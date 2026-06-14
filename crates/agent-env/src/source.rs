@@ -790,6 +790,22 @@ pub fn materialize_source(
     cfg_dir: &Path,
     stage: &Path,
 ) -> Result<MaterializedSource> {
+    materialize_source_with(&download_extract, src, cfg_dir, stage)
+}
+
+/// [`materialize_source`] with the per-branch/ref fetch-and-stage step injected.
+///
+/// `fetch_extract` downloads the archive at `fetch_url` (with `auth`) and extracts it into
+/// `stage`, labelling failures with `user_source`; production passes [`download_extract`]. It
+/// is a parameter *only* so the deferred `main → master` fallback (the `GitPin::Default` arm
+/// below) is exercisable offline — a test passes a mock that fails `main` and stages `master`,
+/// driving the exact retry branch without a live network fetch (closes parity row S-15).
+pub fn materialize_source_with(
+    fetch_extract: &dyn Fn(&str, &UrlRequestAuth, &Path, &str) -> Result<()>,
+    src: &SourceSpec,
+    cfg_dir: &Path,
+    stage: &Path,
+) -> Result<MaterializedSource> {
     if src.source.contains("://") {
         let parsed = parse_repo_url(&src.source)?;
         let pin = src.git_pin();
@@ -797,19 +813,19 @@ pub fn materialize_source(
         let source_revision = match &pin {
             GitPin::Ref(r) => {
                 let (url, auth) = remote_repo_archive_ref(&parsed, r);
-                download_extract(&url, &auth, stage, &src.source)?;
+                fetch_extract(&url, &auth, stage, &src.source)?;
                 format!("ref:{r}")
             }
             GitPin::Branch(b) => {
                 let (url, auth) = remote_repo_archive_branch(&parsed, b);
-                download_extract(&url, &auth, stage, &src.source)?;
+                fetch_extract(&url, &auth, stage, &src.source)?;
                 format!("branch:{b}")
             }
             GitPin::Default => {
                 let (url, auth) = remote_repo_archive_branch(&parsed, "main");
-                download_extract(&url, &auth, stage, &src.source).or_else(|_| {
+                fetch_extract(&url, &auth, stage, &src.source).or_else(|_| {
                     let (url, auth) = remote_repo_archive_branch(&parsed, "master");
-                    download_extract(&url, &auth, stage, &src.source).map_err(|e2| {
+                    fetch_extract(&url, &auth, stage, &src.source).map_err(|e2| {
                         err(format!("{e2} (also tried branch `master` after `main`)"))
                     })
                 })?;
@@ -1565,6 +1581,61 @@ mod tests {
             materialize_source(&src, Path::new("/"), &stage).expect("materialize remote");
         assert_eq!(materialized.source_revision, "branch:main");
         assert!(materialized.cleanup_dir.is_some());
+        let _ = fs::remove_dir_all(&stage);
+    }
+
+    /// S-15 offline: the deferred `main → master` fallback in `materialize_source` is the one
+    /// remote arm that needs a live host, so it was only `#[ignore]`-tested above. Inject the
+    /// fetch-and-stage step via `materialize_source_with` to drive the **exact** retry branch
+    /// (`GitPin::Default` → fail `main`, succeed `master`) with no network: the mock errors on
+    /// the `main` archive URL and stages a real skill tree for the `master` URL. Asserts both
+    /// branches were attempted in order and the kasetto behaviour holds — `source_revision`
+    /// stays `"branch:main"` even when `master` is what actually resolved.
+    #[test]
+    fn remote_materialize_main_to_master_fallback_offline() {
+        let src = SourceSpec {
+            source: "https://github.com/example/repo".to_string(),
+            branch: None, // no branch + no ref => GitPin::Default => the main→master arm
+            git_ref: None,
+            sub_dir: None,
+            skills: SkillsField::Wildcard("*".to_string()),
+        };
+        let stage = temp_dir("agent-env-remote-offline-stage");
+
+        let attempts = std::cell::RefCell::new(Vec::<String>::new());
+        let fetch_extract =
+            |url: &str, _auth: &UrlRequestAuth, dst: &Path, _user_source: &str| -> Result<()> {
+                attempts.borrow_mut().push(url.to_string());
+                if url.contains("master") {
+                    // master resolves: stage a post-strip skill tree the way download_extract would.
+                    let skill_dir = dst.join("demo-skill");
+                    fs::create_dir_all(&skill_dir).unwrap();
+                    fs::write(skill_dir.join("SKILL.md"), "# Demo\n\nDesc\n").unwrap();
+                    Ok(())
+                } else {
+                    // main 404s, forcing the fallback.
+                    Err(err("simulated HTTP 404 on `main` archive"))
+                }
+            };
+
+        let materialized = materialize_source_with(&fetch_extract, &src, Path::new("/"), &stage)
+            .expect("offline main→master fallback");
+
+        assert_eq!(materialized.source_revision, "branch:main");
+        assert!(materialized.cleanup_dir.is_some());
+        assert!(materialized.available.contains_key("demo-skill"));
+
+        let attempts = attempts.into_inner();
+        assert_eq!(attempts.len(), 2, "main then master: {attempts:?}");
+        assert!(
+            attempts[0].contains("main") && !attempts[0].contains("master"),
+            "first attempt is `main`: {attempts:?}"
+        );
+        assert!(
+            attempts[1].contains("master"),
+            "second attempt is `master`: {attempts:?}"
+        );
+
         let _ = fs::remove_dir_all(&stage);
     }
 

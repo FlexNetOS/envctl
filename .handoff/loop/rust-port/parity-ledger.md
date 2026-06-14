@@ -37,6 +37,28 @@ Row format: `- [ ] <id> · <source-path>:<symbol> · <contract> · -> <rust-targ
   asserts both `agent_add` and `agent_remove` refuse a remote `--config`. C-12 → `[x]`. Engine non-printing
   + fail-closed preserved; clippy (`--workspace -D warnings`) / no-c / shape green.
 
+## Parity-verifier pass — 2026-06-14 (cluster: POLISH — S-15 closed offline + test-lint cleanup)
+
+**+1 row flipped `→ [x]` — S-15.** **PARITY NOW COMPLETE: 102 `[x]` / 0 `[~]` / 13 `[≠]` of 115.**
+The last residue is closed by a **fetch-DI seam, not a fake**: `materialize_source` now delegates to
+`materialize_source_with(fetch_extract, ..)`, which injects the per-branch fetch-and-stage step
+(production passes `download_extract` verbatim — zero behavioral change to the verified network path).
+New offline test `remote_materialize_main_to_master_fallback_offline` (agent-env `src/source.rs`) drives
+the **exact** `GitPin::Default` retry branch with NO network: the mock errors on the `main` archive URL
+and stages a real skill tree for the `master` URL, then asserts (a) both branches attempted in order,
+(b) the staged skill is discovered, (c) `source_revision` stays `"branch:main"` even when `master` is
+what resolved — the kasetto behaviour (`src/source/mod.rs:93-100`). The `#[ignore]`d live-network test is
+retained as a belt-and-braces real-host check. agent-env 330→331 (+1, 1 still `#[ignore]`); no new deps,
+no-c/shape/enable + clippy(`--workspace` AND `--tests`) + fmt all green; full `cargo test --workspace` green.
+
+Also resolved the recorded minor debt: the **4 `--all-targets`-only `unnecessary_to_owned` lints** in
+`crates/engine/tests/agent_sync_parity.rs` (redundant `.to_string()` on `Cow<str>` call-args — deref
+coercion already yields `&str`). `cargo clippy -p envctl-engine --tests` is now clean.
+
+**→ The kasetto→envctl ABSORPTION + PARITY is COMPLETE — no `[~]` rows remain.** The 13 `[≠]` are
+intentional front-end divergence (envctl owns rendering; verb semantics already `[x]`), shipped via
+the engine→CLI(#90/#91)→GUI(#93/#94) front-ends. No parity cycles remain.
+
 ## Parity-verifier pass — 2026-06-14 (cluster: FINAL — XC-01/XC-02/CFG-03 + S-15 residue)
 
 **+3 rows flipped `→ [x]`** (98→101). **PARITY PASS AT ITS OFFLINE CEILING: 101 `[x]` / 1 `[~]` / 13 `[≠]`
@@ -295,7 +317,7 @@ CFG-01..03 (recursive `extends` loader), L-01..06 (SHA-256 asset lock), S-09..13
 - [x] S-12 · src/source/auth.rs:auth_env_inline_help · per-host-family env-var hint string (GitHub/GitLab/Bitbucket/Gitea/none). SEED. · -> agent-env::source::auth_env_inline_help · deps: S-01
 - [x] S-13 · src/source/auth.rs:http_fetch_auth_hint · 401|403→" - {help}"; 404→" - if private, {help}"; else "". SEED. · -> agent-env::source::http_fetch_auth_hint · deps: S-12
 - [x] S-14 · src/source/mod.rs:materialize_source + MaterializedSource · http: parse → git_pin → fetch+extract (ref/branch/Default), source_revision label; **main→master retry on Default** (second download_extract, ERR appends "also tried master"); resolve_source_root(sub_dir); discover_with_root_name(hint). local: resolve_path, no cleanup_dir, rev "local". SEED partial — S-15 covers main→master retry remainder. NOT otherwise in seed. · -> agent-env::source::materialize_source · deps: S-02,S-05,S-07,S-16,S-17,F-05
-- [~] S-15 · src/source/mod.rs:materialize_source (GitPin::Default main→master retry) · live second HTTP attempt to `master` when `main` 404s; SEED `archive_url(GitPin::Default)` returns the `main` URL only — the RETRY is the materializer's job. SEED-DEFERRED remainder (TASK-0013). · -> agent-env::source::materialize_source (retry arm) · deps: S-14 ⟨RESIDUE 2026-06-14: retry CODE matches kasetto src/source/mod.rs:93-100 line-for-line, but archive URLs are HTTPS-hardcoded (remote_repo_archive_*) with NO fetch DI seam → a std-only plain-HTTP TcpListener cannot exercise the live main→master retry (TLS handshake fails before HTTP). Only honest live-network row; URL/auth/tar-slip/gzip all [x]. Close via a real HTTPS test endpoint or a fetch-injection seam — NOT by faking.⟩
+- [x] S-15 · src/source/mod.rs:materialize_source (GitPin::Default main→master retry) · live second HTTP attempt to `master` when `main` 404s; SEED `archive_url(GitPin::Default)` returns the `main` URL only — the RETRY is the materializer's job. SEED-DEFERRED remainder (TASK-0013). · -> agent-env::source::materialize_source (retry arm) · deps: S-14 ⟨CLOSED 2026-06-14 (polish): `materialize_source_with(fetch_extract, ..)` injects the fetch-and-stage step; production passes `download_extract` verbatim (zero behavioral change). Offline test `remote_materialize_main_to_master_fallback_offline` fails `main`, stages `master`, asserts retry order + source_revision stays `branch:main`. NOT faked — the seam exercises the real retry branch. `#[ignore]`d live-host test retained.⟩
 - [x] S-16 · src/source/mod.rs:resolve_source_root + repo_name_hint · sub_dir: empty→ERR; absolute→ERR "must be relative"; ParentDir|RootDir→ERR "must not escape"; not-exists→ERR; not-dir→ERR. repo_name_hint: last path segment per host variant. NOT in seed. · -> agent-env::source::{resolve_source_root,repo_name_hint} · deps: S-02
 - [x] S-17 · src/source/mod.rs:discover/discover_with_root_name/discover_skills_in_subdir · root SKILL.md→named by hint; scan `<root>/` + `<root>/skills/` for `*/SKILL.md`; WARN on subdir shadowing root skill (eprintln). NOT in seed. · -> agent-env::source::discover · deps: none
 - [x] S-18 · src/source/mod.rs:discover_mcps · root `.mcp.json`/`mcp.json` + `mcps/*.json`; WARN if legacy `mcp/` present w/o `mcps/` (eprintln). NOT in seed. · -> agent-env::source::discover_mcps · deps: none

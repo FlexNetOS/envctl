@@ -13,11 +13,11 @@ dest_branch: task-0012-agent-env
 dest_base: develop
 rust_target: crates/agent-env (package envctl-agent-env)  # + engine/cli wiring (TASK-0013/0014); reuse-Y units may already live in crates/engine (lock/runtime/doctor per CLAUDE.md)
 cycle_budget: 3
-cycles_this_session: 3   # SESSION-3 BUDGET 3/3 REACHED → HAND OFF. cycle1=C-12-FIX, cycle2=residue close, cycle3=XC-01/02/CFG-03+S-15
-cycles_total: 16
-parity: 101 [x] verified · 1 [~] (S-15 live-network residue) · 0 [ ] · 13 [≠] front-end (parity-ledger.md authoritative; DONE-equiv 114/115 — PARITY AT OFFLINE CEILING)
-ledger: merge 102 [~] merged · 0 [ ] to-merge · 13 [≠] front-end (ABSORPTION + PARITY COMPLETE THROUGH ENGINE; remaining = S-15 residue + TASK-0014 front-end)
-last_item: FINAL parity cluster — +3 [x] (XC-01 error channel, XC-02 http_client, CFG-03 fetch_config_text via std TcpListener mock); S-15 [~] honest live-network residue (HTTPS-hardcoded, no DI seam, code matches kasetto line-for-line); agent-env 322→330
+cycles_this_session: 2   # SESSION-4 (polish) 2026-06-14. cycle1=unblock #93 (cwd-race CI fix); cycle2=S-15 fetch-DI seam + test-lint cleanup
+cycles_total: 18
+parity: 102 [x] verified · 0 [~] · 0 [ ] · 13 [≠] front-end (parity-ledger.md authoritative; PARITY COMPLETE — no unproven rows remain)
+ledger: merge 102 [~] merged · 0 [ ] to-merge · 13 [≠] front-end (ABSORPTION + PARITY COMPLETE; front-end shipped engine→CLI #90/#91→GUI #93/#94)
+last_item: POLISH — S-15 [~]→[x] via materialize_source_with fetch-DI seam (offline main→master fallback test, zero behavioral change to production download_extract); + 4 --all-targets-only unnecessary_to_owned lints cleaned in engine/tests/agent_sync_parity.rs. Also fixed #93 CI cwd-race (serialize agent_list test under cwd_lock). agent-env 330→331
 session3_summary: SESSION-3 successor 2026-06-14, budget 3/3. Landed session-2 stack (#83/#84 merged; #85/#86
   rebased+armed). cycle1 C-12-FIX (no-downgrade engine fix, #86); cycle2 residue close S-07/S-12/S-13/M-22 (#87);
   cycle3 XC-01/XC-02/CFG-03 +S-15-residue (#88). parity 93→101 [x] (DONE-equiv 114/115). **PARITY-VERIFIER PASS
