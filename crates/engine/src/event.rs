@@ -3,7 +3,9 @@
 //! `Send + 'static`, so events cross the GUI worker→UI channel unchanged, and the
 //! CLI drains the same vocabulary. (`EventSink::channel()`, not `new()`, keeps
 //! clippy's `new_ret_no_self` happy — it returns a channel pair, not `Self`.)
-use crate::agent::report::{AgentLockDriftItem, AgentReport, AgentVerb};
+use crate::agent::report::{
+    AgentEditOutcome, AgentList, AgentLockDriftItem, AgentReport, AgentVerb,
+};
 use crate::agent::AgentScope;
 use crate::component::Phase;
 use crate::dashboard::{DashboardPlan, DeployOutcome};
@@ -79,6 +81,19 @@ pub enum Event {
     /// The drift result of `agent_lock --check` (empty = lock is up to date).
     AgentLockChecked {
         drift: Vec<AgentLockDriftItem>,
+    },
+    /// The read-only inventory from `agent_list`, emitted just before the typed return.
+    /// `list` emits only `AgentRunStarted` otherwise, so its rows live only in the return
+    /// value (CLI prints via `render_agent_list`). The GUI worker→UI channel is event-only,
+    /// so this carries the list to the GUI without changing the CLI's typed-return render.
+    AgentListed {
+        list: AgentList,
+    },
+    /// The edit outcome from `agent_add` / `agent_remove`, emitted at the tail (after the
+    /// optional follow-up sync). The preview `would_add`/`would_remove` items are in NO other
+    /// event; this transports them to the GUI. (CLI keeps its typed-return render, unchanged.)
+    AgentEdited {
+        outcome: AgentEditOutcome,
     },
 }
 

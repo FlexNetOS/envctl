@@ -25,11 +25,11 @@ pub mod telemetry; // sample() -> Telemetry (nvidia-smi CSV + sysinfo)
 pub mod wiring; // apply()/revert() for Wiring (shell_rc backup-then-excise) // EngineCommand / EngineEvent + run_event_loop (GUI worker API)
 
 pub use agent::{
-    AgentAddSpec, AgentCleanSpec, AgentEditOutcome, AgentList, AgentListKind, AgentListSpec,
-    AgentLockMode, AgentLockOutcome, AgentLockSpec, AgentRemoveSpec, AgentReport, AgentScope,
-    AgentSectionSel, AgentSyncSpec, AgentVerb,
+    AgentAddSpec, AgentCleanSpec, AgentEditItem, AgentEditOutcome, AgentList, AgentListKind,
+    AgentListSpec, AgentLockDriftItem, AgentLockMode, AgentLockOutcome, AgentLockSpec,
+    AgentRemoveSpec, AgentReport, AgentScope, AgentSectionSel, AgentSyncSpec, AgentVerb,
 };
-pub use command::{run_event_loop, EngineCommand, EngineEvent, TelemetryControl};
+pub use command::{run_event_loop, AgentCommandSpec, EngineCommand, EngineEvent, TelemetryControl};
 pub use component::{Component, Guard, Hook, HookRunner, Phase};
 pub use dashboard::{
     DashboardPane, DashboardPlan, DashboardSpec, DashboardTab, DeployOutcome, MetaRepo,

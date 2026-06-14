@@ -8,6 +8,9 @@
 //! on a cadence the GUI controls via `TelemetryControl` (backoff when off-Dashboard
 //! / unfocused), so a long `engine.run` never starves telemetry.
 use crate::{
+    agent::{
+        AgentAddSpec, AgentCleanSpec, AgentListSpec, AgentLockSpec, AgentRemoveSpec, AgentSyncSpec,
+    },
     component::Phase,
     dashboard::DashboardSpec,
     model::{AddRepoSpec, RunPlan},
@@ -55,8 +58,28 @@ pub enum EngineCommand {
         dry_run: bool,
         force: bool,
     },
+    /// An agent-asset verb (sync/add/remove/lock/list/clean). The engine owns the fail-closed
+    /// preview-vs-apply policy via each `Agent*Spec`'s `apply` flag; the GUI only builds the Spec.
+    Agent {
+        spec: AgentCommandSpec,
+    },
     SampleTelemetry,
     Shutdown,
+}
+
+/// The six agent-asset verbs, each wrapping its typed spec. The GUI builds one of these from
+/// its form state (the identical `Agent*Spec` the CLI builds from clap) and sends it through
+/// `EngineCommand::Agent`; `run_event_loop` dispatches to the matching `Engine::agent_*` method.
+/// This keeps the agent business logic in the engine — the GUI only constructs the Spec + drains
+/// the resulting events (parity with the CLI's `run_agent`).
+#[derive(Clone, Debug)]
+pub enum AgentCommandSpec {
+    Sync(AgentSyncSpec),
+    Add(AgentAddSpec),
+    Remove(AgentRemoveSpec),
+    Lock(AgentLockSpec),
+    List(AgentListSpec),
+    Clean(AgentCleanSpec),
 }
 
 pub type EngineEvent = Event;
@@ -211,6 +234,23 @@ pub fn run_event_loop(
                     engine.deploy_dashboard(start, meta_file, spec, dry_run, force, &sink)
                 {
                     emit_setup_error(&sink, "dashboard-deploy", &e);
+                }
+            }
+            EngineCommand::Agent { spec } => {
+                // Dispatch to the matching Engine::agent_* method, mirroring the CLI's `run_agent`
+                // arms. The typed return is dropped here — the GUI consumes the run via the
+                // events the verb emits (AgentRunStarted/Action/RunFinished/LockChecked plus the
+                // new AgentListed/AgentEdited). A setup-time Err becomes a GuardRefused.
+                let result = match spec {
+                    AgentCommandSpec::Sync(s) => engine.agent_sync(s, &sink).map(|_| ()),
+                    AgentCommandSpec::Add(s) => engine.agent_add(s, &sink).map(|_| ()),
+                    AgentCommandSpec::Remove(s) => engine.agent_remove(s, &sink).map(|_| ()),
+                    AgentCommandSpec::Lock(s) => engine.agent_lock(s, &sink).map(|_| ()),
+                    AgentCommandSpec::List(s) => engine.agent_list(s, &sink).map(|_| ()),
+                    AgentCommandSpec::Clean(s) => engine.agent_clean(s, &sink).map(|_| ()),
+                };
+                if let Err(e) = result {
+                    emit_setup_error(&sink, "agent", &e);
                 }
             }
             EngineCommand::SampleTelemetry => {
