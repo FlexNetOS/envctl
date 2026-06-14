@@ -1,40 +1,46 @@
-# HANDOFF — rust-port-merge + TASK-0014 (kasetto → envctl, Epic C)
-closed_utc: 2026-06-14 (session-relay-wrap-up)   branch: develop (08d7086)   worktree: create FRESH off origin/develop
-cycle_budget: 3   cycles_total: 17   cycles_this_session: parity all merged + TASK-0014 CLI merged
-last_item: TASK-0014 agent CLI (merged #90) + /verify human-render fix (#91 armed)
-next_item: **TASK-0014b** — GUI agent panel in `crates/gui/src/main.rs` (egui), thin adapter over the SAME `Engine::agent_*` methods (route via feature-forge). Then optional: close **S-15** (fetch-DI seam / HTTPS endpoint) + the 4 pre-existing `--all-targets`-only lints in `crates/engine/tests/agent_sync_parity.rs`.
-orchestrator_phase: Epic C COMPLETE THROUGH THE CLI (parity 101 [x] / 1 [~] / 13 [≠]; CLI front-end shipped; GUI = TASK-0014b)
-last_agent: invariant-guardian (TASK-0014 PASS-WITH-NOTES) + /verify fix
-gate_status: PASS (agent-env 330 + engine 96 + cli 20 tests; clippy --workspace -D warnings / no-c / shape / enable / fmt green)   pr_url: #89 parity MERGED, #90 CLI MERGED, #91 verify-fix armed
+# HANDOFF — rust-port-merge + TASK-0014/0014b (kasetto → envctl, Epic C)
+closed_utc: 2026-06-14 (session-relay-wrap-up, post-TASK-0014b)   branch: develop   worktree: create FRESH off origin/develop
+cycle_budget: 3   cycles_total: 18   cycles_this_session: TASK-0014b GUI (1)
+last_item: TASK-0014b GUI agent panel (PR #93 armed)
+next_item: **OPTIONAL POLISH ONLY** — (a) close **S-15** live-net residue: add an engine fetch-DI seam (inject the HTTP getter into `materialize_source`) so the main→master retry is testable offline, flip S-15 [~]→[x]; (b) the 4 `--all-targets`-only `unnecessary_to_owned` lints in `crates/engine/tests/agent_sync_parity.rs` (NOT in CI's `--workspace` clippy — cheap cleanup). **Epic C is otherwise COMPLETE.**
+orchestrator_phase: ⭐ EPIC C FRONT-END COMPLETE (engine → CLI → GUI, all parity-verified). parity 101 [x] / 1 [~] (S-15) / 13 [≠]
+last_agent: invariant-guardian (TASK-0014b PASS — note closed) + orchestrator (recovered an API-dropped implementer)
+gate_status: PASS (engine + cli + gui all green; gui 11 spec tests; engine agent_sync 8→10 with event-emission tests; clippy --workspace -D warnings / no-c / shape / enable / fmt green)   pr_url: #89/#90/#91 MERGED, #93 GUI armed
 
 landed_this_session:
-  - #89  parity-verifier pass consolidated (verbs + C-12-FIX + residue close) — 101 [x], MERGED
-  - #90  cli: envctl agent {sync,add,remove,lock,list,clean} command group — MERGED
-  - #91  cli: render agent return in human mode (/verify fix: list/remove showed header only) — armed
+  - #93  gui: Agent panel {sync,add,remove,lock,list,clean} over Engine::agent_* — armed
+  (prior sessions: #89 parity / #90 CLI / #91 CLI human-render fix — all MERGED)
 decisions_and_dead_ends:
-  - Deep PR stacking under fast auto-merge is fragile → CONSOLIDATE >2-3 deep (cherry-pick net-new
-    commits onto fresh develop, one PR). Did this for #85-#88 → #89. (ICM decisions-forge-loop.)
-  - `--json`-only tests pass the guardian but miss the human surface for return-value verbs (the list
-    bug /verify caught). A verb whose data is in the RETURN (not events) needs explicit human rendering
-    — now `AgentResult::render_human()` + 2 regression tests.
+  - SUBAGENT API-DROP RECOVERY: a delegated implementer can die mid-run (ConnectionRefused). The
+    TASK-0014b implementer finished the ENGINE half then dropped. Recovery = inspect git diff for what
+    landed → verify the finished half (build+test) → delegate ONLY the remainder to a fresh agent.
+    Salvage partial work, never restart. (ICM decisions-forge-loop.)
+  - GUI parity = the SAME return-value-transport gap as the CLI, different surface: a verb whose result
+    is in the RETURN (list→AgentList, add/remove→AgentEditOutcome) needs it to cross the front-end
+    boundary. CLI = render the return in human mode (#91); GUI = engine EMITS it as an Event
+    (AgentListed/AgentEdited) since the worker→UI channel is event-only. Closed the guardian's "no
+    event-emission test" note BEFORE commit (agent_sync 8→10) — don't carry a known regression-class.
+  - lock_mode_from MOVED into the engine (AgentLockMode::from_flags) — single source, CLI+GUI both call it.
+  - Deep PR stacking under fast auto-merge is fragile → CONSOLIDATE >2-3 deep (cherry-pick onto fresh
+    develop, one PR — did this for #85-#88 → #89).
   - S-15 is honest live-network residue (HTTPS-hardcoded, no fetch DI seam) — do NOT fake; close with a
-    seam. Found+fixed one real downgrade (C-12 engine remote-config rejection) en route.
-  - GUI deliberately split to TASK-0014b — engine parity guarantees zero engine churn for it.
-icm_stored: decisions-forge-loop, context-envctl, errors-resolved, decisions-envctl (recall on resume)
+    seam. Found+fixed one real downgrade (C-12 engine remote-config rejection) earlier in the arc.
+icm_stored: decisions-forge-loop (×3), context-envctl, errors-resolved, decisions-envctl (recall on resume)
 verify_on_resume: |
-  git -C <fresh worktree off origin/develop> rev-parse --short origin/develop   # expect 08d7086+ (or #91-merge)
-  cargo build -p envctl-engine -p envctl && cargo test -p envctl                 # cli 20 pass
-  bash ci/gates/no-c.sh && bash ci/gates/shape.sh && bash ci/gates/enable.sh     # PASS
-  target/debug/envctl agent --help                                              # 6 verbs
-resume_command: /forge-loop TASK-0014b   (GUI) — or /session-relay-resume from .handoff/loop/rust-port/HANDOFF.md
+  git -C <fresh worktree off origin/develop> rev-parse --short origin/develop   # 850d504+ (#93 merge)
+  cargo build -p envctl-engine -p envctl -p envctl-gui                          # all build
+  cargo test -p envctl-engine -p envctl -p envctl-gui                           # engine/cli/gui green
+  bash ci/gates/no-c.sh && bash ci/gates/shape.sh && bash ci/gates/enable.sh    # PASS
+  target/debug/envctl agent --help                                             # 6 verbs (CLI)
+resume_command: /forge-loop (S-15 seam or lint cleanup — OPTIONAL) — or /session-relay-resume from .handoff/loop/rust-port/HANDOFF.md
 
-## ⭐ STATUS: the kasetto→envctl ABSORPTION + PARITY is COMPLETE through the engine AND the CLI.
-TASK-0014 shipped the `envctl agent {sync,add,remove,lock,list,clean}` CLI (thin adapter over the
-verified engine; #90) + the human-render fix (#91). Remaining front-end work = **TASK-0014b** (GUI panel).
-The 13 `[≠]` rows are front-end (envctl owns rendering; verb semantics already `[x]` via the C-* engine
-tests). The ONLY unverified parity row is **S-15** (`materialize_source` live main→master HTTP retry) —
-CODE matches kasetto `src/source/mod.rs:93-100` line-for-line, but archive URLs are HTTPS-hardcoded with no
-fetch DI seam, so a std-only `TcpListener` mock can't reach it offline (honest residue — never faked).
+## ⭐ STATUS: the kasetto→envctl ABSORPTION is COMPLETE end-to-end — engine → CLI → GUI.
+Epic C front-end DONE: parity (#89) + CLI (#90/#91) + GUI Agent panel (#93). All three front-ends drive
+the IDENTICAL parity-verified `Engine::agent_*` API (CLI↔GUI Spec parity guardian-checked field-for-field).
+parity ledger: 101 `[x]` / 1 `[~]` / 13 `[≠]`. The ONLY remaining items are OPTIONAL POLISH: close **S-15**
+(`materialize_source` live main→master HTTP retry — CODE matches kasetto `src/source/mod.rs:93-100`
+line-for-line; needs an engine fetch-DI seam to test offline; honest residue, never faked) and the 4
+`--all-targets`-only lints in `crates/engine/tests/agent_sync_parity.rs` (not in CI's `--workspace` clippy).
 
 ## SESSION-2 (2026-06-14 successor, parity-verifier pass — 3 cycles, all PASS)
 First landed session-1's stack (#80/#81/#82 all MERGED). Then:
