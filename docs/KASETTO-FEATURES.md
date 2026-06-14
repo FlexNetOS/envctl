@@ -1,15 +1,59 @@
 # Kasetto Feature Catalog
 
-> Extracted from `kasetto` v3.0.0 (`/tmp/kasetto-extract/kasetto-main`) — a Rust
-> "declarative AI agent environment manager." Source: ~49 `src/**/*.rs` files
-> (~11.5k LOC) plus `README.md`, `CLAUDE.md`, `kasetto.example.yaml`, `Cargo.toml`,
-> `justfile`, and `site/content/docs/*.mdx`.
+> Catalog of **kasetto v3.2.0** (source-of-truth: `github.com/pivoshenko/kasetto`, git tag
+> `v3.2.0`, `ec01cca`; mirrored at `meta/kasetto`) — a Rust "declarative AI agent environment
+> manager." Source: ~49 `src/**/*.rs` files plus `README.md`, `CLAUDE.md`,
+> `kasetto.example.yaml`, `Cargo.toml`, `justfile`, and `site/content/docs/*.mdx`.
 >
 > Each feature lists: **what it is**, **how kasetto implements it** (module + mechanism),
-> and **relevance to envctl** (`/home/drdave/Desktop/envctl` — a declarative, GPU-aware,
-> source-building environment manager with components / manifest / drift / reset /
-> auto-fix / add-repo). Relevance is tagged **ADOPT** (envctl should have it),
-> **PARTIAL** (envctl has a weaker version), or **N/A**.
+> and **relevance to envctl** — a declarative, GPU-aware, source-building environment manager
+> (`meta/envctl`) with components / manifest / drift / reset / auto-fix / add-repo.
+>
+> **⚠️ Historical framing:** the per-section "relevance to envctl" tags
+> (**ADOPT** / **PARTIAL** / **N/A**) were written before the absorption and describe what envctl
+> *should* adopt. As of **2026-06-14 every ADOPT/PARTIAL item is ABSORBED** — see §0. Read the tags
+> as "what was adopted," not "what is still missing."
+
+---
+
+## 0. Status: ABSORBED into envctl (Epic C — parity-complete 2026-06-14)
+
+kasetto v3.2.0 is **no longer an external dependency** — its behavior is reproduced natively inside
+envctl, verified at parity and shipped end-to-end:
+
+- **`crates/agent-env`** — 18-module pure-Rust port of kasetto v3.2.0 (config model, `extends`
+  composition, source resolver, fsops, SHA-256 asset lock, MCP additive-never-clobber merge, the
+  5 command-format transforms).
+- **`crates/engine/src/agent/*`** — the shared, non-printing `Engine::agent_{sync,add,remove,lock,list,clean}`
+  methods (the 11 kasetto verbs folded to envctl's 6; preview-default fail-closed).
+- **Front-ends** — `envctl agent {sync,add,remove,lock,list,clean}` (CLI) + the GUI Agent panel,
+  both driving the identical Engine API. Shipped engine → CLI (PR #90/#91) → GUI (PR #93/#94),
+  promoted to `master` via PR #96.
+- **Parity:** **102 `[x]` verified / 0 `[~]` / 13 `[≠]` front-end** (the `[≠]` rows are kasetto's
+  terminal presentation + clap wiring, which map to envctl's own CLI/GUI — intentional divergence,
+  not a downgrade). Authoritative ledger: `.handoff/loop/rust-port/parity-ledger.md`.
+- **External binary retired** (TASK-0018): envctl no longer installs/symlinks the `kasetto`/`kst`
+  binaries — `envctl agent` is the replacement. The `meta/kasetto` repo remains the upstream
+  reference, not a runtime requirement.
+
+**Invariants preserved through the absorption:** no C in the trust boundary (libSQL-remote /
+ring-only rustls / flate2 `rust_backend`), engine stays non-printing (kasetto's `ui.rs`/`banner.rs`/
+`process::exit` dropped — front-ends own rendering), destructive verbs fail-closed + dry-run by
+default.
+
+### v3.1 → v3.2 delta (absent from the original v3.0.0 extract, now covered)
+
+The catalog below was first written against v3.0.0; the v3.1/v3.2 line added — and the absorption
+reproduces — these:
+
+- **`add` / `remove` source mutation with sync-after** (`config_edit.rs`): edit `agent-env.yaml`
+  then re-sync, `--no-sync` to skip; remote-config rejection (local-only edit target).
+- **`lock --check`** — audit-only lock verification (exit 1 on drift) distinct from rewrite.
+- **`--upgrade-package` / per-package `--update <NAME>`** — re-resolve named packages' refs and
+  re-pin, vs the all-packages refresh.
+- **Hardened source resolver** — tar-slip (`..`) guard, `ref > branch > default(main→master)`
+  precedence with the deferred `master` fallback, browser-URL → raw rewrite, host-aware auth hints.
+- **MCP merge discipline** — additive, never-clobber, never-prune-on-failure.
 
 ---
 
@@ -548,7 +592,11 @@ via git-cliff if it wants automated releases.
 
 ---
 
-## Executive Summary — Top Features envctl Should Adopt (ranked)
+## Executive Summary — Top Features (ranked) · STATUS: all ABSORBED (§0)
+
+> Originally "top features envctl should adopt." As of 2026-06-14 **all ten are absorbed** into
+> `crates/agent-env` + `Engine::agent_*` at parity (§0). Kept ranked as the rationale record.
+
 
 1. **Committed lock file with OS-invariant content hashing (§2).** The single highest-value
    idea: an `envctl.lock` pinning each component's resolved git ref + content/build hash gives
@@ -584,5 +632,8 @@ via git-cliff if it wants automated releases.
 
 ---
 
-*File generated from a full read of the kasetto v3.0.0 source tree. Source paths referenced are
-under `/tmp/kasetto-extract/kasetto-main/`.*
+*Catalog of the kasetto **v3.2.0** source tree (`meta/kasetto`, upstream
+`github.com/pivoshenko/kasetto` `ec01cca`). All feature behavior is absorbed into envctl's
+`crates/agent-env` + `Engine::agent_*` at parity (§0; ledger
+`.handoff/loop/rust-port/parity-ledger.md`). Module paths in the per-section "how kasetto
+implements it" notes refer to the kasetto source, not envctl's port.*
