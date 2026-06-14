@@ -1,45 +1,53 @@
 # agent-env.toml — the AI-agent environment layer.
 #
-# kasetto is the agent-env twin of envctl: same declarative + idempotent + content-locked
-# discipline, one layer up — it manages the agent's own toolkit (skills + MCP baseline) instead
-# of the OS toolchain. This component wires it INTO envctl's component system so a green box also
-# has its agent environment provisioned and locked, surfaced under the same `doctor`/`auto-detect`.
+# The agent-env layer is the declarative + idempotent + content-locked twin of envctl, one layer
+# up — it manages the agent's own toolkit (skills + MCP baseline) instead of the OS toolchain.
+# This component wires it INTO envctl's component system so a green box also has its agent
+# environment provisioned and locked, surfaced under the same `doctor`/`auto-detect`.
 #
-#   detect : kasetto binary present (cargo-installed, like rtk).
-#   verify : `kasetto sync --locked` clean — the agent toolkit matches kasetto.yaml -> kasetto.lock.
-#   install/fix : `kasetto sync` (provision/refresh .claude + .codex from the locked config).
-#   remove : `kasetto clean --project` (unprovision the installed skills/MCPs).
+# RETIRED external `kasetto` binary (TASK-0018, Epic C): kasetto v3.2.0 is now ABSORBED into envctl
+# (`crates/agent-env` + `Engine::agent_*`), so this component drives the BUILT-IN `envctl agent`
+# verbs — no `cargo install kasetto`, no external binary, no `rustup` requirement just for this layer.
 #
-# NOTE: verify/install run from the repo root so kasetto resolves ./kasetto.yaml (scope: project),
-# exactly as the env-install-loop's `kasetto sync --locked` gate already does.
+#   detect : envctl present + an agent-env config exists (the agent engine is built into envctl).
+#   verify : `envctl agent sync --config kasetto.yaml` resolves cleanly (config + sources valid).
+#   install/fix : `envctl agent sync --config kasetto.yaml --apply` (provision/refresh .claude/.codex).
+#   remove : `envctl agent clean --scope project --apply` (unprovision the installed skills/MCPs).
+#
+# NOTE: commands pass `--config kasetto.yaml` explicitly — `envctl agent` defaults to
+# `agent-env.yaml`, but this repo's project config is `kasetto.yaml` (scope: project).
+#
+# FOLLOW-UP (not this task): the strict `--locked` drift gate (kasetto's old verify) is deferred —
+# `envctl agent lock` currently drops the `github` MCP that kasetto's lock captured (the other 6
+# baseline MCPs lock fine). Filed as a parity finding; once resolved, switch verify back to
+# `envctl agent sync --config kasetto.yaml --locked` for the zero-network drift gate.
 
 [[component]]
 id = "kasetto"
-name = "kasetto (agent-env manager) + synced agent toolkit"
-description = "Declarative AI-agent environment manager; provisions the locked skills + MCP baseline (kasetto.yaml -> kasetto.lock) into .claude/.codex. detect = binary present; verify = `kasetto sync --locked` clean."
-requires = ["rustup"]
+name = "agent-env toolkit (envctl agent — kasetto v3.2.0 absorbed)"
+description = "Declarative AI-agent environment layer; provisions the skills + MCP baseline from kasetto.yaml into .claude/.codex via the built-in `envctl agent` (kasetto v3.2.0 absorbed). detect = envctl present + config; verify = `envctl agent sync --config kasetto.yaml` resolves. External kasetto binary retired (TASK-0018)."
+requires = []
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "command -v kasetto || [ -x \"$HOME/.local/bin/kasetto\" ] || [ -x \"$HOME/.cargo/bin/kasetto\" ]"]
+args = ["-lc", "command -v envctl >/dev/null 2>&1 && { [ -f agent-env.yaml ] || [ -f kasetto.yaml ]; }"]
 [component.install]
 kind = "script"
 script = '''
 export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
-command -v kasetto >/dev/null || cargo install kasetto
-kasetto sync
+envctl agent sync --config kasetto.yaml --apply
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.cargo/bin:$HOME/.local/bin:$PATH\"; kasetto --version && kasetto sync --locked"]
+args = ["-lc", "export PATH=\"$HOME/.cargo/bin:$HOME/.local/bin:$PATH\"; envctl agent sync --config kasetto.yaml"]
 [component.fix]
 kind = "script"
 script = '''
 export PATH="$HOME/.cargo/bin:$HOME/.local/bin:$PATH"
-kasetto sync
+envctl agent sync --config kasetto.yaml --apply
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.cargo/bin:$HOME/.local/bin:$PATH\"; kasetto clean --project"]
+args = ["-lc", "export PATH=\"$HOME/.cargo/bin:$HOME/.local/bin:$PATH\"; envctl agent clean --scope project --apply"]

@@ -74,7 +74,7 @@ requires = []
 resolved = ""
 
 [components.env-ctl]
-content_hash = "370a8f964fb5bed4"
+content_hash = "a0996a764b252496"
 requires = [
     "rustup",
     "sqld",
@@ -165,12 +165,13 @@ requires = [
 resolved = ""
 
 [components.group-portability]
-content_hash = "dabdf887a3edd6b0"
+content_hash = "3781810497c5aae5"
 requires = [
     "claude-global-links",
     "home-bin-links",
     "home-config-links",
     "meta-tool-links",
+    "usrlocal-script-links",
 ]
 resolved = ""
 
@@ -190,8 +191,8 @@ requires = ["nix"]
 resolved = ""
 
 [components.kasetto]
-content_hash = "cd67e755fdf1f886"
-requires = ["rustup"]
+content_hash = "bbdb1f5f471fa9cb"
+requires = []
 resolved = ""
 
 [components.keepassxc]
@@ -223,7 +224,7 @@ requires = [
 resolved = ""
 
 [components.meta-tool-links]
-content_hash = "c24beb8e0bf92b8e"
+content_hash = "4159f20ce025fcf9"
 requires = []
 resolved = ""
 
@@ -302,6 +303,11 @@ resolved = ""
 
 [components.sqld]
 content_hash = "cd6716965bf5b09f"
+requires = []
+resolved = ""
+
+[components.usrlocal-script-links]
+content_hash = "b6732195c786b9ff"
 requires = []
 resolved = ""
 

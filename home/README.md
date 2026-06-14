@@ -30,7 +30,7 @@ $HOME/.local/bin/<tool>             -> ~/Desktop/meta/<repo>/target/release/<too
 - **kasetto** = agent layer (skills/MCP into `.claude`/`.codex`) — its *global manifest* lives here
   (`.config/kasetto/kasetto.yaml`) but its outputs are kasetto-managed, not tree-linked.
 - **meta** = repo/workspace layer — `meta/scripts/bootstrap.sh` sequences rustup → clone → build →
-  `envctl install` → `kasetto sync --locked` → `envctl doctor && envctl lock --check`.
+  `envctl install` → `envctl agent sync --locked` → `envctl doctor && envctl lock --check`.
 
 ## Known portability residue (v1, recorded honestly)
 

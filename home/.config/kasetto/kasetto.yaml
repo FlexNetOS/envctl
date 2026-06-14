@@ -28,8 +28,11 @@ agent:
 
 # --- MCP baseline (general-purpose servers useful in every repo). ---
 # Enabled after dry-run confirmed kasetto ADDS these without touching broker/repowire/weave.
+# Source = the IN-META agent-skills (envctl owns it; the canonical FlexNetOS/agent-skills repo is
+# published FROM here), so a sync resolves the MCP defs locally — no network, no remote-repo
+# coupling. Consumed by the built-in `envctl agent sync` (external kasetto binary retired, TASK-0018).
 mcps:
-  - source: https://github.com/FlexNetOS/agent-skills
+  - source: ~/Desktop/meta/envctl/agent-skills
     mcps:
       - context7
       - exa

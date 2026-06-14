@@ -97,9 +97,10 @@ conventions (camelCase, `*.test.ts`, JS imports) — those are **wrong for this 
   files/modules/functions, PascalCase types, SCREAMING_SNAKE_CASE consts, `#[cfg(test)]` tests,
   area-prefixed commit subjects (`engine:`, `secretd:`, `docs:`). Ignore any ECC instinct/skill
   that says otherwise.
-- **To change the agent env:** edit `agent-skills/` + `kasetto.yaml`, then `kasetto sync`.
+- **To change the agent env:** edit `agent-skills/` + `kasetto.yaml`, then `envctl agent sync --apply`
+  (the built-in agent-env engine; the external `kasetto` binary is retired — TASK-0018).
   Do **not** hand-maintain `.claude/skills/*` or `.claude/homunculus/instincts/*` — they're
-  generated. CI enforces with `kasetto sync --locked` (fails on drift).
+  generated. CI enforces with `envctl agent sync --locked` (fails on drift).
 - Keep the MCP baseline identical across Claude (`.mcp.json`) and Codex (`.codex/config.toml`):
   `github`, `context7`, `exa`, `memory`, `playwright`, `sequential-thinking`.
 
@@ -157,7 +158,7 @@ drift/lock/doctor → `env-stabilize`; conventions → `agent-env-config`.)
 kasetto pipeline. Agent definitions live in `.claude/agents/*.md` and the harness skills
 (`feature-forge`, `rust-feature-impl`, `forge-loop`, `session-relay`, `env-install-loop`,
 `auto-provision`, `handoff-sync`) live directly in `.claude/skills/` — edit those files in place and commit them. They are **not** sourced from `agent-skills/`, not in `kasetto.yaml` /
-`kasetto.lock`, and not produced by `kasetto sync`. (Note: this is a deliberate exception to the
+`agent-env.lock`, and not produced by `envctl agent sync`. (Note: this is a deliberate exception to the
 general "`.claude/skills/*` are kasetto-generated" rule above — the kasetto-managed skills remain
 `agent-env-config`, `env-stabilize`, `env-toolchain-install`.)
 
