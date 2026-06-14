@@ -628,6 +628,11 @@ fn copy_tree(src: &Path, dst: &Path) {
 
 #[test]
 fn agent_list_emits_agent_listed_event() {
+    // `list` is cwd-based, so this test mutates the process-global cwd — it MUST serialize
+    // against the other cwd-mutating tests (clean/m22) via the same lock, or under
+    // `cargo test --workspace` parallelism it races and corrupts their cwd-based scope
+    // resolution mid-call (the CI failure that blocked #93: `clean ... removed >= 1`).
+    let _guard = cwd_lock().lock().unwrap();
     let (engine, project, cfg) = project_with_config(&full_config(&pack_dir()));
     let (s, _rx) = sink();
     engine
