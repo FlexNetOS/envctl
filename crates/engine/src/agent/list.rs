@@ -56,6 +56,9 @@ impl Engine {
             commands,
             merged_scopes: merged,
         };
+        // Transport the assembled list to the event-only GUI worker→UI channel (the CLI keeps
+        // its typed-return render via `render_agent_list`). Emitted just before returning.
+        sink.emit(Event::AgentListed { list: list.clone() });
         Ok(list)
     }
 }

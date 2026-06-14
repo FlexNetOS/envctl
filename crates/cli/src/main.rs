@@ -244,19 +244,6 @@ impl From<ListKindArg> for AgentListKind {
     }
 }
 
-/// Map the `--locked` / `--update [names]` flags to the engine `AgentLockMode`.
-/// `--locked` wins (zero-network audit); `--update [names]` re-resolves the named
-/// packages (empty = all); otherwise the default `Plain` (verify+fetch, write lock).
-fn lock_mode_from(locked: bool, update: Option<Vec<String>>) -> AgentLockMode {
-    if locked {
-        AgentLockMode::Locked
-    } else if let Some(only) = update {
-        AgentLockMode::Update { only }
-    } else {
-        AgentLockMode::Plain
-    }
-}
-
 /// The six agent-asset verbs. Each maps field-by-field to its `Agent*Spec`.
 #[derive(Subcommand)]
 enum AgentCmd {
@@ -722,29 +709,11 @@ mod env_cmd_tests {
 
 #[cfg(test)]
 mod agent_cmd_tests {
-    use super::{lock_mode_from, AgentLockMode, AgentScope, ScopeArg};
+    use super::{AgentScope, ScopeArg};
 
-    #[test]
-    fn lock_mode_from_maps_each_flag() {
-        // default: no --locked, no --update -> Plain
-        assert_eq!(lock_mode_from(false, None), AgentLockMode::Plain);
-        // --locked wins (zero-network audit)
-        assert_eq!(lock_mode_from(true, None), AgentLockMode::Locked);
-        // --locked beats --update if both somehow set
-        assert_eq!(lock_mode_from(true, Some(vec![])), AgentLockMode::Locked);
-        // --update with no names -> Update { only: [] } (= all)
-        assert_eq!(
-            lock_mode_from(false, Some(vec![])),
-            AgentLockMode::Update { only: vec![] }
-        );
-        // --update foo bar -> Update { only: [foo, bar] }
-        assert_eq!(
-            lock_mode_from(false, Some(vec!["foo".into(), "bar".into()])),
-            AgentLockMode::Update {
-                only: vec!["foo".into(), "bar".into()]
-            }
-        );
-    }
+    // Note: `lock_mode_from` moved to the engine as `AgentLockMode::from_flags` (TASK-0014b
+    // open-Q1) so the CLI and GUI share one source; its unit test moved with it
+    // (`crates/engine/src/agent/mod.rs::tests::from_flags_maps_each_flag`).
 
     #[test]
     fn scope_arg_converts_to_agent_scope() {
@@ -987,7 +956,7 @@ fn run_agent(engine: Engine, cmd: AgentCmd, json: bool) -> anyhow::Result<()> {
                     config_path: config,
                     scope_override: scope.map(AgentScope::from),
                     apply,
-                    lock_mode: lock_mode_from(locked, update),
+                    lock_mode: AgentLockMode::from_flags(locked, update),
                 };
                 AgentResult::Report(eng.agent_sync(spec, &sink)?)
             }
@@ -1022,7 +991,7 @@ fn run_agent(engine: Engine, cmd: AgentCmd, json: bool) -> anyhow::Result<()> {
                     apply,
                     no_sync,
                     no_verify,
-                    lock_mode: lock_mode_from(locked, update),
+                    lock_mode: AgentLockMode::from_flags(locked, update),
                 };
                 AgentResult::Edit(eng.agent_add(spec, &sink)?)
             }
@@ -1055,7 +1024,7 @@ fn run_agent(engine: Engine, cmd: AgentCmd, json: bool) -> anyhow::Result<()> {
                     scope_override: scope.map(AgentScope::from),
                     apply,
                     no_sync,
-                    lock_mode: lock_mode_from(locked, update),
+                    lock_mode: AgentLockMode::from_flags(locked, update),
                 };
                 AgentResult::Edit(eng.agent_remove(spec, &sink)?)
             }
@@ -1071,7 +1040,7 @@ fn run_agent(engine: Engine, cmd: AgentCmd, json: bool) -> anyhow::Result<()> {
                     scope_override: scope.map(AgentScope::from),
                     check,
                     upgrade_only: upgrade_package,
-                    lock_mode: lock_mode_from(locked, None),
+                    lock_mode: AgentLockMode::from_flags(locked, None),
                 };
                 AgentResult::Lock(eng.agent_lock(spec, &sink)?)
             }

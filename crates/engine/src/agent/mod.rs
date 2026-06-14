@@ -81,6 +81,20 @@ pub enum AgentLockMode {
 }
 
 impl AgentLockMode {
+    /// Map the `--locked` / `--update [names]` front-end flags to an `AgentLockMode`. Shared by
+    /// the CLI and GUI so the two front-ends derive the lock mode from one source (parity).
+    /// `--locked` wins (zero-network audit); `--update [names]` re-resolves the named packages
+    /// (empty = all); otherwise the default `Plain` (verify+fetch, write lock).
+    pub fn from_flags(locked: bool, update: Option<Vec<String>>) -> AgentLockMode {
+        if locked {
+            AgentLockMode::Locked
+        } else if let Some(only) = update {
+            AgentLockMode::Update { only }
+        } else {
+            AgentLockMode::Plain
+        }
+    }
+
     pub(crate) fn to_library(&self) -> LockMode {
         match self {
             AgentLockMode::Plain => LockMode::Plain,
@@ -113,6 +127,7 @@ pub enum AgentListKind {
 // --------------------------------------------------------------------------------------
 
 /// Options for `Engine::agent_sync`.
+#[derive(Clone, Debug)]
 pub struct AgentSyncSpec {
     /// Config file path; `None` → the M-22 default-config resolution.
     pub config_path: Option<String>,
@@ -135,7 +150,7 @@ impl Default for AgentSyncSpec {
 }
 
 /// Per-kind named selectors for `add`/`remove` (the `--skill`/`--mcp`/`--command` flags).
-#[derive(Default)]
+#[derive(Clone, Debug, Default)]
 pub struct AgentSectionSel {
     pub skills: Vec<String>,
     pub mcps: Vec<String>,
@@ -143,6 +158,7 @@ pub struct AgentSectionSel {
 }
 
 /// Options for `Engine::agent_add`.
+#[derive(Clone, Debug)]
 pub struct AgentAddSpec {
     pub source: String,
     pub section: AgentSectionSel,
@@ -158,6 +174,7 @@ pub struct AgentAddSpec {
 }
 
 /// Options for `Engine::agent_remove`.
+#[derive(Clone, Debug)]
 pub struct AgentRemoveSpec {
     pub source: String,
     pub section: AgentSectionSel,
@@ -172,6 +189,7 @@ pub struct AgentRemoveSpec {
 }
 
 /// Options for `Engine::agent_lock`.
+#[derive(Clone, Debug)]
 pub struct AgentLockSpec {
     pub config_path: Option<String>,
     pub scope_override: Option<AgentScope>,
@@ -184,12 +202,14 @@ pub struct AgentLockSpec {
 }
 
 /// Options for `Engine::agent_list`.
+#[derive(Clone, Debug)]
 pub struct AgentListSpec {
     pub scope_override: Option<AgentScope>,
     pub kind: AgentListKind,
 }
 
 /// Options for `Engine::agent_clean`.
+#[derive(Clone, Debug)]
 pub struct AgentCleanSpec {
     pub scope_override: Option<AgentScope>,
     pub apply: bool,
@@ -279,4 +299,37 @@ pub(crate) fn save_runtime_after(
     }
     save_runtime_state(&runtime, scope, project_root)?;
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::AgentLockMode;
+
+    // Moved from cli/src/main.rs (TASK-0014b open-Q1): the lock-mode flag mapping now lives in
+    // the engine so the CLI and GUI share one source. Both front-ends call
+    // `AgentLockMode::from_flags`.
+    #[test]
+    fn from_flags_maps_each_flag() {
+        // default: no --locked, no --update -> Plain
+        assert_eq!(AgentLockMode::from_flags(false, None), AgentLockMode::Plain);
+        // --locked wins (zero-network audit)
+        assert_eq!(AgentLockMode::from_flags(true, None), AgentLockMode::Locked);
+        // --locked beats --update if both somehow set
+        assert_eq!(
+            AgentLockMode::from_flags(true, Some(vec![])),
+            AgentLockMode::Locked
+        );
+        // --update with no names -> Update { only: [] } (= all)
+        assert_eq!(
+            AgentLockMode::from_flags(false, Some(vec![])),
+            AgentLockMode::Update { only: vec![] }
+        );
+        // --update foo bar -> Update { only: [foo, bar] }
+        assert_eq!(
+            AgentLockMode::from_flags(false, Some(vec!["foo".into(), "bar".into()])),
+            AgentLockMode::Update {
+                only: vec!["foo".into(), "bar".into()]
+            }
+        );
+    }
 }

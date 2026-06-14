@@ -619,3 +619,86 @@ fn copy_tree(src: &Path, dst: &Path) {
         }
     }
 }
+
+// ---------------------------------------------------------------------------------------
+// Transport events (TASK-0014b): `list` and the `add`/`remove` edit outcome have no other
+// event carrier — the GUI worker→UI channel is event-only, so the engine MUST emit them or
+// the GUI panel renders nothing (the exact regression /verify caught on the CLI list view).
+// ---------------------------------------------------------------------------------------
+
+#[test]
+fn agent_list_emits_agent_listed_event() {
+    let (engine, project, cfg) = project_with_config(&full_config(&pack_dir()));
+    let (s, _rx) = sink();
+    engine
+        .agent_sync(
+            AgentSyncSpec {
+                config_path: Some(cfg),
+                apply: true,
+                ..Default::default()
+            },
+            &s,
+        )
+        .unwrap();
+
+    // `list` is cwd-based — set cwd to the project for the call, then restore.
+    let prev = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&project).unwrap();
+    let (sl, rxl) = sink();
+    let _ = engine
+        .agent_list(
+            AgentListSpec {
+                scope_override: Some(AgentScope::Project),
+                kind: AgentListKind::All,
+            },
+            &sl,
+        )
+        .expect("list");
+    std::env::set_current_dir(prev).unwrap();
+
+    let evs = drain(rxl);
+    let listed = evs.iter().find_map(|e| match e {
+        Event::AgentListed { list } => Some(list),
+        _ => None,
+    });
+    let list = listed.expect("agent_list must emit Event::AgentListed (GUI transport)");
+    assert!(
+        list.skills.iter().any(|s| s.skill == "alpha"),
+        "AgentListed payload must carry the inventory the typed return has"
+    );
+}
+
+#[test]
+fn agent_remove_preview_emits_agent_edited_event() {
+    let (engine, _project, cfg) = project_with_config(&full_config(&pack_dir()));
+    let (s, rx) = sink();
+    // Preview remove (apply:false) of the configured source — records `would_remove`, no writes.
+    let _ = engine
+        .agent_remove(
+            AgentRemoveSpec {
+                source: pack_dir().display().to_string(),
+                section: AgentSectionSel::default(),
+                git_ref: None,
+                branch: None,
+                sub_dir: None,
+                config_path: Some(cfg),
+                scope_override: Some(AgentScope::Project),
+                apply: false,
+                no_sync: false,
+                lock_mode: AgentLockMode::Plain,
+            },
+            &s,
+        )
+        .expect("remove preview");
+    let evs = drain(rx);
+    let edited = evs.iter().find_map(|e| match e {
+        Event::AgentEdited { outcome } => Some(outcome),
+        _ => None,
+    });
+    let outcome = edited.expect("agent_remove must emit Event::AgentEdited (GUI transport)");
+    assert!(
+        outcome.action.contains("remove"),
+        "AgentEdited carries the would_remove/removed outcome, got action={}",
+        outcome.action
+    );
+}

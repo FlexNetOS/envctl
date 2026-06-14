@@ -1,35 +1,45 @@
-# TASK-0014 architect plan — envctl agent CLI group (CLI-only; GUI→TASK-0014b)
+# TASK-0014b architect plan — GUI Agent panel (Epic C front-end, GUI half)
 
-VERDICT: GO. Thin adapter over existing Engine::agent_* (no engine logic change).
-CLI-only this cycle; GUI deferred (TASK-0014b) — engine parity guarantees zero churn.
+VERDICT: GO (one cycle, all 6 verbs). GUI drives the IDENTICAL Engine::agent_* API as the CLI (#90/#91).
 
-## Surface: add Cmd::Agent { #[command(subcommand)] cmd: AgentCmd } in crates/cli/src/main.rs
-AgentCmd: Sync/Add/Remove/Lock/List/Clean → Engine::agent_{sync,add,remove,lock,list,clean}.
---json is GLOBAL (Cli.json) — inherit, no per-verb flag. apply: bool defaults FALSE (fail-closed).
-ScopeArg{Global,Project}→AgentScope; ListKindArg{All,Skills,Mcps,Commands}→AgentListKind.
-lock_mode_from(locked,update): --locked→Locked; --update[names]→Update{only}; else Plain.
+## Engine deltas (transport only — NOT agent logic):
+1. crates/engine/src/command.rs: add `AgentCommandSpec { Sync|Add|Remove|Lock|List|Clean(Agent*Spec) }`
+   + `EngineCommand::Agent { spec }` + run_event_loop arm dispatching to engine.agent_*; Err→emit_setup_error.
+2. crates/engine/src/event.rs: add `Event::AgentListed { list: AgentList }` + `Event::AgentEdited { outcome: AgentEditOutcome }`.
+   WHY: agent_list emits only AgentRunStarted; the AgentList lives only in the typed return (CLI prints via
+   render_agent_list). add/remove PREVIEW edit-outcome items are in NO event. GUI worker→UI is event-only, so
+   emit these two at the tail of agent_list / agent_add / agent_remove (in the engine, before returning).
+   sync/clean already emit AgentRunFinished{report}; lock emits AgentLockChecked{drift} — reuse those.
+3. ⚠️ Adding Event variants may force a new arm in CLI print_event (cli/src/main.rs ~1099) — add no-op arms if
+   the match is exhaustive. CLI typed-return render stays unchanged (additive events).
 
-Field maps (specs at engine/src/agent/mod.rs:115-196):
-- sync: config→config_path, scope→scope_override, apply→apply, locked/update→lock_mode
-- add: source(pos)→source; skill/mcp/command→AgentSectionSel; ref/branch/sub_dir/config/scope/apply/no_sync/no_verify/locked
-- remove: same as add minus no_verify
-- lock: config/scope/check/upgrade_package→upgrade_only/locked→lock_mode
-- list: scope/kind only
-- clean: scope/apply only
+## GUI (crates/gui/src/main.rs, worker-thread model: EngineCommand/EngineEvent + try_recv drain):
+- Screen::Agent variant + label() + nav-tab + match arm.
+- EnvctlApp state: agent_verb tab, form inputs (config/scope/source/skills/mcps/commands CSV/git_ref/branch/
+  sub_dir/apply/no_sync/no_verify/locked/update CSV/lock_check/list_kind), result holders (agent_list,
+  agent_last_edit, agent_last_report, agent_lock_drift, agent_status). Init in new().
+- PURE state→Spec builders (unit-testable, NO egui types): agent_{sync,add,remove,lock,list,clean}_spec(&self)
+  -> Agent*Spec + agent_command(&self) -> EngineCommand::Agent. Mirror CLI field maps (cli/src/main.rs:986-1090).
+- drain() arms: AgentRunFinished→report+status; AgentLockChecked→drift; AgentListed→agent_list;
+  AgentEdited→edit; AgentAction→push_log.
+- agent_screen(ui): 6 verb sub-tabs, per-verb controls, Preview/Apply gating (apply default FALSE; mirror
+  add_repo two-button preview/apply main.rs:956), result render (list TableBuilder, edit items, report summary,
+  lock drift). clean gets a WARN + Apply gate.
 
-## Render/exit: run_agent(engine, AgentCmd, json) modeled on run_action (main.rs:540-655)
-Worker thread calls Engine method w/ channel sink; drain rx.iter(). Extend print_event
-(main.rs:724) with 4 Event::Agent* arms (currently fall through _ => {}). --json = pretty
-serialized RETURN value (matches auto-detect/graph/lock), uniform across all 6.
-Exit: sync/clean → report.summary.failed>0 ⇒ exit(1); add/remove → outcome.sync.failed>0 ⇒ 1;
-lock --check → non-empty drift ⇒ 1; list → 0. Engine bail!s propagate → exit 1.
+## Field maps (specs at engine/src/agent/mod.rs:115-196): same as CLI TASK-0014.
+sync: config_path/scope_override/apply/lock_mode(locked,update). add: source+AgentSectionSel+git_ref/branch/
+sub_dir/config/scope/apply/no_sync/no_verify/locked. remove: add minus no_verify. lock: config/scope/check/
+upgrade_only/lock_mode. list: scope/kind. clean: scope/apply.
 
-## Files: crates/cli/src/main.rs (enums+AgentCmd+run_agent+print_event arms+dispatch at ~main.rs:219);
-maybe a tiny engine:lib.rs pub use only if a return-field isn't reachable (low prob).
-Tests: NEW crates/cli/tests/agent.rs (model tests/dashboard.rs): per-verb dry-run zero-writes;
---json shape (list, lock --check); exit codes (lock --check drift→1, list→0); flag-conflict
-(add --ref --branch → nonzero). Unit test lock_mode_from + ScopeArg conversion.
+## Invariants: engine single non-printing lib (GUI builds Spec + renders only; 2 events are engine-emitted
+transport); fail-closed apply=false default on sync/add/remove/clean; UI thread never blocks (worker + try_recv);
+no new dep (no-c); one rustls ring-only.
 
-## Invariants: engine non-printing single-lib (CLI thin); fail-closed apply=false default;
---json+exit contract; no new dep (no-c PASS); one rustls ring-only.
-Open Q: clean has no --confirm in spec (preview-default is the guard; don't invent CLI confirm).
+## Verification: GUI needs system dev libs + display to RUN. Headless-provable = (a) pure state→Spec unit tests
+(#[cfg(test)] mod agent_spec_tests, mirror cli agent_cmd_tests), (b) engine test that agent_list/add emit the
+new events (drain EventSink rx). + cargo build -p envctl-gui + clippy (needs libs). If GUI build blocked by
+missing system libs in this env → scope guardian to engine build/test + gui clippy --lib if possible + note it.
+
+## Open Q: (1) recommend MOVING lock_mode_from into engine (AgentLockMode::from_flags) so CLI+GUI share one
+source (stronger parity); CLI test moves with it. (2) EngineCommand::Agent large variant — command.rs already
+has #[allow(clippy::large_enum_variant)]. (3) check CLI print_event exhaustiveness for the 2 new Events.

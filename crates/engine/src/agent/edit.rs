@@ -94,8 +94,7 @@ impl Engine {
                 dry_run: true,
                 sync: None,
             };
-            emit_edit_finished(sink);
-            return Ok(outcome);
+            return Ok(emit_edit_finished(sink, outcome));
         }
 
         if !spec.no_verify {
@@ -120,14 +119,16 @@ impl Engine {
             None
         };
 
-        emit_edit_finished(sink);
-        Ok(AgentEditOutcome {
-            action: "added".into(),
-            source,
-            items,
-            dry_run: false,
-            sync,
-        })
+        Ok(emit_edit_finished(
+            sink,
+            AgentEditOutcome {
+                action: "added".into(),
+                source,
+                items,
+                dry_run: false,
+                sync,
+            },
+        ))
     }
 
     /// Remove a source (or named entries) from the agent-env config, then prune via sync.
@@ -195,14 +196,16 @@ impl Engine {
             .collect();
 
         if !spec.apply {
-            emit_edit_finished(sink);
-            return Ok(AgentEditOutcome {
-                action: "would_remove".into(),
-                source,
-                items,
-                dry_run: true,
-                sync: None,
-            });
+            return Ok(emit_edit_finished(
+                sink,
+                AgentEditOutcome {
+                    action: "would_remove".into(),
+                    source,
+                    items,
+                    dry_run: true,
+                    sync: None,
+                },
+            ));
         }
 
         fs::write(&path, &text)
@@ -220,14 +223,16 @@ impl Engine {
             None
         };
 
-        emit_edit_finished(sink);
-        Ok(AgentEditOutcome {
-            action: "removed".into(),
-            source,
-            items,
-            dry_run: false,
-            sync,
-        })
+        Ok(emit_edit_finished(
+            sink,
+            AgentEditOutcome {
+                action: "removed".into(),
+                source,
+                items,
+                dry_run: false,
+                sync,
+            },
+        ))
     }
 }
 
@@ -365,7 +370,13 @@ fn scope_label(scope: Option<AgentScope>) -> AgentScope {
     scope.unwrap_or(AgentScope::Project)
 }
 
-fn emit_edit_finished(_sink: &EventSink) {
-    // The per-edit confirmation is carried by the returned AgentEditOutcome (and the embedded
-    // sync's own AgentRunFinished). No extra event needed; kept as a seam for symmetry.
+/// Emit the `AgentEdited` transport event (carrying the edit outcome, incl. the preview
+/// `would_*` items that live in no other event) for the event-only GUI worker→UI channel, then
+/// return the outcome so the CLI keeps its typed-return render. Called at the tail of both
+/// `agent_add` and `agent_remove` (after the optional follow-up sync, before returning).
+fn emit_edit_finished(sink: &EventSink, outcome: AgentEditOutcome) -> AgentEditOutcome {
+    sink.emit(Event::AgentEdited {
+        outcome: outcome.clone(),
+    });
+    outcome
 }
