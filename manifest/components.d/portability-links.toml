@@ -107,10 +107,11 @@ id = "meta-tool-links"
 name = "meta tool binaries -> workspace builds"
 description = "Replaces ~/.local/bin (and ~/.cargo/bin duplicate) COPIES of meta-member tools with symlinks into the owning repo's target/release. Version-guarded: never downgrades; skips and reports when the repo build is missing or version-mismatched."
 # detect = ALL always-buildable meta-owned tools are symlinks (not just `meta`).
-# Excludes the version-guarded externals (rtk/kasetto/kst), which may legitimately
-# remain copies when the repo build is behind the installed binary — including them
-# would wedge detect false forever. Checking the full set means adding a newly-built
-# meta tool re-triggers convergence instead of short-circuiting on `meta` alone.
+# Excludes the version-guarded external `rtk`, which may legitimately remain a copy when the
+# repo build is behind the installed binary — including it would wedge detect false forever.
+# (kasetto/kst retired in TASK-0018: absorbed into `envctl agent`, no longer symlinked.)
+# Checking the full set means adding a newly-built meta tool re-triggers convergence instead
+# of short-circuiting on `meta` alone.
 [component.detect]
 kind = "command"
 command = "bash"
@@ -132,8 +133,6 @@ lane            lane/target/release/lane
 vox             vox/target/release/vox
 icm             icm/target/release/icm
 rtk             target/release/rtk
-kasetto         kasetto/target/release/kasetto
-kst             kasetto/target/release/kst
 grit            grit/target/release/grit
 envctl          envctl/target/release/envctl
 envctl-gui      envctl/target/release/envctl-gui
@@ -152,11 +151,9 @@ echo "$pairs" | while read -r name rel; do
   elif [ -L "$dst" ]; then rm "$dst"; fi
   ln -s "$src" "$dst"; echo "linked: $name"
 done
-# ~/.cargo/bin duplicate generations -> same treatment (kasetto kst weave grit secretctl secretd)
+# ~/.cargo/bin duplicate generations -> same treatment (weave grit secretctl secretd)
 cpairs="
 weave      weave/target/release/weave
-kasetto    kasetto/target/release/kasetto
-kst        kasetto/target/release/kst
 grit       grit/target/release/grit
 secretctl  envctl/target/release/secretctl
 secretd    envctl/target/release/secretd
