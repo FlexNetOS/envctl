@@ -10,22 +10,21 @@
 # verbs — no `cargo install kasetto`, no external binary, no `rustup` requirement just for this layer.
 #
 #   detect : envctl present + an agent-env config exists (the agent engine is built into envctl).
-#   verify : `envctl agent sync --config kasetto.yaml` resolves cleanly (config + sources valid).
+#   verify : `envctl agent sync --config kasetto.yaml --locked` — zero-network drift gate against
+#            the committed agent-env.lock (kasetto's old `sync --locked` verify, now envctl-native).
 #   install/fix : `envctl agent sync --config kasetto.yaml --apply` (provision/refresh .claude/.codex).
 #   remove : `envctl agent clean --scope project --apply` (unprovision the installed skills/MCPs).
 #
 # NOTE: commands pass `--config kasetto.yaml` explicitly — `envctl agent` defaults to
-# `agent-env.yaml`, but this repo's project config is `kasetto.yaml` (scope: project).
-#
-# FOLLOW-UP (not this task): the strict `--locked` drift gate (kasetto's old verify) is deferred —
-# `envctl agent lock` currently drops the `github` MCP that kasetto's lock captured (the other 6
-# baseline MCPs lock fine). Filed as a parity finding; once resolved, switch verify back to
-# `envctl agent sync --config kasetto.yaml --locked` for the zero-network drift gate.
+# `agent-env.yaml`, but this repo's project config is `kasetto.yaml` (scope: project). The
+# committed `agent-env.lock` (skills + all 7 MCP baseline servers) is what `--locked` verifies.
+# (The earlier `github`-MCP lock-drop that forced a weaker verify is FIXED — rebuild_lock now
+# records MCP assets; `agent-env.lock` is committed and `sync --locked` is clean end-to-end.)
 
 [[component]]
 id = "kasetto"
 name = "agent-env toolkit (envctl agent — kasetto v3.2.0 absorbed)"
-description = "Declarative AI-agent environment layer; provisions the skills + MCP baseline from kasetto.yaml into .claude/.codex via the built-in `envctl agent` (kasetto v3.2.0 absorbed). detect = envctl present + config; verify = `envctl agent sync --config kasetto.yaml` resolves. External kasetto binary retired (TASK-0018)."
+description = "Declarative AI-agent environment layer; provisions the skills + MCP baseline from kasetto.yaml into .claude/.codex via the built-in `envctl agent` (kasetto v3.2.0 absorbed). detect = envctl present + config; verify = `envctl agent sync --config kasetto.yaml --locked` (zero-network drift gate vs agent-env.lock). External kasetto binary retired (TASK-0018)."
 requires = []
 [component.detect]
 kind = "command"
@@ -40,7 +39,7 @@ envctl agent sync --config kasetto.yaml --apply
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.cargo/bin:$HOME/.local/bin:$PATH\"; envctl agent sync --config kasetto.yaml"]
+args = ["-lc", "export PATH=\"$HOME/.cargo/bin:$HOME/.local/bin:$PATH\"; envctl agent sync --config kasetto.yaml --locked"]
 [component.fix]
 kind = "script"
 script = '''
