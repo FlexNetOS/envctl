@@ -1588,9 +1588,99 @@ fn remove_stale_mcps(
 // lock --check / lock rebuild (kasetto commands/lock.rs)
 // ===================================================================================
 
-/// Rebuild the skills section of `lock` from a fresh resolve and refresh asset revisions.
-/// `upgrade_only` (empty = all) restricts which sources are re-resolved (others carry over).
-/// Returns the rebuilt lock; any source error aborts (Err) before mutation is observable.
+/// Resolve the configured MCP sources to their lock asset entries (no target write) — the lock
+/// half of [`sync_mcps`]. [`rebuild_lock`] calls this so `envctl agent lock` records MCP assets,
+/// not just skills: kasetto's lock captures **every** asset kind, but the skills-only rebuild left
+/// a freshly-written lock with zero MCP entries, so a later `sync --locked` failed with
+/// `MCP <file> ... is not in the lock`. Sources not selected by `upgrade_only` carry their previous
+/// MCP assets over unchanged. Any source error aborts (Err) before the lock is mutated.
+fn rebuild_mcp_assets(
+    cfg: &Config,
+    cfg_dir: &Path,
+    prev: &AgentLockFile,
+    upgrade_only: &[String],
+) -> Result<BTreeMap<String, AssetEntry>> {
+    let mut out: BTreeMap<String, AssetEntry> = BTreeMap::new();
+    for (i, src) in cfg.mcps.iter().enumerate() {
+        // `upgrade_only` (non-empty) restricts which sources re-resolve; others carry prev assets.
+        let active = upgrade_only.is_empty()
+            || prev.assets.values().any(|a| {
+                a.kind == "mcp"
+                    && a.source == src.source
+                    && upgrade_only
+                        .iter()
+                        .any(|u| a.name == *u || a.name == format!("{u}.json"))
+            });
+        if !active {
+            for (id, a) in prev
+                .assets
+                .iter()
+                .filter(|(_, a)| a.kind == "mcp" && a.source == src.source)
+            {
+                out.insert(id.clone(), a.clone());
+            }
+            continue;
+        }
+        let stage = std::env::temp_dir().join(format!("envctl-agent-lockmcp-{}-{}", now_unix(), i));
+        let materialized = materialize_source(&src.as_source_spec(), cfg_dir, &stage)?;
+        let root = materialized
+            .cleanup_dir
+            .as_deref()
+            .unwrap_or_else(|| Path::new(&src.source));
+        let resolved: Result<Vec<PathBuf>> = match &src.mcps {
+            McpsField::Wildcard(s) if s == "*" => discover_mcps(root),
+            McpsField::Wildcard(s) => Err(err(format!(
+                "invalid mcps value \"{s}\": expected \"*\" or a list"
+            ))),
+            McpsField::List(entries) => {
+                let mut paths = Vec::new();
+                for entry in entries {
+                    paths.push(resolve_mcp_entry(root, entry)?);
+                }
+                Ok(paths)
+            }
+        };
+        // Resolve + hash each MCP file into an asset entry; clean up the stage either way.
+        let collected = (|| -> Result<()> {
+            for mcp_path in resolved? {
+                let file_name = file_name_str(&mcp_path);
+                let hash = hash_file(&mcp_path)?;
+                let mcp_val: serde_json::Value =
+                    serde_json::from_str(&fs::read_to_string(&mcp_path)?)?;
+                let server_names: Vec<String> = mcp_val
+                    .get("mcpServers")
+                    .and_then(|v| v.as_object())
+                    .map(|m| m.keys().cloned().collect())
+                    .unwrap_or_default();
+                out.insert(
+                    mcp_asset_id(&src.source, &file_name),
+                    AssetEntry {
+                        kind: "mcp".into(),
+                        name: file_name,
+                        hash,
+                        source: src.source.clone(),
+                        destination: server_names.join(","),
+                        source_revision: materialized.source_revision.clone(),
+                    },
+                );
+            }
+            Ok(())
+        })();
+        if let Some(cleanup) = materialized.cleanup_dir {
+            let _ = fs::remove_dir_all(cleanup);
+        }
+        collected?;
+    }
+    Ok(out)
+}
+
+/// Rebuild the skills **and MCP** sections of `lock` from a fresh resolve and refresh asset
+/// revisions. `upgrade_only` (empty = all) restricts which sources are re-resolved (others carry
+/// over). Returns the rebuilt lock; any source error aborts (Err) before mutation is observable.
+///
+/// NOTE: command assets carry over from `prev` (the lock-rebuild gap for the `command` kind is
+/// tracked separately — no command source is configured here, and its lock entry needs the
+/// command-transform pipeline; MCPs were the exercised regression).
 pub fn rebuild_lock(
     cfg: &Config,
     cfg_dir: &Path,
@@ -1660,8 +1750,15 @@ pub fn rebuild_lock(
         result?;
     }
 
+    // Rebuild MCP assets from a fresh resolve (the skills-only rebuild left a freshly-written lock
+    // with zero MCP entries, so `sync --locked` then failed — see rebuild_mcp_assets). Drop the old
+    // mcp-kind assets and replace with the rebuilt set; command-kind assets carry over via `prev`.
+    let new_mcp_assets = rebuild_mcp_assets(cfg, cfg_dir, prev, upgrade_only)?;
+
     let mut next = prev.clone();
     next.skills = new_skills;
+    next.assets.retain(|_, a| a.kind != "mcp");
+    next.assets.extend(new_mcp_assets);
     refresh_asset_revisions(&mut next, cfg);
     Ok(next)
 }
@@ -2168,5 +2265,69 @@ mod tests {
         // MCP edits never carry sub-dir.
         let mcp = edits.iter().find(|e| e.section == Section::Mcps).unwrap();
         assert!(mcp.item.sub_dir.is_none());
+    }
+
+    #[test]
+    fn rebuild_lock_records_mcp_assets_not_just_skills() {
+        // Regression (no-downgrade): rebuild_lock (the `lock` verb / `lock --check`) rebuilt only
+        // the skills section, so a freshly-written lock had ZERO MCP entries and a later
+        // `sync --locked` failed with "MCP <file> ... is not in the lock". rebuild_lock must
+        // record MCP assets too (kasetto's lock captures every asset kind).
+        let dir = std::env::temp_dir().join(format!("envctl-rebuildlock-mcp-{}", now_unix()));
+        let mcps_dir = dir.join("pack/mcps");
+        fs::create_dir_all(&mcps_dir).unwrap();
+        fs::write(
+            mcps_dir.join("github.json"),
+            r#"{"mcpServers":{"github":{"command":"npx","args":["-y","@modelcontextprotocol/server-github"]}}}"#,
+        )
+        .unwrap();
+        fs::write(
+            mcps_dir.join("context7.json"),
+            r#"{"mcpServers":{"context7":{"command":"npx","args":["-y","@upstash/context7-mcp"]}}}"#,
+        )
+        .unwrap();
+
+        let src = dir.join("pack").to_string_lossy().to_string();
+        let cfg = Config {
+            destination: Some(dir.join("dest").to_string_lossy().to_string()),
+            scope: Some(Scope::Project),
+            agent: None,
+            skills: Vec::new(),
+            mcps: vec![crate::config::McpSourceSpec {
+                source: src.clone(),
+                branch: None,
+                git_ref: None,
+                mcps: McpsField::List(vec![
+                    McpEntry::Name("github".into()),
+                    McpEntry::Name("context7".into()),
+                ]),
+            }],
+            commands: Vec::new(),
+        };
+
+        let prev = AgentLockFile::default();
+        let next = rebuild_lock(&cfg, &dir, Scope::Project, &prev, &[]).expect("rebuild_lock");
+
+        assert!(
+            next.get_tracked_asset("mcp", &mcp_asset_id(&src, "github.json"))
+                .is_some(),
+            "github.json must be recorded in the lock (this was the regression)"
+        );
+        assert!(
+            next.get_tracked_asset("mcp", &mcp_asset_id(&src, "context7.json"))
+                .is_some(),
+            "context7.json must be recorded in the lock"
+        );
+        let gh = next
+            .assets
+            .get(&mcp_asset_id(&src, "github.json"))
+            .expect("github asset");
+        assert!(
+            gh.destination.contains("github"),
+            "server name captured in destination CSV, got `{}`",
+            gh.destination
+        );
+
+        let _ = fs::remove_dir_all(&dir);
     }
 }
