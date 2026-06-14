@@ -3,6 +3,10 @@
 //! `Send + 'static`, so events cross the GUI worker→UI channel unchanged, and the
 //! CLI drains the same vocabulary. (`EventSink::channel()`, not `new()`, keeps
 //! clippy's `new_ret_no_self` happy — it returns a channel pair, not `Self`.)
+use crate::agent::report::{
+    AgentEditOutcome, AgentList, AgentLockDriftItem, AgentReport, AgentVerb,
+};
+use crate::agent::AgentScope;
 use crate::component::Phase;
 use crate::dashboard::{DashboardPlan, DeployOutcome};
 use crate::model::{EnvReport, OpResult, RunSummary};
@@ -53,6 +57,43 @@ pub enum Event {
     /// The outcome of a dashboard deploy (dry-run preview or applied write).
     DashboardDeployed {
         outcome: DeployOutcome,
+    },
+    /// An agent-asset verb run started (sync/add/remove/lock/list/clean). `dry_run`
+    /// reflects preview-vs-apply; `lock_mode` is the resolved mode label.
+    AgentRunStarted {
+        verb: AgentVerb,
+        scope: AgentScope,
+        dry_run: bool,
+        lock_mode: String,
+    },
+    /// One per-asset action from an agent-asset verb (live tree for GUI/CLI): the
+    /// source it came from, the asset name, the outcome status, and any error detail.
+    AgentAction {
+        source: Option<String>,
+        asset: Option<String>,
+        status: String,
+        error: Option<String>,
+    },
+    /// An agent-asset verb run finished — carries the full typed report.
+    AgentRunFinished {
+        report: AgentReport,
+    },
+    /// The drift result of `agent_lock --check` (empty = lock is up to date).
+    AgentLockChecked {
+        drift: Vec<AgentLockDriftItem>,
+    },
+    /// The read-only inventory from `agent_list`, emitted just before the typed return.
+    /// `list` emits only `AgentRunStarted` otherwise, so its rows live only in the return
+    /// value (CLI prints via `render_agent_list`). The GUI worker→UI channel is event-only,
+    /// so this carries the list to the GUI without changing the CLI's typed-return render.
+    AgentListed {
+        list: AgentList,
+    },
+    /// The edit outcome from `agent_add` / `agent_remove`, emitted at the tail (after the
+    /// optional follow-up sync). The preview `would_add`/`would_remove` items are in NO other
+    /// event; this transports them to the GUI. (CLI keeps its typed-return render, unchanged.)
+    AgentEdited {
+        outcome: AgentEditOutcome,
     },
 }
 

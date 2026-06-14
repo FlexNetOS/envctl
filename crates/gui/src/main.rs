@@ -12,9 +12,12 @@ mod theme;
 use eframe::egui::{self, Color32, RichText};
 use egui_extras::{Column, TableBuilder};
 use envctl_engine::{
-    run_event_loop, AddRepoSpec, BuildStrategy, ComponentState, DashboardPlan, DashboardSpec,
-    DriftItem, DriftKind, Engine, EngineCommand, EngineEvent, Event, OpStatus, Refactor,
-    RefactorGoal, RenameRule, Severity, Stream, Telemetry, TelemetryControl,
+    run_event_loop, AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentCommandSpec, AgentEditOutcome,
+    AgentList, AgentListKind, AgentListSpec, AgentLockDriftItem, AgentLockMode, AgentLockSpec,
+    AgentRemoveSpec, AgentReport, AgentScope, AgentSectionSel, AgentSyncSpec, BuildStrategy,
+    ComponentState, DashboardPlan, DashboardSpec, DriftItem, DriftKind, Engine, EngineCommand,
+    EngineEvent, Event, OpStatus, Refactor, RefactorGoal, RenameRule, Severity, Stream, Telemetry,
+    TelemetryControl,
 };
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -37,6 +40,7 @@ enum Screen {
     Components,
     Graph,
     AddRepo,
+    Agent,
     Mesh,
     Logs,
     Settings,
@@ -49,9 +53,92 @@ impl Screen {
             Screen::Components => "Components",
             Screen::Graph => "Graph",
             Screen::AddRepo => "Add Repo",
+            Screen::Agent => "Agent",
             Screen::Mesh => "Mesh",
             Screen::Logs => "Logs",
             Screen::Settings => "Settings",
+        }
+    }
+}
+
+/// The active verb sub-tab on the Agent screen (one of the six agent-asset verbs).
+#[derive(Clone, Copy, PartialEq)]
+enum AgentVerbTab {
+    Sync,
+    Add,
+    Remove,
+    Lock,
+    List,
+    Clean,
+}
+
+impl AgentVerbTab {
+    fn label(self) -> &'static str {
+        match self {
+            AgentVerbTab::Sync => "Sync",
+            AgentVerbTab::Add => "Add",
+            AgentVerbTab::Remove => "Remove",
+            AgentVerbTab::Lock => "Lock",
+            AgentVerbTab::List => "List",
+            AgentVerbTab::Clean => "Clean",
+        }
+    }
+}
+
+/// The scope selector shared by every agent verb form (`--scope`). `Default` = no override
+/// (engine resolves from the config); `Global`/`Project` map to an `AgentScope` override.
+#[derive(Clone, Copy, PartialEq)]
+enum AgentScopeSel {
+    Default,
+    Global,
+    Project,
+}
+
+impl AgentScopeSel {
+    fn label(self) -> &'static str {
+        match self {
+            AgentScopeSel::Default => "default (from config)",
+            AgentScopeSel::Global => "global",
+            AgentScopeSel::Project => "project",
+        }
+    }
+
+    /// Map to the engine `scope_override` (blank/default → `None`), exactly as the CLI does
+    /// via `scope.map(AgentScope::from)`.
+    fn to_override(self) -> Option<AgentScope> {
+        match self {
+            AgentScopeSel::Default => None,
+            AgentScopeSel::Global => Some(AgentScope::Global),
+            AgentScopeSel::Project => Some(AgentScope::Project),
+        }
+    }
+}
+
+/// The `list --kind` selector.
+#[derive(Clone, Copy, PartialEq)]
+enum AgentListKindSel {
+    All,
+    Skills,
+    Mcps,
+    Commands,
+}
+
+impl AgentListKindSel {
+    fn label(self) -> &'static str {
+        match self {
+            AgentListKindSel::All => "all",
+            AgentListKindSel::Skills => "skills",
+            AgentListKindSel::Mcps => "mcps",
+            AgentListKindSel::Commands => "commands",
+        }
+    }
+
+    fn to_kind(self) -> AgentListKind {
+        match self {
+            AgentListKindSel::All => AgentListKind::All,
+            AgentListKindSel::Skills => AgentListKind::Skills,
+            AgentListKindSel::Mcps => AgentListKind::Mcps,
+            AgentListKindSel::Commands => AgentListKind::Commands,
         }
     }
 }
@@ -106,6 +193,32 @@ struct EnvctlApp {
     dash_plan: Option<DashboardPlan>,
     dash_panes_per_tab: usize,
     dash_status: String,
+    // agent-env panel — the active verb sub-tab + shared form inputs
+    agent_verb: AgentVerbTab,
+    agent_config: String,
+    agent_scope: AgentScopeSel,
+    agent_source: String,
+    agent_skills: String,
+    agent_mcps: String,
+    agent_commands: String,
+    agent_git_ref: String,
+    agent_branch: String,
+    agent_sub_dir: String,
+    agent_apply: bool,
+    agent_no_sync: bool,
+    agent_no_verify: bool,
+    agent_locked: bool,
+    agent_update_on: bool,
+    agent_update: String,
+    agent_lock_check: bool,
+    agent_upgrade_pkg: String,
+    agent_list_kind: AgentListKindSel,
+    // agent-env panel — result holders (filled from the worker events)
+    agent_list: Option<AgentList>,
+    agent_last_edit: Option<AgentEditOutcome>,
+    agent_last_report: Option<AgentReport>,
+    agent_lock_drift: Option<Vec<AgentLockDriftItem>>,
+    agent_status: String,
 }
 
 impl EnvctlApp {
@@ -163,6 +276,30 @@ impl EnvctlApp {
             dash_plan: None,
             dash_panes_per_tab: 6,
             dash_status: String::new(),
+            agent_verb: AgentVerbTab::Sync,
+            agent_config: String::new(),
+            agent_scope: AgentScopeSel::Default,
+            agent_source: String::new(),
+            agent_skills: String::new(),
+            agent_mcps: String::new(),
+            agent_commands: String::new(),
+            agent_git_ref: String::new(),
+            agent_branch: String::new(),
+            agent_sub_dir: String::new(),
+            agent_apply: false,
+            agent_no_sync: false,
+            agent_no_verify: false,
+            agent_locked: false,
+            agent_update_on: false,
+            agent_update: String::new(),
+            agent_lock_check: true,
+            agent_upgrade_pkg: String::new(),
+            agent_list_kind: AgentListKindSel::All,
+            agent_list: None,
+            agent_last_edit: None,
+            agent_last_report: None,
+            agent_lock_drift: None,
+            agent_status: String::new(),
         };
         let _ = app.cmd_tx.send(EngineCommand::Detect);
         let _ = app.cmd_tx.send(EngineCommand::SampleTelemetry);
@@ -253,6 +390,64 @@ impl EnvctlApp {
                         self.push_log(Stream::Stdout, format!("[dashboard] {note}"));
                     }
                 }
+                Event::AgentRunFinished { report } => {
+                    let s = &report.summary;
+                    self.agent_status = format!(
+                        "{} · installed {} · updated {} · removed {} · unchanged {} · failed {}",
+                        if report.dry_run { "preview" } else { "applied" },
+                        s.installed,
+                        s.updated,
+                        s.removed,
+                        s.unchanged,
+                        s.failed
+                    );
+                    self.agent_last_report = Some(report);
+                }
+                Event::AgentLockChecked { drift } => {
+                    self.agent_status = if drift.is_empty() {
+                        "lock is up to date".into()
+                    } else {
+                        format!("{} drift change(s)", drift.len())
+                    };
+                    self.agent_lock_drift = Some(drift);
+                }
+                Event::AgentListed { list } => {
+                    self.agent_status = format!(
+                        "{} skill(s) · {} mcp(s) · {} command(s)",
+                        list.skills.len(),
+                        list.mcps.len(),
+                        list.commands.len()
+                    );
+                    self.agent_list = Some(list);
+                }
+                Event::AgentEdited { outcome } => {
+                    self.agent_status = format!("{} · {}", outcome.action, outcome.source);
+                    self.agent_last_edit = Some(outcome);
+                }
+                Event::AgentAction {
+                    source,
+                    asset,
+                    status,
+                    error,
+                } => {
+                    let mut line = String::from("[agent]");
+                    if let Some(s) = &source {
+                        line.push_str(&format!(" {s}"));
+                    }
+                    if let Some(a) = &asset {
+                        line.push_str(&format!("/{a}"));
+                    }
+                    line.push_str(&format!(" -> {status}"));
+                    if let Some(e) = &error {
+                        line.push_str(&format!(" ({e})"));
+                    }
+                    let stream = if error.is_some() {
+                        Stream::Stderr
+                    } else {
+                        Stream::Stdout
+                    };
+                    self.push_log(stream, line);
+                }
                 _ => {}
             }
         }
@@ -317,6 +512,7 @@ impl eframe::App for EnvctlApp {
                         Screen::Components,
                         Screen::Graph,
                         Screen::AddRepo,
+                        Screen::Agent,
                         Screen::Mesh,
                         Screen::Logs,
                         Screen::Settings,
@@ -345,6 +541,7 @@ impl eframe::App for EnvctlApp {
                 Screen::Components => self.components_screen(ui),
                 Screen::Graph => self.graph_screen(ui),
                 Screen::AddRepo => self.add_repo_screen(ui),
+                Screen::Agent => self.agent_screen(ui),
                 Screen::Mesh => self.mesh_screen(ui),
                 Screen::Logs => self.logs_screen(ui),
                 Screen::Settings => self.settings_screen(ui),
@@ -1031,6 +1228,480 @@ impl EnvctlApp {
         }
     }
 
+    // ── Agent (agent-env) ───────────────────────────────────────────────────────
+    // PURE state→Spec builders: NO egui types, unit-testable. Each mirrors the CLI
+    // `run_agent` arm field-for-field (cli/src/main.rs:943-1060). Blank string → None,
+    // CSV → split_csv → Vec, apply default false (fail-closed).
+
+    /// The shared `--locked` / `--update [names]` → `AgentLockMode` mapping, derived from the
+    /// form toggles exactly as the CLI passes `AgentLockMode::from_flags(locked, update)`.
+    fn agent_lock_mode(&self) -> AgentLockMode {
+        let update = if self.agent_update_on {
+            Some(split_csv(&self.agent_update))
+        } else {
+            None
+        };
+        AgentLockMode::from_flags(self.agent_locked, update)
+    }
+
+    fn agent_sync_spec(&self) -> AgentSyncSpec {
+        AgentSyncSpec {
+            config_path: opt_str(&self.agent_config),
+            scope_override: self.agent_scope.to_override(),
+            apply: self.agent_apply,
+            lock_mode: self.agent_lock_mode(),
+        }
+    }
+
+    fn agent_section(&self) -> AgentSectionSel {
+        AgentSectionSel {
+            skills: split_csv(&self.agent_skills),
+            mcps: split_csv(&self.agent_mcps),
+            commands: split_csv(&self.agent_commands),
+        }
+    }
+
+    fn agent_add_spec(&self) -> AgentAddSpec {
+        AgentAddSpec {
+            source: self.agent_source.trim().to_string(),
+            section: self.agent_section(),
+            git_ref: opt_str(&self.agent_git_ref),
+            branch: opt_str(&self.agent_branch),
+            sub_dir: opt_str(&self.agent_sub_dir),
+            config_path: opt_str(&self.agent_config),
+            scope_override: self.agent_scope.to_override(),
+            apply: self.agent_apply,
+            no_sync: self.agent_no_sync,
+            no_verify: self.agent_no_verify,
+            lock_mode: self.agent_lock_mode(),
+        }
+    }
+
+    fn agent_remove_spec(&self) -> AgentRemoveSpec {
+        AgentRemoveSpec {
+            source: self.agent_source.trim().to_string(),
+            section: self.agent_section(),
+            git_ref: opt_str(&self.agent_git_ref),
+            branch: opt_str(&self.agent_branch),
+            sub_dir: opt_str(&self.agent_sub_dir),
+            config_path: opt_str(&self.agent_config),
+            scope_override: self.agent_scope.to_override(),
+            apply: self.agent_apply,
+            no_sync: self.agent_no_sync,
+            lock_mode: self.agent_lock_mode(),
+        }
+    }
+
+    fn agent_lock_spec(&self) -> AgentLockSpec {
+        AgentLockSpec {
+            config_path: opt_str(&self.agent_config),
+            scope_override: self.agent_scope.to_override(),
+            check: self.agent_lock_check,
+            upgrade_only: split_csv(&self.agent_upgrade_pkg),
+            // CLI passes `from_flags(locked, None)` for lock (no --update on lock).
+            lock_mode: AgentLockMode::from_flags(self.agent_locked, None),
+        }
+    }
+
+    fn agent_list_spec(&self) -> AgentListSpec {
+        AgentListSpec {
+            scope_override: self.agent_scope.to_override(),
+            kind: self.agent_list_kind.to_kind(),
+        }
+    }
+
+    fn agent_clean_spec(&self) -> AgentCleanSpec {
+        AgentCleanSpec {
+            scope_override: self.agent_scope.to_override(),
+            apply: self.agent_apply,
+        }
+    }
+
+    /// Wrap the active verb's spec in `EngineCommand::Agent { spec }` — the single command the
+    /// worker dispatches to the matching `Engine::agent_*` method.
+    fn agent_command(&self) -> EngineCommand {
+        let spec = match self.agent_verb {
+            AgentVerbTab::Sync => AgentCommandSpec::Sync(self.agent_sync_spec()),
+            AgentVerbTab::Add => AgentCommandSpec::Add(self.agent_add_spec()),
+            AgentVerbTab::Remove => AgentCommandSpec::Remove(self.agent_remove_spec()),
+            AgentVerbTab::Lock => AgentCommandSpec::Lock(self.agent_lock_spec()),
+            AgentVerbTab::List => AgentCommandSpec::List(self.agent_list_spec()),
+            AgentVerbTab::Clean => AgentCommandSpec::Clean(self.agent_clean_spec()),
+        };
+        EngineCommand::Agent { spec }
+    }
+
+    fn agent_screen(&mut self, ui: &mut egui::Ui) {
+        ui.label(RichText::new("Agent-env — manage skills / MCPs / commands").heading());
+        ui.add_space(8.0);
+
+        // verb sub-tabs
+        ui.horizontal(|ui| {
+            for v in [
+                AgentVerbTab::Sync,
+                AgentVerbTab::Add,
+                AgentVerbTab::Remove,
+                AgentVerbTab::Lock,
+                AgentVerbTab::List,
+                AgentVerbTab::Clean,
+            ] {
+                let active = self.agent_verb == v;
+                let text = if active {
+                    RichText::new(v.label()).color(theme::ACCENT_TEXT).strong()
+                } else {
+                    RichText::new(v.label()).color(theme::TEXT_MUTED)
+                };
+                let btn = egui::Button::new(text)
+                    .fill(if active {
+                        theme::ACCENT
+                    } else {
+                        Color32::TRANSPARENT
+                    })
+                    .rounding(egui::Rounding::same(7.0));
+                if ui.add(btn).clicked() {
+                    self.agent_verb = v;
+                }
+            }
+        });
+        ui.add_space(10.0);
+
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            theme::inset().show(ui, |ui| {
+                ui.set_max_width(640.0);
+                self.agent_scope_row(ui);
+
+                match self.agent_verb {
+                    AgentVerbTab::Sync => {
+                        self.agent_config_row(ui);
+                        self.agent_lock_mode_row(ui);
+                        ui.checkbox(&mut self.agent_apply, "Apply (write) — off = preview");
+                    }
+                    AgentVerbTab::Add => {
+                        self.agent_source_rows(ui);
+                        self.agent_section_rows(ui);
+                        self.agent_config_row(ui);
+                        self.agent_lock_mode_row(ui);
+                        ui.checkbox(&mut self.agent_no_sync, "No sync after edit (--no-sync)");
+                        ui.checkbox(
+                            &mut self.agent_no_verify,
+                            "No verify on add (--no-verify)",
+                        );
+                        ui.checkbox(&mut self.agent_apply, "Apply (write) — off = preview");
+                    }
+                    AgentVerbTab::Remove => {
+                        self.agent_source_rows(ui);
+                        self.agent_section_rows(ui);
+                        self.agent_config_row(ui);
+                        self.agent_lock_mode_row(ui);
+                        ui.checkbox(&mut self.agent_no_sync, "No sync after edit (--no-sync)");
+                        ui.checkbox(&mut self.agent_apply, "Apply (write) — off = preview");
+                    }
+                    AgentVerbTab::Lock => {
+                        self.agent_config_row(ui);
+                        ui.horizontal(|ui| {
+                            ui.label(RichText::new("Upgrade packages (CSV)").color(theme::TEXT_MUTED));
+                            ui.add(
+                                egui::TextEdit::singleline(&mut self.agent_upgrade_pkg)
+                                    .hint_text("name,name (optional)")
+                                    .desired_width(360.0),
+                            );
+                        });
+                        ui.checkbox(&mut self.agent_locked, "Zero-network audit (--locked)");
+                        ui.checkbox(
+                            &mut self.agent_lock_check,
+                            "Check only (--check) — off = rewrite the lock",
+                        );
+                    }
+                    AgentVerbTab::List => {
+                        ui.horizontal(|ui| {
+                            ui.label(RichText::new("Kind").color(theme::TEXT_MUTED));
+                            egui::ComboBox::from_id_salt("agent_list_kind")
+                                .selected_text(self.agent_list_kind.label())
+                                .show_ui(ui, |ui| {
+                                    for k in [
+                                        AgentListKindSel::All,
+                                        AgentListKindSel::Skills,
+                                        AgentListKindSel::Mcps,
+                                        AgentListKindSel::Commands,
+                                    ] {
+                                        ui.selectable_value(
+                                            &mut self.agent_list_kind,
+                                            k,
+                                            k.label(),
+                                        );
+                                    }
+                                });
+                        });
+                    }
+                    AgentVerbTab::Clean => {
+                        ui.colored_label(
+                            theme::WARN,
+                            "⚠ Clean removes managed assets not present in the config (the lock's orphans). Preview first; Apply writes.",
+                        );
+                        ui.checkbox(&mut self.agent_apply, "Apply (write) — off = preview");
+                    }
+                }
+
+                ui.add_space(12.0);
+                self.agent_action_button(ui);
+            });
+
+            ui.add_space(10.0);
+            if !self.agent_status.is_empty() {
+                ui.colored_label(theme::TEXT_MUTED, &self.agent_status);
+                ui.add_space(8.0);
+            }
+            self.agent_results(ui);
+        });
+    }
+
+    fn agent_scope_row(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            ui.label(RichText::new("Scope").color(theme::TEXT_MUTED));
+            egui::ComboBox::from_id_salt("agent_scope")
+                .selected_text(self.agent_scope.label())
+                .show_ui(ui, |ui| {
+                    for s in [
+                        AgentScopeSel::Default,
+                        AgentScopeSel::Global,
+                        AgentScopeSel::Project,
+                    ] {
+                        ui.selectable_value(&mut self.agent_scope, s, s.label());
+                    }
+                });
+        });
+    }
+
+    fn agent_config_row(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            ui.label(RichText::new("Config path").color(theme::TEXT_MUTED));
+            ui.add(
+                egui::TextEdit::singleline(&mut self.agent_config)
+                    .hint_text("(blank = default resolution)")
+                    .desired_width(360.0),
+            );
+        });
+    }
+
+    fn agent_source_rows(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            ui.label(RichText::new("Source").color(theme::TEXT_MUTED));
+            ui.add(
+                egui::TextEdit::singleline(&mut self.agent_source)
+                    .hint_text("repo url / path / id")
+                    .desired_width(360.0),
+            );
+        });
+        ui.horizontal(|ui| {
+            ui.label(RichText::new("Ref").color(theme::TEXT_MUTED));
+            ui.add(
+                egui::TextEdit::singleline(&mut self.agent_git_ref)
+                    .hint_text("ref (optional)")
+                    .desired_width(150.0),
+            );
+            ui.label(RichText::new("Branch").color(theme::TEXT_MUTED));
+            ui.add(
+                egui::TextEdit::singleline(&mut self.agent_branch)
+                    .hint_text("branch (optional)")
+                    .desired_width(150.0),
+            );
+        });
+        ui.horizontal(|ui| {
+            ui.label(RichText::new("Sub-dir").color(theme::TEXT_MUTED));
+            ui.add(
+                egui::TextEdit::singleline(&mut self.agent_sub_dir)
+                    .hint_text("sub-dir (optional)")
+                    .desired_width(360.0),
+            );
+        });
+    }
+
+    fn agent_section_rows(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            ui.label(RichText::new("Skills (CSV)").color(theme::TEXT_MUTED));
+            ui.add(egui::TextEdit::singleline(&mut self.agent_skills).desired_width(360.0));
+        });
+        ui.horizontal(|ui| {
+            ui.label(RichText::new("MCPs (CSV)").color(theme::TEXT_MUTED));
+            ui.add(egui::TextEdit::singleline(&mut self.agent_mcps).desired_width(360.0));
+        });
+        ui.horizontal(|ui| {
+            ui.label(RichText::new("Commands (CSV)").color(theme::TEXT_MUTED));
+            ui.add(egui::TextEdit::singleline(&mut self.agent_commands).desired_width(360.0));
+        });
+    }
+
+    fn agent_lock_mode_row(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            ui.checkbox(&mut self.agent_locked, "Locked (--locked, zero-network)");
+            ui.checkbox(&mut self.agent_update_on, "Update (--update)");
+            if self.agent_update_on {
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.agent_update)
+                        .hint_text("names CSV (blank = all)")
+                        .desired_width(220.0),
+                );
+            }
+        });
+    }
+
+    /// The single action button. For the mutating verbs it carries the apply/preview state in
+    /// the Spec (`agent_apply`), so a fresh, fail-closed default (apply=false) previews. Always
+    /// dispatches to the worker (`dispatch` → mpsc send) so the UI thread never blocks.
+    fn agent_action_button(&mut self, ui: &mut egui::Ui) {
+        let mutating = matches!(
+            self.agent_verb,
+            AgentVerbTab::Sync | AgentVerbTab::Add | AgentVerbTab::Remove | AgentVerbTab::Clean
+        );
+        let label = if mutating {
+            if self.agent_apply {
+                format!("Apply {}", self.agent_verb.label())
+            } else {
+                format!("Preview {}", self.agent_verb.label())
+            }
+        } else {
+            format!("Run {}", self.agent_verb.label())
+        };
+        let fill = if mutating && self.agent_apply {
+            theme::WARN
+        } else {
+            theme::ACCENT
+        };
+        let btn = egui::Button::new(RichText::new(label).color(theme::ACCENT_TEXT)).fill(fill);
+        if ui.add(btn).clicked() {
+            self.dispatch(self.agent_command(), Some("agent".into()));
+        }
+    }
+
+    fn agent_results(&mut self, ui: &mut egui::Ui) {
+        if let Some(list) = self.agent_list.clone() {
+            self.agent_list_tables(ui, &list);
+        }
+        if let Some(edit) = self.agent_last_edit.clone() {
+            theme::card().show(ui, |ui| {
+                ui.set_width(ui.available_width());
+                ui.label(
+                    RichText::new(format!("edit: {} · {}", edit.action, edit.source)).strong(),
+                );
+                for it in &edit.items {
+                    ui.colored_label(
+                        theme::TEXT_MUTED,
+                        format!("  {} / {}", it.section, it.target),
+                    );
+                }
+            });
+            ui.add_space(8.0);
+        }
+        if let Some(report) = self.agent_last_report.clone() {
+            theme::card().show(ui, |ui| {
+                ui.set_width(ui.available_width());
+                let s = &report.summary;
+                ui.label(RichText::new("run summary").strong());
+                ui.colored_label(
+                    theme::TEXT_MUTED,
+                    format!(
+                        "installed {} · updated {} · removed {} · unchanged {} · failed {}",
+                        s.installed, s.updated, s.removed, s.unchanged, s.failed
+                    ),
+                );
+            });
+            ui.add_space(8.0);
+        }
+        if let Some(drift) = self.agent_lock_drift.clone() {
+            theme::card().show(ui, |ui| {
+                ui.set_width(ui.available_width());
+                ui.label(RichText::new("lock drift").strong());
+                if drift.is_empty() {
+                    ui.colored_label(theme::TEXT_FAINT, "  no drift");
+                }
+                for d in &drift {
+                    ui.colored_label(theme::TEXT_MUTED, format!("  {} {}", d.status, d.id));
+                }
+            });
+        }
+    }
+
+    fn agent_list_tables(&self, ui: &mut egui::Ui, list: &AgentList) {
+        if !list.skills.is_empty() {
+            ui.label(RichText::new("skills").strong());
+            TableBuilder::new(ui)
+                .id_salt("agent_skills_tbl")
+                .striped(true)
+                .column(Column::auto().at_least(120.0))
+                .column(Column::auto().at_least(120.0))
+                .column(Column::auto().at_least(80.0))
+                .column(Column::remainder())
+                .column(Column::auto().at_least(80.0))
+                .header(20.0, |mut h| {
+                    for t in ["name", "skill", "scope", "source", "updated"] {
+                        h.col(|ui| {
+                            ui.label(RichText::new(t).color(theme::TEXT_FAINT));
+                        });
+                    }
+                })
+                .body(|mut body| {
+                    for sk in &list.skills {
+                        body.row(18.0, |mut row| {
+                            row.col(|ui| {
+                                ui.label(&sk.name);
+                            });
+                            row.col(|ui| {
+                                ui.label(&sk.skill);
+                            });
+                            row.col(|ui| {
+                                ui.label(format!("{:?}", sk.scope));
+                            });
+                            row.col(|ui| {
+                                ui.label(&sk.source);
+                            });
+                            row.col(|ui| {
+                                ui.label(&sk.updated_ago);
+                            });
+                        });
+                    }
+                });
+            ui.add_space(8.0);
+        }
+        for (title, rows, salt) in [
+            ("mcps", &list.mcps, "agent_mcps_tbl"),
+            ("commands", &list.commands, "agent_commands_tbl"),
+        ] {
+            if rows.is_empty() {
+                continue;
+            }
+            ui.label(RichText::new(title).strong());
+            TableBuilder::new(ui)
+                .id_salt(salt)
+                .striped(true)
+                .column(Column::auto().at_least(140.0))
+                .column(Column::auto().at_least(80.0))
+                .column(Column::remainder())
+                .header(20.0, |mut h| {
+                    for t in ["name", "scope", "source"] {
+                        h.col(|ui| {
+                            ui.label(RichText::new(t).color(theme::TEXT_FAINT));
+                        });
+                    }
+                })
+                .body(|mut body| {
+                    for r in rows {
+                        body.row(18.0, |mut row| {
+                            row.col(|ui| {
+                                ui.label(&r.name);
+                            });
+                            row.col(|ui| {
+                                ui.label(format!("{:?}", r.scope));
+                            });
+                            row.col(|ui| {
+                                ui.label(&r.source);
+                            });
+                        });
+                    }
+                });
+            ui.add_space(8.0);
+        }
+    }
+
     // ── Logs ──────────────────────────────────────────────────────────────────
     fn logs_screen(&mut self, ui: &mut egui::Ui) {
         ui.horizontal(|ui| {
@@ -1278,4 +1949,224 @@ fn split_csv(s: &str) -> Vec<String> {
         .filter(|x| !x.is_empty())
         .map(|x| x.to_string())
         .collect()
+}
+
+/// Trim a form string to an `Option<String>`: blank → `None` (the agent specs' `config_path`
+/// /`git_ref`/… mirror the CLI's blank → `None` mapping).
+fn opt_str(s: &str) -> Option<String> {
+    let t = s.trim();
+    if t.is_empty() {
+        None
+    } else {
+        Some(t.to_string())
+    }
+}
+
+#[cfg(test)]
+mod agent_spec_tests {
+    use super::*;
+    use envctl_engine::AgentLockMode;
+
+    /// A pure, window-free `EnvctlApp` carrying just the agent form fields. The worker channel
+    /// + engine clone aren't needed by the `*_spec` builders, so a fresh test app constructs
+    /// dummy channels and a default engine, then the test mutates only the agent fields.
+    fn test_app() -> EnvctlApp {
+        let (cmd_tx, _cmd_rx) = channel::<EngineCommand>();
+        let (_evt_tx, evt_rx) = channel::<EngineEvent>();
+        // detached() needs no manifest dir, so the test runs from any cwd; the
+        // `*_spec` builders touch neither this engine clone nor the channels.
+        let geng = Engine::detached();
+        // run_event_loop is never started; the builders touch no channel/engine.
+        EnvctlApp {
+            cmd_tx,
+            evt_rx,
+            screen: Screen::Agent,
+            header: String::new(),
+            components: Vec::new(),
+            drift: Vec::new(),
+            busy: HashSet::new(),
+            log: VecDeque::new(),
+            log_cap: 8000,
+            telemetry: None,
+            util_history: HashMap::new(),
+            dry_run_default: true,
+            filter: String::new(),
+            tel: TelemetryControl::new(),
+            geng,
+            graph_focus: String::new(),
+            gpu_present: false,
+            driver_loaded: false,
+            software_rendered: false,
+            gpu_count: 0,
+            add_url: String::new(),
+            add_id: String::new(),
+            add_build: String::new(),
+            add_strategy: "as-is".into(),
+            add_ref: String::new(),
+            add_bins: String::new(),
+            add_renames: String::new(),
+            add_patch: String::new(),
+            add_ai_goal: "port-to-rust".into(),
+            add_ai_instruction: String::new(),
+            add_build_flag: false,
+            dash_plan: None,
+            dash_panes_per_tab: 6,
+            dash_status: String::new(),
+            agent_verb: AgentVerbTab::Sync,
+            agent_config: String::new(),
+            agent_scope: AgentScopeSel::Default,
+            agent_source: String::new(),
+            agent_skills: String::new(),
+            agent_mcps: String::new(),
+            agent_commands: String::new(),
+            agent_git_ref: String::new(),
+            agent_branch: String::new(),
+            agent_sub_dir: String::new(),
+            agent_apply: false,
+            agent_no_sync: false,
+            agent_no_verify: false,
+            agent_locked: false,
+            agent_update_on: false,
+            agent_update: String::new(),
+            agent_lock_check: true,
+            agent_upgrade_pkg: String::new(),
+            agent_list_kind: AgentListKindSel::All,
+            agent_list: None,
+            agent_last_edit: None,
+            agent_last_report: None,
+            agent_lock_drift: None,
+            agent_status: String::new(),
+        }
+    }
+
+    #[test]
+    fn sync_blank_config_is_none_apply_defaults_false() {
+        let app = test_app();
+        let spec = app.agent_sync_spec();
+        assert_eq!(spec.config_path, None, "blank config → None");
+        assert_eq!(spec.scope_override, None, "default scope → no override");
+        assert!(!spec.apply, "apply defaults false (fail-closed)");
+        assert!(matches!(spec.lock_mode, AgentLockMode::Plain));
+    }
+
+    #[test]
+    fn sync_config_and_apply_and_scope_map() {
+        let mut app = test_app();
+        app.agent_config = "  /tmp/cfg.toml ".into();
+        app.agent_apply = true;
+        app.agent_scope = AgentScopeSel::Project;
+        let spec = app.agent_sync_spec();
+        assert_eq!(spec.config_path.as_deref(), Some("/tmp/cfg.toml"));
+        assert!(spec.apply);
+        assert_eq!(spec.scope_override, Some(AgentScope::Project));
+    }
+
+    #[test]
+    fn lock_mode_locked_wins() {
+        let mut app = test_app();
+        app.agent_locked = true;
+        app.agent_update_on = true;
+        app.agent_update = "a,b".into();
+        assert!(matches!(app.agent_lock_mode(), AgentLockMode::Locked));
+    }
+
+    #[test]
+    fn lock_mode_update_csv_splits() {
+        let mut app = test_app();
+        app.agent_update_on = true;
+        app.agent_update = "a, b".into();
+        match app.agent_lock_mode() {
+            AgentLockMode::Update { only } => assert_eq!(only, vec!["a", "b"]),
+            other => panic!("expected Update, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn lock_mode_update_off_is_plain() {
+        let mut app = test_app();
+        app.agent_update_on = false;
+        app.agent_update = "a,b".into(); // ignored while toggle off
+        assert!(matches!(app.agent_lock_mode(), AgentLockMode::Plain));
+    }
+
+    #[test]
+    fn add_section_csv_and_fields_map() {
+        let mut app = test_app();
+        app.agent_source = " repo ".into();
+        app.agent_skills = "a,b".into();
+        app.agent_mcps = "m1".into();
+        app.agent_commands = "".into();
+        app.agent_git_ref = "v1".into();
+        app.agent_branch = "".into();
+        app.agent_sub_dir = "sub".into();
+        app.agent_no_sync = true;
+        app.agent_no_verify = true;
+        let spec = app.agent_add_spec();
+        assert_eq!(spec.source, "repo");
+        assert_eq!(spec.section.skills, vec!["a", "b"]);
+        assert_eq!(spec.section.mcps, vec!["m1"]);
+        assert!(spec.section.commands.is_empty());
+        assert_eq!(spec.git_ref.as_deref(), Some("v1"));
+        assert_eq!(spec.branch, None);
+        assert_eq!(spec.sub_dir.as_deref(), Some("sub"));
+        assert!(spec.no_sync);
+        assert!(spec.no_verify);
+        assert!(!spec.apply, "apply defaults false");
+    }
+
+    #[test]
+    fn remove_maps_without_no_verify() {
+        let mut app = test_app();
+        app.agent_source = "repo".into();
+        app.agent_commands = "c1,c2".into();
+        app.agent_no_sync = true;
+        let spec = app.agent_remove_spec();
+        assert_eq!(spec.source, "repo");
+        assert_eq!(spec.section.commands, vec!["c1", "c2"]);
+        assert!(spec.no_sync);
+        assert!(!spec.apply);
+    }
+
+    #[test]
+    fn lock_check_and_upgrade_map() {
+        let mut app = test_app();
+        app.agent_lock_check = true;
+        app.agent_upgrade_pkg = "p1, p2".into();
+        app.agent_locked = true;
+        let spec = app.agent_lock_spec();
+        assert!(spec.check);
+        assert_eq!(spec.upgrade_only, vec!["p1", "p2"]);
+        // lock ignores --update; --locked makes the audit zero-network.
+        assert!(matches!(spec.lock_mode, AgentLockMode::Locked));
+    }
+
+    #[test]
+    fn list_kind_maps() {
+        let mut app = test_app();
+        app.agent_list_kind = AgentListKindSel::Mcps;
+        app.agent_scope = AgentScopeSel::Global;
+        let spec = app.agent_list_spec();
+        assert_eq!(spec.kind, AgentListKind::Mcps);
+        assert_eq!(spec.scope_override, Some(AgentScope::Global));
+    }
+
+    #[test]
+    fn clean_apply_defaults_false() {
+        let app = test_app();
+        let spec = app.agent_clean_spec();
+        assert!(!spec.apply, "clean apply defaults false (fail-closed)");
+        assert_eq!(spec.scope_override, None);
+    }
+
+    #[test]
+    fn agent_command_wraps_active_verb() {
+        let mut app = test_app();
+        app.agent_verb = AgentVerbTab::Clean;
+        match app.agent_command() {
+            EngineCommand::Agent {
+                spec: AgentCommandSpec::Clean(_),
+            } => {}
+            _ => panic!("expected EngineCommand::Agent(Clean)"),
+        }
+    }
 }

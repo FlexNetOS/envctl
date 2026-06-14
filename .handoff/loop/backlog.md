@@ -106,17 +106,20 @@ are **rendered by `hf`, never hand-written**.
   - **Wired** into the loop verify-on-resume (`.handoff/loop/HANDOFF.md`) + `CLAUDE.md` gate list.
     Verified: positive PASS on the seeded Tier-A; negative tests (stray `*.db`, bad packet/capsule
     schema) all fail closed (exit 1). GO-LIVE + card-minting split to **TASK-0024**.
-- [ ] **TASK-0024 (P2, Epic A) — `hf sync` `.kb` GO-LIVE + envctl card-minting** (split from TASK-0003):
-  - **GO-LIVE for `.handoff`↔`.kb` auto-sync (run at `$META_ROOT`, NEVER in-member — `hf sync` opens a
-    CWD-relative ledger):** verify the kernel's `hf sync` one-way `.kb` write-back (ADR-0003
-    HFTASK-0011) so the loop's `.handoff` cards/checkpoints mirror into GitKB. The broken `.kb`
-    SessionStart hook is already FIXED (`meta/.claude/settings.json`: `git kb service` → guarded
-    `git kb serve`, meta main `bf68d57`). Acceptance: `hf sync` reflects a checkpoint into `.kb` (the
-    `/verify` finding's "auto-sync to .handoff and .kb" becomes TRUE).
-  - **Card-minting:** populate `envctl/.handoff/tasks/` via `hf task mint --from-kb <slug>` once kb
-    task docs exist for the envctl backlog (today `tasks/` is empty; packet degrades to "no open
-    cards"). Reference: `meta/handoff/FLEET_GUIDE.md` for verb usage. CAUTION: use the installed `hf`;
-    do not build/commit in `meta/handoff` while a kernel session may be active.
+- [x] **TASK-0024 (P2, Epic A) — `hf sync` `.kb` GO-LIVE DONE 2026-06-13 (cycle 8); card-minting
+  conditional-deferred** (split from TASK-0003):
+  - **GO-LIVE ✓:** wired `hf sync --auto` into the Stop/PreCompact hook
+    (`.claude/hooks/hf-checkpoint.sh`) right after `hf checkpoint --auto`, run at `$META_ROOT`
+    (same residency — never a per-repo ledger), fail-soft. So every checkpoint now ALSO one-way
+    mirrors the witnessed FLEET ledger → GitKB (ADR-0003 HFTASK-0011). Verified live from `$META_ROOT`:
+    `hf sync --auto` → "mirrored context/overridable/{active,progress} (one-way ledger→kb)", exit 0
+    (FLEET ledger now has 10 witnessed events). Refreshed the hook's stale "DORMANT" header → LIVE.
+    The `/verify` finding's "auto-sync to .handoff and .kb" is now **TRUE**. (Broken `.kb` SessionStart
+    hook was already FIXED upstream: `meta/.claude/settings.json` `git kb service`→`git kb serve`.)
+  - **Card-minting (conditional-deferred, no actionable prereq):** `envctl/.handoff/tasks/` is empty
+    and there are **no envctl `.kb` task docs** to `hf task mint --from-kb` (verified). When kb task
+    docs are authored for the envctl backlog, mint them (packet degrades to "no open cards" until
+    then — residency-correct). Ref `meta/handoff/FLEET_GUIDE.md`; use the installed `hf`.
 
 ## Epic B — Meta-portability / env-ownership (`$META_ROOT`)
 
@@ -167,6 +170,20 @@ preset; multi-host resolver; 5 cmd + 4 MCP-merge additive transforms; 3 lock mod
   no-downgrade checklist; current doc is stale at v3.0.0).
 - [ ] **TASK-0012 (P0 of C):** New pure-Rust crate `crates/agent-env` — config model (6 keys +
   `extends`), multi-host source resolver, SHA-256 hash, lock. Drop `mimalloc`. no-c gate clean.
+  - **IN PROGRESS 2026-06-13 (forge-loop cycle, owner-directed `/harness:rust-port`).** Owner
+    resolved the no-downgrade fork: synced `meta/kasetto` source UP to **pivoshenko/kasetto v3.2.0**
+    (canonical upstream; FlexNetOS v3.0.0 divergence archived → `flexnetos-divergence-backup-2026-06-13`).
+    Crate `crates/agent-env` seeded + `model/*` ported (foundational config/extend/source/hash/lock +
+    full 21-agent preset table + 4 MCP/5 command formats); 78 tests + no-c GREEN. **PR #71 → develop
+    (auto-merge armed).** Now driven by the rust-port **parity ledger**
+    (`.handoff/loop/rust-port/parity-ledger.md`: 55 ported `[~]` / 44 todo `[ ]` / 13 front-end `[≠]`
+    / 0 verified `[x]`). Resume via `/harness:rust-port` (HANDOFF: `.handoff/loop/rust-port/HANDOFF.md`)
+    — next: parity-verifier pass, then fsops/config_edit/MCP-merge/commands. NOT done until 100% parity.
+    The ledger spans TASK-0012..0018 (Engine wiring = TASK-0013, CLI verbs = TASK-0014).
+  - **FORK SYNC DONE 2026-06-13** (owner ran the force push): kasetto fork RENAMED
+    `env_manager_agent` → `FlexNetOS/kasetto`; `origin/main` force-pushed (--force-with-lease) UP to
+    upstream v3.2.0 (`ec01cca`, 0/0 in sync); divergence preserved (remote backup branch + git bundle
+    in `.archives/`); `.meta.yaml` retargeted via meta PR #31. Fork == upstream == local.
 - [ ] **TASK-0013:** Engine `agent_env` module + Engine methods + Events (agent_sync/add/remove/lock);
   non-printing, front-end parity.
 - [ ] **TASK-0014:** CLI verbs `envctl agent {sync,add,remove,lock,list,clean}` (--dry-run/--json/--locked)
@@ -186,8 +203,52 @@ fmt, clippy). Remaining follow-ups extracted from each:
 
 - [ ] **TASK-0019 (fix-secretd):** U1 USB-unlock path needs a real `RealUsbProbe` (crash-loop +
   durable store + passphrase path already fixed/merged). See `.handoff/loop/_done/secretd-provisioning-runbook.md`.
-- [ ] **TASK-0020 (github-app-mint):** Wire the GitHub-App token mint (`secrets-engine/mint_github.rs`,
-  merged) through the `ProviderMint` injection seam — secretctl/secretd phases + agent-env auto-inject.
+- [ ] **TASK-0020 (github-app-mint, P0 — unblocks the `flexnetos_github_app` e2e crown slice):** Expose
+  the completed `provider-github` `ProviderMint` (`secrets-engine/src/mint_github.rs`, PR #35, fully
+  unit-tested via `FakeTransport`) through `secretd` + `secretctl` so the trusted-writer App can mint
+  short-lived installation tokens from the vault-sealed key. **The minting impl is DONE — this is the
+  daemon plumbing + CLI surface only.** (Authored as a build-ready card by the cross-repo session that
+  created+installed+sealed the live App, 2026-06-13.)
+  - **Consumer contract (FROZEN — `flexnetos_github_app` already depends on it):** `app-core::mint::
+    SecretctlInvoker` shells `secretctl mint-github --installation-id <N> [--repository-ids a,b]
+    [--permissions name:access,...] --ttl-secs <T> --output json` and parses stdout exactly as
+    `{"token":"<installation-token>","expires_at_unix":<i64>}`. Permission access maps Read→`"read"`,
+    Write→`"write"`. Today this **404s** (no such subcommand) → the e2e token write-back (post
+    check-run / merge-gate) is blocked. Do not change the flag/JSON shape.
+  - **Build:**
+    1. **Real `HttpTransport`** (the `mint_github::HttpTransport` seam): REUSE the PR #58 relay-proxy
+       client — `reqwest` pinned to **`webpki-roots`, rustls-on-ring** (FS-S7), NOT native-tls/OS roots
+       (else `no-c.sh` fails). Wrap it as the sync `execute(&HttpRequest)->HttpResponse`.
+    2. **Internal unseal path:** the daemon reads `github-app-private-key` (**broker-only** — use the
+       same internal key-extraction the relay proxy uses, NOT the `get --reveal` API, which refuses
+       broker-only) + `github-app-id` from the unlocked vault, then
+       `GitHubAppMint::new(app_id, installation_id, Zeroizing(pem), RealClock, RealTransport)`.
+       Fail-closed when the vault is locked / key absent / the `provider-github` feature is off.
+    3. **proto (`secrets-proto/proto/control.proto`):** add `rpc MintGithub(MintGithubReq) returns
+       (MintGithubResp)` to `service Vault`. `MintGithubReq{ uint64 installation_id; repeated string
+       repository_ids; repeated string permissions; int64 ttl_secs; }` ·
+       `MintGithubResp{ string token; int64 expires_at_unix; }`.
+    4. **secretd handler:** build `MintRequest{ provider: Github, repos, perms, ttl_secs }`, call
+       `mint_scoped`, map `ScopedToken{token, expires_at}` → resp; emit a witnessed mint event but
+       **NEVER log the token**.
+    5. **secretctl `mint-github` subcommand:** flags per the frozen contract; `--output json` prints
+       the JSON to stdout only.
+    6. **Feature:** enable `provider-github` in the `secretd` build (cargo feature, same pattern as
+       `seed-factor`); wire it through `secrets-engine`.
+  - **Gates/tests:** `no-c.sh` (reqwest MUST stay `webpki-roots`/rustls-ring — already clean post #58),
+    `shape.sh`, `enable.sh`; `cargo fmt` + `clippy -D warnings`; add a `secretd` RPC test + a CLI smoke
+    (the JWT/request/parse logic is already unit-tested in `mint_github.rs`).
+  - **Acceptance (LIVE — the App is already created+installed+sealed):** with the vault unlocked (Seed)
+    and these secrets sealed — `github-app-private-key` (broker-only), `github-app-id`=**4044997**,
+    `github-app-installation-id`=**140063898** (org **FlexNetOS**, app slug `flexnetos-github-app`) —
+    `secretctl mint-github --installation-id 140063898 --output json` returns a real installation token
+    from `POST /app/installations/140063898/access_tokens`, and `fxapp mint-token` (flexnetos_github_app
+    app-core P1) then succeeds end to end. This completes the crown slice's token write-back; the
+    webhook→dispatch→fork-gate half was already proven LIVE through a public tunnel (2026-06-13).
+  - **Cross-refs:** ADR-0007/0008; `mint_github.rs` (PR #35); `seam.rs::ProviderMint`; **PR #58**
+    (relay-proxy `reqwest`/`webpki-roots` transport to reuse); `flexnetos_github_app/crates/app-core/
+    src/mint.rs` (`build_argv` contract) + `app-cli` `MintToken`. Sibling of TASK-0019 (RealUsbProbe,
+    done via #61) — both are Epic-D secrets-egress.
 - [ ] **TASK-0021 (node-via-bun):** Manifest design follow-up — mark node not-applicable when a real
   node in the n8n range is present, or add a `node-real` component + drop the group-ai-clis edge
   (cosmetic detect-drift only; truth-telling fix already merged).
@@ -199,6 +260,15 @@ fmt, clippy). Remaining follow-ups extracted from each:
 
 - [ ] **TASK-0023:** develop→master auto-sync GitHub Action (ff master on develop push) +
   enable branch protection on master (PR-only for humans; action token bypass). [in progress 2026-06-12]
+- [x] **TASK-0025 (P1, Epic E) — DONE 2026-06-13 (cycle 7): CI required checks on `develop` so
+  auto-merge gates fail-closed.** Added `.github/workflows/ci.yml` (4 jobs: **rustfmt · clippy
+  (workspace, default features) · test (`--test-threads=1`) · gates (no-c/shape/enable/p7)**) — no
+  `--all-features` (mutually-exclusive `remote`/`embedded`). Enabled repo `allow_auto_merge` +
+  `develop` branch protection requiring those 4 contexts (strict=false so concurrent sessions aren't
+  serialized; no required reviews; admins not enforced). Fixed a real isolation bug TASK-0004 exposed:
+  `dashboard::tests::locate_walks_up` leaked the inherited `$META_FILE` → made hermetic. `test` runs
+  serial in CI to kill the `XDG_CACHE_HOME`/`$META_FILE` parallel env-race flakiness. Verified all 4
+  green locally before requiring them. (Master protection / develop→master mirror = TASK-0023, separate.)
 
 ## Key finding (carried)
 

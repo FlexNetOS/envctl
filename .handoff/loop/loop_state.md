@@ -6,15 +6,18 @@ loop: agenticOS-consolidation (.handoff/loop/backlog.md, Epics A–E; design = .
 branch: develop   # work happens in FRESH worktrees off develop -> PR -> auto-promote to master
 worktree: (per-cycle: meta/.worktrees/<slug>/envctl off develop)
 cycle_budget: 3
-cycles_this_session: 1   # NEW SESSION 2026-06-13 (reset to 0 on resume): cycle 6 (TASK-0003 p7 gate)
-cycles_total: 6
-last_item: TASK-0003 (p7-conformance gate) — DONE 2026-06-13 (cycle 6); added ci/gates/p7.sh
-status: ACTIVE (new session) 2026-06-13 — cycle 6 TASK-0003 DONE: added `ci/gates/p7.sh` (fail-closed
-  grep-based gate — Tier-A schema tags + ledger residency + packet v2; positive PASS + 3 negative
-  tests fail closed), wired into HANDOFF verify-on-resume + CLAUDE.md. Verified-not-claimed first
-  (only unrelated PR #53 libsql-baton-fix open; grit empty). The GO-LIVE (`hf sync` `.kb`) + envctl
-  card-minting were SPLIT into the new **TASK-0024** (P2, Epic A). Next pick: **TASK-0024** (hf sync
-  go-live, needs $META_ROOT) or **Epic C TASK-0012** (crates/agent-env, large). Budget 1/3.
+cycles_this_session: 1   # RESUME SESSION 2026-06-13 (reset to 0 on resume): cycle 9 = TASK-0012 kickoff
+cycles_total: 9
+last_item: TASK-0012 (crates/agent-env, kasetto absorption) — IN PROGRESS via /harness:rust-port; PR #71
+status: HANDING OFF 2026-06-13 (resume session, 1 cycle done; clean early boundary, token economy).
+  Cycle 9 = TASK-0012 kickoff: owner authorized the no-downgrade fork → synced meta/kasetto source UP to
+  pivoshenko v3.2.0 (divergence archived on flexnetos-divergence-backup-2026-06-13); seeded
+  crates/agent-env + ported model/* (foundational + 21-agent table + MCP/command formats), 78 tests +
+  no-c GREEN; **PR #71 → develop, auto-merge armed**. TASK-0012 is now driven by the rust-port
+  parity-ledger loop (55 [~] / 44 [ ] / 13 [≠] / 0 [x]) — NOT done until 100% parity.
+  **Resume the PORT** via `/harness:rust-port` (HANDOFF: `.handoff/loop/rust-port/HANDOFF.md`); the
+  forge-loop itself resumes via `/forge-loop resume` (next forge pick after TASK-0012 lands: TASK-0013
+  engine wiring, or another Epic). OWNER FOLLOW-UP: kasetto FORK origin/main force-push (see backlog TASK-0012 note).
 
 ## Progress log
 - cycle 1 (2026-06-13, TASK-0001, PASS-WITH-NOTES): built+installed `hf` from meta/handoff
