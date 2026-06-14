@@ -400,7 +400,7 @@ fn c03_commands_write_to_supported_agents_skip_unsupported_then_prune() {
     let cfg2_path = proj.join("env-2.yaml");
     let yaml2 = "scope: project\nagent:\n  - claude-code\n  - gemini-cli\n  - cursor\n  - codex\n";
     std::fs::write(&cfg2_path, yaml2).unwrap();
-    let r2 = sync_apply(&engine, &cfg2_path.to_string_lossy().to_string());
+    let r2 = sync_apply(&engine, cfg2_path.to_string_lossy().as_ref());
     assert_eq!(r2.summary.failed, 0);
     assert!(
         !proj.join(".claude/commands/git/commit.md").exists(),
@@ -513,7 +513,7 @@ fn c04_mcp_merge_is_additive_new_servers_added_existing_survive() {
 
     let cfg_path = proj.join("env-1.yaml");
     std::fs::write(&cfg_path, mcp_cfg(&skill_pack())).unwrap();
-    let r = sync_apply(&engine, &cfg_path.to_string_lossy().to_string());
+    let r = sync_apply(&engine, cfg_path.to_string_lossy().as_ref());
     assert_eq!(r.summary.failed, 0);
 
     let merged: serde_json::Value =
@@ -614,7 +614,7 @@ fn c01_c05_never_prune_when_a_source_fails() {
         p = pack.display(),
     );
     std::fs::write(&good_cfg, yaml).unwrap();
-    sync_apply(&engine, &good_cfg.to_string_lossy().to_string());
+    sync_apply(&engine, good_cfg.to_string_lossy().as_ref());
     assert!(proj.join(".claude/skills/alpha/SKILL.md").is_file());
 
     // Add a sibling source that ERRORS at materialize (nonexistent sub-dir) → failed++.
@@ -624,7 +624,7 @@ fn c01_c05_never_prune_when_a_source_fails() {
         p = pack.display(),
     );
     std::fs::write(&broken_cfg, yaml2).unwrap();
-    let r = sync_apply(&engine, &broken_cfg.to_string_lossy().to_string());
+    let r = sync_apply(&engine, broken_cfg.to_string_lossy().as_ref());
     assert!(
         r.summary.failed > 0,
         "broken sibling source records a failure"
