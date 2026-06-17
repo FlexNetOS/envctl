@@ -1,0 +1,224 @@
+# manifest/cognitum-seed-net.toml — host-side link-local addressing for the Cognitum Seed.
+#
+# WHY THIS EXISTS
+# secretd proves the **USB unlock factor** (Profile S / seed-factor) by calling the Cognitum
+# Seed's custody REST API at `https://169.254.42.1:8443/api/v1/custody/sign` over the Seed's
+# **USB CDC-NCM Ethernet gadget** (driver `cdc_ncm`, `ID_MODEL=Cognitum_Seed`). It is NOT read
+# from the Seed's mass-storage mount. That link needs a host IPv4 on `169.254.42.0/24`; without
+# it, requests to `169.254.42.1` fall through to the default gateway and die, so the vault
+# cannot USB-unlock — surfacing only as the no-oracle generic `unlock failed` (engine
+# `EngineError::UnlockFailed`). Observed 2026-06-17: the Seed NIC was UP but unaddressed, so
+# `RealUsbProbe::keyfile_for` returned `None` and `secretctl unlock` failed closed.
+#
+# DESIGN: ADDITIVE, MANAGER-AGNOSTIC, FAIL-OPEN-WHEN-ABSENT
+# This box has multiple network owners (NetworkManager, netplan, lane, network-control, and
+# raw host settings). To avoid becoming yet another claimant, this component installs a tiny
+# udev-triggered systemd oneshot that ONLY **adds a secondary `169.254.42.2/24`** to the Seed's
+# cdc_ncm NIC. It never sets a default route, never sets the interface's primary config, and
+# never removes any other address — so it coexists with whatever else manages the link. When
+# the Seed is unplugged the helper is a clean no-op (exit 0), mirroring env-ctl's "locked is
+# healthy" stance: an absent Seed is healthy, not drift.
+#
+# This is the DURABLE form of the one-shot recovery `ip addr add 169.254.42.2/24 dev <seed-nic>`:
+# the udev rule re-applies on every Seed hotplug and the `WantedBy=multi-user.target` enable
+# re-applies at boot. Root-owned artifacts under /etc + /usr/local/sbin, so every action phase
+# is `needs_sudo` (mirrors the gpu.toml apt components).
+#
+# RELATION TO env-ctl.toml: the USB unlock factor depends on this addressing, but the vault's
+# passphrase factor does NOT, so this is intentionally a separate, optional component (no hard
+# `requires` link from env-ctl) — a box without a Seed never needs it.
+
+[[component]]
+id = "cognitum-seed-net"
+name = "Cognitum Seed USB link-local addressing"
+description = "udev-triggered systemd oneshot that adds the host-side 169.254.42.2/24 to the Cognitum Seed's cdc_ncm USB NIC so secretd can reach the Seed custody API (169.254.42.1:8443) for the USB unlock factor. Additive only; coexists with other network managers."
+requires = []
+destructive = false
+
+# DETECT == "artifacts present" (the install predicate). NOT "Seed reachable" — the Seed may be
+# unplugged, which is healthy. So drift never nudges a needless reinstall when the box is fine.
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", "test -x /usr/local/sbin/cognitum-seed-linklocal && test -f /etc/systemd/system/cognitum-seed-linklocal.service && test -f /etc/udev/rules.d/99-cognitum-seed-linklocal.rules"]
+
+# INSTALL: write the worker + unit + udev rule, reload udev/systemd, enable for boot, apply now.
+# Idempotent (heredocs truncate-write; enable/reload are idempotent). The worker is the single
+# source of truth, embedded here so install is path-independent (no repo-root assumption).
+[component.install]
+kind = "script"
+needs_sudo = true
+script = '''
+set -euo pipefail
+
+# --- worker: the idempotent, additive-only addressing helper (runs as root) ----------------
+install -d -m755 /usr/local/sbin
+cat > /usr/local/sbin/cognitum-seed-linklocal <<'WORKER'
+#!/usr/bin/env bash
+# cognitum-seed-linklocal — host-side addressing for the Cognitum Seed USB link-local subnet.
+# ADDS a secondary 169.254.42.2/24 to the Seed cdc_ncm NIC so secretd can reach the Seed custody
+# API at https://169.254.42.1:8443 (the USB unlock factor). Never claims the interface, sets a
+# route, or removes any other address. Idempotent; exits 0 when the Seed is absent.
+set -euo pipefail
+HOST_ADDR="${COGNITUM_SEED_HOST_ADDR:-169.254.42.2/24}"
+applied=0
+for d in /sys/class/net/*/device/driver; do
+  [ -e "$d" ] || continue
+  [ "$(basename "$(readlink -f "$d")")" = "cdc_ncm" ] || continue
+  ifc="$(basename "$(dirname "$(dirname "$d")")")"
+  model="$(udevadm info -q property -p "/sys/class/net/$ifc" 2>/dev/null | sed -n 's/^ID_MODEL=//p')"
+  [ "$model" = "Cognitum_Seed" ] || continue
+  ip link set "$ifc" up 2>/dev/null || true
+  if ip -4 addr show dev "$ifc" 2>/dev/null | grep -qw "${HOST_ADDR%%/*}"; then
+    echo "cognitum-seed-linklocal: ${HOST_ADDR%%/*} already on $ifc"
+  else
+    ip addr add "$HOST_ADDR" dev "$ifc" && echo "cognitum-seed-linklocal: added $HOST_ADDR to $ifc"
+  fi
+  applied=1
+done
+[ "$applied" = 1 ] || echo "cognitum-seed-linklocal: no Cognitum Seed cdc_ncm interface present (no-op)"
+exit 0
+WORKER
+chmod 0755 /usr/local/sbin/cognitum-seed-linklocal
+
+# --- systemd oneshot: re-applies at boot (covers Seed-plugged-at-boot) ----------------------
+cat > /etc/systemd/system/cognitum-seed-linklocal.service <<'UNIT'
+[Unit]
+Description=Cognitum Seed USB link-local host addressing (envctl secretd USB-unlock factor)
+Documentation=file:///home/drdave/Desktop/meta/envctl/manifest/cognitum-seed-net.toml
+After=systemd-udevd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/cognitum-seed-linklocal
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+
+# --- udev rule: re-applies on every Seed hotplug --------------------------------------------
+cat > /etc/udev/rules.d/99-cognitum-seed-linklocal.rules <<'RULE'
+# When the Cognitum Seed USB-Ethernet (cdc_ncm) NIC appears, start the oneshot that adds the
+# host-side 169.254.42.0/24 link-local address so secretd can reach the Seed custody API.
+ACTION=="add", SUBSYSTEM=="net", ENV{ID_NET_DRIVER}=="cdc_ncm", ENV{ID_MODEL}=="Cognitum_Seed", TAG+="systemd", ENV{SYSTEMD_WANTS}+="cognitum-seed-linklocal.service"
+RULE
+
+udevadm control --reload-rules || true
+systemctl daemon-reload || true
+systemctl enable cognitum-seed-linklocal.service || true
+# Apply immediately if the Seed is already plugged (best-effort; absent Seed is a clean no-op).
+systemctl start cognitum-seed-linklocal.service || true
+'''
+
+# VERIFY: hard predicate = artifacts present (fail-closed, same set as detect). Best-effort
+# serving probe: IF a Cognitum Seed cdc_ncm NIC is present, confirm the host addr is assigned
+# and the custody port answers — log only, NEVER fail verify (the Seed may be unplugged, which
+# is healthy, and verify must not trigger a destructive fix).
+[component.verify]
+kind = "command"
+command = "bash"
+args = ["-lc", '''
+test -x /usr/local/sbin/cognitum-seed-linklocal \
+  && test -f /etc/systemd/system/cognitum-seed-linklocal.service \
+  && test -f /etc/udev/rules.d/99-cognitum-seed-linklocal.rules || exit 1
+seed_ifc=""
+for d in /sys/class/net/*/device/driver; do
+  [ -e "$d" ] || continue
+  [ "$(basename "$(readlink -f "$d")")" = "cdc_ncm" ] || continue
+  ifc="$(basename "$(dirname "$(dirname "$d")")")"
+  [ "$(udevadm info -q property -p "/sys/class/net/$ifc" 2>/dev/null | sed -n 's/^ID_MODEL=//p')" = "Cognitum_Seed" ] && { seed_ifc="$ifc"; break; }
+done
+if [ -z "$seed_ifc" ]; then
+  echo "serving probe: no Cognitum Seed plugged (non-fatal; addressing applies on hotplug)"
+  exit 0
+fi
+if ip -4 addr show dev "$seed_ifc" 2>/dev/null | grep -qw 169.254.42.2; then
+  echo "serving probe: 169.254.42.2 present on $seed_ifc"
+else
+  echo "serving probe: Seed on $seed_ifc but 169.254.42.2 NOT yet assigned (non-fatal; run fix)"
+fi
+if timeout 5 bash -c "cat < /dev/null > /dev/tcp/169.254.42.1/8443" 2>/dev/null; then
+  echo "serving probe: Seed custody API 169.254.42.1:8443 reachable (healthy)"
+else
+  echo "serving probe: 169.254.42.1:8443 not reachable (non-fatal; Seed may be booting/unpaired)"
+fi
+exit 0
+''']
+
+# FIX: idempotent re-provision (rewrite artifacts, reload, re-enable, re-apply now).
+[component.fix]
+kind = "script"
+needs_sudo = true
+script = '''
+set -euo pipefail
+install -d -m755 /usr/local/sbin
+cat > /usr/local/sbin/cognitum-seed-linklocal <<'WORKER'
+#!/usr/bin/env bash
+set -euo pipefail
+HOST_ADDR="${COGNITUM_SEED_HOST_ADDR:-169.254.42.2/24}"
+applied=0
+for d in /sys/class/net/*/device/driver; do
+  [ -e "$d" ] || continue
+  [ "$(basename "$(readlink -f "$d")")" = "cdc_ncm" ] || continue
+  ifc="$(basename "$(dirname "$(dirname "$d")")")"
+  model="$(udevadm info -q property -p "/sys/class/net/$ifc" 2>/dev/null | sed -n 's/^ID_MODEL=//p')"
+  [ "$model" = "Cognitum_Seed" ] || continue
+  ip link set "$ifc" up 2>/dev/null || true
+  if ip -4 addr show dev "$ifc" 2>/dev/null | grep -qw "${HOST_ADDR%%/*}"; then
+    echo "cognitum-seed-linklocal: ${HOST_ADDR%%/*} already on $ifc"
+  else
+    ip addr add "$HOST_ADDR" dev "$ifc" && echo "cognitum-seed-linklocal: added $HOST_ADDR to $ifc"
+  fi
+  applied=1
+done
+[ "$applied" = 1 ] || echo "cognitum-seed-linklocal: no Cognitum Seed cdc_ncm interface present (no-op)"
+exit 0
+WORKER
+chmod 0755 /usr/local/sbin/cognitum-seed-linklocal
+
+cat > /etc/systemd/system/cognitum-seed-linklocal.service <<'UNIT'
+[Unit]
+Description=Cognitum Seed USB link-local host addressing (envctl secretd USB-unlock factor)
+Documentation=file:///home/drdave/Desktop/meta/envctl/manifest/cognitum-seed-net.toml
+After=systemd-udevd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/cognitum-seed-linklocal
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+
+cat > /etc/udev/rules.d/99-cognitum-seed-linklocal.rules <<'RULE'
+ACTION=="add", SUBSYSTEM=="net", ENV{ID_NET_DRIVER}=="cdc_ncm", ENV{ID_MODEL}=="Cognitum_Seed", TAG+="systemd", ENV{SYSTEMD_WANTS}+="cognitum-seed-linklocal.service"
+RULE
+
+udevadm control --reload-rules || true
+systemctl daemon-reload || true
+systemctl enable cognitum-seed-linklocal.service || true
+systemctl restart cognitum-seed-linklocal.service || true
+'''
+
+# REMOVE: disable + drop the unit, udev rule, and worker; best-effort pull the secondary addr.
+# Never touches the Seed device or any other network config (additive-only stays additive-only).
+[component.remove]
+kind = "script"
+needs_sudo = true
+script = '''
+set -euo pipefail
+systemctl disable --now cognitum-seed-linklocal.service 2>/dev/null || true
+# Best-effort: remove the secondary addr we added, if a Seed NIC currently carries it.
+for d in /sys/class/net/*/device/driver; do
+  [ -e "$d" ] || continue
+  [ "$(basename "$(readlink -f "$d")")" = "cdc_ncm" ] || continue
+  ifc="$(basename "$(dirname "$(dirname "$d")")")"
+  [ "$(udevadm info -q property -p "/sys/class/net/$ifc" 2>/dev/null | sed -n 's/^ID_MODEL=//p')" = "Cognitum_Seed" ] || continue
+  ip addr del 169.254.42.2/24 dev "$ifc" 2>/dev/null || true
+done
+rm -f /usr/local/sbin/cognitum-seed-linklocal \
+      /etc/systemd/system/cognitum-seed-linklocal.service \
+      /etc/udev/rules.d/99-cognitum-seed-linklocal.rules
+udevadm control --reload-rules || true
+systemctl daemon-reload || true
+'''

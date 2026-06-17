@@ -40,6 +40,11 @@ content_hash = "9471ae9003dfb7a2"
 requires = ["bun"]
 resolved = ""
 
+[components.cognitum-seed-net]
+content_hash = "60325e0dda731e6d"
+requires = []
+resolved = ""
+
 [components.cuda-oxide]
 content_hash = "da3960d9b533467f"
 requires = [
