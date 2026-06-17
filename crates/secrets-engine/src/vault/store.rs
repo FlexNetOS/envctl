@@ -139,6 +139,14 @@ pub trait Store: Send + Sync {
     fn max_secret_version(&self, name: &str) -> anyhow::Result<u32>;
     fn list_secret_names(&self) -> anyhow::Result<Vec<String>>;
     fn list_secret_versions(&self, name: &str) -> anyhow::Result<Vec<u32>>;
+    /// Remove EVERY version of `name`, returning the count of rows removed (0 if the secret was
+    /// unknown). DESTRUCTIVE — the engine gates this behind an unlocked vault + an explicit `apply`
+    /// (`secret_rm`); the store just executes the removal. Default `Ok(0)` keeps existing/stub
+    /// backends non-breaking (a backend that does not implement removal reports "removed nothing",
+    /// which the engine surfaces honestly to the caller).
+    fn delete_secret(&self, _name: &str) -> anyhow::Result<u32> {
+        Ok(0)
+    }
 
     // ---- keyslots (real CRUD) ----
     fn save_keyslot(&self, slot: &Keyslot) -> anyhow::Result<()>; // upsert by slot.id
@@ -362,6 +370,16 @@ impl Store for InMemStore {
             .collect();
         vs.sort_unstable();
         Ok(vs)
+    }
+
+    fn delete_secret(&self, name: &str) -> anyhow::Result<u32> {
+        let mut g = self.inner.lock().map_err(|_| lock_poisoned())?;
+        let before = g.secrets.len();
+        g.secrets.retain(|r| r.name != name);
+        // The store removes only ciphertext + non-secret metadata rows; no plaintext or DEK ever
+        // lives here. `next_secret_row_id` (the monotonic reserve high-water) is deliberately NOT
+        // rewound — re-creating a deleted name later still reserves a fresh, never-reused row_id.
+        Ok((before - g.secrets.len()) as u32)
     }
 
     fn save_keyslot(&self, slot: &Keyslot) -> anyhow::Result<()> {

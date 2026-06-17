@@ -252,8 +252,15 @@ async fn e2e_control_plane_roundtrip_and_wire_secrecy() {
             r.value.is_empty(),
             "metadata-only get must have empty value"
         );
-        // Phase 6 honesty: the real grpc.rs reports meta:None (no fabricated all-false fields).
-        assert!(r.meta.is_none(), "Phase 6 get must report meta:None");
+        // TASK-0035: a metadata-only get now carries the NON-SECRET meta (name/provider/note/
+        // broker_only) populated via engine.secret_meta — still no value byte.
+        let meta = r
+            .meta
+            .as_ref()
+            .expect("get must now carry meta (TASK-0035)");
+        assert_eq!(meta.name, "normal");
+        assert_eq!(meta.provider, v1::ProviderKind::Generic as i32);
+        assert!(!meta.broker_only);
     }
 
     // 4d. Reveal+apply+confirm on the NORMAL secret: the owner reveal escape hatch works.
@@ -348,10 +355,11 @@ async fn e2e_control_plane_roundtrip_and_wire_secrecy() {
         minted_bearer = r.bearer;
     }
 
-    // 4h. Audit.Query is Unimplemented in Phase 6; assert that contract against the REAL AuditSvc.
+    // 4h. Audit.Query now returns the durable hash-chained log (TASK-0035). It must carry rows from
+    //     the operations above (unlock/add/mint all audit) and NEVER the broker_only sentinel.
     {
         let mut audit = v1::audit_client::AuditClient::new(connect(sock.clone()).await);
-        let err = audit
+        let r = audit
             .query(v1::AuditQueryReq {
                 actor: None,
                 relay: None,
@@ -360,8 +368,20 @@ async fn e2e_control_plane_roundtrip_and_wire_secrecy() {
                 limit: 0,
             })
             .await
-            .expect_err("Audit.Query is Unimplemented in Phase 6");
-        assert_eq!(err.code(), tonic::Code::Unimplemented);
+            .expect("Audit.Query is wired (TASK-0035)")
+            .into_inner();
+        assert!(!r.entries.is_empty(), "audit log must have rows");
+        // Capture every audit byte for the wire-secrecy assertion below.
+        for e in &r.entries {
+            wire.lock().unwrap().extend_from_slice(e.detail.as_bytes());
+            wire.lock().unwrap().extend_from_slice(e.action.as_bytes());
+        }
+        assert!(
+            r.entries
+                .iter()
+                .any(|e| e.action.contains("secret_written")),
+            "audit must record the secret writes"
+        );
     }
 
     // 5. THE LOAD-BEARING ASSERTION: the broker_only plaintext sentinel never appeared in ANY byte

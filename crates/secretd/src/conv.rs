@@ -18,7 +18,7 @@
 use envctl_secrets::broker::{Method, Provider, RelayKind, RelayPolicy, SwapMode};
 use envctl_secrets::inject::{DataPlaneMode, ResolvedInjection};
 use envctl_secrets::keyslot::{Argon2Params, Factor};
-use envctl_secrets::{AuditRecord, SecretEvent, SecretMeta};
+use envctl_secrets::{AuditRecord, SecretEvent, SecretListItem, SecretMeta};
 use envctl_secrets_proto::v1;
 use tonic::Status;
 
@@ -66,6 +66,22 @@ pub fn relaykind_str(k: RelayKind) -> String {
     match k {
         RelayKind::Named => "named",
         RelayKind::Ephemeral => "ephemeral",
+    }
+    .to_string()
+}
+
+/// Engine `broker::Method` -> the canonical lowercase wire string (the inverse of
+/// [`method_from_str`]). Used to echo a policy's `method_allow` back over the wire (`policy_to_proto`).
+pub fn method_str(m: Method) -> String {
+    match m {
+        Method::Get => "get",
+        Method::Head => "head",
+        Method::Post => "post",
+        Method::Put => "put",
+        Method::Patch => "patch",
+        Method::Delete => "delete",
+        Method::Connect => "connect",
+        Method::Options => "options",
     }
     .to_string()
 }
@@ -134,6 +150,37 @@ pub fn add_req_to_meta(req: &v1::AddSecretReq) -> SecretMeta {
         provider: provider_from_proto(req.provider),
         note: req.note.clone(),
         broker_only: req.broker_only,
+    }
+}
+
+// ---- engine SecretMeta / SecretListItem -> proto SecretMeta ----------------------------------
+
+/// Engine `SecretMeta` -> proto `SecretMeta`. METADATA-ONLY (no value/ciphertext, by type). The
+/// engine's `SecretMeta` carries no version/created_at (it is the latest-version metadata for a Get),
+/// so those proto fields are left at their defaults (`version=0`, `created_at=""`). NEVER carries a
+/// secret byte — the engine `SecretMeta` has no value field by construction.
+pub fn secret_meta_to_proto(m: SecretMeta) -> v1::SecretMeta {
+    v1::SecretMeta {
+        name: m.name,
+        provider: provider_to_proto(m.provider),
+        created_at: String::new(),
+        version: 0,
+        note: m.note,
+        broker_only: m.broker_only,
+    }
+}
+
+/// Engine `SecretListItem` -> proto `SecretMeta` (the `ListSecretResp.items` element). METADATA-ONLY:
+/// the `SecretListItem` carries only the non-secret `SecretRow` fields + `version`/`created_ts` — no
+/// nonce, ct_tag, or plaintext exists on the type, so this conversion CANNOT leak a secret.
+pub fn secret_list_item_to_proto(i: SecretListItem) -> v1::SecretMeta {
+    v1::SecretMeta {
+        name: i.name,
+        provider: provider_to_proto(i.provider),
+        created_at: i.created_ts,
+        version: i.version,
+        note: i.note,
+        broker_only: i.broker_only,
     }
 }
 
@@ -214,6 +261,37 @@ pub fn policy_from_proto(p: &v1::RelayPolicy) -> Result<RelayPolicy, Status> {
         enabled: p.enabled,
         revoked: false,
     })
+}
+
+/// Engine `RelayPolicy` -> proto `RelayPolicy` (the `ListRelayResp.items` element). Echoes the
+/// non-secret policy metadata; the policy carries NO secret (only the `secret_name` REFERENCE, never
+/// the value). `upstream_base` is populated only for the `BaseUrlRepoint` plane (the only mode that
+/// carries one); other planes leave it empty. `revoked` has no proto field (the `include_revoked`
+/// filter is applied in the engine before this conversion), so it is not echoed.
+pub fn policy_to_proto(p: RelayPolicy) -> v1::RelayPolicy {
+    let upstream_base = match &p.swap {
+        SwapMode::BaseUrlRepoint { upstream_base } => upstream_base.clone(),
+        _ => String::new(),
+    };
+    let mode = dataplane_mode_to_proto(dataplane_mode_from_swap(&p.swap));
+    v1::RelayPolicy {
+        name: p.relay_id,
+        secret_name: p.secret_name,
+        provider: provider_to_proto(p.provider),
+        mode,
+        host_allow: p.host_allow,
+        path_allow: p.path_allow,
+        method_allow: p.method_allow.into_iter().map(method_str).collect(),
+        // The proto carries an absolute `expires_at`; the engine stores a relative `policy_ttl_secs`.
+        // We surface the TTL (seconds) as the string field — sufficient for the operator-facing list,
+        // and a future schema bump can carry a resolved RFC3339 timestamp if needed.
+        expires_at: p.policy_ttl_secs.to_string(),
+        rate_per_min: p.rate_per_min.unwrap_or(0),
+        quota_total: p.quota_total_requests.unwrap_or(0),
+        enabled: p.enabled,
+        ephemeral: matches!(p.kind, RelayKind::Ephemeral),
+        upstream_base,
+    }
 }
 
 /// Synthesize a minimal `RelayPolicy` for a `Mint` against a relay that has no stored policy (the
@@ -645,5 +723,99 @@ mod tests {
             }),
             DataPlaneMode::NativeSubtoken
         );
+    }
+
+    // ---- TASK-0035: secret-meta / list-item / policy converters ----------------------------
+
+    #[test]
+    fn secret_list_item_to_proto_is_metadata_only() {
+        let item = SecretListItem {
+            name: "anth".to_string(),
+            provider: Provider::Anthropic,
+            note: "note".to_string(),
+            broker_only: true,
+            version: 3,
+            created_ts: "2026-06-17T00:00:00Z".to_string(),
+        };
+        let p = secret_list_item_to_proto(item);
+        assert_eq!(p.name, "anth");
+        assert_eq!(p.provider, provider_to_proto(Provider::Anthropic));
+        assert_eq!(p.version, 3);
+        assert_eq!(p.created_at, "2026-06-17T00:00:00Z");
+        assert!(p.broker_only);
+        // The proto SecretMeta has NO value/ciphertext field — secrecy is enforced by type.
+    }
+
+    #[test]
+    fn secret_meta_to_proto_carries_non_secret_fields() {
+        let m = SecretMeta {
+            name: "gh".to_string(),
+            provider: Provider::Github,
+            note: "app".to_string(),
+            broker_only: false,
+        };
+        let p = secret_meta_to_proto(m);
+        assert_eq!(p.name, "gh");
+        assert_eq!(p.provider, provider_to_proto(Provider::Github));
+        assert!(!p.broker_only);
+    }
+
+    #[test]
+    fn policy_to_proto_echoes_method_allow_and_mode() {
+        let policy = RelayPolicy {
+            relay_id: "claude".to_string(),
+            kind: RelayKind::Named,
+            provider: Provider::Anthropic,
+            secret_name: "anthropic".to_string(),
+            swap: SwapMode::ProxyMitm,
+            host_allow: vec!["api.anthropic.com".to_string()],
+            path_allow: vec!["/v1/".to_string()],
+            method_allow: vec![Method::Post, Method::Get],
+            policy_ttl_secs: 3600,
+            rate_per_min: Some(60),
+            quota_total_requests: Some(1000),
+            quota_total_bytes: None,
+            enabled: true,
+            revoked: false,
+        };
+        let p = policy_to_proto(policy);
+        assert_eq!(p.name, "claude");
+        assert_eq!(p.secret_name, "anthropic");
+        assert_eq!(
+            p.mode,
+            dataplane_mode_to_proto(DataPlaneMode::HttpsProxyMitm)
+        );
+        assert_eq!(p.method_allow, vec!["post".to_string(), "get".to_string()]);
+        assert_eq!(p.rate_per_min, 60);
+        assert_eq!(p.quota_total, 1000);
+        assert!(!p.ephemeral);
+        // ProxyMitm carries no upstream_base.
+        assert!(p.upstream_base.is_empty());
+    }
+
+    #[test]
+    fn policy_to_proto_base_url_carries_upstream() {
+        let policy = RelayPolicy {
+            relay_id: "r".to_string(),
+            kind: RelayKind::Ephemeral,
+            provider: Provider::Generic,
+            secret_name: "s".to_string(),
+            swap: SwapMode::BaseUrlRepoint {
+                upstream_base: "https://api.example.com".to_string(),
+            },
+            host_allow: vec![],
+            path_allow: vec![],
+            method_allow: vec![],
+            policy_ttl_secs: 90 * 24 * 60 * 60,
+            rate_per_min: None,
+            quota_total_requests: None,
+            quota_total_bytes: None,
+            enabled: true,
+            revoked: false,
+        };
+        let p = policy_to_proto(policy);
+        assert_eq!(p.upstream_base, "https://api.example.com");
+        assert!(p.ephemeral);
+        assert_eq!(p.rate_per_min, 0);
     }
 }

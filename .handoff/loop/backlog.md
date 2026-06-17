@@ -130,10 +130,19 @@ foundation IS built (`relay_mint_remote`, `register_remote_client`, `broker/deci
   1.80 `cargo +1.80 check --locked`), F18 (group-commit audit-fsync spec), F13/F17/F19/F23 defense-in-depth.
 
 ### secretd gRPC surface gaps (Phase-6 honest Unimplemented seams — engine lacks public read paths)
-- [ ] **TASK-0035:** Vault `List`/`Rm`/`Rotate`, `Relay.Create`/`List`, `Audit.Query`, and
-  `GetSecret.meta` (always `None`) return Unimplemented (`secretd/src/grpc.rs`). Whole `Certs.*` service
-  (CaInit/Rotate/Issue/Renew/Revoke/TrustApply/List) + non-mitm `ca_issue` (`secrets-engine/lib.rs:1916`)
-  + `secretctl ca` are Phase-4+ stubs. Defined-but-empty features: `provider-openai`, libsql `embedded`.
+- [~] **TASK-0035 (in review — branch `task-0035-grpc`):** Vault `List`/`Rm`/`Rotate`,
+  `Relay.Create`/`List`, `Audit.Query`, and `GetSecret.meta` are now WIRED engine-first (zero new deps,
+  no proto change). Added engine `secret_list`/`SecretListItem`, `secret_meta`, `secret_rm`,
+  `secret_rotate`, `relay_list`, `relay_create`, `audit_query` (+ `Store::delete_secret` default-body
+  trait method, real `InMemStore`/libSQL impls); conv `secret_meta_to_proto`/`secret_list_item_to_proto`/
+  `policy_to_proto`/`method_str`; replaced the 6 grpc `Unimplemented` bodies + Get-meta. Destructive
+  verbs (Rm/Rotate) fail-closed + dry-run by default; reads gate on unlock. Tests: engine inline +
+  conv inline + `secretd/tests/grpc_surface_e2e.rs`. The Certs.* / non-mitm ca_issue / secretctl ca /
+  empty-features carve-out moved to TASK-0038.
+- [ ] **TASK-0038 (deferred from TASK-0035 — Phase 4+):** secretd `Certs.*` service
+  (CaInit/Rotate/Issue/Renew/Revoke/TrustApply/List) + non-mitm `ca_issue` (`secrets-engine/lib.rs`
+  ~2290-2330) + `secretctl ca`; plus the defined-but-empty features `provider-openai` and libsql
+  `embedded`. These remain documented `Unimplemented` (Certs.*) / empty (features) by design.
 - [x] **TASK-0036 — DONE (PR #112, guardian PASS):** secretd in-process `mlockall(MCL_CURRENT|MCL_FUTURE)`
   in `harden_process()` via libc (pure-Rust FFI, zero new lockfile crates), best-effort + `require_mlock`
   strict opt-in (fail-closed). Linux-cfg-gated, never panics, metadata-only WARN.

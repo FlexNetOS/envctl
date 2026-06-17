@@ -320,6 +320,15 @@ impl Store for LibSqlStore {
         Ok(out)
     }
 
+    fn delete_secret(&self, name: &str) -> anyhow::Result<u32> {
+        // Real removal: `execute` returns the affected-row count (every version of `name`). The
+        // store holds ciphertext + non-secret metadata only — no plaintext/DEK is touched.
+        let removed = self
+            .conn
+            .execute(schema::DELETE_SECRET, vec![Value::Text(name.to_string())])?;
+        Ok(removed as u32)
+    }
+
     // ---- keyslots ----
 
     fn save_keyslot(&self, slot: &Keyslot) -> anyhow::Result<()> {

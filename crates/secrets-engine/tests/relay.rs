@@ -274,6 +274,9 @@ impl Store for SharedStore {
     fn list_secret_versions(&self, name: &str) -> anyhow::Result<Vec<u32>> {
         self.0.list_secret_versions(name)
     }
+    fn delete_secret(&self, name: &str) -> anyhow::Result<u32> {
+        self.0.delete_secret(name)
+    }
     fn save_keyslot(&self, slot: &envctl_secrets::keyslot::Keyslot) -> anyhow::Result<()> {
         self.0.save_keyslot(slot)
     }

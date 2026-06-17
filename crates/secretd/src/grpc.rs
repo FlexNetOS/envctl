@@ -10,9 +10,10 @@
 //! apply-gates an allowed one. A refusal surfaces as `Status::permission_denied` with an EMPTY
 //! value, so the real key never crosses the wire for a broker_only secret.
 //!
-//! Several RPCs return `Unimplemented` for Phase 6 (documented per-RPC): the engine exposes no
-//! public path for them and the engine crate is UNTOUCHED. They are: `Vault.List`, `Vault.Rm`,
-//! `Vault.Rotate`, `Relay.Create`, `Relay.List`, `Audit.Query`, and ALL of `Certs.*`.
+//! Vault.List/Rm/Rotate, Relay.Create/List, Audit.Query, and GetSecret.meta are now wired to the
+//! engine's metadata-read / fail-closed-mutation methods (TASK-0035). The only RPCs still returning
+//! `Unimplemented` are ALL of `Certs.*` (CA path — Phase 4+); the engine exposes no public CA-issue
+//! path for them and the engine's CA crate surface is untouched here.
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
@@ -45,6 +46,17 @@ pub struct DaemonState {
 /// Map a `JoinError` from `spawn_blocking` to an internal status.
 fn join_err(e: tokio::task::JoinError) -> Status {
     Status::internal(format!("blocking task failed: {e}"))
+}
+
+/// Map an engine `anyhow::Error` to a tonic `Status` for the metadata-read / mutation RPCs
+/// (TASK-0035). A locked vault is a `failed_precondition` (the operator must unlock first); anything
+/// else is `internal`. NEVER echoes a secret — these engine errors carry no key material.
+fn engine_status(e: anyhow::Error) -> Status {
+    use envctl_secrets::EngineError;
+    if let Some(EngineError::Locked) = e.downcast_ref::<EngineError>() {
+        return Status::failed_precondition(e.to_string());
+    }
+    Status::internal(e.to_string())
 }
 
 /// Read the USB keyslot keyfile for `partuuid` via the engine's `UsbProbe` seam (the same seam the
@@ -245,12 +257,19 @@ impl v1::vault_server::Vault for VaultSvc {
         // forward `apply` truthfully so the ENGINE stays the authority on the reveal gate.
         let apply = req.apply && req.confirm;
         let engine = self.engine.clone();
+        let meta_name = name.clone();
         let res = tokio::task::spawn_blocking(move || {
             let sink = EventSink::null();
-            engine.secret_get(&name, reveal, apply, &sink)
+            // Read the NON-SECRET metadata first (un-audited; no value) so the response carries
+            // `meta` regardless of whether the value is revealed. A meta read failure (e.g. locked)
+            // is non-fatal here — `secret_get` below is the authority and reports the real error.
+            let meta = engine.secret_meta(&meta_name).ok().flatten();
+            let got = engine.secret_get(&name, reveal, apply, &sink);
+            (meta, got)
         })
         .await
         .map_err(join_err)?;
+        let (meta, res) = res;
 
         match res {
             Ok(value) => {
@@ -261,12 +280,10 @@ impl v1::vault_server::Vault for VaultSvc {
                 // reports `revealed = true` on a successful reveal. The value is forwarded as-is on a
                 // reveal and is the engine's empty buffer on a non-reveal (metadata-only) read.
                 let revealed = reveal;
-                // Phase 6 honesty: the engine exposes no public metadata read path, so we report
-                // `meta: None` rather than fabricating all-false fields (which would misleadingly
-                // claim broker_only=false / version=0 for an unknown secret). A real metadata
-                // accessor populates this when it lands.
+                // Populate the NON-SECRET metadata from `engine.secret_meta` (TASK-0035). `None`
+                // (unknown secret / a meta-read race) leaves `meta: None` — honest, never fabricated.
                 Ok(Response::new(v1::GetSecretResp {
-                    meta: None,
+                    meta: meta.map(conv::secret_meta_to_proto),
                     value: if revealed { value.to_vec() } else { Vec::new() },
                     revealed,
                 }))
@@ -277,35 +294,76 @@ impl v1::vault_server::Vault for VaultSvc {
         }
     }
 
+    /// Vault.List — METADATA-ONLY list of stored secrets (TASK-0035), optionally filtered to one
+    /// provider. Fail-closed: a locked vault is `failed_precondition` (the engine gates on unlock).
+    /// NEVER returns a value/ciphertext — `engine.secret_list` yields `SecretListItem` (non-secret
+    /// fields only), mapped to proto `SecretMeta` via `conv::secret_list_item_to_proto`.
     async fn list(
         &self,
-        _request: Request<v1::ListSecretReq>,
+        request: Request<v1::ListSecretReq>,
     ) -> Result<Response<v1::ListSecretResp>, Status> {
-        // The engine exposes no public secret-list path (the store is private); UNIMPLEMENTED in
-        // Phase 6 (a thin public `Engine` list lands later).
-        Err(Status::unimplemented(
-            "Vault.List is not available in Phase 6",
-        ))
+        let req = request.into_inner();
+        let provider = req.provider.map(conv::provider_from_proto);
+        let engine = self.engine.clone();
+        let items = tokio::task::spawn_blocking(move || {
+            let sink = EventSink::null();
+            engine.secret_list(provider, &sink)
+        })
+        .await
+        .map_err(join_err)?
+        .map_err(engine_status)?;
+        Ok(Response::new(v1::ListSecretResp {
+            items: items
+                .into_iter()
+                .map(conv::secret_list_item_to_proto)
+                .collect(),
+        }))
     }
 
+    /// Vault.Rm — DESTRUCTIVE removal of every version, fail-closed + dry-run by default (TASK-0035).
+    /// `apply = req.apply && req.confirm` (mirrors `Relay.Revoke`): an apply without confirm DOWNGRADES
+    /// to a dry-run. The engine refuses on a locked vault, counts the would-remove on a dry-run, and
+    /// removes + audits on apply. Streams the engine's `SecretEvent`s; NEVER logs a secret byte.
     async fn rm(
         &self,
-        _request: Request<v1::RmSecretReq>,
+        request: Request<v1::RmSecretReq>,
     ) -> Result<Response<Self::RmStream>, Status> {
-        // No public `secret_rm` on the engine (engine UNTOUCHED).
-        Err(Status::unimplemented(
-            "Vault.Rm is not available in Phase 6",
-        ))
+        let req = request.into_inner();
+        if req.name.trim().is_empty() {
+            return Err(Status::invalid_argument(
+                "Vault.Rm requires a non-empty name",
+            ));
+        }
+        // Root-of-trust destructive verb: apply REQUIRES confirm (apply && confirm).
+        let apply = req.apply && req.confirm;
+        let name = req.name;
+        let stream = run_streaming(self.engine.clone(), move |engine, sink: &EventSink| {
+            engine.secret_rm(&name, apply, sink).map(|_| ())
+        });
+        Ok(Response::new(stream))
     }
 
+    /// Vault.Rotate — append a fresh sealed version carrying the current meta forward, fail-closed +
+    /// dry-run by default (TASK-0035). The engine refuses on a locked vault or an unknown secret, and
+    /// the new value is held in `Zeroizing`. Streams the engine's `SecretEvent`s; NEVER logs a value.
     async fn rotate(
         &self,
-        _request: Request<v1::RotateReq>,
+        request: Request<v1::RotateReq>,
     ) -> Result<Response<Self::RotateStream>, Status> {
-        // No public `secret_rotate` on the engine (engine UNTOUCHED).
-        Err(Status::unimplemented(
-            "Vault.Rotate is not available in Phase 6",
-        ))
+        let req = request.into_inner();
+        if req.name.trim().is_empty() {
+            return Err(Status::invalid_argument(
+                "Vault.Rotate requires a non-empty name",
+            ));
+        }
+        let apply = req.apply;
+        let name = req.name;
+        // Move the new value into a Zeroizing buffer immediately; the proto buffer drops with `req`.
+        let new_value = Zeroizing::new(req.new_value);
+        let stream = run_streaming(self.engine.clone(), move |engine, sink: &EventSink| {
+            engine.secret_rotate(&name, new_value, apply, sink)
+        });
+        Ok(Response::new(stream))
     }
 
     /// Vault.MintGithub — TASK-0020 FROZEN consumer contract. Per-call GitHub App installation-token
@@ -444,15 +502,30 @@ pub struct RelaySvc {
 impl v1::relay_server::Relay for RelaySvc {
     type CreateStream = EventStream;
 
+    /// Relay.Create — ADDITIVE named-policy create via `engine.relay_create` (TASK-0035). Non-
+    /// destructive (a policy carries no secret, only a `secret_name` reference). Unknown methods in
+    /// `method_allow` are rejected at the boundary (`invalid_argument`, default-deny). Streams the
+    /// engine's `SecretEvent`s (a `relay_created` audit row is written by the engine).
     async fn create(
         &self,
-        _request: Request<v1::CreateRelayReq>,
+        request: Request<v1::CreateRelayReq>,
     ) -> Result<Response<Self::CreateStream>, Status> {
-        // No public create-policy verb on the engine (policies are persisted as a side effect of
-        // `relay_mint`); UNIMPLEMENTED in Phase 6.
-        Err(Status::unimplemented(
-            "Relay.Create is not available in Phase 6 (policy is persisted by Mint)",
-        ))
+        let req = request.into_inner();
+        let proto_policy = req
+            .policy
+            .ok_or_else(|| Status::invalid_argument("Relay.Create requires a policy"))?;
+        if proto_policy.name.trim().is_empty() {
+            return Err(Status::invalid_argument(
+                "Relay.Create requires a non-empty policy name",
+            ));
+        }
+        // Build the engine policy at the boundary (rejects unknown methods, default-deny) BEFORE the
+        // blocking closure so a malformed policy fails fast as `invalid_argument`.
+        let policy = conv::policy_from_proto(&proto_policy)?;
+        let stream = run_streaming(self.engine.clone(), move |engine, sink: &EventSink| {
+            engine.relay_create(policy, sink).map(|_| ())
+        });
+        Ok(Response::new(stream))
     }
 
     async fn revoke(
@@ -498,14 +571,24 @@ impl v1::relay_server::Relay for RelaySvc {
         }))
     }
 
+    /// Relay.List — list stored relay policies (TASK-0035), filtering revoked unless
+    /// `include_revoked`. Read path; the policy carries no secret (only a `secret_name` reference).
     async fn list(
         &self,
-        _request: Request<v1::ListRelayReq>,
+        request: Request<v1::ListRelayReq>,
     ) -> Result<Response<v1::ListRelayResp>, Status> {
-        // No public relay-list path on the engine; UNIMPLEMENTED in Phase 6.
-        Err(Status::unimplemented(
-            "Relay.List is not available in Phase 6",
-        ))
+        let include_revoked = request.into_inner().include_revoked;
+        let engine = self.engine.clone();
+        let policies = tokio::task::spawn_blocking(move || {
+            let sink = EventSink::null();
+            engine.relay_list(include_revoked, &sink)
+        })
+        .await
+        .map_err(join_err)?
+        .map_err(engine_status)?;
+        Ok(Response::new(v1::ListRelayResp {
+            items: policies.into_iter().map(conv::policy_to_proto).collect(),
+        }))
     }
 
     async fn mint(&self, request: Request<v1::MintReq>) -> Result<Response<v1::MintResp>, Status> {
@@ -796,23 +879,52 @@ fn rebuild_github_provider(engine: &Engine) {
 
 #[derive(Clone)]
 pub struct AuditSvc {
-    // Held for when Audit.Query is wired to a public engine read path (Phase 6: Unimplemented).
-    #[allow(dead_code)]
     pub engine: Engine,
 }
 
 #[tonic::async_trait]
 impl v1::audit_server::Audit for AuditSvc {
+    /// Audit.Query — read a window of the durable hash-chained audit log (TASK-0035). The engine
+    /// returns rows with `seq > 0` up to a CLAMPED limit (<=1000, enforced in `engine.audit_query`);
+    /// the DAEMON then post-filters by `actor`/`relay`/`since`/`until` on the mapped `AuditEntry`
+    /// fields. `AuditRecord`s carry NO secret bytes (the engine never writes a value into a detail).
     async fn query(
         &self,
-        _request: Request<v1::AuditQueryReq>,
+        request: Request<v1::AuditQueryReq>,
     ) -> Result<Response<v1::AuditQueryResp>, Status> {
-        // The engine's hash-chained audit log lives behind the private `store`; there is no public
-        // `Engine::query_audit` (engine UNTOUCHED). UNIMPLEMENTED in Phase 6 — audit outcomes are
-        // observed via the Event stream and unary RPC results until a public read path is added.
-        Err(Status::unimplemented(
-            "Audit.Query is not available in Phase 6",
-        ))
+        let req = request.into_inner();
+        // The engine clamps `limit` to <=1000; `limit == 0` means "no caller cap" — pass the engine
+        // ceiling so a 0 still returns up to the clamped maximum.
+        let limit = if req.limit == 0 {
+            1000
+        } else {
+            req.limit as usize
+        };
+        let engine = self.engine.clone();
+        let records = tokio::task::spawn_blocking(move || {
+            let sink = EventSink::null();
+            engine.audit_query(0, limit, &sink)
+        })
+        .await
+        .map_err(join_err)?
+        .map_err(engine_status)?;
+
+        // Daemon-side post-filter (the engine signature stays minimal). Each predicate is applied
+        // only when its proto field is present (`Some`/non-empty). `since`/`until` compare on the
+        // RFC3339 `at` string lexically (RFC3339 is lexicographically ordered for a fixed offset).
+        let actor = req.actor.filter(|s| !s.is_empty());
+        let relay = req.relay.filter(|s| !s.is_empty());
+        let since = req.since.filter(|s| !s.is_empty());
+        let until = req.until.filter(|s| !s.is_empty());
+        let entries: Vec<v1::AuditEntry> = records
+            .into_iter()
+            .map(conv::audit_to_entry)
+            .filter(|e| actor.as_deref().map_or(true, |a| e.actor == a))
+            .filter(|e| relay.as_deref().map_or(true, |r| e.relay == r))
+            .filter(|e| since.as_deref().map_or(true, |s| e.at.as_str() >= s))
+            .filter(|e| until.as_deref().map_or(true, |u| e.at.as_str() <= u))
+            .collect();
+        Ok(Response::new(v1::AuditQueryResp { entries }))
     }
 }
 

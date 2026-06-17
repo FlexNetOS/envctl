@@ -126,6 +126,7 @@ FROM secrets WHERE name = ? AND version = ?";
 pub const LIST_SECRET_NAMES: &str = "SELECT DISTINCT name FROM secrets ORDER BY name";
 pub const LIST_SECRET_VERSIONS: &str =
     "SELECT version FROM secrets WHERE name = ? ORDER BY version";
+pub const DELETE_SECRET: &str = "DELETE FROM secrets WHERE name = ?";
 
 // ---- keyslots ----
 pub const SAVE_KEYSLOT: &str = "\
