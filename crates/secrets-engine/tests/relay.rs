@@ -23,7 +23,7 @@ use envctl_secrets::seam::{Clock, NoMint, UpstreamError, UsbProbe};
 use envctl_secrets::vault::{InMemStore, Store};
 use envctl_secrets::{
     DenyReason, EgressReq, EgressResp, Engine, EngineError, EventSink, SecretEvent, SecretMeta,
-    SwapOutcome, Unlock, Upstream, MAX_BEARER_TTL_SECS,
+    StreamAuthz, SwapOutcome, Unlock, Upstream, MAX_BEARER_TTL_SECS,
 };
 use futures_executor::block_on;
 use zeroize::Zeroizing;
@@ -1538,4 +1538,307 @@ fn outcome_kind(o: &SwapOutcome) -> String {
         SwapOutcome::Denied(reason) => format!("Denied({reason:?})"),
         SwapOutcome::InternalRefused(m) => format!("InternalRefused({m})"),
     }
+}
+
+// ============================================================================================
+// TASK-0032 (FS-S5): the streaming re-check seam — `Engine::relay_stream_authorized`
+// ============================================================================================
+
+use std::sync::atomic::{AtomicBool, Ordering};
+
+/// A USB probe whose possession can be FLIPPED at runtime (models a key being pulled mid-stream):
+/// returns the keyfile for `uuid` only while `present` is `true`.
+struct TogglableUsb {
+    uuid: String,
+    keyfile: Zeroizing<Vec<u8>>,
+    present: Arc<AtomicBool>,
+}
+impl UsbProbe for TogglableUsb {
+    fn keyfile_for(&self, partition_uuid: &str) -> Option<Zeroizing<Vec<u8>>> {
+        if self.present.load(Ordering::SeqCst) && partition_uuid == self.uuid {
+            Some(self.keyfile.clone())
+        } else {
+            None
+        }
+    }
+}
+
+/// A zero-byte re-check request (the streaming re-check observes NO further bytes — it `peek`s, never
+/// `bump`s) optionally carrying the SAME `RemotePeer` captured at the stream's open.
+fn recheck_req(
+    peer_uid: Option<u32>,
+    remote: Option<envctl_secrets::broker::decide::RemotePeer>,
+) -> EgressReq {
+    EgressReq {
+        method: Method::Post,
+        host: "api.anthropic.com".to_string(),
+        path: "/v1/messages".to_string(),
+        headers: Vec::new(),
+        bytes_out: 0,
+        peer_uid,
+        peer_pid: None,
+        observed_sni: None,
+        remote,
+    }
+}
+
+fn build_remote_engine(
+    inmem: &Arc<InMemStore>,
+    clock: &FakeClock,
+    usb: Box<dyn UsbProbe>,
+) -> (Engine, EventSink, std::sync::mpsc::Receiver<SecretEvent>) {
+    let cap = CapturingUpstream(Arc::new(Mutex::new(None)));
+    let eng = Engine::with_seams(
+        paths(),
+        Box::new(SharedStore(inmem.clone())) as Box<dyn Store>,
+        Box::new(clock.clone()),
+        usb,
+        Box::new(NoMint),
+        Box::new(cap),
+        #[cfg(feature = "provider-github")]
+        Box::new(envctl_secrets::mint_github::NoopHttpTransport),
+    )
+    .expect("with_seams must construct");
+    let (sink, rx) = EventSink::channel();
+    (eng, sink, rx)
+}
+
+/// A verified remote presentation matching `(client_id, jkt)` — the SAME one the edge captured at the
+/// stream's open and re-passes each re-check tick.
+fn verified_remote(client_id: &str, jkt: [u8; 32]) -> envctl_secrets::broker::decide::RemotePeer {
+    envctl_secrets::broker::decide::RemotePeer {
+        client_id: client_id.to_string(),
+        dpop_jkt: jkt,
+        dpop_verified: true,
+    }
+}
+
+/// Happy path: a valid, still-live remote bearer re-checks as `Authorized` — and re-checking N times
+/// NEVER consumes rate/budget (it `peek`s) and NEVER fetches the real key (the upstream stays
+/// untouched). This is the "a still-authorized stream survives a re-check tick" engine guarantee.
+#[test]
+fn relay_stream_authorized_allows_live_remote_and_consumes_no_budget() {
+    let inmem = Arc::new(InMemStore::new());
+    let clock = FakeClock::new(T0);
+    let (eng, sink, rx) = build_remote_engine(&inmem, &clock, Box::new(AbsentUsb));
+    eng.init_vault(pp("stream-pass"), None, None, at_floor(), &sink)
+        .unwrap();
+    eng.unlock(Unlock::Passphrase(pp("stream-pass")), &sink)
+        .unwrap();
+    eng.secret_put(
+        SecretMeta {
+            name: "anthropic_key".to_string(),
+            provider: Provider::Anthropic,
+            note: String::new(),
+            broker_only: true,
+        },
+        Zeroizing::new(b"sk-REAL-STREAM".to_vec()),
+        &sink,
+    )
+    .unwrap();
+
+    let jkt = [0x42u8; 32];
+    eng.register_remote_client("phone".to_string(), jkt, false, &sink)
+        .expect("register remote client");
+    let bearer = eng
+        .relay_mint_remote(
+            anthropic_policy("anthropic_key"),
+            3600,
+            "phone".to_string(),
+            jkt,
+            &sink,
+        )
+        .expect("remote mint");
+    let _ = drain(&rx);
+
+    // A rate-limited policy: re-checking many times must NOT trip RateLimited (peek consumes no rate).
+    let req = recheck_req(None, Some(verified_remote("phone", jkt)));
+    for i in 0..200 {
+        assert_eq!(
+            eng.relay_stream_authorized(&bearer.raw, &req, &sink),
+            StreamAuthz::Authorized,
+            "re-check #{i} of a live remote bearer must stay Authorized (peek, not bump)"
+        );
+    }
+    // No key ever leaked into events on the re-check path (the re-check fetches no key).
+    let ev = drain(&rx);
+    assert!(
+        !events_contain(&ev, "sk-REAL-STREAM"),
+        "the streaming re-check must never fetch/emit the real key"
+    );
+}
+
+/// TearDown(BearerRevoked): revoking the bearer mid-stream flips the next re-check to a tear-down —
+/// the revocation is observed FRESH (the row's `revoked` flag re-read each call).
+#[test]
+fn relay_stream_authorized_tears_down_on_bearer_revoke() {
+    let inmem = Arc::new(InMemStore::new());
+    let clock = FakeClock::new(T0);
+    let (eng, sink, rx) = build_remote_engine(&inmem, &clock, Box::new(AbsentUsb));
+    eng.init_vault(pp("rev-pass"), None, None, at_floor(), &sink)
+        .unwrap();
+    eng.unlock(Unlock::Passphrase(pp("rev-pass")), &sink)
+        .unwrap();
+    eng.secret_put(
+        SecretMeta {
+            name: "anthropic_key".to_string(),
+            provider: Provider::Anthropic,
+            note: String::new(),
+            broker_only: true,
+        },
+        Zeroizing::new(b"sk-REAL".to_vec()),
+        &sink,
+    )
+    .unwrap();
+    let jkt = [0x42u8; 32];
+    eng.register_remote_client("phone".to_string(), jkt, false, &sink)
+        .expect("register");
+    let bearer = eng
+        .relay_mint_remote(
+            anthropic_policy("anthropic_key"),
+            3600,
+            "phone".to_string(),
+            jkt,
+            &sink,
+        )
+        .expect("mint");
+    let _ = drain(&rx);
+
+    let req = recheck_req(None, Some(verified_remote("phone", jkt)));
+    assert_eq!(
+        eng.relay_stream_authorized(&bearer.raw, &req, &sink),
+        StreamAuthz::Authorized,
+        "the stream is authorized before the revoke"
+    );
+
+    // Revoke the bearer (apply) — the runtime revoke a relay/bearer revoke RPC performs.
+    let n = eng
+        .relay_revoke_bearer(&bearer.token_id, true, &sink)
+        .expect("revoke");
+    assert_eq!(n, 1, "the revoke flipped exactly one bearer");
+    let _ = drain(&rx);
+
+    assert_eq!(
+        eng.relay_stream_authorized(&bearer.raw, &req, &sink),
+        StreamAuthz::TearDown(DenyReason::BearerRevoked),
+        "after the revoke the next re-check tears the stream down"
+    );
+}
+
+/// TearDown(GateAbsent): pulling the USB key mid-stream (the presence gate goes absent) tears the
+/// stream down on the next re-check — the USB gate is probed FRESH each call.
+#[test]
+fn relay_stream_authorized_tears_down_on_usb_pull() {
+    let inmem = Arc::new(InMemStore::new());
+    let clock = FakeClock::new(T0);
+    let present = Arc::new(AtomicBool::new(true));
+    let keyfile = Zeroizing::new(vec![0xABu8; 64]);
+    let usb = TogglableUsb {
+        uuid: "STREAM-USB".to_string(),
+        keyfile: keyfile.clone(),
+        present: present.clone(),
+    };
+    let (eng, sink, rx) = build_remote_engine(&inmem, &clock, Box::new(usb));
+    // A USB-gated vault: init with the partition + keyfile so a USB keyslot is enrolled.
+    eng.init_vault(
+        pp("usb-pass"),
+        Some("STREAM-USB".to_string()),
+        Some(keyfile.clone()),
+        at_floor(),
+        &sink,
+    )
+    .unwrap();
+    eng.unlock(Unlock::Passphrase(pp("usb-pass")), &sink)
+        .unwrap();
+    eng.secret_put(
+        SecretMeta {
+            name: "anthropic_key".to_string(),
+            provider: Provider::Anthropic,
+            note: String::new(),
+            broker_only: true,
+        },
+        Zeroizing::new(b"sk-REAL".to_vec()),
+        &sink,
+    )
+    .unwrap();
+    let jkt = [0x42u8; 32];
+    eng.register_remote_client("phone".to_string(), jkt, false, &sink)
+        .expect("register");
+    let bearer = eng
+        .relay_mint_remote(
+            anthropic_policy("anthropic_key"),
+            3600,
+            "phone".to_string(),
+            jkt,
+            &sink,
+        )
+        .expect("mint");
+    let _ = drain(&rx);
+
+    let req = recheck_req(None, Some(verified_remote("phone", jkt)));
+    assert_eq!(
+        eng.relay_stream_authorized(&bearer.raw, &req, &sink),
+        StreamAuthz::Authorized,
+        "while the USB key is present the stream is authorized"
+    );
+
+    // Pull the key — the next re-check observes the gate absent and tears down.
+    present.store(false, Ordering::SeqCst);
+    assert_eq!(
+        eng.relay_stream_authorized(&bearer.raw, &req, &sink),
+        StreamAuthz::TearDown(DenyReason::GateAbsent),
+        "pulling the USB key mid-stream tears the stream down (GateAbsent)"
+    );
+}
+
+/// Fail-closed on a LOCKED vault: a re-check against a locked vault tears the stream down (the
+/// internal Err is mapped to a tear-down) — NO panic, no key. Mirrors the swap path's locked-vault
+/// InternalRefused, but as a tear-down for the streaming caller.
+#[test]
+fn relay_stream_authorized_tears_down_on_locked_vault() {
+    let inmem = Arc::new(InMemStore::new());
+    let clock = FakeClock::new(T0);
+    let (eng, sink, rx) = build_remote_engine(&inmem, &clock, Box::new(AbsentUsb));
+    eng.init_vault(pp("lock-pass"), None, None, at_floor(), &sink)
+        .unwrap();
+    eng.unlock(Unlock::Passphrase(pp("lock-pass")), &sink)
+        .unwrap();
+    eng.secret_put(
+        SecretMeta {
+            name: "anthropic_key".to_string(),
+            provider: Provider::Anthropic,
+            note: String::new(),
+            broker_only: true,
+        },
+        Zeroizing::new(b"sk-REAL".to_vec()),
+        &sink,
+    )
+    .unwrap();
+    let jkt = [0x42u8; 32];
+    eng.register_remote_client("phone".to_string(), jkt, false, &sink)
+        .expect("register");
+    let bearer = eng
+        .relay_mint_remote(
+            anthropic_policy("anthropic_key"),
+            3600,
+            "phone".to_string(),
+            jkt,
+            &sink,
+        )
+        .expect("mint");
+    let _ = drain(&rx);
+
+    // Lock the vault — the DEK is gone, so the re-check cannot even verify the bearer: tear down.
+    eng.lock(&sink).expect("lock");
+    assert!(
+        matches!(
+            eng.relay_stream_authorized(
+                &bearer.raw,
+                &recheck_req(None, Some(verified_remote("phone", jkt))),
+                &sink
+            ),
+            StreamAuthz::TearDown(_)
+        ),
+        "a locked vault tears the stream down (no panic, no key)"
+    );
 }

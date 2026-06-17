@@ -28,7 +28,7 @@ use hyper_util::rt::{TokioExecutor, TokioIo};
 use crate::edge::dpop::{verify_dpop_proof, DpopReject, HttpMethod};
 use crate::edge::tls::RelayTlsConfig;
 use crate::proxy::{
-    bare, extract_bearer, method_from_hyper, request_host, swap_and_respond, ProxyCtx,
+    bare, extract_bearer, method_from_hyper, request_host, swap_and_respond_streaming, ProxyCtx,
 };
 
 /// The only route the PR-1 edge serves.
@@ -50,6 +50,9 @@ struct ConnState {
     jti: Arc<Mutex<JtiReplayStore>>,
     /// `Some(ekm)` once the handshake EKM was exported; `None` if uncomputable (FS-S20 → 403).
     ekm: Option<Arc<Vec<u8>>>,
+    /// TASK-0032 / FS-S5: the streaming re-check cadence + lifetime cap for every stream served on
+    /// this connection (production default unless a test override was configured).
+    timing: crate::edge::stream::Timing,
 }
 
 /// Bind the edge TCP listener on `bind_addr`, build the in-process TLS acceptor from the relay-tls
@@ -60,6 +63,7 @@ pub async fn serve_edge_listener(
     engine: Engine,
     relay_tls_dir: &std::path::Path,
     bind_addr: SocketAddr,
+    timing: crate::edge::stream::Timing,
     shutdown: impl std::future::Future<Output = ()> + Send + 'static,
 ) -> anyhow::Result<(SocketAddr, tokio::task::JoinHandle<()>)> {
     // Load the relay-tls ServerConfig FIRST (fail-closed: no cert ⇒ no edge). This is the ONLY cert
@@ -94,7 +98,7 @@ pub async fn serve_edge_listener(
                     let ctx = ctx.clone();
                     let jti = Arc::clone(&jti);
                     tokio::spawn(async move {
-                        serve_connection(acceptor, ctx, jti, tcp, peer).await;
+                        serve_connection(acceptor, ctx, jti, timing, tcp, peer).await;
                     });
                 }
             }
@@ -109,6 +113,7 @@ async fn serve_connection(
     acceptor: tokio_rustls::TlsAcceptor,
     ctx: ProxyCtx,
     jti: Arc<Mutex<JtiReplayStore>>,
+    timing: crate::edge::stream::Timing,
     tcp: tokio::net::TcpStream,
     peer: SocketAddr,
 ) {
@@ -140,7 +145,12 @@ async fn serve_connection(
         }
     };
 
-    let conn = ConnState { ctx, jti, ekm };
+    let conn = ConnState {
+        ctx,
+        jti,
+        ekm,
+        timing,
+    };
     let service = service_fn(move |req| {
         let conn = conn.clone();
         async move { Ok::<_, std::convert::Infallible>(handle_edge_request(conn, req).await) }
@@ -217,10 +227,41 @@ async fn handle_edge_request(
         .unwrap_or_else(|| "/".to_string());
 
     let (parts, body) = req.into_parts();
+
+    // TASK-0032 / FS-S5 — build the in-stream re-check plan from THIS request's verified context so a
+    // long-lived response stream is actively torn down the instant authorization lapses (relay/bearer
+    // revoke, vault lock, USB-key pull, or the max-duration cap). The plan captures:
+    //   * the relay BEARER (extracted from the SAME headers `swap_and_respond` reads — Bearer-scheme
+    //     on the remote plane), as a `Zeroizing<String>` so it is wiped on drop;
+    //   * a ZERO-byte re-check `EgressReq` carrying the SAME `RemotePeer` (`rp`) captured at open, so
+    //     `decide()` clause 11a re-asserts dpop_verified + the client_id/jkt binding each tick;
+    //   * the metadata-only audit labels (the upstream host as the relay label + the PUBLIC token_id).
+    // The engine remains the SOLE policy authority — the supervisor only forwards/re-checks/drops.
+    let bearer_for_recheck = extract_bearer(&parts.headers, envctl_secrets::Provider::Generic)
+        .map(zeroize::Zeroizing::new);
+    let token_id = bearer_for_recheck
+        .as_deref()
+        .and_then(|b| envctl_secrets::broker::parse_bearer(b).map(|(tid, _)| tid.to_string()))
+        .unwrap_or_default();
+    let recheck_req = crate::edge::stream::recheck_egress_req(
+        method,
+        upstream_host.clone(),
+        upstream_path.clone(),
+        Some(rp.clone()),
+    );
+    let audit = crate::edge::stream::StreamAudit {
+        relay: upstream_host.clone(),
+        token_id,
+    };
+    let engine = conn.ctx.engine.clone();
+    let timing = conn.timing;
+
     // Hand to the SHARED swap core with the verified remote context. The provider is derived from the
-    // upstream host INSIDE `swap_and_respond` (same as the proxy), and the bearer is extracted there
-    // from the forwarded headers exactly as the local plane does — so the edge and proxy never diverge.
-    swap_and_respond(
+    // upstream host INSIDE the core (same as the proxy), and the bearer is extracted there from the
+    // forwarded headers exactly as the local plane does — so the edge and proxy never diverge in how
+    // they drive `relay_swap`. The remote edge additionally wraps the response body in the streaming-
+    // revocation supervisor; the local proxy passes the identity wrap (no in-stream re-check).
+    swap_and_respond_streaming(
         &conn.ctx,
         method,
         upstream_host,
@@ -230,6 +271,23 @@ async fn handle_edge_request(
         // No MITM SNI on the remote plane.
         None,
         Some(rp),
+        move |upstream_rx| {
+            // Only reached on an `Allowed` swap. If the bearer somehow could not be re-extracted (it
+            // was present — the swap allowed — but be fail-safe), forward verbatim rather than panic;
+            // a missing bearer would itself tear down on the first tick anyway.
+            let Some(bearer) = bearer_for_recheck else {
+                return upstream_rx;
+            };
+            crate::edge::stream::relay_stream_response(
+                upstream_rx,
+                engine,
+                bearer,
+                recheck_req,
+                audit,
+                envctl_secrets::EventSink::null(),
+                timing,
+            )
+        },
     )
     .await
 }

@@ -19,6 +19,7 @@
 
 pub mod dpop;
 pub mod listener;
+pub mod stream;
 pub mod tls;
 
 use std::net::SocketAddr;
@@ -36,6 +37,11 @@ pub struct EdgeConfig {
     /// reachable remotely (publicly-trusted TLS); the operator chooses the bind (e.g. `0.0.0.0:8443`
     /// behind an L4 front, or a loopback that a reverse tunnel forwards to — SERVER-MODE §6.5).
     pub bind_addr: SocketAddr,
+    /// TASK-0032 / FS-S5 streaming re-check cadence + lifetime cap. `None` ⇒ the production default
+    /// ([`stream::Timing::production`]: 2s re-check, 300s cap). A test-only override (so the e2e closes
+    /// a stream within seconds rather than sleeping the production interval); the daemon always passes
+    /// `None`.
+    pub recheck_timing: Option<stream::Timing>,
 }
 
 /// Start the remote relay edge as a tokio task under the caller's shutdown future. Loads the
@@ -52,5 +58,8 @@ pub async fn serve_edge(
     shutdown: impl std::future::Future<Output = ()> + Send + 'static,
 ) -> anyhow::Result<(SocketAddr, tokio::task::JoinHandle<()>)> {
     let relay_tls_dir = paths.relay_tls_dir();
-    listener::serve_edge_listener(engine, &relay_tls_dir, cfg.bind_addr, shutdown).await
+    let timing = cfg
+        .recheck_timing
+        .unwrap_or_else(stream::Timing::production);
+    listener::serve_edge_listener(engine, &relay_tls_dir, cfg.bind_addr, timing, shutdown).await
 }

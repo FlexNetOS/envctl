@@ -1404,27 +1404,77 @@ impl Engine {
         req: &EgressReq,
         sink: &EventSink,
     ) -> anyhow::Result<Prepared> {
+        // The swap path runs the shared authorization prelude WITH a counter bump (this request
+        // consumes rate/budget) and WITH the real-key fetch on Allow. The observable behavior is
+        // byte-for-byte what it was before the `authorize_relay` factoring: a Deny is audited + emitted
+        // here exactly as `deny_swap` did inline; an Allow carries the extracted key.
+        match self.authorize_relay(bearer, req, true)? {
+            Authz::Deny {
+                relay_id,
+                token_id,
+                reason,
+            } => Ok(Prepared::Deny(self.deny_swap(
+                sink,
+                relay_id,
+                token_id.as_deref(),
+                reason,
+            )?)),
+            Authz::Allow {
+                relay_id,
+                token_id,
+                provider,
+                host,
+                real_key,
+            } => Ok(Prepared::Allow(AllowPrepared {
+                relay_id,
+                token_id,
+                provider,
+                host,
+                // `bump == true` always fetches the key inside `authorize_relay` — its absence here
+                // would be an internal contract break, so fail closed (InternalRefused) rather than
+                // ever reaching `send` with no key.
+                real_key: real_key
+                    .ok_or_else(|| anyhow::anyhow!("authorize_relay(bump) returned no key"))?,
+            })),
+        }
+    }
+
+    /// The shared, sync authorization prelude for the relay egress + the streaming re-check
+    /// (TASK-0032, FS-S5). Parses + constant-time-verifies the bearer (wire MAC AND DEK-keyed row
+    /// MAC), loads the matched policy, snapshots the wall/monotonic clocks + issuance floor + USB
+    /// presence gate, accumulates the usage tallies, and runs the PURE, default-deny [`decide`].
+    ///
+    /// `bump` selects the caller:
+    ///   * `true` (the swap path) — `Broker::bump` records this request (consuming rate/budget) and,
+    ///     on `Allow`, the real key is extracted while the vault read lock is still held (the DEK is
+    ///     live), then every lock is released. `req.bytes_out` is counted.
+    ///   * `false` (the streaming re-check) — `Broker::peek` recomputes the SAME tallies WITHOUT
+    ///     mutating any counter and the key is NOT fetched (the re-check only answers "still
+    ///     authorized?"). Callers pass `bytes_out == 0`, so the re-check enforces the live ceilings
+    ///     against the accumulated totals without consuming any further budget.
+    ///
+    /// Every internal failure (parse handled inline as `UnknownBearer`; poisoned lock, locked vault,
+    /// store error) returns `Err` so the caller fails closed — the swap maps it to `InternalRefused`,
+    /// the re-check to `TearDown`. NEVER audits/emits here: the swap caller owns the `relay_swapped`
+    /// audit (so the row shape is unchanged) and the re-check caller owns the metadata-only tear-down
+    /// audit. No key, bearer, or secret byte is ever returned in a `Deny` or an `Err`.
+    fn authorize_relay(&self, bearer: &str, req: &EgressReq, bump: bool) -> anyhow::Result<Authz> {
         let inner = &self.inner;
 
         // 1. Parse. A malformed / foreign bearer is UnknownBearer (no store hit, no crypto).
         let Some((token_id, raw)) = parse_bearer(bearer) else {
-            return Ok(Prepared::Deny(self.deny_swap(
-                sink,
-                None,
-                None,
-                DenyReason::UnknownBearer,
-            )?));
+            return Ok(Authz::deny(None, None, DenyReason::UnknownBearer));
         };
 
         // 2. Snapshot under the vault READ lock. A poisoned lock fails closed (mapped to
-        // InternalRefused by the caller), never a panic that unwinds past the deny funnel.
+        // InternalRefused / TearDown by the caller), never a panic that unwinds past the deny funnel.
         let v = inner
             .vault
             .read()
             .map_err(|_| anyhow::anyhow!("vault lock poisoned"))?;
         let dek = match v.dek() {
             Some(d) => d,
-            // A locked vault returns InternalRefused (never a send) — fail-closed.
+            // A locked vault returns Err (never a send) — fail-closed.
             None => anyhow::bail!("vault is locked"),
         };
         let now_ms = inner.clock.now().timestamp_millis();
@@ -1434,12 +1484,7 @@ impl Engine {
         // Load the bearer row by the public token_id (O(1)); a miss is UnknownBearer.
         let Some(row) = inner.store.load_bearer(token_id)? else {
             drop(v);
-            return Ok(Prepared::Deny(self.deny_swap(
-                sink,
-                None,
-                Some(token_id),
-                DenyReason::UnknownBearer,
-            )?));
+            return Ok(Authz::deny(None, Some(token_id), DenyReason::UnknownBearer));
         };
 
         // Constant-time MAC verify over the WHOLE wire string. A forged/wrong secret cannot be
@@ -1448,12 +1493,7 @@ impl Engine {
         if !verify_bearer(&hmac_key, raw, &row.mac) {
             drop(hmac_key);
             drop(v);
-            return Ok(Prepared::Deny(self.deny_swap(
-                sink,
-                None,
-                Some(token_id),
-                DenyReason::UnknownBearer,
-            )?));
+            return Ok(Authz::deny(None, Some(token_id), DenyReason::UnknownBearer));
         }
         drop(hmac_key);
 
@@ -1478,12 +1518,7 @@ impl Engine {
         if !verify_bearer_row(&row_mac_key, &row_msg, &row.row_mac) {
             drop(row_mac_key);
             drop(v);
-            return Ok(Prepared::Deny(self.deny_swap(
-                sink,
-                None,
-                Some(token_id),
-                DenyReason::UnknownBearer,
-            )?));
+            return Ok(Authz::deny(None, Some(token_id), DenyReason::UnknownBearer));
         }
         drop(row_mac_key);
 
@@ -1494,12 +1529,7 @@ impl Engine {
             Some(pr) => pr,
             None => {
                 drop(v);
-                return Ok(Prepared::Deny(self.deny_swap(
-                    sink,
-                    None,
-                    Some(token_id),
-                    DenyReason::UnknownBearer,
-                )?));
+                return Ok(Authz::deny(None, Some(token_id), DenyReason::UnknownBearer));
             }
         };
         let relay_id = policy_row.policy.relay_id.clone();
@@ -1510,7 +1540,8 @@ impl Engine {
         // Cognitum Seed: fresh-challenge Ed25519 verify) under `seed-factor` — behind a short-TTL
         // cache so this per-request path never probes the network factor live per request. `decide()`
         // treats Unproven EXACTLY like AbsentSince(now); absence fails closed (REQ-SEC-13), subject to
-        // at most one TTL of presence staleness for the network factor.
+        // at most one TTL of presence staleness for the network factor. The streaming re-check reads
+        // this FRESH each tick, so a USB pull (gate absent) tears the stream down within one interval.
         let gate_state = if self.presence_proven()? {
             crate::broker::GateState::Present
         } else {
@@ -1518,14 +1549,21 @@ impl Engine {
         };
         let gate_absent_since_ms = crate::broker::gate_absent_since_ms(gate_state, now_ms);
 
-        // 3. Bump the broker's ephemeral usage counters (post-bump tallies feed the pure budgets). A
-        // poisoned broker lock fails closed (Err -> InternalRefused), never a panic.
-        let (total_requests, total_bytes, rate_in_window) = {
+        // 3. Accumulate the usage tallies. The swap path BUMPS (this request consumes rate/budget);
+        // the streaming re-check PEEKS (read-only — it must never consume budget or it would starve a
+        // legitimate long-lived stream). A poisoned broker lock fails closed (Err), never a panic.
+        let (total_requests, total_bytes, rate_in_window) = if bump {
             let mut broker = inner
                 .broker
                 .write()
                 .map_err(|_| anyhow::anyhow!("broker lock poisoned"))?;
             broker.bump(&row.token_id, now_ms, req.bytes_out)
+        } else {
+            let broker = inner
+                .broker
+                .read()
+                .map_err(|_| anyhow::anyhow!("broker lock poisoned"))?;
+            broker.peek(&row.token_id, now_ms)
         };
 
         let vb = VerifiedBearer {
@@ -1560,7 +1598,9 @@ impl Engine {
             // Phase-8 remote relay edge already terminated TLS in-process, verified the RFC 9449 DPoP
             // proof against the registered `jkt`, and bound it to the TLS channel (EKM). `decide()`'s
             // clause 11a re-asserts the binding fail-closed (`RemoteNoDPoP` if `dpop_verified` is
-            // false; `CrossKindPresentation` on a plane mismatch vs the bearer's kind).
+            // false; `CrossKindPresentation` on a plane mismatch vs the bearer's kind). The streaming
+            // re-check passes the SAME `RemotePeer` captured at open, so dpop_verified/jkt is
+            // re-asserted each tick.
             remote: req.remote.clone(),
         };
 
@@ -1577,32 +1617,70 @@ impl Engine {
         ) {
             RelayDecision::Deny { reason } => {
                 drop(v);
-                Ok(Prepared::Deny(self.deny_swap(
-                    sink,
-                    Some(relay_id),
-                    Some(token_id),
-                    reason,
-                )?))
+                Ok(Authz::deny(Some(relay_id), Some(token_id), reason))
             }
             RelayDecision::Allow => {
-                // ONLY NOW fetch the real secret — internal open, reveal=false-internal — producing
-                // an owned Zeroizing<Vec<u8>>. We are still holding the vault read lock, so the DEK
-                // is live; we extract the key, then drop EVERY lock before returning so the caller
-                // can await with no guard held. The real key goes ONLY into the returned `Allow`.
-                let real_key = self.open_real_key(dek, &secret_name)?;
+                // On the SWAP path (`bump`), fetch the real secret NOW — internal open,
+                // reveal=false-internal — producing an owned Zeroizing<Vec<u8>>. We are still holding
+                // the vault read lock, so the DEK is live; we extract the key, then drop EVERY lock
+                // before returning so the caller can await with no guard held. The streaming re-check
+                // (`!bump`) NEVER fetches a key — it only needs the Allow/Deny verdict.
+                let real_key = if bump {
+                    Some(self.open_real_key(dek, &secret_name)?)
+                } else {
+                    None
+                };
                 drop(v);
                 // Carry the provider + the canonical host so `relay_swap` can re-assert the HF-11
                 // upstream-host fence IMMEDIATELY before send (belt-and-suspenders: decide() already
                 // checked it, but the send-site gate forecloses any future divergence between the
                 // host decide saw and the host actually sent).
-                Ok(Prepared::Allow(AllowPrepared {
+                Ok(Authz::Allow {
                     relay_id,
                     token_id: row.token_id,
                     provider: policy_row.policy.provider,
                     host: req.host.clone(),
                     real_key,
-                }))
+                })
             }
+        }
+    }
+
+    /// READ-ONLY, NON-MUTATING streaming re-check (TASK-0032, FS-S5): is a long-lived in-flight stream
+    /// STILL authorized? Re-runs the SAME default-deny [`decide`] the swap ran at open — with FRESH
+    /// reads of the wall/monotonic clocks, the bearer `revoked` flag, the policy, and the USB presence
+    /// gate — but WITHOUT fetching the real key and WITHOUT bumping any counter (`bytes_out == 0`,
+    /// `Broker::peek`). The `req` MUST carry the SAME `RemotePeer` captured at the stream's open so
+    /// `decide`'s clause 11a re-asserts `dpop_verified` + the client_id/jkt binding each tick.
+    ///
+    /// Fail-closed by construction: ANY uncertainty tears the stream down. A `decide` Deny →
+    /// `TearDown(reason)`; a locked vault, a poisoned lock, a store error, a vanished bearer row, an
+    /// absent USB gate, or a MAC failure all surface as an `Err` here which the caller maps to
+    /// `TearDown(InternalRefused)`. There is no panic/`unwrap`/`expect` on this path. The streaming
+    /// driver in `secretd::edge::stream` calls this on a fixed interval; the engine performs NO I/O
+    /// beyond the same store/clock reads the swap already does.
+    ///
+    /// `sink` is reserved for symmetry with the swap path (the engine never prints); this method emits
+    /// nothing itself — the edge owns the metadata-only tear-down audit ({reason, client_id,
+    /// token_id} only, never a key/body).
+    pub fn relay_stream_authorized(
+        &self,
+        bearer: &str,
+        req: &EgressReq,
+        _sink: &EventSink,
+    ) -> StreamAuthz {
+        // The re-check is bytes_out-free: it must not advance the byte budget. Callers already pass a
+        // zero-byte `req`, but we re-assert it here so a mis-built request can never consume budget.
+        debug_assert_eq!(
+            req.bytes_out, 0,
+            "the streaming re-check must observe zero bytes (peek, not bump)"
+        );
+        match self.authorize_relay(bearer, req, false) {
+            // Any internal error (locked vault, poisoned lock, store error, ...) tears the stream
+            // DOWN — fail-closed. We map it to a fixed reason discriminant; no secret/detail escapes.
+            Err(_) => StreamAuthz::TearDown(DenyReason::UnknownBearer),
+            Ok(Authz::Deny { reason, .. }) => StreamAuthz::TearDown(reason),
+            Ok(Authz::Allow { .. }) => StreamAuthz::Authorized,
         }
     }
 
@@ -2751,6 +2829,49 @@ impl Engine {
 enum Prepared {
     Deny(DenyReason),
     Allow(AllowPrepared),
+}
+
+/// The result of the shared [`Engine::authorize_relay`] prelude — either a (NOT-yet-audited) deny
+/// carrying the relay/token context the caller needs to audit + emit, or an allow carrying the
+/// metadata the swap needs (plus the extracted real key when the caller bumped). Unlike `Prepared`,
+/// this is the un-audited intermediate that BOTH the swap path and the streaming re-check share; the
+/// caller owns the audit so the two callers can keep their distinct audit shapes (`relay_swapped` vs
+/// the metadata-only tear-down). On the re-check path `real_key` is always `None` (no key fetched).
+enum Authz {
+    Deny {
+        relay_id: Option<String>,
+        token_id: Option<String>,
+        reason: DenyReason,
+    },
+    Allow {
+        relay_id: String,
+        token_id: String,
+        provider: Provider,
+        host: String,
+        /// The real secret on the SWAP path (`bump == true`); `None` on the streaming re-check
+        /// (`bump == false`), which never materializes a key. `Zeroizing` wipes it on drop.
+        real_key: Option<Zeroizing<Vec<u8>>>,
+    },
+}
+
+impl Authz {
+    /// Build a `Deny`, taking the token_id by `&str` for the (frequent) call-site ergonomics.
+    fn deny(relay_id: Option<String>, token_id: Option<&str>, reason: DenyReason) -> Authz {
+        Authz::Deny {
+            relay_id,
+            token_id: token_id.map(str::to_string),
+            reason,
+        }
+    }
+}
+
+/// The verdict of the streaming re-check ([`Engine::relay_stream_authorized`], TASK-0032 / FS-S5):
+/// the in-flight stream is still authorized, or it must be torn down carrying the `decide` reason
+/// (for the edge's metadata-only tear-down audit). `DenyReason` is re-exported at the crate root.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum StreamAuthz {
+    Authorized,
+    TearDown(DenyReason),
 }
 
 struct AllowPrepared {

@@ -334,6 +334,7 @@ async fn edge_dpop_swap_accepts_and_rejects() {
     let cfg = envctl_secretd::edge::EdgeConfig {
         enabled: true,
         bind_addr: "127.0.0.1:0".parse().unwrap(),
+        recheck_timing: None,
     };
     let (addr, handle) =
         envctl_secretd::edge::serve_edge(engine.clone(), &paths, &cfg, async move {

@@ -39,7 +39,7 @@ use zeroize::Zeroizing;
 
 /// Max buffered body chunks between `send`'s upstream pump and the proxy's downstream writer. A
 /// bounded channel keeps memory flat under a slow client (backpressure) without spilling.
-const BODY_CHANNEL_CAP: usize = 16;
+pub(crate) const BODY_CHANNEL_CAP: usize = 16;
 
 /// The hyper response body type the proxy serves: an out-of-band stream of upstream chunks, or an
 /// empty body for refusals / non-streamed paths. `Infallible` data error — the upstream errors are
@@ -49,7 +49,13 @@ pub(crate) type ProxyBody = http_body_util::Either<
     Empty<Bytes>,
 >;
 
-fn stream_body(rx: tokio::sync::mpsc::Receiver<Result<Frame<Bytes>, Infallible>>) -> ProxyBody {
+/// The per-request body channel chunk type (upstream → downstream). `Infallible` data error: an
+/// upstream error is surfaced by ENDING the stream, never by a key-bearing message.
+pub(crate) type BodyChunk = Result<Frame<Bytes>, Infallible>;
+/// The downstream half of the per-request body channel — the proxy/edge response body source.
+pub(crate) type BodyRx = tokio::sync::mpsc::Receiver<BodyChunk>;
+
+fn stream_body(rx: BodyRx) -> ProxyBody {
     http_body_util::Either::Left(StreamBody::new(ReceiverStream::new(rx)))
 }
 
@@ -246,6 +252,20 @@ pub async fn __test_pump_response_body(body: Bytes) -> bool {
     }
     // Dropping `tx` ends the ReceiverStream → the hyper response body completes.
     true
+}
+
+/// Test-only hook: TAKE this request's body sender out of the per-request egress context so a test
+/// `Upstream::send` can drive its OWN slow, multi-chunk pump on a detached task (exactly as
+/// `DaemonUpstream::send` spawns a detached pump for a real upstream) — letting a test exercise the
+/// streaming-revocation tear-down (TASK-0032) over a long-lived, slowly-pumped response. Returns
+/// `None` if no per-request context is present (misuse). Carries no key material; inert in production.
+#[doc(hidden)]
+pub fn __test_take_body_tx() -> Option<tokio::sync::mpsc::Sender<Result<Frame<Bytes>, Infallible>>>
+{
+    EGRESS_CTX
+        .try_with(|c| c.borrow_mut().take().map(|e| e.body_tx))
+        .ok()
+        .flatten()
 }
 
 /// The long-lived engine `Upstream` seam installed at daemon startup. It holds ONLY the shared
@@ -451,6 +471,45 @@ pub(crate) async fn swap_and_respond<B>(
 where
     B: hyper::body::Body<Data = Bytes>,
 {
+    // The local proxy plane does NO in-stream re-check: forward the upstream body verbatim (identity
+    // wrap). The remote relay edge calls `swap_and_respond_streaming` with a supervising wrap (the
+    // TASK-0032 / FS-S5 periodic tear-down).
+    swap_and_respond_streaming(
+        ctx,
+        method,
+        host,
+        path,
+        headers_in,
+        body,
+        observed_sni,
+        remote,
+        |rx| rx,
+    )
+    .await
+}
+
+/// The shared egress core, parameterized by a `wrap_body` transform applied to the per-request
+/// upstream-chunk receiver on the `Allowed` path BEFORE it becomes the response body. The local proxy
+/// passes the identity wrap; the F2 remote relay edge passes the streaming-revocation supervisor
+/// (`stream::relay_stream_response`), which forwards chunks while periodically re-running the engine's
+/// `decide()` and tears the stream down the instant authorization lapses. `wrap_body` runs ONLY on an
+/// `Allowed` outcome — a deny/refusal has no body to wrap.
+#[allow(clippy::too_many_arguments)]
+pub(crate) async fn swap_and_respond_streaming<B, W>(
+    ctx: &ProxyCtx,
+    method: Method,
+    host: String,
+    path: String,
+    headers_in: &hyper::HeaderMap,
+    body: B,
+    observed_sni: Option<String>,
+    remote: Option<envctl_secrets::broker::decide::RemotePeer>,
+    wrap_body: W,
+) -> Response<ProxyBody>
+where
+    B: hyper::body::Body<Data = Bytes>,
+    W: FnOnce(BodyRx) -> BodyRx,
+{
     let provider = provider_for_host(&host);
     // The bearer header convention differs by plane: a LOCAL child speaks the UPSTREAM provider's
     // convention (Anthropic = bare `x-api-key`, others = `Authorization: Bearer`), because the child
@@ -535,8 +594,13 @@ where
                     builder = builder.header(k, v);
                 }
             }
+            // Apply the plane's body wrap: identity for the local proxy; the streaming-revocation
+            // supervisor for the remote edge (it returns a NEW bounded receiver fed by a middle task
+            // that forwards chunks while periodically re-checking authorization and tears the stream
+            // down on revoke/lock/USB-pull/max-duration). Backpressure is preserved: the wrapped
+            // receiver stays bounded (`BODY_CHANNEL_CAP`).
             builder
-                .body(stream_body(body_rx))
+                .body(stream_body(wrap_body(body_rx)))
                 .unwrap_or_else(|_| bare(StatusCode::BAD_GATEWAY))
         }
         // Fail-closed: a deny or an internal refusal is a BARE status with NO body and NO header echo

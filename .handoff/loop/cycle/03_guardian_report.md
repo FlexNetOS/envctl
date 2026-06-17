@@ -1,63 +1,91 @@
-# Verification report: TASK-0036 — secretd in-process `mlockall` (FS-S4 process hardening)
+# Verification report: TASK-0032 (F5, P0) — streaming-revocation tear-down (FS-S5)
 
 ## Verdict — PASS
 
-The change is exactly what the plan/log claim: a small, secretd-local, Linux-gated `mlockall`
-addition (best-effort default + `require_mlock` strict fail-closed), one new direct dep edge
-(`libc`, already transitively resolved → no new lockfile crate), engine/CLI/GUI/secrets-engine
-untouched. All gates + cargo checks green; all three named mlockall tests + both config tests pass.
+All 8 in-scope invariants hold with running evidence; all 4 CI gates and every cargo check
+exit 0. The change is additive, default-OFF behind `relay-edge`, introduces ZERO new lockfile
+crates, and does not touch the crypto/TLS/cert/EKM surface. No guard was weakened.
 
-(Supersedes the prior TASK-0030 cycle report that previously occupied this file.)
-
-### Baseline note (important)
-The correct review baseline is **`git diff HEAD`** (HEAD = `d2ddcc2`, the current tip of
-`origin/develop`), NOT `git diff develop`. The local `develop` ref in this worktree is **stale**
-(points at the pre-Epic-C #45 merge `3707680`), so a `develop` diff falsely attributes the entire
-kasetto absorption (agent-env, baby-mimalloc, secrets stack rework) to this task. Verified against
-`HEAD`, the TASK-0036 surface is exactly 5 source files + 2 handoff docs. No drift, no scope creep.
+Scope note: the branch `task-0032-stream` has NO commits vs `origin/develop` — the TASK-0032
+work is the *uncommitted working tree*. The accurate change is the working tree vs the merge-base
+`491525ea` (matches the implementer log exactly). The raw `git diff origin/develop` mixes in
+develop's 2 ahead-commits (ci.yml / kdf-feature-off.sh / keyslot.rs / manifest) which are NOT
+part of this change and were ignored.
 
 ## Gate results
-- `ci/gates/no-c.sh` : **PASS** (exit 0) — "resolved graph clean: rustls=['0.23.40'] on ring=['0.17.14']; zero aws-lc/openssl/C-SQLite" / "NO-C GATE PASS"
-- `ci/gates/shape.sh` : **PASS** (exit 0) — "SHAPE GATE PASS"
-- `ci/gates/enable.sh` : **PASS** (exit 0) — "ENABLE GATE PASS"
-- `ci/gates/p7.sh` : **PASS** (exit 0) — "P7 GATE PASS"
+- `ci/gates/no-c.sh` : PASS (exit=0) — `rustls=['0.23.40'] on ring=['0.17.14']; zero aws-lc/openssl/C-SQLite`
+- `ci/gates/shape.sh` : PASS (exit=0) — edge-never-references-MITM-CA + native-roots invariants hold
+- `ci/gates/enable.sh` : PASS (exit=0)
+- `ci/gates/p7.sh` : PASS (exit=0)
 
 ## cargo
-- `cargo fmt --all -- --check` : **PASS** (exit 0)
-- `cargo clippy --workspace -- -D warnings` : **PASS** (exit 0, clean finish)
-- `cargo test -p envctl-secretd` : **PASS** (exit 0) — lib 33 passed, bin `tests` 3 passed, integration suites all green (native_mint_e2e 11, proxy_swap_e2e 2, self_check 2, e2e/mitm_e2e green); 0 failed. Ran under EPERM (no CAP_IPC_LOCK) — tests tolerated it as designed.
-  - Named mlockall tests (re-run, isolated): `tests::mlockall_best_effort_does_not_panic` ok · `tests::harden_process_best_effort_default` ok · `tests::require_mlock_strict_fatal_when_unlocked` ok
-  - Config tests: `config::tests::require_mlock_defaults_false_and_threads_through` ok · `config::tests::env_bool_parsing` ok (part of the 33-test lib suite)
+- `cargo fmt --all -- --check` : PASS (exit=0)
+- `cargo clippy --workspace --all-targets -- -D warnings` : PASS (exit=0)
+- `cargo clippy -p envctl-secretd --features relay-edge --all-targets -- -D warnings` : PASS (exit=0)
+- `cargo test -p envctl-secrets-engine` : PASS (exit=0) — 110 unit + 22 relay (incl. 4 new) + 6 inject + 15 vault + 4 phase0, 0 failed
+- `cargo test -p envctl-secretd --features relay-edge` : PASS (exit=0) — 52 unit; e2e 5; **edge_stream_e2e 4**; edge_e2e 1; mitm 1; native_mint 11; **proxy_swap_e2e 2**; self_check 2; 0 failed
 
 ## Invariant checks
-1. **No-C / dep hygiene** : **PASS**. Only `libc` added. `git diff HEAD -- Cargo.lock` = 1 insertion (`"libc"` under `envctl-secretd` deps); `grep -c '^+\[\[package\]\]'` on the lock diff = **0** new packages; `libc` package count in lock stays **1** (already resolved via tokio→signal-hook-registry→errno→libc). Cargo.toml edits limited to the libc edge: root `[workspace.dependencies] libc = "0.2"` + `crates/secretd/Cargo.toml libc = { workspace = true }`. libc is NOT on the no-c banned list (aws-lc/openssl/sqlite/mimalloc). secrets-engine `Cargo.toml` and `src/` untouched.
-2. **Flags + cfg-gate** : **PASS**. `crates/secretd/src/main.rs` `libc::mlockall(libc::MCL_CURRENT | libc::MCL_FUTURE)` inside `mlock_all_pages()`, which is `#[cfg(target_os = "linux")]`; the `#[cfg(not(target_os = "linux"))]` fallback returns `NotApplicable` so non-Linux compiles. Call is placed AFTER the RLIMIT_MEMLOCK raise — `harden_process()` does setrlimit(Core)=0 → raise RLIMIT_MEMLOCK → then `mlock_all_pages()`.
-3. **Fail-safe, never panics** : **PASS**. On `rc == -1`: errno captured via `std::io::Error::last_os_error().raw_os_error()`, a metadata-only `tracing::warn!(errno, error = %err, "...")` (fixed message; no secret bytes), returns `MlockOutcome::Failed { errno }`, and CONTINUES. No `.unwrap()`/`.expect()`/`panic!` on the syscall result. The `unsafe` block is narrowly scoped to the single syscall with a SAFETY comment.
-4. **Strict mode applied AFTER config load** : **PASS**. `serve()` captures `let mlock = harden_process()` BEFORE config exists, then bails `if store_cfg.require_mlock && mlock.failed()` AFTER `StoreConfig::load()`, just before `build_engine`. `anyhow::bail!` = fail-closed refusal. `self_check()` does `let _ = harden_process();` — strict mode deliberately NOT honored, stays best-effort (confirmed: self_check/e2e suites pass under EPERM).
-5. **No secret bytes in logs** : **PASS**. The only mlockall log is the WARN — fields `errno` + `error = %err` (strerror) + a fixed string. The word "secret" appears only in doc comments / the fixed message ("secret material may be swappable"); no secret value, DEK, token, passphrase, or vault byte is logged. Placement is pre-unlock, so no secret material exists in the address space at that point anyway.
-6. **Engine purity** : **PASS**. `git diff HEAD -- crates/engine/` and `crates/secrets-engine/` both EMPTY. No Event, no `println!`/`eprint!`, no clap, no engine logic added. Change is entirely in `secretd::main` + `secretd::config`.
-7. **Front-end parity** : **N/A (justified)**. No Engine method added — this is daemon-process hardening that runs only in `secretd serve`/`--self-check`. CLI/GUI don't run this path, so there is no parity surface to keep in sync (per the plan).
-8. **Lock/manifest honesty** : **PASS**. No `[[package]]` added; manifest/*.toml, envctl.lock, kasetto.lock unchanged (secretd `--self-check` still passes under EPERM, confirmed by the self_check suite). Config tests prove `require_mlock` defaults false and threads through both backends; `env_bool` env-override precedence verified.
+1. **No C in trust boundary** — PASS. `no-c.sh` green from resolved `cargo metadata`. `git diff
+   491525ea -- Cargo.lock` is EMPTY → zero new crates. No new rustls backend / aws-lc / sqlite /
+   openssl / mimalloc.
+2. **Exactly one rustls, ring-only** — PASS. `rustls=0.23.40 on ring=0.17.14`; no TLS dep changed
+   (Cargo.lock unchanged; the re-check does no crypto).
+3. **Engine single sync NON-PRINTING library** — PASS. `git diff` of `crates/secrets-engine/`
+   added lines: ZERO `println!`/`eprintln!`/`print!`/`stdout` (grep exit=1); none anywhere in the
+   engine src. ALL re-check policy lives in `Engine::relay_stream_authorized → authorize_relay(bump=false)
+   → decide()` (lib.rs ~1556–1660). `edge/stream.rs` is select/forward/drop I/O only — no independent
+   allow branch; it can only tear DOWN or break on client/upstream EOF.
+4. **`decide()` is the only Allow authority** — PASS. `relay_stream_authorized` returns `Authorized`
+   ONLY on `Ok(Authz::Allow{..})`, reachable only via `decide() → RelayDecision::Allow`;
+   `Err(_) => TearDown`, `Deny => TearDown(reason)`. Swap path observable behavior unchanged: the
+   `authorize_relay` factoring preserves the inline `deny_swap(...)` audit shape and the on-Allow key
+   fetch; **`proxy_swap_e2e` (2) incl. `proxy_swap_delivers_real_key_only_and_bearer_never_leaks` PASS**,
+   and the edge `wrap_body` supervisor runs ONLY on the already-authorized `Allowed` body (the swap
+   still drives `relay_swap` unchanged; the local proxy passes identity `|rx| rx`).
+5. **Fail-closed / fail-safe** — PASS. Every failure mode maps to tear-down: `decide()` Deny →
+   `TearDown(reason)`; locked vault / poisoned RwLock (`map_err`, not `unwrap`) / store err / vanished
+   bearer / MAC fail / USB absent all surface as engine `Err` → `TearDown`; max-duration deadline →
+   unconditional tear-down; client/upstream EOF → clean break. Grep of the re-check hot path
+   (`stream.rs` + lib.rs 1404–1690) for `unwrap(`/`expect(`/`panic!`/indexing: NONE (exit=1). The
+   `emit_teardown` `unwrap_or_else` is a reason-string fallback, not auth logic / not a panic.
+   Covered by `relay_stream_authorized_tears_down_on_{bearer_revoke,usb_pull,locked_vault}` (real
+   Authorized→TearDown transitions) + the 4 e2e cases.
+6. **No secret bytes in logs/audit** — PASS. New `SecretEvent::RelayStreamTornDown { relay, token_id,
+   reason }` is metadata-only. `emit_teardown` carries only those 3 fields. The bearer in `stream.rs`
+   is `Zeroizing<String>`; `token_id` is the public id via `broker::parse_bearer`; the real key /
+   proxied body never appear. `Deny`/`Err` carry no key.
+7. **relay-tls only, never MITM CA (FS-S25) + EKM (FS-S20)** — PASS. NO TLS/cert/EKM/DPoP file touched
+   (`tls.rs`/`dpop.rs` diff empty); no `mitm|ca_|leaf|mint_cert|root_ca` token in the new edge code
+   (grep exit=1); `shape.sh` PASS.
+8. **Default-OFF `relay-edge`** — PASS. `pub mod edge;` is `#[cfg(feature="relay-edge")]` (lib.rs:13),
+   so `edge/stream.rs` + the listener wiring + `EdgeConfig.recheck_timing` are reachable only under the
+   feature. The engine method is inert unless the edge calls it. `cargo clippy --workspace` (no feature)
+   is clean → a stock secretd build is unaffected.
+9. **Parity (front-end)** — PASS. `RelayStreamTornDown` joins the conv.rs no-proto-twin drop set
+   (alongside `RelayRevoked`): CLI + GUI drain `SecretEvent`s through the same funnel, no divergence,
+   zero proto churn. No `Engine` public-method surface one front-end can reach and the other can't.
 
 ## Parity check
-No Engine method introduced → no CLI/GUI caller required. Daemon-internal `harden_process()` →
-called by `serve()` and `self_check()`, both within `crates/secretd/src/main.rs`.
+This feature adds no user-facing `Engine` verb needing CLI↔GUI wiring (the new engine method is an
+internal edge-only re-check). Event parity: `SecretEvent::RelayStreamTornDown`
+→ `crates/secretd/src/conv.rs::event_to_proto` (no-proto-twin drop set) → consumed identically by CLI
+and GUI. No divergence.
 
 ## Findings
-None blocking.
-
-- (note, non-blocking) Stale local `develop` ref in the worktree — a `git diff develop` here is
-  misleading (attributes all of Epic C to this task). Reviewers/orchestrator must diff against `HEAD`
-  (`d2ddcc2`) or `origin/develop` to see the true TASK-0036 surface. Not a code issue; flagged so
-  the change isn't mis-attributed or mis-merged.
-- (note, non-blocking, in plan's "Out of scope") MADV_DONTDUMP — the deferred companion named
-  alongside mlockall in THREAT-MODEL.md:8,77 — is correctly recorded as a follow-up, not widened here.
+None blocking. Informational notes (consistent with the plan, not defects):
+- INFO: the max-duration cap reports `DenyReason::PolicyExpired` (the deadline branch does NOT consult
+  `decide()` — unconditional hard cap; all other tear-downs carry the real `decide()` reason).
+  Disclosed in the implementer log "Deviations"; matches the plan's hard-cap intent.
+- INFO: the tear-down event is best-effort cosmetic (edge wiring passes `EventSink::null()`); the open
+  swap is already durably audited by the engine and the event is metadata-only either way. No durable
+  audit ROW for the tear-down — consistent with how the existing relay-revoke surfaces.
+- INFO (latency): revoke/lock/USB-pull detection is bounded by one `RECHECK_INTERVAL` (≤2s), not
+  instant. The sub-second `tokio::sync::watch` push is a documented PR-4 follow-up, out of scope.
+  Acceptable for P0.
 
 ## Re-test needed
-None for a PASS verdict. To reconfirm after any further edit, from the worktree root:
-```
-bash ci/gates/no-c.sh ; bash ci/gates/shape.sh ; bash ci/gates/enable.sh ; bash ci/gates/p7.sh
-rtk proxy cargo fmt --all -- --check
-rtk proxy cargo clippy --workspace -- -D warnings
-rtk proxy cargo test -p envctl-secretd
-```
+None. If the working tree is later committed and rebased onto develop, re-run before merge:
+`bash ci/gates/no-c.sh && bash ci/gates/shape.sh && rtk proxy cargo clippy --workspace --all-targets -- -D warnings`
+and `rtk proxy cargo test -p envctl-secretd --features relay-edge` (regression-guard the `proxy_swap_e2e`
+swap path + the 4 `edge_stream_e2e` cases).

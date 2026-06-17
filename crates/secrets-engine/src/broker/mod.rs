@@ -239,6 +239,38 @@ impl Broker {
         c.total_bytes = c.total_bytes.saturating_add(bytes);
         (c.total_requests, c.total_bytes, c.in_window)
     }
+
+    /// READ-ONLY counterpart to [`bump`](Self::bump): recompute the tallies `decide` compares against
+    /// the policy quotas/rate at `now_ms` WITHOUT incrementing any counter and WITHOUT inserting a row
+    /// (`&self`, not `&mut self`). Used by the streaming re-check (TASK-0032, FS-S5): a long-lived
+    /// stream is re-authorized each tick against the live ceilings, but the re-check must NEVER consume
+    /// budget/rate or it would slowly starve a legitimate stream (and re-running `bump` per tick would
+    /// also wrongly inflate the durable usage).
+    ///
+    /// Returns `(total_requests, total_bytes, rate_in_window)` exactly as `bump` would for a
+    /// ZERO-byte, ZERO-count observation: the accumulated totals are reported verbatim, and the
+    /// trailing-60s window count is reported as `0` once the window has rolled past `now_ms` (the
+    /// counter `bump` would reset on its next call), else the current in-window tally. A bearer with no
+    /// counter row yet (e.g. a freshly-opened stream whose first request was on a different broker
+    /// generation, or a restart) reads as all-zero — the same all-zero baseline a first `bump` starts
+    /// from, so the re-check is never falsely denied for a missing row.
+    pub fn peek(&self, token_id: &str, now_ms: i64) -> (u64, u64, u32) {
+        match self.counters.get(token_id) {
+            None => (0, 0, 0),
+            Some(c) => {
+                // Mirror `bump`'s window-roll decision WITHOUT mutating: if the trailing-60s window
+                // has elapsed, the live count for the current window is 0 (bump would reset it).
+                let in_window = if c.window_start_ms == 0
+                    || now_ms.saturating_sub(c.window_start_ms) >= 60_000
+                {
+                    0
+                } else {
+                    c.in_window
+                };
+                (c.total_requests, c.total_bytes, in_window)
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -320,5 +352,64 @@ mod tests {
             remote, empty_cid,
             "Some(\"\") client_id must not alias a real one"
         );
+    }
+
+    // ---- TASK-0032 (FS-S5): Broker::peek is a read-only counterpart to bump --------------------
+
+    #[test]
+    fn peek_does_not_mutate_counters_across_n_calls() {
+        let mut b = Broker::default();
+        let tok = "deadbeef";
+        let t0 = 1_000_000i64;
+        // Establish a counter row with one real swap (the post-bump tallies).
+        let after_bump = b.bump(tok, t0, 128);
+        assert_eq!(after_bump, (1, 128, 1));
+
+        // N read-only re-checks WITHIN the same 60s window must report the SAME tallies every time
+        // and must never advance the in-window count, total_requests, or total_bytes.
+        for i in 0..50 {
+            let now = t0 + i * 100; // still inside the trailing-60s window.
+            assert_eq!(
+                b.peek(tok, now),
+                (1, 128, 1),
+                "peek must be idempotent within the window"
+            );
+        }
+        // The underlying counter row is byte-for-byte unchanged: a real bump after the peeks behaves
+        // exactly as if the peeks never happened (advances from 1 -> 2, not 51 -> 52).
+        let c = b.counters.get(tok).copied().expect("counter row present");
+        assert_eq!(c.in_window, 1);
+        assert_eq!(c.total_requests, 1);
+        assert_eq!(c.total_bytes, 128);
+        let after_second_bump = b.bump(tok, t0 + 1, 64);
+        assert_eq!(
+            after_second_bump,
+            (2, 192, 2),
+            "peek consumed no rate/budget — the next bump advances from the real prior state"
+        );
+    }
+
+    #[test]
+    fn peek_reports_zero_window_after_roll_without_resetting_row() {
+        let mut b = Broker::default();
+        let tok = "deadbeef";
+        let t0 = 1_000_000i64;
+        b.bump(tok, t0, 10); // (1, 10, 1)
+
+        // A peek AFTER the trailing-60s window elapsed reports in_window == 0 (the value bump would
+        // reset to) but must NOT actually reset the stored row — bump remains the only mutator.
+        let later = t0 + 60_000;
+        assert_eq!(b.peek(tok, later), (1, 10, 0));
+        let c = b.counters.get(tok).copied().expect("row still present");
+        assert_eq!(c.window_start_ms, t0, "peek must not roll the window");
+        assert_eq!(c.in_window, 1, "peek must not reset the in-window count");
+    }
+
+    #[test]
+    fn peek_missing_row_reads_all_zero() {
+        let b = Broker::default();
+        // A bearer with no counter row yet reads as the all-zero baseline a first bump starts from,
+        // so the streaming re-check is never falsely denied for a missing row.
+        assert_eq!(b.peek("never-seen", 1_000_000), (0, 0, 0));
     }
 }
