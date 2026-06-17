@@ -12,27 +12,28 @@ use envctl_agent_env::driver::{apply_removals, clean_counts};
 use envctl_agent_env::lock::{save, AgentLockFile};
 use envctl_agent_env::report::{Action, Summary};
 use envctl_agent_env::runtime::clear_runtime_state;
-use envctl_agent_env::Scope;
 
 use crate::agent::report::{AgentReport, AgentVerb};
-use crate::agent::AgentCleanSpec;
+use crate::agent::{AgentCleanSpec, AgentCtx};
 use crate::event::{Event, EventSink};
 use crate::Engine;
 
 impl Engine {
     /// Clean every lock-tracked agent asset and reset the lock. DRY-RUN by default.
+    ///
+    /// The run is anchored on the resolved config directory (the directory that holds the
+    /// loaded `agent-env.yaml`), so `agent clean` works from any subdirectory of a project —
+    /// it finds the lock relative to the config root, not relative to `std::env::current_dir()`.
     pub fn agent_clean(
         &self,
         spec: AgentCleanSpec,
         sink: &EventSink,
     ) -> anyhow::Result<AgentReport> {
-        let scope: Scope = spec
-            .scope_override
-            .map(Into::into)
-            .unwrap_or(Scope::Project);
-        let project_root = std::env::current_dir().unwrap_or_default();
-        let lock_file = crate::agent::agent_lock_path(scope, &project_root)?;
-        let mut lock: AgentLockFile = envctl_agent_env::lock::load(&lock_file)?;
+        let ctx = AgentCtx::resolve(spec.config_path.as_deref(), spec.scope_override)?;
+        let scope = ctx.scope;
+        let project_root = &ctx.cfg_dir;
+        let lock_file = &ctx.lock_file;
+        let mut lock: AgentLockFile = envctl_agent_env::lock::load(lock_file)?;
 
         sink.emit(Event::AgentRunStarted {
             verb: AgentVerb::Clean,
@@ -60,7 +61,12 @@ impl Engine {
             });
         }
         for a in lock.assets.values().filter(|a| a.kind == "mcp") {
-            for server in a.destination.split(',').filter(|s| !s.is_empty()) {
+            for server in a
+                .destination
+                .split(',')
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+            {
                 actions.push(Action {
                     source: Some(a.source.clone()),
                     skill: Some(format!("mcp:{server}")),
@@ -79,10 +85,10 @@ impl Engine {
         }
 
         if spec.apply {
-            apply_removals(&lock, scope, &project_root)?;
+            apply_removals(&lock, scope, project_root)?;
             lock.clear_all();
-            save(&mut lock, &lock_file)?;
-            clear_runtime_state(scope, &project_root)?;
+            save(&mut lock, lock_file)?;
+            clear_runtime_state(scope, project_root)?;
         }
 
         let summary = Summary {

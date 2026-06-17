@@ -7,6 +7,12 @@
 //! `try_recv`, so the UI thread never blocks on engine work. This file is the
 //! explicit proof the worker-closure bounds hold.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+
+use baby_mimalloc::{new_mimalloc_mmap_mutex, MimallocMmapMutex};
+
+#[global_allocator]
+static GLOBAL: MimallocMmapMutex = new_mimalloc_mmap_mutex();
+
 mod theme;
 
 use eframe::egui::{self, Color32, RichText};
@@ -215,6 +221,7 @@ struct EnvctlApp {
     agent_list_kind: AgentListKindSel,
     // agent-env panel — result holders (filled from the worker events)
     agent_list: Option<AgentList>,
+    agent_list_stale: bool,
     agent_last_edit: Option<AgentEditOutcome>,
     agent_last_report: Option<AgentReport>,
     agent_lock_drift: Option<Vec<AgentLockDriftItem>>,
@@ -296,6 +303,7 @@ impl EnvctlApp {
             agent_upgrade_pkg: String::new(),
             agent_list_kind: AgentListKindSel::All,
             agent_list: None,
+            agent_list_stale: false,
             agent_last_edit: None,
             agent_last_report: None,
             agent_lock_drift: None,
@@ -402,6 +410,8 @@ impl EnvctlApp {
                         s.failed
                     );
                     self.agent_last_report = Some(report);
+                    // sync/clean changed the lock or on-disk state; any cached list is stale.
+                    self.agent_list_stale = true;
                 }
                 Event::AgentLockChecked { drift } => {
                     self.agent_status = if drift.is_empty() {
@@ -419,10 +429,13 @@ impl EnvctlApp {
                         list.commands.len()
                     );
                     self.agent_list = Some(list);
+                    self.agent_list_stale = false;
                 }
                 Event::AgentEdited { outcome } => {
                     self.agent_status = format!("{} · {}", outcome.action, outcome.source);
                     self.agent_last_edit = Some(outcome);
+                    // add/remove changed the config (and possibly synced) — cached list is stale.
+                    self.agent_list_stale = true;
                 }
                 Event::AgentAction {
                     source,
@@ -1312,6 +1325,7 @@ impl EnvctlApp {
 
     fn agent_clean_spec(&self) -> AgentCleanSpec {
         AgentCleanSpec {
+            config_path: opt_str(&self.agent_config),
             scope_override: self.agent_scope.to_override(),
             apply: self.agent_apply,
         }
@@ -1549,11 +1563,18 @@ impl EnvctlApp {
     /// the Spec (`agent_apply`), so a fresh, fail-closed default (apply=false) previews. Always
     /// dispatches to the worker (`dispatch` → mpsc send) so the UI thread never blocks.
     fn agent_action_button(&mut self, ui: &mut egui::Ui) {
+        let lock_rewrites = matches!(self.agent_verb, AgentVerbTab::Lock) && !self.agent_lock_check;
         let mutating = matches!(
             self.agent_verb,
             AgentVerbTab::Sync | AgentVerbTab::Add | AgentVerbTab::Remove | AgentVerbTab::Clean
-        );
-        let label = if mutating {
+        ) || lock_rewrites;
+        let label = if matches!(self.agent_verb, AgentVerbTab::Lock) {
+            if self.agent_lock_check {
+                format!("Check {}", self.agent_verb.label())
+            } else {
+                format!("Rewrite {}", self.agent_verb.label())
+            }
+        } else if mutating {
             if self.agent_apply {
                 format!("Apply {}", self.agent_verb.label())
             } else {
@@ -1562,7 +1583,7 @@ impl EnvctlApp {
         } else {
             format!("Run {}", self.agent_verb.label())
         };
-        let fill = if mutating && self.agent_apply {
+        let fill = if mutating && (self.agent_apply || lock_rewrites) {
             theme::WARN
         } else {
             theme::ACCENT
@@ -1574,6 +1595,10 @@ impl EnvctlApp {
     }
 
     fn agent_results(&mut self, ui: &mut egui::Ui) {
+        if self.agent_list_stale {
+            ui.colored_label(theme::WARN, "⚠ agent list is stale — run List to refresh");
+            ui.add_space(4.0);
+        }
         if let Some(list) = self.agent_list.clone() {
             self.agent_list_tables(ui, &list);
         }
@@ -2032,6 +2057,7 @@ mod agent_spec_tests {
             agent_upgrade_pkg: String::new(),
             agent_list_kind: AgentListKindSel::All,
             agent_list: None,
+            agent_list_stale: false,
             agent_last_edit: None,
             agent_last_report: None,
             agent_lock_drift: None,

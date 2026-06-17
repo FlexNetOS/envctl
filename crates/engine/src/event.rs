@@ -4,7 +4,7 @@
 //! CLI drains the same vocabulary. (`EventSink::channel()`, not `new()`, keeps
 //! clippy's `new_ret_no_self` happy — it returns a channel pair, not `Self`.)
 use crate::agent::report::{
-    AgentEditOutcome, AgentList, AgentLockDriftItem, AgentReport, AgentVerb,
+    AgentEditOutcome, AgentInitOutcome, AgentList, AgentLockDriftItem, AgentReport, AgentVerb,
 };
 use crate::agent::AgentScope;
 use crate::component::Phase;
@@ -94,6 +94,12 @@ pub enum Event {
     /// event; this transports them to the GUI. (CLI keeps its typed-return render, unchanged.)
     AgentEdited {
         outcome: AgentEditOutcome,
+    },
+    /// The outcome of `agent init`: the config file path that was created and whether an
+    /// existing file was overwritten. Emitted so the GUI can update its status even though
+    /// `init` has no per-action tree.
+    AgentInitFinished {
+        outcome: AgentInitOutcome,
     },
 }
 

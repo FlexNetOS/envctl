@@ -1,12 +1,16 @@
 //! `envctl` — thin CLI over the shared engine. Subcommands map 1:1 to the five
 //! verbs. Destructive verbs (reset/auto-fix) are DRY-RUN by default; pass
 //! `--apply` to act. `auto-detect` is read-only and prints a real EnvReport.
+use baby_mimalloc::{new_mimalloc_mmap_mutex, MimallocMmapMutex};
 use clap::{Parser, Subcommand};
+
+#[global_allocator]
+static GLOBAL: MimallocMmapMutex = new_mimalloc_mmap_mutex();
 use envctl_engine::{
-    AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentListKind, AgentListSpec, AgentLockMode,
-    AgentLockSpec, AgentRemoveSpec, AgentScope, AgentSectionSel, AgentSyncSpec, AiAgent,
-    BuildStrategy, BuildSystem, DashboardSpec, DriftSummary, Engine, EnvReport, Event, EventSink,
-    OpStatus, Phase, Refactor, RefactorGoal, RenameRule, ResetGates, RunPlan, Severity,
+    AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentInitSpec, AgentListKind, AgentListSpec,
+    AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentScope, AgentSectionSel, AgentSyncSpec,
+    AiAgent, BuildStrategy, BuildSystem, DashboardSpec, DriftSummary, Engine, EnvReport, Event,
+    EventSink, OpStatus, Phase, Refactor, RefactorGoal, RenameRule, ResetGates, RunPlan, Severity,
 };
 
 #[derive(Parser)]
@@ -362,11 +366,23 @@ enum AgentCmd {
     },
     /// Prune assets orphaned from the config. PREVIEW by default; `--apply` writes.
     Clean {
+        /// Config file path (else the default-config resolution / `$ENVCTL_AGENT_CONFIG`).
+        #[arg(long)]
+        config: Option<String>,
         #[arg(long, value_enum)]
         scope: Option<ScopeArg>,
         /// Write changes (else preview / zero writes).
         #[arg(long)]
         apply: bool,
+    },
+    /// Create a starter agent-env config file (`agent-env.yaml`).
+    Init {
+        /// Write the global config under `$XDG_CONFIG_HOME/agent-env/agent-env.yaml`.
+        #[arg(long)]
+        global: bool,
+        /// Overwrite an existing config file.
+        #[arg(long)]
+        force: bool,
     },
 }
 
@@ -855,10 +871,12 @@ enum AgentResult {
     Lock(envctl_engine::AgentLockOutcome),
     /// `list` — always exit 0.
     List(envctl_engine::AgentList),
+    /// `init` — always exit 0 on success (failure is an Err instead).
+    Init(envctl_engine::AgentInitOutcome),
 }
 
 impl AgentResult {
-    /// Pretty-print the serialized return value (uniform across all six verbs,
+    /// Pretty-print the serialized return value (uniform across all seven agent verbs,
     /// matching `auto-detect`/`graph`/`lock`).
     fn to_json(&self) -> anyhow::Result<String> {
         Ok(match self {
@@ -866,16 +884,26 @@ impl AgentResult {
             AgentResult::Edit(o) => serde_json::to_string_pretty(o)?,
             AgentResult::Lock(o) => serde_json::to_string_pretty(o)?,
             AgentResult::List(l) => serde_json::to_string_pretty(l)?,
+            AgentResult::Init(o) => serde_json::to_string_pretty(o)?,
         })
     }
 
     /// The fail-closed exit decision (`true` = success / exit 0).
+    ///
+    /// Broken assets (missing/corrupt lock entries or skills the config asks for but the
+    /// source cannot satisfy) count as failures at the front-end boundary, even though the
+    /// engine's internal `never-prune-on-failure` guard keys off `summary.failed`. This is an
+    /// upgrade over kasetto parity (which only exits nonzero on `failed`) and prevents a
+    /// sync that installed nothing from silently passing CI.
     fn ok(&self) -> bool {
+        let report_ok =
+            |r: &envctl_engine::AgentReport| r.summary.failed == 0 && r.summary.broken == 0;
         match self {
-            AgentResult::Report(r) => r.summary.failed == 0,
-            AgentResult::Edit(o) => o.sync.as_ref().map_or(true, |s| s.summary.failed == 0),
+            AgentResult::Report(r) => report_ok(r),
+            AgentResult::Edit(o) => o.sync.as_ref().map_or(true, report_ok),
             AgentResult::Lock(o) => !o.check || o.drift.is_empty(),
             AgentResult::List(_) => true,
+            AgentResult::Init(_) => true,
         }
     }
 
@@ -899,6 +927,17 @@ impl AgentResult {
                 for it in &o.items {
                     println!("    {}: {}", it.section, it.target);
                 }
+            }
+            AgentResult::Init(o) => {
+                println!(
+                    "  {} {}",
+                    if o.overwritten {
+                        "overwrote"
+                    } else {
+                        "created"
+                    },
+                    o.path
+                );
             }
             // Fully rendered by the EventSink stream (print_event); nothing to add.
             AgentResult::Report(_) | AgentResult::Lock(_) => {}
@@ -1051,12 +1090,21 @@ fn run_agent(engine: Engine, cmd: AgentCmd, json: bool) -> anyhow::Result<()> {
                 };
                 AgentResult::List(eng.agent_list(spec, &sink)?)
             }
-            AgentCmd::Clean { scope, apply } => {
+            AgentCmd::Clean {
+                config,
+                scope,
+                apply,
+            } => {
                 let spec = AgentCleanSpec {
+                    config_path: config,
                     scope_override: scope.map(AgentScope::from),
                     apply,
                 };
                 AgentResult::Report(eng.agent_clean(spec, &sink)?)
+            }
+            AgentCmd::Init { global, force } => {
+                let spec = AgentInitSpec { global, force };
+                AgentResult::Init(eng.agent_init(spec, &sink)?)
             }
         };
         Ok(result) // sink drops here -> the main-thread rx.iter() terminates
@@ -1249,6 +1297,17 @@ fn print_event(ev: &Event) {
                     println!("  {}  {}", d.status, d.id);
                 }
             }
+        }
+        Event::AgentInitFinished { outcome } => {
+            println!(
+                "\x1b[1;32m✓ {} {}\x1b[0m",
+                if outcome.overwritten {
+                    "overwrote"
+                } else {
+                    "created"
+                },
+                outcome.path
+            );
         }
         Event::RunFinished { summary } => {
             if summary.ok() {

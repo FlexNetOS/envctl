@@ -20,7 +20,7 @@ pub enum Scope {
 }
 
 /// Deserialized `kasetto.yaml`: the full sync request (destination, scope, agents, sources).
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Default, Deserialize)]
 pub struct Config {
     pub destination: Option<String>,
     #[serde(default)]
@@ -240,6 +240,12 @@ pub enum SkillTarget {
 pub enum AgentField {
     One(Agent),
     Many(Vec<Agent>),
+}
+
+impl Default for AgentField {
+    fn default() -> Self {
+        AgentField::Many(Vec::new())
+    }
 }
 
 /// The 21-preset agent enum — the named agent targets kasetto knows how to write native

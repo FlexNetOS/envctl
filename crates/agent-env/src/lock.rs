@@ -130,6 +130,23 @@ impl LockMode {
     }
 }
 
+/// A portable snapshot of the skill subset of a lock, used for state transfer
+/// (kasetto `LockFile::state` / `apply_state`).
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq, Eq)]
+pub struct AgentLockState {
+    pub version: u8,
+    pub skills: BTreeMap<String, AgentLockEntry>,
+}
+
+impl Default for AgentLockState {
+    fn default() -> Self {
+        Self {
+            version: LOCK_VERSION,
+            skills: BTreeMap::new(),
+        }
+    }
+}
+
 /// One drift change between two lock snapshots.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct LockDrift {
@@ -185,6 +202,51 @@ impl AgentLockFile {
     pub fn clear_all(&mut self) {
         self.skills.clear();
         self.assets.clear();
+    }
+
+    /// Capture a portable snapshot of the skill state (kasetto `LockFile::state`).
+    pub fn state(&self) -> AgentLockState {
+        AgentLockState {
+            version: self.version,
+            skills: self.skills.clone(),
+        }
+    }
+
+    /// Restore the skill state from a snapshot (kasetto `LockFile::apply_state`).
+    pub fn apply_state(&mut self, state: &AgentLockState) {
+        self.version = state.version;
+        self.skills = state.skills.clone();
+    }
+
+    /// Sorted, deduplicated list of installed command names from tracked assets.
+    pub fn list_installed_commands(&self) -> Vec<String> {
+        let mut names: Vec<String> = self
+            .assets
+            .iter()
+            .filter(|(_, a)| a.kind == "command")
+            .map(|(_, a)| a.name.clone())
+            .collect();
+        names.sort();
+        names.dedup();
+        names
+    }
+
+    /// Sorted, deduplicated list of installed MCP server names from tracked assets.
+    pub fn list_installed_mcps(&self) -> Vec<String> {
+        let mut servers: Vec<String> = self
+            .list_tracked_asset_ids("mcp")
+            .into_iter()
+            .flat_map(|(_, dest_csv)| {
+                dest_csv
+                    .split(',')
+                    .map(str::trim)
+                    .filter(|s| !s.is_empty())
+                    .map(String::from)
+            })
+            .collect();
+        servers.sort();
+        servers.dedup();
+        servers
     }
 
     /// Compute drift between this (previous on-disk) lock and a freshly-resolved `next` lock.
@@ -492,5 +554,58 @@ assets: {}\n";
 
         lock.clear_all();
         assert!(lock.assets.is_empty());
+    }
+
+    #[test]
+    fn state_round_trip_captures_skills() {
+        let mut lock = AgentLockFile::default();
+        lock.skills
+            .insert("src::a".into(), skill_entry("d", "h", "r1"));
+        lock.skills
+            .insert("src::b".into(), skill_entry("d2", "h2", "r2"));
+
+        let state = lock.state();
+        let mut blank = AgentLockFile::default();
+        blank.apply_state(&state);
+
+        assert_eq!(blank.version, LOCK_VERSION);
+        assert_eq!(blank.skills.len(), 2);
+        assert_eq!(blank.skills["src::a"].hash, "h");
+        assert!(blank.skills["src::b"].destination == "d2");
+    }
+
+    #[test]
+    fn list_installed_commands_deduplicates_and_sorts() {
+        let mut lock = AgentLockFile::default();
+        lock.save_tracked_asset("cmd::a", test_asset("command", "z-cmd", "bin/z"));
+        lock.save_tracked_asset("cmd::b", test_asset("command", "a-cmd", "bin/a"));
+        lock.save_tracked_asset("cmd::c", test_asset("command", "a-cmd", "bin/a"));
+        lock.save_tracked_asset("mcp::x", test_asset("mcp", "x", "srv"));
+
+        assert_eq!(
+            lock.list_installed_commands(),
+            vec!["a-cmd".to_string(), "z-cmd".to_string()]
+        );
+    }
+
+    #[test]
+    fn list_installed_mcps_deduplicates_and_sorts() {
+        let mut lock = AgentLockFile::default();
+        let mut mcp = test_asset("mcp", "pack", "bravo,alpha");
+        mcp.destination = "bravo,alpha".into();
+        lock.save_tracked_asset("mcp::a", mcp);
+        let mut mcp2 = test_asset("mcp", "pack2", "alpha, charlie");
+        mcp2.destination = "alpha, charlie".into();
+        lock.save_tracked_asset("mcp::b", mcp2);
+        lock.save_tracked_asset("cmd::c", test_asset("command", "c", "bin/c"));
+
+        assert_eq!(
+            lock.list_installed_mcps(),
+            vec![
+                "alpha".to_string(),
+                "bravo".to_string(),
+                "charlie".to_string()
+            ]
+        );
     }
 }

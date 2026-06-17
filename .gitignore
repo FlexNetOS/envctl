@@ -4,6 +4,10 @@ Cargo.lock.bak
 *.swp
 .DS_Store
 
+# Test/playwright ephemeral artifacts
+.meta-snapshots/
+.playwright-mcp/
+
 # Agent harness output (generated, not committed)
 .agent/
 .archive/

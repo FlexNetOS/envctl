@@ -17,6 +17,7 @@
 
 pub mod clean;
 pub mod edit;
+pub mod init;
 pub mod list;
 pub mod lock;
 pub mod report;
@@ -25,6 +26,7 @@ pub mod sync;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
+use anyhow::Context;
 use serde::{Deserialize, Serialize};
 
 use envctl_agent_env::{
@@ -38,8 +40,8 @@ use envctl_agent_env::{
 
 /// Re-export the per-verb spec/return types so callers `use crate::agent::*`.
 pub use report::{
-    AgentEditItem, AgentEditOutcome, AgentList, AgentLockDriftItem, AgentLockOutcome, AgentReport,
-    AgentVerb,
+    AgentEditItem, AgentEditOutcome, AgentInitOutcome, AgentList, AgentLockDriftItem,
+    AgentLockOutcome, AgentReport, AgentVerb,
 };
 
 /// Serializable mirror of the library `Scope` — the engine-facing scope (so `event.rs` and
@@ -211,8 +213,19 @@ pub struct AgentListSpec {
 /// Options for `Engine::agent_clean`.
 #[derive(Clone, Debug)]
 pub struct AgentCleanSpec {
+    pub config_path: Option<String>,
     pub scope_override: Option<AgentScope>,
     pub apply: bool,
+}
+
+/// Options for `Engine::agent_init`.
+#[derive(Clone, Debug)]
+pub struct AgentInitSpec {
+    /// Write the global config under `$XDG_CONFIG_HOME/agent-env/agent-env.yaml`
+    /// instead of `./agent-env.yaml`.
+    pub global: bool,
+    /// Overwrite an existing config file (default: fail closed).
+    pub force: bool,
 }
 
 // --------------------------------------------------------------------------------------
@@ -246,14 +259,18 @@ impl AgentCtx {
         let path = config_path
             .map(str::to_string)
             .unwrap_or_else(default_config_path);
-        let (cfg, cfg_dir, cfg_label) = load_config_any(&path)?;
+        let (cfg, cfg_dir, cfg_label) = load_config_any(&path)
+            .with_context(|| format!("failed to load agent config from {path}"))?;
         let scope = match scope_override {
             Some(s) => s.into(),
             None => cfg.resolved_scope(),
         };
-        let destinations = resolve_destinations(&cfg_dir, &cfg, scope)?;
-        let scope_root = scope_root(scope, &cfg_dir)?;
-        let lock_file = agent_lock_path(scope, &cfg_dir)?;
+        let destinations = resolve_destinations(&cfg_dir, &cfg, scope)
+            .with_context(|| "failed to resolve agent destinations")?;
+        let scope_root =
+            scope_root(scope, &cfg_dir).with_context(|| "failed to resolve agent scope root")?;
+        let lock_file = agent_lock_path(scope, &cfg_dir)
+            .with_context(|| "failed to resolve agent lock path")?;
         Ok(AgentCtx {
             cfg,
             cfg_dir,

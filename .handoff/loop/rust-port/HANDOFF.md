@@ -43,7 +43,38 @@ Epic C is closed. Pick up the real open work:
 ## verify_on_resume
 ```
 cd <fresh worktree off origin/develop>
+rtk proxy cargo test -p envctl-agent-env            # expect ~334 passed, 1 ignored
+rtk proxy cargo test -p envctl-engine               # expect ~101 passed (agent_sync + agent_command parity)
 bash ci/gates/no-c.sh && bash ci/gates/shape.sh && bash ci/gates/enable.sh   # all PASS
 cargo build -p envctl-engine -p envctl && cargo test -p envctl-agent-env     # green
 ```
+
 resume_command: /forge-loop  (pick the next open backlog item — Epic C is DONE)
+
+## Post-parity hardening + polish (current session)
+
+After the parity ledger closed at 102 `[x]` / 0 `[~]` / 13 `[≠]`, a final
+incremental audit-and-reconcile pass landed the following no-downgrade fixes:
+
+- **Pure-Rust global allocator for the envctl binaries.** Replaced the
+  placeholder `wee_alloc` with `baby-mimalloc` (Rust-native mimalloc algorithm,
+  `mmap` + `std_mutex` features) in `crates/cli/src/main.rs` and
+  `crates/gui/src/main.rs`. Verified: no C linked (`no-c.sh` PASS), all
+  cli/gui/agent-env/engine tests green.
+- **Config-path anchoring for `agent clean`.** `AgentCleanSpec` now carries
+  `config_path`, and `Engine::agent_clean` resolves via `AgentCtx::resolve` just
+  like `sync`/`add`/`remove`/`lock`. Running `agent clean` from a subdirectory
+  of a project now finds the lock relative to the config root, not `cwd`.
+- **Error context in `AgentCtx::resolve`.** `load_config_any`, destination
+  resolution, scope-root, and lock-path resolution are wrapped with
+  `anyhow::Context` so missing/invalid configs produce actionable messages.
+- **GUI stale-results guard.** The GUI marks the cached `agent_list` stale after
+  any mutating run (`sync`/`add`/`remove`/`clean`) and shows a refresh hint.
+- **Lock-rewrite confirmation in the GUI.** When the `Lock` verb is switched from
+  `--check` to rewrite, the action button turns warning-colored and labels
+  itself "Rewrite Lock" instead of "Run Lock".
+- **C-13 `agent init` template writer.** Added `Engine::agent_init`, the
+  `envctl agent init [--global] [--force]` CLI verb, and parity-verified engine
+  + CLI tests. This closes the one business-logic gap the independent verifier
+  found (kasetto `init` writes a commented starter template; envctl previously
+  only had path-resolution constants).

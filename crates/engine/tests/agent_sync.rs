@@ -58,6 +58,11 @@ fn pack_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/agent/pack")
 }
 
+/// The committed local command pack fixture.
+fn cmdpack_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/agent/cmdpack")
+}
+
 /// Build a project tempdir with an `agent-env.yaml` and return (engine, project_dir, cfg_path).
 fn project_with_config(yaml: &str) -> (Engine, PathBuf, String) {
     sandbox_home();
@@ -469,6 +474,7 @@ fn clean_preview_keeps_then_apply_removes_tracked_only() {
     let preview = engine
         .agent_clean(
             AgentCleanSpec {
+                config_path: None,
                 scope_override: Some(AgentScope::Project),
                 apply: false,
             },
@@ -487,6 +493,7 @@ fn clean_preview_keeps_then_apply_removes_tracked_only() {
     let applied = engine
         .agent_clean(
             AgentCleanSpec {
+                config_path: None,
                 scope_override: Some(AgentScope::Project),
                 apply: true,
             },
@@ -599,6 +606,128 @@ fn never_prune_when_a_source_fails() {
     assert!(
         project.join(".claude/skills/alpha/SKILL.md").is_file(),
         "good locked skill survives a failing sibling source"
+    );
+}
+
+// ---------------------------------------------------------------------------------------
+// 9. cross-phase never-prune-on-failure: skills failure must not prune commands/MCPs
+// ---------------------------------------------------------------------------------------
+
+#[test]
+fn skills_failure_does_not_prune_installed_commands() {
+    let cmd_pack = cmdpack_dir();
+    let skill_pack = pack_dir();
+
+    // Install a command.
+    let cmd_yaml = format!(
+        "agent: claude-code\nscope: project\ncommands:\n  - source: {p}\n    commands: \"*\"\n",
+        p = cmd_pack.display()
+    );
+    let (engine, project, cfg) = project_with_config(&cmd_yaml);
+    let (s, _rx) = sink();
+    engine
+        .agent_sync(
+            AgentSyncSpec {
+                config_path: Some(cfg.clone()),
+                apply: true,
+                ..Default::default()
+            },
+            &s,
+        )
+        .unwrap();
+    assert!(
+        project.join(".claude/commands/foo.md").is_file(),
+        "command installed"
+    );
+
+    // Re-sync with a failing skills source and NO commands config.
+    let failing_yaml = format!(
+        "agent: claude-code\nscope: project\nskills:\n  - source: {p}\n    sub-dir: no-such-subdir\n    skills:\n      - ghost\n",
+        p = skill_pack.display()
+    );
+    let cfg2 = project.join("agent-env-failing.yaml");
+    std::fs::write(&cfg2, failing_yaml).unwrap();
+
+    let (s2, _rx2) = sink();
+    let report = engine
+        .agent_sync(
+            AgentSyncSpec {
+                config_path: Some(cfg2.to_string_lossy().to_string()),
+                apply: true,
+                ..Default::default()
+            },
+            &s2,
+        )
+        .expect("sync with failing skill");
+    assert!(report.summary.failed > 0, "failing skill records a failure");
+    assert!(
+        project.join(".claude/commands/foo.md").is_file(),
+        "installed command is NOT pruned when an earlier phase fails"
+    );
+}
+
+#[test]
+fn skills_failure_does_not_prune_installed_mcps() {
+    let skill_pack = pack_dir();
+
+    // Install an MCP.
+    let mcp_yaml = format!(
+        "agent: claude-code\nscope: project\nmcps:\n  - source: {p}\n    mcps: \"*\"\n",
+        p = skill_pack.display()
+    );
+    let (engine, project, cfg) = project_with_config(&mcp_yaml);
+    let (s, _rx) = sink();
+    engine
+        .agent_sync(
+            AgentSyncSpec {
+                config_path: Some(cfg.clone()),
+                apply: true,
+                ..Default::default()
+            },
+            &s,
+        )
+        .unwrap();
+    let mcp_json = project.join(".mcp.json");
+    assert!(mcp_json.is_file(), "mcp settings file created");
+    let before: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&mcp_json).unwrap()).unwrap();
+    assert!(
+        before["mcpServers"]
+            .as_object()
+            .unwrap()
+            .contains_key("github"),
+        "github mcp installed"
+    );
+
+    // Re-sync with a failing skills source, no MCP config, and no configured agent so the
+    // MCP settings target list is empty (the orphaned-MCP fallback path).
+    let failing_yaml = format!(
+        "destination: .claude\nscope: project\nskills:\n  - source: {p}\n    sub-dir: no-such-subdir\n    skills:\n      - ghost\n",
+        p = skill_pack.display()
+    );
+    let cfg2 = project.join("agent-env-failing.yaml");
+    std::fs::write(&cfg2, failing_yaml).unwrap();
+
+    let (s2, _rx2) = sink();
+    let report = engine
+        .agent_sync(
+            AgentSyncSpec {
+                config_path: Some(cfg2.to_string_lossy().to_string()),
+                apply: true,
+                ..Default::default()
+            },
+            &s2,
+        )
+        .expect("sync with failing skill and empty mcp targets");
+    assert!(report.summary.failed > 0, "failing skill records a failure");
+    let after: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(&mcp_json).unwrap()).unwrap();
+    assert!(
+        after["mcpServers"]
+            .as_object()
+            .unwrap()
+            .contains_key("github"),
+        "installed MCP is NOT pruned when an earlier phase fails"
     );
 }
 

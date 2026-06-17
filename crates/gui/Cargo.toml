@@ -13,3 +13,4 @@ envctl-engine = { workspace = true }
 eframe = { workspace = true }
 egui = { workspace = true }
 egui_extras = { workspace = true }
+baby-mimalloc = { workspace = true }

@@ -76,7 +76,8 @@ pub use fsops::{
 };
 pub use hash::{hash_dir, hash_file, hash_str};
 pub use lock::{
-    AgentLockEntry, AgentLockFile, AssetEntry, LockMode, AGENT_ASSETS_KEY, LOCK_VERSION,
+    AgentLockEntry, AgentLockFile, AgentLockState, AssetEntry, LockMode, AGENT_ASSETS_KEY,
+    LOCK_VERSION,
 };
 pub use mcp::{
     merge_mcp_config, read_source_mcp_servers, remove_mcp_server, servers_present_in_settings,
