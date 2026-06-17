@@ -64,6 +64,32 @@ pub enum Cmd {
     Audit(AuditArgs),
     /// Run a command with relay credentials injected into the child only.
     Run(RunArgs),
+    /// Mint a GitHub App installation access token from the vault-sealed App key (TASK-0020). This is
+    /// the FROZEN consumer-contract surface `flexnetos_github_app` shells: `--output json` prints
+    /// EXACTLY `{"token":"...","expires_at_unix":<i64>}` to stdout (all logs to stderr).
+    #[command(name = "mint-github")]
+    MintGithub(MintGithubArgs),
+}
+
+#[derive(Args, Debug)]
+pub struct MintGithubArgs {
+    /// The GitHub App installation id to mint a token for (required).
+    #[arg(long = "installation-id")]
+    pub installation_id: u64,
+    /// Numeric repository IDs to scope the token to, comma-separated (e.g. `--repository-ids 10,20`).
+    /// Omitted ⇒ the installation's full default repository scope.
+    #[arg(long = "repository-ids", value_delimiter = ',')]
+    pub repository_ids: Vec<String>,
+    /// Least-privilege permissions, comma-separated `name:access` (e.g. `--permissions checks:write,contents:read`).
+    /// Omitted ⇒ the installation's full default permission scope.
+    #[arg(long = "permissions", value_delimiter = ',')]
+    pub permissions: Vec<String>,
+    /// Requested token lifetime in seconds (required; advisory — GitHub fixes the lifetime ~1h).
+    #[arg(long = "ttl-secs")]
+    pub ttl_secs: i64,
+    /// Output format. Only `json` is supported (the frozen machine contract). Required.
+    #[arg(long = "output")]
+    pub output: String,
 }
 
 #[derive(Subcommand, Debug)]

@@ -37,8 +37,8 @@ pub use guard::{check_sec_guards, Destructiveness, SecGuard, UnlockContext};
 pub use keyslot::{Argon2Params, Factor, Kdf, Keyslot};
 #[cfg(feature = "provider-github")]
 pub use mint_github::{
-    build_app_jwt, GitHubAppMint, HttpRequest, HttpResponse, HttpTransport, TransportError,
-    MAX_JWT_TTL_SECS,
+    build_app_jwt, GitHubAppMint, GithubMintParams, HttpRequest, HttpResponse, HttpTransport,
+    NoopHttpTransport, TransportError, MAX_JWT_TTL_SECS,
 };
 pub use seam::{Clock, ProviderMint, RealUsbProbe, SystemClock, Upstream, UsbProbe};
 
@@ -111,6 +111,16 @@ const META_MITM_CA_NOT_AFTER: &str = "mitm.ca_not_after";
 #[cfg(feature = "provider-github")]
 pub type AppCredential = (Zeroizing<Vec<u8>>, String, u64);
 
+/// TASK-0020 flat-convention secret/meta names for the per-call `mint-github` path. The App PEM is
+/// sealed as a broker-only `SecretRow` under this name (un-revealable; opened only against the live
+/// DEK, never through `secret_get`); the App id is a non-secret integer string in the plaintext meta
+/// KV (integrity-covered by the header MAC). Enrollment lands in TASK-0026 (`secretctl github-app
+/// enroll`); until then `mint_github_token` fails closed naming exactly that remediation.
+#[cfg(feature = "provider-github")]
+const GITHUB_APP_KEY_NAME: &str = "github-app-private-key";
+#[cfg(feature = "provider-github")]
+const GITHUB_APP_ID_META: &str = "github-app-id";
+
 fn app_id_meta_key(secret_name: &str) -> String {
     format!("{secret_name}.app_id")
 }
@@ -149,6 +159,14 @@ struct EngineInner {
     /// rebuild-on-unlock precedent (the sealed CA key likewise opens only against the live DEK).
     provider: RwLock<Box<dyn ProviderMint>>,
     upstream: Box<dyn Upstream>, // pins frozen webpki roots in the daemon impl (FS-S7)
+    /// The HTTP egress seam for the PER-CALL GitHub App mint (`mint_github_token`, TASK-0020). The
+    /// daemon installs `DaemonHttpTransport` (reqwest/rustls-on-ring, frozen webpki roots); the
+    /// engine's own default is the fail-closed `NoopHttpTransport` (no egress ⇒ a stray mint refuses
+    /// rather than silently succeeding). Distinct from the late-bound `provider` minter: this path
+    /// builds a fresh `GitHubAppMint` per request from the request's `installation_id`, so it needs
+    /// a transport it can hand to that minter even before any provider is installed.
+    #[cfg(feature = "provider-github")]
+    github_transport: Box<dyn mint_github::HttpTransport>,
     owner_uid: u32,
     /// Short-TTL cache for the **network** presence factor (Profile S, the Cognitum Seed):
     /// `(proven, resolved_at_wall_ms)`. The per-request egress path (`relay_swap`) must not do a
@@ -221,11 +239,18 @@ impl Engine {
             Box::new(RealUsbProbe),
             Box::new(seam::NoMint),
             Box::new(NullUpstream),
+            // TASK-0020: the default (non-daemon) build has no GitHub egress ⇒ fail-closed no-op.
+            #[cfg(feature = "provider-github")]
+            Box::new(mint_github::NoopHttpTransport),
         )
     }
 
     /// Construct an engine with injected seams + store (the `envctl with_runner` analogue, for
     /// tests). `store` is the `DryRunRunner` analogue: pass `InMemStore` for an in-RAM vault.
+    ///
+    /// TASK-0020: under `provider-github` this also takes `github_transport`, the HTTP egress seam for
+    /// the per-call `mint_github_token` path (the daemon passes `DaemonHttpTransport`; tests a fake;
+    /// the non-daemon default is `NoopHttpTransport`).
     pub fn with_seams(
         paths: paths::Paths,
         store: Box<dyn vault::Store>,
@@ -233,6 +258,7 @@ impl Engine {
         usb: Box<dyn UsbProbe>,
         provider: Box<dyn ProviderMint>,
         upstream: Box<dyn Upstream>,
+        #[cfg(feature = "provider-github")] github_transport: Box<dyn mint_github::HttpTransport>,
     ) -> anyhow::Result<Engine> {
         let owner_uid = current_uid();
         Ok(Engine {
@@ -246,6 +272,8 @@ impl Engine {
                 usb,
                 provider: RwLock::new(provider),
                 upstream,
+                #[cfg(feature = "provider-github")]
+                github_transport,
                 owner_uid,
                 #[cfg(feature = "seed-factor")]
                 presence_cache: std::sync::Mutex::new(None),
@@ -1644,6 +1672,145 @@ impl Engine {
         Ok(())
     }
 
+    /// TASK-0020 — persist the non-secret flat `github-app-id` for the per-call `mint-github` path
+    /// (the App PEM itself is sealed via the normal `secret_put` as a `broker_only` secret under
+    /// `github-app-private-key`). This is the engine seam the TASK-0026 `secretctl github-app enroll`
+    /// verb drives. Requires the vault Unlocked (the meta KV shares the store the sealed secret lives
+    /// in; gating on the DEK keeps enrollment an unlocked-only op, fail-closed). The id is non-secret
+    /// and integrity-covered by the header MAC.
+    #[cfg(feature = "provider-github")]
+    pub fn put_github_app_id(&self, app_id: &str) -> anyhow::Result<()> {
+        {
+            let v = self.inner.vault.read().expect("vault lock");
+            if v.dek().is_none() {
+                return Err(EngineError::Locked.into());
+            }
+        }
+        self.inner.store.put_meta(GITHUB_APP_ID_META, app_id)?;
+        Ok(())
+    }
+
+    /// TASK-0020 — mint a GitHub App **installation access token** for a REQUEST-SUPPLIED
+    /// installation, behind the FROZEN `mint-github` consumer contract.
+    ///
+    /// Unlike the relay-native path (which uses the late-bound `provider` minter built at unlock),
+    /// `installation_id` here comes from the request, so we build a FRESH [`GitHubAppMint`] per call
+    /// from the vault-sealed App key (`github-app-private-key`, broker-only) + the non-secret App id
+    /// (`github-app-id`), using the engine clock and the [`github_transport`](EngineInner) seam.
+    ///
+    /// Steps mirror [`open_mitm_ca_key`](Self::open_mitm_ca_key) (broker-only unseal against the live
+    /// DEK, NOT `secret_get`):
+    ///   1. require the vault Unlocked (locked ⇒ `Err(Locked)`, fail-closed: no key ⇒ no mint).
+    ///   2. open `github-app-private-key` broker-only against the live DEK ⇒ `Zeroizing` PEM. Absent
+    ///      ⇒ a fail-closed error naming the remediation (`secretctl github-app enroll`, TASK-0026).
+    ///   3. read the `github-app-id` non-secret meta/secret.
+    ///   4. build a per-call `GitHubAppMint::new(app_id, installation_id, pem, clock, &transport)` and
+    ///      `mint_scoped` with `repo_ids` (numeric) + `perms`.
+    ///   5. emit a METADATA-ONLY audit row + event (installation_id, repo/perm counts, expires_at —
+    ///      NEVER the token or PEM).
+    ///
+    /// Returns the `ScopedToken` (its `token` is `Zeroizing`). The token materializes as a `String`
+    /// only at the `MintGithubResp` / secretctl stdout boundary — never here, in a log, or in audit.
+    #[cfg(feature = "provider-github")]
+    pub fn mint_github_token(
+        &self,
+        params: mint_github::GithubMintParams,
+        sink: &EventSink,
+    ) -> anyhow::Result<seam::ScopedToken> {
+        use crate::broker::Provider;
+
+        // 1. Require Unlocked. Open the sealed App PEM directly against the live DEK while holding the
+        // read lock (the un-revealable broker-only path; `secret_get` would refuse a broker_only
+        // reveal). A locked vault has no DEK ⇒ Err(Locked) ⇒ fail-closed (no key ⇒ no mint).
+        let pem = {
+            let v = self.inner.vault.read().expect("vault lock");
+            let dek = match v.dek() {
+                Some(d) => d,
+                None => return Err(EngineError::Locked.into()),
+            };
+            // 2. Absent App key ⇒ fail closed, naming the enrollment remediation (TASK-0026).
+            if self
+                .inner
+                .store
+                .get_secret_latest(GITHUB_APP_KEY_NAME)?
+                .is_none()
+            {
+                anyhow::bail!(
+                    "GitHub App key not enrolled — run `secretctl github-app enroll` (TASK-0026)"
+                );
+            }
+            self.open_real_key(dek, GITHUB_APP_KEY_NAME)?
+        };
+
+        // 3. The App id is non-secret; it is enrolled alongside the key. Absent ⇒ same remediation.
+        let app_id = self
+            .inner
+            .store
+            .get_meta(GITHUB_APP_ID_META)?
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "GitHub App id not enrolled — run `secretctl github-app enroll` (TASK-0026)"
+                )
+            })?;
+
+        // 4. Build a PER-CALL minter from the request's installation_id + the sealed key, and mint.
+        // `&dyn HttpTransport` lets the daemon's `DaemonHttpTransport` (or a test fake) drive egress
+        // without the engine naming the concrete type. A non-GitHub clock is the engine's own clock.
+        let mut minter = mint_github::GitHubAppMint::new(
+            app_id,
+            params.installation_id,
+            pem,
+            self.inner.clock.as_ref(),
+            self.inner.github_transport.as_ref(),
+        );
+        if let Some(base) = &params.api_base {
+            minter = minter.with_api_base(base.clone());
+        }
+        let req = seam::MintRequest {
+            provider: Provider::Github,
+            repos: Vec::new(), // mint-github scopes ONLY by numeric repository_ids (mutually excl.)
+            repo_ids: params.repository_ids.clone(),
+            perms: params.permissions.clone(),
+            ttl_secs: params.ttl_secs,
+        };
+        let scoped = minter
+            .mint_scoped(&req)
+            .map_err(|e| anyhow::anyhow!("github mint failed: {e}"))?;
+
+        // Defensive: a non-positive epoch is never a valid GitHub expiry. Fail closed rather than
+        // emit a bogus expires_at the consumer would treat as already-expired / garbage.
+        if scoped.expires_at <= 0 {
+            anyhow::bail!("github mint returned a non-positive expires_at");
+        }
+        // An empty token is a broker denial in disguise — never surface it as success (fail-closed).
+        if scoped.token.is_empty() {
+            anyhow::bail!("github mint returned an empty token");
+        }
+
+        // 5. METADATA-ONLY audit + event: installation_id, repo/perm counts, expires_at — NEVER the
+        // token or PEM. `expires_at` is GitHub's authoritative epoch, surfaced honestly.
+        let expires_at_rfc3339 = chrono::DateTime::from_timestamp(scoped.expires_at, 0)
+            .map(|dt| dt.to_rfc3339())
+            .unwrap_or_default();
+        self.audit_ok(
+            sink,
+            "github_token_minted",
+            Some(format!("installation:{}", params.installation_id)),
+            serde_json::json!({
+                "installation_id": params.installation_id,
+                "repository_id_count": params.repository_ids.len(),
+                "permission_count": params.permissions.len(),
+                "expires_at": expires_at_rfc3339,
+            }),
+        )?;
+        sink.emit(SecretEvent::RelayMinted {
+            relay: format!("github-installation:{}", params.installation_id),
+            kind: RelayKind::Ephemeral,
+            expires_at: expires_at_rfc3339,
+        });
+        Ok(scoped)
+    }
+
     /// Build the child-env injection for a freshly-minted bearer (G2). This is the SINGLE place the
     /// native-subtoken decision lives — the front-ends (CLI/GUI/daemon) call THIS, never
     /// [`inject::injection_template`] directly, so the mint/inject logic can't diverge.
@@ -1697,6 +1864,7 @@ impl Engine {
             let req = seam::MintRequest {
                 provider,
                 repos,
+                repo_ids: Vec::new(), // relay-native path scopes by repo NAME, not id (TASK-0020)
                 perms,
                 ttl_secs: native_ttl_secs,
             };
@@ -2828,6 +2996,8 @@ mod ca_tests {
             Box::new(NoUsb),
             Box::new(seam::NoMint),
             Box::new(NullUpstream),
+            #[cfg(feature = "provider-github")]
+            Box::new(crate::mint_github::NoopHttpTransport),
         )
         .expect("with_seams");
         let (sink, rx) = EventSink::channel();
@@ -3131,6 +3301,8 @@ mod native_mint_tests {
             Box::new(NoUsb),
             Box::new(seam::NoMint),
             Box::new(NullUpstream),
+            #[cfg(feature = "provider-github")]
+            Box::new(crate::mint_github::NoopHttpTransport),
         )
         .expect("with_seams");
         let (sink, rx) = EventSink::channel();
@@ -3516,6 +3688,188 @@ mod native_mint_tests {
         assert_eq!(
             seen.1,
             vec!["checks:write".to_string(), "contents:read".to_string()]
+        );
+    }
+
+    // ---- TASK-0020: mint_github_token (per-call, frozen consumer contract) --------------------
+
+    /// Build an UNLOCKED engine whose `github_transport` is the supplied `FakeTransport`, then enroll
+    /// the flat-convention App key (`github-app-private-key` broker-only) + id (`github-app-id`) so
+    /// `mint_github_token` finds them. Returns `(engine, sink, rx)`.
+    fn unlocked_engine_with_transport(
+        status: u16,
+        body: &str,
+    ) -> (Engine, EventSink, std::sync::mpsc::Receiver<SecretEvent>) {
+        let engine = Engine::with_seams(
+            paths(),
+            Box::new(vault::InMemStore::new()),
+            Box::new(FixedClock),
+            Box::new(NoUsb),
+            Box::new(seam::NoMint),
+            Box::new(NullUpstream),
+            Box::new(FakeTransport {
+                status,
+                body: body.to_string(),
+            }),
+        )
+        .expect("with_seams");
+        let (sink, rx) = EventSink::channel();
+        engine
+            .init_vault(
+                Zeroizing::new("correct horse battery staple".to_string()),
+                None,
+                None,
+                at_floor(),
+                &sink,
+            )
+            .expect("init_vault");
+        engine
+            .unlock(
+                Unlock::Passphrase(Zeroizing::new("correct horse battery staple".to_string())),
+                &sink,
+            )
+            .expect("unlock");
+        (engine, sink, rx)
+    }
+
+    fn enroll_github_app(engine: &Engine, sink: &EventSink) {
+        engine
+            .secret_put(
+                SecretMeta {
+                    name: GITHUB_APP_KEY_NAME.into(),
+                    provider: Provider::Github,
+                    note: "test app key".into(),
+                    broker_only: true,
+                },
+                Zeroizing::new(TEST_PEM.as_bytes().to_vec()),
+                sink,
+            )
+            .expect("secret_put app key");
+        engine
+            .inner
+            .store
+            .put_meta(GITHUB_APP_ID_META, "4044997")
+            .expect("put app id meta");
+    }
+
+    #[test]
+    fn mint_github_token_happy_path_mints_and_audits_metadata_only() {
+        let (engine, sink, rx) = unlocked_engine_with_transport(
+            201,
+            r#"{"token":"ghs_frozen_contract","expires_at":"2026-06-12T23:00:00Z"}"#,
+        );
+        enroll_github_app(&engine, &sink);
+        let _ = drain(&rx); // discard init/unlock/seed events
+
+        let scoped = engine
+            .mint_github_token(
+                mint_github::GithubMintParams {
+                    installation_id: 12345,
+                    repository_ids: vec![10, 4_044_997],
+                    permissions: vec!["checks:write".into()],
+                    ttl_secs: 3600,
+                    api_base: None,
+                },
+                &sink,
+            )
+            .expect("mint ok");
+        assert_eq!(&*scoped.token, b"ghs_frozen_contract");
+        assert_eq!(
+            scoped.expires_at,
+            chrono::DateTime::parse_from_rfc3339("2026-06-12T23:00:00Z")
+                .unwrap()
+                .timestamp()
+        );
+        assert!(scoped.expires_at > 0, "i64 epoch is positive");
+
+        // The audit row + event carry metadata only — NEVER the minted token.
+        let events = drain(&rx);
+        for e in &events {
+            let json = serde_json::to_string(e).unwrap();
+            assert!(
+                !json.contains("ghs_frozen_contract"),
+                "token must never appear in an event: {json}"
+            );
+        }
+        let minted = events
+            .iter()
+            .any(|e| matches!(e, SecretEvent::RelayMinted { .. }));
+        assert!(minted, "a RelayMinted (metadata-only) event was emitted");
+    }
+
+    #[test]
+    fn mint_github_token_refuses_when_locked() {
+        let (engine, sink, _rx) = unlocked_engine_with_transport(201, "{}");
+        enroll_github_app(&engine, &sink);
+        engine.lock(&sink).expect("lock");
+        // Locked vault ⇒ no DEK ⇒ no key ⇒ fail-closed (never a fabricated token).
+        // NB: ScopedToken holds a secret and has no Debug, so match the Result directly.
+        let err = match engine.mint_github_token(
+            mint_github::GithubMintParams {
+                installation_id: 1,
+                repository_ids: vec![],
+                permissions: vec![],
+                ttl_secs: 3600,
+                api_base: None,
+            },
+            &sink,
+        ) {
+            Ok(_) => panic!("locked vault must refuse"),
+            Err(e) => e,
+        };
+        assert!(
+            err.downcast_ref::<EngineError>()
+                .map(|e| matches!(e, EngineError::Locked))
+                .unwrap_or(false),
+            "locked refusal is EngineError::Locked, got: {err}"
+        );
+    }
+
+    #[test]
+    fn mint_github_token_refuses_when_key_absent_naming_remediation() {
+        // Unlocked, but the App key was never enrolled ⇒ fail-closed naming the enroll remediation.
+        let (engine, sink, _rx) = unlocked_engine_with_transport(201, "{}");
+        let err = match engine.mint_github_token(
+            mint_github::GithubMintParams {
+                installation_id: 1,
+                repository_ids: vec![],
+                permissions: vec![],
+                ttl_secs: 3600,
+                api_base: None,
+            },
+            &sink,
+        ) {
+            Ok(_) => panic!("absent key must refuse"),
+            Err(e) => e,
+        };
+        let msg = err.to_string();
+        assert!(
+            msg.contains("github-app enroll") && msg.contains("not enrolled"),
+            "absent-key error names the remediation, got: {msg}"
+        );
+    }
+
+    #[test]
+    fn mint_github_token_refuses_on_http_error_never_a_token() {
+        let (engine, sink, _rx) = unlocked_engine_with_transport(404, r#"{"message":"Not Found"}"#);
+        enroll_github_app(&engine, &sink);
+        // A non-201 GitHub response ⇒ the per-call minter errors ⇒ we refuse (no token).
+        let err = match engine.mint_github_token(
+            mint_github::GithubMintParams {
+                installation_id: 1,
+                repository_ids: vec![10],
+                permissions: vec![],
+                ttl_secs: 3600,
+                api_base: None,
+            },
+            &sink,
+        ) {
+            Ok(_) => panic!("http error must refuse"),
+            Err(e) => e,
+        };
+        assert!(
+            err.to_string().contains("github mint failed"),
+            "surfaces a fail-closed mint error, got: {err}"
         );
     }
 }

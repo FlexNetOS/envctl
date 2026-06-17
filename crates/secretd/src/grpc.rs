@@ -232,6 +232,115 @@ impl v1::vault_server::Vault for VaultSvc {
             "Vault.Rotate is not available in Phase 6",
         ))
     }
+
+    /// Vault.MintGithub — TASK-0020 FROZEN consumer contract. Per-call GitHub App installation-token
+    /// mint: the engine builds a fresh `GitHubAppMint` from the vault-sealed App key for the
+    /// request's `installation_id`, exchanges the App-JWT for a scoped installation token, and
+    /// returns `{token, expires_at_unix}`. Read-only (no apply/confirm) — the gate is the unlocked
+    /// vault (USB-possession-floored). The minted token is NEVER logged here; it crosses the wire
+    /// ONLY in `MintGithubResp.token` and is materialized as a `String` exactly once.
+    ///
+    /// Without the `provider-github` feature the daemon has no mint path ⇒ `Unimplemented`.
+    #[cfg(not(feature = "provider-github"))]
+    async fn mint_github(
+        &self,
+        _request: Request<v1::MintGithubReq>,
+    ) -> Result<Response<v1::MintGithubResp>, Status> {
+        Err(Status::unimplemented(
+            "Vault.MintGithub requires the provider-github feature",
+        ))
+    }
+
+    #[cfg(feature = "provider-github")]
+    async fn mint_github(
+        &self,
+        request: Request<v1::MintGithubReq>,
+    ) -> Result<Response<v1::MintGithubResp>, Status> {
+        let req = request.into_inner();
+
+        // Parse the repeated `repository_ids` STRINGS into u64 at the boundary — a non-numeric id is
+        // a malformed request, rejected (never forwarded so it can't become a doomed GitHub call).
+        // The closure maps to a small `String` (not a large `Status`) to satisfy `result_large_err`.
+        let repository_ids: Vec<u64> = req
+            .repository_ids
+            .iter()
+            .map(|s| {
+                s.trim()
+                    .parse::<u64>()
+                    .map_err(|_| format!("repository_ids: '{s}' is not a numeric id"))
+            })
+            .collect::<Result<Vec<u64>, String>>()
+            .map_err(Status::invalid_argument)?;
+
+        // `ttl_secs` is proto `int64` (already an `i64`); bound-check defensively (the engine treats
+        // it as advisory — GitHub fixes the installation-token lifetime ~1h). A negative ttl is a
+        // malformed request.
+        let ttl_secs = req.ttl_secs;
+        if ttl_secs < 0 {
+            return Err(Status::invalid_argument("ttl_secs must be non-negative"));
+        }
+
+        // The REST base override (GHES / e2e mock) is read HERE, in the daemon — the engine lib stays
+        // env-free (same discipline as the relay-native `rebuild_github_provider`). Default ⇒ real
+        // GitHub. An empty value is ignored.
+        let api_base = std::env::var("ENVCTL_GITHUB_API_BASE")
+            .ok()
+            .filter(|b| !b.trim().is_empty());
+        let params = envctl_secrets::GithubMintParams {
+            installation_id: req.installation_id,
+            repository_ids,
+            permissions: req.permissions,
+            ttl_secs,
+            api_base,
+        };
+        let engine = self.engine.clone();
+        let scoped = tokio::task::spawn_blocking(move || {
+            let sink = EventSink::null();
+            engine.mint_github_token(params, &sink)
+        })
+        .await
+        .map_err(join_err)?
+        .map_err(map_mint_github_err)?;
+
+        // Materialize the token as a String EXACTLY here (the engine kept it `Zeroizing`). Defensive
+        // re-check (the engine already rejects these): a non-positive expiry or an empty token is a
+        // fail-closed refusal, never a fabricated success.
+        if scoped.expires_at <= 0 {
+            return Err(Status::permission_denied(
+                "mint produced a non-positive expiry",
+            ));
+        }
+        let token = String::from_utf8_lossy(&scoped.token).into_owned();
+        if token.is_empty() {
+            return Err(Status::permission_denied("mint produced an empty token"));
+        }
+        Ok(Response::new(v1::MintGithubResp {
+            token,
+            expires_at_unix: scoped.expires_at,
+        }))
+    }
+}
+
+/// Map a `mint_github_token` failure to a tonic `Status` WITHOUT echoing any secret (the token never
+/// reaches an error path — it lives only in the success `ScopedToken`). Classify fail-closed:
+///   * a locked vault ⇒ `failed_precondition` (the operator must unlock first);
+///   * a transport / GitHub-HTTP error ⇒ `unavailable` (retryable, upstream/egress fault);
+///   * everything else (absent key, broker denial, empty token, malformed) ⇒ `permission_denied`.
+#[cfg(feature = "provider-github")]
+fn map_mint_github_err(e: anyhow::Error) -> Status {
+    use envctl_secrets::EngineError;
+    if let Some(EngineError::Locked) = e.downcast_ref::<EngineError>() {
+        return Status::failed_precondition(e.to_string());
+    }
+    let msg = e.to_string();
+    // The engine wraps a `MintError` as "github mint failed: ...". A transport/HTTP fault is a
+    // retryable upstream condition; surface it as `unavailable`. (The message carries no secret —
+    // the engine's `DaemonHttpTransport` maps every reqwest error to a FIXED key-free string.)
+    let lower = msg.to_ascii_lowercase();
+    if lower.contains("transport") || lower.contains("github returned") {
+        return Status::unavailable(msg);
+    }
+    Status::permission_denied(msg)
 }
 
 // ============================================================================================

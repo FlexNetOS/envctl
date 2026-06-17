@@ -74,6 +74,8 @@ fn make_engine(paths: &Paths) -> Engine {
         Box::new(NoUsb),
         Box::new(NoMint),
         Box::new(NullUpstream),
+        #[cfg(feature = "provider-github")]
+        Box::new(envctl_secrets::mint_github::NoopHttpTransport),
     )
     .expect("with_seams")
 }
@@ -411,4 +413,180 @@ async fn native_mint_without_credential_falls_back_to_proxy_swap() {
     );
 
     std::env::remove_var("ENVCTL_GITHUB_APP_SECRET");
+}
+
+// ============================================================================================
+// TASK-0020: the FROZEN `Vault.MintGithub` per-call surface, end-to-end through `secretd`.
+// ============================================================================================
+
+const MINT_GITHUB_KEY: &str = "github-app-private-key";
+const FROZEN_TOKEN: &str = "ghs_frozen_e2e_token";
+
+/// Build an engine whose `github_transport` is the REAL `DaemonHttpTransport` (so the per-call mint
+/// actually reaches the mock). Must run inside the tokio runtime (`Handle::current()`).
+fn make_engine_with_daemon_transport(paths: &Paths) -> Engine {
+    Engine::with_seams(
+        paths.clone(),
+        Box::new(InMemStore::new()) as Box<dyn Store>,
+        Box::new(SystemClock),
+        Box::new(NoUsb),
+        Box::new(NoMint),
+        Box::new(NullUpstream),
+        Box::new(envctl_secretd::transport::DaemonHttpTransport::new()),
+    )
+    .expect("with_seams")
+}
+
+/// Init + unlock + seed the FLAT-convention App key (`github-app-private-key` broker_only) + id
+/// (`github-app-id` meta), then lock. The per-call `mint_github_token` opens these post-unlock.
+fn seed_flat_app_credential(engine: &Engine) {
+    let sink = EventSink::null();
+    engine
+        .init_vault(
+            Zeroizing::new("correct horse battery staple".to_string()),
+            None,
+            None,
+            cheap_argon2(),
+            &sink,
+        )
+        .expect("init_vault");
+    engine
+        .unlock(
+            envctl_secrets::Unlock::Passphrase(Zeroizing::new(
+                "correct horse battery staple".to_string(),
+            )),
+            &sink,
+        )
+        .expect("unlock");
+    engine
+        .secret_put(
+            SecretMeta {
+                name: MINT_GITHUB_KEY.to_string(),
+                provider: envctl_secrets::broker::Provider::Github,
+                note: "e2e flat app key".to_string(),
+                broker_only: true,
+            },
+            Zeroizing::new(TEST_PEM.as_bytes().to_vec()),
+            &sink,
+        )
+        .expect("secret_put flat app pem");
+    // The App id is a non-secret plaintext meta value (integrity-covered by the header MAC).
+    engine
+        .put_github_app_id("4044997")
+        .expect("put github app id");
+    engine.lock(&sink).expect("lock");
+}
+
+async fn mint_github_over_wire(
+    sock: &std::path::Path,
+    repository_ids: Vec<&str>,
+    permissions: Vec<&str>,
+) -> Result<v1::MintGithubResp, tonic::Status> {
+    let mut c = v1::vault_client::VaultClient::new(connect(sock.to_path_buf()).await);
+    c.mint_github(v1::MintGithubReq {
+        installation_id: 12345,
+        repository_ids: repository_ids.into_iter().map(str::to_string).collect(),
+        permissions: permissions.into_iter().map(str::to_string).collect(),
+        ttl_secs: 3600,
+    })
+    .await
+    .map(|r| r.into_inner())
+}
+
+/// Happy path: the daemon mints over the per-call path and returns the FROZEN `{token,
+/// expires_at_unix}`. The token is the mock-minted token; expires_at_unix is GitHub's epoch.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn mint_github_returns_frozen_two_field_response() {
+    let _g = serial_guard().await;
+    let body = r#"{"token":"ghs_frozen_e2e_token","expires_at":"2026-06-12T23:00:00Z"}"#;
+    let (base, mock) = spawn_mock_github(201, body);
+    std::env::set_var("ENVCTL_GITHUB_API_BASE", &base);
+
+    let event_wire: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(Vec::new()));
+    let (_dir, paths) = temp_paths("mintgh-ok");
+    let engine = make_engine_with_daemon_transport(&paths);
+    seed_flat_app_credential(&engine);
+
+    let sock = paths.control_socket();
+    serve(engine.clone(), sock.clone());
+    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    unlock_over_wire(&sock, &event_wire).await;
+
+    let resp = mint_github_over_wire(&sock, vec!["10", "4044997"], vec!["checks:write"])
+        .await
+        .expect("mint_github ok");
+    let _ = mock.join();
+
+    assert_eq!(
+        resp.token, FROZEN_TOKEN,
+        "the mock-minted token is returned"
+    );
+    let expected = chrono::DateTime::parse_from_rfc3339("2026-06-12T23:00:00Z")
+        .unwrap()
+        .timestamp();
+    assert_eq!(
+        resp.expires_at_unix, expected,
+        "expires_at_unix is GitHub's authoritative epoch (i64)"
+    );
+    assert!(resp.expires_at_unix > 0, "positive epoch");
+
+    // The minted token must NEVER appear in the unlock event-stream wire (metadata-only events).
+    let ew = event_wire.lock().unwrap();
+    assert!(
+        !contains(&ew, FROZEN_TOKEN.as_bytes()),
+        "minted token must never cross the event-stream wire"
+    );
+    drop(ew);
+
+    std::env::remove_var("ENVCTL_GITHUB_API_BASE");
+}
+
+/// A non-numeric `repository_ids` entry is rejected at the daemon boundary (invalid_argument) —
+/// never forwarded to GitHub.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn mint_github_rejects_non_numeric_repository_id() {
+    let _g = serial_guard().await;
+    std::env::remove_var("ENVCTL_GITHUB_API_BASE");
+    let event_wire: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(Vec::new()));
+    let (_dir, paths) = temp_paths("mintgh-badid");
+    let engine = make_engine_with_daemon_transport(&paths);
+    seed_flat_app_credential(&engine);
+
+    let sock = paths.control_socket();
+    serve(engine.clone(), sock.clone());
+    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    unlock_over_wire(&sock, &event_wire).await;
+
+    let err = mint_github_over_wire(&sock, vec!["not-a-number"], vec![])
+        .await
+        .expect_err("non-numeric repository id must be rejected");
+    assert_eq!(
+        err.code(),
+        tonic::Code::InvalidArgument,
+        "non-numeric repository_ids ⇒ invalid_argument, got: {err:?}"
+    );
+}
+
+/// A locked vault ⇒ the mint fails closed with `failed_precondition` (no key ⇒ no token).
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn mint_github_locked_vault_fails_precondition() {
+    let _g = serial_guard().await;
+    std::env::remove_var("ENVCTL_GITHUB_API_BASE");
+    let (_dir, paths) = temp_paths("mintgh-locked");
+    let engine = make_engine_with_daemon_transport(&paths);
+    seed_flat_app_credential(&engine); // leaves the vault LOCKED
+
+    let sock = paths.control_socket();
+    serve(engine.clone(), sock.clone());
+    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    // Deliberately do NOT unlock — the vault stays locked.
+
+    let err = mint_github_over_wire(&sock, vec![], vec![])
+        .await
+        .expect_err("locked vault must refuse the mint");
+    assert_eq!(
+        err.code(),
+        tonic::Code::FailedPrecondition,
+        "locked vault ⇒ failed_precondition, got: {err:?}"
+    );
 }

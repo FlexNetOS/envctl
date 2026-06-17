@@ -77,6 +77,8 @@ fn make_engine(paths: &Paths, keyfile: &Zeroizing<Vec<u8>>) -> Engine {
         }),
         Box::new(NoMint),
         Box::new(NullUpstream),
+        #[cfg(feature = "provider-github")]
+        Box::new(envctl_secrets::mint_github::NoopHttpTransport),
     )
     .expect("with_seams")
 }

@@ -1013,6 +1013,8 @@ mod tests {
                 Box::new(PresentUsb(keyfile.clone())),
                 Box::new(NoMint),
                 Box::new(NullUpstream),
+                #[cfg(feature = "provider-github")]
+                Box::new(envctl_secrets::mint_github::NoopHttpTransport),
             )
             .expect("with_seams");
             let sink = EventSink::null();

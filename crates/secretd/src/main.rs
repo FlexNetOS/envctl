@@ -223,13 +223,21 @@ async fn serve() -> anyhow::Result<()> {
 /// `spawn_blocking` thread — NEVER on the async reactor, where a nested `block_on` would panic (see
 /// `secrets-store-libsql/src/sync.rs`). `InMemStore` does no async and is built inline.
 async fn build_engine(paths: Paths, cfg: config::StoreConfig) -> anyhow::Result<Engine> {
+    // Capture the runtime handle in this ASYNC context so the GitHub mint transport (TASK-0020) can
+    // be built even on the OFF-reactor `spawn_blocking` thread the libSQL store is constructed on
+    // (where `Handle::current()` would panic). Cheap to clone; moved into the blocking closure.
+    let rt = tokio::runtime::Handle::current();
     match cfg.backend {
         config::Backend::InMem => {
             tracing::info!(
                 "store backend = in-memory (ephemeral; set [store] in secretd.toml for durability)"
             );
-            engine_with_daemon_seams(paths, Box::new(envctl_secrets::vault::InMemStore::new()))
-                .context("opening the engine on the in-memory store")
+            engine_with_daemon_seams(
+                paths,
+                Box::new(envctl_secrets::vault::InMemStore::new()),
+                rt,
+            )
+            .context("opening the engine on the in-memory store")
         }
         config::Backend::LibSql => {
             let url = cfg
@@ -244,7 +252,7 @@ async fn build_engine(paths: Paths, cfg: config::StoreConfig) -> anyhow::Result<
                 )
                 .build()
                 .context("opening the libSQL remote store (is sqld reachable?)")?;
-                engine_with_daemon_seams(paths, Box::new(store))
+                engine_with_daemon_seams(paths, Box::new(store), rt)
                     .context("opening the engine on the libSQL store")
             })
             .await
@@ -253,13 +261,18 @@ async fn build_engine(paths: Paths, cfg: config::StoreConfig) -> anyhow::Result<
     }
 }
 
-/// Open the engine with the DAEMON's real seams: `SystemClock`, `RealUsbProbe`, `NoMint`, and — the
-/// PR-2a addition — the [`proxy::DaemonUpstream`] egress sender (webpki-roots TLS, FS-S7) in place of
-/// the engine's default `NullUpstream`. This is the ONLY place the live egress seam is installed; the
-/// engine API is untouched (the seam is injected through the public `Engine::with_seams`).
+/// Open the engine with the DAEMON's real seams: `SystemClock`, `RealUsbProbe`, `NoMint`, the
+/// [`proxy::DaemonUpstream`] egress sender (webpki-roots TLS, FS-S7) in place of the engine's default
+/// `NullUpstream`, and — under `provider-github` (TASK-0020) — the [`transport::DaemonHttpTransport`]
+/// HTTP seam for the per-call GitHub App mint (same frozen-roots/ring TLS, reused verbatim, no new
+/// dep). This is the ONLY place the live seams are installed; the engine API is untouched (they are
+/// injected through the public `Engine::with_seams`). `rt` is the runtime handle captured in the
+/// async `build_engine`, so the transport can be constructed even on the off-reactor `spawn_blocking`
+/// thread the libSQL store is built on.
 fn engine_with_daemon_seams(
     paths: Paths,
     store: Box<dyn envctl_secrets::vault::Store>,
+    #[allow(unused_variables)] rt: tokio::runtime::Handle,
 ) -> anyhow::Result<Engine> {
     Engine::with_seams(
         paths,
@@ -268,6 +281,10 @@ fn engine_with_daemon_seams(
         Box::new(envctl_secrets::seam::RealUsbProbe),
         Box::new(envctl_secrets::seam::NoMint),
         Box::new(envctl_secretd::proxy::DaemonUpstream::new()),
+        #[cfg(feature = "provider-github")]
+        Box::new(envctl_secretd::transport::DaemonHttpTransport::from_handle(
+            rt,
+        )),
     )
 }
 

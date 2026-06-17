@@ -54,6 +54,7 @@ service Vault {
   rpc List   (ListSecretReq) returns (ListSecretResp); // unary; metadata only
   rpc Rm     (RmSecretReq)   returns (stream Event);   // destructive: apply-gated (default dry-run)
   rpc Rotate (RotateReq)     returns (stream Event);   // destructive: apply-gated (full DEK/body re-seal where applicable)
+  rpc MintGithub (MintGithubReq) returns (MintGithubResp); // TASK-0020: per-call GitHub App installation-token mint (unary; read-only; USB-possession-gated via vault unlock)
 }
 // REVIEW FIX (fail-closed, FS-S13/FS-S22): Vault.Init mints the DEK + enrolls keyslots ONCE. `apply`
 // defaults false (proto3) = DRY-RUN preview (the safe state); the daemon mutates ONLY when apply=true.
@@ -78,6 +79,14 @@ message ListSecretReq { optional ProviderKind provider = 1; }
 message ListSecretResp{ repeated SecretMeta items = 1; }
 message RmSecretReq   { string name = 1; bool apply = 2; bool confirm = 3; }       // apply=false => dry-run (CF-8)
 message RotateReq     { string name = 1; bytes new_value = 2; bool apply = 3; }    // apply=false => dry-run (CF-8)
+// TASK-0020 FROZEN consumer contract (flexnetos_github_app/crates/app-core/src/mint.rs shells it):
+// per-call GitHub App installation-token mint. installation_id is request-supplied; the daemon reads
+// the sealed App PEM + app-id, builds a per-call GitHubAppMint, and mints. `repository_ids` are numeric
+// repo IDs (parsed from string at the boundary; mutually exclusive with the name-based `repositories`
+// path used elsewhere). `permissions` are `name:access`. Read-only ⇒ no apply/confirm field; the gate
+// is vault-unlock + USB possession. The minted `token` is NEVER logged/audited (metadata-only audit).
+message MintGithubReq  { uint64 installation_id = 1; repeated string repository_ids = 2; repeated string permissions = 3; int64 ttl_secs = 4; }
+message MintGithubResp { string token = 1; int64 expires_at_unix = 2; }
 
 // ===== Relay: policies + bearer mint (USB-possession-gated, <=24h wire TTL) =====
 service Relay {
