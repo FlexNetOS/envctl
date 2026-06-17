@@ -44,7 +44,7 @@ const BODY_CHANNEL_CAP: usize = 16;
 /// The hyper response body type the proxy serves: an out-of-band stream of upstream chunks, or an
 /// empty body for refusals / non-streamed paths. `Infallible` data error — the upstream errors are
 /// surfaced by simply ending the stream, never by leaking a key-bearing message.
-type ProxyBody = http_body_util::Either<
+pub(crate) type ProxyBody = http_body_util::Either<
     StreamBody<ReceiverStream<Result<Frame<Bytes>, Infallible>>>,
     Empty<Bytes>,
 >;
@@ -53,7 +53,7 @@ fn stream_body(rx: tokio::sync::mpsc::Receiver<Result<Frame<Bytes>, Infallible>>
     http_body_util::Either::Left(StreamBody::new(ReceiverStream::new(rx)))
 }
 
-fn empty_body() -> ProxyBody {
+pub(crate) fn empty_body() -> ProxyBody {
     http_body_util::Either::Right(Empty::new())
 }
 
@@ -132,7 +132,7 @@ fn auth_header_for(provider: Provider) -> AuthHeader {
 /// header and `send` injects the real key into the right header. Mirrors the engine's
 /// `canonical_upstreams` allowlist (the engine re-checks the host fence, so an unknown host here is
 /// harmless — it simply yields a `Generic` header guess that the engine then refuses).
-fn provider_for_host(host: &str) -> Provider {
+pub(crate) fn provider_for_host(host: &str) -> Provider {
     if host.eq_ignore_ascii_case("api.anthropic.com") {
         Provider::Anthropic
     } else if host.eq_ignore_ascii_case("api.openai.com") {
@@ -149,7 +149,7 @@ fn provider_for_host(host: &str) -> Provider {
 /// Extract the raw bearer string from the inbound request's provider auth header, stripping a
 /// `Bearer ` scheme prefix when the provider uses one. `None` when the header is absent/garbled — the
 /// engine then refuses (`UnknownBearer`); the real key is never fetched.
-fn extract_bearer(headers: &hyper::HeaderMap, provider: Provider) -> Option<String> {
+pub(crate) fn extract_bearer(headers: &hyper::HeaderMap, provider: Provider) -> Option<String> {
     let spec = auth_header_for(provider);
     let raw = headers.get(spec.name)?.to_str().ok()?.trim();
     let token = if spec.bearer_scheme {
@@ -166,7 +166,7 @@ fn extract_bearer(headers: &hyper::HeaderMap, provider: Provider) -> Option<Stri
     }
 }
 
-fn method_from_hyper(m: &hyper::Method) -> Option<Method> {
+pub(crate) fn method_from_hyper(m: &hyper::Method) -> Option<Method> {
     Some(match *m {
         hyper::Method::GET => Method::Get,
         hyper::Method::HEAD => Method::Head,
@@ -367,9 +367,23 @@ impl envctl_secrets::Upstream for DaemonUpstream {
 /// carries the long-lived `DaemonUpstream` seam (installed at startup), so the proxy holds only the
 /// engine handle + the loopback peer uid; the per-request provider/body sink ride the task-local.
 #[derive(Clone)]
-struct ProxyCtx {
-    engine: Engine,
-    peer_uid: Option<u32>,
+pub(crate) struct ProxyCtx {
+    pub(crate) engine: Engine,
+    pub(crate) peer_uid: Option<u32>,
+}
+
+impl ProxyCtx {
+    /// Construct a context for the F2 remote relay edge (TASK-0031). The remote edge has no loopback
+    /// peer uid (the principal is the registered remote `client_id`, authenticated via the bearer +
+    /// DPoP); pass `None` so `decide()` never matches on a uid. The engine carries the same long-lived
+    /// `DaemonUpstream` seam, so the edge drives the identical swap core as the local proxy.
+    #[cfg(feature = "relay-edge")]
+    pub(crate) fn for_edge(engine: Engine) -> Self {
+        Self {
+            engine,
+            peer_uid: None,
+        }
+    }
 }
 
 /// Handle one inbound proxy request on a PLAIN loopback connection (the BaseUrlRepoint ingress).
@@ -408,18 +422,23 @@ async fn handle(ctx: ProxyCtx, req: Request<Incoming>) -> Result<Response<ProxyB
         .map(|pq| pq.as_str().to_string())
         .unwrap_or_else(|| "/".to_string());
 
-    // Plain ingress: no TLS is terminated here, so there is no observed SNI (`None`). The non-MITM
-    // swap modes ignore SNI; a `ProxyMitm` policy presented over this plain path fails closed.
+    // Plain ingress: no TLS is terminated here, so there is no observed SNI (`None`) and no remote
+    // (DPoP/EKM) context (`None` — this is a LOCAL loopback plane). The non-MITM swap modes ignore
+    // SNI; a `ProxyMitm` policy presented over this plain path fails closed.
     let (parts, body) = req.into_parts();
-    Ok(swap_and_respond(&ctx, method, host, path, &parts.headers, body, None).await)
+    Ok(swap_and_respond(&ctx, method, host, path, &parts.headers, body, None, None).await)
 }
 
-/// The shared egress core: from a verified-host request (plain OR MITM-decrypted), extract the
-/// bearer, build the `EgressReq`, drive `relay_swap`, and map the `SwapOutcome` to a hyper response.
-/// `observed_sni` is `Some(host)` for the MITM ingress (the TLS handshake name, pinned to the
-/// CONNECT target) and `None` for the plain ingress. The real key never enters this function — it is
+/// The shared egress core: from a verified-host request (plain OR MITM-decrypted OR the F2 remote
+/// edge), extract the bearer, build the `EgressReq`, drive `relay_swap`, and map the `SwapOutcome` to
+/// a hyper response. `observed_sni` is `Some(host)` for the MITM ingress (the TLS handshake name,
+/// pinned to the CONNECT target) and `None` otherwise. `remote` is `Some(RemotePeer{..})` ONLY for
+/// the F2 remote relay edge (after it verified DPoP + EKM channel binding); `None` for every LOCAL
+/// (loopback proxy / MITM) plane. Keeping ONE swap core means the remote edge and the local proxy can
+/// never diverge in how they drive `relay_swap`. The real key never enters this function — it is
 /// confined entirely to the engine's `Upstream::send`.
-async fn swap_and_respond<B>(
+#[allow(clippy::too_many_arguments)]
+pub(crate) async fn swap_and_respond<B>(
     ctx: &ProxyCtx,
     method: Method,
     host: String,
@@ -427,12 +446,24 @@ async fn swap_and_respond<B>(
     headers_in: &hyper::HeaderMap,
     body: B,
     observed_sni: Option<String>,
+    remote: Option<envctl_secrets::broker::decide::RemotePeer>,
 ) -> Response<ProxyBody>
 where
     B: hyper::body::Body<Data = Bytes>,
 {
     let provider = provider_for_host(&host);
-    let bearer = match extract_bearer(headers_in, provider) {
+    // The bearer header convention differs by plane: a LOCAL child speaks the UPSTREAM provider's
+    // convention (Anthropic = bare `x-api-key`, others = `Authorization: Bearer`), because the child
+    // was repointed at the upstream and uses the upstream's header. The REMOTE edge client, by
+    // contrast, addresses the EDGE — its relay bearer always rides `Authorization: Bearer` regardless
+    // of which upstream the swap targets. So for a remote presentation we read the bearer with the
+    // Bearer-scheme convention (`Provider::Generic`), not the upstream provider's.
+    let bearer_provider = if remote.is_some() {
+        Provider::Generic
+    } else {
+        provider
+    };
+    let bearer = match extract_bearer(headers_in, bearer_provider) {
         Some(b) => b,
         // No bearer => the engine would refuse as UnknownBearer; short-circuit to a bare 403 without
         // touching the vault.
@@ -470,6 +501,11 @@ where
         // here. Same-uid trust is the local boundary; the bearer stays short-lived + scoped + USB-gated.
         peer_pid: None,
         observed_sni,
+        // `Some(..)` ONLY when the F2 remote relay edge already terminated TLS in-process, verified
+        // the DPoP proof against the registered jkt, and bound it to the TLS channel (EKM). `None` for
+        // every LOCAL plane (loopback proxy / MITM) — there a remote bearer is denied
+        // `CrossKindPresentation` by `decide()`, and a local bearer with `remote: None` is the norm.
+        remote,
     };
 
     // Per-request body channel. Its sender goes into the task-local egress context that the
@@ -522,7 +558,7 @@ fn is_droppable_response_header(name: &str) -> bool {
 
 /// A bare response: the given status, an EMPTY body, no headers. Used for every refusal and every
 /// deferred/unsupported path so the proxy never leaks an oracle.
-fn bare(status: StatusCode) -> Response<ProxyBody> {
+pub(crate) fn bare(status: StatusCode) -> Response<ProxyBody> {
     Response::builder()
         .status(status)
         .body(empty_body())
@@ -531,7 +567,7 @@ fn bare(status: StatusCode) -> Response<ProxyBody> {
 
 /// The verified target host: the URI authority (absolute-form) if present, else the `Host` header.
 /// Strips any `:port` suffix.
-fn request_host(req: &Request<Incoming>) -> Option<String> {
+pub(crate) fn request_host(req: &Request<Incoming>) -> Option<String> {
     let raw = req
         .uri()
         .authority()
@@ -770,6 +806,8 @@ mod mitm {
             &parts.headers,
             body,
             observed_sni,
+            // MITM-decrypted ingress is a LOCAL plane — no verified remote (DPoP/EKM) context.
+            None,
         )
         .await)
     }

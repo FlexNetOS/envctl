@@ -210,6 +210,7 @@ fn post_req(peer_uid: Option<u32>) -> EgressReq {
         peer_uid,
         peer_pid: None,
         observed_sni: None,
+        remote: None,
     }
 }
 
@@ -711,6 +712,76 @@ fn relay_mint_remote_binds_client_and_cross_kind_denied_locally() {
     assert!(
         cap.0.lock().unwrap().is_none(),
         "the real key must NOT be fetched for a cross-kind deny"
+    );
+}
+
+/// Phase-8 F2 (TASK-0031): a REMOTE bearer presented WITH a remote context whose `dpop_verified`
+/// is `false` (a broken/bypassed edge that forgot to verify the DPoP proof) is denied `RemoteNoDPoP`
+/// fail-closed — the real key is never fetched. This is the engine-side guarantee that backs the
+/// edge's "a verification failure NEVER reaches a mint": even if a buggy edge constructed an
+/// `EgressReq.remote = Some(..)` without proving the proof, `decide()` clause 11a refuses.
+#[test]
+fn relay_swap_remote_unverified_dpop_denied_no_dpop() {
+    use envctl_secrets::broker::decide::RemotePeer;
+
+    let inmem = Arc::new(InMemStore::new());
+    let clock = FakeClock::new(T0);
+    let cap = CapturingUpstream(Arc::new(Mutex::new(None)));
+    let eng = engine(
+        Box::new(SharedStore(inmem.clone())),
+        clock.clone(),
+        Box::new(AbsentUsb),
+        cap.clone(),
+    );
+    let (sink, rx) = EventSink::channel();
+    eng.init_vault(pp("remote-pass"), None, None, at_floor(), &sink)
+        .unwrap();
+    eng.unlock(Unlock::Passphrase(pp("remote-pass")), &sink)
+        .unwrap();
+    eng.secret_put(
+        SecretMeta {
+            name: "anthropic_key".to_string(),
+            provider: Provider::Anthropic,
+            note: String::new(),
+            broker_only: true,
+        },
+        Zeroizing::new(b"sk-REAL-REMOTE".to_vec()),
+        &sink,
+    )
+    .unwrap();
+
+    let jkt = [0x42u8; 32];
+    eng.register_remote_client("phone".to_string(), jkt, false, &sink)
+        .expect("register remote client");
+    let bearer = eng
+        .relay_mint_remote(
+            anthropic_policy("anthropic_key"),
+            3600,
+            "phone".to_string(),
+            jkt,
+            &sink,
+        )
+        .expect("remote mint");
+    let _ = drain(&rx);
+
+    // Present the remote bearer WITH a remote context that was NOT verified (dpop_verified=false).
+    let mut req = post_req(None);
+    req.remote = Some(RemotePeer {
+        client_id: "phone".to_string(),
+        dpop_jkt: jkt,
+        dpop_verified: false,
+    });
+    let outcome = block_on(eng.relay_swap(&bearer.raw, &req, &sink));
+    match outcome {
+        SwapOutcome::Denied(DenyReason::RemoteNoDPoP) => {}
+        other => panic!(
+            "expected Denied(RemoteNoDPoP), got {:?}",
+            outcome_kind(&other)
+        ),
+    }
+    assert!(
+        cap.0.lock().unwrap().is_none(),
+        "the real key must NOT be fetched for an unverified-DPoP remote deny"
     );
 }
 

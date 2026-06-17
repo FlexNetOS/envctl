@@ -58,4 +58,39 @@ impl Paths {
     pub fn log_file(&self) -> PathBuf {
         self.state.join("env-ctl.log")
     }
+    /// The remote relay EDGE's publicly-trusted server-cert directory
+    /// (`~/.config/env-ctl/relay-tls/`, holding `cert.pem` + `key.pem`). The Phase-8 / F2 edge
+    /// (`secretd::edge`) loads its rustls `ServerConfig` ONLY from here — never from the MITM-CA path
+    /// (FS-S18 / FS-S25). Mirrors [`config_file`](Self::config_file): a sibling under `config`, not a
+    /// new XDG root. The directory is operator-provisioned (ACME / operator-supplied cert); a missing
+    /// directory makes the edge fail closed at startup.
+    pub fn relay_tls_dir(&self) -> PathBuf {
+        self.config.join("relay-tls")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn relay_tls_dir_is_under_config_sibling_of_secretd_toml() {
+        let p = Paths::under(PathBuf::from("/tmp/envctl-test"));
+        // relay-tls/ lives directly under the config root, exactly like secretd.toml — and is NOT
+        // any data/state/runtime root, and NOT the MITM-CA location (which lives under `data`).
+        assert_eq!(p.relay_tls_dir(), p.config.join("relay-tls"));
+        assert_eq!(
+            p.relay_tls_dir().parent(),
+            p.config_file().parent(),
+            "relay-tls/ and secretd.toml must share the config dir"
+        );
+        assert!(p.relay_tls_dir().starts_with(&p.config));
+        assert!(!p.relay_tls_dir().starts_with(&p.data));
+    }
+
+    #[test]
+    fn relay_tls_dir_resolves_under_env_ctl_config() {
+        let p = Paths::under(PathBuf::from("/x"));
+        assert!(p.relay_tls_dir().ends_with("config/relay-tls"));
+    }
 }

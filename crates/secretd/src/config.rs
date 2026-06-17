@@ -68,11 +68,24 @@ impl std::fmt::Debug for StoreConfig {
 #[derive(serde::Deserialize, Default)]
 struct FileConfig {
     store: Option<FileStore>,
+    #[cfg(feature = "relay-edge")]
+    edge: Option<FileEdge>,
 }
 #[derive(serde::Deserialize, Default)]
 struct FileStore {
     backend: Option<String>,
     url: Option<String>,
+}
+
+/// The `[edge]` block (F2 / TASK-0031, `relay-edge` feature only). DELIBERATELY carries NO secret —
+/// the relay TLS cert/key live on disk under `relay_tls_dir()`, not in this file.
+#[cfg(feature = "relay-edge")]
+#[derive(serde::Deserialize, Default)]
+struct FileEdge {
+    /// Serve the public remote edge at all (default `false` — a stock secretd binds no edge).
+    enabled: Option<bool>,
+    /// The bind address (e.g. `"0.0.0.0:8443"` or `"127.0.0.1:8443"`). Required when `enabled`.
+    bind_addr: Option<String>,
 }
 
 impl StoreConfig {
@@ -98,6 +111,67 @@ impl StoreConfig {
         let token = load_token().context("loading the libSQL auth token")?;
 
         resolve(backend, url, token)
+    }
+}
+
+/// Resolved, validated remote-edge configuration (F2 / TASK-0031, `relay-edge` feature only).
+///
+/// Off by default: a missing `[edge]` block, or `enabled = false`, yields `EdgeSettings { enabled:
+/// false, .. }` and the daemon binds NO public edge. When `enabled = true`, a parseable `bind_addr`
+/// is REQUIRED (a missing/invalid address is an `Err` — fail-closed; the edge never binds a
+/// half-configured listener). The relay TLS cert is NOT named here — it is loaded fail-closed from
+/// `Paths::relay_tls_dir()` at edge startup.
+#[cfg(feature = "relay-edge")]
+#[derive(Debug, Clone)]
+pub struct EdgeSettings {
+    pub enabled: bool,
+    /// `Some` iff `enabled` (validated parseable). `None` when disabled.
+    pub bind_addr: Option<std::net::SocketAddr>,
+}
+
+#[cfg(feature = "relay-edge")]
+impl EdgeSettings {
+    /// Load + validate the `[edge]` block from the same `secretd.toml` the store config reads (env
+    /// `SECRETD_CONFIG` overrides `default_config_path`; a missing file ⇒ disabled). An env override
+    /// `SECRETD_EDGE_ENABLED` / `SECRETD_EDGE_BIND_ADDR` takes precedence (mirrors the store-config
+    /// precedence) so an operator can toggle the edge without editing the file.
+    pub fn load(default_config_path: &Path) -> anyhow::Result<EdgeSettings> {
+        let cfg_path = std::env::var_os(ENV_CONFIG)
+            .map(PathBuf::from)
+            .unwrap_or_else(|| default_config_path.to_path_buf());
+        let file: FileConfig = match std::fs::read_to_string(&cfg_path) {
+            Ok(t) => toml::from_str(&t).context("parsing secretd config TOML for [edge]")?,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => FileConfig::default(),
+            Err(e) => return Err(e).with_context(|| format!("reading {}", cfg_path.display())),
+        };
+        let fedge = file.edge.unwrap_or_default();
+
+        // env > file. `SECRETD_EDGE_ENABLED` truthy = "1"/"true"/"yes" (case-insensitive).
+        let enabled = match env_nonempty("SECRETD_EDGE_ENABLED") {
+            Some(v) => matches!(v.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes"),
+            None => fedge.enabled.unwrap_or(false),
+        };
+        if !enabled {
+            return Ok(EdgeSettings {
+                enabled: false,
+                bind_addr: None,
+            });
+        }
+        let bind_raw = env_nonempty("SECRETD_EDGE_BIND_ADDR")
+            .or(fedge.bind_addr)
+            .ok_or_else(|| {
+                anyhow!(
+                    "[edge].enabled = true requires a bind_addr (SECRETD_EDGE_BIND_ADDR or \
+                     [edge].bind_addr, e.g. \"0.0.0.0:8443\")"
+                )
+            })?;
+        let bind_addr: std::net::SocketAddr = bind_raw.trim().parse().with_context(|| {
+            format!("parsing [edge].bind_addr {bind_raw:?} as a socket address")
+        })?;
+        Ok(EdgeSettings {
+            enabled: true,
+            bind_addr: Some(bind_addr),
+        })
     }
 }
 

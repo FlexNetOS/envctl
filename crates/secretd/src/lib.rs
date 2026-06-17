@@ -7,6 +7,10 @@
 pub mod audit;
 pub mod config;
 pub mod conv;
+// F2 / TASK-0031 PR-1: the remote relay-edge HTTPS plane (in-process TLS + RFC 9449 DPoP + EKM
+// channel binding). Gated behind `relay-edge` (default-OFF); a default secretd build omits it.
+#[cfg(feature = "relay-edge")]
+pub mod edge;
 pub mod grpc;
 pub mod peercred;
 pub mod proxy;

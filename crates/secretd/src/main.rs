@@ -188,6 +188,40 @@ async fn serve() -> anyhow::Result<()> {
         }
     };
 
+    // F2 remote relay edge (TASK-0031 PR-1): when the `relay-edge` feature is built AND `[edge]` is
+    // explicitly enabled in secretd.toml, bind the PUBLIC HTTPS edge (in-process TLS + DPoP/EKM) under
+    // the SAME broadcast shutdown as the proxy. OFF by default (no feature / no `[edge]` block ⇒ no
+    // bind — a stock secretd serves no public edge). A cert-load or bind failure here is FATAL because
+    // the operator explicitly turned the edge ON (fail-closed: we do NOT silently fall back to no
+    // edge after the operator asked for one).
+    #[cfg(feature = "relay-edge")]
+    let edge_handle = {
+        let edge_cfg =
+            config::EdgeSettings::load(&paths.config_file()).context("loading [edge] config")?;
+        if edge_cfg.enabled {
+            let bind_addr = edge_cfg
+                .bind_addr
+                .expect("EdgeSettings guarantees a bind_addr when enabled");
+            let cfg = envctl_secretd::edge::EdgeConfig {
+                enabled: true,
+                bind_addr,
+            };
+            let (addr, handle) = envctl_secretd::edge::serve_edge(
+                engine.clone(),
+                &paths,
+                &cfg,
+                recv_shutdown(shutdown_tx.subscribe()),
+            )
+            .await
+            .context("starting the remote relay edge (relay-tls cert + bind)")?;
+            tracing::info!(edge = %addr, "remote relay edge listening (public)");
+            Some(handle)
+        } else {
+            tracing::debug!("[edge] disabled — no public remote edge bound");
+            None
+        }
+    };
+
     // READY=1 (FS — Type=notify): the UDS is bound, 0600, and the service stack is about to serve, so
     // the daemon is now reachable by the owner. Telling systemd we are ready closes the crash loop:
     // without this, `Type=notify` waits the full `TimeoutStartSec` (~90s), kills the "still starting"
@@ -208,6 +242,12 @@ async fn serve() -> anyhow::Result<()> {
 
     // Wait for the relay proxy task to wind down under the shared shutdown before exiting.
     if let Some(handle) = proxy_handle {
+        let _ = handle.await;
+    }
+
+    // Likewise wait for the remote relay edge (if it was started) to wind down.
+    #[cfg(feature = "relay-edge")]
+    if let Some(handle) = edge_handle {
         let _ = handle.await;
     }
 
