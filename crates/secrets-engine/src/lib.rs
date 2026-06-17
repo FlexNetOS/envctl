@@ -114,12 +114,16 @@ pub type AppCredential = (Zeroizing<Vec<u8>>, String, u64);
 /// TASK-0020 flat-convention secret/meta names for the per-call `mint-github` path. The App PEM is
 /// sealed as a broker-only `SecretRow` under this name (un-revealable; opened only against the live
 /// DEK, never through `secret_get`); the App id is a non-secret integer string in the plaintext meta
-/// KV (integrity-covered by the header MAC). Enrollment lands in TASK-0026 (`secretctl github-app
-/// enroll`); until then `mint_github_token` fails closed naming exactly that remediation.
+/// KV (integrity-covered by the header MAC). Enrolled by TASK-0026 (`secretctl github-app enroll`),
+/// which references these `pub const`s VERBATIM so the enroll-writer and the mint-reader can never
+/// drift apart; if a credential is absent `mint_github_token` fails closed naming that remediation.
+///
+/// Exported (`pub`) so the thin `secretctl` enroll path seals/labels the App PEM under EXACTLY the
+/// name `mint_github_token` reads — single source of truth, no literal-drift.
 #[cfg(feature = "provider-github")]
-const GITHUB_APP_KEY_NAME: &str = "github-app-private-key";
+pub const GITHUB_APP_KEY_NAME: &str = "github-app-private-key";
 #[cfg(feature = "provider-github")]
-const GITHUB_APP_ID_META: &str = "github-app-id";
+pub const GITHUB_APP_ID_META: &str = "github-app-id";
 
 fn app_id_meta_key(secret_name: &str) -> String {
     format!("{secret_name}.app_id")

@@ -55,6 +55,7 @@ service Vault {
   rpc Rm     (RmSecretReq)   returns (stream Event);   // destructive: apply-gated (default dry-run)
   rpc Rotate (RotateReq)     returns (stream Event);   // destructive: apply-gated (full DEK/body re-seal where applicable)
   rpc MintGithub (MintGithubReq) returns (MintGithubResp); // TASK-0020: per-call GitHub App installation-token mint (unary; read-only; USB-possession-gated via vault unlock)
+  rpc SetGithubAppId (SetGithubAppIdReq) returns (stream Event); // TASK-0026: enroll the non-secret GitHub App id (stream Event mirrors Add/Rm/Rotate; apply=false => dry-run)
 }
 // REVIEW FIX (fail-closed, FS-S13/FS-S22): Vault.Init mints the DEK + enrolls keyslots ONCE. `apply`
 // defaults false (proto3) = DRY-RUN preview (the safe state); the daemon mutates ONLY when apply=true.
@@ -87,6 +88,12 @@ message RotateReq     { string name = 1; bytes new_value = 2; bool apply = 3; } 
 // is vault-unlock + USB possession. The minted `token` is NEVER logged/audited (metadata-only audit).
 message MintGithubReq  { uint64 installation_id = 1; repeated string repository_ids = 2; repeated string permissions = 3; int64 ttl_secs = 4; }
 message MintGithubResp { string token = 1; int64 expires_at_unix = 2; }
+// TASK-0026 (`secretctl github-app enroll`): seal the GitHub App id that `mint_github_token` reads.
+// app_id is the non-secret App identifier (e.g. "4044997"); the App PEM is enrolled separately via
+// `Vault.Add` as a broker_only secret. `apply` defaults false (proto3) = DRY-RUN preview (CF-8): the
+// daemon mutates NOTHING; only `apply=true` writes the `github-app-id` meta. installation-id is NOT
+// enrolled here — it is supplied per-mint in `MintGithubReq.installation_id`.
+message SetGithubAppIdReq { string app_id = 1; bool apply = 2; }
 
 // ===== Relay: policies + bearer mint (USB-possession-gated, <=24h wire TTL) =====
 service Relay {
