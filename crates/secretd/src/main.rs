@@ -230,6 +230,8 @@ async fn serve() -> anyhow::Result<()> {
             let cfg = envctl_secretd::edge::EdgeConfig {
                 enabled: true,
                 bind_addr,
+                // Production streaming re-check cadence/cap (TASK-0032 / FS-S5).
+                recheck_timing: None,
             };
             let (addr, handle) = envctl_secretd::edge::serve_edge(
                 engine.clone(),

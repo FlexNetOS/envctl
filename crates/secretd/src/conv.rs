@@ -406,9 +406,14 @@ pub fn event_to_proto(ev: SecretEvent) -> Option<v1::Event> {
             }),
         }),
         // No proto Event-oneof twin: dropped from the control stream (surfaced via Audit.Query).
+        // `RelayStreamTornDown` (TASK-0032 / FS-S5) joins this set — it is the cosmetic mirror of an
+        // in-stream revocation tear-down, carrying metadata only; like `RelayRevoked` it has no
+        // control-stream twin and adds NO proto churn, so the CLI + GUI consume it identically (both
+        // drain through this one funnel — neither front-end gets a divergent surface).
         SecretEvent::Audit(_)
         | SecretEvent::RelayRotated { .. }
         | SecretEvent::RelayRevoked { .. }
+        | SecretEvent::RelayStreamTornDown { .. }
         | SecretEvent::SecretRead { .. } => return None,
     };
     Some(v1::Event { kind: Some(kind) })

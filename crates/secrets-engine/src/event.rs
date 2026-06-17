@@ -43,6 +43,16 @@ pub enum SecretEvent {
         client_uid: u32,
         client_label: String,
     },
+    /// A long-lived relay stream was actively TORN DOWN mid-flight because the periodic re-check
+    /// lapsed (TASK-0032 / FS-S5: relay/bearer revoke, vault lock, USB-key pull, or the max-duration
+    /// cap). METADATA ONLY — `reason` is the `DenyReason` discriminant (the max-duration cap maps to
+    /// the policy/bearer-expiry reason), `token_id` is the public bearer id; the bearer, the real key,
+    /// and the proxied body are NEVER included. Consumed identically by the CLI + GUI (no divergence).
+    RelayStreamTornDown {
+        relay: String,
+        token_id: String,
+        reason: String,
+    },
     GuardRefused {
         subject: String,
         reason: String,
