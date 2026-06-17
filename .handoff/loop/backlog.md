@@ -54,19 +54,21 @@ additive infra — let it merge — but it does **not** close TASK-0020.
 - **TASK-0026 DONE** — `secretctl github-app enroll` + `Vault.SetGithubAppId` RPC (PR #106, auto-merge armed). Enroll→mint round-trip e2e green. The App can now mint end-to-end (enroll once, then mint-github).
 - **Anti-drift wrap-up gate** live (PR #104 MERGED): backlog is now a written-back artifact.
 
-### ⏭ NEXT PICK (updated 2026-06-17 session 5): **TASK-0032** (F5 stream tear-down)
-MERGED: TASK-0026 (#106), TASK-0030+OI-SM-1 (#109), **TASK-0031 PR-1 edge listener (#111)**. IN FLIGHT
-(auto-merge armed): TASK-0035 (#108, rebased clean, test passed 27m), **TASK-0036 mlockall (#112)**.
-The remote edge serves clients end-to-end AND the daemon is mlock-hardened. Next, in dep order:
-1. **TASK-0032** (F5, P0) — streaming-revocation tear-down: long-lived HTTP/2 streams on the (now-MERGED)
-   `crates/secretd/src/edge/` + a periodic in-stream `decide()` re-check that tears down an in-flight
-   stream on revoke/lock/USB-pull (FS-S5). The architect's PR-3 for the edge. NOW BUILDABLE off develop.
-2. **TASK-0031-PR2** (F2 hardening, parallel) — DPoP-Nonce challenge + rate-limit/admission + mTLS.
-3. Then **TASK-0027** (early-revoke) → **TASK-0028** (GUI parity) →
+### ⏭ NEXT PICK (updated 2026-06-17 session 6): **TASK-0031-PR2** (F2 hardening)
+MERGED: TASK-0026 (#106), TASK-0030+OI-SM-1 (#109), **TASK-0031 PR-1 edge listener (#111)**, **TASK-0036
+mlockall (#112)**, plus infra #113 (low-cost-kdf-tests — ~11x faster CI test job) / #114/#115 (Seed manifest).
+IN FLIGHT (auto-merge armed): **TASK-0032 F5 stream tear-down (#117)**, TASK-0035 gRPC gaps (#108, rebased
+clean onto the new develop). The remote edge serves clients end-to-end, is mlock-hardened, AND tears down
+in-flight streams on revoke/lock/USB-pull. Next, in dep order:
+1. **TASK-0031-PR2** (F2 hardening, P0) — server-issued DPoP-Nonce challenge (OI-SM-1 nonce half) +
+   per-IP/per-client rate-limit + body caps + timeouts + pre-`decide()` admission shedding (CVE-2024-47609) +
+   opt-in hardened-mode mTLS `ClientCertVerifier` (OI-SM-4). Builds on the merged edge listener.
+2. Then **TASK-0027** (early-revoke) → **TASK-0028** (GUI parity) →
    **TASK-0037** (Phase-7 verify) → **TASK-0034** (hardening tail) → **TASK-0038** (Certs.* Phase-4+).
+   Small follow-up: **MADV_DONTDUMP** companion to the merged #112 mlockall.
 SKIP **TASK-0033** (VPS Profile B — owner-gated `[!]`). Resume with `/forge-loop`; for unattended
-completion use `/auto-provision`. FIRST on resume: confirm #108/#112 merged; if #108 still open, rebase
-it onto develop (it just needs #106's merge + the 30m timeout) and let auto-merge land it.
+completion use `/auto-provision`. FIRST on resume: confirm #117 + #108 merged; rebase if DIRTY (every
+secrets PR touches `lib.rs` + `.handoff/` so siblings recur DIRTY — expected, not a problem).
 
 <details><summary>TASK-0020-COMPLETE original spec (DONE — kept for reference)</summary>
 
@@ -122,8 +124,12 @@ foundation IS built (`relay_mint_remote`, `register_remote_client`, `broker/deci
   - [ ] **TASK-0031-PR2 (F2 hardening):** server-issued DPoP-Nonce challenge (OI-SM-1 nonce half) +
     per-IP/per-client rate-limit + body caps + timeouts + pre-`decide()` admission shedding
     (CVE-2024-47609) + opt-in hardened-mode mTLS `ClientCertVerifier` (OI-SM-4).
-- [ ] **TASK-0032 (F5, P0):** Streaming-revocation tear-down — periodic `decide()` re-check during long
-  HTTP/2 streams so revoke/lock/USB-pull stops an in-flight stream (FS-S5).
+- [~] **TASK-0032 (F5, P0) — in review (PR #117, guardian PASS, auto-merge armed):** Streaming-revocation
+  tear-down. Engine `relay_stream_authorized` + `Broker::peek` (non-mutating re-check through the SAME
+  `decide()`); edge `stream.rs` supervises long-lived HTTP/2 streams with a 2s in-stream re-check + max-stream
+  deadline and tears the stream down (drops the `StreamBody` sender → clean HTTP/2 close) on revoke/lock/
+  USB-pull (FS-S5). Fail-closed, metadata-only `RelayStreamTornDown` audit, zero new deps, default-OFF
+  `relay-edge`. Detection ≤2s; sub-second watch-push deferred to PR-4.
 - [!] **TASK-0033 (VPS Profile B, BLOCKED — gated non-shippable):** F7 install-time fail-closed gate +
   F8/OI-SM-2 operator-authorizer protocol + OI-SM-3 external trusted-time. Keep gated until designed.
 - [ ] **TASK-0034 (hardening tail):** F10 (CVE-2024-47609 tonic pin + cargo-audit CI), F11/OQ-1 (MSRV
