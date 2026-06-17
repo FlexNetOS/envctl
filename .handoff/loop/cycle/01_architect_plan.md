@@ -1,32 +1,93 @@
-# TASK-0026 — `secretctl github-app enroll`  (VERDICT: GO)
+# TASK-0030 — F6 bounded DPoP `jti` replay store  ·  VERDICT: GO
 
-Seal the GitHub App credential into the unlocked vault so TASK-0020's `Engine::mint_github_token`
-can read it. Write EXACTLY what the mint reads (byte-for-byte names): broker-only secret
-`github-app-private-key` (PEM) + meta key `github-app-id`. installation-id is NOT enrolled (it comes
-per-mint from `MintGithubReq.installation_id`). Live: app-id=4044997, installation-id=140063898, org FlexNetOS.
+Engine-first, single-repo (envctl). Spec written first as `docs/secrets/OI-SM-1-jti-replay-store.md`
+(persisted alongside this plan). The F2 edge listener that CALLS the store is TASK-0031 — OUT OF SCOPE.
 
-## Decisions (resolved from code)
-1. **Reuse `Vault.Add` for the PEM** (control.proto:73 `AddSecretReq.broker_only=6` → conv.rs:131 → `secret_put{broker_only}`). **Add ONE new minimal RPC for app-id**: `Engine::put_github_app_id` (lib.rs:1682, writes `put_meta("github-app-id")`, Err(Locked) if locked) exists but is wired to NO RPC — that's the gap.
-2. Names (match `mint_github_token` readers verbatim): PEM secret `github-app-private-key` (lib.rs:120 `GITHUB_APP_KEY_NAME`, read via `open_real_key` lib.rs:1742); app-id meta `github-app-id` (lib.rs:122 `GITHUB_APP_ID_META`, read via `get_meta` lib.rs:1749). RECOMMENDED: export these as `pub const` from secrets-engine for secretctl to reference (kills literal-drift). NOT the `{secret_name}.app_id` relay convention — different path, out of scope.
-3. PEM input `--private-key <path|->` (stdin via existing `read_stdin_bytes` main.rs:102). Validate client-side BEFORE any write by reusing `envctl_secrets::build_app_jwt` (lib.rs:40 re-export; mint_github.rs:155 parses PKCS#1 or PKCS#8) — bail on Err, NEVER echo PEM bytes. Wrap PEM in `Zeroizing` on read.
-4. `--apply` gating (dry-run by default, CF-8): no --apply → validate + preview to STDERR (name, broker_only=true, app-id, installation-id reminder, optional SHA-256 fingerprint = non-secret hash), write nothing. --apply → `Vault.Add{broker_only:true}` (PEM) THEN `Vault.SetGithubAppId{apply:true}` (app-id). PEM first (no orphan app-id on failure).
+## Target repos
+1 repo: envctl. All changes in `crates/secrets-engine` (new module + 2 one-line wiring edits + tests)
++ the OI-SM-1 design doc. No cli/gui/secretd/proto/libsql changes this cycle. → sequential single-crew.
 
-## Proto delta (secrets-proto/proto/control.proto, service Vault ~line 50/81)
-`rpc SetGithubAppId (SetGithubAppIdReq) returns (stream Event);`
-`message SetGithubAppIdReq { string app_id = 1; bool apply = 2; }`  (stream Event matches Add/Rm/Rotate; apply=dry-run gate)
+## Placement
+- Crate: `crates/secrets-engine` (the security-policy authority — beside `broker/decide.rs`/`gate.rs`,
+  one shared authority, pure unit-testable, no socket/TLS/tokio). NOT secretd (would couple policy to I/O).
+- New module: `crates/secrets-engine/src/broker/jti.rs`; register `pub mod jti;` in `broker/mod.rs:5`.
+- Re-export `JtiReplayStore`/`JtiReject` from `lib.rs` (~line 40 broker re-export block) so TASK-0031
+  can `use envctl_secrets_engine::{JtiReplayStore, JtiReject};`.
+- No CLI/GUI delta (daemon-internal; parity vacuous — `decide`/`gate` set the no-verb precedent).
 
-## Units (leaf-first; engine UNTOUCHED — seams exist)
-1. proto: the RPC + message above (existing prost/tonic build.rs, no new dep).
-2. secretd `grpc.rs`: `Vault::set_github_app_id` next to `add` (line 147). apply==false → dry-run Event, mutate nothing. apply==true → `run_streaming` calling `engine.put_github_app_id(&req.app_id)` (Locked→failed_precondition per grpc.rs:332 pattern). Empty app_id → invalid_argument. No secret logging (app-id is non-secret).
-3. secretctl `cli.rs`: `Cmd::GithubApp{ #[command(subcommand)] cmd: GithubAppCmd }` + `GithubAppCmd::Enroll{ app_id:String (--app-id), private_key:String (--private-key, path or "-"), apply:bool }`.
-4. secretctl `main.rs`: `Cmd::GithubApp` dispatch (~line 191) + `github_app` fn: read+Zeroize PEM (file or `-`), validate via `build_app_jwt` (bail, no byte echo), dry-run preview→stderr, --apply → Add{name "github-app-private-key", provider github, value pem, broker_only:true, overwrite:false} then SetGithubAppId{app_id, apply:true}, drain each Event stream. Fingerprint only if it needs NO new secretctl dep (else omit).
-5. tests: secretd handler (empty app_id→invalid_argument; dry-run no-mutate; locked→failed_precondition); secretctl cli parse (mirror MintGithub parse tests main.rs:885; `-` stdin); **ROUND-TRIP e2e (load-bearing)** in secretd tests: init+unlock → enroll (Add broker-only test PKCS#1 key from mint_github.rs:340 + SetGithubAppId "4044997") → `Vault.MintGithub` (mock via ENVCTL_GITHUB_API_BASE) SUCCEEDS reading exactly what enroll wrote; broker-only-refusal test (`secret get github-app-private-key --reveal` REFUSED post-enroll); negatives (non-PEM → no write; locked → failed_precondition, nothing written).
+## Engine API delta (new pure type in broker/jti.rs)
+```rust
+pub struct JtiReplayStore {
+    accept_past_ms: i64,   // default 300_000 (ACCEPT_PAST_MS)
+    accept_future_ms: i64, // default 30_000  (ACCEPT_FUTURE_MS)
+    sweep_slack_ms: i64,   // default 30_000  (SWEEP_SLACK_MS)
+    max_entries: usize,    // default 16_384  (MAX_ENTRIES)
+    seen: std::collections::HashMap<String, i64>, // key = "client_id\u{0}jti", val = expiry_ms
+}
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum JtiReject { Replayed, ClockDriftPast, ClockDriftFuture, StoreFull }
+impl JtiReplayStore {
+    pub fn new() -> Self;
+    pub fn with_params(accept_past_ms: i64, accept_future_ms: i64, max_entries: usize) -> Self;
+    /// Atomic check-and-insert; wall-ms i64 (engine convention, like gate.rs/decide). &mut self =>
+    /// caller owns the single lock (§7 atomicity). Sweeps expired entries every call.
+    pub fn check_and_record(&mut self, client_id: &str, jti: &str, iat_ms: i64, now_ms: i64)
+        -> Result<(), JtiReject>;
+    #[cfg(test)] fn len(&self) -> usize;
+}
+impl Default for JtiReplayStore { fn default() -> Self { Self::new() } }
+```
+- Wall-ms i64 throughout (consistent with gate.rs:17-22, decide's now_ms). Store takes `now_ms` from
+  the caller — pure function of inputs (deterministic, no `Clock` dep).
+- `&mut self`: caller (edge) holds the single `Mutex<JtiReplayStore>` (TASK-0031). Keeps the engine
+  type interior-mutability-free; matches broker `RwLock` precedent at the daemon layer.
+- Non-printing: returns `Err(JtiReject)`; caller maps all four to a 401 at the edge (proof failures
+  401 at the edge per decide.rs:39-42 RemoteNoDPoP note). No println!.
+- `check_and_record` order: drift gate → sweep (`seen.retain(|_,&mut exp| exp > now_ms)`) → dedup
+  (`contains_key` → Err(Replayed)) → cap (`len() >= MAX_ENTRIES` → Err(StoreFull)) → insert → Ok(()).
+- Key encoding: `format!("{client_id}\u{0}{jti}")` (NUL separator — can't appear in either field).
 
-## Invariants
-No-C (ZERO new dep; reuse rsa/build_app_jwt + prost/tonic). One rustls ring-only (transport untouched). Engine non-printing/untouched; secretd+secretctl thin; NEVER print PEM/secret bytes (only metadata to stderr). Fail-closed + dry-run-by-default (locked/bad-PEM/missing-arg/no-apply → nothing written). Broker-only PEM (secret get --reveal REFUSES it). Audit metadata-only.
+## Wiring to the broker decision path (decide() UNCHANGED)
+The jti check is a separate MUTATING pre-`decide` step (decide() is pure/non-mutating, decide.rs:122-144).
+Edge call order (TASK-0031): TLS terminate + verify proof sig/htm/htu → `check_and_record(...)` (Err→401,
+stop, never reaches decide) → on Ok build `RemotePeer{dpop_verified:true}` (decide.rs:60-67) → decide()
+(lib.rs:1533). The store sits immediately before `dpop_verified=true` — the seam decide.rs:39-42 anticipates.
+Readiness: type is pub/sync/dep-free, takes only client_id/jti/iat/now (all available at the edge). No
+further engine change when the edge lands. TASK-0031 NOT built here.
 
-## Sequencing
-proto → secretd handler+tests → secretctl cli+dispatch → round-trip/refusal/negative tests → fmt/clippy --workspace -D warnings/test --workspace → no-c.sh + shape.sh.
+## Invariants (each checkable)
+- no-C: only std::collections::HashMap; ZERO new deps; nothing pulls SQLite/OpenSSL/aws-lc. Run no-c.sh.
+- one rustls ring-only: no TLS/crypto crate touched.
+- engine = single sync pure-Rust non-printing lib: sync, no println!/clap/UI; typed Result; in secrets-engine.
+- CLI/GUI parity: vacuous (no user surface; decide/gate precedent).
+- fail-closed: every uncertain outcome (Replayed/drift/StoreFull) REJECTS; no accept-on-error path.
+  StoreFull rejects the NEW proof (never evicts a live entry → no replay hole). Unit-tested.
+- no secret bytes: stores jti + expiry int only; caller logs DenyReason + client_id only.
+- bounded memory / DoS cap: MAX_ENTRIES=16384 ≈1 MiB; sweep + fail-closed cap; documented + tested.
+
+## Lock/manifest sync
+None. No new dep (Cargo.lock unchanged → no-c unaffected), no manifest component, no lock change.
+
+## Sequencing (leaf-first, single-crew sequential)
+Write jti.rs + tests fully → `pub mod jti;` in broker/mod.rs:5 → re-export in lib.rs → verify:
+`cargo test -p envctl-secrets-engine jti`, `cargo fmt --all`, `cargo clippy --workspace -- -D warnings`,
+`bash ci/gates/no-c.sh` (must stay green), `bash ci/gates/shape.sh`.
+
+## Tests (inline #[cfg(test)] in jti.rs; sync, fixed now/iat — no real clock)
+1. first_use_accepted (Ok, len==1). 2. replay_rejected (2nd → Err(Replayed)). 3. different_clients_
+same_jti_both_accepted (per-client scoping). 4. expired_then_fresh_same_value_accepted (sweep evicted;
++ stale iat → ClockDriftPast). 5. clock_drift_past_rejected (+ inclusive boundary Ok). 6. clock_drift_
+future_rejected (+ boundary Ok). 7. capacity_cap_fail_closed (N+1 → StoreFull; a prior live jti still
+Err(Replayed) after — proves no live-eviction hole). 8. sweep_reclaims_then_admits (cap not a permanent
+wall). 9. concurrent_check_and_insert_single_winner (Arc<Mutex>, N threads same jti → exactly one Ok).
 
 ## Risks
-Name drift (mitigate: pub const from engine + round-trip e2e is the gate). installation-id confusion (document: enroll does NOT take it). fingerprint dep creep (drop if it adds a secretctl dep). proto regen blast radius low (single server impl, secretctl sole client).
+Lock-poisoning at daemon (TASK-0031): edge must map poisoned lock → reject; documented in spec §5 +
+re-export doc-comment, not enforceable in this pure type. Param tuning (300s/16384 evidence-based;
+with_params keeps retune a 1-liner). `&mut self` vs `&self` (chose &mut; concurrency test proves the
+Mutex-ownership contract). rtk corrupts fmt/clippy — implementer uses dedicated tools / `rtk proxy` raw;
+cwd resets between agent bash calls → absolute paths.
+
+## Open questions
+None — OI-SM-1 jti-store items resolved with concrete defaults; nonce lifecycle + remote_clients schema
+are separate OI-SM-1 sub-items (TASK-0031/F15); store designed to plug in.
