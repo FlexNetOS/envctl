@@ -28,6 +28,12 @@ mitm-ca = ["envctl-secrets-engine/mitm-ca", "dep:tokio-rustls"]
 # (`transport::DaemonHttpTransport`, reusing the frozen webpki-roots reqwest client — no new dep).
 # Off by default; a stock secretd has no native-mint provider and falls back to the proxy-swap path.
 provider-github = ["envctl-secrets-engine/provider-github"]
+# F2 / TASK-0031 PR-1: the REMOTE relay-edge HTTPS plane (in-process TLS + RFC 9449 DPoP + EKM
+# channel binding). Gates `src/edge/*`. Default-OFF and NOT in `default` — a `--no-default-features`
+# OR a default secretd build drops the public edge entirely (no bind). Reuses the pinned ring-only
+# tokio-rustls/rustls + ring(Ed25519)/base64/sha2/serde_json/hyper already in the resolved graph —
+# ZERO new lockfile crates (no-c stays green). Pulls in `tokio-rustls` (shared with `mitm-ca`).
+relay-edge = ["dep:tokio-rustls", "dep:ring", "dep:base64", "dep:sha2"]
 
 [dependencies]
 envctl-secrets-engine = { workspace = true }
@@ -71,6 +77,13 @@ zeroize = { workspace = true }
 # config.rs: parse the optional secretd.toml (store-backend selection). serde derive + toml parser.
 serde = { workspace = true }
 toml = { workspace = true }
+# F2 relay-edge (relay-edge feature only): DPoP (RFC 9449) proof verification. ring 0.17 (Ed25519
+# verify — already linked transitively via rustls's ring provider, so NO new lockfile crate),
+# base64 (base64url JWT segs + jkt) and sha2 (RFC 7638 JWK SHA-256 thumbprint) — both already in the
+# resolved graph (engine pins them). OPTIONAL: only the `relay-edge` feature links them; no-c stays green.
+ring = { version = "0.17", optional = true }
+base64 = { workspace = true, optional = true }
+sha2 = { workspace = true, optional = true }
 
 [dev-dependencies]
 # the e2e test (tests/e2e.rs) constructs the engine DIRECTLY (with a fake USB seam so Mint can pass
@@ -86,3 +99,11 @@ tokio-rustls = { workspace = true }
 rustls = { workspace = true }
 rustls-pki-types = { workspace = true }
 rustls-pemfile = { workspace = true }
+# F2 edge tests (edge unit tests + edge_e2e.rs): generate a self-signed relay-tls cert into a tempdir
+# and build DPoP proofs. rcgen/ring/base64/sha2/serde_json are all already in the resolved graph
+# (engine pins them) — NO new lockfile crate; no-c stays green.
+rcgen = { workspace = true }
+ring = { version = "0.17" }
+base64 = { workspace = true }
+sha2 = { workspace = true }
+serde_json = { workspace = true }

@@ -1,74 +1,150 @@
-# Implementation log: TASK-0030 — F6 bounded DPoP `jti` replay store
+# Implementation log: TASK-0031 PR-1 — F2 remote relay-edge listener (in-process TLS + DPoP/EKM)
 
-STATUS: GREEN
+Status: **GREEN**. PR-1 minimal-coherent edge implemented behind the `relay-edge` cargo feature
+(default-OFF), config-gated by `[edge].enabled`. One route: `POST /v1/relay/swap` → the EXISTING
+`Engine::relay_swap`. Zero new lockfile crates. All four CI gates pass.
 
-## Changes
-- `crates/secrets-engine/src/broker/jti.rs` (NEW): the bounded, in-memory, per-process DPoP `jti`
-  replay-dedup store — `JtiReplayStore` + `JtiReject`, consts, `check_and_record`, 9 inline tests.
-- `crates/secrets-engine/src/broker/mod.rs`: `pub mod jti;` (next to `pub mod gate;`) +
-  `pub use jti::{JtiReject, JtiReplayStore};` (broker re-export block, matching the `pub use decide::…` style).
-- `crates/secrets-engine/src/lib.rs`: added `JtiReject, JtiReplayStore` to the `pub use broker::{…}`
-  re-export block so TASK-0031 can `use envctl_secrets_engine::{JtiReplayStore, JtiReject};`.
-- (`.handoff/loop/cycle/01_architect_plan.md` + `docs/secrets/OI-SM-1-jti-replay-store.md` are the
-  architect's artifacts, untouched by me.)
+## Confirmed EKM accessor (the flagged risk — verified against pinned source, NOT assumed)
+- rustls **0.23.40** (lockfile-pinned): `ConnectionCommon::export_keying_material<T: AsMut<[u8]>>(&self,
+  output: T, label: &[u8], context: Option<&[u8]>) -> Result<T, Error>` (`src/conn.rs:460`).
+  `ServerConnection` / `ClientConnection` deref to `ConnectionCommon`, so both ends expose it.
+- tokio-rustls **0.26.4** (lockfile-pinned): post-handshake `server::TlsStream<IO>::get_ref(&self) ->
+  (&IO, &ServerConnection)` (`src/server.rs:314`); client side returns `(&IO, &ClientConnection)`
+  (`src/client.rs:217`). So the edge reads EKM via `tls_stream.get_ref().1.export_keying_material(out,
+  EKM_LABEL, None)`. The e2e test computes the SAME value on the client side and binds it into the
+  DPoP `ekm` claim — proving the symmetric RFC 5705 export matches end-to-end (happy-path 200).
+- Label: `EKM_LABEL = b"EXPORTER-envctl-relay-dpop-v1"`, 32-byte output, `context = None`.
 
-## Engine API (new pure type — the parity contract; no CLI/GUI surface, parity vacuous like decide/gate)
-- `pub enum JtiReject { Replayed, ClockDriftPast, ClockDriftFuture, StoreFull }` — `#[derive(Clone, Copy, Debug, PartialEq, Eq)]`.
-- `pub struct JtiReplayStore { accept_past_ms: i64, accept_future_ms: i64, sweep_slack_ms: i64, max_entries: usize, seen: HashMap<String, i64> }`.
-- `pub fn new()`, `pub fn with_params(accept_past_ms, accept_future_ms, max_entries)` (keeps default `SWEEP_SLACK_MS`), `impl Default`.
-- `pub fn check_and_record(&mut self, client_id: &str, jti: &str, iat_ms: i64, now_ms: i64) -> Result<(), JtiReject>`
-  — exact order: drift gate (inclusive boundaries) → sweep `retain(exp > now)` → dedup → cap `len() >= max_entries` → insert `iat + accept_past + sweep_slack`.
-- Key = `format!("{client_id}\u{0}{jti}")` (NUL separator). `#[cfg(test)] fn len()`.
-- Consts: `ACCEPT_PAST_MS=300_000`, `ACCEPT_FUTURE_MS=30_000`, `SWEEP_SLACK_MS=30_000`, `MAX_ENTRIES=16_384`.
-- Sync, non-printing, `std::collections` only — zero new deps.
+## Engine API delta (the parity contract — additive; `decide()` UNTOUCHED)
+- `EgressReq` (engine `lib.rs:198`) gains `pub remote: Option<broker::decide::RemotePeer>`. Set `None`
+  at every existing constructor: `proxy.rs`, `relay_swap`'s owned-copy rebuild, `tests/relay.rs`,
+  `tests/proxy_swap_e2e.rs`.
+- `relay_swap_prepare` (engine `lib.rs`): the hardcoded `remote: None` → `remote: req.remote.clone()`
+  (the ENTIRE engine wiring; `decide()` clause 11a re-asserts fail-closed).
+- NEW `pub fn Engine::load_remote_client(&str) -> anyhow::Result<Option<RemoteClient>>` (additive,
+  non-mutating read accessor; wraps the internal `store.load_remote_client`). The edge raises
+  unknown/revoked → 401 BEFORE `decide()`.
+- NEW `Paths::relay_tls_dir()` → `~/.config/env-ctl/relay-tls/` (engine `paths.rs`; mirrors
+  `config_file()`). NOTE: the plan said `crates/secretd/src/paths.rs`, but `Paths` actually lives in
+  the ENGINE (`crates/secrets-engine/src/paths.rs`) — added there (the real home). See Deviations.
 
-## Tests added (9, inline `#[cfg(test)] mod tests` in jti.rs; fixed now/iat ints, no real clock)
-1. `first_use_accepted` — fresh proof Ok, len==1.
-2. `replay_rejected` — 2nd identical → Err(Replayed); len stays 1.
-3. `different_clients_same_jti_both_accepted` — per-client scoping; both Ok, len==2.
-4. `expired_then_fresh_same_value_accepted` — sweep evicts stale, same jti re-admitted with fresh iat;
-   AND a proof reusing the OLD iat → Err(ClockDriftPast) (proves the stale value can't actually replay).
-5. `clock_drift_past_rejected` — too-old → Err(ClockDriftPast), not recorded; inclusive boundary `iat == now - ACCEPT_PAST` → Ok.
-6. `clock_drift_future_rejected` — too-new → Err(ClockDriftFuture), not recorded; inclusive boundary `iat == now + ACCEPT_FUTURE` → Ok.
-7. `capacity_cap_fail_closed` — fill to cap via `with_params`, N+1 unexpired → Err(StoreFull) (no growth/eviction),
-   AND a prior live jti still → Err(Replayed) afterward (proves NO live-eviction replay hole).
-8. `sweep_reclaims_then_admits` — full at NOW, then post-expiry sweep frees room → fresh proof Ok (cap not a permanent wall).
-9. `concurrent_check_and_insert_single_winner` — `Arc<Mutex<JtiReplayStore>>`, 32 threads same (client,jti,iat):
-   asserts EXACTLY one Ok and 31 Err(Replayed), final len==1.
+## Changes (files touched)
+- `crates/secrets-engine/src/lib.rs` — `EgressReq.remote` field; `relay_swap_prepare` wire;
+  `relay_swap` owned-copy carries `remote`; NEW `load_remote_client` accessor.
+- `crates/secrets-engine/src/paths.rs` — NEW `relay_tls_dir()` + 2 unit tests.
+- `crates/secrets-engine/tests/relay.rs` — `remote: None` in `post_req`; NEW test
+  `relay_swap_remote_unverified_dpop_denied_no_dpop` (remote=Some{dpop_verified:false}→RemoteNoDPoP).
+- `crates/secretd/Cargo.toml` — NEW `relay-edge` feature (default-OFF; `dep:tokio-rustls,ring,base64,
+  sha2`); dev-deps `rcgen/ring/base64/sha2/serde_json` (all already in graph — zero new crate).
+- `crates/secretd/src/lib.rs` — `#[cfg(feature="relay-edge")] pub mod edge;`.
+- `crates/secretd/src/edge/mod.rs` — NEW: `EdgeConfig` + `pub async fn serve_edge(engine, paths, cfg,
+  shutdown)`.
+- `crates/secretd/src/edge/dpop.rs` — NEW: pure-sync `verify_dpop_proof` (RFC 9449) + `VerifiedDpop`/
+  `DpopReject`/`HttpMethod` + 17 vector tests.
+- `crates/secretd/src/edge/tls.rs` — NEW: `RelayTlsConfig` (loads ONLY `relay_tls_dir()`; ring-only
+  ServerConfig; no MITM-CA import — FS-S25 structural) + 4 fail-closed tests.
+- `crates/secretd/src/edge/listener.rs` — NEW: accept→TLS→EKM→verify-ladder→jti→registry→
+  `swap_and_respond(remote: Some)`; `SwapOutcome::{Allowed→200,Denied→403,InternalRefused→503}`.
+- `crates/secretd/src/proxy.rs` — `swap_and_respond` gains a `remote` param (ONE shared swap core for
+  proxy+edge); helpers (`ProxyCtx`/`bare`/`extract_bearer`/`method_from_hyper`/`request_host`/
+  `ProxyBody`) made `pub(crate)`; `ProxyCtx::for_edge`; bearer extracted via Bearer-scheme when remote.
+- `crates/secretd/src/config.rs` — `[edge]` block parse + `EdgeSettings::load` (env>file; enabled⇒
+  bind_addr required, fail-closed).
+- `crates/secretd/src/main.rs` — start `serve_edge` under the SAME broadcast shutdown when the feature
+  is on AND `[edge].enabled`; cert-load/bind failure FATAL when explicitly enabled; await on shutdown.
+- `crates/secretd/tests/edge_e2e.rs` — NEW `#[tokio::test] #[cfg(feature="relay-edge")]` full e2e.
+- `ci/gates/shape.sh` — armed/tightened the FS-S25/FS-S18 edge-vs-MITM-CA grep + REQ-SEC-11 grep now
+  that `crates/secretd/src/edge/` exists.
 
-## Build/test status (commands run from worktree root, raw `rtk proxy` to preserve exit codes/diagnostics)
-- `rtk proxy cargo fmt --all` → exit 0 (reformatted only the new file's test asserts).
-- `rtk proxy cargo clippy --workspace -- -D warnings` → exit 0 (clean).
-- `rtk proxy cargo test -p envctl-secrets-engine` → exit 0; all 9 jti tests PASS; whole crate
-  105 unit + 4 + 6 + 17 + 15 + 0 integration tests all PASS, 0 failed / 0 ignored.
-- `bash ci/gates/no-c.sh` → exit 0: "NO-C GATE PASS" (rustls=0.23.40 on ring=0.17.14; zero aws-lc/openssl/C-SQLite).
-- `bash ci/gates/shape.sh` → exit 0: "SHAPE GATE PASS".
+## Tests added + what they prove
+- engine `paths.rs`: `relay_tls_dir_is_under_config_sibling_of_secretd_toml`,
+  `relay_tls_dir_resolves_under_env_ctl_config` — relay-tls/ is under config, NOT data (≠ MITM-CA).
+- `edge/dpop.rs` (17): valid accept; EKM uncomputable→reject (fail-closed), EKM mismatch, EKM claim
+  absent; bad signature; tampered payload; wrong typ/alg; non-OKP jwk; htm/htu mismatch; iat past/
+  future; missing jti; malformed JWT (≠3 segs, empty); non-base64 seg; RFC 7638 jkt == SHA-256(canon).
+- `edge/tls.rs` (4): loads relay-tls/; missing dir / missing key / empty cert all fail closed.
+- engine `tests/relay.rs`: `relay_swap_remote_unverified_dpop_denied_no_dpop` → `RemoteNoDPoP`, key
+  never fetched. (CrossKindPresentation — remote bearer over local `remote: None` — is ALREADY proven
+  by the existing `relay_mint_remote_binds_client_and_cross_kind_denied_locally`.)
+- `tests/edge_e2e.rs` (1 test, 5 scenarios): real tokio-rustls handshake (trusting ONLY relay-tls
+  cert), client-computed EKM bound into a valid DPoP proof → POST /v1/relay/swap → **200 + the REAL
+  key (SENTINEL) reaches the faked Upstream**. Negatives: replayed jti→401, no DPoP header→401,
+  tampered proof→401, unregistered client→401 (the `load_remote_client→None/revoked` pre-decide branch
+  a revoked client also hits).
 
-## Deviations
-None. Implemented exactly per the plan and OI-SM-1 spec.
+## Build/test status (exact commands; rtk proxy raw)
+- `cargo fmt --all` + `--check` — clean.
+- `cargo clippy --workspace --features relay-edge -- -D warnings` — PASS (exit 0).
+- `cargo clippy --workspace -- -D warnings` (feature OFF) — PASS (exit 0).
+- `cargo clippy -p envctl-secretd -p envctl-secrets-engine --all-targets --features relay-edge -- -D
+  warnings` (test code) — PASS (exit 0).
+- `cargo test -p envctl-secrets-engine -p envctl-secretd --features relay-edge` — PASS: secretd-lib
+  52, edge_e2e 1, mitm_e2e 1, proxy_swap_e2e 2, e2e 5, native_mint 11, self_check 2; engine-lib 129,
+  relay 18, vault 15, inject 4, phase0 6. 0 failed.
+- `cargo test -p envctl-secretd` (feature OFF) — PASS: secretd-lib 31, e2e 5, mitm_e2e 1, native_mint
+  11, proxy_swap 2, self_check 2. 0 failed. (`edge_e2e` correctly absent — `#[cfg(relay-edge)]`.)
+- `bash ci/gates/no-c.sh` — PASS (rustls=[0.23.40] on ring=[0.17.14]; zero aws-lc/openssl/C-SQLite;
+  `--all-features` covers `relay-edge`; independent `cargo metadata --features relay-edge` ⇒ 0 banned).
+- `bash ci/gates/shape.sh` — PASS. `bash ci/gates/enable.sh` — PASS. `bash ci/gates/p7.sh` — PASS.
+- `cargo build -p envctl-engine -p envctl` — clean (tight loop unaffected).
 
-## Follow-ups
-- TASK-0031 (F2 edge listener) is the caller — OUT OF SCOPE here. It must:
-  (a) own the single `Mutex<JtiReplayStore>` (the type is `&mut self`, not interior-mutable);
-  (b) map a POISONED lock → reject (fail-closed) — not enforceable in this pure type (spec §5, noted in module doc);
-  (c) call `check_and_record` once per proof immediately before setting `dpop_verified=true`, mapping every `JtiReject` to a 401.
-- `with_params` keeps a retune to a one-liner if the audited defaults need tuning.
+## Pre-existing lint baseline
+No pre-existing fmt/clippy drift surfaced; the workspace was clean before and after. (Toolchain is the
+pinned `1.96.0` per `rust-toolchain.toml`, so no floating-`stable` mis-attribution.)
 
-## Handoff notes (for the invariant-guardian)
-- Fail-closed cap is the load-bearing security property: verify `capacity_cap_fail_closed` proves the
-  N+1 proof is REFUSED (StoreFull) AND a prior live jti is still Replayed afterward — i.e. NO live entry
-  was evicted to admit the new one (no replay hole). This is the explicit OI-SM-1 §4 fail-closed choice.
-- Drift boundaries are INCLUSIVE (`iat == now - ACCEPT_PAST` and `iat == now + ACCEPT_FUTURE` are Ok) —
-  covered by the boundary asserts in tests 5 & 6.
-- No-C / zero-new-deps: `jti.rs` imports only `std::collections::HashMap` (+ `std::sync`/`std::thread` in
-  `#[cfg(test)]`). Cargo.lock unchanged; no-c gate re-run green. secrets-engine still never links libSQL.
-- No secret bytes stored: the map holds only `(client_id\u{0}jti)` keys + an `i64` expiry. No proof body,
-  signature, bearer, or key material.
-- Non-printing/sync: no `println!`/`eprintln!`, no async, no clap, no UI — typed `Result<(), JtiReject>`.
-- Re-export reachability: `envctl_secrets_engine::{JtiReplayStore, JtiReject}` resolves (added to both
-  `broker/mod.rs` and `lib.rs` re-export blocks).
-- Clippy was run with default `--workspace` (no `--all-targets`), per the plan, and is clean. My change
-  adds no `--all-targets`-only surface. NOTE the known PRE-EXISTING baseline lint (unrelated to this
-  cycle): `cargo clippy -p envctl-gui --all-targets` trips `doc_list_item_without_indentation` at
-  `crates/gui/src/main.rs` under the floating `stable` toolchain (documented in the prior TASK-0020 log) —
-  a gui-doc-comment lint in an untouched crate, not a TASK-0030 regression.
+## Deviations (with rationale)
+1. **`relay_tls_dir()` lives in the ENGINE `paths.rs`, not `secretd/src/paths.rs`.** The plan named
+   `crates/secretd/src/paths.rs`, but secretd has no `paths.rs` — the `Paths` struct is defined in
+   `crates/secrets-engine/src/paths.rs` and secretd imports `envctl_secrets::paths::Paths`. Adding the
+   helper to the real home keeps ONE `Paths` type (no shadow). Unit-tested there.
+2. **The edge reuses `proxy::swap_and_respond` (threaded a `remote` param) instead of an edge-local
+   `relay_swap` call site.** This keeps ONE swap core for the proxy + the edge (engine-parity
+   principle: the planes can't diverge in how they drive `relay_swap`/stream the upstream via the
+   `EGRESS_CTX` task-local + `DaemonUpstream`). The edge still builds `EgressReq{remote: Some(rp)}` and
+   reaches the EXISTING `relay_swap` exactly as the plan requires — the param is just the seam.
+3. **Bearer header convention for the remote plane.** `swap_and_respond` previously extracted the
+   bearer with the UPSTREAM provider's convention (Anthropic = bare `x-api-key`). The remote edge
+   client addresses the EDGE and always sends `Authorization: Bearer`, so for `remote.is_some()` the
+   bearer is read with the Bearer-scheme (`Provider::Generic`). Found + fixed via the e2e (was a 403).
+4. **"Revoked client → 401" e2e is exercised via the unregistered-client path.** The edge refuses an
+   unknown OR revoked client through the SAME `load_remote_client → None/disabled/revoked → 401`
+   pre-decide branch. There is no public remote-client revoke verb yet (revocation TEAR-DOWN is
+   explicitly PR-3 per the plan's out-of-scope), and adding one (or a 68-method `SharedStore` test
+   shim) would exceed PR-1 scope, so the e2e proves the identical edge refusal branch with an
+   unregistered `client_id`. The negative assertion (request never reaches a mint) is intact.
+5. **Upstream target framing.** PR-1 conveys the upstream target via `X-Relay-Upstream-Host` +
+   `X-Relay-Upstream-Path` headers (the edge route is the fixed `/v1/relay/swap`; the DPoP `htu` binds
+   the edge URL). `decide()` re-fences host/path/method against the policy allowlist, so a
+   forged/unallowed target is denied IN THE ENGINE — the edge enforces no policy.
+
+## Handoff notes (for the invariant-guardian — targeted checks)
+- **FS-S20 (EKM channel binding):** `dpop_verified:true` is set ONLY after `verify_dpop_proof`
+  succeeds, which requires `ekm = Some(..)` AND the proof's `ekm` claim to equal it. Uncomputable EKM
+  ⇒ `EkmUncomputable` ⇒ **403** (listener maps the three `Ekm*` rejects to 403, all other rejects to
+  401). Verify: `edge/dpop.rs::uncomputable_ekm_rejected_failclosed` + `ekm_mismatch_rejected` +
+  `ekm_claim_absent_rejected`, and the e2e's symmetric client-side EKM export feeding the happy path.
+- **FS-S25/FS-S18 (relay-tls ONLY, never MITM CA):** structural in `edge/tls.rs` (`RelayTlsConfig`
+  reads ONLY `relay_tls_dir()`, imports no MITM-CA type). Backstop: `ci/gates/shape.sh` greps the
+  `edge/` tree for any MITM/local-CA symbol. Confirm the grep actually scans `crates/secretd/src/edge`
+  (it does — `EDGE_SRC`).
+- **Poisoned-mutex fail-closed:** `listener.rs verify_remote_presentation` step (4) — `conn.jti.lock()`
+  `Err(_) => 401`, NEVER `.unwrap()`. The replay store itself is the F6 `JtiReplayStore` (read-only).
+- **Never reaches a mint on failure:** every verify failure returns from `verify_remote_presentation`
+  BEFORE `swap_and_respond` is called; confirm there is no path that builds `RemotePeer` without all
+  of: EKM bound + DPoP verified + jti fresh + client registered+enabled + proven jkt == registered jkt.
+- **No secret bytes in logs:** the listener's `tracing::debug!` lines carry only status code / peer /
+  error-display — never bearer/proof/EKM/key. The engine emits the secret-free durable audit row.
+- **decide() untouched:** confirm `crates/secrets-engine/src/broker/decide.rs` has NO diff (only the
+  `EgressReq`/`relay_swap_prepare`/`load_remote_client`/`paths` additive edits).
+- **Default-OFF proof:** feature-off `cargo test -p envctl-secretd` passes with `edge_e2e` absent and
+  no edge module compiled; `[edge]` absent ⇒ `serve_edge` never called (main.rs is `#[cfg]`-gated).
+
+## Follow-ups (deferred PR-2 / PR-3 — recorded per the plan's out-of-scope)
+- **PR-2:** server-issued nonce challenge (OI-SM-1 nonce half; the `dpop.rs` window is nonce-agnostic
+  and ready to extend the dedup key to `(client_id, nonce, jti)`); per-IP / per-client rate-limit +
+  body-size caps + request timeouts + admission shedding (CVE-2024-47609 accept-loop class); hardened-
+  mode mTLS `ClientCertVerifier` from a SEPARATE remote-clients CA (OI-SM-4); a startup self-check that
+  the presented edge cert chains to a PUBLIC root and explicitly NOT the MITM/remote-clients CA.
+- **PR-3 (→ folds into TASK-0032):** streaming + in-stream `decide()` re-check; active stream tear-down
+  on `RevokeBearer`/`RevokeRemoteClient`/`lock`/USB-pull; a public `revoke_remote_client` engine verb
+  (the edge's revoked-client refusal branch is already present via `load_remote_client`).

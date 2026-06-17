@@ -24,11 +24,14 @@ if [ -d "$EDGE_SRC" ] && grep -RInE "$CONTROL_TYPES" "$EDGE_SRC" ; then
   fail "edge module references a control-plane service type (REQ-SEC-11)"
 fi
 
-# --- FS-S25: the edge server cert must never be sourced from the MITM/local CA. ---
-EDGE_TLS_DIR=crates/secretd/src
-if grep -RInE 'mitm_ca|local_ca|ca::issue|ResolvesServerCert' "$EDGE_TLS_DIR" \
-   | grep -iE 'edge|relay_tls|inbound' ; then
-  fail "edge TLS appears to reference the local/MITM CA (FS-S25) — edge cert must be publicly-trusted"
+# --- FS-S25 / FS-S18: the edge server cert must never be sourced from the MITM/local CA. ---
+# Structural enforcement lives in edge/tls.rs (RelayTlsConfig loads ONLY relay_tls_dir()); this grep
+# is the defense-in-depth backstop: the edge module tree must reference NO MITM/local-CA symbol or
+# path. The relay cert is publicly-trusted and loaded from relay_tls_dir() exclusively.
+if [ -d "$EDGE_SRC" ] && grep -RInE \
+     'mitm_ca|mitm-ca|local_ca|LocalCa|ca_pem|ca_init|issue_leaf|MitmCertResolver|ResolvesServerCert|relay-tls/\.\.|/ca\b' \
+     "$EDGE_SRC" ; then
+  fail "edge module references the local/MITM CA (FS-S25/FS-S18) — the edge cert must be publicly-trusted and loaded ONLY from relay_tls_dir()"
 fi
 
 echo "SHAPE GATE PASS"

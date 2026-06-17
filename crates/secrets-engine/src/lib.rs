@@ -209,6 +209,15 @@ pub struct EgressReq {
     /// value so `decide` can enforce SNI==Host (anti-fronting) against a TLS-observed name rather than
     /// a sentinel. `None` under a MITM swap fails closed (`SniHostMismatch`).
     pub observed_sni: Option<String>,
+    /// The verified REMOTE presentation context (Phase 8 / F2), set by the `secretd` remote relay
+    /// edge AFTER it terminated TLS in-process, verified the RFC 9449 DPoP proof against the
+    /// registered `jkt`, and bound the proof to the TLS channel (EKM). `None` for every LOCAL (UDS /
+    /// loopback proxy) request — those carry no remote context, so `decide()` denies a remote bearer
+    /// presented over a local path (`CrossKindPresentation`). When `Some`, `relay_swap_prepare`
+    /// forwards it verbatim into the `CanonRequest`, so `decide()`'s clause 11a re-asserts the
+    /// binding fail-closed (`RemoteNoDPoP` if `dpop_verified` is false). The engine NEVER sets this
+    /// itself — it is the single additive seam the edge fills.
+    pub remote: Option<broker::decide::RemotePeer>,
 }
 
 pub struct EgressResp {
@@ -1094,6 +1103,21 @@ impl Engine {
         Ok(())
     }
 
+    /// Read-only lookup of a registered remote client by `client_id` (Phase 8 / F2). Additive,
+    /// non-mutating accessor for the `secretd` remote relay edge: the edge consults it BEFORE
+    /// `decide()` so an unknown or revoked client is refused at the edge (401) without ever reaching
+    /// the swap/mint path — mirroring how `UnknownBearer` is raised before `decide()`. Returns
+    /// `Ok(None)` for an unregistered `client_id`; `Ok(Some(c))` for a registered one (the caller
+    /// inspects `c.enabled` / `c.revoked_at_ms` to map `RemoteClientUnknown` / `RemoteClientRevoked`).
+    /// The `RemoteClient` row holds NO secret (the `jkt` is a public RFC-7638 thumbprint). A store
+    /// error is surfaced as `Err` so the edge fails closed (treat as a refusal, never an accept).
+    pub fn load_remote_client(
+        &self,
+        client_id: &str,
+    ) -> anyhow::Result<Option<crate::vault::RemoteClient>> {
+        self.inner.store.load_remote_client(client_id)
+    }
+
     /// Mint a REMOTE (client_id + DPoP-jkt-bound) relay bearer (Phase 8, F15). The client MUST be a
     /// registered, enabled remote client whose registered DPoP thumbprint equals `dpop_jkt`
     /// (proof-of-possession is bound at mint; the edge re-verifies the live per-request proof). Like
@@ -1292,6 +1316,10 @@ impl Engine {
                     peer_uid: req.peer_uid,
                     peer_pid: req.peer_pid,
                     observed_sni: req.observed_sni.clone(),
+                    // The remote context is already consumed by `decide()` (clause 11a) inside
+                    // `relay_swap_prepare`; carried here only to keep the owned request a faithful
+                    // copy. `Upstream::send` never reads it.
+                    remote: req.remote.clone(),
                 };
                 // HF-11 send-site fence (belt-and-suspenders): re-assert that the EXACT host about to
                 // receive the real key is in the provider's frozen canonical allowlist, immediately
@@ -1527,9 +1555,13 @@ impl Engine {
             usage_requests: total_requests,
             usage_bytes: total_bytes,
             rate_in_window,
-            // Local (UDS) request: no remote presentation context. The Phase-8 edge constructs
-            // `CanonRequest` with `remote: Some(RemotePeer{..})` after verifying DPoP + TLS binding.
-            remote: None,
+            // The verified remote presentation context, forwarded VERBATIM from the request. `None`
+            // for a local (UDS / loopback proxy) request; `Some(RemotePeer{..})` only when the
+            // Phase-8 remote relay edge already terminated TLS in-process, verified the RFC 9449 DPoP
+            // proof against the registered `jkt`, and bound it to the TLS channel (EKM). `decide()`'s
+            // clause 11a re-asserts the binding fail-closed (`RemoteNoDPoP` if `dpop_verified` is
+            // false; `CrossKindPresentation` on a plane mismatch vs the bearer's kind).
+            remote: req.remote.clone(),
         };
 
         // 4. The PURE, default-deny decision (expiry fenced against BOTH the wall and monotonic

@@ -94,6 +94,7 @@ fn post_req(peer_uid: Option<u32>) -> EgressReq {
         peer_uid,
         peer_pid: None,
         observed_sni: None,
+        remote: None,
     }
 }
 
