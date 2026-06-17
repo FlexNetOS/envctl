@@ -3,22 +3,31 @@
 //! `main` stays SYNC and builds a multi-thread runtime explicitly so process hardening runs BEFORE
 //! any async/key path (ops doc §3). Bring-up order inside [`serve`]:
 //!   1. install the rustls RING `CryptoProvider` (CF-2) — never aws-lc-rs;
-//!   2. process hardening (FS-S4): `RLIMIT_CORE=0` + `RLIMIT_MEMLOCK` raised. (See the NOTE below on
-//!      the one place the spec's in-process `mlockall` cannot be honored with the pinned rustix
-//!      feature set; systemd `LimitMEMLOCK`/`LimitCORE` provide defense-in-depth meanwhile.)
+//!   2. process hardening (FS-S4): `RLIMIT_CORE=0` + `RLIMIT_MEMLOCK` raised + in-process
+//!      `mlockall(MCL_CURRENT|MCL_FUTURE)` so secret material (DEK / vault plaintext / PEMs, all
+//!      allocated post-`Lock.Unlock`) can never reach swap. (See the NOTE below on the best-effort
+//!      vs. `require_mlock` strict behavior; systemd `LimitMEMLOCK`/`LimitCORE` are the
+//!      defense-in-depth backstop.)
 //!   3. `Paths::resolve()` + create runtime/data/state dirs `0700`;
 //!   4. `Engine::open(paths)`; first-run bootstrap leaves vault init out-of-band (no `Vault.Init`
 //!      RPC; the vault stays Locked until an explicit `Lock.Unlock`);
 //!   5. bind the UDS `0600` (stale-socket reaped), serve the gRPC services behind the SO_PEERCRED
 //!      owner interceptor with graceful shutdown on SIGINT/SIGTERM.
 //!
-//! NOTE (pinned-rustix limitation, documented): rustix 0.38 with `features=["process","net","time"]`
-//! does NOT include the `mm` module, so `mlockall(MCL_CURRENT|MCL_FUTURE)` is not callable through
-//! the pinned feature set, and we do not add new deps. The buildable hardening within the pins is
-//! `RLIMIT_CORE=0` + raising `RLIMIT_MEMLOCK` (so a future mlock can succeed) — the spec's in-process
-//! `mlockall` is deferred to a follow-up. This is the ONE place the in-process `mlockall` cannot be
-//! honored as written; the systemd unit's `LimitMEMLOCK=infinity` / `LimitCORE=0` cover it as
-//! defense-in-depth.
+//! NOTE (FS-S4 mlockall behavior): `mlockall(MCL_CURRENT|MCL_FUTURE)` is called in-process via the
+//! pure-Rust `libc` FFI bindings (chosen over a rustix `mm` feature widen — `libc` is already in
+//! secretd's resolved tree and adds no new lockfile crate, and `mm` would broaden the SHARED rustix
+//! pin for every consumer). `MCL_FUTURE` is load-bearing: it covers the DEK / vault-plaintext / PEM
+//! allocations that happen AFTER startup (post-unlock), not just the pages mapped at startup. The
+//! call is **Linux-gated** (`#[cfg(target_os = "linux")]`) so non-Linux dev builds compile.
+//!
+//! It is **best-effort by default**: `mlockall` commonly fails `EPERM` (no `CAP_IPC_LOCK`) or
+//! `ENOMEM`; on failure the daemon logs a metadata-only WARN (errno/strerror — never secret bytes,
+//! of which there are none pre-unlock anyway) and CONTINUES, relying on `RLIMIT_CORE=0` + the
+//! systemd unit's `LimitMEMLOCK=infinity` / `LimitCORE=0`. An operator can opt into a hardened mode
+//! via `[security].require_mlock = true` (or `SECRETD_REQUIRE_MLOCK=1`): when set, a failed
+//! `mlockall` is FATAL and `serve` refuses to start (fail-closed). `--self-check` keeps `mlockall`
+//! best-effort regardless of `require_mlock` (it is a non-serving pre-flight).
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 
@@ -84,10 +93,12 @@ fn self_check() -> anyhow::Result<()> {
     // process this installs; an `Err` only means "already installed" (idempotent) — not a failure.
     let _ = rustls::crypto::ring::default_provider().install_default();
 
-    // 2. Process hardening (FS-S4) is best-effort here exactly as in `serve` — a `setrlimit` failure
-    // is logged, not fatal (systemd's LimitCORE/LimitMEMLOCK are authoritative), so it never fails
-    // the self-check on its own.
-    harden_process();
+    // 2. Process hardening (FS-S4) is best-effort here exactly as in `serve` — a `setrlimit` or
+    // `mlockall` failure is logged, not fatal (systemd's LimitCORE/LimitMEMLOCK are authoritative),
+    // so it never fails the self-check on its own. `require_mlock` strict mode is DELIBERATELY NOT
+    // honored here: `--self-check` is a non-serving pre-flight, so a missing CAP_IPC_LOCK must not
+    // fail the manifest `verify` predicate. The mlock outcome is therefore discarded.
+    let _ = harden_process();
 
     // 3. XDG paths resolve and the runtime/data/state dirs exist 0700 (idempotent; the install step
     // already created them — this re-asserts they are present and own-only).
@@ -115,9 +126,10 @@ async fn serve() -> anyhow::Result<()> {
         tracing::debug!("rustls ring CryptoProvider already installed");
     }
 
-    // 2. Process hardening (FS-S4): no core dumps; raise the memlock ceiling. See the module NOTE on
-    // why in-process `mlockall` is deferred under the pinned rustix feature set.
-    harden_process();
+    // 2. Process hardening (FS-S4): no core dumps; raise the memlock ceiling; `mlockall` the address
+    // space (best-effort here — see `harden_process`). The mlock outcome is captured so we can apply
+    // the operator's `require_mlock` strict-mode decision AFTER the config loads (step 4 below).
+    let mlock = harden_process();
 
     // 3. Resolve paths and create the runtime/data/state dirs 0700.
     let paths = Paths::resolve().context("resolving XDG paths")?;
@@ -131,6 +143,19 @@ async fn serve() -> anyhow::Result<()> {
     // `Lock.Unlock`. We do not auto-init here (no passphrase/USB to enroll).
     let store_cfg =
         config::StoreConfig::load(&paths.config_file()).context("loading store config")?;
+
+    // FS-S4 strict mode: `harden_process` runs BEFORE config is available, so the mlockall fatality
+    // decision is applied HERE, once `require_mlock` is known. When strict + the in-process lock
+    // could not be established, the daemon REFUSES to serve (fail-closed) — secret material would be
+    // swappable, which the operator has elected to forbid. The default (`require_mlock = false`)
+    // keeps mlockall best-effort and never reaches this bail.
+    if store_cfg.require_mlock && mlock.failed() {
+        anyhow::bail!(
+            "require_mlock is set but mlockall failed; refusing to start with potentially \
+             swappable secret memory. Grant secretd CAP_IPC_LOCK (or raise LimitMEMLOCK) and retry"
+        );
+    }
+
     let engine = build_engine(paths.clone(), store_cfg).await?;
 
     // 5. Bind the UDS (reaping a stale socket from a dead daemon), chmod 0600.
@@ -328,10 +353,44 @@ fn engine_with_daemon_seams(
     )
 }
 
-/// `RLIMIT_CORE=0` (no core dumps that could leak key material) + raise `RLIMIT_MEMLOCK` so a
-/// future mlock can succeed. A `setrlimit` failure here is logged, not fatal: the systemd unit
-/// provides the authoritative `LimitCORE`/`LimitMEMLOCK` as defense-in-depth.
-fn harden_process() {
+/// Outcome of the in-process `mlockall` attempt (FS-S4). Returned by [`harden_process`] so a caller
+/// can apply the strict-mode (`require_mlock`) fatality decision AFTER the config is loaded — the
+/// syscall itself is always attempted best-effort regardless of strict mode.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum MlockOutcome {
+    /// `mlockall(MCL_CURRENT|MCL_FUTURE)` succeeded — this and all future pages are pinned (no swap).
+    Locked,
+    /// `mlockall` failed (e.g. `EPERM` without `CAP_IPC_LOCK`, or `ENOMEM`). `errno` is the raw OS
+    /// error number; the message was already WARN-logged (metadata only — no secret bytes).
+    Failed { errno: i32 },
+    /// Not a Linux build — `mlockall` is a Linux syscall, so there is nothing to attempt here.
+    /// Only constructed by the `#[cfg(not(target_os = "linux"))]` `mlock_all_pages`, so on a Linux
+    /// build it is (correctly) never constructed; the narrow allow keeps the variant present so the
+    /// `failed()`/strict-mode logic stays target-uniform without a broad crate-level allow.
+    #[cfg_attr(target_os = "linux", allow(dead_code))]
+    NotApplicable,
+}
+
+impl MlockOutcome {
+    /// `true` iff the in-process lock could NOT be established (strict mode treats this as fatal).
+    /// `NotApplicable` is NOT a failure (non-Linux dev build has no syscall to fail).
+    fn failed(self) -> bool {
+        matches!(self, MlockOutcome::Failed { .. })
+    }
+}
+
+/// `RLIMIT_CORE=0` (no core dumps that could leak key material) + raise `RLIMIT_MEMLOCK` so an
+/// `mlock` can succeed, then `mlockall(MCL_CURRENT|MCL_FUTURE)` so secret material (DEK / vault
+/// plaintext / PEMs) — all allocated AFTER startup, once `Lock.Unlock` runs — can never reach swap
+/// (FS-S4). `MCL_FUTURE` is load-bearing: it covers those post-unlock allocations.
+///
+/// Best-effort throughout: a `setrlimit` failure is logged, not fatal (the systemd unit's
+/// `LimitCORE`/`LimitMEMLOCK` are the authoritative defense-in-depth). `mlockall` is likewise
+/// attempted best-effort and NEVER panics — it commonly fails `EPERM` (no `CAP_IPC_LOCK`) or
+/// `ENOMEM`; on failure the daemon CONTINUES (relying on `RLIMIT_CORE=0` + systemd `LimitMEMLOCK`),
+/// emitting a metadata-only WARN. The returned [`MlockOutcome`] lets `serve` enforce the operator's
+/// `require_mlock` strict mode (fail-closed) AFTER config load; the syscall here stays best-effort.
+fn harden_process() -> MlockOutcome {
     if let Err(e) = setrlimit(
         Resource::Core,
         Rlimit {
@@ -344,12 +403,47 @@ fn harden_process() {
     if let Err(e) = setrlimit(
         Resource::Memlock,
         Rlimit {
-            current: None, // None => infinity, raising the ceiling for a future mlock
+            current: None, // None => infinity, raising the ceiling for the mlock below
             maximum: None,
         },
     ) {
         tracing::warn!(error = %e, "could not raise RLIMIT_MEMLOCK (relying on systemd LimitMEMLOCK)");
     }
+    mlock_all_pages()
+}
+
+/// Pin the whole address space (current + future pages) into RAM so secret material is never
+/// swapped to disk (FS-S4). Linux-only (`mlockall` + `MCL_*` are Linux); on other targets this is a
+/// no-op [`MlockOutcome::NotApplicable`] so dev builds still compile. Best-effort: on `-1` it logs a
+/// metadata-only WARN (errno + strerror, NEVER secret bytes) and returns `Failed{errno}` WITHOUT
+/// panicking — pre-unlock there are no secrets in the address space anyway, and `RLIMIT_CORE=0`
+/// independently mitigates core-dump leakage.
+#[cfg(target_os = "linux")]
+fn mlock_all_pages() -> MlockOutcome {
+    // SAFETY: `mlockall` is a trivial syscall taking only an int flags bitmask and touching no
+    // Rust-owned memory; the flags are valid `libc` constants. It cannot violate memory safety.
+    let rc = unsafe { libc::mlockall(libc::MCL_CURRENT | libc::MCL_FUTURE) };
+    if rc == -1 {
+        let err = std::io::Error::last_os_error();
+        let errno = err.raw_os_error().unwrap_or(0);
+        tracing::warn!(
+            errno,
+            error = %err,
+            "mlockall(MCL_CURRENT|MCL_FUTURE) failed; secret material may be swappable. \
+             Relying on RLIMIT_CORE=0 + systemd LimitMEMLOCK. Grant CAP_IPC_LOCK (or set \
+             [security].require_mlock to refuse startup) to enforce the in-process lock."
+        );
+        MlockOutcome::Failed { errno }
+    } else {
+        MlockOutcome::Locked
+    }
+}
+
+/// Non-Linux fallback: `mlockall` is a Linux syscall, so there is nothing to attempt. Lets dev
+/// builds on macOS/Windows compile; the daemon ships on Linux where the real path above runs.
+#[cfg(not(target_os = "linux"))]
+fn mlock_all_pages() -> MlockOutcome {
+    MlockOutcome::NotApplicable
 }
 
 /// Create `dir` (and parents) with mode 0700, tightening perms if it already exists.
@@ -387,4 +481,69 @@ async fn bind_uds(sock: &Path) -> anyhow::Result<tokio::net::UnixListener> {
     std::fs::set_permissions(sock, std::fs::Permissions::from_mode(0o600))
         .with_context(|| format!("chmod 0600 {}", sock.display()))?;
     Ok(listener)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The mlockall wrapper must return cleanly and NEVER panic, whatever the syscall does. CI lacks
+    /// `CAP_IPC_LOCK`, so this almost always exercises the `EPERM` -> `Failed` path; the test asserts
+    /// only that a valid outcome comes back without panicking (it does NOT assert `Locked`, which
+    /// would be unachievable in CI). On a privileged host it may return `Locked`; on non-Linux it
+    /// returns `NotApplicable`. All three are acceptable — the contract is "no panic, handled value".
+    #[test]
+    fn mlockall_best_effort_does_not_panic() {
+        let outcome = mlock_all_pages();
+        match outcome {
+            // EPERM/ENOMEM in CI: the handled not-locked path. Errno must be a real OS error.
+            MlockOutcome::Failed { errno } => {
+                assert_ne!(errno, 0, "Failed must carry a real errno")
+            }
+            // Privileged host or non-Linux dev build — also valid.
+            MlockOutcome::Locked | MlockOutcome::NotApplicable => {}
+        }
+        // `failed()` is consistent with the variant (sanity on the strict-mode predicate).
+        assert_eq!(
+            outcome.failed(),
+            matches!(outcome, MlockOutcome::Failed { .. })
+        );
+    }
+
+    /// `harden_process()` runs the full FS-S4 hardening (RLIMIT_CORE/MEMLOCK + mlockall) and must
+    /// return normally even when mlockall fails (EPERM in CI). It never panics and never blocks.
+    #[test]
+    fn harden_process_best_effort_default() {
+        // Returns a valid outcome; default config (require_mlock=false) would not act on a failure.
+        let outcome = harden_process();
+        // No panic reaching here is the assertion; confirm the value is one of the known variants.
+        assert!(matches!(
+            outcome,
+            MlockOutcome::Locked | MlockOutcome::Failed { .. } | MlockOutcome::NotApplicable
+        ));
+    }
+
+    /// Pure-logic check of the strict-mode fatality rule: `require_mlock && outcome.failed()` is the
+    /// exact predicate `serve` bails on. Deterministic — it does NOT depend on actually locking in
+    /// CI; it drives the predicate with constructed outcomes.
+    #[test]
+    fn require_mlock_strict_fatal_when_unlocked() {
+        // The bail condition `serve` uses.
+        let bail = |require_mlock: bool, outcome: MlockOutcome| require_mlock && outcome.failed();
+
+        // STRICT + failed lock => fatal (serve refuses to start).
+        assert!(bail(
+            true,
+            MlockOutcome::Failed {
+                errno: 1 /* EPERM */
+            }
+        ));
+        // STRICT + locked => not fatal (the lock was established).
+        assert!(!bail(true, MlockOutcome::Locked));
+        // STRICT + not-applicable (non-Linux) => not fatal (no syscall to fail).
+        assert!(!bail(true, MlockOutcome::NotApplicable));
+        // DEFAULT (best-effort) + failed lock => never fatal.
+        assert!(!bail(false, MlockOutcome::Failed { errno: 1 }));
+        assert!(!bail(false, MlockOutcome::Locked));
+    }
 }

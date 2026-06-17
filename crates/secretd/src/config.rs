@@ -35,6 +35,9 @@ pub const ENV_URL: &str = "SECRETD_LIBSQL_URL";
 pub const ENV_TOKEN: &str = "SECRETD_LIBSQL_AUTH_TOKEN";
 pub const ENV_TOKEN_FILE: &str = "SECRETD_LIBSQL_AUTH_TOKEN_FILE";
 pub const ENV_CONFIG: &str = "SECRETD_CONFIG";
+/// FS-S4 strict-mlock toggle: when set to a truthy value (`1`/`true`/`yes`/`on`), an `mlockall`
+/// failure at startup is FATAL (the daemon refuses to serve). Overrides `[security].require_mlock`.
+pub const ENV_REQUIRE_MLOCK: &str = "SECRETD_REQUIRE_MLOCK";
 
 /// Which persistence backend the daemon's engine is built on.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -52,6 +55,13 @@ pub struct StoreConfig {
     pub url: Option<String>,
     /// The libSQL auth token (possibly empty for a loopback sqld). Never logged.
     pub auth_token: Zeroizing<String>,
+    /// FS-S4 strict-mlock mode (default `false`). When `true`, a failed in-process `mlockall` at
+    /// startup is FATAL — `serve` refuses to come up (fail-closed; an operator-elected hardened
+    /// mode per THREAT-MODEL.md "refuse-on-fail"). When `false` (the default), `mlockall` is
+    /// best-effort: a failure is logged and the daemon continues. Sourced from
+    /// `SECRETD_REQUIRE_MLOCK` (env wins) or `[security].require_mlock` in `secretd.toml`. Has NO
+    /// effect on `--self-check`, which keeps `mlockall` best-effort regardless (non-serving).
+    pub require_mlock: bool,
 }
 
 impl std::fmt::Debug for StoreConfig {
@@ -60,6 +70,7 @@ impl std::fmt::Debug for StoreConfig {
             .field("backend", &self.backend)
             .field("url", &self.url)
             .field("auth_token", &"<redacted>")
+            .field("require_mlock", &self.require_mlock)
             .finish()
     }
 }
@@ -70,11 +81,20 @@ struct FileConfig {
     store: Option<FileStore>,
     #[cfg(feature = "relay-edge")]
     edge: Option<FileEdge>,
+    security: Option<FileSecurity>,
 }
 #[derive(serde::Deserialize, Default)]
 struct FileStore {
     backend: Option<String>,
     url: Option<String>,
+}
+/// `[security]` table. FS-S4 process-hardening toggles (no credentials live here either).
+#[derive(serde::Deserialize, Default)]
+struct FileSecurity {
+    /// Strict-mlock mode: when `true`, a failed `mlockall` at startup is fatal. Defaults to `false`
+    /// (best-effort) so a stock daemon without `CAP_IPC_LOCK` still comes up.
+    #[serde(default)]
+    require_mlock: bool,
 }
 
 /// The `[edge]` block (F2 / TASK-0031, `relay-edge` feature only). DELIBERATELY carries NO secret —
@@ -105,12 +125,31 @@ impl StoreConfig {
             None => FileConfig::default(),
         };
         let fstore = file.store.unwrap_or_default();
+        let fsecurity = file.security.unwrap_or_default();
 
         let backend = env_nonempty(ENV_BACKEND).or(fstore.backend);
         let url = env_nonempty(ENV_URL).or(fstore.url);
         let token = load_token().context("loading the libSQL auth token")?;
+        // FS-S4 strict-mlock: env override (truthy) wins over the `[security].require_mlock` file
+        // value; absent in both => false (best-effort default).
+        let require_mlock = env_bool(ENV_REQUIRE_MLOCK).unwrap_or(fsecurity.require_mlock);
 
-        resolve(backend, url, token)
+        resolve(backend, url, token, require_mlock)
+    }
+}
+
+/// Read an env var as a boolean: `1`/`true`/`yes`/`on` (case-insensitive) => `Some(true)`;
+/// `0`/`false`/`no`/`off` => `Some(false)`; unset/empty/unrecognized => `None`.
+fn env_bool(key: &str) -> Option<bool> {
+    match std::env::var(key)
+        .ok()?
+        .trim()
+        .to_ascii_lowercase()
+        .as_str()
+    {
+        "1" | "true" | "yes" | "on" => Some(true),
+        "0" | "false" | "no" | "off" => Some(false),
+        _ => None,
     }
 }
 
@@ -218,6 +257,7 @@ fn resolve(
     backend: Option<String>,
     url: Option<String>,
     token: Option<Zeroizing<String>>,
+    require_mlock: bool,
 ) -> anyhow::Result<StoreConfig> {
     let backend = parse_backend(backend.as_deref())?;
     match backend {
@@ -225,6 +265,7 @@ fn resolve(
             backend,
             url: None,
             auth_token: Zeroizing::new(String::new()),
+            require_mlock,
         }),
         Backend::LibSql => {
             let url = url.filter(|u| !u.trim().is_empty()).ok_or_else(|| {
@@ -242,6 +283,7 @@ fn resolve(
                 backend,
                 url: Some(url),
                 auth_token,
+                require_mlock,
             })
         }
     }
@@ -394,7 +436,7 @@ mod tests {
 
     #[test]
     fn resolve_inmem_default_ignores_libsql_fields() {
-        let c = resolve(None, Some("http://db.turso.io".into()), None).unwrap();
+        let c = resolve(None, Some("http://db.turso.io".into()), None, false).unwrap();
         assert_eq!(c.backend, Backend::InMem);
         assert!(c.url.is_none());
         assert!(c.auth_token.is_empty());
@@ -402,8 +444,8 @@ mod tests {
 
     #[test]
     fn resolve_libsql_requires_url() {
-        assert!(resolve(Some("libsql".into()), None, None).is_err());
-        assert!(resolve(Some("libsql".into()), Some("   ".into()), None).is_err());
+        assert!(resolve(Some("libsql".into()), None, None, false).is_err());
+        assert!(resolve(Some("libsql".into()), Some("   ".into()), None, false).is_err());
     }
 
     #[test]
@@ -412,6 +454,7 @@ mod tests {
             Some("libsql".into()),
             Some("http://db.turso.io:8080".into()),
             Some(Zeroizing::new("tok".into())),
+            false,
         )
         .unwrap_err();
         assert!(err.to_string().contains("non-loopback"));
@@ -424,6 +467,7 @@ mod tests {
             Some("libsql".into()),
             Some("https://db.turso.io".into()),
             Some(Zeroizing::new("tok".into())),
+            false,
         )
         .unwrap_err()
         .to_string();
@@ -440,6 +484,7 @@ mod tests {
             Some("libsql".into()),
             Some("http://127.0.0.1:8080".into()),
             Some(Zeroizing::new("tok".into())),
+            false,
         )
         .unwrap();
         assert_eq!(c.backend, Backend::LibSql);
@@ -453,6 +498,7 @@ mod tests {
             Some("libsql".into()),
             Some("http://127.0.0.1:8080".into()),
             None,
+            false,
         )
         .unwrap();
         assert_eq!(c.backend, Backend::LibSql);
@@ -465,10 +511,46 @@ mod tests {
             Some("libsql".into()),
             Some("http://127.0.0.1:8080".into()),
             Some(Zeroizing::new("super-secret".into())),
+            false,
         )
         .unwrap();
         let s = format!("{c:?}");
         assert!(s.contains("<redacted>"));
         assert!(!s.contains("super-secret"));
+    }
+
+    #[test]
+    fn require_mlock_defaults_false_and_threads_through() {
+        // Default (best-effort) when unset.
+        let c = resolve(None, None, None, false).unwrap();
+        assert!(!c.require_mlock);
+        // Strict mode threads through on both backends.
+        let c = resolve(None, None, None, true).unwrap();
+        assert!(c.require_mlock);
+        let c = resolve(
+            Some("libsql".into()),
+            Some("http://127.0.0.1:8080".into()),
+            None,
+            true,
+        )
+        .unwrap();
+        assert!(c.require_mlock);
+    }
+
+    #[test]
+    fn env_bool_parsing() {
+        // Direct unit check of the truthy/falsy/unrecognized mapping (env-independent).
+        for t in ["1", "true", "TRUE", "Yes", "on"] {
+            std::env::set_var("SECRETD_TEST_ENV_BOOL", t);
+            assert_eq!(env_bool("SECRETD_TEST_ENV_BOOL"), Some(true), "for {t}");
+        }
+        for f in ["0", "false", "No", "OFF"] {
+            std::env::set_var("SECRETD_TEST_ENV_BOOL", f);
+            assert_eq!(env_bool("SECRETD_TEST_ENV_BOOL"), Some(false), "for {f}");
+        }
+        std::env::set_var("SECRETD_TEST_ENV_BOOL", "maybe");
+        assert_eq!(env_bool("SECRETD_TEST_ENV_BOOL"), None);
+        std::env::remove_var("SECRETD_TEST_ENV_BOOL");
+        assert_eq!(env_bool("SECRETD_TEST_ENV_BOOL"), None);
     }
 }

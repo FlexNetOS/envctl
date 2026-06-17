@@ -54,19 +54,18 @@ additive infra — let it merge — but it does **not** close TASK-0020.
 - **TASK-0026 DONE** — `secretctl github-app enroll` + `Vault.SetGithubAppId` RPC (PR #106, auto-merge armed). Enroll→mint round-trip e2e green. The App can now mint end-to-end (enroll once, then mint-github).
 - **Anti-drift wrap-up gate** live (PR #104 MERGED): backlog is now a written-back artifact.
 
-### ⏭ NEXT PICK (updated 2026-06-17 session 4): **TASK-0032** (F5 stream tear-down)
-Progress: **TASK-0026** MERGED (#106). **TASK-0030 + OI-SM-1 spec** MERGED (#109). **TASK-0035** DONE
-(#108, rebased clean, auto-merge armed). **TASK-0031 PR-1** DONE (#111, edge listener, guardian PASS,
-auto-merge armed). The remote edge now serves clients end-to-end (TLS+DPoP/EKM+jti → relay_swap).
-Next, in dep order:
-1. **TASK-0032** (F5, P0) — streaming-revocation tear-down: periodic `decide()` re-check during long
-   HTTP/2 streams so a revoke/lock/USB-pull stops an in-flight stream (FS-S5). This is the architect's
-   PR-3 for the edge — builds ON the #111 edge listener.
-2. **TASK-0031-PR2** (F2 hardening, parallel track) — DPoP-Nonce challenge + rate-limit/admission + mTLS.
-3. Then **TASK-0027** (early-revoke) → **TASK-0028** (GUI parity) → **TASK-0036** (mlockall) →
+### ⏭ NEXT PICK (updated 2026-06-17 session 5): **TASK-0032** (F5 stream tear-down)
+MERGED: TASK-0026 (#106), TASK-0030+OI-SM-1 (#109), **TASK-0031 PR-1 edge listener (#111)**. IN FLIGHT
+(auto-merge armed): TASK-0035 (#108, rebased clean, test passed 27m), **TASK-0036 mlockall (#112)**.
+The remote edge serves clients end-to-end AND the daemon is mlock-hardened. Next, in dep order:
+1. **TASK-0032** (F5, P0) — streaming-revocation tear-down: long-lived HTTP/2 streams on the (now-MERGED)
+   `crates/secretd/src/edge/` + a periodic in-stream `decide()` re-check that tears down an in-flight
+   stream on revoke/lock/USB-pull (FS-S5). The architect's PR-3 for the edge. NOW BUILDABLE off develop.
+2. **TASK-0031-PR2** (F2 hardening, parallel) — DPoP-Nonce challenge + rate-limit/admission + mTLS.
+3. Then **TASK-0027** (early-revoke) → **TASK-0028** (GUI parity) →
    **TASK-0037** (Phase-7 verify) → **TASK-0034** (hardening tail) → **TASK-0038** (Certs.* Phase-4+).
 SKIP **TASK-0033** (VPS Profile B — owner-gated `[!]`). Resume with `/forge-loop`; for unattended
-completion use `/auto-provision`. FIRST on resume: confirm #108/#109 merged; if #108 still open, rebase
+completion use `/auto-provision`. FIRST on resume: confirm #108/#112 merged; if #108 still open, rebase
 it onto develop (it just needs #106's merge + the 30m timeout) and let auto-merge land it.
 
 <details><summary>TASK-0020-COMPLETE original spec (DONE — kept for reference)</summary>
@@ -135,7 +134,10 @@ foundation IS built (`relay_mint_remote`, `register_remote_client`, `broker/deci
   `GetSecret.meta` (always `None`) return Unimplemented (`secretd/src/grpc.rs`). Whole `Certs.*` service
   (CaInit/Rotate/Issue/Renew/Revoke/TrustApply/List) + non-mitm `ca_issue` (`secrets-engine/lib.rs:1916`)
   + `secretctl ca` are Phase-4+ stubs. Defined-but-empty features: `provider-openai`, libsql `embedded`.
-- [ ] **TASK-0036:** secretd in-process `mlockall` deferred (`main.rs:19`; mitigated by RLIMIT_CORE=0).
+- [x] **TASK-0036 — DONE (PR #112, guardian PASS):** secretd in-process `mlockall(MCL_CURRENT|MCL_FUTURE)`
+  in `harden_process()` via libc (pure-Rust FFI, zero new lockfile crates), best-effort + `require_mlock`
+  strict opt-in (fail-closed). Linux-cfg-gated, never panics, metadata-only WARN.
+  - [ ] follow-up: `MADV_DONTDUMP` companion (named alongside mlockall in THREAT-MODEL.md) — not widened here.
 - [ ] **TASK-0037 (Phase-7 verify-don't-rebuild):** confirm secrets verbs are folded onto the `envctl`
   binary (today on `secretctl`) + an `envctl install secretd` manifest component exists. Update stale
   `docs/ROADMAP.md` lines 108-109/128 (contradict code).

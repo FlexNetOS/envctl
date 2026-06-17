@@ -1,117 +1,63 @@
-# Verification report: FULL kasetto v3.2.0 CLI/GUI option parity (TASK-0019)
+# Verification report: TASK-0036 — secretd in-process `mlockall` (FS-S4 process hardening)
 
-## Verdict — **PASS**
+## Verdict — PASS
 
-All four CI gates, cargo fmt/clippy/test, and the GUI build pass; every NON-NEGOTIABLE
-invariant holds against the actual delivered code; the 3 no-downgrade spot-checks confirm the
-ports are faithful to kasetto v3.2.0. The implementer's GREEN is corroborated by independent
-evidence. No blocking findings.
+The change is exactly what the plan/log claim: a small, secretd-local, Linux-gated `mlockall`
+addition (best-effort default + `require_mlock` strict fail-closed), one new direct dep edge
+(`libc`, already transitively resolved → no new lockfile crate), engine/CLI/GUI/secrets-engine
+untouched. All gates + cargo checks green; all three named mlockall tests + both config tests pass.
 
-## Gate results (exit codes pasted)
-| Gate | Result | Evidence |
-|------|--------|----------|
-| `ci/gates/no-c.sh` | **PASS** exit=0 | `rustls=['0.23.40'] on ring=['0.17.14']; zero aws-lc/openssl/C-SQLite` |
-| `ci/gates/shape.sh` | **PASS** exit=0 | `SHAPE GATE PASS` |
-| `ci/gates/enable.sh` | **PASS** exit=0 | `ENABLE GATE PASS` |
-| `ci/gates/p7.sh` | **PASS** exit=0 | `P7 GATE PASS` |
+(Supersedes the prior TASK-0030 cycle report that previously occupied this file.)
+
+### Baseline note (important)
+The correct review baseline is **`git diff HEAD`** (HEAD = `d2ddcc2`, the current tip of
+`origin/develop`), NOT `git diff develop`. The local `develop` ref in this worktree is **stale**
+(points at the pre-Epic-C #45 merge `3707680`), so a `develop` diff falsely attributes the entire
+kasetto absorption (agent-env, baby-mimalloc, secrets stack rework) to this task. Verified against
+`HEAD`, the TASK-0036 surface is exactly 5 source files + 2 handoff docs. No drift, no scope creep.
+
+## Gate results
+- `ci/gates/no-c.sh` : **PASS** (exit 0) — "resolved graph clean: rustls=['0.23.40'] on ring=['0.17.14']; zero aws-lc/openssl/C-SQLite" / "NO-C GATE PASS"
+- `ci/gates/shape.sh` : **PASS** (exit 0) — "SHAPE GATE PASS"
+- `ci/gates/enable.sh` : **PASS** (exit 0) — "ENABLE GATE PASS"
+- `ci/gates/p7.sh` : **PASS** (exit 0) — "P7 GATE PASS"
 
 ## cargo
-| Check | Result | Evidence |
-|-------|--------|----------|
-| `cargo fmt --all --check` | **PASS** exit=0 | clean |
-| `cargo clippy --workspace -- -D warnings` | **PASS** exit=0 | full workspace incl. GUI, `Finished` 0 warnings |
-| `cargo test -p envctl-engine -p envctl -p envctl-agent-env` | **PASS** exit=0 | see summary below |
-| `cargo build -p envctl-gui` | **PASS** exit=0 | `Finished dev profile`, no system-lib block |
-
-Test summary (passed/failed lines): engine lib `58 passed; 0 failed`; envctl bin/lib
-`19 passed; 0 failed` (+ bin/integration suites `13/4/24/12/15/20` all 0 failed); agent-env
-`251 passed; 0 failed; 1 ignored` (+ `82 passed; 0 failed`). **Total: 0 failed across all suites.**
+- `cargo fmt --all -- --check` : **PASS** (exit 0)
+- `cargo clippy --workspace -- -D warnings` : **PASS** (exit 0, clean finish)
+- `cargo test -p envctl-secretd` : **PASS** (exit 0) — lib 33 passed, bin `tests` 3 passed, integration suites all green (native_mint_e2e 11, proxy_swap_e2e 2, self_check 2, e2e/mitm_e2e green); 0 failed. Ran under EPERM (no CAP_IPC_LOCK) — tests tolerated it as designed.
+  - Named mlockall tests (re-run, isolated): `tests::mlockall_best_effort_does_not_panic` ok · `tests::harden_process_best_effort_default` ok · `tests::require_mlock_strict_fatal_when_unlocked` ok
+  - Config tests: `config::tests::require_mlock_defaults_false_and_threads_through` ok · `config::tests::env_bool_parsing` ok (part of the 33-test lib suite)
 
 ## Invariant checks
-1. **No C in trust boundary** — PASS. Resolved graph (independently probed): exactly one `rustls
-   v0.23.40` on `ring v0.17.14`; zero `aws-lc-rs`; `flate2 v1.1.9` backed by pure-Rust
-   `miniz_oxide v0.8.9` (no `libz-sys`); `tar` pure-Rust. no-c.sh PASS.
-2. **clap_complete is the only new crate + pure-Rust** — PASS. `cargo tree -p clap_complete`
-   subtree = clap/clap_builder/clap_lex/anstyle/syn/proc-macro2 only; grep for `-sys|openssl|
-   aws-lc|libsqlite|cc` → none. Cargo.toml:35 `clap_complete = "4.5"` (resolves 4.6.5).
-3. **Engine non-printing / sync / pure-Rust** — PASS. Grep of the 4 new engine modules
-   (`self_update.rs`, `self_uninstall.rs`, `update_notifier.rs`, `agent/doctor.rs`) for
-   `println!/eprintln!/eprint!/print!/stdout/stderr` → ZERO matches. Decision logic confirmed in
-   the engine returning typed data: `is_newer`/`verify_checksum`/`plan_self_update`
-   (self_update.rs), `cache_is_fresh`/`available_update` (update_notifier.rs), doctor assembly +
-   `Event::AgentDoctored` (agent/doctor.rs), uninstall removal decision + `Event::SelfUninstall`
-   (self_uninstall.rs). The only engine printlns in the tree are the **pre-existing**
-   `addrepo.rs:389-402` (interactive `--refactor=ai` guidance, last touched by an unrelated
-   toolchain-pin commit `3a1219e`, NOT by TASK-0019) — not a regression.
-4. **Destructive op fail-closed + dry-run default (item 5 self uninstall)** — PASS.
-   `self_uninstall.rs`: `dry_run = !spec.apply` (L77); all `fs::remove_*` gated behind `if
-   spec.apply` (L107) so no-flag ⇒ ZERO writes; binary-removal guard computes
-   `current_exe()` file-stem ∈ {envctl, envctl-gui} BEFORE any write (L92-105) and refuses
-   otherwise. CLI arm `run_self_uninstall` (main.rs:798-815): `apply && !yes && !stdin().is_terminal()`
-   → errors "pass --yes to confirm uninstall in non-interactive mode"; TTY `[y/N]` otherwise.
-   Refusal-path test `preview_writes_nothing_and_guard_refuses_non_envctl_binary`
-   (self_uninstall.rs:252-293) asserts dry-run, zero config/data/cache/binary/gui removal, AND
-   the guard refusing the non-envctl test-harness stem. Proven, not asserted.
-5. **CLI+GUI parity (item 1 agent doctor)** — PASS (see Parity check). REQUIRED-parity item is
-   genuinely dual-front-end.
-6. **Rust-native, no drift** — PASS. Only `clap_complete` added as a new crate;
-   reqwest/tar/flate2/sha2 are pre-existing workspace pins reused; no foreign-language file
-   appeared. Accepted sole divergence = `baby-mimalloc` (Rust allocator) replacing kasetto's
-   `mimalloc`(C) — upgrade-only, verified C-free.
-7. **Lock honesty** — PASS. Implementer claims no envctl.lock/agent-env.lock/manifest change for
-   TASK-0019; working-tree status confirms the only TASK-0019 mutations are Cargo.toml/Cargo.lock
-   (clap_complete), the 5 new modules, and the wiring files — no lock-tracked component drift.
-   (`manifest/envctl.lock` in `develop...HEAD` is from the branch's older base, not this task.)
+1. **No-C / dep hygiene** : **PASS**. Only `libc` added. `git diff HEAD -- Cargo.lock` = 1 insertion (`"libc"` under `envctl-secretd` deps); `grep -c '^+\[\[package\]\]'` on the lock diff = **0** new packages; `libc` package count in lock stays **1** (already resolved via tokio→signal-hook-registry→errno→libc). Cargo.toml edits limited to the libc edge: root `[workspace.dependencies] libc = "0.2"` + `crates/secretd/Cargo.toml libc = { workspace = true }`. libc is NOT on the no-c banned list (aws-lc/openssl/sqlite/mimalloc). secrets-engine `Cargo.toml` and `src/` untouched.
+2. **Flags + cfg-gate** : **PASS**. `crates/secretd/src/main.rs` `libc::mlockall(libc::MCL_CURRENT | libc::MCL_FUTURE)` inside `mlock_all_pages()`, which is `#[cfg(target_os = "linux")]`; the `#[cfg(not(target_os = "linux"))]` fallback returns `NotApplicable` so non-Linux compiles. Call is placed AFTER the RLIMIT_MEMLOCK raise — `harden_process()` does setrlimit(Core)=0 → raise RLIMIT_MEMLOCK → then `mlock_all_pages()`.
+3. **Fail-safe, never panics** : **PASS**. On `rc == -1`: errno captured via `std::io::Error::last_os_error().raw_os_error()`, a metadata-only `tracing::warn!(errno, error = %err, "...")` (fixed message; no secret bytes), returns `MlockOutcome::Failed { errno }`, and CONTINUES. No `.unwrap()`/`.expect()`/`panic!` on the syscall result. The `unsafe` block is narrowly scoped to the single syscall with a SAFETY comment.
+4. **Strict mode applied AFTER config load** : **PASS**. `serve()` captures `let mlock = harden_process()` BEFORE config exists, then bails `if store_cfg.require_mlock && mlock.failed()` AFTER `StoreConfig::load()`, just before `build_engine`. `anyhow::bail!` = fail-closed refusal. `self_check()` does `let _ = harden_process();` — strict mode deliberately NOT honored, stays best-effort (confirmed: self_check/e2e suites pass under EPERM).
+5. **No secret bytes in logs** : **PASS**. The only mlockall log is the WARN — fields `errno` + `error = %err` (strerror) + a fixed string. The word "secret" appears only in doc comments / the fixed message ("secret material may be swappable"); no secret value, DEK, token, passphrase, or vault byte is logged. Placement is pre-unlock, so no secret material exists in the address space at that point anyway.
+6. **Engine purity** : **PASS**. `git diff HEAD -- crates/engine/` and `crates/secrets-engine/` both EMPTY. No Event, no `println!`/`eprint!`, no clap, no engine logic added. Change is entirely in `secretd::main` + `secretd::config`.
+7. **Front-end parity** : **N/A (justified)**. No Engine method added — this is daemon-process hardening that runs only in `secretd serve`/`--self-check`. CLI/GUI don't run this path, so there is no parity surface to keep in sync (per the plan).
+8. **Lock/manifest honesty** : **PASS**. No `[[package]]` added; manifest/*.toml, envctl.lock, kasetto.lock unchanged (secretd `--self-check` still passes under EPERM, confirmed by the self_check suite). Config tests prove `require_mlock` defaults false and threads through both backends; `env_bool` env-override precedence verified.
 
-## Parity check (Engine method → CLI caller / GUI caller)
-- `Engine::agent_doctor` (engine `agent/doctor.rs:32`)
-  - CLI: `crates/cli/src/main.rs:1540` `eng.agent_doctor(spec, &sink)` → `AgentResult::Doctor` →
-    `render_agent_doctor` (main.rs:1251/1261).
-  - GUI: `crates/gui/src/main.rs:1366` `AgentCommandSpec::Doctor(self.agent_doctor_spec())` →
-    `command.rs:255` `engine.agent_doctor(s, &sink)`; `Event::AgentDoctored` handled at
-    `gui/main.rs:444-455` (real handler — updates status + stores typed `agent_last_doctor` for
-    `agent_doctor_tables` render). **Both front-ends drive the identical Engine method.**
-- All other items (completions / self update+uninstall / notifier / global flags / --frozen) are
-  CLI-only with the documented justifications (clap-tree introspection, self-replacing running
-  binary, end-of-run terminal concept, terminal presentation) — accepted per plan §Invariants.
-
-## No-downgrade spot-checks vs kasetto v3.2.0 (`meta/kasetto`)
-- (a) `is_newer` semver compare — **MATCH (verbatim)**. Identical `(u64,u64,u64)` tuple parse
-   (`split('.').filter_map(parse).collect`) and `parse(latest) > parse(current)` in both
-   `kasetto/src/commands/self_update.rs:186` and `engine/src/self_update.rs`.
-- (b) update_notifier suppression set + TTL — **MATCH**. `TTL_SECS = 24*60*60` and the
-   `now - checked_at < TTL_SECS` freshness boundary are identical. `should_suppress_notice`:
-   completions + self(`Manage`/`ManageSelf`) always suppressed, json/quiet suppressed, `Init`
-   NOT suppressed — same intent; envctl additionally suppresses `Env` (envctl-specific
-   machine-readable eval verb), a correct addition, not a downgrade.
-- (c) agent doctor field set vs kasetto `DoctorOutput` — **MATCH (1:1)**. All 11 fields present
-   and update_check INCLUDED: version, lock_file, scope, skills, installation_path, last_sync,
-   failures, mcps, commands, command_dirs, update_check. Substructs `AgentCommandDirCheck{path,
-   writable}` and `AgentUpdateCheck{status,latest_version,checked_at,age_seconds}` mirror
-   kasetto `CommandDirCheck`/`UpdateCheckOutput`. (Also spot-checked `verify_checksum` — faithful
-   port; asset names retargeted kasetto→envctl as designed.)
-
-## Deviations reviewed — both ACCEPTABLE (not behavior downgrades)
-- **lock `--check` carries only `frozen` alias** (not `locked`): envctl's `agent lock` already
-   exposes a distinct real `--locked` zero-network flag that kasetto's Lock lacks; a `locked`
-   alias on `--check` would collide in clap (`long option names must be unique`). Correct
-   no-collision mapping for envctl's richer Lock surface. The other 3 flags (sync/add/remove)
-   carry `visible_alias = "frozen"` (main.rs:412/454/484/499). No capability lost.
-- **quiet/verbose/color via `OUTPUT: OnceLock<OutputCtx>`**: deliberate front-end-only
-   presentation seam (engine still emits the full event stream non-printing). Failures/refusals
-   are never suppressed under `--quiet`. No engine signature churn, no behavior change.
+## Parity check
+No Engine method introduced → no CLI/GUI caller required. Daemon-internal `harden_process()` →
+called by `serve()` and `self_check()`, both within `crates/secretd/src/main.rs`.
 
 ## Findings
-None blocking. One informational note (carried, not a finding): the `develop...HEAD` diff is
-large because the worktree is built on a feature-rich base ahead of the current `develop`; the
-TASK-0019 delta itself is the uncommitted working-tree set, which matches the implementer log
-exactly (5 new modules + the wiring files). Verification was performed against that working tree.
+None blocking.
+
+- (note, non-blocking) Stale local `develop` ref in the worktree — a `git diff develop` here is
+  misleading (attributes all of Epic C to this task). Reviewers/orchestrator must diff against `HEAD`
+  (`d2ddcc2`) or `origin/develop` to see the true TASK-0036 surface. Not a code issue; flagged so
+  the change isn't mis-attributed or mis-merged.
+- (note, non-blocking, in plan's "Out of scope") MADV_DONTDUMP — the deferred companion named
+  alongside mlockall in THREAT-MODEL.md:8,77 — is correctly recorded as a follow-up, not widened here.
 
 ## Re-test needed
-None. If any fix lands later, re-run (raw, via `rtk proxy`):
+None for a PASS verdict. To reconfirm after any further edit, from the worktree root:
 ```
-bash ci/gates/no-c.sh; echo exit=$?
-rtk proxy cargo clippy --workspace -- -D warnings; echo exit=$?
-rtk proxy cargo test -p envctl-engine -p envctl -p envctl-agent-env; echo exit=$?
-rtk proxy cargo build -p envctl-gui; echo exit=$?
+bash ci/gates/no-c.sh ; bash ci/gates/shape.sh ; bash ci/gates/enable.sh ; bash ci/gates/p7.sh
+rtk proxy cargo fmt --all -- --check
+rtk proxy cargo clippy --workspace -- -D warnings
+rtk proxy cargo test -p envctl-secretd
 ```
