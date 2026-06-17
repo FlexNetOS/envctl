@@ -30,6 +30,16 @@ use argon2::{Algorithm, Argon2, Params, Version};
 use hkdf::Hkdf;
 use sha2::Sha256;
 
+// TASK-0032 tripwire: the `low-cost-kdf-tests` feature lowers the Argon2 downgrade floor + Default
+// params so the CI `test` job's argon2id derivations are cheap (~8 KiB×t1). It is a TEST-SPEED knob
+// ONLY and must never reach a release artifact. `cargo test`/`cargo build` use the dev profile
+// (`debug_assertions` ON) so the feature compiles there; `cargo build --release` (`debug_assertions`
+// OFF) with the feature set fails this compile_error!, making a downgraded floor unshippable.
+#[cfg(all(feature = "low-cost-kdf-tests", not(debug_assertions)))]
+compile_error!(
+    "low-cost-kdf-tests lowers the Argon2 floor — CI test-speed only (TASK-0032); never in a release build"
+);
+
 /// Data-encryption key (root of the at-rest envelope). Never `Serialize`; zeroized on drop.
 #[derive(Zeroize, ZeroizeOnDrop)]
 pub struct Dek(pub [u8; 32]);
@@ -64,7 +74,11 @@ pub struct Argon2Params {
     pub t_cost: u32,
     pub p_lanes: u32,
 }
+// PRODUCTION Default (1 GiB × t4 × 4 lanes). Under `low-cost-kdf-tests` (TASK-0032) the Default
+// drops to the smallest valid Argon2 params so test derivations are fast; the production value is
+// pinned by `production_floor_constants_pinned` on every default-feature run.
 impl Default for Argon2Params {
+    #[cfg(not(feature = "low-cost-kdf-tests"))]
     fn default() -> Self {
         Self {
             m_kib: 1_048_576,
@@ -72,15 +86,38 @@ impl Default for Argon2Params {
             p_lanes: 4,
         }
     }
+    #[cfg(feature = "low-cost-kdf-tests")]
+    fn default() -> Self {
+        // Smallest valid params (`Params::new` requires m_kib >= 8*p_lanes, t_cost >= 1,
+        // p_lanes >= 1). TEST-SPEED ONLY — see the `low-cost-kdf-tests` feature note in Cargo.toml.
+        Self {
+            m_kib: 8,
+            t_cost: 1,
+            p_lanes: 1,
+        }
+    }
 }
 /// 256 MiB floor; refuse to unwrap a slot whose params fall below this (FS-S13).
+///
+/// PRODUCTION value (default features). Under the `low-cost-kdf-tests` feature (TASK-0032, test-speed
+/// only, never shipped) this drops to `8` (Argon2's minimum) so CI test derivations are cheap; the
+/// production `262_144` is pinned by `production_floor_constants_pinned` on every default run.
+#[cfg(not(feature = "low-cost-kdf-tests"))]
 pub const ARGON2_M_KIB_FLOOR: u32 = 262_144;
+#[cfg(feature = "low-cost-kdf-tests")]
+pub const ARGON2_M_KIB_FLOOR: u32 = 8;
 /// Iteration (time-cost) floor. Memory-hardness dominates Argon2's cost, but the downgrade guard
 /// must cover all three cost dimensions — a hostile header could otherwise request `m` at the
 /// memory floor while pinning `t_cost = 1`, the weakest variant the memory floor alone still
 /// permits. `3` follows OWASP / RustCrypto Argon2id guidance. `p_lanes >= 1` is enforced by
 /// `argon2::Params::new` itself.
+///
+/// PRODUCTION value (default features). Under the `low-cost-kdf-tests` feature (TASK-0032) this drops
+/// to `1`; production `3` is pinned by `production_floor_constants_pinned` on every default run.
+#[cfg(not(feature = "low-cost-kdf-tests"))]
 pub const ARGON2_T_COST_FLOOR: u32 = 3;
+#[cfg(feature = "low-cost-kdf-tests")]
+pub const ARGON2_T_COST_FLOOR: u32 = 1;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Keyslot {
@@ -498,6 +535,33 @@ mod tests {
         let mut expected = [0u8; 32];
         hk.expand(b"env-ctl/v1/kek/usb", &mut expected).unwrap();
         assert!(bool::from(kek.0.ct_eq(&expected)));
+    }
+
+    /// PRODUCTION boundary pin (TASK-0032). Default/release builds (no `low-cost-kdf-tests`) MUST
+    /// keep the 256 MiB / t3 floor and the 1 GiB / t4 / 4-lane Default — proving the test-speed
+    /// feature never silently leaks into a production build. Gated OUT under the feature (where the
+    /// values are intentionally lowered); the CI `test` job runs WITH the feature, but `clippy`,
+    /// `rustfmt`, the gates job, and `cargo test` on default features all run this assertion.
+    #[cfg(not(feature = "low-cost-kdf-tests"))]
+    #[test]
+    fn production_floor_constants_pinned() {
+        assert_eq!(
+            ARGON2_M_KIB_FLOOR, 262_144,
+            "production memory floor must be 256 MiB"
+        );
+        assert_eq!(
+            ARGON2_T_COST_FLOOR, 3,
+            "production iteration floor must be 3"
+        );
+        assert_eq!(
+            Argon2Params::default(),
+            Argon2Params {
+                m_kib: 1_048_576,
+                t_cost: 4,
+                p_lanes: 4,
+            },
+            "production Default Argon2 params must be 1 GiB / t4 / 4 lanes"
+        );
     }
 
     #[test]
