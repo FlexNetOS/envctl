@@ -5,19 +5,22 @@ session_started: 2026-06-13
 loop: agenticOS-consolidation (.handoff/loop/backlog.md, Epics A–E; design = .handoff/decisions/ADR-0001)
 branch: develop   # work happens in FRESH worktrees off develop -> PR -> auto-promote to master
 worktree: (per-cycle: meta/.worktrees/<slug>/envctl off develop)
-cycle_budget: 3
-cycles_this_session: 1   # RESUME SESSION 2026-06-13 (reset to 0 on resume): cycle 9 = TASK-0012 kickoff
-cycles_total: 9
-last_item: TASK-0012 (crates/agent-env, kasetto absorption) — IN PROGRESS via /harness:rust-port; PR #71
-status: HANDING OFF 2026-06-13 (resume session, 1 cycle done; clean early boundary, token economy).
-  Cycle 9 = TASK-0012 kickoff: owner authorized the no-downgrade fork → synced meta/kasetto source UP to
-  pivoshenko v3.2.0 (divergence archived on flexnetos-divergence-backup-2026-06-13); seeded
-  crates/agent-env + ported model/* (foundational + 21-agent table + MCP/command formats), 78 tests +
-  no-c GREEN; **PR #71 → develop, auto-merge armed**. TASK-0012 is now driven by the rust-port
-  parity-ledger loop (55 [~] / 44 [ ] / 13 [≠] / 0 [x]) — NOT done until 100% parity.
-  **Resume the PORT** via `/harness:rust-port` (HANDOFF: `.handoff/loop/rust-port/HANDOFF.md`); the
-  forge-loop itself resumes via `/forge-loop resume` (next forge pick after TASK-0012 lands: TASK-0013
-  engine wiring, or another Epic). OWNER FOLLOW-UP: kasetto FORK origin/main force-push (see backlog TASK-0012 note).
+cycle_budget: 1   # session 3 resumed under heavy context — 1 cohesive build cycle (TASK-0030) then hand off
+cycles_this_session: 1   # RESUME SESSION 2026-06-17 (session 3): cycle = TASK-0030 (F6 jti store) + OI-SM-1 spec
+cycles_total: 12
+last_item: TASK-0030 (F6 DPoP jti replay store) — DONE, PR #109, guardian PASS, auto-merge armed
+status: HANDING OFF 2026-06-17 (session 3, 1 cycle done; budget reached + Epic F's next item is large).
+  Cycle = TASK-0030: new pure-Rust engine module crates/secrets-engine/src/broker/jti.rs (JtiReplayStore,
+  atomic fail-closed bounded DPoP-jti replay dedup) + OI-SM-1 spec (docs/secrets/OI-SM-1-jti-replay-store.md);
+  9 tests, zero new deps, guardian PASS. PR #109 ALSO carries a CI fix: test-job timeout 20→30 min (the
+  workspace suite grew past the 20m wall; green runs were being canceled — surfaced by #106/#108).
+  Session-3 also: rebased #108 (DIRTY after #107 merged) + diagnosed #106 test failure as a flaky 20m
+  timeout (passed on rerun → MERGED). PR #108 (TASK-0035) still OPEN — needs rebase onto develop AFTER
+  #109 merges (conflicts with #106 grpc/proto/lib.rs; needs the 30m timeout).
+  **NEXT PICK: TASK-0031 (F2 edge listener, NEW secretd/src/edge — calls the F6 JtiReplayStore; LARGE +
+  security-critical, fresh-context cycle) → TASK-0032 → TASK-0027/0028/0036/0037/0034/0038.** SKIP TASK-0033.
+  FIRST on resume: confirm #108/#109 merged; if #108 open, rebase onto develop + let auto-merge land it.
+  Resume via `/forge-loop resume` or `/auto-provision` for unattended Epic F.
 
 ## Progress log
 - cycle 1 (2026-06-13, TASK-0001, PASS-WITH-NOTES): built+installed `hf` from meta/handoff
