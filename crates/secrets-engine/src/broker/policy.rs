@@ -49,9 +49,23 @@ pub enum RelayKind {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "mode", rename_all = "snake_case")]
 pub enum SwapMode {
-    BaseUrlRepoint { upstream_base: String },
+    BaseUrlRepoint {
+        upstream_base: String,
+    },
     ProxyMitm,
-    NativeSubToken { ttl_secs: i64 },
+    /// Native scoped sub-token mint (G2): mint a provider-native short-lived token (GitHub App
+    /// installation token) instead of repointing/proxying. `repos` / `perms` scope the minted token
+    /// (empty `perms` ⇒ the installation's full default scope; empty `repos` ⇒ all installed repos).
+    /// `ttl_secs` is advisory — GitHub fixes the installation-token TTL (~1h) and we surface its
+    /// authoritative `expires_at`. Back-compat: deserializing an old `{ "ttl_secs": N }` yields empty
+    /// `repos`/`perms` (serde `default`), the pre-G2 behavior.
+    NativeSubToken {
+        ttl_secs: i64,
+        #[serde(default)]
+        repos: Vec<String>,
+        #[serde(default)]
+        perms: Vec<String>,
+    },
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

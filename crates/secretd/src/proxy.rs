@@ -85,7 +85,11 @@ fn upstream_root_store() -> rustls::RootCertStore {
 
 /// Construct the upstream reqwest client ONCE at startup with the frozen webpki-roots TLS config
 /// (`use_preconfigured_tls`). Cheaply `Arc`-cloned per request thereafter.
-fn build_upstream_client() -> reqwest::Client {
+///
+/// `pub(crate)` so the native-mint transport ([`crate::transport::DaemonHttpTransport`]) reuses the
+/// EXACT same client construction — frozen webpki-roots/ring TLS + `.no_proxy()` (FS-S7/CF-6) — and
+/// adds no new dependency. There is one upstream-egress client recipe in the daemon, and this is it.
+pub(crate) fn build_upstream_client() -> reqwest::Client {
     reqwest::ClientBuilder::new()
         .use_preconfigured_tls(upstream_tls_config())
         // The daemon sets `HTTPS_PROXY` in CHILD environments (the MITM injection). `.no_proxy()`

@@ -1,169 +1,143 @@
-# Implementation log: TASK-0014 — envctl `agent` CLI group
+# Implementation log: G2 — native GitHub App installation-token minting wired through secretd
 
-## Changes
-- crates/cli/src/main.rs: thin `agent {sync,add,remove,lock,list,clean}` adapter over the
-  existing `Engine::agent_*`. Added (line refs):
-  - imports of the agent spec/enum types (main.rs:5-10).
-  - `Cmd::Agent { cmd: AgentCmd }` variant (main.rs:~203).
-  - `ScopeArg`→`AgentScope` (main.rs:213) and `ListKindArg`→`AgentListKind` (main.rs:229).
-  - `lock_mode_from(locked, update)`→`AgentLockMode` (main.rs:250): `--locked`→`Locked`
-    (wins), `--update [names]`→`Update{only}`, else `Plain`.
-  - `AgentCmd` enum with the six verbs + field-by-field flags (main.rs:262); `apply` defaults
-    FALSE; `--json` inherited from the global `Cli.json` (no per-verb flag).
-  - explicit dispatch `Cmd::Agent { cmd } => run_agent(...)` in `main()` (main.rs:525), like
-    Dashboard/Env; added `Cmd::Agent { .. }` to the `run_action` unreachable arm (main.rs:852).
-  - `AgentResult` enum + `to_json`/`ok` (main.rs:880) — the pure exit/render decision helper.
-  - `run_agent(engine, AgentCmd, json)` (main.rs:918): worker thread builds the Spec, calls the
-    Engine method with the channel sink; main thread drains `rx.iter()` (human only) then prints
-    the uniform serialized RETURN value under `--json`, and maps the fail-closed exit.
-  - 4 `Event::Agent*` arms in `print_event` (main.rs:1176): RunStarted / Action / RunFinished /
-    LockChecked (previously fell through `_ => {}`).
-  - `#[cfg(test)] mod agent_cmd_tests` (main.rs:~722): `lock_mode_from` + `ScopeArg`→`AgentScope`.
-- crates/cli/tests/agent.rs: NEW integration test (modeled on tests/dashboard.rs), hermetic
-  `Fixture` (own cwd + `agent-env.yaml` + empty `ENVCTL_MANIFEST_DIR` + isolated
-  `XDG_DATA_HOME`/`XDG_CONFIG_HOME`; `Drop` cleans up).
-- NO engine `src/` changes. NO `lib.rs` re-export added — every type the CLI needs
-  (`AgentAddSpec`, `AgentCleanSpec`, `AgentListKind`, `AgentListSpec`, `AgentLockMode`,
-  `AgentLockSpec`, `AgentRemoveSpec`, `AgentScope`, `AgentSectionSel`, `AgentSyncSpec`, and the
-  return types `AgentReport`/`AgentEditOutcome`/`AgentLockOutcome`/`AgentList`) was already
-  re-exported from `envctl_engine`.
+Implemented the architect plan (`01_architect_plan.md`) in full, U1→U6, engine-first, in the
+`g2-native-mint` worktree. DD-1 resolved via Option A (late-bind the provider on unlock). No commit
+made (orchestrator commits after the guardian passes).
 
-## Engine API
-No engine API change. CLI consumes the already-merged, parity-verified contract:
-`Engine::agent_sync(AgentSyncSpec)->AgentReport`, `agent_add(AgentAddSpec)->AgentEditOutcome`,
-`agent_remove(AgentRemoveSpec)->AgentEditOutcome`, `agent_lock(AgentLockSpec)->AgentLockOutcome`,
-`agent_list(AgentListSpec)->AgentList`, `agent_clean(AgentCleanSpec)->AgentReport`; events
-`Event::Agent{RunStarted,Action,RunFinished,LockChecked}`.
+## Per-unit status
 
-## Tests added
-Unit (crates/cli/src/main.rs):
-- `agent_cmd_tests::lock_mode_from_maps_each_flag` — each flag combo → the right `AgentLockMode`
-  (`--locked` wins; `--update []`=all; `--update foo bar`; default `Plain`).
-- `agent_cmd_tests::scope_arg_converts_to_agent_scope` — `ScopeArg`→`AgentScope` both arms.
+| Unit | Status | What landed |
+|------|--------|-------------|
+| U1 — `DaemonHttpTransport` | GREEN | New `crates/secretd/src/transport.rs`; reuses `proxy::build_upstream_client` (frozen webpki-roots/ring, `.no_proxy()`); sync→async via captured `Handle::block_on` off-reactor. |
+| U2 — late-bind provider + App-credential custody | GREEN | `EngineInner.provider` → `RwLock<Box<dyn ProviderMint>>`; `install_provider`/`clear_provider` (ungated); `app_credential_pem`/`put_app_credential_meta` (gated); `lock()` clears the provider; daemon `rebuild_github_provider` on unlock RPC. |
+| U3 — `resolve_injection` (mint / fallback / refuse) | GREEN | `Engine::resolve_injection` is the single native-subtoken decision site; grpc `mint` routes through it; injects the MINTED token, falls back to proxy-swap on `Unsupported`, REFUSES (durable Refused, `injection:None`) on `Other`. |
+| U4 — repos/perms scope + `MintReq.mode` gap fix | GREEN | proto `MintReq` gains `mode`/`repos`/`perms`; `SwapMode::NativeSubToken` gains `repos`/`perms`; `mint_req_to_policy` now honors `req.mode` (was hardcoded `BaseUrlRepoint` ⇒ native was unreachable). |
+| U5 — secretctl client surface | GREEN | `relay mint --mode/--provider/--repo/--perm`; pure builder `mint_req_for_relay_mint` (least-priv `checks:write` default for native github); `render_mint` notes native, never prints the token. CLI-only (GUI parity is a follow-up — see Deviations). |
+| U6 — daemon e2e (mock GitHub) | GREEN | New `crates/secretd/tests/native_mint_e2e.rs`: 3 `#[tokio::test]` covering inject-minted-token + no-leak, HTTP-error-refuses, no-credential-falls-back. |
 
-Integration (crates/cli/tests/agent.rs), driving `CARGO_BIN_EXE_envctl`:
-- `sync_dry_run_writes_nothing`, `add_dry_run_writes_nothing`, `clean_dry_run_writes_nothing` —
-  no `--apply` ⇒ exit 0 AND config + `agent-env.lock` + dest dir byte-identical before/after
-  (fail-closed invariant; the dest-absent check is non-vacuous, asserted separately).
-- `list_json_has_agent_list_shape` — `agent list --json` parses with the `AgentList` shape
-  (`skills`/`mcps`/`commands` arrays + `merged_scopes` bool).
-- `lock_check_json_has_outcome_shape` — `agent lock --check --json` parses with the
-  `AgentLockOutcome` shape (`check=true`, `saved=false`, `drift` array) AND wrote no lock.
-- `list_exits_zero` — exit-code contract for the read-only verb.
-- `add_ref_and_branch_conflict_exits_nonzero` — `agent add src --ref a --branch b` ⇒ engine
-  `bail!` propagates through the worker-join `?` ⇒ nonzero exit.
-- `help_lists_the_six_verbs`, `fixture_dest_absent_until_apply` — surface/fixture sanity.
+## Changes (files touched)
 
-NOTE on the `sync --apply` failure-exit fixture: not built (would require a real failing network
-fetch — explicitly disallowed by the plan: "don't fake a network fetch"). The `failed>0→exit`
-decision is instead exercised by the pure `AgentResult::ok()` logic and asserted via the dry-run
-exit-0 path + the engine-bail nonzero path; the `--apply` happy/sad split lives in the engine's
-own `crates/engine/tests/agent_sync_parity.rs` (TASK-0012, #84).
+Engine (`crates/secrets-engine`):
+- `src/lib.rs` — `EngineInner.provider: RwLock<Box<dyn ProviderMint>>` (was `Box<…>`); `with_seams` wraps in `RwLock::new` (signature unchanged → 3 callers source-compatible). New `pub type AppCredential`; meta-key helpers `app_id_meta_key`/`installation_id_meta_key`. New methods: `install_provider`, `clear_provider`, `app_credential_pem`, `put_app_credential_meta`, `resolve_injection`. `lock()` now calls `clear_provider()`. New `#[cfg(all(test, feature = "provider-github"))] mod native_mint_tests`.
+- `src/broker/policy.rs` — `SwapMode::NativeSubToken { ttl_secs, #[serde(default)] repos, #[serde(default)] perms }` (back-compat for old serialized form).
+- `tests/phase0.rs` — updated the `NativeSubToken` literal for the new fields.
 
-## Build/test status
-Run from worktree root:
-- `cargo build -p envctl-engine -p envctl` — PASS.
-- `cargo test -p envctl` — PASS: **18 passed; 0 failed** (5 lib unit + 9 tests/agent.rs +
-  4 tests/dashboard.rs).
-- `cargo fmt --all` then `cargo fmt --all --check` — clean (exit 0).
-- `cargo clippy --workspace -- -D warnings` (the exact CI invocation in .github/workflows/ci.yml)
-  — clean (exit 0).
-- `bash ci/gates/no-c.sh` — PASS (rustls 0.23.40 on ring 0.17.14; zero aws-lc/openssl/C-SQLite).
-- `bash ci/gates/shape.sh` — PASS. `bash ci/gates/enable.sh` — PASS.
-- Manual smoke: `agent --help` lists all six verbs + the global `--json`; `agent list --json`
-  emits `{"skills":[],"mcps":[],"commands":[],"merged_scopes":true}`.
+Daemon (`crates/secretd`):
+- `Cargo.toml` — new `provider-github` feature (forwards engine's); added to `default`.
+- `src/lib.rs` — `#[cfg(feature = "provider-github")] pub mod transport;`.
+- `src/transport.rs` — NEW. `DaemonHttpTransport` impl of `mint_github::HttpTransport`.
+- `src/proxy.rs` — `build_upstream_client` is now `pub(crate)` (reused by transport; comment added).
+- `src/conv.rs` — `swapmode_from_proto` gains `repos`/`perms`; `mint_req_to_policy` honors `req.mode` (the gap fix); `policy_from_proto` updated; new test `mint_req_with_native_mode_and_scope_builds_native_policy`; updated the `dataplane_mode_from_swap` test literal.
+- `src/grpc.rs` — `mint` routes through `engine.resolve_injection` (native branch needs no proxy_addr); `unlock` calls `rebuild_github_provider` (non-fatal, mirrors `rebuild_ca_if_initialized`); `lock_now` calls `clear_provider`. New `#[cfg(feature = "provider-github")] fn rebuild_github_provider`.
+- `tests/e2e.rs` — added the new `MintReq` fields to 4 literals (no behavior change).
+- `tests/native_mint_e2e.rs` — NEW (U6).
+
+Proto (`crates/secrets-proto`):
+- `proto/control.proto` — `MintReq` gains `DataPlaneMode mode = 6; repeated string repos = 7; repeated string perms = 8;` (back-compat; default 0 = base-url = pre-G2).
+
+CLI (`crates/secretctl`):
+- `src/cli.rs` — `RelayCmd::Mint` gains `--mode`/`--provider`/`--repo`/`--perm`.
+- `src/main.rs` — `Mint` handler uses new pure builder `mint_req_for_relay_mint`; `mint_req_for_run` updated for new fields; new test `mint_req_for_github_native_sets_mode_and_scope`.
+- `src/render.rs` — `render_mint` detects native injection, prints the "TTL fixed ~1h by GitHub" note, never prints the token; JSON gains `"native"`.
+
+## Engine API (the parity contract)
+
+```rust
+// late-bind seam (ungated — NoMint always available)
+pub fn install_provider(&self, provider: Box<dyn ProviderMint>);
+pub fn clear_provider(&self);
+
+// App-credential custody (gated: provider-github)
+pub type AppCredential = (Zeroizing<Vec<u8>>, String, u64); // (pem, app_id, installation_id)
+pub fn app_credential_pem(&self, secret_name: &str) -> anyhow::Result<Option<AppCredential>>; // Err(Locked) when locked; Ok(None) when unenrolled
+pub fn put_app_credential_meta(&self, secret_name: &str, app_id: &str, installation_id: u64) -> anyhow::Result<()>;
+
+// the single native-subtoken decision site (ungated)
+#[allow(clippy::too_many_arguments)]
+pub fn resolve_injection(
+    &self, provider: Provider, relay: &str, bearer: &str, proxy_url: &str, ca_pem_path: &str,
+    mode: inject::DataPlaneMode, repos: Vec<String>, perms: Vec<String>, native_ttl_secs: i64,
+    sink: &EventSink,
+) -> anyhow::Result<Option<inject::ResolvedInjection>>; // Ok(None) == REFUSED (durable Refused row written)
+```
+
+`SwapMode::NativeSubToken` now carries `{ ttl_secs, repos, perms }`. Both front-ends (CLI today;
+daemon `mint`) drive `resolve_injection` — the GUI is the only non-parity surface (no relay-mint
+GUI exists yet; logic is fully engine-side, so the follow-up is pure wiring).
+
+## Tests added (what they prove)
+
+Engine `native_mint_tests` (8):
+- `provider_install_replace_and_clear` — install swaps NoMint→minter→NoMint; native resolve mints when installed, falls back when cleared.
+- `lock_clears_installed_provider` — `lock()` drops the minter (defense-in-depth).
+- `app_credential_pem_reads_pem_and_meta_when_unlocked` / `..._refuses_when_locked` — custody read + the Locked fail-closed gate.
+- `native_subtoken_injects_minted_token_not_bearer` — minted token in `GITHUB_TOKEN`/`GH_TOKEN`, relay bearer never injected, RelayMinted event carries relay+expires_at only, minted token absent from every event body.
+- `native_subtoken_unsupported_falls_back_to_proxy_swap` — NoMint ⇒ `HttpsProxyMitm` shape with the relay bearer.
+- `native_subtoken_other_error_refuses` — 404 ⇒ `Ok(None)` + `GuardRefused` + no token.
+- `native_scope_threads_repos_and_perms_to_the_minter` — repos/perms reach `MintRequest` verbatim.
+
+conv (1): `mint_req_with_native_mode_and_scope_builds_native_policy` — `mode=native` now builds a `NativeSubToken` swap with scope (the gap fix); `mode=0` stays base-url (back-compat).
+
+secretctl (1): `mint_req_for_github_native_sets_mode_and_scope` — `--mode native --provider github` sets mode/provider/scope; default `checks:write`; explicit `--perm` overrides; non-native default unchanged.
+
+transport (1): `execute_round_trips_against_a_loopback_server` — request shaping + sync→async bridge against a loopback server, driven from `spawn_blocking` (production call shape).
+
+U6 e2e (3): `native_mint_injects_minted_token_and_event_never_leaks_it`, `native_mint_http_error_refuses_with_no_injection`, `native_mint_without_credential_falls_back_to_proxy_swap` — full daemon stack against a mock GitHub endpoint. Serialized by a `tokio::sync::Mutex` (process-global env vars) and use floor Argon2 params for speed.
+
+## Build/test status (exact commands run + result)
+
+- `cargo build -p envctl-secretd --features provider-github` — PASS. Also PASS: default features, and `--no-default-features --features mitm-ca` (provider-github off). Engine builds both default and `--features provider-github`.
+- `cargo test -p envctl-secrets-engine --features provider-github` — PASS (112 lib + 4 + 6 + 17 + 15 integration; native_mint_tests all green).
+- `cargo test -p envctl-secretd --features provider-github --lib` — PASS (31; conv U4 included).
+- `cargo test -p envctl-secretd --features provider-github --test native_mint_e2e` — PASS (3/3), both single-threaded and parallel (serial-guarded).
+- `cargo test -p envctl-secretctl` — PASS (4).
+- `cargo test -p envctl-secretd --features provider-github --test e2e` — PASS (5/5; existing suite unaffected by the new `MintReq` fields).
+- `cargo fmt --all` — clean (`--check` passes).
+- `cargo clippy --workspace --features envctl-secretd/provider-github -- -D warnings` (the plan/CLAUDE.md gate form) — **PASS, clean.**
+- CI gates: `no-c.sh` PASS (rustls=0.23.40 single, ring-only, zero aws-lc/openssl/C-SQLite — rsa/base64 are pure-Rust), `shape.sh` PASS, `enable.sh` PASS.
 
 ## Deviations
-- `cargo clippy --workspace --all-targets` (NOT the gate command) surfaces 4 pre-existing
-  `unnecessary_to_owned` errors in `crates/engine/tests/agent_sync_parity.rs` — a file I did NOT
-  touch (committed in #84). This repo's CI gate is `cargo clippy --workspace -- -D warnings`
-  WITHOUT `--all-targets` (.github/workflows/ci.yml:48-49), which is clean. Per the per-repo
-  CI-mirror rule, the `--all-targets` lints are out of scope for this task and for the CLI crate.
-  Flagging for the guardian; not fixed here (would be an engine-test edit beyond TASK-0014's
-  `crates/cli/*` scope).
-- `lock_mode_from`/`AgentResult::ok` use `map_or(true, …)` rather than 1.82's `is_none_or`
-  (MSRV is 1.80); clippy on the 1.96 dev toolchain does not flag it.
 
-## Handoff notes
-- Fail-closed verification target: every mutating verb defaults `apply:false`. The three
-  `*_dry_run_writes_nothing` tests prove zero on-disk mutation (config + lock + dest) — verify the
-  dest-absent assertion is non-vacuous (it is: `fixture_dest_absent_until_apply` confirms the
-  fixture's dest does not pre-exist).
-- Exit-code mapping lives ENTIRELY in `AgentResult::ok()` (main.rs:880) — sync/clean
-  `summary.failed>0`; add/remove `outcome.sync.summary.failed>0` (None sync ⇒ ok); lock
-  `--check && !drift.is_empty()`; list always ok. Engine `bail!`s propagate via the worker
-  `join()??`. No business logic in the CLI — it only builds Specs, drains events, renders.
-- `--json` path is silent on the EventSink and prints only the uniform pretty-serialized RETURN
-  value (matches auto-detect/graph/lock); human path streams the per-action tree via `print_event`.
-- No new dependency (no-c stays green); no engine `src/` or `lib.rs` change.
+1. **`cargo clippy --workspace --all-targets`** (the *stricter* form, not the gate form) reports ONE
+   pre-existing error in **untouched** `crates/gui/src/main.rs:1997` ("doc list item without
+   indentation", inside a `#[cfg(test)]` doc comment) under clippy 1.96. It is NOT a G2 regression
+   (gui is untouched; `git status` shows no gui changes) and does NOT fire under the plan's gate
+   command (`cargo clippy --workspace -- -D warnings`, which is clean). All G2-touched crates are
+   clean under `--all-targets`. Flagging so the guardian doesn't mis-attribute it.
+2. **GUI parity** — G2 is CLI-only (the plan's R5; there is no relay-mint GUI surface today). The
+   native-mint logic is entirely engine-side (`resolve_injection`), so the GUI follow-up is pure
+   wiring. Noted as a parity follow-up, consistent with the plan.
+3. **App-credential secret name** — the daemon's unlock rebuild reads a well-known secret name
+   (`ENVCTL_GITHUB_APP_SECRET`, default `github_app`) rather than per-relay, because unlock has no
+   relay context. `ENVCTL_GITHUB_API_BASE` overrides the REST base (GHES / the e2e mock; default
+   real GitHub). Enrollment (`secretctl github-app enroll`) remains the immediate follow-up (plan
+   R2); tests seed via `secret_put` + `put_app_credential_meta`.
 
----
+## Handoff notes (targeted checks for the guardian)
 
-# Re-run note: TASK-0014b — GUI Agent panel (GUI half)
+- **Fail-closed refusal path** (invariant #4): verify `native_subtoken_other_error_refuses`
+  (engine) + `native_mint_http_error_refuses_with_no_injection` (e2e) prove `Ok(None)` + a durable
+  Refused row + NO token on HTTP/transport error. The grpc `mint` ships `injection: None` on refuse.
+- **No secret on the wire / in logs/audit** (invariant): `resolve_injection`'s RelayMinted
+  event + `relay_native_minted` audit carry only `relay` + `expires_at`; the e2e asserts the minted
+  token never appears in the event-stream wire capture. The minted token is delivered ONLY in the
+  injection (owner-only peercred-gated UDS). ScopedToken stays `Zeroizing` until the env String.
+- **No-C / single-rustls** (invariants #1/#2): `provider-github` pulls only `rsa` + `base64`
+  (pure-Rust RustCrypto, already declared); the transport reuses the existing rustls-ring reqwest
+  client (no new dep). `no-c.sh` PASS confirms rustls=0.23.40 single, ring-only.
+- **`lock()` clears the minter** (drops the Zeroizing App PEM) — engine `lock_clears_installed_provider`
+  + the daemon `lock_now` also calls `clear_provider` (belt-and-suspenders). Confirm the locked-vault
+  path holds no live App key.
+- **Sync→async bridge** (R1): `DaemonHttpTransport` captures `Handle::current()` in `new()` (called
+  from the async unlock RPC) and `block_on`s only inside `execute`, which runs on a `spawn_blocking`
+  thread (off-reactor) — both via `run_streaming`'s spawn_blocking (unlock rebuild) and the mint's
+  `spawn_blocking(resolve_injection)`. U6 exercises the live bridge against the mock.
+- **`MintReq.mode` gap** (U4): before G2, `mint_req_to_policy` hardcoded `BaseUrlRepoint` so native
+  was unreachable via Mint. Confirm `mint_req_with_native_mode_and_scope_builds_native_policy` and
+  the e2e (which drives `mode=native` over the wire) prove it's now reachable, and that `mode=0`
+  still yields base-url (back-compat — verified by the legacy arm of that test + unchanged e2e
+  literals).
+- **Back-compat of `SwapMode::NativeSubToken`**: the new `repos`/`perms` are `#[serde(default)]`, so
+  an old serialized `{ "ttl_secs": N }` still deserializes (covered by `phase0.rs`'s round-trip).
 
-The ENGINE half (Event::AgentListed/AgentEdited, AgentCommandSpec, EngineCommand::Agent +
-run_event_loop arm, AgentLockMode::from_flags, CLI print_event no-op arms) was already landed and
-verified before this session and was NOT re-edited. This section covers only the GUI half.
-
-## Changes (this session)
-- `crates/engine/src/lib.rs`: the ONLY engine edit — additive re-exports so the GUI `use` resolves:
-  added `AgentEditItem`, `AgentLockDriftItem` (from `agent`) and `AgentCommandSpec` (from `command`).
-  No logic changed (diff is the two re-export lines).
-- `crates/gui/src/main.rs`: the full Agent panel — screen, state, pure state→Spec builders, drain
-  arms, render, tests.
-
-## Engine API (parity contract the GUI now drives — unchanged, just consumed)
-- `EngineCommand::Agent { spec: AgentCommandSpec }`, `AgentCommandSpec::{Sync,Add,Remove,Lock,List,Clean}(Agent*Spec)`.
-- Events consumed: `AgentRunFinished{report}`, `AgentLockChecked{drift}`, `AgentListed{list}`, `AgentEdited{outcome}`, `AgentAction{..}`.
-- `AgentLockMode::from_flags(locked, update)` shared by CLI + GUI.
-
-## GUI additions (key file:line in crates/gui/src/main.rs)
-- `Screen::Agent` variant + `label()` + nav-tab row + `Screen::Agent => self.agent_screen(ui)` arm.
-- UI selector enums with pure mappings: `AgentVerbTab`, `AgentScopeSel::to_override()->Option<AgentScope>`,
-  `AgentListKindSel::to_kind()->AgentListKind`.
-- `EnvctlApp` agent state fields (verb tab, form inputs, lock toggles, result holders
-  `agent_list/agent_last_edit/agent_last_report/agent_lock_drift/agent_status`), all init in `new()`.
-- `drain()` arms for the 5 agent events (catch-all kept).
-- PURE state→Spec builders (no egui types): `agent_lock_mode`, `agent_sync_spec`, `agent_section`,
-  `agent_add_spec`, `agent_remove_spec`, `agent_lock_spec`, `agent_list_spec`, `agent_clean_spec`,
-  `agent_command()->EngineCommand::Agent{spec}`. Field maps mirror `cli/src/main.rs:943-1060`
-  field-for-field: blank→`None` via `opt_str`, CSV→`split_csv`→`Vec`, `agent_apply`→`apply`,
-  scope/list-kind/lock-mode mappings; lock uses `from_flags(locked, None)` (no `--update` on lock).
-- `opt_str` helper beside `split_csv`.
-- `agent_screen` + helpers: 6 verb sub-tabs; per-verb controls; Preview/Apply gating (button carries
-  `agent_apply`, default false → "Preview"; true → "Apply" in `theme::WARN`); `clean` WARN caution;
-  results render list as TableBuilder tables (skills: name/skill/scope/source/updated; mcps+commands:
-  name/scope/source), edit outcome (action + section/target items), report summary
-  (installed/updated/removed/unchanged/failed), lock-drift list. Click → `self.dispatch(self.agent_command(), Some("agent".into()))`.
-
-## Tests added (`#[cfg(test)] mod agent_spec_tests` in gui/src/main.rs — headless, no window)
-Helper builds an `EnvctlApp` via `Engine::detached()` (manifest-independent; builders touch no
-engine/channel). 11 tests: sync blank-config→None + apply-default-false; config/apply/scope map;
-lock-mode locked-wins / update-CSV-split / update-off-Plain; add section-CSV + fields (no_sync/no_verify,
-apply false); remove (no no_verify); lock check+upgrade+Locked; list kind+scope; clean apply-default-false;
-agent_command wraps active verb.
-
-## Build/test status (exact commands, worktree root)
-- `cargo build -p envctl-engine -p envctl` — PASS.
-- `cargo build -p envctl-gui` — PASS (13.46s; system dev libs ARE present in this env — NOT blocked).
-- `cargo test -p envctl-gui` — PASS (11 passed).
-- `cargo test -p envctl-engine -p envctl` — PASS (116 passed).
-- `cargo fmt --all` + `cargo fmt --all --check` — PASS (exit 0).
-- `cargo clippy -p envctl-gui -- -D warnings` — PASS (no issues).
-- `cargo clippy --workspace -- -D warnings` — PASS (no issues).
-- `bash ci/gates/no-c.sh` — PASS (rustls=0.23.40 on ring=0.17.14; zero aws-lc/openssl/C-SQLite).
-
-## Deviations (GUI half)
-- Test helper uses `Engine::detached()` not `Engine::load_default()`: the latter panics under
-  `cargo test` (no `manifest/` in cwd). `detached()` is the engine's sanctioned manifest-independent
-  constructor; the spec builders never read the registry, so this is correct/deterministic. No new
-  constructor added.
-
-## Handoff notes (GUI half)
-- Engine edit is the single additive re-export block in `crates/engine/src/lib.rs` — verify no logic
-  changed. The other modified engine/CLI files (cli/main.rs, agent/{edit,list,mod}.rs, command.rs,
-  event.rs) are the PRE-EXISTING engine/CLI halves, untouched this session.
-- Fail-closed targets: `agent_clean_spec`/`agent_sync_spec`/`agent_add_spec`/`agent_remove_spec` all
-  default `apply=false` (tests `clean_apply_defaults_false`, `sync_blank_config_is_none_apply_defaults_false`).
-- Parity: every `*_spec` builder is field-for-field with `cli/src/main.rs:943-1060`.
-- UI-thread non-blocking: action button → `dispatch()` mpsc send only; results via `drain()`/`try_recv`.
+STATUS: GREEN

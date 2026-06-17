@@ -99,6 +99,25 @@ const META_MITM_CA_CERT_DER: &str = "mitm.ca_cert_der";
 #[cfg(feature = "mitm-ca")]
 const META_MITM_CA_NOT_AFTER: &str = "mitm.ca_not_after";
 
+/// Vault meta-key suffixes for a native-mint provider's App credential (G2). The App PEM itself is
+/// stored as a `broker_only` `SecretRow` under the relay's `secret_name` (un-revealable, opened only
+/// via `open_real_key`); the App id + installation id are non-secret integers persisted as plaintext
+/// meta keys, integrity-covered by the header MAC, under `"{secret_name}.app_id"` /
+/// `"{secret_name}.installation_id"`.
+///
+/// A native-mint App credential read from the unlocked vault: `(app_key_pem, app_id, installation_id)`.
+/// The PEM is `Zeroizing` (single-owner, wiped on drop); it flows ONLY into the daemon's
+/// `GitHubAppMint` constructor — never an Event, audit row, or log.
+#[cfg(feature = "provider-github")]
+pub type AppCredential = (Zeroizing<Vec<u8>>, String, u64);
+
+fn app_id_meta_key(secret_name: &str) -> String {
+    format!("{secret_name}.app_id")
+}
+fn installation_id_meta_key(secret_name: &str) -> String {
+    format!("{secret_name}.installation_id")
+}
+
 /// BLAKE3 `derive_key` context for the audit-head anchor key (DEK-keyed, domain-separated from the
 /// header MAC and every other BLAKE3 use in the crate).
 const AUDIT_HEAD_KEY_INFO: &str = "env-ctl/v1/audit-head/key";
@@ -121,7 +140,14 @@ struct EngineInner {
     // dyn-dispatched seams; the supertrait `: Send + Sync` keeps Engine Send+Sync.
     clock: Box<dyn Clock>,
     usb: Box<dyn UsbProbe>,
-    provider: Box<dyn ProviderMint>,
+    /// The native sub-token minter, LATE-BOUND on vault unlock (DD-1, Option A). At startup and
+    /// while Locked this is `NoMint` (every mint falls through to the proxy-swap path). The daemon
+    /// reads the App-credential secret from the now-unlocked vault on unlock, builds a
+    /// `GitHubAppMint`, and installs it via `install_provider`; `lock()` reinstalls `NoMint`,
+    /// dropping the `Zeroizing` App PEM held inside the minter. `RwLock` so the per-request read path
+    /// (`resolve_injection`) never blocks the (rare) install/clear writes. Mirrors the `mitm-ca`
+    /// rebuild-on-unlock precedent (the sealed CA key likewise opens only against the live DEK).
+    provider: RwLock<Box<dyn ProviderMint>>,
     upstream: Box<dyn Upstream>, // pins frozen webpki roots in the daemon impl (FS-S7)
     owner_uid: u32,
     /// Short-TTL cache for the **network** presence factor (Profile S, the Cognitum Seed):
@@ -218,7 +244,7 @@ impl Engine {
                 store,
                 clock,
                 usb,
-                provider,
+                provider: RwLock::new(provider),
                 upstream,
                 owner_uid,
                 #[cfg(feature = "seed-factor")]
@@ -592,6 +618,10 @@ impl Engine {
             let mut ca = self.inner.ca.write().expect("ca lock");
             *ca = None; // drop the in-RAM CA issuer.
         }
+        // Drop any installed native sub-token minter (DD-1): reinstall NoMint so the locked vault
+        // holds no live App PEM. Defense-in-depth — the daemon's lock RPC handler also calls this,
+        // but a direct `Engine::lock` (e.g. a test, or a future in-process caller) must clear it too.
+        self.clear_provider();
         self.audit_ok(sink, "vault_locked", None, serde_json::json!({}))?;
         sink.emit(SecretEvent::VaultLocked);
         Ok(())
@@ -1533,6 +1563,201 @@ impl Engine {
         );
         vault::crypto::open(dek, &aad, &row.nonce, &row.ct_tag)
             .ok_or_else(|| anyhow::anyhow!("relay secret '{secret_name}' failed authentication"))
+    }
+
+    /// Install a native sub-token minter (DD-1, Option A). Called by the daemon AFTER the vault is
+    /// unlocked and the App credential is unsealed — the engine never names the concrete minter type
+    /// (the daemon owns the `GitHubAppMint` + transport), it only swaps the boxed `ProviderMint`.
+    /// Idempotent: replaces any previously installed minter. Ungated (the `NoMint` default is always
+    /// available); the daemon's call site is `#[cfg(feature = "provider-github")]`.
+    pub fn install_provider(&self, provider: Box<dyn ProviderMint>) {
+        *self.inner.provider.write().expect("provider lock") = provider;
+    }
+
+    /// Reinstall the `NoMint` default, dropping any installed minter (and the `Zeroizing` App PEM it
+    /// holds). Called on `lock()` and by the daemon's lock RPC handler — fail-closed: a locked vault
+    /// must hold no live native-mint key. Idempotent.
+    pub fn clear_provider(&self) {
+        *self.inner.provider.write().expect("provider lock") = Box::new(seam::NoMint);
+    }
+
+    /// Read a native-mint provider's App credential from the UNLOCKED vault: the App private-key PEM
+    /// (opened via [`open_real_key`](Self::open_real_key) — the same un-revealable path the MITM CA
+    /// key uses, so a `broker_only` App PEM never leaves through the operator surface) plus the
+    /// `app_id` (string) and `installation_id` (u64) meta values. Returns `Ok(None)` when no App PEM
+    /// is enrolled under `secret_name`. Fails (`Err(Locked)`) when the vault is locked — the App key
+    /// can only materialize post-unlock (the structural fail-closed gate). The PEM is `Zeroizing`;
+    /// it flows ONLY into the daemon's `GitHubAppMint` constructor, never into an Event or audit row.
+    #[cfg(feature = "provider-github")]
+    pub fn app_credential_pem(&self, secret_name: &str) -> anyhow::Result<Option<AppCredential>> {
+        let inner = &self.inner;
+        let v = inner.vault.read().expect("vault lock");
+        let dek = match v.dek() {
+            Some(d) => d,
+            None => return Err(EngineError::Locked.into()),
+        };
+        // No App PEM enrolled under this name ⇒ no native minter (caller keeps NoMint, falls through).
+        if inner.store.get_secret_latest(secret_name)?.is_none() {
+            return Ok(None);
+        }
+        let pem = self.open_real_key(dek, secret_name)?;
+        drop(v);
+        let app_id = inner
+            .store
+            .get_meta(&app_id_meta_key(secret_name))?
+            .ok_or_else(|| anyhow::anyhow!("missing app_id meta for '{secret_name}'"))?;
+        let installation_id = inner
+            .store
+            .get_meta(&installation_id_meta_key(secret_name))?
+            .ok_or_else(|| anyhow::anyhow!("missing installation_id meta for '{secret_name}'"))?
+            .parse::<u64>()
+            .map_err(|_| anyhow::anyhow!("malformed installation_id meta for '{secret_name}'"))?;
+        Ok(Some((pem, app_id, installation_id)))
+    }
+
+    /// Persist the non-secret App `app_id` + `installation_id` meta keys for a native-mint relay
+    /// (G2 enrollment seam; the App PEM itself is written via the normal `secret_put` as a
+    /// `broker_only` secret). Requires the vault Unlocked (the meta KV is the same store the sealed
+    /// secret lives in; we gate on the DEK so enrollment is an unlocked-only op, fail-closed).
+    /// The values are non-secret and are integrity-covered by the header MAC.
+    #[cfg(feature = "provider-github")]
+    pub fn put_app_credential_meta(
+        &self,
+        secret_name: &str,
+        app_id: &str,
+        installation_id: u64,
+    ) -> anyhow::Result<()> {
+        let inner = &self.inner;
+        {
+            let v = inner.vault.read().expect("vault lock");
+            if v.dek().is_none() {
+                return Err(EngineError::Locked.into());
+            }
+        }
+        inner
+            .store
+            .put_meta(&app_id_meta_key(secret_name), app_id)?;
+        inner.store.put_meta(
+            &installation_id_meta_key(secret_name),
+            &installation_id.to_string(),
+        )?;
+        Ok(())
+    }
+
+    /// Build the child-env injection for a freshly-minted bearer (G2). This is the SINGLE place the
+    /// native-subtoken decision lives — the front-ends (CLI/GUI/daemon) call THIS, never
+    /// [`inject::injection_template`] directly, so the mint/inject logic can't diverge.
+    ///
+    /// - `BaseUrlRepoint` / `HttpsProxyMitm`: pure shaping via `injection_template` (the bearer is the
+    ///   relay bearer; the real key stays in the daemon's upstream swap). `Ok(Some(_))`.
+    /// - `NativeSubtoken`: call the installed [`ProviderMint`] (`mint_scoped`):
+    ///     - `Ok(scoped)` ⇒ inject the **minted** token (NOT the relay bearer) into the provider's key
+    ///       var(s). A durable `relay_native_minted` audit row + `RelayMinted` event carry **only**
+    ///       `relay` + `expires_at` (token_id-equivalent) — never the minted token.
+    ///     - `Err(MintError::Unsupported)` ⇒ fall back to the proxy-swap shape (`HttpsProxyMitm` env
+    ///       built from `proxy_url`/`ca_pem_path`), so a vault that can't mint natively still works.
+    ///     - `Err(MintError::Other(_))` ⇒ REFUSE: a durable `Refused` row + `GuardRefused` event,
+    ///       `Ok(None)` (no token emitted). Fail-closed (transport/HTTP/allowlist error).
+    ///
+    /// `expires_at` is GitHub's authoritative value, surfaced honestly (the ~1h installation-token
+    /// TTL is fixed by GitHub and never clamped here). `relay` names the relay for audit only.
+    #[allow(clippy::too_many_arguments)]
+    pub fn resolve_injection(
+        &self,
+        provider: Provider,
+        relay: &str,
+        bearer: &str,
+        proxy_url: &str,
+        ca_pem_path: &str,
+        mode: inject::DataPlaneMode,
+        repos: Vec<String>,
+        perms: Vec<String>,
+        native_ttl_secs: i64,
+        sink: &EventSink,
+    ) -> anyhow::Result<Option<inject::ResolvedInjection>> {
+        use inject::DataPlaneMode;
+        // Non-native planes: pure shaping (no mint). The bearer is the relay bearer.
+        if !matches!(mode, DataPlaneMode::NativeSubtoken) {
+            return Ok(Some(inject::injection_template(
+                provider,
+                bearer,
+                proxy_url,
+                ca_pem_path,
+                mode,
+            )));
+        }
+
+        // Native plane. Fail-closed allowlist: only a provider whose canonical upstream set carries
+        // a GitHub mint host may attempt a native mint here (Github). Any other provider has no
+        // native minter ⇒ treat as Unsupported (fall through to the proxy-swap shape).
+        let mint_allowlisted = matches!(provider, Provider::Github)
+            && canonical_upstreams(provider).contains(&"api.github.com");
+
+        let mint_result = if mint_allowlisted {
+            let req = seam::MintRequest {
+                provider,
+                repos,
+                perms,
+                ttl_secs: native_ttl_secs,
+            };
+            self.inner
+                .provider
+                .read()
+                .expect("provider lock")
+                .mint_scoped(&req)
+        } else {
+            Err(seam::MintError::Unsupported)
+        };
+
+        match mint_result {
+            Ok(scoped) => {
+                // Inject the MINTED token (never the relay bearer) into the provider's key var(s).
+                // `expires_at` is GitHub's authoritative value (RFC3339 from epoch secs), surfaced
+                // honestly for the audit/event metadata — the minted token itself NEVER appears.
+                let token = String::from_utf8_lossy(&scoped.token).into_owned();
+                let injection = inject::injection_template(
+                    provider,
+                    &token,
+                    proxy_url,
+                    ca_pem_path,
+                    DataPlaneMode::NativeSubtoken,
+                );
+                let expires_at = chrono::DateTime::from_timestamp(scoped.expires_at, 0)
+                    .map(|dt| dt.to_rfc3339())
+                    .unwrap_or_default();
+                // Metadata-only audit + event: relay + expires_at, NEVER the minted token.
+                self.audit_ok(
+                    sink,
+                    "relay_native_minted",
+                    Some(relay.to_string()),
+                    serde_json::json!({ "expires_at": expires_at }),
+                )?;
+                sink.emit(SecretEvent::RelayMinted {
+                    relay: relay.to_string(),
+                    kind: RelayKind::Ephemeral,
+                    expires_at,
+                });
+                Ok(Some(injection))
+            }
+            Err(seam::MintError::Unsupported) => {
+                // No native minter (locked vault ⇒ NoMint, or non-native provider): fall back to the
+                // proxy-swap shape so the relay bearer still repoints the child through the daemon.
+                Ok(Some(inject::injection_template(
+                    provider,
+                    bearer,
+                    proxy_url,
+                    ca_pem_path,
+                    DataPlaneMode::HttpsProxyMitm,
+                )))
+            }
+            Err(seam::MintError::Other(_)) => {
+                // Transport / HTTP / allowlist error: REFUSE. Durable Refused row + GuardRefused
+                // event, NO token emitted (fail-closed). The error text (which never contains the
+                // token) is intentionally NOT surfaced into the audit detail — a fixed reason only.
+                self.refuse(sink, "relay_native_minted", relay, "native_mint_failed")?;
+                Ok(None)
+            }
+        }
     }
 
     /// Find a relay policy row by its assigned id (the bearer linkage key). Linear scan of the
@@ -2813,5 +3038,484 @@ mod ca_tests {
         let (engine, _store, _sink, _rx) = unlocked_engine();
         let err = engine.ca_pem_path().unwrap_err();
         assert!(format!("{err}").contains("CA not initialized"));
+    }
+}
+
+/// G2 native-mint engine acceptance tests (DD-1 late-bind + `resolve_injection`), driven through the
+/// PUBLIC `Engine` API over an `InMemStore`. Self-contained (its own minimal seams + helpers) so it
+/// compiles under `--features provider-github` without requiring `mitm-ca`.
+#[cfg(all(test, feature = "provider-github"))]
+mod native_mint_tests {
+    use super::*;
+    use crate::keyslot::{Argon2Params, ARGON2_M_KIB_FLOOR, ARGON2_T_COST_FLOOR};
+    use crate::mint_github::{
+        GitHubAppMint, HttpRequest, HttpResponse, HttpTransport, TransportError,
+    };
+    use crate::seam::{MintError, MintRequest, ProviderMint, ScopedToken};
+    use std::sync::Mutex;
+
+    const NOW_MS: i64 = 1_700_000_000_000;
+
+    /// A throwaway 1024-bit RSA key (PKCS#1) — weak BY DESIGN, never a real credential. Same fixture
+    /// shape `mint_github`'s own tests use.
+    const TEST_PEM: &str = "-----BEGIN RSA PRIVATE KEY-----\nMIICXgIBAAKBgQDw1EvUY2q80CzzraBZxIBLq1xjF9Eu5PsEseAd2bD+oJo4QQkI\npGycm26vJalBiW/rdzcSPaxPUT7KgH1IeftkUL0pbDG6nN08MgJM0/LjVKx3fK5A\n2Lq+CCh+eHfRGxcX8haBzWcwi4tfb90/7Vi9CGh7IXyyMTWLNW/mBVoH8wIDAQAB\nAoGBAMSPYbzdz9Z/ytCwm7noyhX4rRUr8U3nEoIIdDWo4e9RQc48NpVZLlS8ACDw\nCi81b6WtzcMTlzm9xBQfvyGSff0S/cCPAWEfGNItWOg5jeLSNftDVh4yM06BPEOI\nf+FwkGPiQYtCnhSXLhQq0ClODymjHyW+M7MBf8iyqnd8bnUhAkEA/q8Z5C7YQSFq\nIbywMegUkmCykiX8oCrvykg8i5oOjZXhIp/hnxv6jYynZd0PV1oOtbVTuvEve8kr\nCj+84GCPKQJBAPIS3i9C1VaaecCoSlnSY6FHWXmbLsm4wqXGbcyS0m4tQclIXfsd\nuDO4AUTu6Xc893Xfa3M/4Jpl7Fs5TReVbbsCQQCUFIlQVDBmxh/oV8Z2bgMwDMsn\nELEvC2f6zD9vx/Y4OnH5aM6NbX4juSlHn92go3s0CacSZdN+/LtqrR6Ls3jpAkBC\n/DOdUlokf9SHGkqQtmY5X7wDqYx153l9U/5YKJywPjfBEhRng57QOO+o+o+CHk2/\nwVZDav6k2uVfjOinSQM3AkEApokk6NycDKY657zkXPtlhKBsvyxfVW+evW9XjoHi\nEnHNytN8c6NOpZMjmzxgSUoOpAI4OVMIH00OvKHIIpvN0w==\n-----END RSA PRIVATE KEY-----";
+
+    struct NoUsb;
+    impl UsbProbe for NoUsb {
+        fn keyfile_for(&self, _uuid: &str) -> Option<Zeroizing<Vec<u8>>> {
+            None
+        }
+    }
+
+    struct FixedClock;
+    impl Clock for FixedClock {
+        fn now(&self) -> chrono::DateTime<chrono::Utc> {
+            chrono::DateTime::<chrono::Utc>::from_timestamp_millis(NOW_MS).unwrap()
+        }
+        fn boottime_ms(&self) -> i64 {
+            NOW_MS
+        }
+    }
+
+    /// In-process fake transport: replays a canned status+body (no network).
+    struct FakeTransport {
+        status: u16,
+        body: String,
+    }
+    impl HttpTransport for FakeTransport {
+        fn execute(&self, _req: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            Ok(HttpResponse {
+                status: self.status,
+                body: self.body.clone().into_bytes(),
+            })
+        }
+    }
+
+    /// A counting minter so we can prove install/replace/clear actually swap the boxed provider.
+    struct CountingMint {
+        token: String,
+        calls: Mutex<u32>,
+    }
+    impl ProviderMint for CountingMint {
+        fn mint_scoped(&self, _p: &MintRequest) -> Result<ScopedToken, MintError> {
+            *self.calls.lock().unwrap() += 1;
+            Ok(ScopedToken {
+                token: Zeroizing::new(self.token.clone().into_bytes()),
+                expires_at: 1_700_003_600,
+            })
+        }
+    }
+
+    fn at_floor() -> Argon2Params {
+        Argon2Params {
+            m_kib: ARGON2_M_KIB_FLOOR,
+            t_cost: ARGON2_T_COST_FLOOR,
+            p_lanes: 1,
+        }
+    }
+
+    fn paths() -> paths::Paths {
+        let root = std::env::temp_dir().join(format!(
+            "env-ctl-native-test-{}-{}",
+            std::process::id(),
+            NOW_MS
+        ));
+        paths::Paths::under(root)
+    }
+
+    fn unlocked_engine() -> (Engine, EventSink, std::sync::mpsc::Receiver<SecretEvent>) {
+        let engine = Engine::with_seams(
+            paths(),
+            Box::new(vault::InMemStore::new()),
+            Box::new(FixedClock),
+            Box::new(NoUsb),
+            Box::new(seam::NoMint),
+            Box::new(NullUpstream),
+        )
+        .expect("with_seams");
+        let (sink, rx) = EventSink::channel();
+        engine
+            .init_vault(
+                Zeroizing::new("correct horse battery staple".to_string()),
+                None,
+                None,
+                at_floor(),
+                &sink,
+            )
+            .expect("init_vault");
+        engine
+            .unlock(
+                Unlock::Passphrase(Zeroizing::new("correct horse battery staple".to_string())),
+                &sink,
+            )
+            .expect("unlock");
+        (engine, sink, rx)
+    }
+
+    fn drain(rx: &std::sync::mpsc::Receiver<SecretEvent>) -> Vec<SecretEvent> {
+        let mut out = Vec::new();
+        while let Ok(ev) = rx.try_recv() {
+            out.push(ev);
+        }
+        out
+    }
+
+    // ---- U2: late-bind provider install / replace / clear ------------------------------------
+
+    #[test]
+    fn provider_install_replace_and_clear() {
+        let (engine, sink, _rx) = unlocked_engine();
+        // Default is NoMint: a native resolve is Unsupported ⇒ falls back to the proxy-swap shape.
+        let r = engine
+            .resolve_injection(
+                Provider::Github,
+                "gh",
+                "relay-bearer",
+                "http://127.0.0.1:9",
+                "",
+                inject::DataPlaneMode::NativeSubtoken,
+                vec![],
+                vec![],
+                3600,
+                &sink,
+            )
+            .unwrap()
+            .expect("fallback injection present");
+        assert_eq!(
+            r.mode,
+            inject::DataPlaneMode::HttpsProxyMitm,
+            "NoMint ⇒ proxy-swap fallback"
+        );
+
+        // Install a counting minter; now a native resolve mints (the minted token is injected).
+        engine.install_provider(Box::new(CountingMint {
+            token: "ghs_installed".into(),
+            calls: Mutex::new(0),
+        }));
+        let r = engine
+            .resolve_injection(
+                Provider::Github,
+                "gh",
+                "relay-bearer",
+                "",
+                "",
+                inject::DataPlaneMode::NativeSubtoken,
+                vec![],
+                vec![],
+                3600,
+                &sink,
+            )
+            .unwrap()
+            .expect("minted injection present");
+        assert_eq!(r.mode, inject::DataPlaneMode::NativeSubtoken);
+        assert_eq!(
+            r.env.get("GITHUB_TOKEN").map(String::as_str),
+            Some("ghs_installed")
+        );
+
+        // Clear ⇒ back to NoMint ⇒ proxy-swap fallback again.
+        engine.clear_provider();
+        let r = engine
+            .resolve_injection(
+                Provider::Github,
+                "gh",
+                "relay-bearer",
+                "http://127.0.0.1:9",
+                "",
+                inject::DataPlaneMode::NativeSubtoken,
+                vec![],
+                vec![],
+                3600,
+                &sink,
+            )
+            .unwrap()
+            .expect("fallback injection present after clear");
+        assert_eq!(r.mode, inject::DataPlaneMode::HttpsProxyMitm);
+    }
+
+    #[test]
+    fn lock_clears_installed_provider() {
+        let (engine, sink, _rx) = unlocked_engine();
+        engine.install_provider(Box::new(CountingMint {
+            token: "ghs_x".into(),
+            calls: Mutex::new(0),
+        }));
+        // Locking the vault must drop the minter (defense-in-depth) ⇒ native resolve falls back.
+        engine.lock(&sink).expect("lock");
+        // Re-unlock to call resolve (resolve itself doesn't require unlock, but keep it realistic).
+        engine
+            .unlock(
+                Unlock::Passphrase(Zeroizing::new("correct horse battery staple".to_string())),
+                &sink,
+            )
+            .expect("re-unlock");
+        let r = engine
+            .resolve_injection(
+                Provider::Github,
+                "gh",
+                "relay-bearer",
+                "http://127.0.0.1:9",
+                "",
+                inject::DataPlaneMode::NativeSubtoken,
+                vec![],
+                vec![],
+                3600,
+                &sink,
+            )
+            .unwrap()
+            .expect("fallback injection present");
+        assert_eq!(
+            r.mode,
+            inject::DataPlaneMode::HttpsProxyMitm,
+            "lock cleared the minter"
+        );
+    }
+
+    // ---- U2: app_credential_pem custody ------------------------------------------------------
+
+    #[test]
+    fn app_credential_pem_reads_pem_and_meta_when_unlocked() {
+        let (engine, sink, _rx) = unlocked_engine();
+        // Seed the App PEM as a broker_only secret + the app_id/installation_id meta keys.
+        engine
+            .secret_put(
+                SecretMeta {
+                    name: "github_app/flexnetos".into(),
+                    provider: Provider::Github,
+                    note: "test app key".into(),
+                    broker_only: true,
+                },
+                Zeroizing::new(TEST_PEM.as_bytes().to_vec()),
+                &sink,
+            )
+            .expect("secret_put");
+        engine
+            .put_app_credential_meta("github_app/flexnetos", "42", 99)
+            .expect("put meta");
+
+        let (pem, app_id, installation_id) = engine
+            .app_credential_pem("github_app/flexnetos")
+            .expect("ok")
+            .expect("credential present");
+        assert_eq!(&*pem, TEST_PEM.as_bytes());
+        assert_eq!(app_id, "42");
+        assert_eq!(installation_id, 99);
+
+        // No credential enrolled under an unknown name ⇒ Ok(None).
+        assert!(engine.app_credential_pem("nope").unwrap().is_none());
+    }
+
+    #[test]
+    fn app_credential_pem_refuses_when_locked() {
+        let (engine, sink, _rx) = unlocked_engine();
+        engine
+            .secret_put(
+                SecretMeta {
+                    name: "github_app/flexnetos".into(),
+                    provider: Provider::Github,
+                    note: "k".into(),
+                    broker_only: true,
+                },
+                Zeroizing::new(TEST_PEM.as_bytes().to_vec()),
+                &sink,
+            )
+            .expect("secret_put");
+        engine
+            .put_app_credential_meta("github_app/flexnetos", "42", 99)
+            .expect("put meta");
+        engine.lock(&sink).expect("lock");
+        // Locked vault ⇒ the App PEM cannot materialize (structural fail-closed gate).
+        assert!(engine.app_credential_pem("github_app/flexnetos").is_err());
+    }
+
+    // ---- U3: resolve_injection mint / fallback / refuse --------------------------------------
+
+    fn install_github(engine: &Engine, status: u16, body: &str) {
+        let minter = GitHubAppMint::new(
+            "42",
+            99,
+            Zeroizing::new(TEST_PEM.as_bytes().to_vec()),
+            FixedClock,
+            FakeTransport {
+                status,
+                body: body.to_string(),
+            },
+        )
+        .with_api_base("https://gh.test");
+        engine.install_provider(Box::new(minter));
+    }
+
+    #[test]
+    fn native_subtoken_injects_minted_token_not_bearer() {
+        let (engine, sink, rx) = unlocked_engine();
+        install_github(
+            &engine,
+            201,
+            r#"{"token":"ghs_minted_abc","expires_at":"2026-06-12T23:00:00Z"}"#,
+        );
+        let _ = drain(&rx); // discard unlock/seed events
+        let r = engine
+            .resolve_injection(
+                Provider::Github,
+                "gh-relay",
+                "relay-bearer-DO-NOT-LEAK",
+                "",
+                "",
+                inject::DataPlaneMode::NativeSubtoken,
+                vec!["meta".into()],
+                vec!["checks:write".into()],
+                3600,
+                &sink,
+            )
+            .unwrap()
+            .expect("minted injection");
+        assert_eq!(r.mode, inject::DataPlaneMode::NativeSubtoken);
+        // The MINTED token is injected, NOT the relay bearer.
+        assert_eq!(
+            r.env.get("GITHUB_TOKEN").map(String::as_str),
+            Some("ghs_minted_abc")
+        );
+        assert_eq!(
+            r.env.get("GH_TOKEN").map(String::as_str),
+            Some("ghs_minted_abc")
+        );
+        for v in r.env.values() {
+            assert_ne!(
+                v, "relay-bearer-DO-NOT-LEAK",
+                "relay bearer must NOT be injected"
+            );
+        }
+        // The event carries expires_at + relay only — NEVER the minted token.
+        let events = drain(&rx);
+        let minted = events.iter().find_map(|e| match e {
+            SecretEvent::RelayMinted {
+                relay, expires_at, ..
+            } => Some((relay.clone(), expires_at.clone())),
+            _ => None,
+        });
+        let (relay, expires_at) = minted.expect("RelayMinted emitted");
+        assert_eq!(relay, "gh-relay");
+        assert!(!expires_at.is_empty(), "expires_at surfaced honestly");
+        for e in &events {
+            let json = serde_json::to_string(e).unwrap();
+            assert!(
+                !json.contains("ghs_minted_abc"),
+                "minted token must never appear in an event: {json}"
+            );
+        }
+    }
+
+    #[test]
+    fn native_subtoken_unsupported_falls_back_to_proxy_swap() {
+        let (engine, sink, _rx) = unlocked_engine();
+        // No minter installed (NoMint) ⇒ Unsupported ⇒ proxy-swap fallback shape.
+        let r = engine
+            .resolve_injection(
+                Provider::Github,
+                "gh-relay",
+                "relay-bearer",
+                "http://127.0.0.1:9443",
+                "/run/ca.pem",
+                inject::DataPlaneMode::NativeSubtoken,
+                vec![],
+                vec![],
+                3600,
+                &sink,
+            )
+            .unwrap()
+            .expect("fallback injection");
+        assert_eq!(r.mode, inject::DataPlaneMode::HttpsProxyMitm);
+        // The relay bearer is what the proxy-swap fallback injects.
+        assert_eq!(
+            r.env.get("GITHUB_TOKEN").map(String::as_str),
+            Some("relay-bearer")
+        );
+        assert_eq!(
+            r.env.get("HTTPS_PROXY").map(String::as_str),
+            Some("http://127.0.0.1:9443")
+        );
+    }
+
+    #[test]
+    fn native_subtoken_other_error_refuses() {
+        let (engine, sink, rx) = unlocked_engine();
+        // 404 from GitHub ⇒ MintError::Other ⇒ REFUSE: Ok(None), durable Refused row + GuardRefused.
+        install_github(&engine, 404, r#"{"message":"Not Found"}"#);
+        let _ = drain(&rx);
+        let resolved = engine
+            .resolve_injection(
+                Provider::Github,
+                "gh-relay",
+                "relay-bearer",
+                "",
+                "",
+                inject::DataPlaneMode::NativeSubtoken,
+                vec![],
+                vec![],
+                3600,
+                &sink,
+            )
+            .unwrap();
+        assert!(resolved.is_none(), "Other error ⇒ refuse, NO injection");
+        let events = drain(&rx);
+        assert!(
+            events
+                .iter()
+                .any(|e| matches!(e, SecretEvent::GuardRefused { .. })),
+            "a GuardRefused event must be emitted on refuse"
+        );
+        // No minted token (there isn't one) and no bearer leaked into any event.
+        for e in &events {
+            let json = serde_json::to_string(e).unwrap();
+            assert!(!json.contains("relay-bearer"));
+        }
+    }
+
+    // ---- U4: scope → MintRequest -------------------------------------------------------------
+
+    #[test]
+    fn native_scope_threads_repos_and_perms_to_the_minter() {
+        // A minter that captures the MintRequest so we can assert repos/perms reached it verbatim.
+        struct CapturingMint(Mutex<Option<(Vec<String>, Vec<String>)>>);
+        impl ProviderMint for CapturingMint {
+            fn mint_scoped(&self, p: &MintRequest) -> Result<ScopedToken, MintError> {
+                *self.0.lock().unwrap() = Some((p.repos.clone(), p.perms.clone()));
+                Ok(ScopedToken {
+                    token: Zeroizing::new(b"ghs_scoped".to_vec()),
+                    expires_at: 1_700_003_600,
+                })
+            }
+        }
+        let (engine, sink, _rx) = unlocked_engine();
+        let cap = std::sync::Arc::new(CapturingMint(Mutex::new(None)));
+        // install_provider takes a Box; install a clone-backed capturing minter via Arc indirection.
+        struct ArcMint(std::sync::Arc<CapturingMint>);
+        impl ProviderMint for ArcMint {
+            fn mint_scoped(&self, p: &MintRequest) -> Result<ScopedToken, MintError> {
+                self.0.mint_scoped(p)
+            }
+        }
+        engine.install_provider(Box::new(ArcMint(cap.clone())));
+        let _ = engine
+            .resolve_injection(
+                Provider::Github,
+                "gh",
+                "relay-bearer",
+                "",
+                "",
+                inject::DataPlaneMode::NativeSubtoken,
+                vec!["meta".into(), "envctl".into()],
+                vec!["checks:write".into(), "contents:read".into()],
+                3600,
+                &sink,
+            )
+            .unwrap()
+            .expect("minted");
+        let seen = cap.0.lock().unwrap().clone().expect("mint_scoped called");
+        assert_eq!(seen.0, vec!["meta".to_string(), "envctl".to_string()]);
+        assert_eq!(
+            seen.1,
+            vec!["checks:write".to_string(), "contents:read".to_string()]
+        );
     }
 }

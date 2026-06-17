@@ -14,7 +14,7 @@ name = "secretd"
 path = "src/main.rs"
 
 [features]
-default = ["mitm-ca"]
+default = ["mitm-ca", "provider-github"]
 # Build the daemon with the Cognitum Seed USB possession factor. Forwards to the engine feature;
 # the USB keyslot (init + unlock) is then backed by the Seed's deterministic Ed25519 signature.
 # Off by default — a stock secretd has no USB backend and refuses USB enrollment cleanly.
@@ -23,6 +23,11 @@ seed-factor = ["envctl-secrets-engine/seed-factor"]
 # issuance) and gates the proxy's TLS-termination ingress. Default-on; a `--no-default-features`
 # secretd build drops the MITM code and the CONNECT branch falls back to the existing 501.
 mitm-ca = ["envctl-secrets-engine/mitm-ca", "dep:tokio-rustls"]
+# G2: native GitHub App installation-token minting. Forwards the engine's `provider-github` (RS256
+# App-JWT → installation token via the `HttpTransport` seam). The daemon supplies the real transport
+# (`transport::DaemonHttpTransport`, reusing the frozen webpki-roots reqwest client — no new dep).
+# Off by default; a stock secretd has no native-mint provider and falls back to the proxy-swap path.
+provider-github = ["envctl-secrets-engine/provider-github"]
 
 [dependencies]
 envctl-secrets-engine = { workspace = true }

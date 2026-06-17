@@ -139,13 +139,22 @@ pub fn add_req_to_meta(req: &v1::AddSecretReq) -> SecretMeta {
 
 // ---- CreateRelayReq / MintReq -> RelayPolicy -------------------------------------------------
 
-/// Map the proto `DataPlaneMode` (+ the policy's `upstream_base` / a native ttl) to the engine
-/// `SwapMode`. `MODE_UNSPECIFIED` defaults to a base-url repoint against `upstream_base`.
-pub fn swapmode_from_proto(mode: i32, upstream_base: &str, native_ttl_secs: i64) -> SwapMode {
+/// Map the proto `DataPlaneMode` (+ the policy's `upstream_base` / a native ttl + native scope) to
+/// the engine `SwapMode`. `MODE_UNSPECIFIED` defaults to a base-url repoint against `upstream_base`.
+/// `repos`/`perms` are carried onto a `NativeSubToken` swap (ignored for the other planes).
+pub fn swapmode_from_proto(
+    mode: i32,
+    upstream_base: &str,
+    native_ttl_secs: i64,
+    repos: &[String],
+    perms: &[String],
+) -> SwapMode {
     match v1::DataPlaneMode::try_from(mode).unwrap_or(v1::DataPlaneMode::BaseUrlRepoint) {
         v1::DataPlaneMode::HttpsProxyMitm => SwapMode::ProxyMitm,
         v1::DataPlaneMode::NativeSubtoken => SwapMode::NativeSubToken {
             ttl_secs: native_ttl_secs,
+            repos: repos.to_vec(),
+            perms: perms.to_vec(),
         },
         v1::DataPlaneMode::BaseUrlRepoint | v1::DataPlaneMode::ModeUnspecified => {
             SwapMode::BaseUrlRepoint {
@@ -181,7 +190,10 @@ fn policy_ttl_from_expires(expires_at: &str) -> i64 {
 /// `CreateRelayReq.policy` -> engine `RelayPolicy`. Unknown methods are rejected (default-deny).
 pub fn policy_from_proto(p: &v1::RelayPolicy) -> Result<RelayPolicy, Status> {
     let provider = provider_from_proto(p.provider);
-    let swap = swapmode_from_proto(p.mode, &p.upstream_base, DEFAULT_POLICY_TTL_SECS);
+    // A `CreateRelayReq.policy` carries no native repos/perms today (the relay-policy proto predates
+    // G2 scope); a native policy created here mints with the installation's default scope until the
+    // policy proto grows the fields. The `Mint` path (`mint_req_to_policy`) carries them.
+    let swap = swapmode_from_proto(p.mode, &p.upstream_base, DEFAULT_POLICY_TTL_SECS, &[], &[]);
     Ok(RelayPolicy {
         relay_id: p.name.clone(),
         kind: if p.ephemeral {
@@ -211,6 +223,12 @@ pub fn policy_from_proto(p: &v1::RelayPolicy) -> Result<RelayPolicy, Status> {
 /// so an over-broad synthesized `host_allow` cannot widen the actual reachable upstream set.
 pub fn mint_req_to_policy(req: &v1::MintReq) -> RelayPolicy {
     let provider = provider_from_proto(req.provider);
+    // G2 gap fix: honor `req.mode` (was hardcoded `BaseUrlRepoint`, so `NativeSubtoken` was
+    // UNREACHABLE via Mint). The native ttl comes from `req.ttl_secs` (the bearer ttl doubles as the
+    // advisory native ttl); `repos`/`perms` scope a native mint. An empty/unspecified mode keeps the
+    // pre-G2 base-url-repoint default, so existing `Mint` callers are unchanged.
+    let native_ttl = i64::try_from(req.ttl_secs).unwrap_or(0);
+    let swap = swapmode_from_proto(req.mode, "", native_ttl, &req.repos, &req.perms);
     RelayPolicy {
         relay_id: req.relay.clone(),
         kind: if req.ephemeral {
@@ -220,9 +238,7 @@ pub fn mint_req_to_policy(req: &v1::MintReq) -> RelayPolicy {
         },
         provider,
         secret_name: req.relay.clone(),
-        swap: SwapMode::BaseUrlRepoint {
-            upstream_base: String::new(),
-        },
+        swap,
         host_allow: Vec::new(),
         path_allow: Vec::new(),
         method_allow: Vec::new(),
@@ -559,6 +575,52 @@ mod tests {
     }
 
     #[test]
+    fn mint_req_with_native_mode_and_scope_builds_native_policy() {
+        // G2 gap fix: a MintReq with mode=NATIVE_SUBTOKEN now reaches a NativeSubToken swap (was
+        // hardcoded to BaseUrlRepoint, so native was unreachable via Mint). repos/perms are carried.
+        let req = v1::MintReq {
+            relay: "gh".to_string(),
+            ephemeral: true,
+            provider: v1::ProviderKind::Github as i32,
+            ttl_secs: 3600,
+            client_pid: 0,
+            mode: v1::DataPlaneMode::NativeSubtoken as i32,
+            repos: vec!["meta".to_string()],
+            perms: vec!["checks:write".to_string()],
+        };
+        let policy = mint_req_to_policy(&req);
+        assert_eq!(policy.provider, Provider::Github);
+        match policy.swap {
+            SwapMode::NativeSubToken {
+                ttl_secs,
+                repos,
+                perms,
+            } => {
+                assert_eq!(ttl_secs, 3600, "native ttl rides on the bearer ttl");
+                assert_eq!(repos, vec!["meta".to_string()]);
+                assert_eq!(perms, vec!["checks:write".to_string()]);
+            }
+            other => panic!("expected NativeSubToken, got {other:?}"),
+        }
+
+        // An unspecified mode (0) keeps the pre-G2 base-url-repoint default ⇒ back-compat.
+        let legacy = v1::MintReq {
+            relay: "r".to_string(),
+            ephemeral: true,
+            provider: v1::ProviderKind::Anthropic as i32,
+            ttl_secs: 3600,
+            client_pid: 0,
+            mode: 0,
+            repos: vec![],
+            perms: vec![],
+        };
+        assert!(matches!(
+            mint_req_to_policy(&legacy).swap,
+            SwapMode::BaseUrlRepoint { .. }
+        ));
+    }
+
+    #[test]
     fn dataplane_mode_from_swap_maps_each_variant() {
         assert_eq!(
             dataplane_mode_from_swap(&SwapMode::BaseUrlRepoint {
@@ -571,7 +633,11 @@ mod tests {
             DataPlaneMode::HttpsProxyMitm
         );
         assert_eq!(
-            dataplane_mode_from_swap(&SwapMode::NativeSubToken { ttl_secs: 60 }),
+            dataplane_mode_from_swap(&SwapMode::NativeSubToken {
+                ttl_secs: 60,
+                repos: vec![],
+                perms: vec![],
+            }),
             DataPlaneMode::NativeSubtoken
         );
     }

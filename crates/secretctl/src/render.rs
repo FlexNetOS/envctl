@@ -151,18 +151,33 @@ pub fn render_get(r: &v1::GetSecretResp, json: bool) {
 }
 
 pub fn render_mint(r: &v1::MintResp, json: bool) {
+    // A native GitHub installation token (TTL fixed ~1h by GitHub) is delivered inside the
+    // ResolvedInjection env (GITHUB_TOKEN), NOT in the `bearer` field — and is NEVER printed here.
+    let is_native = r
+        .injection
+        .as_ref()
+        .map(|i| i.mode == v1::DataPlaneMode::NativeSubtoken as i32)
+        .unwrap_or(false);
     if json {
-        // The bearer is owner-only (peercred-gated channel). It is NOT the real key.
+        // The bearer is owner-only (peercred-gated channel). It is NOT the real key, and for a
+        // native mint it is the relay bearer (the minted token rides in the injection, never logged).
         println!(
             "{}",
             serde_json::json!({
-                "bearer": r.bearer, "token_id": r.token_id, "expires_at": r.expires_at
+                "bearer": r.bearer, "token_id": r.token_id, "expires_at": r.expires_at,
+                "native": is_native
             })
         );
     } else {
         println!("{}", c_ok(&format!("minted bearer (token {})", r.token_id)));
         println!("{}", r.bearer);
         println!("{}", c_step(&format!("expires {}", r.expires_at)));
+        if is_native {
+            println!(
+                "{}",
+                c_step("native GitHub installation token (TTL fixed ~1h by GitHub) injected as GITHUB_TOKEN")
+            );
+        }
     }
 }
 

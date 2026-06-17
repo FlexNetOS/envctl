@@ -102,7 +102,11 @@ fn swap_mode_and_kdf_json_round_trip() {
             upstream_base: "https://api.anthropic.com".into(),
         },
         SwapMode::ProxyMitm,
-        SwapMode::NativeSubToken { ttl_secs: 3600 },
+        SwapMode::NativeSubToken {
+            ttl_secs: 3600,
+            repos: vec!["meta".into()],
+            perms: vec!["checks:write".into()],
+        },
     ];
     for m in modes {
         let s = serde_json::to_string(&m).unwrap();

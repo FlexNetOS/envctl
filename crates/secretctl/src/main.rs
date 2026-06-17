@@ -369,7 +369,14 @@ async fn relay(cmd: RelayCmd, sock: PathBuf, json: bool) -> anyhow::Result<()> {
                 }
             }
         }
-        RelayCmd::Mint { name, ttl } => {
+        RelayCmd::Mint {
+            name,
+            ttl,
+            mode,
+            provider,
+            repos,
+            perms,
+        } => {
             // TTL string -> seconds (default 0 => engine clamps against policy + the 24h ceiling).
             let ttl_secs = match ttl {
                 Some(s) => s
@@ -377,16 +384,8 @@ async fn relay(cmd: RelayCmd, sock: PathBuf, json: bool) -> anyhow::Result<()> {
                     .with_context(|| format!("invalid --ttl '{s}' (expected seconds)"))?,
                 None => 0,
             };
-            let r = c
-                .mint(v1::MintReq {
-                    relay: name,
-                    ephemeral: false,
-                    provider: v1::ProviderKind::Generic as i32,
-                    ttl_secs,
-                    client_pid: 0,
-                })
-                .await?
-                .into_inner();
+            let req = mint_req_for_relay_mint(name, ttl_secs, mode, provider, repos, perms);
+            let r = c.mint(req).await?.into_inner();
             render::render_mint(&r, json);
         }
     }
@@ -434,6 +433,47 @@ fn injection_from_proto(p: &v1::ResolvedInjection) -> envctl_secrets::inject::Re
     }
 }
 
+/// Build the `MintReq` for an explicit `env-ctl relay mint` (pure; unit-tested). `mode` selects the
+/// data plane (default base-url); `provider` defaults to generic. For a NATIVE GitHub mint with no
+/// explicit `--perm`, the least-privilege default `["checks:write"]` is supplied so a native mint
+/// never silently requests the installation's full default scope. `repos`/`perms` scope the native
+/// mint (ignored by the non-native planes). The native ttl rides on `ttl_secs` (advisory; GitHub
+/// fixes the ~1h installation-token TTL regardless).
+fn mint_req_for_relay_mint(
+    name: String,
+    ttl_secs: u64,
+    mode: Option<String>,
+    provider: Option<String>,
+    repos: Vec<String>,
+    perms: Vec<String>,
+) -> v1::MintReq {
+    let mode_proto = mode
+        .as_deref()
+        .map(mode_to_proto)
+        .unwrap_or(v1::DataPlaneMode::BaseUrlRepoint as i32);
+    let provider_str = provider.as_deref().unwrap_or("generic");
+    let provider_proto = provider_to_proto(provider_str);
+    let is_native_github = mode_proto == v1::DataPlaneMode::NativeSubtoken as i32
+        && provider_proto == v1::ProviderKind::Github as i32;
+    // Least-privilege default for a native GitHub mint: `checks:write` (the merge-gate use case)
+    // unless the operator passed explicit `--perm`s. Empty perms otherwise ⇒ full installation scope.
+    let perms = if is_native_github && perms.is_empty() {
+        vec!["checks:write".to_string()]
+    } else {
+        perms
+    };
+    v1::MintReq {
+        relay: name,
+        ephemeral: false,
+        provider: provider_proto,
+        ttl_secs,
+        client_pid: 0,
+        mode: mode_proto,
+        repos,
+        perms,
+    }
+}
+
 /// Build the `MintReq` for an `env-ctl run` from its args (pure; unit-tested). The relay name is the
 /// first `--relay` (else the provider name, else "default"); the provider defaults to generic
 /// (default-deny in the engine). `client_pid = 0` selects uid-primary binding (OQ1); `ttl_secs = 0`
@@ -452,6 +492,11 @@ fn mint_req_for_run(a: &cli::RunArgs) -> v1::MintReq {
         provider: provider_to_proto(provider),
         ttl_secs: 0,
         client_pid: 0,
+        // `env-ctl run` uses the daemon's default data plane (base-url repoint); native scope is only
+        // selected via the explicit `relay mint --mode native` path.
+        mode: v1::DataPlaneMode::BaseUrlRepoint as i32,
+        repos: Vec::new(),
+        perms: Vec::new(),
     }
 }
 
@@ -621,6 +666,43 @@ mod tests {
         assert_eq!(req.relay, "default");
         assert_eq!(req.provider, v1::ProviderKind::Generic as i32);
         assert_eq!(req.client_pid, 0);
+    }
+
+    #[test]
+    fn mint_req_for_github_native_sets_mode_and_scope() {
+        // `--mode native --provider github` with no `--perm` ⇒ least-privilege default checks:write.
+        let req = mint_req_for_relay_mint(
+            "gh".to_string(),
+            0,
+            Some("native".to_string()),
+            Some("github".to_string()),
+            vec!["meta".to_string()],
+            vec![],
+        );
+        assert_eq!(req.mode, v1::DataPlaneMode::NativeSubtoken as i32);
+        assert_eq!(req.provider, v1::ProviderKind::Github as i32);
+        assert_eq!(req.repos, vec!["meta".to_string()]);
+        assert_eq!(req.perms, vec!["checks:write".to_string()], "default perm");
+
+        // Explicit `--perm`s override the default.
+        let req = mint_req_for_relay_mint(
+            "gh".to_string(),
+            0,
+            Some("native".to_string()),
+            Some("github".to_string()),
+            vec![],
+            vec!["contents:read".to_string()],
+        );
+        assert_eq!(req.perms, vec!["contents:read".to_string()]);
+
+        // A non-native default mint keeps mode=base-url + provider=generic + no scope (pre-G2 shape).
+        let req = mint_req_for_relay_mint("r".to_string(), 0, None, None, vec![], vec![]);
+        assert_eq!(req.mode, v1::DataPlaneMode::BaseUrlRepoint as i32);
+        assert_eq!(req.provider, v1::ProviderKind::Generic as i32);
+        assert!(
+            req.perms.is_empty(),
+            "no default perm for a non-native mint"
+        );
     }
 
     #[test]
