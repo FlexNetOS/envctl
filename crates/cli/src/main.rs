@@ -412,7 +412,7 @@ enum AgentCmd {
         #[arg(long, visible_alias = "frozen")]
         locked: bool,
         /// Re-resolve the named packages' refs (no names = all) and rewrite the lock.
-        #[arg(long, num_args = 0.., value_name = "NAME")]
+        #[arg(long, short = 'u', num_args = 0.., value_name = "NAME")]
         update: Option<Vec<String>>,
     },
     /// Add a source to the config (then sync, unless `--no-sync`). PREVIEW by default.
@@ -453,10 +453,11 @@ enum AgentCmd {
         /// Zero-network mode (requires `--no-sync` on `add`).
         #[arg(long, visible_alias = "frozen")]
         locked: bool,
-        #[arg(long, num_args = 0.., value_name = "NAME")]
+        #[arg(long, short = 'u', num_args = 0.., value_name = "NAME")]
         update: Option<Vec<String>>,
     },
     /// Remove a source from the config (then sync, unless `--no-sync`). PREVIEW by default.
+    #[command(visible_alias = "rm")]
     Remove {
         /// The source to remove.
         source: String,
@@ -483,7 +484,7 @@ enum AgentCmd {
         no_sync: bool,
         #[arg(long, visible_alias = "frozen")]
         locked: bool,
-        #[arg(long, num_args = 0.., value_name = "NAME")]
+        #[arg(long, short = 'u', num_args = 0.., value_name = "NAME")]
         update: Option<Vec<String>>,
     },
     /// Write/verify `agent-env.lock`. `--check` audits (exit 1 on drift); else rewrite.
@@ -499,7 +500,7 @@ enum AgentCmd {
         #[arg(long, visible_alias = "frozen")]
         check: bool,
         /// Restrict the re-resolve to sources providing these skills (repeatable).
-        #[arg(long = "upgrade-package", value_name = "NAME")]
+        #[arg(long = "upgrade-package", short = 'P', value_name = "NAME")]
         upgrade_package: Vec<String>,
         /// With `--check`: make the audit zero-network.
         #[arg(long)]
