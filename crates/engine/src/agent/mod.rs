@@ -16,6 +16,7 @@
 //! FNV-1a component lock (`crate::lock`): this module never imports `crate::lock`.
 
 pub mod clean;
+pub mod doctor;
 pub mod edit;
 pub mod init;
 pub mod list;
@@ -39,9 +40,10 @@ use envctl_agent_env::{
 };
 
 /// Re-export the per-verb spec/return types so callers `use crate::agent::*`.
+pub use doctor::AgentDoctorSpec;
 pub use report::{
-    AgentEditItem, AgentEditOutcome, AgentInitOutcome, AgentList, AgentLockDriftItem,
-    AgentLockOutcome, AgentReport, AgentVerb,
+    AgentCommandDirCheck, AgentDoctorReport, AgentEditItem, AgentEditOutcome, AgentInitOutcome,
+    AgentList, AgentLockDriftItem, AgentLockOutcome, AgentReport, AgentUpdateCheck, AgentVerb,
 };
 
 /// Serializable mirror of the library `Scope` — the engine-facing scope (so `event.rs` and

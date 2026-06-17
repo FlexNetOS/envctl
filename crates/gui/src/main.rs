@@ -18,12 +18,12 @@ mod theme;
 use eframe::egui::{self, Color32, RichText};
 use egui_extras::{Column, TableBuilder};
 use envctl_engine::{
-    run_event_loop, AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentCommandSpec, AgentEditOutcome,
-    AgentList, AgentListKind, AgentListSpec, AgentLockDriftItem, AgentLockMode, AgentLockSpec,
-    AgentRemoveSpec, AgentReport, AgentScope, AgentSectionSel, AgentSyncSpec, BuildStrategy,
-    ComponentState, DashboardPlan, DashboardSpec, DriftItem, DriftKind, Engine, EngineCommand,
-    EngineEvent, Event, OpStatus, Refactor, RefactorGoal, RenameRule, Severity, Stream, Telemetry,
-    TelemetryControl,
+    run_event_loop, AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentCommandSpec, AgentDoctorReport,
+    AgentDoctorSpec, AgentEditOutcome, AgentList, AgentListKind, AgentListSpec, AgentLockDriftItem,
+    AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentReport, AgentScope, AgentSectionSel,
+    AgentSyncSpec, BuildStrategy, ComponentState, DashboardPlan, DashboardSpec, DriftItem,
+    DriftKind, Engine, EngineCommand, EngineEvent, Event, OpStatus, Refactor, RefactorGoal,
+    RenameRule, Severity, Stream, Telemetry, TelemetryControl,
 };
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -76,6 +76,7 @@ enum AgentVerbTab {
     Lock,
     List,
     Clean,
+    Doctor,
 }
 
 impl AgentVerbTab {
@@ -87,6 +88,7 @@ impl AgentVerbTab {
             AgentVerbTab::Lock => "Lock",
             AgentVerbTab::List => "List",
             AgentVerbTab::Clean => "Clean",
+            AgentVerbTab::Doctor => "Doctor",
         }
     }
 }
@@ -225,6 +227,7 @@ struct EnvctlApp {
     agent_last_edit: Option<AgentEditOutcome>,
     agent_last_report: Option<AgentReport>,
     agent_lock_drift: Option<Vec<AgentLockDriftItem>>,
+    agent_last_doctor: Option<AgentDoctorReport>,
     agent_status: String,
 }
 
@@ -307,6 +310,7 @@ impl EnvctlApp {
             agent_last_edit: None,
             agent_last_report: None,
             agent_lock_drift: None,
+            agent_last_doctor: None,
             agent_status: String::new(),
         };
         let _ = app.cmd_tx.send(EngineCommand::Detect);
@@ -436,6 +440,18 @@ impl EnvctlApp {
                     self.agent_last_edit = Some(outcome);
                     // add/remove changed the config (and possibly synced) — cached list is stale.
                     self.agent_list_stale = true;
+                }
+                Event::AgentDoctored { report } => {
+                    self.agent_status = format!(
+                        "envctl {} · {} · {} skill(s) · {} mcp(s) · {} command(s) · {} failure(s)",
+                        report.version,
+                        report.scope,
+                        report.skills.len(),
+                        report.mcps.len(),
+                        report.commands.len(),
+                        report.failures.len(),
+                    );
+                    self.agent_last_doctor = Some(report);
                 }
                 Event::AgentAction {
                     source,
@@ -1331,6 +1347,12 @@ impl EnvctlApp {
         }
     }
 
+    fn agent_doctor_spec(&self) -> AgentDoctorSpec {
+        AgentDoctorSpec {
+            scope_override: self.agent_scope.to_override(),
+        }
+    }
+
     /// Wrap the active verb's spec in `EngineCommand::Agent { spec }` — the single command the
     /// worker dispatches to the matching `Engine::agent_*` method.
     fn agent_command(&self) -> EngineCommand {
@@ -1341,6 +1363,7 @@ impl EnvctlApp {
             AgentVerbTab::Lock => AgentCommandSpec::Lock(self.agent_lock_spec()),
             AgentVerbTab::List => AgentCommandSpec::List(self.agent_list_spec()),
             AgentVerbTab::Clean => AgentCommandSpec::Clean(self.agent_clean_spec()),
+            AgentVerbTab::Doctor => AgentCommandSpec::Doctor(self.agent_doctor_spec()),
         };
         EngineCommand::Agent { spec }
     }
@@ -1358,6 +1381,7 @@ impl EnvctlApp {
                 AgentVerbTab::Lock,
                 AgentVerbTab::List,
                 AgentVerbTab::Clean,
+                AgentVerbTab::Doctor,
             ] {
                 let active = self.agent_verb == v;
                 let text = if active {
@@ -1453,6 +1477,12 @@ impl EnvctlApp {
                             "⚠ Clean removes managed assets not present in the config (the lock's orphans). Preview first; Apply writes.",
                         );
                         ui.checkbox(&mut self.agent_apply, "Apply (write) — off = preview");
+                    }
+                    AgentVerbTab::Doctor => {
+                        ui.colored_label(
+                            theme::TEXT_MUTED,
+                            "Read-only diagnostics: version, lock, scope, inventory, command-dir writability, and the update check.",
+                        );
                     }
                 }
 
@@ -1644,6 +1674,121 @@ impl EnvctlApp {
                 }
             });
         }
+        if let Some(doctor) = self.agent_last_doctor.clone() {
+            self.agent_doctor_tables(ui, &doctor);
+        }
+    }
+
+    /// Render the `agent doctor` report (parity with the CLI's grouped view): Environment,
+    /// Inventory, Checks, Command directories, Failures. Driven by the identical
+    /// `Engine::agent_doctor` the CLI calls (the report arrives via `Event::AgentDoctored`).
+    fn agent_doctor_tables(&self, ui: &mut egui::Ui, d: &AgentDoctorReport) {
+        theme::card().show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            ui.label(
+                RichText::new(format!(
+                    "doctor — envctl {} ({})",
+                    d.version,
+                    if d.failures.is_empty() {
+                        "✓ healthy"
+                    } else {
+                        "✗ issues"
+                    }
+                ))
+                .strong(),
+            );
+
+            ui.add_space(6.0);
+            ui.label(
+                RichText::new("Environment")
+                    .color(theme::ACCENT_TEXT)
+                    .strong(),
+            );
+            let update_text = match d.update_check.status.as_str() {
+                "update_available" => format!(
+                    "{} available",
+                    d.update_check.latest_version.as_deref().unwrap_or("?")
+                ),
+                "up_to_date" => "up-to-date".to_string(),
+                _ => "not yet checked".to_string(),
+            };
+            for (k, v) in [
+                ("Scope", d.scope.clone()),
+                ("Lock file", d.lock_file.clone()),
+                ("Install path", d.installation_path.clone()),
+                (
+                    "Last sync",
+                    d.last_sync.clone().unwrap_or_else(|| "none".into()),
+                ),
+                ("Updates", update_text),
+            ] {
+                ui.colored_label(theme::TEXT_MUTED, format!("  {k}: {v}"));
+            }
+
+            ui.add_space(6.0);
+            ui.label(
+                RichText::new("Inventory")
+                    .color(theme::ACCENT_TEXT)
+                    .strong(),
+            );
+            ui.colored_label(
+                theme::TEXT_MUTED,
+                format!(
+                    "  Skills {} · MCP servers {} · Commands {}",
+                    d.skills.len(),
+                    d.mcps.len(),
+                    d.commands.len()
+                ),
+            );
+
+            ui.add_space(6.0);
+            ui.label(RichText::new("Checks").color(theme::ACCENT_TEXT).strong());
+            let dirs_writable = d.command_dirs.iter().filter(|c| c.writable).count();
+            let dirs_total = d.command_dirs.len();
+            let check = |ui: &mut egui::Ui, ok: bool, label: &str| {
+                let (glyph, color) = if ok {
+                    ("✓", theme::TEXT_MUTED)
+                } else {
+                    ("✗", theme::WARN)
+                };
+                ui.colored_label(color, format!("  {glyph} {label}"));
+            };
+            check(ui, !d.lock_file.is_empty(), "Lock file readable");
+            check(ui, d.failures.is_empty(), "No failed skills");
+            check(
+                ui,
+                dirs_writable == dirs_total,
+                &format!("{dirs_writable} of {dirs_total} command directories writable"),
+            );
+
+            if !d.command_dirs.is_empty() {
+                ui.add_space(6.0);
+                ui.label(
+                    RichText::new("Command directories")
+                        .color(theme::ACCENT_TEXT)
+                        .strong(),
+                );
+                for c in &d.command_dirs {
+                    let (glyph, color) = if c.writable {
+                        ("✓", theme::TEXT_MUTED)
+                    } else {
+                        ("✗", theme::WARN)
+                    };
+                    ui.colored_label(color, format!("  {glyph} {}", c.path));
+                }
+            }
+
+            if !d.failures.is_empty() {
+                ui.add_space(6.0);
+                ui.label(RichText::new("Failures").color(theme::WARN).strong());
+                for f in &d.failures {
+                    ui.colored_label(
+                        theme::WARN,
+                        format!("  ! {} {} {}", f.name, f.reason, f.source),
+                    );
+                }
+            }
+        });
     }
 
     fn agent_list_tables(&self, ui: &mut egui::Ui, list: &AgentList) {
@@ -1993,7 +2138,7 @@ mod agent_spec_tests {
     use envctl_engine::AgentLockMode;
 
     /// A pure, window-free `EnvctlApp` carrying just the agent form fields. The worker channel
-    /// + engine clone aren't needed by the `*_spec` builders, so a fresh test app constructs
+    /// and engine clone aren't needed by the `*_spec` builders, so a fresh test app constructs
     /// dummy channels and a default engine, then the test mutates only the agent fields.
     fn test_app() -> EnvctlApp {
         let (cmd_tx, _cmd_rx) = channel::<EngineCommand>();
@@ -2061,6 +2206,7 @@ mod agent_spec_tests {
             agent_last_edit: None,
             agent_last_report: None,
             agent_lock_drift: None,
+            agent_last_doctor: None,
             agent_status: String::new(),
         }
     }

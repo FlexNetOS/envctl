@@ -88,7 +88,7 @@ pub struct InstalledSkill {
 }
 
 /// A recorded sync failure for a source/skill (ledger M-25).
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct SyncFailure {
     /// The skill/source name that failed.
     pub name: String,

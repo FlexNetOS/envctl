@@ -21,13 +21,17 @@ pub mod model; // Registry, OpResult, OpStatus, EnvReport, Wiring, RunPlan, RunS
 pub mod register; // Phase 4: synthesize the components.d drop-in (provenance + rebuild)
 pub mod runner; // ProcessRunner (real) + DryRunRunner impls of HookRunner
 pub mod runtime; // machine-local last-run state (XDG cache), out of the lock
+pub mod self_uninstall; // `self uninstall` — destructive, fail-closed, dry-run-by-default removal
+pub mod self_update; // `self update` CORE: fetch_latest_release / is_newer / verify_checksum
 pub mod telemetry; // sample() -> Telemetry (nvidia-smi CSV + sysinfo)
+pub mod update_notifier; // end-of-run "new version available" cache + check (CLI renders)
 pub mod wiring; // apply()/revert() for Wiring (shell_rc backup-then-excise) // EngineCommand / EngineEvent + run_event_loop (GUI worker API)
 
 pub use agent::{
-    AgentAddSpec, AgentCleanSpec, AgentEditItem, AgentEditOutcome, AgentInitOutcome, AgentInitSpec,
-    AgentList, AgentListKind, AgentListSpec, AgentLockDriftItem, AgentLockMode, AgentLockOutcome,
-    AgentLockSpec, AgentRemoveSpec, AgentReport, AgentScope, AgentSectionSel, AgentSyncSpec,
+    AgentAddSpec, AgentCleanSpec, AgentCommandDirCheck, AgentDoctorReport, AgentDoctorSpec,
+    AgentEditItem, AgentEditOutcome, AgentInitOutcome, AgentInitSpec, AgentList, AgentListKind,
+    AgentListSpec, AgentLockDriftItem, AgentLockMode, AgentLockOutcome, AgentLockSpec,
+    AgentRemoveSpec, AgentReport, AgentScope, AgentSectionSel, AgentSyncSpec, AgentUpdateCheck,
     AgentVerb,
 };
 pub use command::{run_event_loop, AgentCommandSpec, EngineCommand, EngineEvent, TelemetryControl};
@@ -46,6 +50,11 @@ pub use model::{
     Wiring,
 };
 pub use runner::{DryRunRunner, ProcessRunner};
+pub use self_uninstall::{SelfUninstallOutcome, SelfUninstallSpec};
+pub use self_update::{
+    current_target, fetch_latest_release, is_newer, plan_self_update, verify_checksum,
+    SelfUpdateAsset, SelfUpdateCheck, SelfUpdateRelease, GITHUB_REPO,
+};
 
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -216,4 +225,19 @@ impl Engine {
         });
         Ok(outcome)
     }
+}
+
+/// Process-wide lock serializing tests that MUTATE environment variables
+/// (`HOME` / `XDG_*` / `ENVCTL_CACHE_DIR`) against each other AND against tests
+/// that READ env-derived paths (e.g. `agent::init`'s global-path resolution).
+/// Without it, parallel `cargo test` lets one test's `set_var`/`remove_var` race
+/// another's env read — the cause of the `init_path_global` CI flake. Resilient
+/// to poisoning so one panicking test can't cascade-fail the rest.
+#[cfg(test)]
+pub(crate) fn test_env_lock() -> std::sync::MutexGuard<'static, ()> {
+    use std::sync::{Mutex, OnceLock};
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
 }

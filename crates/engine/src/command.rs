@@ -9,7 +9,8 @@
 //! / unfocused), so a long `engine.run` never starves telemetry.
 use crate::{
     agent::{
-        AgentAddSpec, AgentCleanSpec, AgentListSpec, AgentLockSpec, AgentRemoveSpec, AgentSyncSpec,
+        AgentAddSpec, AgentCleanSpec, AgentDoctorSpec, AgentListSpec, AgentLockSpec,
+        AgentRemoveSpec, AgentSyncSpec,
     },
     component::Phase,
     dashboard::DashboardSpec,
@@ -80,6 +81,9 @@ pub enum AgentCommandSpec {
     Lock(AgentLockSpec),
     List(AgentListSpec),
     Clean(AgentCleanSpec),
+    /// Read-only diagnostics (TASK-0019, Item 1) — the GUI Doctor sub-tab drives the identical
+    /// `Engine::agent_doctor` the CLI's `agent doctor` does.
+    Doctor(AgentDoctorSpec),
 }
 
 pub type EngineEvent = Event;
@@ -248,6 +252,7 @@ pub fn run_event_loop(
                     AgentCommandSpec::Lock(s) => engine.agent_lock(s, &sink).map(|_| ()),
                     AgentCommandSpec::List(s) => engine.agent_list(s, &sink).map(|_| ()),
                     AgentCommandSpec::Clean(s) => engine.agent_clean(s, &sink).map(|_| ()),
+                    AgentCommandSpec::Doctor(s) => engine.agent_doctor(s, &sink).map(|_| ()),
                 };
                 if let Err(e) = result {
                     emit_setup_error(&sink, "agent", &e);

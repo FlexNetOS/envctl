@@ -928,6 +928,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "clap_complete"
+version = "4.6.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e0a7a9bfdb35811f9e59832f0f05975114d2251b415fb534108e6f34060fd772"
+dependencies = [
+ "clap",
+]
+
+[[package]]
 name = "clap_derive"
 version = "4.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1437,8 +1446,14 @@ dependencies = [
  "anyhow",
  "baby-mimalloc",
  "clap",
+ "clap_complete",
+ "envctl-agent-env",
  "envctl-engine",
+ "flate2",
+ "reqwest",
  "serde_json",
+ "sha2",
+ "tar",
 ]
 
 [[package]]
@@ -1463,12 +1478,16 @@ dependencies = [
  "anyhow",
  "chrono",
  "envctl-agent-env",
+ "flate2",
  "glob",
+ "reqwest",
  "rustix 0.38.44",
  "serde",
  "serde_json",
  "serde_yaml",
+ "sha2",
  "sysinfo",
+ "tar",
  "thiserror 2.0.18",
  "toml",
  "which",

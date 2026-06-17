@@ -4,7 +4,8 @@
 //! CLI drains the same vocabulary. (`EventSink::channel()`, not `new()`, keeps
 //! clippy's `new_ret_no_self` happy — it returns a channel pair, not `Self`.)
 use crate::agent::report::{
-    AgentEditOutcome, AgentInitOutcome, AgentList, AgentLockDriftItem, AgentReport, AgentVerb,
+    AgentDoctorReport, AgentEditOutcome, AgentInitOutcome, AgentList, AgentLockDriftItem,
+    AgentReport, AgentVerb,
 };
 use crate::agent::AgentScope;
 use crate::component::Phase;
@@ -100,6 +101,16 @@ pub enum Event {
     /// `init` has no per-action tree.
     AgentInitFinished {
         outcome: AgentInitOutcome,
+    },
+    /// The read-only diagnostic report from `agent_doctor`. Emitted once per run; carries the
+    /// full report so the GUI Doctor tab renders the identical data the CLI prints.
+    AgentDoctored {
+        report: AgentDoctorReport,
+    },
+    /// The outcome of `self uninstall`: a preview (dry-run, zero writes) or applied teardown.
+    /// Emitted once; the destructive removal counts + any fail-closed refusal reason.
+    SelfUninstall {
+        outcome: crate::self_uninstall::SelfUninstallOutcome,
     },
 }
 
