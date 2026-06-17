@@ -1,62 +1,74 @@
-# Implementation log: TASK-0026 — `secretctl github-app enroll`
-
-Seal the GitHub App credential into the unlocked vault so TASK-0020's per-call
-`Engine::mint_github_token` can read it. Enroll writes EXACTLY what the mint reads (byte-for-byte
-names): broker-only secret `github-app-private-key` (PEM) + non-secret meta `github-app-id`.
-installation-id is NOT enrolled (it is supplied per-mint).
-
-## Changes
-- `crates/secrets-proto/proto/control.proto`: added `rpc SetGithubAppId (SetGithubAppIdReq) returns (stream Event)` to `service Vault` + `message SetGithubAppIdReq { string app_id = 1; bool apply = 2; }` (apply=false => dry-run, CF-8).
-- `crates/secrets-engine/src/lib.rs`: exported `GITHUB_APP_KEY_NAME` / `GITHUB_APP_ID_META` as `pub const` (were private) so secretctl references them verbatim — kills literal-drift between the enroll writer and the mint reader. Engine logic otherwise UNTOUCHED.
-- `crates/secretd/src/grpc.rs`: added `type SetGithubAppIdStream = EventStream;` + the `set_github_app_id` handler (next to `add`) + the `map_set_app_id_err` classifier. Feature-gated on `provider-github` (Unimplemented without it, mirroring `mint_github`).
-- `crates/secretctl/Cargo.toml`: enabled `envctl-secrets-engine` feature `provider-github` (for `build_app_jwt` + `MAX_JWT_TTL_SECS` + the consts; pure-Rust rsa+base64, no new C) and added `zeroize` (PEM stays `Zeroizing`). No NEW workspace dependency.
-- `crates/secretctl/src/cli.rs`: added `Cmd::GithubApp { cmd: GithubAppCmd }` + `GithubAppCmd::Enroll { --app-id, --private-key, --apply }`.
-- `crates/secretctl/src/main.rs`: dispatch arm + `github_app` fn + `read_pem` helper. + 3 cli-parse tests.
-- `crates/secretd/tests/native_mint_e2e.rs`: 5 new e2e tests (round-trip + broker-only refusal + 3 negatives) reusing the mock-GitHub harness.
-
-## Engine API (the parity contract)
-- No new Engine method. The engine seam `Engine::put_github_app_id(&self, app_id: &str) -> anyhow::Result<()>` (already present, returns `Err(EngineError::Locked)` if locked) is now wired to the new RPC. This is a secrets-stack (daemon) feature — there is no GUI parity surface (the env-manager GUI does not drive the vault daemon); CLI = `secretctl`, the sole client of `service Vault`.
-- New proto contract: `Vault.SetGithubAppId(SetGithubAppIdReq{app_id, apply}) -> stream Event`.
-- secretd handler signature: `async fn set_github_app_id(&self, Request<v1::SetGithubAppIdReq>) -> Result<Response<Self::SetGithubAppIdStream>, Status>`.
-- secretctl: `async fn github_app(cmd: GithubAppCmd, sock: PathBuf, json: bool) -> anyhow::Result<()>`; `fn read_pem(source: &str) -> anyhow::Result<zeroize::Zeroizing<Vec<u8>>>`.
-
-## Tests added (exact counts)
-secretctl `src/main.rs` unit tests (10 total in the file; 3 NEW):
-- `github_app_enroll_parses_app_id_keypath_and_apply` — proves `--app-id/--private-key/--apply` parse.
-- `github_app_enroll_defaults_to_dry_run_and_accepts_stdin_dash` — `--private-key -` selects stdin; apply defaults false.
-- `github_app_enroll_requires_app_id_and_private_key` — both flags required (clap error otherwise).
-
-secretd `tests/native_mint_e2e.rs` (11 total in the file; 5 NEW; all over the REAL `serve` wire):
-- `enroll_then_mint_github_round_trips` — **LOAD-BEARING**: init+unlock → enroll over the wire (Add broker-only PEM + SetGithubAppId "4044997") → `Vault.MintGithub` against the mock SUCCEEDS reading exactly what enroll wrote. Proves no name-drift writer↔reader.
-- `enrolled_pem_is_broker_only_and_reveal_is_refused` — after enroll, `Vault.Get{reveal,apply,confirm}` on the PEM ⇒ `permission_denied`, and the PEM bytes never appear in the error.
-- `set_github_app_id_empty_is_invalid_argument` — whitespace-only app_id ⇒ `invalid_argument`, nothing written.
-- `set_github_app_id_dry_run_mutates_nothing` — `apply=false` emits a DRY-RUN Log; a later mint fails closed (no App id enrolled) proving no write.
-- `set_github_app_id_locked_vault_fails_precondition` — `apply=true` on a locked vault ⇒ `failed_precondition`, nothing written.
-
-## Build/test status
-- `cargo build -p envctl-secrets-proto / -p envctl-secretd / -p envctl-secretctl` — PASS.
-- `cargo test -p envctl-secretctl` — PASS (10 passed, 0 failed).
-- `cargo test -p envctl-secretd --test native_mint_e2e` — PASS (11 passed, 0 failed; ~170s — the env-var tests are serialized by the existing `SERIAL` tokio mutex).
-- `cargo test -p envctl-secrets-engine --lib` — PASS (96 passed, 0 failed; `pub const` change caused no regression).
-- `cargo clippy -p envctl-secrets-proto -p envctl-secrets-engine -p envctl-secretd -p envctl-secretctl --all-targets -- -D warnings` — PASS (clean).
-- `cargo fmt --all --check` — PASS.
-- `bash ci/gates/no-c.sh` — PASS ("rustls=['0.23.40'] on ring=['0.17.14']; zero aws-lc/openssl/C-SQLite"). Enabling `provider-github` in secretctl adds only pure-Rust rsa+base64.
-- `bash ci/gates/shape.sh` — PASS.
-
-### Residual issue (PRE-EXISTING, NOT mine)
-- `cargo clippy --workspace --all-targets -- -D warnings` FAILS on `crates/gui/...:1997` with `clippy::doc_lazy_continuation`. This is in `envctl-gui` test code, which is NOT in my diff (`git diff --name-only` shows only proto/engine/secretd/secretctl). It is floating-toolchain drift (rust-1.96.0 doc-lint strictness) pre-existing on the branch base, exactly the class flagged in `rust-feature-impl/references/verification.md`. All four TASK-0026 crates pass `--all-targets -D warnings`.
-
-## Deviations
-1. **secretctl enables the engine `provider-github` feature.** The plan calls `build_app_jwt` + `MAX_JWT_TTL_SECS` for client-side PEM validation and references `GITHUB_APP_KEY_NAME`; all three are `#[cfg(feature = "provider-github")]` engine exports, so secretctl must enable that feature. It pulls only pure-Rust `rsa` + `base64` (already in the trust boundary via the engine) — no-c gate green. Not a design change; the plan implied it.
-2. **Locked → `failed_precondition` for the apply path is done OUTSIDE `run_streaming`.** The shared `run_streaming` maps every engine error to `Status::internal`; changing it would affect every streaming RPC. So the apply path runs `put_github_app_id` on `spawn_blocking` directly and classifies via `map_set_app_id_err` (mirrors the unary `map_mint_github_err`), then ships a one-item success stream. The dry-run path uses `run_streaming` (no engine mutation). Net behavior matches the plan exactly (Locked ⇒ failed_precondition; empty ⇒ invalid_argument; dry-run ⇒ preview, nothing written).
-3. **SHA-256 fingerprint omitted** — per plan ("Skip the SHA-256 fingerprint if it would add a new secretctl dependency"); blake3/sha2 are not secretctl deps, so it was dropped to keep the dep surface minimal.
-
-## Handoff notes (for the invariant-guardian)
-- **No new dependency in the trust boundary**: secretctl now enables engine `provider-github` (rsa+base64, pure-Rust) and adds `zeroize` (already a workspace pin). `ci/gates/no-c.sh` is green — verify Gate 2 (`envctl-secretctl --all-features`) still finds no aws-lc/openssl/C-SQLite.
-- **Fail-closed, dry-run by default** — three refusal paths are unit/e2e tested: (a) `set_github_app_id_empty_is_invalid_argument`, (b) `set_github_app_id_dry_run_mutates_nothing` (the proof is a downstream mint that fails closed), (c) `set_github_app_id_locked_vault_fails_precondition`. The secretctl `github_app` fn also validates the PEM (via `build_app_jwt`) BEFORE any RPC, so a non-PEM `--private-key` writes nothing (validated by the round-trip's reliance on a real key + the engine's parse).
-- **PEM never printed/logged**: secretctl holds the PEM in `Zeroizing` from `read_pem` until it crosses the peercred-gated UDS in `AddSecretReq.value`; the dry-run preview prints only metadata to STDERR. The `enrolled_pem_is_broker_only_and_reveal_is_refused` test asserts the PEM bytes never appear in a refused-reveal error.
-- **Broker-only PEM**: enroll seals with `broker_only=true`, so `secret get --reveal` is REFUSED (test covers it); the mint reads it via the internal `open_real_key` path only — proven by the round-trip.
-- **The round-trip is the anti-drift gate**: it enrolls over the WIRE (not the engine seed helper) and then a real `Vault.MintGithub` succeeds — so if the enroll-writer and mint-reader names ever diverge, that test fails. The `pub const` export ensures both sides use one literal.
-- Engine stays the single non-printing library; secretd + secretctl are thin. No GUI parity is required (this is the secrets-daemon stack, not the env-manager engine).
+# Implementation log: TASK-0030 — F6 bounded DPoP `jti` replay store
 
 STATUS: GREEN
+
+## Changes
+- `crates/secrets-engine/src/broker/jti.rs` (NEW): the bounded, in-memory, per-process DPoP `jti`
+  replay-dedup store — `JtiReplayStore` + `JtiReject`, consts, `check_and_record`, 9 inline tests.
+- `crates/secrets-engine/src/broker/mod.rs`: `pub mod jti;` (next to `pub mod gate;`) +
+  `pub use jti::{JtiReject, JtiReplayStore};` (broker re-export block, matching the `pub use decide::…` style).
+- `crates/secrets-engine/src/lib.rs`: added `JtiReject, JtiReplayStore` to the `pub use broker::{…}`
+  re-export block so TASK-0031 can `use envctl_secrets_engine::{JtiReplayStore, JtiReject};`.
+- (`.handoff/loop/cycle/01_architect_plan.md` + `docs/secrets/OI-SM-1-jti-replay-store.md` are the
+  architect's artifacts, untouched by me.)
+
+## Engine API (new pure type — the parity contract; no CLI/GUI surface, parity vacuous like decide/gate)
+- `pub enum JtiReject { Replayed, ClockDriftPast, ClockDriftFuture, StoreFull }` — `#[derive(Clone, Copy, Debug, PartialEq, Eq)]`.
+- `pub struct JtiReplayStore { accept_past_ms: i64, accept_future_ms: i64, sweep_slack_ms: i64, max_entries: usize, seen: HashMap<String, i64> }`.
+- `pub fn new()`, `pub fn with_params(accept_past_ms, accept_future_ms, max_entries)` (keeps default `SWEEP_SLACK_MS`), `impl Default`.
+- `pub fn check_and_record(&mut self, client_id: &str, jti: &str, iat_ms: i64, now_ms: i64) -> Result<(), JtiReject>`
+  — exact order: drift gate (inclusive boundaries) → sweep `retain(exp > now)` → dedup → cap `len() >= max_entries` → insert `iat + accept_past + sweep_slack`.
+- Key = `format!("{client_id}\u{0}{jti}")` (NUL separator). `#[cfg(test)] fn len()`.
+- Consts: `ACCEPT_PAST_MS=300_000`, `ACCEPT_FUTURE_MS=30_000`, `SWEEP_SLACK_MS=30_000`, `MAX_ENTRIES=16_384`.
+- Sync, non-printing, `std::collections` only — zero new deps.
+
+## Tests added (9, inline `#[cfg(test)] mod tests` in jti.rs; fixed now/iat ints, no real clock)
+1. `first_use_accepted` — fresh proof Ok, len==1.
+2. `replay_rejected` — 2nd identical → Err(Replayed); len stays 1.
+3. `different_clients_same_jti_both_accepted` — per-client scoping; both Ok, len==2.
+4. `expired_then_fresh_same_value_accepted` — sweep evicts stale, same jti re-admitted with fresh iat;
+   AND a proof reusing the OLD iat → Err(ClockDriftPast) (proves the stale value can't actually replay).
+5. `clock_drift_past_rejected` — too-old → Err(ClockDriftPast), not recorded; inclusive boundary `iat == now - ACCEPT_PAST` → Ok.
+6. `clock_drift_future_rejected` — too-new → Err(ClockDriftFuture), not recorded; inclusive boundary `iat == now + ACCEPT_FUTURE` → Ok.
+7. `capacity_cap_fail_closed` — fill to cap via `with_params`, N+1 unexpired → Err(StoreFull) (no growth/eviction),
+   AND a prior live jti still → Err(Replayed) afterward (proves NO live-eviction replay hole).
+8. `sweep_reclaims_then_admits` — full at NOW, then post-expiry sweep frees room → fresh proof Ok (cap not a permanent wall).
+9. `concurrent_check_and_insert_single_winner` — `Arc<Mutex<JtiReplayStore>>`, 32 threads same (client,jti,iat):
+   asserts EXACTLY one Ok and 31 Err(Replayed), final len==1.
+
+## Build/test status (commands run from worktree root, raw `rtk proxy` to preserve exit codes/diagnostics)
+- `rtk proxy cargo fmt --all` → exit 0 (reformatted only the new file's test asserts).
+- `rtk proxy cargo clippy --workspace -- -D warnings` → exit 0 (clean).
+- `rtk proxy cargo test -p envctl-secrets-engine` → exit 0; all 9 jti tests PASS; whole crate
+  105 unit + 4 + 6 + 17 + 15 + 0 integration tests all PASS, 0 failed / 0 ignored.
+- `bash ci/gates/no-c.sh` → exit 0: "NO-C GATE PASS" (rustls=0.23.40 on ring=0.17.14; zero aws-lc/openssl/C-SQLite).
+- `bash ci/gates/shape.sh` → exit 0: "SHAPE GATE PASS".
+
+## Deviations
+None. Implemented exactly per the plan and OI-SM-1 spec.
+
+## Follow-ups
+- TASK-0031 (F2 edge listener) is the caller — OUT OF SCOPE here. It must:
+  (a) own the single `Mutex<JtiReplayStore>` (the type is `&mut self`, not interior-mutable);
+  (b) map a POISONED lock → reject (fail-closed) — not enforceable in this pure type (spec §5, noted in module doc);
+  (c) call `check_and_record` once per proof immediately before setting `dpop_verified=true`, mapping every `JtiReject` to a 401.
+- `with_params` keeps a retune to a one-liner if the audited defaults need tuning.
+
+## Handoff notes (for the invariant-guardian)
+- Fail-closed cap is the load-bearing security property: verify `capacity_cap_fail_closed` proves the
+  N+1 proof is REFUSED (StoreFull) AND a prior live jti is still Replayed afterward — i.e. NO live entry
+  was evicted to admit the new one (no replay hole). This is the explicit OI-SM-1 §4 fail-closed choice.
+- Drift boundaries are INCLUSIVE (`iat == now - ACCEPT_PAST` and `iat == now + ACCEPT_FUTURE` are Ok) —
+  covered by the boundary asserts in tests 5 & 6.
+- No-C / zero-new-deps: `jti.rs` imports only `std::collections::HashMap` (+ `std::sync`/`std::thread` in
+  `#[cfg(test)]`). Cargo.lock unchanged; no-c gate re-run green. secrets-engine still never links libSQL.
+- No secret bytes stored: the map holds only `(client_id\u{0}jti)` keys + an `i64` expiry. No proof body,
+  signature, bearer, or key material.
+- Non-printing/sync: no `println!`/`eprintln!`, no async, no clap, no UI — typed `Result<(), JtiReject>`.
+- Re-export reachability: `envctl_secrets_engine::{JtiReplayStore, JtiReject}` resolves (added to both
+  `broker/mod.rs` and `lib.rs` re-export blocks).
+- Clippy was run with default `--workspace` (no `--all-targets`), per the plan, and is clean. My change
+  adds no `--all-targets`-only surface. NOTE the known PRE-EXISTING baseline lint (unrelated to this
+  cycle): `cargo clippy -p envctl-gui --all-targets` trips `doc_list_item_without_indentation` at
+  `crates/gui/src/main.rs` under the floating `stable` toolchain (documented in the prior TASK-0020 log) —
+  a gui-doc-comment lint in an untouched crate, not a TASK-0030 regression.
