@@ -187,11 +187,26 @@ pub enum Unlock {
     Passphrase(Zeroizing<String>),
 }
 
+#[derive(Debug)]
 pub struct SecretMeta {
     pub name: String,
     pub provider: Provider,
     pub note: String,
     pub broker_only: bool,
+}
+
+/// One row of `secret_list`: NON-SECRET metadata for the latest version of a stored secret. Carries
+/// ONLY the safe `SecretRow` fields plus the latest `version` + its `created_ts` — NEVER the `nonce`,
+/// the `ct_tag` ciphertext, or any plaintext (no value crosses this boundary). `broker_only` is a
+/// plain bool flag here; the reveal gate is unaffected.
+#[derive(Debug)]
+pub struct SecretListItem {
+    pub name: String,
+    pub provider: Provider,
+    pub note: String,
+    pub broker_only: bool,
+    pub version: u32,
+    pub created_ts: String,
 }
 
 /// A canonicalized egress request as seen by the broker (host is the *verified* inner Host).
@@ -847,6 +862,233 @@ impl Engine {
         // Drop the plaintext (Zeroizing wipes it) and hand back an empty buffer.
         drop(plaintext);
         Ok(Zeroizing::new(Vec::new()))
+    }
+
+    /// METADATA-ONLY list of stored secrets (the latest version of each), optionally filtered to a
+    /// single `provider`. Gates on an unlocked vault (fail-closed, consistent with `secret_get`): a
+    /// locked vault returns [`EngineError::Locked`]. NEVER returns a value, nonce, or ciphertext — only
+    /// the non-secret [`SecretListItem`] fields. This is a read; it writes NO audit row and emits no
+    /// event (listing metadata is not a security outcome, and an audit-per-list would flood the chain).
+    pub fn secret_list(
+        &self,
+        provider: Option<Provider>,
+        _sink: &EventSink,
+    ) -> anyhow::Result<Vec<SecretListItem>> {
+        let inner = &self.inner;
+        // Fail-closed: require an unlocked vault even though no plaintext is read — listing is an
+        // owner-only capability and we keep parity with `secret_get`'s gate. The DEK borrow is dropped
+        // before the per-name store reads below.
+        {
+            let v = inner.vault.read().expect("vault lock");
+            if v.dek().is_none() {
+                return Err(EngineError::Locked.into());
+            }
+        }
+        let mut out = Vec::new();
+        for name in inner.store.list_secret_names()? {
+            let Some(row) = inner.store.get_secret_latest(&name)? else {
+                continue; // raced removal between list + get; skip.
+            };
+            if let Some(p) = provider {
+                if row.provider != p {
+                    continue;
+                }
+            }
+            out.push(SecretListItem {
+                name: row.name,
+                provider: row.provider,
+                note: row.note,
+                broker_only: row.broker_only,
+                version: row.version,
+                created_ts: row.created_ts,
+            });
+        }
+        Ok(out)
+    }
+
+    /// NON-SECRET metadata for the latest version of `name`, or `None` if unknown. Gates on an
+    /// unlocked vault (fail-closed). Returns NO value/ciphertext. UN-AUDITED by design: this backs the
+    /// `GetSecret.meta` field on a metadata read, and `secret_get` already writes the `secret_read`
+    /// audit row — auditing here too would double-row every Get.
+    pub fn secret_meta(&self, name: &str) -> anyhow::Result<Option<SecretMeta>> {
+        let inner = &self.inner;
+        {
+            let v = inner.vault.read().expect("vault lock");
+            if v.dek().is_none() {
+                return Err(EngineError::Locked.into());
+            }
+        }
+        Ok(inner.store.get_secret_latest(name)?.map(|row| SecretMeta {
+            name: row.name,
+            provider: row.provider,
+            note: row.note,
+            broker_only: row.broker_only,
+        }))
+    }
+
+    /// DESTRUCTIVE removal of EVERY version of `name`, fail-closed + dry-run by default (template =
+    /// [`Engine::relay_revoke`]). Refuses on a locked vault. `apply=false` (the default) is a DRY-RUN:
+    /// it counts the versions that WOULD be removed (via `list_secret_versions`) and mutates NOTHING.
+    /// `apply=true` removes the rows via [`vault::Store::delete_secret`], writes a durable audit row,
+    /// and emits a `SecretWritten`-class event. Returns the count removed (dry-run: would-remove). NO
+    /// secret bytes ever touch the audit row, the event, or the return value.
+    pub fn secret_rm(&self, name: &str, apply: bool, sink: &EventSink) -> anyhow::Result<u32> {
+        let inner = &self.inner;
+        // Fail-closed: a locked vault cannot remove (consistent with the other mutating verbs). The
+        // refusal writes a durable Refused row + GuardRefused event BEFORE returning.
+        {
+            let v = inner.vault.read().expect("vault lock");
+            if v.dek().is_none() {
+                drop(v);
+                self.refuse(sink, "secret_removed", name, "vault is locked")?;
+                return Err(EngineError::Locked.into());
+            }
+        }
+
+        if !apply {
+            // Dry-run: count the versions that WOULD be removed, mutate nothing.
+            let would = inner.store.list_secret_versions(name)?.len() as u32;
+            self.audit_ok(
+                sink,
+                "secret_removed",
+                Some(name.to_string()),
+                serde_json::json!({ "apply": false, "would_remove": would }),
+            )?;
+            return Ok(would);
+        }
+
+        // apply: remove every version. The store returns the count of rows removed.
+        let removed = inner.store.delete_secret(name)?;
+        self.audit_ok(
+            sink,
+            "secret_removed",
+            Some(name.to_string()),
+            serde_json::json!({ "apply": true, "removed": removed }),
+        )?;
+        sink.emit(SecretEvent::GuardRefused {
+            subject: name.to_string(),
+            reason: format!("secret '{name}' removed ({removed} versions)"),
+        });
+        Ok(removed)
+    }
+
+    /// Rotate `name` by appending a fresh sealed version carrying the SAME provider/note/broker_only
+    /// as the current latest (carry-forward meta), fail-closed + dry-run by default. Refuses on a
+    /// locked vault (no DEK to seal) or an unknown secret. `apply=false` (the default) is a DRY-RUN:
+    /// it confirms the secret exists + reports the next version WITHOUT writing anything. `apply=true`
+    /// appends the new version via [`Engine::secret_put`] (which monotonically picks `version=max+1`
+    /// and writes its own `secret_written` audit row). `new_value` is held in `Zeroizing`. NO secret
+    /// bytes touch the audit row, the event, or the return value.
+    pub fn secret_rotate(
+        &self,
+        name: &str,
+        new_value: Zeroizing<Vec<u8>>,
+        apply: bool,
+        sink: &EventSink,
+    ) -> anyhow::Result<()> {
+        let inner = &self.inner;
+        // Fail-closed: rotation seals a new version, which requires the live DEK.
+        {
+            let v = inner.vault.read().expect("vault lock");
+            if v.dek().is_none() {
+                drop(v);
+                self.refuse(sink, "secret_rotated", name, "vault is locked")?;
+                return Err(EngineError::Locked.into());
+            }
+        }
+
+        // Carry-forward meta from the current latest. An unknown secret is refused (rotation rotates
+        // an EXISTING secret; use `secret_put` to create one). This read takes no value/plaintext.
+        let Some(row) = inner.store.get_secret_latest(name)? else {
+            self.refuse(sink, "secret_rotated", name, "unknown secret")?;
+            anyhow::bail!("secret_rotate refused: unknown secret '{name}'");
+        };
+        let meta = SecretMeta {
+            name: row.name.clone(),
+            provider: row.provider,
+            note: row.note.clone(),
+            broker_only: row.broker_only,
+        };
+
+        if !apply {
+            // Dry-run: confirm + report the next version, mutate nothing (no seal, no put).
+            let next = row.version + 1;
+            // The Zeroizing value is dropped here unused (wiped); a dry-run reads no plaintext.
+            drop(new_value);
+            self.audit_ok(
+                sink,
+                "secret_rotated",
+                Some(name.to_string()),
+                serde_json::json!({ "apply": false, "would_rotate_to_version": next }),
+            )?;
+            return Ok(());
+        }
+
+        // apply: append the new sealed version. `secret_put` reserves the row_id, seals against the
+        // canonical AAD, writes its own `secret_written` audit row, and emits `SecretWritten`. We add
+        // a `secret_rotated` audit row on top so the rotation intent is recorded distinctly.
+        let new_version = row.version + 1;
+        self.secret_put(meta, new_value, sink)?;
+        self.audit_ok(
+            sink,
+            "secret_rotated",
+            Some(name.to_string()),
+            serde_json::json!({ "apply": true, "version": new_version }),
+        )?;
+        sink.emit(SecretEvent::RelayRotated {
+            relay: name.to_string(),
+            expires_at: String::new(),
+        });
+        Ok(())
+    }
+
+    /// List stored relay policies; filters out `revoked` policies unless `include_revoked`. Read path
+    /// (no audit row, no event). Available regardless of unlock state — a policy row carries no secret
+    /// (only non-secret metadata), like the other store reads. Returns the engine `RelayPolicy`s.
+    pub fn relay_list(
+        &self,
+        include_revoked: bool,
+        _sink: &EventSink,
+    ) -> anyhow::Result<Vec<RelayPolicy>> {
+        let rows = self.inner.store.list_relay_policies()?;
+        Ok(rows
+            .into_iter()
+            .map(|r| r.policy)
+            .filter(|p| include_revoked || !p.revoked)
+            .collect())
+    }
+
+    /// Create (or upsert) a named relay policy ADDITIVELY via [`vault::Store::save_relay_policy`].
+    /// Non-destructive — no unlock gate (a policy carries no secret); the store assigns the row id
+    /// (`id: 0` ⇒ mint/reuse). Writes a durable `relay_created` audit row and returns the policy id.
+    pub fn relay_create(&self, policy: RelayPolicy, sink: &EventSink) -> anyhow::Result<i64> {
+        let inner = &self.inner;
+        let relay_id = policy.relay_id.clone();
+        let id = inner
+            .store
+            .save_relay_policy(RelayPolicyRow { id: 0, policy })?;
+        self.audit_ok(
+            sink,
+            "relay_created",
+            Some(relay_id),
+            serde_json::json!({ "policy_id": id }),
+        )?;
+        Ok(id)
+    }
+
+    /// Read a window of the durable, hash-chained audit log: rows with `seq > since_seq`, up to
+    /// `limit` (CLAMPED to <=1000 to bound the response). Already metadata-only — `AuditRecord`s
+    /// carry no secret bytes (the engine never writes a value into an audit detail). Read path: no new
+    /// audit row, no event.
+    pub fn audit_query(
+        &self,
+        since_seq: i64,
+        limit: usize,
+        _sink: &EventSink,
+    ) -> anyhow::Result<Vec<AuditRecord>> {
+        const AUDIT_QUERY_MAX: usize = 1000;
+        let limit = limit.min(AUDIT_QUERY_MAX);
+        self.inner.store.query_audit(since_seq, limit)
     }
 
     /// USB-possession-gated, `<=24h`, peer-bound.
@@ -3111,6 +3353,7 @@ mod ca_tests {
             max_secret_version(name: &str) -> anyhow::Result<u32>;
             list_secret_names() -> anyhow::Result<Vec<String>>;
             list_secret_versions(name: &str) -> anyhow::Result<Vec<u32>>;
+            delete_secret(name: &str) -> anyhow::Result<u32>;
             save_keyslot(slot: &Keyslot) -> anyhow::Result<()>;
             load_keyslots() -> anyhow::Result<Vec<Keyslot>>;
             load_keyslot(id: i64) -> anyhow::Result<Option<Keyslot>>;
@@ -3365,6 +3608,240 @@ mod ca_tests {
         let (engine, _store, _sink, _rx) = unlocked_engine();
         let err = engine.ca_pem_path().unwrap_err();
         assert!(format!("{err}").contains("CA not initialized"));
+    }
+
+    // ---- TASK-0035: secret_list / secret_meta / secret_rm / secret_rotate / relay_* / audit ----
+
+    fn put(engine: &Engine, sink: &EventSink, name: &str, provider: Provider, broker_only: bool) {
+        engine
+            .secret_put(
+                SecretMeta {
+                    name: name.to_string(),
+                    provider,
+                    note: format!("{name}-note"),
+                    broker_only,
+                },
+                Zeroizing::new(b"SUPER-SECRET-VALUE".to_vec()),
+                sink,
+            )
+            .expect("secret_put");
+    }
+
+    #[test]
+    fn secret_list_is_metadata_only_and_provider_filtered() {
+        let (engine, _store, sink, _rx) = unlocked_engine();
+        put(&engine, &sink, "anth", Provider::Anthropic, false);
+        put(&engine, &sink, "oai", Provider::Openai, true);
+
+        // Unfiltered: both, metadata only.
+        let all = engine.secret_list(None, &sink).expect("list");
+        assert_eq!(all.len(), 2);
+        assert!(all
+            .iter()
+            .all(|i| i.version == 1 && !i.created_ts.is_empty()));
+        // broker_only is exposed as a plain flag (not a reveal).
+        assert!(all.iter().any(|i| i.name == "oai" && i.broker_only));
+
+        // Provider filter narrows to one.
+        let filtered = engine
+            .secret_list(Some(Provider::Anthropic), &sink)
+            .expect("list filtered");
+        assert_eq!(filtered.len(), 1);
+        assert_eq!(filtered[0].name, "anth");
+
+        // NO secret bytes leak into the list output (serialize every item, scan for the sentinel).
+        let dumped = all
+            .iter()
+            .map(|i| {
+                format!(
+                    "{} {:?} {} {} {}",
+                    i.name, i.provider, i.note, i.version, i.created_ts
+                )
+            })
+            .collect::<String>();
+        assert!(
+            !dumped.contains("SUPER-SECRET-VALUE"),
+            "secret_list leaked plaintext"
+        );
+    }
+
+    #[test]
+    fn secret_list_and_meta_refuse_when_locked() {
+        let (engine, _store, sink, _rx) = unlocked_engine();
+        put(&engine, &sink, "anth", Provider::Anthropic, false);
+        engine.lock(&sink).expect("lock");
+        let e1 = engine.secret_list(None, &sink).unwrap_err();
+        assert!(matches!(
+            e1.downcast_ref::<EngineError>(),
+            Some(EngineError::Locked)
+        ));
+        let e2 = engine.secret_meta("anth").unwrap_err();
+        assert!(matches!(
+            e2.downcast_ref::<EngineError>(),
+            Some(EngineError::Locked)
+        ));
+    }
+
+    #[test]
+    fn secret_meta_returns_non_secret_fields() {
+        let (engine, _store, sink, _rx) = unlocked_engine();
+        put(&engine, &sink, "anth", Provider::Anthropic, true);
+        let m = engine.secret_meta("anth").expect("meta").expect("some");
+        assert_eq!(m.name, "anth");
+        assert_eq!(m.provider, Provider::Anthropic);
+        assert!(m.broker_only);
+        assert!(engine.secret_meta("nope").expect("meta").is_none());
+    }
+
+    #[test]
+    fn secret_rm_dry_run_mutates_nothing_apply_removes() {
+        let (engine, store, sink, _rx) = unlocked_engine();
+        put(&engine, &sink, "anth", Provider::Anthropic, false);
+
+        // Dry-run: reports would-remove count, mutates nothing.
+        let would = engine.secret_rm("anth", false, &sink).expect("rm dry");
+        assert_eq!(would, 1);
+        assert!(
+            store.get_secret_latest("anth").unwrap().is_some(),
+            "dry-run removed a row"
+        );
+
+        // Apply: removes the row, writes an Ok audit row.
+        let removed = engine.secret_rm("anth", true, &sink).expect("rm apply");
+        assert_eq!(removed, 1);
+        assert!(
+            store.get_secret_latest("anth").unwrap().is_none(),
+            "apply did not remove"
+        );
+        assert!(audit_has(&store, "secret_removed", AuditOutcome::Ok));
+        // No secret bytes in any audit row.
+        let dumped = store
+            .audit_rows()
+            .iter()
+            .map(|r| r.detail.to_string())
+            .collect::<String>();
+        assert!(
+            !dumped.contains("SUPER-SECRET-VALUE"),
+            "secret_rm leaked plaintext into audit"
+        );
+    }
+
+    #[test]
+    fn secret_rm_refuses_when_locked() {
+        let (engine, store, sink, _rx) = unlocked_engine();
+        put(&engine, &sink, "anth", Provider::Anthropic, false);
+        engine.lock(&sink).expect("lock");
+        let err = engine.secret_rm("anth", true, &sink).unwrap_err();
+        assert!(matches!(
+            err.downcast_ref::<EngineError>(),
+            Some(EngineError::Locked)
+        ));
+        assert!(audit_has(&store, "secret_removed", AuditOutcome::Refused));
+    }
+
+    #[test]
+    fn secret_rotate_dry_run_then_apply_appends_version() {
+        let (engine, store, sink, _rx) = unlocked_engine();
+        put(&engine, &sink, "anth", Provider::Anthropic, true);
+
+        // Dry-run: no new version.
+        engine
+            .secret_rotate(
+                "anth",
+                Zeroizing::new(b"NEW-ROTATED-VALUE".to_vec()),
+                false,
+                &sink,
+            )
+            .expect("rotate dry");
+        assert_eq!(
+            store.max_secret_version("anth").unwrap(),
+            1,
+            "dry-run appended a version"
+        );
+
+        // Apply: appends version 2, carrying broker_only/provider forward.
+        engine
+            .secret_rotate(
+                "anth",
+                Zeroizing::new(b"NEW-ROTATED-VALUE".to_vec()),
+                true,
+                &sink,
+            )
+            .expect("rotate apply");
+        assert_eq!(store.max_secret_version("anth").unwrap(), 2);
+        let latest = store.get_secret_latest("anth").unwrap().unwrap();
+        assert_eq!(latest.provider, Provider::Anthropic);
+        assert!(latest.broker_only, "rotate must carry broker_only forward");
+        assert!(audit_has(&store, "secret_rotated", AuditOutcome::Ok));
+        // No plaintext in audit.
+        let dumped = store
+            .audit_rows()
+            .iter()
+            .map(|r| r.detail.to_string())
+            .collect::<String>();
+        assert!(
+            !dumped.contains("NEW-ROTATED-VALUE"),
+            "rotate leaked plaintext into audit"
+        );
+    }
+
+    #[test]
+    fn secret_rotate_refuses_locked_and_unknown() {
+        let (engine, _store, sink, _rx) = unlocked_engine();
+        // Unknown secret (unlocked).
+        let err = engine
+            .secret_rotate("nope", Zeroizing::new(b"x".to_vec()), true, &sink)
+            .unwrap_err();
+        assert!(format!("{err}").contains("unknown secret"));
+        // Locked.
+        put(&engine, &sink, "anth", Provider::Anthropic, false);
+        engine.lock(&sink).expect("lock");
+        let err = engine
+            .secret_rotate("anth", Zeroizing::new(b"x".to_vec()), true, &sink)
+            .unwrap_err();
+        assert!(matches!(
+            err.downcast_ref::<EngineError>(),
+            Some(EngineError::Locked)
+        ));
+    }
+
+    #[test]
+    fn relay_create_persists_and_list_filters_revoked() {
+        let (engine, store, sink, _rx) = unlocked_engine();
+        let id = engine
+            .relay_create(covering_policy("api.anthropic.com").policy, &sink)
+            .expect("create");
+        assert!(id > 0);
+        assert!(audit_has(&store, "relay_created", AuditOutcome::Ok));
+
+        // List excludes revoked by default, includes them with the flag.
+        let active = engine.relay_list(false, &sink).expect("list active");
+        assert_eq!(active.len(), 1);
+
+        // Revoke it, then confirm filtering.
+        engine
+            .relay_revoke("claude-main", true, &sink)
+            .expect("revoke");
+        assert!(engine.relay_list(false, &sink).expect("list").is_empty());
+        assert_eq!(engine.relay_list(true, &sink).expect("list all").len(), 1);
+    }
+
+    #[test]
+    fn audit_query_clamps_limit_and_returns_rows() {
+        let (engine, _store, sink, _rx) = unlocked_engine();
+        put(&engine, &sink, "anth", Provider::Anthropic, false);
+        // A huge limit is clamped; rows are returned metadata-only (AuditRecords carry no value).
+        let rows = engine.audit_query(0, usize::MAX, &sink).expect("query");
+        assert!(rows.len() <= 1000);
+        assert!(rows.iter().any(|r| r.event_type == "secret_written"));
+        let dumped = rows
+            .iter()
+            .map(|r| r.detail.to_string())
+            .collect::<String>();
+        assert!(
+            !dumped.contains("SUPER-SECRET-VALUE"),
+            "audit_query leaked plaintext"
+        );
     }
 }
 

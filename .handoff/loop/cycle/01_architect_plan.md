@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # TASK-0032 (F5, P0) — streaming-revocation tear-down (FS-S5) · VERDICT: GO
 
 Adds an engine-side `relay_stream_authorized(...)` re-check seam (re-runs the SAME `decide()`
@@ -105,3 +106,79 @@ forwarding task must keep the bounded BODY_CHANNEL_CAP (proxy.rs:42), no unbound
 ## Out of scope (follow-up)
 PR-4 watch-channel push (~0 latency) · per-client fan-out tear-down of all concurrent streams on one revoke
 · Profile B presence-token re-check (blocked OI-SM-2/3) · N-byte cadence refinement.
+=======
+# TASK-0035 — secretd gRPC surface gaps (Vault/Relay/Audit/read)  ·  VERDICT: GO
+
+Single-repo (envctl), engine-first, cohesive cycle. Every in-scope RPC already has its proto
+message and `secretctl` CLI client wired — the gap is purely **engine read/mutation methods +
+secretd handler wiring**. Zero new dependencies. **No proto change.**
+
+## Target repos
+1 repo: envctl. Crates: secrets-engine (new public methods + one Store method), secretd (handler
+wiring + conv.rs converters), secretctl (confirm `audit query` verb; rest already wired). GUI
+out of scope (secretctl is the front-end for secrets-engine). → sequential single-crew.
+
+## In scope (replace `Status::unimplemented` in crates/secretd/src/grpc.rs)
+- Vault.List — metadata-only list (no values, no ct_tag/nonce).
+- Vault.Rm — DESTRUCTIVE, dry-run-by-default (`apply && confirm`), locked-refusal.
+- Vault.Rotate — append new sealed version via existing secret_put (carry-forward meta); apply-gated.
+- Relay.Create — named-policy create via existing save_relay_policy (additive, unlocked).
+- Relay.List — read list_relay_policies; filter revoked unless include_revoked.
+- Audit.Query — pass-through to store.query_audit; daemon post-filters actor/relay/since/until; clamp limit ≤1000.
+- GetSecret.meta — populate the currently-`None` meta from secret_meta (metadata only).
+
+## Out of scope — DEFER to a NEW backlog item (record only, do not build)
+Certs.* service (CaInit/Rotate/Issue/Renew/Revoke/TrustApply/List), non-mitm ca_issue
+(secrets-engine/src/lib.rs ~2290-2330), `secretctl ca`; empty features provider-openai + libsql `embedded`.
+→ Phase 4+.
+
+## Engine API delta (all sync, non-printing, return metadata not secrets; audit via audit_ok/refuse)
+1. secret_list(provider: Option<Provider>, sink) -> Vec<SecretListItem> — store.list_secret_names + get_secret_latest per name; new `SecretListItem` struct (non-secret SecretRow fields + version + created_ts). Gate on unlocked (Locked when dek().is_none(), matches secret_get).
+2. secret_meta(name) -> Option<SecretMeta> — non-secret metadata for GetSecret.meta. No value.
+3. secret_rm(name, apply, sink) -> u32 — DESTRUCTIVE template = relay_revoke. Locked-refusal. apply=false counts would-remove (list_secret_versions), mutates nothing. apply=true removes all versions via new Store::delete_secret, audits, emits SecretEvent. No secret bytes.
+4. secret_rotate(name, new_value: Zeroizing<Vec<u8>>, apply, sink) — PREFERRED engine method: meta-read (carry provider/note/broker_only) + secret_put under write lock (secret_put already appends version=max+1 monotonically). apply-gated dry-run.
+5. relay_list(include_revoked, sink) -> Vec<RelayPolicy> — store.list_relay_policies; filter revoked.
+6. relay_create(policy: RelayPolicy, sink) -> i64 — store.save_relay_policy(RelayPolicyRow{id:0,policy}); unlocked; audit relay_created.
+7. audit_query(since_seq, limit, sink) -> Vec<AuditRecord> — store.query_audit; clamp limit. Already metadata-only.
+
+### New Store-trait surface (one method)
+- Store::delete_secret(name) -> Result<u32> with DEFAULT `Ok(0)` (non-breaking to existing impls) + real InMemStore impl (retain-filter, return count). libSQL backend: real `DELETE FROM secrets WHERE name = ?` if straightforward, else inherit default + tracked follow-up so no-C/compile stay green. Update any hand-rolled mock (lib.rs ~2964).
+
+## Proto delta
+NONE. All messages/fields exist in control.proto: Vault.List/Rm/Rotate, Relay.Create/List,
+Audit.Query, GetSecretResp.meta, and the apply/confirm fail-closed fields. CI proto round-trip stays green.
+
+## Invariants (each checkable)
+- no-C: zero new deps; secrets-engine still never links libSQL. Run ci/gates/no-c.sh.
+- one rustls ring-only: no TLS/CA crate touched.
+- engine = single sync non-printing lib: all methods sync, emit SecretEvents + audit, no println!/clap/UI.
+- destructive fail-closed + dry-run default: Rm/Rotate gate on apply (proto3 default false), refuse when locked; unit-test-enforced.
+- no secret bytes in logs/audit/List: SecretListItem/SecretMeta carry only non-secret SecretRow fields; audit_query returns engine-written AuditRecords; rotate value in Zeroizing.
+- broker-only never revealable: untouched; List/meta expose broker_only as bool flag only; reveal gate not modified.
+
+## Daemon wiring (grpc.rs)
+Replace 6 unimplemented bodies (~205-234, 360-369, 414-422, 719-729) with spawn_blocking engine
+calls mapped via conv.rs. Add converters secret_list_item_to_proto (→ v1::SecretMeta),
+policy_to_proto (engine RelayPolicy → v1::RelayPolicy); reuse provider_to_proto/audit_to_entry.
+Populate GetSecretResp.meta in the get handler (~193) via engine.secret_meta. Fold
+apply = req.apply && req.confirm for Rm (mirrors Relay.Revoke ~377). Map Locked→failed_precondition,
+empty-arg→invalid_argument. Update module-doc unimplemented list (~13-15); leave Certs.* as Phase 4+.
+
+## Sequencing (leaf-first)
+Store::delete_secret + InMemStore impl → engine reads (secret_list/SecretListItem, secret_meta,
+relay_list, audit_query) + inline tests → engine mutations (relay_create, secret_rm, secret_rotate)
++ tests → conv.rs converters + tests → secretd handlers + tokio round-trip tests → confirm/add
+secretctl `audit query` verb → module-doc updates → append deferred Certs.* backlog item →
+fmt/clippy --workspace -D warnings + cargo test -p envctl-secrets-engine -p envctl-secretd →
+no-c.sh + shape.sh.
+
+## Resolved defaults (open questions — none block)
+1. Reads gate on unlocked (fail-closed, consistent with secret_get). 2. Rotate = engine method
+(single authority). 3. Audit filters daemon-side this cycle (keep engine signature minimal).
+4. libSQL delete_secret: real impl if straightforward, else default-stub + follow-up.
+
+## Risks
+Store-trait addition blast radius (mitigate: default body + check libsql impl + mock compiles).
+Double-audit on Get.meta (keep secret_meta un-audited to avoid duplicate rows on a Get).
+rtk corrupts fmt/clippy — implementer uses `rtk proxy` / file redirect.
+>>>>>>> 727f7ba (secretd: implement Vault/Relay/Audit gRPC surface gaps (TASK-0035))
