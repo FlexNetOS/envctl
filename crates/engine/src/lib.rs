@@ -226,3 +226,18 @@ impl Engine {
         Ok(outcome)
     }
 }
+
+/// Process-wide lock serializing tests that MUTATE environment variables
+/// (`HOME` / `XDG_*` / `ENVCTL_CACHE_DIR`) against each other AND against tests
+/// that READ env-derived paths (e.g. `agent::init`'s global-path resolution).
+/// Without it, parallel `cargo test` lets one test's `set_var`/`remove_var` race
+/// another's env read — the cause of the `init_path_global` CI flake. Resilient
+/// to poisoning so one panicking test can't cascade-fail the rest.
+#[cfg(test)]
+pub(crate) fn test_env_lock() -> std::sync::MutexGuard<'static, ()> {
+    use std::sync::{Mutex, OnceLock};
+    static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+    LOCK.get_or_init(|| Mutex::new(()))
+        .lock()
+        .unwrap_or_else(|e| e.into_inner())
+}

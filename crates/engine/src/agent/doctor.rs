@@ -318,6 +318,14 @@ mod tests {
         use crate::event::EventSink;
         use crate::Engine;
 
+        // Mutates process-global HOME/XDG + cwd — serialize against every other env-touching
+        // test (incl. agent::init's global-path reader) so parallel `cargo test` can't observe
+        // a half-applied env. Held for the whole test; env restored to its prior values at the end.
+        let _env = crate::test_env_lock();
+        let prev_home = std::env::var_os("HOME");
+        let prev_xdg_config = std::env::var_os("XDG_CONFIG_HOME");
+        let prev_xdg_data = std::env::var_os("XDG_DATA_HOME");
+
         // Isolate HOME/XDG + cwd so no real config or lock is in scope; point everything at a
         // throwaway tmp tree with NO agent-env.yaml.
         let base = std::env::temp_dir().join(format!("envctl-doctor-cl-{}", std::process::id()));
@@ -358,18 +366,32 @@ mod tests {
             "config-less doctor must use the all-targets command-dir fallback"
         );
 
-        // Restore environment for the rest of the test process.
+        // Restore environment to its prior state for the rest of the test process (never leave
+        // HOME/XDG unset — agent::init's reader asserts an env-derived path).
         if let Some(p) = prev_cwd {
             let _ = std::env::set_current_dir(p);
         }
-        std::env::remove_var("HOME");
-        std::env::remove_var("XDG_CONFIG_HOME");
-        std::env::remove_var("XDG_DATA_HOME");
+        restore_var("HOME", prev_home);
+        restore_var("XDG_CONFIG_HOME", prev_xdg_config);
+        restore_var("XDG_DATA_HOME", prev_xdg_data);
         let _ = std::fs::remove_dir_all(&base);
+    }
+
+    /// Restore an env var to a saved value (or remove it if it was unset).
+    #[cfg(test)]
+    fn restore_var(key: &str, prev: Option<std::ffi::OsString>) {
+        match prev {
+            Some(v) => std::env::set_var(key, v),
+            None => std::env::remove_var(key),
+        }
     }
 
     #[test]
     fn build_update_check_unknown_without_cache() {
+        // Mutates the process-global ENVCTL_CACHE_DIR the notifier reads — serialize against the
+        // notifier's own env-poking tests via the shared lock; restore the prior value after.
+        let _env = crate::test_env_lock();
+        let prev = std::env::var_os("ENVCTL_CACHE_DIR");
         // Point the cache at an empty dir → no entry → "unknown".
         let dir = std::env::temp_dir().join(format!("envctl-doctor-uc-{}", std::process::id()));
         let _ = std::fs::remove_dir_all(&dir);
@@ -379,7 +401,7 @@ mod tests {
         let uc = build_update_check("1.0.0");
         assert_eq!(uc.status, "unknown");
         assert!(uc.latest_version.is_none());
-        std::env::remove_var("ENVCTL_CACHE_DIR");
+        restore_var("ENVCTL_CACHE_DIR", prev);
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

@@ -124,6 +124,10 @@ mod tests {
 
     #[test]
     fn init_path_global_uses_agent_env_config_dir() {
+        // Reads $XDG_CONFIG_HOME/$HOME — serialize against env-mutating tests
+        // (e.g. doctor::doctor_runs_config_less) so a concurrent remove_var can't
+        // make the global-path resolution observe an unset env.
+        let _env = crate::test_env_lock();
         let path = init_config_path(true).expect("global path");
         assert!(path.ends_with("agent-env/agent-env.yaml"));
     }

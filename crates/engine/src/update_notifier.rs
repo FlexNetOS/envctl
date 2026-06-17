@@ -146,11 +146,10 @@ mod tests {
     use super::*;
 
     /// Serialize the env-poking tests so parallel threads don't observe each other's
-    /// `ENVCTL_CACHE_DIR` override.
+    /// `ENVCTL_CACHE_DIR` override. Delegates to the crate-wide lock so notifier and
+    /// `agent::doctor` cache tests (which poke the same var) are serialized together.
     fn env_lock() -> std::sync::MutexGuard<'static, ()> {
-        use std::sync::{Mutex, OnceLock};
-        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
+        crate::test_env_lock()
     }
 
     #[test]
