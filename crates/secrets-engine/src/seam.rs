@@ -8,6 +8,16 @@ pub trait Clock: Send + Sync {
     fn now(&self) -> chrono::DateTime<chrono::Utc>;
     fn boottime_ms(&self) -> i64;
 }
+/// Forward through a reference (incl. `&dyn Clock`) so a borrowed engine clock satisfies the
+/// generic `Clock` bound on `GitHubAppMint::new` (TASK-0020).
+impl<C: Clock + ?Sized> Clock for &C {
+    fn now(&self) -> chrono::DateTime<chrono::Utc> {
+        (**self).now()
+    }
+    fn boottime_ms(&self) -> i64 {
+        (**self).boottime_ms()
+    }
+}
 pub struct SystemClock;
 impl Clock for SystemClock {
     fn now(&self) -> chrono::DateTime<chrono::Utc> {
@@ -501,6 +511,11 @@ pub(crate) mod seed_factor {
 pub struct MintRequest {
     pub provider: crate::broker::Provider,
     pub repos: Vec<String>,
+    /// TASK-0020: NUMERIC repository IDs. MUTUALLY EXCLUSIVE with `repos` (names): the GitHub
+    /// `create installation access token` endpoint accepts EITHER `repositories` (names) OR
+    /// `repository_ids` (ints), and sending both is a 422. When non-empty, the mint body emits
+    /// `repository_ids` and `repos` MUST be empty (the `mint-github` consumer path sets only this).
+    pub repo_ids: Vec<u64>,
     pub perms: Vec<String>,
     pub ttl_secs: i64,
 }

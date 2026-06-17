@@ -85,6 +85,8 @@ fn engine_with(store: Box<dyn Store>, usb: Box<dyn UsbProbe>) -> Engine {
         usb,
         Box::new(NoMint),
         Box::new(FakeUpstream),
+        #[cfg(feature = "provider-github")]
+        Box::new(envctl_secrets::mint_github::NoopHttpTransport),
     )
     .expect("with_seams must construct")
 }

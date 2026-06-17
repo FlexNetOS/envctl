@@ -76,6 +76,47 @@ pub trait HttpTransport: Send + Sync {
     fn execute(&self, req: &HttpRequest) -> Result<HttpResponse, TransportError>;
 }
 
+/// Forward through a reference (incl. `&dyn HttpTransport`) so the engine can hand a borrowed,
+/// boxed transport to the generic `GitHubAppMint::new` without moving or cloning it (TASK-0020).
+impl<T: HttpTransport + ?Sized> HttpTransport for &T {
+    fn execute(&self, req: &HttpRequest) -> Result<HttpResponse, TransportError> {
+        (**self).execute(req)
+    }
+}
+
+/// The fail-closed default `HttpTransport` for the engine's `github_transport` seam (TASK-0020). A
+/// non-daemon build (or a test that does not inject a real transport) has NO egress, so any mint
+/// attempt that reaches the network MUST refuse rather than silently succeed: `execute` always
+/// returns a fixed `TransportError`. The daemon overrides this with `DaemonHttpTransport`
+/// (reqwest/rustls-on-ring, frozen webpki roots); the engine never reaches the wire on its own.
+pub struct NoopHttpTransport;
+
+impl HttpTransport for NoopHttpTransport {
+    fn execute(&self, _req: &HttpRequest) -> Result<HttpResponse, TransportError> {
+        Err(TransportError::Io(
+            "no GitHub HTTP transport configured (mint requires the daemon's transport)"
+                .to_string(),
+        ))
+    }
+}
+
+/// Scoped parameters for a single GitHub App installation-token mint (TASK-0020). `installation_id`
+/// is request-supplied (the daemon builds a per-call minter); `repository_ids` are NUMERIC repo IDs
+/// (the consumer contract passes IDs, mutually exclusive with the name-based `repositories` path);
+/// `permissions` are `name:access`; `ttl_secs` is advisory (GitHub fixes the lifetime ~1h).
+#[derive(Debug, Clone)]
+pub struct GithubMintParams {
+    pub installation_id: u64,
+    pub repository_ids: Vec<u64>,
+    pub permissions: Vec<String>,
+    pub ttl_secs: i64,
+    /// REST base override (GitHub Enterprise Server / an e2e mock). `None` ⇒ the default
+    /// `https://api.github.com`. The engine stays env-free; the daemon fills this from
+    /// `ENVCTL_GITHUB_API_BASE` (mirroring the existing relay-native `rebuild_github_provider`
+    /// discipline — env reads live in `secretd`, never the pure engine lib).
+    pub api_base: Option<String>,
+}
+
 /// Build the RS256-signed GitHub **App JWT**. Pure + deterministic given (`app_id`, `now`, key):
 /// header `{"alg":"RS256","typ":"JWT"}`, claims `{"iat": now-60, "exp": now+ttl, "iss": app_id}`,
 /// base64url-segments, signed over `header.claims` with PKCS#1 v1.5 / SHA-256. `ttl` is clamped to
@@ -180,7 +221,7 @@ impl<C: Clock, T: HttpTransport> ProviderMint for GitHubAppMint<C, T> {
 
         let now = self.clock.now().timestamp();
         let jwt = build_app_jwt(&self.app_id, now, self.jwt_ttl_secs, &self.app_key_pem)?;
-        let body = build_token_request_body(&p.repos, &p.perms)?;
+        let body = build_token_request_body(&p.repos, &p.repo_ids, &p.perms)?;
         let url = format!(
             "{}/app/installations/{}/access_tokens",
             self.api_base, self.installation_id
@@ -219,13 +260,31 @@ impl<C: Clock, T: HttpTransport> ProviderMint for GitHubAppMint<C, T> {
     }
 }
 
-/// Shape the `create installation access token` request body. `repositories` (repo names) and
-/// `permissions` are each omitted when empty (⇒ the installation's full default scope). Each
-/// permission is `"name:access"` (e.g. `"checks:write"`); a bare `"name"` defaults to `read`.
-fn build_token_request_body(repos: &[String], perms: &[String]) -> Result<Vec<u8>, MintError> {
+/// Shape the `create installation access token` request body. `repositories` (repo names),
+/// `repository_ids` (NUMERIC ids), and `permissions` are each omitted when empty (⇒ the
+/// installation's full default scope). Each permission is `"name:access"` (e.g. `"checks:write"`);
+/// a bare `"name"` defaults to `read`.
+///
+/// TASK-0020: `repository_ids` and `repositories` are MUTUALLY EXCLUSIVE on the GitHub endpoint —
+/// sending both is a 422. They are fail-closed REJECTED here if both are non-empty; the
+/// `mint-github` consumer path sets only `repository_ids`, the relay-native path only `repos`.
+fn build_token_request_body(
+    repos: &[String],
+    repo_ids: &[u64],
+    perms: &[String],
+) -> Result<Vec<u8>, MintError> {
     let mut map = serde_json::Map::new();
+    if !repos.is_empty() && !repo_ids.is_empty() {
+        return Err(MintError::Other(
+            "repositories (names) and repository_ids are mutually exclusive (GitHub 422)".into(),
+        ));
+    }
     if !repos.is_empty() {
         map.insert("repositories".into(), serde_json::json!(repos));
+    }
+    if !repo_ids.is_empty() {
+        // Emit a JSON array of INTEGERS (not strings) — GitHub requires numeric repository_ids.
+        map.insert("repository_ids".into(), serde_json::json!(repo_ids));
     }
     if !perms.is_empty() {
         let mut perm_obj = serde_json::Map::new();
@@ -440,6 +499,7 @@ UwgfTQ68ocgim83T
         let req = MintRequest {
             provider: Provider::Github,
             repos: vec!["meta".into()],
+            repo_ids: vec![],
             perms: vec!["checks:write".into(), "contents:read".into()],
             ttl_secs: 3600,
         };
@@ -491,6 +551,7 @@ UwgfTQ68ocgim83T
         let req = MintRequest {
             provider: Provider::Github,
             repos: vec![],
+            repo_ids: vec![],
             perms: vec!["metadata".into()],
             ttl_secs: 0,
         };
@@ -502,11 +563,61 @@ UwgfTQ68ocgim83T
     }
 
     #[test]
+    fn repository_ids_emit_numeric_array_in_body() {
+        // TASK-0020: the `mint-github` consumer path scopes by NUMERIC repo IDs. The body must carry
+        // `repository_ids` as a JSON ARRAY OF INTEGERS (never strings), and NOT a `repositories` key.
+        let fake = FakeTransport::new(
+            201,
+            r#"{"token":"ghs_byid","expires_at":"2026-06-12T23:00:00Z"}"#,
+        );
+        let minter = github_minter(fake);
+        let req = MintRequest {
+            provider: Provider::Github,
+            repos: vec![],
+            repo_ids: vec![10, 4044997],
+            perms: vec!["checks:write".into()],
+            ttl_secs: 3600,
+        };
+        minter.mint_scoped(&req).expect("mint succeeds");
+        let body: serde_json::Value =
+            serde_json::from_slice(&minter.transport.captured().body).unwrap();
+        assert_eq!(body["repository_ids"], serde_json::json!([10, 4_044_997]));
+        assert!(
+            body["repository_ids"][0].is_i64() || body["repository_ids"][0].is_u64(),
+            "ids are numbers, not strings"
+        );
+        assert!(
+            body.get("repositories").is_none(),
+            "name-based repositories key omitted when minting by id"
+        );
+    }
+
+    #[test]
+    fn repositories_and_repository_ids_are_mutually_exclusive() {
+        // Sending BOTH `repositories` and `repository_ids` is a GitHub 422 — the body builder must
+        // refuse fail-closed (never construct a doomed request) BEFORE any network call.
+        let fake = FakeTransport::new(201, "{}");
+        let minter = github_minter(fake);
+        let req = MintRequest {
+            provider: Provider::Github,
+            repos: vec!["meta".into()],
+            repo_ids: vec![10],
+            perms: vec![],
+            ttl_secs: 60,
+        };
+        assert!(matches!(
+            minter.mint_scoped(&req),
+            Err(MintError::Other(ref m)) if m.contains("mutually exclusive")
+        ));
+    }
+
+    #[test]
     fn non_github_provider_is_unsupported() {
         let minter = github_minter(FakeTransport::new(201, "{}"));
         let req = MintRequest {
             provider: Provider::Openai,
             repos: vec![],
+            repo_ids: vec![],
             perms: vec![],
             ttl_secs: 60,
         };
@@ -522,6 +633,7 @@ UwgfTQ68ocgim83T
         let req = MintRequest {
             provider: Provider::Github,
             repos: vec![],
+            repo_ids: vec![],
             perms: vec![],
             ttl_secs: 60,
         };
@@ -536,6 +648,7 @@ UwgfTQ68ocgim83T
         let req = MintRequest {
             provider: Provider::Github,
             repos: vec![],
+            repo_ids: vec![],
             perms: vec![],
             ttl_secs: 60,
         };

@@ -60,6 +60,8 @@ fn engine() -> Engine {
         Box::new(AbsentUsb),
         Box::new(NoMint),
         Box::new(NoopUpstream),
+        #[cfg(feature = "provider-github")]
+        Box::new(envctl_secrets::mint_github::NoopHttpTransport),
     )
     .expect("with_seams must construct")
 }

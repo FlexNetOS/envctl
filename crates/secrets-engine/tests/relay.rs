@@ -172,6 +172,8 @@ fn engine(
         usb,
         Box::new(NoMint),
         Box::new(upstream),
+        #[cfg(feature = "provider-github")]
+        Box::new(envctl_secrets::mint_github::NoopHttpTransport),
     )
     .expect("with_seams must construct")
 }
@@ -1190,6 +1192,8 @@ fn engine_with_upstream(
         usb,
         Box::new(NoMint),
         upstream,
+        #[cfg(feature = "provider-github")]
+        Box::new(envctl_secrets::mint_github::NoopHttpTransport),
     )
     .expect("with_seams must construct")
 }
@@ -1341,6 +1345,8 @@ fn relay_swap_wall_rollback_within_window_is_denied_by_boottime() {
         Box::new(AbsentUsb),
         Box::new(NoMint),
         Box::new(cap.clone()),
+        #[cfg(feature = "provider-github")]
+        Box::new(envctl_secrets::mint_github::NoopHttpTransport),
     )
     .expect("with_seams");
 
