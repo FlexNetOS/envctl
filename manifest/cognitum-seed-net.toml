@@ -239,7 +239,22 @@ kind = "script"
 needs_sudo = true
 script = '''
 set -euo pipefail
+# Delete the NM profile. On an Ubuntu netplan-renderer box, `nmcli connection delete` also makes
+# netplan drop its persistent /etc/netplan/90-NM-<uuid>.yaml (verified 2026-06-17). The sweep
+# below is belt-and-suspenders for any NM/netplan version where that sync does NOT happen, so we
+# never orphan a netplan YAML.
 nmcli connection delete cognitum-seed-linklocal 2>/dev/null || true
+# Defensive netplan cleanup: remove any netplan YAML our profile name still appears in.
+if [ -d /etc/netplan ]; then
+  swept=0
+  for y in /etc/netplan/90-NM-*.yaml; do
+    [ -e "$y" ] || continue
+    if grep -q 'name: "cognitum-seed-linklocal"' "$y" 2>/dev/null; then
+      rm -f "$y" && swept=1
+    fi
+  done
+  [ "$swept" = 1 ] && { command -v netplan >/dev/null 2>&1 && netplan generate 2>/dev/null || true; }
+fi
 systemctl disable --now cognitum-seed-linklocal.service 2>/dev/null || true
 for d in /sys/class/net/*/device/driver; do
   [ -e "$d" ] || continue

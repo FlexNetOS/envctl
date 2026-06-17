@@ -41,7 +41,7 @@ requires = ["bun"]
 resolved = ""
 
 [components.cognitum-seed-net]
-content_hash = "f49fe29580096003"
+content_hash = "67912d96faab1a1b"
 requires = []
 resolved = ""
 
