@@ -79,3 +79,60 @@ None. `cargo build -p envctl-gui` compiled cleanly in this worktree; the Doctor-
 
 ## Headline status
 **GREEN** — all 7 items implemented (engine-first; CLI + GUI parity for doctor; CLI-only for the rest per plan justifications); engine + CLI + agent-env + GUI build and test pass; fmt + clippy clean; no-c/shape/enable/p7 gates PASS.
+
+---
+
+## Re-run note (2026-06-17): config-less `agent doctor` no-downgrade fix
+
+`/verify` of TASK-0019 found a NO-DOWNGRADE bug: `envctl agent doctor` errored
+(`failed to load agent config from agent-env.yaml`) when run in a dir with no
+`agent-env.yaml`, whereas kasetto's `doctor` runs CONFIG-LESS and envctl's own
+`agent list` already runs config-less. The original smoke-note above
+("`agent doctor` correctly routes through `AgentCtx::resolve` … errored … expected")
+mis-classified the error as expected; it was the downgrade itself.
+
+### Changes
+- `crates/engine/src/agent/doctor.rs`: made `Engine::agent_doctor` config-OPTIONAL,
+  mirroring kasetto `doctor::run` + `Engine::agent_list`:
+  - scope now resolves from `spec.scope_override` else the default `Scope::Global`
+    (kasetto `resolve_scope(scope_override, None)`), WITHOUT loading a config —
+    replacing the config-REQUIRED `AgentCtx::resolve(None, …)` path.
+  - lock / runtime-state / lock-path / scope-root all keyed off `current_dir()` as
+    `project_root` (matching kasetto + list.rs), via `agent_lock_path` + `scope_root`.
+  - `collect_command_dirs` now loads the config best-effort
+    (`match load_config_any(&default_config_path()) { Ok((cfg,_,_)) => cfg.agents(),
+    Err(_) => Vec::new() }`) and on any error / empty agents falls back to
+    `all_command_{project,global}_targets` — never errors on a missing config.
+  - install path / skills / mcps / commands derive from the LOCK only
+    (empty / "none" when nothing installed).
+  - imports: dropped `AgentCtx`; added `default_config_path`, `load_config_any`,
+    `scope_root`, `agent_lock_path`. Spec docstring updated (no longer "from config").
+
+### Engine API
+- `Engine::agent_doctor` signature unchanged (`AgentDoctorSpec`, `&EventSink` →
+  `AgentDoctorReport`). Behavior change only: config-less is now Ok, not an error.
+  CLI + GUI callers unaffected (parity preserved).
+
+### Tests added
+- `agent::doctor::tests::doctor_runs_config_less` — with isolated HOME/XDG + a cwd
+  containing NO `agent-env.yaml`, `agent_doctor(default)` returns Ok; asserts empty
+  skills/mcps/commands, `installation_path == "none"`, `scope == "global"`, and a
+  NON-EMPTY `command_dirs` (the all-targets fallback). The 4 existing doctor tests
+  remain green.
+
+### Build/test status
+- `target/debug/envctl agent doctor` and `--json agent doctor` both EXIT 0 config-less
+  (isolated HOME/XDG + tmp cwd) — install path "none", 9-of-9 all-targets command dirs.
+- `cargo test -p envctl-engine -p envctl` PASS (doctor lib tests: 5 passed).
+- `cargo clippy --workspace -- -D warnings` clean.
+- `cargo fmt --all` applied.
+- `bash ci/gates/no-c.sh` PASS.
+
+### Handoff notes (for the guardian)
+- Verify the new `doctor_runs_config_less` test asserts the all-targets fallback and
+  empty inventory (the no-downgrade contract). The fix is read-only — no guard touched,
+  no dep added. `collect_command_dirs` swallows config-load errors BY DESIGN (kasetto
+  parity: "what does envctl know how to write to?" debugging view).
+- One residual: the test mutates process-global `current_dir`/env (HOME/XDG); it
+  follows the file's existing env-mutation pattern and 3 back-to-back full lib-test
+  runs were clean (no observed flakiness with parallel test threads).

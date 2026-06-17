@@ -9,20 +9,23 @@
 
 use std::path::Path;
 
+use envctl_agent_env::config_path::default_config_path;
+use envctl_agent_env::extend::load_config_any;
+use envctl_agent_env::fsops::scope_root;
 use envctl_agent_env::{
     all_command_global_targets, all_command_project_targets, command_global_targets,
     command_project_targets, dirs_home, lock, resolve_dest, Agent, Scope,
 };
 
 use crate::agent::report::{AgentCommandDirCheck, AgentDoctorReport, AgentUpdateCheck};
-use crate::agent::{AgentCtx, AgentScope};
+use crate::agent::{agent_lock_path, AgentScope};
 use crate::event::{Event, EventSink};
 use crate::Engine;
 
 /// Options for `Engine::agent_doctor`.
 #[derive(Clone, Debug, Default)]
 pub struct AgentDoctorSpec {
-    /// `--scope` override; `None` → resolved from the config.
+    /// `--scope` override; `None` → the default scope (`Global`), config-less (kasetto parity).
     pub scope_override: Option<AgentScope>,
 }
 
@@ -34,16 +37,22 @@ impl Engine {
         spec: AgentDoctorSpec,
         sink: &EventSink,
     ) -> anyhow::Result<AgentDoctorReport> {
-        let ctx = AgentCtx::resolve(None, spec.scope_override)?;
-        let scope = ctx.scope;
-        let lock_file = &ctx.lock_file;
-        let lock = lock::load(lock_file)?;
+        // Config-OPTIONAL, mirroring kasetto `doctor::run` and `Engine::agent_list`: doctor is a
+        // read-only diagnostic that must run with NO `agent-env.yaml` present. The scope resolves
+        // from the override else the default scope WITHOUT loading a config (kasetto:
+        // `resolve_scope(scope_override, None)` → `Global` default); version/skills/mcps/commands
+        // all derive from the LOCK, never from a required config.
+        let scope: Scope = spec.scope_override.map(Into::into).unwrap_or(Scope::Global);
+        let project_root = std::env::current_dir().unwrap_or_default();
+        let lock_file = agent_lock_path(scope, &project_root)?;
+        let lock = lock::load(&lock_file)?;
         let runtime =
-            envctl_agent_env::runtime::load_runtime_state(scope, &ctx.cfg_dir).unwrap_or_default();
+            envctl_agent_env::runtime::load_runtime_state(scope, &project_root).unwrap_or_default();
 
         let version = env!("CARGO_PKG_VERSION").to_string();
         let state = lock.state();
-        let root = &ctx.scope_root;
+        let root = scope_root(scope, &project_root)?;
+        let root = &root;
 
         // Distinct parent directories of every installed skill (the active install paths).
         let mut install_paths: Vec<String> = state
@@ -72,7 +81,7 @@ impl Engine {
 
         let managed_mcps = lock.list_installed_mcps();
         let managed_commands = lock.list_installed_commands();
-        let command_dirs = collect_command_dirs(scope, &ctx.cfg, &ctx.cfg_dir);
+        let command_dirs = collect_command_dirs(scope, &project_root);
 
         let scope_label = match scope {
             Scope::Global => "global".to_string(),
@@ -103,13 +112,14 @@ impl Engine {
 }
 
 /// Scope the COMMAND DIRECTORIES check to the agents the config actually wires; fall back to
-/// every supported agent when no config agents are configured (kasetto verbatim semantics).
-fn collect_command_dirs(
-    scope: Scope,
-    cfg: &envctl_agent_env::Config,
-    project_root: &Path,
-) -> Vec<AgentCommandDirCheck> {
-    let agents: Vec<Agent> = cfg.agents();
+/// every supported agent when there is NO config or no agents configured (kasetto verbatim
+/// semantics — "what does envctl know how to write to?"). Config-OPTIONAL: any load error or an
+/// empty agent set takes the all-targets debugging view rather than erroring.
+fn collect_command_dirs(scope: Scope, project_root: &Path) -> Vec<AgentCommandDirCheck> {
+    let agents: Vec<Agent> = match load_config_any(&default_config_path()) {
+        Ok((cfg, _, _)) => cfg.agents(),
+        Err(_) => Vec::new(),
+    };
     let targets = match scope {
         Scope::Project => {
             if agents.is_empty() {
@@ -298,6 +308,64 @@ mod tests {
         assert!(back.command_dirs[0].writable);
         assert_eq!(back.update_check.status, "update_available");
         assert_eq!(back.failures[0].reason, "missing");
+    }
+
+    #[test]
+    fn doctor_runs_config_less() {
+        // No `agent-env.yaml` anywhere → `agent doctor` must still return Ok with an empty
+        // (nothing-installed) report and the all-targets command-dir fallback, exactly like
+        // kasetto and like `envctl agent list`. This is the no-downgrade regression guard.
+        use crate::event::EventSink;
+        use crate::Engine;
+
+        // Isolate HOME/XDG + cwd so no real config or lock is in scope; point everything at a
+        // throwaway tmp tree with NO agent-env.yaml.
+        let base = std::env::temp_dir().join(format!("envctl-doctor-cl-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&base);
+        let home = base.join("home");
+        let xdg_config = base.join("config");
+        let xdg_data = base.join("data");
+        let cwd = base.join("cwd");
+        for d in [&home, &xdg_config, &xdg_data, &cwd] {
+            std::fs::create_dir_all(d).unwrap();
+        }
+        let prev_cwd = std::env::current_dir().ok();
+        std::env::set_var("HOME", &home);
+        std::env::set_var("XDG_CONFIG_HOME", &xdg_config);
+        std::env::set_var("XDG_DATA_HOME", &xdg_data);
+        std::env::set_current_dir(&cwd).unwrap();
+
+        let engine = Engine::detached();
+        let sink = EventSink::null();
+        // Default scope (Global): MUST NOT error on a missing config.
+        let report = engine
+            .agent_doctor(AgentDoctorSpec::default(), &sink)
+            .expect("config-less doctor must return Ok");
+
+        // Nothing installed: skills/mcps/commands empty, install path "none".
+        assert!(report.skills.is_empty(), "no config → no installed skills");
+        assert!(report.mcps.is_empty(), "no config → no managed mcps");
+        assert!(
+            report.commands.is_empty(),
+            "no config → no managed commands"
+        );
+        assert_eq!(report.installation_path, "none");
+        assert_eq!(report.scope, "global");
+        // The command-dir check falls back to the all-targets debugging view (non-empty: every
+        // supported agent's global command dir), NOT an empty/errored set.
+        assert!(
+            !report.command_dirs.is_empty(),
+            "config-less doctor must use the all-targets command-dir fallback"
+        );
+
+        // Restore environment for the rest of the test process.
+        if let Some(p) = prev_cwd {
+            let _ = std::env::set_current_dir(p);
+        }
+        std::env::remove_var("HOME");
+        std::env::remove_var("XDG_CONFIG_HOME");
+        std::env::remove_var("XDG_DATA_HOME");
+        let _ = std::fs::remove_dir_all(&base);
     }
 
     #[test]
