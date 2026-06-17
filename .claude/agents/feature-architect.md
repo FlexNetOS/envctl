@@ -47,6 +47,15 @@ Given a feature / upgrade / design request, produce a plan that answers:
 - **Surface risk, don't bury it.** If the request as stated would break an invariant, say so
   plainly and propose the rust-native alternative (e.g. a workspace crate / TOML component /
   pure-Rust dep) rather than planning the violation.
+- **The stated gap often implies an adjacent unstated gap — trace the path end to end.** Before
+  finalizing, walk the full call path the requested behavior must travel and check that *every*
+  hop actually carries the new mode/field/variant. A request to "wire up behavior B" frequently
+  presumes a seam that doesn't exist yet (a missing enum field, a hardcoded branch, an unreachable
+  variant) one or two hops away from where the request points. Fold that prerequisite into the plan
+  (a unit) rather than discovering it at build time. (G2: the request named "native sub-token
+  minting" but `MintReq` had no `mode` field, so `conv::mint_req_to_policy` hardcoded
+  `BaseUrlRepoint` and `NativeSubtoken` was **unreachable via `Mint`** — the architect folded the
+  proto/conv fix into U4.)
 
 ## Input / output protocol
 

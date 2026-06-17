@@ -78,6 +78,28 @@ stable toolchain.
 5. Unit-test the engine logic; for destructive paths, test that the guard refuses without
    `--apply`.
 
+## Bridging the sync engine to async I/O (the daemon seam idiom)
+
+The engine is **sync** (invariant #3), but secretd is an async tokio daemon and some engine seams
+(e.g. an outbound HTTP transport for native token minting) need to drive async I/O from a sync
+trait method. The established envctl idiom — do not reinvent it per feature:
+
+- Implement the sync trait method, but **never `block_on` on a reactor thread** — that deadlocks
+  the runtime. Capture a `tokio::runtime::Handle` (via `Handle::current()`) when the seam is
+  *constructed* (construction happens in async context, e.g. the unlock RPC handler), and call
+  `handle.block_on(...)` only inside the sync method, which itself must run **off-reactor** — i.e.
+  inside a `spawn_blocking` closure. Mirror the existing libSQL off-reactor `block_on`
+  (`crates/secrets-engine/src/lib.rs`, the store path) rather than introducing a new pattern.
+- **Reuse the frozen client, add no new dep.** For any new outbound HTTP, reuse
+  `proxy::build_upstream_client` (frozen webpki-roots/ring, `.no_proxy()`) — this keeps the no-C /
+  single-rustls-ring invariants (#1/#2) intact and the no-c gate green. A new HTTP/TLS dependency
+  here is almost always a trust-boundary regression.
+- **Errors must be key-free.** Map every transport error to a *fixed, key-free* string (mirror
+  `DaemonUpstream`'s "never echo error text") — never surface the upstream error text, URL, or any
+  secret in the error, log, audit, or event body.
+- The architect should flag this seam as a named risk (it is load-bearing and easy to get wrong);
+  the e2e test must exercise the live bridge against a mock endpoint, not just the request shaping.
+
 ## Destructive / mutating ops — the fail-closed recipe
 
 - Default to **preview** (dry-run). The mutation only happens behind `--apply` (or `--build` for

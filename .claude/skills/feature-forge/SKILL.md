@@ -80,6 +80,16 @@ features.
      the existing `_done/` convention), then start fresh.
 3. **Scope the request.** If it's a one-line question or a trivial typo, answer/do it directly —
    don't spin up the crew for something that doesn't need it.
+4. **Verify the triggering claim against source — do not design on an asserted premise.** When the
+   request (or a cross-session relay/weave/handoff message) asserts a *concrete code state* —
+   "X is `todo!()`", "Y is unimplemented", "the conv hardcodes Z", "this path doesn't exist yet" —
+   confirm it against HEAD before designing, because cross-session claims go stale (the code may
+   have moved since the message was written). Read the named symbol (code-intelligence, not grep)
+   and note in the design hand-off whether the claim **holds** or is **stale**. This is the
+   no-fabricate rule applied to inputs: a plan built on a false premise wastes a whole cycle, and
+   the architect/implementer must not silently propagate the wrong premise. (G2: the originating
+   #116 message asserted `inject.rs`/`run_child = todo!()`, which was **false at HEAD** — verifying
+   first avoided a wasted design.)
 
 **hf-aware context check.** When `hf` is on PATH, the context check is hf-aware: pick the next item
 via `hf resume --json` (its dep-DAG `next_task_id`/`next_command` picker) rather than re-deriving
@@ -113,6 +123,16 @@ shape; the default is unchanged.
   crate, not five. grit AST-locks (`file::symbol`) only come into play if the modules share files.
 - **>1 target repo → A2 cross-repo fan-out (Phase 2-A2 below).** One coordinated worktree set,
   one implementer per repo run concurrently, per-repo guardian gates.
+
+**Count *independent* modules, not raw modules — and honor the architect's explicit routing.** The
+">3 modules ⇒ pipeline" trigger is about **independent** modules (parallelizable work); modules
+that form a strict dependency chain (U1→U2→…→Un) have parallelism 0 and gain nothing from a
+pipeline even when n>3. The architect's `## Target repos` section states the dependency structure
+and often a routing recommendation (e.g. "units are linearly dependent U1→U6 ⇒ route as sequential
+single-crew"). When it does, **honor that recommendation** — the raw module count alone can
+mis-route a linear chain into a pointless pipeline. The count is a fallback heuristic for when the
+architect gives no dependency signal. (G2: 6 modules but a strict U1→U6 chain ⇒ correctly
+sequential, not pipeline.)
 
 **Escape hatch:** `FORGE_PARALLEL=0` forces the sequential single-crew path regardless of scale
 (and `FORGE_PARALLEL` *unset* leaves today's behavior intact — there is no opt-*in* required for
