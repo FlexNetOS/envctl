@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 use anyhow::Context;
 use clap::Parser;
-use cli::{CaCmd, Cli, Cmd, RelayCmd, SecretCmd};
+use cli::{CaCmd, Cli, Cmd, MintGithubArgs, RelayCmd, SecretCmd};
 use envctl_secrets_proto::v1;
 use hyper_util::rt::TokioIo;
 use tonic::transport::{Endpoint, Uri};
@@ -188,7 +188,38 @@ async fn run(args: Cli) -> anyhow::Result<()> {
             render::render_audit(&r, json);
         }
         Cmd::Run(a) => run_child_cmd(a, sock, json).await?,
+        Cmd::MintGithub(a) => mint_github(a, sock).await?,
     }
+    Ok(())
+}
+
+/// TASK-0020 — the FROZEN `mint-github` consumer-contract surface. Calls `Vault.MintGithub` over the
+/// daemon UDS and prints EXACTLY the compact two-field JSON `{"token":"...","expires_at_unix":<i64>}`
+/// to **stdout** — nothing else. Any human/diagnostic output goes to stderr so the consumer's
+/// `serde_json::from_slice` over stdout never sees a stray byte. `--output json` is the only format.
+async fn mint_github(a: MintGithubArgs, sock: PathBuf) -> anyhow::Result<()> {
+    if a.output != "json" {
+        anyhow::bail!("--output must be 'json' (the only supported mint-github format)");
+    }
+    // The CLI carries `repository_ids` verbatim as strings (the daemon parses them to u64 and rejects
+    // a non-numeric id at the boundary). `permissions` pass through verbatim (`name:access`).
+    let req = v1::MintGithubReq {
+        installation_id: a.installation_id,
+        repository_ids: a.repository_ids,
+        permissions: a.permissions,
+        ttl_secs: a.ttl_secs,
+    };
+    let mut c = VaultClient::new(connect(sock).await?);
+    let resp = c.mint_github(req).await?.into_inner();
+    // Emit EXACTLY the frozen two-field shape, compactly, to stdout. We build the JSON `Value`
+    // explicitly (NOT from the proto struct) so the contract is pinned to these two fields even if
+    // `MintGithubResp` grows a field later. `serde_json` escapes the token string correctly.
+    let out = serde_json::json!({
+        "token": resp.token,
+        "expires_at_unix": resp.expires_at_unix,
+    });
+    // `println!` writes the compact JSON + a trailing newline to STDOUT only. No other stdout writes.
+    println!("{}", serde_json::to_string(&out)?);
     Ok(())
 }
 
@@ -753,5 +784,172 @@ mod tests {
                 .map(String::as_str),
             Some(BEARER)
         );
+    }
+
+    // ===== TASK-0020 DIFFERENTIAL CONTRACT TEST ==============================================
+    //
+    // The consumer `flexnetos_github_app/crates/app-core/src/mint.rs` (a DIFFERENT repo) BUILDS the
+    // argv it shells and PARSES our stdout. These two helpers REPLICATE its frozen shapes VERBATIM
+    // (copied from that file). The tests below prove our `mint-github` clap surface parses exactly the
+    // argv it emits, and our stdout deserializes exactly into its `Out` struct — so the contract can
+    // never silently drift apart even though the two crates don't share a dependency.
+
+    /// VERBATIM copy of `app-core::mint::build_argv` (the consumer's frozen argv builder). If our CLI
+    /// surface diverges from this, `mint_github_argv_round_trips_through_clap` fails.
+    fn consumer_build_argv(
+        program: &str,
+        installation_id: u64,
+        repository_ids: &[u64],
+        permissions: &[(&str, &str)], // (name, "read"|"write")
+        ttl_secs: u64,
+    ) -> Vec<String> {
+        let mut argv = vec![
+            program.to_string(),
+            "mint-github".to_string(),
+            "--installation-id".to_string(),
+            installation_id.to_string(),
+            "--ttl-secs".to_string(),
+            ttl_secs.to_string(),
+            "--output".to_string(),
+            "json".to_string(),
+        ];
+        if !repository_ids.is_empty() {
+            argv.push("--repository-ids".to_string());
+            argv.push(
+                repository_ids
+                    .iter()
+                    .map(u64::to_string)
+                    .collect::<Vec<_>>()
+                    .join(","),
+            );
+        }
+        if !permissions.is_empty() {
+            argv.push("--permissions".to_string());
+            argv.push(
+                permissions
+                    .iter()
+                    .map(|(n, a)| format!("{n}:{a}"))
+                    .collect::<Vec<_>>()
+                    .join(","),
+            );
+        }
+        argv
+    }
+
+    /// Mirrors the consumer's `Out` (`app-core::mint::parse_mint_output`): the exact field NAMES +
+    /// TYPES it deserializes our stdout into (`token: String`, `expires_at_unix: u64`). We replicate
+    /// its `serde_json::from_slice` + typed extraction WITHOUT a serde-derive dep — a missing field,
+    /// a wrong type (e.g. a STRING `expires_at_unix`), or a non-object is a hard parse failure here,
+    /// exactly as it would be for the consumer's derived `Out`.
+    struct ConsumerOut {
+        token: String,
+        expires_at_unix: u64,
+    }
+
+    impl ConsumerOut {
+        /// `serde_json::from_slice` into the consumer's typed shape, fail-closed on any mismatch.
+        fn from_slice(bytes: &[u8]) -> Result<Self, String> {
+            let v: serde_json::Value =
+                serde_json::from_slice(bytes).map_err(|e| format!("malformed: {e}"))?;
+            let obj = v.as_object().ok_or("not a JSON object")?;
+            let token = obj
+                .get("token")
+                .and_then(|t| t.as_str())
+                .ok_or("token missing / not a string")?
+                .to_string();
+            // `as_u64` REQUIRES a JSON number (a string `expires_at_unix` would be `None`) — the same
+            // discipline the consumer's `expires_at_unix: u64` field enforces.
+            let expires_at_unix = obj
+                .get("expires_at_unix")
+                .and_then(|e| e.as_u64())
+                .ok_or("expires_at_unix missing / not a u64 number")?;
+            Ok(Self {
+                token,
+                expires_at_unix,
+            })
+        }
+    }
+
+    #[test]
+    fn mint_github_argv_round_trips_through_clap() {
+        // The consumer's argv (with both optional scopes) must parse into our subcommand 1:1.
+        let argv = consumer_build_argv(
+            "secretctl",
+            99,
+            &[10, 20],
+            &[("checks", "write"), ("contents", "read")],
+            3600,
+        );
+        let cli = Cli::try_parse_from(&argv).expect("consumer argv parses");
+        let a = match cli.cmd {
+            Cmd::MintGithub(a) => a,
+            other => panic!("expected MintGithub, got {other:?}"),
+        };
+        assert_eq!(a.installation_id, 99);
+        assert_eq!(a.ttl_secs, 3600);
+        assert_eq!(a.output, "json");
+        // `--repository-ids 10,20` comma-splits to ["10","20"] (the daemon parses these to u64).
+        assert_eq!(a.repository_ids, vec!["10".to_string(), "20".to_string()]);
+        // `--permissions` is forwarded VERBATIM as name:access tokens.
+        assert_eq!(
+            a.permissions,
+            vec!["checks:write".to_string(), "contents:read".to_string()]
+        );
+
+        // And the request we build carries the parsed scope (ids parse cleanly; perms verbatim).
+        let ids: Vec<u64> = a
+            .repository_ids
+            .iter()
+            .map(|s| s.parse::<u64>().unwrap())
+            .collect();
+        assert_eq!(ids, vec![10, 20]);
+    }
+
+    #[test]
+    fn mint_github_argv_round_trips_without_optional_scopes() {
+        // No `--repository-ids` / `--permissions` ⇒ empty vecs (installation default scope).
+        let argv = consumer_build_argv("secretctl", 4044997, &[], &[], 600);
+        let cli = Cli::try_parse_from(&argv).expect("minimal consumer argv parses");
+        let a = match cli.cmd {
+            Cmd::MintGithub(a) => a,
+            other => panic!("expected MintGithub, got {other:?}"),
+        };
+        assert_eq!(a.installation_id, 4_044_997);
+        assert_eq!(a.ttl_secs, 600);
+        assert!(a.repository_ids.is_empty());
+        assert!(a.permissions.is_empty());
+    }
+
+    #[test]
+    fn stdout_json_deserializes_into_consumer_out_shape() {
+        // Build our stdout EXACTLY as `mint_github` does, then deserialize with the consumer's `Out`.
+        let resp = v1::MintGithubResp {
+            token: "ghs_frozen_contract_token".to_string(),
+            expires_at_unix: 1_700_000_000,
+        };
+        let out_value = serde_json::json!({
+            "token": resp.token,
+            "expires_at_unix": resp.expires_at_unix,
+        });
+        let stdout = serde_json::to_string(&out_value).unwrap();
+
+        // The consumer reads stdout with `serde_json::from_slice` — exercise that exact path.
+        let parsed = ConsumerOut::from_slice(stdout.as_bytes())
+            .expect("our stdout deserializes into the consumer's Out shape");
+        assert_eq!(parsed.token, "ghs_frozen_contract_token");
+        assert_eq!(parsed.expires_at_unix, 1_700_000_000u64);
+
+        // Contract hardening: stdout is COMPACT (no pretty whitespace) and carries ONLY the two keys —
+        // a stray field/line would break the consumer's `from_slice`.
+        assert!(
+            !stdout.contains('\n') && !stdout.contains("  "),
+            "stdout JSON must be compact: {stdout}"
+        );
+        let raw: serde_json::Value = serde_json::from_str(&stdout).unwrap();
+        let obj = raw.as_object().unwrap();
+        assert_eq!(obj.len(), 2, "exactly two fields: token + expires_at_unix");
+        assert!(obj.contains_key("token") && obj.contains_key("expires_at_unix"));
+        // `expires_at_unix` is a JSON NUMBER, not a string (the consumer's `u64` requires it).
+        assert!(obj["expires_at_unix"].is_number());
     }
 }
