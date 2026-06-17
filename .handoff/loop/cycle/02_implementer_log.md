@@ -1,56 +1,62 @@
-# Implementation log: TASK-0020-COMPLETE — FROZEN `mint-github` consumer-contract surface
+# Implementation log: TASK-0026 — `secretctl github-app enroll`
 
-STATUS: GREEN
-
-Base: `g2-mint-github` off `origin/g2-native-mint` (714b187). REUSED (not rebuilt) the G2 primitive
-+ `DaemonHttpTransport` + `GitHubAppMint`/`mint_scoped`/`build_token_request_body` per the plan.
+Seal the GitHub App credential into the unlocked vault so TASK-0020's per-call
+`Engine::mint_github_token` can read it. Enroll writes EXACTLY what the mint reads (byte-for-byte
+names): broker-only secret `github-app-private-key` (PEM) + non-secret meta `github-app-id`.
+installation-id is NOT enrolled (it is supplied per-mint).
 
 ## Changes
-- `crates/secrets-proto/proto/control.proto`: added `rpc MintGithub(MintGithubReq) returns (MintGithubResp)` to `service Vault`; added the two frozen messages (`MintGithubReq{installation_id,repository_ids,permissions,ttl_secs}`, `MintGithubResp{token,expires_at_unix}`).
-- `crates/secrets-engine/src/seam.rs`: added `repo_ids: Vec<u64>` to `MintRequest` (mutually exclusive with `repos`); blanket `impl<C: Clock + ?Sized> Clock for &C` so a borrowed `&dyn Clock` satisfies the generic bound on `GitHubAppMint::new`.
-- `crates/secrets-engine/src/mint_github.rs`: added `NoopHttpTransport` (fail-closed default seam), `GithubMintParams{installation_id,repository_ids,permissions,ttl_secs,api_base}`, blanket `impl<T: HttpTransport + ?Sized> HttpTransport for &T`; taught `build_token_request_body(repos, repo_ids, perms)` to emit a numeric `repository_ids` array and REJECT `repos`+`repo_ids` together (GitHub 422); 2 new unit tests.
-- `crates/secrets-engine/src/lib.rs`: added `github_transport: Box<dyn HttpTransport>` field to `EngineInner` + the `#[cfg(feature="provider-github")]` param to `with_seams` (default `NoopHttpTransport`); flat secret-name consts `GITHUB_APP_KEY_NAME`/`GITHUB_APP_ID_META`; `Engine::put_github_app_id` (TASK-0026 enroll seam) + `Engine::mint_github_token(params, sink) -> ScopedToken` (broker-only unseal vs live DEK, per-call `GitHubAppMint`, metadata-only audit/event, fail-closed expiry/empty checks); updated all in-lib + test `with_seams` callers; 4 new unit tests in `native_mint_tests`.
-- `crates/secretd/src/transport.rs`: added `DaemonHttpTransport::from_handle(rt)` (off-reactor-safe constructor for the libSQL `spawn_blocking` path).
-- `crates/secretd/src/main.rs`: `build_engine` captures `Handle::current()` and threads it through `engine_with_daemon_seams`, which now installs `DaemonHttpTransport::from_handle(rt)` as `github_transport` (`#[cfg(feature="provider-github")]`).
-- `crates/secretd/src/grpc.rs`: `Vault::mint_github` handler (numeric `repository_ids` parse + non-numeric reject → `invalid_argument`; `ttl_secs` non-negative check; `spawn_blocking(engine.mint_github_token)`; `ENVCTL_GITHUB_API_BASE` override read in the daemon, engine stays env-free) + `map_mint_github_err` (locked→`failed_precondition`, transport/HTTP→`unavailable`, else→`permission_denied`); `#[cfg(not(provider-github))]` `Unimplemented` stub so the trait is satisfied feature-off; token never logged, materialized to `String` only at the response.
-- `crates/secretctl/src/cli.rs`: top-level `mint-github` subcommand `MintGithubArgs` with the EXACT frozen flags (`--installation-id` required, `--repository-ids a,b` comma-split, `--permissions name:access,...` comma-split verbatim, `--ttl-secs` required, `--output` required).
-- `crates/secretctl/src/main.rs`: `mint_github` dispatcher — `--output json` only; prints ONLY the compact two-field `{"token":"…","expires_at_unix":<i64>}` to stdout via `serde_json` (no serde-derive dep); 3 new tests incl. the differential contract test.
-- `crates/secretd/tests/native_mint_e2e.rs`: 3 new daemon e2e tests for `Vault.MintGithub` (frozen response, non-numeric-id reject, locked-vault refusal) against the mock GitHub.
-- `crates/secrets-engine/tests/{relay,inject,vault}.rs`, `crates/secretd/tests/{e2e,mitm_e2e,proxy_swap_e2e}.rs`, `crates/secretd/src/proxy.rs`: appended the `#[cfg(feature="provider-github")] Box::new(NoopHttpTransport)` arg to each `with_seams` caller.
+- `crates/secrets-proto/proto/control.proto`: added `rpc SetGithubAppId (SetGithubAppIdReq) returns (stream Event)` to `service Vault` + `message SetGithubAppIdReq { string app_id = 1; bool apply = 2; }` (apply=false => dry-run, CF-8).
+- `crates/secrets-engine/src/lib.rs`: exported `GITHUB_APP_KEY_NAME` / `GITHUB_APP_ID_META` as `pub const` (were private) so secretctl references them verbatim — kills literal-drift between the enroll writer and the mint reader. Engine logic otherwise UNTOUCHED.
+- `crates/secretd/src/grpc.rs`: added `type SetGithubAppIdStream = EventStream;` + the `set_github_app_id` handler (next to `add`) + the `map_set_app_id_err` classifier. Feature-gated on `provider-github` (Unimplemented without it, mirroring `mint_github`).
+- `crates/secretctl/Cargo.toml`: enabled `envctl-secrets-engine` feature `provider-github` (for `build_app_jwt` + `MAX_JWT_TTL_SECS` + the consts; pure-Rust rsa+base64, no new C) and added `zeroize` (PEM stays `Zeroizing`). No NEW workspace dependency.
+- `crates/secretctl/src/cli.rs`: added `Cmd::GithubApp { cmd: GithubAppCmd }` + `GithubAppCmd::Enroll { --app-id, --private-key, --apply }`.
+- `crates/secretctl/src/main.rs`: dispatch arm + `github_app` fn + `read_pem` helper. + 3 cli-parse tests.
+- `crates/secretd/tests/native_mint_e2e.rs`: 5 new e2e tests (round-trip + broker-only refusal + 3 negatives) reusing the mock-GitHub harness.
 
 ## Engine API (the parity contract)
-- `Engine::mint_github_token(&self, params: GithubMintParams, sink: &EventSink) -> anyhow::Result<ScopedToken>` — per-call mint; requires Unlocked (`EngineError::Locked` else); opens `github-app-private-key` broker-only vs live DEK; reads `github-app-id`; builds a per-call `GitHubAppMint`; metadata-only audit (`github_token_minted`: installation_id, repo/perm counts, expires_at) + `RelayMinted` event; rejects non-positive expiry / empty token. Token stays `Zeroizing`.
-- `Engine::put_github_app_id(&self, app_id: &str)` — flat App-id enrollment seam (Unlocked-gated; for TASK-0026 `secretctl github-app enroll`).
-- `Engine::with_seams(..)` — new trailing `github_transport: Box<dyn HttpTransport>` param under `provider-github` (daemon: `DaemonHttpTransport`; default: `NoopHttpTransport`).
-- `MintRequest.repo_ids: Vec<u64>` (numeric, mutually exclusive with `repos`).
-- New exports: `GithubMintParams`, `NoopHttpTransport`.
-- Wire: `Vault.MintGithub` RPC. CLI: `secretctl mint-github` → stdout `{"token":"…","expires_at_unix":<i64>}` (matches `flexnetos_github_app/crates/app-core/src/mint.rs` `build_argv` + `Out{token:String, expires_at_unix:u64}`).
+- No new Engine method. The engine seam `Engine::put_github_app_id(&self, app_id: &str) -> anyhow::Result<()>` (already present, returns `Err(EngineError::Locked)` if locked) is now wired to the new RPC. This is a secrets-stack (daemon) feature — there is no GUI parity surface (the env-manager GUI does not drive the vault daemon); CLI = `secretctl`, the sole client of `service Vault`.
+- New proto contract: `Vault.SetGithubAppId(SetGithubAppIdReq{app_id, apply}) -> stream Event`.
+- secretd handler signature: `async fn set_github_app_id(&self, Request<v1::SetGithubAppIdReq>) -> Result<Response<Self::SetGithubAppIdStream>, Status>`.
+- secretctl: `async fn github_app(cmd: GithubAppCmd, sock: PathBuf, json: bool) -> anyhow::Result<()>`; `fn read_pem(source: &str) -> anyhow::Result<zeroize::Zeroizing<Vec<u8>>>`.
 
-## Tests added (exact)
-mint_github.rs (engine unit): `repository_ids_emit_numeric_array_in_body`, `repositories_and_repository_ids_are_mutually_exclusive`.
-lib.rs `native_mint_tests` (engine unit): `mint_github_token_happy_path_mints_and_audits_metadata_only`, `mint_github_token_refuses_when_locked`, `mint_github_token_refuses_when_key_absent_naming_remediation`, `mint_github_token_refuses_on_http_error_never_a_token`.
-secretctl main.rs (CLI): `mint_github_argv_round_trips_through_clap`, `mint_github_argv_round_trips_without_optional_scopes`, `stdout_json_deserializes_into_consumer_out_shape` (the DIFFERENTIAL contract test — replicates the consumer's `build_argv` + `Out{token,expires_at_unix:u64}` verbatim and round-trips both directions; asserts compact two-field stdout + numeric `expires_at_unix`).
-native_mint_e2e.rs (daemon e2e): `mint_github_returns_frozen_two_field_response`, `mint_github_rejects_non_numeric_repository_id`, `mint_github_locked_vault_fails_precondition`.
+## Tests added (exact counts)
+secretctl `src/main.rs` unit tests (10 total in the file; 3 NEW):
+- `github_app_enroll_parses_app_id_keypath_and_apply` — proves `--app-id/--private-key/--apply` parse.
+- `github_app_enroll_defaults_to_dry_run_and_accepts_stdin_dash` — `--private-key -` selects stdin; apply defaults false.
+- `github_app_enroll_requires_app_id_and_private_key` — both flags required (clap error otherwise).
+
+secretd `tests/native_mint_e2e.rs` (11 total in the file; 5 NEW; all over the REAL `serve` wire):
+- `enroll_then_mint_github_round_trips` — **LOAD-BEARING**: init+unlock → enroll over the wire (Add broker-only PEM + SetGithubAppId "4044997") → `Vault.MintGithub` against the mock SUCCEEDS reading exactly what enroll wrote. Proves no name-drift writer↔reader.
+- `enrolled_pem_is_broker_only_and_reveal_is_refused` — after enroll, `Vault.Get{reveal,apply,confirm}` on the PEM ⇒ `permission_denied`, and the PEM bytes never appear in the error.
+- `set_github_app_id_empty_is_invalid_argument` — whitespace-only app_id ⇒ `invalid_argument`, nothing written.
+- `set_github_app_id_dry_run_mutates_nothing` — `apply=false` emits a DRY-RUN Log; a later mint fails closed (no App id enrolled) proving no write.
+- `set_github_app_id_locked_vault_fails_precondition` — `apply=true` on a locked vault ⇒ `failed_precondition`, nothing written.
 
 ## Build/test status
-- `cargo build -p envctl-secrets-engine --features provider-github -p envctl-secretd -p envctl-secretctl` — PASS. Also builds secretd WITH and WITHOUT `provider-github` (feature gating verified).
-- `cargo test -p envctl-secrets-engine --features provider-github` — PASS (160 total: 118 lib + 4 + 6 + 17 + 15).
-- `cargo test -p envctl-secretctl` — PASS (7).
-- `cargo test -p envctl-secretd` lib(31) + native_mint_e2e(6) + e2e(5) + mitm_e2e(2) + proxy_swap_e2e(1) — PASS.
-- `cargo test -p envctl-secrets-proto` — PASS.
+- `cargo build -p envctl-secrets-proto / -p envctl-secretd / -p envctl-secretctl` — PASS.
+- `cargo test -p envctl-secretctl` — PASS (10 passed, 0 failed).
+- `cargo test -p envctl-secretd --test native_mint_e2e` — PASS (11 passed, 0 failed; ~170s — the env-var tests are serialized by the existing `SERIAL` tokio mutex).
+- `cargo test -p envctl-secrets-engine --lib` — PASS (96 passed, 0 failed; `pub const` change caused no regression).
+- `cargo clippy -p envctl-secrets-proto -p envctl-secrets-engine -p envctl-secretd -p envctl-secretctl --all-targets -- -D warnings` — PASS (clean).
 - `cargo fmt --all --check` — PASS.
-- `cargo clippy -p envctl-secrets-engine -p envctl-secretd -p envctl-secretctl -p envctl-secrets-proto --all-targets -- -D warnings` — PASS (all touched crates clean).
-- `ci/gates/no-c.sh` — PASS (rustls=0.23.40 on ring=0.17.14; zero aws-lc/openssl/C-SQLite; NO NEW DEP). `shape.sh` — PASS. `enable.sh` — PASS.
+- `bash ci/gates/no-c.sh` — PASS ("rustls=['0.23.40'] on ring=['0.17.14']; zero aws-lc/openssl/C-SQLite"). Enabling `provider-github` in secretctl adds only pure-Rust rsa+base64.
+- `bash ci/gates/shape.sh` — PASS.
+
+### Residual issue (PRE-EXISTING, NOT mine)
+- `cargo clippy --workspace --all-targets -- -D warnings` FAILS on `crates/gui/...:1997` with `clippy::doc_lazy_continuation`. This is in `envctl-gui` test code, which is NOT in my diff (`git diff --name-only` shows only proto/engine/secretd/secretctl). It is floating-toolchain drift (rust-1.96.0 doc-lint strictness) pre-existing on the branch base, exactly the class flagged in `rust-feature-impl/references/verification.md`. All four TASK-0026 crates pass `--all-targets -D warnings`.
 
 ## Deviations
-- Added `api_base: Option<String>` to `GithubMintParams` (NOT in the plan's field list). Rationale: the plan's mandated daemon e2e + GHES support need a REST-base override, but the engine must stay env-free. The engine accepts the override as a param; the daemon fills it from `ENVCTL_GITHUB_API_BASE` — identical discipline to the existing relay-native `rebuild_github_provider`. Default `None` ⇒ real GitHub, so the frozen wire contract is unchanged.
-- Added `Engine::put_github_app_id` (a small public enrollment seam) so the daemon e2e can seed the flat `github-app-id` without test-only access to the private store. It is the legitimate engine seam TASK-0026 (`secretctl github-app enroll`) will drive, not test scaffolding.
-- `with_seams`' new `github_transport` param is `#[cfg(feature="provider-github")]`-gated (the plan said "3 callers"); under that feature ALL `with_seams` callers (incl. the workspace's test files) require the arg, so I added `NoopHttpTransport` to every caller. The engine's default build (feature off) keeps the original 6-arg signature.
+1. **secretctl enables the engine `provider-github` feature.** The plan calls `build_app_jwt` + `MAX_JWT_TTL_SECS` for client-side PEM validation and references `GITHUB_APP_KEY_NAME`; all three are `#[cfg(feature = "provider-github")]` engine exports, so secretctl must enable that feature. It pulls only pure-Rust `rsa` + `base64` (already in the trust boundary via the engine) — no-c gate green. Not a design change; the plan implied it.
+2. **Locked → `failed_precondition` for the apply path is done OUTSIDE `run_streaming`.** The shared `run_streaming` maps every engine error to `Status::internal`; changing it would affect every streaming RPC. So the apply path runs `put_github_app_id` on `spawn_blocking` directly and classifies via `map_set_app_id_err` (mirrors the unary `map_mint_github_err`), then ships a one-item success stream. The dry-run path uses `run_streaming` (no engine mutation). Net behavior matches the plan exactly (Locked ⇒ failed_precondition; empty ⇒ invalid_argument; dry-run ⇒ preview, nothing written).
+3. **SHA-256 fingerprint omitted** — per plan ("Skip the SHA-256 fingerprint if it would add a new secretctl dependency"); blake3/sha2 are not secretctl deps, so it was dropped to keep the dep surface minimal.
 
-## Handoff notes (for the invariant-guardian — targeted checks)
-- FAIL-CLOSED proof points: `mint_github_token` refuses on (a) locked vault → `EngineError::Locked` (`mint_github_token_refuses_when_locked`); (b) absent `github-app-private-key` → error NAMING `secretctl github-app enroll` (`..._refuses_when_key_absent_naming_remediation`); (c) GitHub HTTP error → no token (`..._refuses_on_http_error_never_a_token` + daemon `map_mint_github_err`); (d) non-positive expiry / empty token → bail. Daemon boundary: non-numeric `repository_ids` → `invalid_argument`; locked → `failed_precondition`.
-- NO-SECRET-IN-LOGS: token stays `Zeroizing` in the engine; audit/event are metadata-only (`github_token_minted` detail = installation_id + repo/perm counts + expires_at). Verified by `mint_github_token_happy_path...` (asserts the token never appears in any emitted event) and the daemon e2e (asserts the token never crosses the event-stream wire). The token materializes as a `String` ONLY at `MintGithubResp` + the secretctl stdout write.
-- FROZEN CONTRACT: the differential test `stdout_json_deserializes_into_consumer_out_shape` + `mint_github_argv_round_trips_through_clap` pin parity with `flexnetos_github_app/crates/app-core/src/mint.rs` (`build_argv` argv + `Out{token:String, expires_at_unix:u64}`). stdout is compact, exactly two fields, `expires_at_unix` a JSON NUMBER. All non-JSON output in secretctl goes via clap/anyhow to stderr; the `mint_github` success path writes ONLY the one `println!`.
-- repository_ids/repositories mutual exclusion (GitHub 422) is enforced in `build_token_request_body` (`repositories_and_repository_ids_are_mutually_exclusive`); the `mint-github` path sets only `repo_ids`.
-- NO-C: reused `DaemonHttpTransport` (reqwest/rustls-ring/frozen webpki-roots) verbatim; added NO dependency. `no-c.sh` green, one rustls ring-only.
-- PRE-EXISTING (not my change): `cargo clippy -p envctl-gui --all-targets -- -D warnings` fails with `doc_list_item_without_indentation` at `crates/gui/src/main.rs:1997` under clippy 1.96. Verified it fails IDENTICALLY on the base (714b187) with my changes stashed — toolchain drift in an untouched crate, not a TASK-0020 regression. The full-workspace `--all-targets` clippy run trips on it; my four touched crates are clean.
+## Handoff notes (for the invariant-guardian)
+- **No new dependency in the trust boundary**: secretctl now enables engine `provider-github` (rsa+base64, pure-Rust) and adds `zeroize` (already a workspace pin). `ci/gates/no-c.sh` is green — verify Gate 2 (`envctl-secretctl --all-features`) still finds no aws-lc/openssl/C-SQLite.
+- **Fail-closed, dry-run by default** — three refusal paths are unit/e2e tested: (a) `set_github_app_id_empty_is_invalid_argument`, (b) `set_github_app_id_dry_run_mutates_nothing` (the proof is a downstream mint that fails closed), (c) `set_github_app_id_locked_vault_fails_precondition`. The secretctl `github_app` fn also validates the PEM (via `build_app_jwt`) BEFORE any RPC, so a non-PEM `--private-key` writes nothing (validated by the round-trip's reliance on a real key + the engine's parse).
+- **PEM never printed/logged**: secretctl holds the PEM in `Zeroizing` from `read_pem` until it crosses the peercred-gated UDS in `AddSecretReq.value`; the dry-run preview prints only metadata to STDERR. The `enrolled_pem_is_broker_only_and_reveal_is_refused` test asserts the PEM bytes never appear in a refused-reveal error.
+- **Broker-only PEM**: enroll seals with `broker_only=true`, so `secret get --reveal` is REFUSED (test covers it); the mint reads it via the internal `open_real_key` path only — proven by the round-trip.
+- **The round-trip is the anti-drift gate**: it enrolls over the WIRE (not the engine seed helper) and then a real `Vault.MintGithub` succeeds — so if the enroll-writer and mint-reader names ever diverge, that test fails. The `pub const` export ensures both sides use one literal.
+- Engine stays the single non-printing library; secretd + secretctl are thin. No GUI parity is required (this is the secrets-daemon stack, not the env-manager engine).
+
+STATUS: GREEN

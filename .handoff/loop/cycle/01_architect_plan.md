@@ -1,40 +1,32 @@
-# TASK-0020-COMPLETE — FROZEN `mint-github` consumer-contract surface
+# TASK-0026 — `secretctl github-app enroll`  (VERDICT: GO)
 
-VERDICT: GO. Base = `origin/g2-native-mint` (714b187) which ALREADY has the G2 primitive +
-`crates/secretd/src/transport.rs` (`DaemonHttpTransport`) + `Engine::resolve_injection`. **Correction
-to the architect's premise:** DaemonHttpTransport is PRESENT on this base — REUSE it, do not rebuild.
+Seal the GitHub App credential into the unlocked vault so TASK-0020's `Engine::mint_github_token`
+can read it. Write EXACTLY what the mint reads (byte-for-byte names): broker-only secret
+`github-app-private-key` (PEM) + meta key `github-app-id`. installation-id is NOT enrolled (it comes
+per-mint from `MintGithubReq.installation_id`). Live: app-id=4044997, installation-id=140063898, org FlexNetOS.
 
-## Frozen contract (do NOT change; `flexnetos_github_app/crates/app-core/src/mint.rs` shells it)
-`secretctl mint-github --installation-id <N> [--repository-ids a,b] [--permissions name:access,...] --ttl-secs <T> --output json`
-→ stdout EXACTLY `{"token":"<tok>","expires_at_unix":<i64 epoch>}` (consumer struct: `Out{token:String, expires_at_unix:u64}`).
-RPC: `rpc MintGithub(MintGithubReq) returns (MintGithubResp)` on `service Vault`;
-`MintGithubReq{ uint64 installation_id=1; repeated string repository_ids=2; repeated string permissions=3; int64 ttl_secs=4; }`
-`MintGithubResp{ string token=1; int64 expires_at_unix=2; }`.
+## Decisions (resolved from code)
+1. **Reuse `Vault.Add` for the PEM** (control.proto:73 `AddSecretReq.broker_only=6` → conv.rs:131 → `secret_put{broker_only}`). **Add ONE new minimal RPC for app-id**: `Engine::put_github_app_id` (lib.rs:1682, writes `put_meta("github-app-id")`, Err(Locked) if locked) exists but is wired to NO RPC — that's the gap.
+2. Names (match `mint_github_token` readers verbatim): PEM secret `github-app-private-key` (lib.rs:120 `GITHUB_APP_KEY_NAME`, read via `open_real_key` lib.rs:1742); app-id meta `github-app-id` (lib.rs:122 `GITHUB_APP_ID_META`, read via `get_meta` lib.rs:1749). RECOMMENDED: export these as `pub const` from secrets-engine for secretctl to reference (kills literal-drift). NOT the `{secret_name}.app_id` relay convention — different path, out of scope.
+3. PEM input `--private-key <path|->` (stdin via existing `read_stdin_bytes` main.rs:102). Validate client-side BEFORE any write by reusing `envctl_secrets::build_app_jwt` (lib.rs:40 re-export; mint_github.rs:155 parses PKCS#1 or PKCS#8) — bail on Err, NEVER echo PEM bytes. Wrap PEM in `Zeroizing` on read.
+4. `--apply` gating (dry-run by default, CF-8): no --apply → validate + preview to STDERR (name, broker_only=true, app-id, installation-id reminder, optional SHA-256 fingerprint = non-secret hash), write nothing. --apply → `Vault.Add{broker_only:true}` (PEM) THEN `Vault.SetGithubAppId{apply:true}` (app-id). PEM first (no orphan app-id on failure).
 
-## Design decisions (resolved → GO)
-1. **repository_ids vs repositories:** GitHub `POST /app/installations/{id}/access_tokens` accepts both, MUTUALLY EXCLUSIVE. Contract passes numeric IDs → emit `"repository_ids":[ints]`. Add `repo_ids: Vec<u64>` to `MintRequest`; teach `build_token_request_body` to emit `repository_ids` when present; keep the existing `repositories` (names) path for other callers. This RPC populates ONLY repo_ids (sending both → 422).
-2. **Per-call mint (not the installed provider):** installation_id is request-supplied → handler reads the sealed App key + builds a per-call `GitHubAppMint::new(app_id, req.installation_id, pem, clock, transport)`. The relay-provider/NativeSubtoken path (G2) is NOT used here.
-3. **Secret names:** flat TASK-0020 convention — `github-app-private-key` (broker-only PEM), `github-app-id` (=4044997). installation_id from the REQUEST. If secrets not sealed → fail closed with an "App key not enrolled — run `secretctl github-app enroll` (TASK-0026)" message.
-4. **expires_at_unix:** `ScopedToken.expires_at` is already an i64 epoch (engine converts GitHub RFC3339 via `.timestamp()` in `parse_token_response`). Emit as JSON number, NOT a string. Defensive negative-check.
+## Proto delta (secrets-proto/proto/control.proto, service Vault ~line 50/81)
+`rpc SetGithubAppId (SetGithubAppIdReq) returns (stream Event);`
+`message SetGithubAppIdReq { string app_id = 1; bool apply = 2; }`  (stream Event matches Add/Rm/Rotate; apply=dry-run gate)
 
-## Engine API delta (logic in the engine — non-printing, seam-pure)
-`Engine::mint_github_token(&self, params: GithubMintParams, sink: &EventSink) -> anyhow::Result<ScopedToken>`
-with `GithubMintParams{ installation_id:u64, repository_ids:Vec<u64>, permissions:Vec<String>, ttl_secs:i64 }`.
-Steps (mirror `open_mitm_ca_key` lib.rs:~535): vault read lock, require Unlocked (locked → `EngineError::Locked`, fail-closed); open `github-app-private-key` broker-only directly against the live DEK (NOT `secret_get`) → `Zeroizing` PEM; read `github-app-id`; build per-call `GitHubAppMint` with the engine clock + the HttpTransport seam; `mint_scoped`; emit METADATA-ONLY audit (installation_id, repo/perm counts, expires_at — never the token); return ScopedToken (Zeroizing).
-**HttpTransport seam:** prefer an Engine field `github_transport: Box<dyn HttpTransport>` set in `with_seams` (daemon supplies `DaemonHttpTransport`, tests a fake; default errors → non-daemon builds fail closed). Reuse the EXISTING `DaemonHttpTransport` from transport.rs.
-
-## Units (leaf-first)
-1. proto: add the RPC + 2 messages to `service Vault` (unary, no apply/confirm field).
-2. engine: `MintRequest.repo_ids` + `build_token_request_body` `repository_ids` branch + `mint_github_token` + the `github_transport` seam in `with_seams` (update the 3 `with_seams` callers: open_with_store, secretd `engine_with_daemon_seams`, test helper) + unit tests.
-3. secretd: wire `engine_with_daemon_seams` to pass `DaemonHttpTransport` as `github_transport`; `mint_github` handler in grpc.rs (`i64::try_from(ttl)` bound check; parse repository_ids strings→u64, reject malformed; `spawn_blocking(engine.mint_github_token)`; map errors → Status: locked→failed_precondition, transport→unavailable, denial→permission_denied; build resp; NEVER log token).
-4. secretctl: `mint-github` subcommand, EXACT frozen flags; `--output json` prints ONLY the two-field JSON (compact) to stdout; all logs to stderr.
-5. DIFFERENTIAL contract test: serialize `MintGithubResp` via the CLI path, deserialize with the consumer's `Out{token:String, expires_at_unix:u64}` shape (read `flexnetos_github_app/crates/app-core/src/mint.rs` for exact names); assert argv matches `app-core::build_argv`.
+## Units (leaf-first; engine UNTOUCHED — seams exist)
+1. proto: the RPC + message above (existing prost/tonic build.rs, no new dep).
+2. secretd `grpc.rs`: `Vault::set_github_app_id` next to `add` (line 147). apply==false → dry-run Event, mutate nothing. apply==true → `run_streaming` calling `engine.put_github_app_id(&req.app_id)` (Locked→failed_precondition per grpc.rs:332 pattern). Empty app_id → invalid_argument. No secret logging (app-id is non-secret).
+3. secretctl `cli.rs`: `Cmd::GithubApp{ #[command(subcommand)] cmd: GithubAppCmd }` + `GithubAppCmd::Enroll{ app_id:String (--app-id), private_key:String (--private-key, path or "-"), apply:bool }`.
+4. secretctl `main.rs`: `Cmd::GithubApp` dispatch (~line 191) + `github_app` fn: read+Zeroize PEM (file or `-`), validate via `build_app_jwt` (bail, no byte echo), dry-run preview→stderr, --apply → Add{name "github-app-private-key", provider github, value pem, broker_only:true, overwrite:false} then SetGithubAppId{app_id, apply:true}, drain each Event stream. Fingerprint only if it needs NO new secretctl dep (else omit).
+5. tests: secretd handler (empty app_id→invalid_argument; dry-run no-mutate; locked→failed_precondition); secretctl cli parse (mirror MintGithub parse tests main.rs:885; `-` stdin); **ROUND-TRIP e2e (load-bearing)** in secretd tests: init+unlock → enroll (Add broker-only test PKCS#1 key from mint_github.rs:340 + SetGithubAppId "4044997") → `Vault.MintGithub` (mock via ENVCTL_GITHUB_API_BASE) SUCCEEDS reading exactly what enroll wrote; broker-only-refusal test (`secret get github-app-private-key --reveal` REFUSED post-enroll); negatives (non-PEM → no write; locked → failed_precondition, nothing written).
 
 ## Invariants
-No-C: reuse existing DaemonHttpTransport reqwest/rustls-ring + frozen webpki roots, NO new dep (`ci/gates/no-c.sh` green). One rustls ring-only. Engine non-printing (audit Events, logic in engine; only secretctl prints, only the frozen JSON). Fail-closed: locked vault / absent key / transport error / malformed input / empty token → error, never a fabricated/plaintext token; read-only RPC so no --apply (vault-unlock + USB possession is the gate). Token Zeroizing until the final stdout write; audit metadata-only.
+No-C (ZERO new dep; reuse rsa/build_app_jwt + prost/tonic). One rustls ring-only (transport untouched). Engine non-printing/untouched; secretd+secretctl thin; NEVER print PEM/secret bytes (only metadata to stderr). Fail-closed + dry-run-by-default (locked/bad-PEM/missing-arg/no-apply → nothing written). Broker-only PEM (secret get --reveal REFUSES it). Audit metadata-only.
 
 ## Sequencing
-proto → engine (+seam, callers) → secretd transport-wire + handler → secretctl subcommand → differential test → `cargo fmt`/`clippy --workspace -D warnings`/`test` + 4 `ci/gates/*.sh`.
+proto → secretd handler+tests → secretctl cli+dispatch → round-trip/refusal/negative tests → fmt/clippy --workspace -D warnings/test --workspace → no-c.sh + shape.sh.
 
 ## Risks
-repository_ids exclusivity (only one); repository_ids wire = repeated string parsed→u64 (reject non-numeric at handler boundary); stdout purity (only the JSON on stdout or the consumer's `serde_json::from_slice` breaks); expires_at i64→u64 safe (epoch positive, defensive check).
+Name drift (mitigate: pub const from engine + round-trip e2e is the gate). installation-id confusion (document: enroll does NOT take it). fingerprint dep creep (drop if it adds a secretctl dep). proto regen blast radius low (single server impl, secretctl sole client).

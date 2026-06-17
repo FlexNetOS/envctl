@@ -590,3 +590,283 @@ async fn mint_github_locked_vault_fails_precondition() {
         "locked vault ⇒ failed_precondition, got: {err:?}"
     );
 }
+
+// ============================================================================================
+// TASK-0026: `secretctl github-app enroll` — the enroll RPC pair (Vault.Add broker_only +
+// Vault.SetGithubAppId) writes EXACTLY what the TASK-0020 per-call mint reads. The round-trip
+// (enroll over the wire → MintGithub succeeds against the mock) is the load-bearing gate proving
+// no name-drift between the writer and the reader.
+// ============================================================================================
+
+const ENROLL_TOKEN: &str = "ghs_enroll_roundtrip_token";
+
+/// Init the vault (passphrase only) + leave it UNLOCKED in-process — the enroll RPCs require an
+/// unlocked vault, and enrolling over the wire (not via the engine seed helper) is the whole point.
+fn init_and_unlock(engine: &Engine) {
+    let sink = EventSink::null();
+    engine
+        .init_vault(
+            Zeroizing::new("correct horse battery staple".to_string()),
+            None,
+            None,
+            cheap_argon2(),
+            &sink,
+        )
+        .expect("init_vault");
+    engine
+        .unlock(
+            envctl_secrets::Unlock::Passphrase(Zeroizing::new(
+                "correct horse battery staple".to_string(),
+            )),
+            &sink,
+        )
+        .expect("unlock");
+}
+
+/// Enroll the App credential ENTIRELY OVER THE WIRE, exactly as `secretctl github-app enroll --apply`
+/// does: `Vault.Add{ broker_only=true }` (the PEM, under the engine's `GITHUB_APP_KEY_NAME`) THEN
+/// `Vault.SetGithubAppId{ apply=true }` (the App id). Returns the drained event count so the caller
+/// can assert the writes happened.
+async fn enroll_over_wire(sock: &std::path::Path, app_id: &str, wire: &Arc<Mutex<Vec<u8>>>) {
+    let mut c = v1::vault_client::VaultClient::new(connect(sock.to_path_buf()).await);
+    // 1. Seal the PEM broker-only under the mint reader's name (verbatim engine const).
+    let add = c
+        .add(v1::AddSecretReq {
+            name: envctl_secrets::GITHUB_APP_KEY_NAME.to_string(),
+            provider: v1::ProviderKind::Github as i32,
+            value: TEST_PEM.as_bytes().to_vec(),
+            note: "e2e enroll pem".to_string(),
+            overwrite: false,
+            broker_only: true,
+        })
+        .await
+        .expect("vault.add app pem")
+        .into_inner();
+    let _ = drain(add, wire).await;
+    // 2. Persist the non-secret App id.
+    let set = c
+        .set_github_app_id(v1::SetGithubAppIdReq {
+            app_id: app_id.to_string(),
+            apply: true,
+        })
+        .await
+        .expect("vault.set_github_app_id")
+        .into_inner();
+    let evs = drain(set, wire).await;
+    assert!(
+        evs.iter().any(|e| matches!(
+            &e.kind, Some(v1::event::Kind::Log(l)) if l.line.contains("enrolled GitHub App id")
+        )),
+        "applied SetGithubAppId must emit a confirming Log, got {evs:?}"
+    );
+}
+
+/// (ROUND-TRIP, load-bearing): init+unlock → enroll over the wire (Add broker_only PEM +
+/// SetGithubAppId "4044997") → `Vault.MintGithub` against the mock SUCCEEDS, reading EXACTLY what
+/// enroll wrote. Proves the enroll writer and the TASK-0020 mint reader share the same names.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn enroll_then_mint_github_round_trips() {
+    let _g = serial_guard().await;
+    let body = r#"{"token":"ghs_enroll_roundtrip_token","expires_at":"2026-06-12T23:00:00Z"}"#;
+    let (base, mock) = spawn_mock_github(201, body);
+    std::env::set_var("ENVCTL_GITHUB_API_BASE", &base);
+
+    let event_wire: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(Vec::new()));
+    let (_dir, paths) = temp_paths("enroll-roundtrip");
+    let engine = make_engine_with_daemon_transport(&paths);
+    init_and_unlock(&engine); // vault is UNLOCKED; nothing enrolled yet
+
+    let sock = paths.control_socket();
+    serve(engine.clone(), sock.clone());
+    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+
+    // Enroll the credential over the wire (no engine-side seed), then mint reads it back.
+    enroll_over_wire(&sock, "4044997", &event_wire).await;
+
+    let resp = mint_github_over_wire(&sock, vec!["10"], vec!["checks:write"])
+        .await
+        .expect("mint_github after wire-enroll must succeed");
+    let _ = mock.join();
+    assert_eq!(
+        resp.token, ENROLL_TOKEN,
+        "the mint read EXACTLY the enrolled credential and minted against the mock"
+    );
+    assert!(resp.expires_at_unix > 0, "positive epoch");
+
+    std::env::remove_var("ENVCTL_GITHUB_API_BASE");
+}
+
+/// (BROKER-ONLY REFUSAL): after enroll, `Vault.Get{reveal,apply,confirm}` on the App PEM is REFUSED
+/// (`permission_denied`, empty value) — the PEM was sealed `broker_only=true`, so the operator
+/// surface can never read it out; only the internal mint path opens it.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn enrolled_pem_is_broker_only_and_reveal_is_refused() {
+    let _g = serial_guard().await;
+    std::env::remove_var("ENVCTL_GITHUB_API_BASE");
+    let event_wire: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(Vec::new()));
+    let (_dir, paths) = temp_paths("enroll-brokeronly");
+    let engine = make_engine_with_daemon_transport(&paths);
+    init_and_unlock(&engine);
+
+    let sock = paths.control_socket();
+    serve(engine.clone(), sock.clone());
+    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    enroll_over_wire(&sock, "4044997", &event_wire).await;
+
+    let mut c = v1::vault_client::VaultClient::new(connect(sock.clone()).await);
+    let err = c
+        .get(v1::GetSecretReq {
+            name: envctl_secrets::GITHUB_APP_KEY_NAME.to_string(),
+            reveal: true,
+            apply: true,
+            confirm: true,
+        })
+        .await
+        .expect_err("a broker_only reveal must be refused");
+    assert_eq!(
+        err.code(),
+        tonic::Code::PermissionDenied,
+        "broker_only reveal ⇒ permission_denied, got: {err:?}"
+    );
+    // The PEM bytes must NEVER appear on the wire for a refused reveal.
+    assert!(
+        !contains(err.message().as_bytes(), b"BEGIN RSA PRIVATE KEY"),
+        "the refused reveal must not echo the PEM"
+    );
+}
+
+/// (NEGATIVE): an empty `app_id` is rejected at the boundary (`invalid_argument`) and writes nothing.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn set_github_app_id_empty_is_invalid_argument() {
+    let _g = serial_guard().await;
+    std::env::remove_var("ENVCTL_GITHUB_API_BASE");
+    let (_dir, paths) = temp_paths("setid-empty");
+    let engine = make_engine_with_daemon_transport(&paths);
+    init_and_unlock(&engine);
+
+    let sock = paths.control_socket();
+    serve(engine.clone(), sock.clone());
+    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+
+    let mut c = v1::vault_client::VaultClient::new(connect(sock.clone()).await);
+    let err = c
+        .set_github_app_id(v1::SetGithubAppIdReq {
+            app_id: "   ".to_string(), // whitespace-only ⇒ empty after trim
+            apply: true,
+        })
+        .await
+        .expect_err("empty app_id must be rejected");
+    assert_eq!(
+        err.code(),
+        tonic::Code::InvalidArgument,
+        "empty app_id ⇒ invalid_argument, got: {err:?}"
+    );
+}
+
+/// (NEGATIVE): a DRY-RUN `SetGithubAppId{apply=false}` emits a preview Log and mutates NOTHING — a
+/// subsequent MintGithub still fails closed (no App id enrolled ⇒ permission_denied).
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn set_github_app_id_dry_run_mutates_nothing() {
+    let _g = serial_guard().await;
+    std::env::remove_var("ENVCTL_GITHUB_API_BASE");
+    let event_wire: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(Vec::new()));
+    let (_dir, paths) = temp_paths("setid-dryrun");
+    let engine = make_engine_with_daemon_transport(&paths);
+    init_and_unlock(&engine);
+
+    let sock = paths.control_socket();
+    serve(engine.clone(), sock.clone());
+    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+
+    // Seal the PEM so the ONLY missing piece is the App id (isolates that the dry-run didn't write it).
+    {
+        let mut c = v1::vault_client::VaultClient::new(connect(sock.clone()).await);
+        let add = c
+            .add(v1::AddSecretReq {
+                name: envctl_secrets::GITHUB_APP_KEY_NAME.to_string(),
+                provider: v1::ProviderKind::Github as i32,
+                value: TEST_PEM.as_bytes().to_vec(),
+                note: "dry-run pem".to_string(),
+                overwrite: false,
+                broker_only: true,
+            })
+            .await
+            .expect("vault.add")
+            .into_inner();
+        let _ = drain(add, &event_wire).await;
+    }
+
+    // DRY-RUN the id enrollment: a preview Log, no write.
+    {
+        let mut c = v1::vault_client::VaultClient::new(connect(sock.clone()).await);
+        let evs = drain(
+            c.set_github_app_id(v1::SetGithubAppIdReq {
+                app_id: "4044997".to_string(),
+                apply: false,
+            })
+            .await
+            .expect("dry-run set rpc")
+            .into_inner(),
+            &event_wire,
+        )
+        .await;
+        assert!(
+            evs.iter().any(|e| matches!(
+                &e.kind, Some(v1::event::Kind::Log(l)) if l.line.contains("DRY-RUN")
+            )),
+            "dry-run SetGithubAppId must emit a DRY-RUN preview Log, got {evs:?}"
+        );
+    }
+
+    // PROOF the id was not written: the per-call mint fails closed (App id not enrolled).
+    let err = mint_github_over_wire(&sock, vec![], vec![])
+        .await
+        .expect_err("mint must fail: dry-run wrote no App id");
+    assert_eq!(
+        err.code(),
+        tonic::Code::PermissionDenied,
+        "no App id ⇒ permission_denied (the mint's absent-id remediation), got: {err:?}"
+    );
+}
+
+/// (NEGATIVE): an `apply=true` SetGithubAppId on a LOCKED vault fails closed with
+/// `failed_precondition` and writes nothing (the engine refuses without a DEK).
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn set_github_app_id_locked_vault_fails_precondition() {
+    let _g = serial_guard().await;
+    std::env::remove_var("ENVCTL_GITHUB_API_BASE");
+    let (_dir, paths) = temp_paths("setid-locked");
+    let engine = make_engine_with_daemon_transport(&paths);
+    // Init but DO NOT unlock — the vault stays locked.
+    {
+        let sink = EventSink::null();
+        engine
+            .init_vault(
+                Zeroizing::new("correct horse battery staple".to_string()),
+                None,
+                None,
+                cheap_argon2(),
+                &sink,
+            )
+            .expect("init_vault");
+    }
+
+    let sock = paths.control_socket();
+    serve(engine.clone(), sock.clone());
+    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+
+    let mut c = v1::vault_client::VaultClient::new(connect(sock.clone()).await);
+    let stream = c
+        .set_github_app_id(v1::SetGithubAppIdReq {
+            app_id: "4044997".to_string(),
+            apply: true,
+        })
+        .await;
+    // The error may surface at the call (unary-style status) — assert failed_precondition.
+    let err = stream.expect_err("locked vault must refuse the id write");
+    assert_eq!(
+        err.code(),
+        tonic::Code::FailedPrecondition,
+        "locked vault ⇒ failed_precondition, got: {err:?}"
+    );
+}

@@ -82,6 +82,7 @@ impl v1::vault_server::Vault for VaultSvc {
     type AddStream = EventStream;
     type RmStream = EventStream;
     type RotateStream = EventStream;
+    type SetGithubAppIdStream = EventStream;
 
     /// Vault.Init — genesis: mint the DEK + enroll the passphrase keyslot (and optionally a USB
     /// keyslot) over `Engine::init_vault`. Owner-only (the SO_PEERCRED interceptor already gated the
@@ -154,6 +155,80 @@ impl v1::vault_server::Vault for VaultSvc {
         let body = Zeroizing::new(req.value);
         let stream = run_streaming(self.engine.clone(), move |engine, sink: &EventSink| {
             engine.secret_put(meta, body, sink)
+        });
+        Ok(Response::new(stream))
+    }
+
+    /// Vault.SetGithubAppId — TASK-0026 (`secretctl github-app enroll`): seal the NON-SECRET GitHub
+    /// App id (`github-app-id`) that `mint_github_token` reads. The App PEM is enrolled separately via
+    /// `Vault.Add` (broker_only). FAIL-CLOSED + apply-gated, mirroring `init`:
+    ///   * an empty `app_id` is a malformed request ⇒ `invalid_argument` (never written).
+    ///   * `apply=false` (the default, CF-8) is a DRY-RUN: emit a preview Event and mutate NOTHING.
+    ///   * `apply=true` runs `engine.put_github_app_id`, which REFUSES when the vault is Locked
+    ///     (no DEK) ⇒ surfaced as `failed_precondition` (the operator must unlock first). The id is
+    ///     non-secret (integrity-covered by the header MAC), so it is safe to echo in the Event.
+    ///
+    /// Without the `provider-github` feature the engine has no enroll path ⇒ `Unimplemented`.
+    #[cfg(not(feature = "provider-github"))]
+    async fn set_github_app_id(
+        &self,
+        _request: Request<v1::SetGithubAppIdReq>,
+    ) -> Result<Response<Self::SetGithubAppIdStream>, Status> {
+        Err(Status::unimplemented(
+            "Vault.SetGithubAppId requires the provider-github feature",
+        ))
+    }
+
+    #[cfg(feature = "provider-github")]
+    async fn set_github_app_id(
+        &self,
+        request: Request<v1::SetGithubAppIdReq>,
+    ) -> Result<Response<Self::SetGithubAppIdStream>, Status> {
+        use envctl_secrets::event::{SecretEvent, Stream};
+        let req = request.into_inner();
+        let app_id = req.app_id.trim().to_string();
+        // Boundary validation: an empty id is malformed — refuse BEFORE any mutation (fail-closed).
+        if app_id.is_empty() {
+            return Err(Status::invalid_argument("app_id must not be empty"));
+        }
+
+        // DRY-RUN (the default, CF-8): preview only — mutate nothing (no meta write, no audit). No
+        // engine call is made, so this can never fail closed; emit one Log Event and finish.
+        if !req.apply {
+            let stream = run_streaming(self.engine.clone(), move |_engine, sink: &EventSink| {
+                sink.emit(SecretEvent::Log {
+                    source: "vault.set_github_app_id".to_string(),
+                    stream: Stream::Stdout,
+                    line: format!(
+                        "DRY-RUN: would enroll GitHub App id '{app_id}' (meta key `github-app-id`). \
+                         Re-run with --apply to mutate."
+                    ),
+                });
+                Ok(())
+            });
+            return Ok(Response::new(stream));
+        }
+
+        // APPLY: run the SYNC engine write on spawn_blocking. The engine REFUSES when the vault is
+        // Locked (no DEK) ⇒ `Err(Locked)`, which we classify to `failed_precondition` (the operator
+        // must unlock first) — NOT `internal`, matching the unary `map_mint_github_err` discipline.
+        // The id is non-secret (header-MAC integrity-covered), so it is safe to echo in the Event.
+        let engine = self.engine.clone();
+        let id_for_log = app_id.clone();
+        tokio::task::spawn_blocking(move || engine.put_github_app_id(&app_id))
+            .await
+            .map_err(join_err)?
+            .map_err(map_set_app_id_err)?;
+
+        // On success, ship a one-item success stream (a single Log Event) so the client drains it
+        // exactly like Add/Init. `run_streaming` here makes no further engine mutation.
+        let stream = run_streaming(self.engine.clone(), move |_engine, sink: &EventSink| {
+            sink.emit(SecretEvent::Log {
+                source: "vault.set_github_app_id".to_string(),
+                stream: Stream::Stdout,
+                line: format!("enrolled GitHub App id '{id_for_log}' (meta key `github-app-id`)"),
+            });
+            Ok(())
         });
         Ok(Response::new(stream))
     }
@@ -341,6 +416,18 @@ fn map_mint_github_err(e: anyhow::Error) -> Status {
         return Status::unavailable(msg);
     }
     Status::permission_denied(msg)
+}
+
+/// Map a `put_github_app_id` failure to a tonic `Status` (TASK-0026). A locked vault ⇒
+/// `failed_precondition` (unlock first); any other write error (store fault) ⇒ `internal`. The App id
+/// is non-secret, so the message carries no key material.
+#[cfg(feature = "provider-github")]
+fn map_set_app_id_err(e: anyhow::Error) -> Status {
+    use envctl_secrets::EngineError;
+    if let Some(EngineError::Locked) = e.downcast_ref::<EngineError>() {
+        return Status::failed_precondition(e.to_string());
+    }
+    Status::internal(e.to_string())
 }
 
 // ============================================================================================

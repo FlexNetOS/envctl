@@ -10,7 +10,7 @@ use std::path::PathBuf;
 
 use anyhow::Context;
 use clap::Parser;
-use cli::{CaCmd, Cli, Cmd, MintGithubArgs, RelayCmd, SecretCmd};
+use cli::{CaCmd, Cli, Cmd, GithubAppCmd, MintGithubArgs, RelayCmd, SecretCmd};
 use envctl_secrets_proto::v1;
 use hyper_util::rt::TokioIo;
 use tonic::transport::{Endpoint, Uri};
@@ -189,7 +189,99 @@ async fn run(args: Cli) -> anyhow::Result<()> {
         }
         Cmd::Run(a) => run_child_cmd(a, sock, json).await?,
         Cmd::MintGithub(a) => mint_github(a, sock).await?,
+        Cmd::GithubApp { cmd } => github_app(cmd, sock, json).await?,
     }
+    Ok(())
+}
+
+/// Read the App private-key PEM from `--private-key` (a file path, or `-` for stdin) into a
+/// `Zeroizing` buffer that is wiped on drop. The bytes never leave this buffer except over the
+/// peercred-gated UDS in `AddSecretReq.value`; they are NEVER printed, logged, or echoed.
+fn read_pem(source: &str) -> anyhow::Result<zeroize::Zeroizing<Vec<u8>>> {
+    let bytes = if source == "-" {
+        read_stdin_bytes().context("reading the App private-key PEM from stdin")?
+    } else {
+        std::fs::read(source)
+            .with_context(|| format!("reading the App private-key PEM file '{source}'"))?
+    };
+    Ok(zeroize::Zeroizing::new(bytes))
+}
+
+/// `env-ctl github-app enroll` (TASK-0026): seal the GitHub App credential so `mint-github` can mint
+/// installation tokens. Fail-closed + dry-run by default:
+///   1. read the PEM (file or stdin) into `Zeroizing`;
+///   2. VALIDATE it client-side BEFORE any write by building a throwaway App JWT — a non-PEM / bad
+///      key bails here, so a malformed credential never touches the vault (and the PEM is never
+///      echoed; only the validation error string is shown);
+///   3. `--apply` absent ⇒ print a dry-run preview to STDERR and write nothing (CF-8);
+///   4. `--apply` ⇒ `Vault.Add{ broker_only=true, overwrite=false }` (the PEM) THEN
+///      `Vault.SetGithubAppId{ apply=true }` (the id) — PEM first so a failure leaves no orphan id.
+///
+/// The secret name + meta key are the engine's `pub const`s read by the mint, so they can never
+/// drift. installation-id is NOT enrolled (it is supplied per mint).
+async fn github_app(cmd: GithubAppCmd, sock: PathBuf, json: bool) -> anyhow::Result<()> {
+    let GithubAppCmd::Enroll {
+        app_id,
+        private_key,
+        apply,
+    } = cmd;
+
+    if app_id.trim().is_empty() {
+        anyhow::bail!("--app-id must not be empty");
+    }
+
+    // (1) Read the PEM into a Zeroizing buffer (wiped on drop). Never printed.
+    let pem = read_pem(&private_key)?;
+
+    // (2) Validate the PEM client-side BEFORE any write: a throwaway App JWT proves the key parses
+    // (PKCS#1 or PKCS#8) and signs. On Err we bail WITHOUT echoing a single PEM byte. The JWT is
+    // discarded immediately (never sent anywhere). `MAX_JWT_TTL_SECS` is the engine's own ceiling.
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_secs() as i64)
+        .unwrap_or(0);
+    envctl_secrets::build_app_jwt(&app_id, now, envctl_secrets::MAX_JWT_TTL_SECS, &pem).map_err(
+        |e| anyhow::anyhow!("the supplied --private-key is not a usable GitHub App RSA PEM: {e}"),
+    )?;
+
+    // The secret name + meta key are the engine consts the mint reader uses — referenced verbatim so
+    // the enroll writer can NEVER drift from `mint_github_token`'s reader.
+    let key_name = envctl_secrets::GITHUB_APP_KEY_NAME;
+
+    // (3) DRY-RUN (default, CF-8): preview to STDERR (so a piped stdout consumer sees nothing), write
+    // nothing. NEVER prints the PEM — only metadata.
+    if !apply {
+        eprintln!(
+            "DRY-RUN: would enroll the GitHub App credential (writes nothing). Re-run with --apply.\n  \
+             - secret `{key_name}`: the App private key, sealed broker_only=true (un-revealable: \
+             `secret get --reveal` will refuse it)\n  \
+             - meta `github-app-id`: {app_id}\n  \
+             note: installation-id is supplied per-mint (NOT enrolled here)."
+        );
+        return Ok(());
+    }
+
+    // (4) APPLY: seal the PEM FIRST (no orphan app-id if this fails), then persist the App id.
+    let mut c = VaultClient::new(connect(sock).await?);
+
+    let add = v1::AddSecretReq {
+        name: key_name.to_string(),
+        provider: v1::ProviderKind::Github as i32,
+        value: pem.to_vec(),
+        note: "GitHub App private key (TASK-0026 github-app enroll)".to_string(),
+        overwrite: false,
+        broker_only: true,
+    };
+    let add_stream = c.add(add).await?.into_inner();
+    drain(add_stream, json).await?;
+
+    let set = v1::SetGithubAppIdReq {
+        app_id: app_id.clone(),
+        apply: true,
+    };
+    let set_stream = c.set_github_app_id(set).await?.into_inner();
+    drain(set_stream, json).await?;
+
     Ok(())
 }
 
@@ -868,6 +960,73 @@ mod tests {
                 expires_at_unix,
             })
         }
+    }
+
+    // ===== TASK-0026: `github-app enroll` clap surface =======================================
+
+    #[test]
+    fn github_app_enroll_parses_app_id_keypath_and_apply() {
+        let argv = [
+            "secretctl",
+            "github-app",
+            "enroll",
+            "--app-id",
+            "4044997",
+            "--private-key",
+            "/tmp/app.pem",
+            "--apply",
+        ];
+        let cli = Cli::try_parse_from(argv).expect("enroll argv parses");
+        let cmd = match cli.cmd {
+            Cmd::GithubApp { cmd } => cmd,
+            other => panic!("expected GithubApp, got {other:?}"),
+        };
+        let GithubAppCmd::Enroll {
+            app_id,
+            private_key,
+            apply,
+        } = cmd;
+        assert_eq!(app_id, "4044997");
+        assert_eq!(private_key, "/tmp/app.pem");
+        assert!(apply, "--apply was passed");
+    }
+
+    #[test]
+    fn github_app_enroll_defaults_to_dry_run_and_accepts_stdin_dash() {
+        // No `--apply` ⇒ dry-run by default (CF-8); `--private-key -` selects stdin.
+        let argv = [
+            "secretctl",
+            "github-app",
+            "enroll",
+            "--app-id",
+            "4044997",
+            "--private-key",
+            "-",
+        ];
+        let cli = Cli::try_parse_from(argv).expect("enroll argv parses (stdin, dry-run)");
+        let GithubAppCmd::Enroll {
+            private_key, apply, ..
+        } = match cli.cmd {
+            Cmd::GithubApp { cmd } => cmd,
+            other => panic!("expected GithubApp, got {other:?}"),
+        };
+        assert_eq!(private_key, "-", "`-` selects stdin");
+        assert!(!apply, "apply defaults to false (dry-run)");
+    }
+
+    #[test]
+    fn github_app_enroll_requires_app_id_and_private_key() {
+        // Missing `--private-key` is a hard clap error (both flags are required).
+        let argv = ["secretctl", "github-app", "enroll", "--app-id", "4044997"];
+        assert!(
+            Cli::try_parse_from(argv).is_err(),
+            "missing --private-key must fail to parse"
+        );
+        let argv = ["secretctl", "github-app", "enroll", "--private-key", "-"];
+        assert!(
+            Cli::try_parse_from(argv).is_err(),
+            "missing --app-id must fail to parse"
+        );
     }
 
     #[test]
