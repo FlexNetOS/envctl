@@ -49,7 +49,20 @@ reviewer chain (.github_org G1→G5) is STILL blocked.** Root cause of the drift
 weave message + source, the loop never surfaced TASK-0020's frozen contract. PR #102 is sound,
 additive infra — let it merge — but it does **not** close TASK-0020.
 
-### ⏭ NEXT PICK (queued 2026-06-17): TASK-0020-COMPLETE — the frozen `mint-github` surface
+### ✅ 2026-06-17 BUILD SESSION RESULTS (forge + forge-loop cycle 1)
+- **TASK-0020-COMPLETE DONE** — frozen `mint-github` surface shipped: `MintGithub` RPC + `secretctl mint-github` → `{"token","expires_at_unix"}` (PR #105 MERGED). The App's frozen contract is now met.
+- **TASK-0026 DONE** — `secretctl github-app enroll` + `Vault.SetGithubAppId` RPC (PR #106, auto-merge armed). Enroll→mint round-trip e2e green. The App can now mint end-to-end (enroll once, then mint-github).
+- **Anti-drift wrap-up gate** live (PR #104 MERGED): backlog is now a written-back artifact.
+
+### ⏭ NEXT PICK (2026-06-17 handoff): **TASK-0035** (secretd gRPC surface gaps)
+Then, in dep order: write the **OI-SM-1 spec** (DPoP jti store) → **TASK-0030** (F6 jti replay store) →
+**TASK-0031** (F2 edge listener, new `secretd/src/edge`) → **TASK-0032** (F5 stream tear-down) →
+**TASK-0027** (early-revoke) → **TASK-0028** (GUI parity) → **TASK-0036/0037**. SKIP **TASK-0033**
+(VPS Profile B — owner-gated `[!]`). Resume with `/forge-loop`. NOTE: Epic F is multi-session and F6 is
+spec-blocked on OI-SM-1 (write the spec first); for unattended completion use `/auto-provision`.
+
+<details><summary>TASK-0020-COMPLETE original spec (DONE — kept for reference)</summary>
+
 Build the FROZEN contract on top of the G2 primitive (small; the mint engine is done):
 1. proto: `rpc MintGithub(MintGithubReq) returns (MintGithubResp)` on `service Vault`;
    `MintGithubReq{ uint64 installation_id; repeated string repository_ids; repeated string permissions;
@@ -62,10 +75,11 @@ Build the FROZEN contract on top of the G2 primitive (small; the mint engine is 
    `secretctl github-app enroll` verb (G2 follow-up) is a prerequisite.
 Acceptance: `secretctl mint-github --installation-id 140063898 --output json` returns a real token;
 `fxapp mint-token` (flexnetos_github_app) succeeds end-to-end. DO NOT change the flag/JSON shape.
+</details>
 
 ### G2 follow-ups (were ONLY in PR #102 body — the drift the owner flagged; now tracked)
-- [ ] **TASK-0026 (G2):** `secretctl github-app enroll` verb (seal App PEM as broker-only secret +
-  `app_id`/`installation_id` meta; today via raw `secret_put`+`put_meta`). Prereq for TASK-0020-COMPLETE if not already sealed.
+- [x] **TASK-0026 (G2) — DONE 2026-06-17 (PR #106):** `secretctl github-app enroll` + `Vault.SetGithubAppId`
+  RPC seal the broker-only App PEM + `github-app-id` meta. Round-trip e2e (enroll→mint) green.
 - [ ] **TASK-0027 (G2):** `DELETE /installation/token` early-revoke wired to `relay_revoke` (1h expiry
   is the only kill-switch meanwhile).
 - [ ] **TASK-0028 (G2):** GUI relay-mint / mint-github parity (mint logic is engine-side; CLI-only today).
