@@ -11,3 +11,5 @@ pub mod grpc;
 pub mod peercred;
 pub mod proxy;
 pub mod server;
+#[cfg(feature = "provider-github")]
+pub mod transport; // DaemonHttpTransport: the engine's HttpTransport seam (native GitHub App mint, G2)

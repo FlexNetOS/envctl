@@ -331,10 +331,21 @@ impl v1::relay_server::Relay for RelaySvc {
         // Phase 6: no public policy load, so synthesize the policy from the request. `relay_mint`
         // persists it as a side effect and mints a <=24h, USB-gated, peer-bound bearer against it.
         let spec = conv::mint_req_to_policy(&req);
-        // Capture the provider + data-plane mode BEFORE the spec is moved into the blocking closure;
-        // they shape the child env injection built once the bearer is minted.
+        // Capture the provider + data-plane mode + native scope BEFORE the spec is moved into the
+        // blocking closure; they shape the child env injection built once the bearer is minted.
         let provider = spec.provider;
         let mode = conv::dataplane_mode_from_swap(&spec.swap);
+        let relay_name = spec.relay_id.clone();
+        // Native sub-token scope (repos / perms / ttl) carried on the SwapMode (U4); empty for the
+        // non-native planes. Defaults: empty perms ⇒ the installation's full default scope.
+        let (native_repos, native_perms, native_ttl) = match &spec.swap {
+            envctl_secrets::broker::SwapMode::NativeSubToken {
+                ttl_secs,
+                repos,
+                perms,
+            } => (repos.clone(), perms.clone(), *ttl_secs),
+            _ => (Vec::new(), Vec::new(), 0),
+        };
         let engine = self.engine.clone();
 
         let bearer = tokio::task::spawn_blocking(move || {
@@ -345,29 +356,80 @@ impl v1::relay_server::Relay for RelaySvc {
         .map_err(join_err)?
         .map_err(|e| Status::permission_denied(e.to_string()))?;
 
-        // PR-2b: build the child env injection so `env-ctl run` repoints the child at the loopback
-        // relay proxy and overlays the BEARER (never the real key). FAIL-CLOSED: if the proxy has not
-        // bound (no `proxy_addr`), we ship `injection: None` rather than fabricating an address — the
-        // client then refuses to spawn rather than hand the child a half-built env.
-        let injection = match self.state.proxy_addr.get() {
-            Some(addr) => {
-                let proxy_url = format!("http://{addr}");
-                // `ca_pem_path` is empty for the BaseUrlRepoint plane (no MITM CA). For the
-                // HttpsProxyMitm plane (PR-3b) the child MUST trust the engine-minted local CA, so we
-                // materialize the public CA bundle here. FAIL-CLOSED: if no CA is initialized,
-                // `engine.ca_pem_path()` errors and we refuse the mint rather than ship a MITM
-                // injection whose child can never validate the leaf (no half-built env).
-                let ca_pem_path = ca_pem_path_for_mode(&self.engine, mode)?;
-                let resolved = envctl_secrets::inject::injection_template(
+        // Build the child env injection through the engine's `resolve_injection` — the SINGLE place
+        // the native-subtoken decision lives (mint vs proxy-swap vs refuse). For the NATIVE plane the
+        // minted token is injected directly (no loopback proxy), so we do not require `proxy_addr`.
+        // For the proxy/base planes we still FAIL-CLOSED on an unbound proxy (ship `injection: None`),
+        // exactly as before, so the client refuses to spawn rather than hand the child a half-built env.
+        use envctl_secrets::inject::DataPlaneMode;
+        let injection = if matches!(mode, DataPlaneMode::NativeSubtoken) {
+            // Native: no proxy repoint. `resolve_injection` mints the scoped token (or falls back /
+            // refuses). `Ok(None)` ⇒ the mint was refused (durable Refused row already written by the
+            // engine) — ship `injection: None` so the client refuses to spawn (no token emitted).
+            let engine = self.engine.clone();
+            let bearer_raw = bearer.raw.to_string();
+            // The loopback proxy URL is only needed if the native mint is UNSUPPORTED and the engine
+            // falls back to the proxy-swap shape. A successful native mint ignores it (the token is
+            // injected directly). If the proxy hasn't bound, the fallback ships an empty proxy (the
+            // relay bearer still rides in the provider key var) — native success is unaffected.
+            let proxy_url = self
+                .state
+                .proxy_addr
+                .get()
+                .map(|addr| format!("http://{addr}"))
+                .unwrap_or_default();
+            let resolved = tokio::task::spawn_blocking(move || {
+                let sink = EventSink::null();
+                engine.resolve_injection(
                     provider,
-                    &bearer.raw,
+                    &relay_name,
+                    &bearer_raw,
                     &proxy_url,
-                    &ca_pem_path,
-                    mode,
-                );
-                Some(conv::injection_to_proto(&resolved))
+                    "",
+                    DataPlaneMode::NativeSubtoken,
+                    native_repos,
+                    native_perms,
+                    native_ttl,
+                    &sink,
+                )
+            })
+            .await
+            .map_err(join_err)?
+            .map_err(|e| Status::internal(e.to_string()))?;
+            resolved.as_ref().map(conv::injection_to_proto)
+        } else {
+            match self.state.proxy_addr.get() {
+                Some(addr) => {
+                    let proxy_url = format!("http://{addr}");
+                    // `ca_pem_path` is empty for the BaseUrlRepoint plane (no MITM CA). For the
+                    // HttpsProxyMitm plane (PR-3b) the child MUST trust the engine-minted local CA, so
+                    // we materialize the public CA bundle. FAIL-CLOSED: an uninitialized CA errors and
+                    // we refuse the mint rather than ship a MITM injection the child can't validate.
+                    let ca_pem_path = ca_pem_path_for_mode(&self.engine, mode)?;
+                    let engine = self.engine.clone();
+                    let bearer_raw = bearer.raw.to_string();
+                    let resolved = tokio::task::spawn_blocking(move || {
+                        let sink = EventSink::null();
+                        engine.resolve_injection(
+                            provider,
+                            &relay_name,
+                            &bearer_raw,
+                            &proxy_url,
+                            &ca_pem_path,
+                            mode,
+                            Vec::new(),
+                            Vec::new(),
+                            0,
+                            &sink,
+                        )
+                    })
+                    .await
+                    .map_err(join_err)?
+                    .map_err(|e| Status::internal(e.to_string()))?;
+                    resolved.as_ref().map(conv::injection_to_proto)
+                }
+                None => None,
             }
-            None => None,
         };
 
         // The raw bearer goes to the OWNER only (peercred-gated UDS); the REAL key is NEVER here.
@@ -464,6 +526,13 @@ impl v1::lock_server::Lock for LockSvc {
             if r.is_ok() {
                 flag.store(true, Ordering::SeqCst);
                 usb_flag.store(was_usb, Ordering::SeqCst);
+                // G2 (DD-1, Option A): late-bind the native sub-token minter now that the App
+                // credential can be unsealed from the now-unlocked vault. A failure here is
+                // NON-FATAL to the unlock (the vault is usable; native mint simply stays
+                // unavailable and the relay falls back to the proxy-swap path) — mirrors the
+                // `rebuild_ca_if_initialized` precedent.
+                #[cfg(feature = "provider-github")]
+                rebuild_github_provider(engine);
             }
             r.map(|_state| ())
         });
@@ -477,6 +546,10 @@ impl v1::lock_server::Lock for LockSvc {
         let flag = self.state.unlocked.clone();
         let usb_flag = self.state.usb_unlocked.clone();
         let stream = run_streaming(self.engine.clone(), move |engine, sink: &EventSink| {
+            // Drop the native minter (and its Zeroizing App PEM) BEFORE the engine locks. The
+            // engine's `lock()` also clears it (defense-in-depth), but clearing here keeps the
+            // daemon's lock path explicit.
+            engine.clear_provider();
             let r = engine.lock(sink);
             if r.is_ok() {
                 flag.store(false, Ordering::SeqCst);
@@ -486,6 +559,39 @@ impl v1::lock_server::Lock for LockSvc {
         });
         Ok(Response::new(stream))
     }
+}
+
+/// Late-bind the GitHub App native sub-token minter from the unlocked vault (DD-1). Reads the App
+/// PEM + `app_id`/`installation_id` for the well-known App-credential secret (the relay policy's
+/// `secret_name`; configured via `ENVCTL_GITHUB_APP_SECRET`, default `github_app`) and installs a
+/// `GitHubAppMint` carrying the daemon's `DaemonHttpTransport` (frozen webpki-roots reqwest client).
+///
+/// Non-fatal by contract: any failure (no credential enrolled, malformed meta, locked) leaves the
+/// engine's `NoMint` in place so the relay falls back to the proxy-swap path. NEVER logs the PEM.
+/// The REST base is overridable via `ENVCTL_GITHUB_API_BASE` (GHES / e2e mock) — default real GitHub.
+#[cfg(feature = "provider-github")]
+fn rebuild_github_provider(engine: &Engine) {
+    let secret_name =
+        std::env::var("ENVCTL_GITHUB_APP_SECRET").unwrap_or_else(|_| "github_app".to_string());
+    let cred = match engine.app_credential_pem(&secret_name) {
+        Ok(Some(c)) => c,
+        Ok(None) => return, // no App credential enrolled — keep NoMint.
+        Err(_) => return,   // locked / read error — keep NoMint (fail-closed).
+    };
+    let (pem, app_id, installation_id) = cred;
+    let mut minter = envctl_secrets::mint_github::GitHubAppMint::new(
+        app_id,
+        installation_id,
+        pem,
+        envctl_secrets::seam::SystemClock,
+        crate::transport::DaemonHttpTransport::new(),
+    );
+    if let Ok(base) = std::env::var("ENVCTL_GITHUB_API_BASE") {
+        if !base.is_empty() {
+            minter = minter.with_api_base(base);
+        }
+    }
+    engine.install_provider(Box::new(minter));
 }
 
 // ============================================================================================

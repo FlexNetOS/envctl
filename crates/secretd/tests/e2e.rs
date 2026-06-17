@@ -325,6 +325,9 @@ async fn e2e_control_plane_roundtrip_and_wire_secrecy() {
                 provider: v1::ProviderKind::Anthropic as i32,
                 ttl_secs: 3600,
                 client_pid: 0,
+                mode: 0,
+                repos: vec![],
+                perms: vec![],
             })
             .await
             .expect("mint")
@@ -451,6 +454,9 @@ async fn e2e_mint_returns_child_env_injection() {
             provider: v1::ProviderKind::Anthropic as i32,
             ttl_secs: 3600,
             client_pid: 0,
+            mode: 0,
+            repos: vec![],
+            perms: vec![],
         })
         .await
         .expect("mint")
@@ -577,6 +583,9 @@ async fn e2e_authz_deny_non_owner() {
                 provider: 0,
                 ttl_secs: 3600,
                 client_pid: 0,
+                mode: 0,
+                repos: vec![],
+                perms: vec![],
             })
             .await
             .expect_err("relay.mint");
@@ -918,6 +927,9 @@ fn conv_event_to_proto_drift() {
         provider: v1::ProviderKind::Anthropic as i32,
         ttl_secs: 3600,
         client_pid: 0,
+        mode: 0,
+        repos: vec![],
+        perms: vec![],
     });
     assert_eq!(policy.relay_id, "eph");
     assert_eq!(policy.secret_name, "eph");
