@@ -16,6 +16,11 @@ mitm-ca = ["dep:rcgen", "dep:x509-parser", "dep:rustls", "dep:rustls-pemfile", "
 provider-github = ["dep:rsa", "dep:base64"]   # RS256 App-JWT → installation token (src/mint_github.rs)
 provider-openai = []
 seed-factor = ["dep:ring", "dep:rustls", "dep:rustls-pemfile", "dep:rustls-pki-types"]   # Cognitum Seed USB possession factor (opt-in). Direct pure-Rust HTTPS to the Seed's REST custody API, TLS validated against the PINNED Cognitum CA (ring-only rustls — already in the resolved graph, so no-C gate stays green) + ring Ed25519 verify for Profile S. No `ssh`/subprocess (systemd-sandbox-safe). See PLAN-cognitum-seed-envctl-vault-factor.md
+# TEST-SPEED ONLY (TASK-0032): lowers the Argon2 floor + Default params so the CI `test` job's
+# argon2id derivations cost ~8 KiB×t1 instead of 256 MiB-1 GiB. NOT in `default`, NEVER ship — a
+# release build with this feature trips a compile_error! (see keyslot.rs). Production crypto is
+# byte-for-byte unchanged on default/release builds.
+low-cost-kdf-tests = []
 
 [dependencies]
 serde = { workspace = true }

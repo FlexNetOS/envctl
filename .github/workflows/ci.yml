@@ -66,8 +66,15 @@ jobs:
       # Parallel (default). The few tests that touch process-global env are made hermetic at the
       # source (locate_walks_up clears $META_FILE; runtime XDG test isolates its own var) so the
       # suite is deterministic without serializing it.
+      # TASK-0032: the `low-cost-kdf-tests` feature on envctl-secrets-engine lowers the Argon2 floor
+      # + Default params so the memory-hard KDF derivations (which dominated this job) cost ~8 KiB×t1
+      # instead of 256 MiB-1 GiB. Cargo feature unification propagates it to secretd/libsql e2e, which
+      # inherit the cheap engine. Production crypto is UNCHANGED — every other job (clippy, rustfmt,
+      # gates) and all release/manifest builds use default features (full 256 MiB floor); the
+      # `kdf-feature-off` gate proves the feature is never a default, and a release build with it set
+      # trips a compile_error!.
       - name: cargo test --workspace
-        run: cargo test --workspace
+        run: cargo test --workspace --features envctl-secrets-engine/low-cost-kdf-tests
 
   gates:
     name: gates
@@ -86,3 +93,5 @@ jobs:
         run: bash ci/gates/enable.sh
       - name: p7-conformance gate (.handoff Tier-A schema + ledger residency)
         run: bash ci/gates/p7.sh
+      - name: kdf-feature-off gate (test-speed Argon2 floor must be off by default)
+        run: bash ci/gates/kdf-feature-off.sh
