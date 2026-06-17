@@ -43,8 +43,15 @@ printf '1.80.0\n%s\n' "$ver" | sort -V -C || { echo "FATAL: cargo $ver < MSRV 1.
 repo="${ENV_CTL_REPO:-$HOME/Desktop/envctl}"
 test -d "$repo" || { echo "FATAL: workspace not found at $repo (set ENV_CTL_REPO)"; exit 1; }
 
-cargo build --release --manifest-path "$repo/Cargo.toml" \
-  -p envctl-secretd -p envctl-secretctl
+# secretd is built WITH `--features seed-factor` so the Cognitum Seed USB unlock factor
+# (Profile S) is compiled in. Without it, `RealUsbProbe::keyfile_for` is a no-op stub that
+# always returns `None`, so the USB unlock factor can NEVER succeed (the daemon falls back to
+# passphrase only) — i.e. a stock build cannot reproduce a USB-unlock-capable daemon. seed-factor
+# only pulls pure-Rust ring/rustls (already in the resolved graph, so the no-C trust-boundary gate
+# stays green) and degrades cleanly to passphrase-only when no Seed is present, so it is always
+# safe to enable. secretctl has no such feature and is built plain.
+cargo build --release --manifest-path "$repo/Cargo.toml" -p envctl-secretd --features seed-factor
+cargo build --release --manifest-path "$repo/Cargo.toml" -p envctl-secretctl
 
 install -Dm755 "$repo/target/release/secretd"   "$HOME/.cargo/bin/secretd"
 install -Dm755 "$repo/target/release/secretctl" "$HOME/.cargo/bin/secretctl"
@@ -108,7 +115,9 @@ script = '''
 set -euo pipefail
 export PATH="$HOME/.cargo/bin:$PATH"
 repo="${ENV_CTL_REPO:-$HOME/Desktop/envctl}"
-cargo build --release --manifest-path "$repo/Cargo.toml" -p envctl-secretd -p envctl-secretctl
+# Rebuild WITH seed-factor (see install note): a plain rebuild would drop the USB unlock factor.
+cargo build --release --manifest-path "$repo/Cargo.toml" -p envctl-secretd --features seed-factor
+cargo build --release --manifest-path "$repo/Cargo.toml" -p envctl-secretctl
 install -Dm755 "$repo/target/release/secretd"   "$HOME/.cargo/bin/secretd"
 install -Dm755 "$repo/target/release/secretctl" "$HOME/.cargo/bin/secretctl"
 
