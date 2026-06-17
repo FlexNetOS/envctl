@@ -22,6 +22,91 @@ NEVER downgrade (sync meta source UP first) · pure-Rust, no C in the trust boun
 
 ---
 
+## ⚠ 2026-06-17 RECONCILE — read this FIRST (drift sweep)
+
+A full completeness sweep (owner flag: *"during forge loop we drift and forget the remaining parts;
+this repo is holding up the rest of the project"*) found the backlog badly out of sync with ground
+truth AND missing the single biggest remaining blocker. Corrected here; details flow into the Epics.
+
+### Status truth (verified vs merged PRs / live code — these are DONE, ignore stale `[ ]` below)
+| Task | Backlog said | TRUTH | Evidence |
+|------|-------------|-------|----------|
+| TASK-0011 | `[ ]` | **DONE** | PR #97 MERGED (KASETTO-FEATURES v3.2.0) |
+| TASK-0012..0014 | `[ ]`/IN-PROGRESS | **DONE** | PRs #71/#90/#91/#93/#94 MERGED; Epic C parity 102/0/13 |
+| TASK-0006 / TASK-0018 | `[ ]` | **DONE** | PR #98 MERGED (retire ext kasetto + localize agent-env) |
+| TASK-0023 | `[ ]` | **DONE** | `.github/workflows/sync-master.yml` present |
+
+### ‼ TASK-0020 (github-app-mint) — PARTIAL, the FROZEN CONTRACT IS NOT MET (this is the holdup)
+G2/PR #102 (`g2-native-mint` → develop) wired the native-mint **primitive** end-to-end (GitHubAppMint
+install-on-unlock, DaemonHttpTransport, `resolve_injection`→`mint_scoped`) and exposed it as
+`secretctl relay mint --mode native`. **But that is the WRONG surface.** TASK-0020 froze a downstream
+contract that `flexnetos_github_app/crates/app-core/src/mint.rs` already shells:
+`secretctl mint-github --installation-id <N> [--repository-ids …] [--permissions …] --ttl-secs <T>
+--output json` → `{"token":"…","expires_at_unix":<i64>}`, backed by a new `rpc MintGithub(MintGithubReq)
+returns (MintGithubResp)` on `service Vault`. **PR #102 added NONE of these** (no `mint-github`
+subcommand, no `MintGithub` RPC, no `expires_at_unix`). **The App still 404s → the autonomous
+reviewer chain (.github_org G1→G5) is STILL blocked.** Root cause of the drift: G2 was designed from a
+weave message + source, the loop never surfaced TASK-0020's frozen contract. PR #102 is sound,
+additive infra — let it merge — but it does **not** close TASK-0020.
+
+### ⏭ NEXT PICK (queued 2026-06-17): TASK-0020-COMPLETE — the frozen `mint-github` surface
+Build the FROZEN contract on top of the G2 primitive (small; the mint engine is done):
+1. proto: `rpc MintGithub(MintGithubReq) returns (MintGithubResp)` on `service Vault`;
+   `MintGithubReq{ uint64 installation_id; repeated string repository_ids; repeated string permissions;
+   int64 ttl_secs; }` · `MintGithubResp{ string token; int64 expires_at_unix; }`.
+2. secretd handler: build `MintRequest{Github, repos, perms, ttl}`, call the installed provider's
+   `mint_scoped` (already wired by #102), return `{token, expires_at_unix}`; witnessed event, NEVER log token.
+3. secretctl `mint-github` subcommand: exact frozen flags; `--output json` prints `{"token","expires_at_unix"}` only.
+4. Confirm App secrets sealed (TASK-0020 says already done): `github-app-private-key` (broker-only),
+   `github-app-id`=4044997, `github-app-installation-id`=140063898 (org FlexNetOS). If absent → the
+   `secretctl github-app enroll` verb (G2 follow-up) is a prerequisite.
+Acceptance: `secretctl mint-github --installation-id 140063898 --output json` returns a real token;
+`fxapp mint-token` (flexnetos_github_app) succeeds end-to-end. DO NOT change the flag/JSON shape.
+
+### G2 follow-ups (were ONLY in PR #102 body — the drift the owner flagged; now tracked)
+- [ ] **TASK-0026 (G2):** `secretctl github-app enroll` verb (seal App PEM as broker-only secret +
+  `app_id`/`installation_id` meta; today via raw `secret_put`+`put_meta`). Prereq for TASK-0020-COMPLETE if not already sealed.
+- [ ] **TASK-0027 (G2):** `DELETE /installation/token` early-revoke wired to `relay_revoke` (1h expiry
+  is the only kill-switch meanwhile).
+- [ ] **TASK-0028 (G2):** GUI relay-mint / mint-github parity (mint logic is engine-side; CLI-only today).
+
+### Home-tree portability (were ONLY in ICM — now tracked)
+- [ ] **TASK-0029:** `portability-links.toml` branch fork — `usrlocal-script-links` present on master,
+  absent on develop; `home/` tree hash diverges. Reconcile so promote can't silently drop a component.
+  (GAP1 `~/.claude/settings.json` real-file drift = FIXED 2026-06-17; GAP2 gitconfig leak = FIXED.)
+
+### Promoted from the namespaced rust-port loop (was invisible to this flat backlog)
+- [!] **KBTASK-SEED-UNLOCK:** Seed-USB live-hardware unlock — code-complete, OWNER-GATED (live-hardware
+  test only). From `.handoff/loop/rust-port/HANDOFF.md`.
+
+## Epic F — Secrets SERVER-MODE / Phase 8 remote edge (THE missing blocker cluster, was UNTRACKED)
+The completeness sweep found the largest genuine remaining work — *"serve remote clients"* — was **not
+in this backlog at all**. `crates/secretd/src/edge` does not exist. Engine-side F3/F4/F12/F14/F15
+foundation IS built (`relay_mint_remote`, `register_remote_client`, `broker/decide.rs` remote DenyReasons,
+`broker/gate.rs` PresenceGate) — do NOT rebuild. Sequence: spec spike → F6 → F2 → F5. Source:
+`docs/secrets/SERVER-MODE.md`, `docs/secrets/audits/AUDIT-server-mode.md`.
+- [ ] **TASK-0030 (F6, P0, spec-blocked on OI-SM-1):** Bounded DPoP `jti` replay store (cap/eviction/
+  nonce lifecycle/clock-drift window). Write the OI-SM-1 spec first.
+- [ ] **TASK-0031 (F2, P0):** In-process TLS-terminating HTTPS+DPoP/EKM relay-edge listener — the only
+  thing that actually serves remote clients. rustls ServerConfig from `relay-tls` path only (never MITM
+  CA, FS-S25); RFC 9449 DPoP verify; EKM channel binding (FS-S20).
+- [ ] **TASK-0032 (F5, P0):** Streaming-revocation tear-down — periodic `decide()` re-check during long
+  HTTP/2 streams so revoke/lock/USB-pull stops an in-flight stream (FS-S5).
+- [!] **TASK-0033 (VPS Profile B, BLOCKED — gated non-shippable):** F7 install-time fail-closed gate +
+  F8/OI-SM-2 operator-authorizer protocol + OI-SM-3 external trusted-time. Keep gated until designed.
+- [ ] **TASK-0034 (hardening tail):** F10 (CVE-2024-47609 tonic pin + cargo-audit CI), F11/OQ-1 (MSRV
+  1.80 `cargo +1.80 check --locked`), F18 (group-commit audit-fsync spec), F13/F17/F19/F23 defense-in-depth.
+
+### secretd gRPC surface gaps (Phase-6 honest Unimplemented seams — engine lacks public read paths)
+- [ ] **TASK-0035:** Vault `List`/`Rm`/`Rotate`, `Relay.Create`/`List`, `Audit.Query`, and
+  `GetSecret.meta` (always `None`) return Unimplemented (`secretd/src/grpc.rs`). Whole `Certs.*` service
+  (CaInit/Rotate/Issue/Renew/Revoke/TrustApply/List) + non-mitm `ca_issue` (`secrets-engine/lib.rs:1916`)
+  + `secretctl ca` are Phase-4+ stubs. Defined-but-empty features: `provider-openai`, libsql `embedded`.
+- [ ] **TASK-0036:** secretd in-process `mlockall` deferred (`main.rs:19`; mitigated by RLIMIT_CORE=0).
+- [ ] **TASK-0037 (Phase-7 verify-don't-rebuild):** confirm secrets verbs are folded onto the `envctl`
+  binary (today on `secretctl`) + an `envctl install secretd` manifest component exists. Update stale
+  `docs/ROADMAP.md` lines 108-109/128 (contradict code).
+
 ## Epic A — Handoff continuity full-sync (bring `.handoff` to Tier-A)
 
 Research: `meta/handoff` kernel vs `envctl/.handoff` (~30% Tier-B stub). Per-repo `.handoff` holds

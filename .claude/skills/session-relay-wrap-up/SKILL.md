@@ -38,6 +38,29 @@ just the loop state.)
    Prefer the MCP tools (`mcp__icm__icm_memory_store`) when available. Do NOT store ephemeral state
    (build logs, git status) — that lives in `.handoff/loop/`. ICM holds the *why* and the lessons.
 
+3b. **Backlog reconcile — FAIL-CLOSED (the anti-drift gate).** The backlog (`.handoff/loop/backlog.md`)
+   is a **written-back artifact, not read-only input**. Before the checkpoint, reconcile it or the
+   handoff is INCOMPLETE (this is the mechanism that stops "follow-ups discovered mid-cycle live only
+   in a PR body / cycle artifact / ICM and get forgotten"):
+   - **Append every discovered follow-up** as a new `- [ ]`/`- [?]`/`- [!]` item **with its origin**
+     (PR#, cycle file, ICM id). Sources to drain THIS cycle: the guardian's `PASS-WITH-NOTES` notes,
+     the implementer log `## Deviations`, the PR body's "Follow-ups / out-of-scope / deferred" section,
+     and any `icm store` you just wrote. If a follow-up isn't in the backlog after this step, you have
+     NOT finished wrap-up.
+   - **Build-to-the-frozen-contract check.** Before treating a feature as done, grep the backlog for an
+     existing TASK describing the SAME capability — if it pins a *frozen consumer contract* (a CLI
+     flag/JSON shape, an RPC name, a downstream caller), verify the delivered surface matches THAT
+     contract, not a parallel one. A mismatch = the TASK is **PARTIAL**, recorded as such with the
+     exact gap (e.g. G2/TASK-0020: built `relay mint --mode native`, but the frozen contract was
+     `secretctl mint-github → {token,expires_at_unix}` — App still 404s). Never mark a frozen-contract
+     TASK done on a near-miss surface.
+   - **Status-truth reconcile.** Diff backlog `[ ]` items against merged PRs / live code; flip the
+     stale ones to `[x]` with PR evidence so the loop's frontier is real (a stale `[ ]` on done work
+     pollutes the next pick; a missing entry hides real work).
+   - **Promote cross-namespace residuals.** Any non-loop-local open item in a namespaced sub-loop
+     (`.handoff/loop/<sub>/HANDOFF.md`, e.g. rust-port) gets promoted into the flat backlog.
+   - Commit these backlog edits as part of step 5 (they ARE handoff state).
+
 4. **Write the checkpoint** — spawn `continuity-steward` with the worktree, the in-flight cycle, and
    the orchestrator pipeline state. It writes the cold-start `.handoff/loop/HANDOFF.md` (layout below)
    in one pass, keeping the orchestrator's context lean. Overwrite — the steward body is authoritative.
