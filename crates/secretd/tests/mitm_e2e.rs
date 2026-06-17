@@ -208,6 +208,8 @@ async fn mitm_terminates_tls_and_swaps_through_relay() {
         Box::new(PresentUsb(keyfile.clone())),
         Box::new(NoMint),
         Box::new(rec.clone()),
+        #[cfg(feature = "provider-github")]
+        Box::new(envctl_secrets::mint_github::NoopHttpTransport),
     )
     .expect("with_seams");
 

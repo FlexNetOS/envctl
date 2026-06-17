@@ -41,9 +41,17 @@ impl DaemonHttpTransport {
     /// Build the transport. MUST be called from within the tokio runtime (async context) so
     /// `Handle::current()` resolves — the unlock RPC handler is async, satisfying this.
     pub fn new() -> Self {
+        Self::from_handle(Handle::current())
+    }
+
+    /// Build the transport with an EXPLICIT runtime handle. Use this when the constructor runs OFF
+    /// the reactor (e.g. inside `spawn_blocking`, where `Handle::current()` is unavailable) — the
+    /// engine is built on a blocking thread for the libSQL store (TASK-0020), so the daemon captures
+    /// the handle in the async `build_engine` and threads it through.
+    pub fn from_handle(rt: Handle) -> Self {
         DaemonHttpTransport {
             client: crate::proxy::build_upstream_client(),
-            rt: Handle::current(),
+            rt,
         }
     }
 }

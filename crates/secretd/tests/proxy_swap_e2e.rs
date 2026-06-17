@@ -121,6 +121,8 @@ async fn proxy_swap_delivers_real_key_only_and_bearer_never_leaks() {
         Box::new(AbsentUsb),
         Box::new(NoMint),
         Box::new(cap.clone()),
+        #[cfg(feature = "provider-github")]
+        Box::new(envctl_secrets::mint_github::NoopHttpTransport),
     )
     .expect("with_seams");
 
@@ -233,6 +235,8 @@ async fn proxy_denies_forged_bearer_with_bare_403() {
         Box::new(AbsentUsb),
         Box::new(NoMint),
         Box::new(cap.clone()),
+        #[cfg(feature = "provider-github")]
+        Box::new(envctl_secrets::mint_github::NoopHttpTransport),
     )
     .expect("with_seams");
 
