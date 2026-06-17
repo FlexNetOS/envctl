@@ -39,9 +39,18 @@ export PATH="$HOME/.cargo/bin:$PATH"
 ver="$(cargo --version | awk '{print $2}')"
 printf '1.80.0\n%s\n' "$ver" | sort -V -C || { echo "FATAL: cargo $ver < MSRV 1.80"; exit 1; }
 
-# Post-merge this IS the envctl workspace; pre-merge override with ENV_CTL_REPO.
-repo="${ENV_CTL_REPO:-$HOME/Desktop/envctl}"
-test -d "$repo" || { echo "FATAL: workspace not found at $repo (set ENV_CTL_REPO)"; exit 1; }
+# Resolve the envctl workspace root. Explicit override wins; else probe the known checkout
+# locations and validate by a sentinel (crates/secretd) so we never build the wrong tree. The
+# repo now lives UNDER the meta workspace ($HOME/Desktop/meta/envctl); $HOME/Desktop/envctl is the
+# legacy bare-checkout location. (The old hard-coded bare default FATAL'd on the meta layout, which
+# silently blocked the seed-factor rebuild below — so the resolution must try both.)
+repo="${ENV_CTL_REPO:-}"
+if [ -z "$repo" ]; then
+  for c in "$HOME/Desktop/meta/envctl" "$HOME/Desktop/envctl"; do
+    [ -d "$c/crates/secretd" ] && { repo="$c"; break; }
+  done
+fi
+test -d "${repo:-/nonexistent}/crates/secretd" || { echo "FATAL: envctl workspace not found (set ENV_CTL_REPO to the checkout root)"; exit 1; }
 
 # secretd is built WITH `--features seed-factor` so the Cognitum Seed USB unlock factor
 # (Profile S) is compiled in. Without it, `RealUsbProbe::keyfile_for` is a no-op stub that
@@ -114,7 +123,14 @@ kind = "script"
 script = '''
 set -euo pipefail
 export PATH="$HOME/.cargo/bin:$PATH"
-repo="${ENV_CTL_REPO:-$HOME/Desktop/envctl}"
+# Resolve the workspace root (override → meta layout → legacy bare; sentinel-validated). See install.
+repo="${ENV_CTL_REPO:-}"
+if [ -z "$repo" ]; then
+  for c in "$HOME/Desktop/meta/envctl" "$HOME/Desktop/envctl"; do
+    [ -d "$c/crates/secretd" ] && { repo="$c"; break; }
+  done
+fi
+test -d "${repo:-/nonexistent}/crates/secretd" || { echo "FATAL: envctl workspace not found (set ENV_CTL_REPO)"; exit 1; }
 # Rebuild WITH seed-factor (see install note): a plain rebuild would drop the USB unlock factor.
 cargo build --release --manifest-path "$repo/Cargo.toml" -p envctl-secretd --features seed-factor
 cargo build --release --manifest-path "$repo/Cargo.toml" -p envctl-secretctl
