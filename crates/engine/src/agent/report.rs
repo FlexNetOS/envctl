@@ -8,7 +8,7 @@
 use serde::{Deserialize, Serialize};
 
 use envctl_agent_env::driver::AssetRow;
-use envctl_agent_env::report::{Action, InstalledSkill, Summary};
+use envctl_agent_env::report::{Action, InstalledSkill, Summary, SyncFailure};
 
 use super::AgentScope;
 
@@ -23,6 +23,49 @@ pub enum AgentVerb {
     List,
     Clean,
     Init,
+    Doctor,
+}
+
+/// One command directory checked by `agent doctor` — its path and whether it (or its
+/// nearest existing ancestor) is writable. Mirrors kasetto's `CommandDirCheck`.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AgentCommandDirCheck {
+    pub path: String,
+    pub writable: bool,
+}
+
+/// The update-check block of `agent doctor`, derived from the update-notifier cache.
+/// Mirrors kasetto's `UpdateCheckOutput`.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AgentUpdateCheck {
+    /// `"up_to_date"` | `"update_available"` | `"unknown"` (no cache yet).
+    pub status: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub latest_version: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub checked_at: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub age_seconds: Option<u64>,
+}
+
+/// The full read-only diagnostic report from `Engine::agent_doctor` — the parity contract both
+/// the CLI and GUI render. Field-for-field with kasetto's `DoctorOutput` (TASK-0019, Item 1):
+/// version, lock file, scope, skills, install path, last sync, failures, mcps, commands,
+/// command dirs, and the update-check block.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AgentDoctorReport {
+    pub version: String,
+    pub lock_file: String,
+    pub scope: String,
+    pub skills: Vec<String>,
+    pub installation_path: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_sync: Option<String>,
+    pub failures: Vec<SyncFailure>,
+    pub mcps: Vec<String>,
+    pub commands: Vec<String>,
+    pub command_dirs: Vec<AgentCommandDirCheck>,
+    pub update_check: AgentUpdateCheck,
 }
 
 /// The result of a `sync` / `clean` run: the per-run counters + ordered action log plus the

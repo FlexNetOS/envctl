@@ -1,16 +1,22 @@
 //! `envctl` — thin CLI over the shared engine. Subcommands map 1:1 to the five
 //! verbs. Destructive verbs (reset/auto-fix) are DRY-RUN by default; pass
 //! `--apply` to act. `auto-detect` is read-only and prints a real EnvReport.
+mod self_update;
+
 use baby_mimalloc::{new_mimalloc_mmap_mutex, MimallocMmapMutex};
-use clap::{Parser, Subcommand};
+use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
+use clap_complete::Shell;
+use std::io::IsTerminal;
+use std::time::Duration;
 
 #[global_allocator]
 static GLOBAL: MimallocMmapMutex = new_mimalloc_mmap_mutex();
 use envctl_engine::{
-    AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentInitSpec, AgentListKind, AgentListSpec,
-    AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentScope, AgentSectionSel, AgentSyncSpec,
-    AiAgent, BuildStrategy, BuildSystem, DashboardSpec, DriftSummary, Engine, EnvReport, Event,
-    EventSink, OpStatus, Phase, Refactor, RefactorGoal, RenameRule, ResetGates, RunPlan, Severity,
+    AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentDoctorSpec, AgentInitSpec, AgentListKind,
+    AgentListSpec, AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentScope, AgentSectionSel,
+    AgentSyncSpec, AiAgent, BuildStrategy, BuildSystem, DashboardSpec, DriftSummary, Engine,
+    EnvReport, Event, EventSink, OpStatus, Phase, Refactor, RefactorGoal, RenameRule, ResetGates,
+    RunPlan, SelfUninstallSpec, Severity,
 };
 
 #[derive(Parser)]
@@ -25,6 +31,114 @@ struct Cli {
     /// Emit machine-readable NDJSON / JSON instead of the pretty view.
     #[arg(long, global = true)]
     json: bool,
+    /// Suppress non-error output (repeat for stricter silence). Failures/refusals still print.
+    #[arg(short = 'q', long, global = true, action = clap::ArgAction::Count)]
+    quiet: u8,
+    /// Increase output detail (-v, -vv, -vvv) — unfilters log lines.
+    #[arg(short = 'v', long, global = true, action = clap::ArgAction::Count)]
+    verbose: u8,
+    /// When to emit colors: auto, always, never.
+    #[arg(long, global = true, value_name = "WHEN", default_value_t = ColorMode::Auto)]
+    color: ColorMode,
+    /// [deprecated] alias for `--color never`.
+    #[arg(long, global = true, hide = true)]
+    no_color: bool,
+}
+
+/// The `--color` mode (kasetto `ColorMode`). `auto` respects `NO_COLOR`/TTY; `always` forces
+/// color (sets `CLICOLOR_FORCE=1`); `never` disables it.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, ValueEnum)]
+#[clap(rename_all = "lowercase")]
+enum ColorMode {
+    #[default]
+    Auto,
+    Always,
+    Never,
+}
+
+impl std::fmt::Display for ColorMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            ColorMode::Auto => "auto",
+            ColorMode::Always => "always",
+            ColorMode::Never => "never",
+        })
+    }
+}
+
+/// Resolved presentation knobs threaded through every renderer (the engine stays non-printing;
+/// these are pure front-end). Built once in `main` from the global flags.
+#[derive(Clone, Copy, Debug)]
+struct OutputCtx {
+    json: bool,
+    quiet: u8,
+    verbose: u8,
+    /// `true` = strip ANSI (resolved from `--color`/`--no-color`/`NO_COLOR`/TTY).
+    plain: bool,
+}
+
+impl OutputCtx {
+    fn is_quiet(&self) -> bool {
+        self.quiet > 0
+    }
+}
+
+/// Process-global presentation knobs, set once in `main` from the global flags. The renderers
+/// (`print_event`, the agent renderers) read this rather than threading an `OutputCtx` through
+/// every signature — these are presentation-only and the engine stays the source of behavior.
+static OUTPUT: std::sync::OnceLock<OutputCtx> = std::sync::OnceLock::new();
+
+fn out() -> OutputCtx {
+    *OUTPUT.get().unwrap_or(&OutputCtx {
+        json: false,
+        quiet: 0,
+        verbose: 0,
+        plain: false,
+    })
+}
+
+/// Strip ANSI escape sequences from a rendered line when `out().plain` (used by `--color never`
+/// / `--no-color` / non-TTY). Cheap: only allocates when an escape is present.
+fn paint(line: String) -> String {
+    if !out().plain || !line.contains('\u{1b}') {
+        return line;
+    }
+    let mut s = String::with_capacity(line.len());
+    let mut chars = line.chars();
+    while let Some(c) = chars.next() {
+        if c == '\u{1b}' {
+            // Skip the CSI sequence up to and including the final letter.
+            for n in chars.by_ref() {
+                if n.is_ascii_alphabetic() {
+                    break;
+                }
+            }
+        } else {
+            s.push(c);
+        }
+    }
+    s
+}
+
+/// Apply color-flag side effects (CLICOLOR_FORCE for `always`, a one-line deprecation warning
+/// for the legacy `--no-color`) and return the effective `plain` value. Ports kasetto
+/// `resolve_plain` (the deprecated `--plain` flag is renamed `--no-color` here).
+fn resolve_plain(no_color: bool, color: ColorMode) -> bool {
+    if no_color {
+        eprintln!("warning: --no-color is deprecated; use --color never instead");
+    }
+    match color {
+        ColorMode::Always => {
+            std::env::set_var("CLICOLOR_FORCE", "1");
+            // --no-color paired with --color always: honor the explicit deprecated request.
+            no_color
+        }
+        ColorMode::Never => true,
+        ColorMode::Auto => {
+            // auto: plain when NO_COLOR is set, when stdout is not a TTY, or when --no-color.
+            no_color || std::env::var_os("NO_COLOR").is_some() || !std::io::stdout().is_terminal()
+        }
+    }
 }
 
 #[derive(Subcommand)]
@@ -210,6 +324,38 @@ enum Cmd {
         #[command(subcommand)]
         cmd: AgentCmd,
     },
+    /// Manage this envctl installation: update the running binary, or uninstall the stack.
+    #[command(name = "self")]
+    Manage {
+        #[command(subcommand)]
+        action: SelfAction,
+    },
+    /// Generate shell completion scripts (written to stdout).
+    Completions {
+        /// Target shell: bash | zsh | fish | powershell | elvish.
+        shell: Shell,
+    },
+}
+
+/// `envctl self {update,uninstall}` — manage the running installation (kasetto `ManageSelf`).
+#[derive(Subcommand)]
+enum SelfAction {
+    /// Update envctl to the latest GitHub release (download + verify + atomic replace).
+    Update {
+        /// Print update output as JSON.
+        #[arg(long)]
+        json: bool,
+    },
+    /// Completely uninstall envctl: assets, config/data/cache dirs, and the binary.
+    /// DESTRUCTIVE — PREVIEW (dry-run) by default; `--apply` deletes; `--yes` skips the prompt.
+    Uninstall {
+        /// Actually delete (else preview / zero writes).
+        #[arg(long)]
+        apply: bool,
+        /// Skip the confirmation prompt (required in non-interactive mode).
+        #[arg(long)]
+        yes: bool,
+    },
 }
 
 /// Serializable scope selector (clap) → `AgentScope`.
@@ -263,7 +409,7 @@ enum AgentCmd {
         #[arg(long)]
         apply: bool,
         /// Audit the lock with ZERO network fetch (fail-closed if unsatisfied).
-        #[arg(long)]
+        #[arg(long, visible_alias = "frozen")]
         locked: bool,
         /// Re-resolve the named packages' refs (no names = all) and rewrite the lock.
         #[arg(long, num_args = 0.., value_name = "NAME")]
@@ -305,7 +451,7 @@ enum AgentCmd {
         #[arg(long)]
         no_verify: bool,
         /// Zero-network mode (requires `--no-sync` on `add`).
-        #[arg(long)]
+        #[arg(long, visible_alias = "frozen")]
         locked: bool,
         #[arg(long, num_args = 0.., value_name = "NAME")]
         update: Option<Vec<String>>,
@@ -335,7 +481,7 @@ enum AgentCmd {
         apply: bool,
         #[arg(long)]
         no_sync: bool,
-        #[arg(long)]
+        #[arg(long, visible_alias = "frozen")]
         locked: bool,
         #[arg(long, num_args = 0.., value_name = "NAME")]
         update: Option<Vec<String>>,
@@ -347,7 +493,10 @@ enum AgentCmd {
         #[arg(long, value_enum)]
         scope: Option<ScopeArg>,
         /// Verify the lock matches the config without writing (exit 1 on drift).
-        #[arg(long)]
+        // `--frozen` aliases `--check` (CI-friendly). Unlike kasetto we keep ONLY the `frozen`
+        // alias here — envctl's Lock has a distinct `--locked` flag (the zero-network audit
+        // knob), so a `locked` alias on `--check` would collide.
+        #[arg(long, visible_alias = "frozen")]
         check: bool,
         /// Restrict the re-resolve to sources providing these skills (repeatable).
         #[arg(long = "upgrade-package", value_name = "NAME")]
@@ -381,8 +530,14 @@ enum AgentCmd {
         #[arg(long)]
         global: bool,
         /// Overwrite an existing config file.
-        #[arg(long)]
+        #[arg(short = 'f', long)]
         force: bool,
+    },
+    /// Read-only diagnostics: version, lock, scope, inventory, command-dir writability, updates.
+    Doctor {
+        /// Override the scope resolved from the config.
+        #[arg(long, value_enum)]
+        scope: Option<ScopeArg>,
     },
 }
 
@@ -396,6 +551,24 @@ fn main() -> anyhow::Result<()> {
     // `dashboard` and `env` are manifest-INDEPENDENT (they read `.meta.yaml`, not
     // the component registry), so they must work from any cwd without a `manifest/`
     // dir. Use a detached engine for them; every other verb requires the manifest.
+    // Resolve presentation knobs ONCE (color side effects happen here) and publish them.
+    let plain = resolve_plain(cli.no_color, cli.color);
+    let _ = OUTPUT.set(OutputCtx {
+        json: cli.json,
+        quiet: cli.quiet,
+        verbose: cli.verbose,
+        plain,
+    });
+
+    // Spawn the background update check up front (best-effort, silent on failure). Suppress the
+    // end-of-run notice for machine-readable / scripted / version-printing commands.
+    let update_handle = envctl_engine::update_notifier::spawn_background_check();
+    let suppress_notice = should_suppress_notice(&cli.cmd, cli.json, cli.quiet);
+    if !suppress_notice {
+        // Give the cache a brief moment to populate (matches kasetto's 800ms).
+        envctl_engine::update_notifier::wait_for_check(update_handle, Duration::from_millis(800));
+    }
+
     let engine = if matches!(cli.cmd, Cmd::Dashboard { .. } | Cmd::Env { .. }) {
         Engine::detached()
     } else {
@@ -403,7 +576,7 @@ fn main() -> anyhow::Result<()> {
     };
     let json = cli.json;
 
-    match cli.cmd {
+    let result = match cli.cmd {
         Cmd::AutoDetect { .. } => {
             // Read-only: run on the main thread and print the returned report.
             let (sink, _rx) = EventSink::channel();
@@ -526,6 +699,11 @@ fn main() -> anyhow::Result<()> {
             materialize,
         } => run_env(meta_file, toolchains, materialize, json),
         Cmd::Agent { cmd } => run_agent(engine, cmd, json),
+        Cmd::Completions { shell } => run_completions(shell),
+        Cmd::Manage { action } => match action {
+            SelfAction::Update { json: action_json } => self_update::run(json || action_json),
+            SelfAction::Uninstall { apply, yes } => run_self_uninstall(engine, apply, yes, json),
+        },
         // Interactive add-repo connect: handled on the MAIN thread so the agent
         // attaches to the real terminal.
         other if matches!(&other, Cmd::AddRepo { connect: true, .. }) => {
@@ -553,7 +731,132 @@ fn main() -> anyhow::Result<()> {
             }
             run_action(engine, other, json)
         }
+    };
+
+    // End-of-run "new version available" notice — only on success, never under suppress, and
+    // only on a TTY. The engine decided whether an update exists; the CLI renders the line.
+    if result.is_ok() && !suppress_notice && std::io::stdout().is_terminal() {
+        let current = env!("CARGO_PKG_VERSION");
+        if let Some((cur, latest)) = envctl_engine::update_notifier::available_update(current) {
+            println!("{}", render_update_notice(&cur, &latest));
+        }
     }
+    result
+}
+
+/// Suppress the end-of-run update notice for machine-readable / scripted output and for
+/// commands that already print version info (kasetto `should_suppress_notice`). Never suppress
+/// for the human install/reset/auto-fix runs.
+fn should_suppress_notice(cmd: &Cmd, json: bool, quiet: u8) -> bool {
+    if json || quiet > 0 {
+        return true;
+    }
+    match cmd {
+        // Machine-readable / version-printing verbs.
+        Cmd::Completions { .. } | Cmd::Manage { .. } | Cmd::Env { .. } => true,
+        // `auto-detect`/`graph`/`lock`/`agent ... --json` are gated by the global `json` above;
+        // their human forms may still show the notice. Everything else: don't suppress.
+        _ => false,
+    }
+}
+
+/// Render the end-of-run notice. Honors the resolved plain flag.
+fn render_update_notice(current: &str, latest: &str) -> String {
+    let cmd = upgrade_command();
+    let line =
+        format!("\n\x1b[1;33mNew version available:\x1b[0m {current} -> {latest}  run `{cmd}`");
+    paint(line)
+}
+
+/// Best-guess upgrade command from the running binary's install path (kasetto
+/// `upgrade_command`): cargo-installed → `cargo install envctl`; otherwise the self-updater
+/// (`envctl self update`). The brew arm is inert for envctl (no homebrew formula).
+fn upgrade_command() -> &'static str {
+    let exe = std::env::current_exe().ok();
+    let path = exe
+        .as_ref()
+        .map(|p| p.to_string_lossy().to_string())
+        .unwrap_or_default();
+    if path.contains("/.cargo/bin") || path.contains("/cargo/bin") {
+        "cargo install envctl"
+    } else {
+        "envctl self update"
+    }
+}
+
+/// `envctl completions <shell>` — generate the completion script for envctl's OWN clap tree to
+/// stdout. CLI-only (clap-tree introspection; no engine logic / GUI analog).
+fn run_completions(shell: Shell) -> anyhow::Result<()> {
+    let mut cmd = Cli::command();
+    clap_complete::generate(shell, &mut cmd, "envctl", &mut std::io::stdout());
+    Ok(())
+}
+
+/// `envctl self uninstall` — DESTRUCTIVE. Dry-run by default; `--apply` deletes. On a TTY, prompt
+/// `[y/N]` unless `--yes`; in non-interactive mode `--apply` requires `--yes`. The engine owns the
+/// fail-closed removal + binary-stem guard; this owns the confirmation + rendering.
+fn run_self_uninstall(engine: Engine, apply: bool, yes: bool, json: bool) -> anyhow::Result<()> {
+    if apply && !yes {
+        if !std::io::stdin().is_terminal() {
+            return Err(anyhow::anyhow!(
+                "pass --yes to confirm uninstall in non-interactive mode"
+            ));
+        }
+        use std::io::Write;
+        println!("This will remove envctl, envctl-gui, and all installed assets.");
+        print!("Uninstall envctl? [y/N] ");
+        std::io::stdout().flush()?;
+        let mut input = String::new();
+        std::io::stdin().read_line(&mut input)?;
+        if !matches!(input.trim(), "y" | "Y" | "yes") {
+            println!("Cancelled.");
+            return Ok(());
+        }
+    }
+
+    let (sink, _rx) = EventSink::channel();
+    let outcome = engine.self_uninstall(SelfUninstallSpec { apply, yes }, &sink)?;
+
+    if json {
+        println!("{}", serde_json::to_string_pretty(&outcome)?);
+        return Ok(());
+    }
+
+    let verb = if outcome.dry_run {
+        "would remove"
+    } else {
+        "removed"
+    };
+    if outcome.skills_removed > 0 {
+        println!("✓ {verb} {} skills", outcome.skills_removed);
+    }
+    if outcome.mcps_removed > 0 {
+        println!("✓ {verb} {} MCP servers", outcome.mcps_removed);
+    }
+    if outcome.command_dirs_unlinked > 0 {
+        println!(
+            "✓ {verb} {} command directories",
+            outcome.command_dirs_unlinked
+        );
+    }
+    if outcome.dry_run {
+        println!("✓ would remove config / data / cache directories");
+        println!("✓ would remove the envctl binary");
+    } else {
+        if outcome.config_removed || outcome.data_removed || outcome.cache_removed {
+            println!("✓ removed config / data / cache directories");
+        }
+        if outcome.binary_removed || outcome.gui_removed {
+            println!("✓ removed the envctl binary");
+        }
+    }
+    if let Some(reason) = &outcome.refused {
+        println!("\x1b[1;31m  ⛔ {reason}\x1b[0m");
+    }
+    if outcome.dry_run {
+        println!("· dry-run: pass --apply (with --yes or a [y/N] confirm) to delete");
+    }
+    Ok(())
 }
 
 /// Resolve the meta workspace root from the `.meta.yaml` marker and print env
@@ -834,7 +1137,9 @@ fn run_action(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
             | Cmd::Doctor
             | Cmd::Dashboard { .. }
             | Cmd::Env { .. }
-            | Cmd::Agent { .. } => {
+            | Cmd::Agent { .. }
+            | Cmd::Completions { .. }
+            | Cmd::Manage { .. } => {
                 unreachable!("handled in main")
             }
         };
@@ -873,6 +1178,8 @@ enum AgentResult {
     List(envctl_engine::AgentList),
     /// `init` — always exit 0 on success (failure is an Err instead).
     Init(envctl_engine::AgentInitOutcome),
+    /// `doctor` — read-only diagnostics; always exit 0.
+    Doctor(envctl_engine::AgentDoctorReport),
 }
 
 impl AgentResult {
@@ -885,6 +1192,7 @@ impl AgentResult {
             AgentResult::Lock(o) => serde_json::to_string_pretty(o)?,
             AgentResult::List(l) => serde_json::to_string_pretty(l)?,
             AgentResult::Init(o) => serde_json::to_string_pretty(o)?,
+            AgentResult::Doctor(d) => serde_json::to_string_pretty(d)?,
         })
     }
 
@@ -904,6 +1212,7 @@ impl AgentResult {
             AgentResult::Lock(o) => !o.check || o.drift.is_empty(),
             AgentResult::List(_) => true,
             AgentResult::Init(_) => true,
+            AgentResult::Doctor(_) => true,
         }
     }
 
@@ -939,9 +1248,127 @@ impl AgentResult {
                     o.path
                 );
             }
+            AgentResult::Doctor(d) => render_agent_doctor(d),
             // Fully rendered by the EventSink stream (print_event); nothing to add.
             AgentResult::Report(_) | AgentResult::Lock(_) => {}
         }
+    }
+}
+
+/// Human-readable `agent doctor` view (kasetto grouped layout: Environment / Inventory / Checks
+/// / Command directories / Failures). Honors `--quiet` (quiet && !json => no-op) and `--color`.
+/// The decision/data all came from `Engine::agent_doctor`; this is pure rendering.
+fn render_agent_doctor(d: &envctl_engine::AgentDoctorReport) {
+    use envctl_engine::agent::doctor::format_age;
+    let o = out();
+    // kasetto: `if quiet && !as_json { return Ok(()) }` — handled by the caller, but guard here too.
+    if o.is_quiet() && !o.json {
+        return;
+    }
+
+    let update_text = match d.update_check.status.as_str() {
+        "update_available" => format!(
+            "{} available (checked {})",
+            d.update_check.latest_version.as_deref().unwrap_or("?"),
+            d.update_check
+                .age_seconds
+                .map(format_age)
+                .unwrap_or_default()
+        ),
+        "up_to_date" => format!(
+            "up-to-date (checked {})",
+            d.update_check
+                .age_seconds
+                .map(format_age)
+                .unwrap_or_default()
+        ),
+        _ => "not yet checked".to_string(),
+    };
+
+    emit(format!(
+        "\x1b[1;36mdoctor — envctl {} ({})\x1b[0m",
+        d.version,
+        if d.failures.is_empty() {
+            "✓ healthy"
+        } else {
+            "✗ issues"
+        }
+    ));
+
+    emit("\n\x1b[1;33mENVIRONMENT\x1b[0m".to_string());
+    let env_rows: Vec<(&str, String)> = vec![
+        ("Scope", d.scope.clone()),
+        ("Lock file", d.lock_file.clone()),
+        ("Install path", d.installation_path.clone()),
+        (
+            "Last sync",
+            d.last_sync.clone().unwrap_or_else(|| "none".into()),
+        ),
+        ("Updates", update_text),
+    ];
+    let kw = env_rows.iter().map(|(k, _)| k.len()).max().unwrap_or(0);
+    for (k, v) in &env_rows {
+        emit(format!("  {k:<kw$}  {v}"));
+    }
+
+    emit("\n\x1b[1;33mINVENTORY\x1b[0m".to_string());
+    emit(format!("  Skills       {}", d.skills.len()));
+    emit(format!("  MCP servers  {}", d.mcps.len()));
+    emit(format!("  Commands     {}", d.commands.len()));
+
+    emit("\n\x1b[1;33mCHECKS\x1b[0m".to_string());
+    let lock_ok = !d.lock_file.is_empty();
+    emit(check_line(lock_ok, "Lock file readable"));
+    let install_ok =
+        std::path::Path::new(&d.installation_path).exists() || d.installation_path == "none";
+    emit(check_line(install_ok, "Install path writable"));
+    emit(check_line(
+        d.failures.is_empty(),
+        if d.failures.is_empty() {
+            "No failed skills"
+        } else {
+            "Failed skills present"
+        },
+    ));
+    let dirs_writable = d.command_dirs.iter().filter(|c| c.writable).count();
+    let dirs_total = d.command_dirs.len();
+    emit(check_line(
+        dirs_writable == dirs_total,
+        &format!("{dirs_writable} of {dirs_total} command directories writable"),
+    ));
+
+    if !d.command_dirs.is_empty() {
+        emit(format!(
+            "\n\x1b[1;33mCOMMAND DIRECTORIES\x1b[0m  {}",
+            d.command_dirs.len()
+        ));
+        for c in &d.command_dirs {
+            let glyph = if c.writable {
+                "\x1b[1;32m✓\x1b[0m"
+            } else {
+                "\x1b[1;31m✗\x1b[0m"
+            };
+            emit(format!("  {glyph} {}", c.path));
+        }
+    }
+
+    if !d.failures.is_empty() {
+        emit("\n\x1b[1;33mFAILURES\x1b[0m".to_string());
+        for f in &d.failures {
+            emit(format!(
+                "  \x1b[1;31m!\x1b[0m {} {} {}",
+                f.name, f.reason, f.source
+            ));
+        }
+    }
+}
+
+/// A `✓ / ✗ label` check row.
+fn check_line(ok: bool, label: &str) -> String {
+    if ok {
+        format!("  \x1b[1;32m✓\x1b[0m {label}")
+    } else {
+        format!("  \x1b[1;31m✗\x1b[0m {label}")
     }
 }
 
@@ -1106,6 +1533,12 @@ fn run_agent(engine: Engine, cmd: AgentCmd, json: bool) -> anyhow::Result<()> {
                 let spec = AgentInitSpec { global, force };
                 AgentResult::Init(eng.agent_init(spec, &sink)?)
             }
+            AgentCmd::Doctor { scope } => {
+                let spec = AgentDoctorSpec {
+                    scope_override: scope.map(AgentScope::from),
+                };
+                AgentResult::Doctor(eng.agent_doctor(spec, &sink)?)
+            }
         };
         Ok(result) // sink drops here -> the main-thread rx.iter() terminates
     });
@@ -1201,7 +1634,15 @@ fn run_dashboard(engine: &Engine, args: DashboardArgs, json: bool) -> anyhow::Re
     Ok(())
 }
 
+/// Emit a rendered line, stripping ANSI when `--color never` / non-TTY resolved to plain.
+fn emit(line: String) {
+    println!("{}", paint(line));
+}
+
 fn print_event(ev: &Event) {
+    let o = out();
+    // quiet>=1 drops progress/log/info chatter but ALWAYS keeps failures/refusals.
+    let quiet = o.quiet >= 1;
     match ev {
         Event::StepStarted {
             component,
@@ -1209,44 +1650,80 @@ fn print_event(ev: &Event) {
             index,
             total,
         } => {
-            println!(
+            if quiet {
+                return;
+            }
+            emit(format!(
                 "\x1b[1;36m==> [{}/{}] {component} :: {phase:?}\x1b[0m",
                 index + 1,
                 total
-            )
+            ))
         }
-        Event::Log { line, .. } => println!("    {line}"),
+        Event::Log {
+            line, component, ..
+        } => {
+            // Log lines are detail: dropped under --quiet; shown otherwise. With -v (verbose),
+            // prefix each line with its component so interleaved streams are attributable.
+            if quiet {
+                return;
+            }
+            if o.verbose >= 1 {
+                emit(format!("    [{component}] {line}"))
+            } else {
+                emit(format!("    {line}"))
+            }
+        }
         Event::StepFinished { result } => match result.status {
-            OpStatus::Ok => println!(
-                "\x1b[1;32m  ✓ {} {:?}\x1b[0m",
-                result.component, result.phase
-            ),
-            OpStatus::Failed => println!(
+            // Successes / dry-run / skips are progress chatter — dropped under --quiet.
+            OpStatus::Ok => {
+                if !quiet {
+                    emit(format!(
+                        "\x1b[1;32m  ✓ {} {:?}\x1b[0m",
+                        result.component, result.phase
+                    ))
+                }
+            }
+            // Failures, refusals, incomplete: ALWAYS printed even under --quiet.
+            OpStatus::Failed => emit(format!(
                 "\x1b[1;33m  ! FAILED {} (exit {:?})\x1b[0m",
                 result.component, result.exit_code
-            ),
-            OpStatus::Refused => println!(
+            )),
+            OpStatus::Refused => emit(format!(
                 "\x1b[1;31m  ⛔ REFUSED {}: {}\x1b[0m",
                 result.component, result.message
-            ),
-            OpStatus::Skipped => println!("  — skip {} ({})", result.component, result.message),
-            OpStatus::SkippedBlocked => println!(
+            )),
+            OpStatus::Skipped => {
+                if !quiet {
+                    emit(format!(
+                        "  — skip {} ({})",
+                        result.component, result.message
+                    ))
+                }
+            }
+            OpStatus::SkippedBlocked => emit(format!(
                 "\x1b[1;33m  — blocked {} ({})\x1b[0m",
                 result.component, result.message
-            ),
-            OpStatus::DryRun => println!("  · would {:?} {}", result.phase, result.component),
-            OpStatus::RebootRequired => println!(
+            )),
+            OpStatus::DryRun => {
+                if !quiet {
+                    emit(format!("  · would {:?} {}", result.phase, result.component))
+                }
+            }
+            OpStatus::RebootRequired => emit(format!(
                 "\x1b[1;33m  ⟳ {} needs a REBOOT to take effect\x1b[0m",
                 result.component
-            ),
-            OpStatus::Incomplete => println!(
+            )),
+            OpStatus::Incomplete => emit(format!(
                 "\x1b[1;31m  ✗ {} acted but post-state wrong: {}\x1b[0m",
                 result.component, result.message
-            ),
+            )),
             OpStatus::NoHook => {}
         },
         Event::GuardRefused { component, reason } => {
-            println!("\x1b[1;31m  ⛔ REFUSED {component}: {reason}\x1b[0m")
+            // A refusal is never suppressed.
+            emit(format!(
+                "\x1b[1;31m  ⛔ REFUSED {component}: {reason}\x1b[0m"
+            ))
         }
         Event::AgentRunStarted {
             verb,
@@ -1254,8 +1731,13 @@ fn print_event(ev: &Event) {
             dry_run,
             lock_mode,
         } => {
+            if quiet {
+                return;
+            }
             let mode = if *dry_run { " (preview)" } else { "" };
-            println!("\x1b[1;36m==> agent {verb:?} :: {scope:?} [{lock_mode}]{mode}\x1b[0m");
+            emit(format!(
+                "\x1b[1;36m==> agent {verb:?} :: {scope:?} [{lock_mode}]{mode}\x1b[0m"
+            ));
         }
         Event::AgentAction {
             source,
@@ -1270,56 +1752,74 @@ fn print_event(ev: &Event) {
                 (None, None) => String::new(),
             };
             match error {
-                Some(e) => println!("\x1b[1;31m  ✗ {status} {who}: {e}\x1b[0m"),
-                None => println!("  {status} {who}"),
+                // Errors always print.
+                Some(e) => emit(format!("\x1b[1;31m  ✗ {status} {who}: {e}\x1b[0m")),
+                None => {
+                    if !quiet {
+                        emit(format!("  {status} {who}"))
+                    }
+                }
             }
         }
         Event::AgentRunFinished { report } => {
             let s = &report.summary;
             if s.failed == 0 {
-                println!(
-                    "\x1b[1;32mdone: {} installed, {} updated, {} removed, {} unchanged.\x1b[0m",
-                    s.installed, s.updated, s.removed, s.unchanged
-                );
+                if !quiet {
+                    emit(format!(
+                        "\x1b[1;32mdone: {} installed, {} updated, {} removed, {} unchanged.\x1b[0m",
+                        s.installed, s.updated, s.removed, s.unchanged
+                    ))
+                }
             } else {
-                println!(
+                emit(format!(
                     "\x1b[1;33mdone with {} failed ({} installed, {} updated, {} removed).\x1b[0m",
                     s.failed, s.installed, s.updated, s.removed
-                );
+                ))
             }
         }
         Event::AgentLockChecked { drift } => {
             if drift.is_empty() {
-                println!("\x1b[1;32m✓ agent-env.lock is up to date\x1b[0m");
+                if !quiet {
+                    emit("\x1b[1;32m✓ agent-env.lock is up to date\x1b[0m".to_string())
+                }
             } else {
-                println!("\x1b[1;33m✗ lock drift ({}):\x1b[0m", drift.len());
+                emit(format!("\x1b[1;33m✗ lock drift ({}):\x1b[0m", drift.len()));
                 for d in drift {
-                    println!("  {}  {}", d.status, d.id);
+                    emit(format!("  {}  {}", d.status, d.id));
                 }
             }
         }
         Event::AgentInitFinished { outcome } => {
-            println!(
-                "\x1b[1;32m✓ {} {}\x1b[0m",
-                if outcome.overwritten {
-                    "overwrote"
-                } else {
-                    "created"
-                },
-                outcome.path
-            );
+            if !quiet {
+                emit(format!(
+                    "\x1b[1;32m✓ {} {}\x1b[0m",
+                    if outcome.overwritten {
+                        "overwrote"
+                    } else {
+                        "created"
+                    },
+                    outcome.path
+                ))
+            }
+        }
+        Event::AgentDoctored { report } => {
+            // `agent doctor` honors --quiet (kasetto: quiet && !json => no-op). The human view
+            // is rendered from the typed return in `render_agent_doctor`, not here.
+            let _ = report;
         }
         Event::RunFinished { summary } => {
             if summary.ok() {
-                println!("\x1b[1;32mdone.\x1b[0m");
+                if !quiet {
+                    emit("\x1b[1;32mdone.\x1b[0m".to_string())
+                }
             } else {
-                println!(
+                emit(format!(
                     "\x1b[1;33mdone with {} failed, {} refused, {} blocked, {} incomplete.\x1b[0m",
                     summary.failed.len(),
                     summary.refused.len(),
                     summary.skipped_blocked.len(),
                     summary.incomplete.len()
-                );
+                ))
             }
         }
         _ => {}
@@ -1837,4 +2337,189 @@ fn print_report(r: &EnvReport) {
         }
     }
     println!("\n  generated_at {}", r.generated_at);
+}
+
+#[cfg(test)]
+mod frontend_gaps_tests {
+    //! TASK-0019: CLI parse/render coverage for the kasetto front-end gap port — global options,
+    //! completions, the `self` tree, `--frozen` aliases, and `agent doctor`.
+    use super::{Cli, Cmd, ColorMode, SelfAction};
+    use clap::{CommandFactory, Parser};
+    use clap_complete::{generate, Shell};
+
+    // --- Item 2: completions <shell> generates non-empty scripts for each shell, exit 0 ---
+    #[test]
+    fn completions_generate_nonempty_for_each_shell() {
+        for shell in [Shell::Bash, Shell::Zsh, Shell::Fish, Shell::PowerShell] {
+            let mut cmd = Cli::command();
+            let mut buf: Vec<u8> = Vec::new();
+            generate(shell, &mut cmd, "envctl", &mut buf);
+            assert!(!buf.is_empty(), "{shell:?} completion was empty");
+            let text = String::from_utf8_lossy(&buf);
+            assert!(
+                text.contains("envctl"),
+                "{shell:?} script lacks the bin name"
+            );
+        }
+    }
+
+    #[test]
+    fn completions_subcommand_parses_a_shell_positional() {
+        let cli = Cli::try_parse_from(["envctl", "completions", "fish"]).expect("parse");
+        match cli.cmd {
+            Cmd::Completions { shell } => assert_eq!(shell, Shell::Fish),
+            _ => panic!("expected completions"),
+        }
+    }
+
+    // --- Item 3: --frozen aliases --locked on the four agent verbs ---
+    #[test]
+    fn frozen_aliases_locked_on_sync() {
+        let cli = Cli::try_parse_from(["envctl", "agent", "sync", "--frozen"]).expect("parse");
+        match cli.cmd {
+            Cmd::Agent {
+                cmd: super::AgentCmd::Sync { locked, .. },
+            } => assert!(locked, "--frozen must set locked on sync"),
+            _ => panic!("expected agent sync"),
+        }
+    }
+
+    #[test]
+    fn frozen_aliases_locked_on_add_remove() {
+        for verb in ["add", "remove"] {
+            let cli =
+                Cli::try_parse_from(["envctl", "agent", verb, "src", "--frozen"]).expect("parse");
+            let locked = match cli.cmd {
+                Cmd::Agent {
+                    cmd: super::AgentCmd::Add { locked, .. },
+                } => locked,
+                Cmd::Agent {
+                    cmd: super::AgentCmd::Remove { locked, .. },
+                } => locked,
+                _ => panic!("expected agent {verb}"),
+            };
+            assert!(locked, "--frozen must set locked on {verb}");
+        }
+    }
+
+    #[test]
+    fn frozen_aliases_check_on_lock() {
+        // `lock` exposes --check with the visible alias `frozen` (envctl keeps a distinct
+        // `--locked` zero-network flag, so `locked` is NOT a `--check` alias here).
+        for flag in ["--check", "--frozen"] {
+            let cli = Cli::try_parse_from(["envctl", "agent", "lock", flag]).expect("parse");
+            match cli.cmd {
+                Cmd::Agent {
+                    cmd: super::AgentCmd::Lock { check, .. },
+                } => assert!(check, "{flag} must set check on lock"),
+                _ => panic!("expected agent lock"),
+            }
+        }
+    }
+
+    // --- Item 7: global options parse with repeat counts + color modes + init -f ---
+    #[test]
+    fn quiet_and_verbose_count_repeats() {
+        let cli = Cli::try_parse_from(["envctl", "-qq", "auto-detect"]).expect("parse");
+        assert_eq!(cli.quiet, 2);
+        let cli = Cli::try_parse_from(["envctl", "-vvv", "auto-detect"]).expect("parse");
+        assert_eq!(cli.verbose, 3);
+    }
+
+    #[test]
+    fn color_mode_parses_each_value() {
+        let cli = Cli::try_parse_from(["envctl", "--color", "always", "auto-detect"]).expect("p");
+        assert_eq!(cli.color, ColorMode::Always);
+        let cli = Cli::try_parse_from(["envctl", "--color", "never", "auto-detect"]).expect("p");
+        assert_eq!(cli.color, ColorMode::Never);
+        let cli = Cli::try_parse_from(["envctl", "auto-detect"]).expect("p");
+        assert_eq!(cli.color, ColorMode::Auto);
+    }
+
+    #[test]
+    fn no_color_flag_parses() {
+        let cli = Cli::try_parse_from(["envctl", "--no-color", "auto-detect"]).expect("parse");
+        assert!(cli.no_color);
+    }
+
+    #[test]
+    fn agent_init_force_has_short_f() {
+        let cli = Cli::try_parse_from(["envctl", "agent", "init", "-f"]).expect("parse");
+        match cli.cmd {
+            Cmd::Agent {
+                cmd: super::AgentCmd::Init { force, .. },
+            } => assert!(force, "-f must set force on agent init"),
+            _ => panic!("expected agent init"),
+        }
+    }
+
+    // --- resolve_plain side effects (kasetto port) ---
+    #[test]
+    fn resolve_plain_never_is_plain() {
+        assert!(super::resolve_plain(false, ColorMode::Never));
+    }
+
+    #[test]
+    fn resolve_plain_always_sets_clicolor_force() {
+        std::env::remove_var("CLICOLOR_FORCE");
+        let plain = super::resolve_plain(false, ColorMode::Always);
+        assert!(!plain, "--color always alone is not plain");
+        assert_eq!(std::env::var("CLICOLOR_FORCE").as_deref(), Ok("1"));
+        std::env::remove_var("CLICOLOR_FORCE");
+    }
+
+    // --- Item 4/5: self tree parses; uninstall flags map ---
+    #[test]
+    fn self_update_parses_with_json() {
+        let cli = Cli::try_parse_from(["envctl", "self", "update", "--json"]).expect("parse");
+        match cli.cmd {
+            Cmd::Manage {
+                action: SelfAction::Update { json },
+            } => assert!(json),
+            _ => panic!("expected self update"),
+        }
+    }
+
+    #[test]
+    fn self_uninstall_parses_apply_yes() {
+        let cli =
+            Cli::try_parse_from(["envctl", "self", "uninstall", "--apply", "--yes"]).expect("p");
+        match cli.cmd {
+            Cmd::Manage {
+                action: SelfAction::Uninstall { apply, yes },
+            } => {
+                assert!(apply);
+                assert!(yes);
+            }
+            _ => panic!("expected self uninstall"),
+        }
+    }
+
+    #[test]
+    fn self_uninstall_defaults_to_preview() {
+        // No flags = preview (apply false), no --yes.
+        let cli = Cli::try_parse_from(["envctl", "self", "uninstall"]).expect("parse");
+        match cli.cmd {
+            Cmd::Manage {
+                action: SelfAction::Uninstall { apply, yes },
+            } => {
+                assert!(!apply, "uninstall must default to preview (no --apply)");
+                assert!(!yes);
+            }
+            _ => panic!("expected self uninstall"),
+        }
+    }
+
+    // --- Item 1: agent doctor parses with --scope ---
+    #[test]
+    fn agent_doctor_parses_with_scope() {
+        let cli =
+            Cli::try_parse_from(["envctl", "agent", "doctor", "--scope", "global"]).expect("parse");
+        match cli.cmd {
+            Cmd::Agent {
+                cmd: super::AgentCmd::Doctor { scope },
+            } => assert!(scope.is_some()),
+            _ => panic!("expected agent doctor"),
+        }
+    }
 }

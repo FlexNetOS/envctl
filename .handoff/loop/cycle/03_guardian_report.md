@@ -1,68 +1,117 @@
-# Verification report: TASK-0031 PR-1 — F2 remote relay-edge listener (in-process TLS + DPoP/EKM)
+# Verification report: FULL kasetto v3.2.0 CLI/GUI option parity (TASK-0019)
 
 ## Verdict — **PASS**
 
-Independent, adversarial verification of the new default-OFF `relay-edge` HTTPS edge in
-`crates/secretd/src/edge/{mod,dpop,tls,listener}.rs` (+ additive engine seam) against every
-NON-NEGOTIABLE invariant and the real CI gates. All gates green, both feature states clean,
-every security invariant confirmed against the actual code (not the implementer's claims).
-Zero blocking findings. Two non-blocking notes recorded below.
+All four CI gates, cargo fmt/clippy/test, and the GUI build pass; every NON-NEGOTIABLE
+invariant holds against the actual delivered code; the 3 no-downgrade spot-checks confirm the
+ports are faithful to kasetto v3.2.0. The implementer's GREEN is corroborated by independent
+evidence. No blocking findings.
 
-> Note on the PR-1 delta surface: the edge work is **uncommitted in the worktree** (all three
-> branch refs point at the same commit `755ebb2`). The correct delta is therefore *working-tree
-> vs HEAD*, NOT vs `develop` — a `develop` diff is polluted by already-merged Epic-C/TASK-0030
-> crates (`baby-mimalloc`, `envctl-agent-env`, `tar`, `filetime`, `xattr`). I verified against
-> HEAD throughout. (`baby-mimalloc` is a pure-Rust allocator, NOT the C `libmimalloc-sys`, and is
-> not reachable from the secretd trust boundary — see gate results.)
-
-## Gate results
-| Gate | Command | Exit | Result |
-|------|---------|------|--------|
-| no-c | `bash ci/gates/no-c.sh` | 0 | **PASS** — `rustls=['0.23.40'] on ring=['0.17.14']; zero aws-lc/openssl/C-SQLite` |
-| shape | `bash ci/gates/shape.sh` | 0 | **PASS** — FS-S25/REQ-SEC-11 edge greps armed + scanning `crates/secretd/src/edge` |
-| enable | `bash ci/gates/enable.sh` | 0 | **PASS** |
-| p7 | `bash ci/gates/p7.sh` | 0 | **PASS** |
+## Gate results (exit codes pasted)
+| Gate | Result | Evidence |
+|------|--------|----------|
+| `ci/gates/no-c.sh` | **PASS** exit=0 | `rustls=['0.23.40'] on ring=['0.17.14']; zero aws-lc/openssl/C-SQLite` |
+| `ci/gates/shape.sh` | **PASS** exit=0 | `SHAPE GATE PASS` |
+| `ci/gates/enable.sh` | **PASS** exit=0 | `ENABLE GATE PASS` |
+| `ci/gates/p7.sh` | **PASS** exit=0 | `P7 GATE PASS` |
 
 ## cargo
-| Check | Command | Exit | Result |
-|-------|---------|------|--------|
-| fmt | `cargo fmt --all -- --check` | 0 | **PASS** |
-| clippy OFF | `cargo clippy --workspace -- -D warnings` | 0 | **PASS** |
-| clippy ON | `cargo clippy --workspace --features relay-edge -- -D warnings` | 0 | **PASS** |
-| test OFF | `cargo test -p envctl-secretd` | 0 | **PASS** — secretd-lib 31, e2e 5, mitm 1, native_mint 11, proxy_swap 2, self_check 2; `edge_e2e` runs **0** tests (cfg-gated absent), edge module not compiled |
-| test ON | `cargo test -p envctl-secrets-engine -p envctl-secretd --features relay-edge` | 0 | **PASS** — **17** dpop unit vectors all pass; `edge_e2e::edge_dpop_swap_accepts_and_rejects` PASS; engine `remote_no_dpop_fails_closed` PASS; `relay_swap_remote_unverified_dpop_denied_no_dpop` PASS; secretd-lib 52, engine-lib 129, relay 18, vault 15. **0 failed** |
+| Check | Result | Evidence |
+|-------|--------|----------|
+| `cargo fmt --all --check` | **PASS** exit=0 | clean |
+| `cargo clippy --workspace -- -D warnings` | **PASS** exit=0 | full workspace incl. GUI, `Finished` 0 warnings |
+| `cargo test -p envctl-engine -p envctl -p envctl-agent-env` | **PASS** exit=0 | see summary below |
+| `cargo build -p envctl-gui` | **PASS** exit=0 | `Finished dev profile`, no system-lib block |
 
-## Invariant checks (independently confirmed against source)
-1. **No-C / one rustls ring-only** — PASS. Cargo.lock working-tree-vs-HEAD adds **ZERO `[[package]]`** entries; the only delta is 4 dependency *edges* on `envctl-secretd` (`base64`, `rcgen`, `ring`, `sha2`) — all crates already in the graph. `cargo tree -p envctl-secretd --features relay-edge -e normal` → 0 banned crates (aws-lc/openssl/native-tls/mimalloc); single `rustls` package = 0.23.40 (lockfile has exactly one `[[package]] name="rustls"`). An edge adding a TLS server pulled **no** aws-lc-rs and **no** second rustls.
-2. **decide() truly untouched + fail-closed reaches the engine** — PASS. `git diff HEAD -- crates/secrets-engine/src/broker/decide.rs` and `git diff develop -- …decide.rs` are **both empty**. `broker/jti.rs` untouched (consumed read-only). Engine test `tests/relay.rs::relay_swap_remote_unverified_dpop_denied_no_dpop` (lines 724-786) drives `relay_swap` with `remote: Some(RemotePeer{dpop_verified:false})` → asserts `Denied(RemoteNoDPoP)` AND `cap.0.lock().is_none()` (**real key NEVER fetched**). The edge cannot manufacture an Allow by skipping a check — the engine re-asserts (`broker::decide::tests::remote_no_dpop_fails_closed` also passes).
-3. **EKM binding (FS-S20) is real, not cosmetic** — PASS. `dpop.rs:138` rejects `EkmUncomputable` *before touching the proof*; `dpop.rs:243-252` requires the proof's `ekm` claim present AND byte-equal to the connection EKM (`EkmMissing`/`EkmMismatch` otherwise). `listener.rs:132-134` reads EKM via the **real** rustls 0.23 API `tls_stream.get_ref().1.export_keying_material(out, EKM_LABEL, None)` (not a stub); `None` ⇒ `dpop_verified` never set. `listener.rs:273-278` maps the three `Ekm*` rejects → **403**. Vectors `uncomputable_ekm_rejected_failclosed`, `ekm_mismatch_rejected`, `ekm_claim_absent_rejected` all pass; e2e binds the *client-side* EKM into the proof and gets 200 (symmetric RFC 5705 export proven end-to-end).
-4. **relay-tls ONLY, never MITM CA (FS-S25)** — PASS. `RelayTlsConfig::load_from_dir` (`tls.rs:38`) reads ONLY `relay_tls_dir/{cert,key}.pem`, imports no MITM-CA type, has no fallback; missing dir/key/empty cert all fail closed (4 tests pass). Symbol grep over `crates/secretd/src/edge/` for `mitm_ca|local_ca|MitmCertResolver|issue_leaf|ResolvesServerCert` → **0 code references** (only doc-comment prose mentions "MITM CA"). `shape.sh:27-34` arms the FS-S25/FS-S18 symbol grep over `EDGE_SRC` and passes. `relay_tls_dir()` = `config/relay-tls` (sibling of `secretd.toml`), explicitly NOT the MITM-CA `data` dir (unit-tested, `paths.rs:77-95`).
-5. **Fail-closed completeness** — PASS. `listener.rs::verify_remote_presentation` traces every reject BEFORE `swap_and_respond`: missing/empty DPoP→401 (256), missing bearer→401 (264), `Ekm*`→403 / all other DPoP rejects→401 (273-279), **poisoned `Mutex<JtiReplayStore>` → 401, NOT `.unwrap()`** (285-288), replayed/drift jti→401 (290-300), no proof client_id→401 (308-311), unknown/disabled/revoked client OR store error → fail-closed 401 (316-325), proven-jkt ≠ registered-jkt → 401 (318-321). `RemotePeer{dpop_verified:true}` is constructed ONLY after all of EKM-bound + DPoP-verified + jti-fresh + client-registered+enabled + jkt-match. `InternalRefused→503` mapping in the swap core. **`awk`-scan (excluding `#[cfg(test)]`) finds ZERO `.unwrap()`/`.expect()`/`panic!`/`unreachable!`/`[idx]` on attacker-reachable input across the whole edge tree.**
-6. **No secret bytes in logs** — PASS. Grep of all `tracing::*!` macros in `edge/` for `bearer|dpop|proof|ekm|api_key|secret|private_key|token` → **0 matches**. Log lines carry only `peer`/`status`/`error`-display/`client_id`. The engine emits the secret-free durable audit row.
-7. **Engine purity / non-printing** — PASS. No `println!`/`eprintln!`/`print!`/`stdout` in `edge/` (only a doc-comment *saying* "no `println!`"). MINT + DECIDE stay in `relay_swap`/`decide()`; the edge does I/O + proof verification only, enforces no policy (upstream host/path ride headers and are re-fenced by `decide()`'s allowlist). `EgressReq.remote` is purely additive — all existing constructors set `None` (compile-proven; local-plane behavior in `swap_and_respond` unchanged when `remote.is_none()`).
-8. **Off-by-default** — PASS. `crates/secretd/Cargo.toml:17` `default = ["mitm-ca", "provider-github"]` — `relay-edge` is **not** in defaults. The whole edge module/config/startup is `#[cfg(feature="relay-edge")]`-gated; `[edge].enabled` defaults `false`; `bind_addr` required only when enabled (fail-closed); absent `[edge]` block ⇒ no bind. Feature-OFF test run confirms `edge_e2e` compiles to 0 tests and the module isn't built. Cert-load/bind failure is FATAL only when the operator explicitly enabled the edge.
+Test summary (passed/failed lines): engine lib `58 passed; 0 failed`; envctl bin/lib
+`19 passed; 0 failed` (+ bin/integration suites `13/4/24/12/15/20` all 0 failed); agent-env
+`251 passed; 0 failed; 1 ignored` (+ `82 passed; 0 failed`). **Total: 0 failed across all suites.**
 
-## Parity check
-This is a secretd daemon network surface (no CLI/GUI front-end) — front-end parity N/A. The
-relevant parity is **proxy↔edge plane parity**: both drive the SAME `proxy::swap_and_respond`
-core, so the two planes cannot diverge in how they reach `relay_swap`/`decide()`.
-- `Engine::relay_swap` (`crates/secrets-engine/src/lib.rs:~1267`) ← local proxy `proxy.rs::swap_and_respond` (remote=`None`) AND edge `listener.rs:223` `swap_and_respond(.., Some(rp))`.
-- `Engine::load_remote_client` (`lib.rs`, additive read accessor) ← edge `listener.rs:316`.
-- `Paths::relay_tls_dir()` (`paths.rs:67`) ← edge `mod.rs:54` / `tls.rs::load_from_dir`.
+## Invariant checks
+1. **No C in trust boundary** — PASS. Resolved graph (independently probed): exactly one `rustls
+   v0.23.40` on `ring v0.17.14`; zero `aws-lc-rs`; `flate2 v1.1.9` backed by pure-Rust
+   `miniz_oxide v0.8.9` (no `libz-sys`); `tar` pure-Rust. no-c.sh PASS.
+2. **clap_complete is the only new crate + pure-Rust** — PASS. `cargo tree -p clap_complete`
+   subtree = clap/clap_builder/clap_lex/anstyle/syn/proc-macro2 only; grep for `-sys|openssl|
+   aws-lc|libsqlite|cc` → none. Cargo.toml:35 `clap_complete = "4.5"` (resolves 4.6.5).
+3. **Engine non-printing / sync / pure-Rust** — PASS. Grep of the 4 new engine modules
+   (`self_update.rs`, `self_uninstall.rs`, `update_notifier.rs`, `agent/doctor.rs`) for
+   `println!/eprintln!/eprint!/print!/stdout/stderr` → ZERO matches. Decision logic confirmed in
+   the engine returning typed data: `is_newer`/`verify_checksum`/`plan_self_update`
+   (self_update.rs), `cache_is_fresh`/`available_update` (update_notifier.rs), doctor assembly +
+   `Event::AgentDoctored` (agent/doctor.rs), uninstall removal decision + `Event::SelfUninstall`
+   (self_uninstall.rs). The only engine printlns in the tree are the **pre-existing**
+   `addrepo.rs:389-402` (interactive `--refactor=ai` guidance, last touched by an unrelated
+   toolchain-pin commit `3a1219e`, NOT by TASK-0019) — not a regression.
+4. **Destructive op fail-closed + dry-run default (item 5 self uninstall)** — PASS.
+   `self_uninstall.rs`: `dry_run = !spec.apply` (L77); all `fs::remove_*` gated behind `if
+   spec.apply` (L107) so no-flag ⇒ ZERO writes; binary-removal guard computes
+   `current_exe()` file-stem ∈ {envctl, envctl-gui} BEFORE any write (L92-105) and refuses
+   otherwise. CLI arm `run_self_uninstall` (main.rs:798-815): `apply && !yes && !stdin().is_terminal()`
+   → errors "pass --yes to confirm uninstall in non-interactive mode"; TTY `[y/N]` otherwise.
+   Refusal-path test `preview_writes_nothing_and_guard_refuses_non_envctl_binary`
+   (self_uninstall.rs:252-293) asserts dry-run, zero config/data/cache/binary/gui removal, AND
+   the guard refusing the non-envctl test-harness stem. Proven, not asserted.
+5. **CLI+GUI parity (item 1 agent doctor)** — PASS (see Parity check). REQUIRED-parity item is
+   genuinely dual-front-end.
+6. **Rust-native, no drift** — PASS. Only `clap_complete` added as a new crate;
+   reqwest/tar/flate2/sha2 are pre-existing workspace pins reused; no foreign-language file
+   appeared. Accepted sole divergence = `baby-mimalloc` (Rust allocator) replacing kasetto's
+   `mimalloc`(C) — upgrade-only, verified C-free.
+7. **Lock honesty** — PASS. Implementer claims no envctl.lock/agent-env.lock/manifest change for
+   TASK-0019; working-tree status confirms the only TASK-0019 mutations are Cargo.toml/Cargo.lock
+   (clap_complete), the 5 new modules, and the wiring files — no lock-tracked component drift.
+   (`manifest/envctl.lock` in `develop...HEAD` is from the branch's older base, not this task.)
+
+## Parity check (Engine method → CLI caller / GUI caller)
+- `Engine::agent_doctor` (engine `agent/doctor.rs:32`)
+  - CLI: `crates/cli/src/main.rs:1540` `eng.agent_doctor(spec, &sink)` → `AgentResult::Doctor` →
+    `render_agent_doctor` (main.rs:1251/1261).
+  - GUI: `crates/gui/src/main.rs:1366` `AgentCommandSpec::Doctor(self.agent_doctor_spec())` →
+    `command.rs:255` `engine.agent_doctor(s, &sink)`; `Event::AgentDoctored` handled at
+    `gui/main.rs:444-455` (real handler — updates status + stores typed `agent_last_doctor` for
+    `agent_doctor_tables` render). **Both front-ends drive the identical Engine method.**
+- All other items (completions / self update+uninstall / notifier / global flags / --frozen) are
+  CLI-only with the documented justifications (clap-tree introspection, self-replacing running
+  binary, end-of-run terminal concept, terminal presentation) — accepted per plan §Invariants.
+
+## No-downgrade spot-checks vs kasetto v3.2.0 (`meta/kasetto`)
+- (a) `is_newer` semver compare — **MATCH (verbatim)**. Identical `(u64,u64,u64)` tuple parse
+   (`split('.').filter_map(parse).collect`) and `parse(latest) > parse(current)` in both
+   `kasetto/src/commands/self_update.rs:186` and `engine/src/self_update.rs`.
+- (b) update_notifier suppression set + TTL — **MATCH**. `TTL_SECS = 24*60*60` and the
+   `now - checked_at < TTL_SECS` freshness boundary are identical. `should_suppress_notice`:
+   completions + self(`Manage`/`ManageSelf`) always suppressed, json/quiet suppressed, `Init`
+   NOT suppressed — same intent; envctl additionally suppresses `Env` (envctl-specific
+   machine-readable eval verb), a correct addition, not a downgrade.
+- (c) agent doctor field set vs kasetto `DoctorOutput` — **MATCH (1:1)**. All 11 fields present
+   and update_check INCLUDED: version, lock_file, scope, skills, installation_path, last_sync,
+   failures, mcps, commands, command_dirs, update_check. Substructs `AgentCommandDirCheck{path,
+   writable}` and `AgentUpdateCheck{status,latest_version,checked_at,age_seconds}` mirror
+   kasetto `CommandDirCheck`/`UpdateCheckOutput`. (Also spot-checked `verify_checksum` — faithful
+   port; asset names retargeted kasetto→envctl as designed.)
+
+## Deviations reviewed — both ACCEPTABLE (not behavior downgrades)
+- **lock `--check` carries only `frozen` alias** (not `locked`): envctl's `agent lock` already
+   exposes a distinct real `--locked` zero-network flag that kasetto's Lock lacks; a `locked`
+   alias on `--check` would collide in clap (`long option names must be unique`). Correct
+   no-collision mapping for envctl's richer Lock surface. The other 3 flags (sync/add/remove)
+   carry `visible_alias = "frozen"` (main.rs:412/454/484/499). No capability lost.
+- **quiet/verbose/color via `OUTPUT: OnceLock<OutputCtx>`**: deliberate front-end-only
+   presentation seam (engine still emits the full event stream non-printing). Failures/refusals
+   are never suppressed under `--quiet`. No engine signature churn, no behavior change.
 
 ## Findings
-None blocking. Two non-blocking notes:
-- **NOTE (informational, not a defect):** the worktree's PR-1 changes are **uncommitted**. The orchestrator must commit working-tree state before merge; a `develop` diff will mislead (it folds in unrelated Epic-C crates). Verification above used HEAD-relative diffs and is sound.
-- **NOTE (scope, already documented):** identity for the registry lookup is taken from the proof's `client_id` claim (`listener.rs:308`), which `dpop.rs` documents as "not trusted for identity." This is defensible here because the registered client's `dpop_jkt` is re-asserted equal to the *proven* key (`listener.rs:318`) and `decide()` clause 11a independently re-binds the bearer's own `client_id` — a forged claim cannot escalate. Worth keeping in mind for PR-2's mTLS/nonce hardening. No change required for PR-1.
+None blocking. One informational note (carried, not a finding): the `develop...HEAD` diff is
+large because the worktree is built on a feature-rich base ahead of the current `develop`; the
+TASK-0019 delta itself is the uncommitted working-tree set, which matches the implementer log
+exactly (5 new modules + the wiring files). Verification was performed against that working tree.
 
 ## Re-test needed
-None — PASS as delivered. If the orchestrator amends anything before merge, re-run the changed
-surface:
-```bash
-bash ci/gates/no-c.sh && bash ci/gates/shape.sh && bash ci/gates/enable.sh && bash ci/gates/p7.sh
-cargo fmt --all -- --check
-cargo clippy --workspace -- -D warnings
-cargo clippy --workspace --features relay-edge -- -D warnings
-cargo test -p envctl-secretd                                              # feature OFF
-cargo test -p envctl-secrets-engine -p envctl-secretd --features relay-edge   # feature ON
+None. If any fix lands later, re-run (raw, via `rtk proxy`):
+```
+bash ci/gates/no-c.sh; echo exit=$?
+rtk proxy cargo clippy --workspace -- -D warnings; echo exit=$?
+rtk proxy cargo test -p envctl-engine -p envctl -p envctl-agent-env; echo exit=$?
+rtk proxy cargo build -p envctl-gui; echo exit=$?
 ```

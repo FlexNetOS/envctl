@@ -21,13 +21,17 @@ pub mod model; // Registry, OpResult, OpStatus, EnvReport, Wiring, RunPlan, RunS
 pub mod register; // Phase 4: synthesize the components.d drop-in (provenance + rebuild)
 pub mod runner; // ProcessRunner (real) + DryRunRunner impls of HookRunner
 pub mod runtime; // machine-local last-run state (XDG cache), out of the lock
+pub mod self_uninstall; // `self uninstall` — destructive, fail-closed, dry-run-by-default removal
+pub mod self_update; // `self update` CORE: fetch_latest_release / is_newer / verify_checksum
 pub mod telemetry; // sample() -> Telemetry (nvidia-smi CSV + sysinfo)
+pub mod update_notifier; // end-of-run "new version available" cache + check (CLI renders)
 pub mod wiring; // apply()/revert() for Wiring (shell_rc backup-then-excise) // EngineCommand / EngineEvent + run_event_loop (GUI worker API)
 
 pub use agent::{
-    AgentAddSpec, AgentCleanSpec, AgentEditItem, AgentEditOutcome, AgentInitOutcome, AgentInitSpec,
-    AgentList, AgentListKind, AgentListSpec, AgentLockDriftItem, AgentLockMode, AgentLockOutcome,
-    AgentLockSpec, AgentRemoveSpec, AgentReport, AgentScope, AgentSectionSel, AgentSyncSpec,
+    AgentAddSpec, AgentCleanSpec, AgentCommandDirCheck, AgentDoctorReport, AgentDoctorSpec,
+    AgentEditItem, AgentEditOutcome, AgentInitOutcome, AgentInitSpec, AgentList, AgentListKind,
+    AgentListSpec, AgentLockDriftItem, AgentLockMode, AgentLockOutcome, AgentLockSpec,
+    AgentRemoveSpec, AgentReport, AgentScope, AgentSectionSel, AgentSyncSpec, AgentUpdateCheck,
     AgentVerb,
 };
 pub use command::{run_event_loop, AgentCommandSpec, EngineCommand, EngineEvent, TelemetryControl};
@@ -46,6 +50,11 @@ pub use model::{
     Wiring,
 };
 pub use runner::{DryRunRunner, ProcessRunner};
+pub use self_uninstall::{SelfUninstallOutcome, SelfUninstallSpec};
+pub use self_update::{
+    current_target, fetch_latest_release, is_newer, plan_self_update, verify_checksum,
+    SelfUpdateAsset, SelfUpdateCheck, SelfUpdateRelease, GITHUB_REPO,
+};
 
 use std::path::PathBuf;
 use std::sync::Arc;

@@ -24,3 +24,11 @@ which = { workspace = true }
 chrono = { workspace = true }
 glob = { workspace = true }
 rustix = { workspace = true }
+# self-update / update-notifier (TASK-0019): reuse the agent-env blocking HTTP client
+# (envctl_agent_env::source::http_client — reqwest→rustls→ring). tar + flate2(rust_backend)
+# + sha2 are the same pure-Rust deps the agent-env crate already links — ZERO new C
+# (proven by ci/gates/no-c.sh). The engine half is the non-printing decision/data core.
+reqwest = { workspace = true }
+tar = { workspace = true }
+flate2 = { workspace = true }
+sha2 = { workspace = true }

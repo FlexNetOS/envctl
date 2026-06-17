@@ -1,150 +1,81 @@
-# Implementation log: TASK-0031 PR-1 — F2 remote relay-edge listener (in-process TLS + DPoP/EKM)
+# Implementation log: FULL kasetto v3.2.0 CLI/GUI option parity (TASK-0019)
 
-Status: **GREEN**. PR-1 minimal-coherent edge implemented behind the `relay-edge` cargo feature
-(default-OFF), config-gated by `[edge].enabled`. One route: `POST /v1/relay/swap` → the EXISTING
-`Engine::relay_swap`. Zero new lockfile crates. All four CI gates pass.
+Branch `task-0019-frontend-gaps` (off develop). All 7 plan items implemented in leaf-first order.
+The only accepted divergence remains mimalloc→baby-mimalloc (pre-existing, allocator-only).
 
-## Confirmed EKM accessor (the flagged risk — verified against pinned source, NOT assumed)
-- rustls **0.23.40** (lockfile-pinned): `ConnectionCommon::export_keying_material<T: AsMut<[u8]>>(&self,
-  output: T, label: &[u8], context: Option<&[u8]>) -> Result<T, Error>` (`src/conn.rs:460`).
-  `ServerConnection` / `ClientConnection` deref to `ConnectionCommon`, so both ends expose it.
-- tokio-rustls **0.26.4** (lockfile-pinned): post-handshake `server::TlsStream<IO>::get_ref(&self) ->
-  (&IO, &ServerConnection)` (`src/server.rs:314`); client side returns `(&IO, &ClientConnection)`
-  (`src/client.rs:217`). So the edge reads EKM via `tls_stream.get_ref().1.export_keying_material(out,
-  EKM_LABEL, None)`. The e2e test computes the SAME value on the client side and binds it into the
-  DPoP `ekm` claim — proving the symmetric RFC 5705 export matches end-to-end (happy-path 200).
-- Label: `EKM_LABEL = b"EXPORTER-envctl-relay-dpop-v1"`, 32-byte output, `context = None`.
-
-## Engine API delta (the parity contract — additive; `decide()` UNTOUCHED)
-- `EgressReq` (engine `lib.rs:198`) gains `pub remote: Option<broker::decide::RemotePeer>`. Set `None`
-  at every existing constructor: `proxy.rs`, `relay_swap`'s owned-copy rebuild, `tests/relay.rs`,
-  `tests/proxy_swap_e2e.rs`.
-- `relay_swap_prepare` (engine `lib.rs`): the hardcoded `remote: None` → `remote: req.remote.clone()`
-  (the ENTIRE engine wiring; `decide()` clause 11a re-asserts fail-closed).
-- NEW `pub fn Engine::load_remote_client(&str) -> anyhow::Result<Option<RemoteClient>>` (additive,
-  non-mutating read accessor; wraps the internal `store.load_remote_client`). The edge raises
-  unknown/revoked → 401 BEFORE `decide()`.
-- NEW `Paths::relay_tls_dir()` → `~/.config/env-ctl/relay-tls/` (engine `paths.rs`; mirrors
-  `config_file()`). NOTE: the plan said `crates/secretd/src/paths.rs`, but `Paths` actually lives in
-  the ENGINE (`crates/secrets-engine/src/paths.rs`) — added there (the real home). See Deviations.
+## Per-item status
+- **Item 7 — global options** DONE. `-q/--quiet` (Count), `-v/--verbose` (Count), `--color {auto,always,never}`, `--no-color` (deprecated alias). `ColorMode` enum + `resolve_plain` (CLICOLOR_FORCE on `always`; stderr deprecation on `--no-color`; NO_COLOR/TTY honored on `auto`). Threaded through `print_event`/agent renderers via a process-global `OUTPUT: OnceLock<OutputCtx>` (presentation-only; engine untouched). `-f` short added to `agent init` force.
+- **Item 4a — self-update CORE** DONE (engine). `fetch_latest_release`/`is_newer`/`current_target`/`verify_checksum`/`plan_self_update`, `GITHUB_REPO="FlexNetOS/envctl"`, asset names retargeted to envctl. Reuses `envctl_agent_env::source::http_client()` (blocking, rustls→ring) — ZERO new HTTP/TLS deps.
+- **Item 6 — update_notifier** DONE (engine + CLI). Non-printing cache/check core (env override `ENVCTL_CACHE_DIR`, 24h TTL, `available_update`). CLI `main()` spawns the background check, gates via `should_suppress_notice`, renders the end-of-run notice (TTY-gated) via `render_update_notice`/`upgrade_command` (cargo + installer arms; brew inert).
+- **Item 1 — agent doctor** DONE (engine + CLI + **GUI parity**). `Engine::agent_doctor(AgentDoctorSpec)->AgentDoctorReport`, read-only, emits one `Event::AgentDoctored`. CLI `envctl agent doctor [--scope]` grouped render (Environment/Inventory/Checks/Command dirs/Failures), honors quiet/color, `--json` round-trips. GUI Doctor sub-tab dispatches `AgentCommandSpec::Doctor` and renders the identical report.
+- **Item 4b — self update CLI** DONE. `envctl self update [--json]` in `crates/cli/src/self_update.rs` — download matched asset, verify checksum, atomic replace (`.old` backup + restore-on-fail, 0o755) keyed off `current_exe()`; tar-slip `..` guard preserved; in-archive binaries `envctl`/`envctl-gui`.
+- **Item 5 — self uninstall** DONE (engine + CLI). DESTRUCTIVE, fail-closed: dry-run by default (zero writes), `--apply` deletes, TTY `[y/N]` unless `--yes`, non-TTY+`--apply` requires `--yes` (errors otherwise). Binary-removal GUARD refuses unless `current_exe()` file-stem ∈ {envctl,envctl-gui}. Asset teardown delegates to `Engine::agent_clean(apply)`; removes config/data/cache dirs + binary. Emits `Event::SelfUninstall`.
+- **Item 2 — completions** DONE. `envctl completions <shell>` via `clap_complete::generate` over envctl's own clap tree (pure-Rust dep `clap_complete = "4.5"`).
+- **Item 3 — --frozen alias** DONE. `visible_alias = "frozen"` on the agent `--locked` flags (sync/add/remove) and on lock's `--check`. NOTE: lock's `--check` carries ONLY the `frozen` alias (not `locked`) — envctl's Lock has a distinct real `--locked` zero-network flag, so a `locked` alias on `--check` would collide in clap (kasetto's Lock had no separate `--locked`). Documented in code + ledger.
 
 ## Changes (files touched)
-- `crates/secrets-engine/src/lib.rs` — `EgressReq.remote` field; `relay_swap_prepare` wire;
-  `relay_swap` owned-copy carries `remote`; NEW `load_remote_client` accessor.
-- `crates/secrets-engine/src/paths.rs` — NEW `relay_tls_dir()` + 2 unit tests.
-- `crates/secrets-engine/tests/relay.rs` — `remote: None` in `post_req`; NEW test
-  `relay_swap_remote_unverified_dpop_denied_no_dpop` (remote=Some{dpop_verified:false}→RemoteNoDPoP).
-- `crates/secretd/Cargo.toml` — NEW `relay-edge` feature (default-OFF; `dep:tokio-rustls,ring,base64,
-  sha2`); dev-deps `rcgen/ring/base64/sha2/serde_json` (all already in graph — zero new crate).
-- `crates/secretd/src/lib.rs` — `#[cfg(feature="relay-edge")] pub mod edge;`.
-- `crates/secretd/src/edge/mod.rs` — NEW: `EdgeConfig` + `pub async fn serve_edge(engine, paths, cfg,
-  shutdown)`.
-- `crates/secretd/src/edge/dpop.rs` — NEW: pure-sync `verify_dpop_proof` (RFC 9449) + `VerifiedDpop`/
-  `DpopReject`/`HttpMethod` + 17 vector tests.
-- `crates/secretd/src/edge/tls.rs` — NEW: `RelayTlsConfig` (loads ONLY `relay_tls_dir()`; ring-only
-  ServerConfig; no MITM-CA import — FS-S25 structural) + 4 fail-closed tests.
-- `crates/secretd/src/edge/listener.rs` — NEW: accept→TLS→EKM→verify-ladder→jti→registry→
-  `swap_and_respond(remote: Some)`; `SwapOutcome::{Allowed→200,Denied→403,InternalRefused→503}`.
-- `crates/secretd/src/proxy.rs` — `swap_and_respond` gains a `remote` param (ONE shared swap core for
-  proxy+edge); helpers (`ProxyCtx`/`bare`/`extract_bearer`/`method_from_hyper`/`request_host`/
-  `ProxyBody`) made `pub(crate)`; `ProxyCtx::for_edge`; bearer extracted via Bearer-scheme when remote.
-- `crates/secretd/src/config.rs` — `[edge]` block parse + `EdgeSettings::load` (env>file; enabled⇒
-  bind_addr required, fail-closed).
-- `crates/secretd/src/main.rs` — start `serve_edge` under the SAME broadcast shutdown when the feature
-  is on AND `[edge].enabled`; cert-load/bind failure FATAL when explicitly enabled; await on shutdown.
-- `crates/secretd/tests/edge_e2e.rs` — NEW `#[tokio::test] #[cfg(feature="relay-edge")]` full e2e.
-- `ci/gates/shape.sh` — armed/tightened the FS-S25/FS-S18 edge-vs-MITM-CA grep + REQ-SEC-11 grep now
-  that `crates/secretd/src/edge/` exists.
+- `Cargo.toml`: + `clap_complete = "4.5"` (workspace dep).
+- `Cargo.lock`: regenerated for clap_complete.
+- `crates/engine/Cargo.toml`: + `reqwest`/`tar`/`flate2`/`sha2` (all pre-existing workspace pins; no new C).
+- `crates/cli/Cargo.toml`: + `clap_complete`/`tar`/`flate2`/`sha2`/`reqwest`/`envctl-agent-env` (path).
+- `crates/agent-env/src/report.rs`: `SyncFailure` now derives `Deserialize` (needed by the doctor Event).
+- `crates/engine/src/self_update.rs` (NEW): self-update CORE + golden tests.
+- `crates/engine/src/update_notifier.rs` (NEW): notifier cache/check core + tests.
+- `crates/engine/src/self_uninstall.rs` (NEW): `Engine::self_uninstall` + guard/preview tests.
+- `crates/engine/src/agent/doctor.rs` (NEW): `Engine::agent_doctor` + `AgentDoctorSpec` + `format_age` + tests.
+- `crates/engine/src/agent/{mod,report}.rs`: `AgentVerb::Doctor`, `AgentDoctorReport`/`AgentCommandDirCheck`/`AgentUpdateCheck`, re-exports.
+- `crates/engine/src/event.rs`: + `Event::AgentDoctored`, + `Event::SelfUninstall`.
+- `crates/engine/src/command.rs`: + `AgentCommandSpec::Doctor` + worker dispatch.
+- `crates/engine/src/lib.rs`: new modules + re-exports.
+- `crates/cli/src/self_update.rs` (NEW): self-update CLI half (download/extract/atomic-replace).
+- `crates/cli/src/main.rs`: global opts + `ColorMode`/`resolve_plain`/`OUTPUT`/`paint`/`emit`; `Cmd::Manage`(`#[command(name="self")]`)+`SelfAction`; `Cmd::Completions`; `--frozen`/`-f`; notifier wiring + end-of-run notice; `AgentCmd::Doctor`; `AgentResult::Doctor` + `render_agent_doctor`; `run_completions`/`run_self_uninstall`; quiet/verbose/plain-aware `print_event`; new `frontend_gaps_tests` module.
+- `crates/gui/src/main.rs`: `AgentVerbTab::Doctor`, `agent_last_doctor` state, `agent_doctor_spec`, command arm, Doctor tab + form + `agent_doctor_tables` render, `Event::AgentDoctored` handler.
+- `.handoff/loop/rust-port/parity-ledger.md`: flipped FRONTEND-01/02/07/08/09/10 to `[x]` with TASK-0019 closure notes (FRONTEND-03/04/05/06 = binary/ui/banner/colors stay `[≠]` envctl-owned).
 
-## Tests added + what they prove
-- engine `paths.rs`: `relay_tls_dir_is_under_config_sibling_of_secretd_toml`,
-  `relay_tls_dir_resolves_under_env_ctl_config` — relay-tls/ is under config, NOT data (≠ MITM-CA).
-- `edge/dpop.rs` (17): valid accept; EKM uncomputable→reject (fail-closed), EKM mismatch, EKM claim
-  absent; bad signature; tampered payload; wrong typ/alg; non-OKP jwk; htm/htu mismatch; iat past/
-  future; missing jti; malformed JWT (≠3 segs, empty); non-base64 seg; RFC 7638 jkt == SHA-256(canon).
-- `edge/tls.rs` (4): loads relay-tls/; missing dir / missing key / empty cert all fail closed.
-- engine `tests/relay.rs`: `relay_swap_remote_unverified_dpop_denied_no_dpop` → `RemoteNoDPoP`, key
-  never fetched. (CrossKindPresentation — remote bearer over local `remote: None` — is ALREADY proven
-  by the existing `relay_mint_remote_binds_client_and_cross_kind_denied_locally`.)
-- `tests/edge_e2e.rs` (1 test, 5 scenarios): real tokio-rustls handshake (trusting ONLY relay-tls
-  cert), client-computed EKM bound into a valid DPoP proof → POST /v1/relay/swap → **200 + the REAL
-  key (SENTINEL) reaches the faked Upstream**. Negatives: replayed jti→401, no DPoP header→401,
-  tampered proof→401, unregistered client→401 (the `load_remote_client→None/revoked` pre-decide branch
-  a revoked client also hits).
+## Engine API delta (the parity contract)
+- NEW `Engine::agent_doctor(AgentDoctorSpec{scope_override}) -> AgentDoctorReport` (read-only, emits `Event::AgentDoctored`).
+- NEW `Engine::self_uninstall(SelfUninstallSpec{apply,yes}) -> SelfUninstallOutcome` (fail-closed; emits `Event::SelfUninstall`).
+- NEW free fns: `self_update::{fetch_latest_release,is_newer,current_target,verify_checksum,plan_self_update}` + types `SelfUpdateRelease/SelfUpdateAsset/SelfUpdateCheck`, `GITHUB_REPO`.
+- NEW `update_notifier::{spawn_background_check,wait_for_check,read_cached_entry,now_unix_secs,available_update}` + `UpdateCacheEntry`.
+- NEW Events: `AgentDoctored{report}`, `SelfUninstall{outcome}`. NEW `AgentVerb::Doctor`, `AgentCommandSpec::Doctor`. NEW report types `AgentDoctorReport/AgentCommandDirCheck/AgentUpdateCheck`.
 
-## Build/test status (exact commands; rtk proxy raw)
-- `cargo fmt --all` + `--check` — clean.
-- `cargo clippy --workspace --features relay-edge -- -D warnings` — PASS (exit 0).
-- `cargo clippy --workspace -- -D warnings` (feature OFF) — PASS (exit 0).
-- `cargo clippy -p envctl-secretd -p envctl-secrets-engine --all-targets --features relay-edge -- -D
-  warnings` (test code) — PASS (exit 0).
-- `cargo test -p envctl-secrets-engine -p envctl-secretd --features relay-edge` — PASS: secretd-lib
-  52, edge_e2e 1, mitm_e2e 1, proxy_swap_e2e 2, e2e 5, native_mint 11, self_check 2; engine-lib 129,
-  relay 18, vault 15, inject 4, phase0 6. 0 failed.
-- `cargo test -p envctl-secretd` (feature OFF) — PASS: secretd-lib 31, e2e 5, mitm_e2e 1, native_mint
-  11, proxy_swap 2, self_check 2. 0 failed. (`edge_e2e` correctly absent — `#[cfg(relay-edge)]`.)
-- `bash ci/gates/no-c.sh` — PASS (rustls=[0.23.40] on ring=[0.17.14]; zero aws-lc/openssl/C-SQLite;
-  `--all-features` covers `relay-edge`; independent `cargo metadata --features relay-edge` ⇒ 0 banned).
-- `bash ci/gates/shape.sh` — PASS. `bash ci/gates/enable.sh` — PASS. `bash ci/gates/p7.sh` — PASS.
-- `cargo build -p envctl-engine -p envctl` — clean (tight loop unaffected).
+## Tests added (what they prove)
+- engine self_update: is_newer ×5, current_target non-empty, verify_checksum match/mismatch/missing-asset/multi, plan_self_update status map (kasetto golden vectors, asset names retargeted).
+- engine update_notifier: cache round-trip, TTL boundary (fresh at TTL-1, stale at TTL), missing-cache None, available_update env-override + newer/same/older compare.
+- engine agent::doctor: is_writable ancestor-walk (+ read-only-ancestor refusal, root-skipped), format_age boundaries (s/m/h/d), build_update_check "unknown" without cache, AgentDoctorReport JSON round-trip full field-set (kasetto DoctorOutput field names).
+- engine self_uninstall: exe_stem extraction, guard known-stems, remove_dir noop/delete, **preview writes nothing + guard refuses non-envctl binary** (the fail-closed refusal path).
+- CLI frontend_gaps_tests: completions non-empty ×4 shells + bin-name, completions parse; --frozen sets locked on sync/add/remove; --check/--frozen on lock; -qq→2/-vvv→3; color modes; --no-color; init -f; resolve_plain never→plain / always→CLICOLOR_FORCE; self update --json parse; self uninstall apply/yes parse + default-preview; agent doctor --scope parse.
+- GUI: compile-level parity (Doctor tab → `AgentCommandSpec::Doctor`, `Event::AgentDoctored` handled, `agent_doctor_tables` render).
 
-## Pre-existing lint baseline
-No pre-existing fmt/clippy drift surfaced; the workspace was clean before and after. (Toolchain is the
-pinned `1.96.0` per `rust-toolchain.toml`, so no floating-`stable` mis-attribution.)
+## Build/test status — commands run + result
+- `cargo build -p envctl-engine -p envctl -p envctl-gui` — **PASS** (GUI compiles; no system-lib block hit).
+- `cargo test -p envctl-engine -p envctl -p envctl-agent-env -p envctl-gui` — **PASS**. Key result lines:
+  - engine lib: `test result: ok. 58 passed; 0 failed`
+  - envctl bin (incl. frontend_gaps_tests): `test result: ok. 19 passed; 0 failed` (lib) + bin/integration suites all ok
+  - agent-env: all ok (251/82/… passed)
+  - gui: `test result: ok. 11 passed; 0 failed`
+- `cargo fmt --all --check` — **PASS** (clean).
+- `cargo clippy -p envctl-engine -p envctl -p envctl-gui -p envctl-agent-env --all-targets -- ` — **PASS** (0 warnings after clearing the `SelfCmd`→`Manage` enum-variant-name + a GUI doc-list warning).
 
-## Deviations (with rationale)
-1. **`relay_tls_dir()` lives in the ENGINE `paths.rs`, not `secretd/src/paths.rs`.** The plan named
-   `crates/secretd/src/paths.rs`, but secretd has no `paths.rs` — the `Paths` struct is defined in
-   `crates/secrets-engine/src/paths.rs` and secretd imports `envctl_secrets::paths::Paths`. Adding the
-   helper to the real home keeps ONE `Paths` type (no shadow). Unit-tested there.
-2. **The edge reuses `proxy::swap_and_respond` (threaded a `remote` param) instead of an edge-local
-   `relay_swap` call site.** This keeps ONE swap core for the proxy + the edge (engine-parity
-   principle: the planes can't diverge in how they drive `relay_swap`/stream the upstream via the
-   `EGRESS_CTX` task-local + `DaemonUpstream`). The edge still builds `EgressReq{remote: Some(rp)}` and
-   reaches the EXISTING `relay_swap` exactly as the plan requires — the param is just the seam.
-3. **Bearer header convention for the remote plane.** `swap_and_respond` previously extracted the
-   bearer with the UPSTREAM provider's convention (Anthropic = bare `x-api-key`). The remote edge
-   client addresses the EDGE and always sends `Authorization: Bearer`, so for `remote.is_some()` the
-   bearer is read with the Bearer-scheme (`Provider::Generic`). Found + fixed via the e2e (was a 403).
-4. **"Revoked client → 401" e2e is exercised via the unregistered-client path.** The edge refuses an
-   unknown OR revoked client through the SAME `load_remote_client → None/disabled/revoked → 401`
-   pre-decide branch. There is no public remote-client revoke verb yet (revocation TEAR-DOWN is
-   explicitly PR-3 per the plan's out-of-scope), and adding one (or a 68-method `SharedStore` test
-   shim) would exceed PR-1 scope, so the e2e proves the identical edge refusal branch with an
-   unregistered `client_id`. The negative assertion (request never reaches a mint) is intact.
-5. **Upstream target framing.** PR-1 conveys the upstream target via `X-Relay-Upstream-Host` +
-   `X-Relay-Upstream-Path` headers (the edge route is the fixed `/v1/relay/swap`; the DPoP `htu` binds
-   the edge URL). `decide()` re-fences host/path/method against the policy allowlist, so a
-   forged/unallowed target is denied IN THE ENGINE — the edge enforces no policy.
+## CI gates
+- `bash ci/gates/no-c.sh` — **PASS** (`rustls=['0.23.40'] on ring=['0.17.14']; zero aws-lc/openssl/C-SQLite`). Confirms `clap_complete` + the reqwest/tar/flate2/sha2 reuse added NO C.
+- `bash ci/gates/shape.sh` — **PASS**.
+- `bash ci/gates/enable.sh` — **PASS**.
+- `bash ci/gates/p7.sh` — **PASS**.
 
-## Handoff notes (for the invariant-guardian — targeted checks)
-- **FS-S20 (EKM channel binding):** `dpop_verified:true` is set ONLY after `verify_dpop_proof`
-  succeeds, which requires `ekm = Some(..)` AND the proof's `ekm` claim to equal it. Uncomputable EKM
-  ⇒ `EkmUncomputable` ⇒ **403** (listener maps the three `Ekm*` rejects to 403, all other rejects to
-  401). Verify: `edge/dpop.rs::uncomputable_ekm_rejected_failclosed` + `ekm_mismatch_rejected` +
-  `ekm_claim_absent_rejected`, and the e2e's symmetric client-side EKM export feeding the happy path.
-- **FS-S25/FS-S18 (relay-tls ONLY, never MITM CA):** structural in `edge/tls.rs` (`RelayTlsConfig`
-  reads ONLY `relay_tls_dir()`, imports no MITM-CA type). Backstop: `ci/gates/shape.sh` greps the
-  `edge/` tree for any MITM/local-CA symbol. Confirm the grep actually scans `crates/secretd/src/edge`
-  (it does — `EDGE_SRC`).
-- **Poisoned-mutex fail-closed:** `listener.rs verify_remote_presentation` step (4) — `conn.jti.lock()`
-  `Err(_) => 401`, NEVER `.unwrap()`. The replay store itself is the F6 `JtiReplayStore` (read-only).
-- **Never reaches a mint on failure:** every verify failure returns from `verify_remote_presentation`
-  BEFORE `swap_and_respond` is called; confirm there is no path that builds `RemotePeer` without all
-  of: EKM bound + DPoP verified + jti fresh + client registered+enabled + proven jkt == registered jkt.
-- **No secret bytes in logs:** the listener's `tracing::debug!` lines carry only status code / peer /
-  error-display — never bearer/proof/EKM/key. The engine emits the secret-free durable audit row.
-- **decide() untouched:** confirm `crates/secrets-engine/src/broker/decide.rs` has NO diff (only the
-  `EgressReq`/`relay_swap_prepare`/`load_remote_client`/`paths` additive edits).
-- **Default-OFF proof:** feature-off `cargo test -p envctl-secretd` passes with `edge_e2e` absent and
-  no edge module compiled; `[edge]` absent ⇒ `serve_edge` never called (main.rs is `#[cfg]`-gated).
+## GUI system-lib block
+None. `cargo build -p envctl-gui` compiled cleanly in this worktree; the Doctor-tab parity code is in place and exercised by the GUI test suite.
 
-## Follow-ups (deferred PR-2 / PR-3 — recorded per the plan's out-of-scope)
-- **PR-2:** server-issued nonce challenge (OI-SM-1 nonce half; the `dpop.rs` window is nonce-agnostic
-  and ready to extend the dedup key to `(client_id, nonce, jti)`); per-IP / per-client rate-limit +
-  body-size caps + request timeouts + admission shedding (CVE-2024-47609 accept-loop class); hardened-
-  mode mTLS `ClientCertVerifier` from a SEPARATE remote-clients CA (OI-SM-4); a startup self-check that
-  the presented edge cert chains to a PUBLIC root and explicitly NOT the MITM/remote-clients CA.
-- **PR-3 (→ folds into TASK-0032):** streaming + in-stream `decide()` re-check; active stream tear-down
-  on `RevokeBearer`/`RevokeRemoteClient`/`lock`/USB-pull; a public `revoke_remote_client` engine verb
-  (the edge's revoked-client refusal branch is already present via `load_remote_client`).
+## Deviations
+- **Lock `--check` alias**: kasetto's `lock --check` carries aliases `[locked, frozen]`, but envctl's `agent lock` already exposes a distinct real `--locked` (zero-network audit) flag. Adding a `locked` alias to `--check` collides in clap (`long option names must be unique`). Resolved by giving `--check` ONLY the `frozen` alias; the real `--locked` flag is unchanged. This is the correct no-collision mapping for envctl's richer Lock surface (documented in code + ledger). No capability lost.
+- The `--no-color` flag is the rename of kasetto's deprecated `--plain` (kasetto already treats `--plain` as a deprecated alias for `--color never`; envctl exposes it as `--no-color`, same semantics + stderr deprecation warning).
+
+## Handoff notes (for the guardian)
+- **Fail-closed uninstall** is the load-bearing invariant: verify `crates/engine/src/self_uninstall.rs::tests::preview_writes_nothing_and_guard_refuses_non_envctl_binary` covers (a) dry-run-by-default = zero writes and (b) the binary-removal guard refusing a non-{envctl,envctl-gui} stem. CLI side: `run_self_uninstall` errors on non-TTY `--apply` without `--yes` (smoke-confirmed: "pass --yes to confirm uninstall in non-interactive mode") and prompts `[y/N]` on a TTY.
+- **No-C**: the only new crate is `clap_complete` (pure-Rust). self_update/notifier reuse `envctl_agent_env::source::http_client` + workspace tar/flate2(rust_backend)/sha2 — `no-c.sh` re-run PASS confirms zero new C and the single ring-only rustls.
+- **Engine non-printing**: all decision/data logic is in engine modules (self_update/update_notifier/self_uninstall/agent::doctor); ALL printing + the binary-replace + the `[y/N]` prompt are in the CLI; GUI parity for `agent doctor` drives the identical `Engine::agent_doctor`.
+- **Presentation globals**: quiet/verbose/color are threaded via `OUTPUT: OnceLock<OutputCtx>` (set once in `main`) + `paint()`/`emit()` — a deliberate front-end-only choice (the engine emits the full event stream regardless), avoiding a signature churn across every renderer. Failures/refusals are NEVER suppressed under `--quiet`.
+- **Smoke checks run**: `completions bash` emits a real script; `self uninstall` (no flags) prints the preview + "dry-run: pass --apply…"; `agent doctor` correctly routes through `AgentCtx::resolve` (errored only because the worktree root has no agent-env config — expected).
+
+## Headline status
+**GREEN** — all 7 items implemented (engine-first; CLI + GUI parity for doctor; CLI-only for the rest per plan justifications); engine + CLI + agent-env + GUI build and test pass; fmt + clippy clean; no-c/shape/enable/p7 gates PASS.

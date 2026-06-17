@@ -11,6 +11,16 @@ path = "src/main.rs"
 [dependencies]
 envctl-engine = { workspace = true }
 clap = { workspace = true }
+# Pure-Rust shell-completion generation for the CLI-only `completions <shell>` verb (TASK-0019).
+clap_complete = { workspace = true }
 anyhow = { workspace = true }
 serde_json = { workspace = true }
 baby-mimalloc = { workspace = true }
+# self-update CLI half (TASK-0019): download/extract/atomic-replace of the running binary.
+# Reuses the agent-env blocking HTTP client; tar + flate2(rust_backend) + sha2 are pure-Rust
+# (no new C — proven by ci/gates/no-c.sh).
+tar = { workspace = true }
+flate2 = { workspace = true }
+sha2 = { workspace = true }
+envctl-agent-env = { path = "../agent-env" }
+reqwest = { workspace = true }

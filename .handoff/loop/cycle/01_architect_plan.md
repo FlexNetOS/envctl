@@ -1,102 +1,81 @@
-# TASK-0031 — F2 remote relay-edge listener (in-process TLS + DPoP/EKM) · VERDICT: GO (3-PR split)
+# Plan: FULL kasetto v3.2.0 CLI/GUI option parity (TASK-0019)
 
-PR-1 (THIS cycle) = minimal-coherent edge. PR-2 (nonce + rate-limit + hardened mTLS) and PR-3
-(streaming + revocation tear-down → folds into TASK-0032) stacked after. Engine remote core already
-built (relay_mint_remote, register_remote_client, decide() clause 11a, JtiReplayStore) — do NOT rebuild.
+**VERDICT: GO** — 1 repo (envctl), >3 modules → multi-commit/multi-PR on one branch. Owner directive: NOTHING left out of kasetto; every command/flag/option ports. Only accepted divergence = mimalloc(C)→baby-mimalloc(Rust) global allocator (verified upgrade-only, already in place).
+
+## Delta already-present (DO NOT re-port)
+envctl has: agent {sync,add,remove,lock,list,clean,init}; `--json`(global), `--apply`(fail-closed inversion of kasetto `--dry-run` — KEEP), `--locked`, `--update [NAME..]`, `--upgrade-package`, `--scope/--config/--skill/--mcp/--command/--ref/--branch/--sub-dir/--no-sync/--no-verify/--check`. Init already has `--force`+`--global`.
 
 ## Target repos
-1 — envctl. Branch task-0031-edge (stacked on task-0030-jti; F6 JtiReplayStore present, consumed read-only).
+1 repo `envctl`. Modules: workspace Cargo.toml (+clap_complete), crates/engine (agent_doctor, self_update core, self_uninstall, update_notifier; event.rs, command.rs, lib.rs), crates/agent-env (reuse only; maybe notifier cache helper), crates/cli (completions, `self` tree, global flags, --frozen, notifier wiring, doctor render), crates/gui (Doctor tab parity), ci/gates/no-c.sh (re-run only).
 
-## Engine API delta (ONE additive seam — decide() UNTOUCHED)
-1. Add `pub remote: Option<broker::decide::RemotePeer>` to `EgressReq` (lib.rs:198). Set `None` at all
-   existing constructors (proxy.rs + tests — enumerate via grep `EgressReq {`).
-2. In `relay_swap_prepare` (lib.rs:1519-1533) replace hardcoded `remote: None` with `remote: req.remote.clone()`.
-   That is the ENTIRE engine wiring. decide() clause 11a (decide.rs:187-207) already fails closed
-   RemoteNoDPoP if !dpop_verified, denies CrossKindPresentation on plane mismatch, RemoteBindingMismatch
-   on client_id/jkt divergence. Do NOT modify decide().
-3. Edge calls EXISTING `Engine::relay_swap(bearer, &EgressReq{remote: Some(rp), ..}, &sink)` (lib.rs:1267);
-   map SwapOutcome::{Allowed,Denied,InternalRefused} → HTTP 200/403/503.
-4. Add `Engine::load_remote_client(&str) -> Result<Option<RemoteClient>>` read accessor (additive,
-   non-mutating; internal use exists at lib.rs:1114). Edge raises RemoteClientUnknown/Revoked → 401
-   BEFORE decide() (mirrors UnknownBearer pre-decide raise).
+## SEQUENCING (dependency order — do not reorder)
+1. Item 7 global options (printer/color path foundation)
+2. Item 4a self-update CORE (engine: fetch_latest_release/is_newer/current_target/verify_checksum/plan_self_update) — notifier imports it
+3. Item 6 update_notifier (engine fetch+cache + CLI render; produces cache item 1 reads)
+4. Item 1 agent doctor (depends 6 for update_check block, 7 for quiet/json/color)
+5. Item 4b self update CLI (download/extract/atomic-replace)
+6. Item 5 self uninstall (destructive, fail-closed)
+7. Items 2 (completions) + 3 (--frozen) — independent
 
-## Module layout (NEW crates/secretd/src/edge/)
-- mod.rs    — `EdgeConfig`, `pub fn serve_edge(engine, paths, cfg, shutdown) -> Result<(SocketAddr, JoinHandle)>`
-- listener.rs — rustls ServerConfig from relay-tls/ ONLY; TlsAcceptor; accept loop; per-conn handler;
-  EKM read; map SwapOutcome → hyper Response.
-- dpop.rs    — pure sync `verify_dpop_proof(...) -> Result<VerifiedDpop, DpopReject>` (RFC 9449) + types.
-- tls.rs     — `RelayTlsConfig` newtype that can ONLY load relay-tls/{cert.pem,key.pem} (FS-S25 structural;
-  never imports MITM-CA types).
-- `Paths::relay_tls_dir()` NEW helper in paths.rs (mirrors config_file()): ~/.config/env-ctl/relay-tls/.
-- Gate behind a `relay-edge` cargo feature (default-off, mirrors mitm-ca) so --no-default-features drops it.
+## Item 1 — `agent doctor` (engine-first; GUI parity REQUIRED)
+Source kasetto src/commands/doctor.rs:15-318 (DoctorOutput, CommandDirCheck, UpdateCheckOutput, collect_command_dirs, is_writable, build_update_check, format_age). Substrate exists: agent-env runtime.rs:73 load_latest_failures (tests-only today), report.rs SyncFailure, lib.rs:44-45 command_*_targets, lock.rs:222/235 list_installed_{mcps,commands}, lock.state().skills.
+Engine: new crates/engine/src/agent/doctor.rs — `Engine::agent_doctor(AgentDoctorSpec{scope_override},sink)->AgentDoctorReport`, read-only, non-printing, emits one Event::AgentDoctored. report.rs adds AgentCommandDirCheck{path,writable}, AgentUpdateCheck{status,latest_version,checked_at,age_seconds}, AgentDoctorReport{version,lock_file,scope,skills,installation_path,last_sync,failures:Vec<SyncFailure>,mcps,commands,command_dirs,update_check}. AgentVerb::Doctor. event.rs Event::AgentDoctored. command.rs AgentCommandSpec::Doctor + dispatch (GUI worker drives identical method).
+CLI: `envctl agent doctor [--scope]` (+global --json). Human render = kasetto grouped (Environment/Inventory/Checks/Command dirs/Failures), honor quiet (quiet&&!json→no-op) + color. AgentResult::Doctor, always exit 0.
+GUI (parity): Doctor sub-tab (AgentVerbTab::Doctor gui main.rs:72), "Run diagnostics" button → AgentCommandSpec::Doctor; handle Event::AgentDoctored into agent_last_doctor:Option<AgentDoctorReport>, render grouped tables.
+update_check block depends on Item 6.
 
-## DPoP verification (edge/dpop.rs — pure, vector-testable; SERVER-MODE §4.2)
-1. Parse DPoP header JWT (3 base64url segs). Malformed → 401.
-2. Header: typ=="dpop+jwt", alg=="EdDSA" (Ed25519), embedded OKP jwk (x = 32-byte pubkey). Else 401.
-3. Verify sig over b64url(header).b64url(payload) via ring ED25519 UnparsedPublicKey::verify. Bad → 401.
-4. jkt = b64url(SHA-256 of RFC 7638 canonical JWK) (sha2). Must match registered client dpop_jkt.
-5. Claims: htm==method, htu==canonical URI (scheme+host+path, no query), iat in F6 window. Mismatch → 401.
-6. EKM (FS-S20, RFC 9449 §5): rustls 0.23 `export_keying_material` off the terminated tokio_rustls server
-   stream (get_ref().1); proof must bind it; uncomputable binding → 403 fail-closed (edge MUST terminate
-   TLS in-process; no external TLS-terminating proxy — L4 passthrough only). IMPLEMENTER: confirm the
-   exact accessor against rustls 0.23 (context7) before wiring — flagged risk, don't assume.
-7. jti: `JtiReplayStore::check_and_record(client_id, jti, iat_ms, now_ms)` under edge-owned
-   `Mutex<JtiReplayStore>`; any Err → 401; POISONED mutex → 401 (never .unwrap()).
-8. All pass → RemotePeer{client_id, dpop_jkt, dpop_verified:true} → relay_swap. decide() re-asserts.
+## Item 2 — `completions <shell>` (CLI-only)
+kasetto src/commands/completions.rs. Top-level `envctl completions <shell>` (clap_complete::Shell positional) → `generate(shell,&mut Cli::command(),"envctl",&mut stdout())` (needs clap::CommandFactory). Generates envctl's OWN tree. Add to should_suppress_notice; not json-gated. Dep: workspace + crates/cli `clap_complete = "4.5"` (pure-Rust, clap+clap_lex only — run no-c.sh). CLI-only justified (clap-tree introspection, no engine logic/GUI analog).
 
-## Startup (config-gated, OFF by default)
-In secretd main::serve, after the proxy task: load `[edge]` from secretd.toml (bind addr, enabled). Absent/
-disabled → do not bind (stock secretd serves no public edge). Enabled → serve_edge under the SAME broadcast
-shutdown as the proxy. Cert-load/bind failure is FATAL when edge explicitly enabled (fail-closed). Serve
-hyper HTTP/1.1+2 over tokio_rustls server stream — reuse already-linked hyper/hyper-util/http-body-util
-(NO axum). PR-1 route = exactly `POST /v1/relay/swap` → relay_swap.
+## Item 3 — `--frozen` alias (CLI-only)
+Add `visible_alias = "frozen"` to the 4 agent `--locked` flags: Sync main.rs:266, Add:308, Remove:339, Lock(--check):356. No semantic change.
 
-## Zero new deps (no-C proof)
-All present in resolved graph: tokio-rustls 0.26 + rustls 0.23 (ring-only, default-features=false
-features=["ring","tls12"], Cargo.toml:91-97), ring 0.17 (Ed25519), base64 0.22, sha2 0.10, serde_json,
-hyper/hyper-util/http-body-util (secretd). Banned list (no-c.sh:74) — none pulled. Edge doesn't touch the
-store layer. Run no-c.sh after the EgressReq engine edit.
+## Item 4 — `self update` (engine-first core, CLI binary-replace)
+kasetto src/commands/self_update.rs:1-360. RETARGET GITHUB_REPO → "FlexNetOS/envctl"; asset names kasetto/kst→envctl. Reuse envctl_agent_env::source::http_client() (pub, source.rs:30, blocking) + workspace tar/flate2(rust_backend)/sha2 → ZERO new deps (preferred over flipping engine reqwest to blocking).
+Engine: new crates/engine/src/self_update.rs — SelfUpdateRelease/Asset, fetch_latest_release(), is_newer(verbatim semver tuple), current_target(verbatim), verify_checksum(SHA-256 vs checksums.txt), plan_self_update()->SelfUpdateCheck{current,latest,status}. Non-printing.
+CLI: top-level `self` subcommand (mirror kasetto ManageSelf) with SelfAction: `envctl self update [--json]` — check→if newer download matched asset, verify checksum, atomic replace (.old backup + restore-on-fail, 0o755) keyed off current_exe(). In should_suppress_notice. CLI half prints progress + does replace (running-binary concern). GUI: CLI-only justified (self-replacing running binary, no GUI analog).
 
-## Invariants (each checkable)
-- no-C / one rustls ring-only: PASS (zero new deps; reuse pinned ring rustls). Run ci/gates/no-c.sh.
-- relay-tls ONLY never MITM CA (FS-S25): PASS by construction (RelayTlsConfig newtype; edge never imports
-  MITM-CA types). Add CI grep: edge/ never references the MITM-CA path/symbol (guardian-checkable).
-- EKM binding (FS-S20): PASS — dpop_verified true ONLY after export_keying_material succeeds AND proof binds
-  it; uncomputable → 403. EKM-mismatch reject vector tested.
-- fail-closed: bad TLS / bad-expired-replayed DPoP (401) / jti reject (401) / unknown-revoked client (401
-  pre-decide) / poisoned mutex (401) / locked vault-internal (503). Never reaches a mint on failure.
-- engine single non-printing authority: PASS — edge does I/O + proof verify only; MINT/DECIDE stay in
-  relay_swap/decide; edge uses tracing metadata-only, never println!.
-- no secret bytes in logs/audit: PASS — log client_id/source_ip/jkt-hash/decision only; engine emits the
-  secret-free durable audit row.
-- destructive guards / dry-run: N/A (network listener gated by config presence = the --apply analogue).
+## Item 5 — `self uninstall` (DESTRUCTIVE — fail-closed, dry-run by default)
+kasetto src/commands/uninstall.rs:13-131. Faithful removal set: agent assets via existing Engine::agent_clean (agent/clean.rs:27, clears runtime), config dir dirs_agent_env_config(), data dir dirs_agent_env_data(), cache dirs_agent_env_cache(), + the running binary (envctl/envctl-gui).
+INVARIANT: default = PREVIEW (no flag → dry-run, zero writes, prints what would be removed). `--apply` required for deletion; TTY `[y/N]` confirm unless `--yes`; non-TTY requires `--yes` (port uninstall.rs:14-19). GUARD: binary removal refuses unless current_exe() file-stem ∈ {envctl,envctl-gui} (fail-closed, NotLiveDevice-style).
+Engine: new crates/engine/src/self_uninstall.rs — Engine::self_uninstall(SelfUninstallSpec{apply,yes},sink)->SelfUninstallOutcome{dry_run,skills_removed,mcps_removed,command_dirs_unlinked,config_removed,data_removed,binary_removed,gui_removed,refused:Option<String>}; delegates asset removal to agent_clean(apply); emits Event::SelfUninstall. Refuses to act when apply==false. CLI keeps the [y/N] prompt.
+Surface: `envctl self uninstall` (under `self`, sibling of update). GUI: CLI-only justified (would delete running stack; no kasetto GUI).
 
-## Sequencing (leaf-first)
-1. Engine seam: EgressReq.remote field + all-constructor None + relay_swap_prepare wire + load_remote_client
-   accessor; build engine + decide.rs table tests pass. 2. Paths::relay_tls_dir() + test. 3. edge/dpop.rs
-   pure verifier + vectors (TDD). 4. edge/tls.rs RelayTlsConfig (proxy.rs:686 shape, relay-tls/ cert, no
-   leaf-mint). 5. edge/listener.rs accept→TLS→EKM→bearer+DPoP→verify→jti→load/verify client→EgressReq{remote}
-   →relay_swap→map outcome. 6. edge/mod.rs EdgeConfig+serve_edge; [edge] parse (mirror StoreConfig). 7. main.rs
-   start task under shared shutdown when enabled; relay-edge feature. 8. CI grep FS-S25. 9. tests. Then
-   fmt/clippy --workspace -D warnings + 4 ci/gates.
+## Item 6 — update_notifier (end-of-run "new version available" notice)
+kasetto src/update_notifier.rs:1-289 + app.rs:191-219 (should_suppress_notice, current_program_name). cache dir dirs_agent_env_cache(); env override KASETTO_CACHE_DIR→ENVCTL_CACHE_DIR; repo via item-4 self-update core (FlexNetOS/envctl); 24h TTL.
+Engine (non-printing): new crates/engine/src/update_notifier.rs — spawn_background_check()->Option<handle>, wait_for_check(handle,timeout), read_cached_entry()->Option<UpdateCacheEntry> (used by item 1), now_unix_secs(), available_update()->Option<(current,latest)>.
+CLI: mirror kasetto app.rs::run — spawn check up front; should_suppress_notice(&cli.cmd) (suppress for --json/--quiet/completions/self/machine-readable verbs; never for install/reset/auto-fix human runs); wait_for_check(800ms) unless suppressed; at end on success render notice via available_update() gated by TTY+suppress. Port current_program_name (default "envctl"). upgrade_command(): keep cargo arm (cargo install envctl) + installer arm (→ envctl self update); brew arm inert. GUI: none (end-of-run CLI concept).
 
-## Tests
-Unit (dpop.rs): ACCEPT (valid Ed25519, correct htm/htu/iat, matching EKM); REJECT vectors — bad sig, wrong
-alg/typ, htm/htu mismatch, iat out of window, EKM mismatch, malformed JWT; jkt matches RFC 7638 vector; jti
-replay → 401; poisoned mutex → reject. tls.rs: loads relay-tls/, missing relay-tls/ fails closed, no MITM-CA
-path. Engine: relay_swap with remote=Some{dpop_verified:false} → RemoteNoDPoP; remote bearer + remote=None →
-CrossKindPresentation. Integration (crates/secretd/tests/edge_e2e.rs, reuse mitm_e2e.rs harness): test
-relay-tls cert in tempdir, serve_edge w/ faked seams (fake USB so register/mint pass gate, fake Upstream),
-tokio-rustls client real handshake → register+mint remote bearer → valid DPoP bound to EKM → POST
-/v1/relay/swap → 200 + faked upstream. Negatives: replayed jti → 401, revoked → 401, tampered → 401, no DPoP
-header → 401. CI gates: no-c.sh (engine edit + edge deps), shape.sh (new module).
+## Item 7 — global options -q/--quiet, -v/--verbose, --color, --no-color (+Init -f)
+kasetto cli.rs:52-95,170-187 + colors.rs:74-82. Add to top-level Cli (all global=true): quiet:u8 (ArgAction::Count, short q), verbose:u8 (Count, short v), color:ColorMode (auto|always|never, default auto), no_color:bool (hide=true, deprecated alias for --color never). Define ColorMode ValueEnum lowercase. Port resolve_plain: always→set CLICOLOR_FORCE=1; no_color→never + stderr deprecation note; never→plain; auto→respect NO_COLOR/TTY.
+REAL effects wired through CLI printer (print_event main.rs:1204 + human renderers): quiet>=1 drops Log/StepStarted/info, keeps failures/refusals (not --json); verbose unfilters Event::Log detail; color/no-color gate ANSI via resolved plain. Engine: NONE (pure front-end; engine already emits full stream non-printing).
+Init parity: add `short='f'` to agent init force (kasetto Init has -f). --global+--force already present.
+GUI: none (terminal concepts). CLI-only justified.
 
-## Risks
-EKM accessor through tokio_rustls 0.26 server stream — confirm against rustls 0.23 (context7) before wiring
-(the one API to verify, not assume). EgressReq additive field blast radius low (compile error catches a miss).
-Edge runs ON the reactor → await relay_swap normally (no spawn_blocking; proxy.rs does the same).
+## Invariants
+no-C: only clap_complete added (pure-Rust); self_update/notifier reuse existing reqwest-rustls-ring + tar + flate2(rust_backend) + sha2 — zero new C (prefer reusing agent-env http_client()). Run `bash ci/gates/no-c.sh` after dep change. One ring-only rustls (no new TLS). Engine single/sync/non-printing (all decision logic in engine, all printing + binary-replace + [y/N] prompt in CLI). CLI+GUI parity: doctor REQUIRES GUI parity; completions/self/notifier/global-flags/--frozen CLI-only with documented justifications. Destructive (uninstall) fail-closed + dry-run default + binary-stem guard.
 
-## Out of scope (record as follow-ups in wrap-up)
-PR-2: server-issued nonce challenge (OI-SM-1 nonce half), per-IP/per-client rate-limit + body caps + timeouts
-+ admission shedding (CVE-2024-47609), hardened-mode mTLS ClientCertVerifier (OI-SM-4). PR-3: streaming +
-in-stream decide() re-check + tear-down on revoke/USB-pull (→ TASK-0032).
+## Lock/manifest
+No envctl.lock/agent-env.lock/manifest change. Commit regenerated Cargo.lock (clap_complete). Flip FRONTEND-01..10 + --frozen + AP rows to [x] in .handoff/loop/rust-port/parity-ledger.md as closed (note mimalloc the sole [≠], upgrade-only).
+
+## Work breakdown (leaf-first — implementer follows in order)
+1. Item 7 global options + ColorMode + resolve_plain + thread quiet/verbose/color through print_event/renderers + `-f` short on agent init. Tests.
+2. Item 4a self-update core (engine/src/self_update.rs, reuse agent-env http_client). Port golden tests. Export lib.rs.
+3. Item 6 update_notifier (engine/src/update_notifier.rs + CLI wiring in main()). Port tests.
+4. Item 1 agent doctor (engine/src/agent/doctor.rs + report/event/command/lib; CLI agent doctor + render + AgentResult::Doctor; GUI Doctor tab + agent_last_doctor + Event handling). Port doctor unit tests.
+5. Item 4b self update CLI (cli/src/self_update.rs download/extract/atomic-replace; `self` subcommand tree).
+6. Item 5 self uninstall (engine/src/self_uninstall.rs preview/apply/guard delegating agent_clean + Event::SelfUninstall; CLI self uninstall confirm/--yes/--apply). Tests.
+7. Items 2+3 (clap_complete + completions <shell>; --frozen visible_alias ×4+lock-check). Tests.
+8. All 4 CI gates + cargo fmt --all + cargo clippy --workspace -D warnings + full cargo test --workspace.
+
+## Tests (kasetto golden vectors — port verbatim)
+Engine: is_newer ×5, verify_checksum match/mismatch/missing-asset/multi, current_target non-empty; notifier cache round-trip/TTL boundary/render plain+color/classify_install_path/missing-cache; doctor is_writable ancestor-walk/build_update_check status map/format_age boundaries; self_uninstall preview=zero-writes/binary-stem-guard-refuses/apply-removes-temp-tree.
+CLI: completions ×4 shells non-empty+exit0; --frozen sets locked ×4; -qq→2/-vvv→3/--no-color→plain+deprecation(stderr)/--color always→CLICOLOR_FORCE; agent doctor --json round-trips; self uninstall non-TTY+--apply w/o --yes errors.
+GUI: compile-level parity (Doctor tab dispatches AgentCommandSpec::Doctor, handles Event::AgentDoctored).
+CI: no-c.sh (MUST, after clap_complete) + shape.sh expect PASS; enable.sh/p7.sh untouched; fmt+clippy.
+
+## Suggested PR split (single branch)
+PR-1 Item7 global options. PR-2 Items 4a+6 self-update-core+notifier. PR-3 Item1 agent doctor (engine+CLI+GUI). PR-4 Items 4b+5 self update CLI + uninstall. PR-5 Items 2+3 completions + --frozen.
+
+## Implementer defaults (non-blocking)
+(a) self-update HTTP = reuse envctl_agent_env::source::http_client() (zero new deps). (b) notifier upgrade_command keeps cargo+installer arms (installer→`envctl self update`), brew inert.
