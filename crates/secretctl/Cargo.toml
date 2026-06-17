@@ -12,8 +12,11 @@ path = "src/main.rs"
 [dependencies]
 envctl-secrets-proto = { workspace = true }
 # The engine edge: `env-ctl run` calls `Engine::run_child` in-process to spawn the child with the
-# daemon-built env injection (bearer-only). Pure-Rust — adds no banned C to the trust boundary.
-envctl-secrets-engine = { workspace = true }
+# daemon-built env injection (bearer-only). The `provider-github` feature is enabled so the TASK-0026
+# `github-app enroll` path can VALIDATE the App PEM client-side via `build_app_jwt` and reference the
+# `GITHUB_APP_KEY_NAME` const VERBATIM (no literal-drift from the mint reader). Pure-Rust (rsa +
+# base64, RustCrypto) — adds no banned C to the trust boundary.
+envctl-secrets-engine = { workspace = true, features = ["provider-github"] }
 tonic = { workspace = true }
 tokio = { workspace = true, features = ["rt-multi-thread", "macros", "net"] }
 # tower (service_fn) + hyper-util (TokioIo) build the classic UDS client connector for tonic's
@@ -24,3 +27,5 @@ clap = { workspace = true }
 anyhow = { workspace = true }
 serde_json = { workspace = true }
 tracing-subscriber = { workspace = true }
+# Wrap the App PEM bytes in `Zeroizing` from read until they cross the wire (never logged/echoed).
+zeroize = { workspace = true }

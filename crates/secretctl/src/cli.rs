@@ -69,6 +69,33 @@ pub enum Cmd {
     /// EXACTLY `{"token":"...","expires_at_unix":<i64>}` to stdout (all logs to stderr).
     #[command(name = "mint-github")]
     MintGithub(MintGithubArgs),
+    /// Enroll the GitHub App credential into the unlocked vault (TASK-0026): seal the App PEM as a
+    /// broker-only secret + persist the non-secret App id, so `mint-github` can mint installation
+    /// tokens. Dry-run preview unless `--apply`.
+    #[command(name = "github-app")]
+    GithubApp {
+        #[command(subcommand)]
+        cmd: GithubAppCmd,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum GithubAppCmd {
+    /// Enroll the GitHub App private key (PEM) + App id. The PEM is sealed broker-only (un-revealable)
+    /// under `github-app-private-key`; the App id is persisted as the non-secret `github-app-id` meta.
+    /// installation-id is NOT enrolled — it is supplied per mint. Dry-run preview unless `--apply`.
+    Enroll {
+        /// The GitHub App id (non-secret, e.g. `4044997`). Required.
+        #[arg(long = "app-id")]
+        app_id: String,
+        /// Path to the App private-key PEM file, or `-` to read it from stdin. The bytes are validated
+        /// (must be a usable RSA App key) BEFORE any write and are NEVER printed.
+        #[arg(long = "private-key")]
+        private_key: String,
+        /// Actually enroll. Without it, prints a dry-run preview (to stderr) and writes nothing (CF-8).
+        #[arg(long)]
+        apply: bool,
+    },
 }
 
 #[derive(Args, Debug)]
