@@ -141,7 +141,7 @@ verb wiring lands in **`crates/engine`** (Engine API) + CLI/GUI. The component-g
 - [~] C-10 · port-fresh · Engine::agent_list · merge-into engine (new Engine method) · -> envctl_engine::Engine::agent_list · refs: · status: not merged
 - [~] C-11 · port-fresh · Engine::agent_clean · merge-into engine (new Engine method; needs MC-02 remove) · -> envctl_engine::Engine::agent_clean · refs: research#left-behind MC-02 (dep) · status: not merged
 - [~] C-12 · port-fresh · agent-env::config_edit::{resolve_local_config_path,split_at_ref}+sync_after · new agent-env::config_edit + engine · -> envctl_agent_env::config_edit::* + Engine sync_after · refs: · status: not merged
-- [~] C-13 · port-fresh · Engine::agent_init_template · merge-into engine (folded into add/sync) · -> envctl_engine::Engine (init template) · refs: · status: not merged
+- [x] C-13 · port-fresh · Engine::agent_init · merge-into engine (template writer; local + --global + --force) · -> envctl_engine::Engine::agent_init + CLI `agent init` · refs: · status: merged
 - [~] C-14 · port-fresh · Engine::agent_clean (asset portion only) · merge-into engine (binary-self-removal is front-end) · -> envctl_engine::Engine::agent_clean (asset cleanup) · refs: · status: not merged
 
 ## LEFT-BEHIND — discovered by the sweep (referenced as deps, never rowed)

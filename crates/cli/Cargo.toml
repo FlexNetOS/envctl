@@ -13,3 +13,4 @@ envctl-engine = { workspace = true }
 clap = { workspace = true }
 anyhow = { workspace = true }
 serde_json = { workspace = true }
+baby-mimalloc = { workspace = true }

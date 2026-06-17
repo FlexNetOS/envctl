@@ -31,8 +31,8 @@ use envctl_agent_env::config_path::{DEFAULT_CONFIG_FILENAME, DEFAULT_GLOBAL_CONF
 
 use envctl_engine::event::{Event, EventSink};
 use envctl_engine::{
-    AgentAddSpec, AgentCleanSpec, AgentListKind, AgentListSpec, AgentLockMode, AgentLockSpec,
-    AgentRemoveSpec, AgentScope, AgentSectionSel, AgentSyncSpec, Engine,
+    AgentAddSpec, AgentCleanSpec, AgentInitSpec, AgentListKind, AgentListSpec, AgentLockMode,
+    AgentLockSpec, AgentRemoveSpec, AgentScope, AgentSectionSel, AgentSyncSpec, Engine,
 };
 
 // ---------------------------------------------------------------------------------------
@@ -725,6 +725,7 @@ fn c11_c14_clean_preview_then_apply_removes_tracked_only() {
     let preview = engine
         .agent_clean(
             AgentCleanSpec {
+                config_path: None,
                 scope_override: Some(AgentScope::Project),
                 apply: false,
             },
@@ -751,6 +752,7 @@ fn c11_c14_clean_preview_then_apply_removes_tracked_only() {
     let applied = engine
         .agent_clean(
             AgentCleanSpec {
+                config_path: None,
                 scope_override: Some(AgentScope::Project),
                 apply: true,
             },
@@ -775,4 +777,89 @@ fn c11_c14_clean_preview_then_apply_removes_tracked_only() {
     );
 
     std::env::set_current_dir(&prev).unwrap();
+}
+
+// =======================================================================================
+// C-13 — agent_init: writes a commented starter template, refuses to overwrite unless forced.
+// =======================================================================================
+
+#[test]
+fn c13_init_writes_starter_template_and_refuses_overwrite() {
+    let _guard = cwd_lock().lock().unwrap();
+    let (engine, proj, _cfg) = project("agent: claude-code\n");
+    // Remove the fixture config so init has a clean slate.
+    std::fs::remove_file(proj.join("agent-env.yaml")).unwrap();
+    let prev = std::env::current_dir().unwrap();
+    std::env::set_current_dir(&proj).unwrap();
+
+    let (s, _rx) = sink();
+    let out = engine
+        .agent_init(
+            AgentInitSpec {
+                global: false,
+                force: false,
+            },
+            &s,
+        )
+        .expect("init local");
+    assert_eq!(out.path, "agent-env.yaml");
+    assert!(!out.overwritten);
+
+    let written = std::fs::read_to_string(proj.join("agent-env.yaml")).unwrap();
+    assert!(written.contains("# envctl agent-env"));
+    assert!(written.contains("skills:"));
+    assert!(written.contains("mcps:"));
+    assert!(written.contains("commands:"));
+
+    // Without --force an existing file is refused.
+    let (s2, _rx2) = sink();
+    assert!(
+        engine
+            .agent_init(
+                AgentInitSpec {
+                    global: false,
+                    force: false
+                },
+                &s2
+            )
+            .is_err(),
+        "init must refuse to overwrite without --force"
+    );
+
+    // With --force it overwrites.
+    let (s3, _rx3) = sink();
+    let out3 = engine
+        .agent_init(
+            AgentInitSpec {
+                global: false,
+                force: true,
+            },
+            &s3,
+        )
+        .expect("init force");
+    assert!(out3.overwritten);
+
+    std::env::set_current_dir(&prev).unwrap();
+}
+
+#[test]
+fn c13_init_global_uses_agent_env_config_dir() {
+    let _guard = cwd_lock().lock().unwrap();
+    sandbox_home();
+    let (engine, _proj, _cfg) = project("agent: claude-code\n");
+    let (s, _rx) = sink();
+    let out = engine
+        .agent_init(
+            AgentInitSpec {
+                global: true,
+                force: false,
+            },
+            &s,
+        )
+        .expect("init global");
+    assert!(
+        std::path::Path::new(&out.path).ends_with("agent-env/agent-env.yaml"),
+        "global init path should end with agent-env/agent-env.yaml: {}",
+        out.path
+    );
 }

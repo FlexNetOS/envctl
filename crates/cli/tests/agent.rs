@@ -241,16 +241,16 @@ fn add_ref_and_branch_conflict_exits_nonzero() {
     );
 }
 
-/// `agent --help` lists the six verbs (surface smoke).
+/// `agent --help` lists the seven verbs (surface smoke).
 #[test]
-fn help_lists_the_six_verbs() {
+fn help_lists_the_seven_verbs() {
     let out = Command::new(bin())
         .args(["agent", "--help"])
         .output()
         .unwrap();
     assert!(out.status.success());
     let help = String::from_utf8(out.stdout).unwrap();
-    for verb in ["sync", "add", "remove", "lock", "list", "clean"] {
+    for verb in ["sync", "add", "remove", "lock", "list", "clean", "init"] {
         assert!(
             help.contains(verb),
             "agent --help missing `{verb}`:\n{help}"
@@ -355,4 +355,46 @@ fn remove_preview_renders_outcome_summary() {
     );
     // Still fail-closed: a preview writes nothing.
     assert_unchanged(&fx, &before, "remove");
+}
+
+/// C-13 — `agent init` creates a commented starter config.
+#[test]
+fn init_creates_agent_env_yaml() {
+    let fx = Fixture::new();
+    // The standard fixture already has a config; remove it so `init` starts from scratch.
+    std::fs::remove_file(fx.config_path()).unwrap();
+    let out = fx.cmd().args(["agent", "init"]).output().unwrap();
+    assert!(
+        out.status.success(),
+        "stderr: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let written = std::fs::read_to_string(fx.config_path()).unwrap();
+    assert!(written.contains("# envctl agent-env"));
+    assert!(written.contains("skills:"));
+}
+
+/// C-13 — `agent init` refuses to overwrite without `--force`.
+#[test]
+fn init_refuses_overwrite_without_force() {
+    let fx = Fixture::new();
+    std::fs::remove_file(fx.config_path()).unwrap();
+    assert!(fx
+        .cmd()
+        .args(["agent", "init"])
+        .output()
+        .unwrap()
+        .status
+        .success());
+    let out = fx.cmd().args(["agent", "init"]).output().unwrap();
+    assert!(
+        !out.status.success(),
+        "init must fail when config exists and --force is absent"
+    );
+    let out2 = fx
+        .cmd()
+        .args(["agent", "init", "--force"])
+        .output()
+        .unwrap();
+    assert!(out2.status.success(), "init --force must succeed");
 }

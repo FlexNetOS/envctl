@@ -22,6 +22,7 @@ pub enum AgentVerb {
     Lock,
     List,
     Clean,
+    Init,
 }
 
 /// The result of a `sync` / `clean` run: the per-run counters + ordered action log plus the
@@ -100,4 +101,12 @@ pub struct AgentEditOutcome {
 pub struct AgentEditItem {
     pub target: String,
     pub section: String,
+}
+
+/// The result of `agent init`: the created config file path and whether an existing file
+/// was overwritten.
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AgentInitOutcome {
+    pub path: String,
+    pub overwritten: bool,
 }

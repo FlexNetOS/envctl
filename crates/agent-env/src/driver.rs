@@ -699,7 +699,9 @@ fn sync_commands(ctx: &DriverCtx, lock: &mut AgentLockFile, res: &mut SyncResult
     };
 
     if ctx.cfg.commands.is_empty() {
-        remove_stale_commands(ctx, lock, res, &HashSet::new());
+        if res.summary.failed == 0 {
+            remove_stale_commands(ctx, lock, res, &HashSet::new());
+        }
         return;
     }
     if targets.is_empty() {
@@ -1154,16 +1156,18 @@ fn sync_mcps(ctx: &DriverCtx, lock: &mut AgentLockFile, res: &mut SyncResult) {
     };
 
     if mcp_settings_list.is_empty() {
-        let has_orphans = lock.assets.values().any(|a| a.kind == "mcp");
-        if has_orphans {
-            let fallback_targets: Vec<McpSettingsTarget> = match ctx.scope {
-                Scope::Project => all_mcp_project_targets(&ctx.scope_root),
-                Scope::Global => match (dirs_home(), dirs_agent_env_config()) {
-                    (Ok(home), Ok(cfg_dir)) => all_mcp_settings_targets(&home, &cfg_dir),
-                    _ => Vec::new(),
-                },
-            };
-            remove_stale_mcps(ctx, lock, res, &desired_mcp_ids, &fallback_targets);
+        if res.summary.failed == 0 {
+            let has_orphans = lock.assets.values().any(|a| a.kind == "mcp");
+            if has_orphans {
+                let fallback_targets: Vec<McpSettingsTarget> = match ctx.scope {
+                    Scope::Project => all_mcp_project_targets(&ctx.scope_root),
+                    Scope::Global => match (dirs_home(), dirs_agent_env_config()) {
+                        (Ok(home), Ok(cfg_dir)) => all_mcp_settings_targets(&home, &cfg_dir),
+                        _ => Vec::new(),
+                    },
+                };
+                remove_stale_mcps(ctx, lock, res, &desired_mcp_ids, &fallback_targets);
+            }
         }
         return;
     }

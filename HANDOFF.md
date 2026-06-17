@@ -113,6 +113,27 @@ ENVCTL_MANIFEST_DIR="$PWD/manifest" DISPLAY=:0 WAYLAND_DISPLAY=wayland-0 \
   XDG_RUNTIME_DIR=/run/user/1000 cargo run -p envctl-gui
 ```
 
+## 9. Agent-env / kasetto absorption (Epic C)
+
+The kasetto v3.2.0 feature set is now a built-in pure-Rust subsystem:
+`crates/agent-env` (`envctl-agent-env`) + `crates/engine/src/agent/*` +
+`envctl agent {sync,add,remove,lock,list,clean}` in the CLI/GUI. No external
+`kasetto` binary is required. Quick verification:
+
+```bash
+# agent-env library parity tests (334 passed, 1 ignored)
+cargo test -p envctl-agent-env
+
+# engine integration tests (101 passed)
+cargo test -p envctl-engine
+
+# CLI surface smoke
+ENVCTL_MANIFEST_DIR=/tmp/empty_manifest cargo run -p envctl -- agent --help
+
+# Read-only list works without a config (uses cwd as project scope)
+cargo run -p envctl -- agent list
+```
+
 ## Safety invariants to confirm still hold
 - Destructive verbs (`reset`/`auto-fix`) are dry-run unless `--apply`.
 - Guards fail closed (`UuidResolves`/`NotLiveDevice`/`NotMounted` via blkid/findmnt;
@@ -127,8 +148,9 @@ ENVCTL_MANIFEST_DIR="$PWD/manifest" DISPLAY=:0 WAYLAND_DISPLAY=wayland-0 \
 · `docs/ADD-REPO.md` · `docs/KASETTO-FEATURES.md` · this `HANDOFF.md`.
 
 ## Open / next (optional polish, not blocking)
-Adopt from kasetto (see `docs/KASETTO-FEATURES.md`): a committed **lock file** with
-content hashing (top pick); `--locked`/`--update` sync modes; a multi-host source
-resolver to harden `add-repo` beyond GitHub; universal `--json` on every verb; a
-`doctor`-style diagnostic. Also: a GUI graph tab; shell-completions install;
-systemd `--user` daemon units; live add-repo build streaming into the GUI.
+- ~~Adopt kasetto's agent-env subsystem~~ **DONE** (built into `envctl-agent-env`;
+  see `.handoff/loop/rust-port/parity-ledger.md` for the 102/115 parity-verified
+  absorption record).
+- From `docs/KASETTO-FEATURES.md`: universal `--json` on every verb (already true
+  for agent verbs); a GUI graph tab; shell-completions install; systemd `--user`
+  daemon units; live add-repo build streaming into the GUI.
