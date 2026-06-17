@@ -5,7 +5,7 @@ recipe independently — the implementer running it first means fewer round-trip
 runs from the **worktree root**. Treat an *errored* command (not just a failed assertion) as a
 FAIL, fail-closed — never read an empty/errored result as "clean."
 
-## 0. Two environment realities — handle these first
+## 0. Environment realities — handle these first
 - **rtk wraps `cargo`/`git`.** The shell hook rewrites these to `rtk`, which *summarizes* output
   and can misreport exit codes and fmt/clippy diagnostics. When precise output matters, run
   `rtk proxy <cmd>` (raw passthrough) **or** redirect to a file and read it; capture the exit code
@@ -18,6 +18,18 @@ FAIL, fail-closed — never read an empty/errored result as "clean."
   the feature stashed (or in files the change never touched), it is **baseline** — report it as a
   NOTE, not a blocker. Only issues that appear *because of* the change are findings. (There is no
   `cargo fmt --check` CI gate in this repo; fmt is a local discipline.)
+- **The clippy *axis* matters too: the gate form vs `--all-targets`.** The CI/CLAUDE.md gate is
+  `cargo clippy --workspace -- -D warnings` (no `--all-targets`). The stricter
+  `cargo clippy --workspace --all-targets` *also lints test code* and can surface findings the gate
+  form never fires (this is the same per-repo `--all-targets` axis the preflight gate mirrors — see
+  CLAUDE.md "Per-repo CI mirror"). Classify by **(a) which axis** and **(b) introduced vs
+  pre-existing**: a finding in an **untouched** file under `--all-targets`-only is **inherited red**
+  — report it as a NOTE with the `git diff --name-only` proof that the change didn't touch it, and
+  do **not** block on it (and do **not** silently "fix" an untouched file to make it pass). But a
+  finding in a file **the change touched** is a real finding even if it only fires under
+  `--all-targets` — fix it. Never relax the gate command to make red disappear. (G2:
+  `gui/main.rs:1997` fired only under `--all-targets`, in an untouched file → correctly inherited,
+  NOTE not blocker.)
 
 ## Table of contents
 1. The three CI gates
