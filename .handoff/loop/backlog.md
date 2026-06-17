@@ -54,15 +54,16 @@ additive infra — let it merge — but it does **not** close TASK-0020.
 - **TASK-0026 DONE** — `secretctl github-app enroll` + `Vault.SetGithubAppId` RPC (PR #106, auto-merge armed). Enroll→mint round-trip e2e green. The App can now mint end-to-end (enroll once, then mint-github).
 - **Anti-drift wrap-up gate** live (PR #104 MERGED): backlog is now a written-back artifact.
 
-### ⏭ NEXT PICK (updated 2026-06-17 session 3): **TASK-0031** (F2 edge listener)
-Progress this session: **TASK-0035** DONE (PR #108 — needs rebase onto develop AFTER #109 merges; it
-conflicts with #106 grpc/proto/lib.rs and needs the 30m CI timeout from #109). **TASK-0030 + OI-SM-1
-spec** DONE (PR #109, auto-merge armed, carries the CI timeout fix). **TASK-0026** MERGED (#106).
+### ⏭ NEXT PICK (updated 2026-06-17 session 4): **TASK-0032** (F5 stream tear-down)
+Progress: **TASK-0026** MERGED (#106). **TASK-0030 + OI-SM-1 spec** MERGED (#109). **TASK-0035** DONE
+(#108, rebased clean, auto-merge armed). **TASK-0031 PR-1** DONE (#111, edge listener, guardian PASS,
+auto-merge armed). The remote edge now serves clients end-to-end (TLS+DPoP/EKM+jti → relay_swap).
 Next, in dep order:
-1. **TASK-0031** (F2 edge listener, NEW `secretd/src/edge`) — the in-process TLS-terminating
-   HTTPS+DPoP/EKM relay-edge listener that CALLS the F6 `JtiReplayStore` (TASK-0030). LARGE +
-   security-critical → give it a fresh-context cycle. → **TASK-0032** (F5 stream tear-down).
-2. Then **TASK-0027** (early-revoke) → **TASK-0028** (GUI parity) → **TASK-0036** (mlockall) →
+1. **TASK-0032** (F5, P0) — streaming-revocation tear-down: periodic `decide()` re-check during long
+   HTTP/2 streams so a revoke/lock/USB-pull stops an in-flight stream (FS-S5). This is the architect's
+   PR-3 for the edge — builds ON the #111 edge listener.
+2. **TASK-0031-PR2** (F2 hardening, parallel track) — DPoP-Nonce challenge + rate-limit/admission + mTLS.
+3. Then **TASK-0027** (early-revoke) → **TASK-0028** (GUI parity) → **TASK-0036** (mlockall) →
    **TASK-0037** (Phase-7 verify) → **TASK-0034** (hardening tail) → **TASK-0038** (Certs.* Phase-4+).
 SKIP **TASK-0033** (VPS Profile B — owner-gated `[!]`). Resume with `/forge-loop`; for unattended
 completion use `/auto-provision`. FIRST on resume: confirm #108/#109 merged; if #108 still open, rebase
@@ -112,9 +113,16 @@ foundation IS built (`relay_mint_remote`, `register_remote_client`, `broker/deci
   hole), in-memory, zero new deps. F2 edge listener that calls it = TASK-0031 (next). PR #109 also
   carries a CI fix: test-job `timeout-minutes` 20→30 (the workspace suite grew past the 20m wall and
   green runs were being canceled — surfaced by #106/#108).
-- [ ] **TASK-0031 (F2, P0):** In-process TLS-terminating HTTPS+DPoP/EKM relay-edge listener — the only
-  thing that actually serves remote clients. rustls ServerConfig from `relay-tls` path only (never MITM
-  CA, FS-S25); RFC 9449 DPoP verify; EKM channel binding (FS-S20).
+- [x] **TASK-0031 (F2, P0) — PR-1 DONE (PR #111, guardian PASS):** In-process TLS-terminating
+  HTTPS+DPoP/EKM relay-edge listener (`crates/secretd/src/edge/{mod,dpop,tls,listener}.rs`, default-OFF
+  `relay-edge` feature, route `POST /v1/relay/swap`). rustls ServerConfig from `relay-tls` ONLY (FS-S25,
+  structural + shape.sh grep); RFC 9449 DPoP verify (Ed25519/ring); EKM binding (FS-S20, accessor confirmed
+  vs source); F6 jti check; drives EXISTING `relay_swap`/`decide()` (untouched). Engine seam additive only
+  (`EgressReq.remote` + `relay_swap_prepare` + `load_remote_client` + `Paths::relay_tls_dir()`). Fail-closed,
+  zero new deps, 4 gates green. **PR-2 / PR-3 deferred (see TASK-0031-PR2 / TASK-0032 below).**
+  - [ ] **TASK-0031-PR2 (F2 hardening):** server-issued DPoP-Nonce challenge (OI-SM-1 nonce half) +
+    per-IP/per-client rate-limit + body caps + timeouts + pre-`decide()` admission shedding
+    (CVE-2024-47609) + opt-in hardened-mode mTLS `ClientCertVerifier` (OI-SM-4).
 - [ ] **TASK-0032 (F5, P0):** Streaming-revocation tear-down — periodic `decide()` re-check during long
   HTTP/2 streams so revoke/lock/USB-pull stops an in-flight stream (FS-S5).
 - [!] **TASK-0033 (VPS Profile B, BLOCKED — gated non-shippable):** F7 install-time fail-closed gate +

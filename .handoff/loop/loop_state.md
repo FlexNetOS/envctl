@@ -5,22 +5,23 @@ session_started: 2026-06-13
 loop: agenticOS-consolidation (.handoff/loop/backlog.md, Epics A–E; design = .handoff/decisions/ADR-0001)
 branch: develop   # work happens in FRESH worktrees off develop -> PR -> auto-promote to master
 worktree: (per-cycle: meta/.worktrees/<slug>/envctl off develop)
-cycle_budget: 1   # session 3 resumed under heavy context — 1 cohesive build cycle (TASK-0030) then hand off
-cycles_this_session: 1   # RESUME SESSION 2026-06-17 (session 3): cycle = TASK-0030 (F6 jti store) + OI-SM-1 spec
-cycles_total: 12
-last_item: TASK-0030 (F6 DPoP jti replay store) — DONE, PR #109, guardian PASS, auto-merge armed
-status: HANDING OFF 2026-06-17 (session 3, 1 cycle done; budget reached + Epic F's next item is large).
-  Cycle = TASK-0030: new pure-Rust engine module crates/secrets-engine/src/broker/jti.rs (JtiReplayStore,
-  atomic fail-closed bounded DPoP-jti replay dedup) + OI-SM-1 spec (docs/secrets/OI-SM-1-jti-replay-store.md);
-  9 tests, zero new deps, guardian PASS. PR #109 ALSO carries a CI fix: test-job timeout 20→30 min (the
-  workspace suite grew past the 20m wall; green runs were being canceled — surfaced by #106/#108).
-  Session-3 also: rebased #108 (DIRTY after #107 merged) + diagnosed #106 test failure as a flaky 20m
-  timeout (passed on rerun → MERGED). PR #108 (TASK-0035) still OPEN — needs rebase onto develop AFTER
-  #109 merges (conflicts with #106 grpc/proto/lib.rs; needs the 30m timeout).
-  **NEXT PICK: TASK-0031 (F2 edge listener, NEW secretd/src/edge — calls the F6 JtiReplayStore; LARGE +
-  security-critical, fresh-context cycle) → TASK-0032 → TASK-0027/0028/0036/0037/0034/0038.** SKIP TASK-0033.
-  FIRST on resume: confirm #108/#109 merged; if #108 open, rebase onto develop + let auto-merge land it.
-  Resume via `/forge-loop resume` or `/auto-provision` for unattended Epic F.
+cycle_budget: 1   # session 4 resumed under heavy context — 1 cohesive build cycle (TASK-0031 PR-1) then hand off
+cycles_this_session: 1   # RESUME SESSION 2026-06-17 (session 4): cycle = TASK-0031 PR-1 (F2 edge listener)
+cycles_total: 13
+last_item: TASK-0031 PR-1 (F2 remote relay-edge listener) — DONE, PR #111, guardian PASS, auto-merge armed
+status: HANDING OFF 2026-06-17 (session 4, 1 cycle done; budget reached; next is fresh-context F5/PR-2 work).
+  Cycle = TASK-0031 PR-1: NEW crates/secretd/src/edge/{mod,dpop,tls,listener}.rs (default-OFF relay-edge
+  feature, route POST /v1/relay/swap). Verifies RFC 9449 DPoP (Ed25519/ring) + EKM channel binding (FS-S20,
+  accessor confirmed vs rustls 0.23 source) + F6 jti check, then drives EXISTING relay_swap/decide()
+  (UNTOUCHED). Engine seam additive only (EgressReq.remote + relay_swap_prepare + load_remote_client +
+  Paths::relay_tls_dir()). relay-tls path ONLY never MITM CA (FS-S25, structural + shape.sh grep), fail-closed,
+  zero new deps, 4 gates green, guardian PASS. PR #111 auto-merge armed.
+  Session-4 also: #109 (TASK-0030) MERGED to develop; #108 (TASK-0035) rebased clean onto develop TWICE
+  (DIRTY from #106 then #109) — its test passed at 27m under the new 30m timeout, auto-merge armed.
+  **NEXT PICK: TASK-0032 (F5 streaming-revocation tear-down = the edge's PR-3; periodic decide() re-check in
+  long streams → stop in-flight on revoke/lock/USB-pull) → TASK-0031-PR2 (nonce + rate-limit + mTLS) →
+  TASK-0027/0028/0036/0037/0034/0038.** SKIP TASK-0033 (owner-gated [!]).
+  FIRST on resume: confirm #108/#111 merged (both auto-merge armed). Resume via `/forge-loop resume`.
 
 ## Progress log
 - cycle 1 (2026-06-13, TASK-0001, PASS-WITH-NOTES): built+installed `hf` from meta/handoff
