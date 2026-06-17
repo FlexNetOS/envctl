@@ -164,11 +164,25 @@ pub enum RelayCmd {
         #[arg(long)]
         all: bool,
     },
-    /// Mint a `<=24h` peer-bound bearer under a policy (USB-gated).
+    /// Mint a `<=24h` peer-bound bearer under a policy (USB-gated). With `--mode native --provider
+    /// github` mints a native GitHub App installation token (TTL fixed ~1h by GitHub) instead.
     Mint {
         name: String,
         #[arg(long)]
         ttl: Option<String>,
+        /// Data plane: base-url | proxy | native (default base-url).
+        #[arg(long)]
+        mode: Option<String>,
+        /// Provider: anthropic | openai | github | generic (default generic; `github` for native mint).
+        #[arg(long)]
+        provider: Option<String>,
+        /// Repository to scope a `--mode native` GitHub mint to (repeatable). Empty ⇒ all installed.
+        #[arg(long = "repo")]
+        repos: Vec<String>,
+        /// Permission to scope a `--mode native` GitHub mint (`name:access`, repeatable). Defaults to
+        /// `["checks:write"]` for `--mode native --provider github`. Empty ⇒ full installation scope.
+        #[arg(long = "perm")]
+        perms: Vec<String>,
     },
 }
 
