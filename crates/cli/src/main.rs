@@ -11,6 +11,37 @@ use std::time::Duration;
 
 #[global_allocator]
 static GLOBAL: MimallocMmapMutex = new_mimalloc_mmap_mutex();
+
+/// Clap help styling (ported from kasetto `colors::clap_styles`): amber `#e8a94d`
+/// bold `Usage:` / `Commands:` / `Options:` headers + literals, secondary-grey
+/// `#a8a195` `<COMMAND>` / `<ARG>` placeholders. clap propagates these to every
+/// subcommand. Uses `clap::builder::styling` (built into clap 4.x — no new dep).
+fn clap_styles() -> clap::builder::Styles {
+    use clap::builder::styling::{Effects, RgbColor, Style, Styles};
+    let amber = Style::new().fg_color(Some(RgbColor(232, 169, 77).into())) | Effects::BOLD;
+    let secondary = Style::new().fg_color(Some(RgbColor(168, 161, 149).into()));
+    Styles::styled()
+        .header(amber)
+        .usage(amber)
+        .literal(amber)
+        .placeholder(secondary)
+}
+
+/// Clap `after_help` block (ported from kasetto's `cli_examples!`, renamed and
+/// kept crate-private — deliberately NOT `#[macro_export]`): an amber-bold
+/// `Examples:` header followed by secondary-grey indented example lines. Defined
+/// before its first use (the `Cli` derive) so the macro is in scope.
+macro_rules! envctl_examples {
+    ($($line:literal),* $(,)?) => {
+        concat!(
+            "\x1b[1m\x1b[38;2;232;169;77mExamples:\x1b[0m\n",
+            $(
+                concat!("  \x1b[38;2;168;161;149m", $line, "\x1b[0m\n"),
+            )*
+        )
+    };
+}
+
 use envctl_engine::{
     AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentDoctorSpec, AgentInitSpec, AgentListKind,
     AgentListSpec, AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentScope, AgentSectionSel,
@@ -23,7 +54,17 @@ use envctl_engine::{
 #[command(
     name = "envctl",
     version,
-    about = "GPU-aware, source-building environment manager for this box"
+    color = clap::ColorChoice::Auto,
+    styles = clap_styles(),
+    about = "GPU-aware, source-building environment manager for this box",
+    long_about = "A declarative, GPU-aware environment manager for this workstation, written in Rust.\n\nBrings the box to a declared state from TOML components whose lifecycle hooks wrap proven scripts: detect, install, fix, reset, and wire-in toolchains, repos, and the agent environment. One shared engine drives both the CLI and the GUI, so they never diverge. Destructive verbs (reset / auto-fix / self uninstall) are PREVIEW by default and fail-closed — they refuse unless they can prove the operation is safe and you pass the explicit act flag (--apply / --build / --confirm).",
+    after_help = envctl_examples!(
+        "envctl auto-detect",
+        "envctl doctor",
+        "envctl install --dry-run",
+        "envctl agent sync --apply",
+        "envctl graph --impact secretd",
+    )
 )]
 struct Cli {
     #[command(subcommand)]
@@ -149,8 +190,25 @@ enum Cmd {
     /// Read-only inventory: host, GPU (works pre-driver), tools, components.
     // audit fix (minor): dropped unimplemented `--only` flag (engine.detect takes
     // no filter) so an unsupported flag errors instead of silently no-oping.
+    #[command(
+        long_about = "Inspect the box and report its current state without changing anything: host facts, GPU inventory (works before the driver is installed), detected toolchains, and the install/drift status of every managed component. This is the read-only foundation the other verbs build on. Use --json (global) for a machine-readable EnvReport.",
+        after_help = envctl_examples!(
+            "envctl auto-detect",
+            "envctl auto-detect --json",
+        )
+    )]
     AutoDetect {},
     /// Dependency-graph intelligence: summary, impact/blast-radius, paths, DOT/JSON.
+    #[command(
+        long_about = "Query the component dependency graph: a summary of the roster, a component's install closure and reset blast-radius (--impact), the root->X dependency paths explaining why X is needed (--why), or the whole graph as Graphviz DOT (--dot) or JSON (--json). Read-only. Pass --live to annotate nodes with live detect/drift state (runs auto-detect first).",
+        after_help = envctl_examples!(
+            "envctl graph",
+            "envctl graph --impact secretd",
+            "envctl graph --why cuda",
+            "envctl graph --dot | dot -Tsvg -o graph.svg",
+            "envctl graph --live",
+        )
+    )]
     Graph {
         /// Focus on one component: install closure + reset --cascade blast-radius.
         #[arg(long)]
@@ -167,20 +225,52 @@ enum Cmd {
     },
     /// Write/verify envctl.lock — a content hash of every component for reproducible
     /// installs + a CI gate. No flags = (re)write the lock; --check = verify (exit 1 on drift).
+    #[command(
+        long_about = "Pin the component roster into envctl.lock — a content hash of every component — so installs are reproducible and CI can gate on drift. With no flags it (re)writes the lock; with --check it verifies the lock matches the manifest and exits 1 on drift without writing.",
+        after_help = envctl_examples!(
+            "envctl lock",
+            "envctl lock --check",
+        )
+    )]
     Lock {
         /// Verify the lock matches the manifest; exit nonzero on drift (CI gate).
         #[arg(long)]
         check: bool,
     },
     /// Read-only health diagnostics: writability, toolchains, sudo, UEFI, GPU.
+    #[command(
+        long_about = "Run local health diagnostics and report what is and isn't ready: directory writability, installed toolchains, sudo access, UEFI / boot state, and GPU readiness. Read-only — it never changes the box. Use --json (global) for a machine-readable report.",
+        after_help = envctl_examples!(
+            "envctl doctor",
+            "envctl doctor --json",
+        )
+    )]
     Doctor,
     /// Install components (additive + idempotent; --dry-run to preview).
+    #[command(
+        long_about = "Install the named components (or the whole roster when none are named) to bring the box to its declared state. Additive and idempotent — re-running only does what is missing. Pass --dry-run to preview the plan without changing anything.",
+        after_help = envctl_examples!(
+            "envctl install",
+            "envctl install rust cuda",
+            "envctl install --dry-run",
+        )
+    )]
     Install {
         targets: Vec<String>,
         #[arg(long)]
         dry_run: bool,
     },
     /// Reset = remove + unwire. DRY-RUN by default; --apply to act.
+    #[command(
+        long_about = "DESTRUCTIVE: remove and unwire the named components (uninstall binaries, revert wiring). PREVIEW (dry-run) by default; pass --apply to act. Fail-closed guards refuse unless safety is proven: resetting the whole roster (no targets) requires --all --confirm; removing live reverse-dependents requires --cascade; deleting declared data dirs requires --purge --confirm (the UUID is re-verified first). Use --keep-config to revert wiring + remove binaries while keeping config-kind paths.",
+        after_help = envctl_examples!(
+            "envctl reset secretd",
+            "envctl reset secretd --apply",
+            "envctl reset secretd --apply --cascade",
+            "envctl reset --all --confirm --apply",
+            "envctl reset secretd --purge --confirm --apply",
+        )
+    )]
     Reset {
         targets: Vec<String>,
         #[arg(long)]
@@ -202,6 +292,15 @@ enum Cmd {
         purge: bool,
     },
     /// Auto-fix = repair broken components. DRY-RUN by default; --apply to act.
+    #[command(
+        long_about = "Repair components that detect as broken (re-run the fix hook to restore the declared state). PREVIEW (dry-run) by default; pass --apply to act. A system-scope fix (apt / nix / cdi / alternatives) additionally requires --confirm, so a privileged change is never silent.",
+        after_help = envctl_examples!(
+            "envctl auto-fix",
+            "envctl auto-fix cuda",
+            "envctl auto-fix cuda --apply",
+            "envctl auto-fix cuda --apply --confirm",
+        )
+    )]
     AutoFix {
         targets: Vec<String>,
         #[arg(long)]
@@ -212,6 +311,17 @@ enum Cmd {
     },
     /// Add a repo as a managed component (build-from-source + wire-in).
     /// Acquire+detect+PREVIEW by default; pass --build to actually build + install.
+    #[command(
+        long_about = "Adopt an external git repo as a managed component: clone it, detect its build system, build from source, install the artifacts, and wire it in. Acquire + detect + PREVIEW by default; pass --build to actually run the upstream build / AI agent / install. The --strategy chooses how it lands: as-is, cherry-pick (--bin), rename (--rename old=new), or refactor (--patch-cmd, or --refactor=ai with --ai-goal port-to-rust). Use --connect to drop into an interactive agent session inside the clone. An --id is required to name the component.",
+        after_help = envctl_examples!(
+            "envctl add-repo https://github.com/FlexNetOS/example --id example",
+            "envctl add-repo https://github.com/FlexNetOS/example --id example --build",
+            "envctl add-repo https://github.com/FlexNetOS/example --id example --strategy cherry-pick --bin foo",
+            "envctl add-repo https://github.com/FlexNetOS/example --id example --strategy rename --rename foo=bar",
+            "envctl add-repo https://github.com/FlexNetOS/example --id example --strategy refactor --ai-goal port-to-rust --build",
+            "envctl add-repo https://github.com/FlexNetOS/example --id example --connect",
+        )
+    )]
     AddRepo {
         /// Git URL (or use --local for a working tree).
         git_url: String,
@@ -274,6 +384,15 @@ enum Cmd {
     /// Render the meta mission-control zellij dashboard from `.meta.yaml`.
     /// Default = print the KDL to stdout (read-only). `--deploy` previews the
     /// write (dry-run); `--apply` performs it; `--json` emits the DashboardPlan.
+    #[command(
+        long_about = "Generate the meta mission-control zellij layout (KDL) from the workspace `.meta.yaml` — one pane per repo. By default it prints the KDL to stdout (read-only). With --deploy it targets the yazelix zellij layouts dir; --deploy alone previews the write (dry-run) and --apply performs it. --force backs up and clobbers a non-envctl file at the target. --json emits the DashboardPlan.",
+        after_help = envctl_examples!(
+            "envctl dashboard",
+            "envctl dashboard --deploy",
+            "envctl dashboard --deploy --apply",
+            "envctl dashboard --json",
+        )
+    )]
     Dashboard {
         /// Explicit `.meta.yaml` path (else walk up from CWD / use $META_FILE).
         #[arg(long)]
@@ -299,6 +418,15 @@ enum Cmd {
     /// WITHOUT hardcoding paths. Read-only. Default prints POSIX `export` lines
     /// for `eval "$(envctl env)"`; `--json` emits a map. This is the seam that
     /// lets every config reference `$META_ROOT` no matter where meta is installed.
+    #[command(
+        long_about = "Resolve the meta workspace root (via the `.meta.yaml` marker, like git's `.git`) and emit environment exports so shells and configs locate meta WITHOUT hardcoding paths. Read-only. By default it prints POSIX `export` lines for `eval \"$(envctl env)\"`; --json emits a map. --toolchains also emits the meta-located toolchain prefixes + PATH. --materialize FILE renders `${META_ROOT}` tokens in FILE to the absolute root for configs a consumer reads literally.",
+        after_help = envctl_examples!(
+            "eval \"$(envctl env)\"",
+            "envctl env --json",
+            "eval \"$(envctl env --toolchains)\"",
+            "envctl env --materialize .claude/settings.json",
+        )
+    )]
     Env {
         /// Explicit `.meta.yaml` path (else walk up from CWD / use $META_FILE).
         #[arg(long)]
@@ -320,17 +448,45 @@ enum Cmd {
     /// shared `Engine::agent_*` API. Mutating verbs (sync/add/remove/clean) are
     /// PREVIEW by default; pass `--apply` to write. `--json` (global) emits the typed
     /// return value. `list`/`lock --check` are read-only.
+    #[command(
+        long_about = "Manage agent assets (skills / MCP servers / commands) declaratively over the shared engine. Reconcile installed assets with the config (sync), add or remove sources, lock the config, list the inventory, prune orphans (clean), create a starter config (init), or run diagnostics (doctor). Mutating verbs (sync / add / remove / clean) are PREVIEW by default; pass --apply to write. `list` and `lock --check` are read-only.",
+        after_help = envctl_examples!(
+            "envctl agent sync --apply",
+            "envctl agent add https://github.com/FlexNetOS/example --skill find --apply",
+            "envctl agent list --kind skills",
+            "envctl agent lock --check",
+            "envctl agent doctor --scope global",
+        )
+    )]
     Agent {
         #[command(subcommand)]
         cmd: AgentCmd,
     },
     /// Manage this envctl installation: update the running binary, or uninstall the stack.
-    #[command(name = "self")]
+    #[command(
+        name = "self",
+        long_about = "Manage this envctl installation: update the running binary from GitHub releases, or uninstall the whole stack (assets, config / data / cache dirs, and the binary). Uninstall is DESTRUCTIVE and PREVIEW by default — pass --apply to delete.",
+        after_help = envctl_examples!(
+            "envctl self update",
+            "envctl self update --json",
+            "envctl self uninstall",
+            "envctl self uninstall --apply --yes",
+        )
+    )]
     Manage {
         #[command(subcommand)]
         action: SelfAction,
     },
     /// Generate shell completion scripts (written to stdout).
+    #[command(
+        long_about = "Generate a shell completion script for envctl and write it to stdout so it can be sourced directly or redirected to a file. Supported shells: bash, zsh, fish, powershell, elvish.",
+        after_help = envctl_examples!(
+            "envctl completions bash",
+            "envctl completions zsh",
+            "envctl completions fish",
+            "envctl completions powershell",
+        )
+    )]
     Completions {
         /// Target shell: bash | zsh | fish | powershell | elvish.
         shell: Shell,
@@ -341,6 +497,13 @@ enum Cmd {
 #[derive(Subcommand)]
 enum SelfAction {
     /// Update envctl to the latest GitHub release (download + verify + atomic replace).
+    #[command(
+        long_about = "Check GitHub for the latest envctl release. If a newer version is available, download the matching binary, verify it, and atomically replace the current executable in place. Use --json for a machine-readable result.",
+        after_help = envctl_examples!(
+            "envctl self update",
+            "envctl self update --json",
+        )
+    )]
     Update {
         /// Print update output as JSON.
         #[arg(long)]
@@ -348,6 +511,14 @@ enum SelfAction {
     },
     /// Completely uninstall envctl: assets, config/data/cache dirs, and the binary.
     /// DESTRUCTIVE — PREVIEW (dry-run) by default; `--apply` deletes; `--yes` skips the prompt.
+    #[command(
+        long_about = "DESTRUCTIVE: completely uninstall envctl — installed assets, the config / data / cache directories, and the envctl / envctl-gui binaries. PREVIEW (dry-run) by default; pass --apply to delete. On a TTY you are prompted to confirm; --yes skips the prompt (required to --apply in non-interactive mode).",
+        after_help = envctl_examples!(
+            "envctl self uninstall",
+            "envctl self uninstall --apply",
+            "envctl self uninstall --apply --yes",
+        )
+    )]
     Uninstall {
         /// Actually delete (else preview / zero writes).
         #[arg(long)]
@@ -398,6 +569,16 @@ impl From<ListKindArg> for AgentListKind {
 #[derive(Subcommand)]
 enum AgentCmd {
     /// Reconcile installed assets with the config. PREVIEW by default; `--apply` writes.
+    #[command(
+        long_about = "Read the agent-env config, discover the requested skills / MCP servers / commands, then install, update, or remove local copies so the destination matches the config. PREVIEW by default; pass --apply to write. Use --locked (alias --frozen) to audit against the lock with zero network fetch (fail-closed if the lock cannot satisfy the config), or --update [NAME...] to re-resolve moving refs and rewrite the lock.",
+        after_help = envctl_examples!(
+            "envctl agent sync",
+            "envctl agent sync --apply",
+            "envctl agent sync --locked",
+            "envctl agent sync --update --apply",
+            "envctl agent sync --config agent-env.yaml --apply",
+        )
+    )]
     Sync {
         /// Config file path (else the default-config resolution / `$ENVCTL_AGENT_CONFIG`).
         #[arg(long)]
@@ -416,6 +597,16 @@ enum AgentCmd {
         update: Option<Vec<String>>,
     },
     /// Add a source to the config (then sync, unless `--no-sync`). PREVIEW by default.
+    #[command(
+        long_about = "Append a skill / MCP / command source to your agent-env.yaml (preserving comments), then run a sync to install it. Use the kind-tagged flags --skill / --mcp / --command (each repeatable) to name entries; a single add can touch several lists when a repo ships more than one kind. The source may be a repo URL, a deep blob/tree browse URL, a local path, or a SOURCE@REF shorthand; --ref / --branch / --sub-dir override the derived pieces. The source is fetched once to verify it resolves (skip with --no-verify). PREVIEW by default; pass --apply to write, or --no-sync to edit the config without installing.",
+        after_help = envctl_examples!(
+            "envctl agent add https://github.com/FlexNetOS/example --apply",
+            "envctl agent add https://github.com/FlexNetOS/example --skill alpha --skill beta --apply",
+            "envctl agent add https://github.com/FlexNetOS/example --skill find --mcp github --command review --apply",
+            "envctl agent add https://github.com/FlexNetOS/example --ref v2.0 --no-sync --apply",
+            "envctl agent add https://github.com/FlexNetOS/example --config agent-env.yaml --apply",
+        )
+    )]
     Add {
         /// The source (git URL / local path) to add.
         source: String,
@@ -457,7 +648,17 @@ enum AgentCmd {
         update: Option<Vec<String>>,
     },
     /// Remove a source from the config (then sync, unless `--no-sync`). PREVIEW by default.
-    #[command(visible_alias = "rm")]
+    #[command(
+        visible_alias = "rm",
+        long_about = "Delete entries from your agent-env.yaml (preserving comments), then run a sync so the now-unconfigured assets are pruned from disk and the lock. Mirrors `add`: the kind-tagged flags --skill / --mcp / --command (each repeatable) name entries to subtract; with no kind flags the source is removed from every list it appears in. When multiple entries share a source URL, pass --ref or --branch to disambiguate. PREVIEW by default; pass --apply to write, or --no-sync to edit the config without pruning.",
+        after_help = envctl_examples!(
+            "envctl agent remove https://github.com/FlexNetOS/example --apply",
+            "envctl agent remove https://github.com/FlexNetOS/example --skill find --apply",
+            "envctl agent remove https://github.com/FlexNetOS/example --mcp github --command review --apply",
+            "envctl agent remove https://github.com/FlexNetOS/example --no-sync --apply",
+            "envctl agent rm ./local/pack --apply",
+        )
+    )]
     Remove {
         /// The source to remove.
         source: String,
@@ -488,6 +689,16 @@ enum AgentCmd {
         update: Option<Vec<String>>,
     },
     /// Write/verify `agent-env.lock`. `--check` audits (exit 1 on drift); else rewrite.
+    #[command(
+        long_about = "Re-resolve every source (re-resolving moving refs) and write agent-env.lock without installing to destinations, so the lock is immediately usable with `sync --locked`. With --check (alias --frozen) it audits the lock against the config and exits 1 on drift without writing. Use --upgrade-package/-P NAME to restrict the re-resolve to sources providing those skills, --locked to make a --check audit zero-network, and --scope to override the resolved scope.",
+        after_help = envctl_examples!(
+            "envctl agent lock",
+            "envctl agent lock --check",
+            "envctl agent lock --upgrade-package alpha --upgrade-package beta",
+            "envctl agent lock --scope project",
+            "envctl agent lock --config agent-env.yaml",
+        )
+    )]
     Lock {
         #[arg(long)]
         config: Option<String>,
@@ -507,6 +718,14 @@ enum AgentCmd {
         locked: bool,
     },
     /// Read-only inventory of installed assets (skills + MCP servers + commands).
+    #[command(
+        long_about = "Read the installed assets from the lock file and print them as plain tables: skills, MCP servers, and commands, each with their scope and source. Filter the output with --kind skills|mcps|commands|all (default: all). Read-only. Use --json (global) for scripting.",
+        after_help = envctl_examples!(
+            "envctl agent list",
+            "envctl agent list --kind skills",
+            "envctl agent list --json",
+        )
+    )]
     List {
         #[arg(long, value_enum)]
         scope: Option<ScopeArg>,
@@ -515,6 +734,14 @@ enum AgentCmd {
         kind: ListKindArg,
     },
     /// Prune assets orphaned from the config. PREVIEW by default; `--apply` writes.
+    #[command(
+        long_about = "Remove installed assets that are no longer referenced by the config and reset the corresponding lock entries. PREVIEW by default; pass --apply to write. Use --scope to override the resolved scope.",
+        after_help = envctl_examples!(
+            "envctl agent clean",
+            "envctl agent clean --apply",
+            "envctl agent clean --scope project --apply",
+        )
+    )]
     Clean {
         /// Config file path (else the default-config resolution / `$ENVCTL_AGENT_CONFIG`).
         #[arg(long)]
@@ -526,6 +753,14 @@ enum AgentCmd {
         apply: bool,
     },
     /// Create a starter agent-env config file (`agent-env.yaml`).
+    #[command(
+        long_about = "Write a commented starter agent-env.yaml you can edit before running sync. By default it writes ./agent-env.yaml; with --global it writes under $XDG_CONFIG_HOME/agent-env/agent-env.yaml. If the target already exists you are prompted to overwrite unless --force/-f is set.",
+        after_help = envctl_examples!(
+            "envctl agent init",
+            "envctl agent init --global",
+            "envctl agent init --force",
+        )
+    )]
     Init {
         /// Write the global config under `$XDG_CONFIG_HOME/agent-env/agent-env.yaml`.
         #[arg(long)]
@@ -535,6 +770,14 @@ enum AgentCmd {
         force: bool,
     },
     /// Read-only diagnostics: version, lock, scope, inventory, command-dir writability, updates.
+    #[command(
+        long_about = "Inspect the local agent-env setup: version, lock file, active scope and installation paths, asset inventory, command-directory writability, failed installs from the latest sync, and update status. Read-only. Use --scope to override the resolved scope and --json (global) for a machine-readable report.",
+        after_help = envctl_examples!(
+            "envctl agent doctor",
+            "envctl agent doctor --scope global",
+            "envctl agent doctor --json",
+        )
+    )]
     Doctor {
         /// Override the scope resolved from the config.
         #[arg(long, value_enum)]
@@ -2522,5 +2765,134 @@ mod frontend_gaps_tests {
             } => assert!(scope.is_some()),
             _ => panic!("expected agent doctor"),
         }
+    }
+
+    // --- kasetto help-text port: rich --help presentation (long_about + Examples) ---
+
+    /// Render the long help of a `clap::Command` to a `String` (introspection, no spawn).
+    fn long_help(cmd: &mut clap::Command) -> String {
+        let mut buf: Vec<u8> = Vec::new();
+        cmd.write_long_help(&mut buf).expect("render long help");
+        String::from_utf8_lossy(&buf).into_owned()
+    }
+
+    /// Walk the whole command tree (root + every subcommand, recursing into `agent` / `self`),
+    /// applying `f` to each command. The visitor takes a mutable clone so it can render help.
+    fn for_each_command(f: &mut impl FnMut(&str, &mut clap::Command)) {
+        fn walk(cmd: &clap::Command, path: &str, f: &mut impl FnMut(&str, &mut clap::Command)) {
+            for sub in cmd.get_subcommands() {
+                let name = sub.get_name().to_string();
+                let full = if path.is_empty() {
+                    name.clone()
+                } else {
+                    format!("{path} {name}")
+                };
+                let mut owned = sub.clone();
+                f(&full, &mut owned);
+                walk(sub, &full, f);
+            }
+        }
+        let root = Cli::command();
+        let mut owned_root = root.clone();
+        f("envctl", &mut owned_root);
+        walk(&root, "", f);
+    }
+
+    /// The clap tree must be internally consistent (no conflicting flags, valid help, etc.).
+    #[test]
+    fn help_tree_builds() {
+        Cli::command().debug_assert();
+    }
+
+    /// No kasetto/upstream branding may leak into any user-facing help string.
+    #[test]
+    fn no_kasetto_branding_in_help() {
+        let banned = ["kasetto", "kst ", "KASETTO", "pivoshenko", "kasetto.yaml"];
+        for_each_command(&mut |path, cmd| {
+            let help = long_help(cmd);
+            for needle in banned {
+                assert!(
+                    !help.contains(needle),
+                    "`{path}` long help leaks branding {needle:?}"
+                );
+            }
+        });
+    }
+
+    /// Examples must use envctl's real flags, not kasetto's: `--kind` (not `--type`),
+    /// `--apply` on the destructive uninstall, `agent-env.yaml` (not kasetto.yaml), `--scope`.
+    #[test]
+    fn examples_use_envctl_flags() {
+        let mut agent_list = Cli::command()
+            .find_subcommand("agent")
+            .and_then(|a| a.find_subcommand("list"))
+            .cloned()
+            .expect("agent list");
+        let list_help = long_help(&mut agent_list);
+        assert!(
+            list_help.contains("--kind"),
+            "agent list help must show envctl's --kind filter"
+        );
+        assert!(
+            !list_help.contains("--type"),
+            "agent list help must NOT use kasetto's --type filter"
+        );
+
+        let mut uninstall = Cli::command()
+            .find_subcommand("self")
+            .and_then(|s| s.find_subcommand("uninstall"))
+            .cloned()
+            .expect("self uninstall");
+        let uninstall_help = long_help(&mut uninstall);
+        assert!(
+            uninstall_help.contains("--apply"),
+            "self uninstall examples must teach the fail-closed --apply flag"
+        );
+
+        let mut agent_add = Cli::command()
+            .find_subcommand("agent")
+            .and_then(|a| a.find_subcommand("add"))
+            .cloned()
+            .expect("agent add");
+        let add_help = long_help(&mut agent_add);
+        assert!(
+            add_help.contains("agent-env.yaml"),
+            "an agent example must reference envctl's agent-env.yaml config"
+        );
+
+        let mut agent_lock = Cli::command()
+            .find_subcommand("agent")
+            .and_then(|a| a.find_subcommand("lock"))
+            .cloned()
+            .expect("agent lock");
+        let lock_help = long_help(&mut agent_lock);
+        assert!(
+            lock_help.contains("--scope"),
+            "scope must be expressed via --scope (envctl's flag)"
+        );
+    }
+
+    /// Every command (root + each subcommand, recursing into agent + self) must carry a
+    /// non-empty long_about and an after_help Examples block.
+    #[test]
+    fn every_command_has_long_about_and_examples() {
+        for_each_command(&mut |path, cmd| {
+            let long_about = cmd
+                .get_long_about()
+                .map(|s| s.to_string())
+                .unwrap_or_default();
+            assert!(
+                !long_about.trim().is_empty(),
+                "`{path}` is missing a non-empty long_about"
+            );
+            let after = cmd
+                .get_after_help()
+                .map(|s| s.to_string())
+                .unwrap_or_default();
+            assert!(
+                after.contains("Examples:"),
+                "`{path}` is missing an after_help Examples: block"
+            );
+        });
     }
 }
