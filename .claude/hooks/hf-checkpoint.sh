@@ -14,6 +14,30 @@
 # of its worktrees (meta/.worktrees/<slug>/envctl) without a hardcoded path.
 set -u
 
+# --- batch wrap-up cadence enforcement (cheap, fail-soft, no git) ---------------------------------
+# The forge-loop runs tasks back-to-back with no per-task pause; the heavy continuity work (reaper +
+# wrap-up reconcile + evolution-steward retro) is batched to a boundary every `wrap_every` completed
+# cycles. That boundary is an agentic step and is easy to SKIP — and skipping it is exactly what let
+# 46 worktrees pile up. So this hook — which fires every Stop/PreCompact — drops a durable
+# `WRAP-UP-OWED` marker the moment a boundary comes due. session-relay-resume is FAIL-CLOSED on that
+# marker (must run the owed wrap-up before picking new work), so a missed boundary is caught at the
+# next resume rather than silently lost. Pure file I/O (read counters, maybe touch one file): safe to
+# run on every turn. The marker is cleared by the wrap-up that satisfies it (sets last_wrapup_total).
+PROJ="${CLAUDE_PROJECT_DIR:-$PWD}"
+LS="$PROJ/.handoff/loop/loop_state.md"
+if [ -f "$LS" ]; then
+  ct="$(awk '/^cycles_total:/{print $2; exit}' "$LS" 2>/dev/null)"
+  we="$(awk '/^wrap_every:/{print $2; exit}' "$LS" 2>/dev/null)"
+  lw="$(awk '/^last_wrapup_total:/{print $2; exit}' "$LS" 2>/dev/null)"
+  we="${we:-5}"; lw="${lw:-0}"
+  case "$ct$we$lw" in *[!0-9]*|'') ct="" ;; esac   # only act when all three parsed as integers
+  if [ -n "$ct" ] && [ "$((ct - lw))" -ge "$we" ]; then
+    marker="$PROJ/.handoff/loop/WRAP-UP-OWED"
+    [ -f "$marker" ] || printf 'boundary due: cycles_total=%s last_wrapup_total=%s wrap_every=%s\nrun /session-relay-wrap-up (reaper + reconcile + evolution-steward) before picking new work.\n' \
+      "$ct" "$lw" "$we" > "$marker" 2>/dev/null || true
+  fi
+fi
+
 d="${CLAUDE_PROJECT_DIR:-$PWD}"
 META_ROOT=""
 while [ "$d" != "/" ] && [ -n "$d" ]; do

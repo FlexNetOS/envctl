@@ -6,6 +6,8 @@ loop: agenticOS-consolidation (.handoff/loop/backlog.md, Epics A–E; design = .
 branch: develop   # work happens in FRESH worktrees off develop -> PR -> auto-promote to master
 worktree: (per-cycle: meta/.worktrees/<slug>/envctl off develop)
 cycle_budget: 1   # heavy-context resume sessions — 1 cohesive build cycle then hand off
+wrap_every: 5   # batch boundary: run reaper + wrap-up + evolution-steward every N completed cycles (no per-task pause)
+last_wrapup_total: 18   # cycles_total at the last completed wrap-up boundary; boundary DUE when (cycles_total - this) >= wrap_every
 cycles_this_session: 1   # RESUME SESSION 2026-06-18 (session 9): cycle = TASK-0028 (GUI parity)
 cycles_total: 18   # 16 (thru session 7) + TASK-0027 (session 8, #124) + TASK-0028 (session 9, #126)
 last_item: TASK-0028 (GUI parity, Architecture B subprocess-secretctl) — DONE, PR #126, guardian PASS-WITH-NOTES, auto-merge armed

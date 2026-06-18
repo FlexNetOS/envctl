@@ -54,6 +54,14 @@ wake-up.)
    merged/clean per-cycle worktrees + branches and prunes dangling tracking refs — never remotes,
    never dirty worktrees. Keeps worktrees ↔ branches ↔ origin consistent every session.
 
+4c. **Owed-wrap-up check — FAIL-CLOSED.** If `.handoff/loop/WRAP-UP-OWED` exists, the prior session hit
+   a forge-loop batch boundary (`wrap_every`) and ended without running the owed wrap-up — the
+   Stop/PreCompact hook flagged it. **Run `session-relay-wrap-up` in BATCH BOUNDARY mode NOW** (retro →
+   ICM → backlog reconcile → checkpoint → reap), which clears the marker and sets `last_wrapup_total`,
+   **before picking any new work**. Do this after the baseline (4) so the owed retro/reconcile runs on a
+   proven tree. This is what makes a skipped boundary impossible to lose: it is caught here, bounded to
+   one inter-session gap. (4b's reap is subsumed by the boundary wrap-up's own reap when this fires.)
+
 5. **Broadcast `relay:resumed`** (best-effort, after any bootstrap-hazard check):
    `weave send --to all --subject "relay:resumed" --body "worktree=<abs> item=<next>"`.
 
@@ -72,4 +80,6 @@ full picture — the durable *reasoning* (ICM) and live *coordination* (weave) a
 ## Non-negotiables
 - **Committed checkpoint is authoritative** — not the inbox, not memory, not chat.
 - **Fail-closed on a red baseline** — verify before you build; a failing baseline halts to `NEEDS-HUMAN`.
+- **Fail-closed on an owed wrap-up** — a `WRAP-UP-OWED` marker means the prior batch boundary's
+  reap/reconcile/retro never ran; run it before any new work (step 4c), never pick around it.
 - **Recall before deciding** — ICM holds decisions/lessons the context window lost; use them.

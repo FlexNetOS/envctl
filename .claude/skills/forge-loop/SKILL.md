@@ -76,8 +76,15 @@ capability or one component per item — so a cycle fits comfortably under the b
    - `.handoff/loop/DONE` present **OR** completion confirmed (see below) → **DONE**: report, no re-fire.
      *Completion is confirmed when* `hf resume --json` reports `next_command: "done"` (hf present) **or**
      all cards are `status: done` / all `backlog.md` items are `- [x]`/`- [!]` (hf absent).
+   - `.handoff/loop/WRAP-UP-OWED` present → a batch boundary came due (the Stop/PreCompact hook
+     dropped it) and the owed wrap-up has not run → **run the batch boundary now** (see "Batch
+     wrap-up cadence" below) BEFORE picking another item; do not pick around an owed wrap-up.
+   - **Batch boundary due** — `cycles_total - last_wrapup_total >= wrap_every` → run the batch
+     boundary (reaper + wrap-up reconcile + evolution-steward), then continue if still under
+     `cycle_budget`. This fires *inside* a session; it is NOT a hand-off.
    - `cycles_this_session >= cycle_budget` → **HAND OFF**: invoke the `session-relay` skill and stop
-     (do not re-fire from this session). This is the cycle-budget trigger.
+     (do not re-fire from this session). This is the cycle-budget trigger (always also runs the
+     boundary work as part of wrap-up, so a hand-off never skips a reap/retro).
 3. **Pick** the next item:
    - **hf present:** take `next_task_id` from `hf resume --json` (the `next_safe` DAG picker) and
      `hf claim <TASK-####>`.
@@ -122,7 +129,12 @@ capability or one component per item — so a cycle fits comfortably under the b
    cards if they look stale). Increment `cycles_this_session` and `cycles_total`, update `last_item`
    and `status` in `loop_state.md`, and append a one-line progress note. Commit the `.handoff/` update
    (text only — never a `ledger.db`).
-6. **Re-fire** to continue the loop (see Self-pacing).
+6. **Re-fire silently** to continue the loop (see Self-pacing). **No per-task pause/summary** — write
+   the result to `.handoff/loop/` and go straight to the next item. A consolidated, user-facing
+   summary is produced ONLY at the batch boundary (every `wrap_every` cycles) and at HAND OFF — this
+   is what keeps per-task context lean enough to fit 5–8 cycles in one session. (One PR per cycle is
+   unchanged; tick-on-merged still gates terminal Done. Removing the *narration* between tasks is the
+   only change — the durable state is still written every cycle.)
 
 ## Worktree hygiene (keep worktrees ↔ branches ↔ origin in sync)
 Each cycle runs in a fresh `meta/.worktrees/<slug>/envctl` worktree off develop; on PR auto-merge,
@@ -139,6 +151,36 @@ upstream is `[gone]` (merged) or that is an ancestor of `origin/master`. You may
 also **fast-forwards the protected trunk branches** (`master`, `develop`) to origin — FF-only and
 clean-only (an ahead/diverged/dirty branch is left untouched) — so the main checkout's `master`
 mirror and `develop` stay in lockstep with origin without a manual merge after each develop push.
+
+## Batch wrap-up cadence (the periodic boundary — keeps long sessions from drifting)
+The loop runs tasks **back-to-back with no per-task pause** (one PR each, tick-on-merged), and batches
+the heavy continuity work to a **boundary every `wrap_every` completed cycles** (default 5; set in
+`loop_state.md`). At the boundary — `cycles_total - last_wrapup_total >= wrap_every`, or a
+`WRAP-UP-OWED` marker is present — run, in order:
+1. **Reaper** — `bash scripts/reap-worktrees.sh --apply` (clears the merged per-cycle worktrees/branches
+   that accrued over the batch; safe-by-construction, skips dirty, FF-syncs trunk).
+2. **Wrap-up reconcile** — `session-relay-wrap-up` steps 3b (backlog status-truth, MERGED-gated) + the
+   ICM store; this is also where the consolidated user-facing summary of the batch is produced.
+3. **Evolution-steward** — the retro over the batch (mine lessons → `LESSONS.md` / `proposed-upgrades.md`).
+
+Then **clear the marker and set `last_wrapup_total = cycles_total`** so the next boundary is measured
+from here. The boundary is *in-session* — it is NOT a hand-off; after it, continue picking items if
+still under `cycle_budget`.
+
+**Why a marker + hook (don't rely on remembering):** the boundary is an agentic step, and skipping it
+is precisely what let 46 worktrees pile up. The Stop/PreCompact hook (`.claude/hooks/hf-checkpoint.sh`)
+drops `.handoff/loop/WRAP-UP-OWED` the moment a boundary comes due, and `session-relay-resume` is
+**fail-closed** on that marker (it runs the owed wrap-up before any new work). So even a session that
+forgets the boundary cannot silently skip it — the next resume catches it, bounded to one inter-session
+gap. The hook itself does only cheap file I/O (it does **not** run the reaper from a per-turn hook — git
+fetch + worktree removal interleaving with the agent mid-cycle is unsafe; the reaper runs at the
+agentic boundary and at resume, the settled points where merge status is known).
+
+`wrap_every` (in-session continuity cadence) and `cycle_budget` (when to hand off to a fresh session)
+are independent: with `wrap_every=5, cycle_budget=8` a session does up to 8 cycles with a wrap-up at
+cycle 5 and again at hand-off; with the heavy-context `cycle_budget=1`, every cycle hands off (wrap-up
+runs anyway), so the boundary only changes behavior once `cycle_budget>1` (the unattended `auto-provision`
+runner, or attended batch runs).
 
 ## Parallel mode (opt-in grit git-lock coordination)
 
@@ -166,6 +208,13 @@ When `cycles_this_session` reaches it, you do **not** start another cycle — yo
 `session-relay`, which checkpoints + announces + schedules the successor, then you stop. The
 successor resets `cycles_this_session` to 0 and continues where the backlog left off. This keeps
 every session short, cheap, and well below context rot — by construction, not by measurement.
+
+> **`cycle_budget` (hand-off) vs `wrap_every` (in-session boundary) — distinct knobs.** `cycle_budget`
+> ends the *session*; `wrap_every` (see "Batch wrap-up cadence") triggers the periodic reaper + wrap-up
+> + retro *within* a session without ending it. The hand-off at `cycle_budget` always runs the boundary
+> work too (it's part of wrap-up), so a session never ends without a reap/retro. For attended bounded
+> runs keep `cycle_budget` small; for unattended batch runs (via `auto-provision`) set `cycle_budget`
+> to the 5–8 the context comfortably holds and let `wrap_every` keep the workspace clean mid-session.
 
 > **Truly-unattended runs: use the external runner, don't rely on the in-session cron.** The
 > successor cron scheduled by `session-relay` is **session-only** in this runtime (it does not

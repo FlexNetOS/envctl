@@ -2,14 +2,25 @@
 name: session-relay-wrap-up
 description: >-
   Full end-of-session wrap-up + handoff for a harness loop (invoked as /session-relay-wrap-up, or
-  /harness:session-relay-wrap-up). ALWAYS use to close a session at cycle budget, on STOP, or when
-  the owner says "wrap up", "wrap up the session", "hand off", "checkpoint and stop", "prep handoff",
-  "close out". Runs the retro, persists durable memory to ICM, writes + commits the authoritative
+  /harness:session-relay-wrap-up). ALWAYS use to close a session at cycle budget, on STOP, at a
+  forge-loop BATCH BOUNDARY (every `wrap_every` cycles, or when `.handoff/loop/WRAP-UP-OWED` exists),
+  or when the owner says "wrap up", "wrap up the session", "hand off", "checkpoint and stop",
+  "prep handoff", "close out". Runs the retro, persists durable memory to ICM, writes + commits the authoritative
   HANDOFF.md, broadcasts the weave heartbeat, arms a best-effort successor, then stops. The committed
   HANDOFF.md is the resume signal — weave is only the heartbeat.
 ---
 
 # session-relay-wrap-up — the full wrap-up + handoff
+
+## Two modes: HAND-OFF vs BATCH BOUNDARY
+This skill runs in two modes that share steps 2–5b:
+- **HAND-OFF** (cycle budget reached / STOP / owner "wrap up"): run **all** steps 1–8 — including the
+  weave heartbeat, the successor cron, and **stop** the session.
+- **BATCH BOUNDARY** (forge-loop hit `wrap_every`, or `.handoff/loop/WRAP-UP-OWED` exists, mid-session):
+  run steps **2, 3, 3b, 4, 5, 5b** (retro → ICM → backlog reconcile → checkpoint → commit → reap),
+  then **clear the marker, set `last_wrapup_total = cycles_total` in `loop_state.md`, commit that**,
+  and **return to the loop** (do NOT do 6–8; the session is not ending). This is the periodic
+  reaper + reconcile + retro that keeps a long batch run from drifting.
 
 The clean way to end a loop session so the next one resumes cold with zero loss. It composes the
 harness's continuity primitives into one ordered, idempotent sequence. Pairs with
@@ -74,6 +85,12 @@ just the loop state.)
 5. **Commit** — `chore(<harness>): handoff (at <item>)`, including `HANDOFF.md` + `.handoff/loop/`
    state + any wrap-up edits. **A fresh process must resume from this commit alone** — this is the
    real payload.
+
+5a. **Satisfy the batch boundary (both modes).** Set `last_wrapup_total = cycles_total` in
+   `loop_state.md` and remove `.handoff/loop/WRAP-UP-OWED` if present (`rm -f`), so the cadence is
+   measured from here and the fail-closed resume check is cleared. Commit this with step 5 (BATCH
+   BOUNDARY: this is the commit that lets the loop continue; HAND-OFF: it rides along with the handoff
+   commit). Skipping this would re-trigger the boundary every turn via the hook.
 
 5b. **Reap merged worktrees/branches (keep the workspace in sync).** The loop creates a fresh
    `meta/.worktrees/<slug>/envctl` per cycle; once a cycle's PR auto-merges, origin deletes the head
