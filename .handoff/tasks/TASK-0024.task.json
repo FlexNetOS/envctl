@@ -1,0 +1,31 @@
+{
+  "schema": "handoff.task.v1",
+  "id": "TASK-0024",
+  "title": "hf sync .kb GO-LIVE in Stop/PreCompact hook (one-way ledger->kb at $META_ROOT)",
+  "status": "done",
+  "priority": "P2",
+  "objective": "hf sync .kb GO-LIVE in Stop/PreCompact hook (one-way ledger->kb at $META_ROOT)",
+  "path_scope": [
+    "**"
+  ],
+  "acceptance_criteria": [
+    "TASK-0024 — landed & merged on develop"
+  ],
+  "test_commands": [
+    "cargo build -p envctl-engine -p envctl",
+    "bash ci/gates/p7.sh"
+  ],
+  "dependencies": [],
+  "blocked_by": [
+    "TASK-0002"
+  ],
+  "allows_network": false,
+  "allows_dependency_addition": false,
+  "correlation_id": "envctl-agenticos-consolidation",
+  "role": "implementer",
+  "intent_lock": {
+    "objective_hash": "blake3:72da231de300fa997836001759e952e4e214dc11d3677ab8ce7e2c06937a714a",
+    "path_scope_hash": "blake3:f9c172b2971d269a1472ee50322c857b61594c7c0b5dcf298cd884a2fd59101c",
+    "acceptance_hash": "blake3:22cb08d942a22ed76eac7f45566ccfdbc2db9b7dc71123ba31fd9937fbbcb2fe"
+  }
+}

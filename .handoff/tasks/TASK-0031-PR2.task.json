@@ -1,0 +1,31 @@
+{
+  "schema": "handoff.task.v1",
+  "id": "TASK-0031-PR2",
+  "title": "F2 hardening: NonceStore + AdmissionLimiter + body caps/timeouts + opt-in mTLS",
+  "status": "done",
+  "priority": "P0",
+  "objective": "F2 hardening: NonceStore + AdmissionLimiter + body caps/timeouts + opt-in mTLS",
+  "path_scope": [
+    "**"
+  ],
+  "acceptance_criteria": [
+    "TASK-0031-PR2 — landed & merged on develop"
+  ],
+  "test_commands": [
+    "cargo build -p envctl-engine -p envctl",
+    "bash ci/gates/p7.sh"
+  ],
+  "dependencies": [],
+  "blocked_by": [
+    "TASK-0031"
+  ],
+  "allows_network": false,
+  "allows_dependency_addition": false,
+  "correlation_id": "envctl-agenticos-consolidation",
+  "role": "implementer",
+  "intent_lock": {
+    "objective_hash": "blake3:4b713b1f129d9aba4c3b1049ecf7e5f4f19cdb1472765e412f3eb9b618711826",
+    "path_scope_hash": "blake3:f9c172b2971d269a1472ee50322c857b61594c7c0b5dcf298cd884a2fd59101c",
+    "acceptance_hash": "blake3:7acdf863ec1dd5e6205ad09e7c09123da3ecb1681f31bbd47d910f89bea08555"
+  }
+}

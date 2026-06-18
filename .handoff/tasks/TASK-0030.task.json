@@ -1,0 +1,29 @@
+{
+  "schema": "handoff.task.v1",
+  "id": "TASK-0030",
+  "title": "F6: bounded DPoP jti replay store (JtiReplayStore::check_and_record)",
+  "status": "done",
+  "priority": "P0",
+  "objective": "F6: bounded DPoP jti replay store (JtiReplayStore::check_and_record)",
+  "path_scope": [
+    "**"
+  ],
+  "acceptance_criteria": [
+    "TASK-0030 — landed & merged on develop"
+  ],
+  "test_commands": [
+    "cargo build -p envctl-engine -p envctl",
+    "bash ci/gates/p7.sh"
+  ],
+  "dependencies": [],
+  "blocked_by": [],
+  "allows_network": false,
+  "allows_dependency_addition": false,
+  "correlation_id": "envctl-agenticos-consolidation",
+  "role": "implementer",
+  "intent_lock": {
+    "objective_hash": "blake3:09a0edc51fe8d9642aa86f4cb933d585136c0c4db011504f810f74c9efaf19bd",
+    "path_scope_hash": "blake3:f9c172b2971d269a1472ee50322c857b61594c7c0b5dcf298cd884a2fd59101c",
+    "acceptance_hash": "blake3:daaa2fddc350ad1754c8e4d74d53d068d1c6eb863f9b2e60419ec6952efdc6c7"
+  }
+}

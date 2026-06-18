@@ -1,0 +1,29 @@
+{
+  "schema": "handoff.task.v1",
+  "id": "TASK-0049",
+  "title": "Cross-repo impact map (git-kb callers/callees/impact) before A2 grit locks",
+  "status": "done",
+  "priority": "P1",
+  "objective": "Cross-repo impact map (git-kb callers/callees/impact) before A2 grit locks",
+  "path_scope": [
+    "**"
+  ],
+  "acceptance_criteria": [
+    "TASK-0049 — landed & merged on develop"
+  ],
+  "test_commands": [
+    "cargo build -p envctl-engine -p envctl",
+    "bash ci/gates/p7.sh"
+  ],
+  "dependencies": [],
+  "blocked_by": [],
+  "allows_network": false,
+  "allows_dependency_addition": false,
+  "correlation_id": "envctl-agenticos-consolidation",
+  "role": "implementer",
+  "intent_lock": {
+    "objective_hash": "blake3:89e7b74a35dd3f5b3a65b00631490b4faf919fa41db0aae599649527b1442451",
+    "path_scope_hash": "blake3:f9c172b2971d269a1472ee50322c857b61594c7c0b5dcf298cd884a2fd59101c",
+    "acceptance_hash": "blake3:34e17185915eedd1e8f31bce3743b8a1dd34a028a269674ddf51931d3ce31d63"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "schema": "handoff.task.v1",
+  "id": "TASK-0044",
+  "title": "Pick-time dependency authority via the hf kernel: mint envctl backlog into fleet-scoped handoff.task.v1 cards",
+  "status": "active",
+  "priority": "P1",
+  "objective": "Pick-time dependency authority via the hf kernel: mint envctl backlog into fleet-scoped handoff.task.v1 cards",
+  "path_scope": [
+    "**"
+  ],
+  "acceptance_criteria": [
+    "TASK-0044 — landed & merged on develop"
+  ],
+  "test_commands": [
+    "cargo build -p envctl-engine -p envctl",
+    "bash ci/gates/p7.sh"
+  ],
+  "dependencies": [],
+  "blocked_by": [
+    "TASK-0001",
+    "TASK-0002",
+    "TASK-0003"
+  ],
+  "allows_network": false,
+  "allows_dependency_addition": false,
+  "correlation_id": "envctl-agenticos-consolidation",
+  "role": "implementer",
+  "intent_lock": {
+    "objective_hash": "blake3:c98920ab9f48ebe2d50f76aa3a0293e93a7bb89ecf7d9f94ed4289b6ef4da181",
+    "path_scope_hash": "blake3:f9c172b2971d269a1472ee50322c857b61594c7c0b5dcf298cd884a2fd59101c",
+    "acceptance_hash": "blake3:9d1b3a9b4037aa000808fc8fcc7c1e098a4406743d0fd6935ea7ac4be1d27c1f"
+  }
+}

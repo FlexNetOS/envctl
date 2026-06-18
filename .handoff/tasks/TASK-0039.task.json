@@ -1,0 +1,31 @@
+{
+  "schema": "handoff.task.v1",
+  "id": "TASK-0039",
+  "title": "remote-clients-CA lifecycle: mint/<=7d-leaf/renew/revoke + revocation-set propagation for mTLS verifier",
+  "status": "backlog",
+  "priority": "P1",
+  "objective": "remote-clients-CA lifecycle: mint/<=7d-leaf/renew/revoke + revocation-set propagation for mTLS verifier",
+  "path_scope": [
+    "**"
+  ],
+  "acceptance_criteria": [
+    "TASK-0039 — landed & merged on develop"
+  ],
+  "test_commands": [
+    "cargo build -p envctl-engine -p envctl",
+    "bash ci/gates/p7.sh"
+  ],
+  "dependencies": [],
+  "blocked_by": [
+    "TASK-0031-PR2"
+  ],
+  "allows_network": false,
+  "allows_dependency_addition": false,
+  "correlation_id": "envctl-agenticos-consolidation",
+  "role": "implementer",
+  "intent_lock": {
+    "objective_hash": "blake3:eac8ed041e6de8dae56d8e79933998813be97e469a338121b3adfe337c4fb342",
+    "path_scope_hash": "blake3:f9c172b2971d269a1472ee50322c857b61594c7c0b5dcf298cd884a2fd59101c",
+    "acceptance_hash": "blake3:2e9619205cc7a09e91ec7f1963f829e8bdd2b3d26dcf857e087cc4cc33830fc8"
+  }
+}

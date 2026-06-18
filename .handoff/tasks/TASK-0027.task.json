@@ -1,0 +1,31 @@
+{
+  "schema": "handoff.task.v1",
+  "id": "TASK-0027",
+  "title": "DELETE /installation/token early-revoke (RevokeGithubToken RPC + secretctl github-app revoke-token)",
+  "status": "done",
+  "priority": "P1",
+  "objective": "DELETE /installation/token early-revoke (RevokeGithubToken RPC + secretctl github-app revoke-token)",
+  "path_scope": [
+    "**"
+  ],
+  "acceptance_criteria": [
+    "TASK-0027 — landed & merged on develop"
+  ],
+  "test_commands": [
+    "cargo build -p envctl-engine -p envctl",
+    "bash ci/gates/p7.sh"
+  ],
+  "dependencies": [],
+  "blocked_by": [
+    "TASK-0020"
+  ],
+  "allows_network": false,
+  "allows_dependency_addition": false,
+  "correlation_id": "envctl-agenticos-consolidation",
+  "role": "implementer",
+  "intent_lock": {
+    "objective_hash": "blake3:0d021b0c45f82b5fa736cf54d13e12148565c139c382aa2255a625deb893a7e4",
+    "path_scope_hash": "blake3:f9c172b2971d269a1472ee50322c857b61594c7c0b5dcf298cd884a2fd59101c",
+    "acceptance_hash": "blake3:1fbdcf8cb321380d8c77a080bdf141307bf6f52f4e8eb0820aa2a3d467d801cb"
+  }
+}

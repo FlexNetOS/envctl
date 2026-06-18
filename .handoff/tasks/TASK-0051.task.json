@@ -1,0 +1,31 @@
+{
+  "schema": "handoff.task.v1",
+  "id": "TASK-0051",
+  "title": "Behavioral-branch coverage in the guardian (exercise every refusal/error branch for mutating ops)",
+  "status": "done",
+  "priority": "P2",
+  "objective": "Behavioral-branch coverage in the guardian (exercise every refusal/error branch for mutating ops)",
+  "path_scope": [
+    "**"
+  ],
+  "acceptance_criteria": [
+    "TASK-0051 — landed & merged on develop"
+  ],
+  "test_commands": [
+    "cargo build -p envctl-engine -p envctl",
+    "bash ci/gates/p7.sh"
+  ],
+  "dependencies": [],
+  "blocked_by": [
+    "TASK-0043"
+  ],
+  "allows_network": false,
+  "allows_dependency_addition": false,
+  "correlation_id": "envctl-agenticos-consolidation",
+  "role": "implementer",
+  "intent_lock": {
+    "objective_hash": "blake3:6f7853eb1ad8dd8d37e88faee963ab1baa8dbe167456e6f39282ebd1be80255c",
+    "path_scope_hash": "blake3:f9c172b2971d269a1472ee50322c857b61594c7c0b5dcf298cd884a2fd59101c",
+    "acceptance_hash": "blake3:457bc4763b6901c4f21e503f83c353c70b0242c4d7a0fd3107b9993f367f93bf"
+  }
+}

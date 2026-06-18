@@ -1,0 +1,29 @@
+{
+  "schema": "handoff.task.v1",
+  "id": "TASK-0004",
+  "title": "Wire META_ROOT/META_FILE into the env Claude inherits",
+  "status": "done",
+  "priority": "P0",
+  "objective": "Wire META_ROOT/META_FILE into the env Claude inherits",
+  "path_scope": [
+    "**"
+  ],
+  "acceptance_criteria": [
+    "TASK-0004 — landed & merged on develop"
+  ],
+  "test_commands": [
+    "cargo build -p envctl-engine -p envctl",
+    "bash ci/gates/p7.sh"
+  ],
+  "dependencies": [],
+  "blocked_by": [],
+  "allows_network": false,
+  "allows_dependency_addition": false,
+  "correlation_id": "envctl-agenticos-consolidation",
+  "role": "implementer",
+  "intent_lock": {
+    "objective_hash": "blake3:a61e1262546f5091e77f24a37efbad2c91a51d47032b317d01936c76ceda13ad",
+    "path_scope_hash": "blake3:f9c172b2971d269a1472ee50322c857b61594c7c0b5dcf298cd884a2fd59101c",
+    "acceptance_hash": "blake3:898b2da46c973cdc28f86130908b14d9e95ba1dbe25d8344ddd38d97a354e1fe"
+  }
+}

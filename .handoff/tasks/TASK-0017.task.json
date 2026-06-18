@@ -1,0 +1,31 @@
+{
+  "schema": "handoff.task.v1",
+  "id": "TASK-0017",
+  "title": "Adopt kasetto extends config composition for envctl component manifests",
+  "status": "backlog",
+  "priority": "P1",
+  "objective": "Adopt kasetto extends config composition for envctl component manifests",
+  "path_scope": [
+    "**"
+  ],
+  "acceptance_criteria": [
+    "TASK-0017 — landed & merged on develop"
+  ],
+  "test_commands": [
+    "cargo build -p envctl-engine -p envctl",
+    "bash ci/gates/p7.sh"
+  ],
+  "dependencies": [],
+  "blocked_by": [
+    "TASK-0012"
+  ],
+  "allows_network": false,
+  "allows_dependency_addition": false,
+  "correlation_id": "envctl-agenticos-consolidation",
+  "role": "implementer",
+  "intent_lock": {
+    "objective_hash": "blake3:4802471ca5da79c59217f2b16af1957abc72369f0bbd72e0cf94e26a53f9016d",
+    "path_scope_hash": "blake3:f9c172b2971d269a1472ee50322c857b61594c7c0b5dcf298cd884a2fd59101c",
+    "acceptance_hash": "blake3:3473c90332a9646f6ddaebb841fe470b29819f720ee0a8d10cc6feed5a039904"
+  }
+}

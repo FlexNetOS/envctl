@@ -1,0 +1,31 @@
+{
+  "schema": "handoff.task.v1",
+  "id": "TASK-0031",
+  "title": "F2: in-process TLS-terminating HTTPS+DPoP/EKM relay-edge listener (PR-1)",
+  "status": "done",
+  "priority": "P0",
+  "objective": "F2: in-process TLS-terminating HTTPS+DPoP/EKM relay-edge listener (PR-1)",
+  "path_scope": [
+    "**"
+  ],
+  "acceptance_criteria": [
+    "TASK-0031 — landed & merged on develop"
+  ],
+  "test_commands": [
+    "cargo build -p envctl-engine -p envctl",
+    "bash ci/gates/p7.sh"
+  ],
+  "dependencies": [],
+  "blocked_by": [
+    "TASK-0030"
+  ],
+  "allows_network": false,
+  "allows_dependency_addition": false,
+  "correlation_id": "envctl-agenticos-consolidation",
+  "role": "implementer",
+  "intent_lock": {
+    "objective_hash": "blake3:6bf03b6b8722c9f7da9fd736279193d3cfcf9c791388591d5dedef2832dfcf3e",
+    "path_scope_hash": "blake3:f9c172b2971d269a1472ee50322c857b61594c7c0b5dcf298cd884a2fd59101c",
+    "acceptance_hash": "blake3:e6ed43d50bf9653fc9748c1e21fcfd893bf65030787a2e53e89d3eaaaf4e04fe"
+  }
+}

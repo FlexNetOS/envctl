@@ -1,0 +1,33 @@
+{
+  "schema": "handoff.task.v1",
+  "id": "TASK-0018",
+  "title": "Retire the external kasetto binary dependency (after no-downgrade checklist passes)",
+  "status": "done",
+  "priority": "P1",
+  "objective": "Retire the external kasetto binary dependency (after no-downgrade checklist passes)",
+  "path_scope": [
+    "**"
+  ],
+  "acceptance_criteria": [
+    "TASK-0018 — landed & merged on develop"
+  ],
+  "test_commands": [
+    "cargo build -p envctl-engine -p envctl",
+    "bash ci/gates/p7.sh"
+  ],
+  "dependencies": [],
+  "blocked_by": [
+    "TASK-0012",
+    "TASK-0013",
+    "TASK-0014"
+  ],
+  "allows_network": false,
+  "allows_dependency_addition": false,
+  "correlation_id": "envctl-agenticos-consolidation",
+  "role": "implementer",
+  "intent_lock": {
+    "objective_hash": "blake3:8b0eebbf4fe32d5ed254770668980773fbd96c0f4c42d7f048766c9b9d854204",
+    "path_scope_hash": "blake3:f9c172b2971d269a1472ee50322c857b61594c7c0b5dcf298cd884a2fd59101c",
+    "acceptance_hash": "blake3:1c7b17e3c35c658094bf87bb2701cbbdb6d56867888af3a781cea4f877b34def"
+  }
+}

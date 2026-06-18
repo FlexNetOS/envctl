@@ -1,0 +1,29 @@
+{
+  "schema": "handoff.task.v1",
+  "id": "TASK-0020",
+  "title": "github-app-mint: expose provider-github ProviderMint via secretd+secretctl (frozen mint-github contract)",
+  "status": "done",
+  "priority": "P0",
+  "objective": "github-app-mint: expose provider-github ProviderMint via secretd+secretctl (frozen mint-github contract)",
+  "path_scope": [
+    "**"
+  ],
+  "acceptance_criteria": [
+    "TASK-0020 — landed & merged on develop"
+  ],
+  "test_commands": [
+    "cargo build -p envctl-engine -p envctl",
+    "bash ci/gates/p7.sh"
+  ],
+  "dependencies": [],
+  "blocked_by": [],
+  "allows_network": false,
+  "allows_dependency_addition": false,
+  "correlation_id": "envctl-agenticos-consolidation",
+  "role": "implementer",
+  "intent_lock": {
+    "objective_hash": "blake3:324f941d15d5228ed93e06f9d4c3ed00b67280da87f560919fe99d18f2ed3712",
+    "path_scope_hash": "blake3:f9c172b2971d269a1472ee50322c857b61594c7c0b5dcf298cd884a2fd59101c",
+    "acceptance_hash": "blake3:0f48ed57a29711a3a71edf42153918d073c601ac9c152a041d17cc8d824d3909"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schema": "handoff.task.v1",
+  "id": "TASK-0001",
+  "title": "Build & install the hf kernel binary from meta/handoff",
+  "status": "done",
+  "priority": "P0",
+  "objective": "Build & install the hf kernel binary from meta/handoff",
+  "path_scope": [
+    "**"
+  ],
+  "acceptance_criteria": [
+    "TASK-0001 — landed & merged on develop"
+  ],
+  "test_commands": [
+    "cargo build -p envctl-engine -p envctl",
+    "bash ci/gates/p7.sh"
+  ],
+  "dependencies": [],
+  "blocked_by": [],
+  "allows_network": false,
+  "allows_dependency_addition": false,
+  "correlation_id": "envctl-agenticos-consolidation",
+  "role": "implementer",
+  "intent_lock": {
+    "objective_hash": "blake3:f7f0ae2e1c2f0b44b4dd1f57c1aeda54849944269e351a8af924eaee5850607e",
+    "path_scope_hash": "blake3:f9c172b2971d269a1472ee50322c857b61594c7c0b5dcf298cd884a2fd59101c",
+    "acceptance_hash": "blake3:82f4b5a0078138c90b88a5d86a43b3b2733537d7bf661d59ecdcf0c24878fcee"
+  }
+}

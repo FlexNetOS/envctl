@@ -164,15 +164,22 @@ SUPERVISED (never auto-run): TASK-0010 was `- [!!]` (now DONE by a human session
   --- EPIC G (forge-loop hardening, 2026-06-18 deep audit; direct-to-develop harness-maintenance,
   NOT forge cycles → cycles_total unchanged at 18). Provenance confirmed: forge-loop hand-authored in
   envctl (5dcc4b2/00237ca), not from a "forge" repo — it is the source pattern harness_hub abstracted.
-  Planned as Epic G (TASK-0041..0052); owner LOCKED Tier-2/3 forks. SHIPPED (9/12, all pushed develop):
+  Planned as Epic G (TASK-0041..0052); owner LOCKED Tier-2/3 forks. SHIPPED (10/12, all pushed develop):
   Tier 1 — 0041 loop-state counter gate (+hermetic test, ci.yml), 0042 proposed-upgrades drain in
-  wrap-up 3b, 0043 Phase-3.5 runtime-verify (guardian runs the app). Tier 2 — 0045 in-flight - [~]
+  wrap-up 3b, 0043 Phase-3.5 runtime-verify (guardian runs the app). Tier 2 — **0044 hf-kernel
+  pick-time dependency authority (53 envctl cards minted into envctl/.handoff/tasks/; DONE 2026-06-18,
+  handoff-kernel-engineer)**, 0045 in-flight - [~]
   re-poll sweep on resume, 0046 symbol-grain Unit ledger (architect+guardian), 0047 pre-DONE
   left-behind sweep. Tier 3 — 0048 A2 all-green merge barrier, 0049 cross-repo impact map before
   locks, 0050 bidirectional destination baseline, 0051 mutating-op branch coverage.
-  DEFERRED (cross-repo dedicated cycles, NOT skipped): **TASK-0044** mint envctl cards into the shared
-  fleet ledger (hf IS live + ledger-resident; hazard = HFTASK-* contamination per HFTASK-0026; route to
-  handoff-kernel-engineer) and **TASK-0052** full eject/package into harness_hub (doctrine override;
-  capstone). Commits: af67ad6 f3f13c5 477376c + 4 more on develop.
+  TASK-0044 RESULT: minted via the kernel's OWN work-order crate (intent_lock byte-verified vs PHTASK-0001);
+  cards-only, ZERO ledger writes (840 events unchanged). Contamination-free: fleet status AFTER = handoff 55 /
+  prompt_hub 71 / weave 1 UNCHANGED, envctl 0→53. `hf fleet render envctl` surfaces only TASK-* (0 HFTASK leakage);
+  DAG picker (sandbox-verified) returns dep-safe next + refuses blocked (0038→0035, 0052→0044). p7 PASS, doctor
+  healthy, residency 0 *.db under member .handoff. **Kernel gap (finding, NOT a regression):** shipped hf is
+  CWD-relative w/ no --ledger override (HFTASK-0054) → live `hf claim --next` member-scoped creates a forbidden
+  per-repo ledger.db; clean read-only authority path TODAY = `hf fleet render envctl` (markdown subnote stays the
+  live-pick fallback until HFTASK-0054 lands). DEFERRED (NOT skipped): **TASK-0052** full eject/package into
+  harness_hub (doctrine override; capstone). Commits: af67ad6 f3f13c5 477376c + 4 more on develop.
 
 last_update: 2026-06-18

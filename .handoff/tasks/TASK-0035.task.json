@@ -1,0 +1,29 @@
+{
+  "schema": "handoff.task.v1",
+  "id": "TASK-0035",
+  "title": "secretd gRPC surface gaps: Vault List/Rm/Rotate, Relay Create/List, Audit Query, Get meta",
+  "status": "review",
+  "priority": "P1",
+  "objective": "secretd gRPC surface gaps: Vault List/Rm/Rotate, Relay Create/List, Audit Query, Get meta",
+  "path_scope": [
+    "**"
+  ],
+  "acceptance_criteria": [
+    "TASK-0035 — landed & merged on develop"
+  ],
+  "test_commands": [
+    "cargo build -p envctl-engine -p envctl",
+    "bash ci/gates/p7.sh"
+  ],
+  "dependencies": [],
+  "blocked_by": [],
+  "allows_network": false,
+  "allows_dependency_addition": false,
+  "correlation_id": "envctl-agenticos-consolidation",
+  "role": "implementer",
+  "intent_lock": {
+    "objective_hash": "blake3:7964bedf000a9e428d50004367d99ff5fdb3f0940e3d9a1e5d69b119b1e6490b",
+    "path_scope_hash": "blake3:f9c172b2971d269a1472ee50322c857b61594c7c0b5dcf298cd884a2fd59101c",
+    "acceptance_hash": "blake3:e962bbf4bd32f77cc844e8f1acc46c47c7bcd0bb4a3eba5902bda9bd1548dda8"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schema": "handoff.task.v1",
+  "id": "TASK-0025",
+  "title": "CI required checks on develop (rustfmt/clippy/test/gates) so auto-merge fails closed",
+  "status": "done",
+  "priority": "P1",
+  "objective": "CI required checks on develop (rustfmt/clippy/test/gates) so auto-merge fails closed",
+  "path_scope": [
+    "**"
+  ],
+  "acceptance_criteria": [
+    "TASK-0025 — landed & merged on develop"
+  ],
+  "test_commands": [
+    "cargo build -p envctl-engine -p envctl",
+    "bash ci/gates/p7.sh"
+  ],
+  "dependencies": [],
+  "blocked_by": [],
+  "allows_network": false,
+  "allows_dependency_addition": false,
+  "correlation_id": "envctl-agenticos-consolidation",
+  "role": "implementer",
+  "intent_lock": {
+    "objective_hash": "blake3:c11cbc51d30cca23782647e82a1908030d090749c645319859e5a37d470b9152",
+    "path_scope_hash": "blake3:f9c172b2971d269a1472ee50322c857b61594c7c0b5dcf298cd884a2fd59101c",
+    "acceptance_hash": "blake3:040a9f27a569f7755caf988b252d248ba311044ce24a195f782aebb15c5b4290"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "schema": "handoff.task.v1",
+  "id": "TASK-0019",
+  "title": "fix-secretd: U1 USB-unlock path needs a real RealUsbProbe",
+  "status": "backlog",
+  "priority": "P1",
+  "objective": "fix-secretd: U1 USB-unlock path needs a real RealUsbProbe",
+  "path_scope": [
+    "**"
+  ],
+  "acceptance_criteria": [
+    "TASK-0019 — landed & merged on develop"
+  ],
+  "test_commands": [
+    "cargo build -p envctl-engine -p envctl",
+    "bash ci/gates/p7.sh"
+  ],
+  "dependencies": [],
+  "blocked_by": [],
+  "allows_network": false,
+  "allows_dependency_addition": false,
+  "correlation_id": "envctl-agenticos-consolidation",
+  "role": "implementer",
+  "intent_lock": {
+    "objective_hash": "blake3:6622a7d026daa5e3d701d2e35feb56b48a66dee2581eddf3b86b0384cef74a13",
+    "path_scope_hash": "blake3:f9c172b2971d269a1472ee50322c857b61594c7c0b5dcf298cd884a2fd59101c",
+    "acceptance_hash": "blake3:5a3f4ce5e848bafc2a97b1e9d5b8cbadf3b75a6115db1d7c28b09e01c81f875f"
+  }
+}

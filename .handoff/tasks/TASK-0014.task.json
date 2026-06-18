@@ -1,0 +1,32 @@
+{
+  "schema": "handoff.task.v1",
+  "id": "TASK-0014",
+  "title": "CLI verbs envctl agent {sync,add,remove,lock,list,clean} + GUI parity",
+  "status": "done",
+  "priority": "P1",
+  "objective": "CLI verbs envctl agent {sync,add,remove,lock,list,clean} + GUI parity",
+  "path_scope": [
+    "**"
+  ],
+  "acceptance_criteria": [
+    "TASK-0014 — landed & merged on develop"
+  ],
+  "test_commands": [
+    "cargo build -p envctl-engine -p envctl",
+    "bash ci/gates/p7.sh"
+  ],
+  "dependencies": [],
+  "blocked_by": [
+    "TASK-0012",
+    "TASK-0013"
+  ],
+  "allows_network": false,
+  "allows_dependency_addition": false,
+  "correlation_id": "envctl-agenticos-consolidation",
+  "role": "implementer",
+  "intent_lock": {
+    "objective_hash": "blake3:dd7b7d6a5f3332a63841c2e4759531330871bd38dd0ca8316978370bc3d6f4b8",
+    "path_scope_hash": "blake3:f9c172b2971d269a1472ee50322c857b61594c7c0b5dcf298cd884a2fd59101c",
+    "acceptance_hash": "blake3:b1a3026f5b18b194440e9bee4aa9e887a8e4b0be601f11ab62e61740cb18ddfa"
+  }
+}
