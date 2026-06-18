@@ -112,6 +112,18 @@ pub enum Event {
     SelfUninstall {
         outcome: crate::self_uninstall::SelfUninstallOutcome,
     },
+    /// TASK-0028: the result of an engine-driven `secretctl` subprocess (the GUI secrets verbs
+    /// mint-github / relay-mint / revoke under Architecture B). `verb` is the stable label the GUI
+    /// keys off; `json_stdout` is the child's stdout (parsed by the GUI for METADATA only — the
+    /// mint token is held transiently and never persisted); `stderr` is surfaced verbatim in a
+    /// fail-closed DANGER card; `code` is the child exit status (`None` ⇒ not spawned / not found).
+    /// The engine parses nothing secret and holds no token after the child exits.
+    SecretsResult {
+        verb: String,
+        json_stdout: String,
+        stderr: String,
+        code: Option<i32>,
+    },
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

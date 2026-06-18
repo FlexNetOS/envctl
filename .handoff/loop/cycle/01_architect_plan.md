@@ -1,123 +1,90 @@
-# TASK-0027 (G2) — GitHub installation-token early-revoke (DELETE /installation/token) · VERDICT: GO
+# TASK-0028 — GUI parity (mint-github / relay-mint / revoke) · VERDICT: GO
 
-Additive `DELETE /installation/token` early-revoke through the EXISTING `HttpTransport` seam (no new dep),
-exposed as a new `RevokeGithubToken` RPC + `secretctl github-app revoke-token` verb; `mint-github` frozen
-contract untouched. GitHub's DELETE authenticates with **the installation token itself** as the bearer (204
-on success) — NOT the App-JWT — and the daemon does NOT persist minted tokens. So: explicit-token verb is
-the primary kill-switch; the `relay_revoke` tie-in is a documented best-effort revoke of the relay's
-last engine-minted NATIVE token (the one path where the engine still holds the token in-process).
+**Architecture: B — `envctl-gui` shells out to the installed `secretctl` binary as a subprocess and parses its `--json` stdout.** Zero new crate deps, GUI stays pure-sync, divergence is structurally impossible (the GUI drives the identical clap surface). All three controls render METADATA ONLY, default to dry-run (revoke `apply=false`), feed the revoke token over `secretctl` stdin (never argv), never persist any secret byte (eframe persistence is already off — no `save()` impl exists).
+
+## Architecture decision (A vs B)
+Option B is strictly dominant. The GUI worker (`crates/gui/src/main.rs:248-252`) drives `envctl_engine::Engine` over mpsc and the GUI crate deps are only `envctl-engine, eframe, egui, egui_extras, baby-mimalloc` (`crates/gui/Cargo.toml:11-16`). The secrets verbs are unreachable from that engine — they require a tonic `VaultClient` over the daemon UDS that `secretctl` builds in its own runtime (`crates/secretctl/src/main.rs:24-31,59-73`). Option A would graft a second async runtime + tonic + prost + secrets-proto into a pure-sync egui app, force a fresh `ci/gates/no-c.sh` re-proof, and re-implement the `mint_req_for_relay_mint`/`MintGithubReq` builders that already exist in secretctl — the exact CLI↔GUI divergence the invariants forbid. Option B drives the identical clap surface so the GUI CANNOT mint/revoke differently; adds zero deps; stays pure-sync; reuses secretctl's own no-argv-leak stdin path for the revoke token.
 
 ## Target repos
-envctl (single). secrets-engine: mint_github.rs, lib.rs, event.rs; secrets-proto: control.proto; secretd:
-grpc.rs; secretctl: cli.rs, main.rs. Tests: engine units (mint_github.rs + lib.rs) + secretd
-native_mint_e2e.rs. 7 modules single-repo → sequential single-crew.
+Single repo: **envctl** (no cross-repo / multi-crate scale trigger → sequential single-crew).
+- `crates/gui/src/main.rs` — NEW `Screen::Secrets` + screen fn + state fields + result events; NEW pure spec→argv builders (unit-testable, mirror secretctl) + subprocess dispatch path. Linear chain (Screen enum → state → builders → dispatch → render) → sequential.
+- `crates/gui/Cargo.toml` — NO change under Option B.
+- `crates/engine/src/lib.rs` (+ event loop) — NEW `EngineCommand::Secrets { argv, stdin }` + `Event::SecretsResult { verb, json_stdout, stderr, code }`; engine spawns `secretctl`, writes stdin, captures stdout/stderr/exit, emits event — holds NO secret bytes after the child exits.
 
-## Design choice (resolved, GO)
-GitHub `DELETE /installation/token` needs the TOKEN VALUE as bearer (confirmed vs GitHub REST docs, 204 No
-Content). Daemon mints into Zeroizing and hands off once (no token-at-rest store, by design). →
-**Primary = explicit-token verb** `secretctl github-app revoke-token --token <tok|-> --apply` →
-RevokeGithubToken RPC → `engine.revoke_github_token(token, apply, api_base, sink)`; works for ANY outstanding
-token because the holder supplies it. **relay_revoke tie-in = best-effort, native-plane only**: the
-NativeSubtoken `resolve_injection` path is where the ENGINE mints in-process; retain that relay's last token
-(in-memory Zeroizing, never persisted, cleared on lock/clear_provider) and on `relay_revoke(apply=true)` fire
-a best-effort DELETE before clearing. A handed-off/rotated token or a BaseUrlRepoint/MitM relay has nothing
-to auto-revoke → relay_revoke's existing bearer/policy revocation stays authoritative, 1h expiry is the
-backstop. NOT full token-tracking (worse at-rest posture; larger change) — that's an Out-of-scope follow-up.
+## Scope
+1. **mint-github** → `secretctl mint-github --installation-id … [--repository-ids …] [--permissions …] --ttl-secs … --output json` (`cli.rs:101-120`, `main.rs:292-316`). Render metadata only (`expires_at_unix` + transient copy-once token) — never persist the frozen `{token,expires_at_unix}`.
+2. **relay-mint** → `secretctl relay mint <name> [--ttl …] [--mode …] [--provider …] [--repo …]… [--perm …]… --json` (`cli.rs:220-239`, `main.rs:495-513`, builder `main.rs:565-598`). Render `render_mint` metadata `{token_id, expires_at, native}` — do NOT display `bearer` (secret-class).
+3. **revoke (installation-token)** → `secretctl github-app revoke-token --token - [--installation-id …] [--apply] --json` (PR #124 surface). Token via stdin. Render `{"revoked":bool,"dry_run":bool}`. Dry-run default (`--apply` only on explicit affordance).
 
-## Engine API delta
-mint_github.rs (model on mint request ctor ~229-260; revoke needs NO App-JWT):
-  `pub fn build_revoke_request(api_base, user_agent, installation_token: &[u8]) -> HttpRequest`
-    (method DELETE, url {base}/installation/token, Authorization: Bearer <tok>, Accept/X-GitHub-Api-Version/
-     User-Agent, empty body). Token only in the auth header; NEVER {:?}-log the request (add comment).
-  `pub fn revoke_installation_token<T: HttpTransport>(transport,api_base,user_agent,installation_token:&[u8])
-     -> Result<(),MintError>` — 204 ⇒ Ok; transport err / non-204 ⇒ Err (snippet ≤200, no token).
-lib.rs:
-  `#[cfg(feature="provider-github")] pub fn revoke_github_token(&self, token: Zeroizing<Vec<u8>>, apply: bool,
-     api_base: Option<String>, sink: &EventSink) -> anyhow::Result<bool>` — gate on vault Unlocked
-     (EngineError::Locked matches mint's auth floor); apply=false ⇒ dry-run audit {apply:false} + return false,
-     no egress; apply=true ⇒ revoke via self.inner.github_transport; Ok(204) ⇒ SecretEvent::GithubTokenRevoked
-     + ok audit, return true; transport/non-204 ⇒ Err (no false success). Token never in audit/event/Err.
-  native_token_cache: `Mutex<HashMap<String /*relay_id*/, Zeroizing<Vec<u8>>>>` populated in
-     resolve_injection NativeSubtoken success branch (~2218+); cleared on lock()/clear_provider().
-  relay_revoke tie-in (~1418): after existing policy+bearer revocation, if cache has relay_id → best-effort
-     revoke_installation_token, success ⇒ GithubTokenRevoked{outcome:"revoked"}, failure ⇒ audit
-     {outcome:"best_effort_failed"} SWALLOWED (relay revoke still returns bearer count); clear entry.
-event.rs: `GithubTokenRevoked { installation_id: Option<u64>, outcome: String }` (never the token; outcome ∈
-  "revoked"/"dry_run"/"best_effort_failed"). installation_id Option (explicit verb may not know it).
-CLI+GUI: secretctl drives the RPC; engine method is the single shared entry so GUI parity (later) won't
-  diverge. No GUI change in TASK-0027 (mint-github not yet in GUI) — noted Out of scope.
+Out of scope: relay-policy/bearer revoke GUI (stretch follow-up); Option A; secret/init/unlock/ca GUI surfaces.
 
-## Proto + gRPC delta
-control.proto (additive RPC on service Vault, next to MintGithub):
-  `rpc RevokeGithubToken (RevokeGithubTokenReq) returns (RevokeResp);`
-  `message RevokeGithubTokenReq { bytes token = 1; bool apply = 2; uint64 installation_id = 3; }`
-  Reuse existing RevokeResp{count_revoked,dry_run} (count ∈ {0,1}) — drains like Relay.Revoke. token is
-  `bytes` (byte-exact, no accidental Display). Additive → wire round-trip drift test stays green.
-grpc.rs handler (model on revoke/mint_github ~388/531): reject empty token (invalid_argument); token →
-  Zeroizing; api_base from ENVCTL_GITHUB_API_BASE (same as mint); installation_id (req!=0).then_some;
-  spawn_blocking engine.revoke_github_token; map via existing map_mint_github_err (Locked→failed_precondition,
-  transport/non-204→unavailable). non-feature companion ⇒ Status::unimplemented.
+## Daemon gRPC / CLI surface the GUI drives (verified)
+| GUI control | secretctl invocation | RPC reached | Response rendered |
+|---|---|---|---|
+| Mint GitHub | `mint-github … --output json` | `Vault.MintGithub` → `MintGithubResp{token,expires_at_unix}` (FROZEN) | `expires_at_unix` + transient copy-once token; token never persisted |
+| Relay mint | `relay mint <name> … --json` | `Relay.Mint(MintReq)` → `MintResp` | `{token_id,expires_at,native}` (NOT `bearer`) |
+| Revoke install-token | `github-app revoke-token --token - [--installation-id N] [--apply] --json` | `Vault.RevokeGithubToken{token,apply,installation_id}` → `RevokeResp{count_revoked,dry_run}`; CLI prints `{"revoked":bool,"dry_run":bool}` | `{revoked,dry_run}`; apply=false default |
 
-## CLI delta
-cli.rs GithubAppCmd::RevokeToken{ token:String(--token, `-`=stdin), installation_id:Option<u64>, apply:bool }.
-main.rs handler: read token (file/`-`/stdin into Zeroizing, refuse empty); no --apply ⇒ stderr dry-run
-  preview, no egress; --apply ⇒ Vault.RevokeGithubToken{token,apply,installation_id}, drain RevokeResp; --json
-  ⇒ {"revoked":<bool>,"dry_run":<bool>} to stdout, human text to stderr. Token NEVER printed.
+## CLI parity reference (each GUI control ↔ secretctl arg/field)
+**Mint GitHub** — `MintGithubArgs` (`cli.rs:101-120`): `--installation-id`(u64,req) · `--repository-ids`(CSV,blank⇒omit) · `--permissions`(CSV `name:access`,blank⇒omit) · `--ttl-secs`(i64,req) · fixed `--output json`.
+**Relay mint** — `RelayCmd::Mint` (`cli.rs:220-239`), builder `main.rs:565-598`: positional `<name>` · `--ttl`(blank⇒omit) · `--mode`(base-url/proxy/native, `mode_to_proto` `main.rs:86-94`) · `--provider`(anthropic/openai/github/generic, `provider_to_proto` `main.rs:75-84`) · repeated `--repo`(CSV) · repeated `--perm`(CSV; native default `checks:write` applied CLI-side `main.rs:583-587`, NOT in GUI).
+**Revoke** — `github-app revoke-token` (#124): `--token -`(stdin) · `--installation-id`(u64,opt) · `--apply`(default OFF ⇒ dry-run, no egress) · fixed `--json` → `{"revoked":bool,"dry_run":bool}`.
 
-## relay_revoke tie-in (best-effort, native-plane only)
-1. NativeSubtoken success → store Zeroizing(token) keyed by relay_id (replace prior; never persisted; cleared
-   on lock()/clear_provider). 2. relay_revoke(apply=true): after policy+bearer revoke (1443-1461),
-   cache.remove(relay_id) → best-effort revoke_installation_token; success⇒revoked event+audit, failure⇒
-   best_effort_failed audit, SWALLOW err (relay still revoked at policy/bearer; worst case token lives ≤1h
-   = today's behavior). 3. dry-run apply=false: no egress, count only. 4. cleared on lock()/clear_provider
-   (fail-closed: locked vault holds no live token bytes).
+## GUI changes (existing pattern mirrored + insertion points)
+Pattern mirrored: the **Agent screen** (`gui/src/main.rs:1260-1873`) — pure state→spec builders, a verb sub-tab enum, a single dispatch button with apply/preview gating (`agent_action_button` `:1595-1625`), result holders filled from worker events (`drain` `:321-482`). Secrets screen mirrors it exactly but the "spec" is an argv `Vec<String>` and dispatch runs a subprocess.
 
-## Dep decision (no-C proof)
-ZERO new deps. Reuses mint_github::HttpTransport (seam), secretd DaemonHttpTransport (existing reqwest/rustls-
-on-ring), Zeroizing, tonic/prost (proto regen only), clap. No sqlite/openssl/aws-lc; one rustls(ring) remains.
-no-c.sh operates on resolved cargo metadata → graph unchanged → unaffected (run it anyway). DELETE has no body
-→ no new serializer.
+1. **New `Screen::Secrets`** — `main.rs:43-53` add variant; label `:56-67`; nav `:539-548`; central dispatch `:568-577` → `Screen::Secrets => self.secrets_screen(ui)`.
+2. **New verb sub-tab** — beside `AgentVerbTab` (`:70-94`): `enum SecretsVerbTab { MintGithub, RelayMint, Revoke }` + `label()`.
+3. **New state fields** — append to `struct EnvctlApp` (`:165-232`) and BOTH constructors (`new` `:254-315`, test `test_app` `:2150-2211`): `secrets_verb`; mint form `sec_install_id/sec_repo_ids/sec_perms/sec_ttl_secs:String`; relay form `sec_relay_name/sec_relay_ttl/sec_relay_mode(def "base-url")/sec_relay_provider(def "generic")/sec_relay_repos/sec_relay_perms:String`; revoke form `sec_revoke_token:String`(transient secret), `sec_revoke_install_id:String`, `sec_revoke_apply:bool`(def false); results `sec_status:String`, `sec_mint_expires:Option<i64>`, `sec_mint_has_token:bool`, `sec_relay_result:Option<RelayMintMeta>`({token_id,expires_at,native} — no bearer), `sec_revoke_result:Option<(bool,bool)>`.
+4. **Pure argv builders** (unit-testable; reuse `split_csv`/`opt_str` helpers `:2116-2133`):
+   - `mint_github_argv(&self)->Vec<String>` — `["mint-github","--installation-id",id,"--ttl-secs",ttl,"--output","json"]` + conditional `--repository-ids`/`--permissions` (replicate comma-join rules `main.rs:292-303`, `:891-929`).
+   - `relay_mint_argv(&self)->Vec<String>` — `["relay","mint",name]` + optional `--ttl`/`--mode`/`--provider`, repeated `--repo`/`--perm`, `--json`. Do NOT inject `checks:write` (left to secretctl).
+   - `revoke_argv(&self)->Vec<String>` — `["github-app","revoke-token","--token","-"]` + optional `--installation-id`, conditional `--apply`, `--json`.
+5. **Subprocess dispatch (engine-owned, recommended).** `EngineCommand::Secrets { argv:Vec<String>, stdin:Option<Zeroizing<Vec<u8>>> }` + `Event::SecretsResult { verb, json_stdout, stderr, code }` (engine `lib.rs` + `run_event_loop` match). Engine spawns `secretctl` via `std::process::Command`, writes stdin pipe, captures stdout/stderr, emits result — parses nothing secret, holds no token after child exits. GUI dispatch reuses `self.dispatch(cmd, Some("secrets".into()))` (`:492-497`); results land in `drain` (add arms after `:479`). Binary resolution: (a) alongside `std::env::current_exe`, (b) `$HOME/.cargo/bin/secretctl` (`manifest/env-ctl.toml:66`), (c) `PATH`; unresolved → `SecretsResult` error (matrix).
+6. **New `secrets_screen(ui)`** — model on `agent_screen` (`:1371-1500`): verb sub-tab row, `theme::inset()` form per verb, single action button (label "Mint"/"Mint relay"/(apply?"Revoke (apply)":"Revoke (dry-run)"); fill `theme::WARN` when `sec_revoke_apply`, else `theme::ACCENT`); metadata-only results cards (mirror `agent_results` `:1627-1680`).
+
+## Secret-handling design
+1. **eframe persistence already OFF** — `EnvctlApp` has no `save()`, `run_native` (`:36-41`) has no storage path, `NativeOptions` (`:32-35`) sets no persist. No app state ever serialized. Plan FORBIDS adding a `save()` or `#[derive(Serialize)]` on `EnvctlApp`/secret fields.
+2. **Minted token** — engine emits `SecretsResult.json_stdout` with frozen `{token,expires_at_unix}`. GUI parses once, stores ONLY `expires_at_unix:i64` + `sec_mint_has_token:bool`; holds the token string transiently in the `drain` arm for a single copy-once `ui.output_mut(|o| o.copied_text = token)`, dropped at arm end; never to `self.log`/`push_log`. Mint stdout must NOT go through `push_log` (`:485-490`) — only stderr/metadata.
+3. **Relay `bearer`** — never shown/stored; only `token_id/expires_at/native` (`render.rs:153-182`).
+4. **Revoke token input** — `sec_revoke_token:String`, fed via stdin (`--token -`), never argv. On dispatch moved into `Zeroizing<Vec<u8>>` for `EngineCommand::Secrets.stdin`, `sec_revoke_token` cleared (`String::clear`), never persisted. Engine writes the buffer to child stdin, drops it.
+5. No secret to clipboard except the explicit copy-once mint affordance; never to `self.log`/`LogLine`.
 
 ## Fail-closed matrix
-dry-run default (apply=false) → no egress, dry_run audit+event, return false. transport error → Err →
-unavailable (never success). non-204 (401/404/422) → Err(MintError::Other "{status} ... {snippet≤200}", no
-token) → unavailable/permission_denied. locked vault → Err(Locked) → failed_precondition. missing App cred →
-N/A (revoke needs no App key; bearer = token). empty/blank token → invalid_argument, no egress. relay tie-in
-failure → best_effort_failed audit, swallowed, relay revoke still returns bearer count.
+| Condition | Detection (B) | GUI behavior (never synthesized success) |
+|---|---|---|
+| secretd not running | secretctl non-zero; stderr "is secretd running?" (`main.rs:71`) | real stderr in DANGER card; no success card |
+| Vault locked / USB possession not proven | daemon error; secretctl non-zero stderr | stderr verbatim DANGER; button stays enabled (retry after unlock) |
+| secretctl binary not found | engine current_exe/cargo-bin/PATH all miss | `SecretsResult` error "secretctl not installed"; disabled/explanatory |
+| Revoke without apply | `sec_revoke_apply=false` ⇒ omit `--apply` | `{dry_run:true}` "dry-run: would revoke (no egress)" — default |
+| Mint missing required field | GUI pre-validates non-empty + parses u64/i64 | button `add_enabled(false)` until valid (`:1181-1190`); no invocation |
+| Bad repo id / perm | secretctl/daemon rejects | stderr surfaced; no partial success |
 
-## Tests (all CI-offline: FakeTransport / loopback mock, never real GitHub)
-mint_github.rs units: revoke_builds_correct_delete_request (method/url/headers/empty body);
-revoke_204_is_success; revoke_non_204_is_failure (401, assert no token in err); revoke_transport_error_is_failure;
-revoke_token_is_zeroized (token only in auth header, not in MintError Display).
-lib.rs units (reuse unlocked_engine_with_transport ~4334): revoke_github_token_dry_run_no_egress;
-revoke_github_token_apply_204 (GithubTokenRevoked{revoked}, metadata-only audit); _locked_vault_fails_closed;
-relay_revoke_native_tie_in_best_effort (DELETE fired; 500 variant ⇒ relay_revoke STILL returns bearer count).
-secretctl units (clap round-trip): revoke_token parses + defaults dry-run; accepts `-` stdin; requires token.
-secretd e2e (native_mint_e2e.rs loopback + ENVCTL_GITHUB_API_BASE ~419-595): revoke over wire 204 ⇒
-{count_revoked:1,dry_run:false}; dry-run contacts nothing; locked vault ⇒ failed_precondition.
+## Tests (inline `#[cfg(test)] mod` in gui/src/main.rs, mirror `agent_spec_tests` `:2135-2344` via `test_app()`/`Engine::detached()`)
+1. **Argv parity (anti-divergence):** each verb's GUI argv parses into the SAME secretctl clap struct/fields (GUI analog of `mint_github_argv_round_trips_through_clap` `main.rs:1033-1065`). **Use the verbatim-replication path (no `envctl-secretctl` dev-dep)** to avoid pulling tonic/tokio into even the dev graph — replicate the arg-struct assertion like secretctl's consumer builder (`main.rs:891-929`).
+2. `mint_github_argv_omits_blank_optional_scopes` — blank repo-ids/perms ⇒ flags omitted.
+3. `relay_mint_argv_maps_mode_provider_repos_perms` — combos + CSV → repeated flags; native default perm NOT injected by GUI.
+4. `revoke_argv_defaults_dry_run_uses_stdin_token` — no `--apply` default; `--token -` always (never literal token in argv); `--apply` only when toggle on.
+5. `revoke_apply_toggle_defaults_false`.
+6. **No-persist:** guard that `EnvctlApp` has no `save` override and secret fields are plain `String`/`Zeroizing`; assert `sec_revoke_token` cleared after building dispatch.
+7. **JSON metadata parse:** feed `{"revoked":true,"dry_run":false}` and `render_mint` JSON; assert only metadata retained (no `bearer`, no mint `token`).
+8. **Degrade:** secretctl ships `provider-github` unconditionally (`secretctl/Cargo.toml:19`) → verbs always present → no GUI cfg gate; degrade test asserts the binary-absent path renders the explanatory state.
 
-## Sequencing (leaf-first)
-1 mint_github.rs build_revoke_request + revoke_installation_token + units. 2 event.rs GithubTokenRevoked.
-3 lib.rs revoke_github_token + native_token_cache + relay_revoke tie-in + lock/clear clearing + units.
-4 control.proto RevokeGithubToken RPC + msg (regen). 5 grpc.rs handler (+non-feature unimplemented), reuse
-map_mint_github_err. 6 secretctl cli.rs+main.rs RevokeToken + clap tests. 7 native_mint_e2e.rs.
-8 fmt + clippy --workspace -Dwarnings (rtk proxy) + 4 CI gates (no-c proves graph unchanged).
+CI gates: `shape.sh` (new screen/module shape) green; `no-c.sh` UNAFFECTED (zero new deps); `cargo fmt --all` + `clippy --workspace -Dwarnings` + `test -p envctl-gui` before push.
 
 ## Invariants (each checkable)
-no-C: zero new deps, cargo metadata unchanged → no-c.sh green; grep diff for new Cargo.toml dep (none).
-engine single non-printing: request ctor + 204/non-204 + tie-in in engine via HttpTransport seam (env-free),
-secretd supplies transport+RPC, secretctl thin; no println! in engine; emits SecretEvent. fail-closed/dry-run:
-apply default false previews w/o egress, non-204/transport→Err never false success (tests guard). no secret in
-logs: token Zeroizing only in auth header, audit/event metadata-only, map_mint_github_err echoes no secret,
-no {:?} of revoke request (zeroize test guards). frozen-contract: mint-github flag/JSON + MintGithub*
-untouched; revoke is additive RPC/verb/event (mint argv + proto drift tests stay green).
+1. Engine single authority / no divergence — GUI has zero mint/revoke logic; drives identical secretctl clap surface; argv-parity tests prove it. PASS.
+2. No secret rendered/persisted — eframe persistence off (no `save()`; forbid adding); mint token transient copy-once then dropped; `bearer` never shown; revoke token via stdin in `Zeroizing`, field cleared; nothing secret to `push_log`. PASS (Tests 6,7).
+3. Fail-closed / dry-run default — `sec_revoke_apply` def false ⇒ no `--apply` ⇒ daemon dry-run no egress; mint/relay require explicit fields, button disabled until valid. PASS (Tests 4,5).
+4. No-C trust boundary — Option B adds ZERO crate deps; `no-c.sh` graph unchanged. PASS.
+5. default-OFF / feature-gating parity — secretctl ships verbs unconditionally (no CLI feature gate to mirror); GUI degrades gracefully when binary absent (Test 8). PASS-by-construction.
 
 ## Risks
-GHES api-base: revoke must read ENVCTL_GITHUB_API_BASE the SAME way as mint (thread api_base identically;
-e2e covers via loopback). token-via-argv leak: default-recommend `--token -` stdin (same as secret add
---value-stdin). best-effort over-promise: doc-comment + --help state plainly it revokes only the relay's last
-engine-minted native token; explicit verb is the kill-switch for handed-off tokens.
+1. **PR #124 (`github-app revoke-token`) not yet on develop.** Under Architecture B the GUI does NOT compile-depend on secretctl, so the GUI builds/tests fine without #124 (revoke argv is pure strings; parity tests use verbatim replication, no secretctl import). The ONLY coupling is runtime — an installed secretctl without revoke-token errors gracefully (fail-closed matrix). #124 is auto-merging independently. **Mitigation: build off develop now with verbatim-replication tests; no rebase-on-#124 required.**
+2. **Test 1 dep edge.** A `#[cfg(test)]` dev-dep on `envctl-secretctl` would pull tonic/tokio into the GUI dev graph — AVOID; use verbatim replication (Risk-1 mitigation doubles here).
+3. **Subprocess stdout secret hygiene.** Engine must route mint stdout to structured `SecretsResult` only, never the generic log/stderr pump — one accidental `push_log` of mint stdout leaks the token. Enforced by routing + Test 7.
 
-## Out of scope (follow-up)
-GUI revoke parity (when GUI gains mint-github) · blanket auto-revoke-on-relay-revoke for handed-off tokens
-(needs persisted encrypted registry + GC, worse at-rest posture) · bulk all-tokens revoke (no GitHub endpoint).
+## Out of scope / named follow-ups
+- Relay-policy revoke / bearer revoke GUI (`relay revoke`/`relay revoke-token` `cli.rs:201-214`) — follow-up TASK if owner wants full relay-revoke parity.
+- Option A (embedded gRPC client) — revisit only if the GUI needs streaming daemon events the CLI doesn't expose.
+- secretctl path-discovery hardening (configured install prefix) — start current-exe → `~/.cargo/bin` → PATH.

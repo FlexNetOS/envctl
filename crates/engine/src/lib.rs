@@ -21,6 +21,7 @@ pub mod model; // Registry, OpResult, OpStatus, EnvReport, Wiring, RunPlan, RunS
 pub mod register; // Phase 4: synthesize the components.d drop-in (provenance + rebuild)
 pub mod runner; // ProcessRunner (real) + DryRunRunner impls of HookRunner
 pub mod runtime; // machine-local last-run state (XDG cache), out of the lock
+pub mod secrets; // TASK-0028: engine-owned `secretctl` subprocess seam for the GUI secrets verbs
 pub mod self_uninstall; // `self uninstall` — destructive, fail-closed, dry-run-by-default removal
 pub mod self_update; // `self update` CORE: fetch_latest_release / is_newer / verify_checksum
 pub mod telemetry; // sample() -> Telemetry (nvidia-smi CSV + sysinfo)
@@ -55,6 +56,10 @@ pub use self_update::{
     current_target, fetch_latest_release, is_newer, plan_self_update, verify_checksum,
     SelfUpdateAsset, SelfUpdateCheck, SelfUpdateRelease, GITHUB_REPO,
 };
+// Re-export `Zeroizing` so front-ends (the GUI) can build the secret stdin buffer for
+// `EngineCommand::Secrets` WITHOUT taking a direct `zeroize` dependency (Architecture B keeps the
+// GUI dep set frozen). The engine owns the zeroize dep; the GUI uses it through this path.
+pub use zeroize::Zeroizing;
 
 use std::path::PathBuf;
 use std::sync::Arc;
