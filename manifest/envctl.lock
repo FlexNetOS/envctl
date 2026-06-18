@@ -41,7 +41,7 @@ requires = ["bun"]
 resolved = ""
 
 [components.cognitum-seed-net]
-content_hash = "67912d96faab1a1b"
+content_hash = "e4444dd7225cd113"
 requires = []
 resolved = ""
 
@@ -79,7 +79,7 @@ requires = []
 resolved = ""
 
 [components.env-ctl]
-content_hash = "895e04cd75c0e060"
+content_hash = "33382f2b2c2d5850"
 requires = [
     "rustup",
     "sqld",

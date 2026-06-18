@@ -103,7 +103,7 @@ chmod 0755 /usr/local/sbin/cognitum-seed-linklocal
 cat > /etc/systemd/system/cognitum-seed-linklocal.service <<'UNIT'
 [Unit]
 Description=Cognitum Seed USB link-local host addressing (envctl secretd USB-unlock factor)
-Documentation=file:///home/drdave/Desktop/meta/envctl/manifest/cognitum-seed-net.toml
+Documentation=https://github.com/FlexNetOS/envctl/blob/main/manifest/cognitum-seed-net.toml
 After=systemd-udevd.service NetworkManager.service
 Wants=NetworkManager.service
 
@@ -210,7 +210,7 @@ chmod 0755 /usr/local/sbin/cognitum-seed-linklocal
 cat > /etc/systemd/system/cognitum-seed-linklocal.service <<'UNIT'
 [Unit]
 Description=Cognitum Seed USB link-local host addressing (envctl secretd USB-unlock factor)
-Documentation=file:///home/drdave/Desktop/meta/envctl/manifest/cognitum-seed-net.toml
+Documentation=https://github.com/FlexNetOS/envctl/blob/main/manifest/cognitum-seed-net.toml
 After=systemd-udevd.service NetworkManager.service
 Wants=NetworkManager.service
 
