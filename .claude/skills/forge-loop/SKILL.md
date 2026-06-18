@@ -51,10 +51,22 @@ each hf call; on failure, drop to the markdown path for that cycle.
 **Per-cycle verb sequence (the REAL shipped `hf` verbs).** (The shipped binary also has `hf drift`,
 `hf policy check-claim|check-edit|check-handoff`, `hf fleet`, `hf intake`, `hf dispatch`, `hf ship`,
 `hf review` — verified 2026-06-18; an earlier note here wrongly said `drift`/`policy` did not exist.)
-The core per-cycle verbs:
-- **Pick / resume:** `hf resume --json` from `$META_ROOT` — read `next_task_id` + `next_command`
-  (the kernel's `next_safe` dependency-DAG picker). That is the next item; do not re-derive ordering
-  from markdown when hf is present.
+> **⚠ Member-scoped picking is BLOCKED on kernel HFTASK-0054 (verified 2026-06-18, TASK-0044).** The
+> shipped `hf` is **CWD-relative for the ledger with no `--ledger`/`--member` override**. So the
+> member-scoped *live picker* verbs (`hf resume --json` / `hf claim --next`) **cannot** run cleanly for
+> envctl yet: run from the envctl member dir they **create a forbidden per-repo `.handoff/ledger.db`**
+> (residency violation); run from `$META_ROOT` they read the **FLEET** ledger (the kernel's own
+> `HFTASK-*` loop), **not** envctl's `TASK-*` cards. envctl's 53 dependency-DAG cards ARE minted
+> (`.handoff/tasks/TASK-*.task.json`, per-member store, no contamination — TASK-0044), so the
+> **dependency authority substrate exists**; only the live picker verb awaits HFTASK-0054.
+> **Until HFTASK-0054 lands, pick like this:**
+- **Pick / resume (TODAY):** read the authoritative open/DAG set with **`hf fleet render envctl`** from
+  `$META_ROOT` — it renders envctl's packet from envctl's OWN cards (read-only on the FLEET ledger,
+  creates **no** per-repo ledger, surfaces only `TASK-*`, zero `HFTASK-*` leak). Take the top unblocked
+  `TASK-####` from that render. The markdown sub-note path remains the live-pick fallback. **Do NOT run
+  `hf resume`/`hf claim --next` from the envctl member dir** (forbidden-ledger hazard) until HFTASK-0054
+  adds a `--ledger`/`--member` override — at which point this reverts to `hf resume --json` +
+  `hf claim --next` as the dep-DAG picker.
 - **Cycle start:** `hf claim <TASK-####>` (witnessed claim; mesh-coordinated so two sessions can't
   grab the same task).
 - **Mid-cycle:** `hf checkpoint --auto` (routine boundary) or `hf checkpoint --note "<reason>"`
