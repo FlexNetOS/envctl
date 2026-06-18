@@ -51,22 +51,18 @@ each hf call; on failure, drop to the markdown path for that cycle.
 **Per-cycle verb sequence (the REAL shipped `hf` verbs).** (The shipped binary also has `hf drift`,
 `hf policy check-claim|check-edit|check-handoff`, `hf fleet`, `hf intake`, `hf dispatch`, `hf ship`,
 `hf review` — verified 2026-06-18; an earlier note here wrongly said `drift`/`policy` did not exist.)
-> **⚠ Member-scoped picking is BLOCKED on kernel HFTASK-0054 (verified 2026-06-18, TASK-0044).** The
-> shipped `hf` is **CWD-relative for the ledger with no `--ledger`/`--member` override**. So the
-> member-scoped *live picker* verbs (`hf resume --json` / `hf claim --next`) **cannot** run cleanly for
-> envctl yet: run from the envctl member dir they **create a forbidden per-repo `.handoff/ledger.db`**
-> (residency violation); run from `$META_ROOT` they read the **FLEET** ledger (the kernel's own
-> `HFTASK-*` loop), **not** envctl's `TASK-*` cards. envctl's 53 dependency-DAG cards ARE minted
-> (`.handoff/tasks/TASK-*.task.json`, per-member store, no contamination — TASK-0044), so the
-> **dependency authority substrate exists**; only the live picker verb awaits HFTASK-0054.
-> **Until HFTASK-0054 lands, pick like this:**
-- **Pick / resume (TODAY):** read the authoritative open/DAG set with **`hf fleet render envctl`** from
-  `$META_ROOT` — it renders envctl's packet from envctl's OWN cards (read-only on the FLEET ledger,
-  creates **no** per-repo ledger, surfaces only `TASK-*`, zero `HFTASK-*` leak). Take the top unblocked
-  `TASK-####` from that render. The markdown sub-note path remains the live-pick fallback. **Do NOT run
-  `hf resume`/`hf claim --next` from the envctl member dir** (forbidden-ledger hazard) until HFTASK-0054
-  adds a `--ledger`/`--member` override — at which point this reverts to `hf resume --json` +
-  `hf claim --next` as the dep-DAG picker.
+> **Ledger model (ADR-0004 §3.3 rev + ADR-0052, verified vs handoff PR #86).** envctl keeps its own
+> **per-repo `.handoff/ledger.db`** — the **gitignored** witnessed *source of record* — and a
+> SessionStop hook (`hf checkpoint --auto && hf handoff && hf sync --auto`) **auto-rolls** its events
+> into the central FLEET ledger (`$META_ROOT/.handoff/ledger.db`). So `hf resume`/`hf claim` run **in
+> the envctl member dir** read envctl's own per-repo ledger + its `TASK-*` cards — this is correct (the
+> per-repo ledger is *expected*, NOT a "forbidden" db; that was a stale pre-§3.3 reading). A
+> *git-committed* binary ledger is BANNED (`hf fleet status` flags a tracked one). `HFTASK-0054`'s
+> `--ledger`/`HANDOFF_LEDGER` override (landed, PR #85) is for rendering against the **shared/central**
+> ledger — what `hf fleet render envctl` does from `$META_ROOT`.
+- **Pick / resume:** `hf resume --json` (in the envctl member dir) → `next_task_id` + `next_command`
+  from the `next_safe` DAG over envctl's per-repo ledger + cards. Cross-repo board = `hf fleet render
+  envctl` from `$META_ROOT`. Markdown sub-note path = fallback when hf is absent.
 - **Cycle start:** `hf claim <TASK-####>` (witnessed claim; mesh-coordinated so two sessions can't
   grab the same task).
 - **Mid-cycle:** `hf checkpoint --auto` (routine boundary) or `hf checkpoint --note "<reason>"`
@@ -101,13 +97,12 @@ capability or one component per item — so a cycle fits comfortably under the b
      (do not re-fire from this session). This is the cycle-budget trigger (always also runs the
      boundary work as part of wrap-up, so a hand-off never skips a reap/retro).
 3. **Pick** the next item:
-   - **hf present:** read the next dep-safe item from **`hf fleet render <member>`** (run from
-     `$META_ROOT`, read-only — the safe authority while the shipped `hf` is CWD-relative, **HFTASK-0054**;
-     see the warning above). Do **NOT** run `hf resume`/`hf claim --next` from the member dir — it
-     creates a forbidden per-repo `ledger.db` and/or reads the wrong (FLEET) scope. (Reverts to
-     `hf resume --json` + `hf claim` once HFTASK-0054 lands a `--ledger`/`--member` override.)
-   - **hf absent (or HFTASK-0054 not yet landed):** the top unchecked unblocked `- [ ]` item, honoring
-     deps parsed from sub-notes — the markdown fallback.
+   - **hf present:** `hf resume --json` (in the envctl member dir) → take `next_task_id` from the
+     `next_safe` DAG picker (reads envctl's per-repo ledger + cards — the legitimate source of record,
+     ADR-0004 §3.3), then `hf claim <TASK-####>`. The per-repo ledger auto-syncs to central at session
+     end (`hf sync --auto`); `hf fleet render envctl` from `$META_ROOT` is the cross-repo view.
+   - **hf absent:** the top unchecked unblocked `- [ ]` item, honoring deps parsed from sub-notes — the
+     markdown fallback.
    - **`- [!!]` SUPERVISED/CRITICAL refusal:** if the picked item is marked `- [!!]` (e.g. the
      rtk-hook install, a live n8n/smoke test), the loop **REFUSES to auto-run it** — write
      `.handoff/loop/NEEDS-HUMAN` (with the item id + why it needs a human), do **not** claim/build it,
