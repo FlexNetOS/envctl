@@ -74,6 +74,20 @@ just the loop state.)
      unmerged work hides a not-actually-landed change.
    - **Promote cross-namespace residuals.** Any non-loop-local open item in a namespaced sub-loop
      (`.handoff/loop/<sub>/HANDOFF.md`, e.g. rust-port) gets promoted into the flat backlog.
+   - **Drain `proposed-upgrades.md` — FAIL-CLOSED (the self-improvement closure gate).** The
+     evolution-steward (Phase E, step 2) writes structural harness proposals to
+     `.handoff/loop/proposed-upgrades.md`; they are ESCALATED, not auto-applied. Nothing else tracks
+     them to a decision, so they silently accumulate (the audit found 49 undrained lines). Before the
+     checkpoint, **drain every entry** in that file to a tracked disposition:
+     - **Still open** → append a `- [?]` harness-upgrade item to the backlog citing the proposal, so it
+       enters the normal pick flow with an owner-decision status.
+     - **Already addressed** (a prior cycle shipped it — verify against HEAD, don't assume) → record it
+       resolved with the commit/PR, do NOT re-open.
+     - **Declined / accept-as-is** (owner chose an option, or "do nothing" is the recommendation) →
+       record the disposition.
+     Then **reset `proposed-upgrades.md` to its drained header** (empty body) so a non-empty file always
+     means "undrained proposals exist." A non-empty `proposed-upgrades.md` at the end of wrap-up means
+     wrap-up is **INCOMPLETE** — same fail-closed shape as the follow-up drain above.
    - Commit these backlog edits as part of step 5 (they ARE handoff state).
 
 4. **Write the checkpoint** — spawn `continuity-steward` with the worktree, the in-flight cycle, and

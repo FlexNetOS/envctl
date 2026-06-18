@@ -464,7 +464,19 @@ fmt, clippy). Remaining follow-ups extracted from each:
     `cycles_total`. Add to `ci/gates/harness-scripts.sh` family or its own step.
   - **Deps:** none. **Risk:** very low (new gate, additive).
 
-- [ ] **TASK-0042 (T1.2, P1):** Drain `proposed-upgrades.md` into the backlog. The evolution-steward
+- [x] **TASK-0042 (T1.2, P1) — DONE 2026-06-18 (direct-to-develop):** Mechanism shipped + existing
+  file drained. `session-relay-wrap-up` step 3b now drains `proposed-upgrades.md` fail-closed (open →
+  `- [?]` backlog item; addressed → record resolved vs HEAD; declined → record disposition; then reset
+  the file to its drained header — a non-empty file means wrap-up is INCOMPLETE).
+  **Drained the 49-line 2026-06-18 backlog:**
+  - *P1 (merge-driver test)* → **RESOLVED** — `scripts/tests/test-merge-driver.sh` shipped + wired
+    into `ci/gates/harness-scripts.sh` (prior session). No new work.
+  - *P2 (reaper test)* → **RESOLVED** — `scripts/tests/test-reaper.sh` shipped + wired into the same
+    gate. No new work.
+  - *P3 (scheduled reaper)* → **DECLINED, accept (a)** — reap stays loop-boundary-only (resume +
+    wrap-up); a CI/cron reaper has no local workspace to clean. Documented in forge-loop "Worktree
+    hygiene". `proposed-upgrades.md` reset to drained header.
+  Original entry: Drain `proposed-upgrades.md` into the backlog. The evolution-steward
   writes structural proposals to `.handoff/loop/proposed-upgrades.md` (currently 49 lines, undrained);
   nothing tracks them to accept/reject closure, so escalations sit indefinitely.
   - **Files:** `.claude/skills/session-relay-wrap-up/SKILL.md` (extend step 3b), `.handoff/loop/
