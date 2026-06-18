@@ -238,9 +238,20 @@ item per the markdown.
 ## Stop conditions & sentinel write semantics (end the loop — no re-fire)
 Sentinels live under `.handoff/loop/`. **Phase-0 reads all three (STOP, NEEDS-HUMAN, DONE) before
 picking;** write them as follows:
-- **DONE** — write `.handoff/loop/DONE` only when completion is *confirmed*: `hf resume --json`
-  reports `next_command: "done"` (hf present) **or** all cards are `done` / all backlog items
-  `- [x]`/`- [!]` (hf absent). Then report the DONE summary, no re-fire.
+- **DONE** — write `.handoff/loop/DONE` only when completion is *confirmed* AND the left-behind
+  sweep clears:
+  1. *Completion confirmed:* `hf resume --json` reports `next_command: "done"` (hf present) **or** all
+     cards are `done` / all backlog items `- [x]`/`- [!]` (hf absent).
+  2. **Pre-DONE left-behind sweep (independent re-derivation — fail-closed).** Before writing DONE,
+     spawn an independent completeness critic (an `invariant-guardian` pass scoped to "what's missing")
+     that **re-derives the expected surface from the plans/specs** (`.handoff/loop/cycle/*/01_architect_
+     plan.md` `## Unit ledger` rows for the completed items, plus the backlog goals + `docs/`) and
+     **diffs it against the delivered code** — NOT against the backlog's own `- [x]` marks (the backlog
+     trusting itself is exactly the drift). Every ledger unit must be present+wired in HEAD. If the
+     re-derivation surfaces an un-built/unwired unit, or it cannot re-derive a scope at all (zero/partial
+     harvest), the result is **INCONCLUSIVE → write `.handoff/loop/NEEDS-HUMAN`** with the gap, NOT DONE.
+     "Clean" requires a positive re-derivation that matches, not the mere absence of open `- [ ]`.
+  Only when BOTH hold: write DONE, report the summary, no re-fire.
 - **NEEDS-HUMAN** — write `.handoff/loop/NEEDS-HUMAN` on (a) an unroutable guardian **FAIL** /
   NEEDS-DECISION, **or** (b) encountering any `- [!!]` SUPERVISED/CRITICAL item (rtk-hook, live
   smoke). Stop and surface for a human; do not auto-pick around it.

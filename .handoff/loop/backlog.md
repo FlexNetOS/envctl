@@ -559,7 +559,13 @@ fmt, clippy). Remaining follow-ups extracted from each:
     it from the pick; the structured PR-state field is present.
   - **Deps:** complements TASK-0044; can land independently. **Risk:** low-medium.
 
-- [ ] **TASK-0046 (T2.3, P1, HIGH value):** Symbol-grain completeness ledger (adopt the rust-port
+- [x] **TASK-0046 (T2.3, P1, HIGH value) — DONE 2026-06-18 (direct-to-develop):** Symbol-grain
+  completeness ledger shipped. feature-architect plan now has a **`## Unit ledger`** (one tagged `U#`
+  row per concrete deliverable — Engine method / Event / type / CLI flag / RPC / GUI control /
+  component / test — with `file::symbol` + how it is wired); invariant-guardian gained a
+  **Completeness check** that proves each row PRESENT (AST) AND WIRED (has a caller) — any missing or
+  unwired row is a FAIL, plus a `## Unit ledger` report table. Closes the backlog-grain "done ≠
+  complete" drift at symbol grain. Symbol-grain completeness ledger (adopt the rust-port
   *cartographer* pattern). forge tracks completeness only at task-card grain in `backlog.md` — "done"
   ≠ "the surface area exists & is wired." Introduce a per-cycle ledger of the concrete units a task must
   produce (Engine method / `Event` / CLI flag / RPC / component) and whether each is *present* and
@@ -571,7 +577,13 @@ fmt, clippy). Remaining follow-ups extracted from each:
     status; a missing unit blocks PASS.
   - **Deps:** none structurally; foundation for TASK-0047. **Risk:** medium.
 
-- [ ] **TASK-0047 (T2.4, P1, HIGH value):** Pre-DONE left-behind sweep (adopt cartographer's
+- [x] **TASK-0047 (T2.4, P1, HIGH value) — DONE 2026-06-18 (direct-to-develop):** Pre-DONE
+  left-behind sweep shipped. forge-loop's DONE sentinel write now requires, in addition to completion-
+  confirmed, an **independent re-derivation** (a completeness-critic guardian pass) that derives the
+  expected surface from the plans' `## Unit ledger` + goals + `docs/` and diffs vs **delivered code**
+  (not vs the backlog's own `- [x]`); a surfaced un-built unit or a zero/partial harvest →
+  **INCONCLUSIVE → NEEDS-HUMAN**, not DONE. "Clean" now requires a positive matching re-derivation.
+  Builds on TASK-0046's ledger. Pre-DONE left-behind sweep (adopt cartographer's
   independent re-derivation). forge's DONE trusts the backlog is exhaustive; rust-port re-harvests scope
   and fails **INCONCLUSIVE** rather than "clean." Add a completeness critic before terminal DONE that
   re-derives the expected surface from the plan/spec and diffs vs what was built.

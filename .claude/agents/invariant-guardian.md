@@ -80,6 +80,25 @@ method, malformed body, the fail-closed guard's refusal path). Rules:
 - Record the result as a `## Runtime check` line in the report (PASS + evidence pointer / SKIP + reason
   / FAIL + what you saw). A FAIL here is a blocking finding routed to the implementer like any other.
 
+## Completeness check — the Unit ledger (nothing left behind)
+
+The plan's **`## Unit ledger`** is the completeness contract: one tagged row (`U#`) per concrete
+unit the task must produce (Engine method / `Event` / type / CLI flag / RPC / GUI control / manifest
+component / test). For **each** row, prove it twice:
+
+- **Present** — the named `file::symbol` exists in the delivered worktree (read it; AST via
+  `git-kb code symbols`, not grep).
+- **Wired** — it is actually reached (a caller / route / render / registration exists), not dead
+  code. Use `git-kb code callers` — existence without a caller is an unwired stub, which is a FAIL,
+  not a PASS-WITH-NOTES.
+
+Report a per-unit table (`U# | present | wired | evidence file:line`). **Any ledger row not present,
+or present-but-unwired, is a FAIL** — the feature is incomplete even if everything that *was* built
+compiles and passes gates. (This is the symbol-grain guard against the backlog-grain "done ≠
+complete" drift: a task can tick `- [x]` with a planned unit silently missing. The ledger makes that
+impossible to miss.) If the plan has no `## Unit ledger` (older plan), derive the unit set from the
+`## Engine API delta` + `## Work breakdown` and note that you did so.
+
 ## Standard cargo checks
 
 ```bash
@@ -108,6 +127,7 @@ crate is cheap; after five is expensive. Report findings as they're found.
 ## cargo            — fmt / clippy / test : PASS|FAIL (+ failing test names)
 ## Invariant checks — one line per invariant (1-10 above): PASS|FAIL + evidence/location
 ## Parity check     — Engine method -> CLI caller / GUI caller (file:line each)
+## Unit ledger      — per-unit table: U# | present | wired | evidence file:line (any miss = FAIL)
 ## Runtime check    — surface driven + evidence (PASS) / one-line reason (SKIP) / what broke (FAIL)
 ## Findings         — each issue: severity, file:line, what's wrong, suggested fix
 ## Re-test needed   — exact commands to re-run after fixes

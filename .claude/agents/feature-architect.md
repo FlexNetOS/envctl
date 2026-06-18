@@ -82,6 +82,14 @@ sections:
 ## Safety guards      — guards + --apply/--build gating for any mutation
 ## Lock/manifest sync — what (if anything) must change
 ## Work breakdown     — ordered, leaf-first steps the implementer follows
+## Unit ledger        — the COMPLETENESS CONTRACT: one row per concrete unit this task must
+                        produce — every new/changed Engine method, `Event` variant, type, CLI
+                        flag/subcommand, RPC, GUI screen/control, manifest component, and the
+                        test(s) that cover each. Tag each `U#` and state where it lives
+                        (`file::symbol`) + how it is wired (its caller). The guardian checks each
+                        row present AND wired; a row left unbuilt blocks PASS. This is the
+                        symbol-grain "nothing left behind" list — `## Work breakdown` is the
+                        *order*, this is the *checklist of what must exist when done*.
 ## Verification plan  — tests to add + which CI gates are touched
 ## Runtime surface    — the observable surface a reviewer DRIVES to see this work execute, +
                         the EXACT drive path. One of: CLI verb (the command + args), GUI screen
