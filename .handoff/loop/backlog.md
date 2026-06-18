@@ -490,18 +490,24 @@ fmt, clippy). Remaining follow-ups extracted from each:
 
 ### Tier 2 — pick-correctness + completeness (small design decision per item)
 
-- [ ] **TASK-0044 (T2.1, P1):** Machine-checkable pick-time dependency check. Cards were never minted
-  (`.handoff/tasks/` is just `.gitkeep`), so ordering is *always* the markdown-subnote fallback while
-  the skill/architect/steward all assert "cards/`hf next_safe` are authoritative" — two ordering
-  stories, only the prose one live. Dependency edges live in free prose (the TASK-0020 wrong-surface
-  miss is exactly this). **Design choice:** (a) actually mint the cards so `hf next_safe` is real, OR
-  (b) add a structured dep front-matter block + a `pick-check` that refuses to claim an item whose named
-  deps are not `- [x]`. Recommend (b) first (cheaper, no hf dependency), (a) when Epic A lands hf.
-  - **Files:** `.claude/skills/forge-loop/SKILL.md` (pick step: parse structured deps, refuse on unmet),
-    `.handoff/loop/backlog.md` (convert prose `## Order` / sub-note deps → a structured `deps:` line per
-    item).
-  - **Acceptance:** picking an item with an unmet dep is refused with the blocking dep id named.
-  - **Deps:** none. **Risk:** medium.
+- [ ] **TASK-0044 (T2.1, P1):** Pick-time dependency authority via the **hf kernel** (LOCKED
+  2026-06-18, owner). Cards were never minted (`.handoff/tasks/` is just `.gitkeep`), so ordering is
+  *always* the markdown-subnote fallback while the skill/architect/steward assert "cards/`hf next_safe`
+  are authoritative" — two ordering stories, only the prose one live (the TASK-0020 wrong-surface miss
+  is exactly this). **LOCKED DECISION:** adopt the **kernel-backed loop** — `handoff-loop-init` →
+  `handoff-loop-run` driving `hf init` + `hf next_safe` (the witnessed-ledger DAG picker) as the
+  dependency authority, retiring the markdown fallback as the *primary* path. (Not the front-matter
+  pick-check — owner chose the kernel.)
+  - **Files:** adopt `handoff-loop-init`/`handoff-loop-run` (from harness_hub `harness/skills/`),
+    `.claude/skills/forge-loop/SKILL.md` (pick step delegates to `hf next_safe`; markdown is fallback
+    only when hf is absent/non-resident), `.handoff/tasks/*.task.json` (cards minted from backlog).
+  - **Acceptance:** `hf resume --json` returns `next_task_id` from the real DAG; picking an item whose
+    `blocked_by` is unmet is refused by the kernel, not by prose parsing.
+  - **Deps:** **Epic A** (hf must be on PATH, built, and ledger-resident at `$META_ROOT/.handoff/
+    ledger.db`). **⚠ Blocker:** hf currently links bundled C SQLite (FlexNetOS/handoff#71) — violates
+    the no-C invariant; resolve or accept-with-NOTE before hf is the authority. If hf is not live when
+    this task is picked, mark `- [!]` blocked on Epic A rather than silently using the markdown path.
+  - **Risk:** medium-high (couples the loop to the kernel; gated on Epic A).
 
 - [ ] **TASK-0045 (T2.2, P1):** Fail-closed in-flight re-poll/promote sweep on resume. Tick-on-merged
   leaves armed-not-merged work as `- [~]` and says "next session re-polls," but `session-relay-resume`
@@ -540,14 +546,20 @@ fmt, clippy). Remaining follow-ups extracted from each:
 
 ### Tier 3 — structural (A2 maturity + behavioral coverage + hub conformance)
 
-- [ ] **TASK-0048 (T3.1, P1):** A2 cross-repo merge atomicity. A2 commits/PRs each repo independently
-  after that repo's guardian passes — repo A can MERGE before repo B's guardian FAILs, leaving a
-  half-landed feature with no rollback path or backlog record of the split state.
-  - **Files:** `.claude/skills/feature-forge/SKILL.md` (Phase 2-A2: arm auto-merge only at the
-    all-repos-green barrier; OR record a `partial-landed` backlog state + documented reconcile/revert),
-    `.handoff/loop/backlog.md` legend (+ a `partial-landed` marker if chosen).
-  - **Acceptance:** an A2 cycle where one repo FAILs does not leave another repo merged with no record;
-    either no merge fired, or the split state is tracked with a reconcile procedure.
+- [ ] **TASK-0048 (T3.1, P1):** A2 cross-repo merge atomicity — **all-green barrier** (LOCKED
+  2026-06-18, owner). A2 commits/PRs each repo independently after that repo's guardian passes — repo A
+  can MERGE before repo B's guardian FAILs, leaving a half-landed feature with no rollback path.
+  **LOCKED DECISION:** arm auto-merge for **every** target repo ONLY after **all** repos' guardians
+  PASS (the all-green barrier) — half-landed becomes impossible by construction. (Not the
+  allow-partial + `partial-landed`-state option.)
+  - **Caveat (owner):** the all-green barrier is across target **repos**, NOT across OS platforms —
+    do **not** add macOS/Windows/Ubuntu cross-platform build matrices to the "all-green" gate right
+    now. The barrier waits on each repo's existing guardian/CI, not a new OS matrix.
+  - **Files:** `.claude/skills/feature-forge/SKILL.md` (Phase 2-A2: hold all per-repo auto-merge arming
+    until the all-repos-green barrier), `.claude/agents/rust-implementer.md` (commit-on-PASS but
+    arm-merge deferred to the barrier).
+  - **Acceptance:** an A2 cycle where one repo FAILs leaves NO sibling repo merged (no auto-merge was
+    armed before the barrier); the failed repo is `- [!]` blocked, the cycle does not reach Done.
   - **Deps:** none. **Risk:** medium-high (touches the cross-repo commit/merge flow).
 
 - [ ] **TASK-0049 (T3.2, P1):** Cross-repo impact map before A2 grit locks (adopt the
@@ -578,19 +590,25 @@ fmt, clippy). Remaining follow-ups extracted from each:
     observed, not inferred from source.
   - **Deps:** **TASK-0043** (builds on runtime-verify). **Risk:** medium.
 
-- [ ] **TASK-0052 (T3.5, P2):** Register forge-loop into harness_hub (packaging/cataloging conformance).
-  forge-loop is unregistered/unpackaged/unvalidated by the hub though it already *consumes* the hub's
-  shared layer (byte-identical `harness-evolution`, the whole `rust-port`/`session-relay`/`icm-memory`
-  families). **Design choice:** register-as-cataloged-peer vs full eject/package — given envctl's
-  "hand-authored outside the pipeline" rule, recommend a `registry.json` row + `entries/<id>.md` (catalog
-  presence) WITHOUT forcing the full factory-minted packaged shape.
-  - **Files:** `harness_hub/registry.json` + `harness_hub/entries/forge-loop.md` (or `feature-forge.md`)
-    in the **harness_hub repo** (cross-repo — its own PR), referencing `harness_hub/scripts/register.sh`
-    + the `hub-validate` crate.
-  - **Acceptance:** `harness_hub` validator passes with forge-loop catalogued; envctl CLAUDE.md notes the
-    registration.
-  - **Deps:** capstone — do last. **Risk:** low (cross-repo, mostly docs/registry). **Cross-repo** (A2
-    shape: envctl note + harness_hub row).
+- [ ] **TASK-0052 (T3.5, P2):** **Full eject/package** forge-loop into harness_hub (LOCKED 2026-06-18,
+  owner). forge-loop is unregistered/unpackaged/unvalidated by the hub though it already *consumes* the
+  hub's shared layer (byte-identical `harness-evolution`, the whole `rust-port`/`session-relay`/
+  `icm-memory` families). **LOCKED DECISION:** convert the Feature-Forge family into the **factory-minted
+  packaged-harness shape** (like `meta-plugin`/`rust-port`/`code-research`) — ejectable into other repos
+  — NOT a catalog-row-only entry.
+  - **⚠ Doctrine change:** this **overrides** envctl CLAUDE.md's "harness is hand-authored and
+    git-tracked, intentionally OUTSIDE the kasetto/agent-env pipeline" rule for the Feature-Forge family.
+    Reconcile that CLAUDE.md section + the change-history table as part of this task. Prefix the core
+    specialists that would collide in the hub's shared pool (`feature-architect`, `rust-implementer`,
+    `invariant-guardian`, `handoff-kernel-engineer`) per the Packaged-Harness Standard's agent-pool rule.
+  - **Files:** harness_hub factory shape — `harness/skills/feature-forge/` + bundled `scripts/eject.sh`
+    + `references/eject.md`; `registry.json` row + `entries/<id>.md`; run `scripts/register.sh` + the
+    `hub-validate` crate; conform to `docs/packaged-harness-standard.md`. envctl side: CLAUDE.md
+    reconcile + (if ejected back) the generated skills.
+  - **Acceptance:** `harness_hub` `hub-validate` passes with the Feature-Forge harness packaged +
+    registered + ejectable; envctl CLAUDE.md doctrine reconciled.
+  - **Deps:** capstone — do last (the whole family must be stable first). **Risk:** medium (doctrine
+    shift + cross-repo factory work). **Cross-repo** (envctl + harness_hub).
 
 ## Key finding (carried)
 
