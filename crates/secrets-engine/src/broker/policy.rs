@@ -111,10 +111,19 @@ pub const MAX_BEARER_TTL_SECS: i64 = 24 * 60 * 60;
 /// The single TTL choke point (HF-15): clamps the requested TTL against the policy TTL AND the
 /// 24h ceiling, saturating (never wraps), and refuses a dead/negative TTL (FS-S3). Returns the
 /// absolute `expires_at` epoch-seconds, or `None` to refuse.
+///
+/// `requested_ttl_secs == 0` means "unspecified" — the caller (e.g. `env-ctl run`, which mints with
+/// `ttl_secs: 0`) is deferring entirely to the policy ceiling + the 24h cap. Treating 0 as a literal
+/// `min()` operand would force the result to 0 and refuse every such mint, so 0 falls back to the 24h
+/// ceiling here. A *negative* requested TTL stays malformed and is still refused (FS-S3); a
+/// non-positive `policy_ttl_secs` (expired/disabled policy) also still refuses.
 pub fn clamp_ttl(now: i64, policy_ttl_secs: i64, requested_ttl_secs: i64) -> Option<i64> {
-    let ttl = requested_ttl_secs
-        .min(policy_ttl_secs)
-        .min(MAX_BEARER_TTL_SECS);
+    let requested = if requested_ttl_secs == 0 {
+        MAX_BEARER_TTL_SECS
+    } else {
+        requested_ttl_secs
+    };
+    let ttl = requested.min(policy_ttl_secs).min(MAX_BEARER_TTL_SECS);
     if ttl <= 0 {
         return None;
     }

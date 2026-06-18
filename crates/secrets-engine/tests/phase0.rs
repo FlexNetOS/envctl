@@ -68,6 +68,15 @@ fn clamp_ttl_never_exceeds_24h_and_refuses_nonpositive() {
     // dead/negative TTL is refused (FS-S3).
     assert!(clamp_ttl(now, 0, 100).is_none());
     assert!(clamp_ttl(now, 100, -5).is_none());
+    // requested == 0 means "unspecified" → defer to the policy ceiling + 24h cap (the `env-ctl run`
+    // path mints with ttl_secs: 0). It must NOT refuse just because the request was left blank.
+    let exp0 = clamp_ttl(now, 90 * 24 * 3600, 0).expect("ttl_secs:0 falls back to the 24h ceiling");
+    assert_eq!(exp0 - now, MAX_BEARER_TTL_SECS);
+    // a 0 request under a short policy still respects the (shorter) policy ceiling.
+    let exp0p = clamp_ttl(now, 3600, 0).expect("0 request under a 1h policy yields 1h");
+    assert_eq!(exp0p - now, 3600);
+    // but a 0 request under a dead policy still refuses.
+    assert!(clamp_ttl(now, 0, 0).is_none());
 }
 
 #[test]
