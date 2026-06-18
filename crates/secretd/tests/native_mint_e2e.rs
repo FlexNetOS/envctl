@@ -592,6 +592,149 @@ async fn mint_github_locked_vault_fails_precondition() {
 }
 
 // ============================================================================================
+// TASK-0027: `secretctl github-app revoke-token` — the `Vault.RevokeGithubToken` RPC drives a
+// `DELETE /installation/token` over the REAL DaemonHttpTransport against the mock. The revoke
+// authenticates with the token ITSELF (no App credential needed) — only an unlocked vault.
+// ============================================================================================
+
+const REVOKE_E2E_TOKEN: &[u8] = b"ghs_e2e_revoke_me";
+
+/// Drive `Vault.RevokeGithubToken` over the wire.
+async fn revoke_github_over_wire(
+    sock: &std::path::Path,
+    token: &[u8],
+    apply: bool,
+) -> Result<v1::RevokeResp, tonic::Status> {
+    let mut c = v1::vault_client::VaultClient::new(connect(sock.to_path_buf()).await);
+    c.revoke_github_token(v1::RevokeGithubTokenReq {
+        token: token.to_vec(),
+        apply,
+        installation_id: 0,
+    })
+    .await
+    .map(|r| r.into_inner())
+}
+
+/// Init the vault (passphrase only) + leave it UNLOCKED in-process — the revoke RPC requires only an
+/// unlocked vault (no App credential), and the explicit-token verb supplies its own bearer.
+fn init_and_unlock_only(engine: &Engine) {
+    let sink = EventSink::null();
+    engine
+        .init_vault(
+            Zeroizing::new("correct horse battery staple".to_string()),
+            None,
+            None,
+            cheap_argon2(),
+            &sink,
+        )
+        .expect("init_vault");
+    engine
+        .unlock(
+            envctl_secrets::Unlock::Passphrase(Zeroizing::new(
+                "correct horse battery staple".to_string(),
+            )),
+            &sink,
+        )
+        .expect("unlock");
+}
+
+/// Apply path: the daemon fires the DELETE against the 204 mock ⇒ `{count_revoked:1, dry_run:false}`.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn revoke_github_token_over_wire_204_succeeds() {
+    let _g = serial_guard().await;
+    let (base, mock) = spawn_mock_github(204, "");
+    std::env::set_var("ENVCTL_GITHUB_API_BASE", &base);
+
+    let event_wire: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(Vec::new()));
+    let (_dir, paths) = temp_paths("revokegh-ok");
+    let engine = make_engine_with_daemon_transport(&paths);
+    init_and_unlock_only(&engine);
+
+    let sock = paths.control_socket();
+    serve(engine.clone(), sock.clone());
+    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+
+    let resp = revoke_github_over_wire(&sock, REVOKE_E2E_TOKEN, true)
+        .await
+        .expect("revoke ok");
+    let _ = mock.join();
+    assert_eq!(resp.count_revoked, 1, "204 ⇒ one token revoked");
+    assert!(!resp.dry_run, "apply=true ⇒ not a dry-run");
+
+    // The token must NEVER appear on the (unlock) event-stream wire.
+    let ew = event_wire.lock().unwrap();
+    assert!(
+        !contains(&ew, REVOKE_E2E_TOKEN),
+        "token must never cross the event-stream wire"
+    );
+    drop(ew);
+
+    std::env::remove_var("ENVCTL_GITHUB_API_BASE");
+}
+
+/// Dry-run (apply=false) contacts NOTHING — no DELETE on the wire — and reports `dry_run:true`. The
+/// mock is NOT spawned, so any egress attempt would hang/fail the test; it returns quickly instead.
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn revoke_github_token_dry_run_contacts_nothing() {
+    let _g = serial_guard().await;
+    // Point at an UNROUTED base: if the daemon egressed, the call would error — it must not egress.
+    std::env::set_var("ENVCTL_GITHUB_API_BASE", "http://127.0.0.1:1");
+
+    let event_wire: Arc<Mutex<Vec<u8>>> = Arc::new(Mutex::new(Vec::new()));
+    let (_dir, paths) = temp_paths("revokegh-dry");
+    let engine = make_engine_with_daemon_transport(&paths);
+    init_and_unlock_only(&engine);
+
+    let sock = paths.control_socket();
+    serve(engine.clone(), sock.clone());
+    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+    let _ = &event_wire;
+
+    let resp = revoke_github_over_wire(&sock, REVOKE_E2E_TOKEN, false)
+        .await
+        .expect("dry-run ok");
+    assert_eq!(resp.count_revoked, 0, "dry-run reports no revoke");
+    assert!(resp.dry_run, "apply=false ⇒ dry_run");
+
+    std::env::remove_var("ENVCTL_GITHUB_API_BASE");
+}
+
+/// A locked vault ⇒ the revoke fails closed with `failed_precondition` (mint's auth floor).
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn revoke_github_token_locked_vault_fails_precondition() {
+    let _g = serial_guard().await;
+    std::env::remove_var("ENVCTL_GITHUB_API_BASE");
+    let (_dir, paths) = temp_paths("revokegh-locked");
+    let engine = make_engine_with_daemon_transport(&paths);
+    // Init the vault but DO NOT unlock — it stays locked.
+    {
+        let sink = EventSink::null();
+        engine
+            .init_vault(
+                Zeroizing::new("correct horse battery staple".to_string()),
+                None,
+                None,
+                cheap_argon2(),
+                &sink,
+            )
+            .expect("init_vault");
+    }
+
+    let sock = paths.control_socket();
+    serve(engine.clone(), sock.clone());
+    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
+
+    let err = revoke_github_over_wire(&sock, REVOKE_E2E_TOKEN, true)
+        .await
+        .expect_err("locked vault must refuse the revoke");
+    assert_eq!(
+        err.code(),
+        tonic::Code::FailedPrecondition,
+        "locked vault ⇒ failed_precondition, got: {err:?}"
+    );
+}
+
+// ============================================================================================
 // TASK-0026: `secretctl github-app enroll` — the enroll RPC pair (Vault.Add broker_only +
 // Vault.SetGithubAppId) writes EXACTLY what the TASK-0020 per-call mint reads. The round-trip
 // (enroll over the wire → MintGithub succeeds against the mock) is the load-bearing gate proving

@@ -1,168 +1,80 @@
-# Implementation log: TASK-0031-PR2 — F2 relay-edge hardening · STATUS: GREEN
+# Implementation log: TASK-0027 — GitHub installation-token early-revoke (DELETE /installation/token)
 
-All four sub-features (PR-2a anti-abuse core + PR-2b opt-in mTLS) landed on branch `task-0031-pr2`
-in a single cycle. ZERO new dependencies. relay-edge-OFF build byte-for-byte unaffected.
+**STATUS: GREEN**
+
+Additive `DELETE /installation/token` early-revoke through the EXISTING `HttpTransport` seam (zero new
+deps). Exposed as a new `RevokeGithubToken` RPC + `secretctl github-app revoke-token` verb, plus a
+best-effort `relay_revoke` native-plane tie-in. The frozen `mint-github` contract is untouched.
 
 ## Changes
-- `crates/secrets-engine/src/broker/nonce.rs` (NEW): `NonceStore` server-issued DPoP-Nonce store +
-  7 unit tests.
-- `crates/secrets-engine/src/broker/admission.rs` (NEW): `AdmissionLimiter` token-bucket + 5 unit
-  tests.
-- `crates/secrets-engine/src/broker/mod.rs`: register `admission`/`nonce` modules; `pub use` both.
-- `crates/secrets-engine/src/lib.rs`: re-export `Admit, AdmissionLimiter, NonceReject, NonceStore`.
-- `crates/secrets-engine/src/event.rs`: add metadata-only `SecretEvent::EdgeRequestShed{reason,
-  client_or_ip,count}`.
-- `crates/secrets-engine/Cargo.toml`: make `ring` non-optional (already in resolved graph — ZERO
-  lockfile delta); drop `dep:ring` from the `seed-factor` feature (ring is now unconditional).
-- `crates/secretd/src/conv.rs`: add `EdgeRequestShed` to the no-proto-twin match arm (exhaustive
-  match — required for compile; consumed identically by CLI+GUI).
-- `crates/secretd/src/proxy.rs`: add `challenge_nonce(nonce)` helper (401 + `DPoP-Nonce` +
-  `WWW-Authenticate: DPoP error="use_dpop_nonce"`), gated `#[cfg(feature="relay-edge")]`; `bare`
-  untouched.
-- `crates/secretd/src/edge/dpop.rs`: surface `VerifiedDpop.nonce: Option<String>` (additive parse;
-  verifier stays I/O-free; existing DPoP vector tests unchanged).
-- `crates/secretd/src/edge/tls.rs`: add `load_from_dir_with_client_auth(dir, client_ca_path)` +
-  `load_client_ca_roots` helper; `load_from_dir` now delegates with `None`. mTLS uses the explicit
-  ring provider. + 4 unit tests (mTLS load / missing-CA fail-closed / empty-CA fail-closed /
-  no-CA-default-ok).
-- `crates/secretd/src/edge/listener.rs`: admission STEP-0 (per-IP, 429), nonce gate inside
-  `verify_remote_presentation`, `Refusal` enum (`Status`/`NonceChallenge`), body caps via
-  `Limited` (413) + idle/handshake/header timeouts (408/drop), `IngressCaps` struct (prod +
-  test-override) threaded through `ConnState`.
-- `crates/secretd/src/edge/mod.rs`: `EdgeConfig` gains `require_client_cert`, `client_ca_path`,
-  `ingress_caps`; `serve_edge` fail-closed startup `Err` when `require_client_cert && client_ca_path
-  .is_none()`; re-export `IngressCaps`.
-- `crates/secretd/src/config.rs`: `FileEdge`/`EdgeSettings` gain `require_client_cert` +
-  `client_ca_path` (env `SECRETD_EDGE_REQUIRE_CLIENT_CERT` / `SECRETD_EDGE_CLIENT_CA_PATH`),
-  fail-closed at load too.
-- `crates/secretd/src/main.rs`: thread mTLS config + `ingress_caps: None` into `EdgeConfig`.
-- `crates/secretd/tests/edge_e2e.rs`: `make_proof` gains optional nonce arg; `post_swap` returns
-  `(status, Option<DPoP-Nonce>)`; `swap_with_nonce_dance` helper; PR-1 cases updated for the nonce
-  round-trip.
-- `crates/secretd/tests/edge_stream_e2e.rs`: `make_proof` + `fetch_nonce`; all 4 streaming cases do
-  the nonce dance before the swap.
-- `crates/secretd/tests/edge_hardening_e2e.rs` (NEW): 4 e2e tests — nonce+anti-abuse, rate-limit-
-  sheds-before-decide, body-caps+timeouts, mTLS-requires-client-cert.
+- `crates/secrets-engine/src/mint_github.rs`: + `build_revoke_request(api_base, user_agent, installation_token) -> HttpRequest` (DELETE {base}/installation/token, token only in Authorization header, empty body, never-`{:?}`-log comment); + `revoke_installation_token<T: HttpTransport + ?Sized>(transport, api_base, user_agent, token) -> Result<(), MintError>` (204⇒Ok, transport/non-204⇒Err with ≤200-char snippet, no token); + 5 unit tests.
+- `crates/secrets-engine/src/event.rs`: + metadata-only `SecretEvent::GithubTokenRevoked { installation_id: Option<u64>, outcome: String }` (outcome ∈ revoked/dry_run/best_effort_failed; never the token).
+- `crates/secrets-engine/src/lib.rs`: + `pub use` of the two new mint_github fns; + `native_token_cache: Mutex<HashMap<String, Zeroizing<Vec<u8>>>>` field (cfg provider-github) populated in the `resolve_injection` NativeSubtoken success branch (replace prior), cleared in `clear_provider()` (⇒ also on `lock()`); + `revoke_github_token(token, apply, api_base, sink) -> anyhow::Result<bool>`; + `relay_revoke` best-effort tie-in (after the existing policy+bearer revoke; remove+revoke the cached relay token, success⇒revoked event/audit, failure⇒best_effort_failed audit/event SWALLOWED); + consts `GITHUB_API_BASE_DEFAULT`/`GITHUB_REVOKE_USER_AGENT`; + `use std::collections::HashMap` / `Mutex`; + 8 engine unit tests (native_mint_tests).
+- `crates/secrets-proto/proto/control.proto`: + `rpc RevokeGithubToken (RevokeGithubTokenReq) returns (RevokeResp)` on `service Vault`; + `message RevokeGithubTokenReq { bytes token = 1; bool apply = 2; uint64 installation_id = 3; }` (reuses existing `RevokeResp`).
+- `crates/secretd/src/grpc.rs`: + `revoke_github_token` Vault handler (empty-token⇒invalid_argument; token→Zeroizing; api_base from `ENVCTL_GITHUB_API_BASE`; installation_id `(req!=0).then_some`; spawn_blocking; errors via existing `map_mint_github_err`) + `#[cfg(not(feature="provider-github"))]` companion returning `Status::unimplemented`.
+- `crates/secretd/src/conv.rs`: `GithubTokenRevoked` added to the no-proto-twin `return None` funnel (metadata-only, like RelayRevoked).
+- `crates/secretctl/src/cli.rs`: + `GithubAppCmd::RevokeToken { token: String (--token, `-`=stdin / path / file), installation_id: Option<u64>, apply: bool }`.
+- `crates/secretctl/src/main.rs`: `github_app` split into a dispatcher + `github_app_enroll` + new `github_app_revoke_token` (read token via `read_token` into Zeroizing, refuse empty; no `--apply`⇒stderr dry-run preview + optional `{"revoked":false,"dry_run":true}` json, no egress; `--apply`⇒`Vault.RevokeGithubToken`, drain RevokeResp, `{"revoked":<bool>,"dry_run":<bool>}` to stdout / human text to stderr; token never printed) + 3 clap round-trip tests; existing enroll tests adjusted to `let-else` (enum now multi-variant).
+- `crates/secretd/tests/native_mint_e2e.rs`: + 3 e2e tests over the loopback mock-GitHub + `ENVCTL_GITHUB_API_BASE` harness (204⇒{count_revoked:1,dry_run:false}; dry-run contacts nothing; locked vault⇒failed_precondition).
 
-## Engine API delta (as implemented)
+## Engine API (as implemented)
 ```rust
-// broker::nonce (NEW) — sync, std + ring::rand only, non-printing
-pub const NONCE_TTL_MS: i64 = 300_000;
-pub const MAX_NONCES: usize = 16_384;
-pub const NONCE_LEN: usize = 32;
-pub enum NonceReject { Missing, Unknown, Expired }
-impl NonceStore {
-    pub fn new() -> Self;
-    pub fn with_params(ttl_ms: i64, max: usize) -> Self;
-    #[allow(clippy::result_unit_err)] // every failure means the same: issue no nonce, fail closed
-    pub fn issue(&mut self, now_ms: i64, rng: &dyn ring::rand::SecureRandom) -> Result<String, ()>;
-    pub fn check_and_consume(&mut self, nonce: &str, now_ms: i64) -> Result<(), NonceReject>; // single-use
-}
+// mint_github.rs
+pub fn build_revoke_request(api_base: &str, user_agent: &str, installation_token: &[u8]) -> HttpRequest;
+pub fn revoke_installation_token<T: HttpTransport + ?Sized>(
+    transport: &T, api_base: &str, user_agent: &str, installation_token: &[u8],
+) -> Result<(), MintError>;
 
-// broker::admission (NEW) — sync, std-only, non-printing
-pub const RATE_REFILL_PER_MIN: u32 = 120;
-pub const BUCKET_BURST: u32 = 60;
-pub const MAX_KEYS: usize = 65_536;
-pub enum Admit { Allow, Throttled }
-impl AdmissionLimiter {
-    pub fn new() -> Self;
-    pub fn with_params(refill_per_min: u32, burst: u32, max_keys: usize) -> Self;
-    pub fn admit(&mut self, key: &str, now_ms: i64) -> Admit; // refill→sweep→try-consume; full table+new key → Throttled
-}
+// lib.rs (Engine, #[cfg(feature = "provider-github")])
+pub fn revoke_github_token(
+    &self, token: Zeroizing<Vec<u8>>, apply: bool, api_base: Option<String>, sink: &EventSink,
+) -> anyhow::Result<bool>;
 
-// dpop.rs delta (additive)
-pub struct VerifiedDpop { /* ...prior... */ pub nonce: Option<String> }
+// event.rs
+SecretEvent::GithubTokenRevoked { installation_id: Option<u64>, outcome: String }
+```
+Deviation from plan signature: `revoke_installation_token` has `T: HttpTransport + ?Sized` (not bare
+`T: HttpTransport`) so the engine can pass `self.inner.github_transport.as_ref()` (`&dyn HttpTransport`,
+unsized) — identical to how `mint_github_token` hands the boxed transport to `GitHubAppMint::new`. The
+plan-named call surface is unchanged; this is the minimal bound needed to compile against the `Box<dyn>`
+seam. (Justified, no behavior change.)
 
-// event.rs (additive)
-SecretEvent::EdgeRequestShed { reason: String, client_or_ip: String, count: u64 } // metadata-only
-
-// edge::tls (PR-2b)
-impl RelayTlsConfig {
-    pub fn load_from_dir_with_client_auth(relay_tls_dir: &Path, client_ca_path: Option<&Path>) -> anyhow::Result<Self>;
-}
-
-// edge::mod (PR-2b + PR-2 caps)
-pub use listener::IngressCaps; // {handshake_timeout, header_read_timeout, idle_timeout, max_body_bytes, admission: Option<(u32,u32,usize)>}
-pub struct EdgeConfig { /* ...prior... */ require_client_cert: bool, client_ca_path: Option<PathBuf>, ingress_caps: Option<IngressCaps> }
+## Proto delta (as implemented)
+```proto
+service Vault { ... rpc RevokeGithubToken (RevokeGithubTokenReq) returns (RevokeResp); }
+message RevokeGithubTokenReq { bytes token = 1; bool apply = 2; uint64 installation_id = 3; }
+// RevokeResp reused as-is (count_revoked ∈ {0,1}, dry_run). Additive ⇒ wire round-trip drift test green.
 ```
 
-## rustls 0.23.40 WebPkiClientVerifier builder — CONFIRMED against in-tree source
-`~/.cargo/registry/src/index.crates.io-*/rustls-0.23.40/src/webpki/client_verifier.rs:291`:
-```rust
-pub fn builder_with_provider(roots: Arc<RootCertStore>, provider: Arc<CryptoProvider>) -> ClientCertVerifierBuilder
-```
-then `ClientCertVerifierBuilder::build(self) -> Result<Arc<dyn ClientCertVerifier>, VerifierBuilderError>`
-(line 172). NOTE: `roots` is `Arc<RootCertStore>` (not the store by value). Server side:
-`ServerConfig::builder_with_provider(ring).with_safe_default_protocol_versions()?.with_client_cert_verifier(v).with_single_cert(..)`.
-The architect's `builder_with_provider` name was correct (context7's stale 0.20 docs were NOT used).
+## Tests added
+- mint_github.rs (5): `revoke_builds_correct_delete_request`, `revoke_204_is_success`, `revoke_non_204_is_failure_without_token` (401, no token in err), `revoke_transport_error_is_failure`, `revoke_token_only_in_auth_header_not_in_error`.
+- lib.rs native_mint_tests (8): `revoke_github_token_dry_run_no_egress`, `revoke_github_token_apply_204_succeeds_metadata_only`, `revoke_github_token_non_204_is_err_no_false_success`, `revoke_github_token_locked_vault_fails_closed`, `relay_revoke_native_tie_in_best_effort_success` (DELETE fired + revoked event), `relay_revoke_native_tie_in_best_effort_failure_still_returns` (500 ⇒ relay_revoke STILL returns + best_effort_failed event), `relay_revoke_dry_run_no_native_egress`, `lock_clears_native_token_cache` (post-lock relay_revoke fires no DELETE).
+- secretctl (3): `github_app_revoke_token_parses_token_installation_and_apply`, `github_app_revoke_token_defaults_to_dry_run_and_accepts_stdin_dash`, `github_app_revoke_token_requires_token`.
+- secretd e2e (3): `revoke_github_token_over_wire_204_succeeds`, `revoke_github_token_dry_run_contacts_nothing`, `revoke_github_token_locked_vault_fails_precondition`.
 
-## Build/test status (all `rtk proxy cargo …`, exit codes captured)
-- `cargo fmt --all -- --check`  → PASS, exit=0
-- `cargo clippy --workspace --all-targets -- -D warnings`  → PASS, exit=0
-- `cargo clippy -p envctl-secretd --features relay-edge --all-targets -- -D warnings`  → PASS, exit=0
-- `cargo test -p envctl-secrets-engine`  → PASS (133 lib incl. 7 nonce + 5 admission + concurrency;
-  all bins/integration green), exit=0
-- `cargo test -p envctl-secretd --features relay-edge`  → PASS (62 lib; edge_e2e 1; edge_hardening_e2e
-  4; edge_stream_e2e 4; e2e 5; grpc 6; mitm 1; native_mint 11; proxy_swap 2; self_check 2), exit=0
-- `cargo build -p envctl-secretd` (relay-edge OFF)  → PASS, exit=0 (byte-for-byte unaffected;
-  challenge_nonce gated behind the feature)
-- `bash ci/gates/no-c.sh`  → NO-C GATE PASS, exit=0 (rustls=0.23.40 on ring=0.17.14; zero
-  aws-lc/openssl/C-SQLite; Cargo.lock unchanged — ZERO new crates)
-- `bash ci/gates/shape.sh`  → SHAPE GATE PASS, exit=0
+## Build/test status (exact commands + exit codes; all via `rtk proxy`)
+- `cargo fmt --all -- --check` → **PASS** exit=0
+- `cargo clippy --workspace --all-targets -- -D warnings` → **PASS** exit=0
+- `cargo clippy -p envctl-secrets-engine --features provider-github --all-targets -- -D warnings` → **PASS** exit=0 (default workspace clippy doesn't enable engine `provider-github`; secretd's default DOES pull it transitively, and this explicit run covers the gated code directly)
+- `cargo test -p envctl-secrets-engine` (default) → **PASS** exit=0
+- `cargo test -p envctl-secrets-engine --features provider-github` → **PASS** exit=0 (lib 16 incl. revoke units; integration suites green)
+- `cargo test -p envctl-secretd` → **PASS** exit=0 (14 native_mint_e2e incl. 3 new revoke tests; proxy_swap_e2e + self_check green)
+- `cargo test -p envctl-secretctl` → **PASS** exit=0 (13 incl. 3 new clap tests)
+- `bash ci/gates/no-c.sh` → **PASS** exit=0 (resolved graph unchanged: rustls 0.23.40 on ring 0.17.14, zero aws-lc/openssl/C-SQLite)
+- `bash ci/gates/shape.sh` → **PASS** exit=0
+- `git diff --stat` over all Cargo.toml + Cargo.lock → **empty** (ZERO new dependencies)
 
-## Deviations from the plan (with justification)
-1. **Nonce encoding hex, not base64url.** `base64` is OPTIONAL in the engine (behind `provider-github`).
-   To keep the always-built nonce path dependency-free I encode the random nonce as lowercase hex via
-   a tiny std-only helper instead of pulling base64 unconditionally. A nonce is an opaque public token;
-   any unambiguous text encoding is equivalent. ZERO new dep; engine stays minimal.
-2. **`ring` made non-optional in the engine.** The plan's `issue(.., &dyn ring::rand::SecureRandom)`
-   needs `ring` on an always-built path; it was `optional` (seed-factor only). `ring` is ALREADY in the
-   resolved graph (rustls' ring provider), so making it unconditional adds ZERO lockfile crates
-   (verified: `git diff Cargo.lock` empty). Also removed the now-invalid `dep:ring` from `seed-factor`.
-3. **Test RNG is `SystemRandom`, not a seeded custom RNG.** `ring::rand::SecureRandom` is a SEALED
-   trait — a custom seeded impl is impossible. The nonce unit tests inject the real `SystemRandom`
-   (clock still injected via `now_ms`); they assert behavior/bounds, never a specific nonce value, so
-   determinism is unaffected. The architect's "seeded RNG" intent is met by injection + injected clock.
-4. **Body caps via pre-collect in the listener (not streaming `Limited` into the swap core).** I wrap
-   the body in `http_body_util::Limited` + a `timeout`, collect it in `handle_edge_request`, then pass
-   a `Full<Bytes>` into `swap_and_respond_streaming` (which already accepts any `Body<Data=Bytes>`).
-   This maps the cap/timeout to the EXACT statuses (413/408) instead of the swap core's generic 400,
-   and leaves `swap_and_respond_streaming`/`ProxyBody`/`proxy.rs` UNCHANGED — the non-breaking option
-   the plan asked me to pick. The 413 e2e is green.
-5. **`#[allow(clippy::result_unit_err)]` on `NonceStore::issue`** (one method only, justified inline):
-   the plan mandates `Result<String,()>`; the `()` is honest (every failure = "issue no nonce, fail
-   closed", the caller never branches on a discriminant). Scoped to the single method, not broad.
-6. **`EdgeRequestShed` type added + wired through `conv.rs`; the shed paths log via `tracing::debug`
-   (metadata-only) rather than `sink.emit`.** The event is "optional but recommended" in the plan; the
-   variant exists, is CLI+GUI-routable, and carries no bearer/proof/nonce bytes. Emitting it on the
-   sink is a trivial follow-up if the guardian prefers the cosmetic event surfaced (no secret-leak).
-7. **`hyper` `header_read_timeout` needed a `Timer`.** Added `.http1().timer(TokioTimer::new())`
-   alongside `.header_read_timeout(..)` (hyper panics otherwise) — discovered + fixed via the edge_e2e
-   run.
+## Deviations
+1. `revoke_installation_token` generic bound is `T: HttpTransport + ?Sized` (see Engine API note). Minimal, no behavior change.
+2. `relay_revoke` best-effort tie-in targets `GITHUB_API_BASE_DEFAULT` (`https://api.github.com`) — the engine has no request-level api_base on the relay plane (the daemon's installed `GitHubAppMint` holds the GHES base, not visible to the engine here). The explicit-token verb DOES thread `api_base` (GHES-correct). A GHES relay's native early-revoke is therefore a documented best-effort limitation; its policy+bearer revoke remains authoritative. (Consistent with the plan's "best-effort, native-plane only" framing.)
+3. grpc handler computes `_installation_id = (req.installation_id != 0).then_some(..)` as the plan specifies, but the engine method emits `installation_id: None` (the engine method takes no installation_id arg per the plan's signature), so it is bound-but-unused (`_`-prefixed). No functional impact.
 
-## Handoff notes (targeted checks for the guardian)
-- **decide() sole-Allow invariant:** the `edge_rate_limit_sheds_before_decide` e2e asserts a 429'd
-  request leaves `RecordingUpstream.seen_key == None` — proving admission shed BEFORE decide()/the
-  upstream. The nonce gate sits AFTER `verify_dpop_proof` and BEFORE the jti record, and returns a
-  `Refusal` (never a `RemotePeer`), so a missing/stale nonce never reaches a mint. The full verify
-  ladder + `decide()` still run on every accepted request (edge_e2e + edge_hardening happy paths 200).
-- **Fail-closed / no panic on request path:** every new lock is matched (poisoned → 401/429), `issue`
-  full → 401 (no nonce), body over-cap → 413, body/handshake/header timeout → 408/drop, mTLS misconfig
-  → startup `Err`. No `unwrap`/`expect`/panic added on the request path (the `challenge_nonce` header
-  build has an `unwrap_or_else(bare(401))` fallback).
-- **ring-only mTLS:** `WebPkiClientVerifier::builder_with_provider(roots, ring::default_provider())` —
-  explicit ring provider, no aws-lc. no-c.sh confirms one rustls 0.23.40 on ring.
-- **FS-S25 preserved + shape gate:** `tls.rs` reads ONLY `relay_tls_dir()` for the server cert; the
-  client-CA is a SEPARATE input (`client_ca_path`), no MITM-CA type imported. I renamed the local
-  var `ca_pem`→`anchors_pem` so the SHAPE-gate MITM-CA token grep stays armed AND passes (I did NOT
-  weaken shape.sh). Verify: `grep -RInE 'ca_pem|mitm_ca|...' crates/secretd/src/edge/` returns nothing.
-- **relay-edge-OFF byte-for-byte:** `challenge_nonce` is `#[cfg(feature="relay-edge")]`; the OFF build
-  compiles clean (`cargo build -p envctl-secretd` exit=0). The only non-gated engine change (the new
-  broker modules + `EdgeRequestShed` variant + non-optional ring) is shared library surface, not edge
-  behavior.
-- **Protocol change ripple:** the nonce requirement changed the wire flow — every existing edge e2e
-  (edge_e2e, edge_stream_e2e) now does a challenge→retry; all updated and green. Confirm no other
-  in-tree DPoP client assumes a nonce-less first request.
-- No grit / parallel mode (single-repo sequential single-crew). No symbols claimed/released.
-
-GREEN
+## Handoff notes (for the invariant-guardian)
+- **No new dep / no C**: `git diff` shows NO Cargo.toml/Cargo.lock change; `no-c.sh` green. Revoke reuses the existing `DaemonHttpTransport`/`HttpTransport` seam, `Zeroizing`, tonic/prost, clap.
+- **Engine single sync non-printing authority**: request construction + 204/non-204 + the relay tie-in policy all live in `secrets-engine` via the `HttpTransport` seam (env-free); secretd supplies transport+RPC+env read; secretctl is thin. No `println!`/`eprintln!` added in `secrets-engine`; the engine emits `SecretEvent::GithubTokenRevoked`.
+- **Fail-closed / no false success**: verify `revoke_github_token` returns `Err` on transport-error AND non-204 — covered by `revoke_github_token_non_204_is_err_no_false_success` + the mint_github.rs `revoke_non_204_is_failure_without_token`/`revoke_transport_error_is_failure`. `apply` defaults false everywhere (proto3 + clap); dry-run does NO egress — covered by `revoke_github_token_dry_run_no_egress` + e2e `revoke_github_token_dry_run_contacts_nothing` (unrouted base, no mock spawned).
+- **No secret in logs/audit/err**: token is `Zeroizing`, lives ONLY in the revoke request's Authorization header; audit + event are metadata-only (installation_id, outcome). Token-leak guards: mint_github.rs `revoke_token_only_in_auth_header_not_in_error`, engine tests scan every emitted event JSON for the token, e2e scans the event-stream wire. The revoke `HttpRequest` is never `{:?}`-logged (comment in `build_revoke_request`).
+- **Fail-closed cache clearing**: `native_token_cache` cleared on `clear_provider()` (and thus `lock()`) — `lock_clears_native_token_cache` proves a post-lock relay_revoke fires no DELETE. The cache lives only in `EngineInner` with `Zeroizing` values; never persisted.
+- **relay_revoke still returns its bearer count on tie-in failure**: `relay_revoke_native_tie_in_best_effort_failure_still_returns` (500 DELETE ⇒ Ok + best_effort_failed event).
+- **Frozen-contract safety**: `mint-github` flag/JSON shape + `MintGithub*` proto messages untouched (verify via diff of control.proto + secretctl mint path). Revoke is purely additive (new RPC/message/event/verb).
+- **No grit/parallel mode**: sequential single-crew run (1 repo, 7 modules) — no grit locks claimed.

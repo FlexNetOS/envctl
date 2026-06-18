@@ -63,6 +63,14 @@ pub enum SecretEvent {
         client_or_ip: String,
         count: u64,
     },
+    /// A GitHub installation access token was early-revoked via `DELETE /installation/token`
+    /// (TASK-0027). METADATA ONLY — `installation_id` is optional (the explicit-token verb may not
+    /// know it), `outcome` is a fixed discriminant ∈ `"revoked"` | `"dry_run"` |
+    /// `"best_effort_failed"`. The token itself is NEVER carried.
+    GithubTokenRevoked {
+        installation_id: Option<u64>,
+        outcome: String,
+    },
     GuardRefused {
         subject: String,
         reason: String,

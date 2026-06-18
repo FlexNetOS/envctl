@@ -56,6 +56,7 @@ service Vault {
   rpc Rotate (RotateReq)     returns (stream Event);   // destructive: apply-gated (full DEK/body re-seal where applicable)
   rpc MintGithub (MintGithubReq) returns (MintGithubResp); // TASK-0020: per-call GitHub App installation-token mint (unary; read-only; USB-possession-gated via vault unlock)
   rpc SetGithubAppId (SetGithubAppIdReq) returns (stream Event); // TASK-0026: enroll the non-secret GitHub App id (stream Event mirrors Add/Rm/Rotate; apply=false => dry-run)
+  rpc RevokeGithubToken (RevokeGithubTokenReq) returns (RevokeResp); // TASK-0027: DELETE /installation/token early-revoke (unary; apply=false => dry-run; reuses RevokeResp count∈{0,1})
 }
 // REVIEW FIX (fail-closed, FS-S13/FS-S22): Vault.Init mints the DEK + enrolls keyslots ONCE. `apply`
 // defaults false (proto3) = DRY-RUN preview (the safe state); the daemon mutates ONLY when apply=true.
@@ -94,6 +95,12 @@ message MintGithubResp { string token = 1; int64 expires_at_unix = 2; }
 // daemon mutates NOTHING; only `apply=true` writes the `github-app-id` meta. installation-id is NOT
 // enrolled here — it is supplied per-mint in `MintGithubReq.installation_id`.
 message SetGithubAppIdReq { string app_id = 1; bool apply = 2; }
+// TASK-0027 (`secretctl github-app revoke-token`): early-revoke a GitHub installation access token
+// via `DELETE /installation/token`. The token authenticates the revoke ITSELF (GitHub bearer; not
+// the App-JWT), so `token` is the credential to kill — `bytes` (byte-exact, no accidental Display).
+// `apply` defaults false (proto3) = DRY-RUN preview (CF-8): no egress. `installation_id` is optional
+// (0 ⇒ unknown) and metadata-only. Reuses RevokeResp{count_revoked∈{0,1}, dry_run}.
+message RevokeGithubTokenReq { bytes token = 1; bool apply = 2; uint64 installation_id = 3; }
 
 // ===== Relay: policies + bearer mint (USB-possession-gated, <=24h wire TTL) =====
 service Relay {

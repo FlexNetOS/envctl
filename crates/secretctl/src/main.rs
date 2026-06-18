@@ -207,6 +207,97 @@ fn read_pem(source: &str) -> anyhow::Result<zeroize::Zeroizing<Vec<u8>>> {
     Ok(zeroize::Zeroizing::new(bytes))
 }
 
+/// `env-ctl github-app …` dispatch (TASK-0026 `enroll` + TASK-0027 `revoke-token`). Each verb is
+/// fail-closed + dry-run by default; neither ever prints a credential.
+async fn github_app(cmd: GithubAppCmd, sock: PathBuf, json: bool) -> anyhow::Result<()> {
+    match cmd {
+        GithubAppCmd::Enroll { .. } => github_app_enroll(cmd, sock, json).await,
+        GithubAppCmd::RevokeToken { .. } => github_app_revoke_token(cmd, sock, json).await,
+    }
+}
+
+/// `secretctl github-app revoke-token` (TASK-0027): early-revoke an outstanding GitHub installation
+/// access token via the daemon's `Vault.RevokeGithubToken` RPC. Fail-closed + dry-run by default:
+///   1. read the token (file / `-` stdin) into `Zeroizing`, refuse empty;
+///   2. `--apply` absent ⇒ print a dry-run preview to STDERR and contact nothing (CF-8);
+///   3. `--apply` ⇒ drive the RPC; under `--json` emit `{"revoked":<bool>,"dry_run":<bool>}` to
+///      STDOUT, all human text to STDERR.
+///
+/// The token is NEVER printed in any mode (it lives only in `Zeroizing` and the RPC `bytes` field).
+async fn github_app_revoke_token(
+    cmd: GithubAppCmd,
+    sock: PathBuf,
+    json: bool,
+) -> anyhow::Result<()> {
+    let GithubAppCmd::RevokeToken {
+        token,
+        installation_id,
+        apply,
+    } = cmd
+    else {
+        unreachable!("github_app_revoke_token dispatched a non-RevokeToken variant");
+    };
+
+    // (1) Read the token into a Zeroizing buffer (wiped on drop). NEVER printed.
+    let token_bytes = read_token(&token)?;
+    if token_bytes.iter().all(|b| b.is_ascii_whitespace()) {
+        anyhow::bail!("--token must not be empty");
+    }
+
+    // (2) DRY-RUN (default, CF-8): preview to STDERR, contact nothing.
+    if !apply {
+        eprintln!(
+            "DRY-RUN: would early-revoke the supplied GitHub installation token via \
+             DELETE /installation/token (contacts nothing). Re-run with --apply.\n  \
+             - the token is sent ONLY as the revoke request's bearer; it is never printed."
+        );
+        if json {
+            println!(
+                "{}",
+                serde_json::json!({ "revoked": false, "dry_run": true })
+            );
+        }
+        return Ok(());
+    }
+
+    // (3) APPLY: drive the RPC. The token crosses ONLY as the RPC `bytes` field.
+    let mut c = VaultClient::new(connect(sock).await?);
+    let resp = c
+        .revoke_github_token(v1::RevokeGithubTokenReq {
+            token: token_bytes.to_vec(),
+            apply: true,
+            installation_id: installation_id.unwrap_or(0),
+        })
+        .await?
+        .into_inner();
+    let revoked = resp.count_revoked > 0;
+    if json {
+        println!(
+            "{}",
+            serde_json::json!({ "revoked": revoked, "dry_run": resp.dry_run })
+        );
+    } else {
+        eprintln!("revoked: {} (dry_run: {})", revoked, resp.dry_run);
+    }
+    Ok(())
+}
+
+/// Read the installation token from `--token` (a file path, or `-` for stdin) into a `Zeroizing`
+/// buffer wiped on drop. The bytes are NEVER printed; they cross ONLY as the RPC `bytes` field. A
+/// trailing newline (common when piping) is trimmed.
+fn read_token(source: &str) -> anyhow::Result<zeroize::Zeroizing<Vec<u8>>> {
+    let mut bytes = if source == "-" {
+        read_stdin_bytes().context("reading the installation token from stdin")?
+    } else {
+        std::fs::read(source)
+            .with_context(|| format!("reading the installation token file '{source}'"))?
+    };
+    while bytes.last().is_some_and(|b| *b == b'\n' || *b == b'\r') {
+        bytes.pop();
+    }
+    Ok(zeroize::Zeroizing::new(bytes))
+}
+
 /// `env-ctl github-app enroll` (TASK-0026): seal the GitHub App credential so `mint-github` can mint
 /// installation tokens. Fail-closed + dry-run by default:
 ///   1. read the PEM (file or stdin) into `Zeroizing`;
@@ -219,12 +310,15 @@ fn read_pem(source: &str) -> anyhow::Result<zeroize::Zeroizing<Vec<u8>>> {
 ///
 /// The secret name + meta key are the engine's `pub const`s read by the mint, so they can never
 /// drift. installation-id is NOT enrolled (it is supplied per mint).
-async fn github_app(cmd: GithubAppCmd, sock: PathBuf, json: bool) -> anyhow::Result<()> {
+async fn github_app_enroll(cmd: GithubAppCmd, sock: PathBuf, json: bool) -> anyhow::Result<()> {
     let GithubAppCmd::Enroll {
         app_id,
         private_key,
         apply,
-    } = cmd;
+    } = cmd
+    else {
+        unreachable!("github_app_enroll dispatched a non-Enroll variant");
+    };
 
     if app_id.trim().is_empty() {
         anyhow::bail!("--app-id must not be empty");
@@ -985,7 +1079,10 @@ mod tests {
             app_id,
             private_key,
             apply,
-        } = cmd;
+        } = cmd
+        else {
+            panic!("expected Enroll");
+        };
         assert_eq!(app_id, "4044997");
         assert_eq!(private_key, "/tmp/app.pem");
         assert!(apply, "--apply was passed");
@@ -1004,11 +1101,15 @@ mod tests {
             "-",
         ];
         let cli = Cli::try_parse_from(argv).expect("enroll argv parses (stdin, dry-run)");
-        let GithubAppCmd::Enroll {
-            private_key, apply, ..
-        } = match cli.cmd {
+        let cmd = match cli.cmd {
             Cmd::GithubApp { cmd } => cmd,
             other => panic!("expected GithubApp, got {other:?}"),
+        };
+        let GithubAppCmd::Enroll {
+            private_key, apply, ..
+        } = cmd
+        else {
+            panic!("expected Enroll");
         };
         assert_eq!(private_key, "-", "`-` selects stdin");
         assert!(!apply, "apply defaults to false (dry-run)");
@@ -1026,6 +1127,68 @@ mod tests {
         assert!(
             Cli::try_parse_from(argv).is_err(),
             "missing --app-id must fail to parse"
+        );
+    }
+
+    #[test]
+    fn github_app_revoke_token_parses_token_installation_and_apply() {
+        let argv = [
+            "secretctl",
+            "github-app",
+            "revoke-token",
+            "--token",
+            "/tmp/tok",
+            "--installation-id",
+            "12345",
+            "--apply",
+        ];
+        let cli = Cli::try_parse_from(argv).expect("revoke-token argv parses");
+        let cmd = match cli.cmd {
+            Cmd::GithubApp { cmd } => cmd,
+            other => panic!("expected GithubApp, got {other:?}"),
+        };
+        let GithubAppCmd::RevokeToken {
+            token,
+            installation_id,
+            apply,
+        } = cmd
+        else {
+            panic!("expected RevokeToken");
+        };
+        assert_eq!(token, "/tmp/tok");
+        assert_eq!(installation_id, Some(12345));
+        assert!(apply, "--apply was passed");
+    }
+
+    #[test]
+    fn github_app_revoke_token_defaults_to_dry_run_and_accepts_stdin_dash() {
+        // No `--apply` ⇒ dry-run by default (CF-8); `--token -` selects stdin; installation-id optional.
+        let argv = ["secretctl", "github-app", "revoke-token", "--token", "-"];
+        let cli = Cli::try_parse_from(argv).expect("revoke-token argv parses (stdin, dry-run)");
+        let cmd = match cli.cmd {
+            Cmd::GithubApp { cmd } => cmd,
+            other => panic!("expected GithubApp, got {other:?}"),
+        };
+        let GithubAppCmd::RevokeToken {
+            token,
+            installation_id,
+            apply,
+        } = cmd
+        else {
+            panic!("expected RevokeToken");
+        };
+        assert_eq!(token, "-", "`-` selects stdin");
+        assert_eq!(installation_id, None, "installation-id is optional");
+        assert!(!apply, "apply defaults to false (dry-run)");
+    }
+
+    #[test]
+    fn github_app_revoke_token_requires_token() {
+        // Missing `--token` is a hard clap error (it is required).
+        let argv = ["secretctl", "github-app", "revoke-token", "--apply"];
+        assert!(
+            Cli::try_parse_from(argv).is_err(),
+            "missing --token must fail to parse"
         );
     }
 
