@@ -1,73 +1,76 @@
-# HANDOFF — forge-loop (envctl secrets / Epic-F build) · 2026-06-17 (session 6)
+# HANDOFF — forge-loop (envctl secrets / Epic-F build) · 2026-06-17 (session 7)
 
 closed_utc: 2026-06-17   branch: develop (work in FRESH worktrees off develop)
-cycle_budget: 1   cycles_this_session: 1   cycles_total: 15
-last_item: TASK-0032 (DONE, PR #117, guardian PASS)   next_item: TASK-0031-PR2 (F2 hardening)
-orchestrator_phase: handoff (cycle budget reached)   gate_status: PASS   pr_url: https://github.com/FlexNetOS/envctl/pull/117
+cycle_budget: 1   cycles_this_session: 1   cycles_total: 16
+last_item: TASK-0031-PR2 (DONE, PR #122, guardian PASS)   next_item: TASK-0027 (early-revoke)
+orchestrator_phase: handoff (cycle budget reached)   gate_status: PASS   pr_url: https://github.com/FlexNetOS/envctl/pull/122
 resume_command: /forge-loop resume   (reads this file + backlog "⏭ NEXT PICK")
 
 ## State (authoritative = Git/merged PRs; this file is a companion view)
 MERGED to develop: #106 (TASK-0026 enroll), #109 (TASK-0030 jti + OI-SM-1), #111 (TASK-0031 PR-1 edge
-  listener), **#112 (TASK-0036 mlockall FS-S4)**, plus infra **#113 (low-cost-kdf-tests — ~11x faster CI
-  `test` job, production crypto unchanged)**, #114/#115 (Seed manifest reproducible USB-unlock).
-IN FLIGHT (auto-merge armed, run under the CI gate):
-  - **#117** (TASK-0032 — F5 streaming-revocation tear-down). guardian PASS, 4 gates green, zero new deps.
-  - **#108** (TASK-0035 gRPC surface gaps). Rebased clean onto the new develop (DIRTY from #112/#113/#114/#115);
-    build green; auto-merge armed.
-Earlier merged: #102/#103/#104/#105/#107.
+  listener), #112 (TASK-0036 mlockall), **#117 (TASK-0032 F5 stream tear-down)**, **#108 (TASK-0035 gRPC
+  gaps)**, #119 (session-6 reconcile), plus infra #113 (low-cost-kdf-tests) / #114/#115/#120/#121 (Seed +
+  manifest portability).
+IN FLIGHT (auto-merge armed): **#122 (TASK-0031-PR2 — F2 edge hardening)**. guardian PASS, 4 gates green,
+  zero new deps, relay-edge-OFF build unaffected.
+Earlier merged: #102/#103/#104/#105/#107/#118.
 
-**Epic F status:** the remote edge serves clients end-to-end (TLS+DPoP/EKM+jti → relay_swap, #111), the
-daemon is mlock-hardened (#112), AND long-lived streams now tear down on revoke/lock/USB-pull (#117). The
-edge's PR-1 (listener) and PR-3 (stream tear-down) are done; PR-2 (hardening) is next.
+**Epic F / relay edge is now feature-complete on the listener path:** PR-1 (listener, TLS+DPoP/EKM+jti →
+relay_swap, #111) + PR-2 (hardening: nonce + admission/rate-limit + body-caps/timeouts + opt-in mTLS, #122)
++ PR-3 (streaming-revocation tear-down, #117). The daemon is mlock-hardened (#112) and the gRPC surface is
+real (#108). What remains in Epic F is the revoke/UX/verify tail, not the edge core.
 
 ## ⚠ FIRST on resume (baseline verify)
 1. From an envctl worktree (NOT meta root): `git -C envctl fetch origin develop && gh pr list --state open`.
-2. Confirm **#117** and **#108** merged. If either is DIRTY (a sibling merged first, touching the same
-   `lib.rs`/`.handoff` lines), rebase onto develop: resolve `.handoff/loop/cycle/*` conflicts by taking the
-   PR's own side (`--theirs`); take develop's side for `loop_state.md`/`HANDOFF.md`/backlog NEXT-PICK
-   (`--ours`) but KEEP the PR's real per-item checkbox ticks; `cargo check -p envctl-secretd` (and
-   `--features relay-edge`); `git push --force-with-lease`. This churn recurs because every secrets PR
-   touches `lib.rs` + `.handoff/` — expected, not a problem.
+2. Confirm **#122** merged. If DIRTY (a sibling merged first, touching `lib.rs`/`broker/mod.rs`/`.handoff`),
+   rebase onto develop: resolve `.handoff/loop/cycle/*` conflicts by taking the PR's own side (`--theirs`);
+   take develop's side for `loop_state.md`/`HANDOFF.md`/backlog NEXT-PICK (`--ours`) but KEEP the PR's real
+   per-item checkbox ticks; `cargo check -p envctl-secretd --features relay-edge`; `git push --force-with-lease`.
+   NOTE: this session bundled the reconcile commit INTO the feature branch BEFORE CI finished, so the
+   squash-merge carried the bookkeeping (last session's separate chore PR #119 was needed because auto-merge
+   squash-landed the feature before the reconcile — bundling avoids that orphan).
 
-## NEXT (dep order — the edge listener + tear-down are merged/in-flight)
-1. **TASK-0031-PR2 (F2 hardening, P0)** — on the merged `crates/secretd/src/edge/`: server-issued
-   **DPoP-Nonce** challenge (OI-SM-1 nonce half — the `jti` store is already in; add the nonce issuance +
-   `DPoP-Nonce`/`use_dpop_nonce` 401 challenge loop) + **per-IP/per-client rate-limit** + **body caps** +
-   **timeouts** + **pre-`decide()` admission shedding** (CVE-2024-47609 — shed before the expensive verify) +
-   opt-in **hardened-mode mTLS `ClientCertVerifier`** (OI-SM-4). Keep it default-OFF behind `relay-edge`,
-   zero new C deps, fail-closed.
-2. Then **TASK-0027** (early-revoke) → **TASK-0028** (GUI parity) → **TASK-0037** (Phase-7 verify) →
-   **TASK-0034** (hardening tail) → **TASK-0038** (Certs.* Phase-4+). Small follow-up: **MADV_DONTDUMP**
-   companion to the merged #112 mlockall (named alongside it in THREAT-MODEL.md).
+## NEXT (dep order)
+1. **TASK-0027 (early-revoke)** — the revoke path: surface/strengthen relay+bearer early-revocation so a
+   revoke takes effect immediately across the gRPC surface and the edge (the stream tear-down #117 already
+   reacts to it within ≤2s; this is the revoke *issuance/propagation* side). Read `docs/secrets/SERVER-MODE.md`
+   + `THREAT-MODEL.md` for the F-id, and the existing `relay_revoke`/`relay_revoke_bearer` engine methods.
+2. Then **TASK-0028** (GUI parity for the new secrets verbs) → **TASK-0037** (Phase-7 verify-don't-rebuild:
+   confirm secrets verbs folded onto `envctl`, manifest component, stale ROADMAP lines) → **TASK-0034**
+   (hardening tail: F10 tonic pin + cargo-audit CI, F11 MSRV check, F18 audit-fsync) → **TASK-0038** (Certs.*
+   Phase-4+). Small follow-up: **MADV_DONTDUMP** companion to the merged #112 mlockall.
+   New follow-ups filed this session: **TASK-0031-PR2c** (PROXY-protocol source IP), **TASK-0039**
+   (remote-clients-CA lifecycle for the mTLS verifier).
 SKIP **TASK-0033** (VPS Profile B) — owner-gated `[!]`.
 
 ## decisions_and_dead_ends (don't re-litigate)
-- The re-check must NOT reuse `relay_swap`/`relay_swap_prepare` — they fetch the key and `broker.bump()` the
-  usage counters every call. `Broker::peek` (read-only) + `authorize_relay(bump=false)` + `bytes_out=0` give a
-  budget/rate-enforcing re-check that consumes nothing and fetches no key. The swap path stays bump=true,
-  byte-for-byte unchanged (proxy_swap_e2e/decide tests pass).
-- `decide()` stays the single Allow authority — the re-check re-runs it with the open-time `RemotePeer`
-  (clause 11a re-asserts dpop_verified/jkt); the edge never keeps a stream alive by its own judgment.
-- Tear-down is fail-closed: every uncertainty (decide() Deny, locked vault, poisoned lock via `map_err`,
-  store err, vanished bearer, absent USB gate, dropped engine handle, max-duration) → drop the downstream
-  sender → clean HTTP/2 close. No `unwrap`/panic on the periodic hot path.
-- Interval-poll (2s) chosen over watch-channel push for PR-3: decide()'s inputs (USB gate, bearer.revoked,
-  policy) are re-read each call, so a 2s poll gives a ≤2s bound with zero new wiring. The sub-second
-  `tokio::sync::watch` push needs an engine broadcast seam keyed by client/token → deferred to PR-4.
-- CI `test` job is now ~11x faster via the **#113 low-cost-kdf-tests** feature (argon2 params dialed down for
-  tests only; production crypto unchanged) — the 30m timeout fragility from sessions 2–5 is largely resolved.
-- Loop discipline: pick the top *unblocked* item. TASK-0032 was unblocked once #111 merged; built it this
-  session. TASK-0031-PR2 is next and is independent (hardening on the existing listener).
-- Recurring rebase churn on the integration branch (every secrets PR touches `lib.rs` + `.handoff/`): resolve
-  by taking the PR's code/cycle-artifacts and develop's loop_state/HANDOFF/backlog-narrative.
+- Nonce + admission are ENGINE security policy (siblings to broker::jti), not edge logic — the edge only
+  emits the 401/`DPoP-Nonce` header, 429, 413, 408. `ring` is now an unconditional secrets-engine dep
+  (NonceStore.issue needs `ring::rand` on the always-built path); it was already in the resolved graph via
+  rustls, so NO new lockfile crate and no-c stays green.
+- Admission sheds per-IP BEFORE any crypto (CVE-2024-47609); per-CLIENT quota stays in `decide()`
+  `rate_per_min` (client_id is unauthenticated pre-verify). Admission can only reject early — the full
+  verify ladder + `decide()` still run on every non-shed request (an e2e asserts a 429'd req never reaches
+  the recording upstream). decide() remains the sole Allow authority; mTLS is additive, never a replacement.
+- Nonces are single-use (consume on accept); a genuine retry re-challenges → fresh nonce → fresh proof+jti.
+  Windowed (TTL without removal) is a one-line fallback if HTTP/2 coalescing ever flakes (it shouldn't —
+  each request carries its own proof).
+- mTLS verifier built `WebPkiClientVerifier::builder_with_provider(roots, ring::default_provider())` —
+  ring-only (confirmed vs in-tree rustls 0.23.40, NOT context7 which returned stale 0.20 docs). The
+  client-CA is a SEPARATE operator input on the SAME relay-tls ServerConfig — never the MITM CA (FS-S25).
+- Bundle the loop reconcile commit into the feature branch before CI finishes (don't rely on a separate
+  chore PR) — auto-merge squash-lands the feature the instant CI is green and would orphan a late reconcile.
+- Recurring rebase churn: every secrets PR touches `lib.rs`/`broker/mod.rs` + `.handoff/` → siblings go
+  DIRTY. Resolve by taking the PR's code/cycle-artifacts and develop's loop_state/HANDOFF/backlog-narrative.
 
 ## Invariants (carry forward — non-negotiable)
-no-C trust boundary (reuse rustls-ring / libc-FFI, no banned dep) · fail-closed / fail-safe (never panic on a
-hardening/re-check path; strict modes refuse) · no secret in logs/audit (metadata-only) · engine the single
-sync non-printing authority (policy in engine via decide(), I/O in front-ends) · relay-tls only never MITM CA
-(FS-S25) · EKM bind (FS-S20) · default-OFF behind `relay-edge`.
+no-C trust boundary (reuse rustls-ring / ring / libc-FFI, no banned dep) · fail-closed / fail-safe (never
+panic on a hardening/verify/admission path; strict/require modes refuse) · no secret in logs/audit
+(metadata-only) · engine the single sync non-printing authority (policy in engine via decide()/nonce/
+admission, I/O in front-ends) · relay-tls only never MITM CA (FS-S25) · EKM bind (FS-S20) · default-OFF
+behind `relay-edge`, mTLS additionally opt-in.
 
 ## verify_on_resume (exact)
 - `git -C envctl fetch origin develop && gh pr list --state open` (from a worktree)
-- rebase #117/#108 if either still DIRTY (steps above); confirm both merged
-- new worktree: `git -C envctl worktree add ../.worktrees/task-0031-pr2/envctl -b task-0031-pr2 origin/develop`
+- rebase #122 if still DIRTY (steps above); confirm it merged
+- new worktree: `git -C envctl worktree add ../.worktrees/task-0027-early-revoke/envctl -b task-0027-early-revoke origin/develop`
