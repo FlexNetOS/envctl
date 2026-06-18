@@ -690,7 +690,16 @@ fmt, clippy). Remaining follow-ups extracted from each:
     observed, not inferred from source.
   - **Deps:** **TASK-0043** (builds on runtime-verify). **Risk:** medium.
 
-- [ ] **TASK-0052 (T3.5, P2):** **Full eject/package** forge-loop into harness_hub (LOCKED 2026-06-18,
+- [x] **TASK-0052 (T3.5, P2) — DONE 2026-06-18 (harness_hub PR #38):** Feature Forge packaged into
+  harness_hub as ejectable **`/harness:feature-forge`** — `harness/skills/feature-forge/` (orchestrator,
+  phases 0–4 incl. 3.5 + Phase E) + sub-skills `forge-loop`/`rust-feature-impl` + 4 prefixed specialists
+  `harness/agents/feature-forge-{architect,implementer,guardian,kernel-engineer}.md` (reuses shared
+  evolution/continuity/integration-qa/build-health); `eject.sh`+`references/eject.md`+`loop_state.
+  template.md`+`ralph-feature-forge.sh`; `registry.json` row + `entries/feature-forge.md` + README;
+  plugin 1.10.1→1.11.0. **`hub-validate` PASS (8 entries)**, 0 dangling old-agent refs. envctl CLAUDE.md
+  Placement doctrine reconciled (supersedes never-packaged stance for the generic core; env-install-loop/
+  auto-provision/handoff-sync stay envctl-only).
+  [ORIGINAL SPEC] **Full eject/package** forge-loop into harness_hub (LOCKED 2026-06-18,
   owner). forge-loop is unregistered/unpackaged/unvalidated by the hub though it already *consumes* the
   hub's shared layer (byte-identical `harness-evolution`, the whole `rust-port`/`session-relay`/
   `icm-memory` families). **LOCKED DECISION:** convert the Feature-Forge family into the **factory-minted

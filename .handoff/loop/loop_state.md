@@ -164,7 +164,7 @@ SUPERVISED (never auto-run): TASK-0010 was `- [!!]` (now DONE by a human session
   --- EPIC G (forge-loop hardening, 2026-06-18 deep audit; direct-to-develop harness-maintenance,
   NOT forge cycles → cycles_total unchanged at 18). Provenance confirmed: forge-loop hand-authored in
   envctl (5dcc4b2/00237ca), not from a "forge" repo — it is the source pattern harness_hub abstracted.
-  Planned as Epic G (TASK-0041..0052); owner LOCKED Tier-2/3 forks. SHIPPED (10/12, all pushed develop):
+  Planned as Epic G (TASK-0041..0052); owner LOCKED Tier-2/3 forks. SHIPPED (12/12 — EPIC G COMPLETE):
   Tier 1 — 0041 loop-state counter gate (+hermetic test, ci.yml), 0042 proposed-upgrades drain in
   wrap-up 3b, 0043 Phase-3.5 runtime-verify (guardian runs the app). Tier 2 — **0044 hf-kernel
   pick-time dependency authority (53 envctl cards minted into envctl/.handoff/tasks/; DONE 2026-06-18,
@@ -179,7 +179,12 @@ SUPERVISED (never auto-run): TASK-0010 was `- [!!]` (now DONE by a human session
   healthy, residency 0 *.db under member .handoff. **Kernel gap (finding, NOT a regression):** shipped hf is
   CWD-relative w/ no --ledger override (HFTASK-0054) → live `hf claim --next` member-scoped creates a forbidden
   per-repo ledger.db; clean read-only authority path TODAY = `hf fleet render envctl` (markdown subnote stays the
-  live-pick fallback until HFTASK-0054 lands). DEFERRED (NOT skipped): **TASK-0052** full eject/package into
-  harness_hub (doctrine override; capstone). Commits: af67ad6 f3f13c5 477376c + 4 more on develop.
+  live-pick fallback until HFTASK-0054 lands). **TASK-0052 DONE 2026-06-18 (harness_hub PR #38):** Feature
+  Forge packaged into harness_hub as ejectable `/harness:feature-forge` — orchestrator + forge-loop +
+  rust-feature-impl sub-skills + 4 prefixed agents (feature-forge-*), eject.sh/ralph runner/loop_state
+  template, registry row + entries/feature-forge.md, plugin 1.11.0; `hub-validate` PASS (8 entries);
+  envctl CLAUDE.md Placement doctrine reconciled (generic core now packaged upstream; env-install-loop/
+  auto-provision/handoff-sync stay envctl-only). EPIC G COMPLETE (12/12). Commits: af67ad6 f3f13c5
+  477376c 51ebcdf 465e096 e1c10e7 6159a99 c5740f5 e40d30d e29fc81 on develop + harness_hub f9ad297 (PR #38).
 
 last_update: 2026-06-18
