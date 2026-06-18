@@ -153,8 +153,10 @@ SUPERVISED (never auto-run): TASK-0010 was `- [!!]` (now DONE by a human session
 ## needs_human / supervised
 - Decision: bring GitKB into meta as a `.meta.yaml` project (git-kb currently external)?
 - Old dashboard-forge-loop GUI smoke-test (loop/_done/, HUMAN-ONLY).
-- REVIEW (Epic A): hf kernel links bundled C SQLite (rusqlite). If the continuity kernel must be
-  C-free under the agenticOS "no C in trust boundary" north star, that's a kernel-side change in
-  `meta/handoff` (port `ledger` off rusqlite to pure-Rust) — out of envctl's no-c gate scope today.
+- REVIEW (Epic A): hf kernel links bundled C SQLite (rusqlite) + is CWD-relative (no `--ledger`
+  override → can't render member Tier-A against the shared fleet ledger without a forbidden per-repo
+  ledger.db). Both kernel-side in `meta/handoff`; out of envctl's no-c/p7 scope. **FILED for the
+  kernel owner: FlexNetOS/handoff#71** (2026-06-18) — port `ledger` off rusqlite + add a ledger-path
+  override. Tracks the cycle-1 CARRIED FINDING + FINDING-0002.
 
-last_update: 2026-06-13
+last_update: 2026-06-18
