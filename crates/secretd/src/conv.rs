@@ -495,6 +495,10 @@ pub fn event_to_proto(ev: SecretEvent) -> Option<v1::Event> {
         // `EdgeRequestShed` (TASK-0031-PR2) joins this set — a metadata-only anti-abuse shed notice
         // with no proto control-stream twin, consumed identically by the CLI + GUI.
         | SecretEvent::EdgeRequestShed { .. }
+        // `GithubTokenRevoked` (TASK-0027) joins this set — a metadata-only early-revoke notice with
+        // no proto control-stream twin (the RevokeGithubToken RPC is unary, returning RevokeResp);
+        // consumed identically by the CLI + GUI through this single funnel.
+        | SecretEvent::GithubTokenRevoked { .. }
         | SecretEvent::SecretRead { .. } => return None,
     };
     Some(v1::Event { kind: Some(kind) })

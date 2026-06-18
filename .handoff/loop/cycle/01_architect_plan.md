@@ -1,121 +1,123 @@
-# TASK-0031-PR2 — Hardening the F2 relay edge · VERDICT: GO
+# TASK-0027 (G2) — GitHub installation-token early-revoke (DELETE /installation/token) · VERDICT: GO
 
-All four sub-features in one cycle, single repo (envctl, ~6 modules → sequential single-crew), ZERO new
-deps. Sequenced as two coherent slices on the SAME branch: **PR-2a anti-abuse core** (nonce + admission/
-rate-limit + body-caps/timeouts) then **PR-2b opt-in mTLS**. Nonce store + admission limiter are
-engine-side security policy (siblings to `broker::jti::JtiReplayStore`); the edge does pure I/O.
-
-## Scope for this cycle
-IN: (1) server-issued DPoP-Nonce challenge (OI-SM-1 nonce half, RFC 9449 §8–9); (2) per-IP admission +
-token-bucket rate-limit, shed BEFORE verify/decide (CVE-2024-47609, SERVER-MODE §6.2); (3) body caps +
-handshake/header/idle/body timeouts; (4) opt-in hardened-mode mTLS `ClientCertVerifier` (OI-SM-4),
-default-OFF. 2a lands first (request-pipeline + 2 engine stores), 2b second (tls.rs + EdgeConfig toggle).
-Named deferrals (NOT silent drops): PROXY-protocol source-IP parsing → TASK-0031-PR2c; remote-clients-CA
-lifecycle (mint/renew/revoke) → TASK-0033; group-commit audit batching + watch-push stream re-check → pre-existing.
+Additive `DELETE /installation/token` early-revoke through the EXISTING `HttpTransport` seam (no new dep),
+exposed as a new `RevokeGithubToken` RPC + `secretctl github-app revoke-token` verb; `mint-github` frozen
+contract untouched. GitHub's DELETE authenticates with **the installation token itself** as the bearer (204
+on success) — NOT the App-JWT — and the daemon does NOT persist minted tokens. So: explicit-token verb is
+the primary kill-switch; the `relay_revoke` tie-in is a documented best-effort revoke of the relay's
+last engine-minted NATIVE token (the one path where the engine still holds the token in-process).
 
 ## Target repos
-envctl (single). engine: `broker/{nonce.rs(NEW),admission.rs(NEW),mod.rs}`; secretd:
-`edge/{listener.rs,tls.rs,mod.rs,dpop.rs}` + new test files. ~6 modules → sequential single-crew.
+envctl (single). secrets-engine: mint_github.rs, lib.rs, event.rs; secrets-proto: control.proto; secretd:
+grpc.rs; secretctl: cli.rs, main.rs. Tests: engine units (mint_github.rs + lib.rs) + secretd
+native_mint_e2e.rs. 7 modules single-repo → sequential single-crew.
 
-## Engine API delta (all new security policy in engine, sync/non-printing/std+ring::rand-only)
-### broker::nonce::NonceStore (NEW)
-consts NONCE_TTL_MS=300_000 (coherent w/ ACCEPT_PAST_MS), MAX_NONCES=16_384 (~1MiB), NONCE_LEN=32.
-`enum NonceReject{Missing,Unknown,Expired}`. `new()/with_params(ttl,max)`;
-`issue(now_ms,&dyn ring::rand::SecureRandom)->Result<String,()>` (sweep-first; full-after-sweep→Err, caller
-fails closed = 401 with no nonce); `check_and_consume(nonce,now_ms)->Result<(),NonceReject>` (single-use:
-remove on accept). RNG injected as trait obj so engine stays pure/testable. **Single-use** recommended
-(strongest replay posture; genuine retry re-challenges → fresh nonce → fresh jti, OI-SM-1 §6); windowed is
-the one-line fallback (TTL without removal) if HTTP/2 coalescing flakes.
-### broker::admission::AdmissionLimiter (NEW)
-consts RATE_REFILL_PER_MIN=120, BUCKET_BURST=60, MAX_KEYS=65_536. `enum Admit{Allow,Throttled}`.
-`admit(key,now_ms)->Admit` token-bucket: refill-by-elapsed → sweep idle → try-consume; full key table +
-new key → Throttled (never grow, never evict-to-admit). Poisoned lock → caller 429.
-Reexport both in broker/mod.rs + lib.rs (`pub use`). Optional metadata-only
-`SecretEvent::EdgeRequestShed{reason,client_or_ip,count}` (recommended, like RelayStreamTornDown).
-### dpop.rs delta
-`VerifiedDpop.nonce: Option<String>` surfaced at parse (additive; verifier stays I/O-free, validation in
-caller next to jti check so existing vector tests are unchanged).
+## Design choice (resolved, GO)
+GitHub `DELETE /installation/token` needs the TOKEN VALUE as bearer (confirmed vs GitHub REST docs, 204 No
+Content). Daemon mints into Zeroizing and hands off once (no token-at-rest store, by design). →
+**Primary = explicit-token verb** `secretctl github-app revoke-token --token <tok|-> --apply` →
+RevokeGithubToken RPC → `engine.revoke_github_token(token, apply, api_base, sink)`; works for ANY outstanding
+token because the holder supplies it. **relay_revoke tie-in = best-effort, native-plane only**: the
+NativeSubtoken `resolve_injection` path is where the ENGINE mints in-process; retain that relay's last token
+(in-memory Zeroizing, never persisted, cleared on lock/clear_provider) and on `relay_revoke(apply=true)` fire
+a best-effort DELETE before clearing. A handed-off/rotated token or a BaseUrlRepoint/MitM relay has nothing
+to auto-revoke → relay_revoke's existing bearer/policy revocation stays authoritative, 1h expiry is the
+backstop. NOT full token-tracking (worse at-rest posture; larger change) — that's an Out-of-scope follow-up.
 
-## Edge changes (exact insertion points)
-Current ladder (mod.rs:11 / listener.rs): route/method gate → htu → verify_remote_presentation{EKM,DPoP,
-verify_dpop_proof, jti check_and_record, client_id, registry} → upstream → swap_and_respond_streaming.
-**A. Admission (step 0, BEFORE any crypto):** add `admit: Arc<Mutex<AdmissionLimiter>>` + connection
-`peer: SocketAddr` to ConnState (built in serve_edge_listener next to jti, listener.rs:78). In
-handle_edge_request (listener.rs:169) right after route/method gate (after :180), before host/htu/verify:
-`admit.lock()` (poisoned→bare(429)) + `admit(peer.ip(), now)`; Throttled→`bare(TOO_MANY_REQUESTS)`. Per-IP
-only (client_id unauthenticated pre-verify); per-client quota stays in engine decide() clause 15
-(rate_per_min) on accept. **B. Nonce (within verify_remote_presentation, listener.rs:297):** add
-`nonce: Arc<Mutex<NonceStore>>` + `rng: Arc<ring::rand::SystemRandom>` to ConnState. After verify_dpop_proof
-succeeds (:329) BEFORE jti check_and_record (:342): if verified.nonce None/unknown/expired → issue fresh +
-return typed `Refusal::NonceChallenge(b64)`; present+valid → check_and_consume (single-use), Err→401. Change
-verify_remote_presentation error type StatusCode → `enum Refusal{Status(StatusCode),NonceChallenge(String)}`.
-New helper `challenge_nonce(nonce)->Response<ProxyBody>` beside `bare` (proxy.rs:625; bare emits no headers —
-don't modify, add sibling) building 401 + `DPoP-Nonce: <b64>` + `WWW-Authenticate: DPoP error="use_dpop_nonce"`.
-**C. Body caps + timeouts:** handshake timeout wraps acceptor.accept (listener.rs:120) in
-tokio::time::timeout(HANDSHAKE_TIMEOUT)→drop on elapse; hyper auto Builder (listener.rs:159)
-.http1().header_read_timeout(...); body cap via http_body_util::Limited::new(body,MAX_BODY_BYTES) before
-swap consumes (listener.rs:229/:264)→413 on exceed; body-read timeout→408. consts HANDSHAKE_TIMEOUT=10s,
-HEADER_READ_TIMEOUT=15s, IDLE_TIMEOUT=30s, MAX_BODY_BYTES=1MiB.
+## Engine API delta
+mint_github.rs (model on mint request ctor ~229-260; revoke needs NO App-JWT):
+  `pub fn build_revoke_request(api_base, user_agent, installation_token: &[u8]) -> HttpRequest`
+    (method DELETE, url {base}/installation/token, Authorization: Bearer <tok>, Accept/X-GitHub-Api-Version/
+     User-Agent, empty body). Token only in the auth header; NEVER {:?}-log the request (add comment).
+  `pub fn revoke_installation_token<T: HttpTransport>(transport,api_base,user_agent,installation_token:&[u8])
+     -> Result<(),MintError>` — 204 ⇒ Ok; transport err / non-204 ⇒ Err (snippet ≤200, no token).
+lib.rs:
+  `#[cfg(feature="provider-github")] pub fn revoke_github_token(&self, token: Zeroizing<Vec<u8>>, apply: bool,
+     api_base: Option<String>, sink: &EventSink) -> anyhow::Result<bool>` — gate on vault Unlocked
+     (EngineError::Locked matches mint's auth floor); apply=false ⇒ dry-run audit {apply:false} + return false,
+     no egress; apply=true ⇒ revoke via self.inner.github_transport; Ok(204) ⇒ SecretEvent::GithubTokenRevoked
+     + ok audit, return true; transport/non-204 ⇒ Err (no false success). Token never in audit/event/Err.
+  native_token_cache: `Mutex<HashMap<String /*relay_id*/, Zeroizing<Vec<u8>>>>` populated in
+     resolve_injection NativeSubtoken success branch (~2218+); cleared on lock()/clear_provider().
+  relay_revoke tie-in (~1418): after existing policy+bearer revocation, if cache has relay_id → best-effort
+     revoke_installation_token, success ⇒ GithubTokenRevoked{outcome:"revoked"}, failure ⇒ audit
+     {outcome:"best_effort_failed"} SWALLOWED (relay revoke still returns bearer count); clear entry.
+event.rs: `GithubTokenRevoked { installation_id: Option<u64>, outcome: String }` (never the token; outcome ∈
+  "revoked"/"dry_run"/"best_effort_failed"). installation_id Option (explicit verb may not know it).
+CLI+GUI: secretctl drives the RPC; engine method is the single shared entry so GUI parity (later) won't
+  diverge. No GUI change in TASK-0027 (mint-github not yet in GUI) — noted Out of scope.
 
-## PR-2b mTLS (tls.rs)
-`RelayTlsConfig::load_from_dir_with_client_auth(relay_tls_dir, client_ca_path:Option<&Path>)`: when client-CA
-configured, replace `.with_no_client_auth()` (tls.rs:86) with `.with_client_cert_verifier(v)` where
-`v = WebPkiClientVerifier::builder_with_provider(roots, Arc::new(rustls::crypto::ring::default_provider())).build()?`
-(rustls-webpki + rustls-pki-types already in Cargo.lock → zero new deps; explicit ring provider → ring-only).
-roots = operator-provisioned remote-clients-CA PEM (SERVER-MODE §6.1 line 196) — NEVER the MITM CA, never the
-server cert; distinct config input preserves FS-S25. EdgeConfig (mod.rs:31) gains
-`require_client_cert: bool`(default false) + `client_ca_path: Option<PathBuf>`; serve_edge (mod.rs:54) threads
-it. `require_client_cert && client_ca_path.is_none()` → fail-closed startup Err.
+## Proto + gRPC delta
+control.proto (additive RPC on service Vault, next to MintGithub):
+  `rpc RevokeGithubToken (RevokeGithubTokenReq) returns (RevokeResp);`
+  `message RevokeGithubTokenReq { bytes token = 1; bool apply = 2; uint64 installation_id = 3; }`
+  Reuse existing RevokeResp{count_revoked,dry_run} (count ∈ {0,1}) — drains like Relay.Revoke. token is
+  `bytes` (byte-exact, no accidental Display). Additive → wire round-trip drift test stays green.
+grpc.rs handler (model on revoke/mint_github ~388/531): reject empty token (invalid_argument); token →
+  Zeroizing; api_base from ENVCTL_GITHUB_API_BASE (same as mint); installation_id (req!=0).then_some;
+  spawn_blocking engine.revoke_github_token; map via existing map_mint_github_err (Locked→failed_precondition,
+  transport/non-204→unavailable). non-feature companion ⇒ Status::unimplemented.
 
-## Fail-closed matrix
-missing nonce→401+DPoP-Nonce+WWW-Authenticate use_dpop_nonce · unknown/expired nonce→401 re-challenge ·
-NonceStore full on issue→401 no nonce · poisoned NonceStore lock→401 · per-IP rate breach→429 · admission
-key table full(new)→429 · poisoned admission lock→429 · body>MAX_BODY_BYTES→413 · header/idle/body timeout→408
-· TLS handshake timeout→drop · mTLS required no client cert→handshake fail/drop · mTLS required no client_ca
-path→startup Err · existing PR-1 bad DPoP/EKM/jti→401/403 unchanged. No unwrap/panic on request path; every
-lock match→reject; no default-open.
+## CLI delta
+cli.rs GithubAppCmd::RevokeToken{ token:String(--token, `-`=stdin), installation_id:Option<u64>, apply:bool }.
+main.rs handler: read token (file/`-`/stdin into Zeroizing, refuse empty); no --apply ⇒ stderr dry-run
+  preview, no egress; --apply ⇒ Vault.RevokeGithubToken{token,apply,installation_id}, drain RevokeResp; --json
+  ⇒ {"revoked":<bool>,"dry_run":<bool>} to stdout, human text to stderr. Token NEVER printed.
+
+## relay_revoke tie-in (best-effort, native-plane only)
+1. NativeSubtoken success → store Zeroizing(token) keyed by relay_id (replace prior; never persisted; cleared
+   on lock()/clear_provider). 2. relay_revoke(apply=true): after policy+bearer revoke (1443-1461),
+   cache.remove(relay_id) → best-effort revoke_installation_token; success⇒revoked event+audit, failure⇒
+   best_effort_failed audit, SWALLOW err (relay still revoked at policy/bearer; worst case token lives ≤1h
+   = today's behavior). 3. dry-run apply=false: no egress, count only. 4. cleared on lock()/clear_provider
+   (fail-closed: locked vault holds no live token bytes).
 
 ## Dep decision (no-C proof)
-rustls 0.23.40(ring), rustls-webpki, rustls-pki-types, ring, http-body-util(Limited), std/tokio::time — ALL
-already in Cargo.lock. ZERO new crates. mTLS verifier built _with_provider(ring) → single ring-only rustls.
-no-c.sh stays green.
+ZERO new deps. Reuses mint_github::HttpTransport (seam), secretd DaemonHttpTransport (existing reqwest/rustls-
+on-ring), Zeroizing, tonic/prost (proto regen only), clap. No sqlite/openssl/aws-lc; one rustls(ring) remains.
+no-c.sh operates on resolved cargo metadata → graph unchanged → unaffected (run it anyway). DELETE has no body
+→ no new serializer.
 
-## Tests
-engine units (inject clock + seeded RNG, jti.rs pattern): nonce issue→consume; second consume→Unknown;
-expired→Expired; missing→Missing; full→Err; sweep-then-issue; concurrent single-winner. admission: burst→
-Throttled; refill; idle sweep; MAX_KEYS full→Throttled; concurrent. e2e (extend edge_e2e.rs; new
-edge_hardening_e2e.rs; cfg relay-edge, reuse connect_and_ekm/make_proof, make_proof gains optional nonce arg):
-nonce challenge→retry 200; stale-nonce→401; rate-limit→429 (assert shed BEFORE upstream recorder saw a key);
-oversized-body→413; stalled-body→408 (small injected timeout override); mTLS require_client_cert=true: no
-cert→handshake fail, valid cert(rcgen client-CA)→200. CI-tolerant (pure in-process, small injected params).
-gates: no-c.sh, shape.sh (confirm mTLS verifier adds no banned import), fmt, clippy --workspace -Dwarnings,
-test -p secrets-engine, test -p secretd --features relay-edge.
+## Fail-closed matrix
+dry-run default (apply=false) → no egress, dry_run audit+event, return false. transport error → Err →
+unavailable (never success). non-204 (401/404/422) → Err(MintError::Other "{status} ... {snippet≤200}", no
+token) → unavailable/permission_denied. locked vault → Err(Locked) → failed_precondition. missing App cred →
+N/A (revoke needs no App key; bearer = token). empty/blank token → invalid_argument, no egress. relay tie-in
+failure → best_effort_failed audit, swallowed, relay revoke still returns bearer count.
+
+## Tests (all CI-offline: FakeTransport / loopback mock, never real GitHub)
+mint_github.rs units: revoke_builds_correct_delete_request (method/url/headers/empty body);
+revoke_204_is_success; revoke_non_204_is_failure (401, assert no token in err); revoke_transport_error_is_failure;
+revoke_token_is_zeroized (token only in auth header, not in MintError Display).
+lib.rs units (reuse unlocked_engine_with_transport ~4334): revoke_github_token_dry_run_no_egress;
+revoke_github_token_apply_204 (GithubTokenRevoked{revoked}, metadata-only audit); _locked_vault_fails_closed;
+relay_revoke_native_tie_in_best_effort (DELETE fired; 500 variant ⇒ relay_revoke STILL returns bearer count).
+secretctl units (clap round-trip): revoke_token parses + defaults dry-run; accepts `-` stdin; requires token.
+secretd e2e (native_mint_e2e.rs loopback + ENVCTL_GITHUB_API_BASE ~419-595): revoke over wire 204 ⇒
+{count_revoked:1,dry_run:false}; dry-run contacts nothing; locked vault ⇒ failed_precondition.
 
 ## Sequencing (leaf-first)
-1 nonce.rs+tests+reexport. 2 admission.rs+tests+reexport. 3 dpop.rs surface nonce. 4 listener.rs PR-2a
-(ConnState admit/nonce/rng/peer; admission step-0; nonce challenge; Refusal enum + challenge_nonce helper).
-5 listener.rs body-caps/timeouts. 6 e2e PR-2a. 7 tls.rs+mod.rs PR-2b mTLS + fail-closed startup + e2e.
-8 all gates + fmt/clippy; verify relay-edge-OFF build byte-for-byte unaffected.
+1 mint_github.rs build_revoke_request + revoke_installation_token + units. 2 event.rs GithubTokenRevoked.
+3 lib.rs revoke_github_token + native_token_cache + relay_revoke tie-in + lock/clear clearing + units.
+4 control.proto RevokeGithubToken RPC + msg (regen). 5 grpc.rs handler (+non-feature unimplemented), reuse
+map_mint_github_err. 6 secretctl cli.rs+main.rs RevokeToken + clap tests. 7 native_mint_e2e.rs.
+8 fmt + clippy --workspace -Dwarnings (rtk proxy) + 4 CI gates (no-c proves graph unchanged).
 
 ## Invariants (each checkable)
-1 no-C/one ring-only: zero new deps, mTLS _with_provider(ring), no-c.sh green. 2 engine single non-printing:
-NonceStore/AdmissionLimiter sync std+ring::rand, typed rejects, no println!; edge does I/O. 3 decide() sole
-Allow authority: admission/nonce only reject early; full verify+decide() run on every accepted req (test:
-429'd req never reaches recording upstream); mTLS additive not replacement. 4 fail-closed/no panic: every
-matrix row rejects; poisoned locks reject; no unwrap on req path; mTLS-misconfig→startup Err. 5 no secret in
-logs: rejections metadata-only; nonces (non-secret) not logged needlessly. 6 relay-tls only/FS-S25/EKM:
-client-CA separate input on SAME ServerConfig, no MITM-CA import, EKM untouched. 7 default-OFF relay-edge +
-mTLS additionally opt-in (require_client_cert default false; with_no_client_auth byte-for-byte when off).
+no-C: zero new deps, cargo metadata unchanged → no-c.sh green; grep diff for new Cargo.toml dep (none).
+engine single non-printing: request ctor + 204/non-204 + tie-in in engine via HttpTransport seam (env-free),
+secretd supplies transport+RPC, secretctl thin; no println! in engine; emits SecretEvent. fail-closed/dry-run:
+apply default false previews w/o egress, non-204/transport→Err never false success (tests guard). no secret in
+logs: token Zeroizing only in auth header, audit/event metadata-only, map_mint_github_err echoes no secret,
+no {:?} of revoke request (zeroize test guards). frozen-contract: mint-github flag/JSON + MintGithub*
+untouched; revoke is additive RPC/verb/event (mint argv + proto drift tests stay green).
 
 ## Risks
-body-cap wiring vs swap_and_respond_streaming body type (Incoming/ProxyBody, proxy.rs:47) — implementer
-confirms non-breaking Limited wrap vs Content-Length guard; 413 e2e is the gate. verify_remote_presentation
-return-type change (StatusCode→Refusal) touches one caller (listener.rs:192), low blast radius. HTTP/2
-coalescing + single-use nonce: each req carries own proof+nonce → fine; windowed fallback is one-line.
-context7 returned stale rustls 0.20 docs → WebPkiClientVerifier::builder_with_provider asserted from in-tree
-rustls 0.23.40 usage (tls.rs:83) + lockfile; implementer MUST confirm exact builder method name vs rustls
-0.23.40 rustdoc before finalizing PR-2b.
+GHES api-base: revoke must read ENVCTL_GITHUB_API_BASE the SAME way as mint (thread api_base identically;
+e2e covers via loopback). token-via-argv leak: default-recommend `--token -` stdin (same as secret add
+--value-stdin). best-effort over-promise: doc-comment + --help state plainly it revokes only the relay's last
+engine-minted native token; explicit verb is the kill-switch for handed-off tokens.
 
-## Out of scope (named follow-ups)
-TASK-0031-PR2c proxy-protocol-source-ip · TASK-0033 remote-clients-CA lifecycle (mint/renew/revoke) ·
-group-commit audit batching + watch-push stream re-check (pre-existing deferrals).
+## Out of scope (follow-up)
+GUI revoke parity (when GUI gains mint-github) · blanket auto-revoke-on-relay-revoke for handed-off tokens
+(needs persisted encrypted registry + GC, worse at-rest posture) · bulk all-tokens revoke (no GitHub endpoint).

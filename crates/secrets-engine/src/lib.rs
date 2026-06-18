@@ -38,12 +38,14 @@ pub use guard::{check_sec_guards, Destructiveness, SecGuard, UnlockContext};
 pub use keyslot::{Argon2Params, Factor, Kdf, Keyslot};
 #[cfg(feature = "provider-github")]
 pub use mint_github::{
-    build_app_jwt, GitHubAppMint, GithubMintParams, HttpRequest, HttpResponse, HttpTransport,
-    NoopHttpTransport, TransportError, MAX_JWT_TTL_SECS,
+    build_app_jwt, build_revoke_request, revoke_installation_token, GitHubAppMint,
+    GithubMintParams, HttpRequest, HttpResponse, HttpTransport, NoopHttpTransport, TransportError,
+    MAX_JWT_TTL_SECS,
 };
 pub use seam::{Clock, ProviderMint, RealUsbProbe, SystemClock, Upstream, UsbProbe};
 
-use std::sync::{Arc, RwLock};
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex, RwLock};
 use zeroize::Zeroizing;
 
 use event::AuditOutcome;
@@ -126,6 +128,16 @@ pub const GITHUB_APP_KEY_NAME: &str = "github-app-private-key";
 #[cfg(feature = "provider-github")]
 pub const GITHUB_APP_ID_META: &str = "github-app-id";
 
+/// TASK-0027 — the GitHub REST base + User-Agent the engine uses for the BEST-EFFORT native
+/// early-revoke fired from `relay_revoke`. The explicit-token verb (`revoke_github_token`) threads
+/// an `api_base` from the request (so it works against GHES); the relay tie-in has no request-level
+/// base, so it targets the public default. A GHES relay's native early-revoke is therefore a
+/// documented best-effort limitation — its policy+bearer revoke is authoritative regardless.
+#[cfg(feature = "provider-github")]
+const GITHUB_API_BASE_DEFAULT: &str = "https://api.github.com";
+#[cfg(feature = "provider-github")]
+const GITHUB_REVOKE_USER_AGENT: &str = "flexnetos-github-app";
+
 fn app_id_meta_key(secret_name: &str) -> String {
     format!("{secret_name}.app_id")
 }
@@ -172,6 +184,14 @@ struct EngineInner {
     /// a transport it can hand to that minter even before any provider is installed.
     #[cfg(feature = "provider-github")]
     github_transport: Box<dyn mint_github::HttpTransport>,
+    /// TASK-0027 — the last engine-minted NATIVE installation token per relay, keyed by `relay_id`.
+    /// Populated in the `NativeSubtoken` success branch of [`Engine::resolve_injection`] (replacing
+    /// any prior entry for that relay) so `relay_revoke(apply=true)` can fire a BEST-EFFORT
+    /// `DELETE /installation/token` early-revoke against the live token bytes the engine still holds
+    /// in-process. NEVER persisted; CLEARED on `lock()` / `clear_provider()` (fail-closed: a locked
+    /// vault holds no live token). The values are `Zeroizing` (wiped on drop).
+    #[cfg(feature = "provider-github")]
+    native_token_cache: Mutex<HashMap<String, Zeroizing<Vec<u8>>>>,
     owner_uid: u32,
     /// Short-TTL cache for the **network** presence factor (Profile S, the Cognitum Seed):
     /// `(proven, resolved_at_wall_ms)`. The per-request egress path (`relay_swap`) must not do a
@@ -303,6 +323,8 @@ impl Engine {
                 upstream,
                 #[cfg(feature = "provider-github")]
                 github_transport,
+                #[cfg(feature = "provider-github")]
+                native_token_cache: Mutex::new(HashMap::new()),
                 owner_uid,
                 #[cfg(feature = "seed-factor")]
                 presence_cache: std::sync::Mutex::new(None),
@@ -1470,6 +1492,59 @@ impl Engine {
             relay: relay_id.to_string(),
             reason: "operator revoke".to_string(),
         });
+
+        // TASK-0027 — BEST-EFFORT native early-revoke. If the engine still holds this relay's last
+        // engine-minted native installation token, fire a `DELETE /installation/token` to kill it
+        // immediately (instead of waiting out the ~1h expiry). This is the ONE relay-revoke plane
+        // where the engine has live token bytes to revoke (a handed-off/rotated or
+        // BaseUrlRepoint/MitM relay has nothing to auto-revoke; its policy+bearer revoke above is
+        // authoritative). Failure is SWALLOWED — `relay_revoke` MUST still return its bearer count;
+        // worst case the native token lives out its ≤1h TTL (today's behavior). The entry is removed
+        // regardless (we hold no live token after revoking, success or not).
+        #[cfg(feature = "provider-github")]
+        {
+            let cached = self
+                .inner
+                .native_token_cache
+                .lock()
+                .expect("native token cache")
+                .remove(relay_id);
+            if let Some(token) = cached {
+                match mint_github::revoke_installation_token(
+                    self.inner.github_transport.as_ref(),
+                    GITHUB_API_BASE_DEFAULT,
+                    GITHUB_REVOKE_USER_AGENT,
+                    &token,
+                ) {
+                    Ok(()) => {
+                        self.audit_ok(
+                            sink,
+                            "github_token_revoked",
+                            Some(relay_id.to_string()),
+                            serde_json::json!({ "outcome": "revoked" }),
+                        )?;
+                        sink.emit(SecretEvent::GithubTokenRevoked {
+                            installation_id: None,
+                            outcome: "revoked".to_string(),
+                        });
+                    }
+                    Err(_) => {
+                        // Swallow: the error text never carries the token, but we surface only a
+                        // fixed outcome label (metadata-only) — relay revoke still succeeds.
+                        self.audit_failed(
+                            sink,
+                            "github_token_revoked",
+                            Some(relay_id.to_string()),
+                            serde_json::json!({ "outcome": "best_effort_failed" }),
+                        )?;
+                        sink.emit(SecretEvent::GithubTokenRevoked {
+                            installation_id: None,
+                            outcome: "best_effort_failed".to_string(),
+                        });
+                    }
+                }
+            }
+        }
         Ok(n)
     }
 
@@ -1961,9 +2036,16 @@ impl Engine {
 
     /// Reinstall the `NoMint` default, dropping any installed minter (and the `Zeroizing` App PEM it
     /// holds). Called on `lock()` and by the daemon's lock RPC handler — fail-closed: a locked vault
-    /// must hold no live native-mint key. Idempotent.
+    /// must hold no live native-mint key. Idempotent. Also DROPS the native-token cache (TASK-0027):
+    /// a locked/cleared vault holds no live engine-minted installation token.
     pub fn clear_provider(&self) {
         *self.inner.provider.write().expect("provider lock") = Box::new(seam::NoMint);
+        #[cfg(feature = "provider-github")]
+        self.inner
+            .native_token_cache
+            .lock()
+            .expect("native token cache")
+            .clear();
     }
 
     /// Read a native-mint provider's App credential from the UNLOCKED vault: the App private-key PEM
@@ -2168,6 +2250,79 @@ impl Engine {
         Ok(scoped)
     }
 
+    /// TASK-0027 — early-revoke a GitHub installation access token via `DELETE /installation/token`.
+    /// The token is supplied by the HOLDER (the explicit kill-switch verb): GitHub authenticates the
+    /// revoke with the TOKEN ITSELF as the bearer (not the App-JWT), so no App credential is needed —
+    /// only an UNLOCKED vault (`EngineError::Locked` if locked, matching mint's auth floor).
+    ///
+    /// `apply=false` ⇒ DRY-RUN: a `{apply:false}` audit row + `GithubTokenRevoked{outcome:"dry_run"}`
+    /// event, NO egress, returns `Ok(false)`. `apply=true` ⇒ drive
+    /// [`revoke_installation_token`](mint_github::revoke_installation_token) over the engine's
+    /// `github_transport` seam: on GitHub's **204** ⇒ `GithubTokenRevoked{outcome:"revoked"}` + ok
+    /// audit + `Ok(true)`; on transport error / non-204 ⇒ propagate `Err` (NEVER a false success).
+    ///
+    /// The token (`Zeroizing`) lives ONLY in the revoke request's auth header; it NEVER enters the
+    /// audit detail, the event, or the returned `Err`. `api_base` threads the GHES base the same way
+    /// `mint_github_token` does (env reads stay in the daemon — the engine is env-free).
+    #[cfg(feature = "provider-github")]
+    pub fn revoke_github_token(
+        &self,
+        token: Zeroizing<Vec<u8>>,
+        apply: bool,
+        api_base: Option<String>,
+        sink: &EventSink,
+    ) -> anyhow::Result<bool> {
+        // Auth floor: require the vault Unlocked (mirrors mint). A locked vault ⇒ Err(Locked).
+        {
+            let v = self.inner.vault.read().expect("vault lock");
+            if v.dek().is_none() {
+                return Err(EngineError::Locked.into());
+            }
+        }
+
+        if !apply {
+            // Dry-run: preview only, NO egress. Metadata-only audit + event.
+            self.audit_ok(
+                sink,
+                "github_token_revoked",
+                None,
+                serde_json::json!({ "apply": false }),
+            )?;
+            sink.emit(SecretEvent::GithubTokenRevoked {
+                installation_id: None,
+                outcome: "dry_run".to_string(),
+            });
+            return Ok(false);
+        }
+
+        let base = api_base
+            .as_deref()
+            .unwrap_or(GITHUB_API_BASE_DEFAULT)
+            .to_string();
+        // Drive the DELETE; 204 ⇒ Ok, transport/non-204 ⇒ Err (no false success). The error text
+        // never contains the token (built without it), so it is safe to propagate.
+        mint_github::revoke_installation_token(
+            self.inner.github_transport.as_ref(),
+            &base,
+            GITHUB_REVOKE_USER_AGENT,
+            &token,
+        )
+        .map_err(|e| anyhow::anyhow!("github revoke failed: {e}"))?;
+
+        // Metadata-only audit + event — NEVER the token.
+        self.audit_ok(
+            sink,
+            "github_token_revoked",
+            None,
+            serde_json::json!({ "apply": true, "outcome": "revoked" }),
+        )?;
+        sink.emit(SecretEvent::GithubTokenRevoked {
+            installation_id: None,
+            outcome: "revoked".to_string(),
+        });
+        Ok(true)
+    }
+
     /// Build the child-env injection for a freshly-minted bearer (G2). This is the SINGLE place the
     /// native-subtoken decision lives — the front-ends (CLI/GUI/daemon) call THIS, never
     /// [`inject::injection_template`] directly, so the mint/inject logic can't diverge.
@@ -2236,6 +2391,19 @@ impl Engine {
 
         match mint_result {
             Ok(scoped) => {
+                // TASK-0027 — retain the engine-minted NATIVE token bytes (in-memory, Zeroizing,
+                // never persisted) keyed by relay so a later `relay_revoke(apply=true)` can fire a
+                // best-effort `DELETE /installation/token`. Replaces any prior entry for this relay;
+                // cleared on lock()/clear_provider(). The token NEVER leaves the cache except as the
+                // revoke request's auth-header bearer.
+                #[cfg(feature = "provider-github")]
+                {
+                    self.inner
+                        .native_token_cache
+                        .lock()
+                        .expect("native token cache")
+                        .insert(relay.to_string(), scoped.token.clone());
+                }
                 // Inject the MINTED token (never the relay bearer) into the provider's key var(s).
                 // `expires_at` is GitHub's authoritative value (RFC3339 from epoch secs), surfaced
                 // honestly for the audit/event metadata — the minted token itself NEVER appears.
@@ -4505,6 +4673,310 @@ mod native_mint_tests {
         assert!(
             err.to_string().contains("github mint failed"),
             "surfaces a fail-closed mint error, got: {err}"
+        );
+    }
+
+    // ---- TASK-0027: revoke_github_token (explicit-token verb) + relay_revoke tie-in -----------
+
+    #[test]
+    fn revoke_github_token_dry_run_no_egress() {
+        // apply=false ⇒ no DELETE on the wire, audit/event say "dry_run", returns false.
+        let (engine, sink, rx) = unlocked_engine_with_transport(204, "");
+        let _ = drain(&rx);
+        let revoked = engine
+            .revoke_github_token(
+                Zeroizing::new(b"ghs_secret_token".to_vec()),
+                false,
+                None,
+                &sink,
+            )
+            .expect("dry-run ok");
+        assert!(!revoked, "dry-run never reports a revoke");
+        let events = drain(&rx);
+        let saw_dry = events.iter().any(|e| {
+            matches!(e, SecretEvent::GithubTokenRevoked { outcome, .. } if outcome == "dry_run")
+        });
+        assert!(saw_dry, "a dry_run GithubTokenRevoked event was emitted");
+        for e in &events {
+            assert!(
+                !serde_json::to_string(e)
+                    .unwrap()
+                    .contains("ghs_secret_token"),
+                "token never appears in an event"
+            );
+        }
+    }
+
+    #[test]
+    fn revoke_github_token_apply_204_succeeds_metadata_only() {
+        let (engine, sink, rx) = unlocked_engine_with_transport(204, "");
+        let _ = drain(&rx);
+        let revoked = engine
+            .revoke_github_token(
+                Zeroizing::new(b"ghs_secret_token".to_vec()),
+                true,
+                None,
+                &sink,
+            )
+            .expect("204 ⇒ Ok(true)");
+        assert!(revoked, "204 reports a successful revoke");
+        let events = drain(&rx);
+        let saw_revoked = events.iter().any(|e| {
+            matches!(e, SecretEvent::GithubTokenRevoked { outcome, .. } if outcome == "revoked")
+        });
+        assert!(
+            saw_revoked,
+            "a revoked GithubTokenRevoked event was emitted"
+        );
+        for e in &events {
+            assert!(
+                !serde_json::to_string(e)
+                    .unwrap()
+                    .contains("ghs_secret_token"),
+                "token never appears in an event"
+            );
+        }
+    }
+
+    #[test]
+    fn revoke_github_token_non_204_is_err_no_false_success() {
+        // A non-204 (401) ⇒ Err; never a fabricated success. The token must not appear in the error.
+        let (engine, sink, _rx) = unlocked_engine_with_transport(401, r#"{"message":"Bad"}"#);
+        let err = match engine.revoke_github_token(
+            Zeroizing::new(b"ghs_secret_token".to_vec()),
+            true,
+            None,
+            &sink,
+        ) {
+            Ok(_) => panic!("non-204 must be an error"),
+            Err(e) => e,
+        };
+        let msg = err.to_string();
+        assert!(msg.contains("github revoke failed"), "fail-closed: {msg}");
+        assert!(
+            !msg.contains("ghs_secret_token"),
+            "no token in error: {msg}"
+        );
+    }
+
+    #[test]
+    fn revoke_github_token_locked_vault_fails_closed() {
+        let (engine, sink, _rx) = unlocked_engine_with_transport(204, "");
+        engine.lock(&sink).expect("lock");
+        let err = match engine.revoke_github_token(
+            Zeroizing::new(b"ghs_secret_token".to_vec()),
+            true,
+            None,
+            &sink,
+        ) {
+            Ok(_) => panic!("locked vault must refuse"),
+            Err(e) => e,
+        };
+        assert!(
+            err.downcast_ref::<EngineError>()
+                .map(|e| matches!(e, EngineError::Locked))
+                .unwrap_or(false),
+            "locked refusal is EngineError::Locked, got: {err}"
+        );
+    }
+
+    /// Build an UNLOCKED engine with a method-routing transport (POST→mint, DELETE→revoke), enroll
+    /// the App key, mint a native sub-token (which populates the engine's native-token cache for the
+    /// relay), then assert `relay_revoke(apply=true)` fires the best-effort DELETE.
+    fn unlocked_engine_with_method_transport(
+        post_status: u16,
+        post_body: &str,
+        delete_status: u16,
+    ) -> (
+        Engine,
+        EventSink,
+        std::sync::mpsc::Receiver<SecretEvent>,
+        Arc<Mutex<Vec<String>>>,
+    ) {
+        let seen = Arc::new(Mutex::new(Vec::new()));
+        // The transport records into a shared Vec we can inspect after the engine drops its ref.
+        struct Shared {
+            post_status: u16,
+            post_body: String,
+            delete_status: u16,
+            seen: Arc<Mutex<Vec<String>>>,
+        }
+        impl HttpTransport for Shared {
+            fn execute(&self, req: &HttpRequest) -> Result<HttpResponse, TransportError> {
+                self.seen.lock().unwrap().push(req.method.to_string());
+                let (status, body) = match req.method {
+                    "DELETE" => (self.delete_status, String::new()),
+                    _ => (self.post_status, self.post_body.clone()),
+                };
+                Ok(HttpResponse {
+                    status,
+                    body: body.into_bytes(),
+                })
+            }
+        }
+        let engine = Engine::with_seams(
+            paths(),
+            Box::new(vault::InMemStore::new()),
+            Box::new(FixedClock),
+            Box::new(NoUsb),
+            Box::new(seam::NoMint),
+            Box::new(NullUpstream),
+            Box::new(Shared {
+                post_status,
+                post_body: post_body.to_string(),
+                delete_status,
+                seen: seen.clone(),
+            }),
+        )
+        .expect("with_seams");
+        let (sink, rx) = EventSink::channel();
+        engine
+            .init_vault(
+                Zeroizing::new("correct horse battery staple".to_string()),
+                None,
+                None,
+                at_floor(),
+                &sink,
+            )
+            .expect("init_vault");
+        engine
+            .unlock(
+                Unlock::Passphrase(Zeroizing::new("correct horse battery staple".to_string())),
+                &sink,
+            )
+            .expect("unlock");
+        (engine, sink, rx, seen)
+    }
+
+    /// Install a `GitHubAppMint` minter so a NativeSubtoken resolve_injection mints (and caches the
+    /// token), then drive resolve_injection to populate the engine's native-token cache.
+    fn mint_native_for_relay(engine: &Engine, sink: &EventSink, relay: &str) {
+        let minter = GitHubAppMint::new(
+            "4044997",
+            12345,
+            Zeroizing::new(TEST_PEM.as_bytes().to_vec()),
+            FixedClock,
+            // The engine's own github_transport is what `revoke_installation_token` uses; the minter
+            // needs its OWN transport for the POST. Reuse a small 201-returning fake.
+            Mint201,
+        );
+        engine.install_provider(Box::new(minter));
+        engine
+            .resolve_injection(
+                Provider::Github,
+                relay,
+                "relay-bearer",
+                "",
+                "",
+                inject::DataPlaneMode::NativeSubtoken,
+                vec!["meta".into()],
+                vec!["checks:write".into()],
+                3600,
+                sink,
+            )
+            .expect("resolve ok")
+            .expect("minted injection");
+    }
+
+    /// A 201-returning transport for the minter's own POST during `mint_native_for_relay`.
+    struct Mint201;
+    impl HttpTransport for Mint201 {
+        fn execute(&self, _req: &HttpRequest) -> Result<HttpResponse, TransportError> {
+            Ok(HttpResponse {
+                status: 201,
+                body: br#"{"token":"ghs_native_cached","expires_at":"2026-06-12T23:00:00Z"}"#
+                    .to_vec(),
+            })
+        }
+    }
+
+    #[test]
+    fn relay_revoke_native_tie_in_best_effort_success() {
+        // The engine's github_transport returns 204 on DELETE. After a native mint caches the token,
+        // relay_revoke(apply=true) fires the best-effort DELETE and emits a revoked event.
+        let (engine, sink, rx, seen) = unlocked_engine_with_method_transport(201, "", 204);
+        mint_native_for_relay(&engine, &sink, "gh");
+        let _ = drain(&rx);
+        let n = engine
+            .relay_revoke("gh", true, &sink)
+            .expect("relay revoke");
+        // relay_revoke returns its bearer count (0 here — no bearers stored), and the tie-in fired.
+        let _ = n;
+        assert!(
+            seen.lock().unwrap().iter().any(|m| m == "DELETE"),
+            "the best-effort DELETE was fired"
+        );
+        let events = drain(&rx);
+        assert!(
+            events.iter().any(|e| matches!(
+                e,
+                SecretEvent::GithubTokenRevoked { outcome, .. } if outcome == "revoked"
+            )),
+            "a revoked GithubTokenRevoked event was emitted"
+        );
+    }
+
+    #[test]
+    fn relay_revoke_native_tie_in_best_effort_failure_still_returns() {
+        // The DELETE returns 500 — the tie-in SWALLOWS the failure; relay_revoke still succeeds and
+        // emits a best_effort_failed event (metadata only).
+        let (engine, sink, rx, seen) = unlocked_engine_with_method_transport(201, "", 500);
+        mint_native_for_relay(&engine, &sink, "gh");
+        let _ = drain(&rx);
+        let res = engine.relay_revoke("gh", true, &sink);
+        assert!(
+            res.is_ok(),
+            "relay_revoke still returns Ok despite revoke failure"
+        );
+        assert!(
+            seen.lock().unwrap().iter().any(|m| m == "DELETE"),
+            "the best-effort DELETE was attempted"
+        );
+        let events = drain(&rx);
+        assert!(
+            events.iter().any(|e| matches!(
+                e,
+                SecretEvent::GithubTokenRevoked { outcome, .. } if outcome == "best_effort_failed"
+            )),
+            "a best_effort_failed event was emitted"
+        );
+    }
+
+    #[test]
+    fn relay_revoke_dry_run_no_native_egress() {
+        // apply=false ⇒ no DELETE, no native egress (count only).
+        let (engine, sink, rx, seen) = unlocked_engine_with_method_transport(201, "", 204);
+        mint_native_for_relay(&engine, &sink, "gh");
+        let _ = drain(&rx);
+        let _ = engine.relay_revoke("gh", false, &sink).expect("dry-run");
+        assert!(
+            !seen.lock().unwrap().iter().any(|m| m == "DELETE"),
+            "dry-run fires no DELETE"
+        );
+    }
+
+    #[test]
+    fn lock_clears_native_token_cache() {
+        // After a native mint caches the token, lock() must drop it so a post-lock relay_revoke fires
+        // no DELETE (fail-closed: a locked vault holds no live token).
+        let (engine, sink, rx, seen) = unlocked_engine_with_method_transport(201, "", 204);
+        mint_native_for_relay(&engine, &sink, "gh");
+        engine.lock(&sink).expect("lock");
+        seen.lock().unwrap().clear();
+        // Re-unlock so relay_revoke's own DEK-gated reseal path doesn't trip; the cache is empty.
+        engine
+            .unlock(
+                Unlock::Passphrase(Zeroizing::new("correct horse battery staple".to_string())),
+                &sink,
+            )
+            .expect("unlock");
+        let _ = drain(&rx);
+        let _ = engine
+            .relay_revoke("gh", true, &sink)
+            .expect("relay revoke");
+        assert!(
+            !seen.lock().unwrap().iter().any(|m| m == "DELETE"),
+            "lock() cleared the cache ⇒ no DELETE after re-unlock"
         );
     }
 }

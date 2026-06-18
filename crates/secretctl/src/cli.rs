@@ -96,6 +96,22 @@ pub enum GithubAppCmd {
         #[arg(long)]
         apply: bool,
     },
+    /// Early-revoke a GitHub installation access token via `DELETE /installation/token` (TASK-0027).
+    /// The token authenticates the revoke ITSELF (it is the kill-switch for an outstanding token —
+    /// e.g. one already handed off to a child tool). Dry-run preview unless `--apply`. The token is
+    /// NEVER printed in any mode.
+    RevokeToken {
+        /// The installation token to revoke, OR `-` to read it from stdin, OR an `@path` file. The
+        /// bytes are NEVER printed. Recommended: `--token -` (avoids leaking it into argv/ps).
+        #[arg(long = "token")]
+        token: String,
+        /// The installation id this token belongs to (optional, metadata-only; aids the audit trail).
+        #[arg(long = "installation-id")]
+        installation_id: Option<u64>,
+        /// Actually revoke. Without it, prints a dry-run preview (to stderr) and contacts nothing.
+        #[arg(long)]
+        apply: bool,
+    },
 }
 
 #[derive(Args, Debug)]

@@ -260,6 +260,64 @@ impl<C: Clock, T: HttpTransport> ProviderMint for GitHubAppMint<C, T> {
     }
 }
 
+/// Build the `DELETE /installation/token` early-revoke request (TASK-0027). GitHub revokes the
+/// installation access token **immediately** when this endpoint is called authenticated with the
+/// token ITSELF as the bearer (NOT the App-JWT) — it returns **204 No Content** on success. The
+/// request is pure + transport-agnostic, mirroring [`GitHubAppMint::mint_scoped`]'s request shaping.
+///
+/// The `installation_token` appears ONLY in the `Authorization` header; the body is EMPTY. The
+/// returned [`HttpRequest`] therefore carries the secret in `headers` — it MUST NEVER be
+/// `{:?}`-logged (its `Debug` impl would print the bearer). Callers pass it straight to the
+/// transport and drop it.
+pub fn build_revoke_request(
+    api_base: &str,
+    user_agent: &str,
+    installation_token: &[u8],
+) -> HttpRequest {
+    let bearer = format!("Bearer {}", String::from_utf8_lossy(installation_token));
+    HttpRequest {
+        method: "DELETE",
+        url: format!("{api_base}/installation/token"),
+        headers: vec![
+            ("Authorization".into(), bearer),
+            ("Accept".into(), "application/vnd.github+json".into()),
+            ("X-GitHub-Api-Version".into(), "2022-11-28".into()),
+            ("User-Agent".into(), user_agent.to_string()),
+        ],
+        body: Vec::new(),
+    }
+}
+
+/// Drive an installation-token early-revoke over the supplied [`HttpTransport`] (TASK-0027). On
+/// GitHub's **204 No Content** success ⇒ `Ok(())`; a transport error OR any non-204 status ⇒
+/// `Err(MintError::Other(..))` carrying a ≤200-char body snippet (the revoke error body never
+/// contains a token, so the snippet is safe — mirrors the mint path's diagnostic). The token is
+/// supplied to [`build_revoke_request`] as the bearer ONLY; it never enters the returned error.
+pub fn revoke_installation_token<T: HttpTransport + ?Sized>(
+    transport: &T,
+    api_base: &str,
+    user_agent: &str,
+    installation_token: &[u8],
+) -> Result<(), MintError> {
+    let req = build_revoke_request(api_base, user_agent, installation_token);
+    let resp = transport
+        .execute(&req)
+        .map_err(|e| MintError::Other(format!("GitHub transport: {e}")))?;
+    if resp.status == 204 {
+        return Ok(());
+    }
+    // Non-204: surface a truncated snippet for diagnosis. The revoke error body never carries a
+    // token, so this is safe (same discipline as the mint path).
+    let snippet: String = String::from_utf8_lossy(&resp.body)
+        .chars()
+        .take(200)
+        .collect();
+    Err(MintError::Other(format!(
+        "GitHub returned {} revoking installation token: {snippet}",
+        resp.status
+    )))
+}
+
 /// Shape the `create installation access token` request body. `repositories` (repo names),
 /// `repository_ids` (NUMERIC ids), and `permissions` are each omitted when empty (⇒ the
 /// installation's full default scope). Each permission is `"name:access"` (e.g. `"checks:write"`);
@@ -653,5 +711,105 @@ UwgfTQ68ocgim83T
             ttl_secs: 60,
         };
         assert!(matches!(minter.mint_scoped(&req), Err(MintError::Other(_))));
+    }
+
+    // ---- TASK-0027: DELETE /installation/token early-revoke ----------------------------------
+
+    const REVOKE_TOKEN: &[u8] = b"ghs_revoke_me_now";
+
+    #[test]
+    fn revoke_builds_correct_delete_request() {
+        // The revoke request is a DELETE to {base}/installation/token with the token as the bearer,
+        // the standard Accept / api-version / user-agent headers, and an EMPTY body.
+        let req = build_revoke_request("https://gh.test", "flexnetos-github-app", REVOKE_TOKEN);
+        assert_eq!(req.method, "DELETE");
+        assert_eq!(req.url, "https://gh.test/installation/token");
+        assert_eq!(
+            header_value(&req, "Authorization"),
+            Some("Bearer ghs_revoke_me_now")
+        );
+        assert_eq!(
+            header_value(&req, "Accept"),
+            Some("application/vnd.github+json")
+        );
+        assert_eq!(
+            header_value(&req, "X-GitHub-Api-Version"),
+            Some("2022-11-28")
+        );
+        assert_eq!(
+            header_value(&req, "User-Agent"),
+            Some("flexnetos-github-app")
+        );
+        assert!(req.body.is_empty(), "DELETE carries no body");
+    }
+
+    #[test]
+    fn revoke_204_is_success() {
+        let fake = FakeTransport::new(204, "");
+        let out = revoke_installation_token(
+            &fake,
+            "https://gh.test",
+            "flexnetos-github-app",
+            REVOKE_TOKEN,
+        );
+        assert!(out.is_ok(), "204 No Content ⇒ Ok(())");
+        // The token reached the wire only as the auth header bearer.
+        let sent = fake.captured();
+        assert_eq!(sent.method, "DELETE");
+        assert_eq!(
+            header_value(&sent, "Authorization"),
+            Some("Bearer ghs_revoke_me_now")
+        );
+    }
+
+    #[test]
+    fn revoke_non_204_is_failure_without_token() {
+        // 401 (or any non-204) ⇒ Err; the error must NEVER echo the token.
+        let fake = FakeTransport::new(401, r#"{"message":"Bad credentials"}"#);
+        let err = revoke_installation_token(
+            &fake,
+            "https://gh.test",
+            "flexnetos-github-app",
+            REVOKE_TOKEN,
+        )
+        .expect_err("non-204 is an error");
+        let msg = err.to_string();
+        assert!(msg.contains("401"), "status surfaced: {msg}");
+        assert!(
+            !msg.contains("ghs_revoke_me_now"),
+            "token must never appear in the error: {msg}"
+        );
+    }
+
+    #[test]
+    fn revoke_transport_error_is_failure() {
+        // A transport-layer error ⇒ Err (never a false success that a 204 implies).
+        let err = revoke_installation_token(
+            &NoopHttpTransport,
+            "https://gh.test",
+            "flexnetos-github-app",
+            REVOKE_TOKEN,
+        )
+        .expect_err("transport error is an error");
+        assert!(matches!(err, MintError::Other(ref m) if m.contains("transport")));
+    }
+
+    #[test]
+    fn revoke_token_only_in_auth_header_not_in_error() {
+        // Even on the failure path the token lives ONLY in the request's auth header — it is never
+        // copied into the MintError Display (the request itself must never be {:?}-logged).
+        let fake = FakeTransport::new(422, r#"{"message":"Unprocessable"}"#);
+        let err = revoke_installation_token(
+            &fake,
+            "https://gh.test",
+            "flexnetos-github-app",
+            REVOKE_TOKEN,
+        )
+        .expect_err("422 is an error");
+        assert!(!err.to_string().contains("ghs_revoke_me_now"));
+        let sent = fake.captured();
+        // The token is exactly once, in the Authorization header — never the url or body.
+        assert!(!sent.url.contains("ghs_revoke_me_now"));
+        assert!(sent.body.is_empty());
     }
 }

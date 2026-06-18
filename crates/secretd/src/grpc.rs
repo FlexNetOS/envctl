@@ -452,6 +452,54 @@ impl v1::vault_server::Vault for VaultSvc {
             expires_at_unix: scoped.expires_at,
         }))
     }
+
+    /// Without the `provider-github` feature the daemon has no revoke path ⇒ `Unimplemented`.
+    #[cfg(not(feature = "provider-github"))]
+    async fn revoke_github_token(
+        &self,
+        _request: Request<v1::RevokeGithubTokenReq>,
+    ) -> Result<Response<v1::RevokeResp>, Status> {
+        Err(Status::unimplemented(
+            "Vault.RevokeGithubToken requires the provider-github feature",
+        ))
+    }
+
+    /// TASK-0027 — early-revoke a GitHub installation access token (`DELETE /installation/token`).
+    /// The `token` (bytes) authenticates the revoke ITSELF; it is moved into `Zeroizing` immediately
+    /// (the proto buffer drops with `req`) and flows ONLY into the engine. `apply=false` ⇒ dry-run
+    /// (no egress). Errors map via the SAME `map_mint_github_err` as the mint path (Locked ⇒
+    /// failed_precondition; transport/non-204 ⇒ unavailable). The token never reaches an error/log.
+    #[cfg(feature = "provider-github")]
+    async fn revoke_github_token(
+        &self,
+        request: Request<v1::RevokeGithubTokenReq>,
+    ) -> Result<Response<v1::RevokeResp>, Status> {
+        let req = request.into_inner();
+        // Move the token into a Zeroizing buffer; refuse a blank/empty token (no egress).
+        let token: Zeroizing<Vec<u8>> = Zeroizing::new(req.token);
+        if token.is_empty() {
+            return Err(Status::invalid_argument("token must not be empty"));
+        }
+        let apply = req.apply;
+        // Optional installation_id (0 ⇒ unknown), metadata-only.
+        let _installation_id = (req.installation_id != 0).then_some(req.installation_id);
+        // REST base override read HERE in the daemon (env-free engine), same as the mint path.
+        let api_base = std::env::var("ENVCTL_GITHUB_API_BASE")
+            .ok()
+            .filter(|b| !b.trim().is_empty());
+        let engine = self.engine.clone();
+        let revoked = tokio::task::spawn_blocking(move || {
+            let sink = EventSink::null();
+            engine.revoke_github_token(token, apply, api_base, &sink)
+        })
+        .await
+        .map_err(join_err)?
+        .map_err(map_mint_github_err)?;
+        Ok(Response::new(v1::RevokeResp {
+            count_revoked: revoked as u32,
+            dry_run: !apply,
+        }))
+    }
 }
 
 /// Map a `mint_github_token` failure to a tonic `Status` WITHOUT echoing any secret (the token never
