@@ -5,39 +5,41 @@ session_started: 2026-06-13
 loop: agenticOS-consolidation (.handoff/loop/backlog.md, Epics A–E; design = .handoff/decisions/ADR-0001)
 branch: develop   # work happens in FRESH worktrees off develop -> PR -> auto-promote to master
 worktree: (per-cycle: meta/.worktrees/<slug>/envctl off develop)
-cycle_budget: 1   # session 7 resumed post-compaction under heavy context — 1 cohesive build cycle (TASK-0031-PR2) then hand off
-cycles_this_session: 1   # RESUME SESSION 2026-06-17 (session 7): cycle = TASK-0031-PR2 (F2 edge hardening)
-cycles_total: 16
-last_item: TASK-0031-PR2 (F2 relay-edge hardening) — DONE, PR #122, guardian PASS, auto-merge armed
-status: HANDING OFF 2026-06-17 (session 7, 1 cycle done; budget reached; next is fresh-context early-revoke).
-  Cycle = TASK-0031-PR2 (F2): hardened the relay edge against replay/abuse + added opt-in strong mTLS, all
-  behind default-OFF relay-edge, ZERO new deps (ring promoted optional->unconditional in secrets-engine,
-  already in the resolved graph -> no new lockfile crate). Engine (security policy, sync/non-printing, siblings
-  to broker::jti): broker::nonce::NonceStore (server-issued DPoP nonce RFC 9449 §8-9; issue() via injected
-  ring::rand::SecureRandom, single-use check_and_consume, bounded 16384/5min, full-after-sweep->Err fail-closed);
-  broker::admission::AdmissionLimiter (per-key token bucket 120/min burst 60 MAX_KEYS 65536, new-key-vs-full->
-  Throttled never grow); SecretEvent::EdgeRequestShed metadata-only. Edge (I/O only): admission is step 0
-  BEFORE any crypto -> per-IP 429 (CVE-2024-47609; full verify+decide() still run on every non-shed req,
-  per-client quota stays in decide() rate_per_min); DPoP-Nonce challenge inside verify -> 401 + DPoP-Nonce +
-  WWW-Authenticate: DPoP error="use_dpop_nonce", retried proof must carry the nonce claim (parsed additively in
-  dpop.rs, validated by caller next to jti); body caps + handshake/header/idle/body timeouts -> 413/408.
-  Opt-in mTLS (OI-SM-4, default off): tls.rs load_from_dir_with_client_auth builds
-  WebPkiClientVerifier::builder_with_provider(roots, ring) (ring-only, confirmed vs in-tree rustls 0.23.40)
-  from an operator-provisioned remote-clients-CA PEM — separate input on the SAME relay-tls ServerConfig, never
-  the MITM CA (FS-S25); EdgeConfig require_client_cert(default false)+client_ca_path, require w/o CA -> startup
-  Err. Default keeps with_no_client_auth() byte-for-byte. Fail-closed (poisoned locks reject, no unwrap on req
-  path), 7 nonce + 5 admission engine units + edge_hardening_e2e (challenge->retry 200, stale-nonce 401,
-  rate-limit 429 asserted to shed before upstream, body 413, mTLS no-cert reject / valid accept), 4 gates green
-  + relay-edge-OFF build unaffected, guardian PASS. PR #122 auto-merge armed.
-  Session-7 also: confirmed #117 (TASK-0032) + #119 (reconcile) + #108 (TASK-0035) ALL MERGED to develop at
-  resume; #120/#121 (manifest portability) also landed. The relay edge is now PR-1 (listener) + PR-2 (hardening)
-  + PR-3 (stream tear-down) complete.
-  **NEXT PICK: TASK-0027 (early-revoke) → TASK-0028 (GUI parity) → TASK-0037 (Phase-7 verify) → TASK-0034
-  (hardening tail) → TASK-0038 (Certs.* Phase-4+).** New follow-ups filed: TASK-0031-PR2c (PROXY-protocol
-  source IP for per-IP shed behind an L4 front), TASK-0039 (remote-clients-CA lifecycle: mint/≤7d-leaf/renew/
-  revoke for the mTLS verifier). Small follow-up: MADV_DONTDUMP companion to #112 mlockall. SKIP TASK-0033
-  (VPS Profile B, owner-gated [!]).
-  FIRST on resume: confirm #122 merged; rebase if DIRTY (every secrets PR touches lib.rs + .handoff/).
+cycle_budget: 1   # session 8 resumed under heavy context — 1 cohesive build cycle (TASK-0027) then hand off
+cycles_this_session: 1   # RESUME SESSION 2026-06-17 (session 8): cycle = TASK-0027 (G2 installation-token early-revoke)
+cycles_total: 17
+last_item: TASK-0027 (G2 installation-token early-revoke) — DONE, PR #124, guardian PASS, auto-merge armed
+status: HANDING OFF 2026-06-17 (session 8, 1 cycle done; budget reached; next is fresh-context GUI parity).
+  Cycle = TASK-0027 (G2): active kill-switch for minted GitHub App installation tokens via GitHub's
+  DELETE /installation/token (authenticated with the TOKEN ITSELF as bearer, 204) — previously only the 1h
+  expiry retired a token. Purely ADDITIVE; mint-github frozen contract untouched. ZERO new deps (reuses the
+  existing HttpTransport seam / DaemonHttpTransport). Engine: mint_github::build_revoke_request +
+  revoke_installation_token<T> (204->Ok, transport/non-204->Err with ≤200ch snippet, never the token; token
+  only in the Authorization header, request never Debug-logged); Engine::revoke_github_token(token:Zeroizing,
+  apply, api_base, sink) gated on unlocked vault, apply=false dry-run no egress, apply=true returns true only
+  on real 204 (transport/non-204 propagate Err, never false success), reads ENVCTL_GITHUB_API_BASE like mint
+  (GHES parity); SecretEvent::GithubTokenRevoked{installation_id,outcome} metadata-only. relay_revoke tie-in
+  (best-effort, NATIVE plane only): NativeSubtoken resolve_injection caches the relay's last engine-minted token
+  (in-memory Zeroizing, never persisted, cleared on lock()/clear_provider); relay_revoke(apply=true) fires a
+  best-effort DELETE then clears it, failure swallowed into best_effort_failed audit (relay still returns bearer
+  count). Surface: additive proto rpc RevokeGithubToken(RevokeGithubTokenReq{bytes token,bool apply,uint64
+  installation_id}) reusing RevokeResp; secretd handler (empty->invalid_argument, Locked->failed_precondition,
+  transport/non-204->unavailable); secretctl github-app revoke-token --token <tok|-> [--installation-id]
+  [--apply] (dry-run default, stdin `-` to avoid argv leak, token never printed, --json {revoked,dry_run}).
+  Fail-closed, no unwrap on req path, token never in logs/audit/Err. Engine units + secretctl clap tests +
+  native_mint_e2e over-wire revoke (204/dry-run/locked); 4 gates + fmt + clippy + engine/secretd/secretctl
+  suites green. Guardian PASS. PR #124 auto-merge armed.
+  Session-8 also: confirmed #122 (TASK-0031-PR2) + #123 (reconcile) MERGED at resume; #116 (kasetto --help
+  port) merged mid-cycle (rebased clean, no conflict). The relay edge is PR-1+PR-2+PR-3 complete; the GitHub
+  App mint path now has enroll (#106) + mint (#105) + early-revoke (#124).
+  **NEXT PICK: TASK-0028 (GUI parity for relay-mint / mint-github / revoke — mint+revoke logic is engine-side,
+  CLI-only today) → TASK-0037 (Phase-7 verify-don't-rebuild) → TASK-0034 (hardening tail) → TASK-0038 (Certs.*
+  Phase-4+).** Open follow-ups: TASK-0031-PR2c (PROXY-protocol source IP), TASK-0039 (remote-clients-CA
+  lifecycle), MADV_DONTDUMP (companion to #112). SKIP TASK-0033 (VPS Profile B, owner-gated [!]).
+  OPERATIONAL NOTE (not a loop task): weave #126 asks for `github-app enroll` to unblock the App's mint —
+  that needs the ORIGINAL app.pem (the vault copy is broker_only/un-revealable by design) and is an
+  owner/operational action, NOT a forge cycle. Do not hunt for the PEM (sandbox correctly denies it).
+  FIRST on resume: confirm #124 merged; rebase if DIRTY (every secrets PR touches lib.rs + .handoff/).
   Resume via `/forge-loop resume`.
 
 ## Progress log

@@ -54,18 +54,19 @@ additive infra — let it merge — but it does **not** close TASK-0020.
 - **TASK-0026 DONE** — `secretctl github-app enroll` + `Vault.SetGithubAppId` RPC (PR #106, auto-merge armed). Enroll→mint round-trip e2e green. The App can now mint end-to-end (enroll once, then mint-github).
 - **Anti-drift wrap-up gate** live (PR #104 MERGED): backlog is now a written-back artifact.
 
-### ⏭ NEXT PICK (updated 2026-06-17 session 7): **TASK-0027** (early-revoke)
+### ⏭ NEXT PICK (updated 2026-06-17 session 8): **TASK-0028** (GUI parity)
 MERGED: TASK-0026 (#106), TASK-0030+OI-SM-1 (#109), **TASK-0031 PR-1 edge listener (#111)**, **TASK-0036
-mlockall (#112)**, **TASK-0032 F5 stream tear-down (#117)**, **TASK-0035 gRPC gaps (#108)**, plus infra
-#113 (low-cost-kdf-tests) / #114/#115/#120/#121 (Seed + manifest portability).
-IN FLIGHT (auto-merge armed): **TASK-0031-PR2 F2 edge hardening (#122)**. The relay edge is now complete:
-PR-1 listener + PR-2 hardening (nonce/admission/rate-limit/body-caps/timeouts/opt-in mTLS) + PR-3 stream
-tear-down. Next, in dep order:
-1. **TASK-0027** (early-revoke) → **TASK-0028** (GUI parity) →
-   **TASK-0037** (Phase-7 verify) → **TASK-0034** (hardening tail) → **TASK-0038** (Certs.* Phase-4+).
+mlockall (#112)**, **TASK-0032 F5 stream tear-down (#117)**, **TASK-0035 gRPC gaps (#108)**, **TASK-0031-PR2
+F2 edge hardening (#122)**, plus infra #113 (low-cost-kdf-tests) / #114/#115/#116/#120/#121 (Seed + manifest
+portability + kasetto --help).
+IN FLIGHT (auto-merge armed): **TASK-0027 G2 installation-token early-revoke (#124)**. The relay edge is
+complete (PR-1 listener + PR-2 hardening + PR-3 stream tear-down); the GitHub App mint path now has enroll
+(#106) + mint (#105) + early-revoke (#124). Next, in dep order:
+1. **TASK-0028** (GUI parity) — relay-mint / mint-github / **revoke** parity in `envctl-gui` (mint+revoke
+   logic is engine-side, CLI-only today; the GUI drives the SAME Engine API so no divergence).
+2. Then **TASK-0037** (Phase-7 verify) → **TASK-0034** (hardening tail) → **TASK-0038** (Certs.* Phase-4+).
    Small follow-up: **MADV_DONTDUMP** companion to the merged #112 mlockall.
-   New (from TASK-0031-PR2): **TASK-0031-PR2c** (PROXY-protocol source IP for the per-IP shed behind an L4
-   front) + **TASK-0039** (remote-clients-CA lifecycle: mint/≤7d-leaf/renew/revoke for the mTLS verifier).
+   Open follow-ups: **TASK-0031-PR2c** (PROXY-protocol source IP), **TASK-0039** (remote-clients-CA lifecycle).
 SKIP **TASK-0033** (VPS Profile B — owner-gated `[!]`). Resume with `/forge-loop`; for unattended
 completion use `/auto-provision`. FIRST on resume: confirm #122 merged; rebase if DIRTY (every
 secrets PR touches `lib.rs` + `.handoff/` so siblings recur DIRTY — expected, not a problem).
@@ -89,9 +90,16 @@ Acceptance: `secretctl mint-github --installation-id 140063898 --output json` re
 ### G2 follow-ups (were ONLY in PR #102 body — the drift the owner flagged; now tracked)
 - [x] **TASK-0026 (G2) — DONE 2026-06-17 (PR #106):** `secretctl github-app enroll` + `Vault.SetGithubAppId`
   RPC seal the broker-only App PEM + `github-app-id` meta. Round-trip e2e (enroll→mint) green.
-- [ ] **TASK-0027 (G2):** `DELETE /installation/token` early-revoke wired to `relay_revoke` (1h expiry
-  is the only kill-switch meanwhile).
-- [ ] **TASK-0028 (G2):** GUI relay-mint / mint-github parity (mint logic is engine-side; CLI-only today).
+- [x] **TASK-0027 (G2) — DONE 2026-06-17 (PR #124, guardian PASS):** `DELETE /installation/token`
+  early-revoke. Engine `revoke_github_token` + `mint_github::{build_revoke_request, revoke_installation_token}`
+  over the existing HttpTransport seam (204⇒Ok, transport/non-204⇒Err, token only in the auth header, never
+  logged); `RevokeGithubToken` RPC + `secretctl github-app revoke-token --token <tok|-> [--apply]` (dry-run
+  default, stdin to avoid argv leak); `SecretEvent::GithubTokenRevoked` metadata-only; best-effort
+  `relay_revoke` tie-in for the relay's last engine-minted NATIVE token (cached in-mem Zeroizing, cleared on
+  lock). Zero new deps; fail-closed; GHES api-base parity. The explicit verb is the kill-switch for handed-off
+  tokens; 1h expiry is the backstop.
+- [ ] **TASK-0028 (G2):** GUI relay-mint / mint-github / **revoke** parity (mint+revoke logic is engine-side;
+  CLI-only today). The GUI drives the SAME Engine API (no divergence).
 
 ### Home-tree portability (were ONLY in ICM — now tracked)
 - [ ] **TASK-0029:** `portability-links.toml` branch fork — `usrlocal-script-links` present on master,
