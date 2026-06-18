@@ -528,11 +528,19 @@ fmt, clippy). Remaining follow-ups extracted from each:
     only when hf is absent/non-resident), `.handoff/tasks/*.task.json` (cards minted from backlog).
   - **Acceptance:** `hf resume --json` returns `next_task_id` from the real DAG; picking an item whose
     `blocked_by` is unmet is refused by the kernel, not by prose parsing.
-  - **Deps:** **Epic A** (hf must be on PATH, built, and ledger-resident at `$META_ROOT/.handoff/
-    ledger.db`). **⚠ Blocker:** hf currently links bundled C SQLite (FlexNetOS/handoff#71) — violates
-    the no-C invariant; resolve or accept-with-NOTE before hf is the authority. If hf is not live when
-    this task is picked, mark `- [!]` blocked on Epic A rather than silently using the markdown path.
-  - **Risk:** medium-high (couples the loop to the kernel; gated on Epic A).
+  - **2026-06-18 finding (hf IS live):** `hf` is on PATH (`~/.local/bin/hf`) and the shared fleet
+    ledger is resident (`$META_ROOT/.handoff/ledger.db`, 240KB). So 0044 is **NOT blocked on hf
+    existing** — the gap is that envctl's `TASK-*` cards were never minted. **⚠ The real hazard:** the
+    shared ledger currently holds the handoff kernel's OWN `HFTASK-*` loop (29 tasks). Minting envctl's
+    `TASK-*` into the same fleet ledger risks **cross-loop contamination** (cf. `HFTASK-0026` = "fix
+    kb-mint contamination" — a real, already-hit failure mode). So this is a **cross-repo, shared-ledger
+    fleet-routing** task → route to **`handoff-kernel-engineer`** (owns ledger residency + fleet routing),
+    NOT a quick doc edit. hf's internal C-SQLite (#71) is the handoff repo's concern, NOT an envctl
+    link-boundary blocker (hf is an external tool binary, like grit/rtk) — so it does not gate 0044.
+  - **Deps:** Epic A is effectively satisfied for *availability*; remaining work is fleet-scoped card
+    minting (envctl member) + verifying `hf claim --next`/`hf resume` picks envctl items without
+    surfacing `HFTASK-*`. Do as a dedicated cycle.
+  - **Risk:** medium-high (couples the loop to the kernel; shared-ledger contamination risk).
 
 - [ ] **TASK-0045 (T2.2, P1):** Fail-closed in-flight re-poll/promote sweep on resume. Tick-on-merged
   leaves armed-not-merged work as `- [~]` and says "next session re-polls," but `session-relay-resume`

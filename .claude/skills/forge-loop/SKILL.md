@@ -48,7 +48,10 @@ next-item selection and checkpointing to the kernel (real verbs below). **ELSE**
 markdown-checkbox + sub-note dependency parsing path. Re-run the residency fail-closed check before
 each hf call; on failure, drop to the markdown path for that cycle.
 
-**Per-cycle verb sequence (the REAL shipped `hf` verbs — there is NO `hf drift` and NO `hf policy`):**
+**Per-cycle verb sequence (the REAL shipped `hf` verbs).** (The shipped binary also has `hf drift`,
+`hf policy check-claim|check-edit|check-handoff`, `hf fleet`, `hf intake`, `hf dispatch`, `hf ship`,
+`hf review` — verified 2026-06-18; an earlier note here wrongly said `drift`/`policy` did not exist.)
+The core per-cycle verbs:
 - **Pick / resume:** `hf resume --json` from `$META_ROOT` — read `next_task_id` + `next_command`
   (the kernel's `next_safe` dependency-DAG picker). That is the next item; do not re-derive ordering
   from markdown when hf is present.
