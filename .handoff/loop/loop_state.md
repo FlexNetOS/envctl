@@ -5,33 +5,39 @@ session_started: 2026-06-13
 loop: agenticOS-consolidation (.handoff/loop/backlog.md, Epics A–E; design = .handoff/decisions/ADR-0001)
 branch: develop   # work happens in FRESH worktrees off develop -> PR -> auto-promote to master
 worktree: (per-cycle: meta/.worktrees/<slug>/envctl off develop)
-cycle_budget: 1   # session 6 resumed post-compaction under heavy context — 1 cohesive build cycle (TASK-0032) then hand off
-cycles_this_session: 1   # RESUME SESSION 2026-06-17 (session 6): cycle = TASK-0032 (F5 stream tear-down)
-cycles_total: 15
-last_item: TASK-0032 (F5 streaming-revocation tear-down) — DONE, PR #117, guardian PASS, auto-merge armed
-status: HANDING OFF 2026-06-17 (session 6, 1 cycle done; budget reached; next is fresh-context F2 hardening).
-  Cycle = TASK-0032 (F5, FS-S5): long-lived HTTP/2 relay-edge streams now get a periodic in-stream re-check
-  that tears the stream down the moment authorization lapses (relay/bearer revoke, vault lock, USB-key pull).
-  Engine (single Allow authority): Broker::peek (read-only counterpart to bump — enforces live budget/rate
-  ceilings without consuming them); factored relay_swap_prepare's verify+policy+gate prelude into
-  authorize_relay(bump) (swap path bump=true byte-for-byte unchanged); relay_stream_authorized(bearer,req,sink)
-  -> StreamAuthz{Authorized,TearDown(DenyReason)} re-runs the SAME decide() with the open-time RemotePeer,
-  no key fetch, no bump, bytes_out=0; SecretEvent::RelayStreamTornDown metadata-only audit. Edge (I/O only,
-  default-OFF relay-edge): edge/stream.rs relay_stream_response supervises the upstream chunk receiver with
-  tokio::select! over {next chunk, 2s re-check interval, max-stream deadline}, drops the downstream sender on
-  TearDown/deadline (clean HTTP/2 close), keeps the bounded BODY_CHANNEL_CAP backpressure; listener routes an
-  Allowed swap's body through it. Fail-closed (every uncertainty → tear down, no unwrap/panic on hot path),
-  ZERO new deps, 4 gates green + 4 edge_stream_e2e cases + engine units, guardian PASS. PR #117 auto-merge armed.
-  Detection latency ≤2s; sub-second watch-push deferred to PR-4.
-  Session-6 also: **#112 (TASK-0036 mlockall) MERGED to develop** (9323c63); #113 (low-cost-kdf-tests, ~11x
-  faster CI test job), #114/#115 (Seed manifest) also landed. Rebased #108 (TASK-0035) AGAIN onto the new
-  develop (DIRTY from #112/#113/#114/#115) — clean, build green, auto-merge armed.
-  **NEXT PICK: TASK-0031-PR2 (F2 hardening — server-issued DPoP-Nonce challenge [OI-SM-1 nonce half] +
-  per-IP/per-client rate-limit + body caps + timeouts + pre-decide() admission shedding [CVE-2024-47609] +
-  opt-in hardened-mode mTLS ClientCertVerifier [OI-SM-4]) → TASK-0027 (early-revoke) → TASK-0028 (GUI parity)
-  → TASK-0037 (Phase-7 verify) → TASK-0034 (hardening tail) → TASK-0038 (Certs.* Phase-4+).** Also a small
-  follow-up: MADV_DONTDUMP companion to the merged #112 mlockall. SKIP TASK-0033 (owner-gated [!]).
-  FIRST on resume: confirm #117 + #108 merged; rebase if DIRTY (every secrets PR touches lib.rs + .handoff/).
+cycle_budget: 1   # session 7 resumed post-compaction under heavy context — 1 cohesive build cycle (TASK-0031-PR2) then hand off
+cycles_this_session: 1   # RESUME SESSION 2026-06-17 (session 7): cycle = TASK-0031-PR2 (F2 edge hardening)
+cycles_total: 16
+last_item: TASK-0031-PR2 (F2 relay-edge hardening) — DONE, PR #122, guardian PASS, auto-merge armed
+status: HANDING OFF 2026-06-17 (session 7, 1 cycle done; budget reached; next is fresh-context early-revoke).
+  Cycle = TASK-0031-PR2 (F2): hardened the relay edge against replay/abuse + added opt-in strong mTLS, all
+  behind default-OFF relay-edge, ZERO new deps (ring promoted optional->unconditional in secrets-engine,
+  already in the resolved graph -> no new lockfile crate). Engine (security policy, sync/non-printing, siblings
+  to broker::jti): broker::nonce::NonceStore (server-issued DPoP nonce RFC 9449 §8-9; issue() via injected
+  ring::rand::SecureRandom, single-use check_and_consume, bounded 16384/5min, full-after-sweep->Err fail-closed);
+  broker::admission::AdmissionLimiter (per-key token bucket 120/min burst 60 MAX_KEYS 65536, new-key-vs-full->
+  Throttled never grow); SecretEvent::EdgeRequestShed metadata-only. Edge (I/O only): admission is step 0
+  BEFORE any crypto -> per-IP 429 (CVE-2024-47609; full verify+decide() still run on every non-shed req,
+  per-client quota stays in decide() rate_per_min); DPoP-Nonce challenge inside verify -> 401 + DPoP-Nonce +
+  WWW-Authenticate: DPoP error="use_dpop_nonce", retried proof must carry the nonce claim (parsed additively in
+  dpop.rs, validated by caller next to jti); body caps + handshake/header/idle/body timeouts -> 413/408.
+  Opt-in mTLS (OI-SM-4, default off): tls.rs load_from_dir_with_client_auth builds
+  WebPkiClientVerifier::builder_with_provider(roots, ring) (ring-only, confirmed vs in-tree rustls 0.23.40)
+  from an operator-provisioned remote-clients-CA PEM — separate input on the SAME relay-tls ServerConfig, never
+  the MITM CA (FS-S25); EdgeConfig require_client_cert(default false)+client_ca_path, require w/o CA -> startup
+  Err. Default keeps with_no_client_auth() byte-for-byte. Fail-closed (poisoned locks reject, no unwrap on req
+  path), 7 nonce + 5 admission engine units + edge_hardening_e2e (challenge->retry 200, stale-nonce 401,
+  rate-limit 429 asserted to shed before upstream, body 413, mTLS no-cert reject / valid accept), 4 gates green
+  + relay-edge-OFF build unaffected, guardian PASS. PR #122 auto-merge armed.
+  Session-7 also: confirmed #117 (TASK-0032) + #119 (reconcile) + #108 (TASK-0035) ALL MERGED to develop at
+  resume; #120/#121 (manifest portability) also landed. The relay edge is now PR-1 (listener) + PR-2 (hardening)
+  + PR-3 (stream tear-down) complete.
+  **NEXT PICK: TASK-0027 (early-revoke) → TASK-0028 (GUI parity) → TASK-0037 (Phase-7 verify) → TASK-0034
+  (hardening tail) → TASK-0038 (Certs.* Phase-4+).** New follow-ups filed: TASK-0031-PR2c (PROXY-protocol
+  source IP for per-IP shed behind an L4 front), TASK-0039 (remote-clients-CA lifecycle: mint/≤7d-leaf/renew/
+  revoke for the mTLS verifier). Small follow-up: MADV_DONTDUMP companion to #112 mlockall. SKIP TASK-0033
+  (VPS Profile B, owner-gated [!]).
+  FIRST on resume: confirm #122 merged; rebase if DIRTY (every secrets PR touches lib.rs + .handoff/).
   Resume via `/forge-loop resume`.
 
 ## Progress log

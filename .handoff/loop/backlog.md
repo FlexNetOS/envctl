@@ -54,20 +54,20 @@ additive infra — let it merge — but it does **not** close TASK-0020.
 - **TASK-0026 DONE** — `secretctl github-app enroll` + `Vault.SetGithubAppId` RPC (PR #106, auto-merge armed). Enroll→mint round-trip e2e green. The App can now mint end-to-end (enroll once, then mint-github).
 - **Anti-drift wrap-up gate** live (PR #104 MERGED): backlog is now a written-back artifact.
 
-### ⏭ NEXT PICK (updated 2026-06-17 session 6): **TASK-0031-PR2** (F2 hardening)
+### ⏭ NEXT PICK (updated 2026-06-17 session 7): **TASK-0027** (early-revoke)
 MERGED: TASK-0026 (#106), TASK-0030+OI-SM-1 (#109), **TASK-0031 PR-1 edge listener (#111)**, **TASK-0036
-mlockall (#112)**, plus infra #113 (low-cost-kdf-tests — ~11x faster CI test job) / #114/#115 (Seed manifest).
-IN FLIGHT (auto-merge armed): **TASK-0032 F5 stream tear-down (#117)**, TASK-0035 gRPC gaps (#108, rebased
-clean onto the new develop). The remote edge serves clients end-to-end, is mlock-hardened, AND tears down
-in-flight streams on revoke/lock/USB-pull. Next, in dep order:
-1. **TASK-0031-PR2** (F2 hardening, P0) — server-issued DPoP-Nonce challenge (OI-SM-1 nonce half) +
-   per-IP/per-client rate-limit + body caps + timeouts + pre-`decide()` admission shedding (CVE-2024-47609) +
-   opt-in hardened-mode mTLS `ClientCertVerifier` (OI-SM-4). Builds on the merged edge listener.
-2. Then **TASK-0027** (early-revoke) → **TASK-0028** (GUI parity) →
+mlockall (#112)**, **TASK-0032 F5 stream tear-down (#117)**, **TASK-0035 gRPC gaps (#108)**, plus infra
+#113 (low-cost-kdf-tests) / #114/#115/#120/#121 (Seed + manifest portability).
+IN FLIGHT (auto-merge armed): **TASK-0031-PR2 F2 edge hardening (#122)**. The relay edge is now complete:
+PR-1 listener + PR-2 hardening (nonce/admission/rate-limit/body-caps/timeouts/opt-in mTLS) + PR-3 stream
+tear-down. Next, in dep order:
+1. **TASK-0027** (early-revoke) → **TASK-0028** (GUI parity) →
    **TASK-0037** (Phase-7 verify) → **TASK-0034** (hardening tail) → **TASK-0038** (Certs.* Phase-4+).
    Small follow-up: **MADV_DONTDUMP** companion to the merged #112 mlockall.
+   New (from TASK-0031-PR2): **TASK-0031-PR2c** (PROXY-protocol source IP for the per-IP shed behind an L4
+   front) + **TASK-0039** (remote-clients-CA lifecycle: mint/≤7d-leaf/renew/revoke for the mTLS verifier).
 SKIP **TASK-0033** (VPS Profile B — owner-gated `[!]`). Resume with `/forge-loop`; for unattended
-completion use `/auto-provision`. FIRST on resume: confirm #117 + #108 merged; rebase if DIRTY (every
+completion use `/auto-provision`. FIRST on resume: confirm #122 merged; rebase if DIRTY (every
 secrets PR touches `lib.rs` + `.handoff/` so siblings recur DIRTY — expected, not a problem).
 
 <details><summary>TASK-0020-COMPLETE original spec (DONE — kept for reference)</summary>
@@ -121,10 +121,19 @@ foundation IS built (`relay_mint_remote`, `register_remote_client`, `broker/deci
   vs source); F6 jti check; drives EXISTING `relay_swap`/`decide()` (untouched). Engine seam additive only
   (`EgressReq.remote` + `relay_swap_prepare` + `load_remote_client` + `Paths::relay_tls_dir()`). Fail-closed,
   zero new deps, 4 gates green. **PR-2 / PR-3 deferred (see TASK-0031-PR2 / TASK-0032 below).**
-  - [ ] **TASK-0031-PR2 (F2 hardening):** server-issued DPoP-Nonce challenge (OI-SM-1 nonce half) +
-    per-IP/per-client rate-limit + body caps + timeouts + pre-`decide()` admission shedding
-    (CVE-2024-47609) + opt-in hardened-mode mTLS `ClientCertVerifier` (OI-SM-4).
-- [~] **TASK-0032 (F5, P0) — in review (PR #117, guardian PASS, auto-merge armed):** Streaming-revocation
+  - [x] **TASK-0031-PR2 (F2 hardening) — DONE (PR #122, guardian PASS):** `broker::nonce::NonceStore`
+    (server-issued DPoP-Nonce, RFC 9449 §8-9, single-use, ring::rand) + `broker::admission::AdmissionLimiter`
+    (per-IP token bucket, shed BEFORE crypto, CVE-2024-47609) + body caps/timeouts (413/408) + opt-in mTLS
+    `WebPkiClientVerifier` (OI-SM-4, ring-only, default-OFF, separate client-CA never the MITM CA). Zero new
+    deps; `SecretEvent::EdgeRequestShed` metadata-only; fail-closed; 7 nonce + 5 admission units +
+    edge_hardening_e2e. Edge now PR-1+PR-2+PR-3 complete.
+    - [ ] **TASK-0031-PR2c:** parse the PROXY-protocol header to key the per-IP shed on the real client IP
+      when the edge sits behind an L4 front (this cycle keys on `peer.ip()` — correct for direct-bind /
+      on-box reverse-tunnel default).
+    - [ ] **TASK-0039 (remote-clients-CA lifecycle):** mint/≤7d-leaf/renew/revoke + revocation-set
+      propagation for the mTLS client-CA (OI-SM-4's CA-management half; PR-2 wired only the verifier +
+      consumes an operator-provisioned bundle).
+- [x] **TASK-0032 (F5, P0) — DONE (PR #117 MERGED, guardian PASS):** Streaming-revocation
   tear-down. Engine `relay_stream_authorized` + `Broker::peek` (non-mutating re-check through the SAME
   `decide()`); edge `stream.rs` supervises long-lived HTTP/2 streams with a 2s in-stream re-check + max-stream
   deadline and tears the stream down (drops the `StreamBody` sender → clean HTTP/2 close) on revoke/lock/
