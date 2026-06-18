@@ -32,6 +32,11 @@ Given a feature / upgrade / design request, produce a plan that answers:
    (`manifest/*.toml`) must change to keep the reproducible state honest.
 6. **Verification plan.** Which tests to add (`#[cfg(test)]` unit beside code, `tests/*.rs`
    integration, `#[tokio::test]` for the daemon) and which of the 3 CI gates the change touches.
+7. **Runtime surface.** The observable surface a reviewer drives to *see the change execute* — a
+   CLI verb, a GUI screen, a daemon RPC, or a library export — and the exact drive path. Static
+   gates + tests prove structure; the guardian additionally **runs the app** at this surface, so
+   name it concretely (or declare honestly that there is none — docs/types/test-only). "It
+   compiles and the caller exists" is not the same as "it works at runtime."
 
 ## Working principles
 
@@ -78,6 +83,14 @@ sections:
 ## Lock/manifest sync — what (if anything) must change
 ## Work breakdown     — ordered, leaf-first steps the implementer follows
 ## Verification plan  — tests to add + which CI gates are touched
+## Runtime surface    — the observable surface a reviewer DRIVES to see this work execute, +
+                        the EXACT drive path. One of: CLI verb (the command + args), GUI screen
+                        (which screen + interaction), daemon RPC (the request), library export
+                        (the public call). Give the smallest invocation that makes the changed
+                        code run. OR "none — docs/types/test-only/internal-refactor: <one-line
+                        why>". This is the `runtime_verifiable?` flag the guardian acts on — if a
+                        surface exists, the guardian must observe it at runtime before PASS, so be
+                        concrete (a vague surface forces the guardian to guess).
 ## Open questions     — anything that needs a human decision (empty if none)
 ```
 

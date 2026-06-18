@@ -221,7 +221,35 @@ Spawn `invariant-guardian` with the plan + implementer log. It runs the three CI
   (fix only the flagged surface), plan-level findings → `feature-architect`. Re-run Phase 3 after
   the fix. Loop **at most twice**; if still failing, stop and report the open findings — never
   weaken a guard or invariant to force a pass.
-- **PASS / PASS-WITH-NOTES** → proceed to synthesis.
+- **PASS / PASS-WITH-NOTES** → proceed to **Phase 3.5 (runtime verify)**, not straight to synthesis.
+
+## Phase 3.5: Runtime verify (run the app, don't just gate it)
+
+Static gates + `cargo test` prove the code is *well-formed*; they do **not** prove the feature
+*works at its surface*. A change can compile, pass every gate, and still not do the thing — TASK-0028
+shipped a GUI Secrets screen marked done on an argv round-trip vs a replica, with **no `secretctl`
+invocation and no GUI launch**. This phase closes that "green but broken" gap.
+
+Read the architect's **`## Runtime surface`** section (the `runtime_verifiable?` flag) and route:
+
+- **A surface is declared** (CLI verb / GUI screen / daemon RPC / library export) → the guardian
+  must **drive that surface and observe it** before the verdict stands. Invoke the bundled **`verify`**
+  skill (or follow its protocol directly): build the real binary, drive the smallest path that makes
+  the changed code execute at the declared surface, capture the evidence (stdout / response body /
+  pane dump / screenshot), and probe at least one off-happy-path input. The guardian report's verdict
+  is PASS **only after** a runtime observation is captured — a static-gates-only PASS is downgraded to
+  PASS-WITH-NOTES("runtime unverified") and the orchestrator routes it back for a runtime check.
+- **No surface** (architect declared docs/types/test-only/internal-refactor) → **SKIP** with that
+  one-line reason recorded in the guardian report. Do not invent a surface; do not re-run tests to
+  fill the space (that is CI's job, per the `verify` skill).
+- **Destructive/irreversible path with no dry-run or safe target** → verify *around* it (the guard's
+  refusal path, the dry-run preview) and state explicitly which live path was not exercised and why —
+  never drive a destructive op live just to observe it.
+
+This phase reuses the existing **`verify`** skill's "runtime observation is the only evidence"
+discipline; it does not add a new agent. Its result is folded into Phase 3's
+`03_guardian_report.md` (a `## Runtime check` line), and only a PASS here (or a recorded SKIP) lets
+the cycle reach Phase 4 / terminal Done.
 
 ## Phase 4: Synthesize & finish
 

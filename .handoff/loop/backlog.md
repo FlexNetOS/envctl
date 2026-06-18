@@ -488,7 +488,15 @@ fmt, clippy). Remaining follow-ups extracted from each:
     backlog rows citing it; the file is marked drained.
   - **Deps:** none. **Risk:** low (skill-text + backlog edits).
 
-- [ ] **TASK-0043 (T1.3, P0):** Runtime-verify phase in feature-forge — wire the bundled `verify`
+- [x] **TASK-0043 (T1.3, P0) — DONE 2026-06-18 (direct-to-develop):** Phase 3.5 runtime-verify
+  shipped. feature-architect now emits a `## Runtime surface` section (the `runtime_verifiable?` flag
+  + the exact drive path); feature-forge has a **Phase 3.5** between Verify and Synthesize; the
+  invariant-guardian gained invariant #10 (Runtime behavior), a "Runtime verification" section that
+  drives the declared surface via the `verify` skill (run the app, capture evidence, probe one
+  off-happy-path), and a `## Runtime check` report line; `verification.md` §4.5 mirrors it. A clean
+  PASS now requires a runtime observation (or a recorded SKIP for no-surface); static-gates-only is
+  downgraded to PASS-WITH-NOTES. Closes the TASK-0028 "green but broken" class. (Behavioral-branch
+  coverage deepening = TASK-0051, builds on this.) Runtime-verify phase in feature-forge — wire the bundled `verify`
   skill into the guardian gate. Today the guardian is **static-only** (gates + `cargo` + source-grep
   parity); the crew never runs the app. TASK-0028 shipped a GUI Secrets screen marked done on "argv
   round-trip vs a replica" — no `secretctl` invocation, no GUI launch. The "compiles + gates green but

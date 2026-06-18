@@ -15,7 +15,8 @@ green self-report from the implementer is a claim; you produce the evidence.
 
 > You must run validation scripts and `cargo`, so you are a **general-purpose** agent, never the
 > read-only `Explore` type. Existence-checking ("the function is defined") is not verification —
-> comparing shapes across a boundary is.
+> comparing shapes across a boundary is, and for an observable surface, **running the app and
+> watching the changed code execute** is (Phase 3.5 below).
 
 ## What you verify — the NON-NEGOTIABLE invariants
 
@@ -51,6 +52,33 @@ Run these as concrete checks against the worktree, not from memory. Read the
    section** in `envctl.lock` (neither rehashed nor regressed); and the **MCP-merge preserved the
    global `broker`/`repowire`/`weave` servers** alongside the 6 baseline (run the §7 regression
    fixture). Any one of these failing is a FAIL.
+10. **Runtime behavior (observable surfaces).** Static gates + `cargo test` prove the code is
+    well-formed, not that it *works*. For any feature whose plan declares a **`## Runtime surface`**
+    (CLI verb / GUI screen / daemon RPC / library export), you must **run the app and observe that
+    surface** — see "Runtime verification" below. A surface declared but not driven means the verdict
+    is at most PASS-WITH-NOTES("runtime unverified"), never a clean PASS. SKIP only when the architect
+    declared no surface (docs/types/test-only/internal-refactor), recording that one-line reason.
+    (TASK-0028 shipped a GUI screen marked done on an argv round-trip vs a *replica* — no real
+    `secretctl` call, no GUI launch; exactly the "green but broken" gap this closes.)
+
+## Runtime verification (Phase 3.5 — run it, don't just gate it)
+
+When the plan's `## Runtime surface` names a surface, drive it with the bundled **`verify`** skill
+(invoke it via the Skill tool, or follow its protocol directly): build the **real** binary, drive
+the **smallest path that makes the changed code execute** at that surface, and capture the evidence
+as the app's own output — stdout, an RPC response body, a TUI pane dump, a GUI screenshot under
+xvfb/Playwright. Then probe at least one off-happy-path input (empty/blocked/conflicting flag, wrong
+method, malformed body, the fail-closed guard's refusal path). Rules:
+
+- **Observation is the only evidence.** Do not `import-and-call` an internal function and call that a
+  runtime check — go to the real surface (CLI/socket/window) the way a user reaches it.
+- **Destructive/irreversible path with no dry-run or safe target** → verify *around* it (drive the
+  guard's refusal + the dry-run preview), and state explicitly which live path you did **not** exercise
+  and why. Never run a destructive op live just to watch it.
+- **Don't run tests to fill the space.** Re-running `cargo test` here proves you can run CI, not that
+  the feature works — that time goes to running the app. (This mirrors the `verify` skill exactly.)
+- Record the result as a `## Runtime check` line in the report (PASS + evidence pointer / SKIP + reason
+  / FAIL + what you saw). A FAIL here is a blocking finding routed to the implementer like any other.
 
 ## Standard cargo checks
 
@@ -78,8 +106,9 @@ crate is cheap; after five is expensive. Report findings as they're found.
 ## Verdict          — PASS / FAIL / PASS-WITH-NOTES
 ## Gate results     — no-c.sh / shape.sh / enable.sh : PASS|FAIL (+ first failing line)
 ## cargo            — fmt / clippy / test : PASS|FAIL (+ failing test names)
-## Invariant checks — one line per invariant (1-8 above): PASS|FAIL + evidence/location
+## Invariant checks — one line per invariant (1-10 above): PASS|FAIL + evidence/location
 ## Parity check     — Engine method -> CLI caller / GUI caller (file:line each)
+## Runtime check    — surface driven + evidence (PASS) / one-line reason (SKIP) / what broke (FAIL)
 ## Findings         — each issue: severity, file:line, what's wrong, suggested fix
 ## Re-test needed   — exact commands to re-run after fixes
 ```

@@ -36,6 +36,7 @@ FAIL, fail-closed — never read an empty/errored result as "clean."
 2. Cargo checks (fmt / clippy / test)
 3. Engine purity (non-printing, logic-in-engine)
 4. Front-end parity (CLI ↔ GUI ↔ Engine)
+4.5. Runtime behavior (run the app at its surface — Phase 3.5)
 5. Fail-closed / dry-run defaults
 6. Rust-native drift
 7. Lock / manifest honesty
@@ -98,6 +99,34 @@ git-kb code callers '<EngineMethod>' --json     # or kb_callers MCP
 
 Expect to see a CLI call site (`crates/cli/...`) and a GUI call site (`crates/gui/...`). Read
 both and confirm they pass/consume the same shape the engine expects/returns.
+
+> Parity (callers exist, shapes match) is **structural** proof, not runtime proof. For an
+> observable surface, also do §4.5 — running the app is the evidence parity can't give.
+
+## 4.5. Runtime behavior (run the app at its surface — Phase 3.5)
+
+Sections 1–4 prove the change is *well-formed*; they do not prove it *works*. For any feature whose
+plan declares a **`## Runtime surface`** (CLI verb / GUI screen / daemon RPC / library export), drive
+that surface with the bundled **`verify`** skill and capture the app's own output as evidence:
+
+```bash
+# build the REAL binary, then drive the smallest path that runs the changed code:
+cargo run -p envctl -- <the declared verb + args>          # CLI surface
+# daemon RPC: start secretd, send the request via secretctl, capture the response body
+# GUI: drive under xvfb/Playwright, screenshot the screen
+```
+
+- **Observe, don't import-and-call.** Reach the surface the way a user does (CLI/socket/window),
+  not by calling an internal fn — that's a unit test, not a runtime check.
+- **Probe one off-happy-path input** (empty/blocked/conflicting flag, wrong method, malformed body,
+  the fail-closed guard's *refusal* path) — capture what the app actually does.
+- **Destructive/irreversible + no dry-run/safe target** → verify *around* it (refusal + dry-run
+  preview) and state which live path was not exercised. Never run a destructive op live to watch it.
+- **No surface** (docs/types/test-only/internal-refactor) → SKIP with that one-line reason. Don't
+  re-run `cargo test` to fill the space — that proves CI runs, not that the feature works.
+
+This is the guardian's Phase 3.5; its result is the `## Runtime check` line of the report. A clean
+PASS requires a runtime observation (or a recorded SKIP); static gates alone are PASS-WITH-NOTES.
 
 ## 5. Fail-closed / dry-run defaults
 
