@@ -112,6 +112,19 @@ capability or one component per item — so a cycle fits comfortably under the b
    (text only — never a `ledger.db`).
 6. **Re-fire** to continue the loop (see Self-pacing).
 
+## Worktree hygiene (keep worktrees ↔ branches ↔ origin in sync)
+Each cycle runs in a fresh `meta/.worktrees/<slug>/envctl` worktree off develop; on PR auto-merge,
+origin deletes the head branch (`delete_branch_on_merge=true`) but the local worktree/branch/tracking
+ref do **not** self-clean — left unmanaged they pile up (this is what produced a 46-worktree /
+85-branch mess). The loop does **not** reap mid-cycle (a PR may still be merging asynchronously);
+instead the reap runs at the safe boundaries where merge status is settled:
+- **`session-relay-resume`** reaps at session start (clean slate), and
+- **`session-relay-wrap-up`** reaps after the handoff commit.
+Both call `scripts/reap-worktrees.sh` — dry-run by default, never `--force`, protects
+`master`/`develop`/the current worktree, skips any dirty worktree, and only reaps a branch whose
+upstream is `[gone]` (merged) or that is an ancestor of `origin/master`. You may also run
+`bash scripts/reap-worktrees.sh` anytime to preview, or `--apply` to reap on demand.
+
 ## Parallel mode (opt-in grit git-lock coordination)
 
 When looping over items that span multiple meta repos, activate with `USE_GRIT=1`:

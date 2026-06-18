@@ -71,6 +71,19 @@ just the loop state.)
    state + any wrap-up edits. **A fresh process must resume from this commit alone** — this is the
    real payload.
 
+5b. **Reap merged worktrees/branches (keep the workspace in sync).** The loop creates a fresh
+   `meta/.worktrees/<slug>/envctl` per cycle; once a cycle's PR auto-merges, origin deletes the head
+   (`delete_branch_on_merge`) but the *local* worktree/branch/tracking-ref linger and pile up. After
+   the handoff commit, run the reaper to mirror origin's cleanup locally:
+   ```bash
+   bash scripts/reap-worktrees.sh            # preview first
+   bash scripts/reap-worktrees.sh --apply    # reap merged/clean worktrees + branches + prune refs
+   ```
+   It is **safe by construction**: dry-run by default, never `--force`, protects `master`/`develop`/the
+   current worktree/branch, **skips any dirty worktree** (uncommitted work is never destroyed), and
+   never touches remotes. A branch is reaped only when its upstream is `[gone]` (PR merged) or it is an
+   ancestor of `origin/master`. This is the step that stops the 46-worktree / 85-branch pileup.
+
 6. **Weave heartbeat (best-effort)** — broadcast `to:"all"`:
    `weave send --to all --subject "relay:handoff" --body "worktree=<abs> item=<next> reason=<budget|stop>"`.
    Bootstrap-hazard guard: if *this harness's own messaging code* is in the diff this cycle, skip the

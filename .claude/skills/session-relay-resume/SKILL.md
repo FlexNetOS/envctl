@@ -41,6 +41,15 @@ wake-up.)
    fails, write `.handoff/loop/NEEDS-HUMAN` with the captured output and **halt** — a red baseline is a
    human wall; do not continue feature work on top of it, do not paper over it.
 
+4b. **Reap merged worktrees/branches (start clean).** Mirror origin's merge-time cleanup into the
+   local workspace so a resuming session doesn't inherit prior cycles' dead worktrees/branches:
+   ```bash
+   bash scripts/reap-worktrees.sh --apply    # safe: dry-run-by-default tool; protects master/develop/current; skips dirty
+   ```
+   Run it after the baseline (4) so it never reaps while the tree is unproven. It removes only
+   merged/clean per-cycle worktrees + branches and prunes dangling tracking refs — never remotes,
+   never dirty worktrees. Keeps worktrees ↔ branches ↔ origin consistent every session.
+
 5. **Broadcast `relay:resumed`** (best-effort, after any bootstrap-hazard check):
    `weave send --to all --subject "relay:resumed" --body "worktree=<abs> item=<next>"`.
 
