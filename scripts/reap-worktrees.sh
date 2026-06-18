@@ -21,10 +21,18 @@
 #     from REAPING (they are never deleted; they are kept in sync via FF instead).
 #
 # A branch is REAPABLE only when it is safely resolved:
-#   (a) its upstream is gone — `[gone]` — i.e. origin deleted the head after the PR merged
-#       (this is the squash-merge–robust signal; squash tips are never ancestors of master), OR
+#   (a) its upstream is gone — `[gone]` — i.e. origin deleted the head after the PR closed
+#       (squash-merge robust: squash tips are never ancestors of master), OR
 #   (b) it is an ancestor of origin/master — a true/FF merge.
 # A branch with unpushed local commits (no upstream, not an ancestor) is NEVER reaped.
+#
+# CAVEAT — `[gone]` is NOT proof of MERGE. origin deletes the head on close whether the PR was
+#   merged OR closed-unmerged, so `[gone]` is a "PR is resolved AND its tip is pushed" signal, not
+#   a "merged" signal. That is safe HERE because a `[gone]` local branch has no unpushed work to
+#   lose (its commits are on origin). But for any IRREVERSIBLE action against the REMOTE
+#   (deleting an origin branch), `[gone]`/ancestor are NOT sufficient — confirm the PR actually
+#   MERGED via the GitHub oracle (`gh pr view <ref> --json state` == MERGED) before deleting.
+#   A closed-unmerged head (e.g. PR #99 this session) reads identically to a merged one locally.
 #
 # Usage:  scripts/reap-worktrees.sh            # preview (dry-run)
 #         scripts/reap-worktrees.sh --apply    # actually reap

@@ -85,8 +85,14 @@ just the loop state.)
    ```
    It is **safe by construction**: dry-run by default, never `--force`, protects `master`/`develop`/the
    current worktree/branch, **skips any dirty worktree** (uncommitted work is never destroyed), and
-   never touches remotes. A branch is reaped only when its upstream is `[gone]` (PR merged) or it is an
+   never touches remotes. A branch is reaped only when its upstream is `[gone]` (PR resolved) or it is an
    ancestor of `origin/master`. This is the step that stops the 46-worktree / 85-branch pileup.
+   > **Local reap vs. remote delete (irreversible-action discipline).** The reaper is LOCAL-only by
+   > design; origin self-cleans merged heads. If you ever delete **origin** branches manually (an
+   > irreversible off-box action), that is a human wall: get explicit owner authorization, write a
+   > recovery manifest of the refs+SHAs first, and confirm each PR actually `MERGED` via the GitHub
+   > oracle (`gh pr view <ref> --json state`) — `[gone]`/ancestor are NOT merge proof (a
+   > closed-unmerged head reads identically locally; cf. PR #99, 2026-06-18).
 
 6. **Weave heartbeat (best-effort)** — broadcast `to:"all"`:
    `weave send --to all --subject "relay:handoff" --body "worktree=<abs> item=<next> reason=<budget|stop>"`.
