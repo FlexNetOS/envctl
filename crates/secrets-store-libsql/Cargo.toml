@@ -12,6 +12,20 @@
 #   - This crate is consumed ONLY by secretd, behind the engine `Store` trait; engine/proto/cli
 #     never link it. Engine default store stays `inmem-store`; secretd runtime selection is Phase 1.
 #   - Target remains strict C-toolchain-free (blake3 `pure` + a pure-Rust Hrana client) — see OI-1.
+#
+# SECURITY ADVISORY DISPOSITION — GHSA-8m95-fffc-h4c5 (libsql-sqlite3-parser <= 0.13.0, LOW):
+# "crash due to invalid UTF-8 input" to the SQL parser. DISMISSED as tolerable_risk (Dependabot
+# alert #1, 2026-06-18) — structurally UNREACHABLE in envctl, and no fix exists upstream:
+#   * All SQL text handed to libsql is static `const &str` literals (src/schema.rs); the generic
+#     `sql: &str` helpers in src/sync.rs are only ever called with `schema::*` constants.
+#   * All dynamic/untrusted data flows through BOUND PARAMETERS (Vec<libsql::Value> -> `?`
+#     placeholders), never into SQL text.
+#   * Rust `&str`/`String` are UTF-8 by construction, so the parser can never be handed invalid
+#     UTF-8 from our code regardless of source — the vulnerable code path cannot be triggered.
+#   * 0.13.0 is the LATEST published parser and the advisory's firstPatchedVersion is null (nothing
+#     to upgrade to); it is pulled transitively via `libsql` remote/hrana 0.9.30. Severity LOW (DoS).
+#   * No-C invariant unaffected (parser links nothing; ci/gates/no-c.sh PASS).
+#   RE-EVALUATE / un-dismiss if libsql ships a parser with the UTF-8 fix.
 
 [package]
 name = "envctl-secrets-store-libsql"
