@@ -62,6 +62,22 @@ wake-up.)
    proven tree. This is what makes a skipped boundary impossible to lose: it is caught here, bounded to
    one inter-session gap. (4b's reap is subsumed by the boundary wrap-up's own reap when this fires.)
 
+4d. **In-flight `- [~]` re-poll/promote sweep — FAIL-CLOSED (before any pick).** Tick-on-merged leaves
+   armed-not-merged work as `- [~]` for the *next* session to confirm; if resume hands back to the loop
+   without confirming, a race or a skipped poll can re-pick an already-built item and redo it. So before
+   handing back: for **every** `- [~]` item in `.handoff/loop/backlog.md`, read its `pr=<N>` from the
+   item / `loop_state.md` and run `gh pr view <N> --json state,mergeStateStatus -q .state`:
+   - `MERGED` → **promote `- [~]`→`- [x]`** (cite the PR), and if hf is present `hf done <TASK> --pr <N>`.
+   - anything else (`OPEN`/`BLOCKED`/`CLOSED`) → **leave `- [~]`** and record the live
+     `pr=<N> state=<status>` field on the item in `loop_state.md` (this field is REQUIRED, not optional —
+     `ci/gates/loop-state.sh`'s sibling discipline; an unpopulated PR-state on a `- [~]` is a wrap-up/
+     resume defect).
+   - **Exclude every still-`- [~]` item from the pick set** — the loop must not claim an item that is
+     already built and merely awaiting merge. A `CLOSED`-unmerged `- [~]` (PR abandoned) is surfaced as
+     a NEEDS-HUMAN note, not silently re-picked.
+   Run after the baseline (4) so the `gh` calls happen on a proven tree. This is the enforcement of the
+   tick-on-merged promise the forge-loop documents but resume previously did not mandate (the #125 class).
+
 5. **Broadcast `relay:resumed`** (best-effort, after any bootstrap-hazard check):
    `weave send --to all --subject "relay:resumed" --body "worktree=<abs> item=<next>"`.
 
@@ -82,4 +98,6 @@ full picture — the durable *reasoning* (ICM) and live *coordination* (weave) a
 - **Fail-closed on a red baseline** — verify before you build; a failing baseline halts to `NEEDS-HUMAN`.
 - **Fail-closed on an owed wrap-up** — a `WRAP-UP-OWED` marker means the prior batch boundary's
   reap/reconcile/retro never ran; run it before any new work (step 4c), never pick around it.
+- **Never pick an in-flight `- [~]`** — re-poll every `- [~]` PR first (step 4d); promote merged ones,
+  exclude the rest from the pick set. Re-building an already-built-and-armed item is the #125 drift.
 - **Recall before deciding** — ICM holds decisions/lessons the context window lost; use them.

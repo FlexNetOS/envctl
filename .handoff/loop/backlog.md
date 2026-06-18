@@ -542,7 +542,12 @@ fmt, clippy). Remaining follow-ups extracted from each:
     surfacing `HFTASK-*`. Do as a dedicated cycle.
   - **Risk:** medium-high (couples the loop to the kernel; shared-ledger contamination risk).
 
-- [ ] **TASK-0045 (T2.2, P1):** Fail-closed in-flight re-poll/promote sweep on resume. Tick-on-merged
+- [x] **TASK-0045 (T2.2, P1) — DONE 2026-06-18 (direct-to-develop):** `session-relay-resume` gained
+  **step 4d** — a fail-closed sweep that, before any pick, re-polls every `- [~]` item's `pr=<N>` via
+  `gh pr view --json state`, promotes `MERGED`→`- [x]` (+`hf done` when present), leaves the rest `- [~]`
+  with a REQUIRED `pr=<N> state=<status>` field, and **excludes all still-`- [~]` items from the pick
+  set** (a CLOSED-unmerged one → NEEDS-HUMAN, not re-picked). New non-negotiable bullet added. Enforces
+  the tick-on-merged promise resume previously didn't mandate (#125 class). Fail-closed in-flight re-poll/promote sweep on resume. Tick-on-merged
   leaves armed-not-merged work as `- [~]` and says "next session re-polls," but `session-relay-resume`
   does not *mandate* the sweep and the `pr=<N> state=<status>` field is specified-but-unpopulated — so
   a race/skip could re-pick an already-built `- [~]` item.
