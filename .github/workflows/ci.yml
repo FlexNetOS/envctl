@@ -97,5 +97,7 @@ jobs:
         run: bash ci/gates/kdf-feature-off.sh
       - name: agent-env gate (agent-env.yaml matches agent-env.lock; no kasetto drift)
         run: bash ci/gates/agent-env.sh
-      - name: harness-scripts gate (merge-driver + reaper safety invariants)
+      - name: loop-state gate (forge-loop counter integrity)
+        run: bash ci/gates/loop-state.sh
+      - name: harness-scripts gate (merge-driver + reaper + loop-state safety invariants)
         run: bash ci/gates/harness-scripts.sh

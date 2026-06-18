@@ -446,7 +446,12 @@ fmt, clippy). Remaining follow-ups extracted from each:
 
 ### Tier 1 — low-risk pure additions (build first, no design decision needed)
 
-- [ ] **TASK-0041 (T1.1, P0):** `ci/gates/loop-state.sh` — loop-counter integrity gate. The
+- [x] **TASK-0041 (T1.1, P0) — DONE 2026-06-18 (direct-to-develop):** `ci/gates/loop-state.sh`
+  shipped — asserts the 5 counters parse as non-negative ints, `wrap_every`/`cycle_budget` >= 1,
+  `cycles_total >= last_wrapup_total`, and `cycles_total` monotonic vs HEAD~1 (skip-if-unreadable,
+  never false-block). Hermetic test `scripts/tests/test-loop-state-gate.sh` (7 scenarios) wired into
+  `ci/gates/harness-scripts.sh` + a dedicated `ci.yml` step; CLAUDE.md gates list updated. Gate green
+  on live state; full harness-scripts gate green. `ci/gates/loop-state.sh` — loop-counter integrity gate. The
   batch-boundary / hand-off / WRAP-UP-OWED logic all key off hand-edited integers in `loop_state.md`
   (`cycles_total`, `last_wrapup_total`, `wrap_every`); `cycles_total: 18` is reconstructed by free-text
   narration with no check that it matches ground truth.

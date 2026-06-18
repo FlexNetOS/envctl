@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# test-loop-state-gate.sh — proves ci/gates/loop-state.sh enforces forge-loop counter integrity:
+#   * PASS on a well-formed loop_state.md (integers, cadence>=1, cycles_total>=last_wrapup_total)
+#   * FAIL on a non-integer cycles_total
+#   * FAIL on cycles_total < last_wrapup_total (negative boundary delta)
+#   * FAIL on wrap_every: 0 (would fire a boundary every turn)
+#   * FAIL on a cycles_total that REGRESSED vs the prior commit (monotonic)
+#   * SKIP cleanly when no loop_state.md exists
+#
+# Hermetic: builds a throwaway git repo containing only ci/gates/loop-state.sh + a synthetic
+# .handoff/loop/loop_state.md, runs the REAL gate against each scenario, asserts exit status. No
+# network, no real workspace touched.
+set -euo pipefail
+
+REPO_ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
+GATE="$REPO_ROOT/ci/gates/loop-state.sh"
+[ -f "$GATE" ] || { echo "FAIL: $GATE missing" >&2; exit 1; }
+fail() { echo "FAIL: $*" >&2; exit 1; }
+
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+gitc() { git -C "$tmp" -c user.email=t@example.com -c user.name=test -c commit.gpgsign=false "$@"; }
+
+# throwaway repo carrying the real gate
+git init -q "$tmp"
+mkdir -p "$tmp/ci/gates" "$tmp/.handoff/loop"
+cp "$GATE" "$tmp/ci/gates/loop-state.sh"
+
+LS="$tmp/.handoff/loop/loop_state.md"
+write_state() { # <cycle_budget> <wrap_every> <last_wrapup_total> <cycles_total> <cycles_this_session>
+  cat > "$LS" <<EOF
+# Loop state (synthetic test)
+cycle_budget: $1   # comment survives
+wrap_every: $2   # comment
+last_wrapup_total: $3   # comment
+cycles_this_session: $5
+cycles_total: $4   # narration $4
+EOF
+}
+
+run_gate() { ( cd "$tmp" && bash ci/gates/loop-state.sh >/dev/null 2>&1 ); }
+
+# 1. well-formed -> PASS, committed so HEAD~1 exists for the monotonic scenario later
+write_state 1 5 18 18 1
+gitc add -A >/dev/null; gitc commit -q -m "seed: cycles_total=18"
+run_gate || fail "well-formed loop_state.md should PASS"
+
+# 2. non-integer cycles_total -> FAIL
+write_state 1 5 18 "eighteen" 1
+run_gate && fail "non-integer cycles_total should FAIL" || true
+
+# 3. cycles_total < last_wrapup_total -> FAIL
+write_state 1 5 18 17 1
+run_gate && fail "cycles_total < last_wrapup_total should FAIL" || true
+
+# 4. wrap_every: 0 -> FAIL
+write_state 1 0 0 18 1
+run_gate && fail "wrap_every=0 should FAIL" || true
+
+# 5. monotonic: regress cycles_total 18 -> 12 vs the committed HEAD (=18) -> FAIL
+write_state 1 5 5 12 1
+gitc add -A >/dev/null; gitc commit -q -m "regress cycles_total to 12"
+run_gate && fail "regressed cycles_total (18->12) should FAIL the monotonic check" || true
+
+# 6. advance cycles_total 18 -> 20 -> PASS (monotonic forward)
+write_state 1 5 18 20 1
+gitc add -A >/dev/null; gitc commit -q -m "advance cycles_total to 20" || true
+run_gate || fail "monotonic-forward cycles_total (18->20) should PASS"
+
+# 7. no loop_state.md -> SKIP (exit 0)
+rm -f "$LS"
+run_gate || fail "missing loop_state.md should SKIP (exit 0), not fail"
+
+echo "test-loop-state-gate: PASS"

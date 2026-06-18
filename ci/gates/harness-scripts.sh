@@ -10,5 +10,6 @@ root="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 
 bash "$root/scripts/tests/test-merge-driver.sh"
 bash "$root/scripts/tests/test-reaper.sh"
+bash "$root/scripts/tests/test-loop-state-gate.sh"
 
 echo "HARNESS-SCRIPTS GATE PASS"
