@@ -165,21 +165,54 @@ fn make_proof(
     jti: &str,
     iat_secs: i64,
     client_id: &str,
+    nonce: Option<&str>,
 ) -> String {
     let x = URL_SAFE_NO_PAD.encode(kp.public_key().as_ref());
     let header = serde_json::json!({
         "typ": "dpop+jwt", "alg": "EdDSA",
         "jwk": { "kty": "OKP", "crv": "Ed25519", "x": x },
     });
-    let payload = serde_json::json!({
+    let mut payload = serde_json::json!({
         "htm": "POST", "htu": htu, "jti": jti, "iat": iat_secs,
         "ekm": URL_SAFE_NO_PAD.encode(ekm), "client_id": client_id,
     });
+    if let Some(n) = nonce {
+        payload
+            .as_object_mut()
+            .unwrap()
+            .insert("nonce".to_string(), serde_json::json!(n));
+    }
     let h = URL_SAFE_NO_PAD.encode(serde_json::to_string(&header).unwrap().as_bytes());
     let p = URL_SAFE_NO_PAD.encode(serde_json::to_string(&payload).unwrap().as_bytes());
     let signing_input = format!("{h}.{p}");
     let sig = kp.sign(signing_input.as_bytes());
     format!("{h}.{p}.{}", URL_SAFE_NO_PAD.encode(sig.as_ref()))
+}
+
+/// PR-2: fetch a fresh server-issued DPoP-Nonce by sending a nonce-less proof on a throwaway
+/// connection and reading the `DPoP-Nonce` header off the 401 challenge.
+async fn fetch_nonce(
+    connector: &tokio_rustls::TlsConnector,
+    addr: std::net::SocketAddr,
+    kp: &Ed25519KeyPair,
+    htu: &str,
+    bearer: &str,
+    jti: &str,
+    now_secs: i64,
+) -> String {
+    let (mut tls, ekm) = connect_and_ekm(connector, addr).await;
+    let proof = make_proof(kp, htu, &ekm, jti, now_secs, "phone", None);
+    write_swap_request(&mut tls, bearer, &proof).await;
+    let (raw, _) = read_until_close(&mut tls, Duration::from_secs(5)).await;
+    let head = String::from_utf8_lossy(&raw);
+    head.lines()
+        .find_map(|l| {
+            let (k, v) = l.split_once(':')?;
+            k.trim()
+                .eq_ignore_ascii_case("dpop-nonce")
+                .then(|| v.trim().to_string())
+        })
+        .expect("the 401 challenge must carry a DPoP-Nonce header")
 }
 
 fn write_relay_cert(dir: &std::path::Path) {
@@ -399,6 +432,9 @@ async fn setup(tag: &str) -> Harness {
             RECHECK,
             MAX_DURATION,
         )),
+        require_client_cert: false,
+        client_ca_path: None,
+        ingress_caps: None,
     };
     let (addr, handle) =
         envctl_secretd::edge::serve_edge(engine.clone(), &paths, &cfg, async move {
@@ -429,8 +465,26 @@ async fn revoke_mid_stream_tears_down_within_bound() {
     let htu = format!("https://{EDGE_HOST}{SWAP_PATH}");
     let now_secs = chrono::Utc::now().timestamp();
 
+    let nonce = fetch_nonce(
+        &h.connector,
+        h.addr,
+        &h.kp,
+        &htu,
+        &h.bearer,
+        "jti-revoke-n",
+        now_secs,
+    )
+    .await;
     let (mut tls, ekm) = connect_and_ekm(&h.connector, h.addr).await;
-    let proof = make_proof(&h.kp, &htu, &ekm, "jti-revoke", now_secs, "phone");
+    let proof = make_proof(
+        &h.kp,
+        &htu,
+        &ekm,
+        "jti-revoke",
+        now_secs,
+        "phone",
+        Some(&nonce),
+    );
     write_swap_request(&mut tls, &h.bearer, &proof).await;
 
     // Let the stream run for a couple of chunks, then revoke the bearer mid-flight.
@@ -469,8 +523,26 @@ async fn usb_pull_mid_stream_tears_down_within_bound() {
     let htu = format!("https://{EDGE_HOST}{SWAP_PATH}");
     let now_secs = chrono::Utc::now().timestamp();
 
+    let nonce = fetch_nonce(
+        &h.connector,
+        h.addr,
+        &h.kp,
+        &htu,
+        &h.bearer,
+        "jti-usb-n",
+        now_secs,
+    )
+    .await;
     let (mut tls, ekm) = connect_and_ekm(&h.connector, h.addr).await;
-    let proof = make_proof(&h.kp, &htu, &ekm, "jti-usb", now_secs, "phone");
+    let proof = make_proof(
+        &h.kp,
+        &htu,
+        &ekm,
+        "jti-usb",
+        now_secs,
+        "phone",
+        Some(&nonce),
+    );
     write_swap_request(&mut tls, &h.bearer, &proof).await;
 
     tokio::time::sleep(PUMP_DELAY * 3).await;
@@ -495,8 +567,26 @@ async fn still_authorized_stream_survives_a_recheck_tick() {
     let htu = format!("https://{EDGE_HOST}{SWAP_PATH}");
     let now_secs = chrono::Utc::now().timestamp();
 
+    let nonce = fetch_nonce(
+        &h.connector,
+        h.addr,
+        &h.kp,
+        &htu,
+        &h.bearer,
+        "jti-survive-n",
+        now_secs,
+    )
+    .await;
     let (mut tls, ekm) = connect_and_ekm(&h.connector, h.addr).await;
-    let proof = make_proof(&h.kp, &htu, &ekm, "jti-survive", now_secs, "phone");
+    let proof = make_proof(
+        &h.kp,
+        &htu,
+        &ekm,
+        "jti-survive",
+        now_secs,
+        "phone",
+        Some(&nonce),
+    );
     write_swap_request(&mut tls, &h.bearer, &proof).await;
 
     // Read for a window spanning SEVERAL re-check ticks WITHOUT revoking. The stream must keep
@@ -524,8 +614,26 @@ async fn max_duration_cap_tears_down() {
     let htu = format!("https://{EDGE_HOST}{SWAP_PATH}");
     let now_secs = chrono::Utc::now().timestamp();
 
+    let nonce = fetch_nonce(
+        &h.connector,
+        h.addr,
+        &h.kp,
+        &htu,
+        &h.bearer,
+        "jti-maxdur-n",
+        now_secs,
+    )
+    .await;
     let (mut tls, ekm) = connect_and_ekm(&h.connector, h.addr).await;
-    let proof = make_proof(&h.kp, &htu, &ekm, "jti-maxdur", now_secs, "phone");
+    let proof = make_proof(
+        &h.kp,
+        &htu,
+        &ekm,
+        "jti-maxdur",
+        now_secs,
+        "phone",
+        Some(&nonce),
+    );
     write_swap_request(&mut tls, &h.bearer, &proof).await;
 
     // The pump (PUMP_CHUNKS * PUMP_DELAY = 6s) outlives MAX_DURATION (3s). The hard cap MUST tear the

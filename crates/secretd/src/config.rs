@@ -106,6 +106,11 @@ struct FileEdge {
     enabled: Option<bool>,
     /// The bind address (e.g. `"0.0.0.0:8443"` or `"127.0.0.1:8443"`). Required when `enabled`.
     bind_addr: Option<String>,
+    /// PR-2b: require a verified client certificate (mTLS hardened mode). Default `false`.
+    require_client_cert: Option<bool>,
+    /// PR-2b: path to the operator-provisioned remote-clients-CA PEM (required when
+    /// `require_client_cert`). NEVER the MITM CA / server cert — a separate trust input (FS-S25).
+    client_ca_path: Option<String>,
 }
 
 impl StoreConfig {
@@ -166,6 +171,12 @@ pub struct EdgeSettings {
     pub enabled: bool,
     /// `Some` iff `enabled` (validated parseable). `None` when disabled.
     pub bind_addr: Option<std::net::SocketAddr>,
+    /// PR-2b: require a verified client certificate (mTLS hardened mode). Default `false`.
+    pub require_client_cert: bool,
+    /// PR-2b: the remote-clients-CA PEM path the client cert is verified against. `Some` only when
+    /// configured; a `require_client_cert = true` with `None` here is a fail-closed startup `Err`
+    /// (enforced in `serve_edge`).
+    pub client_ca_path: Option<std::path::PathBuf>,
 }
 
 #[cfg(feature = "relay-edge")]
@@ -194,6 +205,8 @@ impl EdgeSettings {
             return Ok(EdgeSettings {
                 enabled: false,
                 bind_addr: None,
+                require_client_cert: false,
+                client_ca_path: None,
             });
         }
         let bind_raw = env_nonempty("SECRETD_EDGE_BIND_ADDR")
@@ -207,9 +220,27 @@ impl EdgeSettings {
         let bind_addr: std::net::SocketAddr = bind_raw.trim().parse().with_context(|| {
             format!("parsing [edge].bind_addr {bind_raw:?} as a socket address")
         })?;
+        // PR-2b mTLS (env > file). Default-OFF (additionally opt-in on top of the default-OFF feature).
+        let require_client_cert = match env_nonempty("SECRETD_EDGE_REQUIRE_CLIENT_CERT") {
+            Some(v) => matches!(v.trim().to_ascii_lowercase().as_str(), "1" | "true" | "yes"),
+            None => fedge.require_client_cert.unwrap_or(false),
+        };
+        let client_ca_path = env_nonempty("SECRETD_EDGE_CLIENT_CA_PATH")
+            .or(fedge.client_ca_path)
+            .map(std::path::PathBuf::from);
+        // Fail-closed at load time too (serve_edge re-checks): requiring a client cert with no CA to
+        // verify against would accept any/none — refuse the half-built mTLS config early.
+        if require_client_cert && client_ca_path.is_none() {
+            return Err(anyhow!(
+                "[edge].require_client_cert = true requires [edge].client_ca_path \
+                 (SECRETD_EDGE_CLIENT_CA_PATH or the file key) — the mTLS gate fails closed"
+            ));
+        }
         Ok(EdgeSettings {
             enabled: true,
             bind_addr: Some(bind_addr),
+            require_client_cert,
+            client_ca_path,
         })
     }
 }

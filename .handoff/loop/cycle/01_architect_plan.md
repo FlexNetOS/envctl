@@ -1,184 +1,121 @@
-<<<<<<< HEAD
-# TASK-0032 (F5, P0) — streaming-revocation tear-down (FS-S5) · VERDICT: GO
+# TASK-0031-PR2 — Hardening the F2 relay edge · VERDICT: GO
 
-Adds an engine-side `relay_stream_authorized(...)` re-check seam (re-runs the SAME `decide()`
-authorization with fresh clock/USB/revocation reads, NO key fetch, NO counter bump) and a streaming
-tear-down driver in the existing `relay-edge` listener that wraps the upstream stream with a periodic
-re-check + revocation observation, aborting the in-flight `StreamBody` the instant authorization lapses.
-ZERO new dependencies. Single-repo (envctl), sequential single-crew.
+All four sub-features in one cycle, single repo (envctl, ~6 modules → sequential single-crew), ZERO new
+deps. Sequenced as two coherent slices on the SAME branch: **PR-2a anti-abuse core** (nonce + admission/
+rate-limit + body-caps/timeouts) then **PR-2b opt-in mTLS**. Nonce store + admission limiter are
+engine-side security policy (siblings to `broker::jti::JtiReplayStore`); the edge does pure I/O.
+
+## Scope for this cycle
+IN: (1) server-issued DPoP-Nonce challenge (OI-SM-1 nonce half, RFC 9449 §8–9); (2) per-IP admission +
+token-bucket rate-limit, shed BEFORE verify/decide (CVE-2024-47609, SERVER-MODE §6.2); (3) body caps +
+handshake/header/idle/body timeouts; (4) opt-in hardened-mode mTLS `ClientCertVerifier` (OI-SM-4),
+default-OFF. 2a lands first (request-pipeline + 2 engine stores), 2b second (tls.rs + EdgeConfig toggle).
+Named deferrals (NOT silent drops): PROXY-protocol source-IP parsing → TASK-0031-PR2c; remote-clients-CA
+lifecycle (mint/renew/revoke) → TASK-0033; group-commit audit batching + watch-push stream re-check → pre-existing.
 
 ## Target repos
-- **envctl** (single). 2 modified (`crates/secrets-engine/src/lib.rs`, `crates/secretd/src/edge/listener.rs`)
-  + 1 new (`crates/secretd/src/edge/stream.rs`) + 1 test (`crates/secretd/tests/edge_stream_e2e.rs`).
-  ≤3 engine-first modules → sequential single-crew (no A2 / no grit).
+envctl (single). engine: `broker/{nonce.rs(NEW),admission.rs(NEW),mod.rs}`; secretd:
+`edge/{listener.rs,tls.rs,mod.rs,dpop.rs}` + new test files. ~6 modules → sequential single-crew.
 
-## Engine API delta (additive, non-mutating)
-The existing seam can't be reused: `relay_swap`/`relay_swap_prepare` FETCH the key and `broker.bump()`
-the usage counters every call — re-running per tick would consume budget/rate and re-materialize the key.
-New method answers only "is this stream still authorized?" with no key fetch, no counter mutation,
-`bytes_out = 0`, routed through the SAME `decide()`:
+## Engine API delta (all new security policy in engine, sync/non-printing/std+ring::rand-only)
+### broker::nonce::NonceStore (NEW)
+consts NONCE_TTL_MS=300_000 (coherent w/ ACCEPT_PAST_MS), MAX_NONCES=16_384 (~1MiB), NONCE_LEN=32.
+`enum NonceReject{Missing,Unknown,Expired}`. `new()/with_params(ttl,max)`;
+`issue(now_ms,&dyn ring::rand::SecureRandom)->Result<String,()>` (sweep-first; full-after-sweep→Err, caller
+fails closed = 401 with no nonce); `check_and_consume(nonce,now_ms)->Result<(),NonceReject>` (single-use:
+remove on accept). RNG injected as trait obj so engine stays pure/testable. **Single-use** recommended
+(strongest replay posture; genuine retry re-challenges → fresh nonce → fresh jti, OI-SM-1 §6); windowed is
+the one-line fallback (TTL without removal) if HTTP/2 coalescing flakes.
+### broker::admission::AdmissionLimiter (NEW)
+consts RATE_REFILL_PER_MIN=120, BUCKET_BURST=60, MAX_KEYS=65_536. `enum Admit{Allow,Throttled}`.
+`admit(key,now_ms)->Admit` token-bucket: refill-by-elapsed → sweep idle → try-consume; full key table +
+new key → Throttled (never grow, never evict-to-admit). Poisoned lock → caller 429.
+Reexport both in broker/mod.rs + lib.rs (`pub use`). Optional metadata-only
+`SecretEvent::EdgeRequestShed{reason,client_or_ip,count}` (recommended, like RelayStreamTornDown).
+### dpop.rs delta
+`VerifiedDpop.nonce: Option<String>` surfaced at parse (additive; verifier stays I/O-free, validation in
+caller next to jti check so existing vector tests are unchanged).
 
-```rust
-// crates/secrets-engine/src/lib.rs
-pub fn relay_stream_authorized(&self, bearer: &str, req: &EgressReq, sink: &EventSink) -> StreamAuthz;
-pub enum StreamAuthz { Authorized, TearDown(DenyReason) }  // DenyReason re-exported from broker::decide
-```
-- Factor the bearer-verify + policy-load + gate-snapshot prelude of `relay_swap_prepare` (lib.rs:1409–1546)
-  into private `authorize_relay(&self, bearer, req, bump: bool) -> {Deny(DenyReason)|Allow(AllowMeta)}`
-  WITHOUT the key fetch. `relay_swap_prepare` calls it `bump=true` then fetches key on Allow (behavior
-  byte-for-byte unchanged). `relay_stream_authorized` calls it `bump=false`, ignores key fetch.
-- Add `Broker::peek(&self, token_id, now_ms) -> (u64,u64,u32)` (read-only counterpart to `bump` at
-  broker/mod.rs:231): recompute rate_in_window for the current window WITHOUT incrementing, so the
-  re-check still enforces ceilings against live tallies but never consumes them. `bytes_out=0`.
-- Pass the SAME `RemotePeer` captured at open → decide() clause 11a (decide.rs:192) re-asserts
-  `dpop_verified` + client_id/jkt binding each tick.
-- OPTIONAL metadata-only `SecretEvent::RelayStreamTornDown { relay, token_id, reason }` for GUI/CLI
-  audit granularity (recommended; consumed identically by both front-ends — no divergence). No front-end
-  behavior change either way (neither drives the edge).
+## Edge changes (exact insertion points)
+Current ladder (mod.rs:11 / listener.rs): route/method gate → htu → verify_remote_presentation{EKM,DPoP,
+verify_dpop_proof, jti check_and_record, client_id, registry} → upstream → swap_and_respond_streaming.
+**A. Admission (step 0, BEFORE any crypto):** add `admit: Arc<Mutex<AdmissionLimiter>>` + connection
+`peer: SocketAddr` to ConnState (built in serve_edge_listener next to jti, listener.rs:78). In
+handle_edge_request (listener.rs:169) right after route/method gate (after :180), before host/htu/verify:
+`admit.lock()` (poisoned→bare(429)) + `admit(peer.ip(), now)`; Throttled→`bare(TOO_MANY_REQUESTS)`. Per-IP
+only (client_id unauthenticated pre-verify); per-client quota stays in engine decide() clause 15
+(rate_per_min) on accept. **B. Nonce (within verify_remote_presentation, listener.rs:297):** add
+`nonce: Arc<Mutex<NonceStore>>` + `rng: Arc<ring::rand::SystemRandom>` to ConnState. After verify_dpop_proof
+succeeds (:329) BEFORE jti check_and_record (:342): if verified.nonce None/unknown/expired → issue fresh +
+return typed `Refusal::NonceChallenge(b64)`; present+valid → check_and_consume (single-use), Err→401. Change
+verify_remote_presentation error type StatusCode → `enum Refusal{Status(StatusCode),NonceChallenge(String)}`.
+New helper `challenge_nonce(nonce)->Response<ProxyBody>` beside `bare` (proxy.rs:625; bare emits no headers —
+don't modify, add sibling) building 401 + `DPoP-Nonce: <b64>` + `WWW-Authenticate: DPoP error="use_dpop_nonce"`.
+**C. Body caps + timeouts:** handshake timeout wraps acceptor.accept (listener.rs:120) in
+tokio::time::timeout(HANDSHAKE_TIMEOUT)→drop on elapse; hyper auto Builder (listener.rs:159)
+.http1().header_read_timeout(...); body cap via http_body_util::Limited::new(body,MAX_BODY_BYTES) before
+swap consumes (listener.rs:229/:264)→413 on exceed; body-read timeout→408. consts HANDSHAKE_TIMEOUT=10s,
+HEADER_READ_TIMEOUT=15s, IDLE_TIMEOUT=30s, MAX_BODY_BYTES=1MiB.
 
-## Edge changes
-- NEW `crates/secretd/src/edge/stream.rs` (`#[cfg(feature="relay-edge")]`): `relay_stream_response(...)`
-  wraps the engine's per-request upstream chunk `mpsc::Receiver` (proxy.rs:513) in a supervised middle
-  task forwarding chunks downstream while `tokio::select!` races: (a) next upstream chunk, (b)
-  `tokio::time::interval` tick, (c) revocation observation, (d) hard max-stream-duration deadline. On a
-  tick → `engine.relay_stream_authorized(...)`; on `TearDown`/deadline → drop downstream sender (StreamBody
-  ends cleanly, client sees HTTP/2 close) + metadata-only audit. Body stays the existing `ProxyBody`
-  (`Either::Left(StreamBody::new(ReceiverStream::new(rx)))`, proxy.rs:47–53) — same shape, no new framework.
-- MODIFY `crates/secretd/src/edge/listener.rs::handle_edge_request` (:159): after the verified `RemotePeer`
-  (:330) and an `Allowed` swap, route the returned `body_rx` through `stream::relay_stream_response`
-  instead of returning it bare; thread the captured-at-open `EgressReq` + bearer + `RemotePeer` (all in scope).
-- Reuse `swap_and_respond` → `relay_swap` for the swap itself (no policy duplicated in the edge).
+## PR-2b mTLS (tls.rs)
+`RelayTlsConfig::load_from_dir_with_client_auth(relay_tls_dir, client_ca_path:Option<&Path>)`: when client-CA
+configured, replace `.with_no_client_auth()` (tls.rs:86) with `.with_client_cert_verifier(v)` where
+`v = WebPkiClientVerifier::builder_with_provider(roots, Arc::new(rustls::crypto::ring::default_provider())).build()?`
+(rustls-webpki + rustls-pki-types already in Cargo.lock → zero new deps; explicit ring provider → ring-only).
+roots = operator-provisioned remote-clients-CA PEM (SERVER-MODE §6.1 line 196) — NEVER the MITM CA, never the
+server cert; distinct config input preserves FS-S25. EdgeConfig (mod.rs:31) gains
+`require_client_cert: bool`(default false) + `client_ca_path: Option<PathBuf>`; serve_edge (mod.rs:54) threads
+it. `require_client_cert && client_ca_path.is_none()` → fail-closed startup Err.
 
-## Re-check cadence & cancellation
-- `tokio::time::interval(RECHECK_INTERVAL=2s)` (named const) runs `relay_stream_authorized` each tick;
-  hard `MAX_STREAM_SECS` (~300s) deadline tears down unconditionally.
-- Worst-case revoke/lock/USB-pull detection latency = one interval (≤2s): decide() reads the USB gate +
-  bearer `revoked` + policy fresh each call. Select wakes immediately on upstream EOF/error.
-- FORK (resolved, non-blocking): interval-poll vs watch-push. Interval-poll ships now (≤2s bound, zero new
-  wiring). `tokio::sync::watch` push (~0 latency) needs an engine broadcast seam keyed by client/token →
-  larger cross-cutting change → documented PR-4 follow-up.
+## Fail-closed matrix
+missing nonce→401+DPoP-Nonce+WWW-Authenticate use_dpop_nonce · unknown/expired nonce→401 re-challenge ·
+NonceStore full on issue→401 no nonce · poisoned NonceStore lock→401 · per-IP rate breach→429 · admission
+key table full(new)→429 · poisoned admission lock→429 · body>MAX_BODY_BYTES→413 · header/idle/body timeout→408
+· TLS handshake timeout→drop · mTLS required no client cert→handshake fail/drop · mTLS required no client_ca
+path→startup Err · existing PR-1 bad DPoP/EKM/jti→401/403 unchanged. No unwrap/panic on request path; every
+lock match→reject; no default-open.
 
 ## Dep decision (no-C proof)
-tokio (interval/select/mpsc/watch), http-body-util (StreamBody/Either), hyper/hyper-util, tokio-stream
-(ReceiverStream), envctl-secrets-engine — ALL already resolved (secretd Cargo.toml:44–49; proxy.rs:47–53).
-ZERO new lockfile crates. No SQLite/OpenSSL/aws-lc/mimalloc; no new rustls backend; ring untouched (re-check
-does no crypto). `no-c.sh` green by construction (still run it).
-
-## Fail-closed matrix (every uncertainty → tear down)
-decide() Deny → TearDown(reason) · vault locked → TearDown · RwLock poisoned → map_err→TearDown (no unwrap)
-· store err re-loading bearer → TearDown · bearer row vanished/MAC fails → TearDown · USB pulled (gate
-absent) → TearDown(≤2s) · Engine handle dropped → sender dropped, stream closes · client vanished →
-downstream send err, stop+drop · max-duration → TearDown · re-check panic FORBIDDEN (no unwrap/expect/index
-on hot path). Default = always tear-down on uncertainty.
+rustls 0.23.40(ring), rustls-webpki, rustls-pki-types, ring, http-body-util(Limited), std/tokio::time — ALL
+already in Cargo.lock. ZERO new crates. mTLS verifier built _with_provider(ring) → single ring-only rustls.
+no-c.sh stays green.
 
 ## Tests
-Engine unit (lib.rs near relay_swap + broker/mod.rs for peek): Authorized for valid remote bearer;
-TearDown(BearerRevoked) after relay_revoke_bearer(apply); TearDown(GateAbsent) on absent USB gate;
-TearDown on locked/poisoned (no panic); peek leaves counters unchanged across N re-checks.
-E2E new `crates/secretd/tests/edge_stream_e2e.rs` (`#![cfg(feature="relay-edge")]`, reuse edge_e2e harness:
-fake PresentUsb, RecordingUpstream slow-pumping multiple chunks, with_seams, real serve_edge + tokio-rustls
-client + EKM-bound DPoP): (1) revoke mid-stream → client stream closes within ~2× RECHECK_INTERVAL, body
-truncated; (2) USB pull mid-stream → close within bound; (3) survives a tick when still authorized (no
-false-tear, counters didn't deny); (4) max-duration cap tears down. Generous CI timeouts; fakes only.
+engine units (inject clock + seeded RNG, jti.rs pattern): nonce issue→consume; second consume→Unknown;
+expired→Expired; missing→Missing; full→Err; sweep-then-issue; concurrent single-winner. admission: burst→
+Throttled; refill; idle sweep; MAX_KEYS full→Throttled; concurrent. e2e (extend edge_e2e.rs; new
+edge_hardening_e2e.rs; cfg relay-edge, reuse connect_and_ekm/make_proof, make_proof gains optional nonce arg):
+nonce challenge→retry 200; stale-nonce→401; rate-limit→429 (assert shed BEFORE upstream recorder saw a key);
+oversized-body→413; stalled-body→408 (small injected timeout override); mTLS require_client_cert=true: no
+cert→handshake fail, valid cert(rcgen client-CA)→200. CI-tolerant (pure in-process, small injected params).
+gates: no-c.sh, shape.sh (confirm mTLS verifier adds no banned import), fmt, clippy --workspace -Dwarnings,
+test -p secrets-engine, test -p secretd --features relay-edge.
 
 ## Sequencing (leaf-first)
-1. `Broker::peek` + unit test. 2. factor `authorize_relay(bump)` + `relay_stream_authorized` + `StreamAuthz`
-(re-export DenyReason); confirm relay_swap byte-for-byte unchanged (existing proxy_swap_e2e/decide tests
-pass); engine unit tests; (optional RelayStreamTornDown event). 3. add `edge/stream.rs` + `pub mod stream;`
-(cfg relay-edge). 4. wire body_rx through relay_stream_response in listener. 5. edge_stream_e2e.rs.
-6. fmt + clippy --workspace -Dwarnings + test -p secrets-engine + test -p secretd --features relay-edge +
-no-c.sh + shape.sh (via `rtk proxy cargo ...`).
+1 nonce.rs+tests+reexport. 2 admission.rs+tests+reexport. 3 dpop.rs surface nonce. 4 listener.rs PR-2a
+(ConnState admit/nonce/rng/peer; admission step-0; nonce challenge; Refusal enum + challenge_nonce helper).
+5 listener.rs body-caps/timeouts. 6 e2e PR-2a. 7 tls.rs+mod.rs PR-2b mTLS + fail-closed startup + e2e.
+8 all gates + fmt/clippy; verify relay-edge-OFF build byte-for-byte unaffected.
 
 ## Invariants (each checkable)
-1 no-C: zero new crates, no-c.sh from cargo metadata. 2 engine single non-printing: policy in
-relay_stream_authorized→decide(), edge stream.rs is select/forward/drop I/O only, no println!. 3 decide()
-only Allow authority: re-check calls decide() with SAME captured inputs incl. open-time RemotePeer.
-4 fail-closed: matrix maps every error to tear-down, no unwrap on periodic path. 5 no secret in logs/audit:
-tear-down events {reason,client_id,token_id} only; key confined to Upstream::send. 6 relay-tls/EKM unchanged:
-no TLS/cert/EKM code touched. 7 default-OFF: new module+wiring cfg relay-edge; engine method inert unless
-edge calls it. 8 dry-run/fail-closed destructive: N/A (tear-down is internal fail-safe, not an --apply op).
+1 no-C/one ring-only: zero new deps, mTLS _with_provider(ring), no-c.sh green. 2 engine single non-printing:
+NonceStore/AdmissionLimiter sync std+ring::rand, typed rejects, no println!; edge does I/O. 3 decide() sole
+Allow authority: admission/nonce only reject early; full verify+decide() run on every accepted req (test:
+429'd req never reaches recording upstream); mTLS additive not replacement. 4 fail-closed/no panic: every
+matrix row rejects; poisoned locks reject; no unwrap on req path; mTLS-misconfig→startup Err. 5 no secret in
+logs: rejections metadata-only; nonces (non-secret) not logged needlessly. 6 relay-tls only/FS-S25/EKM:
+client-CA separate input on SAME ServerConfig, no MITM-CA import, EKM untouched. 7 default-OFF relay-edge +
+mTLS additionally opt-in (require_client_cert default false; with_no_client_auth byte-for-byte when off).
 
 ## Risks
-peek mis-impl (reusing bump) → false deny — guarded by "counters unchanged" unit test. Backpressure: middle
-forwarding task must keep the bounded BODY_CHANNEL_CAP (proxy.rs:42), no unbounded buffer. 2s poll is
-"prompt" not instant (watch-push fork if sub-second needed). CI flake → generous timeouts + fakes.
+body-cap wiring vs swap_and_respond_streaming body type (Incoming/ProxyBody, proxy.rs:47) — implementer
+confirms non-breaking Limited wrap vs Content-Length guard; 413 e2e is the gate. verify_remote_presentation
+return-type change (StatusCode→Refusal) touches one caller (listener.rs:192), low blast radius. HTTP/2
+coalescing + single-use nonce: each req carries own proof+nonce → fine; windowed fallback is one-line.
+context7 returned stale rustls 0.20 docs → WebPkiClientVerifier::builder_with_provider asserted from in-tree
+rustls 0.23.40 usage (tls.rs:83) + lockfile; implementer MUST confirm exact builder method name vs rustls
+0.23.40 rustdoc before finalizing PR-2b.
 
-## Out of scope (follow-up)
-PR-4 watch-channel push (~0 latency) · per-client fan-out tear-down of all concurrent streams on one revoke
-· Profile B presence-token re-check (blocked OI-SM-2/3) · N-byte cadence refinement.
-=======
-# TASK-0035 — secretd gRPC surface gaps (Vault/Relay/Audit/read)  ·  VERDICT: GO
-
-Single-repo (envctl), engine-first, cohesive cycle. Every in-scope RPC already has its proto
-message and `secretctl` CLI client wired — the gap is purely **engine read/mutation methods +
-secretd handler wiring**. Zero new dependencies. **No proto change.**
-
-## Target repos
-1 repo: envctl. Crates: secrets-engine (new public methods + one Store method), secretd (handler
-wiring + conv.rs converters), secretctl (confirm `audit query` verb; rest already wired). GUI
-out of scope (secretctl is the front-end for secrets-engine). → sequential single-crew.
-
-## In scope (replace `Status::unimplemented` in crates/secretd/src/grpc.rs)
-- Vault.List — metadata-only list (no values, no ct_tag/nonce).
-- Vault.Rm — DESTRUCTIVE, dry-run-by-default (`apply && confirm`), locked-refusal.
-- Vault.Rotate — append new sealed version via existing secret_put (carry-forward meta); apply-gated.
-- Relay.Create — named-policy create via existing save_relay_policy (additive, unlocked).
-- Relay.List — read list_relay_policies; filter revoked unless include_revoked.
-- Audit.Query — pass-through to store.query_audit; daemon post-filters actor/relay/since/until; clamp limit ≤1000.
-- GetSecret.meta — populate the currently-`None` meta from secret_meta (metadata only).
-
-## Out of scope — DEFER to a NEW backlog item (record only, do not build)
-Certs.* service (CaInit/Rotate/Issue/Renew/Revoke/TrustApply/List), non-mitm ca_issue
-(secrets-engine/src/lib.rs ~2290-2330), `secretctl ca`; empty features provider-openai + libsql `embedded`.
-→ Phase 4+.
-
-## Engine API delta (all sync, non-printing, return metadata not secrets; audit via audit_ok/refuse)
-1. secret_list(provider: Option<Provider>, sink) -> Vec<SecretListItem> — store.list_secret_names + get_secret_latest per name; new `SecretListItem` struct (non-secret SecretRow fields + version + created_ts). Gate on unlocked (Locked when dek().is_none(), matches secret_get).
-2. secret_meta(name) -> Option<SecretMeta> — non-secret metadata for GetSecret.meta. No value.
-3. secret_rm(name, apply, sink) -> u32 — DESTRUCTIVE template = relay_revoke. Locked-refusal. apply=false counts would-remove (list_secret_versions), mutates nothing. apply=true removes all versions via new Store::delete_secret, audits, emits SecretEvent. No secret bytes.
-4. secret_rotate(name, new_value: Zeroizing<Vec<u8>>, apply, sink) — PREFERRED engine method: meta-read (carry provider/note/broker_only) + secret_put under write lock (secret_put already appends version=max+1 monotonically). apply-gated dry-run.
-5. relay_list(include_revoked, sink) -> Vec<RelayPolicy> — store.list_relay_policies; filter revoked.
-6. relay_create(policy: RelayPolicy, sink) -> i64 — store.save_relay_policy(RelayPolicyRow{id:0,policy}); unlocked; audit relay_created.
-7. audit_query(since_seq, limit, sink) -> Vec<AuditRecord> — store.query_audit; clamp limit. Already metadata-only.
-
-### New Store-trait surface (one method)
-- Store::delete_secret(name) -> Result<u32> with DEFAULT `Ok(0)` (non-breaking to existing impls) + real InMemStore impl (retain-filter, return count). libSQL backend: real `DELETE FROM secrets WHERE name = ?` if straightforward, else inherit default + tracked follow-up so no-C/compile stay green. Update any hand-rolled mock (lib.rs ~2964).
-
-## Proto delta
-NONE. All messages/fields exist in control.proto: Vault.List/Rm/Rotate, Relay.Create/List,
-Audit.Query, GetSecretResp.meta, and the apply/confirm fail-closed fields. CI proto round-trip stays green.
-
-## Invariants (each checkable)
-- no-C: zero new deps; secrets-engine still never links libSQL. Run ci/gates/no-c.sh.
-- one rustls ring-only: no TLS/CA crate touched.
-- engine = single sync non-printing lib: all methods sync, emit SecretEvents + audit, no println!/clap/UI.
-- destructive fail-closed + dry-run default: Rm/Rotate gate on apply (proto3 default false), refuse when locked; unit-test-enforced.
-- no secret bytes in logs/audit/List: SecretListItem/SecretMeta carry only non-secret SecretRow fields; audit_query returns engine-written AuditRecords; rotate value in Zeroizing.
-- broker-only never revealable: untouched; List/meta expose broker_only as bool flag only; reveal gate not modified.
-
-## Daemon wiring (grpc.rs)
-Replace 6 unimplemented bodies (~205-234, 360-369, 414-422, 719-729) with spawn_blocking engine
-calls mapped via conv.rs. Add converters secret_list_item_to_proto (→ v1::SecretMeta),
-policy_to_proto (engine RelayPolicy → v1::RelayPolicy); reuse provider_to_proto/audit_to_entry.
-Populate GetSecretResp.meta in the get handler (~193) via engine.secret_meta. Fold
-apply = req.apply && req.confirm for Rm (mirrors Relay.Revoke ~377). Map Locked→failed_precondition,
-empty-arg→invalid_argument. Update module-doc unimplemented list (~13-15); leave Certs.* as Phase 4+.
-
-## Sequencing (leaf-first)
-Store::delete_secret + InMemStore impl → engine reads (secret_list/SecretListItem, secret_meta,
-relay_list, audit_query) + inline tests → engine mutations (relay_create, secret_rm, secret_rotate)
-+ tests → conv.rs converters + tests → secretd handlers + tokio round-trip tests → confirm/add
-secretctl `audit query` verb → module-doc updates → append deferred Certs.* backlog item →
-fmt/clippy --workspace -D warnings + cargo test -p envctl-secrets-engine -p envctl-secretd →
-no-c.sh + shape.sh.
-
-## Resolved defaults (open questions — none block)
-1. Reads gate on unlocked (fail-closed, consistent with secret_get). 2. Rotate = engine method
-(single authority). 3. Audit filters daemon-side this cycle (keep engine signature minimal).
-4. libSQL delete_secret: real impl if straightforward, else default-stub + follow-up.
-
-## Risks
-Store-trait addition blast radius (mitigate: default body + check libsql impl + mock compiles).
-Double-audit on Get.meta (keep secret_meta un-audited to avoid duplicate rows on a Get).
-rtk corrupts fmt/clippy — implementer uses `rtk proxy` / file redirect.
->>>>>>> 727f7ba (secretd: implement Vault/Relay/Audit gRPC surface gaps (TASK-0035))
+## Out of scope (named follow-ups)
+TASK-0031-PR2c proxy-protocol-source-ip · TASK-0033 remote-clients-CA lifecycle (mint/renew/revoke) ·
+group-commit audit batching + watch-push stream re-check (pre-existing deferrals).

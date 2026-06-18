@@ -110,8 +110,9 @@ fn jkt_of(kp: &Ed25519KeyPair) -> [u8; 32] {
     Sha256::digest(canonical.as_bytes()).into()
 }
 
-/// Build a signed DPoP proof for `htu`/`ekm`/`iat`/`jti`. The signing input is the raw base64url
-/// segments (RFC 7515 §5), matching the verifier.
+/// Build a signed DPoP proof for `htu`/`ekm`/`iat`/`jti`, optionally echoing a server-issued
+/// `nonce` (PR-2: `None` ⇒ no nonce claim). The signing input is the raw base64url segments
+/// (RFC 7515 §5), matching the verifier.
 fn make_proof(
     kp: &Ed25519KeyPair,
     htu: &str,
@@ -119,6 +120,7 @@ fn make_proof(
     jti: &str,
     iat_secs: i64,
     client_id: &str,
+    nonce: Option<&str>,
 ) -> String {
     let x = URL_SAFE_NO_PAD.encode(kp.public_key().as_ref());
     let header = serde_json::json!({
@@ -126,7 +128,7 @@ fn make_proof(
         "alg": "EdDSA",
         "jwk": { "kty": "OKP", "crv": "Ed25519", "x": x },
     });
-    let payload = serde_json::json!({
+    let mut payload = serde_json::json!({
         "htm": "POST",
         "htu": htu,
         "jti": jti,
@@ -134,6 +136,12 @@ fn make_proof(
         "ekm": URL_SAFE_NO_PAD.encode(ekm),
         "client_id": client_id,
     });
+    if let Some(n) = nonce {
+        payload
+            .as_object_mut()
+            .unwrap()
+            .insert("nonce".to_string(), serde_json::json!(n));
+    }
     let h = URL_SAFE_NO_PAD.encode(serde_json::to_string(&header).unwrap().as_bytes());
     let p = URL_SAFE_NO_PAD.encode(serde_json::to_string(&payload).unwrap().as_bytes());
     let signing_input = format!("{h}.{p}");
@@ -193,12 +201,29 @@ async fn connect_and_ekm(
     (tls, ekm)
 }
 
-/// Send one POST /v1/relay/swap with the given DPoP + (optional) bearer headers; return the status.
-async fn post_swap<S>(tls: &mut S, bearer: Option<&str>, dpop: Option<&str>) -> u16
+/// Send one POST /v1/relay/swap with the given DPoP + (optional) bearer headers; return the status
+/// AND any `DPoP-Nonce` response header (PR-2: present on a nonce challenge).
+async fn post_swap<S>(
+    tls: &mut S,
+    bearer: Option<&str>,
+    dpop: Option<&str>,
+) -> (u16, Option<String>)
 where
     S: AsyncReadExt + AsyncWriteExt + Unpin,
 {
-    let body = b"{\"q\":1}";
+    post_swap_body(tls, bearer, dpop, b"{\"q\":1}").await
+}
+
+/// As [`post_swap`] but with a caller-supplied request body (so the body-cap path can be exercised).
+async fn post_swap_body<S>(
+    tls: &mut S,
+    bearer: Option<&str>,
+    dpop: Option<&str>,
+    body: &[u8],
+) -> (u16, Option<String>)
+where
+    S: AsyncReadExt + AsyncWriteExt + Unpin,
+{
     let mut head = format!(
         "POST {SWAP_PATH} HTTP/1.1\r\nHost: {EDGE_HOST}\r\n\
          x-relay-upstream-host: {UPSTREAM_HOST}\r\nx-relay-upstream-path: /v1/messages\r\n\
@@ -234,12 +259,75 @@ where
             }
         }
     }
-    let head = String::from_utf8_lossy(&out);
-    head.lines()
+    parse_status_and_nonce(&out)
+}
+
+/// Parse the HTTP status code + any `DPoP-Nonce` header out of a raw response head.
+fn parse_status_and_nonce(raw: &[u8]) -> (u16, Option<String>) {
+    let head = String::from_utf8_lossy(raw);
+    let status = head
+        .lines()
         .next()
         .and_then(|l| l.split_whitespace().nth(1))
         .and_then(|c| c.parse::<u16>().ok())
-        .unwrap_or(0)
+        .unwrap_or(0);
+    let nonce = head.lines().find_map(|l| {
+        let (k, v) = l.split_once(':')?;
+        if k.trim().eq_ignore_ascii_case("dpop-nonce") {
+            Some(v.trim().to_string())
+        } else {
+            None
+        }
+    });
+    (status, nonce)
+}
+
+/// The full PR-2 challenge→retry dance over a SINGLE connection per attempt: a first proof with NO
+/// nonce gets a `401 + DPoP-Nonce` challenge; a fresh connection then retries with that nonce echoed
+/// in the proof. Returns the FINAL status (200 on the happy path). Each attempt uses a fresh
+/// connection + fresh jti (the edge is single-use on both nonce and jti).
+#[allow(clippy::too_many_arguments)]
+async fn swap_with_nonce_dance(
+    connector: &tokio_rustls::TlsConnector,
+    addr: std::net::SocketAddr,
+    kp: &Ed25519KeyPair,
+    htu: &str,
+    bearer: &str,
+    client_id: &str,
+    jti_prefix: &str,
+    now_secs: i64,
+) -> u16 {
+    // (1) First request with no nonce → expect a 401 challenge carrying a fresh DPoP-Nonce.
+    let (mut tls1, ekm1) = connect_and_ekm(connector, addr).await;
+    let proof1 = make_proof(
+        kp,
+        htu,
+        &ekm1,
+        &format!("{jti_prefix}-a"),
+        now_secs,
+        client_id,
+        None,
+    );
+    let (s1, nonce) = post_swap(&mut tls1, Some(bearer), Some(&proof1)).await;
+    assert_eq!(
+        s1, 401,
+        "the first (nonce-less) request must be a 401 challenge"
+    );
+    let nonce = nonce.expect("a 401 challenge must carry a DPoP-Nonce header");
+
+    // (2) Retry on a fresh connection echoing the issued nonce → the verify ladder + decide() run.
+    let (mut tls2, ekm2) = connect_and_ekm(connector, addr).await;
+    let proof2 = make_proof(
+        kp,
+        htu,
+        &ekm2,
+        &format!("{jti_prefix}-b"),
+        now_secs,
+        client_id,
+        Some(&nonce),
+    );
+    let (s2, _) = post_swap(&mut tls2, Some(bearer), Some(&proof2)).await;
+    s2
 }
 
 fn build_engine(
@@ -335,6 +423,9 @@ async fn edge_dpop_swap_accepts_and_rejects() {
         enabled: true,
         bind_addr: "127.0.0.1:0".parse().unwrap(),
         recheck_timing: None,
+        require_client_cert: false,
+        client_ca_path: None,
+        ingress_caps: None,
     };
     let (addr, handle) =
         envctl_secretd::edge::serve_edge(engine.clone(), &paths, &cfg, async move {
@@ -348,10 +439,20 @@ async fn edge_dpop_swap_accepts_and_rejects() {
 
     // ---- happy path: a valid DPoP-bound swap → 200 + the real key reaches the upstream ----
     {
-        let (mut tls, ekm) = connect_and_ekm(&connector, addr).await;
-        let proof = make_proof(&kp, &htu, &ekm, "jti-accept-1", now_secs, "phone");
-        let status = post_swap(&mut tls, Some(&raw_bearer), Some(&proof)).await;
-        assert_eq!(status, 200, "a valid DPoP-bound swap must be 200");
+        // PR-2: the swap now requires a server-issued DPoP-Nonce. The dance does the
+        // challenge → retry; the final retry must be a 200 with the real key reaching the upstream.
+        let status = swap_with_nonce_dance(
+            &connector,
+            addr,
+            &kp,
+            &htu,
+            &raw_bearer,
+            "phone",
+            "jti-accept",
+            now_secs,
+        )
+        .await;
+        assert_eq!(status, 200, "a valid DPoP-bound + nonce'd swap must be 200");
         assert_eq!(
             rec.seen_key.lock().unwrap().as_deref(),
             Some(SENTINEL),
@@ -359,32 +460,58 @@ async fn edge_dpop_swap_accepts_and_rejects() {
         );
     }
 
-    // ---- replayed jti → 401 (the second use of the same jti on a fresh connection) ----
+    // ---- replayed jti → 401 (the second use of the same jti, each with a fresh nonce) ----
     {
-        // First use on a fresh connection (accepted).
+        // Acquire a fresh nonce (challenge), then use it with a fixed jti (accepted).
+        let (mut tlsc, ekmc) = connect_and_ekm(&connector, addr).await;
+        let pc = make_proof(&kp, &htu, &ekmc, "jti-rc", now_secs, "phone", None);
+        let (sc, nonce1) = post_swap(&mut tlsc, Some(&raw_bearer), Some(&pc)).await;
+        assert_eq!(sc, 401, "challenge");
+        let nonce1 = nonce1.expect("nonce on challenge");
+
         let (mut tls1, ekm1) = connect_and_ekm(&connector, addr).await;
-        let proof1 = make_proof(&kp, &htu, &ekm1, "jti-replay", now_secs, "phone");
-        let s1 = post_swap(&mut tls1, Some(&raw_bearer), Some(&proof1)).await;
+        let proof1 = make_proof(
+            &kp,
+            &htu,
+            &ekm1,
+            "jti-replay",
+            now_secs,
+            "phone",
+            Some(&nonce1),
+        );
+        let (s1, _) = post_swap(&mut tls1, Some(&raw_bearer), Some(&proof1)).await;
         assert_eq!(s1, 200, "first use of jti-replay is accepted");
 
-        // Replay the SAME jti (rebuilt for the new connection's EKM, but the jti value repeats).
+        // Replay the SAME jti. It needs a fresh nonce (single-use); acquire one, then replay the jti.
+        let (mut tlsc2, ekmc2) = connect_and_ekm(&connector, addr).await;
+        let pc2 = make_proof(&kp, &htu, &ekmc2, "jti-rc2", now_secs, "phone", None);
+        let (_, nonce2) = post_swap(&mut tlsc2, Some(&raw_bearer), Some(&pc2)).await;
+        let nonce2 = nonce2.expect("nonce on challenge");
         let (mut tls2, ekm2) = connect_and_ekm(&connector, addr).await;
-        let proof2 = make_proof(&kp, &htu, &ekm2, "jti-replay", now_secs, "phone");
-        let s2 = post_swap(&mut tls2, Some(&raw_bearer), Some(&proof2)).await;
+        let proof2 = make_proof(
+            &kp,
+            &htu,
+            &ekm2,
+            "jti-replay",
+            now_secs,
+            "phone",
+            Some(&nonce2),
+        );
+        let (s2, _) = post_swap(&mut tls2, Some(&raw_bearer), Some(&proof2)).await;
         assert_eq!(s2, 401, "a replayed jti must be rejected (401)");
     }
 
-    // ---- no DPoP header → 401 ----
+    // ---- no DPoP header → 401 (rejected before the nonce gate) ----
     {
         let (mut tls, _ekm) = connect_and_ekm(&connector, addr).await;
-        let status = post_swap(&mut tls, Some(&raw_bearer), None).await;
+        let (status, _) = post_swap(&mut tls, Some(&raw_bearer), None).await;
         assert_eq!(status, 401, "a swap with no DPoP header must be 401");
     }
 
-    // ---- tampered proof → 401 (a valid proof whose payload is swapped, breaking the signature) ----
+    // ---- tampered proof → 401 (signature fails at verify_dpop_proof, BEFORE the nonce gate) ----
     {
         let (mut tls, ekm) = connect_and_ekm(&connector, addr).await;
-        let proof = make_proof(&kp, &htu, &ekm, "jti-tamper", now_secs, "phone");
+        let proof = make_proof(&kp, &htu, &ekm, "jti-tamper", now_secs, "phone", None);
         let mut parts: Vec<String> = proof.split('.').map(|s| s.to_string()).collect();
         let evil = serde_json::json!({
             "htm": "POST", "htu": htu, "jti": "evil", "iat": now_secs,
@@ -392,19 +519,27 @@ async fn edge_dpop_swap_accepts_and_rejects() {
         });
         parts[1] = URL_SAFE_NO_PAD.encode(serde_json::to_string(&evil).unwrap().as_bytes());
         let tampered = parts.join(".");
-        let status = post_swap(&mut tls, Some(&raw_bearer), Some(&tampered)).await;
+        let (status, _) = post_swap(&mut tls, Some(&raw_bearer), Some(&tampered)).await;
         assert_eq!(status, 401, "a tampered proof must be 401");
     }
 
     // ---- unregistered/unknown client → 401 (the same edge `load_remote_client → None/revoked`
     // pre-decide refusal branch a REVOKED client hits; revocation TEAR-DOWN itself is PR-3). The proof
-    // is otherwise valid + freshly-jti'd + EKM-bound, so the ONLY reason for the 401 is the unknown
-    // client_id — proving the edge refuses an unregistered client BEFORE reaching a mint. ----
+    // is otherwise valid + freshly-jti'd + EKM-bound + nonce'd, so the ONLY reason for the 401 is the
+    // unknown client_id — proving the edge refuses an unregistered client BEFORE reaching a mint. The
+    // dance returns 401 from the registry check (the unknown-client 401, not the nonce challenge). ----
     {
-        let (mut tls, ekm) = connect_and_ekm(&connector, addr).await;
-        // Sign with the SAME key but assert a client_id the registry does not know.
-        let proof = make_proof(&kp, &htu, &ekm, "jti-unknown-client", now_secs, "ghost");
-        let status = post_swap(&mut tls, Some(&raw_bearer), Some(&proof)).await;
+        let status = swap_with_nonce_dance(
+            &connector,
+            addr,
+            &kp,
+            &htu,
+            &raw_bearer,
+            "ghost",
+            "jti-unknown-client",
+            now_secs,
+        )
+        .await;
         assert_eq!(
             status, 401,
             "an unregistered remote client must be 401 (pre-decide)"

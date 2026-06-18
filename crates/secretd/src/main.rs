@@ -232,6 +232,11 @@ async fn serve() -> anyhow::Result<()> {
                 bind_addr,
                 // Production streaming re-check cadence/cap (TASK-0032 / FS-S5).
                 recheck_timing: None,
+                // PR-2b mTLS hardened mode (OI-SM-4): opt-in via the [edge] block; default-OFF.
+                require_client_cert: edge_cfg.require_client_cert,
+                client_ca_path: edge_cfg.client_ca_path.clone(),
+                // Production ingress caps (PR-2: body size + handshake/header/idle timeouts).
+                ingress_caps: None,
             };
             let (addr, handle) = envctl_secretd::edge::serve_edge(
                 engine.clone(),

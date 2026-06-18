@@ -629,6 +629,26 @@ pub(crate) fn bare(status: StatusCode) -> Response<ProxyBody> {
         .expect("bare response with empty body is always constructible")
 }
 
+/// A server-issued DPoP-Nonce challenge (TASK-0031-PR2 / RFC 9449 §8–9): `401` + a `DPoP-Nonce`
+/// header carrying the fresh nonce + a `WWW-Authenticate: DPoP error="use_dpop_nonce"` so a compliant
+/// client retries with the nonce echoed in its next proof. EMPTY body (no oracle). The `nonce` is a
+/// public, non-secret anti-replay token (safe to send on the wire — that is its whole purpose). If
+/// the header value cannot be constructed (it is ASCII hex, so this never happens in practice), we
+/// fall back to a bare 401 — fail-closed, never a 200. Distinct from [`bare`]: `bare` emits no
+/// headers; this is the ONLY edge response that adds the two DPoP challenge headers.
+///
+/// `relay-edge`-only: the F2 edge listener is the sole caller, so this is gated to keep the
+/// `relay-edge`-OFF build byte-for-byte unaffected.
+#[cfg(feature = "relay-edge")]
+pub(crate) fn challenge_nonce(nonce: &str) -> Response<ProxyBody> {
+    Response::builder()
+        .status(StatusCode::UNAUTHORIZED)
+        .header("dpop-nonce", nonce)
+        .header("www-authenticate", "DPoP error=\"use_dpop_nonce\"")
+        .body(empty_body())
+        .unwrap_or_else(|_| bare(StatusCode::UNAUTHORIZED))
+}
+
 /// The verified target host: the URI authority (absolute-form) if present, else the `Host` header.
 /// Strips any `:port` suffix.
 pub(crate) fn request_host(req: &Request<Incoming>) -> Option<String> {

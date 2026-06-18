@@ -28,8 +28,9 @@ pub mod seam; // Clock, UsbProbe, ProviderMint, Upstream + SystemClock/RealUsbPr
 pub mod vault; // Vault state machine + Store trait + crypto (seal/open) + canonical AAD + audit // ChildEnvPlan, ResolvedInjection, injection_template, run_wrapped
 
 pub use broker::{
-    clamp_ttl, Bearer, DenyReason, JtiReject, JtiReplayStore, Method, Provider, RelayDecision,
-    RelayId, RelayKind, RelayPolicy, SwapMode, SwapOutcome, MAX_BEARER_TTL_SECS,
+    clamp_ttl, AdmissionLimiter, Admit, Bearer, DenyReason, JtiReject, JtiReplayStore, Method,
+    NonceReject, NonceStore, Provider, RelayDecision, RelayId, RelayKind, RelayPolicy, SwapMode,
+    SwapOutcome, MAX_BEARER_TTL_SECS,
 };
 pub use error::{EngineError, VaultState};
 pub use event::{AuditRecord, EventSink, SecretEvent, Stream};
