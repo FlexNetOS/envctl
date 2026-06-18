@@ -22,7 +22,8 @@ use std::sync::Arc;
 
 use anyhow::{bail, Context};
 use rustls::pki_types::{CertificateDer, PrivateKeyDer};
-use rustls::ServerConfig;
+use rustls::server::WebPkiClientVerifier;
+use rustls::{RootCertStore, ServerConfig};
 
 /// The relay edge's server-TLS configuration, loaded ONLY from the relay-tls directory. Wraps the
 /// built rustls [`ServerConfig`] so the edge listener never constructs a server config from any other
@@ -31,11 +32,32 @@ pub struct RelayTlsConfig(Arc<ServerConfig>);
 
 impl RelayTlsConfig {
     /// Load the relay server cert + key from `relay_tls_dir/{cert.pem,key.pem}` and build a ring-only
-    /// rustls `ServerConfig`. Fail-closed: any missing/empty/unparsable input is an `Err`.
+    /// rustls `ServerConfig` with NO client auth (the PR-1 default). Fail-closed: any missing/empty/
+    /// unparsable input is an `Err`.
     ///
     /// `relay_tls_dir` MUST be the value of `Paths::relay_tls_dir()` — the caller passes it so this
     /// module never computes or references any other path (it cannot reach the MITM-CA location).
     pub fn load_from_dir(relay_tls_dir: &Path) -> anyhow::Result<Self> {
+        Self::load_from_dir_with_client_auth(relay_tls_dir, None)
+    }
+
+    /// PR-2b: load the relay server cert + key (as [`load_from_dir`](Self::load_from_dir)) and build
+    /// the ring-only rustls `ServerConfig`, OPTIONALLY requiring a verified client certificate (mTLS).
+    ///
+    /// When `client_ca_path` is `None` the config uses `.with_no_client_auth()` BYTE-FOR-BYTE as PR-1
+    /// (the default-OFF behavior is unchanged). When `Some(ca)`, the SAME relay-tls ServerConfig
+    /// additionally requires a client cert verified against the operator-provisioned remote-clients-CA
+    /// PEM at `ca` (SERVER-MODE §6.1) — a SEPARATE config input, NEVER the MITM CA and NEVER the server
+    /// cert (FS-S25 preserved: this loader still reads no MITM-CA path). The verifier is built with the
+    /// EXPLICIT ring provider (`WebPkiClientVerifier::builder_with_provider(roots, ring)`), so the edge
+    /// stays single-rustls / ring-only (no aws-lc).
+    ///
+    /// Fail-closed: a missing/empty/unparsable client-CA PEM, an empty trust-anchor set, or a verifier
+    /// build error is an `Err` (the edge refuses to start rather than serve a half-built mTLS gate).
+    pub fn load_from_dir_with_client_auth(
+        relay_tls_dir: &Path,
+        client_ca_path: Option<&Path>,
+    ) -> anyhow::Result<Self> {
         let cert_path = relay_tls_dir.join("cert.pem");
         let key_path = relay_tls_dir.join("key.pem");
 
@@ -77,15 +99,35 @@ impl RelayTlsConfig {
                 })?
         };
 
-        // ring-only provider, safe protocol versions, NO client auth (mTLS is PR-2). A build error
-        // (e.g. cert/key mismatch, unsupported key) fails closed.
-        let config =
+        // ring-only provider + safe protocol versions are common to both modes. A build error (e.g.
+        // cert/key mismatch, unsupported key) fails closed.
+        let builder =
             ServerConfig::builder_with_provider(Arc::new(rustls::crypto::ring::default_provider()))
                 .with_safe_default_protocol_versions()
-                .context("ring safe protocol versions for the relay edge")?
+                .context("ring safe protocol versions for the relay edge")?;
+
+        let config = match client_ca_path {
+            // Default (PR-1): no client auth. BYTE-FOR-BYTE the prior behavior.
+            None => builder
                 .with_no_client_auth()
                 .with_single_cert(certs, key)
-                .context("building the relay edge ServerConfig (cert/key mismatch?)")?;
+                .context("building the relay edge ServerConfig (cert/key mismatch?)")?,
+            // PR-2b mTLS: require a client cert verified against the remote-clients-CA bundle. Same
+            // relay-tls ServerConfig, an ADDITIONAL gate; the explicit ring provider keeps it ring-only.
+            Some(ca) => {
+                let roots = load_client_ca_roots(ca)?;
+                let verifier = WebPkiClientVerifier::builder_with_provider(
+                    Arc::new(roots),
+                    Arc::new(rustls::crypto::ring::default_provider()),
+                )
+                .build()
+                .context("building the relay edge client-cert verifier (remote-clients-CA)")?;
+                builder
+                    .with_client_cert_verifier(verifier)
+                    .with_single_cert(certs, key)
+                    .context("building the relay edge mTLS ServerConfig (cert/key mismatch?)")?
+            }
+        };
 
         Ok(RelayTlsConfig(Arc::new(config)))
     }
@@ -94,6 +136,40 @@ impl RelayTlsConfig {
     pub fn server_config(&self) -> Arc<ServerConfig> {
         Arc::clone(&self.0)
     }
+}
+
+/// PR-2b: load the operator-provisioned remote-clients-CA bundle (PEM) into a rustls `RootCertStore`
+/// (the trust anchors a presented client cert is verified against). The SAME `rustls_pemfile::certs`
+/// path the server cert uses — a SEPARATE input from the relay-tls cert, NEVER the MITM CA. Fail-
+/// closed: a missing/empty/unparsable file, or a file with zero usable anchors, is an `Err`.
+fn load_client_ca_roots(client_ca_path: &Path) -> anyhow::Result<RootCertStore> {
+    let anchors_pem = std::fs::read(client_ca_path).with_context(|| {
+        format!(
+            "reading remote-clients-CA bundle {}",
+            client_ca_path.display()
+        )
+    })?;
+    let anchors: Vec<CertificateDer<'static>> = {
+        let mut rd = std::io::BufReader::new(&anchors_pem[..]);
+        rustls_pemfile::certs(&mut rd)
+            .collect::<Result<Vec<_>, _>>()
+            .context("parsing the remote-clients-CA PEM")?
+    };
+    if anchors.is_empty() {
+        bail!(
+            "remote-clients-CA bundle at {} contained no certificates (mTLS fails closed)",
+            client_ca_path.display()
+        );
+    }
+    let mut roots = RootCertStore::empty();
+    let (added, _ignored) = roots.add_parsable_certificates(anchors);
+    if added == 0 {
+        bail!(
+            "remote-clients-CA bundle at {} had no usable trust anchors (mTLS fails closed)",
+            client_ca_path.display()
+        );
+    }
+    Ok(roots)
 }
 
 #[cfg(test)]
@@ -162,6 +238,61 @@ mod tests {
         let cert = rcgen::generate_simple_self_signed(vec!["edge.example".to_string()]).unwrap();
         std::fs::write(dir.join("key.pem"), cert.key_pair.serialize_pem()).unwrap();
         assert!(RelayTlsConfig::load_from_dir(&dir).is_err());
+    }
+
+    // ---- PR-2b mTLS loader ----------------------------------------------------------------------
+
+    #[test]
+    fn mtls_loads_with_client_ca() {
+        install_ring();
+        let tmp = tempdir();
+        let dir = tmp.join("relay-tls");
+        write_relay_cert(&dir);
+        // A separate client-CA PEM (NOT the relay cert, NOT the MITM CA) — the trust input for mTLS.
+        let ca = rcgen::generate_simple_self_signed(vec!["clients-ca".to_string()]).unwrap();
+        let ca_path = tmp.join("clients-ca.pem");
+        std::fs::write(&ca_path, ca.cert.pem()).unwrap();
+        let cfg = RelayTlsConfig::load_from_dir_with_client_auth(&dir, Some(&ca_path))
+            .expect("mTLS ServerConfig builds with a client-CA");
+        let _ = cfg.server_config();
+    }
+
+    #[test]
+    fn mtls_missing_client_ca_file_fails_closed() {
+        install_ring();
+        let tmp = tempdir();
+        let dir = tmp.join("relay-tls");
+        write_relay_cert(&dir);
+        let ca_path = tmp.join("does-not-exist-clients-ca.pem");
+        assert!(
+            RelayTlsConfig::load_from_dir_with_client_auth(&dir, Some(&ca_path)).is_err(),
+            "a missing client-CA bundle must fail closed"
+        );
+    }
+
+    #[test]
+    fn mtls_empty_client_ca_fails_closed() {
+        install_ring();
+        let tmp = tempdir();
+        let dir = tmp.join("relay-tls");
+        write_relay_cert(&dir);
+        let ca_path = tmp.join("empty-clients-ca.pem");
+        std::fs::write(&ca_path, b"").unwrap();
+        assert!(
+            RelayTlsConfig::load_from_dir_with_client_auth(&dir, Some(&ca_path)).is_err(),
+            "an empty client-CA bundle (no anchors) must fail closed"
+        );
+    }
+
+    #[test]
+    fn no_client_ca_matches_pr1_default() {
+        // `load_from_dir` delegates to `..._with_client_auth(dir, None)` — the no-client-auth default
+        // path still builds (byte-for-byte PR-1 behavior; no client cert required).
+        install_ring();
+        let tmp = tempdir();
+        let dir = tmp.join("relay-tls");
+        write_relay_cert(&dir);
+        assert!(RelayTlsConfig::load_from_dir_with_client_auth(&dir, None).is_ok());
     }
 
     /// A minimal tempdir helper (no `tempfile` dep): a unique path under the OS temp dir, created on

@@ -1,107 +1,122 @@
-# Verification report: TASK-0035 — secretd gRPC surface gaps (Vault/Relay/Audit/read)
+# Verification report: TASK-0031-PR2 — F2 relay-edge hardening (default-OFF `relay-edge`)
 
 ## Verdict — **PASS**
 
-Independent cross-boundary verification of the working-tree TASK-0035 changeset (working tree vs
-`HEAD`, since the task work is uncommitted on top of the committed TASK-0020 #105). Every
-NON-NEGOTIABLE invariant holds; all real gates + cargo checks are green from raw `rtk proxy`
-passthrough (verified exit codes, not the implementer's word).
+Independent cross-boundary verification of the working-tree TASK-0031-PR2 changeset on branch
+`task-0031-pr2`. All four sub-features (server-issued DPoP-Nonce, per-IP token-bucket admission,
+body caps + timeouts, opt-in mTLS) land clean. Every NON-NEGOTIABLE invariant holds; all real
+gates + cargo checks are green from raw `rtk proxy` passthrough (verified exit codes, not the
+implementer's word). ZERO new lockfile crates.
 
-### Changeset scope (TASK-0035 = `git diff HEAD`, 12 files + 1 new test file)
-`crates/secrets-engine/src/{lib.rs,vault/store.rs}`, `crates/secrets-store-libsql/src/{schema,store}.rs`,
-`crates/secretd/src/{conv,grpc}.rs`, `crates/secretd/tests/e2e.rs`, `crates/secrets-engine/tests/{relay,vault}.rs`,
-NEW `crates/secretd/tests/grpc_surface_e2e.rs`, + 3 handoff docs. **No proto file in the changeset.**
+### Changeset scope (PR-2 = uncommitted working tree)
+**The PR-2 work is the uncommitted working tree** — `git log origin/develop..HEAD` is EMPTY (HEAD =
+`9ba53ae` TASK-0035 #108). 15 modified + 3 new untracked files:
+`crates/secrets-engine/src/{broker/{nonce.rs(NEW),admission.rs(NEW),mod.rs},event.rs,lib.rs}`,
+`crates/secrets-engine/Cargo.toml`, `crates/secretd/src/{config,conv,main,proxy}.rs`,
+`crates/secretd/src/edge/{dpop,listener,mod,tls}.rs`,
+`crates/secretd/tests/{edge_e2e,edge_stream_e2e}.rs`, NEW `crates/secretd/tests/edge_hardening_e2e.rs`.
+**No proto change. No Cargo.lock change.**
 
-## Gate results
+## Gate results — exit codes captured
 | Gate | Command | Exit | Result |
 |------|---------|------|--------|
-| no-c | `bash ci/gates/no-c.sh` | 0 | **PASS** — `rustls=['0.23.40'] on ring=['0.17.14']; zero aws-lc/openssl/C-SQLite` |
-| shape | `bash ci/gates/shape.sh` | 0 | **PASS** — `SHAPE GATE PASS` |
+| no-c | `bash ci/gates/no-c.sh` | **0** | PASS — `rustls=['0.23.40'] on ring=['0.17.14']; zero aws-lc/openssl/C-SQLite` |
+| shape | `bash ci/gates/shape.sh` | **0** | PASS — `SHAPE GATE PASS` |
+| enable | `bash ci/gates/enable.sh` | **0** | PASS — `ENABLE GATE PASS` |
+| p7 | `bash ci/gates/p7.sh` | **0** | PASS — `P7 GATE PASS` |
 
-## cargo
+## cargo — exit codes captured
 | Check | Command | Exit | Result |
 |-------|---------|------|--------|
-| fmt | `rtk proxy cargo fmt --all -- --check` | 0 | **PASS** |
-| clippy | `rtk proxy cargo clippy --workspace -- -D warnings` (exact CI form, `ci.yml:49`) | 0 | **PASS** |
-| test | `rtk proxy cargo test -p envctl-secrets-engine -p envctl-secretd` | 0 | **PASS** |
+| fmt | `cargo fmt --all -- --check` | **0** | PASS |
+| clippy (ws) | `cargo clippy --workspace --all-targets -- -D warnings` | **0** | PASS |
+| clippy (relay-edge) | `cargo clippy -p envctl-secretd --features relay-edge --all-targets -- -D warnings` | **0** | PASS |
+| test engine | `cargo test -p envctl-secrets-engine` | **0** | PASS — 133 lib (incl. **7 nonce + 5 admission**), relay 22, vault 15, inject 4, phase0 6; **0 failed** |
+| test secretd relay-edge | `cargo test -p envctl-secretd --features relay-edge` | **0** | PASS — edge_hardening_e2e **4**, edge_e2e/stream, grpc_surface 6, mitm 1, native_mint 11, proxy_swap 2, self_check 2; **0 failed** |
+| build relay-edge-OFF | `cargo build -p envctl-secretd` | **0** | PASS — OFF build unaffected (`challenge_nonce` gated) |
 
-Test counts: secrets-engine lib **127**, relay **17**, vault **15** (+ libsql binding 11/4/6, 1 ignored
-live-sqld for `delete_secret`); secretd lib **35** (incl. conv tests), e2e **5**, **grpc_surface_e2e 6**,
-proxy_swap 2, self_check 2, native_mint/mint_github 1. **0 failed.**
-
-CI clippy form confirmed at `.github/workflows/ci.yml:48-49` = `cargo clippy --workspace -- -D warnings`
-(NO `--all-targets`). The pre-existing `crates/gui/src/main.rs:1997` `doc_lazy_continuation` lint only
-fires under `--all-targets`, is NOT in CI's gate, and `gui/` is NOT in the TASK-0035 changeset.
-**Not attributable / not blocking** — implementer's claim confirmed.
+edge_hardening_e2e isolated run: `edge_mtls_requires_client_cert`, `edge_rate_limit_sheds_before_decide`,
+`edge_nonce_and_anti_abuse`, `edge_body_caps_and_timeouts` — all 4 ok.
 
 ## Invariant checks
-1. **No secret bytes in List/meta/audit/logs — PASS.** `SecretListItem` (lib.rs:195) and `SecretMeta`
-   carry only non-secret `SecretRow` fields (name/provider/note/broker_only + version/created_ts) — no
-   `nonce`/`ct_tag`/value field exists by construction. `secret_list`/`secret_meta`/`audit_query`
-   (lib.rs:859/900/1070) never read or emit plaintext. `secret_rotate` holds `new_value` in
-   `Zeroizing` (lib.rs:972; daemon moves the proto buffer into `Zeroizing` immediately in grpc.rs
-   rotate). Audit details carry only counts/versions (`would_remove`/`removed`/`version`). Enforced by
-   SENTINEL scans: `secret_list_is_metadata_only_*`, the rm/rotate apply audit scans,
-   `audit_query_clamps_*`, and the e2e wire-secrecy assertion (now also fed Audit.Query bytes, e2e.rs:355).
-2. **Destructive ops fail-closed + dry-run default — PASS.** `secret_rm`/`secret_rotate` refuse on
-   locked vault (write Refused audit row + GuardRefused event BEFORE returning → daemon
-   `failed_precondition` via `engine_status`, grpc.rs:51). `apply=false` (proto3 default) mutates
-   nothing — rm counts via `list_secret_versions`, rotate confirms+drops the Zeroizing value. Daemon
-   folds `apply = req.apply && req.confirm` for Vault.Rm (mirrors Relay.Revoke). Refusal paths
-   unit+e2e tested: `secret_rm_dry_run_mutates_nothing_apply_removes`, `secret_rm_refuses_when_locked`,
-   `secret_rotate_dry_run_then_apply_appends_version`, `secret_rotate_refuses_locked_and_unknown`,
-   `vault_rm_dry_run_then_apply_and_empty_arg_refused`, `locked_vault_refuses_list_with_failed_precondition`.
-3. **Engine = single sync non-printing library — PASS.** No `println!`/`eprintln!`/`print!`/clap/UI
-   and no `async fn`/`.await` added to secrets-engine (diff grep clean). All 7 new methods are sync,
-   emit Events + audit rows; secretd handlers are thin spawn_blocking/run_streaming wrappers over the
-   engine. Logic landed in the engine, not the daemon.
-4. **Broker-only never revealable — PASS.** `secret_get`/reveal path NOT in the diff (the only
-   `broker_only` mention in the diff is a test comment). List/meta expose `broker_only` only as a bool
-   flag. `ca_key_not_revealable_via_secret_get` and the e2e broker_only sentinel assertion still pass.
-5. **delete_secret correctness — PASS.** Trait default `Ok(0)` (store.rs:145, non-breaking). InMemStore
-   impl = retain-filter returning the correct removed count, deliberately does NOT rewind the row_id
-   high-water (store.rs:373). libSQL impl = `DELETE FROM secrets WHERE name = ?` parameterized, returns
-   affected-row count (store.rs:321; SQL const schema.rs:127). In-module `SharedStore` fwd! mock + the
-   two integration test `SharedStore`s forward `delete_secret` explicitly → behavior is real in tests.
-   Whole-workspace compile + 127/17/15 engine tests prove all Store impls compile.
-6. **No proto change — PASS.** `git diff HEAD -- crates/secrets-proto/proto/control.proto` is EMPTY.
-   (The proto delta visible vs `develop` belongs to committed TASK-0020 #105 `MintGithub` + G2
-   `DataPlaneMode mode` — NOT this task.) **Zero new deps:** no `Cargo.lock`/`Cargo.toml` in the
-   changeset; `cargo tree -p envctl-secrets-engine` shows no libsql/sqlite/openssl/aws-lc — engine
-   still never links libSQL (the libSQL delete lives in the quarantined `secrets-store-libsql` crate
-   behind the Store trait).
+1. **No C / one ring-only rustls — PASS.** no-c.sh exit=0; `git diff origin/develop --stat Cargo.lock`
+   EMPTY (ZERO new crates). `ring` made non-optional in the engine (Cargo.toml) — already in the
+   resolved graph via rustls' ring provider, so zero lockfile delta. mTLS verifier built with the
+   EXPLICIT ring provider: `tls.rs:119` `WebPkiClientVerifier::builder_with_provider(Arc::new(roots),
+   Arc::new(rustls::crypto::ring::default_provider()))`. Grep for `aws_lc`/`aws-lc` in edge+broker:
+   only doc-comment NEGATIONS ("never aws-lc-rs"). No sqlite/openssl/mimalloc.
+2. **Engine = single sync non-printing library — PASS.** Grep `println!/eprintln!/print!/stdout` in
+   nonce.rs/admission.rs/event.rs/lib.rs/broker/mod.rs: NONE. `NonceStore` (nonce.rs) + `AdmissionLimiter`
+   (admission.rs) are sync, `std`+`ring::rand`-only, hold the security policy (issue/check_and_consume,
+   token-bucket admit decision), return typed rejects (`NonceReject`, `Admit`). The edge does only I/O:
+   emits headers (`challenge_nonce`), 429/413/408, drops.
+3. **`decide()` is the SOLE Allow authority — PASS.** listener.rs: admission is STEP-0 (`:305-323`,
+   before any crypto) and can ONLY reject early (`Throttled⇒429`). The nonce gate sits inside
+   `verify_remote_presentation` (`:516-546`) AFTER `verify_dpop_proof`, BEFORE the jti record, and
+   returns a `Refusal` (never a `RemotePeer`). The full verify ladder (EKM→DPoP→nonce→jti→client_id→
+   registry/jkt) then `swap_and_respond_streaming` → `relay_swap`/`decide()` run on every non-shed req.
+   e2e `edge_rate_limit_sheds_before_decide` (edge_hardening_e2e.rs:533-542) resets
+   `RecordingUpstream.seen_key=None`, sends a 3rd request, asserts `429` AND `seen_key.is_none()` —
+   proving the shed request NEVER reached the recording upstream. mTLS is ADDITIVE (same ServerConfig,
+   extra client-cert gate) — DPoP/EKM/decide untouched.
+4. **Fail-closed / no panic — PASS.** Matrix verified in source: missing/unknown/expired nonce⇒401
+   re-challenge or fresh challenge; store-full-on-issue⇒401 no nonce (nonce.rs:98 `Err(())`); poisoned
+   nonce/admit/jti lock⇒401/429 (every `.lock()` is matched, never unwrapped); rate breach⇒429;
+   admission key-table-full+new key⇒Throttled (admission.rs:133, never evict-to-admit); body>cap⇒413;
+   body-read timeout⇒408; handshake timeout⇒drop; mTLS required+no-CA⇒startup `Err` (mod.rs serve_edge
+   `:bail!` + config.rs load-time `Err`). Single-use nonce: `check_and_consume` REMOVES on accept
+   (nonce.rs:124 `remove`); unit `second_consume_is_unknown` + `concurrent_consume_single_winner` prove
+   a second consume rejects. Grep of the listener production path (lines 290-608) for
+   `unwrap/expect/panic/unreachable/unchecked-index`: NONE. (`challenge_nonce` uses
+   `unwrap_or_else(bare(401))` — a fail-closed fallback, not a panic.)
+5. **No secret bytes in logs/audit — PASS.** All new shed/refusal `tracing` lines are metadata-only:
+   `peer` (source IP — operational, not secret), `status.as_u16()`, a fixed label. No bearer/proof/
+   EKM/key/nonce-value/body is logged (the nonce is a public anti-replay token; the challenge log line
+   carries no value). New `SecretEvent::EdgeRequestShed{reason,client_or_ip,count}` (event.rs) is
+   metadata-only by construction and routes to CLI+GUI via conv.rs (no-proto-twin arm).
+6. **relay-tls only / FS-S25 + EKM — PASS.** shape.sh exit=0. `tls.rs` imports NO MITM-CA type (grep
+   `mitm/MitmCa/ca_pem` in tls.rs: NONE; local var renamed `ca_pem`→`anchors_pem`). The mTLS client-CA
+   is a SEPARATE operator-provisioned input (`client_ca_path`, `load_client_ca_roots`) on the SAME
+   relay-tls `ServerConfig` (`with_client_cert_verifier` on the same builder, `:125-128`) — never the
+   MITM CA, never the server cert. The EKM path (`export_keying_material`, listener.rs:246) is untouched.
+7. **Default-OFF `relay-edge`; mTLS additionally opt-in — PASS.** All new edge code is under
+   `#[cfg(feature="relay-edge")]` (`challenge_nonce` gated; the whole `edge` module is feature-gated).
+   `require_client_cert` defaults `false` (config.rs + EdgeConfig). `tls.rs` keeps `.with_no_client_auth()`
+   BYTE-FOR-BYTE when `client_ca_path` is `None` (`:111-114`, the `load_from_dir` delegate path; unit
+   `no_client_ca_matches_pr1_default`). relay-edge-OFF build: `cargo build -p envctl-secretd` exit=0.
+8. **RFC 9449 correctness — PASS.** `challenge_nonce` (proxy.rs) emits `401` + `DPoP-Nonce: <nonce>` +
+   `WWW-Authenticate: DPoP error="use_dpop_nonce"`, empty body. The proof's `nonce` claim is surfaced
+   at parse (dpop.rs `VerifiedDpop.nonce`) and validated against `NonceStore` in the caller. e2e
+   `edge_nonce_and_anti_abuse` exercises the full round-trip: nonce-less proof⇒401 + DPoP-Nonce header
+   (`fetch_nonce`), retry echoing the nonce⇒200 with the real key reaching upstream
+   (edge_hardening_e2e.rs:415-432), and stale/unknown nonce⇒401 carrying a FRESH challenge (:436-459).
 
 ## Parity check (front-end reach)
-Secrets stack: `secretctl` is the front-end for `secrets-engine` (GUI out of scope per plan §10).
-Engine method → daemon RPC → CLI verb:
-- `secret_list` → `Vault.List` (grpc.rs list) → `secretctl secret list` (pre-existing verb)
-- `secret_rm` → `Vault.Rm` (grpc.rs rm, apply&&confirm) → `secretctl secret rm` (pre-existing)
-- `secret_rotate` → `Vault.Rotate` (grpc.rs rotate) → `secretctl secret rotate` (pre-existing)
-- `secret_meta` → `GetSecretResp.meta` populated in `Vault.Get` (grpc.rs:182) → `secretctl secret get`
-- `relay_create` → `Relay.Create` (grpc.rs create) → `secretctl relay create` (confirmed pre-existing)
-- `relay_list` → `Relay.List` (grpc.rs list) → `secretctl relay list` (pre-existing)
-- `audit_query` → `Audit.Query` (grpc.rs query, daemon post-filter) → `secretctl audit query` (confirmed)
-All in-scope RPCs proto+CLI were pre-wired; this cycle filled the engine+daemon gap. No CLI change
-required (plan Step 6 resolved to confirmation only).
+Edge-internal hardening; no new operator-facing Engine verb (the security stores are edge-driven
+policy, like `JtiReplayStore`). The mTLS toggle reaches the daemon via config (`[edge].require_client_cert`
+/ `client_ca_path`, env `SECRETD_EDGE_REQUIRE_CLIENT_CERT` / `SECRETD_EDGE_CLIENT_CA_PATH`) →
+`EdgeConfig` → `serve_edge` → `serve_edge_listener` → `load_from_dir_with_client_auth`. The new
+`SecretEvent::EdgeRequestShed` reaches CLI+GUI identically via the conv.rs no-proto-twin arm (same path
+as `RelayStreamTornDown`). No CLI/GUI code change required or expected for this cycle.
 
 ## Findings
-None blocking. Notes / non-blocking observations:
-- **N1 (cosmetic):** `secret_rm` apply emits `SecretEvent::GuardRefused` and `secret_rotate` apply
-  emits `SecretEvent::RelayRotated` as removal/rotation notification carriers (no dedicated
-  `SecretRemoved`/`SecretRotated` enum variant exists; adding one is an event-enum + `event_to_proto`
-  change outside scope). The reason/relay strings carry ONLY name + count — no secret. Authoritative
-  record is the durable `secret_removed`/`secret_rotated` audit row. Acceptable; an optional future
-  enrichment (already in the implementer's follow-ups). No secrecy/invariant impact.
-- **N2 (note):** `policy_to_proto.expires_at` surfaces the relative `policy_ttl_secs` as a string (the
-  engine stores relative TTL, not an absolute timestamp). Operator-facing, documented; a future schema
-  bump could carry a resolved RFC3339. Not a TASK-0035 defect.
-- **N3 (note):** Audit.Query `since`/`until` daemon-side filter uses lexical RFC3339 compare (correct
-  for a fixed offset, as the code comments note). Metadata filtering only.
-- **N4 (deferred, recorded):** Certs.* / non-mitm `ca_issue` / `secretctl ca` / empty-features
-  carve-out correctly deferred to **TASK-0038** (appended to backlog). The 4 Certs.* RPCs remain
-  `Status::unimplemented` by design; module-doc updated accordingly.
+None blocking. Notes:
+- **N1 (not a defect — branch hygiene):** `git diff origin/develop` shows `manifest/env-ctl.toml` +
+  `manifest/envctl.lock` changes. These are NOT part of the PR-2 changeset — they are COMMITTED in the
+  branch base (`ee24394` #115) and predate develop's #121; the diff appears only because the branch was
+  cut before #121. `manifest/` is CLEAN in the working tree (not touched by PR-2). The orchestrator will
+  reconcile branch-base divergence at merge/rebase; no code action.
+- **N2 (deviation, accepted):** nonce is lowercase-hex (not base64url) to keep the always-built engine
+  path dependency-free (`base64` is optional behind `provider-github`). A nonce is an opaque public
+  token; any unambiguous encoding is equivalent. ZERO new dep. Acceptable.
+- **N3 (deviation, accepted):** test RNG is the real `SystemRandom` (ring's `SecureRandom` is sealed —
+  no seeded impl constructible). Tests assert behavior/bounds, never a nonce value; clock still injected.
+  The architect's "seeded RNG" intent met by injection. Acceptable.
+- **N4 (note):** `EdgeRequestShed` is wired through `conv.rs` and the shed paths log via
+  `tracing::debug` (metadata-only) rather than `sink.emit`. The variant exists and is CLI+GUI-routable;
+  surfacing it on the sink is a trivial no-secret-leak follow-up if desired. No invariant impact.
 
 ## Re-test needed
-None — all gates and tests green on this changeset. If the cosmetic event-enum enrichment (N1) is
-pursued, re-run `cargo test -p envctl-secrets-engine -p envctl-secretd` + `cargo clippy --workspace
--- -D warnings`. Routing for N1, if wanted: rust-implementer (small event-enum + conv change).
+None — all gates + tests green on this changeset. If the optional `EdgeRequestShed` sink emission (N4)
+is pursued, re-run `cargo test -p envctl-secrets-engine -p envctl-secretd --features relay-edge` +
+`cargo clippy --workspace --all-targets -- -D warnings`.

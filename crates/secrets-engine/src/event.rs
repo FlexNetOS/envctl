@@ -53,6 +53,16 @@ pub enum SecretEvent {
         token_id: String,
         reason: String,
     },
+    /// The F2 relay edge SHED a request at the anti-abuse stage (TASK-0031-PR2): a per-IP admission
+    /// rate breach (CVE-2024-47609) or a missing/stale DPoP-Nonce challenge. METADATA ONLY — `reason`
+    /// is a fixed discriminant label (e.g. `"rate_limited"`, `"nonce_challenge"`), `client_or_ip` is
+    /// the source IP or public client label, `count` is a best-effort occurrence tally. NO bearer,
+    /// proof, EKM, nonce, key, or body bytes are ever included. Consumed identically by the CLI + GUI.
+    EdgeRequestShed {
+        reason: String,
+        client_or_ip: String,
+        count: u64,
+    },
     GuardRefused {
         subject: String,
         reason: String,

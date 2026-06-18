@@ -23,9 +23,12 @@ pub mod stream;
 pub mod tls;
 
 use std::net::SocketAddr;
+use std::path::PathBuf;
 
 use envctl_secrets::paths::Paths;
 use envctl_secrets::Engine;
+
+pub use listener::IngressCaps;
 
 /// Resolved, validated remote-edge configuration (parsed from `[edge]` in `secretd.toml`).
 #[derive(Debug, Clone)]
@@ -42,6 +45,18 @@ pub struct EdgeConfig {
     /// a stream within seconds rather than sleeping the production interval); the daemon always passes
     /// `None`.
     pub recheck_timing: Option<stream::Timing>,
+    /// PR-2b: require a verified CLIENT certificate (mTLS hardened mode, OI-SM-4). Default `false`
+    /// (additionally opt-in on top of the already-default-OFF `relay-edge` feature). When `true`,
+    /// `client_ca_path` MUST be `Some` or `serve_edge` returns a fail-closed startup `Err`.
+    pub require_client_cert: bool,
+    /// PR-2b: the operator-provisioned remote-clients-CA PEM the client cert is verified against
+    /// (SERVER-MODE §6.1) — a SEPARATE input, NEVER the MITM CA / server cert (FS-S25). `None` ⇒ no
+    /// mTLS (with_no_client_auth, byte-for-byte PR-1).
+    pub client_ca_path: Option<PathBuf>,
+    /// PR-2: ingress hardening caps (body size + handshake/header/idle timeouts). `None` ⇒ the
+    /// production defaults ([`listener::IngressCaps::production`]). A test-only override (small values
+    /// so the e2e exercises the 408/413 paths quickly); the daemon always passes `None`.
+    pub ingress_caps: Option<IngressCaps>,
 }
 
 /// Start the remote relay edge as a tokio task under the caller's shutdown future. Loads the
@@ -61,5 +76,32 @@ pub async fn serve_edge(
     let timing = cfg
         .recheck_timing
         .unwrap_or_else(stream::Timing::production);
-    listener::serve_edge_listener(engine, &relay_tls_dir, cfg.bind_addr, timing, shutdown).await
+    let caps = cfg.ingress_caps.unwrap_or_default();
+
+    // PR-2b fail-closed startup: requiring a client cert with NO client-CA to verify against would
+    // accept any cert (or none) — refuse to bind a half-built mTLS gate.
+    if cfg.require_client_cert && cfg.client_ca_path.is_none() {
+        anyhow::bail!(
+            "[edge].require_client_cert = true requires a remote-clients-CA bundle \
+             (client_ca_path) — the mTLS gate fails closed rather than accept unauthenticated clients"
+        );
+    }
+    // The client-CA is threaded ONLY when mTLS is required (an unused CA path is ignored, so a
+    // misconfigured `client_ca_path` without `require_client_cert` cannot silently enable mTLS).
+    let client_ca = if cfg.require_client_cert {
+        cfg.client_ca_path.as_deref()
+    } else {
+        None
+    };
+
+    listener::serve_edge_listener(
+        engine,
+        &relay_tls_dir,
+        cfg.bind_addr,
+        timing,
+        caps,
+        client_ca,
+        shutdown,
+    )
+    .await
 }

@@ -45,6 +45,11 @@ pub struct VerifiedDpop {
     pub jti: String,
     /// The proof's issued-at in wall-ms — the caller passes it to `JtiReplayStore::check_and_record`.
     pub iat_ms: i64,
+    /// The server-issued DPoP-Nonce the proof echoed back (RFC 9449 §8 `nonce` claim), if any
+    /// (TASK-0031-PR2). SURFACED ONLY — this pure verifier does NOT validate it (validation needs the
+    /// stateful `NonceStore`, which is I/O-adjacent and the caller's job, next to the jti check). A
+    /// `None` means the proof carried no nonce claim; the caller then issues a fresh challenge.
+    pub nonce: Option<String>,
 }
 
 /// Why a DPoP proof was refused. Every variant is a REJECT (the edge maps all to 401). There is no
@@ -258,11 +263,21 @@ pub fn verify_dpop_proof(
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
 
+    // The (optional) server-issued DPoP-Nonce echo (RFC 9449 §8). SURFACED ONLY here — this pure,
+    // I/O-free verifier does not validate it; the caller checks it against the stateful `NonceStore`
+    // next to the jti check (TASK-0031-PR2). An empty value is treated as absent (`None`).
+    let nonce = payload
+        .get("nonce")
+        .and_then(|v| v.as_str())
+        .filter(|s| !s.is_empty())
+        .map(|s| s.to_string());
+
     Ok(VerifiedDpop {
         client_id,
         jkt,
         jti,
         iat_ms,
+        nonce,
     })
 }
 
