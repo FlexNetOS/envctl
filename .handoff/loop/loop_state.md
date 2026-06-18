@@ -161,4 +161,18 @@ SUPERVISED (never auto-run): TASK-0010 was `- [!!]` (now DONE by a human session
   kernel owner: FlexNetOS/handoff#71** (2026-06-18) — port `ledger` off rusqlite + add a ledger-path
   override. Tracks the cycle-1 CARRIED FINDING + FINDING-0002.
 
+  --- EPIC G (forge-loop hardening, 2026-06-18 deep audit; direct-to-develop harness-maintenance,
+  NOT forge cycles → cycles_total unchanged at 18). Provenance confirmed: forge-loop hand-authored in
+  envctl (5dcc4b2/00237ca), not from a "forge" repo — it is the source pattern harness_hub abstracted.
+  Planned as Epic G (TASK-0041..0052); owner LOCKED Tier-2/3 forks. SHIPPED (9/12, all pushed develop):
+  Tier 1 — 0041 loop-state counter gate (+hermetic test, ci.yml), 0042 proposed-upgrades drain in
+  wrap-up 3b, 0043 Phase-3.5 runtime-verify (guardian runs the app). Tier 2 — 0045 in-flight - [~]
+  re-poll sweep on resume, 0046 symbol-grain Unit ledger (architect+guardian), 0047 pre-DONE
+  left-behind sweep. Tier 3 — 0048 A2 all-green merge barrier, 0049 cross-repo impact map before
+  locks, 0050 bidirectional destination baseline, 0051 mutating-op branch coverage.
+  DEFERRED (cross-repo dedicated cycles, NOT skipped): **TASK-0044** mint envctl cards into the shared
+  fleet ledger (hf IS live + ledger-resident; hazard = HFTASK-* contamination per HFTASK-0026; route to
+  handoff-kernel-engineer) and **TASK-0052** full eject/package into harness_hub (doctrine override;
+  capstone). Commits: af67ad6 f3f13c5 477376c + 4 more on develop.
+
 last_update: 2026-06-18
