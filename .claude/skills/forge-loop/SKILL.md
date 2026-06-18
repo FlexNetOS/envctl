@@ -101,9 +101,13 @@ capability or one component per item — so a cycle fits comfortably under the b
      (do not re-fire from this session). This is the cycle-budget trigger (always also runs the
      boundary work as part of wrap-up, so a hand-off never skips a reap/retro).
 3. **Pick** the next item:
-   - **hf present:** take `next_task_id` from `hf resume --json` (the `next_safe` DAG picker) and
-     `hf claim <TASK-####>`.
-   - **hf absent:** the top unchecked unblocked `- [ ]` item, honoring deps parsed from sub-notes.
+   - **hf present:** read the next dep-safe item from **`hf fleet render <member>`** (run from
+     `$META_ROOT`, read-only — the safe authority while the shipped `hf` is CWD-relative, **HFTASK-0054**;
+     see the warning above). Do **NOT** run `hf resume`/`hf claim --next` from the member dir — it
+     creates a forbidden per-repo `ledger.db` and/or reads the wrong (FLEET) scope. (Reverts to
+     `hf resume --json` + `hf claim` once HFTASK-0054 lands a `--ledger`/`--member` override.)
+   - **hf absent (or HFTASK-0054 not yet landed):** the top unchecked unblocked `- [ ]` item, honoring
+     deps parsed from sub-notes — the markdown fallback.
    - **`- [!!]` SUPERVISED/CRITICAL refusal:** if the picked item is marked `- [!!]` (e.g. the
      rtk-hook install, a live n8n/smoke test), the loop **REFUSES to auto-run it** — write
      `.handoff/loop/NEEDS-HUMAN` (with the item id + why it needs a human), do **not** claim/build it,

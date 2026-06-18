@@ -47,10 +47,16 @@ shopt -u nullglob
 if git ls-files "$HND" | grep -qE '\.db$|(^|/)ledger\.db$'; then
   fail "a binary ledger (*.db) is git-tracked under $HND — the FLEET ledger lives at \$META_ROOT/.handoff"
 fi
-# 3b: nothing ledger-like present on disk either (catches an untracked stray about to be added).
-if find "$HND" -name '*.db' -type f 2>/dev/null | grep -q .; then
-  fail "a *.db file exists under $HND — remove it; the witnessed ledger is fleet-only"
-fi
+# 3b: a *.db on disk is allowed ONLY if it is git-ignored — that is the local, CWD-relative working
+# ledger any `hf status`/`resume`/`checkpoint` call creates (HFTASK-0054); it is never the authority and
+# can never be committed (3c guarantees the guard). Fail ONLY on a NON-ignored stray that could be
+# staged. (Existence-only was too strict: it went red on every local run that touched hf, while CI —
+# a fresh clone with no on-disk db — stayed green. 3a already catches a git-tracked db.)
+while IFS= read -r _db; do
+  [ -n "$_db" ] || continue
+  git check-ignore -q "$_db" 2>/dev/null \
+    || fail "a non-ignored *.db ($_db) exists under $HND — gitignore it ('.handoff/**/ledger.db'); the witnessed ledger is fleet-only"
+done < <(find "$HND" -name '*.db' -type f 2>/dev/null)
 # 3c: the .gitignore guard must be present so a stray ledger can never be committed.
 grep -qE '^\.handoff/\*\*/ledger\.db' .gitignore \
   || fail ".gitignore is missing the residency guard '.handoff/**/ledger.db'"
