@@ -64,6 +64,17 @@ pub enum EngineCommand {
     Agent {
         spec: AgentCommandSpec,
     },
+    /// TASK-0028 (Architecture B): drive the installed `secretctl` binary as a subprocess for the
+    /// GUI secrets verbs (mint-github / relay-mint / revoke). `verb` is the stable result label;
+    /// `argv` is the IDENTICAL `secretctl` clap surface the CLI drives (built by the GUI as pure
+    /// strings); `stdin` is an OPTIONAL secret buffer (`Zeroizing` — the revoke `--token -` token)
+    /// piped to the child's stdin, never to argv. The engine spawns, captures stdout/stderr/exit,
+    /// emits `Event::SecretsResult`, and holds no token after the child exits.
+    Secrets {
+        verb: String,
+        argv: Vec<String>,
+        stdin: Option<zeroize::Zeroizing<Vec<u8>>>,
+    },
     SampleTelemetry,
     Shutdown,
 }
@@ -257,6 +268,13 @@ pub fn run_event_loop(
                 if let Err(e) = result {
                     emit_setup_error(&sink, "agent", &e);
                 }
+            }
+            EngineCommand::Secrets { verb, argv, stdin } => {
+                // Engine-owned subprocess seam: spawn `secretctl`, pipe the (optional) Zeroizing
+                // secret stdin, capture stdout/stderr/exit, emit a single SecretsResult. The engine
+                // parses nothing secret and holds no token after the child exits. Fail-closed: a
+                // missing binary emits an error result (never panics — handled inside run_secretctl).
+                crate::secrets::run_secretctl(verb, argv, stdin, &sink);
             }
             EngineCommand::SampleTelemetry => {
                 ctrl.sample_now(); // wake the sampler; it no longer samples on this thread

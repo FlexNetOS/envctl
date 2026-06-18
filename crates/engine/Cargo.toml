@@ -32,3 +32,6 @@ reqwest = { workspace = true }
 tar = { workspace = true }
 flate2 = { workspace = true }
 sha2 = { workspace = true }
+# TASK-0028: zeroize the secret stdin buffer (revoke token) the engine pipes to `secretctl`.
+# Pure-Rust, already a workspace dep used by the secrets crates — links NO C (no-c.sh unaffected).
+zeroize = { workspace = true }
