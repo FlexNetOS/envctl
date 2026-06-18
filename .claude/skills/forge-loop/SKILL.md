@@ -135,7 +135,10 @@ instead the reap runs at the safe boundaries where merge status is settled:
 Both call `scripts/reap-worktrees.sh` — dry-run by default, never `--force`, protects
 `master`/`develop`/the current worktree, skips any dirty worktree, and only reaps a branch whose
 upstream is `[gone]` (merged) or that is an ancestor of `origin/master`. You may also run
-`bash scripts/reap-worktrees.sh` anytime to preview, or `--apply` to reap on demand.
+`bash scripts/reap-worktrees.sh` anytime to preview, or `--apply` to reap on demand. The reaper
+also **fast-forwards the protected trunk branches** (`master`, `develop`) to origin — FF-only and
+clean-only (an ahead/diverged/dirty branch is left untouched) — so the main checkout's `master`
+mirror and `develop` stay in lockstep with origin without a manual merge after each develop push.
 
 ## Parallel mode (opt-in grit git-lock coordination)
 

@@ -7,11 +7,18 @@
 # (`delete_branch_on_merge=true`), but nothing locally reaped the worktree, the local branch, or
 # the now-dangling remote-tracking ref — so they accumulated (46 worktrees / 85 branches once).
 #
+# It also keeps the protected trunk branches (master, develop) fast-forwarded to origin, so
+# `develop ↔ master ↔ origin` stay consistent locally without a manual merge — the main checkout's
+# `master` mirror in particular does NOT auto-FF when a develop push fast-forwards origin/master.
+#
 # Design (mirrors envctl invariants):
 #   * DRY-RUN BY DEFAULT — destructive ops are fail-closed + preview unless you pass --apply.
 #   * NEVER --force — git refuses to remove a dirty worktree; we also skip+warn on dirty.
 #   * NEVER touches remotes — origin self-cleans on merge; we only `fetch --prune` to mirror it.
-#   * PROTECTS master, develop, the current branch, the current worktree, and the main checkout.
+#   * FF-ONLY, CLEAN-ONLY sync — protected branches are only fast-forwarded (never merged/rebased)
+#     and only when their worktree is clean; an ahead/diverged/dirty branch is left untouched.
+#   * PROTECTS master, develop, the current branch, the current worktree, and the main checkout
+#     from REAPING (they are never deleted; they are kept in sync via FF instead).
 #
 # A branch is REAPABLE only when it is safely resolved:
 #   (a) its upstream is gone — `[gone]` — i.e. origin deleted the head after the PR merged
@@ -43,6 +50,41 @@ is_reapable() {
 
 # 1. Mirror origin's merge-time branch deletions into local tracking refs (non-destructive).
 git fetch --prune origin >/dev/null 2>&1 || true
+
+# 1b. Fast-forward the protected trunk branches to origin (FF-only, clean-only). Keeps the main
+#     checkout's `master` mirror and `develop` in lockstep with origin without a manual merge.
+echo "== sync protected branches (FF-only) =="
+# Map each checked-out branch -> its worktree path (so we can FF a branch that lives elsewhere).
+declare -A WT_OF
+_wt=""
+while IFS= read -r line; do
+  case "$line" in
+    "worktree "*) _wt="${line#worktree }" ;;
+    "branch refs/heads/"*) WT_OF["${line#branch refs/heads/}"]="$_wt" ;;
+  esac
+done < <(git worktree list --porcelain)
+synced=0
+for b in master develop; do
+  git show-ref --verify --quiet "refs/heads/$b" || continue
+  git show-ref --verify --quiet "refs/remotes/origin/$b" || continue
+  # Only when strictly BEHIND (local is an ancestor of origin and not equal) => fast-forwardable.
+  git merge-base --is-ancestor "refs/heads/$b" "refs/remotes/origin/$b" 2>/dev/null || { echo "  skip $b (ahead/diverged — not FF)"; continue; }
+  [ "$(git rev-parse "refs/heads/$b")" = "$(git rev-parse "refs/remotes/origin/$b")" ] && continue  # already current
+  wt="${WT_OF[$b]:-}"
+  if [ -n "$wt" ]; then
+    if [ -n "$(git -C "$wt" status --porcelain 2>/dev/null)" ]; then
+      echo "  SKIP (dirty): $b @ $wt"; continue
+    fi
+    echo "  FF $b -> origin/$b (in $wt)"
+    run git -C "$wt" merge --ff-only "origin/$b"
+  else
+    # Not checked out anywhere: FF the ref directly (git rejects a non-FF, so this is safe).
+    echo "  FF $b -> origin/$b (ref update)"
+    run git fetch origin "$b:$b"
+  fi
+  synced=$((synced + 1))
+done
+echo "  protected branches FF'd: $synced"
 
 # 2. Reap merged/clean per-cycle worktrees (skip main, develop, current, and anything dirty).
 echo "== worktrees =="
