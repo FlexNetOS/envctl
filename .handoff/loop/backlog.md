@@ -431,6 +431,167 @@ fmt, clippy). Remaining follow-ups extracted from each:
   serial in CI to kill the `XDG_CACHE_HOME`/`$META_FILE` parallel env-race flakiness. Verified all 4
   green locally before requiring them. (Master protection / develop→master mirror = TASK-0023, separate.)
 
+## Epic G — Forge-loop hardening (2026-06-18 deep audit)
+
+> Source: owner-requested deep audit of the forge-loop harness (provenance + gaps + adoptable
+> patterns from the rust-port crew and harness_hub). Provenance confirmed: forge-loop is
+> hand-authored bespoke in envctl (commits `5dcc4b2`/`00237ca`, 2026-06-04), NOT ported from an
+> external "forge" repo — it is the *source pattern* harness_hub later abstracted. Findings recorded
+> here as a tiered, dependency-ordered plan. **These items edit the hand-authored harness
+> (`.claude/skills/*`, `.claude/agents/*`, `ci/gates/*`, `scripts/*`) — outside the agent-env
+> pipeline, committed in place.** Build order: **Tier 1 → Tier 2 → Tier 3**, deps honored within.
+>
+> Audit dimensions & severities are carried per-item below. None weakens an existing guard
+> (evolution-steward discipline); each is additive.
+
+### Tier 1 — low-risk pure additions (build first, no design decision needed)
+
+- [ ] **TASK-0041 (T1.1, P0):** `ci/gates/loop-state.sh` — loop-counter integrity gate. The
+  batch-boundary / hand-off / WRAP-UP-OWED logic all key off hand-edited integers in `loop_state.md`
+  (`cycles_total`, `last_wrapup_total`, `wrap_every`); `cycles_total: 18` is reconstructed by free-text
+  narration with no check that it matches ground truth.
+  - **Files:** `ci/gates/loop-state.sh` (NEW, mirror the dependency-free grep gates), `.github/
+    workflows/ci.yml` (+gate step), `CLAUDE.md` (CI-gates list row).
+  - **Gate asserts:** the three counters parse as integers; `cycles_total >= last_wrapup_total`;
+    `cycles_total` is monotonic vs the prior commit (non-decreasing). Read-only, zero-network, exits 1
+    on drift.
+  - **Acceptance:** gate green on current state; flips red on a hand-injected non-integer / decreased
+    `cycles_total`. Add to `ci/gates/harness-scripts.sh` family or its own step.
+  - **Deps:** none. **Risk:** very low (new gate, additive).
+
+- [ ] **TASK-0042 (T1.2, P1):** Drain `proposed-upgrades.md` into the backlog. The evolution-steward
+  writes structural proposals to `.handoff/loop/proposed-upgrades.md` (currently 49 lines, undrained);
+  nothing tracks them to accept/reject closure, so escalations sit indefinitely.
+  - **Files:** `.claude/skills/session-relay-wrap-up/SKILL.md` (extend step 3b), `.handoff/loop/
+    backlog.md` (the drained items land here).
+  - **Change:** wrap-up step 3b also drains `proposed-upgrades.md` → tracked `- [?]` harness-upgrade
+    items in the backlog with origin + an owner-decision status; an undrained non-empty file makes
+    wrap-up INCOMPLETE (same fail-closed shape as the follow-up drain).
+  - **Acceptance:** running a wrap-up with a non-empty `proposed-upgrades.md` results in `- [?]`
+    backlog rows citing it; the file is marked drained.
+  - **Deps:** none. **Risk:** low (skill-text + backlog edits).
+
+- [ ] **TASK-0043 (T1.3, P0):** Runtime-verify phase in feature-forge — wire the bundled `verify`
+  skill into the guardian gate. Today the guardian is **static-only** (gates + `cargo` + source-grep
+  parity); the crew never runs the app. TASK-0028 shipped a GUI Secrets screen marked done on "argv
+  round-trip vs a replica" — no `secretctl` invocation, no GUI launch. The "compiles + gates green but
+  doesn't work at runtime" class escapes.
+  - **Files:** `.claude/skills/feature-forge/SKILL.md` (new Phase 3.5 runtime-verify), `.claude/agents/
+    feature-architect.md` (plan emits a `runtime_verifiable?` flag + the surface: CLI verb / GUI screen
+    / daemon RPC), `.claude/agents/invariant-guardian.md` (verdict PASS only after the behavioral check
+    when a surface exists).
+  - **Change:** for any item whose plan declares an observable surface, the guardian invokes
+    `verify`/`run` to drive that surface and capture evidence before PASS; SKIP only when the architect
+    declares no runtime surface (docs/types/test-only), one line why.
+  - **Acceptance:** a feature with a CLI/GUI/RPC surface cannot reach PASS on static gates alone — the
+    guardian report cites a runtime observation. Smoke: re-run a representative past item.
+  - **Deps:** none (T3.4 builds on this). **Risk:** medium (changes the gate contract — but strictly
+    *stronger*, never weakens it).
+
+### Tier 2 — pick-correctness + completeness (small design decision per item)
+
+- [ ] **TASK-0044 (T2.1, P1):** Machine-checkable pick-time dependency check. Cards were never minted
+  (`.handoff/tasks/` is just `.gitkeep`), so ordering is *always* the markdown-subnote fallback while
+  the skill/architect/steward all assert "cards/`hf next_safe` are authoritative" — two ordering
+  stories, only the prose one live. Dependency edges live in free prose (the TASK-0020 wrong-surface
+  miss is exactly this). **Design choice:** (a) actually mint the cards so `hf next_safe` is real, OR
+  (b) add a structured dep front-matter block + a `pick-check` that refuses to claim an item whose named
+  deps are not `- [x]`. Recommend (b) first (cheaper, no hf dependency), (a) when Epic A lands hf.
+  - **Files:** `.claude/skills/forge-loop/SKILL.md` (pick step: parse structured deps, refuse on unmet),
+    `.handoff/loop/backlog.md` (convert prose `## Order` / sub-note deps → a structured `deps:` line per
+    item).
+  - **Acceptance:** picking an item with an unmet dep is refused with the blocking dep id named.
+  - **Deps:** none. **Risk:** medium.
+
+- [ ] **TASK-0045 (T2.2, P1):** Fail-closed in-flight re-poll/promote sweep on resume. Tick-on-merged
+  leaves armed-not-merged work as `- [~]` and says "next session re-polls," but `session-relay-resume`
+  does not *mandate* the sweep and the `pr=<N> state=<status>` field is specified-but-unpopulated — so
+  a race/skip could re-pick an already-built `- [~]` item.
+  - **Files:** `.claude/skills/session-relay-resume/SKILL.md` (new fail-closed step: for every `- [~]`,
+    `gh pr view <N> --json state`; promote `MERGED`→`- [x]`, else leave `- [~]`, and **exclude all
+    `- [~]` from the pick set**), `.handoff/loop/loop_state.md` (require the `pr=<N> state=<status>`
+    field), optionally fold into `ci/gates/loop-state.sh`.
+  - **Acceptance:** resume with an armed-not-merged `- [~]` either promotes it (if merged) or excludes
+    it from the pick; the structured PR-state field is present.
+  - **Deps:** complements TASK-0044; can land independently. **Risk:** low-medium.
+
+- [ ] **TASK-0046 (T2.3, P1, HIGH value):** Symbol-grain completeness ledger (adopt the rust-port
+  *cartographer* pattern). forge tracks completeness only at task-card grain in `backlog.md` — "done"
+  ≠ "the surface area exists & is wired." Introduce a per-cycle ledger of the concrete units a task must
+  produce (Engine method / `Event` / CLI flag / RPC / component) and whether each is *present* and
+  *wired*.
+  - **Files:** `.claude/agents/feature-architect.md` (emit the unit list into `.handoff/loop/cycle/
+    01_architect_plan.md`), `.claude/agents/invariant-guardian.md` (verify each unit present+wired),
+    a `.handoff/loop/cycle/` ledger surface; reference `rust-port-cartographer.md` as the pattern.
+  - **Acceptance:** a cycle's guardian report enumerates each planned unit with present/wired/verified
+    status; a missing unit blocks PASS.
+  - **Deps:** none structurally; foundation for TASK-0047. **Risk:** medium.
+
+- [ ] **TASK-0047 (T2.4, P1, HIGH value):** Pre-DONE left-behind sweep (adopt cartographer's
+  independent re-derivation). forge's DONE trusts the backlog is exhaustive; rust-port re-harvests scope
+  and fails **INCONCLUSIVE** rather than "clean." Add a completeness critic before terminal DONE that
+  re-derives the expected surface from the plan/spec and diffs vs what was built.
+  - **Files:** `.claude/skills/session-relay-wrap-up/SKILL.md` (or a `forge-loop` DONE-gate step) — a
+    sweep that re-derives scope independently and emits `INCONCLUSIVE → NEEDS-HUMAN` on a zero/partial
+    re-derivation rather than silently passing.
+  - **Acceptance:** DONE cannot be declared while the independent re-derivation surfaces an un-built
+    planned unit; emits NEEDS-HUMAN with the gap.
+  - **Deps:** **TASK-0046** (uses the unit ledger). **Risk:** medium.
+
+### Tier 3 — structural (A2 maturity + behavioral coverage + hub conformance)
+
+- [ ] **TASK-0048 (T3.1, P1):** A2 cross-repo merge atomicity. A2 commits/PRs each repo independently
+  after that repo's guardian passes — repo A can MERGE before repo B's guardian FAILs, leaving a
+  half-landed feature with no rollback path or backlog record of the split state.
+  - **Files:** `.claude/skills/feature-forge/SKILL.md` (Phase 2-A2: arm auto-merge only at the
+    all-repos-green barrier; OR record a `partial-landed` backlog state + documented reconcile/revert),
+    `.handoff/loop/backlog.md` legend (+ a `partial-landed` marker if chosen).
+  - **Acceptance:** an A2 cycle where one repo FAILs does not leave another repo merged with no record;
+    either no merge fired, or the split state is tracked with a reconcile procedure.
+  - **Deps:** none. **Risk:** medium-high (touches the cross-repo commit/merge flow).
+
+- [ ] **TASK-0049 (T3.2, P1):** Cross-repo impact map before A2 grit locks (adopt the
+  *cross-repo-referencer* pattern). A2 takes grit symbol locks *blind* — no who-calls-what blast-radius
+  map drives the lock scope.
+  - **Files:** `.claude/skills/feature-forge/SKILL.md` (Phase 1.5 A2: build a `git-kb code
+    callers/callees/impact` map across target repos before locking; lock scope derives from it),
+    reference `rust-port-cross-repo-referencer.md`.
+  - **Acceptance:** A2 lock scope is derived from an impact map artifact, not chosen ad hoc.
+  - **Deps:** none; pairs with TASK-0050. **Risk:** medium.
+
+- [ ] **TASK-0050 (T3.3, P1):** Bidirectional "don't regress the destination" baseline in A2 (adopt the
+  *merge-integrator* discipline). A2 proves each repo compiles + passes its own guardian but never
+  captures the target's behavioral baseline nor proves the change didn't regress it.
+  - **Files:** `.claude/skills/feature-forge/SKILL.md` (A2: capture destination behavioral baseline at
+    DISCOVER, prove no-regression at the gate), `.claude/agents/invariant-guardian.md` (the
+    no-regression diff), reference `rust-port-merge-integrator.md`.
+  - **Acceptance:** an A2 merge that regresses the destination's prior behavior fails the gate.
+  - **Deps:** **TASK-0049** (uses the impact map). **Risk:** medium.
+
+- [ ] **TASK-0051 (T3.4, P2):** Behavioral-branch coverage in the guardian (scoped-down
+  *parity-verifier* technique). Differential golden testing doesn't map to new features (no reference),
+  but the *exercise-every-branch* discipline does — especially the fail-closed guard **refusal** paths
+  the guardian today only checks structurally.
+  - **Files:** `.claude/agents/invariant-guardian.md` (for mutating ops, exercise each error/refusal
+    branch, not just the happy path), `.claude/skills/rust-feature-impl/references/verification.md`.
+  - **Acceptance:** a mutating op's guardian report shows the fail-closed refusal path was driven and
+    observed, not inferred from source.
+  - **Deps:** **TASK-0043** (builds on runtime-verify). **Risk:** medium.
+
+- [ ] **TASK-0052 (T3.5, P2):** Register forge-loop into harness_hub (packaging/cataloging conformance).
+  forge-loop is unregistered/unpackaged/unvalidated by the hub though it already *consumes* the hub's
+  shared layer (byte-identical `harness-evolution`, the whole `rust-port`/`session-relay`/`icm-memory`
+  families). **Design choice:** register-as-cataloged-peer vs full eject/package — given envctl's
+  "hand-authored outside the pipeline" rule, recommend a `registry.json` row + `entries/<id>.md` (catalog
+  presence) WITHOUT forcing the full factory-minted packaged shape.
+  - **Files:** `harness_hub/registry.json` + `harness_hub/entries/forge-loop.md` (or `feature-forge.md`)
+    in the **harness_hub repo** (cross-repo — its own PR), referencing `harness_hub/scripts/register.sh`
+    + the `hub-validate` crate.
+  - **Acceptance:** `harness_hub` validator passes with forge-loop catalogued; envctl CLAUDE.md notes the
+    registration.
+  - **Deps:** capstone — do last. **Risk:** low (cross-repo, mostly docs/registry). **Cross-repo** (A2
+    shape: envctl note + harness_hub row).
+
 ## Key finding (carried)
 
 Most meta-built tools' installed binaries are NEWER than their committed meta sources
