@@ -54,9 +54,13 @@ just the loop state.)
      exact gap (e.g. G2/TASK-0020: built `relay mint --mode native`, but the frozen contract was
      `secretctl mint-github → {token,expires_at_unix}` — App still 404s). Never mark a frozen-contract
      TASK done on a near-miss surface.
-   - **Status-truth reconcile.** Diff backlog `[ ]` items against merged PRs / live code; flip the
-     stale ones to `[x]` with PR evidence so the loop's frontier is real (a stale `[ ]` on done work
-     pollutes the next pick; a missing entry hides real work).
+   - **Status-truth reconcile (TICK-ON-MERGED).** Diff backlog `[ ]` items against **merged** PRs /
+     live code; flip a stale `[ ]` to `[x]` ONLY when `gh pr view <N> --json state -q .state` returns
+     `MERGED` — cite the PR. A PR that is merely *armed* (guardian PASS + `gh pr merge --auto`, not yet
+     merged) is recorded `- [~]` in-flight, NOT `- [x]`; never tick a reconcile/superseding box for an
+     unmerged PR (this is the #125 failure: TASK-0027 was ticked before its PR merged, then had to be
+     retired as superseded). A stale `[ ]` on done work pollutes the next pick; a premature `[x]` on
+     unmerged work hides a not-actually-landed change.
    - **Promote cross-namespace residuals.** Any non-loop-local open item in a namespaced sub-loop
      (`.handoff/loop/<sub>/HANDOFF.md`, e.g. rust-port) gets promoted into the flat backlog.
    - Commit these backlog edits as part of step 5 (they ARE handoff state).

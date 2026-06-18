@@ -1,0 +1,9 @@
+# High-churn loop-state files: NEVER silently 3-way-merge them. git's default merge concatenates
+# append-heavy files across non-overlapping regions and reports it as clean — which once
+# triplicated loop_state.md and duplicated TASK cards (forge-loop cycle 5). The `handoff-reconcile`
+# driver forces a visible conflict instead, so session-relay-wrap-up step 3b reconciles explicitly.
+# Register the driver per clone with scripts/install-handoff-merge-driver.sh (run at session
+# resume; idempotent). Without it registered, git falls back to the default merge (no worse than
+# before); with it, silent concatenation is impossible.
+.handoff/loop/loop_state.md   merge=handoff-reconcile
+.handoff/loop/backlog.md      merge=handoff-reconcile

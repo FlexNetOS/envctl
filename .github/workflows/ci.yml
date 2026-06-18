@@ -95,3 +95,5 @@ jobs:
         run: bash ci/gates/p7.sh
       - name: kdf-feature-off gate (test-speed Argon2 floor must be off by default)
         run: bash ci/gates/kdf-feature-off.sh
+      - name: agent-env gate (agent-env.yaml matches agent-env.lock; no kasetto drift)
+        run: bash ci/gates/agent-env.sh

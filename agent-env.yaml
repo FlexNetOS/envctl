@@ -1,0 +1,33 @@
+# agent-env.yaml — agent environment for the envctl workspace.
+# (Renamed from kasetto.yaml; the external kasetto binary was retired in TASK-0018/#98 and the
+# absorbed engine is now `envctl agent`. The absorbed CLI resolves this filename by default.)
+# Provisions a curated, locked agent toolkit (skills + MCP baseline) into the Claude Code and
+# Codex environments. This is the source of truth for the agent config; it supersedes the
+# ECC-auto-generated .claude/.codex files. Lock-of-record: agent-env.lock (was kasetto.lock).
+#
+# Stabilize/refresh:  envctl agent sync --apply   (authoritative; preview without --apply)
+# CI enforcement:     envctl agent lock --check    (read-only; zero-network; exits 1 on drift)
+
+scope: project
+
+agent:
+  - claude-code
+  - codex
+
+skills:
+  # Curated, envctl-grounded dev skills (correct Rust conventions).
+  - source: ./agent-skills
+    skills: "*"
+
+mcps:
+  # Standard tool surface for envctl work; kept identical across Claude (.mcp.json)
+  # and Codex (.codex/config.toml [mcp_servers.*]).
+  - source: ./agent-skills
+    mcps:
+      - github
+      - context7
+      - exa
+      - memory
+      - playwright
+      - sequential-thinking
+      - n8n-mcp

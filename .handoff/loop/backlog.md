@@ -8,8 +8,9 @@
 > Workflow: `develop` is the integration branch; `master` is its protected mirror (auto-synced).
 > Each item below is picked up in a FRESH worktree off `develop` (`git worktree add … -b <slug> develop`).
 >
-> Legend: `- [ ]` todo · `- [x]` done · `- [!]` blocked (reason) · `- [?]` needs investigation
-> · `- [!!]` SUPERVISED/CRITICAL (never auto-run).
+> Legend: `- [ ]` todo · `- [x]` done (MERGED-confirmed) · `- [~]` in-flight (guardian PASS +
+> auto-merge armed, PR NOT yet merged — re-poll `gh pr view <N>` next session) · `- [!]` blocked
+> (reason) · `- [?]` needs investigation · `- [!!]` SUPERVISED/CRITICAL (never auto-run).
 
 ## North star
 
@@ -53,6 +54,12 @@ additive infra — let it merge — but it does **not** close TASK-0020.
 - **TASK-0020-COMPLETE DONE** — frozen `mint-github` surface shipped: `MintGithub` RPC + `secretctl mint-github` → `{"token","expires_at_unix"}` (PR #105 MERGED). The App's frozen contract is now met.
 - **TASK-0026 DONE** — `secretctl github-app enroll` + `Vault.SetGithubAppId` RPC (PR #106, auto-merge armed). Enroll→mint round-trip e2e green. The App can now mint end-to-end (enroll once, then mint-github).
 - **Anti-drift wrap-up gate** live (PR #104 MERGED): backlog is now a written-back artifact.
+
+### ✅ 2026-06-18 HARNESS-MAINTENANCE SESSION (forge-loop audit — direct-to-develop, not a forge cycle)
+- **Workspace reaper** — `scripts/reap-worktrees.sh` + wired into resume/wrap-up; reaped the 46-worktree/85-branch/17-remote pileup; `.handoff` now fully git-tracked (ledger.db guard kept).
+- **Forge-loop audit upgrades** U1 (TICK-ON-MERGED status gate), U3 (handoff-reconcile merge driver — no silent concat), U4 (frozen-contract pick-time check), U6 (auto-provision for unattended).
+- **TASK-0040 DONE** — completed the kasetto integration: migrated `kasetto.yaml`/`.lock` → `agent-env.yaml`/`agent-env.lock` (absorbed-CLI default names) and wired the previously claimed-but-absent drift gate `ci/gates/agent-env.sh` (`envctl agent lock --check`) into CI. Closes the operational loose end after the v3.2.0 absorption (parity already 102/0/13).
+- **Dependabot** GHSA-8m95-fffc-h4c5 (libsql-sqlite3-parser, low) dismissed as unreachable+unfixable (rationale in `crates/secrets-store-libsql/Cargo.toml`).
 
 ### ⏭ NEXT PICK (updated 2026-06-18 session 9): **TASK-0037** (Phase-7 verify-don't-rebuild)
 MERGED: TASK-0026 (#106), TASK-0030+OI-SM-1 (#109), **TASK-0031 PR-1 edge listener (#111)**, **TASK-0036

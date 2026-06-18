@@ -91,6 +91,17 @@ features.
    #116 message asserted `inject.rs`/`run_child = todo!()`, which was **false at HEAD** — verifying
    first avoided a wasted design.)
 
+5. **Frozen-contract pick-time check (prevent building the wrong surface).** *Before* designing,
+   grep the backlog (`.handoff/loop/backlog.md`) and `docs/` for an existing TASK that pins a
+   **frozen consumer contract** for the same capability — a specific CLI flag/subcommand, an RPC
+   name, or a JSON output shape that a downstream caller already shells. If one exists, the design
+   MUST target *that* surface, not a parallel one. This is the preventive form of the wrap-up
+   step-3b reconcile: catch the mismatch at pick-time, not after a wasted cycle. (G2/TASK-0020:
+   the loop built `secretctl relay mint --mode native` while the frozen contract was
+   `secretctl mint-github → {token,expires_at_unix}` + a `MintGithub` RPC that
+   `flexnetos_github_app` shells — so the App stayed 404 and a whole cycle missed the real target.
+   Surfacing the frozen contract at pick-time would have caught it before design.)
+
 **hf-aware context check.** When `hf` is on PATH, the context check is hf-aware: pick the next item
 via `hf resume --json` (its dep-DAG `next_task_id`/`next_command` picker) rather than re-deriving
 order from the markdown backlog; the markdown-checkbox read is the fallback only when `hf` is

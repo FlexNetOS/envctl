@@ -89,10 +89,21 @@ capability or one component per item — so a cycle fits comfortably under the b
 4. **Run one Feature Forge cycle** on it via the `feature-forge` orchestrator: architect → implementer
    → guardian, with the same routing/loop caps and `.handoff/loop/cycle/` artifacts. Mid-cycle, when
    hf is present, emit `hf checkpoint --auto` (or `--note`) at notable boundaries (claim/checkpoint
-   **never** mark done). Commit on PASS / PASS-WITH-NOTES (area-prefixed subject). On cycle **PASS**,
-   mark the task **terminal Done** with `hf done <TASK-####> --pr <N>` (hf present) — the only verb
-   that marks done — then `hf handoff` to re-render the packet; in the markdown fallback, tick
-   `- [x]`. On an **unrecoverable guardian FAIL or NEEDS-DECISION the loop can't route around**, write
+   **never** mark done). Commit on PASS / PASS-WITH-NOTES (area-prefixed subject).
+
+   > **TICK-ON-MERGED, not tick-on-armed (status-integrity gate — non-negotiable).** Guardian PASS +
+   > `gh pr merge --auto` *arms* the merge; it does NOT complete it (a required check — usually Format
+   > — can still block it). So a cycle reaches **terminal Done** ONLY after the PR is confirmed
+   > merged: `gh pr view <N> --json state,mergeStateStatus -q .state` returns `MERGED`. Until then the
+   > item stays **in-flight `- [~]`** (PASS, armed, not merged) — never `- [x]`, never `hf done`.
+   > - **Merged** → mark terminal Done: `hf done <TASK-####> --pr <N>` (hf present; the only verb that
+   >   marks done) then `hf handoff` to re-render the packet; markdown fallback → tick `- [x]`.
+   > - **Armed-not-merged at the cycle boundary** → leave `- [~]`, record `pr=<N> state=<status>` in
+   >   `loop_state.md`, and make the **next session's FIRST action** re-poll `gh pr view <N>` and
+   >   promote `- [~]`→`- [x]` once `MERGED` (this is what stops the #125 tick-before-merge drift).
+   >   Never tick a sibling/superseding reconcile box for a PR that has not merged.
+
+   On an **unrecoverable guardian FAIL or NEEDS-DECISION the loop can't route around**, write
    `.handoff/loop/NEEDS-HUMAN` and mark the item `- [!]` blocked with a one-line reason, then move to
    the next item (don't thrash).
 
@@ -104,7 +115,8 @@ capability or one component per item — so a cycle fits comfortably under the b
    > their own TTLs). The cycle completes only when **all** target repos reach guardian PASS (or
    > are marked `- [!]` blocked). Cycle-budget counting and the `session-relay` handoff are
    > unchanged — an A2 cycle is still one cycle against the per-session budget.
-5. **Write state back:** tick the markdown VIEW (`- [x]` done / `- [!]` blocked) **only if it agrees
+5. **Write state back:** tick the markdown VIEW (`- [x]` done **only when MERGED-confirmed per the
+   gate above** / `- [~]` in-flight if armed-not-merged / `- [!]` blocked) **only if it agrees
    with the card status** — when hf is present the card (ledger-replayed via `hf done`) is
    authoritative; reconcile the box to the card, never the reverse (use `hf sync-cards` to re-derive
    cards if they look stale). Increment `cycles_this_session` and `cycles_total`, update `last_item`
@@ -151,6 +163,14 @@ When `cycles_this_session` reaches it, you do **not** start another cycle — yo
 `session-relay`, which checkpoints + announces + schedules the successor, then you stop. The
 successor resets `cycles_this_session` to 0 and continues where the backlog left off. This keeps
 every session short, cheap, and well below context rot — by construction, not by measurement.
+
+> **Truly-unattended runs: use the external runner, don't rely on the in-session cron.** The
+> successor cron scheduled by `session-relay` is **session-only** in this runtime (it does not
+> survive process exit), so an in-session `/forge-loop` cannot actually self-perpetuate past one
+> handoff — which is why heavy-context sessions end up pinned at `cycle_budget: 1`. For real
+> set-and-forget operation (fresh context every cycle, budget>1 honored), launch via the
+> **`auto-provision`** runner (the bundled Ralph loop that spawns a fresh `claude -p` per cycle).
+> In-session `/forge-loop` remains correct for attended, bounded runs.
 
 ## Resume (entering mid-loop from a handoff)
 If invoked to **resume** (a `.handoff/loop/HANDOFF.md` exists, or weave inbox / the successor cron

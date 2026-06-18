@@ -35,6 +35,10 @@ wake-up.)
 3. **Locate + read the checkpoint.** `cd` to `HANDOFF.md:worktree`. Read the committed
    `.handoff/loop/HANDOFF.md` (authoritative). If absent, fall back to the loop's DISCOVER entry
    point. If `hf` is reachable, prefer `hf resume` to render the packet from the witnessed ledger.
+   **Register the loop-state merge guard** (idempotent, per-clone — git won't trust it from
+   `.gitattributes` alone): `bash scripts/install-handoff-merge-driver.sh`. This makes any rebase/
+   merge of `loop_state.md`/`backlog.md` **conflict visibly** instead of silently concatenating
+   (forge-loop cycle 5 hazard) — reconcile such conflicts per wrap-up step 3b.
 
 4. **Verify-on-resume baseline (fail-closed).** Run the exact commands in `HANDOFF.md:verify_on_resume`
    (or `bash .handoff/loop/verify-on-resume.sh` — template in `scripts/`) in a **fresh shell**. If it
