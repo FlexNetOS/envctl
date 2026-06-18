@@ -143,6 +143,13 @@ cargo test -p <crate> -- <guard_or_refuse_test_name>
 
 A mutation op with only a happy-path test is incomplete.
 
+- **Drive every refusal branch at runtime (Phase 3.5 deepening — §4.5).** A passing refusal *unit
+  test* is necessary but not sufficient: also drive **each** guard's refusal path and the
+  dry-run-vs-`--apply` split at the real surface and capture what the running app does (refusal without
+  `--apply`; refusal when safety can't be proven; preview vs mutation). For a mutating op this is the
+  highest-risk surface — confirming the *running* CLI/daemon actually refuses is the evidence, not just
+  that a test for it compiles and passes.
+
 ## 6. Rust-native drift
 
 ```bash

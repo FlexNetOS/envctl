@@ -77,6 +77,16 @@ method, malformed body, the fail-closed guard's refusal path). Rules:
   and why. Never run a destructive op live just to watch it.
 - **Don't run tests to fill the space.** Re-running `cargo test` here proves you can run CI, not that
   the feature works — that time goes to running the app. (This mirrors the `verify` skill exactly.)
+- **Mutating ops — exercise EVERY refusal/error branch at runtime, not just one (TASK-0051).** For a
+  destructive/mutating op, the fail-closed guards (`UuidResolves`/`NotLiveDevice`/`NotMounted`, the
+  `--apply`/`--build` gate) are the highest-risk surface. Adopt the rust-port parity-verifier's
+  *exercise-every-branch* discipline (scoped to a new feature, which has no source to diff against):
+  drive **each** guard's refusal path and the dry-run-vs-apply split at the real surface and capture
+  what the app does — refusal without `--apply`, refusal when the guard can't prove safety, the
+  preview vs the mutation. "A unit test for the refusal exists" (invariant #6) is necessary but not
+  sufficient — confirming the *running* CLI/daemon actually refuses is the evidence. Differential
+  golden testing (run source vs port, diff) does **not** apply to new features (no reference behavior);
+  per-branch runtime exercise does, and is the genuinely adoptable part.
 - Record the result as a `## Runtime check` line in the report (PASS + evidence pointer / SKIP + reason
   / FAIL + what you saw). A FAIL here is a blocking finding routed to the implementer like any other.
 

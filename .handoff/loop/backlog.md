@@ -596,7 +596,7 @@ fmt, clippy). Remaining follow-ups extracted from each:
 
 ### Tier 3 — structural (A2 maturity + behavioral coverage + hub conformance)
 
-- [ ] **TASK-0048 (T3.1, P1):** A2 cross-repo merge atomicity — **all-green barrier** (LOCKED
+- [x] **TASK-0048 (T3.1, P1) — DONE 2026-06-18 (direct-to-develop):** A2 all-green barrier shipped — Phase 2-A2 step 6 now commits each repo on its own guardian PASS but DEFERS arming `gh pr merge --auto` on ALL N PRs until EVERY target repo's guardian PASSes; if one repo FAILs, no sibling was armed → half-landed is impossible, the failed repo is `- [!]`, cycle does not reach Done. Barrier waits on each repo's guardian/CI, not an OS matrix. A2 cross-repo merge atomicity — **all-green barrier** (LOCKED
   2026-06-18, owner). A2 commits/PRs each repo independently after that repo's guardian passes — repo A
   can MERGE before repo B's guardian FAILs, leaving a half-landed feature with no rollback path.
   **LOCKED DECISION:** arm auto-merge for **every** target repo ONLY after **all** repos' guardians
@@ -612,7 +612,7 @@ fmt, clippy). Remaining follow-ups extracted from each:
     armed before the barrier); the failed repo is `- [!]` blocked, the cycle does not reach Done.
   - **Deps:** none. **Risk:** medium-high (touches the cross-repo commit/merge flow).
 
-- [ ] **TASK-0049 (T3.2, P1):** Cross-repo impact map before A2 grit locks (adopt the
+- [x] **TASK-0049 (T3.2, P1) — DONE 2026-06-18 (direct-to-develop):** Phase 2-A2 step 2b now builds a cross-repo blast-radius map (`git-kb code callers/callees/impact` across target repos + shared protocol types) into `.handoff/loop/<repo>/00_impact_map.md` BEFORE locking; the grit lock scope (step 3) derives from it instead of an ad-hoc guess. Adopts the cross-repo-referencer discipline. Cross-repo impact map before A2 grit locks (adopt the
   *cross-repo-referencer* pattern). A2 takes grit symbol locks *blind* — no who-calls-what blast-radius
   map drives the lock scope.
   - **Files:** `.claude/skills/feature-forge/SKILL.md` (Phase 1.5 A2: build a `git-kb code
@@ -621,7 +621,7 @@ fmt, clippy). Remaining follow-ups extracted from each:
   - **Acceptance:** A2 lock scope is derived from an impact map artifact, not chosen ad hoc.
   - **Deps:** none; pairs with TASK-0050. **Risk:** medium.
 
-- [ ] **TASK-0050 (T3.3, P1):** Bidirectional "don't regress the destination" baseline in A2 (adopt the
+- [x] **TASK-0050 (T3.3, P1) — DONE 2026-06-18 (direct-to-develop):** Phase 2-A2 step 2a captures each target repo's behavioral baseline (`00_baseline.md`: tests + runtime obs of touched surfaces) BEFORE any implementer writes; step 5's guardian diffs delivered behavior vs that baseline — a merge that lands new code but regresses the destination's prior behavior FAILs. Bidirectional no-downgrade. Builds on TASK-0049's map. Bidirectional "don't regress the destination" baseline in A2 (adopt the
   *merge-integrator* discipline). A2 proves each repo compiles + passes its own guardian but never
   captures the target's behavioral baseline nor proves the change didn't regress it.
   - **Files:** `.claude/skills/feature-forge/SKILL.md` (A2: capture destination behavioral baseline at
@@ -630,7 +630,7 @@ fmt, clippy). Remaining follow-ups extracted from each:
   - **Acceptance:** an A2 merge that regresses the destination's prior behavior fails the gate.
   - **Deps:** **TASK-0049** (uses the impact map). **Risk:** medium.
 
-- [ ] **TASK-0051 (T3.4, P2):** Behavioral-branch coverage in the guardian (scoped-down
+- [x] **TASK-0051 (T3.4, P2) — DONE 2026-06-18 (direct-to-develop):** invariant-guardian Runtime verification + verification.md §5 now require driving EVERY refusal/error branch + the dry-run-vs-`--apply` split at the real surface for mutating ops (not just confirming a refusal unit test exists). Adopts the parity-verifier exercise-every-branch discipline, scoped to new features (differential golden testing N/A — no reference). Builds on TASK-0043. Behavioral-branch coverage in the guardian (scoped-down
   *parity-verifier* technique). Differential golden testing doesn't map to new features (no reference),
   but the *exercise-every-branch* discipline does — especially the fail-closed guard **refusal** paths
   the guardian today only checks structurally.

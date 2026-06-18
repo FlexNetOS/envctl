@@ -183,7 +183,21 @@ it commits/merges/PRs, only after that repo's guardian PASSes — never `grit do
 2. **Namespace the artifacts per repo.** Use `.handoff/loop/<repo>/` for each repo's
    `01_architect_plan.md` / `02_implementer_log.md` / `03_guardian_report.md` — the only
    structural change to the artifact protocol (it is flat in the sequential path).
-3. **Init grit per repo (locks only).** Seed the whole worktree set in one shot with
+2a. **Capture the destination behavioral baseline (no-regression contract — TASK-0050).** Before any
+   implementer writes, capture each target repo's *current* behavior at the surfaces the change will
+   touch — the relevant `cargo test` pass, and a runtime observation of any surface that will change
+   (the `verify` skill). Record it per repo as `.handoff/loop/<repo>/00_baseline.md`. This is the
+   "don't regress the destination" contract: A2's no-downgrade discipline is **bidirectional** — land
+   the new code AND prove the repo's prior behavior still holds. The guardian (step 5) diffs against
+   this baseline.
+2b. **Build the cross-repo impact map BEFORE locking (TASK-0049).** Don't take grit locks blind. Using
+   code intelligence (`git-kb code callers/callees/impact --json`, or `kb_impact`), map the blast
+   radius of the planned `file::symbol` edits **across** the target repos + shared substrates, and the
+   protocol-drift surface (shared `meta_plugin_protocol`/`meta_plugin_api` types). Record it as
+   `.handoff/loop/<repo>/00_impact_map.md`. **The grit lock scope in step 3 derives from this map** —
+   you lock what the map shows is touched (and its dependents via `--with-deps`), not an ad-hoc guess.
+   (Adopts the rust-port `cross-repo-referencer` discipline.)
+3. **Init grit per repo (locks only) — scoped by the impact map (2b).** Seed the whole worktree set in one shot with
    `meta git worktree exec <slug> --include <r1,r2> -- grit init` (or `grit init` in each repo
    worktree individually) — `grit init` is **idempotent** (a re-run just re-indexes symbols, exit
    0), so seeding is safe to repeat. For a one-time, box-wide seed of grit into **every** meta
@@ -201,9 +215,20 @@ it commits/merges/PRs, only after that repo's guardian PASSes — never `grit do
    - **non-envctl Rust repo** → no envctl gate set exists, so **degrade** to `fmt` / `clippy` /
      `test` and flag the missing invariant contract (PR-1 demonstrated scope = envctl-style Rust
      repos; portable per-repo gate descriptors are staged to PR-2).
-6. **Commit/merge/PR — harness-owned, gated.** Only after a repo's guardian PASSes does the
-   orchestrator commit that repo (area-prefixed subject) → **N commits / N PRs** (meta keeps
-   independent histories; there is no single cross-repo commit). **Never** call grit `done`.
+   - **No-regression vs the baseline (TASK-0050).** Each repo's guardian additionally diffs delivered
+     behavior against that repo's `00_baseline.md` (step 2a): the baseline tests still pass and the
+     touched surfaces' prior behavior is preserved (changed-on-purpose is fine; *broken* is a FAIL).
+     A merge that lands the new code but regresses the destination's existing behavior FAILs the gate.
+6. **Commit per repo on its guardian PASS, but DEFER MERGE to the all-green barrier (TASK-0048).**
+   The orchestrator commits each repo (area-prefixed subject) once *that* repo's guardian PASSes →
+   **N commits / N PRs** (meta keeps independent histories; no single cross-repo commit). **But do NOT
+   arm auto-merge on any repo's PR until EVERY target repo's guardian has PASSed** — the **all-green
+   barrier**. Only at the barrier does the orchestrator arm `gh pr merge --auto` across all N PRs at
+   once. This makes a half-landed cross-repo feature impossible by construction: if repo B FAILs, repo
+   A's PR was never armed, so nothing merged — mark B `- [!]` blocked, the cycle does not reach Done,
+   and no sibling is left merged-without-its-pair. (The barrier waits on each repo's own guardian/CI,
+   **not** on any OS-matrix build — no macOS/Windows/Ubuntu matrix is required here.) **Never** call
+   grit `done`.
 7. **Aggregate.**
    `meta --json git worktree exec <slug> --parallel --include <r1,r2> -- <verify>`
    returns structured per-repo `{directory, exit_code, stdout, summary}`; reduce the N exit codes
