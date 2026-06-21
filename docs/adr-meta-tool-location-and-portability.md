@@ -51,7 +51,7 @@ symlinks — idempotently, never-downgrade, archive-first.
      then swap the install with a symlink.
    - **Third-party toolchains** (uv, node-via-bun, bun, mise, cargo): NOT vendored as repos.
      Redirect each manager's install prefix INTO meta via its native env var, owned by envctl:
-     `BUN_INSTALL=$META_ROOT/.toolchains/bun`, `MISE_DATA_DIR=$META_ROOT/.toolchains/mise`,
+     `BUN_INSTALL=$META_ROOT/.toolchains/.bun`, `MISE_DATA_DIR=$META_ROOT/.toolchains/mise`,
      `CARGO_HOME=$META_ROOT/.toolchains/cargo`, `UV_TOOL_DIR`/`UV_PYTHON_INSTALL_DIR=$META_ROOT/.toolchains/uv`.
      Installs land physically in meta; `~/.local/bin` symlinks in; "latest" is the managers'
      own `upgrade`. node is installed via bun/mise into that prefix.
@@ -84,5 +84,8 @@ symlinks — idempotently, never-downgrade, archive-first.
   `meta_core/src/data_dir.rs` (`META_DATA_DIR` override), `engine::dashboard::locate_meta_file`.
 - ADR-0006 (meta-portability home tree), runaway-containment mission (ICM recursion fix +
   settings de-hardcoding `2bf6a28`), `envctl env` (`feat/envctl-env`).
-- **Open follow-up:** confirm bun honors `BUN_INSTALL` for the bin dir specifically; decide
-  gitkb adoption mechanism (vendor crate vs `.meta.yaml` project).
+- **Bun path note:** envctl uses `$META_ROOT/.toolchains/.bun` rather than
+  `$META_ROOT/.toolchains/bun` because Bun honors `BUN_INSTALL`, and Codex's
+  installer/updater recognizes Bun-managed installs by the `.bun/install/global`
+  path segment.
+- **Open follow-up:** decide gitkb adoption mechanism (vendor crate vs `.meta.yaml` project).

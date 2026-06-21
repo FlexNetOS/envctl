@@ -1135,7 +1135,7 @@ fn run_env(
     if json {
         let mut map = serde_json::json!({ "META_ROOT": meta_root, "META_FILE": meta_yaml });
         if toolchains {
-            map["BUN_INSTALL"] = format!("{tc}/bun").into();
+            map["BUN_INSTALL"] = format!("{tc}/.bun").into();
             map["MISE_DATA_DIR"] = format!("{tc}/mise").into();
             map["CARGO_HOME"] = format!("{tc}/cargo").into();
             map["UV_TOOL_DIR"] = format!("{tc}/uv/tools").into();
@@ -1155,7 +1155,7 @@ fn run_env(
         // toolchain prefix). PATH uses double quotes so `$PATH` expands.
         println!(
             "export BUN_INSTALL={}",
-            sh_single_quote(&format!("{tc}/bun"))
+            sh_single_quote(&format!("{tc}/.bun"))
         );
         println!(
             "export MISE_DATA_DIR={}",
@@ -1173,7 +1173,7 @@ fn run_env(
             "export UV_PYTHON_INSTALL_DIR={}",
             sh_single_quote(&format!("{tc}/uv/python"))
         );
-        println!("export PATH=\"{tc}/bun/bin:{tc}/cargo/bin:{tc}/uv/tools/bin:$PATH\"");
+        println!("export PATH=\"{tc}/.bun/bin:{tc}/cargo/bin:{tc}/uv/tools/bin:$PATH\"");
     }
     Ok(())
 }

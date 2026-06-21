@@ -103,6 +103,50 @@ command = "bash"
 args = ["-lc", "T=\"${ENVCTL_HOME_TREE:-$HOME/Desktop/meta/envctl/home}\"; [ -L \"$HOME/.local/bin/n8n-open\" ]"]
 
 [[component]]
+id = "rtk-config-links"
+name = "RTK config -> envctl home tree"
+description = "Symlinks ~/.config/rtk into envctl/home/.config/rtk so RTK policy is tracked. RTK history/tee logs remain machine-local state under ~/.local/share/rtk."
+requires = ["home-config-links"]
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", "T=\"${ENVCTL_HOME_TREE:-$HOME/Desktop/meta/envctl/home}\"; [ \"$(readlink -f \"$HOME/.config/rtk\" 2>/dev/null)\" = \"$(readlink -f \"$T/.config/rtk\")\" ]"]
+[component.install]
+kind = "script"
+script = '''
+set -e
+T="${ENVCTL_HOME_TREE:-$HOME/Desktop/meta/envctl/home}"
+src="$T/.config/rtk"
+dst="$HOME/.config/rtk"
+ARCH="$HOME/Desktop/_archives/home-links-$(date +%Y-%m-%d)"
+[ -d "$src" ] || { echo "SKIP rtk-config-links: missing $src"; exit 0; }
+[ "$(readlink -f "$dst" 2>/dev/null)" = "$(readlink -f "$src")" ] && exit 0
+mkdir -p "$(dirname "$dst")"
+if [ -e "$dst" ] && [ ! -L "$dst" ]; then
+  mkdir -p "$ARCH/.config"
+  mv "$dst" "$ARCH/.config/rtk"
+  echo "archived: .config/rtk"
+elif [ -L "$dst" ]; then
+  rm "$dst"
+fi
+ln -s "$src" "$dst"
+echo "linked: .config/rtk"
+'''
+[component.verify]
+kind = "command"
+command = "bash"
+args = ["-lc", "T=\"${ENVCTL_HOME_TREE:-$HOME/Desktop/meta/envctl/home}\"; [ \"$(readlink -f \"$HOME/.config/rtk\" 2>/dev/null)\" = \"$(readlink -f \"$T/.config/rtk\")\" ] && rtk gain >/dev/null"]
+[component.remove]
+kind = "script"
+script = '''
+if [ -L "$HOME/.config/rtk" ]; then
+  rm "$HOME/.config/rtk"
+  last=$(ls -d "$HOME/Desktop/_archives/home-links-"* 2>/dev/null | sort | tail -1)
+  [ -n "$last" ] && [ -e "$last/.config/rtk" ] && cp -a "$last/.config/rtk" "$HOME/.config/rtk" && echo "restored: .config/rtk"
+fi
+'''
+
+[[component]]
 id = "meta-tool-links"
 name = "meta tool binaries -> workspace builds"
 description = "Replaces ~/.local/bin (and ~/.cargo/bin duplicate) COPIES of meta-member tools with symlinks into the owning repo's target/release. Version-guarded: never downgrades; skips and reports when the repo build is missing or version-mismatched."
@@ -266,8 +310,8 @@ args = ["-lc", '''OWNER="${SUDO_USER:-$USER}"; OH="$(getent passwd "$OWNER" | cu
 [[component]]
 id = "group-portability"
 name = "Portability link layer (ADR-0006)"
-requires = ["home-config-links", "home-bin-links", "meta-tool-links", "claude-global-links", "usrlocal-script-links"]
+requires = ["home-config-links", "home-bin-links", "rtk-config-links", "meta-tool-links", "claude-global-links", "usrlocal-script-links"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "[ -L \"$HOME/.gitconfig\" ] && [ -L \"$HOME/.local/bin/meta\" ] && [ -L \"$HOME/.claude/settings.json\" ]"]
+args = ["-lc", "[ -L \"$HOME/.gitconfig\" ] && [ -L \"$HOME/.config/rtk\" ] && [ -L \"$HOME/.local/bin/meta\" ] && [ -L \"$HOME/.claude/settings.json\" ]"]

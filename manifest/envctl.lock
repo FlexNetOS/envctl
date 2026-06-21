@@ -21,8 +21,13 @@ requires = []
 resolved = ""
 
 [components.bun]
-content_hash = "a55314a5a86ba851"
+content_hash = "12b1db1abe80d37e"
 requires = []
+resolved = ""
+
+[components.cargo-nextest]
+content_hash = "326ab6f0db498b5e"
+requires = ["rustup"]
 resolved = ""
 
 [components.claude-code-cli]
@@ -36,8 +41,12 @@ requires = []
 resolved = ""
 
 [components.codex-cli]
-content_hash = "9471ae9003dfb7a2"
-requires = ["bun"]
+content_hash = "8fd9e3fd5d5a587e"
+requires = [
+    "bun",
+    "mold-linker",
+    "rustup",
+]
 resolved = ""
 
 [components.cognitum-seed-net]
@@ -87,7 +96,7 @@ requires = [
 resolved = ""
 
 [components.gemini-cli]
-content_hash = "4a80a4e40bd660aa"
+content_hash = "33efa2ab75a01b7c"
 requires = ["bun"]
 resolved = ""
 
@@ -125,7 +134,7 @@ requires = [
 resolved = ""
 
 [components.group-ai-clis]
-content_hash = "3bd21a9b8ad7ef5c"
+content_hash = "ea5aef01ca8baeb1"
 requires = [
     "claude-code-cli",
     "codex-cli",
@@ -170,12 +179,13 @@ requires = [
 resolved = ""
 
 [components.group-portability]
-content_hash = "3781810497c5aae5"
+content_hash = "b3f19854c342c870"
 requires = [
     "claude-global-links",
     "home-bin-links",
     "home-config-links",
     "meta-tool-links",
+    "rtk-config-links",
     "usrlocal-script-links",
 ]
 resolved = ""
@@ -193,6 +203,11 @@ resolved = ""
 [components.home-manager]
 content_hash = "4ba601bcc9326bb6"
 requires = ["nix"]
+resolved = ""
+
+[components.just]
+content_hash = "ef31dda12267cbd2"
+requires = []
 resolved = ""
 
 [components.kasetto]
@@ -233,6 +248,11 @@ content_hash = "4159f20ce025fcf9"
 requires = []
 resolved = ""
 
+[components.mold-linker]
+content_hash = "288dc105e7fea850"
+requires = []
+resolved = ""
+
 [components.n8n-mcp]
 content_hash = "f1cc110ba3589365"
 requires = ["node-via-bun"]
@@ -259,7 +279,7 @@ requires = []
 resolved = ""
 
 [components.node-via-bun]
-content_hash = "de3c65560bc30907"
+content_hash = "a0607fbc12e9a25a"
 requires = ["bun"]
 resolved = ""
 
@@ -296,6 +316,11 @@ content_hash = "5f2c300db44fca21"
 requires = ["rustup"]
 resolved = ""
 
+[components.rtk-config-links]
+content_hash = "ebca00eff6f21c6d"
+requires = ["home-config-links"]
+resolved = ""
+
 [components.rust-nightly-cuda-oxide]
 content_hash = "2aecc6927295ce12"
 requires = ["rustup"]
@@ -327,7 +352,7 @@ requires = []
 resolved = ""
 
 [components.vite]
-content_hash = "7a47bf1d2aec1015"
+content_hash = "09ded0589748792d"
 requires = ["bun"]
 resolved = ""
 
