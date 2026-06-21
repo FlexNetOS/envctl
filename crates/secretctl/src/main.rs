@@ -1192,7 +1192,13 @@ mod tests {
     #[test]
     fn github_app_set_app_id_defaults_to_dry_run_and_requires_app_id() {
         // No `--apply` ⇒ dry-run by default (CF-8); the PEM is NOT a parameter of this verb.
-        let argv = ["secretctl", "github-app", "set-app-id", "--app-id", "4044997"];
+        let argv = [
+            "secretctl",
+            "github-app",
+            "set-app-id",
+            "--app-id",
+            "4044997",
+        ];
         let cli = Cli::try_parse_from(argv).expect("set-app-id argv parses (dry-run)");
         let GithubAppCmd::SetAppId { apply, .. } = (match cli.cmd {
             Cmd::GithubApp { cmd } => cmd,
