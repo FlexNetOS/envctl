@@ -5,7 +5,9 @@
 //! in the vault, and this module exchanges it (an RS256 **App-JWT**) for a short-lived, scoped
 //! **installation access token** via `POST /app/installations/{id}/access_tokens`. The token
 //! is what `flexnetos_github_app` uses to post check-runs / drive the merge gate — replacing the
-//! long-lived `PARENT_REPO_PAT` with a per-repo, per-permission, ~1h credential.
+//! long-lived `PARENT_REPO_PAT` with a per-repo, per-permission, **relay-rotated** credential
+//! (the raw GitHub token is ~1h; envctl's relay re-mints + re-injects it on a ≤24h policy — see
+//! "TTL truth" below).
 //!
 //! ## Why it lives behind a seam (and is fully offline-testable)
 //! Per envctl's invariants the engine LIB is pure-Rust, non-printing, and pushes all I/O to a
@@ -15,12 +17,22 @@
 //! request shaping, response parsing — is pure and unit-tested with a fake transport, so no
 //! live GitHub App is needed to prove it correct.
 //!
-//! ## TTL truth (verified against GitHub's API, ADR-0008 §B)
-//! GitHub fixes the installation-token lifetime at **~1 hour and it is NOT client-configurable**;
+//! ## TTL truth — two layers, two lifetimes (ADR-0008 §B); do NOT conflate them
+//! **1. Raw GitHub installation token (provider mechanics).** GitHub fixes the installation-token
+//! lifetime at **~1 hour and it is NOT client-configurable**;
 //! [`MintRequest::ttl_secs`](crate::seam::MintRequest) is therefore advisory — the authoritative
 //! `expires_at` is taken from GitHub's response. The App-JWT itself is the only lifetime we
 //! control, and GitHub caps it at 10 minutes; we issue ≤[`MAX_JWT_TTL_SECS`] with the `iat`
 //! back-dated 60s for clock-drift tolerance.
+//!
+//! **2. Relay-rotation policy (the consumer-facing lifetime).** envctl is a *relay*: it holds the
+//! long-lived credential ([`RelayPolicy::policy_ttl_secs`](crate::broker::policy::RelayPolicy),
+//! 1y/90d) and re-mints + re-injects the scoped token on a **≤24h rotation** (the WIRE bearer is
+//! always clamped to ≤24h — see [`broker::policy`](crate::broker::policy)). So a consumer (e.g. a
+//! CI job) does NOT receive a one-shot 1h token: it receives a *continuously rotated* credential
+//! whose value changes every 24h — a virtual-credit-card model that bounds blast radius and makes
+//! a leak fast to detect and short-lived by construction. The ~1h raw GitHub token from layer 1 is
+//! an internal implementation detail the relay refreshes underneath the 24h policy.
 //!
 //! ## Gating (USB / vault presence)
 //! This seam holds an *already-unsealed* App key, so minting is structurally gated upstream: the
@@ -103,7 +115,8 @@ impl HttpTransport for NoopHttpTransport {
 /// Scoped parameters for a single GitHub App installation-token mint (TASK-0020). `installation_id`
 /// is request-supplied (the daemon builds a per-call minter); `repository_ids` are NUMERIC repo IDs
 /// (the consumer contract passes IDs, mutually exclusive with the name-based `repositories` path);
-/// `permissions` are `name:access`; `ttl_secs` is advisory (GitHub fixes the lifetime ~1h).
+/// `permissions` are `name:access`; `ttl_secs` is advisory (GitHub fixes the RAW token lifetime
+/// ~1h — the relay re-mints + re-injects it on a ≤24h rotation; see the module-level "TTL truth").
 #[derive(Debug, Clone)]
 pub struct GithubMintParams {
     pub installation_id: u64,
