@@ -127,7 +127,8 @@ pub struct MintGithubArgs {
     /// Omitted ⇒ the installation's full default permission scope.
     #[arg(long = "permissions", value_delimiter = ',')]
     pub permissions: Vec<String>,
-    /// Requested token lifetime in seconds (required; advisory — GitHub fixes the lifetime ~1h).
+    /// Requested token lifetime in seconds (required; advisory — GitHub fixes the RAW installation
+    /// token at ~1h, but the relay re-mints + re-injects it on a ≤24h rotation policy).
     #[arg(long = "ttl-secs")]
     pub ttl_secs: i64,
     /// Output format. Only `json` is supported (the frozen machine contract). Required.
