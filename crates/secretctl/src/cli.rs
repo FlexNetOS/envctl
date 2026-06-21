@@ -96,6 +96,20 @@ pub enum GithubAppCmd {
         #[arg(long)]
         apply: bool,
     },
+    /// Set (or refresh) ONLY the non-secret `github-app-id` meta that `mint-github` reads, WITHOUT
+    /// touching the sealed PEM. Heals an enrollment whose App key is already sealed under
+    /// `github-app-private-key` but whose `github-app-id` meta is absent — the exact state that makes
+    /// `mint-github` fail "GitHub App id not enrolled" even though the key is present (e.g. an App
+    /// sealed by an older enroll path / a meta-schema drift). Requires the vault Unlocked. Dry-run
+    /// preview unless `--apply`.
+    SetAppId {
+        /// The GitHub App id (non-secret, e.g. `4044997`). Required.
+        #[arg(long = "app-id")]
+        app_id: String,
+        /// Actually persist the id meta. Without it, prints a dry-run preview (to stderr) and writes nothing.
+        #[arg(long)]
+        apply: bool,
+    },
     /// Early-revoke a GitHub installation access token via `DELETE /installation/token` (TASK-0027).
     /// The token authenticates the revoke ITSELF (it is the kill-switch for an outstanding token —
     /// e.g. one already handed off to a child tool). Dry-run preview unless `--apply`. The token is
