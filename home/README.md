@@ -8,6 +8,7 @@ outside, never the reverse* — `$HOME` paths are symlinks into this tree, wired
 ```
 $HOME/.gitconfig                    -> envctl/home/.gitconfig
 $HOME/.claude/settings.json         -> envctl/home/.claude/settings.json     (claude-global-links)
+$HOME/.config/rtk                   -> envctl/home/.config/rtk               (rtk-config-links)
 $HOME/.config/yazelix/settings.jsonc-> envctl/home/.config/yazelix/...       (home-config-links)
 $HOME/.config/systemd/user/*.service-> envctl/home/.config/systemd/user/...  (home-config-links)
 $HOME/.local/bin/<tool>             -> ~/Desktop/meta/<repo>/target/release/<tool>  (meta-tool-links)
@@ -39,3 +40,5 @@ $HOME/.local/bin/<tool>             -> ~/Desktop/meta/<repo>/target/release/<too
   this box; a template/substitution pass at link time is the follow-up (tracked in
   PORTABILITY-AUDIT.md at the meta root).
 - `repowire.service` is carried for the record but disabled on the box (binary missing — see header).
+- RTK config is tracked here; RTK command history and tee logs remain machine-local state under
+  `~/.local/share/rtk/`.

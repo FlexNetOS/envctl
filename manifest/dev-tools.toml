@@ -48,21 +48,121 @@ requires = ["bun"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "command -v vite || [ -x \"$HOME/.bun/bin/vite\" ]"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/.bun/bin/vite\" ] && [ \"$(readlink -f \"$HOME/.local/bin/vite\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/.bun/bin/vite\")\" ]"]
 [component.install]
 kind = "script"
-script = "export BUN_INSTALL=\"$HOME/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; bun add -g vite"
+script = '''
+set -e
+M="${META_ROOT:-$HOME/Desktop/meta}"
+export BUN_INSTALL="$M/.toolchains/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+bun add -g vite
+mkdir -p "$HOME/.local/bin"
+dst="$HOME/.local/bin/vite"
+src="$BUN_INSTALL/bin/vite"
+ARCH="$HOME/Desktop/_archives/home-links-$(date +%Y-%m-%d)"
+if [ -e "$dst" ] && [ ! -L "$dst" ]; then mkdir -p "$ARCH/.local/bin"; mv "$dst" "$ARCH/.local/bin/vite"; echo "archived copy: vite"; fi
+[ -L "$dst" ] && rm "$dst"
+ln -s "$src" "$dst"
+'''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.bun/bin:$PATH\"; vite --version"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; vite --version"]
 [component.fix]
 kind = "script"
-script = "export PATH=\"$HOME/.bun/bin:$PATH\"; bun add -g vite"
+script = '''
+set -e
+M="${META_ROOT:-$HOME/Desktop/meta}"
+export BUN_INSTALL="$M/.toolchains/.bun"
+export PATH="$BUN_INSTALL/bin:$PATH"
+bun add -g vite
+mkdir -p "$HOME/.local/bin"
+ln -sfn "$BUN_INSTALL/bin/vite" "$HOME/.local/bin/vite"
+'''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.bun/bin:$PATH\"; bun remove -g vite"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; bun remove -g vite; [ -L \"$HOME/.local/bin/vite\" ] && rm \"$HOME/.local/bin/vite\" || true"]
+
+
+[[component]]
+id = "cargo-nextest"
+name = "cargo-nextest (Rust test runner)"
+description = "Repo-required Rust test runner for Codex and other Rust workspaces; installed through meta-owned CARGO_HOME."
+requires = ["rustup"]
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/cargo/bin/cargo-nextest\" ] && [ \"$(readlink -f \"$HOME/.local/bin/cargo-nextest\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/cargo/bin/cargo-nextest\")\" ]"]
+[component.install]
+kind = "script"
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+export CARGO_HOME="$M/.toolchains/cargo"
+export PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"
+cargo install cargo-nextest --version 0.9.137 --locked
+mkdir -p "$HOME/.local/bin"
+dst="$HOME/.local/bin/cargo-nextest"
+src="$CARGO_HOME/bin/cargo-nextest"
+ARCH="$HOME/Desktop/_archives/home-links-$(date +%Y-%m-%d)"
+if [ -e "$dst" ] && [ ! -L "$dst" ]; then mkdir -p "$ARCH/.local/bin"; mv "$dst" "$ARCH/.local/bin/cargo-nextest"; echo "archived copy: cargo-nextest"; fi
+[ -L "$dst" ] && rm "$dst"
+ln -s "$src" "$dst"
+'''
+[component.verify]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export CARGO_HOME=\"$M/.toolchains/cargo\"; export PATH=\"$CARGO_HOME/bin:$PATH\"; cargo nextest --version"]
+[component.fix]
+kind = "script"
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+export CARGO_HOME="$M/.toolchains/cargo"
+export PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"
+cargo install cargo-nextest --version 0.9.137 --force --locked
+mkdir -p "$HOME/.local/bin"
+ln -sfn "$CARGO_HOME/bin/cargo-nextest" "$HOME/.local/bin/cargo-nextest"
+'''
+[component.remove]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export CARGO_HOME=\"$M/.toolchains/cargo\"; export PATH=\"$CARGO_HOME/bin:$PATH\"; cargo uninstall cargo-nextest || true; [ -L \"$HOME/.local/bin/cargo-nextest\" ] && rm \"$HOME/.local/bin/cargo-nextest\" || true"]
+
+
+[[component]]
+id = "mold-linker"
+name = "mold linker"
+description = "Fast native linker for local Rust source builds on the Threadripper workstation."
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", "command -v mold >/dev/null || command -v ld.mold >/dev/null"]
+[component.install]
+kind = "script"
+script = '''
+set -euo pipefail
+sudo apt-get update -y
+sudo apt-get install -y mold
+'''
+[component.verify]
+kind = "command"
+command = "bash"
+args = ["-lc", "mold --version || ld.mold --version"]
+[component.fix]
+kind = "script"
+script = '''
+set -euo pipefail
+sudo apt-get update -y
+sudo apt-get install --reinstall -y mold
+'''
+[component.remove]
+kind = "command"
+needs_sudo = true
+command = "apt-get"
+args = ["remove", "-y", "mold"]
 
 
 [[component]]

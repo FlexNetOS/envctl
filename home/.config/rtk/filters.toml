@@ -1,0 +1,4 @@
+# User-global RTK filters — apply to all projects through the envctl-owned
+# home tree. Project-local .rtk/filters.toml still takes precedence.
+schema_version = 1
+

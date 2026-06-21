@@ -38,27 +38,46 @@ description = "JS runtime + package manager; provides node via a bun symlink."
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "command -v bun || [ -x \"$HOME/.bun/bin/bun\" ]"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/.bun/bin/bun\" ] && [ \"$(readlink -f \"$HOME/.local/bin/bun\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/.bun/bin/bun\")\" ]"]
 [component.install]
 kind = "script"
-script = "curl -fsSL https://bun.sh/install | bash"
+script = '''
+set -e
+M="${META_ROOT:-$HOME/Desktop/meta}"
+export BUN_INSTALL="$M/.toolchains/.bun"
+mkdir -p "$BUN_INSTALL" "$HOME/.local/bin"
+curl -fsSL https://bun.sh/install | bash
+dst="$HOME/.local/bin/bun"
+src="$BUN_INSTALL/bin/bun"
+ARCH="$HOME/Desktop/_archives/home-links-$(date +%Y-%m-%d)"
+if [ -e "$dst" ] && [ ! -L "$dst" ]; then mkdir -p "$ARCH/.local/bin"; mv "$dst" "$ARCH/.local/bin/bun"; echo "archived copy: bun"; fi
+[ -L "$dst" ] && rm "$dst"
+ln -s "$src" "$dst"
+'''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.bun/bin:$PATH\"; bun --version"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; bun --version"]
 [component.fix]
 kind = "script"
-script = "curl -fsSL https://bun.sh/install | bash"
+script = '''
+set -e
+M="${META_ROOT:-$HOME/Desktop/meta}"
+export BUN_INSTALL="$M/.toolchains/.bun"
+mkdir -p "$BUN_INSTALL" "$HOME/.local/bin"
+curl -fsSL https://bun.sh/install | bash
+ln -sfn "$BUN_INSTALL/bin/bun" "$HOME/.local/bin/bun"
+'''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "rm -rf \"$HOME/.bun\""]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; rm -rf \"$M/.toolchains/.bun\"; [ -L \"$HOME/.local/bin/bun\" ] && rm \"$HOME/.local/bin/bun\" || true"]
 [component.wiring]
-path_entries = ["~/.bun/bin", "~/.local/bin"]
+path_entries = ["~/Desktop/meta/.toolchains/.bun/bin", "~/.local/bin"]
 [[component.wiring.shell_rc]]
 file = "~/.bashrc"
-marker = "bun path"
-content = 'export PATH="$HOME/.bun/bin:$HOME/.local/bin:$PATH"'
+marker = "meta toolchain path"
+content = 'eval "$(envctl env --toolchains)"'
 
 
 [[component]]
@@ -72,26 +91,26 @@ command = "bash"
 # Truthful: node-compat is satisfied if EITHER ~/.bun/bin/node points at bun
 # (the bun node shim) OR a real `node` resolves on PATH. On an n8n box the real
 # node (~/.local/bin/node) precedes the inert bun symlink — that still counts.
-args = ["-lc", "{ [ -x \"$HOME/.bun/bin/node\" ] && readlink -f \"$HOME/.bun/bin/node\" 2>/dev/null | grep -q bun; } || command -v node >/dev/null"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; { [ -x \"$M/.toolchains/.bun/bin/node\" ] && readlink -f \"$M/.toolchains/.bun/bin/node\" 2>/dev/null | grep -q bun; } || command -v node >/dev/null"]
 [component.install]
 kind = "command"
 command = "bash"
-args = ["-lc", "ln -sf \"$(command -v bun || echo \"$HOME/.bun/bin/bun\")\" \"$HOME/.bun/bin/node\""]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; ln -sf \"$M/.toolchains/.bun/bin/bun\" \"$M/.toolchains/.bun/bin/node\""]
 [component.verify]
 kind = "command"
 command = "bash"
 # Bun's node shim runs `node <script>` but NOT `node --version`. A real node also
 # runs `node -e`. So `node -e` is the honest node-compat smoke test for BOTH
 # runtimes. Prefer a real node if one is on PATH; else fall back to the bun shim.
-args = ["-lc", "export PATH=\"$HOME/.bun/bin:$PATH\"; node -e 'process.exit(0)'"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export PATH=\"$M/.toolchains/.bun/bin:$PATH\"; node -e 'process.exit(0)'"]
 [component.fix]
 kind = "command"
 command = "bash"
-args = ["-lc", "ln -sf \"$HOME/.bun/bin/bun\" \"$HOME/.bun/bin/node\""]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; ln -sf \"$M/.toolchains/.bun/bin/bun\" \"$M/.toolchains/.bun/bin/node\""]
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "rm -f \"$HOME/.bun/bin/node\""]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; rm -f \"$M/.toolchains/.bun/bin/node\""]
 
 
 [[component]]
