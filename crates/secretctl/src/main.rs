@@ -212,8 +212,44 @@ fn read_pem(source: &str) -> anyhow::Result<zeroize::Zeroizing<Vec<u8>>> {
 async fn github_app(cmd: GithubAppCmd, sock: PathBuf, json: bool) -> anyhow::Result<()> {
     match cmd {
         GithubAppCmd::Enroll { .. } => github_app_enroll(cmd, sock, json).await,
+        GithubAppCmd::SetAppId { .. } => github_app_set_app_id(cmd, sock, json).await,
         GithubAppCmd::RevokeToken { .. } => github_app_revoke_token(cmd, sock, json).await,
     }
+}
+
+/// `env-ctl github-app set-app-id` — persist ONLY the non-secret `github-app-id` meta that
+/// `mint_github_token` reads, via `Vault.SetGithubAppId`, WITHOUT re-sealing (or needing) the PEM.
+/// This heals an enrollment whose App key is already sealed under `github-app-private-key` but whose
+/// id meta is missing (so `mint-github` fails "GitHub App id not enrolled"). The id is non-secret;
+/// the daemon refuses when the vault is Locked. Dry-run preview to STDERR unless `--apply`.
+async fn github_app_set_app_id(cmd: GithubAppCmd, sock: PathBuf, json: bool) -> anyhow::Result<()> {
+    let GithubAppCmd::SetAppId { app_id, apply } = cmd else {
+        unreachable!("github_app_set_app_id dispatched a non-SetAppId variant");
+    };
+
+    if app_id.trim().is_empty() {
+        anyhow::bail!("--app-id must not be empty");
+    }
+
+    // DRY-RUN (default, CF-8): preview to STDERR, write nothing. The sealed App key is never touched.
+    if !apply {
+        eprintln!(
+            "DRY-RUN: would persist meta `github-app-id`: {app_id} (writes nothing; the sealed App \
+             private key under `github-app-private-key` is left untouched). Re-run with --apply."
+        );
+        return Ok(());
+    }
+
+    // APPLY: the same `Vault.SetGithubAppId` RPC the enroll path uses for its id step — minus the PEM.
+    let mut c = VaultClient::new(connect(sock).await?);
+    let set = v1::SetGithubAppIdReq {
+        app_id: app_id.clone(),
+        apply: true,
+    };
+    let set_stream = c.set_github_app_id(set).await?.into_inner();
+    drain(set_stream, json).await?;
+
+    Ok(())
 }
 
 /// `secretctl github-app revoke-token` (TASK-0027): early-revoke an outstanding GitHub installation
@@ -1124,6 +1160,49 @@ mod tests {
             "missing --private-key must fail to parse"
         );
         let argv = ["secretctl", "github-app", "enroll", "--private-key", "-"];
+        assert!(
+            Cli::try_parse_from(argv).is_err(),
+            "missing --app-id must fail to parse"
+        );
+    }
+
+    #[test]
+    fn github_app_set_app_id_parses_app_id_and_apply() {
+        // The meta-only enrollment-heal verb: takes ONLY --app-id (no PEM) + an optional --apply.
+        let argv = [
+            "secretctl",
+            "github-app",
+            "set-app-id",
+            "--app-id",
+            "4044997",
+            "--apply",
+        ];
+        let cli = Cli::try_parse_from(argv).expect("set-app-id argv parses");
+        let cmd = match cli.cmd {
+            Cmd::GithubApp { cmd } => cmd,
+            other => panic!("expected GithubApp, got {other:?}"),
+        };
+        let GithubAppCmd::SetAppId { app_id, apply } = cmd else {
+            panic!("expected SetAppId");
+        };
+        assert_eq!(app_id, "4044997");
+        assert!(apply, "--apply was passed");
+    }
+
+    #[test]
+    fn github_app_set_app_id_defaults_to_dry_run_and_requires_app_id() {
+        // No `--apply` ⇒ dry-run by default (CF-8); the PEM is NOT a parameter of this verb.
+        let argv = ["secretctl", "github-app", "set-app-id", "--app-id", "4044997"];
+        let cli = Cli::try_parse_from(argv).expect("set-app-id argv parses (dry-run)");
+        let GithubAppCmd::SetAppId { apply, .. } = (match cli.cmd {
+            Cmd::GithubApp { cmd } => cmd,
+            other => panic!("expected GithubApp, got {other:?}"),
+        }) else {
+            panic!("expected SetAppId");
+        };
+        assert!(!apply, "apply defaults to false (dry-run)");
+        // Missing --app-id is a hard clap error.
+        let argv = ["secretctl", "github-app", "set-app-id"];
         assert!(
             Cli::try_parse_from(argv).is_err(),
             "missing --app-id must fail to parse"
