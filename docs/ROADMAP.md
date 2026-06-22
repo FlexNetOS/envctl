@@ -104,10 +104,13 @@ The secrets stack has its own phased roadmap spanning **Phases 0–8** with the 
 
 - **Phase 0:** Scaffold (secrets-engine lib, secrets-proto, secretd daemon, secretctl client) — ✅ COMPLETED
 - **Phase 1:** Vault core (AEAD + keyslots + canonical AAD) + libSQL remote store — ✅ COMPLETED
-- **Phase 2–5:** Keymgmt/unlock, broker/relay, certs/CA+MITM, gRPC daemon — IN PROGRESS
-- **Phase 6:** `env-ctl run` exec-wrapper (ephemeral bearer injection, fail-closed profile walk-up) — PENDING
-- **Phase 7:** **envctl MERGE** — drop secrets crates into envctl/crates/, fold CLI verbs (`envctl secret|vault|relay|ca|run`), ship secretd as manifest systemd component, unify workspace lockfile. See `docs/secrets/ROADMAP.md` §5 for full acceptance criteria.
-- **Phase 8:** SERVER-MODE remote relay edge (in-process TLS+DPoP listener, bounded jti replay store, streaming revocation, VPS Profile-B gates) — PENDING
+- **Phase 2 — broker/relay:** TASK-0031 (TLS-terminating listener, PR #111) + TASK-0031-PR2 (hardening + mTLS, PR #122). ✅ COMPLETED.
+- **Phase 3 — gRPC daemon surface:** TASK-0036 (mlockall hardening, PR #112) + TASK-0035 (Vault/Relay/Audit gRPC gaps, PR #108). ✅ COMPLETED.
+- **Phase 4 — keymgmt/unlock:** TASK-0030 (bounded jti replay store, PR #109) + TASK-0032 (stream tear-down, PR #117). ✅ COMPLETED.
+- **Phase 5 — certs/CA+MITM:** VPS Profile-B ([!] blocked by owner). Phase 4+ work deferred to TASK-0038.
+- **Phase 6 — `envctl secret run` (exec-wrapper):** Implemented as part of Phase 7 (this task: PR pending). The exec-wrapper surface maps to `envctl secret run -- <cmd>`.
+- **Phase 7 — envctl MERGE:** secretd manifest component + `envctl secret` CLI surface (this task, in-progress). The `envctl secret` subcommand mirrors the full `secretctl` clap surface via Engine's subprocess seam.
+- **Phase 8 — SERVER-MODE remote relay edge:** In-process TLS+DPoP listener shipped (PR #111/#122). VPS Profile-B gates ([!] owner-gated) remain pending. See TASK-0033.
 
 **Phases 6–8 are the most impactful remaining work:** they complete the secrets integration into envctl's core workspace and enable unattended daemon serving. See `docs/secrets/ARCHITECTURE.md` for design details and `docs/secrets/audits/AUDIT-server-mode.md` for the phased audit spec.
 
