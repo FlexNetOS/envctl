@@ -4,7 +4,7 @@
 mod self_update;
 
 use baby_mimalloc::{new_mimalloc_mmap_mutex, MimallocMmapMutex};
-use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
+use clap::{Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::Shell;
 use std::io::IsTerminal;
 use std::time::Duration;
@@ -42,6 +42,7 @@ macro_rules! envctl_examples {
     };
 }
 
+use envctl_engine::secrets::run_secretctl;
 use envctl_engine::{
     AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentDoctorSpec, AgentInitSpec, AgentListKind,
     AgentListSpec, AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentScope, AgentSectionSel,
@@ -491,6 +492,21 @@ enum Cmd {
         /// Target shell: bash | zsh | fish | powershell | elvish.
         shell: Shell,
     },
+    /// Manage secrets: vault status, init/unlock/lock, secret CRUD, relay policies, CA, audit, run, mint-github, github-app.
+    #[command(
+        long_about = "Manage secrets stored in the secretd vault: vault status, initialization, unlocking, locking, secret CRUD (get/list/rm), relay policy management (create/revoke/mint), local CA management (init/issue/renew/revoke/trust-apply), audit log queries, ephemeral credential injection (run), GitHub App token minting, and GitHub App enrollment. All destructive verbs are dry-run by default — pass --apply to act.",
+        after_help = envctl_examples!(
+            "envctl secret status",
+            "envctl secret init --apply",
+            "envctl secret relay mint my-policy --ttl 3600",
+            "envctl secret run --relay api -- curl https://api.example.com",
+            "envctl secret mint-github --installation-id 42 --output json --ttl-secs 3600",
+        )
+    )]
+    Secret {
+        #[command(subcommand)]
+        cmd: SecretCmd,
+    },
 }
 
 /// `envctl self {update,uninstall}` — manage the running installation (kasetto `ManageSelf`).
@@ -785,6 +801,528 @@ enum AgentCmd {
     },
 }
 
+/// `envctl secret` subcommand group — mirrors the full `secretctl` clap surface.
+#[derive(Subcommand)]
+pub enum SecretCmd {
+    /// Vault lock status (no unlock side effect).
+    #[command(
+        long_about = "Print the vault's current lock state (locked or unlocked) without modifying it. A read-only diagnostic that confirms whether the DEK is loaded in memory.",
+        after_help = envctl_examples!(
+            "envctl secret status",
+        )
+    )]
+    Status {},
+    /// Initialize a fresh vault: mint the DEK + enroll keyslots. Dry-run preview unless --apply.
+    #[command(
+        long_about = "Create a brand-new vault: generate a data-encryption key (DEK), establish the CA issuer, and enroll keyslots (USB or passphrase). PREVIEW by default; pass --apply to perform the initialization.",
+        after_help = envctl_examples!(
+            "envctl secret init",
+            "envctl secret init --apply",
+            "envctl secret init --enroll-usb --usb-partuuid abc123",
+            "envctl secret init --passphrase-stdin --apply",
+        )
+    )]
+    Init {
+        #[arg(long)]
+        passphrase_stdin: bool,
+        #[arg(long)]
+        enroll_usb: bool,
+        #[arg(long = "usb-partuuid")]
+        usb_partuuid: Option<String>,
+        /// Actually initialize. Without it, prints a dry-run preview and mutates nothing (CF-8).
+        #[arg(long)]
+        apply: bool,
+    },
+    /// Unlock the vault (USB-first; passphrase only if USB absent).
+    #[command(
+        long_about = "Unlock the existing vault. Tries USB first (if enrolled), then falls back to passphrase. On success the DEK is loaded into memory for subsequent secret operations.",
+        after_help = envctl_examples!(
+            "envctl secret unlock",
+            "envctl secret unlock --passphrase-stdin",
+        )
+    )]
+    Unlock {
+        #[arg(long)]
+        passphrase_stdin: bool,
+    },
+    /// Zeroize the DEK + CA issuer in RAM (the true panic stop).
+    #[command(
+        long_about = "Zero out the DEK and CA issuer from memory. This is the emergency shutdown — no secrets remain accessible afterward until the next unlock.",
+        after_help = envctl_examples!(
+            "envctl secret lock",
+        )
+    )]
+    Lock {},
+    /// Manage stored secrets.
+    #[command(
+        long_about = "Store, retrieve, list, remove, or rotate individual secrets in the vault. All destructive verbs (rm) are dry-run by default; pass --apply to act.",
+        after_help = envctl_examples!(
+            "envctl secret add api-key --provider github",
+            "envctl secret get api-key --reveal",
+            "envctl secret list",
+            "envctl secret rm old-key --apply",
+            "envctl secret rotate db-password --value-stdin",
+        )
+    )]
+    Secret {
+        #[command(subcommand)]
+        cmd: SecretSubCmd,
+    },
+    /// Manage relay policies + mint bearers.
+    #[command(
+        long_about = "Create, revoke, and list relay policies that gate credential forwarding. Mint short-lived bearer tokens scoped to a policy for downstream services.",
+        after_help = envctl_examples!(
+            "envctl secret relay create api --secret github --provider okta",
+            "envctl secret relay list",
+            "envctl secret relay revoke api --apply",
+            "envctl secret relay mint api --ttl 3600",
+        )
+    )]
+    Relay {
+        #[command(subcommand)]
+        cmd: RelaySubCmd,
+    },
+    /// Manage the local CA, leaf certs, and trust wiring.
+    #[command(
+        long_about = "Initialize a local Certificate Authority (or rotate it), issue and renew leaf certificates with SANs, and apply trust anchors to the system bundle.",
+        after_help = envctl_examples!(
+            "envctl secret ca init --apply",
+            "envctl secret ca issue my.host.local --san alt.host --ttl-days 90",
+            "envctl secret ca renew my.host.local --apply",
+            "envctl secret ca trust system-bundle --apply",
+        )
+    )]
+    Ca {
+        #[command(subcommand)]
+        cmd: CaSubCmd,
+    },
+    /// Query the tamper-evident audit log.
+    #[command(
+        long_about = "Read entries from the vault's tamper-evident audit log. Filter by actor, relay identity, or time range. Returns a paginated list of secret operations.",
+        after_help = envctl_examples!(
+            "envctl secret audit --limit 10",
+            "envctl secret audit --actor alice --since 2026-01-01T00:00:00Z",
+        )
+    )]
+    Audit(AuditArgs),
+    /// Run a command with relay credentials injected into the child only.
+    #[command(
+        long_about = "Execute a child process with relay bearer tokens and environment variables injected — visible only to that process, never persisted or leaked to parent.",
+        after_help = envctl_examples!(
+            "envctl secret run --relay api -- curl https://api.example.com",
+            "envctl secret run --ephemeral -- my-command",
+        )
+    )]
+    Run(RunArgs),
+    /// Mint a GitHub App installation access token from the vault-sealed key (TASK-0020).
+    #[command(
+        long_about = "Mint a short-lived GitHub App installation access token using the vault-sealed App private key. Output is always JSON (the frozen machine contract).",
+        after_help = envctl_examples!(
+            "envctl secret mint-github --installation-id 42 --output json --ttl-secs 3600",
+        )
+    )]
+    #[command(name = "mint-github")]
+    MintGithub(MintGithubArgs),
+    /// Enroll the GitHub App credential into the unlocked vault (TASK-0026).
+    #[command(
+        long_about = "Enroll a GitHub App's identity (app ID + private key) into the unlocked vault, or update just the app-id on an existing enrollment. Supports token revocation.",
+        after_help = envctl_examples!(
+            "envctl secret github-app enroll --app-id 123456 --private-key ./key.pem --apply",
+            "envctl secret github-app set-app-id 789012 --apply",
+            "envctl secret github-app revoke-token --token ghp_xxx",
+        )
+    )]
+    #[command(name = "github-app")]
+    GithubApp {
+        #[command(subcommand)]
+        cmd: GithubAppSubCmd,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum SecretSubCmd {
+    /// Add a new secret to the vault. PREVIEW by default; --apply to write.
+    #[command(
+        long_about = "Store a new secret identified by name under a given provider (e.g. 'github', 'okta'). The value is read from stdin when --value-stdin is set.",
+        after_help = envctl_examples!(
+            "envctl secret add api-key --provider github",
+            "cat key.pem | envctl secret add cert --provider file --value-stdin",
+        )
+    )]
+    Add {
+        name: String,
+        #[arg(long)]
+        provider: String,
+        #[arg(long)]
+        value_stdin: bool,
+        #[arg(long)]
+        note: Option<String>,
+        #[arg(long)]
+        overwrite: bool,
+        #[arg(long)]
+        broker_only: bool,
+    },
+    /// Get a secret by name. PREVIEW (JSON) by default; --reveal prints the value; --apply writes it to disk.
+    #[command(
+        long_about = "Retrieve a stored secret by name. Default is JSON output; use --reveal to print the raw value, or --apply to write it to a file.",
+        after_help = envctl_examples!(
+            "envctl secret get api-key",
+            "envctl secret get api-key --reveal",
+            "envctl secret get api-key --apply",
+        )
+    )]
+    Get {
+        name: String,
+        #[arg(long)]
+        reveal: bool,
+        #[arg(long)]
+        apply: bool,
+        #[arg(long)]
+        confirm: bool,
+    },
+    /// List secrets, optionally filtered by provider.
+    #[command(
+        long_about = "List stored secrets with their metadata (provider, note). Use --provider to filter.",
+        after_help = envctl_examples!(
+            "envctl secret list",
+            "envctl secret list --provider github",
+        )
+    )]
+    List {
+        #[arg(long)]
+        provider: Option<String>,
+    },
+    /// Remove a secret by name. PREVIEW by default; --apply to delete.
+    #[command(
+        long_about = "Remove a stored secret by name. PREVIEW (dry-run) by default; pass --apply to actually delete the entry from the vault.",
+        after_help = envctl_examples!(
+            "envctl secret rm old-key",
+            "envctl secret rm old-key --apply --confirm",
+        )
+    )]
+    Rm {
+        name: String,
+        #[arg(long)]
+        apply: bool,
+        #[arg(long)]
+        confirm: bool,
+    },
+    /// Rotate a secret by replacing its value. PREVIEW by default; --apply to commit the new value.
+    #[command(
+        long_about = "Replace an existing secret's value (rotation). Value can come from stdin with --value-stdin.",
+        after_help = envctl_examples!(
+            "envctl secret rotate db-password",
+            "cat new-key.pem | envctl secret rotate cert --apply --value-stdin",
+        )
+    )]
+    Rotate {
+        name: String,
+        #[arg(long)]
+        value_stdin: bool,
+        #[arg(long)]
+        apply: bool,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum RelaySubCmd {
+    /// Create a new relay policy with the given configuration. PREVIEW by default; --apply to create.
+    #[command(
+        long_about = "Define a forwarding policy — which secret to use as the upstream, auth provider, hosts/paths/methods, rate/quota limits, and optional expiry.",
+        after_help = envctl_examples!(
+            "envctl secret relay create api --secret github --provider okta --mode passthrough",
+            "envctl secret relay create api --host localhost:8080 --path /api/* --method GET --disabled",
+        )
+    )]
+    Create {
+        name: String,
+        #[arg(long)]
+        secret: String,
+        #[arg(long)]
+        provider: String,
+        #[arg(long)]
+        mode: String,
+        #[arg(long)]
+        upstream_base: Option<String>,
+        #[arg(long = "host")]
+        hosts: Vec<String>,
+        #[arg(long = "path")]
+        paths: Vec<String>,
+        #[arg(long = "method")]
+        methods: Vec<String>,
+        #[arg(long)]
+        expires: Option<String>,
+        #[arg(long)]
+        rate: Option<u32>,
+        #[arg(long)]
+        quota: Option<u64>,
+        #[arg(long)]
+        disabled: bool,
+    },
+    /// Revoke a relay policy. PREVIEW by default; --apply to revoke.
+    #[command(
+        long_about = "Remove a relay policy. All tokens minted under it become invalid immediately.",
+        after_help = envctl_examples!(
+            "envctl secret relay revoke api",
+            "envctl secret relay revoke api --apply --confirm",
+        )
+    )]
+    Revoke {
+        name: String,
+        #[arg(long)]
+        apply: bool,
+        #[arg(long)]
+        confirm: bool,
+    },
+    /// Revoke a specific bearer token issued by a relay. PREVIEW by default; --apply to revoke.
+    #[command(
+        long_about = "Revoke an individual bearer token (by token ID) issued under any relay policy.",
+        after_help = envctl_examples!(
+            "envctl secret relay revoke-token tkn_xxx",
+            "envctl secret relay revoke-token tkn_xxx --apply",
+        )
+    )]
+    RevokeToken {
+        token_id: String,
+        #[arg(long)]
+        apply: bool,
+    },
+    /// List relay policies, optionally including disabled ones.
+    #[command(
+        long_about = "List all configured relay policies with their metadata (mode, hosts, expiry). Use --all to include disabled policies.",
+        after_help = envctl_examples!(
+            "envctl secret relay list",
+            "envctl secret relay list --all",
+        )
+    )]
+    List {
+        #[arg(long)]
+        all: bool,
+    },
+    /// Mint a short-lived bearer token under the named relay policy.
+    #[command(
+        long_about = "Generate a scoped bearer token under an existing relay policy. Specify TTL, mode, target repos/permissions for GitHub-style scopes.",
+        after_help = envctl_examples!(
+            "envctl secret relay mint api --ttl 3600",
+            "envctl secret relay mint gh --repo org/repo --perm write",
+        )
+    )]
+    Mint {
+        name: String,
+        #[arg(long)]
+        ttl: Option<String>,
+        #[arg(long)]
+        mode: Option<String>,
+        #[arg(long)]
+        provider: Option<String>,
+        #[arg(long = "repo")]
+        repos: Vec<String>,
+        #[arg(long = "perm")]
+        perms: Vec<String>,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum CaSubCmd {
+    /// Initialize a local CA. PREVIEW by default; --apply to create.
+    #[command(
+        long_about = "Create a new Certificate Authority (key pair + self-signed cert) in the vault. If one already exists this is a no-op preview.",
+        after_help = envctl_examples!(
+            "envctl secret ca init",
+            "envctl secret ca init --apply",
+        )
+    )]
+    Init {
+        #[arg(long)]
+        apply: bool,
+    },
+    /// Rotate the CA key pair. PREVIEW by default; --apply to rotate + confirm.
+    #[command(
+        long_about = "Generate a new CA key pair and re-issue all leaf certificates. Requires confirmation when --apply is used to prevent accidental rotation.",
+        after_help = envctl_examples!(
+            "envctl secret ca rotate",
+            "envctl secret ca rotate --apply --confirm",
+        )
+    )]
+    Rotate {
+        #[arg(long)]
+        apply: bool,
+        #[arg(long)]
+        confirm: bool,
+    },
+    /// Issue a new leaf certificate for the given common name with optional SANs.
+    #[command(
+        long_about = "Sign a new leaf certificate under the local CA for a specific hostname (CN) with alternative names (SANs), configurable TTL and key usage.",
+        after_help = envctl_examples!(
+            "envctl secret ca issue my.host.local --san alt.host --ttl-days 90",
+            "envctl secret ca issue api.internal --san localhost --usage serverAuth",
+        )
+    )]
+    Issue {
+        cn: String,
+        #[arg(long = "san")]
+        sans: Vec<String>,
+        #[arg(long)]
+        ttl_days: Option<u64>,
+        #[arg(long)]
+        usage: String,
+    },
+    /// Renew an existing leaf certificate. PREVIEW by default; --apply to issue the renewed cert.
+    #[command(
+        long_about = "Renew a previously-issued leaf certificate before it expires. Returns a new cert signed under the current CA.",
+        after_help = envctl_examples!(
+            "envctl secret ca renew my.host.local",
+            "envctl secret ca renew my.host.local --apply",
+        )
+    )]
+    Renew {
+        cn: String,
+        #[arg(long)]
+        apply: bool,
+    },
+    /// Revoke a leaf certificate. PREVIEW by default; --apply to revoke.
+    #[command(
+        long_about = "Revoke (and add to the CA's CRL) a previously-issued leaf certificate. Requires confirmation when --apply is used.",
+        after_help = envctl_examples!(
+            "envctl secret ca revoke my.host.local",
+            "envctl secret ca revoke my.host.local --apply --confirm",
+        )
+    )]
+    Revoke {
+        cn: String,
+        #[arg(long)]
+        apply: bool,
+        #[arg(long)]
+        confirm: bool,
+    },
+    /// Apply trust anchors to system or local trust stores.
+    #[command(
+        long_about = "Install the CA certificate (and optionally intermediate certs) into the OS trust store so leaf certs are validated automatically.",
+        after_help = envctl_examples!(
+            "envctl secret ca trust --target /etc/ssl/certs/ca-certificates.crt",
+            "envctl secret ca trust --system-bundle --apply --confirm",
+        )
+    )]
+    Trust {
+        targets: Vec<String>,
+        #[arg(long)]
+        system_bundle: bool,
+        #[arg(long)]
+        apply: bool,
+        #[arg(long)]
+        confirm: bool,
+    },
+}
+
+#[derive(Subcommand)]
+pub enum GithubAppSubCmd {
+    /// Enroll a GitHub App's identity into the vault. PREVIEW by default; --apply to enroll.
+    #[command(
+        long_about = "Store a GitHub App's credentials (app ID + private key PEM) in the unlocked vault for use by mint-github and other relay consumers.",
+        after_help = envctl_examples!(
+            "envctl secret github-app enroll --app-id 123456 --private-key ./key.pem --apply",
+        )
+    )]
+    Enroll {
+        #[arg(long = "app-id")]
+        app_id: String,
+        #[arg(long = "private-key")]
+        private_key: String,
+        #[arg(long)]
+        apply: bool,
+    },
+    /// Update just the app-id on an existing GitHub App enrollment.
+    #[command(
+        long_about = "Update only the app-id field on an existing GitHub App enrollment without touching the private key. Useful when migrating to a new App.",
+        after_help = envctl_examples!(
+            "envctl secret github-app set-app-id 789012 --apply",
+        )
+    )]
+    SetAppId {
+        #[arg(long = "app-id")]
+        app_id: String,
+        #[arg(long)]
+        apply: bool,
+    },
+    /// Revoke a GitHub App installation token from the vault.
+    #[command(
+        long_about = "Revoke a specific GitHub App installation access token (identified by token string or installation ID). Prevents reuse of that token.",
+        after_help = envctl_examples!(
+            "envctl secret github-app revoke-token --token ghp_xxx",
+            "envctl secret github-app revoke-token --token ghp_xxx --apply",
+        )
+    )]
+    RevokeToken {
+        #[arg(long = "token")]
+        token: String,
+        #[arg(long = "installation-id")]
+        installation_id: Option<u64>,
+        #[arg(long)]
+        apply: bool,
+    },
+}
+
+// Helper structs for the verbs that are args (not sub-subcommands)
+#[derive(Args)]
+pub struct AuditArgs {
+    /// Filter by actor.
+    #[arg(long)]
+    pub actor: Option<String>,
+    /// Filter by relay identity.
+    #[arg(long)]
+    pub relay: Option<String>,
+    /// Start time (ISO 8601).
+    #[arg(long)]
+    pub since: Option<String>,
+    /// End time (ISO 8601).
+    #[arg(long)]
+    pub until: Option<String>,
+    /// Max entries to return.
+    #[arg(long)]
+    pub limit: Option<u32>,
+}
+
+#[derive(Args)]
+pub struct RunArgs {
+    /// Relay identity (repeated for multiple relays).
+    #[arg(long = "relay")]
+    pub relays: Vec<String>,
+    /// Override the relay's auth provider.
+    #[arg(long)]
+    pub provider: Option<String>,
+    /// Mint a one-off ephemeral bearer for this process.
+    #[arg(long)]
+    pub ephemeral: bool,
+    /// Skip loading the default ~/.config/env-ctl/relay.toml profile.
+    #[arg(long = "no-profile")]
+    pub no_profile: bool,
+    /// Use an explicit relay config path instead of the default.
+    #[arg(long)]
+    pub profile: Option<String>,
+    /// Command to run with relay credentials injected into the child only.
+    #[arg(trailing_var_arg = true, allow_hyphen_values = true)]
+    pub argv: Vec<String>,
+}
+
+#[derive(Args)]
+pub struct MintGithubArgs {
+    /// GitHub App installation ID (required).
+    #[arg(long = "installation-id")]
+    pub installation_id: u64,
+    /// Filter to specific repository IDs.
+    #[arg(long = "repository-ids", value_delimiter = ',')]
+    pub repository_ids: Vec<String>,
+    /// Requested permissions (comma-separated).
+    #[arg(long = "permissions", value_delimiter = ',')]
+    pub permissions: Vec<String>,
+    /// TTL in seconds for the minted token.
+    #[arg(long = "ttl-secs")]
+    pub ttl_secs: Option<u64>,
+    /// Output format. Only `json` is supported (the frozen machine contract). Required.
+    #[arg(long = "output")]
+    pub output: String,
+}
+
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     // `dashboard` is manifest-INDEPENDENT (it reads `.meta.yaml`, never the
@@ -943,6 +1481,7 @@ fn main() -> anyhow::Result<()> {
             materialize,
         } => run_env(meta_file, toolchains, materialize, json),
         Cmd::Agent { cmd } => run_agent(engine, cmd, json),
+        Cmd::Secret { cmd } => run_secret(cmd, json),
         Cmd::Completions { shell } => run_completions(shell),
         Cmd::Manage { action } => match action {
             SelfAction::Update { json: action_json } => self_update::run(json || action_json),
@@ -1382,6 +1921,7 @@ fn run_action(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
             | Cmd::Dashboard { .. }
             | Cmd::Env { .. }
             | Cmd::Agent { .. }
+            | Cmd::Secret { .. }
             | Cmd::Completions { .. }
             | Cmd::Manage { .. } => {
                 unreachable!("handled in main")
@@ -1808,6 +2348,440 @@ fn run_agent(engine: Engine, cmd: AgentCmd, json: bool) -> anyhow::Result<()> {
     if !result.ok() {
         std::process::exit(1);
     }
+    Ok(())
+}
+
+/// Run the `envctl secret` subcommand group — delegates to the installed `secretctl` binary
+/// via Engine's subprocess seam. No gRPC client embedded; the CLI is a transparent proxy.
+fn run_secret(cmd: SecretCmd, _json: bool) -> anyhow::Result<()> {
+    let (sink, rx) = EventSink::channel();
+
+    // Build argv for secretctl based on the subcommand variant.
+    let verb_and_argv = match &cmd {
+        SecretCmd::Status {} => ("status", vec!["status".to_string()]),
+        SecretCmd::Init {
+            passphrase_stdin,
+            enroll_usb,
+            usb_partuuid,
+            apply,
+        } => {
+            let mut a = vec!["init".to_string()];
+            if *passphrase_stdin {
+                a.push("--passphrase-stdin".into());
+            }
+            if *enroll_usb {
+                a.push("--enroll-usb".into());
+            }
+            if let Some(p) = usb_partuuid {
+                a.push(format!("--usb-partuuid={}", p));
+            }
+            if *apply {
+                a.push("--apply".into());
+            }
+            ("init", a)
+        }
+        SecretCmd::Unlock { passphrase_stdin } => {
+            let mut a = vec!["unlock".to_string()];
+            if *passphrase_stdin {
+                a.push("--passphrase-stdin".into());
+            }
+            ("unlock", a)
+        }
+        SecretCmd::Lock {} => ("lock", vec!["lock".to_string()]),
+        SecretCmd::Secret { cmd } => {
+            let sub = match cmd {
+                SecretSubCmd::Add {
+                    name,
+                    provider,
+                    value_stdin,
+                    note,
+                    overwrite,
+                    broker_only,
+                } => {
+                    let mut a = vec!["secret".into(), "add".into(), name.clone()];
+                    a.push(format!("--provider={}", provider));
+                    if *value_stdin {
+                        a.push("--value-stdin".into());
+                    }
+                    if let Some(n) = note {
+                        a.push(format!("--note={}", n));
+                    }
+                    if *overwrite {
+                        a.push("--overwrite".into());
+                    }
+                    if *broker_only {
+                        a.push("--broker-only".into());
+                    }
+                    ("secret-add", a)
+                }
+                SecretSubCmd::Get {
+                    name,
+                    reveal,
+                    apply,
+                    confirm,
+                } => {
+                    let mut a = vec!["secret".into(), "get".into(), name.clone()];
+                    if *reveal {
+                        a.push("--reveal".into());
+                    }
+                    if *apply {
+                        a.push("--apply".into());
+                    }
+                    if *confirm {
+                        a.push("--confirm".into());
+                    }
+                    ("secret-get", a)
+                }
+                SecretSubCmd::List { provider } => {
+                    let mut a = vec!["secret".into(), "list".into()];
+                    if let Some(p) = provider {
+                        a.push(format!("--provider={}", p));
+                    }
+                    ("secret-list", a)
+                }
+                SecretSubCmd::Rm {
+                    name,
+                    apply,
+                    confirm,
+                } => {
+                    let mut a = vec!["secret".into(), "rm".into(), name.clone()];
+                    if *apply {
+                        a.push("--apply".into());
+                    }
+                    if *confirm {
+                        a.push("--confirm".into());
+                    }
+                    ("secret-rm", a)
+                }
+                SecretSubCmd::Rotate {
+                    name,
+                    value_stdin,
+                    apply,
+                } => {
+                    let mut a = vec!["secret".into(), "rotate".into(), name.clone()];
+                    if *value_stdin {
+                        a.push("--value-stdin".into());
+                    }
+                    if *apply {
+                        a.push("--apply".into());
+                    }
+                    ("secret-rotate", a)
+                }
+            };
+            sub
+        }
+        SecretCmd::Relay { cmd } => {
+            let sub = match cmd {
+                RelaySubCmd::Create {
+                    name,
+                    secret,
+                    provider,
+                    mode,
+                    upstream_base,
+                    hosts,
+                    paths,
+                    methods,
+                    expires,
+                    rate,
+                    quota,
+                    disabled,
+                } => {
+                    let mut a = vec!["relay".into(), "create".into(), name.clone()];
+                    a.push(format!("--secret={}", secret));
+                    a.push(format!("--provider={}", provider));
+                    a.push(format!("--mode={}", mode));
+                    if let Some(u) = upstream_base {
+                        a.push(format!("--upstream-base={}", u));
+                    }
+                    for h in hosts {
+                        a.push(format!("--host={}", h));
+                    }
+                    for p in paths {
+                        a.push(format!("--path={}", p));
+                    }
+                    for m in methods {
+                        a.push(format!("--method={}", m));
+                    }
+                    if let Some(e) = expires {
+                        a.push(format!("--expires={}", e));
+                    }
+                    if let Some(r) = rate {
+                        a.push(format!("--rate={}", r));
+                    }
+                    if let Some(q) = quota {
+                        a.push(format!("--quota={}", q));
+                    }
+                    if *disabled {
+                        a.push("--disabled".into());
+                    }
+                    ("relay-create", a)
+                }
+                RelaySubCmd::Revoke {
+                    name,
+                    apply,
+                    confirm,
+                } => {
+                    let mut a = vec!["relay".into(), "revoke".into(), name.clone()];
+                    if *apply {
+                        a.push("--apply".into());
+                    }
+                    if *confirm {
+                        a.push("--confirm".into());
+                    }
+                    ("relay-revoke", a)
+                }
+                RelaySubCmd::RevokeToken { token_id, apply } => {
+                    let mut a = vec!["relay".into(), "revoke-token".into(), token_id.clone()];
+                    if *apply {
+                        a.push("--apply".into());
+                    }
+                    ("relay-revoke-token", a)
+                }
+                RelaySubCmd::List { all } => {
+                    let mut a = vec!["relay".into(), "list".into()];
+                    if *all {
+                        a.push("--all".into());
+                    }
+                    ("relay-list", a)
+                }
+                RelaySubCmd::Mint {
+                    name,
+                    ttl,
+                    mode,
+                    provider,
+                    repos,
+                    perms,
+                } => {
+                    let mut a = vec!["relay".into(), "mint".into(), name.clone()];
+                    if let Some(t) = ttl {
+                        a.push(format!("--ttl={}", t));
+                    }
+                    if let Some(m) = mode {
+                        a.push(format!("--mode={}", m));
+                    }
+                    if let Some(p) = provider {
+                        a.push(format!("--provider={}", p));
+                    }
+                    for r in repos {
+                        a.push(format!("--repo={}", r));
+                    }
+                    for p in perms {
+                        a.push(format!("--perm={}", p));
+                    }
+                    ("relay-mint", a)
+                }
+            };
+            sub
+        }
+        SecretCmd::Ca { cmd } => {
+            let sub = match cmd {
+                CaSubCmd::Init { apply } => {
+                    let mut a = vec!["ca".into(), "init".into()];
+                    if *apply {
+                        a.push("--apply".into());
+                    }
+                    ("ca-init", a)
+                }
+                CaSubCmd::Rotate { apply, confirm } => {
+                    let mut a = vec!["ca".into(), "rotate".into()];
+                    if *apply {
+                        a.push("--apply".into());
+                    }
+                    if *confirm {
+                        a.push("--confirm".into());
+                    }
+                    ("ca-rotate", a)
+                }
+                CaSubCmd::Issue {
+                    cn,
+                    sans,
+                    ttl_days,
+                    usage,
+                } => {
+                    let mut a = vec![String::from("ca"), String::from("issue"), cn.clone()];
+                    a.extend(sans.iter().map(|s| format!("--san={}", s)));
+                    if let Some(t) = ttl_days {
+                        a.push(format!("--ttl-days={}", t));
+                    }
+                    a.push(format!("--usage={}", usage));
+                    ("ca-issue", a)
+                }
+                CaSubCmd::Renew { cn, apply } => {
+                    let mut a = vec![String::from("ca"), String::from("renew"), cn.clone()];
+                    if *apply {
+                        a.push("--apply".into());
+                    }
+                    ("ca-renew", a)
+                }
+                CaSubCmd::Revoke { cn, apply, confirm } => {
+                    let mut a = vec![String::from("ca"), String::from("revoke"), cn.clone()];
+                    if *apply {
+                        a.push("--apply".into());
+                    }
+                    if *confirm {
+                        a.push("--confirm".into());
+                    }
+                    ("ca-revoke", a)
+                }
+                CaSubCmd::Trust {
+                    targets,
+                    system_bundle,
+                    apply,
+                    confirm,
+                } => {
+                    let mut a = vec!["ca".into(), "trust-apply".into()];
+                    for t in targets {
+                        a.push(format!("--target={}", t));
+                    }
+                    if *system_bundle {
+                        a.push("--system-bundle".into());
+                    }
+                    if *apply {
+                        a.push("--apply".into());
+                    }
+                    if *confirm {
+                        a.push("--confirm".into());
+                    }
+                    ("ca-trust", a)
+                }
+            };
+            sub
+        }
+        SecretCmd::Audit(args) => {
+            let mut a = vec!["audit".into()];
+            if let Some(actor) = &args.actor {
+                a.push(format!("--actor={}", actor));
+            }
+            if let Some(relay) = &args.relay {
+                a.push(format!("--relay={}", relay));
+            }
+            if let Some(since) = &args.since {
+                a.push(format!("--since={}", since));
+            }
+            if let Some(until) = &args.until {
+                a.push(format!("--until={}", until));
+            }
+            if let Some(limit) = args.limit {
+                a.push(format!("--limit={}", limit));
+            }
+            ("audit", a)
+        }
+        SecretCmd::Run(args) => {
+            let mut a = vec!["run".into()];
+            for r in &args.relays {
+                a.push(format!("--relay={}", r));
+            }
+            if let Some(provider) = &args.provider {
+                a.push(format!("--provider={}", provider));
+            }
+            if args.ephemeral {
+                a.push("--ephemeral".into());
+            }
+            if args.no_profile {
+                a.push("--no-profile".into());
+            }
+            if let Some(profile) = &args.profile {
+                a.push(format!("--profile={}", profile));
+            }
+            // argv: the last element from clap's trailing_var_arg is already split; we join it as the command.
+            if !args.argv.is_empty() {
+                a.extend(args.argv.iter().cloned());
+            }
+            ("run", a)
+        }
+        SecretCmd::MintGithub(args) => {
+            let mut a = vec![
+                "mint-github".into(),
+                format!("--installation-id={}", args.installation_id),
+            ];
+            if !args.repository_ids.is_empty() {
+                a.push(format!(
+                    "--repository-ids={}",
+                    args.repository_ids.join(",")
+                ));
+            }
+            if !args.permissions.is_empty() {
+                a.push(format!("--permissions={}", args.permissions.join(",")));
+            }
+            if let Some(ttl) = args.ttl_secs {
+                a.push(format!("--ttl-secs={}", ttl));
+            }
+            a.push(format!("--output={}", args.output));
+            ("mint-github", a)
+        }
+        SecretCmd::GithubApp { cmd } => {
+            let sub = match cmd {
+                GithubAppSubCmd::Enroll {
+                    app_id,
+                    private_key,
+                    apply,
+                } => {
+                    let mut a = vec!["github-app".into(), "enroll".into()];
+                    a.push(format!("--app-id={}", app_id));
+                    a.push(format!("--private-key={}", private_key));
+                    if *apply {
+                        a.push("--apply".into());
+                    }
+                    ("github-app-enroll", a)
+                }
+                GithubAppSubCmd::SetAppId { app_id, apply } => {
+                    let mut a = vec!["github-app".into(), "set-app-id".into()];
+                    a.push(format!("--app-id={}", app_id));
+                    if *apply {
+                        a.push("--apply".into());
+                    }
+                    ("github-app-set-app-id", a)
+                }
+                GithubAppSubCmd::RevokeToken {
+                    token,
+                    installation_id,
+                    apply,
+                } => {
+                    let mut a = vec!["github-app".into(), "revoke-token".into()];
+                    a.push(format!("--token={}", token));
+                    if let Some(id) = installation_id {
+                        a.push(format!("--installation-id={}", id));
+                    }
+                    if *apply {
+                        a.push("--apply".into());
+                    }
+                    ("github-app-revoke-token", a)
+                }
+            };
+            sub
+        }
+    };
+
+    // Spawn the subprocess via Engine's secrets seam.
+    let (verb, argv) = verb_and_argv;
+    run_secretctl(
+        verb.to_string(),
+        argv,
+        None, // stdin: no secret input needed for these verbs
+        &sink,
+    );
+
+    // Drain events and render results.
+    for ev in rx.iter() {
+        if let Event::SecretsResult {
+            verb: v,
+            json_stdout,
+            stderr,
+            code,
+        } = &ev
+        {
+            if *v == verb && !json_stdout.is_empty() {
+                println!("{}", json_stdout);
+            }
+            if !stderr.is_empty() {
+                eprintln!("{}", stderr);
+            }
+            if let Some(c) = code {
+                std::process::exit(*c);
+            }
+        }
+    }
+
     Ok(())
 }
 
