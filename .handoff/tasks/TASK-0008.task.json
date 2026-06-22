@@ -2,7 +2,7 @@
   "schema": "handoff.task.v1",
   "id": "TASK-0008",
   "title": "Relocate meta-mcp into meta/meta_mcp (first proof of the relocation procedure)",
-  "status": "backlog",
+  "status": "done",
   "priority": "P2",
   "objective": "Relocate meta-mcp into meta/meta_mcp (first proof of the relocation procedure)",
   "path_scope": [
