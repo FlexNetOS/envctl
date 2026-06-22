@@ -1354,9 +1354,9 @@ mod tests {
         tar_buf.extend_from_slice(contents);
         // pad content to a 512-byte boundary
         let pad = (512 - (contents.len() % 512)) % 512;
-        tar_buf.extend(std::iter::repeat(0u8).take(pad));
+        tar_buf.extend(std::iter::repeat_n(0u8, pad));
         // two 512-byte zero blocks mark end of archive
-        tar_buf.extend(std::iter::repeat(0u8).take(1024));
+        tar_buf.extend(std::iter::repeat_n(0u8, 1024));
 
         let mut gz = flate2::write::GzEncoder::new(Vec::new(), flate2::Compression::default());
         gz.write_all(&tar_buf).expect("gz write");
