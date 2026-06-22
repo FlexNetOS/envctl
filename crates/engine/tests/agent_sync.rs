@@ -58,6 +58,12 @@ fn pack_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/agent/pack")
 }
 
+/// The repo's live agent-skill/MCP pack declared by agent-env.yaml.
+fn repo_agent_skills_dir() -> PathBuf {
+    std::fs::canonicalize(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../agent-skills"))
+        .expect("repo agent-skills fixture")
+}
+
 /// The committed local command pack fixture.
 fn cmdpack_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures/agent/cmdpack")
@@ -202,6 +208,101 @@ fn mcp_sync_is_additive_never_clobbers_existing_servers() {
             "{name} must be present after sync"
         );
     }
+}
+
+#[test]
+fn live_agent_skills_mcp_pack_preserves_mesh_servers_for_claude_and_codex() {
+    let pack = repo_agent_skills_dir();
+    let yaml = format!(
+        "agent:\n  - claude-code\n  - codex\nscope: project\nmcps:\n  - source: {pack}\n    mcps:\n      - github\n      - context7\n      - exa\n      - memory\n      - playwright\n      - sequential-thinking\n      - n8n-mcp\n",
+        pack = pack.display()
+    );
+    let (engine, project, cfg) = project_with_config(&yaml);
+
+    let mesh_json = serde_json::json!({
+        "mcpServers": {
+            "broker": { "command": "broker", "env": { "TOKEN": "real-broker-token" } },
+            "repowire": { "command": "repowire" },
+            "weave": { "url": "https://weave.local" }
+        }
+    });
+    std::fs::write(
+        project.join(".mcp.json"),
+        serde_json::to_string_pretty(&mesh_json).unwrap(),
+    )
+    .unwrap();
+
+    std::fs::create_dir_all(project.join(".codex")).unwrap();
+    std::fs::write(
+        project.join(".codex/config.toml"),
+        r#"[mcp_servers.broker]
+command = "broker"
+[mcp_servers.broker.env]
+TOKEN = "real-broker-token"
+[mcp_servers.repowire]
+command = "repowire"
+[mcp_servers.weave]
+url = "https://weave.local"
+"#,
+    )
+    .unwrap();
+
+    let (s, _rx) = sink();
+    let report = engine
+        .agent_sync(
+            AgentSyncSpec {
+                config_path: Some(cfg),
+                apply: true,
+                ..Default::default()
+            },
+            &s,
+        )
+        .expect("apply sync");
+    assert_eq!(report.summary.failed, 0);
+
+    let expected = [
+        "broker",
+        "repowire",
+        "weave",
+        "github",
+        "context7",
+        "exa",
+        "memory",
+        "playwright",
+        "sequential-thinking",
+        "n8n-mcp",
+    ];
+
+    let claude: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(project.join(".mcp.json")).unwrap()).unwrap();
+    let claude_servers = claude["mcpServers"].as_object().unwrap();
+    for name in expected {
+        assert!(
+            claude_servers.contains_key(name),
+            "Claude MCP config must contain {name}"
+        );
+    }
+    assert_eq!(
+        claude_servers["broker"]["env"]["TOKEN"], "real-broker-token",
+        "Claude merge must not overwrite the existing broker secret"
+    );
+
+    let codex: toml::Value = std::fs::read_to_string(project.join(".codex/config.toml"))
+        .unwrap()
+        .parse()
+        .unwrap();
+    let codex_servers = codex["mcp_servers"].as_table().unwrap();
+    for name in expected {
+        assert!(
+            codex_servers.contains_key(name),
+            "Codex MCP config must contain {name}"
+        );
+    }
+    assert_eq!(
+        codex_servers["broker"]["env"]["TOKEN"].as_str().unwrap(),
+        "real-broker-token",
+        "Codex merge must not overwrite the existing broker secret"
+    );
 }
 
 // ---------------------------------------------------------------------------------------
