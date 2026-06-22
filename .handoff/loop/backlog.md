@@ -67,7 +67,7 @@ MERGED: TASK-0026 (#106), TASK-0030+OI-SM-1 (#109), **TASK-0031 PR-1 edge listen
 IN FLIGHT: None. Guardian report notes are informational only (socket pass-through intentional). Next, in dep order:
 1. **TASK-0034** (hardening tail: F10 tonic pin + cargo-audit CI, F11 MSRV check, F18 audit-fsync) → **TASK-0038** (Certs.* Phase-4+).
    Small follow-up: **MADV_DONTDUMP** companion to the merged #112 mlockall.
-   Open follow-ups: **TASK-0031-PR2c** (PROXY-protocol source IP for the per-IP shed behind an L4 front) +
+   Open follow-ups: **TASK-0031-PR2C** (PROXY-protocol source IP for the per-IP shed behind an L4 front) +
    **TASK-0039** (remote-clients-CA lifecycle: mint/≤7d-leaf/renew/revoke for the mTLS verifier).
 SKIP **TASK-0033** (VPS Profile B — owner-gated `[!]`). Resume with `/forge-loop`; for unattended completion use `/auto-provision`.
 completion use `/auto-provision`. FIRST on resume: confirm #126 merged; rebase if DIRTY (every
@@ -137,7 +137,7 @@ foundation IS built (`relay_mint_remote`, `register_remote_client`, `broker/deci
     `WebPkiClientVerifier` (OI-SM-4, ring-only, default-OFF, separate client-CA never the MITM CA). Zero new
     deps; `SecretEvent::EdgeRequestShed` metadata-only; fail-closed; 7 nonce + 5 admission units +
     edge_hardening_e2e. Edge now PR-1+PR-2+PR-3 complete.
-    - [ ] **TASK-0031-PR2c:** parse the PROXY-protocol header to key the per-IP shed on the real client IP
+    - [ ] **TASK-0031-PR2C:** parse the PROXY-protocol header to key the per-IP shed on the real client IP
       when the edge sits behind an L4 front (this cycle keys on `peer.ip()` — correct for direct-bind /
       on-box reverse-tunnel default).
     - [ ] **TASK-0039 (remote-clients-CA lifecycle):** mint/≤7d-leaf/renew/revoke + revocation-set

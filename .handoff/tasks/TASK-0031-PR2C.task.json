@@ -1,6 +1,6 @@
 {
   "schema": "handoff.task.v1",
-  "id": "TASK-0031-PR2c",
+  "id": "TASK-0031-PR2C",
   "title": "Parse PROXY-protocol header to key per-IP shed on real client IP behind an L4 front",
   "status": "backlog",
   "priority": "P2",
@@ -9,7 +9,7 @@
     "**"
   ],
   "acceptance_criteria": [
-    "TASK-0031-PR2c — landed & merged on develop"
+    "TASK-0031-PR2C — landed & merged on develop"
   ],
   "test_commands": [
     "cargo build -p envctl-engine -p envctl",

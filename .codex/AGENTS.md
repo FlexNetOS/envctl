@@ -21,6 +21,10 @@ The generated baseline enables GitHub, Context7, Exa, Memory, Playwright, and Se
 
 ## Workflow Files
 
-- No dedicated workflow command files were generated for this repo.
+- `/forge-loop` - `.codex/prompts/forge-loop.md`
+- `/session-relay` - `.codex/prompts/session-relay.md`
+- `/session-relay-handoff` - `.codex/prompts/session-relay-handoff.md`
+- `/session-relay-resume` - `.codex/prompts/session-relay-resume.md`
+- `/session-relay-wrap-up` - `.codex/prompts/session-relay-wrap-up.md`
 
 Use these workflow files as reusable task scaffolds when the detected repository workflows recur.
