@@ -31,7 +31,7 @@ status: CYCLE COMPLETE 2026-06-22
   --theirs); the revoke runtime dependency is now satisfied on develop.
   **NEXT PICK: TASK-0038 (Certs.* Phase-4+).** TASK-0034 is DONE (PR #135 MERGED). Open follow-ups:
   MADV_DONTDUMP (companion to
-  #112), TASK-0031-PR2c (PROXY-protocol source IP), TASK-0039 (remote-clients-CA lifecycle). SKIP TASK-0033 (VPS
+  #112), TASK-0031-PR2C (PROXY-protocol source IP), TASK-0039 (remote-clients-CA lifecycle). SKIP TASK-0033 (VPS
   Profile B, owner-gated [!]).
   OPERATIONAL (not a forge cycle): a weave message requested `github-app enroll` to unblock the App's mint-github
   (404 / "App id not enrolled") — that is the TASK-0026 fail-closed guard working as designed, NOT a bug. Enroll
@@ -66,7 +66,7 @@ status: CYCLE COMPLETE 2026-06-22
   resume; #120/#121 (manifest portability) also landed. The relay edge is now PR-1 (listener) + PR-2 (hardening)
   + PR-3 (stream tear-down) complete.
   **NEXT PICK: TASK-0027 (early-revoke) → TASK-0028 (GUI parity) → TASK-0037 (Phase-7 verify) → TASK-0034
-  (hardening tail) → TASK-0038 (Certs.* Phase-4+).** New follow-ups filed: TASK-0031-PR2c (PROXY-protocol
+  (hardening tail) → TASK-0038 (Certs.* Phase-4+).** New follow-ups filed: TASK-0031-PR2C (PROXY-protocol
   source IP for per-IP shed behind an L4 front), TASK-0039 (remote-clients-CA lifecycle: mint/≤7d-leaf/renew/
   revoke for the mTLS verifier). Small follow-up: MADV_DONTDUMP companion to #112 mlockall. SKIP TASK-0033
   (VPS Profile B, owner-gated [!]).

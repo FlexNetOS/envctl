@@ -38,7 +38,7 @@ in Epic F is the Phase-7 verify-don't-rebuild pass, the hardening tail, and Cert
    source/merged PRs, don't re-port what's already done.
 2. Then **TASK-0034** (hardening tail: F10 tonic version-pin + cargo-audit in CI, F11 MSRV-1.80 check job,
    F18 audit-log fsync) → **TASK-0038** (Certs.* Phase-4+). Small follow-up: **MADV_DONTDUMP** companion to the
-   merged #112 mlockall. Open: **TASK-0031-PR2c** (PROXY-protocol source IP), **TASK-0039** (remote-clients-CA
+   merged #112 mlockall. Open: **TASK-0031-PR2C** (PROXY-protocol source IP), **TASK-0039** (remote-clients-CA
    lifecycle for the mTLS verifier).
 SKIP **TASK-0033** (VPS Profile B) — owner-gated `[!]`.
 
