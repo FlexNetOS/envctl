@@ -62,7 +62,7 @@ additive infra — let it merge — but it does **not** close TASK-0020.
 - **Dependabot** GHSA-8m95-fffc-h4c5 (libsql-sqlite3-parser, low) dismissed as unreachable+unfixable (rationale in `crates/secrets-store-libsql/Cargo.toml`).
 
 
-### ⏭ NEXT PICK (updated 2026-06-22): **TASK-0008** (meta-mcp relocation proof)
+### ⏭ NEXT PICK (updated 2026-06-22): **TASK-0015** (agent-env provisioning fidelity)
 MERGED: TASK-0026 (#106), TASK-0030+OI-SM-1 (#109), **TASK-0031 PR-1 edge listener (#111)**, **TASK-0036 mlockall (#112)**, **TASK-0032 F5 stream tear-down (#117)**, **TASK-0035 gRPC gaps (#108)**, **TASK-0031-PR2 F2 edge hardening (#122)**, **TASK-0027 early-revoke (#124)**, **TASK-0037 Phase-7 verify-don't-rebuild (#131)**, plus infra #113 (low-cost-kdf-tests) / #114/#115/#116/#120/#121 (Seed + manifest portability + kasetto --help).
 IN FLIGHT: None. Guardian report notes are informational only (socket pass-through intentional). Next, in dep order:
 1. **TASK-0034** (hardening tail: F10 tonic pin + cargo-audit CI, F11 MSRV check, F18 audit-fsync) → **TASK-0038** (Certs.* Phase-4+).
@@ -310,7 +310,11 @@ verify env health.
   (merged 2026-06-22): typed `meta_boundary` report on `EnvReport`, high-severity
   `boundary_violation` drift for `meta-tool-links`, GUI drift label parity, and META_ROOT-aware
   detect/install/verify for `meta-tool-links`.
-- [ ] **TASK-0008 (P2):** Relocate **meta-mcp** → `meta/meta_mcp` (lowest risk; first proof of procedure).
+- [x] **TASK-0008 (P2):** Relocate **meta-mcp** → `meta/meta_mcp` (lowest risk; first proof of procedure).
+  VERIFIED already satisfied 2026-06-22: `/home/drdave/Desktop/meta/meta_mcp` exists and is registered
+  in `.meta.yaml`; no `meta-mcp/` directory remains; `~/.local/bin/meta-mcp` is a symlink to
+  `/home/drdave/Desktop/meta/target/release/meta-mcp`; `meta-mcp` builds from the meta workspace and
+  `cargo test -p meta-mcp` passes (10 tests) with toolchain cargo at Rust 1.88 path.
 - [!] **TASK-0009 (P2):** Relocate **kasetto + kst** — superseded by Epic C (kasetto becomes built-in;
   no external binary to relocate once absorbed). Until C lands: meta source v3.0.0 < installed v3.1.0.
 - [x] **TASK-0010 (P2):** Relocate **rtk + rtk-monitor** — DONE 2026-06-13 (human-supervised session,

@@ -7,10 +7,9 @@ envctl owns and contains the meta environment: every FlexNetOS tool/dotfile/.loc
 Git > .handoff/ledger.db > tasks/*.task.json > active.md > this packet.
 
 ## 3. Progress
-Done: 41/53.  Tamper-evident events verified: 6.
+Done: 42/53.  Tamper-evident events verified: 3.
 
 ## 4. Remaining (next safe first)
-- [P2] **TASK-0008** — Relocate meta-mcp into meta/meta_mcp (first proof of the relocation procedure)
 - [P2] **TASK-0009** — Relocate kasetto + kst (BLOCKED: superseded by Epic C built-in absorption)
 - [P1] **TASK-0015** — Provisioning fidelity — verbatim skill copy; 5 command-format + 4 MCP-merge additive transforms
 - [P1] **TASK-0016** — Lock unification — fold agent assets into envctl.lock (SHA-256 section)
@@ -24,13 +23,13 @@ Done: 41/53.  Tamper-evident events verified: 6.
 - [P1] **TASK-0039** — remote-clients-CA lifecycle: mint/<=7d-leaf/renew/revoke + revocation-set propagation for mTLS verifier
 
 ## 5. Next Best Task
-**TASK-0008** — Relocate meta-mcp into meta/meta_mcp (first proof of the relocation procedure)
-  objective: Relocate meta-mcp into meta/meta_mcp (first proof of the relocation procedure)
+**TASK-0015** — Provisioning fidelity — verbatim skill copy; 5 command-format + 4 MCP-merge additive transforms
+  objective: Provisioning fidelity — verbatim skill copy; 5 command-format + 4 MCP-merge additive transforms
 
 ## 6. Resume Commands
 ```bash
 hf resume
-hf claim TASK-0008
+hf claim TASK-0015
 ```
 
 ## 7. Machine Summary
@@ -44,6 +43,7 @@ hf claim TASK-0008
     "TASK-0005",
     "TASK-0006",
     "TASK-0007",
+    "TASK-0008",
     "TASK-0010",
     "TASK-0011",
     "TASK-0012",
@@ -79,11 +79,10 @@ hf claim TASK-0008
     "TASK-0051",
     "TASK-0052"
   ],
-  "next_command": "hf claim TASK-0008",
-  "next_task_id": "TASK-0008",
+  "next_command": "hf claim TASK-0015",
+  "next_task_id": "TASK-0015",
   "project": "handoff (Continuity Ledger Kernel)",
   "remaining": [
-    "TASK-0008",
     "TASK-0009",
     "TASK-0015",
     "TASK-0016",
@@ -98,6 +97,6 @@ hf claim TASK-0008
   ],
   "schema": "handoff.packet.v2",
   "tasks_total": 53,
-  "witnessed_events_verified": 6
+  "witnessed_events_verified": 3
 }
 ```
