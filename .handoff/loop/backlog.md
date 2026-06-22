@@ -151,8 +151,11 @@ foundation IS built (`relay_mint_remote`, `register_remote_client`, `broker/deci
   `relay-edge`. Detection ≤2s; sub-second watch-push deferred to PR-4.
 - [!] **TASK-0033 (VPS Profile B, BLOCKED — gated non-shippable):** F7 install-time fail-closed gate +
   F8/OI-SM-2 operator-authorizer protocol + OI-SM-3 external trusted-time. Keep gated until designed.
-- [ ] **TASK-0034 (hardening tail):** F10 (CVE-2024-47609 tonic pin + cargo-audit CI), F11/OQ-1 (MSRV
-  1.80 `cargo +1.80 check --locked`), F18 (group-commit audit-fsync spec), F13/F17/F19/F23 defense-in-depth.
+- [~] **TASK-0034 (hardening tail — PR #135 auto-merge armed, guardian PASS):** F10 (CVE-2024-47609
+  tonic/hyper floors + cargo-audit CI), F11/OQ-1 (MSRV 1.80 `cargo +1.80 check --workspace --locked`
+  CI), F18 (group-commit audit-fsync spec: N=100/T=100ms, barrier-before-response, whole-batch deny
+  on barrier failure), F13/F17/F19/F23 defense-in-depth docs reconciled. Tick to `[x]` only after
+  GitHub reports PR #135 `MERGED`.
 
 ### secretd gRPC surface gaps (Phase-6 honest Unimplemented seams — engine lacks public read paths)
 - [x] **TASK-0035 (in review — branch `task-0035-grpc`):** Vault `List`/`Rm`/`Rotate`,

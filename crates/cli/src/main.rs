@@ -3,14 +3,10 @@
 //! `--apply` to act. `auto-detect` is read-only and prints a real EnvReport.
 mod self_update;
 
-use baby_mimalloc::{new_mimalloc_mmap_mutex, MimallocMmapMutex};
 use clap::{Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::Shell;
 use std::io::IsTerminal;
 use std::time::Duration;
-
-#[global_allocator]
-static GLOBAL: MimallocMmapMutex = new_mimalloc_mmap_mutex();
 
 /// Clap help styling (ported from kasetto `colors::clap_styles`): amber `#e8a94d`
 /// bold `Usage:` / `Commands:` / `Options:` headers + literals, secondary-grey

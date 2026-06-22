@@ -3,7 +3,7 @@
 **Status:** Ops/deploy design (concrete, sourced). READ-ONLY companion to the design set.
 **Reads with:** `ARCHITECTURE.md` (§one rustls/ring, §FS-S7 root pinning), `SERVER-MODE.md` (§2.2 C-isolation, §3 control-unreachable, §6 edge, §7 deploy steps), `THREAT-MODEL.md` (FS-S*/A*), `DESIGN-NOTES.md` (CF-1/CF-2/CF-6, HF-17/HF-18, R7/R8/R9, OI-1/OI-14/OI-23/OI-24), `ROADMAP.md` (Phase 0/1/7 acceptance).
 **Scope:** The CI gates, MSRV policy, no-C/single-backend enforcement, supply-chain controls, and the deploy units that stand `secretd` up on THIS dual-RTX-5090 box (Profile A, the recommended default). VPS (Profile B) deploy ops are flagged non-shippable (OI-SM-2/3) and only sketched.
-**Verified-against (this box, 2026-06-02):** `rustc 1.96.0 (ac68faa20 2026-05-25)`, `cargo 1.96.0`. Workspace declares `rust-version = "1.80"` and `rust-toolchain.toml` channel `stable`. `cargo-deny`/`cargo-vet` are NOT yet installed here (`cargo deny --version` → not found) — UNVERIFIED locally, install in CI per below.
+**Verified-against (this box, 2026-06-02; TASK-0034 refreshed gates on 2026-06-22):** workspace declares `rust-version = "1.80"` and `rust-toolchain.toml` channel `stable`; CI now verifies the floor with `cargo +1.80.0 check --workspace --locked` and RustSec advisories with `ci/gates/cargo-audit.sh`.
 
 This document grounds every gate in the artifacts that already specify it. Where a design doc already
 mandates a gate (e.g. SERVER-MODE §2.2, §3; DESIGN-NOTES R7/R9, HF-18) this doc gives the *concrete*
@@ -164,7 +164,14 @@ Rationale: ARCHITECTURE §FS-S7 explicitly says `native-tls`, `rustls-tls-native
 
 - **Declared floor:** `rust-version = "1.80"` in `[workspace.package]` (workspace `Cargo.toml`).
 - **Dev toolchain:** `rust-toolchain.toml` stays floating `stable` for ergonomics (OI-24). The 1.80 floor is a *separate, verified* CI gate — it is NOT the dev default. (This is why local `rustc` is 1.96 while the floor is 1.80; that gap is expected and intentional.)
-- **The known risk (HF-18, UNVERIFIED here):** `url → idna → icu` has historically raised MSRV past 1.80, and `reqwest 0.12` pulls `url`. If the 1.80 gate fails on an `icu`/`idna` edge, the locked remedy is: pin `idna`/`icu` patch versions to a 1.80-compatible release, OR raise the shared floor with explicit operator sign-off (recorded in DESIGN-NOTES). The gate exists precisely to force that decision instead of letting the floor rot.
+- **Verified gate:** `cargo +1.80.0 check --workspace --locked` is now a required CI job. The
+  lockfile pins the few transitive packages that otherwise drift above the floor (`url`/`idna`,
+  `toml_edit`/`indexmap`, GUI/browser helpers, and other patch-level bumps). If a future update fails
+  this gate, either pin the affected package to a 1.80-compatible patch or raise the shared floor with
+  explicit operator sign-off (recorded in DESIGN-NOTES).
+- **Feature scope:** this parent workspace deliberately does **not** run `--all-features`: the
+  libSQL store exposes mutually-exclusive `remote` and `embedded` features and intentionally
+  compile-errors when both are selected. The MSRV gate covers the locked default shipping graph.
 
 ### 2.2 Concrete gate
 
@@ -177,9 +184,8 @@ Rationale: ARCHITECTURE §FS-S7 explicitly says `native-tls`, `rustls-tls-native
       - uses: dtolnay/rust-toolchain@1.80.0          # pinned-version form, https://github.com/dtolnay/rust-toolchain
       - uses: Swatinem/rust-cache@v2                 # https://github.com/Swatinem/rust-cache
       # `check`, not `build`: MSRV is about the compiler accepting the source, not producing artifacts.
+      # No `--all-features`: the store backend features are mutually exclusive in the parent workspace.
       - run: cargo +1.80.0 check --workspace --locked
-      - run: cargo +1.80.0 check --workspace --locked --all-features
-      - run: cargo +1.80.0 check --workspace --locked --no-default-features
 ```
 
 Optional hardening (recommended): add `cargo-msrv` as an *advisory* (non-gating) job to auto-discover the true floor and warn if it drifts above 1.80, so the team sees a floor bump coming. https://github.com/foresterre/cargo-msrv
@@ -551,7 +557,7 @@ secretctl keyslot add --factor usb --partuuid "$(blkid -o value -s PARTUUID /dev
 envctl reset secretd
 ```
 
-Note (`Type=notify`): the daemon's startup self-check (SERVER-MODE §3.3 — refuse to start unless exactly one non-loopback listener exists and the control socket is a UDS with no TCP control bind) and the USB-keyslot check (§5.2) must complete *before* `sd_notify READY=1`, so systemd treats a fail-closed refusal as a failed start, not a running service. UNVERIFIED: whether `secretd` currently links an sd_notify implementation (e.g. `sd-notify` crate, pure-Rust) — flagged §9.
+Note (`Type=notify`): the daemon's startup self-check (SERVER-MODE §3.3 — refuse to start unless exactly one non-loopback listener exists and the control socket is a UDS with no TCP control bind) and the USB-keyslot check (§5.2) must complete *before* `sd_notify READY=1`, so systemd treats a fail-closed refusal as a failed start, not a running service. `secretd` links the pure-Rust `sd-notify` crate on the MSRV-compatible 0.4 line and sends READY/STOPPING best-effort notifications.
 
 ### 8.3 Store wiring (SERVER-MODE §2.2 recommended, §7.2 step 2)
 
@@ -600,13 +606,13 @@ VPS deploy is explicitly gated as non-shippable until the operator-box→VPS aut
 
 | # | Item | Severity | Notes / proposed resolution |
 |---|---|---|---|
-| OQ-1 | **MSRV 1.80 vs `reqwest 0.12 → url → idna → icu`** (HF-18) | HIGH | UNVERIFIED here. Run the §2.2 gate first; if it breaks, pin `idna`/`icu` to a 1.80-compatible patch OR raise the floor with recorded operator sign-off. Decision must be made before the first tagged release. |
+| OQ-1 | **MSRV 1.80 vs `reqwest 0.12 → url → idna`** (HF-18) | HIGH | RESOLVED in TASK-0034. `cargo +1.80.0 check --workspace --locked` passes and is a CI job; the lockfile pins the URL/IDNA and other transitive patch lines that otherwise drift above 1.80. Future updates must keep the gate green or raise the floor with recorded operator sign-off. |
 | OQ-2 | **`cargo-deny` config schema version drift** | MEDIUM | The §4.1 `deny.toml` targets the v2 schema; confirm exact keys against the pinned cargo-deny version's docs before merge (the tool renames keys across majors). |
 | OQ-3 | **libsql-ffi scoped allow in cargo-deny** when `secrets-store-libsql` lands (Phase 1) | MEDIUM | Convert the outright `libsql-ffi` ban to a `wrappers`-scoped allow (permitted only when pulled by that one crate), mirroring the §1.1 Gate-3 tree assertion and SERVER-MODE §80. |
-| OQ-4 | **sd_notify support in `secretd`** for `Type=notify` | MEDIUM | UNVERIFIED whether secretd links a pure-Rust `sd-notify`. If not, use `Type=simple` + a post-start readiness probe, but then the startup self-check refusal is less cleanly surfaced to systemd. |
+| OQ-4 | **sd_notify support in `secretd`** for `Type=notify` | MEDIUM | RESOLVED. `secretd` links pure-Rust `sd-notify` on the MSRV-compatible 0.4 line and sends READY/STOPPING best-effort notifications. |
 | OQ-5 | **Bit-for-bit reproducible `secretd` binary** | MEDIUM | Not yet configured (§6.2). For a secrets daemon, an independently-rebuildable published binary is high value; needs `--remap-path-prefix`, `SOURCE_DATE_EPOCH`, deterministic debuginfo, and a documented build env. |
 | OQ-6 | **SLSA provenance / signed release artifacts** | MEDIUM | Beyond SBOM: consider `cargo dist` + GitHub artifact attestations / cosign for the released `secretd`/`secretctl` binaries so operators can verify provenance. Not yet specified. |
-| OQ-7 | **`cargo audit` vs `cargo deny check advisories`** overlap | LOW | `cargo-deny` advisories subsumes `cargo-audit`; keep ONE to avoid divergent ignore-lists. Recommend cargo-deny only. |
+| OQ-7 | **`cargo audit` vs `cargo deny check advisories`** overlap | LOW | RESOLVED for TASK-0034: use `cargo audit` only for the advisory CI gate, with explicit documented exceptions for `rsa` (no fixed stable release) and `time` (fixed line conflicts with Rust/Cargo 1.80). Add `cargo-deny` later only for licenses/bans/sources if needed, not as a second advisory authority. |
 | OQ-8 | **`sqld` version pinning + supply chain** (Phase 1) | MEDIUM | The separate `sqld` process is itself a deployed C binary; pin its version, track its CVEs, and decide whether it ships from the envctl manifest or is operator-provisioned. The no-C *Rust* gate does not cover the external `sqld` binary. |
 | OQ-9 | **`control-types-not-in-edge` grep precision** | LOW | The §1.2 grep is a heuristic until the real edge/control module names exist; tighten the type-name list and the `EDGE_SRC` path when the edge module lands (Phase 5/§3.2). |
 | OQ-10 | **Where gates run pre-merge into envctl** (Phase 7) | MEDIUM | On merge into `envctl/crates/`, all gates here must re-run in the *parent* workspace (re-resolved single lockfile, `rustix` row hand-unioned to `["process","net"]`, HF-17). Confirm envctl's MSRV ≥ 1.80 or raise its floor with sign-off. |

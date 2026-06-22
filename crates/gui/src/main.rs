@@ -8,11 +8,6 @@
 //! explicit proof the worker-closure bounds hold.
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use baby_mimalloc::{new_mimalloc_mmap_mutex, MimallocMmapMutex};
-
-#[global_allocator]
-static GLOBAL: MimallocMmapMutex = new_mimalloc_mmap_mutex();
-
 mod theme;
 
 use eframe::egui::{self, Color32, RichText};

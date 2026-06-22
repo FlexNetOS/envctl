@@ -202,8 +202,8 @@ Remote clients trust the edge via the **public PKI** — they install nothing. M
 ### 6.2 Rate-limit / DoS
 
 - **mTLS/DPoP-required before app bytes:** unauthenticated peers are dropped at the handshake, before any crypto / before the C core / before a DB write.
-- **Per-source-IP handshake rate limit + per-client-id token buckets + global connection cap + body-size caps + request timeouts** (absorbs slowloris/floods). The **accept-loop DoS class (CVE-2024-47609)** applies to this NEW network listener (it is a network-listener bug, NOT addressed by "control is UDS-only"): pin `tonic ≥ 0.12.3` + a patched hyper line, enforced by `cargo audit` in CI.
-- **Authenticated-flood / write-amplification defense:** a compromised client with a valid key can drive high-rate swaps, each hitting `decide()`, the bearer verify, and the **durable audit fsync** (HF-14). Enforce `rate_limit_per_min` and `quota_budget` as **hard pre-`decide()` admission control** (shed before any crypto or DB write); **group-commit** audit writes for high-rate swaps while preserving "durable before response" (the group fsyncs before any batched response returns); cap concurrent in-flight swaps per `client_id` and globally; keep MITM leaf minting rate-limited and cached.
+- **Per-source-IP handshake rate limit + per-client-id token buckets + global connection cap + body-size caps + request timeouts** (absorbs slowloris/floods). The **accept-loop DoS class (CVE-2024-47609)** applies to this NEW network listener (it is a network-listener bug, NOT addressed by "control is UDS-only"): pin `tonic >= 0.12.3` (workspace floor `0.12.3`) + a named patched hyper line (workspace floor `1.10.1`, lock-resolved `1.10.1`), enforced by `ci/gates/cargo-audit.sh` / `cargo audit` in CI.
+- **Authenticated-flood / write-amplification defense:** a compromised client with a valid key can drive high-rate swaps, each hitting `decide()`, the bearer verify, and the **durable audit fsync** (HF-14). Enforce `rate_limit_per_min` and `quota_budget` as **hard pre-`decide()` admission control** (shed before any crypto or DB write); current libSQL audit appends are per-row barriers (stronger than batching). A future **group-commit** optimization must preserve "durable before response": cap each batch at **N=100 rows or T=100 ms**, complete the fsync/barrier before **any** batched response returns, and map any batch fsync failure to a durable-deny/403 for the whole batch (never 200). Cap concurrent in-flight swaps per `client_id` and globally; keep MITM leaf minting rate-limited and cached.
 
 ### 6.3 Control-plane unreachability (proven, §3) and C-core exposure
 
@@ -217,6 +217,11 @@ edge: mTLS/DPoP verify  →  per-client rate/quota admission  →  decide() == A
    →  durable append_audit + fsync_barrier confirmed  →  THEN fetch real key (inside Allow)  →  Upstream::send
 ```
 Any failure before the barrier maps to `InternalRefused` / 403 with a durable deny audit — never a fall-through to `Upstream::send`. For a remote `sqld`, a barrier timeout is a hard fail-closed deny, and the deny itself is durably auditable on a path that does not depend on the same stalled node (the operator-box-local audit mirror under `~/.local/state/env-ctl`). Forbidden state FS-S26: a remote swap returns Allowed before its audit row is durably committed.
+
+If audit appends are ever batched, FS-S26 applies to the batch as a single commit group: max 100 rows
+or 100 ms of waiting, whichever comes first; no response in the group may return until the shared
+barrier succeeds; a barrier failure converts every member to a deny response and must not leak an
+Allowed/200 before the deny is itself auditable.
 
 ### 6.5 Availability coupling (ACME)
 

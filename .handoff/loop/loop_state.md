@@ -29,8 +29,8 @@ status: CYCLE COMPLETE 2026-06-22
   no-c/shape/enable + fmt + clippy gate-axis & --all-targets + build all exit 0; argv replica verified field-for-field
   vs secretctl/src/cli.rs, no drift). #124 (TASK-0027) merged mid-cycle → rebased onto it clean (cycle artifacts
   --theirs); the revoke runtime dependency is now satisfied on develop.
-  **NEXT PICK: TASK-0037 (Phase-7 verify-don't-rebuild) → TASK-0034 (hardening tail: F10 tonic pin + cargo-audit
-  CI, F11 MSRV, F18 audit-fsync) → TASK-0038 (Certs.* Phase-4+).** Open follow-ups: MADV_DONTDUMP (companion to
+  **NEXT PICK: TASK-0034 is implemented in PR #135 (auto-merge armed; tick only after MERGED) →
+  TASK-0038 (Certs.* Phase-4+).** Open follow-ups: MADV_DONTDUMP (companion to
   #112), TASK-0031-PR2c (PROXY-protocol source IP), TASK-0039 (remote-clients-CA lifecycle). SKIP TASK-0033 (VPS
   Profile B, owner-gated [!]).
   OPERATIONAL (not a forge cycle): a weave message requested `github-app enroll` to unblock the App's mint-github
