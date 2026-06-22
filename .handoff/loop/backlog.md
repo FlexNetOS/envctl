@@ -62,7 +62,7 @@ additive infra — let it merge — but it does **not** close TASK-0020.
 - **Dependabot** GHSA-8m95-fffc-h4c5 (libsql-sqlite3-parser, low) dismissed as unreachable+unfixable (rationale in `crates/secrets-store-libsql/Cargo.toml`).
 
 
-### ⏭ NEXT PICK (updated 2026-06-22): **TASK-0015** (agent-env provisioning fidelity)
+### ⏭ NEXT PICK (updated 2026-06-22): **TASK-0016** (agent-asset lock unification)
 MERGED: TASK-0026 (#106), TASK-0030+OI-SM-1 (#109), **TASK-0031 PR-1 edge listener (#111)**, **TASK-0036 mlockall (#112)**, **TASK-0032 F5 stream tear-down (#117)**, **TASK-0035 gRPC gaps (#108)**, **TASK-0031-PR2 F2 edge hardening (#122)**, **TASK-0027 early-revoke (#124)**, **TASK-0037 Phase-7 verify-don't-rebuild (#131)**, plus infra #113 (low-cost-kdf-tests) / #114/#115/#116/#120/#121 (Seed + manifest portability + kasetto --help).
 IN FLIGHT: None. Guardian report notes are informational only (socket pass-through intentional). Next, in dep order:
 1. **TASK-0034** (hardening tail: F10 tonic pin + cargo-audit CI, F11 MSRV check, F18 audit-fsync) → **TASK-0038** (Certs.* Phase-4+).
@@ -352,8 +352,14 @@ preset; multi-host resolver; 5 cmd + 4 MCP-merge additive transforms; 3 lock mod
   non-printing, front-end parity.
 - [ ] **TASK-0014:** CLI verbs `envctl agent {sync,add,remove,lock,list,clean}` (--dry-run/--json/--locked)
   + GUI parity.
-- [ ] **TASK-0015:** Provisioning fidelity — verbatim skill copy; 5 command-format transforms; 4
+- [x] **TASK-0015:** Provisioning fidelity — verbatim skill copy; 5 command-format transforms; 4
   MCP-merge formats (ADDITIVE, never-clobber — must preserve global broker/repowire/weave servers).
+  DONE 2026-06-22, PR #146: added live `agent-skills` MCP-pack regression through
+  `Engine::agent_sync` for `claude-code` + `codex`, proving broker/repowire/weave survive while
+  github/context7/exa/memory/playwright/sequential-thinking/n8n-mcp are added to both `.mcp.json`
+  and `.codex/config.toml`; kept mesh secrets untouched; cleaned a pinned-toolchain clippy lint in
+  the agent-env source test helper; ignored ephemeral `.handoff/locks/`. CI all green on #146 and
+  `hf test TASK-0015` witnessed build+p7 before `hf done`.
 - [ ] **TASK-0016:** Lock unification — fold agent assets into `envctl.lock` (SHA-256 section) or keep
   kasetto.lock owned by the subsystem; reframe `manifest/agent-env.toml` external-binary → built-in.
 - [ ] **TASK-0017:** Adopt kasetto `extends` config composition for envctl component manifests.

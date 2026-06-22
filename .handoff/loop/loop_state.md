@@ -8,10 +8,22 @@ worktree: (per-cycle: meta/.worktrees/<slug>/envctl off develop)
 cycle_budget: 1   # heavy-context resume sessions — 1 cohesive build cycle then hand off
 wrap_every: 5   # batch boundary: run reaper + wrap-up + evolution-steward every N completed cycles (no per-task pause)
 last_wrapup_total: 18   # cycles_total at the last completed wrap-up boundary; boundary DUE when (cycles_total - this) >= wrap_every
-cycles_this_session: 3   # RESUME SESSION 2026-06-22: cycles = TASK-0038, TASK-0007, TASK-0008
-cycles_total: 22   # 21 previous cycles + TASK-0008 (verified already satisfied)
-last_item: TASK-0008 (meta-mcp relocation proof) — VERIFIED/DONE
+cycles_this_session: 4   # RESUME SESSION 2026-06-22: cycles = TASK-0038, TASK-0007, TASK-0008, TASK-0015
+cycles_total: 23   # 22 previous cycles + TASK-0015 (PR #146)
+last_item: TASK-0015 (agent-env provisioning fidelity) — DONE, PR #146
 status: CYCLE COMPLETE 2026-06-22
+  Cycle = TASK-0015. PR #146 MERGED 2026-06-22T23:51:42Z. Added a live-pack regression that drives
+  `Engine::agent_sync` against the real `agent-skills` MCP pack for both `claude-code` and `codex`,
+  proving broker/repowire/weave are preserved while github/context7/exa/memory/playwright/
+  sequential-thinking/n8n-mcp are added to `.mcp.json` and `.codex/config.toml`; existing broker
+  secrets remain untouched. Also cleaned a pinned-toolchain clippy lint in the agent-env source test
+  helper and ignored ephemeral `.handoff/locks/`. Verification: engine+CLI build, engine agent_sync
+  and agent_sync_parity tests, full envctl-agent-env tests, clippy for envctl-engine+agent-env,
+  fmt, p7, loop-state, no-c, agent-env gate, `hf test TASK-0015`, MSRV 1.88 spot check, and all
+  GitHub checks green on #146. `hf resume --json` now points at TASK-0016. Batch boundary is due
+  because cycles_total - last_wrapup_total == wrap_every (23 - 18 == 5); run the boundary before
+  claiming TASK-0016.
+
   Cycle = TASK-0008. VERIFIED already satisfied 2026-06-22. `/home/drdave/Desktop/meta/meta_mcp`
   exists and is registered in `.meta.yaml`; `/home/drdave/Desktop/meta/meta-mcp` is absent;
   `~/.local/bin/meta-mcp` resolves to `/home/drdave/Desktop/meta/target/release/meta-mcp`.
@@ -45,7 +57,7 @@ status: CYCLE COMPLETE 2026-06-22
   (hf card minting) and TASK-0052 (harness_hub packaging) done. `hf handoff` now renders Done 40/53, next safe =
   TASK-0007. Added Codex prompt shims for /forge-loop and session-relay aliases because Codex slash commands were
   missing on reload. Normalized TASK-0031-PR2c -> TASK-0031-PR2C inside the task id so the hf schema accepts it.
-  **NEXT PICK: TASK-0015** per `hf resume --json`. Open follow-ups: TASK-0031-PR2C (PROXY-protocol source IP),
+  **NEXT PICK: TASK-0016** per `hf resume --json`. Open follow-ups: TASK-0031-PR2C (PROXY-protocol source IP),
   TASK-0039 (remote-clients-CA lifecycle), MADV_DONTDUMP companion to #112. SKIP TASK-0033 (VPS Profile B,
   owner-gated [!]).
   OPERATIONAL (not a forge cycle): a weave message requested `github-app enroll` to unblock the App's mint-github
@@ -55,7 +67,7 @@ status: CYCLE COMPLETE 2026-06-22
   --private-key <original-app.pem>`. DO NOT scan the box for the PEM (the sandbox correctly denies credential
   exploration). A multi-daemon "which secretd is canonical?" question was also raised on weave — held for the owner
   to confirm the authoritative socket/data-dir before any daemon switch.
-  FIRST on resume: start from `hf resume --json`; current next safe is TASK-0015 unless this handoff PR changes it.
+  FIRST on resume: start from `hf resume --json`; current next safe is TASK-0016 unless this handoff PR changes it.
   Resume via `/forge-loop resume` or `/prompt:forge-loop resume`.
   [historical — session 7] HANDING OFF 2026-06-17 (session 7, 1 cycle done; budget reached; next is fresh-context early-revoke).
   Cycle = TASK-0031-PR2 (F2): hardened the relay edge against replay/abuse + added opt-in strong mTLS, all

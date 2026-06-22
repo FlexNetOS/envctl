@@ -2,7 +2,7 @@
   "schema": "handoff.task.v1",
   "id": "TASK-0015",
   "title": "Provisioning fidelity — verbatim skill copy; 5 command-format + 4 MCP-merge additive transforms",
-  "status": "backlog",
+  "status": "done",
   "priority": "P1",
   "objective": "Provisioning fidelity — verbatim skill copy; 5 command-format + 4 MCP-merge additive transforms",
   "path_scope": [
