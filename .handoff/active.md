@@ -1,4 +1,4 @@
 # Active
 
-Next: TASK-0015
-Done 42/53 · witness-verified 3 events
+Next: TASK-0016
+Done 43/53 · witness-verified 6 events
