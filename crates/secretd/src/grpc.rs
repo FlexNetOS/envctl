@@ -10,10 +10,10 @@
 //! apply-gates an allowed one. A refusal surfaces as `Status::permission_denied` with an EMPTY
 //! value, so the real key never crosses the wire for a broker_only secret.
 //!
-//! Vault.List/Rm/Rotate, Relay.Create/List, Audit.Query, and GetSecret.meta are now wired to the
-//! engine's metadata-read / fail-closed-mutation methods (TASK-0035). The only RPCs still returning
-//! `Unimplemented` are ALL of `Certs.*` (CA path — Phase 4+); the engine exposes no public CA-issue
-//! path for them and the engine's CA crate surface is untouched here.
+//! Vault.List/Rm/Rotate, Relay.Create/List, Audit.Query, GetSecret.meta, and the additive
+//! Certs.CaInit/Issue/List surface are wired to the engine's metadata-read / fail-closed-mutation
+//! methods. Destructive Certs root-of-trust verbs remain explicit `Unimplemented` until their
+//! apply/confirm/revert semantics land.
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
@@ -977,14 +977,23 @@ impl v1::audit_server::Audit for AuditSvc {
 }
 
 // ============================================================================================
-// Certs (all Unimplemented — Phase 4+)
+// Certs
 // ============================================================================================
 
 #[derive(Clone)]
 pub struct CertsSvc {
-    // Held for when the CA path (ca_issue etc.) is wired (Phase 4+: all Unimplemented).
-    #[allow(dead_code)]
     pub engine: Engine,
+}
+
+fn cert_item_to_proto(item: envctl_secrets::CertListItem) -> v1::CertMeta {
+    v1::CertMeta {
+        cn: item.cn,
+        is_ca: item.is_ca,
+        not_after: item.not_after,
+        revoked: item.revoked,
+        sans: item.sans,
+        usage: item.usage,
+    }
 }
 
 #[tonic::async_trait]
@@ -998,9 +1007,14 @@ impl v1::certs_server::Certs for CertsSvc {
 
     async fn ca_init(
         &self,
-        _request: Request<v1::CaInitReq>,
+        request: Request<v1::CaInitReq>,
     ) -> Result<Response<Self::CaInitStream>, Status> {
-        Err(Status::unimplemented("Certs.CaInit is Phase 4+"))
+        let req = request.into_inner();
+        let apply = req.apply;
+        let stream = run_streaming(self.engine.clone(), move |engine, sink: &EventSink| {
+            engine.ca_init(apply, sink)
+        });
+        Ok(Response::new(stream))
     }
     async fn ca_rotate(
         &self,
@@ -1010,9 +1024,14 @@ impl v1::certs_server::Certs for CertsSvc {
     }
     async fn issue(
         &self,
-        _request: Request<v1::IssueLeafReq>,
+        request: Request<v1::IssueLeafReq>,
     ) -> Result<Response<Self::IssueStream>, Status> {
-        Err(Status::unimplemented("Certs.Issue is Phase 4+"))
+        let req = request.into_inner();
+        let stream = run_streaming(self.engine.clone(), move |engine, sink: &EventSink| {
+            engine.ca_issue(&req.cn, &req.sans, req.ttl_days, &req.usage, sink)?;
+            Ok(())
+        });
+        Ok(Response::new(stream))
     }
     async fn renew(
         &self,
@@ -1036,6 +1055,13 @@ impl v1::certs_server::Certs for CertsSvc {
         &self,
         _request: Request<v1::ListCertReq>,
     ) -> Result<Response<v1::ListCertResp>, Status> {
-        Err(Status::unimplemented("Certs.List is Phase 4+"))
+        let engine = self.engine.clone();
+        let items = tokio::task::spawn_blocking(move || engine.ca_list())
+            .await
+            .map_err(join_err)?
+            .map_err(engine_status)?;
+        Ok(Response::new(v1::ListCertResp {
+            items: items.into_iter().map(cert_item_to_proto).collect(),
+        }))
     }
 }

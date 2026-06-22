@@ -35,6 +35,40 @@ mod imp {
 
     /// CA validity window, in seconds (10 years). The CA is long-lived; rotation is an operator op.
     pub(crate) const CA_TTL_SECS: i64 = 10 * 365 * 24 * 60 * 60;
+    /// Default control-plane leaf validity. Operator leaves are persisted, unlike ephemeral MITM
+    /// leaves, but still kept short enough to make rotation normal.
+    const OPERATOR_LEAF_DEFAULT_TTL_DAYS: u64 = 30;
+    /// Browser/server ecosystems generally treat >397-day end-entity certs as stale policy. Keep
+    /// envctl-issued control-plane leaves below that ceiling.
+    const OPERATOR_LEAF_MAX_TTL_DAYS: u64 = 397;
+    const SECS_PER_DAY: i64 = 24 * 60 * 60;
+
+    #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+    pub(crate) enum OperatorLeafUsage {
+        ControlPlaneServer,
+        ControlPlaneClient,
+    }
+
+    impl OperatorLeafUsage {
+        pub(crate) fn label(self) -> &'static str {
+            match self {
+                Self::ControlPlaneServer => "control_plane_server",
+                Self::ControlPlaneClient => "control_plane_client",
+            }
+        }
+
+        fn eku(self) -> ExtendedKeyUsagePurpose {
+            match self {
+                Self::ControlPlaneServer => ExtendedKeyUsagePurpose::ServerAuth,
+                Self::ControlPlaneClient => ExtendedKeyUsagePurpose::ClientAuth,
+            }
+        }
+    }
+
+    pub(crate) struct OperatorLeaf {
+        pub cert_der: Vec<u8>,
+        pub not_after_rfc3339: String,
+    }
 
     /// The in-RAM local CA issuer. Holds the reconstructed rcgen key pair + issuer cert needed to
     /// sign leaves, plus an owned, zeroized copy of the PKCS#8 key DER (wiped on drop). Present only
@@ -198,6 +232,78 @@ mod imp {
             Ok((chain, key))
         }
 
+        /// Mint an operator-requested, persisted control-plane leaf. This path is deliberately
+        /// separate from `issue_leaf`: it supports only control-plane usages and never mints MITM
+        /// leaves. The private key is generated only for signing and is not returned by the current
+        /// RPC shape, so no private material crosses the daemon/client boundary.
+        pub(crate) fn issue_operator_leaf(
+            &self,
+            cn: &str,
+            sans: &[String],
+            ttl_days: u64,
+            usage: OperatorLeafUsage,
+            now_unix: i64,
+        ) -> anyhow::Result<OperatorLeaf> {
+            let cn = cn.trim();
+            if cn.is_empty() {
+                anyhow::bail!("ca issue: cn must not be empty");
+            }
+            let ttl_days = if ttl_days == 0 {
+                OPERATOR_LEAF_DEFAULT_TTL_DAYS
+            } else {
+                ttl_days
+            };
+            if ttl_days > OPERATOR_LEAF_MAX_TTL_DAYS {
+                anyhow::bail!(
+                    "ca issue: ttl_days {ttl_days} exceeds maximum {OPERATOR_LEAF_MAX_TTL_DAYS}"
+                );
+            }
+
+            let mut names = Vec::with_capacity(sans.len() + 1);
+            names.push(cn.to_string());
+            for san in sans {
+                let san = san.trim();
+                if san.is_empty() {
+                    anyhow::bail!("ca issue: SAN must not be empty");
+                }
+                if !names.iter().any(|n| n.eq_ignore_ascii_case(san)) {
+                    names.push(san.to_string());
+                }
+            }
+
+            let leaf_key = KeyPair::generate_for(&PKCS_ECDSA_P256_SHA256)
+                .map_err(|e| anyhow::anyhow!("operator leaf keygen: {e}"))?;
+            let mut params = CertificateParams::new(Vec::<String>::new())
+                .map_err(|e| anyhow::anyhow!("operator leaf params: {e}"))?;
+            params.subject_alt_names = names
+                .iter()
+                .map(|name| {
+                    Ia5String::try_from(name.as_str())
+                        .map(SanType::DnsName)
+                        .map_err(|e| anyhow::anyhow!("invalid DNS SAN {name:?}: {e}"))
+                })
+                .collect::<anyhow::Result<Vec<_>>>()?;
+            params.distinguished_name.push(DnType::CommonName, cn);
+            params.is_ca = IsCa::ExplicitNoCa;
+            params.key_usages = vec![
+                KeyUsagePurpose::DigitalSignature,
+                KeyUsagePurpose::KeyEncipherment,
+            ];
+            params.extended_key_usages = vec![usage.eku()];
+            params.use_authority_key_identifier_extension = true;
+            params.not_before = offset_dt(now_unix - LEAF_BACKDATE_SECS)?;
+            let not_after = offset_dt(now_unix + (ttl_days as i64).saturating_mul(SECS_PER_DAY))?;
+            params.not_after = not_after;
+
+            let leaf = params
+                .signed_by(&leaf_key, &self.issuer_cert, &self.key_pair)
+                .map_err(|e| anyhow::anyhow!("operator leaf sign: {e}"))?;
+            Ok(OperatorLeaf {
+                cert_der: leaf.der().to_vec(),
+                not_after_rfc3339: offset_to_rfc3339(not_after),
+            })
+        }
+
         /// The PUBLIC CA certificate, PEM-encoded. Never exposes the private key.
         pub fn ca_cert_pem(&self) -> String {
             pem_cert(&self.ca_cert_der)
@@ -267,7 +373,7 @@ mod imp {
 #[cfg(feature = "mitm-ca")]
 pub use imp::LocalCa;
 #[cfg(feature = "mitm-ca")]
-pub(crate) use imp::CA_COMMON_NAME;
+pub(crate) use imp::{OperatorLeafUsage, CA_COMMON_NAME};
 
 /// CA-less builds keep a zero-sized placeholder so the engine's `Option<LocalCa>` field type and the
 /// `ca` module both exist regardless of the feature (the engine only ever stores `None` here).

@@ -355,7 +355,87 @@ async fn e2e_control_plane_roundtrip_and_wire_secrecy() {
         minted_bearer = r.bearer;
     }
 
-    // 4h. Audit.Query now returns the durable hash-chained log (TASK-0035). It must carry rows from
+    // 4h. Certs.CaInit/Issue/List are real owner-gated RPCs. The operator path may mint only
+    //     control-plane leaves; `mitm_leaf` remains reserved for the relay-gated proxy resolver.
+    {
+        let mut certs = v1::certs_client::CertsClient::new(connect(sock.clone()).await);
+        let evs = drain(
+            certs
+                .ca_init(v1::CaInitReq {
+                    apply: true,
+                    confirm: false,
+                })
+                .await
+                .expect("certs.ca_init")
+                .into_inner(),
+            &wire,
+        )
+        .await;
+        assert!(
+            evs.iter()
+                .any(|e| matches!(&e.kind, Some(v1::event::Kind::CaIssued(_)))),
+            "ca_init must emit CaIssued, got {evs:?}"
+        );
+
+        let evs = drain(
+            certs
+                .issue(v1::IssueLeafReq {
+                    cn: "control.test".into(),
+                    sans: vec!["control.test".into()],
+                    ttl_days: 7,
+                    usage: "control_plane_server".into(),
+                })
+                .await
+                .expect("certs.issue control-plane")
+                .into_inner(),
+            &wire,
+        )
+        .await;
+        assert!(
+            evs.iter().any(|e| matches!(
+                &e.kind,
+                Some(v1::event::Kind::CaIssued(c)) if c.cn == "control.test" && !c.serial.is_empty()
+            )),
+            "control-plane issue must emit CaIssued, got {evs:?}"
+        );
+
+        let err = drain_expect_err(
+            certs
+                .issue(v1::IssueLeafReq {
+                    cn: "mitm.test".into(),
+                    sans: vec!["mitm.test".into()],
+                    ttl_days: 7,
+                    usage: "mitm_leaf".into(),
+                })
+                .await
+                .expect("certs.issue mitm_leaf stream")
+                .into_inner(),
+        )
+        .await;
+        assert!(
+            err.contains("CF-5"),
+            "mitm_leaf operator issuance must be refused, got {err:?}"
+        );
+
+        let listed = certs
+            .list(v1::ListCertReq {})
+            .await
+            .expect("certs.list")
+            .into_inner();
+        assert!(
+            listed.items.iter().any(|c| c.is_ca),
+            "list must include the local CA"
+        );
+        let leaf = listed
+            .items
+            .iter()
+            .find(|c| c.cn == "control.test")
+            .expect("list must include the issued control-plane leaf");
+        assert_eq!(leaf.usage, "control_plane_server");
+        assert_eq!(leaf.sans, vec!["control.test".to_string()]);
+    }
+
+    // 4i. Audit.Query now returns the durable hash-chained log (TASK-0035). It must carry rows from
     //     the operations above (unlock/add/mint all audit) and NEVER the broker_only sentinel.
     {
         let mut audit = v1::audit_client::AuditClient::new(connect(sock.clone()).await);

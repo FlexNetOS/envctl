@@ -294,6 +294,8 @@ pub enum CaCmd {
         #[arg(long)]
         usage: String,
     },
+    /// List the local CA and persisted leaf certs.
+    List,
     /// Renew a leaf cert.
     Renew {
         cn: String,
