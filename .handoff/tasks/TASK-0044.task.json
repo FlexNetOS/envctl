@@ -2,7 +2,7 @@
   "schema": "handoff.task.v1",
   "id": "TASK-0044",
   "title": "Pick-time dependency authority via the hf kernel: mint envctl backlog into fleet-scoped handoff.task.v1 cards",
-  "status": "active",
+  "status": "done",
   "priority": "P1",
   "objective": "Pick-time dependency authority via the hf kernel: mint envctl backlog into fleet-scoped handoff.task.v1 cards",
   "path_scope": [

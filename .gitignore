@@ -23,3 +23,8 @@ Cargo.lock.bak
 # .handoff is TEXT ONLY — the witnessed binary ledger lives at $META_ROOT/.handoff/ledger.db,
 # never here. Never commit a binary ledger into this repo.
 .handoff/**/ledger.db
+.handoff/**/ledger.db.*
+
+# hf transport notices are regenerated from witnessed events; the committed packet/card layer is
+# the durable handoff state.
+.handoff/deliveries/

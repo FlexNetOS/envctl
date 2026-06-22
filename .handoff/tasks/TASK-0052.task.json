@@ -2,7 +2,7 @@
   "schema": "handoff.task.v1",
   "id": "TASK-0052",
   "title": "Full eject/package forge-loop into harness_hub (packaged-harness shape; doctrine override; capstone; cross-repo)",
-  "status": "backlog",
+  "status": "done",
   "priority": "P2",
   "objective": "Full eject/package forge-loop into harness_hub (packaged-harness shape; doctrine override; capstone; cross-repo)",
   "path_scope": [

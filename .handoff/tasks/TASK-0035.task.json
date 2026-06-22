@@ -2,7 +2,7 @@
   "schema": "handoff.task.v1",
   "id": "TASK-0035",
   "title": "secretd gRPC surface gaps: Vault List/Rm/Rotate, Relay Create/List, Audit Query, Get meta",
-  "status": "review",
+  "status": "done",
   "priority": "P1",
   "objective": "secretd gRPC surface gaps: Vault List/Rm/Rotate, Relay Create/List, Audit Query, Get meta",
   "path_scope": [

@@ -2,7 +2,7 @@
   "schema": "handoff.task.v1",
   "id": "TASK-0034",
   "title": "Hardening tail: F10 tonic pin + cargo-audit CI, F11 MSRV check, F18 audit-fsync",
-  "status": "backlog",
+  "status": "done",
   "priority": "P1",
   "objective": "Hardening tail: F10 tonic pin + cargo-audit CI, F11 MSRV check, F18 audit-fsync",
   "path_scope": [

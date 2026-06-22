@@ -2,7 +2,7 @@
   "schema": "handoff.task.v1",
   "id": "TASK-0038",
   "title": "secretd Certs.* service + non-mitm ca_issue + secretctl ca (deferred from TASK-0035, Phase 4+)",
-  "status": "backlog",
+  "status": "done",
   "priority": "P1",
   "objective": "secretd Certs.* service + non-mitm ca_issue + secretctl ca (deferred from TASK-0035, Phase 4+)",
   "path_scope": [
