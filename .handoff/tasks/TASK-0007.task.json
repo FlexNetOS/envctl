@@ -2,7 +2,7 @@
   "schema": "handoff.task.v1",
   "id": "TASK-0007",
   "title": "envctl doctor boundary-refusal on out-of-meta FlexNetOS install; idempotent ~/.local/bin symlink regen",
-  "status": "backlog",
+  "status": "done",
   "priority": "P2",
   "objective": "envctl doctor boundary-refusal on out-of-meta FlexNetOS install; idempotent ~/.local/bin symlink regen",
   "path_scope": [
