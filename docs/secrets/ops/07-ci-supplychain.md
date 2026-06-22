@@ -3,7 +3,7 @@
 **Status:** Ops/deploy design (concrete, sourced). READ-ONLY companion to the design set.
 **Reads with:** `ARCHITECTURE.md` (§one rustls/ring, §FS-S7 root pinning), `SERVER-MODE.md` (§2.2 C-isolation, §3 control-unreachable, §6 edge, §7 deploy steps), `THREAT-MODEL.md` (FS-S*/A*), `DESIGN-NOTES.md` (CF-1/CF-2/CF-6, HF-17/HF-18, R7/R8/R9, OI-1/OI-14/OI-23/OI-24), `ROADMAP.md` (Phase 0/1/7 acceptance).
 **Scope:** The CI gates, MSRV policy, no-C/single-backend enforcement, supply-chain controls, and the deploy units that stand `secretd` up on THIS dual-RTX-5090 box (Profile A, the recommended default). VPS (Profile B) deploy ops are flagged non-shippable (OI-SM-2/3) and only sketched.
-**Verified-against (this box, 2026-06-02; TASK-0034 refreshed gates on 2026-06-22):** workspace declares `rust-version = "1.80"` and `rust-toolchain.toml` channel `stable`; CI now verifies the floor with `cargo +1.80.0 check --workspace --locked` and RustSec advisories with `ci/gates/cargo-audit.sh`.
+**Verified-against (this box, 2026-06-02; TASK-0034 refreshed gates on 2026-06-22):** workspace declares `rust-version = "1.88"` and `rust-toolchain.toml` channel `stable`; CI now verifies the floor with `cargo +1.88.0 check --workspace --locked` and RustSec advisories with `ci/gates/cargo-audit.sh`.
 
 This document grounds every gate in the artifacts that already specify it. Where a design doc already
 mandates a gate (e.g. SERVER-MODE §2.2, §3; DESIGN-NOTES R7/R9, HF-18) this doc gives the *concrete*
@@ -22,7 +22,7 @@ env-ctl's security posture is enforced almost entirely at *dependency-graph* and
 | Forbid native-roots / `danger_accept_invalid_certs` grep | FS-S7, A6, CF-6 — upstream TLS trusting OS store or local CA | A `rustls-tls-native-roots` feature is a compile-time decision; runtime only sees the resolved store. |
 | `control-types-not-in-edge` grep | FS-S8/FS-S19, A17, REQ-SEC-11 — the public edge able to reach control RPCs | Provable-by-construction (SERVER-MODE §3.2) means the *code shape* must forbid the import, caught in CI not at runtime. |
 | relay-cert-separation grep | FS-S25, A6 — the edge cert ever sourced from the MITM CA | The cert wiring is static; CI proves the edge never references the local-CA path. |
-| MSRV `cargo +1.80.0 check` | HF-18 — a silent transitive MSRV bump past the declared floor | `cargo build` on stable (1.96 here) hides a 1.80 break; only an explicit 1.80 toolchain surfaces it. |
+| MSRV `cargo +1.88.0 check` | HF-18 — a silent transitive MSRV bump past the declared floor | `cargo build` on stable (1.96 here) hides a 1.88 break; only an explicit 1.88 toolchain surfaces it. |
 | `cargo deny` advisories / `cargo vet` | Supply-chain compromise of the few-but-sensitive crypto/TLS deps | A new RUSTSEC advisory or an unaudited new transitive crate is invisible to `cargo build`. |
 | Reproducible/`--locked` + SBOM | Build-input drift; provenance for the crypto crates | `Cargo.lock` drift and unpinned inputs are not a runtime concern. |
 
@@ -158,16 +158,16 @@ Rationale: ARCHITECTURE §FS-S7 explicitly says `native-tls`, `rustls-tls-native
 
 ---
 
-## 2. MSRV gate (Rust 1.80)
+## 2. MSRV gate (Rust 1.88)
 
 ### 2.1 Policy
 
-- **Declared floor:** `rust-version = "1.80"` in `[workspace.package]` (workspace `Cargo.toml`).
-- **Dev toolchain:** `rust-toolchain.toml` stays floating `stable` for ergonomics (OI-24). The 1.80 floor is a *separate, verified* CI gate — it is NOT the dev default. (This is why local `rustc` is 1.96 while the floor is 1.80; that gap is expected and intentional.)
-- **Verified gate:** `cargo +1.80.0 check --workspace --locked` is now a required CI job. The
+- **Declared floor:** `rust-version = "1.88"` in `[workspace.package]` (workspace `Cargo.toml`).
+- **Dev toolchain:** `rust-toolchain.toml` stays floating `stable` for ergonomics (OI-24). The 1.88 floor is a *separate, verified* CI gate — it is NOT the dev default. (This is why local `rustc` is 1.96 while the floor is 1.88; that gap is expected and intentional.)
+- **Verified gate:** `cargo +1.88.0 check --workspace --locked` is now a required CI job. The
   lockfile pins the few transitive packages that otherwise drift above the floor (`url`/`idna`,
   `toml_edit`/`indexmap`, GUI/browser helpers, and other patch-level bumps). If a future update fails
-  this gate, either pin the affected package to a 1.80-compatible patch or raise the shared floor with
+  this gate, either pin the affected package to a 1.88-compatible patch or raise the shared floor with
   explicit operator sign-off (recorded in DESIGN-NOTES).
 - **Feature scope:** this parent workspace deliberately does **not** run `--all-features`: the
   libSQL store exposes mutually-exclusive `remote` and `embedded` features and intentionally
@@ -177,18 +177,18 @@ Rationale: ARCHITECTURE §FS-S7 explicitly says `native-tls`, `rustls-tls-native
 
 ```yaml
   msrv:
-    name: MSRV (Rust 1.80)
+    name: MSRV (Rust 1.88)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@1.80.0          # pinned-version form, https://github.com/dtolnay/rust-toolchain
+      - uses: dtolnay/rust-toolchain@1.88.0          # pinned-version form, https://github.com/dtolnay/rust-toolchain
       - uses: Swatinem/rust-cache@v2                 # https://github.com/Swatinem/rust-cache
       # `check`, not `build`: MSRV is about the compiler accepting the source, not producing artifacts.
       # No `--all-features`: the store backend features are mutually exclusive in the parent workspace.
-      - run: cargo +1.80.0 check --workspace --locked
+      - run: cargo +1.88.0 check --workspace --locked
 ```
 
-Optional hardening (recommended): add `cargo-msrv` as an *advisory* (non-gating) job to auto-discover the true floor and warn if it drifts above 1.80, so the team sees a floor bump coming. https://github.com/foresterre/cargo-msrv
+Optional hardening (recommended): add `cargo-msrv` as an *advisory* (non-gating) job to auto-discover the true floor and warn if it drifts above 1.88, so the team sees a floor bump coming. https://github.com/foresterre/cargo-msrv
 
 ---
 
@@ -204,7 +204,7 @@ The engine's feature surface (from `crates/secrets-engine/Cargo.toml`):
     strategy:
       fail-fast: false
       matrix:
-        rust: [stable, 1.80.0]
+        rust: [stable, 1.88.0]
         # All combinations that must compile+test. Each row is run as
         #   cargo test -p envctl-secrets-engine --no-default-features --features "<row>"
         features:
@@ -304,7 +304,7 @@ CI job (pin the action AND the tool version — supply-chain tools are themselve
       - uses: EmbarkStudios/cargo-deny-action@v2
         with:
           command: check advisories licenses bans sources
-          # rust-version: 1.80.0   # optionally evaluate advisories against the MSRV graph
+          # rust-version: 1.88.0   # optionally evaluate advisories against the MSRV graph
 ```
 
 Note (UNVERIFIED, decide at pin time): `cargo-deny` config has a schema `version` field; the `[licenses]`/`[advisories]` shapes above target the v2 schema used by recent releases. Confirm against the exact pinned version's docs before merge — the tool occasionally renames keys (e.g. the old `[advisories] vulnerability = "deny"` is now a default). https://embarkstudios.github.io/cargo-deny/checks/advisories/cfg.html and .../checks/bans/cfg.html
@@ -458,7 +458,7 @@ env:
 jobs:
   lint:               # §5
   msrv:               # §2.2
-  test:               # §3  (matrix: stable + 1.80.0 x feature rows)
+  test:               # §3  (matrix: stable + 1.88.0 x feature rows)
   no-c-and-shape:     # §1.1 + §1.2  (runs ci/gates/no-c.sh and ci/gates/shape.sh)
   supply-chain-deny:  # §4.1
   supply-chain-vet:   # §4.2
@@ -484,7 +484,7 @@ jobs:
 `sbom` is intentionally NOT in `ci-ok`'s `needs` (informational). Configure branch protection to require the single `ci-ok` check.
 
 Action versions used (pin to release tags, re-pin deliberately):
-- `dtolnay/rust-toolchain` — https://github.com/dtolnay/rust-toolchain (ref form `@stable` / `@1.80.0`)
+- `dtolnay/rust-toolchain` — https://github.com/dtolnay/rust-toolchain (ref form `@stable` / `@1.88.0`)
 - `Swatinem/rust-cache@v2` — https://github.com/Swatinem/rust-cache
 - `EmbarkStudios/cargo-deny-action@v2` — https://github.com/EmbarkStudios/cargo-deny-action
 - `taiki-e/install-action@v2` — https://github.com/taiki-e/install-action
@@ -606,16 +606,16 @@ VPS deploy is explicitly gated as non-shippable until the operator-box→VPS aut
 
 | # | Item | Severity | Notes / proposed resolution |
 |---|---|---|---|
-| OQ-1 | **MSRV 1.80 vs `reqwest 0.12 → url → idna`** (HF-18) | HIGH | RESOLVED in TASK-0034. `cargo +1.80.0 check --workspace --locked` passes and is a CI job; the lockfile pins the URL/IDNA and other transitive patch lines that otherwise drift above 1.80. Future updates must keep the gate green or raise the floor with recorded operator sign-off. |
+| OQ-1 | **MSRV 1.88 vs `reqwest 0.12 → url → idna`** (HF-18) | HIGH | RESOLVED in TASK-0034. `cargo +1.88.0 check --workspace --locked` passes and is a CI job; the lockfile pins the URL/IDNA and other transitive patch lines that otherwise drift above 1.88. Future updates must keep the gate green or raise the floor with recorded operator sign-off. |
 | OQ-2 | **`cargo-deny` config schema version drift** | MEDIUM | The §4.1 `deny.toml` targets the v2 schema; confirm exact keys against the pinned cargo-deny version's docs before merge (the tool renames keys across majors). |
 | OQ-3 | **libsql-ffi scoped allow in cargo-deny** when `secrets-store-libsql` lands (Phase 1) | MEDIUM | Convert the outright `libsql-ffi` ban to a `wrappers`-scoped allow (permitted only when pulled by that one crate), mirroring the §1.1 Gate-3 tree assertion and SERVER-MODE §80. |
 | OQ-4 | **sd_notify support in `secretd`** for `Type=notify` | MEDIUM | RESOLVED. `secretd` links pure-Rust `sd-notify` on the MSRV-compatible 0.4 line and sends READY/STOPPING best-effort notifications. |
 | OQ-5 | **Bit-for-bit reproducible `secretd` binary** | MEDIUM | Not yet configured (§6.2). For a secrets daemon, an independently-rebuildable published binary is high value; needs `--remap-path-prefix`, `SOURCE_DATE_EPOCH`, deterministic debuginfo, and a documented build env. |
 | OQ-6 | **SLSA provenance / signed release artifacts** | MEDIUM | Beyond SBOM: consider `cargo dist` + GitHub artifact attestations / cosign for the released `secretd`/`secretctl` binaries so operators can verify provenance. Not yet specified. |
-| OQ-7 | **`cargo audit` vs `cargo deny check advisories`** overlap | LOW | RESOLVED for TASK-0034: use `cargo audit` only for the advisory CI gate, with explicit documented exceptions for `rsa` (no fixed stable release) and `time` (fixed line conflicts with Rust/Cargo 1.80). Add `cargo-deny` later only for licenses/bans/sources if needed, not as a second advisory authority. |
+| OQ-7 | **`cargo audit` vs `cargo deny check advisories`** overlap | LOW | RESOLVED for TASK-0034: use `cargo audit` only for the advisory CI gate, with an explicit documented exception for `rsa` (no fixed stable release). The old `time` exception was removed after upgrading to `time` 0.3.47 and raising the verified MSRV floor to Rust/Cargo 1.88. Add `cargo-deny` later only for licenses/bans/sources if needed, not as a second advisory authority. |
 | OQ-8 | **`sqld` version pinning + supply chain** (Phase 1) | MEDIUM | The separate `sqld` process is itself a deployed C binary; pin its version, track its CVEs, and decide whether it ships from the envctl manifest or is operator-provisioned. The no-C *Rust* gate does not cover the external `sqld` binary. |
 | OQ-9 | **`control-types-not-in-edge` grep precision** | LOW | The §1.2 grep is a heuristic until the real edge/control module names exist; tighten the type-name list and the `EDGE_SRC` path when the edge module lands (Phase 5/§3.2). |
-| OQ-10 | **Where gates run pre-merge into envctl** (Phase 7) | MEDIUM | On merge into `envctl/crates/`, all gates here must re-run in the *parent* workspace (re-resolved single lockfile, `rustix` row hand-unioned to `["process","net"]`, HF-17). Confirm envctl's MSRV ≥ 1.80 or raise its floor with sign-off. |
+| OQ-10 | **Where gates run pre-merge into envctl** (Phase 7) | MEDIUM | On merge into `envctl/crates/`, all gates here must re-run in the *parent* workspace (re-resolved single lockfile, `rustix` row hand-unioned to `["process","net"]`, HF-17). Confirm envctl's MSRV ≥ 1.88 or raise its floor with sign-off. |
 
 ---
 

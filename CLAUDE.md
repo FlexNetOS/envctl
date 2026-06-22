@@ -41,7 +41,7 @@ cargo fmt --all && cargo clippy --workspace -- -D warnings   # must be clean bef
 ```
 
 Tests are inline `#[cfg(test)] mod tests` beside the code, or `crates/<crate>/tests/*.rs`
-integration tests (`#[tokio::test]` for the async daemon path). MSRV 1.80, stable toolchain
+integration tests (`#[tokio::test]` for the async daemon path). MSRV 1.88, stable toolchain
 (`rust-toolchain.toml`).
 
 ## CI gates — run before pushing anything that touches deps or the trust boundary

@@ -37,12 +37,12 @@ cargo run  -p envctl-gui                      # needs system dev libs — see RE
 cargo test --workspace                        # all crates
 cargo test -p envctl-secrets-engine vault     # single crate / filter by test name
 cargo test -p envctl-secretd --test e2e       # one integration test file (daemon e2e)
-cargo +1.80.0 check --workspace --locked      # MSRV floor, default feature graph
+cargo +1.88.0 check --workspace --locked      # MSRV floor, default feature graph
 cargo fmt --all && cargo clippy --workspace -- -D warnings   # must be clean before commit
 ```
 
 Tests are inline `#[cfg(test)] mod tests` beside the code, or `crates/<crate>/tests/*.rs`
-integration tests (`#[tokio::test]` for the async daemon path). MSRV 1.80, stable toolchain
+integration tests (`#[tokio::test]` for the async daemon path). MSRV 1.88, stable toolchain
 (`rust-toolchain.toml`).
 
 ## CI gates — run before pushing anything that touches deps or the trust boundary

@@ -93,7 +93,7 @@ From `~/Desktop/env-ctl/Cargo.toml` and `crates/*/Cargo.toml` (all `VERIFIED` by
 | `crates/secretd` | `envctl-secretd` | `secretd` | YES (tokio 1.43, tonic 0.12, hyper 1.5, reqwest 0.12) | YES today (Phase 0 scaffold); gains libSQL **behind a feature** in Phase 1 |
 | `crates/secretctl` | `envctl-secretctl` | `secretctl` | client-side tonic | YES |
 
-Workspace pins (`[workspace.dependencies]`, `VERIFIED`): `rust-version = "1.80"`,
+Workspace pins (`[workspace.dependencies]`, `VERIFIED`): `rust-version = "1.88"`,
 `edition = "2021"`, `resolver = "2"`. Crypto is pure-Rust:
 `chacha20poly1305 = 0.10`, `argon2 = 0.5 (features=["zeroize"])`, `hkdf = 0.12`,
 `sha2 = 0.10`, `blake3 = 1.5`, `zeroize = 1.8`, `subtle = 2.6`, `rand = 0.8`,
@@ -119,7 +119,7 @@ rustix = { version = "0.38", features = ["process", "net"] }
 
 | Dep | Pin | Source | Note |
 |---|---|---|---|
-| rustup / stable toolchain | MSRV 1.80 | https://rustup.rs/ ; channel pinned in `rust-toolchain.toml` (`VERIFIED`) | `cargo --version` must be ≥ 1.80 |
+| rustup / stable toolchain | MSRV 1.88 | https://rustup.rs/ ; channel pinned in `rust-toolchain.toml` (`VERIFIED`) | `cargo --version` must be ≥ 1.88 |
 | tokio | 1.43 | https://github.com/tokio-rs/tokio/releases | check CVE-2024-47609 accept-loop fix is in-tree (see §9) |
 | tonic | 0.12 | https://github.com/hyperium/tonic/releases | |
 | prost | 0.13 | https://github.com/tokio-rs/prost/releases | |
@@ -149,7 +149,7 @@ XDG layout from ARCHITECTURE.md §"Layout" (lines 124-127):
 id = "env-ctl"
 name = "env-ctl secrets daemon"
 description = "Pure-Rust gRPC secrets vault + credential broker. Stores keys AEAD-encrypted at rest, mints <=24h peer-bound relay bearers, terminates TLS in-process for the remote relay edge. Control plane is UDS + SO_PEERCRED (owner-only); data plane is loopback; the only network surface is the relay HTTPS edge."
-requires = ["rustup"]      # cargo + stable >= 1.80
+requires = ["rustup"]      # cargo + stable >= 1.88
 destructive = false
 
 # DETECT == the "already installed AND healthy enough to be present" predicate.
@@ -166,9 +166,9 @@ script = '''
 set -euo pipefail
 export PATH="$HOME/.cargo/bin:$PATH"
 
-# MSRV gate (rust-version = 1.80 in the workspace). Fail closed, do not silently upgrade.
+# MSRV gate (rust-version = 1.88 in the workspace). Fail closed, do not silently upgrade.
 ver="$(cargo --version | awk '{print $2}')"
-printf '%s\n1.80.0\n' "$ver" | sort -V -C || { echo "FATAL: cargo $ver < MSRV 1.80"; exit 1; }
+printf '%s\n1.88.0\n' "$ver" | sort -V -C || { echo "FATAL: cargo $ver < MSRV 1.88"; exit 1; }
 
 # Post-merge this is the envctl workspace itself; pre-merge override with ENV_CTL_REPO.
 repo="${ENV_CTL_REPO:-$HOME/Desktop/envctl}"
@@ -317,7 +317,7 @@ args = ["-lc", "lsblk -dno PARTUUID | grep -q . || { echo 'FATAL: no PARTUUID st
 requires = ["rustup"]
 ```
 
-This is the only hard external dependency: `cargo` + a stable toolchain ≥ 1.80. (`rustup` is
+This is the only hard external dependency: `cargo` + a stable toolchain ≥ 1.88. (`rustup` is
 the natural `requires` target; envctl's graph resolves `requires` before install —
 `executor.rs:157`, `VERIFIED`.) The systemd user session and `$XDG_RUNTIME_DIR` are assumed
 present (true on this box's interactive login).
@@ -341,7 +341,7 @@ cargo tree -i aws-lc-sys 2>/dev/null && { echo "FAIL: aws-lc-sys present (expect
 test "$(cargo tree -i rustls 2>/dev/null | grep -c '^rustls v')" = "1" || { echo "FAIL: multiple rustls"; exit 1; }
 
 # (3) MSRV gate.
-cargo +1.80.0 check -p envctl-secrets-engine -p envctl-secrets-proto -p envctl-secretctl
+cargo +1.88.0 check -p envctl-secrets-engine -p envctl-secrets-proto -p envctl-secretctl
 
 # (4) The rustix feature UNION survived the merge (HF-17 regression guard).
 cargo tree -e features -i rustix 2>/dev/null | grep -q 'feature "net"' \
@@ -369,7 +369,7 @@ When Phase 6 + OI-1 land, this guard is removed and `enable` flips to `true` in 
 ### 5.1 Pre-flight (operator)
 
 ```bash
-rustup show                 # stable >= 1.80 active
+rustup show                 # stable >= 1.88 active
 which cargo secretd 2>/dev/null
 lsblk -dno PARTUUID         # the USB key partition's PARTUUID (pre-filter selector only)
 ```

@@ -15,7 +15,7 @@ members = [
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.80"
+rust-version = "1.88"
 license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
@@ -57,7 +57,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # tiny std-only UDS writer (proven by ci/gates/no-c.sh). Closes the secretd crash-loop (no READY=1 =>
 # Type=notify 90s timeout => restart storm).
 # Keep the systemd notify helper on the MSRV-compatible line. 0.5.x raises
-# rust-version above the workspace floor (1.80) without changing envctl's use
+# rust-version above the workspace floor (1.88) without changing envctl's use
 # of READY=1 / STOPPING=1 datagrams.
 sd-notify = "0.4.5"
 tokio = { version = "1.43", features = ["rt-multi-thread", "macros", "net", "sync", "fs", "process", "signal", "time", "io-util"] }
