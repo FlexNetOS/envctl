@@ -7,11 +7,10 @@ envctl owns and contains the meta environment: every FlexNetOS tool/dotfile/.loc
 Git > .handoff/ledger.db > tasks/*.task.json > active.md > this packet.
 
 ## 3. Progress
-Done: 42/53.  Tamper-evident events verified: 3.
+Done: 43/53.  Tamper-evident events verified: 6.
 
 ## 4. Remaining (next safe first)
 - [P2] **TASK-0009** — Relocate kasetto + kst (BLOCKED: superseded by Epic C built-in absorption)
-- [P1] **TASK-0015** — Provisioning fidelity — verbatim skill copy; 5 command-format + 4 MCP-merge additive transforms
 - [P1] **TASK-0016** — Lock unification — fold agent assets into envctl.lock (SHA-256 section)
 - [P1] **TASK-0017** — Adopt kasetto extends config composition for envctl component manifests
 - [P1] **TASK-0019** — fix-secretd: U1 USB-unlock path needs a real RealUsbProbe
@@ -23,13 +22,13 @@ Done: 42/53.  Tamper-evident events verified: 3.
 - [P1] **TASK-0039** — remote-clients-CA lifecycle: mint/<=7d-leaf/renew/revoke + revocation-set propagation for mTLS verifier
 
 ## 5. Next Best Task
-**TASK-0015** — Provisioning fidelity — verbatim skill copy; 5 command-format + 4 MCP-merge additive transforms
-  objective: Provisioning fidelity — verbatim skill copy; 5 command-format + 4 MCP-merge additive transforms
+**TASK-0016** — Lock unification — fold agent assets into envctl.lock (SHA-256 section)
+  objective: Lock unification — fold agent assets into envctl.lock (SHA-256 section)
 
 ## 6. Resume Commands
 ```bash
 hf resume
-hf claim TASK-0015
+hf claim TASK-0016
 ```
 
 ## 7. Machine Summary
@@ -49,6 +48,7 @@ hf claim TASK-0015
     "TASK-0012",
     "TASK-0013",
     "TASK-0014",
+    "TASK-0015",
     "TASK-0018",
     "TASK-0020",
     "TASK-0023",
@@ -79,12 +79,11 @@ hf claim TASK-0015
     "TASK-0051",
     "TASK-0052"
   ],
-  "next_command": "hf claim TASK-0015",
-  "next_task_id": "TASK-0015",
+  "next_command": "hf claim TASK-0016",
+  "next_task_id": "TASK-0016",
   "project": "handoff (Continuity Ledger Kernel)",
   "remaining": [
     "TASK-0009",
-    "TASK-0015",
     "TASK-0016",
     "TASK-0017",
     "TASK-0019",
@@ -97,6 +96,6 @@ hf claim TASK-0015
   ],
   "schema": "handoff.packet.v2",
   "tasks_total": 53,
-  "witnessed_events_verified": 3
+  "witnessed_events_verified": 6
 }
 ```
