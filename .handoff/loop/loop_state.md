@@ -8,31 +8,27 @@ worktree: (per-cycle: meta/.worktrees/<slug>/envctl off develop)
 cycle_budget: 1   # heavy-context resume sessions — 1 cohesive build cycle then hand off
 wrap_every: 5   # batch boundary: run reaper + wrap-up + evolution-steward every N completed cycles (no per-task pause)
 last_wrapup_total: 18   # cycles_total at the last completed wrap-up boundary; boundary DUE when (cycles_total - this) >= wrap_every
-cycles_this_session: 0   # RESUME SESSION 2026-06-18 (session 9): cycle = TASK-0028 (GUI parity)
-cycles_total: 19   # 16 (thru session 7) + TASK-0027 (session 8, #124) + TASK-0028 (session 9, #126)
-last_item: TASK-0037 (Phase-7 verify-don't-rebuild) — DONE, PR #131
+cycles_this_session: 1   # RESUME SESSION 2026-06-22: cycle = TASK-0038 (Certs issue/list surface)
+cycles_total: 20   # 19 previous cycles + TASK-0038 (PR #137)
+last_item: TASK-0038 (Certs CaInit/Issue/List + non-MITM ca_issue + secretctl ca) — DONE, PR #137
 status: CYCLE COMPLETE 2026-06-22
-  This reconcile is a SUPERSET that subsumes the session-8 reconcile PR #125 (which ticked TASK-0027 but had not
-  merged) — #125 retired as superseded; both TASK-0027 and TASK-0028 ticks are folded here. Session 9 cycle =
-  TASK-0028 (G2 GUI parity): added a Secrets screen to envctl-gui surfacing mint-github / relay-mint / revoke at
-  CLI parity. Architecture B (chosen over an embedded tonic/tokio VaultClient): the GUI builds an argv Vec<String>
-  and a new sync, non-printing EngineCommand::Secrets shells out to the installed `secretctl` binary, capturing
-  stdout/stderr/exit into Event::SecretsResult. ZERO new GUI crate deps (gui/Cargo.toml byte-unchanged, no-c
-  untouched); GUI stays pure-sync; CLI↔GUI divergence structurally impossible (drives the identical clap surface,
-  proven by argv round-trip tests vs a faithful replica). Secret hygiene: eframe persistence stays off (no save()/
-  serde); minted token only expires_at_unix + has_token kept, token held transiently for copy-once then dropped,
-  never to push_log; relay bearer never shown; revoke token moved into Zeroizing + piped via child stdin (--token -,
-  never argv), field cleared. Fail-closed: revoke dry-run default; non-zero exit surfaces real stderr (no synthesized
-  success); secretctl-not-found → fail-closed result, no panic (resolves via current_exe → ~/.cargo/bin → PATH).
-  Engine API delta: EngineCommand::Secrets{argv, stdin:Option<Zeroizing>}, Event::SecretsResult{verb,json_stdout,
-  stderr,code}, new engine `secrets` module. Guardian PASS-WITH-NOTES (25 gui tests + engine fail-closed test ran;
-  no-c/shape/enable + fmt + clippy gate-axis & --all-targets + build all exit 0; argv replica verified field-for-field
-  vs secretctl/src/cli.rs, no drift). #124 (TASK-0027) merged mid-cycle → rebased onto it clean (cycle artifacts
-  --theirs); the revoke runtime dependency is now satisfied on develop.
-  **NEXT PICK: TASK-0038 (Certs.* Phase-4+).** TASK-0034 is DONE (PR #135 MERGED). Open follow-ups:
-  MADV_DONTDUMP (companion to
-  #112), TASK-0031-PR2C (PROXY-protocol source IP), TASK-0039 (remote-clients-CA lifecycle). SKIP TASK-0033 (VPS
-  Profile B, owner-gated [!]).
+  Cycle = TASK-0038. PR #137 MERGED 2026-06-22T22:17:16Z. Implemented the non-MITM control-plane certificate
+  surface: secrets-engine issues control_plane_server/control_plane_client leaves only, refuses mitm_leaf before
+  key material, persists public DER metadata, lists CA+leaf certs, and audits ca_issued. secretd now wires
+  Certs.CaInit/Issue/List; secretctl ca init/issue/list drives the daemon; e2e covers init -> issue -> list and
+  mitm_leaf refusal. Certs.CaRotate/Renew/Revoke/TrustApply remain explicit Unimplemented until destructive/root-
+  of-trust semantics are designed; remote client CA lifecycle remains TASK-0039. Verification: fmt, targeted
+  secrets-engine/secretd/secretctl tests, engine+CLI build, p7/no-c/shape/enable/kdf/agent-env/loop-state gates,
+  clippy -D warnings, workspace tests with low-cost KDF, metadata --locked, cargo-audit, MSRV 1.80 check, and CI
+  all green on #137.
+  Handoff repair in this branch: witnessed and marked stale PR-backed ledger items TASK-0034 (#135), TASK-0035
+  (#108), TASK-0037 (#131), and TASK-0038 (#137) done; then witnessed already-landed direct work TASK-0044
+  (hf card minting) and TASK-0052 (harness_hub packaging) done. `hf handoff` now renders Done 40/53, next safe =
+  TASK-0007. Added Codex prompt shims for /forge-loop and session-relay aliases because Codex slash commands were
+  missing on reload. Normalized TASK-0031-PR2c -> TASK-0031-PR2C inside the task id so the hf schema accepts it.
+  **NEXT PICK: TASK-0007** per `hf resume --json`. Open follow-ups: TASK-0031-PR2C (PROXY-protocol source IP),
+  TASK-0039 (remote-clients-CA lifecycle), MADV_DONTDUMP companion to #112. SKIP TASK-0033 (VPS Profile B,
+  owner-gated [!]).
   OPERATIONAL (not a forge cycle): a weave message requested `github-app enroll` to unblock the App's mint-github
   (404 / "App id not enrolled") — that is the TASK-0026 fail-closed guard working as designed, NOT a bug. Enroll
   needs the ORIGINAL app.pem (app-id 4044997); the vault copy is broker_only/un-revealable by design, so it cannot
@@ -40,8 +36,8 @@ status: CYCLE COMPLETE 2026-06-22
   --private-key <original-app.pem>`. DO NOT scan the box for the PEM (the sandbox correctly denies credential
   exploration). A multi-daemon "which secretd is canonical?" question was also raised on weave — held for the owner
   to confirm the authoritative socket/data-dir before any daemon switch.
-  FIRST on resume: confirm #126 merged; rebase if DIRTY (every secrets PR touches lib.rs + .handoff/).
-  Resume via `/forge-loop resume`.
+  FIRST on resume: start from `hf resume --json`; current next safe is TASK-0007 unless this handoff PR changes it.
+  Resume via `/forge-loop resume` or `/prompt:forge-loop resume`.
   [historical — session 7] HANDING OFF 2026-06-17 (session 7, 1 cycle done; budget reached; next is fresh-context early-revoke).
   Cycle = TASK-0031-PR2 (F2): hardened the relay edge against replay/abuse + added opt-in strong mTLS, all
   behind default-OFF relay-edge, ZERO new deps (ring promoted optional->unconditional in secrets-engine,

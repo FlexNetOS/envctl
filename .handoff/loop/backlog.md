@@ -62,7 +62,7 @@ additive infra — let it merge — but it does **not** close TASK-0020.
 - **Dependabot** GHSA-8m95-fffc-h4c5 (libsql-sqlite3-parser, low) dismissed as unreachable+unfixable (rationale in `crates/secrets-store-libsql/Cargo.toml`).
 
 
-### ⏭ NEXT PICK (updated 2026-06-22): **TASK-0034** (hardening tail)
+### ⏭ NEXT PICK (updated 2026-06-22): **TASK-0007** (doctor boundary-refusal / symlink regen)
 MERGED: TASK-0026 (#106), TASK-0030+OI-SM-1 (#109), **TASK-0031 PR-1 edge listener (#111)**, **TASK-0036 mlockall (#112)**, **TASK-0032 F5 stream tear-down (#117)**, **TASK-0035 gRPC gaps (#108)**, **TASK-0031-PR2 F2 edge hardening (#122)**, **TASK-0027 early-revoke (#124)**, **TASK-0037 Phase-7 verify-don't-rebuild (#131)**, plus infra #113 (low-cost-kdf-tests) / #114/#115/#116/#120/#121 (Seed + manifest portability + kasetto --help).
 IN FLIGHT: None. Guardian report notes are informational only (socket pass-through intentional). Next, in dep order:
 1. **TASK-0034** (hardening tail: F10 tonic pin + cargo-audit CI, F11 MSRV check, F18 audit-fsync) → **TASK-0038** (Certs.* Phase-4+).
@@ -166,10 +166,11 @@ foundation IS built (`relay_mint_remote`, `register_remote_client`, `broker/deci
   verbs (Rm/Rotate) fail-closed + dry-run by default; reads gate on unlock. Tests: engine inline +
   conv inline + `secretd/tests/grpc_surface_e2e.rs`. The Certs.* / non-mitm ca_issue / secretctl ca /
   empty-features carve-out moved to TASK-0038.
-- [ ] **TASK-0038 (deferred from TASK-0035 — Phase 4+):** secretd `Certs.*` service
-  (CaInit/Rotate/Issue/Renew/Revoke/TrustApply/List) + non-mitm `ca_issue` (`secrets-engine/lib.rs`
-  ~2290-2330) + `secretctl ca`; plus the defined-but-empty features `provider-openai` and libsql
-  `embedded`. These remain documented `Unimplemented` (Certs.*) / empty (features) by design.
+- [x] **TASK-0038 (deferred from TASK-0035 — Phase 4+):** secretd `Certs.CaInit/Issue/List`
+  + non-mitm `ca_issue` + `secretctl ca init/issue/list` landed in PR #137 (MERGED, guardian PASS).
+  The general operator path mints only `control_plane_server` / `control_plane_client` leaves and
+  refuses `mitm_leaf`; Certs.CaRotate/Renew/Revoke/TrustApply remain explicit Unimplemented until
+  destructive/root-of-trust semantics are designed. Remote client CA lifecycle remains TASK-0039.
 - [x] **TASK-0036 — DONE (PR #112, guardian PASS):** secretd in-process `mlockall(MCL_CURRENT|MCL_FUTURE)`
   in `harden_process()` via libc (pure-Rust FFI, zero new lockfile crates), best-effort + `require_mlock`
   strict opt-in (fail-closed). Linux-cfg-gated, never panics, metadata-only WARN.

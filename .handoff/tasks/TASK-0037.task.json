@@ -2,7 +2,7 @@
   "schema": "handoff.task.v1",
   "id": "TASK-0037",
   "title": "Phase-7 verify-don't-rebuild: confirm secrets verbs on envctl + install secretd component; fix stale ROADMAP",
-  "status": "backlog",
+  "status": "done",
   "priority": "P1",
   "objective": "Phase-7 verify-don't-rebuild: confirm secrets verbs on envctl + install secretd component; fix stale ROADMAP",
   "path_scope": [
