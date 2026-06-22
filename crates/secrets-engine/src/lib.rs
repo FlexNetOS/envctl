@@ -11,7 +11,8 @@
 //! `secret_put`/`secret_get` seal/open per-record ciphertext through the `Store`. Every security
 //! op appends a DURABLE, hash-chained audit row BEFORE returning (HF-14) and emits a `SecretEvent`.
 //! A refused op is `Ok`-with-a-`GuardRefused`-event + a `Refused` audit row — NOT an `Err`
-//! (error.rs discipline). The relay/CA/run paths remain `todo!()` (Phase 4+).
+//! (error.rs discipline). The relay/run paths and destructive CA lifecycle verbs continue to land
+//! incrementally behind fail-closed guards.
 #![allow(dead_code)] // Some scaffold fields/bodies are placeholders until later phases.
 
 pub mod broker; // Broker, RelayPolicy, Bearer, decide(), token verify, clamp_ttl, SwapOutcome
@@ -44,8 +45,11 @@ pub use mint_github::{
 };
 pub use seam::{Clock, ProviderMint, RealUsbProbe, SystemClock, Upstream, UsbProbe};
 
+#[cfg(feature = "provider-github")]
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex, RwLock};
+#[cfg(feature = "provider-github")]
+use std::sync::Mutex;
+use std::sync::{Arc, RwLock};
 use zeroize::Zeroizing;
 
 use event::AuditOutcome;
@@ -54,7 +58,7 @@ use keyslot::{
     ARGON2_M_KIB_FLOOR, ARGON2_T_COST_FLOOR,
 };
 use vault::aad::{record_aad, TableTag};
-use vault::store::{BearerRow, RelayPolicyRow, SecretRow};
+use vault::store::{BearerRow, CertRow, RelayPolicyRow, SecretRow};
 
 use broker::{
     bearer_row_mac_message, broker_hmac_key, broker_row_mac_key, canonical_upstreams, decide,
@@ -113,6 +117,16 @@ const META_MITM_CA_NOT_AFTER: &str = "mitm.ca_not_after";
 /// `GitHubAppMint` constructor — never an Event, audit row, or log.
 #[cfg(feature = "provider-github")]
 pub type AppCredential = (Zeroizing<Vec<u8>>, String, u64);
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct CertListItem {
+    pub cn: String,
+    pub is_ca: bool,
+    pub not_after: String,
+    pub revoked: bool,
+    pub sans: Vec<String>,
+    pub usage: String,
+}
 
 /// TASK-0020 flat-convention secret/meta names for the per-call `mint-github` path. The App PEM is
 /// sealed as a broker-only `SecretRow` under this name (un-revealable; opened only against the live
@@ -2809,18 +2823,20 @@ impl Engine {
     /// Operator-issued NON-MITM leaves only; REFUSES `usage = "mitm_leaf"` (CF-5). A MITM leaf may be
     /// minted ONLY through the relay-gated [`Engine::issue_leaf_for_covered_host`], never through
     /// this operator surface. The refusal is a durable `Refused` row + `GuardRefused` event mapped to
-    /// an `Err`. Non-MITM operator issuance is not part of PR-3a: a recognized non-mitm `usage`
-    /// returns a safe `unimplemented` error WITHOUT minting anything (no key material is touched).
+    /// an `Err`. Valid control-plane usages mint a public cert, persist its public DER/metadata, and
+    /// emit/audit the issuance; the private key is never returned by this RPC shape.
     #[cfg(feature = "mitm-ca")]
     pub fn ca_issue(
         &self,
-        _cn: &str,
-        _sans: &[String],
+        cn: &str,
+        sans: &[String],
+        ttl_days: u64,
         usage: &str,
         sink: &EventSink,
     ) -> anyhow::Result<String> {
         // CF-5: the operator path NEVER mints a MITM leaf. Refuse before touching any key material.
-        if usage == "mitm_leaf" {
+        let usage_key = usage.trim().replace('-', "_").to_ascii_lowercase();
+        if usage_key == "mitm_leaf" {
             self.refuse(
                 sink,
                 "ca_issued",
@@ -2829,11 +2845,138 @@ impl Engine {
             )?;
             anyhow::bail!("ca issue refused: usage 'mitm_leaf' is not operator-issuable (CF-5)");
         }
-        // Other usages (e.g. "client", "server") are valid operator targets but not implemented in
-        // PR-3a. Fail safe (no issuance) rather than mint something half-specified.
-        anyhow::bail!(
-            "ca issue: operator leaf issuance for usage '{usage}' is not yet implemented"
+
+        let operator_usage = match usage_key.as_str() {
+            "control_plane_server" | "control_server" | "server" => {
+                ca::OperatorLeafUsage::ControlPlaneServer
+            }
+            "control_plane_client" | "control_client" | "client" => {
+                ca::OperatorLeafUsage::ControlPlaneClient
+            }
+            _ => {
+                self.refuse(
+                    sink,
+                    "ca_issued",
+                    usage,
+                    "operator ca issue refused: usage must be control_plane_server or control_plane_client",
+                )?;
+                anyhow::bail!(
+                    "ca issue refused: usage must be control_plane_server or control_plane_client"
+                );
+            }
+        };
+
+        let inner = &self.inner;
+        {
+            let v = inner.vault.read().expect("vault lock");
+            if v.dek().is_none() {
+                return Err(EngineError::Locked.into());
+            }
+        }
+
+        let now_unix = inner.clock.now().timestamp();
+        let leaf = {
+            let ca = inner.ca.read().expect("ca lock");
+            match ca.as_ref() {
+                Some(ca) => ca.issue_operator_leaf(cn, sans, ttl_days, operator_usage, now_unix)?,
+                None => {
+                    self.refuse(sink, "ca_issued", cn, "CA not initialized")?;
+                    return Err(EngineError::NoCa.into());
+                }
+            }
+        };
+
+        let (_rem, cert) = x509_parser::parse_x509_certificate(&leaf.cert_der)
+            .map_err(|e| anyhow::anyhow!("ca issue: parse issued cert: {e}"))?;
+        let serial = cert.tbs_certificate.raw_serial_as_string();
+        inner.store.save_cert(CertRow {
+            serial: serial.clone(),
+            cn: cn.to_string(),
+            not_after: leaf.not_after_rfc3339.clone(),
+            der: leaf.cert_der,
+        })?;
+
+        self.audit_ok(
+            sink,
+            "ca_issued",
+            Some(cn.to_string()),
+            serde_json::json!({
+                "serial": serial,
+                "cn": cn,
+                "sans": sans,
+                "usage": operator_usage.label(),
+                "not_after": leaf.not_after_rfc3339,
+            }),
+        )?;
+        sink.emit(SecretEvent::CaIssued {
+            serial: serial.clone(),
+            cn: cn.to_string(),
+            not_after: leaf.not_after_rfc3339,
+        });
+        Ok(serial)
+    }
+
+    #[cfg(feature = "mitm-ca")]
+    pub fn ca_list(&self) -> anyhow::Result<Vec<CertListItem>> {
+        let inner = &self.inner;
+        let mut items = Vec::new();
+        if let Some(not_after) = inner.store.get_meta(META_MITM_CA_NOT_AFTER)? {
+            if inner.store.get_meta(META_MITM_CA_CERT_DER)?.is_some() {
+                items.push(CertListItem {
+                    cn: ca::CA_COMMON_NAME.to_string(),
+                    is_ca: true,
+                    not_after,
+                    revoked: false,
+                    sans: Vec::new(),
+                    usage: "ca".to_string(),
+                });
+            }
+        }
+        items.extend(
+            inner
+                .store
+                .list_certs()?
+                .into_iter()
+                .map(Self::cert_row_to_list_item),
         );
+        Ok(items)
+    }
+
+    #[cfg(feature = "mitm-ca")]
+    fn cert_row_to_list_item(row: CertRow) -> CertListItem {
+        let mut sans = Vec::new();
+        let mut usage = String::new();
+        if let Ok((_rem, cert)) = x509_parser::parse_x509_certificate(&row.der) {
+            if let Ok(Some(ext)) = cert.subject_alternative_name() {
+                sans = ext
+                    .value
+                    .general_names
+                    .iter()
+                    .filter_map(|name| match name {
+                        x509_parser::extensions::GeneralName::DNSName(dns) => {
+                            Some((*dns).to_string())
+                        }
+                        _ => None,
+                    })
+                    .collect();
+            }
+            if let Ok(Some(ext)) = cert.extended_key_usage() {
+                usage = match (ext.value.server_auth, ext.value.client_auth) {
+                    (true, false) => "control_plane_server".to_string(),
+                    (false, true) => "control_plane_client".to_string(),
+                    (true, true) => "control_plane_server,control_plane_client".to_string(),
+                    _ => String::new(),
+                };
+            }
+        }
+        CertListItem {
+            cn: row.cn,
+            is_ca: false,
+            not_after: row.not_after,
+            revoked: false,
+            sans,
+            usage,
+        }
     }
 
     /// CA-less build: `ca_issue` still exists but the whole CA surface is unavailable.
@@ -2842,11 +2985,18 @@ impl Engine {
         &self,
         _cn: &str,
         _sans: &[String],
+        _ttl_days: u64,
         _usage: &str,
         _sink: &EventSink,
     ) -> anyhow::Result<String> {
         anyhow::bail!("ca issue: built without the `mitm-ca` feature")
     }
+
+    #[cfg(not(feature = "mitm-ca"))]
+    pub fn ca_list(&self) -> anyhow::Result<Vec<CertListItem>> {
+        anyhow::bail!("ca list: built without the `mitm-ca` feature")
+    }
+
     /// Spawn a child with the provider env delta overlaid onto the inherited parent env, streaming
     /// its stdout/stderr line-by-line as `SecretEvent::Log` and returning its true exit code
     /// (128+signal on signal death). Fail-closed: refuses an empty argv or a program that does not
@@ -3478,7 +3628,7 @@ mod ca_tests {
     //! rows + seed a relay policy for the coverage gate.
     use super::*;
     use crate::keyslot::{Argon2Params, ARGON2_M_KIB_FLOOR, ARGON2_T_COST_FLOOR};
-    use crate::vault::store::RelayPolicyRow;
+    use crate::vault::store::{CertRow, RelayPolicyRow};
     use crate::vault::{InMemStore, Store};
     use std::sync::Arc;
 
@@ -3533,6 +3683,9 @@ mod ca_tests {
             save_relay_policy(row: RelayPolicyRow) -> anyhow::Result<i64>;
             load_relay_policy(relay_id: &str) -> anyhow::Result<Option<RelayPolicyRow>>;
             list_relay_policies() -> anyhow::Result<Vec<RelayPolicyRow>>;
+            save_cert(row: CertRow) -> anyhow::Result<()>;
+            load_cert(serial: &str) -> anyhow::Result<Option<CertRow>>;
+            list_certs() -> anyhow::Result<Vec<CertRow>>;
         }
     }
 
@@ -3678,17 +3831,31 @@ mod ca_tests {
 
         // mitm_leaf is refused (Err + a Refused audit row + GuardRefused event).
         let err = engine
-            .ca_issue("host", &["host".to_string()], "mitm_leaf", &sink)
+            .ca_issue("host", &["host".to_string()], 0, "mitm_leaf", &sink)
             .unwrap_err();
         assert!(format!("{err}").contains("CF-5"));
         assert!(audit_has(&store, "ca_issued", AuditOutcome::Refused));
 
-        // A non-mitm usage is NOT a CF-5 refusal: it is an explicit "not implemented" error, and it
-        // does NOT write a ca_issued Refused row for that usage path.
-        let err2 = engine
-            .ca_issue("host", &["host".to_string()], "client", &sink)
-            .unwrap_err();
-        assert!(format!("{err2}").contains("not yet implemented"));
+        // A control-plane usage is NOT a CF-5 refusal: it mints and persists a public cert row.
+        let serial = engine
+            .ca_issue(
+                "control.test",
+                &["control.test".to_string()],
+                7,
+                "control_plane_client",
+                &sink,
+            )
+            .expect("control-plane issue");
+        assert!(!serial.is_empty());
+        assert!(audit_has(&store, "ca_issued", AuditOutcome::Ok));
+        let certs = engine.ca_list().expect("ca list");
+        assert!(certs.iter().any(|c| c.is_ca));
+        let leaf = certs
+            .iter()
+            .find(|c| !c.is_ca && c.cn == "control.test")
+            .expect("issued leaf is listed");
+        assert_eq!(leaf.usage, "control_plane_client");
+        assert_eq!(leaf.sans, vec!["control.test".to_string()]);
     }
 
     #[test]

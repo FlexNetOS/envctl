@@ -20,6 +20,7 @@ type VaultClient = v1::vault_client::VaultClient<tonic::transport::Channel>;
 type RelayClient = v1::relay_client::RelayClient<tonic::transport::Channel>;
 type LockClient = v1::lock_client::LockClient<tonic::transport::Channel>;
 type AuditClient = v1::audit_client::AuditClient<tonic::transport::Channel>;
+type CertsClient = v1::certs_client::CertsClient<tonic::transport::Channel>;
 
 fn main() -> anyhow::Result<()> {
     let args = Cli::parse();
@@ -645,9 +646,77 @@ async fn relay(cmd: RelayCmd, sock: PathBuf, json: bool) -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn ca(_cmd: CaCmd, _sock: PathBuf, _json: bool) -> anyhow::Result<()> {
-    // Certs.* is Phase 4+; the daemon returns Unimplemented for every Ca verb.
-    anyhow::bail!("`env-ctl ca` is not available in Phase 6 (Certs are Phase 4+)")
+async fn ca(cmd: CaCmd, sock: PathBuf, json: bool) -> anyhow::Result<()> {
+    let mut c = CertsClient::new(connect(sock).await?);
+    match cmd {
+        CaCmd::Init { apply } => {
+            let stream = c
+                .ca_init(v1::CaInitReq {
+                    apply,
+                    confirm: false,
+                })
+                .await?
+                .into_inner();
+            drain(stream, json).await?;
+        }
+        CaCmd::Issue {
+            cn,
+            sans,
+            ttl_days,
+            usage,
+        } => {
+            let stream = c
+                .issue(v1::IssueLeafReq {
+                    cn,
+                    sans,
+                    ttl_days: ttl_days.unwrap_or(0),
+                    usage,
+                })
+                .await?
+                .into_inner();
+            drain(stream, json).await?;
+        }
+        CaCmd::List => {
+            let r = c.list(v1::ListCertReq {}).await?.into_inner();
+            render::render_certs(&r, json);
+        }
+        CaCmd::Rotate { apply, confirm } => {
+            let stream = c
+                .ca_rotate(v1::CaRotateReq { apply, confirm })
+                .await?
+                .into_inner();
+            drain(stream, json).await?;
+        }
+        CaCmd::Renew { cn, apply } => {
+            let stream = c.renew(v1::RenewLeafReq { cn, apply }).await?.into_inner();
+            drain(stream, json).await?;
+        }
+        CaCmd::Revoke { cn, apply, confirm } => {
+            let stream = c
+                .revoke(v1::RevokeLeafReq { cn, apply, confirm })
+                .await?
+                .into_inner();
+            drain(stream, json).await?;
+        }
+        CaCmd::Trust {
+            targets,
+            system_bundle,
+            apply,
+            confirm,
+        } => {
+            let stream = c
+                .trust_apply(v1::TrustReq {
+                    targets,
+                    system_bundle,
+                    apply,
+                    confirm,
+                })
+                .await?
+                .into_inner();
+            drain(stream, json).await?;
+        }
+    }
+    Ok(())
 }
 
 // ---- `env-ctl run` (PR-2b): mint a bearer + run the child with the daemon-built injection --------

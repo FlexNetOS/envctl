@@ -181,6 +181,46 @@ pub fn render_mint(r: &v1::MintResp, json: bool) {
     }
 }
 
+pub fn render_certs(r: &v1::ListCertResp, json: bool) {
+    if json {
+        for item in &r.items {
+            println!(
+                "{}",
+                serde_json::json!({
+                    "cn": item.cn,
+                    "is_ca": item.is_ca,
+                    "not_after": item.not_after,
+                    "revoked": item.revoked,
+                    "sans": item.sans,
+                    "usage": item.usage,
+                })
+            );
+        }
+        return;
+    }
+
+    if r.items.is_empty() {
+        println!("{}", c_step("(no certs)"));
+        return;
+    }
+
+    for item in &r.items {
+        let kind = if item.is_ca { "ca" } else { "leaf" };
+        let usage = if item.usage.is_empty() {
+            String::new()
+        } else {
+            format!(" usage={}", item.usage)
+        };
+        println!(
+            "{}",
+            c_step(&format!(
+                "{} {} not_after={}{} revoked={}",
+                kind, item.cn, item.not_after, usage, item.revoked
+            ))
+        );
+    }
+}
+
 pub fn render_revoke(r: &v1::RevokeResp, json: bool) {
     if json {
         println!(
