@@ -967,10 +967,10 @@ impl v1::audit_server::Audit for AuditSvc {
         let entries: Vec<v1::AuditEntry> = records
             .into_iter()
             .map(conv::audit_to_entry)
-            .filter(|e| actor.as_deref().map_or(true, |a| e.actor == a))
-            .filter(|e| relay.as_deref().map_or(true, |r| e.relay == r))
-            .filter(|e| since.as_deref().map_or(true, |s| e.at.as_str() >= s))
-            .filter(|e| until.as_deref().map_or(true, |u| e.at.as_str() <= u))
+            .filter(|e| actor.as_deref().is_none_or(|a| e.actor == a))
+            .filter(|e| relay.as_deref().is_none_or(|r| e.relay == r))
+            .filter(|e| since.as_deref().is_none_or(|s| e.at.as_str() >= s))
+            .filter(|e| until.as_deref().is_none_or(|u| e.at.as_str() <= u))
             .collect();
         Ok(Response::new(v1::AuditQueryResp { entries }))
     }

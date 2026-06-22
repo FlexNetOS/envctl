@@ -1988,7 +1988,7 @@ impl AgentResult {
             |r: &envctl_engine::AgentReport| r.summary.failed == 0 && r.summary.broken == 0;
         match self {
             AgentResult::Report(r) => report_ok(r),
-            AgentResult::Edit(o) => o.sync.as_ref().map_or(true, report_ok),
+            AgentResult::Edit(o) => o.sync.as_ref().is_none_or(report_ok),
             AgentResult::Lock(o) => !o.check || o.drift.is_empty(),
             AgentResult::List(_) => true,
             AgentResult::Init(_) => true,
