@@ -140,7 +140,10 @@ C-SQLite path stays forbidden regardless.
   row), links the row with the engine's shared chain math (`vault::audit::link_row`), inserts it, then
   calls `fsync_barrier()` (a `SELECT 1` round-trip that confirms the server APPLIED the insert —
   durability is sqld server-side; no client `PRAGMA`) before returning the `seq`. `verify_audit_chain`
-  reuses `vault::audit::verify_chain` so this backend can never disagree with `InMemStore`.
+  reuses `vault::audit::verify_chain` so this backend can never disagree with `InMemStore`. This is
+  intentionally per-row today. If a future high-rate path adds group commit, SERVER-MODE §6.2/§6.4
+  caps the group at 100 rows or 100 ms and forbids returning any batched response before the shared
+  barrier succeeds; barrier failure denies the whole group and never leaks an Allowed/200.
 - **Row-id authority:** `reserve_secret_row_id` is an atomic `UPDATE … +1; SELECT` under one
   transaction; `put_secret` validates reservation + collision + version-monotonicity under one
   transaction (mirrors the `InMemStore` contract).

@@ -15,7 +15,6 @@ clap = { workspace = true }
 clap_complete = { workspace = true }
 anyhow = { workspace = true }
 serde_json = { workspace = true }
-baby-mimalloc = { workspace = true }
 # self-update CLI half (TASK-0019): download/extract/atomic-replace of the running binary.
 # Reuses the agent-env blocking HTTP client; tar + flate2(rust_backend) + sha2 are pure-Rust
 # (no new C — proven by ci/gates/no-c.sh).

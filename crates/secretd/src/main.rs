@@ -260,7 +260,7 @@ async fn serve() -> anyhow::Result<()> {
     // daemon, and `Restart=on-failure` storms. A no-op when `$NOTIFY_SOCKET` is unset (tests / a
     // non-systemd run), so it is always safe to call. Best-effort: a notify failure must not abort a
     // healthy daemon, so we log and serve regardless.
-    if let Err(e) = sd_notify::notify(&[sd_notify::NotifyState::Ready]) {
+    if let Err(e) = sd_notify::notify(false, &[sd_notify::NotifyState::Ready]) {
         tracing::warn!(error = %e, "sd_notify READY failed (continuing to serve)");
     }
 
@@ -268,7 +268,7 @@ async fn serve() -> anyhow::Result<()> {
 
     // STOPPING=1 on graceful shutdown so systemd does not race the teardown against a restart. No-op
     // without `$NOTIFY_SOCKET`; best-effort.
-    if let Err(e) = sd_notify::notify(&[sd_notify::NotifyState::Stopping]) {
+    if let Err(e) = sd_notify::notify(false, &[sd_notify::NotifyState::Stopping]) {
         tracing::warn!(error = %e, "sd_notify STOPPING failed");
     }
 
