@@ -8,10 +8,10 @@ worktree: (per-cycle: meta/.worktrees/<slug>/envctl off develop)
 cycle_budget: 1   # heavy-context resume sessions — 1 cohesive build cycle then hand off
 wrap_every: 5   # batch boundary: run reaper + wrap-up + evolution-steward every N completed cycles (no per-task pause)
 last_wrapup_total: 18   # cycles_total at the last completed wrap-up boundary; boundary DUE when (cycles_total - this) >= wrap_every
-cycles_this_session: 1   # RESUME SESSION 2026-06-18 (session 9): cycle = TASK-0028 (GUI parity)
-cycles_total: 18   # 16 (thru session 7) + TASK-0027 (session 8, #124) + TASK-0028 (session 9, #126)
-last_item: TASK-0028 (GUI parity, Architecture B subprocess-secretctl) — DONE, PR #126, guardian PASS-WITH-NOTES, auto-merge armed
-status: HANDING OFF 2026-06-18 (session 9, 1 cycle done; budget reached; next is fresh-context TASK-0037 Phase-7 verify).
+cycles_this_session: 0   # RESUME SESSION 2026-06-18 (session 9): cycle = TASK-0028 (GUI parity)
+cycles_total: 19   # 16 (thru session 7) + TASK-0027 (session 8, #124) + TASK-0028 (session 9, #126)
+last_item: TASK-0037 (Phase-7 verify-don't-rebuild) — DONE, PR #131
+status: CYCLE COMPLETE 2026-06-22
   This reconcile is a SUPERSET that subsumes the session-8 reconcile PR #125 (which ticked TASK-0027 but had not
   merged) — #125 retired as superseded; both TASK-0027 and TASK-0028 ticks are folded here. Session 9 cycle =
   TASK-0028 (G2 GUI parity): added a Secrets screen to envctl-gui surfacing mint-github / relay-mint / revoke at

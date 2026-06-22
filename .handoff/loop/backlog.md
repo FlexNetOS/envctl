@@ -61,22 +61,15 @@ additive infra — let it merge — but it does **not** close TASK-0020.
 - **TASK-0040 DONE** — completed the kasetto integration: migrated `kasetto.yaml`/`.lock` → `agent-env.yaml`/`agent-env.lock` (absorbed-CLI default names) and wired the previously claimed-but-absent drift gate `ci/gates/agent-env.sh` (`envctl agent lock --check`) into CI. Closes the operational loose end after the v3.2.0 absorption (parity already 102/0/13).
 - **Dependabot** GHSA-8m95-fffc-h4c5 (libsql-sqlite3-parser, low) dismissed as unreachable+unfixable (rationale in `crates/secrets-store-libsql/Cargo.toml`).
 
-### ⏭ NEXT PICK (updated 2026-06-18 session 9): **TASK-0037** (Phase-7 verify-don't-rebuild)
-MERGED: TASK-0026 (#106), TASK-0030+OI-SM-1 (#109), **TASK-0031 PR-1 edge listener (#111)**, **TASK-0036
-mlockall (#112)**, **TASK-0032 F5 stream tear-down (#117)**, **TASK-0035 gRPC gaps (#108)**, **TASK-0031-PR2
-F2 edge hardening (#122)**, **TASK-0027 early-revoke (#124)**, plus infra #113 (low-cost-kdf-tests) /
-#114/#115/#116/#120/#121 (Seed + manifest portability + kasetto --help).
-IN FLIGHT (auto-merge armed): **TASK-0028 GUI parity (#126)**. The GitHub App mint path is now full-lifecycle
-(enroll #106 → mint #105 → early-revoke #124 → GUI parity #126), the relay edge is complete (PR-1 listener +
-PR-2 hardening + PR-3 stream tear-down), daemon mlock-hardened (#112), gRPC surface real (#108). Next, in dep
-order:
-1. **TASK-0037** (Phase-7 verify-don't-rebuild: confirm secrets verbs folded onto `envctl`, the `install
-   secretd` manifest component exists, fix stale ROADMAP lines) → **TASK-0034** (hardening tail: F10 tonic
-   pin + cargo-audit CI, F11 MSRV check, F18 audit-fsync) → **TASK-0038** (Certs.* Phase-4+).
+
+### ⏭ NEXT PICK (updated 2026-06-22): **TASK-0034** (hardening tail)
+MERGED: TASK-0026 (#106), TASK-0030+OI-SM-1 (#109), **TASK-0031 PR-1 edge listener (#111)**, **TASK-0036 mlockall (#112)**, **TASK-0032 F5 stream tear-down (#117)**, **TASK-0035 gRPC gaps (#108)**, **TASK-0031-PR2 F2 edge hardening (#122)**, **TASK-0027 early-revoke (#124)**, **TASK-0037 Phase-7 verify-don't-rebuild (#131)**, plus infra #113 (low-cost-kdf-tests) / #114/#115/#116/#120/#121 (Seed + manifest portability + kasetto --help).
+IN FLIGHT: None. Guardian report notes are informational only (socket pass-through intentional). Next, in dep order:
+1. **TASK-0034** (hardening tail: F10 tonic pin + cargo-audit CI, F11 MSRV check, F18 audit-fsync) → **TASK-0038** (Certs.* Phase-4+).
    Small follow-up: **MADV_DONTDUMP** companion to the merged #112 mlockall.
    Open follow-ups: **TASK-0031-PR2c** (PROXY-protocol source IP for the per-IP shed behind an L4 front) +
    **TASK-0039** (remote-clients-CA lifecycle: mint/≤7d-leaf/renew/revoke for the mTLS verifier).
-SKIP **TASK-0033** (VPS Profile B — owner-gated `[!]`). Resume with `/forge-loop`; for unattended
+SKIP **TASK-0033** (VPS Profile B — owner-gated `[!]`). Resume with `/forge-loop`; for unattended completion use `/auto-provision`.
 completion use `/auto-provision`. FIRST on resume: confirm #126 merged; rebase if DIRTY (every
 secrets PR touches `lib.rs` + `.handoff/` so siblings recur DIRTY — expected, not a problem).
 NOTE (session 9): this reconcile is a SUPERSET that subsumes the session-8 reconcile PR #125 (TASK-0027 tick) —
@@ -162,7 +155,7 @@ foundation IS built (`relay_mint_remote`, `register_remote_client`, `broker/deci
   1.80 `cargo +1.80 check --locked`), F18 (group-commit audit-fsync spec), F13/F17/F19/F23 defense-in-depth.
 
 ### secretd gRPC surface gaps (Phase-6 honest Unimplemented seams — engine lacks public read paths)
-- [~] **TASK-0035 (in review — branch `task-0035-grpc`):** Vault `List`/`Rm`/`Rotate`,
+- [x] **TASK-0035 (in review — branch `task-0035-grpc`):** Vault `List`/`Rm`/`Rotate`,
   `Relay.Create`/`List`, `Audit.Query`, and `GetSecret.meta` are now WIRED engine-first (zero new deps,
   no proto change). Added engine `secret_list`/`SecretListItem`, `secret_meta`, `secret_rm`,
   `secret_rotate`, `relay_list`, `relay_create`, `audit_query` (+ `Store::delete_secret` default-body
@@ -179,7 +172,7 @@ foundation IS built (`relay_mint_remote`, `register_remote_client`, `broker/deci
   in `harden_process()` via libc (pure-Rust FFI, zero new lockfile crates), best-effort + `require_mlock`
   strict opt-in (fail-closed). Linux-cfg-gated, never panics, metadata-only WARN.
   - [ ] follow-up: `MADV_DONTDUMP` companion (named alongside mlockall in THREAT-MODEL.md) — not widened here.
-- [ ] **TASK-0037 (Phase-7 verify-don't-rebuild):** confirm secrets verbs are folded onto the `envctl`
+- [x] **TASK-0037 (Phase-7 verify-don't-rebuild):** confirm secrets verbs are folded onto the `envctl`
   binary (today on `secretctl`) + an `envctl install secretd` manifest component exists. Update stale
   `docs/ROADMAP.md` lines 108-109/128 (contradict code).
 
