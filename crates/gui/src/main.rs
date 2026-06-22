@@ -2639,6 +2639,7 @@ fn health_label(c: &ComponentState, drift: Option<&DriftItem>) -> (Color32, Stri
             DriftKind::Unhealthy => "unhealthy",
             DriftKind::WiringMissing => "wiring missing",
             DriftKind::DriverInactive => "driver inactive",
+            DriftKind::BoundaryViolation => "boundary violation",
         };
         return (
             sev_color(d.severity),

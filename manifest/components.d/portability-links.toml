@@ -159,12 +159,12 @@ description = "Replaces ~/.local/bin (and ~/.cargo/bin duplicate) COPIES of meta
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "for b in meta meta-mcp loop lane grit; do [ -L \"$HOME/.local/bin/$b\" ] || exit 1; done"]
+args = ["-lc", '''M="${META_ROOT:-$HOME/Desktop/meta}"; ok=1; check(){ name="$1"; rel="$2"; src="$M/$rel"; dst="$HOME/.local/bin/$name"; [ -x "$src" ] || return 0; [ "$(readlink -f "$dst" 2>/dev/null)" = "$(readlink -f "$src" 2>/dev/null)" ] || ok=0; }; check meta target/release/meta; check meta-mcp target/release/meta-mcp; check loop target/release/loop; check lane lane/target/release/lane; check grit grit/target/release/grit; [ $ok = 1 ]''']
 [component.install]
 kind = "script"
 script = '''
 set -e
-M="$HOME/Desktop/meta"
+M="${META_ROOT:-$HOME/Desktop/meta}"
 ARCH="$HOME/Desktop/_archives/home-links-$(date +%Y-%m-%d)"
 # pairs: <dest-name> <repo-relative build path>
 pairs="
@@ -215,7 +215,7 @@ echo "NOTE: rtk and icm are live-session hooks — verify each immediately after
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "fail=0; for b in meta loop lane; do [ -L \"$HOME/.local/bin/$b\" ] || { echo \"copy remains: $b\"; fail=1; }; done; [ $fail = 0 ]"]
+args = ["-lc", '''M="${META_ROOT:-$HOME/Desktop/meta}"; fail=0; check(){ name="$1"; rel="$2"; src="$M/$rel"; dst="$HOME/.local/bin/$name"; [ -x "$src" ] || return 0; if [ "$(readlink -f "$dst" 2>/dev/null)" != "$(readlink -f "$src" 2>/dev/null)" ]; then echo "not linked from META_ROOT: $name"; fail=1; fi; }; check meta target/release/meta; check loop target/release/loop; check lane lane/target/release/lane; [ $fail = 0 ]''']
 
 [[component]]
 id = "claude-global-links"

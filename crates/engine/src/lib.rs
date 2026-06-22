@@ -46,9 +46,9 @@ pub use error::{EngineError, RunContext};
 pub use event::{Event, EventSink, GpuSample, Stream, Telemetry};
 pub use model::{
     AddRepoSpec, AiAgent, BuildStrategy, BuildSystem, ComponentState, DataPath, DesktopEntry,
-    DriftItem, DriftKind, EnvReport, OpResult, OpStatus, Refactor, RefactorGoal, Registry,
-    RenameRule, ResetGates, RunPlan, RunSummary, Severity, ShellRcBlock, SystemdUnit, ToolState,
-    Wiring,
+    DriftItem, DriftKind, EnvReport, MetaBoundaryReport, MetaBoundaryViolation,
+    MetaBoundaryViolationKind, OpResult, OpStatus, Refactor, RefactorGoal, Registry, RenameRule,
+    ResetGates, RunPlan, RunSummary, Severity, ShellRcBlock, SystemdUnit, ToolState, Wiring,
 };
 pub use runner::{DryRunRunner, ProcessRunner};
 pub use self_uninstall::{SelfUninstallOutcome, SelfUninstallSpec};

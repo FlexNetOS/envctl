@@ -108,6 +108,19 @@ pub fn compute(report: &EnvReport, reg: &Registry) -> Vec<DriftItem> {
         });
     }
 
+    for v in &report.meta_boundary.violations {
+        items.push(DriftItem {
+            component: "meta-tool-links".into(),
+            kind: DriftKind::BoundaryViolation,
+            severity: Severity::High,
+            suggested_verb: "envctl install meta-tool-links --apply".into(),
+            detail: format!(
+                "{} resolves to {} outside META_ROOT {}",
+                v.tool, v.resolved_path, v.expected_root
+            ),
+        });
+    }
+
     // Highest severity first for display.
     items.sort_by_key(|d| match d.severity {
         Severity::High => 0,
@@ -173,6 +186,9 @@ impl std::fmt::Display for DriftSummary {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::model::{
+        MetaBoundaryReport, MetaBoundaryViolation, MetaBoundaryViolationKind, Registry,
+    };
 
     fn item(severity: Severity) -> DriftItem {
         DriftItem {
@@ -241,5 +257,32 @@ mod tests {
             DriftSummary::from_items(&[item(Severity::Low), item(Severity::High)]).worst_severity(),
             Some(Severity::High)
         );
+    }
+
+    #[test]
+    fn boundary_violations_become_high_severity_drift() {
+        let report = EnvReport {
+            meta_boundary: MetaBoundaryReport {
+                meta_root: Some("/meta".into()),
+                local_bin: "/home/user/.local/bin".into(),
+                cargo_bin: "/home/user/.cargo/bin".into(),
+                violations: vec![MetaBoundaryViolation {
+                    tool: "secretctl".into(),
+                    path: "/home/user/.cargo/bin/secretctl".into(),
+                    resolved_path: "/home/user/.cargo/bin/secretctl".into(),
+                    expected_root: "/meta".into(),
+                    kind: MetaBoundaryViolationKind::ForeignCargoBinFile,
+                }],
+            },
+            ..EnvReport::default()
+        };
+        let reg = Registry::empty();
+
+        let drift = compute(&report, &reg);
+
+        assert_eq!(drift.len(), 1);
+        assert_eq!(drift[0].kind, DriftKind::BoundaryViolation);
+        assert_eq!(drift[0].severity, Severity::High);
+        assert_eq!(drift[0].component, "meta-tool-links");
     }
 }
