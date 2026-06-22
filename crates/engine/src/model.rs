@@ -233,9 +233,48 @@ pub struct EnvReport {
     // tools + managed components
     pub tools: Vec<ToolState>,
     pub components: Vec<ComponentState>,
+    // meta/FlexNetOS install boundary: repo-owned binaries must resolve inside META_ROOT.
+    #[serde(default)]
+    pub meta_boundary: MetaBoundaryReport,
     // computed: how detected state diverges from the manifest's desired state
     #[serde(default)]
     pub drift: Vec<DriftItem>,
+}
+
+/// Read-only boundary diagnostic for meta-owned tool shims. A non-empty
+/// `violations` list means envctl must not blindly treat the install as
+/// converged: a real binary/copy/symlink outside META_ROOT is still winning.
+#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+pub struct MetaBoundaryReport {
+    pub meta_root: Option<String>,
+    pub local_bin: String,
+    pub cargo_bin: String,
+    #[serde(default)]
+    pub violations: Vec<MetaBoundaryViolation>,
+}
+
+impl MetaBoundaryReport {
+    pub fn ok(&self) -> bool {
+        self.violations.is_empty()
+    }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct MetaBoundaryViolation {
+    pub tool: String,
+    pub path: String,
+    pub resolved_path: String,
+    pub expected_root: String,
+    pub kind: MetaBoundaryViolationKind,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum MetaBoundaryViolationKind {
+    ForeignPathEntry,
+    ForeignLocalBinFile,
+    ForeignCargoBinFile,
+    ForeignSymlinkTarget,
 }
 
 /// One way the detected environment diverges from the manifest's desired state.
@@ -259,6 +298,8 @@ pub enum DriftKind {
     WiringMissing,
     /// GPUs present but the kernel driver isn't loaded (software-rendered).
     DriverInactive,
+    /// A known FlexNetOS/meta tool resolves to a real install outside META_ROOT.
+    BoundaryViolation,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]

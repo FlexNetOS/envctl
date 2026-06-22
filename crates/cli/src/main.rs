@@ -3130,6 +3130,7 @@ fn handle_connect(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
 /// sudo, UEFI/Secure-Boot, GPU, and the run log. Never mutates anything.
 fn print_doctor(engine: &Engine, json: bool) -> anyhow::Result<()> {
     let last_run = envctl_engine::runtime::load(engine.manifest_dir()).last_run;
+    let detected = engine.detect(&EventSink::null()).ok();
     let home = std::env::var("HOME").unwrap_or_default();
     let write_ok = |p: &str| -> bool {
         let dir = std::path::Path::new(p);
@@ -3209,6 +3210,7 @@ fn print_doctor(engine: &Engine, json: bool) -> anyhow::Result<()> {
                 "writable": dirj, "tools": toolj, "sudo_cached": sudo_cached,
                 "uefi": uefi, "secure_boot": secure_boot, "nvidia_driver_loaded": driver_loaded,
                 "run_log": run_log.display().to_string(), "run_log_exists": log_exists,
+                "meta_boundary": detected.as_ref().map(|r| &r.meta_boundary),
                 "last_run": last_run,
             }))?
         );
@@ -3272,6 +3274,9 @@ fn print_doctor(engine: &Engine, json: bool) -> anyhow::Result<()> {
             lr.at
         ),
         None => println!("  last op            (none recorded)"),
+    }
+    if let Some(report) = detected.as_ref() {
+        print_meta_boundary(report);
     }
     if !sudo_cached {
         println!("\n  note: sudo not pre-authorized — privileged installs need `sudo -v` in a real terminal first.");
@@ -3510,6 +3515,8 @@ fn print_report(r: &EnvReport) {
         }
     }
 
+    print_meta_boundary(r);
+
     println!("\x1b[1;36m── components ──\x1b[0m");
     for c in &r.components {
         let mark = if c.detected {
@@ -3551,6 +3558,35 @@ fn print_report(r: &EnvReport) {
         }
     }
     println!("\n  generated_at {}", r.generated_at);
+}
+
+fn print_meta_boundary(r: &EnvReport) {
+    let b = &r.meta_boundary;
+    println!("\x1b[1;36m── meta boundary ──\x1b[0m");
+    match b.meta_root.as_deref() {
+        Some(root) => println!("  META_ROOT          {root}"),
+        None => {
+            println!("  META_ROOT          (not resolved)");
+            return;
+        }
+    }
+    println!("  local bin          {}", b.local_bin);
+    println!("  cargo bin          {}", b.cargo_bin);
+    if b.ok() {
+        println!("  \x1b[1;32m✓\x1b[0m known FlexNetOS tools resolve inside META_ROOT");
+        return;
+    }
+    println!(
+        "  \x1b[1;31m✗\x1b[0m {} out-of-bound tool install(s) found",
+        b.violations.len()
+    );
+    for v in &b.violations {
+        println!(
+            "    {:<14} {:?}: {} -> {}",
+            v.tool, v.kind, v.path, v.resolved_path
+        );
+    }
+    println!("    → envctl install meta-tool-links --apply");
 }
 
 #[cfg(test)]
