@@ -779,3 +779,56 @@ rm -rf "$M/.toolchains/helix"
 
 [component.wiring]
 path_entries = ["~/.local/bin"]
+
+# ── huggingface-cli ── meta-owned HuggingFace CLI in an isolated venv (same venv idiom as
+# pytorch-venv, but under .toolchains). huggingface_hub renamed its CLI to `hf`; the classic
+# `huggingface-cli` binary is now a DEAD deprecation stub in 1.x ("no longer works. Use `hf`"),
+# and `hf` itself collides with the handoff continuity kernel (~/.local/bin/hf). So we symlink the
+# WORKING `hf` entry point under the non-colliding classic name `huggingface-cli` — the script does
+# not gate on its own filename, so `huggingface-cli <args>` runs the real CLI (verified: `version`,
+# `env`). `hf` is NEVER placed on ~/.local/bin. Repo: huggingface/huggingface_hub.
+[[component]]
+id = "huggingface-cli"
+name = "HuggingFace CLI (meta-owned venv)"
+description = "huggingface_hub CLI in an isolated venv at .toolchains/huggingface, exposed as ~/.local/bin/huggingface-cli (symlinked to the WORKING `hf` entry point; never `hf`, which collides with the handoff kernel). Repo: huggingface/huggingface_hub."
+
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/huggingface/bin/hf\" ] && [ \"$(readlink -f \"$HOME/.local/bin/huggingface-cli\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/huggingface/bin/hf\")\" ]"]
+
+[component.install]
+kind = "script"
+login_shell = true
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/huggingface"
+python3 -m venv "$DEST"
+"$DEST/bin/pip" install --quiet --upgrade pip
+"$DEST/bin/pip" install --quiet --upgrade huggingface_hub
+install -d -m 755 "$HOME/.local/bin"
+# Expose the WORKING `hf` entry point under the classic, non-colliding name. The classic
+# `huggingface-cli` binary is a dead deprecation stub in huggingface_hub 1.x; `hf` itself is
+# NEVER symlinked (it collides with ~/.local/bin/hf, the handoff kernel).
+ln -sfn "$DEST/bin/hf" "$HOME/.local/bin/huggingface-cli"
+'''
+
+[component.verify]
+kind = "command"
+command = "bash"
+args = ["-lc", "PATH=\"$HOME/.local/bin:$PATH\"; huggingface-cli version"]
+
+[component.remove]
+kind = "script"
+login_shell = true
+script = '''
+set -u
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/huggingface"
+t="$HOME/.local/bin/huggingface-cli"; [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/huggingface" && rm -f "$t"
+rm -rf "$DEST"
+'''
+
+[component.wiring]
+path_entries = ["~/.local/bin"]
