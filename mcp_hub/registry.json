@@ -1,0 +1,21 @@
+{
+  "schema": "hub.registry.v1",
+  "entries": [
+    {
+      "id": "n8n-mcp",
+      "name": "n8n MCP server (docs-only key-less)",
+      "description": "Tier-1 n8n workflow tooling via the external n8n-mcp server. The docs-only path is key-less; live workflow management still needs the human-gated n8n API key.",
+      "component": "n8n-mcp",
+      "status": "stable",
+      "tier": 1
+    },
+    {
+      "id": "playwright-mcp",
+      "name": "Playwright MCP server (API-less fallback)",
+      "description": "Tier-2 browser automation fallback for API-less web apps. Already present in the agent-env baseline via the Playwright MCP pack.",
+      "component": "kasetto",
+      "status": "stable",
+      "tier": 2
+    }
+  ]
+}
