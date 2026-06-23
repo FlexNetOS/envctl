@@ -327,7 +327,7 @@ requires = ["rustup"]
 resolved = ""
 
 [components.rustup]
-content_hash = "27302c5aae65a605"
+content_hash = "0b56e68481dccda6"
 requires = []
 resolved = ""
 
