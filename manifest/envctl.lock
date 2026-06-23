@@ -289,7 +289,7 @@ requires = []
 resolved = ""
 
 [components.nix-portable]
-content_hash = "5a216c6aa34e3e16"
+content_hash = "f202afc6d3cef691"
 requires = []
 resolved = ""
 

@@ -151,3 +151,59 @@ F1 fix made the on-box install actually run. It's a localized fix to the SAME co
 kind of "failing verify you can see is yours to fix before handoff" case. The architect's "ELF"
 intent is preserved (the payload IS an ELF); only the detection method changed from the `file`
 classifier (wrong for a polyglot script+ELF) to the embedded-magic grep.
+
+## Re-run note 2 (SUPERSEDES re-run note 1) — owner directive: gh-authenticated fetch + polyglot verify
+
+The coordinator superseded re-run note 1's F1 fix with an owner directive, and refined F2. Both are
+manifest-TOML-only, same `nix-portable` block.
+
+### FIX 1 (owner directive) — authenticate the fetch via the meta-owned gh, don't dodge the rate limit
+- **Root cause (confirmed):** the box's UNAUTH GitHub API quota is 60/hr and exhausted → 403. But
+  the box IS gh-authenticated (`gh auth status`: account `drdave-flexnetos`, keyring, scopes incl.
+  `repo`) → authenticated ops get 5000/hr. And `gh` is itself a meta-owned Epic-H component
+  (TASK-0057), guaranteed on PATH.
+- **Fix:** the install hook now uses authenticated `gh release download --repo DavHau/nix-portable
+  --pattern 'nix-portable-x86_64' --output "$DEST/bin/nix-portable" --clobber` as PRIMARY (no
+  api.github.com JSON, no tag math, no rate-limit), with the web-redirect + curl + `v012` fallback
+  ONLY if gh is absent/unauthed:
+  ```
+  if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+    gh release download --repo DavHau/nix-portable --pattern 'nix-portable-x86_64' --output "$DEST/bin/nix-portable" --clobber
+  else
+    TAG="$(curl -fsSLI -o /dev/null -w '%{url_effective}' 'https://github.com/DavHau/nix-portable/releases/latest' 2>/dev/null | grep -oE 'v[0-9]+$')"; [ -n "$TAG" ] || TAG=v012
+    curl -fsSL "https://github.com/DavHau/nix-portable/releases/download/${TAG}/nix-portable-x86_64" -o "$DEST/bin/nix-portable"
+  fi
+  ```
+  `M=`/`DEST=`/`rm -rf "$DEST"; install -d -m 755 "$DEST/bin"` (moved BEFORE the fetch so both
+  branches write into a clean dir) + `chmod +x` + `ln -sfn ... ~/.local/bin/nix-portable` unchanged.
+
+### FIX 2 (refines re-run-note-1's F2) — verify via `grep -qi 'executable'`, not embedded-ELF-magic
+- Same root cause: nix-portable is a self-extracting polyglot, `file` reports "Bourne-Again shell
+  script, ASCII text executable", so `grep -q 'ELF'` fails on a good install.
+- Per the owner/coordinator directive, the verify hook now uses the simpler, future-proof
+  `file ... | grep -qi 'executable'` (matches "ASCII text executable" today AND "ELF ... executable"
+  if upstream ever repackages) instead of re-run-note-1's `grep -qa $'\x7fELF'` embedded-magic
+  check. Still file-exists + executable, still NO mutation/network.
+
+### Re-verify (on-box, post-both-fixes — gh path EXERCISED)
+- `gh auth status` → `✓ Logged in to github.com account drdave-flexnetos (keyring)`.
+- Cleared the prior artifact (`rm -rf .toolchains/nix-portable` + the symlink) to force a FRESH
+  gh-path install, then `cargo run -p envctl -- install nix-portable` → **`✓ nix-portable Install`,
+  `wiring applied`, exit 0** (the `gh release download` branch ran, since gh is authed).
+- Artifact: 64.9 MB / 68062412 bytes at `.toolchains/nix-portable/bin/nix-portable`, exec bit set;
+  `file` → "Bourne-Again shell script, ASCII text executable"; verify-hook simulation
+  `file | grep -qi 'executable'` → **PASS**.
+- `readlink -f ~/.local/bin/nix-portable` → `/home/drdave/Desktop/meta/.toolchains/nix-portable/bin/nix-portable`
+  (resolves into `$META_ROOT/.toolchains`). Did NOT run `nix-portable nix ...`.
+- `auto-detect | grep nix-portable` → **`✓ nix-portable (meta-owned) [healthy] wired`**.
+- `doctor` → nix-portable NOT flagged (healthy); only the pre-existing unrelated `weave` flag remains.
+- `lock` → 74; `lock --check` → `✓ matches (74 components)` exit 0 (install+verify bodies changed →
+  content_hash regenerated; count unchanged at 74).
+- `cargo fmt --all -- --check` clean; `ci/gates/no-c.sh` / `shape.sh` / `loop-state.sh` all PASS.
+- **Component left INSTALLED + healthy on the box.**
+
+### Guardian note: NOTE on the install `--apply` flag
+The envctl `install` verb mutates by DEFAULT (`--dry-run` is the opt-in); `install --apply` is
+rejected (`unexpected argument '--apply'`). The correct mutating invocation is `install nix-portable`
+(or bare `install`). This differs from `auto-fix`/`reset`, which DO take `--apply`. The on-box install
+above used `install nix-portable` and succeeded.
