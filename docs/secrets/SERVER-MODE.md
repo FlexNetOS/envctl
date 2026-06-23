@@ -168,9 +168,9 @@ pub trait PresenceGate: Send + Sync { fn resolve(&self) -> GateState; }
 - **Plane-specific grace:** the ~5-min grace was sized for the local-UX "brief USB jiggle mid-command" case; it is mis-sized as a remote security boundary. For the **remote plane the grace is short or zero** — on USB-absent, deny NEW remote egress immediately while local same-box ergonomics keep the existing grace. The remote grace is a **security** parameter, not a UX one.
 - **On-box gate must actually be backed by a USB keyslot:** if topology is on-box and NO enabled `usb_keyfile` keyslot exists, the daemon **refuses to start** (or forces every `usb_gated=0` to be an explicit, audited operator choice) — a passphrase-only on-box vault otherwise has the A12 posture (minus the hypervisor risk) while the operator believes they are in the strong default. New FS-S22 (symmetric to the VPS FS-S21).
 
-### 5.3 Profile B — VPS (explicit opt-in, fail-closed, **non-shippable until the authorizer protocol is specified**)
+### 5.3 Profile B — VPS (explicit opt-in, fail-closed, **shippable — operator-authorizer protocol specified + tested, TASK-0033**)
 
-If `secretd` runs on a VPS the USB cannot be there. VPS mode is supported only with an explicit substitute factor and **never silently downgrades**, but the substitute protocol is currently UNSPECIFIED and load-bearing, so VPS mode is **gated as non-shippable** until it is designed and tested (OI-SM-2):
+If `secretd` runs on a VPS the USB cannot be there. VPS mode is supported only with an explicit substitute factor and **never silently downgrades**. The substitute protocol is now SPECIFIED (operator-box presence-token authorizer, OI-SM-2 — `docs/secrets/OI-SM-2-operator-authorizer.md`) and TESTED (TASK-0033 `crates/secretd/tests/profile_b_e2e.rs`, incl. the FS-S21/S22/S23/S24 negatives), so VPS mode is **shippable**:
 
 - **Store:** prefer the pure-Rust `remote` libSQL client to a SEPARATE hardened `sqld` (JWT Ed25519 + TLS + pinned cert, **never the open default** — research/03: `sqld` defaults to no auth, no usable at-rest encryption). `sqld` is untrusted ciphertext storage; only app-encrypted blobs reach it; the DEK is never persisted.
 - **Substitute gate (split authority):** mint/renew/post-grace swap on the VPS REQUIRE a short-lived, **operator-box-signed presence token** issued over the mTLS remote channel by an `env-ctl authorizer` on the box that holds the USB. The presence token maps into `gate_absent_since_ms` via the `PresenceGate` impl. If the operator box (USB holder) is unreachable, the VPS **drains in-flight and denies new egress** — identical fail-closed semantics to a USB pull. **A VPS deploy with no configured substitute factor fails closed at startup** (FS-S21).
@@ -233,7 +233,7 @@ A lapsed edge cert breaks all remote clients; on a CGNAT/dynamic-IP home box ACM
 
 ### 7.1 Decision table
 
-| Dimension | Profile A — THIS box (DEFAULT, recommended) | Profile B — VPS (opt-in, fail-closed, non-shippable until OI-SM-2) |
+| Dimension | Profile A — THIS box (DEFAULT, recommended) | Profile B — VPS (opt-in, fail-closed, shippable — OI-SM-2 specified+tested, TASK-0033) |
 |---|---|---|
 | Vault / DEK location | on the operator box (physical control) | OFF the operator box (untrusted hypervisor) |
 | USB gating | local, **unchanged** (REQ-SEC-3/5, FS-S5) | substituted by operator-box-signed presence token (split authority) |
@@ -255,7 +255,7 @@ A lapsed edge cert breaks all remote clients; on a CGNAT/dynamic-IP home box ACM
 5. Open ONLY the relay port in the firewall; control via local `secretctl` over UDS. Pull the USB → remote egress stops within the (short, remote-plane) grace; `lock` / `relay revoke --all` are the panic stops for remote too.
 6. Run the deploy smoke test (§3): every control verb undialable off-box; a valid DPoP-bound swap succeeds; USB-pull stops remote egress within grace.
 
-**Profile B (VPS, opt-in — blocked until OI-SM-2/3 ship):**
+**Profile B (VPS, opt-in — shippable as of TASK-0033; OI-SM-2/3 specified + tested):**
 1. Provision a hardened `sqld` node (JWT Ed25519 + TLS + pinned cert, NOT the open default).
 2. `secretd --features libsql-remote`, `store.profile = "remote"`, `sync_url`/`auth_jwt`/`tls_pin` set.
 3. Configure the substitute gate: `env-ctl authorizer` on the operator box (holds the USB), reachable over mTLS; configure trusted time. No gate configured ⇒ refuses to start (FS-S21).
@@ -330,8 +330,8 @@ Resolved in code/docs since this design note was written:
 | ID | Severity | Item |
 |---|---|---|
 | OI-SM-1 | medium | DPoP plumbing details: `jti` replay-store sizing/eviction, server-issued nonce lifecycle, clock-drift window; the exact `remote_clients` schema for `jkt` + `hardware_bound`. |
-| OI-SM-2 | high (blocks VPS) | Operator-box authorizer protocol (presence-token format/binding/TTL/replay window/outage behavior) + the substitute-factor declaration UX. VPS mode is non-shippable until specified and FS-S21/S23 have passing negative tests. |
-| OI-SM-3 | high (blocks VPS) | External trusted-time source for VPS bearer issuance/acceptance (hypervisor clock untrusted; defeats the monotonic floor). |
+| OI-SM-2 | RESOLVED (TASK-0033) | Operator-box authorizer protocol (presence-token format/binding/TTL/replay window/outage behavior). Specified in `OI-SM-2-operator-authorizer.md`; built in `broker::authorizer` + `secretd::edge::authorizer` + `secretctl authorizer`; FS-S21/S22/S23/S24 negatives pass in `profile_b_e2e.rs`. |
+| OI-SM-3 | RESOLVED (TASK-0033) | External trusted-time source for VPS token issuance/acceptance (`OperatorBoxTrustedTime`; the authorizer link attests the operator's time, and verify refuses `TrustedTimeUnavailable` when stale). |
 | OI-SM-5 | medium | Telegram cloud-agent key custody confirmation: does the runtime offer a non-exportable/process-isolated key store? Sets `hardware_bound`; otherwise the bearer-only degraded posture (§4.4) applies. |
 | OI-SM-6 | medium | Reverse-tunnel-from-VPS pattern as the home-box default reachability path; ensure TLS termination stays on-box so DPoP/EKM survives. |
 | OI-SM-7 | low | Per-client `source_cidr` UX; documented as defense-in-depth pre-filter only (never sole control), default unset for cloud clients. |
@@ -343,4 +343,4 @@ Resolved in code/docs since this design note was written:
 
 - **Phase 0 (now):** add the fail-closed surface as compile-present `todo!()` guards — the `RemotePeer`/client-binding type, the new `DenyReason` variants, the `relay_bearers.client_id`/`dpop_jkt` fields, the `gate_absent_since_ms` rename + `PresenceGate` trait, and the listener-enumeration self-check. The safety surface is never deferred (the existing rule). The public edge listener MUST NOT serve until the remote-binding deny path and the self-check are non-`todo!()`.
 - **Phase 1:** store work targets the **libSQL backend behind the `Store` trait in the new `secrets-store-libsql` crate** (Profile A; recommended separate-process `sqld` + pure-Rust `remote` client). `inmem-store` remains the CI analogue and the engine default.
-- **New Phase 8 — SERVER-MODE (remote relay HTTPS plane):** in-process TLS-terminating edge; DPoP verification + replay store; remote-clients CA (hardened mode); `RemotePeer`/binding wired into `decide()`; the listener self-check + deploy smoke test; the publicly-trusted edge cert; streaming revocation tear-down. **Profile B (VPS) is a gated sub-item, blocked behind OI-SM-2/3** (operator-authorizer protocol + trusted time) — until then Profile A is the only production path and the daemon refuses VPS mode.
+- **New Phase 8 — SERVER-MODE (remote relay HTTPS plane):** in-process TLS-terminating edge; DPoP verification + replay store; remote-clients CA (hardened mode); `RemotePeer`/binding wired into `decide()`; the listener self-check + deploy smoke test; the publicly-trusted edge cert; streaming revocation tear-down. **Profile B (VPS) is now shippable (TASK-0033):** the operator-box presence-token authorizer (OI-SM-2) + external trusted time (OI-SM-3) are specified and tested; the daemon serves VPS mode with the substitute factor and refuses (fail-closed) only when it is misconfigured (FS-S21/S22/S23/S24).
