@@ -65,8 +65,8 @@ requires = [
 resolved = ""
 
 [components.cuda-toolkit]
-content_hash = "c5be706d2f4a8bac"
-requires = ["nvidia-cuda-repo"]
+content_hash = "7e883134a2a85adb"
+requires = ["rustup"]
 resolved = ""
 
 [components.dashboard]

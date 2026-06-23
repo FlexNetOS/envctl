@@ -32,44 +32,111 @@ script = "sudo dpkg -P cuda-keyring; sudo rm -f /etc/apt/sources.list.d/cuda-ubu
 
 [[component]]
 id = "cuda-toolkit"
-name = "CUDA toolkit 13.3"
-description = "cuda-toolkit-13-3 (version-locked); owns the cuda env shell block."
-requires = ["nvidia-cuda-repo"]
+name = "CUDA toolkit 13.3 (meta-owned)"
+# Epic H TASK-0063: relocated from the apt `cuda-toolkit-13-3` system-depth install to a
+# meta-owned prefix ($META_ROOT/.toolchains/cuda) via NVIDIA's runfile in TOOLKIT-ONLY,
+# user-prefix mode (`--toolkit --toolkitpath=… --override`, NO sudo, NO driver). The
+# nvidia-open KERNEL driver stays apt (the irreducible system floor — a kernel module can't
+# live in a userspace prefix; the runfile is invoked toolkit-only so it never touches it).
+# libcuda (the proprietary user-mode driver) also stays with the apt driver. id is unchanged
+# so the `requires = [..., "cuda-toolkit", ...]` edges (cuda-oxide, group-gpu-stack) resolve.
+# The old apt toolkit is removed by the owner separately (`sudo apt-get remove -y
+# cuda-toolkit-13-3 && sudo apt-get autoremove -y`) — a sudo step kept out of every hook.
+description = "CUDA toolkit (nvcc, cuBLAS/cuDNN, nsys/ncu) from NVIDIA's runfile into .toolchains/cuda (toolkit-only, no-sudo, no-driver). Replaces the apt cuda-toolkit-13-3 system-depth install. Owns the cuda env shell block (meta-prefix first, apt fallback)."
+# rust-native GPU stack: the toolkit feeds `cuda-oxide` (Rust→PTX via nightly), so the rust
+# toolchain is provisioned first. (Replaces the dropped apt `nvidia-cuda-repo` ordering dep — the
+# runfile is self-contained — and keeps the topo invariant `rustup < cuda-toolkit`.)
+requires = ["rustup"]
 gpu_required = true
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "command -v nvcc >/dev/null || dpkg -l cuda-toolkit-13-3 2>/dev/null | grep -q '^ii'"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/cuda/bin/nvcc\" ]"]
 [component.install]
-kind = "command"
-needs_sudo = true
-command = "apt-get"
-args = ["install", "-y", "cuda-toolkit-13-3"]
+kind = "script"
+login_shell = true
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/cuda"
+VER="13.3.0"; DRV="610.43.02"
+MD5="16d68669cf659157777d2e7adaff179d"
+RUN="cuda_${VER}_${DRV}_linux.run"
+URL="https://developer.download.nvidia.com/compute/cuda/${VER}/local_installers/${RUN}"
+# Cache the ~4GB runfile under $M/.cache so a retry/fix never re-downloads. Verify md5 each
+# time; re-fetch only if missing or corrupt. The download + integrity check happen BEFORE we
+# touch the existing prefix, so a bad download is fail-closed and never destroys a good install.
+cache="$M/.cache/cuda"; install -d -m 755 "$cache"
+if ! ( [ -s "$cache/$RUN" ] && echo "${MD5}  $cache/$RUN" | md5sum -c - >/dev/null 2>&1 ); then
+  curl -fSL "$URL" -o "$cache/$RUN"
+  echo "${MD5}  $cache/$RUN" | md5sum -c -
+fi
+tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+# Toolkit-only, user-prefix, no-sudo install. --toolkit (NOT --driver/--samples) so the apt
+# nvidia-open kernel driver (system floor) is never touched; --override skips the host
+# compiler/distro checks; --nox11 + </dev/null stop the makeself wrapper from trying to spawn
+# an xterm when stdout is not a TTY (headless/CI); --tmpdir keeps the ~7GB self-extraction
+# off a small /tmp. NOTE: invoked with `sh`; --nox11 is the load-bearing headless flag.
+rm -rf "$DEST"; install -d -m 755 "$DEST"
+sh "$cache/$RUN" --silent --toolkit --toolkitpath="$DEST" --override --no-opengl-libs --no-man-page --nox11 --tmpdir="$tmp" </dev/null
+# Curated bin tools → ~/.local/bin (nvcc resolves its sibling nvvm/targets via realpath).
+install -d -m 755 "$HOME/.local/bin"
+for t in nvcc nsys ncu cuda-gdb compute-sanitizer cuobjdump; do
+  [ -x "$DEST/bin/$t" ] && ln -sfn "$DEST/bin/$t" "$HOME/.local/bin/$t"
+done
+'''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "CUDA_HOME=/usr/local/cuda; [ -d \"$CUDA_HOME/bin\" ] || CUDA_HOME=\"$(ls -d /usr/local/cuda-* 2>/dev/null | sort -V | tail -n1)\"; \"$CUDA_HOME/bin/nvcc\" --version"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; D=\"$M/.toolchains/cuda\"; \"$D/bin/nvcc\" --version | command grep -q 'release 13.3' && { ls \"$D\"/targets/x86_64-linux/lib/libcublas.so* >/dev/null 2>&1 || ls \"$D\"/lib64/libcublas.so* >/dev/null 2>&1; }"]
 [component.fix]
-kind = "command"
-needs_sudo = true
-command = "apt-get"
-args = ["install", "--reinstall", "-y", "cuda-toolkit-13-3"]
+kind = "script"
+login_shell = true
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/cuda"
+VER="13.3.0"; DRV="610.43.02"
+MD5="16d68669cf659157777d2e7adaff179d"
+RUN="cuda_${VER}_${DRV}_linux.run"
+URL="https://developer.download.nvidia.com/compute/cuda/${VER}/local_installers/${RUN}"
+cache="$M/.cache/cuda"; install -d -m 755 "$cache"
+if ! ( [ -s "$cache/$RUN" ] && echo "${MD5}  $cache/$RUN" | md5sum -c - >/dev/null 2>&1 ); then
+  curl -fSL "$URL" -o "$cache/$RUN"
+  echo "${MD5}  $cache/$RUN" | md5sum -c -
+fi
+tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+rm -rf "$DEST"; install -d -m 755 "$DEST"
+sh "$cache/$RUN" --silent --toolkit --toolkitpath="$DEST" --override --no-opengl-libs --no-man-page --nox11 --tmpdir="$tmp" </dev/null
+install -d -m 755 "$HOME/.local/bin"
+for t in nvcc nsys ncu cuda-gdb compute-sanitizer cuobjdump; do
+  [ -x "$DEST/bin/$t" ] && ln -sfn "$DEST/bin/$t" "$HOME/.local/bin/$t"
+done
+'''
 [component.remove]
 kind = "script"
-script = "sudo apt-get remove -y cuda-toolkit-13-3 && sudo apt-get autoremove -y"
+script = '''
+set -u
+M="${META_ROOT:-$HOME/Desktop/meta}"
+for t in nvcc nsys ncu cuda-gdb compute-sanitizer cuobjdump; do
+  tt="$HOME/.local/bin/$t"; [ -L "$tt" ] && readlink "$tt" | grep -q "$M/.toolchains/cuda" && rm -f "$tt"
+done
+rm -rf "$M/.toolchains/cuda"
+'''
 [component.wiring]
-path_entries = ["/usr/local/cuda/bin"]
+path_entries = ["~/.local/bin"]
 [[component.wiring.shell_rc]]
 file = "~/.bashrc"
 marker = "cuda env"
-# Resolve CUDA_HOME dynamically (cuda-toolkit-13-3 installs to /usr/local/cuda-13.3
-# and does NOT guarantee the unversioned /usr/local/cuda symlink) — mirrors the
-# wizard (yazelix-setup.sh L134-135) and this component's own verify.
+# Resolve CUDA_HOME meta-prefix-first, with apt fallback so consumers (cuda-oxide, pytorch)
+# keep working during/after the migration off the apt toolkit. Epic H TASK-0063.
 content = '''
-CUDA_HOME=/usr/local/cuda; [ -d "$CUDA_HOME/bin" ] || CUDA_HOME="$(ls -d /usr/local/cuda-* 2>/dev/null | sort -V | tail -n1)"
+M="${META_ROOT:-$HOME/Desktop/meta}"
+CUDA_HOME="$M/.toolchains/cuda"; [ -d "$CUDA_HOME/bin" ] || CUDA_HOME=/usr/local/cuda; [ -d "$CUDA_HOME/bin" ] || CUDA_HOME="$(ls -d /usr/local/cuda-* 2>/dev/null | sort -V | tail -n1)"
+export CUDA_HOME
 export PATH="$CUDA_HOME/bin:$PATH"
-export LD_LIBRARY_PATH="$CUDA_HOME/lib64:${LD_LIBRARY_PATH:-}"
-export CUDA_OXIDE_LLC="$(command -v llc-22 || command -v llc-21 || ls /usr/lib/llvm-2*/bin/llc 2>/dev/null | sort -V | tail -n1)"
+export LD_LIBRARY_PATH="$CUDA_HOME/lib64:$CUDA_HOME/targets/x86_64-linux/lib:${LD_LIBRARY_PATH:-}"
+export CUDA_OXIDE_LLC="$(command -v llc-22 || command -v llc-21 || command -v llc || ls /usr/lib/llvm-2*/bin/llc 2>/dev/null | sort -V | tail -n1)"
 '''
 
 
