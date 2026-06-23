@@ -65,6 +65,12 @@ additive infra — let it merge — but it does **not** close TASK-0020.
 ### ⏭ NEXT PICK (updated 2026-06-22): **TASK-0016** (agent-asset lock unification)
 MERGED: TASK-0026 (#106), TASK-0030+OI-SM-1 (#109), **TASK-0031 PR-1 edge listener (#111)**, **TASK-0036 mlockall (#112)**, **TASK-0032 F5 stream tear-down (#117)**, **TASK-0035 gRPC gaps (#108)**, **TASK-0031-PR2 F2 edge hardening (#122)**, **TASK-0027 early-revoke (#124)**, **TASK-0037 Phase-7 verify-don't-rebuild (#131)**, plus infra #113 (low-cost-kdf-tests) / #114/#115/#116/#120/#121 (Seed + manifest portability + kasetto --help).
 IN FLIGHT: None. Guardian report notes are informational only (socket pass-through intentional). Next, in dep order:
+0. **TASK-0053** (P0, inserted 2026-06-23): route the verified meta GitHub transport doctrine into envctl.
+   Source proof is `tasks/envctl-github-transport-truth` in the meta KB plus TASK-0053's card. Doctrine:
+   SSH-backed `git` is repository truth; `gh`/GitHub API is workflow orchestration and must be read-back
+   verified against git refs, PR state, and required checks; raw API/connector output is advisory. Envctl owns
+   the scoped/broker-only GitHub App token path (`mint-github`, enroll/revoke, policy-drift token equivalent).
+   Keep continuity wording current: handoff uses the redb-backed ledger plus deterministic JSONL export, not SQLite.
 1. **TASK-0034** (hardening tail: F10 tonic pin + cargo-audit CI, F11 MSRV check, F18 audit-fsync) → **TASK-0038** (Certs.* Phase-4+).
    Small follow-up: **MADV_DONTDUMP** companion to the merged #112 mlockall.
    Open follow-ups: **TASK-0031-PR2C** (PROXY-protocol source IP for the per-IP shed behind an L4 front) +
