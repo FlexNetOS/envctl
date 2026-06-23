@@ -9,7 +9,7 @@
 #      This is what `verify` proves — fail-closed, never touches a human key.
 #   2. live management (gated): create/update/run workflows additionally needs a
 #      running n8n at N8N_API_URL + the `n8n-api-key` secret (HUMAN GATE). The live
-#      smoke is DOCUMENTED (see _workspace/n8n-live-smoke-runbook.md), NOT wired
+#      smoke is DOCUMENTED (see .handoff/loop/_done/n8n-live-smoke-runbook.md), NOT wired
 #      into verify — an absent key must neither falsely pass nor falsely fail here.
 
 [[component]]
