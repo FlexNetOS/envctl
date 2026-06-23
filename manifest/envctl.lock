@@ -289,7 +289,7 @@ requires = []
 resolved = ""
 
 [components.mlua]
-content_hash = "d35684cc3655c910"
+content_hash = "7222c41f0cc7f8e7"
 requires = [
     "llvm-clang",
     "rustup",

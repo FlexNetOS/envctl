@@ -236,16 +236,18 @@ use std::io::Read;
 fn main() -> mlua::Result<()> {
     let lua = mlua::Lua::new();
     let args: Vec<String> = std::env::args().skip(1).collect();
-    let code = if args.first().map(|s| s == "-e").unwrap_or(false) {
-        args.get(1).cloned().unwrap_or_default()
+    // Name the chunk so Lua errors point at the user's source, not the loader call site.
+    // Lua convention: `@path` renders as the file path; `=label` renders verbatim.
+    let (code, name) = if args.first().map(|s| s == "-e").unwrap_or(false) {
+        (args.get(1).cloned().unwrap_or_default(), "=(command line)".to_string())
     } else if let Some(path) = args.first() {
-        std::fs::read_to_string(path)?
+        (std::fs::read_to_string(path)?, format!("@{path}"))
     } else {
         let mut s = String::new();
         std::io::stdin().read_to_string(&mut s)?;
-        s
+        (s, "=stdin".to_string())
     };
-    lua.load(&code).exec()
+    lua.load(&code).set_name(name).exec()
 }
 RS
 export CARGO_HOME="$M/.toolchains/cargo"
