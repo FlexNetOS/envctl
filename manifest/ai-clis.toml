@@ -24,7 +24,7 @@ script = "curl -fsSL https://claude.ai/install.sh | bash"
 [[component]]
 id = "codex-cli"
 name = "Codex CLI (meta source build; bun fallback)"
-requires = ["rustup", "bun", "mold-linker"]
+requires = ["rustup", "bun", "wild-linker"]
 [component.detect]
 kind = "command"
 command = "bash"
@@ -42,10 +42,10 @@ if [ -d "$M/codex/codex-rs/cli" ]; then
   export CARGO_PROFILE_RELEASE_LTO="${CARGO_PROFILE_RELEASE_LTO:-false}"
   export CARGO_PROFILE_RELEASE_CODEGEN_UNITS="${CARGO_PROFILE_RELEASE_CODEGEN_UNITS:-$jobs}"
   export CARGO_PROFILE_RELEASE_INCREMENTAL="${CARGO_PROFILE_RELEASE_INCREMENTAL:-true}"
-  if command -v mold >/dev/null && command -v clang >/dev/null; then
-    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER="${CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER:-clang}"
-    export RUSTFLAGS="${RUSTFLAGS:-} -C link-arg=-fuse-ld=mold"
-  fi
+  # Linker acceleration is provided by the wild-linker component (Epic H TASK-0054): it wires
+  # clang + --ld-path=wild via the meta-root $M/.cargo/config.toml, which this cargo build
+  # (run under the meta tree) inherits automatically. mold dropped (TASK-0070) — setting a
+  # -fuse-ld=mold RUSTFLAGS here would override (and conflict with) that wild config.
   cargo build --release -p codex-cli --jobs "$jobs" --timings --manifest-path "$M/codex/codex-rs/Cargo.toml"
   src="$M/codex/codex-rs/target/release/codex"
 else
@@ -78,10 +78,10 @@ if [ -d "$M/codex/codex-rs/cli" ]; then
   export CARGO_PROFILE_RELEASE_LTO="${CARGO_PROFILE_RELEASE_LTO:-false}"
   export CARGO_PROFILE_RELEASE_CODEGEN_UNITS="${CARGO_PROFILE_RELEASE_CODEGEN_UNITS:-$jobs}"
   export CARGO_PROFILE_RELEASE_INCREMENTAL="${CARGO_PROFILE_RELEASE_INCREMENTAL:-true}"
-  if command -v mold >/dev/null && command -v clang >/dev/null; then
-    export CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER="${CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER:-clang}"
-    export RUSTFLAGS="${RUSTFLAGS:-} -C link-arg=-fuse-ld=mold"
-  fi
+  # Linker acceleration is provided by the wild-linker component (Epic H TASK-0054): it wires
+  # clang + --ld-path=wild via the meta-root $M/.cargo/config.toml, which this cargo build
+  # (run under the meta tree) inherits automatically. mold dropped (TASK-0070) — setting a
+  # -fuse-ld=mold RUSTFLAGS here would override (and conflict with) that wild config.
   cargo build --release -p codex-cli --jobs "$jobs" --timings --manifest-path "$M/codex/codex-rs/Cargo.toml"
   src="$M/codex/codex-rs/target/release/codex"
 else

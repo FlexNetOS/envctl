@@ -132,37 +132,10 @@ command = "bash"
 args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export CARGO_HOME=\"$M/.toolchains/cargo\"; export PATH=\"$CARGO_HOME/bin:$PATH\"; cargo uninstall cargo-nextest || true; [ -L \"$HOME/.local/bin/cargo-nextest\" ] && rm \"$HOME/.local/bin/cargo-nextest\" || true"]
 
 
-[[component]]
-id = "mold-linker"
-name = "mold linker"
-description = "Fast native linker for local Rust source builds on the Threadripper workstation."
-[component.detect]
-kind = "command"
-command = "bash"
-args = ["-lc", "command -v mold >/dev/null || command -v ld.mold >/dev/null"]
-[component.install]
-kind = "script"
-script = '''
-set -euo pipefail
-sudo apt-get update -y
-sudo apt-get install -y mold
-'''
-[component.verify]
-kind = "command"
-command = "bash"
-args = ["-lc", "mold --version || ld.mold --version"]
-[component.fix]
-kind = "script"
-script = '''
-set -euo pipefail
-sudo apt-get update -y
-sudo apt-get install --reinstall -y mold
-'''
-[component.remove]
-kind = "command"
-needs_sudo = true
-command = "apt-get"
-args = ["remove", "-y", "mold"]
+# mold-linker REMOVED (Epic H TASK-0070): the apt mold linker is superseded by the meta-owned
+# `wild-linker` component (Epic H TASK-0054), which is wired as the local cargo linker via the
+# meta-root .cargo/config.toml. The apt package itself is removed by the owner separately
+# (`sudo apt-get remove -y mold`) — a sudo step kept out of any autonomous hook.
 
 
 [[component]]
