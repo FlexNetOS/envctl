@@ -794,6 +794,58 @@ fmt, clippy). Remaining follow-ups extracted from each:
   - **Deps:** capstone — do last (the whole family must be stable first). **Risk:** medium (doctrine
     shift + cross-repo factory work). **Cross-repo** (envctl + harness_hub).
 
+## Epic H — Eliminate system-depth installs (owner doctrine, 2026-06-23)
+
+**Doctrine (owner):** meta and its peers use NO system-depth installs (apt `/usr`, `/usr/local`,
+nix `/nix`, kernel). Every system-depth install has an upstream repo and MUST be meta-prefix-
+installed (`$META_ROOT/.toolchains/<x>` via tarball / `cargo install --root` / runfile
+`--toolkitpath`) or cloned+added (`.meta.yaml` peer / `add-repo`), or — only if physically
+irreducible — declared an explicit `system:` component. Authoritative plan + per-item method:
+`docs/adr-install-locations-and-local-state.md` (§System-depth convergence plan). Each card below
+adds a real envctl component (new `manifest/*.toml`) + `.toolchains` install + `~/.local/bin`
+symlink; dry-run-safe, applied via `envctl install`/`env-install-loop`. Sequenced EASY → HARD.
+
+- [ ] **TASK-0054 (H, EASY, owner-pref):** `wild` linker component — `cargo install --locked wild
+  --root .toolchains/wild`; wire `RUSTFLAGS`/`.cargo/config.toml` `--ld-path`. **Replaces `mold`**
+  (apt) per owner linker preference. Remove the `mold` apt dependency once wild is the gate. Repo:
+  davidlattimore/wild. Acceptance: cargo builds use wild from the meta prefix; no `/usr/bin/mold` dep.
+- [ ] **TASK-0055 (H, EASY):** `kache` (+ allow `hurry`/`zccache`) compiler-cache wrappers as
+  meta-owned components on the `.toolchains` path (carried from the prior ADR drift). sccache only
+  as last-resort fallback (v0.15.0+, UDS not TCP). Acceptance: cache wrapper on the meta path,
+  wired into the rust build env.
+- [ ] **TASK-0056 (H, EASY):** `archon` relink — DRIFT only (FlexNetOS/Archon is already a peer).
+  Add `archon` to `meta-tool-links` so `~/.local/bin/archon → meta/Archon/target/release/archon`
+  (mirrors `vox`); remove the stray real binary at `/usr/local/bin/archon` (sudo phase). Acceptance:
+  archon resolves to the meta build, no `/usr/local/bin/archon` real file.
+- [ ] **TASK-0057 (H, EASY):** `gh` component — release tarball → `.toolchains/gh` + symlink;
+  drop the apt `gh` dep (`dev-tools.toml`). Repo: cli/cli.
+- [ ] **TASK-0058 (H, EASY):** `nushell` + `zellij` components — musl static release tarballs →
+  `.toolchains/{nushell,zellij}` + symlinks. Removes nix as the *delivery path* for `nu`/`zellij`.
+  Repos: nushell/nushell, zellij-org/zellij.
+- [ ] **TASK-0059 (H, EASY):** `mise` standalone component — static binary → `.toolchains/mise/bin`
+  (`MISE_DATA_DIR` already meta). Repo: jdx/mise.
+- [ ] **TASK-0060 (H, MEDIUM):** `ollama` component — prebuilt binary → `.toolchains/ollama/bin` +
+  GPU `.so` redirect via `OLLAMA_LIBRARY_PATH`. Drop `/usr/local/bin/ollama` real binary. Repo:
+  ollama/ollama.
+- [ ] **TASK-0061 (H, MEDIUM):** `llvm/clang-21` component — prebuilt `clang+llvm-*-linux` tarball →
+  `.toolchains/llvm` (source build impractical). Drop apt `clang`/`llvm-21`. Repo: llvm/llvm-project.
+- [ ] **TASK-0062 (H, MEDIUM):** `libgccjit` for `rustc_codegen_gcc` — `y.sh`-downloaded CI
+  `libgccjit.so` → `.toolchains/libgccjit/lib` (no system GCC build). Repo: rust-lang/rustc_codegen_gcc.
+- [ ] **TASK-0063 (H, HARD):** CUDA toolkit → meta prefix — `.run --silent --toolkit
+  --toolkitpath=.toolchains/cuda --override` (toolkit meta-owned; root still needed for side-paths;
+  conda-forge rootless alt noted). Replaces the apt `cuda-toolkit-13-3` install path. Includes
+  Nsight (`nsys`) under the toolkit prefix.
+- [ ] **TASK-0064 (H, HARD):** yazelix de-nix decomposition — yazelix is a nix-flake meta-config,
+  not an app. Converge by composing its config (already in `home/.config/yazelix`) + the
+  separately-installed component binaries (TASK-0058/0059 + yazi/helix) so the terminal env runs
+  without a nix-profile dependency. Repo: FlexNetOS/yazelix (note: **live install drifted to
+  `luccahuguet/yazelix`** — reconcile to the fork). Large; depends on 0058/0059.
+- [ ] **TASK-0065 (H, irreducible — DECLARE, don't convert):** Formalize the two proven-irreducible
+  `system:` components with written rationale + `verify` hooks: **nvidia-open** kernel driver
+  (DKMS, OS-global `/lib/modules`) and **Nix `/nix` store** (store path hardcoded in derivation
+  hashes, non-relocatable). Plus the `system:` build-floor (`build-essential`/`cmake`/`pkg-config`/
+  `libssl-dev`). These are the ONLY sanctioned system installs.
+
 ## Key finding (carried)
 
 Most meta-built tools' installed binaries are NEWER than their committed meta sources

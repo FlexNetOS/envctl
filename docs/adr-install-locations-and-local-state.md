@@ -15,9 +15,18 @@ The owner invariant (from the prior ADR) stands: **every tool/dotfile/`.local`/`
 resolves inside `meta`; user-global (`~/.local`, `~/.cargo`, `~/.claude`) holds ONLY symlinks
 into meta; no config hardcodes a meta path.**
 
+**Corrected doctrine (owner, 2026-06-23):** there are **NO sanctioned system-depth exceptions.**
+meta and its peers use no system-depth installs (apt `/usr`, `/usr/local`, the nix `/nix` store,
+the kernel) — and neither should any peer. Every current system-depth install has an upstream repo
+and MUST be either (a) installed at a meta-directed prefix (`$META_ROOT/.toolchains/<x>` via
+tarball / `cargo install --root` / runfile `--toolkitpath`), or (b) cloned + added as a source
+repo (`.meta.yaml` peer / `add-repo` source build), or — only when it physically cannot be
+meta-owned — (c) declared as an explicit **irreducible `system:` component** with written
+rationale. (c) is not a free pass; it is reserved for the two cases proven irreducible below.
+
 ## The install-location map (verified live)
 
-Two declared roots, plus three sanctioned exceptions.
+Two declared roots; system-depth installs are tracked as drift in the convergence plan (below).
 
 ### Root 1 — `$META_ROOT/.toolchains/` : the meta-owned toolchain store
 Declared by `crates/cli/src/main.rs::run_env` (`envctl env --toolchains`) and the `rustup`/`bun`
@@ -41,22 +50,53 @@ into a `meta/<repo>/target/release/<tool>` build. Live, all resolve as declared.
 |------|-----------------------------------|-------------|-------------|
 | `codex`  | `meta/codex/codex-rs/target/release/codex` | `ai-clis.toml` codex-cli | ✅ source build |
 | `gemini` | `.toolchains/.bun/.../@google/gemini-cli`   | `ai-clis.toml` gemini-cli | ✅ bun-global |
-| `claude` | `~/.local/share/claude/versions/<v>`        | `ai-clis.toml` claude-code-cli | ⚠️ vendor self-updater (see exceptions) |
-| `kimi`   | `~/.local/bin/kimi` (real file)             | `ai-clis.toml` kimi-cli | ⚠️ vendor installer (see exceptions) |
+| `claude` | `~/.local/share/claude/versions/<v>`        | `ai-clis.toml` claude-code-cli | ⚠️ vendor self-updater (user-scope, not system) |
+| `kimi`   | `~/.local/bin/kimi` (real file)             | `ai-clis.toml` kimi-cli | ⚠️ vendor installer (user-scope, not system) |
 | `bun`    | `.toolchains/.bun/bin/bun`                  | `base.toml` bun | ✅ |
 | `cargo`/`rustc`/`rustup` | `~/.cargo/bin/* → .toolchains/cargo/bin/rustup` | `base.toml` rustup | ✅ (`RUSTUP_HOME` now exported — this ADR) |
 | `meta`/`envctl`/`weave`/`grit`/… | `meta/<repo>/target/release/<tool>` | `components.d/portability-links.toml` meta-tool-links | ✅ |
 | `node`   | `~/.local/node/bin/node`                    | `base.toml` node-real (n8n carve-out) | ⚠️ user-scope tarball (see drifts) |
 
-### Sanctioned exceptions (NOT relocated into meta, by design)
-- **CUDA toolkit** — `/usr/local/cuda-13.3` (apt, `manifest/gpu.toml::cuda-toolkit`). System
-  package; relocating a multi-GB apt toolkit into meta is not worth it. `CUDA_HOME` is wired
-  dynamically in `~/.bashrc`.
-- **yazelix / nushell (`nu`) / zellij / mise binary** — nix profile (`~/.nix-profile/bin`, nix
-  store), `manifest/nix-yazelix.toml::yazelix`. nushell+mise+zellij are *bundled inside* the
-  yazelix nix runtime — nix is the meta-external-but-reproducible owner here.
-- **claude / kimi** — vendor `curl|bash` self-updating installers land in `~/.local/{bin,share}`.
-  envctl declares + verifies them but does not own their binary layout (the installer self-updates).
+## System-depth convergence plan (the drift, and how each is meta-owned)
+
+Live audit (2026-06-23) of every system-depth install meta touches, its upstream repo, and the
+meta-owned method. Tier: **EASY** = Rust/Go `cargo/go install --root` or a relocatable tarball;
+**MEDIUM** = C/C++ cmake/make-to-prefix or prebuilt-with-side-libs; **HARD** = huge build or
+genuinely irreducible.
+
+| install (current system location) | upstream repo | meta-owned method (→ `.toolchains/<x>` + `~/.local/bin` symlink) | tier |
+|---|---|---|---|
+| **mold** (apt → `/usr/bin/mold`) | rui314/mold | **replace with `wild`** (owner pref) — `cargo install --locked wild --root .toolchains/wild`; wire via `RUSTFLAGS --ld-path`. (mold fallback: release tarball → `.toolchains/mold`) | EASY |
+| **wild** (preferred linker, not yet installed) | davidlattimore/wild | `cargo install --locked wild --root .toolchains/wild` | EASY |
+| **kache / hurry / zccache** (owner-preferred cache, not installed) | (owner/meta tooling) | source-build into `.toolchains/<x>` (carried from prior ADR drift) | EASY–MEDIUM |
+| **gh** (apt → `/usr/bin/gh`) | cli/cli | release tarball → `.toolchains/gh` + symlink | EASY |
+| **nushell `nu`** (nix profile) | nushell/nushell | musl static release tarball → `.toolchains/nushell` (or `cargo install nu --root`) | EASY |
+| **zellij** (nix profile) | zellij-org/zellij | musl static release tarball → `.toolchains/zellij` | EASY |
+| **mise** (bundled in yazelix) | jdx/mise | static binary → `.toolchains/mise/bin`; `MISE_DATA_DIR` already meta | EASY |
+| **ollama** (`/usr/local/bin/ollama`, no peer) | ollama/ollama | prebuilt binary → `.toolchains/ollama/bin` + redirect GPU `.so` via `OLLAMA_LIBRARY_PATH` | MEDIUM |
+| **archon** (`/usr/local/bin/archon`, real binary) | FlexNetOS/Archon (**already a `.meta.yaml` peer**) | DRIFT — just symlink `~/.local/bin/archon → meta/Archon/target/release/archon` via `meta-tool-links` (same as `vox`) | EASY |
+| **clang / llvm-21** (apt) | llvm/llvm-project | **prebuilt** `clang+llvm-*-x86_64-linux` tarball → `.toolchains/llvm` (source build is 30–50 GB, impractical) | MEDIUM |
+| **libgccjit** (for `rustc_codegen_gcc`) | rust-lang/rustc_codegen_gcc | `y.sh` downloads the CI `libgccjit.so`; place at `.toolchains/libgccjit/lib` — **system GCC NOT required** | MEDIUM |
+| **CUDA toolkit** (apt → `/usr/local/cuda-13.3`) | NVIDIA (runfile) | `.run --silent --toolkit --toolkitpath=.toolchains/cuda --override` (toolkit → meta; **still needs root** for udev/pkgconfig side-paths). Conda-forge `nvidia-cuda-toolkit` = rootless alt | HARD |
+| **Nsight (`nsys`/`nsys-ui`)** (`/etc/alternatives`) | NVIDIA (bundled in CUDA runfile) | lands under `--toolkitpath/nsight-systems`, or standalone `.run --prefix=.toolchains/nsight-systems` | MEDIUM |
+
+### The two genuinely irreducible `system:` cases (proven, not rubber-stamped)
+- **nvidia-open kernel driver** (apt `nvidia-driver-595-open` + DKMS, `gpu.toml`) — repo
+  NVIDIA/open-gpu-kernel-modules. Kernel `.ko` modules must build against the running kernel's
+  headers and load into `/lib/modules/`; the module subsystem is OS-global and `modprobe` has no
+  user-prefix. **No meta-prefix path exists.** Declare as `system:` with a `verify` hook; install
+  stays apt/DKMS.
+- **Nix store `/nix`** (Determinate installer, `nix-yazelix.toml`) — the `/nix/store` path is
+  hardcoded into every derivation's content hash + ELF RPATH; relocating invalidates the whole
+  store. **Non-relocatable by design.** Declare as `system:`. (The tools nix *delivers* —
+  nushell/zellij/mise — are converged above, which removes nix as a *dependency path* for them;
+  **yazelix** itself is a nix-flake meta-config, not an app — converging it means decomposing it
+  into its config (already in `home/.config/yazelix`) + the separately-installed component
+  binaries. Larger effort, carded in Epic H.)
+
+> Note `build-essential`/`cmake`/`pkg-config`/`libssl-dev` are the OS build foundation; they are
+> the bootstrap floor every from-source convergence above depends on. They are tracked as the
+> `system:` build-floor (a third irreducible-in-practice class), not silently ignored.
 
 ## Decision
 
@@ -93,11 +133,31 @@ already set `RUSTUP_HOME=.toolchains/rustup` in its *hooks*; this pairs the *she
 hooks. Added to both the shell and `--json` output, with a regression test
 (`crates/cli/tests/env.rs`). Additive / upgrade-only.
 
-## Identified drifts (not fixed here — routed)
+**Operational note — rustup is currently split-brain (audit 2026-06-23).** Because the seam never
+exported `RUSTUP_HOME`, toolchains installed via interactive shells (incl. the GPU component's
+pinned **`nightly-2026-04-03`** + `rust-src`/`rustc-dev`/`llvm-tools`) landed in `~/.rustup`, while
+the meta store `.toolchains/rustup` holds only `{1.96.0, nightly, stable}`. After this seam lands
+and `envctl` is rebuilt, interactive shells point rustup at the meta store, which does **not** yet
+contain `nightly-2026-04-03`. Convergence is automatic and safe: the GPU component's `detect`
+misses against the meta store, so `envctl install`/`auto-fix` re-installs it INTO the meta store
+(or rustup downloads on demand). No data lost — `~/.rustup` left intact. One-time full convergence:
+`envctl install`.
+
+## Identified drifts (routed)
 
 | drift | matches owner pref | routing |
 |-------|--------------------|---------|
-| **kache / hurry / zccache** Rust compiler-cache wrappers NOT declared or installed | owner wants kache as the meta-owned cache path | **feature** — new `manifest` components (`feature-forge`); large, needs build/wire/lock |
-| **`node` → `~/.local/node`** (user-scope tarball) while `node-via-bun` declares the meta path | toolchain meta-owned | `node-via-bun` fix exists on a branch, unmerged — promote/merge |
-| **install-state record** (version/path) absent from locks | reproducibility | extend `envctl.lock` `resolved` field or `doctor --json` (future) |
-| **claude / kimi** vendor self-updaters in user-global | meta-owned ideal | accept — vendor installer constraint; envctl verifies presence only |
+| **system-depth installs** (mold/gh/nushell/zellij/mise/ollama/llvm/CUDA-toolkit/Nsight + archon relink) | no system-depth installs | **Epic H** (below) — per-item meta-prefix/clone+add components |
+| **rustup split-brain**: GPU-pinned `nightly-2026-04-03` lives in `~/.rustup`, not meta store | toolchain meta-owned | one-time `envctl install` after the RUSTUP_HOME seam lands; see Operational note |
+| **kache / hurry / zccache** cache wrappers not installed | owner wants kache as the meta cache path | folded into Epic H |
+| **`node` → `~/.local/node`** while `node-via-bun` declares the meta path | toolchain meta-owned | `node-via-bun` fix on an unmerged branch — promote |
+| **install-state record** (version/path) absent from locks | reproducibility | extend `envctl.lock` `resolved` field / `doctor --json` (future) |
+| **claude / kimi** vendor self-updaters in `~/.local` (user-scope, not system) | meta-owned ideal | accept — vendor installer constraint; user-scope ≠ system-depth |
+
+## Epic H — eliminate system-depth installs (carded)
+
+Each row of the convergence plan becomes an envctl component (new `manifest/*.toml` or a
+`.meta.yaml` peer source-build) plus a `meta-tool-links`/`.toolchains` install. Sequenced
+EASY → HARD; all dry-run-safe by default (apply on the box via `envctl install`/`auto-fix`,
+driven by `env-install-loop`). The two irreducible `system:` cases (nvidia-open, `/nix`) are
+declared, not converted. Backlog: `.handoff/loop/backlog.md` Epic H.
