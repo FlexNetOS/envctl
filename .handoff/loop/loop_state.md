@@ -7,11 +7,11 @@ branch: develop   # work happens in FRESH worktrees off develop -> PR -> auto-pr
 worktree: (per-cycle: meta/.worktrees/<slug>/envctl off develop)
 cycle_budget: 1   # heavy-context resume sessions — 1 cohesive build cycle then hand off
 wrap_every: 5   # batch boundary: run reaper + wrap-up + evolution-steward every N completed cycles (no per-task pause)
-last_wrapup_total: 28   # batch boundary DUE after this cycle (33-28=5 >= wrap_every=5) → reaper+wrap-up+steward at wrap-up
-cycles_this_session: 1   # RESUME 2026-06-23 (/forge-loop resume, fresh session): TASK-0060 (ollama) — cycle_budget=1 → HAND OFF after this
-cycles_total: 33   # 32 + TASK-0060 (ollama, MEDIUM)
-last_item: TASK-0060 (ollama) — meta-owned ollama component applied+verified on box (zstd tarball → .toolchains/ollama, GPU runners + OLLAMA_LIBRARY_PATH redirect)
-status: ACTIVE 2026-06-23 — Epic H: ollama meta-owned (cycle, PR pending). Remaining: wild/kache WIRING (0054/0055, verified-separate, ideally after clang TASK-0061), archon (0056 BLOCKED), MEDIUM 0061 llvm/0062 libgccjit/0066 nix-portable, HARD 0063 CUDA/0064 yazelix-de-nix(owner). boundary DUE: 33-28=5 >= wrap_every 5
+last_wrapup_total: 33   # batch boundary RAN this session (33-28=5 >= wrap_every=5): reaper+status-reconcile+steward done; next boundary at 38
+cycles_this_session: 1   # RESUME 2026-06-23 (/forge-loop resume, fresh session): TASK-0060 (ollama) MERGED #172 — cycle_budget=1 reached → HAND OFF
+cycles_total: 33   # 32 + TASK-0060 (ollama, MEDIUM) — DONE #172
+last_item: TASK-0060 (ollama) — DONE via PR #172 (MERGED 08:52:09Z). meta-owned ollama (zstd tarball → .toolchains/ollama, GPU runners + OLLAMA_LIBRARY_PATH redirect)
+status: HANDOFF 2026-06-23 — Epic H: ollama meta-owned + MERGED (#172). cycle_budget=1 reached. Remaining: wild/kache WIRING (0054/0055, verified-separate, ideally after clang TASK-0061), archon (0056 BLOCKED), MEDIUM 0061 llvm/0062 libgccjit/0066 nix-portable, HARD 0063 CUDA/0064 yazelix-de-nix(owner). NEXT PICK: TASK-0061 (llvm/clang-21) per markdown backlog (hf picker unreliable here). boundary RAN: 33-28=5; next at 38
   Cycle = TASK-0053. Guardian PASS (0 blocking); docs/doctrine + 1 regression test, NO new code surface.
   PR #164 (FlexNetOS/envctl) MERGED 2026-06-23T04:37:54Z (squash a7d96ff onto develop; master synced) —
   merged during this session's handoff write, so reconciled to DONE in-session. Runtime fail-closed verified
