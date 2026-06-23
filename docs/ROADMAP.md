@@ -110,7 +110,7 @@ The secrets stack has its own phased roadmap spanning **Phases 0–8** with the 
 - **Phase 5 — certs/CA+MITM:** VPS Profile-B ([!] blocked by owner). Phase 4+ work deferred to TASK-0038.
 - **Phase 6 — `envctl secret run` (exec-wrapper):** Implemented as part of Phase 7 (this task: PR pending). The exec-wrapper surface maps to `envctl secret run -- <cmd>`.
 - **Phase 7 — envctl MERGE:** secretd manifest component + `envctl secret` CLI surface (this task, in-progress). The `envctl secret` subcommand mirrors the full `secretctl` clap surface via Engine's subprocess seam.
-- **Phase 8 — SERVER-MODE remote relay edge:** In-process TLS+DPoP listener shipped (PR #111/#122). VPS Profile-B gates ([!] owner-gated) remain pending. See TASK-0033.
+- **Phase 8 — SERVER-MODE remote relay edge:** In-process TLS+DPoP listener shipped (PR #111/#122); PROXY-protocol source IP (PR #157), per-connection mTLS revocation reload (PR #158), remote-clients CA lifecycle (PR #162/TASK-0039), and the verified GitHub transport doctrine (PR #164/TASK-0053) landed. VPS Profile-B gates ([!] owner-gated) remain pending. See TASK-0033.
 
 **Phases 6–8 are the most impactful remaining work:** they complete the secrets integration into envctl's core workspace and enable unattended daemon serving. See `docs/secrets/ARCHITECTURE.md` for design details and `docs/secrets/audits/AUDIT-server-mode.md` for the phased audit spec.
 
