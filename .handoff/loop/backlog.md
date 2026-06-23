@@ -439,9 +439,12 @@ fmt, clippy). Remaining follow-ups extracted from each:
     (relay-proxy `reqwest`/`webpki-roots` transport to reuse); `flexnetos_github_app/crates/app-core/
     src/mint.rs` (`build_argv` contract) + `app-cli` `MintToken`. Sibling of TASK-0019 (RealUsbProbe,
     done via #61) — both are Epic-D secrets-egress.
-- [ ] **TASK-0021 (node-via-bun):** Manifest design follow-up — mark node not-applicable when a real
+- [x] **TASK-0021 (node-via-bun):** Manifest design follow-up — mark node not-applicable when a real
   node in the n8n range is present, or add a `node-real` component + drop the group-ai-clis edge
-  (cosmetic detect-drift only; truth-telling fix already merged).
+  (cosmetic detect-drift only; truth-telling fix already merged). DONE 2026-06-23: verified at HEAD
+  that `node-real` already exists as a standalone carve-out, `group-ai-clis` no longer requires
+  `node-via-bun`, `envctl lock --check` is clean, and focused engine tests prove the `node-real`
+  component is empty-requires and the `group-ai-clis` edge is absent.
 - [ ] **TASK-0022 (agent-web-access):** Phases 2–3 of the agent web-access ladder (Phase 1 n8n-mcp +
   kasetto wiring merged). `- [!]` n8n live smoke test is HUMAN-ONLY (see
   `.handoff/loop/_done/n8n-live-smoke-runbook.md`).
