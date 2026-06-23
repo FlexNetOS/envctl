@@ -995,7 +995,7 @@ policy change" — both are available and declarable here.
   RUSTFLAGS env > config rustflags — and silently bypass wild); removed the `mold-linker` apt
   component (`dev-tools.toml`); lock 74→73. Verified: codex-cli + wild-linker `[healthy] wired`,
   meta-tree build links via wild. **Owner sudo follow-up:** `sudo apt-get remove -y mold`.
-- [~] **TASK-0071 (H, EASY) — BUILT 2026-06-23 (PR armed; tick `- [x]` on MERGE) — HuggingFace CLI
+- [x] **TASK-0071 (H, EASY) — DONE 2026-06-23 (PR #198 MERGED) — HuggingFace CLI
   → meta:** added a `huggingface-cli` component (`epic-h-toolchains.toml`): isolated venv at
   `$M/.toolchains/huggingface` (pytorch-venv idiom under .toolchains) → `pip install huggingface_hub`
   → symlink `~/.local/bin/huggingface-cli`. **FINDING (verified-by-doing, corrects the task premise):**
@@ -1014,7 +1014,7 @@ policy change" — both are available and declarable here.
   **Exit criterion:** ollama is removed ONLY AFTER shimmy & ruvllm officially run and PROVE they can
   swap ollama out — that proof is a `feature-forge` build/eval item (stand up shimmy + ruvllm as the
   rust LLM-serving replacement, parity-check against ollama), not a loop cleanup.
-- [~] **TASK-0073 (H, EASY) — BUILT 2026-06-23 (PR armed; tick `- [x]` on MERGE) — meta rust default
+- [x] **TASK-0073 (H, EASY) — DONE 2026-06-23 (PR #199 MERGED) — meta rust default
   = nightly DECLARED:** modified the `rustup` component (`base.toml`): install/fix now use
   `--default-toolchain nightly` + `rustup default nightly`, fix does `rustup update nightly` (keeps
   the meta default on the LATEST nightly per the owner's standing directive), and detect now requires
