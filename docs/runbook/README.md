@@ -6,7 +6,7 @@ manager **and** secrets vault. envctl has two halves over one shared `Engine`:
 - **env-manager** — declarative TOML *components* (detect → install → verify → fix → remove)
   that bring the box to a declared state. Verbs: `auto-detect, install, doctor, auto-fix,
   reset, add-repo, graph, registry, lock, env, dashboard, self, completions`.
-- **secrets stack** — a pure-Rust gRPC vault + credential broker (`envctl secret …`, daemon
+- **secrets stack** — a pure-Rust gRPC vault + credential broker (`secretctl …`, daemon
   `secretd`): AEAD-at-rest, ≤24h peer-bound relay bearers, GitHub-App token minting, a local CA.
 - **agent-env** — the absorbed **Kasetto v3.2.0** engine (`envctl agent …`): declarative
   skills / MCP servers / slash-commands sync. The standalone `kasetto` binary is retired;
@@ -37,13 +37,13 @@ manager **and** secrets vault. envctl has two halves over one shared `Engine`:
 The vault is **locked** after every daemon (re)start or reboot (the DEK is RAM-only and
 zeroized on lock — this is correct security posture, **not** an empty/uninitialized vault).
 `secret_count=0` and "would init fresh" in some outputs are cosmetic — **never run
-`envctl secret init` on an existing vault** (it refuses against the stored header MAC).
+`secretctl init` on an existing vault** (it refuses against the stored header MAC).
 
 ```bash
-envctl secret status                 # locked | unlocked, usb_possessed, relay/secret counts
-envctl secret unlock                 # USB-first (Cognitum Seed); passphrase if USB absent
-envctl secret unlock --passphrase-stdin   # scripted passphrase unlock
-envctl secret lock                   # zeroize the DEK + CA issuer in RAM (true panic-stop)
+secretctl status                 # locked | unlocked, usb_possessed, relay/secret counts
+secretctl unlock                 # USB-first (Cognitum Seed); passphrase if USB absent
+secretctl unlock --passphrase-stdin   # scripted passphrase unlock
+secretctl lock                   # zeroize the DEK + CA issuer in RAM (true panic-stop)
 ```
 
 **Unlock factors (the "way in"):**
@@ -64,10 +64,10 @@ envctl secret lock                   # zeroize the DEK + CA issuer in RAM (true 
 ### Vault — GitHub App token mint (admin control plane)
 
 ```bash
-envctl secret mint-github --output json   # → {"token":"…","expires_at_unix":<i64>}  (FROZEN contract)
-envctl secret github-app enroll --private-key <app.pem> --apply   # seal the App PEM (one-time)
-envctl secret github-app set-app-id --apply                       # heal a missing app-id meta
-envctl secret github-app revoke-token …                           # early-revoke an outstanding token
+secretctl mint-github --installation-id <ID> --ttl-secs <SECS> --output json   # → {"token":"…","expires_at_unix":<i64>}  (FROZEN contract; --installation-id, --ttl-secs, --output all REQUIRED)
+secretctl github-app enroll --app-id <APP_ID> --private-key <app.pem|-> --apply  # seal the App PEM + persist app-id (one-time; --app-id & --private-key REQUIRED)
+secretctl github-app set-app-id --app-id <APP_ID> --apply                        # heal a missing github-app-id meta (PEM untouched)
+secretctl github-app revoke-token …                                             # early-revoke an outstanding installation token
 ```
 `mint-github` opens the vault-sealed `github-app-private-key` (app-id `4044997`) against the live
 DEK, builds an RS256 App-JWT, and exchanges it for an installation access token. **Gated on the
@@ -76,11 +76,11 @@ vault being unlocked.**
 ### Vault — secrets, relay injection, CA, audit
 
 ```bash
-envctl secret secret <set|get|list|rm> …   # stored-secret CRUD
-envctl secret run -- <cmd>                  # run <cmd> with relay creds injected into the CHILD only
-envctl secret relay …                       # relay policies + mint ≤24h peer-bound bearers
-envctl secret ca …                          # local CA: issue/revoke leaf certs, trust wiring
-envctl secret audit …                       # query the tamper-evident (hash-chained) audit log
+secretctl secret <add|get|list|rm|rotate> …   # stored-secret CRUD (get --reveal --apply to reveal; audited, refused if broker-only)
+secretctl run -- <cmd>                  # run <cmd> with relay creds injected into the CHILD only
+secretctl relay …                       # relay policies + mint ≤24h peer-bound bearers
+secretctl ca …                          # local CA: issue/revoke leaf certs, trust wiring
+secretctl audit …                       # query the tamper-evident (hash-chained) audit log
 ```
 The **auto-inject seam** keeps the real key in the daemon: child tools get a bearer (base-url
 repoint *or* `HTTPS_PROXY`/MITM) and the real credential never leaves `secretd`. See
