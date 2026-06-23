@@ -8,10 +8,20 @@ worktree: (per-cycle: meta/.worktrees/<slug>/envctl off develop)
 cycle_budget: 1   # heavy-context resume sessions — 1 cohesive build cycle then hand off
 wrap_every: 5   # batch boundary: run reaper + wrap-up + evolution-steward every N completed cycles (no per-task pause)
 last_wrapup_total: 23   # batch boundary satisfied 2026-06-22 after TASK-0015; next due at cycles_total 28
-cycles_this_session: 4   # RESUME SESSION 2026-06-22: cycles = TASK-0038, TASK-0007, TASK-0008, TASK-0015
-cycles_total: 23   # 22 previous cycles + TASK-0015 (PR #146)
-last_item: TASK-0015 (agent-env provisioning fidelity) — DONE, PR #146
-status: CYCLE COMPLETE 2026-06-22
+cycles_this_session: 5   # RESUME SESSION 2026-06-22/23: cycles = TASK-0038, TASK-0007, TASK-0008, TASK-0015, TASK-0016
+cycles_total: 24   # 23 previous cycles + TASK-0016 (PR #149)
+last_item: TASK-0016 (agent lock boundary) — DONE, PR #149
+status: CYCLE COMPLETE 2026-06-23
+  Cycle = TASK-0016. PR #149 MERGED 2026-06-23T00:15:53Z (merge commit
+  9e43b699d5bc38b646b2fef271b2a65c434eda21). Encoded the no-downgrade lock-boundary decision:
+  standalone SHA-256 `agent-env.lock` remains separate from FNV-1a `manifest/envctl.lock`; the
+  agent-env manifest now drives built-in `envctl agent` with `agent-env.yaml`; the CI gate uses the
+  true zero-network `envctl agent lock --config agent-env.yaml --check --locked`. Verification:
+  fmt, engine+CLI build, full envctl-agent-env tests, full envctl-engine tests, clippy for
+  envctl-engine+agent-env, `envctl lock --check`, agent-env/p7/loop-state/no-c/shape/enable/kdf/
+  harness-scripts gates, `hf test TASK-0016`, and all GitHub checks green on #149. `hf resume --json`
+  now points at TASK-0017.
+
   Batch boundary satisfied 2026-06-22 at cycles_total=23 (wrap_every=5). Proposed-upgrades was already
   drained; reaper preview/apply found 0 live worktrees and 0 branches to reap, then meta worktree
   prune removed 17 orphaned worktree records. ICM context store: 01KVRWEB957ZHQP6QTNXRQFXRA. Next safe
