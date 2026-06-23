@@ -95,18 +95,40 @@ cases." Owner review (and a rigorous why-pass) showed both were cop-outs. The ac
   open-vs-closed question is moot; the point is meta has no ownership here.) Kernel modules are
   genuinely OS-global (`/lib/modules`, `modprobe`), but that's the host's affair, not a meta
   `system:` component.
-- **Nix `/nix` store — removable, not irreducible.** Verified: a nix-built binary's ELF *program
-  interpreter* + RUNPATH are absolute `/nix/store/<hash>/…` paths, and the store prefix is part of
-  every derivation's hash identity (fingerprint includes `:/nix/store:`). So the **logical**
-  `/nix/store` is inescapable — but a **root-owned `/nix` is not**: a *chroot store*
-  (`nix --store 'local?root=$HOME/…'` / `nix-user-chroot`) bind-mounts a meta-owned dir to `/nix`
-  in a namespace, keeping the *logical* path (so the binary cache still works) without root `/nix`.
-  Only a custom `store-dir=` truly relocates the prefix — and that **destroys the binary cache**
-  (every artifact rebuilds from C source), so it's the wrong path. **The meta-correct move is to
-  remove nix entirely:** nix exists on this box solely to deliver **yazelix** (which bundles
-  nu/zellij/mise). Converge those (TASK-0058/0059) and de-nix yazelix (TASK-0064) and `/nix`
-  disappears — no relocation needed. (Chroot store is the *transitional* fallback only if nix must
-  persist before TASK-0064 lands.)
+- **Nix `/nix` store — meta-owned-ISOLATED, not system-depth and not irreducible.** Verified: a
+  nix-built binary's ELF *program interpreter* + RUNPATH are absolute `/nix/store/<hash>/…` paths,
+  and the store prefix is part of every derivation's hash identity (fingerprint includes
+  `:/nix/store:`). So the **logical** `/nix/store` is inescapable — but a **root-owned `/nix` is
+  not**. The correct meta strategy (owner, 2026-06-23) is to run nix fully **isolated inside a
+  meta/home-owned sandbox** so the host never has a real `/nix`:
+  - **`nix-portable` (bubblewrap-backed) — the chosen path.** A single static binary
+    (`DavHau/nix-portable`) that bwrap-mounts a home-dir store (`~/.nix-portable`) as `/nix`
+    inside a namespace. Keeps the **logical `/nix/store`** → the **binary cache still works** (no
+    from-source rebuilds). `ls /nix` on the host returns not-found. ~0% compute overhead,
+    ~20 ms one-shot shell-spawn cost. GPU passthrough for ghostty via `nixGL` (path-linker, no
+    draw-call interception — 0% framerate cost on the dual RTX 5090s).
+  - **Verified on THIS box (Ubuntu 26.04, kernel 7.0.0-22):** `apparmor_restrict_unprivileged_userns=1`
+    is ACTIVE → **raw** unprivileged userns is blocked (`unshare --user --map-root-user` →
+    `uid_map: Operation not permitted`); `bwrap` works (0.11.1, sanctioned AppArmor profile).
+    So with the knob as-is, `nix-portable` works and `nix-user-chroot` would not.
+  - **But this box is single-admin, no-human-in-the-loop, full-agentic (owner, 2026-06-23):** that
+    AppArmor restriction exists to protect multi-user / untrusted contexts that don't apply here —
+    it's an **owner-tunable knob, not a wall.** The meta-correct handling is for **envctl to
+    DECLARE the policy** (a sudo-phase component setting `apparmor_restrict_unprivileged_userns=0`,
+    or installing the bwrap userns profile) so the host state is reproducible — not a hand-flipped
+    sysctl. With the knob owned, BOTH nix-portable and nix-user-chroot are available; **nix-portable
+    stays the recommended default on merit** (single static binary, no daemon, bwrap-isolated, what
+    the owner's research recommends), not because the alternative is blocked.
+  - **General principle (this box):** "system-depth" is NEVER gated by *permission* — the single
+    admin has all of it. It is gated only by *meta ownership / reproducibility*. So every Epic-H
+    convergence is blocked by *work to be done*, not by *can't* — including host-policy knobs and
+    sudo-phase installs, which envctl declares and applies like any other component.
+  - **Custom `store-dir=`** (relocating the *logical* prefix) is the wrong path: it **destroys the
+    binary cache** (every artifact rebuilds from C source). Never use it.
+  - **End-state:** nix exists on this box solely to deliver **yazelix** (nu/zellij/mise). Converging
+    those (TASK-0058/0059) + de-nixing yazelix (TASK-0064) removes nix entirely. nix-portable is the
+    immediate isolation (works today, no host `/nix`); the yazelix rust-core de-nix is the eventual
+    full removal. Either way **nix is never a system-depth install.**
   - **yazelix status (verified, local checkout post-v17.7 / v17.7=2026-06-15):** `yzx` is now a
     standalone Rust binary (`rust_core/yazelix_core` → `[[bin]] yzx`) and the project is extracting
     its subsystems into standalone cargo crates — the direction is off-nix. BUT the current
