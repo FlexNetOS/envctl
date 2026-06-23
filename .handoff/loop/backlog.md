@@ -825,12 +825,14 @@ policy change" — both are available and declarable here.
   the wild-linked `envctl --version` runs. Lock content_hash regen (count 74, extended not added).
   `mold` drop deferred → TASK-0070. (Implementer agent hit the weekly model limit mid-cycle after
   writing the edits; orchestrator completed the build-verify gate + guardian + commit.)
-- [~] **TASK-0055 (H, EASY) — INSTALL DONE 2026-06-23:** `kache` component authored + APPLIED
-  (`cargo install kache --root .toolchains/kache`, repo kunobi-ninja/kache, v0.6.0,
-  `~/.local/bin/kache` healthy). **REMAINING (wiring):** set `RUSTC_WRAPPER=kache` (or `kache init`)
-  — held back/verified separately. `hurry` **DROPPED** (no confirmable authoritative repo —
-  researched, only an unretrievable HN post). `zccache` available as alt (zackees/zccache) if
-  wanted. sccache only last-resort (v0.15.0+, UDS not TCP).
+- [x] **TASK-0055 (H, EASY) — DONE 2026-06-23 via PR #184 (MERGED):** `kache` wired as
+  RUSTC_WRAPPER via a delimited `[build] rustc-wrapper = "kache"` block in the meta-root
+  `$M/.cargo/config.toml` — CO-MANAGED with the wild-linker component (TASK-0054) via a
+  non-clobbering block-upsert (each owns a `# >>> … <<<` block; wild migrated off its wholesale
+  `cat >`). Chose the cargo config over the env-seam because the seam isn't sourced in
+  non-interactive/login/build contexts; the config is read by cargo everywhere. Runtime-verified:
+  a throwaway build with the config (isolated XDG_CACHE_HOME) is kache-intercepted (index.db
+  written). `hurry` DROPPED; `zccache`/`sccache` noted as alts.
 - [!] **TASK-0056 (H, EASY) — BLOCKED:** `archon` relink is NOT a free symlink — **`meta/Archon`
   is not cloned/built locally** (the `.meta.yaml` peer exists but no checkout; `meta/Archon/target/
   release/archon` absent). The live `/usr/local/bin/archon` is a 105 MB ELF of unknown provenance.
@@ -890,23 +892,32 @@ policy change" — both are available and declarable here.
   ELF shared object) + `.so.0` present; absent from drift. Guardian PASS (all 8 gates green).
   **Remaining (separate, wiring):** rustc_codegen_gcc backend selection itself (nightly + `-Zcodegen-backend`
   / `config.toml gcc-path`) is the consumer-side wiring, out of this component's scope.
-- [ ] **TASK-0063 (H, HARD):** CUDA toolkit → meta prefix — `.run --silent --toolkit
-  --toolkitpath=.toolchains/cuda --override` (toolkit meta-owned; root still needed for side-paths;
-  conda-forge rootless alt noted). Replaces the apt `cuda-toolkit-13-3` install path. Includes
-  Nsight (`nsys`) under the toolkit prefix.
-- [ ] **TASK-0064 (H, HARD) — removes nix entirely (the real fix for `/nix`):** yazelix is the
-  SOLE reason nix exists on this box; de-nixing it deletes the `/nix` system-depth. Verified
-  (local checkout post-v17.7): `yzx` is already a standalone Rust binary (`rust_core/yazelix_core`
-  → `[[bin]] yzx`) and subsystems are extracting to cargo crates — the off-nix direction is real —
-  but the current `docs/installation.md` still requires Nix+flakes and runtime assembly is still
-  nix (`packaging/mk_runtime_tree.nix`). **ACTION:** confirm the non-nix install path with owner
-  (rust-core + bring-your-own-PATH-tools vs a specific newer build), then land yazelix as a
-  cargo-built `yzx` + its config (`home/.config/yazelix`) composed over the meta-prefix component
-  binaries (TASK-0058/0059 + yazi/helix). Reconcile the fork: live install drifted to
-  `luccahuguet/yazelix`; `.meta.yaml` declares `FlexNetOS/yazelix`. Depends on 0058/0059.
-  **Transitional isolation until this lands:** TASK-0066 nix-portable (bwrap) runs yazelix
-  nix-isolated with no host `/nix` TODAY. (NOT nix-user-chroot — verified blocked by AppArmor raw-
-  userns restriction on this box; NOT a custom `store-dir` — kills the binary cache.)
+- [~] **TASK-0063 (H, HARD) — ARMED 2026-06-23 via PR #186 (auto-merge; re-poll → tick `- [x]`
+  when MERGED):** CUDA toolkit relocated apt `cuda-toolkit-13-3` → `$M/.toolchains/cuda` via the
+  runfile `cuda_13.3.0_610.43.02_linux.run` (md5 16d68669…, cached under `$M/.cache/cuda`,
+  toolkit-only `--toolkit --toolkitpath … --override --no-opengl-libs --nox11`, NO sudo, NO driver).
+  **KEY FIX:** the makeself self-extractor needs `--nox11` + `</dev/null` headless or it tries to
+  spawn an xterm and dies `exec: -title` (exit 127). nvidia-open KERNEL driver + libcuda stay apt
+  (irreducible floor). id preserved (cuda-oxide/gpu-stack edges resolve); dropped the unneeded
+  `requires=["nvidia-cuda-repo"]`. Real **7.0G** install verified on-box: `✓ cuda-toolkit
+  [healthy] wired`, nvcc 13.3 V13.3.33 from the meta prefix, libcublas present; live `~/.bashrc`
+  CUDA_HOME converged meta-first (apt fallback). nsys/ncu included. **Owner sudo follow-up:**
+  `sudo apt-get remove -y cuda-toolkit-13-3 && sudo apt-get autoremove -y`.
+- [~] **TASK-0064 (H, HARD) — removes nix entirely (the real fix for `/nix`); U1 DONE, full de-nix
+  RESERVED for the OWNER JOINT CLOSE-OUT:** yazelix is the SOLE reason nix exists on this box.
+  **U1 fork-reconcile DONE 2026-06-23 (owner: "reconcile to FlexNetOS fork"):** FF
+  `FlexNetOS/yazelix:main` ← `luccahuguet/yazelix:main` (was 0-ahead/65-behind, clean FF →
+  `e09582da`, pushed; old pinned rev `e60d15e` preserved in branch `pin-meta-2026-06-12`). `yzx`
+  confirmed a plain-cargo bin (`rust_core/yazelix_core` → `[[bin]] yzx`); it finds its tools via
+  `YAZELIX_RUNTIME_DIR` (any dir with `runtime_identity.json` + `toolbin/`) — nix is only the
+  current *builder* of that tree. **HARD PREREQ for the full de-nix (found this session):**
+  `yazi` + `hx` resolve ONLY via `/nix/store` today (nu/zellij are already meta-prefix via
+  TASK-0058) → meta-prefix `yazi` + `helix` components MUST be built first. **Remaining (owner
+  joint close-out):** (a) build meta `yazi`+`helix`; (b) cargo-build `yzx`→`.toolchains/yazelix` +
+  compose a meta-prefix `YAZELIX_RUNTIME_DIR` runtime tree (replaces `mk_runtime_tree.nix`);
+  (c) verify `yzx` in a throwaway `env -i` shell (no `/nix` in resolved paths); (d) repoint the
+  live yazelix-shell auto-enter (transitional fallback to nix until removed). Owner open Qs:
+  ghostty GPU/nixGL replacement; pin `main` HEAD vs a tag. Then → TASK-0067 removes host `/nix`.
 - [ ] **TASK-0065 (host prerequisites — DETECT/VERIFY only, NOT meta components):** Corrected
   classification (owner 2026-06-23): the nvidia-open kernel driver (pre-meta install; OS-global
   `/lib/modules`/DKMS) and the `system:` build-floor (`build-essential`/`cmake`/`pkg-config`/
@@ -964,13 +975,12 @@ policy change" — both are available and declarable here.
   for the enrollment + supply of the original pem. Once unblocked: add a shared `gh`→App-installation-
   token fetch helper so Epic-H GitHub fetches use the App (higher quota, scoped, auditable) and route
   through `flexnetos_runner` for CI/job dispatch.
-- [ ] **TASK-0070 (H, EASY) — drop mold (follow-up to TASK-0054 wild wiring):** now that wild is the
-  wired+verified local cargo linker (TASK-0054), retire mold. Steps: (1) strip the conflicting
-  `-fuse-ld=mold` RUSTFLAGS from `manifest/ai-clis.toml` codex install/fix hooks (with `--ld-path=wild`
-  now set meta-root, the mold flag is at best wasteful, at worst a conflicting link driver); (2) drop
-  `mold-linker` from the `ai-clis` `requires` and re-lock; (3) remove the `mold-linker` apt component
-  (`manifest/dev-tools.toml`) and the apt package itself (**sudo** — separate authz step). Loop-fixable
-  except the apt removal (sudo). Verify a full `cargo build` still links via wild after the RUSTFLAGS strip.
+- [x] **TASK-0070 (H, EASY) — DONE 2026-06-23 via PR #185 (MERGED):** dropped mold now that wild is
+  the wired linker (TASK-0054). codex-cli `requires` `mold-linker`→`wild-linker`; removed the
+  `-fuse-ld=mold` RUSTFLAGS from the codex install/fix hooks (it would OVERRIDE the wild config —
+  RUSTFLAGS env > config rustflags — and silently bypass wild); removed the `mold-linker` apt
+  component (`dev-tools.toml`); lock 74→73. Verified: codex-cli + wild-linker `[healthy] wired`,
+  meta-tree build links via wild. **Owner sudo follow-up:** `sudo apt-get remove -y mold`.
 
 ## Key finding (carried)
 
