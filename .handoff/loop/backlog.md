@@ -1014,15 +1014,16 @@ policy change" — both are available and declarable here.
   **Exit criterion:** ollama is removed ONLY AFTER shimmy & ruvllm officially run and PROVE they can
   swap ollama out — that proof is a `feature-forge` build/eval item (stand up shimmy + ruvllm as the
   rust LLM-serving replacement, parity-check against ollama), not a loop cleanup.
-- [ ] **TASK-0073 (H, EASY) — declare the meta rust default = nightly (owner standing directive:
-  always latest toolchain; Rust always nightly):** the live default was `stable` (drift) and was
-  converged to **nightly (1.98.0-nightly, latest)** this session. Make it DECLARED/reproducible:
-  a meta component (or the existing rustup/rust-nightly component) sets `rustup default nightly` +
-  keeps nightly updated to latest, so a fresh provision lands nightly-by-default. NOTE: the envctl
-  crate stays pinned `1.96.0` stable via its own `rust-toolchain.toml` (deliberate MSRV-stable CI
-  design — the global default doesn't override a repo's `rust-toolchain.toml`); this directive is
-  the workstation/meta default, not a change to envctl's pin. Open Q for owner: should envctl
-  itself move to nightly, or keep its MSRV-stable pin?
+- [~] **TASK-0073 (H, EASY) — BUILT 2026-06-23 (PR armed; tick `- [x]` on MERGE) — meta rust default
+  = nightly DECLARED:** modified the `rustup` component (`base.toml`): install/fix now use
+  `--default-toolchain nightly` + `rustup default nightly`, fix does `rustup update nightly` (keeps
+  the meta default on the LATEST nightly per the owner's standing directive), and detect now requires
+  `rustup default` to be nightly so a non-nightly box reports drift → auto-fix converges it.
+  Verified on-box: live meta default is already `nightly` (`rustup default` → nightly), `rustup
+  ✓ [healthy] wired` (new nightly check passes), envctl dir still correctly overrides to 1.96.0 via
+  its own `rust-toolchain.toml` (the global default does NOT change a repo's pin — confirmed
+  `rustup show active-toolchain` = 1.96.0 in-repo). lock 77 comp; 6 gates green. **Open Q for owner
+  (unchanged):** should envctl itself move off its MSRV-stable 1.96.0 pin to nightly, or keep it?
 - [x] **TASK-0074 (secrets) — VOID / RETRACTED (my diagnosis was WRONG; owner corrected 2026-06-23):**
   the USB keyslot is NOT a stub — it is a real, working slot (`usb_partition_uuid = "verify-vault-uuid"`
   is just the binding string). The vault has opened via USB many times. NO re-enroll verb is needed.
