@@ -29,3 +29,13 @@ serde_json = { workspace = true }
 tracing-subscriber = { workspace = true }
 # Wrap the App PEM bytes in `Zeroizing` from read until they cross the wire (never logged/echoed).
 zeroize = { workspace = true }
+# TASK-0033 `authorizer serve` (operator-box presence-token signer over mTLS, Profile B / OI-SM-2).
+# All ring-only + workspace-pinned and ALREADY in the resolved graph (secretd/engine pull them), so
+# promoting them to direct secretctl deps adds NO new lockfile crate and keeps the no-c / one-rustls
+# (ring) gate green. The signer reuses `engine::sign_presence_token` (the engine owns the signing
+# primitive); this crate adds only the thin mTLS server I/O.
+tokio-rustls = { workspace = true }
+rustls = { workspace = true }
+rustls-pemfile = { workspace = true }
+ring = { version = "0.17" }
+sha2 = { workspace = true }

@@ -55,6 +55,12 @@ struct Cli {
     /// it never binds the socket, connects the store, or mutates the vault.
     #[arg(long = "self-check")]
     self_check: bool,
+    /// TASK-0033 (FS-S22): allow an on-box (Profile A) daemon to serve passphrase-only — i.e. start
+    /// even when a USB keyslot is enrolled but USB possession is currently unproven. Without this,
+    /// an on-box daemon with an enrolled-but-unproven USB keyslot REFUSES to start (the gate would
+    /// back nothing). Has no effect on a VPS (Profile B) or a vault with no USB keyslot.
+    #[arg(long = "allow-passphrase-only")]
+    allow_passphrase_only: bool,
 }
 
 fn main() -> anyhow::Result<()> {
@@ -66,7 +72,8 @@ fn main() -> anyhow::Result<()> {
         .with_writer(std::io::stderr)
         .init();
 
-    if Cli::parse().self_check {
+    let cli = Cli::parse();
+    if cli.self_check {
         return self_check();
     }
 
@@ -74,7 +81,7 @@ fn main() -> anyhow::Result<()> {
         .enable_all()
         .build()
         .context("building the tokio runtime")?;
-    rt.block_on(serve())
+    rt.block_on(serve(cli.allow_passphrase_only))
 }
 
 /// Non-serving startup pre-flight — the manifest `verify` predicate (`secretd --self-check`).
@@ -117,7 +124,7 @@ fn self_check() -> anyhow::Result<()> {
     Ok(())
 }
 
-async fn serve() -> anyhow::Result<()> {
+async fn serve(allow_passphrase_only: bool) -> anyhow::Result<()> {
     // 1. Install the rustls RING crypto provider (CF-2). Idempotent; ignore "already installed".
     if rustls::crypto::ring::default_provider()
         .install_default()
@@ -156,7 +163,37 @@ async fn serve() -> anyhow::Result<()> {
         );
     }
 
-    let engine = build_engine(paths.clone(), store_cfg).await?;
+    // TASK-0033: load the Profile (A on-box / B VPS) config. FS-S24 vTPM gating is rejected at parse.
+    let profile =
+        config::ProfileSettings::load(&paths.config_file()).context("loading [profile] config")?;
+
+    let (engine, profile_b_seams) = build_engine(paths.clone(), store_cfg, profile.clone()).await?;
+    // The Profile-B seam handles are consumed ONLY by the `relay-edge` authorizer spawn below; a
+    // default (no-edge) build holds them inert (a VPS daemon needs the edge feature anyway).
+    #[cfg(not(feature = "relay-edge"))]
+    let _ = &profile_b_seams;
+
+    // TASK-0033 startup guards (FS-S21/S22/S23/S24). Run ALL four against the engine's resolved
+    // state + the profile knobs BEFORE binding; a refusal is FATAL (fail-closed — never serve a
+    // downgraded config). For a VPS, FS-S23 (gate not Unproven) is satisfied AFTER the authorizer
+    // link delivers a token; we spawn the link below, then re-assert FS-S23 once it has primed —
+    // but FS-S21/S22/S24 are config-level and checked here unconditionally.
+    if let Err(refusal) = engine.assert_profile_b_startup(
+        profile.operator_authorizer_url.as_deref(),
+        allow_passphrase_only,
+        profile.vtpm_gating_requested,
+    ) {
+        // FS-S23 (VpsGateUnprovenAtStartup) is the ONLY refusal a VPS legitimately hits before the
+        // authorizer link primes the gate — it is re-checked after spawn (below). Every other
+        // refusal is a config error and is fatal here.
+        if !matches!(
+            refusal,
+            envctl_secrets::StartupRefusal::VpsGateUnprovenAtStartup
+        ) {
+            anyhow::bail!("startup refused: {refusal}");
+        }
+        tracing::info!("VPS gate unproven at startup — will prime via the authorizer link");
+    }
 
     // 5. Bind the UDS (reaping a stale socket from a dead daemon), chmod 0600.
     let sock = paths.control_socket();
@@ -219,6 +256,69 @@ async fn serve() -> anyhow::Result<()> {
     // bind — a stock secretd serves no public edge). A cert-load or bind failure here is FATAL because
     // the operator explicitly turned the edge ON (fail-closed: we do NOT silently fall back to no
     // edge after the operator asked for one).
+    // TASK-0033 (U14): Profile-B operator-box authorizer link. When `topology == Vps`, spawn the
+    // async mTLS task that fetches + verifies presence tokens and feeds the SHARED gate +
+    // trusted-time the engine reads. Gated behind `relay-edge` (the authorizer is part of the edge
+    // plane). On Profile A this is inert (no VPS seams were built).
+    #[cfg(feature = "relay-edge")]
+    let authorizer_handle = if profile.topology == config::Topology::Vps {
+        let (Some(gate), Some(trusted_time)) = (
+            profile_b_seams.gate.clone(),
+            profile_b_seams.trusted_time.clone(),
+        ) else {
+            anyhow::bail!("VPS topology but Profile-B seams were not built (internal error)");
+        };
+        // Resolve this VPS's edge-cert fingerprint (channel binding the operator-box token is
+        // checked against). Default to relay_tls_dir/cert.pem when not explicitly configured.
+        let edge_cert_path = profile
+            .edge_cert_path
+            .clone()
+            .unwrap_or_else(|| paths.relay_tls_dir().join("cert.pem"));
+        let vps_cert_fp =
+            envctl_secretd::edge::authorizer::cert_fingerprint_from_pem(&edge_cert_path)
+                .context("computing this VPS's edge-cert fingerprint for the authorizer binding")?;
+        let auth_cfg = envctl_secretd::edge::authorizer::AuthorizerConfig {
+            url: profile
+                .operator_authorizer_url
+                .clone()
+                .expect("Profile B guarantees a URL"),
+            vps_instance_id: profile
+                .vps_instance_id
+                .clone()
+                .expect("Profile B guarantees an instance id"),
+            vps_cert_fp,
+            operator_pubkey: profile
+                .operator_pubkey
+                .expect("Profile B guarantees a pubkey"),
+            operator_ca_path: profile
+                .operator_ca_path
+                .clone()
+                .expect("Profile B guarantees a CA path"),
+            client_cert_path: profile
+                .client_cert_path
+                .clone()
+                .expect("Profile B guarantees a client cert"),
+            client_key_path: profile
+                .client_key_path
+                .clone()
+                .expect("Profile B guarantees a client key"),
+        };
+        let (asink, _arx) = envctl_secrets::EventSink::channel();
+        let handle = envctl_secretd::edge::authorizer::spawn_authorizer_link(
+            auth_cfg,
+            engine.clone(),
+            gate,
+            trusted_time,
+            asink,
+            recv_shutdown(shutdown_tx.subscribe()),
+        )
+        .context("starting the operator-box authorizer link")?;
+        tracing::info!("operator-box authorizer link started (Profile B / VPS)");
+        Some(handle)
+    } else {
+        None
+    };
+
     #[cfg(feature = "relay-edge")]
     let edge_handle = {
         let edge_cfg =
@@ -287,6 +387,12 @@ async fn serve() -> anyhow::Result<()> {
         let _ = handle.await;
     }
 
+    // Wait for the Profile-B authorizer link (if it was started) to wind down.
+    #[cfg(feature = "relay-edge")]
+    if let Some(handle) = authorizer_handle {
+        let _ = handle.await;
+    }
+
     // Best-effort cleanup of the socket on graceful exit.
     let _ = std::fs::remove_file(&sock);
     result.context("serving the control plane")?;
@@ -298,7 +404,11 @@ async fn serve() -> anyhow::Result<()> {
 /// The libSQL store drives its OWN current-thread runtime via `block_on`, so it is constructed on a
 /// `spawn_blocking` thread — NEVER on the async reactor, where a nested `block_on` would panic (see
 /// `secrets-store-libsql/src/sync.rs`). `InMemStore` does no async and is built inline.
-async fn build_engine(paths: Paths, cfg: config::StoreConfig) -> anyhow::Result<Engine> {
+async fn build_engine(
+    paths: Paths,
+    cfg: config::StoreConfig,
+    profile: config::ProfileSettings,
+) -> anyhow::Result<(Engine, ProfileBSeams)> {
     // Capture the runtime handle in this ASYNC context so the GitHub mint transport (TASK-0020) can
     // be built even on the OFF-reactor `spawn_blocking` thread the libSQL store is constructed on
     // (where `Handle::current()` would panic). Cheap to clone; moved into the blocking closure.
@@ -312,6 +422,7 @@ async fn build_engine(paths: Paths, cfg: config::StoreConfig) -> anyhow::Result<
                 paths,
                 Box::new(envctl_secrets::vault::InMemStore::new()),
                 rt,
+                &profile,
             )
             .context("opening the engine on the in-memory store")
         }
@@ -321,14 +432,14 @@ async fn build_engine(paths: Paths, cfg: config::StoreConfig) -> anyhow::Result<
                 .expect("resolve() guarantees a URL for the libSQL backend");
             tracing::info!(url = %url, "store backend = libSQL remote (durable)");
             let token = cfg.auth_token; // Zeroizing; moved into + dropped by the blocking task
-            tokio::task::spawn_blocking(move || -> anyhow::Result<Engine> {
+            tokio::task::spawn_blocking(move || -> anyhow::Result<(Engine, ProfileBSeams)> {
                 let store = envctl_secrets_store_libsql::LibSqlStoreBuilder::new(
                     url,
                     token.as_str().to_owned(),
                 )
                 .build()
                 .context("opening the libSQL remote store (is sqld reachable?)")?;
-                engine_with_daemon_seams(paths, Box::new(store), rt)
+                engine_with_daemon_seams(paths, Box::new(store), rt, &profile)
                     .context("opening the engine on the libSQL store")
             })
             .await
@@ -349,8 +460,41 @@ fn engine_with_daemon_seams(
     paths: Paths,
     store: Box<dyn envctl_secrets::vault::Store>,
     #[allow(unused_variables)] rt: tokio::runtime::Handle,
-) -> anyhow::Result<Engine> {
-    Engine::with_seams(
+    profile: &config::ProfileSettings,
+) -> anyhow::Result<(Engine, ProfileBSeams)> {
+    // TASK-0033: Profile-B seams. For Profile A (default) these are the engine's fail-closed
+    // defaults (UnprovenGate, never consulted on-box; SystemClockTrustedTime). For Profile B we
+    // build a SHARED `Arc<VpsPresenceGate>` + `Arc<OperatorBoxTrustedTime>` and hand a clone to the
+    // engine AND keep a clone so `serve()` can spawn the authorizer link feeding the SAME instances.
+    let (presence_gate, trusted_time, b_seams): (
+        Box<dyn envctl_secrets::PresenceGate>,
+        Box<dyn envctl_secrets::TrustedTime>,
+        ProfileBSeams,
+    ) = match profile.topology {
+        config::Topology::OnBox => (
+            Box::new(envctl_secrets::broker::UnprovenGate),
+            Box::new(envctl_secrets::SystemClockTrustedTime),
+            ProfileBSeams::default(),
+        ),
+        config::Topology::Vps => {
+            let gate = std::sync::Arc::new(envctl_secrets::VpsPresenceGate::new(Box::new(
+                envctl_secrets::seam::SystemClock,
+            )));
+            let trusted = std::sync::Arc::new(envctl_secrets::OperatorBoxTrustedTime::new(
+                Box::new(envctl_secrets::seam::SystemClock),
+            ));
+            (
+                Box::new(gate.clone()),
+                Box::new(trusted.clone()),
+                ProfileBSeams {
+                    gate: Some(gate),
+                    trusted_time: Some(trusted),
+                },
+            )
+        }
+    };
+
+    let engine = Engine::with_seams(
         paths,
         store,
         Box::new(envctl_secrets::seam::SystemClock),
@@ -361,7 +505,20 @@ fn engine_with_daemon_seams(
         Box::new(envctl_secretd::transport::DaemonHttpTransport::from_handle(
             rt,
         )),
-    )
+        presence_gate,
+        trusted_time,
+        profile.topology.to_engine(),
+    )?;
+    Ok((engine, b_seams))
+}
+
+/// The Profile-B (VPS) shared seam handles `serve()` needs to spawn the authorizer link feeding the
+/// SAME gate + trusted-time the engine reads. Empty for Profile A.
+#[derive(Default)]
+#[cfg_attr(not(feature = "relay-edge"), allow(dead_code))]
+struct ProfileBSeams {
+    gate: Option<std::sync::Arc<envctl_secrets::VpsPresenceGate>>,
+    trusted_time: Option<std::sync::Arc<envctl_secrets::OperatorBoxTrustedTime>>,
 }
 
 /// Outcome of the in-process `mlockall` attempt (FS-S4). Returned by [`harden_process`] so a caller

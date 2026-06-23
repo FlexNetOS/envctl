@@ -17,6 +17,7 @@
 //! analogue for this network listener (a destructive-surface guard by construction). A cert-load or
 //! bind failure when the edge is explicitly enabled is FATAL (the caller propagates the `Err`).
 
+pub mod authorizer;
 pub mod dpop;
 pub mod listener;
 pub mod stream;

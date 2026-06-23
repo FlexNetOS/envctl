@@ -76,6 +76,9 @@ fn make_engine(paths: &Paths) -> Engine {
         Box::new(NullUpstream),
         #[cfg(feature = "provider-github")]
         Box::new(envctl_secrets::mint_github::NoopHttpTransport),
+        Box::new(envctl_secrets::broker::UnprovenGate),
+        Box::new(envctl_secrets::SystemClockTrustedTime),
+        envctl_secrets::Topology::OnBox,
     )
     .expect("with_seams")
 }
@@ -433,6 +436,9 @@ fn make_engine_with_daemon_transport(paths: &Paths) -> Engine {
         Box::new(NoMint),
         Box::new(NullUpstream),
         Box::new(envctl_secretd::transport::DaemonHttpTransport::new()),
+        Box::new(envctl_secrets::broker::UnprovenGate),
+        Box::new(envctl_secrets::SystemClockTrustedTime),
+        envctl_secrets::Topology::OnBox,
     )
     .expect("with_seams")
 }

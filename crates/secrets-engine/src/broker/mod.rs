@@ -3,6 +3,7 @@
 //! USB-presence-gated.
 pub mod adapter;
 pub mod admission;
+pub mod authorizer;
 pub mod decide;
 pub mod gate;
 pub mod jti;
@@ -11,11 +12,15 @@ pub mod policy;
 pub mod token;
 
 pub use admission::{AdmissionLimiter, Admit};
+pub use authorizer::{
+    authz_reject_label, presence_token_signing_bytes, sign_presence_token, verify_presence_token,
+    AuthzReject, PresenceToken, DEFAULT_TOKEN_TTL_MS, PRESENCE_TOKEN_VERSION,
+};
 pub use decide::RemotePeer;
 pub use decide::{decide, CanonRequest, DenyReason, RelayDecision, VerifiedBearer};
 #[cfg(feature = "seed-factor")]
 pub use gate::SeedPresenceGate;
-pub use gate::{gate_absent_since_ms, GateState, PresenceGate};
+pub use gate::{gate_absent_since_ms, GateState, PresenceGate, UnprovenGate, VpsPresenceGate};
 pub use jti::{JtiReject, JtiReplayStore};
 pub use nonce::{NonceReject, NonceStore};
 pub use policy::{

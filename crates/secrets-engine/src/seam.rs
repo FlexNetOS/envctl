@@ -18,6 +18,103 @@ impl<C: Clock + ?Sized> Clock for &C {
         (**self).boottime_ms()
     }
 }
+/// External **trusted time** source (OI-SM-3, SERVER-MODE Profile B). A VPS clock is
+/// hypervisor-controlled, so the presence-token verifier MUST NOT trust the local wall clock to
+/// decide whether a token is expired — a hostile host could wind the clock back to keep a stale
+/// token "valid". `now_ms()` returns `Some(t)` ONLY when a fresh, externally-attested time is
+/// available; `None` ⇒ time is unverified/stale and token issuance/acceptance MUST be refused
+/// (fail-closed). On-box (Profile A) the local clock is trusted, so [`SystemClockTrustedTime`]
+/// always returns `Some`.
+pub trait TrustedTime: Send + Sync {
+    /// The current externally-attested wall-clock epoch-ms, or `None` when no fresh trusted time is
+    /// available (fail-closed: callers REFUSE to issue/accept a token).
+    fn now_ms(&self) -> Option<i64>;
+}
+
+/// Forward through an `Arc` so the daemon can hold an `Arc<OperatorBoxTrustedTime>` (to push
+/// attestations from the authorizer task) AND pass a `Box::new(arc.clone())` into `with_seams` —
+/// both sides share ONE trusted-time source.
+impl<T: TrustedTime + ?Sized> TrustedTime for std::sync::Arc<T> {
+    fn now_ms(&self) -> Option<i64> {
+        (**self).now_ms()
+    }
+}
+
+/// Profile A trusted-time: the local wall clock is authoritative on a box the operator controls, so
+/// this always returns `Some(now)`. The engine default (Profile B installs
+/// [`OperatorBoxTrustedTime`] instead, which returns `None` when stale/unverified).
+pub struct SystemClockTrustedTime;
+impl TrustedTime for SystemClockTrustedTime {
+    fn now_ms(&self) -> Option<i64> {
+        Some(chrono::Utc::now().timestamp_millis())
+    }
+}
+
+/// Profile B (VPS) trusted-time: holds the last externally-attested wall-clock reading (fed by the
+/// operator-box authorizer link over mTLS, U14). `now_ms()` returns `Some(attested_now)` ONLY while
+/// the attestation is still within its freshness window; otherwise `None` (fail-closed: a VPS whose
+/// trusted-time feed has stalled refuses to issue or accept any presence token). The attested time
+/// and its receipt instant are interior-mutable (`Mutex`) so the async authorizer task can refresh
+/// it while the per-request egress path reads it.
+pub struct OperatorBoxTrustedTime {
+    /// `(attested_now_ms, received_at_local_ms)` of the most recent fresh attestation, or `None`
+    /// when never attested. Stale once `local_now - received_at > freshness_ms`.
+    state: std::sync::Mutex<Option<(i64, i64)>>,
+    /// How long (ms) an attestation stays fresh before `now_ms()` falls back to `None`.
+    freshness_ms: i64,
+    /// Local monotonic-ish wall clock used only to AGE the attestation (never to answer `now_ms`).
+    local_clock: Box<dyn Clock>,
+}
+
+impl OperatorBoxTrustedTime {
+    /// Default freshness window for an attested external time (10 min — coherent with the presence
+    /// token's default TTL: once a token could not have been issued under fresh time, trusted time
+    /// is useless anyway).
+    pub const DEFAULT_FRESHNESS_MS: i64 = 600_000;
+
+    /// Build with the default freshness window over the given local clock (used to AGE attestations).
+    #[must_use]
+    pub fn new(local_clock: Box<dyn Clock>) -> Self {
+        Self::with_freshness(local_clock, Self::DEFAULT_FRESHNESS_MS)
+    }
+
+    /// Build with a tuned freshness window (lets a test shrink the staleness boundary).
+    #[must_use]
+    pub fn with_freshness(local_clock: Box<dyn Clock>, freshness_ms: i64) -> Self {
+        Self {
+            state: std::sync::Mutex::new(None),
+            freshness_ms,
+            local_clock,
+        }
+    }
+
+    /// Record a fresh externally-attested wall-clock reading (called by the authorizer link when it
+    /// verifies a signed time from the operator box). Resets the freshness window. A poisoned lock is
+    /// treated as "no attestation" on the read side (fail-closed), so we ignore a poisoned write.
+    pub fn attest(&self, attested_now_ms: i64) {
+        let received_at = self.local_clock.now().timestamp_millis();
+        if let Ok(mut g) = self.state.lock() {
+            *g = Some((attested_now_ms, received_at));
+        }
+    }
+}
+
+impl TrustedTime for OperatorBoxTrustedTime {
+    fn now_ms(&self) -> Option<i64> {
+        let g = self.state.lock().ok()?;
+        let (attested, received_at) = (*g)?;
+        let local_now = self.local_clock.now().timestamp_millis();
+        // Stale (or a backwards local jump that makes the age negative-then-huge is bounded by
+        // saturating_sub) ⇒ fail closed.
+        if local_now.saturating_sub(received_at) > self.freshness_ms {
+            return None;
+        }
+        // Report the attested time advanced by however long we've held it locally (so a long-lived
+        // engine still expires tokens correctly within the freshness window).
+        Some(attested.saturating_add(local_now.saturating_sub(received_at)))
+    }
+}
+
 pub struct SystemClock;
 impl Clock for SystemClock {
     fn now(&self) -> chrono::DateTime<chrono::Utc> {

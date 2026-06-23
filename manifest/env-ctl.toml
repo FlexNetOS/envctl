@@ -93,6 +93,16 @@ url = "http://127.0.0.1:8080"
 TOML
   chmod 0600 "$cfg"
 fi
+
+# TASK-0033 (F7 / FS-S21): VPS Profile B install-time fail-closed gate. A `[profile] topology =
+# "remote"` (VPS) deployment MUST configure an operator_authorizer_url (the substitute presence
+# factor); without it, secretd would SILENTLY downgrade to ungated egress. Refuse the install FATALLY
+# rather than ship that downgrade (secretd ALSO refuses to start — this is the earlier, install-time
+# guard). On-box (the default, or no [profile] block) is unaffected.
+if grep -Eq '^\s*topology\s*=\s*"(remote|vps)"' "$cfg" 2>/dev/null; then
+  grep -Eq '^\s*operator_authorizer_url\s*=' "$cfg" \
+    || { echo "FATAL: secretd.toml has [profile] topology=remote (VPS) but no operator_authorizer_url (FS-S21 substitute presence factor); refusing to install a silently ungated VPS"; exit 1; }
+fi
 '''
 
 # VERIFY: bins answer, AND secretd's own non-serving self-check passes. `secretd --self-check` runs
@@ -113,6 +123,13 @@ args = ["-lc", '''
 export PATH="$HOME/.local/bin:$PATH"
 # Hard predicate (fail-closed): bins answer + the daemon's offline self-check passes.
 secretctl --help >/dev/null && secretd --self-check >/dev/null || exit 1
+# TASK-0033 (F7 / FS-S21): a VPS Profile B config MUST carry operator_authorizer_url. verify fails
+# closed on the same downgrade the install gate refuses (so drift introduced after install is caught).
+cfg="$HOME/.config/env-ctl/secretd.toml"
+if grep -Eq '^\s*topology\s*=\s*"(remote|vps)"' "$cfg" 2>/dev/null; then
+  grep -Eq '^\s*operator_authorizer_url\s*=' "$cfg" \
+    || { echo "FATAL: VPS profile (topology=remote) without operator_authorizer_url (FS-S21)"; exit 1; }
+fi
 # Best-effort serving probe — NEVER fails verify (locked is healthy; daemon may be stopped).
 if systemctl --user is-active --quiet env-ctl.service; then
   if secretctl status >/dev/null 2>&1; then

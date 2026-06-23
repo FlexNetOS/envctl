@@ -499,6 +499,13 @@ pub fn event_to_proto(ev: SecretEvent) -> Option<v1::Event> {
         // no proto control-stream twin (the RevokeGithubToken RPC is unary, returning RevokeResp);
         // consumed identically by the CLI + GUI through this single funnel.
         | SecretEvent::GithubTokenRevoked { .. }
+        // TASK-0033 Profile-B presence-token events join this set — metadata-only notices
+        // (`PresenceTokenAccepted`/`PresenceTokenRejected`/`AuthorizerUnreachable`) with no proto
+        // control-stream twin; the per-token outcome is observable via logs/audit, and the CLI + GUI
+        // consume them identically through this single funnel (no divergent front-end surface).
+        | SecretEvent::PresenceTokenAccepted { .. }
+        | SecretEvent::PresenceTokenRejected { .. }
+        | SecretEvent::AuthorizerUnreachable { .. }
         | SecretEvent::SecretRead { .. } => return None,
     };
     Some(v1::Event { kind: Some(kind) })
