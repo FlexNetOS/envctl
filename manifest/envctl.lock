@@ -41,11 +41,11 @@ requires = []
 resolved = ""
 
 [components.codex-cli]
-content_hash = "8fd9e3fd5d5a587e"
+content_hash = "0cd784943a6a3880"
 requires = [
     "bun",
-    "mold-linker",
     "rustup",
+    "wild-linker",
 ]
 resolved = ""
 
@@ -265,11 +265,6 @@ resolved = ""
 
 [components.mise]
 content_hash = "faabb3d25fc7249b"
-requires = []
-resolved = ""
-
-[components.mold-linker]
-content_hash = "288dc105e7fea850"
 requires = []
 resolved = ""
 
