@@ -15,6 +15,7 @@ pub mod event; // Event, EventSink, Stream, Telemetry, GpuSample
 pub mod executor; // Engine::run(plan) best-effort loop + RunContext resolve + add_repo
 pub mod graph; // graph intelligence over the component dependency DAG
 pub mod guard; // fail-closed UuidResolves/NotLiveDevice/NotMounted/PathExists/HookSucceeds
+pub mod hub_registry; // read-only federation over *_hub/registry.json
 pub mod install; // Phase 4: symlink artifacts into ~/.local/bin (refuse-unmanaged) + wire-in
 pub mod lock; // envctl.lock — content-hashed manifest-of-record + CI gate
 pub mod model; // Registry, OpResult, OpStatus, EnvReport, Wiring, RunPlan, RunSummary, AddRepoSpec
@@ -44,6 +45,9 @@ pub use dashboard::{
 pub use drift::DriftSummary;
 pub use error::{EngineError, RunContext};
 pub use event::{Event, EventSink, GpuSample, Stream, Telemetry};
+pub use hub_registry::{
+    HubRegistryDrift, HubRegistryEntryView, HubRegistryReport, HubRegistrySource, HubRegistryStatus,
+};
 pub use model::{
     AddRepoSpec, AiAgent, BuildStrategy, BuildSystem, ComponentState, DataPath, DesktopEntry,
     DriftItem, DriftKind, EnvReport, MetaBoundaryReport, MetaBoundaryViolation,
@@ -138,6 +142,12 @@ impl Engine {
         &self.inner.registry
     }
 
+    /// Read-only federation over the workspace's `*_hub/registry.json` files.
+    pub fn hub_registry(&self) -> anyhow::Result<HubRegistryReport> {
+        let root = workspace_root_for_manifest_dir(&self.inner.manifest_dir);
+        hub_registry::load(&root, &self.inner.registry)
+    }
+
     /// The manifest directory (where `envctl.lock` + `components.d/` live).
     pub fn manifest_dir(&self) -> &std::path::Path {
         &self.inner.manifest_dir
@@ -229,6 +239,19 @@ impl Engine {
             outcome: outcome.clone(),
         });
         Ok(outcome)
+    }
+}
+
+fn workspace_root_for_manifest_dir(manifest_dir: &std::path::Path) -> std::path::PathBuf {
+    match manifest_dir.parent() {
+        Some(parent) if parent.as_os_str().is_empty() => {
+            std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
+        }
+        Some(parent) if parent.is_absolute() => parent.to_path_buf(),
+        Some(parent) => std::env::current_dir()
+            .unwrap_or_else(|_| std::path::PathBuf::from("."))
+            .join(parent),
+        None => std::env::current_dir().unwrap_or_else(|_| manifest_dir.to_path_buf()),
     }
 }
 
