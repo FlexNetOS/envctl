@@ -82,6 +82,39 @@ struct FileConfig {
     #[cfg(feature = "relay-edge")]
     edge: Option<FileEdge>,
     security: Option<FileSecurity>,
+    /// TASK-0033: the `[profile]` block (SERVER-MODE Profile A on-box vs Profile B VPS). Absent ⇒
+    /// on-box (Profile A), the default.
+    profile: Option<FileProfile>,
+}
+
+/// `[profile]` table (TASK-0033 / SERVER-MODE §6). Carries the deployment topology and — for a VPS —
+/// the operator-box authorizer link parameters. DELIBERATELY carries NO secret: the operator key is
+/// a PUBLIC key (hex), the client cert/key live on disk as PEM paths (like the relay-tls key).
+#[derive(serde::Deserialize, Default)]
+struct FileProfile {
+    /// `"onbox"` (default) or `"remote"`/`"vps"` (Profile B).
+    topology: Option<String>,
+    /// Profile B: `https://operator.box:PORT` of the operator-box authorizer. REQUIRED when
+    /// `topology = "remote"` (FS-S21; enforced at startup).
+    operator_authorizer_url: Option<String>,
+    /// Profile B: this VPS's instance id (binds the token to this deployment).
+    vps_instance_id: Option<String>,
+    /// Profile B: operator-pinned Ed25519 public key (64-hex) the token signature is verified against.
+    operator_pubkey_hex: Option<String>,
+    /// Profile B: PEM path of the operator-box CA (mTLS server-trust; frozen roots).
+    operator_ca_path: Option<String>,
+    /// Profile B: PEM path of this VPS's mTLS client certificate.
+    client_cert_path: Option<String>,
+    /// Profile B: PEM path of this VPS's mTLS client private key.
+    client_key_path: Option<String>,
+    /// Profile B: PEM path of this VPS's OWN edge cert (to compute its `vps_cert_fp` channel binding).
+    /// Defaults to `relay_tls_dir/cert.pem` when absent.
+    edge_cert_path: Option<String>,
+    /// FS-S24: FORBIDDEN — gating DEK release on a vTPM. Any truthy value is REJECTED at parse time
+    /// (a vTPM has no hardware isolation boundary on a VPS). Present here only so the refusal is
+    /// explicit if an operator tries to enable it.
+    #[serde(default)]
+    vtpm_gating: bool,
 }
 #[derive(serde::Deserialize, Default)]
 struct FileStore {
@@ -258,6 +291,179 @@ impl EdgeSettings {
 /// Read an env var, treating unset OR empty/whitespace as `None`.
 fn env_nonempty(key: &str) -> Option<String> {
     std::env::var(key).ok().filter(|v| !v.trim().is_empty())
+}
+
+/// Deployment topology selector (mirrors `envctl_secrets::Topology`, parsed from `[profile].topology`).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Topology {
+    /// Profile A: on the operator box (default).
+    #[default]
+    OnBox,
+    /// Profile B: on a VPS (uses the operator-box authorizer link).
+    Vps,
+}
+
+impl Topology {
+    /// Map to the engine's `Topology`.
+    #[must_use]
+    pub fn to_engine(self) -> envctl_secrets::Topology {
+        match self {
+            Topology::OnBox => envctl_secrets::Topology::OnBox,
+            Topology::Vps => envctl_secrets::Topology::Vps,
+        }
+    }
+}
+
+/// Resolved, validated `[profile]` configuration (TASK-0033). For Profile A the VPS fields are all
+/// `None`. For Profile B the loader REQUIRES the authorizer URL + binding inputs (a half-configured
+/// VPS profile is an `Err` — fail-closed, never a silent on-box downgrade).
+#[derive(Debug, Clone)]
+pub struct ProfileSettings {
+    pub topology: Topology,
+    pub operator_authorizer_url: Option<String>,
+    pub vps_instance_id: Option<String>,
+    pub operator_pubkey: Option<[u8; 32]>,
+    pub operator_ca_path: Option<PathBuf>,
+    pub client_cert_path: Option<PathBuf>,
+    pub client_key_path: Option<PathBuf>,
+    pub edge_cert_path: Option<PathBuf>,
+    /// FS-S24: whether the (forbidden) vTPM gating was requested in config. The loader REJECTS it at
+    /// parse time, so a successfully-loaded `ProfileSettings` always has this `false`; the field is
+    /// kept so the engine guard receives an explicit input.
+    pub vtpm_gating_requested: bool,
+}
+
+impl ProfileSettings {
+    /// Load + validate the `[profile]` block. Env overrides (`SECRETD_TOPOLOGY`,
+    /// `SECRETD_OPERATOR_AUTHORIZER_URL`) win over the file. FS-S24: a truthy `vtpm_gating` is
+    /// REJECTED here (config-parse reject). The deeper FS-S21/S23 startup refusals run in
+    /// `serve()` via the engine guards.
+    pub fn load(default_config_path: &Path) -> anyhow::Result<ProfileSettings> {
+        let cfg_path = std::env::var_os(ENV_CONFIG)
+            .map(PathBuf::from)
+            .unwrap_or_else(|| default_config_path.to_path_buf());
+        let file: FileConfig = match std::fs::read_to_string(&cfg_path) {
+            Ok(t) => toml::from_str(&t).context("parsing secretd config TOML for [profile]")?,
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => FileConfig::default(),
+            Err(e) => return Err(e).with_context(|| format!("reading {}", cfg_path.display())),
+        };
+        let fp = file.profile.unwrap_or_default();
+        resolve_profile(
+            fp,
+            env_nonempty("SECRETD_TOPOLOGY"),
+            env_nonempty("SECRETD_OPERATOR_AUTHORIZER_URL"),
+        )
+    }
+}
+
+/// Pure, testable resolution core for [`ProfileSettings::load`] — turns the file `[profile]` block
+/// plus the env overrides into a validated [`ProfileSettings`]. Enforces FS-S24 (vTPM reject) and
+/// the Profile-B required-input rules (FS-S21 substitute factor plus binding inputs). No I/O.
+fn resolve_profile(
+    fp: FileProfile,
+    topology_env: Option<String>,
+    url_env: Option<String>,
+) -> anyhow::Result<ProfileSettings> {
+    {
+        // FS-S24: vTPM gating is forbidden — reject at parse time (fail-closed).
+        if fp.vtpm_gating {
+            bail!(
+                "[profile].vtpm_gating is forbidden (FS-S24): a vTPM has no hardware isolation \
+                 boundary on a VPS; refusing to gate DEK release on it"
+            );
+        }
+
+        let topology = match topology_env
+            .or(fp.topology)
+            .map(|s| s.trim().to_ascii_lowercase())
+            .as_deref()
+        {
+            None | Some("") | Some("onbox") | Some("on-box") | Some("local") => Topology::OnBox,
+            Some("remote") | Some("vps") => Topology::Vps,
+            Some(other) => bail!(
+                "unknown [profile].topology {other:?} (expected \"onbox\" or \"remote\"/\"vps\")"
+            ),
+        };
+
+        let operator_authorizer_url = url_env.or(fp.operator_authorizer_url);
+
+        if topology == Topology::OnBox {
+            return Ok(ProfileSettings {
+                topology,
+                operator_authorizer_url,
+                vps_instance_id: None,
+                operator_pubkey: None,
+                operator_ca_path: None,
+                client_cert_path: None,
+                client_key_path: None,
+                edge_cert_path: None,
+                vtpm_gating_requested: false,
+            });
+        }
+
+        // Profile B: require the binding inputs (fail-closed — a half-built VPS profile never serves).
+        let operator_authorizer_url = operator_authorizer_url.clone().ok_or_else(|| {
+            anyhow!(
+                "[profile].topology = \"remote\" requires operator_authorizer_url (FS-S21 substitute \
+                 presence factor)"
+            )
+        })?;
+        let vps_instance_id = fp
+            .vps_instance_id
+            .filter(|s| !s.trim().is_empty())
+            .ok_or_else(|| anyhow!("[profile].topology = \"remote\" requires vps_instance_id"))?;
+        let operator_pubkey =
+            parse_pubkey_hex(fp.operator_pubkey_hex.as_deref().ok_or_else(|| {
+                anyhow!("[profile] remote requires operator_pubkey_hex (64-hex)")
+            })?)
+            .ok_or_else(|| anyhow!("[profile].operator_pubkey_hex must be 64 hex chars"))?;
+        let operator_ca_path = PathBuf::from(
+            fp.operator_ca_path
+                .filter(|s| !s.trim().is_empty())
+                .ok_or_else(|| anyhow!("[profile] remote requires operator_ca_path (PEM)"))?,
+        );
+        let client_cert_path = PathBuf::from(
+            fp.client_cert_path
+                .filter(|s| !s.trim().is_empty())
+                .ok_or_else(|| anyhow!("[profile] remote requires client_cert_path (PEM)"))?,
+        );
+        let client_key_path = PathBuf::from(
+            fp.client_key_path
+                .filter(|s| !s.trim().is_empty())
+                .ok_or_else(|| anyhow!("[profile] remote requires client_key_path (PEM)"))?,
+        );
+        let edge_cert_path = fp
+            .edge_cert_path
+            .filter(|s| !s.trim().is_empty())
+            .map(PathBuf::from);
+
+        Ok(ProfileSettings {
+            topology,
+            operator_authorizer_url: Some(operator_authorizer_url),
+            vps_instance_id: Some(vps_instance_id),
+            operator_pubkey: Some(operator_pubkey),
+            operator_ca_path: Some(operator_ca_path),
+            client_cert_path: Some(client_cert_path),
+            client_key_path: Some(client_key_path),
+            edge_cert_path,
+            vtpm_gating_requested: false,
+        })
+    }
+}
+
+/// Decode a 64-char hex Ed25519 public key into 32 bytes. `None` on malformed input.
+fn parse_pubkey_hex(s: &str) -> Option<[u8; 32]> {
+    let s = s.trim();
+    if s.len() != 64 {
+        return None;
+    }
+    let mut out = [0u8; 32];
+    for (i, chunk) in s.as_bytes().chunks_exact(2).enumerate() {
+        let hi = (chunk[0] as char).to_digit(16)?;
+        let lo = (chunk[1] as char).to_digit(16)?;
+        out[i] = ((hi << 4) | lo) as u8;
+    }
+    Some(out)
 }
 
 /// Load the auth token from `SECRETD_LIBSQL_AUTH_TOKEN`, else from the `0600` file at
@@ -593,5 +799,103 @@ mod tests {
         assert_eq!(env_bool("SECRETD_TEST_ENV_BOOL"), None);
         std::env::remove_var("SECRETD_TEST_ENV_BOOL");
         assert_eq!(env_bool("SECRETD_TEST_ENV_BOOL"), None);
+    }
+
+    // ---- TASK-0033: [profile] resolution (resolve_profile is pure — no env/file I/O) ----------
+
+    fn profile_b_file() -> FileProfile {
+        FileProfile {
+            topology: Some("remote".into()),
+            operator_authorizer_url: Some("https://operator.box:9443".into()),
+            vps_instance_id: Some("vps-1".into()),
+            operator_pubkey_hex: Some("00".repeat(32)),
+            operator_ca_path: Some("/etc/op/ca.pem".into()),
+            client_cert_path: Some("/etc/op/client.pem".into()),
+            client_key_path: Some("/etc/op/client.key".into()),
+            edge_cert_path: None,
+            vtpm_gating: false,
+        }
+    }
+
+    #[test]
+    fn profile_default_is_onbox() {
+        let p = resolve_profile(FileProfile::default(), None, None).expect("onbox default");
+        assert_eq!(p.topology, Topology::OnBox);
+        assert!(p.operator_authorizer_url.is_none());
+    }
+
+    #[test]
+    fn profile_vtpm_gating_rejected_fs_s24() {
+        let mut fp = FileProfile::default();
+        fp.vtpm_gating = true;
+        let err = resolve_profile(fp, None, None).unwrap_err().to_string();
+        assert!(
+            err.contains("FS-S24"),
+            "vTPM gating must be rejected: {err}"
+        );
+    }
+
+    #[test]
+    fn profile_vps_requires_authorizer_url_fs_s21() {
+        let mut fp = profile_b_file();
+        fp.operator_authorizer_url = None;
+        let err = resolve_profile(fp, None, None).unwrap_err().to_string();
+        assert!(
+            err.contains("operator_authorizer_url"),
+            "VPS without authorizer URL must refuse: {err}"
+        );
+    }
+
+    #[test]
+    fn profile_vps_requires_binding_inputs() {
+        // Missing instance id.
+        let mut fp = profile_b_file();
+        fp.vps_instance_id = None;
+        assert!(resolve_profile(fp, None, None).is_err());
+        // Bad pubkey length.
+        let mut fp = profile_b_file();
+        fp.operator_pubkey_hex = Some("deadbeef".into());
+        assert!(resolve_profile(fp, None, None).is_err());
+        // Missing client key.
+        let mut fp = profile_b_file();
+        fp.client_key_path = None;
+        assert!(resolve_profile(fp, None, None).is_err());
+    }
+
+    #[test]
+    fn profile_vps_full_config_resolves() {
+        let p = resolve_profile(profile_b_file(), None, None).expect("full VPS profile");
+        assert_eq!(p.topology, Topology::Vps);
+        assert_eq!(
+            p.operator_authorizer_url.as_deref(),
+            Some("https://operator.box:9443")
+        );
+        assert_eq!(p.vps_instance_id.as_deref(), Some("vps-1"));
+        assert_eq!(p.operator_pubkey, Some([0u8; 32]));
+        assert!(!p.vtpm_gating_requested);
+        assert_eq!(p.topology.to_engine(), envctl_secrets::Topology::Vps);
+    }
+
+    #[test]
+    fn profile_env_topology_overrides_file() {
+        // File says onbox; env forces remote (then the binding inputs are still required).
+        let mut fp = profile_b_file();
+        fp.topology = Some("onbox".into());
+        let p = resolve_profile(fp, Some("remote".into()), None).expect("env override to remote");
+        assert_eq!(p.topology, Topology::Vps);
+    }
+
+    #[test]
+    fn profile_unknown_topology_rejected() {
+        let mut fp = FileProfile::default();
+        fp.topology = Some("cloud".into());
+        assert!(resolve_profile(fp, None, None).is_err());
+    }
+
+    #[test]
+    fn parse_pubkey_hex_validates_length() {
+        assert!(parse_pubkey_hex(&"ab".repeat(32)).is_some());
+        assert!(parse_pubkey_hex("dead").is_none());
+        assert!(parse_pubkey_hex(&"zz".repeat(32)).is_none());
     }
 }

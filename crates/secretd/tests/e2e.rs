@@ -79,6 +79,9 @@ fn make_engine(paths: &Paths, keyfile: &Zeroizing<Vec<u8>>) -> Engine {
         Box::new(NullUpstream),
         #[cfg(feature = "provider-github")]
         Box::new(envctl_secrets::mint_github::NoopHttpTransport),
+        Box::new(envctl_secrets::broker::UnprovenGate),
+        Box::new(envctl_secrets::SystemClockTrustedTime),
+        envctl_secrets::Topology::OnBox,
     )
     .expect("with_seams")
 }
