@@ -65,6 +65,10 @@ fn toolchains_shell_exports_rustup_home_with_cargo_home() {
         )),
         "OLLAMA_LIBRARY_PATH must redirect ollama at the meta-owned GPU runner libs:\n{out}"
     );
+    assert!(
+        out.contains(&format!("export LIBCLANG_PATH='{r}/.toolchains/llvm/lib'")),
+        "LIBCLANG_PATH must point at the meta-owned LLVM/clang lib dir:\n{out}"
+    );
 }
 
 /// JSON form carries RUSTUP_HOME too, so machine consumers see the same seam.
@@ -88,5 +92,10 @@ fn toolchains_json_carries_rustup_home() {
         v["OLLAMA_LIBRARY_PATH"].as_str(),
         Some(format!("{r}/.toolchains/ollama/lib/ollama").as_str()),
         "json OLLAMA_LIBRARY_PATH must redirect ollama at the meta-owned GPU runner libs"
+    );
+    assert_eq!(
+        v["LIBCLANG_PATH"].as_str(),
+        Some(format!("{r}/.toolchains/llvm/lib").as_str()),
+        "json LIBCLANG_PATH must point at the meta-owned LLVM/clang lib dir"
     );
 }

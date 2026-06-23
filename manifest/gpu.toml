@@ -102,28 +102,11 @@ kind = "script"
 script = "sudo apt-get remove -y nvidia-open && sudo apt-get autoremove -y"
 
 
-[[component]]
-id = "llvm-clang"
-name = "LLVM 21 + clang-21 + libclang dev"
-description = "Provides llc + libclang resource-dir headers cuda-oxide's bindgen needs."
-requires = ["nvidia-cuda-repo"]
-gpu_required = true
-[component.detect]
-kind = "command"
-command = "bash"
-args = ["-lc", "command -v clang-21 >/dev/null && (command -v llc-21 >/dev/null || command -v llc-22 >/dev/null || ls /usr/lib/llvm-2*/bin/llc >/dev/null 2>&1)"]
-[component.install]
-kind = "command"
-needs_sudo = true
-command = "apt-get"
-args = ["install", "-y", "llvm-21", "llvm-21-tools", "clang-21", "libclang-21-dev", "libclang-cpp21-dev", "libclang-common-21-dev"]
-[component.verify]
-kind = "command"
-command = "bash"
-args = ["-lc", "clang-21 --version"]
-[component.remove]
-kind = "script"
-script = "sudo apt-get remove -y llvm-21 llvm-21-tools clang-21 libclang-21-dev libclang-cpp21-dev libclang-common-21-dev && sudo apt-get autoremove -y"
+# NOTE: the `llvm-clang` component is now meta-owned (prebuilt LLVM/clang-21 tarball
+# into .toolchains/llvm) and lives in components.d/epic-h-toolchains.toml — Epic H
+# TASK-0061 replaced the apt `llvm-21`/`clang-21`/`libclang-*-dev` system-depth install
+# that used to be defined here. The id is unchanged, so the `requires = [..., "llvm-clang",
+# ...]` references below (cuda-oxide, gpu-stack) still resolve.
 
 
 [[component]]

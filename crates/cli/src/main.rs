@@ -1744,6 +1744,7 @@ fn run_env(
             map["UV_TOOL_DIR"] = format!("{tc}/uv/tools").into();
             map["UV_PYTHON_INSTALL_DIR"] = format!("{tc}/uv/python").into();
             map["OLLAMA_LIBRARY_PATH"] = format!("{tc}/ollama/lib/ollama").into();
+            map["LIBCLANG_PATH"] = format!("{tc}/llvm/lib").into();
         }
         println!("{}", serde_json::to_string_pretty(&map)?);
         return Ok(());
@@ -1793,6 +1794,12 @@ fn run_env(
         println!(
             "export OLLAMA_LIBRARY_PATH={}",
             sh_single_quote(&format!("{tc}/ollama/lib/ollama"))
+        );
+        // libclang.so redirect for the meta-owned LLVM/clang (.toolchains/llvm/lib
+        // holds libclang.so) so bindgen-style consumers find it (Epic H TASK-0061).
+        println!(
+            "export LIBCLANG_PATH={}",
+            sh_single_quote(&format!("{tc}/llvm/lib"))
         );
         println!("export PATH=\"{tc}/.bun/bin:{tc}/cargo/bin:{tc}/uv/tools/bin:$PATH\"");
     }
