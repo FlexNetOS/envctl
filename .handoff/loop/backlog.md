@@ -990,7 +990,7 @@ policy change" — both are available and declarable here.
   ACTION REQUIRED" claim was WRONG (owner-corrected) — the App was never gated.
   Carved part-2 (mint-github *fetch wiring*) → **TASK-0077** (non-blocking hardening; the rate-limit
   liability it would address is ALREADY solved by TASK-0068's authenticated `gh api`).
-- [ ] **TASK-0077 (H, LOW — hardening, non-blocking) — route Epic-H GitHub fetches through the
+- [~] **TASK-0077 (H, LOW — hardening, non-blocking) — IN-FLIGHT: PR #204 ARMED (auto-merge --squash, OPEN/BLOCKED on pending checks 2026-06-23; NEXT SESSION re-poll `gh pr view 204` → tick `- [x]` when MERGED).** Built the shared resolver `assets/scripts/envctl-gh-fetch.sh` (3-tier: `secretctl mint-github` → authed `gh` → unauth; functions-only, stderr-only diagnostics, fail-open) and repointed all 10 Epic-H GitHub fetch sites in `epic-h-toolchains.toml`; lock regen (79 comp, only 10 hashes changed). Mint tier gated on operator `ENVCTL_GH_INSTALLATION_ID` (no fabricated id). Guardian PASS (gh/curl tiers byte-identical to prior; runtime-proven: resolver fail-through → real tag, live mise fetch). route Epic-H GitHub fetches through the
   vault App token (more-isolated than the `gh` keyring).** Add a shared fetch-token resolver the
   Epic-H component install/fix hooks call: prefer `secretctl mint-github --output json` (vault-sealed
   App key; requires the vault unlocked via the Cognitum Seed possession factor) → fall back to
