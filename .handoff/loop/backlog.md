@@ -867,8 +867,22 @@ policy change" — both are available and declarable here.
   llvm-ar, llvm-config, llvm-nm, llvm-objcopy, llvm-objdump.
   **Remaining cleanup (separate, sudo):** `apt remove clang clang-21 llvm-21 …` (meta clang already
   shadows `/usr/bin` on PATH via `~/.local/bin`).
-- [ ] **TASK-0062 (H, MEDIUM):** `libgccjit` for `rustc_codegen_gcc` — `y.sh`-downloaded CI
-  `libgccjit.so` → `.toolchains/libgccjit/lib` (no system GCC build). Repo: rust-lang/rustc_codegen_gcc.
+- [x] **TASK-0062 (H, MEDIUM) — DONE 2026-06-23 via PR #177 (MERGED, squash `1cc08dc`):**
+  `libgccjit` for `rustc_codegen_gcc` — meta-owned (9th Epic-H tarball→`.toolchains` component). Install
+  reads the pinned commit from rustc_codegen_gcc's own `libgccjit.version`, downloads the `rust-lang/gcc`
+  release asset `master-${COMMIT}/libgccjit.so` (commit `2f06e64…`, HTTP-200 verified) →
+  `.toolchains/libgccjit/lib/libgccjit.so` (+ `.so.0` SONAME). Payload is a runtime `.so` consumed by the
+  external rustc backend → **NO `~/.local/bin` symlink**; verify = file-exists + `file | grep 'shared
+  object'`; self-guarded remove; idempotent re-install. `GCC_PATH` env seam added to `run_env`
+  (JSON+shell, after `LIBCLANG_PATH`) — the seam rustc_codegen_gcc's `config.toml gcc-path` /
+  `LIBRARY_PATH`+`LD_LIBRARY_PATH` consume. `crates/cli/tests/env.rs` extended (both toolchains tests).
+  Lock regen **72→73** (additive net-new id — NOT id-preserved, no pre-existing libgccjit id). ADR row
+  marked shipped. **no-C clean:** the `.so` is a `.toolchains/` runtime artifact, never a Cargo dep
+  (Cargo.toml/lock diff vs develop empty) — `ci/gates/no-c.sh` provably unaffected. Verified on-box:
+  `✓ libgccjit (meta-owned) [healthy] wired`; `GCC_PATH=…/.toolchains/libgccjit/lib`; libgccjit.so (426M
+  ELF shared object) + `.so.0` present; absent from drift. Guardian PASS (all 8 gates green).
+  **Remaining (separate, wiring):** rustc_codegen_gcc backend selection itself (nightly + `-Zcodegen-backend`
+  / `config.toml gcc-path`) is the consumer-side wiring, out of this component's scope.
 - [ ] **TASK-0063 (H, HARD):** CUDA toolkit → meta prefix — `.run --silent --toolkit
   --toolkitpath=.toolchains/cuda --override` (toolkit meta-owned; root still needed for side-paths;
   conda-forge rootless alt noted). Replaces the apt `cuda-toolkit-13-3` install path. Includes
