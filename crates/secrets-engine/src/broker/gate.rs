@@ -54,6 +54,86 @@ pub fn gate_absent_since_ms(state: GateState, now_ms: i64) -> Option<i64> {
     }
 }
 
+/// The default-injected presence gate: ALWAYS [`GateState::Unproven`]. It is the fail-closed
+/// engine default for the Profile-B gate seam — a daemon that has not installed a real gate (or a
+/// VPS whose authorizer link has never delivered a valid token) can prove nothing, so it denies
+/// immediately with no grace (REQ-SEC-13). Profile A never consults the injected gate (it keeps the
+/// on-box USB/Seed path), so this default is invisible to default builds.
+#[derive(Default)]
+pub struct UnprovenGate;
+
+impl PresenceGate for UnprovenGate {
+    fn resolve(&self) -> GateState {
+        GateState::Unproven
+    }
+}
+
+/// Profile B (VPS) presence gate (audit F9 / FS-S23 / OI-SM-2). Possession is substituted by an
+/// operator-box-signed **presence token**: the async authorizer link (secretd `edge::authorizer`)
+/// verifies a token and feeds its `valid_until` (the token's `expiry_ms`) here via
+/// [`VpsPresenceGate::accept_token`]. `resolve()` re-reads the stored `valid_until` against the
+/// engine clock on EVERY swap (the engine never caches a gate result across swaps — FS-S23), so a
+/// token expiring between two swaps flips the 2nd swap to absent.
+///
+/// Fail-closed: never-proven ⇒ [`GateState::Unproven`] (deny, no grace); a token that has expired ⇒
+/// [`GateState::AbsentSince`]`(expiry)`. Interior-mutable (`Mutex`) so the async authorizer writes
+/// while the per-request egress path reads. A poisoned lock resolves to `Unproven` (fail-closed).
+pub struct VpsPresenceGate {
+    /// `Some(valid_until_wall_ms)` of the most-recently accepted token, else `None` (never proven).
+    valid_until_ms: std::sync::Mutex<Option<i64>>,
+    /// Engine wall clock used to compare `valid_until` against "now" on each `resolve()`.
+    clock: std::boxed::Box<dyn crate::seam::Clock>,
+}
+
+impl VpsPresenceGate {
+    /// Build a never-proven VPS gate over the given engine clock. The authorizer link must call
+    /// [`Self::accept_token`] before any swap can pass the gate.
+    #[must_use]
+    pub fn new(clock: std::boxed::Box<dyn crate::seam::Clock>) -> Self {
+        Self {
+            valid_until_ms: std::sync::Mutex::new(None),
+            clock,
+        }
+    }
+
+    /// Record that a presence token valid until `valid_until_ms` (its `expiry_ms`) was just verified
+    /// by the authorizer link. Subsequent `resolve()` calls report `Present` until the engine clock
+    /// passes `valid_until_ms`. A poisoned lock is ignored (the read side fails closed anyway).
+    pub fn accept_token(&self, valid_until_ms: i64) {
+        if let Ok(mut g) = self.valid_until_ms.lock() {
+            *g = Some(valid_until_ms);
+        }
+    }
+
+    /// Drop any accepted token so the gate reverts to never-proven (`Unproven`). Called when the
+    /// authorizer link goes unreachable (FS-S23: deny new egress while possession can't be re-proven).
+    pub fn clear(&self) {
+        if let Ok(mut g) = self.valid_until_ms.lock() {
+            *g = None;
+        }
+    }
+}
+
+impl PresenceGate for VpsPresenceGate {
+    fn resolve(&self) -> GateState {
+        let Ok(g) = self.valid_until_ms.lock() else {
+            return GateState::Unproven; // poisoned ⇒ fail closed
+        };
+        match *g {
+            None => GateState::Unproven,
+            Some(valid_until) => {
+                let now = self.clock.now().timestamp_millis();
+                if now < valid_until {
+                    GateState::Present
+                } else {
+                    // Expired: absent since the token's expiry instant (deterministic, not "now").
+                    GateState::AbsentSince(valid_until)
+                }
+            }
+        }
+    }
+}
+
 /// Profile S — the **Cognitum Seed** presence gate. Possession is proven *freshly* on each
 /// `resolve()`: a random 32-byte challenge is signed by the Seed's Ed25519 device key (over the
 /// REST custody API, TLS-pinned to the Cognitum CA, via [`crate::seam::seed_factor::sign_hex`])
@@ -160,6 +240,92 @@ mod tests {
         assert_eq!(
             gate_absent_since_ms(GateState::AbsentSince(42), 1_000),
             Some(42)
+        );
+    }
+
+    /// A test clock that returns a caller-set fixed wall-ms (the `boottime_ms` is irrelevant here).
+    struct TestClock(std::sync::Mutex<i64>);
+    impl crate::seam::Clock for TestClock {
+        fn now(&self) -> chrono::DateTime<chrono::Utc> {
+            chrono::DateTime::from_timestamp_millis(*self.0.lock().unwrap())
+                .expect("valid timestamp")
+        }
+        fn boottime_ms(&self) -> i64 {
+            0
+        }
+    }
+
+    #[test]
+    fn unproven_gate_is_always_unproven() {
+        assert_eq!(UnprovenGate.resolve(), GateState::Unproven);
+        assert_eq!(UnprovenGate::default().resolve(), GateState::Unproven);
+    }
+
+    #[test]
+    fn vps_gate_never_proven_is_unproven() {
+        let clock = Box::new(TestClock(std::sync::Mutex::new(1_000)));
+        let gate = VpsPresenceGate::new(clock);
+        assert_eq!(
+            gate.resolve(),
+            GateState::Unproven,
+            "a VPS gate with no accepted token denies (fail-closed)"
+        );
+    }
+
+    #[test]
+    fn vps_gate_valid_token_is_present() {
+        let clock = Box::new(TestClock(std::sync::Mutex::new(1_000)));
+        let gate = VpsPresenceGate::new(clock);
+        gate.accept_token(5_000); // valid_until well ahead of now=1000
+        assert_eq!(gate.resolve(), GateState::Present);
+    }
+
+    #[test]
+    fn vps_gate_expired_token_is_absent_since_expiry() {
+        // now (2000) is past valid_until (1500): absent since the token's expiry instant.
+        let clock = Box::new(TestClock(std::sync::Mutex::new(2_000)));
+        let gate = VpsPresenceGate::new(clock);
+        gate.accept_token(1_500);
+        assert_eq!(gate.resolve(), GateState::AbsentSince(1_500));
+    }
+
+    #[test]
+    fn vps_gate_clear_reverts_to_unproven() {
+        let clock = Box::new(TestClock(std::sync::Mutex::new(1_000)));
+        let gate = VpsPresenceGate::new(clock);
+        gate.accept_token(5_000);
+        assert_eq!(gate.resolve(), GateState::Present);
+        gate.clear();
+        assert_eq!(
+            gate.resolve(),
+            GateState::Unproven,
+            "after the authorizer goes unreachable, the gate denies again"
+        );
+    }
+
+    #[test]
+    fn vps_gate_reresolves_on_clock_advance() {
+        // FS-S23: the gate is re-read against the clock on EVERY resolve — a token valid at one read
+        // is absent at a later read once the clock passes its expiry, with no re-acceptance.
+        let now = std::sync::Mutex::new(1_000);
+        let clock_handle = std::sync::Arc::new(now);
+        struct SharedClock(std::sync::Arc<std::sync::Mutex<i64>>);
+        impl crate::seam::Clock for SharedClock {
+            fn now(&self) -> chrono::DateTime<chrono::Utc> {
+                chrono::DateTime::from_timestamp_millis(*self.0.lock().unwrap()).unwrap()
+            }
+            fn boottime_ms(&self) -> i64 {
+                0
+            }
+        }
+        let gate = VpsPresenceGate::new(Box::new(SharedClock(clock_handle.clone())));
+        gate.accept_token(2_000);
+        assert_eq!(gate.resolve(), GateState::Present, "valid at t=1000");
+        *clock_handle.lock().unwrap() = 2_500; // advance past expiry
+        assert_eq!(
+            gate.resolve(),
+            GateState::AbsentSince(2_000),
+            "same token now absent at t=2500 — re-resolved per call, not cached"
         );
     }
 
