@@ -120,6 +120,18 @@ fn self_check() -> anyhow::Result<()> {
     let _store_cfg =
         config::StoreConfig::load(&paths.config_file()).context("loading store config")?;
 
+    // 5. The `[profile]` (Profile A on-box / B VPS) config loads + validates. This is the CONFIG-LEVEL
+    // half of the TASK-0033 startup guards and is what makes `--self-check`'s contract honest for a
+    // VPS deploy: a `topology = "remote"` config missing its substitute presence factor fails HERE
+    // (FS-S21: `operator_authorizer_url` required; plus `vps_instance_id`/`operator_pubkey_hex`/…),
+    // and a `vtpm_gating` config is rejected at parse (FS-S24) — the same fatal `ProfileSettings::load`
+    // bail `serve` hits before binding. It stays offline + side-effect-free (pure TOML parse, no vault).
+    // NOTE: FS-S22 (on-box USB-keyslot presence) and FS-S23 (VPS gate primed by the live authorizer
+    // link) need serve-time engine/link state and are DELIBERATELY out of scope here — self-check
+    // covers the config-level guards only, not the runtime-state ones.
+    let _profile =
+        config::ProfileSettings::load(&paths.config_file()).context("loading [profile] config")?;
+
     println!("secretd --self-check: OK");
     Ok(())
 }
