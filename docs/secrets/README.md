@@ -14,6 +14,9 @@ stack it now ships. The `env-ctl` repo is being archived after this carry-over.
 ## Key entry points
 - **`SERVER-MODE.md`** — the Phase-8 remote-relay-edge spec (F2/F5/F6/F14, forbidden-states
   FS-S16..S25, open items OI-SM-1..6). **Read this before the F2/F5/F6 design spike.**
+- `GITHUB-TRANSPORT-DOCTRINE.md` — verified GitHub transport doctrine (TASK-0053): SSH `git` is
+  repo truth; `gh`/API is advisory until read-back; the broker-only `mint-github` / POLICY_DRIFT
+  token path; merge-gate cross-check.
 - `THREAT-MODEL.md` — attacker profiles (A1..A16) + threat assertions.
 - `DESIGN-NOTES.md` — locked operator decisions; CF/HF/OI item ledger.
 - `CHARTER.md`, `SCAFFOLD-SPEC.md` — mission + the Phase-0 type skeleton/acceptance criteria.
