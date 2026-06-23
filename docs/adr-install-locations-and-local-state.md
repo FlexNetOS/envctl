@@ -21,8 +21,10 @@ the kernel) — and neither should any peer. Every current system-depth install 
 and MUST be either (a) installed at a meta-directed prefix (`$META_ROOT/.toolchains/<x>` via
 tarball / `cargo install --root` / runfile `--toolkitpath`), or (b) cloned + added as a source
 repo (`.meta.yaml` peer / `add-repo` source build), or — only when it physically cannot be
-meta-owned — (c) declared as an explicit **irreducible `system:` component** with written
-rationale. (c) is not a free pass; it is reserved for the two cases proven irreducible below.
+meta-owned — (c) recognized as a **host prerequisite** meta only detects/verifies (never owns).
+(c) is not a free pass; see the Corrected classification below — after review, (c) covers only the
+GPU driver + the OS build-floor (pre-meta host facts), and `/nix` is removable, not a permanent
+exception.
 
 ## The install-location map (verified live)
 
@@ -80,23 +82,41 @@ genuinely irreducible.
 | **CUDA toolkit** (apt → `/usr/local/cuda-13.3`) | NVIDIA (runfile) | `.run --silent --toolkit --toolkitpath=.toolchains/cuda --override` (toolkit → meta; **still needs root** for udev/pkgconfig side-paths). Conda-forge `nvidia-cuda-toolkit` = rootless alt | HARD |
 | **Nsight (`nsys`/`nsys-ui`)** (`/etc/alternatives`) | NVIDIA (bundled in CUDA runfile) | lands under `--toolkitpath/nsight-systems`, or standalone `.run --prefix=.toolchains/nsight-systems` | MEDIUM |
 
-### The two genuinely irreducible `system:` cases (proven, not rubber-stamped)
-- **nvidia-open kernel driver** (apt `nvidia-driver-595-open` + DKMS, `gpu.toml`) — repo
-  NVIDIA/open-gpu-kernel-modules. Kernel `.ko` modules must build against the running kernel's
-  headers and load into `/lib/modules/`; the module subsystem is OS-global and `modprobe` has no
-  user-prefix. **No meta-prefix path exists.** Declare as `system:` with a `verify` hook; install
-  stays apt/DKMS.
-- **Nix store `/nix`** (Determinate installer, `nix-yazelix.toml`) — the `/nix/store` path is
-  hardcoded into every derivation's content hash + ELF RPATH; relocating invalidates the whole
-  store. **Non-relocatable by design.** Declare as `system:`. (The tools nix *delivers* —
-  nushell/zellij/mise — are converged above, which removes nix as a *dependency path* for them;
-  **yazelix** itself is a nix-flake meta-config, not an app — converging it means decomposing it
-  into its config (already in `home/.config/yazelix`) + the separately-installed component
-  binaries. Larger effort, carded in Epic H.)
+### Corrected classification (owner review 2026-06-23 — neither prior "irreducible" claim held)
 
-> Note `build-essential`/`cmake`/`pkg-config`/`libssl-dev` are the OS build foundation; they are
-> the bootstrap floor every from-source convergence above depends on. They are tracked as the
-> `system:` build-floor (a third irreducible-in-practice class), not silently ignored.
+An earlier draft labelled the nvidia driver and the nix store "genuinely irreducible `system:`
+cases." Owner review (and a rigorous why-pass) showed both were cop-outs. The accurate picture:
+
+- **nvidia-open kernel driver — NOT a meta concern at all (pre-meta host prerequisite).** It was
+  installed *before* meta existed, so meta does not own it regardless. meta's job is to
+  **detect/verify GPU readiness** (`gpu.toml` verify hooks), never to install or "declare-own" the
+  driver. (Aside, settled by hardware: RTX 5090 = Blackwell/sm_120 has *open* kernel modules only —
+  proprietary kernel modules don't support Blackwell — and the open module is what's loaded. So the
+  open-vs-closed question is moot; the point is meta has no ownership here.) Kernel modules are
+  genuinely OS-global (`/lib/modules`, `modprobe`), but that's the host's affair, not a meta
+  `system:` component.
+- **Nix `/nix` store — removable, not irreducible.** Verified: a nix-built binary's ELF *program
+  interpreter* + RUNPATH are absolute `/nix/store/<hash>/…` paths, and the store prefix is part of
+  every derivation's hash identity (fingerprint includes `:/nix/store:`). So the **logical**
+  `/nix/store` is inescapable — but a **root-owned `/nix` is not**: a *chroot store*
+  (`nix --store 'local?root=$HOME/…'` / `nix-user-chroot`) bind-mounts a meta-owned dir to `/nix`
+  in a namespace, keeping the *logical* path (so the binary cache still works) without root `/nix`.
+  Only a custom `store-dir=` truly relocates the prefix — and that **destroys the binary cache**
+  (every artifact rebuilds from C source), so it's the wrong path. **The meta-correct move is to
+  remove nix entirely:** nix exists on this box solely to deliver **yazelix** (which bundles
+  nu/zellij/mise). Converge those (TASK-0058/0059) and de-nix yazelix (TASK-0064) and `/nix`
+  disappears — no relocation needed. (Chroot store is the *transitional* fallback only if nix must
+  persist before TASK-0064 lands.)
+  - **yazelix status (verified, local checkout post-v17.7 / v17.7=2026-06-15):** `yzx` is now a
+    standalone Rust binary (`rust_core/yazelix_core` → `[[bin]] yzx`) and the project is extracting
+    its subsystems into standalone cargo crates — the direction is off-nix. BUT the current
+    `docs/installation.md` still states "Yazelix requires Nix with flakes," and runtime *assembly*
+    (zellij/yazi/helix/nu/mise → runtime tree) is still nix (`packaging/mk_runtime_tree.nix`).
+    The non-nix install path is **in-flight, not yet released**. TASK-0064 tracks landing on it.
+
+> `build-essential`/`cmake`/`pkg-config`/`libssl-dev`/system GCC are the OS **build-floor** every
+> from-source convergence depends on — a host prerequisite (like the kernel/driver), not a meta
+> component. meta detects them; it does not vendor the platform C toolchain.
 
 ## Decision
 
@@ -159,5 +179,6 @@ misses against the meta store, so `envctl install`/`auto-fix` re-installs it INT
 Each row of the convergence plan becomes an envctl component (new `manifest/*.toml` or a
 `.meta.yaml` peer source-build) plus a `meta-tool-links`/`.toolchains` install. Sequenced
 EASY → HARD; all dry-run-safe by default (apply on the box via `envctl install`/`auto-fix`,
-driven by `env-install-loop`). The two irreducible `system:` cases (nvidia-open, `/nix`) are
-declared, not converted. Backlog: `.handoff/loop/backlog.md` Epic H.
+driven by `env-install-loop`). The GPU driver + OS build-floor are host prerequisites (detect/
+verify only, never meta-owned); `/nix` is removed by finishing the yazelix de-nix (TASK-0064), not
+declared a permanent exception. Backlog: `.handoff/loop/backlog.md` Epic H.
