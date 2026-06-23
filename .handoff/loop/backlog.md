@@ -908,7 +908,15 @@ policy change" — both are available and declarable here.
   irreducible** (see TASK-0064) — do not declare it a permanent `system:` component. Net: there is
   NO list of "sanctioned system installs" to formalize; only host prerequisites to verify and the
   `/nix` removal to finish.
-- [ ] **TASK-0066 (H, MEDIUM) — nix-portable isolation (makes nix meta-owned, kills host `/nix`):**
+- [~] **TASK-0066 (H, MEDIUM) — ADDITIVE COMPONENT DONE 2026-06-23 via PR #179 (MERGED, squash `70ddfc0`); destructive migration → TASK-0067:**
+  nix-portable isolation (makes nix meta-owned, kills host `/nix`).
+  **Shipped (additive):** meta-owned `nix-portable` Epic-H component (10th) — `DavHau/nix-portable`
+  `nix-portable-x86_64` (v012) → `.toolchains/nix-portable/bin/nix-portable` + `~/.local/bin` symlink,
+  fetched via **authenticated `gh release download`** (5000/hr; redirect+curl `v012` fallback), verify
+  handles the self-extracting `#!/usr/bin/env bash`+ELF polyglot (`file | grep -qi executable`),
+  self-guarded remove (never touches host `/nix`). Lock 73→74. Verified on-box `✓ [healthy] wired`.
+  **DEFERRED to TASK-0067 (SUPERVISED):** the destructive half — remove host `/nix`, re-provision the
+  LIVE yazelix terminal off Determinate nix — touches the owner's running shell, needs a human window.
   Replace the root-owned Determinate `/nix` install with **`nix-portable`** (`DavHau/nix-portable`,
   bubblewrap-backed) so nix runs fully isolated in a meta/home-owned store (`~/.nix-portable`),
   host `/nix` gone, binary cache preserved (logical `/nix/store` kept via bwrap namespace), `nixGL`
@@ -919,6 +927,36 @@ policy change" — both are available and declarable here.
   off the Determinate install; remove the host `/nix`. Unblocks running yazelix nix-isolated TODAY
   (before the TASK-0064 rust-core de-nix lands). Aligns with the meta-owned-isolated nix strategy
   in the ADR §Corrected classification.
+- [x] **TASK-0068 (H, MEDIUM) — DONE 2026-06-23 via PR #180 (MERGED, squash `795c2f0`):**
+  Authenticated-GitHub-fetch hardening — eliminate the last `api.github.com` rate-limit liability.
+  Finding: 6/7 Epic-H components already fetch via the `/releases/latest` web redirect (302, NOT the
+  rate-limited JSON API) → immune; only the **`llvm`** component used `api.github.com/.../releases`
+  (it must LIST releases to pin latest 21.x since `/releases/latest`→22.x), which 403s when the box's
+  unauth 60/hr quota is exhausted (the failure that surfaced in TASK-0066). Fix: `llvm` now lists via
+  **authenticated `gh api`** (5000/hr; gh is the meta-owned TASK-0057 component), unauth API fallback
+  only if gh absent/unauthed. Resolves same `llvmorg-21.1.8`; lock content_hash regen (count 74,
+  unchanged). Gates green; llvm-clang stays `[healthy] wired`. **Future (→ TASK-0069):** a shared
+  `gh`→vault-App fetch path (more-isolated token) once the App is usable.
+- [!!] **TASK-0067 (H, HARD, SUPERVISED — never auto-run) — destructive `/nix` removal + yazelix migration:**
+  The deferred destructive half of TASK-0066. Re-provision yazelix + nu/zellij/mise to run via
+  `nix-portable` (`NP_RUNTIME=bwrap nix-portable nix ...`), validated in a throwaway shell first;
+  migrate the `~/.bashrc` yazelix auto-enter block (`manifest/nix-yazelix.toml`) + the
+  `nix`/`home-manager`/`yazelix` components off the Determinate daemon path; retire the
+  `manifest/nix-yazelix.toml` `id="nix"` component and remove the host `/nix`
+  (`/nix/nix-installer uninstall`). **SUPERVISED** because yazelix is the owner's LIVE interactive
+  shell — autonomous execution can break the running terminal; needs a human migration window.
+  Depends on TASK-0066 (nix-portable installed — DONE).
+- [ ] **TASK-0069 (H, MEDIUM, owner-gated) — make the vault GitHub App usable as the isolated token source:**
+  TASK-0068 uses the `gh` keyring token (account drdave-flexnetos, 5000/hr) — the available auth. The
+  more-isolated path the owner built is the vault GitHub App (`secretctl mint-github`, app-id 4044997),
+  but it is NOT usable today: (1) `secretctl` is **not on PATH** (not installed to `~/.local/bin`/
+  `.toolchains` — file an Epic-H component for it; note `secretd` itself runs from `~/.cargo/bin`, a
+  system-depth location worth converging); (2) the App is **enrollment-blocked (404)** — needs the
+  ORIGINAL `app.pem` for app-id 4044997 (`secretctl github-app enroll --app-id 4044997 --private-key
+  <original-app.pem>`); the vault copy is broker-only/un-revealable by design. **OWNER ACTION REQUIRED**
+  for the enrollment + supply of the original pem. Once unblocked: add a shared `gh`→App-installation-
+  token fetch helper so Epic-H GitHub fetches use the App (higher quota, scoped, auditable) and route
+  through `flexnetos_runner` for CI/job dispatch.
 
 ## Key finding (carried)
 
