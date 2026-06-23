@@ -833,11 +833,13 @@ policy change" — both are available and declarable here.
   non-interactive/login/build contexts; the config is read by cargo everywhere. Runtime-verified:
   a throwaway build with the config (isolated XDG_CACHE_HOME) is kache-intercepted (index.db
   written). `hurry` DROPPED; `zccache`/`sccache` noted as alts.
-- [!] **TASK-0056 (H, EASY) — BLOCKED:** `archon` relink is NOT a free symlink — **`meta/Archon`
-  is not cloned/built locally** (the `.meta.yaml` peer exists but no checkout; `meta/Archon/target/
-  release/archon` absent). The live `/usr/local/bin/archon` is a 105 MB ELF of unknown provenance.
-  PRE-REQ: `meta git update` (clone Archon) + build it, THEN add to `meta-tool-links` + remove the
-  stray `/usr/local/bin/archon` (sudo). Reclassify EASY→MEDIUM (needs clone+build first).
+- [!] **TASK-0056 (H, MEDIUM) — archon: build only to FINISH THE PORT to `harness-agent-rs`
+  (owner 2026-06-23):** archon is NOT a relink/symlink job — it is being PORTED to Rust as
+  `harness-agent-rs`. Building archon (`meta git update` to clone + build) is needed ONLY to
+  properly finish that port. So the real work is the rust port (`harness-agent-rs`), with the
+  archon build as a reference/parity source — NOT adding the stray `/usr/local/bin/archon` ELF to
+  meta. Route via the rust-port harness (X=archon → Y=harness-agent-rs). The stray
+  `/usr/local/bin/archon` is retired once the port lands.
 - [x] **TASK-0057 (H, EASY) — DONE 2026-06-23:** `gh-cli` component authored + APPLIED + verified
   — release tarball → `.toolchains/gh` + `~/.local/bin/gh` symlink (gh 2.95.0, healthy). Remaining
   cleanup: drop the apt `gh` (sudo `apt remove gh`) — meta gh is already primary on PATH.
@@ -857,8 +859,12 @@ policy change" — both are available and declarable here.
   **0.30.10**, auto-detect detected/healthy/wiring_present). GPU `.so` redirect wired via
   `OLLAMA_LIBRARY_PATH` in `envctl env --toolchains` (shell+json; the binary also resolves
   `../lib/ollama` from its real path). Lock regen 71→72; env integration test extended. Repo:
-  ollama/ollama. **Remaining cleanup (separate, sudo):** remove the stale root `/usr/local/bin/ollama`
-  real binary (shadowed by the `~/.local/bin` symlink on PATH already) + stop the old 0.30.6 root daemon.
+  ollama/ollama. **Cleanup — CORRECTED (owner 2026-06-23): do NOT remove ollama yet.** ollama is
+  officially superseded by **shimmy + ruvllm** (the rust upgrade), but removal happens ONLY after
+  shimmy & ruvllm officially run and PROVE they can swap ollama out. For now: keep ollama, and
+  migrate ollama + its MODELS to meta (→ TASK-0072). The old 0.30.6 root daemon may be stopped
+  (the meta client/runner is primary), but the `/usr/local/bin/ollama` binary stays until the
+  shimmy/ruvllm swap is proven.
 - [x] **TASK-0061 (H, MEDIUM) — DONE 2026-06-23 via PR #175 (MERGED 09:39:19Z, squash `440faee`):**
   `llvm-clang` component (8th Epic-H tarball→`.toolchains`→`~/.local/bin`) — pins the latest **21.x**
   release via the GitHub releases API (the `/releases/latest` redirect now points at 22.x — avoided),
@@ -964,23 +970,49 @@ policy change" — both are available and declarable here.
   (`/nix/nix-installer uninstall`). **SUPERVISED** because yazelix is the owner's LIVE interactive
   shell — autonomous execution can break the running terminal; needs a human migration window.
   Depends on TASK-0066 (nix-portable installed — DONE).
-- [ ] **TASK-0069 (H, MEDIUM, owner-gated) — make the vault GitHub App usable as the isolated token source:**
-  TASK-0068 uses the `gh` keyring token (account drdave-flexnetos, 5000/hr) — the available auth. The
-  more-isolated path the owner built is the vault GitHub App (`secretctl mint-github`, app-id 4044997),
-  but it is NOT usable today: (1) `secretctl` is **not on PATH** (not installed to `~/.local/bin`/
-  `.toolchains` — file an Epic-H component for it; note `secretd` itself runs from `~/.cargo/bin`, a
-  system-depth location worth converging); (2) the App is **enrollment-blocked (404)** — needs the
-  ORIGINAL `app.pem` for app-id 4044997 (`secretctl github-app enroll --app-id 4044997 --private-key
-  <original-app.pem>`); the vault copy is broker-only/un-revealable by design. **OWNER ACTION REQUIRED**
-  for the enrollment + supply of the original pem. Once unblocked: add a shared `gh`→App-installation-
-  token fetch helper so Epic-H GitHub fetches use the App (higher quota, scoped, auditable) and route
-  through `flexnetos_runner` for CI/job dispatch.
+- [ ] **TASK-0069 (H, MEDIUM) — make the vault GitHub App the isolated token source — CORRECTED
+  (owner 2026-06-23): NOT owner-gated, the App was never gated.** My earlier "enrollment-blocked
+  404 / needs original app.pem / OWNER ACTION REQUIRED" claim was WRONG — the owner confirms the
+  vault App is **already enrolled (open/closed + min added)** and the USB possession factor (the
+  **Cognitum Seed**, referenced in the `meta-ruvector` crates) is **already mounted at
+  `/run/media/drdave/COGNITUM`**. The real, autonomous-buildable work: (1) **build + install
+  `secretctl` + `secretd` to the meta prefix** (`.toolchains` + `~/.local/bin`) — they are NOT on
+  the box right now (regressed from `~/.cargo/bin`, itself system-depth); file as the Epic-H
+  secrets-stack component; (2) wire the `secretctl mint-github` path (App already enrolled) so
+  Epic-H GitHub fetches can use the App token (more-isolated than the `gh` keyring) and route via
+  `flexnetos_runner` for CI/job dispatch. USB unlock uses the Cognitum Seed over the custody API
+  (see [[cognitum-seed-usb-unlock]]), not the mass-storage mount.
 - [x] **TASK-0070 (H, EASY) — DONE 2026-06-23 via PR #185 (MERGED):** dropped mold now that wild is
   the wired linker (TASK-0054). codex-cli `requires` `mold-linker`→`wild-linker`; removed the
   `-fuse-ld=mold` RUSTFLAGS from the codex install/fix hooks (it would OVERRIDE the wild config —
   RUSTFLAGS env > config rustflags — and silently bypass wild); removed the `mold-linker` apt
   component (`dev-tools.toml`); lock 74→73. Verified: codex-cli + wild-linker `[healthy] wired`,
   meta-tree build links via wild. **Owner sudo follow-up:** `sudo apt-get remove -y mold`.
+- [ ] **TASK-0071 (H, EASY) — HuggingFace CLI → meta (owner 2026-06-23, overlooked):** the
+  HuggingFace CLI is NOT installed at all (confirmed: no `huggingface-cli`, no `huggingface_hub`).
+  Migrate it to the meta prefix. **NAME COLLISION (critical):** HF's new CLI binary is `hf`, which
+  collides with the handoff continuity kernel `hf` (`~/.local/bin/hf`) — so expose the HF tool as
+  **`huggingface-cli`** (the still-supported classic name), NEVER `hf`. It is a Python tool
+  (`huggingface_hub`); install meta-owned via a uv-tool / venv under `.toolchains` (same pattern as
+  `pytorch-venv`), symlink `huggingface-cli` → `~/.local/bin`. (gh CLI was already migrated —
+  TASK-0057, `~/.local/bin/gh`→`.toolchains/gh` — only its apt copy needs the sudo removal.)
+- [ ] **TASK-0072 (H, MEDIUM) — ollama + models → meta; shimmy/ruvllm swap is the exit (owner
+  2026-06-23):** ollama is officially superseded by **shimmy + ruvllm** (the rust upgrade) but is
+  NOT removed yet (corrects TASK-0060 cleanup). Now: (a) migrate ollama's MODELS store into meta
+  (`OLLAMA_MODELS` → a meta path under `.toolchains`/a meta data dir; today models live in the root
+  daemon's store) so the model blobs are meta-owned; (b) keep the meta ollama client/runner primary.
+  **Exit criterion:** ollama is removed ONLY AFTER shimmy & ruvllm officially run and PROVE they can
+  swap ollama out — that proof is a `feature-forge` build/eval item (stand up shimmy + ruvllm as the
+  rust LLM-serving replacement, parity-check against ollama), not a loop cleanup.
+- [ ] **TASK-0073 (H, EASY) — declare the meta rust default = nightly (owner standing directive:
+  always latest toolchain; Rust always nightly):** the live default was `stable` (drift) and was
+  converged to **nightly (1.98.0-nightly, latest)** this session. Make it DECLARED/reproducible:
+  a meta component (or the existing rustup/rust-nightly component) sets `rustup default nightly` +
+  keeps nightly updated to latest, so a fresh provision lands nightly-by-default. NOTE: the envctl
+  crate stays pinned `1.96.0` stable via its own `rust-toolchain.toml` (deliberate MSRV-stable CI
+  design — the global default doesn't override a repo's `rust-toolchain.toml`); this directive is
+  the workstation/meta default, not a change to envctl's pin. Open Q for owner: should envctl
+  itself move to nightly, or keep its MSRV-stable pin?
 
 ## Key finding (carried)
 
