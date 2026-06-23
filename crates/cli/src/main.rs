@@ -1740,6 +1740,7 @@ fn run_env(
             map["BUN_INSTALL"] = format!("{tc}/.bun").into();
             map["MISE_DATA_DIR"] = format!("{tc}/mise").into();
             map["CARGO_HOME"] = format!("{tc}/cargo").into();
+            map["RUSTUP_HOME"] = format!("{tc}/rustup").into();
             map["UV_TOOL_DIR"] = format!("{tc}/uv/tools").into();
             map["UV_PYTHON_INSTALL_DIR"] = format!("{tc}/uv/python").into();
         }
@@ -1766,6 +1767,16 @@ fn run_env(
         println!(
             "export CARGO_HOME={}",
             sh_single_quote(&format!("{tc}/cargo"))
+        );
+        // RUSTUP_HOME must travel with CARGO_HOME: the rustup toolchain store is
+        // meta-owned at .toolchains/rustup (set in the `rustup` component's install
+        // hooks), but without exporting it here, `eval "$(envctl env --toolchains)"`
+        // shells fall back to ~/.rustup and miss the meta-owned nightly/codegen-gcc
+        // toolchain. Pairs CARGO_HOME ↔ RUSTUP_HOME so the shell seam matches the
+        // component hooks.
+        println!(
+            "export RUSTUP_HOME={}",
+            sh_single_quote(&format!("{tc}/rustup"))
         );
         println!(
             "export UV_TOOL_DIR={}",
