@@ -73,6 +73,12 @@ fn toolchains_shell_exports_rustup_home_with_cargo_home() {
         out.contains(&format!("export GCC_PATH='{r}/.toolchains/libgccjit/lib'")),
         "GCC_PATH must point at the meta-owned libgccjit lib dir:\n{out}"
     );
+    assert!(
+        out.contains(&format!(
+            "export HELIX_RUNTIME='{r}/.toolchains/helix/runtime'"
+        )),
+        "HELIX_RUNTIME must point at the meta-owned helix tree-sitter runtime dir:\n{out}"
+    );
 }
 
 /// JSON form carries RUSTUP_HOME too, so machine consumers see the same seam.
@@ -106,5 +112,10 @@ fn toolchains_json_carries_rustup_home() {
         v["GCC_PATH"].as_str(),
         Some(format!("{r}/.toolchains/libgccjit/lib").as_str()),
         "json GCC_PATH must point at the meta-owned libgccjit lib dir"
+    );
+    assert_eq!(
+        v["HELIX_RUNTIME"].as_str(),
+        Some(format!("{r}/.toolchains/helix/runtime").as_str()),
+        "json HELIX_RUNTIME must point at the meta-owned helix tree-sitter runtime dir"
     );
 }

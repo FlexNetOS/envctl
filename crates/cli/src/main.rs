@@ -1746,6 +1746,7 @@ fn run_env(
             map["OLLAMA_LIBRARY_PATH"] = format!("{tc}/ollama/lib/ollama").into();
             map["LIBCLANG_PATH"] = format!("{tc}/llvm/lib").into();
             map["GCC_PATH"] = format!("{tc}/libgccjit/lib").into();
+            map["HELIX_RUNTIME"] = format!("{tc}/helix/runtime").into();
         }
         println!("{}", serde_json::to_string_pretty(&map)?);
         return Ok(());
@@ -1807,6 +1808,13 @@ fn run_env(
         println!(
             "export GCC_PATH={}",
             sh_single_quote(&format!("{tc}/libgccjit/lib"))
+        );
+        // helix tree-sitter runtime (grammars + queries) for the meta-owned hx
+        // (.toolchains/helix/runtime, bundled in the upstream release tarball). hx also finds
+        // runtime/ as a sibling of its resolved exe, so this is belt-and-suspenders (Epic H).
+        println!(
+            "export HELIX_RUNTIME={}",
+            sh_single_quote(&format!("{tc}/helix/runtime"))
         );
         println!("export PATH=\"{tc}/.bun/bin:{tc}/cargo/bin:{tc}/uv/tools/bin:$PATH\"");
     }

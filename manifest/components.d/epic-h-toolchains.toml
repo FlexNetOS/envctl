@@ -658,3 +658,124 @@ rm -rf "$M/.toolchains/nix-portable"
 
 [component.wiring]
 path_entries = ["~/.local/bin"]
+
+# ── yazi ── meta-owned terminal file manager (yazi + ya). Replaces the /nix yazelix-bundled
+# yazi for interactive use. Upstream ships a musl release zip carrying BOTH binaries, so no
+# source build is needed (mirrors nushell/zellij/mise above). Additive — the /nix yazelix path
+# is untouched; the destructive /nix migration stays supervised (TASK-0067). Repo: sxyazi/yazi.
+[[component]]
+id = "yazi"
+name = "yazi (meta-owned)"
+description = "yazi terminal file manager (yazi + ya) from the upstream musl release zip into .toolchains/yazi + ~/.local/bin/{yazi,ya}. Removes nix as the delivery path for interactive yazi. Repo: sxyazi/yazi."
+
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/yazi/yazi\" ] && [ -x \"$M/.toolchains/yazi/ya\" ] && [ \"$(readlink -f \"$HOME/.local/bin/yazi\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/yazi/yazi\")\" ] && [ \"$(readlink -f \"$HOME/.local/bin/ya\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/yazi/ya\")\" ]"]
+
+[component.install]
+kind = "script"
+login_shell = true
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/yazi"
+ASSET="yazi-x86_64-unknown-linux-musl.zip"
+tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+# Authenticated fetch (gh = 5000/hr, gh is meta-owned Epic-H TASK-0057) to dodge the 60/hr
+# unauth GitHub API 403; web /releases/latest redirect + curl fallback (no unauth JSON API).
+if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+  gh release download --repo sxyazi/yazi --pattern "$ASSET" --output "$tmp/yazi.zip" --clobber
+else
+  TAG="$(curl -fsSLI -o /dev/null -w '%{url_effective}' 'https://github.com/sxyazi/yazi/releases/latest' | sed 's#.*/tag/##')"
+  curl -fsSL "https://github.com/sxyazi/yazi/releases/download/${TAG}/${ASSET}" -o "$tmp/yazi.zip"
+fi
+# zip extraction: unzip if present, else python3's stdlib zipfile (no system dep). Exec bit is
+# re-applied by `install -m 755` below regardless of what the extractor preserves.
+if command -v unzip >/dev/null 2>&1; then unzip -q -o "$tmp/yazi.zip" -d "$tmp"; else python3 -m zipfile -e "$tmp/yazi.zip" "$tmp"; fi
+SRC="$(dirname "$(find "$tmp" -type f -name yazi | head -1)")"
+install -d -m 755 "$DEST"
+install -m 755 "$SRC/yazi" "$DEST/yazi"
+install -m 755 "$SRC/ya" "$DEST/ya"
+install -d -m 755 "$HOME/.local/bin"
+ln -sfn "$DEST/yazi" "$HOME/.local/bin/yazi"
+ln -sfn "$DEST/ya" "$HOME/.local/bin/ya"
+'''
+
+[component.verify]
+kind = "command"
+command = "bash"
+args = ["-lc", "PATH=\"$HOME/.local/bin:$PATH\"; yazi --version && ya --version"]
+
+[component.remove]
+kind = "script"
+login_shell = true
+script = '''
+set -u
+M="${META_ROOT:-$HOME/Desktop/meta}"
+for b in yazi ya; do t="$HOME/.local/bin/$b"; [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/yazi" && rm -f "$t"; done
+rm -rf "$M/.toolchains/yazi"
+'''
+
+[component.wiring]
+path_entries = ["~/.local/bin"]
+
+# ── helix ── meta-owned modal editor (hx). The upstream release tarball BUNDLES the tree-sitter
+# runtime/ (grammars + queries), so NO source build and NO `hx --grammar fetch/build` is needed
+# (helix-term is unpublished on crates.io — 0.0.0 — so `cargo install` is not an option). hx
+# resolves runtime/ as a sibling of its real exe (current_exe() resolves the ~/.local/bin/hx
+# symlink to .toolchains/helix/hx), so it works with no env var; HELIX_RUNTIME is belt-and-
+# suspenders, also exported by `envctl env --toolchains`. Replaces the /nix yazelix-bundled
+# helix; additive (destructive /nix migration = supervised TASK-0067). Repo: helix-editor/helix.
+[[component]]
+id = "helix"
+name = "helix (meta-owned)"
+description = "helix modal editor (hx) + bundled tree-sitter runtime from the upstream release tarball into .toolchains/helix + ~/.local/bin/hx. Removes nix as the delivery path for interactive helix. Repo: helix-editor/helix."
+
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/helix/hx\" ] && [ -d \"$M/.toolchains/helix/runtime\" ] && [ \"$(readlink -f \"$HOME/.local/bin/hx\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/helix/hx\")\" ]"]
+
+[component.install]
+kind = "script"
+login_shell = true
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/helix"
+tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+# Authenticated fetch (gh = 5000/hr) to dodge the 60/hr unauth GitHub API 403; redirect+curl
+# fallback. The asset name embeds the version, so the gh --pattern is version-agnostic.
+if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+  gh release download --repo helix-editor/helix --pattern 'helix-*-x86_64-linux.tar.xz' --output "$tmp/helix.tar.xz" --clobber
+else
+  TAG="$(curl -fsSLI -o /dev/null -w '%{url_effective}' 'https://github.com/helix-editor/helix/releases/latest' | sed 's#.*/tag/##')"
+  curl -fsSL "https://github.com/helix-editor/helix/releases/download/${TAG}/helix-${TAG}-x86_64-linux.tar.xz" -o "$tmp/helix.tar.xz"
+fi
+tar -xJf "$tmp/helix.tar.xz" -C "$tmp"
+SRC="$(dirname "$(find "$tmp" -type f -name hx | head -1)")"
+rm -rf "$DEST"; install -d -m 755 "$DEST"
+install -m 755 "$SRC/hx" "$DEST/hx"
+cp -a "$SRC/runtime" "$DEST/runtime"
+install -d -m 755 "$HOME/.local/bin"
+ln -sfn "$DEST/hx" "$HOME/.local/bin/hx"
+'''
+
+[component.verify]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; PATH=\"$HOME/.local/bin:$PATH\"; export HELIX_RUNTIME=\"$M/.toolchains/helix/runtime\"; hx --version"]
+
+[component.remove]
+kind = "script"
+login_shell = true
+script = '''
+set -u
+M="${META_ROOT:-$HOME/Desktop/meta}"
+t="$HOME/.local/bin/hx"; [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/helix" && rm -f "$t"
+rm -rf "$M/.toolchains/helix"
+'''
+
+[component.wiring]
+path_entries = ["~/.local/bin"]
