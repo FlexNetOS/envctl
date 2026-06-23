@@ -812,12 +812,19 @@ knobs (e.g. `apparmor_restrict_unprivileged_userns`) and sudo-phase installs are
 "Can't be meta-owned" is reserved for physical impossibility, never for "needs root" or "needs a
 policy change" — both are available and declarable here.
 
-- [~] **TASK-0054 (H, EASY, owner-pref) — INSTALL DONE 2026-06-23:** `wild-linker` component
-  authored (`components.d/epic-h-toolchains.toml`) + APPLIED — `cargo install --locked wild-linker
-  --root .toolchains/wild` (crate is **`wild-linker`**, binary `wild`; NOT the `wild` argv crate),
-  `~/.local/bin/wild` healthy (Wild 0.9.0). **REMAINING (wiring, separate/verified):** set the
-  cargo linker (`.cargo/config.toml`: `linker="clang"` + `-Clink-arg=--ld-path=wild`) and drop the
-  `mold` apt dep — held back so an apply can't break workspace builds; verify builds first.
+- [x] **TASK-0054 (H, EASY, owner-pref) — DONE 2026-06-23 via PR #182 (MERGED, squash `5c4f666`):**
+  `wild-linker` component install (done earlier) + **WIRING now landed**: the component install ALSO
+  writes the meta-root `$META_ROOT/.cargo/config.toml` (`linker = "clang"` +
+  `rustflags = ["-Clink-arg=--ld-path=wild"]`) — meta-owned path (NOT `~/.cargo`/system-depth), a
+  runtime artifact at the meta root so **CI never sees it** (CI clones repos standalone) → local-dev
+  acceleration only. detect asserts binary symlink + config section; verify link-tests a throwaway
+  `/tmp` crate proving `--ld-path=wild`; remove is marker-self-guarded (restores a pre-wild backup or
+  removes the managed file; never clobbers a foreign config). **Build-verification gate GREEN:**
+  `cargo clean -p envctl` + `cargo build -v` shows `linker=clang` + `-Clink-arg=--ld-path=wild`; the
+  full secrets stack (engine/secretd/secretctl/libsql/tonic) links cleanly via wild (15.5s, exit 0);
+  the wild-linked `envctl --version` runs. Lock content_hash regen (count 74, extended not added).
+  `mold` drop deferred → TASK-0070. (Implementer agent hit the weekly model limit mid-cycle after
+  writing the edits; orchestrator completed the build-verify gate + guardian + commit.)
 - [~] **TASK-0055 (H, EASY) — INSTALL DONE 2026-06-23:** `kache` component authored + APPLIED
   (`cargo install kache --root .toolchains/kache`, repo kunobi-ninja/kache, v0.6.0,
   `~/.local/bin/kache` healthy). **REMAINING (wiring):** set `RUSTC_WRAPPER=kache` (or `kache init`)
@@ -957,6 +964,13 @@ policy change" — both are available and declarable here.
   for the enrollment + supply of the original pem. Once unblocked: add a shared `gh`→App-installation-
   token fetch helper so Epic-H GitHub fetches use the App (higher quota, scoped, auditable) and route
   through `flexnetos_runner` for CI/job dispatch.
+- [ ] **TASK-0070 (H, EASY) — drop mold (follow-up to TASK-0054 wild wiring):** now that wild is the
+  wired+verified local cargo linker (TASK-0054), retire mold. Steps: (1) strip the conflicting
+  `-fuse-ld=mold` RUSTFLAGS from `manifest/ai-clis.toml` codex install/fix hooks (with `--ld-path=wild`
+  now set meta-root, the mold flag is at best wasteful, at worst a conflicting link driver); (2) drop
+  `mold-linker` from the `ai-clis` `requires` and re-lock; (3) remove the `mold-linker` apt component
+  (`manifest/dev-tools.toml`) and the apt package itself (**sudo** — separate authz step). Loop-fixable
+  except the apt removal (sudo). Verify a full `cargo build` still links via wild after the RUSTFLAGS strip.
 
 ## Key finding (carried)
 
