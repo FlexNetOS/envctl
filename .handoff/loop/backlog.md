@@ -898,8 +898,8 @@ policy change" — both are available and declarable here.
   ELF shared object) + `.so.0` present; absent from drift. Guardian PASS (all 8 gates green).
   **Remaining (separate, wiring):** rustc_codegen_gcc backend selection itself (nightly + `-Zcodegen-backend`
   / `config.toml gcc-path`) is the consumer-side wiring, out of this component's scope.
-- [~] **TASK-0063 (H, HARD) — ARMED 2026-06-23 via PR #186 (auto-merge; re-poll → tick `- [x]`
-  when MERGED):** CUDA toolkit relocated apt `cuda-toolkit-13-3` → `$M/.toolchains/cuda` via the
+- [x] **TASK-0063 (H, HARD) — DONE 2026-06-23 (PR #186 MERGED, confirmed `gh pr view 186`=MERGED):**
+  CUDA toolkit relocated apt `cuda-toolkit-13-3` → `$M/.toolchains/cuda` via the
   runfile `cuda_13.3.0_610.43.02_linux.run` (md5 16d68669…, cached under `$M/.cache/cuda`,
   toolkit-only `--toolkit --toolkitpath … --override --no-opengl-libs --nox11`, NO sudo, NO driver).
   **KEY FIX:** the makeself self-extractor needs `--nox11` + `</dev/null` headless or it tries to
@@ -918,8 +918,15 @@ policy change" — both are available and declarable here.
   `YAZELIX_RUNTIME_DIR` (any dir with `runtime_identity.json` + `toolbin/`) — nix is only the
   current *builder* of that tree. **HARD PREREQ for the full de-nix (found this session):**
   `yazi` + `hx` resolve ONLY via `/nix/store` today (nu/zellij are already meta-prefix via
-  TASK-0058) → meta-prefix `yazi` + `helix` components MUST be built first. **Remaining (owner
-  joint close-out):** (a) build meta `yazi`+`helix`; (b) cargo-build `yzx`→`.toolchains/yazelix` +
+  TASK-0058) → meta-prefix `yazi` + `helix` components MUST be built first. **STEP (a) DONE
+  2026-06-23 (autonomous prereq, NON-destructive — landed via the yazi+helix PR this cycle):**
+  added `yazi` (yazi+ya 26.5.6) + `helix` (hx 25.07.1 + bundled 245-grammar tree-sitter runtime)
+  to `epic-h-toolchains.toml`, release-tarball style (gh-auth fetch, no source build; helix-term is
+  0.0.0/unpublished on crates.io so the release tarball is the only clean path + it bundles
+  runtime/). `HELIX_RUNTIME` exported by `envctl env --toolchains` (+ hx sibling-runtime fallback).
+  Runtime-verified on-box: both `✓ [healthy] wired`, binaries run from the meta prefix; lock 76 comp;
+  gates + clippy(CI-flags) green. **Remaining (owner joint close-out, still gated):**
+  (b) cargo-build `yzx`→`.toolchains/yazelix` +
   compose a meta-prefix `YAZELIX_RUNTIME_DIR` runtime tree (replaces `mk_runtime_tree.nix`);
   (c) verify `yzx` in a throwaway `env -i` shell (no `/nix` in resolved paths); (d) repoint the
   live yazelix-shell auto-enter (transitional fallback to nix until removed). Owner open Qs:

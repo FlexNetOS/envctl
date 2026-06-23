@@ -195,6 +195,11 @@ requires = [
 ]
 resolved = ""
 
+[components.helix]
+content_hash = "2a11e8028f65c332"
+requires = []
+resolved = ""
+
 [components.home-bin-links]
 content_hash = "10acb59bb347cc1d"
 requires = ["home-config-links"]
@@ -429,6 +434,11 @@ resolved = ""
 [components.yazelix-shell]
 content_hash = "d227c7451abed6e3"
 requires = ["yazelix"]
+resolved = ""
+
+[components.yazi]
+content_hash = "c097c64890e8d226"
+requires = []
 resolved = ""
 
 [components.zellij]
