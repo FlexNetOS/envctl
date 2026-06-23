@@ -443,7 +443,7 @@ enum Cmd {
         #[arg(long)]
         meta_file: Option<std::path::PathBuf>,
         /// ALSO emit the meta-located toolchain prefix exports + PATH
-        /// (BUN_INSTALL/MISE_DATA_DIR/CARGO_HOME/UV_* -> $META_ROOT/.toolchains).
+        /// (BUN_INSTALL/MISE_DATA_DIR/CARGO_HOME/RUSTUP_HOME/UV_* -> $META_ROOT/.toolchains).
         /// OPT-IN: only sound once those dirs are populated (else a manager would
         /// not see its existing installs). See the meta-tool-location ADR.
         #[arg(long)]
@@ -1740,6 +1740,7 @@ fn run_env(
             map["BUN_INSTALL"] = format!("{tc}/.bun").into();
             map["MISE_DATA_DIR"] = format!("{tc}/mise").into();
             map["CARGO_HOME"] = format!("{tc}/cargo").into();
+            map["RUSTUP_HOME"] = format!("{tc}/rustup").into();
             map["UV_TOOL_DIR"] = format!("{tc}/uv/tools").into();
             map["UV_PYTHON_INSTALL_DIR"] = format!("{tc}/uv/python").into();
         }
@@ -1766,6 +1767,15 @@ fn run_env(
         println!(
             "export CARGO_HOME={}",
             sh_single_quote(&format!("{tc}/cargo"))
+        );
+        // RUSTUP_HOME so the active rustc/cargo resolve under the meta-owned
+        // rustup (nightly + rustc_codegen_gcc), not user-global ~/.rustup
+        // (stable). Without this, sessions silently fall back to ~/.rustup even
+        // when CARGO_HOME is meta-located. (ADR-0013: compiler resolves under
+        // $META_ROOT/.toolchains/rustup.)
+        println!(
+            "export RUSTUP_HOME={}",
+            sh_single_quote(&format!("{tc}/rustup"))
         );
         println!(
             "export UV_TOOL_DIR={}",
