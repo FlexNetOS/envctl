@@ -143,9 +143,12 @@ Acceptance: `secretctl mint-github --installation-id 140063898 --output json` re
   default, revoke token via stdin in `Zeroizing`, eframe persistence stays off. Guardian PASS-WITH-NOTES.
 
 ### Home-tree portability (were ONLY in ICM — now tracked)
-- [ ] **TASK-0029:** `portability-links.toml` branch fork — `usrlocal-script-links` present on master,
-  absent on develop; `home/` tree hash diverges. Reconcile so promote can't silently drop a component.
-  (GAP1 `~/.claude/settings.json` real-file drift = FIXED 2026-06-17; GAP2 gitconfig leak = FIXED.)
+- [x] **TASK-0029 — DONE / reconciled 2026-06-23 (verified-by-doing):** the branch-fork drift no
+  longer exists — `manifest/components.d/portability-links.toml` is PRESENT on develop (id
+  `usrlocal-script-links` at line ~279, included in the `portability` group `requires` at ~313) and
+  in `envctl.lock`. master↔develop converged via the normal develop→master FF mirror; promote can no
+  longer silently drop the component. GAP1 (`~/.claude/settings.json` real-file drift = FIXED
+  2026-06-17) and GAP2 (gitconfig leak = FIXED) were already closed. Nothing left to reconcile.
 
 ### Promoted from the namespaced rust-port loop (was invisible to this flat backlog)
 - [!] **KBTASK-SEED-UNLOCK:** Seed-USB live-hardware unlock — code-complete, OWNER-GATED (live-hardware
@@ -180,11 +183,12 @@ foundation IS built (`relay_mint_remote`, `register_remote_client`, `broker/deci
       when the edge sits behind an L4 front. DONE 2026-06-23, PR #157: relay-edge now trusts the
       PROXY-protocol source IP before admission/rate limiting; `hf test TASK-0031-PR2C` witnessed
       build+p7 before `hf done`.
-    - [ ] **TASK-0039 (remote-clients-CA lifecycle):** mint/≤7d-leaf/renew/revoke + revocation-set
-      propagation for the mTLS client-CA. PARTIAL 2026-06-23, PR #158: hardened the verifier-side
-      revocation propagation path (reload revocation set on each connection, reject revoked client
-      leaves, compatible with PR #157 PROXY source-IP). Remaining: implement the lifecycle surface
-      (`mint`/`<=7d leaf`/`renew`/`revoke`) instead of relying on operator-provisioned files.
+    - [x] **TASK-0039 (remote-clients-CA lifecycle) — DONE 2026-06-23 via PR #162 (MERGED,
+      "secretd: add remote client CA lifecycle"):** the mint/≤7d-leaf/renew/revoke lifecycle surface
+      landed (Certs.Renew/Revoke + the remote client CA lifecycle, per the TASK-0038 cross-ref at
+      line ~216). PR #158 was the earlier PARTIAL (verifier-side revocation propagation: reload set
+      per connection, reject revoked leaves, compatible with #157 PROXY source-IP); #162 completed
+      the lifecycle so it no longer relies on operator-provisioned files. Card was stale `- [ ]`.
 - [x] **TASK-0032 (F5, P0) — DONE (PR #117 MERGED, guardian PASS):** Streaming-revocation
   tear-down. Engine `relay_stream_authorized` + `Broker::peek` (non-mutating re-check through the SAME
   `decide()`); edge `stream.rs` supervises long-lived HTTP/2 streams with a 2s in-stream re-check + max-stream
@@ -931,16 +935,20 @@ policy change" — both are available and declarable here.
   (c) verify `yzx` in a throwaway `env -i` shell (no `/nix` in resolved paths); (d) repoint the
   live yazelix-shell auto-enter (transitional fallback to nix until removed). Owner open Qs:
   ghostty GPU/nixGL replacement; pin `main` HEAD vs a tag. Then → TASK-0067 removes host `/nix`.
-- [ ] **TASK-0065 (host prerequisites — DETECT/VERIFY only, NOT meta components):** Corrected
-  classification (owner 2026-06-23): the nvidia-open kernel driver (pre-meta install; OS-global
-  `/lib/modules`/DKMS) and the `system:` build-floor (`build-essential`/`cmake`/`pkg-config`/
-  `libssl-dev`/system GCC) are **host prerequisites meta does NOT own or install** — meta only
-  detects/verifies them (`gpu.toml` verify hooks). The `/nix` store is **removable, not
-  irreducible** (see TASK-0064) — do not declare it a permanent `system:` component. Net: there is
-  NO list of "sanctioned system installs" to formalize; only host prerequisites to verify and the
-  `/nix` removal to finish.
-- [~] **TASK-0066 (H, MEDIUM) — ADDITIVE COMPONENT DONE 2026-06-23 via PR #179 (MERGED, squash `70ddfc0`); destructive migration → TASK-0067:**
-  nix-portable isolation (makes nix meta-owned, kills host `/nix`).
+- [x] **TASK-0065 — DONE / reconciled 2026-06-23 (classification resolved, nothing to build):** the
+  corrected classification (owner 2026-06-23) IS the deliverable — the nvidia-open kernel driver
+  (pre-meta; OS-global `/lib/modules`/DKMS) and the `system:` build-floor
+  (`build-essential`/`cmake`/`pkg-config`/`libssl-dev`/system GCC) are **host prerequisites meta does
+  NOT own or install** (only detect/verify via `gpu.toml` verify hooks, which already exist). The
+  `/nix` store is **removable, not irreducible** (tracked under TASK-0064/0067 — the deferred nix
+  tier), so it is NOT a permanent `system:` component. There is **NO list of "sanctioned system
+  installs" to formalize** → no component to author; the only residual is the `/nix` removal, owned
+  by 0064/0067. Card closed.
+- [x] **TASK-0066 (H, MEDIUM) — ADDITIVE COMPONENT DONE 2026-06-23 via PR #179 (MERGED, squash `70ddfc0`); destructive migration tracked separately as TASK-0067 (DEFERRED, SUPERVISED):**
+  nix-portable isolation (makes nix meta-owned, kills host `/nix`). The additive meta-owned
+  `nix-portable` component shipped and is `[healthy] wired` on-box; the only remaining half is the
+  destructive host-`/nix` removal + live-yazelix re-provision, which is `- [!!]` SUPERVISED under
+  TASK-0067 (owner joint close-out — part of the deferred NIX tier, do NOT auto-run).
   **Shipped (additive):** meta-owned `nix-portable` Epic-H component (10th) — `DavHau/nix-portable`
   `nix-portable-x86_64` (v012) → `.toolchains/nix-portable/bin/nix-portable` + `~/.local/bin` symlink,
   fetched via **authenticated `gh release download`** (5000/hr; redirect+curl `v012` fallback), verify
