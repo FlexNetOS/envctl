@@ -241,8 +241,8 @@ requires = []
 resolved = ""
 
 [components.llvm-clang]
-content_hash = "4eca839843e0c197"
-requires = ["nvidia-cuda-repo"]
+content_hash = "de16a4e1f3ddf18b"
+requires = []
 resolved = ""
 
 [components.meta-base-sanity]

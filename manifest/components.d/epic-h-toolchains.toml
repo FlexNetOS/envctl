@@ -334,3 +334,61 @@ rm -rf "$M/.toolchains/ollama"
 
 [component.wiring]
 path_entries = ["~/.local/bin"]
+
+# ── llvm-clang ── meta-owned LLVM/clang toolchain, replaces the apt clang/llvm
+# system-depth install. Pure prebuilt tarball into .toolchains/llvm + ~/.local/bin
+# symlinks for the clang/lld driver set. The `/releases/latest` redirect now points at
+# 22.x, so the install pins the latest 21.x tag via the releases API. `envctl env
+# --toolchains` also exports LIBCLANG_PATH=.toolchains/llvm/lib so bindgen-style
+# consumers find libclang.so (Epic H TASK-0061). Repo: llvm/llvm-project.
+[[component]]
+id = "llvm-clang"
+name = "LLVM/clang (meta-owned)"
+description = "LLVM/clang-21 from upstream prebuilt release tarball into .toolchains/llvm + ~/.local/bin clang/lld symlinks. Replaces the apt clang/llvm. Pins latest 21.x (the /latest redirect now points at 22.x). Repo: llvm/llvm-project."
+
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/llvm/bin/clang\" ] && [ -L \"$HOME/.local/bin/clang\" ] && case \"$(readlink -f \"$HOME/.local/bin/clang\" 2>/dev/null)\" in \"$M/.toolchains/llvm\"/*) true;; *) false;; esac"]
+
+[component.install]
+kind = "script"
+login_shell = true
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/llvm"
+TAG="$(curl -fsSL 'https://api.github.com/repos/llvm/llvm-project/releases?per_page=100' \
+  | grep -oE '"tag_name": *"llvmorg-21\.[0-9]+\.[0-9]+"' \
+  | grep -oE 'llvmorg-21\.[0-9]+\.[0-9]+' | sort -V | tail -1)"
+VER="${TAG#llvmorg-}"
+URL="https://github.com/llvm/llvm-project/releases/download/${TAG}/LLVM-${VER}-Linux-X64.tar.xz"
+tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+curl -fsSL "$URL" -o "$tmp/llvm.tar.xz"
+rm -rf "$DEST"; install -d -m 755 "$DEST"
+tar -xJf "$tmp/llvm.tar.xz" -C "$DEST" --strip-components=1
+install -d -m 755 "$HOME/.local/bin"
+for b in clang clang++ clang-cpp clang-21 llvm-config lld ld.lld llvm-ar llvm-nm llvm-objcopy llvm-objdump; do
+  [ -e "$DEST/bin/$b" ] && ln -sfn "$DEST/bin/$b" "$HOME/.local/bin/$b"
+done
+'''
+
+[component.verify]
+kind = "command"
+command = "bash"
+args = ["-lc", "PATH=\"$HOME/.local/bin:$PATH\"; clang --version && lld --version"]
+
+[component.remove]
+kind = "script"
+login_shell = true
+script = '''
+set -u
+M="${META_ROOT:-$HOME/Desktop/meta}"
+for b in clang clang++ clang-cpp clang-21 llvm-config lld ld.lld llvm-ar llvm-nm llvm-objcopy llvm-objdump; do
+  t="$HOME/.local/bin/$b"; [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/llvm" && rm -f "$t"
+done
+rm -rf "$M/.toolchains/llvm"
+'''
+
+[component.wiring]
+path_entries = ["~/.local/bin"]
