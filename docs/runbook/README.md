@@ -54,10 +54,21 @@ secretctl lock                   # zeroize the DEK + CA issuer in RAM (true pani
    `cognitum-seed-net` NetworkManager profile (host `169.254.42.2/24` on the Seed cdc_ncm link).
 2. **Passphrase (argon2id keyslot):** the fallback when the USB factor is absent.
 
-> ⚠️ **Known caveat (2026-06-23):** the USB keyslot may be enrolled with a placeholder
-> `usb_partition_uuid` (a test enrollment) — if so, USB unlock fails by data mismatch and the
-> **first unlock must use the passphrase**, after which the USB slot is re-enrolled with the
-> real partition UUID so subsequent unlocks are Seed-possession-only. The Seed itself holds **no
+> ⚠️ **Most common USB-unlock failure — a STALE PINNED CA (proven 2026-06-23):** the daemon
+> validates the Seed's TLS **strictly against the pinned Cognitum Device CA**
+> (`/usr/local/share/ca-certificates/cognitum-ca.crt`; override `ENVCTL_SEED_CA`). When the Seed
+> **rotates its Device CA**, the host pin goes stale, the TLS handshake fails **fail-closed and
+> silently** (no log), so custody/sign fails → `usb_possessed=false` → `secretctl unlock` returns a
+> generic `Internal: "unlock failed"`. It is **NOT** a broken keyslot and the passphrase is **not**
+> required. **Fix = re-pin from the physically-present USB trust anchor:**
+> `bash /run/media/drdave/COGNITUM/trust/install-trust.sh` (copies `trust/cognitum-ca.pem` → the
+> system pin + `update-ca-certificates`), restart `env-ctl.service`, then `secretctl unlock` (USB)
+> succeeds with no custom config. Diagnose by comparing pubkeys: the host pin must equal the live
+> Seed-presented CA — `openssl s_client -connect 169.254.42.1:8443 -showcerts` vs
+> `openssl x509 -in <pin> -pubkey`. (Codification to auto-refresh on rotation: backlog TASK-0075.)
+>
+> **Note:** `secretctl status` shows `secret_count=0` even on a populated vault (cosmetic). Revealing
+> a non-broker secret needs all three flags: `--reveal --apply --confirm`. The Seed itself holds **no
 > vault material** — it is a Pi Zero 2 W providing only Ed25519 custody-sign (admin via
 > `ssh genesis@169.254.42.1`).
 
