@@ -835,16 +835,26 @@ symlink; dry-run-safe, applied via `envctl install`/`env-install-loop`. Sequence
   --toolkitpath=.toolchains/cuda --override` (toolkit meta-owned; root still needed for side-paths;
   conda-forge rootless alt noted). Replaces the apt `cuda-toolkit-13-3` install path. Includes
   Nsight (`nsys`) under the toolkit prefix.
-- [ ] **TASK-0064 (H, HARD):** yazelix de-nix decomposition — yazelix is a nix-flake meta-config,
-  not an app. Converge by composing its config (already in `home/.config/yazelix`) + the
-  separately-installed component binaries (TASK-0058/0059 + yazi/helix) so the terminal env runs
-  without a nix-profile dependency. Repo: FlexNetOS/yazelix (note: **live install drifted to
-  `luccahuguet/yazelix`** — reconcile to the fork). Large; depends on 0058/0059.
-- [ ] **TASK-0065 (H, irreducible — DECLARE, don't convert):** Formalize the two proven-irreducible
-  `system:` components with written rationale + `verify` hooks: **nvidia-open** kernel driver
-  (DKMS, OS-global `/lib/modules`) and **Nix `/nix` store** (store path hardcoded in derivation
-  hashes, non-relocatable). Plus the `system:` build-floor (`build-essential`/`cmake`/`pkg-config`/
-  `libssl-dev`). These are the ONLY sanctioned system installs.
+- [ ] **TASK-0064 (H, HARD) — removes nix entirely (the real fix for `/nix`):** yazelix is the
+  SOLE reason nix exists on this box; de-nixing it deletes the `/nix` system-depth. Verified
+  (local checkout post-v17.7): `yzx` is already a standalone Rust binary (`rust_core/yazelix_core`
+  → `[[bin]] yzx`) and subsystems are extracting to cargo crates — the off-nix direction is real —
+  but the current `docs/installation.md` still requires Nix+flakes and runtime assembly is still
+  nix (`packaging/mk_runtime_tree.nix`). **ACTION:** confirm the non-nix install path with owner
+  (rust-core + bring-your-own-PATH-tools vs a specific newer build), then land yazelix as a
+  cargo-built `yzx` + its config (`home/.config/yazelix`) composed over the meta-prefix component
+  binaries (TASK-0058/0059 + yazi/helix). Reconcile the fork: live install drifted to
+  `luccahuguet/yazelix`; `.meta.yaml` declares `FlexNetOS/yazelix`. Depends on 0058/0059.
+  **Transitional fallback if nix must persist:** chroot store (`nix --store 'local?root=…'` /
+  nix-user-chroot) — keeps the binary cache, no root `/nix`; NOT a custom `store-dir` (kills cache).
+- [ ] **TASK-0065 (host prerequisites — DETECT/VERIFY only, NOT meta components):** Corrected
+  classification (owner 2026-06-23): the nvidia-open kernel driver (pre-meta install; OS-global
+  `/lib/modules`/DKMS) and the `system:` build-floor (`build-essential`/`cmake`/`pkg-config`/
+  `libssl-dev`/system GCC) are **host prerequisites meta does NOT own or install** — meta only
+  detects/verifies them (`gpu.toml` verify hooks). The `/nix` store is **removable, not
+  irreducible** (see TASK-0064) — do not declare it a permanent `system:` component. Net: there is
+  NO list of "sanctioned system installs" to formalize; only host prerequisites to verify and the
+  `/nix` removal to finish.
 
 ## Key finding (carried)
 
