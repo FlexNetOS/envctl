@@ -235,6 +235,11 @@ content_hash = "c9e0c4b4426df1c3"
 requires = []
 resolved = ""
 
+[components.libgccjit]
+content_hash = "4ae561e10e5344a6"
+requires = []
+resolved = ""
+
 [components.libssl-dev]
 content_hash = "7dc5db4e9089f3cc"
 requires = []

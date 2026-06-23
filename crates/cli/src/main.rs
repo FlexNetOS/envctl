@@ -1745,6 +1745,7 @@ fn run_env(
             map["UV_PYTHON_INSTALL_DIR"] = format!("{tc}/uv/python").into();
             map["OLLAMA_LIBRARY_PATH"] = format!("{tc}/ollama/lib/ollama").into();
             map["LIBCLANG_PATH"] = format!("{tc}/llvm/lib").into();
+            map["GCC_PATH"] = format!("{tc}/libgccjit/lib").into();
         }
         println!("{}", serde_json::to_string_pretty(&map)?);
         return Ok(());
@@ -1800,6 +1801,12 @@ fn run_env(
         println!(
             "export LIBCLANG_PATH={}",
             sh_single_quote(&format!("{tc}/llvm/lib"))
+        );
+        // libgccjit.so dir for rustc_codegen_gcc (config.toml `gcc-path` /
+        // LIBRARY_PATH+LD_LIBRARY_PATH consume it) — Epic H TASK-0062.
+        println!(
+            "export GCC_PATH={}",
+            sh_single_quote(&format!("{tc}/libgccjit/lib"))
         );
         println!("export PATH=\"{tc}/.bun/bin:{tc}/cargo/bin:{tc}/uv/tools/bin:$PATH\"");
     }

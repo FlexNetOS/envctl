@@ -404,3 +404,53 @@ rm -rf "$M/.toolchains/llvm"
 
 [component.wiring]
 path_entries = ["~/.local/bin"]
+
+# ── libgccjit ── meta-owned libgccjit.so for the rustc_codegen_gcc backend. NOT a
+# system GCC build and NOT apt: downloads the prebuilt CI `libgccjit.so` from the
+# `rust-lang/gcc` release whose tag is pinned by rustc_codegen_gcc's own
+# `libgccjit.version` (so the .so matches the backend exactly, not floating-latest)
+# into .toolchains/libgccjit/lib. The payload is a runtime shared object consumed by
+# the external rustc_codegen_gcc backend, NOT a CLI binary, so there is NO
+# ~/.local/bin symlink and NO `path_entries`. `envctl env --toolchains` exports
+# GCC_PATH=.toolchains/libgccjit/lib so the backend (config.toml `gcc-path` /
+# LIBRARY_PATH+LD_LIBRARY_PATH) finds it (Epic H TASK-0062). Repo: rust-lang/gcc.
+[[component]]
+id = "libgccjit"
+name = "libgccjit (meta-owned)"
+description = "Prebuilt libgccjit.so for the rustc_codegen_gcc backend, from the rust-lang/gcc release pinned by rustc_codegen_gcc's libgccjit.version, into .toolchains/libgccjit/lib. Runtime .so (no CLI binary, no ~/.local/bin symlink); exposed via the GCC_PATH env seam. Replaces a system GCC/libgccjit build. Repo: rust-lang/gcc."
+
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -f \"$M/.toolchains/libgccjit/lib/libgccjit.so\" ]"]
+
+[component.install]
+kind = "script"
+login_shell = true
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/libgccjit"
+COMMIT="$(curl -fsSL https://raw.githubusercontent.com/rust-lang/rustc_codegen_gcc/master/libgccjit.version | tr -d '[:space:]')"
+[ -n "$COMMIT" ] || { echo "libgccjit: could not resolve commit from libgccjit.version" >&2; exit 1; }
+URL="https://github.com/rust-lang/gcc/releases/download/master-${COMMIT}/libgccjit.so"
+tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
+curl -fsSL "$URL" -o "$tmp/libgccjit.so"
+rm -rf "$DEST"; install -d -m 755 "$DEST/lib"
+install -m 644 "$tmp/libgccjit.so" "$DEST/lib/libgccjit.so"
+ln -sfn "$DEST/lib/libgccjit.so" "$DEST/lib/libgccjit.so.0"
+'''
+
+[component.verify]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -f \"$M/.toolchains/libgccjit/lib/libgccjit.so\" ] && file \"$M/.toolchains/libgccjit/lib/libgccjit.so\" | grep -q 'shared object'"]
+
+[component.remove]
+kind = "script"
+login_shell = true
+script = '''
+set -u
+M="${META_ROOT:-$HOME/Desktop/meta}"
+rm -rf "$M/.toolchains/libgccjit"
+'''

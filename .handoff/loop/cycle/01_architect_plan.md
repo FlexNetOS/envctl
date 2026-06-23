@@ -1,38 +1,51 @@
-# 01 — Architect Plan: TASK-0053 Route verified GitHub transport doctrine into envctl
+# Cycle artifact — Architect plan: TASK-0062 (libgccjit for rustc_codegen_gcc)
 
-**VERDICT: GO** — docs/doctrine-routing + verification-test cycle. Single-repo envctl, sequential.
-No new Engine method, RPC, CLI flag, type, or crate dependency.
+VERDICT: GO
 
-## Triggering-claim check (per acceptance criterion vs HEAD)
-- **AC1 (doctrine in docs/backlog):** NET-NEW docs. Belongs in `.handoff/loop/backlog.md` + new `docs/secrets/GITHUB-TRANSPORT-DOCTRINE.md`.
-- **AC2 (mint-github byte-stable):** HOLDS — `crates/secretctl/src/main.rs:1084-1429` verbatim-consumer contract tests; stdout pinned two-field `{token,expires_at_unix}` at `main.rs:440-445`. U2 extends.
-- **AC3 (POLICY_DRIFT_TOKEN path):** SATISFIED by existing `mint-github --permissions administration:write,metadata:read --repository-ids <id>`; live consumer `.github_org/scripts/rotate-policy-drift-token.sh:90-93` (wired 2026-06-21). Engine `build_token_request_body` (`mint_github.rs:342`) already serializes arbitrary `name:access` perms. NO new surface — document + test.
-- **AC4 (tokens broker-only/scoped/never logged):** HOLDS — `mint_github.rs` uses `Zeroizing`, token only in auth header, token-free error snippets, metadata-only audit.
-- **AC5 (consumer cross-check):** HOLDS — `../flexnetos_github_app/crates/app-core/src/mint.rs::parse_mint_output` expects exactly `{token, expires_at_unix:u64}` (matches main.rs:440); `merge_gate.rs::ensure_armable` green-only + `UnwiredMergeGate` fail-closed.
-- **AC6 (SSH-git + gh read-back verify):** verification step, U4.
-- **AC7 (redb/JSONL continuity wording, NOT SQLite):** doc-wording invariant; reuse exact phrasing at `.handoff/loop/backlog.md:73,195-196`.
+## Summary
+9th Epic-H component (`libgccjit`): download the prebuilt CI `libgccjit.so` from `rust-lang/gcc`
+(commit pinned by rustc_codegen_gcc's own `libgccjit.version`) into
+`$META_ROOT/.toolchains/libgccjit/lib` — no system GCC build, no apt. Payload is a runtime `.so`
+consumed by the external rustc_codegen_gcc backend, NOT a CLI binary → **no `~/.local/bin` symlink**;
+exposed via a new `GCC_PATH` env seam in `run_env` (JSON + shell), mirroring `OLLAMA_LIBRARY_PATH`
+(TASK-0060) / `LIBCLANG_PATH` (TASK-0061).
 
-## Target repos
-- **1 repo: envctl** (single-crew sequential DEFAULT). `flexnetos_github_app` and `.github_org` are **read-only cross-checks**, never edited.
-- 4 units, near-linear doc→test→doc→verify — sequential, no pipeline/A2.
+## Authoritative download (verified HTTP 200, commit 2f06e64…)
+- `COMMIT=$(curl -fsSL https://raw.githubusercontent.com/rust-lang/rustc_codegen_gcc/master/libgccjit.version | tr -d '[:space:]')`
+- `URL=https://github.com/rust-lang/gcc/releases/download/master-${COMMIT}/libgccjit.so`
+- Upstream-authoritative pin (the backend's own `libgccjit.version`), not floating-latest.
 
-## Unit ledger
-| U# | Goal | Lives (`file::symbol`) | Engine/FE | Test | AC |
-|----|------|------------------------|-----------|------|-----|
-| U1 | Doctrine subsection + status-truth + TASK-0053 row in backlog (append via handoff-reconcile; no header rewrite) | `.handoff/loop/backlog.md` | docs | p7 gate | AC1, AC7 |
-| U2 | Additive permission-scoping regression test for the POLICY_DRIFT scope | `crates/secretctl/src/main.rs::tests::policy_drift_permissions_scope_serializes` (beside :1084 contract tests) | FE-test | `cargo test -p envctl-secretctl` | AC2,AC3,AC4 |
-| U3 | Tracked doctrine note (SSH-truth/gh-advisory/read-back; POLICY_DRIFT path; merge-gate cross-check; redb/JSONL) | `docs/secrets/GITHUB-TRANSPORT-DOCTRINE.md` (new) + index entry in `docs/secrets/README.md` | docs | p7 | AC1,AC3,AC5,AC7 |
-| U4 | Run gates + SSH-git/gh read-back verify; confirm lock/manifest clean | `ci/gates/no-c.sh`, cargo test/clippy | verify | gates | AC6, all |
+## Unit ledger (completeness contract)
+- **U1** `manifest/components.d/epic-h-toolchains.toml` :: new `[[component]] id="libgccjit"` —
+  detect `[ -f "$M/.toolchains/libgccjit/lib/libgccjit.so" ]`; install (login_shell): resolve COMMIT
+  from libgccjit.version, curl the `.so` → `$DEST/lib/libgccjit.so` + `ln -sfn ... libgccjit.so.0`
+  (SONAME), `rm -rf "$DEST"` before extract (idempotent); verify file-exists + `file ... | grep -q
+  'shared object'`; remove self-guarded `rm -rf "$M/.toolchains/libgccjit"`; NO `path_entries`.
+- **U2** `crates/cli/src/main.rs` :: `run_env` JSON branch (after LIBCLANG_PATH) —
+  `GCC_PATH = "{tc}/libgccjit/lib"`.
+- **U3** `crates/cli/src/main.rs` :: `run_env` shell branch (after LIBCLANG_PATH) —
+  `export GCC_PATH=...` + explanatory comment.
+- **U4** `crates/cli/tests/env.rs` :: extend BOTH toolchains tests with GCC_PATH assertions (shell+json).
+- **U5** `manifest/envctl.lock` :: regenerate; net-new id → count **72 → 73** (additive, NOT id-preserved).
+- **U6** `docs/adr-install-locations-and-local-state.md` :: mark libgccjit row shipped + cite the
+  `libgccjit.version`-pinned `rust-lang/gcc` release asset.
+
+## Invariants (all PASS)
+- no-C trust boundary: the `.so` is a runtime artifact under `.toolchains/`, NEVER a Cargo dep →
+  `ci/gates/no-c.sh` (cargo-metadata-scoped) is provably unaffected. **Guardian: do not false-flag.**
+- one rustls/ring-only: no new dep at all.
+- engine single shared non-printing lib: no engine change; component is TOML hooks the engine runs;
+  GCC_PATH is CLI-output only (GUI does not consume this seam → cannot diverge).
+- destructive fail-closed/dry-run: install/remove gated by `--apply`; remove is self-guarded.
+- rust-native / no drift: sanctioned `.toolchains/` delivery path replacing a system GCC build.
 
 ## Runtime surface
-**runtime_verifiable = YES (CLI verb, fail-closed path).** Guardian Phase 3.5 drives:
-`cargo run -p envctl-secretctl -- mint-github --installation-id 140063898 --repository-ids 1 --permissions administration:write,metadata:read --ttl-secs 3600 --output json` against a **locked/absent** daemon ⇒ must fail-closed (never emit a token). Positive shape covered hermetically by `crates/secretd/tests/native_mint_e2e.rs` + U2. Doctrine read-back rule verified at workflow level: `git ls-remote --symref origin HEAD` (SSH) + `gh pr view <PR> --json state,mergeStateStatus`.
+1. Component lifecycle: `auto-detect` lists libgccjit (absent fresh) → `install --apply` downloads →
+   `doctor` verify green.
+2. Env seam: `envctl env --toolchains [--json]` emits `GCC_PATH=<root>/.toolchains/libgccjit/lib`.
+   Non-network observable (CI/sandbox): the `env --toolchains` GCC_PATH emission + `auto-detect` parse.
+   Network install (GitHub download) may be deferred on a sandbox.
 
-## Invariant risk
-- **Continuity-wording trap (AC7):** every continuity sentence MUST say redb-backed ledger + deterministic JSONL export, NEVER SQLite. Guardian greps diff for "sqlite"/"SQLite" (absent except in a "NOT SQLite" negation).
-- **Token-leak in new test (AC4):** U2 asserts on the request-body permission MAP only; never logs/prints a token; no real credential in fixtures.
-- **Backlog merge-concatenation hazard:** U1 appends under existing anchors via `handoff-reconcile`; no duplicate headers.
-- **No-C / no-dep:** zero deps (card forbids); `no-c.sh` hard regression gate in U4.
-
-## Open questions
-None. Fork (new POLICY_DRIFT surface vs document existing) resolves to **document + test the existing `mint-github` path** — production consumer already uses it with the named scope.
+## Implementer judgment call (non-blocking)
+Pin commit at install time by reading `libgccjit.version` (recommended; matches the backend's own
+pin) vs hardcoding `2f06e64…` (fully frozen). Either satisfies "stable, pinnable, not floating-latest".
