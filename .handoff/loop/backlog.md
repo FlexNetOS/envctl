@@ -1059,12 +1059,19 @@ policy change" — both are available and declarable here.
   (possession-rooted; additive; absent Seed = no-op; verify = pinned CA pubkey == the live Seed-presented
   CA). Owner doctrine note: consider relocating the pin off `/usr/local` to a meta path + `ENVCTL_SEED_CA`
   (no-system-depth) as part of this. See memory [[cognitum-seed-usb-unlock]].
-- [ ] **TASK-0076 (secrets, MEDIUM) — reboot-persistent USB auto-unlock (owner: "persist vault opens
-  after reboot"):** after a daemon (re)start the vault is LOCKED (DEK is RAM-only; confirmed — status
-  shows `locked` post-restart, an explicit `secretctl unlock` is required). Add a user service
-  (ordered After `env-ctl.service`, gated on USB possession) that runs `secretctl unlock` once the
-  daemon is up, so a reboot with the Seed present auto-reopens the vault. Fail-closed (no Seed → stays
-  locked, no passphrase ever scripted). Depends on TASK-0075 (fresh CA pin) being in place first.
+- [~] **TASK-0076 (secrets, MEDIUM) — reboot-persistent USB auto-unlock — BUILT, PR #202 armed (auto-merge
+  --squash; OPEN/BLOCKED on pending checks, not yet MERGED → stays `- [~]`; re-poll `gh pr view 202` and tick
+  `- [x]` when MERGED).** New `manifest/cognitum-seed-autounlock.toml` (sibling to seed-trust/seed-net):
+  worker + system oneshot + cdc_ncm udev rule auto-unlocks via `secretctl unlock` (USB-first, NO passphrase).
+  Design crux fixed (architect): the root-triggered oneshot drops to the OWNER uid via `setpriv … env
+  XDG_RUNTIME_DIR=…` so the secretctl connection passes the USER secretd's SO_PEERCRED owner-only gate
+  (`crates/secretd/src/peercred.rs`); a plain root call would be denied. Runtime-verify caught+fixed a
+  `HOME: unbound variable` (set -u) regression that broke fail-closed exit-0. **RUNTIME-PROVEN on the live
+  box (Seed present):** oneshot exits 0/SUCCESS, journal `vault unlocked via USB possession factor`,
+  `secretctl status`=unlocked usb_possessed=true. Lock 78→79; 8 gates PASS; fmt clean. Deferred (honest):
+  true reboot-without-login persistence needs linger + a physical reboot (owner hardware-in-the-loop).
+  ORIGINAL: after a daemon (re)start the vault is LOCKED (DEK is RAM-only); add a service gated on USB
+  possession that runs `secretctl unlock` once the daemon is up. Depended on TASK-0075 (fresh CA pin).
 - [x] **TASK-0075b (secrets, MEDIUM) — DONE 2026-06-23 (PR #201 MERGED) — relocate the Seed Device-CA pin OFF `/usr/local` to a meta path
   (no-system-depth doctrine; follow-up to TASK-0075):** DONE via pure-manifest change (commit `97f79ca`): secretd unit (`env-ctl.toml` `[Service]`) gains `Environment=ENVCTL_SEED_CA=%h/Desktop/meta/.toolchains/secrets/ca/cognitum-ca.crt` + `ReadOnlyPaths=%h/Desktop/meta/.toolchains/secrets/ca`; `cognitum-seed-trust.toml` worker DST default → `${META_ROOT:-$HOME/Desktop/meta}/.toolchains/secrets/ca/cognitum-ca.crt`; lock regen (78). Sandbox-reachability proven (`systemd-run -p ProtectHome=read-only -p ProtectSystem=strict cat <meta CA>` printed the PEM). Guardian PASS-WITH-NOTES (write-refusal only enforceable in the system unit, not `systemd-run --user` — on-box re-test noted). ORIGINAL: TASK-0075's PR-1 pinned to
   `/usr/local/share/ca-certificates/cognitum-ca.crt` because that is the path `secretd` reads TODAY
