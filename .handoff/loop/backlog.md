@@ -81,6 +81,39 @@ secrets PR touches `lib.rs` + `.handoff/` so siblings recur DIRTY — expected, 
 NOTE (session 9): this reconcile is a SUPERSET that subsumes the session-8 reconcile PR #125 (TASK-0027 tick) —
 #125 retired as superseded; its bookkeeping is folded here.
 
+### GitHub transport doctrine (TASK-0053, delivered 2026-06-23)
+
+Verified meta GitHub transport/automation doctrine, routed into envctl as
+`docs/secrets/GITHUB-TRANSPORT-DOCTRINE.md` (every cite read-back-verified from source):
+- **SSH `git` is the repository source of truth** for the FlexNetOS fleet (`.meta.yaml` → SSH
+  remotes; `git ls-remote --symref origin HEAD`). `gh config get git_protocol` reports `https`, so
+  **`gh` is not the git transport truth.**
+- **`gh`/GitHub API is workflow orchestration — advisory until read-back verified.** `gh` mutations
+  can silently succeed; re-query against git refs / PR state (`gh pr view <PR> --json
+  state,mergeStateStatus`) / required checks before trusting them. Always assert `--owner/--repo`
+  (the `gh repo view` wrong-CWD hazard).
+- **Envctl owns the broker-only, scoped GitHub App token path.** Frozen contract (TASK-0020) stays
+  byte-stable: `secretctl mint-github … --output json` → `{token, expires_at_unix}` /
+  `Vault.MintGithub`. Tokens broker-only/scoped/short-lived/never-logged; mutating App ops are
+  `--apply`-gated dry-runs.
+- **POLICY_DRIFT_TOKEN** is the **existing** `mint-github --permissions
+  administration:write,metadata:read` path (live consumer
+  `.github_org/scripts/rotate-policy-drift-token.sh:39,90-95`) — **no new envctl surface.** Pinned
+  by the additive `policy_drift_permissions_scope_serializes` regression test (parse-level / fake
+  transport; no real credential).
+- **Merge-gate cross-check** (`../flexnetos_github_app/crates/app-core/src/merge_gate.rs`): the App
+  posts a verdict as a REQUIRED check-run and arms native auto-merge only after green; never a bot
+  APPROVE; `UnwiredMergeGate` fails closed. Agents hold no broad merge token, never native-APPROVE
+  their own PRs, never force-merge red.
+- Continuity wording stays current: handoff uses the **redb-backed ledger plus deterministic JSONL
+  export**, not SQLite.
+
+- [~] **TASK-0053 (P0) — delivered 2026-06-23 (guardian PASS pending merge):** doctrine note
+  `docs/secrets/GITHUB-TRANSPORT-DOCTRINE.md` + README index entry + additive
+  `policy_drift_permissions_scope_serializes` regression test in `crates/secretctl/src/main.rs`.
+  Zero new Engine method / RPC / CLI flag / crate dep (the existing `mint-github` path already
+  covers POLICY_DRIFT). Re-poll `gh pr view <N>` next session; tick to `[x]` on MERGED.
+
 <details><summary>TASK-0020-COMPLETE original spec (DONE — kept for reference)</summary>
 
 Build the FROZEN contract on top of the G2 primitive (small; the mint engine is done):

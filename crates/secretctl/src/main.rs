@@ -1161,6 +1161,152 @@ mod tests {
         }
     }
 
+    // ===== TASK-0053: POLICY_DRIFT_TOKEN permission-scope regression =========================
+    //
+    // The live consumer `.github_org/scripts/rotate-policy-drift-token.sh:39,91-95` rotates the
+    // strict-policy-drift token via `secretctl mint-github --permissions
+    // administration:write,metadata:read`. This pins BOTH ends of that path against silent drift:
+    //   (1) the scope parses through our real `mint-github` clap surface into `MintGithubArgs`, and
+    //   (2) the ENGINE's real request-body serializer (`GitHubAppMint::mint_scoped`, which calls the
+    //       private `build_token_request_body`) emits the exact GitHub permission MAP
+    //       `{"administration":"write","metadata":"read"}`.
+    // It drives the ACTUAL engine serializer through a capturing transport (no reimplementation, no
+    // network), uses a TEST-ONLY throwaway key, and asserts ONLY on the request-body permission map —
+    // it NEVER logs/prints a token and uses NO real credential (AC2/AC3/AC4).
+
+    /// TEST-ONLY throwaway 1024-bit RSA key (weak BY DESIGN; NEVER a real credential). It only has to
+    /// RS256-sign the App-JWT so `mint_scoped` reaches the body-builder; the canned 201 below means no
+    /// network and no real token. PKCS#8 form (`BEGIN PRIVATE KEY`), accepted by `build_app_jwt`.
+    const POLICY_DRIFT_TEST_KEY_PEM: &str = r#"-----BEGIN PRIVATE KEY-----
+MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBAJhBIdXf46YQy/2f
+jy4tlYwwVPTlFzl8YDRRlocnrKvNNYR5Ngj5rs+ULgY4dBXi8ZX7bmKkzkkmZcp0
+7asRcOa6frSXH1/HmE0Glby5ccgVtW0FpwLP1SPT9iWoivYud3xnTsf+27gbGys6
+3iQ4JnMNArV4GkTGJWDhHBqceHRtAgMBAAECgYBIEw0hYcsyYeEvPslY4ttYccjF
+5W0JGYexPK41bOKgsZQUEg0yUoAeY9clurO5aKVUiqHGsJ22oyasoI2h3a/DzrM6
+MNDoMAJyP9mMfwqgSD4BjN44R0NcK1DzHWoLV3c4dmmUOjcc7GeLdySIjs5QgV7G
+AeWy1i5DWQ1xepDrQQJBAMi9bSq25j+Xka+kAsqr4mcF4peJ+l+m2/OYSztpRsiT
+s8GsxA0MAy1a7KVOp9ADM3TXDoEiJF4daKCMTTWmzacCQQDCKtO8D4vgG+kiTNre
+V8rbdPjYywB4qp8oNoWtt1TQradDhSVQ6LuiEA5F8sXJQLIyQHOZyzLKxzKuAWP6
+Z7fLAkAq33IqVkfUux1tYt0Jxi4jjLk5XkmwFiYR36vps3Ffs1QIAEsa8j7Xd/zk
+zWi/338k7C133P/hbeyDpZNz6v0vAkEAsf/w+4aFBH6RyxAJ1atGHMmvF4+Cbxx7
+q7HP+uEGsAeCPzPgcbvpxzhQ3W8iQs08jzTmxSay+ZKDs2Ey9mv+4QJALSKKsEbb
+k+VHrssB9kiF920GQUWgbhQ3rMRpRN9OAa5NKY8GjvCOj3pjJr1/H+J0vqYPnWqz
+42vWSRYw7ZnIRA==
+-----END PRIVATE KEY-----"#;
+
+    #[test]
+    fn policy_drift_permissions_scope_serializes() {
+        use envctl_secrets::broker::Provider;
+        use envctl_secrets::mint_github::{
+            GitHubAppMint, HttpRequest, HttpResponse, HttpTransport, TransportError,
+        };
+        use envctl_secrets::seam::MintRequest;
+        use envctl_secrets::{ProviderMint, SystemClock};
+        use std::sync::Mutex;
+
+        // (1) The POLICY_DRIFT scope parses through the REAL `mint-github` clap surface. We build the
+        //     argv exactly as the consumer does (`consumer_build_argv`), so this is the wire path the
+        //     rotate script drives, not a hand-rolled vec.
+        let argv = consumer_build_argv(
+            "secretctl",
+            140_063_898, // POLICY_DRIFT_INSTALLATION_ID default (rotate-policy-drift-token.sh:37)
+            &[1],
+            &[("administration", "write"), ("metadata", "read")],
+            3600,
+        );
+        let cli = Cli::try_parse_from(&argv).expect("policy-drift argv parses");
+        let a = match cli.cmd {
+            Cmd::MintGithub(a) => a,
+            other => panic!("expected MintGithub, got {other:?}"),
+        };
+        assert_eq!(
+            a.permissions,
+            vec![
+                "administration:write".to_string(),
+                "metadata:read".to_string()
+            ],
+            "the strict-policy-drift scope is carried verbatim as name:access tokens"
+        );
+
+        // (2) Drive the ENGINE's real serializer with those parsed perms. A capturing transport
+        //     (canned 201, no network) lets `mint_scoped` run `build_token_request_body` and hand us
+        //     the exact wire body. No token is ever logged; the throwaway key only signs the JWT, and
+        //     the canned response is never validated (the body is what we inspect).
+        struct CapturingTransport {
+            seen: Mutex<Option<HttpRequest>>,
+        }
+        impl HttpTransport for CapturingTransport {
+            fn execute(&self, req: &HttpRequest) -> Result<HttpResponse, TransportError> {
+                *self.seen.lock().unwrap() = Some(req.clone());
+                // Canned GitHub 201 — a dummy (non-secret) token literal so the mint completes
+                // offline. This value is asserted on NOWHERE; only the request body is inspected.
+                Ok(HttpResponse {
+                    status: 201,
+                    body: br#"{"token":"x","expires_at":"2026-06-12T23:00:00Z"}"#.to_vec(),
+                })
+            }
+        }
+
+        let transport = CapturingTransport {
+            seen: Mutex::new(None),
+        };
+        let minter = GitHubAppMint::new(
+            "42",
+            a.installation_id,
+            zeroize::Zeroizing::new(POLICY_DRIFT_TEST_KEY_PEM.as_bytes().to_vec()),
+            SystemClock,
+            &transport,
+        )
+        .with_api_base("https://gh.test");
+
+        let repo_ids: Vec<u64> = a
+            .repository_ids
+            .iter()
+            .map(|s| s.parse::<u64>().expect("numeric repo id"))
+            .collect();
+        let req = MintRequest {
+            provider: Provider::Github,
+            repos: vec![],
+            repo_ids,
+            perms: a.permissions.clone(),
+            ttl_secs: a.ttl_secs as i64,
+        };
+        minter
+            .mint_scoped(&req)
+            .expect("mint reaches the body builder");
+
+        // The engine's real `build_token_request_body` MUST have serialized the scope as the GitHub
+        // permission MAP `{"administration":"write","metadata":"read"}` (string access values).
+        let sent = transport
+            .seen
+            .lock()
+            .unwrap()
+            .clone()
+            .expect("a request was built");
+        let body: serde_json::Value =
+            serde_json::from_slice(&sent.body).expect("request body is JSON");
+        let perms = body
+            .get("permissions")
+            .and_then(|p| p.as_object())
+            .expect("permissions is a JSON object map");
+        assert_eq!(perms.len(), 2, "exactly the two policy-drift scopes");
+        assert_eq!(
+            perms.get("administration").and_then(|v| v.as_str()),
+            Some("write"),
+            "administration:write maps to a string access value"
+        );
+        assert_eq!(
+            perms.get("metadata").and_then(|v| v.as_str()),
+            Some("read"),
+            "metadata:read maps to a string access value"
+        );
+        // The serialized map equals the exact GitHub-API shape, byte-for-byte by key/value.
+        assert_eq!(
+            body["permissions"],
+            serde_json::json!({ "administration": "write", "metadata": "read" })
+        );
+    }
+
     // ===== TASK-0026: `github-app enroll` clap surface =======================================
 
     #[test]
