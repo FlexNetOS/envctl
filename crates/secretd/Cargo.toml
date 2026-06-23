@@ -33,7 +33,7 @@ provider-github = ["envctl-secrets-engine/provider-github"]
 # OR a default secretd build drops the public edge entirely (no bind). Reuses the pinned ring-only
 # tokio-rustls/rustls + ring(Ed25519)/base64/sha2/serde_json/hyper already in the resolved graph —
 # ZERO new lockfile crates (no-c stays green). Pulls in `tokio-rustls` (shared with `mitm-ca`).
-relay-edge = ["dep:tokio-rustls", "dep:ring", "dep:base64", "dep:sha2"]
+relay-edge = ["dep:tokio-rustls", "dep:ring", "dep:base64"]
 
 [dependencies]
 envctl-secrets-engine = { workspace = true }
@@ -88,7 +88,7 @@ toml = { workspace = true }
 # resolved graph (engine pins them). OPTIONAL: only the `relay-edge` feature links them; no-c stays green.
 ring = { version = "0.17", optional = true }
 base64 = { workspace = true, optional = true }
-sha2 = { workspace = true, optional = true }
+sha2 = { workspace = true }
 
 [dev-dependencies]
 # the e2e test (tests/e2e.rs) constructs the engine DIRECTLY (with a fake USB seam so Mint can pass

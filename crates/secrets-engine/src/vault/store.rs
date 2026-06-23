@@ -89,6 +89,7 @@ pub struct CertRow {
     pub cn: String,
     pub not_after: String,
     pub der: Vec<u8>,
+    pub revoked: bool,
 }
 
 /// A registered remote client (Phase 8, F15): the principal a remote bearer can be bound to. The
@@ -216,6 +217,9 @@ pub trait Store: Send + Sync {
         Ok(None)
     }
     fn list_certs(&self) -> anyhow::Result<Vec<CertRow>> {
+        Ok(Vec::new())
+    }
+    fn revoke_certs_for_cn(&self, _cn: &str) -> anyhow::Result<Vec<CertRow>> {
         Ok(Vec::new())
     }
 }
@@ -587,6 +591,18 @@ impl Store for InMemStore {
     fn list_certs(&self) -> anyhow::Result<Vec<CertRow>> {
         let g = self.inner.lock().map_err(|_| lock_poisoned())?;
         Ok(g.certs.clone())
+    }
+
+    fn revoke_certs_for_cn(&self, cn: &str) -> anyhow::Result<Vec<CertRow>> {
+        let mut g = self.inner.lock().map_err(|_| lock_poisoned())?;
+        let mut revoked = Vec::new();
+        for cert in g.certs.iter_mut() {
+            if cert.cn == cn && !cert.revoked {
+                cert.revoked = true;
+                revoked.push(cert.clone());
+            }
+        }
+        Ok(revoked)
     }
 }
 

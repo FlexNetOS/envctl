@@ -14,11 +14,13 @@
 //! Certs.CaInit/Issue/List surface are wired to the engine's metadata-read / fail-closed-mutation
 //! methods. Destructive Certs root-of-trust verbs remain explicit `Unimplemented` until their
 //! apply/confirm/revert semantics land.
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 
-use envctl_secrets::{Engine, EventSink, Unlock};
+use envctl_secrets::{Engine, EventSink, RevokedCert, Unlock};
 use envctl_secrets_proto::v1;
+use sha2::{Digest, Sha256};
 use tonic::{Request, Response, Status};
 use zeroize::Zeroizing;
 
@@ -41,6 +43,10 @@ pub struct DaemonState {
     /// `serve_proxy` binds. PR-2b's `Relay.Mint` reads it to fill `MintResp.injection` so the child
     /// is repointed at the proxy. `None` until the proxy has bound (or if it failed to bind).
     pub proxy_addr: Arc<std::sync::OnceLock<std::net::SocketAddr>>,
+    /// Optional hardened mTLS client revocation-set path. This is daemon edge config, not engine
+    /// state; `Certs.Revoke` appends SHA-256 DER fingerprints here after the engine marks the
+    /// matching cert rows revoked.
+    pub client_revocations_path: Arc<std::sync::OnceLock<PathBuf>>,
 }
 
 /// Map a `JoinError` from `spawn_blocking` to an internal status.
@@ -983,6 +989,7 @@ impl v1::audit_server::Audit for AuditSvc {
 #[derive(Clone)]
 pub struct CertsSvc {
     pub engine: Engine,
+    pub state: DaemonState,
 }
 
 fn cert_item_to_proto(item: envctl_secrets::CertListItem) -> v1::CertMeta {
@@ -994,6 +1001,32 @@ fn cert_item_to_proto(item: envctl_secrets::CertListItem) -> v1::CertMeta {
         sans: item.sans,
         usage: item.usage,
     }
+}
+
+fn append_revoked_client_fingerprints(path: &Path, certs: &[RevokedCert]) -> anyhow::Result<()> {
+    if certs.is_empty() {
+        return Ok(());
+    }
+    let mut file = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(path)
+        .map_err(|e| anyhow::anyhow!("append client revocations {}: {e}", path.display()))?;
+    for cert in certs {
+        let digest = Sha256::digest(&cert.der);
+        let mut line = String::with_capacity(65);
+        for byte in digest {
+            use std::fmt::Write as _;
+            write!(&mut line, "{byte:02x}").expect("write to string");
+        }
+        line.push('\n');
+        use std::io::Write as _;
+        file.write_all(line.as_bytes())
+            .map_err(|e| anyhow::anyhow!("write client revocation {}: {e}", path.display()))?;
+    }
+    file.sync_all()
+        .map_err(|e| anyhow::anyhow!("sync client revocations {}: {e}", path.display()))?;
+    Ok(())
 }
 
 #[tonic::async_trait]
@@ -1035,15 +1068,31 @@ impl v1::certs_server::Certs for CertsSvc {
     }
     async fn renew(
         &self,
-        _request: Request<v1::RenewLeafReq>,
+        request: Request<v1::RenewLeafReq>,
     ) -> Result<Response<Self::RenewStream>, Status> {
-        Err(Status::unimplemented("Certs.Renew is Phase 4+"))
+        let req = request.into_inner();
+        let stream = run_streaming(self.engine.clone(), move |engine, sink: &EventSink| {
+            engine.ca_renew(&req.cn, req.apply, sink)?;
+            Ok(())
+        });
+        Ok(Response::new(stream))
     }
     async fn revoke(
         &self,
-        _request: Request<v1::RevokeLeafReq>,
+        request: Request<v1::RevokeLeafReq>,
     ) -> Result<Response<Self::RevokeStream>, Status> {
-        Err(Status::unimplemented("Certs.Revoke is Phase 4+"))
+        let req = request.into_inner();
+        let revocations_path = self.state.client_revocations_path.get().cloned();
+        let stream = run_streaming(self.engine.clone(), move |engine, sink: &EventSink| {
+            let revoked = engine.ca_revoke(&req.cn, req.apply, req.confirm, sink)?;
+            if req.apply {
+                if let Some(path) = revocations_path.as_deref() {
+                    append_revoked_client_fingerprints(path, &revoked)?;
+                }
+            }
+            Ok(())
+        });
+        Ok(Response::new(stream))
     }
     async fn trust_apply(
         &self,
@@ -1063,5 +1112,43 @@ impl v1::certs_server::Certs for CertsSvc {
         Ok(Response::new(v1::ListCertResp {
             items: items.into_iter().map(cert_item_to_proto).collect(),
         }))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn append_revoked_client_fingerprints_writes_verifier_format() {
+        let path = std::env::temp_dir().join(format!(
+            "envctl-client-revocations-{}-{}.txt",
+            std::process::id(),
+            "grpc"
+        ));
+        let _ = std::fs::remove_file(&path);
+        append_revoked_client_fingerprints(
+            &path,
+            &[RevokedCert {
+                serial: "01".to_string(),
+                cn: "phone".to_string(),
+                der: b"client-cert-der".to_vec(),
+            }],
+        )
+        .expect("append fingerprint");
+
+        let text = std::fs::read_to_string(&path).expect("read revocations");
+        let expected = {
+            let digest = Sha256::digest(b"client-cert-der");
+            let mut out = String::new();
+            for byte in digest {
+                use std::fmt::Write as _;
+                write!(&mut out, "{byte:02x}").unwrap();
+            }
+            out.push('\n');
+            out
+        };
+        assert_eq!(text, expected);
+        let _ = std::fs::remove_file(path);
     }
 }

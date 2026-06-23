@@ -223,6 +223,9 @@ async fn serve() -> anyhow::Result<()> {
     let edge_handle = {
         let edge_cfg =
             config::EdgeSettings::load(&paths.config_file()).context("loading [edge] config")?;
+        if let Some(path) = edge_cfg.client_revocations_path.clone() {
+            let _ = state.client_revocations_path.set(path);
+        }
         if edge_cfg.enabled {
             let bind_addr = edge_cfg
                 .bind_addr

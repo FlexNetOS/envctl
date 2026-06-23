@@ -100,6 +100,13 @@ impl LibSqlStore {
     }
 }
 
+fn unix_now_ms() -> i64 {
+    std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map(|d| d.as_millis().min(i64::MAX as u128) as i64)
+        .unwrap_or(0)
+}
+
 impl Store for LibSqlStore {
     // ---- meta KV ----
 
@@ -546,6 +553,15 @@ impl Store for LibSqlStore {
     fn save_cert(&self, row: CertRow) -> anyhow::Result<()> {
         self.conn
             .execute(schema::SAVE_CERT, serial::bind_cert_row(&row))?;
+        if row.revoked {
+            self.conn.execute(
+                schema::MARK_CERT_REVOKED,
+                vec![
+                    Value::Text(row.serial.clone()),
+                    Value::Integer(unix_now_ms()),
+                ],
+            )?;
+        }
         self.fsync_barrier()?;
         Ok(())
     }
@@ -566,6 +582,26 @@ impl Store for LibSqlStore {
         for r in &rows {
             out.push(serial::deserialize_cert_row(r)?);
         }
+        Ok(out)
+    }
+
+    fn revoke_certs_for_cn(&self, cn: &str) -> anyhow::Result<Vec<CertRow>> {
+        let rows = self.conn.query_all(
+            schema::LIST_LIVE_CERTS_FOR_CN,
+            vec![Value::Text(cn.to_string())],
+        )?;
+        let mut out = Vec::with_capacity(rows.len());
+        let now_ms = unix_now_ms();
+        for r in &rows {
+            let mut cert = serial::deserialize_cert_row(r)?;
+            self.conn.execute(
+                schema::MARK_CERT_REVOKED,
+                vec![Value::Text(cert.serial.clone()), Value::Integer(now_ms)],
+            )?;
+            cert.revoked = true;
+            out.push(cert);
+        }
+        self.fsync_barrier()?;
         Ok(out)
     }
 }

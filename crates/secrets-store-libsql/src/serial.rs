@@ -373,12 +373,13 @@ pub fn bind_cert_row(row: &CertRow) -> Vec<Value> {
     ]
 }
 
-/// Cols: 0 serial, 1 cn, 2 not_after, 3 der.
+/// Cols: 0 serial, 1 cn, 2 not_after, 3 der, 4 revoked.
 pub fn deserialize_cert_row(row: &Row) -> Result<CertRow> {
     Ok(CertRow {
         serial: get_string(row, 0, "cert.serial")?,
         cn: get_string(row, 1, "cert.cn")?,
         not_after: get_string(row, 2, "cert.not_after")?,
         der: get_blob(row, 3, "cert.der")?,
+        revoked: get_i64(row, 4, "cert.revoked")? != 0,
     })
 }
