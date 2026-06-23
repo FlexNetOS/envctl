@@ -354,9 +354,12 @@ verify env health.
   per-machine templating: statusline script + 2 plugin-marketplace dirs (HIGH — live source-of-truth file).
   - DONE 2026-06-13: `home/.claude/settings.json.tmpl` + `claude-global-links` per-machine render
     (byte-identical, non-breaking). PR **envctl#37 MERGED → develop** (`bf29acd`). (Git>backlog: confirmed merged.)
-- [ ] **TASK-0006 (P2):** Point global `home/.config/kasetto/kasetto.yaml` mcps source at in-meta
-  agent-skills (not `github.com/FlexNetOS/agent-skills`); genericize MED shell/nushell hardcodes
-  (`shell_nu.nu`, `shell_bash.sh`, `config.nu`). Fix stale `Documentation=` URL in `manifest/env-ctl.toml`.
+- [x] **TASK-0006 (P2) — DONE 2026-06-23 via PR #206 (MERGED):** fixed the stale `Documentation=` URL
+  in `manifest/env-ctl.toml` (`/blob/main/`→`/blob/master/`) + regen `envctl.lock` (only env-ctl hash
+  changed) + corrected misleading `FlexNetOS/agent-skills`/`kasetto sync` comments in
+  `home/.config/kasetto/kasetto.yaml`. The primary deliverable (mcps source repoint to in-meta
+  `~/Desktop/meta/envctl/agent-skills`) and the shell/nushell genericization were verified
+  ALREADY-SATISFIED (no change needed). All 5 gates green.
 - [x] **TASK-0007 (P2):** `envctl doctor`/env boundary-refusal when a real FlexNetOS install is found
   outside meta; idempotent `~/.local/bin` symlink regen from `META_ROOT`. DONE in PR #140
   (merged 2026-06-22): typed `meta_boundary` report on `EnvReport`, high-severity
@@ -497,9 +500,12 @@ fmt, clippy). Remaining follow-ups extracted from each:
   that `node-real` already exists as a standalone carve-out, `group-ai-clis` no longer requires
   `node-via-bun`, `envctl lock --check` is clean, and focused engine tests prove the `node-real`
   component is empty-requires and the `group-ai-clis` edge is absent.
-- [ ] **TASK-0022 (agent-web-access):** Phases 2–3 of the agent web-access ladder (Phase 1 n8n-mcp +
-  kasetto wiring merged). `- [!]` n8n live smoke test is HUMAN-ONLY (see
-  `.handoff/loop/_done/n8n-live-smoke-runbook.md`).
+- [x] **TASK-0022 (agent-web-access) — DONE 2026-06-23 via PR #205 (MERGED):** the autonomous part of
+  Phases 2–3 shipped (n8n-mcp management-tier wiring behind runtime `secretctl` key-substitution,
+  fail-closed/key-less verify preserved; runbook path corrected). The n8n LIVE smoke test (create/
+  activate a real workflow) remains HUMAN-ONLY — it needs an owner-minted n8n API key stored in the
+  vault (`.handoff/loop/_done/n8n-live-smoke-runbook.md`); no key is minted/stored/hardcoded by the
+  agent. Autonomous deliverable complete; live smoke is the documented human gate.
 
 ## Epic E — Workflow infrastructure
 
