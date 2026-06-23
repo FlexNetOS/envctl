@@ -1,55 +1,61 @@
 # HANDOFF — forge-loop
 
-closed_utc: 2026-06-23T03:40:10Z
-branch: task-0039-client-ca-lifecycle
+closed_utc: 2026-06-23T03:59:47Z
+branch: handoff-task0039-finalize
 worktree: /home/drdave/Desktop/meta/.worktrees/task-0039-client-ca-lifecycle/envctl
 cycle_budget: 1
 cycles_total: 28
 cycles_this_session: 9
 last_item: TASK-0039
-next_item: TASK-0039
-orchestrator_phase: PR_OPEN_WAIT_FOR_MERGE
+next_item: TASK-0053
+orchestrator_phase: TASK_0053_CLAIMED_NOT_STARTED
 last_agent: codex
 gate_status: PASS-WITH-NOTES
 pr_url: https://github.com/FlexNetOS/envctl/pull/162
 
 ## Landed This Session
 
-- 882c111 secretd: add remote client CA lifecycle
-- PR #159 merged earlier this session: handoff stale-card reconciliation.
-- PR #162 is open and carries TASK-0039 implementation; do not run `hf done` until it is confirmed
-  `MERGED`.
+- PR #162 merged at 2026-06-23T03:49:16Z with all required checks green.
+- `hf test TASK-0039` witnessed the card gates: `cargo build -p envctl-engine -p envctl` and
+  `bash ci/gates/p7.sh`.
+- `hf done TASK-0039 --pr 162`, `hf sync-cards`, `hf handoff`, and `hf export` promoted TASK-0039 to
+  Done and exported `.handoff/ledger.events.jsonl` with 73 verified events.
+- TASK-0053 is claimed for the next forge-loop cycle. `hf handoff` proved its AgentContract via
+  ruvector-verified.
 
 ## Current State
 
-TASK-0039 was reopened because PR #158 only delivered the verifier/revocation-file enforcement slice.
-This branch implements the lifecycle slice:
+TASK-0039 is complete. The code and docs now agree that the remote-clients CA lifecycle is landed:
 
-- DEK-sealed remote-clients CA distinct from the MITM CA.
-- Remote-clients CA rebuilds on unlock and zeroizes on lock.
-- `control_plane_client` issuance defaults to 7 days and refuses `ttl_days > 7`.
-- `Engine::ca_renew` reissues live client leaves and revokes superseded rows.
-- `Engine::ca_revoke` is dry-run by default, requires `--apply --confirm`, revokes cert rows, and
-  disables a matching remote-client registry row.
-- `secretd` wires `Certs.Renew` and `Certs.Revoke`.
-- `secretd` appends SHA-256 DER fingerprints to configured `client_revocations_path`, the same format
-  PR #158's mTLS verifier reloads.
-- libSQL cert storage now projects revocation state through an idempotent `cert_revocations` table.
+- Remote-clients CA is separate from the MITM CA.
+- Client leaves are capped at <=7 days.
+- `Certs.Renew` revokes superseded leaves.
+- `Certs.Revoke` appends SHA-256 DER fingerprints in the verifier reload format from PR #158.
+- Remaining explicit Certs root-of-trust stubs are only `Certs.CaRotate` and `Certs.TrustApply`.
+
+The next build task is TASK-0053: route the verified GitHub transport doctrine into envctl.
 
 ## Decisions And Dead Ends
 
-- Do not mark TASK-0039 done on local PASS or auto-merge armed. Tick-on-merged applies: only
-  `gh pr view 162 --json state -q .state` returning `MERGED` permits `hf done TASK-0039 --pr 162`.
-- Do not delete `task-0039-client-ca-lifecycle` branch or its worktree until PR #162 is confirmed
-  merged. Reaper may clean older merged worktrees only.
-- The existing `IssueLeafReq` stream does not return private key material. The implemented lifecycle
-  closes the frozen Certs/secretctl surfaces; full device enrollment/export packet automation remains
-  a future surface if the owner wants it.
-- ICM correction: earlier local context had mistakenly treated TASK-0039 as done after PR #158. It is
-  now correctly claimed/in-flight until PR #162 merges.
+- Do not send a fresh session back to TASK-0039. GitHub PR #162 is merged and the hf ledger/card state
+  says TASK-0039 is Done.
+- The local `.handoff/ledger.db` is a rebuild cache. This handoff rebuilt it from the committed
+  `.handoff/ledger.events.jsonl`, replayed TASK-0039 completion on the full 62-event chain, then
+  exported the 73-event JSONL truth. If a cold clone lacks `.handoff/ledger.db`, rebuild it from JSONL
+  before trusting dependency drift checks.
+- The installed `hf` may lag the source command surface for `import`/`export`; the source command that
+  worked here was:
+  `cargo run --quiet --manifest-path /home/drdave/Desktop/meta/handoff/Cargo.toml -p hf --bin hf -- <verb>`.
+- Known kernel URL bug discovered here: the witnessed `delivery` event for `hf done TASK-0039 --pr
+  162` renders `FlexNetOS/handoff/pull/162` because `hf done --pr N` assumes the kernel repo. The
+  GitHub oracle for this cycle is PR #162 in `FlexNetOS/envctl` (see `pr_url` above and `gh pr view
+  162`). Carry this into TASK-0053's GitHub transport doctrine work; do not hand-edit the witnessed
+  JSONL payload.
 
-## Verification Completed Locally
+## Verification Completed
 
+- `gh pr view 162 --json number,state,mergedAt,mergeCommit,statusCheckRollup,url` showed `MERGED` and
+  all checks green.
 - `cargo test -p envctl-secrets-engine ca_ -- --nocapture`
 - `cargo test -p envctl-secretd append_revoked_client_fingerprints_writes_verifier_format -- --nocapture`
 - `cargo test -p envctl-secrets-store-libsql bind_cert_row_shape -- --nocapture`
@@ -63,23 +69,48 @@ This branch implements the lifecycle slice:
 - `bash ci/gates/enable.sh`
 - `bash ci/gates/p7.sh && bash ci/gates/loop-state.sh`
 - `cargo test --workspace` (raw log: `/tmp/envctl-task0039-workspace-test.log`, exit=0)
-- Post-rebase onto `origin/develop@e1e2726`: focused CA tests, relay-edge daemon check, p7, and
-  loop-state gate passed.
+- Post-merge handoff verification: source `hf import`, `hf test TASK-0039`, `hf done TASK-0039 --pr
+  162`, `hf sync-cards`, `hf handoff`, `hf export`, `hf resume --json`.
 
 ## Verify On Resume
 
-1. `gh pr view 162 --json state,mergeStateStatus,statusCheckRollup,url`
-2. If checks are green and PR is not merged, run `gh pr merge 162 --auto --squash` or merge once
-   branch protection permits.
-3. Poll until `gh pr view 162 --json state -q .state` returns `MERGED`.
-4. Only after merge:
-   - `hf done TASK-0039 --pr 162`
-   - `hf handoff`
-   - `bash scripts/reap-worktrees.sh`
-   - `bash scripts/reap-worktrees.sh --apply`
-5. Re-run `hf resume --json`; expected remaining tasks after TASK-0039 merges are owner-blocked
-   `TASK-0009`, owner-gated `TASK-0033`, and new buildable P0 `TASK-0053` (GitHub transport doctrine
-   and scoped token path from PR #161's handoff work).
+Run these first:
+
+```bash
+git fetch --prune origin
+git status --short --branch
+hf resume --json
+```
+
+Expected `hf resume --json` shape:
+
+```json
+{
+  "next_command": "hf claim TASK-0053",
+  "next_task_id": "TASK-0053",
+  "remaining": ["TASK-0009", "TASK-0033", "TASK-0053"],
+  "witnessed_events_verified": 73
+}
+```
+
+If `.handoff/ledger.db` is missing or stale, rebuild it from committed JSONL before resuming:
+
+```bash
+cargo run --quiet --manifest-path /home/drdave/Desktop/meta/handoff/Cargo.toml -p hf --bin hf -- import
+hf resume --json
+```
+
+Then continue the loop at TASK-0053:
+
+```bash
+hf checkpoint TASK-0053 "cold-start resume"
+/forge-loop
+```
+
+Note: the generated packet's "Next Action / Direction" correctly says `hf checkpoint TASK-0053`
+because TASK-0053 is already Claimed. `hf resume --json` may still show `hf claim TASK-0053`; treat
+that as the kernel's conservative resume hint and continue the already-claimed task with checkpoint +
+forge-loop, not a new task pick.
 
 ## ICM Stored
 

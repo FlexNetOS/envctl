@@ -178,8 +178,9 @@ foundation IS built (`relay_mint_remote`, `register_remote_client`, `broker/deci
 - [x] **TASK-0038 (deferred from TASK-0035 — Phase 4+):** secretd `Certs.CaInit/Issue/List`
   + non-mitm `ca_issue` + `secretctl ca init/issue/list` landed in PR #137 (MERGED, guardian PASS).
   The general operator path mints only `control_plane_server` / `control_plane_client` leaves and
-  refuses `mitm_leaf`; Certs.CaRotate/Renew/Revoke/TrustApply remain explicit Unimplemented until
-  destructive/root-of-trust semantics are designed. Remote client CA lifecycle remains TASK-0039.
+  refuses `mitm_leaf`; Certs.CaRotate/TrustApply remain explicit Unimplemented until
+  destructive/root-of-trust semantics are designed. Certs.Renew/Revoke and the remote client CA
+  lifecycle landed in TASK-0039 / PR #162.
 - [x] **TASK-0036 — DONE (PR #112, guardian PASS):** secretd in-process `mlockall(MCL_CURRENT|MCL_FUTURE)`
   in `harden_process()` via libc (pure-Rust FFI, zero new lockfile crates), best-effort + `require_mlock`
   strict opt-in (fail-closed). Linux-cfg-gated, never panics, metadata-only WARN.
@@ -190,9 +191,9 @@ foundation IS built (`relay_mint_remote`, `register_remote_client`, `broker/deci
 
 ## Epic A — Handoff continuity full-sync (bring `.handoff` to Tier-A)
 
-Research: `meta/handoff` kernel vs `envctl/.handoff` (~30% Tier-B stub). Per-repo `.handoff` holds
-git-committed TEXT ONLY; events flow to the shared `meta/.handoff/ledger.db` (ADR-0004). Packets
-are **rendered by `hf`, never hand-written**.
+Research: `meta/handoff` kernel vs `envctl/.handoff` (~30% Tier-B stub). Current continuity truth is
+the committed `.handoff/ledger.events.jsonl` export; `.handoff/ledger.db` is an ignored local redb
+cache rebuilt from JSONL (ADR-0018 D1). Packets are **rendered by `hf`, never hand-written**.
 
 - [x] **TASK-0001 (P0):** Build & install the `hf` kernel binary from `meta/handoff` (not on PATH
   today — keystone blocker). Relocate per Epic B procedure (symlink into meta). Verify

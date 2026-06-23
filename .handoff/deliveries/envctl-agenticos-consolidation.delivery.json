@@ -1,0 +1,10 @@
+{
+  "schema": "handoff.delivery.v1",
+  "correlation_id": "envctl-agenticos-consolidation",
+  "task_id": "TASK-0039",
+  "pr": "162",
+  "status": "merged",
+  "summary": "TASK-0039 completed via PR 162 (status: merged)",
+  "url": "https://github.com/FlexNetOS/handoff/pull/162",
+  "timestamp_ns": 1782187158375420898
+}

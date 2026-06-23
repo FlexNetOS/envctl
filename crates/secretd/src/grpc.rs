@@ -11,9 +11,9 @@
 //! value, so the real key never crosses the wire for a broker_only secret.
 //!
 //! Vault.List/Rm/Rotate, Relay.Create/List, Audit.Query, GetSecret.meta, and the additive
-//! Certs.CaInit/Issue/List surface are wired to the engine's metadata-read / fail-closed-mutation
-//! methods. Destructive Certs root-of-trust verbs remain explicit `Unimplemented` until their
-//! apply/confirm/revert semantics land.
+//! Certs.CaInit/Issue/List/Renew/Revoke surface are wired to the engine's metadata-read /
+//! fail-closed-mutation methods. The remaining Certs root-of-trust verbs (`CaRotate` and
+//! `TrustApply`) stay explicit `Unimplemented` until their apply/confirm/revert semantics land.
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
