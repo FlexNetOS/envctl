@@ -288,6 +288,11 @@ content_hash = "b6e1fcab48daf321"
 requires = []
 resolved = ""
 
+[components.nix-portable]
+content_hash = "88e98a62e8fc4be2"
+requires = []
+resolved = ""
+
 [components.nix-yazelix-cache]
 content_hash = "f986c70d2091b3d0"
 requires = ["nix"]

@@ -454,3 +454,57 @@ set -u
 M="${META_ROOT:-$HOME/Desktop/meta}"
 rm -rf "$M/.toolchains/libgccjit"
 '''
+
+# ── nix-portable ── meta-owned, bwrap-backed isolated nix. A single static binary
+# (DavHau/nix-portable) into .toolchains/nix-portable/bin + ~/.local/bin/nix-portable.
+# It bwrap-mounts a home-dir store (default ~/.nix-portable) as /nix inside a namespace,
+# keeping the logical /nix/store (binary cache works) WITHOUT a host root /nix.
+# Runtime needs `bwrap` (0.11.1 present, AppArmor-sanctioned); on this box raw
+# unprivileged userns is blocked (apparmor_restrict_unprivileged_userns=1), so the
+# `NP_RUNTIME=bwrap` runtime selector is the working path. ADDITIVE only — this NEVER
+# touches the host /nix; the destructive migration (remove host /nix, de-nix yazelix)
+# is deferred to supervised TASK-0067. Epic H TASK-0066. Repo: DavHau/nix-portable.
+[[component]]
+id = "nix-portable"
+name = "nix-portable (meta-owned)"
+description = "Bwrap-backed isolated nix: the DavHau/nix-portable static binary into .toolchains/nix-portable/bin + ~/.local/bin/nix-portable. Provides nix without a host root /nix store (home-dir store, logical /nix/store preserved so the binary cache works). Needs bwrap at runtime (NP_RUNTIME=bwrap). Additive — never touches host /nix; destructive /nix migration deferred to supervised TASK-0067. Repo: DavHau/nix-portable."
+
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/nix-portable/bin/nix-portable\" ] && [ \"$(readlink -f \"$HOME/.local/bin/nix-portable\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/nix-portable/bin/nix-portable\")\" ]"]
+
+[component.install]
+kind = "script"
+login_shell = true
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/nix-portable"
+TAG="$(curl -fsSL 'https://api.github.com/repos/DavHau/nix-portable/releases/latest' | grep -oE '"tag_name": *"[^"]+"' | head -1 | grep -oE 'v[0-9]+')"
+[ -n "$TAG" ] || { echo "nix-portable: could not resolve release tag" >&2; exit 1; }
+URL="https://github.com/DavHau/nix-portable/releases/download/${TAG}/nix-portable-x86_64"
+rm -rf "$DEST"; install -d -m 755 "$DEST/bin"
+curl -fsSL "$URL" -o "$DEST/bin/nix-portable"
+chmod +x "$DEST/bin/nix-portable"
+install -d -m 755 "$HOME/.local/bin"
+ln -sfn "$DEST/bin/nix-portable" "$HOME/.local/bin/nix-portable"
+'''
+
+[component.verify]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/nix-portable/bin/nix-portable\" ] && file \"$M/.toolchains/nix-portable/bin/nix-portable\" | grep -q 'ELF'"]
+
+[component.remove]
+kind = "script"
+login_shell = true
+script = '''
+set -u
+M="${META_ROOT:-$HOME/Desktop/meta}"
+t="$HOME/.local/bin/nix-portable"; [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/nix-portable" && rm -f "$t"
+rm -rf "$M/.toolchains/nix-portable"
+'''
+
+[component.wiring]
+path_entries = ["~/.local/bin"]
