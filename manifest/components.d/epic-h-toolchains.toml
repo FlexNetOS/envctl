@@ -358,9 +358,19 @@ script = '''
 set -euo pipefail
 M="${META_ROOT:-$HOME/Desktop/meta}"
 DEST="$M/.toolchains/llvm"
-TAG="$(curl -fsSL 'https://api.github.com/repos/llvm/llvm-project/releases?per_page=100' \
-  | grep -oE '"tag_name": *"llvmorg-21\.[0-9]+\.[0-9]+"' \
-  | grep -oE 'llvmorg-21\.[0-9]+\.[0-9]+' | sort -V | tail -1)"
+# Authenticated release listing (gh = 5000/hr; gh is the meta-owned Epic-H component TASK-0057,
+# guaranteed on PATH) — the /releases/latest redirect points at 22.x, so we must LIST releases to
+# pin the latest 21.x. Falls back to the unauthenticated API (60/hr, may 403 when the quota is
+# exhausted) only if gh is absent/unauthed. TASK-0068 (last api.github.com rate-limit liability).
+if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+  TAG="$(gh api 'repos/llvm/llvm-project/releases?per_page=100' \
+    --jq '.[].tag_name | select(test("^llvmorg-21\\.[0-9]+\\.[0-9]+$"))' | sort -V | tail -1)"
+else
+  TAG="$(curl -fsSL 'https://api.github.com/repos/llvm/llvm-project/releases?per_page=100' \
+    | grep -oE '"tag_name": *"llvmorg-21\.[0-9]+\.[0-9]+"' \
+    | grep -oE 'llvmorg-21\.[0-9]+\.[0-9]+' | sort -V | tail -1)"
+fi
+[ -n "$TAG" ] || { echo "llvm: could not resolve latest 21.x tag" >&2; exit 1; }
 VER="${TAG#llvmorg-}"
 URL="https://github.com/llvm/llvm-project/releases/download/${TAG}/LLVM-${VER}-Linux-X64.tar.xz"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
