@@ -360,8 +360,13 @@ preset; multi-host resolver; 5 cmd + 4 MCP-merge additive transforms; 3 lock mod
   and `.codex/config.toml`; kept mesh secrets untouched; cleaned a pinned-toolchain clippy lint in
   the agent-env source test helper; ignored ephemeral `.handoff/locks/`. CI all green on #146 and
   `hf test TASK-0015` witnessed build+p7 before `hf done`.
-- [ ] **TASK-0016:** Lock unification — fold agent assets into `envctl.lock` (SHA-256 section) or keep
+- [x] **TASK-0016:** Lock unification — fold agent assets into `envctl.lock` (SHA-256 section) or keep
   kasetto.lock owned by the subsystem; reframe `manifest/agent-env.toml` external-binary → built-in.
+  DONE 2026-06-23, PR #149: recorded the no-downgrade decision to keep standalone SHA-256
+  `agent-env.lock` separate from FNV-1a `manifest/envctl.lock`; reframed `manifest/agent-env.toml`
+  around built-in `envctl agent` + `agent-env.yaml`; tightened `ci/gates/agent-env.sh` to use
+  `envctl agent lock --config agent-env.yaml --check --locked`; regenerated `manifest/envctl.lock`.
+  CI all green on #149 and `hf test TASK-0016` witnessed build+p7 before `hf done`.
 - [ ] **TASK-0017:** Adopt kasetto `extends` config composition for envctl component manifests.
 - [ ] **TASK-0018:** Retire the external `kasetto` binary dependency — only after the no-downgrade
   checklist passes end-to-end.
