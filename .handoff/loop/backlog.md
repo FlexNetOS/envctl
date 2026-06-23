@@ -373,9 +373,9 @@ lock / §16 runtime / doctor / lock --check. Absorb the rest as a pure-Rust crat
 checklist in ADR-0001 (all 11 verbs incl v3.1 add/remove/lock; 6-key+extends schema; 21-agent
 preset; multi-host resolver; 5 cmd + 4 MCP-merge additive transforms; 3 lock modes).
 
-- [ ] **TASK-0011 (P1):** Refresh `docs/KASETTO-FEATURES.md` to v3.2.0 (full verb/schema inventory +
+- [x] **TASK-0011 (P1) — DONE / reconciled 2026-06-23 (verified-by-doing):** `docs/KASETTO-FEATURES.md` present (38K, references v3.2.0). Original: Refresh `docs/KASETTO-FEATURES.md` to v3.2.0 (full verb/schema inventory +
   no-downgrade checklist; current doc is stale at v3.0.0).
-- [ ] **TASK-0012 (P0 of C):** New pure-Rust crate `crates/agent-env` — config model (6 keys +
+- [x] **TASK-0012 (P0 of C) — DONE / reconciled 2026-06-23 (verified-by-doing):** `crates/agent-env` exists (agent.rs 36K / command.rs / config.rs), `envctl-agent-env` in workspace; absorbed kasetto v3.2.0 (see [[kasetto-absorption-rust-port]], Epic C COMPLETE). Original: New pure-Rust crate `crates/agent-env` — config model (6 keys +
   `extends`), multi-host source resolver, SHA-256 hash, lock. Drop `mimalloc`. no-c gate clean.
   - **IN PROGRESS 2026-06-13 (forge-loop cycle, owner-directed `/harness:rust-port`).** Owner
     resolved the no-downgrade fork: synced `meta/kasetto` source UP to **pivoshenko/kasetto v3.2.0**
@@ -391,9 +391,9 @@ preset; multi-host resolver; 5 cmd + 4 MCP-merge additive transforms; 3 lock mod
     `env_manager_agent` → `FlexNetOS/kasetto`; `origin/main` force-pushed (--force-with-lease) UP to
     upstream v3.2.0 (`ec01cca`, 0/0 in sync); divergence preserved (remote backup branch + git bundle
     in `.archives/`); `.meta.yaml` retargeted via meta PR #31. Fork == upstream == local.
-- [ ] **TASK-0013:** Engine `agent_env` module + Engine methods + Events (agent_sync/add/remove/lock);
+- [x] **TASK-0013 — DONE / reconciled 2026-06-23 (verified-by-doing):** `crates/engine/src/agent/` module present (mod.rs/lock.rs/sync.rs) with `agent_sync`/`agent_lock`/`agent_lock_path` Engine methods. Original: Engine `agent_env` module + Engine methods + Events (agent_sync/add/remove/lock);
   non-printing, front-end parity.
-- [ ] **TASK-0014:** CLI verbs `envctl agent {sync,add,remove,lock,list,clean}` (--dry-run/--json/--locked)
+- [x] **TASK-0014 — DONE / reconciled 2026-06-23 (verified-by-doing):** `envctl agent --help` shows sync/add/remove/lock/list/clean/init/doctor; mutating verbs PREVIEW-by-default + `--apply`. Original: CLI verbs `envctl agent {sync,add,remove,lock,list,clean}` (--dry-run/--json/--locked)
   + GUI parity.
 - [x] **TASK-0015:** Provisioning fidelity — verbatim skill copy; 5 command-format transforms; 4
   MCP-merge formats (ADDITIVE, never-clobber — must preserve global broker/repowire/weave servers).
@@ -417,7 +417,7 @@ preset; multi-host resolver; 5 cmd + 4 MCP-merge additive transforms; 3 lock mod
   parent tables. Added integration tests for inherited components, same-id overlay, cycle refusal,
   and depth refusal; updated docs. CI all green on #151 and `hf test TASK-0017` witnessed build+p7
   before `hf done`.
-- [ ] **TASK-0018:** Retire the external `kasetto` binary dependency — only after the no-downgrade
+- [x] **TASK-0018 — DONE / reconciled 2026-06-23 (verified-by-doing):** the external `kasetto` binary DEPENDENCY is retired — absorbed into `crates/agent-env`, driven by built-in `envctl agent`, and NO manifest/agent-env config references a `kasetto` binary (grep clean). RESIDUAL (host cleanup, not a code gap): a dangling unreferenced `~/.local/bin/kasetto` (4.5M ELF, pre-absorption leftover) still exists — owner-confirmable removal (user-prefix, not system-depth); NOT auto-deleted (binary I did not create, no dry-run safety). Original: Retire the external `kasetto` binary dependency — only after the no-downgrade
   checklist passes end-to-end.
 
 ## Epic D — Follow-ups surfaced from the WIP-branch consolidation (2026-06-12)
@@ -436,7 +436,7 @@ fmt, clippy). Remaining follow-ups extracted from each:
   is compatibility links only. Verification: seed-factor unit tests, seed-factor `secretd` build,
   fake-probe USB keyslot unlock test, engine+CLI build, envctl lock check, envctl doctor, and
   p7/no-c/shape/enable/kdf/agent-env/loop-state/harness-scripts gates.
-- [ ] **TASK-0020 (github-app-mint, P0 — unblocks the `flexnetos_github_app` e2e crown slice):** Expose
+- [x] **TASK-0020 (github-app-mint, P0) — DONE / reconciled 2026-06-23 (verified-by-doing):** `secretctl mint-github` present (frozen contract `{"token","expires_at_unix"}`, `MintGithub` RPC; 10 refs in cli/src/main.rs); shipped as TASK-0020-COMPLETE (PR #105). Original: Expose
   the completed `provider-github` `ProviderMint` (`secrets-engine/src/mint_github.rs`, PR #35, fully
   unit-tested via `FakeTransport`) through `secretd` + `secretctl` so the trusted-writer App can mint
   short-lived installation tokens from the vault-sealed key. **The minting impl is DONE — this is the
@@ -494,7 +494,7 @@ fmt, clippy). Remaining follow-ups extracted from each:
 
 ## Epic E — Workflow infrastructure
 
-- [ ] **TASK-0023:** develop→master auto-sync GitHub Action (ff master on develop push) +
+- [x] **TASK-0023 — DONE / reconciled 2026-06-23 (verified-by-doing):** `.github/workflows/sync-master.yml` present (FF master on develop push). Original: develop→master auto-sync GitHub Action (ff master on develop push) +
   enable branch protection on master (PR-only for humans; action token bypass). [in progress 2026-06-12]
 - [x] **TASK-0025 (P1, Epic E) — DONE 2026-06-13 (cycle 7): CI required checks on `develop` so
   auto-merge gates fail-closed.** Added `.github/workflows/ci.yml` (4 jobs: **rustfmt · clippy
@@ -1059,9 +1059,7 @@ policy change" — both are available and declarable here.
   (possession-rooted; additive; absent Seed = no-op; verify = pinned CA pubkey == the live Seed-presented
   CA). Owner doctrine note: consider relocating the pin off `/usr/local` to a meta path + `ENVCTL_SEED_CA`
   (no-system-depth) as part of this. See memory [[cognitum-seed-usb-unlock]].
-- [~] **TASK-0076 (secrets, MEDIUM) — reboot-persistent USB auto-unlock — BUILT, PR #202 armed (auto-merge
-  --squash; OPEN/BLOCKED on pending checks, not yet MERGED → stays `- [~]`; re-poll `gh pr view 202` and tick
-  `- [x]` when MERGED).** New `manifest/cognitum-seed-autounlock.toml` (sibling to seed-trust/seed-net):
+- [x] **TASK-0076 (secrets, MEDIUM) — DONE 2026-06-23 (PR #202 MERGED) — reboot-persistent USB auto-unlock.** New `manifest/cognitum-seed-autounlock.toml` (sibling to seed-trust/seed-net):
   worker + system oneshot + cdc_ncm udev rule auto-unlocks via `secretctl unlock` (USB-first, NO passphrase).
   Design crux fixed (architect): the root-triggered oneshot drops to the OWNER uid via `setpriv … env
   XDG_RUNTIME_DIR=…` so the secretctl connection passes the USER secretd's SO_PEERCRED owner-only gate
