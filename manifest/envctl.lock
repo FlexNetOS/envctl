@@ -49,6 +49,11 @@ requires = [
 ]
 resolved = ""
 
+[components.cognitum-seed-autounlock]
+content_hash = "d11d6685841e22e4"
+requires = []
+resolved = ""
+
 [components.cognitum-seed-net]
 content_hash = "e4444dd7225cd113"
 requires = []

@@ -1,0 +1,229 @@
+# manifest/cognitum-seed-autounlock.toml — reboot-persistent secretd vault auto-unlock (TASK-0076)
+#
+# After a reboot or `secretd` (re)start the vault is LOCKED because the DEK is RAM-only. This
+# component auto-reopens the vault when the Cognitum Seed USB is physically present: at boot (a
+# systemd oneshot) and on hotplug (a cdc_ncm-NIC udev rule fires the same unit). The unlock uses
+# `secretctl unlock` — the USB-first possession factor — so NO passphrase is ever scripted.
+#
+# Fail-closed: no Seed present (or no possession proof) => the vault stays LOCKED and the worker
+# exits 0, keeping the boot path clean. Possession-rooted, additive, absent-Seed = clean no-op.
+#
+# SO_PEERCRED boundary (the design crux): secretd is a systemd USER service and its control socket
+# (`$XDG_RUNTIME_DIR/env-ctl/secretd.sock`) is owner-only — the daemon admits a request only when the
+# peer uid == the owner uid (crates/secretd/src/peercred.rs). The udev rule + oneshot run as ROOT, so
+# the worker DROPS to the owner uid (`setpriv --reuid … --init-groups`) with the owner's
+# XDG_RUNTIME_DIR before calling `secretctl unlock`; otherwise root (uid 0) would be denied and the
+# socket path would be wrong. If the owner's user manager / socket is not up yet (no linger /
+# pre-login boot), the worker no-ops cleanly — the hotplug-on-present-Seed path is the robust one.
+#
+# Sibling components: cognitum-seed-trust.toml (Device-CA pin), cognitum-seed-net.toml (link-local).
+# Like them the artifacts live under /usr/local/sbin + /etc (udev rules are irreducibly system-level;
+# a oneshot that must run at multi-user boot lives in /etc/systemd/system) — a meta-prefix relocation
+# of the seed-* family is a separate doctrine sweep. The worker DOES prefer the meta-prefix secretctl.
+
+[[component]]
+id = "cognitum-seed-autounlock"
+name = "Cognitum Seed reboot-persistent auto-unlock"
+description = "After reboot/daemon-restart, auto-unlocks the secretd vault via the USB possession factor when the Seed is present; fail-closed (no Seed = stays locked); no passphrase ever scripted."
+requires = []
+destructive = false
+
+# DETECT == "artifacts present" (NOT "Seed reachable") so drift never nudges a rebuild. Mirrors
+# cognitum-seed-net's detect predicate.
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", "test -x /usr/local/sbin/cognitum-seed-autounlock && test -f /etc/systemd/system/cognitum-seed-autounlock.service && test -f /etc/udev/rules.d/99-cognitum-seed-autounlock.rules"]
+
+# INSTALL: write the worker + system oneshot + cdc_ncm udev rule, reload udev/systemd, enable+start.
+[component.install]
+kind = "script"
+needs_sudo = true
+script = '''
+set -euo pipefail
+
+install -d -m755 /usr/local/sbin
+cat > /usr/local/sbin/cognitum-seed-autounlock <<'WORKER'
+#!/usr/bin/env bash
+# cognitum-seed-autounlock — auto-unlock the secretd vault via the Cognitum Seed USB possession
+# factor. USB-first (no passphrase ever scripted). Fail-closed: absent Seed/daemon => vault stays
+# LOCKED, exit 0 (never errors the boot path).
+set -euo pipefail
+
+# Resolve secretctl: prefer the meta-prefix binary, then PATH fallbacks.
+SECRETCTL=""
+# NB: $HOME is UNSET for a systemd system service, so guard it (set -u would abort otherwise —
+# this is the line-9 "HOME: unbound variable" failure runtime-verify caught, which broke the
+# fail-closed exit-0 contract). The meta-prefix path needs no $HOME and is tried first.
+for c in "${META_ROOT:-/home/drdave/Desktop/meta}/.toolchains/secrets/bin/secretctl" "${HOME:-}/.local/bin/secretctl" /usr/local/bin/secretctl secretctl; do
+  if command -v "$c" >/dev/null 2>&1; then SECRETCTL="$c"; break; fi
+done
+# No secretctl anywhere => nothing to do.
+[ -n "${SECRETCTL:-}" ] || { echo "autounlock: secretctl not found (no-op)"; exit 0; }
+
+# Owner identity — single-user box convention (mirrors the sibling /home/drdave hardcode).
+OWNER="drdave"
+OWNER_UID="$(id -u "$OWNER" 2>/dev/null || echo "")"
+[ -n "${OWNER_UID:-}" ] || { echo "autounlock: owner $OWNER not resolvable (no-op)"; exit 0; }
+RT="/run/user/${OWNER_UID}"
+SOCK="${RT}/env-ctl/secretd.sock"
+
+# Bounded wait for the owner's USER secretd socket (pre-login boot / no linger => clean no-op).
+for _i in $(seq 1 10); do
+  [ -S "$SOCK" ] && break
+  sleep 1
+done
+# Socket never appeared => the owner daemon is not up; nothing to unlock.
+[ -S "$SOCK" ] || { echo "autounlock: owner secretd socket absent (no-op)"; exit 0; }
+
+# Drop to the owner uid/gid + owner XDG_RUNTIME_DIR so the secretctl connection's SO_PEERCRED uid
+# == owner_uid (secretd peercred gate) AND the socket path resolves to the owner's daemon. The
+# unlock is USB-first possession — NO passphrase is passed.
+if setpriv --reuid "$OWNER_UID" --regid "$OWNER_UID" --init-groups \
+     env XDG_RUNTIME_DIR="$RT" SECRETCTL_SOCK="$SOCK" \
+     "$SECRETCTL" unlock >/dev/null 2>&1; then
+  echo "autounlock: vault unlocked via USB possession factor"
+else
+  echo "autounlock: Seed not present/possessed (vault stays locked; no-op)"
+fi
+# Always exit 0 — fail-closed; never error the boot path.
+exit 0
+WORKER
+chmod 0755 /usr/local/sbin/cognitum-seed-autounlock
+
+cat > /etc/systemd/system/cognitum-seed-autounlock.service <<'UNIT'
+[Unit]
+Description=envctl secretd auto-unlock via Cognitum Seed USB possession factor
+Documentation=https://github.com/FlexNetOS/envctl/blob/main/manifest/cognitum-seed-autounlock.toml
+# UDS-only (no network ordering). secretd is a USER unit, invisible to this system oneshot's dep
+# graph, so readiness is handled by the worker's bounded socket-wait, not unit ordering.
+After=systemd-udevd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/cognitum-seed-autounlock
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+
+cat > /etc/udev/rules.d/99-cognitum-seed-autounlock.rules <<'RULE'
+ACTION=="add", SUBSYSTEM=="net", ENV{ID_NET_DRIVER}=="cdc_ncm", ENV{ID_MODEL}=="Cognitum_Seed", TAG+="systemd", ENV{SYSTEMD_WANTS}+="cognitum-seed-autounlock.service"
+RULE
+
+udevadm control --reload-rules || true
+systemctl daemon-reload || true
+systemctl enable cognitum-seed-autounlock.service || true
+systemctl start cognitum-seed-autounlock.service || true
+'''
+
+# VERIFY: HARD predicate = the three artifacts present (else exit 1). Then a NON-FATAL probe that
+# round-trips `secretctl status` as the INVOKING user (verify is never elevated, so it must NOT
+# setpriv — when the owner runs `envctl doctor` they ARE the owner). Always exit 0 after the probe.
+[component.verify]
+kind = "command"
+command = "bash"
+args = ["-lc", '''
+test -x /usr/local/sbin/cognitum-seed-autounlock \
+  && test -f /etc/systemd/system/cognitum-seed-autounlock.service \
+  && test -f /etc/udev/rules.d/99-cognitum-seed-autounlock.rules || exit 1
+
+# Non-fatal probe (runs as the invoking user; verify carries no sudo so it cannot setpriv).
+# $HOME is guarded with :- for parity with the worker (verify usually has HOME, but stay safe).
+SECRETCTL=""
+for c in "${META_ROOT:-${HOME:-}/Desktop/meta}/.toolchains/secrets/bin/secretctl" "${HOME:-}/.local/bin/secretctl" /usr/local/bin/secretctl secretctl; do
+  if command -v "$c" >/dev/null 2>&1; then SECRETCTL="$c"; break; fi
+done
+if [ -n "${SECRETCTL:-}" ] && "$SECRETCTL" status >/dev/null 2>&1; then
+  echo "autounlock probe: secretd reachable as $(id -un) (vault status queried; non-fatal)"
+else
+  echo "autounlock probe: secretd not reachable / secretctl absent (non-fatal; unlock applies on Seed hotplug)"
+fi
+exit 0
+''']
+
+# FIX: idempotent re-provision — rewrite all three artifacts, reload, re-enable, and restart the
+# oneshot to attempt an unlock now.
+[component.fix]
+kind = "script"
+needs_sudo = true
+script = '''
+set -euo pipefail
+
+install -d -m755 /usr/local/sbin
+cat > /usr/local/sbin/cognitum-seed-autounlock <<'WORKER'
+#!/usr/bin/env bash
+# cognitum-seed-autounlock — auto-unlock the secretd vault via the Cognitum Seed USB possession
+# factor. USB-first (no passphrase ever scripted). Fail-closed: absent Seed/daemon => vault stays
+# LOCKED, exit 0 (never errors the boot path).
+set -euo pipefail
+
+SECRETCTL=""
+for c in "${META_ROOT:-/home/drdave/Desktop/meta}/.toolchains/secrets/bin/secretctl" "$HOME/.local/bin/secretctl" /usr/local/bin/secretctl secretctl; do
+  if command -v "$c" >/dev/null 2>&1; then SECRETCTL="$c"; break; fi
+done
+[ -n "${SECRETCTL:-}" ] || { echo "autounlock: secretctl not found (no-op)"; exit 0; }
+
+OWNER="drdave"
+OWNER_UID="$(id -u "$OWNER" 2>/dev/null || echo "")"
+[ -n "${OWNER_UID:-}" ] || { echo "autounlock: owner $OWNER not resolvable (no-op)"; exit 0; }
+RT="/run/user/${OWNER_UID}"
+SOCK="${RT}/env-ctl/secretd.sock"
+
+for _i in $(seq 1 10); do
+  [ -S "$SOCK" ] && break
+  sleep 1
+done
+[ -S "$SOCK" ] || { echo "autounlock: owner secretd socket absent (no-op)"; exit 0; }
+
+if setpriv --reuid "$OWNER_UID" --regid "$OWNER_UID" --init-groups \
+     env XDG_RUNTIME_DIR="$RT" SECRETCTL_SOCK="$SOCK" \
+     "$SECRETCTL" unlock >/dev/null 2>&1; then
+  echo "autounlock: vault unlocked via USB possession factor"
+else
+  echo "autounlock: Seed not present/possessed (vault stays locked; no-op)"
+fi
+exit 0
+WORKER
+chmod 0755 /usr/local/sbin/cognitum-seed-autounlock
+
+cat > /etc/systemd/system/cognitum-seed-autounlock.service <<'UNIT'
+[Unit]
+Description=envctl secretd auto-unlock via Cognitum Seed USB possession factor
+Documentation=https://github.com/FlexNetOS/envctl/blob/main/manifest/cognitum-seed-autounlock.toml
+After=systemd-udevd.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/cognitum-seed-autounlock
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+
+cat > /etc/udev/rules.d/99-cognitum-seed-autounlock.rules <<'RULE'
+ACTION=="add", SUBSYSTEM=="net", ENV{ID_NET_DRIVER}=="cdc_ncm", ENV{ID_MODEL}=="Cognitum_Seed", TAG+="systemd", ENV{SYSTEMD_WANTS}+="cognitum-seed-autounlock.service"
+RULE
+
+udevadm control --reload-rules || true
+systemctl daemon-reload || true
+systemctl enable cognitum-seed-autounlock.service || true
+systemctl restart cognitum-seed-autounlock.service || true
+'''
+
+# REMOVE: disable + drop the unit, worker, and udev rule. Removing this component ONLY stops the
+# auto-unlock mechanism — it NEVER locks or wipes a currently-open vault.
+[component.remove]
+kind = "script"
+needs_sudo = true
+script = '''
+set -euo pipefail
+systemctl disable --now cognitum-seed-autounlock.service 2>/dev/null || true
+rm -f /usr/local/sbin/cognitum-seed-autounlock
+rm -f /etc/systemd/system/cognitum-seed-autounlock.service
+rm -f /etc/udev/rules.d/99-cognitum-seed-autounlock.rules
+udevadm control --reload-rules || true
+systemctl daemon-reload || true
+# NOTE: this only removes the auto-unlock mechanism; a currently-open vault is left untouched
+# (no lock, no wipe). Re-locking happens via the daemon's own relock paths, not here.
+'''
