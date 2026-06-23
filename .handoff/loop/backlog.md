@@ -805,6 +805,13 @@ irreducible — declared an explicit `system:` component. Authoritative plan + p
 adds a real envctl component (new `manifest/*.toml`) + `.toolchains` install + `~/.local/bin`
 symlink; dry-run-safe, applied via `envctl install`/`env-install-loop`. Sequenced EASY → HARD.
 
+**Single-admin / full-agentic principle (owner, 2026-06-23):** this box has one admin and runs
+no-human-in-the-loop, so convergence is NEVER gated by *permission* — only by *work*. Host-policy
+knobs (e.g. `apparmor_restrict_unprivileged_userns`) and sudo-phase installs are owner-tunable and
+**envctl declares + applies them as components** (reproducible), not treated as external walls.
+"Can't be meta-owned" is reserved for physical impossibility, never for "needs root" or "needs a
+policy change" — both are available and declarable here.
+
 - [ ] **TASK-0054 (H, EASY, owner-pref):** `wild` linker component — `cargo install --locked wild
   --root .toolchains/wild`; wire `RUSTFLAGS`/`.cargo/config.toml` `--ld-path`. **Replaces `mold`**
   (apt) per owner linker preference. Remove the `mold` apt dependency once wild is the gate. Repo:
@@ -845,8 +852,9 @@ symlink; dry-run-safe, applied via `envctl install`/`env-install-loop`. Sequence
   cargo-built `yzx` + its config (`home/.config/yazelix`) composed over the meta-prefix component
   binaries (TASK-0058/0059 + yazi/helix). Reconcile the fork: live install drifted to
   `luccahuguet/yazelix`; `.meta.yaml` declares `FlexNetOS/yazelix`. Depends on 0058/0059.
-  **Transitional fallback if nix must persist:** chroot store (`nix --store 'local?root=…'` /
-  nix-user-chroot) — keeps the binary cache, no root `/nix`; NOT a custom `store-dir` (kills cache).
+  **Transitional isolation until this lands:** TASK-0066 nix-portable (bwrap) runs yazelix
+  nix-isolated with no host `/nix` TODAY. (NOT nix-user-chroot — verified blocked by AppArmor raw-
+  userns restriction on this box; NOT a custom `store-dir` — kills the binary cache.)
 - [ ] **TASK-0065 (host prerequisites — DETECT/VERIFY only, NOT meta components):** Corrected
   classification (owner 2026-06-23): the nvidia-open kernel driver (pre-meta install; OS-global
   `/lib/modules`/DKMS) and the `system:` build-floor (`build-essential`/`cmake`/`pkg-config`/
@@ -855,6 +863,17 @@ symlink; dry-run-safe, applied via `envctl install`/`env-install-loop`. Sequence
   irreducible** (see TASK-0064) — do not declare it a permanent `system:` component. Net: there is
   NO list of "sanctioned system installs" to formalize; only host prerequisites to verify and the
   `/nix` removal to finish.
+- [ ] **TASK-0066 (H, MEDIUM) — nix-portable isolation (makes nix meta-owned, kills host `/nix`):**
+  Replace the root-owned Determinate `/nix` install with **`nix-portable`** (`DavHau/nix-portable`,
+  bubblewrap-backed) so nix runs fully isolated in a meta/home-owned store (`~/.nix-portable`),
+  host `/nix` gone, binary cache preserved (logical `/nix/store` kept via bwrap namespace), `nixGL`
+  for ghostty GPU. **Verified prerequisite on this box (2026-06-23):** use **nix-portable (bwrap)**,
+  NOT nix-user-chroot — `apparmor_restrict_unprivileged_userns=1` blocks raw userns (`unshare
+  --user` fails) but `bwrap` 0.11.1 works (sanctioned AppArmor profile). Steps: install
+  nix-portable → `~/.local/bin`; re-provision yazelix + nu/zellij/mise via nix-portable; migrate
+  off the Determinate install; remove the host `/nix`. Unblocks running yazelix nix-isolated TODAY
+  (before the TASK-0064 rust-core de-nix lands). Aligns with the meta-owned-isolated nix strategy
+  in the ADR §Corrected classification.
 
 ## Key finding (carried)
 
