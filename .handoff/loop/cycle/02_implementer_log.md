@@ -95,3 +95,59 @@ clippy run (GUI crate may carry inherited lints per prior cycles, unrelated to t
 - **Lock is machine-generated** (`cargo run -p envctl -- lock`), not hand-edited; `lock --check`
   exits 0 at 74 components.
 - Sequential single-implementer; no grit/parallel mode, no symbols claimed.
+
+## Re-run note (guardian FAIL → fixed) — 2 fixes
+
+### F1 (guardian-routed): tag resolution via api.github.com is rate-limit-fragile
+- **Fix (manifest-TOML only):** in the nix-portable install hook, replaced the
+  `TAG=$(curl ...api.github.com/.../releases/latest | grep tag_name ...)` JSON-API line + its
+  hard-abort guard with the web `/releases/latest` redirect (no API, no unauth rate-limit) and a
+  last-known-good fallback:
+  ```
+  TAG="$(curl -fsSLI -o /dev/null -w '%{url_effective}' 'https://github.com/DavHau/nix-portable/releases/latest' 2>/dev/null | grep -oE 'v[0-9]+$')"
+  [ -n "$TAG" ] || TAG="v012"
+  ```
+- **Verified on-box:** the redirect resolves to `TAG=v012` from this box (the JSON API still 403s),
+  so the install hook no longer aborts. URL build / `rm -rf DEST` / curl→DEST / chmod / symlink
+  unchanged. detect/remove/wiring unchanged.
+
+### F2 (NEW bug surfaced by the now-working on-box install — implementer-fixed, same component scope)
+- **Symptom:** install SUCCEEDED (real 68 MB / 68062412-byte artifact downloaded to
+  `.toolchains/nix-portable/bin/nix-portable`, symlink + executable correct) but the component went
+  `[unhealthy]` — `auto-detect`: "installed but verify failed".
+- **Root cause:** the original verify hook (`file "$f" | grep -q 'ELF'`, per the U1 libgccjit idiom)
+  is WRONG for this artifact. **nix-portable ships as a self-extracting `#!/usr/bin/env bash`
+  wrapper around an embedded ELF payload** — so `file` classifies it as "Bourne-Again shell script,
+  ASCII text executable", NOT "ELF". The download was correct; the verify assertion was wrong, so a
+  correct install was permanently marked unhealthy.
+- **Fix (manifest-TOML only, same component):** verify now checks file-exists + executable + the
+  **embedded ELF magic** (binary-safe grep), which proves a real ~68 MB nix-portable binary landed
+  (rules out an HTML error/redirect stub) without depending on the misleading `file` class:
+  ```
+  f="$M/.toolchains/nix-portable/bin/nix-portable"; [ -x "$f" ] && LC_ALL=C grep -qa $'\x7fELF' "$f"
+  ```
+  Confirmed `\x7fELF` magic IS present in the installed artifact; shebang is `#!/usr/bin/env bash`.
+  This stays NO-mutation / NO-network (the architect's verify constraint).
+
+### Re-verify (real output, post-both-fixes)
+- On-box `cargo run -p envctl -- install nix-portable` — **SUCCEEDS** (`✓ nix-portable Install`,
+  `wiring applied`, exit 0).
+- `readlink -f ~/.local/bin/nix-portable` → `/home/drdave/Desktop/meta/.toolchains/nix-portable/bin/nix-portable`
+  (resolves into `$META_ROOT/.toolchains`). Artifact `-x` YES, size 68062412 bytes (~68 MB),
+  embedded `\x7fELF` magic present. Did NOT run `nix-portable nix ...` (would bwrap-bootstrap a store).
+- `cargo run -p envctl -- auto-detect | grep nix-portable` — **`✓ nix-portable (meta-owned) [healthy] wired`**.
+- `cargo run -p envctl -- doctor` — nix-portable NOT flagged (healthy); the only doctor flag is a
+  pre-existing unrelated `weave` out-of-bound `.cargo/bin` install.
+- `cargo run -p envctl -- lock` then `lock --check` — `✓ ... matches (74 components)` exit 0 (the
+  install-script + verify bodies changed → content_hash regenerated; count unchanged at 74).
+- `cargo fmt --all -- --check` — clean. `cargo clippy -p envctl-engine -p envctl -- -D warnings` —
+  clean. `ci/gates/no-c.sh` PASS, `shape.sh` PASS, `loop-state.sh` PASS.
+- **Component is left INSTALLED + healthy on the box** (the desired end state); the artifact is real.
+
+### Note on F2 scope
+F2 was a real correctness bug (a correct install reads unhealthy forever), surfaced only because the
+F1 fix made the on-box install actually run. It's a localized fix to the SAME component's verify hook
+(no Rust, no new dep, no design change), so I fixed it rather than handing back — it's exactly the
+kind of "failing verify you can see is yours to fix before handoff" case. The architect's "ELF"
+intent is preserved (the payload IS an ELF); only the detection method changed from the `file`
+classifier (wrong for a polyglot script+ELF) to the embedded-magic grep.

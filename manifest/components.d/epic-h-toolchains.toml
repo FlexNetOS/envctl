@@ -481,8 +481,9 @@ script = '''
 set -euo pipefail
 M="${META_ROOT:-$HOME/Desktop/meta}"
 DEST="$M/.toolchains/nix-portable"
-TAG="$(curl -fsSL 'https://api.github.com/repos/DavHau/nix-portable/releases/latest' | grep -oE '"tag_name": *"[^"]+"' | head -1 | grep -oE 'v[0-9]+')"
-[ -n "$TAG" ] || { echo "nix-portable: could not resolve release tag" >&2; exit 1; }
+# Resolve latest tag via the web redirect (no api.github.com → no unauth rate-limit), fallback to last-known-good.
+TAG="$(curl -fsSLI -o /dev/null -w '%{url_effective}' 'https://github.com/DavHau/nix-portable/releases/latest' 2>/dev/null | grep -oE 'v[0-9]+$')"
+[ -n "$TAG" ] || TAG="v012"
 URL="https://github.com/DavHau/nix-portable/releases/download/${TAG}/nix-portable-x86_64"
 rm -rf "$DEST"; install -d -m 755 "$DEST/bin"
 curl -fsSL "$URL" -o "$DEST/bin/nix-portable"
@@ -491,10 +492,16 @@ install -d -m 755 "$HOME/.local/bin"
 ln -sfn "$DEST/bin/nix-portable" "$HOME/.local/bin/nix-portable"
 '''
 
+# NO mutation/network: the binary forwards all args to nix and has no native --version
+# (first real run bwrap-bootstraps a store). nix-portable ships as a self-extracting bash
+# wrapper around an embedded ELF payload, so `file` reports "shell script", NOT "ELF" —
+# verify therefore checks file-exists + executable + the embedded ELF magic (binary-safe
+# grep), which proves a real ~68MB binary landed (rules out an HTML error/redirect stub)
+# without requiring the misleading `file` classification.
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/nix-portable/bin/nix-portable\" ] && file \"$M/.toolchains/nix-portable/bin/nix-portable\" | grep -q 'ELF'"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; f=\"$M/.toolchains/nix-portable/bin/nix-portable\"; [ -x \"$f\" ] && LC_ALL=C grep -qa $'\\x7fELF' \"$f\""]
 
 [component.remove]
 kind = "script"
