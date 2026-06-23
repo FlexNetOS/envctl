@@ -162,7 +162,7 @@ description = "Rust toolchain manager (cargo/rustc). Foundation for rtk + cuda-o
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export CARGO_HOME=\"$M/.toolchains/cargo\" RUSTUP_HOME=\"$M/.toolchains/rustup\" PATH=\"$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH\"; rustup --version >/dev/null 2>&1 && cargo --version >/dev/null 2>&1 && rustc --version >/dev/null 2>&1"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export CARGO_HOME=\"$M/.toolchains/cargo\" RUSTUP_HOME=\"$M/.toolchains/rustup\" PATH=\"$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH\"; rustup --version >/dev/null 2>&1 && cargo --version >/dev/null 2>&1 && rustc --version >/dev/null 2>&1 && rustup default 2>/dev/null | grep -q '^nightly'"]
 [component.install]
 kind = "script"
 script = '''
@@ -171,7 +171,12 @@ M="${META_ROOT:-$HOME/Desktop/meta}"
 export CARGO_HOME="$M/.toolchains/cargo"
 export RUSTUP_HOME="$M/.toolchains/rustup"
 mkdir -p "$CARGO_HOME" "$RUSTUP_HOME" "$HOME/.cargo/bin"
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --default-toolchain stable
+# Owner standing directive: the workstation/meta Rust default is ALWAYS nightly (latest).
+# A repo with its own rust-toolchain.toml (e.g. envctl pinned 1.96.0) still overrides this for
+# its own builds — the global default does not change a repo's pinned channel.
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --default-toolchain nightly
+export PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"
+rustup default nightly
 for tool in cargo cargo-clippy cargo-fmt cargo-miri clippy-driver rls rust-analyzer rust-gdb rust-gdbgui rust-lldb rustc rustdoc rustfmt rustup; do
   ln -sfn "$CARGO_HOME/bin/rustup" "$HOME/.cargo/bin/$tool"
 done
@@ -189,11 +194,13 @@ export CARGO_HOME="$M/.toolchains/cargo"
 export RUSTUP_HOME="$M/.toolchains/rustup"
 mkdir -p "$CARGO_HOME" "$RUSTUP_HOME" "$HOME/.cargo/bin"
 if [ ! -x "$CARGO_HOME/bin/rustup" ]; then
-  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --default-toolchain stable
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --default-toolchain nightly
 fi
 export PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"
 rustup self update
-rustup update stable
+# Keep the meta default on the LATEST nightly (owner directive: always latest toolchain).
+rustup update nightly
+rustup default nightly
 for tool in cargo cargo-clippy cargo-fmt cargo-miri clippy-driver rls rust-analyzer rust-gdb rust-gdbgui rust-lldb rustc rustdoc rustfmt rustup; do
   ln -sfn "$CARGO_HOME/bin/rustup" "$HOME/.cargo/bin/$tool"
 done
