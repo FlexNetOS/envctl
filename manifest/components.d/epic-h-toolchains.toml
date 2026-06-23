@@ -454,3 +454,69 @@ set -u
 M="${META_ROOT:-$HOME/Desktop/meta}"
 rm -rf "$M/.toolchains/libgccjit"
 '''
+
+# ── nix-portable ── meta-owned, bwrap-backed isolated nix. A single static binary
+# (DavHau/nix-portable) into .toolchains/nix-portable/bin + ~/.local/bin/nix-portable.
+# It bwrap-mounts a home-dir store (default ~/.nix-portable) as /nix inside a namespace,
+# keeping the logical /nix/store (binary cache works) WITHOUT a host root /nix.
+# Runtime needs `bwrap` (0.11.1 present, AppArmor-sanctioned); on this box raw
+# unprivileged userns is blocked (apparmor_restrict_unprivileged_userns=1), so the
+# `NP_RUNTIME=bwrap` runtime selector is the working path. ADDITIVE only — this NEVER
+# touches the host /nix; the destructive migration (remove host /nix, de-nix yazelix)
+# is deferred to supervised TASK-0067. Epic H TASK-0066. Repo: DavHau/nix-portable.
+[[component]]
+id = "nix-portable"
+name = "nix-portable (meta-owned)"
+description = "Bwrap-backed isolated nix: the DavHau/nix-portable static binary into .toolchains/nix-portable/bin + ~/.local/bin/nix-portable. Provides nix without a host root /nix store (home-dir store, logical /nix/store preserved so the binary cache works). Needs bwrap at runtime (NP_RUNTIME=bwrap). Additive — never touches host /nix; destructive /nix migration deferred to supervised TASK-0067. Repo: DavHau/nix-portable."
+
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/nix-portable/bin/nix-portable\" ] && [ \"$(readlink -f \"$HOME/.local/bin/nix-portable\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/nix-portable/bin/nix-portable\")\" ]"]
+
+[component.install]
+kind = "script"
+login_shell = true
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/nix-portable"
+rm -rf "$DEST"; install -d -m 755 "$DEST/bin"
+# Authenticated fetch (gh = 5000/hr, gh is a meta-owned Epic-H component TASK-0057) — avoids the
+# 60/hr unauth GitHub API 403 (the box's unauth quota is exhausted). Falls back to the web
+# /releases/latest redirect + curl (no unauth JSON API) with a last-known-good tag only if gh is
+# absent/unauthed.
+if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
+  gh release download --repo DavHau/nix-portable --pattern 'nix-portable-x86_64' --output "$DEST/bin/nix-portable" --clobber
+else
+  TAG="$(curl -fsSLI -o /dev/null -w '%{url_effective}' 'https://github.com/DavHau/nix-portable/releases/latest' 2>/dev/null | grep -oE 'v[0-9]+$')"; [ -n "$TAG" ] || TAG=v012
+  curl -fsSL "https://github.com/DavHau/nix-portable/releases/download/${TAG}/nix-portable-x86_64" -o "$DEST/bin/nix-portable"
+fi
+chmod +x "$DEST/bin/nix-portable"
+install -d -m 755 "$HOME/.local/bin"
+ln -sfn "$DEST/bin/nix-portable" "$HOME/.local/bin/nix-portable"
+'''
+
+# NO mutation/network: the binary forwards all args to nix and has no native --version
+# (first real run bwrap-bootstraps a store). nix-portable is a self-extracting POLYGLOT —
+# a `#!/usr/bin/env bash` wrapper around an embedded ELF — so `file` reports "Bourne-Again
+# shell script, ASCII text executable", NOT "ELF". Verify therefore checks file-exists +
+# executable + `file | grep -qi 'executable'` (matches both the "ASCII text executable"
+# polyglot today and a plain "ELF ... executable" if upstream ever repackages — future-proof).
+[component.verify]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/nix-portable/bin/nix-portable\" ] && file \"$M/.toolchains/nix-portable/bin/nix-portable\" | grep -qi 'executable'"]
+
+[component.remove]
+kind = "script"
+login_shell = true
+script = '''
+set -u
+M="${META_ROOT:-$HOME/Desktop/meta}"
+t="$HOME/.local/bin/nix-portable"; [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/nix-portable" && rm -f "$t"
+rm -rf "$M/.toolchains/nix-portable"
+'''
+
+[component.wiring]
+path_entries = ["~/.local/bin"]

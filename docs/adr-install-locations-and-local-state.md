@@ -79,6 +79,7 @@ genuinely irreducible.
 | **archon** (`/usr/local/bin/archon`, real binary) | FlexNetOS/Archon (**already a `.meta.yaml` peer**) | DRIFT — just symlink `~/.local/bin/archon → meta/Archon/target/release/archon` via `meta-tool-links` (same as `vox`) | EASY |
 | **clang / llvm-21** (apt) | llvm/llvm-project | **prebuilt** `clang+llvm-*-x86_64-linux` tarball → `.toolchains/llvm` (source build is 30–50 GB, impractical) | MEDIUM |
 | **libgccjit** (for `rustc_codegen_gcc`) | rust-lang/gcc (asset) · pinned by rustc_codegen_gcc | **SHIPPED** (TASK-0062, `libgccjit` component) — downloads the prebuilt CI `libgccjit.so` from the `rust-lang/gcc` release `master-${COMMIT}` whose `${COMMIT}` is read from rustc_codegen_gcc's own `libgccjit.version` (reproducible, matches the backend; not floating-latest) → `.toolchains/libgccjit/lib/libgccjit.so` (+ `.so.0` SONAME); exposed via the `GCC_PATH` env seam — runtime `.so`, no `~/.local/bin` symlink. **System GCC NOT required.** | MEDIUM |
+| **nix** (Determinate, host root `/nix`) | DavHau/nix-portable | **COMPONENT SHIPPED — ADDITIVE** (TASK-0066, `nix-portable` component): the `DavHau/nix-portable` static binary (pinned via the releases API) → `.toolchains/nix-portable/bin/nix-portable` + `~/.local/bin` symlink. Gives bwrap-isolated nix (home-dir store, logical `/nix/store` preserved → binary cache works) with **no host root `/nix`**. The **destructive** migration (remove host `/nix`, re-provision yazelix off Determinate) is **DEFERRED to supervised TASK-0067** — it touches the owner's live interactive shell (yazelix runs from `/nix`). | MEDIUM |
 | **CUDA toolkit** (apt → `/usr/local/cuda-13.3`) | NVIDIA (runfile) | `.run --silent --toolkit --toolkitpath=.toolchains/cuda --override` (toolkit → meta; **still needs root** for udev/pkgconfig side-paths). Conda-forge `nvidia-cuda-toolkit` = rootless alt | HARD |
 | **Nsight (`nsys`/`nsys-ui`)** (`/etc/alternatives`) | NVIDIA (bundled in CUDA runfile) | lands under `--toolkitpath/nsight-systems`, or standalone `.run --prefix=.toolchains/nsight-systems` | MEDIUM |
 
@@ -107,6 +108,13 @@ cases." Owner review (and a rigorous why-pass) showed both were cop-outs. The ac
     from-source rebuilds). `ls /nix` on the host returns not-found. ~0% compute overhead,
     ~20 ms one-shot shell-spawn cost. GPU passthrough for ghostty via `nixGL` (path-linker, no
     draw-call interception — 0% framerate cost on the dual RTX 5090s).
+    - **Component SHIPPED (TASK-0066) — ADDITIVE only.** The meta-owned `nix-portable`
+      component (`manifest/components.d/epic-h-toolchains.toml`) installs the static binary into
+      `.toolchains/nix-portable` + `~/.local/bin/nix-portable`; it **never touches the host
+      `/nix`**. The **destructive** migration — removing the host `/nix`, re-provisioning yazelix
+      off Determinate nix, retiring `manifest/nix-yazelix.toml` id=`nix` — is **DEFERRED to
+      supervised TASK-0067** (it mutates the owner's live interactive shell, which runs from
+      `/nix`), mirroring the install-vs-risky-part split used by TASK-0054/0055.
   - **Verified on THIS box (Ubuntu 26.04, kernel 7.0.0-22):** `apparmor_restrict_unprivileged_userns=1`
     is ACTIVE → **raw** unprivileged userns is blocked (`unshare --user --map-root-user` →
     `uid_map: Operation not permitted`); `bwrap` works (0.11.1, sanctioned AppArmor profile).
