@@ -850,8 +850,23 @@ policy change" — both are available and declarable here.
   `../lib/ollama` from its real path). Lock regen 71→72; env integration test extended. Repo:
   ollama/ollama. **Remaining cleanup (separate, sudo):** remove the stale root `/usr/local/bin/ollama`
   real binary (shadowed by the `~/.local/bin` symlink on PATH already) + stop the old 0.30.6 root daemon.
-- [ ] **TASK-0061 (H, MEDIUM):** `llvm/clang-21` component — prebuilt `clang+llvm-*-linux` tarball →
-  `.toolchains/llvm` (source build impractical). Drop apt `clang`/`llvm-21`. Repo: llvm/llvm-project.
+- [x] **TASK-0061 (H, MEDIUM) — DONE 2026-06-23 via PR #175 (MERGED 09:39:19Z, squash `440faee`):**
+  `llvm-clang` component (8th Epic-H tarball→`.toolchains`→`~/.local/bin`) — pins the latest **21.x**
+  release via the GitHub releases API (the `/releases/latest` redirect now points at 22.x — avoided),
+  downloads `LLVM-<ver>-Linux-X64.tar.xz` → `.toolchains/llvm` (`--strip-components=1`), symlinks a
+  **probe-gated** curated set into `~/.local/bin`. REPLACED the pre-existing apt-based `llvm-clang` in
+  `gpu.toml` (the system-depth install being eliminated), id-preserved so `cuda-oxide`/`gpu-stack`
+  `requires` still resolve (last-wins → tarball def authoritative; lock `content_hash b66d8854ad82aa99`,
+  count 72). `LIBCLANG_PATH` env seam added to `run_env` (JSON+shell) + env.rs test. Verified on-box:
+  `✓ llvm-clang [healthy] wired`; clang/llc/llvm-config 21.1.8; `clang -print-resource-dir` →
+  `.toolchains/llvm/lib/clang/21`. **Guardian-driven robustness fix:** the prebuilt `lld`/`ld.lld`
+  link `libxml2.so.2` (box has `.so.16`, ABI-incompatible) → install loop now probes each candidate
+  (`--version` exit 0) before symlinking and self-prunes stale owned symlinks, so `lld`/`ld.lld`
+  auto-drop here (strategic linker is `wild`, TASK-0054; apt lld remains fallback) and `verify` gates
+  on `clang && llvm-config` only. Curated set landed (10): clang, clang++, clang-21, clang-cpp, llc,
+  llvm-ar, llvm-config, llvm-nm, llvm-objcopy, llvm-objdump.
+  **Remaining cleanup (separate, sudo):** `apt remove clang clang-21 llvm-21 …` (meta clang already
+  shadows `/usr/bin` on PATH via `~/.local/bin`).
 - [ ] **TASK-0062 (H, MEDIUM):** `libgccjit` for `rustc_codegen_gcc` — `y.sh`-downloaded CI
   `libgccjit.so` → `.toolchains/libgccjit/lib` (no system GCC build). Repo: rust-lang/rustc_codegen_gcc.
 - [ ] **TASK-0063 (H, HARD):** CUDA toolkit → meta prefix — `.run --silent --toolkit

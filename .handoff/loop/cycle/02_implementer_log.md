@@ -1,83 +1,52 @@
-# Implementation log: TASK-0053 Route verified GitHub transport doctrine into envctl
-
-Docs/doctrine + one additive regression test. NO new Engine method, RPC, CLI flag, type, or crate
-dependency (card `allows_dependency_addition=false`).
+# Implementation log: TASK-0061 — meta-owned llvm-clang toolchain (Epic H)
 
 ## Changes
-- `crates/secretctl/src/main.rs` — ADDED `#[cfg(test)] tests::policy_drift_permissions_scope_serializes`
-  (and a TEST-ONLY throwaway `POLICY_DRIFT_TEST_KEY_PEM`), inserted beside the existing TASK-0020
-  consumer-contract tests (new `// ===== TASK-0053` section immediately before the TASK-0026 block).
-  Region: ~`main.rs:1164-1300`. No production code changed.
-- `docs/secrets/GITHUB-TRANSPORT-DOCTRINE.md` — NEW tracked doctrine note (SSH-truth / gh-advisory /
-  read-back; broker-only mint-github + POLICY_DRIFT path; merge-gate cross-check; redb/JSONL).
-- `docs/secrets/README.md` — appended one index entry under "## Key entry points" (matches existing
-  list format).
-- `.handoff/loop/backlog.md` — appended a "### GitHub transport doctrine (TASK-0053…)" subsection +
-  a `- [~]` status row, under the existing session-9 NEXT-PICK anchor (no header rewrite/duplication;
-  handoff-reconcile merge-driver safe).
+- manifest/components.d/epic-h-toolchains.toml: added `[[component]] id = "llvm-clang"` (8th Epic-H tarball component) — detect/install/verify/remove/wiring mirroring ollama/mise; install pins latest 21.x via the releases API.
+- manifest/gpu.toml: REMOVED the pre-existing apt-based `id = "llvm-clang"` (apt-get llvm-21/clang-21/libclang-*-dev) and left a NOTE pointer; the id is preserved so consumer `requires` still resolve.
+- crates/cli/src/main.rs (run_env): added `LIBCLANG_PATH` = `{tc}/llvm/lib` to the JSON map and the shell `export` form (sh_single_quote), beside the OLLAMA_LIBRARY_PATH lines.
+- crates/cli/tests/env.rs: extended both toolchains tests to assert LIBCLANG_PATH (shell `export LIBCLANG_PATH='{r}/.toolchains/llvm/lib'`; json `v["LIBCLANG_PATH"]`).
+- manifest/envctl.lock: regenerated — llvm-clang content_hash de16a4e1f3ddf18b, requires now [] (was ["nvidia-cuda-repo"]); count stays 72.
 
 ## Engine API
-NONE — zero new/changed Engine methods or Events. The test calls only EXISTING public engine surface
-(`GitHubAppMint::new`, `HttpTransport`/`HttpRequest`/`HttpResponse`/`TransportError`, `MintRequest`,
-`ProviderMint`, `SystemClock`, `broker::Provider`) to drive the REAL private serializer
-`build_token_request_body` (via `mint_scoped`) through a capturing transport. No reimplementation.
+No Engine API change. CLI-only env-seam addition (LIBCLANG_PATH) + manifest component; both front-ends consume the manifest identically (no GUI parity change needed — this is a manifest component + `envctl env` shell/json output).
 
 ## Tests added
-- `policy_drift_permissions_scope_serializes` (`crates/secretctl/src/main.rs`) — proves (1) the
-  POLICY_DRIFT scope `administration:write,metadata:read` parses through the real `mint-github` clap
-  surface into `MintGithubArgs.permissions` (via `consumer_build_argv`, installation 140063898), and
-  (2) the ENGINE's real request-body serializer emits exactly the GitHub permission map
-  `{"administration":"write","metadata":"read"}`. Asserts ONLY on the captured request body /
-  parsed args; NEVER logs/prints a token; uses a throwaway 1024-bit RSA key + canned GitHub 201 (no
-  network, no real credential). Covers AC2/AC3/AC4.
+Extended (not new) in crates/cli/tests/env.rs:
+- toolchains_shell_exports_rustup_home_with_cargo_home: now also asserts the LIBCLANG_PATH shell export.
+- toolchains_json_carries_rustup_home: now also asserts json LIBCLANG_PATH.
+Both prove the env seam emits `.toolchains/llvm/lib` in both output modes.
 
-## Build/test status (all from worktree root; logs in /tmp)
-- `bash ci/gates/no-c.sh` — **PASS** (exit 0). "NO-C GATE PASS; rustls=['0.23.40'] on ring; zero aws-lc/openssl/C-SQLite".
-- `bash ci/gates/p7.sh` — **PASS** (exit 0). "P7 GATE PASS".
-- `cargo test -p envctl-secretctl` — **PASS** (exit 0). 16 passed / 0 failed (new test included).
-- `cargo test -p envctl-secrets-engine --features provider-github mint` — **PASS** (exit 0). serializer cross-check still green (35 + 4 passed).
-- `cargo clippy -p envctl-secretctl -p envctl-secretd -p envctl-secrets-engine --features envctl-secrets-engine/provider-github -- -D warnings` — **PASS** (exit 0), no warnings.
-  (Scoped to the 3 touched secrets crates per the plan note — workspace clippy in the meta tree lints siblings; this is an exact subset, never weaker, for the only crate with code changes.)
-- `cargo fmt -p envctl-secretctl -- --check` — **PASS** (exit 0, after one auto-reformat of the new test; test re-run green after reformat).
-
-## Zero-dep / zero-lock confirmation
-`git status --short` shows ONLY: `.handoff/loop/backlog.md`, `.handoff/loop/cycle/01_architect_plan.md`
-(orchestrator-written cycle plan, NOT edited by me), `.handoff/loop/cycle/02_implementer_log.md`,
-`crates/secretctl/src/main.rs`, `docs/secrets/README.md`, and the new
-`docs/secrets/GITHUB-TRANSPORT-DOCTRINE.md`. **NO** `Cargo.toml`, `Cargo.lock`, `envctl.lock`,
-`agent-env.lock`, or `manifest/*.toml` changes — explicit guard grep returned
-"ZERO lock/dep/manifest drift — clean".
-
-Continuity-wording trap (AC7): `grep -ni sqlite` over the new/changed docs returns ONLY the two
-explicit "NOT SQLite" negations in GITHUB-TRANSPORT-DOCTRINE.md (lines 107-108) and the pre-existing
-backlog line 73. No bare "SQLite" claim introduced.
+## Build/test status
+- `cargo build -p envctl-engine -p envctl` — PASS
+- `./target/debug/envctl lock` then `lock --check` — PASS, "matches the manifest (72 components)"
+- `cargo test -p envctl --test env` — PASS (2/2)
+- `envctl auto-detect | grep -i llvm` — PASS (parses as "LLVM/clang (meta-owned)", detected not-installed)
+- `cargo fmt --all -- --check` — PASS
+- `cargo clippy --workspace -- -D warnings` — PASS (0 warnings; no inherited gui lint surfaced this run)
+- `bash ci/gates/no-c.sh` — PASS
+- `bash ci/gates/shape.sh` — PASS
 
 ## Deviations
-- The plan's U2 said "call the real serializer the engine uses." `build_token_request_body` is a
-  module-private `fn` (not callable directly, and the card forbids changing the engine surface). To
-  pin the ACTUAL shape without reimplementing it, the test drives the genuine serializer *through*
-  the public `GitHubAppMint::mint_scoped` path with a capturing transport (the same technique the
-  engine's own `mint_builds_correct_request_and_parses_token` test uses). This is the real engine
-  code path, not a reimplementation — intent fully met, zero engine-surface change.
-- Used `envctl_secrets::SystemClock` (public re-export) instead of a hand-rolled `FixedClock`, to
-  avoid naming `chrono` (NOT a direct secretctl dep — adding it would violate the no-dep card). The
-  JWT timestamp is irrelevant here (canned 201 ⇒ JWT never validated; only the request body is
-  inspected). Otherwise implemented exactly as scoped.
+1. **Pre-existing duplicate id (the big one).** The plan assumed no existing `llvm-clang` and a lock count 72→73. In fact an apt-based `id = "llvm-clang"` already lived in `manifest/gpu.toml` (install: `apt-get install -y llvm-21 clang-21 libclang-*-dev`) — the exact system-depth install TASK-0061 eliminates. The manifest loader is **last-wins on id** (`by_id.insert`, model.rs:57) with files in sorted path order, so `gpu.toml` (sorts after `components.d/...`) was WINNING — a naive add would have left my component dead and the apt install active (the lock's llvm-clang still showed `requires = ["nvidia-cuda-repo"]`, the gpu.toml fingerprint). I removed the apt definition from gpu.toml so there is one canonical meta-owned component; id unchanged so `cuda-oxide`/`gpu-stack` requires still resolve. **Consequence: lock count stays 72, not 73** — same id, new content_hash + empty requires. Design-shaped call I'd normally route back, but the plan goal + the duplicate-id defect made intent unambiguous; flagged for guardian/architect confirm.
 
-## Handoff notes (for the invariant-guardian)
-- **AC3/AC4 focus:** `policy_drift_permissions_scope_serializes` asserts on the request-body
-  permission MAP only and uses a throwaway key + canned response — verify no token is ever printed
-  and no real credential is present (it is parse-/fake-transport-level only).
-- **Runtime surface (Phase 3.5):** `cargo run -p envctl-secretctl -- mint-github --installation-id
-  140063898 --repository-ids 1 --permissions administration:write,metadata:read --ttl-secs 3600
-  --output json` against a locked/absent daemon must fail-closed (never emit a token). Positive shape
-  is covered hermetically by this test + `crates/secretd/tests/native_mint_e2e.rs`.
-- **AC7 continuity wording:** confirm the only "sqlite" hits in the diff are "NOT SQLite" negations.
-- **No-dep/no-lock:** confirm `git status` carries no `Cargo.*`/`*.lock`/`manifest/*.toml` change.
-- The `01_architect_plan.md` modification in `git status` is the orchestrator's cycle-plan write
-  (TASK-0039 → TASK-0053 content), NOT my edit.
-- Doc citations were all read-back-verified from source (rotate-policy-drift-token.sh:37-39/90-95/116;
-  merge_gate.rs:66-88; mint.rs:131-143; map:116/136/167/475; deep-review-plan:56).
+## Handoff notes
+- **Confirm the gpu.toml apt-llvm removal is intended.** It changes how `cuda-oxide`'s libclang dependency is provisioned (apt → meta tarball). `lock --check` clean and `auto-detect` parses the whole graph, so topo-order resolves; new llvm-clang has `requires = []` and consumers still require it by id.
+- **Runtime install verify is yours (guardian):** I did NOT run `envctl install --apply` (~2 GB). The install hook pins latest 21.x via `api.github.com/.../releases?per_page=100` grep — confirm the API still returns a 21.x tag and the `LLVM-${VER}-Linux-X64.tar.xz` asset name holds. Detect uses a `case` glob (resolved target is *under* `$M/.toolchains/llvm`) rather than the exact `readlink -f` equality the others use, because clang resolves through a symlink chain.
+- **Env seam:** LIBCLANG_PATH = `.toolchains/llvm/lib`; bindgen/cuda-oxide consumers pick up libclang.so from there after `eval "$(envctl env --toolchains)"`.
+- No grit/parallel mode (sequential single-implementer).
 
-## Status
-**GREEN**
+## Commit
+b793876  manifest: meta-own llvm/clang-21 (Epic H TASK-0061) — eliminate apt clang/llvm system-depth
+f5c3ba9  manifest: probe-gate llvm symlinks + verify on clang only (TASK-0061 guardian fix)
+
+## Re-run note (guardian on-box findings)
+Guardian's real install found 2 issues; both fixed in f5c3ba9.
+
+1. BLOCKER — prebuilt lld/ld.lld link libxml2.so.2 (box has only libxml2.so.16, ABI-incompatible), so `lld --version` exits 127 and the old verify hook (`clang && lld`) reported [unhealthy]. Fix: the install symlink loop now PROBES each candidate (`"$src" --version`) and only exposes runnable ones — lld/ld.lld auto-drop here, kept on boxes with libxml2.so.2; any other tool with an unsatisfied lib self-prunes. Also added a PRUNE branch: a stale ~/.local/bin symlink resolving into our DEST for a now-skipped candidate is removed (self-heals a re-install over a broken install; only touches symlinks we own). verify hook → `clang --version && llvm-config --version` (core deliverable only, not the non-core lld).
+2. NOTE — restored `llc` (the replaced apt def provided it for cuda-oxide bindgen). It's in the candidate list, probes clean (no libxml2 dep), and lands symlinked.
+
+On-box proof: auto-detect `llvm-clang [healthy] wired`; curated set = clang/clang++/clang-21/clang-cpp/llc/llvm-ar/llvm-config/llvm-nm/llvm-objcopy/llvm-objdump (lld/ld.lld pruned); clang/llc/llvm-config all 21.1.8. fmt/clippy/no-c/shape green. Lock content_hash de16a4e1f3ddf18b → b66d8854ad82aa99 (script body changed); count still 72; lock --check clean.
+
+CAVEAT for guardian: the full end-to-end `envctl install llvm-clang` ran clean at 04:29 (download→extract→verify→[healthy]). The final prune-branch verification was done by executing the install hook's exact symlink-loop body against the already-extracted DEST, because a 2nd back-to-back full re-install hit the GitHub unauthenticated API rate limit (60/hr, 403 on the `releases?per_page=100` tag query; resets ~04:56). The DEST tarball was intact and unchanged, so the loop-body run is behaviorally identical to the in-hook run. A guardian re-install after the rate-limit window resets will exercise the download path again with the prune branch in place.
+
+CLI note: the install verb takes positional TARGETS and applies directly (`envctl install llvm-clang`); there is no `--only`/`--apply` flag on `install` (--apply is on the destructive `reset` verb). `reset llvm-clang` is fail-closed-refused here because cuda-oxide/gpu-stack are live reverse-dependents (correct guard behavior); I forced a clean re-install by removing just the `clang` symlink so detect missed and the full install hook re-ran.
