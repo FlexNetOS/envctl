@@ -1,17 +1,17 @@
 # Loop state — envctl agenticOS consolidation (Epics A–E)
 
 # --- forge-loop ledger (schema fields the loop reads in Phase-0) ---
-session_started: 2026-06-13
+session_started: 2026-06-23
 loop: agenticOS-consolidation (.handoff/loop/backlog.md, Epics A–E; design = .handoff/decisions/ADR-0001)
 branch: develop   # work happens in FRESH worktrees off develop -> PR -> auto-promote to master
 worktree: (per-cycle: meta/.worktrees/<slug>/envctl off develop)
 cycle_budget: 1   # heavy-context resume sessions — 1 cohesive build cycle then hand off
 wrap_every: 5   # batch boundary: run reaper + wrap-up + evolution-steward every N completed cycles (no per-task pause)
 last_wrapup_total: 28   # no batch boundary this session (29-28=1 < wrap_every=5); last HAND-OFF wrap-up 2026-06-23 after TASK-0039 merged
-cycles_this_session: 1   # RESUME SESSION 2026-06-22: cycle = TASK-0053 (reset from prior session)
-cycles_total: 29   # 28 previous cycles + TASK-0053 (PR #164 armed, not yet merged)
-last_item: TASK-0053 (GitHub transport doctrine) — DONE via PR #164 (MERGED 2026-06-23T04:37:54Z onto develop, master synced)
-status: HANDOFF 2026-06-22 — TASK-0053 merged/done; resume picks the NEXT backlog item
+cycles_this_session: 3   # RESUME 2026-06-23 (owner: pick next 3): EASY-batch-1 (gh/wild/kache PR#170 MERGED), TASK-0058 (nu+zellij), TASK-0059 (mise)
+cycles_total: 32   # 29 + EASY-batch-1 (PR#170) + TASK-0058 + TASK-0059
+last_item: TASK-0059 (mise) — Epic H EASY tier applied+verified on box (gh/wild/kache/nu/zellij/mise all meta-owned healthy)
+status: ACTIVE 2026-06-23 — Epic H EASY tier converged. Remaining: wild/kache WIRING (0054/0055, verified-separate), archon (0056 BLOCKED — meta/Archon not cloned), apt/nix cleanup. boundary check: 32-28=4 < wrap_every 5
   Cycle = TASK-0053. Guardian PASS (0 blocking); docs/doctrine + 1 regression test, NO new code surface.
   PR #164 (FlexNetOS/envctl) MERGED 2026-06-23T04:37:54Z (squash a7d96ff onto develop; master synced) —
   merged during this session's handoff write, so reconciled to DONE in-session. Runtime fail-closed verified
