@@ -1,56 +1,65 @@
-# Cycle artifact — Architect plan: TASK-0066 (nix-portable, ADDITIVE component only)
+# Cycle artifact — Architect plan: TASK-0054 (wild linker wiring)
 
 VERDICT: GO
 
-## Scope (orchestrator-bounded)
-ADDITIVE half only: meta-owned `nix-portable` Epic-H component (download DavHau/nix-portable static
-binary → `.toolchains/nix-portable/bin/nix-portable` + `~/.local/bin/nix-portable` symlink). The
-DESTRUCTIVE migration (remove host `/nix`, re-provision yazelix off Determinate nix) is DEFERRED to a
-SUPERVISED follow-up card (TASK-0067) — it touches the owner's LIVE interactive shell (yazelix runs
-from `/nix`). Mirrors the TASK-0054/0055 install-vs-risky-part split.
+## Summary
+Wire **wild** as the local cargo linker (via `clang --ld-path=wild`) by writing a linker section to
+the **meta-root** `$META_ROOT/.cargo/config.toml` (local-dev only; CI clones repos standalone so it
+never sees this file). Delivered by EXTENDING the existing `wild-linker` component (NOT a new one) so
+install/detect/verify/remove manage both the binary and the config as one reversible unit. The cycle
+is gated by a **build-verification gate**: write config → full `cargo build` MUST pass AND use wild →
+keep; else revert + mark blocked. mold-drop DEFERRED (sudo + separate concern → follow-up card).
 
-## Authoritative download
-- Repo: `DavHau/nix-portable`; latest stable tag **`v012`**; asset **`nix-portable-x86_64`** (~68 MB).
-- Pin via releases API (mirror gh/llvm discipline): `TAG=$(curl -fsSL api.github.com/repos/DavHau/nix-portable/releases/latest | grep -oE '"tag_name": *"[^"]+"' | head -1 | grep -oE 'v[0-9]+')`.
-- URL: `https://github.com/DavHau/nix-portable/releases/download/${TAG}/nix-portable-x86_64`.
-- Runtime needs `bwrap` (0.11.1 present, AppArmor-sanctioned); `NP_RUNTIME=bwrap` selector (raw userns
-  blocked by `apparmor_restrict_unprivileged_userns=1`). Default store `~/.nix-portable`. NO env seam.
+## Config location (owner doctrine)
+`$META_ROOT/.cargo/config.toml` = `/home/drdave/Desktop/meta/.cargo/config.toml` (absent today;
+`~/.cargo/config.toml` absent). NOT `~/.cargo`/`~/.rustup`/system-depth. Runtime artifact at meta-root
+(like `.toolchains/`), outside the envctl git repo — only the manifest component def is committed.
+
+## Canonical syntax (confirmed vs wild docs; Wild 0.9.0 installed, clang meta-owned TASK-0061)
+```
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-Clink-arg=--ld-path=wild"]
+```
 
 ## Unit ledger (completeness contract)
-- **U1** `manifest/components.d/epic-h-toolchains.toml` :: new `[[component]] id="nix-portable"` —
-  mirror the **mise** block (single static binary). detect: `[ -x DEST/bin/nix-portable ]` + symlink
-  resolves to DEST. install (login_shell): `M="${META_ROOT:-$HOME/Desktop/meta}"`; DEST=`$M/.toolchains/nix-portable`;
-  pin TAG via API; `mktemp -d`+`trap`; `rm -rf "$DEST"`; `install -d -m 755 "$DEST/bin"`; curl asset →
-  `$DEST/bin/nix-portable`; `chmod +x`; `ln -sfn ... ~/.local/bin/nix-portable`. verify (NO mutation/network —
-  binary passes all args to nix, no native --help/--version; first real run bwrap-bootstraps a store):
-  file-exists + executable + `file "$f" | grep -q 'ELF'` (libgccjit idiom). remove: symlink-ownership-guarded
-  (`[ -L t ] && readlink t | grep -q "$M/.toolchains/nix-portable" && rm -f t`) + `rm -rf "$M/.toolchains/nix-portable"`
-  (NEVER touches host /nix). wiring: `path_entries = ["~/.local/bin"]`. Comment: bwrap runtime + NP_RUNTIME=bwrap.
-- **U2** `manifest/envctl.lock` :: new `[components.nix-portable]` (content_hash, requires=[], resolved="");
-  count **73 → 74** (additive). Regen via `cargo run -p envctl -- lock`; `lock --check` exits 0.
-- **U3** `docs/adr-install-locations-and-local-state.md` :: §System-depth convergence — mark nix-portable
-  component SHIPPED (additive) + destructive migration DEFERRED to SUPERVISED TASK-0067.
-- **U4** (orchestrator, NOT implementer) `.handoff/loop/backlog.md` — file `- [!!]` SUPERVISED TASK-0067
-  for the deferred destructive migration (re-provision yazelix via nix-portable; migrate ~/.bashrc
-  auto-enter + nix/home-manager/yazelix components off Determinate; retire `manifest/nix-yazelix.toml`
-  id="nix" + `/nix/nix-installer uninstall` — ONLY in a human-supervised window).
-
-## run_env / env.rs: NOT touched (justified)
-nix-portable self-manages `~/.nix-portable` (default `$HOME`); no meta-owned lib-path redirect like
-OLLAMA_LIBRARY_PATH/LIBCLANG_PATH/GCC_PATH. Implementer must NOT add a gratuitous NP_LOCATION/NP_RUNTIME export.
+- **U1** `epic-h-toolchains.toml` :: `wild-linker` `[component.install]` — after binary install+symlink,
+  write `$M/.cargo/config.toml` with the linker section; back up any pre-existing file to
+  `config.toml.pre-wild.bak`; idempotent (write-if-absent / overwrite-our-section).
+- **U2** same :: `[component.detect]` — extend to ALSO assert `$M/.cargo/config.toml` contains the
+  `--ld-path=wild` line (in addition to the binary-symlink check).
+- **U3** same :: `[component.verify]` — prove wiring: clang+wild on PATH, config parses, a build links
+  via wild (`cargo build -v` shows `--ld-path=wild`).
+- **U4** same :: `[component.remove]` + file header (lines 6–9) + name/description — remove ALSO strips
+  the linker section (or restores `.bak`) → no override; header updated to "wiring included + verified".
+- **U5** `manifest/envctl.lock` :: `[components.wild-linker] content_hash` regen (from 044b76e16bd48a7c).
+- **U6** `.handoff/loop/backlog.md` :: append deferred mold-drop follow-up (apt removal + ai-clis
+  RUSTFLAGS strip + drop mold-linker from ai-clis requires + re-lock).
+- **GATE** (process): write config → `cargo build` green AND `--ld-path=wild` observed → keep; red →
+  revert (remove config section) + re-build to confirm healthy + mark TASK-0054 blocked, DON'T commit.
 
 ## Invariants (all PASS)
-- no-C trust boundary: artifact is a `.toolchains/` runtime binary, NOT a Cargo dep → no-c.sh unaffected.
+- no-C: wild/clang are build TOOLING (the linker), never linked into the dep graph → no-c.sh unaffected;
+  no new crate dep.
 - one rustls/ring-only: no dep change.
-- engine single non-printing lib: no engine code; declarative component only.
-- destructive fail-closed/dry-run: component is purely additive; remove is self-guarded; NEVER touches /nix.
-- rust-native/no drift: sanctioned meta-owned-binary pattern (gh/mise/ollama/llvm precedent).
-- id collision: `manifest/nix-yazelix.toml` has id="nix" (Determinate installer, out of scope); new id
-  `nix-portable` is distinct/additive (grep: no pre-existing nix-portable id).
+- engine single non-printing lib: no engine code; manifest component only.
+- destructive fail-closed/dry-run: config write is apply-gated (only `envctl install`, not auto-detect/
+  doctor); backup-before-write; reversible remove; the BUILD GATE reverts a bad config before done.
+- rust-native/no drift: `.cargo/config.toml` is canonical cargo TOML, not foreign source.
+- NO ~/.cargo/~/.rustup/system-depth: config at $META_ROOT/.cargo.
+- CI safety: meta-root config is outside the per-repo CI clone → CI builds unchanged.
+
+## mold-drop: DEFER
+mold refs: `dev-tools.toml` mold-linker (apt), `ai-clis.toml` codex RUSTFLAGS (`-fuse-ld=mold`,
+command -v guarded), `envctl.lock` ai-clis requires. Dropping apt = sudo; the codex RUSTFLAGS would
+conflict with --ld-path=wild → strip in the follow-up. Defer all to keep this cycle scoped + honor
+"verify builds first".
 
 ## Runtime surface
-- `envctl auto-detect` lists `nix-portable` (parses + rostered) — read-only, safe.
-- `envctl lock --check` exits 0, "74 components".
-- On-box after `install --apply`: `doctor` healthy+wired; `~/.local/bin/nix-portable` → DEST; ELF executable.
-- Excluded from verify/guardian-required surface: functional `nix-portable nix --version` (bwrap-bootstraps
-  a store/network on first run).
+1. `$META_ROOT/.cargo/config.toml` exists with the linker section.
+2. `cargo build -v -p envctl 2>&1 | grep -- '--ld-path=wild'` returns the clang link cmd; build exits 0.
+3. `envctl auto-detect`/`doctor` shows wild-linker healthy (extended detect: binary + config).
+
+## Open question (non-blocking → folded into mold-drop follow-up)
+ai-clis codex hooks inject `-fuse-ld=mold` via RUSTFLAGS; with --ld-path=wild that's conflicting/wasteful
+— strip in the deferred mold-drop follow-up. Harmless to this cycle's gate (gate builds are envctl).

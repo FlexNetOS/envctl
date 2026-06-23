@@ -3,10 +3,13 @@
 # replacing an apt/system install. See docs/adr-install-locations-and-local-state.md
 # (§System-depth convergence plan) and .handoff/loop/backlog.md Epic H.
 #
-# Install-only by default: components that ALSO change build behavior (wild as the
-# linker, kache as RUSTC_WRAPPER) install the binary here but DO NOT auto-wire the
-# global build config — wiring is a separate, verified step so an apply can never
-# break the workspace's own builds.
+# Install-only by default: components that ALSO change build behavior install the
+# binary here. Wiring that changes the global build config is gated behind a build-
+# verification step so an apply can never silently break the workspace's own builds.
+# wild (the linker) is now FULLY WIRED + verified (Epic H TASK-0054): its install
+# writes the meta-root $META_ROOT/.cargo/config.toml linker section and a full
+# `cargo build` was confirmed to link via `clang --ld-path=wild` before it landed.
+# kache (RUSTC_WRAPPER) remains install-only — its wiring is a separate step.
 
 # ── gh (GitHub CLI) ── replaces apt `gh` (/usr/bin/gh). Pure tarball, additive.
 [[component]]
@@ -56,17 +59,20 @@ rm -rf "$M/.toolchains/gh"
 path_entries = ["~/.local/bin"]
 
 # ── wild (linker) ── owner-preferred replacement for mold. crates.io pkg = `wild-linker`,
-# binary = `wild`. INSTALL-ONLY: wiring it as the cargo linker (clang + --ld-path) is a
-# separate verified step (see Epic H TASK-0054) so an apply can't break builds.
+# binary = `wild`. FULLY WIRED (Epic H TASK-0054): install ALSO writes the meta-root
+# $META_ROOT/.cargo/config.toml linker section (`linker = "clang"` +
+# `-Clink-arg=--ld-path=wild`) so local cargo builds link via wild; detect/verify assert
+# the wiring; remove strips it (restoring any pre-wild backup). A full `cargo build` was
+# confirmed to link through `clang --ld-path=wild` before this landed (build-verify gate).
 [[component]]
 id = "wild-linker"
-name = "wild linker (meta-owned, install-only)"
-description = "Fast Rust linker (davidlattimore/wild) via `cargo install --locked wild-linker` into .toolchains/wild. Owner-preferred over mold. Install-only — global linker wiring is a separate step."
+name = "wild linker (meta-owned, wired + verified)"
+description = "Fast Rust linker (davidlattimore/wild) via `cargo install --locked wild-linker` into .toolchains/wild, wired as the local cargo linker via the meta-root .cargo/config.toml (clang + --ld-path=wild). Owner-preferred over mold. Wiring is verified — a full cargo build links through wild before it lands; remove restores the prior config."
 
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/wild/bin/wild\" ] && [ \"$(readlink -f \"$HOME/.local/bin/wild\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/wild/bin/wild\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/wild/bin/wild\" ] && [ \"$(readlink -f \"$HOME/.local/bin/wild\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/wild/bin/wild\")\" ] && [ -f \"$M/.cargo/config.toml\" ] && grep -q -- '--ld-path=wild' \"$M/.cargo/config.toml\""]
 
 [component.install]
 kind = "script"
@@ -78,12 +84,59 @@ DEST="$M/.toolchains/wild"
 cargo install --locked wild-linker --root "$DEST"
 install -d -m 755 "$HOME/.local/bin"
 ln -sfn "$DEST/bin/wild" "$HOME/.local/bin/wild"
+# Wire wild as the local cargo linker via the meta-root .cargo/config.toml. This file
+# lives OUTSIDE the envctl repo (it is a runtime artifact at $META_ROOT, like .toolchains/);
+# only this component def is committed. CI clones each repo standalone so it never sees it.
+install -d -m 755 "$M/.cargo"
+CFG="$M/.cargo/config.toml"
+MARK="# managed by envctl wild-linker component (Epic H TASK-0054)"
+if [ -f "$CFG" ] && ! grep -qF "$MARK" "$CFG"; then
+  # Pre-existing, foreign config — back it up once before we take over the file.
+  cp -p "$CFG" "$CFG.pre-wild.bak"
+fi
+# Idempotent: always (re)write our managed file with exactly the linker section.
+cat > "$CFG" <<EOF
+$MARK
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-Clink-arg=--ld-path=wild"]
+EOF
 '''
 
 [component.verify]
-kind = "command"
-command = "bash"
-args = ["-lc", "PATH=\"$HOME/.local/bin:$PATH\"; wild --version"]
+kind = "script"
+login_shell = true
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+export PATH="$HOME/.local/bin:$PATH"
+# Bypass any interactive `grep` shell-function wrapper (rtk/ugrep hook in login shells):
+# `command grep` always invokes the real binary so piped greps in this hook are robust.
+g() { command grep "$@"; }
+# 1) tools resolve
+wild --version
+clang --version >/dev/null
+# 2) the managed config exists and carries the wild linker section
+CFG="$M/.cargo/config.toml"
+[ -f "$CFG" ] && g -q -- '--ld-path=wild' "$CFG"
+# 3) prove the wiring actually links via wild. Build a tiny throwaway crate in a /tmp dir
+#    (outside the meta tree so it never gets pulled into the meta workspace) and apply the
+#    meta-root linker config EXPLICITLY via `cargo --config <path>`. Confirm the verbose link
+#    line carries `--ld-path=wild`. Self-contained target-dir; cleaned on exit.
+tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+mkdir -p "$tmp/proj/src"
+cat > "$tmp/proj/Cargo.toml" <<EOF
+[package]
+name = "wild-wire-probe"
+version = "0.0.0"
+edition = "2021"
+[[bin]]
+name = "wild-wire-probe"
+path = "src/main.rs"
+EOF
+echo 'fn main() {}' > "$tmp/proj/src/main.rs"
+( cd "$tmp/proj" && cargo build -v --config "$CFG" --target-dir "$tmp/td" 2>&1 ) | g -q -- '--ld-path=wild'
+'''
 
 [component.remove]
 kind = "script"
@@ -93,6 +146,18 @@ set -u
 M="${META_ROOT:-$HOME/Desktop/meta}"
 t="$HOME/.local/bin/wild"; [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/wild" && rm -f "$t"
 rm -rf "$M/.toolchains/wild"
+# Strip the wild linker wiring. If we backed up a pre-existing foreign config, restore it;
+# otherwise remove our managed file so there is no leftover linker override. Self-guarded:
+# only touch a config that carries OUR marker (never clobber a foreign config we never wrote).
+CFG="$M/.cargo/config.toml"
+MARK="# managed by envctl wild-linker component (Epic H TASK-0054)"
+if [ -f "$CFG" ] && grep -qF "$MARK" "$CFG"; then
+  if [ -f "$CFG.pre-wild.bak" ]; then
+    mv -f "$CFG.pre-wild.bak" "$CFG"
+  else
+    rm -f "$CFG"
+  fi
+fi
 '''
 
 [component.wiring]
