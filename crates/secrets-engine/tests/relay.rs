@@ -174,6 +174,9 @@ fn engine(
         Box::new(upstream),
         #[cfg(feature = "provider-github")]
         Box::new(envctl_secrets::mint_github::NoopHttpTransport),
+        Box::new(envctl_secrets::broker::UnprovenGate),
+        Box::new(envctl_secrets::SystemClockTrustedTime),
+        envctl_secrets::Topology::OnBox,
     )
     .expect("with_seams must construct")
 }
@@ -1268,6 +1271,9 @@ fn engine_with_upstream(
         upstream,
         #[cfg(feature = "provider-github")]
         Box::new(envctl_secrets::mint_github::NoopHttpTransport),
+        Box::new(envctl_secrets::broker::UnprovenGate),
+        Box::new(envctl_secrets::SystemClockTrustedTime),
+        envctl_secrets::Topology::OnBox,
     )
     .expect("with_seams must construct")
 }
@@ -1421,6 +1427,9 @@ fn relay_swap_wall_rollback_within_window_is_denied_by_boottime() {
         Box::new(cap.clone()),
         #[cfg(feature = "provider-github")]
         Box::new(envctl_secrets::mint_github::NoopHttpTransport),
+        Box::new(envctl_secrets::broker::UnprovenGate),
+        Box::new(envctl_secrets::SystemClockTrustedTime),
+        envctl_secrets::Topology::OnBox,
     )
     .expect("with_seams");
 
@@ -1600,6 +1609,9 @@ fn build_remote_engine(
         Box::new(cap),
         #[cfg(feature = "provider-github")]
         Box::new(envctl_secrets::mint_github::NoopHttpTransport),
+        Box::new(envctl_secrets::broker::UnprovenGate),
+        Box::new(envctl_secrets::SystemClockTrustedTime),
+        envctl_secrets::Topology::OnBox,
     )
     .expect("with_seams must construct");
     let (sink, rx) = EventSink::channel();

@@ -43,7 +43,10 @@ pub use mint_github::{
     GithubMintParams, HttpRequest, HttpResponse, HttpTransport, NoopHttpTransport, TransportError,
     MAX_JWT_TTL_SECS,
 };
-pub use seam::{Clock, ProviderMint, RealUsbProbe, SystemClock, Upstream, UsbProbe};
+pub use seam::{
+    Clock, OperatorBoxTrustedTime, ProviderMint, RealUsbProbe, SystemClock, SystemClockTrustedTime,
+    TrustedTime, Upstream, UsbProbe,
+};
 
 #[cfg(feature = "provider-github")]
 use std::collections::HashMap;
@@ -197,6 +200,20 @@ struct EngineInner {
     // dyn-dispatched seams; the supertrait `: Send + Sync` keeps Engine Send+Sync.
     clock: Box<dyn Clock>,
     usb: Box<dyn UsbProbe>,
+    /// Deployment topology (Profile A on-box vs Profile B VPS). Selects how `presence_proven()`
+    /// resolves the egress gate: `OnBox` keeps the on-box USB/Seed probe (default, byte-identical);
+    /// `Vps` resolves through the injected `presence_gate` instead. Default `OnBox`.
+    topology: Topology,
+    /// The Profile-B (VPS) egress presence gate — the operator-box presence-token gate
+    /// (`broker::VpsPresenceGate`), fed by the daemon's authorizer link. Consulted ONLY when
+    /// `topology == Vps`; default builds inject the fail-closed `broker::UnprovenGate` and never
+    /// consult it. The single typed choke point (REQ-SEC-13): a substitute factor can never be
+    /// bolted beside `decide()`.
+    presence_gate: Box<dyn broker::PresenceGate>,
+    /// External trusted-time source (OI-SM-3). `SystemClockTrustedTime` (always `Some`) on-box;
+    /// `OperatorBoxTrustedTime` (None when stale/unverified) on a VPS. The presence-token verifier
+    /// refuses to issue/accept a token when this returns `None`.
+    trusted_time: Box<dyn TrustedTime>,
     /// The native sub-token minter, LATE-BOUND on vault unlock (DD-1, Option A). At startup and
     /// while Locked this is `NoMint` (every mint falls through to the proxy-swap path). The daemon
     /// reads the App-credential secret from the now-unlocked vault on unlock, builds a
@@ -236,6 +253,23 @@ struct EngineInner {
 pub enum Unlock {
     Usb,
     Passphrase(Zeroizing<String>),
+}
+
+/// Where `secretd` is running, which selects the egress presence factor (SERVER-MODE §5.1, Profile
+/// A vs B). `OnBox` (the default) keeps the existing on-box USB/Seed possession probe — default
+/// builds are byte-identical. `Vps` substitutes the operator-box presence-token authorizer
+/// ([`broker::VpsPresenceGate`] + [`OperatorBoxTrustedTime`]): the daemon runs OFF the box that
+/// holds the USB, so possession is proven by a short-lived, Ed25519-signed presence token pushed
+/// over an mTLS link instead of a local USB probe.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Topology {
+    /// Profile A: the daemon runs on the operator box that physically holds the USB/Seed. The
+    /// egress gate resolves through the on-box possession probe (unchanged).
+    #[default]
+    OnBox,
+    /// Profile B: the daemon runs on a VPS. The egress gate resolves through the injected
+    /// [`broker::PresenceGate`] (the VPS presence-token gate), NOT a local USB probe.
+    Vps,
 }
 
 #[derive(Debug)]
@@ -321,6 +355,13 @@ impl Engine {
             // TASK-0020: the default (non-daemon) build has no GitHub egress ⇒ fail-closed no-op.
             #[cfg(feature = "provider-github")]
             Box::new(mint_github::NoopHttpTransport),
+            // TASK-0033 Profile-B seams — defaults are Profile A (on-box): a fail-closed
+            // never-proven VPS gate (never consulted while topology==OnBox), the local clock as
+            // trusted time, and OnBox topology. The daemon installs the VPS variants when it is
+            // configured for a VPS.
+            Box::new(broker::UnprovenGate),
+            Box::new(SystemClockTrustedTime),
+            Topology::OnBox,
         )
     }
 
@@ -330,6 +371,7 @@ impl Engine {
     /// TASK-0020: under `provider-github` this also takes `github_transport`, the HTTP egress seam for
     /// the per-call `mint_github_token` path (the daemon passes `DaemonHttpTransport`; tests a fake;
     /// the non-daemon default is `NoopHttpTransport`).
+    #[allow(clippy::too_many_arguments)]
     pub fn with_seams(
         paths: paths::Paths,
         store: Box<dyn vault::Store>,
@@ -338,6 +380,13 @@ impl Engine {
         provider: Box<dyn ProviderMint>,
         upstream: Box<dyn Upstream>,
         #[cfg(feature = "provider-github")] github_transport: Box<dyn mint_github::HttpTransport>,
+        // TASK-0033 (Profile B): the egress presence gate consulted when `topology == Vps`, the
+        // external trusted-time source (OI-SM-3), and the deployment topology. Profile-A callers
+        // pass `UnprovenGate` + `SystemClockTrustedTime` + `Topology::OnBox` (the gate is then never
+        // consulted, so the default build is byte-identical).
+        presence_gate: Box<dyn broker::PresenceGate>,
+        trusted_time: Box<dyn TrustedTime>,
+        topology: Topology,
     ) -> anyhow::Result<Engine> {
         let owner_uid = current_uid();
         Ok(Engine {
@@ -350,6 +399,9 @@ impl Engine {
                 store,
                 clock,
                 usb,
+                topology,
+                presence_gate,
+                trusted_time,
                 provider: RwLock::new(provider),
                 upstream,
                 #[cfg(feature = "provider-github")]
@@ -2597,6 +2649,17 @@ impl Engine {
     /// the *network* factor is cached, because the per-request egress path can't afford a ~1-2s SSH
     /// probe per request.
     fn presence_proven(&self) -> anyhow::Result<bool> {
+        // Profile B (VPS): resolve through the injected presence gate (the operator-box
+        // presence-token gate). RE-RESOLVED on every call (FS-S23: the engine never caches a gate
+        // result across swaps), so a token expiring between swaps flips the gate to absent. `decide`
+        // treats anything other than `Present` as fail-closed.
+        if self.inner.topology == Topology::Vps {
+            return Ok(matches!(
+                self.inner.presence_gate.resolve(),
+                crate::broker::GateState::Present
+            ));
+        }
+        // Profile A (on-box) — UNCHANGED (default builds are byte-identical).
         #[cfg(feature = "seed-factor")]
         {
             if std::env::var_os("ENVCTL_SEED_PUBKEY").is_some() {
@@ -4121,6 +4184,9 @@ mod ca_tests {
             Box::new(NullUpstream),
             #[cfg(feature = "provider-github")]
             Box::new(crate::mint_github::NoopHttpTransport),
+            Box::new(broker::UnprovenGate),
+            Box::new(SystemClockTrustedTime),
+            Topology::OnBox,
         )
         .expect("with_seams");
         let (sink, rx) = EventSink::channel();
@@ -4806,6 +4872,9 @@ mod native_mint_tests {
             Box::new(NullUpstream),
             #[cfg(feature = "provider-github")]
             Box::new(crate::mint_github::NoopHttpTransport),
+            Box::new(broker::UnprovenGate),
+            Box::new(SystemClockTrustedTime),
+            Topology::OnBox,
         )
         .expect("with_seams");
         let (sink, rx) = EventSink::channel();
@@ -5214,6 +5283,9 @@ mod native_mint_tests {
                 status,
                 body: body.to_string(),
             }),
+            Box::new(broker::UnprovenGate),
+            Box::new(SystemClockTrustedTime),
+            Topology::OnBox,
         )
         .expect("with_seams");
         let (sink, rx) = EventSink::channel();
@@ -5527,6 +5599,9 @@ mod native_mint_tests {
                 delete_status,
                 seen: seen.clone(),
             }),
+            Box::new(broker::UnprovenGate),
+            Box::new(SystemClockTrustedTime),
+            Topology::OnBox,
         )
         .expect("with_seams");
         let (sink, rx) = EventSink::channel();

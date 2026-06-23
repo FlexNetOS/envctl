@@ -31,6 +31,15 @@ pub trait TrustedTime: Send + Sync {
     fn now_ms(&self) -> Option<i64>;
 }
 
+/// Forward through an `Arc` so the daemon can hold an `Arc<OperatorBoxTrustedTime>` (to push
+/// attestations from the authorizer task) AND pass a `Box::new(arc.clone())` into `with_seams` —
+/// both sides share ONE trusted-time source.
+impl<T: TrustedTime + ?Sized> TrustedTime for std::sync::Arc<T> {
+    fn now_ms(&self) -> Option<i64> {
+        (**self).now_ms()
+    }
+}
+
 /// Profile A trusted-time: the local wall clock is authoritative on a box the operator controls, so
 /// this always returns `Some(now)`. The engine default (Profile B installs
 /// [`OperatorBoxTrustedTime`] instead, which returns `None` when stale/unverified).

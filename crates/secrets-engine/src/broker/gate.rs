@@ -41,6 +41,15 @@ pub trait PresenceGate: Send + Sync {
     fn resolve(&self) -> GateState;
 }
 
+/// Forward through an `Arc` so the daemon can hold an `Arc<VpsPresenceGate>` (to feed verified
+/// tokens from the async authorizer task) AND pass a `Box::new(arc.clone())` into `with_seams` —
+/// both the engine read path and the authorizer write path then share ONE gate.
+impl<G: PresenceGate + ?Sized> PresenceGate for std::sync::Arc<G> {
+    fn resolve(&self) -> GateState {
+        (**self).resolve()
+    }
+}
+
 /// Map a resolved [`GateState`] to the `gate_absent_since_ms` value `decide()` consumes.
 ///
 /// [`GateState::Unproven`] collapses to `AbsentSince(now_ms)` (REQ-SEC-13: treated exactly
