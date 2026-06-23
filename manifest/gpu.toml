@@ -43,6 +43,10 @@ name = "CUDA toolkit 13.3 (meta-owned)"
 # The old apt toolkit is removed by the owner separately (`sudo apt-get remove -y
 # cuda-toolkit-13-3 && sudo apt-get autoremove -y`) — a sudo step kept out of every hook.
 description = "CUDA toolkit (nvcc, cuBLAS/cuDNN, nsys/ncu) from NVIDIA's runfile into .toolchains/cuda (toolkit-only, no-sudo, no-driver). Replaces the apt cuda-toolkit-13-3 system-depth install. Owns the cuda env shell block (meta-prefix first, apt fallback)."
+# rust-native GPU stack: the toolkit feeds `cuda-oxide` (Rust→PTX via nightly), so the rust
+# toolchain is provisioned first. (Replaces the dropped apt `nvidia-cuda-repo` ordering dep — the
+# runfile is self-contained — and keeps the topo invariant `rustup < cuda-toolkit`.)
+requires = ["rustup"]
 gpu_required = true
 [component.detect]
 kind = "command"
