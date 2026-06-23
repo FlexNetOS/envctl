@@ -105,6 +105,11 @@ content_hash = "11f7017702ce9809"
 requires = []
 resolved = ""
 
+[components.gh-cli]
+content_hash = "021c7130376f6582"
+requires = []
+resolved = ""
+
 [components.ghostty]
 content_hash = "ebb42fe2d9cd9fcb"
 requires = []
@@ -207,6 +212,11 @@ resolved = ""
 
 [components.just]
 content_hash = "ef31dda12267cbd2"
+requires = []
+resolved = ""
+
+[components.kache]
+content_hash = "a9d993833b550c02"
 requires = []
 resolved = ""
 
@@ -363,6 +373,11 @@ resolved = ""
 
 [components.wasmer]
 content_hash = "9b42a3bc38d065bc"
+requires = []
+resolved = ""
+
+[components.wild-linker]
+content_hash = "044b76e16bd48a7c"
 requires = []
 resolved = ""
 
