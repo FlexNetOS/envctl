@@ -995,14 +995,17 @@ policy change" — both are available and declarable here.
   RUSTFLAGS env > config rustflags — and silently bypass wild); removed the `mold-linker` apt
   component (`dev-tools.toml`); lock 74→73. Verified: codex-cli + wild-linker `[healthy] wired`,
   meta-tree build links via wild. **Owner sudo follow-up:** `sudo apt-get remove -y mold`.
-- [ ] **TASK-0071 (H, EASY) — HuggingFace CLI → meta (owner 2026-06-23, overlooked):** the
-  HuggingFace CLI is NOT installed at all (confirmed: no `huggingface-cli`, no `huggingface_hub`).
-  Migrate it to the meta prefix. **NAME COLLISION (critical):** HF's new CLI binary is `hf`, which
-  collides with the handoff continuity kernel `hf` (`~/.local/bin/hf`) — so expose the HF tool as
-  **`huggingface-cli`** (the still-supported classic name), NEVER `hf`. It is a Python tool
-  (`huggingface_hub`); install meta-owned via a uv-tool / venv under `.toolchains` (same pattern as
-  `pytorch-venv`), symlink `huggingface-cli` → `~/.local/bin`. (gh CLI was already migrated —
-  TASK-0057, `~/.local/bin/gh`→`.toolchains/gh` — only its apt copy needs the sudo removal.)
+- [~] **TASK-0071 (H, EASY) — BUILT 2026-06-23 (PR armed; tick `- [x]` on MERGE) — HuggingFace CLI
+  → meta:** added a `huggingface-cli` component (`epic-h-toolchains.toml`): isolated venv at
+  `$M/.toolchains/huggingface` (pytorch-venv idiom under .toolchains) → `pip install huggingface_hub`
+  → symlink `~/.local/bin/huggingface-cli`. **FINDING (verified-by-doing, corrects the task premise):**
+  in `huggingface_hub` 1.x (1.20.1) the classic `huggingface-cli` binary is a **DEAD deprecation stub**
+  ("no longer works. Use `hf`") — the working CLI is `hf`, which collides with the handoff kernel
+  `~/.local/bin/hf`. Honored the OWNER INTENT (working HF CLI under the non-colliding classic name) by
+  symlinking the classic name to the WORKING `hf` entry point (`…/huggingface/bin/hf`); the CLI script
+  does not gate on its own filename, so `huggingface-cli version`/`env` work. `hf` is NEVER placed on
+  `~/.local/bin` (kernel's own 9.6M `hf` confirmed untouched). Runtime-verified: `✓ [healthy] wired`,
+  `huggingface-cli version`=1.20.1; lock 77 comp; 6 gates green. (gh CLI already migrated — TASK-0057.)
 - [ ] **TASK-0072 (H, MEDIUM) — ollama + models → meta; shimmy/ruvllm swap is the exit (owner
   2026-06-23):** ollama is officially superseded by **shimmy + ruvllm** (the rust upgrade) but is
   NOT removed yet (corrects TASK-0060 cleanup). Now: (a) migrate ollama's MODELS store into meta

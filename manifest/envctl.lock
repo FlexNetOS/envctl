@@ -215,6 +215,11 @@ content_hash = "4ba601bcc9326bb6"
 requires = ["nix"]
 resolved = ""
 
+[components.huggingface-cli]
+content_hash = "6651c01e97c6d8ad"
+requires = []
+resolved = ""
+
 [components.just]
 content_hash = "ef31dda12267cbd2"
 requires = []
