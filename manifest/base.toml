@@ -162,22 +162,46 @@ description = "Rust toolchain manager (cargo/rustc). Foundation for rtk + cuda-o
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "command -v cargo || command -v rustup || [ -x \"$HOME/.cargo/bin/cargo\" ]"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export CARGO_HOME=\"$M/.toolchains/cargo\" RUSTUP_HOME=\"$M/.toolchains/rustup\" PATH=\"$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH\"; rustup --version >/dev/null 2>&1 && cargo --version >/dev/null 2>&1 && rustc --version >/dev/null 2>&1"]
 [component.install]
 kind = "script"
-script = "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+export CARGO_HOME="$M/.toolchains/cargo"
+export RUSTUP_HOME="$M/.toolchains/rustup"
+mkdir -p "$CARGO_HOME" "$RUSTUP_HOME" "$HOME/.cargo/bin"
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --default-toolchain stable
+for tool in cargo cargo-clippy cargo-fmt cargo-miri clippy-driver rls rust-analyzer rust-gdb rust-gdbgui rust-lldb rustc rustdoc rustfmt rustup; do
+  ln -sfn "$CARGO_HOME/bin/rustup" "$HOME/.cargo/bin/$tool"
+done
+'''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.cargo/bin:$PATH\"; rustc --version && cargo --version"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export CARGO_HOME=\"$M/.toolchains/cargo\" RUSTUP_HOME=\"$M/.toolchains/rustup\" PATH=\"$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH\"; rustup --version && rustc --version && cargo --version"]
 [component.fix]
-kind = "command"
-command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.cargo/bin:$PATH\"; rustup self update; rustup update stable"]
+kind = "script"
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+export CARGO_HOME="$M/.toolchains/cargo"
+export RUSTUP_HOME="$M/.toolchains/rustup"
+mkdir -p "$CARGO_HOME" "$RUSTUP_HOME" "$HOME/.cargo/bin"
+if [ ! -x "$CARGO_HOME/bin/rustup" ]; then
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --default-toolchain stable
+fi
+export PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"
+rustup self update
+rustup update stable
+for tool in cargo cargo-clippy cargo-fmt cargo-miri clippy-driver rls rust-analyzer rust-gdb rust-gdbgui rust-lldb rustc rustdoc rustfmt rustup; do
+  ln -sfn "$CARGO_HOME/bin/rustup" "$HOME/.cargo/bin/$tool"
+done
+'''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "\"$HOME/.cargo/bin/rustup\" self uninstall -y"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export CARGO_HOME=\"$M/.toolchains/cargo\" RUSTUP_HOME=\"$M/.toolchains/rustup\" PATH=\"$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH\"; rustup self uninstall -y"]
 
 
 [[component]]

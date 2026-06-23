@@ -1,24 +1,31 @@
-# TASK-0017 — component manifest extends · VERDICT: GO
+# TASK-0019 — RealUsbProbe verification · VERDICT: GO
 
 ## Trigger Check
 
-TASK-0017 asks for kasetto-style `extends` composition for envctl component manifests. The agent-env
-crate already contains the reusable no-downgrade model: strip `extends`, load parents recursively,
-merge before deserialization, and fail closed on cycles/depth overflow. The envctl component
-manifest loader currently parses each `*.toml` file directly into `ManifestFile`.
+TASK-0019 says the USB-unlock path still needs a real `RealUsbProbe`, pointing at the old
+`secretd-provisioning-runbook.md` note. That premise is stale at HEAD.
+
+Source truth:
+
+- `crates/secrets-engine/src/seam.rs` implements `RealUsbProbe::keyfile_for`.
+- Default builds return `None` fail-closed.
+- With `--features seed-factor`, `RealUsbProbe` resolves a Cognitum Seed-backed, PARTUUID-bound
+  Ed25519 signature via the pure-Rust HTTPS `seed_factor` backend and returns the 64 bytes as the
+  USB keyfile material.
+- `crates/secretd/src/grpc.rs` forwards USB enrollment through that same seam.
+- `crates/secretd/src/main.rs` injects `RealUsbProbe` into the daemon engine seams.
+- `manifest/env-ctl.toml` builds and rebuilds `envctl-secretd` with `--features seed-factor`, so the
+  installed daemon is USB-unlock-capable while stock Cargo builds remain fail-closed.
 
 ## Design
 
-Add a local-only manifest composition layer in `Registry::load`:
+No Rust implementation is required for `RealUsbProbe`. Close this cycle by proving the existing
+implementation and marking the stale task done with evidence.
 
-- Parse each manifest file as raw `toml::Value`.
-- Accept `extends = "parent.toml"` or `extends = ["base.toml", "team.toml"]`.
-- Resolve relative parent paths from the child manifest's directory.
-- Load parents before the child.
-- Refuse cycles and chains deeper than 8.
-- Merge `[[component]]` arrays by component `id`.
-- For the same component `id`, deep-merge the component table so a child can inherit parent hooks and
-  override only selected fields.
+During verification, the local runner/toolchain path exposed a separate envctl manifest bug:
+`rustup` detect accepted a broken `$HOME/.cargo/bin/cargo` shim. Upgrade the rustup component so the
+actual toolchain state is meta-owned under `$META_ROOT/.toolchains/{cargo,rustup}`, while
+`$HOME/.cargo/bin` is only compatibility symlinks into that owned install.
 
 ## Target Repos
 
@@ -26,15 +33,16 @@ Single repo: envctl. Sequential single-crew path.
 
 Touched surfaces:
 
-- `crates/engine/src/model.rs`
-- `crates/engine/tests/engine.rs`
-- `docs/ARCHITECTURE.md`
-- `docs/KASETTO-FEATURES.md`
-- `docs/ROADMAP.md`
+- `.handoff/loop/backlog.md`
+- `.handoff/loop/loop_state.md`
+- `.handoff/loop/cycle/*`
+- `manifest/base.toml`
+- `manifest/envctl.lock`
 
 ## Non-Goals
 
-- No remote manifest URLs; TASK-0017 has `allows_network=false`, and envctl component manifests are
-  local TOML files.
-- No new dependency.
-- No change to the existing `[[component]]` schema.
+- Do not enable `seed-factor` as a default Cargo feature; the manifest install path owns production
+  enablement and the default fail-closed build is intentional.
+- Do not run a live Seed/network probe; TASK-0019 has `allows_network=false`.
+- Do not downgrade to user-global Rust state; the runner/toolchain repair must preserve meta
+  ownership.

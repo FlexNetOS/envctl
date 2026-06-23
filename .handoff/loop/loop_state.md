@@ -8,10 +8,20 @@ worktree: (per-cycle: meta/.worktrees/<slug>/envctl off develop)
 cycle_budget: 1   # heavy-context resume sessions — 1 cohesive build cycle then hand off
 wrap_every: 5   # batch boundary: run reaper + wrap-up + evolution-steward every N completed cycles (no per-task pause)
 last_wrapup_total: 23   # batch boundary satisfied 2026-06-22 after TASK-0015; next due at cycles_total 28
-cycles_this_session: 6   # RESUME SESSION 2026-06-22/23: cycles = TASK-0038, TASK-0007, TASK-0008, TASK-0015, TASK-0016, TASK-0017
-cycles_total: 25   # 24 previous cycles + TASK-0017 (PR #151)
-last_item: TASK-0017 (component manifest extends) — DONE, PR #151
+cycles_this_session: 7   # RESUME SESSION 2026-06-22/23: cycles = TASK-0038, TASK-0007, TASK-0008, TASK-0015, TASK-0016, TASK-0017, TASK-0019
+cycles_total: 26   # 25 previous cycles + TASK-0019 verification
+last_item: TASK-0019 (real RealUsbProbe) — VERIFIED already satisfied, handoff PR pending
 status: CYCLE COMPLETE 2026-06-23
+  Cycle = TASK-0019. VERIFIED already satisfied 2026-06-23. The backlog's referenced
+  `_done/secretd-provisioning-runbook.md` premise was stale: `RealUsbProbe` now delegates to
+  `seed_factor::keyfile_for` under `--features seed-factor`, returning a PARTUUID-bound Cognitum
+  Seed Ed25519 signature as USB keyfile material over bounded pure-Rust HTTPS. `secretd` forwards
+  USB enrollment through that same seam, injects `RealUsbProbe` into the live daemon engine seams,
+  and `manifest/env-ctl.toml` builds/rebuilds `envctl-secretd --features seed-factor` for the
+  installed daemon. No live Seed/network probe was run because TASK-0019 is `allows_network=false`.
+  Verification: seed-factor unit tests, seed-factor `secretd` build, fake-probe USB keyslot unlock
+  test, engine+CLI build, p7/no-c/shape/enable/kdf/agent-env/loop-state/harness-scripts gates.
+
   Cycle = TASK-0017. PR #151 MERGED 2026-06-23T00:28:20Z (merge commit
   a398e5ab5a37173ca6d50a5d096847e195638e77). Added local kasetto-style `extends`
   composition to envctl component manifests: parent manifests load before children, relative parent

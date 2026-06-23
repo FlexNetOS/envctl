@@ -382,8 +382,17 @@ preset; multi-host resolver; 5 cmd + 4 MCP-merge additive transforms; 3 lock mod
 All WIP branches were merged to develop + verified green (build, 197 tests, no-c/shape/enable,
 fmt, clippy). Remaining follow-ups extracted from each:
 
-- [ ] **TASK-0019 (fix-secretd):** U1 USB-unlock path needs a real `RealUsbProbe` (crash-loop +
-  durable store + passphrase path already fixed/merged). See `.handoff/loop/_done/secretd-provisioning-runbook.md`.
+- [x] **TASK-0019 (fix-secretd):** U1 USB-unlock path needs a real `RealUsbProbe` (crash-loop +
+  durable store + passphrase path already fixed/merged). DONE 2026-06-23: verified at HEAD that
+  the old `_done/secretd-provisioning-runbook.md` premise is stale. `RealUsbProbe` delegates to the
+  pure-Rust Cognitum Seed `seed_factor` backend under `--features seed-factor`; `secretd` forwards
+  USB enrollment through the same seam and injects `RealUsbProbe` into the live daemon engine; the
+  `env-ctl` manifest install/fix hooks build `envctl-secretd --features seed-factor`. The same
+  closeout fixed the envctl-owned rustup component after verification found a dangling hosted-runner
+  cargo shim: rustup now lives under `$META_ROOT/.toolchains/{cargo,rustup}` and `$HOME/.cargo/bin`
+  is compatibility links only. Verification: seed-factor unit tests, seed-factor `secretd` build,
+  fake-probe USB keyslot unlock test, engine+CLI build, envctl lock check, envctl doctor, and
+  p7/no-c/shape/enable/kdf/agent-env/loop-state/harness-scripts gates.
 - [ ] **TASK-0020 (github-app-mint, P0 — unblocks the `flexnetos_github_app` e2e crown slice):** Expose
   the completed `provider-github` `ProviderMint` (`secrets-engine/src/mint_github.rs`, PR #35, fully
   unit-tested via `FakeTransport`) through `secretd` + `secretctl` so the trusted-writer App can mint
