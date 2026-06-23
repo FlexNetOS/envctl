@@ -977,18 +977,27 @@ policy change" — both are available and declarable here.
   (`/nix/nix-installer uninstall`). **SUPERVISED** because yazelix is the owner's LIVE interactive
   shell — autonomous execution can break the running terminal; needs a human migration window.
   Depends on TASK-0066 (nix-portable installed — DONE).
-- [ ] **TASK-0069 (H, MEDIUM) — make the vault GitHub App the isolated token source — CORRECTED
-  (owner 2026-06-23): NOT owner-gated, the App was never gated.** My earlier "enrollment-blocked
-  404 / needs original app.pem / OWNER ACTION REQUIRED" claim was WRONG — the owner confirms the
-  vault App is **already enrolled (open/closed + min added)** and the USB possession factor (the
-  **Cognitum Seed**, referenced in the `meta-ruvector` crates) is **already mounted at
-  `/run/media/drdave/COGNITUM`**. The real, autonomous-buildable work: (1) **build + install
-  `secretctl` + `secretd` to the meta prefix** (`.toolchains` + `~/.local/bin`) — they are NOT on
-  the box right now (regressed from `~/.cargo/bin`, itself system-depth); file as the Epic-H
-  secrets-stack component; (2) wire the `secretctl mint-github` path (App already enrolled) so
-  Epic-H GitHub fetches can use the App token (more-isolated than the `gh` keyring) and route via
-  `flexnetos_runner` for CI/job dispatch. USB unlock uses the Cognitum Seed over the custody API
-  (see [[cognitum-seed-usb-unlock]]), not the mass-storage mount.
+- [x] **TASK-0069 (H, MEDIUM) — secrets-stack → meta prefix (no-system-depth) — DONE / reconciled
+  2026-06-23 (verified-by-doing).** Primary deliverable shipped + declaratively managed: `manifest/
+  env-ctl.toml` builds `envctl-secretd --features seed-factor` + `envctl-secretctl` with the META
+  cargo (`$M/.toolchains/cargo`), installs both to `$M/.toolchains/secrets/bin`, and symlinks
+  `~/.local/bin/{secretd,secretctl}` — OFF the prior `~/.cargo/bin` system-depth regression (the
+  manifest's own comments cite "Epic H TASK-0069", lines 33/69-70/223). Box-verified: both bins
+  present at `.toolchains/secrets/bin` (7.6M/17.6M) + `~/.local/bin` (no `~/.cargo/bin/secret*`),
+  `env-ctl.service` present, the component DETECT predicate returns true. `secretctl mint-github`
+  verb present (TASK-0020 frozen contract `{"token","expires_at_unix"}`); the vault App is enrolled
+  and the Cognitum Seed is mounted (owner-confirmed). The earlier "enrollment-blocked 404 / OWNER
+  ACTION REQUIRED" claim was WRONG (owner-corrected) — the App was never gated.
+  Carved part-2 (mint-github *fetch wiring*) → **TASK-0077** (non-blocking hardening; the rate-limit
+  liability it would address is ALREADY solved by TASK-0068's authenticated `gh api`).
+- [ ] **TASK-0077 (H, LOW — hardening, non-blocking) — route Epic-H GitHub fetches through the
+  vault App token (more-isolated than the `gh` keyring).** Add a shared fetch-token resolver the
+  Epic-H component install/fix hooks call: prefer `secretctl mint-github --output json` (vault-sealed
+  App key; requires the vault unlocked via the Cognitum Seed possession factor) → fall back to
+  authenticated `gh api` (5000/hr, TASK-0068) → fall back to unauth (60/hr). Optionally route CI/job
+  dispatch via `flexnetos_runner` (fxrun). LOW priority: the rate-limit problem is already solved by
+  TASK-0068; this is purely a token-isolation improvement (App token is narrower-scoped + shorter-TTL
+  than the gh keyring PAT). USB unlock uses the Seed over the custody API (see [[cognitum-seed-usb-unlock]]).
 - [x] **TASK-0070 (H, EASY) — DONE 2026-06-23 via PR #185 (MERGED):** dropped mold now that wild is
   the wired linker (TASK-0054). codex-cli `requires` `mold-linker`→`wild-linker`; removed the
   `-fuse-ld=mold` RUSTFLAGS from the codex install/fix hooks (it would OVERRIDE the wild config —
