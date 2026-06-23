@@ -425,6 +425,7 @@ async fn edge_dpop_swap_accepts_and_rejects() {
         recheck_timing: None,
         require_client_cert: false,
         client_ca_path: None,
+        client_revocations_path: None,
         ingress_caps: None,
     };
     let (addr, handle) =

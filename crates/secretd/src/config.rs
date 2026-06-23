@@ -111,6 +111,8 @@ struct FileEdge {
     /// PR-2b: path to the operator-provisioned remote-clients-CA PEM (required when
     /// `require_client_cert`). NEVER the MITM CA / server cert — a separate trust input (FS-S25).
     client_ca_path: Option<String>,
+    /// PR-2b: optional revocation-set path for hardened mTLS client certs.
+    client_revocations_path: Option<String>,
 }
 
 impl StoreConfig {
@@ -177,6 +179,9 @@ pub struct EdgeSettings {
     /// configured; a `require_client_cert = true` with `None` here is a fail-closed startup `Err`
     /// (enforced in `serve_edge`).
     pub client_ca_path: Option<std::path::PathBuf>,
+    /// PR-2b: optional newline-delimited revocation-set path. Handshakes consult it freshly for each
+    /// connection, so a revoked leaf is rejected on the next accept.
+    pub client_revocations_path: Option<std::path::PathBuf>,
 }
 
 #[cfg(feature = "relay-edge")]
@@ -207,6 +212,7 @@ impl EdgeSettings {
                 bind_addr: None,
                 require_client_cert: false,
                 client_ca_path: None,
+                client_revocations_path: None,
             });
         }
         let bind_raw = env_nonempty("SECRETD_EDGE_BIND_ADDR")
@@ -228,6 +234,9 @@ impl EdgeSettings {
         let client_ca_path = env_nonempty("SECRETD_EDGE_CLIENT_CA_PATH")
             .or(fedge.client_ca_path)
             .map(std::path::PathBuf::from);
+        let client_revocations_path = env_nonempty("SECRETD_EDGE_CLIENT_REVOCATIONS_PATH")
+            .or(fedge.client_revocations_path)
+            .map(std::path::PathBuf::from);
         // Fail-closed at load time too (serve_edge re-checks): requiring a client cert with no CA to
         // verify against would accept any/none — refuse the half-built mTLS config early.
         if require_client_cert && client_ca_path.is_none() {
@@ -241,6 +250,7 @@ impl EdgeSettings {
             bind_addr: Some(bind_addr),
             require_client_cert,
             client_ca_path,
+            client_revocations_path,
         })
     }
 }
