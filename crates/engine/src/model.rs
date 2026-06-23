@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
+const MAX_MANIFEST_EXTENDS_DEPTH: u8 = 8;
+
 /// The loaded set of components, indexed by id, with a dependency-respecting order.
 pub struct Registry {
     by_id: BTreeMap<String, Component>,
@@ -41,11 +43,7 @@ impl Registry {
         }
         files.sort();
         for f in files {
-            let text = std::fs::read_to_string(&f)?;
-            let mf: ManifestFile = toml::from_str(&text).map_err(|e| EngineError::Manifest {
-                file: f.display().to_string(),
-                source: e,
-            })?;
+            let mf = load_manifest_file(&f)?;
             for c in mf.component {
                 // manifest lint: reject literal `~` in Command argv (would not expand).
                 if let Some(crate::component::Hook::Command { args, .. }) = c.remove.as_ref() {
@@ -115,6 +113,170 @@ impl Registry {
         }
         Ok(out)
     }
+}
+
+fn load_manifest_file(path: &Path) -> anyhow::Result<ManifestFile> {
+    let mut visited = Vec::new();
+    let merged = load_manifest_value(path, &mut visited, 0)?;
+    merged.try_into().map_err(|e| {
+        EngineError::Manifest {
+            file: path.display().to_string(),
+            source: e,
+        }
+        .into()
+    })
+}
+
+fn load_manifest_value(
+    path: &Path,
+    visited: &mut Vec<PathBuf>,
+    depth: u8,
+) -> anyhow::Result<toml::Value> {
+    if depth > MAX_MANIFEST_EXTENDS_DEPTH {
+        return Err(anyhow::anyhow!(
+            "manifest extends depth limit exceeded ({MAX_MANIFEST_EXTENDS_DEPTH}) at {}",
+            path.display()
+        ));
+    }
+
+    let canonical = std::fs::canonicalize(path).map_err(|e| {
+        anyhow::anyhow!(
+            "manifest not found: {} (resolved error: {e})",
+            path.display()
+        )
+    })?;
+    if visited.iter().any(|p| p == &canonical) {
+        return Err(anyhow::anyhow!(
+            "circular manifest extends detected involving {}",
+            canonical.display()
+        ));
+    }
+    visited.push(canonical.clone());
+
+    let text = std::fs::read_to_string(&canonical)?;
+    let mut value: toml::Value = toml::from_str(&text).map_err(|e| EngineError::Manifest {
+        file: canonical.display().to_string(),
+        source: e,
+    })?;
+    let parents = extract_manifest_extends(&mut value, &canonical)?;
+
+    let mut merged = toml::Value::Table(Default::default());
+    let base_dir = canonical
+        .parent()
+        .map(Path::to_path_buf)
+        .ok_or_else(|| anyhow::anyhow!("manifest path has no parent: {}", canonical.display()))?;
+    for parent_ref in parents {
+        let parent_path = resolve_manifest_extends_ref(&base_dir, &parent_ref);
+        let parent = load_manifest_value(&parent_path, visited, depth + 1).map_err(|e| {
+            anyhow::anyhow!(
+                "failed to load extended manifest '{}' (extended from {}): {e}",
+                parent_ref,
+                canonical.display()
+            )
+        })?;
+        merged = merge_manifest_values(merged, parent);
+    }
+
+    let out = merge_manifest_values(merged, value);
+    visited.pop();
+    Ok(out)
+}
+
+fn extract_manifest_extends(
+    path_value: &mut toml::Value,
+    path: &Path,
+) -> anyhow::Result<Vec<String>> {
+    let Some(table) = path_value.as_table_mut() else {
+        return Ok(Vec::new());
+    };
+    let Some(raw) = table.remove("extends") else {
+        return Ok(Vec::new());
+    };
+    match raw {
+        toml::Value::String(s) => Ok(vec![s]),
+        toml::Value::Array(items) => items
+            .into_iter()
+            .map(|item| match item {
+                toml::Value::String(s) => Ok(s),
+                other => Err(anyhow::anyhow!(
+                    "manifest extends entries in {} must be strings, got {other:?}",
+                    path.display()
+                )),
+            })
+            .collect(),
+        other => Err(anyhow::anyhow!(
+            "manifest extends in {} must be a string or list of strings, got {other:?}",
+            path.display()
+        )),
+    }
+}
+
+fn resolve_manifest_extends_ref(base_dir: &Path, parent_ref: &str) -> PathBuf {
+    let path = PathBuf::from(parent_ref);
+    if path.is_absolute() {
+        path
+    } else {
+        base_dir.join(path)
+    }
+}
+
+fn merge_manifest_values(base: toml::Value, overlay: toml::Value) -> toml::Value {
+    let toml::Value::Table(mut out) = base else {
+        return overlay;
+    };
+    let toml::Value::Table(overlay_table) = overlay else {
+        return overlay;
+    };
+
+    for (key, overlay_value) in overlay_table {
+        let merged = match (key.as_str(), out.remove(&key), overlay_value) {
+            (
+                "component",
+                Some(toml::Value::Array(base_components)),
+                toml::Value::Array(overlay_components),
+            ) => toml::Value::Array(merge_component_list(base_components, overlay_components)),
+            (
+                _,
+                Some(base_value @ toml::Value::Table(_)),
+                overlay_value @ toml::Value::Table(_),
+            ) => merge_manifest_values(base_value, overlay_value),
+            (_, _, overlay_value) => overlay_value,
+        };
+        out.insert(key, merged);
+    }
+    toml::Value::Table(out)
+}
+
+fn merge_component_list(
+    mut base_components: Vec<toml::Value>,
+    overlay_components: Vec<toml::Value>,
+) -> Vec<toml::Value> {
+    for overlay in overlay_components {
+        let Some(overlay_id) = component_id(&overlay).map(str::to_string) else {
+            base_components.push(overlay);
+            continue;
+        };
+        if let Some(pos) = base_components
+            .iter()
+            .position(|base| component_id(base) == Some(overlay_id.as_str()))
+        {
+            let base = std::mem::replace(
+                &mut base_components[pos],
+                toml::Value::Table(Default::default()),
+            );
+            base_components[pos] = merge_manifest_values(base, overlay);
+        } else {
+            base_components.push(overlay);
+        }
+    }
+    base_components
+}
+
+fn component_id(value: &toml::Value) -> Option<&str> {
+    value
+        .as_table()
+        .and_then(|table| table.get("id"))
+        .and_then(toml::Value::as_str)
 }
 
 /// Kahn topo sort; ties broken by manifest (BTreeMap key) order for determinism.

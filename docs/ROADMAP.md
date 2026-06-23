@@ -128,7 +128,8 @@ The secrets stack has its own phased roadmap spanning **Phases 0–8** with the 
   orphan-prereq removal, unterminated-shell-rc excision to EOF, drop-in shell
   injection); all fixed + regression-tested. See `docs/KASETTO-FEATURES.md` for the
   remaining ranked adoptions (sync modes `--locked/--update`, multi-host source
-  resolver, `extends` composition, universal `--json`, completions [needs network]).
+  resolver, universal `--json`, completions [needs network]). `extends` composition is now adopted
+  for component manifests with local parent paths, cycle/depth guards, and component-id merging.
 
 ---
 

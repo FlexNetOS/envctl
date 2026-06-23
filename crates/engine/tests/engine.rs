@@ -44,6 +44,151 @@ fn manifest_loads_and_topo_sorts() {
 }
 
 #[test]
+fn manifest_extends_merges_components_by_id() {
+    let root = temp_manifest_dir("extends-merge");
+    std::fs::create_dir_all(root.join("profiles")).unwrap();
+    std::fs::write(
+        root.join("profiles/base.toml"),
+        r#"
+[[component]]
+id = "base-only"
+name = "Base Only"
+
+[component.detect]
+kind = "command"
+command = "true"
+
+[[component]]
+id = "overlay"
+name = "Base Name"
+requires = ["base-only"]
+
+[component.detect]
+kind = "command"
+command = "true"
+
+[component.verify]
+kind = "command"
+command = "true"
+"#,
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("child.toml"),
+        r#"
+extends = "profiles/base.toml"
+
+[[component]]
+id = "overlay"
+name = "Child Name"
+requires = []
+
+[component.install]
+kind = "script"
+script = "echo child"
+"#,
+    )
+    .unwrap();
+
+    let reg = Registry::load(&root).expect("extended manifest loads");
+    assert!(
+        reg.get("base-only").is_some(),
+        "parent-only component is inherited"
+    );
+
+    let overlay = reg.get("overlay").expect("overlay component exists");
+    assert_eq!(overlay.name, "Child Name");
+    assert!(
+        overlay.requires.is_empty(),
+        "child requires replaces parent requires"
+    );
+    assert!(matches!(overlay.detect, Some(Hook::Command { .. })));
+    assert!(matches!(overlay.verify, Some(Hook::Command { .. })));
+    assert!(matches!(overlay.install, Some(Hook::Script { .. })));
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn manifest_extends_detects_cycles() {
+    let root = temp_manifest_dir("extends-cycle");
+    std::fs::create_dir_all(root.join("profiles")).unwrap();
+    std::fs::write(
+        root.join("a.toml"),
+        r#"
+extends = "profiles/b.toml"
+[[component]]
+id = "a"
+name = "a"
+"#,
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("profiles/b.toml"),
+        r#"
+extends = "../a.toml"
+[[component]]
+id = "b"
+name = "b"
+"#,
+    )
+    .unwrap();
+
+    let err = match Registry::load(&root) {
+        Ok(_) => panic!("cycle must fail closed"),
+        Err(err) => err,
+    };
+    assert!(
+        err.to_string().contains("circular manifest extends"),
+        "unexpected error: {err:#}"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+#[test]
+fn manifest_extends_enforces_depth_guard() {
+    let root = temp_manifest_dir("extends-depth");
+    std::fs::create_dir_all(root.join("profiles")).unwrap();
+    std::fs::write(root.join("entry.toml"), r#"extends = "profiles/c0.toml""#).unwrap();
+    for i in 0..=9 {
+        let next = if i == 9 {
+            r#"[[component]]
+id = "leaf"
+name = "leaf"
+"#
+            .to_string()
+        } else {
+            format!(r#"extends = "c{}.toml""#, i + 1)
+        };
+        std::fs::write(root.join("profiles").join(format!("c{i}.toml")), next).unwrap();
+    }
+
+    let err = match Registry::load(&root) {
+        Ok(_) => panic!("over-deep chain must fail closed"),
+        Err(err) => err,
+    };
+    assert!(
+        err.to_string()
+            .contains("manifest extends depth limit exceeded"),
+        "unexpected error: {err:#}"
+    );
+
+    let _ = std::fs::remove_dir_all(root);
+}
+
+fn temp_manifest_dir(slug: &str) -> PathBuf {
+    let dir = std::env::temp_dir().join(format!(
+        "envctl-{slug}-{}-{}",
+        std::process::id(),
+        std::thread::current().name().unwrap_or("test")
+    ));
+    let _ = std::fs::remove_dir_all(&dir);
+    std::fs::create_dir_all(&dir).unwrap();
+    dir
+}
+
+#[test]
 fn tagged_enums_round_trip_through_toml() {
     // Exercises every Hook kind and every Guard kind (the brittle serde+toml seam).
     let src = r#"

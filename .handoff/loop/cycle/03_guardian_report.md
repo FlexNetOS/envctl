@@ -1,25 +1,26 @@
-# TASK-0016 — guardian report
+# TASK-0017 — guardian report
 
 ## Verdict: PASS
 
-The change encodes the no-downgrade split between the two lock domains and updates the manifest and
-CI gate to the absorbed agent-env filenames. No new dependency was added. No trust-boundary code path
-was widened.
+The delivered change adopts local kasetto-style `extends` composition for envctl component manifests
+without changing the `[[component]]` schema or adding dependencies.
 
 ## Findings
 
-- PASS: `agent-env.lock` remains the SHA-256 agent-asset lock. The component lock remains the FNV-1a
-  `manifest/envctl.lock`; the change does not mix schemas or hash domains.
-- PASS: `manifest/agent-env.toml` no longer drives `kasetto.yaml` or a deferred external-binary
-  verify path; remaining `kasetto.yaml` mentions are historical context. It drives the built-in
-  `envctl agent` subsystem.
-- PASS: `ci/gates/agent-env.sh` now actually uses the zero-network `--locked` mode it documented.
-- PASS: The regenerated `manifest/envctl.lock` matches the current manifest according to
-  `envctl lock --check`.
+- PASS: `Registry::load` still loads the same manifest roots (`manifest/*.toml` and
+  `manifest/components.d/*.toml`), but each file can now inherit from local parent TOML files before
+  deserialization.
+- PASS: Parent paths are local only and relative paths resolve from the child manifest directory,
+  matching the task's no-network constraint.
+- PASS: Cycle and depth guards fail closed and are covered by integration tests.
+- PASS: Component arrays merge by component `id`; same-id child components deep-merge with the parent
+  table, so inherited hooks survive when only selected fields are overridden.
+- PASS: `envctl lock --check` remains clean against the real manifest.
 
 ## Gate Results
 
-All local gates run on 2026-06-23T00:11:17Z passed:
+All local gates passed:
 
-- fmt, build, agent-env tests, engine tests, clippy
-- agent-env, p7, loop-state, no-c, shape, enable, kdf-feature-off, harness-scripts
+- fmt, engine+CLI build, focused manifest-extends tests, full envctl-engine tests, clippy
+- envctl lock check, p7, loop-state, no-c, shape, enable, kdf-feature-off, harness-scripts,
+  agent-env

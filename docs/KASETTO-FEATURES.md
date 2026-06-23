@@ -137,10 +137,12 @@ org base, a team overlay, and a project config compose into one effective config
   (`MAX_EXTENDS_DEPTH = 8`). Relative `extends` resolve against the parent config's directory;
   relative extends from an HTTP origin are an error.
 
-**Relevance to envctl:** **ADOPT.** envctl already has `components.d/` drop-ins, which is a
-flat overlay; `extends`-style **layered inheritance with identity-keyed merge** would let a
-shared base manifest (org/box-class defaults) be overlaid by a machine-specific manifest
-without copy-paste. The value-level merge + cycle/depth guards are a clean, reusable pattern.
+**Relevance to envctl:** **ADOPTED for component manifests (TASK-0017).** envctl already has
+`components.d/` drop-ins, which are a flat overlay; `extends`-style **layered inheritance with
+identity-keyed merge** now lets a shared base manifest (org/box-class defaults) be overlaid by a
+machine-specific manifest without copy-paste. envctl's manifest loader keeps this local-only for
+component manifests: parent paths are relative or absolute TOML files, cycles/depth overflow fail
+closed, and `[[component]]` arrays merge by component `id`.
 
 ---
 
