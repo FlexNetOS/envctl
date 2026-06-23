@@ -7,11 +7,23 @@ branch: develop   # work happens in FRESH worktrees off develop -> PR -> auto-pr
 worktree: (per-cycle: meta/.worktrees/<slug>/envctl off develop)
 cycle_budget: 1   # heavy-context resume sessions — 1 cohesive build cycle then hand off
 wrap_every: 5   # batch boundary: run reaper + wrap-up + evolution-steward every N completed cycles (no per-task pause)
-last_wrapup_total: 23   # batch boundary satisfied 2026-06-22 after TASK-0015; next due at cycles_total 28
-cycles_this_session: 8   # RESUME SESSION 2026-06-22/23: cycles = TASK-0038, TASK-0007, TASK-0008, TASK-0015, TASK-0016, TASK-0017, TASK-0019, TASK-0021
-cycles_total: 27   # 26 previous cycles + TASK-0021 verification
-last_item: TASK-0021 (node-via-bun follow-up) — VERIFIED already satisfied, handoff PR pending
-status: CYCLE COMPLETE 2026-06-23
+last_wrapup_total: 28   # HAND-OFF wrap-up satisfied 2026-06-23 after TASK-0039 local PASS / PR #162 open
+cycles_this_session: 9   # RESUME SESSION 2026-06-22/23: cycles = TASK-0038, TASK-0007, TASK-0008, TASK-0015, TASK-0016, TASK-0017, TASK-0019, TASK-0021, TASK-0039
+cycles_total: 28   # 27 previous cycles + TASK-0039 local PASS / PR #162 open
+last_item: TASK-0039 (remote-clients CA lifecycle) — LOCAL PASS, PR #162 open; do not hf done until MERGED
+status: HANDOFF 2026-06-23 — TASK-0039 PR #162 open, CI running
+  Cycle = TASK-0039. LOCAL PASS 2026-06-23; PR #162 open
+  (https://github.com/FlexNetOS/envctl/pull/162), CI running. Implemented a DEK-sealed
+  remote-clients CA distinct from the MITM CA; control_plane_client leaves are capped at <=7d;
+  Certs.Renew and Certs.Revoke are wired through secretd; revoke is dry-run/apply+confirm gated,
+  persists cert revocation state, disables a matching remote-client registry row, and appends
+  SHA-256 DER fingerprints to the configured client_revocations_path consumed by PR #158's mTLS
+  verifier. Verification passed locally: fmt, clippy, engine+CLI build, secretctl check,
+  relay-edge daemon check, focused engine/secretd/libSQL tests, no-c/shape/enable/p7/loop-state
+  gates, and full `cargo test --workspace`. NEXT: poll PR #162; if GitHub checks pass, arm/confirm
+  merge, then `hf done TASK-0039 --pr 162 && hf handoff`. Do not remove the PR branch/worktree until
+  GitHub reports state=MERGED.
+
   Cycle = TASK-0021. VERIFIED already satisfied 2026-06-23. The manifest already had the real
   `node-real` carve-out, `group-ai-clis` no longer required `node-via-bun`, and `envctl lock --check`
   passed. Focused engine tests confirmed `node_real_component_exists_with_empty_requires` and

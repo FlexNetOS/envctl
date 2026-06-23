@@ -1,20 +1,39 @@
-# TASK-0021 — implementation log · STATUS: GREEN
+# TASK-0039 — implementation log · STATUS: GREEN
 
 ## Result
 
-No source edit was necessary. The current tree already contains the requested manifest truth-telling
-state:
+Implemented the remote-clients CA lifecycle that remained after PR #158:
 
-- `node-real` exists as a standalone component for real Node 20-24 on n8n boxes.
-- `group-ai-clis` no longer requires `node-via-bun`.
-- The lock file matches the manifest and `envctl lock --check` passes.
+- Added a DEK-sealed `remote-clients CA` that is distinct from the local MITM CA.
+- Rebuilds the remote-clients issuer on unlock and zeroizes it on lock alongside the existing CA.
+- Keeps `control_plane_client` leaves at `ttl_days <= 7`; the default client-leaf TTL is now 7 days.
+- Persists certificate revocation state in both the in-memory store and libSQL store.
+- Implements `Engine::ca_renew` and `Engine::ca_revoke`.
+- Wires `Certs.Renew` and `Certs.Revoke` through `secretd`.
+- On revoke, disables a matching remote-client registry row and appends revoked certificate
+  SHA-256 DER fingerprints to the configured `client_revocations_path` for the PR #158 verifier.
+
+## Deviations
+
+- The existing frozen proto/CLI surface does not return client private key material from
+  `Certs.Issue`. This cycle closes the shipped lifecycle surfaces (CA separation, <=7d mint,
+  renew, revoke, registry disablement, verifier revocation propagation), but a future enrollment
+  packet/export surface would be needed for full out-of-band device provisioning.
 
 ## Verification
 
-- `cargo test -p envctl-engine group_ai_clis_does_not_require_node_via_bun -- --nocapture`
-- `cargo test -p envctl-engine node_real_component_exists_with_empty_requires -- --nocapture`
+- `cargo test -p envctl-secrets-engine ca_ -- --nocapture`
+- `cargo test -p envctl-secretd append_revoked_client_fingerprints_writes_verifier_format -- --nocapture`
+- `cargo test -p envctl-secrets-store-libsql bind_cert_row_shape -- --nocapture`
+- `cargo check -p envctl-secretd --features relay-edge`
+- `cargo check -p envctl-secretctl`
 - `cargo build -p envctl-engine -p envctl`
-- `bash ci/gates/p7.sh`
-- `hf test TASK-0021`
+- `cargo fmt --all -- --check`
+- `cargo clippy --workspace -- -D warnings`
+- `bash ci/gates/no-c.sh`
+- `bash ci/gates/shape.sh`
+- `bash ci/gates/enable.sh`
+- `bash ci/gates/p7.sh && bash ci/gates/loop-state.sh`
+- `cargo test --workspace`
 
-All checks passed.
+All checks passed locally.

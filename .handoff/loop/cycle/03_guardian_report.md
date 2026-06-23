@@ -1,28 +1,35 @@
-# TASK-0021 — guardian report
+# TASK-0039 — guardian report
 
-## Verdict: PASS
+## Verdict: PASS-WITH-NOTES
 
-TASK-0021 is already satisfied in the current source tree. The stale backlog card was the thing that
-needed reconciliation.
+TASK-0039's reopened implementation gap is closed on the existing frozen Certs/secretctl surfaces:
+remote client leaves now use a separate envctl-owned CA, are capped to seven days, can be renewed,
+can be revoked, disable matching remote-client rows, and feed the mTLS verifier's revocation file.
 
 ## Findings
 
-- PASS: `manifest/base.toml` has a standalone `node-real` component for a real Node in the n8n range.
-- PASS: `group-ai-clis` does not require `node-via-bun`.
-- PASS: `n8n-mcp` still requires `node-via-bun`, which is correct because it is Bun-provided node
-  compat, not the real V8 runtime carve-out.
-- PASS: `envctl lock --check` passes, so the generated lock matches the manifest.
-- PASS: The focused engine tests prove both the truthy `node-real` component and the absence of the
-  old `group-ai-clis -> node-via-bun` edge.
+- PASS: `control_plane_client` issuance is capped at `ttl_days <= 7`; the default is 7 days.
+- PASS: client leaves are signed by `env-ctl remote clients CA`, not the MITM CA.
+- PASS: `Certs.Renew` and `Certs.Revoke` no longer return `Unimplemented`.
+- PASS: revoke is fail-closed: dry-run by default, `--apply` requires `--confirm`.
+- PASS: revoke persists cert state and disables a matching remote-client registry row.
+- PASS: `secretd` appends lowercase SHA-256 DER fingerprints in the verifier format consumed by
+  the PR #158 mTLS revocation loader.
+- NOTE: the existing `IssueLeafReq` stream does not return private key material, so device
+  enrollment packet/export remains a separate future surface if the owner wants full provisioning
+  automation.
 
 ## Gate Results
 
 All local gates passed:
 
-- targeted engine tests for `group_ai_clis_does_not_require_node_via_bun` and
-  `node_real_component_exists_with_empty_requires`
+- focused engine CA lifecycle tests
+- focused daemon revocation-file writer test
+- libSQL cert-row shape test
+- relay-edge daemon check
+- secretctl check
 - engine+CLI build
-- p7
-- `hf test TASK-0021`
-
-No code change was needed for this closeout.
+- fmt
+- clippy
+- no-c / shape / enable / p7 / loop-state gates
+- full workspace test

@@ -7,7 +7,7 @@ envctl owns and contains the meta environment: every FlexNetOS tool/dotfile/.loc
 Git > .handoff/ledger.db > tasks/*.task.json > active.md > this packet.
 
 ## 3. Progress
-Done: 50/53.  Tamper-evident events verified: 60.
+Done: 50/53.  Tamper-evident events verified: 62.
 
 ## 4. Remaining (next safe first)
 - [P2] **TASK-0009** — Relocate kasetto + kst (BLOCKED: superseded by Epic C built-in absorption)
@@ -89,6 +89,13 @@ hf claim TASK-0039
   ],
   "schema": "handoff.packet.v2",
   "tasks_total": 53,
-  "witnessed_events_verified": 60
+  "witnessed_events_verified": 62
 }
 ```
+
+## Contract Proof (ADR-0011 — ruvector-verified/Lean)
+Active task **TASK-0039** — AgentContract PROVEN via ruvector-verified (3 obligation(s)).
+- ✓ `intent:objective` (Eq.refl proof-term #0)
+- ✓ `intent:path_scope` (Eq.refl proof-term #1)
+- ✓ `intent:acceptance` (Eq.refl proof-term #2)
+3 proof-term(s) · proof-hash `4fae6edd4fe50dc5` · binding `0x868602ae2eddac78` · verifier `0x00010000` (lean-agentic 0.1.0).

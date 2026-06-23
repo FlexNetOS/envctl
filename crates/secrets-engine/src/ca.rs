@@ -26,6 +26,7 @@ mod imp {
     /// Common Name stamped on the generated local CA. Cosmetic — the child trusts the CA by the
     /// explicit PEM bundle (`ca_pem_path`), not by name.
     pub(crate) const CA_COMMON_NAME: &str = "env-ctl local MITM CA";
+    pub(crate) const REMOTE_CLIENTS_CA_COMMON_NAME: &str = "env-ctl remote clients CA";
 
     /// Leaf certificate validity window, in seconds. Deliberately SHORT (MITM leaves are minted
     /// fresh per request and never persisted), so a leaf that somehow escaped RAM expires fast.
@@ -102,12 +103,12 @@ mod imp {
     /// Fixed parameters for the local CA cert (deterministic DN / key-usage / is_ca). Used at both
     /// generation (`generate`) and reconstruction (`from_material`) so the rebuilt signing issuer
     /// matches the persisted CA cert's identity-bearing fields.
-    fn ca_params(now_unix: i64) -> anyhow::Result<CertificateParams> {
+    fn ca_params(common_name: &str, now_unix: i64) -> anyhow::Result<CertificateParams> {
         let mut params = CertificateParams::new(Vec::<String>::new())
             .map_err(|e| anyhow::anyhow!("ca params: {e}"))?;
         params
             .distinguished_name
-            .push(DnType::CommonName, CA_COMMON_NAME);
+            .push(DnType::CommonName, common_name);
         params.is_ca = IsCa::Ca(BasicConstraints::Constrained(0));
         params.key_usages = vec![
             KeyUsagePurpose::KeyCertSign,
@@ -142,9 +143,16 @@ mod imp {
         /// DER for the engine to seal/persist; does NOT itself touch the vault. `now_unix` anchors
         /// the validity window (taken from the engine `Clock` so tests are deterministic).
         pub(crate) fn generate(now_unix: i64) -> anyhow::Result<GeneratedCa> {
+            Self::generate_with_common_name(CA_COMMON_NAME, now_unix)
+        }
+
+        pub(crate) fn generate_with_common_name(
+            common_name: &str,
+            now_unix: i64,
+        ) -> anyhow::Result<GeneratedCa> {
             let key_pair = KeyPair::generate_for(&PKCS_ECDSA_P256_SHA256)
                 .map_err(|e| anyhow::anyhow!("ca keygen: {e}"))?;
-            let params = ca_params(now_unix)?;
+            let params = ca_params(common_name, now_unix)?;
             let not_after = params.not_after;
             let cert = params
                 .self_signed(&key_pair)
@@ -167,6 +175,14 @@ mod imp {
             ca_key_der: Zeroizing<Vec<u8>>,
             ca_cert_der: &[u8],
         ) -> anyhow::Result<Self> {
+            Self::from_material_with_common_name(CA_COMMON_NAME, ca_key_der, ca_cert_der)
+        }
+
+        pub(crate) fn from_material_with_common_name(
+            common_name: &str,
+            ca_key_der: Zeroizing<Vec<u8>>,
+            ca_cert_der: &[u8],
+        ) -> anyhow::Result<Self> {
             let key_pair = KeyPair::from_pkcs8_der_and_sign_algo(
                 &PrivatePkcs8KeyDer::from(ca_key_der.as_slice()),
                 &PKCS_ECDSA_P256_SHA256,
@@ -175,7 +191,7 @@ mod imp {
             // Rebuild the signing issuer cert. Its serial/validity may differ from the persisted
             // cert, but `signed_by` only consumes the issuer DN / key-id method / key-usages, which
             // are fixed in `ca_params` and identical to those baked into the persisted CA cert.
-            let params = ca_params(0)?;
+            let params = ca_params(common_name, 0)?;
             let issuer_cert = params
                 .self_signed(&key_pair)
                 .map_err(|e| anyhow::anyhow!("ca issuer rebuild: {e}"))?;
@@ -373,7 +389,7 @@ mod imp {
 #[cfg(feature = "mitm-ca")]
 pub use imp::LocalCa;
 #[cfg(feature = "mitm-ca")]
-pub(crate) use imp::{OperatorLeafUsage, CA_COMMON_NAME};
+pub(crate) use imp::{OperatorLeafUsage, CA_COMMON_NAME, REMOTE_CLIENTS_CA_COMMON_NAME};
 
 /// CA-less builds keep a zero-sized placeholder so the engine's `Option<LocalCa>` field type and the
 /// `ca` module both exist regardless of the feature (the engine only ever stores `None` here).

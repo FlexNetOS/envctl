@@ -176,6 +176,7 @@ fn bind_cert_row_shape() {
         cn: "leaf.local".into(),
         not_after: "2027-01-01T00:00:00Z".into(),
         der: vec![0xCA; 16],
+        revoked: false,
     };
     let v = serial::bind_cert_row(&row);
     assert_eq!(v.len(), 4);

@@ -94,6 +94,10 @@ CREATE TABLE IF NOT EXISTS certs (
   cn         TEXT NOT NULL,
   not_after  TEXT NOT NULL,
   der        BLOB NOT NULL
+);
+CREATE TABLE IF NOT EXISTS cert_revocations (
+  serial        TEXT PRIMARY KEY,
+  revoked_at_ms INTEGER NOT NULL
 );";
 
 /// Dummy round-trip that confirms the connection is live + durable (the `fsync_barrier`).
@@ -202,5 +206,17 @@ pub const REVOKE_REMOTE_CLIENT: &str =
 // ---- certs ----
 pub const SAVE_CERT: &str =
     "INSERT OR REPLACE INTO certs(serial, cn, not_after, der) VALUES(?, ?, ?, ?)";
-pub const LOAD_CERT: &str = "SELECT serial, cn, not_after, der FROM certs WHERE serial = ?";
-pub const LIST_CERTS: &str = "SELECT serial, cn, not_after, der FROM certs ORDER BY not_after";
+pub const MARK_CERT_REVOKED: &str =
+    "INSERT OR REPLACE INTO cert_revocations(serial, revoked_at_ms) VALUES(?, ?)";
+pub const LOAD_CERT: &str = "\
+SELECT c.serial, c.cn, c.not_after, c.der, \
+       CASE WHEN r.serial IS NULL THEN 0 ELSE 1 END AS revoked \
+FROM certs c LEFT JOIN cert_revocations r ON r.serial = c.serial WHERE c.serial = ?";
+pub const LIST_CERTS: &str = "\
+SELECT c.serial, c.cn, c.not_after, c.der, \
+       CASE WHEN r.serial IS NULL THEN 0 ELSE 1 END AS revoked \
+FROM certs c LEFT JOIN cert_revocations r ON r.serial = c.serial ORDER BY c.not_after";
+pub const LIST_LIVE_CERTS_FOR_CN: &str = "\
+SELECT c.serial, c.cn, c.not_after, c.der, 0 AS revoked \
+FROM certs c LEFT JOIN cert_revocations r ON r.serial = c.serial \
+WHERE c.cn = ? AND r.serial IS NULL";

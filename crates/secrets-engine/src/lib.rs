@@ -105,6 +105,14 @@ const META_MITM_CA_CERT_DER: &str = "mitm.ca_cert_der";
 /// Meta key holding the local-CA cert `not_after` (RFC3339), for visibility / rotation tooling.
 #[cfg(feature = "mitm-ca")]
 const META_MITM_CA_NOT_AFTER: &str = "mitm.ca_not_after";
+#[cfg(feature = "mitm-ca")]
+const META_REMOTE_CLIENTS_CA_KEY_NAME: &str = "__remote_clients_ca_key";
+#[cfg(feature = "mitm-ca")]
+const META_REMOTE_CLIENTS_CA_CERT_DER: &str = "remote_clients.ca_cert_der";
+#[cfg(feature = "mitm-ca")]
+const META_REMOTE_CLIENTS_CA_NOT_AFTER: &str = "remote_clients.ca_not_after";
+#[cfg(feature = "mitm-ca")]
+const REMOTE_CLIENT_LEAF_MAX_TTL_DAYS: u64 = 7;
 
 /// Vault meta-key suffixes for a native-mint provider's App credential (G2). The App PEM itself is
 /// stored as a `broker_only` `SecretRow` under the relay's `secret_name` (un-revealable, opened only
@@ -126,6 +134,13 @@ pub struct CertListItem {
     pub revoked: bool,
     pub sans: Vec<String>,
     pub usage: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct RevokedCert {
+    pub serial: String,
+    pub cn: String,
+    pub der: Vec<u8>,
 }
 
 /// TASK-0020 flat-convention secret/meta names for the per-call `mint-github` path. The App PEM is
@@ -177,6 +192,7 @@ struct EngineInner {
     vault: RwLock<vault::Vault>, // Locked | Unlocked { dek: Dek }
     broker: RwLock<broker::Broker>,
     ca: RwLock<Option<ca::LocalCa>>,
+    remote_clients_ca: RwLock<Option<ca::LocalCa>>,
     store: Box<dyn vault::Store>, // persistence seam; default InMemStore (libSQL slots in later)
     // dyn-dispatched seams; the supertrait `: Send + Sync` keeps Engine Send+Sync.
     clock: Box<dyn Clock>,
@@ -330,6 +346,7 @@ impl Engine {
                 vault: RwLock::new(vault::Vault::Locked),
                 broker: RwLock::new(broker::Broker::default()),
                 ca: RwLock::new(None),
+                remote_clients_ca: RwLock::new(None),
                 store,
                 clock,
                 usb,
@@ -635,6 +652,8 @@ impl Engine {
         // unlock (the vault is already usable; CA issuance simply stays unavailable until re-init).
         #[cfg(feature = "mitm-ca")]
         self.rebuild_ca_if_initialized(sink)?;
+        #[cfg(feature = "mitm-ca")]
+        self.rebuild_remote_clients_ca_if_initialized(sink)?;
         sink.emit(SecretEvent::VaultUnlocked {
             factor: want_factor,
         });
@@ -674,6 +693,41 @@ impl Engine {
         Ok(())
     }
 
+    #[cfg(feature = "mitm-ca")]
+    fn rebuild_remote_clients_ca_if_initialized(&self, sink: &EventSink) -> anyhow::Result<()> {
+        let inner = &self.inner;
+        let Some(cert_hex) = inner.store.get_meta(META_REMOTE_CLIENTS_CA_CERT_DER)? else {
+            return Ok(());
+        };
+        let ca_cert_der = hex_decode(&cert_hex)
+            .ok_or_else(|| anyhow::anyhow!("malformed remote_clients ca_cert_der meta"))?;
+        let key_der = match self.open_remote_clients_ca_key()? {
+            Some(k) => k,
+            None => {
+                self.audit_failed(
+                    sink,
+                    "remote_clients_ca_rebuild",
+                    None,
+                    serde_json::json!({ "reason": "ca_key_unavailable" }),
+                )?;
+                return Ok(());
+            }
+        };
+        let ca = ca::LocalCa::from_material_with_common_name(
+            ca::REMOTE_CLIENTS_CA_COMMON_NAME,
+            key_der,
+            &ca_cert_der,
+        )?;
+        {
+            let mut slot = inner
+                .remote_clients_ca
+                .write()
+                .expect("remote clients ca lock");
+            *slot = Some(ca);
+        }
+        Ok(())
+    }
+
     /// Open the sealed `__mitm_ca_key` SecretRow against the live DEK, returning its plaintext
     /// PKCS#8 DER (Zeroizing). `None` if the row is absent or fails authentication. Requires the
     /// vault to be Unlocked. This bypasses `secret_get`'s reveal gate (a `broker_only` secret is
@@ -681,13 +735,23 @@ impl Engine {
     /// build the issuer and is never returned to a caller.
     #[cfg(feature = "mitm-ca")]
     fn open_mitm_ca_key(&self) -> anyhow::Result<Option<Zeroizing<Vec<u8>>>> {
+        self.open_sealed_ca_key(META_MITM_CA_KEY_NAME)
+    }
+
+    #[cfg(feature = "mitm-ca")]
+    fn open_remote_clients_ca_key(&self) -> anyhow::Result<Option<Zeroizing<Vec<u8>>>> {
+        self.open_sealed_ca_key(META_REMOTE_CLIENTS_CA_KEY_NAME)
+    }
+
+    #[cfg(feature = "mitm-ca")]
+    fn open_sealed_ca_key(&self, key_name: &str) -> anyhow::Result<Option<Zeroizing<Vec<u8>>>> {
         let inner = &self.inner;
         let v = inner.vault.read().expect("vault lock");
         let dek = match v.dek() {
             Some(d) => d,
             None => return Err(EngineError::Locked.into()),
         };
-        let row = match inner.store.get_secret_latest(META_MITM_CA_KEY_NAME)? {
+        let row = match inner.store.get_secret_latest(key_name)? {
             Some(r) => r,
             None => return Ok(None),
         };
@@ -710,6 +774,14 @@ impl Engine {
         {
             let mut ca = self.inner.ca.write().expect("ca lock");
             *ca = None; // drop the in-RAM CA issuer.
+        }
+        {
+            let mut ca = self
+                .inner
+                .remote_clients_ca
+                .write()
+                .expect("remote clients ca lock");
+            *ca = None;
         }
         // Drop any installed native sub-token minter (DD-1): reinstall NoMint so the locked vault
         // holds no live App PEM. Defense-in-depth — the daemon's lock RPC handler also calls this,
@@ -2713,6 +2785,80 @@ impl Engine {
         Ok(())
     }
 
+    #[cfg(feature = "mitm-ca")]
+    fn ensure_remote_clients_ca_initialized(&self, sink: &EventSink) -> anyhow::Result<()> {
+        let inner = &self.inner;
+        if inner
+            .remote_clients_ca
+            .read()
+            .expect("remote clients ca lock")
+            .is_some()
+        {
+            return Ok(());
+        }
+        if inner
+            .store
+            .get_meta(META_REMOTE_CLIENTS_CA_CERT_DER)?
+            .is_some()
+        {
+            self.rebuild_remote_clients_ca_if_initialized(sink)?;
+            if inner
+                .remote_clients_ca
+                .read()
+                .expect("remote clients ca lock")
+                .is_some()
+            {
+                return Ok(());
+            }
+        }
+
+        let now_unix = inner.clock.now().timestamp();
+        let generated =
+            ca::LocalCa::generate_with_common_name(ca::REMOTE_CLIENTS_CA_COMMON_NAME, now_unix)?;
+        self.secret_put(
+            SecretMeta {
+                name: META_REMOTE_CLIENTS_CA_KEY_NAME.to_string(),
+                provider: Provider::Generic,
+                note: "remote-clients CA private key (sealed; never revealable)".to_string(),
+                broker_only: true,
+            },
+            generated.key_der.clone(),
+            sink,
+        )?;
+        inner.store.put_meta(
+            META_REMOTE_CLIENTS_CA_CERT_DER,
+            &hex_encode(&generated.cert_der),
+        )?;
+        inner.store.put_meta(
+            META_REMOTE_CLIENTS_CA_NOT_AFTER,
+            &generated.not_after_rfc3339,
+        )?;
+        let ca = ca::LocalCa::from_material_with_common_name(
+            ca::REMOTE_CLIENTS_CA_COMMON_NAME,
+            generated.key_der.clone(),
+            &generated.cert_der,
+        )?;
+        {
+            let mut slot = inner
+                .remote_clients_ca
+                .write()
+                .expect("remote clients ca lock");
+            *slot = Some(ca);
+        }
+        self.audit_ok(
+            sink,
+            "remote_clients_ca_initialized",
+            None,
+            serde_json::json!({ "not_after": generated.not_after_rfc3339 }),
+        )?;
+        sink.emit(SecretEvent::CaIssued {
+            serial: String::new(),
+            cn: ca::REMOTE_CLIENTS_CA_COMMON_NAME.to_string(),
+            not_after: generated.not_after_rfc3339,
+        });
+        Ok(())
+    }
+
     /// Write the PUBLIC CA certificate PEM to a `0600` file under the runtime dir and return its
     /// path. Feeds the child-trust bundle (`inject::injection_template`'s `ca_pem_path`) for
     /// `HttpsProxyMitm` mode. Refuses (`Err`) when no CA is initialized. Public material only.
@@ -2865,6 +3011,25 @@ impl Engine {
                 );
             }
         };
+        let effective_ttl_days = if operator_usage == ca::OperatorLeafUsage::ControlPlaneClient {
+            let requested = if ttl_days == 0 {
+                REMOTE_CLIENT_LEAF_MAX_TTL_DAYS
+            } else {
+                ttl_days
+            };
+            if requested > REMOTE_CLIENT_LEAF_MAX_TTL_DAYS {
+                self.refuse(
+                    sink,
+                    "ca_issued",
+                    usage,
+                    "control_plane_client leaves must have ttl_days <= 7",
+                )?;
+                anyhow::bail!("ca issue refused: control_plane_client ttl_days must be <= 7");
+            }
+            requested
+        } else {
+            ttl_days
+        };
 
         let inner = &self.inner;
         {
@@ -2873,15 +3038,44 @@ impl Engine {
                 return Err(EngineError::Locked.into());
             }
         }
+        if operator_usage == ca::OperatorLeafUsage::ControlPlaneClient {
+            self.ensure_remote_clients_ca_initialized(sink)?;
+        }
 
         let now_unix = inner.clock.now().timestamp();
         let leaf = {
-            let ca = inner.ca.read().expect("ca lock");
-            match ca.as_ref() {
-                Some(ca) => ca.issue_operator_leaf(cn, sans, ttl_days, operator_usage, now_unix)?,
-                None => {
-                    self.refuse(sink, "ca_issued", cn, "CA not initialized")?;
-                    return Err(EngineError::NoCa.into());
+            if operator_usage == ca::OperatorLeafUsage::ControlPlaneClient {
+                let ca = inner
+                    .remote_clients_ca
+                    .read()
+                    .expect("remote clients ca lock");
+                match ca.as_ref() {
+                    Some(ca) => ca.issue_operator_leaf(
+                        cn,
+                        sans,
+                        effective_ttl_days,
+                        operator_usage,
+                        now_unix,
+                    )?,
+                    None => {
+                        self.refuse(sink, "ca_issued", cn, "remote-clients CA not initialized")?;
+                        return Err(EngineError::NoCa.into());
+                    }
+                }
+            } else {
+                let ca = inner.ca.read().expect("ca lock");
+                match ca.as_ref() {
+                    Some(ca) => ca.issue_operator_leaf(
+                        cn,
+                        sans,
+                        effective_ttl_days,
+                        operator_usage,
+                        now_unix,
+                    )?,
+                    None => {
+                        self.refuse(sink, "ca_issued", cn, "CA not initialized")?;
+                        return Err(EngineError::NoCa.into());
+                    }
                 }
             }
         };
@@ -2894,6 +3088,7 @@ impl Engine {
             cn: cn.to_string(),
             not_after: leaf.not_after_rfc3339.clone(),
             der: leaf.cert_der,
+            revoked: false,
         })?;
 
         self.audit_ok(
@@ -2917,6 +3112,169 @@ impl Engine {
     }
 
     #[cfg(feature = "mitm-ca")]
+    pub fn ca_renew(&self, cn: &str, apply: bool, sink: &EventSink) -> anyhow::Result<String> {
+        let cn = cn.trim();
+        if cn.is_empty() {
+            anyhow::bail!("ca renew refused: cn must not be empty");
+        }
+        let inner = &self.inner;
+        {
+            let v = inner.vault.read().expect("vault lock");
+            if v.dek().is_none() {
+                return Err(EngineError::Locked.into());
+            }
+        }
+
+        let current = inner
+            .store
+            .list_certs()?
+            .into_iter()
+            .filter_map(|row| {
+                if row.cn != cn || row.revoked {
+                    return None;
+                }
+                match Self::cert_row_sans_and_usage(&row) {
+                    Ok((_sans, usage)) if usage == "control_plane_client" => Some(row),
+                    _ => None,
+                }
+            })
+            .max_by(|a, b| a.not_after.cmp(&b.not_after))
+            .ok_or_else(|| {
+                anyhow::anyhow!("ca renew refused: no live control_plane_client cert for cn {cn:?}")
+            })?;
+        let (sans, _usage) = Self::cert_row_sans_and_usage(&current)?;
+
+        if !apply {
+            sink.emit(SecretEvent::Log {
+                source: "ca.renew".to_string(),
+                stream: crate::event::Stream::Stdout,
+                line: format!(
+                    "DRY-RUN: would renew {cn} as control_plane_client for <=7d; re-run with --apply"
+                ),
+            });
+            return Ok(current.serial);
+        }
+
+        let now_unix = inner.clock.now().timestamp();
+        self.ensure_remote_clients_ca_initialized(sink)?;
+        let leaf = {
+            let ca = inner
+                .remote_clients_ca
+                .read()
+                .expect("remote clients ca lock");
+            match ca.as_ref() {
+                Some(ca) => ca.issue_operator_leaf(
+                    cn,
+                    &sans,
+                    REMOTE_CLIENT_LEAF_MAX_TTL_DAYS,
+                    ca::OperatorLeafUsage::ControlPlaneClient,
+                    now_unix,
+                )?,
+                None => {
+                    self.refuse(sink, "ca_renewed", cn, "remote-clients CA not initialized")?;
+                    return Err(EngineError::NoCa.into());
+                }
+            }
+        };
+        let (_rem, cert) = x509_parser::parse_x509_certificate(&leaf.cert_der)
+            .map_err(|e| anyhow::anyhow!("ca renew: parse issued cert: {e}"))?;
+        let serial = cert.tbs_certificate.raw_serial_as_string();
+        let _ = inner.store.revoke_certs_for_cn(cn)?;
+        inner.store.save_cert(CertRow {
+            serial: serial.clone(),
+            cn: cn.to_string(),
+            not_after: leaf.not_after_rfc3339.clone(),
+            der: leaf.cert_der,
+            revoked: false,
+        })?;
+        self.audit_ok(
+            sink,
+            "ca_renewed",
+            Some(cn.to_string()),
+            serde_json::json!({
+                "serial": serial,
+                "cn": cn,
+                "usage": "control_plane_client",
+                "not_after": leaf.not_after_rfc3339,
+                "ttl_days": REMOTE_CLIENT_LEAF_MAX_TTL_DAYS,
+            }),
+        )?;
+        sink.emit(SecretEvent::CaIssued {
+            serial: serial.clone(),
+            cn: cn.to_string(),
+            not_after: leaf.not_after_rfc3339,
+        });
+        Ok(serial)
+    }
+
+    #[cfg(feature = "mitm-ca")]
+    pub fn ca_revoke(
+        &self,
+        cn: &str,
+        apply: bool,
+        confirm: bool,
+        sink: &EventSink,
+    ) -> anyhow::Result<Vec<RevokedCert>> {
+        let cn = cn.trim();
+        if cn.is_empty() {
+            anyhow::bail!("ca revoke refused: cn must not be empty");
+        }
+        let inner = &self.inner;
+        let live = inner
+            .store
+            .list_certs()?
+            .into_iter()
+            .filter(|row| row.cn == cn && !row.revoked)
+            .collect::<Vec<_>>();
+        if !apply {
+            sink.emit(SecretEvent::Log {
+                source: "ca.revoke".to_string(),
+                stream: crate::event::Stream::Stdout,
+                line: format!(
+                    "DRY-RUN: would revoke {} live cert(s) for {cn}; re-run with --apply --confirm",
+                    live.len()
+                ),
+            });
+            return Ok(Vec::new());
+        }
+        if !confirm {
+            self.refuse(
+                sink,
+                "ca_revoked",
+                cn,
+                "revoke requires --confirm with --apply",
+            )?;
+            anyhow::bail!("ca revoke refused: --apply requires --confirm");
+        }
+        let now_ms = inner.clock.now().timestamp_millis();
+        let revoked = inner.store.revoke_certs_for_cn(cn)?;
+        let remote_revoked = inner.store.revoke_remote_client(cn, now_ms)?;
+        self.audit_ok(
+            sink,
+            "ca_revoked",
+            Some(cn.to_string()),
+            serde_json::json!({
+                "cn": cn,
+                "certs": revoked.len(),
+                "remote_client_revoked": remote_revoked,
+            }),
+        )?;
+        sink.emit(SecretEvent::Log {
+            source: "ca.revoke".to_string(),
+            stream: crate::event::Stream::Stdout,
+            line: format!("revoked {} cert(s) for {cn}", revoked.len()),
+        });
+        Ok(revoked
+            .into_iter()
+            .map(|row| RevokedCert {
+                serial: row.serial,
+                cn: row.cn,
+                der: row.der,
+            })
+            .collect())
+    }
+
+    #[cfg(feature = "mitm-ca")]
     pub fn ca_list(&self) -> anyhow::Result<Vec<CertListItem>> {
         let inner = &self.inner;
         let mut items = Vec::new();
@@ -2929,6 +3287,22 @@ impl Engine {
                     revoked: false,
                     sans: Vec::new(),
                     usage: "ca".to_string(),
+                });
+            }
+        }
+        if let Some(not_after) = inner.store.get_meta(META_REMOTE_CLIENTS_CA_NOT_AFTER)? {
+            if inner
+                .store
+                .get_meta(META_REMOTE_CLIENTS_CA_CERT_DER)?
+                .is_some()
+            {
+                items.push(CertListItem {
+                    cn: ca::REMOTE_CLIENTS_CA_COMMON_NAME.to_string(),
+                    is_ca: true,
+                    not_after,
+                    revoked: false,
+                    sans: Vec::new(),
+                    usage: "remote_clients_ca".to_string(),
                 });
             }
         }
@@ -2973,10 +3347,16 @@ impl Engine {
             cn: row.cn,
             is_ca: false,
             not_after: row.not_after,
-            revoked: false,
+            revoked: row.revoked,
             sans,
             usage,
         }
+    }
+
+    #[cfg(feature = "mitm-ca")]
+    fn cert_row_sans_and_usage(row: &CertRow) -> anyhow::Result<(Vec<String>, String)> {
+        let item = Self::cert_row_to_list_item(row.clone());
+        Ok((item.sans, item.usage))
     }
 
     /// CA-less build: `ca_issue` still exists but the whole CA surface is unavailable.
@@ -2990,6 +3370,22 @@ impl Engine {
         _sink: &EventSink,
     ) -> anyhow::Result<String> {
         anyhow::bail!("ca issue: built without the `mitm-ca` feature")
+    }
+
+    #[cfg(not(feature = "mitm-ca"))]
+    pub fn ca_renew(&self, _cn: &str, _apply: bool, _sink: &EventSink) -> anyhow::Result<String> {
+        anyhow::bail!("ca renew: built without the `mitm-ca` feature")
+    }
+
+    #[cfg(not(feature = "mitm-ca"))]
+    pub fn ca_revoke(
+        &self,
+        _cn: &str,
+        _apply: bool,
+        _confirm: bool,
+        _sink: &EventSink,
+    ) -> anyhow::Result<Vec<RevokedCert>> {
+        anyhow::bail!("ca revoke: built without the `mitm-ca` feature")
     }
 
     #[cfg(not(feature = "mitm-ca"))]
@@ -3683,9 +4079,14 @@ mod ca_tests {
             save_relay_policy(row: RelayPolicyRow) -> anyhow::Result<i64>;
             load_relay_policy(relay_id: &str) -> anyhow::Result<Option<RelayPolicyRow>>;
             list_relay_policies() -> anyhow::Result<Vec<RelayPolicyRow>>;
+            save_remote_client(row: crate::vault::RemoteClient) -> anyhow::Result<()>;
+            load_remote_client(client_id: &str) -> anyhow::Result<Option<crate::vault::RemoteClient>>;
+            list_remote_clients() -> anyhow::Result<Vec<crate::vault::RemoteClient>>;
+            revoke_remote_client(client_id: &str, now_ms: i64) -> anyhow::Result<bool>;
             save_cert(row: CertRow) -> anyhow::Result<()>;
             load_cert(serial: &str) -> anyhow::Result<Option<CertRow>>;
             list_certs() -> anyhow::Result<Vec<CertRow>>;
+            revoke_certs_for_cn(cn: &str) -> anyhow::Result<Vec<CertRow>>;
         }
     }
 
@@ -3856,6 +4257,138 @@ mod ca_tests {
             .expect("issued leaf is listed");
         assert_eq!(leaf.usage, "control_plane_client");
         assert_eq!(leaf.sans, vec!["control.test".to_string()]);
+    }
+
+    #[test]
+    fn remote_client_ca_issue_is_capped_to_seven_days() {
+        let (engine, _store, sink, _rx) = unlocked_engine();
+        engine.ca_init(true, &sink).expect("ca_init");
+
+        let err = engine
+            .ca_issue(
+                "phone",
+                &["phone".to_string()],
+                8,
+                "control_plane_client",
+                &sink,
+            )
+            .unwrap_err();
+        assert!(
+            format!("{err}").contains("ttl_days must be <= 7"),
+            "unexpected error: {err:?}"
+        );
+
+        engine
+            .ca_issue(
+                "phone",
+                &["phone".to_string()],
+                0,
+                "control_plane_client",
+                &sink,
+            )
+            .expect("issue default client leaf");
+        let leaf = engine
+            .ca_list()
+            .expect("ca list")
+            .into_iter()
+            .find(|item| item.cn == "phone" && !item.is_ca)
+            .expect("client leaf listed");
+        let not_after = chrono::DateTime::parse_from_rfc3339(&leaf.not_after)
+            .expect("parse not_after")
+            .with_timezone(&chrono::Utc);
+        let max = chrono::DateTime::<chrono::Utc>::from_timestamp_millis(NOW_MS).unwrap()
+            + chrono::Duration::days(7);
+        assert!(not_after <= max, "not_after {not_after} exceeds {max}");
+    }
+
+    #[test]
+    fn ca_renew_reissues_client_leaf_and_revokes_old_row() {
+        let (engine, _store, sink, _rx) = unlocked_engine();
+        engine.ca_init(true, &sink).expect("ca_init");
+        let old_serial = engine
+            .ca_issue(
+                "phone",
+                &["phone".to_string()],
+                7,
+                "control_plane_client",
+                &sink,
+            )
+            .expect("issue");
+
+        assert_eq!(
+            engine
+                .ca_renew("phone", false, &sink)
+                .expect("dry-run renew"),
+            old_serial
+        );
+        let new_serial = engine.ca_renew("phone", true, &sink).expect("apply renew");
+        assert_ne!(old_serial, new_serial);
+
+        let certs = engine.ca_list().expect("ca list");
+        let old = certs
+            .iter()
+            .find(|c| !c.is_ca && c.cn == "phone" && c.revoked)
+            .expect("old cert revoked");
+        let new = certs
+            .iter()
+            .find(|c| !c.is_ca && c.cn == "phone" && !c.revoked)
+            .expect("new cert live");
+        assert_eq!(old.usage, "control_plane_client");
+        assert_eq!(new.usage, "control_plane_client");
+    }
+
+    #[test]
+    fn ca_revoke_is_apply_confirm_gated_and_disables_remote_client() {
+        let (engine, store, sink, _rx) = unlocked_engine();
+        engine.ca_init(true, &sink).expect("ca_init");
+        engine
+            .ca_issue(
+                "phone",
+                &["phone".to_string()],
+                7,
+                "control_plane_client",
+                &sink,
+            )
+            .expect("issue");
+        store
+            .save_remote_client(crate::vault::RemoteClient {
+                client_id: "phone".to_string(),
+                dpop_jkt: [7u8; 32],
+                enabled: true,
+                hardware_bound: true,
+                created_at_ms: NOW_MS,
+                revoked_at_ms: None,
+            })
+            .expect("save remote client");
+
+        assert!(engine
+            .ca_revoke("phone", false, false, &sink)
+            .expect("dry-run revoke")
+            .is_empty());
+        assert!(!engine
+            .ca_list()
+            .expect("ca list")
+            .into_iter()
+            .any(|c| c.cn == "phone" && c.revoked));
+
+        let err = engine.ca_revoke("phone", true, false, &sink).unwrap_err();
+        assert!(format!("{err}").contains("--confirm"));
+
+        let revoked = engine
+            .ca_revoke("phone", true, true, &sink)
+            .expect("apply revoke");
+        assert_eq!(revoked.len(), 1);
+        assert!(engine
+            .ca_list()
+            .expect("ca list")
+            .into_iter()
+            .any(|c| c.cn == "phone" && c.revoked));
+        let client = store
+            .load_remote_client("phone")
+            .expect("load remote client")
+            .expect("remote client remains");
+        assert!(!client.enabled);
+        assert_eq!(client.revoked_at_ms, Some(NOW_MS));
     }
 
     #[test]
