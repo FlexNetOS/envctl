@@ -77,6 +77,46 @@ pub enum Cmd {
         #[command(subcommand)]
         cmd: GithubAppCmd,
     },
+    /// Operator-box presence-token authorizer for SERVER-MODE Profile B (TASK-0033 / OI-SM-2). The
+    /// OPERATOR-box role: `serve` signs presence tokens for a remote VPS over mTLS; `status` shows
+    /// the local `[profile]` topology + whether the VPS authorizer link is configured.
+    Authorizer {
+        #[command(subcommand)]
+        cmd: AuthorizerCmd,
+    },
+}
+
+#[derive(Subcommand, Debug)]
+pub enum AuthorizerCmd {
+    /// Operator-box SIGNER: serve presence tokens to a remote VPS over mTLS. On each VPS challenge
+    /// (instance id + server nonce + cert fp) this signs a short-lived [`PresenceToken`] with the
+    /// operator Ed25519 seed and returns it + the operator's attested trusted time. The seed is read
+    /// from `--seed-file` (32 raw bytes or 64-hex); it NEVER leaves this process and is zeroized.
+    Serve {
+        /// Bind address for the operator-box authorizer (e.g. `0.0.0.0:9443`).
+        #[arg(long = "bind")]
+        bind: String,
+        /// Path to the operator Ed25519 signing seed (32 raw bytes or 64-hex). The public half is
+        /// what the VPS pins as `operator_pubkey_hex`.
+        #[arg(long = "seed-file")]
+        seed_file: String,
+        /// PEM path of this operator box's TLS server cert (presented to the VPS).
+        #[arg(long = "cert")]
+        cert: String,
+        /// PEM path of this operator box's TLS server key.
+        #[arg(long = "key")]
+        key: String,
+        /// PEM path of the CA the VPS client cert is verified against (mTLS; required — the signer
+        /// fails closed without a client-CA, it never signs for an unauthenticated VPS).
+        #[arg(long = "client-ca")]
+        client_ca: String,
+        /// Token TTL in seconds (clamped to the audited 5–15 min band; default 600 = 10 min).
+        #[arg(long = "ttl-secs", default_value_t = 600)]
+        ttl_secs: i64,
+    },
+    /// Show the local `[profile]` topology (on-box vs VPS) and, for a VPS, whether the operator
+    /// authorizer link is configured. A read-only local config inspection (no daemon round-trip).
+    Status,
 }
 
 #[derive(Subcommand, Debug)]

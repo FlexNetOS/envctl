@@ -2,6 +2,7 @@
 //! `Event` stream and pretty-prints (or `--json`). Destructive verbs default to dry-run (`--apply`
 //! to act, `--confirm` for root-of-trust). The bearer/value printing is owner-only and only on the
 //! peercred-gated channel; the real key is never printed (the daemon never sends it).
+mod authorizer;
 mod cli;
 mod render;
 
@@ -191,6 +192,7 @@ async fn run(args: Cli) -> anyhow::Result<()> {
         Cmd::Run(a) => run_child_cmd(a, sock, json).await?,
         Cmd::MintGithub(a) => mint_github(a, sock).await?,
         Cmd::GithubApp { cmd } => github_app(cmd, sock, json).await?,
+        Cmd::Authorizer { cmd } => authorizer::authorizer(cmd, json).await?,
     }
     Ok(())
 }
