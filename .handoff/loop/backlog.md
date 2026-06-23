@@ -1013,6 +1013,24 @@ policy change" — both are available and declarable here.
   design — the global default doesn't override a repo's `rust-toolchain.toml`); this directive is
   the workstation/meta default, not a change to envctl's pin. Open Q for owner: should envctl
   itself move to nightly, or keep its MSRV-stable pin?
+- [ ] **TASK-0074 (secrets, MEDIUM) — re-enroll/rotate a USB keyslot on an UNLOCKED existing vault
+  (the durable "plugged in = access" fix; owner 2026-06-23):** PROVEN this session by full live
+  diagnosis + reading the sqld `keyslots` table — the vault's USB slot is a **placeholder/verify-spike
+  STUB** (`usb_partition_uuid = "verify-vault-uuid"`, `wrapped_dek` never bound to the real DEK), so
+  `secretctl unlock` (USB-first) fails `Internal: "unlock failed"` even though the WHOLE Seed path is
+  healthy (custody API → HTTP 200 + valid Ed25519 sig, token/CA/network/mount/seed-factor all green).
+  USB-keyslot enrollment today exists ONLY at `secretctl init --enroll-usb --usb-partuuid`, and `init`
+  REFUSES to overwrite an existing vault → **there is NO verb to add/rotate a USB slot post-init**.
+  Build it: an Engine method + `secretctl keyslot add-usb|rotate-usb` (or `secretctl usb enroll`) that,
+  on an UNLOCKED vault, wraps the live DEK with `kek_from_usb(Seed-sig over the slot context)` and
+  upserts the USB slot (replacing the stub) — fail-closed, dry-run/`--apply`, peercred-gated like
+  `init`. Bind to a STABLE real identifier (the live COGNITUM USB is whole-device with no PARTUUID —
+  use the filesystem UUID or the Seed device_id `0e34a5e5-…` as the slot context, not a placeholder).
+  **Verification needs the vault unlocked** (passphrase bootstrap — owner runs `! secretctl unlock`),
+  so this is build-then-verify-with-owner, not a clean blind auto-merge. After it lands + the real USB
+  slot is enrolled: `lock` → `unlock` with NO passphrase must succeed (plugged-in = access). The
+  GitHub mint (`secretctl mint-github`) is INDEPENDENT — it only needs the vault unlocked, so it works
+  the moment passphrase-unlock succeeds. See memory [[cognitum-seed-usb-unlock]].
 
 ## Key finding (carried)
 
