@@ -88,7 +88,7 @@ requires = []
 resolved = ""
 
 [components.env-ctl]
-content_hash = "33382f2b2c2d5850"
+content_hash = "3bac972d57580709"
 requires = [
     "rustup",
     "sqld",
