@@ -13,8 +13,8 @@ pub mod token;
 
 pub use admission::{AdmissionLimiter, Admit};
 pub use authorizer::{
-    presence_token_signing_bytes, sign_presence_token, verify_presence_token, AuthzReject,
-    PresenceToken, DEFAULT_TOKEN_TTL_MS, PRESENCE_TOKEN_VERSION,
+    authz_reject_label, presence_token_signing_bytes, sign_presence_token, verify_presence_token,
+    AuthzReject, PresenceToken, DEFAULT_TOKEN_TTL_MS, PRESENCE_TOKEN_VERSION,
 };
 pub use decide::RemotePeer;
 pub use decide::{decide, CanonRequest, DenyReason, RelayDecision, VerifiedBearer};

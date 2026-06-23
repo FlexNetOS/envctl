@@ -1857,3 +1857,150 @@ fn relay_stream_authorized_tears_down_on_locked_vault() {
         "a locked vault tears the stream down (no panic, no key)"
     );
 }
+
+// ---- TASK-0033 (F9 / FS-S23): VPS gate is re-resolved on EVERY swap (never cached) -----------
+
+/// Build a Profile-B (VPS) engine sharing the FakeClock with the injected VpsPresenceGate, so a
+/// token's `valid_until` is compared against the SAME advancing clock the test drives. Returns the
+/// engine + the shared gate handle (to feed verified tokens) + the event sink/rx.
+fn build_vps_engine(
+    inmem: &Arc<InMemStore>,
+    clock: &FakeClock,
+) -> (
+    Engine,
+    Arc<envctl_secrets::VpsPresenceGate>,
+    EventSink,
+    std::sync::mpsc::Receiver<SecretEvent>,
+) {
+    let cap = CapturingUpstream(Arc::new(Mutex::new(None)));
+    let gate = Arc::new(envctl_secrets::VpsPresenceGate::new(Box::new(
+        clock.clone(),
+    )));
+    let eng = Engine::with_seams(
+        paths(),
+        Box::new(SharedStore(inmem.clone())) as Box<dyn Store>,
+        Box::new(clock.clone()),
+        Box::new(AbsentUsb),
+        Box::new(NoMint),
+        Box::new(cap),
+        #[cfg(feature = "provider-github")]
+        Box::new(envctl_secrets::mint_github::NoopHttpTransport),
+        Box::new(gate.clone()),
+        Box::new(envctl_secrets::SystemClockTrustedTime),
+        envctl_secrets::Topology::Vps,
+    )
+    .expect("with_seams must construct");
+    let (sink, rx) = EventSink::channel();
+    (eng, gate, sink, rx)
+}
+
+/// F9 / FS-S23: a token valid at the first swap but EXPIRED before the second swap denies the second
+/// swap `GateAbsent` — proving the engine re-resolves the presence gate on every swap and never
+/// caches the result across swaps. A passphrase-only VPS vault (no USB keyslot) whose egress is
+/// gated SOLELY by the operator-box presence token.
+#[test]
+fn vps_token_expiry_between_swaps_denies_second_gate_absent() {
+    let inmem = Arc::new(InMemStore::new());
+    let clock = FakeClock::new(T0);
+    let (eng, gate, sink, rx) = build_vps_engine(&inmem, &clock);
+
+    // Passphrase-only vault (no USB keyslot — on a VPS there is no USB to enroll).
+    eng.init_vault(pp("vps-pass"), None, None, at_floor(), &sink)
+        .unwrap();
+    eng.unlock(Unlock::Passphrase(pp("vps-pass")), &sink)
+        .unwrap();
+    eng.secret_put(
+        SecretMeta {
+            name: "anthropic_key".to_string(),
+            provider: Provider::Anthropic,
+            note: String::new(),
+            broker_only: true,
+        },
+        Zeroizing::new(b"sk-REAL-VPS".to_vec()),
+        &sink,
+    )
+    .unwrap();
+
+    // The authorizer link verified a token valid until T0 + 5_000; feed it into the shared gate.
+    gate.accept_token(T0 + 5_000);
+
+    let bearer = eng
+        .relay_mint(
+            anthropic_policy("anthropic_key"),
+            3600,
+            Some(1000),
+            None,
+            &sink,
+        )
+        .expect("mint under a present VPS gate");
+    let _ = drain(&rx);
+
+    // Swap #1 at T0+1_000 (gate Present) ⇒ Allowed.
+    clock.set(T0 + 1_000);
+    let o1 = block_on(eng.relay_swap(&bearer.raw, &post_req(Some(1000)), &sink));
+    assert!(
+        matches!(o1, SwapOutcome::Allowed(_)),
+        "swap #1 with a live presence token must be Allowed, got {}",
+        outcome_kind(&o1)
+    );
+
+    // Advance the clock PAST the token's expiry — the authorizer has NOT delivered a fresh token.
+    clock.set(T0 + 6_000);
+
+    // Swap #2: the gate is re-resolved against the advanced clock (not cached from swap #1) ⇒
+    // GateAbsent. The real key is NEVER fetched on a deny.
+    let o2 = block_on(eng.relay_swap(&bearer.raw, &post_req(Some(1000)), &sink));
+    match o2 {
+        SwapOutcome::Denied(DenyReason::GateAbsent) => {}
+        other => panic!(
+            "swap #2 after token expiry must deny GateAbsent (re-resolved per swap), got {}",
+            outcome_kind(&other)
+        ),
+    }
+}
+
+/// A VPS swap with NO accepted token at all (gate Unproven) denies GateAbsent — the boot-unwrapped
+/// DEK never authorizes egress without a currently-valid presence token (FS-S23).
+#[test]
+fn vps_swap_with_no_token_denies_gate_absent() {
+    let inmem = Arc::new(InMemStore::new());
+    let clock = FakeClock::new(T0);
+    let (eng, gate, sink, rx) = build_vps_engine(&inmem, &clock);
+    eng.init_vault(pp("vps-pass2"), None, None, at_floor(), &sink)
+        .unwrap();
+    eng.unlock(Unlock::Passphrase(pp("vps-pass2")), &sink)
+        .unwrap();
+    eng.secret_put(
+        SecretMeta {
+            name: "anthropic_key".to_string(),
+            provider: Provider::Anthropic,
+            note: String::new(),
+            broker_only: true,
+        },
+        Zeroizing::new(b"sk-REAL-VPS2".to_vec()),
+        &sink,
+    )
+    .unwrap();
+    // Mint requires the gate present — feed a token, mint, then CLEAR (authorizer went unreachable).
+    gate.accept_token(T0 + 5_000);
+    let bearer = eng
+        .relay_mint(
+            anthropic_policy("anthropic_key"),
+            3600,
+            Some(1000),
+            None,
+            &sink,
+        )
+        .expect("mint");
+    gate.clear(); // authorizer unreachable — gate reverts to Unproven
+    let _ = drain(&rx);
+
+    let o = block_on(eng.relay_swap(&bearer.raw, &post_req(Some(1000)), &sink));
+    match o {
+        SwapOutcome::Denied(DenyReason::GateAbsent) => {}
+        other => panic!(
+            "a VPS swap with no valid token must deny GateAbsent, got {}",
+            outcome_kind(&other)
+        ),
+    }
+}

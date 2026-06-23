@@ -26,12 +26,14 @@ pub mod keyslot; // Keyslot, Kdf, Argon2Params, wrap/unwrap (LUKS-style dual KEK
 pub mod mint_github; // GitHubAppMint: RS256 App-JWT → installation token (ProviderMint seam)
 pub mod paths; // Paths (XDG, env-ctl-namespaced)
 pub mod seam; // Clock, UsbProbe, ProviderMint, Upstream + SystemClock/RealUsbProbe + fakes
+pub mod startup; // Profile-B startup-refusal guards (FS-S21/S22/S23/S24)
 pub mod vault; // Vault state machine + Store trait + crypto (seal/open) + canonical AAD + audit // ChildEnvPlan, ResolvedInjection, injection_template, run_wrapped
 
 pub use broker::{
-    clamp_ttl, AdmissionLimiter, Admit, Bearer, DenyReason, JtiReject, JtiReplayStore, Method,
-    NonceReject, NonceStore, Provider, RelayDecision, RelayId, RelayKind, RelayPolicy, SwapMode,
-    SwapOutcome, MAX_BEARER_TTL_SECS,
+    clamp_ttl, sign_presence_token, AdmissionLimiter, Admit, AuthzReject, Bearer, DenyReason,
+    GateState, JtiReject, JtiReplayStore, Method, NonceReject, NonceStore, PresenceGate,
+    PresenceToken, Provider, RelayDecision, RelayId, RelayKind, RelayPolicy, SwapMode, SwapOutcome,
+    VpsPresenceGate, DEFAULT_TOKEN_TTL_MS, MAX_BEARER_TTL_SECS,
 };
 pub use error::{EngineError, VaultState};
 pub use event::{AuditRecord, EventSink, SecretEvent, Stream};
@@ -47,6 +49,7 @@ pub use seam::{
     Clock, OperatorBoxTrustedTime, ProviderMint, RealUsbProbe, SystemClock, SystemClockTrustedTime,
     TrustedTime, Upstream, UsbProbe,
 };
+pub use startup::StartupRefusal;
 
 #[cfg(feature = "provider-github")]
 use std::collections::HashMap;
@@ -2704,6 +2707,122 @@ impl Engine {
             .map_err(|_| anyhow::anyhow!("presence cache lock poisoned"))?;
         *cache = Some((proven, now_ms));
         Ok(proven)
+    }
+
+    /// The configured deployment topology (Profile A on-box vs Profile B VPS).
+    #[must_use]
+    pub fn topology(&self) -> Topology {
+        self.inner.topology
+    }
+
+    /// Resolve the egress presence gate state THROUGH the same choke point `relay_swap_prepare` uses
+    /// (`presence_proven`), exposed for the daemon's FS-S23 startup check + the authorizer link.
+    /// Returns `Present` when proven, `Unproven` otherwise (the engine never grants grace here — the
+    /// AbsentSince timestamp is an internal `decide()` detail).
+    pub fn presence_gate_state(&self) -> anyhow::Result<crate::broker::GateState> {
+        Ok(if self.presence_proven()? {
+            crate::broker::GateState::Present
+        } else {
+            crate::broker::GateState::Unproven
+        })
+    }
+
+    /// Whether the vault currently has an enabled USB keyslot enrolled (FS-S22 startup input).
+    pub fn has_enabled_usb_keyslot(&self) -> anyhow::Result<bool> {
+        Ok(crate::startup::has_enabled_usb_keyslot(
+            &self.inner.store.load_keyslots()?,
+        ))
+    }
+
+    /// PUBLIC view of [`Self::usb_possession_proven`] for the daemon's FS-S22 startup check (the
+    /// on-box USB probe outcome). VPS topology does not use this (its gate is the authorizer).
+    pub fn usb_possession_proven_pub(&self) -> anyhow::Result<bool> {
+        self.usb_possession_proven()
+    }
+
+    /// OI-SM-3: whether the engine's trusted-time source currently reports a fresh time. A VPS that
+    /// returns `false` cannot safely issue/accept presence tokens (per-token refusal is enforced in
+    /// `verify_presence_token`; this lets the daemon surface a startup warning).
+    #[must_use]
+    pub fn trusted_time_available(&self) -> bool {
+        crate::startup::trusted_time_available(self.inner.trusted_time.as_ref())
+    }
+
+    /// Verify an operator-box presence token (Profile B) and, on success, return its `expiry_ms` so
+    /// the daemon's authorizer link can feed the VPS gate. The engine owns the verify POLICY (ordered
+    /// fail-closed ladder over the engine's trusted-time source); the daemon owns only the I/O
+    /// (fetching the token + the nonce/jti stores it passes in). Emits a metadata-only
+    /// `PresenceTokenAccepted`/`PresenceTokenRejected` event. The real key, the token bytes, the
+    /// signature, and the operator key never cross this boundary.
+    #[allow(clippy::too_many_arguments)]
+    pub fn verify_presence_token(
+        &self,
+        pubkey: &[u8; 32],
+        tok: &crate::broker::PresenceToken,
+        sig: &[u8; 64],
+        expected_cert_fp: &[u8; 32],
+        nonce_store: &mut crate::broker::NonceStore,
+        jti_store: &mut crate::broker::JtiReplayStore,
+        sink: &EventSink,
+    ) -> Result<i64, crate::broker::AuthzReject> {
+        match crate::broker::verify_presence_token(
+            pubkey,
+            tok,
+            sig,
+            expected_cert_fp,
+            self.inner.trusted_time.as_ref(),
+            nonce_store,
+            jti_store,
+        ) {
+            Ok(()) => {
+                sink.emit(SecretEvent::PresenceTokenAccepted {
+                    jti: tok.jti.clone(),
+                    expiry_ms: tok.expiry_ms,
+                });
+                Ok(tok.expiry_ms)
+            }
+            Err(reject) => {
+                sink.emit(SecretEvent::PresenceTokenRejected {
+                    reason: crate::broker::authz_reject_label(&reject).to_string(),
+                });
+                Err(reject)
+            }
+        }
+    }
+
+    /// Run ALL four Profile-B startup-refusal guards (FS-S21/S22/S23/S24) against the engine's
+    /// resolved state + the daemon-supplied config knobs. Returns the FIRST refusal (fail-closed) or
+    /// `Ok(())` when every guard proves the config safe. The daemon calls this once in `serve()`
+    /// before binding and `bail!`s on `Err`.
+    pub fn assert_profile_b_startup(
+        &self,
+        operator_authorizer_url: Option<&str>,
+        allow_passphrase_only: bool,
+        vtpm_gating_requested: bool,
+    ) -> Result<(), crate::startup::StartupRefusal> {
+        use crate::startup as g;
+        let topology = self.inner.topology;
+        // FS-S24 first (forbidden everywhere, cheap, config-level).
+        g::assert_no_vtpm_gating(vtpm_gating_requested)?;
+        // FS-S21 (VPS substitute factor configured).
+        g::assert_vps_factor_configured(topology, operator_authorizer_url)?;
+        // FS-S22 (on-box USB keyslot proven or override). Errors from store I/O surface as the
+        // refusal-mapping below would be wrong; instead treat an I/O failure as "cannot prove safe".
+        let has_usb = self
+            .has_enabled_usb_keyslot()
+            .map_err(|_| crate::startup::StartupRefusal::OnBoxUsbKeyslotUnproven)?;
+        let usb_proven = self
+            .usb_possession_proven()
+            .map_err(|_| crate::startup::StartupRefusal::OnBoxUsbKeyslotUnproven)?;
+        g::assert_onbox_usb_keyslot_or_override(
+            topology,
+            has_usb,
+            usb_proven,
+            allow_passphrase_only,
+        )?;
+        // FS-S23 (VPS gate not Unproven at startup).
+        g::assert_gate_not_unproven_at_startup(topology, self.inner.presence_gate.as_ref())?;
+        Ok(())
     }
 
     /// Whether USB possession is currently PROVEN: some enabled USB keyslot's keyfile is obtainable

@@ -23,7 +23,7 @@
 use serde::{Deserialize, Serialize};
 use zeroize::Zeroizing;
 
-use crate::broker::jti::{JtiReplayStore, JtiReject};
+use crate::broker::jti::{JtiReject, JtiReplayStore};
 use crate::broker::nonce::{NonceReject, NonceStore};
 use crate::seam::TrustedTime;
 
@@ -113,7 +113,17 @@ pub fn presence_token_signing_bytes(tok: &PresenceToken) -> Vec<u8> {
     let nonce = tok.server_nonce.as_bytes();
     let jti = tok.jti.as_bytes();
     let mut m = Vec::with_capacity(
-        PRESENCE_TOKEN_DOMAIN.len() + 1 + 8 + 4 + id.len() + 4 + nonce.len() + 32 + 8 + 4 + jti.len(),
+        PRESENCE_TOKEN_DOMAIN.len()
+            + 1
+            + 8
+            + 4
+            + id.len()
+            + 4
+            + nonce.len()
+            + 32
+            + 8
+            + 4
+            + jti.len(),
     );
     m.extend_from_slice(PRESENCE_TOKEN_DOMAIN);
     m.push(tok.v);
@@ -183,6 +193,22 @@ pub enum AuthzReject {
     /// The token's `jti` was already accepted within its window — a replay.
     #[error("presence token replayed")]
     Replayed,
+}
+
+/// A fixed, metadata-only discriminant label for a rejection (for the `PresenceTokenRejected`
+/// event). Carries NO token/sig/key bytes — only the reason class.
+#[must_use]
+pub fn authz_reject_label(r: &AuthzReject) -> &'static str {
+    match r {
+        AuthzReject::MalformedVersion => "malformed_version",
+        AuthzReject::TrustedTimeUnavailable => "trusted_time_unavailable",
+        AuthzReject::BadSignature => "bad_signature",
+        AuthzReject::CertFpMismatch => "cert_fp_mismatch",
+        AuthzReject::NonceUnknown => "nonce_unknown",
+        AuthzReject::Expired => "expired",
+        AuthzReject::NotYetValid => "not_yet_valid",
+        AuthzReject::Replayed => "replayed",
+    }
 }
 
 /// Map a [`NonceReject`] to the single nonce-failure verdict (all nonce failures mean the same thing

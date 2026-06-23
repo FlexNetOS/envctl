@@ -71,6 +71,26 @@ pub enum SecretEvent {
         installation_id: Option<u64>,
         outcome: String,
     },
+    /// A Profile-B (VPS) operator-box presence token was ACCEPTED by the verifier (TASK-0033 /
+    /// OI-SM-2). METADATA ONLY — `jti` is the public token id, `expiry_ms` its absolute expiry. The
+    /// token bytes, the Ed25519 signature, the server nonce, and the operator key are NEVER included.
+    /// Consumed identically by the CLI + GUI.
+    PresenceTokenAccepted {
+        jti: String,
+        expiry_ms: i64,
+    },
+    /// A Profile-B presence token was REJECTED (TASK-0033). METADATA ONLY — `reason` is the
+    /// `AuthzReject` discriminant label (e.g. `"bad_signature"`, `"expired"`, `"replayed"`); no token
+    /// /sig/key bytes are ever carried.
+    PresenceTokenRejected {
+        reason: String,
+    },
+    /// The Profile-B operator-box authorizer link went UNREACHABLE (TASK-0033 / FS-S23). The VPS
+    /// gate is cleared (deny new egress) and any in-flight relay streams are drained. METADATA ONLY —
+    /// `drained_streams` is the count of streams torn down. No bearer/key/body bytes are included.
+    AuthorizerUnreachable {
+        drained_streams: u64,
+    },
     GuardRefused {
         subject: String,
         reason: String,

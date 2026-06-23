@@ -68,7 +68,6 @@ pub fn gate_absent_since_ms(state: GateState, now_ms: i64) -> Option<i64> {
 /// VPS whose authorizer link has never delivered a valid token) can prove nothing, so it denies
 /// immediately with no grace (REQ-SEC-13). Profile A never consults the injected gate (it keeps the
 /// on-box USB/Seed path), so this default is invisible to default builds.
-#[derive(Default)]
 pub struct UnprovenGate;
 
 impl PresenceGate for UnprovenGate {
@@ -267,7 +266,6 @@ mod tests {
     #[test]
     fn unproven_gate_is_always_unproven() {
         assert_eq!(UnprovenGate.resolve(), GateState::Unproven);
-        assert_eq!(UnprovenGate::default().resolve(), GateState::Unproven);
     }
 
     #[test]
