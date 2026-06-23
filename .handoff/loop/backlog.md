@@ -1029,8 +1029,15 @@ policy change" — both are available and declarable here.
   is just the binding string). The vault has opened via USB many times. NO re-enroll verb is needed.
   The ACTUAL recurring failure was a **stale pinned Cognitum CA** — superseded by TASK-0075. (Kept as a
   ticked row, not deleted, so the retraction is auditable.)
-- [ ] **TASK-0075 (secrets, MEDIUM) — `cognitum-seed-trust` component: auto-refresh the pinned Seed CA
-  from the USB on rotation (the REAL durable "plugged in = access" fix; owner 2026-06-23):** ROOT CAUSE
+- [~] **TASK-0075 (secrets, MEDIUM) — BUILT 2026-06-23 (PR armed; tick `- [x]` on MERGE) — `cognitum-seed-trust` component: auto-refresh the pinned Seed CA
+  from the USB on rotation (the REAL durable "plugged in = access" fix; owner 2026-06-23):** Shipped a
+  `manifest/cognitum-seed-trust.toml` component (sibling to `cognitum-seed-net`): a self-healing worker
+  (`/usr/local/sbin/cognitum-seed-trust-refresh`) + oneshot unit + cdc_ncm udev rule that re-pins the
+  Device CA from `COGNITUM/trust/cognitum-ca.pem` -> the path secretd reads (`ENVCTL_SEED_CA` || the
+  `/usr/local` default, per `seam.rs:113-116`) on boot + Seed hotplug; idempotent (re-pins only on diff),
+  additive, absent-Seed=no-op, needs_sudo. Verify = artifacts hard + non-fatal byte-compare probe. remove
+  KEEPS the pinned CA. Lock 77->78; 7 gates PASS; runtime-verified (re-pin/idempotent/glob-fallback/parse).
+  No daemon change needed (override already exists). Meta-path relocate -> TASK-0075b. ROOT CAUSE
   proven this session — `secretctl unlock` (USB-first) failed `Internal: "unlock failed"` because the
   daemon validates the Seed's TLS strictly against the pinned Cognitum Device CA
   (`/usr/local/share/ca-certificates/cognitum-ca.crt`) and **the Seed had rotated its Device CA** (host
@@ -1049,6 +1056,16 @@ policy change" — both are available and declarable here.
   (ordered After `env-ctl.service`, gated on USB possession) that runs `secretctl unlock` once the
   daemon is up, so a reboot with the Seed present auto-reopens the vault. Fail-closed (no Seed → stays
   locked, no passphrase ever scripted). Depends on TASK-0075 (fresh CA pin) being in place first.
+- [ ] **TASK-0075b (secrets, MEDIUM) — relocate the Seed Device-CA pin OFF `/usr/local` to a meta path
+  (no-system-depth doctrine; architect-recommended follow-up to TASK-0075):** TASK-0075's PR-1 pins to
+  `/usr/local/share/ca-certificates/cognitum-ca.crt` because that is the path `secretd` reads TODAY
+  (`crates/secrets-engine/src/seam.rs` `ca_path()` default; `ENVCTL_SEED_CA` is unset in the unit). The
+  override knob already exists — so the doctrinally-correct end state is: set `Environment=ENVCTL_SEED_CA=<meta
+  path>` in the secretd systemd unit (`env-ctl.toml`'s `env-ctl.service`), point the `cognitum-seed-trust`
+  refresh worker at that same meta path, and CONFIRM the daemon's `ProtectSystem=strict`/`ProtectHome=read-only`
+  sandbox can actually read it (a meta path under `$HOME` may be invisible under `ProtectHome` — likely needs a
+  `ReadWritePaths=`/`ReadOnlyPaths=` carve-out or a non-$HOME meta location). Verify by `secretctl unlock`
+  succeeding with the pin living only at the meta path and `/usr/local` empty. Origin: TASK-0075 architect plan.
 
 ## Key finding (carried)
 

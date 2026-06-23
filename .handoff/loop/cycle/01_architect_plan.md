@@ -1,65 +1,40 @@
-# Cycle artifact — Architect plan: TASK-0054 (wild linker wiring)
+# Architect plan — TASK-0075 cognitum-seed-trust (cycle: seed-ca-trust)
 
-VERDICT: GO
+**Verdict: GO. Pure-manifest, single new component file + lock sync.**
 
-## Summary
-Wire **wild** as the local cargo linker (via `clang --ld-path=wild`) by writing a linker section to
-the **meta-root** `$META_ROOT/.cargo/config.toml` (local-dev only; CI clones repos standalone so it
-never sees this file). Delivered by EXTENDING the existing `wild-linker` component (NOT a new one) so
-install/detect/verify/remove manage both the binary and the config as one reversible unit. The cycle
-is gated by a **build-verification gate**: write config → full `cargo build` MUST pass AND use wild →
-keep; else revert + mark blocked. mold-drop DEFERRED (sudo + separate concern → follow-up card).
+## Decisive finding
+`ENVCTL_SEED_CA` override ALREADY EXISTS — `crates/secrets-engine/src/seam.rs:113-116`:
+`ca_path()` = env `ENVCTL_SEED_CA` || `/usr/local/share/ca-certificates/cognitum-ca.crt`.
+So NO daemon/engine code change. PR-1 pins to the `/usr/local` path the daemon reads today
+(a meta-path pin the daemon ignores would be useless). Meta-path relocate (set `ENVCTL_SEED_CA`
+in the secretd unit) is deferred → TASK-0075b follow-up.
 
-## Config location (owner doctrine)
-`$META_ROOT/.cargo/config.toml` = `/home/drdave/Desktop/meta/.cargo/config.toml` (absent today;
-`~/.cargo/config.toml` absent). NOT `~/.cargo`/`~/.rustup`/system-depth. Runtime artifact at meta-root
-(like `.toolchains/`), outside the envctl git repo — only the manifest component def is committed.
+## On-box facts
+- USB anchor `/run/media/drdave/COGNITUM/trust/`: `cognitum-ca.pem` (786B) = source; `.crt` identical; `install-trust.sh` does `sudo cp cognitum-ca.pem /usr/local/share/ca-certificates/cognitum-ca.crt && sudo update-ca-certificates`.
+- Current host pin MATCHES the USB (owner already re-pinned manually) → verify will report MATCH.
+- `manifest/envctl.lock` enumerates components by FNV-1a `content_hash`; regenerate via `envctl lock`.
+- Template = `manifest/cognitum-seed-net.toml` (top-level sibling, NM-profile worker + oneshot unit + cdc_ncm udev rule, additive, absent-Seed=no-op, needs_sudo).
 
-## Canonical syntax (confirmed vs wild docs; Wild 0.9.0 installed, clang meta-owned TASK-0061)
-```
-[target.x86_64-unknown-linux-gnu]
-linker = "clang"
-rustflags = ["-Clink-arg=--ld-path=wild"]
-```
+## Unit ledger
+| U# | unit | what | why |
+|----|------|------|-----|
+| U1 | `manifest/cognitum-seed-trust.toml` `[[component]]` | new component, `destructive=false`, `requires=[]` | codify the manual re-pin |
+| U2 | `[component.detect]` | worker+unit+udev present (artifacts predicate, NOT Seed-reachable) | drift never nudges reinstall when Seed unplugged |
+| U3 | `[component.install]` worker `/usr/local/sbin/cognitum-seed-trust-refresh` | locate COGNITUM mount, cp `trust/cognitum-ca.pem`->pin path, `update-ca-certificates`; absent->exit 0 | the auto re-pin |
+| U3b | install -> oneshot unit + `99-cognitum-seed-trust.rules` (cdc_ncm trigger) | run on boot + Seed hotplug | "plugged in = access" without manual action |
+| U4 | `[component.verify]` | artifacts hard (fail-closed) + non-fatal byte-compare pin vs anchor (MATCH/STALE) | task's stated verify; honest absent-Seed no-op |
+| U5 | `[component.fix]` | idempotent re-provision + re-pin now | self-heal |
+| U6 | `[component.remove]` | drop unit/udev/worker; KEEP pinned CA | removal never breaks a working unlock |
+| U7 | `manifest/envctl.lock` | add `[components.cognitum-seed-trust]` via `envctl lock` | reproducible-state honesty |
 
-## Unit ledger (completeness contract)
-- **U1** `epic-h-toolchains.toml` :: `wild-linker` `[component.install]` — after binary install+symlink,
-  write `$M/.cargo/config.toml` with the linker section; back up any pre-existing file to
-  `config.toml.pre-wild.bak`; idempotent (write-if-absent / overwrite-our-section).
-- **U2** same :: `[component.detect]` — extend to ALSO assert `$M/.cargo/config.toml` contains the
-  `--ld-path=wild` line (in addition to the binary-symlink check).
-- **U3** same :: `[component.verify]` — prove wiring: clang+wild on PATH, config parses, a build links
-  via wild (`cargo build -v` shows `--ld-path=wild`).
-- **U4** same :: `[component.remove]` + file header (lines 6–9) + name/description — remove ALSO strips
-  the linker section (or restores `.bak`) → no override; header updated to "wiring included + verified".
-- **U5** `manifest/envctl.lock` :: `[components.wild-linker] content_hash` regen (from 044b76e16bd48a7c).
-- **U6** `.handoff/loop/backlog.md` :: append deferred mold-drop follow-up (apt removal + ai-clis
-  RUSTFLAGS strip + drop mold-linker from ai-clis requires + re-lock).
-- **GATE** (process): write config → `cargo build` green AND `--ld-path=wild` observed → keep; red →
-  revert (remove config section) + re-build to confirm healthy + mark TASK-0054 blocked, DON'T commit.
+## Runtime surface (guardian drives — Seed mounted at /run/media/drdave/COGNITUM)
+1. `cargo run -p envctl -- auto-detect` -> `cognitum-seed-trust` appears, no manifest parse error.
+2. With Seed mounted: the verify hook's non-fatal probe reports pin==anchor MATCH (byte compare).
+3. Simulated absent-Seed (`COGNITUM_TRUST_DIR` -> nonexistent): worker exits 0 with explicit no-op msg; never fails the box.
 
-## Invariants (all PASS)
-- no-C: wild/clang are build TOOLING (the linker), never linked into the dep graph → no-c.sh unaffected;
-  no new crate dep.
-- one rustls/ring-only: no dep change.
-- engine single non-printing lib: no engine code; manifest component only.
-- destructive fail-closed/dry-run: config write is apply-gated (only `envctl install`, not auto-detect/
-  doctor); backup-before-write; reversible remove; the BUILD GATE reverts a bad config before done.
-- rust-native/no drift: `.cargo/config.toml` is canonical cargo TOML, not foreign source.
-- NO ~/.cargo/~/.rustup/system-depth: config at $META_ROOT/.cargo.
-- CI safety: meta-root config is outside the per-repo CI clone → CI builds unchanged.
-
-## mold-drop: DEFER
-mold refs: `dev-tools.toml` mold-linker (apt), `ai-clis.toml` codex RUSTFLAGS (`-fuse-ld=mold`,
-command -v guarded), `envctl.lock` ai-clis requires. Dropping apt = sudo; the codex RUSTFLAGS would
-conflict with --ld-path=wild → strip in the follow-up. Defer all to keep this cycle scoped + honor
-"verify builds first".
-
-## Runtime surface
-1. `$META_ROOT/.cargo/config.toml` exists with the linker section.
-2. `cargo build -v -p envctl 2>&1 | grep -- '--ld-path=wild'` returns the clang link cmd; build exits 0.
-3. `envctl auto-detect`/`doctor` shows wild-linker healthy (extended detect: binary + config).
-
-## Open question (non-blocking → folded into mold-drop follow-up)
-ai-clis codex hooks inject `-fuse-ld=mold` via RUSTFLAGS; with --ld-path=wild that's conflicting/wasteful
-— strip in the deferred mold-drop follow-up. Harmless to this cycle's gate (gate builds are envctl).
+## Guards
+- absent-Seed = clean no-op (exit 0) in every hook — never fail the box when unplugged.
+- additive: cp the CA + update-ca-certificates; never removes other CAs; never scripts the passphrase; never reveals a secret.
+- no-C: pure manifest, no Cargo deps; verify compares cert by raw bytes (`cmp -s`), no openssl needed.
+- needs_sudo on install/fix/remove (root-owned `/usr/local` + `/etc` artifacts).
+- no-system-depth tradeoff is explicit & deferred (TASK-0075b).
