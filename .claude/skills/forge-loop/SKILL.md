@@ -123,6 +123,13 @@ capability or one component per item — so a cycle fits comfortably under the b
    >   `loop_state.md`, and make the **next session's FIRST action** re-poll `gh pr view <N>` and
    >   promote `- [~]`→`- [x]` once `MERGED` (this is what stops the #125 tick-before-merge drift).
    >   Never tick a sibling/superseding reconcile box for a PR that has not merged.
+   > - **Write-side (no post-arm push):** once `--auto` is armed, treat the branch as
+   >   potentially-already-merged. NEVER push a follow-up/fix-up commit to it without first confirming
+   >   `gh pr view <N> --json state -q .state` is still `OPEN` — a fast PR can merge in seconds and
+   >   origin auto-deletes the head, so a post-merge push **re-creates a dangling no-PR branch** and the
+   >   fix-up never reaches the merged code. Apply post-arm fixes BEFORE arming, or via a fresh
+   >   reconcile branch off `develop` once `MERGED` (the read/tick side above is necessary but not
+   >   sufficient — this guards the write side). [LESSONS 2026-06-23, TASK-0060/#172]
 
    On an **unrecoverable guardian FAIL or NEEDS-DECISION the loop can't route around**, write
    `.handoff/loop/NEEDS-HUMAN` and mark the item `- [!]` blocked with a one-line reason, then move to
