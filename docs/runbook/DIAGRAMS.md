@@ -1,14 +1,34 @@
 # envctl Runbook — ASCII Diagrams
 
-Runbook-grade diagrams for the ten owner-named topics. `envctl` is a pure-Rust
-workstation environment manager (declarative TOML components wrapping proven bash)
-**plus** a secrets vault + credential broker. It absorbed Kasetto v3.2.0 as its
-built-in `envctl agent` agent-environment engine. The non-negotiable spine: **no C
-library in the trust boundary** (libSQL `remote` only, ring-only rustls, pure-Rust
-crypto), one shared non-printing `Engine` drives both CLI and GUI, and destructive
-ops are fail-closed + dry-run by default.
+Runbook-grade diagrams. `envctl` is a pure-Rust workstation environment manager
+(declarative TOML components wrapping proven bash) **plus** a secrets vault + credential
+broker, driven and maintained by an **autonomous agent harness**. It absorbed Kasetto v3.2.0
+as its built-in `envctl agent` agent-environment engine. The non-negotiable spine: **no C
+library in the trust boundary** (libSQL `remote` only, ring-only rustls, pure-Rust crypto),
+one shared non-printing `Engine` drives both CLI and GUI, and destructive ops are fail-closed
++ dry-run by default.
+
+This file has three parts:
+
+- **§1–§10** — the vault / secrets / CLI / agent-env spine (the original ten topics).
+- **§11–§16** — the **full picture**: every component, the env-manager data flow, the
+  meta-prefix system-depth convergence, the agent-harness automation topology, the continuity
+  kernel, and the complete automated-vs-manual control surface.
+- Companion stories: [`AGENTIC-STORY.md`](AGENTIC-STORY.md) (how the box builds & maintains
+  itself with zero humans) and [`USER-STORY.md`](USER-STORY.md) (how / if / when the human is
+  involved — desktop app, CLI, enter/exit points).
 
 Each diagram cites its source `file:section`.
+
+### Automation legend (used throughout §11–§16)
+
+```
+  [A]  AUTOMATED          — agent/loop runs it unattended; no human needed
+  [A*] AUTOMATED-ELEVATED — runs sudo, but sudo -n is passwordless here → still unattended
+  [P]  PREVIEW-BY-DEFAULT — runs dry-run; a human (or RALPH_APPLY) must pass --apply to mutate
+  [H]  HUMAN-GATED        — a human MUST trigger it (reboot, live-shell migration, secret reveal)
+  [!!] SUPERVISED/CRITICAL— the loop REFUSES to auto-run; writes NEEDS-HUMAN and stops
+```
 
 ---
 
@@ -396,4 +416,253 @@ dropped — front-ends own rendering), destructive verbs fail-closed + dry-run b
    └──────────────────────────────────────────────────────────────────────────┘
    Invariants kept: NO C in trust boundary (mimalloc DROPPED) · engine non-printing
    (ui/banner/process::exit dropped) · destructive = fail-closed + dry-run default
+```
+
+---
+
+## 11. The full component catalog (every component envctl declares)
+
+envctl declares **79 components** (the committed `manifest/envctl.lock` count) across 14 manifest
+files (`manifest/*.toml` + drop-ins in `manifest/components.d/`). Each is a `[[component]]` with
+five phase hooks (Detect → Install → Verify → Fix → Remove) and a `requires = [...]` edge set;
+the engine runs them in topological order. Below is the complete set, grouped by manifest, with
+the automation class of its *install/converge* path (legend at top). `group-*` ids are aggregate
+meta-components (install-a-set); `gpu_required` components are skipped on a GPU-less host.
+
+*Source: `manifest/*.toml` + `manifest/components.d/*.toml` (id inventory, verified 2026-06-23);
+`manifest/envctl.lock` (79 components); CLAUDE.md (manifest dir defaults to `./manifest`,
+override `ENVCTL_MANIFEST_DIR`); docs/ARCHITECTURE.md §3 (component model), §6 (topo order).*
+
+```
+ base.toml ─ language/runtime floor ───────────────────────────────────────────────┐
+   [A]  nerd-fonts · bun · node-via-bun · node-real · rustup(→nightly) · rtk         │
+ apt-base.toml ─ host prerequisites (apt; some sudo) ───────────────────────────────┤
+   [A*] ghostty · podman · keepassxc · virt-stack · libssl-dev · meta-base-sanity    │
+ dev-tools.toml ─ dev CLIs ─────────────────────────────────────────────────────────┤
+   [A]  gh · vite · wasmer · cargo-nextest · uv                                       │
+ components.d/just.toml :  [A] just                                                   │
+ components.d/epic-h-toolchains.toml ─ META-PREFIX toolchains (the no-system-depth set)┤
+   [A]  gh-cli · wild-linker · kache · nushell · zellij · mise · ollama · llvm-clang  │
+        · libgccjit · nix-portable · yazi · helix · huggingface-cli                   │
+ gpu.toml ─ NVIDIA / CUDA / rust-GPU (gpu_required) ────────────────────────────────┤
+   [A*] nvidia-cuda-repo   [floor] nvidia-open(kernel)   [A] cuda-toolkit(meta-prefix)│
+   [A]  rust-nightly-cuda-oxide · cuda-oxide · pytorch-venv · gpu-verify-scripts      │
+   [A*] nvidia-container-toolkit            (aggregate) group-gpu-stack               │
+ ai-clis.toml ─ agent CLIs ─────────────────────────────────────────────────────────┤
+   [A]  claude-code-cli · codex-cli · gemini-cli · kimi-cli · devin-cli   group-ai-clis│
+ agent-env.toml :  [A] kasetto   (the absorbed agent-env engine component)            │
+ SECRETS STACK ─ env-ctl.toml/secretd.toml/sqld.toml + seed ────────────────────────┤
+   [A]  env-ctl(builds+installs secretd/secretctl→.toolchains) · secretd · sqld       │
+   [A*] cognitum-seed-net · cognitum-seed-trust · cognitum-seed-autounlock (udev/units)│
+ nix-yazelix.toml ─ interactive shell (nix-sourced; being de-nixed) ────────────────┤
+   [A]  nix · nix-yazelix-cache · home-manager · yazelix · yazelix-config             │
+   [A]  yazelix-desktop · yazelix-shell · ghostty-default-terminal  group-nix-yazelix │
+ dashboard.toml :  [A] dashboard (zellij mission-control)                             │
+ desktop-app.toml :  [A] desktop-app (envctl-gui .desktop entry)                      │
+ n8n-mcp.toml :  [A] n8n-mcp     grit.toml : [A] grit     rusty-idd.toml : [A] rusty-idd│
+ components.d/portability-links.toml ─ ~/.config, ~/.local/bin, /usr/local symlinks ─┤
+   [A]  home-config-links · home-bin-links · rtk-config-links · meta-tool-links       │
+   [A]  claude-global-links · usrlocal-script-links            group-portability      │
+ boot-repair.toml ─ recovery (DESTRUCTIVE; not in the normal converge path) ─────────┤
+   [P/!!] boot-repair-diagnose · -dev · -rename-pro · -finalize   group-boot-repair   │
+ ───────────────────────────────────────────────────────────────────────────────────┘
+   IRREDUCIBLE FLOOR (meta never owns; detect/verify only): nvidia-open KERNEL module
+   + libcuda.so  (see §13).   Everything else resolves inside meta → $META_ROOT/.toolchains.
+```
+
+---
+
+## 12. The env-manager data flow (detect → converge → lock)
+
+The whole env-manager is one loop: **read reality, diff against the declared state, converge,
+re-hash the lock.** `auto-detect` is read-only and returns an `EnvReport`; `install` is the only
+*additive-by-default* mutator (it ACTS — it is **not** dry-run); `auto-fix` / `reset` / `add-repo`
+are **dry-run by default** and need `--apply`. Every component's Verify hook returns `0=healthy`;
+the committed `envctl.lock` is the OS-invariant content hash that makes a converged box
+reproducible (and `lock --check` is the CI no-drift gate). A failing hook is recorded in
+`RunSummary.fail[]` and the run continues — never an abort.
+
+*Source: crates/cli/src/main.rs (Cmd verbs); crates/engine/src/lib.rs (Engine, Event stream,
+RunSummary); docs/ARCHITECTURE.md §5 (verb→phase), §6 (topo/Kahn), §12 (dry-run safety);
+CLAUDE.md (install applies by default; auto-fix/reset/add-repo preview).*
+
+```
+                        ┌─────────────────────── envctl.lock (committed) ──────────────┐
+                        │     OS-invariant content hash of every component (79)         │
+                        │     lock --check = CI no-drift gate  [A]                      │
+                        └───────────────▲──────────────────────────────┬───────────────┘
+                                        │ re-hash after converge        │ compare
+   reality (the box)                    │                               ▼
+   ┌──────────────┐  [A] auto-detect   ┌┴───────────────┐   diff    ┌──────────────────┐
+   │ host · GPU · │ ───(read-only)───▶ │   EnvReport    │ ────────▶ │ declared state    │
+   │ tools · pkgs │                    │ present/healthy │           │ (manifest/*.toml) │
+   └──────────────┘                    └────────────────┘           └────────┬─────────┘
+        ▲                                                                     │ per component, topo order
+        │ converged                                                          ▼
+        │                         ┌─ Detect ─▶ present? ─no─▶ [A] Install (ADDITIVE, acts) ─┐
+        │                         │     │ yes                                               │
+        └─────────────────────────┤     ▼                                                   │
+          [A] install (acts)       │  [A] Verify (0=healthy) ─bad─▶ [P] auto-fix (--apply) ─┘
+          [P] auto-fix --apply     │                                                         │
+          [P] reset --apply        └─ remove path: [P] reset (dry-run) ──--apply--▶ unwire   │
+                                                                          [!!] reset --all --confirm
+   Event stream (NDJSON with --json) drains to CLI stdout / GUI Live-Logs  ── never println! in engine
+```
+
+---
+
+## 13. Meta-prefix convergence — the no-system-depth model (Epic H)
+
+**Owner doctrine:** meta and its peers use **NO system-depth installs** (`apt /usr`,
+`/usr/local`, nix `/nix`, kernel). Every system-depth tool has an upstream repo and must be
+either (a) installed at `$META_ROOT/.toolchains/<x>` (tarball / `cargo install --root` / runfile
+`--toolkitpath`) with a `~/.local/bin` symlink, (b) cloned+added as a `.meta.yaml` peer, or (c)
+— only if *physically* irreducible — declared a `system:` host-prerequisite (detect/verify only).
+The convergence is itself a set of `[A]` components; the only genuinely irreducible item is the
+NVIDIA **kernel module**. `/nix` is **reducible** (nix-portable) but its live removal is `[!!]`.
+
+*Source: docs/adr-install-locations-and-local-state.md §System-depth convergence; CLAUDE.md
+(rust-native; agent-env-managed); backlog Epic H (TASK-0054..0077); memory
+[[no-system-depth-installs]]; verified on-box 2026-06-23 (nvidia-595-open, /nix 14G, libcuda 595).*
+
+```
+   SYSTEM DEPTH (being eliminated)                 META PREFIX (the target)
+   ───────────────────────────────                ─────────────────────────────────────────
+   apt /usr/bin · /usr/local/bin                  $META_ROOT/.toolchains/<tool>/  +  ~/.local/bin/<tool>
+   /nix/store (14G, multi-user daemon)            $HOME/.nix-portable  (bwrap, no root)   [A] shipped
+                                                  └ live /nix removal + yazelix repoint    [!!] TASK-0067
+   ~/.cargo  ~/.rustup  (user-global)             $META_ROOT/.toolchains/{cargo,rustup}
+   apt cuda-toolkit-13-3                           .toolchains/cuda (runfile --toolkitpath) [A] done
+                                                   └ apt remove cuda-toolkit-13-3           [H] owner sudo
+
+   ── IRREDUCIBLE FLOOR (meta NEVER owns — detect/verify only) ──────────────────────────────
+   nvidia-open KERNEL module   loaded by the running kernel (/lib/modules, DKMS/MOK);
+                               MANDATORY for RTX 5090 / Blackwell (proprietary unsupported)
+   libcuda.so (user-mode drv)  version-locked to the module; every Rust GPU layer rides on it
+        │
+        ├── [A] cuda-oxide   (Rust → PTX compiler; author kernels in Rust, no C++)
+        └── [A] cudarc       (host-side launch; links ONLY libcuda — no CUDA toolkit C needed)
+            ⇒ once both are in use, the system CUDA toolkit becomes REMOVABLE
+   driver 595→610 bump        [H] needs a REBOOT — held to the very end of the loop
+```
+
+---
+
+## 14. The agent-harness automation topology (the construction crew)
+
+The box is built and maintained by a **self-perpetuating agent loop** (the *Ralph* pattern), not
+by hand. `forge-loop` reads a durable backlog, runs one **Feature Forge** cycle per item
+(architect → implementer → guardian), opens one PR, and ticks the item **only when the PR is
+MERGED**. `env-install-loop` is the same loop pointed at provisioning (doctor/install/auto-fix).
+`auto-provision` is the external runner that spawns a *fresh* `claude -p` per cycle for truly
+unattended, set-and-forget operation. Parallel **qwen3.6** background sessions do cheap drafting
+legwork; the **opus** orchestrator owns every gate (only it commits/merges, and only after the
+guardian PASSes). Mutating agents work in isolated git worktrees so parallel cycles never collide.
+
+*Source: .claude/skills/{forge-loop,feature-forge,env-install-loop,auto-provision,session-relay};
+.claude/agents/{feature-architect,rust-implementer,invariant-guardian,handoff-kernel-engineer,
+continuity-steward,evolution-steward,build-health-auditor}; CLAUDE.md "Harness: Feature Forge";
+memory [[forge-loop-epic-g]], [[agenticos-consolidation-loop]].*
+
+```
+   .handoff/loop/backlog.md  (the loop's MEMORY — durable on disk, not in chat)
+        │  [A] pick top unblocked item  (hf resume / markdown fallback)
+        ▼
+   ┌──────────────────────── one Feature Forge cycle  [A] ───────────────────────────┐
+   │  feature-architect ─▶ rust-implementer ─▶ invariant-guardian                     │
+   │  (read-only plan)     (mutates worktree)   (runs CI gates + cargo + runtime-verify)│
+   │        ▲                    │                       │ PASS / PASS-WITH-NOTES        │
+   │        │ qwen3.6 drafts ────┘ (legwork; opus gates) │ FAIL → mark [!] blocked,     │
+   │        │ (parallel bg sessions)                     │        route to next item    │
+   └────────┼───────────────────────────────────────────┼──────────────────────────────┘
+            │                                            ▼
+            │                              [A] commit ─▶ PR ─▶ arm gh auto-merge --squash
+            │                                            │
+            │                              [A] TICK-ON-MERGED: gh pr view <N> == MERGED
+            │                                            │   └ armed-not-merged → leave [~], re-poll next session
+            ▼                                            ▼
+   every wrap_every(5) cycles:                  cycle_budget reached →
+   [A] BATCH BOUNDARY                           [A] HAND OFF (session-relay) → see §15
+     reaper (reap merged worktrees, FF trunk)
+     wrap-up reconcile (status-truth, MERGED-gated)
+     evolution-steward retro (LESSONS.md / proposed-upgrades.md)
+
+   STOP CONDITIONS (no re-fire):  STOP sentinel [H] · NEEDS-HUMAN [!!] · DONE (confirmed+swept)
+```
+
+---
+
+## 15. The continuity / handoff kernel (zero-loss across sessions)
+
+The loop survives context rot and token burn because **all its truth lives in durable files**, not
+in conversation memory. The `hf` kernel (built from `meta/handoff`) witnesses every claim /
+checkpoint / done into a ledger; `.handoff/loop/` holds the human-readable views (backlog,
+loop_state, per-cycle artifacts) and the sentinels. At a cycle-budget boundary the
+`continuity-steward` writes a cold-start `HANDOFF.md`, announces over the **weave** bus, and the
+successor session resumes with zero loss. **ICM** is the cross-session semantic memory (decisions,
+preferences, resolved errors). Hooks (Stop / PreCompact) auto-checkpoint and drop a
+`WRAP-UP-OWED` marker so a missed boundary is caught fail-closed at the next resume.
+
+*Source: .claude/skills/{session-relay,session-relay-resume,session-relay-wrap-up,handoff-sync};
+.claude/agents/{continuity-steward,handoff-kernel-engineer}; .claude/hooks/hf-checkpoint.sh;
+CLAUDE.md (ADR-0004 ledger model, state precedence); memory [[harness-bootstrap]].*
+
+```
+   STATE PRECEDENCE (agents never re-rank):
+   Git  >  .handoff/ledger.db (witnessed)  >  tasks/*.task.json  >  active.md  >  HANDOFF.md / backlog.md
+
+   ┌─ DURABLE STATE  .handoff/loop/ ──────────────┐     ┌─ CROSS-SESSION ────────────────────┐
+   │ backlog.md       (item checklist; the view)  │     │ ICM      decisions / prefs / errors  │
+   │ loop_state.md    cycles_*/budget/wrap_every  │     │ weave    cross-agent bus (to:all)    │
+   │ cycle/01_..03_   architect/impl/guardian     │     │ HANDOFF.md  cold-start packet        │
+   │ SENTINELS  STOP[H] · NEEDS-HUMAN[!!] · DONE  │     └─────────────────────────────────────┘
+   │            · WRAP-UP-OWED (hook-dropped)     │
+   └───────────────────┬──────────────────────────┘
+        [A] hf claim ──┤ checkpoint --auto ──┤ done --pr <N> ──▶ hf handoff (re-render packet)
+                       ▼
+   session N  ──cycle_budget──▶  [A] continuity-steward writes HANDOFF + weave-announce
+                                       │  (in-session cron is session-only → real unattended = auto-provision)
+                                       ▼
+   session N+1  [A] session-relay-resume: read HANDOFF · reap worktrees · run any WRAP-UP-OWED ·
+                    re-poll armed PRs · reset cycles_this_session=0 ·  continue the backlog
+```
+
+---
+
+## 16. The complete control surface — every enter/exit point, automated vs not
+
+Two enter-classes meet the box: **agents** (the loop, unattended) and the **human owner** (rare,
+high-trust). Almost everything is `[A]`/`[A*]` automated. The human is required only at five kinds
+of point: a **reboot**, a **live-shell migration** (`/nix`), a **secret reveal/unlock passphrase**,
+an **owner-sudo cleanup**, and an **owner approval verdict** for a queued `[!!]` decision. The
+loop never crosses those lines itself — it writes a sentinel and stops. This diagram is the bridge
+to [`USER-STORY.md`](USER-STORY.md).
+
+*Source: CLAUDE.md (dashboard panes default to shell; `[!!]` SUPERVISED refusal; owner-gated
+items); docs/runbook/README.md (vault unlock/reveal flags); backlog Epic H (owner-sudo +
+TASK-0067 + driver reboot); memory [[no-system-depth-installs]], [[cognitum-seed-usb-unlock]].*
+
+```
+   ENTER POINTS                          AUTOMATED?    WHO / WHEN
+   ─────────────────────────────────────────────────────────────────────────────────────
+   agent loop (forge/env-install)        [A]           the harness, unattended, self-pacing
+   auto-provision (fresh claude -p/cycle)[A]           set-and-forget overnight runs
+   envctl <verb> (CLI)                   [A]/[P]       human OR agent; mutate gated by --apply
+   envctl-gui (desktop app, egui)        [H-driven]    human clicks; same Engine as CLI (§9)
+   zellij mission-control dashboard      shell default human; Claude only via envctl-open-claude
+   secretctl unlock / lock               [A] USB / [H] passphrase   USB possession = auto; pass = human
+   secretctl secret get --reveal         [H] --reveal --apply --confirm   human, audited
+   ! secretctl unlock (in-session)       [H]           the secure owner path for passphrase unlock
+   ─────────────────────────────────────────────────────────────────────────────────────
+   EXIT / HUMAN-WALL POINTS              CLASS         WHY
+   ─────────────────────────────────────────────────────────────────────────────────────
+   driver 595→610 bump                   [H] reboot    kernel module reload needs a reboot
+   /nix removal + yazelix repoint        [!!] TASK-0067 touches the owner's LIVE interactive shell
+   apt remove cuda-toolkit/mold/gh       [H] sudo      pure cleanup; meta already shadows on PATH
+   reset --all / boot-repair destructive [!!]/[P]      fail-closed; --confirm / human only
+   queued approval verdict               [H] owner     handoff-steward surfaces; owner decides
+   NEEDS-HUMAN / STOP sentinel           [!!]/[H]      loop refuses + stops; human resumes
+   ─────────────────────────────────────────────────────────────────────────────────────
+   COMMUNICATION BACK TO THE HUMAN:  vox (spoken summary, piper/en) · weave (bus) · ICM (memory)
+   · PR descriptions · HANDOFF.md · the sentinel files · GUI Live-Logs / dashboard panes
 ```

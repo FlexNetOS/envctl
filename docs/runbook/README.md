@@ -21,7 +21,9 @@ manager **and** secrets vault. envctl has two halves over one shared `Engine`:
 
 | Area | Where |
 |------|-------|
-| **ASCII diagrams** (vault, data flow, relay/injection, rotations, in/out, vault content, CLI, provider/model, desktop, Kasetto features) | [`DIAGRAMS.md`](DIAGRAMS.md) |
+| **ASCII diagrams** — §1–§10 vault/secrets/CLI/agent-env spine; §11–§16 every component, env-manager data flow, meta-prefix convergence, agent-harness topology, continuity kernel, full automated-vs-manual control surface | [`DIAGRAMS.md`](DIAGRAMS.md) |
+| **Agentic story** (how the box builds & maintains itself with zero humans; the crew, the loop, the gates, self-improvement) | [`AGENTIC-STORY.md`](AGENTIC-STORY.md) |
+| **User story** (how/if/when the human is involved; desktop app, CLI, dashboard, communication flow, enter/exit points, the five human walls) | [`USER-STORY.md`](USER-STORY.md) |
 | **agent-env user docs** (ported from kasetto.dev/docs, renamed) | [`agent-env/`](agent-env/) — installation, configuration, commands, agents, authentication, security, ci, faq, cookbook, how-sync-works, sync-flow, slash-commands, writing-skills |
 | Env-manager architecture | [`../ARCHITECTURE.md`](../ARCHITECTURE.md) |
 | Secrets-stack design corpus | [`../secrets/`](../secrets/) — ARCHITECTURE, DESIGN-NOTES, SERVER-MODE, THREAT-MODEL, AUTO-INJECT-STATUS, GITHUB-TRANSPORT-DOCTRINE |
