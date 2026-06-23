@@ -48,11 +48,20 @@ CUR_BR="$(git symbolic-ref --quiet --short HEAD || echo '')"
 PROTECT=" master develop ${CUR_BR} "
 is_protected() { case "$PROTECT" in *" $1 "*) return 0 ;; esac; return 1; }
 
-# Branch is reapable iff upstream is gone OR it is already in origin/master.
+# Branch is reapable iff upstream is gone OR it is already in origin/master OR its PR is MERGED.
 is_reapable() {
   local b="$1"
   [ "$(git for-each-ref --format='%(upstream:track)' "refs/heads/$b")" = '[gone]' ] && return 0
   git merge-base --is-ancestor "refs/heads/$b" origin/master 2>/dev/null && return 0
+  # Squash-merge oracle (the structural gap that let 16 husks + 7 branches pile up): a
+  # squash-merged branch is NEVER an ancestor of master, and until `fetch --prune` lands its
+  # upstream may not yet read [gone] — but its PR is MERGED on GitHub. The merged-PR head-ref is
+  # the squash-robust authority (CAVEAT above: [gone] alone can't tell merged from closed-unmerged;
+  # `state==MERGED` can). Fail-CLOSED: only a positive MERGED answer reaps; gh absent/unauthed/empty
+  # falls through to `return 1` — never reap on an unanswered oracle.
+  if command -v gh >/dev/null 2>&1; then
+    [ -n "$(gh pr list --head "$b" --state merged --json number -q '.[0].number' 2>/dev/null)" ] && return 0
+  fi
   return 1
 }
 
@@ -103,6 +112,13 @@ while IFS= read -r wt; do
   br="$(git -C "$wt" symbolic-ref --quiet --short HEAD 2>/dev/null || echo '')"
   [ -z "$br" ] && continue
   is_protected "$br" && continue
+  # Explicit source-of-truth guard (owner FIX #4): NEVER reap a worktree with uncommitted/untracked
+  # `.handoff` state — it is the loop's durable source of truth. (The generic dirty-skip below also
+  # catches this, but make the refusal specific + legible so it can't be "optimized away".)
+  if [ -n "$(git -C "$wt" status --porcelain -- '.handoff' 2>/dev/null)" ]; then
+    echo "    REFUSE (uncommitted .handoff state — source of truth): $wt [$br]"
+    continue
+  fi
   if [ -n "$(git -C "$wt" status --porcelain 2>/dev/null)" ]; then
     echo "    SKIP (dirty — has uncommitted work): $wt [$br]"
     continue
@@ -110,10 +126,24 @@ while IFS= read -r wt; do
   if is_reapable "$br"; then
     echo "  reap worktree: $wt [$br]"
     run git worktree remove "$wt"
+    # Remove the now-empty meta/.worktrees/<slug> husk dir (rmdir refuses non-empty -> safe).
+    parent="$(dirname "$wt")"
+    case "$parent" in */.worktrees/*) [ -z "$(ls -A "$parent" 2>/dev/null)" ] && run rmdir "$parent" ;; esac
     reaped_wt=$((reaped_wt + 1))
   fi
 done < <(git worktree list --porcelain | awk '/^worktree /{print $2}')
 echo "  worktrees reaped: $reaped_wt"
+
+# 2b. Sweep husk dirs left behind by PRIOR sessions (empty meta/.worktrees/<slug> whose worktree
+#     was already removed but the slug parent dir lingered). rmdir is inherently safe (refuses
+#     non-empty), so a slug dir that still holds a live `envctl/` worktree is never touched.
+ws="$(dirname "$MAIN_WT")/.worktrees"
+if [ -d "$ws" ]; then
+  for d in "$ws"/*/; do
+    [ -d "$d" ] || continue
+    [ -z "$(ls -A "$d" 2>/dev/null)" ] && { echo "  reap husk dir: $d"; run rmdir "$d"; }
+  done
+fi
 
 # 3. Reap merged local branches not checked out in any remaining worktree.
 echo "== branches =="
