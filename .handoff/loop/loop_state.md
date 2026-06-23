@@ -8,10 +8,21 @@ worktree: (per-cycle: meta/.worktrees/<slug>/envctl off develop)
 cycle_budget: 1   # heavy-context resume sessions — 1 cohesive build cycle then hand off
 wrap_every: 5   # batch boundary: run reaper + wrap-up + evolution-steward every N completed cycles (no per-task pause)
 last_wrapup_total: 23   # batch boundary satisfied 2026-06-22 after TASK-0015; next due at cycles_total 28
-cycles_this_session: 5   # RESUME SESSION 2026-06-22/23: cycles = TASK-0038, TASK-0007, TASK-0008, TASK-0015, TASK-0016
-cycles_total: 24   # 23 previous cycles + TASK-0016 (PR #149)
-last_item: TASK-0016 (agent lock boundary) — DONE, PR #149
+cycles_this_session: 6   # RESUME SESSION 2026-06-22/23: cycles = TASK-0038, TASK-0007, TASK-0008, TASK-0015, TASK-0016, TASK-0017
+cycles_total: 25   # 24 previous cycles + TASK-0017 (PR #151)
+last_item: TASK-0017 (component manifest extends) — DONE, PR #151
 status: CYCLE COMPLETE 2026-06-23
+  Cycle = TASK-0017. PR #151 MERGED 2026-06-23T00:28:20Z (merge commit
+  a398e5ab5a37173ca6d50a5d096847e195638e77). Added local kasetto-style `extends`
+  composition to envctl component manifests: parent manifests load before children, relative parent
+  paths resolve from the child manifest directory, cycles and chains deeper than 8 fail closed, and
+  `[[component]]` arrays merge by component id with same-id child tables overlaying inherited
+  parent fields. Verification: fmt, engine+CLI build, focused manifest-extends tests, full
+  envctl-engine tests, clippy, `envctl lock --check`, p7/loop-state/no-c/shape/enable/kdf/
+  harness-scripts/agent-env gates, `hf test TASK-0017`, and all GitHub checks green on #151.
+  The fresh ledger view was also repaired by re-witnessing already-merged TASK-0016 (#149), so
+  `hf resume --json` now points at TASK-0019.
+
   Cycle = TASK-0016. PR #149 MERGED 2026-06-23T00:15:53Z (merge commit
   9e43b699d5bc38b646b2fef271b2a65c434eda21). Encoded the no-downgrade lock-boundary decision:
   standalone SHA-256 `agent-env.lock` remains separate from FNV-1a `manifest/envctl.lock`; the
