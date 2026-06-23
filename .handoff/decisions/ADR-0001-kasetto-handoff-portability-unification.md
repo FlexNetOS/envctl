@@ -52,10 +52,11 @@ upgrade-only / no-downgrade / no-feature-lost:
    `crates/agent-env`, driven through the `Engine` API (engine-first, non-printing, Events), surfaced
    by **new CLI verbs `envctl agent {sync,add,remove,lock,list,clean}`** with GUI parity. Drop
    `mimalloc`. Adopt **SHA-256** for the agent-asset lock (kasetto's, cryptographic — the
-   no-downgrade choice) and unify into `envctl.lock` (separate keyed section) while keeping the
-   FNV-1a component section. Reframe `manifest/agent-env.toml` from "drive external binary" to
-   "built-in subsystem." Retire the external `kasetto` binary dependency only after the
-   **no-downgrade checklist** passes.
+   no-downgrade choice). TASK-0016 refined the lock placement: keep the agent-asset lock as
+   standalone `agent-env.lock` and keep `manifest/envctl.lock` as the FNV-1a component lock; the two
+   hash/key domains coexist but are not folded together. Reframe `manifest/agent-env.toml` from
+   "drive external binary" to "built-in subsystem." Retire the external `kasetto` binary dependency
+   only after the **no-downgrade checklist** passes.
 
 ### No-downgrade preservation checklist (every kasetto feature that MUST survive)
 - All 11 verbs incl. v3.1 `add`/`remove`/`lock`(`--check`,`--upgrade-package`); `--dry-run`/`--json`/`--locked` everywhere.

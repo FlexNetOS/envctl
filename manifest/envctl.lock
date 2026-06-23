@@ -134,7 +134,7 @@ requires = [
 resolved = ""
 
 [components.group-ai-clis]
-content_hash = "ea5aef01ca8baeb1"
+content_hash = "4b1b6f0120822b78"
 requires = [
     "claude-code-cli",
     "codex-cli",
@@ -211,7 +211,7 @@ requires = []
 resolved = ""
 
 [components.kasetto]
-content_hash = "bbdb1f5f471fa9cb"
+content_hash = "42b262e7122c05ad"
 requires = []
 resolved = ""
 
@@ -244,7 +244,7 @@ requires = [
 resolved = ""
 
 [components.meta-tool-links]
-content_hash = "4159f20ce025fcf9"
+content_hash = "ba45a708e8816d49"
 requires = []
 resolved = ""
 
@@ -329,6 +329,11 @@ resolved = ""
 [components.rustup]
 content_hash = "27302c5aae65a605"
 requires = []
+resolved = ""
+
+[components.secretd]
+content_hash = "41bdc024403d38a6"
+requires = ["env-ctl"]
 resolved = ""
 
 [components.sqld]

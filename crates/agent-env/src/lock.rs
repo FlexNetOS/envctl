@@ -3,10 +3,10 @@
 //! `src/commands/lock.rs`.
 //!
 //! This is a **separate type** from the engine's FNV-1a component lock
-//! (`crates/engine/src/lock.rs`); the two never share code. This lock is designed to be
-//! embedded into `envctl.lock` under its own keyed section ([`AGENT_ASSETS_KEY`]),
-//! leaving the FNV-1a component section untouched (TASK-0017 does the embedding;
-//! TASK-0012 ships it standalone).
+//! (`crates/engine/src/lock.rs`); the two never share code. TASK-0016 keeps the
+//! SHA-256 agent-asset lock as the standalone committed `agent-env.lock` because
+//! folding it into the component lock would mix two hash domains and weaken the
+//! no-downgrade boundary.
 //!
 //! ## 3 modes ([`LockMode`])
 //! - [`LockMode::Plain`] — verify + fetch as needed, write/refresh the lock.
@@ -27,11 +27,11 @@ use crate::{err, Result};
 /// scope-relative `destination` paths, no machine-/run-specific fields.
 pub const LOCK_VERSION: u8 = 2;
 
-/// Top-level key under which this lock serializes when embedded into `envctl.lock`
-/// (TASK-0017). The FNV-1a component lock lives under its own, separate section.
+/// Reserved top-level key for exporters that need to label this lock domain.
+/// The committed envctl repo keeps this data in standalone `agent-env.lock`.
 pub const AGENT_ASSETS_KEY: &str = "agent_assets";
 
-/// Default standalone filename for the agent-asset lock (when not embedded).
+/// Default standalone filename for the agent-asset lock.
 pub const LOCK_FILENAME: &str = "agent-env.lock";
 
 /// A tracked skill entry (the verbatim-copied skill tree, SHA-256 hashed).
