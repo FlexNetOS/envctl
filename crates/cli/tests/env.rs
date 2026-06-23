@@ -69,6 +69,10 @@ fn toolchains_shell_exports_rustup_home_with_cargo_home() {
         out.contains(&format!("export LIBCLANG_PATH='{r}/.toolchains/llvm/lib'")),
         "LIBCLANG_PATH must point at the meta-owned LLVM/clang lib dir:\n{out}"
     );
+    assert!(
+        out.contains(&format!("export GCC_PATH='{r}/.toolchains/libgccjit/lib'")),
+        "GCC_PATH must point at the meta-owned libgccjit lib dir:\n{out}"
+    );
 }
 
 /// JSON form carries RUSTUP_HOME too, so machine consumers see the same seam.
@@ -97,5 +101,10 @@ fn toolchains_json_carries_rustup_home() {
         v["LIBCLANG_PATH"].as_str(),
         Some(format!("{r}/.toolchains/llvm/lib").as_str()),
         "json LIBCLANG_PATH must point at the meta-owned LLVM/clang lib dir"
+    );
+    assert_eq!(
+        v["GCC_PATH"].as_str(),
+        Some(format!("{r}/.toolchains/libgccjit/lib").as_str()),
+        "json GCC_PATH must point at the meta-owned libgccjit lib dir"
     );
 }

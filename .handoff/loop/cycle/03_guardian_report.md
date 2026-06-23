@@ -1,175 +1,115 @@
-# Verification report: TASK-0061 — meta-owned llvm-clang toolchain (Epic H)
+# Verification report: TASK-0062 — meta-owned libgccjit for rustc_codegen_gcc (Epic H, 9th component)
 
-Worktree: `/home/drdave/Desktop/meta/.worktrees/task-0061-llvm/envctl`. `$META_ROOT=/home/drdave/Desktop/meta`.
+Worktree: `/home/drdave/Desktop/meta/.worktrees/task-0062-libgccjit/envctl` · branch `task-0062-libgccjit` @ `c64f539` (off `develop`, on top of `46eb908`). `$META_ROOT=/home/drdave/Desktop/meta`.
+(Prior on-disk report was the stale TASK-0061 cycle — no open TASK-0062 finding carried forward; overwritten.)
 
-=========================================================================
-## RE-VERIFY (round 2) — branch `task-0061-llvm` @ `f5c3ba9` (on top of `b793876`)
+## Verdict — PASS
 
-### FINAL VERDICT — PASS
-Both round-1 blocking/note findings are fixed and confirmed at the real surface. All static
-gates, the env test, the lock, the blast-radius chain, and the on-box runtime health re-pass.
-No re-pull (DEST present; GitHub API rate-limited until ~04:56 — download path unchanged since
-round 1's successful pull, only the symlink/verify logic changed). Orchestrator may open the PR.
-
-**Authoritative health line:** `✓ llvm-clang  LLVM/clang (meta-owned) [healthy] wired`
-
-### The fix (diff `b793876...f5c3ba9`, `manifest/components.d/epic-h-toolchains.toml`, +17/-5)
-- Install symlink loop now probe-gates each candidate (`"$src" --version` exit 0) before
-  `ln -sfn`, and self-prunes any stale symlink it owns (resolving into `$DEST`) when the binary
-  no longer runs — so `lld`/`ld.lld` auto-drop on a `libxml2.so.16` box and the round-1 broken
-  `lld` symlink is healed. `verify` hook: `clang --version && lld --version` → `clang --version
-  && llvm-config --version`. `remove` loop covers the full candidate list (incl. `llc`/`lld`/`ld.lld`).
-  `llc` restored to the curated set. No Rust source changed (manifest TOML + lock only).
-
-### Static — all PASS
-- `cargo build -p envctl-engine -p envctl` : PASS (no Rust change → cached)
-- `cargo fmt --all --check` : PASS · `cargo clippy --workspace -- -D warnings` : PASS (clean)
-- `cargo test -p envctl --test env` : PASS — 2/2 (LIBCLANG_PATH JSON+shell)
-- `envctl lock --check` : PASS — `✓ matches the manifest (72 components)`; `[components.llvm-clang]`
-  `content_hash de16a4e1f3ddf18b → b66d8854ad82aa99`, `requires = []` (tarball def still wins)
-- `no-c.sh` : PASS (`rustls 0.23.40 on ring`, zero C) · `shape.sh` : PASS
-- No new crate dep (Cargo.lock/toml untouched); no engine source change — invariants intact.
-
-### Blast-radius — PASS (re-confirmed)
-`cuda-oxide`/`gpu-stack` `requires` resolve (`group-gpu-stack 9 requires`); `llc` (named by the
-replaced apt def for cuda-oxide bindgen) is back on PATH; id-preserved last-wins still holds.
-
-### Runtime (Phase 3.5) — PASS — no re-pull, DEST intact
-| Check | Result | Evidence |
-|-------|--------|----------|
-| `auto-detect` health | **PASS** | `✓ llvm-clang … [healthy] wired` (was `[unhealthy]` in round 1) |
-| component verify hook (`clang && llvm-config`) | **PASS** | direct run exit 0 |
-| `clang --version` | PASS | `clang version 21.1.8`, exit 0 |
-| `llc --version` | PASS | `LLVM version 21.1.8`, exit 0 (Finding 2 fixed — restored) |
-| `llvm-config --version` | PASS | `21.1.8`, exit 0 |
-| `lld` / `ld.lld` | PASS | ABSENT — probe-pruned on this libxml2.so.16 box (Finding 1 fixed) |
-| curated symlink set | PASS | exactly the 10: clang, clang++, clang-21, clang-cpp, llc, llvm-ar, llvm-config, llvm-nm, llvm-objcopy, llvm-objdump — all → `.toolchains/llvm/bin` |
-| `env --toolchains --json` LIBCLANG_PATH | PASS | `…/.toolchains/llvm/lib` |
-| idempotency re-run | PASS | `— skip llvm-clang (already present)`, exit 0; DEST intact (no re-extract) |
-
-### Resolved from round 1
-- **Finding 1 (BLOCKING) — lld/ld.lld shipped non-functional:** RESOLVED. Probe-gate drops them
-  on this box; verify hook no longer depends on lld; component is `[healthy]`.
-- **Finding 2 (NOTE) — llc dropped from PATH:** RESOLVED. `llc` restored to the symlink/remove sets and on PATH.
-
-### Caveat
-On-box state was already converged (the implementer re-ran the fixed install pre-handoff; `llc`
-symlink stamped Jun 23 04:31, lld absent). The 2 GB download path is unchanged since round 1's
-successful pull and was deliberately NOT re-exercised (API rate-limited); only the symlink/verify
-logic — fully re-confirmed above — changed.
-
-=========================================================================
-## ROUND 1 (historical) — @ `b793876` — verdict FAIL (both findings now fixed above)
-
-(Supersedes the stale TASK-0053 report previously at this path.)
-
-## Verdict — FAIL (1 blocking runtime finding) — static layer + env seam are fully GREEN
-
-The static gates, parity test, lock, and the LIBCLANG_PATH env seam all pass. The component
-installs idempotently and clang converges correctly. **But the delivered component's own
-`verify` hook FAILS on the live box** — `lld`/`ld.lld` are shipped non-functional (they link
-the absent `libxml2.so.2`), so `auto-detect` reports the component `[unhealthy]`, not healthy.
-The runtime surface does not converge to the state the checklist required (step 5: "now reports
-installed/healthy"). Per invariant #10 a runtime FAIL is blocking and routes to the implementer.
+All five non-negotiable invariants hold, all 8 CI gates + every cargo check pass, and the
+architect-declared runtime surface was driven on-box with captured evidence (auto-detect
+`[healthy] wired`, GCC_PATH seam in both JSON+shell, the 426 MB `.so` artifact present, verify
+hook green, no drift/boundary flag). No blocking findings. Orchestrator may open the PR.
 
 ## Gate results
-- `bash ci/gates/no-c.sh` : **PASS** — `rustls=['0.23.40'] on ring=['0.17.14']; zero aws-lc/openssl/C-SQLite`
-- `bash ci/gates/shape.sh` : **PASS** — `SHAPE GATE PASS`
-- (enable.sh not relevant — no secretd surface in this manifest/CLI diff)
+| Gate | Result | First line |
+|------|--------|-----------|
+| `no-c.sh` | **PASS** | `resolved graph clean: rustls=['0.23.40'] on ring=['0.17.14']; zero aws-lc/openssl/C-SQLite` |
+| `shape.sh` | **PASS** | `SHAPE GATE PASS` |
+| `enable.sh` | **PASS** | `ENABLE GATE PASS` |
+| `p7.sh` | **PASS** | `P7 GATE PASS` |
+| `agent-env.sh` | **PASS** | `✓ agent-env.lock is up to date` |
+| `loop-state.sh` | **PASS** | `monotonic ok (34 -> 34)` |
+| `harness-scripts.sh` | **PASS** | driver + reaper + loop-state-gate tests all PASS |
+| `kdf-feature-off.sh` | **PASS** | `low-cost-kdf-tests correctly OFF by default` |
 
 ## cargo
-- `cargo build -p envctl-engine -p envctl` : **PASS**
-- `cargo fmt --all --check` : **PASS**
-- `cargo clippy --workspace -- -D warnings` : **PASS** (clean; no inherited gui/main.rs lint at this snapshot)
-- `cargo test -p envctl --test env` : **PASS** — 2/2 (`toolchains_shell_exports_rustup_home_with_cargo_home`, `toolchains_json_carries_rustup_home`)
-- `./target/debug/envctl lock --check` : **PASS** — `✓ envctl.lock matches the manifest (72 components)`
+| Check | Result | Evidence |
+|-------|--------|----------|
+| `cargo build -p envctl-engine -p envctl` | **PASS** | finished, exit 0 |
+| `cargo test -p envctl --test env` | **PASS** | 2/2 — `toolchains_json_carries_rustup_home`, `toolchains_shell_exports_rustup_home_with_cargo_home` (both carry the new GCC_PATH assertions) |
+| `cargo run -p envctl -- lock --check` | **PASS** | `✓ envctl.lock matches the manifest (73 components)` (72→73 confirmed) |
+| `cargo fmt --all -- --check` | **PASS** | exit 0, no diff |
+| `cargo clippy -p envctl-engine -p envctl -- -D warnings` | **PASS** | exit 0, clean |
+
+### Clippy axis classification
+Zero clippy findings on the gate-scope (`-p envctl-engine -p envctl`), touched crates — nothing
+to classify. Did NOT run/fix any `--all-targets` or untouched-crate (gui) lint; out of scope and
+not introduced by this change.
 
 ## Invariant checks
-1. No-C trust boundary — **PASS**. `Cargo.lock`/`Cargo.toml` untouched (no new crate dep); no-c gate green.
-2. Code-shape — **PASS** (shape.sh green).
-3. secretd enable — **N/A** (no secretd surface).
-4. Engine purity — **PASS**. Zero `crates/engine/src` files changed; the new env-seam logic is CLI-only printing in `crates/cli/src/main.rs` (an existing print surface), not the engine library.
-5. Front-end parity — **PASS/NOTE**. LIBCLANG_PATH seam is in `envctl env --toolchains`; both JSON (`run_env:1747`) and shell (`:1800-1803`) forms carry it. CLI env-export surface with no GUI counterpart — consistent with sibling OLLAMA/RUSTUP exports.
-6. Fail-closed / dry-run — **PASS**. `install` is additive/idempotent; `--dry-run` previews ("would Install"); the `remove` hook is self-guarded — only unlinks `~/.local/bin/*` symlinks whose `readlink` resolves into `$M/.toolchains/llvm` before `rm -rf` of the prefix.
-7. Rust-native, no drift — **PASS**. No non-Rust source/package files; component is a TOML manifest block; no banned dep.
-8. Lock honesty — **PASS**. `[components.llvm-clang]` regenerated: `content_hash de16a4e1f3ddf18b`, `requires = []` (was `["nvidia-cuda-repo"]`) — tarball def won last-wins-on-id. `lock --check` clean.
-9. Kasetto/agent-env — **N/A**.
-10. Runtime behavior — **FAIL** (see Runtime check + Findings).
+1. **No C in the trust boundary — PASS.** `no-c.sh` green (rustls 0.23.40 on ring, zero
+   aws-lc/openssl/C-SQLite). **Independently confirmed NO new dependency:** `git diff
+   develop...HEAD` over `Cargo.toml`/`Cargo.lock` is EMPTY — no crate added, no TLS/dep churn.
+   **The downloaded `libgccjit.so` is correctly NOT a Cargo dependency:** it is a runtime shared
+   object under `$META_ROOT/.toolchains/libgccjit/lib/`, consumed by the EXTERNAL
+   `rustc_codegen_gcc` backend, never linked into any envctl crate. The no-c gate is
+   cargo-metadata-scoped, so a file under `.toolchains/` is invisible to it by design — NOT
+   false-flagged, and correctly so.
+2. **Exactly one rustls, ring-only — PASS.** `Cargo.lock` diff empty; no rustls/ring/aws-lc
+   churn. no-c gate reports the single `rustls 0.23.40 on ring 0.17.14`.
+3. **Engine is the single shared, non-printing library — PASS.** NO engine code changed
+   (diff touches only `manifest/components.d/epic-h-toolchains.toml`, `crates/cli/src/main.rs`
+   `run_env`, `crates/cli/tests/env.rs`, `manifest/envctl.lock`, the ADR doc, and the two handoff
+   cycle files). No `println!` added to the engine path; GCC_PATH is emitted by the CLI's
+   `run_env` only (existing print site, mirrors the other toolchain exports). New logic is in the
+   manifest TOML (data) + the thin CLI seam — correct placement.
+4. **Destructive ops fail-closed / dry-run by default — PASS.** install/remove run only through
+   envctl's standard apply harness (no bespoke guard needed for a manifest component). Read the
+   actual `remove` hook (TOML 449-456): `set -u` then `rm -rf "$M/.toolchains/libgccjit"` — scoped
+   to its OWN `.toolchains/libgccjit` dir only, never a foreign path; `set -u` aborts on an unbound
+   `META_ROOT` (default `$HOME/Desktop/meta`). Self-guarded as claimed.
+5. **Rust-native / no language drift — PASS.** No foreign-language SOURCE added to the workspace
+   (no `.c`/`.cpp`/`.js`/etc. tracked). `git status --short` is clean — the 426 MB `.so` is NOT a
+   tracked add. `.toolchains/` is gitignored at the meta root (`/home/drdave/Desktop/meta/.gitignore:85
+   → .toolchains/`), so the runtime artifact lives entirely outside version control.
 
-## Parity check (env seam)
-- JSON: `crates/cli/src/main.rs:1747` → `map["LIBCLANG_PATH"] = "{tc}/llvm/lib"`.
-- Shell: `crates/cli/src/main.rs:1800-1803` → `export LIBCLANG_PATH=…`.
-- Both verified live: `env --toolchains --json` and shell form emit `…/.toolchains/llvm/lib`.
+## Parity check
+GCC_PATH reaches BOTH machine consumers via the single `run_env` site (no front-end divergence):
+- JSON form: `crates/cli/src/main.rs:1748` — `map["GCC_PATH"] = format!("{tc}/libgccjit/lib")`
+- shell form: `crates/cli/src/main.rs:1807-1810` — `export GCC_PATH=…libgccjit/lib`
+- both asserted: `crates/cli/tests/env.rs` JSON (`v["GCC_PATH"]`) + shell (`export GCC_PATH='…'`).
+(This is a CLI env-seam surface; no GUI/Engine method involved — GUI parity N/A for an env export.)
 
-## Unit ledger (derived from diff — no `## Unit ledger` in plan packet at this path)
-| U# | unit | present | wired | evidence |
+## Unit ledger (derived from plan — Engine API delta + Work breakdown)
+| U# | Unit | Present | Wired | Evidence |
 |----|------|---------|-------|----------|
-| U1 | `llvm-clang` tarball component | YES | YES (auto-detect parses + graph resolves) | `manifest/components.d/epic-h-toolchains.toml:345` |
-| U2 | apt `llvm-clang` removed from gpu.toml | YES | YES (note left; id preserved) | `manifest/gpu.toml:105-110` |
-| U3 | LIBCLANG_PATH seam (JSON+shell) | YES | YES (env tests + runtime) | `crates/cli/src/main.rs:1747,1800` |
-| U4 | env.rs assertions | YES | YES (2/2 pass) | `crates/cli/tests/env.rs:68,96` |
-| U5 | lock regen | YES | YES (lock --check clean) | `manifest/envctl.lock:243` |
+| U1 | `[[component]] id="libgccjit"` (detect/install/verify/remove) | ✓ | ✓ | `epic-h-toolchains.toml:417-456`; loaded → `auto-detect` lists it `[healthy] wired` |
+| U2 | install: pin COMMIT from `libgccjit.version`, download `master-${COMMIT}/libgccjit.so` → `.so` + `.so.0` symlink, no `~/.local/bin` link | ✓ | ✓ | `toml:430-442`; on-box `.so` (426M) + `.so.0` SONAME present, no bin symlink |
+| U3 | GCC_PATH in JSON env seam | ✓ | ✓ | `main.rs:1748`; runtime json emits `…/.toolchains/libgccjit/lib` |
+| U4 | GCC_PATH in shell env seam | ✓ | ✓ | `main.rs:1807`; runtime shell emits `export GCC_PATH='…'` |
+| U5 | env test GCC_PATH assertions (both forms) | ✓ | ✓ | `tests/env.rs`; 2/2 pass |
+| U6 | `envctl.lock` regen 72→73 (`[components.libgccjit]`) | ✓ | ✓ | `envctl.lock` (+5); `lock --check` ✓ 73 components |
+| U7 | ADR row marked SHIPPED | ✓ | ✓ | `docs/adr-install-locations-and-local-state.md:78` |
+All ledger rows present AND wired (reached at runtime / referenced). No unwired stubs.
 
-## BLAST-RADIUS (gpu.toml apt→tarball swap) — PASS
-- `requires = [… "llvm-clang" …]` intact: `cuda-oxide` (`gpu.toml:141`), `gpu-stack` (`gpu.toml:279`). `envctl graph` resolves the chain (`group-gpu-stack 9 requires`) — no dangling require.
-- Last-wins confirmed: auto-detect shows tarball name "LLVM/clang (meta-owned)"; lock shows tarball `content_hash` + `requires = []`, NOT the old `requires = ["nvidia-cuda-repo"]`.
-- No other component references the removed apt def's side effects.
-
-## Runtime check — FAIL
-Real install on the live box (`envctl install llvm-clang`, 36s, `✓ llvm-clang Install`).
-Pre-state: apt clang 21.1.8 at `/usr/bin`; no `~/.local/bin/clang`; no `.toolchains/llvm`.
-
-| Step | Result | Evidence |
-|------|--------|----------|
-| dry-run preview | PASS | `would Install llvm-clang` |
-| install (real) | PASS | `✓ llvm-clang Install`, `wiring applied` |
-| `clang --version` | PASS | `clang version 21.1.8 (…llvm-project 2078da…)`, target `x86_64-unknown-linux-gnu` |
-| `clang -print-resource-dir` | PASS | `…/.toolchains/llvm/lib/clang/21` (realpath into the prefix — symlink reasoning holds) |
-| `command -v clang` shadows apt | PASS | `/home/drdave/.local/bin/clang` (meta ahead of `/usr/bin`) |
-| `libclang.so*` present | PASS | `libclang.so → .so.21.1 → .so.21.1.8` (199 MB) under `.toolchains/llvm/lib` |
-| `env --toolchains` LIBCLANG_PATH | PASS | JSON + shell emit `…/.toolchains/llvm/lib` |
-| **`lld --version`** | **FAIL** | `lld: error while loading shared libraries: libxml2.so.2: cannot open shared object file` — **exit 127** |
-| **verify hook** (`clang --version && lld --version`) | **FAIL** | chain **exit 127** (lld short-circuits) |
-| `auto-detect` post-install health | **FAIL** | `✓ llvm-clang … [unhealthy] wired` → `[high] Unhealthy: installed but verify failed` |
-| idempotency re-run | PASS | `— skip llvm-clang (already present)`, exit 0 |
+## Runtime check — PASS (architect declared a `## Runtime surface`; driven on-box)
+Drove the real surfaces; install was NOT re-exercised (already converged on-box; the network
+GitHub download is the deferred-on-sandbox path the architect noted — verified the resulting state
+instead, which is the observable evidence).
+| # | Surface driven | Result | Evidence (captured) |
+|---|---------------|--------|---------------------|
+| 1 | `envctl auto-detect` | **PASS** | `✓ libgccjit  libgccjit (meta-owned) [healthy] wired` |
+| 2a | `env --toolchains --json \| grep GCC_PATH` | **PASS** | `"GCC_PATH": "/home/drdave/Desktop/meta/.toolchains/libgccjit/lib"` |
+| 2b | `env --toolchains \| grep GCC_PATH` | **PASS** | `export GCC_PATH='/home/drdave/Desktop/meta/.toolchains/libgccjit/lib'` |
+| 3 | component verify hook (`[ -f …libgccjit.so ] && file … \| grep 'shared object'`) | **PASS** | `VERIFY_HOOK_GREEN`, exit 0; `doctor` shows no libgccjit FAIL |
+| 4 | installed artifact | **PASS** | `libgccjit.so` 426.3M + `.so.0 -> …libgccjit.so`; `file` → `ELF 64-bit LSB shared object, x86-64 … dynamically linked` |
+| 5a | off-happy-path: `remove` hook self-guard | **PASS (read)** | deletes only `$M/.toolchains/libgccjit`; never a foreign path |
+| 5b | off-happy-path: drift/boundary probe | **PASS** | libgccjit absent from ALL `auto-detect` drift entries; the 5 listed drift items are pre-existing (`weave` `~/.cargo/bin` boundary etc.), unrelated to this change — the meta-owned `.so` under `.toolchains/` is correctly NOT a boundary violation |
 
 ## Findings
-1. **BLOCKING — `lld`/`ld.lld` shipped non-functional (libxml2 soname mismatch).**
-   `~/.local/bin/lld` and `ld.lld` link `libxml2.so.2`, which is absent — the box only has
-   `libxml2.so.16` (newer Ubuntu soname); the tarball bundles no libxml2. The component's own
-   `[component.verify]` is `clang --version && lld --version`, so a clean install is permanently
-   `[unhealthy]` and the LLD linker (a flagship deliverable, named in the component) does not run.
-   Evidence: `ldd ~/.local/bin/lld → libxml2.so.2 => not found`; `lld --version → exit 127`;
-   `auto-detect → [high] Unhealthy: installed but verify failed`.
-   Fix options: (a) make the install hook provide/symlink a compatible libxml2 ABI only when
-   genuinely ABI-compatible (a soname bump may not be); (b) declare the system `libxml2`(`.so.2`)
-   dependency / `requires`; (c) use an LLVM tarball whose lld is statically linked or links the
-   current soname; (d) if lld isn't needed downstream, drop `lld`/`ld.lld` from BOTH the symlink
-   set AND the verify hook. The verify hook and the shipped surface must agree — today they don't.
+None blocking. None non-blocking.
 
-2. **NOTE / possible downgrade — `llc` dropped from the PATH symlink set.**
-   The replaced apt def's description explicitly said *"Provides **llc** + libclang resource-dir
-   headers cuda-oxide's bindgen needs"* and detected `command -v llc-21`. The tarball ships `llc`
-   (`.toolchains/llvm/bin/llc`) but the new symlink loop omits it, so `llc` is not on PATH. If
-   cuda-oxide's build reaches `llc` by PATH name this is a regression for the named consumer; if it
-   reaches it via `llvm-config`/resource-dir it's harmless. Implementer should confirm cuda-oxide's
-   lookup and, if PATH-based, add `llc` to the symlink + remove sets.
+NOTE (informational, not a finding): `auto-detect`/`doctor` report 5 pre-existing drift items
+(`weave` BoundaryViolation resolving to `~/.cargo/bin/weave` outside META_ROOT, etc.). These are
+unrelated to TASK-0062 — present on `develop`, owned by other components — and do NOT involve
+libgccjit. Out of scope for this cycle.
 
-3. **NOTE — additive coexistence correct.** apt `clang-21`/`llvm-21`/`libclang-21-dev` remain
-   installed (removal is a separate sudo step per plan); `~/.local/bin` correctly shadows `/usr/bin`.
-
-## Re-test needed (after fix)
+## Re-test needed
+None — clean PASS. Should the orchestrator wish to re-confirm after rebase:
 ```
-cd /home/drdave/Desktop/meta/.worktrees/task-0061-llvm/envctl
-cargo build -p envctl-engine -p envctl
-cargo fmt --all --check
-cargo clippy --workspace -- -D warnings
-cargo test -p envctl --test env
-./target/debug/envctl lock --check                # regen first if the component block changes
+cd /home/drdave/Desktop/meta/.worktrees/task-0062-libgccjit/envctl
 bash ci/gates/no-c.sh && bash ci/gates/shape.sh
-# Runtime — the gate that currently fails:
-./target/debug/envctl install llvm-clang
-PATH="$HOME/.local/bin:$PATH" lld --version                       # must exit 0
-./target/debug/envctl auto-detect 2>/dev/null | grep -i llvm     # must report healthy, not [unhealthy]
-command -v llc                                                     # if Finding 2 accepted: ~/.local/bin/llc
+cargo test -p envctl --test env
+cargo run -p envctl -- lock --check        # expect: 73 components
+META_ROOT=/home/drdave/Desktop/meta cargo run -p envctl -- auto-detect | grep libgccjit
 ```
