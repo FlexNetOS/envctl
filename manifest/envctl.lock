@@ -288,6 +288,14 @@ content_hash = "e2ebea57f7a14432"
 requires = []
 resolved = ""
 
+[components.mlua]
+content_hash = "d35684cc3655c910"
+requires = [
+    "llvm-clang",
+    "rustup",
+]
+resolved = ""
+
 [components.n8n-mcp]
 content_hash = "f1cc110ba3589365"
 requires = ["node-via-bun"]
