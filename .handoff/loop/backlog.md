@@ -108,11 +108,11 @@ Verified meta GitHub transport/automation doctrine, routed into envctl as
 - Continuity wording stays current: handoff uses the **redb-backed ledger plus deterministic JSONL
   export**, not SQLite.
 
-- [~] **TASK-0053 (P0) — delivered 2026-06-23 (guardian PASS pending merge):** doctrine note
+- [x] **TASK-0053 (P0) — DONE 2026-06-23 via PR #164 (MERGED 04:37:54Z):** doctrine note
   `docs/secrets/GITHUB-TRANSPORT-DOCTRINE.md` + README index entry + additive
   `policy_drift_permissions_scope_serializes` regression test in `crates/secretctl/src/main.rs`.
   Zero new Engine method / RPC / CLI flag / crate dep (the existing `mint-github` path already
-  covers POLICY_DRIFT). Re-poll `gh pr view <N>` next session; tick to `[x]` on MERGED.
+  covers POLICY_DRIFT). Guardian PASS, runtime fail-closed verified.
 
 <details><summary>TASK-0020-COMPLETE original spec (DONE — kept for reference)</summary>
 
