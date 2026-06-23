@@ -59,15 +59,16 @@ rm -rf "$M/.toolchains/gh"
 path_entries = ["~/.local/bin"]
 
 # ── wild (linker) ── owner-preferred replacement for mold. crates.io pkg = `wild-linker`,
-# binary = `wild`. FULLY WIRED (Epic H TASK-0054): install ALSO writes the meta-root
-# $META_ROOT/.cargo/config.toml linker section (`linker = "clang"` +
+# binary = `wild`. FULLY WIRED (Epic H TASK-0054): install ALSO writes a delimited block in
+# the meta-root $META_ROOT/.cargo/config.toml linker section (`linker = "clang"` +
 # `-Clink-arg=--ld-path=wild`) so local cargo builds link via wild; detect/verify assert
-# the wiring; remove strips it (restoring any pre-wild backup). A full `cargo build` was
-# confirmed to link through `clang --ld-path=wild` before this landed (build-verify gate).
+# the wiring; remove strips ONLY its block. The file is CO-MANAGED with the kache component
+# (TASK-0055) via non-clobbering block-upsert. A full `cargo build` was confirmed to link
+# through `clang --ld-path=wild` before this landed (build-verify gate).
 [[component]]
 id = "wild-linker"
 name = "wild linker (meta-owned, wired + verified)"
-description = "Fast Rust linker (davidlattimore/wild) via `cargo install --locked wild-linker` into .toolchains/wild, wired as the local cargo linker via the meta-root .cargo/config.toml (clang + --ld-path=wild). Owner-preferred over mold. Wiring is verified — a full cargo build links through wild before it lands; remove restores the prior config."
+description = "Fast Rust linker (davidlattimore/wild) via `cargo install --locked wild-linker` into .toolchains/wild, wired as the local cargo linker via a delimited block in the meta-root .cargo/config.toml (clang + --ld-path=wild). Owner-preferred over mold. Wiring is verified — a full cargo build links through wild before it lands; the config is co-managed with kache (block-upsert) and remove strips only the wild block."
 
 [component.detect]
 kind = "command"
@@ -85,22 +86,26 @@ cargo install --locked wild-linker --root "$DEST"
 install -d -m 755 "$HOME/.local/bin"
 ln -sfn "$DEST/bin/wild" "$HOME/.local/bin/wild"
 # Wire wild as the local cargo linker via the meta-root .cargo/config.toml. This file
-# lives OUTSIDE the envctl repo (it is a runtime artifact at $META_ROOT, like .toolchains/);
-# only this component def is committed. CI clones each repo standalone so it never sees it.
+# lives OUTSIDE the envctl repo (a runtime artifact at $META_ROOT, like .toolchains/); only
+# this component def is committed. CI clones each repo standalone so it never sees it. The
+# file is CO-MANAGED with the kache component (Epic H TASK-0055): each component owns a
+# delimited block written by a NON-CLOBBERING upsert (strip my old block, append fresh),
+# so the two never overwrite each other and any foreign content is preserved.
 install -d -m 755 "$M/.cargo"
 CFG="$M/.cargo/config.toml"
-MARK="# managed by envctl wild-linker component (Epic H TASK-0054)"
-if [ -f "$CFG" ] && ! grep -qF "$MARK" "$CFG"; then
-  # Pre-existing, foreign config — back it up once before we take over the file.
-  cp -p "$CFG" "$CFG.pre-wild.bak"
+touch "$CFG"
+# One-time migration off the legacy wholesale format (pre-TASK-0055: a single marker line +
+# a [target...] section written via `cat >`). Strip exactly those legacy lines, preserving
+# anything else (e.g. a kache [build] block written first). Stop the legacy skip at the next
+# [section] OR the next comment line (so a following block's `# >>> ... >>>` marker survives).
+if grep -q '^# managed by envctl wild-linker component' "$CFG"; then
+  awk '/^# managed by envctl wild-linker component/{leg=1;next} leg&&((/^\[/&&$0!~/^\[target\.x86_64-unknown-linux-gnu\]/)||/^#/){leg=0} leg{next} {print}' "$CFG" > "$CFG.mig" && mv "$CFG.mig" "$CFG"
 fi
-# Idempotent: always (re)write our managed file with exactly the linker section.
-cat > "$CFG" <<EOF
-$MARK
-[target.x86_64-unknown-linux-gnu]
-linker = "clang"
-rustflags = ["-Clink-arg=--ld-path=wild"]
-EOF
+# Upsert our delimited block idempotently (replace any prior wild block, keep the rest).
+BEG="# >>> envctl wild-linker (Epic H TASK-0054) >>>"
+END="# <<< envctl wild-linker (Epic H TASK-0054) <<<"
+awk -v b="$BEG" -v e="$END" '$0==b{s=1} s&&$0==e{s=0;next} !s{print}' "$CFG" > "$CFG.tmp" && mv "$CFG.tmp" "$CFG"
+printf '%s\n[target.x86_64-unknown-linux-gnu]\nlinker = "clang"\nrustflags = ["-Clink-arg=--ld-path=wild"]\n%s\n' "$BEG" "$END" >> "$CFG"
 '''
 
 [component.verify]
@@ -146,35 +151,42 @@ set -u
 M="${META_ROOT:-$HOME/Desktop/meta}"
 t="$HOME/.local/bin/wild"; [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/wild" && rm -f "$t"
 rm -rf "$M/.toolchains/wild"
-# Strip the wild linker wiring. If we backed up a pre-existing foreign config, restore it;
-# otherwise remove our managed file so there is no leftover linker override. Self-guarded:
-# only touch a config that carries OUR marker (never clobber a foreign config we never wrote).
+# Strip the wild linker block from the CO-MANAGED config (non-destructive to other blocks,
+# e.g. kache, and to foreign content). Self-guarded by OUR delimiters; also strips the legacy
+# wholesale format if present. If nothing is left, remove the file. Drop any obsolete
+# pre-wild backup left by the legacy format.
 CFG="$M/.cargo/config.toml"
-MARK="# managed by envctl wild-linker component (Epic H TASK-0054)"
-if [ -f "$CFG" ] && grep -qF "$MARK" "$CFG"; then
-  if [ -f "$CFG.pre-wild.bak" ]; then
-    mv -f "$CFG.pre-wild.bak" "$CFG"
-  else
-    rm -f "$CFG"
+BEG="# >>> envctl wild-linker (Epic H TASK-0054) >>>"
+END="# <<< envctl wild-linker (Epic H TASK-0054) <<<"
+if [ -f "$CFG" ]; then
+  awk -v b="$BEG" -v e="$END" '$0==b{s=1} s&&$0==e{s=0;next} !s{print}' "$CFG" > "$CFG.tmp" && mv "$CFG.tmp" "$CFG"
+  if grep -q '^# managed by envctl wild-linker component' "$CFG" 2>/dev/null; then
+    awk '/^# managed by envctl wild-linker component/{leg=1;next} leg&&((/^\[/&&$0!~/^\[target\.x86_64-unknown-linux-gnu\]/)||/^#/){leg=0} leg{next} {print}' "$CFG" > "$CFG.mig" && mv "$CFG.mig" "$CFG"
   fi
+  grep -q '[^[:space:]]' "$CFG" || rm -f "$CFG"
 fi
+rm -f "$CFG.pre-wild.bak"
 '''
 
 [component.wiring]
 path_entries = ["~/.local/bin"]
 
 # ── kache (compiler cache) ── owner-preferred RUSTC_WRAPPER (kunobi-ninja/kache).
-# INSTALL-ONLY: wiring RUSTC_WRAPPER is a separate verified step (Epic H TASK-0055)
-# so an apply can't change how the workspace compiles.
+# FULLY WIRED (Epic H TASK-0055): install ALSO writes a delimited `[build] rustc-wrapper`
+# block into the meta-root $META_ROOT/.cargo/config.toml (CO-MANAGED with the wild-linker
+# component via non-clobbering block-upsert), so local cargo builds are cache-wrapped by
+# kache. The env-seam (`envctl env`) was NOT used: it is not sourced into the interactive
+# shell, so an env-var wiring would be inert — the cargo config is the only automatic path.
+# Verify proves a real throwaway build is actually intercepted by kache (index.db written).
 [[component]]
 id = "kache"
-name = "kache compiler cache (meta-owned, install-only)"
-description = "Content-addressed Rust compiler cache (kunobi-ninja/kache) via `cargo install kache` into .toolchains/kache. Install-only — RUSTC_WRAPPER wiring is a separate step. sccache only as last-resort fallback."
+name = "kache compiler cache (meta-owned, wired + verified)"
+description = "Content-addressed Rust compiler cache (kunobi-ninja/kache) via `cargo install kache` into .toolchains/kache, wired as RUSTC_WRAPPER via a delimited [build] block in the meta-root .cargo/config.toml (co-managed with wild via block-upsert). Wiring is verified — a throwaway cargo build is confirmed to be kache-intercepted before it lands. sccache only as last-resort fallback."
 
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/kache/bin/kache\" ] && [ \"$(readlink -f \"$HOME/.local/bin/kache\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/kache/bin/kache\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/kache/bin/kache\" ] && [ \"$(readlink -f \"$HOME/.local/bin/kache\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/kache/bin/kache\")\" ] && [ -f \"$M/.cargo/config.toml\" ] && grep -q 'rustc-wrapper' \"$M/.cargo/config.toml\""]
 
 [component.install]
 kind = "script"
@@ -186,12 +198,54 @@ DEST="$M/.toolchains/kache"
 cargo install kache --root "$DEST"
 install -d -m 755 "$HOME/.local/bin"
 ln -sfn "$DEST/bin/kache" "$HOME/.local/bin/kache"
+# Wire kache as RUSTC_WRAPPER via the meta-root .cargo/config.toml [build] section. Same
+# CO-MANAGED file as the wild-linker component (TASK-0054): each owns a delimited block,
+# written by a non-clobbering upsert so the two never overwrite each other and foreign
+# content is preserved. The file is a $META_ROOT runtime artifact (like .toolchains/),
+# outside the repo; CI clones repos standalone so it never sees it. `kache` is PATH-resolved
+# (~/.local/bin), matching kache's own `doctor` recommendation and wild's bare `clang`/`wild`.
+install -d -m 755 "$M/.cargo"
+CFG="$M/.cargo/config.toml"
+touch "$CFG"
+BEG="# >>> envctl kache (Epic H TASK-0055) >>>"
+END="# <<< envctl kache (Epic H TASK-0055) <<<"
+awk -v b="$BEG" -v e="$END" '$0==b{s=1} s&&$0==e{s=0;next} !s{print}' "$CFG" > "$CFG.tmp" && mv "$CFG.tmp" "$CFG"
+printf '%s\n[build]\nrustc-wrapper = "kache"\n%s\n' "$BEG" "$END" >> "$CFG"
 '''
 
 [component.verify]
-kind = "command"
-command = "bash"
-args = ["-lc", "PATH=\"$HOME/.local/bin:$PATH\"; kache --version || kache doctor"]
+kind = "script"
+login_shell = true
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+export PATH="$HOME/.local/bin:$PATH"
+# Bypass any interactive `grep` shell-function wrapper (rtk/ugrep hook in login shells).
+g() { command grep "$@"; }
+# 1) tool resolves
+kache --version
+# 2) the co-managed config carries the rustc-wrapper wiring
+CFG="$M/.cargo/config.toml"
+[ -f "$CFG" ] && g -q 'rustc-wrapper' "$CFG"
+# 3) prove kache actually wraps a real build. Build a throwaway crate in /tmp (outside the
+#    meta tree) with the meta-root config applied, against an ISOLATED kache cache via
+#    XDG_CACHE_HOME, then confirm kache recorded the wrapped build (index.db written).
+tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+export XDG_CACHE_HOME="$tmp/xdg"; mkdir -p "$XDG_CACHE_HOME"
+mkdir -p "$tmp/proj/src"
+cat > "$tmp/proj/Cargo.toml" <<EOF
+[package]
+name = "kache-wire-probe"
+version = "0.0.0"
+edition = "2021"
+[[bin]]
+name = "kache-wire-probe"
+path = "src/main.rs"
+EOF
+echo 'fn main() {}' > "$tmp/proj/src/main.rs"
+( cd "$tmp/proj" && cargo build --config "$CFG" --target-dir "$tmp/td" 2>&1 )
+[ -s "$XDG_CACHE_HOME/kache/index.db" ] || { echo "kache did not record the wrapped build"; exit 1; }
+'''
 
 [component.remove]
 kind = "script"
@@ -201,6 +255,15 @@ set -u
 M="${META_ROOT:-$HOME/Desktop/meta}"
 t="$HOME/.local/bin/kache"; [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/kache" && rm -f "$t"
 rm -rf "$M/.toolchains/kache"
+# Strip ONLY the kache block from the co-managed config (leaves wild's block + foreign
+# content intact). Self-guarded by OUR delimiters. Remove the file if nothing remains.
+CFG="$M/.cargo/config.toml"
+BEG="# >>> envctl kache (Epic H TASK-0055) >>>"
+END="# <<< envctl kache (Epic H TASK-0055) <<<"
+if [ -f "$CFG" ]; then
+  awk -v b="$BEG" -v e="$END" '$0==b{s=1} s&&$0==e{s=0;next} !s{print}' "$CFG" > "$CFG.tmp" && mv "$CFG.tmp" "$CFG"
+  grep -q '[^[:space:]]' "$CFG" || rm -f "$CFG"
+fi
 '''
 
 [component.wiring]
