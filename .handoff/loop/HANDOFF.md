@@ -1,92 +1,90 @@
-# HANDOFF — forge-loop (envctl secrets / Epic-F build) · 2026-06-18 (session 9)
+# HANDOFF — forge-loop
 
-closed_utc: 2026-06-18   branch: develop (work in FRESH worktrees off develop)
-cycle_budget: 1   cycles_this_session: 1   cycles_total: 18
-last_item: TASK-0028 (DONE, PR #126, guardian PASS-WITH-NOTES)   next_item: TASK-0037 (Phase-7 verify-don't-rebuild)
-orchestrator_phase: handoff (cycle budget reached)   gate_status: PASS-WITH-NOTES   pr_url: https://github.com/FlexNetOS/envctl/pull/126
-resume_command: /forge-loop resume   (reads this file + backlog "⏭ NEXT PICK")
+closed_utc: 2026-06-23T03:40:10Z
+branch: task-0039-client-ca-lifecycle
+worktree: /home/drdave/Desktop/meta/.worktrees/task-0039-client-ca-lifecycle/envctl
+cycle_budget: 1
+cycles_total: 28
+cycles_this_session: 9
+last_item: TASK-0039
+next_item: TASK-0039
+orchestrator_phase: PR_OPEN_WAIT_FOR_MERGE
+last_agent: codex
+gate_status: PASS-WITH-NOTES
+pr_url: https://github.com/FlexNetOS/envctl/pull/162
 
-## State (authoritative = Git/merged PRs; this file is a companion view)
-MERGED to develop: #106 (TASK-0026 enroll), #105 (mint), #109 (TASK-0030 jti+OI-SM-1), #111 (TASK-0031 PR-1
-  listener), #112 (TASK-0036 mlockall), #117 (TASK-0032 stream tear-down), #108 (TASK-0035 gRPC), #122
-  (TASK-0031-PR2 edge hardening), **#124 (TASK-0027 early-revoke)**, plus infra #113/#114/#115/#116/#120/#121.
-IN FLIGHT (auto-merge armed): **#126 (TASK-0028 — GUI parity)**. Guardian PASS-WITH-NOTES, 4 gates green,
-  ZERO new GUI deps. A separate chore PR carries this session's reconcile/handoff (fast CI squash-lands the
-  feature before a bundled reconcile commit — proven sessions 6/7/8 — so bookkeeping ships as its own PR).
-RETIRED: **#125** (session-8 reconcile) — this session-9 reconcile is a SUPERSET that subsumes it (ticked
-  TASK-0027 + TASK-0028, cycles_total 16→18); #125 was closed as superseded so the two reconciles don't race.
-Earlier merged: #102/#103/#104/#107/#118/#119/#123.
+## Landed This Session
 
-**Epic F status:** the GitHub App mint path is now FULL-LIFECYCLE + GUI-surfaced — **enroll (#106) → mint
-(#105) → early-revoke (#124) → GUI parity (#126)**. The remote relay edge is feature-complete (listener #111 +
-hardening #122 + stream tear-down #117), mlock-hardened (#112), with a real gRPC surface (#108). What remains
-in Epic F is the Phase-7 verify-don't-rebuild pass, the hardening tail, and Certs.* (Phase 4+).
+- 882c111 secretd: add remote client CA lifecycle
+- PR #159 merged earlier this session: handoff stale-card reconciliation.
+- PR #162 is open and carries TASK-0039 implementation; do not run `hf done` until it is confirmed
+  `MERGED`.
 
-## ⚠ FIRST on resume (baseline verify)
-1. From an envctl worktree (NOT meta root): `git -C envctl fetch origin develop && gh pr list --state open`.
-2. Confirm **#126** merged. If DIRTY (a sibling merged first touching `lib.rs`/`engine`/`.handoff`), rebase onto
-   develop: resolve `.handoff/loop/cycle/*` by taking the PR's own side (`--theirs`); take develop's side for
-   `loop_state.md`/`HANDOFF.md`/backlog NEXT-PICK (`--ours`) but KEEP the PR's per-item ticks;
-   `cargo build -p envctl-engine -p envctl-gui`; `git push --force-with-lease`.
+## Current State
 
-## NEXT (dep order)
-1. **TASK-0037 — Phase-7 verify-don't-rebuild.** This is a VERIFY pass, not a fresh build: confirm the secrets
-   verbs are folded onto the `envctl` umbrella (not just standalone `secretctl`/`secretd`), confirm an
-   `install secretd` manifest component exists (or file it), and fix stale ROADMAP/doc lines that claim
-   unbuilt state. Architect should lead with a gap inventory (what the docs claim vs what Git shows merged) so
-   the cycle confirms/corrects rather than re-implements. Mind the no-fabricate rule: verify each claim against
-   source/merged PRs, don't re-port what's already done.
-2. Then **TASK-0034** (hardening tail: F10 tonic version-pin + cargo-audit in CI, F11 MSRV-1.80 check job,
-   F18 audit-log fsync) → **TASK-0038** (Certs.* Phase-4+). Small follow-up: **MADV_DONTDUMP** companion to the
-   merged #112 mlockall. Open: **TASK-0031-PR2C** (PROXY-protocol source IP), **TASK-0039** (remote-clients-CA
-   lifecycle for the mTLS verifier).
-SKIP **TASK-0033** (VPS Profile B) — owner-gated `[!]`.
+TASK-0039 was reopened because PR #158 only delivered the verifier/revocation-file enforcement slice.
+This branch implements the lifecycle slice:
 
-## OPERATIONAL NOTE (not a forge cycle — for the owner / an operational session)
-A weave message requested `secretctl github-app enroll` to unblock the App's `mint-github` (it currently 404s /
-"App id not enrolled"). This is the **TASK-0026 fail-closed guard working as designed**, NOT a code bug. The
-enroll needs the **ORIGINAL `app.pem`** (app-id 4044997) — the vault's copy is `broker_only` / un-revealable by
-design, so it cannot be sourced from envctl. This is an **owner/operational action**, not a loop task:
-`secretctl github-app enroll --apply --app-id 4044997 --private-key <original-app.pem>` then
-`secretctl mint-github --installation-id 140063898 --output json`. **DO NOT scan the box for the PEM** (the
-sandbox correctly denies credential exploration; both the implementer and guardian sub-agents this session
-correctly held rather than hunting for it). A second weave question — "which secretd is canonical / what is the
-authoritative socket+data-dir?" — is also **held for the owner**; do not switch daemons or add a socket override
-without that confirmation. If a socket override is ever wanted it is a NEW task (teach the GUI/CLI seam to honor
-`--socket`/`$ENVCTL_SECRETD_SOCKET`), not part of TASK-0028.
+- DEK-sealed remote-clients CA distinct from the MITM CA.
+- Remote-clients CA rebuilds on unlock and zeroizes on lock.
+- `control_plane_client` issuance defaults to 7 days and refuses `ttl_days > 7`.
+- `Engine::ca_renew` reissues live client leaves and revokes superseded rows.
+- `Engine::ca_revoke` is dry-run by default, requires `--apply --confirm`, revokes cert rows, and
+  disables a matching remote-client registry row.
+- `secretd` wires `Certs.Renew` and `Certs.Revoke`.
+- `secretd` appends SHA-256 DER fingerprints to configured `client_revocations_path`, the same format
+  PR #158's mTLS verifier reloads.
+- libSQL cert storage now projects revocation state through an idempotent `cert_revocations` table.
 
-## decisions_and_dead_ends (don't re-litigate)
-- **TASK-0028 architecture = B (subprocess `secretctl`), NOT an embedded gRPC client.** `envctl-gui` drives the
-  env-manager `Engine` in-process and has zero secrets-stack path; the secrets verbs reach only via `secretd`
-  gRPC, which `secretctl` (a thin async client) already drives. Embedding a tonic/tokio `VaultClient` in the GUI
-  (Option A) would add a runtime + deps + re-implement secretctl's request builders = the exact CLI↔GUI
-  divergence the invariants forbid. Option B (GUI builds argv → engine shells `secretctl` → parses `--json`)
-  adds ZERO deps, keeps the GUI pure-sync, and cannot diverge. Rejected A; do not revisit unless the GUI needs
-  streaming daemon events the CLI doesn't expose.
-- The architect's first pass returned NEEDS-DECISION (correctly — it lacked the owner blanket-approval +
-  CLAUDE.md parity-goal context). The orchestrator resolved all 4 questions in-scope (GUI→daemon seam approved;
-  installation-token revoke is the required one; mirror the REAL JSON shapes; daemon-down = graceful no-false-
-  success) and re-spawned for a GO. Lesson: the architect flags decisions; the orchestrator RESOLVES the
-  in-scope ones it has context for.
-- Under Architecture B the GUI does NOT compile-depend on `secretctl`, so TASK-0028 built off develop with no
-  rebase-on-#124 needed (revoke argv is pure strings; parity tests use verbatim replication, no secretctl
-  import). #124 happened to merge mid-cycle so the runtime dependency is now satisfied anyway.
-- LOOP MECHANICS: land the per-cycle reconcile/handoff as a SEPARATE chore PR after the feature merges — the
-  fast CI (low-cost-kdf #113) squash-lands the feature before a reconcile commit bundled into the same branch
-  can land (orphaned in sessions 6/7; #125 from session 8 never merged → folded into this superset). The owner
-  noted meta/handoff is addressing this kernel-side.
-- Recurring rebase churn: every secrets/loop PR touches `lib.rs`/`engine`/`.handoff/` → siblings go DIRTY;
-  resolve by taking the PR's code/cycle-artifacts (`--theirs`) and develop's loop_state/HANDOFF/backlog-narrative.
+## Decisions And Dead Ends
 
-## Invariants (carry forward — non-negotiable)
-no-C trust boundary (zero new GUI deps; reuse the subprocess/HttpTransport seams) · fail-closed / fail-safe
-(dry-run default for mutating/outward ops; never panic on the request/spawn path; never a false success) ·
-no secret in logs/audit/persistence (Zeroizing, metadata-only, eframe persistence off) · engine the single
-sync non-printing authority (policy in engine, I/O in front-ends, CLI+GUI drive the identical surface) ·
-relay-tls only never MITM CA (FS-S25) · EKM bind (FS-S20) · frozen contracts (mint-github) stay byte-stable;
-new work is additive.
+- Do not mark TASK-0039 done on local PASS or auto-merge armed. Tick-on-merged applies: only
+  `gh pr view 162 --json state -q .state` returning `MERGED` permits `hf done TASK-0039 --pr 162`.
+- Do not delete `task-0039-client-ca-lifecycle` branch or its worktree until PR #162 is confirmed
+  merged. Reaper may clean older merged worktrees only.
+- The existing `IssueLeafReq` stream does not return private key material. The implemented lifecycle
+  closes the frozen Certs/secretctl surfaces; full device enrollment/export packet automation remains
+  a future surface if the owner wants it.
+- ICM correction: earlier local context had mistakenly treated TASK-0039 as done after PR #158. It is
+  now correctly claimed/in-flight until PR #162 merges.
 
-## verify_on_resume (exact)
-- `git -C envctl fetch origin develop && gh pr list --state open` (from a worktree)
-- rebase #126 if still DIRTY (steps above); confirm it merged
-- new worktree: `git -C envctl worktree add ../.worktrees/task-0037-phase7-verify/envctl -b task-0037-phase7-verify origin/develop`
+## Verification Completed Locally
+
+- `cargo test -p envctl-secrets-engine ca_ -- --nocapture`
+- `cargo test -p envctl-secretd append_revoked_client_fingerprints_writes_verifier_format -- --nocapture`
+- `cargo test -p envctl-secrets-store-libsql bind_cert_row_shape -- --nocapture`
+- `cargo check -p envctl-secretd --features relay-edge`
+- `cargo check -p envctl-secretctl`
+- `cargo build -p envctl-engine -p envctl`
+- `cargo fmt --all -- --check`
+- `cargo clippy --workspace -- -D warnings`
+- `bash ci/gates/no-c.sh`
+- `bash ci/gates/shape.sh`
+- `bash ci/gates/enable.sh`
+- `bash ci/gates/p7.sh && bash ci/gates/loop-state.sh`
+- `cargo test --workspace` (raw log: `/tmp/envctl-task0039-workspace-test.log`, exit=0)
+- Post-rebase onto `origin/develop@e1e2726`: focused CA tests, relay-edge daemon check, p7, and
+  loop-state gate passed.
+
+## Verify On Resume
+
+1. `gh pr view 162 --json state,mergeStateStatus,statusCheckRollup,url`
+2. If checks are green and PR is not merged, run `gh pr merge 162 --auto --squash` or merge once
+   branch protection permits.
+3. Poll until `gh pr view 162 --json state -q .state` returns `MERGED`.
+4. Only after merge:
+   - `hf done TASK-0039 --pr 162`
+   - `hf handoff`
+   - `bash scripts/reap-worktrees.sh`
+   - `bash scripts/reap-worktrees.sh --apply`
+5. Re-run `hf resume --json`; expected remaining tasks after TASK-0039 merges are owner-blocked
+   `TASK-0009`, owner-gated `TASK-0033`, and new buildable P0 `TASK-0053` (GitHub transport doctrine
+   and scoped token path from PR #161's handoff work).
+
+## ICM Stored
+
+- `context-envctl`: `01KVS8ZH9DTW4C1KAFVZ9R1T2V`
+
+## Resume Command
+
+`/session-relay-resume from .handoff/loop/HANDOFF.md`
