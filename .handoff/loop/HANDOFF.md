@@ -1,76 +1,34 @@
-# HANDOFF — forge-loop
+# HANDOFF — envctl forge-loop (AUTONOMOUS SWEEP, session 6)
 
-closed_utc: 2026-06-22 (handoff at cycle_budget=1)
-branch: develop  (cycle worktree: task-0053-github-transport-doctrine)
-worktree: /home/drdave/Desktop/meta/.worktrees/task-0053-github-transport-doctrine/envctl
-cycle_budget: 1
-cycles_total: 29
-cycles_this_session: 1
-last_item: TASK-0053 (DONE — PR #164 MERGED 2026-06-23T04:37:54Z)
-next_item: pick the NEXT backlog item (TASK-0053 is done)
-orchestrator_phase: CYCLE_COMPLETE_MERGED
-last_agent: invariant-guardian (PASS)
-gate_status: PASS
-pr_url: https://github.com/FlexNetOS/envctl/pull/164 (MERGED)
+**Written:** 2026-06-23 · **Branch:** develop (current with origin) · **hf:** present · **META_ROOT:** /home/drdave/Desktop/meta
 
-## FIRST action on resume
-TASK-0053 is DONE (PR #164 MERGED onto develop a7d96ff, master synced) and was reconciled to `- [x]`
-in-session. So resume **picks the NEXT backlog item**:
-1. `cd /home/drdave/Desktop/meta/envctl && git fetch origin && git status -sb` — confirm clean/synced.
-2. Pick the next item from `.handoff/loop/backlog.md` (the **markdown backlog is authoritative** —
-   do NOT trust `hf resume` from envctl: it reads the handoff kernel's own ledger, HFTASK-0054).
-   Skip `- [!]`/`- [!!]` items (TASK-0033 owner-gated; KBTASK-SEED-UNLOCK owner-gated). Many old
-   Epic-C items are already done per memory — reconcile status-truth before picking.
-3. New worktree off develop, run one feature-forge cycle (cycle_budget=1).
-Optional ledger hygiene: `hf test TASK-0053` was re-run on develop this session to witness the card;
-if `hf done TASK-0053 --pr 164` still reports it needs evidence, the Git state (PR #164 MERGED +
-backlog `- [x]`) is authoritative regardless — the hf ledger is a rebuild cache.
+## Resume in one line
+`/forge-loop resume` — FIRST action: re-poll the in-flight PR, tick `- [x]` if MERGED, then pick the next non-deferred item.
 
-## Landed This Session
-- 53d3784 `docs: route verified GitHub transport doctrine into envctl (TASK-0053)` (on branch
-  task-0053-github-transport-doctrine, in PR #164 — NOT yet on develop until #164 merges).
-- This handoff commit (loop_state.md + HANDOFF.md + LESSONS.md recurrence row + rendered
-  packets/latest.md) on develop.
+## In-flight (re-poll FIRST — TICK-ON-MERGED)
+- **PR #204** — TASK-0077 (shared GitHub fetch-token resolver). Armed auto-merge --squash, was OPEN/BLOCKED on pending checks. `gh pr view 204 --json state` → if `MERGED`, tick TASK-0077 `- [x]` in backlog.md and reap its worktree (`/home/drdave/Desktop/meta/.worktrees/task-0077-fetch-token/envctl`). Shell+manifest only (no Rust) → all gates should pass.
 
-## Current State
-TASK-0053 cycle is COMPLETE (architect GO → implementer GREEN → guardian PASS) and its PR is
-**armed for auto-merge but NOT yet merged**. The deliverables (in PR #164):
-- `docs/secrets/GITHUB-TRANSPORT-DOCTRINE.md` (NEW) — SSH git = repo source-of-truth; gh/API =
-  orchestration, advisory until read-back; envctl owns the scoped/broker-only GitHub App token path;
-  POLICY_DRIFT_TOKEN = existing `mint-github --permissions administration:write,metadata:read`;
-  merge-gate cross-check; continuity = redb-backed ledger + JSONL export (NOT SQLite).
-- `crates/secretctl/src/main.rs` — additive `policy_drift_permissions_scope_serializes` test.
-- `docs/secrets/README.md` index entry; `.handoff/loop/backlog.md` doctrine row (`- [~]` TASK-0053).
-No new Engine method/RPC/CLI flag/dep — AC2/3/4/5 were already satisfied at HEAD (frozen mint-github
-contract from TASK-0020/0026/0028). Zero Cargo/lock/manifest drift; engine source untouched.
+## This session (6/6 cycles — budget reached → handed off)
+- **Cycle 6 = TASK-0077 BUILT** (PR #204 armed). New `assets/scripts/envctl-gh-fetch.sh` (3-tier resolver: `secretctl mint-github` → authed `gh` → unauth; functions-only, stderr-only diagnostics, fail-open) + all 10 Epic-H fetch sites repointed in `epic-h-toolchains.toml`; lock 79 comp (10 hashes changed). Mint tier gated on operator `ENVCTL_GH_INSTALLATION_ID` (no fabricated id). Guardian PASS, runtime-proven (fail-through → real tag v2.95.0; live mise fetch; no-c/shape/p7/agent-env/harness-scripts + lock --check + clippy -D clean; Cargo.lock diff empty).
+- Also confirmed **PR #203 MERGED** (runbook docs deliverable — diagrams §11–16 + AGENTIC-STORY.md + USER-STORY.md; a direct owner request, not a loop cycle).
+- Reaper applied: reaped merged `docs-diagrams` worktree + branch.
 
-## Decisions And Dead Ends
-- POLICY_DRIFT_TOKEN (AC3) was resolved to **document + test the EXISTING mint-github path**, not
-  build a new surface — `.github_org/scripts/rotate-policy-drift-token.sh` already consumes it in
-  production with the `administration:write,metadata:read` scope. A new surface would be redundant.
-- The `hf resume` picker run from envctl reads the **handoff kernel's own ledger** (`"project":
-  "handoff (Continuity Ledger Kernel)"`, lists TASK-0039 as remaining) — that is HFTASK-0054, a known
-  kernel CWD/ledger bug. **Git state (committed loop_state.md / HANDOFF.md / card status) is
-  authoritative over the hf picker.** Use `gh pr view 164` as the GitHub oracle. Authoritative envctl
-  view = `hf fleet render envctl` from $META_ROOT (renders packet, does not re-pick).
+## NEXT (dependency-correct, all NON-deferred — pick in order after re-poll)
+1. **TASK-0022** — agent-web-access Phases 2–3 (real feature; Phase 1 n8n-mcp already done). Largest remaining autonomous value — fresh context helps.
+2. **TASK-0006** (P2) — repoint global `home/.config/kasetto/kasetto.yaml` mcps source to in-meta; **needs care** (superseded by the TASK-0040 `kasetto.yaml`→`agent-env.yaml` rename — verify which file the live home overlay actually uses before editing).
+3. **TASK-0039** — remote-clients-CA lifecycle (mint/≤7d-leaf/renew/revoke + revocation-set) — secrets-stack sub-item under the relay edge.
+4. **Reconcile** stale cards: TASK-0029 (no `portability-links.toml` found — likely stale), TASK-0065 (host-prereq classification — essentially resolved, tick/close).
 
-## Verification Completed
-- Gates: `no-c.sh` / `p7.sh` / `shape.sh` / `loop-state.sh` exit 0.
-- Tests: secretctl 16, secrets-engine `--features provider-github` 218, secretd `--features
-  provider-github` 46 — pass. Scoped clippy (`-p envctl-secretctl -p envctl-secretd -p
-  envctl-secrets-engine -- -D warnings`) + fmt clean.
-- Runtime (Phase 3.5): `secretctl mint-github … ` vs a locked vault → exit 1, no token,
-  `FailedPrecondition: "vault is locked"`. Fail-closed confirmed.
+## DEFERRED-TO-END (do NOT auto-run — route around, surface to owner only)
+- **nvidia 595→610 driver bump + reboot** — THE final task (unlocks CUDA 13.3/ruvllm). Hold to the very end.
+- **TASK-0067** — destructive `/nix` removal + yazelix repoint (`[!!]` SUPERVISED; owner: "i will tell you when to run it").
+- **TASK-0064** — JOINT `/nix` close-out (owner runs live yazelix repoint; build meta-prefix yazi+helix first).
+- **TASK-0072** — ollama + models → meta (~100GB move while ollama serves the qwen workers — needs a quiescent window + owner timing).
+- Blocked/gated: TASK-0033 [!] (VPS Profile B), TASK-0009 [!] (kasetto relocate, superseded), TASK-0056 [!] (archon port), KBTASK-SEED-UNLOCK [!] (live hardware).
+- Owner-sudo cleanups (pure cleanup, meta already wins PATH): `apt remove cuda-toolkit-13-3 / mold / gh`.
 
-## icm_stored
-- `context-envctl` (01KVSCCKBGXGCY1F39HW6HKCXQ) — TASK-0053 cycle summary.
-- `decisions-envctl` (01KVSCCP5QN76JXZ0C0BQ1H3KJ) — POLICY_DRIFT_TOKEN document-existing decision.
+## Honest state for the owner
+The autonomous build backlog is nearly drained. After TASK-0022/0006/0039 + the reconcile ticks, **what remains is the owner-gated tier** — the env is "not fully set" not from agent inaction but because the final steps (reboot, `/nix` live migration, ~100GB ollama move, sudo cleanups) require a human window. Truly-unattended continuation needs the **external `auto-provision` runner** (the in-session cron does not survive process exit); `/forge-loop resume` continues attended.
 
-## verify_on_resume
-```
-gh pr view 164 --json state,mergeStateStatus -q '{s:.state,m:.mergeStateStatus}'   # FIRST
-cd /home/drdave/Desktop/meta/envctl && git fetch origin && git status -sb           # confirm clean/synced
-hf fleet render envctl   # (from $META_ROOT) — authoritative envctl view
-```
-
-resume_command: /session-relay-resume from .handoff/loop/HANDOFF.md
+## Ledger
+cycles_this_session 6 · cycles_total 47 · cycle_budget 6 · wrap_every 5 · last_wrapup_total 43 (next boundary at 48) · state precedence Git > ledger.db > task cards > active.md > markdown.
