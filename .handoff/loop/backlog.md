@@ -75,7 +75,7 @@ IN FLIGHT: None. Guardian report notes are informational only (socket pass-throu
    Small follow-up: **MADV_DONTDUMP** companion to the merged #112 mlockall.
    Open follow-ups: **TASK-0031-PR2C** (PROXY-protocol source IP for the per-IP shed behind an L4 front) +
    **TASK-0039** (remote-clients-CA lifecycle: mint/≤7d-leaf/renew/revoke for the mTLS verifier).
-SKIP **TASK-0033** (VPS Profile B — owner-gated `[!]`). Resume with `/forge-loop`; for unattended completion use `/auto-provision`.
+DONE **TASK-0033** (VPS Profile B — PR #207 MERGED 2026-06-23; was owner-gated, built in full with E2E 9/9 + smoke).
 completion use `/auto-provision`. FIRST on resume: confirm #126 merged; rebase if DIRTY (every
 secrets PR touches `lib.rs` + `.handoff/` so siblings recur DIRTY — expected, not a problem).
 NOTE (session 9): this reconcile is a SUPERSET that subsumes the session-8 reconcile PR #125 (TASK-0027 tick) —
@@ -200,8 +200,10 @@ foundation IS built (`relay_mint_remote`, `register_remote_client`, `broker/deci
   deadline and tears the stream down (drops the `StreamBody` sender → clean HTTP/2 close) on revoke/lock/
   USB-pull (FS-S5). Fail-closed, metadata-only `RelayStreamTornDown` audit, zero new deps, default-OFF
   `relay-edge`. Detection ≤2s; sub-second watch-push deferred to PR-4.
-- [!] **TASK-0033 (VPS Profile B, BLOCKED — gated non-shippable):** F7 install-time fail-closed gate +
-  F8/OI-SM-2 operator-authorizer protocol + OI-SM-3 external trusted-time. Keep gated until designed.
+- [x] **TASK-0033 (VPS Profile B — DONE, PR #207 MERGED):** F7 install-time fail-closed gate +
+  F8/OI-SM-2 operator-box Ed25519 presence-token authorizer + OI-SM-3 external trusted-time +
+  VpsPresenceGate + FS-S21/S22/S23/S24 fail-closed guards. E2E 9/9 (--features relay-edge),
+  engine 15/15, gates green. SERVER-MODE/AUDIT corpus reconciled (F7/F8/F9/F22 → RESOLVED).
 - [x] **TASK-0034 (hardening tail — DONE, PR #135 MERGED, guardian PASS):** F10 (CVE-2024-47609
   tonic/hyper floors + cargo-audit CI), F11/OQ-1 (MSRV 1.80 `cargo +1.80 check --workspace --locked`
   CI), F18 (group-commit audit-fsync spec: N=100/T=100ms, barrier-before-response, whole-batch deny
@@ -1009,7 +1011,7 @@ policy change" — both are available and declarable here.
   ACTION REQUIRED" claim was WRONG (owner-corrected) — the App was never gated.
   Carved part-2 (mint-github *fetch wiring*) → **TASK-0077** (non-blocking hardening; the rate-limit
   liability it would address is ALREADY solved by TASK-0068's authenticated `gh api`).
-- [~] **TASK-0077 (H, LOW — hardening, non-blocking) — IN-FLIGHT: PR #204 ARMED (auto-merge --squash, OPEN/BLOCKED on pending checks 2026-06-23; NEXT SESSION re-poll `gh pr view 204` → tick `- [x]` when MERGED).** Built the shared resolver `assets/scripts/envctl-gh-fetch.sh` (3-tier: `secretctl mint-github` → authed `gh` → unauth; functions-only, stderr-only diagnostics, fail-open) and repointed all 10 Epic-H GitHub fetch sites in `epic-h-toolchains.toml`; lock regen (79 comp, only 10 hashes changed). Mint tier gated on operator `ENVCTL_GH_INSTALLATION_ID` (no fabricated id). Guardian PASS (gh/curl tiers byte-identical to prior; runtime-proven: resolver fail-through → real tag, live mise fetch). route Epic-H GitHub fetches through the
+- [x] **TASK-0077 (H, LOW — hardening, non-blocking) — DONE: PR #204 MERGED.** Built the shared resolver `assets/scripts/envctl-gh-fetch.sh` (3-tier: `secretctl mint-github` → authed `gh` → unauth; functions-only, stderr-only diagnostics, fail-open) and repointed all 10 Epic-H GitHub fetch sites in `epic-h-toolchains.toml`; lock regen (79 comp, only 10 hashes changed). Mint tier gated on operator `ENVCTL_GH_INSTALLATION_ID` (no fabricated id). Guardian PASS (gh/curl tiers byte-identical to prior; runtime-proven: resolver fail-through → real tag, live mise fetch). route Epic-H GitHub fetches through the
   vault App token (more-isolated than the `gh` keyring).** Add a shared fetch-token resolver the
   Epic-H component install/fix hooks call: prefer `secretctl mint-github --output json` (vault-sealed
   App key; requires the vault unlocked via the Cognitum Seed possession factor) → fall back to
