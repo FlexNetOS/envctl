@@ -7,11 +7,16 @@ branch: develop   # work happens in FRESH worktrees off develop -> PR -> auto-pr
 worktree: (per-cycle: meta/.worktrees/<slug>/envctl off develop)
 cycle_budget: 1   # heavy-context resume sessions — 1 cohesive build cycle then hand off
 wrap_every: 5   # batch boundary: run reaper + wrap-up + evolution-steward every N completed cycles (no per-task pause)
-last_wrapup_total: 18   # cycles_total at the last completed wrap-up boundary; boundary DUE when (cycles_total - this) >= wrap_every
+last_wrapup_total: 23   # batch boundary satisfied 2026-06-22 after TASK-0015; next due at cycles_total 28
 cycles_this_session: 4   # RESUME SESSION 2026-06-22: cycles = TASK-0038, TASK-0007, TASK-0008, TASK-0015
 cycles_total: 23   # 22 previous cycles + TASK-0015 (PR #146)
 last_item: TASK-0015 (agent-env provisioning fidelity) — DONE, PR #146
 status: CYCLE COMPLETE 2026-06-22
+  Batch boundary satisfied 2026-06-22 at cycles_total=23 (wrap_every=5). Proposed-upgrades was already
+  drained; reaper preview/apply found 0 live worktrees and 0 branches to reap, then meta worktree
+  prune removed 17 orphaned worktree records. ICM context store: 01KVRWEB957ZHQP6QTNXRQFXRA. Next safe
+  pick remains TASK-0016 per `hf resume --json`.
+
   Cycle = TASK-0015. PR #146 MERGED 2026-06-22T23:51:42Z. Added a live-pack regression that drives
   `Engine::agent_sync` against the real `agent-skills` MCP pack for both `claude-code` and `codex`,
   proving broker/repowire/weave are preserved while github/context7/exa/memory/playwright/
@@ -20,9 +25,7 @@ status: CYCLE COMPLETE 2026-06-22
   helper and ignored ephemeral `.handoff/locks/`. Verification: engine+CLI build, engine agent_sync
   and agent_sync_parity tests, full envctl-agent-env tests, clippy for envctl-engine+agent-env,
   fmt, p7, loop-state, no-c, agent-env gate, `hf test TASK-0015`, MSRV 1.88 spot check, and all
-  GitHub checks green on #146. `hf resume --json` now points at TASK-0016. Batch boundary is due
-  because cycles_total - last_wrapup_total == wrap_every (23 - 18 == 5); run the boundary before
-  claiming TASK-0016.
+  GitHub checks green on #146. `hf resume --json` now points at TASK-0016.
 
   Cycle = TASK-0008. VERIFIED already satisfied 2026-06-22. `/home/drdave/Desktop/meta/meta_mcp`
   exists and is registered in `.meta.yaml`; `/home/drdave/Desktop/meta/meta-mcp` is absent;
