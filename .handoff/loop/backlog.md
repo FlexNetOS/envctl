@@ -1029,7 +1029,7 @@ policy change" — both are available and declarable here.
   is just the binding string). The vault has opened via USB many times. NO re-enroll verb is needed.
   The ACTUAL recurring failure was a **stale pinned Cognitum CA** — superseded by TASK-0075. (Kept as a
   ticked row, not deleted, so the retraction is auditable.)
-- [~] **TASK-0075 (secrets, MEDIUM) — BUILT 2026-06-23 (PR armed; tick `- [x]` on MERGE) — `cognitum-seed-trust` component: auto-refresh the pinned Seed CA
+- [x] **TASK-0075 (secrets, MEDIUM) — DONE 2026-06-23 (PR #200 MERGED, squash `fa68d64` onto develop) — `cognitum-seed-trust` component: auto-refresh the pinned Seed CA
   from the USB on rotation (the REAL durable "plugged in = access" fix; owner 2026-06-23):** Shipped a
   `manifest/cognitum-seed-trust.toml` component (sibling to `cognitum-seed-net`): a self-healing worker
   (`/usr/local/sbin/cognitum-seed-trust-refresh`) + oneshot unit + cdc_ncm udev rule that re-pins the
