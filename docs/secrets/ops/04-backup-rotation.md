@@ -365,8 +365,8 @@ systemctl start secretd
 
 # 4. Verify the audit chain (see §6) and that secrets are readable:
 envctl vault verify-audit                  # [PROPOSED verb] — recompute chain seq=1..head
-envctl secret list                         # metadata only
-envctl secret get anthropic/api-key        # broker path; --reveal is apply-gated + audited
+secretctl secret list                         # metadata only
+secretctl secret get anthropic/api-key        # broker path; --reveal is apply-gated + audited
 ```
 
 The unlock itself enforces the tamper checks: `meta.header_mac` recomputation

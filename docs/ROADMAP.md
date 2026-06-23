@@ -108,7 +108,7 @@ The secrets stack has its own phased roadmap spanning **Phases 0–8** with the 
 - **Phase 3 — gRPC daemon surface:** TASK-0036 (mlockall hardening, PR #112) + TASK-0035 (Vault/Relay/Audit gRPC gaps, PR #108). ✅ COMPLETED.
 - **Phase 4 — keymgmt/unlock:** TASK-0030 (bounded jti replay store, PR #109) + TASK-0032 (stream tear-down, PR #117). ✅ COMPLETED.
 - **Phase 5 — certs/CA+MITM:** VPS Profile-B ([!] blocked by owner). Phase 4+ work deferred to TASK-0038.
-- **Phase 6 — `envctl secret run` (exec-wrapper):** Implemented as part of Phase 7 (this task: PR pending). The exec-wrapper surface maps to `envctl secret run -- <cmd>`.
+- **Phase 6 — `secretctl run` (exec-wrapper):** Implemented as part of Phase 7 (this task: PR pending). The exec-wrapper surface maps to `secretctl run -- <cmd>`.
 - **Phase 7 — envctl MERGE:** secretd manifest component + `envctl secret` CLI surface (this task, in-progress). The `envctl secret` subcommand mirrors the full `secretctl` clap surface via Engine's subprocess seam.
 - **Phase 8 — SERVER-MODE remote relay edge:** In-process TLS+DPoP listener shipped (PR #111/#122); PROXY-protocol source IP (PR #157), per-connection mTLS revocation reload (PR #158), remote-clients CA lifecycle (PR #162/TASK-0039), and the verified GitHub transport doctrine (PR #164/TASK-0053) landed. VPS Profile-B gates ([!] owner-gated) remain pending. See TASK-0033.
 

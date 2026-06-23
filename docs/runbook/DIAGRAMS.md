@@ -107,7 +107,7 @@ docs/secrets/ARCHITECTURE.md §1/§3 (durable audit before return).*
 
 ## 3. The secret relay engine + secret injection flow
 
-`envctl secret run -- <cmd>` is a **fork/exec wrapper**, not a shell mutation: it mints a
+`secretctl run -- <cmd>` is a **fork/exec wrapper**, not a shell mutation: it mints a
 ≤24h, peer-bound relay bearer for the child, asks the daemon for a provider-shaped env delta
 (`ResolvedInjection`), overlays only those keys onto a clone of the parent env, and `execvp`s
 the child. **The real key never enters the child env, argv, shell history, logs, or git** — the
@@ -125,7 +125,7 @@ docs/secrets/ARCHITECTURE.md §6 (swap modes), §9 (auto-inject); crates/secrets
 crates/secretd/src/proxy.rs (DaemonUpstream, mod mitm); crates/secretctl/src/main.rs (Cmd::Run).*
 
 ```
-   envctl secret run -- claude -p "hi"
+   secretctl run -- claude -p "hi"
         │  1. mint ≤24h peer-bound bearer (child-pid scoped)
         │  2. ask daemon for ResolvedInjection (provider env delta)
         ▼
