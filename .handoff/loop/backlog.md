@@ -812,20 +812,26 @@ knobs (e.g. `apparmor_restrict_unprivileged_userns`) and sudo-phase installs are
 "Can't be meta-owned" is reserved for physical impossibility, never for "needs root" or "needs a
 policy change" — both are available and declarable here.
 
-- [ ] **TASK-0054 (H, EASY, owner-pref):** `wild` linker component — `cargo install --locked wild
-  --root .toolchains/wild`; wire `RUSTFLAGS`/`.cargo/config.toml` `--ld-path`. **Replaces `mold`**
-  (apt) per owner linker preference. Remove the `mold` apt dependency once wild is the gate. Repo:
-  davidlattimore/wild. Acceptance: cargo builds use wild from the meta prefix; no `/usr/bin/mold` dep.
-- [ ] **TASK-0055 (H, EASY):** `kache` (+ allow `hurry`/`zccache`) compiler-cache wrappers as
-  meta-owned components on the `.toolchains` path (carried from the prior ADR drift). sccache only
-  as last-resort fallback (v0.15.0+, UDS not TCP). Acceptance: cache wrapper on the meta path,
-  wired into the rust build env.
-- [ ] **TASK-0056 (H, EASY):** `archon` relink — DRIFT only (FlexNetOS/Archon is already a peer).
-  Add `archon` to `meta-tool-links` so `~/.local/bin/archon → meta/Archon/target/release/archon`
-  (mirrors `vox`); remove the stray real binary at `/usr/local/bin/archon` (sudo phase). Acceptance:
-  archon resolves to the meta build, no `/usr/local/bin/archon` real file.
-- [ ] **TASK-0057 (H, EASY):** `gh` component — release tarball → `.toolchains/gh` + symlink;
-  drop the apt `gh` dep (`dev-tools.toml`). Repo: cli/cli.
+- [~] **TASK-0054 (H, EASY, owner-pref) — INSTALL DONE 2026-06-23:** `wild-linker` component
+  authored (`components.d/epic-h-toolchains.toml`) + APPLIED — `cargo install --locked wild-linker
+  --root .toolchains/wild` (crate is **`wild-linker`**, binary `wild`; NOT the `wild` argv crate),
+  `~/.local/bin/wild` healthy (Wild 0.9.0). **REMAINING (wiring, separate/verified):** set the
+  cargo linker (`.cargo/config.toml`: `linker="clang"` + `-Clink-arg=--ld-path=wild`) and drop the
+  `mold` apt dep — held back so an apply can't break workspace builds; verify builds first.
+- [~] **TASK-0055 (H, EASY) — INSTALL DONE 2026-06-23:** `kache` component authored + APPLIED
+  (`cargo install kache --root .toolchains/kache`, repo kunobi-ninja/kache, v0.6.0,
+  `~/.local/bin/kache` healthy). **REMAINING (wiring):** set `RUSTC_WRAPPER=kache` (or `kache init`)
+  — held back/verified separately. `hurry` **DROPPED** (no confirmable authoritative repo —
+  researched, only an unretrievable HN post). `zccache` available as alt (zackees/zccache) if
+  wanted. sccache only last-resort (v0.15.0+, UDS not TCP).
+- [!] **TASK-0056 (H, EASY) — BLOCKED:** `archon` relink is NOT a free symlink — **`meta/Archon`
+  is not cloned/built locally** (the `.meta.yaml` peer exists but no checkout; `meta/Archon/target/
+  release/archon` absent). The live `/usr/local/bin/archon` is a 105 MB ELF of unknown provenance.
+  PRE-REQ: `meta git update` (clone Archon) + build it, THEN add to `meta-tool-links` + remove the
+  stray `/usr/local/bin/archon` (sudo). Reclassify EASY→MEDIUM (needs clone+build first).
+- [x] **TASK-0057 (H, EASY) — DONE 2026-06-23:** `gh-cli` component authored + APPLIED + verified
+  — release tarball → `.toolchains/gh` + `~/.local/bin/gh` symlink (gh 2.95.0, healthy). Remaining
+  cleanup: drop the apt `gh` (sudo `apt remove gh`) — meta gh is already primary on PATH.
 - [ ] **TASK-0058 (H, EASY):** `nushell` + `zellij` components — musl static release tarballs →
   `.toolchains/{nushell,zellij}` + symlinks. Removes nix as the *delivery path* for `nu`/`zellij`.
   Repos: nushell/nushell, zellij-org/zellij.
