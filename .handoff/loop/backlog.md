@@ -1056,7 +1056,7 @@ policy change" — both are available and declarable here.
   (ordered After `env-ctl.service`, gated on USB possession) that runs `secretctl unlock` once the
   daemon is up, so a reboot with the Seed present auto-reopens the vault. Fail-closed (no Seed → stays
   locked, no passphrase ever scripted). Depends on TASK-0075 (fresh CA pin) being in place first.
-- [~] **TASK-0075b (secrets, MEDIUM) — BUILT 2026-06-23 (PR #201 armed; tick `- [x]` on MERGE) — relocate the Seed Device-CA pin OFF `/usr/local` to a meta path
+- [x] **TASK-0075b (secrets, MEDIUM) — DONE 2026-06-23 (PR #201 MERGED) — relocate the Seed Device-CA pin OFF `/usr/local` to a meta path
   (no-system-depth doctrine; follow-up to TASK-0075):** DONE via pure-manifest change (commit `97f79ca`): secretd unit (`env-ctl.toml` `[Service]`) gains `Environment=ENVCTL_SEED_CA=%h/Desktop/meta/.toolchains/secrets/ca/cognitum-ca.crt` + `ReadOnlyPaths=%h/Desktop/meta/.toolchains/secrets/ca`; `cognitum-seed-trust.toml` worker DST default → `${META_ROOT:-$HOME/Desktop/meta}/.toolchains/secrets/ca/cognitum-ca.crt`; lock regen (78). Sandbox-reachability proven (`systemd-run -p ProtectHome=read-only -p ProtectSystem=strict cat <meta CA>` printed the PEM). Guardian PASS-WITH-NOTES (write-refusal only enforceable in the system unit, not `systemd-run --user` — on-box re-test noted). ORIGINAL: TASK-0075's PR-1 pinned to
   `/usr/local/share/ca-certificates/cognitum-ca.crt` because that is the path `secretd` reads TODAY
   (`crates/secrets-engine/src/seam.rs` `ca_path()` default; `ENVCTL_SEED_CA` is unset in the unit). The
