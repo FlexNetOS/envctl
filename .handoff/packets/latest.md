@@ -7,11 +7,10 @@ envctl owns and contains the meta environment: every FlexNetOS tool/dotfile/.loc
 Git > .handoff/ledger.db > tasks/*.task.json > active.md > this packet.
 
 ## 3. Progress
-Done: 45/53.  Tamper-evident events verified: 10.
+Done: 46/53.  Tamper-evident events verified: 21.
 
 ## 4. Remaining (next safe first)
 - [P2] **TASK-0009** — Relocate kasetto + kst (BLOCKED: superseded by Epic C built-in absorption)
-- [P1] **TASK-0019** — fix-secretd: U1 USB-unlock path needs a real RealUsbProbe
 - [P2] **TASK-0021** — node-via-bun manifest follow-up: node not-applicable when real node present, or add node-real component
 - [P1] **TASK-0022** — agent-web-access Phases 2-3 (Phase 1 n8n-mcp+kasetto wiring merged; live smoke is human-only)
 - [P2] **TASK-0029** — portability-links.toml branch fork reconcile (usrlocal-script-links develop/master divergence)
@@ -20,13 +19,13 @@ Done: 45/53.  Tamper-evident events verified: 10.
 - [P1] **TASK-0039** — remote-clients-CA lifecycle: mint/<=7d-leaf/renew/revoke + revocation-set propagation for mTLS verifier
 
 ## 5. Next Best Task
-**TASK-0019** — fix-secretd: U1 USB-unlock path needs a real RealUsbProbe
-  objective: fix-secretd: U1 USB-unlock path needs a real RealUsbProbe
+**TASK-0021** — node-via-bun manifest follow-up: node not-applicable when real node present, or add node-real component
+  objective: node-via-bun manifest follow-up: node not-applicable when real node present, or add node-real component
 
 ## 6. Resume Commands
 ```bash
 hf resume
-hf claim TASK-0019
+hf claim TASK-0021
 ```
 
 ## 7. Machine Summary
@@ -50,6 +49,7 @@ hf claim TASK-0019
     "TASK-0016",
     "TASK-0017",
     "TASK-0018",
+    "TASK-0019",
     "TASK-0020",
     "TASK-0023",
     "TASK-0024",
@@ -79,12 +79,11 @@ hf claim TASK-0019
     "TASK-0051",
     "TASK-0052"
   ],
-  "next_command": "hf claim TASK-0019",
-  "next_task_id": "TASK-0019",
+  "next_command": "hf claim TASK-0021",
+  "next_task_id": "TASK-0021",
   "project": "handoff (Continuity Ledger Kernel)",
   "remaining": [
     "TASK-0009",
-    "TASK-0019",
     "TASK-0021",
     "TASK-0022",
     "TASK-0029",
@@ -94,6 +93,6 @@ hf claim TASK-0019
   ],
   "schema": "handoff.packet.v2",
   "tasks_total": 53,
-  "witnessed_events_verified": 10
+  "witnessed_events_verified": 21
 }
 ```
