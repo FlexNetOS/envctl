@@ -344,7 +344,7 @@ path_entries = ["~/.local/bin"]
 [[component]]
 id = "llvm-clang"
 name = "LLVM/clang (meta-owned)"
-description = "LLVM/clang-21 from upstream prebuilt release tarball into .toolchains/llvm + ~/.local/bin clang/lld symlinks. Replaces the apt clang/llvm. Pins latest 21.x (the /latest redirect now points at 22.x). Repo: llvm/llvm-project."
+description = "LLVM/clang-21 from upstream prebuilt release tarball into .toolchains/llvm + ~/.local/bin symlinks for the binaries whose runtime libs resolve on this host (clang/clang++/llc/llvm-* always; lld/ld.lld only where libxml2.so.2 exists). Replaces the apt clang/llvm. Pins latest 21.x (the /latest redirect now points at 22.x). Repo: llvm/llvm-project."
 
 [component.detect]
 kind = "command"
@@ -368,15 +368,27 @@ curl -fsSL "$URL" -o "$tmp/llvm.tar.xz"
 rm -rf "$DEST"; install -d -m 755 "$DEST"
 tar -xJf "$tmp/llvm.tar.xz" -C "$DEST" --strip-components=1
 install -d -m 755 "$HOME/.local/bin"
-for b in clang clang++ clang-cpp clang-21 llvm-config lld ld.lld llvm-ar llvm-nm llvm-objcopy llvm-objdump; do
-  [ -e "$DEST/bin/$b" ] && ln -sfn "$DEST/bin/$b" "$HOME/.local/bin/$b"
+# only symlink binaries whose runtime libs resolve on this host (the prebuilt lld links
+# libxml2.so.2, absent on libxml2.so.16 boxes); the box's strategic linker is wild
+# (TASK-0054), and apt lld remains as fallback until apt removal. The `--version` probe
+# self-prunes any tarball tool with an unsatisfied shared lib, not just lld.
+for b in clang clang++ clang-cpp clang-21 llvm-config llc llvm-ar llvm-nm llvm-objcopy llvm-objdump lld ld.lld; do
+  src="$DEST/bin/$b"; dst="$HOME/.local/bin/$b"
+  if [ -e "$src" ] && "$src" --version >/dev/null 2>&1; then
+    ln -sfn "$src" "$dst"
+  else
+    # prune a stale symlink into our DEST for a now-unexposed binary (e.g. a prior
+    # install that linked lld before libxml2.so.2 went away, or a re-install). Only
+    # touch symlinks we own (resolving into $DEST); never remove a foreign/apt binary.
+    [ -L "$dst" ] && readlink "$dst" | grep -q "$DEST" && rm -f "$dst"
+  fi
 done
 '''
 
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "PATH=\"$HOME/.local/bin:$PATH\"; clang --version && lld --version"]
+args = ["-lc", "PATH=\"$HOME/.local/bin:$PATH\"; clang --version && llvm-config --version"]
 
 [component.remove]
 kind = "script"
@@ -384,7 +396,7 @@ login_shell = true
 script = '''
 set -u
 M="${META_ROOT:-$HOME/Desktop/meta}"
-for b in clang clang++ clang-cpp clang-21 llvm-config lld ld.lld llvm-ar llvm-nm llvm-objcopy llvm-objdump; do
+for b in clang clang++ clang-cpp clang-21 llvm-config llc llvm-ar llvm-nm llvm-objcopy llvm-objdump lld ld.lld; do
   t="$HOME/.local/bin/$b"; [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/llvm" && rm -f "$t"
 done
 rm -rf "$M/.toolchains/llvm"
