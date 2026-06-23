@@ -367,7 +367,13 @@ preset; multi-host resolver; 5 cmd + 4 MCP-merge additive transforms; 3 lock mod
   around built-in `envctl agent` + `agent-env.yaml`; tightened `ci/gates/agent-env.sh` to use
   `envctl agent lock --config agent-env.yaml --check --locked`; regenerated `manifest/envctl.lock`.
   CI all green on #149 and `hf test TASK-0016` witnessed build+p7 before `hf done`.
-- [ ] **TASK-0017:** Adopt kasetto `extends` config composition for envctl component manifests.
+- [x] **TASK-0017:** Adopt kasetto `extends` config composition for envctl component manifests.
+  DONE 2026-06-23, PR #151: added local manifest `extends` support before component deserialization;
+  parents load first, relative paths resolve from the child manifest, cycles/depth overflow fail
+  closed, and `[[component]]` arrays merge by component `id` with same-id child tables overlaying
+  parent tables. Added integration tests for inherited components, same-id overlay, cycle refusal,
+  and depth refusal; updated docs. CI all green on #151 and `hf test TASK-0017` witnessed build+p7
+  before `hf done`.
 - [ ] **TASK-0018:** Retire the external `kasetto` binary dependency — only after the no-downgrade
   checklist passes end-to-end.
 
