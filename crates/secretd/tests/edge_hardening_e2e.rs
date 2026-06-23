@@ -112,6 +112,16 @@ fn jkt_of(kp: &Ed25519KeyPair) -> [u8; 32] {
     Sha256::digest(canonical.as_bytes()).into()
 }
 
+fn hex_lower(bytes: &[u8]) -> String {
+    const HEX: &[u8; 16] = b"0123456789abcdef";
+    let mut out = String::with_capacity(bytes.len() * 2);
+    for &b in bytes {
+        out.push(HEX[(b >> 4) as usize] as char);
+        out.push(HEX[(b & 0x0f) as usize] as char);
+    }
+    out
+}
+
 /// Build a signed DPoP proof, optionally echoing a server-issued `nonce` (PR-2). Matches the
 /// verifier's signing-input convention (raw base64url segments, RFC 7515 §5).
 fn make_proof(
@@ -400,6 +410,7 @@ async fn edge_nonce_and_anti_abuse() {
         recheck_timing: None,
         require_client_cert: false,
         client_ca_path: None,
+        client_revocations_path: None,
         ingress_caps: Some(small_caps()),
     };
     let (addr, handle) =
@@ -500,6 +511,7 @@ async fn edge_rate_limit_sheds_before_decide() {
         recheck_timing: None,
         require_client_cert: false,
         client_ca_path: None,
+        client_revocations_path: None,
         ingress_caps: Some(caps),
     };
     let (addr, handle) =
@@ -581,6 +593,7 @@ async fn edge_body_caps_and_timeouts() {
         recheck_timing: None,
         require_client_cert: false,
         client_ca_path: None,
+        client_revocations_path: None,
         ingress_caps: Some(caps),
     };
     let (addr, handle) =
@@ -677,6 +690,7 @@ async fn edge_mtls_requires_client_cert() {
         recheck_timing: None,
         require_client_cert: true,
         client_ca_path: Some(client_ca_path),
+        client_revocations_path: None,
         ingress_caps: Some(caps),
     };
     let (addr, handle) =
@@ -791,6 +805,108 @@ async fn edge_mtls_requires_client_cert() {
             "a valid client cert + nonce'd swap must be 200"
         );
     }
+
+    let _ = sd_tx.send(());
+    let _ = handle.await;
+    let _ = std::fs::remove_dir_all(&root);
+}
+
+#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+async fn edge_mtls_rejects_revoked_client_cert() {
+    let _ = rustls::crypto::ring::default_provider().install_default();
+
+    let root = temp_root("mtls-revoke");
+    let paths = envctl_secrets::paths::Paths::under(root.clone());
+    std::fs::create_dir_all(&paths.runtime).unwrap();
+    std::fs::create_dir_all(&paths.config).unwrap();
+    write_relay_cert(&paths.relay_tls_dir());
+
+    let ca = rcgen::generate_simple_self_signed(vec!["remote-clients-ca".to_string()])
+        .expect("gen client CA");
+    let client_ca_path = root.join("clients-ca.pem");
+    std::fs::write(&client_ca_path, ca.cert.pem()).unwrap();
+
+    let revocations_path = root.join("clients-revoked.txt");
+    std::fs::write(&revocations_path, b"").unwrap();
+
+    let rec = RecordingUpstream {
+        seen_key: Arc::new(Mutex::new(None)),
+    };
+    let keyfile = Zeroizing::new(vec![0x5Au8; 64]);
+    let (engine, _kp, _raw_bearer) = provision(&paths, &rec, &keyfile);
+
+    let cert_pem = paths.relay_tls_dir().join("cert.pem");
+    let pem = std::fs::read(&cert_pem).expect("read relay cert");
+    let mut rd = std::io::BufReader::new(&pem[..]);
+    let mut roots = rustls::RootCertStore::empty();
+    for cert in rustls_pemfile::certs(&mut rd) {
+        roots.add(cert.expect("parse cert")).expect("add root");
+    }
+
+    let mut caps = small_caps();
+    caps.admission = Some((60, 64, 1024));
+
+    let (sd_tx, sd_rx) = tokio::sync::oneshot::channel::<()>();
+    let cfg = envctl_secretd::edge::EdgeConfig {
+        enabled: true,
+        bind_addr: "127.0.0.1:0".parse().unwrap(),
+        recheck_timing: None,
+        require_client_cert: true,
+        client_ca_path: Some(client_ca_path.clone()),
+        client_revocations_path: Some(revocations_path.clone()),
+        ingress_caps: Some(caps),
+    };
+    let (addr, handle) =
+        envctl_secretd::edge::serve_edge(engine.clone(), &paths, &cfg, async move {
+            let _ = sd_rx.await;
+        })
+        .await
+        .expect("serve_edge (mTLS revoke)");
+
+    let mut params = rcgen::CertificateParams::new(vec!["phone-client".to_string()]).unwrap();
+    params.is_ca = rcgen::IsCa::NoCa;
+    let client_key = rcgen::KeyPair::generate().unwrap();
+    let ca_kp = rcgen::KeyPair::from_pem(&ca.key_pair.serialize_pem()).expect("reload CA keypair");
+    let ca_params = rcgen::CertificateParams::new(vec!["remote-clients-ca".to_string()]).unwrap();
+    let ca_cert = ca_params.self_signed(&ca_kp).expect("rebuild CA cert");
+    let client_leaf = params
+        .signed_by(&client_key, &ca_cert, &ca_kp)
+        .expect("sign client leaf");
+    let revoked_fp = hex_lower(&Sha256::digest(client_leaf.der().as_ref()));
+    std::fs::write(&revocations_path, format!("{revoked_fp}\n")).unwrap();
+
+    let client_chain = vec![client_leaf.der().clone()];
+    let client_pk = rustls::pki_types::PrivateKeyDer::try_from(client_key.serialize_der()).unwrap();
+    let with_cert = rustls::ClientConfig::builder_with_provider(Arc::new(
+        rustls::crypto::ring::default_provider(),
+    ))
+    .with_safe_default_protocol_versions()
+    .expect("ring safe protocol versions")
+    .with_root_certificates(roots)
+    .with_client_auth_cert(client_chain, client_pk)
+    .expect("client auth cert");
+    let connector = tokio_rustls::TlsConnector::from(Arc::new(with_cert));
+    let tcp = tokio::net::TcpStream::connect(addr).await.expect("tcp");
+    let server_name = rustls::pki_types::ServerName::try_from(EDGE_HOST).unwrap();
+    let rejected = match connector.connect(server_name, tcp).await {
+        Err(_) => true,
+        Ok(mut tls) => {
+            let req = format!(
+                "POST {SWAP_PATH} HTTP/1.1\r\nHost: {EDGE_HOST}\r\nconnection: close\r\n\r\n"
+            );
+            if tls.write_all(req.as_bytes()).await.is_err() {
+                true
+            } else {
+                let mut buf = Vec::new();
+                let _ = tls.read_to_end(&mut buf).await;
+                !String::from_utf8_lossy(&buf).contains(" 200 ")
+            }
+        }
+    };
+    assert!(
+        rejected,
+        "a revoked client cert must never complete a usable swap"
+    );
 
     let _ = sd_tx.send(());
     let _ = handle.await;

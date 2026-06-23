@@ -53,6 +53,9 @@ pub struct EdgeConfig {
     /// (SERVER-MODE §6.1) — a SEPARATE input, NEVER the MITM CA / server cert (FS-S25). `None` ⇒ no
     /// mTLS (with_no_client_auth, byte-for-byte PR-1).
     pub client_ca_path: Option<PathBuf>,
+    /// PR-2b: optional hardened-mTLS revocation-set path. The edge reloads it on each connection so
+    /// a newly revoked leaf is refused on the next handshake.
+    pub client_revocations_path: Option<PathBuf>,
     /// PR-2: ingress hardening caps (body size + handshake/header/idle timeouts). `None` ⇒ the
     /// production defaults ([`listener::IngressCaps::production`]). A test-only override (small values
     /// so the e2e exercises the 408/413 paths quickly); the daemon always passes `None`.
@@ -101,6 +104,7 @@ pub async fn serve_edge(
         timing,
         caps,
         client_ca,
+        cfg.client_revocations_path.as_deref(),
         shutdown,
     )
     .await

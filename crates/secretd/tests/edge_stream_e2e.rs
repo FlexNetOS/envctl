@@ -434,6 +434,7 @@ async fn setup(tag: &str) -> Harness {
         )),
         require_client_cert: false,
         client_ca_path: None,
+        client_revocations_path: None,
         ingress_caps: None,
     };
     let (addr, handle) =
