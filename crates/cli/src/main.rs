@@ -43,8 +43,8 @@ use envctl_engine::{
     AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentDoctorSpec, AgentInitSpec, AgentListKind,
     AgentListSpec, AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentScope, AgentSectionSel,
     AgentSyncSpec, AiAgent, BuildStrategy, BuildSystem, DashboardSpec, DriftSummary, Engine,
-    EnvReport, Event, EventSink, OpStatus, Phase, Refactor, RefactorGoal, RenameRule, ResetGates,
-    RunPlan, SelfUninstallSpec, Severity,
+    EnvReport, Event, EventSink, HubRegistryReport, HubRegistryStatus, OpStatus, Phase, Refactor,
+    RefactorGoal, RenameRule, ResetGates, RunPlan, SelfUninstallSpec, Severity,
 };
 
 #[derive(Parser)]
@@ -219,6 +219,20 @@ enum Cmd {
         /// Annotate with live detect/drift state (runs auto-detect first).
         #[arg(long)]
         live: bool,
+    },
+    /// Read-only federation over the workspace hub registries.
+    #[command(
+        long_about = "Read every `<name>_hub/registry.json`, reconcile the entries against the envctl component manifest, and emit the federated master view. With --check it acts as a drift gate (exit 1 when any entry binds to a missing component). Use --json (global) for the structured report.",
+        after_help = envctl_examples!(
+            "envctl registry",
+            "envctl registry --check",
+            "envctl registry --json",
+        )
+    )]
+    Registry {
+        /// Exit 1 when any hub entry binds to a missing envctl component.
+        #[arg(long)]
+        check: bool,
     },
     /// Write/verify envctl.lock — a content hash of every component for reproducible
     /// installs + a CI gate. No flags = (re)write the lock; --check = verify (exit 1 on drift).
@@ -1404,6 +1418,18 @@ fn main() -> anyhow::Result<()> {
             }
             Ok(())
         }
+        Cmd::Registry { check } => {
+            let report = engine.hub_registry()?;
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            } else {
+                print_hub_registry(&report);
+            }
+            if check && !report.clean() {
+                std::process::exit(1);
+            }
+            Ok(())
+        }
         Cmd::Lock { check } => {
             use envctl_engine::lock;
             let reg = engine.registry();
@@ -1523,6 +1549,45 @@ fn main() -> anyhow::Result<()> {
     result
 }
 
+fn print_hub_registry(report: &HubRegistryReport) {
+    if report.sources.is_empty() {
+        println!("hub registry: no *_hub/registry.json files found");
+        return;
+    }
+    let status = if report.clean() { "clean" } else { "drift" };
+    println!(
+        "hub registry: {} sources, {} entries, {}",
+        report.sources.len(),
+        report.entries.len(),
+        status
+    );
+    for source in &report.sources {
+        println!("  {} ({})", source.hub, source.path);
+        for entry in report
+            .entries
+            .iter()
+            .filter(|entry| entry.hub == source.hub)
+        {
+            println!(
+                "    {} -> {} [{}; tier {}]",
+                entry.entry.id,
+                entry.entry.component,
+                match entry.entry.status {
+                    HubRegistryStatus::Stable => "stable",
+                    HubRegistryStatus::Experimental => "experimental",
+                },
+                entry.entry.tier
+            );
+        }
+    }
+    if !report.drift.is_empty() {
+        println!("drift:");
+        for item in &report.drift {
+            println!("  {} / {}: {}", item.hub, item.id, item.detail);
+        }
+    }
+}
+
 /// Suppress the end-of-run update notice for machine-readable / scripted output and for
 /// commands that already print version info (kasetto `should_suppress_notice`). Never suppress
 /// for the human install/reset/auto-fix runs.
@@ -1532,7 +1597,9 @@ fn should_suppress_notice(cmd: &Cmd, json: bool, quiet: u8) -> bool {
     }
     match cmd {
         // Machine-readable / version-printing verbs.
-        Cmd::Completions { .. } | Cmd::Manage { .. } | Cmd::Env { .. } => true,
+        Cmd::Completions { .. } | Cmd::Manage { .. } | Cmd::Env { .. } | Cmd::Registry { .. } => {
+            true
+        }
         // `auto-detect`/`graph`/`lock`/`agent ... --json` are gated by the global `json` above;
         // their human forms may still show the notice. Everything else: don't suppress.
         _ => false,
@@ -1918,6 +1985,7 @@ fn run_action(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
             | Cmd::Env { .. }
             | Cmd::Agent { .. }
             | Cmd::Secret { .. }
+            | Cmd::Registry { .. }
             | Cmd::Completions { .. }
             | Cmd::Manage { .. } => {
                 unreachable!("handled in main")
