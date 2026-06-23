@@ -55,7 +55,7 @@ requires = []
 resolved = ""
 
 [components.cognitum-seed-trust]
-content_hash = "803b4ea145f8c45b"
+content_hash = "072d9f336faed1bf"
 requires = []
 resolved = ""
 
@@ -93,7 +93,7 @@ requires = []
 resolved = ""
 
 [components.env-ctl]
-content_hash = "3bac972d57580709"
+content_hash = "de1b5a93c5fca2ec"
 requires = [
     "rustup",
     "sqld",
