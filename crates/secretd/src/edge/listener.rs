@@ -34,9 +34,10 @@ use hyper::body::Incoming;
 use hyper::service::service_fn;
 use hyper::{Request, Response, StatusCode};
 use hyper_util::rt::{TokioExecutor, TokioIo};
+use sha2::{Digest, Sha256};
 
 use crate::edge::dpop::{verify_dpop_proof, DpopReject, HttpMethod};
-use crate::edge::tls::RelayTlsConfig;
+use crate::edge::tls::{load_client_revocations, RelayTlsConfig};
 use crate::proxy::{
     bare, challenge_nonce, extract_bearer, method_from_hyper, request_host,
     swap_and_respond_streaming, ProxyCtx,
@@ -143,13 +144,17 @@ pub async fn serve_edge_listener(
     timing: crate::edge::stream::Timing,
     caps: IngressCaps,
     client_ca_path: Option<&std::path::Path>,
+    client_revocations_path: Option<&std::path::Path>,
     shutdown: impl std::future::Future<Output = ()> + Send + 'static,
 ) -> anyhow::Result<(SocketAddr, tokio::task::JoinHandle<()>)> {
     // Load the relay-tls ServerConfig FIRST (fail-closed: no cert ⇒ no edge). This is the ONLY cert
     // source — never the MITM CA (FS-S25, structural in `tls.rs`). PR-2b: when a client-CA bundle is
     // configured, the same relay-tls ServerConfig additionally requires a verified client cert (mTLS).
-    let tls = RelayTlsConfig::load_from_dir_with_client_auth(relay_tls_dir, client_ca_path)?;
-    let acceptor = tokio_rustls::TlsAcceptor::from(tls.server_config());
+    let _ = RelayTlsConfig::load_from_dir_with_client_auth(
+        relay_tls_dir,
+        client_ca_path,
+        client_revocations_path,
+    )?;
 
     let listener = tokio::net::TcpListener::bind(bind_addr).await?;
     let local_addr = listener.local_addr()?;
@@ -165,6 +170,9 @@ pub async fn serve_edge_listener(
     let nonce = Arc::new(Mutex::new(NonceStore::new()));
     let rng = Arc::new(ring::rand::SystemRandom::new());
     let ctx = ProxyCtx::for_edge(engine);
+    let relay_tls_dir = relay_tls_dir.to_path_buf();
+    let client_ca_path = client_ca_path.map(std::path::Path::to_path_buf);
+    let client_revocations_path = client_revocations_path.map(std::path::Path::to_path_buf);
 
     let handle = tokio::spawn(async move {
         tokio::pin!(shutdown);
@@ -182,15 +190,28 @@ pub async fn serve_edge_listener(
                             continue;
                         }
                     };
-                    let acceptor = acceptor.clone();
                     let ctx = ctx.clone();
                     let jti = Arc::clone(&jti);
                     let admit = Arc::clone(&admit);
                     let nonce = Arc::clone(&nonce);
                     let rng = Arc::clone(&rng);
+                    let relay_tls_dir = relay_tls_dir.clone();
+                    let client_ca_path = client_ca_path.clone();
+                    let client_revocations_path = client_revocations_path.clone();
                     tokio::spawn(async move {
                         serve_connection(
-                            acceptor, ctx, jti, admit, nonce, rng, timing, caps, tcp, peer,
+                            ctx,
+                            jti,
+                            admit,
+                            nonce,
+                            rng,
+                            timing,
+                            caps,
+                            relay_tls_dir,
+                            client_ca_path,
+                            client_revocations_path,
+                            tcp,
+                            peer,
                         )
                         .await;
                     });
@@ -205,7 +226,6 @@ pub async fn serve_edge_listener(
 /// Terminate TLS on one accepted TCP stream, export the connection EKM, and serve its requests.
 #[allow(clippy::too_many_arguments)]
 async fn serve_connection(
-    acceptor: tokio_rustls::TlsAcceptor,
     ctx: ProxyCtx,
     jti: Arc<Mutex<JtiReplayStore>>,
     admit: Arc<Mutex<AdmissionLimiter>>,
@@ -213,9 +233,23 @@ async fn serve_connection(
     rng: Arc<ring::rand::SystemRandom>,
     timing: crate::edge::stream::Timing,
     caps: IngressCaps,
+    relay_tls_dir: std::path::PathBuf,
+    client_ca_path: Option<std::path::PathBuf>,
+    client_revocations_path: Option<std::path::PathBuf>,
     tcp: tokio::net::TcpStream,
     peer: SocketAddr,
 ) {
+    let acceptor = match RelayTlsConfig::load_from_dir_with_client_auth(
+        &relay_tls_dir,
+        client_ca_path.as_deref(),
+        client_revocations_path.as_deref(),
+    ) {
+        Ok(tls) => tokio_rustls::TlsAcceptor::from(tls.server_config()),
+        Err(e) => {
+            tracing::warn!(peer = %peer, error = %e, "relay edge TLS config reload failed");
+            return;
+        }
+    };
     // PR-2: bound the TLS handshake — a peer that opens a TCP connection and never (or slowly)
     // completes the handshake is DROPPED on elapse (no plaintext is ever read; no key material is in
     // scope). A slow-loris backstop at the very front of the pipeline.
@@ -233,6 +267,28 @@ async fn serve_connection(
             return;
         }
     };
+
+    if let Some(revocations_path) = client_revocations_path.as_deref() {
+        let Some(peer_certs) = tls_stream.get_ref().1.peer_certificates() else {
+            tracing::debug!(peer = %peer, "relay edge handshake produced no client cert");
+            return;
+        };
+        if let Some(cert) = peer_certs.first() {
+            match load_client_revocations(revocations_path) {
+                Ok(revoked) => {
+                    let fingerprint: [u8; 32] = Sha256::digest(cert.as_ref()).into();
+                    if revoked.contains(&fingerprint) {
+                        tracing::debug!(peer = %peer, "relay edge rejected revoked client cert");
+                        return;
+                    }
+                }
+                Err(e) => {
+                    tracing::warn!(peer = %peer, error = %e, "relay edge revocation reload failed");
+                    return;
+                }
+            }
+        }
+    }
 
     // Compute the RFC 5705 EKM off the TERMINATED server stream (FS-S20). The accessor is, on
     // tokio-rustls 0.26's post-handshake `server::TlsStream`, `get_ref().1` → `&ServerConnection`,

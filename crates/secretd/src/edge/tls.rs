@@ -21,9 +21,14 @@ use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::{bail, Context};
+use rustls::client::danger::HandshakeSignatureValid;
+use rustls::pki_types::UnixTime;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer};
+use rustls::server::danger::{ClientCertVerified, ClientCertVerifier};
 use rustls::server::WebPkiClientVerifier;
-use rustls::{RootCertStore, ServerConfig};
+use rustls::{CertificateError, DigitallySignedStruct, Error, RootCertStore, ServerConfig};
+use sha2::{Digest, Sha256};
+use std::collections::HashSet;
 
 /// The relay edge's server-TLS configuration, loaded ONLY from the relay-tls directory. Wraps the
 /// built rustls [`ServerConfig`] so the edge listener never constructs a server config from any other
@@ -38,7 +43,7 @@ impl RelayTlsConfig {
     /// `relay_tls_dir` MUST be the value of `Paths::relay_tls_dir()` — the caller passes it so this
     /// module never computes or references any other path (it cannot reach the MITM-CA location).
     pub fn load_from_dir(relay_tls_dir: &Path) -> anyhow::Result<Self> {
-        Self::load_from_dir_with_client_auth(relay_tls_dir, None)
+        Self::load_from_dir_with_client_auth(relay_tls_dir, None, None)
     }
 
     /// PR-2b: load the relay server cert + key (as [`load_from_dir`](Self::load_from_dir)) and build
@@ -57,6 +62,7 @@ impl RelayTlsConfig {
     pub fn load_from_dir_with_client_auth(
         relay_tls_dir: &Path,
         client_ca_path: Option<&Path>,
+        client_revocations_path: Option<&Path>,
     ) -> anyhow::Result<Self> {
         let cert_path = relay_tls_dir.join("cert.pem");
         let key_path = relay_tls_dir.join("key.pem");
@@ -122,6 +128,15 @@ impl RelayTlsConfig {
                 )
                 .build()
                 .context("building the relay edge client-cert verifier (remote-clients-CA)")?;
+                let verifier: Arc<dyn ClientCertVerifier> =
+                    if let Some(revocations) = client_revocations_path {
+                        Arc::new(RevocationAwareClientVerifier::new(
+                            verifier,
+                            load_client_revocations(revocations)?,
+                        ))
+                    } else {
+                        verifier
+                    };
                 builder
                     .with_client_cert_verifier(verifier)
                     .with_single_cert(certs, key)
@@ -170,6 +185,135 @@ fn load_client_ca_roots(client_ca_path: &Path) -> anyhow::Result<RootCertStore> 
         );
     }
     Ok(roots)
+}
+
+/// Load a newline-delimited revocation set of SHA-256 fingerprints over the client certificate DER
+/// (hex, one fingerprint per line). Blank lines and `#` comments are ignored. Fail-closed: a file
+/// that cannot be read is an `Err`; an empty file is a valid empty revocation set.
+pub(crate) fn load_client_revocations(
+    client_revocations_path: &Path,
+) -> anyhow::Result<HashSet<[u8; 32]>> {
+    let text = std::fs::read_to_string(client_revocations_path).with_context(|| {
+        format!(
+            "reading remote-clients revocation set {}",
+            client_revocations_path.display()
+        )
+    })?;
+    let mut revoked = HashSet::new();
+    for (idx, raw) in text.lines().enumerate() {
+        let line = raw.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        revoked.insert(parse_hex_fingerprint(line).with_context(|| {
+            format!(
+                "parsing remote-clients revocation fingerprint on line {} of {}",
+                idx + 1,
+                client_revocations_path.display()
+            )
+        })?);
+    }
+    Ok(revoked)
+}
+
+fn parse_hex_fingerprint(s: &str) -> anyhow::Result<[u8; 32]> {
+    if s.len() != 64 {
+        bail!("revocation fingerprint must be 64 hex chars");
+    }
+    let bytes = s.as_bytes();
+    let mut out = [0u8; 32];
+    for (i, slot) in out.iter_mut().enumerate() {
+        let hi = hex_val(bytes[i * 2])?;
+        let lo = hex_val(bytes[i * 2 + 1])?;
+        *slot = (hi << 4) | lo;
+    }
+    Ok(out)
+}
+
+fn hex_val(b: u8) -> anyhow::Result<u8> {
+    match b {
+        b'0'..=b'9' => Ok(b - b'0'),
+        b'a'..=b'f' => Ok(b - b'a' + 10),
+        b'A'..=b'F' => Ok(b - b'A' + 10),
+        _ => bail!("invalid hex digit"),
+    }
+}
+
+#[derive(Clone)]
+struct RevocationAwareClientVerifier {
+    inner: Arc<dyn ClientCertVerifier>,
+    revoked: Arc<HashSet<[u8; 32]>>,
+}
+
+impl RevocationAwareClientVerifier {
+    fn new(inner: Arc<dyn ClientCertVerifier>, revoked: HashSet<[u8; 32]>) -> Self {
+        Self {
+            inner,
+            revoked: Arc::new(revoked),
+        }
+    }
+}
+
+impl std::fmt::Debug for RevocationAwareClientVerifier {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("RevocationAwareClientVerifier")
+            .field("revoked_count", &self.revoked.len())
+            .finish()
+    }
+}
+
+impl ClientCertVerifier for RevocationAwareClientVerifier {
+    fn offer_client_auth(&self) -> bool {
+        self.inner.offer_client_auth()
+    }
+
+    fn client_auth_mandatory(&self) -> bool {
+        self.inner.client_auth_mandatory()
+    }
+
+    fn root_hint_subjects(&self) -> &[rustls::DistinguishedName] {
+        self.inner.root_hint_subjects()
+    }
+
+    fn verify_client_cert(
+        &self,
+        end_entity: &CertificateDer<'_>,
+        intermediates: &[CertificateDer<'_>],
+        now: UnixTime,
+    ) -> Result<ClientCertVerified, Error> {
+        let fingerprint: [u8; 32] = Sha256::digest(end_entity.as_ref()).into();
+        if self.revoked.contains(&fingerprint) {
+            return Err(Error::InvalidCertificate(CertificateError::Revoked));
+        }
+        self.inner
+            .verify_client_cert(end_entity, intermediates, now)
+    }
+
+    fn verify_tls12_signature(
+        &self,
+        message: &[u8],
+        cert: &CertificateDer<'_>,
+        dss: &DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, Error> {
+        self.inner.verify_tls12_signature(message, cert, dss)
+    }
+
+    fn verify_tls13_signature(
+        &self,
+        message: &[u8],
+        cert: &CertificateDer<'_>,
+        dss: &DigitallySignedStruct,
+    ) -> Result<HandshakeSignatureValid, Error> {
+        self.inner.verify_tls13_signature(message, cert, dss)
+    }
+
+    fn supported_verify_schemes(&self) -> Vec<rustls::SignatureScheme> {
+        self.inner.supported_verify_schemes()
+    }
+
+    fn requires_raw_public_keys(&self) -> bool {
+        self.inner.requires_raw_public_keys()
+    }
 }
 
 #[cfg(test)]
@@ -252,7 +396,7 @@ mod tests {
         let ca = rcgen::generate_simple_self_signed(vec!["clients-ca".to_string()]).unwrap();
         let ca_path = tmp.join("clients-ca.pem");
         std::fs::write(&ca_path, ca.cert.pem()).unwrap();
-        let cfg = RelayTlsConfig::load_from_dir_with_client_auth(&dir, Some(&ca_path))
+        let cfg = RelayTlsConfig::load_from_dir_with_client_auth(&dir, Some(&ca_path), None)
             .expect("mTLS ServerConfig builds with a client-CA");
         let _ = cfg.server_config();
     }
@@ -265,7 +409,7 @@ mod tests {
         write_relay_cert(&dir);
         let ca_path = tmp.join("does-not-exist-clients-ca.pem");
         assert!(
-            RelayTlsConfig::load_from_dir_with_client_auth(&dir, Some(&ca_path)).is_err(),
+            RelayTlsConfig::load_from_dir_with_client_auth(&dir, Some(&ca_path), None).is_err(),
             "a missing client-CA bundle must fail closed"
         );
     }
@@ -279,7 +423,7 @@ mod tests {
         let ca_path = tmp.join("empty-clients-ca.pem");
         std::fs::write(&ca_path, b"").unwrap();
         assert!(
-            RelayTlsConfig::load_from_dir_with_client_auth(&dir, Some(&ca_path)).is_err(),
+            RelayTlsConfig::load_from_dir_with_client_auth(&dir, Some(&ca_path), None).is_err(),
             "an empty client-CA bundle (no anchors) must fail closed"
         );
     }
@@ -292,7 +436,7 @@ mod tests {
         let tmp = tempdir();
         let dir = tmp.join("relay-tls");
         write_relay_cert(&dir);
-        assert!(RelayTlsConfig::load_from_dir_with_client_auth(&dir, None).is_ok());
+        assert!(RelayTlsConfig::load_from_dir_with_client_auth(&dir, None, None).is_ok());
     }
 
     /// A minimal tempdir helper (no `tempfile` dep): a unique path under the OS temp dir, created on
