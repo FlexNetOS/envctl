@@ -443,7 +443,7 @@ enum Cmd {
         #[arg(long)]
         meta_file: Option<std::path::PathBuf>,
         /// ALSO emit the meta-located toolchain prefix exports + PATH
-        /// (BUN_INSTALL/MISE_DATA_DIR/CARGO_HOME/UV_* -> $META_ROOT/.toolchains).
+        /// (BUN_INSTALL/MISE_DATA_DIR/CARGO_HOME/RUSTUP_HOME/UV_* -> $META_ROOT/.toolchains).
         /// OPT-IN: only sound once those dirs are populated (else a manager would
         /// not see its existing installs). See the meta-tool-location ADR.
         #[arg(long)]
@@ -1776,7 +1776,7 @@ fn run_env(
         // hooks), but without exporting it here, `eval "$(envctl env --toolchains)"`
         // shells fall back to ~/.rustup and miss the meta-owned nightly/codegen-gcc
         // toolchain. Pairs CARGO_HOME ↔ RUSTUP_HOME so the shell seam matches the
-        // component hooks.
+        // component hooks. (ADR-0013: compiler resolves under $META_ROOT/.toolchains/rustup.)
         println!(
             "export RUSTUP_HOME={}",
             sh_single_quote(&format!("{tc}/rustup"))
