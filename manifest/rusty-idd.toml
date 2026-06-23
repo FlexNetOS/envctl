@@ -1,0 +1,80 @@
+# manifest/rusty-idd.toml — rusty-idd: the harness control-plane front door (FlexNetOS/rusty-idd)
+#
+# rusty-idd is the single binary that unifies the IDD core + OpenSpec spec engine + runner + TUI +
+# knowledge + merge-tools + the fleet-deploy control plane (ADR-0015/ADR-0017). The thin-adapter
+# surface deployed into every fleet repo's `.claude`/`.codex`/`.agents`/`.devin` runs a SessionStart
+# hook that calls the installed binary: `exec rusty-idd next --base "$root"`. That hook only works if
+# `rusty-idd` is ON PATH in every box — this component is what guarantees that, the same way
+# grit.toml/env-ctl.toml own their tool binaries: a declarative detect/install/verify/fix/remove
+# component, installed box-wide to ~/.cargo/bin from the meta-cloned checkout.
+#
+# TRUST-BOUNDARY NOTE: rusty-idd is pure-Rust, no-C (no openssl-sys / libgit2-sys in its lock), so —
+# like grit — it is an EXTERNAL TOOL BINARY managed as *data* (this TOML), never added to any envctl
+# Cargo.toml [workspace.members] or [dependencies]. It lives beside the workspace on PATH.
+#
+# Installed from the committed rusty-idd/Cargo.lock (`--locked`) for a reproducible, offline build.
+
+[[component]]
+id = "rusty-idd"
+name = "rusty-idd — harness control-plane front door"
+description = "Single-binary IDD engine + fleet-deploy control plane (ADR-0015). The thin-adapter SessionStart hooks deployed across the fleet call `rusty-idd next`, so the binary must be on PATH box-wide. External tool binary on ~/.cargo/bin; NOT linked into any envctl crate."
+requires = ["rustup"]   # cargo + a toolchain >= MSRV 1.88 (base.toml). Pure-Rust: no libssl-dev.
+destructive = false
+
+# DETECT == "already present" predicate (read-only; feeds auto-detect + drives install/doctor).
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", "command -v rusty-idd >/dev/null || [ -x \"$HOME/.cargo/bin/rusty-idd\" ]"]
+
+# INSTALL: MSRV-gate (fail-closed, never silently upgrade), then build+place the `rusty-idd` bin from
+# the meta-cloned checkout. The bin lives in the `rusty-idd-cli` package (crates/cli); `--locked`
+# honours rusty-idd's committed Cargo.lock for a reproducible build.
+[component.install]
+kind = "script"
+script = '''
+set -euo pipefail
+export PATH="$HOME/.cargo/bin:$PATH"
+
+# MSRV gate: pass iff cargo >= 1.88.0. MSRV line FIRST so `sort -V -C` succeeds only when the pair is
+# ascending (1.88.0 <= $ver). (Same ordering idiom as grit.toml/env-ctl.toml — do NOT reverse.)
+ver="$(cargo --version | awk '{print $2}')"
+printf '1.88.0\n%s\n' "$ver" | sort -V -C || { echo "FATAL: cargo $ver < MSRV 1.88"; exit 1; }
+
+# rusty-idd lives in the meta workspace (registered in ../.meta.yaml, .gitignore'd, its own repo).
+repo="${RUSTY_IDD_REPO:-$HOME/Desktop/meta/rusty-idd}"
+test -d "$repo" || { echo "FATAL: rusty-idd checkout not found at $repo (set RUSTY_IDD_REPO)"; exit 1; }
+
+# Install only the front-door binary's package (crates/cli = rusty-idd-cli, bin name `rusty-idd`).
+cargo install --path "$repo/crates/cli" --locked
+'''
+
+# VERIFY: the installed binary answers. Read-only; a missing/broken rusty-idd reports verify=false
+# (drift visible) WITHOUT triggering a destructive fix — detect, not verify, is the install gate.
+[component.verify]
+kind = "command"
+command = "bash"
+args = ["-lc", "export PATH=\"$HOME/.cargo/bin:$PATH\"; rusty-idd --version >/dev/null"]
+
+# FIX: idempotent rebuild+reinstall (force-overwrite). The dev-tools `cargo install --force` idiom.
+[component.fix]
+kind = "script"
+script = '''
+set -euo pipefail
+export PATH="$HOME/.cargo/bin:$PATH"
+repo="${RUSTY_IDD_REPO:-$HOME/Desktop/meta/rusty-idd}"
+test -d "$repo" || { echo "FATAL: rusty-idd checkout not found at $repo (set RUSTY_IDD_REPO)"; exit 1; }
+cargo install --path "$repo/crates/cli" --force --locked
+'''
+
+# REMOVE: uninstall the binary by PACKAGE name (rusty-idd-cli), not bin name. `|| true` keeps reset
+# idempotent if rusty-idd was never installed.
+[component.remove]
+kind = "command"
+command = "bash"
+args = ["-lc", "export PATH=\"$HOME/.cargo/bin:$PATH\"; cargo uninstall rusty-idd-cli || true"]
+
+# ---- WIRING: ~/.cargo/bin is already on PATH via other components; declared so reset can reason
+# ---- about it reversibly. No shell_rc / systemd / data_paths — rusty-idd is a plain binary.
+[component.wiring]
+path_entries = ["~/.cargo/bin"]

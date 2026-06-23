@@ -361,6 +361,11 @@ content_hash = "0b56e68481dccda6"
 requires = []
 resolved = ""
 
+[components.rusty-idd]
+content_hash = "f6148e56efb10da6"
+requires = ["rustup"]
+resolved = ""
+
 [components.secretd]
 content_hash = "41bdc024403d38a6"
 requires = ["env-ctl"]
