@@ -258,6 +258,11 @@ content_hash = "ba45a708e8816d49"
 requires = []
 resolved = ""
 
+[components.mise]
+content_hash = "faabb3d25fc7249b"
+requires = []
+resolved = ""
+
 [components.mold-linker]
 content_hash = "288dc105e7fea850"
 requires = []
@@ -291,6 +296,11 @@ resolved = ""
 [components.node-via-bun]
 content_hash = "a0607fbc12e9a25a"
 requires = ["bun"]
+resolved = ""
+
+[components.nushell]
+content_hash = "cd571dae408f0781"
+requires = []
 resolved = ""
 
 [components.nvidia-container-toolkit]
@@ -404,4 +414,9 @@ resolved = ""
 [components.yazelix-shell]
 content_hash = "d227c7451abed6e3"
 requires = ["yazelix"]
+resolved = ""
+
+[components.zellij]
+content_hash = "b6229a13b206ef2b"
+requires = []
 resolved = ""

@@ -832,11 +832,15 @@ policy change" — both are available and declarable here.
 - [x] **TASK-0057 (H, EASY) — DONE 2026-06-23:** `gh-cli` component authored + APPLIED + verified
   — release tarball → `.toolchains/gh` + `~/.local/bin/gh` symlink (gh 2.95.0, healthy). Remaining
   cleanup: drop the apt `gh` (sudo `apt remove gh`) — meta gh is already primary on PATH.
-- [ ] **TASK-0058 (H, EASY):** `nushell` + `zellij` components — musl static release tarballs →
-  `.toolchains/{nushell,zellij}` + symlinks. Removes nix as the *delivery path* for `nu`/`zellij`.
-  Repos: nushell/nushell, zellij-org/zellij.
-- [ ] **TASK-0059 (H, EASY):** `mise` standalone component — static binary → `.toolchains/mise/bin`
-  (`MISE_DATA_DIR` already meta). Repo: jdx/mise.
+- [x] **TASK-0058 (H, EASY) — DONE 2026-06-23:** `nushell` + `zellij` components authored
+  (`epic-h-toolchains.toml`) + APPLIED + verified — musl tarballs → `.toolchains/{nushell,zellij}` +
+  `~/.local/bin/{nu,zellij}` symlinks (nu **0.113.1**, zellij **0.44.3**, both healthy). Removes nix
+  as the *delivery path* for interactive nu/zellij; yazelix's own bundled copies (absolute nix path)
+  are untouched (additive). NOTE skew: interactive nu 0.113.1 vs yazelix-bundled nu 0.112.2 —
+  reconciled fully by TASK-0064 (yazelix de-nix). Repos: nushell/nushell, zellij-org/zellij.
+- [x] **TASK-0059 (H, EASY) — DONE 2026-06-23:** `mise` component authored + APPLIED + verified —
+  static binary → `.toolchains/mise/bin/mise` + `~/.local/bin/mise` (mise **2026.6.12**, healthy);
+  replaced the prior real-file `~/.local/bin/mise`. `MISE_DATA_DIR` already meta. Repo: jdx/mise.
 - [ ] **TASK-0060 (H, MEDIUM):** `ollama` component — prebuilt binary → `.toolchains/ollama/bin` +
   GPU `.so` redirect via `OLLAMA_LIBRARY_PATH`. Drop `/usr/local/bin/ollama` real binary. Repo:
   ollama/ollama.
