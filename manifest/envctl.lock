@@ -54,6 +54,11 @@ content_hash = "e4444dd7225cd113"
 requires = []
 resolved = ""
 
+[components.cognitum-seed-trust]
+content_hash = "803b4ea145f8c45b"
+requires = []
+resolved = ""
+
 [components.cuda-oxide]
 content_hash = "da3960d9b533467f"
 requires = [
