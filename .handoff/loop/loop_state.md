@@ -157,6 +157,30 @@ status: AUTONOMOUS SWEEP 2026-06-23 (5th session) — owner reset cadence: "stop
   Resume via `/forge-loop resume`.
 
 ## Progress log
+
+- **2026-06-23 OWNER 15-MIN PUSH (`/goal`: "run /forge-loop until all tasks complete; only nix and
+  ollama should remain")** — drove every remaining NON-deferred item to terminal/armed in one pass:
+  - **3 buildable PRs created + auto-merge armed** (draining through the single-concurrency self-hosted
+    runner): **#204** TASK-0077 (shared GitHub fetch-token resolver — re-poll/re-ran timed-out check),
+    **#205** TASK-0022 (agent-web-access Phases 2–3 autonomous deliverable; live n8n smoke remains the
+    documented HUMAN gate — needs owner-minted n8n key), **#206** TASK-0006 (stale `Documentation=` URL
+    + kasetto.yaml comments; mcps-repoint + shell genericization verified already-satisfied).
+  - **5 stale cards reconciled DONE (verified-by-doing, pushed to develop):** TASK-0039 (#162 MERGED,
+    remote-clients-CA lifecycle), TASK-0066 (#179 MERGED additive nix-portable; destructive→0067),
+    TASK-0029 (portability-links.toml present on develop — fork drift gone), TASK-0065 (host-prereq
+    classification resolved, nothing to build), KBTASK-SEED-UNLOCK (live USB unlock proven via
+    TASK-0075/0076 on-box).
+  - **CI throughput fix (infra, not code):** the rustfmt "fail" on #204 was a 10-min runner *timeout*
+    during rust-cache (single-job runner shared with a concurrent `forge-loop-smoke` session), NOT fmt
+    drift — `cargo +nightly fmt --all --check` = 0 drift on develop. Canceled 4 superseded develop-push
+    CI runs to free the runner for the PR checks; re-ran the timed-out job.
+  - **TRUE remaining = exactly the owner's deferred pair + 2 legitimately-parked:** NIX (TASK-0064 `~`
+    / TASK-0067 `!!` SUPERVISED) and OLLAMA (TASK-0072) are owner-gated, held to the END. The only
+    other non-`[x]` items are **TASK-0033** (`[!]` VPS Profile B — undesigned design spike, "keep gated
+    until designed", non-shippable) and **TASK-0056** (`[!]` archon→harness-agent-rs — a full Rust PORT
+    routed OUT of the envctl loop to `/harness:rust-port`, multi-cycle/cross-repo, not envctl-loop work).
+    Both are correct terminal states for THIS loop, not pending build work.
+
 - cycle 1 (2026-06-13, TASK-0001, PASS-WITH-NOTES): built+installed `hf` from meta/handoff
   (`~/.local/bin/hf` → release symlink); `hf --help` runs; residency guard clean (shared ledger
   only, read-only). Dormant Stop/PreCompact hook now LIVE (resolves hf, runs from $META_ROOT,
