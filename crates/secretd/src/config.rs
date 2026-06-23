@@ -826,8 +826,10 @@ mod tests {
 
     #[test]
     fn profile_vtpm_gating_rejected_fs_s24() {
-        let mut fp = FileProfile::default();
-        fp.vtpm_gating = true;
+        let fp = FileProfile {
+            vtpm_gating: true,
+            ..FileProfile::default()
+        };
         let err = resolve_profile(fp, None, None).unwrap_err().to_string();
         assert!(
             err.contains("FS-S24"),
@@ -887,8 +889,10 @@ mod tests {
 
     #[test]
     fn profile_unknown_topology_rejected() {
-        let mut fp = FileProfile::default();
-        fp.topology = Some("cloud".into());
+        let fp = FileProfile {
+            topology: Some("cloud".into()),
+            ..FileProfile::default()
+        };
         assert!(resolve_profile(fp, None, None).is_err());
     }
 
