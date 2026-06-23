@@ -4,9 +4,21 @@
       {
         "hooks": [
           {
-            "type": "command",
             "command": "bash '/home/drdave/Desktop/meta/envctl/.codex/hooks/hf-checkpoint.sh'",
-            "timeout": 10
+            "timeout": 10,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "command": "sh -lc 'root=\"$(git rev-parse --show-toplevel)\"; exec rusty-idd next --base \"$root\"'",
+            "statusMessage": "Rusty IDD front door: computing the next step",
+            "timeout": 180,
+            "type": "command"
           }
         ]
       }
@@ -15,9 +27,9 @@
       {
         "hooks": [
           {
-            "type": "command",
             "command": "bash '/home/drdave/Desktop/meta/envctl/.codex/hooks/hf-checkpoint.sh'",
-            "timeout": 10
+            "timeout": 10,
+            "type": "command"
           }
         ]
       }
