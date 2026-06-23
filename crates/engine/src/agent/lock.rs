@@ -4,7 +4,7 @@
 //!
 //! This lock is the SHA-256 `agent-env.lock` only. It lives at `crate::agent::lock` and never
 //! touches the engine's FNV-1a component lock (`crate::lock`) — the two are wholly separate
-//! (unifying them is TASK-0017, not this card).
+//! (TASK-0016 records that split as the no-downgrade decision).
 
 use envctl_agent_env::driver::rebuild_lock;
 use envctl_agent_env::lock::{save, AgentLockFile, LockMode};
