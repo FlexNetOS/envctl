@@ -246,7 +246,7 @@ requires = []
 resolved = ""
 
 [components.llvm-clang]
-content_hash = "b66d8854ad82aa99"
+content_hash = "b8257460ca9f0a15"
 requires = []
 resolved = ""
 
