@@ -116,7 +116,7 @@ requires = []
 resolved = ""
 
 [components.gh-cli]
-content_hash = "021c7130376f6582"
+content_hash = "fe2a95764ece78da"
 requires = []
 resolved = ""
 
@@ -206,7 +206,7 @@ requires = [
 resolved = ""
 
 [components.helix]
-content_hash = "2a11e8028f65c332"
+content_hash = "e327005c4ba55c85"
 requires = []
 resolved = ""
 
@@ -256,7 +256,7 @@ requires = []
 resolved = ""
 
 [components.libgccjit]
-content_hash = "4ae561e10e5344a6"
+content_hash = "6ec58a71ae24baeb"
 requires = []
 resolved = ""
 
@@ -266,7 +266,7 @@ requires = []
 resolved = ""
 
 [components.llvm-clang]
-content_hash = "b8257460ca9f0a15"
+content_hash = "06d2befc01dda402"
 requires = []
 resolved = ""
 
@@ -284,7 +284,7 @@ requires = []
 resolved = ""
 
 [components.mise]
-content_hash = "faabb3d25fc7249b"
+content_hash = "e2ebea57f7a14432"
 requires = []
 resolved = ""
 
@@ -304,7 +304,7 @@ requires = []
 resolved = ""
 
 [components.nix-portable]
-content_hash = "f202afc6d3cef691"
+content_hash = "d5846b195a2643ae"
 requires = []
 resolved = ""
 
@@ -324,7 +324,7 @@ requires = ["bun"]
 resolved = ""
 
 [components.nushell]
-content_hash = "cd571dae408f0781"
+content_hash = "34dddf5eeabd9be8"
 requires = []
 resolved = ""
 
@@ -347,7 +347,7 @@ requires = ["nvidia-cuda-repo"]
 resolved = ""
 
 [components.ollama]
-content_hash = "94144bfee2b880aa"
+content_hash = "a8b6c4ae4dbc94f3"
 requires = []
 resolved = ""
 
@@ -452,11 +452,11 @@ requires = ["yazelix"]
 resolved = ""
 
 [components.yazi]
-content_hash = "c097c64890e8d226"
+content_hash = "b0e62159ac85a263"
 requires = []
 resolved = ""
 
 [components.zellij]
-content_hash = "b6229a13b206ef2b"
+content_hash = "cd9c8c7269f25b56"
 requires = []
 resolved = ""
