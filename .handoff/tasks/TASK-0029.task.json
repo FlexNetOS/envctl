@@ -2,7 +2,7 @@
   "schema": "handoff.task.v1",
   "id": "TASK-0029",
   "title": "portability-links.toml branch fork reconcile (usrlocal-script-links develop/master divergence)",
-  "status": "backlog",
+  "status": "done",
   "priority": "P2",
   "objective": "portability-links.toml branch fork reconcile (usrlocal-script-links develop/master divergence)",
   "path_scope": [

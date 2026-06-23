@@ -2,7 +2,7 @@
   "schema": "handoff.task.v1",
   "id": "TASK-0016",
   "title": "Lock unification — fold agent assets into envctl.lock (SHA-256 section)",
-  "status": "backlog",
+  "status": "done",
   "priority": "P1",
   "objective": "Lock unification — fold agent assets into envctl.lock (SHA-256 section)",
   "path_scope": [

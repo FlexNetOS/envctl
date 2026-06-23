@@ -2,7 +2,7 @@
   "schema": "handoff.task.v1",
   "id": "TASK-0021",
   "title": "node-via-bun manifest follow-up: node not-applicable when real node present, or add node-real component",
-  "status": "backlog",
+  "status": "done",
   "priority": "P2",
   "objective": "node-via-bun manifest follow-up: node not-applicable when real node present, or add node-real component",
   "path_scope": [

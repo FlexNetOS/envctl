@@ -137,12 +137,15 @@ foundation IS built (`relay_mint_remote`, `register_remote_client`, `broker/deci
     `WebPkiClientVerifier` (OI-SM-4, ring-only, default-OFF, separate client-CA never the MITM CA). Zero new
     deps; `SecretEvent::EdgeRequestShed` metadata-only; fail-closed; 7 nonce + 5 admission units +
     edge_hardening_e2e. Edge now PR-1+PR-2+PR-3 complete.
-    - [ ] **TASK-0031-PR2C:** parse the PROXY-protocol header to key the per-IP shed on the real client IP
-      when the edge sits behind an L4 front (this cycle keys on `peer.ip()` — correct for direct-bind /
-      on-box reverse-tunnel default).
+    - [x] **TASK-0031-PR2C:** parse the PROXY-protocol header to key the per-IP shed on the real client IP
+      when the edge sits behind an L4 front. DONE 2026-06-23, PR #157: relay-edge now trusts the
+      PROXY-protocol source IP before admission/rate limiting; `hf test TASK-0031-PR2C` witnessed
+      build+p7 before `hf done`.
     - [ ] **TASK-0039 (remote-clients-CA lifecycle):** mint/≤7d-leaf/renew/revoke + revocation-set
-      propagation for the mTLS client-CA (OI-SM-4's CA-management half; PR-2 wired only the verifier +
-      consumes an operator-provisioned bundle).
+      propagation for the mTLS client-CA. PARTIAL 2026-06-23, PR #158: hardened the verifier-side
+      revocation propagation path (reload revocation set on each connection, reject revoked client
+      leaves, compatible with PR #157 PROXY source-IP). Remaining: implement the lifecycle surface
+      (`mint`/`<=7d leaf`/`renew`/`revoke`) instead of relying on operator-provisioned files.
 - [x] **TASK-0032 (F5, P0) — DONE (PR #117 MERGED, guardian PASS):** Streaming-revocation
   tear-down. Engine `relay_stream_authorized` + `Broker::peek` (non-mutating re-check through the SAME
   `decide()`); edge `stream.rs` supervises long-lived HTTP/2 streams with a 2s in-stream re-check + max-stream

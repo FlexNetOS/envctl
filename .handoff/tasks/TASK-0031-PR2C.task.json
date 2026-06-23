@@ -2,7 +2,7 @@
   "schema": "handoff.task.v1",
   "id": "TASK-0031-PR2C",
   "title": "Parse PROXY-protocol header to key per-IP shed on real client IP behind an L4 front",
-  "status": "backlog",
+  "status": "done",
   "priority": "P2",
   "objective": "Parse PROXY-protocol header to key per-IP shed on real client IP behind an L4 front",
   "path_scope": [
