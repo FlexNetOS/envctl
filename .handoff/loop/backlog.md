@@ -1013,24 +1013,31 @@ policy change" — both are available and declarable here.
   design — the global default doesn't override a repo's `rust-toolchain.toml`); this directive is
   the workstation/meta default, not a change to envctl's pin. Open Q for owner: should envctl
   itself move to nightly, or keep its MSRV-stable pin?
-- [ ] **TASK-0074 (secrets, MEDIUM) — re-enroll/rotate a USB keyslot on an UNLOCKED existing vault
-  (the durable "plugged in = access" fix; owner 2026-06-23):** PROVEN this session by full live
-  diagnosis + reading the sqld `keyslots` table — the vault's USB slot is a **placeholder/verify-spike
-  STUB** (`usb_partition_uuid = "verify-vault-uuid"`, `wrapped_dek` never bound to the real DEK), so
-  `secretctl unlock` (USB-first) fails `Internal: "unlock failed"` even though the WHOLE Seed path is
-  healthy (custody API → HTTP 200 + valid Ed25519 sig, token/CA/network/mount/seed-factor all green).
-  USB-keyslot enrollment today exists ONLY at `secretctl init --enroll-usb --usb-partuuid`, and `init`
-  REFUSES to overwrite an existing vault → **there is NO verb to add/rotate a USB slot post-init**.
-  Build it: an Engine method + `secretctl keyslot add-usb|rotate-usb` (or `secretctl usb enroll`) that,
-  on an UNLOCKED vault, wraps the live DEK with `kek_from_usb(Seed-sig over the slot context)` and
-  upserts the USB slot (replacing the stub) — fail-closed, dry-run/`--apply`, peercred-gated like
-  `init`. Bind to a STABLE real identifier (the live COGNITUM USB is whole-device with no PARTUUID —
-  use the filesystem UUID or the Seed device_id `0e34a5e5-…` as the slot context, not a placeholder).
-  **Verification needs the vault unlocked** (passphrase bootstrap — owner runs `! secretctl unlock`),
-  so this is build-then-verify-with-owner, not a clean blind auto-merge. After it lands + the real USB
-  slot is enrolled: `lock` → `unlock` with NO passphrase must succeed (plugged-in = access). The
-  GitHub mint (`secretctl mint-github`) is INDEPENDENT — it only needs the vault unlocked, so it works
-  the moment passphrase-unlock succeeds. See memory [[cognitum-seed-usb-unlock]].
+- [x] **TASK-0074 (secrets) — VOID / RETRACTED (my diagnosis was WRONG; owner corrected 2026-06-23):**
+  the USB keyslot is NOT a stub — it is a real, working slot (`usb_partition_uuid = "verify-vault-uuid"`
+  is just the binding string). The vault has opened via USB many times. NO re-enroll verb is needed.
+  The ACTUAL recurring failure was a **stale pinned Cognitum CA** — superseded by TASK-0075. (Kept as a
+  ticked row, not deleted, so the retraction is auditable.)
+- [ ] **TASK-0075 (secrets, MEDIUM) — `cognitum-seed-trust` component: auto-refresh the pinned Seed CA
+  from the USB on rotation (the REAL durable "plugged in = access" fix; owner 2026-06-23):** ROOT CAUSE
+  proven this session — `secretctl unlock` (USB-first) failed `Internal: "unlock failed"` because the
+  daemon validates the Seed's TLS strictly against the pinned Cognitum Device CA
+  (`/usr/local/share/ca-certificates/cognitum-ca.crt`) and **the Seed had rotated its Device CA** (host
+  pin `f6a65edb…` Mar-13 vs current `4fc730d4…` Jun-18, the latter on the USB `trust/` + presented live
+  by the Seed). Stale pin → TLS handshake fails fail-closed & SILENT → custody/sign fails →
+  `usb_possessed=false` → unlock fails. Fixed manually via `bash /run/media/drdave/COGNITUM/trust/install-trust.sh`
+  (re-pin from the USB anchor) → stock USB unlock works, mint verified live (78 repos). The owner has
+  done this re-pin "several times" — codify it: a manifest component (sibling to `cognitum-seed-net`)
+  that, on boot + Seed cdc_ncm/USB hotplug, refreshes the pinned CA from `COGNITUM/trust/cognitum-ca.pem`
+  (possession-rooted; additive; absent Seed = no-op; verify = pinned CA pubkey == the live Seed-presented
+  CA). Owner doctrine note: consider relocating the pin off `/usr/local` to a meta path + `ENVCTL_SEED_CA`
+  (no-system-depth) as part of this. See memory [[cognitum-seed-usb-unlock]].
+- [ ] **TASK-0076 (secrets, MEDIUM) — reboot-persistent USB auto-unlock (owner: "persist vault opens
+  after reboot"):** after a daemon (re)start the vault is LOCKED (DEK is RAM-only; confirmed — status
+  shows `locked` post-restart, an explicit `secretctl unlock` is required). Add a user service
+  (ordered After `env-ctl.service`, gated on USB possession) that runs `secretctl unlock` once the
+  daemon is up, so a reboot with the Seed present auto-reopens the vault. Fail-closed (no Seed → stays
+  locked, no passphrase ever scripted). Depends on TASK-0075 (fresh CA pin) being in place first.
 
 ## Key finding (carried)
 
