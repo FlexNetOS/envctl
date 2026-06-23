@@ -151,8 +151,13 @@ Acceptance: `secretctl mint-github --installation-id 140063898 --output json` re
   2026-06-17) and GAP2 (gitconfig leak = FIXED) were already closed. Nothing left to reconcile.
 
 ### Promoted from the namespaced rust-port loop (was invisible to this flat backlog)
-- [!] **KBTASK-SEED-UNLOCK:** Seed-USB live-hardware unlock — code-complete, OWNER-GATED (live-hardware
-  test only). From `.handoff/loop/rust-port/HANDOFF.md`.
+- [x] **KBTASK-SEED-UNLOCK — VALIDATED 2026-06-23 (live-hardware proof landed via TASK-0075/0076):**
+  the live-hardware Seed-USB unlock that this card was gated on is now PROVEN on the box — TASK-0075
+  fixed the stale-CA root cause and verified "stock USB unlock works, mint verified live (78 repos)",
+  and TASK-0076 was RUNTIME-PROVEN with the Seed present (`vault unlocked via USB possession factor`,
+  `secretctl status`=unlocked `usb_possessed=true`). The code was already complete; the gating
+  live-hardware test is satisfied. (Canonical card lives in `.handoff/loop/rust-port/HANDOFF.md`; this
+  is the cross-namespace reconcile of the reference.)
 
 ## Epic F — Secrets SERVER-MODE / Phase 8 remote edge (THE missing blocker cluster, was UNTRACKED)
 The completeness sweep found the largest genuine remaining work — *"serve remote clients"* — was **not
