@@ -22,7 +22,7 @@ destructive = false
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "test -x \"$HOME/.cargo/bin/secretd\" && test -x \"$HOME/.cargo/bin/secretctl\" && test -f \"$HOME/.config/systemd/user/env-ctl.service\""]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; test -x \"$M/.toolchains/secrets/bin/secretd\" && test -x \"$M/.toolchains/secrets/bin/secretctl\" && test -f \"$HOME/.config/systemd/user/env-ctl.service\""]
 
 # INSTALL: MSRV-gate, build from the in-workspace sources, place bins, create XDG dirs (0700).
 # Does NOT init the vault or enroll keyslots — those are operator-driven, USB-gated daemon ops.
@@ -30,7 +30,11 @@ args = ["-lc", "test -x \"$HOME/.cargo/bin/secretd\" && test -x \"$HOME/.cargo/b
 kind = "script"
 script = '''
 set -euo pipefail
-export PATH="$HOME/.cargo/bin:$PATH"
+# Meta-owned toolchain (Epic H TASK-0069): build with the meta cargo, NOT ~/.cargo/bin.
+M="${META_ROOT:-$HOME/Desktop/meta}"
+export CARGO_HOME="$M/.toolchains/cargo"
+export PATH="$M/.toolchains/cargo/bin:$HOME/.local/bin:$PATH"
+DEST="$M/.toolchains/secrets/bin"
 
 # MSRV gate (rust-version = 1.80 in the workspace). Fail closed, do not silently upgrade.
 # Pass iff cargo >= 1.80.0: with the MSRV line FIRST, `sort -V -C` succeeds only when the
@@ -62,8 +66,13 @@ test -d "${repo:-/nonexistent}/crates/secretd" || { echo "FATAL: envctl workspac
 cargo build --release --manifest-path "$repo/Cargo.toml" -p envctl-secretd --features seed-factor
 cargo build --release --manifest-path "$repo/Cargo.toml" -p envctl-secretctl
 
-install -Dm755 "$repo/target/release/secretd"   "$HOME/.cargo/bin/secretd"
-install -Dm755 "$repo/target/release/secretctl" "$HOME/.cargo/bin/secretctl"
+# Meta-prefix install (Epic H TASK-0069): binaries live under $M/.toolchains/secrets/bin,
+# symlinked onto ~/.local/bin (on PATH) — NOT ~/.cargo/bin (system-depth).
+install -Dm755 "$repo/target/release/secretd"   "$DEST/secretd"
+install -Dm755 "$repo/target/release/secretctl" "$DEST/secretctl"
+install -d -m755 "$HOME/.local/bin"
+ln -sfn "$DEST/secretd"   "$HOME/.local/bin/secretd"
+ln -sfn "$DEST/secretctl" "$HOME/.local/bin/secretctl"
 
 # XDG dirs, fail-closed perms (ARCHITECTURE layout). RUNTIME dir is created by the unit at start.
 install -d -m700 "$HOME/.config/env-ctl"
@@ -101,7 +110,7 @@ fi
 kind = "command"
 command = "bash"
 args = ["-lc", '''
-export PATH="$HOME/.cargo/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 # Hard predicate (fail-closed): bins answer + the daemon's offline self-check passes.
 secretctl --help >/dev/null && secretd --self-check >/dev/null || exit 1
 # Best-effort serving probe — NEVER fails verify (locked is healthy; daemon may be stopped).
@@ -122,7 +131,11 @@ exit 0
 kind = "script"
 script = '''
 set -euo pipefail
-export PATH="$HOME/.cargo/bin:$PATH"
+# Meta-owned toolchain + prefix (Epic H TASK-0069). See install.
+M="${META_ROOT:-$HOME/Desktop/meta}"
+export CARGO_HOME="$M/.toolchains/cargo"
+export PATH="$M/.toolchains/cargo/bin:$HOME/.local/bin:$PATH"
+DEST="$M/.toolchains/secrets/bin"
 # Resolve the workspace root (override → meta layout → legacy bare; sentinel-validated). See install.
 repo="${ENV_CTL_REPO:-}"
 if [ -z "$repo" ]; then
@@ -134,8 +147,11 @@ test -d "${repo:-/nonexistent}/crates/secretd" || { echo "FATAL: envctl workspac
 # Rebuild WITH seed-factor (see install note): a plain rebuild would drop the USB unlock factor.
 cargo build --release --manifest-path "$repo/Cargo.toml" -p envctl-secretd --features seed-factor
 cargo build --release --manifest-path "$repo/Cargo.toml" -p envctl-secretctl
-install -Dm755 "$repo/target/release/secretd"   "$HOME/.cargo/bin/secretd"
-install -Dm755 "$repo/target/release/secretctl" "$HOME/.cargo/bin/secretctl"
+install -Dm755 "$repo/target/release/secretd"   "$DEST/secretd"
+install -Dm755 "$repo/target/release/secretctl" "$DEST/secretctl"
+install -d -m755 "$HOME/.local/bin"
+ln -sfn "$DEST/secretd"   "$HOME/.local/bin/secretd"
+ln -sfn "$DEST/secretctl" "$HOME/.local/bin/secretctl"
 
 # Re-assert the durable store config idempotently (write only if absent; operator edits preserved).
 install -d -m700 "$HOME/.config/env-ctl"
@@ -159,7 +175,13 @@ kind = "script"
 script = '''
 set -euo pipefail
 systemctl --user disable --now env-ctl.service 2>/dev/null || true
-rm -f "$HOME/.cargo/bin/secretd" "$HOME/.cargo/bin/secretctl"
+M="${META_ROOT:-$HOME/Desktop/meta}"
+# Self-guarded: drop the ~/.local/bin symlinks only if they point into our meta prefix, then
+# remove the meta-prefix binaries. Never touches a foreign binary.
+for b in secretd secretctl; do
+  t="$HOME/.local/bin/$b"; [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/secrets" && rm -f "$t"
+done
+rm -f "$M/.toolchains/secrets/bin/secretd" "$M/.toolchains/secrets/bin/secretctl"
 systemctl --user daemon-reload || true
 # vault.db / ca/ / audit are data_paths+config_paths below — envctl deletes them ONLY with --purge,
 # after a UUID re-verify. remove() never touches user data (THREAT-MODEL: user data is never touched).
@@ -167,7 +189,7 @@ systemctl --user daemon-reload || true
 
 # ---- WIRING (engine-owned, reversible: backup-then-excise on reset; see engine/src/wiring.rs) ----
 [component.wiring]
-path_entries = ["~/.cargo/bin"]
+path_entries = ["~/.local/bin"]
 
 [[component.wiring.shell_rc]]
 file = "~/.bashrc"
@@ -198,7 +220,8 @@ After=sqld.service
 [Service]
 Type=notify
 NotifyAccess=main
-ExecStart=%h/.cargo/bin/secretd
+# Meta-prefix binary (Epic H TASK-0069). %h=home; META_ROOT is $HOME/Desktop/meta on this box.
+ExecStart=%h/Desktop/meta/.toolchains/secrets/bin/secretd
 Restart=on-failure
 RestartSec=10
 # Fail-closed memory hygiene is enforced IN secretd (mlockall + RLIMIT_CORE=0 + MADV_DONTDUMP;

@@ -13,7 +13,8 @@ After=sqld.service
 [Service]
 Type=notify
 NotifyAccess=main
-ExecStart=%h/.cargo/bin/secretd
+# Meta-prefix binary (Epic H TASK-0069). %h=home; META_ROOT is $HOME/Desktop/meta on this box.
+ExecStart=%h/Desktop/meta/.toolchains/secrets/bin/secretd
 Restart=on-failure
 RestartSec=10
 # Fail-closed memory hygiene is enforced IN secretd (mlockall + RLIMIT_CORE=0 + MADV_DONTDUMP;
