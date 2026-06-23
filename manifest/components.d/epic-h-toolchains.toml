@@ -280,3 +280,57 @@ rm -rf "$M/.toolchains/mise"
 
 [component.wiring]
 path_entries = ["~/.local/bin"]
+
+# ── ollama ── meta-owned LLM runner, replaces the root /usr/local/bin/ollama install.
+# Ships as a zstd tarball with `bin/ollama` + `lib/ollama/` (the GPU runner .so set,
+# incl. cuda_v12/cuda_v13). The binary finds its libs via `../lib/ollama` relative to
+# its real path (/proc/self/exe is symlink-resolved, so the ~/.local/bin symlink still
+# resolves to .toolchains/ollama/lib/ollama); `envctl env --toolchains` also exports
+# OLLAMA_LIBRARY_PATH as a belt-and-suspenders GPU .so redirect (Epic H TASK-0060).
+# Repo: ollama/ollama. (The old root binary at /usr/local/bin/ollama is shadowed by the
+# ~/.local/bin symlink on PATH; its sudo removal is a separate cleanup step.)
+[[component]]
+id = "ollama"
+name = "ollama (meta-owned)"
+description = "ollama LLM runner from upstream zstd release tarball into .toolchains/ollama (bin/ollama + lib/ollama GPU runners) + ~/.local/bin/ollama symlink. Replaces the root /usr/local/bin/ollama. Repo: ollama/ollama."
+
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/ollama/bin/ollama\" ] && [ \"$(readlink -f \"$HOME/.local/bin/ollama\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/ollama/bin/ollama\")\" ]"]
+
+[component.install]
+kind = "script"
+login_shell = true
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/ollama"
+TAG="$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/ollama/ollama/releases/latest | sed 's#.*/tag/##')"
+URL="https://github.com/ollama/ollama/releases/download/${TAG}/ollama-linux-amd64.tar.zst"
+tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+curl -fsSL "$URL" -o "$tmp/ollama.tar.zst"
+rm -rf "$DEST"
+install -d -m 755 "$DEST"
+tar --zstd -xf "$tmp/ollama.tar.zst" -C "$DEST"
+install -d -m 755 "$HOME/.local/bin"
+ln -sfn "$DEST/bin/ollama" "$HOME/.local/bin/ollama"
+'''
+
+[component.verify]
+kind = "command"
+command = "bash"
+args = ["-lc", "PATH=\"$HOME/.local/bin:$PATH\"; ollama -v"]
+
+[component.remove]
+kind = "script"
+login_shell = true
+script = '''
+set -u
+M="${META_ROOT:-$HOME/Desktop/meta}"
+t="$HOME/.local/bin/ollama"; [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/ollama" && rm -f "$t"
+rm -rf "$M/.toolchains/ollama"
+'''
+
+[component.wiring]
+path_entries = ["~/.local/bin"]
