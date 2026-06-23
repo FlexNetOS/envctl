@@ -28,12 +28,16 @@ login_shell = true
 script = '''
 set -euo pipefail
 M="${META_ROOT:-$HOME/Desktop/meta}"
+ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 DEST="$M/.toolchains/gh"
+# Bootstrapping gh itself: the redirect-resolve is a github.com HEAD (not the JSON API) so it
+# stays plain curl; the asset download goes through the resolver (bearer when a token is already
+# available, identical bytes otherwise).
 TAG="$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/cli/cli/releases/latest | sed 's#.*/tag/##')"
 VER="${TAG#v}"
 URL="https://github.com/cli/cli/releases/download/${TAG}/gh_${VER}_linux_amd64.tar.gz"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-curl -fsSL "$URL" -o "$tmp/gh.tgz"
+envctl_gh_curl "$URL" -o "$tmp/gh.tgz"
 install -d -m 755 "$DEST"
 tar -xzf "$tmp/gh.tgz" -C "$DEST" --strip-components=1
 install -d -m 755 "$HOME/.local/bin"
@@ -287,11 +291,12 @@ login_shell = true
 script = '''
 set -euo pipefail
 M="${META_ROOT:-$HOME/Desktop/meta}"
+ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 DEST="$M/.toolchains/nushell"
 TAG="$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/nushell/nushell/releases/latest | sed 's#.*/tag/##')"
 URL="https://github.com/nushell/nushell/releases/download/${TAG}/nu-${TAG}-x86_64-unknown-linux-musl.tar.gz"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-curl -fsSL "$URL" -o "$tmp/nu.tgz"
+envctl_gh_curl "$URL" -o "$tmp/nu.tgz"
 install -d -m 755 "$DEST"
 tar -xzf "$tmp/nu.tgz" -C "$DEST" --strip-components=1
 install -d -m 755 "$HOME/.local/bin"
@@ -334,11 +339,12 @@ login_shell = true
 script = '''
 set -euo pipefail
 M="${META_ROOT:-$HOME/Desktop/meta}"
+ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 DEST="$M/.toolchains/zellij"
 TAG="$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/zellij-org/zellij/releases/latest | sed 's#.*/tag/##')"
 URL="https://github.com/zellij-org/zellij/releases/download/${TAG}/zellij-x86_64-unknown-linux-musl.tar.gz"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-curl -fsSL "$URL" -o "$tmp/zellij.tgz"
+envctl_gh_curl "$URL" -o "$tmp/zellij.tgz"
 install -d -m 755 "$DEST"
 tar -xzf "$tmp/zellij.tgz" -C "$DEST"
 install -d -m 755 "$HOME/.local/bin"
@@ -381,11 +387,12 @@ login_shell = true
 script = '''
 set -euo pipefail
 M="${META_ROOT:-$HOME/Desktop/meta}"
+ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 DEST="$M/.toolchains/mise"
 TAG="$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/jdx/mise/releases/latest | sed 's#.*/tag/##')"
 URL="https://github.com/jdx/mise/releases/download/${TAG}/mise-${TAG}-linux-x64"
 install -d -m 755 "$DEST/bin"
-curl -fsSL "$URL" -o "$DEST/bin/mise"
+envctl_gh_curl "$URL" -o "$DEST/bin/mise"
 chmod +x "$DEST/bin/mise"
 install -d -m 755 "$HOME/.local/bin"
 ln -sfn "$DEST/bin/mise" "$HOME/.local/bin/mise"
@@ -433,11 +440,12 @@ login_shell = true
 script = '''
 set -euo pipefail
 M="${META_ROOT:-$HOME/Desktop/meta}"
+ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 DEST="$M/.toolchains/ollama"
 TAG="$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/ollama/ollama/releases/latest | sed 's#.*/tag/##')"
 URL="https://github.com/ollama/ollama/releases/download/${TAG}/ollama-linux-amd64.tar.zst"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-curl -fsSL "$URL" -o "$tmp/ollama.tar.zst"
+envctl_gh_curl "$URL" -o "$tmp/ollama.tar.zst"
 rm -rf "$DEST"
 install -d -m 755 "$DEST"
 tar --zstd -xf "$tmp/ollama.tar.zst" -C "$DEST"
@@ -485,16 +493,19 @@ login_shell = true
 script = '''
 set -euo pipefail
 M="${META_ROOT:-$HOME/Desktop/meta}"
+ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 DEST="$M/.toolchains/llvm"
-# Authenticated release listing (gh = 5000/hr; gh is the meta-owned Epic-H component TASK-0057,
-# guaranteed on PATH) — the /releases/latest redirect points at 22.x, so we must LIST releases to
-# pin the latest 21.x. Falls back to the unauthenticated API (60/hr, may 403 when the quota is
-# exhausted) only if gh is absent/unauthed. TASK-0068 (last api.github.com rate-limit liability).
-if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
-  TAG="$(gh api 'repos/llvm/llvm-project/releases?per_page=100' \
+# Authenticated release listing via the shared resolver (gh tier = 5000/hr, or the vault-sealed
+# mint token; gh is the meta-owned Epic-H component TASK-0057, guaranteed on PATH) — the
+# /releases/latest redirect points at 22.x, so we must LIST releases to pin the latest 21.x.
+# The resolver's gh path preserves `--jq`; we keep our OWN unauthenticated grep-based fallback
+# for when gh is absent/unauthed (60/hr, may 403 when the quota is exhausted), because the
+# curl-side cannot honour gh's --jq. TASK-0068 (last api.github.com rate-limit liability).
+if _envctl_gh_authed; then
+  TAG="$(envctl_gh_api 'repos/llvm/llvm-project/releases?per_page=100' \
     --jq '.[].tag_name | select(test("^llvmorg-21\\.[0-9]+\\.[0-9]+$"))' | sort -V | tail -1)"
 else
-  TAG="$(curl -fsSL 'https://api.github.com/repos/llvm/llvm-project/releases?per_page=100' \
+  TAG="$(envctl_gh_curl 'https://api.github.com/repos/llvm/llvm-project/releases?per_page=100' \
     | grep -oE '"tag_name": *"llvmorg-21\.[0-9]+\.[0-9]+"' \
     | grep -oE 'llvmorg-21\.[0-9]+\.[0-9]+' | sort -V | tail -1)"
 fi
@@ -502,7 +513,7 @@ fi
 VER="${TAG#llvmorg-}"
 URL="https://github.com/llvm/llvm-project/releases/download/${TAG}/LLVM-${VER}-Linux-X64.tar.xz"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-curl -fsSL "$URL" -o "$tmp/llvm.tar.xz"
+envctl_gh_curl "$URL" -o "$tmp/llvm.tar.xz"
 rm -rf "$DEST"; install -d -m 755 "$DEST"
 tar -xJf "$tmp/llvm.tar.xz" -C "$DEST" --strip-components=1
 install -d -m 755 "$HOME/.local/bin"
@@ -568,12 +579,13 @@ login_shell = true
 script = '''
 set -euo pipefail
 M="${META_ROOT:-$HOME/Desktop/meta}"
+ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 DEST="$M/.toolchains/libgccjit"
-COMMIT="$(curl -fsSL https://raw.githubusercontent.com/rust-lang/rustc_codegen_gcc/master/libgccjit.version | tr -d '[:space:]')"
+COMMIT="$(envctl_gh_curl https://raw.githubusercontent.com/rust-lang/rustc_codegen_gcc/master/libgccjit.version | tr -d '[:space:]')"
 [ -n "$COMMIT" ] || { echo "libgccjit: could not resolve commit from libgccjit.version" >&2; exit 1; }
 URL="https://github.com/rust-lang/gcc/releases/download/master-${COMMIT}/libgccjit.so"
 tmp=$(mktemp -d); trap 'rm -rf "$tmp"' EXIT
-curl -fsSL "$URL" -o "$tmp/libgccjit.so"
+envctl_gh_curl "$URL" -o "$tmp/libgccjit.so"
 rm -rf "$DEST"; install -d -m 755 "$DEST/lib"
 install -m 644 "$tmp/libgccjit.so" "$DEST/lib/libgccjit.so"
 ln -sfn "$DEST/lib/libgccjit.so" "$DEST/lib/libgccjit.so.0"
@@ -618,17 +630,19 @@ login_shell = true
 script = '''
 set -euo pipefail
 M="${META_ROOT:-$HOME/Desktop/meta}"
+ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 DEST="$M/.toolchains/nix-portable"
 rm -rf "$DEST"; install -d -m 755 "$DEST/bin"
-# Authenticated fetch (gh = 5000/hr, gh is a meta-owned Epic-H component TASK-0057) — avoids the
-# 60/hr unauth GitHub API 403 (the box's unauth quota is exhausted). Falls back to the web
-# /releases/latest redirect + curl (no unauth JSON API) with a last-known-good tag only if gh is
-# absent/unauthed.
-if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
-  gh release download --repo DavHau/nix-portable --pattern 'nix-portable-x86_64' --output "$DEST/bin/nix-portable" --clobber
+# Authenticated fetch via the shared resolver (gh tier = 5000/hr or the vault-sealed mint token;
+# gh is a meta-owned Epic-H component TASK-0057) — avoids the 60/hr unauth GitHub API 403 (the
+# box's unauth quota is exhausted). When gh is authed the resolver uses `gh release download`;
+# otherwise we keep this component's OWN /releases/latest redirect + curl fallback (with a
+# last-known-good tag), now bearer-tokened via envctl_gh_curl when a token is available.
+if _envctl_gh_authed; then
+  envctl_gh_release_download --repo DavHau/nix-portable --pattern 'nix-portable-x86_64' --output "$DEST/bin/nix-portable"
 else
   TAG="$(curl -fsSLI -o /dev/null -w '%{url_effective}' 'https://github.com/DavHau/nix-portable/releases/latest' 2>/dev/null | grep -oE 'v[0-9]+$')"; [ -n "$TAG" ] || TAG=v012
-  curl -fsSL "https://github.com/DavHau/nix-portable/releases/download/${TAG}/nix-portable-x86_64" -o "$DEST/bin/nix-portable"
+  envctl_gh_curl "https://github.com/DavHau/nix-portable/releases/download/${TAG}/nix-portable-x86_64" -o "$DEST/bin/nix-portable"
 fi
 chmod +x "$DEST/bin/nix-portable"
 install -d -m 755 "$HOME/.local/bin"
@@ -679,16 +693,19 @@ login_shell = true
 script = '''
 set -euo pipefail
 M="${META_ROOT:-$HOME/Desktop/meta}"
+ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 DEST="$M/.toolchains/yazi"
 ASSET="yazi-x86_64-unknown-linux-musl.zip"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-# Authenticated fetch (gh = 5000/hr, gh is meta-owned Epic-H TASK-0057) to dodge the 60/hr
-# unauth GitHub API 403; web /releases/latest redirect + curl fallback (no unauth JSON API).
-if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
-  gh release download --repo sxyazi/yazi --pattern "$ASSET" --output "$tmp/yazi.zip" --clobber
+# Authenticated fetch via the shared resolver (gh tier = 5000/hr or the vault-sealed mint token;
+# gh is meta-owned Epic-H TASK-0057) to dodge the 60/hr unauth GitHub API 403. When gh is authed
+# the resolver uses `gh release download`; otherwise we keep this component's OWN /releases/latest
+# redirect + curl fallback, now bearer-tokened via envctl_gh_curl when a token is available.
+if _envctl_gh_authed; then
+  envctl_gh_release_download --repo sxyazi/yazi --pattern "$ASSET" --output "$tmp/yazi.zip"
 else
   TAG="$(curl -fsSLI -o /dev/null -w '%{url_effective}' 'https://github.com/sxyazi/yazi/releases/latest' | sed 's#.*/tag/##')"
-  curl -fsSL "https://github.com/sxyazi/yazi/releases/download/${TAG}/${ASSET}" -o "$tmp/yazi.zip"
+  envctl_gh_curl "https://github.com/sxyazi/yazi/releases/download/${TAG}/${ASSET}" -o "$tmp/yazi.zip"
 fi
 # zip extraction: unzip if present, else python3's stdlib zipfile (no system dep). Exec bit is
 # re-applied by `install -m 755` below regardless of what the extractor preserves.
@@ -743,15 +760,18 @@ login_shell = true
 script = '''
 set -euo pipefail
 M="${META_ROOT:-$HOME/Desktop/meta}"
+ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 DEST="$M/.toolchains/helix"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-# Authenticated fetch (gh = 5000/hr) to dodge the 60/hr unauth GitHub API 403; redirect+curl
-# fallback. The asset name embeds the version, so the gh --pattern is version-agnostic.
-if command -v gh >/dev/null 2>&1 && gh auth status >/dev/null 2>&1; then
-  gh release download --repo helix-editor/helix --pattern 'helix-*-x86_64-linux.tar.xz' --output "$tmp/helix.tar.xz" --clobber
+# Authenticated fetch via the shared resolver (gh tier = 5000/hr or the vault-sealed mint token)
+# to dodge the 60/hr unauth GitHub API 403. The gh --pattern is a version-agnostic GLOB (the
+# asset name embeds the version), so this branch keeps `gh release download` directly through the
+# resolver; the unauth fallback builds the concrete URL and is bearer-tokened via envctl_gh_curl.
+if _envctl_gh_authed; then
+  envctl_gh_release_download --repo helix-editor/helix --pattern 'helix-*-x86_64-linux.tar.xz' --output "$tmp/helix.tar.xz"
 else
   TAG="$(curl -fsSLI -o /dev/null -w '%{url_effective}' 'https://github.com/helix-editor/helix/releases/latest' | sed 's#.*/tag/##')"
-  curl -fsSL "https://github.com/helix-editor/helix/releases/download/${TAG}/helix-${TAG}-x86_64-linux.tar.xz" -o "$tmp/helix.tar.xz"
+  envctl_gh_curl "https://github.com/helix-editor/helix/releases/download/${TAG}/helix-${TAG}-x86_64-linux.tar.xz" -o "$tmp/helix.tar.xz"
 fi
 tar -xJf "$tmp/helix.tar.xz" -C "$tmp"
 SRC="$(dirname "$(find "$tmp" -type f -name hx | head -1)")"
