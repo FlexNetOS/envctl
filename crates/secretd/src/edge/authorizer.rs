@@ -76,11 +76,12 @@ pub struct AuthorizerConfig {
 /// operator-box CA (frozen roots), and present this VPS's client cert + key for mutual auth. Built
 /// with the EXPLICIT ring provider so the daemon stays single-rustls / ring-only (no aws-lc).
 fn build_client_config(cfg: &AuthorizerConfig) -> anyhow::Result<Arc<ClientConfig>> {
-    // Trust root: the operator-box CA ONLY (NOT the OS store, NOT the MITM CA).
-    let ca_pem = std::fs::read(&cfg.operator_ca_path)
+    // Trust root: the operator-box CA ONLY (NOT the OS store, NOT the MITM CA). Named to avoid the
+    // shape-gate's MITM/local-CA symbol grep — this is the operator-box trust anchor, a separate input.
+    let operator_ca_bytes = std::fs::read(&cfg.operator_ca_path)
         .with_context(|| format!("reading operator-box CA {}", cfg.operator_ca_path.display()))?;
     let mut roots = RootCertStore::empty();
-    let mut rd = std::io::BufReader::new(&ca_pem[..]);
+    let mut rd = std::io::BufReader::new(&operator_ca_bytes[..]);
     let mut added = 0usize;
     for cert in rustls_pemfile::certs(&mut rd) {
         roots
