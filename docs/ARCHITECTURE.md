@@ -213,6 +213,12 @@ The shipped base manifest is one `*.toml` file per component under
 `~/.config/envctl/components.d/*.toml`. The `Registry` merges base + every drop-in at load, so
 `add-repo` never edits a shared file in place (clean removal = delete the drop-in).
 
+Manifest files may also declare `extends = "relative/or/absolute.toml"` or a list of parent paths.
+Parents load first, relative paths resolve from the child manifest, cycles and chains deeper than 8
+fail closed, and `[[component]]` arrays merge by component `id`. If a child component has the same
+`id` as a parent, its table overlays the parent table, so a box-class manifest can inherit shared
+hooks and override only the local fields.
+
 ```toml
 # manifests/cuda-toolkit.toml — one component, wrapping the wizard fragment verbatim.
 id           = "cuda-toolkit"

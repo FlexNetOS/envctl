@@ -1,21 +1,24 @@
-# TASK-0016 — agent lock boundary · VERDICT: GO
+# TASK-0017 — component manifest extends · VERDICT: GO
 
 ## Trigger Check
 
-The card says "fold agent assets into envctl.lock (SHA-256 section)", but the current rust-port
-handoff and research report have the later no-downgrade finding: the engine component lock and the
-agent-asset lock are different domains and should remain separate.
+TASK-0017 asks for kasetto-style `extends` composition for envctl component manifests. The agent-env
+crate already contains the reusable no-downgrade model: strip `extends`, load parents recursively,
+merge before deserialization, and fail closed on cycles/depth overflow. The envctl component
+manifest loader currently parses each `*.toml` file directly into `ManifestFile`.
 
-## Decision
+## Design
 
-Route TASK-0016 as a lock-boundary decision plus manifest/gate cleanup:
+Add a local-only manifest composition layer in `Registry::load`:
 
-- Keep `manifest/envctl.lock` as the FNV-1a component lock for manifest components.
-- Keep `agent-env.lock` as the SHA-256 agent-asset lock for skills, commands, and MCP assets.
-- Reframe `manifest/agent-env.toml` around the built-in `envctl agent` commands and the renamed
-  `agent-env.yaml` / `agent-env.lock` files.
-- Make the CI drift gate use the true zero-network command:
-  `envctl agent lock --config agent-env.yaml --check --locked`.
+- Parse each manifest file as raw `toml::Value`.
+- Accept `extends = "parent.toml"` or `extends = ["base.toml", "team.toml"]`.
+- Resolve relative parent paths from the child manifest's directory.
+- Load parents before the child.
+- Refuse cycles and chains deeper than 8.
+- Merge `[[component]]` arrays by component `id`.
+- For the same component `id`, deep-merge the component table so a child can inherit parent hooks and
+  override only selected fields.
 
 ## Target Repos
 
@@ -23,16 +26,15 @@ Single repo: envctl. Sequential single-crew path.
 
 Touched surfaces:
 
-- `crates/agent-env/src/lock.rs`
-- `crates/engine/src/agent/lock.rs`
-- `manifest/agent-env.toml`
-- `manifest/envctl.lock`
-- `ci/gates/agent-env.sh`
-- `.handoff/decisions/*`
+- `crates/engine/src/model.rs`
+- `crates/engine/tests/engine.rs`
+- `docs/ARCHITECTURE.md`
+- `docs/KASETTO-FEATURES.md`
+- `docs/ROADMAP.md`
 
 ## Non-Goals
 
-- Do not re-port kasetto.
-- Do not rename the component id `kasetto` in this cycle; that would create needless component-lock
-  churn and is orthogonal to the agent-asset lock boundary.
-- Do not embed the SHA-256 lock into `manifest/envctl.lock`.
+- No remote manifest URLs; TASK-0017 has `allows_network=false`, and envctl component manifests are
+  local TOML files.
+- No new dependency.
+- No change to the existing `[[component]]` schema.
