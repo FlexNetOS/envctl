@@ -7,11 +7,11 @@ branch: develop   # work happens in FRESH worktrees off develop -> PR -> auto-pr
 worktree: (per-cycle: meta/.worktrees/<slug>/envctl off develop)
 cycle_budget: 1   # heavy-context resume sessions — 1 cohesive build cycle then hand off
 wrap_every: 5   # batch boundary: run reaper + wrap-up + evolution-steward every N completed cycles (no per-task pause)
-last_wrapup_total: 28   # no batch boundary this session (29-28=1 < wrap_every=5); last HAND-OFF wrap-up 2026-06-23 after TASK-0039 merged
-cycles_this_session: 3   # RESUME 2026-06-23 (owner: pick next 3): EASY-batch-1 (gh/wild/kache PR#170 MERGED), TASK-0058 (nu+zellij), TASK-0059 (mise)
-cycles_total: 32   # 29 + EASY-batch-1 (PR#170) + TASK-0058 + TASK-0059
-last_item: TASK-0059 (mise) — Epic H EASY tier applied+verified on box (gh/wild/kache/nu/zellij/mise all meta-owned healthy)
-status: ACTIVE 2026-06-23 — Epic H EASY tier converged. Remaining: wild/kache WIRING (0054/0055, verified-separate), archon (0056 BLOCKED — meta/Archon not cloned), apt/nix cleanup. boundary check: 32-28=4 < wrap_every 5
+last_wrapup_total: 28   # batch boundary DUE after this cycle (33-28=5 >= wrap_every=5) → reaper+wrap-up+steward at wrap-up
+cycles_this_session: 1   # RESUME 2026-06-23 (/forge-loop resume, fresh session): TASK-0060 (ollama) — cycle_budget=1 → HAND OFF after this
+cycles_total: 33   # 32 + TASK-0060 (ollama, MEDIUM)
+last_item: TASK-0060 (ollama) — meta-owned ollama component applied+verified on box (zstd tarball → .toolchains/ollama, GPU runners + OLLAMA_LIBRARY_PATH redirect)
+status: ACTIVE 2026-06-23 — Epic H: ollama meta-owned (cycle, PR pending). Remaining: wild/kache WIRING (0054/0055, verified-separate, ideally after clang TASK-0061), archon (0056 BLOCKED), MEDIUM 0061 llvm/0062 libgccjit/0066 nix-portable, HARD 0063 CUDA/0064 yazelix-de-nix(owner). boundary DUE: 33-28=5 >= wrap_every 5
   Cycle = TASK-0053. Guardian PASS (0 blocking); docs/doctrine + 1 regression test, NO new code surface.
   PR #164 (FlexNetOS/envctl) MERGED 2026-06-23T04:37:54Z (squash a7d96ff onto develop; master synced) —
   merged during this session's handoff write, so reconciled to DONE in-session. Runtime fail-closed verified

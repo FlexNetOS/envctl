@@ -1743,6 +1743,7 @@ fn run_env(
             map["RUSTUP_HOME"] = format!("{tc}/rustup").into();
             map["UV_TOOL_DIR"] = format!("{tc}/uv/tools").into();
             map["UV_PYTHON_INSTALL_DIR"] = format!("{tc}/uv/python").into();
+            map["OLLAMA_LIBRARY_PATH"] = format!("{tc}/ollama/lib/ollama").into();
         }
         println!("{}", serde_json::to_string_pretty(&map)?);
         return Ok(());
@@ -1785,6 +1786,13 @@ fn run_env(
         println!(
             "export UV_PYTHON_INSTALL_DIR={}",
             sh_single_quote(&format!("{tc}/uv/python"))
+        );
+        // GPU runner .so redirect for the meta-owned ollama (.toolchains/ollama/lib/
+        // ollama holds the cuda_v12/cuda_v13 ggml runners). The binary also resolves
+        // ../lib/ollama from its real path, so this is belt-and-suspenders.
+        println!(
+            "export OLLAMA_LIBRARY_PATH={}",
+            sh_single_quote(&format!("{tc}/ollama/lib/ollama"))
         );
         println!("export PATH=\"{tc}/.bun/bin:{tc}/cargo/bin:{tc}/uv/tools/bin:$PATH\"");
     }

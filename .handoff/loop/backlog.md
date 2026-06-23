@@ -841,9 +841,16 @@ policy change" — both are available and declarable here.
 - [x] **TASK-0059 (H, EASY) — DONE 2026-06-23:** `mise` component authored + APPLIED + verified —
   static binary → `.toolchains/mise/bin/mise` + `~/.local/bin/mise` (mise **2026.6.12**, healthy);
   replaced the prior real-file `~/.local/bin/mise`. `MISE_DATA_DIR` already meta. Repo: jdx/mise.
-- [ ] **TASK-0060 (H, MEDIUM):** `ollama` component — prebuilt binary → `.toolchains/ollama/bin` +
-  GPU `.so` redirect via `OLLAMA_LIBRARY_PATH`. Drop `/usr/local/bin/ollama` real binary. Repo:
-  ollama/ollama.
+- [~] **TASK-0060 (H, MEDIUM) — INSTALL+WIRE DONE, PR pending (2026-06-23):** `ollama` component
+  authored (`components.d/epic-h-toolchains.toml`) + APPLIED + verified on box — upstream zstd
+  tarball (`ollama-linux-amd64.tar.zst`) → `.toolchains/ollama` (`bin/ollama` + `lib/ollama/`
+  cuda_v12/cuda_v13/vulkan GPU runners) + `~/.local/bin/ollama` symlink (client **0.30.10**,
+  auto-detect detected/healthy/wiring_present). GPU `.so` redirect wired via `OLLAMA_LIBRARY_PATH`
+  in `envctl env --toolchains` (shell+json; the binary also resolves `../lib/ollama` from its real
+  path). Lock regen 71→72; env integration test extended. Repo: ollama/ollama. pr=<PR> (re-poll on
+  resume → `- [x]` when MERGED). **Remaining cleanup (separate, sudo):** remove the stale root
+  `/usr/local/bin/ollama` real binary (shadowed by the `~/.local/bin` symlink on PATH already) +
+  stop the old 0.30.6 root daemon.
 - [ ] **TASK-0061 (H, MEDIUM):** `llvm/clang-21` component — prebuilt `clang+llvm-*-linux` tarball →
   `.toolchains/llvm` (source build impractical). Drop apt `clang`/`llvm-21`. Repo: llvm/llvm-project.
 - [ ] **TASK-0062 (H, MEDIUM):** `libgccjit` for `rustc_codegen_gcc` — `y.sh`-downloaded CI

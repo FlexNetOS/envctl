@@ -59,6 +59,12 @@ fn toolchains_shell_exports_rustup_home_with_cargo_home() {
         out.contains(&format!("export RUSTUP_HOME='{r}/.toolchains/rustup'")),
         "RUSTUP_HOME must travel with CARGO_HOME (meta-owned rustup store):\n{out}"
     );
+    assert!(
+        out.contains(&format!(
+            "export OLLAMA_LIBRARY_PATH='{r}/.toolchains/ollama/lib/ollama'"
+        )),
+        "OLLAMA_LIBRARY_PATH must redirect ollama at the meta-owned GPU runner libs:\n{out}"
+    );
 }
 
 /// JSON form carries RUSTUP_HOME too, so machine consumers see the same seam.
@@ -77,5 +83,10 @@ fn toolchains_json_carries_rustup_home() {
         v["RUSTUP_HOME"].as_str(),
         Some(format!("{r}/.toolchains/rustup").as_str()),
         "json RUSTUP_HOME must be present and meta-located"
+    );
+    assert_eq!(
+        v["OLLAMA_LIBRARY_PATH"].as_str(),
+        Some(format!("{r}/.toolchains/ollama/lib/ollama").as_str()),
+        "json OLLAMA_LIBRARY_PATH must redirect ollama at the meta-owned GPU runner libs"
     );
 }
