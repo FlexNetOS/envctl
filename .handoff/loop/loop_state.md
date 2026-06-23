@@ -7,22 +7,15 @@ branch: develop   # work happens in FRESH worktrees off develop -> PR -> auto-pr
 worktree: (per-cycle: meta/.worktrees/<slug>/envctl off develop)
 cycle_budget: 1   # heavy-context resume sessions — 1 cohesive build cycle then hand off
 wrap_every: 5   # batch boundary: run reaper + wrap-up + evolution-steward every N completed cycles (no per-task pause)
-last_wrapup_total: 28   # HAND-OFF wrap-up satisfied 2026-06-23 after TASK-0039 local PASS / PR #162 open
+last_wrapup_total: 28   # HAND-OFF wrap-up satisfied 2026-06-23 after TASK-0039 merged / TASK-0053 claimed
 cycles_this_session: 9   # RESUME SESSION 2026-06-22/23: cycles = TASK-0038, TASK-0007, TASK-0008, TASK-0015, TASK-0016, TASK-0017, TASK-0019, TASK-0021, TASK-0039
-cycles_total: 28   # 27 previous cycles + TASK-0039 local PASS / PR #162 open
-last_item: TASK-0039 (remote-clients CA lifecycle) — LOCAL PASS, PR #162 open; do not hf done until MERGED
-status: HANDOFF 2026-06-23 — TASK-0039 PR #162 open, CI running
-  Cycle = TASK-0039. LOCAL PASS 2026-06-23; PR #162 open
-  (https://github.com/FlexNetOS/envctl/pull/162), CI running. Implemented a DEK-sealed
-  remote-clients CA distinct from the MITM CA; control_plane_client leaves are capped at <=7d;
-  Certs.Renew and Certs.Revoke are wired through secretd; revoke is dry-run/apply+confirm gated,
-  persists cert revocation state, disables a matching remote-client registry row, and appends
-  SHA-256 DER fingerprints to the configured client_revocations_path consumed by PR #158's mTLS
-  verifier. Verification passed locally: fmt, clippy, engine+CLI build, secretctl check,
-  relay-edge daemon check, focused engine/secretd/libSQL tests, no-c/shape/enable/p7/loop-state
-  gates, and full `cargo test --workspace`. NEXT: poll PR #162; if GitHub checks pass, arm/confirm
-  merge, then `hf done TASK-0039 --pr 162 && hf handoff`. Do not remove the PR branch/worktree until
-  GitHub reports state=MERGED.
+cycles_total: 28   # 27 previous cycles + TASK-0039 landed via PR #162
+last_item: TASK-0039 (remote-clients CA lifecycle) — DONE via PR #162; TASK-0053 claimed for next cycle
+status: HANDOFF 2026-06-23 — TASK-0039 merged/done; resume at TASK-0053
+  Cycle = TASK-0039. PR #162 MERGED 2026-06-23T03:49:16Z with all GitHub checks green.
+  Completed ledger sequence on full JSONL-derived redb cache: `hf test TASK-0039`,
+  `hf done TASK-0039 --pr 162`, `hf sync-cards`, `hf handoff`, `hf export`. JSONL now has
+  73 witnessed events. NEXT: TASK-0053 (GitHub transport doctrine) is claimed but not started.
 
   Cycle = TASK-0021. VERIFIED already satisfied 2026-06-23. The manifest already had the real
   `node-real` carve-out, `group-ai-clis` no longer required `node-via-bun`, and `envctl lock --check`
@@ -99,8 +92,9 @@ status: HANDOFF 2026-06-23 — TASK-0039 PR #162 open, CI running
   surface: secrets-engine issues control_plane_server/control_plane_client leaves only, refuses mitm_leaf before
   key material, persists public DER metadata, lists CA+leaf certs, and audits ca_issued. secretd now wires
   Certs.CaInit/Issue/List; secretctl ca init/issue/list drives the daemon; e2e covers init -> issue -> list and
-  mitm_leaf refusal. Certs.CaRotate/Renew/Revoke/TrustApply remain explicit Unimplemented until destructive/root-
-  of-trust semantics are designed; remote client CA lifecycle remains TASK-0039. Verification: fmt, targeted
+  mitm_leaf refusal. Certs.CaRotate/TrustApply remain explicit Unimplemented until destructive/root-
+  of-trust semantics are designed; Certs.Renew/Revoke and the remote client CA lifecycle landed in
+  TASK-0039 / PR #162. Verification: fmt, targeted
   secrets-engine/secretd/secretctl tests, engine+CLI build, p7/no-c/shape/enable/kdf/agent-env/loop-state gates,
   clippy -D warnings, workspace tests with low-cost KDF, metadata --locked, cargo-audit, MSRV 1.80 check, and CI
   all green on #137.

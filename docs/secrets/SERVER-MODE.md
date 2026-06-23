@@ -320,12 +320,18 @@ A lapsed edge cert breaks all remote clients; on a CGNAT/dynamic-IP home box ACM
 
 ## 9. OPEN ITEMS (server-mode; medium/low — to append to DESIGN-NOTES)
 
+Resolved in code/docs since this design note was written:
+
+- **OI-SM-4** — remote-clients CA lifecycle and revocation propagation are implemented by
+  TASK-0039 / PR #162: the remote-clients CA is separate from the MITM CA, client leaves are capped
+  at <=7 days, `Certs.Renew` revokes superseded leaves, and `Certs.Revoke` writes the verifier's
+  SHA-256 DER fingerprint format for handshake reload/enforcement.
+
 | ID | Severity | Item |
 |---|---|---|
 | OI-SM-1 | medium | DPoP plumbing details: `jti` replay-store sizing/eviction, server-issued nonce lifecycle, clock-drift window; the exact `remote_clients` schema for `jkt` + `hardware_bound`. |
 | OI-SM-2 | high (blocks VPS) | Operator-box authorizer protocol (presence-token format/binding/TTL/replay window/outage behavior) + the substitute-factor declaration UX. VPS mode is non-shippable until specified and FS-S21/S23 have passing negative tests. |
 | OI-SM-3 | high (blocks VPS) | External trusted-time source for VPS bearer issuance/acceptance (hypervisor clock untrusted; defeats the monotonic floor). |
-| OI-SM-4 | medium | Remote-clients CA lifecycle (separate from MITM CA + edge server cert): leaf TTL/rotation (≤7d), revocation-set propagation latency at the handshake. |
 | OI-SM-5 | medium | Telegram cloud-agent key custody confirmation: does the runtime offer a non-exportable/process-isolated key store? Sets `hardware_bound`; otherwise the bearer-only degraded posture (§4.4) applies. |
 | OI-SM-6 | medium | Reverse-tunnel-from-VPS pattern as the home-box default reachability path; ensure TLS termination stays on-box so DPoP/EKM survives. |
 | OI-SM-7 | low | Per-client `source_cidr` UX; documented as defense-in-depth pre-filter only (never sole control), default unset for cloud clients. |

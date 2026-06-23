@@ -6,10 +6,9 @@
 //! through — the `RelayMinted` proto twin carries no bearer, by construction.
 //!
 //! Some conversions (the policy/method/audit-entry maps) are the TOTAL conversion surface the design
-//! specifies, but are not all reached in Phase 6 because their RPCs (`Relay.Create`, `Vault.List`,
-//! `Audit.Query`) return `Unimplemented` here — they are consumed when those paths land. We allow
-//! dead_code at module scope (mirroring the engine's own scaffold discipline) rather than delete a
-//! spec-mandated, tested-by-construction mapping.
+//! specifies. A few remain reachable only through less-common flows, so we allow dead_code at module
+//! scope (mirroring the engine's own scaffold discipline) rather than delete a spec-mandated,
+//! tested-by-construction mapping.
 #![allow(dead_code)]
 // These conversions return `Result<_, tonic::Status>`; `Status` is intentionally large, so
 // `result_large_err` fires across the whole boundary. Boxing gRPC status errors is non-idiomatic
@@ -294,11 +293,12 @@ pub fn policy_to_proto(p: RelayPolicy) -> v1::RelayPolicy {
     }
 }
 
-/// Synthesize a minimal `RelayPolicy` for a `Mint` against a relay that has no stored policy (the
-/// Phase-6 path: `Relay.Create` is Unimplemented, so a mint carries enough to stand up an ephemeral
-/// or named policy from the request alone). `relay_mint` persists it as a side effect. The provider's
-/// canonical upstream allowlist (engine `canonical_upstreams`) is the hard egress fence regardless,
-/// so an over-broad synthesized `host_allow` cannot widen the actual reachable upstream set.
+/// Synthesize a minimal `RelayPolicy` for a `Mint` against a relay that has no stored policy. This
+/// keeps direct mint callers backward-compatible with the pre-`Relay.Create` path: the request still
+/// carries enough to stand up an ephemeral or named policy, and `relay_mint` persists it as a side
+/// effect. The provider's canonical upstream allowlist (engine `canonical_upstreams`) is the hard
+/// egress fence regardless, so an over-broad synthesized `host_allow` cannot widen the actual
+/// reachable upstream set.
 pub fn mint_req_to_policy(req: &v1::MintReq) -> RelayPolicy {
     let provider = provider_from_proto(req.provider);
     // G2 gap fix: honor `req.mode` (was hardcoded `BaseUrlRepoint`, so `NativeSubtoken` was

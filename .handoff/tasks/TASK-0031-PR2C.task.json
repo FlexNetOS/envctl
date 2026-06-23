@@ -26,6 +26,6 @@
   "intent_lock": {
     "objective_hash": "blake3:bfb92fea95e6cff7132672460af912a2bf2100f60997c38231fe657d42e9145d",
     "path_scope_hash": "blake3:f9c172b2971d269a1472ee50322c857b61594c7c0b5dcf298cd884a2fd59101c",
-    "acceptance_hash": "blake3:0133194cc7297832d752891e2f6dcd252dd7ebc0748374e426fd36ca5bfdd433"
+    "acceptance_hash": "blake3:8b8f852d8c50e4b63cb3184913f409a3db6b3229023985aea40235ef2563f705"
   }
 }

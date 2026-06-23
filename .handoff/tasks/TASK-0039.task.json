@@ -2,7 +2,7 @@
   "schema": "handoff.task.v1",
   "id": "TASK-0039",
   "title": "remote-clients-CA lifecycle: mint/<=7d-leaf/renew/revoke + revocation-set propagation for mTLS verifier",
-  "status": "backlog",
+  "status": "done",
   "priority": "P1",
   "objective": "remote-clients-CA lifecycle: mint/<=7d-leaf/renew/revoke + revocation-set propagation for mTLS verifier",
   "path_scope": [

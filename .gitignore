@@ -16,18 +16,15 @@ Cargo.lock.bak
 # baseline for `envctl lock --check` (the CI drift gate). Do not ignore it.
 
 # .handoff is git-tracked TEXT in full — the complete continuity audit trail (backlog.md /
-# loop_state.md / HANDOFF.md / cycle/ / _done/ AND the loop control sentinels DONE/NEEDS-HUMAN/
-# STOP and run logs) is committed so a fresh session resumes cold with nothing left behind.
+# loop_state.md / HANDOFF.md / cycle/ / _done/ deliveries/ AND the loop control sentinels
+# DONE/NEEDS-HUMAN/STOP and run logs) is committed so a fresh session resumes cold with nothing
+# left behind.
 #
-# ADR-0004 fail-safe (the ONE exception, CI-enforced by ci/gates/p7.sh §3c): the per-repo
-# .handoff is TEXT ONLY — the witnessed binary ledger lives at $META_ROOT/.handoff/ledger.db,
-# never here. Never commit a binary ledger into this repo.
+# ADR-0018 D1 fail-safe (the ONE binary exception, CI-enforced by ci/gates/p7.sh §3c):
+# `.handoff/ledger.events.jsonl` is the committed continuity truth; `.handoff/ledger.db` and
+# sidecars are local redb/RVF rebuild caches derived from that JSONL. Never commit binary ledgers.
 .handoff/**/ledger.db
 .handoff/**/ledger.db.*
-
-# hf transport notices are regenerated from witnessed events; the committed packet/card layer is
-# the durable handoff state.
-.handoff/deliveries/
 
 # Runtime claim locks are ephemeral coordination state, not durable handoff text.
 .handoff/locks/
