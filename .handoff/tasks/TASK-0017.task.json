@@ -2,7 +2,7 @@
   "schema": "handoff.task.v1",
   "id": "TASK-0017",
   "title": "Adopt kasetto extends config composition for envctl component manifests",
-  "status": "backlog",
+  "status": "done",
   "priority": "P1",
   "objective": "Adopt kasetto extends config composition for envctl component manifests",
   "path_scope": [

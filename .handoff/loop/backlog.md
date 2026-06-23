@@ -137,12 +137,15 @@ foundation IS built (`relay_mint_remote`, `register_remote_client`, `broker/deci
     `WebPkiClientVerifier` (OI-SM-4, ring-only, default-OFF, separate client-CA never the MITM CA). Zero new
     deps; `SecretEvent::EdgeRequestShed` metadata-only; fail-closed; 7 nonce + 5 admission units +
     edge_hardening_e2e. Edge now PR-1+PR-2+PR-3 complete.
-    - [ ] **TASK-0031-PR2C:** parse the PROXY-protocol header to key the per-IP shed on the real client IP
-      when the edge sits behind an L4 front (this cycle keys on `peer.ip()` — correct for direct-bind /
-      on-box reverse-tunnel default).
+    - [x] **TASK-0031-PR2C:** parse the PROXY-protocol header to key the per-IP shed on the real client IP
+      when the edge sits behind an L4 front. DONE 2026-06-23, PR #157: relay-edge now trusts the
+      PROXY-protocol source IP before admission/rate limiting; `hf test TASK-0031-PR2C` witnessed
+      build+p7 before `hf done`.
     - [ ] **TASK-0039 (remote-clients-CA lifecycle):** mint/≤7d-leaf/renew/revoke + revocation-set
-      propagation for the mTLS client-CA (OI-SM-4's CA-management half; PR-2 wired only the verifier +
-      consumes an operator-provisioned bundle).
+      propagation for the mTLS client-CA. PARTIAL 2026-06-23, PR #158: hardened the verifier-side
+      revocation propagation path (reload revocation set on each connection, reject revoked client
+      leaves, compatible with PR #157 PROXY source-IP). Remaining: implement the lifecycle surface
+      (`mint`/`<=7d leaf`/`renew`/`revoke`) instead of relying on operator-provisioned files.
 - [x] **TASK-0032 (F5, P0) — DONE (PR #117 MERGED, guardian PASS):** Streaming-revocation
   tear-down. Engine `relay_stream_authorized` + `Broker::peek` (non-mutating re-check through the SAME
   `decide()`); edge `stream.rs` supervises long-lived HTTP/2 streams with a 2s in-stream re-check + max-stream
@@ -439,9 +442,12 @@ fmt, clippy). Remaining follow-ups extracted from each:
     (relay-proxy `reqwest`/`webpki-roots` transport to reuse); `flexnetos_github_app/crates/app-core/
     src/mint.rs` (`build_argv` contract) + `app-cli` `MintToken`. Sibling of TASK-0019 (RealUsbProbe,
     done via #61) — both are Epic-D secrets-egress.
-- [ ] **TASK-0021 (node-via-bun):** Manifest design follow-up — mark node not-applicable when a real
+- [x] **TASK-0021 (node-via-bun):** Manifest design follow-up — mark node not-applicable when a real
   node in the n8n range is present, or add a `node-real` component + drop the group-ai-clis edge
-  (cosmetic detect-drift only; truth-telling fix already merged).
+  (cosmetic detect-drift only; truth-telling fix already merged). DONE 2026-06-23: verified at HEAD
+  that `node-real` already exists as a standalone carve-out, `group-ai-clis` no longer requires
+  `node-via-bun`, `envctl lock --check` is clean, and focused engine tests prove the `node-real`
+  component is empty-requires and the `group-ai-clis` edge is absent.
 - [ ] **TASK-0022 (agent-web-access):** Phases 2–3 of the agent web-access ladder (Phase 1 n8n-mcp +
   kasetto wiring merged). `- [!]` n8n live smoke test is HUMAN-ONLY (see
   `.handoff/loop/_done/n8n-live-smoke-runbook.md`).

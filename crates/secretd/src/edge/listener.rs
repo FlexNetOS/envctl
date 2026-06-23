@@ -20,7 +20,7 @@
 //! mint. NO secret bytes are logged: tracing carries only `client_id` / a decision label / a status,
 //! never the bearer / proof / EKM / key / nonce / body. The poisoned-mutex path is a reject.
 
-use std::net::SocketAddr;
+use std::net::{IpAddr, SocketAddr};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -239,6 +239,8 @@ async fn serve_connection(
     tcp: tokio::net::TcpStream,
     peer: SocketAddr,
 ) {
+    let peer = resolve_proxy_peer(&tcp, peer).await;
+
     let acceptor = match RelayTlsConfig::load_from_dir_with_client_auth(
         &relay_tls_dir,
         client_ca_path.as_deref(),
@@ -660,4 +662,120 @@ fn verify_remote_presentation(
 /// Kept as a tiny helper so the `&str` borrow is explicit at the call site.
 fn identity_for_jti(v: &crate::edge::dpop::VerifiedDpop) -> &str {
     v.client_id.as_deref().unwrap_or("")
+}
+
+async fn resolve_proxy_peer(tcp: &tokio::net::TcpStream, fallback: SocketAddr) -> SocketAddr {
+    let mut buf = [0u8; 256];
+    match tcp.peek(&mut buf).await {
+        Ok(0) | Err(_) => fallback,
+        Ok(n) => parse_proxy_peer(&buf[..n]).unwrap_or(fallback),
+    }
+}
+
+fn parse_proxy_peer(bytes: &[u8]) -> Option<SocketAddr> {
+    parse_proxy_v2(bytes).or_else(|| parse_proxy_v1(bytes))
+}
+
+fn parse_proxy_v1(bytes: &[u8]) -> Option<SocketAddr> {
+    const PREFIX: &[u8] = b"PROXY ";
+    if !bytes.starts_with(PREFIX) {
+        return None;
+    }
+    let line_end = bytes.windows(2).position(|w| w == b"\r\n")?;
+    let line = std::str::from_utf8(&bytes[..line_end]).ok()?;
+    let mut parts = line.split_ascii_whitespace();
+    let _proxy = parts.next()?;
+    let family = parts.next()?;
+    let src = parts.next()?;
+    let _dst = parts.next()?;
+    let src_port = parts.next()?;
+    let _dst_port = parts.next()?;
+    if parts.next().is_some() {
+        return None;
+    }
+    let ip = match family {
+        "TCP4" | "TCP6" => src.parse().ok()?,
+        _ => return None,
+    };
+    let port = src_port.parse().ok()?;
+    Some(SocketAddr::new(ip, port))
+}
+
+fn parse_proxy_v2(bytes: &[u8]) -> Option<SocketAddr> {
+    const SIG: &[u8; 12] = b"\r\n\r\n\0\r\nQUIT\n";
+    if bytes.len() < 16 || !bytes.starts_with(SIG) {
+        return None;
+    }
+    if bytes[12] >> 4 != 0x2 {
+        return None;
+    }
+    let fam_proto = bytes[13];
+    let len = u16::from_be_bytes([bytes[14], bytes[15]]) as usize;
+    if bytes.len() < 16 + len {
+        return None;
+    }
+    let payload = &bytes[16..16 + len];
+    match fam_proto >> 4 {
+        0x1 => {
+            if fam_proto & 0x0f != 0x1 || payload.len() < 12 {
+                return None;
+            }
+            let ip = IpAddr::from(<[u8; 4]>::try_from(&payload[0..4]).ok()?);
+            let port = u16::from_be_bytes([payload[8], payload[9]]);
+            Some(SocketAddr::new(ip, port))
+        }
+        0x2 => {
+            if fam_proto & 0x0f != 0x1 || payload.len() < 36 {
+                return None;
+            }
+            let ip = IpAddr::from(<[u8; 16]>::try_from(&payload[0..16]).ok()?);
+            let port = u16::from_be_bytes([payload[32], payload[33]]);
+            Some(SocketAddr::new(ip, port))
+        }
+        _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{parse_proxy_peer, parse_proxy_v1, parse_proxy_v2};
+    use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr};
+
+    #[test]
+    fn parses_proxy_v1_tcp4_peer() {
+        let peer = parse_proxy_v1(b"PROXY TCP4 203.0.113.7 198.51.100.1 51420 443\r\n")
+            .expect("proxy v1 peer");
+        assert_eq!(
+            peer,
+            SocketAddr::new(IpAddr::V4(Ipv4Addr::new(203, 0, 113, 7)), 51420)
+        );
+    }
+
+    #[test]
+    fn parses_proxy_v2_tcp6_peer() {
+        let mut bytes = Vec::new();
+        bytes.extend_from_slice(b"\r\n\r\n\0\r\nQUIT\n");
+        bytes.push(0x21);
+        bytes.push(0x21);
+        bytes.extend_from_slice(&36u16.to_be_bytes());
+        bytes.extend_from_slice(&Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x42).octets());
+        bytes.extend_from_slice(&Ipv6Addr::LOCALHOST.octets());
+        bytes.extend_from_slice(&51420u16.to_be_bytes());
+        bytes.extend_from_slice(&443u16.to_be_bytes());
+        bytes.extend_from_slice(&[0u8; 12]);
+
+        let peer = parse_proxy_v2(&bytes).expect("proxy v2 peer");
+        assert_eq!(
+            peer,
+            SocketAddr::new(
+                IpAddr::V6(Ipv6Addr::new(0x2001, 0xdb8, 0, 0, 0, 0, 0, 0x42)),
+                51420
+            )
+        );
+    }
+
+    #[test]
+    fn ignores_non_proxy_bytes() {
+        assert!(parse_proxy_peer(b"GET / HTTP/1.1\r\n").is_none());
+    }
 }

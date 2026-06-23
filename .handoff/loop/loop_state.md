@@ -8,10 +8,16 @@ worktree: (per-cycle: meta/.worktrees/<slug>/envctl off develop)
 cycle_budget: 1   # heavy-context resume sessions — 1 cohesive build cycle then hand off
 wrap_every: 5   # batch boundary: run reaper + wrap-up + evolution-steward every N completed cycles (no per-task pause)
 last_wrapup_total: 23   # batch boundary satisfied 2026-06-22 after TASK-0015; next due at cycles_total 28
-cycles_this_session: 7   # RESUME SESSION 2026-06-22/23: cycles = TASK-0038, TASK-0007, TASK-0008, TASK-0015, TASK-0016, TASK-0017, TASK-0019
-cycles_total: 26   # 25 previous cycles + TASK-0019 verification
-last_item: TASK-0019 (real RealUsbProbe) — VERIFIED already satisfied, handoff PR pending
+cycles_this_session: 8   # RESUME SESSION 2026-06-22/23: cycles = TASK-0038, TASK-0007, TASK-0008, TASK-0015, TASK-0016, TASK-0017, TASK-0019, TASK-0021
+cycles_total: 27   # 26 previous cycles + TASK-0021 verification
+last_item: TASK-0021 (node-via-bun follow-up) — VERIFIED already satisfied, handoff PR pending
 status: CYCLE COMPLETE 2026-06-23
+  Cycle = TASK-0021. VERIFIED already satisfied 2026-06-23. The manifest already had the real
+  `node-real` carve-out, `group-ai-clis` no longer required `node-via-bun`, and `envctl lock --check`
+  passed. Focused engine tests confirmed `node_real_component_exists_with_empty_requires` and
+  `group_ai_clis_does_not_require_node_via_bun`. No code change was needed; this cycle reconciled the
+  stale backlog card with the truthful manifest state.
+
   Cycle = TASK-0019. VERIFIED already satisfied 2026-06-23. The backlog's referenced
   `_done/secretd-provisioning-runbook.md` premise was stale: `RealUsbProbe` now delegates to
   `seed_factor::keyfile_for` under `--features seed-factor`, returning a PARTUUID-bound Cognitum

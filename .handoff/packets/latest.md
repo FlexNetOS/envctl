@@ -7,7 +7,7 @@ envctl owns and contains the meta environment: every FlexNetOS tool/dotfile/.loc
 Git > .handoff/ledger.db > tasks/*.task.json > active.md > this packet.
 
 ## 3. Progress
-Done: 51/53.  Tamper-evident events verified: 58.
+Done: 51/53.  Tamper-evident events verified: 60.
 
 ## 4. Remaining (next safe first)
 - [P2] **TASK-0009** — Relocate kasetto + kst (BLOCKED: superseded by Epic C built-in absorption)
@@ -86,6 +86,6 @@ done
   ],
   "schema": "handoff.packet.v2",
   "tasks_total": 53,
-  "witnessed_events_verified": 58
+  "witnessed_events_verified": 60
 }
 ```

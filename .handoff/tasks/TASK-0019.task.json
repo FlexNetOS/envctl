@@ -2,7 +2,7 @@
   "schema": "handoff.task.v1",
   "id": "TASK-0019",
   "title": "fix-secretd: U1 USB-unlock path needs a real RealUsbProbe",
-  "status": "backlog",
+  "status": "done",
   "priority": "P1",
   "objective": "fix-secretd: U1 USB-unlock path needs a real RealUsbProbe",
   "path_scope": [
