@@ -4,8 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`envctl` is a **pure-Rust Cargo workspace** (8 crates) that declaratively manages a
-dual-RTX-5090 Ubuntu workstation. Two halves share one engine:
+**`envctl` is the environment-manager agent of the `meta` workspace.** `meta` is primary;
+envctl is **secondary** — a subordinate agent whose single job is to **own and converge the
+meta environment**, never to operate as a standalone box tool and never to exclude meta. It owns
+the **meta environment boundary**: `PATH`, dotfiles, `~/.local`, the canonical `home/` overlay
+(`envctl/home`, ADR-0006) that `~/.claude/{settings.json,CLAUDE.md,RTK.md}` and
+`meta/settings.json` symlink into, the toolchain prefixes, and the `META_ROOT` export — plus
+secrets, which it holds and auto-injects into child tools on demand.
+
+It is *implemented* as a **pure-Rust Cargo workspace** (8 crates) that declaratively manages a
+dual-RTX-5090 Ubuntu workstation — but that is *how/where it runs*, not its identity. Two halves
+share one engine:
 
 - **env-manager** — `engine` + `cli` (`envctl`) + `gui` (`envctl-gui`). Brings the box to
   a declared state via TOML *components* whose lifecycle hooks wrap the proven bash in
@@ -14,6 +23,17 @@ dual-RTX-5090 Ubuntu workstation. Two halves share one engine:
 - **secrets stack** — `secrets-engine` (pure-Rust crypto vault), `secrets-proto` (tonic/prost
   gRPC), `secretd` (async tokio daemon), `secretctl` (client), `secrets-store-libsql`
   (libSQL **remote** backend). Design corpus in `docs/secrets/`.
+
+### Relationship to meta (primary)
+
+envctl is a registered **Tier-B** member of the `meta` meta-repo (`meta/.meta.yaml`:
+`provides: [envctl]`, `tags: [tools, env]`) — meta's **env-manager agent**, not an independent
+project. **Meta policy is first.** Authoritative sources, in order: `meta/.kb/AGENTS.md` (the
+FlexNetOS knowledge-base policy) and `meta/META-ORG-POLICY.md` (workspace org policy), then this
+`CLAUDE.md` + `.handoff/context/capsule.json` (`role`/`northstar`) — which must **agree** with
+them (docs-are-traps, P5.22). envctl adopts the meta KB policy locally: its own git-kb context
+lives in `.kb/store/` as **git-tracked** documents (see "Knowledge base is git-durable" below).
+The governing rule for every decision here: **manage the meta environment; do not exclude it.**
 
 ## Session start: work in a fresh git worktree (mandatory)
 
@@ -111,6 +131,20 @@ JS imports) — those are **wrong for this repo**.
   drift — `ci/gates/agent-env.sh`, TASK-0040).
 - Keep the MCP baseline identical across Claude (`.mcp.json`) and Codex (`.codex/config.toml`):
   `github`, `context7`, `exa`, `memory`, `playwright`, `sequential-thinking`.
+
+## Knowledge base is git-durable (adopts meta KB policy)
+
+This repo uses the FlexNetOS git-kb knowledge base (`@.kb/AGENTS.md`), following **meta policy**
+(`meta/.kb/AGENTS.md`). envctl's context lives as the seven `context/{immutable,extensible,
+overridable}/*` documents — start a session by reading them (`git-kb list --path context/`).
+
+**Durability rule (non-negotiable):** `.kb/store/` is **git-tracked TEXT** — the source of truth
+— so the KB survives clone/reclaim. Only `.kb/.cache/` (a rebuildable index; `git-kb reindex`
+regenerates it from the store) and the ephemeral `workspaces/`/`stashes/` surfaces are
+`.gitignore`d. This is the same rule as `.handoff` (track text; never commit binary rebuild
+caches) and it **deliberately overrides `git-kb init`'s tool default**, which ignores the whole
+`.kb/store/` and would make the KB non-durable. See `meta/META-ORG-POLICY.md` (the workspace
+`.kb/store` durability rule) and `docs/kb-sync-runbook.md` (cross-KB sync with meta).
 
 ## Pointers
 

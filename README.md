@@ -1,10 +1,15 @@
 # envctl
 
-A personal, **GPU-aware, source-building environment manager** for this dual-RTX-5090
-Ubuntu 26.04 workstation. One Rust workspace: a shared engine, a CLI (`envctl`), and a
-native egui desktop app (`envctl-gui`). It manages the box declaratively — every tool is
-a TOML **component** whose lifecycle hooks *wrap the proven bash* from the Desktop kit
-(`yazelix-setup.sh`, `ubuntu-boot-repair.sh`, …) rather than rewriting it.
+The **environment-manager agent of the `meta` workspace** — a registered Tier-B member
+(`meta/.meta.yaml`) whose job is to own and converge **the meta environment** (PATH, dotfiles,
+`~/.local`, the `home/` overlay, toolchains, `META_ROOT`, secrets). meta is primary; envctl
+serves it and does not stand apart from it.
+
+It is implemented as a **GPU-aware, source-building** manager for this dual-RTX-5090 Ubuntu 26.04
+workstation — the box the meta fleet runs on. One Rust workspace: a shared engine, a CLI
+(`envctl`), and a native egui desktop app (`envctl-gui`). It manages the box declaratively —
+every tool is a TOML **component** whose lifecycle hooks *wrap the proven bash* from the Desktop
+kit (`yazelix-setup.sh`, `ubuntu-boot-repair.sh`, …) rather than rewriting it.
 
 ## Verbs
 
