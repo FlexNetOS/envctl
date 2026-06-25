@@ -53,8 +53,8 @@ use envctl_engine::{
     version,
     color = clap::ColorChoice::Auto,
     styles = clap_styles(),
-    about = "GPU-aware, source-building environment manager for this box",
-    long_about = "A declarative, GPU-aware environment manager for this workstation, written in Rust.\n\nBrings the box to a declared state from TOML components whose lifecycle hooks wrap proven scripts: detect, install, fix, reset, and wire-in toolchains, repos, and the agent environment. One shared engine drives both the CLI and the GUI, so they never diverge. Destructive verbs (reset / auto-fix / self uninstall) are PREVIEW by default and fail-closed — they refuse unless they can prove the operation is safe and you pass the explicit act flag (--apply / --build / --confirm).",
+    about = "meta's agentic environment manager — installs every tool into meta (.toolchains)",
+    long_about = "A declarative, GPU-aware, agentic environment manager for the whole meta workspace, written in Rust.\n\nenvctl is a first-class meta peer member: it brings every tool, dependency, provider, vendor, CLI, and config to a declared state and installs it INTO meta (meta/.toolchains, $META_ROOT) — no system-depth or user-global installs, so anything meta uses lives in meta and travels wherever meta is cloned. It works from TOML components whose lifecycle hooks wrap proven scripts: detect, install, fix, reset, and wire-in toolchains, repos, and the agent environment. One shared engine drives both the CLI and the GUI, so they never diverge. Destructive verbs (reset / auto-fix / self uninstall) are PREVIEW by default and fail-closed — they refuse unless they can prove the operation is safe and you pass the explicit act flag (--apply / --build / --confirm). Deployment target today: a GPU-aware dual-RTX-5090 Ubuntu 26.04 workstation.",
     after_help = envctl_examples!(
         "envctl auto-detect",
         "envctl doctor",
