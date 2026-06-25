@@ -25,6 +25,7 @@ struct Fixture {
     manifest: PathBuf,
     xdg_data: PathBuf,
     xdg_config: PathBuf,
+    xdg_cache: PathBuf,
     /// The config-declared destination dir (must NOT be created by a dry-run).
     dest: PathBuf,
 }
@@ -44,6 +45,7 @@ impl Fixture {
         let manifest = root.join("manifest");
         let xdg_data = root.join("xdg-data");
         let xdg_config = root.join("xdg-config");
+        let xdg_cache = root.join("xdg-cache");
         let dest = project.join("dest");
         std::fs::create_dir_all(&project).unwrap();
         std::fs::create_dir_all(&manifest).unwrap();
@@ -61,6 +63,7 @@ impl Fixture {
             manifest,
             xdg_data,
             xdg_config,
+            xdg_cache,
             dest,
         }
     }
@@ -71,7 +74,8 @@ impl Fixture {
         c.current_dir(&self.project)
             .env("ENVCTL_MANIFEST_DIR", &self.manifest)
             .env("XDG_DATA_HOME", &self.xdg_data)
-            .env("XDG_CONFIG_HOME", &self.xdg_config);
+            .env("XDG_CONFIG_HOME", &self.xdg_config)
+            .env("XDG_CACHE_HOME", &self.xdg_cache);
         c
     }
 
