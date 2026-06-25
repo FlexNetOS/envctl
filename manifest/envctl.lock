@@ -468,3 +468,8 @@ resolved = ""
 content_hash = "cd9c8c7269f25b56"
 requires = []
 resolved = ""
+
+[components.zsh]
+content_hash = "613adfe865c9639e"
+requires = []
+resolved = ""
