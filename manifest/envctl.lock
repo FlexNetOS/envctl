@@ -355,7 +355,7 @@ requires = ["nvidia-cuda-repo"]
 resolved = ""
 
 [components.ohmyzsh]
-content_hash = "33b7f3fa6bc48485"
+content_hash = "6f549fb753f2d40b"
 requires = ["zsh"]
 resolved = ""
 
