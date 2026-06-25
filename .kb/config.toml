@@ -8,7 +8,7 @@ install_dirs = []
 
 [code]
 index_threads = 0
-default_branch = "cli-tdd-contract-loop"
+default_branch = "master"
 
 [code.repo_default_branch_map]
 

@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "document_id": "019f0078-83f2-7493-8d62-df3c7672af55",
+      "slug": "context/immutable/project-brief",
+      "tip_commit_id": "019f0078-ad4d-7513-acd0-6b51e28f4507"
+    },
+    {
+      "document_id": "019f007a-0a64-7c22-83ce-deb92c5bb789",
+      "slug": "context/immutable/patterns",
+      "tip_commit_id": "019f007a-0b18-72d2-9945-148f8fa776d1"
+    },
+    {
+      "document_id": "019f007a-0a76-7f83-b728-301d525f402c",
+      "slug": "context/immutable/architecture",
+      "tip_commit_id": "019f007a-0b18-72d2-9945-148f8fa776d1"
+    },
+    {
+      "document_id": "019f007a-0a88-7160-bdf7-150a7cea8744",
+      "slug": "context/extensible/product",
+      "tip_commit_id": "019f007a-0b18-72d2-9945-148f8fa776d1"
+    },
+    {
+      "document_id": "019f007a-0a99-7422-aa53-e093269fb834",
+      "slug": "context/extensible/tech",
+      "tip_commit_id": "019f007a-0b18-72d2-9945-148f8fa776d1"
+    },
+    {
+      "document_id": "019f007a-0aaa-78a3-8dc1-b40f7ede9f80",
+      "slug": "context/overridable/active",
+      "tip_commit_id": "019f007a-0b18-72d2-9945-148f8fa776d1"
+    },
+    {
+      "document_id": "019f007a-0abc-7980-b542-70a8188c16e7",
+      "slug": "context/overridable/progress",
+      "tip_commit_id": "019f007a-0b18-72d2-9945-148f8fa776d1"
+    },
+    {
+      "document_id": "019f007d-bec7-76e3-9dec-63aae2a24022",
+      "slug": "reference/meta-kb-policy",
+      "tip_commit_id": "019f007d-bf0e-75a0-9b05-de909bdc9694"
+    },
+    {
+      "document_id": "019f007d-bed9-7373-86e7-34a622a7849d",
+      "slug": "reference/meta-org-policy",
+      "tip_commit_id": "019f007d-bf0e-75a0-9b05-de909bdc9694"
+    }
+  ]
+}

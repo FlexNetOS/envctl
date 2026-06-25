@@ -6,8 +6,11 @@
 
 # envctl — ARCHITECTURE.md
 
-> A personal, GPU-aware, source-building environment manager for one specific box:
-> Ubuntu 26.04 LTS, dual NVIDIA RTX 5090 (GB202 / Blackwell / sm_120) developer workstation.
+> A first-class **meta** peer member — the GPU-aware, source-building agentic environment
+> manager for the whole meta workspace. Installs every tool/dependency/provider/vendor/CLI/config
+> **into meta** (`meta/.toolchains/`, `$META_ROOT`), with no system-depth or user-global installs.
+> Deployment target today: one specific box — Ubuntu 26.04 LTS, dual NVIDIA RTX 5090
+> (GB202 / Blackwell / sm_120) developer workstation.
 > Pure Rust. Native egui/eframe GUI (no web, no WebView). One engine library shared by a CLI and a GUI.
 
 ---

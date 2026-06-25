@@ -4,8 +4,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`envctl` is a **pure-Rust Cargo workspace** (8 crates) that declaratively manages a
-dual-RTX-5090 Ubuntu workstation. Two halves share one engine:
+`envctl` is a first-class **meta** peer member — the **agentic environment manager for the
+whole meta workspace**. It is a **pure-Rust Cargo workspace** (8 crates) that declaratively
+brings every tool, dependency, provider, vendor, CLI, and config to a declared state and
+installs it **into meta** (`meta/.toolchains/`, `$META_ROOT`), with **no system-depth or
+user-global installs** — anything meta uses lives in meta. Its deployment target today is a
+dual-RTX-5090 Ubuntu 26.04 workstation. Two halves share one engine:
 
 - **env-manager** — `engine` + `cli` (`envctl`) + `gui` (`envctl-gui`). Brings the box to
   a declared state via TOML *components* whose lifecycle hooks wrap the proven bash in
@@ -14,6 +18,31 @@ dual-RTX-5090 Ubuntu workstation. Two halves share one engine:
 - **secrets stack** — `secrets-engine` (pure-Rust crypto vault), `secrets-proto` (tonic/prost
   gRPC), `secretd` (async tokio daemon), `secretctl` (client), `secrets-store-libsql`
   (libSQL **remote** backend). Design corpus in `docs/secrets/`.
+
+## Wired into the meta workspace (envctl is meta's env manager, not an island)
+
+envctl is a first-class member of the `meta` workspace, reachable across every meta surface —
+`meta exec`/`git`/`worktree`/`project` (via its `.meta.yaml` entry, `tags:[tools,env]`) — and now
+the **plugin** surface:
+
+- **`meta env <verb>` dispatches into envctl.** envctl ships the **`meta-env`** subprocess plugin
+  (`crates/cli/src/bin/meta-env.rs`, native `meta_plugin_protocol::run_plugin`): `meta env doctor`,
+  `meta env install`, `meta env auto-detect --json`, etc. It returns an `ExecutionPlan` that runs
+  the `envctl` binary, so envctl's own rendering + fail-closed/dry-run-by-default semantics are
+  reused verbatim. Distinct namespace from `meta dashboard` (which `meta_dashboard_cli` shells to).
+- **The engine uses `loop_lib` as its command-construction substrate.** The hook runner
+  (`crates/engine/src/runner.rs`) builds its `std::process::Command` via `loop_lib::build_command`
+  (meta's shared builder) while keeping its own supervision (setsid reaping, per-phase timeout,
+  streaming/tee) — loop_lib is a batch fan-out runner with no equivalent for those, so they stay
+  in envctl. Parity is pinned by `crates/engine/tests/runner_parity.rs`.
+- **Cargo:** envctl builds as its **own** workspace (it owns the no-C `[workspace.dependencies]`
+  pins — ring-only rustls, libsql-remote-only, pure-Rust crypto — the security boundary it
+  enforces). Cargo cannot nest a workspace as a `members` entry, so envctl is listed in the meta
+  root `Cargo.toml` `exclude` **purely as a build mechanic** (like `weave`/`meta_dashboard_cli`) —
+  this is NOT exclusion from meta. The `meta_plugin_protocol`/`loop_lib` deps are **path deps into
+  the meta tree**, so envctl is a meta-tree-resident crate (it builds within `meta/`, not
+  standalone) — exactly its role as meta's env manager. `ci/gates/no-c.sh` Gate 1.5 + Gate 4 prove
+  these meta deps stay C-free.
 
 ## Session start: work in a fresh git worktree (mandatory)
 
@@ -111,6 +140,20 @@ JS imports) — those are **wrong for this repo**.
   drift — `ci/gates/agent-env.sh`, TASK-0040).
 - Keep the MCP baseline identical across Claude (`.mcp.json`) and Codex (`.codex/config.toml`):
   `github`, `context7`, `exa`, `memory`, `playwright`, `sequential-thinking`.
+
+## Knowledge base is git-durable (adopts meta KB policy)
+
+This repo uses the FlexNetOS git-kb knowledge base (`@.kb/AGENTS.md`), following **meta policy**
+(`meta/.kb/AGENTS.md`). envctl's context lives as the seven `context/{immutable,extensible,
+overridable}/*` documents — start a session by reading them (`git-kb list --path context/`).
+
+**Durability rule (non-negotiable):** `.kb/store/` is **git-tracked TEXT** — the source of truth
+— so the KB survives clone/reclaim. Only `.kb/.cache/` (a rebuildable index; `git-kb reindex`
+regenerates it from the store) and the ephemeral `workspaces/`/`stashes/` surfaces are
+`.gitignore`d. This is the same rule as `.handoff` (track text; never commit binary rebuild
+caches) and it **deliberately overrides `git-kb init`'s tool default**, which ignores the whole
+`.kb/store/` and would make the KB non-durable. See `meta/META-ORG-POLICY.md` (the workspace
+`.kb/store` durability rule) and `docs/kb-sync-runbook.md` (cross-KB sync with meta).
 
 ## Pointers
 

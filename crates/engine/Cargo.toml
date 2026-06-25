@@ -35,3 +35,9 @@ sha2 = { workspace = true }
 # TASK-0028: zeroize the secret stdin buffer (revoke token) the engine pipes to `secretctl`.
 # Pure-Rust, already a workspace dep used by the secrets crates — links NO C (no-c.sh unaffected).
 zeroize = { workspace = true }
+# Meta wiring: loop_lib is meta's shared command-construction substrate. The engine's hook
+# runner delegates std::process::Command *construction* to `loop_lib::build_command` while
+# keeping its own supervision (setsid/timeout/streaming/tee). loop_lib is pure-Rust
+# (anyhow/rayon/serde/serde_json/colored/indicatif/is-terminal) — ZERO C; enforced by the new
+# envctl-engine gate in ci/gates/no-c.sh. Path dep into the meta tree (envctl lives in meta).
+loop_lib = { path = "../../../loop_lib" }
