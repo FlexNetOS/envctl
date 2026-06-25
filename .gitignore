@@ -2,14 +2,14 @@
 Cargo.lock.bak
 **/*.rs.bk
 *.swp
-.DS_Store
+# .DS_Store
 
 # Test/playwright ephemeral artifacts
 .meta-snapshots/
-.playwright-mcp/
+# .playwright-mcp/
 
 # Agent harness output (generated, not committed)
-.agent/
+# .agent/
 .archive/
 
 # envctl.lock IS committed — it is the content-hashed manifest-of-record and the
@@ -23,11 +23,11 @@ Cargo.lock.bak
 # ADR-0018 D1 fail-safe (the ONE binary exception, CI-enforced by ci/gates/p7.sh §3c):
 # `.handoff/ledger.events.jsonl` is the committed continuity truth; `.handoff/ledger.db` and
 # sidecars are local redb/RVF rebuild caches derived from that JSONL. Never commit binary ledgers.
-.handoff/**/ledger.db
-.handoff/**/ledger.db.*
+# .handoff/**/ledger.db
+# .handoff/**/ledger.db.*
 
 # Runtime claim locks are ephemeral coordination state, not durable handoff text.
-.handoff/locks/
+# .handoff/locks/
 
 # GitKB — track the durable TEXT store (documents/commits/refs/manifest.json =
 # the source of truth) so the KB survives clone/reclaim and travels in git.
@@ -37,7 +37,7 @@ Cargo.lock.bak
 #   NOTE: `git-kb init`'s tool default ignores `.kb/store/` wholesale — that is
 #   WRONG here: it makes the KB non-durable (nothing committed/pushed; the docs
 #   are lost on a fresh clone). See META-ORG-POLICY (.kb store-durability rule).
-.kb/.cache/
+# .kb/.cache/
 .kb/workspace/
 .kb/workspaces/
 .kb/store/stashes/
