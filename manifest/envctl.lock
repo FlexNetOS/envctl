@@ -478,3 +478,11 @@ resolved = ""
 content_hash = "613adfe865c9639e"
 requires = []
 resolved = ""
+
+[components.zsh-migration-launcher]
+content_hash = "69de6ac52be0e927"
+requires = [
+    "ohmyzsh",
+    "zsh",
+]
+resolved = ""
