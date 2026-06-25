@@ -1445,7 +1445,7 @@ fn main() -> anyhow::Result<()> {
                     println!(
                         "{}",
                         serde_json::to_string_pretty(
-                            &serde_json::json!({"locked": !drift.is_empty(), "drift": items})
+                            &serde_json::json!({"locked": drift.is_empty(), "drift": items})
                         )?
                     );
                 } else if drift.is_empty() {

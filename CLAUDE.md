@@ -19,6 +19,31 @@ dual-RTX-5090 Ubuntu 26.04 workstation. Two halves share one engine:
   gRPC), `secretd` (async tokio daemon), `secretctl` (client), `secrets-store-libsql`
   (libSQL **remote** backend). Design corpus in `docs/secrets/`.
 
+## Wired into the meta workspace (envctl is meta's env manager, not an island)
+
+envctl is a first-class member of the `meta` workspace, reachable across every meta surface —
+`meta exec`/`git`/`worktree`/`project` (via its `.meta.yaml` entry, `tags:[tools,env]`) — and now
+the **plugin** surface:
+
+- **`meta env <verb>` dispatches into envctl.** envctl ships the **`meta-env`** subprocess plugin
+  (`crates/cli/src/bin/meta-env.rs`, native `meta_plugin_protocol::run_plugin`): `meta env doctor`,
+  `meta env install`, `meta env auto-detect --json`, etc. It returns an `ExecutionPlan` that runs
+  the `envctl` binary, so envctl's own rendering + fail-closed/dry-run-by-default semantics are
+  reused verbatim. Distinct namespace from `meta dashboard` (which `meta_dashboard_cli` shells to).
+- **The engine uses `loop_lib` as its command-construction substrate.** The hook runner
+  (`crates/engine/src/runner.rs`) builds its `std::process::Command` via `loop_lib::build_command`
+  (meta's shared builder) while keeping its own supervision (setsid reaping, per-phase timeout,
+  streaming/tee) — loop_lib is a batch fan-out runner with no equivalent for those, so they stay
+  in envctl. Parity is pinned by `crates/engine/tests/runner_parity.rs`.
+- **Cargo:** envctl builds as its **own** workspace (it owns the no-C `[workspace.dependencies]`
+  pins — ring-only rustls, libsql-remote-only, pure-Rust crypto — the security boundary it
+  enforces). Cargo cannot nest a workspace as a `members` entry, so envctl is listed in the meta
+  root `Cargo.toml` `exclude` **purely as a build mechanic** (like `weave`/`meta_dashboard_cli`) —
+  this is NOT exclusion from meta. The `meta_plugin_protocol`/`loop_lib` deps are **path deps into
+  the meta tree**, so envctl is a meta-tree-resident crate (it builds within `meta/`, not
+  standalone) — exactly its role as meta's env manager. `ci/gates/no-c.sh` Gate 1.5 + Gate 4 prove
+  these meta deps stay C-free.
+
 ## Session start: work in a fresh git worktree (mandatory)
 
 This repo lives inside the `meta` workspace. **Begin every session by creating an isolated
