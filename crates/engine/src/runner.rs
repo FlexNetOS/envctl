@@ -12,6 +12,8 @@
 use crate::component::{Hook, HookRunner, Phase};
 use crate::event::{Event, EventSink, Stream};
 use crate::model::{OpResult, OpStatus};
+use loop_lib::{build_command as loop_build_command, SpawnSpec};
+use std::collections::BTreeMap;
 use std::fs::{File, OpenOptions};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::os::unix::process::CommandExt; // for pre_exec (audit fix #20)
@@ -152,6 +154,14 @@ fn mk(
 }
 
 fn timeout_for(phase: Phase) -> Duration {
+    // Test/debug seam: `ENVCTL_HOOK_TIMEOUT_MS` overrides the per-phase timeout so the
+    // timeout/setsid-reaper path is exercisable in tests without a 60s wait. Unset in
+    // normal operation (the production per-phase defaults below apply).
+    if let Ok(ms) = std::env::var("ENVCTL_HOOK_TIMEOUT_MS") {
+        if let Ok(n) = ms.parse::<u64>() {
+            return Duration::from_millis(n);
+        }
+    }
     match phase {
         Phase::Detect | Phase::Verify => Duration::from_secs(60),
         Phase::Install => Duration::from_secs(1800), // big apt/nix/CUDA builds
@@ -276,20 +286,24 @@ fn truncate(s: &str, max: usize) -> &str {
 /// `bash -lc` for `Script`; `bash <path>` for `ShippedScript`). needs_sudo uses
 /// `sudo -n` (non-interactive): with a pre-warmed credential it runs silently;
 /// without one it fails fast instead of hanging on a TTY-less password prompt.
+///
+/// envctl owns the wrapping *policy* (which program + args + env each hook shape
+/// resolves to); the actual `std::process::Command` *construction* is delegated to
+/// the shared meta substrate `loop_lib::build_command` (so meta and envctl assemble
+/// subprocess commands the same way). Supervision — setsid, piped stdio, the pump
+/// threads, the per-phase timeout — stays in `ProcessRunner::run`, because loop_lib
+/// is a batch fan-out runner with no equivalent for those.
 fn build_command(hook: &Hook) -> Command {
-    match hook {
+    let (program, args, env): (String, Vec<String>, Vec<(String, String)>) = match hook {
         Hook::Command {
             command,
             args,
             env,
             needs_sudo,
         } => {
-            let mut c = sudo_or(command, *needs_sudo);
-            c.args(args);
-            for (k, v) in env {
-                c.env(k, v);
-            }
-            c
+            let (program, mut argv) = sudo_wrap(command.clone(), *needs_sudo);
+            argv.extend(args.iter().cloned());
+            (program, argv, env_pairs(env))
         }
         Hook::Script {
             script,
@@ -305,49 +319,55 @@ fn build_command(hook: &Hook) -> Command {
                 Some(p) => p.clone(),
                 None => script.clone(),
             };
-            let mut c = if *needs_sudo {
-                let mut s = Command::new("sudo");
-                s.arg("-n").arg("bash").arg(shell_flag);
-                s
+            let (program, mut argv) = if *needs_sudo {
+                (
+                    "sudo".to_string(),
+                    vec!["-n".to_string(), "bash".to_string(), shell_flag.to_string()],
+                )
             } else {
-                let mut s = Command::new("bash");
-                s.arg(shell_flag);
-                s
+                ("bash".to_string(), vec![shell_flag.to_string()])
             };
-            c.arg(body);
-            for (k, v) in env {
-                c.env(k, v);
-            }
-            c
+            argv.push(body);
+            (program, argv, env_pairs(env))
         }
         Hook::ShippedScript {
             path,
             args,
             needs_sudo,
         } => {
-            let mut c = if *needs_sudo {
-                let mut s = Command::new("sudo");
-                s.arg("-n").arg("bash").arg(path);
-                s
+            let (program, mut argv) = if *needs_sudo {
+                (
+                    "sudo".to_string(),
+                    vec!["-n".to_string(), "bash".to_string(), path.clone()],
+                )
             } else {
-                let mut s = Command::new("bash");
-                s.arg(path);
-                s
+                ("bash".to_string(), vec![path.clone()])
             };
-            c.args(args);
-            c
+            argv.extend(args.iter().cloned());
+            (program, argv, Vec::new())
         }
+    };
+    loop_build_command(&SpawnSpec {
+        program: &program,
+        args: &args,
+        current_dir: None,
+        env: &env,
+    })
+}
+
+/// Resolve `(program, leading-args)` for an optional non-interactive `sudo -n`
+/// prefix. Without sudo the program is the command itself and there are no leading
+/// args; with sudo the program is `sudo` and the command becomes its first arg.
+fn sudo_wrap(command: String, needs_sudo: bool) -> (String, Vec<String>) {
+    if needs_sudo {
+        ("sudo".to_string(), vec!["-n".to_string(), command])
+    } else {
+        (command, Vec::new())
     }
 }
 
-fn sudo_or(command: &str, needs_sudo: bool) -> Command {
-    if needs_sudo {
-        let mut s = Command::new("sudo");
-        s.arg("-n").arg(command);
-        s
-    } else {
-        Command::new(command)
-    }
+fn env_pairs(env: &BTreeMap<String, String>) -> Vec<(String, String)> {
+    env.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
 }
 
 /// Never executes; reports every hook as `DryRun`. Used by tests + previews.
