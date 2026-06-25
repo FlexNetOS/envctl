@@ -6,8 +6,10 @@
 # into a meta-owned ZSH_CUSTOM, and writes a meta-owned ZDOTDIR with the full
 # plugin set enabled.
 #
-# Add-ons (FlexNetOS forks, full clones into .toolchains/zsh-config/custom/plugins):
-#   zsh-autosuggestions · zsh-syntax-highlighting · zsh-completions
+# Add-ons (FlexNetOS forks, full clones into .toolchains/zsh-config/custom):
+#   plugins/ : zsh-autosuggestions · zsh-syntax-highlighting · zsh-completions
+#   themes/  : powerlevel10k (ZSH_THEME) — Nerd Font already on box; the p10k
+#              config wizard runs on first interactive open.
 # Bundled omz plugins enabled: git sudo z extract colored-man-pages
 #   command-not-found copypath copyfile dirhistory history.
 #
@@ -16,13 +18,13 @@
 [[component]]
 id = "ohmyzsh"
 name = "oh-my-zsh config (meta-owned, full features)"
-description = "Meta-owned ZDOTDIR sourcing the FlexNetOS/ohmyzsh fork with the full add-on set (autosuggestions, syntax-highlighting, completions + rich plugins) in a meta ZSH_CUSTOM. Config only; does not touch ~/.zshrc."
+description = "Meta-owned ZDOTDIR sourcing the FlexNetOS/ohmyzsh fork with the full add-on set (powerlevel10k theme + autosuggestions, syntax-highlighting, completions + rich plugins) in a meta ZSH_CUSTOM. Config only; does not touch ~/.zshrc."
 requires = ["zsh"]
 
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; C=\"$M/.toolchains/zsh-config\"; [ -f \"$M/ohmyzsh/oh-my-zsh.sh\" ] && [ -f \"$C/.zshrc\" ] && [ -f \"$C/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh\" ] && [ -f \"$C/custom/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh\" ] && [ -d \"$C/custom/plugins/zsh-completions\" ]"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; C=\"$M/.toolchains/zsh-config\"; [ -f \"$M/ohmyzsh/oh-my-zsh.sh\" ] && [ -f \"$C/.zshrc\" ] && [ -f \"$C/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh\" ] && [ -f \"$C/custom/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh\" ] && [ -d \"$C/custom/plugins/zsh-completions\" ] && [ -f \"$C/custom/themes/powerlevel10k/powerlevel10k.zsh-theme\" ]"]
 
 [component.install]
 kind = "script"
@@ -49,6 +51,15 @@ for p in zsh-autosuggestions zsh-syntax-highlighting zsh-completions; do
   fi
 done
 
+# 2b. Powerlevel10k theme (FlexNetOS fork, full clone). Nerd Font already present
+#     (JetBrainsMono/FiraCode in ~/.local/share/fonts). The p10k config WIZARD is
+#     left enabled — it runs on first interactive open; its output (.p10k.zsh) is
+#     sourced by the .zshrc below, so the managed .zshrc never needs hand-edits.
+install -d -m 755 "$CUSTOM/themes"
+if [ ! -d "$CUSTOM/themes/powerlevel10k/.git" ]; then
+  git clone "git@github.com:FlexNetOS/powerlevel10k.git" "$CUSTOM/themes/powerlevel10k"
+fi
+
 # 3. Meta-owned ZDOTDIR with the FULL plugin set. $OMZ/$CUSTOM baked absolute;
 #    runtime $ZSH escaped literal. zsh-syntax-highlighting MUST be the last plugin.
 install -d -m 755 "$ZDD"
@@ -57,7 +68,7 @@ cat > "$ZDD/.zshrc" <<EOF
 # Full-feature ohmyzsh for the meta zsh. Launch: ZDOTDIR="$ZDD" zsh
 export ZSH="$OMZ"
 export ZSH_CUSTOM="$CUSTOM"
-ZSH_THEME="robbyrussell"
+ZSH_THEME="powerlevel10k/powerlevel10k"
 plugins=(
   git sudo z extract colored-man-pages command-not-found
   copypath copyfile dirhistory history
@@ -66,13 +77,17 @@ plugins=(
   zsh-syntax-highlighting
 )
 source "\$ZSH/oh-my-zsh.sh"
+# Powerlevel10k: the configuration wizard runs on first interactive open (no
+# ~/.p10k.zsh yet). It writes \${ZDOTDIR}/.p10k.zsh, which is sourced here — so the
+# wizard's output is honored without editing this managed file.
+[[ ! -f "\${ZDOTDIR:-\$HOME}/.p10k.zsh" ]] || source "\${ZDOTDIR:-\$HOME}/.p10k.zsh"
 EOF
 '''
 
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; o=$(ZDOTDIR=\"$M/.toolchains/zsh-config\" \"$HOME/.local/bin/zsh\" -ic 'print -r -- \"OMZ=$ZSH AS=${+functions[_zsh_autosuggest_start]} HL=${+ZSH_HIGHLIGHT_VERSION} CMP=${+functions[_git]}\"' 2>/dev/null); echo \"$o\"; echo \"$o\" | grep -q \"OMZ=$M/ohmyzsh\" && echo \"$o\" | grep -q 'AS=1' && echo \"$o\" | grep -q 'HL=1'"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; o=$(POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true ZDOTDIR=\"$M/.toolchains/zsh-config\" \"$HOME/.local/bin/zsh\" -ic 'print -r -- \"OMZ=$ZSH P10K=${+functions[p10k]} AS=${+functions[_zsh_autosuggest_start]} HL=${+ZSH_HIGHLIGHT_VERSION}\"' 2>/dev/null); echo \"$o\"; echo \"$o\" | grep -q \"OMZ=$M/ohmyzsh\" && echo \"$o\" | grep -q 'P10K=1' && echo \"$o\" | grep -q 'AS=1' && echo \"$o\" | grep -q 'HL=1'"]
 
 [component.remove]
 kind = "script"
