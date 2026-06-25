@@ -354,6 +354,11 @@ content_hash = "c3e3d91e6e86ab92"
 requires = ["nvidia-cuda-repo"]
 resolved = ""
 
+[components.ohmyzsh]
+content_hash = "33b7f3fa6bc48485"
+requires = ["zsh"]
+resolved = ""
+
 [components.ollama]
 content_hash = "a8b6c4ae4dbc94f3"
 requires = []
