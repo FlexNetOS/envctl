@@ -3,6 +3,7 @@
 //! and that a deploy DRY-RUN writes NO file (fail-closed default).
 use std::path::PathBuf;
 use std::process::Command;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 fn bin() -> &'static str {
     env!("CARGO_BIN_EXE_envctl")
@@ -23,7 +24,9 @@ fn fixture_dir() -> PathBuf {
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    let dir = std::env::temp_dir().join(format!("envctl-dash-it-{nanos}"));
+    static SEQ: AtomicU64 = AtomicU64::new(0);
+    let seq = SEQ.fetch_add(1, Ordering::Relaxed);
+    let dir = std::env::temp_dir().join(format!("envctl-dash-it-{nanos}-{seq}"));
     std::fs::create_dir_all(&dir).unwrap();
     std::fs::write(
         dir.join(".meta.yaml"),

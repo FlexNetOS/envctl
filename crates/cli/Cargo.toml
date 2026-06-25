@@ -23,3 +23,9 @@ flate2 = { workspace = true }
 sha2 = { workspace = true }
 envctl-agent-env = { path = "../agent-env" }
 reqwest = { workspace = true }
+# Meta plugin: envctl ships the `meta-env` subprocess plugin (src/bin/meta-env.rs) so
+# `meta env <verb>` dispatches into envctl — native meta_plugin_protocol adoption. The
+# protocol is pure-Rust (serde only); indexmap is pure-Rust (hashbrown) — ZERO C
+# (no-c.sh unaffected). Path dep into the meta tree (envctl is meta-tree-resident).
+meta_plugin_protocol = { path = "../../../meta_plugin_protocol" }
+indexmap = "2"
