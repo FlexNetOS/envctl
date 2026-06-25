@@ -27,6 +27,17 @@ if grep -Eq 'libsql-ffi|sqlite3-sys|rusqlite|openssl-sys|aws-lc-sys|aws-lc-rs' <
   fail "C dependency linked into envctl-secrets-engine"
 fi
 
+# --- Gate 1.5: the ENGINE crate stays C-free after adopting loop_lib (meta substrate). ---
+# The engine's hook runner delegates Command construction to `loop_lib::build_command`. loop_lib is
+# pure-Rust (anyhow/rayon/serde/serde_json/colored/indicatif/is-terminal — zero C library). This locks
+# in that the meta-wiring adoption introduced no banned C dep into the engine. Capture-first.
+# NOTE: this gate (and the whole-graph Gate 4) now require the meta tree to be present, because
+# envctl-engine path-deps `../../../loop_lib`; envctl is a meta-tree-resident crate by design.
+ENGINE_LIB_TREE=$(cargo tree -p envctl-engine --all-features --edges normal,build)
+if grep -Eq 'libsql-ffi|sqlite3-sys|rusqlite|openssl-sys|aws-lc-sys|aws-lc-rs|mimalloc|libmimalloc-sys' <<<"$ENGINE_LIB_TREE"; then
+  fail "C dependency linked into envctl-engine (loop_lib adoption must stay pure-Rust)"
+fi
+
 # --- Gate 2: proto + cli stay C-free (SERVER-MODE §81) ---
 for crate in envctl-secrets-proto envctl-secretctl; do
   CRATE_TREE=$(cargo tree -p "$crate" --all-features --edges normal,build)
