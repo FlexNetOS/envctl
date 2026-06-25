@@ -141,6 +141,20 @@ JS imports) — those are **wrong for this repo**.
 - Keep the MCP baseline identical across Claude (`.mcp.json`) and Codex (`.codex/config.toml`):
   `github`, `context7`, `exa`, `memory`, `playwright`, `sequential-thinking`.
 
+## Knowledge base is git-durable (adopts meta KB policy)
+
+This repo uses the FlexNetOS git-kb knowledge base (`@.kb/AGENTS.md`), following **meta policy**
+(`meta/.kb/AGENTS.md`). envctl's context lives as the seven `context/{immutable,extensible,
+overridable}/*` documents — start a session by reading them (`git-kb list --path context/`).
+
+**Durability rule (non-negotiable):** `.kb/store/` is **git-tracked TEXT** — the source of truth
+— so the KB survives clone/reclaim. Only `.kb/.cache/` (a rebuildable index; `git-kb reindex`
+regenerates it from the store) and the ephemeral `workspaces/`/`stashes/` surfaces are
+`.gitignore`d. This is the same rule as `.handoff` (track text; never commit binary rebuild
+caches) and it **deliberately overrides `git-kb init`'s tool default**, which ignores the whole
+`.kb/store/` and would make the KB non-durable. See `meta/META-ORG-POLICY.md` (the workspace
+`.kb/store` durability rule) and `docs/kb-sync-runbook.md` (cross-KB sync with meta).
+
 ## Pointers
 
 - `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/DESIGN-NOTES.md` — env-manager design.
