@@ -1,9 +1,9 @@
 # envctl — The Agentic Story (full agent-automation narrative)
 
 > Companion to [`DIAGRAMS.md`](DIAGRAMS.md) §14–§16 and [`USER-STORY.md`](USER-STORY.md).
-> This is the story of how a dual-RTX-5090 Ubuntu 26.04 workstation **builds, provisions, and
-> maintains itself with no human in the loop** — and where, by deliberate design, it stops and
-> asks for one.
+> This is the story of how envctl — meta's agentic environment manager — **builds, provisions, and
+> maintains the whole meta workspace with no human in the loop**, on its deployment target today (a
+> dual-RTX-5090 Ubuntu 26.04 workstation) — and where, by deliberate design, it stops and asks for one.
 
 The thesis: **the box is a declarative target, and a swarm of agents converges reality onto that
 target on a loop.** Nothing here is "an AI helping a human run commands." The human writes intent

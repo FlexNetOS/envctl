@@ -3,11 +3,14 @@
 Paste this whole file as the first message of a new session to pick up + verify.
 
 ## What envctl is
-A pure-Rust, GPU-aware, **source-building environment manager** for this live
-dual-RTX-5090 Ubuntu 26.04 box. One cargo workspace at `/home/drdave/Desktop/envctl`:
+A first-class **meta** peer member — the pure-Rust, GPU-aware, **source-building agentic
+environment manager for the whole meta workspace**. It installs every tool, dependency,
+provider, vendor, CLI, and config **into meta** (`meta/.toolchains/`, `$META_ROOT`), with no
+system-depth or user-global installs — anything meta uses lives in meta. One cargo workspace:
 `crates/engine` (lib `envctl_engine`) + `crates/cli` (`envctl`) + `crates/gui`
-(`envctl-gui`, native egui — no web). It manages the box declaratively: every tool
-is a TOML **component** whose hooks wrap the proven Desktop bash kit. **All six
+(`envctl-gui`, native egui — no web). It manages the environment declaratively: every tool
+is a TOML **component** whose hooks wrap the proven Desktop bash kit. Its deployment target
+today is a live dual-RTX-5090 Ubuntu 26.04 box. **All six
 roadmap phases are complete + dogfooded**, plus graph intelligence and an
 interactive add-repo "connect" mode.
 

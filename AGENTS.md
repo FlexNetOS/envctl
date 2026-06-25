@@ -4,8 +4,12 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 
 ## What this is
 
-`envctl` is a **pure-Rust Cargo workspace** (8 crates) that declaratively manages a
-dual-RTX-5090 Ubuntu workstation. Two halves share one engine:
+`envctl` is a first-class **meta** peer member — the **agentic environment manager for the
+whole meta workspace**. It is a **pure-Rust Cargo workspace** (8 crates) that declaratively
+brings every tool, dependency, provider, vendor, CLI, and config to a declared state and
+installs it **into meta** (`meta/.toolchains/`, `$META_ROOT`), with **no system-depth or
+user-global installs** — anything meta uses lives in meta. Its deployment target today is a
+dual-RTX-5090 Ubuntu 26.04 workstation. Two halves share one engine:
 
 - **env-manager** — `engine` + `cli` (`envctl`) + `gui` (`envctl-gui`). Brings the box to
   a declared state via TOML *components* whose lifecycle hooks wrap the proven bash in
