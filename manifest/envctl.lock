@@ -480,7 +480,7 @@ requires = []
 resolved = ""
 
 [components.zsh-migration-launcher]
-content_hash = "69de6ac52be0e927"
+content_hash = "d2c9a9fbd28f4470"
 requires = [
     "ohmyzsh",
     "zsh",

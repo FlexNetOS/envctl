@@ -1,9 +1,10 @@
 # ── zsh migration terminal — one-click desktop launcher ─────────────────────
 # A desktop app + icon that opens the meta-owned zsh (.toolchains/zsh, 5.9.1,
 # zero /nix) with the ohmyzsh ZDOTDIR, ready to drive the env migration. The
-# SHELL is the meta zsh; the host window is whatever terminal emulator is present
-# (currently only ghostty — a meta-owned GUI terminal for the post-/nix world is a
-# separate follow-up). Explicit-launch: does NOT change the login shell or ~/.zshrc.
+# SHELL is the meta zsh; the host window is the on-box, NON-/nix default terminal
+# (Ptyxis — the Ubuntu 26.04/GNOME default — or /usr/bin/ghostty), chosen by
+# absolute path so it survives the nix teardown and never uses yazelix's /nix
+# ghostty. Explicit-launch: does NOT change the login shell or ~/.zshrc.
 [[component]]
 id = "zsh-migration-launcher"
 name = "Meta zsh migration terminal (desktop launcher)"
@@ -38,18 +39,22 @@ M="${META_ROOT:-$HOME/Desktop/meta}"
 export META_ROOT="$M"
 export ZDOTDIR="$M/.toolchains/zsh-config"
 ZSH_BIN="$HOME/.local/bin/zsh"
-# Ensure the meta zsh + (current) ghostty are findable from a GUI-launched env.
 export PATH="$HOME/.local/bin:$PATH"
-command -v ghostty >/dev/null 2>&1 || PATH="$(dirname "$(readlink -f "$HOME/.local/bin/zsh")")/../../..:$PATH"
-for term in ghostty kgx gnome-terminal konsole xterm; do
+# Prefer the on-box, NON-/nix terminals (survive the system-nix teardown) by
+# ABSOLUTE path — never yazelix's /nix ghostty. Ptyxis is the Ubuntu 26.04 /
+# GNOME default; /usr/bin/ghostty is the system ghostty.
+[ -x /usr/bin/ptyxis ]  && exec /usr/bin/ptyxis  -- "$ZSH_BIN"
+[ -x /usr/bin/ghostty ] && exec /usr/bin/ghostty -e "$ZSH_BIN"
+# Fallback: search PATH (last resort, may include the /nix ghostty).
+for term in ptyxis ghostty kgx gnome-terminal konsole xterm; do
   if command -v "$term" >/dev/null 2>&1; then
     case "$term" in
-      gnome-terminal) exec "$term" -- "$ZSH_BIN" ;;
-      *)              exec "$term" -e "$ZSH_BIN" ;;
+      gnome-terminal|ptyxis) exec "$term" -- "$ZSH_BIN" ;;
+      *)                     exec "$term" -e "$ZSH_BIN" ;;
     esac
   fi
 done
-echo "meta-zsh: no terminal emulator found on PATH" >&2
+echo "meta-zsh: no terminal emulator found" >&2
 exit 1
 SH
 chmod +x "$LAUNCH"
