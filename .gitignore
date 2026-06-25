@@ -28,3 +28,9 @@ Cargo.lock.bak
 
 # Runtime claim locks are ephemeral coordination state, not durable handoff text.
 .handoff/locks/
+
+# GitKB
+.kb/.cache/
+.kb/store/
+.kb/workspace/
+.kb/workspaces/
