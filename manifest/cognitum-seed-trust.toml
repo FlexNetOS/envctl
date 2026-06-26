@@ -2,7 +2,7 @@
 #
 # WHY THIS EXISTS
 # secretd's USB-unlock factor validates the Seed's TLS strictly against a pinned Cognitum Device
-# CA at ${META_ROOT:-$HOME/Desktop/meta}/.toolchains/secrets/ca/cognitum-ca.crt (the meta path the
+# CA at ${META_ROOT:-$HOME/Desktop/meta}/.local/share/envctl/secrets/ca/cognitum-ca.crt (the meta path the
 # secretd unit sets via ENVCTL_SEED_CA; crates/secrets-engine/src/seam.rs `ca_path()` honors that
 # env override). When the Seed rotates its Device CA, the host pin goes stale, the
 # TLS handshake fails fail-closed and SILENT, custody/sign fails, usb_possessed=false, and
@@ -13,7 +13,7 @@
 #
 # CANONICAL OPERATION (what install-trust.sh did, now relocated to the meta path):
 #   cp <COGNITUM mount>/trust/cognitum-ca.pem \
-#      ${META_ROOT:-$HOME/Desktop/meta}/.toolchains/secrets/ca/cognitum-ca.crt
+#      ${META_ROOT:-$HOME/Desktop/meta}/.local/share/envctl/secrets/ca/cognitum-ca.crt
 #   update-ca-certificates   # (best-effort; the daemon pins the meta path directly via ENVCTL_SEED_CA)
 #
 # DESIGN
@@ -27,7 +27,7 @@
 # unplugged, which is healthy. So drift never nudges a needless reinstall when the box is fine.
 #
 # NO-SYSTEM-DEPTH NOTE: this pins to the meta toolchains prefix
-# (${META_ROOT:-$HOME/Desktop/meta}/.toolchains/secrets/ca/cognitum-ca.crt), NOT /usr/local. The
+# (${META_ROOT:-$HOME/Desktop/meta}/.local/share/envctl/secrets/ca/cognitum-ca.crt), NOT /usr/local. The
 # secretd unit sets ENVCTL_SEED_CA to that path (manifest/env-ctl.toml), so the daemon's
 # seam.rs `ca_path()` reads the pin from meta. The relocation off the system-depth /usr/local path
 # is DONE (this IS TASK-0075b) — it is no longer tracked as a follow-up. The worker still honors an
@@ -40,7 +40,7 @@
 [[component]]
 id = "cognitum-seed-trust"
 name = "Cognitum Seed Device-CA auto-refresh"
-description = "Auto-refreshes the pinned Cognitum Device CA (the meta path ${META_ROOT:-$HOME/Desktop/meta}/.toolchains/secrets/ca/cognitum-ca.crt that secretd reads via ENVCTL_SEED_CA) from the USB trust anchor (COGNITUM/trust/cognitum-ca.pem) on boot + Seed hotplug, so the vault USB-unlock factor keeps working across Seed CA rotation. Additive; never removes other CAs; absent Seed = no-op."
+description = "Auto-refreshes the pinned Cognitum Device CA (the meta path ${META_ROOT:-$HOME/Desktop/meta}/.local/share/envctl/secrets/ca/cognitum-ca.crt that secretd reads via ENVCTL_SEED_CA) from the USB trust anchor (COGNITUM/trust/cognitum-ca.pem) on boot + Seed hotplug, so the vault USB-unlock factor keeps working across Seed CA rotation. Additive; never removes other CAs; absent Seed = no-op."
 requires = []
 destructive = false
 
@@ -79,7 +79,7 @@ if [ -z "${TRUST_DIR:-}" ]; then
 fi
 
 SRC="$TRUST_DIR/cognitum-ca.pem"
-DST="${ENVCTL_SEED_CA:-${META_ROOT:-$HOME/Desktop/meta}/.toolchains/secrets/ca/cognitum-ca.crt}"
+DST="${ENVCTL_SEED_CA:-${META_ROOT:-$HOME/Desktop/meta}/.local/share/envctl/secrets/ca/cognitum-ca.crt}"
 
 if cmp -s "$SRC" "$DST"; then
   echo "cognitum-seed-trust: pin already current (no-op)"; exit 0
@@ -143,7 +143,7 @@ if [ -z "${TRUST_DIR:-}" ]; then
   echo "pin probe: no Cognitum Seed anchor present (non-fatal; re-pin applies on hotplug)"; exit 0
 fi
 
-DST="${ENVCTL_SEED_CA:-${META_ROOT:-$HOME/Desktop/meta}/.toolchains/secrets/ca/cognitum-ca.crt}"
+DST="${ENVCTL_SEED_CA:-${META_ROOT:-$HOME/Desktop/meta}/.local/share/envctl/secrets/ca/cognitum-ca.crt}"
 if cmp -s "$TRUST_DIR/cognitum-ca.pem" "$DST"; then
   echo "pin probe: Device CA pin MATCHES USB anchor (healthy)"
 else
@@ -176,7 +176,7 @@ if [ -z "${TRUST_DIR:-}" ]; then
   echo "cognitum-seed-trust: no Cognitum trust anchor present (no-op)"; exit 0
 fi
 SRC="$TRUST_DIR/cognitum-ca.pem"
-DST="${ENVCTL_SEED_CA:-${META_ROOT:-$HOME/Desktop/meta}/.toolchains/secrets/ca/cognitum-ca.crt}"
+DST="${ENVCTL_SEED_CA:-${META_ROOT:-$HOME/Desktop/meta}/.local/share/envctl/secrets/ca/cognitum-ca.crt}"
 if cmp -s "$SRC" "$DST"; then
   echo "cognitum-seed-trust: pin already current (no-op)"; exit 0
 fi
@@ -213,7 +213,7 @@ systemctl restart cognitum-seed-trust.service || true
 '''
 
 # REMOVE: disable + drop the unit/udev rule/worker. CRITICAL: do NOT delete the pinned CA from
-# the meta path ${META_ROOT:-$HOME/Desktop/meta}/.toolchains/secrets/ca/ — removing trust could
+# the meta path ${META_ROOT:-$HOME/Desktop/meta}/.local/share/envctl/secrets/ca/ — removing trust could
 # break a currently-working USB unlock; the owner removes the CA manually if ever desired. This
 # only removes the auto-refresh mechanism.
 [component.remove]
@@ -225,7 +225,7 @@ systemctl disable --now cognitum-seed-trust.service 2>/dev/null || true
 rm -f /usr/local/sbin/cognitum-seed-trust-refresh \
       /etc/systemd/system/cognitum-seed-trust.service \
       /etc/udev/rules.d/99-cognitum-seed-trust.rules
-# NOTE: the pinned CA at ${META_ROOT:-$HOME/Desktop/meta}/.toolchains/secrets/ca/cognitum-ca.crt is
+# NOTE: the pinned CA at ${META_ROOT:-$HOME/Desktop/meta}/.local/share/envctl/secrets/ca/cognitum-ca.crt is
 # intentionally LEFT in place — removing it could break a working USB unlock. Only the refresh
 # mechanism is removed here.
 udevadm control --reload-rules || true

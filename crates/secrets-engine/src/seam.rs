@@ -206,16 +206,38 @@ pub(crate) mod seed_factor {
 
     /// Pinned Cognitum CA (PEM). The CA is name-constrained to `169.254.x.x` + `.local`; we
     /// pin THIS root explicitly (FS-S7 frozen-roots) rather than trusting the OS store. The
-    /// envctl unit sets `ENVCTL_SEED_CA`; the fallback is the meta-owned prefix so direct
-    /// probes and tests do not silently fall back to the legacy `/usr/local` path.
+    /// envctl unit sets `ENVCTL_SEED_CA`; the fallback is the canonical meta-local share path,
+    /// with a read-only legacy `.toolchains` fallback only when that file already exists.
     fn ca_path() -> String {
-        std::env::var("ENVCTL_SEED_CA").unwrap_or_else(|_| {
-            let meta = std::env::var("META_ROOT").unwrap_or_else(|_| {
-                let home = std::env::var("HOME").unwrap_or_else(|_| String::from("/home/drdave"));
-                format!("{home}/Desktop/meta")
-            });
-            format!("{meta}/.toolchains/secrets/ca/cognitum-ca.crt")
-        })
+        if let Ok(path) = std::env::var("ENVCTL_SEED_CA") {
+            return path;
+        }
+        let meta = meta_root();
+        let canonical = canonical_seed_ca(&meta);
+        if canonical.is_file() {
+            return canonical.to_string_lossy().into_owned();
+        }
+        let legacy = legacy_seed_ca(&meta);
+        if legacy.is_file() {
+            return legacy.to_string_lossy().into_owned();
+        }
+        canonical.to_string_lossy().into_owned()
+    }
+
+    fn meta_root() -> std::path::PathBuf {
+        if let Ok(meta) = std::env::var("META_ROOT") {
+            return std::path::PathBuf::from(meta);
+        }
+        let home = std::env::var("HOME").unwrap_or_else(|_| String::from("/home/drdave"));
+        std::path::PathBuf::from(home).join("Desktop/meta")
+    }
+
+    fn canonical_seed_ca(meta: &std::path::Path) -> std::path::PathBuf {
+        meta.join(".local/share/envctl/secrets/ca/cognitum-ca.crt")
+    }
+
+    fn legacy_seed_ca(meta: &std::path::Path) -> std::path::PathBuf {
+        meta.join(".toolchains/secrets/ca/cognitum-ca.crt")
     }
 
     /// Stable pairing-client name for the daemon. Re-pairing under the same name replaces the
@@ -521,8 +543,22 @@ pub(crate) mod seed_factor {
     #[cfg(test)]
     mod tests {
         use super::{
-            ca_path, extract_field, host_port, parse_pubkey_hex, parse_sig_hex, parse_status,
+            ca_path, canonical_seed_ca, extract_field, host_port, legacy_seed_ca, parse_pubkey_hex,
+            parse_sig_hex, parse_status,
         };
+        use std::sync::{Mutex, MutexGuard, OnceLock};
+
+        fn env_lock() -> MutexGuard<'static, ()> {
+            static ENV_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+            ENV_LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
+        }
+
+        fn restore_var(key: &str, value: Option<String>) {
+            match value {
+                Some(v) => std::env::set_var(key, v),
+                None => std::env::remove_var(key),
+            }
+        }
 
         #[test]
         fn parse_sig_hex_roundtrips_64_bytes() {
@@ -545,44 +581,52 @@ pub(crate) mod seed_factor {
         }
 
         #[test]
-        fn ca_path_defaults_to_meta_toolchains() {
-            static ENV_LOCK: std::sync::OnceLock<std::sync::Mutex<()>> = std::sync::OnceLock::new();
-            let _guard = ENV_LOCK
-                .get_or_init(|| std::sync::Mutex::new(()))
-                .lock()
-                .unwrap();
+        fn ca_path_defaults_to_meta_local_share() {
+            let _guard = env_lock();
             let old_seed_ca = std::env::var("ENVCTL_SEED_CA").ok();
             let old_meta = std::env::var("META_ROOT").ok();
             std::env::remove_var("ENVCTL_SEED_CA");
             std::env::set_var("META_ROOT", "/tmp/meta-envctl-test");
             assert_eq!(
                 ca_path(),
-                "/tmp/meta-envctl-test/.toolchains/secrets/ca/cognitum-ca.crt"
+                "/tmp/meta-envctl-test/.local/share/envctl/secrets/ca/cognitum-ca.crt"
             );
-            match old_seed_ca {
-                Some(v) => std::env::set_var("ENVCTL_SEED_CA", v),
-                None => std::env::remove_var("ENVCTL_SEED_CA"),
-            }
-            match old_meta {
-                Some(v) => std::env::set_var("META_ROOT", v),
-                None => std::env::remove_var("META_ROOT"),
-            }
+            restore_var("ENVCTL_SEED_CA", old_seed_ca);
+            restore_var("META_ROOT", old_meta);
+        }
+
+        #[test]
+        fn ca_path_uses_legacy_toolchains_when_present() {
+            let _guard = env_lock();
+            let old_seed_ca = std::env::var("ENVCTL_SEED_CA").ok();
+            let old_meta = std::env::var("META_ROOT").ok();
+            let tmp = std::env::temp_dir().join(format!(
+                "envctl-seed-ca-{}-{}",
+                std::process::id(),
+                std::time::SystemTime::now()
+                    .duration_since(std::time::UNIX_EPOCH)
+                    .expect("system clock after unix epoch")
+                    .as_nanos()
+            ));
+            let legacy = legacy_seed_ca(&tmp);
+            std::fs::create_dir_all(legacy.parent().expect("legacy parent")).expect("mkdir");
+            std::fs::write(&legacy, b"legacy ca").expect("write legacy ca");
+            assert!(!canonical_seed_ca(&tmp).exists());
+            std::env::remove_var("ENVCTL_SEED_CA");
+            std::env::set_var("META_ROOT", &tmp);
+            assert_eq!(ca_path(), legacy.to_string_lossy().into_owned());
+            restore_var("ENVCTL_SEED_CA", old_seed_ca);
+            restore_var("META_ROOT", old_meta);
+            let _ = std::fs::remove_dir_all(tmp);
         }
 
         #[test]
         fn ca_path_honors_explicit_override() {
-            static ENV_LOCK: std::sync::OnceLock<std::sync::Mutex<()>> = std::sync::OnceLock::new();
-            let _guard = ENV_LOCK
-                .get_or_init(|| std::sync::Mutex::new(()))
-                .lock()
-                .unwrap();
-            let old = std::env::var("ENVCTL_SEED_CA").ok();
+            let _guard = env_lock();
+            let old_seed_ca = std::env::var("ENVCTL_SEED_CA").ok();
             std::env::set_var("ENVCTL_SEED_CA", "/tmp/custom-ca.pem");
             assert_eq!(ca_path(), "/tmp/custom-ca.pem");
-            match old {
-                Some(v) => std::env::set_var("ENVCTL_SEED_CA", v),
-                None => std::env::remove_var("ENVCTL_SEED_CA"),
-            }
+            restore_var("ENVCTL_SEED_CA", old_seed_ca);
         }
 
         #[test]

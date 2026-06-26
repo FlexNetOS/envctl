@@ -101,6 +101,26 @@ impl MetaLayout {
         self.share().join("envctl")
     }
 
+    pub fn envctl_lib(&self) -> PathBuf {
+        self.lib().join("envctl")
+    }
+
+    pub fn secrets_libexec(&self) -> PathBuf {
+        self.envctl_lib().join("secrets/bin")
+    }
+
+    pub fn secrets_share(&self) -> PathBuf {
+        self.envctl_share().join("secrets")
+    }
+
+    pub fn secrets_ca_dir(&self) -> PathBuf {
+        self.secrets_share().join("ca")
+    }
+
+    pub fn seed_ca(&self) -> PathBuf {
+        self.secrets_ca_dir().join("cognitum-ca.crt")
+    }
+
     pub fn repo_store(&self) -> PathBuf {
         self.envctl_share().join("repos")
     }
@@ -113,6 +133,14 @@ impl MetaLayout {
     /// manager-specific tool trees under `.toolchains`.
     pub fn legacy_toolchains(&self) -> PathBuf {
         self.meta_root.join(".toolchains")
+    }
+
+    pub fn legacy_secrets_bin(&self) -> PathBuf {
+        self.legacy_toolchains().join("secrets/bin")
+    }
+
+    pub fn legacy_seed_ca(&self) -> PathBuf {
+        self.legacy_toolchains().join("secrets/ca/cognitum-ca.crt")
     }
 
     /// The central path registry for envctl-owned installs and state.
@@ -178,6 +206,30 @@ impl MetaLayout {
                 purpose: "envctl shared data root",
             },
             LayoutEntry {
+                key: "envctl_lib",
+                path: self.envctl_lib(),
+                kind: LayoutKind::Canonical,
+                purpose: "envctl private library and libexec root",
+            },
+            LayoutEntry {
+                key: "secrets_libexec",
+                path: self.secrets_libexec(),
+                kind: LayoutKind::Canonical,
+                purpose: "private installed secretd/secretctl binaries",
+            },
+            LayoutEntry {
+                key: "secrets_share",
+                path: self.secrets_share(),
+                kind: LayoutKind::Canonical,
+                purpose: "shared secrets-stack data such as trust roots",
+            },
+            LayoutEntry {
+                key: "secrets_ca_dir",
+                path: self.secrets_ca_dir(),
+                kind: LayoutKind::Canonical,
+                purpose: "pinned Cognitum Seed CA directory",
+            },
+            LayoutEntry {
                 key: "repo_store",
                 path: self.repo_store(),
                 kind: LayoutKind::Canonical,
@@ -188,6 +240,12 @@ impl MetaLayout {
                 path: self.legacy_toolchains(),
                 kind: LayoutKind::LegacyCompatibility,
                 purpose: "compatibility prefix for manifests not yet migrated to .local",
+            },
+            LayoutEntry {
+                key: "legacy_secrets_bin",
+                path: self.legacy_secrets_bin(),
+                kind: LayoutKind::LegacyCompatibility,
+                purpose: "compatibility secretd/secretctl binary prefix",
             },
         ]
     }
@@ -234,6 +292,10 @@ impl MetaLayout {
             ("ENVCTL_BIN_DIR", self.bin()),
             ("ENVCTL_LIB_DIR", self.lib()),
             ("ENVCTL_SHARE_DIR", self.share()),
+            ("ENVCTL_ENVCTL_SHARE_DIR", self.envctl_share()),
+            ("ENVCTL_ENVCTL_LIB_DIR", self.envctl_lib()),
+            ("ENVCTL_SECRETS_BIN_DIR", self.secrets_libexec()),
+            ("ENVCTL_SEED_CA", self.seed_ca()),
             ("ENVCTL_STATE_DIR", self.state()),
             ("ENVCTL_CACHE_DIR", self.cache()),
             ("ENVCTL_TMP_DIR", self.tmp()),
@@ -283,11 +345,28 @@ mod tests {
         assert_eq!(l.tmp(), Path::new("/m/.local/tmp"));
         assert_eq!(l.opt(), Path::new("/m/.local/opt"));
         assert_eq!(l.repo_store(), Path::new("/m/.local/share/envctl/repos"));
+        assert_eq!(l.envctl_lib(), Path::new("/m/.local/lib/envctl"));
+        assert_eq!(
+            l.secrets_libexec(),
+            Path::new("/m/.local/lib/envctl/secrets/bin")
+        );
+        assert_eq!(
+            l.seed_ca(),
+            Path::new("/m/.local/share/envctl/secrets/ca/cognitum-ca.crt")
+        );
         assert_eq!(
             l.component_prefix("ripgrep"),
             Path::new("/m/.local/opt/ripgrep")
         );
         assert_eq!(l.legacy_toolchains(), Path::new("/m/.toolchains"));
+        assert_eq!(
+            l.legacy_secrets_bin(),
+            Path::new("/m/.toolchains/secrets/bin")
+        );
+        assert_eq!(
+            l.legacy_seed_ca(),
+            Path::new("/m/.toolchains/secrets/ca/cognitum-ca.crt")
+        );
     }
 
     #[test]
@@ -301,6 +380,10 @@ mod tests {
             .iter()
             .any(|(k, v)| *k == "ENVCTL_REPO_STORE"
                 && v == Path::new("/meta/.local/share/envctl/repos")));
+        assert!(exports.iter().any(|(k, v)| *k == "ENVCTL_SECRETS_BIN_DIR"
+            && v == Path::new("/meta/.local/lib/envctl/secrets/bin")));
+        assert!(exports.iter().any(|(k, v)| *k == "ENVCTL_SEED_CA"
+            && v == Path::new("/meta/.local/share/envctl/secrets/ca/cognitum-ca.crt")));
     }
 
     #[test]
@@ -314,6 +397,16 @@ mod tests {
         assert_eq!(legacy.path, Path::new("/meta/.toolchains"));
         assert_eq!(legacy.kind, LayoutKind::LegacyCompatibility);
         assert!(!legacy.is_canonical());
+
+        let legacy_secrets = entries
+            .iter()
+            .find(|entry| entry.key == "legacy_secrets_bin")
+            .expect("legacy secrets bin entry");
+        assert_eq!(
+            legacy_secrets.path,
+            Path::new("/meta/.toolchains/secrets/bin")
+        );
+        assert_eq!(legacy_secrets.kind, LayoutKind::LegacyCompatibility);
 
         let repo_store = entries
             .iter()

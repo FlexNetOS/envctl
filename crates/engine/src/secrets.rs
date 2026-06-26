@@ -20,9 +20,10 @@ use zeroize::Zeroizing;
 /// Resolve the `secretctl` binary, fail-closed (returns `None` if it cannot be found):
 /// (a) alongside the current executable,
 /// (b) `$META_ROOT/.local/bin/secretctl` (the canonical envctl exposure prefix),
-/// (c) `$META_ROOT/.toolchains/secrets/bin/secretctl` (legacy manifest prefix),
-/// (d) legacy `$HOME/.local/bin/secretctl` / `$HOME/.cargo/bin/secretctl`, and finally
-/// (e) on `PATH`. The first existing path wins.
+/// (c) `$META_ROOT/.local/lib/envctl/secrets/bin/secretctl` (private canonical install),
+/// (d) `$META_ROOT/.toolchains/secrets/bin/secretctl` (legacy manifest prefix),
+/// (e) legacy `$HOME/.local/bin/secretctl` / `$HOME/.cargo/bin/secretctl`, and finally
+/// (f) on `PATH`. The first existing path wins.
 fn resolve_secretctl() -> Option<PathBuf> {
     // (a) alongside current_exe
     if let Ok(exe) = std::env::current_exe() {
@@ -34,19 +35,26 @@ fn resolve_secretctl() -> Option<PathBuf> {
         }
     }
     let layout = crate::layout::MetaLayout::from_env_or_default();
-    // (b) canonical meta-owned exposure prefix
+    // (b) canonical meta-owned exposure prefix.
     let cand = layout.bin().join("secretctl");
     if cand.is_file() {
         return Some(cand);
     }
-    // (c) compatibility manifest prefix while existing components migrate.
-    let cand = layout.legacy_toolchains().join("secrets/bin/secretctl");
+    // (c) canonical private install prefix.  The public .local/bin entry may be
+    // absent in minimal/systemd contexts, but the installed binary still belongs
+    // under the meta-local libexec tree.
+    let cand = layout.secrets_libexec().join("secretctl");
+    if cand.is_file() {
+        return Some(cand);
+    }
+    // (d) compatibility manifest prefix while existing components migrate.
+    let cand = layout.legacy_secrets_bin().join("secretctl");
     if cand.is_file() {
         return Some(cand);
     }
     if let Ok(home) = std::env::var("HOME") {
         let home = PathBuf::from(home);
-        // (d) host-global fallbacks are compatibility-only lookup paths, not
+        // (e) host-global fallbacks are compatibility-only lookup paths, not
         // envctl install targets.
         let local = home.join(".local/bin/secretctl");
         if local.is_file() {
@@ -57,7 +65,7 @@ fn resolve_secretctl() -> Option<PathBuf> {
             return Some(legacy);
         }
     }
-    // (e) PATH
+    // (f) PATH
     which::which("secretctl").ok()
 }
 
@@ -81,8 +89,9 @@ pub fn run_secretctl(
             verb,
             json_stdout: String::new(),
             stderr: "secretctl not installed (looked alongside the binary, in \
-                     $META_ROOT/.local/bin, legacy $META_ROOT/.toolchains/secrets/bin, \
-                     compatibility $HOME/.local/bin / $HOME/.cargo/bin, and on PATH)"
+                     $META_ROOT/.local/bin, $META_ROOT/.local/lib/envctl/secrets/bin, \
+                     legacy $META_ROOT/.toolchains/secrets/bin, compatibility \
+                     $HOME/.local/bin / $HOME/.cargo/bin, and on PATH)"
                 .to_string(),
             code: None,
         });
@@ -155,9 +164,11 @@ mod tests {
         let _g = crate::test_env_lock();
         let prev_path = std::env::var("PATH").ok();
         let prev_home = std::env::var("HOME").ok();
+        let prev_meta = std::env::var("META_ROOT").ok();
         let tmp = std::env::temp_dir().join("envctl-secrets-test-nohome");
         std::env::set_var("PATH", "");
         std::env::set_var("HOME", &tmp);
+        std::env::set_var("META_ROOT", tmp.join("meta"));
 
         let (sink, rx) = EventSink::channel();
         run_secretctl(
@@ -174,6 +185,10 @@ mod tests {
         match prev_home {
             Some(h) => std::env::set_var("HOME", h),
             None => std::env::remove_var("HOME"),
+        }
+        match prev_meta {
+            Some(m) => std::env::set_var("META_ROOT", m),
+            None => std::env::remove_var("META_ROOT"),
         }
 
         let ev = rx.recv().expect("a SecretsResult was emitted");
