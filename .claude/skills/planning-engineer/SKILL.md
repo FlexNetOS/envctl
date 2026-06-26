@@ -76,12 +76,22 @@ fleet scans.
 5. `plan-opus-bg-rusty-idd-north-star` — first-run `rusty-idd` surfacing, meta↔envctl↔prompt_hub
    relationship truth, owner north-star capture, Forge/IDD-loop upgrade path.
 
-All `Agent` calls use Opus-class max effort. In Claude-compatible runtimes use explicit
-`claude-opus-4-8`/`anthropic/claude-opus-4-8` with `run_in_background:true`. In Codex runtimes, spawn
-the `.codex/agents/plan-opus-bg-*.toml` custom agents; if the local provider cannot resolve Opus,
-fail closed and report the provider gap instead of silently falling back to a weaker model. Data
-transfer is **file-based** (pass artifact PATHS, never contents) + **return-value** (each agent returns
-a one-line verdict the orchestrator reduces).
+All actual lane work uses Opus-class max effort. In Claude-compatible runtimes use explicit
+`claude-opus-4-8`/`anthropic/claude-opus-4-8` with `run_in_background:true`.
+
+**Codex transport law: use weave for Opus.** Codex's ChatGPT/OpenAI provider may not resolve Anthropic
+model slugs directly, so Codex must **not** try to run `model = "claude-opus-4-8"` subagents. Instead:
+1. `weave attach --name envctl-plan-orchestrator` to register the foreground.
+2. For each lane, `weave spawn <lane-peer> --cmd claude --cmd --model --cmd claude-opus-4-8 --cmd -p
+   --cmd <lane prompt>` when a Claude CLI surface is available, or create a fenced `weave job`/`weave
+   ask` routed to an already registered Opus-capable peer.
+3. Record the weave peer/session id plus message/job id in `.handoff/loop/plan/loop_state.md` and the
+   lane artifact.
+4. If weave cannot produce or reach an Opus-capable worker, fail closed with a provider/transport gap;
+   do not silently perform the heavy lane in Codex or any weaker model.
+
+Data transfer is **file-based** (pass artifact PATHS, never contents) + **return-value** (each worker
+returns a one-line verdict the orchestrator reduces through weave receipts/inbox/job results).
 
 ## Agents (in the plugin's shared `harness/agents/` pool)
 

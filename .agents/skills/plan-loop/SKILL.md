@@ -106,18 +106,21 @@ and continue if under `cycle_budget`. The boundary is *in-session* — NOT a han
 The loop must never do fleet scans or web sweeps inline in the foreground. Launch five background
 lanes immediately and reduce only their structured artifact paths/verdicts:
 
-| Lane | Codex custom agent | Model/effort | Required output |
-|------|--------------------|--------------|-----------------|
-| Code graph + cross-repo refs | `plan-opus-bg-code-graph` | `claude-opus-4-8`, max/xhigh | graph snapshots/diffs + `git-kb code` query JSON |
-| Web/trends + skeptic | `plan-opus-bg-web-trends` | `claude-opus-4-8`, max/xhigh | dated 90-day research + refutation notes |
-| Governance/control plane | `plan-opus-bg-governance` | `claude-opus-4-8`, max/xhigh | rules/instructions/hooks/policy/CLAUDE/AGENTS drift |
-| Settings/config hygiene | `plan-opus-bg-settings-config` | `claude-opus-4-8`, max/xhigh | MCP rot, skill overload, token burn, permissions/config drift |
-| Rusty-IDD north star | `plan-opus-bg-rusty-idd-north-star` | `claude-opus-4-8`, max/xhigh | first-target verdict + Forge/IDD loop upgrade path |
+| Lane | Codex dispatcher shim | Actual worker transport/model | Required output |
+|------|-----------------------|-------------------------------|-----------------|
+| Code graph + cross-repo refs | `plan-opus-bg-code-graph` | weave → `claude-opus-4-8`, max/xhigh | graph snapshots/diffs + `git-kb code` query JSON |
+| Web/trends + skeptic | `plan-opus-bg-web-trends` | weave → `claude-opus-4-8`, max/xhigh | dated 90-day research + refutation notes |
+| Governance/control plane | `plan-opus-bg-governance` | weave → `claude-opus-4-8`, max/xhigh | rules/instructions/hooks/policy/CLAUDE/AGENTS drift |
+| Settings/config hygiene | `plan-opus-bg-settings-config` | weave → `claude-opus-4-8`, max/xhigh | MCP rot, skill overload, token burn, permissions/config drift |
+| Rusty-IDD north star | `plan-opus-bg-rusty-idd-north-star` | weave → `claude-opus-4-8`, max/xhigh | first-target verdict + Forge/IDD loop upgrade path |
 
-If the active runtime cannot resolve Opus 4.8, **fail closed** with a provider/config gap. Do not
-silently downgrade to Sonnet or a lower-effort model. In Claude Code use `run_in_background:true`; in
-Codex use custom subagent files and background/automation/worktree surfaces where available. The owner
-must be able to keep talking to the foreground orchestrator while these lanes run.
+**Use weave when running from Codex.** Codex dispatchers stay on the supported Codex model; they are
+not the heavy workers. The orchestrator registers with `weave attach --name envctl-plan-orchestrator`,
+then launches or routes each lane via `weave spawn`, `weave job create`, or `weave ask` to an
+Opus-capable Claude peer. Record weave peer/session/message/job ids in `loop_state.md`. If weave cannot
+produce an Opus worker, **fail closed** with a provider/transport gap. Do not silently downgrade to
+Sonnet, Codex, or a lower-effort model for the actual lane work. The owner must be able to keep talking
+to the foreground orchestrator while these lanes run.
 
 ## Self-pacing (how the loop re-fires)
 - Default: **dynamic `/loop` / runtime scheduler** — re-enter this skill for the next iteration by using the active runtime's supported loop/scheduling surface (for Claude Code, `/loop`/`CronCreate`; do not name or call an unavailable tool). Pass the same `/plan-loop …` prompt verbatim. A planning cycle is deliberative (more reasoning,
