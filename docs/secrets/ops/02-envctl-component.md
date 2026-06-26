@@ -58,7 +58,7 @@ the in-workspace sources and wires `secretd` as a systemd *user* service.** Rati
   is how `ai-clis.toml` / `dev-tools.toml` style components already operate (cargo/`~/.cargo/bin`),
   and it keeps the no-C CI gate (§6) authoritative on the exact bytes that ship.
 - **systemd *user* service, not system.** The TCB is the owner's address space; the vault,
-  the UDS control socket (`$XDG_RUNTIME_DIR/env-ctl/control.sock`), and the USB keyfile are
+  the UDS control socket (`$XDG_RUNTIME_DIR/env-ctl/secretd.sock`), and the USB keyfile are
   all per-user. A system service would run as root and break the `SO_PEERCRED uid == owner`
   authz model (ARCHITECTURE.md §"Control" plane). `systemd_user` is a first-class Wiring
   field. `VERIFIED` (`model.rs:292`, `SystemdUnit{name,content,enable}` at `model.rs:379-384`).
@@ -132,12 +132,20 @@ rustix = { version = "0.38", features = ["process", "net"] }
 
 ## 3. The component manifest (`manifest/env-ctl.toml`)
 
+
+> **Current source truth (2026-06-26):** the excerpt below is historical design context. The live
+> manifest installs `secretd` and `secretctl` to
+> `$META_ROOT/.toolchains/secrets/bin/` and exposes them via `~/.local/bin` symlinks, not
+> `~/.cargo/bin`. The meta-owned install/fix path archives only proven duplicate legacy
+> `~/.cargo/bin/{secretd,secretctl}` copies; foreign/different binaries are left in place and
+> surfaced by verify.
+
 Field names, hook `kind`s, and guard `kind`s below are exact against
-`~/Desktop/envctl/crates/engine/src/component.rs` and `model.rs`. Paths are the verified
+`$META_ROOT/envctl/crates/engine/src/component.rs` and `model.rs`. Paths are the verified
 XDG layout from ARCHITECTURE.md §"Layout" (lines 124-127):
 `~/.config/env-ctl` (config), `~/.local/share/env-ctl` (0700; `vault.db` 0600, `ca/`),
 `~/.local/state/env-ctl` (0700; `secretd.log`, audit mirror),
-`$XDG_RUNTIME_DIR/env-ctl` (0700; `control.sock` 0600, relay-proxy bind config). `VERIFIED`.
+`$XDG_RUNTIME_DIR/env-ctl` (0700; `secretd.sock` 0600, relay-proxy bind config). `VERIFIED`.
 
 ```toml
 # manifest/env-ctl.toml — env-ctl secrets vault + credential broker (Profile A: on-box, USB unlock)
@@ -229,7 +237,7 @@ path_entries = ["~/.cargo/bin"]
 file = "~/.bashrc"
 marker = "env-ctl"     # engine writes "BEGIN env-ctl (added by envctl)" / "END env-ctl" guard lines
 content = '''
-export SECRETCTL_SOCK="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/env-ctl/control.sock"
+export SECRETCTL_SOCK="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/env-ctl/secretd.sock"
 '''
 
 [[component.wiring.systemd_user]]
