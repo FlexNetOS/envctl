@@ -85,9 +85,13 @@ model slugs directly, so Codex must **not** try to run `model = "claude-opus-4-8
 2. For each lane, `weave spawn <lane-peer> --cmd claude --cmd --model --cmd claude-opus-4-8 --cmd -p
    --cmd <lane prompt>` when a Claude CLI surface is available, or create a fenced `weave job`/`weave
    ask` routed to an already registered Opus-capable peer.
-3. Record the weave peer/session id plus message/job id in `.handoff/loop/plan/loop_state.md` and the
+3. Prefer the packaged helper `scripts/plan-weave-dispatch.sh` (root copy) or
+   `.agents/skills/planning-engineer/scripts/plan-weave-dispatch.sh` (ejected copy) so dispatch is
+   repeatable and test-gated. It writes `.handoff/loop/plan/weave-dispatch/<run-id>.jsonl` with one
+   row per lane.
+4. Record the weave peer/session id plus message/job id in `.handoff/loop/plan/loop_state.md` and the
    lane artifact.
-4. If weave cannot produce or reach an Opus-capable worker, fail closed with a provider/transport gap;
+5. If weave cannot produce or reach an Opus-capable worker, fail closed with a provider/transport gap;
    do not silently perform the heavy lane in Codex or any weaker model.
 
 Data transfer is **file-based** (pass artifact PATHS, never contents) + **return-value** (each worker
