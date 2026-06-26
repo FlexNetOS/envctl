@@ -4,7 +4,7 @@
 # and META_ROOT exported by the runner. Host-user/global installs are not a target.
 # The only sanctioned real-home bridge is one archive-first link:
 #   $ENVCTL_REAL_HOME/.local -> $META_ROOT/.local
-# Per-tool symlink farms in real ~/.local/bin, real ~/.cargo/bin, and /usr/local/bin
+# Per-tool real-home local-bin/cargo-bin and system-bin link farms
 # are retired/no-op compatibility component ids so older groups do not recreate them.
 
 [[component]]
@@ -201,7 +201,7 @@ M="${META_ROOT:?META_ROOT required}"
 [[component]]
 id = "meta-tool-links"
 name = "retired per-tool meta binary links"
-description = "Compatibility id only. The old per-tool real-home bin/cargo symlink farm is retired; binaries must be installed directly in META_ROOT-owned prefixes."
+description = "Compatibility id only. The old per-tool real-home bin/cargo link farm is retired; binaries must be installed directly in META_ROOT-owned prefixes."
 requires = ["home-local-single-link"]
 [component.detect]
 kind = "command"

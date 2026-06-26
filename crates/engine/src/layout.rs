@@ -183,7 +183,7 @@ impl MetaLayout {
                 key: "bin",
                 path: self.bin(),
                 kind: LayoutKind::Canonical,
-                purpose: "executable symlink farm exposed on PATH",
+                purpose: "executable frontdoor tree exposed on PATH",
             },
             LayoutEntry {
                 key: "lib",

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Install envctl-gui as a desktop application (binary + launcher + icon).
 # Idempotent: safe to re-run. Meta-scoped (no sudo) by default: artifacts land
-# under $META_ROOT/.local rather than the host user's ~/.local tree.
+# under $META_ROOT/.local rather than the host user's local tree.
 #
 #   bash packaging/install-desktop.sh           # build (release) + install for current user
 #   bash packaging/install-desktop.sh --no-build # install an already-built binary
