@@ -16,7 +16,7 @@ description: >-
 Produce a test strategy for a planning target that is **implementable, not aspirational**: every
 "untested" finding cites the symbol that lacks a test caller, every proposed test is a concrete case,
 and the output ends in a spec Feature Forge can build verbatim. The harness is **read-only** — this
-method *designs* the suite; it never writes or runs test code (that is Feature Forge's job, reached by
+method *designs* the suite; it writes and RED-runs additive test code; Feature Forge implements the production change and turns the suite GREEN, reached by
 the handoff at the end).
 
 > The exact CLAIM/UPGRADE row formats and the `## FF test-build spec` shape live in
@@ -70,7 +70,24 @@ End `findings/test-strategy-<T>.md` with a `## FF test-build spec` block (the ha
 (files/modules), one bullet per concrete case (symbol/flow + assertion + test type), golden fixtures to
 capture, the coverage target, and which CI gate(s) the new tests touch. Shape it to Feature Forge's
 `feature-architect` `## Verification plan` intake so the architect can promote it directly. **This is
-the creation+implementation path: you specify; Feature Forge writes + runs.**
+the creation+implementation path: you write + RED-run the additive tests; Feature Forge writes production code + GREEN-runs.**
+
+
+## RED authoring and count verification (prompt P8)
+
+For every accepted plan item or UPGRADE row, create at least one additive test that encodes its
+acceptance criterion. Use the repo's real test surfaces (`tests/`, `#[cfg(test)]`, integration tests,
+`scripts/differential-drive.cases.sh`, golden fixtures) and never modify production code. Run the
+narrow command and record:
+
+- command,
+- expected RED failure reason,
+- tests-ran count (`> 0` required),
+- traceability: plan item ↔ acceptance criterion ↔ test path/name ↔ RED|GREEN.
+
+A pre-implementation PASS is a bad test and must be rewritten. An exit-0 with zero tests is FAIL.
+If the environment cannot run the test, record the owner wall and the exact command; do not mark the
+item verifiable.
 
 ## Discipline
 - **Coverage = reachability** (call graph), never file presence.

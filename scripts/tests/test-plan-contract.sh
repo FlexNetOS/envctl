@@ -22,8 +22,43 @@ CONTRACT="$root/$REL"
 # Fallback for envctl standalone CI (no meta-worktree root; only the ejected .claude copy is present):
 [ -f "$CONTRACT" ] || CONTRACT="$(git -C "$here" rev-parse --show-toplevel 2>/dev/null)/harness/skills/planning-engineer/references/state-contract.md"
 [ -f "$CONTRACT" ] || CONTRACT="$(git -C "$here" rev-parse --show-toplevel 2>/dev/null)/.claude/skills/planning-engineer/references/state-contract.md"
-[ -f "$CONTRACT" ] || CONTRACT="$(git -C "$here" rev-parse --show-toplevel 2>/dev/null)/.agents/skills/planning-engineer/references/state-contract.md"
 [ -f "$CONTRACT" ] || { echo "FAIL: planning-engineer state-contract.md not found from $here" >&2; exit 1; }
+repo_root="$(git -C "$here" rev-parse --show-toplevel 2>/dev/null)"
+
+# Codex prompt front doors: the recovered planning-engineer harness must be reachable from Codex,
+# not only as Claude/.agents skills. The compatibility alias covers the historically-mistyped
+# `/plan-engineering-loop` request and routes it to `/plan-loop`.
+for prompt in planning-engineer plan-loop plan-engineering-loop; do
+  [ -f "$repo_root/.codex/prompts/$prompt.md" ] || fail "missing Codex prompt front door: $prompt"
+done
+grep -q '.agents/skills/planning-engineer/SKILL.md' "$repo_root/.codex/prompts/planning-engineer.md" \
+  || fail "planning-engineer prompt does not point at the authoritative .agents skill"
+grep -q '.agents/skills/plan-loop/SKILL.md' "$repo_root/.codex/prompts/plan-loop.md" \
+  || fail "plan-loop prompt does not point at the authoritative .agents skill"
+grep -q '.codex/prompts/plan-loop.md' "$repo_root/.codex/prompts/plan-engineering-loop.md" \
+  || fail "plan-engineering-loop alias does not route to plan-loop"
+for agent in \
+  plan-analyst \
+  plan-architect \
+  plan-cartographer \
+  plan-governance-config-auditor \
+  plan-test-strategist \
+  plan-trend-researcher \
+  plan-verifier; do
+  [ -f "$repo_root/.codex/agents/$agent.toml" ] || fail "missing Codex planning subagent: $agent"
+done
+python3 - "$repo_root" <<'PY'
+from pathlib import Path
+import sys
+import tomllib
+
+root = Path(sys.argv[1])
+for path in sorted((root / ".codex/agents").glob("plan-*.toml")):
+    data = tomllib.loads(path.read_text())
+    for key in ("name", "description", "developer_instructions"):
+        if key not in data or not str(data[key]).strip():
+            raise SystemExit(f"FAIL: {path} missing non-empty {key}")
+PY
 
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT

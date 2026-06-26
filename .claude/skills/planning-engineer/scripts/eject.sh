@@ -15,8 +15,8 @@ TARGET="$(cd "$TARGET" && pwd)"
 PLUGIN="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"  # harness/
 
 # OWN: the harness's own skills + its specific reuse (code-research-verify) → always refresh.
-OWN_SKILLS=(planning-engineer plan-loop plan-cartography plan-trend-research plan-test-strategy plan-synthesis code-research-verify)
-OWN_AGENTS=(plan-cartographer plan-trend-researcher plan-analyst plan-test-strategist plan-verifier plan-architect)
+OWN_SKILLS=(planning-engineer plan-loop plan-cartography plan-trend-research plan-governance-config plan-test-strategy plan-synthesis code-research-verify)
+OWN_AGENTS=(plan-cartographer plan-trend-researcher plan-governance-config-auditor plan-analyst plan-test-strategist plan-verifier plan-architect)
 # SHARED: copy only if the target lacks them (don't downgrade a hand-authored canonical version).
 SHARED_SKILLS=(session-relay-wrap-up session-relay-resume harness-loop-init harness-evolution icm-memory)
 SHARED_AGENTS=(continuity-steward evolution-steward)
@@ -64,7 +64,7 @@ cat <<'SNIP'
 # CLAUDE.md pointer:
 ## Harness: Planning Engineer
 **Goal:** continuous, evidence-backed planning/architecture — code graph + 90-day research ->
-adversarially-verified gaps -> a plan with ASCII diagrams, quality/speed/accuracy upgrades, tool-eval.
+adversarially-verified gaps -> a plan with ASCII diagrams, quality/speed/accuracy/governance+settings+config upgrades, tool-eval.
 **Trigger:** for "plan <subsystem> / architecture plan / deep planning / loop on the architecture /
 resume the planning loop", use the `plan-loop` (continuous) / `planning-engineer` (single-cycle) skill.
 Read-only on production code; writes plans/graph under .handoff/loop/plan/ + docs.

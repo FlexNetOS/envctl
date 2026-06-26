@@ -2,7 +2,7 @@
 name: plan-synthesis
 description: >-
   Turn verified findings into a decision-grade PLAN — verdict-first, ASCII architecture diagrams, a
-  sequenced quality/speed/accuracy upgrade roadmap, a tool-evaluation, named gaps, and a stated
+  sequenced quality/speed/accuracy/governance+settings+config upgrade roadmap, a tool-evaluation, named gaps, and a stated
   confidence — then promote it (ROADMAP row + draft ADR). ALWAYS use to "write the plan", "synthesize
   the findings", "draw the architecture", "what should we upgrade", "tool evaluation", "promote to the
   roadmap", "draft an ADR", AND follow-ups — "revise the plan", "redo the synthesis", "re-render the
@@ -44,13 +44,14 @@ Write the plan in this order — **verdict first**, evidence after:
    feasible items.
 4. **Tool-evaluation** — the tool/CLI/MCP/crate inventory with currency/advisories → upgrade/hold/pin
    (recipe below).
-5. **Test Strategy & Coverage** — current coverage (by call-graph reachability), the ranked coverage
+5. **Governance, settings & config** — control-plane findings (rules/instructions/hooks/policy/CLAUDE.md/AGENTS.md), settings hygiene (MCP rot / skill overload / token burn / permission drift), config drift, and APPLY/PROPOSE/REGENERATE routing.
+6. **Test Strategy & Coverage** — current coverage (by call-graph reachability), the ranked coverage
    gaps (untested public-API / hotspots / data-flows / error-paths, each citing the symbol), and the
    designed suite (cases, types, golden fixtures) that closes them and covers the roadmap's upgrades —
    from `findings/test-strategy-<T>.md`. Ends by promoting the **FF test-build spec** (recipe below).
-6. **Gaps** — what is unverified, infeasible-here, or needs a harness (e.g. a perf claim that couldn't
+7. **Gaps** — what is unverified, infeasible-here, or needs a harness (e.g. a perf claim that couldn't
    be benchmarked → "needs a perf harness"); plus notable REFUTED overclaims. Honesty over completeness.
-7. **Confidence** — restate the overall confidence and what would raise it.
+8. **Confidence** — restate the overall confidence and what would raise it.
 
 ## ASCII diagram conventions (R4)
 
@@ -67,8 +68,7 @@ From envctl `docs/runbook/DIAGRAMS.md` (full legend + worked example in `referen
 ## Gap → upgrade rubric (the roadmap ordering)
 
 For each surviving upgrade (CONFIRMED/QUALIFIED + feasibility-passed in `verdicts.md`):
-1. **Tag the axis** — exactly one of `quality` (correctness/maintainability/safety),
-   `speed` (latency/throughput/build-time), or `accuracy` (result correctness/precision). Carry the
+1. **Tag the axis** — exactly one of `quality` (correctness/maintainability/safety), `speed` (latency/throughput/build-time), `accuracy` (result correctness/precision), or `governance+settings+config` (control-plane/settings/config coherence). Carry the
    axis from the analyst's UPGRADE row.
 2. **Order by value/risk using the graph** — rank by **graph centrality** of the touched symbols
    (`metrics.hotspots`) and **blast-radius** (`metrics.blast_radius`): high-centrality + bounded-blast,
@@ -95,10 +95,12 @@ blast-scope, risk, and the verdict ref that cleared it.
 
 ## Test Strategy & the Feature-Forge handoff (the testing component)
 
+The `plan-governance-config-auditor` produces `findings/governance-config-<T>.md`; lift its verified detector table and APPLY/PROPOSE/REGENERATE routing into the plan and tool-eval.
+
 The `plan-test-strategist` produces `findings/test-strategy-<T>.md` — current coverage (by call-graph
 reachability), the ranked coverage gaps, the designed suite, and a `## FF test-build spec`. Lift its
 **verified** rows into the plan's *Test Strategy & Coverage* section, then **promote the suite to
-Feature Forge** — the planning loop *designs* tests; it never writes or runs them (read-only). The handoff:
+Feature Forge** — the planning loop authors and RED-runs additive tests; Feature Forge writes the production code and turns them GREEN. The handoff:
 - Append a **test-build ROADMAP row** (format in `references/diagram-and-adr.md`) shaped to Feature
   Forge's `feature-architect` `## Verification plan` intake: the test surface, the concrete cases
   (symbol/flow + assertion + type), the golden fixtures to capture, the coverage target, and the CI
@@ -106,7 +108,7 @@ Feature Forge** — the planning loop *designs* tests; it never writes or runs t
 - **Only verified, feasible items** enter the section/handoff — a "this is untested" claim the verifier
   REFUTED (it *is* tested), and any infeasible test design, are dropped, never handed to FF.
 - This is the "creation + implementation" path: the plan specifies the suite precisely; **Feature Forge
-  generates and runs it.** Do not write test code here.
+  generates and runs it.** Do not write production code here; test code must remain additive and RED before implementation.
 
 ## Promotion (durable record)
 

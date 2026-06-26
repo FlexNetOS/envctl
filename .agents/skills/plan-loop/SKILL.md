@@ -127,7 +127,7 @@ NEEDS-HUMAN → reset `cycles_this_session`), then run the iteration body normal
 ## Test Scenarios
 **Happy path:** `/plan-loop budget=3` on envctl with no `targets.md`. Cycle 1's cartographer
 auto-derives `targets.md` from the 8 workspace crates, then plans `engine`; cycles 2–3 plan `cli` and
-`secrets-engine`. Each writes `reports/<T>-plan.md` (diagrams + quality/speed/accuracy roadmap +
+`secrets-engine`. Each writes `reports/<T>-plan.md` (diagrams + quality/speed/accuracy/governance+settings+config roadmap +
 tool-eval) + a `docs/ROADMAP.md` row, ticks the target `- [x]`, increments the ledger. After cycle 3
 the budget trips → `session-relay-wrap-up` writes HANDOFF, the successor resumes at `secretd`.
 
