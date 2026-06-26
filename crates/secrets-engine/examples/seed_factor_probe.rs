@@ -10,7 +10,7 @@
 //!   cargo run -p envctl-secrets-engine --example seed_factor_probe --features seed-factor
 //! ```
 //! Overrides: `ENVCTL_SEED_API` (default `https://169.254.42.1:8443`), `ENVCTL_SEED_CA`
-//! (default `/usr/local/share/ca-certificates/cognitum-ca.crt`), `ENVCTL_SEED_TOKEN[_FILE]`,
+//! (default `$META_ROOT/.toolchains/secrets/ca/cognitum-ca.crt`), `ENVCTL_SEED_TOKEN[_FILE]`,
 //! `ENVCTL_SEED_KEK_CONTEXT`.
 
 #[cfg(feature = "seed-factor")]

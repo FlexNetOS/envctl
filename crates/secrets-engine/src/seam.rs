@@ -204,12 +204,18 @@ pub(crate) mod seed_factor {
         std::env::var("ENVCTL_SEED_API").unwrap_or_else(|_| "https://169.254.42.1:8443".to_string())
     }
 
-    /// Pinned Cognitum CA (PEM). The CA is name-constrained to `169.254.x.x` + `.local` and is
-    /// installed system-wide; we pin THIS root explicitly (FS-S7 frozen-roots) rather than trusting
-    /// the OS store. Readable under `ProtectSystem=strict` (it lives under `/usr`).
+    /// Pinned Cognitum CA (PEM). The CA is name-constrained to `169.254.x.x` + `.local`; we
+    /// pin THIS root explicitly (FS-S7 frozen-roots) rather than trusting the OS store. The
+    /// envctl unit sets `ENVCTL_SEED_CA`; the fallback is the meta-owned prefix so direct
+    /// probes and tests do not silently fall back to the legacy `/usr/local` path.
     fn ca_path() -> String {
-        std::env::var("ENVCTL_SEED_CA")
-            .unwrap_or_else(|_| "/usr/local/share/ca-certificates/cognitum-ca.crt".to_string())
+        std::env::var("ENVCTL_SEED_CA").unwrap_or_else(|_| {
+            let meta = std::env::var("META_ROOT").unwrap_or_else(|_| {
+                let home = std::env::var("HOME").unwrap_or_else(|_| String::from("/home/drdave"));
+                format!("{home}/Desktop/meta")
+            });
+            format!("{meta}/.toolchains/secrets/ca/cognitum-ca.crt")
+        })
     }
 
     /// Stable pairing-client name for the daemon. Re-pairing under the same name replaces the
@@ -514,7 +520,9 @@ pub(crate) mod seed_factor {
 
     #[cfg(test)]
     mod tests {
-        use super::{extract_field, host_port, parse_pubkey_hex, parse_sig_hex, parse_status};
+        use super::{
+            ca_path, extract_field, host_port, parse_pubkey_hex, parse_sig_hex, parse_status,
+        };
 
         #[test]
         fn parse_sig_hex_roundtrips_64_bytes() {
@@ -534,6 +542,47 @@ pub(crate) mod seed_factor {
                 parse_sig_hex(&"00".repeat(63)).is_none(),
                 "126 hex = wrong length"
             );
+        }
+
+        #[test]
+        fn ca_path_defaults_to_meta_toolchains() {
+            static ENV_LOCK: std::sync::OnceLock<std::sync::Mutex<()>> = std::sync::OnceLock::new();
+            let _guard = ENV_LOCK
+                .get_or_init(|| std::sync::Mutex::new(()))
+                .lock()
+                .unwrap();
+            let old_seed_ca = std::env::var("ENVCTL_SEED_CA").ok();
+            let old_meta = std::env::var("META_ROOT").ok();
+            std::env::remove_var("ENVCTL_SEED_CA");
+            std::env::set_var("META_ROOT", "/tmp/meta-envctl-test");
+            assert_eq!(
+                ca_path(),
+                "/tmp/meta-envctl-test/.toolchains/secrets/ca/cognitum-ca.crt"
+            );
+            match old_seed_ca {
+                Some(v) => std::env::set_var("ENVCTL_SEED_CA", v),
+                None => std::env::remove_var("ENVCTL_SEED_CA"),
+            }
+            match old_meta {
+                Some(v) => std::env::set_var("META_ROOT", v),
+                None => std::env::remove_var("META_ROOT"),
+            }
+        }
+
+        #[test]
+        fn ca_path_honors_explicit_override() {
+            static ENV_LOCK: std::sync::OnceLock<std::sync::Mutex<()>> = std::sync::OnceLock::new();
+            let _guard = ENV_LOCK
+                .get_or_init(|| std::sync::Mutex::new(()))
+                .lock()
+                .unwrap();
+            let old = std::env::var("ENVCTL_SEED_CA").ok();
+            std::env::set_var("ENVCTL_SEED_CA", "/tmp/custom-ca.pem");
+            assert_eq!(ca_path(), "/tmp/custom-ca.pem");
+            match old {
+                Some(v) => std::env::set_var("ENVCTL_SEED_CA", v),
+                None => std::env::remove_var("ENVCTL_SEED_CA"),
+            }
         }
 
         #[test]

@@ -74,6 +74,32 @@ install -d -m755 "$HOME/.local/bin"
 ln -sfn "$DEST/secretd"   "$HOME/.local/bin/secretd"
 ln -sfn "$DEST/secretctl" "$HOME/.local/bin/secretctl"
 
+cleanup_legacy_cargo_bin() {
+  b="$1"
+  legacy="$HOME/.cargo/bin/$b"
+  owned="$DEST/$b"
+  [ -e "$legacy" ] || return 0
+  # If an old symlink already points at the new meta-prefix binary, remove the duplicate link.
+  if [ -L "$legacy" ] && [ "$(readlink -f "$legacy" 2>/dev/null)" = "$(readlink -f "$owned" 2>/dev/null)" ]; then
+    rm -f "$legacy"
+    echo "removed legacy cargo-bin symlink: $legacy"
+    return 0
+  fi
+  # If the old regular file is byte-identical to the just-installed meta binary, archive it.
+  # Different/foreign binaries are left in place and surfaced by verify; strict upgrade-only means
+  # never deleting an unproven executable.
+  if [ -f "$legacy" ] && [ -f "$owned" ] && cmp -s "$legacy" "$owned"; then
+    arch="$HOME/.local/state/envctl/legacy-archives/$(date -u +%Y%m%dT%H%M%SZ)/.cargo/bin"
+    install -d -m700 "$arch"
+    mv "$legacy" "$arch/$b"
+    echo "archived legacy cargo-bin copy: $legacy -> $arch/$b"
+  elif [ -e "$legacy" ]; then
+    echo "WARNING: legacy cargo-bin $legacy differs from $owned; left in place (strict upgrade-only)"
+  fi
+}
+cleanup_legacy_cargo_bin secretd
+cleanup_legacy_cargo_bin secretctl
+
 # XDG dirs, fail-closed perms (ARCHITECTURE layout). RUNTIME dir is created by the unit at start.
 install -d -m700 "$HOME/.config/env-ctl"
 install -d -m700 "$HOME/.local/share/env-ctl"
@@ -123,6 +149,18 @@ args = ["-lc", '''
 export PATH="$HOME/.local/bin:$PATH"
 # Hard predicate (fail-closed): bins answer + the daemon's offline self-check passes.
 secretctl --help >/dev/null && secretd --self-check >/dev/null || exit 1
+# Legacy cargo-bin copies must not shadow the meta-prefix install. They are cleaned by install/fix
+# when byte-identical or symlinked to the meta prefix; different foreign binaries are surfaced here
+# rather than removed destructively.
+M="${META_ROOT:-$HOME/Desktop/meta}"
+for b in secretd secretctl; do
+  legacy="$HOME/.cargo/bin/$b"
+  owned="$M/.toolchains/secrets/bin/$b"
+  if [ -e "$legacy" ] && [ "$(readlink -f "$legacy" 2>/dev/null)" != "$(readlink -f "$owned" 2>/dev/null)" ]; then
+    echo "legacy cargo-bin $b shadows meta-prefix install: $legacy"
+    exit 1
+  fi
+done
 # TASK-0033 (F7 / FS-S21): a VPS Profile B config MUST carry operator_authorizer_url. verify fails
 # closed on the same downgrade the install gate refuses (so drift introduced after install is caught).
 cfg="$HOME/.config/env-ctl/secretd.toml"
@@ -169,6 +207,32 @@ install -Dm755 "$repo/target/release/secretctl" "$DEST/secretctl"
 install -d -m755 "$HOME/.local/bin"
 ln -sfn "$DEST/secretd"   "$HOME/.local/bin/secretd"
 ln -sfn "$DEST/secretctl" "$HOME/.local/bin/secretctl"
+
+cleanup_legacy_cargo_bin() {
+  b="$1"
+  legacy="$HOME/.cargo/bin/$b"
+  owned="$DEST/$b"
+  [ -e "$legacy" ] || return 0
+  # If an old symlink already points at the new meta-prefix binary, remove the duplicate link.
+  if [ -L "$legacy" ] && [ "$(readlink -f "$legacy" 2>/dev/null)" = "$(readlink -f "$owned" 2>/dev/null)" ]; then
+    rm -f "$legacy"
+    echo "removed legacy cargo-bin symlink: $legacy"
+    return 0
+  fi
+  # If the old regular file is byte-identical to the just-installed meta binary, archive it.
+  # Different/foreign binaries are left in place and surfaced by verify; strict upgrade-only means
+  # never deleting an unproven executable.
+  if [ -f "$legacy" ] && [ -f "$owned" ] && cmp -s "$legacy" "$owned"; then
+    arch="$HOME/.local/state/envctl/legacy-archives/$(date -u +%Y%m%dT%H%M%SZ)/.cargo/bin"
+    install -d -m700 "$arch"
+    mv "$legacy" "$arch/$b"
+    echo "archived legacy cargo-bin copy: $legacy -> $arch/$b"
+  elif [ -e "$legacy" ]; then
+    echo "WARNING: legacy cargo-bin $legacy differs from $owned; left in place (strict upgrade-only)"
+  fi
+}
+cleanup_legacy_cargo_bin secretd
+cleanup_legacy_cargo_bin secretctl
 
 # Re-assert the durable store config idempotently (write only if absent; operator edits preserved).
 install -d -m700 "$HOME/.config/env-ctl"
