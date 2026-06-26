@@ -77,7 +77,7 @@ A rung that needs privilege/reboot/hardware → write `NEEDS-HUMAN` and stop (do
 
 ## DONE — the runner exits 0 only when the spawned agent proves ALL:
 `envctl doctor` green · `auto-detect` all detected+healthy, zero drift · `lock --check` +
-`kasetto sync --locked` clean · `cargo build -p envctl-engine -p envctl` + `no-c`/`shape`/`enable`
+`envctl agent lock --config agent-env.yaml --check --locked` clean · `cargo build -p envctl-engine -p envctl` + `no-c`/`shape`/`enable`
 gates pass. The agent writes `.handoff/loop/DONE` with this evidence.
 
 ## Safety (this modifies a live workstation — non-negotiable)
@@ -94,7 +94,7 @@ gates pass. The agent writes `.handoff/loop/DONE` with this evidence.
 **Happy path:** `RALPH_APPLY=1 bash …/ralph-provision.sh` in a clean worktree. Iter 1: fresh agent
 DISCOVERs gaps, installs 3 components, writes `HANDOFF.md`, exits. Iter 2: fresh agent resumes from
 the committed checkpoint, resets+reinstalls one wedged component, installs the rest, re-runs doctor
-→ green, lock+kasetto+gates clean → writes `.handoff/loop/DONE`. Runner exits 0.
+→ green, lock+agent-env+gates clean → writes `.handoff/loop/DONE`. Runner exits 0.
 
 **Error path:** A component needs a reboot after a kernel-module install. The spawned agent runs the
 dry-run, can't complete unattended, writes `.handoff/loop/NEEDS-HUMAN: reboot required after nvidia-open`
