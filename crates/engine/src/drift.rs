@@ -113,7 +113,7 @@ pub fn compute(report: &EnvReport, reg: &Registry) -> Vec<DriftItem> {
             component: "meta-tool-links".into(),
             kind: DriftKind::BoundaryViolation,
             severity: Severity::High,
-            suggested_verb: "envctl install meta-tool-links --apply".into(),
+            suggested_verb: "envctl install meta-tool-links".into(),
             detail: format!(
                 "{} resolves to {} outside META_ROOT {}",
                 v.tool, v.resolved_path, v.expected_root
@@ -284,5 +284,6 @@ mod tests {
         assert_eq!(drift[0].kind, DriftKind::BoundaryViolation);
         assert_eq!(drift[0].severity, Severity::High);
         assert_eq!(drift[0].component, "meta-tool-links");
+        assert_eq!(drift[0].suggested_verb, "envctl install meta-tool-links");
     }
 }
