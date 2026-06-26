@@ -23,7 +23,7 @@ Cargo.lock.bak
 #   NOTE: `git-kb init`'s tool default ignores `.kb/store/` wholesale — that is
 #   WRONG here: it makes the KB non-durable (nothing committed/pushed; the docs
 #   are lost on a fresh clone). See META-ORG-POLICY (.kb store-durability rule).
-# .kb/.cache/
+.kb/.cache/
 .kb/workspace/
 .kb/workspaces/
 .kb/store/stashes/
