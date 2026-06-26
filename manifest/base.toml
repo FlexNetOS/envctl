@@ -13,7 +13,7 @@ args = ["-lc", "fc-list 2>/dev/null | grep -qiE 'JetBrainsMono Nerd|FiraCode Ner
 kind = "script"
 script = '''
 set -e
-FD="$HOME/.local/share/fonts"; mkdir -p "$FD"; cd "$(mktemp -d)"
+FD="$META_ROOT/.local/share/fonts"; mkdir -p "$FD"; cd "$(mktemp -d)"
 base="https://github.com/ryanoasis/nerd-fonts/releases/latest/download"
 for f in JetBrainsMono FiraCode; do
   curl -fsSL -o "$f.zip" "$base/$f.zip"
@@ -28,7 +28,7 @@ args = ["-lc", "fc-list | grep -qiE 'JetBrainsMono Nerd Font|FiraCode Nerd Font'
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "rm -rf \"$HOME/.local/share/fonts/JetBrainsMono-NerdFont\" \"$HOME/.local/share/fonts/FiraCode-NerdFont\"; fc-cache -f >/dev/null"]
+args = ["-lc", "rm -rf \"$META_ROOT/.local/share/fonts/JetBrainsMono-NerdFont\" \"$META_ROOT/.local/share/fonts/FiraCode-NerdFont\"; fc-cache -f >/dev/null"]
 
 
 [[component]]
@@ -38,18 +38,18 @@ description = "JS runtime + package manager; provides node via a bun symlink."
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/.bun/bin/bun\" ] && [ \"$(readlink -f \"$HOME/.local/bin/bun\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/.bun/bin/bun\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/.bun/bin/bun\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/bun\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/.bun/bin/bun\")\" ]"]
 [component.install]
 kind = "script"
 script = '''
 set -e
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 export BUN_INSTALL="$M/.toolchains/.bun"
-mkdir -p "$BUN_INSTALL" "$HOME/.local/bin"
+mkdir -p "$BUN_INSTALL" "$META_ROOT/.local/bin"
 curl -fsSL https://bun.sh/install | bash
-dst="$HOME/.local/bin/bun"
+dst="$META_ROOT/.local/bin/bun"
 src="$BUN_INSTALL/bin/bun"
-ARCH="$HOME/Desktop/_archives/home-links-$(date +%Y-%m-%d)"
+ARCH="$META_ROOT/.local/state/envctl/legacy-archives/home-links-$(date +%Y-%m-%d)"
 if [ -e "$dst" ] && [ ! -L "$dst" ]; then mkdir -p "$ARCH/.local/bin"; mv "$dst" "$ARCH/.local/bin/bun"; echo "archived copy: bun"; fi
 [ -L "$dst" ] && rm "$dst"
 ln -s "$src" "$dst"
@@ -57,25 +57,25 @@ ln -s "$src" "$dst"
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; bun --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; bun --version"]
 [component.fix]
 kind = "script"
 script = '''
 set -e
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 export BUN_INSTALL="$M/.toolchains/.bun"
-mkdir -p "$BUN_INSTALL" "$HOME/.local/bin"
+mkdir -p "$BUN_INSTALL" "$META_ROOT/.local/bin"
 curl -fsSL https://bun.sh/install | bash
-ln -sfn "$BUN_INSTALL/bin/bun" "$HOME/.local/bin/bun"
+ln -sfn "$BUN_INSTALL/bin/bun" "$META_ROOT/.local/bin/bun"
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; rm -rf \"$M/.toolchains/.bun\"; [ -L \"$HOME/.local/bin/bun\" ] && rm \"$HOME/.local/bin/bun\" || true"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; rm -rf \"$M/.toolchains/.bun\"; [ -L \"$META_ROOT/.local/bin/bun\" ] && rm \"$META_ROOT/.local/bin/bun\" || true"]
 [component.wiring]
-path_entries = ["~/Desktop/meta/.toolchains/.bun/bin", "~/.local/bin"]
+path_entries = ["$META_ROOT/.toolchains/.bun/bin", "$META_ROOT/.local/bin"]
 [[component.wiring.shell_rc]]
-file = "~/.bashrc"
+file = "$META_ROOT/.bashrc"
 marker = "meta toolchain path"
 content = 'eval "$(envctl env --toolchains)"'
 
@@ -90,42 +90,42 @@ kind = "command"
 command = "bash"
 # Truthful: node-compat is satisfied if EITHER ~/.bun/bin/node points at bun
 # (the bun node shim) OR a real `node` resolves on PATH. On an n8n box the real
-# node (~/.local/bin/node) precedes the inert bun symlink — that still counts.
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; { [ -x \"$M/.toolchains/.bun/bin/node\" ] && readlink -f \"$M/.toolchains/.bun/bin/node\" 2>/dev/null | grep -q bun; } || command -v node >/dev/null"]
+# node ($META_ROOT/.local/bin/node) precedes the inert bun symlink — that still counts.
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; { [ -x \"$M/.toolchains/.bun/bin/node\" ] && readlink -f \"$M/.toolchains/.bun/bin/node\" 2>/dev/null | grep -q bun; } || command -v node >/dev/null"]
 [component.install]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; ln -sf \"$M/.toolchains/.bun/bin/bun\" \"$M/.toolchains/.bun/bin/node\""]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; ln -sf \"$M/.toolchains/.bun/bin/bun\" \"$M/.toolchains/.bun/bin/node\""]
 [component.verify]
 kind = "command"
 command = "bash"
 # Bun's node shim runs `node <script>` but NOT `node --version`. A real node also
 # runs `node -e`. So `node -e` is the honest node-compat smoke test for BOTH
 # runtimes. Prefer a real node if one is on PATH; else fall back to the bun shim.
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export PATH=\"$M/.toolchains/.bun/bin:$PATH\"; node -e 'process.exit(0)'"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$M/.toolchains/.bun/bin:$PATH\"; node -e 'process.exit(0)'"]
 [component.fix]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; ln -sf \"$M/.toolchains/.bun/bin/bun\" \"$M/.toolchains/.bun/bin/node\""]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; ln -sf \"$M/.toolchains/.bun/bin/bun\" \"$M/.toolchains/.bun/bin/node\""]
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; rm -f \"$M/.toolchains/.bun/bin/node\""]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; rm -f \"$M/.toolchains/.bun/bin/node\""]
 
 
 [[component]]
 id = "node-real"
 name = "Real Node.js (n8n V8 runtime)"
-description = "Real Node 20-24 for tools that need V8 (n8n's isolated-vm), installed into $META_ROOT/.toolchains/node with ~/.local/bin symlinks. Bun (JSC) cannot satisfy these; this is the narrow non-bun carve-out. Bun remains the default JS runtime."
+description = "Real Node 20-24 for tools that need V8 (n8n's isolated-vm), installed into $META_ROOT/.toolchains/node with $META_ROOT/.local/bin symlinks. Bun (JSC) cannot satisfy these; this is the narrow non-bun carve-out. Bun remains the default JS runtime."
 [component.detect]
 kind = "command"
 command = "bash"
 # A REAL node (not the bun shim) in n8n's supported range 20-24.
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/node/bin/node\" ] && [ \"$(readlink -f \"$HOME/.local/bin/node\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/node/bin/node\")\" ] && ! readlink -f \"$HOME/.local/bin/node\" | grep -q bun && \"$HOME/.local/bin/node\" -e 'const m=+process.versions.node.split(\".\")[0]; process.exit(m>=20 && m<=24 ? 0 : 1)'"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/node/bin/node\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/node\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/node/bin/node\")\" ] && ! readlink -f \"$META_ROOT/.local/bin/node\" | grep -q bun && \"$META_ROOT/.local/bin/node\" -e 'const m=+process.versions.node.split(\".\")[0]; process.exit(m>=20 && m<=24 ? 0 : 1)'"]
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ \"$(readlink -f \"$(command -v node)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/node/bin/node\")\" ] && node -e 'const m=+process.versions.node.split(\".\")[0]; process.exit(m>=20 && m<=24 ? 0 : 1)'"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ \"$(readlink -f \"$(command -v node)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/node/bin/node\")\" ] && node -e 'const m=+process.versions.node.split(\".\")[0]; process.exit(m>=20 && m<=24 ? 0 : 1)'"]
 [component.install]
 kind = "script"
 # Install a real Node 22 LTS into the meta toolchain prefix without touching bun.
@@ -133,15 +133,15 @@ script = '''
 set -e
 VER=v22.22.3
 ARCH="$(uname -m)"; case "$ARCH" in x86_64) A=x64;; aarch64) A=arm64;; *) A="$ARCH";; esac
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/node"
 cd "$(mktemp -d)"
 curl -fsSL -o node.tar.xz "https://nodejs.org/dist/$VER/node-$VER-linux-$A.tar.xz"
 rm -rf "$DEST"
-mkdir -p "$DEST" "$HOME/.local/bin"
+mkdir -p "$DEST" "$META_ROOT/.local/bin"
 tar -xJf node.tar.xz --strip-components=1 -C "$DEST"
 for b in node npm npx corepack; do
-  [ -x "$DEST/bin/$b" ] && ln -sfn "$DEST/bin/$b" "$HOME/.local/bin/$b"
+  [ -x "$DEST/bin/$b" ] && ln -sfn "$DEST/bin/$b" "$META_ROOT/.local/bin/$b"
 done
 '''
 [component.fix]
@@ -150,23 +150,23 @@ script = '''
 set -e
 VER=v22.22.3
 ARCH="$(uname -m)"; case "$ARCH" in x86_64) A=x64;; aarch64) A=arm64;; *) A="$ARCH";; esac
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/node"
 cd "$(mktemp -d)"
 curl -fsSL -o node.tar.xz "https://nodejs.org/dist/$VER/node-$VER-linux-$A.tar.xz"
 rm -rf "$DEST"
-mkdir -p "$DEST" "$HOME/.local/bin"
+mkdir -p "$DEST" "$META_ROOT/.local/bin"
 tar -xJf node.tar.xz --strip-components=1 -C "$DEST"
 for b in node npm npx corepack; do
-  [ -x "$DEST/bin/$b" ] && ln -sfn "$DEST/bin/$b" "$HOME/.local/bin/$b"
+  [ -x "$DEST/bin/$b" ] && ln -sfn "$DEST/bin/$b" "$META_ROOT/.local/bin/$b"
 done
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; for b in node npm npx corepack; do t=\"$HOME/.local/bin/$b\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/node\" && rm -f \"$t\"; done; rm -rf \"$M/.toolchains/node\""]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; for b in node npm npx corepack; do t=\"$META_ROOT/.local/bin/$b\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/node\" && rm -f \"$t\"; done; rm -rf \"$M/.toolchains/node\""]
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 
 
 [[component]]
@@ -176,53 +176,53 @@ description = "Rust toolchain manager (cargo/rustc). Foundation for rtk + cuda-o
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export CARGO_HOME=\"$M/.toolchains/cargo\" RUSTUP_HOME=\"$M/.toolchains/rustup\" PATH=\"$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH\"; rustup --version >/dev/null 2>&1 && cargo --version >/dev/null 2>&1 && rustc --version >/dev/null 2>&1 && rustup default 2>/dev/null | grep -q '^nightly'"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export CARGO_HOME=\"$M/.toolchains/cargo\" RUSTUP_HOME=\"$M/.toolchains/rustup\" PATH=\"$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH\"; rustup --version >/dev/null 2>&1 && cargo --version >/dev/null 2>&1 && rustc --version >/dev/null 2>&1 && rustup default 2>/dev/null | grep -q '^nightly'"]
 [component.install]
 kind = "script"
 script = '''
 set -euo pipefail
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 export CARGO_HOME="$M/.toolchains/cargo"
 export RUSTUP_HOME="$M/.toolchains/rustup"
-mkdir -p "$CARGO_HOME" "$RUSTUP_HOME" "$HOME/.cargo/bin"
+mkdir -p "$CARGO_HOME" "$RUSTUP_HOME" "$META_ROOT/.toolchains/cargo/bin"
 # Owner standing directive: the workstation/meta Rust default is ALWAYS nightly (latest).
 # A repo with its own rust-toolchain.toml (e.g. envctl pinned 1.96.0) still overrides this for
 # its own builds — the global default does not change a repo's pinned channel.
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --default-toolchain nightly
-export PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"
+export PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"
 rustup default nightly
 for tool in cargo cargo-clippy cargo-fmt cargo-miri clippy-driver rls rust-analyzer rust-gdb rust-gdbgui rust-lldb rustc rustdoc rustfmt rustup; do
-  ln -sfn "$CARGO_HOME/bin/rustup" "$HOME/.cargo/bin/$tool"
+  ln -sfn "$CARGO_HOME/bin/rustup" "$META_ROOT/.toolchains/cargo/bin/$tool"
 done
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export CARGO_HOME=\"$M/.toolchains/cargo\" RUSTUP_HOME=\"$M/.toolchains/rustup\" PATH=\"$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH\"; rustup --version && rustc --version && cargo --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export CARGO_HOME=\"$M/.toolchains/cargo\" RUSTUP_HOME=\"$M/.toolchains/rustup\" PATH=\"$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH\"; rustup --version && rustc --version && cargo --version"]
 [component.fix]
 kind = "script"
 script = '''
 set -euo pipefail
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 export CARGO_HOME="$M/.toolchains/cargo"
 export RUSTUP_HOME="$M/.toolchains/rustup"
-mkdir -p "$CARGO_HOME" "$RUSTUP_HOME" "$HOME/.cargo/bin"
+mkdir -p "$CARGO_HOME" "$RUSTUP_HOME" "$META_ROOT/.toolchains/cargo/bin"
 if [ ! -x "$CARGO_HOME/bin/rustup" ]; then
   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --default-toolchain nightly
 fi
-export PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"
+export PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"
 rustup self update
 # Keep the meta default on the LATEST nightly (owner directive: always latest toolchain).
 rustup update nightly
 rustup default nightly
 for tool in cargo cargo-clippy cargo-fmt cargo-miri clippy-driver rls rust-analyzer rust-gdb rust-gdbgui rust-lldb rustc rustdoc rustfmt rustup; do
-  ln -sfn "$CARGO_HOME/bin/rustup" "$HOME/.cargo/bin/$tool"
+  ln -sfn "$CARGO_HOME/bin/rustup" "$META_ROOT/.toolchains/cargo/bin/$tool"
 done
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export CARGO_HOME=\"$M/.toolchains/cargo\" RUSTUP_HOME=\"$M/.toolchains/rustup\" PATH=\"$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH\"; rustup self uninstall -y"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export CARGO_HOME=\"$M/.toolchains/cargo\" RUSTUP_HOME=\"$M/.toolchains/rustup\" PATH=\"$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH\"; rustup self uninstall -y"]
 
 
 [[component]]
@@ -233,18 +233,18 @@ requires = ["rustup"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "command -v rtk || [ -x \"$HOME/.local/bin/rtk\" ] || [ -x \"$HOME/.cargo/bin/rtk\" ]"]
+args = ["-lc", "command -v rtk || [ -x \"$META_ROOT/.local/bin/rtk\" ] || [ -x \"$META_ROOT/.toolchains/cargo/bin/rtk\" ]"]
 [component.install]
 kind = "script"
-script = "export PATH=\"$HOME/.cargo/bin:$PATH\"; cargo install --git https://github.com/rtk-ai/rtk"
+script = "export PATH=\"$META_ROOT/.toolchains/cargo/bin:$PATH\"; cargo install --git https://github.com/rtk-ai/rtk"
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.cargo/bin:$PATH\"; rtk --version"]
+args = ["-lc", "export PATH=\"$META_ROOT/.toolchains/cargo/bin:$PATH\"; rtk --version"]
 [component.fix]
 kind = "script"
-script = "export PATH=\"$HOME/.cargo/bin:$PATH\"; cargo install --force --git https://github.com/rtk-ai/rtk"
+script = "export PATH=\"$META_ROOT/.toolchains/cargo/bin:$PATH\"; cargo install --force --git https://github.com/rtk-ai/rtk"
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.cargo/bin:$PATH\"; cargo uninstall rtk"]
+args = ["-lc", "export PATH=\"$META_ROOT/.toolchains/cargo/bin:$PATH\"; cargo uninstall rtk"]

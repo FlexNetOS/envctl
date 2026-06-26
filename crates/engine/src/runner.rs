@@ -5,18 +5,20 @@
 //! Phase 2: action phases (Install/Fix/Remove) now LINE-STREAM stdout/stderr as
 //! `Event::Log` (so the CLI/GUI show progress live during a long apt/nix/CUDA run)
 //! AND tee every line to `$META_ROOT/.local/state/envctl/envctl.log` (the analogue of
-//! `~/yazelix-setup.log`, survives a crash). Read-only phases (Detect/Verify)
+//! `$META_ROOT/.local/state/envctl/yazelix-setup.log`, survives a crash). Read-only phases (Detect/Verify)
 //! capture quietly — only the exit code matters, and leaking their output would
 //! corrupt the CLI table / `--json`. Every hook is bounded by a per-phase timeout
 //! (the process is killed on expiry) so a stuck installer can't wedge the worker.
 use crate::component::{Hook, HookRunner, Phase};
 use crate::event::{Event, EventSink, Stream};
+use crate::layout::MetaLayout;
 use crate::model::{OpResult, OpStatus};
 use loop_lib::{build_command as loop_build_command, SpawnSpec};
 use std::collections::BTreeMap;
 use std::fs::{File, OpenOptions};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::os::unix::process::CommandExt; // for pre_exec (audit fix #20)
+use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
@@ -295,7 +297,7 @@ fn truncate(s: &str, max: usize) -> &str {
 /// threads, the per-phase timeout — stays in `ProcessRunner::run`, because loop_lib
 /// is a batch fan-out runner with no equivalent for those.
 fn build_command(hook: &Hook) -> Command {
-    let (program, args, env): (String, Vec<String>, Vec<(String, String)>) = match hook {
+    let (program, args, hook_env): (String, Vec<String>, Vec<(String, String)>) = match hook {
         Hook::Command {
             command,
             args,
@@ -336,24 +338,151 @@ fn build_command(hook: &Hook) -> Command {
             args,
             needs_sudo,
         } => {
+            let path = MetaLayout::from_env_or_default().expand_meta_path(path);
             let (program, mut argv) = if *needs_sudo {
                 (
                     "sudo".to_string(),
-                    vec!["-n".to_string(), "bash".to_string(), path.clone()],
+                    vec!["-n".to_string(), "bash".to_string(), path],
                 )
             } else {
-                ("bash".to_string(), vec![path.clone()])
+                ("bash".to_string(), vec![path])
             };
             argv.extend(args.iter().cloned());
             (program, argv, Vec::new())
         }
     };
+    let env = enforced_meta_env(hook_env);
     loop_build_command(&SpawnSpec {
         program: &program,
         args: &args,
         current_dir: None,
         env: &env,
     })
+}
+
+/// Every component hook runs inside the meta-owned install prefix.
+///
+/// A large amount of legacy shell still spells exposure paths as
+/// a user-local prefix; envctl's contract is stricter than that: installs belong
+/// under `$META_ROOT/.local/...`, never the operator's user-global
+/// real user-home local tree. Legacy scripts that use HOME land in `$META_ROOT/.local`
+/// immediately while preserving the real home as an
+/// explicit escape hatch for non-install host integration.
+fn enforced_meta_env(mut hook_env: Vec<(String, String)>) -> Vec<(String, String)> {
+    let layout = MetaLayout::from_env_or_default();
+    let real_home = std::env::var("HOME").unwrap_or_default();
+    let mut env = Vec::new();
+
+    // Keep caller-specified values, then append enforced layout values so the
+    // meta target wins even if an old manifest tried to override it.
+    env.append(&mut hook_env);
+    if !real_home.is_empty() {
+        env.push(("ENVCTL_REAL_HOME".to_string(), real_home.clone()));
+    }
+    env.push((
+        "META_ROOT".to_string(),
+        layout.meta_root().display().to_string(),
+    ));
+    env.push(("HOME".to_string(), layout.meta_root().display().to_string()));
+    for (key, path) in layout.env_exports() {
+        env.push((key.to_string(), path.display().to_string()));
+    }
+    env.push((
+        "XDG_CONFIG_HOME".to_string(),
+        layout.meta_root().join(".config").display().to_string(),
+    ));
+    env.push((
+        "XDG_DATA_HOME".to_string(),
+        layout.share().display().to_string(),
+    ));
+    env.push((
+        "XDG_STATE_HOME".to_string(),
+        layout.state().display().to_string(),
+    ));
+    env.push((
+        "XDG_CACHE_HOME".to_string(),
+        layout.cache().display().to_string(),
+    ));
+
+    let meta_bin = layout.bin().display().to_string();
+    let legacy_cargo = layout
+        .legacy_toolchains()
+        .join("cargo/bin")
+        .display()
+        .to_string();
+    let forbidden_real_home_entries = [".local/bin", ".cargo/bin", ".nix-profile/bin"]
+        .into_iter()
+        .map(|rel| PathBuf::from(&real_home).join(rel).display().to_string())
+        .collect::<Vec<_>>();
+    let filtered = std::env::var("PATH")
+        .unwrap_or_default()
+        .split(':')
+        .filter(|entry| {
+            !entry.is_empty()
+                && (real_home.is_empty()
+                    || !forbidden_real_home_entries
+                        .iter()
+                        .any(|forbidden| entry == forbidden))
+        })
+        .map(str::to_string)
+        .collect::<Vec<_>>();
+    let mut path = vec![meta_bin, legacy_cargo];
+    path.extend(filtered);
+    env.push(("PATH".to_string(), path.join(":")));
+    env
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn env_value(env: &[(String, String)], key: &str) -> String {
+        env.iter()
+            .rev()
+            .find(|(k, _)| k == key)
+            .map(|(_, v)| v.clone())
+            .unwrap_or_else(|| panic!("missing env key {key}"))
+    }
+
+    #[test]
+    fn enforced_meta_env_retargets_home_and_strips_host_global_path_entries() {
+        let _g = crate::test_env_lock();
+        let prev_home = std::env::var("HOME").ok();
+        let prev_meta = std::env::var("META_ROOT").ok();
+        let prev_path = std::env::var("PATH").ok();
+        std::env::set_var("HOME", "/home/alice");
+        std::env::set_var("META_ROOT", "/workspace/meta");
+        std::env::set_var(
+            "PATH",
+            "/home/alice/.local/bin:/home/alice/.cargo/bin:/home/alice/.nix-profile/bin:/usr/bin",
+        );
+
+        let env = enforced_meta_env(Vec::new());
+
+        match prev_home {
+            Some(v) => std::env::set_var("HOME", v),
+            None => std::env::remove_var("HOME"),
+        }
+        match prev_meta {
+            Some(v) => std::env::set_var("META_ROOT", v),
+            None => std::env::remove_var("META_ROOT"),
+        }
+        match prev_path {
+            Some(v) => std::env::set_var("PATH", v),
+            None => std::env::remove_var("PATH"),
+        }
+
+        assert_eq!(env_value(&env, "ENVCTL_REAL_HOME"), "/home/alice");
+        assert_eq!(env_value(&env, "HOME"), "/workspace/meta");
+        let path = env_value(&env, "PATH");
+        let entries = path.split(':').collect::<Vec<_>>();
+        assert_eq!(entries[0], "/workspace/meta/.local/bin");
+        assert_eq!(entries[1], "/workspace/meta/.toolchains/cargo/bin");
+        assert!(entries.contains(&"/usr/bin"));
+        assert!(!entries.contains(&"/home/alice/.local/bin"));
+        assert!(!entries.contains(&"/home/alice/.cargo/bin"));
+        assert!(!entries.contains(&"/home/alice/.nix-profile/bin"));
+    }
 }
 
 /// Resolve `(program, leading-args)` for an optional non-interactive `sudo -n`

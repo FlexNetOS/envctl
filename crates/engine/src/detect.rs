@@ -10,6 +10,7 @@
 //! "reboot to load nvidia-open" hint instead of a false "no GPU".
 use crate::component::{HookRunner, Phase};
 use crate::event::{Event, EventSink};
+use crate::layout::MetaLayout;
 use crate::model::{
     ComponentState, EnvReport, MetaBoundaryReport, MetaBoundaryViolation,
     MetaBoundaryViolationKind, OpStatus, Registry, ToolState,
@@ -235,8 +236,9 @@ const LOCAL_META_TOOLS: &[&str] = &[
 const CARGO_META_TOOLS: &[&str] = &["weave", "grit", "secretctl", "secretd"];
 
 fn meta_boundary_report() -> MetaBoundaryReport {
-    let local_bin = home_join(".local/bin");
-    let cargo_bin = home_join(".cargo/bin");
+    let layout = MetaLayout::from_env_or_default();
+    let local_bin = layout.bin();
+    let cargo_bin = layout.legacy_toolchains().join("cargo/bin");
     let Some(meta_root) = resolve_meta_root() else {
         return MetaBoundaryReport {
             meta_root: None,
@@ -270,13 +272,6 @@ fn normalize_meta_root(root: PathBuf) -> PathBuf {
         before_worktrees.push(component.as_os_str());
     }
     root
-}
-
-fn home_join(rel: &str) -> PathBuf {
-    std::env::var("HOME")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| PathBuf::from(""))
-        .join(rel)
 }
 
 fn meta_boundary_report_for(
@@ -398,15 +393,10 @@ fn canonical_or_self(path: PathBuf) -> PathBuf {
 /// wiring_present); a component that declares no wiring at all reports true.
 fn wiring_present(comp: &crate::component::Component) -> bool {
     let w = &comp.wiring;
+    let layout = crate::layout::MetaLayout::from_env_or_default();
 
     let shell_rc_ok = w.shell_rc.iter().all(|blk| {
-        let file = match blk.file.strip_prefix("~/") {
-            Some(rest) => match std::env::var("HOME") {
-                Ok(h) => format!("{h}/{rest}"),
-                Err(_) => return false,
-            },
-            None => blk.file.clone(),
-        };
+        let file = layout.expand_meta_path(&blk.file);
         // Suffix-agnostic: the wizard writes the same blocks as
         // "BEGIN <marker> (added by yazelix-setup.sh)"; envctl writes
         // "(added by envctl)". Match the marker regardless of who wrote it.
@@ -416,14 +406,11 @@ fn wiring_present(comp: &crate::component::Component) -> bool {
     });
 
     // path_entries are realized into the engine-owned "envctl PATH" block in
-    // ~/.bashrc (see wiring::path_block); probe for that marker.
+    // $META_ROOT/.bashrc (see wiring::path_block); probe for that marker.
     let path_ok = w.path_entries.is_empty() || {
-        match std::env::var("HOME") {
-            Ok(h) => std::fs::read_to_string(format!("{h}/.bashrc"))
-                .map(|t| t.contains("BEGIN envctl PATH"))
-                .unwrap_or(false),
-            Err(_) => false,
-        }
+        std::fs::read_to_string(layout.meta_root().join(".bashrc"))
+            .map(|t| t.contains("BEGIN envctl PATH"))
+            .unwrap_or(false)
     };
 
     // System-scope footprints: each is present iff its on-disk target exists
@@ -456,11 +443,11 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]
-    fn meta_boundary_accepts_local_bin_symlink_into_meta_root() {
-        let root = temp_root("accepts-local-bin-symlink");
+    fn meta_boundary_accepts_meta_local_bin_symlink_into_meta_root() {
+        let root = temp_root("accepts-meta-local-bin-symlink");
         let meta = root.join("meta");
-        let local_bin = root.join("home/.local/bin");
-        let cargo_bin = root.join("home/.cargo/bin");
+        let local_bin = meta.join(".local/bin");
+        let cargo_bin = meta.join(".toolchains/cargo/bin");
         std::fs::create_dir_all(meta.join("target/release")).unwrap();
         std::fs::create_dir_all(&local_bin).unwrap();
         std::fs::create_dir_all(&cargo_bin).unwrap();
@@ -475,24 +462,19 @@ mod tests {
     }
 
     #[test]
-    fn meta_boundary_refuses_real_local_bin_copy_outside_meta_root() {
-        let root = temp_root("refuses-foreign-copy");
+    fn meta_boundary_accepts_meta_local_bin_real_file_inside_meta_root() {
+        let root = temp_root("accepts-meta-local-bin-real-file");
         let meta = root.join("meta");
-        let local_bin = root.join("home/.local/bin");
-        let cargo_bin = root.join("home/.cargo/bin");
+        let local_bin = meta.join(".local/bin");
+        let cargo_bin = meta.join(".toolchains/cargo/bin");
         std::fs::create_dir_all(&meta).unwrap();
         std::fs::create_dir_all(&local_bin).unwrap();
         std::fs::create_dir_all(&cargo_bin).unwrap();
-        std::fs::write(local_bin.join("meta"), b"foreign copy").unwrap();
+        std::fs::write(local_bin.join("meta"), b"meta-hosted frontdoor").unwrap();
 
         let report = meta_boundary_report_for(&meta, &local_bin, &cargo_bin, false);
 
-        assert_eq!(report.violations.len(), 1);
-        assert_eq!(report.violations[0].tool, "meta");
-        assert_eq!(
-            report.violations[0].kind,
-            MetaBoundaryViolationKind::ForeignLocalBinFile
-        );
+        assert!(report.ok(), "{:?}", report.violations);
         let _ = std::fs::remove_dir_all(root);
     }
 
@@ -501,8 +483,8 @@ mod tests {
         let root = temp_root("refuses-foreign-symlink");
         let meta = root.join("meta");
         let outside = root.join("outside");
-        let local_bin = root.join("home/.local/bin");
-        let cargo_bin = root.join("home/.cargo/bin");
+        let local_bin = meta.join(".local/bin");
+        let cargo_bin = meta.join(".toolchains/cargo/bin");
         std::fs::create_dir_all(&meta).unwrap();
         std::fs::create_dir_all(&outside).unwrap();
         std::fs::create_dir_all(&local_bin).unwrap();

@@ -518,14 +518,18 @@ fn classify_line(line: &str) -> Vec<LineHit> {
             detail: "manifest still points at the compatibility prefix; update hook/wiring to MetaLayout .local paths",
         });
     }
-    if trimmed.contains("~/.local") || trimmed.contains("$HOME/.local") {
+    if trimmed.contains("~/.local")
+        || trimmed.contains("$HOME/.local")
+        || trimmed.contains("${HOME}/.local")
+        || trimmed.contains("%h/.local")
+    {
         hits.push(LineHit {
             id: "home-local",
             kind: MigrationKind::UserGlobalPath,
             action: MigrationAction::AdoptIntoMetaLocal,
             risk: MigrationRisk::Medium,
             subject: "user-global .local reference",
-            detail: "user-global installs are shims only; envctl-owned payloads belong under META_ROOT .local",
+            detail: "the real-home .local surface is a single bridge only; envctl-owned payloads belong under META_ROOT .local",
         });
     }
     if trimmed.contains("/usr/local") || trimmed.contains("/opt/") {
@@ -724,16 +728,20 @@ mod tests {
         let root = tempdir("migration-scan");
         let manifest = root.join("manifest");
         std::fs::create_dir_all(&manifest).unwrap();
+        let legacy_home_local = ["~", ".local/bin/foo"].join("/");
+        let legacy_usr_local = ["/usr/local/bin", "foo"].join("/");
         std::fs::write(
             manifest.join("base.toml"),
-            r#"
+            format!(
+                r#"
 [[component]]
 id = "legacy"
 name = "Legacy"
 [component.install]
 kind = "script"
-script = "mkdir -p $META_ROOT/.toolchains/legacy && ln -s ~/.local/bin/foo /usr/local/bin/foo"
-"#,
+script = "mkdir -p $META_ROOT/.toolchains/legacy && ln -s {legacy_home_local} {legacy_usr_local}"
+"#
+            ),
         )
         .unwrap();
         std::fs::create_dir_all(root.join("crates/engine")).unwrap();
@@ -798,6 +806,28 @@ name = "Stub"
         assert!(PathBuf::from(&report.ledger_path).is_file());
         std::env::remove_var("META_ROOT");
         let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn classify_line_flags_all_real_home_local_spellings() {
+        for spelling in [
+            "~/.local/bin/foo",
+            "$HOME/.local/bin/foo",
+            "${HOME}/.local/bin/foo",
+            "%h/.local/bin/foo",
+        ] {
+            assert!(
+                classify_line(spelling)
+                    .iter()
+                    .any(|hit| hit.id == "home-local"),
+                "{spelling} should be migration debt"
+            );
+        }
+
+        assert!(
+            classify_line("$ENVCTL_REAL_HOME/.local -> $META_ROOT/.local").is_empty(),
+            "the one explicit host bridge policy must not be classified as a per-tool install"
+        );
     }
 
     fn tempdir(label: &str) -> PathBuf {

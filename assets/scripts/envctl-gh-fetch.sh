@@ -16,7 +16,7 @@
 # is available. A token never changes WHAT is fetched, only the rate-limit bucket it counts against.
 #
 # Usage from a component install hook:
-#   ROOT="${META_ROOT:-$HOME/Desktop/meta}/envctl"
+#   ROOT="${META_ROOT:?META_ROOT required}/envctl"
 #   source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 #   TAG="$(envctl_gh_api 'repos/cli/cli/releases/latest' --jq .tag_name)"
 

@@ -14,7 +14,7 @@ This scaffold was produced by a design swarm and then adversarially reviewed. Th
 - `RunContext` resolves the live-root UUID **once** per run (resolve-once, no TOCTOU); guards read it.
 - Destructive verbs (`reset`/`auto-fix`) default to **dry-run** unless `--apply`.
 - `install` is **idempotent**: skip-if-detected; dependants of a failed component are `SkippedBlocked`.
-- `add-repo` hardened: strict slug validation, refuse id-collision with a built-in, atomic temp+rename drop-in write with timestamped backup, clone into `~/.local/share/envctl/repos/<slug>` (0700) not `/tmp`, all interpolated values escaped.
+- `add-repo` hardened: strict slug validation, refuse id-collision with a built-in, atomic temp+rename drop-in write with timestamped backup, clone into `$META_ROOT/.local/share/envctl/repos/<slug>` (0700) not `/tmp`, all interpolated values escaped.
 - `base.toml` `yazelix-shell`: removed the hand-rolled `sed -i ~/.bashrc` remove hook (literal-`~` bug + double-ownership); `Wiring::revert` is the single owner of marker-block excision (backup-then-excise-only-owned-block).
 
 ## Deferred to later phases (tracked in ROADMAP.md)
@@ -26,7 +26,7 @@ This scaffold was produced by a design swarm and then adversarially reviewed. Th
 
 ## JS runtime: bun-first, with a narrow real-node carve-out
 - **Bun is the default JS runtime.** It is required by `codex-cli`/`gemini-cli` and remains the go-to runtime. `node-via-bun` is an optional bun node-compat nicety (the `~/.bun/bin/node → bun` shim) and **gates nothing** — its detect/verify are truthful (detect succeeds when EITHER the bun node-shim OR a real `node` is present; verify uses `node -e`, which both runtimes satisfy, never `node --version`, which bun's shim cannot do by design).
-- **`node-real` is the narrow non-bun carve-out** for V8-only tools (n8n / isolated-vm — Bun's JSC engine cannot satisfy these). It owns the real-Node 20–24 requirement (currently v22.22.3 at `~/.local/bin/node`) and has no `remove` hook by design (removing real node would break n8n).
+- **`node-real` is the narrow non-bun carve-out** for V8-only tools (n8n / isolated-vm — Bun's JSC engine cannot satisfy these). It owns the real-Node 20–24 requirement (currently v22.22.3 at `$META_ROOT/.local/bin/node`) and has no `remove` hook by design (removing real node would break n8n).
 - `group-ai-clis` no longer requires `node-via-bun` — its detect only probes the five AI CLIs and never needed node; dropping that false edge keeps the healthy ai-clis stack untouched while letting the JS-runtime story read truthfully green.
 
 ## Reviewer verdict

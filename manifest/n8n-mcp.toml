@@ -22,13 +22,13 @@ requires = ["node-via-bun"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.bun/bin:$HOME/.local/bin:$PATH\"; npm ls -g n8n-mcp >/dev/null 2>&1 || command -v n8n-mcp >/dev/null"]
+args = ["-lc", "export PATH=\"$META_ROOT/.toolchains/.bun/bin:$META_ROOT/.local/bin:$PATH\"; npm ls -g n8n-mcp >/dev/null 2>&1 || command -v n8n-mcp >/dev/null"]
 
 # Idempotent global install via npm (node provided by node-via-bun).
 [component.install]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.bun/bin:$HOME/.local/bin:$PATH\"; npm i -g n8n-mcp"]
+args = ["-lc", "export PATH=\"$META_ROOT/.toolchains/.bun/bin:$META_ROOT/.local/bin:$PATH\"; npm i -g n8n-mcp"]
 
 # KEY-LESS, fail-closed verify: prove the bin resolves AND speaks MCP in docs-only
 # mode WITHOUT the human key. `--version` is NOT a real flag (it boots the stdio
@@ -40,16 +40,16 @@ args = ["-lc", "export PATH=\"$HOME/.bun/bin:$HOME/.local/bin:$PATH\"; npm i -g 
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.bun/bin:$HOME/.local/bin:$PATH\"; printf '%s\\n' '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2024-11-05\",\"capabilities\":{},\"clientInfo\":{\"name\":\"envctl-verify\",\"version\":\"0\"}}}' | timeout 60 npx -y n8n-mcp 2>/dev/null | grep -q 'n8n-documentation-mcp'"]
+args = ["-lc", "export PATH=\"$META_ROOT/.toolchains/.bun/bin:$META_ROOT/.local/bin:$PATH\"; printf '%s\\n' '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2024-11-05\",\"capabilities\":{},\"clientInfo\":{\"name\":\"envctl-verify\",\"version\":\"0\"}}}' | timeout 60 npx -y n8n-mcp 2>/dev/null | grep -q 'n8n-documentation-mcp'"]
 
 # Idempotent repair: reinstall.
 [component.fix]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.bun/bin:$HOME/.local/bin:$PATH\"; npm i -g n8n-mcp"]
+args = ["-lc", "export PATH=\"$META_ROOT/.toolchains/.bun/bin:$META_ROOT/.local/bin:$PATH\"; npm i -g n8n-mcp"]
 
 # Remove the global install.
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.bun/bin:$HOME/.local/bin:$PATH\"; npm rm -g n8n-mcp"]
+args = ["-lc", "export PATH=\"$META_ROOT/.toolchains/.bun/bin:$META_ROOT/.local/bin:$PATH\"; npm rm -g n8n-mcp"]

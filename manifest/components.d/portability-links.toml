@@ -1,41 +1,94 @@
-# portability-links.toml — ADR-0006 (meta portability): wire $HOME into the canonical home/ tree.
+# portability-links.toml — META_ROOT-hosted portability boundary.
 #
-# Three components, ordered by blast radius:
-#   home-config-links   : config files + systemd units + home/bin scripts  (safe, no live consumers)
-#   meta-tool-links     : ~/.local/bin + ~/.cargo/bin copies -> symlinks into meta target/release
-#                         (VERSION-GUARDED: links only when the repo build exists and --version
-#                          matches the installed copy — never downgrades, skips + reports otherwise)
-#   claude-global-links : ~/.claude settings/CLAUDE.md/RTK.md/commands — applied LAST; the live
-#                         agent session consumes these (HOME-DIR SAFETY: archive-first + smoke test)
-#
-# All installers archive displaced real files to ~/Desktop/_archives/home-links-<date>/ and are
-# idempotent (re-running converges). remove = unlink + restore the newest archived original if any.
-# Interim wiring is script-kind (the wrap-proven-bash pattern); the engine-native `wiring.symlink`
-# kind is the follow-up envctl feature (Feature Forge).
+# Current policy (2026-06-26): envctl lifecycle hooks execute with HOME=$META_ROOT
+# and META_ROOT exported by the runner. Host-user/global installs are not a target.
+# The only sanctioned real-home bridge is one archive-first link:
+#   $ENVCTL_REAL_HOME/.local -> $META_ROOT/.local
+# Per-tool real-home local-bin/cargo-bin and system-bin link farms
+# are retired/no-op compatibility component ids so older groups do not recreate them.
 
 [[component]]
-id = "home-config-links"
-name = "home tree config links"
-description = "Symlinks $HOME config files (gitconfig, ghostty, nushell, kasetto global, yazelix user config, systemd user units, home/bin scripts) into envctl/home/. Archive-first, idempotent."
+id = "home-local-single-link"
+name = "single real-home .local link to META_ROOT"
+description = "The only sanctioned real-home bridge: $ENVCTL_REAL_HOME/.local points at $META_ROOT/.local. Existing real-home .local content is archived under $META_ROOT/.local/state/envctl before the link is created."
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "T=\"${ENVCTL_HOME_TREE:-$HOME/Desktop/meta/envctl/home}\"; [ \"$(readlink -f \"$HOME/.gitconfig\" 2>/dev/null)\" = \"$(readlink -f \"$T/.gitconfig\")\" ]"]
+args = ["-lc", '''
+set -e
+M="${META_ROOT:?META_ROOT required}"
+R="${ENVCTL_REAL_HOME:-}"
+[ -n "$R" ] && [ "$R" != "$M" ] || exit 0
+[ "$(readlink -f "$R/.local" 2>/dev/null)" = "$(readlink -f "$M/.local" 2>/dev/null)" ]
+''']
 [component.install]
 kind = "script"
 script = '''
 set -e
-T="${ENVCTL_HOME_TREE:-$HOME/Desktop/meta/envctl/home}"
-ARCH="$HOME/Desktop/_archives/home-links-$(date +%Y-%m-%d)"
+M="${META_ROOT:?META_ROOT required}"
+R="${ENVCTL_REAL_HOME:-}"
+[ -n "$R" ] && [ "$R" != "$M" ] || { echo "SKIP home-local-single-link: real home unavailable or already META_ROOT"; exit 0; }
+TARGET="$M/.local"
+LINK="$R/.local"
+ARCH="$M/.local/state/envctl/archives/home-local-$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$TARGET" "$(dirname "$ARCH")"
+if [ "$(readlink -f "$LINK" 2>/dev/null)" = "$(readlink -f "$TARGET" 2>/dev/null)" ]; then
+  echo "home .local already linked to META_ROOT"
+  exit 0
+fi
+if [ -e "$LINK" ] || [ -L "$LINK" ]; then
+  mkdir -p "$ARCH"
+  mv "$LINK" "$ARCH/.local"
+  echo "archived prior real-home .local at $ARCH/.local"
+fi
+ln -s "$TARGET" "$LINK"
+echo "linked $LINK -> $TARGET"
+'''
+[component.verify]
+kind = "command"
+command = "bash"
+args = ["-lc", '''
+set -e
+M="${META_ROOT:?META_ROOT required}"
+R="${ENVCTL_REAL_HOME:-}"
+[ -n "$R" ] && [ "$R" != "$M" ] || exit 0
+[ "$(readlink -f "$R/.local" 2>/dev/null)" = "$(readlink -f "$M/.local" 2>/dev/null)" ]
+''']
+
+[[component]]
+id = "home-config-links"
+name = "META_ROOT config links"
+description = "Links META_ROOT-scoped config files from $META_ROOT/envctl/home into the META_ROOT home view. Hooks run with HOME=$META_ROOT; this never writes real-home config paths."
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", '''
+M="${META_ROOT:?META_ROOT required}"
+T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
+[ "$(readlink -f "$M/.gitconfig" 2>/dev/null)" = "$(readlink -f "$T/.gitconfig" 2>/dev/null)" ]
+''']
+[component.install]
+kind = "script"
+script = '''
+set -e
+M="${META_ROOT:?META_ROOT required}"
+T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
+ARCH="$M/.local/state/envctl/archives/home-links-$(date +%Y%m%d-%H%M%S)"
 link() {
-  src="$T/$1"; dst="$HOME/$1"
+  src="$T/$1"
+  dst="$M/$1"
   [ -e "$src" ] || { echo "SKIP (missing source): $1"; return 0; }
-  if [ "$(readlink -f "$dst" 2>/dev/null)" = "$(readlink -f "$src")" ]; then return 0; fi
+  if [ "$(readlink -f "$dst" 2>/dev/null)" = "$(readlink -f "$src" 2>/dev/null)" ]; then return 0; fi
   mkdir -p "$(dirname "$dst")"
   if [ -e "$dst" ] && [ ! -L "$dst" ]; then
-    mkdir -p "$ARCH/$(dirname "$1")"; mv "$dst" "$ARCH/$1"; echo "archived: $1"
-  elif [ -L "$dst" ]; then rm "$dst"; fi
-  ln -s "$src" "$dst"; echo "linked: $1"
+    mkdir -p "$ARCH/$(dirname "$1")"
+    mv "$dst" "$ARCH/$1"
+    echo "archived META_ROOT file: $1"
+  elif [ -L "$dst" ]; then
+    rm "$dst"
+  fi
+  ln -s "$src" "$dst"
+  echo "linked META_ROOT file: $1"
 }
 link .gitconfig
 link .config/ghostty/config.ghostty
@@ -57,261 +110,198 @@ systemctl --user daemon-reload 2>/dev/null || true
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", '''T="${ENVCTL_HOME_TREE:-$HOME/Desktop/meta/envctl/home}"; ok=1; for p in .gitconfig .config/nushell/config.nu .config/nushell/rtk-wrappers.nu .config/kasetto/kasetto.yaml .config/yazelix/settings.jsonc .config/systemd/user/env-ctl.service .config/systemd/user/sqld.service; do [ "$(readlink -f "$HOME/$p" 2>/dev/null)" = "$(readlink -f "$T/$p")" ] || { echo "NOT LINKED: $p"; ok=0; }; done; [ $ok = 1 ]''']
+args = ["-lc", '''
+M="${META_ROOT:?META_ROOT required}"
+T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
+ok=1
+for p in .gitconfig .config/nushell/config.nu .config/nushell/rtk-wrappers.nu .config/kasetto/kasetto.yaml .config/yazelix/settings.jsonc .config/systemd/user/env-ctl.service .config/systemd/user/sqld.service; do
+  [ "$(readlink -f "$M/$p" 2>/dev/null)" = "$(readlink -f "$T/$p" 2>/dev/null)" ] || { echo "NOT META_ROOT-LINKED: $p"; ok=0; }
+done
+[ $ok = 1 ]
+''']
 [component.remove]
 kind = "script"
 script = '''
-T="${ENVCTL_HOME_TREE:-$HOME/Desktop/meta/envctl/home}"
+M="${META_ROOT:?META_ROOT required}"
 for p in .gitconfig .config/ghostty/config.ghostty .config/nushell/config.nu .config/nushell/rtk-wrappers.nu .config/kasetto/kasetto.yaml .config/yazelix/settings.jsonc .config/yazelix/shell_bash.sh .config/yazelix/shell_nu.nu .config/yazelix/terminal_ghostty.conf .config/yazelix/tombi.toml .config/systemd/user/env-ctl.service .config/systemd/user/sqld.service .config/systemd/user/repowire.service; do
-  if [ -L "$HOME/$p" ]; then
-    rm "$HOME/$p"
-    last=$(ls -d "$HOME/Desktop/_archives/home-links-"* 2>/dev/null | sort | tail -1)
-    [ -n "$last" ] && [ -e "$last/$p" ] && cp -a "$last/$p" "$HOME/$p" && echo "restored: $p"
-  fi
+  [ -L "$M/$p" ] && rm "$M/$p"
 done
 systemctl --user daemon-reload 2>/dev/null || true
 '''
 
 [[component]]
 id = "home-bin-links"
-name = "home/bin user scripts"
-description = "Symlinks orphan user scripts (n8n-open, yazelix-gpu-verify*) from ~/.local/bin into envctl/home/bin/."
-requires = ["home-config-links"]
+name = "retired per-tool home bin links"
+description = "Compatibility id only. Per-tool real-home bin links are retired; tools must install under $META_ROOT/.local/bin and be exposed through the single real-home .local link."
+requires = ["home-local-single-link"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "T=\"${ENVCTL_HOME_TREE:-$HOME/Desktop/meta/envctl/home}\"; [ \"$(readlink -f \"$HOME/.local/bin/n8n-open\" 2>/dev/null)\" = \"$(readlink -f \"$T/bin/n8n-open\")\" ]"]
+args = ["-lc", "true"]
 [component.install]
 kind = "script"
 script = '''
-set -e
-T="${ENVCTL_HOME_TREE:-$HOME/Desktop/meta/envctl/home}"
-ARCH="$HOME/Desktop/_archives/home-links-$(date +%Y-%m-%d)"
-for b in n8n-open yazelix-gpu-verify.sh yazelix-gpu-verify-launch.sh; do
-  src="$T/bin/$b"; dst="$HOME/.local/bin/$b"
-  [ -e "$src" ] || continue
-  chmod +x "$src"
-  [ "$(readlink -f "$dst" 2>/dev/null)" = "$(readlink -f "$src")" ] && continue
-  if [ -e "$dst" ] && [ ! -L "$dst" ]; then mkdir -p "$ARCH/.local/bin"; mv "$dst" "$ARCH/.local/bin/$b"; fi
-  [ -L "$dst" ] && rm "$dst"
-  ln -s "$src" "$dst"; echo "linked: .local/bin/$b"
-done
+echo "home-bin-links retired: use META_ROOT/.local/bin plus home-local-single-link"
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "T=\"${ENVCTL_HOME_TREE:-$HOME/Desktop/meta/envctl/home}\"; [ -L \"$HOME/.local/bin/n8n-open\" ]"]
+args = ["-lc", "true"]
 
 [[component]]
 id = "rtk-config-links"
-name = "RTK config -> envctl home tree"
-description = "Symlinks ~/.config/rtk into envctl/home/.config/rtk so RTK policy is tracked. RTK history/tee logs remain machine-local state under ~/.local/share/rtk."
+name = "RTK config -> META_ROOT home tree"
+description = "Links META_ROOT/.config/rtk to $META_ROOT/envctl/home/.config/rtk. RTK state remains under META_ROOT-local state."
 requires = ["home-config-links"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "T=\"${ENVCTL_HOME_TREE:-$HOME/Desktop/meta/envctl/home}\"; [ \"$(readlink -f \"$HOME/.config/rtk\" 2>/dev/null)\" = \"$(readlink -f \"$T/.config/rtk\")\" ]"]
+args = ["-lc", '''
+M="${META_ROOT:?META_ROOT required}"
+T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
+[ "$(readlink -f "$M/.config/rtk" 2>/dev/null)" = "$(readlink -f "$T/.config/rtk" 2>/dev/null)" ]
+''']
 [component.install]
 kind = "script"
 script = '''
 set -e
-T="${ENVCTL_HOME_TREE:-$HOME/Desktop/meta/envctl/home}"
+M="${META_ROOT:?META_ROOT required}"
+T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
 src="$T/.config/rtk"
-dst="$HOME/.config/rtk"
-ARCH="$HOME/Desktop/_archives/home-links-$(date +%Y-%m-%d)"
+dst="$M/.config/rtk"
+ARCH="$M/.local/state/envctl/archives/home-links-$(date +%Y%m%d-%H%M%S)"
 [ -d "$src" ] || { echo "SKIP rtk-config-links: missing $src"; exit 0; }
-[ "$(readlink -f "$dst" 2>/dev/null)" = "$(readlink -f "$src")" ] && exit 0
+[ "$(readlink -f "$dst" 2>/dev/null)" = "$(readlink -f "$src" 2>/dev/null)" ] && exit 0
 mkdir -p "$(dirname "$dst")"
 if [ -e "$dst" ] && [ ! -L "$dst" ]; then
   mkdir -p "$ARCH/.config"
   mv "$dst" "$ARCH/.config/rtk"
-  echo "archived: .config/rtk"
+  echo "archived META_ROOT .config/rtk"
 elif [ -L "$dst" ]; then
   rm "$dst"
 fi
 ln -s "$src" "$dst"
-echo "linked: .config/rtk"
+echo "linked META_ROOT .config/rtk"
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "T=\"${ENVCTL_HOME_TREE:-$HOME/Desktop/meta/envctl/home}\"; [ \"$(readlink -f \"$HOME/.config/rtk\" 2>/dev/null)\" = \"$(readlink -f \"$T/.config/rtk\")\" ] && rtk gain >/dev/null"]
+args = ["-lc", '''
+M="${META_ROOT:?META_ROOT required}"
+T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
+[ "$(readlink -f "$M/.config/rtk" 2>/dev/null)" = "$(readlink -f "$T/.config/rtk" 2>/dev/null)" ] && rtk gain >/dev/null
+''']
 [component.remove]
 kind = "script"
 script = '''
-if [ -L "$HOME/.config/rtk" ]; then
-  rm "$HOME/.config/rtk"
-  last=$(ls -d "$HOME/Desktop/_archives/home-links-"* 2>/dev/null | sort | tail -1)
-  [ -n "$last" ] && [ -e "$last/.config/rtk" ] && cp -a "$last/.config/rtk" "$HOME/.config/rtk" && echo "restored: .config/rtk"
-fi
+M="${META_ROOT:?META_ROOT required}"
+[ -L "$M/.config/rtk" ] && rm "$M/.config/rtk"
 '''
 
 [[component]]
 id = "meta-tool-links"
-name = "meta tool binaries -> workspace builds"
-description = "Replaces ~/.local/bin (and ~/.cargo/bin duplicate) COPIES of meta-member tools with symlinks into the owning repo's target/release. Version-guarded: never downgrades; skips and reports when the repo build is missing or version-mismatched."
-# detect = ALL always-buildable meta-owned tools are symlinks (not just `meta`).
-# Excludes the version-guarded external `rtk`, which may legitimately remain a copy when the
-# repo build is behind the installed binary — including it would wedge detect false forever.
-# (kasetto/kst retired in TASK-0018: absorbed into `envctl agent`, no longer symlinked.)
-# Checking the full set means adding a newly-built meta tool re-triggers convergence instead
-# of short-circuiting on `meta` alone.
+name = "retired per-tool meta binary links"
+description = "Compatibility id only. The old per-tool real-home bin/cargo link farm is retired; binaries must be installed directly in META_ROOT-owned prefixes."
+requires = ["home-local-single-link"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:-$HOME/Desktop/meta}"; ok=1; check_local(){ name="$1"; rel="$2"; src="$M/$rel"; dst="$HOME/.local/bin/$name"; [ -x "$src" ] || return 0; [ "$(readlink -f "$dst" 2>/dev/null)" = "$(readlink -f "$src" 2>/dev/null)" ] || ok=0; }; check_cargo(){ name="$1"; rel="$2"; src="$M/$rel"; dst="$HOME/.cargo/bin/$name"; [ -e "$dst" ] || return 0; [ -x "$src" ] || { ok=0; return 0; }; [ "$(readlink -f "$dst" 2>/dev/null)" = "$(readlink -f "$src" 2>/dev/null)" ] || ok=0; }; check_local meta target/release/meta; check_local meta-mcp target/release/meta-mcp; check_local loop target/release/loop; check_local lane lane/target/release/lane; check_local grit grit/target/release/grit; check_cargo weave weave/target/release/weave; check_cargo grit grit/target/release/grit; check_cargo secretctl envctl/target/release/secretctl; check_cargo secretd envctl/target/release/secretd; [ $ok = 1 ]''']
+args = ["-lc", "true"]
 [component.install]
 kind = "script"
 script = '''
-set -e
-M="${META_ROOT:-$HOME/Desktop/meta}"
-ARCH="$HOME/Desktop/_archives/home-links-$(date +%Y-%m-%d)"
-# pairs: <dest-name> <repo-relative build path>
-pairs="
-meta            target/release/meta
-meta-git        target/release/meta-git
-meta-mcp        target/release/meta-mcp
-meta-project    target/release/meta-project
-loop            target/release/loop
-lane            lane/target/release/lane
-vox             vox/target/release/vox
-icm             icm/target/release/icm
-rtk             target/release/rtk
-grit            grit/target/release/grit
-envctl          envctl/target/release/envctl
-envctl-gui      envctl/target/release/envctl-gui
-meta-dashboard  meta_dashboard_cli/target/release/meta-dashboard
-"
-echo "$pairs" | while read -r name rel; do
-  [ -n "$name" ] || continue
-  src="$M/$rel"; dst="$HOME/.local/bin/$name"
-  if [ ! -x "$src" ]; then echo "SKIP $name: no build at $rel (cargo build --release first)"; continue; fi
-  if [ -e "$dst" ] && [ ! -L "$dst" ]; then
-    vsrc=$("$src" --version 2>/dev/null | head -1 || true)
-    vdst=$("$dst" --version 2>/dev/null | head -1 || true)
-    if [ -n "$vdst" ] && [ "$vsrc" != "$vdst" ]; then echo "SKIP $name: version mismatch (installed '$vdst' vs build '$vsrc') — never downgrade"; continue; fi
-    mkdir -p "$ARCH/.local/bin"; mv "$dst" "$ARCH/.local/bin/$name"; echo "archived copy: $name"
-  elif [ -L "$dst" ] && [ "$(readlink -f "$dst")" = "$(readlink -f "$src")" ]; then continue
-  elif [ -L "$dst" ]; then rm "$dst"; fi
-  ln -s "$src" "$dst"; echo "linked: $name"
-done
-# ~/.cargo/bin duplicate generations -> same treatment (weave grit secretctl secretd)
-cpairs="
-weave      weave/target/release/weave
-grit       grit/target/release/grit
-secretctl  envctl/target/release/secretctl
-secretd    envctl/target/release/secretd
-"
-echo "$cpairs" | while read -r name rel; do
-  [ -n "$name" ] || continue
-  src="$M/$rel"; dst="$HOME/.cargo/bin/$name"
-  [ -x "$src" ] || { echo "SKIP cargo-bin $name: no build"; continue; }
-  [ -e "$dst" ] || continue
-  if [ ! -L "$dst" ]; then mkdir -p "$ARCH/.cargo/bin"; mv "$dst" "$ARCH/.cargo/bin/$name"; echo "archived cargo copy: $name"; else rm "$dst"; fi
-  ln -s "$src" "$dst"; echo "linked cargo-bin: $name"
-done
-echo "NOTE: rtk and icm are live-session hooks — verify each immediately after install."
+echo "meta-tool-links retired: install binaries into META_ROOT/.local/bin or META_ROOT/.toolchains"
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:-$HOME/Desktop/meta}"; fail=0; check_local(){ name="$1"; rel="$2"; src="$M/$rel"; dst="$HOME/.local/bin/$name"; [ -x "$src" ] || return 0; if [ "$(readlink -f "$dst" 2>/dev/null)" != "$(readlink -f "$src" 2>/dev/null)" ]; then echo "not linked from META_ROOT: $name"; fail=1; fi; }; check_cargo(){ name="$1"; rel="$2"; src="$M/$rel"; dst="$HOME/.cargo/bin/$name"; [ -e "$dst" ] || return 0; if [ ! -x "$src" ]; then echo "cargo-bin $name exists but no META_ROOT build at $rel"; fail=1; return 0; fi; if [ "$(readlink -f "$dst" 2>/dev/null)" != "$(readlink -f "$src" 2>/dev/null)" ]; then echo "cargo-bin not linked from META_ROOT: $name"; fail=1; fi; }; check_local meta target/release/meta; check_local loop target/release/loop; check_local lane lane/target/release/lane; check_cargo weave weave/target/release/weave; check_cargo grit grit/target/release/grit; check_cargo secretctl envctl/target/release/secretctl; check_cargo secretd envctl/target/release/secretd; [ $fail = 0 ]''']
+args = ["-lc", "true"]
 
 [[component]]
 id = "claude-global-links"
-name = "claude user-global settings links (apply LAST)"
-description = "Symlinks ~/.claude/{settings.json,CLAUDE.md,RTK.md,commands/*} into envctl/home/.claude/. The LIVE agent session consumes these files — archive-first, and run the smoke test in verify immediately."
+name = "Claude META_ROOT settings links"
+description = "Links Claude files inside the META_ROOT home view only. Real-home Claude paths are not mutated by envctl."
+requires = ["home-config-links"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "T=\"${ENVCTL_HOME_TREE:-$HOME/Desktop/meta/envctl/home}\"; [ \"$(readlink -f \"$HOME/.claude/settings.json\" 2>/dev/null)\" = \"$(readlink -f \"$T/.claude/settings.json\")\" ]"]
+args = ["-lc", '''
+M="${META_ROOT:?META_ROOT required}"
+T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
+[ "$(readlink -f "$M/.claude/settings.json" 2>/dev/null)" = "$(readlink -f "$T/.claude/settings.json" 2>/dev/null)" ]
+''']
 [component.install]
 kind = "script"
 script = '''
 set -e
-T="${ENVCTL_HOME_TREE:-$HOME/Desktop/meta/envctl/home}"
-ARCH="$HOME/Desktop/_archives/home-links-$(date +%Y-%m-%d)"
-# TASK-0005: render the LIVE settings.json from its portable .tmpl, substituting
-# ${META_ROOT} -> this machine's meta root (= the home tree's grandparent). The
-# .tmpl is the committed source of truth; settings.json is a rendered artifact so
-# no meta path is ever hardcoded. Equivalent to `envctl env --materialize`, but
-# dependency-free for the install hook. EDIT settings.json.tmpl, never settings.json.
+M="${META_ROOT:?META_ROOT required}"
+T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
+ARCH="$M/.local/state/envctl/archives/home-links-$(date +%Y%m%d-%H%M%S)"
 if [ -f "$T/.claude/settings.json.tmpl" ]; then
-  MR="$(cd "$T/../.." && pwd)"
-  sed "s|\${META_ROOT}|$MR|g" "$T/.claude/settings.json.tmpl" > "$T/.claude/settings.json"
-  echo "rendered .claude/settings.json from tmpl (META_ROOT=$MR)"
+  sed "s|\${META_ROOT}|$M|g" "$T/.claude/settings.json.tmpl" > "$T/.claude/settings.json"
+  echo "rendered .claude/settings.json from tmpl (META_ROOT=$M)"
 fi
 for p in .claude/settings.json .claude/CLAUDE.md .claude/RTK.md .claude/commands/recall.md .claude/commands/remember.md .claude/commands/speak.md; do
-  src="$T/$p"; dst="$HOME/$p"
+  src="$T/$p"
+  dst="$M/$p"
   [ -e "$src" ] || { echo "SKIP missing source: $p"; continue; }
-  [ "$(readlink -f "$dst" 2>/dev/null)" = "$(readlink -f "$src")" ] && continue
+  [ "$(readlink -f "$dst" 2>/dev/null)" = "$(readlink -f "$src" 2>/dev/null)" ] && continue
   mkdir -p "$(dirname "$dst")"
-  if [ -e "$dst" ] && [ ! -L "$dst" ]; then mkdir -p "$ARCH/$(dirname "$p")"; mv "$dst" "$ARCH/$p"; echo "archived: $p"; fi
+  if [ -e "$dst" ] && [ ! -L "$dst" ]; then
+    mkdir -p "$ARCH/$(dirname "$p")"
+    mv "$dst" "$ARCH/$p"
+    echo "archived META_ROOT file: $p"
+  fi
   [ -L "$dst" ] && rm "$dst"
-  ln -s "$src" "$dst"; echo "linked: $p"
+  ln -s "$src" "$dst"
+  echo "linked META_ROOT file: $p"
 done
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "[ -L \"$HOME/.claude/settings.json\" ] && claude --version >/dev/null 2>&1 && echo claude-binary-ok"]
+args = ["-lc", '''
+M="${META_ROOT:?META_ROOT required}"
+T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
+[ "$(readlink -f "$M/.claude/settings.json" 2>/dev/null)" = "$(readlink -f "$T/.claude/settings.json" 2>/dev/null)" ]
+''']
 [component.remove]
 kind = "script"
 script = '''
+M="${META_ROOT:?META_ROOT required}"
 for p in .claude/settings.json .claude/CLAUDE.md .claude/RTK.md .claude/commands/recall.md .claude/commands/remember.md .claude/commands/speak.md; do
-  if [ -L "$HOME/$p" ]; then
-    rm "$HOME/$p"
-    last=$(ls -d "$HOME/Desktop/_archives/home-links-"* 2>/dev/null | sort | tail -1)
-    [ -n "$last" ] && [ -e "$last/$p" ] && cp -a "$last/$p" "$HOME/$p" && echo "restored: $p"
-  fi
+  [ -L "$M/$p" ] && rm "$M/$p"
 done
 '''
 
-# usrlocal-script-links — root-owned /usr/local/bin helper scripts -> symlinks into the
-# canonical meta-owned source (envctl/assets/scripts). These are byte-identical duplicates of
-# files already in the repo (yazelix-gpu-verify-install is run FROM assets/scripts by the
-# gpu-verify-scripts component; the rest are manual/one-off helpers). Needs write access to
-# /usr/local/bin == the bootstrap SUDO phase (`sudo envctl install usrlocal-script-links`, or
-# bootstrap.sh phase 3 run with sudo). As a non-root user it SKIPS (exit 0) so `envctl install`
-# never errors mid-run. META_ROOT resolves via SUDO_USER's home so it works under sudo (where
-# $HOME would otherwise be /root). Archive-first; idempotent.
 [[component]]
 id = "usrlocal-script-links"
-name = "/usr/local/bin helper scripts -> meta assets (sudo phase)"
+name = "retired system-depth helper script links"
+description = "Compatibility id only. /usr/local/bin symlink creation is retired; helper scripts must be launched from META_ROOT or installed into META_ROOT/.local/bin."
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", '''OWNER="${SUDO_USER:-$USER}"; OH="$(getent passwd "$OWNER" | cut -d: -f6)"; S="${META_ROOT:-$OH/Desktop/meta}/envctl/assets/scripts"; ok=1; for n in yazelix-config.sh yazelix-setup.sh yazelix-gpu-verify-install.sh ubuntu-boot-repair.sh; do [ "$(readlink -f "/usr/local/bin/$n" 2>/dev/null)" = "$(readlink -f "$S/$n")" ] || ok=0; done; [ $ok = 1 ]''']
+args = ["-lc", "true"]
 [component.install]
 kind = "script"
 script = '''
-set -e
-OWNER="${SUDO_USER:-$USER}"; OH="$(getent passwd "$OWNER" | cut -d: -f6)"
-S="${META_ROOT:-$OH/Desktop/meta}/envctl/assets/scripts"
-ARCH="$OH/Desktop/_archives/home-links-$(date +%Y-%m-%d)/usr-local-bin"
-if [ ! -w /usr/local/bin ]; then
-  echo "SKIP usrlocal-script-links: /usr/local/bin not writable — run the sudo bootstrap phase (sudo envctl install usrlocal-script-links)"; exit 0
-fi
-mkdir -p "$ARCH"
-for n in yazelix-config.sh yazelix-setup.sh yazelix-gpu-verify-install.sh ubuntu-boot-repair.sh; do
-  src="$S/$n"; dst="/usr/local/bin/$n"
-  [ -e "$src" ] || { echo "SKIP (missing meta source): $n"; continue; }
-  [ "$(readlink -f "$dst" 2>/dev/null)" = "$(readlink -f "$src")" ] && continue
-  if [ -e "$dst" ] && [ ! -L "$dst" ]; then mv "$dst" "$ARCH/$n"; echo "archived: $n"; fi
-  [ -L "$dst" ] && rm "$dst"
-  ln -s "$src" "$dst"; echo "linked: /usr/local/bin/$n -> $src"
-done
+echo "usrlocal-script-links retired: no system-depth symlinks are created"
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", '''OWNER="${SUDO_USER:-$USER}"; OH="$(getent passwd "$OWNER" | cut -d: -f6)"; S="${META_ROOT:-$OH/Desktop/meta}/envctl/assets/scripts"; [ ! -w /usr/local/bin ] && exit 0; for n in yazelix-config.sh yazelix-setup.sh yazelix-gpu-verify-install.sh ubuntu-boot-repair.sh; do [ "$(readlink -f "/usr/local/bin/$n" 2>/dev/null)" = "$(readlink -f "$S/$n")" ] || { echo "not linked: $n"; exit 1; }; done''']
+args = ["-lc", "true"]
 
 [[component]]
 id = "group-portability"
-name = "Portability link layer (ADR-0006)"
-requires = ["home-config-links", "home-bin-links", "rtk-config-links", "meta-tool-links", "claude-global-links", "usrlocal-script-links"]
+name = "META_ROOT portability layer"
+requires = ["home-local-single-link", "home-config-links", "rtk-config-links", "claude-global-links"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "[ -L \"$HOME/.gitconfig\" ] && [ -L \"$HOME/.config/rtk\" ] && [ -L \"$HOME/.local/bin/meta\" ] && [ -L \"$HOME/.claude/settings.json\" ]"]
+args = ["-lc", '''
+M="${META_ROOT:?META_ROOT required}"
+R="${ENVCTL_REAL_HOME:-}"
+[ -L "$M/.gitconfig" ] && [ -L "$M/.config/rtk" ] && [ -L "$M/.claude/settings.json" ] || exit 1
+[ -z "$R" ] || [ "$R" = "$M" ] || [ "$(readlink -f "$R/.local" 2>/dev/null)" = "$(readlink -f "$M/.local" 2>/dev/null)" ]
+''']
