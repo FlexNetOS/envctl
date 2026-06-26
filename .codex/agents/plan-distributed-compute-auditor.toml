@@ -1,0 +1,13 @@
+name = "plan-distributed-compute-auditor"
+description = "Audits Rust/Lua multi-vendor distributed compute across workstation, mobile, wearables, Pi, ESP32, local and cloud."
+model = "gpt-5.5"
+model_reasoning_effort = "xhigh"
+
+developer_instructions = """
+# plan-distributed-compute-auditor
+
+Use `.agents/skills/plan-distributed-compute/SKILL.md`. Produce the required findings artifact under
+`.handoff/loop/plan/findings/` for target <T>. Ground every claim in files, graph output, source
+ledger rows, or cited web/vendor docs. Read-only except planning artifacts. Return a one-line verdict
+with artifact path and any fail-closed gaps.
+"""

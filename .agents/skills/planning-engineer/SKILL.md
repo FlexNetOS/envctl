@@ -98,6 +98,38 @@ Data transfer is **file-based** (pass artifact PATHS, never contents) + **return
 returns a one-line verdict the orchestrator reduces through weave receipts/inbox/job results).
 
 
+
+## Owner north-star architecture-loop upgrade (critical)
+
+The planning loop is not just a repo planner; it is the architecture loop for a Rust/Lua distributed
+agent fabric. Every target plan must explicitly cover these critical components:
+
+1. **Persistent memory + vector intelligence** — ICM recall/store, `.handoff` ledger, source ledgers,
+   GitKB code graph, vector/RAG indexes when present, freshness, and cold-start recall proof.
+2. **Constant auto-research** — deliberately over-emphasize continuous code and web research. Refresh
+   GitKB graph intelligence and current web/vendor/tool docs every cycle; stale evidence invalidates
+   recommendations.
+3. **Rules, policy, and agent org chart** — Upgrade Only, No Downgrades, automate everything
+   researchable, replace human bottlenecks with agents where safe, explicit SUPERVISED/owner-only
+   boundaries, real agent org chart, and agent-to-agent communication via weave/A2A/MCP surfaces.
+4. **Always background agents** — heavy research/code mapping/policy scans run in background so the
+   foreground chat remains responsive and weave messages are not missed.
+5. **Rust + Lua north star** — Rust owns safe control/data planes and embedded/no_std paths; Lua/Luau
+   is evaluated as the small script/policy/runtime layer where it improves deployability without
+   weakening trust-boundary invariants.
+6. **Distributed compute across owner hardware** — plan for workstation/GPU, local servers, mobile,
+   AI glasses/wearables, Raspberry Pi/Pi Zero class Linux, ESP32/ESP32-S3 class MCU, and offline/
+   degraded operation.
+7. **Multi-vendor local+cloud mesh** — plans must evaluate local models plus multiple vendors/clouds
+   working together (OpenAI, Anthropic/Claude via weave where used, Cloudflare, Hugging Face,
+   GitHub/Copilot cloud agent, and project-local providers), with failover and data-residency policy.
+
+Required artifacts for each target:
+- `findings/memory-vector-intelligence-<T>.md`
+- `findings/autoresearch-<T>.md`
+- `findings/rules-policy-org-<T>.md`
+- `findings/distributed-compute-<T>.md`
+
 ## June 2026 P0-P2 planning-harness upgrades (mandatory)
 
 The research report at `.handoff/loop/plan/research/agentic-planning-trends-2026-06.md` is now part
@@ -142,6 +174,10 @@ of this harness contract. Every planning run must include these additions:
 | `plan-trend-researcher` | deep WEB research — best-practices + latest trends over a rolling 90-day window, every finding cited + dated | **R3a** | specialist |
 | `plan-analyst` | per-dimension analysis → cited claims, named gaps, and upgrade options each tagged **quality / speed / accuracy** | **R5** | specialist |
 | `plan-governance-config-auditor` | control-plane + settings/config scan: rules/instructions/hooks/policy/CLAUDE.md/AGENTS.md, `.claude`/`.codex`, MCP rot, skill overload, token burn, permission/config drift | **prompt P2/P5/P6** | specialist |
+| `plan-memory-vector-intelligence-auditor` | persistent memory + vector intelligence: ICM, `.handoff`, source ledgers, GitKB/vector/RAG freshness, cold-start recall proof | **memory-vector-intelligence** | specialist |
+| `plan-autoresearch-loop-auditor` | constant code+web auto-research cadence, stale-evidence invalidation, graph/web recency refresh | **autoresearch** | specialist |
+| `plan-rules-policy-org-auditor` | Upgrade Only/No Downgrades policy, automation-first rules, real agent org chart, A2A/weave communication, human-bottleneck replacement | **rules-policy-org** | specialist |
+| `plan-distributed-compute-auditor` | Rust+Lua distributed compute across workstation/mobile/glasses/Pi/Pi Zero/ESP32/local+cloud vendors | **distributed-compute** | specialist |
 | `plan-dependency-graph-auditor` | TDP target/dimension dependency DAG, topological ready-set scheduling, node-scoped context, localized SELF-REVISION | **P0 TDP** | specialist |
 | `plan-filesystem-layout-auditor` | standard OS file/folder organization: FHS/XDG, repo-native Cargo layout, envctl/meta placement boundaries, root clutter, generated/cache/state/log/runtime placement, and enforcement-test handoff | **filesystem-layout** | specialist |
 | `plan-prompt-architecture-auditor` | prompt/tool/model/runtime coupling review; ADR/no-ADR routing for prompt-induced architecture | **P0 prompt-architecture** | specialist |
@@ -152,7 +188,7 @@ of this harness contract. Every planning run must include these additions:
 | `evolution-steward` | Phase 5 self-eval + fail-closed harness self-upgrade | **R6** | shared |
 
 Skills used: `plan-cartography`, `plan-trend-research`, `plan-governance-config`,
-`plan-dependency-graph`, `plan-filesystem-layout`, `plan-prompt-architecture`, `plan-test-strategy`, `plan-synthesis`, the reused `code-research-verify` (the verifier's refute discipline), `session-relay-wrap-up`,
+`plan-memory-vector-intelligence`, `plan-autoresearch-loop`, `plan-rules-policy-org`, `plan-distributed-compute`, `plan-dependency-graph`, `plan-filesystem-layout`, `plan-prompt-architecture`, `plan-test-strategy`, `plan-synthesis`, the reused `code-research-verify` (the verifier's refute discipline), `session-relay-wrap-up`,
 `session-relay-resume`, `harness-evolution`, `icm-memory`. (The 90-day field research applies the
 deep-research *method* — fan-out search → deep-read → adversarial verify → cited synthesis —
 implemented inline by `plan-trend-research`; there is no separate `deep-research` skill to load.)
@@ -187,6 +223,10 @@ Required artifacts:
   in-window sources, flag older), every finding cited + dated.
 - governance/settings/config lanes → `findings/governance-config-<T>.md` with control-plane drift,
   settings/config hygiene, and routing (`APPLY|PROPOSE|REGENERATE`).
+- memory-vector auditor → `findings/memory-vector-intelligence-<T>.md` with memory inventory, vector intelligence map, recall guarantees, and upgrade rows.
+- autoresearch auditor → `findings/autoresearch-<T>.md` with code graph refresh, web/vendor recency, cadence, and stale-evidence rules.
+- rules-policy-org auditor → `findings/rules-policy-org-<T>.md` with policy table, agent org chart, A2A/weave map, and automation-first routing.
+- distributed-compute auditor → `findings/distributed-compute-<T>.md` with Rust/Lua hardware matrix, vendor mesh, control/data plane, and failover.
 - dependency-graph auditor → `graph/target-dag.json` + `graph/target-dag.md` with ready-set scheduling,
   node-scoped context, and SELF-REVISION rows.
 - filesystem-layout auditor → `findings/filesystem-layout-<T>.md` with path inventory, FHS/XDG +
@@ -207,7 +247,7 @@ filesystem-layout + prompt-architecture + TDP DAG + north-star findings.
 
 For each `- [ ]` code dimension, spawn `plan-analyst` (parallel) → `.handoff/loop/plan/findings/<dim>.md`. Also spawn `plan-governance-config-auditor` for the governance+settings+config axis, `plan-filesystem-layout-auditor` for the standard OS/repo layout axis, and `plan-test-strategist` for the always-on test-coverage/P8 axis:
 falsifiable **CLAIM** rows (each citing `file:line` / symbol / call-path / test) + named **gaps** +
-**UPGRADE** rows each tagged `axis: quality|speed|accuracy|governance+settings+config|filesystem-layout|prompt-architecture` with rationale, evidence, blast-radius
+**UPGRADE** rows each tagged `axis: quality|speed|accuracy|governance+settings+config|filesystem-layout|prompt-architecture|memory-vector-intelligence|autoresearch|rules-policy-org|distributed-compute` with rationale, evidence, blast-radius
 (from the graph) and risk. Analysts query the graph — blast-radius to scope each upgrade's risk,
 centrality to prioritize. Mark dimensions `- [~]` (analyzed, unverified).
 
@@ -240,7 +280,7 @@ only — never touch production code. Commit.
 
 ## Output contract
 
-End every cycle with paths to: plan file, ASCII diagrams including the control-plane diagram and any file/folder organization map, graph snapshot + diff, gap→upgrade table across quality/speed/accuracy/governance+settings+config/filesystem-layout, tool-eval table, governance findings, settings/config hygiene findings (MCP rot / skill overload / token burn / permission/config drift), prompt-architecture findings, filesystem-layout findings (path inventory / placement verdicts / boundary map / enforcement tests), TDD RED-suite evidence with tests-ran count and traceability matrix, evolution scorecard/LESSONS/proposed-upgrades, and the resume pointer.
+End every cycle with paths to: plan file, ASCII diagrams including the control-plane diagram and any file/folder organization map, graph snapshot + diff, gap→upgrade table across quality/speed/accuracy/governance+settings+config/filesystem-layout, tool-eval table, governance findings, settings/config hygiene findings (MCP rot / skill overload / token burn / permission/config drift), memory/vector findings, autoresearch findings, rules/policy/org findings, distributed-compute findings, prompt-architecture findings, filesystem-layout findings (path inventory / placement verdicts / boundary map / enforcement tests), TDD RED-suite evidence with tests-ran count and traceability matrix, evolution scorecard/LESSONS/proposed-upgrades, and the resume pointer.
 
 ## Phase 5: SELF-EVAL (every cycle) — `evolution-steward`, lightweight
 

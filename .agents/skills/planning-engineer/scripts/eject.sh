@@ -15,8 +15,8 @@ TARGET="$(cd "$TARGET" && pwd)"
 PLUGIN="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"  # harness/
 
 # OWN: the harness's own skills + its specific reuse (code-research-verify) → always refresh.
-OWN_SKILLS=(planning-engineer plan-loop plan-cartography plan-dependency-graph plan-trend-research plan-governance-config plan-filesystem-layout plan-prompt-architecture plan-test-strategy plan-synthesis code-research-verify)
-OWN_AGENTS=(plan-cartographer plan-dependency-graph-auditor plan-trend-researcher plan-governance-config-auditor plan-filesystem-layout-auditor plan-prompt-architecture-auditor plan-analyst plan-test-strategist plan-verifier plan-architect)
+OWN_SKILLS=(planning-engineer plan-loop plan-cartography plan-memory-vector-intelligence plan-autoresearch-loop plan-rules-policy-org plan-distributed-compute plan-dependency-graph plan-trend-research plan-governance-config plan-filesystem-layout plan-prompt-architecture plan-test-strategy plan-synthesis code-research-verify)
+OWN_AGENTS=(plan-cartographer plan-memory-vector-intelligence-auditor plan-autoresearch-loop-auditor plan-rules-policy-org-auditor plan-distributed-compute-auditor plan-dependency-graph-auditor plan-trend-researcher plan-governance-config-auditor plan-filesystem-layout-auditor plan-prompt-architecture-auditor plan-analyst plan-test-strategist plan-verifier plan-architect)
 # SHARED: copy only if the target lacks them (don't downgrade a hand-authored canonical version).
 SHARED_SKILLS=(session-relay-wrap-up session-relay-resume harness-loop-init harness-evolution icm-memory)
 SHARED_AGENTS=(continuity-steward evolution-steward)

@@ -91,10 +91,10 @@ grep -q 'weave_dispatch' "$repo_root/.agents/skills/planning-engineer/scripts/lo
 for t in test-plan-artifact-gate.sh test-plan-evals.sh; do
   [ -x "$repo_root/scripts/tests/$t" ] || fail "missing executable planning eval/gate test: $t"
 done
-for skill in plan-dependency-graph plan-prompt-architecture; do
+for skill in plan-memory-vector-intelligence plan-autoresearch-loop plan-rules-policy-org plan-distributed-compute plan-dependency-graph plan-prompt-architecture; do
   [ -f "$repo_root/.agents/skills/$skill/SKILL.md" ] || fail "missing planning P0 skill: $skill"
 done
-for agent in plan-dependency-graph-auditor plan-prompt-architecture-auditor; do
+for agent in plan-memory-vector-intelligence-auditor plan-autoresearch-loop-auditor plan-rules-policy-org-auditor plan-distributed-compute-auditor plan-dependency-graph-auditor plan-prompt-architecture-auditor; do
   [ -f "$repo_root/.codex/agents/$agent.toml" ] || fail "missing Codex P0 planning agent: $agent"
 done
 grep -q 'plan-artifact-gate.sh' "$repo_root/.agents/skills/planning-engineer/SKILL.md" || fail "planning-engineer does not require artifact gate"
@@ -104,6 +104,24 @@ grep -q 'findings/prompt-architecture-<T>.md' "$repo_root/.agents/skills/plan-pr
 grep -q 'sources-<T>.jsonl' "$repo_root/.agents/skills/plan-trend-research/SKILL.md" || fail "trend researcher missing source ledger contract"
 grep -q 'agent-run-ledger' "$repo_root/.agents/skills/plan-synthesis/SKILL.md" || fail "synthesis missing agent-run-ledger lift"
 grep -q 'agent_interop' "$repo_root/.agents/skills/planning-engineer/scripts/loop_state.template.md" || fail "loop state missing interop registry"
+
+# Owner critical architecture-loop axes: persistent memory/vector intelligence, constant research,
+# policy/org/A2A, Rust+Lua, distributed owner hardware, and multi-vendor local+cloud mesh.
+grep -q 'Owner north-star architecture-loop upgrade' "$repo_root/.agents/skills/planning-engineer/SKILL.md" || fail "planning-engineer missing owner critical architecture-loop section"
+grep -q 'memory-vector-intelligence-<T>.md' "$repo_root/.agents/skills/planning-engineer/SKILL.md" || fail "planning-engineer missing memory/vector artifact"
+grep -q 'autoresearch-<T>.md' "$repo_root/.agents/skills/planning-engineer/SKILL.md" || fail "planning-engineer missing autoresearch artifact"
+grep -q 'rules-policy-org-<T>.md' "$repo_root/.agents/skills/planning-engineer/SKILL.md" || fail "planning-engineer missing rules/policy/org artifact"
+grep -q 'distributed-compute-<T>.md' "$repo_root/.agents/skills/planning-engineer/SKILL.md" || fail "planning-engineer missing distributed compute artifact"
+grep -q 'Pi Zero' "$repo_root/.agents/skills/plan-distributed-compute/SKILL.md" || fail "distributed compute skill missing Pi Zero target"
+grep -q 'ESP32' "$repo_root/.agents/skills/plan-distributed-compute/SKILL.md" || fail "distributed compute skill missing ESP32 target"
+grep -q 'Lua' "$repo_root/.agents/skills/plan-distributed-compute/SKILL.md" || fail "distributed compute skill missing Lua target"
+grep -q 'No Downgrades' "$repo_root/.agents/skills/plan-rules-policy-org/SKILL.md" || fail "rules-policy skill missing no-downgrades rule"
+grep -q 'ICM' "$repo_root/.agents/skills/plan-memory-vector-intelligence/SKILL.md" || fail "memory-vector skill missing ICM"
+grep -q 'stale-evidence' "$repo_root/.agents/skills/plan-autoresearch-loop/SKILL.md" || fail "autoresearch skill missing stale-evidence invalidation"
+if grep -nE 'directory = /tmp/\.tmp' "$repo_root/home/.gitconfig" >/tmp/envctl-safe-dir-grep.txt 2>/dev/null; then
+  cat /tmp/envctl-safe-dir-grep.txt >&2
+  fail "tracked home/.gitconfig must not trust ephemeral /tmp/.tmp* safe.directory paths"
+fi
 
 python3 - "$repo_root" <<'PY'
 from pathlib import Path

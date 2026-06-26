@@ -21,6 +21,10 @@ dimension status is gated by `plan-verifier`. Lay the tree down with `harness-lo
   research/<T>.trends.md   # 90-day web findings, every finding cited + dated
   research/sources-<T>.jsonl # machine-readable source ledger (url/title/publisher/dates/claim_ids)
   findings/<dim>.md        # analyst: CLAIM + gap + UPGRADE rows
+  findings/memory-vector-intelligence-<T>.md # persistent memory + vector/code intelligence guarantees
+  findings/autoresearch-<T>.md # constant code+web auto-research cadence and stale evidence invalidation
+  findings/rules-policy-org-<T>.md # owner policy, agent org chart, A2A/weave communication
+  findings/distributed-compute-<T>.md # Rust+Lua multi-vendor edge/cloud hardware fabric
   findings/prompt-architecture-<T>.md # prompt/tool/model/runtime coupling review + ADR/no-ADR rationale
   findings/verdicts.md     # verifier verdicts (append per dimension)
   reports/codemap-<T>.md   # structural map
@@ -102,7 +106,7 @@ artifacts, not just prompt prose:
 - required graph/research/findings/report artifacts exist for every `- [x]` target;
 - `target-dag.json/md` records TDP ready-set scheduling and SELF-REVISION capability;
 - `sources-<T>.jsonl` is valid JSONL with URL/title/publisher/accessed/published/recency/claim ids;
-- prompt-architecture, filesystem-layout, governance/config, test strategy, verdicts, risk policy,
+- memory/vector, autoresearch, rules/policy/org, distributed-compute, prompt-architecture, filesystem-layout, governance/config, test strategy, verdicts, risk policy,
   backend matrix, interop registry, and agent-run ledger are present;
 - `DONE` is rejected unless all target/dimension rows are terminal and the completeness sweep is
   recorded with confirmed/qualified evidence.
@@ -120,3 +124,18 @@ artifacts, not just prompt prose:
 - **P2 reproducible research/interoperability** — `sources-<T>.jsonl` and `agent-interop.md` preserve
   source provenance and future weave/MCP/ACP/A2A/GitHub-cloud routing decisions without weakening the
   current weave→Opus law.
+
+
+## Owner critical architecture-loop artifacts
+
+For each completed target, these artifacts are mandatory in addition to the P0-P2 gate artifacts:
+
+- `findings/memory-vector-intelligence-<T>.md` — ICM/`.handoff`/source ledger/GitKB/vector/RAG
+  inventory, freshness, recall/store guarantees, and cold-start proof.
+- `findings/autoresearch-<T>.md` — constant code graph + web/vendor research cadence, contradiction
+  checks, and stale-evidence invalidation.
+- `findings/rules-policy-org-<T>.md` — Upgrade Only, No Downgrades, automation-first policy, real
+  agent org chart, background-agent law, A2A/weave message map, and human-bottleneck replacement.
+- `findings/distributed-compute-<T>.md` — Rust+Lua runtime strategy, workstation/local/mobile/AI
+  glasses/Pi/Pi Zero/ESP32 hardware matrix, multi-vendor local+cloud mesh, failover, telemetry,
+  secrets, and data-residency policy.

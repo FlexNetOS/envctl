@@ -15,6 +15,10 @@ risk_policy: risk-policy.md                              # HITL/SUPERVISED routi
 agent_backend_matrix: agent-backend-matrix.md            # local/worktree/container/remote/cloud/ACP/A2A isolation decision
 agent_interop: agent-interop.md                          # weave/MCP/ACP/A2A/GitHub cloud agent routing registry
 prompt_architecture: findings/prompt-architecture-<T>.md # prompt/tool/model couplings + ADR/no-ADR review
+memory_vector_intelligence: findings/memory-vector-intelligence-<T>.md # persistent memory + vector/code intelligence
+autoresearch: findings/autoresearch-<T>.md            # constant code+web research cadence
+rules_policy_org: findings/rules-policy-org-<T>.md    # Upgrade Only/No Downgrades + agent org + A2A
+distributed_compute: findings/distributed-compute-<T>.md # Rust/Lua hardware/vendor compute fabric
 weave_dispatch: weave-dispatch/<run-id>.jsonl        # five Opus lane transport rows (peer/session/message/job ids)
 weave_orchestrator: envctl-plan-orchestrator-<run-id> # unique foreground registration; avoid ambiguous aliases
 cycle_budget: 3                                      # completed planning cycles per session before HAND OFF
