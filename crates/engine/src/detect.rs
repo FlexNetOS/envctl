@@ -238,7 +238,7 @@ const CARGO_META_TOOLS: &[&str] = &["weave", "grit", "secretctl", "secretd"];
 fn meta_boundary_report() -> MetaBoundaryReport {
     let layout = MetaLayout::from_env_or_default();
     let local_bin = layout.bin();
-    let cargo_bin = home_join(".cargo/bin");
+    let cargo_bin = layout.legacy_toolchains().join("cargo/bin");
     let Some(meta_root) = resolve_meta_root() else {
         return MetaBoundaryReport {
             meta_root: None,
@@ -272,13 +272,6 @@ fn normalize_meta_root(root: PathBuf) -> PathBuf {
         before_worktrees.push(component.as_os_str());
     }
     root
-}
-
-fn home_join(rel: &str) -> PathBuf {
-    std::env::var("HOME")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| PathBuf::from(""))
-        .join(rel)
 }
 
 fn meta_boundary_report_for(
@@ -462,7 +455,7 @@ mod tests {
         let root = temp_root("accepts-local-bin-symlink");
         let meta = root.join("meta");
         let local_bin = root.join("home/.local/bin");
-        let cargo_bin = root.join("home/.cargo/bin");
+        let cargo_bin = meta.join(".toolchains/cargo/bin");
         std::fs::create_dir_all(meta.join("target/release")).unwrap();
         std::fs::create_dir_all(&local_bin).unwrap();
         std::fs::create_dir_all(&cargo_bin).unwrap();
@@ -481,7 +474,7 @@ mod tests {
         let root = temp_root("refuses-foreign-copy");
         let meta = root.join("meta");
         let local_bin = root.join("home/.local/bin");
-        let cargo_bin = root.join("home/.cargo/bin");
+        let cargo_bin = meta.join(".toolchains/cargo/bin");
         std::fs::create_dir_all(&meta).unwrap();
         std::fs::create_dir_all(&local_bin).unwrap();
         std::fs::create_dir_all(&cargo_bin).unwrap();
@@ -504,7 +497,7 @@ mod tests {
         let meta = root.join("meta");
         let outside = root.join("outside");
         let local_bin = root.join("home/.local/bin");
-        let cargo_bin = root.join("home/.cargo/bin");
+        let cargo_bin = meta.join(".toolchains/cargo/bin");
         std::fs::create_dir_all(&meta).unwrap();
         std::fs::create_dir_all(&outside).unwrap();
         std::fs::create_dir_all(&local_bin).unwrap();

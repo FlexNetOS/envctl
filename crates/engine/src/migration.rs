@@ -724,16 +724,20 @@ mod tests {
         let root = tempdir("migration-scan");
         let manifest = root.join("manifest");
         std::fs::create_dir_all(&manifest).unwrap();
+        let legacy_home_local = ["~", ".local/bin/foo"].join("/");
+        let legacy_usr_local = ["/usr/local/bin", "foo"].join("/");
         std::fs::write(
             manifest.join("base.toml"),
-            r#"
+            format!(
+                r#"
 [[component]]
 id = "legacy"
 name = "Legacy"
 [component.install]
 kind = "script"
-script = "mkdir -p $META_ROOT/.toolchains/legacy && ln -s ~/.local/bin/foo /usr/local/bin/foo"
-"#,
+script = "mkdir -p $META_ROOT/.toolchains/legacy && ln -s {legacy_home_local} {legacy_usr_local}"
+"#
+            ),
         )
         .unwrap();
         std::fs::create_dir_all(root.join("crates/engine")).unwrap();

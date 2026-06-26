@@ -228,8 +228,10 @@ pub(crate) mod seed_factor {
         if let Ok(meta) = std::env::var("META_ROOT") {
             return std::path::PathBuf::from(meta);
         }
-        let home = std::env::var("HOME").unwrap_or_else(|_| String::from("/home/drdave"));
-        std::path::PathBuf::from(home).join("Desktop/meta")
+        if let Ok(home) = std::env::var("HOME") {
+            return std::path::PathBuf::from(home).join("Desktop/meta");
+        }
+        std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
     }
 
     fn canonical_seed_ca(meta: &std::path::Path) -> std::path::PathBuf {

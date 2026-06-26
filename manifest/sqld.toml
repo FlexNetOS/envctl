@@ -24,7 +24,7 @@ destructive = false
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "test -x \"$HOME/.local/bin/sqld\" && test -f \"$HOME/.config/systemd/user/sqld.service\""]
+args = ["-lc", "test -x \"$META_ROOT/.local/bin/sqld\" && test -f \"$META_ROOT/.config/systemd/user/sqld.service\""]
 
 # INSTALL: fetch the prebuilt sqld release tarball, place the binary, create the loopback data dir.
 # Pinned version for reproducibility; override with SQLD_VERSION. Idempotent.
@@ -40,10 +40,10 @@ case "$arch" in
   *) echo "FATAL: unsupported arch $arch for sqld release binary"; exit 1 ;;
 esac
 
-install -d -m755 "$HOME/.local/bin"
-install -d -m700 "$HOME/.local/share/sqld"   # loopback data dir (the durable libSQL database)
+install -d -m755 "$META_ROOT/.local/bin"
+install -d -m700 "$META_ROOT/.local/share/sqld"   # loopback data dir (the durable libSQL database)
 
-if [ ! -x "$HOME/.local/bin/sqld" ]; then
+if [ ! -x "$META_ROOT/.local/bin/sqld" ]; then
   tmp="$(mktemp -d)"
   trap 'rm -rf "$tmp"' EXIT
   # Release asset naming: tag = libsql-server-<ver>; asset = libsql-server-<target>.tar.xz.
@@ -55,7 +55,7 @@ if [ ! -x "$HOME/.local/bin/sqld" ]; then
   # The tarball contains the `sqld` binary (under a versioned dir); place just the binary.
   bin="$(find "$tmp" -type f -name sqld | head -n1)"
   test -n "$bin" || { echo "FATAL: sqld binary not found in tarball"; exit 1; }
-  install -Dm755 "$bin" "$HOME/.local/bin/sqld"
+  install -Dm755 "$bin" "$META_ROOT/.local/bin/sqld"
 fi
 '''
 
@@ -65,7 +65,7 @@ fi
 kind = "command"
 command = "bash"
 args = ["-lc", '''
-export PATH="$HOME/.local/bin:$PATH"
+export PATH="$META_ROOT/.local/bin:$PATH"
 sqld --version >/dev/null 2>&1 || sqld --help >/dev/null 2>&1 || exit 1
 if systemctl --user is-active --quiet sqld.service; then
   if curl -fsS http://127.0.0.1:8080/health >/dev/null 2>&1 \
@@ -92,15 +92,15 @@ case "$arch" in
   aarch64) target="aarch64-unknown-linux-gnu" ;;
   *) echo "FATAL: unsupported arch $arch"; exit 1 ;;
 esac
-install -d -m755 "$HOME/.local/bin"
-install -d -m700 "$HOME/.local/share/sqld"
-if [ ! -x "$HOME/.local/bin/sqld" ]; then
+install -d -m755 "$META_ROOT/.local/bin"
+install -d -m700 "$META_ROOT/.local/share/sqld"
+if [ ! -x "$META_ROOT/.local/bin/sqld" ]; then
   tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
   url="https://github.com/tursodatabase/libsql/releases/download/libsql-server-${ver}/libsql-server-${target}.tar.xz"
   curl -fsSL "$url" -o "$tmp/sqld.tar.xz" || { echo "FATAL: download failed $url"; exit 1; }
   tar -xJf "$tmp/sqld.tar.xz" -C "$tmp"
   bin="$(find "$tmp" -type f -name sqld | head -n1)"
-  install -Dm755 "$bin" "$HOME/.local/bin/sqld"
+  install -Dm755 "$bin" "$META_ROOT/.local/bin/sqld"
 fi
 systemctl --user daemon-reload || true
 systemctl --user enable --now sqld.service || true
@@ -112,14 +112,14 @@ kind = "script"
 script = '''
 set -euo pipefail
 systemctl --user disable --now sqld.service 2>/dev/null || true
-rm -f "$HOME/.local/bin/sqld"
+rm -f "$META_ROOT/.local/bin/sqld"
 systemctl --user daemon-reload || true
-# ~/.local/share/sqld is data_paths below — never deleted by remove(); --purge only (user data rule).
+# $META_ROOT/.local/share/sqld is data_paths below — never deleted by remove(); --purge only (user data rule).
 '''
 
 # ---- WIRING: PATH + the loopback user service that secretd orders after ----
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 
 [[component.wiring.systemd_user]]
 name = "sqld.service"
@@ -152,4 +152,4 @@ WantedBy=default.target
 
 # ---- DATA: the durable libSQL database — deleted ONLY by `envctl reset sqld --purge` ----
 [[component.wiring.data_paths]]
-path = "~/.local/share/sqld"
+path = "$META_ROOT/.local/share/sqld"

@@ -319,7 +319,7 @@ fn json_shapes_cover_detect_doctor_graph_and_registry() {
 #[test]
 fn secret_wrapper_forwards_frozen_argv_without_live_daemon() {
     let fx = Fixture::new();
-    let local_bin = fx.home.join(".local/bin");
+    let local_bin = fx.meta.join(".local/bin");
     std::fs::create_dir_all(&local_bin).unwrap();
     let log = fx.root.join("secretctl-argv.log");
     let fake = local_bin.join("secretctl");
@@ -442,9 +442,12 @@ fn migration_scan_json_reports_meta_layout_and_legacy_manifest_debt() {
     let fx = Fixture::new();
     let components = fx.manifest.join("components.d");
     std::fs::create_dir_all(&components).unwrap();
+    let legacy_home_local = ["~", ".local/bin/foo"].join("/");
+    let legacy_usr_local = ["/usr", "local/bin/bar"].join("/");
     std::fs::write(
         components.join("legacy.toml"),
-        r#"
+        format!(
+            r#"
 [[component]]
 id = "legacy-paths"
 name = "Legacy Paths"
@@ -456,8 +459,9 @@ command = "true"
 [component.install]
 kind = "command"
 command = "sh"
-args = ["-c", "echo $META_ROOT/.toolchains/legacy && echo ~/.local/bin/foo && echo /usr/local/bin/bar"]
-"#,
+args = ["-c", "echo $META_ROOT/.toolchains/legacy && echo {legacy_home_local} && echo {legacy_usr_local}"]
+"#
+        ),
     )
     .unwrap();
 

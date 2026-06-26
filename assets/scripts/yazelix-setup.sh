@@ -10,15 +10,21 @@
 # NOT installed here: nushell + mise. The yazelix runtime bundles both (use them
 # via `yzx env` or from inside yazelix). Ghostty + Node come from apt at install.
 #
-# Auto-launched once on first GUI login via ~/.config/autostart; removes its own
+# Auto-launched once on first GUI login via $META_ROOT/.config/autostart; removes its own
 # autostart entry on a clean finish. Re-run any time: yazelix-setup.sh
 # Runs as the logged-in user; uses sudo only for the few system steps.
 # Each step is best-effort: failures are logged and the wizard keeps going.
 # =============================================================================
 set -uo pipefail
+META_ROOT="${META_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)}"
+export META_ROOT
+export HOME="$META_ROOT"
+META_BASHRC="$META_ROOT/.bashrc"
+touch "$META_BASHRC" 2>/dev/null || true
 
-LOG="$HOME/yazelix-setup.log"
-AUTOSTART="$HOME/.config/autostart/yazelix-setup.desktop"
+LOG="$META_ROOT/.local/state/envctl/yazelix-setup.log"
+mkdir -p "$(dirname "$LOG")"
+AUTOSTART="$META_ROOT/.config/autostart/yazelix-setup.desktop"
 exec > >(tee -a "$LOG") 2>&1
 
 c_ok()   { printf '\033[1;32m  ✓ %s\033[0m\n' "$*"; }
@@ -31,7 +37,7 @@ run() {  # run "<label>" cmd...   -> records failures, never aborts the wizard
   if "$@"; then c_ok "$label"; else c_warn "FAILED: $label (see $LOG)"; fail+=("$label"); return 1; fi
 }
 load_nix() { . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null || true
-             export PATH="$HOME/.nix-profile/bin:$PATH"; }
+             export PATH="$META_ROOT/.nix-profile/bin:$PATH"; }
 
 cat <<'BANNER'
 
@@ -42,7 +48,7 @@ cat <<'BANNER'
   └────────────────────────────────────────────────────────┘
 
   Downloads a lot of tooling; needs the internet (~15–30 min).
-  Safe to re-run. Full log: ~/yazelix-setup.log
+  Safe to re-run. Full log: $META_ROOT/.local/state/envctl/yazelix-setup.log
 
 BANNER
 read -rp "  Press Enter to begin (Ctrl-C to cancel)… " _ || true
@@ -60,7 +66,7 @@ command -v ghostty >/dev/null && c_ok "ghostty present (apt)" || c_warn "ghostty
 # --- 1. Nerd Fonts ----------------------------------------------------------
 run "Nerd Fonts (JetBrainsMono, FiraCode)" bash -c '
   set -e
-  FD="$HOME/.local/share/fonts"; mkdir -p "$FD"; cd "$(mktemp -d)"
+  FD="$META_ROOT/.local/share/fonts"; mkdir -p "$FD"; cd "$(mktemp -d)"
   base="https://github.com/ryanoasis/nerd-fonts/releases/latest/download"
   for f in JetBrainsMono FiraCode; do
     curl -fsSL -o "$f.zip" "$base/$f.zip"
@@ -75,10 +81,10 @@ run "Nerd Fonts (JetBrainsMono, FiraCode)" bash -c '
 # no separate Node.js install is needed. Codex/Gemini are installed with
 # `bun install -g` (their bins run via Bun). Claude/Kimi/Devin use their own
 # native installers (independent of Node).
-run "Bun (JS runtime + package manager)" bash -c 'curl -fsSL https://bun.sh/install | bash'
-export BUN_INSTALL="$HOME/.bun"; export PATH="$BUN_INSTALL/bin:$HOME/.local/bin:$PATH"
-grep -q '.bun/bin' "$HOME/.bashrc" 2>/dev/null || \
-  echo 'export PATH="$HOME/.bun/bin:$HOME/.local/bin:$PATH"' >> "$HOME/.bashrc"
+run "Bun (JS runtime + package manager)" bash -c 'export BUN_INSTALL="$META_ROOT/.toolchains/.bun"; curl -fsSL https://bun.sh/install | bash'
+export BUN_INSTALL="$META_ROOT/.toolchains/.bun"; export PATH="$BUN_INSTALL/bin:$META_ROOT/.local/bin:$PATH"
+grep -q '.bun/bin' "$META_BASHRC" 2>/dev/null || \
+  echo 'export PATH="$META_ROOT/.toolchains/.bun/bin:$META_ROOT/.local/bin:$PATH"' >> "$META_BASHRC"
 # Provide `node` via Bun (Bun detects argv0=node and runs in Node-compat mode).
 if command -v bun >/dev/null; then
   ln -sf "$(command -v bun)" "$BUN_INSTALL/bin/node"
@@ -88,7 +94,7 @@ fi
 
 run "Claude Code CLI"          bash -c 'curl -fsSL https://claude.ai/install.sh | bash'
 run "Codex + Gemini (via bun)" bash -c '
-  export BUN_INSTALL="$HOME/.bun"; export PATH="$BUN_INSTALL/bin:$PATH"
+  export BUN_INSTALL="$META_ROOT/.toolchains/.bun"; export PATH="$BUN_INSTALL/bin:$PATH"
   bun install -g @openai/codex @google/gemini-cli'
 run "Kimi CLI"                 bash -c 'curl -LsSf https://code.kimi.com/install.sh | bash'
 run "Devin CLI"                bash -c 'curl -fsSL https://cli.devin.ai/install.sh | bash'
@@ -98,9 +104,9 @@ if ! command -v cargo >/dev/null; then
   run "Rust toolchain (rustup)" bash -c \
     "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y"
 fi
-. "$HOME/.cargo/env" 2>/dev/null || export PATH="$HOME/.cargo/bin:$PATH"
+. "$META_ROOT/.toolchains/cargo/env" 2>/dev/null || export PATH="$META_ROOT/.toolchains/cargo/bin:$PATH"
 run "rtk (cargo install)" bash -c '
-  . "$HOME/.cargo/env" 2>/dev/null || export PATH="$HOME/.cargo/bin:$PATH"
+  . "$META_ROOT/.toolchains/cargo/env" 2>/dev/null || export PATH="$META_ROOT/.toolchains/cargo/bin:$PATH"
   cargo install --git https://github.com/rtk-ai/rtk'
 
 # --- 3b. CUDA + cuda-oxide + NVIDIA Container Toolkit + PyTorch --------------
@@ -136,24 +142,24 @@ if lspci 2>/dev/null | grep -qiE 'nvidia'; then
   LLC="$(command -v llc-22 || command -v llc-21 || true)"
   [ -z "$LLC" ] && LLC="$(ls /usr/lib/llvm-2*/bin/llc 2>/dev/null | sort -V | tail -n1)"
   export PATH="$CUDA_HOME/bin:$PATH"; export CUDA_OXIDE_LLC="$LLC"
-  if ! grep -q 'BEGIN cuda env' "$HOME/.bashrc" 2>/dev/null; then
-    cat >> "$HOME/.bashrc" <<EOF
+  if ! grep -q 'BEGIN cuda env' "$META_BASHRC" 2>/dev/null; then
+    cat >> "$META_BASHRC" <<EOF
 # >>> BEGIN cuda env (added by yazelix-setup.sh) >>>
 export PATH="$CUDA_HOME/bin:\$PATH"
 export LD_LIBRARY_PATH="$CUDA_HOME/lib64:\${LD_LIBRARY_PATH:-}"
 export CUDA_OXIDE_LLC="$LLC"
 # <<< END cuda env <<<
 EOF
-    c_ok "CUDA + llc env added to ~/.bashrc (CUDA_OXIDE_LLC=$LLC)"
+    c_ok "CUDA + llc env added to $META_ROOT/.bashrc (CUDA_OXIDE_LLC=$LLC)"
   fi
 
   run "Rust nightly + components for cuda-oxide" bash -c '
-    . "$HOME/.cargo/env" 2>/dev/null || export PATH="$HOME/.cargo/bin:$PATH"
+    . "$META_ROOT/.toolchains/cargo/env" 2>/dev/null || export PATH="$META_ROOT/.toolchains/cargo/bin:$PATH"
     rustup toolchain install nightly-2026-04-03
     rustup component add rust-src rustc-dev llvm-tools --toolchain nightly-2026-04-03'
 
   run "cargo-oxide (latest, from git)" bash -c '
-    . "$HOME/.cargo/env" 2>/dev/null || export PATH="$HOME/.cargo/bin:$PATH"
+    . "$META_ROOT/.toolchains/cargo/env" 2>/dev/null || export PATH="$META_ROOT/.toolchains/cargo/bin:$PATH"
     cargo install --git https://github.com/NVlabs/cuda-oxide.git cargo-oxide'
 
   # NVIDIA Container Toolkit + CDI so rootless Podman can use the GPUs.
@@ -174,12 +180,12 @@ EOF
   # (Python 3.14, matching 26.04) x86_64 manylinux_2_28 wheels that include
   # Blackwell sm_120 kernels. The wheels bundle their own CUDA 13.2 runtime, so
   # they never touch system CUDA 13.3; they only need a recent driver (610 OK).
-  # Activate with: source ~/.venvs/torch/bin/activate
-  run "PyTorch (cu132) in ~/.venvs/torch" bash -c '
+  # Activate with: source $META_ROOT/.venvs/torch/bin/activate
+  run "PyTorch (cu132) in $META_ROOT/.venvs/torch" bash -c '
     set -e
-    python3 -m venv "$HOME/.venvs/torch"
-    "$HOME/.venvs/torch/bin/pip" install --upgrade pip
-    "$HOME/.venvs/torch/bin/pip" install torch torchvision --index-url https://download.pytorch.org/whl/cu132'
+    python3 -m venv "$META_ROOT/.venvs/torch"
+    "$META_ROOT/.venvs/torch/bin/pip" install --upgrade pip
+    "$META_ROOT/.venvs/torch/bin/pip" install torch torchvision --index-url https://download.pytorch.org/whl/cu132'
 
   if command -v nvidia-smi >/dev/null && nvidia-smi -L >/dev/null 2>&1; then
     c_ok "$(nvidia-smi -L 2>/dev/null | head -n2 | tr '\n' ';')"
@@ -193,7 +199,7 @@ fi
 # --- 3e. Extra dev toolchains: gh, Vite, wasmer, uv -------------------------
 # (Bun + node->bun were set up in section 2, before the AI CLIs.)
 # cargo is already present (rustup, from the rtk step) — confirm it.
-. "$HOME/.cargo/env" 2>/dev/null || export PATH="$HOME/.cargo/bin:$PATH"
+. "$META_ROOT/.toolchains/cargo/env" 2>/dev/null || export PATH="$META_ROOT/.toolchains/cargo/bin:$PATH"
 command -v cargo >/dev/null && c_ok "cargo $(cargo --version 2>/dev/null | awk '{print $2}')" \
   || c_warn "cargo missing (rustup step may have failed)"
 
@@ -209,13 +215,13 @@ run "GitHub CLI (gh, official repo)" bash -c '
   sudo apt-get update -y
   sudo apt-get install -y gh'
 
-export BUN_INSTALL="$HOME/.bun"; export PATH="$BUN_INSTALL/bin:$PATH"
+export BUN_INSTALL="$META_ROOT/.toolchains/.bun"; export PATH="$BUN_INSTALL/bin:$PATH"
 # Vite via Bun (global). Use `bunx create-vite` to scaffold projects.
 run "Vite (via bun add -g)" bash -c '
-  export BUN_INSTALL="$HOME/.bun"; export PATH="$BUN_INSTALL/bin:$PATH"
+  export BUN_INSTALL="$META_ROOT/.toolchains/.bun"; export PATH="$BUN_INSTALL/bin:$PATH"
   bun add -g vite'
 
-# wasmer — WebAssembly runtime (its installer appends its own PATH to ~/.bashrc).
+# wasmer — WebAssembly runtime (its installer appends its own PATH to $META_ROOT/.bashrc).
 run "Wasmer (WASM runtime)" bash -c 'curl -fsSL https://get.wasmer.io | sh'
 
 # uv — fast Python package/project manager (latest Python toolchain).
@@ -226,14 +232,17 @@ run "uv (Python toolchain)" bash -c 'curl -LsSf https://astral.sh/uv/install.sh 
 # also installed as a one-shot autostart that re-runs on the next login and
 # self-disables once the driver is live and the checks pass.
 if lspci 2>/dev/null | grep -qiE 'nvidia'; then
-  mkdir -p "$HOME/.local/bin" "$HOME/.config/autostart"
+  mkdir -p "$META_ROOT/.local/bin" "$META_ROOT/.config/autostart"
 
-  cat > "$HOME/.local/bin/yazelix-gpu-verify.sh" <<'YZXGPU'
+  cat > "$META_ROOT/.local/bin/yazelix-gpu-verify.sh" <<'YZXGPU'
 #!/usr/bin/env bash
 # GPU stack smoke test: NVIDIA driver, PyTorch CUDA (+ sm_120 kernel), cuda-oxide,
 # and Podman CDI. Auto-runs once after the post-install reboot, then self-disables.
 set -uo pipefail
-AUTOSTART="$HOME/.config/autostart/yazelix-gpu-verify.desktop"
+META_ROOT="${META_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+export META_ROOT
+export HOME="$META_ROOT"
+AUTOSTART="$META_ROOT/.config/autostart/yazelix-gpu-verify.desktop"
 ok(){   printf '\033[1;32m  ✓ %s\033[0m\n' "$*"; }
 no(){   printf '\033[1;31m  ✗ %s\033[0m\n' "$*"; }
 warn(){ printf '\033[1;33m  ! %s\033[0m\n' "$*"; }
@@ -248,8 +257,8 @@ else
 fi
 
 echo; echo "-- PyTorch --"
-if [ -x "$HOME/.venvs/torch/bin/python" ]; then
-  "$HOME/.venvs/torch/bin/python" - <<'PY' || warn "PyTorch check raised an error"
+if [ -x "$META_ROOT/.venvs/torch/bin/python" ]; then
+  "$META_ROOT/.venvs/torch/bin/python" - <<'PY' || warn "PyTorch check raised an error"
 import torch
 print("  torch", torch.__version__, "| CUDA build", torch.version.cuda)
 avail = torch.cuda.is_available()
@@ -265,11 +274,11 @@ else:
     print("  (no CUDA — expected before the driver reboot)")
 PY
 else
-  warn "PyTorch venv not found at ~/.venvs/torch"
+  warn "PyTorch venv not found at $META_ROOT/.venvs/torch"
 fi
 
 echo; echo "-- cuda-oxide --"
-export PATH="$HOME/.cargo/bin:$PATH"
+export PATH="$META_ROOT/.toolchains/cargo/bin:$PATH"
 if command -v cargo-oxide >/dev/null; then ok "cargo-oxide present ($(cargo-oxide --version 2>/dev/null | head -n1))"
 else warn "cargo-oxide not on PATH (open a new shell, or check the install log)"; fi
 
@@ -285,17 +294,20 @@ echo
 if [ "$DRIVER_OK" = 1 ]; then
   rm -f "$AUTOSTART" 2>/dev/null && ok "Verification complete — disabled the post-reboot auto-run."
 else
-  warn "Re-run after reboot:  ~/.local/bin/yazelix-gpu-verify.sh"
+  warn "Re-run after reboot:  $META_ROOT/.local/bin/yazelix-gpu-verify.sh"
 fi
 echo "=========================================================="
 read -rp "  Press Enter to close… " _ 2>/dev/null || true
 YZXGPU
-  chmod +x "$HOME/.local/bin/yazelix-gpu-verify.sh"
+  chmod +x "$META_ROOT/.local/bin/yazelix-gpu-verify.sh"
 
   # Terminal launcher for the post-reboot autostart (same fallback chain as the wizard).
-  cat > "$HOME/.local/bin/yazelix-gpu-verify-launch.sh" <<'YZXGPUL'
+  cat > "$META_ROOT/.local/bin/yazelix-gpu-verify-launch.sh" <<'YZXGPUL'
 #!/usr/bin/env bash
-V="$HOME/.local/bin/yazelix-gpu-verify.sh"
+META_ROOT="${META_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
+export META_ROOT
+export HOME="$META_ROOT"
+V="$META_ROOT/.local/bin/yazelix-gpu-verify.sh"
 [ -x "$V" ] || exit 0
 if   command -v ghostty        >/dev/null; then exec ghostty -e bash -lc "$V"
 elif command -v kgx            >/dev/null; then exec kgx -- bash -lc "$V"
@@ -303,15 +315,15 @@ elif command -v gnome-terminal >/dev/null; then exec gnome-terminal -- bash -lc 
 elif command -v xterm          >/dev/null; then exec xterm -e bash -lc "$V"
 else bash -lc "$V"; fi
 YZXGPUL
-  chmod +x "$HOME/.local/bin/yazelix-gpu-verify-launch.sh"
+  chmod +x "$META_ROOT/.local/bin/yazelix-gpu-verify-launch.sh"
 
   # One-shot autostart: re-runs the smoke test on next login (post-reboot).
-  cat > "$HOME/.config/autostart/yazelix-gpu-verify.desktop" <<EOF
+  cat > "$META_ROOT/.config/autostart/yazelix-gpu-verify.desktop" <<EOF
 [Desktop Entry]
 Type=Application
 Name=GPU Stack Verification
 Comment=Verifies NVIDIA driver, PyTorch CUDA, cuda-oxide, Podman GPU after reboot
-Exec=$HOME/.local/bin/yazelix-gpu-verify-launch.sh
+Exec=$META_ROOT/.local/bin/yazelix-gpu-verify-launch.sh
 Terminal=false
 X-GNOME-Autostart-enabled=true
 X-GNOME-Autostart-Delay=12
@@ -319,7 +331,7 @@ EOF
 
   # Run it once now (pre-reboot: confirms installs; driver shows as not-yet-active).
   c_step "GPU stack smoke test (initial run)"
-  bash "$HOME/.local/bin/yazelix-gpu-verify.sh" </dev/null || true
+  bash "$META_ROOT/.local/bin/yazelix-gpu-verify.sh" </dev/null || true
 fi
 
 # --- 4. Nix (Determinate Systems installer, flakes enabled) ------------------
@@ -369,7 +381,7 @@ if command -v nix >/dev/null; then
   load_nix
   # NOTE: settings.jsonc is intentionally NOT pre-written here. yazelix seeds its
   # own full default (all options) on first launch — letting it do so avoids any
-  # conflict with how yazelix installs. The optional helper /usr/local/bin/
+  # conflict with how yazelix installs. The optional helper under $META_ROOT/.local/bin/
   # yazelix-config.sh can restore that default later if it ever goes missing.
   # Desktop launcher entry + health check (per yazelix docs).
   command -v yzx >/dev/null && run "yzx desktop install" bash -c 'yzx desktop install' || c_warn "yzx not on PATH yet (open a new shell)"
@@ -380,23 +392,23 @@ else
 fi
 
 # --- 8. Make yazelix the default everyday host shell ------------------------
-# Append a guarded auto-enter block to ~/.bashrc so opening ANY terminal drops
+# Append a guarded auto-enter block to $META_ROOT/.bashrc so opening ANY terminal drops
 # you into yazelix (default_shell = nu). Nix is sourced first because GUI
 # terminals start NON-login shells that skip /etc/profile.d. Guards prevent
 # re-entry from zellij panes, non-interactive shells, and dumb terminals.
 if command -v yzx >/dev/null; then
-  c_step "Set yazelix as the default everyday shell (~/.bashrc auto-enter)"
-  if grep -q 'BEGIN yazelix auto-enter' "$HOME/.bashrc" 2>/dev/null; then
+  c_step "Set yazelix as the default everyday shell ($META_ROOT/.bashrc auto-enter)"
+  if grep -q 'BEGIN yazelix auto-enter' "$META_BASHRC" 2>/dev/null; then
     c_ok "auto-enter block already present"
   else
-    cat >> "$HOME/.bashrc" <<'YZXRC'
+    cat >> "$META_BASHRC" <<'YZXRC'
 
 # >>> BEGIN yazelix auto-enter (added by yazelix-setup.sh) >>>
 # Load Nix into interactive (incl. non-login) shells so `yzx` is on PATH.
 if [ -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
   . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 fi
-export PATH="$HOME/.nix-profile/bin:$PATH"
+export PATH="$META_ROOT/.nix-profile/bin:$PATH"
 # Enter yazelix for top-level interactive shells; return to bash on exit.
 if [[ $- == *i* ]] \
    && [[ -z "${ZELLIJ:-}" ]] \
@@ -408,7 +420,7 @@ if [[ $- == *i* ]] \
 fi
 # <<< END yazelix auto-enter <<<
 YZXRC
-    c_ok "auto-enter block added to ~/.bashrc"
+    c_ok "auto-enter block added to $META_ROOT/.bashrc"
   fi
   # Best-effort: make Ghostty the default terminal emulator for the desktop.
   if command -v ghostty >/dev/null; then
@@ -435,17 +447,17 @@ cat <<'NEXT'
 
   yazelix is now your DEFAULT shell: open a new terminal and it auto-enters
   (nushell + mise live inside it). To get a plain bash prompt instead, run:
-  YAZELIX_ACTIVE=1 bash   — or comment out the block in ~/.bashrc.
+  YAZELIX_ACTIVE=1 bash   — or comment out the block in $META_ROOT/.bashrc.
 
   First-run notes:
     • AI logins:     claude / codex / gemini / kimi   (run /login as prompted)
     • Devin:         cd <project> && devin
     • rtk:           rtk gain ; rtk init -g
     • GPU verify:    runs automatically after you REBOOT (auto-disables once OK);
-                     or manually: ~/.local/bin/yazelix-gpu-verify.sh
+                     or manually: $META_ROOT/.local/bin/yazelix-gpu-verify.sh
     • cuda-oxide:    cargo oxide run <example>   (reboot first if driver just installed)
     • GPU check:     nvidia-smi
-    • PyTorch:       source ~/.venvs/torch/bin/activate ; python -c 'import torch;print(torch.cuda.is_available())'
+    • PyTorch:       source $META_ROOT/.venvs/torch/bin/activate ; python -c 'import torch;print(torch.cuda.is_available())'
     • GPU + Podman:  podman run --rm --device nvidia.com/gpu=all <image> nvidia-smi
     • Bun/Vite:      bun --version ; bunx create-vite my-app
     • wasmer:        wasmer --version
@@ -455,6 +467,6 @@ cat <<'NEXT'
     • yazelix help:  yzx help ; yzx doctor
     • home-manager:  home-manager init --switch   (optional, to go declarative)
 
-  Full log: ~/yazelix-setup.log
+  Full log: $META_ROOT/.local/state/envctl/yazelix-setup.log
 NEXT
 read -rp "  Press Enter to close… " _ || true

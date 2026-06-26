@@ -51,13 +51,13 @@ gpu_required = true
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/cuda/bin/nvcc\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/cuda/bin/nvcc\" ]"]
 [component.install]
 kind = "script"
 login_shell = true
 script = '''
 set -euo pipefail
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/cuda"
 VER="13.3.0"; DRV="610.43.02"
 MD5="16d68669cf659157777d2e7adaff179d"
@@ -79,26 +79,26 @@ tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 # off a small /tmp. NOTE: invoked with `sh`; --nox11 is the load-bearing headless flag.
 rm -rf "$DEST"; install -d -m 755 "$DEST"
 sh "$cache/$RUN" --silent --toolkit --toolkitpath="$DEST" --override --no-opengl-libs --no-man-page --nox11 --tmpdir="$tmp" </dev/null
-# Curated bin tools → ~/.local/bin (nvcc resolves its sibling nvvm/targets via realpath).
-install -d -m 755 "$HOME/.local/bin"
+# Curated bin tools → $META_ROOT/.local/bin (nvcc resolves its sibling nvvm/targets via realpath).
+install -d -m 755 "$META_ROOT/.local/bin"
 for t in nvcc nsys ncu cuda-gdb compute-sanitizer cuobjdump; do
-  [ -x "$DEST/bin/$t" ] && ln -sfn "$DEST/bin/$t" "$HOME/.local/bin/$t"
+  [ -x "$DEST/bin/$t" ] && ln -sfn "$DEST/bin/$t" "$META_ROOT/.local/bin/$t"
 done
 if [ -x /usr/bin/nvidia-smi ]; then
   install -m 755 /usr/bin/nvidia-smi "$DEST/bin/nvidia-smi"
-  ln -sfn "$DEST/bin/nvidia-smi" "$HOME/.local/bin/nvidia-smi"
+  ln -sfn "$DEST/bin/nvidia-smi" "$META_ROOT/.local/bin/nvidia-smi"
 fi
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; D=\"$M/.toolchains/cuda\"; \"$D/bin/nvcc\" --version | command grep -q 'release 13.3' && { ls \"$D\"/targets/x86_64-linux/lib/libcublas.so* >/dev/null 2>&1 || ls \"$D\"/lib64/libcublas.so* >/dev/null 2>&1; } && { [ ! -x /usr/bin/nvidia-smi ] || [ \"$(readlink -f \"$HOME/.local/bin/nvidia-smi\" 2>/dev/null)\" = \"$(readlink -f \"$D/bin/nvidia-smi\")\" ]; }"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; D=\"$M/.toolchains/cuda\"; \"$D/bin/nvcc\" --version | command grep -q 'release 13.3' && { ls \"$D\"/targets/x86_64-linux/lib/libcublas.so* >/dev/null 2>&1 || ls \"$D\"/lib64/libcublas.so* >/dev/null 2>&1; } && { [ ! -x /usr/bin/nvidia-smi ] || [ \"$(readlink -f \"$META_ROOT/.local/bin/nvidia-smi\" 2>/dev/null)\" = \"$(readlink -f \"$D/bin/nvidia-smi\")\" ]; }"]
 [component.fix]
 kind = "script"
 login_shell = true
 script = '''
 set -euo pipefail
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/cuda"
 VER="13.3.0"; DRV="610.43.02"
 MD5="16d68669cf659157777d2e7adaff179d"
@@ -112,34 +112,34 @@ fi
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 rm -rf "$DEST"; install -d -m 755 "$DEST"
 sh "$cache/$RUN" --silent --toolkit --toolkitpath="$DEST" --override --no-opengl-libs --no-man-page --nox11 --tmpdir="$tmp" </dev/null
-install -d -m 755 "$HOME/.local/bin"
+install -d -m 755 "$META_ROOT/.local/bin"
 for t in nvcc nsys ncu cuda-gdb compute-sanitizer cuobjdump; do
-  [ -x "$DEST/bin/$t" ] && ln -sfn "$DEST/bin/$t" "$HOME/.local/bin/$t"
+  [ -x "$DEST/bin/$t" ] && ln -sfn "$DEST/bin/$t" "$META_ROOT/.local/bin/$t"
 done
 if [ -x /usr/bin/nvidia-smi ]; then
   install -m 755 /usr/bin/nvidia-smi "$DEST/bin/nvidia-smi"
-  ln -sfn "$DEST/bin/nvidia-smi" "$HOME/.local/bin/nvidia-smi"
+  ln -sfn "$DEST/bin/nvidia-smi" "$META_ROOT/.local/bin/nvidia-smi"
 fi
 '''
 [component.remove]
 kind = "script"
 script = '''
 set -u
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 for t in nvcc nsys ncu cuda-gdb compute-sanitizer cuobjdump nvidia-smi; do
-  tt="$HOME/.local/bin/$t"; [ -L "$tt" ] && readlink "$tt" | grep -q "$M/.toolchains/cuda" && rm -f "$tt"
+  tt="$META_ROOT/.local/bin/$t"; [ -L "$tt" ] && readlink "$tt" | grep -q "$M/.toolchains/cuda" && rm -f "$tt"
 done
 rm -rf "$M/.toolchains/cuda"
 '''
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 [[component.wiring.shell_rc]]
-file = "~/.bashrc"
+file = "$META_ROOT/.bashrc"
 marker = "cuda env"
 # Resolve CUDA_HOME meta-prefix-first, with apt fallback so consumers (cuda-oxide, pytorch)
 # keep working during/after the migration off the apt toolkit. Epic H TASK-0063.
 content = '''
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 CUDA_HOME="$M/.toolchains/cuda"; [ -d "$CUDA_HOME/bin" ] || CUDA_HOME=/usr/local/cuda; [ -d "$CUDA_HOME/bin" ] || CUDA_HOME="$(ls -d /usr/local/cuda-* 2>/dev/null | sort -V | tail -n1)"
 export CUDA_HOME
 export PATH="$CUDA_HOME/bin:$PATH"
@@ -193,21 +193,21 @@ gpu_required = true
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:-$HOME/Desktop/meta}"; export CARGO_HOME="$M/.toolchains/cargo" RUSTUP_HOME="$M/.toolchains/rustup" PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"; rustup toolchain list 2>/dev/null | grep -q nightly-2026-04-03''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export CARGO_HOME="$M/.toolchains/cargo" RUSTUP_HOME="$M/.toolchains/rustup" PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"; rustup toolchain list 2>/dev/null | grep -q nightly-2026-04-03''']
 [component.install]
 kind = "script"
-script = '''M="${META_ROOT:-$HOME/Desktop/meta}"; export CARGO_HOME="$M/.toolchains/cargo" RUSTUP_HOME="$M/.toolchains/rustup" PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"; rustup toolchain install nightly-2026-04-03; rustup component add rust-src rustc-dev llvm-tools --toolchain nightly-2026-04-03'''
+script = '''M="${META_ROOT:?META_ROOT required}"; export CARGO_HOME="$M/.toolchains/cargo" RUSTUP_HOME="$M/.toolchains/rustup" PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"; rustup toolchain install nightly-2026-04-03; rustup component add rust-src rustc-dev llvm-tools --toolchain nightly-2026-04-03'''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:-$HOME/Desktop/meta}"; export CARGO_HOME="$M/.toolchains/cargo" RUSTUP_HOME="$M/.toolchains/rustup" PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"; rustup component list --toolchain nightly-2026-04-03 --installed | grep -q rust-src''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export CARGO_HOME="$M/.toolchains/cargo" RUSTUP_HOME="$M/.toolchains/rustup" PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"; rustup component list --toolchain nightly-2026-04-03 --installed | grep -q rust-src''']
 [component.fix]
 kind = "script"
-script = '''M="${META_ROOT:-$HOME/Desktop/meta}"; export CARGO_HOME="$M/.toolchains/cargo" RUSTUP_HOME="$M/.toolchains/rustup" PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"; rustup component add rust-src rustc-dev llvm-tools --toolchain nightly-2026-04-03'''
+script = '''M="${META_ROOT:?META_ROOT required}"; export CARGO_HOME="$M/.toolchains/cargo" RUSTUP_HOME="$M/.toolchains/rustup" PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"; rustup component add rust-src rustc-dev llvm-tools --toolchain nightly-2026-04-03'''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:-$HOME/Desktop/meta}"; export CARGO_HOME="$M/.toolchains/cargo" RUSTUP_HOME="$M/.toolchains/rustup" PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"; rustup toolchain uninstall nightly-2026-04-03''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export CARGO_HOME="$M/.toolchains/cargo" RUSTUP_HOME="$M/.toolchains/rustup" PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"; rustup toolchain uninstall nightly-2026-04-03''']
 
 
 [[component]]
@@ -218,7 +218,7 @@ gpu_required = true
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:-$HOME/Desktop/meta}"; [ -x "$M/.toolchains/cargo/bin/cargo-oxide" ] && [ "$(readlink -f "$HOME/.local/bin/cargo-oxide" 2>/dev/null)" = "$(readlink -f "$M/.toolchains/cargo/bin/cargo-oxide")" ]''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; [ -x "$M/.toolchains/cargo/bin/cargo-oxide" ] && [ "$(readlink -f "$META_ROOT/.local/bin/cargo-oxide" 2>/dev/null)" = "$(readlink -f "$M/.toolchains/cargo/bin/cargo-oxide")" ]''']
 [component.install]
 kind = "script"
 # Pin the nightly toolchain explicitly: cuda-oxide's cuda-core uses `#![feature(f16)]`,
@@ -226,18 +226,18 @@ kind = "script"
 # stable default/rust-toolchain.toml, so this builds correctly regardless of the caller's
 # environment (relying on the repo's own toolchain file is fragile — an inherited
 # RUSTUP_TOOLCHAIN silently overrides it and the build fails E0554 on stable).
-script = '''M="${META_ROOT:-$HOME/Desktop/meta}"; export CARGO_HOME="$M/.toolchains/cargo" RUSTUP_HOME="$M/.toolchains/rustup" PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"; cargo +nightly-2026-04-03 install --git https://github.com/NVlabs/cuda-oxide.git cargo-oxide; install -d -m 755 "$HOME/.local/bin"; ln -sfn "$CARGO_HOME/bin/cargo-oxide" "$HOME/.local/bin/cargo-oxide"'''
+script = '''M="${META_ROOT:?META_ROOT required}"; export CARGO_HOME="$M/.toolchains/cargo" RUSTUP_HOME="$M/.toolchains/rustup" PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"; cargo +nightly-2026-04-03 install --git https://github.com/NVlabs/cuda-oxide.git cargo-oxide; install -d -m 755 "$META_ROOT/.local/bin"; ln -sfn "$CARGO_HOME/bin/cargo-oxide" "$META_ROOT/.local/bin/cargo-oxide"'''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:-$HOME/Desktop/meta}"; export CARGO_HOME="$M/.toolchains/cargo" RUSTUP_HOME="$M/.toolchains/rustup" PATH="$HOME/.local/bin:$CARGO_HOME/bin:$PATH"; [ "$(readlink -f "$HOME/.local/bin/cargo-oxide" 2>/dev/null)" = "$(readlink -f "$CARGO_HOME/bin/cargo-oxide")" ] && cargo-oxide --version''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export CARGO_HOME="$M/.toolchains/cargo" RUSTUP_HOME="$M/.toolchains/rustup" PATH="$META_ROOT/.local/bin:$CARGO_HOME/bin:$PATH"; [ "$(readlink -f "$META_ROOT/.local/bin/cargo-oxide" 2>/dev/null)" = "$(readlink -f "$CARGO_HOME/bin/cargo-oxide")" ] && cargo-oxide --version''']
 [component.fix]
 kind = "script"
-script = '''M="${META_ROOT:-$HOME/Desktop/meta}"; export CARGO_HOME="$M/.toolchains/cargo" RUSTUP_HOME="$M/.toolchains/rustup" PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"; cargo +nightly-2026-04-03 install --force --git https://github.com/NVlabs/cuda-oxide.git cargo-oxide; install -d -m 755 "$HOME/.local/bin"; ln -sfn "$CARGO_HOME/bin/cargo-oxide" "$HOME/.local/bin/cargo-oxide"'''
+script = '''M="${META_ROOT:?META_ROOT required}"; export CARGO_HOME="$M/.toolchains/cargo" RUSTUP_HOME="$M/.toolchains/rustup" PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"; cargo +nightly-2026-04-03 install --force --git https://github.com/NVlabs/cuda-oxide.git cargo-oxide; install -d -m 755 "$META_ROOT/.local/bin"; ln -sfn "$CARGO_HOME/bin/cargo-oxide" "$META_ROOT/.local/bin/cargo-oxide"'''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:-$HOME/Desktop/meta}"; export CARGO_HOME="$M/.toolchains/cargo" RUSTUP_HOME="$M/.toolchains/rustup" PATH="$CARGO_HOME/bin:$PATH"; cargo uninstall cargo-oxide || true; [ -L "$HOME/.local/bin/cargo-oxide" ] && [ "$(readlink -f "$HOME/.local/bin/cargo-oxide" 2>/dev/null)" = "$CARGO_HOME/bin/cargo-oxide" ] && rm -f "$HOME/.local/bin/cargo-oxide" || true''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export CARGO_HOME="$M/.toolchains/cargo" RUSTUP_HOME="$M/.toolchains/rustup" PATH="$CARGO_HOME/bin:$PATH"; cargo uninstall cargo-oxide || true; [ -L "$META_ROOT/.local/bin/cargo-oxide" ] && [ "$(readlink -f "$META_ROOT/.local/bin/cargo-oxide" 2>/dev/null)" = "$CARGO_HOME/bin/cargo-oxide" ] && rm -f "$META_ROOT/.local/bin/cargo-oxide" || true''']
 
 
 [[component]]
@@ -289,61 +289,60 @@ output = "/etc/cdi/nvidia.yaml"
 [[component]]
 id = "pytorch-venv"
 name = "PyTorch cu132 (isolated venv)"
-description = "torch+torchvision cu132 in ~/.venvs/torch (bundles its own CUDA runtime)."
+description = "torch+torchvision cu132 in $META_ROOT/.venvs/torch (bundles its own CUDA runtime)."
 gpu_required = true
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "[ -x \"$HOME/.venvs/torch/bin/python\" ] && \"$HOME/.venvs/torch/bin/python\" -c 'import torch' 2>/dev/null"]
+args = ["-lc", "[ -x \"$META_ROOT/.venvs/torch/bin/python\" ] && \"$META_ROOT/.venvs/torch/bin/python\" -c 'import torch' 2>/dev/null"]
 [component.install]
 kind = "script"
 script = '''
 set -e
-python3 -m venv "$HOME/.venvs/torch"
-"$HOME/.venvs/torch/bin/pip" install --upgrade pip
-"$HOME/.venvs/torch/bin/pip" install torch torchvision --index-url https://download.pytorch.org/whl/cu132
+python3 -m venv "$META_ROOT/.venvs/torch"
+"$META_ROOT/.venvs/torch/bin/pip" install --upgrade pip
+"$META_ROOT/.venvs/torch/bin/pip" install torch torchvision --index-url https://download.pytorch.org/whl/cu132
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "\"$HOME/.venvs/torch/bin/python\" -c 'import torch; print(torch.__version__)'"]
+args = ["-lc", "\"$META_ROOT/.venvs/torch/bin/python\" -c 'import torch; print(torch.__version__)'"]
 [component.fix]
 kind = "script"
-script = "\"$HOME/.venvs/torch/bin/pip\" install --upgrade --force-reinstall torch torchvision --index-url https://download.pytorch.org/whl/cu132"
+script = "\"$META_ROOT/.venvs/torch/bin/pip\" install --upgrade --force-reinstall torch torchvision --index-url https://download.pytorch.org/whl/cu132"
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "rm -rf \"$HOME/.venvs/torch\""]
+args = ["-lc", "rm -rf \"$META_ROOT/.venvs/torch\""]
 
 
 [[component]]
 id = "gpu-verify-scripts"
 name = "GPU smoke-test scripts"
-description = "~/.local/bin/yazelix-gpu-verify.sh + launcher + post-reboot one-shot autostart. install/fix REGENERATE them from the shipped yazelix-gpu-verify-install.sh (declarative port of yazelix-setup.sh 3f); detect/verify/remove unchanged. GPU-gated (no-op on a non-NVIDIA box)."
+description = "$META_ROOT/.local/bin/yazelix-gpu-verify.sh + launcher + post-reboot one-shot autostart. install/fix REGENERATE them from the shipped yazelix-gpu-verify-install.sh (declarative port of yazelix-setup.sh 3f); detect/verify/remove unchanged. GPU-gated (no-op on a non-NVIDIA box)."
 requires = ["nvidia-open", "pytorch-venv", "cuda-oxide", "nvidia-container-toolkit"]
 gpu_required = true
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "[ -x \"$HOME/.local/bin/yazelix-gpu-verify.sh\" ]"]
+args = ["-lc", "[ -x \"$META_ROOT/.local/bin/yazelix-gpu-verify.sh\" ]"]
 # install/fix regenerate the smoke-test + launcher + autostart from the shipped
 # installer (port of yazelix-setup.sh 3f). The installer self-gates on lspci nvidia.
 [component.install]
 kind = "shipped_script"
-path = "/usr/local/bin/yazelix-gpu-verify-install.sh"
+path = "$META_ROOT/envctl/assets/scripts/yazelix-gpu-verify-install.sh"
 [component.fix]
 kind = "shipped_script"
-path = "/usr/local/bin/yazelix-gpu-verify-install.sh"
-# verify runs the shipped smoke test with $HOME expanded (ShippedScript paths are
-# NOT shell-expanded, so this is a Command hook); </dev/null answers its final read.
+path = "$META_ROOT/envctl/assets/scripts/yazelix-gpu-verify-install.sh"
+# verify runs the shipped smoke test from the meta-local launcher; </dev/null answers its final read.
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "\"$HOME/.local/bin/yazelix-gpu-verify.sh\" </dev/null"]
+args = ["-lc", "\"$META_ROOT/.local/bin/yazelix-gpu-verify.sh\" </dev/null"]
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "rm -f \"$HOME/.local/bin/yazelix-gpu-verify.sh\" \"$HOME/.local/bin/yazelix-gpu-verify-launch.sh\" \"$HOME/.config/autostart/yazelix-gpu-verify.desktop\""]
+args = ["-lc", "rm -f \"$META_ROOT/.local/bin/yazelix-gpu-verify.sh\" \"$META_ROOT/.local/bin/yazelix-gpu-verify-launch.sh\" \"$META_ROOT/.config/autostart/yazelix-gpu-verify.desktop\""]
 
 
 # Group/meta: the whole GPU stack in dependency order. Skips on a non-NVIDIA box.
@@ -360,4 +359,4 @@ command = "bash"
 # NOT bare `command -v nvcc`: envctl runs detect via a non-interactive `bash -lc`, which
 # hits ~/.bashrc's interactivity guard and returns BEFORE the "cuda env" PATH block — so
 # `command -v nvcc` false-negatives even though the toolkit is installed and wired.
-args = ["-lc", '''M="${META_ROOT:-$HOME/Desktop/meta}"; [ -x "$M/.toolchains/cuda/bin/nvcc" ] && command -v nvidia-smi >/dev/null && [ -x "$M/.toolchains/cargo/bin/cargo-oxide" ] && [ "$(readlink -f "$HOME/.local/bin/cargo-oxide" 2>/dev/null)" = "$(readlink -f "$M/.toolchains/cargo/bin/cargo-oxide")" ]''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; [ -x "$M/.toolchains/cuda/bin/nvcc" ] && command -v nvidia-smi >/dev/null && [ -x "$M/.toolchains/cargo/bin/cargo-oxide" ] && [ "$(readlink -f "$META_ROOT/.local/bin/cargo-oxide" 2>/dev/null)" = "$(readlink -f "$M/.toolchains/cargo/bin/cargo-oxide")" ]''']
