@@ -35,10 +35,24 @@ Write the plan in this order — **verdict first**, evidence after:
 
 1. **Verdict** — the headline recommendation in 1–3 sentences (what to do about this target now), with
    a stated **confidence: High/Medium/Low** and the basis.
-2. **ASCII architecture diagrams** — the target's structure + the graph's intelligence, rendered with
-   box-drawing characters; **cite each diagram `Source: file:section`** (the graph snapshot, the
-   codemap, or a `docs/secrets/*`/`docs/ARCHITECTURE.md` section). Annotate hotspots, cycles, and
-   layering with the automation legend where a step is automated/gated (see below).
+2. **ASCII architecture diagrams** — rendered with box-drawing characters; **cite each diagram
+   `Source: file:section`** (the graph snapshot, the codemap, or a `docs/secrets/*`/`docs/ARCHITECTURE.md`
+   section). Annotate hotspots, cycles, and layering with the automation legend where a step is
+   automated/gated (see below). Produce **all of these that apply to the run**:
+   - a **current-architecture** diagram of the target (module / data-flow structure from the graph);
+   - a **target-state** diagram for the proposed plan (P7) — what the architecture looks like *after*
+     the roadmap's upgrades land;
+   - a **control-plane** diagram (REQUIRED — from the governance + settings/config scans, not vibes)
+     showing the governance flow and the runtime/build bind, with edges labelled by relationship
+     (`governs` / `enforces` / `configures` / `gates`):
+     `hooks (lifecycle) ▶ policy/guard (rules.toml + cognitum gate) ▶ claim ▶ scope ▶ handoff`,
+     `settings (perms/env/model/effort/MCP) ▶ runtime`,
+     `toolchain/Cargo ▶ build ▶ CI (.github/workflows)`,
+     `.handoff/policy.toml ▶ loop cadence + merge`,
+     plus where `rules` / `instructions` / `CLAUDE.md` / `AGENTS.md` bind in;
+   - for a **fleet / multi-repo** run, a **fleet-level** diagram (repos, shared substrates, cross-repo
+     edges from `cross-repo-reference`). A diagram that doesn't apply (e.g. fleet diagram on a
+     single-crate run) is skipped with a one-line note, never silently omitted.
 3. **Sequenced upgrade roadmap** — the ordered list of upgrades, each tagged
    `axis: quality|speed|accuracy|governance+settings+config|filesystem-layout|prompt-architecture|memory-vector-intelligence|autoresearch|rules-policy-org|distributed-compute`, ordered by value/risk (recipe below). Only CONFIRMED/QUALIFIED +
    feasible items.
@@ -85,13 +99,23 @@ For each surviving upgrade (CONFIRMED/QUALIFIED + feasibility-passed in `verdict
    out (e.g. an upgrade that would violate the no-C-in-trust-boundary invariant) is **excluded from the
    roadmap** and listed under gaps with the reason. Never recommend an infeasible upgrade.
 
-Each roadmap entry uses the UPGRADE row format (`references/diagram-and-adr.md`) with its evidence,
-blast-scope, risk, and the verdict ref that cleared it.
+Each roadmap entry uses the full UPGRADE row format (`plan-analyst` schema): `axis` ·
+`target-surface` · `evidence` · `blast` · `effort` · `risk-tier` (APPLY/PROPOSE/REGENERATE) ·
+`acceptance` (the falsifiable condition its P8 RED test encodes — **1:1 with the test**) ·
+`reversibility` (NORTH-STAR triad Integrity · Reversibility · Capability-Gain) · the verdict ref that
+cleared it. An upgrade whose `acceptance` has no matching RED test (P8) is flagged **unverifiable** —
+a fail-closed finding against the plan itself, not a silent roadmap row.
 
 ## Tool-evaluation rubric (R7)
 
 1. **Inventory** the tools/CLIs/MCPs/crates the target actually uses — from the graph
-   (`metrics.public_api` + the codemap's external deps), not from a guess.
+   (`metrics.public_api` + the codemap's external deps), not from a guess. For a fleet/meta run,
+   always evaluate the **standing fleet toolset** by name: `rtk`, `hf`, `git kb` / code-intelligence,
+   the `meta` CLI, the connected MCP servers (from the settings/config scan's `[mcp_servers.*]`
+   inventory), the harness skills (the `.claude/skills/*` count → skill-overload), JS tooling
+   (**bun**, never pnpm/node), and the **shimmy + ruvllm** migration (the official ollama replacement —
+   evaluate readiness but **do NOT recommend removing ollama until swap-out is parity-proven**). Honor
+   the latest-toolchain standing rule (clang/llvm-21 is load-bearing).
 2. **Currency + advisories** — pull each tool's latest version, release date, breaking-change flag, and
    any CVE/advisory from the researcher's `research/<T>.trends.md` **Tool-currency & advisories**
    subsection (the R7 input).
