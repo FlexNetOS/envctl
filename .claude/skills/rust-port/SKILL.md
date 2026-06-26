@@ -1,18 +1,13 @@
 ---
 name: rust-port
 description: >-
-  Packaged Rust-port harness (invoked as /harness:rust-port). Runs an autonomous, resumable loop
-  that performs a FULL-FEATURE, NO-DOWNGRADE port of a source project (TypeScript/Python/etc.) to
-  idiomatic Rust — no feature logic left behind. ALWAYS use for: "port <project> to Rust", "rust
-  port", "rewrite in Rust", "full-parity Rust port", "port meta/Archon to Rust", AND follow-ups —
-  "resume", "continue the port", "run it again", "re-run", "redo only the <unit/phase>", "based on
-  the previous result", "what's left to port". Also ejectable: "install/eject the rust-port harness
-  into <repo>". ALSO does port-and-MERGE: "port <X> to Rust and merge into <Y>", "merge the rust code
-  into <repo>", "reconcile the port with <repo>" — ports X then integrates each verified unit into a
-  destination repo Y (re-verified in Y). Runs an automated 3-model workflow (opus on gates/hard design,
-  sonnet on structured work, haiku on mechanical). Drives a Ralph loop over a parity ledger: one unit
-  per cycle, differential parity test, commit per cycle, hand off at budget. DONE only at 100% parity
-  (+ 100% merged when a destination repo is set) — nothing left behind.
+  Packaged Rust-port harness (/harness:rust-port) for full-feature, no-downgrade ports of
+  TypeScript/Python/etc. projects to idiomatic Rust. Use for "port <project> to Rust", "rewrite in
+  Rust", full-parity ports, resume/re-run/follow-up port cycles, ejecting the harness into a repo,
+  and port-and-merge work that integrates verified Rust units into a destination repo. Drives a
+  resumable Ralph loop over a parity ledger with inventory, idiomatic translation, differential
+  parity verification, build-health gates, per-cycle commits, and cold handoff at budget; DONE only
+  when every source behavior is parity-proven, and merged when a destination repo is set.
 ---
 
 # rust-port — full-feature, no-downgrade Rust port harness  (`/harness:rust-port`)
