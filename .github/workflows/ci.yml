@@ -15,14 +15,24 @@ on:
   push:
     branches: [develop]
 
+# Keep protected develop runs complete, but cancel stale PR/head runs before
+# they waste either the FlexNetOS org runner or GitHub-hosted minutes.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/develop' }}
+
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: "1"        # debuggable backtraces when a CI test panics
 
 jobs:
+  # Hybrid runner routing policy (required context names below are branch-protection contracts):
+  # - fan-out/static checks run on GitHub-hosted runners so they execute in parallel;
+  # - the single trusted heavy test job uses the FlexNetOS org self-hosted runner;
+  # - fork PRs never execute on self-hosted infrastructure.
   rustfmt:
     name: rustfmt
-    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork) && 'ubuntu-latest' || fromJSON('["self-hosted","linux","x64","local","flexnetos"]') }}
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -39,7 +49,7 @@ jobs:
 
   clippy:
     name: clippy
-    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork) && 'ubuntu-latest' || fromJSON('["self-hosted","linux","x64","local","flexnetos"]') }}
+    runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
@@ -58,7 +68,7 @@ jobs:
 
   msrv:
     name: MSRV (Rust 1.88)
-    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork) && 'ubuntu-latest' || fromJSON('["self-hosted","linux","x64","local","flexnetos"]') }}
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -75,7 +85,7 @@ jobs:
 
   cargo-audit:
     name: cargo audit
-    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork) && 'ubuntu-latest' || fromJSON('["self-hosted","linux","x64","local","flexnetos"]') }}
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -92,6 +102,8 @@ jobs:
 
   test:
     name: test
+    # Trusted internal refs run the cache-heavy workspace tests on the org runner;
+    # fork PRs stay on GitHub-hosted runners so untrusted code cannot reach the local host.
     runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork) && 'ubuntu-latest' || fromJSON('["self-hosted","linux","x64","local","flexnetos"]') }}
     # Generous but bounded: the cold build dominates and the parallel test run is now substantial
     # (secrets-engine alone ~5 min — the argon2 memory-hard KDF + daemon e2e tests). A real hang
@@ -124,7 +136,7 @@ jobs:
 
   gates:
     name: gates
-    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork) && 'ubuntu-latest' || fromJSON('["self-hosted","linux","x64","local","flexnetos"]') }}
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
@@ -135,6 +147,8 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
       # Fail-closed supply-chain / shape / enable / p7-conformance gates (ci/gates/*.sh).
+      - name: runner-routing gate (hybrid hosted/local policy)
+        run: bash ci/gates/runner-routing.sh
       - name: no-c gate (no C in the trust boundary)
         run: bash ci/gates/no-c.sh
       - name: meta-substrates gate (loop_lib + meta_plugin_protocol wiring)

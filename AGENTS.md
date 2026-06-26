@@ -53,6 +53,7 @@ integration tests (`#[tokio::test]` for the async daemon path). MSRV 1.88, stabl
 ## CI gates — run before pushing anything that touches deps or the trust boundary
 
 ```bash
+bash ci/gates/runner-routing.sh # GitHub Actions hybrid hosted/local runner policy
 bash ci/gates/no-c.sh           # supply-chain: forbids C in the trust boundary (see below)
 bash ci/gates/meta-substrates.sh # meta shared-substrate wiring: loop_lib + meta_plugin_protocol path deps
 bash ci/gates/shape.sh          # code-shape invariants (native-roots, edge module)
