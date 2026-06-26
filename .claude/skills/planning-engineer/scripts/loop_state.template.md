@@ -7,6 +7,14 @@ planning_target: <current T (crate/subsystem slug), or "(sweeping targets.md)">
 target_root: <abs path of the subsystem/crate under plan, e.g. ~/Desktop/meta/envctl/crates/secrets-proto>
 recency_window_days: 90                              # the rolling web-research window (R3a)
 graph_snapshot: graph/<T>.symbols.json@<git-sha>     # which snapshot the metrics derive from
+target_dag: graph/target-dag.json                       # TDP scheduler state: nodes/edges/ready_set/self_revision
+artifact_gate: scripts/plan-artifact-gate.sh             # runtime DONE/completeness validator
+source_ledger: research/sources-<T>.jsonl                # machine-readable cited source ledger
+agent_run_ledger: reports/agent-run-ledger-<T>.md         # background-lane spans + artifacts + verdicts
+risk_policy: risk-policy.md                              # HITL/SUPERVISED routing table
+agent_backend_matrix: agent-backend-matrix.md            # local/worktree/container/remote/cloud/ACP/A2A isolation decision
+agent_interop: agent-interop.md                          # weave/MCP/ACP/A2A/GitHub cloud agent routing registry
+prompt_architecture: findings/prompt-architecture-<T>.md # prompt/tool/model couplings + ADR/no-ADR review
 weave_dispatch: weave-dispatch/<run-id>.jsonl        # five Opus lane transport rows (peer/session/message/job ids)
 weave_orchestrator: envctl-plan-orchestrator-<run-id> # unique foreground registration; avoid ambiguous aliases
 cycle_budget: 3                                      # completed planning cycles per session before HAND OFF

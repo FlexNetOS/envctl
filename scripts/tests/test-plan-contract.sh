@@ -85,6 +85,26 @@ fi
 grep -q 'plan-weave-dispatch.sh' "$repo_root/.agents/skills/plan-loop/SKILL.md"   || fail "plan-loop skill does not point at the weave dispatch helper"
 grep -q 'weave_dispatch' "$repo_root/.agents/skills/planning-engineer/scripts/loop_state.template.md"   || fail "loop_state template does not record weave dispatch artifact"
 
+# P0-P2 runtime upgrades from June 2026 research: artifact gate, TDP DAG, prompt architecture,
+# observability/backend/risk/evals, source ledger, and interop registry.
+[ -x "$repo_root/scripts/plan-artifact-gate.sh" ] || fail "missing executable plan artifact gate"
+for t in test-plan-artifact-gate.sh test-plan-evals.sh; do
+  [ -x "$repo_root/scripts/tests/$t" ] || fail "missing executable planning eval/gate test: $t"
+done
+for skill in plan-dependency-graph plan-prompt-architecture; do
+  [ -f "$repo_root/.agents/skills/$skill/SKILL.md" ] || fail "missing planning P0 skill: $skill"
+done
+for agent in plan-dependency-graph-auditor plan-prompt-architecture-auditor; do
+  [ -f "$repo_root/.codex/agents/$agent.toml" ] || fail "missing Codex P0 planning agent: $agent"
+done
+grep -q 'plan-artifact-gate.sh' "$repo_root/.agents/skills/planning-engineer/SKILL.md" || fail "planning-engineer does not require artifact gate"
+grep -q 'graph/target-dag.json' "$repo_root/.agents/skills/plan-loop/SKILL.md" || fail "plan-loop does not require TDP target DAG"
+grep -q 'SELF-REVISION' "$repo_root/.agents/skills/plan-dependency-graph/SKILL.md" || fail "TDP skill missing SELF-REVISION"
+grep -q 'findings/prompt-architecture-<T>.md' "$repo_root/.agents/skills/plan-prompt-architecture/SKILL.md" || fail "prompt architecture skill missing artifact contract"
+grep -q 'sources-<T>.jsonl' "$repo_root/.agents/skills/plan-trend-research/SKILL.md" || fail "trend researcher missing source ledger contract"
+grep -q 'agent-run-ledger' "$repo_root/.agents/skills/plan-synthesis/SKILL.md" || fail "synthesis missing agent-run-ledger lift"
+grep -q 'agent_interop' "$repo_root/.agents/skills/planning-engineer/scripts/loop_state.template.md" || fail "loop state missing interop registry"
+
 python3 - "$repo_root" <<'PY'
 from pathlib import Path
 import sys

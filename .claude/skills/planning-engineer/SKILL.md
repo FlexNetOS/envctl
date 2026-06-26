@@ -97,6 +97,43 @@ model slugs directly, so Codex must **not** try to run `model = "claude-opus-4-8
 Data transfer is **file-based** (pass artifact PATHS, never contents) + **return-value** (each worker
 returns a one-line verdict the orchestrator reduces through weave receipts/inbox/job results).
 
+
+## June 2026 P0-P2 planning-harness upgrades (mandatory)
+
+The research report at `.handoff/loop/plan/research/agentic-planning-trends-2026-06.md` is now part
+of this harness contract. Every planning run must include these additions:
+
+1. **P0 runtime artifact gate** — before `DONE`, run `scripts/plan-artifact-gate.sh` against the real
+   `.handoff/loop/plan/` directory. The gate validates required artifacts, schema markers, verified
+   verdicts, TDP state, source ledger, prompt-architecture review, risk policy, backend matrix,
+   interop registry, agent-run ledger, and terminal target/dimension rows.
+2. **P0 TDP target DAG** — spawn/use `plan-dependency-graph-auditor` to produce
+   `graph/target-dag.json` and `graph/target-dag.md`. Pick targets from the topological ready set;
+   when verification changes an upstream assumption, append `SELF-REVISION` and replan only affected
+   downstream nodes.
+3. **P0 prompt-architecture review** — spawn/use `plan-prompt-architecture-auditor` to produce
+   `findings/prompt-architecture-<T>.md`. Treat prompt/tool/model/backend changes as architectural
+   couplings until the artifact records an ADR candidate or explicit no-ADR rationale.
+4. **P1 background observability** — write `reports/agent-run-ledger-<T>.md` with lane, peer/session,
+   model, effort, start/end, artifact hashes/paths, retries, tool failures, and verdicts. The
+   foreground orchestrator may answer owner progress questions from this ledger without interrupting
+   background workers.
+5. **P1 backend isolation matrix** — write `agent-backend-matrix.md`; classify each lane as
+   `read-only-local`, `isolated-worktree`, `container`, `remote-vm`, `cloud-agent`, or `ACP/A2A`, and
+   fail closed when a lane requiring isolation runs in the foreground checkout.
+6. **P1 risk/HITL policy** — write `risk-policy.md`; mark destructive ops, trust-boundary dependency
+   changes, secrets/credential surfaces, filesystem migrations outside repo scope, and provider/model
+   changes as `SUPERVISED` unless an explicit verified policy says otherwise.
+7. **P1 eval fixtures** — keep `scripts/tests/test-plan-evals.sh` green; these fixtures prove the loop
+   rejects unverified claims, bad source ledgers, missing TDP self-revision, and missing
+   prompt-architecture findings.
+8. **P2 source ledger** — `plan-trend-researcher` must write `research/sources-<T>.jsonl` with URL,
+   title, publisher, accessed_at, published_at, in_recency_window, why_used, and claim_ids for every
+   source used by claim-bearing findings.
+9. **P2 interop registry** — write `agent-interop.md` recording weave, MCP, ACP, A2A, and GitHub cloud
+   agent availability/routing. Weave remains the required current Opus transport; any new adapter is a
+   strict upgrade, never a downgrade or silent replacement.
+
 ## Agents (in the plugin's shared `harness/agents/` pool)
 
 | Agent | Owns | Requirement | Shared? |
@@ -105,7 +142,9 @@ returns a one-line verdict the orchestrator reduces through weave receipts/inbox
 | `plan-trend-researcher` | deep WEB research — best-practices + latest trends over a rolling 90-day window, every finding cited + dated | **R3a** | specialist |
 | `plan-analyst` | per-dimension analysis → cited claims, named gaps, and upgrade options each tagged **quality / speed / accuracy** | **R5** | specialist |
 | `plan-governance-config-auditor` | control-plane + settings/config scan: rules/instructions/hooks/policy/CLAUDE.md/AGENTS.md, `.claude`/`.codex`, MCP rot, skill overload, token burn, permission/config drift | **prompt P2/P5/P6** | specialist |
+| `plan-dependency-graph-auditor` | TDP target/dimension dependency DAG, topological ready-set scheduling, node-scoped context, localized SELF-REVISION | **P0 TDP** | specialist |
 | `plan-filesystem-layout-auditor` | standard OS file/folder organization: FHS/XDG, repo-native Cargo layout, envctl/meta placement boundaries, root clutter, generated/cache/state/log/runtime placement, and enforcement-test handoff | **filesystem-layout** | specialist |
+| `plan-prompt-architecture-auditor` | prompt/tool/model/runtime coupling review; ADR/no-ADR routing for prompt-induced architecture | **P0 prompt-architecture** | specialist |
 | `plan-test-strategist` | the always-on **`test-coverage`** dimension: map existing tests, author additive RED tests for each accepted plan item, count-verify tests-ran > 0, emit traceability, and hand GREEN implementation to Feature Forge | **prompt P8** | specialist |
 | `plan-verifier` | adversarially **refute** each claim against the source AND **feasibility-gate** each upgrade (the gate) | gate for R3/R5/R8 | specialist |
 | `plan-architect` | synthesize → plan with **ASCII diagrams** + **tool-evaluation** + sequenced upgrade roadmap; promote to docs/ROADMAP + draft ADR | **R4 + R7** | specialist |
@@ -113,7 +152,7 @@ returns a one-line verdict the orchestrator reduces through weave receipts/inbox
 | `evolution-steward` | Phase 5 self-eval + fail-closed harness self-upgrade | **R6** | shared |
 
 Skills used: `plan-cartography`, `plan-trend-research`, `plan-governance-config`,
-`plan-filesystem-layout`, `plan-test-strategy`, `plan-synthesis`, the reused `code-research-verify` (the verifier's refute discipline), `session-relay-wrap-up`,
+`plan-dependency-graph`, `plan-filesystem-layout`, `plan-prompt-architecture`, `plan-test-strategy`, `plan-synthesis`, the reused `code-research-verify` (the verifier's refute discipline), `session-relay-wrap-up`,
 `session-relay-resume`, `harness-evolution`, `icm-memory`. (The 90-day field research applies the
 deep-research *method* — fan-out search → deep-read → adversarial verify → cited synthesis —
 implemented inline by `plan-trend-research`; there is no separate `deep-research` skill to load.)
@@ -148,21 +187,27 @@ Required artifacts:
   in-window sources, flag older), every finding cited + dated.
 - governance/settings/config lanes → `findings/governance-config-<T>.md` with control-plane drift,
   settings/config hygiene, and routing (`APPLY|PROPOSE|REGENERATE`).
+- dependency-graph auditor → `graph/target-dag.json` + `graph/target-dag.md` with ready-set scheduling,
+  node-scoped context, and SELF-REVISION rows.
 - filesystem-layout auditor → `findings/filesystem-layout-<T>.md` with path inventory, FHS/XDG +
   repo-native placement verdicts, boundary map, exact migration/enforcement upgrade rows, and CI/test
   handoff. This is mandatory because file/folder organization drift is a recurring planning blind spot.
+- prompt-architecture auditor → `findings/prompt-architecture-<T>.md` with instruction surfaces,
+  tools granted, model lanes, hidden architectural couplings, governance controls, and ADR/no-ADR routing.
+- trend researcher also writes `research/sources-<T>.jsonl`; orchestrator writes `reports/agent-run-ledger-<T>.md`,
+  `risk-policy.md`, `agent-backend-matrix.md`, and `agent-interop.md`.
 - rusty-idd north-star lane → `findings/rusty-idd-north-star-<T>.md` capturing whether `rusty-idd` is
   the correct first surfaced target, how it binds to the Forge/IDD loop, and any meta/envctl/prompt_hub
   relationship gaps.
 
 Await all lanes, then commit `dimensions.md` + graph + research + governance/settings/config +
-filesystem-layout + north-star findings.
+filesystem-layout + prompt-architecture + TDP DAG + north-star findings.
 
 ## Phase 2: ANALYZE (fan-out, parallel)
 
 For each `- [ ]` code dimension, spawn `plan-analyst` (parallel) → `.handoff/loop/plan/findings/<dim>.md`. Also spawn `plan-governance-config-auditor` for the governance+settings+config axis, `plan-filesystem-layout-auditor` for the standard OS/repo layout axis, and `plan-test-strategist` for the always-on test-coverage/P8 axis:
 falsifiable **CLAIM** rows (each citing `file:line` / symbol / call-path / test) + named **gaps** +
-**UPGRADE** rows each tagged `axis: quality|speed|accuracy|governance+settings+config|filesystem-layout` with rationale, evidence, blast-radius
+**UPGRADE** rows each tagged `axis: quality|speed|accuracy|governance+settings+config|filesystem-layout|prompt-architecture` with rationale, evidence, blast-radius
 (from the graph) and risk. Analysts query the graph — blast-radius to scope each upgrade's risk,
 centrality to prioritize. Mark dimensions `- [~]` (analyzed, unverified).
 
@@ -195,7 +240,7 @@ only — never touch production code. Commit.
 
 ## Output contract
 
-End every cycle with paths to: plan file, ASCII diagrams including the control-plane diagram and any file/folder organization map, graph snapshot + diff, gap→upgrade table across quality/speed/accuracy/governance+settings+config/filesystem-layout, tool-eval table, governance findings, settings/config hygiene findings (MCP rot / skill overload / token burn / permission/config drift), filesystem-layout findings (path inventory / placement verdicts / boundary map / enforcement tests), TDD RED-suite evidence with tests-ran count and traceability matrix, evolution scorecard/LESSONS/proposed-upgrades, and the resume pointer.
+End every cycle with paths to: plan file, ASCII diagrams including the control-plane diagram and any file/folder organization map, graph snapshot + diff, gap→upgrade table across quality/speed/accuracy/governance+settings+config/filesystem-layout, tool-eval table, governance findings, settings/config hygiene findings (MCP rot / skill overload / token burn / permission/config drift), prompt-architecture findings, filesystem-layout findings (path inventory / placement verdicts / boundary map / enforcement tests), TDD RED-suite evidence with tests-ran count and traceability matrix, evolution scorecard/LESSONS/proposed-upgrades, and the resume pointer.
 
 ## Phase 5: SELF-EVAL (every cycle) — `evolution-steward`, lightweight
 
@@ -210,7 +255,7 @@ on every run" reconciles with the fail-closed, never-mid-cycle rule.
 
 ## DONE gate (evidence-backed, fail-closed)
 
-Write `.handoff/loop/plan/DONE` only when: every target in `targets.md` is `- [x]` (planned) or an
+Write `.handoff/loop/plan/DONE` only after `scripts/plan-artifact-gate.sh .handoff/loop/plan` passes and when: every target in `targets.md` is `- [x]` (planned) or an
 explicit `- [!]`, AND every dimension of the target is `- [x]` (verified) or `- [!]`; AND the
 `plan-cartographer`'s **completeness sweep** re-derives the target's expected surface from the graph
 (modules / entry points / public-API) and finds nothing major unexamined; AND the plan answers from

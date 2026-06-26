@@ -16,11 +16,19 @@ dimension status is gated by `plan-verifier`. Lay the tree down with `harness-lo
   graph/<T>.metrics.json   # DERIVED graph intelligence (centrality/hotspots, blast-radius, dead, cycles, layering, public-api)
   graph/<T>.graph.md       # human ASCII view of the graph + metrics (diagram-ready)
   graph/<T>.diff.md        # delta vs the previous committed snapshot — how the graph "updates"
+  graph/target-dag.json      # TDP target/dimension DAG: nodes, edges, ready_set, self_revision
+  graph/target-dag.md        # human DAG + ready-set + SELF-REVISION rows
   research/<T>.trends.md   # 90-day web findings, every finding cited + dated
+  research/sources-<T>.jsonl # machine-readable source ledger (url/title/publisher/dates/claim_ids)
   findings/<dim>.md        # analyst: CLAIM + gap + UPGRADE rows
+  findings/prompt-architecture-<T>.md # prompt/tool/model/runtime coupling review + ADR/no-ADR rationale
   findings/verdicts.md     # verifier verdicts (append per dimension)
   reports/codemap-<T>.md   # structural map
   reports/<T>-plan.md      # THE FINAL PLAN (diagrams + sequenced upgrades + tool-eval + gaps + confidence)
+  reports/agent-run-ledger-<T>.md # background-lane observability: spans, model, effort, artifacts, verdicts
+  risk-policy.md             # HITL/SUPERVISED routing for high-risk upgrades
+  agent-backend-matrix.md    # lane isolation/backend decision table
+  agent-interop.md           # weave/MCP/ACP/A2A/GitHub cloud-agent registry and routing decision
   evaluation.md            # per-cycle self-eval scorecard (superseded each cycle)
   proposed-upgrades.md     # structural harness upgrades awaiting owner (fail-closed)
   HANDOFF.md               # cold-start packet at budget
@@ -83,3 +91,32 @@ are reported as findings/gaps, never as recommendations.
 - **Cite everything** — every claim, upgrade, and verdict points at real code, so any line is checkable.
 - **Read-only on the target's code** — the only writes are this ledger, the graph store, and the
   architect's docs/ROADMAP + draft-ADR promotion. Never weaken a gate to force a pass.
+
+
+## Runtime artifact gate
+
+Before a target is marked DONE, run `bash scripts/plan-artifact-gate.sh .handoff/loop/plan` (or the
+ejected copy under `.claude/skills/planning-engineer/scripts/`). The gate validates the actual runtime
+artifacts, not just prompt prose:
+
+- required graph/research/findings/report artifacts exist for every `- [x]` target;
+- `target-dag.json/md` records TDP ready-set scheduling and SELF-REVISION capability;
+- `sources-<T>.jsonl` is valid JSONL with URL/title/publisher/accessed/published/recency/claim ids;
+- prompt-architecture, filesystem-layout, governance/config, test strategy, verdicts, risk policy,
+  backend matrix, interop registry, and agent-run ledger are present;
+- `DONE` is rejected unless all target/dimension rows are terminal and the completeness sweep is
+  recorded with confirmed/qualified evidence.
+
+## P0-P2 upgrade axes now required
+
+- **P0 artifact validation** — `plan-artifact-gate.sh` is the runtime DONE/completeness validator.
+- **P0 TDP scheduling** — `plan-dependency-graph` owns `graph/target-dag.{json,md}` and localized
+  self-revision.
+- **P0 prompt-architecture review** — `plan-prompt-architecture` owns
+  `findings/prompt-architecture-<T>.md` and ADR/no-ADR routing for prompt/tool/model couplings.
+- **P1 observability/backend/risk/evals** — `reports/agent-run-ledger-<T>.md`,
+  `agent-backend-matrix.md`, `risk-policy.md`, and `scripts/tests/test-plan-evals.sh` make background
+  work inspectable and gated.
+- **P2 reproducible research/interoperability** — `sources-<T>.jsonl` and `agent-interop.md` preserve
+  source provenance and future weave/MCP/ACP/A2A/GitHub-cloud routing decisions without weakening the
+  current weave→Opus law.

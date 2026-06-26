@@ -16,7 +16,7 @@ Answer "what is the current best practice and the latest movement in this target
 **cited, dated** evidence inside a **rolling 90-day window**. This applies the deep-research *method*
 (the engine: fan-out web search → deep-read sources → adversarially verify → cited synthesis),
 implemented **inline here** — there is no separate `deep-research` skill to load; it adds one thing
-that method does not enforce — a **hard recency gate** computed from today's date. Output: `.handoff/loop/plan/research/<T>.trends.md`. Used by
+that method does not enforce — a **hard recency gate** computed from today's date. Output: `.handoff/loop/plan/research/<T>.trends.md` plus `.handoff/loop/plan/research/sources-<T>.jsonl`. Used by
 `plan-trend-researcher`.
 
 Why a wrapper and not just `deep-research`: a *plan* must not recommend a stale practice or a tool that
@@ -112,3 +112,15 @@ the graph's actual dependency usage; the verifier may sanity-check a currency cl
   plan can still be sanity-checked by the verifier. Don't overstate confidence.
 - **Stay on-target** — research *this* target's tech, not a general literature review; tie every
   sub-question to a crate/tool/pattern the cartographer actually found.
+
+
+## Machine-readable source ledger (P2)
+
+Also write `research/sources-<T>.jsonl`, one JSON object per source used by claim-bearing findings:
+
+```json
+{"url":"https://example.org/release","title":"Release notes","publisher":"Example","accessed_at":"2026-06-26","published_at":"2026-06-20","in_recency_window":true,"why_used":"latest release evidence","claim_ids":["C1","TOOL-tonic"]}
+```
+
+Required keys: `url`, `title`, `publisher`, `accessed_at`, `published_at`, `in_recency_window`,
+`why_used`, `claim_ids`. The runtime artifact gate rejects prose-only source lists for completed runs.

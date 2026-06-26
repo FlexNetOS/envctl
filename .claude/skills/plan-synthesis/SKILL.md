@@ -40,19 +40,21 @@ Write the plan in this order — **verdict first**, evidence after:
    codemap, or a `docs/secrets/*`/`docs/ARCHITECTURE.md` section). Annotate hotspots, cycles, and
    layering with the automation legend where a step is automated/gated (see below).
 3. **Sequenced upgrade roadmap** — the ordered list of upgrades, each tagged
-   `axis: quality|speed|accuracy|governance+settings+config|filesystem-layout`, ordered by value/risk (recipe below). Only CONFIRMED/QUALIFIED +
+   `axis: quality|speed|accuracy|governance+settings+config|filesystem-layout|prompt-architecture`, ordered by value/risk (recipe below). Only CONFIRMED/QUALIFIED +
    feasible items.
 4. **Tool-evaluation** — the tool/CLI/MCP/crate inventory with currency/advisories → upgrade/hold/pin
    (recipe below).
 5. **Governance, settings & config** — control-plane findings (rules/instructions/hooks/policy/CLAUDE.md/AGENTS.md), settings hygiene (MCP rot / skill overload / token burn / permission drift), config drift, and APPLY/PROPOSE/REGENERATE routing.
 6. **Filesystem layout** — file/folder organization map, path inventory, FHS/XDG/repo-native placement verdicts, boundary map (repo/meta/user/system), and enforcement-test handoff from `findings/filesystem-layout-<T>.md`.
-7. **Test Strategy & Coverage** — current coverage (by call-graph reachability), the ranked coverage
+7. **Prompt-architecture** — prompt/tool/model/runtime couplings, ADR candidates/no-ADR rationale, and governance controls from `findings/prompt-architecture-<T>.md`.
+8. **Risk policy / backend / interop** — HITL/SUPERVISED routing, lane isolation decisions, and weave/MCP/ACP/A2A/GitHub-cloud interop registry.
+9. **Test Strategy & Coverage** — current coverage (by call-graph reachability), the ranked coverage
    gaps (untested public-API / hotspots / data-flows / error-paths, each citing the symbol), and the
    designed suite (cases, types, golden fixtures) that closes them and covers the roadmap's upgrades —
    from `findings/test-strategy-<T>.md`. Ends by promoting the **FF test-build spec** (recipe below).
-8. **Gaps** — what is unverified, infeasible-here, or needs a harness (e.g. a perf claim that couldn't
+10. **Gaps** — what is unverified, infeasible-here, or needs a harness (e.g. a perf claim that couldn't
    be benchmarked → "needs a perf harness"); plus notable REFUTED overclaims. Honesty over completeness.
-9. **Confidence** — restate the overall confidence and what would raise it.
+11. **Confidence** — restate the overall confidence and what would raise it.
 
 ## ASCII diagram conventions (R4)
 
@@ -145,3 +147,19 @@ After writing `reports/<T>-plan.md`:
 ## References
 - `references/diagram-and-adr.md` — full ASCII diagram legend + worked example, the ADR template, and
   the `docs/ROADMAP.md` row format + the UPGRADE row format reused in the roadmap.
+
+
+## P0-P2 synthesis inputs
+
+Lift these runtime-gated artifacts into the plan before promotion:
+
+- `graph/target-dag.md` — TDP scheduling and SELF-REVISION implications.
+- `findings/prompt-architecture-<T>.md` — prompt/tool/model coupling review and ADR/no-ADR routing.
+- `reports/agent-run-ledger-<T>.md` — background-lane observability and failures/retries.
+- `risk-policy.md` — HITL/SUPERVISED routing for high-risk plan items.
+- `agent-backend-matrix.md` — lane isolation/backend choice.
+- `agent-interop.md` — weave/MCP/ACP/A2A/GitHub-cloud routing decision.
+- `research/sources-<T>.jsonl` — source provenance supporting research claims.
+
+A plan missing any applicable P0-P2 section cannot be marked fully planned; `plan-artifact-gate.sh`
+will reject DONE.
