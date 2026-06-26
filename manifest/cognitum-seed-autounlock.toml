@@ -55,7 +55,7 @@ SECRETCTL=""
 # NB: $HOME is UNSET for a systemd system service, so guard it (set -u would abort otherwise —
 # this is the line-9 "HOME: unbound variable" failure runtime-verify caught, which broke the
 # fail-closed exit-0 contract). The meta-prefix path needs no $HOME and is tried first.
-for c in "${META_ROOT:-/home/drdave/Desktop/meta}/.toolchains/secrets/bin/secretctl" "${HOME:-}/.local/bin/secretctl" /usr/local/bin/secretctl secretctl; do
+for c in "${META_ROOT:-/home/drdave/Desktop/meta}/.local/bin/secretctl" "${META_ROOT:-/home/drdave/Desktop/meta}/.local/lib/envctl/secrets/bin/secretctl" "${META_ROOT:-/home/drdave/Desktop/meta}/.toolchains/secrets/bin/secretctl" "${HOME:-}/.local/bin/secretctl" /usr/local/bin/secretctl secretctl; do
   if command -v "$c" >/dev/null 2>&1; then SECRETCTL="$c"; break; fi
 done
 # No secretctl anywhere => nothing to do.
@@ -131,7 +131,7 @@ test -x /usr/local/sbin/cognitum-seed-autounlock \
 # Non-fatal probe (runs as the invoking user; verify carries no sudo so it cannot setpriv).
 # $HOME is guarded with :- for parity with the worker (verify usually has HOME, but stay safe).
 SECRETCTL=""
-for c in "${META_ROOT:-${HOME:-}/Desktop/meta}/.toolchains/secrets/bin/secretctl" "${HOME:-}/.local/bin/secretctl" /usr/local/bin/secretctl secretctl; do
+for c in "${META_ROOT:-${HOME:-}/Desktop/meta}/.local/bin/secretctl" "${META_ROOT:-${HOME:-}/Desktop/meta}/.local/lib/envctl/secrets/bin/secretctl" "${META_ROOT:-${HOME:-}/Desktop/meta}/.toolchains/secrets/bin/secretctl" "${HOME:-}/.local/bin/secretctl" /usr/local/bin/secretctl secretctl; do
   if command -v "$c" >/dev/null 2>&1; then SECRETCTL="$c"; break; fi
 done
 if [ -n "${SECRETCTL:-}" ] && "$SECRETCTL" status >/dev/null 2>&1; then
@@ -159,7 +159,7 @@ cat > /usr/local/sbin/cognitum-seed-autounlock <<'WORKER'
 set -euo pipefail
 
 SECRETCTL=""
-for c in "${META_ROOT:-/home/drdave/Desktop/meta}/.toolchains/secrets/bin/secretctl" "$HOME/.local/bin/secretctl" /usr/local/bin/secretctl secretctl; do
+for c in "${META_ROOT:-/home/drdave/Desktop/meta}/.local/bin/secretctl" "${META_ROOT:-/home/drdave/Desktop/meta}/.local/lib/envctl/secrets/bin/secretctl" "${META_ROOT:-/home/drdave/Desktop/meta}/.toolchains/secrets/bin/secretctl" "${HOME:-}/.local/bin/secretctl" /usr/local/bin/secretctl secretctl; do
   if command -v "$c" >/dev/null 2>&1; then SECRETCTL="$c"; break; fi
 done
 [ -n "${SECRETCTL:-}" ] || { echo "autounlock: secretctl not found (no-op)"; exit 0; }

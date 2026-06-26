@@ -50,7 +50,7 @@ requires = [
 resolved = ""
 
 [components.cognitum-seed-autounlock]
-content_hash = "d11d6685841e22e4"
+content_hash = "41482df1d6630308"
 requires = []
 resolved = ""
 
@@ -60,7 +60,7 @@ requires = []
 resolved = ""
 
 [components.cognitum-seed-trust]
-content_hash = "072d9f336faed1bf"
+content_hash = "fb3accfe1e18405f"
 requires = []
 resolved = ""
 
@@ -85,7 +85,7 @@ requires = []
 resolved = ""
 
 [components.dashboard]
-content_hash = "8d1bb9db4a67b3c6"
+content_hash = "a2f5a858086120a0"
 requires = [
     "claude-code-cli",
     "yazelix",
@@ -93,7 +93,7 @@ requires = [
 resolved = ""
 
 [components.desktop-app]
-content_hash = "264f738506ab4ce1"
+content_hash = "99fb3504f3fe5be3"
 requires = ["rustup"]
 resolved = ""
 
@@ -103,7 +103,7 @@ requires = []
 resolved = ""
 
 [components.env-ctl]
-content_hash = "567d54c66a88c052"
+content_hash = "6bd2c75b80c49edb"
 requires = [
     "rustup",
     "sqld",
@@ -379,6 +379,15 @@ content_hash = "c0923dbf11260d3e"
 requires = []
 resolved = ""
 
+[components.prompt_hub]
+content_hash = "28e34467ffad545e"
+requires = [
+    "libssl-dev",
+    "llvm-clang",
+    "rustup",
+]
+resolved = ""
+
 [components.pytorch-venv]
 content_hash = "10985f6258af9f59"
 requires = []
@@ -410,7 +419,7 @@ requires = ["rustup"]
 resolved = ""
 
 [components.secretd]
-content_hash = "b1d81b2d0bd69dc2"
+content_hash = "24be653258bf20fb"
 requires = ["env-ctl"]
 resolved = ""
 
