@@ -7,7 +7,7 @@ envctl owns and contains the meta environment: every FlexNetOS tool/dotfile/.loc
 Git > .handoff/ledger.db > tasks/*.task.json > active.md > this packet.
 
 ## 3. Progress
-Done: 52/54.  Tamper-evident events verified: 74.
+Done: 54/54.  Tamper-evident events verified: 84.
 
 ## 0. Next Action / Direction
 - **Next safe task:** none — backlog is exhausted (all cards Done).
@@ -15,11 +15,9 @@ Done: 52/54.  Tamper-evident events verified: 74.
 - **Why it is next:** no Backlog/in-progress card remains.
 - **Cycle / context budget:** context — wrap at ~50% of the context window (cycle_flush=4 caps a runaway cycle); this session is at cycle 0/4.
 - **Ready to ship:** no (`hf ship` once the cycle is full / context budget hit).
-- **Blocking walls:** TASK-0002 (blocked_by TASK-0001) · TASK-0003 (blocked_by TASK-0002) · TASK-0009 (status Blocked; blocked_by TASK-0018) · TASK-0013 (blocked_by TASK-0012) · TASK-0014 (blocked_by TASK-0012, TASK-0013) · TASK-0015 (blocked_by TASK-0012) · TASK-0016 (blocked_by TASK-0012) · TASK-0017 (blocked_by TASK-0012) · TASK-0018 (blocked_by TASK-0012, TASK-0013, TASK-0014) · TASK-0024 (blocked_by TASK-0002) · TASK-0026 (blocked_by TASK-0020) · TASK-0027 (blocked_by TASK-0020) · TASK-0028 (blocked_by TASK-0020) · TASK-0031-PR2 (blocked_by TASK-0031) · TASK-0031-PR2C (blocked_by TASK-0031-PR2) · TASK-0031 (blocked_by TASK-0030) · TASK-0032 (blocked_by TASK-0031) · TASK-0033 (status Blocked) · TASK-0038 (blocked_by TASK-0035) · TASK-0039 (blocked_by TASK-0031-PR2) · TASK-0044 (blocked_by TASK-0001, TASK-0002, TASK-0003) · TASK-0047 (blocked_by TASK-0046; NEEDS-HUMAN) · TASK-0050 (blocked_by TASK-0049) · TASK-0051 (blocked_by TASK-0043) · TASK-0052 (blocked_by TASK-0044)
+- **Blocking walls:** TASK-0002 (blocked_by TASK-0001) · TASK-0003 (blocked_by TASK-0002) · TASK-0009 (blocked_by TASK-0018) · TASK-0013 (blocked_by TASK-0012) · TASK-0014 (blocked_by TASK-0012, TASK-0013) · TASK-0015 (blocked_by TASK-0012) · TASK-0016 (blocked_by TASK-0012) · TASK-0017 (blocked_by TASK-0012) · TASK-0018 (blocked_by TASK-0012, TASK-0013, TASK-0014) · TASK-0024 (blocked_by TASK-0002) · TASK-0026 (blocked_by TASK-0020) · TASK-0027 (blocked_by TASK-0020) · TASK-0028 (blocked_by TASK-0020) · TASK-0031-PR2 (blocked_by TASK-0031) · TASK-0031-PR2C (blocked_by TASK-0031-PR2) · TASK-0031 (blocked_by TASK-0030) · TASK-0032 (blocked_by TASK-0031) · TASK-0038 (blocked_by TASK-0035) · TASK-0039 (blocked_by TASK-0031-PR2) · TASK-0044 (blocked_by TASK-0001, TASK-0002, TASK-0003) · TASK-0047 (blocked_by TASK-0046; NEEDS-HUMAN) · TASK-0050 (blocked_by TASK-0049) · TASK-0051 (blocked_by TASK-0043) · TASK-0052 (blocked_by TASK-0044)
 
 ## 4. Remaining (next safe first)
-- [P2] **TASK-0009** — Relocate kasetto + kst (BLOCKED: superseded by Epic C built-in absorption)
-- [P1] **TASK-0033** — VPS Profile B (BLOCKED owner-gated): F7 install gate + F8/OI-SM-2 authorizer + OI-SM-3 trusted-time
 
 ## 5. Next Best Task
 
@@ -41,6 +39,7 @@ done
     "TASK-0006",
     "TASK-0007",
     "TASK-0008",
+    "TASK-0009",
     "TASK-0010",
     "TASK-0011",
     "TASK-0012",
@@ -66,6 +65,7 @@ done
     "TASK-0031-PR2C",
     "TASK-0031",
     "TASK-0032",
+    "TASK-0033",
     "TASK-0034",
     "TASK-0035",
     "TASK-0036",
@@ -89,12 +89,9 @@ done
   "next_command": "done",
   "next_task_id": null,
   "project": "handoff (Continuity Ledger Kernel)",
-  "remaining": [
-    "TASK-0009",
-    "TASK-0033"
-  ],
+  "remaining": [],
   "schema": "handoff.packet.v2",
   "tasks_total": 54,
-  "witnessed_events_verified": 74
+  "witnessed_events_verified": 84
 }
 ```
