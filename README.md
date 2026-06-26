@@ -24,6 +24,7 @@ target today is a GPU-aware dual-RTX-5090 Ubuntu 26.04 workstation.
 | `graph` | dependency-DAG intelligence: summary, `--impact` blast-radius, `--why` paths, `--dot`/`--json` | — |
 | `lock` | content-hashed `envctl.lock` (reproducible) + `--check` CI gate (exit 1 on drift) | writes |
 | `doctor` | read-only health: writability, toolchains, sudo, UEFI/Secure-Boot, GPU, last-op | — |
+| `migrate` | adopt legacy/global installs into `$META_ROOT/.local`, preserve agent assets, protect shared meta substrates, and refuse unsafe purge | read-only (`apply --apply` materializes dirs) |
 
 ## Quick start
 
@@ -36,6 +37,8 @@ cargo run  -p envctl -- auto-detect        # read-only; safe to run anytime
 cargo run  -p envctl -- auto-detect --json # machine-readable EnvReport
 cargo run  -p envctl -- install bun --dry-run
 cargo run  -p envctl -- reset boot-repair-dev      # dry-run by default
+cargo run  -p envctl -- migrate scan               # migration/adoption inventory
+cargo run  -p envctl -- migrate apply --apply      # materialize canonical .local dirs
 ```
 
 The manifest dir defaults to `./manifest` (override with `ENVCTL_MANIFEST_DIR`).
@@ -60,6 +63,9 @@ hand-spell ad hoc host paths; they should resolve through the engine layout and 
 (`BUN_INSTALL`, `CARGO_HOME`, `RUSTUP_HOME`, `UV_*`, etc.) while manifests migrate to the
 system-shaped `.local` tree. `envctl env --toolchains` exports both the canonical `ENVCTL_*`
 paths and the legacy manager variables, with `$META_ROOT/.local/bin` first on `PATH`.
+See [`docs/MIGRATION-ADOPTION.md`](docs/MIGRATION-ADOPTION.md) for the upgrade-only
+scan/plan/apply/verify/purge contract, including why `loop_lib` and agent/Codex assets are
+protected during adoption.
 
 ### Native GUI
 
@@ -124,7 +130,7 @@ crates/cli/      # envctl
 crates/gui/      # envctl-gui (eframe/egui)
 manifest/        # declarative components (base.toml, cuda.toml, boot-repair.toml) + components.d/ drop-ins
 assets/scripts/  # the proven Desktop kit, referenced verbatim by ShippedScript hooks
-docs/            # ARCHITECTURE.md · ROADMAP.md · DESIGN-NOTES.md
+docs/            # ARCHITECTURE.md · ROADMAP.md · DESIGN-NOTES.md · MIGRATION-ADOPTION.md
 ```
 
 Design produced by a multi-agent design swarm and adversarially reviewed; the applied

@@ -59,6 +59,12 @@ pub enum Event {
     DashboardDeployed {
         outcome: DeployOutcome,
     },
+    /// The migration/adoption report over the meta-hosted install topology. This
+    /// is emitted by every `migrate` verb so the CLI and GUI consume one shared
+    /// engine surface for scan/plan/apply/verify/purge.
+    MigrationReported {
+        report: Box<crate::migration::MigrationReport>,
+    },
     /// An agent-asset verb run started (sync/add/remove/lock/list/clean). `dry_run`
     /// reflects preview-vs-apply; `lock_mode` is the resolved mode label.
     AgentRunStarted {
