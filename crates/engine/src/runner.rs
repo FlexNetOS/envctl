@@ -11,6 +11,7 @@
 //! (the process is killed on expiry) so a stuck installer can't wedge the worker.
 use crate::component::{Hook, HookRunner, Phase};
 use crate::event::{Event, EventSink, Stream};
+use crate::layout::MetaLayout;
 use crate::model::{OpResult, OpStatus};
 use loop_lib::{build_command as loop_build_command, SpawnSpec};
 use std::collections::BTreeMap;
@@ -295,7 +296,7 @@ fn truncate(s: &str, max: usize) -> &str {
 /// threads, the per-phase timeout — stays in `ProcessRunner::run`, because loop_lib
 /// is a batch fan-out runner with no equivalent for those.
 fn build_command(hook: &Hook) -> Command {
-    let (program, args, env): (String, Vec<String>, Vec<(String, String)>) = match hook {
+    let (program, args, hook_env): (String, Vec<String>, Vec<(String, String)>) = match hook {
         Hook::Command {
             command,
             args,
@@ -348,12 +349,78 @@ fn build_command(hook: &Hook) -> Command {
             (program, argv, Vec::new())
         }
     };
+    let env = enforced_meta_env(hook_env);
     loop_build_command(&SpawnSpec {
         program: &program,
         args: &args,
         current_dir: None,
         env: &env,
     })
+}
+
+/// Every component hook runs inside the meta-owned install prefix.
+///
+/// A large amount of legacy shell still spells exposure paths as
+/// `$HOME/.local/...`; envctl's contract is stricter than that: installs belong
+/// under `$META_ROOT/.local/...`, never the operator's user-global
+/// `/home/<user>/.local`.  Legacy scripts that spell `$HOME/.local` land in `$META_ROOT/.local`
+/// immediately while preserving the real home as an
+/// explicit escape hatch for non-install host integration.
+fn enforced_meta_env(mut hook_env: Vec<(String, String)>) -> Vec<(String, String)> {
+    let layout = MetaLayout::from_env_or_default();
+    let real_home = std::env::var("HOME").unwrap_or_default();
+    let mut env = Vec::new();
+
+    // Keep caller-specified values, then append enforced layout values so the
+    // meta target wins even if an old manifest tried to override it.
+    env.append(&mut hook_env);
+    if !real_home.is_empty() {
+        env.push(("ENVCTL_REAL_HOME".to_string(), real_home.clone()));
+    }
+    env.push((
+        "META_ROOT".to_string(),
+        layout.meta_root().display().to_string(),
+    ));
+    env.push(("HOME".to_string(), layout.meta_root().display().to_string()));
+    for (key, path) in layout.env_exports() {
+        env.push((key.to_string(), path.display().to_string()));
+    }
+    env.push((
+        "XDG_CONFIG_HOME".to_string(),
+        layout.meta_root().join(".config").display().to_string(),
+    ));
+    env.push((
+        "XDG_DATA_HOME".to_string(),
+        layout.share().display().to_string(),
+    ));
+    env.push((
+        "XDG_STATE_HOME".to_string(),
+        layout.state().display().to_string(),
+    ));
+    env.push((
+        "XDG_CACHE_HOME".to_string(),
+        layout.cache().display().to_string(),
+    ));
+
+    let meta_bin = layout.bin().display().to_string();
+    let legacy_cargo = layout
+        .legacy_toolchains()
+        .join("cargo/bin")
+        .display()
+        .to_string();
+    let filtered = std::env::var("PATH")
+        .unwrap_or_default()
+        .split(':')
+        .filter(|entry| {
+            !entry.is_empty()
+                && (real_home.is_empty() || *entry != format!("{real_home}/.local/bin"))
+        })
+        .map(str::to_string)
+        .collect::<Vec<_>>();
+    let mut path = vec![meta_bin, legacy_cargo];
+    path.extend(filtered);
+    env.push(("PATH".to_string(), path.join(":")));
+    env
 }
 
 /// Resolve `(program, leading-args)` for an optional non-interactive `sudo -n`

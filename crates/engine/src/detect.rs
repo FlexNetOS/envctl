@@ -10,6 +10,7 @@
 //! "reboot to load nvidia-open" hint instead of a false "no GPU".
 use crate::component::{HookRunner, Phase};
 use crate::event::{Event, EventSink};
+use crate::layout::MetaLayout;
 use crate::model::{
     ComponentState, EnvReport, MetaBoundaryReport, MetaBoundaryViolation,
     MetaBoundaryViolationKind, OpStatus, Registry, ToolState,
@@ -235,7 +236,8 @@ const LOCAL_META_TOOLS: &[&str] = &[
 const CARGO_META_TOOLS: &[&str] = &["weave", "grit", "secretctl", "secretd"];
 
 fn meta_boundary_report() -> MetaBoundaryReport {
-    let local_bin = home_join(".local/bin");
+    let layout = MetaLayout::from_env_or_default();
+    let local_bin = layout.bin();
     let cargo_bin = home_join(".cargo/bin");
     let Some(meta_root) = resolve_meta_root() else {
         return MetaBoundaryReport {
