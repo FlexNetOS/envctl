@@ -21,6 +21,7 @@ The generated baseline enables GitHub, Context7, Exa, Memory, Playwright, and Se
 
 ## Workflow Files
 
+- `/goal` - `.codex/prompts/goal.md` (canonical) and `.claude/commands/goal.md` (Claude Code shim)
 - `/forge-loop` - `.codex/prompts/forge-loop.md`
 - `/prompt:forge-loop` - `.codex/prompts/prompt:forge-loop.md`
 - `/feature-forge` - `.codex/prompts/feature-forge.md`

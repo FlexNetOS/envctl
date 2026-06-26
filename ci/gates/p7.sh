@@ -2,14 +2,15 @@
 # ci/gates/p7.sh — fail-closed p7-conformance gate for this repo's `.handoff/` Tier-A layer.
 #
 # META-ORG-POLICY **P7** / handoff ADR-0003 + ADR-0004 §2/§3: a member repo's `.handoff/` is the
-# git-committed continuity layer — TEXT ONLY, no binary `ledger.db` (the witnessed FLEET ledger lives
-# at `$META_ROOT/.handoff/ledger.db`). This gate makes the conformance the loop already verifies by
-# hand (capsule/policy/hooks schema tags, residency, the rendered packet) fail-CLOSED. Grep-based and
-# dependency-free, mirroring ci/gates/{shape,enable}.sh. Run from the repo root: `bash ci/gates/p7.sh`.
+# git-committed continuity layer. The committed continuity truth is the per-repo JSONL ledger export
+# (`.handoff/ledger.events.jsonl`) plus rendered text artifacts; local redb/RVF `ledger.db` caches are
+# rebuild/runtime state and must be ignored unless the handoff kernel explicitly changes the wire
+# contract. This gate makes the conformance the loop already verifies by hand (capsule/policy/hooks
+# schema tags, residency, the rendered packet) fail-CLOSED. Grep-based and dependency-free, mirroring
+# ci/gates/{shape,enable}.sh. Run from the repo root: `bash ci/gates/p7.sh`.
 #
 # It validates the COMMITTED Tier-A artifacts; it deliberately does NOT invoke any ledger-mutating
-# `hf` verb (`hf init`/`status`/`resume`/`sync` open a CWD-relative ledger → would itself violate P7).
-# The packet is checked as the static artifact `hf fleet render <member>` produced.
+# `hf` verb. The packet is checked as the static artifact `hf fleet render <member>` produced.
 set -euo pipefail
 fail() { echo "P7 GATE FAIL: $*" >&2; exit 1; }
 
@@ -42,10 +43,10 @@ for card in "$HND"/tasks/*.task.json; do
 done
 shopt -u nullglob
 
-# --- Gate 3: ledger residency (ADR-0004 §3 / P7) — NO per-repo ledger, ever. ---
+# --- Gate 3: ledger residency (ADR-0004 §3 / P7) — committed JSONL yes; binary db caches ignored. ---
 # 3a: nothing ledger-like tracked in git under .handoff.
 if git ls-files "$HND" | grep -qE '\.db$|(^|/)ledger\.db$'; then
-  fail "a binary ledger (*.db) is git-tracked under $HND — the FLEET ledger lives at \$META_ROOT/.handoff"
+  fail "a binary ledger (*.db) is git-tracked under $HND — commit the JSONL export, not redb/RVF caches"
 fi
 # 3b: a *.db on disk is allowed ONLY if it is git-ignored — that is the local, CWD-relative working
 # ledger any `hf status`/`resume`/`checkpoint` call creates (HFTASK-0054); it is never the authority and
@@ -55,7 +56,7 @@ fi
 while IFS= read -r _db; do
   [ -n "$_db" ] || continue
   git check-ignore -q "$_db" 2>/dev/null \
-    || fail "a non-ignored *.db ($_db) exists under $HND — gitignore it ('.handoff/**/ledger.db'); the witnessed ledger is fleet-only"
+    || fail "a non-ignored *.db ($_db) exists under $HND — gitignore it ('.handoff/**/ledger.db'); commit the JSONL export, not redb/RVF caches"
 done < <(find "$HND" -name '*.db' -type f 2>/dev/null)
 # 3c: the .gitignore guard must be present so a stray ledger can never be committed.
 grep -qE '^\.handoff/\*\*/ledger\.db' .gitignore \

@@ -36,8 +36,7 @@ The implementer follows the **`rust-feature-impl`** skill; the guardian runs tha
 **Epic A routing (handoff full-sync / hf kernel).** When the item's scope is building/relocating the
 `hf` kernel or seeding the Tier-A `.handoff` layer (backlog Epic A, TASK-0001…0003), the Build phase
 uses **`handoff-kernel-engineer`** instead of `rust-implementer` — it follows the **`handoff-sync`**
-skill and owns the kernel invariants (single shared ledger at `$META_ROOT/.handoff/ledger.db`,
-packets-rendered-never-hand-written, p7-conformance). The guardian additionally verifies those kernel
+skill and owns the kernel invariants (committed JSONL ledger export, packets-rendered-never-hand-written, p7-conformance). The guardian additionally verifies those kernel
 invariants for Epic-A cycles. This is a **cross-repo** job (`meta/handoff` ↔ envctl), which is why it
 is a distinct agent from the envctl-engine-first `rust-implementer`.
 
@@ -281,8 +280,11 @@ the cycle reach Phase 4 / terminal Done.
 1. Summarize for the user: what was built, the Engine API delta, parity status, gate results,
    and any PASS-WITH-NOTES caveats.
 2. Commit with an area-prefixed subject (`engine:` / `cli:` / `gui:` / `secretd:` / `docs:`),
-   body explaining *why*. Do **not** push unless asked.
-3. Offer follow-up (see Phase 5).
+   body explaining *why*.
+3. Immediately publish the committed chunk: `git push -u origin HEAD`, `gh pr create --fill`,
+   then `gh pr merge <PR> --auto --squash`. Do **not** stop with committed-but-unpushed work,
+   and do not ask whether to create the PR after committing.
+4. Offer follow-up (see Phase 5).
 
 ## Data transfer protocol
 
