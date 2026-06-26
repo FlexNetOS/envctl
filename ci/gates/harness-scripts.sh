@@ -15,6 +15,7 @@ bash "$root/scripts/tests/test-skill-contract.sh"
 bash "$root/scripts/tests/test-plan-eject.sh"
 bash "$root/scripts/tests/test-plan-contract.sh"
 bash "$root/scripts/tests/test-plan-loop-state.sh"
+bash "$root/scripts/tests/test-plan-weave-dispatch.sh"
 
 # Guard the owner-critical publish contract. The harness must never regress to
 # committed-but-unpushed local work; every committed chunk is pushed, PR-backed,

@@ -117,10 +117,13 @@ lanes immediately and reduce only their structured artifact paths/verdicts:
 **Use weave when running from Codex.** Codex dispatchers stay on the supported Codex model; they are
 not the heavy workers. The orchestrator registers with `weave attach --name envctl-plan-orchestrator`,
 then launches or routes each lane via `weave spawn`, `weave job create`, or `weave ask` to an
-Opus-capable Claude peer. Record weave peer/session/message/job ids in `loop_state.md`. If weave cannot
-produce an Opus worker, **fail closed** with a provider/transport gap. Do not silently downgrade to
-Sonnet, Codex, or a lower-effort model for the actual lane work. The owner must be able to keep talking
-to the foreground orchestrator while these lanes run.
+Opus-capable Claude peer. Prefer `scripts/plan-weave-dispatch.sh` so the five lane records are
+materialized under `.handoff/loop/plan/weave-dispatch/<run-id>.jsonl`. Record weave
+peer/session/message/job ids in `loop_state.md` and route by unique peer/session id, not a reused alias
+that could hit weave's ambiguous-target guard. If weave cannot produce an Opus worker, **fail closed**
+with a provider/transport gap. Do not silently downgrade to Sonnet, Codex, or a lower-effort model for
+the actual lane work. The owner must be able to keep talking to the foreground orchestrator while these
+lanes run.
 
 ## Self-pacing (how the loop re-fires)
 - Default: **dynamic `/loop` / runtime scheduler** — re-enter this skill for the next iteration by using the active runtime's supported loop/scheduling surface (for Claude Code, `/loop`/`CronCreate`; do not name or call an unavailable tool). Pass the same `/plan-loop …` prompt verbatim. A planning cycle is deliberative (more reasoning,

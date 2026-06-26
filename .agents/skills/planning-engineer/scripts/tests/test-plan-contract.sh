@@ -76,6 +76,10 @@ if grep -R '^model = "claude-opus-4-8"' "$repo_root/.codex/agents"/plan-*.toml >
   fail "Codex plan agents must not pin unsupported claude-opus-4-8 directly; use weave transport"
 fi
 
+[ -x "$repo_root/scripts/plan-weave-dispatch.sh" ] || fail "missing executable plan weave dispatch helper"
+grep -q 'plan-weave-dispatch.sh' "$repo_root/.agents/skills/plan-loop/SKILL.md"   || fail "plan-loop skill does not point at the weave dispatch helper"
+grep -q 'weave_dispatch' "$repo_root/.agents/skills/planning-engineer/scripts/loop_state.template.md"   || fail "loop_state template does not record weave dispatch artifact"
+
 python3 - "$repo_root" <<'PY'
 from pathlib import Path
 import sys

@@ -7,6 +7,8 @@ planning_target: <current T (crate/subsystem slug), or "(sweeping targets.md)">
 target_root: <abs path of the subsystem/crate under plan, e.g. ~/Desktop/meta/envctl/crates/secrets-proto>
 recency_window_days: 90                              # the rolling web-research window (R3a)
 graph_snapshot: graph/<T>.symbols.json@<git-sha>     # which snapshot the metrics derive from
+weave_dispatch: weave-dispatch/<run-id>.jsonl        # five Opus lane transport rows (peer/session/message/job ids)
+weave_orchestrator: envctl-plan-orchestrator-<run-id> # unique foreground registration; avoid ambiguous aliases
 cycle_budget: 3                                      # completed planning cycles per session before HAND OFF
 wrap_every: 5                                        # in-session batch-boundary cadence (reaper + retro + reconcile)
 last_wrapup_total: 0
