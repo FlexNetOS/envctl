@@ -12,20 +12,26 @@ pub struct Paths {
 }
 
 impl Paths {
-    /// Resolve from the environment (`HOME` + the XDG base-dir vars).
+    /// Resolve from the environment (explicit XDG base-dir vars, else `META_ROOT`, else `HOME`).
     pub fn resolve() -> anyhow::Result<Paths> {
-        let home = std::env::var_os("HOME")
+        let fallback_root = std::env::var_os("META_ROOT")
+            .filter(|v| !v.is_empty())
+            .or_else(|| std::env::var_os("HOME").filter(|v| !v.is_empty()))
             .map(PathBuf::from)
-            .ok_or_else(|| anyhow::anyhow!("HOME is not set"))?;
+            .ok_or_else(|| anyhow::anyhow!("neither META_ROOT nor HOME is set"))?;
         let base = |var: &str, default: PathBuf| -> PathBuf {
-            std::env::var_os(var).map(PathBuf::from).unwrap_or(default)
+            std::env::var_os(var)
+                .filter(|v| !v.is_empty())
+                .map(PathBuf::from)
+                .unwrap_or(default)
         };
-        let config = base("XDG_CONFIG_HOME", home.join(".config")).join("env-ctl");
-        let data = base("XDG_DATA_HOME", home.join(".local/share")).join("env-ctl");
-        let state = base("XDG_STATE_HOME", home.join(".local/state")).join("env-ctl");
+        let config = base("XDG_CONFIG_HOME", fallback_root.join(".config")).join("env-ctl");
+        let data = base("XDG_DATA_HOME", fallback_root.join(".local/share")).join("env-ctl");
+        let state = base("XDG_STATE_HOME", fallback_root.join(".local/state")).join("env-ctl");
         let runtime = match std::env::var_os("XDG_RUNTIME_DIR") {
-            Some(r) => PathBuf::from(r).join("env-ctl"),
+            Some(r) if !r.is_empty() => PathBuf::from(r).join("env-ctl"),
             None => state.clone(),
+            Some(_) => state.clone(),
         };
         Ok(Paths {
             config,
@@ -73,6 +79,44 @@ impl Paths {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::ffi::OsString;
+    use std::sync::{Mutex, MutexGuard, OnceLock};
+
+    fn env_lock() -> MutexGuard<'static, ()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
+    }
+
+    fn restore_var(key: &str, value: Option<OsString>) {
+        match value {
+            Some(v) => std::env::set_var(key, v),
+            None => std::env::remove_var(key),
+        }
+    }
+
+    fn clear_path_env() -> Vec<(&'static str, Option<OsString>)> {
+        let keys = [
+            "HOME",
+            "META_ROOT",
+            "XDG_CONFIG_HOME",
+            "XDG_DATA_HOME",
+            "XDG_STATE_HOME",
+            "XDG_RUNTIME_DIR",
+        ];
+        keys.into_iter()
+            .map(|key| {
+                let old = std::env::var_os(key);
+                std::env::remove_var(key);
+                (key, old)
+            })
+            .collect()
+    }
+
+    fn restore_path_env(old: Vec<(&'static str, Option<OsString>)>) {
+        for (key, value) in old {
+            restore_var(key, value);
+        }
+    }
 
     #[test]
     fn relay_tls_dir_is_under_config_sibling_of_secretd_toml() {
@@ -93,5 +137,53 @@ mod tests {
     fn relay_tls_dir_resolves_under_env_ctl_config() {
         let p = Paths::under(PathBuf::from("/x"));
         assert!(p.relay_tls_dir().ends_with("config/relay-tls"));
+    }
+
+    #[test]
+    fn resolve_defaults_to_meta_root_when_xdg_is_unset() {
+        let _g = env_lock();
+        let old = clear_path_env();
+        std::env::set_var("HOME", "/home/real-user");
+        std::env::set_var("META_ROOT", "/home/real-user/Desktop/meta");
+
+        let p = Paths::resolve().expect("paths resolve from META_ROOT");
+        assert_eq!(
+            p.config,
+            PathBuf::from("/home/real-user/Desktop/meta/.config/env-ctl")
+        );
+        assert_eq!(
+            p.data,
+            PathBuf::from("/home/real-user/Desktop/meta/.local/share/env-ctl")
+        );
+        assert_eq!(
+            p.state,
+            PathBuf::from("/home/real-user/Desktop/meta/.local/state/env-ctl")
+        );
+        assert_eq!(
+            p.runtime,
+            PathBuf::from("/home/real-user/Desktop/meta/.local/state/env-ctl")
+        );
+
+        restore_path_env(old);
+    }
+
+    #[test]
+    fn resolve_honors_explicit_xdg_overrides_before_meta_root() {
+        let _g = env_lock();
+        let old = clear_path_env();
+        std::env::set_var("HOME", "/home/real-user");
+        std::env::set_var("META_ROOT", "/home/real-user/Desktop/meta");
+        std::env::set_var("XDG_CONFIG_HOME", "/custom/config");
+        std::env::set_var("XDG_DATA_HOME", "/custom/data");
+        std::env::set_var("XDG_STATE_HOME", "/custom/state");
+        std::env::set_var("XDG_RUNTIME_DIR", "/run/user/1000");
+
+        let p = Paths::resolve().expect("paths resolve from explicit XDG roots");
+        assert_eq!(p.config, PathBuf::from("/custom/config/env-ctl"));
+        assert_eq!(p.data, PathBuf::from("/custom/data/env-ctl"));
+        assert_eq!(p.state, PathBuf::from("/custom/state/env-ctl"));
+        assert_eq!(p.runtime, PathBuf::from("/run/user/1000/env-ctl"));
+
+        restore_path_env(old);
     }
 }

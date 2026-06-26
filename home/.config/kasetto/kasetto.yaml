@@ -25,7 +25,7 @@ agent:
 # The current agent-skills are envctl-grounded, so they belong in envctl's project config,
 # not globally. Point this at the shared repo and curate which skills are global-worthy.
 # skills:
-#   - source: ~/.local/share/agent-skills
+#   - source: $META_ROOT/.local/share/agent-skills
 #     skills:
 #       - <a-general-skill>
 

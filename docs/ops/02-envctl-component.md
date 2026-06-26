@@ -135,10 +135,10 @@ rustix = { version = "0.38", features = ["process", "net"] }
 ## 3. The component manifest (`manifest/env-ctl.toml`)
 
 Field names, hook `kind`s, and guard `kind`s below are exact against
-`~/Desktop/envctl/crates/engine/src/component.rs` and `model.rs`. Paths are the verified
-XDG layout from ARCHITECTURE.md §"Layout" (lines 124-127):
-`~/.config/env-ctl` (config), `~/.local/share/env-ctl` (0700; `vault.db` 0600, `ca/`),
-`~/.local/state/env-ctl` (0700; `secretd.log`, audit mirror),
+`$META_ROOT/envctl/crates/engine/src/component.rs` and `model.rs`. Paths are the verified
+META_ROOT-hosted layout from ARCHITECTURE.md §"Layout" (lines 124-127):
+`$META_ROOT/.config/env-ctl` (config), `$META_ROOT/.local/share/env-ctl` (0700; `vault.db` 0600, `ca/`),
+`$META_ROOT/.local/state/env-ctl` (0700; `secretd.log`, audit mirror),
 `$XDG_RUNTIME_DIR/env-ctl` (0700; `control.sock` 0600, relay-proxy bind config). `VERIFIED`.
 
 ```toml
@@ -179,13 +179,13 @@ test -d "$repo" || { echo "FATAL: workspace not found at $repo (set ENV_CTL_REPO
 cargo build --release --manifest-path "$repo/Cargo.toml" \
   -p envctl-secretd -p envctl-secretctl
 
-install -Dm755 "$repo/target/release/secretd"   "$HOME/.cargo/bin/secretd"
-install -Dm755 "$repo/target/release/secretctl" "$HOME/.cargo/bin/secretctl"
+install -Dm755 "$repo/target/release/secretd"   "$META_ROOT/.local/bin/secretd"
+install -Dm755 "$repo/target/release/secretctl" "$META_ROOT/.local/bin/secretctl"
 
 # XDG dirs, fail-closed perms (ARCHITECTURE.md layout). RUNTIME dir is created by the unit at start.
-install -d -m700 "$HOME/.config/env-ctl"
-install -d -m700 "$HOME/.local/share/env-ctl"
-install -d -m700 "$HOME/.local/state/env-ctl"
+install -d -m700 "$META_ROOT/.config/env-ctl"
+install -d -m700 "$META_ROOT/.local/share/env-ctl"
+install -d -m700 "$META_ROOT/.local/state/env-ctl"
 '''
 
 # VERIFY: bins answer, AND secretd's own non-serving self-check passes. `secretd --self-check` runs
@@ -261,7 +261,7 @@ LimitCORE=0
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=%h/.local/share/env-ctl %h/.local/state/env-ctl %t/env-ctl
+ReadWritePaths=%h/Desktop/meta/.local/share/env-ctl %h/Desktop/meta/.local/state/env-ctl %t/env-ctl
 RuntimeDirectory=env-ctl
 RuntimeDirectoryMode=0700
 PrivateTmp=true
@@ -279,13 +279,13 @@ WantedBy=default.target
 
 # ---- VAULT DATA: deleted ONLY by `envctl reset env-ctl --purge` (after UUID re-verify) ----
 [[component.wiring.data_paths]]
-path = "~/.local/share/env-ctl"   # vault.db (0600), ca/ (local CA private material)
+path = "$META_ROOT/.local/share/env-ctl"   # vault.db (0600), ca/ (local CA private material)
 [[component.wiring.data_paths]]
-path = "~/.local/state/env-ctl"   # secretd.log, durable hash-chained audit mirror
+path = "$META_ROOT/.local/state/env-ctl"   # secretd.log, durable hash-chained audit mirror
 
 # ---- CONFIG: kept with `--keep-config`, else engine-removed on reset ----
 [[component.wiring.config_paths]]
-path = "~/.config/env-ctl"
+path = "$META_ROOT/.config/env-ctl"
 
 # ---- GUARD: USB/storage PARTUUID pre-filter on destructive phases. This is a fast pre-flight ----
 # ---- ONLY; the daemon proves keyfile POSSESSION cryptographically (REQ-SEC-3, FS-S9). ----

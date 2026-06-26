@@ -11,7 +11,8 @@ $HOME/.claude/settings.json         -> envctl/home/.claude/settings.json     (cl
 $HOME/.config/rtk                   -> envctl/home/.config/rtk               (rtk-config-links)
 $HOME/.config/yazelix/settings.jsonc-> envctl/home/.config/yazelix/...       (home-config-links)
 $HOME/.config/systemd/user/*.service-> envctl/home/.config/systemd/user/...  (home-config-links)
-$HOME/.local/bin/<tool>             -> ~/Desktop/meta/<repo>/target/release/<tool>  (meta-tool-links)
+$ENVCTL_REAL_HOME/.local            -> $META_ROOT/.local                    (only real-home bridge)
+$META_ROOT/.local/bin/<tool>        -> $META_ROOT/.toolchains/... or meta/<repo>/target/release/<tool>
 ```
 
 ## Rules (review gates — this repo is PUBLIC)
@@ -19,8 +20,9 @@ $HOME/.local/bin/<tool>             -> ~/Desktop/meta/<repo>/target/release/<too
 1. **No secrets, ever.** Credentials delegate outward (`.gitconfig` uses `gh auth git-credential`;
    `~/.claude/.credentials.json`, `~/.config/gh/hosts.yml`, keyrings are NEVER added). The envctl
    secrets stack / relay is the sanctioned channel for secret material.
-2. **No state.** Histories, caches, sessions, `vox.db`, piper voices, `~/.local/share/*` stay
-   machine-local; bootstrap regenerates them.
+2. **No host-home state.** Histories, caches, sessions, `vox.db`, piper voices, and envctl-owned
+   share/state/cache data live under `$META_ROOT/.local/{share,state,cache}` (or another explicit
+   `$META_ROOT` path). The only real-home `.local` object is the single bridge back to meta.
 3. **Archive-first.** The wiring components move any pre-existing real file to
    `~/Desktop/_archives/home-links-<date>/` before linking — originals are never deleted.
 4. **Every file is reviewed individually** before it lands here (no bulk `cp -r` of live dirs).
@@ -41,4 +43,4 @@ $HOME/.local/bin/<tool>             -> ~/Desktop/meta/<repo>/target/release/<too
   PORTABILITY-AUDIT.md at the meta root).
 - `repowire.service` is carried for the record but disabled on the box (binary missing — see header).
 - RTK config is tracked here; RTK command history and tee logs remain machine-local state under
-  `~/.local/share/rtk/`.
+  `$META_ROOT/.local/share/rtk/` through the single real-home `.local` bridge.

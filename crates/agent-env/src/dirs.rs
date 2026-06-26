@@ -2,7 +2,7 @@
 //! `src/fsops/dirs.rs` (ledger XC-03).
 //!
 //! The agent-NATIVE base-directory rules (`HOME`, the three `XDG_*_HOME` overrides with
-//! their `$HOME/.config|.local/share|.cache` fallbacks) are kept byte-for-byte. Only the
+//! their home-relative config/data/cache fallbacks) are kept byte-for-byte. Only the
 //! kasetto-SELF-NAMED per-product subdirectory helpers are renamed to an envctl-neutral
 //! `dirs_agent_env_{config,data,cache}` (appending `agent-env` instead of `kasetto`), so the
 //! absorbed crate carries no foreign product identity. The XDG bases they build on are
@@ -37,7 +37,7 @@ pub fn dirs_agent_env_config() -> Result<PathBuf> {
 }
 
 /// [XDG Base Directory](https://specifications.freedesktop.org/basedir-spec/latest/) data home:
-/// `XDG_DATA_HOME`, or `$HOME/.local/share` when unset or empty.
+/// `XDG_DATA_HOME`, or the XDG data fallback under `$HOME` when unset or empty.
 pub fn dirs_xdg_data_home() -> Result<PathBuf> {
     match std::env::var("XDG_DATA_HOME") {
         Ok(p) if !p.is_empty() => Ok(PathBuf::from(p)),

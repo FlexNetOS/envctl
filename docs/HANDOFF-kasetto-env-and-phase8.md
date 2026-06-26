@@ -62,8 +62,8 @@ Future features land **directly in envctl `master`**.
 
 ## The kasetto-managed agent environment
 
-The `.claude/` + `.codex/` agent config is now provisioned and locked by **kasetto** (the env-manager
-CLI, installed at `~/.local/bin/{kasetto,kst}`), from a committed source — NOT hand-edited.
+The `.claude/` + `.codex/` agent config is now provisioned and locked by **agent-env** (the env-manager
+CLI surface installed through `$META_ROOT/.local/bin/envctl`), from a committed source — NOT hand-edited.
 
 - **Source of truth:** `envctl/kasetto.yaml` + `envctl/agent-skills/` (3 curated skills:
   `env-toolchain-install`, `agent-env-config`, `env-stabilize`; + a 6-server MCP pack:

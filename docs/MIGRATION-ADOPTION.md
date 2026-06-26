@@ -15,7 +15,7 @@ proven.
 ## Non-negotiable rules
 
 - **Meta-root first:** envctl-owned payloads belong under `$META_ROOT/.local`,
-  not `/usr/local`, `/opt`, or `$HOME/.local`.
+  not `/usr/local`, `/opt`, or a real-home local tree.
 - **No blind rebuilds:** Codex/agent assets are adopted/preserved in place. This
   includes `agent-env.yaml`, `agent-env.lock`, `.codex/config.toml`, `.mcp.json`,
   and the ejected harness mirrors under `.Codex/` / `.agents/`.
@@ -76,7 +76,7 @@ The first implementation classifies manifest references conservatively:
 - `.toolchains` / `ENVCTL_LEGACY_TOOLCHAINS` → manifest must move to
   `MetaLayout` / canonical `.local` paths; `.toolchains` itself remains a
   protected compatibility root.
-- `~/.local` / `$HOME/.local` → user-global install debt; adopt into
+- legacy real-home local spellings → user-global install debt; adopt into
   `$META_ROOT/.local`.
 - `/usr/local` / `/opt/` → high-risk system/global path; report only until a
   component-specific adoption plan proves ownership and safety.
