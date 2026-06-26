@@ -40,18 +40,19 @@ Write the plan in this order — **verdict first**, evidence after:
    codemap, or a `docs/secrets/*`/`docs/ARCHITECTURE.md` section). Annotate hotspots, cycles, and
    layering with the automation legend where a step is automated/gated (see below).
 3. **Sequenced upgrade roadmap** — the ordered list of upgrades, each tagged
-   `axis: quality|speed|accuracy`, ordered by value/risk (recipe below). Only CONFIRMED/QUALIFIED +
+   `axis: quality|speed|accuracy|governance+settings+config|filesystem-layout`, ordered by value/risk (recipe below). Only CONFIRMED/QUALIFIED +
    feasible items.
 4. **Tool-evaluation** — the tool/CLI/MCP/crate inventory with currency/advisories → upgrade/hold/pin
    (recipe below).
 5. **Governance, settings & config** — control-plane findings (rules/instructions/hooks/policy/CLAUDE.md/AGENTS.md), settings hygiene (MCP rot / skill overload / token burn / permission drift), config drift, and APPLY/PROPOSE/REGENERATE routing.
-6. **Test Strategy & Coverage** — current coverage (by call-graph reachability), the ranked coverage
+6. **Filesystem layout** — file/folder organization map, path inventory, FHS/XDG/repo-native placement verdicts, boundary map (repo/meta/user/system), and enforcement-test handoff from `findings/filesystem-layout-<T>.md`.
+7. **Test Strategy & Coverage** — current coverage (by call-graph reachability), the ranked coverage
    gaps (untested public-API / hotspots / data-flows / error-paths, each citing the symbol), and the
    designed suite (cases, types, golden fixtures) that closes them and covers the roadmap's upgrades —
    from `findings/test-strategy-<T>.md`. Ends by promoting the **FF test-build spec** (recipe below).
-7. **Gaps** — what is unverified, infeasible-here, or needs a harness (e.g. a perf claim that couldn't
+8. **Gaps** — what is unverified, infeasible-here, or needs a harness (e.g. a perf claim that couldn't
    be benchmarked → "needs a perf harness"); plus notable REFUTED overclaims. Honesty over completeness.
-8. **Confidence** — restate the overall confidence and what would raise it.
+9. **Confidence** — restate the overall confidence and what would raise it.
 
 ## ASCII diagram conventions (R4)
 
@@ -68,7 +69,7 @@ From envctl `docs/runbook/DIAGRAMS.md` (full legend + worked example in `referen
 ## Gap → upgrade rubric (the roadmap ordering)
 
 For each surviving upgrade (CONFIRMED/QUALIFIED + feasibility-passed in `verdicts.md`):
-1. **Tag the axis** — exactly one of `quality` (correctness/maintainability/safety), `speed` (latency/throughput/build-time), `accuracy` (result correctness/precision), or `governance+settings+config` (control-plane/settings/config coherence). Carry the
+1. **Tag the axis** — exactly one of `quality` (correctness/maintainability/safety), `speed` (latency/throughput/build-time), `accuracy` (result correctness/precision), `governance+settings+config` (control-plane/settings/config coherence), or `filesystem-layout` (standard OS/repo file-folder organization). Carry the
    axis from the analyst's UPGRADE row.
 2. **Order by value/risk using the graph** — rank by **graph centrality** of the touched symbols
    (`metrics.hotspots`) and **blast-radius** (`metrics.blast_radius`): high-centrality + bounded-blast,
@@ -96,6 +97,8 @@ blast-scope, risk, and the verdict ref that cleared it.
 ## Test Strategy & the Feature-Forge handoff (the testing component)
 
 The `plan-governance-config-auditor` produces `findings/governance-config-<T>.md`; lift its verified detector table and APPLY/PROPOSE/REGENERATE routing into the plan and tool-eval.
+
+The `plan-filesystem-layout-auditor` produces `findings/filesystem-layout-<T>.md`; lift its verified path inventory, placement verdicts, boundary map, and layout enforcement test handoff into the plan. A target with material file/folder drift cannot be marked fully planned without either an accepted filesystem-layout upgrade or an explicit qualified gap.
 
 The `plan-test-strategist` produces `findings/test-strategy-<T>.md` — current coverage (by call-graph
 reachability), the ranked coverage gaps, the designed suite, and a `## FF test-build spec`. Lift its

@@ -88,7 +88,7 @@ prompt_for_lane() {
 Planning Engineer lane: $lane
 Target: $TARGET
 Target root: $TARGET_ROOT
-Model contract: $OPUS_MODEL max effort. Use PromptHub intent, graph-first evidence, and write only .handoff/loop/plan artifacts. Return artifact paths + verdict.
+Model contract: $OPUS_MODEL max effort. Use PromptHub intent, graph-first evidence, standard OS file/folder layout (FHS/XDG), and write only .handoff/loop/plan artifacts. Return artifact paths + verdict.
 PROMPT
 }
 

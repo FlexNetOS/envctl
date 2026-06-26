@@ -26,3 +26,5 @@ Required behavior:
   planning contract.
 - At budget or batch boundary, run the session-relay/wrap-up path instead of leaving state in chat.
 - Commit, push, open a PR, and arm auto-merge for any coherent committed repo change.
+
+Filesystem-layout requirement: every planning cycle must map file/folder organization against FHS/XDG, repo-native Cargo layout, and envctl/meta placement invariants, emitting `findings/filesystem-layout-<T>.md`.

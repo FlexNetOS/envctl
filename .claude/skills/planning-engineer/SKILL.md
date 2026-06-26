@@ -72,7 +72,7 @@ fleet scans.
 2. `plan-opus-bg-web-trends` — rolling 90-day web/context7/Hugging Face research plus skeptic check.
 3. `plan-opus-bg-governance` — rules, instructions, hooks, policy, CLAUDE.md/AGENTS.md drift.
 4. `plan-opus-bg-settings-config` — `.codex`/`.claude` settings, MCP rot, skill overload, token burn,
-   permissions, `.meta.yaml`, Cargo/toolchain/CI/bun/config drift.
+   permissions, `.meta.yaml`, Cargo/toolchain/CI/bun/config drift, and filesystem-layout triage.
 5. `plan-opus-bg-rusty-idd-north-star` — first-run `rusty-idd` surfacing, meta↔envctl↔prompt_hub
    relationship truth, owner north-star capture, Forge/IDD-loop upgrade path.
 
@@ -105,6 +105,7 @@ returns a one-line verdict the orchestrator reduces through weave receipts/inbox
 | `plan-trend-researcher` | deep WEB research — best-practices + latest trends over a rolling 90-day window, every finding cited + dated | **R3a** | specialist |
 | `plan-analyst` | per-dimension analysis → cited claims, named gaps, and upgrade options each tagged **quality / speed / accuracy** | **R5** | specialist |
 | `plan-governance-config-auditor` | control-plane + settings/config scan: rules/instructions/hooks/policy/CLAUDE.md/AGENTS.md, `.claude`/`.codex`, MCP rot, skill overload, token burn, permission/config drift | **prompt P2/P5/P6** | specialist |
+| `plan-filesystem-layout-auditor` | standard OS file/folder organization: FHS/XDG, repo-native Cargo layout, envctl/meta placement boundaries, root clutter, generated/cache/state/log/runtime placement, and enforcement-test handoff | **filesystem-layout** | specialist |
 | `plan-test-strategist` | the always-on **`test-coverage`** dimension: map existing tests, author additive RED tests for each accepted plan item, count-verify tests-ran > 0, emit traceability, and hand GREEN implementation to Feature Forge | **prompt P8** | specialist |
 | `plan-verifier` | adversarially **refute** each claim against the source AND **feasibility-gate** each upgrade (the gate) | gate for R3/R5/R8 | specialist |
 | `plan-architect` | synthesize → plan with **ASCII diagrams** + **tool-evaluation** + sequenced upgrade roadmap; promote to docs/ROADMAP + draft ADR | **R4 + R7** | specialist |
@@ -112,7 +113,7 @@ returns a one-line verdict the orchestrator reduces through weave receipts/inbox
 | `evolution-steward` | Phase 5 self-eval + fail-closed harness self-upgrade | **R6** | shared |
 
 Skills used: `plan-cartography`, `plan-trend-research`, `plan-governance-config`,
-`plan-test-strategy`, `plan-synthesis`, the reused `code-research-verify` (the verifier's refute discipline), `session-relay-wrap-up`,
+`plan-filesystem-layout`, `plan-test-strategy`, `plan-synthesis`, the reused `code-research-verify` (the verifier's refute discipline), `session-relay-wrap-up`,
 `session-relay-resume`, `harness-evolution`, `icm-memory`. (The 90-day field research applies the
 deep-research *method* — fan-out search → deep-read → adversarial verify → cited synthesis —
 implemented inline by `plan-trend-research`; there is no separate `deep-research` skill to load.)
@@ -147,18 +148,21 @@ Required artifacts:
   in-window sources, flag older), every finding cited + dated.
 - governance/settings/config lanes → `findings/governance-config-<T>.md` with control-plane drift,
   settings/config hygiene, and routing (`APPLY|PROPOSE|REGENERATE`).
+- filesystem-layout auditor → `findings/filesystem-layout-<T>.md` with path inventory, FHS/XDG +
+  repo-native placement verdicts, boundary map, exact migration/enforcement upgrade rows, and CI/test
+  handoff. This is mandatory because file/folder organization drift is a recurring planning blind spot.
 - rusty-idd north-star lane → `findings/rusty-idd-north-star-<T>.md` capturing whether `rusty-idd` is
   the correct first surfaced target, how it binds to the Forge/IDD loop, and any meta/envctl/prompt_hub
   relationship gaps.
 
 Await all lanes, then commit `dimensions.md` + graph + research + governance/settings/config +
-north-star findings.
+filesystem-layout + north-star findings.
 
 ## Phase 2: ANALYZE (fan-out, parallel)
 
-For each `- [ ]` code dimension, spawn `plan-analyst` (parallel) → `.handoff/loop/plan/findings/<dim>.md`. Also spawn `plan-governance-config-auditor` for the governance+settings+config axis and `plan-test-strategist` for the always-on test-coverage/P8 axis:
+For each `- [ ]` code dimension, spawn `plan-analyst` (parallel) → `.handoff/loop/plan/findings/<dim>.md`. Also spawn `plan-governance-config-auditor` for the governance+settings+config axis, `plan-filesystem-layout-auditor` for the standard OS/repo layout axis, and `plan-test-strategist` for the always-on test-coverage/P8 axis:
 falsifiable **CLAIM** rows (each citing `file:line` / symbol / call-path / test) + named **gaps** +
-**UPGRADE** rows each tagged `axis: quality|speed|accuracy|governance+settings+config` with rationale, evidence, blast-radius
+**UPGRADE** rows each tagged `axis: quality|speed|accuracy|governance+settings+config|filesystem-layout` with rationale, evidence, blast-radius
 (from the graph) and risk. Analysts query the graph — blast-radius to scope each upgrade's risk,
 centrality to prioritize. Mark dimensions `- [~]` (analyzed, unverified).
 
@@ -180,9 +184,10 @@ unverified claim or an infeasible upgrade into the plan** — that is the whole 
 
 `plan-architect` → `.handoff/loop/plan/reports/<T>-plan.md`: **verdict first** (the headline
 recommendation), then **ASCII architecture diagrams** (envctl `DIAGRAMS.md` conventions — box-drawing,
-`Source: file:section`, the `[A]/[A*]/[P]/[H]/[!!]` legend), the **sequenced upgrade roadmap** (each
+`Source: file:section`, the `[A]/[A*]/[P]/[H]/[!!]` legend), including a file/folder organization map
+when layout is material to the target, the **sequenced upgrade roadmap** (each
 item tagged quality/speed/accuracy, ordered by value/risk using graph centrality + blast-radius), a
-**governance/settings/config findings**, dedicated **tool-evaluation** section (tools/CLIs/MCPs/crates the target uses, their 90-day currency /
+**governance/settings/config findings**, **filesystem-layout findings** (path inventory, placement verdicts, boundary map, enforcement tests), dedicated **tool-evaluation** section (tools/CLIs/MCPs/crates the target uses, their 90-day currency /
 advisories from the researcher, recommend upgrade/hold), named **gaps**, and a stated **confidence**.
 Then promote: append a `docs/ROADMAP.md` row (canonical copy stays under `reports/`); emit a **draft**
 ADR at `.handoff/decisions/ADR-####-<slug>.md` **only** for a genuine architecture decision. Docs
@@ -190,7 +195,7 @@ only — never touch production code. Commit.
 
 ## Output contract
 
-End every cycle with paths to: plan file, ASCII diagrams including the control-plane diagram, graph snapshot + diff, gap→upgrade table across quality/speed/accuracy/governance+settings+config, tool-eval table, governance findings, settings/config hygiene findings (MCP rot / skill overload / token burn / permission/config drift), TDD RED-suite evidence with tests-ran count and traceability matrix, evolution scorecard/LESSONS/proposed-upgrades, and the resume pointer.
+End every cycle with paths to: plan file, ASCII diagrams including the control-plane diagram and any file/folder organization map, graph snapshot + diff, gap→upgrade table across quality/speed/accuracy/governance+settings+config/filesystem-layout, tool-eval table, governance findings, settings/config hygiene findings (MCP rot / skill overload / token burn / permission/config drift), filesystem-layout findings (path inventory / placement verdicts / boundary map / enforcement tests), TDD RED-suite evidence with tests-ran count and traceability matrix, evolution scorecard/LESSONS/proposed-upgrades, and the resume pointer.
 
 ## Phase 5: SELF-EVAL (every cycle) — `evolution-steward`, lightweight
 

@@ -39,8 +39,9 @@ mirrors the `.handoff/loop/rust-port/` namespacing precedent). Lay it down with 
 - **`loop_state.md`** — counters: `cycles_this_session`, `cycles_total`, `cycle_budget`, `wrap_every`,
   `last_wrapup_total`, `session_started` (UTC, passed in — never call Date.now), `planning_target`,
   `target_root`, `recency_window_days`, `graph_snapshot`, `last_item`, `status`.
-- **Per-cycle artifacts** — `graph/<T>.*`, `research/<T>.trends.md`, `findings/<dim>.md` +
-  `verdicts.md`, `reports/codemap-<T>.md` + `<T>-plan.md`, `evaluation.md`.
+- **Per-cycle artifacts** — `graph/<T>.*`, `research/<T>.trends.md`, `findings/<dim>.md`,
+  `findings/filesystem-layout-<T>.md` + `verdicts.md`, `reports/codemap-<T>.md` + `<T>-plan.md`,
+  `evaluation.md`.
 - **Sentinels**: `DONE`, `NEEDS-HUMAN`, `STOP`, `WRAP-UP-OWED`.
 
 ## Target backlog (`targets.md`) — auto-derived, owner-overridable
@@ -76,8 +77,8 @@ scope = every target in `targets.md` planned + verified.
    why), do not pick it, stop.
 4. **Run ONE planning cycle** on `T` via the `planning-engineer` orchestrator using the required
    **5× Opus 4.8 max-effort background-agent fan-out** while the foreground chat remains interactive:
-   code-graph ‖ web-trends ‖ governance ‖ settings/config ‖ rusty-idd+north-star → analysts (incl.
-   `plan-test-strategist` on the always-on `test-coverage` dimension) → verifiers (gate) → architect
+   code-graph ‖ web-trends ‖ governance ‖ settings/config+filesystem-layout ‖ rusty-idd+north-star → analysts (incl.
+   `plan-filesystem-layout-auditor` and `plan-test-strategist` on the always-on dimensions) → verifiers (gate) → architect
    → evolution-steward self-eval. This produces
    `reports/<T>-plan.md` (with a *Test Strategy & Coverage* section) + the graph + the ROADMAP/ADR
    promotion + a **Feature-Forge test-build handoff** (the loop plans the suite; Feature Forge builds +
@@ -111,7 +112,7 @@ lanes immediately and reduce only their structured artifact paths/verdicts:
 | Code graph + cross-repo refs | `plan-opus-bg-code-graph` | weave → `claude-opus-4-8`, max/xhigh | graph snapshots/diffs + `git-kb code` query JSON |
 | Web/trends + skeptic | `plan-opus-bg-web-trends` | weave → `claude-opus-4-8`, max/xhigh | dated 90-day research + refutation notes |
 | Governance/control plane | `plan-opus-bg-governance` | weave → `claude-opus-4-8`, max/xhigh | rules/instructions/hooks/policy/CLAUDE/AGENTS drift |
-| Settings/config hygiene | `plan-opus-bg-settings-config` | weave → `claude-opus-4-8`, max/xhigh | MCP rot, skill overload, token burn, permissions/config drift |
+| Settings/config + filesystem layout | `plan-opus-bg-settings-config` + `plan-filesystem-layout-auditor` | weave → `claude-opus-4-8`, max/xhigh | MCP rot, skill overload, token burn, permissions/config drift, FHS/XDG/repo layout verdicts |
 | Rusty-IDD north star | `plan-opus-bg-rusty-idd-north-star` | weave → `claude-opus-4-8`, max/xhigh | first-target verdict + Forge/IDD loop upgrade path |
 
 **Use weave when running from Codex.** Codex dispatchers stay on the supported Codex model; they are

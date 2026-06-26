@@ -45,6 +45,7 @@ for agent in \
   plan-architect \
   plan-cartographer \
   plan-governance-config-auditor \
+  plan-filesystem-layout-auditor \
   plan-opus-bg-code-graph \
   plan-opus-bg-governance \
   plan-opus-bg-rusty-idd-north-star \
@@ -67,6 +68,10 @@ grep -q 'rusty-idd' "$repo_root/.agents/skills/plan-loop/SKILL.md"   || fail "pl
 grep -q 'git-kb code' "$repo_root/.agents/skills/planning-engineer/SKILL.md"   || fail "planning-engineer skill does not require git-kb code intelligence"
 grep -q 'git-kb code doctor' "$repo_root/.agents/skills/planning-engineer/SKILL.md"   || fail "planning-engineer skill does not enumerate git-kb code doctor/index/query flow"
 grep -q 'meta↔envctl' "$repo_root/.codex/prompts/plan-loop.md"   || fail "plan-loop prompt does not capture the meta/envctl/prompt_hub relationship"
+grep -q 'filesystem-layout' "$repo_root/.agents/skills/planning-engineer/SKILL.md"   || fail "planning-engineer skill does not include the filesystem-layout axis"
+[ -f "$repo_root/.agents/skills/plan-filesystem-layout/SKILL.md" ]   || fail "missing plan-filesystem-layout skill"
+grep -q 'FHS/XDG' "$repo_root/.agents/skills/plan-filesystem-layout/SKILL.md"   || fail "plan-filesystem-layout skill does not name FHS/XDG standards"
+grep -q 'findings/filesystem-layout-<T>.md' "$repo_root/.agents/skills/plan-filesystem-layout/SKILL.md"   || fail "plan-filesystem-layout skill does not define its finding artifact"
 for lane in code-graph web-trends governance settings-config rusty-idd-north-star; do
   [ -f "$repo_root/.codex/agents/plan-opus-bg-$lane.toml" ] || fail "missing Opus background lane agent: $lane"
   ! grep -q '^model = "claude-opus-4-8"' "$repo_root/.codex/agents/plan-opus-bg-$lane.toml"     || fail "Opus background lane $lane pins unsupported Codex model instead of using weave"
