@@ -159,7 +159,7 @@ description = "Replaces ~/.local/bin (and ~/.cargo/bin duplicate) COPIES of meta
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:-$HOME/Desktop/meta}"; ok=1; check(){ name="$1"; rel="$2"; src="$M/$rel"; dst="$HOME/.local/bin/$name"; [ -x "$src" ] || return 0; [ "$(readlink -f "$dst" 2>/dev/null)" = "$(readlink -f "$src" 2>/dev/null)" ] || ok=0; }; check meta target/release/meta; check meta-mcp target/release/meta-mcp; check loop target/release/loop; check lane lane/target/release/lane; check grit grit/target/release/grit; [ $ok = 1 ]''']
+args = ["-lc", '''M="${META_ROOT:-$HOME/Desktop/meta}"; ok=1; check_local(){ name="$1"; rel="$2"; src="$M/$rel"; dst="$HOME/.local/bin/$name"; [ -x "$src" ] || return 0; [ "$(readlink -f "$dst" 2>/dev/null)" = "$(readlink -f "$src" 2>/dev/null)" ] || ok=0; }; check_cargo(){ name="$1"; rel="$2"; src="$M/$rel"; dst="$HOME/.cargo/bin/$name"; [ -e "$dst" ] || return 0; [ -x "$src" ] || { ok=0; return 0; }; [ "$(readlink -f "$dst" 2>/dev/null)" = "$(readlink -f "$src" 2>/dev/null)" ] || ok=0; }; check_local meta target/release/meta; check_local meta-mcp target/release/meta-mcp; check_local loop target/release/loop; check_local lane lane/target/release/lane; check_local grit grit/target/release/grit; check_cargo weave weave/target/release/weave; check_cargo grit grit/target/release/grit; check_cargo secretctl envctl/target/release/secretctl; check_cargo secretd envctl/target/release/secretd; [ $ok = 1 ]''']
 [component.install]
 kind = "script"
 script = '''
@@ -215,7 +215,7 @@ echo "NOTE: rtk and icm are live-session hooks — verify each immediately after
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:-$HOME/Desktop/meta}"; fail=0; check(){ name="$1"; rel="$2"; src="$M/$rel"; dst="$HOME/.local/bin/$name"; [ -x "$src" ] || return 0; if [ "$(readlink -f "$dst" 2>/dev/null)" != "$(readlink -f "$src" 2>/dev/null)" ]; then echo "not linked from META_ROOT: $name"; fail=1; fi; }; check meta target/release/meta; check loop target/release/loop; check lane lane/target/release/lane; [ $fail = 0 ]''']
+args = ["-lc", '''M="${META_ROOT:-$HOME/Desktop/meta}"; fail=0; check_local(){ name="$1"; rel="$2"; src="$M/$rel"; dst="$HOME/.local/bin/$name"; [ -x "$src" ] || return 0; if [ "$(readlink -f "$dst" 2>/dev/null)" != "$(readlink -f "$src" 2>/dev/null)" ]; then echo "not linked from META_ROOT: $name"; fail=1; fi; }; check_cargo(){ name="$1"; rel="$2"; src="$M/$rel"; dst="$HOME/.cargo/bin/$name"; [ -e "$dst" ] || return 0; if [ ! -x "$src" ]; then echo "cargo-bin $name exists but no META_ROOT build at $rel"; fail=1; return 0; fi; if [ "$(readlink -f "$dst" 2>/dev/null)" != "$(readlink -f "$src" 2>/dev/null)" ]; then echo "cargo-bin not linked from META_ROOT: $name"; fail=1; fi; }; check_local meta target/release/meta; check_local loop target/release/loop; check_local lane lane/target/release/lane; check_cargo weave weave/target/release/weave; check_cargo grit grit/target/release/grit; check_cargo secretctl envctl/target/release/secretctl; check_cargo secretd envctl/target/release/secretd; [ $fail = 0 ]''']
 
 [[component]]
 id = "claude-global-links"
