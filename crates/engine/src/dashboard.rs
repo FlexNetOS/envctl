@@ -496,6 +496,7 @@ fn now_nanos() -> u128 {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::sync::atomic::{AtomicU64, Ordering};
 
     const FIXTURE: &str = r#"
 projects:
@@ -515,6 +516,18 @@ projects:
     tags: [mcp]
   repowire: git@github.com:FlexNetOS/repowire.git
 "#;
+
+    static TEMP_COUNTER: AtomicU64 = AtomicU64::new(0);
+
+    fn temp_dir(prefix: &str) -> PathBuf {
+        std::env::temp_dir().join(format!(
+            "{}-{}-{}-{}",
+            prefix,
+            std::process::id(),
+            TEMP_COUNTER.fetch_add(1, Ordering::Relaxed),
+            now_nanos()
+        ))
+    }
 
     fn ws() -> MetaWorkspace {
         parse_workspace(FIXTURE, Path::new("/work/.meta.yaml")).unwrap()
@@ -623,7 +636,7 @@ projects:
 
     #[test]
     fn deploy_dry_run_writes_nothing() {
-        let dir = std::env::temp_dir().join(format!("envctl-dash-{}", now_nanos()));
+        let dir = temp_dir("envctl-dash");
         std::fs::create_dir_all(&dir).unwrap();
         let target = dir.join("mission-control.kdl");
         let plan = DashboardPlan {
@@ -641,7 +654,7 @@ projects:
 
     #[test]
     fn deploy_refuses_foreign_file_without_force() {
-        let dir = std::env::temp_dir().join(format!("envctl-dash-{}", now_nanos()));
+        let dir = temp_dir("envctl-dash");
         std::fs::create_dir_all(&dir).unwrap();
         let target = dir.join("mission-control.kdl");
         std::fs::write(&target, "layout { tab name=\"hand-written\" {} }\n").unwrap();
@@ -670,7 +683,7 @@ projects:
 
     #[test]
     fn deploy_apply_writes_and_backs_up_owned_file() {
-        let dir = std::env::temp_dir().join(format!("envctl-dash-{}", now_nanos()));
+        let dir = temp_dir("envctl-dash");
         std::fs::create_dir_all(&dir).unwrap();
         let target = dir.join("mission-control.kdl");
         let plan = DashboardPlan {
@@ -699,7 +712,7 @@ projects:
         // test reads/writes these vars, so this is race-free under parallel execution.
         std::env::remove_var("META_FILE");
         std::env::remove_var("META_ROOT");
-        let dir = std::env::temp_dir().join(format!("envctl-locate-{}", now_nanos()));
+        let dir = temp_dir("envctl-locate");
         let nested = dir.join("a/b/c");
         std::fs::create_dir_all(&nested).unwrap();
         std::fs::write(dir.join(".meta.yaml"), "projects: {}\n").unwrap();

@@ -37,6 +37,88 @@ if len(description) > 240:
     raise SystemExit(f'FAIL: {p} description too long for routing parameter: {len(description)} > 240')
 PY
 
+# All active skill descriptions must stay within Codex's loader limit.
+# rust-port previously exceeded 1024 chars; keep the compact metadata as a
+# no-downgrade routing surface by requiring the old trigger phrases too.
+python3 - "$root" <<'PY'
+from pathlib import Path
+import sys
+
+root = Path(sys.argv[1])
+
+
+def frontmatter(path: Path) -> str:
+    text = path.read_text()
+    if not text.startswith("---"):
+        raise SystemExit(f"FAIL: {path} missing YAML frontmatter")
+    parts = text.split("---", 2)
+    if len(parts) < 3:
+        raise SystemExit(f"FAIL: {path} malformed YAML frontmatter")
+    return parts[1]
+
+
+def description(path: Path) -> str:
+    lines = frontmatter(path).splitlines()
+    for idx, raw in enumerate(lines):
+        if raw.startswith("description:"):
+            val = raw.split(":", 1)[1].strip()
+            if val in (">-", ">", "|", "|-") or not val:
+                chunks = []
+                for nxt in lines[idx + 1 :]:
+                    if nxt and not nxt.startswith(" "):
+                        break
+                    chunks.append(nxt.strip())
+                return " ".join(chunks).strip()
+            return val.strip().strip('"')
+    raise SystemExit(f"FAIL: {path} missing description")
+
+
+skill_paths = sorted(root.glob(".agents/skills/*/SKILL.md")) + sorted(
+    root.glob(".claude/skills/*/SKILL.md")
+)
+for path in skill_paths:
+    desc = description(path)
+    if len(desc) > 1024:
+        raise SystemExit(
+            f"FAIL: {path} description exceeds Codex loader limit: {len(desc)} > 1024"
+        )
+
+agents_rust = root / ".agents/skills/rust-port/SKILL.md"
+claude_rust = root / ".claude/skills/rust-port/SKILL.md"
+if description(agents_rust) != description(claude_rust):
+    raise SystemExit("FAIL: rust-port frontmatter descriptions drifted (.agents != .claude)")
+
+rust_desc = description(agents_rust).lower()
+required = [
+    "port <project> to rust",
+    "rust port",
+    "rewrite in rust",
+    "full-parity rust port",
+    "port meta/archon to rust",
+    "resume",
+    "continue the port",
+    "run it again",
+    "re-run",
+    "redo only the <unit/phase>",
+    "based on the previous result",
+    "what's left to port",
+    "install/eject the rust-port harness into <repo>",
+    "port <x> to rust and merge into <y>",
+    "merge the rust code into <repo>",
+    "reconcile the port with <repo>",
+    "opus",
+    "sonnet",
+    "haiku",
+    "differential parity test",
+    "100% parity",
+]
+missing = [item for item in required if item not in rust_desc]
+if missing:
+    raise SystemExit(
+        "FAIL: rust-port compact description lost trigger(s): " + ", ".join(missing)
+    )
+PY
+
 # Stale doctrine that caused the failed skill must not reappear in active skill/agent config.
 if grep -RInE 'redirect the shared ledger|no per-repo ledger|forbidden per-repo|There is \*\*no `hf drift`|run hf from `\$META_ROOT`|\$META_ROOT/\.handoff/ledger\.db' \
   "$root/.agents/skills/handoff-sync" \
