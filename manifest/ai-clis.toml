@@ -49,17 +49,20 @@ ln -sfn "$DEST/bin/claude" "$HOME/.local/bin/claude"
 
 [[component]]
 id = "codex-cli"
-name = "Codex CLI (meta source build; bun fallback)"
+name = "Codex CLI (meta toolchain install; source build preferred)"
 requires = ["rustup", "bun", "wild-linker"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; source_root=\"$M/codex/codex-rs/cli\"; src=\"$M/codex/codex-rs/target/release/codex\"; bun_src=\"$M/.toolchains/.bun/bin/codex\"; if [ -d \"$source_root\" ]; then [ -x \"$src\" ] && [ \"$(readlink -f \"$HOME/.local/bin/codex\" 2>/dev/null)\" = \"$(readlink -f \"$src\")\" ]; else [ -x \"$bun_src\" ] && [ \"$(readlink -f \"$HOME/.local/bin/codex\" 2>/dev/null)\" = \"$(readlink -f \"$bun_src\")\" ]; fi"]
+args = ["-lc", '''M="${META_ROOT:-$HOME/Desktop/meta}"; dest="$M/.toolchains/codex/bin/codex"; meta_link="$M/.local/bin/codex"; user_link="$HOME/.local/bin/codex"; [ -x "$dest" ] && [ "$(readlink -f "$meta_link" 2>/dev/null)" = "$(readlink -f "$dest")" ] && [ "$(readlink -f "$user_link" 2>/dev/null)" = "$(readlink -f "$dest")" ]''']
 [component.install]
 kind = "script"
 script = '''
 set -euo pipefail
 M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/codex"
+META_BIN="$M/.local/bin"
+USER_BIN="$HOME/.local/bin"
 if [ -d "$M/codex/codex-rs/cli" ]; then
   export CARGO_HOME="$M/.toolchains/cargo"
   export PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"
@@ -74,28 +77,38 @@ if [ -d "$M/codex/codex-rs/cli" ]; then
   # -fuse-ld=mold RUSTFLAGS here would override (and conflict with) that wild config.
   cargo build --release -p codex-cli --jobs "$jobs" --timings --manifest-path "$M/codex/codex-rs/Cargo.toml"
   src="$M/codex/codex-rs/target/release/codex"
+  install -d -m 755 "$DEST/bin"
+  install -m 755 "$src" "$DEST/bin/codex"
 else
   export BUN_INSTALL="$M/.toolchains/.bun"
   export PATH="$BUN_INSTALL/bin:$PATH"
   bun install -g @openai/codex
   src="$BUN_INSTALL/bin/codex"
+  install -d -m 755 "$DEST/bin"
+  ln -sfn "$src" "$DEST/bin/codex"
 fi
-mkdir -p "$HOME/.local/bin"
-dst="$HOME/.local/bin/codex"
-ARCH="$HOME/Desktop/_archives/home-links-$(date +%Y-%m-%d)"
-if [ -e "$dst" ] && [ ! -L "$dst" ]; then mkdir -p "$ARCH/.local/bin"; mv "$dst" "$ARCH/.local/bin/codex"; echo "archived copy: codex"; fi
-[ -L "$dst" ] && rm "$dst"
-ln -s "$src" "$dst"
+install -d -m 755 "$META_BIN" "$USER_BIN"
+ln -sfn "$DEST/bin/codex" "$META_BIN/codex"
+ARCH="$M/.local/archive/home-links-$(date -u +%Y-%m-%d)"
+if [ -e "$USER_BIN/codex" ] && [ ! -L "$USER_BIN/codex" ]; then
+  install -d -m 755 "$ARCH/.local/bin"
+  mv "$USER_BIN/codex" "$ARCH/.local/bin/codex"
+  echo "archived copy: codex"
+fi
+ln -sfn "$META_BIN/codex" "$USER_BIN/codex"
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export CARGO_HOME=\"$M/.toolchains/cargo\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$HOME/.local/bin:$CARGO_HOME/bin:$BUN_INSTALL/bin:$PATH\"; codex --version"]
+args = ["-lc", '''M="${META_ROOT:-$HOME/Desktop/meta}"; export CARGO_HOME="$M/.toolchains/cargo"; export BUN_INSTALL="$M/.toolchains/.bun"; export PATH="$HOME/.local/bin:$M/.local/bin:$CARGO_HOME/bin:$BUN_INSTALL/bin:$PATH"; dest="$M/.toolchains/codex/bin/codex"; [ -x "$dest" ] && [ "$(readlink -f "$(command -v codex)" 2>/dev/null)" = "$(readlink -f "$dest")" ] && codex --version''']
 [component.fix]
 kind = "script"
 script = '''
 set -euo pipefail
 M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/codex"
+META_BIN="$M/.local/bin"
+USER_BIN="$HOME/.local/bin"
 if [ -d "$M/codex/codex-rs/cli" ]; then
   export CARGO_HOME="$M/.toolchains/cargo"
   export PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"
@@ -110,19 +123,24 @@ if [ -d "$M/codex/codex-rs/cli" ]; then
   # -fuse-ld=mold RUSTFLAGS here would override (and conflict with) that wild config.
   cargo build --release -p codex-cli --jobs "$jobs" --timings --manifest-path "$M/codex/codex-rs/Cargo.toml"
   src="$M/codex/codex-rs/target/release/codex"
+  install -d -m 755 "$DEST/bin"
+  install -m 755 "$src" "$DEST/bin/codex"
 else
   export BUN_INSTALL="$M/.toolchains/.bun"
   export PATH="$BUN_INSTALL/bin:$PATH"
   bun install -g @openai/codex
   src="$BUN_INSTALL/bin/codex"
+  install -d -m 755 "$DEST/bin"
+  ln -sfn "$src" "$DEST/bin/codex"
 fi
-mkdir -p "$HOME/.local/bin"
-ln -sfn "$src" "$HOME/.local/bin/codex"
+install -d -m 755 "$META_BIN" "$USER_BIN"
+ln -sfn "$DEST/bin/codex" "$META_BIN/codex"
+ln -sfn "$META_BIN/codex" "$USER_BIN/codex"
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; bun remove -g @openai/codex || true; [ -L \"$HOME/.local/bin/codex\" ] && rm \"$HOME/.local/bin/codex\" || true"]
+args = ["-lc", '''M="${META_ROOT:-$HOME/Desktop/meta}"; export BUN_INSTALL="$M/.toolchains/.bun"; export PATH="$BUN_INSTALL/bin:$PATH"; bun remove -g @openai/codex || true; [ -L "$HOME/.local/bin/codex" ] && rm "$HOME/.local/bin/codex" || true; [ -L "$M/.local/bin/codex" ] && rm "$M/.local/bin/codex" || true; rm -f "$M/.toolchains/codex/bin/codex"''']
 
 
 [[component]]

@@ -41,7 +41,7 @@ requires = []
 resolved = ""
 
 [components.codex-cli]
-content_hash = "0cd784943a6a3880"
+content_hash = "9de46b5dc2a4b2df"
 requires = [
     "bun",
     "rustup",
