@@ -1,5 +1,7 @@
 # FINDING-0002 — TASK-0002 blocked: installed `hf` is the S1 spike, missing the fleet verbs
 
+> **SUPERCESSION NOTE (2026-06-26):** `meta/handoff` ADR-0004 §3 and ADR-0018 D1 now govern. A gitignored local per-repo `.handoff/ledger.db` is legitimate/expected; the committed continuity truth is `.handoff/ledger.events.jsonl` plus durable rendered text. Only git-tracked binary DB/RVF/cache files are forbidden. Older central-only/no-per-repo-ledger wording below is historical context, not active policy.
+
 - **Status:** **RESOLVED 2026-06-13 (Option A) — UNBLOCKS TASK-0002/0003.** The kernel built the
   missing fleet verbs in `meta/handoff` PR **#17** (`feat: fleet verbs hf fleet status/render, hf
   sync` + handoff-loop harness; handoff HEAD `1adbb13`); installed `hf` rebuilt 2026-06-13 04:29.
@@ -23,7 +25,7 @@
 ## Context
 
 TASK-0002 asks: seed envctl's Tier-A `.handoff` via `hf` — render `active.md` + `packets/latest.md`,
-mint `handoff.task.v1` cards, land `hf sync` (.kb write-back) — with **no per-repo `ledger.db`** and
+mint `handoff.task.v1` cards, land `hf sync` (.kb write-back) — with a gitignored local per-repo `ledger.db` cache plus committed JSONL export and
 **no hand-written packets**. TASK-0001 (build+install `hf`) is DONE.
 
 ## The design is SETTLED (not ambiguous) — ADR-0004 + PRD v2
@@ -36,19 +38,19 @@ The residency model I initially read as an "open ambiguity" is in fact **decided
   capsule.json` (REQUIRED), `tasks/` (minted cards), `packets/` (resume packets), `README.md`;
   **OPTIONAL** `hooks/hooks.toml` + `policies/rules.toml` when the repo runs autonomous loops.
 - **ADR-0004 §3 (Ledger residency, settles open-question #13):** **one witnessed ledger per
-  orchestration home**; **per-repo `.handoff/` carries NO `ledger.db` / no binary state — git
+  orchestration home**; **per-repo `.handoff/` may carry a gitignored local `ledger.db` rebuild cache/source-of-record; git
   text only.** Events are checkpointed into the fleet ledger.
 - **ADR-0004 §4:** cross-repo aggregation = **`hf fleet status`** (enumerate `../.meta.yaml`
   members, read each repo's capsule+cards, join with fleet-ledger events; Git is the sync transport).
 
-So TASK-0002's "no per-repo ledger, packets are compiled not hand-written" is **correct by design**.
+So TASK-0002's old central-only framing is superseded; the active design is local cache + committed JSONL export, with packets rendered not hand-written.
 
-### Ledger location — reconciled, NO discrepancy
+### Ledger location — superseded by ADR-0018/HFTASK-0067
 envctl **ADR-0001 §23** reconciles ADR-0004's wording: there are two orchestration homes —
-`meta/.handoff/ledger.db` = **FLEET** (what envctl writes to) and `meta/handoff/.handoff/ledger.db`
+`meta/.handoff/ledger.db` = **FLEET rollup** and `envctl/.handoff/ledger.db` = **member local cache/source**, while `meta/handoff/.handoff/ledger.db`
 = **KERNEL** (the kernel's own self-dev). Verified live: the fleet ledger is empty (`hf status` from
 `meta` → 0 tasks); the kernel ledger holds the 23 `HFTASK-####` cards (`hf status` from
-`meta/handoff` → 23 tasks). **Cycle-1's residency target (`meta/.handoff/ledger.db`) was correct.**
+`meta/handoff` → 23 tasks). **Cycle-1's central-only residency target is historical; current envctl writes locally, exports JSONL, and syncs to fleet when needed.**
 
 ## The actual blocker — the installed `hf` is the S1 spike, missing the fleet verbs
 
@@ -61,7 +63,7 @@ The **installed binary** (built cycle 1 from `meta/handoff`, the S1 spike) expos
 TASK-0002 needs exactly the **unbuilt** verbs:
 1. **`hf fleet status` + fleet-aware packet rendering** — to compile envctl's `packets/latest.md` +
    `active.md` from the **fleet** ledger's envctl-scoped events (the shipped `hf handoff` compiles
-   from the *CWD-relative* ledger, so per ADR-0004's "no per-repo ledger" it would compile from
+   from the *CWD-relative* ledger, which is now legitimate after importing committed JSONL; before ADR-0018 this compiled from
    nothing). ADR-0004 §76 lists `fleet status` as a verb **"to implement."**
 2. **`hf sync`** — the one-way `.handoff`→`.kb` write-back (ADR-0001 §6 / **HFTASK-0011**). The
    shipped binary has `sync-cards` (ledger→cards) but not `sync` (cards/ledger→`.kb`).
@@ -75,7 +77,7 @@ scope**. The kernel ledger shows HFTASK-0007/0011 still `Backlog` (not Done).
 
 ## Correction (what v1 of this finding got wrong)
 - ❌ v1: "shipped `hf` is strictly CWD-relative and needs a `--ledger`/`HANDOFF_DIR` flag." → The
-  model **deliberately** has no per-repo ledger and no flag; a repo's packets are compiled centrally
+  model now permits the per-repo ledger cache; a repo's packets are compiled locally from imported JSONL
   by the (unbuilt) fleet verbs from the fleet ledger. A `--ledger` flag is **not** the fix.
 - ❌ v1 implied the design was an open ambiguity. → It is **decided** (ADR-0004, PRD v2).
 - ✅ Correct blocker: the **installed `hf` is the S1 spike**; the **fleet/sync verbs are unbuilt**.
@@ -105,7 +107,7 @@ and no kernel change**, so they can be seeded now if desired.
 
 ## Consequences / linkage
 - **TASK-0003 (p7 gate)** validates cards/packets + `hf resume --json` → `handoff.packet.v2`; needs
-  the seeded/rendered layer, so it tracks A. The residency-invariant portion (assert no per-repo
+  the seeded/rendered layer, so it tracks A. The residency-invariant portion (assert no tracked binary
   `ledger.db` tracked) is landable independently.
 - **TASK-0001 GO-LIVE end-to-end** (a Stop firing `hf checkpoint --auto` writing a witnessed event)
   needs an **active task in the fleet ledger**; Option A's `hf session`/fleet-aware minting provides

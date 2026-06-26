@@ -1,10 +1,10 @@
 {
   "schema": "handoff.task.v1",
   "id": "TASK-0002",
-  "title": "Seed envctl .handoff Tier-A via hf (text-only; no per-repo ledger.db)",
+  "title": "Seed envctl .handoff Tier-A via hf (JSONL + rendered text; binary cache ignored)",
   "status": "done",
   "priority": "P0",
-  "objective": "Seed envctl .handoff Tier-A via hf (text-only; no per-repo ledger.db)",
+  "objective": "Seed envctl .handoff Tier-A via hf (JSONL + rendered text; binary cache ignored)",
   "path_scope": [
     "**"
   ],

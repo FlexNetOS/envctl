@@ -1,5 +1,7 @@
 # ADR-0001 — Unify kasetto into envctl, complete handoff sync, and finish meta-portability
 
+> **SUPERCESSION NOTE (2026-06-26):** `meta/handoff` ADR-0004 §3 and ADR-0018 D1 now govern. A gitignored local per-repo `.handoff/ledger.db` is legitimate/expected; the committed continuity truth is `.handoff/ledger.events.jsonl` plus durable rendered text. Only git-tracked binary DB/RVF/cache files are forbidden. Older central-only/no-per-repo-ledger wording below is historical context, not active policy.
+
 - **Status:** accepted (planning) — 2026-06-12
 - **Plane:** env-control
 - **Scope:** envctl (engine/cli/gui + new agent-env crate), envctl/.handoff, envctl/home overlay; coordinates with `handoff/` and `kasetto/` peer repos.
@@ -20,7 +22,7 @@ upgrade-only / no-downgrade / no-feature-lost:
 
 ### Stream 1 — handoff sync (canonical kernel vs envctl)
 - Canonical kernel `meta/handoff`: witnessed `ledger.db` (blake3, rvf-crypto), `schemas/{packet.v2,task.v1,session.v1}`, the `hf` binary (`hf/src/main.rs`, verbs init/seed/status/claim/release/checkpoint/handoff/resume/ship/review/policy/session/sync/fleet/drift), `.handoff/{policy.toml,hooks/hooks.toml,policies/rules.toml,active.md,packets/latest.md,skills/}`, p7-conformance CI, handoff-discipline skill + steward agent.
-- **Ledger residency (ADR-0004):** one ledger per orchestration home = `meta/.handoff/ledger.db` (fleet) / `meta/handoff/.handoff/ledger.db` (kernel). **Per-repo `.handoff/` carries git-committed TEXT ONLY — no `ledger.db`.** envctl writes events to the shared ledger via `hf checkpoint`/`hf handoff`.
+- **Ledger residency (ADR-0004):** per-repo-first ledger plus fleet rollup. envctl may have a gitignored local `.handoff/ledger.db` rebuild cache/source-of-record for witnessed member history; durable git truth is `.handoff/ledger.events.jsonl` plus rendered text. `hf sync` rolls member events up to the fleet ledger.
 - **envctl/.handoff today ≈ 30% (Tier B stub):** has `context/capsule.json` + `README.md` + `loop/` (env-ownership backlog). **Missing:** `hf` on PATH (not built — no `meta/handoff/target/release/hf`), `policy.toml`, `hooks/hooks.toml`, `policies/rules.toml`, `active.md`, `packets/latest.md` (must be **rendered by hf, never hand-written**), task cards (`handoff.task.v1`, id `^TASK-[0-9]{4,}$`), ADRs, skills.
 
 ### Stream 2 — meta policy + install verification
@@ -42,7 +44,7 @@ upgrade-only / no-downgrade / no-feature-lost:
 
 ## Decision
 
-1. **Handoff:** build & install `hf`, wire envctl to the shared `meta/.handoff/ledger.db`, and let
+1. **Handoff:** build & install `hf`, wire envctl to its local JSONL-exported ledger plus fleet rollup, and let
    **`hf` render** envctl's `policy.toml`/`hooks`/`policies`/`active.md`/`packets`/`skills`. Add a
    p7-conformance CI gate. Do **not** create a per-repo `ledger.db`; do **not** hand-write packets.
 2. **Portability:** implement `envctl env` → export `META_ROOT` (reuse `locate_meta_file`), then heal
