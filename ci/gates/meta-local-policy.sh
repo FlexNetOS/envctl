@@ -40,12 +40,13 @@ ACTIVE_PATHS=(
 )
 
 TMP="$(mktemp)"
-trap 'rm -f "$TMP"' EXIT
+SOURCE_LIST="$(mktemp)"
+trap 'rm -f "$TMP" "$SOURCE_LIST"' EXIT
 
-if grep -REnI "$PATTERN" "${ACTIVE_PATHS[@]}" \
-  --exclude='meta-local-policy.sh' \
-  --exclude-dir='.git' \
-  --exclude-dir='target' |
+git ls-files -z --cached --others --exclude-standard -- "${ACTIVE_PATHS[@]}" >"$SOURCE_LIST"
+
+if [ -s "$SOURCE_LIST" ] && xargs -0 grep -HEnI "$PATTERN" <"$SOURCE_LIST" |
+  grep -v '^ci/gates/meta-local-policy.sh:' |
   grep -v '^crates/engine/src/migration.rs:' >"$TMP"; then
   echo "meta-local-policy: real-home .local/symlink-farm references remain in active install sources:" >&2
   cat "$TMP" >&2
