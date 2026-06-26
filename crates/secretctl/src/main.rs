@@ -33,24 +33,31 @@ fn main() -> anyhow::Result<()> {
 }
 
 /// Resolve the control socket: `--socket` override, else `$XDG_RUNTIME_DIR/env-ctl/secretd.sock`.
+/// Without a runtime dir, fall back to explicit `XDG_STATE_HOME`, then `META_ROOT`, then `HOME`.
 /// secretctl does NOT depend on the engine, so this path is recomputed inline (mirrors
 /// `Paths::resolve().control_socket()`).
 fn socket_path(override_path: &Option<String>) -> anyhow::Result<PathBuf> {
     if let Some(p) = override_path {
         return Ok(PathBuf::from(p));
     }
+    let state_fallback = || -> anyhow::Result<PathBuf> {
+        let fallback_root = std::env::var_os("META_ROOT")
+            .filter(|v| !v.is_empty())
+            .or_else(|| std::env::var_os("HOME").filter(|v| !v.is_empty()))
+            .map(PathBuf::from)
+            .ok_or_else(|| {
+                anyhow::anyhow!("neither XDG_RUNTIME_DIR, META_ROOT, nor HOME is set")
+            })?;
+        Ok(std::env::var_os("XDG_STATE_HOME")
+            .filter(|v| !v.is_empty())
+            .map(PathBuf::from)
+            .unwrap_or_else(|| fallback_root.join(".local/state"))
+            .join("env-ctl"))
+    };
     let runtime = match std::env::var_os("XDG_RUNTIME_DIR") {
-        Some(r) => PathBuf::from(r).join("env-ctl"),
-        None => {
-            // Fall back to the XDG state dir, matching the engine's Paths::resolve fallback.
-            let home = std::env::var_os("HOME")
-                .map(PathBuf::from)
-                .ok_or_else(|| anyhow::anyhow!("neither XDG_RUNTIME_DIR nor HOME is set"))?;
-            std::env::var_os("XDG_STATE_HOME")
-                .map(PathBuf::from)
-                .unwrap_or_else(|| home.join(".local/state"))
-                .join("env-ctl")
-        }
+        Some(r) if !r.is_empty() => PathBuf::from(r).join("env-ctl"),
+        None => state_fallback()?,
+        Some(_) => state_fallback()?,
     };
     Ok(runtime.join("secretd.sock"))
 }
@@ -956,6 +963,74 @@ fn render_secret_event(ev: &envctl_secrets::SecretEvent, json: bool) {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::ffi::OsString;
+    use std::sync::{Mutex, MutexGuard, OnceLock};
+
+    fn env_lock() -> MutexGuard<'static, ()> {
+        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
+        LOCK.get_or_init(|| Mutex::new(())).lock().unwrap()
+    }
+
+    fn restore_var(key: &str, value: Option<OsString>) {
+        match value {
+            Some(v) => std::env::set_var(key, v),
+            None => std::env::remove_var(key),
+        }
+    }
+
+    fn clear_socket_path_env() -> Vec<(&'static str, Option<OsString>)> {
+        let keys = ["HOME", "META_ROOT", "XDG_STATE_HOME", "XDG_RUNTIME_DIR"];
+        keys.into_iter()
+            .map(|key| {
+                let old = std::env::var_os(key);
+                std::env::remove_var(key);
+                (key, old)
+            })
+            .collect()
+    }
+
+    fn restore_socket_path_env(old: Vec<(&'static str, Option<OsString>)>) {
+        for (key, value) in old {
+            restore_var(key, value);
+        }
+    }
+
+    #[test]
+    fn socket_path_defaults_to_meta_root_state_when_runtime_is_unset() {
+        let _g = env_lock();
+        let old = clear_socket_path_env();
+        std::env::set_var("HOME", "/home/real-user");
+        std::env::set_var("META_ROOT", "/home/real-user/Desktop/meta");
+
+        assert_eq!(
+            socket_path(&None).expect("socket path"),
+            PathBuf::from("/home/real-user/Desktop/meta/.local/state/env-ctl/secretd.sock")
+        );
+
+        restore_socket_path_env(old);
+    }
+
+    #[test]
+    fn socket_path_honors_runtime_then_state_overrides() {
+        let _g = env_lock();
+        let old = clear_socket_path_env();
+        std::env::set_var("HOME", "/home/real-user");
+        std::env::set_var("META_ROOT", "/home/real-user/Desktop/meta");
+        std::env::set_var("XDG_RUNTIME_DIR", "/run/user/1000");
+        assert_eq!(
+            socket_path(&None).expect("socket path"),
+            PathBuf::from("/run/user/1000/env-ctl/secretd.sock")
+        );
+
+        std::env::remove_var("XDG_RUNTIME_DIR");
+        std::env::set_var("XDG_STATE_HOME", "/custom/state");
+        assert_eq!(
+            socket_path(&None).expect("socket path"),
+            PathBuf::from("/custom/state/env-ctl/secretd.sock")
+        );
+
+        restore_socket_path_env(old);
+    }
 
     fn run_args(relays: Vec<&str>, provider: Option<&str>, ephemeral: bool) -> cli::RunArgs {
         cli::RunArgs {

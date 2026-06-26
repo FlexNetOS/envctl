@@ -161,7 +161,7 @@ pub fn synth_dropin(spec: &RegisterSpec) -> String {
 
     s.push_str("[component.install]\nkind = \"script\"\nlogin_shell = true\nscript = '''\n");
     s.push_str("set -euo pipefail\n");
-    s.push_str("M=\"${META_ROOT:-$HOME/Desktop/meta}\"\n");
+    s.push_str("M=\"${META_ROOT:?META_ROOT required}\"\n");
     s.push_str("STORE=\"$M/.local/share/envctl/repos\"\n");
     s.push_str("BIN=\"$M/.local/bin\"\n");
     s.push_str("install -d -m 700 \"$STORE\"\n");
@@ -187,7 +187,7 @@ pub fn synth_dropin(spec: &RegisterSpec) -> String {
 
     s.push_str("[component.remove]\nkind = \"script\"\nlogin_shell = true\nscript = '''\n");
     s.push_str("set -u\n");
-    s.push_str("M=\"${META_ROOT:-$HOME/Desktop/meta}\"\n");
+    s.push_str("M=\"${META_ROOT:?META_ROOT required}\"\n");
     s.push_str("STORE=\"$M/.local/share/envctl/repos\"\n");
     s.push_str("BIN=\"$M/.local/bin\"\n");
     s.push_str(&excise);
@@ -195,9 +195,7 @@ pub fn synth_dropin(spec: &RegisterSpec) -> String {
     s.push_str(&format!("rm -rf \"$STORE/{}\"\n", spec.slug));
     s.push_str("'''\n\n");
 
-    s.push_str(
-        "[component.wiring]\npath_entries = [\"${META_ROOT:-$HOME/Desktop/meta}/.local/bin\"]\n",
-    );
+    s.push_str("[component.wiring]\npath_entries = [\"$META_ROOT/.local/bin\"]\n");
     s
 }
 

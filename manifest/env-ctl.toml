@@ -22,7 +22,7 @@ destructive = false
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; PRIV=\"$M/.local/lib/envctl/secrets/bin\"; META_BIN=\"$M/.local/bin\"; test -x \"$PRIV/secretd\" && test -x \"$PRIV/secretctl\" && test -f \"$HOME/.config/systemd/user/env-ctl.service\" && [ \"$(readlink -f \"$META_BIN/secretd\" 2>/dev/null)\" = \"$(readlink -f \"$PRIV/secretd\" 2>/dev/null)\" ] && [ \"$(readlink -f \"$META_BIN/secretctl\" 2>/dev/null)\" = \"$(readlink -f \"$PRIV/secretctl\" 2>/dev/null)\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; PRIV=\"$M/.local/lib/envctl/secrets/bin\"; META_BIN=\"$M/.local/bin\"; test -x \"$PRIV/secretd\" && test -x \"$PRIV/secretctl\" && test -f \"$META_ROOT/.config/systemd/user/env-ctl.service\" && [ \"$(readlink -f \"$META_BIN/secretd\" 2>/dev/null)\" = \"$(readlink -f \"$PRIV/secretd\" 2>/dev/null)\" ] && [ \"$(readlink -f \"$META_BIN/secretctl\" 2>/dev/null)\" = \"$(readlink -f \"$PRIV/secretctl\" 2>/dev/null)\" ]"]
 
 # INSTALL: MSRV-gate, build from the in-workspace sources, place bins, create XDG dirs (0700).
 # Does NOT init the vault or enroll keyslots — those are operator-driven, USB-gated daemon ops.
@@ -30,11 +30,11 @@ args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; PRIV=\"$M/.local/lib/env
 kind = "script"
 script = '''
 set -euo pipefail
-# Meta-owned toolchain (Epic H TASK-0069): build with the meta cargo, NOT ~/.cargo/bin.
-M="${META_ROOT:-$HOME/Desktop/meta}"
+# Meta-owned toolchain (Epic H TASK-0069): build with the meta cargo, NOT $META_ROOT/.toolchains/cargo/bin.
+M="${META_ROOT:?META_ROOT required}"
 export CARGO_HOME="$M/.toolchains/cargo"
 META_BIN="$M/.local/bin"
-export PATH="$M/.toolchains/cargo/bin:$META_BIN:$HOME/.local/bin:$PATH"
+export PATH="$M/.toolchains/cargo/bin:$META_BIN:$META_ROOT/.local/bin:$PATH"
 DEST="$M/.local/lib/envctl/secrets/bin"
 
 # MSRV gate (rust-version = 1.80 in the workspace). Fail closed, do not silently upgrade.
@@ -44,17 +44,10 @@ DEST="$M/.local/lib/envctl/secrets/bin"
 ver="$(cargo --version | awk '{print $2}')"
 printf '1.80.0\n%s\n' "$ver" | sort -V -C || { echo "FATAL: cargo $ver < MSRV 1.80"; exit 1; }
 
-# Resolve the envctl workspace root. Explicit override wins; else probe the known checkout
-# locations and validate by a sentinel (crates/secretd) so we never build the wrong tree. The
-# repo now lives UNDER the meta workspace ($HOME/Desktop/meta/envctl); $HOME/Desktop/envctl is the
-# legacy bare-checkout location. (The old hard-coded bare default FATAL'd on the meta layout, which
-# silently blocked the seed-factor rebuild below — so the resolution must try both.)
-repo="${ENV_CTL_REPO:-}"
-if [ -z "$repo" ]; then
-  for c in "$HOME/Desktop/meta/envctl" "$HOME/Desktop/envctl"; do
-    [ -d "$c/crates/secretd" ] && { repo="$c"; break; }
-  done
-fi
+# Resolve the envctl workspace root. Explicit override wins; otherwise use the meta-hosted
+# checkout under $META_ROOT. Do not fall back to a user-home checkout: envctl is a first-class
+# meta member and builds from the meta workspace only.
+repo="${ENV_CTL_REPO:-$META_ROOT/envctl}"
 test -d "${repo:-/nonexistent}/crates/secretd" || { echo "FATAL: envctl workspace not found (set ENV_CTL_REPO to the checkout root)"; exit 1; }
 
 # secretd is built WITH `--features seed-factor` so the Cognitum Seed USB unlock factor
@@ -68,19 +61,19 @@ cargo build --release --manifest-path "$repo/Cargo.toml" -p envctl-secretd --fea
 cargo build --release --manifest-path "$repo/Cargo.toml" -p envctl-secretctl
 
 # Meta-prefix install (Epic H TASK-0069): private binaries live under
-# $M/.local/lib/envctl/secrets/bin, exposed through $M/.local/bin. ~/.local/bin
-# gets compatibility symlinks only; never install directly into ~/.cargo/bin (system-depth).
+# $M/.local/lib/envctl/secrets/bin, exposed through $M/.local/bin. $META_ROOT/.local/bin
+# gets compatibility symlinks only; never install directly into $META_ROOT/.toolchains/cargo/bin (system-depth).
 install -Dm755 "$repo/target/release/secretd"   "$DEST/secretd"
 install -Dm755 "$repo/target/release/secretctl" "$DEST/secretctl"
-install -d -m755 "$META_BIN" "$HOME/.local/bin"
+install -d -m755 "$META_BIN" "$META_ROOT/.local/bin"
 ln -sfn "$DEST/secretd"   "$META_BIN/secretd"
 ln -sfn "$DEST/secretctl" "$META_BIN/secretctl"
-ln -sfn "$META_BIN/secretd"   "$HOME/.local/bin/secretd"
-ln -sfn "$META_BIN/secretctl" "$HOME/.local/bin/secretctl"
+ln -sfn "$META_BIN/secretd"   "$META_ROOT/.local/bin/secretd"
+ln -sfn "$META_BIN/secretctl" "$META_ROOT/.local/bin/secretctl"
 
 cleanup_legacy_cargo_bin() {
   b="$1"
-  legacy="$HOME/.cargo/bin/$b"
+  legacy="$META_ROOT/.toolchains/cargo/bin/$b"
   owned="$DEST/$b"
   [ -e "$legacy" ] || return 0
   # If an old symlink already points at the new meta-local binary, remove the duplicate link.
@@ -93,7 +86,7 @@ cleanup_legacy_cargo_bin() {
   # Different/foreign binaries are left in place and surfaced by verify; strict upgrade-only means
   # never deleting an unproven executable.
   if [ -f "$legacy" ] && [ -f "$owned" ] && cmp -s "$legacy" "$owned"; then
-    arch="$HOME/.local/state/envctl/legacy-archives/$(date -u +%Y%m%dT%H%M%SZ)/.cargo/bin"
+    arch="$META_ROOT/.local/state/envctl/legacy-archives/$(date -u +%Y%m%dT%H%M%SZ)/.cargo/bin"
     install -d -m700 "$arch"
     mv "$legacy" "$arch/$b"
     echo "archived legacy cargo-bin copy: $legacy -> $arch/$b"
@@ -105,14 +98,14 @@ cleanup_legacy_cargo_bin secretd
 cleanup_legacy_cargo_bin secretctl
 
 # XDG dirs, fail-closed perms (ARCHITECTURE layout). RUNTIME dir is created by the unit at start.
-install -d -m700 "$HOME/.config/env-ctl"
-install -d -m700 "$HOME/.local/share/env-ctl"
-install -d -m700 "$HOME/.local/state/env-ctl"
+install -d -m700 "$META_ROOT/.config/env-ctl"
+install -d -m700 "$META_ROOT/.local/share/env-ctl"
+install -d -m700 "$META_ROOT/.local/state/env-ctl"
 
 # Durable store config (docs/ops/08): point secretd at the loopback sqld (libSQL remote backend).
 # Idempotent: written only if absent (operator edits are preserved). The AUTH TOKEN is NEVER written
 # here — it comes from SECRETD_LIBSQL_AUTH_TOKEN[_FILE] only (config.rs refuses a token in this file).
-cfg="$HOME/.config/env-ctl/secretd.toml"
+cfg="$META_ROOT/.config/env-ctl/secretd.toml"
 if [ ! -f "$cfg" ]; then
   cat > "$cfg" <<'TOML'
 # secretd store backend (OI-1 (a)). libSQL `remote` -> a LOOPBACK sqld (see manifest/sqld.toml).
@@ -150,15 +143,15 @@ fi
 kind = "command"
 command = "bash"
 args = ["-lc", '''
-M="${META_ROOT:-$HOME/Desktop/meta}"
-export PATH="$M/.local/bin:$HOME/.local/bin:$PATH"
+M="${META_ROOT:?META_ROOT required}"
+export PATH="$M/.local/bin:$META_ROOT/.local/bin:$PATH"
 # Hard predicate (fail-closed): bins answer + the daemon's offline self-check passes.
 secretctl --help >/dev/null && secretd --self-check >/dev/null || exit 1
 # Legacy cargo-bin copies must not shadow the meta-local install. They are cleaned by install/fix
 # when byte-identical or symlinked to the meta prefix; different foreign binaries are surfaced here
 # rather than removed destructively.
 for b in secretd secretctl; do
-  legacy="$HOME/.cargo/bin/$b"
+  legacy="$META_ROOT/.toolchains/cargo/bin/$b"
   owned="$M/.local/lib/envctl/secrets/bin/$b"
   if [ -e "$legacy" ] && [ "$(readlink -f "$legacy" 2>/dev/null)" != "$(readlink -f "$owned" 2>/dev/null)" ]; then
     echo "legacy cargo-bin $b shadows meta-local install: $legacy"
@@ -167,7 +160,7 @@ for b in secretd secretctl; do
 done
 # TASK-0033 (F7 / FS-S21): a VPS Profile B config MUST carry operator_authorizer_url. verify fails
 # closed on the same downgrade the install gate refuses (so drift introduced after install is caught).
-cfg="$HOME/.config/env-ctl/secretd.toml"
+cfg="$META_ROOT/.config/env-ctl/secretd.toml"
 if grep -Eq '^\s*topology\s*=\s*"(remote|vps)"' "$cfg" 2>/dev/null; then
   grep -Eq '^\s*operator_authorizer_url\s*=' "$cfg" \
     || { echo "FATAL: VPS profile (topology=remote) without operator_authorizer_url (FS-S21)"; exit 1; }
@@ -191,33 +184,28 @@ kind = "script"
 script = '''
 set -euo pipefail
 # Meta-owned toolchain + prefix (Epic H TASK-0069). See install.
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 export CARGO_HOME="$M/.toolchains/cargo"
 META_BIN="$M/.local/bin"
-export PATH="$M/.toolchains/cargo/bin:$META_BIN:$HOME/.local/bin:$PATH"
+export PATH="$M/.toolchains/cargo/bin:$META_BIN:$META_ROOT/.local/bin:$PATH"
 DEST="$M/.local/lib/envctl/secrets/bin"
-# Resolve the workspace root (override → meta layout → legacy bare; sentinel-validated). See install.
-repo="${ENV_CTL_REPO:-}"
-if [ -z "$repo" ]; then
-  for c in "$HOME/Desktop/meta/envctl" "$HOME/Desktop/envctl"; do
-    [ -d "$c/crates/secretd" ] && { repo="$c"; break; }
-  done
-fi
+# Resolve the workspace root (override -> meta layout; sentinel-validated). See install.
+repo="${ENV_CTL_REPO:-$META_ROOT/envctl}"
 test -d "${repo:-/nonexistent}/crates/secretd" || { echo "FATAL: envctl workspace not found (set ENV_CTL_REPO)"; exit 1; }
 # Rebuild WITH seed-factor (see install note): a plain rebuild would drop the USB unlock factor.
 cargo build --release --manifest-path "$repo/Cargo.toml" -p envctl-secretd --features seed-factor
 cargo build --release --manifest-path "$repo/Cargo.toml" -p envctl-secretctl
 install -Dm755 "$repo/target/release/secretd"   "$DEST/secretd"
 install -Dm755 "$repo/target/release/secretctl" "$DEST/secretctl"
-install -d -m755 "$META_BIN" "$HOME/.local/bin"
+install -d -m755 "$META_BIN" "$META_ROOT/.local/bin"
 ln -sfn "$DEST/secretd"   "$META_BIN/secretd"
 ln -sfn "$DEST/secretctl" "$META_BIN/secretctl"
-ln -sfn "$META_BIN/secretd"   "$HOME/.local/bin/secretd"
-ln -sfn "$META_BIN/secretctl" "$HOME/.local/bin/secretctl"
+ln -sfn "$META_BIN/secretd"   "$META_ROOT/.local/bin/secretd"
+ln -sfn "$META_BIN/secretctl" "$META_ROOT/.local/bin/secretctl"
 
 cleanup_legacy_cargo_bin() {
   b="$1"
-  legacy="$HOME/.cargo/bin/$b"
+  legacy="$META_ROOT/.toolchains/cargo/bin/$b"
   owned="$DEST/$b"
   [ -e "$legacy" ] || return 0
   # If an old symlink already points at the new meta-local binary, remove the duplicate link.
@@ -230,7 +218,7 @@ cleanup_legacy_cargo_bin() {
   # Different/foreign binaries are left in place and surfaced by verify; strict upgrade-only means
   # never deleting an unproven executable.
   if [ -f "$legacy" ] && [ -f "$owned" ] && cmp -s "$legacy" "$owned"; then
-    arch="$HOME/.local/state/envctl/legacy-archives/$(date -u +%Y%m%dT%H%M%SZ)/.cargo/bin"
+    arch="$META_ROOT/.local/state/envctl/legacy-archives/$(date -u +%Y%m%dT%H%M%SZ)/.cargo/bin"
     install -d -m700 "$arch"
     mv "$legacy" "$arch/$b"
     echo "archived legacy cargo-bin copy: $legacy -> $arch/$b"
@@ -242,8 +230,8 @@ cleanup_legacy_cargo_bin secretd
 cleanup_legacy_cargo_bin secretctl
 
 # Re-assert the durable store config idempotently (write only if absent; operator edits preserved).
-install -d -m700 "$HOME/.config/env-ctl"
-cfg="$HOME/.config/env-ctl/secretd.toml"
+install -d -m700 "$META_ROOT/.config/env-ctl"
+cfg="$META_ROOT/.config/env-ctl/secretd.toml"
 if [ ! -f "$cfg" ]; then
   cat > "$cfg" <<'TOML'
 [store]
@@ -263,14 +251,14 @@ kind = "script"
 script = '''
 set -euo pipefail
 systemctl --user disable --now env-ctl.service 2>/dev/null || true
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 # Self-guarded: drop only symlinks that resolve to the canonical meta-local install,
 # then remove the canonical private binaries. Legacy .toolchains binaries are strict-upgrade
 # fallbacks and are never removed here.
 for b in secretd secretctl; do
   private="$M/.local/lib/envctl/secrets/bin/$b"
   meta_link="$M/.local/bin/$b"
-  host_link="$HOME/.local/bin/$b"
+  host_link="$META_ROOT/.local/bin/$b"
   private_real="$(readlink -f "$private" 2>/dev/null || true)"
   meta_real="$(readlink -f "$meta_link" 2>/dev/null || true)"
   if [ -L "$host_link" ]; then
@@ -291,10 +279,10 @@ systemctl --user daemon-reload || true
 
 # ---- WIRING (engine-owned, reversible: backup-then-excise on reset; see engine/src/wiring.rs) ----
 [component.wiring]
-path_entries = ["${META_ROOT:-$HOME/Desktop/meta}/.local/bin", "~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 
 [[component.wiring.shell_rc]]
-file = "~/.bashrc"
+file = "$META_ROOT/.bashrc"
 marker = "env-ctl"     # engine writes "BEGIN env-ctl (added by envctl)" / "END env-ctl" guard lines
 # SOCKET NAME FIX: the real control socket is `secretd.sock` (Paths::control_socket()), NOT
 # `control.sock`. The old name pointed secretctl at a path the daemon never binds, so every
@@ -322,11 +310,15 @@ After=sqld.service
 [Service]
 Type=notify
 NotifyAccess=main
-# Meta-local binary (Epic H TASK-0069). %h=home; META_ROOT is $HOME/Desktop/meta on this box.
+# Meta-local binary (Epic H TASK-0069). %h=home; META_ROOT is %h/Desktop/meta on this box.
 ExecStart=%h/Desktop/meta/.local/lib/envctl/secrets/bin/secretd
 # Cognitum Seed Device-CA pin lives under the meta-local share prefix, NOT /usr/local (TASK-0075b,
 # no-system-depth doctrine). seam.rs `ca_path()` reads ENVCTL_SEED_CA; cognitum-seed-trust pins here.
 Environment=ENVCTL_SEED_CA=%h/Desktop/meta/.local/share/envctl/secrets/ca/cognitum-ca.crt
+Environment=META_ROOT=%h/Desktop/meta
+Environment=XDG_CONFIG_HOME=%h/Desktop/meta/.config
+Environment=XDG_DATA_HOME=%h/Desktop/meta/.local/share
+Environment=XDG_STATE_HOME=%h/Desktop/meta/.local/state
 Restart=on-failure
 RestartSec=10
 # Fail-closed memory hygiene is enforced IN secretd (mlockall + RLIMIT_CORE=0 + MADV_DONTDUMP;
@@ -338,7 +330,7 @@ LimitCORE=0
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=%h/.local/share/env-ctl %h/.local/state/env-ctl %t/env-ctl
+ReadWritePaths=%h/Desktop/meta/.local/share/env-ctl %h/Desktop/meta/.local/state/env-ctl %t/env-ctl
 # Belt-and-suspenders read access to the Seed Device-CA dir (TASK-0075b). NOT ReadWritePaths — the
 # daemon must never overwrite its trust root; survives any future ProtectHome=tmpfs hardening.
 ReadOnlyPaths=%h/Desktop/meta/.local/share/envctl/secrets/ca
@@ -359,15 +351,15 @@ WantedBy=default.target
 
 # ---- VAULT DATA: deleted ONLY by `envctl reset env-ctl --purge` (after UUID re-verify) ----
 [[component.wiring.data_paths]]
-path = "~/.local/share/env-ctl"   # vault.db (0600), ca/ (local CA private material)
+path = "$META_ROOT/.local/share/env-ctl"   # vault.db (0600), ca/ (local CA private material)
 [[component.wiring.data_paths]]
-path = "~/.local/state/env-ctl"   # secretd.log, durable hash-chained audit mirror
+path = "$META_ROOT/.local/state/env-ctl"   # secretd.log, durable hash-chained audit mirror
 
 # ---- CONFIG: kept with `--keep-config`, else engine-removed on reset ----
 # This is where docs/ops/08's secretd.toml store-backend selection lives; auth tokens are NEVER
 # stored here.
 [[component.wiring.config_paths]]
-path = "~/.config/env-ctl"
+path = "$META_ROOT/.config/env-ctl"
 
 # ---- GUARD: USB/storage PARTUUID pre-filter on destructive phases. This is a fast pre-flight ----
 # ---- ONLY; the daemon proves keyfile POSSESSION cryptographically (REQ-SEC-3, FS-S9). ----
