@@ -94,10 +94,9 @@ upgrades via PR, never weaken a gate). Then **clear the marker, set `last_wrapup
 and continue if under `cycle_budget`. The boundary is *in-session* — NOT a hand-off.
 
 ## Self-pacing (how the loop re-fires)
-- Default: **dynamic /loop** — use `ScheduleWakeup` to re-enter this skill for the next iteration,
-  passing the same `/plan-loop …` prompt verbatim. A planning cycle is deliberative (more reasoning,
+- Default: **dynamic `/loop` / runtime scheduler** — re-enter this skill for the next iteration by using the active runtime's supported loop/scheduling surface (for Claude Code, `/loop`/`CronCreate`; do not name or call an unavailable tool). Pass the same `/plan-loop …` prompt verbatim. A planning cycle is deliberative (more reasoning,
   more web/graph work than a code cycle); a warm-cache short delay (≤270s) is fine for back-to-back
-  cycles. When you HAND OFF or finish, **omit** the ScheduleWakeup call to end the loop.
+  cycles. When you HAND OFF or finish, **do not schedule another re-entry**; ending the scheduling chain is what stops the loop.
 - A cycle counts only when a planning cycle **completes** (plan written + verified, or target blocked).
 
 ## Cycle budget (the handoff trigger)

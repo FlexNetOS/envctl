@@ -38,16 +38,16 @@ tables first). The cartographer uses exactly this surface:
 
 | Command | Purpose |
 |---------|---------|
-| `git-kb code index <root> [--refresh]` | Index source symbols (idempotent; daemon also watches saves) |
+| `git-kb code index <root> [--force]` | Index source symbols (idempotent; `--force` refreshes changed/unchanged files) |
 | `git-kb code symbols [--json]` | List indexed symbols (filter by file/kind/lang) |
 | `git-kb code callers <sym> [--json]` | Callers of a symbol (real call sites, AST) |
 | `git-kb code callees <sym> [--json]` | Callees of a symbol |
 | `git-kb code impact <file> --depth N [--json]` | Transitive blast radius for a file via the call graph |
 | `git-kb code dead [--json]` | Symbols with zero callers (candidate dead code) |
-| `git-kb code refs [--json]` | KB documents referencing a code symbol |
+| `git-kb code refs <sym> [--json]` | KB documents referencing a code symbol |
 | `git-kb code entrypoints [--json]` | Inferred entry points (mains, servers, CLIs, exported APIs) |
 | `git-kb code flows [--json]` / `flow <id> [--json]` | Traced execution flows / one flow's path |
-| `git-kb code stats` | Index statistics (use to confirm a warm index) |
+| `git-kb code stats --json` | Index statistics (use to confirm a warm index) |
 | `git-kb code query <template> [--json] [--depth N] [--target S] [--limit N] [--refresh]` | Typed graph queries (§ below) |
 
 `query` templates (exact `[possible values]`):

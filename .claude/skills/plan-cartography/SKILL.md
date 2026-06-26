@@ -35,7 +35,7 @@ Let `<T>` = the target slug (crate/subsystem, e.g. `secrets-proto`); `<root>` = 
 ### 1. MATERIALIZE — index, then snapshot the graph as JSON
 
 1. **Index** the target (idempotent; the daemon also re-indexes on save):
-   `git-kb code index <root> --refresh`, then confirm with `git-kb code stats`.
+   `git-kb code index <root> --force`, then confirm with `git-kb code stats --json`.
    - **Branch-scoping (the #1 empty-result cause — verified live).** `git-kb code` symbols and queries
      are scoped to the **current git branch** (every result carries a `"branch"` field; the index is
      built per-branch). On a fresh loop worktree branch — and **every cycle runs in a fresh
