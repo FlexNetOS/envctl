@@ -159,7 +159,7 @@ best-effort). Read it, run its verify-on-resume baseline, broadcast `env-install
 - `envctl doctor` fully **green**; `auto-detect` shows every declared component **detected +
   healthy**; **zero drift**.
 - All toolchains present at correct versions; **PATH + env vars verified in a fresh shell**.
-- `cargo run -p envctl -- lock --check` clean **and** `kasetto sync --locked` clean (reproducible).
+- `cargo run -p envctl -- lock --check` clean **and** `envctl agent lock --config agent-env.yaml --check --locked` clean (reproducible).
 - `cargo build -p envctl-engine -p envctl` + the 3 CI gates (`no-c`/`shape`/`enable`) pass.
 - Any `- [!]` blocked items are surfaced for the human with their reason.
 
@@ -193,7 +193,7 @@ two PATH entries unwired. DISCOVER writes a 3-item backlog. Cycles 1-3 each inst
 (dry-run → `--apply`), verify it on PATH in a fresh shell, tick the backlog, commit. Budget hits →
 `session-relay` writes+commits `HANDOFF.md`, broadcasts `env-install:handoff`, stops. Successor
 resumes from the committed checkpoint, finds the backlog empty after re-running doctor → DONE:
-doctor green, lock + kasetto clean, gates pass; opens a PR.
+doctor green, lock + agent-env clean, gates pass; opens a PR.
 
 **Error path:** an item needs a kernel module + reboot. The loop runs the dry-run, sees it can't
 complete unattended, marks `- [!] needs-human: requires reboot after nvidia-open install`, commits,
