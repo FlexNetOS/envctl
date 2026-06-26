@@ -21,6 +21,39 @@ repo_url() {
   fi
 }
 
+workspace_version() {
+  local version
+  version="$(grep -A3 'name = "loop_lib"' "$root/Cargo.lock" | sed -n 's/^version = "\(.*\)"/\1/p' | head -n1)"
+  if [ -z "$version" ]; then
+    echo "FAIL: unable to determine loop_lib version from Cargo.lock" >&2
+    exit 1
+  fi
+  printf '%s\n' "$version"
+}
+
+ensure_parent_workspace() {
+  local manifest="$meta_root/Cargo.toml"
+  if [ -f "$manifest" ]; then
+    echo "meta-dep: parent workspace manifest already exists at $manifest"
+    return
+  fi
+
+  local version
+  version="$(workspace_version)"
+  echo "meta-dep: writing minimal parent workspace manifest at $manifest"
+  cat > "$manifest" <<EOF_MANIFEST
+[workspace]
+members = ["loop_lib", "meta_plugin_protocol"]
+resolver = "2"
+
+[workspace.package]
+version = "$version"
+edition = "2021"
+license = "MIT"
+repository = "https://github.com/FlexNetOS/meta"
+EOF_MANIFEST
+}
+
 ensure_repo() {
   local repo="$1"
   local target="$meta_root/$repo"
@@ -42,6 +75,7 @@ ensure_repo() {
 
 ensure_repo loop_lib
 ensure_repo meta_plugin_protocol
+ensure_parent_workspace
 
 # Prove the exact paths Cargo resolves from envctl's path dependencies exist.
 test -f "$root/crates/engine/../../../loop_lib/Cargo.toml" \
