@@ -40,21 +40,25 @@ Write the plan in this order — **verdict first**, evidence after:
    codemap, or a `docs/secrets/*`/`docs/ARCHITECTURE.md` section). Annotate hotspots, cycles, and
    layering with the automation legend where a step is automated/gated (see below).
 3. **Sequenced upgrade roadmap** — the ordered list of upgrades, each tagged
-   `axis: quality|speed|accuracy|governance+settings+config|filesystem-layout|prompt-architecture`, ordered by value/risk (recipe below). Only CONFIRMED/QUALIFIED +
+   `axis: quality|speed|accuracy|governance+settings+config|filesystem-layout|prompt-architecture|memory-vector-intelligence|autoresearch|rules-policy-org|distributed-compute`, ordered by value/risk (recipe below). Only CONFIRMED/QUALIFIED +
    feasible items.
 4. **Tool-evaluation** — the tool/CLI/MCP/crate inventory with currency/advisories → upgrade/hold/pin
    (recipe below).
 5. **Governance, settings & config** — control-plane findings (rules/instructions/hooks/policy/CLAUDE.md/AGENTS.md), settings hygiene (MCP rot / skill overload / token burn / permission drift), config drift, and APPLY/PROPOSE/REGENERATE routing.
 6. **Filesystem layout** — file/folder organization map, path inventory, FHS/XDG/repo-native placement verdicts, boundary map (repo/meta/user/system), and enforcement-test handoff from `findings/filesystem-layout-<T>.md`.
-7. **Prompt-architecture** — prompt/tool/model/runtime couplings, ADR candidates/no-ADR rationale, and governance controls from `findings/prompt-architecture-<T>.md`.
-8. **Risk policy / backend / interop** — HITL/SUPERVISED routing, lane isolation decisions, and weave/MCP/ACP/A2A/GitHub-cloud interop registry.
-9. **Test Strategy & Coverage** — current coverage (by call-graph reachability), the ranked coverage
+7. **Memory/vector intelligence** — ICM, `.handoff`, source ledgers, GitKB/vector/RAG freshness, and cold-start recall proof from `findings/memory-vector-intelligence-<T>.md`.
+8. **Auto-research cadence** — code graph/web/vendor refresh, stale-evidence invalidation, and recurrence cadence from `findings/autoresearch-<T>.md`.
+9. **Rules/policy/agent org** — Upgrade Only/No Downgrades, automation-first routing, org chart, A2A/weave comms, and human-bottleneck replacement from `findings/rules-policy-org-<T>.md`.
+10. **Distributed compute fabric** — Rust+Lua hardware matrix, local+cloud vendor mesh, control/data plane, mobile/AI glasses/Pi/Pi Zero/ESP32 support from `findings/distributed-compute-<T>.md`.
+11. **Prompt-architecture** — prompt/tool/model/runtime couplings, ADR candidates/no-ADR rationale, and governance controls from `findings/prompt-architecture-<T>.md`.
+12. **Risk policy / backend / interop** — HITL/SUPERVISED routing, lane isolation decisions, and weave/MCP/ACP/A2A/GitHub-cloud interop registry.
+13. **Test Strategy & Coverage** — current coverage (by call-graph reachability), the ranked coverage
    gaps (untested public-API / hotspots / data-flows / error-paths, each citing the symbol), and the
    designed suite (cases, types, golden fixtures) that closes them and covers the roadmap's upgrades —
    from `findings/test-strategy-<T>.md`. Ends by promoting the **FF test-build spec** (recipe below).
-10. **Gaps** — what is unverified, infeasible-here, or needs a harness (e.g. a perf claim that couldn't
+14. **Gaps** — what is unverified, infeasible-here, or needs a harness (e.g. a perf claim that couldn't
    be benchmarked → "needs a perf harness"); plus notable REFUTED overclaims. Honesty over completeness.
-11. **Confidence** — restate the overall confidence and what would raise it.
+15. **Confidence** — restate the overall confidence and what would raise it.
 
 ## ASCII diagram conventions (R4)
 
@@ -153,6 +157,10 @@ After writing `reports/<T>-plan.md`:
 
 Lift these runtime-gated artifacts into the plan before promotion:
 
+- `findings/memory-vector-intelligence-<T>.md` — persistent memory/vector/code intelligence guarantees.
+- `findings/autoresearch-<T>.md` — constant code+web research cadence and stale-evidence invalidation.
+- `findings/rules-policy-org-<T>.md` — owner rules, policy, agent org chart, A2A/weave comms.
+- `findings/distributed-compute-<T>.md` — Rust+Lua distributed compute across all hardware/vendors.
 - `graph/target-dag.md` — TDP scheduling and SELF-REVISION implications.
 - `findings/prompt-architecture-<T>.md` — prompt/tool/model coupling review and ADR/no-ADR routing.
 - `reports/agent-run-ledger-<T>.md` — background-lane observability and failures/retries.

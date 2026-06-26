@@ -31,6 +31,14 @@ corrected to it.
 
 
 
+## Owner critical architecture-loop axes (mandatory)
+
+Every planning iteration must cover persistent memory/vector intelligence, constant code+web
+auto-research, rules/policy/agent-org/A2A communication, Rust+Lua runtime strategy, distributed compute
+across owner hardware (mobile, AI glasses/wearables, Pi/Pi Zero, ESP32), and multi-vendor local+cloud
+mesh. Missing any of `findings/memory-vector-intelligence-<T>.md`, `findings/autoresearch-<T>.md`,
+`findings/rules-policy-org-<T>.md`, or `findings/distributed-compute-<T>.md` blocks DONE.
+
 ## June 2026 P0-P2 loop upgrades (mandatory)
 
 The loop now schedules and gates planning work with the full P0-P2 upgrade set:

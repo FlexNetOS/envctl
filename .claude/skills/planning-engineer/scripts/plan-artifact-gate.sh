@@ -165,6 +165,10 @@ def validate_target(target: str) -> None:
         f"findings/governance-config-{target}.md",
         f"findings/filesystem-layout-{target}.md",
         f"findings/test-strategy-{target}.md",
+        f"findings/memory-vector-intelligence-{target}.md",
+        f"findings/autoresearch-{target}.md",
+        f"findings/rules-policy-org-{target}.md",
+        f"findings/distributed-compute-{target}.md",
         f"findings/prompt-architecture-{target}.md",
         f"reports/agent-run-ledger-{target}.md",
         f"reports/{target}-plan.md",
@@ -174,12 +178,17 @@ def validate_target(target: str) -> None:
     require_contains(f"findings/governance-config-{target}.md", [r"CLAIM", r"UPGRADE", r"governance\+settings\+config"])
     require_contains(f"findings/filesystem-layout-{target}.md", [r"path inventory", r"placement verdict", r"boundary map", r"filesystem-layout"])
     require_contains(f"findings/test-strategy-{target}.md", [r"tests-ran\s*[:=]\s*[1-9]", r"traceability", r"FF test-build spec"])
+    require_contains(f"findings/memory-vector-intelligence-{target}.md", [r"memory", r"vector|git-kb|RAG", r"ICM|handoff", r"recall"])
+    require_contains(f"findings/autoresearch-{target}.md", [r"code auto-research|git-kb", r"web auto-research|90-day|recency", r"stale|invalidate"])
+    require_contains(f"findings/rules-policy-org-{target}.md", [r"Upgrade Only", r"No Downgrades", r"agent org chart", r"weave|A2A", r"background"] )
+    require_contains(f"findings/distributed-compute-{target}.md", [r"Rust", r"Lua|Luau", r"mobile", r"AI glasses|wearables", r"Pi Zero|Raspberry Pi", r"ESP32", r"vendor|cloud|local"])
     require_contains(f"findings/prompt-architecture-{target}.md", [r"prompt-architecture", r"tool grants|tools granted", r"model lanes", r"ADR"])
     require_contains(f"reports/agent-run-ledger-{target}.md", [r"agent run ledger", r"lane", r"model", r"artifact"])
     require_contains(f"research/{target}.trends.md", [r"Tool-currency & advisories", r"Sources"])
     require_contains(f"reports/{target}-plan.md", [
         r"Verdict", r"ASCII architecture", r"Sequenced upgrade", r"Tool-evaluation",
-        r"Governance", r"Filesystem layout", r"Test Strategy", r"Prompt-architecture",
+        r"Governance", r"Filesystem layout", r"Memory/vector", r"Auto-research",
+        r"Rules/policy", r"Distributed compute", r"Test Strategy", r"Prompt-architecture",
         r"Risk policy", r"Confidence"
     ])
 

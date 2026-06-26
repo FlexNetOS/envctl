@@ -63,6 +63,22 @@ traceability matrix
 tests-ran: 2
 ## FF test-build spec
 EOF
+cat > "$plan/findings/memory-vector-intelligence-engine.md" <<'EOF'
+# memory-vector-intelligence
+Memory inventory: ICM and .handoff present. Vector intelligence map: git-kb graph and RAG index freshness. Recall guarantees recorded.
+EOF
+cat > "$plan/findings/autoresearch-engine.md" <<'EOF'
+# autoresearch
+Code auto-research: git-kb refresh. Web auto-research: 90-day recency. stale evidence invalidation enabled.
+EOF
+cat > "$plan/findings/rules-policy-org-engine.md" <<'EOF'
+# rules-policy-org
+Upgrade Only. No Downgrades. agent org chart. weave/A2A communication. background agents required.
+EOF
+cat > "$plan/findings/distributed-compute-engine.md" <<'EOF'
+# distributed-compute
+Rust and Lua/Luau plan for mobile, AI glasses/wearables, Raspberry Pi / Pi Zero, ESP32, local and cloud vendor mesh.
+EOF
 cat > "$plan/findings/prompt-architecture-engine.md" <<'EOF'
 # prompt-architecture
 instruction surfaces, tools granted, model lanes, hidden couplings
@@ -86,6 +102,10 @@ Confidence: High
 ## Governance, settings & config
 ## Filesystem layout
 ## Test Strategy & Coverage
+## Memory/vector intelligence
+## Auto-research
+## Rules/policy/org
+## Distributed compute
 ## Prompt-architecture
 ## Risk policy
 ## Confidence

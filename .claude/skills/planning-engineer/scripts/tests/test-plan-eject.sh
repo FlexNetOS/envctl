@@ -35,10 +35,10 @@ run_eject() { bash "$EJECT" "$TARGET" >/dev/null 2>&1; }
 
 # 1. first eject — OWN skills + agents must land
 run_eject || fail "first eject exited non-zero"
-for s in planning-engineer plan-loop plan-cartography plan-dependency-graph plan-trend-research plan-governance-config plan-filesystem-layout plan-prompt-architecture plan-test-strategy plan-synthesis code-research-verify; do
+for s in planning-engineer plan-loop plan-cartography plan-memory-vector-intelligence plan-autoresearch-loop plan-rules-policy-org plan-distributed-compute plan-dependency-graph plan-trend-research plan-governance-config plan-filesystem-layout plan-prompt-architecture plan-test-strategy plan-synthesis code-research-verify; do
   [ -d "$TARGET/.claude/skills/$s" ] || fail "OWN skill not copied: $s"
 done
-for a in plan-cartographer plan-dependency-graph-auditor plan-trend-researcher plan-governance-config-auditor plan-filesystem-layout-auditor plan-prompt-architecture-auditor plan-analyst plan-test-strategist plan-verifier plan-architect; do
+for a in plan-cartographer plan-memory-vector-intelligence-auditor plan-autoresearch-loop-auditor plan-rules-policy-org-auditor plan-distributed-compute-auditor plan-dependency-graph-auditor plan-trend-researcher plan-governance-config-auditor plan-filesystem-layout-auditor plan-prompt-architecture-auditor plan-analyst plan-test-strategist plan-verifier plan-architect; do
   [ -f "$TARGET/.claude/agents/$a.md" ] || fail "OWN agent not copied: $a"
 done
 
