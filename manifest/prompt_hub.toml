@@ -1,0 +1,97 @@
+# manifest/prompt_hub.toml — prompt_hub: prompt management for LLM agent swarms (FlexNetOS/prompt_hub)
+#
+# WHY THIS FILE EXISTS: prompt_hub is a meta member (registered in ../.meta.yaml,
+# `provides: [prompts]`), but until now it declared what it PROVIDES and nothing about what it NEEDS.
+# That asymmetry is why the repo "looks broken" when built cold: nothing told meta/envctl which
+# toolchain + system build-deps it requires, so a box without them fails to build it and an observer
+# assumes the repo is the problem. It isn't — its needs were simply unspecified. This component is
+# where prompt_hub specifies its needs, the same declarative detect/install/verify/fix/remove way
+# grit.toml / rusty-idd.toml / sqld.toml specify theirs.
+#
+# WHAT prompt_hub NEEDS (and why each `requires` edge):
+#   * rustup     — cargo + a toolchain (rust-toolchain.toml pins 1.96.0; workspace MSRV is 1.91.1).
+#   * llvm-clang — a C/C++ compiler. prompt_hub's dep tree links C: libsql-ffi (bundled C-SQLite, the
+#                  same bottom-half as sqld.toml), ring, aws-lc-sys, onig_sys, esaxx-rs, zstd-sys.
+#                  Without a C compiler on PATH those *-sys build scripts fail and the build "breaks".
+#   * libssl-dev — OpenSSL dev headers + pkg-config. openssl-sys is in prompt_hub's lock (transitive),
+#                  exactly the system-OpenSSL build-dep that was added to apt-base.toml for grit.
+#
+# TRUST-BOUNDARY NOTE (deliberate): prompt_hub's own crates are `#![forbid(unsafe_code)]` pure-Rust,
+# but its DEPENDENCY tree pulls C (libsql-ffi/ring/aws-lc-sys/onig_sys/esaxx-rs/zstd-sys/openssl-sys).
+# That is FINE here because prompt_hub is an EXTERNAL PRODUCT built beside the workspace, never added
+# to any envctl `Cargo.toml` [workspace.members]/[dependencies] — so `ci/gates/no-c.sh` stays green.
+# It is managed as *data* (this TOML), not as code, identical to how grit (which also links C) is.
+#
+# Installed box-wide to ~/.cargo/bin from the meta-cloned checkout, offline/reproducible via the
+# committed prompt_hub/Cargo.lock (`--locked`). The `prompthub` CLI is the front door; the
+# `prompthub-server` HTTP binary is installed alongside it from the same workspace.
+
+[[component]]
+id = "prompt_hub"
+name = "prompt_hub — prompt management for LLM agent swarms"
+description = "Builds + installs the prompthub CLI and prompthub-server binaries from the meta-cloned prompt_hub checkout. External product binary on ~/.cargo/bin; NOT linked into any envctl crate. Declares prompt_hub's build needs (rustup + a C compiler + OpenSSL headers) so the repo is provisioned, not assumed-broken."
+requires = ["rustup", "llvm-clang", "libssl-dev"]   # cargo+toolchain (base.toml) + C compiler for the
+                                                     # *-sys crates (epic-h-toolchains) + openssl-sys
+                                                     # dev headers (apt-base.toml).
+destructive = false
+
+# DETECT == "already present" predicate (read-only; feeds auto-detect + drives install/doctor).
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", "command -v prompthub >/dev/null || [ -x \"$HOME/.cargo/bin/prompthub\" ]"]
+
+# INSTALL: MSRV-gate (fail-closed, never silently upgrade), then build+place the binaries from the
+# meta-cloned checkout. `--locked` honours prompt_hub's committed Cargo.lock for a reproducible build.
+[component.install]
+kind = "script"
+script = '''
+set -euo pipefail
+export PATH="$HOME/.cargo/bin:$PATH"
+
+# MSRV gate: pass iff cargo >= 1.91.1 (prompt_hub workspace rust-version). MSRV line FIRST so
+# `sort -V -C` succeeds only when the pair is ascending (1.91.1 <= $ver). (Same ordering idiom as
+# grit.toml / rusty-idd.toml / env-ctl.toml — do NOT reverse.)
+ver="$(cargo --version | awk '{print $2}')"
+printf '1.91.1\n%s\n' "$ver" | sort -V -C || { echo "FATAL: cargo $ver < prompt_hub MSRV 1.91.1"; exit 1; }
+
+# prompt_hub lives in the meta workspace (registered in ../.meta.yaml, .gitignore'd, its own repo).
+repo="${PROMPT_HUB_REPO:-$HOME/Desktop/meta/prompt_hub}"
+test -d "$repo" || { echo "FATAL: prompt_hub checkout not found at $repo (set PROMPT_HUB_REPO)"; exit 1; }
+
+# Front-door CLI (package `prompthub`, bin `prompthub`) + the HTTP server (`prompthub-server`).
+# Default features: the heavy optional backends (smart-ort/ONNX, tui, otel, …) are opt-in and NOT
+# needed for the box-wide binaries; a feature build is a usage choice, out of scope for install.
+cargo install --path "$repo/prompthub" --locked
+cargo install --path "$repo/prompthub-server" --locked
+'''
+
+# VERIFY: the installed binaries answer. Read-only; a missing/broken bin reports verify=false (drift
+# visible) WITHOUT triggering a destructive fix — detect, not verify, is the install gate.
+[component.verify]
+kind = "command"
+command = "bash"
+args = ["-lc", "export PATH=\"$HOME/.cargo/bin:$PATH\"; prompthub --version >/dev/null && prompthub-server --help >/dev/null"]
+
+# FIX: idempotent rebuild+reinstall (force-overwrite). The dev-tools `cargo install --force` idiom.
+[component.fix]
+kind = "script"
+script = '''
+set -euo pipefail
+export PATH="$HOME/.cargo/bin:$PATH"
+repo="${PROMPT_HUB_REPO:-$HOME/Desktop/meta/prompt_hub}"
+test -d "$repo" || { echo "FATAL: prompt_hub checkout not found at $repo (set PROMPT_HUB_REPO)"; exit 1; }
+cargo install --path "$repo/prompthub" --force --locked
+cargo install --path "$repo/prompthub-server" --force --locked
+'''
+
+# REMOVE: uninstall by PACKAGE name. `|| true` keeps reset idempotent if it was never installed.
+[component.remove]
+kind = "command"
+command = "bash"
+args = ["-lc", "export PATH=\"$HOME/.cargo/bin:$PATH\"; cargo uninstall prompthub || true; cargo uninstall prompthub-server || true"]
+
+# ---- WIRING: ~/.cargo/bin is already on PATH via other components; declared so reset can reason
+# ---- about it reversibly. No shell_rc / systemd / data_paths — prompthub is a plain binary.
+[component.wiring]
+path_entries = ["~/.cargo/bin"]
