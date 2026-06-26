@@ -22,8 +22,10 @@ Required behavior:
   when the planning skill explicitly requires it.
 - Launch the 5× Opus 4.8 max-effort background-agent lanes via weave before reducing findings; keep the
   foreground interactive and use weave to launch/route the actual Opus workers; fail closed only if weave cannot produce an Opus-capable worker.
-- Include the governance/settings/config axis, rusty-idd north-star verdict, tool-evaluation, ASCII
+- Include the governance/settings/config/filesystem-layout axis, rusty-idd north-star verdict, tool-evaluation, ASCII
   diagrams, graph snapshot/diff, and TDD RED-suite evidence/counts in the final plan contract.
 - Verify claims adversarially before they enter the plan; unverified or infeasible upgrades must stay
   out of the roadmap.
 - Commit, push, open a PR, and arm auto-merge for any coherent committed repo change.
+
+Filesystem-layout requirement: every planning cycle must map file/folder organization against FHS/XDG, repo-native Cargo layout, and envctl/meta placement invariants, emitting `findings/filesystem-layout-<T>.md`.
