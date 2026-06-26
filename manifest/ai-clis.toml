@@ -8,17 +8,43 @@ name = "Claude Code CLI"
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "command -v claude || [ -x \"$HOME/.local/bin/claude\" ]"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/claude/bin/claude\" ] && [ \"$(readlink -f \"$HOME/.local/bin/claude\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/claude/bin/claude\")\" ]"]
 [component.install]
 kind = "script"
-script = "curl -fsSL https://claude.ai/install.sh | bash"
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/claude"
+# Upstream's installer may stage under ~/.local/share/claude; mirror the resulting
+# executable into the meta-owned prefix and expose only a thin ~/.local/bin symlink.
+curl -fsSL https://claude.ai/install.sh | bash
+src="$(readlink -f "$HOME/.local/bin/claude" 2>/dev/null || true)"
+if [ -z "$src" ] || [ ! -x "$src" ]; then
+  src="$(command -v claude)"
+fi
+install -d -m 755 "$DEST/bin"
+install -m 755 "$src" "$DEST/bin/claude"
+ln -sfn "$DEST/bin/claude" "$HOME/.local/bin/claude"
+'''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.local/bin:$PATH\"; claude --version"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export PATH=\"$HOME/.local/bin:$PATH\"; [ \"$(readlink -f \"$(command -v claude)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/claude/bin/claude\")\" ] && claude --version"]
 [component.fix]
 kind = "script"
-script = "curl -fsSL https://claude.ai/install.sh | bash"
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/claude"
+curl -fsSL https://claude.ai/install.sh | bash
+src="$(readlink -f "$HOME/.local/bin/claude" 2>/dev/null || true)"
+if [ -z "$src" ] || [ ! -x "$src" ]; then
+  src="$(command -v claude)"
+fi
+install -d -m 755 "$DEST/bin"
+install -m 755 "$src" "$DEST/bin/claude"
+ln -sfn "$DEST/bin/claude" "$HOME/.local/bin/claude"
+'''
 
 
 [[component]]

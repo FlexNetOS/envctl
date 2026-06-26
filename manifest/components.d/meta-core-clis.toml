@@ -1,0 +1,109 @@
+[[component]]
+id = "git"
+name = "Git SCM (meta-hosted binary tree)"
+description = "Git 2.54.0 copied into $META_ROOT/.toolchains/git as a real binary tree. No wrapper: ~/.local/bin/git is a direct symlink to the meta-hosted git executable."
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/git/bin/git\" ] && [ \"$(readlink -f \"$HOME/.local/bin/git\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/git/bin/git\")\" ]"]
+[component.install]
+kind = "script"
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/git"
+install -d -m 755 "$HOME/.local/bin"
+PATH="$(printf '%s' "$PATH" | tr ':' '
+' | grep -v -E "^$HOME/.local/bin$" | paste -sd: -)"
+src_bin="$(readlink -f "$(command -v git)")"
+case "$src_bin" in "$DEST"/*) src_bin="$(find /nix/store -path '*/bin/git' -type f 2>/dev/null | grep 'git-2.54.0' | head -n1)";; esac
+[ -n "$src_bin" ] || { echo "FATAL: no Git 2.54.0 source binary found"; exit 1; }
+src_root="$(cd "$(dirname "$src_bin")/.." && pwd)"
+rm -rf "$DEST"
+mkdir -p "$DEST"
+cp -a "$src_root/." "$DEST/"
+ln -sfn "$DEST/bin/git" "$HOME/.local/bin/git"
+'''
+[component.verify]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export PATH=\"$HOME/.local/bin:$PATH\"; [ \"$(readlink -f \"$(command -v git)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/git/bin/git\")\" ] && git --version | grep -q '2\\.54\\.0'"]
+[component.fix]
+kind = "script"
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/git"
+install -d -m 755 "$HOME/.local/bin"
+PATH="$(printf '%s' "$PATH" | tr ':' '
+' | grep -v -E "^$HOME/.local/bin$" | paste -sd: -)"
+src_bin="$(readlink -f "$(command -v git)")"
+case "$src_bin" in "$DEST"/*) src_bin="$(find /nix/store -path '*/bin/git' -type f 2>/dev/null | grep 'git-2.54.0' | head -n1)";; esac
+[ -n "$src_bin" ] || { echo "FATAL: no Git 2.54.0 source binary found"; exit 1; }
+src_root="$(cd "$(dirname "$src_bin")/.." && pwd)"
+rm -rf "$DEST"
+mkdir -p "$DEST"
+cp -a "$src_root/." "$DEST/"
+ln -sfn "$DEST/bin/git" "$HOME/.local/bin/git"
+'''
+[component.remove]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; t=\"$HOME/.local/bin/git\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/git\" && rm -f \"$t\"; rm -rf \"$M/.toolchains/git\""]
+[component.wiring]
+path_entries = ["~/.local/bin"]
+
+[[component]]
+id = "curl"
+name = "curl (static meta binary)"
+description = "Static curl binary installed under $META_ROOT/.toolchains/curl. No wrapper: ~/.local/bin/curl is a direct symlink to the meta-hosted curl binary."
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/curl/bin/curl\" ] && [ \"$(readlink -f \"$HOME/.local/bin/curl\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/curl/bin/curl\")\" ]"]
+[component.install]
+kind = "script"
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+VER="${CURL_VERSION:-8.21.0}"
+DEST="$M/.toolchains/curl"
+ARCH="$(uname -m)"; case "$ARCH" in x86_64) A=x86_64;; aarch64) A=aarch64;; *) echo "unsupported arch: $ARCH"; exit 1;; esac
+URL="https://github.com/stunnel/static-curl/releases/download/$VER/curl-linux-$A-musl-$VER.tar.xz"
+cache="$M/.cache/curl"; install -d -m 755 "$cache" "$DEST/bin" "$HOME/.local/bin"
+tarball="$cache/curl-linux-$A-musl-$VER.tar.xz"
+[ -s "$tarball" ] || /usr/bin/curl -fSL "$URL" -o "$tarball"
+tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+tar -xJf "$tarball" -C "$tmp"
+src="$(find "$tmp" -type f -name curl -perm -111 | head -n1)"
+install -m 755 "$src" "$DEST/bin/curl"
+ln -sfn "$DEST/bin/curl" "$HOME/.local/bin/curl"
+'''
+[component.verify]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export PATH=\"$HOME/.local/bin:$PATH\"; [ \"$(readlink -f \"$(command -v curl)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/curl/bin/curl\")\" ] && curl --version | grep -q '8\\.21\\.0'"]
+[component.fix]
+kind = "script"
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+VER="${CURL_VERSION:-8.21.0}"
+DEST="$M/.toolchains/curl"
+ARCH="$(uname -m)"; case "$ARCH" in x86_64) A=x86_64;; aarch64) A=aarch64;; *) echo "unsupported arch: $ARCH"; exit 1;; esac
+URL="https://github.com/stunnel/static-curl/releases/download/$VER/curl-linux-$A-musl-$VER.tar.xz"
+cache="$M/.cache/curl"; install -d -m 755 "$cache" "$DEST/bin" "$HOME/.local/bin"
+tarball="$cache/curl-linux-$A-musl-$VER.tar.xz"
+[ -s "$tarball" ] || /usr/bin/curl -fSL "$URL" -o "$tarball"
+tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+tar -xJf "$tarball" -C "$tmp"
+src="$(find "$tmp" -type f -name curl -perm -111 | head -n1)"
+install -m 755 "$src" "$DEST/bin/curl"
+ln -sfn "$DEST/bin/curl" "$HOME/.local/bin/curl"
+'''
+[component.remove]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; t=\"$HOME/.local/bin/curl\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/curl\" && rm -f \"$t\"; rm -rf \"$M/.toolchains/curl\""]
+[component.wiring]
+path_entries = ["~/.local/bin"]

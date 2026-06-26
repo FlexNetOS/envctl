@@ -141,25 +141,45 @@ args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export CARGO_HOME=\"$M/.
 [[component]]
 id = "wasmer"
 name = "Wasmer (WASM runtime)"
-description = "Self-wires its own PATH block into ~/.bashrc (installer-owned)."
+description = "Wasmer runtime mirrored into $META_ROOT/.toolchains/wasmer with a ~/.local/bin frontdoor."
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "command -v wasmer || [ -x \"$HOME/.wasmer/bin/wasmer\" ]"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/wasmer/bin/wasmer\" ] && [ \"$(readlink -f \"$HOME/.local/bin/wasmer\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/wasmer/bin/wasmer\")\" ]"]
 [component.install]
 kind = "script"
-script = "curl -fsSL https://get.wasmer.io | sh"
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/wasmer"
+curl -fsSL https://get.wasmer.io | sh
+rm -rf "$DEST"
+install -d -m 755 "$DEST" "$HOME/.local/bin"
+cp -a "$HOME/.wasmer/." "$DEST/"
+ln -sfn "$DEST/bin/wasmer" "$HOME/.local/bin/wasmer"
+'''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.wasmer/bin:$PATH\"; wasmer --version"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export PATH=\"$HOME/.local/bin:$PATH\"; [ \"$(readlink -f \"$(command -v wasmer)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/wasmer/bin/wasmer\")\" ] && wasmer --version"]
 [component.fix]
 kind = "script"
-script = "curl -fsSL https://get.wasmer.io | sh"
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/wasmer"
+curl -fsSL https://get.wasmer.io | sh
+rm -rf "$DEST"
+install -d -m 755 "$DEST" "$HOME/.local/bin"
+cp -a "$HOME/.wasmer/." "$DEST/"
+ln -sfn "$DEST/bin/wasmer" "$HOME/.local/bin/wasmer"
+'''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "rm -rf \"$HOME/.wasmer\""]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; t=\"$HOME/.local/bin/wasmer\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/wasmer\" && rm -f \"$t\"; rm -rf \"$M/.toolchains/wasmer\""]
+[component.wiring]
+path_entries = ["~/.local/bin"]
 
 
 [[component]]
@@ -168,21 +188,46 @@ name = "uv (Python toolchain)"
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "command -v uv || [ -x \"$HOME/.local/bin/uv\" ]"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/uv/bin/uv\" ] && [ -x \"$M/.toolchains/uv/bin/uvx\" ] && [ \"$(readlink -f \"$HOME/.local/bin/uv\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/uv/bin/uv\")\" ] && [ \"$(readlink -f \"$HOME/.local/bin/uvx\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/uv/bin/uvx\")\" ] && case \"$(readlink -f \"$HOME/.local/bin/python3\" 2>/dev/null)\" in \"$M/.toolchains/uv/python\"/*) true;; *) false;; esac"]
 [component.install]
 kind = "script"
-script = "curl -LsSf https://astral.sh/uv/install.sh | sh"
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/uv/bin"
+install -d -m 755 "$DEST" "$HOME/.local/bin"
+curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="$DEST" sh
+ln -sfn "$DEST/uv" "$HOME/.local/bin/uv"
+ln -sfn "$DEST/uvx" "$HOME/.local/bin/uvx"
+export UV_PYTHON_INSTALL_DIR="$M/.toolchains/uv/python"
+"$DEST/uv" python install 3.14 --preview || "$DEST/uv" python install 3.13
+py="$(find "$UV_PYTHON_INSTALL_DIR" -path '*/bin/python3*' -type f | sort -V | tail -n1)"
+[ -n "$py" ] && ln -sfn "$py" "$HOME/.local/bin/python3"
+'''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.local/bin:$PATH\"; uv --version"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export PATH=\"$HOME/.local/bin:$PATH\"; [ \"$(readlink -f \"$(command -v uv)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/uv/bin/uv\")\" ] && case \"$(readlink -f \"$(command -v python3)\" 2>/dev/null)\" in \"$M/.toolchains/uv/python\"/*) true;; *) false;; esac && uv --version && python3 --version"]
 [component.fix]
 kind = "script"
-script = "export PATH=\"$HOME/.local/bin:$PATH\"; uv self update || curl -LsSf https://astral.sh/uv/install.sh | sh"
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/uv/bin"
+install -d -m 755 "$DEST" "$HOME/.local/bin"
+export PATH="$DEST:$PATH"
+uv self update || curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="$DEST" sh
+ln -sfn "$DEST/uv" "$HOME/.local/bin/uv"
+ln -sfn "$DEST/uvx" "$HOME/.local/bin/uvx"
+export UV_PYTHON_INSTALL_DIR="$M/.toolchains/uv/python"
+"$DEST/uv" python install 3.14 --preview || "$DEST/uv" python install 3.13
+py="$(find "$UV_PYTHON_INSTALL_DIR" -path '*/bin/python3*' -type f | sort -V | tail -n1)"
+[ -n "$py" ] && ln -sfn "$py" "$HOME/.local/bin/python3"
+'''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "uv self uninstall 2>/dev/null || rm -f \"$HOME/.local/bin/uv\" \"$HOME/.local/bin/uvx\""]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; for b in uv uvx python3; do t=\"$HOME/.local/bin/$b\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/uv\" && rm -f \"$t\"; done; rm -rf \"$M/.toolchains/uv/bin\""]
 
 
 # mlua — Lua-in-Rust scripting substrate (vendored Lua 5.4, pure rust-native, ZERO system-depth).

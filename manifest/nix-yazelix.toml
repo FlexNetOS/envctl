@@ -8,20 +8,41 @@ name = "Nix (Determinate, flakes)"
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "command -v nix || [ -e /nix ]"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/nix/bin/nix\" ] && [ \"$(readlink -f \"$HOME/.local/bin/nix\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/nix/bin/nix\")\" ] && [ -e /nix ]"]
 [component.install]
 kind = "script"
-script = "curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm"
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+if [ ! -e /nix ]; then
+  curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
+fi
+install -d -m 755 "$M/.toolchains/nix/bin" "$HOME/.local/bin"
+src="$(readlink -f /nix/var/nix/profiles/default/bin/nix)"
+install -m 755 "$src" "$M/.toolchains/nix/bin/nix"
+ln -sfn "$M/.toolchains/nix/bin/nix" "$HOME/.local/bin/nix"
+'''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", ". /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null; nix --version"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export PATH=\"$HOME/.local/bin:$PATH\"; [ \"$(readlink -f \"$(command -v nix)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/nix/bin/nix\")\" ] && nix --version"]
 [component.fix]
 kind = "script"
-script = ". /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null; sudo systemctl restart nix-daemon; nix --version"
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+sudo systemctl restart nix-daemon 2>/dev/null || true
+install -d -m 755 "$M/.toolchains/nix/bin" "$HOME/.local/bin"
+src="$(readlink -f /nix/var/nix/profiles/default/bin/nix)"
+install -m 755 "$src" "$M/.toolchains/nix/bin/nix"
+ln -sfn "$M/.toolchains/nix/bin/nix" "$HOME/.local/bin/nix"
+"$M/.toolchains/nix/bin/nix" --version
+'''
 [component.remove]
 kind = "script"
-script = "/nix/nix-installer uninstall --no-confirm 2>/dev/null || (sudo rm -rf /nix /etc/nix)"
+script = "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; t=\"$HOME/.local/bin/nix\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/nix\" && rm -f \"$t\"; rm -rf \"$M/.toolchains/nix\""
+[component.wiring]
+path_entries = ["~/.local/bin"]
 
 
 [[component]]

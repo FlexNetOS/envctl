@@ -6,7 +6,7 @@
 # hook that calls the installed binary: `exec rusty-idd next --base "$root"`. That hook only works if
 # `rusty-idd` is ON PATH in every box — this component is what guarantees that, the same way
 # grit.toml/env-ctl.toml own their tool binaries: a declarative detect/install/verify/fix/remove
-# component, installed box-wide to ~/.cargo/bin from the meta-cloned checkout.
+# component, installed under $META_ROOT/.toolchains/rusty-idd and symlinked onto PATH.
 #
 # TRUST-BOUNDARY NOTE: rusty-idd is pure-Rust, no-C (no openssl-sys / libgit2-sys in its lock), so —
 # like grit — it is an EXTERNAL TOOL BINARY managed as *data* (this TOML), never added to any envctl
@@ -17,7 +17,7 @@
 [[component]]
 id = "rusty-idd"
 name = "rusty-idd — harness control-plane front door"
-description = "Single-binary IDD engine + fleet-deploy control plane (ADR-0015). The thin-adapter SessionStart hooks deployed across the fleet call `rusty-idd next`, so the binary must be on PATH box-wide. External tool binary on ~/.cargo/bin; NOT linked into any envctl crate."
+description = "Single-binary IDD engine + fleet-deploy control plane (ADR-0015). The thin-adapter SessionStart hooks deployed across the fleet call `rusty-idd next`, so the binary must be on PATH box-wide. External tool binary installed under $META_ROOT/.toolchains/rusty-idd and symlinked onto ~/.cargo/bin; NOT linked into any envctl crate."
 requires = ["rustup"]   # cargo + a toolchain >= MSRV 1.88 (base.toml). Pure-Rust: no libssl-dev.
 destructive = false
 
@@ -25,7 +25,7 @@ destructive = false
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "command -v rusty-idd >/dev/null || [ -x \"$HOME/.cargo/bin/rusty-idd\" ]"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/rusty-idd/bin/rusty-idd\" ] && [ \"$(readlink -f \"$HOME/.cargo/bin/rusty-idd\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/rusty-idd/bin/rusty-idd\")\" ]"]
 
 # INSTALL: MSRV-gate (fail-closed, never silently upgrade), then build+place the `rusty-idd` bin from
 # the meta-cloned checkout. The bin lives in the `rusty-idd-cli` package (crates/cli); `--locked`
@@ -34,7 +34,10 @@ args = ["-lc", "command -v rusty-idd >/dev/null || [ -x \"$HOME/.cargo/bin/rusty
 kind = "script"
 script = '''
 set -euo pipefail
-export PATH="$HOME/.cargo/bin:$PATH"
+M="${META_ROOT:-$HOME/Desktop/meta}"
+export CARGO_HOME="$M/.toolchains/cargo"
+export RUSTUP_HOME="$M/.toolchains/rustup"
+export PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"
 
 # MSRV gate: pass iff cargo >= 1.88.0. MSRV line FIRST so `sort -V -C` succeeds only when the pair is
 # ascending (1.88.0 <= $ver). (Same ordering idiom as grit.toml/env-ctl.toml — do NOT reverse.)
@@ -42,11 +45,15 @@ ver="$(cargo --version | awk '{print $2}')"
 printf '1.88.0\n%s\n' "$ver" | sort -V -C || { echo "FATAL: cargo $ver < MSRV 1.88"; exit 1; }
 
 # rusty-idd lives in the meta workspace (registered in ../.meta.yaml, .gitignore'd, its own repo).
-repo="${RUSTY_IDD_REPO:-$HOME/Desktop/meta/rusty-idd}"
+repo="${RUSTY_IDD_REPO:-$M/rusty-idd}"
 test -d "$repo" || { echo "FATAL: rusty-idd checkout not found at $repo (set RUSTY_IDD_REPO)"; exit 1; }
 
-# Install only the front-door binary's package (crates/cli = rusty-idd-cli, bin name `rusty-idd`).
-cargo install --path "$repo/crates/cli" --locked
+# Install only the front-door binary's package (crates/cli = rusty-idd-cli, bin name `rusty-idd`)
+# into a meta-owned root, then expose a compatibility symlink on ~/.cargo/bin.
+ROOT="$M/.toolchains/rusty-idd"
+cargo install --path "$repo/crates/cli" --locked --root "$ROOT"
+mkdir -p "$HOME/.cargo/bin"
+ln -sfn "$ROOT/bin/rusty-idd" "$HOME/.cargo/bin/rusty-idd"
 '''
 
 # VERIFY: the installed binary answers. Read-only; a missing/broken rusty-idd reports verify=false
@@ -54,17 +61,23 @@ cargo install --path "$repo/crates/cli" --locked
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.cargo/bin:$PATH\"; rusty-idd --version >/dev/null"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export PATH=\"$HOME/.cargo/bin:$PATH\"; [ \"$(readlink -f \"$(command -v rusty-idd)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/rusty-idd/bin/rusty-idd\")\" ] && rusty-idd --version >/dev/null"]
 
 # FIX: idempotent rebuild+reinstall (force-overwrite). The dev-tools `cargo install --force` idiom.
 [component.fix]
 kind = "script"
 script = '''
 set -euo pipefail
-export PATH="$HOME/.cargo/bin:$PATH"
-repo="${RUSTY_IDD_REPO:-$HOME/Desktop/meta/rusty-idd}"
+M="${META_ROOT:-$HOME/Desktop/meta}"
+export CARGO_HOME="$M/.toolchains/cargo"
+export RUSTUP_HOME="$M/.toolchains/rustup"
+export PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"
+repo="${RUSTY_IDD_REPO:-$M/rusty-idd}"
 test -d "$repo" || { echo "FATAL: rusty-idd checkout not found at $repo (set RUSTY_IDD_REPO)"; exit 1; }
-cargo install --path "$repo/crates/cli" --force --locked
+ROOT="$M/.toolchains/rusty-idd"
+cargo install --path "$repo/crates/cli" --force --locked --root "$ROOT"
+mkdir -p "$HOME/.cargo/bin"
+ln -sfn "$ROOT/bin/rusty-idd" "$HOME/.cargo/bin/rusty-idd"
 '''
 
 # REMOVE: uninstall the binary by PACKAGE name (rusty-idd-cli), not bin name. `|| true` keeps reset
@@ -72,7 +85,7 @@ cargo install --path "$repo/crates/cli" --force --locked
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.cargo/bin:$PATH\"; cargo uninstall rusty-idd-cli || true"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; t=\"$HOME/.cargo/bin/rusty-idd\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/rusty-idd\" && rm -f \"$t\"; rm -rf \"$M/.toolchains/rusty-idd\""]
 
 # ---- WIRING: ~/.cargo/bin is already on PATH via other components; declared so reset can reason
 # ---- about it reversibly. No shell_rc / systemd / data_paths — rusty-idd is a plain binary.

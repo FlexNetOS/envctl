@@ -31,7 +31,7 @@ requires = ["rustup"]
 resolved = ""
 
 [components.claude-code-cli]
-content_hash = "af5110cb4a34882c"
+content_hash = "7d61e40d56ba0ad8"
 requires = []
 resolved = ""
 
@@ -75,8 +75,13 @@ requires = [
 resolved = ""
 
 [components.cuda-toolkit]
-content_hash = "7e883134a2a85adb"
+content_hash = "eef9f3936ec60de4"
 requires = ["rustup"]
+resolved = ""
+
+[components.curl]
+content_hash = "567c2e0421aca9c9"
+requires = []
 resolved = ""
 
 [components.dashboard]
@@ -128,6 +133,11 @@ resolved = ""
 [components.ghostty-default-terminal]
 content_hash = "1762b9eca6e7fb72"
 requires = ["ghostty"]
+resolved = ""
+
+[components.git]
+content_hash = "f8c685064b561f2d"
+requires = []
 resolved = ""
 
 [components.gpu-verify-scripts]
@@ -307,7 +317,7 @@ requires = []
 resolved = ""
 
 [components.nix]
-content_hash = "b6e1fcab48daf321"
+content_hash = "0247c129cf40fadd"
 requires = []
 resolved = ""
 
@@ -322,7 +332,7 @@ requires = ["nix"]
 resolved = ""
 
 [components.node-real]
-content_hash = "ccd41ad72108a3ab"
+content_hash = "9e4e5b37c861e25d"
 requires = []
 resolved = ""
 
@@ -365,7 +375,7 @@ requires = []
 resolved = ""
 
 [components.podman]
-content_hash = "a8a52b0418fb9be3"
+content_hash = "c0923dbf11260d3e"
 requires = []
 resolved = ""
 
@@ -395,7 +405,7 @@ requires = []
 resolved = ""
 
 [components.rusty-idd]
-content_hash = "f6148e56efb10da6"
+content_hash = "75fcb317175feb76"
 requires = ["rustup"]
 resolved = ""
 
@@ -415,7 +425,7 @@ requires = []
 resolved = ""
 
 [components.uv]
-content_hash = "2a3557de0adfa5c4"
+content_hash = "b6ad4d4f7bf184e9"
 requires = []
 resolved = ""
 
@@ -430,7 +440,7 @@ requires = ["bun"]
 resolved = ""
 
 [components.wasmer]
-content_hash = "9b42a3bc38d065bc"
+content_hash = "5c470343e53ac44f"
 requires = []
 resolved = ""
 
