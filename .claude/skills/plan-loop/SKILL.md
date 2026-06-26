@@ -6,9 +6,9 @@ description: >-
   architecture", run the planning engineer "until done"/"on repeat"/"unattended", "plan the backlog",
   or "resume the planning loop" from a handoff. Each iteration plans the next undone target via the
   full cartographer→researcher→analyst→verifier→architect cycle, then **self-evaluates AND
-  self-upgrades the harness after every cycle** (the `evolution-steward` runs the `harness-evolution`
-  method each run — evaluate → mine lessons → route → queue/apply fail-closed), checkpoints, and
-  self-paces. Follow-ups — "resume the loop", "re-run", "continue", "keep planning", "run it again",
+  self-upgrades the harness after every cycle** (the `evolution-steward` runs `harness-evolution`:
+  evaluate → mine → route → apply/queue fail-closed), checkpoints, and
+  self-paces. Follow-ups — "resume the loop", "re-run", "continue", "run it again",
   "redo only the <target>". At the per-session cycle budget it hands off to a fresh session via
   session-relay. Do NOT use for a single one-off plan (use `planning-engineer` directly) or for
   building/implementing code (use feature-forge/forge-loop). Read-only on the target's code.
