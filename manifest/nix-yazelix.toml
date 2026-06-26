@@ -42,7 +42,7 @@ ln -sfn "$M/.toolchains/nix/bin/nix" "$HOME/.local/bin/nix"
 kind = "script"
 script = "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; t=\"$HOME/.local/bin/nix\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/nix\" && rm -f \"$t\"; rm -rf \"$M/.toolchains/nix\""
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 
 
 [[component]]

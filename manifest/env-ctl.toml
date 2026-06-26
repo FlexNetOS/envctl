@@ -291,7 +291,7 @@ systemctl --user daemon-reload || true
 
 # ---- WIRING (engine-owned, reversible: backup-then-excise on reset; see engine/src/wiring.rs) ----
 [component.wiring]
-path_entries = ["${META_ROOT:-$HOME/Desktop/meta}/.local/bin", "~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 
 [[component.wiring.shell_rc]]
 file = "~/.bashrc"

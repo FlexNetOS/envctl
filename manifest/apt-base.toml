@@ -141,7 +141,7 @@ kind = "command"
 command = "bash"
 args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; for b in podman crun runc fuse-overlayfs fusermount3 pasta; do t=\"$HOME/.local/bin/$b\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/podman\" && rm -f \"$t\"; done; for f in containers.conf storage.conf registries.conf policy.json; do t=\"$HOME/.config/containers/$f\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/podman\" && rm -f \"$t\"; done; rm -rf \"$M/.toolchains/podman\""]
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 
 
 [[component]]

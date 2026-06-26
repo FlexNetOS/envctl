@@ -60,7 +60,7 @@ rm -rf "$M/.toolchains/gh"
 '''
 
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 
 # ── wild (linker) ── owner-preferred replacement for mold. crates.io pkg = `wild-linker`,
 # binary = `wild`. FULLY WIRED (Epic H TASK-0054): install ALSO writes a delimited block in
@@ -173,7 +173,7 @@ rm -f "$CFG.pre-wild.bak"
 '''
 
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 
 # ── kache (compiler cache) ── owner-preferred RUSTC_WRAPPER (kunobi-ninja/kache).
 # FULLY WIRED (Epic H TASK-0055): install ALSO writes a delimited `[build] rustc-wrapper`
@@ -271,7 +271,7 @@ fi
 '''
 
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 
 # ── nushell (nu) ── meta-owned musl static binary, replaces nix-delivered nu for
 # interactive use. Additive: yazelix's own bundled nu (absolute nix path) is untouched.
@@ -319,7 +319,7 @@ rm -rf "$M/.toolchains/nushell"
 '''
 
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 
 # ── zellij ── meta-owned musl static binary, replaces nix-delivered zellij for
 # interactive use. Additive: yazelix's own bundled zellij (nix path) is untouched.
@@ -367,7 +367,7 @@ rm -rf "$M/.toolchains/zellij"
 '''
 
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 
 # ── mise ── meta-owned static binary (single file). MISE_DATA_DIR already points
 # into meta via `envctl env --toolchains`. Repo: jdx/mise.
@@ -414,7 +414,7 @@ rm -rf "$M/.toolchains/mise"
 '''
 
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 
 # ── ollama ── meta-owned LLM runner, replaces the root /usr/local/bin/ollama install.
 # Ships as a zstd tarball with `bin/ollama` + `lib/ollama/` (the GPU runner .so set,
@@ -469,7 +469,7 @@ rm -rf "$M/.toolchains/ollama"
 '''
 
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 
 # ── llvm-clang ── meta-owned LLVM/clang toolchain, replaces the apt clang/llvm
 # system-depth install. Pure prebuilt tarball into .toolchains/llvm + ~/.local/bin
@@ -552,7 +552,7 @@ rm -rf "$M/.toolchains/llvm"
 '''
 
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 
 # ── libgccjit ── meta-owned libgccjit.so for the rustc_codegen_gcc backend. NOT a
 # system GCC build and NOT apt: downloads the prebuilt CI `libgccjit.so` from the
@@ -671,7 +671,7 @@ rm -rf "$M/.toolchains/nix-portable"
 '''
 
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 
 # ── yazi ── meta-owned terminal file manager (yazi + ya). Replaces the /nix yazelix-bundled
 # yazi for interactive use. Upstream ships a musl release zip carrying BOTH binaries, so no
@@ -735,7 +735,7 @@ rm -rf "$M/.toolchains/yazi"
 '''
 
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 
 # ── helix ── meta-owned modal editor (hx). The upstream release tarball BUNDLES the tree-sitter
 # runtime/ (grammars + queries), so NO source build and NO `hx --grammar fetch/build` is needed
@@ -798,7 +798,7 @@ rm -rf "$M/.toolchains/helix"
 '''
 
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 
 # ── huggingface-cli ── meta-owned HuggingFace CLI in an isolated venv (same venv idiom as
 # pytorch-venv, but under .toolchains). huggingface_hub renamed its CLI to `hf`; the classic
@@ -851,4 +851,4 @@ rm -rf "$DEST"
 '''
 
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]

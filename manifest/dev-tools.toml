@@ -179,7 +179,7 @@ kind = "command"
 command = "bash"
 args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; t=\"$HOME/.local/bin/wasmer\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/wasmer\" && rm -f \"$t\"; rm -rf \"$M/.toolchains/wasmer\""]
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 
 
 [[component]]
@@ -321,4 +321,4 @@ kind = "command"
 command = "bash"
 args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -L \"$HOME/.local/bin/lua-mlua\" ] && rm -f \"$HOME/.local/bin/lua-mlua\"; rm -rf \"$M/.toolchains/mlua\"; true"]
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]

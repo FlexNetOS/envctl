@@ -119,7 +119,7 @@ systemctl --user daemon-reload || true
 
 # ---- WIRING: PATH + the loopback user service that secretd orders after ----
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 
 [[component.wiring.systemd_user]]
 name = "sqld.service"

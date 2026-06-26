@@ -51,7 +51,7 @@ kind = "command"
 command = "bash"
 args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; t=\"$HOME/.local/bin/git\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/git\" && rm -f \"$t\"; rm -rf \"$M/.toolchains/git\""]
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 
 [[component]]
 id = "curl"
@@ -106,4 +106,4 @@ kind = "command"
 command = "bash"
 args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; t=\"$HOME/.local/bin/curl\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/curl\" && rm -f \"$t\"; rm -rf \"$M/.toolchains/curl\""]
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]

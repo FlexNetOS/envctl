@@ -94,4 +94,4 @@ args = ["-lc", "export PATH=\"$HOME/.cargo/bin:$PATH\"; cargo uninstall prompthu
 # ---- WIRING: ~/.cargo/bin is already on PATH via other components; declared so reset can reason
 # ---- about it reversibly. No shell_rc / systemd / data_paths — prompthub is a plain binary.
 [component.wiring]
-path_entries = ["~/.cargo/bin"]
+path_entries = ["$META_ROOT/.cargo/bin"]

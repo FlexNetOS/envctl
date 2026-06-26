@@ -44,6 +44,29 @@ fn manifest_loads_and_topo_sorts() {
 }
 
 #[test]
+fn manifest_path_entries_are_meta_root_hosted() {
+    let reg = Registry::load(&manifest_dir()).expect("manifest dir loads");
+    let mut bad = Vec::new();
+
+    for component in reg.ordered() {
+        for entry in &component.wiring.path_entries {
+            if entry.contains('~') || entry.contains("$HOME") || entry.contains("${HOME") {
+                bad.push(format!("{}: {}", component.id, entry));
+                continue;
+            }
+            if !entry.starts_with("$META_ROOT/") {
+                bad.push(format!("{}: {}", component.id, entry));
+            }
+        }
+    }
+
+    assert!(
+        bad.is_empty(),
+        "manifest path_entries must be explicit META_ROOT-hosted paths, not HOME/tilde/absolute host paths: {bad:#?}"
+    );
+}
+
+#[test]
 fn manifest_extends_merges_components_by_id() {
     let root = temp_manifest_dir("extends-merge");
     std::fs::create_dir_all(root.join("profiles")).unwrap();

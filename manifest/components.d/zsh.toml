@@ -82,4 +82,4 @@ rm -rf "$M/.toolchains/zsh"
 '''
 
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]

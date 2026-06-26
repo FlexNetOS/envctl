@@ -76,4 +76,4 @@ args = ["-lc", "export PATH=\"$HOME/.cargo/bin:$PATH\"; cargo uninstall grit || 
 # ---- WIRING: ~/.cargo/bin is already on PATH via other components; declared so reset can
 # ---- reason about it reversibly. No shell_rc / systemd / data_paths — grit is a plain binary.
 [component.wiring]
-path_entries = ["~/.cargo/bin"]
+path_entries = ["$META_ROOT/.cargo/bin"]

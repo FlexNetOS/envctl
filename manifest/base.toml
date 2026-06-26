@@ -73,7 +73,7 @@ kind = "command"
 command = "bash"
 args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; rm -rf \"$M/.toolchains/.bun\"; [ -L \"$HOME/.local/bin/bun\" ] && rm \"$HOME/.local/bin/bun\" || true"]
 [component.wiring]
-path_entries = ["~/Desktop/meta/.toolchains/.bun/bin", "~/.local/bin"]
+path_entries = ["$META_ROOT/.toolchains/.bun/bin", "$META_ROOT/.local/bin"]
 [[component.wiring.shell_rc]]
 file = "~/.bashrc"
 marker = "meta toolchain path"
@@ -166,7 +166,7 @@ kind = "command"
 command = "bash"
 args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; for b in node npm npx corepack; do t=\"$HOME/.local/bin/$b\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/node\" && rm -f \"$t\"; done; rm -rf \"$M/.toolchains/node\""]
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 
 
 [[component]]

@@ -132,7 +132,7 @@ done
 rm -rf "$M/.toolchains/cuda"
 '''
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/.local/bin"]
 [[component.wiring.shell_rc]]
 file = "~/.bashrc"
 marker = "cuda env"
