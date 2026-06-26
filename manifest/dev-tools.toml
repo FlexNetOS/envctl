@@ -203,8 +203,13 @@ ln -sfn "$DEST/uv" "$META_ROOT/.local/bin/uv"
 ln -sfn "$DEST/uvx" "$META_ROOT/.local/bin/uvx"
 export UV_PYTHON_INSTALL_DIR="$M/.toolchains/uv/python"
 "$DEST/uv" python install 3.14 --preview || "$DEST/uv" python install 3.13
-py="$(find "$UV_PYTHON_INSTALL_DIR" -path '*/bin/python3*' -type f | sort -V | tail -n1)"
-[ -n "$py" ] && ln -sfn "$py" "$META_ROOT/.local/bin/python3"
+# Select the python3 INTERPRETER (the canonical bin/python3), never a *-config script or the bare
+# versioned binary; the old `*/bin/python3*` -type f glob dropped the python3 symlink and let
+# `python3.14-config` sort last, silently linking python3 to a config script. Verify the pick imports
+# its stdlib before linking, so a broken/partial install can never leave python3 pointing at a
+# non-working interpreter. Link into the meta-local prefix ($META_ROOT), never $HOME (meta-local policy).
+py="$(find "$UV_PYTHON_INSTALL_DIR" -path '*/bin/python3' | sort -V | tail -n1)"
+[ -n "$py" ] && "$py" -c 'import encodings' 2>/dev/null && ln -sfn "$py" "$META_ROOT/.local/bin/python3"
 '''
 [component.verify]
 kind = "command"
@@ -223,8 +228,13 @@ ln -sfn "$DEST/uv" "$META_ROOT/.local/bin/uv"
 ln -sfn "$DEST/uvx" "$META_ROOT/.local/bin/uvx"
 export UV_PYTHON_INSTALL_DIR="$M/.toolchains/uv/python"
 "$DEST/uv" python install 3.14 --preview || "$DEST/uv" python install 3.13
-py="$(find "$UV_PYTHON_INSTALL_DIR" -path '*/bin/python3*' -type f | sort -V | tail -n1)"
-[ -n "$py" ] && ln -sfn "$py" "$META_ROOT/.local/bin/python3"
+# Select the python3 INTERPRETER (the canonical bin/python3), never a *-config script or the bare
+# versioned binary; the old `*/bin/python3*` -type f glob dropped the python3 symlink and let
+# `python3.14-config` sort last, silently linking python3 to a config script. Verify the pick imports
+# its stdlib before linking, so a broken/partial install can never leave python3 pointing at a
+# non-working interpreter. Link into the meta-local prefix ($META_ROOT), never $HOME (meta-local policy).
+py="$(find "$UV_PYTHON_INSTALL_DIR" -path '*/bin/python3' | sort -V | tail -n1)"
+[ -n "$py" ] && "$py" -c 'import encodings' 2>/dev/null && ln -sfn "$py" "$META_ROOT/.local/bin/python3"
 '''
 [component.remove]
 kind = "command"
