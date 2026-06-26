@@ -35,6 +35,11 @@ completeness sweep — the gate that makes "nothing major unexamined" a checked 
    architect (box-drawing chars). And **`graph/<T>.diff.md`** — the delta vs the previous committed
    snapshot: this is how the graph *updates* across cycles (new/removed symbols, edge churn, metric
    movement). Record `graph_snapshot: graph/<T>.symbols.json@<git-sha>` in `loop_state.md`.
+5. **Cross-repo edges (when the target spans repos / is a fleet run):** beyond the intra-graph
+   `cross-service-impact`, map who calls/uses what **ACROSS** repos and the blast radius of each
+   boundary via the **`cross-repo-reference`** skill (`git-kb code callers/callees/impact` across repo
+   roots + the `meta` CLI). Write `graph/<T>.cross-repo.md` — the cross-repo edge list feeding the
+   architect's fleet-level diagram. Skip with a one-line note for a single self-contained crate.
 5. **Auto-derive `targets.md` when absent** — enumerate the repo's Cargo workspace members + major
    modules, one `- [ ] <T>: <one-line>` each (small, independent targets). An explicit owner-supplied
    target list in the invocation overrides this.
