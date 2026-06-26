@@ -20,8 +20,8 @@ Required behavior:
 - Keep production code read-only. The permitted writes are planning artifacts under
   `.handoff/loop/plan/`, docs/ROADMAP or draft ADR promotion, and additive RED test evidence only
   when the planning skill explicitly requires it.
-- Launch the 5× Opus 4.8 max-effort background-agent lanes before reducing findings; keep the
-  foreground interactive and fail closed if Opus cannot be resolved instead of silently downgrading.
+- Launch the 5× Opus 4.8 max-effort background-agent lanes via weave before reducing findings; keep the
+  foreground interactive and use weave to launch/route the actual Opus workers; fail closed only if weave cannot produce an Opus-capable worker.
 - Include the governance/settings/config axis, rusty-idd north-star verdict, tool-evaluation, ASCII
   diagrams, graph snapshot/diff, and TDD RED-suite evidence/counts in the final plan contract.
 - Verify claims adversarially before they enter the plan; unverified or infeasible upgrades must stay

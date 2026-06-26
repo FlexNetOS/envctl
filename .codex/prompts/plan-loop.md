@@ -17,7 +17,7 @@ Required behavior:
   one-off chat proposal.
 - On `resume`, reconstruct state from `.handoff/loop/plan/loop_state.md`, the latest plan reports,
   ICM recall, and any committed handoff packet before choosing work.
-- Each iteration launches the 5× Opus 4.8 max-effort background-agent lanes (code graph, web
+- Each iteration launches the 5× Opus 4.8 max-effort background-agent lanes via weave (code graph, web
   trends, governance, settings/config, rusty-idd north-star) so the foreground remains interactive,
   then runs analysis, test strategy, verification, synthesis, and self-eval.
 - If no backlog exists, seed the first fleet target as `rusty-idd` when present under meta and record

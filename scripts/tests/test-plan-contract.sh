@@ -61,6 +61,7 @@ done
 grep -q 'prompt_hub/prompts/planning-engineer-loop.prompt.yml' "$repo_root/.codex/prompts/plan-loop.md"   || fail "plan-loop prompt does not cite the PromptHub source of truth"
 grep -q 'prompt_hub/prompts/planning-engineer-loop.prompt.yml' "$repo_root/.agents/skills/plan-loop/SKILL.md"   || fail "plan-loop skill does not cite the PromptHub source of truth"
 grep -q '5× Opus 4.8' "$repo_root/.agents/skills/plan-loop/SKILL.md"   || fail "plan-loop skill does not require 5x Opus 4.8 background lanes"
+grep -q 'Use weave when running from Codex' "$repo_root/.agents/skills/plan-loop/SKILL.md"   || fail "plan-loop skill does not route Codex Opus lanes through weave"
 grep -q 'foreground chat remains interactive' "$repo_root/.agents/skills/plan-loop/SKILL.md"   || fail "plan-loop skill does not protect foreground interactivity"
 grep -q 'rusty-idd' "$repo_root/.agents/skills/plan-loop/SKILL.md"   || fail "plan-loop skill does not seed/surface rusty-idd"
 grep -q 'git-kb code' "$repo_root/.agents/skills/planning-engineer/SKILL.md"   || fail "planning-engineer skill does not require git-kb code intelligence"
@@ -68,8 +69,12 @@ grep -q 'git-kb code doctor' "$repo_root/.agents/skills/planning-engineer/SKILL.
 grep -q 'meta↔envctl' "$repo_root/.codex/prompts/plan-loop.md"   || fail "plan-loop prompt does not capture the meta/envctl/prompt_hub relationship"
 for lane in code-graph web-trends governance settings-config rusty-idd-north-star; do
   [ -f "$repo_root/.codex/agents/plan-opus-bg-$lane.toml" ] || fail "missing Opus background lane agent: $lane"
-  grep -q 'model = "claude-opus-4-8"' "$repo_root/.codex/agents/plan-opus-bg-$lane.toml"     || fail "Opus background lane $lane does not pin claude-opus-4-8"
+  ! grep -q '^model = "claude-opus-4-8"' "$repo_root/.codex/agents/plan-opus-bg-$lane.toml"     || fail "Opus background lane $lane pins unsupported Codex model instead of using weave"
+  grep -q 'weave' "$repo_root/.codex/agents/plan-opus-bg-$lane.toml"     || fail "Opus background lane $lane does not instruct weave transport"
 done
+if grep -R '^model = "claude-opus-4-8"' "$repo_root/.codex/agents"/plan-*.toml >/dev/null; then
+  fail "Codex plan agents must not pin unsupported claude-opus-4-8 directly; use weave transport"
+fi
 
 python3 - "$repo_root" <<'PY'
 from pathlib import Path
