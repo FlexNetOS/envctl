@@ -179,7 +179,8 @@ fn install_artifact(
     if !a.renamed && shadows_system(&a.install_name) {
         return Err(InstallErr::Shadow(a.install_name.clone()));
     }
-    let dir = local_bin();
+    let layout = MetaLayout::from_env_or_default();
+    let dir = layout.bin();
     let target = dir.join(&a.install_name);
     let target_s = target.display().to_string();
 
@@ -214,7 +215,7 @@ fn install_artifact(
     if dry_run {
         return Ok(Some(target_s));
     }
-    ensure_private_bin(&dir)?;
+    layout.ensure_dirs()?;
     let src = std::fs::canonicalize(&a.source).unwrap_or_else(|_| a.source.clone());
     if target.symlink_metadata().is_ok() {
         let _ = std::fs::remove_file(&target);
@@ -302,9 +303,6 @@ fn local_bin() -> PathBuf {
 }
 fn repo_store() -> PathBuf {
     MetaLayout::from_env_or_default().repo_store()
-}
-fn ensure_private_bin(dir: &Path) -> std::io::Result<()> {
-    std::fs::create_dir_all(dir)
 }
 // AUDIT-FIX: nanosecond resolution so two foreign-file backups taken within the
 // same second don't produce the same `.bak.<n>` suffix and clobber each other

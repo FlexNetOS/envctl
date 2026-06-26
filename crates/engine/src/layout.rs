@@ -6,7 +6,31 @@
 //! not through hand-maintained host-global paths.  The legacy `.toolchains/`
 //! tree is kept as a compatibility prefix while existing component manifests
 //! are migrated.
-use std::path::{Path, PathBuf};
+use std::io;
+use std::path::{Component, Path, PathBuf};
+
+/// Whether a layout path is part of envctl's canonical target topology or a
+/// compatibility surface kept for older manifests while they migrate.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum LayoutKind {
+    Canonical,
+    LegacyCompatibility,
+}
+
+/// One named path in envctl's meta-hosted install registry.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct LayoutEntry {
+    pub key: &'static str,
+    pub path: PathBuf,
+    pub kind: LayoutKind,
+    pub purpose: &'static str,
+}
+
+impl LayoutEntry {
+    pub fn is_canonical(&self) -> bool {
+        self.kind == LayoutKind::Canonical
+    }
+}
 
 /// The canonical install topology for a single meta workspace.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -91,6 +115,118 @@ impl MetaLayout {
         self.meta_root.join(".toolchains")
     }
 
+    /// The central path registry for envctl-owned installs and state.
+    ///
+    /// Callers should consume this registry instead of re-deriving path lists by
+    /// hand.  `.toolchains` is intentionally labeled compatibility-only: envctl
+    /// can still expose it to older manifests, but new materialization happens
+    /// through the canonical `.local` tree.
+    pub fn entries(&self) -> Vec<LayoutEntry> {
+        vec![
+            LayoutEntry {
+                key: "local",
+                path: self.local(),
+                kind: LayoutKind::Canonical,
+                purpose: "meta-local prefix for envctl-managed installs",
+            },
+            LayoutEntry {
+                key: "bin",
+                path: self.bin(),
+                kind: LayoutKind::Canonical,
+                purpose: "executable symlink farm exposed on PATH",
+            },
+            LayoutEntry {
+                key: "lib",
+                path: self.lib(),
+                kind: LayoutKind::Canonical,
+                purpose: "shared libraries and native support files",
+            },
+            LayoutEntry {
+                key: "share",
+                path: self.share(),
+                kind: LayoutKind::Canonical,
+                purpose: "architecture-independent shared data",
+            },
+            LayoutEntry {
+                key: "state",
+                path: self.state(),
+                kind: LayoutKind::Canonical,
+                purpose: "meta-local persistent state",
+            },
+            LayoutEntry {
+                key: "cache",
+                path: self.cache(),
+                kind: LayoutKind::Canonical,
+                purpose: "meta-local cache data",
+            },
+            LayoutEntry {
+                key: "tmp",
+                path: self.tmp(),
+                kind: LayoutKind::Canonical,
+                purpose: "meta-local temporary workspace",
+            },
+            LayoutEntry {
+                key: "opt",
+                path: self.opt(),
+                kind: LayoutKind::Canonical,
+                purpose: "component prefixes under .local/opt/<component>",
+            },
+            LayoutEntry {
+                key: "envctl_share",
+                path: self.envctl_share(),
+                kind: LayoutKind::Canonical,
+                purpose: "envctl shared data root",
+            },
+            LayoutEntry {
+                key: "repo_store",
+                path: self.repo_store(),
+                kind: LayoutKind::Canonical,
+                purpose: "0700 source/build repo store for envctl add-repo",
+            },
+            LayoutEntry {
+                key: "legacy_toolchains",
+                path: self.legacy_toolchains(),
+                kind: LayoutKind::LegacyCompatibility,
+                purpose: "compatibility prefix for manifests not yet migrated to .local",
+            },
+        ]
+    }
+
+    /// Canonical directories that envctl is allowed to materialize.
+    pub fn canonical_dirs(&self) -> Vec<PathBuf> {
+        self.entries()
+            .into_iter()
+            .filter(LayoutEntry::is_canonical)
+            .map(|entry| entry.path)
+            .collect()
+    }
+
+    /// Create the canonical meta-local directory tree.
+    ///
+    /// This deliberately skips compatibility-only paths such as `.toolchains`:
+    /// those may continue to exist on old machines, but envctl no longer treats
+    /// them as the target organization for new installs.
+    pub fn ensure_dirs(&self) -> io::Result<()> {
+        for dir in self.canonical_dirs() {
+            std::fs::create_dir_all(dir)?;
+        }
+        set_private_dir_permissions(&self.repo_store())?;
+        Ok(())
+    }
+
+    /// Create and return the canonical prefix for one component.
+    pub fn ensure_component_prefix(&self, id: &str) -> io::Result<PathBuf> {
+        if !is_safe_component_id(id) {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                format!("component id '{id}' must be a single path component"),
+            ));
+        }
+        let prefix = self.component_prefix(id);
+        std::fs::create_dir_all(&prefix)?;
+        Ok(prefix)
+    }
+
     /// Stable environment variables exported by `envctl env --toolchains`.
     pub fn env_exports(&self) -> Vec<(&'static str, PathBuf)> {
         vec![
@@ -108,10 +244,32 @@ impl MetaLayout {
     }
 }
 
+fn is_safe_component_id(id: &str) -> bool {
+    if id.is_empty() || id.contains('/') || id.contains('\\') {
+        return false;
+    }
+    let mut comps = Path::new(id).components();
+    matches!(
+        (comps.next(), comps.next()),
+        (Some(Component::Normal(_)), None)
+    )
+}
+
+#[cfg(unix)]
+fn set_private_dir_permissions(dir: &Path) -> io::Result<()> {
+    use std::os::unix::fs::PermissionsExt;
+    std::fs::set_permissions(dir, std::fs::Permissions::from_mode(0o700))
+}
+
+#[cfg(not(unix))]
+fn set_private_dir_permissions(_dir: &Path) -> io::Result<()> {
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
-    use super::MetaLayout;
-    use std::path::Path;
+    use super::{LayoutKind, MetaLayout};
+    use std::path::{Path, PathBuf};
 
     #[test]
     fn resolves_system_shaped_tree_inside_meta() {
@@ -143,5 +301,81 @@ mod tests {
             .iter()
             .any(|(k, v)| *k == "ENVCTL_REPO_STORE"
                 && v == Path::new("/meta/.local/share/envctl/repos")));
+    }
+
+    #[test]
+    fn registry_marks_toolchains_as_legacy_compatibility() {
+        let l = MetaLayout::from_meta_root("/meta");
+        let entries = l.entries();
+        let legacy = entries
+            .iter()
+            .find(|entry| entry.key == "legacy_toolchains")
+            .expect("legacy toolchains entry");
+        assert_eq!(legacy.path, Path::new("/meta/.toolchains"));
+        assert_eq!(legacy.kind, LayoutKind::LegacyCompatibility);
+        assert!(!legacy.is_canonical());
+
+        let repo_store = entries
+            .iter()
+            .find(|entry| entry.key == "repo_store")
+            .expect("repo store entry");
+        assert_eq!(repo_store.kind, LayoutKind::Canonical);
+        assert_eq!(
+            repo_store.path,
+            Path::new("/meta/.local/share/envctl/repos")
+        );
+    }
+
+    #[test]
+    fn ensure_dirs_materializes_canonical_tree_only() {
+        let root = tempdir("layout-materialize");
+        let l = MetaLayout::from_meta_root(&root);
+
+        l.ensure_dirs().unwrap();
+
+        for dir in l.canonical_dirs() {
+            assert!(dir.is_dir(), "canonical dir missing: {}", dir.display());
+        }
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            assert_eq!(
+                l.repo_store().metadata().unwrap().permissions().mode() & 0o777,
+                0o700
+            );
+        }
+        assert!(
+            !l.legacy_toolchains().exists(),
+            "compatibility .toolchains must not be materialized as canonical layout"
+        );
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn component_prefix_materializer_rejects_escaped_ids() {
+        let root = tempdir("layout-component-prefix");
+        let l = MetaLayout::from_meta_root(&root);
+
+        assert_eq!(
+            l.ensure_component_prefix("ripgrep").unwrap(),
+            root.join(".local/opt/ripgrep")
+        );
+        assert!(l.ensure_component_prefix("../evil").is_err());
+        assert!(l.ensure_component_prefix("nested/tool").is_err());
+        assert!(l.ensure_component_prefix("").is_err());
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    fn tempdir(label: &str) -> PathBuf {
+        let nanos = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_nanos())
+            .unwrap_or(0);
+        let dir =
+            std::env::temp_dir().join(format!("envctl-{label}-{}-{nanos}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
     }
 }

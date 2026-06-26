@@ -319,7 +319,9 @@ pub fn connect_agent(spec: &AddRepoSpec) -> anyhow::Result<()> {
     let agent = agent
         .ok_or_else(|| anyhow::anyhow!("no AI coding CLI found; {}", available_agents_msg()))?;
 
-    let repos_root = crate::layout::MetaLayout::from_env_or_default().repo_store();
+    let layout = crate::layout::MetaLayout::from_env_or_default();
+    layout.ensure_dirs()?;
+    let repos_root = layout.repo_store();
     ensure_private_dir(&repos_root)?;
     let clone_dir = repos_root.join(&spec.id);
 

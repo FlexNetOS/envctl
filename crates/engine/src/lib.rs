@@ -49,7 +49,7 @@ pub use event::{Event, EventSink, GpuSample, Stream, Telemetry};
 pub use hub_registry::{
     HubRegistryDrift, HubRegistryEntryView, HubRegistryReport, HubRegistrySource, HubRegistryStatus,
 };
-pub use layout::MetaLayout;
+pub use layout::{LayoutEntry, LayoutKind, MetaLayout};
 pub use model::{
     AddRepoSpec, AiAgent, BuildStrategy, BuildSystem, ComponentState, DataPath, DesktopEntry,
     DriftItem, DriftKind, EnvReport, MetaBoundaryReport, MetaBoundaryViolation,
