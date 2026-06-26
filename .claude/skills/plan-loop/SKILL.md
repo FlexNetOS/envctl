@@ -14,7 +14,9 @@ description: >-
 # Planning Engineer Loop (Ralph)
 
 You run the `planning-engineer` crew as a **self-perpetuating loop** over a durable backlog of
-planning targets, instead of one target at a time. The *Ralph* pattern: durable state on disk, each
+planning targets, instead of one target at a time. The owner intent is captured upstream in
+`/home/drdave/Desktop/meta/prompt_hub/prompts/planning-engineer-loop.prompt.yml`; this runnable loop
+must preserve that prompt's fleet-wide, self-evolving, background-agent, graph-first contract. The *Ralph* pattern: durable state on disk, each
 iteration reads it, plans the next undone target, writes the result back, and re-fires. The loop's
 intelligence lives in the **backlog + checkpoints**, not in conversation memory — that is exactly
 what lets a fresh session pick it up with zero loss (see `session-relay-resume`).
@@ -44,9 +46,13 @@ mirrors the `.handoff/loop/rust-port/` namespacing precedent). Lay it down with 
 ## Target backlog (`targets.md`) — auto-derived, owner-overridable
 If `targets.md` does not exist, the first cycle's `plan-cartographer` **auto-derives** it by
 enumerating the repo's Cargo workspace members + major modules, one `- [ ] <T>: <one-line>` each
-(keep targets small & independent — one crate/subsystem per item). An **explicit owner-supplied
-target list** in the invocation OVERRIDES the auto-derived list for that run. DONE scope = every
-target in `targets.md` planned + verified.
+(keep targets small & independent — one crate/subsystem per item). It must also read
+`/home/drdave/Desktop/meta/.meta.yaml`, `AGENTS.md`, `.codex/config.toml`, and the PromptHub planning
+prompt so the backlog reflects the **meta↔envctl relationship** and owner north star, not only Cargo
+members. First-run seed rule: include **`rusty-idd`** as the first surfaced fleet planning target when
+it exists under meta; that lane is the real upgrade path into the Forge/IDD loop. An **explicit
+owner-supplied target list** in the invocation OVERRIDES the auto-derived list for that run. DONE
+scope = every target in `targets.md` planned + verified.
 
 > **hf-aware (optional):** if `hf` is on PATH and the ledger-residency guard holds, you MAY mint
 > planning targets as cards and pick via `hf resume --json` (as forge-loop does). Otherwise use the
@@ -68,9 +74,11 @@ target in `targets.md` planned + verified.
 3. **Pick** the next target: the top unchecked unblocked `- [ ] <T>` in `targets.md`. A `- [!!]`
    SUPERVISED target → **REFUSE to auto-run**: write `.handoff/loop/plan/NEEDS-HUMAN` (target id +
    why), do not pick it, stop.
-4. **Run ONE planning cycle** on `T` via the `planning-engineer` orchestrator: cartographer ‖
-   researcher (fan-out) → analysts (incl. `plan-test-strategist` on the always-on `test-coverage`
-   dimension) → verifiers (gate) → architect → evolution-steward self-eval. This produces
+4. **Run ONE planning cycle** on `T` via the `planning-engineer` orchestrator using the required
+   **5× Opus 4.8 max-effort background-agent fan-out** while the foreground chat remains interactive:
+   code-graph ‖ web-trends ‖ governance ‖ settings/config ‖ rusty-idd+north-star → analysts (incl.
+   `plan-test-strategist` on the always-on `test-coverage` dimension) → verifiers (gate) → architect
+   → evolution-steward self-eval. This produces
    `reports/<T>-plan.md` (with a *Test Strategy & Coverage* section) + the graph + the ROADMAP/ADR
    promotion + a **Feature-Forge test-build handoff** (the loop plans the suite; Feature Forge builds +
    runs it). On an unresolvable verifier
@@ -92,6 +100,24 @@ status-truth over `targets.md` + the ICM store + the consolidated batch summary;
 — the retro over the batch (mine lessons → `LESSONS.md`/`proposed-upgrades.md`, apply queued low-risk
 upgrades via PR, never weaken a gate). Then **clear the marker, set `last_wrapup_total = cycles_total`**,
 and continue if under `cycle_budget`. The boundary is *in-session* — NOT a hand-off.
+
+## Background-agent launch contract (Codex + Claude compatible)
+
+The loop must never do fleet scans or web sweeps inline in the foreground. Launch five background
+lanes immediately and reduce only their structured artifact paths/verdicts:
+
+| Lane | Codex custom agent | Model/effort | Required output |
+|------|--------------------|--------------|-----------------|
+| Code graph + cross-repo refs | `plan-opus-bg-code-graph` | `claude-opus-4-8`, max/xhigh | graph snapshots/diffs + `git-kb code` query JSON |
+| Web/trends + skeptic | `plan-opus-bg-web-trends` | `claude-opus-4-8`, max/xhigh | dated 90-day research + refutation notes |
+| Governance/control plane | `plan-opus-bg-governance` | `claude-opus-4-8`, max/xhigh | rules/instructions/hooks/policy/CLAUDE/AGENTS drift |
+| Settings/config hygiene | `plan-opus-bg-settings-config` | `claude-opus-4-8`, max/xhigh | MCP rot, skill overload, token burn, permissions/config drift |
+| Rusty-IDD north star | `plan-opus-bg-rusty-idd-north-star` | `claude-opus-4-8`, max/xhigh | first-target verdict + Forge/IDD loop upgrade path |
+
+If the active runtime cannot resolve Opus 4.8, **fail closed** with a provider/config gap. Do not
+silently downgrade to Sonnet or a lower-effort model. In Claude Code use `run_in_background:true`; in
+Codex use custom subagent files and background/automation/worktree surfaces where available. The owner
+must be able to keep talking to the foreground orchestrator while these lanes run.
 
 ## Self-pacing (how the loop re-fires)
 - Default: **dynamic `/loop` / runtime scheduler** — re-enter this skill for the next iteration by using the active runtime's supported loop/scheduling surface (for Claude Code, `/loop`/`CronCreate`; do not name or call an unavailable tool). Pass the same `/plan-loop …` prompt verbatim. A planning cycle is deliberative (more reasoning,

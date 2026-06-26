@@ -27,6 +27,25 @@ plan/graph artifacts under `.handoff/loop/plan/`, additive RED test suites (the 
 For a CONTINUOUS run over a backlog of targets, the `plan-loop` skill wraps this one cycle in the
 Ralph loop. This skill IS one cycle.
 
+## Source-of-truth intent and meta/envctl relationship
+
+This ejected harness must stay aligned with the owner prompt in
+`/home/drdave/Desktop/meta/prompt_hub/prompts/planning-engineer-loop.prompt.yml`. Treat that
+PromptHub file as the upstream **north-star intent** and this envctl package as the runnable, tested
+Codex/agent implementation of it. When they differ, preserve the stricter requirement and patch the
+harness; never silently downgrade the prompt's intent.
+
+Current relationship truth:
+- `meta` is the fleet/workspace mission-control root (`/home/drdave/Desktop/meta`) and `.meta.yaml`
+  is the fleet index the loop reads before deriving targets.
+- `envctl` is a first-class meta peer: the pure-Rust agentic environment manager that installs tools
+  into meta (`meta/.toolchains/`, `$META_ROOT`) and governs reproducible agent/runtime config.
+- `prompt_hub` carries owner-authored intent prompts; this planning-engineer package is the
+  operational harness that turns that intent into durable `.handoff/loop/plan/` evidence.
+- The first fleet loop run is expected to surface **`rusty-idd`** as the priority planning target and
+  the real upgrade path into the Forge/IDD loop; if auto-derivation misses it, record that as a
+  governance/config finding and seed `rusty-idd` explicitly.
+
 ## Execution mode — Hybrid (background fan-out sub-agents + file-based), and why
 
 Single-orchestrator with specialist sub-agents over a durable ledger — **not** a live `TeamCreate`
@@ -36,14 +55,33 @@ Per phase:
 
 | Phase | Mode | Shape |
 |-------|------|-------|
-| 1 Map + Research | Sub-agent, **parallel** (`run_in_background:true`) | cartographer ‖ trend-researcher |
+| 1 Five-lane fleet fan-out | Sub-agent, **parallel background** (`run_in_background:true`) | 5 Opus 4.8 max-effort lanes (below) |
 | 2 Analyze | Sub-agent, **parallel** | one analyst per dimension + governance/config auditor + test strategist → cited gaps + upgrades |
 | 3 Verify (gate) | Sub-agent, **parallel** | one verifier per dimension → refute claims + feasibility-gate upgrades |
 | 4 Synthesize | Sub-agent, **sequential** | architect → plan + ASCII diagrams + tool-eval |
 | 5 Self-eval | Sub-agent, **sequential** | evolution-steward → evaluate this cycle, queue upgrades |
 
-All `Agent` calls use `model: "opus"`. Data transfer is **file-based** (pass artifact PATHS, never
-contents) + **return-value** (each agent returns a one-line verdict the orchestrator reduces).
+**Foreground-interactive law:** the orchestrator/main chat stays available to the owner. Heavy web,
+repo, governance, settings/config, and `rusty-idd`/north-star work runs only in background agents; the
+foreground reduces structured artifact paths and verdicts. Do not block the owner chat with inline
+fleet scans.
+
+**Five required background-agent lanes (launch together, max effort):**
+1. `plan-opus-bg-code-graph` — per-repo `git-kb code` index/symbols/callers/callees/impact/flows,
+   code-graph snapshot+diff, cross-repo references.
+2. `plan-opus-bg-web-trends` — rolling 90-day web/context7/Hugging Face research plus skeptic check.
+3. `plan-opus-bg-governance` — rules, instructions, hooks, policy, CLAUDE.md/AGENTS.md drift.
+4. `plan-opus-bg-settings-config` — `.codex`/`.claude` settings, MCP rot, skill overload, token burn,
+   permissions, `.meta.yaml`, Cargo/toolchain/CI/bun/config drift.
+5. `plan-opus-bg-rusty-idd-north-star` — first-run `rusty-idd` surfacing, meta↔envctl↔prompt_hub
+   relationship truth, owner north-star capture, Forge/IDD-loop upgrade path.
+
+All `Agent` calls use Opus-class max effort. In Claude-compatible runtimes use explicit
+`claude-opus-4-8`/`anthropic/claude-opus-4-8` with `run_in_background:true`. In Codex runtimes, spawn
+the `.codex/agents/plan-opus-bg-*.toml` custom agents; if the local provider cannot resolve Opus,
+fail closed and report the provider gap instead of silently falling back to a weaker model. Data
+transfer is **file-based** (pass artifact PATHS, never contents) + **return-value** (each agent returns
+a one-line verdict the orchestrator reduces).
 
 ## Agents (in the plugin's shared `harness/agents/` pool)
 
@@ -75,19 +113,32 @@ members + major modules and the loop picks the next `- [ ]`. Record `T`, `target
 `recency_window_days: 90` in `loop_state.md`. (Read-only target: no build required to start, but the
 verifier may run it — note the toolchain.)
 
-## Phase 1: MAP + RESEARCH (fan-out, parallel) — `run_in_background:true`
+## Phase 1: MAP + RESEARCH (five-lane fan-out, parallel background) — `run_in_background:true`
 
-Spawn **both** concurrently:
-- `plan-cartographer` → `.handoff/loop/plan/graph/<T>.{symbols,callgraph,metrics}.json` +
+Launch the **five Opus 4.8 background lanes** above in parallel; at minimum the existing packaged
+specialists map onto them as: cartographer/code-graph, trend-researcher/web-trends,
+governance-config-auditor/governance+settings, settings/config hygiene, and the dedicated rusty-idd
+north-star lane.
+
+Required artifacts:
+- `plan-cartographer` / code-graph lane → `.handoff/loop/plan/graph/<T>.{symbols,callgraph,metrics}.json` +
   `<T>.graph.md` + `<T>.diff.md` (delta vs the previous committed snapshot — this is the graph
-  *update*) + `reports/codemap-<T>.md`; seeds `dimensions.md` with the dimensions this target needs
-  (architecture, data-flow, hotspots/coupling, dead-code, public-API/contracts, perf, correctness/
-  accuracy, tooling, governance+settings+config, test-coverage, …). Built **only** from `git-kb code` JSON (no C dep, no graph DB).
-- `plan-trend-researcher` → `.handoff/loop/plan/research/<T>.trends.md` — best-practices + latest
-  trends in a **rolling 90-day window** (compute from today's date; prefer in-window sources, flag
-  older), every finding cited + dated.
+  *update*) + `reports/codemap-<T>.md`; seeds `dimensions.md` with the dimensions this target needs.
+  Built **only** from `git-kb code` JSON (no C dep, no graph DB). Required command families:
+  `git-kb code doctor`, `index`, `symbols`, `callers`, `callees`, `impact`, `flows`, `query hotspots`,
+  `query public-api`, `query entrypoints`, `query cross-service-impact`, `query dead-code-explain`,
+  and `dead`; text grep is not a substitute for graph intelligence.
+- `plan-trend-researcher` / web-trends lane → `.handoff/loop/plan/research/<T>.trends.md` —
+  best-practices + latest trends in a **rolling 90-day window** (compute from today's date; prefer
+  in-window sources, flag older), every finding cited + dated.
+- governance/settings/config lanes → `findings/governance-config-<T>.md` with control-plane drift,
+  settings/config hygiene, and routing (`APPLY|PROPOSE|REGENERATE`).
+- rusty-idd north-star lane → `findings/rusty-idd-north-star-<T>.md` capturing whether `rusty-idd` is
+  the correct first surfaced target, how it binds to the Forge/IDD loop, and any meta/envctl/prompt_hub
+  relationship gaps.
 
-Await both, commit `dimensions.md` + the graph + research.
+Await all lanes, then commit `dimensions.md` + graph + research + governance/settings/config +
+north-star findings.
 
 ## Phase 2: ANALYZE (fan-out, parallel)
 
