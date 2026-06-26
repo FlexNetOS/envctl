@@ -16,6 +16,14 @@ A harness gets better only if each run teaches the next one. This skill is the m
 record**. Done well it compounds; done carelessly it overfits or weakens the harness — so the rules
 below are about *safe* improvement.
 
+**Cadence — after every run (a run = one completed cycle).** A loop self-evaluates AND self-upgrades
+*every cycle*, not only at DONE/HAND OFF. Per cycle, run this method *lightweight* over that cycle's
+artifacts: evaluate, mine, route, and **queue or apply** a small in-scope upgrade. The batch boundary
+(and DONE / HAND OFF) is a *consolidation* pass — dedupe the cycle-level lessons, roll up recurrence
+counts, flush any still-queued low-risk upgrades — not a fresh from-scratch retro. Always act at the
+**cycle boundary, never mid-cycle** (§4): "after every run" and "never mid-cycle" are the same
+discipline — the cycle is the unit, the gap between cycles is where you change the rules.
+
 ## 1. Evaluate the run (from durable artifacts, not memory)
 
 Reconstruct the run from `.handoff/loop/` (`loop_state.md`, the backlog/ledger, `findings/*.md`,

@@ -5,10 +5,13 @@ description: >-
   ALWAYS use when asked to: plan a whole repo subsystem-by-subsystem, "keep planning", "loop on the
   architecture", run the planning engineer "until done"/"on repeat"/"unattended", "plan the backlog",
   or "resume the planning loop" from a handoff. Each iteration plans the next undone target via the
-  full cartographer→researcher→analyst→verifier→architect cycle, self-evaluates, checkpoints, and
-  self-paces. At the per-session cycle budget it hands off to a fresh session via session-relay. Do
-  NOT use for a single one-off plan (use `planning-engineer` directly) or for building/implementing
-  code (use feature-forge/forge-loop). Read-only on the target's code.
+  full cartographer→researcher→analyst→verifier→architect cycle, then **self-evaluates AND
+  self-upgrades the harness after every cycle** (the `evolution-steward` runs the `harness-evolution`
+  method each run — evaluate → mine lessons → route → queue/apply fail-closed), checkpoints, and
+  self-paces. Follow-ups — "resume the loop", "re-run", "continue", "keep planning", "run it again",
+  "redo only the <target>". At the per-session cycle budget it hands off to a fresh session via
+  session-relay. Do NOT use for a single one-off plan (use `planning-engineer` directly) or for
+  building/implementing code (use feature-forge/forge-loop). Read-only on the target's code.
 ---
 
 # Planning Engineer Loop (Ralph)
@@ -106,10 +109,11 @@ scope = every target in `targets.md` planned + verified.
    **5× Opus 4.8 max-effort background-agent fan-out** while the foreground chat remains interactive:
    code-graph ‖ web-trends ‖ governance ‖ settings/config+filesystem-layout ‖ rusty-idd+north-star → analysts (incl.
    `plan-filesystem-layout-auditor` and `plan-test-strategist` on the always-on dimensions) → verifiers (gate) → architect
-   → evolution-steward self-eval. This produces
+   → **`evolution-steward` self-eval + self-upgrade (every cycle — see "Self-eval + self-upgrade
+   after every cycle" below)**. This produces
    `reports/<T>-plan.md` (with a *Test Strategy & Coverage* section) + the graph + the ROADMAP/ADR
    promotion + a **Feature-Forge test-build handoff** (the loop plans the suite; Feature Forge builds +
-   runs it). On an unresolvable verifier
+   runs it) + the cycle's `evaluation.md` + a `LESSONS.md` row. On an unresolvable verifier
    gate or a `- [!!]`/blocked condition, write `NEEDS-HUMAN`, mark the target `- [!]` with a one-line
    reason, and move on (don't thrash).
 5. **Write state back:** tick `targets.md` (`- [x]` only when the plan is complete AND its dimensions
@@ -120,14 +124,39 @@ scope = every target in `targets.md` planned + verified.
    `.handoff/loop/plan/` and go straight to the next target. A consolidated user-facing summary is
    produced ONLY at the batch boundary (`wrap_every`) and at HAND OFF.
 
-## Batch wrap-up cadence (the periodic boundary — keeps long sessions from drifting)
+## Self-eval + self-upgrade after every cycle (mandatory — leverages `harness-evolution`)
+Every completed cycle ends by running the `evolution-steward` over THIS cycle via the
+`harness-evolution` method — the loop is self-improving by construction, not only at the batch
+boundary. This is **at the cycle boundary, never mid-cycle** (the rules can't change under a running
+cycle), so "after every run" and the fail-closed "never mid-cycle" rule reconcile cleanly — a *run*
+is one completed cycle. Per cycle the steward:
+1. **Evaluates** the cycle → writes/supersedes `.handoff/loop/plan/evaluation.md` (friction · gate
+   quality: did a wrong claim slip past verify / did verify false-refute a sound upgrade? · coverage ·
+   human-walls).
+2. **Mines lessons** (the *class* of problem, generalized — not the one instance) and appends one
+   append-only row per lesson to `LESSONS.md`, bumping the recurrence counter.
+3. **Routes** each lesson (skill body / agent def / orchestrator / description / bundled script).
+4. **Queues or applies, fail-closed:** a genuinely *low-risk in-scope* edit (tighten an instruction,
+   add an example/trigger/checklist item, bundle a repeated helper, fix a stale reference) is applied
+   via the standard **feature-branch → PR → auto-merge** flow with a CLAUDE.md change-history row;
+   anything structural (add/remove/merge an agent, reorder phases, touch a gate/guard) is **PROPOSED**
+   in `.handoff/loop/proposed-upgrades.md`, never applied. **Only ever strengthen the
+   verify/completeness/DONE gate — never weaken it.** A lesson seen once is *noted*; the **second**
+   recurrence of its class is applied now.
+
+Keep it lightweight per cycle (the steward reads the cycle's artifacts, not the whole run) so it does
+not dominate cycle cost; the apply happens between cycles, never inside one.
+
+## Batch wrap-up cadence (the periodic boundary — consolidates the per-cycle evolution)
 Every `wrap_every` completed cycles (default 5; `cycles_total - last_wrapup_total >= wrap_every`, or a
 `WRAP-UP-OWED` marker), run in order: (1) **reaper** — `bash scripts/reap-worktrees.sh --apply` (clears
 merged per-cycle worktrees if any were spawned); (2) **wrap-up reconcile** — `session-relay-wrap-up`
-status-truth over `targets.md` + the ICM store + the consolidated batch summary; (3) **evolution-steward**
-— the retro over the batch (mine lessons → `LESSONS.md`/`proposed-upgrades.md`, apply queued low-risk
-upgrades via PR, never weaken a gate). Then **clear the marker, set `last_wrapup_total = cycles_total`**,
-and continue if under `cycle_budget`. The boundary is *in-session* — NOT a hand-off.
+status-truth over `targets.md` + the ICM store + the consolidated batch summary; (3) **evolution-steward
+consolidation** — NOT a fresh retro (each cycle already self-evaluated + self-upgraded above): dedupe
+the cycle-level `LESSONS.md` rows, roll up recurrence counts across the batch, flush any still-queued
+low-risk `- [?]` upgrades the per-cycle apply deferred, and surface the standing `proposed-upgrades.md`
+for the owner. Then **clear the marker, set `last_wrapup_total = cycles_total`**, and continue if under
+`cycle_budget`. The boundary is *in-session* — NOT a hand-off.
 
 ## Background-agent launch contract (Codex + Claude compatible)
 
