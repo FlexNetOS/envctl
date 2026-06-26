@@ -18,6 +18,7 @@ use std::collections::BTreeMap;
 use std::fs::{File, OpenOptions};
 use std::io::{BufRead, BufReader, Read, Write};
 use std::os::unix::process::CommandExt; // for pre_exec (audit fix #20)
+use std::path::PathBuf;
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
@@ -361,9 +362,9 @@ fn build_command(hook: &Hook) -> Command {
 /// Every component hook runs inside the meta-owned install prefix.
 ///
 /// A large amount of legacy shell still spells exposure paths as
-/// `$HOME/.local/...`; envctl's contract is stricter than that: installs belong
+/// a user-local prefix; envctl's contract is stricter than that: installs belong
 /// under `$META_ROOT/.local/...`, never the operator's user-global
-/// `/home/<user>/.local`.  Legacy scripts that spell `$HOME/.local` land in `$META_ROOT/.local`
+/// real user-home local tree. Legacy scripts that use HOME land in `$META_ROOT/.local`
 /// immediately while preserving the real home as an
 /// explicit escape hatch for non-install host integration.
 fn enforced_meta_env(mut hook_env: Vec<(String, String)>) -> Vec<(String, String)> {
@@ -408,12 +409,19 @@ fn enforced_meta_env(mut hook_env: Vec<(String, String)>) -> Vec<(String, String
         .join("cargo/bin")
         .display()
         .to_string();
+    let forbidden_real_home_entries = [".local/bin", ".cargo/bin", ".nix-profile/bin"]
+        .into_iter()
+        .map(|rel| PathBuf::from(&real_home).join(rel).display().to_string())
+        .collect::<Vec<_>>();
     let filtered = std::env::var("PATH")
         .unwrap_or_default()
         .split(':')
         .filter(|entry| {
             !entry.is_empty()
-                && (real_home.is_empty() || *entry != format!("{real_home}/.local/bin"))
+                && (real_home.is_empty()
+                    || !forbidden_real_home_entries
+                        .iter()
+                        .any(|forbidden| entry == forbidden))
         })
         .map(str::to_string)
         .collect::<Vec<_>>();
@@ -421,6 +429,59 @@ fn enforced_meta_env(mut hook_env: Vec<(String, String)>) -> Vec<(String, String
     path.extend(filtered);
     env.push(("PATH".to_string(), path.join(":")));
     env
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn env_value(env: &[(String, String)], key: &str) -> String {
+        env.iter()
+            .rev()
+            .find(|(k, _)| k == key)
+            .map(|(_, v)| v.clone())
+            .unwrap_or_else(|| panic!("missing env key {key}"))
+    }
+
+    #[test]
+    fn enforced_meta_env_retargets_home_and_strips_host_global_path_entries() {
+        let _g = crate::test_env_lock();
+        let prev_home = std::env::var("HOME").ok();
+        let prev_meta = std::env::var("META_ROOT").ok();
+        let prev_path = std::env::var("PATH").ok();
+        std::env::set_var("HOME", "/home/alice");
+        std::env::set_var("META_ROOT", "/workspace/meta");
+        std::env::set_var(
+            "PATH",
+            "/home/alice/.local/bin:/home/alice/.cargo/bin:/home/alice/.nix-profile/bin:/usr/bin",
+        );
+
+        let env = enforced_meta_env(Vec::new());
+
+        match prev_home {
+            Some(v) => std::env::set_var("HOME", v),
+            None => std::env::remove_var("HOME"),
+        }
+        match prev_meta {
+            Some(v) => std::env::set_var("META_ROOT", v),
+            None => std::env::remove_var("META_ROOT"),
+        }
+        match prev_path {
+            Some(v) => std::env::set_var("PATH", v),
+            None => std::env::remove_var("PATH"),
+        }
+
+        assert_eq!(env_value(&env, "ENVCTL_REAL_HOME"), "/home/alice");
+        assert_eq!(env_value(&env, "HOME"), "/workspace/meta");
+        let path = env_value(&env, "PATH");
+        let entries = path.split(':').collect::<Vec<_>>();
+        assert_eq!(entries[0], "/workspace/meta/.local/bin");
+        assert_eq!(entries[1], "/workspace/meta/.toolchains/cargo/bin");
+        assert!(entries.contains(&"/usr/bin"));
+        assert!(!entries.contains(&"/home/alice/.local/bin"));
+        assert!(!entries.contains(&"/home/alice/.cargo/bin"));
+        assert!(!entries.contains(&"/home/alice/.nix-profile/bin"));
+    }
 }
 
 /// Resolve `(program, leading-args)` for an optional non-interactive `sudo -n`

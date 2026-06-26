@@ -570,9 +570,7 @@ fn dropin_filters_injection_in_relinks() {
     assert!(
         toml.contains("STORE=\"$M/.local/share/envctl/repos\"")
             && toml.contains("BIN=\"$M/.local/bin\"")
-            && toml.contains(
-                "[component.wiring]\npath_entries = [\"${META_ROOT:-$HOME/Desktop/meta}/.local/bin\"]"
-            ),
+            && toml.contains("[component.wiring]\npath_entries = [\"$META_ROOT/.local/bin\"]"),
         "drop-in must resolve through the meta-hosted .local registry/layout"
     );
     // and the generated TOML still parses (one component with the expected hooks)
