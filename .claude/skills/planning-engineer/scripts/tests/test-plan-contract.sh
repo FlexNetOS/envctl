@@ -242,4 +242,29 @@ for da in "${doc_arts[@]}"; do
   valid_graph_artifact "$concrete" || fail "documented graph artifact does not satisfy the validator: '$da'"
 done
 
+# ---- self-eval + self-upgrade after EVERY cycle is wired (anti-drift on the harness-evolution contract) ----
+# Resolve the sibling skill/agent files from the located CONTRACT so this works in BOTH the plugin
+# layout (.../harness/skills + .../harness/agents) and the ejected layout (.../.claude/skills + agents).
+PE_DIR="$(dirname "$(dirname "$CONTRACT")")"     # .../skills/planning-engineer
+SKILLS_DIR="$(dirname "$PE_DIR")"                # .../skills
+HARNESS_ROOT="$(dirname "$SKILLS_DIR")"          # .../harness (plugin) | .../.claude (ejected)
+PE_SKILL="$PE_DIR/SKILL.md"
+PLAN_LOOP_SKILL="$SKILLS_DIR/plan-loop/SKILL.md"
+EVO_AGENT="$HARNESS_ROOT/agents/evolution-steward.md"
+for f in "$PE_SKILL" "$PLAN_LOOP_SKILL" "$EVO_AGENT"; do
+  [ -f "$f" ] || fail "self-eval contract: required file missing: $f"
+done
+# planning-engineer single cycle: the every-cycle self-eval phase + the harness-evolution method.
+grep -qiE 'SELF-EVAL \(every cycle\)' "$PE_SKILL" || fail "planning-engineer SKILL.md lost the 'SELF-EVAL (every cycle)' phase"
+grep -qi  'harness-evolution'          "$PE_SKILL" || fail "planning-engineer SKILL.md no longer references the harness-evolution method"
+# plan-loop: must self-evaluate AND self-upgrade every cycle (not only at the batch boundary), fail-closed.
+grep -qiE 'self-eval.*self-upgrade'    "$PLAN_LOOP_SKILL" || fail "plan-loop SKILL.md must state per-cycle self-eval + self-upgrade"
+grep -qiE 'after every cycle'          "$PLAN_LOOP_SKILL" || fail "plan-loop SKILL.md must run the evolution after every cycle"
+grep -qi  'harness-evolution'          "$PLAN_LOOP_SKILL" || fail "plan-loop SKILL.md must reference the harness-evolution method"
+grep -qiE 'never weaken'               "$PLAN_LOOP_SKILL" || fail "plan-loop SKILL.md must keep the never-weaken-a-gate guard"
+# shared evolution-steward: fires every cycle, fail-closed, never mid-cycle.
+grep -qiE 'every cycle'                "$EVO_AGENT" || fail "evolution-steward must run every cycle"
+grep -qiE 'never mid-cycle'            "$EVO_AGENT" || fail "evolution-steward must keep the never-mid-cycle rule"
+echo "PASS: self-eval+self-upgrade-every-cycle contract locked (planning-engineer Phase 5 · plan-loop · evolution-steward)"
+
 echo "PASS: plan contract locked — targets rows, graph artifact names, JSON validity, and the documented examples all conform ($jq_note)"
