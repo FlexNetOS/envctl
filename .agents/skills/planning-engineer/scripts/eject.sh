@@ -15,8 +15,8 @@ TARGET="$(cd "$TARGET" && pwd)"
 PLUGIN="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"  # harness/
 
 # OWN: the harness's own skills + its specific reuse (code-research-verify) → always refresh.
-OWN_SKILLS=(planning-engineer plan-loop plan-cartography plan-trend-research plan-governance-config plan-filesystem-layout plan-test-strategy plan-synthesis code-research-verify)
-OWN_AGENTS=(plan-cartographer plan-trend-researcher plan-governance-config-auditor plan-filesystem-layout-auditor plan-analyst plan-test-strategist plan-verifier plan-architect)
+OWN_SKILLS=(planning-engineer plan-loop plan-cartography plan-dependency-graph plan-trend-research plan-governance-config plan-filesystem-layout plan-prompt-architecture plan-test-strategy plan-synthesis code-research-verify)
+OWN_AGENTS=(plan-cartographer plan-dependency-graph-auditor plan-trend-researcher plan-governance-config-auditor plan-filesystem-layout-auditor plan-prompt-architecture-auditor plan-analyst plan-test-strategist plan-verifier plan-architect)
 # SHARED: copy only if the target lacks them (don't downgrade a hand-authored canonical version).
 SHARED_SKILLS=(session-relay-wrap-up session-relay-resume harness-loop-init harness-evolution icm-memory)
 SHARED_AGENTS=(continuity-steward evolution-steward)
@@ -70,7 +70,7 @@ resume the planning loop", use the `plan-loop` (continuous) / `planning-engineer
 Read-only on production code; writes plans/graph under .handoff/loop/plan/ + docs.
 
 # Harness self-tests (optional CI gate): the package ships hermetic, network-free tests at
-#   .claude/skills/planning-engineer/scripts/tests/test-plan-{eject,loop-state,contract}.sh
+#   .claude/skills/planning-engineer/scripts/tests/test-plan-{eject,loop-state,contract,weave-dispatch,artifact-gate,evals}.sh
 # They resolve their scripts-under-test from the repo root; wire them into CI (run each with `bash`).
 # The loop-state test needs ci/gates/loop-state.sh present (copy it if your repo runs the plan loop).
 

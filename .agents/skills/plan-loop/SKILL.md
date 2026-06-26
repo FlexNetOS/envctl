@@ -29,6 +29,24 @@ head — write it down every iteration.** State precedence: **Git > `.handoff/lo
 views**; when a `hf` witnessed ledger is present, it outranks the markdown and the markdown is
 corrected to it.
 
+
+
+## June 2026 P0-P2 loop upgrades (mandatory)
+
+The loop now schedules and gates planning work with the full P0-P2 upgrade set:
+
+- Use `graph/target-dag.json` / `graph/target-dag.md` as the Task-Decoupled Planning scheduler; pick
+  from the topological ready-set, not only the first unchecked row in `targets.md`.
+- Write `SELF-REVISION` rows and re-open only affected downstream nodes when verifier evidence changes
+  an upstream assumption.
+- Require `findings/prompt-architecture-<T>.md` for prompt/tool/model/runtime coupling review.
+- Maintain `reports/agent-run-ledger-<T>.md` so foreground chat can inspect background lane progress
+  without interrupting workers.
+- Maintain `agent-backend-matrix.md`, `risk-policy.md`, and `agent-interop.md` for isolation,
+  human-in-the-loop routing, and weave/MCP/ACP/A2A/GitHub-cloud interop decisions.
+- Require `research/sources-<T>.jsonl` alongside `research/<T>.trends.md` for reproducible web research.
+- Run `scripts/plan-artifact-gate.sh .handoff/loop/plan` before writing or trusting `DONE`.
+
 ## Durable state (the loop's memory) — all under `.handoff/loop/plan/`
 Namespaced under `.handoff/loop/plan/` (NOT the flat `.handoff/loop/` — that is forge-loop's; this
 mirrors the `.handoff/loop/rust-port/` namespacing precedent). Lay it down with `harness-loop-init`.
@@ -36,6 +54,7 @@ mirrors the `.handoff/loop/rust-port/` namespacing precedent). Lay it down with 
   its plan is complete & verified; `- [!]` blocked; `- [~]` in-flight; `- [!!]` SUPERVISED — never
   auto-run). Auto-derived (see below).
 - **`dimensions.md`** — per-target dimension ledger (cartographer-owned, verifier-gated).
+- **`graph/target-dag.json` + `graph/target-dag.md`** — P0 TDP scheduler: nodes, edges, ready-set, and SELF-REVISION rows.
 - **`loop_state.md`** — counters: `cycles_this_session`, `cycles_total`, `cycle_budget`, `wrap_every`,
   `last_wrapup_total`, `session_started` (UTC, passed in — never call Date.now), `planning_target`,
   `target_root`, `recency_window_days`, `graph_snapshot`, `last_item`, `status`.
@@ -72,7 +91,7 @@ scope = every target in `targets.md` planned + verified.
    - **Batch boundary due** — `cycles_total - last_wrapup_total >= wrap_every` → run the boundary,
      then continue if still under `cycle_budget`.
    - `cycles_this_session >= cycle_budget` → **HAND OFF**: invoke `session-relay-wrap-up`, then stop.
-3. **Pick** the next target: the top unchecked unblocked `- [ ] <T>` in `targets.md`. A `- [!!]`
+3. **Pick** the next target: refresh `graph/target-dag.json` and pick the topological ready-set node. Fallback to the top unchecked unblocked `- [ ] <T>` in `targets.md` only when the DAG is absent during the first derivation cycle. A `- [!!]`
    SUPERVISED target → **REFUSE to auto-run**: write `.handoff/loop/plan/NEEDS-HUMAN` (target id +
    why), do not pick it, stop.
 4. **Run ONE planning cycle** on `T` via the `planning-engineer` orchestrator using the required
@@ -149,7 +168,7 @@ says so): follow `session-relay-resume` first (read HANDOFF → verify-on-resume
 NEEDS-HUMAN → reset `cycles_this_session`), then run the iteration body normally.
 
 ## Stop conditions & sentinel write semantics (end the loop — no re-fire)
-- **DONE** — only when completion is confirmed AND the cartographer's **pre-DONE completeness sweep**
+- **DONE** — only when completion is confirmed AND `scripts/plan-artifact-gate.sh .handoff/loop/plan` passes AND the cartographer's **pre-DONE completeness sweep**
   re-derives each planned target's expected surface from its graph and finds nothing major unexamined.
   A partial/zero re-derivation → INCONCLUSIVE → write `NEEDS-HUMAN`, not DONE.
 - **NEEDS-HUMAN** — an unresolvable verifier gate, any `- [!!]` SUPERVISED target, or a

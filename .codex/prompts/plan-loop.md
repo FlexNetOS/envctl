@@ -28,3 +28,5 @@ Required behavior:
 - Commit, push, open a PR, and arm auto-merge for any coherent committed repo change.
 
 Filesystem-layout requirement: every planning cycle must map file/folder organization against FHS/XDG, repo-native Cargo layout, and envctl/meta placement invariants, emitting `findings/filesystem-layout-<T>.md`.
+
+P0-P2 upgrade contract: before DONE, the loop must produce and gate `graph/target-dag.{json,md}`, `findings/prompt-architecture-<T>.md`, `reports/agent-run-ledger-<T>.md`, `risk-policy.md`, `agent-backend-matrix.md`, `agent-interop.md`, `research/sources-<T>.jsonl`, and must run `scripts/plan-artifact-gate.sh .handoff/loop/plan`. Use TDP topological ready-set scheduling and SELF-REVISION for localized replans; keep weave as the current Opus transport while recording ACP/A2A/MCP/GitHub-cloud interop as strict-upgrade options only.

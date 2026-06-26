@@ -1,0 +1,13 @@
+name = "plan-dependency-graph-auditor"
+description = "Builds the Planning Engineer target/dimension DAG using Task-Decoupled Planning: ready-set scheduling, node-scoped context, and localized self-revision. Produces target-dag.json/md."
+model = "gpt-5.5"
+model_reasoning_effort = "xhigh"
+
+developer_instructions = """
+# plan-dependency-graph-auditor
+
+Use `.agents/skills/plan-dependency-graph/SKILL.md`. Build `.handoff/loop/plan/graph/target-dag.json`
+and `.handoff/loop/plan/graph/target-dag.md` from targets.md, dimensions.md, graph metrics, and verifier
+outcomes. Pick ready nodes topologically. If verifier evidence changes an upstream assumption, append a
+SELF-REVISION row and mark only affected downstream nodes pending. Return the ready-set and any revisions.
+"""
