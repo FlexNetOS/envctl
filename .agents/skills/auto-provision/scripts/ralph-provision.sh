@@ -7,7 +7,7 @@
 # Each iteration spawns one fresh headless agent that runs one cycle-budget of install/repair
 # (install <-> reset remediation), commits per cycle, then writes EXACTLY ONE sentinel + exits:
 #   .handoff/loop/HANDOFF.md  -> more work remains; this script spawns the next fresh process
-#   .handoff/loop/DONE        -> doctor green + lock/kasetto clean + gates pass; this script exits 0
+#   .handoff/loop/DONE        -> doctor green + lock/agent-env clean + gates pass; this script exits 0
 #   .handoff/loop/NEEDS-HUMAN -> hit a sudo/reboot/hardware wall; this script halts for you
 #   .handoff/loop/STOP        -> kill switch (you `touch` it); this script halts
 #
@@ -74,8 +74,9 @@ $RESEARCH_LINE
    -> if detected-but-unhealthy and auto-fix won't resolve, reset --apply then install --apply ->
    verify on PATH + env vars in a FRESH shell -> commit per cycle. Destructive ops are fail-closed.
 3. Then write EXACTLY ONE sentinel under .handoff/loop/ and stop (do not ScheduleWakeup):
-   - DONE (with evidence: doctor green, auto-detect all healthy/zero drift, lock --check + kasetto
-     sync --locked clean, build + no-c/shape/enable gates pass) -> create .handoff/loop/DONE
+   - DONE (with evidence: doctor green, auto-detect all healthy/zero drift, lock --check +
+     envctl agent lock --config agent-env.yaml --check --locked clean, build + no-c/shape/enable
+     gates pass) -> create .handoff/loop/DONE
    - hit a sudo / interactive-auth / reboot / hardware wall you cannot clear -> create
      .handoff/loop/NEEDS-HUMAN with the reason
    - otherwise write .handoff/loop/HANDOFF.md (spawn continuity-steward) and exit.
