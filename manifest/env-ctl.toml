@@ -22,7 +22,7 @@ destructive = false
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; PRIV=\"$M/.local/lib/envctl/secrets/bin\"; META_BIN=\"$M/.local/bin\"; test -x \"$PRIV/secretd\" && test -x \"$PRIV/secretctl\" && test -f \"$META_ROOT/.config/systemd/user/env-ctl.service\" && [ \"$(readlink -f \"$META_BIN/secretd\" 2>/dev/null)\" = \"$(readlink -f \"$PRIV/secretd\" 2>/dev/null)\" ] && [ \"$(readlink -f \"$META_BIN/secretctl\" 2>/dev/null)\" = \"$(readlink -f \"$PRIV/secretctl\" 2>/dev/null)\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; PRIV=\"$M/.local/lib/envctl/secrets/bin\"; META_BIN=\"$M/.local/bin\"; test -x \"$PRIV/secretd\" && test -x \"$PRIV/secretctl\" && test -f \"$META_ROOT/.config/systemd/user/env-ctl.service\" && [ -x \"$META_BIN/secretd\" ] && [ ! -L \"$META_BIN/secretd\" ] && [ -x \"$META_BIN/secretctl\" ] && [ ! -L \"$META_BIN/secretctl\" ]"]
 
 # INSTALL: MSRV-gate, build from the in-workspace sources, place bins, create XDG dirs (0700).
 # Does NOT init the vault or enroll keyslots — those are operator-driven, USB-gated daemon ops.
@@ -62,21 +62,21 @@ cargo build --release --manifest-path "$repo/Cargo.toml" -p envctl-secretctl
 
 # Meta-prefix install (Epic H TASK-0069): private binaries live under
 # $M/.local/lib/envctl/secrets/bin, exposed through $M/.local/bin. $META_ROOT/.local/bin
-# gets compatibility symlinks only; never install directly into $META_ROOT/.toolchains/cargo/bin (system-depth).
+# gets compatibility regular frontdoors only; never install directly into $META_ROOT/.toolchains/cargo/bin (system-depth).
 install -Dm755 "$repo/target/release/secretd"   "$DEST/secretd"
 install -Dm755 "$repo/target/release/secretctl" "$DEST/secretctl"
 install -d -m755 "$META_BIN" "$META_ROOT/.local/bin"
-ln -sfn "$DEST/secretd"   "$META_BIN/secretd"
-ln -sfn "$DEST/secretctl" "$META_BIN/secretctl"
-ln -sfn "$META_BIN/secretd"   "$META_ROOT/.local/bin/secretd"
-ln -sfn "$META_BIN/secretctl" "$META_ROOT/.local/bin/secretctl"
+install -m 755 "$DEST/secretd"   "$META_BIN/secretd"
+install -m 755 "$DEST/secretctl" "$META_BIN/secretctl"
+install -m 755 "$META_BIN/secretd"   "$META_ROOT/.local/bin/secretd"
+install -m 755 "$META_BIN/secretctl" "$META_ROOT/.local/bin/secretctl"
 
 cleanup_legacy_cargo_bin() {
   b="$1"
   legacy="$META_ROOT/.toolchains/cargo/bin/$b"
   owned="$DEST/$b"
   [ -e "$legacy" ] || return 0
-  # If an old symlink already points at the new meta-local binary, remove the duplicate link.
+  # If an old cargo-bin symlink already points at the new meta-local binary, remove the duplicate link.
   if [ -L "$legacy" ] && [ "$(readlink -f "$legacy" 2>/dev/null)" = "$(readlink -f "$owned" 2>/dev/null)" ]; then
     rm -f "$legacy"
     echo "removed legacy cargo-bin symlink: $legacy"
@@ -148,7 +148,7 @@ export PATH="$M/.local/bin:$META_ROOT/.local/bin:$PATH"
 # Hard predicate (fail-closed): bins answer + the daemon's offline self-check passes.
 secretctl --help >/dev/null && secretd --self-check >/dev/null || exit 1
 # Legacy cargo-bin copies must not shadow the meta-local install. They are cleaned by install/fix
-# when byte-identical or symlinked to the meta prefix; different foreign binaries are surfaced here
+# when byte-identical to the meta prefix; different foreign binaries are surfaced here
 # rather than removed destructively.
 for b in secretd secretctl; do
   legacy="$META_ROOT/.toolchains/cargo/bin/$b"
@@ -198,17 +198,17 @@ cargo build --release --manifest-path "$repo/Cargo.toml" -p envctl-secretctl
 install -Dm755 "$repo/target/release/secretd"   "$DEST/secretd"
 install -Dm755 "$repo/target/release/secretctl" "$DEST/secretctl"
 install -d -m755 "$META_BIN" "$META_ROOT/.local/bin"
-ln -sfn "$DEST/secretd"   "$META_BIN/secretd"
-ln -sfn "$DEST/secretctl" "$META_BIN/secretctl"
-ln -sfn "$META_BIN/secretd"   "$META_ROOT/.local/bin/secretd"
-ln -sfn "$META_BIN/secretctl" "$META_ROOT/.local/bin/secretctl"
+install -m 755 "$DEST/secretd"   "$META_BIN/secretd"
+install -m 755 "$DEST/secretctl" "$META_BIN/secretctl"
+install -m 755 "$META_BIN/secretd"   "$META_ROOT/.local/bin/secretd"
+install -m 755 "$META_BIN/secretctl" "$META_ROOT/.local/bin/secretctl"
 
 cleanup_legacy_cargo_bin() {
   b="$1"
   legacy="$META_ROOT/.toolchains/cargo/bin/$b"
   owned="$DEST/$b"
   [ -e "$legacy" ] || return 0
-  # If an old symlink already points at the new meta-local binary, remove the duplicate link.
+  # If an old cargo-bin symlink already points at the new meta-local binary, remove the duplicate link.
   if [ -L "$legacy" ] && [ "$(readlink -f "$legacy" 2>/dev/null)" = "$(readlink -f "$owned" 2>/dev/null)" ]; then
     rm -f "$legacy"
     echo "removed legacy cargo-bin symlink: $legacy"
@@ -252,7 +252,7 @@ script = '''
 set -euo pipefail
 systemctl --user disable --now env-ctl.service 2>/dev/null || true
 M="${META_ROOT:?META_ROOT required}"
-# Self-guarded: drop only symlinks that resolve to the canonical meta-local install,
+# Self-guarded: drop only legacy symlinks that resolve to the canonical meta-local install,
 # then remove the canonical private binaries. Legacy .toolchains binaries are strict-upgrade
 # fallbacks and are never removed here.
 for b in secretd secretctl; do

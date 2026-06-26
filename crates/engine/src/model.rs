@@ -405,7 +405,7 @@ pub struct EnvReport {
 
 /// Read-only boundary diagnostic for meta-owned tool shims. A non-empty
 /// `violations` list means envctl must not blindly treat the install as
-/// converged: a real binary/copy/symlink outside META_ROOT is still winning.
+/// converged: a real binary/copy/link outside META_ROOT is still winning.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct MetaBoundaryReport {
     pub meta_root: Option<String>,
@@ -437,6 +437,7 @@ pub enum MetaBoundaryViolationKind {
     ForeignLocalBinFile,
     ForeignCargoBinFile,
     ForeignSymlinkTarget,
+    MetaLocalSymlink,
 }
 
 /// One way the detected environment diverges from the manifest's desired state.

@@ -35,7 +35,7 @@ Six phases. **Phase 0 (this scaffold)** compiles green and ships a working, read
 ## Phase 3 — reset + auto-fix (destructive, full guard discipline) — Make the environment reversible and repairable under ubuntu-boot-repair.sh's safety model: dry-run default, resolve+re-verify, refuse on ambiguity, back up before clobber, never touch /home.
 
 - RunContext: resolve live-device identities + GPU presence ONCE per run (no TOCTOU); guard.rs evaluates UuidResolves/NotLiveDevice/NotMounted/PathExists/HookSucceeds -> OpStatus::Refused + GuardRefused event
-- Wiring::revert(): timestamped backup (.bak.$(date +%s)) then excise ONLY the owned marker block; symlink/unit deletion tolerant of missing targets
+- Wiring::revert(): timestamped backup (.bak.$(date +%s)) then excise ONLY the owned marker block; frontdoor/unit deletion tolerant of missing targets
 - reset: reverse topo order, --dry-run default/--apply, --cascade/refuse-on-dependents, --all + --confirm, --keep-config/--purge; re-detect to confirm ABSENT
 - auto-fix: act only on BROKEN/PARTIAL, minimal corrective wiring/fix-hook actions, atomic backup->apply->verify with revert-on-verify-failure; --dry-run DEFAULT/--apply, --only-wiring
 - Boot-repair delegation: wrap ubuntu-boot-repair.sh diagnose/repair-dev/rename-pro/finalize as ShippedScript components gated behind --allow-boot; UUIDs/bl-ids from manifest machine config
@@ -79,7 +79,7 @@ Six phases. **Phase 0 (this scaffold)** compiles green and ships a working, read
 ## ✅ Phases 4 & 5 — IMPLEMENTED + dogfooded (build-from-source add-repo · GUI/telemetry)
 
 **Phase 4 — `add-repo`** (`detect_build.rs` detector table, `addrepo.rs` staged
-pipeline + confined AI-agent orchestrator, `install.rs` symlink/PATH-shadow/
+pipeline + confined AI-agent orchestrator, `install.rs` regular-frontdoor/PATH-shadow/
 refuse-unmanaged install, `register.rs` provenance drop-in). Strategies: `as-is`,
 `cherry-pick`, `rename`, `refactor` (patch **and** AI — incl. full **port-to-rust**
 via an available agent). Dogfooded on the live box: a local cargo crate was

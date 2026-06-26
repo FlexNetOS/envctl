@@ -8,7 +8,7 @@ name = "Claude Code CLI"
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/claude/bin/claude\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/claude\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/claude/bin/claude\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; t=\"$M/.local/bin/claude\"; [ -x \"$M/.toolchains/claude/bin/claude\" ] && [ -x \"$t\" ] && [ ! -L \"$t\" ]"]
 [component.install]
 kind = "script"
 script = '''
@@ -16,20 +16,25 @@ set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/claude"
 # Upstream's installer may stage under $META_ROOT/.local/share/claude; mirror the resulting
-# executable into the meta-owned prefix and expose only a thin $META_ROOT/.local/bin symlink.
+# executable into the meta-owned prefix and expose only a regular $META_ROOT/.local/bin frontdoor.
 curl -fsSL https://claude.ai/install.sh | bash
-src="$(readlink -f "$META_ROOT/.local/bin/claude" 2>/dev/null || true)"
+src="$(find "$META_ROOT/.local/share/claude/versions" -maxdepth 1 -type f -executable 2>/dev/null | sort -V | tail -n1 || true)"
+if [ -z "$src" ] || [ ! -x "$src" ]; then
+  if [ -L "$META_ROOT/.local/bin/claude" ]; then
+    src="$(readlink -f "$META_ROOT/.local/bin/claude" 2>/dev/null || true)"
+  fi
+fi
 if [ -z "$src" ] || [ ! -x "$src" ]; then
   src="$(command -v claude)"
 fi
 install -d -m 755 "$DEST/bin"
 install -m 755 "$src" "$DEST/bin/claude"
-ln -sfn "$DEST/bin/claude" "$META_ROOT/.local/bin/claude"
+install -m 755 "$DEST/bin/claude" "$META_ROOT/.local/bin/claude"
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/.local/bin:$PATH\"; [ \"$(readlink -f \"$(command -v claude)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/claude/bin/claude\")\" ] && claude --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$M/.local/bin:$PATH\"; p=\"$(command -v claude)\"; rp=\"$(realpath -e \"$p\")\"; [ \"$rp\" = \"$M/.local/bin/claude\" ] && [ ! -L \"$rp\" ] && claude --version"]
 [component.fix]
 kind = "script"
 script = '''
@@ -37,13 +42,18 @@ set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/claude"
 curl -fsSL https://claude.ai/install.sh | bash
-src="$(readlink -f "$META_ROOT/.local/bin/claude" 2>/dev/null || true)"
+src="$(find "$META_ROOT/.local/share/claude/versions" -maxdepth 1 -type f -executable 2>/dev/null | sort -V | tail -n1 || true)"
+if [ -z "$src" ] || [ ! -x "$src" ]; then
+  if [ -L "$META_ROOT/.local/bin/claude" ]; then
+    src="$(readlink -f "$META_ROOT/.local/bin/claude" 2>/dev/null || true)"
+  fi
+fi
 if [ -z "$src" ] || [ ! -x "$src" ]; then
   src="$(command -v claude)"
 fi
 install -d -m 755 "$DEST/bin"
 install -m 755 "$src" "$DEST/bin/claude"
-ln -sfn "$DEST/bin/claude" "$META_ROOT/.local/bin/claude"
+install -m 755 "$DEST/bin/claude" "$META_ROOT/.local/bin/claude"
 '''
 
 
@@ -54,7 +64,7 @@ requires = ["rustup", "bun", "wild-linker"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; dest="$M/.toolchains/codex/bin/codex"; meta_link="$M/.local/bin/codex"; user_link="$META_ROOT/.local/bin/codex"; [ -x "$dest" ] && [ "$(readlink -f "$meta_link" 2>/dev/null)" = "$(readlink -f "$dest")" ] && [ "$(readlink -f "$user_link" 2>/dev/null)" = "$(readlink -f "$dest")" ]''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; dest="$M/.toolchains/codex/bin/codex"; front="$M/.local/bin/codex"; [ -x "$dest" ] && [ -x "$front" ] && [ ! -L "$front" ]''']
 [component.install]
 kind = "script"
 script = '''
@@ -85,22 +95,22 @@ else
   bun install -g @openai/codex
   src="$BUN_INSTALL/bin/codex"
   install -d -m 755 "$DEST/bin"
-  ln -sfn "$src" "$DEST/bin/codex"
+  install -m 755 "$src" "$DEST/bin/codex"
 fi
 install -d -m 755 "$META_BIN" "$USER_BIN"
-ln -sfn "$DEST/bin/codex" "$META_BIN/codex"
+install -m 755 "$DEST/bin/codex" "$META_BIN/codex"
 ARCH="$M/.local/archive/home-links-$(date -u +%Y-%m-%d)"
 if [ -e "$USER_BIN/codex" ] && [ ! -L "$USER_BIN/codex" ]; then
   install -d -m 755 "$ARCH/.local/bin"
   mv "$USER_BIN/codex" "$ARCH/.local/bin/codex"
   echo "archived copy: codex"
 fi
-ln -sfn "$META_BIN/codex" "$USER_BIN/codex"
+install -m 755 "$META_BIN/codex" "$USER_BIN/codex"
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export CARGO_HOME="$M/.toolchains/cargo"; export BUN_INSTALL="$M/.toolchains/.bun"; export PATH="$META_ROOT/.local/bin:$M/.local/bin:$CARGO_HOME/bin:$BUN_INSTALL/bin:$PATH"; dest="$M/.toolchains/codex/bin/codex"; [ -x "$dest" ] && [ "$(readlink -f "$(command -v codex)" 2>/dev/null)" = "$(readlink -f "$dest")" ] && codex --version''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export CARGO_HOME="$M/.toolchains/cargo"; export BUN_INSTALL="$M/.toolchains/.bun"; export PATH="$M/.local/bin:$CARGO_HOME/bin:$BUN_INSTALL/bin:$PATH"; front="$M/.local/bin/codex"; [ -x "$M/.toolchains/codex/bin/codex" ] && [ -x "$front" ] && [ ! -L "$front" ] && [ "$(realpath -e "$(command -v codex)")" = "$front" ] && codex --version''']
 [component.fix]
 kind = "script"
 script = '''
@@ -131,11 +141,11 @@ else
   bun install -g @openai/codex
   src="$BUN_INSTALL/bin/codex"
   install -d -m 755 "$DEST/bin"
-  ln -sfn "$src" "$DEST/bin/codex"
+  install -m 755 "$src" "$DEST/bin/codex"
 fi
 install -d -m 755 "$META_BIN" "$USER_BIN"
-ln -sfn "$DEST/bin/codex" "$META_BIN/codex"
-ln -sfn "$META_BIN/codex" "$USER_BIN/codex"
+install -m 755 "$DEST/bin/codex" "$META_BIN/codex"
+install -m 755 "$META_BIN/codex" "$USER_BIN/codex"
 '''
 [component.remove]
 kind = "command"
@@ -150,7 +160,7 @@ requires = ["bun"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/.bun/bin/gemini\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/gemini\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/.bun/bin/gemini\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; t=\"$M/.local/bin/gemini\"; [ -x \"$M/.toolchains/.bun/bin/gemini\" ] && [ -x \"$t\" ] && [ ! -L \"$t\" ]"]
 [component.install]
 kind = "script"
 script = '''
@@ -165,7 +175,7 @@ src="$BUN_INSTALL/bin/gemini"
 ARCH="$META_ROOT/.local/state/envctl/legacy-archives/home-links-$(date +%Y-%m-%d)"
 if [ -e "$dst" ] && [ ! -L "$dst" ]; then mkdir -p "$ARCH/.local/bin"; mv "$dst" "$ARCH/.local/bin/gemini"; echo "archived copy: gemini"; fi
 [ -L "$dst" ] && rm "$dst"
-ln -s "$src" "$dst"
+install -m 755 "$src" "$dst"
 '''
 [component.verify]
 kind = "command"
@@ -180,7 +190,7 @@ export BUN_INSTALL="$M/.toolchains/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 bun install -g @google/gemini-cli
 mkdir -p "$META_ROOT/.local/bin"
-ln -sfn "$BUN_INSTALL/bin/gemini" "$META_ROOT/.local/bin/gemini"
+install -m 755 "$BUN_INSTALL/bin/gemini" "$META_ROOT/.local/bin/gemini"
 '''
 [component.remove]
 kind = "command"

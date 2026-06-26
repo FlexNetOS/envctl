@@ -587,8 +587,12 @@ fn dropin_filters_injection_in_relinks() {
         "unsafe relink REL must be filtered"
     );
     assert!(
-        toml.contains("ln -sfn \"$SRC/target/release/good\" \"$BIN/good\""),
-        "safe relink kept"
+        toml.contains("install -m 755 \"$SRC/target/release/good\" \"$BIN/good\""),
+        "safe regular frontdoor kept"
+    );
+    assert!(
+        !toml.contains("ln -sfn \"$SRC/"),
+        "generated drop-ins must not install symlink frontdoors"
     );
     assert!(
         toml.contains("STORE=\"$M/.local/share/envctl/repos\"")

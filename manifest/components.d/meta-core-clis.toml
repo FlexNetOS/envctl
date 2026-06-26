@@ -1,11 +1,11 @@
 [[component]]
 id = "git"
 name = "Git SCM (meta-hosted binary tree)"
-description = "Git 2.54.0 copied into $META_ROOT/.toolchains/git as a real binary tree. No wrapper: $META_ROOT/.local/bin/git is a direct symlink to the meta-hosted git executable."
+description = "Git 2.54.0 copied into $META_ROOT/.toolchains/git as a real binary tree. $META_ROOT/.local/bin/git is a regular meta-local frontdoor copied from the meta-hosted git executable."
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/git/bin/git\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/git\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/git/bin/git\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; t=\"$META_ROOT/.local/bin/git\"; [ -x \"$M/.toolchains/git/bin/git\" ] && [ -x \"$t\" ] && [ ! -L \"$t\" ]"]
 [component.install]
 kind = "script"
 script = '''
@@ -22,12 +22,12 @@ src_root="$(cd "$(dirname "$src_bin")/.." && pwd)"
 rm -rf "$DEST"
 mkdir -p "$DEST"
 cp -a "$src_root/." "$DEST/"
-ln -sfn "$DEST/bin/git" "$META_ROOT/.local/bin/git"
+install -m 755 "$DEST/bin/git" "$META_ROOT/.local/bin/git"
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/.local/bin:$PATH\"; [ \"$(readlink -f \"$(command -v git)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/git/bin/git\")\" ] && git --version | grep -q '2\\.54\\.0'"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/.local/bin:$PATH\"; p=\"$(command -v git)\"; [ \"$(realpath -e \"$p\")\" = \"$META_ROOT/.local/bin/git\" ] && [ ! -L \"$META_ROOT/.local/bin/git\" ] && git --version | grep -q '2\\.54\\.0'"]
 [component.fix]
 kind = "script"
 script = '''
@@ -44,7 +44,7 @@ src_root="$(cd "$(dirname "$src_bin")/.." && pwd)"
 rm -rf "$DEST"
 mkdir -p "$DEST"
 cp -a "$src_root/." "$DEST/"
-ln -sfn "$DEST/bin/git" "$META_ROOT/.local/bin/git"
+install -m 755 "$DEST/bin/git" "$META_ROOT/.local/bin/git"
 '''
 [component.remove]
 kind = "command"
@@ -56,11 +56,11 @@ path_entries = ["$META_ROOT/.local/bin"]
 [[component]]
 id = "curl"
 name = "curl (static meta binary)"
-description = "Static curl binary installed under $META_ROOT/.toolchains/curl. No wrapper: $META_ROOT/.local/bin/curl is a direct symlink to the meta-hosted curl binary."
+description = "Static curl binary installed under $META_ROOT/.toolchains/curl. $META_ROOT/.local/bin/curl is a regular meta-local frontdoor copied from the meta-hosted curl binary."
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/curl/bin/curl\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/curl\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/curl/bin/curl\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; t=\"$META_ROOT/.local/bin/curl\"; [ -x \"$M/.toolchains/curl/bin/curl\" ] && [ -x \"$t\" ] && [ ! -L \"$t\" ]"]
 [component.install]
 kind = "script"
 script = '''
@@ -77,12 +77,12 @@ tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 tar -xJf "$tarball" -C "$tmp"
 src="$(find "$tmp" -type f -name curl -perm -111 | head -n1)"
 install -m 755 "$src" "$DEST/bin/curl"
-ln -sfn "$DEST/bin/curl" "$META_ROOT/.local/bin/curl"
+install -m 755 "$DEST/bin/curl" "$META_ROOT/.local/bin/curl"
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/.local/bin:$PATH\"; [ \"$(readlink -f \"$(command -v curl)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/curl/bin/curl\")\" ] && curl --version | grep -q '8\\.21\\.0'"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/.local/bin:$PATH\"; p=\"$(command -v curl)\"; [ \"$(realpath -e \"$p\")\" = \"$META_ROOT/.local/bin/curl\" ] && [ ! -L \"$META_ROOT/.local/bin/curl\" ] && curl --version | grep -q '8\\.21\\.0'"]
 [component.fix]
 kind = "script"
 script = '''
@@ -99,7 +99,7 @@ tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 tar -xJf "$tarball" -C "$tmp"
 src="$(find "$tmp" -type f -name curl -perm -111 | head -n1)"
 install -m 755 "$src" "$DEST/bin/curl"
-ln -sfn "$DEST/bin/curl" "$META_ROOT/.local/bin/curl"
+install -m 755 "$DEST/bin/curl" "$META_ROOT/.local/bin/curl"
 '''
 [component.remove]
 kind = "command"

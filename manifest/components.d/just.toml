@@ -19,7 +19,7 @@ artifacts=$META_ROOT/.local/bin/just
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/src/just/target/release/just\" ] && [ \"$(readlink -f \"$M/.local/bin/just\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/src/just/target/release/just\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; t=\"$M/.local/bin/just\"; [ -x \"$M/.toolchains/src/just/target/release/just\" ] && [ -x \"$t\" ] && [ ! -L \"$t\" ]"]
 
 [component.install]
 kind = "script"
@@ -34,13 +34,13 @@ git -C "$SRC" fetch --depth 1 origin 5097d64c8b765f8f6bf0f19d13be199bb1d1769c &&
 cd "$SRC"
 cargo build --release --locked || cargo build --release
 install -d -m 755 "$M/.local/bin"
-ln -sfn "$SRC/target/release/just" "$M/.local/bin/just"
+install -m 755 "$SRC/target/release/just" "$M/.local/bin/just"
 '''
 
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "just --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; PATH=\"$M/.local/bin:$PATH\"; p=\"$(command -v just)\"; [ \"$(realpath -e \"$p\")\" = \"$M/.local/bin/just\" ] && [ ! -L \"$M/.local/bin/just\" ] && just --version"]
 
 [component.remove]
 kind = "script"

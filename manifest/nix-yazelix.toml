@@ -8,7 +8,7 @@ name = "Nix (Determinate, flakes)"
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/nix/bin/nix\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/nix\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/nix/bin/nix\")\" ] && [ -e /nix ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; t=\"$META_ROOT/.local/bin/nix\"; [ -x \"$M/.toolchains/nix/bin/nix\" ] && [ -x \"$t\" ] && [ ! -L \"$t\" ] && [ -e /nix ]"]
 [component.install]
 kind = "script"
 script = '''
@@ -20,12 +20,12 @@ fi
 install -d -m 755 "$M/.toolchains/nix/bin" "$META_ROOT/.local/bin"
 src="$(readlink -f /nix/var/nix/profiles/default/bin/nix)"
 install -m 755 "$src" "$M/.toolchains/nix/bin/nix"
-ln -sfn "$M/.toolchains/nix/bin/nix" "$META_ROOT/.local/bin/nix"
+install -m 755 "$M/.toolchains/nix/bin/nix" "$META_ROOT/.local/bin/nix"
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/.local/bin:$PATH\"; [ \"$(readlink -f \"$(command -v nix)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/nix/bin/nix\")\" ] && nix --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/.local/bin:$PATH\"; p=\"$(command -v nix)\"; [ \"$(realpath -e \"$p\")\" = \"$META_ROOT/.local/bin/nix\" ] && [ ! -L \"$META_ROOT/.local/bin/nix\" ] && nix --version"]
 [component.fix]
 kind = "script"
 script = '''
@@ -35,7 +35,7 @@ sudo systemctl restart nix-daemon 2>/dev/null || true
 install -d -m 755 "$M/.toolchains/nix/bin" "$META_ROOT/.local/bin"
 src="$(readlink -f /nix/var/nix/profiles/default/bin/nix)"
 install -m 755 "$src" "$M/.toolchains/nix/bin/nix"
-ln -sfn "$M/.toolchains/nix/bin/nix" "$META_ROOT/.local/bin/nix"
+install -m 755 "$M/.toolchains/nix/bin/nix" "$META_ROOT/.local/bin/nix"
 "$M/.toolchains/nix/bin/nix" --version
 '''
 [component.remove]

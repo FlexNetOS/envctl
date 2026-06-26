@@ -36,7 +36,7 @@ these paths through the layout registry rather than re-deriving strings by hand.
 
 | surface | canonical location | rule |
 |---|---|---|
-| CLI/application frontdoors | `$META_ROOT/.local/bin` | Exposed on PATH by the envctl PATH block. Links inside this tree may point to other `$META_ROOT` paths; the host-home `.local` tree is only the single directory bridge. |
+| CLI/application frontdoors | `$META_ROOT/.local/bin` | Exposed on PATH by the envctl PATH block. Entries in this tree must be regular frontdoor files or directories hosted under `$META_ROOT`; symlinks inside `$META_ROOT/.local` are forbidden. The host-home `.local` tree is only the single directory bridge. |
 | Libraries/support files | `$META_ROOT/.local/lib` | Component-owned support payloads. |
 | Shared data | `$META_ROOT/.local/share` | Envctl-owned persistent data, including component stores and secrets data. |
 | Mutable state/logs | `$META_ROOT/.local/state` | Envctl-owned state and logs. |
@@ -87,7 +87,7 @@ component's explicit guarded reset flow.
 | Component registry | `manifest/*.toml` plus `manifest/components.d/*.toml`, loaded by `Registry::load`; pinned by `manifest/envctl.lock` | `envctl lock --check` gates manifest drift. |
 | Hub/tool registry | each `<name>_hub/registry.json` under the envctl workspace root; today `mcp_hub/registry.json` is discovered by `envctl registry --json` | Read-only federation; `envctl registry --check` fails when a hub entry binds to a missing component. |
 | Runtime/last-run state | `$META_ROOT/.local/cache/envctl/<hash-of-manifest-dir>/state.json` when envctl owns it; otherwise explicit component state under `$META_ROOT/.local/state` | Machine-local and intentionally uncommitted. |
-| CLI exposure | `$META_ROOT/.local/bin` | Recreated by `envctl install`; host `$ENVCTL_REAL_HOME/.local` is only the directory bridge. |
+| CLI exposure | `$META_ROOT/.local/bin` | Recreated by `envctl install` as regular frontdoors; host `$ENVCTL_REAL_HOME/.local` is only the directory bridge. |
 | Secrets daemon binaries | `$META_ROOT/.local/lib/envctl/secrets/bin/{secretd,secretctl}` with frontdoors in `$META_ROOT/.local/bin` | Legacy compatibility paths are retained only until migrated and parity-proven. |
 | Secrets config | `$META_ROOT/.config/env-ctl/secretd.toml` | Preserved unless the owning reset flow explicitly removes it; auth tokens are never stored here. |
 | Secrets data/audit | `$META_ROOT/.local/share/env-ctl` and `$META_ROOT/.local/state/env-ctl` | Data paths are deleted only by the guarded `envctl reset env-ctl --purge --confirm --apply` flow. |

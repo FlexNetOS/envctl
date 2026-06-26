@@ -697,7 +697,7 @@ pub fn add_repo(
 
     // Re-check id-collision against a FRESH registry (close the long-pipeline
     // TOCTOU) BEFORE installing — so a concurrent registration can't leave
-    // orphaned meta .local/bin symlinks + a PATH block behind on the bail path (audit fix).
+    // orphaned meta .local/bin frontdoors + a PATH block behind on the bail path (audit fix).
     if let Ok(fresh) = Registry::load(manifest_dir) {
         if fresh.get(&id).is_some() {
             anyhow::bail!(
@@ -706,12 +706,12 @@ pub fn add_repo(
         }
     }
 
-    // INSTALL + WIRE-IN (symlink, refuse-shadow, refuse-unmanaged-unless-force).
+    // INSTALL + WIRE-IN (regular frontdoor, refuse-shadow, refuse-unmanaged-unless-force).
     let iplan = build_install_plan(&id, &spec, &outcome);
     let ireport = crate::install::install_and_wire(&iplan, spec.force, false, sink);
     // AUDIT-FIX (#24): a half-installed add-repo must NOT persist a drop-in. If
     // install_and_wire reported failures — or produced no installed paths when
-    // installs were expected — the symlinks/targets we'd record never landed, so
+    // installs were expected — the frontdoors/targets we'd record never landed, so
     // writing components.d/<id>.toml would create permanent drift (and a later
     // `reset <id>` would try to unwire links that never existed). Bail BEFORE
     // write_dropin so a failed install leaves nothing registered.

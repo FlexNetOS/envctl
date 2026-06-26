@@ -2,7 +2,7 @@
 //! repo becomes a first-class managed component. Captures full provenance
 //! (source/ref/sha/strategy/build_system/build_cmd/transform/artifacts), a
 //! SHA-pinned rebuild-from-source `install` hook, a `verify`, and a `remove` that
-//! excises ONLY our managed symlinks then drops the 0700 clone. The text is fed
+//! excises ONLY our managed regular frontdoors then drops the 0700 clone. The text is fed
 //! into executor::add_repo's existing atomic temp+rename+backup writer (one code
 //! path over components.d). For Refactor::Ai the rebuild REPLAYS the recorded SHA,
 //! never re-drives the agent.
@@ -22,7 +22,7 @@ pub struct RegisterSpec {
     /// detect/verify primary binary (post-rename); falls back to `id`.
     pub primary_bin: Option<String>,
     pub verify_cmd: Option<String>,
-    /// (install_name, path-relative-to-clone) so rebuild can relink artifacts.
+    /// (install_name, path-relative-to-clone) so rebuild can expose artifacts as regular frontdoors.
     pub relinks: Vec<(String, String)>,
     /// absolute install targets (`$META_ROOT/.local/bin/<name>`) — provenance + remove list.
     pub installed_targets: Vec<String>,
@@ -69,26 +69,24 @@ pub fn synth_dropin(spec: &RegisterSpec) -> String {
     // AUDIT-FIX (blocker): the relink line interpolates name+rel into a shell
     // double-quoted string; an unsafe char ($ ` " \ newline / ..) would break out.
     // Only emit relinks whose name is a slug and whose rel path is a safe charset.
-    let relink_lines: String = spec
+    let safe_relinks: Vec<(String, String)> = spec
         .relinks
         .iter()
         .filter(|(name, rel)| safe_name(name) && safe_rel(rel))
-        .map(|(name, rel)| format!("ln -sfn \"$SRC/{rel}\" \"$BIN/{name}\""))
+        .cloned()
+        .collect();
+    let relink_lines: String = safe_relinks
+        .iter()
+        .map(|(name, rel)| format!("install -m 755 \"$SRC/{rel}\" \"$BIN/{name}\""))
         .collect::<Vec<_>>()
         .join("\n");
-    let excise_names: Vec<String> = spec
-        .relinks
-        .iter()
-        .map(|(name, _)| name.clone())
-        .filter(|name| safe_name(name))
-        .collect();
-    let excise: String = if excise_names.is_empty() {
+    let excise: String = if safe_relinks.is_empty() {
         "true".into()
     } else {
-        excise_names
+        safe_relinks
             .iter()
-            .map(|name| format!(
-                "t=\"$BIN/{name}\"; if [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$STORE/{slug}\"; then rm -f \"$t\"; fi",
+            .map(|(name, rel)| format!(
+                "t=\"$BIN/{name}\"; src=\"$STORE/{slug}/{rel}\"; if [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$STORE/{slug}\"; then rm -f \"$t\"; elif [ -f \"$t\" ] && [ -f \"$src\" ] && cmp -s \"$t\" \"$src\"; then rm -f \"$t\"; fi",
                 slug = spec.slug
             ))
             .collect::<Vec<_>>()

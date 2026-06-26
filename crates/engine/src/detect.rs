@@ -348,6 +348,18 @@ fn inspect_bin_entry(
         return;
     };
     let resolved = canonical_or_self(path.to_path_buf());
+    if md.file_type().is_symlink() && is_under_meta_local(path, meta_root) {
+        push_violation(
+            tool,
+            path,
+            &resolved,
+            expected_root,
+            MetaBoundaryViolationKind::MetaLocalSymlink,
+            seen,
+            violations,
+        );
+        return;
+    }
     if resolved.starts_with(meta_root) {
         return;
     }
@@ -357,6 +369,10 @@ fn inspect_bin_entry(
         file_kind
     };
     push_violation(tool, path, &resolved, expected_root, kind, seen, violations);
+}
+
+fn is_under_meta_local(path: &Path, meta_root: &Path) -> bool {
+    path.starts_with(meta_root.join(".local"))
 }
 
 fn push_violation(
@@ -443,8 +459,8 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]
-    fn meta_boundary_accepts_meta_local_bin_symlink_into_meta_root() {
-        let root = temp_root("accepts-meta-local-bin-symlink");
+    fn meta_boundary_refuses_meta_local_bin_symlink_into_meta_root() {
+        let root = temp_root("refuses-meta-local-bin-symlink");
         let meta = root.join("meta");
         let local_bin = meta.join(".local/bin");
         let cargo_bin = meta.join(".toolchains/cargo/bin");
@@ -457,7 +473,11 @@ mod tests {
 
         let report = meta_boundary_report_for(&meta, &local_bin, &cargo_bin, false);
 
-        assert!(report.ok(), "{:?}", report.violations);
+        assert_eq!(report.violations.len(), 1);
+        assert_eq!(
+            report.violations[0].kind,
+            MetaBoundaryViolationKind::MetaLocalSymlink
+        );
         let _ = std::fs::remove_dir_all(root);
     }
 
@@ -489,9 +509,9 @@ mod tests {
         std::fs::create_dir_all(&outside).unwrap();
         std::fs::create_dir_all(&local_bin).unwrap();
         std::fs::create_dir_all(&cargo_bin).unwrap();
-        let foreign = outside.join("meta");
+        let foreign = outside.join("weave");
         std::fs::write(&foreign, b"foreign").unwrap();
-        symlink(&foreign, local_bin.join("meta")).unwrap();
+        symlink(&foreign, cargo_bin.join("weave")).unwrap();
 
         let report = meta_boundary_report_for(&meta, &local_bin, &cargo_bin, false);
 

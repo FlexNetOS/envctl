@@ -21,11 +21,12 @@ add-repo runs **untrusted upstream code**, so it is gated:
 - **0700 sandbox.** Clone + build live under `$META_ROOT/.local/share/envctl/repos/<id>/`,
   created `0700`. The build/agent run in their own **process group**, killed
   wholesale on timeout (acquire 10m, refactor/build 1h).
-- **Install never hijacks a name.** It refuses to symlink an artifact whose name
+- **Install never hijacks a name.** It refuses to install a regular frontdoor whose name
   already resolves on `PATH` outside `$META_ROOT/.local/bin`, and hard-refuses well-known
   names (`sudo`, `git`, `bash`, `cargo`, …) — use `--rename` instead.
-- **Refuse-overwrite-unmanaged.** A target is "ours" only if it's a symlink whose
-  canonical path is inside the repo store. A real foreign file is **refused** unless
+- **Refuse-overwrite-unmanaged.** A target is "ours" only if it is either a legacy envctl symlink into
+  the repo store or a byte-identical regular frontdoor copied from that store. A foreign
+  file/link is **refused** unless
   `--force` (which backs it up `*.bak.<epoch>` first).
 - **The AI agent is structurally confined.** Invoked non-interactively, TTY-less,
   in the clone dir (`claude --add-dir <clone> --permission-mode acceptEdits`, never
@@ -75,9 +76,9 @@ On a successful `--build`, envctl writes `components.d/<id>.toml` with:
   build cmd / transform / artifacts);
 - `detect` = `command -v <primary-bin>`;
 - `install` = **rebuild-from-source pinned to the SHA** (re-clone → checkout → replay
-  patch → build → relink) so a fresh box reproduces it;
+  patch → build → install regular frontdoors) so a fresh box reproduces it;
 - `verify` = `<bin> --version`;
-- `remove` = excise **only our** symlinks (readlink-into-store guard) then drop the clone;
+- `remove` = excise **only our** regular frontdoors (plus legacy envctl symlinks) then drop the clone;
 - `[component.wiring] path_entries = ["$META_ROOT/.local/bin"]` so
   `reset` unwinds `PATH` through the same meta-local layout envctl exports.
 
@@ -103,7 +104,7 @@ envctl add-repo ./my-tool --id my-tool --local ./my-tool --build
 
 # then it's a managed component:
 envctl auto-detect          # shows it
-envctl reset pastel --apply # removes symlinks + drops the clone
+envctl reset pastel --apply # removes managed frontdoors + drops the clone
 ```
 
 ## GUI

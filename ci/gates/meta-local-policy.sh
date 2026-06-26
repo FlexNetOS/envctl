@@ -40,7 +40,8 @@ ACTIVE_PATHS=(
 )
 
 TMP="$(mktemp)"
-trap 'rm -f "$TMP"' EXIT
+SYMLINK_FRONTDOORS="$(mktemp)"
+trap 'rm -f "$TMP" "$SYMLINK_FRONTDOORS"' EXIT
 
 if grep -REnI "$PATTERN" "${ACTIVE_PATHS[@]}" \
   --exclude='meta-local-policy.sh' \
@@ -49,6 +50,38 @@ if grep -REnI "$PATTERN" "${ACTIVE_PATHS[@]}" \
   grep -v '^crates/engine/src/migration.rs:' >"$TMP"; then
   echo "meta-local-policy: real-home .local/symlink-farm references remain in active install sources:" >&2
   cat "$TMP" >&2
+  exit 1
+fi
+
+if grep -REnI 'ln -s(f|n|fn)?[[:space:]][^;|&]*((\$META_ROOT|\$\{META_ROOT\}|\$M|\$\{M\})/\.local/bin|\$BIN/|\$META_BIN/|\$USER_BIN/)' \
+  manifest assets/scripts scripts crates/engine/src crates/engine/tests \
+  --exclude='meta-local-policy.sh' \
+  --exclude='verify-meta-local-health.sh' \
+  --exclude-dir='.git' \
+  --exclude-dir='target' >"$SYMLINK_FRONTDOORS"; then
+  echo "meta-local-policy: active symlink frontdoors into META_ROOT/.local/bin are forbidden:" >&2
+  cat "$SYMLINK_FRONTDOORS" >&2
+  exit 1
+fi
+
+if grep -REnI 'ln -sfn "\$SRC/.*"\s+"\$BIN/' crates/engine/src crates/engine/tests >"$SYMLINK_FRONTDOORS"; then
+  echo "meta-local-policy: add-repo generated drop-ins must install regular frontdoors, not symlinks:" >&2
+  cat "$SYMLINK_FRONTDOORS" >&2
+  exit 1
+fi
+
+if [ ! -x scripts/verify-meta-local-health.sh ]; then
+  echo "meta-local-policy: missing executable scripts/verify-meta-local-health.sh" >&2
+  exit 1
+fi
+
+if ! grep -Fq 'find "$META_LOCAL" -xdev -type l' scripts/verify-meta-local-health.sh; then
+  echo "meta-local-policy: verifier must fail on any symlink under META_ROOT/.local" >&2
+  exit 1
+fi
+
+if ! grep -Fq '[ -L "$HOME_LOCAL" ]' scripts/verify-meta-local-health.sh; then
+  echo "meta-local-policy: verifier must require the single real-home .local bridge" >&2
   exit 1
 fi
 

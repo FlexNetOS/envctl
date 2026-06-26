@@ -71,7 +71,7 @@ never-downgrade, archive-first.
 - No repo-per-vendor-tool explosion; toolchains stay in meta via native prefixes.
 - gitkb is reclassified from "external" to **adopted foundation** (bring latest into meta).
 - Prereq for the relocation loop: the env-export + materialization must land before the live
-  symlink swaps (so configs resolve through `META_ROOT`).
+  bridge/frontdoor swaps (so configs resolve through `META_ROOT`).
 
 ## Research / Cross-References
 

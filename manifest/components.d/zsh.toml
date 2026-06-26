@@ -1,6 +1,6 @@
 # ── zsh (shell, meta-owned) ─────────────────────────────────────────────────
 # Builds the LATEST stable zsh from source into $META_ROOT/.toolchains/zsh and
-# symlinks $META_ROOT/.local/bin/zsh. Replaces the /nix/store zsh (yazelix bundle + the
+# installs a regular $META_ROOT/.local/bin/zsh frontdoor. Replaces the /nix/store zsh (yazelix bundle + the
 # standalone nix zsh) so a meta-owned shell exists OUTSIDE /nix — it survives the
 # system-nix→nix-portable teardown and is the terminal that drives that migration.
 #
@@ -18,7 +18,7 @@ description = "Latest stable zsh built from source (zsh-users/zsh) into .toolcha
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/zsh/bin/zsh\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/zsh\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/zsh/bin/zsh\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; t=\"$META_ROOT/.local/bin/zsh\"; [ -x \"$M/.toolchains/zsh/bin/zsh\" ] && [ -x \"$t\" ] && [ ! -L \"$t\" ]"]
 
 [component.install]
 kind = "script"
@@ -63,13 +63,13 @@ src="$tmp/zsh-${VER}"
 
 # 4. Wire into $META_ROOT/.local/bin (already on PATH via run_env()).
 install -d -m 755 "$META_ROOT/.local/bin"
-ln -sfn "$DEST/bin/zsh" "$META_ROOT/.local/bin/zsh"
+install -m 755 "$DEST/bin/zsh" "$META_ROOT/.local/bin/zsh"
 '''
 
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; PATH=\"$META_ROOT/.local/bin:$PATH\"; zsh --version && ! ldd \"$M/.toolchains/zsh/bin/zsh\" | grep -q /nix/store"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; PATH=\"$META_ROOT/.local/bin:$PATH\"; p=\"$(command -v zsh)\"; [ \"$(realpath -e \"$p\")\" = \"$META_ROOT/.local/bin/zsh\" ] && [ ! -L \"$META_ROOT/.local/bin/zsh\" ] && zsh --version && ! ldd \"$M/.toolchains/zsh/bin/zsh\" | grep -q /nix/store"]
 
 [component.remove]
 kind = "script"

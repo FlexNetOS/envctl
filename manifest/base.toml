@@ -34,11 +34,11 @@ args = ["-lc", "rm -rf \"$META_ROOT/.local/share/fonts/JetBrainsMono-NerdFont\" 
 [[component]]
 id = "bun"
 name = "Bun JS runtime"
-description = "JS runtime + package manager; provides node via a bun symlink."
+description = "JS runtime + package manager; provides a regular $META_ROOT/.local/bin/bun frontdoor."
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/.bun/bin/bun\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/bun\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/.bun/bin/bun\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; t=\"$M/.local/bin/bun\"; [ -x \"$M/.toolchains/.bun/bin/bun\" ] && [ -x \"$t\" ] && [ ! -L \"$t\" ] && \"$t\" --version >/dev/null"]
 [component.install]
 kind = "script"
 script = '''
@@ -52,7 +52,7 @@ src="$BUN_INSTALL/bin/bun"
 ARCH="$META_ROOT/.local/state/envctl/legacy-archives/home-links-$(date +%Y-%m-%d)"
 if [ -e "$dst" ] && [ ! -L "$dst" ]; then mkdir -p "$ARCH/.local/bin"; mv "$dst" "$ARCH/.local/bin/bun"; echo "archived copy: bun"; fi
 [ -L "$dst" ] && rm "$dst"
-ln -s "$src" "$dst"
+install -m 755 "$src" "$dst"
 '''
 [component.verify]
 kind = "command"
@@ -66,7 +66,7 @@ M="${META_ROOT:?META_ROOT required}"
 export BUN_INSTALL="$M/.toolchains/.bun"
 mkdir -p "$BUN_INSTALL" "$META_ROOT/.local/bin"
 curl -fsSL https://bun.sh/install | bash
-ln -sfn "$BUN_INSTALL/bin/bun" "$META_ROOT/.local/bin/bun"
+install -m 755 "$BUN_INSTALL/bin/bun" "$META_ROOT/.local/bin/bun"
 '''
 [component.remove]
 kind = "command"
@@ -82,15 +82,15 @@ content = 'eval "$(envctl env --toolchains)"'
 
 [[component]]
 id = "node-via-bun"
-name = "node → bun symlink"
-description = "Exposes `node` as a symlink to bun (node-compat mode)."
+name = "node → bun shim"
+description = "Exposes `node` as the internal bun node-compat shim under $META_ROOT/.toolchains/.bun (not under .local)."
 requires = ["bun"]
 [component.detect]
 kind = "command"
 command = "bash"
 # Truthful: node-compat is satisfied if EITHER ~/.bun/bin/node points at bun
 # (the bun node shim) OR a real `node` resolves on PATH. On an n8n box the real
-# node ($META_ROOT/.local/bin/node) precedes the inert bun symlink — that still counts.
+# node ($META_ROOT/.local/bin/node) precedes the internal bun shim — that still counts.
 args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; { [ -x \"$M/.toolchains/.bun/bin/node\" ] && readlink -f \"$M/.toolchains/.bun/bin/node\" 2>/dev/null | grep -q bun; } || command -v node >/dev/null"]
 [component.install]
 kind = "command"
@@ -116,16 +116,16 @@ args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; rm -f \"$M/.toolchains/.
 [[component]]
 id = "node-real"
 name = "Real Node.js (n8n V8 runtime)"
-description = "Real Node 20-24 for tools that need V8 (n8n's isolated-vm), installed into $META_ROOT/.toolchains/node with $META_ROOT/.local/bin symlinks. Bun (JSC) cannot satisfy these; this is the narrow non-bun carve-out. Bun remains the default JS runtime."
+description = "Real Node 20-24 for tools that need V8 (n8n's isolated-vm), installed into $META_ROOT/.toolchains/node with regular $META_ROOT/.local/bin frontdoors. Bun (JSC) cannot satisfy these; this is the narrow non-bun carve-out. Bun remains the default JS runtime."
 [component.detect]
 kind = "command"
 command = "bash"
 # A REAL node (not the bun shim) in n8n's supported range 20-24.
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/node/bin/node\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/node\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/node/bin/node\")\" ] && ! readlink -f \"$META_ROOT/.local/bin/node\" | grep -q bun && \"$META_ROOT/.local/bin/node\" -e 'const m=+process.versions.node.split(\".\")[0]; process.exit(m>=20 && m<=24 ? 0 : 1)'"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; t=\"$M/.local/bin/node\"; [ -x \"$M/.toolchains/node/bin/node\" ] && [ -x \"$t\" ] && [ ! -L \"$t\" ] && ! \"$t\" -p 'process.execPath' | grep -q bun && \"$t\" -e 'const m=+process.versions.node.split(\".\")[0]; process.exit(m>=20 && m<=24 ? 0 : 1)'"]
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ \"$(readlink -f \"$(command -v node)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/node/bin/node\")\" ] && node -e 'const m=+process.versions.node.split(\".\")[0]; process.exit(m>=20 && m<=24 ? 0 : 1)'"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$M/.local/bin:$PATH\"; p=\"$(command -v node)\"; rp=\"$(realpath -e \"$p\")\"; [ \"$rp\" = \"$M/.local/bin/node\" ] && [ ! -L \"$rp\" ] && node -e 'const m=+process.versions.node.split(\".\")[0]; process.exit(m>=20 && m<=24 ? 0 : 1)'"]
 [component.install]
 kind = "script"
 # Install a real Node 22 LTS into the meta toolchain prefix without touching bun.
@@ -141,7 +141,7 @@ rm -rf "$DEST"
 mkdir -p "$DEST" "$META_ROOT/.local/bin"
 tar -xJf node.tar.xz --strip-components=1 -C "$DEST"
 for b in node npm npx corepack; do
-  [ -x "$DEST/bin/$b" ] && ln -sfn "$DEST/bin/$b" "$META_ROOT/.local/bin/$b"
+  [ -x "$DEST/bin/$b" ] && install -m 755 "$DEST/bin/$b" "$META_ROOT/.local/bin/$b"
 done
 '''
 [component.fix]
@@ -158,7 +158,7 @@ rm -rf "$DEST"
 mkdir -p "$DEST" "$META_ROOT/.local/bin"
 tar -xJf node.tar.xz --strip-components=1 -C "$DEST"
 for b in node npm npx corepack; do
-  [ -x "$DEST/bin/$b" ] && ln -sfn "$DEST/bin/$b" "$META_ROOT/.local/bin/$b"
+  [ -x "$DEST/bin/$b" ] && install -m 755 "$DEST/bin/$b" "$META_ROOT/.local/bin/$b"
 done
 '''
 [component.remove]
