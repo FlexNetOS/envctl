@@ -2,6 +2,14 @@
 # GPU stack smoke test: NVIDIA driver, PyTorch CUDA (+ sm_120 kernel), cuda-oxide,
 # and Podman CDI. Auto-runs once after the post-install reboot, then self-disables.
 set -uo pipefail
+if [ -z "${META_ROOT:-}" ]; then
+  if [ -f "$HOME/.meta.yaml" ]; then
+    META_ROOT="$HOME"
+  else
+    META_ROOT="$HOME/Desktop/meta"
+  fi
+fi
+export META_ROOT
 AUTOSTART="$HOME/.config/autostart/yazelix-gpu-verify.desktop"
 ok(){   printf '\033[1;32m  ✓ %s\033[0m\n' "$*"; }
 no(){   printf '\033[1;31m  ✗ %s\033[0m\n' "$*"; }
@@ -54,7 +62,7 @@ echo
 if [ "$DRIVER_OK" = 1 ]; then
   rm -f "$AUTOSTART" 2>/dev/null && ok "Verification complete — disabled the post-reboot auto-run."
 else
-  warn "Re-run after reboot:  ~/.local/bin/yazelix-gpu-verify.sh"
+  warn "Re-run after reboot:  $META_ROOT/.local/bin/yazelix-gpu-verify.sh"
 fi
 echo "=========================================================="
 read -rp "  Press Enter to close… " _ 2>/dev/null || true

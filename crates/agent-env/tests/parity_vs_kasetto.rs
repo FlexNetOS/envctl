@@ -2818,7 +2818,7 @@ fn parity_dirs_xdg_resolution() {
         PathBuf::from("/home/tester/.config/agent-env")
     );
 
-    // XDG_DATA_HOME: unset → `$HOME/.local/share`; leaf renamed kasetto → agent-env.
+    // XDG_DATA_HOME: unset -> the XDG data fallback under HOME; leaf renamed kasetto -> agent-env.
     std::env::remove_var("XDG_DATA_HOME");
     assert_eq!(
         dirs_xdg_data_home().unwrap(),

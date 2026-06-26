@@ -78,7 +78,7 @@ On a successful `--build`, envctl writes `components.d/<id>.toml` with:
   patch → build → relink) so a fresh box reproduces it;
 - `verify` = `<bin> --version`;
 - `remove` = excise **only our** symlinks (readlink-into-store guard) then drop the clone;
-- `[component.wiring] path_entries = ["${META_ROOT:-$HOME/Desktop/meta}/.local/bin"]` so
+- `[component.wiring] path_entries = ["$META_ROOT/.local/bin"]` so
   `reset` unwinds `PATH` through the same meta-local layout envctl exports.
 
 It's marked build-from-source: an *untargeted* `install`/`auto-fix` won't re-run the

@@ -7,6 +7,7 @@
 use crate::component::{Guard, Hook, HookRunner, Phase};
 use crate::error::RunContext;
 use crate::event::EventSink;
+use crate::layout::MetaLayout;
 use crate::model::{OpResult, OpStatus};
 use std::path::Path;
 use std::process::Command;
@@ -99,12 +100,7 @@ fn check_one(g: &Guard, runner: &dyn HookRunner, ctx: &RunContext) -> Option<Str
 // ---- helpers (each treats a tool failure as the conservative/refusing branch) --
 
 fn expand_tilde(p: &str) -> String {
-    if let Some(rest) = p.strip_prefix("~/") {
-        if let Ok(home) = std::env::var("HOME") {
-            return format!("{home}/{rest}");
-        }
-    }
-    p.to_string()
+    MetaLayout::from_env_or_default().expand_meta_path(p)
 }
 
 /// `blkid -U <uuid>` → device path, or None.
