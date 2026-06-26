@@ -1,5 +1,5 @@
 use envctl_engine::{hub_registry, HubRegistryStatus, Registry};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 fn temp_root(slug: &str) -> PathBuf {
     let dir = std::env::temp_dir().join(format!(
@@ -12,7 +12,7 @@ fn temp_root(slug: &str) -> PathBuf {
     dir
 }
 
-fn write_component(dir: &PathBuf, id: &str) {
+fn write_component(dir: &Path, id: &str) {
     let text = format!(
         r#"
 [[component]]

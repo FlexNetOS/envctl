@@ -18,9 +18,11 @@ use std::process::{Command, Stdio};
 use zeroize::Zeroizing;
 
 /// Resolve the `secretctl` binary, fail-closed (returns `None` if it cannot be found):
-/// (a) alongside the current executable (the GUI ships next to it in `~/.cargo/bin`),
-/// (b) `$HOME/.cargo/bin/secretctl` (the manifest install location, `env-ctl.toml:66`),
-/// (c) on `PATH`. The first existing path wins.
+/// (a) alongside the current executable,
+/// (b) `$META_ROOT/.toolchains/secrets/bin/secretctl` (the envctl-owned manifest prefix),
+/// (c) `$HOME/.local/bin/secretctl` (the canonical symlink farm),
+/// (d) legacy `$HOME/.cargo/bin/secretctl`, and finally
+/// (e) on `PATH`. The first existing path wins.
 fn resolve_secretctl() -> Option<PathBuf> {
     // (a) alongside current_exe
     if let Ok(exe) = std::env::current_exe() {
@@ -31,14 +33,31 @@ fn resolve_secretctl() -> Option<PathBuf> {
             }
         }
     }
-    // (b) $HOME/.cargo/bin/secretctl
-    if let Ok(home) = std::env::var("HOME") {
-        let cand = PathBuf::from(home).join(".cargo/bin/secretctl");
+    // (b) meta-owned prefix
+    if let Ok(meta) = std::env::var("META_ROOT") {
+        let cand = PathBuf::from(meta).join(".toolchains/secrets/bin/secretctl");
         if cand.is_file() {
             return Some(cand);
         }
     }
-    // (c) PATH
+    if let Ok(home) = std::env::var("HOME") {
+        let home = PathBuf::from(home);
+        let default_meta = home.join("Desktop/meta/.toolchains/secrets/bin/secretctl");
+        if default_meta.is_file() {
+            return Some(default_meta);
+        }
+        // (c) canonical symlink farm
+        let local = home.join(".local/bin/secretctl");
+        if local.is_file() {
+            return Some(local);
+        }
+        // (d) legacy cargo-bin location, kept as a compatibility fallback only.
+        let legacy = home.join(".cargo/bin/secretctl");
+        if legacy.is_file() {
+            return Some(legacy);
+        }
+    }
+    // (e) PATH
     which::which("secretctl").ok()
 }
 
@@ -62,6 +81,7 @@ pub fn run_secretctl(
             verb,
             json_stdout: String::new(),
             stderr: "secretctl not installed (looked alongside the binary, in \
+                     $META_ROOT/.toolchains/secrets/bin, $HOME/.local/bin, legacy \
                      $HOME/.cargo/bin, and on PATH)"
                 .to_string(),
             code: None,
@@ -130,8 +150,8 @@ mod tests {
 
     #[test]
     fn missing_binary_emits_failclosed_result_not_panic() {
-        // Force resolution to miss: empty PATH + a HOME with no .cargo/bin/secretctl, and
-        // current_exe's dir won't have a `secretctl` in the test harness.
+        // Force resolution to miss: empty PATH + a HOME with no meta/.local/.cargo secretctl,
+        // and current_exe's dir won't have a `secretctl` in the test harness.
         let _g = crate::test_env_lock();
         let prev_path = std::env::var("PATH").ok();
         let prev_home = std::env::var("HOME").ok();
