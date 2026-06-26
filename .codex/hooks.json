@@ -4,7 +4,7 @@
       {
         "hooks": [
           {
-            "command": "bash '/home/drdave/Desktop/meta/envctl/.codex/hooks/hf-checkpoint.sh'",
+            "command": "sh -lc 'root=\"$(git rev-parse --show-toplevel)\"; exec bash \"$root/.codex/hooks/hf-checkpoint.sh\"'",
             "timeout": 10,
             "type": "command"
           }
@@ -27,7 +27,7 @@
       {
         "hooks": [
           {
-            "command": "bash '/home/drdave/Desktop/meta/envctl/.codex/hooks/hf-checkpoint.sh'",
+            "command": "sh -lc 'root=\"$(git rev-parse --show-toplevel)\"; exec bash \"$root/.codex/hooks/hf-checkpoint.sh\"'",
             "timeout": 10,
             "type": "command"
           }
