@@ -84,11 +84,15 @@ install -d -m 755 "$HOME/.local/bin"
 for t in nvcc nsys ncu cuda-gdb compute-sanitizer cuobjdump; do
   [ -x "$DEST/bin/$t" ] && ln -sfn "$DEST/bin/$t" "$HOME/.local/bin/$t"
 done
+if [ -x /usr/bin/nvidia-smi ]; then
+  install -m 755 /usr/bin/nvidia-smi "$DEST/bin/nvidia-smi"
+  ln -sfn "$DEST/bin/nvidia-smi" "$HOME/.local/bin/nvidia-smi"
+fi
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; D=\"$M/.toolchains/cuda\"; \"$D/bin/nvcc\" --version | command grep -q 'release 13.3' && { ls \"$D\"/targets/x86_64-linux/lib/libcublas.so* >/dev/null 2>&1 || ls \"$D\"/lib64/libcublas.so* >/dev/null 2>&1; }"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; D=\"$M/.toolchains/cuda\"; \"$D/bin/nvcc\" --version | command grep -q 'release 13.3' && { ls \"$D\"/targets/x86_64-linux/lib/libcublas.so* >/dev/null 2>&1 || ls \"$D\"/lib64/libcublas.so* >/dev/null 2>&1; } && { [ ! -x /usr/bin/nvidia-smi ] || [ \"$(readlink -f \"$HOME/.local/bin/nvidia-smi\" 2>/dev/null)\" = \"$(readlink -f \"$D/bin/nvidia-smi\")\" ]; }"]
 [component.fix]
 kind = "script"
 login_shell = true
@@ -112,13 +116,17 @@ install -d -m 755 "$HOME/.local/bin"
 for t in nvcc nsys ncu cuda-gdb compute-sanitizer cuobjdump; do
   [ -x "$DEST/bin/$t" ] && ln -sfn "$DEST/bin/$t" "$HOME/.local/bin/$t"
 done
+if [ -x /usr/bin/nvidia-smi ]; then
+  install -m 755 /usr/bin/nvidia-smi "$DEST/bin/nvidia-smi"
+  ln -sfn "$DEST/bin/nvidia-smi" "$HOME/.local/bin/nvidia-smi"
+fi
 '''
 [component.remove]
 kind = "script"
 script = '''
 set -u
 M="${META_ROOT:-$HOME/Desktop/meta}"
-for t in nvcc nsys ncu cuda-gdb compute-sanitizer cuobjdump; do
+for t in nvcc nsys ncu cuda-gdb compute-sanitizer cuobjdump nvidia-smi; do
   tt="$HOME/.local/bin/$t"; [ -L "$tt" ] && readlink "$tt" | grep -q "$M/.toolchains/cuda" && rm -f "$tt"
 done
 rm -rf "$M/.toolchains/cuda"

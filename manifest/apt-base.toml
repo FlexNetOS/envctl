@@ -24,20 +24,124 @@ args = ["-lc", "ghostty --version"]
 [[component]]
 id = "podman"
 name = "Podman (rootless containers)"
-description = "Rootless container stack (podman + compose + buildah + skopeo)."
+description = "Rootless container stack from the static podman release, installed under $META_ROOT/.toolchains/podman. No wrapper: ~/.local/bin/podman is a direct symlink to the meta-hosted podman binary; helper binaries and containers config are also meta-hosted."
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "command -v podman"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/podman/usr/local/bin/podman\" ] && [ \"$(readlink -f \"$HOME/.local/bin/podman\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/podman/usr/local/bin/podman\")\" ]"]
 [component.install]
-kind = "command"
-needs_sudo = true
-command = "apt-get"
-args = ["install", "-y", "podman", "podman-compose", "buildah", "skopeo", "uidmap", "slirp4netns"]
+kind = "script"
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/podman"
+VER="${PODMAN_STATIC_VERSION:-v5.8.3}"
+ARCH="$(uname -m)"; case "$ARCH" in x86_64) A=amd64;; aarch64) A=arm64;; *) echo "unsupported arch: $ARCH"; exit 1;; esac
+URL="https://github.com/mgoltzsche/podman-static/releases/download/$VER/podman-linux-$A.tar.gz"
+cache="$M/.cache/podman"; install -d -m 755 "$cache"
+tarball="$cache/podman-linux-$A-$VER.tar.gz"
+[ -s "$tarball" ] || curl -fSL "$URL" -o "$tarball"
+tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+tar -xzf "$tarball" -C "$tmp"
+rm -rf "$DEST"; install -d -m 755 "$DEST"
+cp -a "$tmp/podman-linux-$A/." "$DEST/"
+
+# Relocated, meta-hosted config. The podman binary is direct; config is read via
+# normal XDG/user config symlinks, not a launcher wrapper.
+install -d -m 755 "$DEST/etc/containers" "$HOME/.config/containers" "$HOME/.local/bin"
+cat > "$DEST/etc/containers/containers.conf" <<EOF
+[engine]
+cgroup_manager = "cgroupfs"
+events_logger = "file"
+conmon_path = ["$DEST/usr/local/lib/podman/conmon"]
+helper_binaries_dir = ["$DEST/usr/local/lib/podman", "$DEST/usr/local/libexec/podman", "$DEST/usr/local/bin"]
+network_cmd_path = "$DEST/usr/local/bin/pasta"
+runtime = "crun"
+
+[engine.runtimes]
+crun = ["$DEST/usr/local/bin/crun"]
+runc = ["$DEST/usr/local/bin/runc"]
+EOF
+cat > "$DEST/etc/containers/storage.conf" <<EOF
+[storage]
+driver = "overlay"
+runroot = "$M/.toolchains/podman/runroot"
+graphroot = "$M/.toolchains/podman/graphroot"
+rootless_storage_path = "$M/.toolchains/podman/rootless-storage"
+
+[storage.options.overlay]
+ignore_chown_errors = "true"
+mount_program = "$DEST/usr/local/bin/fuse-overlayfs"
+mountopt = "nodev,fsync=0"
+EOF
+for f in containers.conf storage.conf registries.conf policy.json; do
+  [ -f "$DEST/etc/containers/$f" ] && ln -sfn "$DEST/etc/containers/$f" "$HOME/.config/containers/$f"
+done
+ln -sfn "$DEST/usr/local/bin/podman" "$HOME/.local/bin/podman"
+for b in crun runc fuse-overlayfs fusermount3 pasta; do
+  [ -x "$DEST/usr/local/bin/$b" ] && ln -sfn "$DEST/usr/local/bin/$b" "$HOME/.local/bin/$b"
+done
+'''
 [component.verify]
 kind = "command"
-command = "podman"
-args = ["info"]
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export PATH=\"$HOME/.local/bin:$PATH\"; [ \"$(readlink -f \"$(command -v podman)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/podman/usr/local/bin/podman\")\" ] && podman --version | grep -q '5\\.8\\.3' && podman info --format '{{.Host.Conmon.Path}} {{.Host.OCIRuntime.Path}}' | grep -q \"$M/.toolchains/podman\""]
+[component.fix]
+kind = "script"
+script = '''
+set -euo pipefail
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/podman"
+VER="${PODMAN_STATIC_VERSION:-v5.8.3}"
+ARCH="$(uname -m)"; case "$ARCH" in x86_64) A=amd64;; aarch64) A=arm64;; *) echo "unsupported arch: $ARCH"; exit 1;; esac
+URL="https://github.com/mgoltzsche/podman-static/releases/download/$VER/podman-linux-$A.tar.gz"
+cache="$M/.cache/podman"; install -d -m 755 "$cache"
+tarball="$cache/podman-linux-$A-$VER.tar.gz"
+[ -s "$tarball" ] || curl -fSL "$URL" -o "$tarball"
+tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+tar -xzf "$tarball" -C "$tmp"
+rm -rf "$DEST"; install -d -m 755 "$DEST"
+cp -a "$tmp/podman-linux-$A/." "$DEST/"
+install -d -m 755 "$DEST/etc/containers" "$HOME/.config/containers" "$HOME/.local/bin"
+cat > "$DEST/etc/containers/containers.conf" <<EOF
+[engine]
+cgroup_manager = "cgroupfs"
+events_logger = "file"
+conmon_path = ["$DEST/usr/local/lib/podman/conmon"]
+helper_binaries_dir = ["$DEST/usr/local/lib/podman", "$DEST/usr/local/libexec/podman", "$DEST/usr/local/bin"]
+network_cmd_path = "$DEST/usr/local/bin/pasta"
+runtime = "crun"
+
+[engine.runtimes]
+crun = ["$DEST/usr/local/bin/crun"]
+runc = ["$DEST/usr/local/bin/runc"]
+EOF
+cat > "$DEST/etc/containers/storage.conf" <<EOF
+[storage]
+driver = "overlay"
+runroot = "$M/.toolchains/podman/runroot"
+graphroot = "$M/.toolchains/podman/graphroot"
+rootless_storage_path = "$M/.toolchains/podman/rootless-storage"
+
+[storage.options.overlay]
+ignore_chown_errors = "true"
+mount_program = "$DEST/usr/local/bin/fuse-overlayfs"
+mountopt = "nodev,fsync=0"
+EOF
+for f in containers.conf storage.conf registries.conf policy.json; do
+  [ -f "$DEST/etc/containers/$f" ] && ln -sfn "$DEST/etc/containers/$f" "$HOME/.config/containers/$f"
+done
+ln -sfn "$DEST/usr/local/bin/podman" "$HOME/.local/bin/podman"
+for b in crun runc fuse-overlayfs fusermount3 pasta; do
+  [ -x "$DEST/usr/local/bin/$b" ] && ln -sfn "$DEST/usr/local/bin/$b" "$HOME/.local/bin/$b"
+done
+'''
+[component.remove]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; for b in podman crun runc fuse-overlayfs fusermount3 pasta; do t=\"$HOME/.local/bin/$b\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/podman\" && rm -f \"$t\"; done; for f in containers.conf storage.conf registries.conf policy.json; do t=\"$HOME/.config/containers/$f\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/podman\" && rm -f \"$t\"; done; rm -rf \"$M/.toolchains/podman\""]
+[component.wiring]
+path_entries = ["~/.local/bin"]
 
 
 [[component]]

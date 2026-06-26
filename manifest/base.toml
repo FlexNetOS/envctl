@@ -116,27 +116,33 @@ args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; rm -f \"$M/.toolchains/.
 [[component]]
 id = "node-real"
 name = "Real Node.js (n8n V8 runtime)"
-description = "Real Node 20-24 for tools that need V8 (n8n's isolated-vm). Bun (JSC) cannot satisfy these; this is the narrow non-bun carve-out. Bun remains the default JS runtime."
+description = "Real Node 20-24 for tools that need V8 (n8n's isolated-vm), installed into $META_ROOT/.toolchains/node with ~/.local/bin symlinks. Bun (JSC) cannot satisfy these; this is the narrow non-bun carve-out. Bun remains the default JS runtime."
 [component.detect]
 kind = "command"
 command = "bash"
 # A REAL node (not the bun shim) in n8n's supported range 20-24.
-args = ["-lc", "command -v node >/dev/null && ! readlink -f \"$(command -v node)\" 2>/dev/null | grep -q bun && node -e 'const m=+process.versions.node.split(\".\")[0]; process.exit(m>=20 && m<=24 ? 0 : 1)'"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/node/bin/node\" ] && [ \"$(readlink -f \"$HOME/.local/bin/node\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/node/bin/node\")\" ] && ! readlink -f \"$HOME/.local/bin/node\" | grep -q bun && \"$HOME/.local/bin/node\" -e 'const m=+process.versions.node.split(\".\")[0]; process.exit(m>=20 && m<=24 ? 0 : 1)'"]
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "node -e 'const m=+process.versions.node.split(\".\")[0]; process.exit(m>=20 && m<=24 ? 0 : 1)'"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ \"$(readlink -f \"$(command -v node)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/node/bin/node\")\" ] && node -e 'const m=+process.versions.node.split(\".\")[0]; process.exit(m>=20 && m<=24 ? 0 : 1)'"]
 [component.install]
 kind = "script"
-# Install a real Node 22 LTS into ~/.local without touching bun. nvm-free, no sudo.
+# Install a real Node 22 LTS into the meta toolchain prefix without touching bun.
 script = '''
 set -e
 VER=v22.22.3
 ARCH="$(uname -m)"; case "$ARCH" in x86_64) A=x64;; aarch64) A=arm64;; *) A="$ARCH";; esac
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/node"
 cd "$(mktemp -d)"
 curl -fsSL -o node.tar.xz "https://nodejs.org/dist/$VER/node-$VER-linux-$A.tar.xz"
-mkdir -p "$HOME/.local"
-tar -xJf node.tar.xz --strip-components=1 -C "$HOME/.local"
+rm -rf "$DEST"
+mkdir -p "$DEST" "$HOME/.local/bin"
+tar -xJf node.tar.xz --strip-components=1 -C "$DEST"
+for b in node npm npx corepack; do
+  [ -x "$DEST/bin/$b" ] && ln -sfn "$DEST/bin/$b" "$HOME/.local/bin/$b"
+done
 '''
 [component.fix]
 kind = "script"
@@ -144,13 +150,21 @@ script = '''
 set -e
 VER=v22.22.3
 ARCH="$(uname -m)"; case "$ARCH" in x86_64) A=x64;; aarch64) A=arm64;; *) A="$ARCH";; esac
+M="${META_ROOT:-$HOME/Desktop/meta}"
+DEST="$M/.toolchains/node"
 cd "$(mktemp -d)"
 curl -fsSL -o node.tar.xz "https://nodejs.org/dist/$VER/node-$VER-linux-$A.tar.xz"
-mkdir -p "$HOME/.local"
-tar -xJf node.tar.xz --strip-components=1 -C "$HOME/.local"
+rm -rf "$DEST"
+mkdir -p "$DEST" "$HOME/.local/bin"
+tar -xJf node.tar.xz --strip-components=1 -C "$DEST"
+for b in node npm npx corepack; do
+  [ -x "$DEST/bin/$b" ] && ln -sfn "$DEST/bin/$b" "$HOME/.local/bin/$b"
+done
 '''
-# NOTE: no `remove` hook by design — n8n depends on real node; removal is not a
-# managed operation here (avoids a footgun that would break n8n).
+[component.remove]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; for b in node npm npx corepack; do t=\"$HOME/.local/bin/$b\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/node\" && rm -f \"$t\"; done; rm -rf \"$M/.toolchains/node\""]
 [component.wiring]
 path_entries = ["~/.local/bin"]
 
