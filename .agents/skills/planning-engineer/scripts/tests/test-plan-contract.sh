@@ -1,0 +1,134 @@
+#!/usr/bin/env bash
+# test-plan-contract.sh — locks the `.handoff/loop/plan/` row/artifact contract the plan-loop must
+# produce. No single validator script exists for these, so this test carries small inline validators
+# and asserts them against synthetic GOOD/BAD fixtures, AND against the literal examples grepped out of
+# the real references/state-contract.md (so the doc can't silently drift from the gate):
+#   * targets.md rows: status marker + lowercase-kebab slug + "scope" present
+#   * graph artifact names: graph/<T>.{symbols,callgraph,metrics}.json + .{graph,diff}.md
+#   * JSON validity of a synthetic symbols.json via jq (SKIPPED with a note if jq is absent)
+#   * the documented examples parse under the very same validators
+#
+# Self-contained: no external script under test, no network, tmpdir for fixtures.
+set -euo pipefail
+
+fail() { echo "FAIL: $*" >&2; exit 1; }
+# Locate the packaged state-contract.md regardless of which of the two byte-identical copies is running
+# (mirrored into envctl/scripts/tests/ and the harness_hub plugin). Walk up from this script to the
+# meta-worktree root (holding both envctl/ and harness_hub/) and descend to the plugin references.
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; root="$here"
+REL="harness_hub/harness/skills/planning-engineer/references/state-contract.md"
+while [ "$root" != "/" ] && [ ! -f "$root/$REL" ]; do root="$(dirname "$root")"; done
+CONTRACT="$root/$REL"
+# Fallback for envctl standalone CI (no meta-worktree root; only the ejected .claude copy is present):
+[ -f "$CONTRACT" ] || CONTRACT="$(git -C "$here" rev-parse --show-toplevel 2>/dev/null)/harness/skills/planning-engineer/references/state-contract.md"
+[ -f "$CONTRACT" ] || CONTRACT="$(git -C "$here" rev-parse --show-toplevel 2>/dev/null)/.claude/skills/planning-engineer/references/state-contract.md"
+[ -f "$CONTRACT" ] || CONTRACT="$(git -C "$here" rev-parse --show-toplevel 2>/dev/null)/.agents/skills/planning-engineer/references/state-contract.md"
+[ -f "$CONTRACT" ] || { echo "FAIL: planning-engineer state-contract.md not found from $here" >&2; exit 1; }
+
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+SLUG_RE='^[a-z0-9][a-z0-9-]*$'
+
+# valid_target_row "<row>" — a targets.md row: "- [<m>] <slug>: <scope>"; <m> in { space,x,~,!,!! }.
+# Rejects bad status markers, slugs with spaces/uppercase/bad chars, and a missing scope.
+# Regex parse (brackets/literals are explicit — no glob ambiguity from `case`/`${#}` patterns).
+valid_target_row() {
+  local row="$1" slug scope
+  [[ "$row" =~ ^-\ \[(\ |x|~|!|!!)\]\ ([^:]+):[[:space:]]*(.+)$ ]] || return 1
+  slug="${BASH_REMATCH[2]}"
+  scope="${BASH_REMATCH[3]}"
+  [ -n "$scope" ] || return 1                        # scope must be non-empty
+  [[ "$slug" =~ $SLUG_RE ]] || return 1              # lowercase-kebab slug, no spaces/uppercase
+  return 0
+}
+
+# valid_graph_artifact "<name>" — graph/<T>.<kind> per the documented scheme.
+valid_graph_artifact() {
+  local n="$1" base T kind
+  case "$n" in graph/*) base="${n#graph/}" ;; *) return 1 ;; esac
+  T="${base%%.*}"
+  [[ "$T" =~ $SLUG_RE ]] || return 1
+  kind="${base#*.}"
+  case "$kind" in
+    symbols.json|callgraph.json|metrics.json|graph.md|diff.md) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+# ---- targets.md row fixtures ----
+GOOD_ROWS=(
+  "- [ ] secrets-proto: gRPC contract crate"
+  "- [x] engine: the single shared sync library"
+  "- [!] foo: blocked: upstream crate missing"
+  "- [~] secretd: planned with open gaps"
+  "- [!!] reset-flow: SUPERVISED destructive path"
+)
+BAD_ROWS=(
+  "- [?] secrets-proto: bad status marker"
+  "- [ ] Secrets Proto: slug has spaces and uppercase"
+  "- [ ] secrets_proto-OK: uppercase in slug"
+  "- [ ] secretd"
+  "* [ ] secrets-proto: wrong bullet"
+)
+for r in "${GOOD_ROWS[@]}"; do valid_target_row "$r" || fail "GOOD targets row rejected: $r"; done
+for r in "${BAD_ROWS[@]}";  do valid_target_row "$r" && fail "BAD targets row accepted: $r" || true; done
+
+# duplicate-slug detection over a synthetic targets.md
+cat > "$tmp/targets.md" <<'EOF'
+- [ ] secrets-proto: gRPC contract crate
+- [x] engine: shared sync library
+- [~] secrets-proto: duplicate slug must be caught
+EOF
+dups="$(grep -oE '^- \[[^]]*\] [a-z0-9-]+:' "$tmp/targets.md" \
+        | sed -E 's/^- \[[^]]*\] ([a-z0-9-]+):/\1/' | sort | uniq -d)"
+[ "$dups" = "secrets-proto" ] || fail "duplicate-slug detector failed (got: '${dups:-<none>}')"
+
+# ---- graph artifact naming fixtures ----
+GOOD_ART=(
+  "graph/secrets-proto.symbols.json"
+  "graph/secrets-proto.callgraph.json"
+  "graph/secrets-proto.metrics.json"
+  "graph/secrets-proto.graph.md"
+  "graph/secrets-proto.diff.md"
+)
+BAD_ART=(
+  "graph/secrets-proto.symbol.json"
+  "graph/secrets-proto.json"
+  "graph/Secrets-Proto.symbols.json"
+  "secrets-proto.symbols.json"
+  "graph/secrets-proto.symbols.txt"
+)
+for a in "${GOOD_ART[@]}"; do valid_graph_artifact "$a" || fail "GOOD artifact rejected: $a"; done
+for a in "${BAD_ART[@]}";  do valid_graph_artifact "$a" && fail "BAD artifact accepted: $a" || true; done
+
+# ---- JSON validity (jq) ----
+if command -v jq >/dev/null 2>&1; then
+  printf '{"symbols":[],"count":0}\n' > "$tmp/secrets-proto.symbols.json"
+  jq -e . "$tmp/secrets-proto.symbols.json" >/dev/null || fail "well-formed symbols.json failed jq parse"
+  printf '{"symbols":[], "count":0\n' > "$tmp/bad.symbols.json"      # missing closing brace
+  jq -e . "$tmp/bad.symbols.json" >/dev/null 2>&1 && fail "malformed JSON passed jq parse" || true
+  jq_note="jq checks RAN"
+else
+  jq_note="jq absent — JSON sub-checks SKIPPED"
+fi
+
+# ---- documented examples parse under the same validators (anti-drift vs the real doc) ----
+# targets.md example line in the doc uses <T>/<one-line scope> placeholders; substitute concrete
+# values and strip the trailing "# comment", then run it through valid_target_row.
+doc_target="$(grep -E '^- \[ \] <T>: <one-line scope>' "$CONTRACT" | head -n1)"
+[ -n "$doc_target" ] || fail "could not find the targets.md row example in state-contract.md"
+doc_target="${doc_target%%#*}"; doc_target="${doc_target%"${doc_target##*[![:space:]]}"}"  # rtrim
+doc_target="${doc_target//<T>/secrets-proto}"
+doc_target="${doc_target//<one-line scope>/gRPC contract crate}"
+valid_target_row "$doc_target" || fail "documented targets.md example does not satisfy the validator: '$doc_target'"
+
+# graph artifact names documented in the doc (graph/<T>.<kind> ...) must satisfy valid_graph_artifact.
+mapfile -t doc_arts < <(grep -oE 'graph/<T>\.[a-z]+\.(json|md)' "$CONTRACT" | sort -u)
+[ "${#doc_arts[@]}" -ge 4 ] || fail "expected >=4 documented graph artifacts, found ${#doc_arts[@]}"
+for da in "${doc_arts[@]}"; do
+  concrete="${da//<T>/secrets-proto}"
+  valid_graph_artifact "$concrete" || fail "documented graph artifact does not satisfy the validator: '$da'"
+done
+
+echo "PASS: plan contract locked — targets rows, graph artifact names, JSON validity, and the documented examples all conform ($jq_note)"

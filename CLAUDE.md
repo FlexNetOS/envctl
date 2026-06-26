@@ -224,9 +224,16 @@ general "`.claude/skills/*` are kasetto-generated" rule above — the kasetto-ma
 > `auto-provision`, `handoff-sync`) are NOT generically reusable and remain hand-authored in envctl
 > only — they are deliberately out of the hub package's scope.
 
+> **Packaged planning upstream (2026-06-26):** the recovered **planning-engineer** harness is now a
+> registered, ejectable packaged harness in `harness_hub` (`/harness:planning-engineer` for one
+> evidence-backed planning cycle and `/harness:plan-loop` for the continuous Ralph loop). The envctl
+> `.claude/`/`.agents/` copies are ejected mirrors; the hub package is the reusable source-of-truth.
+> The loop is read-only on product code and writes planning artifacts under `.handoff/loop/plan/`.
+
 **Change history:**
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
+| 2026-06-26 | Recover and eject planning-engineer harness | `.claude`/`.agents` planning skills+agents; `.handoff/loop/plan`; `ci/gates/{loop-state,harness-scripts}.sh`; `scripts/tests/test-plan-*` | Recovered Claude-lost `/harness:planning-engineer` + `/harness:plan-loop` work from transcript, re-ejected into envctl, and added hermetic gates so the plan-loop state/eject/contract cannot silently drift |
 | 2026-06-04 | Initial harness build | agents/{feature-architect,rust-implementer,invariant-guardian}; skills/{feature-forge,rust-feature-impl} | Build a feature-delivery construction crew (design/implement/verify) that upholds the non-negotiable invariants |
 | 2026-06-04 | Architect uses return-value (not Write) | agents/feature-architect; skills/feature-forge | Smoke test: `Plan` type is read-only and cannot Write its plan file — orchestrator persists the returned text |
 | 2026-06-04 | Add rtk-proxy + baseline-stash guidance | skills/rust-feature-impl/references/verification; skills/feature-forge | Smoke test: rtk summarizes cargo/git output (corrupts fmt/clippy diagnostics); floating `stable`=1.96 causes pre-existing workspace fmt/clippy drift to be mis-attributed to the change |

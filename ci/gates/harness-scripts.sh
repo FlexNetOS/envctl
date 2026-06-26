@@ -12,6 +12,9 @@ bash "$root/scripts/tests/test-merge-driver.sh"
 bash "$root/scripts/tests/test-reaper.sh"
 bash "$root/scripts/tests/test-loop-state-gate.sh"
 bash "$root/scripts/tests/test-skill-contract.sh"
+bash "$root/scripts/tests/test-plan-eject.sh"
+bash "$root/scripts/tests/test-plan-contract.sh"
+bash "$root/scripts/tests/test-plan-loop-state.sh"
 
 # Guard the owner-critical publish contract. The harness must never regress to
 # committed-but-unpushed local work; every committed chunk is pushed, PR-backed,

@@ -22,57 +22,61 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-LS=".handoff/loop/loop_state.md"
-if [ ! -f "$LS" ]; then
-  echo "LOOP-STATE GATE SKIP — no $LS (not a forge-loop worktree)"
+LOOP_STATES=()
+[ -f ".handoff/loop/loop_state.md" ] && LOOP_STATES+=(".handoff/loop/loop_state.md")
+[ -f ".handoff/loop/plan/loop_state.md" ] && LOOP_STATES+=(".handoff/loop/plan/loop_state.md")
+if [ "${#LOOP_STATES[@]}" -eq 0 ]; then
+  echo "LOOP-STATE GATE SKIP — no forge-loop or planning-engineer loop_state.md"
   exit 0
 fi
 
 # field <key> [file]  -> prints the value token after "<key>:" (strips trailing "# comment")
 field() {
-  awk -v k="$1:" '$1==k{print $2; exit}' "${2:-$LS}"
+  awk -v k="$1:" '$1==k{print $2; exit}' "$2"
 }
 
 fail() { echo "LOOP-STATE GATE FAIL — $1" >&2; exit 1; }
 
 is_uint() { case "$1" in ''|*[!0-9]*) return 1 ;; *) return 0 ;; esac; }
 
-cycle_budget="$(field cycle_budget)"
-wrap_every="$(field wrap_every)"
-last_wrapup_total="$(field last_wrapup_total)"
-cycles_total="$(field cycles_total)"
-cycles_this_session="$(field cycles_this_session)"
+for LS in "${LOOP_STATES[@]}"; do
+  cycle_budget="$(field cycle_budget "$LS")"
+  wrap_every="$(field wrap_every "$LS")"
+  last_wrapup_total="$(field last_wrapup_total "$LS")"
+  cycles_total="$(field cycles_total "$LS")"
+  cycles_this_session="$(field cycles_this_session "$LS")"
 
-# 1. every counter is a non-negative integer
-for kv in \
-  "cycle_budget=$cycle_budget" \
-  "wrap_every=$wrap_every" \
-  "last_wrapup_total=$last_wrapup_total" \
-  "cycles_total=$cycles_total" \
-  "cycles_this_session=$cycles_this_session"; do
-  k="${kv%%=*}"; v="${kv#*=}"
-  is_uint "$v" || fail "$k is not a non-negative integer (got: '${v:-<missing>}')"
+  # 1. every counter is a non-negative integer
+  for kv in \
+    "cycle_budget=$cycle_budget" \
+    "wrap_every=$wrap_every" \
+    "last_wrapup_total=$last_wrapup_total" \
+    "cycles_total=$cycles_total" \
+    "cycles_this_session=$cycles_this_session"; do
+    k="${kv%%=*}"; v="${kv#*=}"
+    is_uint "$v" || fail "$LS: $k is not a non-negative integer (got: '${v:-<missing>}')"
+  done
+
+  # 2. cadence knobs must be >= 1 (a 0 fires a boundary/hand-off every turn)
+  [ "$wrap_every"   -ge 1 ] || fail "$LS: wrap_every must be >= 1 (got $wrap_every)"
+  [ "$cycle_budget" -ge 1 ] || fail "$LS: cycle_budget must be >= 1 (got $cycle_budget)"
+
+  # 3. boundary delta can never be negative
+  [ "$cycles_total" -ge "$last_wrapup_total" ] \
+    || fail "$LS: cycles_total ($cycles_total) < last_wrapup_total ($last_wrapup_total) — negative boundary delta"
+
+  # 4. monotonic cycles_total vs the prior committed version (skip if unreadable — never false-block)
+  prev=""
+  if prev_file="$(git show HEAD~1:"$LS" 2>/dev/null)"; then
+    prev="$(printf '%s\n' "$prev_file" | awk -v k="cycles_total:" '$1==k{print $2; exit}')"
+  fi
+  if [ -n "$prev" ] && is_uint "$prev"; then
+    [ "$cycles_total" -ge "$prev" ] \
+      || fail "$LS: cycles_total regressed: $prev (HEAD~1) -> $cycles_total (now) — counters must be monotonic"
+    mono="monotonic ok ($prev -> $cycles_total)"
+  else
+    mono="monotonic SKIPPED (no readable prior cycles_total)"
+  fi
+
+  echo "LOOP-STATE GATE PASS [$LS] — budget=$cycle_budget wrap_every=$wrap_every last_wrapup=$last_wrapup_total cycles_total=$cycles_total session=$cycles_this_session; $mono"
 done
-
-# 2. cadence knobs must be >= 1 (a 0 fires a boundary/hand-off every turn)
-[ "$wrap_every"   -ge 1 ] || fail "wrap_every must be >= 1 (got $wrap_every)"
-[ "$cycle_budget" -ge 1 ] || fail "cycle_budget must be >= 1 (got $cycle_budget)"
-
-# 3. boundary delta can never be negative
-[ "$cycles_total" -ge "$last_wrapup_total" ] \
-  || fail "cycles_total ($cycles_total) < last_wrapup_total ($last_wrapup_total) — negative boundary delta"
-
-# 4. monotonic cycles_total vs the prior committed version (skip if unreadable — never false-block)
-prev=""
-if prev_file="$(git show HEAD~1:"$LS" 2>/dev/null)"; then
-  prev="$(printf '%s\n' "$prev_file" | awk -v k="cycles_total:" '$1==k{print $2; exit}')"
-fi
-if [ -n "$prev" ] && is_uint "$prev"; then
-  [ "$cycles_total" -ge "$prev" ] \
-    || fail "cycles_total regressed: $prev (HEAD~1) -> $cycles_total (now) — counters must be monotonic"
-  mono="monotonic ok ($prev -> $cycles_total)"
-else
-  mono="monotonic SKIPPED (no readable prior cycles_total)"
-fi
-
-echo "LOOP-STATE GATE PASS — budget=$cycle_budget wrap_every=$wrap_every last_wrapup=$last_wrapup_total cycles_total=$cycles_total session=$cycles_this_session; $mono"
