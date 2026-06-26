@@ -21,7 +21,7 @@ completeness sweep — the gate that makes "nothing major unexamined" a checked 
 2. **Build the CODE GRAPH — ONLY from `git-kb code` JSON** (no C dep, no graph DB; plain JSON/md):
    - Snapshot symbols + call edges + entrypoints + flows →
      `graph/<T>.symbols.json`, `graph/<T>.callgraph.json` (edges + entrypoints + flows).
-   - Recipes (all `--json --refresh`): `git-kb code index <root>`, `symbols`, `callers <sym>`,
+   - Recipes (JSON where supported; refresh with command-supported flags only): `git-kb code index <root> --force`, `symbols`, `callers <sym>`,
      `callees <sym>`, `impact <file> --depth N`, `dead`, `refs`, `entrypoints`, `flows`,
      `flow <id>`, `query <template>` ∈ {hotspots, public-api, entrypoints, unresolved-by-reason,
      cross-service-impact, dead-code-explain, routes, route-clients, handler-routes}.
