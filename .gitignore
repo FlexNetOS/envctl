@@ -46,3 +46,4 @@ Cargo.lock.bak
 .handoff/**/*.redb.tmp
 /.handoff/workspaces/
 /.handoff/locks/
+/.handoff/maps/
