@@ -3279,17 +3279,13 @@ fn print_doctor(engine: &Engine, json: bool) -> anyhow::Result<()> {
                 .to_string()
         })
     };
-    let dirs = [
-        layout.bin().display().to_string(),
-        layout.lib().display().to_string(),
-        layout.share().display().to_string(),
-        layout.repo_store().display().to_string(),
-        layout.state().display().to_string(),
-        layout.cache().display().to_string(),
-        layout.tmp().display().to_string(),
-        layout.opt().display().to_string(),
-        "/etc".to_string(),
-    ];
+    let layout_entries = layout.entries();
+    let mut dirs: Vec<String> = layout_entries
+        .iter()
+        .filter(|entry| entry.is_canonical())
+        .map(|entry| entry.path.display().to_string())
+        .collect();
+    dirs.push("/etc".to_string());
     let tools = [
         "git",
         "cargo",
@@ -3325,6 +3321,20 @@ fn print_doctor(engine: &Engine, json: bool) -> anyhow::Result<()> {
             .iter()
             .map(|d| serde_json::json!({"path": d, "writable": write_ok(d)}))
             .collect();
+        let layoutj: Vec<_> = layout_entries
+            .iter()
+            .map(|entry| {
+                serde_json::json!({
+                    "key": entry.key,
+                    "path": entry.path.display().to_string(),
+                    "kind": match entry.kind {
+                        envctl_engine::LayoutKind::Canonical => "canonical",
+                        envctl_engine::LayoutKind::LegacyCompatibility => "legacy_compatibility",
+                    },
+                    "purpose": entry.purpose,
+                })
+            })
+            .collect();
         let toolj: Vec<_> = tools
             .iter()
             .map(|t| serde_json::json!({"tool": t, "version": has(t)}))
@@ -3332,7 +3342,8 @@ fn print_doctor(engine: &Engine, json: bool) -> anyhow::Result<()> {
         println!(
             "{}",
             serde_json::to_string_pretty(&serde_json::json!({
-                "writable": dirj, "tools": toolj, "sudo_cached": sudo_cached,
+                "writable": dirj, "layout_registry": layoutj,
+                "tools": toolj, "sudo_cached": sudo_cached,
                 "uefi": uefi, "secure_boot": secure_boot, "nvidia_driver_loaded": driver_loaded,
                 "run_log": run_log.display().to_string(), "run_log_exists": log_exists,
                 "meta_boundary": detected.as_ref().map(|r| &r.meta_boundary),

@@ -669,7 +669,7 @@ pub fn add_repo(
     // Run the staged pipeline (acquire → [transform] → detect → build → locate →
     // shape). It refuses as root, gates real work behind spec.allow_build, and
     // streams every stage. Returns the partial summary + outcome.
-    let repos_root = repos_root();
+    let repos_root = repos_root()?;
     let (mut summary, outcome) = crate::addrepo::run_pipeline(&spec, &repos_root, dry_run, sink)?;
     let Some(outcome) = outcome else {
         return Ok(summary); // pipeline short-circuited (root-refusal / a stage failed)
@@ -840,8 +840,10 @@ pub(crate) fn validate_spec_strings(spec: &AddRepoSpec) -> anyhow::Result<()> {
     Ok(())
 }
 
-fn repos_root() -> std::path::PathBuf {
-    crate::layout::MetaLayout::from_env_or_default().repo_store()
+fn repos_root() -> std::io::Result<std::path::PathBuf> {
+    let layout = crate::layout::MetaLayout::from_env_or_default();
+    layout.ensure_dirs()?;
+    Ok(layout.repo_store())
 }
 
 fn local_bin_target(_spec: &AddRepoSpec, name: &str) -> String {
