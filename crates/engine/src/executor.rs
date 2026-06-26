@@ -696,7 +696,7 @@ pub fn add_repo(
 
     // Re-check id-collision against a FRESH registry (close the long-pipeline
     // TOCTOU) BEFORE installing — so a concurrent registration can't leave
-    // orphaned ~/.local/bin symlinks + a PATH block behind on the bail path (audit fix).
+    // orphaned meta .local/bin symlinks + a PATH block behind on the bail path (audit fix).
     if let Ok(fresh) = Registry::load(manifest_dir) {
         if fresh.get(&id).is_some() {
             anyhow::bail!(
@@ -841,13 +841,15 @@ pub(crate) fn validate_spec_strings(spec: &AddRepoSpec) -> anyhow::Result<()> {
 }
 
 fn repos_root() -> std::path::PathBuf {
-    let home = std::env::var("HOME").unwrap_or_else(|_| "/root".into());
-    std::path::PathBuf::from(home).join(".local/share/envctl/repos")
+    crate::layout::MetaLayout::from_env_or_default().repo_store()
 }
 
 fn local_bin_target(_spec: &AddRepoSpec, name: &str) -> String {
-    let home = std::env::var("HOME").unwrap_or_else(|_| "/root".into());
-    format!("{home}/.local/bin/{name}")
+    crate::layout::MetaLayout::from_env_or_default()
+        .bin()
+        .join(name)
+        .display()
+        .to_string()
 }
 
 fn build_install_plan(

@@ -7,9 +7,10 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 `envctl` is a first-class **meta** peer member — the **agentic environment manager for the
 whole meta workspace**. It is a **pure-Rust Cargo workspace** (8 crates) that declaratively
 brings every tool, dependency, provider, vendor, CLI, and config to a declared state and
-installs it **into meta** (`meta/.toolchains/`, `$META_ROOT`), with **no system-depth or
-user-global installs** — anything meta uses lives in meta. Its deployment target today is a
-dual-RTX-5090 Ubuntu 26.04 workstation. Two halves share one engine:
+installs it **into meta** (`$META_ROOT/.local/{bin,lib,share,state,cache,tmp,opt}`,
+legacy `meta/.toolchains/`, `$META_ROOT`), with **no system-depth or user-global installs** —
+anything meta uses lives in meta. Its deployment target today is a dual-RTX-5090 Ubuntu 26.04
+workstation. Two halves share one engine:
 
 - **env-manager** — `engine` + `cli` (`envctl`) + `gui` (`envctl-gui`). Brings the box to
   a declared state via TOML *components* whose lifecycle hooks wrap the proven bash in
@@ -53,6 +54,7 @@ integration tests (`#[tokio::test]` for the async daemon path). MSRV 1.88, stabl
 
 ```bash
 bash ci/gates/no-c.sh           # supply-chain: forbids C in the trust boundary (see below)
+bash ci/gates/meta-substrates.sh # meta shared-substrate wiring: loop_lib + meta_plugin_protocol path deps
 bash ci/gates/shape.sh          # code-shape invariants (native-roots, edge module)
 bash ci/gates/enable.sh         # secretd systemd-unit enable invariant
 bash ci/gates/p7.sh             # .handoff Tier-A p7-conformance: schema tags + ledger residency (ADR-0004 §3)
@@ -70,6 +72,12 @@ bash ci/gates/harness-scripts.sh # Feature-Forge harness tooling safety (merge-d
   chacha20poly1305, argon2). `ci/gates/no-c.sh` proves this fail-closed from the resolved
   `cargo metadata` graph — **never add a dependency that pulls one of the banned crates in.**
 - **Exactly one rustls, ring-only** (not aws-lc-rs). All TLS/CA crates pin `features = ["ring"]`.
+- **envctl is wired into meta, not special/excluded.** Keep sibling path dependencies on
+  `loop_lib` and `meta_plugin_protocol`. `ProcessRunner` may own envctl-specific supervision
+  (setsid, timeout, streaming, tee), but `runner.rs` must delegate `std::process::Command`
+  construction to `loop_lib::build_command`. If the shared substrate lacks a needed API, upgrade
+  that substrate first and consume it here; **never downgrade envctl by removing or bypassing it**.
+  `ci/gates/meta-substrates.sh` proves this fail-closed in CI.
 - **The engine is the single shared library** (`crates/engine/src/lib.rs`): sync, pure-Rust,
   **non-printing** (emits `Event`s, never `println!`), no UI, no clap. CLI and GUI both drive
   the *identical* `Engine` API so the front-ends can't diverge. Put logic in the engine, not in

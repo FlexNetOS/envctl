@@ -19,9 +19,9 @@ use zeroize::Zeroizing;
 
 /// Resolve the `secretctl` binary, fail-closed (returns `None` if it cannot be found):
 /// (a) alongside the current executable,
-/// (b) `$META_ROOT/.toolchains/secrets/bin/secretctl` (the envctl-owned manifest prefix),
-/// (c) `$HOME/.local/bin/secretctl` (the canonical symlink farm),
-/// (d) legacy `$HOME/.cargo/bin/secretctl`, and finally
+/// (b) `$META_ROOT/.local/bin/secretctl` (the canonical envctl exposure prefix),
+/// (c) `$META_ROOT/.toolchains/secrets/bin/secretctl` (legacy manifest prefix),
+/// (d) legacy `$HOME/.local/bin/secretctl` / `$HOME/.cargo/bin/secretctl`, and finally
 /// (e) on `PATH`. The first existing path wins.
 fn resolve_secretctl() -> Option<PathBuf> {
     // (a) alongside current_exe
@@ -33,25 +33,25 @@ fn resolve_secretctl() -> Option<PathBuf> {
             }
         }
     }
-    // (b) meta-owned prefix
-    if let Ok(meta) = std::env::var("META_ROOT") {
-        let cand = PathBuf::from(meta).join(".toolchains/secrets/bin/secretctl");
-        if cand.is_file() {
-            return Some(cand);
-        }
+    let layout = crate::layout::MetaLayout::from_env_or_default();
+    // (b) canonical meta-owned exposure prefix
+    let cand = layout.bin().join("secretctl");
+    if cand.is_file() {
+        return Some(cand);
+    }
+    // (c) compatibility manifest prefix while existing components migrate.
+    let cand = layout.legacy_toolchains().join("secrets/bin/secretctl");
+    if cand.is_file() {
+        return Some(cand);
     }
     if let Ok(home) = std::env::var("HOME") {
         let home = PathBuf::from(home);
-        let default_meta = home.join("Desktop/meta/.toolchains/secrets/bin/secretctl");
-        if default_meta.is_file() {
-            return Some(default_meta);
-        }
-        // (c) canonical symlink farm
+        // (d) host-global fallbacks are compatibility-only lookup paths, not
+        // envctl install targets.
         let local = home.join(".local/bin/secretctl");
         if local.is_file() {
             return Some(local);
         }
-        // (d) legacy cargo-bin location, kept as a compatibility fallback only.
         let legacy = home.join(".cargo/bin/secretctl");
         if legacy.is_file() {
             return Some(legacy);
@@ -81,8 +81,8 @@ pub fn run_secretctl(
             verb,
             json_stdout: String::new(),
             stderr: "secretctl not installed (looked alongside the binary, in \
-                     $META_ROOT/.toolchains/secrets/bin, $HOME/.local/bin, legacy \
-                     $HOME/.cargo/bin, and on PATH)"
+                     $META_ROOT/.local/bin, legacy $META_ROOT/.toolchains/secrets/bin, \
+                     compatibility $HOME/.local/bin / $HOME/.cargo/bin, and on PATH)"
                 .to_string(),
             code: None,
         });

@@ -37,7 +37,6 @@ sha2 = { workspace = true }
 zeroize = { workspace = true }
 # Meta wiring: loop_lib is meta's shared command-construction substrate. The engine's hook
 # runner delegates std::process::Command *construction* to `loop_lib::build_command` while
-# keeping its own supervision (setsid/timeout/streaming/tee). loop_lib is pure-Rust
-# (anyhow/rayon/serde/serde_json/colored/indicatif/is-terminal) — ZERO C; enforced by the new
-# envctl-engine gate in ci/gates/no-c.sh. Path dep into the meta tree (envctl lives in meta).
+# keeping its own supervision (setsid/timeout/streaming/tee). If loop_lib lacks a needed API,
+# upgrade loop_lib first — never bypass or remove it from envctl.
 loop_lib = { path = "../../../loop_lib" }

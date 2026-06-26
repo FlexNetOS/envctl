@@ -53,8 +53,8 @@ use envctl_engine::{
     version,
     color = clap::ColorChoice::Auto,
     styles = clap_styles(),
-    about = "meta's agentic environment manager — installs every tool into meta (.toolchains)",
-    long_about = "A declarative, GPU-aware, agentic environment manager for the whole meta workspace, written in Rust.\n\nenvctl is a first-class meta peer member: it brings every tool, dependency, provider, vendor, CLI, and config to a declared state and installs it INTO meta (meta/.toolchains, $META_ROOT) — no system-depth or user-global installs, so anything meta uses lives in meta and travels wherever meta is cloned. It works from TOML components whose lifecycle hooks wrap proven scripts: detect, install, fix, reset, and wire-in toolchains, repos, and the agent environment. One shared engine drives both the CLI and the GUI, so they never diverge. Destructive verbs (reset / auto-fix / self uninstall) are PREVIEW by default and fail-closed — they refuse unless they can prove the operation is safe and you pass the explicit act flag (--apply / --build / --confirm). Deployment target today: a GPU-aware dual-RTX-5090 Ubuntu 26.04 workstation.",
+    about = "meta's agentic environment manager — installs every tool into meta's .local layout",
+    long_about = "A declarative, GPU-aware, agentic environment manager for the whole meta workspace, written in Rust.\n\nenvctl is a first-class meta peer member: it brings every tool, dependency, provider, vendor, CLI, and config to a declared state and installs it INTO meta's system-shaped local prefix ($META_ROOT/.local/{bin,lib,share,state,cache,tmp,opt}) — no system-depth or user-global installs, so anything meta uses lives in meta and travels wherever meta is cloned. Existing .toolchains managers remain a legacy compatibility prefix while manifests migrate. It works from TOML components whose lifecycle hooks wrap proven scripts: detect, install, fix, reset, and wire-in toolchains, repos, and the agent environment. One shared engine drives both the CLI and the GUI, so they never diverge. Destructive verbs (reset / auto-fix / self uninstall) are PREVIEW by default and fail-closed — they refuse unless they can prove the operation is safe and you pass the explicit act flag (--apply / --build / --confirm). Deployment target today: a GPU-aware dual-RTX-5090 Ubuntu 26.04 workstation.",
     after_help = envctl_examples!(
         "envctl auto-detect",
         "envctl doctor",
@@ -430,7 +430,7 @@ enum Cmd {
     /// for `eval "$(envctl env)"`; `--json` emits a map. This is the seam that
     /// lets every config reference `$META_ROOT` no matter where meta is installed.
     #[command(
-        long_about = "Resolve the meta workspace root (via the `.meta.yaml` marker, like git's `.git`) and emit environment exports so shells and configs locate meta WITHOUT hardcoding paths. Read-only. By default it prints POSIX `export` lines for `eval \"$(envctl env)\"`; --json emits a map. --toolchains also emits the meta-located toolchain prefixes + PATH. --materialize FILE renders `${META_ROOT}` tokens in FILE to the absolute root for configs a consumer reads literally.",
+        long_about = "Resolve the meta workspace root (via the `.meta.yaml` marker, like git's `.git`) and emit environment exports so shells and configs locate meta WITHOUT hardcoding paths. Read-only. By default it prints POSIX `export` lines for `eval \"$(envctl env)\"`; --json emits a map. --toolchains also emits the meta-hosted .local layout, legacy toolchain prefixes, and PATH. --materialize FILE renders `${META_ROOT}` tokens in FILE to the absolute root for configs a consumer reads literally.",
         after_help = envctl_examples!(
             "eval \"$(envctl env)\"",
             "envctl env --json",
@@ -442,10 +442,9 @@ enum Cmd {
         /// Explicit `.meta.yaml` path (else walk up from CWD / use $META_FILE).
         #[arg(long)]
         meta_file: Option<std::path::PathBuf>,
-        /// ALSO emit the meta-located toolchain prefix exports + PATH
-        /// (BUN_INSTALL/MISE_DATA_DIR/CARGO_HOME/RUSTUP_HOME/UV_* -> $META_ROOT/.toolchains).
-        /// OPT-IN: only sound once those dirs are populated (else a manager would
-        /// not see its existing installs). See the meta-tool-location ADR.
+        /// ALSO emit the meta-hosted .local layout, legacy toolchain prefix
+        /// exports, and PATH. Manager stores still point at `$META_ROOT/.toolchains`
+        /// until manifests migrate, but envctl-owned exposure begins at `.local/bin`.
         #[arg(long)]
         toolchains: bool,
         /// Instead of emitting exports, read FILE and print it with `${META_ROOT}`
@@ -1722,6 +1721,7 @@ fn run_env(
         anyhow::anyhow!("`.meta.yaml` at {} has no parent dir", meta_yaml.display())
     })?;
     let root = meta_root.to_string_lossy();
+    let layout = envctl_engine::MetaLayout::from_meta_root(meta_root.to_path_buf());
 
     // --materialize: render `${META_ROOT}`/`$META_ROOT` -> absolute root in FILE.
     // Read-only (stdout). Heals configs Claude reads literally (marketplace paths).
@@ -1732,11 +1732,17 @@ fn run_env(
         return Ok(());
     }
 
-    // The meta-located toolchain prefixes (opt-in via --toolchains).
-    let tc = format!("{root}/.toolchains");
+    // The meta-hosted install layout (opt-in via --toolchains for now because
+    // this is the shell seam that mutates PATH). `.local/bin` is canonical for
+    // envctl-owned exposure; `.toolchains` remains a compatibility manager store.
+    let tc = layout.legacy_toolchains().to_string_lossy().to_string();
+    let bin_dir = layout.bin().to_string_lossy().to_string();
     if json {
         let mut map = serde_json::json!({ "META_ROOT": meta_root, "META_FILE": meta_yaml });
         if toolchains {
+            for (key, path) in layout.env_exports() {
+                map[key] = path.to_string_lossy().to_string().into();
+            }
             map["BUN_INSTALL"] = format!("{tc}/.bun").into();
             map["MISE_DATA_DIR"] = format!("{tc}/mise").into();
             map["CARGO_HOME"] = format!("{tc}/cargo").into();
@@ -1758,8 +1764,13 @@ fn run_env(
         sh_single_quote(&meta_yaml.to_string_lossy())
     );
     if toolchains {
+        for (key, path) in layout.env_exports() {
+            println!("export {key}={}", sh_single_quote(&path.to_string_lossy()));
+        }
         // Redirect each manager's install prefix INTO meta (ADR: meta-located
-        // toolchain prefix). PATH uses double quotes so `$PATH` expands.
+        // toolchain prefix). Canonical exposure starts at `.local/bin`; legacy
+        // manager bins trail it for compatibility. PATH uses double quotes so
+        // `$PATH` expands.
         println!(
             "export BUN_INSTALL={}",
             sh_single_quote(&format!("{tc}/.bun"))
@@ -1816,7 +1827,7 @@ fn run_env(
             "export HELIX_RUNTIME={}",
             sh_single_quote(&format!("{tc}/helix/runtime"))
         );
-        println!("export PATH=\"{tc}/.bun/bin:{tc}/cargo/bin:{tc}/uv/tools/bin:$PATH\"");
+        println!("export PATH=\"{bin_dir}:{tc}/.bun/bin:{tc}/cargo/bin:{tc}/uv/tools/bin:$PATH\"");
     }
     Ok(())
 }
@@ -3240,7 +3251,7 @@ fn handle_connect(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
 fn print_doctor(engine: &Engine, json: bool) -> anyhow::Result<()> {
     let last_run = envctl_engine::runtime::load(engine.manifest_dir()).last_run;
     let detected = engine.detect(&EventSink::null()).ok();
-    let home = std::env::var("HOME").unwrap_or_default();
+    let layout = envctl_engine::MetaLayout::from_env_or_default();
     let write_ok = |p: &str| -> bool {
         let dir = std::path::Path::new(p);
         if std::fs::create_dir_all(dir).is_err() {
@@ -3269,9 +3280,14 @@ fn print_doctor(engine: &Engine, json: bool) -> anyhow::Result<()> {
         })
     };
     let dirs = [
-        format!("{home}/.local/bin"),
-        format!("{home}/.config"),
-        format!("{home}/.local/share/envctl/repos"),
+        layout.bin().display().to_string(),
+        layout.lib().display().to_string(),
+        layout.share().display().to_string(),
+        layout.repo_store().display().to_string(),
+        layout.state().display().to_string(),
+        layout.cache().display().to_string(),
+        layout.tmp().display().to_string(),
+        layout.opt().display().to_string(),
         "/etc".to_string(),
     ];
     let tools = [
@@ -3301,7 +3317,7 @@ fn print_doctor(engine: &Engine, json: bool) -> anyhow::Result<()> {
         .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
         .filter(|s| !s.is_empty());
     let driver_loaded = std::path::Path::new("/proc/driver/nvidia/version").exists();
-    let run_log = std::path::Path::new(&home).join(".local/state/envctl/envctl.log");
+    let run_log = layout.state().join("envctl/envctl.log");
     let log_exists = run_log.exists();
 
     if json {

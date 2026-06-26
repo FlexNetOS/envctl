@@ -1,6 +1,6 @@
 //! Behavior-parity tests for the real `ProcessRunner` (the hook executor).
 //!
-//! These pin the supervisor behavior that MUST survive the loop_lib adoption:
+//! These pin the hook supervisor behavior that meta/envctl command substrate changes must preserve:
 //! exit-code capture, stderr/stdout tail + char-safe truncate, per-phase timeout
 //! synthesizing exit 124, `setsid` process-group reaping, phase-conditional
 //! streaming + tee, quiet capture on read-only phases, hook wrapping (argv vs
@@ -169,13 +169,20 @@ fn setsid_reaps_the_whole_process_group() {
 fn action_phase_streams_and_tees_to_log() {
     let _g = lock();
     let home = unique_tmp("home");
+    let meta = unique_tmp("meta");
     let prev = std::env::var_os("HOME");
+    let prev_meta = std::env::var_os("META_ROOT");
     std::env::set_var("HOME", &home);
+    std::env::set_var("META_ROOT", &meta);
     let (res, events) = run(&script("echo streamed-line", false), Phase::Install);
     // restore HOME before assertions
     match prev {
         Some(v) => std::env::set_var("HOME", v),
         None => std::env::remove_var("HOME"),
+    }
+    match prev_meta {
+        Some(v) => std::env::set_var("META_ROOT", v),
+        None => std::env::remove_var("META_ROOT"),
     }
     assert_eq!(res.status, OpStatus::Ok);
     assert!(
@@ -185,7 +192,7 @@ fn action_phase_streams_and_tees_to_log() {
         "action phase must emit Event::Log lines"
     );
     let logged =
-        std::fs::read_to_string(home.join(".local/state/envctl/envctl.log")).unwrap_or_default();
+        std::fs::read_to_string(meta.join(".local/state/envctl/envctl.log")).unwrap_or_default();
     assert!(
         logged.contains("[test-comp] streamed-line"),
         "action phase must tee to envctl.log, got: {:?}",

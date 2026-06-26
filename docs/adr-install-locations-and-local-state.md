@@ -4,6 +4,14 @@
 [adr-meta-tool-location-and-portability](adr-meta-tool-location-and-portability.md),
 ADR-0006 (home/ overlay portability).
 
+> **2026-06-26 correction:** envctl is now the path authority for meta installs. The
+> canonical install tree is `$META_ROOT/.local/{bin,lib,share,state,cache,tmp,opt}`;
+> add-repo clones/builds under `$META_ROOT/.local/share/envctl/repos`; and
+> `$META_ROOT/.toolchains` is a legacy compatibility prefix for existing manager homes
+> (`BUN_INSTALL`, `CARGO_HOME`, `RUSTUP_HOME`, `UV_*`, etc.) while manifests migrate.
+> Host `~/.local` references below document the historical audit baseline unless a row
+> explicitly says it is still a compatibility fallback.
+
 ## Context
 
 Owner audit question: *where are the CLI installs (codex/claude/kimi/gemini); where are the

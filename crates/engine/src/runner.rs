@@ -4,7 +4,7 @@
 //!
 //! Phase 2: action phases (Install/Fix/Remove) now LINE-STREAM stdout/stderr as
 //! `Event::Log` (so the CLI/GUI show progress live during a long apt/nix/CUDA run)
-//! AND tee every line to `~/.local/state/envctl/envctl.log` (the analogue of
+//! AND tee every line to `$META_ROOT/.local/state/envctl/envctl.log` (the analogue of
 //! `~/yazelix-setup.log`, survives a crash). Read-only phases (Detect/Verify)
 //! capture quietly — only the exit code matters, and leaking their output would
 //! corrupt the CLI table / `--json`. Every hook is bounded by a per-phase timeout
@@ -258,8 +258,9 @@ fn kill_group(pid: u32) {
 }
 
 fn open_run_log() -> Option<File> {
-    let home = std::env::var("HOME").ok()?;
-    let dir = std::path::Path::new(&home).join(".local/state/envctl");
+    let dir = crate::layout::MetaLayout::from_env_or_default()
+        .state()
+        .join("envctl");
     std::fs::create_dir_all(&dir).ok()?;
     OpenOptions::new()
         .create(true)

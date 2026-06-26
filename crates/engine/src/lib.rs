@@ -16,7 +16,8 @@ pub mod executor; // Engine::run(plan) best-effort loop + RunContext resolve + a
 pub mod graph; // graph intelligence over the component dependency DAG
 pub mod guard; // fail-closed UuidResolves/NotLiveDevice/NotMounted/PathExists/HookSucceeds
 pub mod hub_registry; // read-only federation over *_hub/registry.json
-pub mod install; // Phase 4: symlink artifacts into ~/.local/bin (refuse-unmanaged) + wire-in
+pub mod install; // Phase 4: symlink artifacts into meta .local/bin (refuse-unmanaged) + wire-in
+pub mod layout; // meta-hosted .local/bin/lib/share/state/cache/tmp/opt path resolver
 pub mod lock; // envctl.lock — content-hashed manifest-of-record + CI gate
 pub mod model; // Registry, OpResult, OpStatus, EnvReport, Wiring, RunPlan, RunSummary, AddRepoSpec
 pub mod register; // Phase 4: synthesize the components.d drop-in (provenance + rebuild)
@@ -48,6 +49,7 @@ pub use event::{Event, EventSink, GpuSample, Stream, Telemetry};
 pub use hub_registry::{
     HubRegistryDrift, HubRegistryEntryView, HubRegistryReport, HubRegistrySource, HubRegistryStatus,
 };
+pub use layout::MetaLayout;
 pub use model::{
     AddRepoSpec, AiAgent, BuildStrategy, BuildSystem, ComponentState, DataPath, DesktopEntry,
     DriftItem, DriftKind, EnvReport, MetaBoundaryReport, MetaBoundaryViolation,
