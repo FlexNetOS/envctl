@@ -1,11 +1,9 @@
 # envctl .handoff Tier-A — autonomous-loop hook descriptors (ADR-0004 §2, OPTIONAL).
 #
-# RESIDENCY (ADR-0004 §3 / META-ORG-POLICY P7): this file is git-committed TEXT ONLY and the
-# kernel never parses it — it documents the loop's lifecycle contract. Any ledger-MUTATING verb
-# below (checkpoint/handoff/claim/...) MUST execute at the orchestration home ($META_ROOT, whose
-# witnessed FLEET ledger is meta/.handoff/ledger.db), NEVER with CWD inside this member repo —
-# running them here would materialize a forbidden per-repo .handoff/ledger.db. envctl's live wiring
-# (.claude/hooks/hf-checkpoint.sh) already resolves $META_ROOT and runs from there.
+# RESIDENCY (ADR-0004 §3 / ADR-0018 D1 / META-ORG-POLICY P7): this file is git-committed TEXT.
+# Ledger-mutating verbs below operate on this member repo's local `.handoff/ledger.db` rebuild cache,
+# then export the durable `.handoff/ledger.events.jsonl` for git. The binary cache is legitimate and
+# expected, but never committed; `hf sync` rolls member events up to the fleet ledger when needed.
 
 schema = "handoff.hooks.v1"
 

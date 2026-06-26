@@ -247,8 +247,7 @@ cache rebuilt from JSONL (ADR-0018 D1). Packets are **rendered by `hf`, never ha
     `meta/handoff/target/release/hf` (meta convention; rebuilds propagate). `which hf` resolves the
     meta symlink; `hf --help` runs (verbs: init|seed|status|session|claim|release|checkpoint|
     sync-cards|done|task mint|ship|review|handoff|resume — no `hf drift`/`hf policy`). Residency
-    guard PASSES before+after: no per-repo `ledger.db` under any envctl tree; `hf status` from
-    `$META_ROOT` reads the shared `meta/.handoff/ledger.db` read-only (md5 unchanged).
+    guard PASSES before+after: no git-tracked binary ledger/cache under envctl; `hf status` may use the legitimate local `.handoff/ledger.db` cache rebuilt from committed JSONL.
   - GO-LIVE for the wired-but-DORMANT continuity hook: `.claude/settings.json` +
     `.claude/hooks/hf-checkpoint.sh` are already wired (Stop + PreCompact, fleet-ledger-resident,
     self-resolves `$META_ROOT`) but no-op until `hf` exists + supports `checkpoint --auto --quiet`.
@@ -312,8 +311,7 @@ cache rebuilt from JSONL (ADR-0018 D1). Packets are **rendered by `hf`, never ha
     (`handoff.context_capsule.v1`), `policies/rules.toml` (`handoff.policy.rules.v1`),
     `hooks/hooks.toml` (`handoff.hooks.v1`), every `tasks/*.task.json` (`handoff.task.v1`), and that
     `packets/latest.md` (the `hf fleet render` artifact) is a `handoff.packet.v2`.
-  - **Residency invariant ✓:** asserts **no per-repo `ledger.db`** is git-tracked OR present on disk
-    under `.handoff`, and that `.gitignore` carries the `.handoff/**/ledger.db` guard. Fail-closed.
+  - **Residency invariant ✓:** asserts no binary ledger/cache is git-tracked under `.handoff`, requires `.handoff/ledger.events.jsonl` to be tracked, and delegates durability checks to `hf gitignore --check`. Fail-closed.
   - **Wired** into the loop verify-on-resume (`.handoff/loop/HANDOFF.md`) + `CLAUDE.md` gate list.
     Verified: positive PASS on the seeded Tier-A; negative tests (stray `*.db`, bad packet/capsule
     schema) all fail closed (exit 1). GO-LIVE + card-minting split to **TASK-0024**.
@@ -321,7 +319,7 @@ cache rebuilt from JSONL (ADR-0018 D1). Packets are **rendered by `hf`, never ha
   conditional-deferred** (split from TASK-0003):
   - **GO-LIVE ✓:** wired `hf sync --auto` into the Stop/PreCompact hook
     (`.claude/hooks/hf-checkpoint.sh`) right after `hf checkpoint --auto`, run at `$META_ROOT`
-    (same residency — never a per-repo ledger), fail-soft. So every checkpoint now ALSO one-way
+    (same residency — per-repo ledger cache is legitimate; binary cache is ignored), fail-soft. So every checkpoint now ALSO one-way
     mirrors the witnessed FLEET ledger → GitKB (ADR-0003 HFTASK-0011). Verified live from `$META_ROOT`:
     `hf sync --auto` → "mirrored context/overridable/{active,progress} (one-way ledger→kb)", exit 0
     (FLEET ledger now has 10 witnessed events). Refreshed the hook's stale "DORMANT" header → LIVE.
@@ -621,7 +619,7 @@ fmt, clippy). Remaining follow-ups extracted from each:
     `KBTASK-` prefix into the shared FLEET dir (would mix with HFTASK/KBTASK cards) — both wrong here.
   - **Card model (DAG-correct for the picker):** `dependencies` carries ONLY still-OPEN prerequisites
     (the picker's `next_safe` resolves a dep as satisfied via a ledger **Done** event; with the
-    residency-mandated empty member ledger, an edge to an already-done task can never satisfy, so
+    pre-ADR-0018 empty member-ledger assumption, an edge to an already-done task can never satisfy, so
     edges to done tasks are dropped from `dependencies` and preserved in `blocked_by` for provenance).
     Status mapping: `[x]`→done (34), `[ ]`/`[?]`→backlog, `[!]`→blocked, `[~]`→review, this task→active.
     No `[!!]` SUPERVISED items currently open (TASK-0010 was, now done).

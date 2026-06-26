@@ -184,7 +184,7 @@ status: AUTONOMOUS SWEEP 2026-06-23 (5th session) — owner reset cadence: "stop
 - cycle 1 (2026-06-13, TASK-0001, PASS-WITH-NOTES): built+installed `hf` from meta/handoff
   (`~/.local/bin/hf` → release symlink); `hf --help` runs; residency guard clean (shared ledger
   only, read-only). Dormant Stop/PreCompact hook now LIVE (resolves hf, runs from $META_ROOT,
-  exit 0, no per-repo ledger). Witnessed-event WRITE is a no-op until a task is active → defers to
+  exit 0, no tracked binary ledger/cache). Witnessed-event WRITE is a no-op until a task is active → defers to
   TASK-0002 (correct dep). CARRIED FINDING: hf kernel links bundled C SQLite (rusqlite/
   libsqlite3-sys via the `ledger` crate) — not an envctl no-c violation (separate workspace) but
   flagged against Epic A's pure-Rust-kernel north star.
@@ -192,7 +192,7 @@ status: AUTONOMOUS SWEEP 2026-06-23 (5th session) — owner reset cadence: "stop
 - cycle 2 (2026-06-13, TASK-0002 + TASK-0003, BLOCKED/NEEDS-DECISION): source-proved that the
   shipped `hf` is strictly CWD-relative (no `--ledger`/`HANDOFF_DIR`), so envctl's Tier-A
   text/packet layer cannot be hf-rendered against the shared meta ledger without creating a
-  forbidden per-repo `ledger.db` (ADR-0004). `mint --from-kb` needs CWD=child-repo; `hf seed`
+  legitimate local per-repo `ledger.db` cache (ADR-0004/ADR-0018), with JSONL export committed. `mint --from-kb` needs CWD=child-repo; `hf seed`
   writes the kernel's own HFTASK cards. Fix is a kernel feature in `meta/handoff` (out of envctl
   scope). Wrote `.handoff/decisions/FINDING-0002-...md` (3 options, A recommended). TASK-0003
   blocked with it (depends on a seeded layer). Epic A stalls pending the owner/kernel decision.
@@ -233,8 +233,7 @@ status: AUTONOMOUS SWEEP 2026-06-23 (5th session) — owner reset cadence: "stop
   `ci/gates/p7.sh` — a fail-closed, dependency-free grep gate (mirrors `ci/gates/{shape,enable}.sh`)
   that validates the COMMITTED `.handoff/` Tier-A: schema tags (capsule v1 / policy v1 / hooks v1 /
   task v1 / packet **v2**) + ledger residency (no tracked OR on-disk `*.db` under `.handoff`, and the
-  `.gitignore` guard present). Deliberately runs NO ledger-mutating `hf` verb in-member (would itself
-  create a ledger). Wired into HANDOFF verify-on-resume + CLAUDE.md gate list. Verified: positive PASS
+  `.gitignore` guard present). Runs member ledger verbs only with import/export discipline; older central-only notes would have called this a ledger). Wired into HANDOFF verify-on-resume + CLAUDE.md gate list. Verified: positive PASS
   on the seeded Tier-A; negatives (stray `*.db`, broken packet/capsule schema) fail closed (exit 1).
   Split the `hf sync` `.kb` GO-LIVE + envctl card-minting into new **TASK-0024** (need `$META_ROOT`
   execution / kb task docs). Verified-not-claimed: only unrelated PR #53 (libsql-baton-fix) open.
@@ -256,15 +255,14 @@ SUPERVISED (never auto-run): TASK-0010 was `- [!!]` (now DONE by a human session
 
 ## Gates (non-negotiable)
 - never-downgrade (sync meta source UP first) · archive-first (never delete) · build+verify before
-  swap · rollback on failure · ledger-residency ($META_ROOT only, no per-repo ledger.db) ·
+  swap · rollback on failure · ledger-residency (member local cache + JSONL export; fleet sync when needed) ·
   packets-rendered-never-hand-written · `- [!!]` items refuse auto-run -> NEEDS-HUMAN.
 
 ## needs_human / supervised
 - Decision: bring GitKB into meta as a `.meta.yaml` project (git-kb currently external)?
 - Old dashboard-forge-loop GUI smoke-test (loop/_done/, HUMAN-ONLY).
 - REVIEW (Epic A): hf kernel links bundled C SQLite (rusqlite) + is CWD-relative (no `--ledger`
-  override → can't render member Tier-A against the shared fleet ledger without a forbidden per-repo
-  ledger.db). Both kernel-side in `meta/handoff`; out of envctl's no-c/p7 scope. **FILED for the
+  override → can't render member Tier-A against the shared fleet ledger without a legitimate per-repo ledger cache.db). Both kernel-side in `meta/handoff`; out of envctl's no-c/p7 scope. **FILED for the
   kernel owner: FlexNetOS/handoff#71** (2026-06-18) — port `ledger` off rusqlite + add a ledger-path
   override. Tracks the cycle-1 CARRIED FINDING + FINDING-0002.
 
