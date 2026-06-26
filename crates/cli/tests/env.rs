@@ -1,8 +1,9 @@
 //! Integration tests for `envctl env --toolchains`. Drives the real binary
-//! against a fixture `.meta.yaml` and asserts the meta-located toolchain prefix
-//! exports — in particular that RUSTUP_HOME travels with CARGO_HOME so an
-//! `eval "$(envctl env --toolchains)"` shell points rustup at the meta-owned
-//! store (.toolchains/rustup), not the user-global ~/.rustup.
+//! against a fixture `.meta.yaml` and asserts the meta-hosted install layout:
+//! canonical exposure/state under `.local/{bin,lib,share,state,cache,tmp,opt}`,
+//! plus legacy manager stores under `.toolchains`. In particular RUSTUP_HOME
+//! travels with CARGO_HOME so an `eval "$(envctl env --toolchains)"` shell points
+//! rustup at the meta-owned compatibility store, not user-global ~/.rustup.
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -44,13 +45,34 @@ fn run(root: &Path, json: bool) -> String {
     String::from_utf8(out.stdout).unwrap()
 }
 
-/// Shell form pairs RUSTUP_HOME with CARGO_HOME, both meta-located under
-/// `.toolchains/`. Without RUSTUP_HOME the eval-seam silently leaks to ~/.rustup.
+/// Shell form exposes the canonical meta `.local` layout and pairs RUSTUP_HOME
+/// with CARGO_HOME under the legacy `.toolchains/` manager store. Without
+/// RUSTUP_HOME the eval-seam silently leaks to ~/.rustup.
 #[test]
-fn toolchains_shell_exports_rustup_home_with_cargo_home() {
+fn toolchains_shell_exports_meta_local_layout_and_rustup_home() {
     let root = fixture_dir();
     let r = root.to_string_lossy();
     let out = run(&root, false);
+    assert!(
+        out.contains(&format!("export ENVCTL_LOCAL='{r}/.local'")),
+        "missing canonical meta .local prefix:\n{out}"
+    );
+    assert!(
+        out.contains(&format!("export ENVCTL_BIN_DIR='{r}/.local/bin'")),
+        "missing canonical meta .local/bin export:\n{out}"
+    );
+    assert!(
+        out.contains(&format!(
+            "export ENVCTL_REPO_STORE='{r}/.local/share/envctl/repos'"
+        )),
+        "missing canonical envctl repo store export:\n{out}"
+    );
+    assert!(
+        out.contains(&format!(
+            "export ENVCTL_LEGACY_TOOLCHAINS='{r}/.toolchains'"
+        )),
+        "missing legacy toolchains compatibility export:\n{out}"
+    );
     assert!(
         out.contains(&format!("export CARGO_HOME='{r}/.toolchains/cargo'")),
         "missing meta CARGO_HOME export:\n{out}"
@@ -79,15 +101,42 @@ fn toolchains_shell_exports_rustup_home_with_cargo_home() {
         )),
         "HELIX_RUNTIME must point at the meta-owned helix tree-sitter runtime dir:\n{out}"
     );
+    assert!(
+        out.contains(&format!(
+            "export PATH=\"{r}/.local/bin:{r}/.toolchains/.bun/bin:{r}/.toolchains/cargo/bin:{r}/.toolchains/uv/tools/bin:$PATH\""
+        )),
+        "PATH must put canonical meta .local/bin ahead of legacy manager bins:\n{out}"
+    );
 }
 
-/// JSON form carries RUSTUP_HOME too, so machine consumers see the same seam.
+/// JSON form carries the layout variables and RUSTUP_HOME too, so machine
+/// consumers see the same seam.
 #[test]
-fn toolchains_json_carries_rustup_home() {
+fn toolchains_json_carries_meta_local_layout_and_rustup_home() {
     let root = fixture_dir();
     let out = run(&root, true);
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
     let r = root.to_string_lossy();
+    assert_eq!(
+        v["ENVCTL_LOCAL"].as_str(),
+        Some(format!("{r}/.local").as_str()),
+        "json ENVCTL_LOCAL"
+    );
+    assert_eq!(
+        v["ENVCTL_BIN_DIR"].as_str(),
+        Some(format!("{r}/.local/bin").as_str()),
+        "json ENVCTL_BIN_DIR"
+    );
+    assert_eq!(
+        v["ENVCTL_REPO_STORE"].as_str(),
+        Some(format!("{r}/.local/share/envctl/repos").as_str()),
+        "json ENVCTL_REPO_STORE"
+    );
+    assert_eq!(
+        v["ENVCTL_LEGACY_TOOLCHAINS"].as_str(),
+        Some(format!("{r}/.toolchains").as_str()),
+        "json ENVCTL_LEGACY_TOOLCHAINS"
+    );
     assert_eq!(
         v["CARGO_HOME"].as_str(),
         Some(format!("{r}/.toolchains/cargo").as_str()),

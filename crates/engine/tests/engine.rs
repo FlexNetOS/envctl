@@ -564,8 +564,16 @@ fn dropin_filters_injection_in_relinks() {
         "unsafe relink REL must be filtered"
     );
     assert!(
-        toml.contains("ln -sfn \"$SRC/target/release/good\" \"$HOME/.local/bin/good\""),
+        toml.contains("ln -sfn \"$SRC/target/release/good\" \"$BIN/good\""),
         "safe relink kept"
+    );
+    assert!(
+        toml.contains("STORE=\"$M/.local/share/envctl/repos\"")
+            && toml.contains("BIN=\"$M/.local/bin\"")
+            && toml.contains(
+                "[component.wiring]\npath_entries = [\"${META_ROOT:-$HOME/Desktop/meta}/.local/bin\"]"
+            ),
+        "drop-in must resolve through the meta-hosted .local registry/layout"
     );
     // and the generated TOML still parses (one component with the expected hooks)
     let reg_ok = toml.contains("[[component]]") && toml.contains("[component.install]");

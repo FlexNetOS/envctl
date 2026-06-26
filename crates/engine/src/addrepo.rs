@@ -319,10 +319,7 @@ pub fn connect_agent(spec: &AddRepoSpec) -> anyhow::Result<()> {
     let agent = agent
         .ok_or_else(|| anyhow::anyhow!("no AI coding CLI found; {}", available_agents_msg()))?;
 
-    let repos_root = {
-        let home = std::env::var("HOME").unwrap_or_else(|_| "/root".into());
-        PathBuf::from(home).join(".local/share/envctl/repos")
-    };
+    let repos_root = crate::layout::MetaLayout::from_env_or_default().repo_store();
     ensure_private_dir(&repos_root)?;
     let clone_dir = repos_root.join(&spec.id);
 

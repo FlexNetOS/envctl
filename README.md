@@ -2,8 +2,10 @@
 
 A first-class **meta** peer member — the fully-automated, **agentic environment manager for
 the whole meta workspace**. It brings every tool, dependency, provider, vendor, CLI, and
-config to a declared state and installs it **into meta** (`meta/.toolchains/`, `$META_ROOT`),
-with **no system-depth or user-global installs**: anything meta uses lives in meta, portable
+config to a declared state and installs it **into meta** through envctl's canonical
+system-shaped prefix (`$META_ROOT/.local/{bin,lib,share,state,cache,tmp,opt}`), with
+`.toolchains/` retained only as a legacy compatibility store for manager-specific roots.
+There are **no system-depth or user-global installs**: anything meta uses lives in meta, portable
 wherever meta is cloned. One Rust workspace: a shared engine, a CLI (`envctl`), and a native
 egui desktop app (`envctl-gui`). It manages the environment declaratively — every tool is a
 TOML **component** whose lifecycle hooks *wrap the proven bash* from the Desktop kit
@@ -38,6 +40,27 @@ cargo run  -p envctl -- reset boot-repair-dev      # dry-run by default
 
 The manifest dir defaults to `./manifest` (override with `ENVCTL_MANIFEST_DIR`).
 
+### Meta-local layout
+
+envctl is the path authority for meta installs. Components and add-repo drop-ins should not
+hand-spell ad hoc host paths; they should resolve through the engine layout and land under:
+
+| purpose | canonical path |
+|---|---|
+| executable exposure | `$META_ROOT/.local/bin` |
+| libraries | `$META_ROOT/.local/lib` |
+| shared data + generated drop-ins | `$META_ROOT/.local/share` |
+| add-repo source/build store | `$META_ROOT/.local/share/envctl/repos` |
+| logs/state | `$META_ROOT/.local/state` |
+| caches | `$META_ROOT/.local/cache` |
+| temporary files | `$META_ROOT/.local/tmp` |
+| component prefixes | `$META_ROOT/.local/opt/<component>` |
+
+`$META_ROOT/.toolchains` is a compatibility prefix for existing manager homes
+(`BUN_INSTALL`, `CARGO_HOME`, `RUSTUP_HOME`, `UV_*`, etc.) while manifests migrate to the
+system-shaped `.local` tree. `envctl env --toolchains` exports both the canonical `ENVCTL_*`
+paths and the legacy manager variables, with `$META_ROOT/.local/bin` first on `PATH`.
+
 ### Native GUI
 
 The `envctl-gui` crate needs system dev libs (winit/glow + a native file dialog):
@@ -70,10 +93,11 @@ or drive it through the engine like any other component:
 cargo run -p envctl -- install desktop-app   # idempotent; reset removes the launcher + icon
 ```
 
-It installs `~/.local/bin/envctl-gui`, an `applications/envctl-gui.desktop`
-launcher (`Categories=System;Monitor;`), and a scalable icon under
-`hicolor/scalable/apps/`. Re-running is a no-op; `reset desktop-app` (or
-`--uninstall`) unwinds it.
+It installs `$META_ROOT/.local/bin/envctl-gui`, an
+`$META_ROOT/.local/share/applications/envctl-gui.desktop` launcher
+(`Categories=System;Monitor;`), and a scalable icon under
+`$META_ROOT/.local/share/icons/hicolor/scalable/apps/`. Re-running is a no-op;
+`reset desktop-app` (or `--uninstall`) unwinds it.
 
 ## Status
 
@@ -109,4 +133,3 @@ review fixes are listed in `docs/DESIGN-NOTES.md`.
 ## References and Acknowledgments 
 
 - pivoshenko/kasetto
-

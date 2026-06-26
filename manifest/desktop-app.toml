@@ -2,7 +2,7 @@
 #
 # The eframe/egui binary IS a native desktop app; this component makes the OS
 # treat it like an *installed* one: binary on PATH, an app-menu launcher, and a
-# scalable icon — all user-scoped (no sudo), driven by the repo's idempotent
+# scalable icon — all meta-scoped (no sudo), driven by the repo's idempotent
 # packaging/install-desktop.sh (which is also the standalone entry point).
 #
 # Build deps: the GUI needs the system dev libs listed under README "Native GUI"
@@ -12,14 +12,14 @@
 [[component]]
 id = "desktop-app"
 name = "envctl-gui desktop integration"
-description = "Install the native GUI as a desktop app: ~/.local/bin binary + app-menu .desktop launcher + scalable icon (user-scoped, no sudo)."
+description = "Install the native GUI as a desktop app: $META_ROOT/.local/bin binary + app-menu .desktop launcher + scalable icon (meta-scoped, no sudo)."
 requires = ["rustup"]
 
 # Present iff the launcher exists AND the binary is resolvable on PATH.
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "test -f \"${XDG_DATA_HOME:-$HOME/.local/share}/applications/envctl-gui.desktop\" && command -v envctl-gui >/dev/null"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; B=\"${ENVCTL_BIN_DIR:-$M/.local/bin}\"; S=\"${ENVCTL_SHARE_DIR:-$M/.local/share}\"; test -x \"$B/envctl-gui\" && test -f \"$S/applications/envctl-gui.desktop\""]
 
 # Build (release) + install binary, launcher, and icon. cwd-independent: the repo
 # root is derived from the manifest dir (ENVCTL_MANIFEST_DIR defaults to ./manifest).
@@ -36,7 +36,7 @@ bash "$ROOT/packaging/install-desktop.sh"
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "command -v envctl-gui >/dev/null && { command -v desktop-file-validate >/dev/null && desktop-file-validate \"${XDG_DATA_HOME:-$HOME/.local/share}/applications/envctl-gui.desktop\" || true; }"]
+args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; B=\"${ENVCTL_BIN_DIR:-$M/.local/bin}\"; S=\"${ENVCTL_SHARE_DIR:-$M/.local/share}\"; test -x \"$B/envctl-gui\" && { command -v desktop-file-validate >/dev/null && desktop-file-validate \"$S/applications/envctl-gui.desktop\" || true; }"]
 
 # Idempotent repair: reinstall integration from the already-built binary if present,
 # else build then install.

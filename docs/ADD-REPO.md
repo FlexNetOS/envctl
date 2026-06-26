@@ -18,11 +18,11 @@ add-repo runs **untrusted upstream code**, so it is gated:
   run a refactor agent, or install. You must pass **`--build`** to actually run the
   upstream build / AI agent / install. (`--dry-run` previews without even cloning.)
 - **Never as root.** The pipeline refuses (`Refused`) if `euid == 0`.
-- **0700 sandbox.** Clone + build live under `~/.local/share/envctl/repos/<id>/`,
+- **0700 sandbox.** Clone + build live under `$META_ROOT/.local/share/envctl/repos/<id>/`,
   created `0700`. The build/agent run in their own **process group**, killed
   wholesale on timeout (acquire 10m, refactor/build 1h).
 - **Install never hijacks a name.** It refuses to symlink an artifact whose name
-  already resolves on `PATH` outside `~/.local/bin`, and hard-refuses well-known
+  already resolves on `PATH` outside `$META_ROOT/.local/bin`, and hard-refuses well-known
   names (`sudo`, `git`, `bash`, `cargo`, …) — use `--rename` instead.
 - **Refuse-overwrite-unmanaged.** A target is "ours" only if it's a symlink whose
   canonical path is inside the repo store. A real foreign file is **refused** unless
@@ -78,7 +78,8 @@ On a successful `--build`, envctl writes `components.d/<id>.toml` with:
   patch → build → relink) so a fresh box reproduces it;
 - `verify` = `<bin> --version`;
 - `remove` = excise **only our** symlinks (readlink-into-store guard) then drop the clone;
-- `[component.wiring] path_entries = ["~/.local/bin"]` so `reset` unwinds `PATH`.
+- `[component.wiring] path_entries = ["${META_ROOT:-$HOME/Desktop/meta}/.local/bin"]` so
+  `reset` unwinds `PATH` through the same meta-local layout envctl exports.
 
 It's marked build-from-source: an *untargeted* `install`/`auto-fix` won't re-run the
 upstream build — you must name it.

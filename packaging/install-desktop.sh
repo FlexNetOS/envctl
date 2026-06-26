@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Install envctl-gui as a desktop application (binary + launcher + icon).
-# Idempotent: safe to re-run. User-scoped (no sudo) by default.
+# Idempotent: safe to re-run. Meta-scoped (no sudo) by default: artifacts land
+# under $META_ROOT/.local rather than the host user's ~/.local tree.
 #
 #   bash packaging/install-desktop.sh           # build (release) + install for current user
 #   bash packaging/install-desktop.sh --no-build # install an already-built binary
@@ -9,9 +10,13 @@ set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BIN_NAME="envctl-gui"
-BIN_DIR="${XDG_BIN_HOME:-$HOME/.local/bin}"
-APP_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/applications"
-ICON_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/icons/hicolor/scalable/apps"
+META_ROOT="${META_ROOT:-$HOME/Desktop/meta}"
+ENVCTL_LOCAL="${ENVCTL_LOCAL:-$META_ROOT/.local}"
+BIN_DIR="${ENVCTL_BIN_DIR:-$ENVCTL_LOCAL/bin}"
+SHARE_DIR="${ENVCTL_SHARE_DIR:-$ENVCTL_LOCAL/share}"
+APP_DIR="$SHARE_DIR/applications"
+ICON_DIR="$SHARE_DIR/icons/hicolor/scalable/apps"
+ICON_THEME_DIR="$SHARE_DIR/icons/hicolor"
 
 uninstall() {
   rm -f "$BIN_DIR/$BIN_NAME" \
@@ -45,7 +50,7 @@ install -m 0644 "$REPO_ROOT/packaging/$BIN_NAME.desktop" "$APP_DIR/$BIN_NAME.des
 
 command -v update-desktop-database >/dev/null 2>&1 && update-desktop-database "$APP_DIR" || true
 command -v gtk-update-icon-cache  >/dev/null 2>&1 && \
-  gtk-update-icon-cache -f -t "${XDG_DATA_HOME:-$HOME/.local/share}/icons/hicolor" >/dev/null 2>&1 || true
+  gtk-update-icon-cache -f -t "$ICON_THEME_DIR" >/dev/null 2>&1 || true
 
 echo "Installed:"
 echo "  binary  -> $BIN_DIR/$BIN_NAME"
