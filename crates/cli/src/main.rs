@@ -3695,7 +3695,7 @@ fn print_meta_boundary(r: &EnvReport) {
             v.tool, v.kind, v.path, v.resolved_path
         );
     }
-    println!("    → envctl install meta-tool-links --apply");
+    println!("    → envctl install meta-tool-links");
 }
 
 #[cfg(test)]
