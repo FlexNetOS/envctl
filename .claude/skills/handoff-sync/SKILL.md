@@ -1,12 +1,12 @@
 ---
 name: handoff-sync
-description: "Build & install the `hf` handoff KERNEL and seed the Tier-A `.handoff` layer/ledger for envctl (Epic A: handoff full-sync). ALWAYS use when asked to: 'build hf', 'sync the handoff layer', 'make .handoff tier-A', 'resume handoff full-sync', install/bring-up the continuity kernel, or wire the witnessed ledger. Drives: build `hf` from `meta/handoff`, redirect the shared ledger, `hf init`/`hf seed`, render policy/hooks/policies/active/packets/skills, mint task cards via `hf task mint`, and add the `p7-conformance` CI gate. DISAMBIGUATION vs session-relay: handoff-sync BUILDS/INSTALLS the kernel and SEEDS the Tier-A layer (one-time bring-up of the substrate); session-relay does PER-LOOP checkpoint/handoff ON TOP of an already-built kernel. If `hf` is not yet on PATH, this skill is the prerequisite; once it lands, the loops auto-upgrade to the witnessed ledger."
+description: "Sync envctl .handoff with the hf kernel: import/export JSONL, render packets, enforce p7, and keep binary ledger caches ignored."
 ---
 
 # Handoff Sync (build the `hf` kernel + seed Tier-A `.handoff`)
 
 You bring up the **continuity substrate** for envctl: build & install the `hf` kernel binary, make
-the single shared witnessed ledger reside correctly, seed the envctl `.handoff` Tier-A layer, mint
+the per-repo witnessed ledger/export and fleet rollup reside correctly, seed the envctl `.handoff` Tier-A layer, mint
 the backlog as schema-valid task cards, and gate the whole thing with a `p7-conformance` CI check.
 This is the **one-time bring-up** that every later checkpoint/handoff (see `session-relay`,
 `forge-loop`) rides on. After this skill lands, the loops detect `hf` on PATH and auto-upgrade from
@@ -16,14 +16,13 @@ hand-written `.handoff/loop/HANDOFF.md` to the witnessed ledger.
 > `session-relay` = *per-loop checkpoint + handoff* on top of the already-built kernel. Run
 > handoff-sync once (Epic A); run session-relay every cycle-budget boundary.
 
-> **Already built — don't rebuild from scratch.** Per ICM (`buildout-hf-cli-proper-handoff`) the
-> `hf` kernel already exists in `meta/handoff` (registered `.meta.yaml` project FlexNetOS/handoff;
-> its ledger engine maps onto existing RuVector RVF WitnessChain crates). Epic A is **build the
-> existing kernel + install + thin glue + seed**, NOT a from-scratch 12-crate build. Verbs the
-> shipped binary actually has: `init`, `seed`, `status [--json]`, `claim ID`, `release ID`,
-> `checkpoint [ID] [note] [--auto] [--quiet] [--sync-cards]`, `sync-cards`, `done ID [--pr N]`,
-> `task mint --from-kb SLUG`, `ship`, `review verdict`, `session`, `handoff`, `resume
-> [--json|--compact]`. There is **no `hf drift` and no `hf policy`.**
+> **Already built — don't rebuild from scratch.** The `hf` kernel already exists in `meta/handoff`
+> (registered `.meta.yaml` project FlexNetOS/handoff). Build/install the existing kernel and then
+> use the current CLI surface reported by `hf --help`; do not rely on stale verb inventories. As of
+> ADR-0018/HFTASK-0067 the important sync verbs are `hf import` (rebuild local cache from committed
+> JSONL), `hf handoff` (render active/packet), `hf export` (write committed JSONL), `hf sync`/`hf
+> fleet status` (roll up/view fleet state), and `hf gitignore --check|--repair` (canonical
+> durability policy).
 
 Backlog map: this skill executes Epic A → **TASK-0001** (build/install hf) → **TASK-0002** (seed
 Tier-A layer + mint cards) → **TASK-0003** (p7-conformance gate).
@@ -32,7 +31,7 @@ Tier-A layer + mint cards) → **TASK-0003** (p7-conformance gate).
 
 ## P0 — LEDGER-RESIDENCY GUARD (gate everything on this)
 
-**Source of truth.** Before changing this ledger/p7 doctrine, verify against `meta/handoff` source and ADRs, especially `docs/adr-0004-fleet-handoff-rollout.md` and `docs/adr-0018-full-auto-agentic-operation.md`. Do not trust older envctl harness prose; it has carried stale "no per-repo ledger" landmines.
+**Source of truth.** Before changing this ledger/p7 doctrine, verify against `meta/handoff` source and ADRs, especially `docs/adr-0004-fleet-handoff-rollout.md` and `docs/adr-0018-full-auto-agentic-operation.md`. Do not trust older envctl harness prose; it carried a stale central-only ledger doctrine.
 
 **The hazard.** The shipped `hf` resolves a **CWD-relative** handoff dir (`const HF = ".handoff"`)
 and therefore a CWD-relative runtime cache at `.handoff/ledger.db` (`hf/src/main.rs::ledger_path()` =
@@ -41,16 +40,16 @@ plus rendered text artifacts. Binary `ledger.db`/RVF files are cache/runtime sta
 kernel explicitly changes the committed wire contract.
 
 **The rule (fail-closed).** Every `hf` call must update the intended continuity surface: envctl's
-per-repo state when operating on envctl, and the fleet view when rendering fleet state from
-`$META_ROOT`. After ledger-touching commands, export/sync the committed `.handoff/ledger.events.jsonl`
-and keep binary db caches ignored. Do not fork truth by committing stale/generated binary caches or by
-writing fleet state when the task is envctl-member state.
+per-repo state when operating on envctl, and the fleet rollup/view when explicitly syncing or
+querying cross-repo state. After ledger-touching commands, run `hf export` so the committed `.handoff/ledger.events.jsonl`
+stays in sync, and keep binary db/RVF caches ignored. Run `hf sync` only when rolling member events
+up to the fleet ledger. Do not fork truth by committing stale/generated binary caches.
 
 ```bash
 META_ROOT="$(cd "$(git rev-parse --show-toplevel)/.." && pwd)"   # or your known meta root
 [ -d "$META_ROOT/.handoff" ] || { echo "FAIL: no $META_ROOT/.handoff"; exit 1; }
-# Per-repo updates: run hf in the member repo that owns the state.
-# Fleet rendering: run hf fleet/render commands from $META_ROOT.
+# Per-repo updates: run hf in the member repo that owns the state, then `hf export`.
+# Fleet rollup/view: run `hf sync` / `hf fleet status` when explicitly coordinating across repos.
 ```
 
 If a future `hf` adds `--ledger <path>` or a `HANDOFF_LEDGER`/`HANDOFF_DIR` env var, prefer that
@@ -62,11 +61,12 @@ If a future `hf` adds `--ledger <path>` or a `HANDOFF_LEDGER`/`HANDOFF_DIR` env 
 # The committed ledger export is allowed; binary db caches must not be unintentionally committed.
 git ls-files .handoff | grep -q 'ledger\.events\.jsonl' || { echo "FAIL: missing committed ledger export"; exit 1; }
 git check-ignore -q .handoff/ledger.db 2>/dev/null || { echo "FAIL: ledger.db cache is not ignored"; exit 1; }
-git ls-files .handoff | grep -q 'ledger\.db' && { echo "FAIL: ledger.db tracked in git without a new kernel contract"; exit 1; }
+git ls-files .handoff | grep -Eq '\.(db|db-wal|db-shm|rvf|rvf\.lock)$|(^|/)ledger\.db$' && { echo "FAIL: binary ledger/cache tracked in git"; exit 1; }
+hf gitignore --check
 ```
 
 If the guard fails, **do not proceed** — the hf-aware branch in the loops stays disabled and the
-harness falls back to hand-written `.handoff/loop/HANDOFF.md`. A wrong ledger is worse than no
+harness falls back to hand-written `.handoff/loop/HANDOFF.md`. A stale export or tracked binary cache is worse than no
 ledger. (Mirror this guard wherever a loop gates its `hf checkpoint`/`hf handoff` calls.)
 
 ---
@@ -89,17 +89,18 @@ verify). Build the **existing** kernel; do not regenerate it.
 4. **Verify install:** `hf --help` (or bare `hf` prints the usage line) resolves to the new binary;
    `command -v hf` points at the meta-owned symlink.
 
-Acceptance: `hf` is on PATH, runs, and the residency guard passes from `$META_ROOT`.
+Acceptance: `hf` is on PATH, runs, and the residency guard passes in the member repo.
 
 ## Step 2 — Seed the envctl Tier-A `.handoff` layer (TASK-0002)
 
 > **Run verbs against the surface they own** (residency guard). Envctl-member verbs update envctl's
-> per-repo JSONL ledger export and rendered text. Fleet verbs render from `$META_ROOT`. Binary
+> per-repo JSONL ledger export and rendered text. Fleet verbs roll up or view cross-repo state. Binary
 > `ledger.db` caches remain ignored unless the handoff kernel changes that contract.
 
 1. **Init / seed the ledger & layout.**
    ```bash
    ( hf init )    # creates ledger + tasks/ + packets/ + context/ (idempotent)
+   ( hf import || true )  # rebuild local cache from committed JSONL when present
    ( hf seed )    # seeds kernel HFTASK-#### cards into the ledger
    ```
    `hf init` creates the schema/dirs; `hf seed` writes the kernel's own bring-up cards.
@@ -107,7 +108,8 @@ Acceptance: `hf` is on PATH, runs, and the residency guard passes from `$META_RO
    `packets/latest.md` and `active.md` from the witnessed ledger (`hf handoff` writes both). Render,
    don't author:
    ```bash
-   ( hf handoff )   # renders .handoff/packets/latest.md + .handoff/active.md (handoff.packet.v2)
+   ( hf handoff )  # renders .handoff/packets/latest.md + .handoff/active.md (handoff.packet.v2)
+   ( hf export )   # writes committed .handoff/ledger.events.jsonl from the local ledger cache
    ```
    Author/maintain only the **policy text** layer (`policy.toml`, `hooks/`, `policies/`, `skills/`)
    — the declarative inputs — and let the kernel render the **state** layer (`active.md`,
@@ -141,20 +143,20 @@ Tier-A + mint cards), **TASK-0003** (p7-conformance gate).
 
 ## Step 4 — Add the `p7-conformance` CI gate (TASK-0003)
 
-Add a CI gate (`ci/gates/p7-conformance.sh`, wired into the workflow as a **required status check**)
+Maintain the CI gate (`ci/gates/p7.sh`, wired into the workflow gates)
 that proves the Tier-A layer is kernel-conformant and fail-closed:
 
 1. **Schema validation.** Validate every `.handoff/tasks/*.task.json` against
    `schemas/task.schema.json` (handoff.task.v1); validate the seeded capsule against its schema and
    `policy.toml` against the policy schema. Any non-conforming card/capsule fails the gate.
-2. **Packet conformance.** `( cd "$META_ROOT" && hf resume --json )` MUST emit a
+2. **Packet conformance.** `( hf import || true; hf resume --json )` MUST emit a
    `"schema": "handoff.packet.v2"` object with `next_task_id`/`next_command`; `packets/latest.md`
    and `active.md` MUST carry the hf-rendered v2 header and must **never** be harness-edited
-   (compare against a fresh `hf handoff` render — drift = a hand edit = FAIL).
+   (compare against a fresh `hf import && hf handoff && hf export` render — drift = a hand edit = FAIL).
 3. **Residency invariant (fail-closed).** Assert the committed ledger export is present when expected,
    and any binary `ledger.db` cache under `envctl/.handoff` is either ignored or intentionally tracked
    by a newer handoff contract.
-   A committed per-repo ledger fails the gate hard (ADR-0004).
+   A tracked binary ledger/cache fails the gate hard; a gitignored local per-repo ledger cache is legitimate (ADR-0004/ADR-0018).
 
 Acceptance: the gate is green on a correctly-seeded tree and red on (a) a non-schema card,
 (b) a hand-edited packet, or (c) an unignored binary `ledger.db` cache.
@@ -162,9 +164,8 @@ Acceptance: the gate is green on a correctly-seeded tree and red on (a) a non-sc
 ---
 
 ## Done criteria (Epic A complete)
-- `hf` on PATH, verified; residency guard passes from `$META_ROOT` (ledger only at
-  the current handoff contract).
-- `.handoff` Tier-A portable layer seeded & committed (JSONL/text; binary caches ignored); `packets/latest.md`
+- `hf` on PATH, verified; residency guard passes in the member repo and fleet status remains healthy.
+- `.handoff` Tier-A portable layer seeded & committed (JSONL/rendered text; binary caches ignored); `packets/latest.md`
   + `active.md` are hf-rendered, not hand-written.
 - Backlog minted as `handoff.task.v1` cards (kernel seed cards `HFTASK-####` carry replay fields).
 - `p7-conformance` gate added and green (schema + packet-v2 + residency).
@@ -173,7 +174,7 @@ Acceptance: the gate is green on a correctly-seeded tree and red on (a) a non-sc
 
 ## Error handling
 - **Residency guard fails** (a binary `.handoff/ledger.db` cache is unignored or unintentionally tracked): stop; fix ignore/tracking
-  it, re-run from `$META_ROOT`; keep the loops on the hand-written fallback until clean.
+  it, re-run from `$META_ROOT`; repair via `hf gitignore --repair`, re-export/import, and keep the loops on fallback until clean.
 - **`hf` build fails:** keep the archived prior binary; do not symlink a broken build; the harness
   stays on the hand-written HANDOFF path (no regression).
 - **A packet was hand-edited:** re-render via `hf handoff` (never patch the markdown); the p7 gate

@@ -22,7 +22,7 @@ markdown view disagree, the ledger wins.
 ## Core role — `hf`-aware branch
 
 **IF `hf` is on PATH _and_ the ledger-residency guard is satisfied** (ledger resolves to
-`$META_ROOT/.handoff/ledger.db` — run hf from `$META_ROOT`; see the `handoff-sync` skill):
+`./.handoff/ledger.db` local cache + committed `ledger.events.jsonl`; run hf in the member repo, then `hf export`/`hf sync` as needed; see the `handoff-sync` skill):
 
 - The **canonical checkpoint** is `hf checkpoint` (`--auto` for a routine cycle boundary, or
   `--note "<reason>"`), which appends a witnessed event to the shared ledger.

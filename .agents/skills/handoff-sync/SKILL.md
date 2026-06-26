@@ -1,6 +1,6 @@
 ---
 name: handoff-sync
-description: "Build & install the `hf` handoff KERNEL and seed the Tier-A `.handoff` layer/ledger for envctl (Epic A: handoff full-sync). ALWAYS use when asked to: 'build hf', 'sync the handoff layer', 'make .handoff tier-A', 'resume handoff full-sync', install/bring-up the continuity kernel, or wire the witnessed ledger. Drives: build `hf` from `meta/handoff`, `hf init`/`hf seed`, render policy/hooks/policies/active/packets/skills, mint task cards via `hf task mint`, and add the `p7-conformance` CI gate. DISAMBIGUATION vs session-relay: handoff-sync BUILDS/INSTALLS the kernel and SEEDS the Tier-A layer (one-time bring-up of the substrate); session-relay does PER-LOOP checkpoint/handoff ON TOP of an already-built kernel. If `hf` is not yet on PATH, this skill is the prerequisite; once it lands, the loops auto-upgrade to the witnessed ledger."
+description: "Sync envctl .handoff with the hf kernel: import/export JSONL, render packets, enforce p7, and keep binary ledger caches ignored."
 ---
 
 # Handoff Sync (build the `hf` kernel + seed Tier-A `.handoff`)
@@ -40,8 +40,8 @@ plus rendered text artifacts. Binary `ledger.db`/RVF files are cache/runtime sta
 kernel explicitly changes the committed wire contract.
 
 **The rule (fail-closed).** Every `hf` call must update the intended continuity surface: envctl's
-per-repo state when operating on envctl, and the fleet view when rendering fleet state from
-the member repo. After ledger-touching commands, run `hf export` so the committed `.handoff/ledger.events.jsonl`
+per-repo state when operating on envctl, and the fleet rollup/view when explicitly syncing or
+querying cross-repo state. After ledger-touching commands, run `hf export` so the committed `.handoff/ledger.events.jsonl`
 stays in sync, and keep binary db/RVF caches ignored. Run `hf sync` only when rolling member events
 up to the fleet ledger. Do not fork truth by committing stale/generated binary caches.
 
@@ -89,7 +89,7 @@ verify). Build the **existing** kernel; do not regenerate it.
 4. **Verify install:** `hf --help` (or bare `hf` prints the usage line) resolves to the new binary;
    `command -v hf` points at the meta-owned symlink.
 
-Acceptance: `hf` is on PATH, runs, and the residency guard passes from `$META_ROOT`.
+Acceptance: `hf` is on PATH, runs, and the residency guard passes in the member repo.
 
 ## Step 2 — Seed the envctl Tier-A `.handoff` layer (TASK-0002)
 
@@ -143,7 +143,7 @@ Tier-A + mint cards), **TASK-0003** (p7-conformance gate).
 
 ## Step 4 — Add the `p7-conformance` CI gate (TASK-0003)
 
-Add a CI gate (`ci/gates/p7-conformance.sh`, wired into the workflow as a **required status check**)
+Maintain the CI gate (`ci/gates/p7.sh`, wired into the workflow gates)
 that proves the Tier-A layer is kernel-conformant and fail-closed:
 
 1. **Schema validation.** Validate every `.handoff/tasks/*.task.json` against
