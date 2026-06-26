@@ -27,6 +27,26 @@ plan/graph artifacts under `.handoff/loop/plan/`, additive RED test suites (the 
 For a CONTINUOUS run over a backlog of targets, the `plan-loop` skill wraps this one cycle in the
 Ralph loop. This skill IS one cycle.
 
+## Standing laws (non-negotiable, every cycle)
+
+These bind every phase and every agent in this harness; a plan or upgrade that violates one is a
+fail-closed finding, never a recommendation:
+- **Fail-closed.** Absence of failure is NOT proof of success — a green exit / empty result / missing
+  file is a finding to investigate, never a pass. Every claim cites positive evidence
+  (`file:line` / a graph-query row / a dated URL).
+- **Owner walls → NEEDS-HUMAN.** Physical / account / irreversible / scope-expanding actions are
+  surfaced, never silently performed. Research + planning are read-only and autonomous; mutating the
+  fleet is not part of this loop. The **one permitted mutation** is authoring **additive RED test
+  suites** (P8) — tests only ADD verification; they never change product code or weaken a gate.
+- **TDD-native / falsifiable.** Every plan item is expressed as a *failing test* before it counts; an
+  item with no test that can fail is itself a finding. "Done" = a GREEN suite (`tests-ran > 0`), never
+  prose.
+- **Latest-toolchain standing rule + owner corrections.** JS tooling is **bun**, never pnpm/node;
+  **shimmy + ruvllm** are the official ollama replacement but **do NOT remove ollama until swap-out is
+  parity-proven**; **clang/llvm-21** is load-bearing. The tool-eval (R7) and the config-drift detector
+  enforce currency against this rule.
+- **Evidence over vibes.** Diagrams and gaps derive from the code graph and cited sources, not memory.
+
 ## Source-of-truth intent and meta/envctl relationship
 
 This ejected harness must stay aligned with the owner prompt in
