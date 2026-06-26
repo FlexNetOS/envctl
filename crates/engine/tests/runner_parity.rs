@@ -13,7 +13,7 @@
 //! shared lock to run serially — otherwise a parallel test would see another's
 //! shrunk timeout / temp HOME.
 
-use envctl_engine::{Event, EventSink, Hook, HookRunner, OpStatus, Phase, ProcessRunner, Stream};
+use envctl_engine::{Event, EventSink, Hook, HookRunner, OpStatus, Phase, ProcessRunner};
 use std::collections::BTreeMap;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Mutex, MutexGuard};
