@@ -1,23 +1,24 @@
-# ECC for Codex CLI
+# Codex CLI project layer
 
-This supplements the root `AGENTS.md` with a repo-local ECC baseline.
+This supplements the root `AGENTS.md` with the repo-local Codex baseline. The root `AGENTS.md` and the `agent-env-config` skill supersede older ECC-generated JavaScript-convention guidance.
 
 ## Repo Skill
 
-- Repo-generated Codex skill: `.agents/skills/envctl/SKILL.md`
-- Claude-facing companion skill: `.claude/skills/envctl/SKILL.md`
-- Keep user-specific credentials and private MCPs in `~/.codex/config.toml`, not in this repo.
+- Canonical envctl convention skill: `.agents/skills/agent-env-config/SKILL.md` and `.codex/skills/agent-env-config/SKILL.md`.
+- Harness skills live under `.agents/skills/*`; prompt shims live under `.codex/prompts/*`.
+- Keep user-specific credentials, provider redirects, and private MCP auth in `~/.codex/config.toml`, not in this repo.
 
 ## MCP Baseline
 
 Treat `.codex/config.toml` as the default ECC-safe baseline for work in this repository.
-The generated baseline enables GitHub, Context7, Exa, Memory, Playwright, and Sequential Thinking.
+The project baseline enables GitHub, Context7, Exa, Memory, Playwright, Sequential Thinking, and n8n-mcp. Keep MCP definitions synchronized through `agent-env.yaml`/`agent-skills`, not ad-hoc edits.
 
 ## Multi-Agent Support
 
-- Explorer: read-only evidence gathering
-- Reviewer: correctness, security, and regression review
-- Docs researcher: API and release-note verification
+- Explorer: read-only evidence gathering.
+- Reviewer: correctness, security, and regression review.
+- Docs researcher: API and release-note verification.
+- Harness agents: feature-forge, rust-port, continuity, and build-health roles under `.codex/agents/*.toml`.
 
 ## Workflow Files
 
