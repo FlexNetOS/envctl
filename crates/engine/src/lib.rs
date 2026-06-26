@@ -19,6 +19,7 @@ pub mod hub_registry; // read-only federation over *_hub/registry.json
 pub mod install; // Phase 4: symlink artifacts into meta .local/bin (refuse-unmanaged) + wire-in
 pub mod layout; // meta-hosted .local/bin/lib/share/state/cache/tmp/opt path resolver
 pub mod lock; // envctl.lock — content-hashed manifest-of-record + CI gate
+pub mod migration; // adoption engine: scan/plan/apply/verify/purge into meta .local topology
 pub mod model; // Registry, OpResult, OpStatus, EnvReport, Wiring, RunPlan, RunSummary, AddRepoSpec
 pub mod register; // Phase 4: synthesize the components.d drop-in (provenance + rebuild)
 pub mod runner; // ProcessRunner (real) + DryRunRunner impls of HookRunner
@@ -37,7 +38,10 @@ pub use agent::{
     AgentRemoveSpec, AgentReport, AgentScope, AgentSectionSel, AgentSyncSpec, AgentUpdateCheck,
     AgentVerb,
 };
-pub use command::{run_event_loop, AgentCommandSpec, EngineCommand, EngineEvent, TelemetryControl};
+pub use command::{
+    run_event_loop, AgentCommandSpec, EngineCommand, EngineEvent, MigrationCommandSpec,
+    TelemetryControl,
+};
 pub use component::{Component, Guard, Hook, HookRunner, Phase};
 pub use dashboard::{
     DashboardPane, DashboardPlan, DashboardSpec, DashboardTab, DeployOutcome, MetaRepo,
@@ -50,6 +54,11 @@ pub use hub_registry::{
     HubRegistryDrift, HubRegistryEntryView, HubRegistryReport, HubRegistrySource, HubRegistryStatus,
 };
 pub use layout::{LayoutEntry, LayoutKind, MetaLayout};
+pub use migration::{
+    MigrationAction, MigrationItem, MigrationKind, MigrationLayoutEntry, MigrationLayoutKind,
+    MigrationOwner, MigrationReport, MigrationRisk, MigrationScope, MigrationSpec, MigrationStatus,
+    MigrationSummary, MigrationVerb,
+};
 pub use model::{
     AddRepoSpec, AiAgent, BuildStrategy, BuildSystem, ComponentState, DataPath, DesktopEntry,
     DriftItem, DriftKind, EnvReport, MetaBoundaryReport, MetaBoundaryViolation,
@@ -241,6 +250,79 @@ impl Engine {
             outcome: outcome.clone(),
         });
         Ok(outcome)
+    }
+
+    /// Read-only migration/adoption scan: inventory canonical meta `.local` dirs,
+    /// legacy manifest tokens, preserved agent assets, and protected meta shared
+    /// substrates such as `loop_lib`.
+    pub fn migrate_scan(
+        &self,
+        spec: MigrationSpec,
+        sink: &EventSink,
+    ) -> anyhow::Result<MigrationReport> {
+        let report = migration::scan(&self.inner.registry, &self.inner.manifest_dir, &spec);
+        migration::emit_report(&report, sink);
+        Ok(report)
+    }
+
+    /// Read-only migration plan. Same inventory as scan, labeled as the plan
+    /// surface so front-ends can show the next action without mutating state.
+    pub fn migrate_plan(
+        &self,
+        spec: MigrationSpec,
+        sink: &EventSink,
+    ) -> anyhow::Result<MigrationReport> {
+        let report = migration::plan(&self.inner.registry, &self.inner.manifest_dir, &spec);
+        migration::emit_report(&report, sink);
+        Ok(report)
+    }
+
+    /// Apply the safe subset of the migration plan. Preview unless `apply=true`;
+    /// the first implementation only materializes canonical meta `.local`
+    /// directories and writes the migration ledger.
+    pub fn migrate_apply(
+        &self,
+        spec: MigrationSpec,
+        apply: bool,
+        sink: &EventSink,
+    ) -> anyhow::Result<MigrationReport> {
+        let report =
+            migration::apply(&self.inner.registry, &self.inner.manifest_dir, &spec, apply)?;
+        migration::emit_report(&report, sink);
+        Ok(report)
+    }
+
+    /// Verify that the migration plan is fully resolved. Non-mutating; callers
+    /// may choose to exit non-zero when `report.ok()` is false.
+    pub fn migrate_verify(
+        &self,
+        spec: MigrationSpec,
+        sink: &EventSink,
+    ) -> anyhow::Result<MigrationReport> {
+        let report = migration::verify(&self.inner.registry, &self.inner.manifest_dir, &spec);
+        migration::emit_report(&report, sink);
+        Ok(report)
+    }
+
+    /// Strict-upgrade purge surface. Preview unless `apply=true` and `confirmed=true`;
+    /// the engine refuses to delete any legacy path that has not first been proven
+    /// adopted into a canonical replacement and ledgered.
+    pub fn migrate_purge(
+        &self,
+        spec: MigrationSpec,
+        apply: bool,
+        confirmed: bool,
+        sink: &EventSink,
+    ) -> anyhow::Result<MigrationReport> {
+        let report = migration::purge(
+            &self.inner.registry,
+            &self.inner.manifest_dir,
+            &spec,
+            apply,
+            confirmed,
+        )?;
+        migration::emit_report(&report, sink);
+        Ok(report)
     }
 }
 

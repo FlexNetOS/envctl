@@ -43,8 +43,10 @@ use envctl_engine::{
     AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentDoctorSpec, AgentInitSpec, AgentListKind,
     AgentListSpec, AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentScope, AgentSectionSel,
     AgentSyncSpec, AiAgent, BuildStrategy, BuildSystem, DashboardSpec, DriftSummary, Engine,
-    EnvReport, Event, EventSink, HubRegistryReport, HubRegistryStatus, OpStatus, Phase, Refactor,
-    RefactorGoal, RenameRule, ResetGates, RunPlan, SelfUninstallSpec, Severity,
+    EnvReport, Event, EventSink, HubRegistryReport, HubRegistryStatus, MigrationAction,
+    MigrationReport, MigrationRisk, MigrationScope, MigrationSpec, MigrationStatus, MigrationVerb,
+    OpStatus, Phase, Refactor, RefactorGoal, RenameRule, ResetGates, RunPlan, SelfUninstallSpec,
+    Severity,
 };
 
 #[derive(Parser)]
@@ -59,6 +61,7 @@ use envctl_engine::{
         "envctl auto-detect",
         "envctl doctor",
         "envctl install --dry-run",
+        "envctl migrate scan",
         "envctl agent sync --apply",
         "envctl graph --impact secretd",
     )
@@ -454,6 +457,22 @@ enum Cmd {
         #[arg(long, value_name = "FILE")]
         materialize: Option<std::path::PathBuf>,
     },
+    /// Adopt existing installs/configs into envctl's canonical `$META_ROOT/.local` topology.
+    #[command(
+        long_about = "Migrate/adopt an existing meta machine into envctl's canonical `$META_ROOT/.local/{bin,lib,share,state,cache,tmp,opt}` layout. scan/plan/verify are read-only. apply previews unless --apply is passed. purge is strict upgrade-only: it refuses deletion unless a legacy path already has verified canonical parity/adoption evidence. Shared meta substrates (loop_lib / meta_plugin_protocol) and agent/Codex configs are protected, not removed or rebuilt blindly.",
+        after_help = envctl_examples!(
+            "envctl migrate scan",
+            "envctl migrate plan --scope component-registry",
+            "envctl migrate apply",
+            "envctl migrate apply --apply",
+            "envctl migrate verify --json",
+            "envctl migrate purge --apply --confirm",
+        )
+    )]
+    Migrate {
+        #[command(subcommand)]
+        cmd: MigrateCmd,
+    },
     /// Manage agent assets (skills / MCP servers / commands) declaratively over the
     /// shared `Engine::agent_*` API. Mutating verbs (sync/add/remove/clean) are
     /// PREVIEW by default; pass `--apply` to write. `--json` (global) emits the typed
@@ -516,6 +535,117 @@ enum Cmd {
         #[command(subcommand)]
         cmd: SecretCmd,
     },
+}
+
+/// The migration/adoption subcommands. All variants share optional scope and
+/// component filters; mutating variants remain preview-only unless explicitly applied.
+#[derive(Subcommand)]
+enum MigrateCmd {
+    /// Read the meta layout, manifests, agent assets, and protected substrates.
+    #[command(
+        long_about = "Read-only scan of the existing meta checkout: canonical .local directories, manifest references to legacy/global paths, agent/Codex assets, and shared meta substrates such as loop_lib.",
+        after_help = envctl_examples!(
+            "envctl migrate scan",
+            "envctl migrate scan --scope layout --scope meta-substrates",
+            "envctl migrate scan --component rust",
+        )
+    )]
+    Scan {
+        #[arg(long = "scope", value_enum)]
+        scopes: Vec<MigrateScopeArg>,
+        #[arg(long = "component")]
+        components: Vec<String>,
+    },
+    /// Build the migration/adoption worklist without writing anything.
+    #[command(
+        long_about = "Read-only plan for adopting old paths into the canonical meta-hosted .local topology. The plan is the same engine report as scan, but with the verb set to plan for automation.",
+        after_help = envctl_examples!(
+            "envctl migrate plan",
+            "envctl migrate plan --scope component-registry",
+        )
+    )]
+    Plan {
+        #[arg(long = "scope", value_enum)]
+        scopes: Vec<MigrateScopeArg>,
+        #[arg(long = "component")]
+        components: Vec<String>,
+    },
+    /// Materialize canonical meta directories. Preview unless --apply is set.
+    #[command(
+        long_about = "Materialize the canonical `$META_ROOT/.local` directory structure and append a migration ledger entry. Without --apply this is a zero-write preview.",
+        after_help = envctl_examples!(
+            "envctl migrate apply",
+            "envctl migrate apply --apply",
+        )
+    )]
+    Apply {
+        #[arg(long = "scope", value_enum)]
+        scopes: Vec<MigrateScopeArg>,
+        #[arg(long = "component")]
+        components: Vec<String>,
+        /// Actually create canonical directories and write the migration ledger.
+        #[arg(long)]
+        apply: bool,
+    },
+    /// Verify the migration/adoption plan is clean. Exits 1 if unresolved work remains.
+    #[command(
+        long_about = "Read-only verification gate. Exits non-zero if any migration debt remains, so CI/automation can block unsafe purges or releases.",
+        after_help = envctl_examples!(
+            "envctl migrate verify",
+            "envctl migrate verify --scope layout",
+        )
+    )]
+    Verify {
+        #[arg(long = "scope", value_enum)]
+        scopes: Vec<MigrateScopeArg>,
+        #[arg(long = "component")]
+        components: Vec<String>,
+    },
+    /// Strict upgrade-only purge surface. Refuses until adoption/parity is proven.
+    #[command(
+        long_about = "Strict upgrade-only purge guard. Dry-run reports why legacy roots are protected. Even with --apply --confirm, envctl refuses deletion unless a typed legacy path has verified canonical adoption evidence in the migration ledger.",
+        after_help = envctl_examples!(
+            "envctl migrate purge",
+            "envctl migrate purge --apply --confirm",
+        )
+    )]
+    Purge {
+        #[arg(long = "scope", value_enum)]
+        scopes: Vec<MigrateScopeArg>,
+        #[arg(long = "component")]
+        components: Vec<String>,
+        /// Attempt the guarded purge path (still refuses without verified candidates).
+        #[arg(long)]
+        apply: bool,
+        /// Confirm a destructive purge attempt.
+        #[arg(long)]
+        confirm: bool,
+    },
+}
+
+/// CLI spelling for `MigrationScope`.
+#[derive(Clone, Copy, Debug, ValueEnum)]
+#[clap(rename_all = "kebab-case")]
+enum MigrateScopeArg {
+    All,
+    Layout,
+    ComponentRegistry,
+    AgentAssets,
+    MetaSubstrates,
+    LegacyPaths,
+}
+
+impl From<MigrateScopeArg> for MigrationScope {
+    fn from(scope: MigrateScopeArg) -> Self {
+        match scope {
+            MigrateScopeArg::All => MigrationScope::All,
+            MigrateScopeArg::Layout => MigrationScope::Layout,
+            MigrateScopeArg::ComponentRegistry => MigrationScope::ComponentRegistry,
+            MigrateScopeArg::AgentAssets => MigrationScope::AgentAssets,
+            MigrateScopeArg::MetaSubstrates => MigrationScope::MetaSubstrates,
+            MigrateScopeArg::LegacyPaths => MigrationScope::LegacyPaths,
+        }
+    }
 }
 
 /// `envctl self {update,uninstall}` — manage the running installation (kasetto `ManageSelf`).
@@ -1501,6 +1631,7 @@ fn main() -> anyhow::Result<()> {
             toolchains,
             materialize,
         } => run_env(meta_file, toolchains, materialize, json),
+        Cmd::Migrate { cmd } => run_migrate(&engine, cmd, json),
         Cmd::Agent { cmd } => run_agent(engine, cmd, json),
         Cmd::Secret { cmd } => run_secret(cmd, json),
         Cmd::Completions { shell } => run_completions(shell),
@@ -1546,6 +1677,182 @@ fn main() -> anyhow::Result<()> {
         }
     }
     result
+}
+
+fn migration_spec(scopes: Vec<MigrateScopeArg>, components: Vec<String>) -> MigrationSpec {
+    MigrationSpec {
+        scopes: if scopes.is_empty() {
+            vec![MigrationScope::All]
+        } else {
+            scopes.into_iter().map(Into::into).collect()
+        },
+        components,
+    }
+}
+
+fn run_migrate(engine: &Engine, cmd: MigrateCmd, json: bool) -> anyhow::Result<()> {
+    let (sink, _rx) = EventSink::channel();
+    let (report, hard_purge_attempt) = match cmd {
+        MigrateCmd::Scan { scopes, components } => (
+            engine.migrate_scan(migration_spec(scopes, components), &sink)?,
+            false,
+        ),
+        MigrateCmd::Plan { scopes, components } => (
+            engine.migrate_plan(migration_spec(scopes, components), &sink)?,
+            false,
+        ),
+        MigrateCmd::Apply {
+            scopes,
+            components,
+            apply,
+        } => (
+            engine.migrate_apply(migration_spec(scopes, components), apply, &sink)?,
+            false,
+        ),
+        MigrateCmd::Verify { scopes, components } => (
+            engine.migrate_verify(migration_spec(scopes, components), &sink)?,
+            false,
+        ),
+        MigrateCmd::Purge {
+            scopes,
+            components,
+            apply,
+            confirm,
+        } => (
+            engine.migrate_purge(migration_spec(scopes, components), apply, confirm, &sink)?,
+            apply && confirm,
+        ),
+    };
+
+    if json {
+        println!("{}", serde_json::to_string_pretty(&report)?);
+    } else {
+        print_migration_report(&report);
+    }
+
+    if matches!(report.verb, MigrationVerb::Verify) && !report.ok() {
+        std::process::exit(1);
+    }
+    if hard_purge_attempt && report.summary.refused > 0 {
+        std::process::exit(2);
+    }
+    Ok(())
+}
+
+fn print_migration_report(report: &MigrationReport) {
+    let verb = migration_verb_label(report.verb);
+    let status = if report.ok() { "ok" } else { "needs-work" };
+    emit(format!(
+        "\x1b[1;36mmigrate {verb}: {status}\x1b[0m  {} items ({} current, {} needs migration, {} missing canonical, {} protected, {} refused)",
+        report.summary.total,
+        report.summary.current,
+        report.summary.needs_migration,
+        report.summary.missing_canonical,
+        report.summary.protected,
+        report.summary.refused,
+    ));
+    emit(format!("  meta_root: {}", report.meta_root));
+    emit(format!("  manifest:  {}", report.manifest_dir));
+    emit(format!("  ledger:    {}", report.ledger_path));
+    if let Some(risk) = report.summary.highest_risk {
+        emit(format!("  highest risk: {}", migration_risk_label(risk)));
+    }
+
+    let mut shown = 0usize;
+    for item in &report.items {
+        if item.status == MigrationStatus::Current && out().verbose == 0 {
+            continue;
+        }
+        shown += 1;
+        let marker = migration_marker(item.status, item.protected);
+        let action = migration_action_label(item.action);
+        let mut line = format!(
+            "  {marker} {:<22} {:<18} {}",
+            migration_status_label(item.status),
+            action,
+            item.subject
+        );
+        if let Some(component) = item.component.as_deref() {
+            line.push_str(&format!(" [{component}]"));
+        }
+        emit(line);
+        if out().verbose >= 1 {
+            emit(format!("      {}", item.detail));
+            if let Some(source) = item.source.as_deref() {
+                emit(format!("      source: {source}"));
+            }
+            if let Some(canonical) = item.canonical.as_deref() {
+                emit(format!("      canonical: {canonical}"));
+            }
+            if let Some(legacy) = item.legacy.as_deref() {
+                emit(format!("      legacy: {legacy}"));
+            }
+        }
+    }
+    if shown == 0 && !report.items.is_empty() {
+        emit("  all displayed items are current; use -v to show the full inventory".to_string());
+    }
+}
+
+fn migration_verb_label(verb: MigrationVerb) -> &'static str {
+    match verb {
+        MigrationVerb::Scan => "scan",
+        MigrationVerb::Plan => "plan",
+        MigrationVerb::Apply => "apply",
+        MigrationVerb::Verify => "verify",
+        MigrationVerb::Purge => "purge",
+    }
+}
+
+fn migration_status_label(status: MigrationStatus) -> &'static str {
+    match status {
+        MigrationStatus::Current => "current",
+        MigrationStatus::NeedsMigration => "needs-migration",
+        MigrationStatus::MissingCanonical => "missing-canonical",
+        MigrationStatus::Materialized => "materialized",
+        MigrationStatus::Preserved => "preserved",
+        MigrationStatus::Protected => "protected",
+        MigrationStatus::ReportOnly => "report-only",
+        MigrationStatus::Refused => "refused",
+    }
+}
+
+fn migration_action_label(action: MigrationAction) -> &'static str {
+    match action {
+        MigrationAction::None => "none",
+        MigrationAction::MaterializeCanonicalDir => "materialize-dir",
+        MigrationAction::UpdateManifestToCanonicalLayout => "update-manifest",
+        MigrationAction::AdoptIntoMetaLocal => "adopt-meta-local",
+        MigrationAction::PreserveConfig => "preserve-config",
+        MigrationAction::ProtectSubstrate => "protect-substrate",
+        MigrationAction::ReportOnly => "report-only",
+        MigrationAction::RefusePurge => "refuse-purge",
+    }
+}
+
+fn migration_risk_label(risk: MigrationRisk) -> &'static str {
+    match risk {
+        MigrationRisk::Low => "low",
+        MigrationRisk::Medium => "medium",
+        MigrationRisk::High => "high",
+    }
+}
+
+fn migration_marker(status: MigrationStatus, protected: bool) -> &'static str {
+    if protected {
+        "🔒"
+    } else {
+        match status {
+            MigrationStatus::Current
+            | MigrationStatus::Materialized
+            | MigrationStatus::Preserved => "✓",
+            MigrationStatus::NeedsMigration
+            | MigrationStatus::MissingCanonical
+            | MigrationStatus::ReportOnly => "·",
+            MigrationStatus::Protected => "🔒",
+            MigrationStatus::Refused => "⛔",
+        }
+    }
 }
 
 fn print_hub_registry(report: &HubRegistryReport) {
@@ -1596,9 +1903,11 @@ fn should_suppress_notice(cmd: &Cmd, json: bool, quiet: u8) -> bool {
     }
     match cmd {
         // Machine-readable / version-printing verbs.
-        Cmd::Completions { .. } | Cmd::Manage { .. } | Cmd::Env { .. } | Cmd::Registry { .. } => {
-            true
-        }
+        Cmd::Completions { .. }
+        | Cmd::Manage { .. }
+        | Cmd::Env { .. }
+        | Cmd::Migrate { .. }
+        | Cmd::Registry { .. } => true,
         // `auto-detect`/`graph`/`lock`/`agent ... --json` are gated by the global `json` above;
         // their human forms may still show the notice. Everything else: don't suppress.
         _ => false,
@@ -2035,6 +2344,7 @@ fn run_action(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
             | Cmd::Doctor
             | Cmd::Dashboard { .. }
             | Cmd::Env { .. }
+            | Cmd::Migrate { .. }
             | Cmd::Agent { .. }
             | Cmd::Secret { .. }
             | Cmd::Registry { .. }
@@ -3058,6 +3368,20 @@ fn print_event(ev: &Event) {
             emit(format!(
                 "\x1b[1;31m  ⛔ REFUSED {component}: {reason}\x1b[0m"
             ))
+        }
+        Event::MigrationReported { report } => {
+            if quiet {
+                return;
+            }
+            emit(format!(
+                "\x1b[1;36m==> migrate {} :: {} items, {} needs migration, {} missing canonical, {} protected, {} refused\x1b[0m",
+                migration_verb_label(report.verb),
+                report.summary.total,
+                report.summary.needs_migration,
+                report.summary.missing_canonical,
+                report.summary.protected,
+                report.summary.refused,
+            ));
         }
         Event::AgentRunStarted {
             verb,

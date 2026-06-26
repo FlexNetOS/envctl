@@ -14,6 +14,7 @@ use crate::{
     },
     component::Phase,
     dashboard::DashboardSpec,
+    migration::MigrationSpec,
     model::{AddRepoSpec, RunPlan},
     Engine, Event, EventSink,
 };
@@ -59,6 +60,11 @@ pub enum EngineCommand {
         dry_run: bool,
         force: bool,
     },
+    /// Migration/adoption engine: scan/plan/apply/verify/purge the meta-hosted
+    /// install topology. GUI parity uses the identical typed surface as the CLI.
+    Migrate {
+        spec: MigrationCommandSpec,
+    },
     /// An agent-asset verb (sync/add/remove/lock/list/clean). The engine owns the fail-closed
     /// preview-vs-apply policy via each `Agent*Spec`'s `apply` flag; the GUI only builds the Spec.
     Agent {
@@ -95,6 +101,25 @@ pub enum AgentCommandSpec {
     /// Read-only diagnostics (TASK-0019, Item 1) — the GUI Doctor sub-tab drives the identical
     /// `Engine::agent_doctor` the CLI's `agent doctor` does.
     Doctor(AgentDoctorSpec),
+}
+
+/// The five migration/adoption verbs. Mutating forms carry the same explicit
+/// apply/confirm booleans as the CLI so destructive behavior remains fail-closed
+/// in every front-end.
+#[derive(Clone, Debug)]
+pub enum MigrationCommandSpec {
+    Scan(MigrationSpec),
+    Plan(MigrationSpec),
+    Apply {
+        spec: MigrationSpec,
+        apply: bool,
+    },
+    Verify(MigrationSpec),
+    Purge {
+        spec: MigrationSpec,
+        apply: bool,
+        confirmed: bool,
+    },
 }
 
 pub type EngineEvent = Event;
@@ -249,6 +274,32 @@ pub fn run_event_loop(
                     engine.deploy_dashboard(start, meta_file, spec, dry_run, force, &sink)
                 {
                     emit_setup_error(&sink, "dashboard-deploy", &e);
+                }
+            }
+            EngineCommand::Migrate { spec } => {
+                let result = match spec {
+                    MigrationCommandSpec::Scan(spec) => {
+                        engine.migrate_scan(spec, &sink).map(|_| ())
+                    }
+                    MigrationCommandSpec::Plan(spec) => {
+                        engine.migrate_plan(spec, &sink).map(|_| ())
+                    }
+                    MigrationCommandSpec::Apply { spec, apply } => {
+                        engine.migrate_apply(spec, apply, &sink).map(|_| ())
+                    }
+                    MigrationCommandSpec::Verify(spec) => {
+                        engine.migrate_verify(spec, &sink).map(|_| ())
+                    }
+                    MigrationCommandSpec::Purge {
+                        spec,
+                        apply,
+                        confirmed,
+                    } => engine
+                        .migrate_purge(spec, apply, confirmed, &sink)
+                        .map(|_| ()),
+                };
+                if let Err(e) = result {
+                    emit_setup_error(&sink, "migrate", &e);
                 }
             }
             EngineCommand::Agent { spec } => {

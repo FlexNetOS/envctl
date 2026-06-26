@@ -108,6 +108,7 @@ args = ["-c", "printf remove > would-write"]
         let mut c = Command::new(bin());
         c.current_dir(&self.root)
             .env("ENVCTL_MANIFEST_DIR", &self.manifest)
+            .env("META_ROOT", &self.meta)
             .env("XDG_CONFIG_HOME", &self.xdg_config)
             .env("XDG_DATA_HOME", &self.xdg_data)
             .env("XDG_CACHE_HOME", &self.xdg_cache)
@@ -147,6 +148,7 @@ fn root_help_lists_the_full_cli_surface() {
         "add-repo",
         "dashboard",
         "env",
+        "migrate",
         "agent",
         "self",
         "completions",
@@ -390,6 +392,8 @@ fn mutating_verbs_preview_without_writing_fixture_state() {
         vec!["install", "--dry-run", "stub"],
         vec!["auto-fix", "stub"],
         vec!["reset", "stub"],
+        vec!["migrate", "apply"],
+        vec!["migrate", "purge"],
         vec![
             "add-repo",
             "file://fixture",
@@ -431,6 +435,69 @@ fn mutating_verbs_preview_without_writing_fixture_state() {
             "hook ran during preview for args={args:?}"
         );
     }
+}
+
+#[test]
+fn migration_scan_json_reports_meta_layout_and_legacy_manifest_debt() {
+    let fx = Fixture::new();
+    let components = fx.manifest.join("components.d");
+    std::fs::create_dir_all(&components).unwrap();
+    std::fs::write(
+        components.join("legacy.toml"),
+        r#"
+[[component]]
+id = "legacy-paths"
+name = "Legacy Paths"
+
+[component.detect]
+kind = "command"
+command = "true"
+
+[component.install]
+kind = "command"
+command = "sh"
+args = ["-c", "echo $META_ROOT/.toolchains/legacy && echo ~/.local/bin/foo && echo /usr/local/bin/bar"]
+"#,
+    )
+    .unwrap();
+
+    let out = fx
+        .cmd()
+        .args(["--json", "migrate", "scan"])
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "stderr: {}", stderr(&out));
+    let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(v["schema"], "envctl.migration.report.v1");
+    assert_eq!(v["meta_root"], fx.meta.display().to_string());
+    assert!(
+        v["layout"].as_array().unwrap().iter().any(|entry| {
+            entry["key"] == "bin"
+                && entry["path"] == fx.meta.join(".local/bin").display().to_string()
+        }),
+        "layout missing canonical meta .local/bin: {v}"
+    );
+    let items = v["items"].as_array().unwrap();
+    assert!(
+        items
+            .iter()
+            .any(|item| item["kind"] == "manifest_legacy_token"
+                && item["status"] == "needs_migration"),
+        "missing legacy token item: {v}"
+    );
+    assert!(
+        items
+            .iter()
+            .any(|item| item["kind"] == "user_global_path"
+                && item["action"] == "adopt_into_meta_local"),
+        "missing user-global adoption item: {v}"
+    );
+    assert!(
+        items.iter().any(|item| {
+            item["kind"] == "legacy_compatibility_root" && item["protected"] == true
+        }),
+        "missing protected legacy compatibility item: {v}"
+    );
 }
 
 #[test]
