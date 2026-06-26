@@ -23,6 +23,9 @@ The project baseline enables GitHub, Context7, Exa, Memory, Playwright, Sequenti
 ## Workflow Files
 
 - `/goal` - `.codex/prompts/goal.md` (canonical) and `.claude/commands/goal.md` (Claude Code shim)
+- `/planning-engineer` - `.codex/prompts/planning-engineer.md`
+- `/plan-loop` - `.codex/prompts/plan-loop.md`
+- `/plan-engineering-loop` - `.codex/prompts/plan-engineering-loop.md` (compatibility alias to `/plan-loop`)
 - `/forge-loop` - `.codex/prompts/forge-loop.md`
 - `/prompt:forge-loop` - `.codex/prompts/prompt:forge-loop.md`
 - `/feature-forge` - `.codex/prompts/feature-forge.md`

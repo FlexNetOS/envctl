@@ -17,7 +17,7 @@ Resume the planning-engineer harness (external Ralph runner, fresh context): run
    verify-on-resume, continue at the next target/dimension. Else have the cartographer auto-derive
    targets.md (Cargo workspace members + major modules), then start the first target.
 2. Run up to $BUDGET planning cycles: per target, cartographer ‖ trend-researcher (fan-out) -> analysts
-   (cited gaps + quality/speed/accuracy upgrades) -> adversarially VERIFY claims + feasibility-gate
+   (cited gaps + quality/speed/accuracy/governance+settings+config upgrades) -> adversarially VERIFY claims + feasibility-gate
    upgrades vs the code -> architect synthesizes the plan (ASCII diagrams + tool-eval) + ROADMAP row.
    Read-only on production code. Commit .handoff/loop/plan/ per cycle. Never let an unverified claim or
    an infeasible upgrade into a plan.

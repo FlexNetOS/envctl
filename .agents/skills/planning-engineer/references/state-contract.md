@@ -46,6 +46,8 @@ Dimension catalog (pick what the target needs): **architecture** (components/bou
 **public-API/contracts** (the surface a plan must not break), **performance** (speed upgrades),
 **correctness/accuracy** (accuracy upgrades), **code-quality** (idiom, tests, lint), **tooling**
 (CLIs/MCPs/crates + currency), **comparison-to-best-practice** (vs the 90-day research), and
+**governance+settings+config** — **ALWAYS seeded** for every target (owned by `plan-governance-config-auditor`): control-plane/settings/config coherence, MCP rot, skill overload, token burn, permission/config drift.
+
 **test-coverage** — **ALWAYS seeded** for every target (owned by `plan-test-strategist`): existing
 tests by call-graph reachability + ranked coverage gaps + the designed suite, in
 `findings/test-strategy-<T>.md` (which ends with a `## FF test-build spec` the architect promotes to

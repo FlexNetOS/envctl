@@ -27,7 +27,7 @@ target's production code, so ejecting cannot change the target's behavior.
 # CLAUDE.md pointer
 ## Harness: Planning Engineer
 **Goal:** continuous, evidence-backed planning/architecture — code graph + 90-day research →
-adversarially-verified gaps → a plan with ASCII diagrams, quality/speed/accuracy upgrades, tool-eval.
+adversarially-verified gaps → a plan with ASCII diagrams, quality/speed/accuracy/governance+settings+config upgrades, tool-eval.
 **Trigger:** for "plan <subsystem>", "architecture plan", "deep planning", "loop on the architecture",
 or "resume the planning loop", use the `plan-loop` (continuous) / `planning-engineer` (single-cycle)
 skill. Read-only on production code; writes plans/graph under `.handoff/loop/plan/` + docs.

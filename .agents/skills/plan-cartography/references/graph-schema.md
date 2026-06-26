@@ -271,7 +271,7 @@ Dimension catalog (pick what the target needs): `architecture`, `data-flow`, `ho
 - UPGRADE: <change> | axis: quality|speed|accuracy | rationale: <why> | evidence: <path:line> | blast: <impact-scope> | risk: low|med|high
 ```
 `blast` is taken from `metrics.blast_radius` for the touched file; `axis` is mandatory and exactly one
-of quality/speed/accuracy.
+of quality/speed/accuracy/governance+settings+config.
 
 **VERDICT row** (verifier → `findings/verdicts.md`):
 ```
