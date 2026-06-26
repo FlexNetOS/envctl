@@ -63,6 +63,28 @@ impl MetaLayout {
         &self.meta_root
     }
 
+    /// Expand the path tokens that envctl manifests are allowed to use for
+    /// meta-hosted paths.
+    ///
+    /// Managed hooks run with `HOME=$META_ROOT`, so a legacy leading `~/`,
+    /// `$HOME/`, or `${HOME}/` is deliberately resolved to the meta checkout
+    /// here too.  The real user home remains available to hook bodies only as
+    /// `ENVCTL_REAL_HOME` for explicit host-integration bridges.
+    pub fn expand_meta_path(&self, p: &str) -> String {
+        let root = self.meta_root.display();
+        match p {
+            "$META_ROOT" | "${META_ROOT}" | "$HOME" | "${HOME}" | "~" => root.to_string(),
+            _ => {
+                for prefix in ["$META_ROOT/", "${META_ROOT}/", "$HOME/", "${HOME}/", "~/"] {
+                    if let Some(rest) = p.strip_prefix(prefix) {
+                        return self.meta_root.join(rest).display().to_string();
+                    }
+                }
+                p.to_string()
+            }
+        }
+    }
+
     /// Meta's XDG-shaped local prefix: all envctl-owned exposure and state live
     /// below this tree.
     pub fn local(&self) -> PathBuf {
@@ -459,6 +481,33 @@ mod tests {
         assert!(l.ensure_component_prefix("").is_err());
 
         let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn expand_meta_path_retargets_home_tokens_to_meta_root() {
+        let l = MetaLayout::from_meta_root("/meta");
+
+        assert_eq!(
+            l.expand_meta_path("$META_ROOT/.local/bin"),
+            "/meta/.local/bin"
+        );
+        assert_eq!(
+            l.expand_meta_path("${META_ROOT}/envctl/assets/scripts/demo.sh"),
+            "/meta/envctl/assets/scripts/demo.sh"
+        );
+        assert_eq!(
+            l.expand_meta_path("$HOME/.config/env-ctl"),
+            "/meta/.config/env-ctl"
+        );
+        let tilde_local = ["~", ".local/share/env-ctl"].join("/");
+        assert_eq!(
+            l.expand_meta_path(&tilde_local),
+            "/meta/.local/share/env-ctl"
+        );
+        assert_eq!(
+            l.expand_meta_path("/etc/systemd/system/demo.service"),
+            "/etc/systemd/system/demo.service"
+        );
     }
 
     fn tempdir(label: &str) -> PathBuf {

@@ -3,16 +3,17 @@ set -euo pipefail
 
 ROOT="$(git rev-parse --show-toplevel)"
 cd "$ROOT"
+META_ROOT="${META_ROOT:-$(cd "$ROOT/.." && pwd)}"
 
-META_CARGO_HOME="${META_ROOT:-$HOME/Desktop/meta}/.toolchains/cargo"
-export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$META_CARGO_HOME/bin:$PATH"
+META_CARGO_HOME="$META_ROOT/.toolchains/cargo"
+export PATH="${CARGO_HOME:-$META_ROOT/.toolchains/cargo}/bin:$META_CARGO_HOME/bin:$PATH"
 
 fail() {
   printf 'CARGO-AUDIT GATE FAIL: %s\n' "$*" >&2
   exit 1
 }
 
-command -v cargo-audit >/dev/null 2>&1 || fail "cargo-audit is not installed in ${CARGO_HOME:-$HOME/.cargo}/bin or $META_CARGO_HOME/bin"
+command -v cargo-audit >/dev/null 2>&1 || fail "cargo-audit is not installed in ${CARGO_HOME:-$META_ROOT/.toolchains/cargo}/bin or $META_CARGO_HOME/bin"
 
 # RUSTSEC-2023-0071 (rsa Marvin timing side channel) has no fixed stable release in the
 # RustCrypto rsa 0.9 line.

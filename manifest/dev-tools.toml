@@ -48,19 +48,19 @@ requires = ["bun"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/.bun/bin/vite\" ] && [ \"$(readlink -f \"$HOME/.local/bin/vite\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/.bun/bin/vite\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/.bun/bin/vite\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/vite\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/.bun/bin/vite\")\" ]"]
 [component.install]
 kind = "script"
 script = '''
 set -e
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 export BUN_INSTALL="$M/.toolchains/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 bun add -g vite
-mkdir -p "$HOME/.local/bin"
-dst="$HOME/.local/bin/vite"
+mkdir -p "$META_ROOT/.local/bin"
+dst="$META_ROOT/.local/bin/vite"
 src="$BUN_INSTALL/bin/vite"
-ARCH="$HOME/Desktop/_archives/home-links-$(date +%Y-%m-%d)"
+ARCH="$META_ROOT/.local/state/envctl/legacy-archives/home-links-$(date +%Y-%m-%d)"
 if [ -e "$dst" ] && [ ! -L "$dst" ]; then mkdir -p "$ARCH/.local/bin"; mv "$dst" "$ARCH/.local/bin/vite"; echo "archived copy: vite"; fi
 [ -L "$dst" ] && rm "$dst"
 ln -s "$src" "$dst"
@@ -68,22 +68,22 @@ ln -s "$src" "$dst"
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; vite --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; vite --version"]
 [component.fix]
 kind = "script"
 script = '''
 set -e
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 export BUN_INSTALL="$M/.toolchains/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 bun add -g vite
-mkdir -p "$HOME/.local/bin"
-ln -sfn "$BUN_INSTALL/bin/vite" "$HOME/.local/bin/vite"
+mkdir -p "$META_ROOT/.local/bin"
+ln -sfn "$BUN_INSTALL/bin/vite" "$META_ROOT/.local/bin/vite"
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; bun remove -g vite; [ -L \"$HOME/.local/bin/vite\" ] && rm \"$HOME/.local/bin/vite\" || true"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; bun remove -g vite; [ -L \"$META_ROOT/.local/bin/vite\" ] && rm \"$META_ROOT/.local/bin/vite\" || true"]
 
 
 [[component]]
@@ -94,19 +94,19 @@ requires = ["rustup"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/cargo/bin/cargo-nextest\" ] && [ \"$(readlink -f \"$HOME/.local/bin/cargo-nextest\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/cargo/bin/cargo-nextest\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/cargo/bin/cargo-nextest\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/cargo-nextest\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/cargo/bin/cargo-nextest\")\" ]"]
 [component.install]
 kind = "script"
 script = '''
 set -euo pipefail
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 export CARGO_HOME="$M/.toolchains/cargo"
-export PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"
+export PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"
 cargo install cargo-nextest --version 0.9.137 --locked
-mkdir -p "$HOME/.local/bin"
-dst="$HOME/.local/bin/cargo-nextest"
+mkdir -p "$META_ROOT/.local/bin"
+dst="$META_ROOT/.local/bin/cargo-nextest"
 src="$CARGO_HOME/bin/cargo-nextest"
-ARCH="$HOME/Desktop/_archives/home-links-$(date +%Y-%m-%d)"
+ARCH="$META_ROOT/.local/state/envctl/legacy-archives/home-links-$(date +%Y-%m-%d)"
 if [ -e "$dst" ] && [ ! -L "$dst" ]; then mkdir -p "$ARCH/.local/bin"; mv "$dst" "$ARCH/.local/bin/cargo-nextest"; echo "archived copy: cargo-nextest"; fi
 [ -L "$dst" ] && rm "$dst"
 ln -s "$src" "$dst"
@@ -114,22 +114,22 @@ ln -s "$src" "$dst"
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export CARGO_HOME=\"$M/.toolchains/cargo\"; export PATH=\"$CARGO_HOME/bin:$PATH\"; cargo nextest --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export CARGO_HOME=\"$M/.toolchains/cargo\"; export PATH=\"$CARGO_HOME/bin:$PATH\"; cargo nextest --version"]
 [component.fix]
 kind = "script"
 script = '''
 set -euo pipefail
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 export CARGO_HOME="$M/.toolchains/cargo"
-export PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"
+export PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"
 cargo install cargo-nextest --version 0.9.137 --force --locked
-mkdir -p "$HOME/.local/bin"
-ln -sfn "$CARGO_HOME/bin/cargo-nextest" "$HOME/.local/bin/cargo-nextest"
+mkdir -p "$META_ROOT/.local/bin"
+ln -sfn "$CARGO_HOME/bin/cargo-nextest" "$META_ROOT/.local/bin/cargo-nextest"
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export CARGO_HOME=\"$M/.toolchains/cargo\"; export PATH=\"$CARGO_HOME/bin:$PATH\"; cargo uninstall cargo-nextest || true; [ -L \"$HOME/.local/bin/cargo-nextest\" ] && rm \"$HOME/.local/bin/cargo-nextest\" || true"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export CARGO_HOME=\"$M/.toolchains/cargo\"; export PATH=\"$CARGO_HOME/bin:$PATH\"; cargo uninstall cargo-nextest || true; [ -L \"$META_ROOT/.local/bin/cargo-nextest\" ] && rm \"$META_ROOT/.local/bin/cargo-nextest\" || true"]
 
 
 # mold-linker REMOVED (Epic H TASK-0070): the apt mold linker is superseded by the meta-owned
@@ -141,43 +141,45 @@ args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export CARGO_HOME=\"$M/.
 [[component]]
 id = "wasmer"
 name = "Wasmer (WASM runtime)"
-description = "Wasmer runtime mirrored into $META_ROOT/.toolchains/wasmer with a ~/.local/bin frontdoor."
+description = "Wasmer runtime mirrored into $META_ROOT/.toolchains/wasmer with a $META_ROOT/.local/bin frontdoor."
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/wasmer/bin/wasmer\" ] && [ \"$(readlink -f \"$HOME/.local/bin/wasmer\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/wasmer/bin/wasmer\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/wasmer/bin/wasmer\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/wasmer\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/wasmer/bin/wasmer\")\" ]"]
 [component.install]
 kind = "script"
 script = '''
 set -euo pipefail
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/wasmer"
+export HOME="$M"
 curl -fsSL https://get.wasmer.io | sh
 rm -rf "$DEST"
-install -d -m 755 "$DEST" "$HOME/.local/bin"
-cp -a "$HOME/.wasmer/." "$DEST/"
-ln -sfn "$DEST/bin/wasmer" "$HOME/.local/bin/wasmer"
+install -d -m 755 "$DEST" "$META_ROOT/.local/bin"
+cp -a "$M/.wasmer/." "$DEST/"
+ln -sfn "$DEST/bin/wasmer" "$META_ROOT/.local/bin/wasmer"
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export PATH=\"$HOME/.local/bin:$PATH\"; [ \"$(readlink -f \"$(command -v wasmer)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/wasmer/bin/wasmer\")\" ] && wasmer --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/.local/bin:$PATH\"; [ \"$(readlink -f \"$(command -v wasmer)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/wasmer/bin/wasmer\")\" ] && wasmer --version"]
 [component.fix]
 kind = "script"
 script = '''
 set -euo pipefail
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/wasmer"
+export HOME="$M"
 curl -fsSL https://get.wasmer.io | sh
 rm -rf "$DEST"
-install -d -m 755 "$DEST" "$HOME/.local/bin"
-cp -a "$HOME/.wasmer/." "$DEST/"
-ln -sfn "$DEST/bin/wasmer" "$HOME/.local/bin/wasmer"
+install -d -m 755 "$DEST" "$META_ROOT/.local/bin"
+cp -a "$M/.wasmer/." "$DEST/"
+ln -sfn "$DEST/bin/wasmer" "$META_ROOT/.local/bin/wasmer"
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; t=\"$HOME/.local/bin/wasmer\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/wasmer\" && rm -f \"$t\"; rm -rf \"$M/.toolchains/wasmer\""]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; t=\"$META_ROOT/.local/bin/wasmer\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/wasmer\" && rm -f \"$t\"; rm -rf \"$M/.toolchains/wasmer\""]
 [component.wiring]
 path_entries = ["$META_ROOT/.local/bin"]
 
@@ -188,46 +190,46 @@ name = "uv (Python toolchain)"
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/uv/bin/uv\" ] && [ -x \"$M/.toolchains/uv/bin/uvx\" ] && [ \"$(readlink -f \"$HOME/.local/bin/uv\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/uv/bin/uv\")\" ] && [ \"$(readlink -f \"$HOME/.local/bin/uvx\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/uv/bin/uvx\")\" ] && case \"$(readlink -f \"$HOME/.local/bin/python3\" 2>/dev/null)\" in \"$M/.toolchains/uv/python\"/*) true;; *) false;; esac"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/uv/bin/uv\" ] && [ -x \"$M/.toolchains/uv/bin/uvx\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/uv\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/uv/bin/uv\")\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/uvx\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/uv/bin/uvx\")\" ] && case \"$(readlink -f \"$META_ROOT/.local/bin/python3\" 2>/dev/null)\" in \"$M/.toolchains/uv/python\"/*) true;; *) false;; esac"]
 [component.install]
 kind = "script"
 script = '''
 set -euo pipefail
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/uv/bin"
-install -d -m 755 "$DEST" "$HOME/.local/bin"
+install -d -m 755 "$DEST" "$META_ROOT/.local/bin"
 curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="$DEST" sh
-ln -sfn "$DEST/uv" "$HOME/.local/bin/uv"
-ln -sfn "$DEST/uvx" "$HOME/.local/bin/uvx"
+ln -sfn "$DEST/uv" "$META_ROOT/.local/bin/uv"
+ln -sfn "$DEST/uvx" "$META_ROOT/.local/bin/uvx"
 export UV_PYTHON_INSTALL_DIR="$M/.toolchains/uv/python"
 "$DEST/uv" python install 3.14 --preview || "$DEST/uv" python install 3.13
 py="$(find "$UV_PYTHON_INSTALL_DIR" -path '*/bin/python3*' -type f | sort -V | tail -n1)"
-[ -n "$py" ] && ln -sfn "$py" "$HOME/.local/bin/python3"
+[ -n "$py" ] && ln -sfn "$py" "$META_ROOT/.local/bin/python3"
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export PATH=\"$HOME/.local/bin:$PATH\"; [ \"$(readlink -f \"$(command -v uv)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/uv/bin/uv\")\" ] && case \"$(readlink -f \"$(command -v python3)\" 2>/dev/null)\" in \"$M/.toolchains/uv/python\"/*) true;; *) false;; esac && uv --version && python3 --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/.local/bin:$PATH\"; [ \"$(readlink -f \"$(command -v uv)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/uv/bin/uv\")\" ] && case \"$(readlink -f \"$(command -v python3)\" 2>/dev/null)\" in \"$M/.toolchains/uv/python\"/*) true;; *) false;; esac && uv --version && python3 --version"]
 [component.fix]
 kind = "script"
 script = '''
 set -euo pipefail
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/uv/bin"
-install -d -m 755 "$DEST" "$HOME/.local/bin"
+install -d -m 755 "$DEST" "$META_ROOT/.local/bin"
 export PATH="$DEST:$PATH"
 uv self update || curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="$DEST" sh
-ln -sfn "$DEST/uv" "$HOME/.local/bin/uv"
-ln -sfn "$DEST/uvx" "$HOME/.local/bin/uvx"
+ln -sfn "$DEST/uv" "$META_ROOT/.local/bin/uv"
+ln -sfn "$DEST/uvx" "$META_ROOT/.local/bin/uvx"
 export UV_PYTHON_INSTALL_DIR="$M/.toolchains/uv/python"
 "$DEST/uv" python install 3.14 --preview || "$DEST/uv" python install 3.13
 py="$(find "$UV_PYTHON_INSTALL_DIR" -path '*/bin/python3*' -type f | sort -V | tail -n1)"
-[ -n "$py" ] && ln -sfn "$py" "$HOME/.local/bin/python3"
+[ -n "$py" ] && ln -sfn "$py" "$META_ROOT/.local/bin/python3"
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; for b in uv uvx python3; do t=\"$HOME/.local/bin/$b\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/uv\" && rm -f \"$t\"; done; rm -rf \"$M/.toolchains/uv/bin\""]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; for b in uv uvx python3; do t=\"$META_ROOT/.local/bin/$b\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/uv\" && rm -f \"$t\"; done; rm -rf \"$M/.toolchains/uv/bin\""]
 
 
 # mlua — Lua-in-Rust scripting substrate (vendored Lua 5.4, pure rust-native, ZERO system-depth).
@@ -245,13 +247,13 @@ requires = ["rustup", "llvm-clang"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/mlua/target/release/lua-mlua\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/mlua/target/release/lua-mlua\" ]"]
 [component.install]
 kind = "script"
 login_shell = true
 script = '''
 set -euo pipefail
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/mlua"; SRC="$DEST/src"
 install -d -m 755 "$SRC/src"
 cat > "$SRC/Cargo.toml" <<'TOML'
@@ -296,29 +298,29 @@ fn main() -> mlua::Result<()> {
 }
 RS
 export CARGO_HOME="$M/.toolchains/cargo"
-export PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"
+export PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"
 cargo build --release --manifest-path "$SRC/Cargo.toml" --target-dir "$DEST/target"
-install -d -m 755 "$HOME/.local/bin"
-ln -sfn "$DEST/target/release/lua-mlua" "$HOME/.local/bin/lua-mlua"
+install -d -m 755 "$META_ROOT/.local/bin"
+ln -sfn "$DEST/target/release/lua-mlua" "$META_ROOT/.local/bin/lua-mlua"
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; \"$M/.toolchains/mlua/target/release/lua-mlua\" -e 'assert(6*7==42); print(\"mlua ok\")'"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; \"$M/.toolchains/mlua/target/release/lua-mlua\" -e 'assert(6*7==42); print(\"mlua ok\")'"]
 [component.fix]
 kind = "script"
 login_shell = true
 script = '''
 set -euo pipefail
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 export CARGO_HOME="$M/.toolchains/cargo"
-export PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"
+export PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"
 cargo build --release --manifest-path "$M/.toolchains/mlua/src/Cargo.toml" --target-dir "$M/.toolchains/mlua/target"
-ln -sfn "$M/.toolchains/mlua/target/release/lua-mlua" "$HOME/.local/bin/lua-mlua"
+ln -sfn "$M/.toolchains/mlua/target/release/lua-mlua" "$META_ROOT/.local/bin/lua-mlua"
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -L \"$HOME/.local/bin/lua-mlua\" ] && rm -f \"$HOME/.local/bin/lua-mlua\"; rm -rf \"$M/.toolchains/mlua\"; true"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -L \"$META_ROOT/.local/bin/lua-mlua\" ] && rm -f \"$META_ROOT/.local/bin/lua-mlua\"; rm -rf \"$M/.toolchains/mlua\"; true"]
 [component.wiring]
 path_entries = ["$META_ROOT/.local/bin"]

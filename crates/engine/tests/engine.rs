@@ -236,7 +236,7 @@ fn tagged_enums_round_trip_through_toml() {
 
         [component.verify]
         kind = "shipped_script"
-        path = "/usr/local/bin/demo.sh"
+        path = "$META_ROOT/envctl/assets/scripts/demo.sh"
         args = ["check"]
 
         [[component.guards]]

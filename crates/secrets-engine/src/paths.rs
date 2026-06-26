@@ -1,5 +1,6 @@
-//! XDG, env-ctl-namespaced paths. Config `~/.config/env-ctl`, data `~/.local/share/env-ctl`
-//! (0700), state/log `~/.local/state/env-ctl`, runtime socket under `$XDG_RUNTIME_DIR`.
+//! XDG, env-ctl-namespaced paths. In envctl-managed shells, config/data/state live under
+//! `$META_ROOT/.config/env-ctl`, `$META_ROOT/.local/share/env-ctl`, and
+//! `$META_ROOT/.local/state/env-ctl`; runtime socket remains under `$XDG_RUNTIME_DIR`.
 use std::path::PathBuf;
 
 #[derive(Clone, Debug)]
@@ -50,7 +51,7 @@ impl Paths {
     pub fn control_socket(&self) -> PathBuf {
         self.runtime.join("secretd.sock")
     }
-    /// The daemon's runtime config file (`~/.config/env-ctl/secretd.toml`): store-backend selection
+    /// The daemon's runtime config file (`$META_ROOT/.config/env-ctl/secretd.toml`): store-backend selection
     /// and libSQL connection params (OI-1 (a), Phase 1). Optional — absent => in-memory defaults.
     pub fn config_file(&self) -> PathBuf {
         self.config.join("secretd.toml")
@@ -59,7 +60,7 @@ impl Paths {
         self.state.join("env-ctl.log")
     }
     /// The remote relay EDGE's publicly-trusted server-cert directory
-    /// (`~/.config/env-ctl/relay-tls/`, holding `cert.pem` + `key.pem`). The Phase-8 / F2 edge
+    /// (`$META_ROOT/.config/env-ctl/relay-tls/`, holding `cert.pem` + `key.pem`). The Phase-8 / F2 edge
     /// (`secretd::edge`) loads its rustls `ServerConfig` ONLY from here — never from the MITM-CA path
     /// (FS-S18 / FS-S25). Mirrors [`config_file`](Self::config_file): a sibling under `config`, not a
     /// new XDG root. The directory is operator-provisioned (ACME / operator-supplied cert); a missing

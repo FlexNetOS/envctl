@@ -90,7 +90,7 @@ kind = "command"
 command = "bash"
 args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; B=\"${ENVCTL_BIN_DIR:-$M/.local/bin}\"; t=\"$B/rusty-idd\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/rusty-idd\" && rm -f \"$t\"; rm -rf \"$M/.toolchains/rusty-idd\""]
 
-# ---- WIRING: ~/.local/bin is already on PATH via other components; declared so reset can reason
+# ---- WIRING: $META_ROOT/.local/bin is already on PATH via other components; declared so reset can reason
 # ---- about it reversibly. No shell_rc / systemd / data_paths — rusty-idd is a plain binary.
 [component.wiring]
 path_entries = ["$META_ROOT/.local/bin"]

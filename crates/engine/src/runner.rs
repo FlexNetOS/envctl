@@ -5,7 +5,7 @@
 //! Phase 2: action phases (Install/Fix/Remove) now LINE-STREAM stdout/stderr as
 //! `Event::Log` (so the CLI/GUI show progress live during a long apt/nix/CUDA run)
 //! AND tee every line to `$META_ROOT/.local/state/envctl/envctl.log` (the analogue of
-//! `~/yazelix-setup.log`, survives a crash). Read-only phases (Detect/Verify)
+//! `$META_ROOT/.local/state/envctl/yazelix-setup.log`, survives a crash). Read-only phases (Detect/Verify)
 //! capture quietly — only the exit code matters, and leaking their output would
 //! corrupt the CLI table / `--json`. Every hook is bounded by a per-phase timeout
 //! (the process is killed on expiry) so a stuck installer can't wedge the worker.
@@ -338,13 +338,14 @@ fn build_command(hook: &Hook) -> Command {
             args,
             needs_sudo,
         } => {
+            let path = MetaLayout::from_env_or_default().expand_meta_path(path);
             let (program, mut argv) = if *needs_sudo {
                 (
                     "sudo".to_string(),
-                    vec!["-n".to_string(), "bash".to_string(), path.clone()],
+                    vec!["-n".to_string(), "bash".to_string(), path],
                 )
             } else {
-                ("bash".to_string(), vec![path.clone()])
+                ("bash".to_string(), vec![path])
             };
             argv.extend(args.iter().cloned());
             (program, argv, Vec::new())

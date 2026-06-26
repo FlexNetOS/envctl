@@ -8,42 +8,42 @@ name = "Claude Code CLI"
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/claude/bin/claude\" ] && [ \"$(readlink -f \"$HOME/.local/bin/claude\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/claude/bin/claude\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/claude/bin/claude\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/claude\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/claude/bin/claude\")\" ]"]
 [component.install]
 kind = "script"
 script = '''
 set -euo pipefail
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/claude"
-# Upstream's installer may stage under ~/.local/share/claude; mirror the resulting
-# executable into the meta-owned prefix and expose only a thin ~/.local/bin symlink.
+# Upstream's installer may stage under $META_ROOT/.local/share/claude; mirror the resulting
+# executable into the meta-owned prefix and expose only a thin $META_ROOT/.local/bin symlink.
 curl -fsSL https://claude.ai/install.sh | bash
-src="$(readlink -f "$HOME/.local/bin/claude" 2>/dev/null || true)"
+src="$(readlink -f "$META_ROOT/.local/bin/claude" 2>/dev/null || true)"
 if [ -z "$src" ] || [ ! -x "$src" ]; then
   src="$(command -v claude)"
 fi
 install -d -m 755 "$DEST/bin"
 install -m 755 "$src" "$DEST/bin/claude"
-ln -sfn "$DEST/bin/claude" "$HOME/.local/bin/claude"
+ln -sfn "$DEST/bin/claude" "$META_ROOT/.local/bin/claude"
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export PATH=\"$HOME/.local/bin:$PATH\"; [ \"$(readlink -f \"$(command -v claude)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/claude/bin/claude\")\" ] && claude --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/.local/bin:$PATH\"; [ \"$(readlink -f \"$(command -v claude)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/claude/bin/claude\")\" ] && claude --version"]
 [component.fix]
 kind = "script"
 script = '''
 set -euo pipefail
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/claude"
 curl -fsSL https://claude.ai/install.sh | bash
-src="$(readlink -f "$HOME/.local/bin/claude" 2>/dev/null || true)"
+src="$(readlink -f "$META_ROOT/.local/bin/claude" 2>/dev/null || true)"
 if [ -z "$src" ] || [ ! -x "$src" ]; then
   src="$(command -v claude)"
 fi
 install -d -m 755 "$DEST/bin"
 install -m 755 "$src" "$DEST/bin/claude"
-ln -sfn "$DEST/bin/claude" "$HOME/.local/bin/claude"
+ln -sfn "$DEST/bin/claude" "$META_ROOT/.local/bin/claude"
 '''
 
 
@@ -54,18 +54,18 @@ requires = ["rustup", "bun", "wild-linker"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:-$HOME/Desktop/meta}"; dest="$M/.toolchains/codex/bin/codex"; meta_link="$M/.local/bin/codex"; user_link="$HOME/.local/bin/codex"; [ -x "$dest" ] && [ "$(readlink -f "$meta_link" 2>/dev/null)" = "$(readlink -f "$dest")" ] && [ "$(readlink -f "$user_link" 2>/dev/null)" = "$(readlink -f "$dest")" ]''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; dest="$M/.toolchains/codex/bin/codex"; meta_link="$M/.local/bin/codex"; user_link="$META_ROOT/.local/bin/codex"; [ -x "$dest" ] && [ "$(readlink -f "$meta_link" 2>/dev/null)" = "$(readlink -f "$dest")" ] && [ "$(readlink -f "$user_link" 2>/dev/null)" = "$(readlink -f "$dest")" ]''']
 [component.install]
 kind = "script"
 script = '''
 set -euo pipefail
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/codex"
 META_BIN="$M/.local/bin"
-USER_BIN="$HOME/.local/bin"
+USER_BIN="$META_ROOT/.local/bin"
 if [ -d "$M/codex/codex-rs/cli" ]; then
   export CARGO_HOME="$M/.toolchains/cargo"
-  export PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"
+  export PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"
   jobs="${CODEX_CARGO_JOBS:-$(nproc --all)}"
   export CARGO_BUILD_JOBS="$jobs"
   export CARGO_PROFILE_RELEASE_LTO="${CARGO_PROFILE_RELEASE_LTO:-false}"
@@ -100,18 +100,18 @@ ln -sfn "$META_BIN/codex" "$USER_BIN/codex"
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:-$HOME/Desktop/meta}"; export CARGO_HOME="$M/.toolchains/cargo"; export BUN_INSTALL="$M/.toolchains/.bun"; export PATH="$HOME/.local/bin:$M/.local/bin:$CARGO_HOME/bin:$BUN_INSTALL/bin:$PATH"; dest="$M/.toolchains/codex/bin/codex"; [ -x "$dest" ] && [ "$(readlink -f "$(command -v codex)" 2>/dev/null)" = "$(readlink -f "$dest")" ] && codex --version''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export CARGO_HOME="$M/.toolchains/cargo"; export BUN_INSTALL="$M/.toolchains/.bun"; export PATH="$META_ROOT/.local/bin:$M/.local/bin:$CARGO_HOME/bin:$BUN_INSTALL/bin:$PATH"; dest="$M/.toolchains/codex/bin/codex"; [ -x "$dest" ] && [ "$(readlink -f "$(command -v codex)" 2>/dev/null)" = "$(readlink -f "$dest")" ] && codex --version''']
 [component.fix]
 kind = "script"
 script = '''
 set -euo pipefail
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/codex"
 META_BIN="$M/.local/bin"
-USER_BIN="$HOME/.local/bin"
+USER_BIN="$META_ROOT/.local/bin"
 if [ -d "$M/codex/codex-rs/cli" ]; then
   export CARGO_HOME="$M/.toolchains/cargo"
-  export PATH="$CARGO_HOME/bin:$HOME/.cargo/bin:$PATH"
+  export PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"
   jobs="${CODEX_CARGO_JOBS:-$(nproc --all)}"
   export CARGO_BUILD_JOBS="$jobs"
   export CARGO_PROFILE_RELEASE_LTO="${CARGO_PROFILE_RELEASE_LTO:-false}"
@@ -140,7 +140,7 @@ ln -sfn "$META_BIN/codex" "$USER_BIN/codex"
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:-$HOME/Desktop/meta}"; export BUN_INSTALL="$M/.toolchains/.bun"; export PATH="$BUN_INSTALL/bin:$PATH"; bun remove -g @openai/codex || true; [ -L "$HOME/.local/bin/codex" ] && rm "$HOME/.local/bin/codex" || true; [ -L "$M/.local/bin/codex" ] && rm "$M/.local/bin/codex" || true; rm -f "$M/.toolchains/codex/bin/codex"''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export BUN_INSTALL="$M/.toolchains/.bun"; export PATH="$BUN_INSTALL/bin:$PATH"; bun remove -g @openai/codex || true; [ -L "$META_ROOT/.local/bin/codex" ] && rm "$META_ROOT/.local/bin/codex" || true; [ -L "$M/.local/bin/codex" ] && rm "$M/.local/bin/codex" || true; rm -f "$M/.toolchains/codex/bin/codex"''']
 
 
 [[component]]
@@ -150,19 +150,19 @@ requires = ["bun"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/.bun/bin/gemini\" ] && [ \"$(readlink -f \"$HOME/.local/bin/gemini\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/.bun/bin/gemini\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/.bun/bin/gemini\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/gemini\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/.bun/bin/gemini\")\" ]"]
 [component.install]
 kind = "script"
 script = '''
 set -e
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 export BUN_INSTALL="$M/.toolchains/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 bun install -g @google/gemini-cli
-mkdir -p "$HOME/.local/bin"
-dst="$HOME/.local/bin/gemini"
+mkdir -p "$META_ROOT/.local/bin"
+dst="$META_ROOT/.local/bin/gemini"
 src="$BUN_INSTALL/bin/gemini"
-ARCH="$HOME/Desktop/_archives/home-links-$(date +%Y-%m-%d)"
+ARCH="$META_ROOT/.local/state/envctl/legacy-archives/home-links-$(date +%Y-%m-%d)"
 if [ -e "$dst" ] && [ ! -L "$dst" ]; then mkdir -p "$ARCH/.local/bin"; mv "$dst" "$ARCH/.local/bin/gemini"; echo "archived copy: gemini"; fi
 [ -L "$dst" ] && rm "$dst"
 ln -s "$src" "$dst"
@@ -170,22 +170,22 @@ ln -s "$src" "$dst"
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$HOME/.local/bin:$BUN_INSTALL/bin:$PATH\"; gemini --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$META_ROOT/.local/bin:$BUN_INSTALL/bin:$PATH\"; gemini --version"]
 [component.fix]
 kind = "script"
 script = '''
 set -e
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 export BUN_INSTALL="$M/.toolchains/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 bun install -g @google/gemini-cli
-mkdir -p "$HOME/.local/bin"
-ln -sfn "$BUN_INSTALL/bin/gemini" "$HOME/.local/bin/gemini"
+mkdir -p "$META_ROOT/.local/bin"
+ln -sfn "$BUN_INSTALL/bin/gemini" "$META_ROOT/.local/bin/gemini"
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; bun remove -g @google/gemini-cli; [ -L \"$HOME/.local/bin/gemini\" ] && rm \"$HOME/.local/bin/gemini\" || true"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; bun remove -g @google/gemini-cli; [ -L \"$META_ROOT/.local/bin/gemini\" ] && rm \"$META_ROOT/.local/bin/gemini\" || true"]
 
 
 [[component]]
@@ -194,14 +194,14 @@ name = "Kimi CLI"
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "command -v kimi || [ -x \"$HOME/.local/bin/kimi\" ]"]
+args = ["-lc", "command -v kimi || [ -x \"$META_ROOT/.local/bin/kimi\" ]"]
 [component.install]
 kind = "script"
 script = "curl -LsSf https://code.kimi.com/install.sh | bash"
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.local/bin:$PATH\"; kimi --version"]
+args = ["-lc", "export PATH=\"$META_ROOT/.local/bin:$PATH\"; kimi --version"]
 [component.fix]
 kind = "script"
 script = "curl -LsSf https://code.kimi.com/install.sh | bash"
@@ -213,14 +213,14 @@ name = "Devin CLI"
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "command -v devin || [ -x \"$HOME/.local/bin/devin\" ]"]
+args = ["-lc", "command -v devin || [ -x \"$META_ROOT/.local/bin/devin\" ]"]
 [component.install]
 kind = "script"
 script = "curl -fsSL https://cli.devin.ai/install.sh | bash"
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.local/bin:$PATH\"; devin --version"]
+args = ["-lc", "export PATH=\"$META_ROOT/.local/bin:$PATH\"; devin --version"]
 [component.fix]
 kind = "script"
 script = "curl -fsSL https://cli.devin.ai/install.sh | bash"
@@ -236,4 +236,4 @@ requires = ["claude-code-cli", "codex-cli", "gemini-cli", "kimi-cli", "devin-cli
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export PATH=\"$HOME/.local/bin:$M/.toolchains/.bun/bin:$PATH\"; for c in claude codex gemini kimi devin; do command -v $c >/dev/null || exit 1; done"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/.local/bin:$M/.toolchains/.bun/bin:$PATH\"; for c in claude codex gemini kimi devin; do command -v $c >/dev/null || exit 1; done"]
