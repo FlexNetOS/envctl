@@ -23,8 +23,8 @@ Cargo.lock.bak
 # ADR-0018 D1 fail-safe (the ONE binary exception, CI-enforced by ci/gates/p7.sh §3c):
 # `.handoff/ledger.events.jsonl` is the committed continuity truth; `.handoff/ledger.db` and
 # sidecars are local redb/RVF rebuild caches derived from that JSONL. Never commit binary ledgers.
-# .handoff/**/ledger.db
-# .handoff/**/ledger.db.*
+.handoff/**/ledger.db
+.handoff/**/ledger.db.*
 
 # Runtime claim locks are ephemeral coordination state, not durable handoff text.
 # .handoff/locks/
