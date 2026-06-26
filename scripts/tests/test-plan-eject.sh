@@ -16,11 +16,13 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 # is running (mirrored into envctl/scripts/tests/ and the harness_hub plugin). Walk up from this
 # script to the meta-worktree root (holding both envctl/ and harness_hub/) and descend to the plugin.
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; root="$here"
+# Prefer the repo-local ejected copy first; a sibling harness_hub checkout can be older than this PR.
+EJECT="$(git -C "$here" rev-parse --show-toplevel 2>/dev/null)/.claude/skills/planning-engineer/scripts/eject.sh"
 REL="harness_hub/harness/skills/planning-engineer/scripts/eject.sh"
-while [ "$root" != "/" ] && [ ! -f "$root/$REL" ]; do root="$(dirname "$root")"; done
-EJECT="$root/$REL"
-# Fallback for envctl standalone CI (no meta-worktree root; only the ejected .claude copy is present):
-[ -f "$EJECT" ] || EJECT="$(git -C "$here" rev-parse --show-toplevel 2>/dev/null)/.claude/skills/planning-engineer/scripts/eject.sh"
+if [ ! -f "$EJECT" ]; then
+  while [ "$root" != "/" ] && [ ! -f "$root/$REL" ]; do root="$(dirname "$root")"; done
+  EJECT="$root/$REL"
+fi
 [ -f "$EJECT" ] || { echo "FAIL: planning-engineer eject.sh not found from $here" >&2; exit 1; }
 PLUGIN="$(cd "$(dirname "$EJECT")/../../.." && pwd)"   # harness/  — same root eject.sh computes
 

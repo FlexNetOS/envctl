@@ -16,12 +16,15 @@ fail() { echo "FAIL: $*" >&2; exit 1; }
 # (mirrored into envctl/scripts/tests/ and the harness_hub plugin). Walk up from this script to the
 # meta-worktree root (holding both envctl/ and harness_hub/) and descend to the plugin references.
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; root="$here"
+# Prefer the repo-local ejected copy first; a sibling harness_hub checkout can be older than this PR.
+repo_probe="$(git -C "$here" rev-parse --show-toplevel 2>/dev/null)"
+CONTRACT="$repo_probe/.claude/skills/planning-engineer/references/state-contract.md"
+[ -f "$CONTRACT" ] || CONTRACT="$repo_probe/harness/skills/planning-engineer/references/state-contract.md"
 REL="harness_hub/harness/skills/planning-engineer/references/state-contract.md"
-while [ "$root" != "/" ] && [ ! -f "$root/$REL" ]; do root="$(dirname "$root")"; done
-CONTRACT="$root/$REL"
-# Fallback for envctl standalone CI (no meta-worktree root; only the ejected .claude copy is present):
-[ -f "$CONTRACT" ] || CONTRACT="$(git -C "$here" rev-parse --show-toplevel 2>/dev/null)/harness/skills/planning-engineer/references/state-contract.md"
-[ -f "$CONTRACT" ] || CONTRACT="$(git -C "$here" rev-parse --show-toplevel 2>/dev/null)/.claude/skills/planning-engineer/references/state-contract.md"
+if [ ! -f "$CONTRACT" ]; then
+  while [ "$root" != "/" ] && [ ! -f "$root/$REL" ]; do root="$(dirname "$root")"; done
+  CONTRACT="$root/$REL"
+fi
 [ -f "$CONTRACT" ] || { echo "FAIL: planning-engineer state-contract.md not found from $here" >&2; exit 1; }
 repo_root="$(git -C "$here" rev-parse --show-toplevel 2>/dev/null)"
 
@@ -42,11 +45,32 @@ for agent in \
   plan-architect \
   plan-cartographer \
   plan-governance-config-auditor \
+  plan-opus-bg-code-graph \
+  plan-opus-bg-governance \
+  plan-opus-bg-rusty-idd-north-star \
+  plan-opus-bg-settings-config \
+  plan-opus-bg-web-trends \
   plan-test-strategist \
   plan-trend-researcher \
   plan-verifier; do
   [ -f "$repo_root/.codex/agents/$agent.toml" ] || fail "missing Codex planning subagent: $agent"
 done
+
+# PromptHub / owner-intent alignment: the loop must preserve the recovered upstream prompt contract,
+# including 5x Opus 4.8 background lanes, rusty-idd first-run surfacing, and graph-first code intel.
+grep -q 'prompt_hub/prompts/planning-engineer-loop.prompt.yml' "$repo_root/.codex/prompts/plan-loop.md"   || fail "plan-loop prompt does not cite the PromptHub source of truth"
+grep -q 'prompt_hub/prompts/planning-engineer-loop.prompt.yml' "$repo_root/.agents/skills/plan-loop/SKILL.md"   || fail "plan-loop skill does not cite the PromptHub source of truth"
+grep -q '5× Opus 4.8' "$repo_root/.agents/skills/plan-loop/SKILL.md"   || fail "plan-loop skill does not require 5x Opus 4.8 background lanes"
+grep -q 'foreground chat remains interactive' "$repo_root/.agents/skills/plan-loop/SKILL.md"   || fail "plan-loop skill does not protect foreground interactivity"
+grep -q 'rusty-idd' "$repo_root/.agents/skills/plan-loop/SKILL.md"   || fail "plan-loop skill does not seed/surface rusty-idd"
+grep -q 'git-kb code' "$repo_root/.agents/skills/planning-engineer/SKILL.md"   || fail "planning-engineer skill does not require git-kb code intelligence"
+grep -q 'git-kb code doctor' "$repo_root/.agents/skills/planning-engineer/SKILL.md"   || fail "planning-engineer skill does not enumerate git-kb code doctor/index/query flow"
+grep -q 'meta↔envctl' "$repo_root/.codex/prompts/plan-loop.md"   || fail "plan-loop prompt does not capture the meta/envctl/prompt_hub relationship"
+for lane in code-graph web-trends governance settings-config rusty-idd-north-star; do
+  [ -f "$repo_root/.codex/agents/plan-opus-bg-$lane.toml" ] || fail "missing Opus background lane agent: $lane"
+  grep -q 'model = "claude-opus-4-8"' "$repo_root/.codex/agents/plan-opus-bg-$lane.toml"     || fail "Opus background lane $lane does not pin claude-opus-4-8"
+done
+
 python3 - "$repo_root" <<'PY'
 from pathlib import Path
 import sys
