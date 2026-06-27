@@ -126,9 +126,10 @@ mkdir -p \
   "$mig_home/.cargo" \
   "$mig_home/.npm" \
   "$mig_home/.dotnet" \
-  "$mig_home/.ai/cache" \
-  "$mig_home/.ai/tokens" \
+  "$mig_home/.unknown-ai-sensitive/cache" \
+  "$mig_home/.unknown-ai-sensitive/tokens" \
   "$mig_home/.gemini" \
+  "$mig_home/.ai/mcp" \
   "$mig_home/.archon" \
   "$mig_home/.hermes" \
   "$mig_home/.n8n-mcp" \
@@ -149,13 +150,14 @@ ln -s "$mig_meta/envctl/home/.gitconfig" "$mig_meta/.gitconfig"
 ln -s "$mig_meta/.gitconfig" "$mig_home/.gitconfig"
 ln -s "$mig_meta/.local" "$mig_home/.local"
 printf 'real-home cargo state\n' >"$mig_home/.cargo/config"
-printf 'ai-profile\n' >"$mig_home/.ai/settings.toml"
-printf 'secret\n' >"$mig_home/.ai/tokens/api-token"
-ln -s ../settings.toml "$mig_home/.ai/cache/settings-link"
+printf 'ai-profile\n' >"$mig_home/.unknown-ai-sensitive/settings.toml"
+printf 'secret\n' >"$mig_home/.unknown-ai-sensitive/tokens/api-token"
+ln -s ../settings.toml "$mig_home/.unknown-ai-sensitive/cache/settings-link"
 printf 'real-home npm state\n' >"$mig_home/.npm/npmrc"
 printf 'real-home dotnet state\n' >"$mig_home/.dotnet/state"
 printf 'set ideajoin\n' >"$mig_home/.ideavimrc"
 printf '{ "theme": "dark" }\n' >"$mig_home/.gemini/settings.json"
+printf '' >"$mig_home/.ai/mcp/mcp.json"
 printf '{ "lastChecked": "2026-06-27T00:00:00Z" }\n' >"$mig_home/.archon/update-check.json"
 printf 'provider: ollama\nbase_url: http://localhost:11434/v1\n' >"$mig_home/.hermes/config.yaml"
 printf '{ "telemetry": false }\n' >"$mig_home/.n8n-mcp/telemetry.json"
@@ -178,6 +180,7 @@ printf '{ "mcpServers": {} }\n' >"$mig_home/.claude.json"
 
 "$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/app-config-inventory.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/app-config-inventory.out" 2>"$tmp/app-config-inventory.err"
 grep -qx $'.gemini\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/gemini\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
+grep -qx $'.ai\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/ai\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.gphoto\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.config/gphoto\tmigrate-dir-to-meta-config-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.archon\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/archon\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.hermes\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/hermes\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
@@ -210,8 +213,8 @@ head -n 1 "$tmp/unknown-app-config.tsv" | grep -qx $'dot_entry	real_path	type	di
 awk -F '\t' 'NF != 10 { print "bad unknown app-config row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/unknown-app-config.tsv"
 test "$(wc -l <"$tmp/unknown-app-config.tsv" | tr -d '[:space:]')" = 2
 awk -F '\t' -v home="$mig_home" '
-  $1 == ".ai" {
-    if ($2 != home "/.ai") bad=1
+  $1 == ".unknown-ai-sensitive" {
+    if ($2 != home "/.unknown-ai-sensitive") bad=1
     if ($3 != "directory") bad=1
     if ($4 !~ /^[0-9a-f]{64}$/) bad=1
     if ($5 != "5") bad=1
@@ -226,6 +229,10 @@ awk -F '\t' -v home="$mig_home" '
 ' "$tmp/unknown-app-config.tsv"
 if awk -F '\t' '$1 == ".gemini" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
   echo "unexpected unknown app-config report row for known canonical .gemini target" >&2
+  exit 1
+fi
+if awk -F '\t' '$1 == ".ai" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
+  echo "unexpected unknown app-config report row for allow-listed .ai target" >&2
   exit 1
 fi
 if awk -F '\t' '$1 == ".archon" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
@@ -286,6 +293,19 @@ test -f "$mig_meta/var/lib/ollama/history"
 "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .claude.json --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-claude-json.out" 2>"$tmp/migrate-claude-json.err"
 test "$(readlink -f "$mig_home/.claude.json")" = "$mig_meta/.local/share/claude/claude.json"
 test -f "$mig_meta/.local/share/claude/claude.json"
+
+"$root/scripts/audit-meta-local-paths.sh" --migrate-dot .ai --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-ai-dry.out" 2>"$tmp/migrate-ai-dry.err"
+grep -q 'DRY-RUN: would move .*\.ai to .*\.local/share/ai' "$tmp/migrate-ai-dry.out"
+test -d "$mig_home/.ai"
+test ! -e "$mig_meta/.local/share/ai"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .ai --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-ai.out" 2>"$tmp/migrate-ai.err"
+test "$(readlink -f "$mig_home/.ai")" = "$mig_meta/.local/share/ai"
+test -f "$mig_meta/.local/share/ai/mcp/mcp.json"
+test ! -s "$mig_meta/.local/share/ai/mcp/mcp.json"
+
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/ai-post.tsv" --inventory-summary "$tmp/ai-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/ai-post.out" 2>"$tmp/ai-post.err"
+grep -qx $'.ai	symlink	already-meta	already-meta	'"$mig_meta"$'/.local/share/ai	none	n/a' "$tmp/ai-post.tsv"
 
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .archon --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-archon-dry.out" 2>"$tmp/migrate-archon-dry.err"
 grep -q 'DRY-RUN: would move .*\.archon to .*\.local/share/archon' "$tmp/migrate-archon-dry.out"
@@ -417,6 +437,24 @@ fi
 test -f "$vscode_shared_bad_home/.vscode-shared"
 test ! -e "$vscode_shared_bad_meta/.local/share/vscode-shared"
 grep -q -- '--migrate-dot .vscode-shared: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-vscode-shared-file.err"
+
+ai_bad_meta="$tmp/ai-bad-meta"
+ai_bad_home="$tmp/ai-bad-home"
+mkdir -p "$ai_bad_meta/.local" "$ai_bad_meta/envctl/home" "$ai_bad_home"
+printf '# managed gitconfig
+' >"$ai_bad_meta/envctl/home/.gitconfig"
+ln -s "$ai_bad_meta/envctl/home/.gitconfig" "$ai_bad_meta/.gitconfig"
+ln -s "$ai_bad_meta/.gitconfig" "$ai_bad_home/.gitconfig"
+ln -s "$ai_bad_meta/.local" "$ai_bad_home/.local"
+printf 'not a directory
+' >"$ai_bad_home/.ai"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .ai --meta-root "$ai_bad_meta" --real-home "$ai_bad_home" --envctl-home-source "$ai_bad_meta/envctl/home" >"$tmp/migrate-ai-file.out" 2>"$tmp/migrate-ai-file.err"; then
+  echo "expected --migrate-dot .ai to fail closed for non-directory source" >&2
+  exit 1
+fi
+test -f "$ai_bad_home/.ai"
+test ! -e "$ai_bad_meta/.local/share/ai"
+grep -q -- '--migrate-dot .ai: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-ai-file.err"
 
 archon_bad_meta="$tmp/archon-bad-meta"
 archon_bad_home="$tmp/archon-bad-home"
