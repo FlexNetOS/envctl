@@ -1449,6 +1449,85 @@ awk -F '\t' -v home="$cache_child_home" -v meta="$cache_child_meta" '
   END { exit !(found && !bad) }
 ' "$tmp/cache-child-post.tsv"
 
+config_bridge_meta="$tmp/config-bridge-meta"
+config_bridge_home="$tmp/config-bridge-home"
+mkdir -p "$config_bridge_meta/.local" "$config_bridge_meta/envctl/home/.config/managed-app" "$config_bridge_home"
+printf '# managed gitconfig\n' >"$config_bridge_meta/envctl/home/.gitconfig"
+printf 'managed config\n' >"$config_bridge_meta/envctl/home/.config/managed-app/config.toml"
+ln -s "$config_bridge_meta/envctl/home/.gitconfig" "$config_bridge_meta/.gitconfig"
+ln -s "$config_bridge_meta/.local" "$config_bridge_home/.local"
+ln -s "$config_bridge_meta/.gitconfig" "$config_bridge_home/.gitconfig"
+
+"$root/scripts/audit-meta-local-paths.sh" --bridge-managed-config-child managed-app --meta-root "$config_bridge_meta" --real-home "$config_bridge_home" --envctl-home-source "$config_bridge_meta/envctl/home" >"$tmp/config-bridge-dry.out" 2>"$tmp/config-bridge-dry.err"
+grep -q 'DRY-RUN: would link .*\.config/managed-app -> .*envctl/home/.config/managed-app' "$tmp/config-bridge-dry.out"
+test ! -e "$config_bridge_home/.config/managed-app"
+
+if "$root/scripts/audit-meta-local-paths.sh" --bridge-managed-config-child ../evil --meta-root "$config_bridge_meta" --real-home "$config_bridge_home" --envctl-home-source "$config_bridge_meta/envctl/home" >"$tmp/config-bridge-invalid.out" 2>"$tmp/config-bridge-invalid.err"; then
+  echo "expected --bridge-managed-config-child to reject path-like child names" >&2
+  exit 1
+fi
+grep -q -- '--bridge-managed-config-child ../evil is not a direct .config child name' "$tmp/config-bridge-invalid.err"
+
+if "$root/scripts/audit-meta-local-paths.sh" --bridge-managed-config-child missing --meta-root "$config_bridge_meta" --real-home "$config_bridge_home" --envctl-home-source "$config_bridge_meta/envctl/home" >"$tmp/config-bridge-missing.out" 2>"$tmp/config-bridge-missing.err"; then
+  echo "expected --bridge-managed-config-child to reject missing managed sources" >&2
+  exit 1
+fi
+grep -q -- '--bridge-managed-config-child missing: managed source .* is missing; refusing automatic managed config-child bridge' "$tmp/config-bridge-missing.err"
+
+config_bridge_external_meta="$tmp/config-bridge-external-meta"
+config_bridge_external_home="$tmp/config-bridge-external-home"
+mkdir -p "$config_bridge_external_meta/.local" "$config_bridge_external_meta/envctl/home/.config/managed-app" "$config_bridge_external_home/.config"
+printf '# managed gitconfig\n' >"$config_bridge_external_meta/envctl/home/.gitconfig"
+printf 'managed config\n' >"$config_bridge_external_meta/envctl/home/.config/managed-app/config.toml"
+ln -s "$config_bridge_external_meta/envctl/home/.gitconfig" "$config_bridge_external_meta/.gitconfig"
+ln -s "$config_bridge_external_meta/.local" "$config_bridge_external_home/.local"
+ln -s "$config_bridge_external_meta/.gitconfig" "$config_bridge_external_home/.gitconfig"
+ln -s "$outside/hf" "$config_bridge_external_home/.config/managed-app"
+if "$root/scripts/audit-meta-local-paths.sh" --bridge-managed-config-child managed-app --meta-root "$config_bridge_external_meta" --real-home "$config_bridge_external_home" --envctl-home-source "$config_bridge_external_meta/envctl/home" >"$tmp/config-bridge-external.out" 2>"$tmp/config-bridge-external.err"; then
+  echo "expected --bridge-managed-config-child to reject external real-home symlinks" >&2
+  exit 1
+fi
+grep -q -- '--bridge-managed-config-child managed-app: .*\.config/managed-app is an external symlink .*refusing automatic managed config-child bridge' "$tmp/config-bridge-external.err"
+
+config_bridge_existing_meta="$tmp/config-bridge-existing-meta"
+config_bridge_existing_home="$tmp/config-bridge-existing-home"
+mkdir -p "$config_bridge_existing_meta/.local" "$config_bridge_existing_meta/envctl/home/.config/managed-app" "$config_bridge_existing_home/.config/managed-app"
+printf '# managed gitconfig\n' >"$config_bridge_existing_meta/envctl/home/.gitconfig"
+printf 'managed config\n' >"$config_bridge_existing_meta/envctl/home/.config/managed-app/config.toml"
+printf 'real config\n' >"$config_bridge_existing_home/.config/managed-app/config.toml"
+ln -s "$config_bridge_existing_meta/envctl/home/.gitconfig" "$config_bridge_existing_meta/.gitconfig"
+ln -s "$config_bridge_existing_meta/.local" "$config_bridge_existing_home/.local"
+ln -s "$config_bridge_existing_meta/.gitconfig" "$config_bridge_existing_home/.gitconfig"
+"$root/scripts/audit-meta-local-paths.sh" --bridge-managed-config-child managed-app --meta-root "$config_bridge_existing_meta" --real-home "$config_bridge_existing_home" --envctl-home-source "$config_bridge_existing_meta/envctl/home" >"$tmp/config-bridge-existing-dry.out" 2>"$tmp/config-bridge-existing-dry.err"
+grep -q 'DRY-RUN: would refuse automatic managed config-child bridge because source .* already exists; owner-reviewed merge/removal required before bridge' "$tmp/config-bridge-existing-dry.out"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --bridge-managed-config-child managed-app --meta-root "$config_bridge_existing_meta" --real-home "$config_bridge_existing_home" --envctl-home-source "$config_bridge_existing_meta/envctl/home" >"$tmp/config-bridge-existing.out" 2>"$tmp/config-bridge-existing.err"; then
+  echo "expected --bridge-managed-config-child to reject existing real-home state on apply" >&2
+  exit 1
+fi
+grep -q -- '--bridge-managed-config-child managed-app: source .* already exists; owner-reviewed merge/removal required before bridge' "$tmp/config-bridge-existing.err"
+grep -Fqx 'real config' "$config_bridge_existing_home/.config/managed-app/config.toml"
+grep -Fqx 'managed config' "$config_bridge_existing_meta/envctl/home/.config/managed-app/config.toml"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --bridge-managed-config-child managed-app --meta-root "$config_bridge_meta" --real-home "$config_bridge_home" --envctl-home-source "$config_bridge_meta/envctl/home" >"$tmp/config-bridge.out" 2>"$tmp/config-bridge.err"
+test "$(readlink -f "$config_bridge_home/.config/managed-app")" = "$config_bridge_meta/envctl/home/.config/managed-app"
+grep -Fqx 'managed config' "$config_bridge_meta/envctl/home/.config/managed-app/config.toml"
+
+"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-child-candidates-report "$tmp/config-bridge-post.tsv" --meta-root "$config_bridge_meta" --real-home "$config_bridge_home" --envctl-home-source "$config_bridge_meta/envctl/home" >"$tmp/config-bridge-post.out" 2>"$tmp/config-bridge-post.err"
+awk -F '\t' -v home="$config_bridge_home" -v meta="$config_bridge_meta" '
+  $1 == ".config" && $2 == "managed-app" {
+    if ($3 != home "/.config/managed-app") bad=1
+    if ($4 != "symlink") bad=1
+    if ($5 != "already-meta") bad=1
+    if ($6 != "already-meta") bad=1
+    if ($7 != meta "/envctl/home/.config/managed-app") bad=1
+    if ($13 != "none") bad=1
+    if ($14 != "n/a") bad=1
+    if ($15 != "none") bad=1
+    found=1
+  }
+  END { exit !(found && !bad) }
+' "$tmp/config-bridge-post.tsv"
+
 "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .pki --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-pki.out" 2>"$tmp/migrate-pki.err"
 test "$(readlink -f "$mig_home/.pki")" = "$mig_meta/.local/share/pki"
 grep -Fqx 'cert db fixture' "$mig_meta/.local/share/pki/nssdb/cert9.db"

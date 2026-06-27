@@ -11,7 +11,8 @@
 # It intentionally does not move credentials or broad real-home application state by default.
 # Shell dotfiles are only canonicalized with the explicit --apply-shell-dotfiles opt-in; default
 # --apply remains limited to the proven-safe bridges above plus explicitly requested allow-listed
-# --migrate-dot entries and explicit one-child --migrate-cache-child NAME entries.
+# --migrate-dot entries, explicit one-child --migrate-cache-child NAME entries, and explicit
+# one-child --bridge-managed-config-child NAME bridges.
 # History/backup dot entries are only archived+bridged into META_ROOT with the explicit
 # --apply-history-archives opt-in; default --apply remains non-mutating for them.
 # Portable app configs are only migrated when they are explicitly allow-listed here.
@@ -23,7 +24,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--owner-supervised-sensitive-review-plan PATH] [--owner-supervised-state-report PATH] [--owner-supervised-child-report PATH] [--owner-supervised-child-plan PATH] [--owner-supervised-child-candidates-report PATH] [--owner-supervised-child-candidate-actions PATH] [--owner-supervised-cache-child-component-plan PATH] [--owner-supervised-managed-config-child-review-plan PATH] [--owner-supervised-config-child-classification-plan PATH] [--owner-supervised-child-candidate-action-summary PATH] [--owner-supervised-child-candidates-summary PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--migration-blockers-plan PATH] [--open-handle-process-window-plan PATH] [--fail-migration-blockers] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--migrate-cache-child NAME]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--owner-supervised-sensitive-review-plan PATH] [--owner-supervised-state-report PATH] [--owner-supervised-child-report PATH] [--owner-supervised-child-plan PATH] [--owner-supervised-child-candidates-report PATH] [--owner-supervised-child-candidate-actions PATH] [--owner-supervised-cache-child-component-plan PATH] [--owner-supervised-managed-config-child-review-plan PATH] [--owner-supervised-config-child-classification-plan PATH] [--owner-supervised-child-candidate-action-summary PATH] [--owner-supervised-child-candidates-summary PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--migration-blockers-plan PATH] [--open-handle-process-window-plan PATH] [--fail-migration-blockers] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--migrate-cache-child NAME]... [--bridge-managed-config-child NAME]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
 With --inventory, also writes a tab-separated relocation inventory:
@@ -50,6 +51,12 @@ With --migrate-cache-child, performs an explicit owner-requested migration for o
 real-home .cache at a time, moving it to $META_ROOT/.local/cache/<name> and leaving a symlink bridge.
 Mutation still requires --apply; without --apply the script prints the planned move and changes nothing.
 Names must be direct .cache child names, and existing targets are never merged automatically.
+With --bridge-managed-config-child, performs an explicit owner-requested bridge for one direct child
+of real-home .config at a time when $ENVCTL_HOME_SOURCE/.config/<name> already exists as the managed
+source. Mutation still requires --apply; without --apply the script prints the planned bridge and
+changes nothing. Names must be direct .config child names. Existing real-home state is never merged,
+overwritten, or removed automatically; owner-reviewed merge/removal must happen before applying the
+bridge.
 With --shell-dotfile-conflict-report, writes supervised shell-dotfile merge rows:
 dot_entry, real_path, canonical_target, action, apply_safe, real_sha256, canonical_sha256, real_lines, canonical_lines, recommendation.
 With --app-config-conflict-report, writes supervised app-config merge rows when a known real-home
@@ -167,6 +174,7 @@ DEEP_LINK_SUMMARY_PATH=""
 FAIL_REAL_HOME_DEEP_LINKS=0
 MIGRATE_DOTS=()
 MIGRATE_CACHE_CHILDREN=()
+BRIDGE_MANAGED_CONFIG_CHILDREN=()
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -200,6 +208,7 @@ while [ "$#" -gt 0 ]; do
     --fail-real-home-deep-links) FAIL_REAL_HOME_DEEP_LINKS=1; shift ;;
     --migrate-dot) MIGRATE_DOTS+=("${2:?--migrate-dot requires a dot entry}"); shift 2 ;;
     --migrate-cache-child) MIGRATE_CACHE_CHILDREN+=("${2:?--migrate-cache-child requires a child name}"); shift 2 ;;
+    --bridge-managed-config-child) BRIDGE_MANAGED_CONFIG_CHILDREN+=("${2:?--bridge-managed-config-child requires a child name}"); shift 2 ;;
     --meta-root) META_ROOT="${2:?--meta-root requires a path}"; shift 2 ;;
     --real-home) REAL_HOME="${2:?--real-home requires a path}"; shift 2 ;;
     --envctl-home-source) ENVCTL_HOME_SOURCE="${2:?--envctl-home-source requires a path}"; shift 2 ;;
@@ -1796,6 +1805,76 @@ is_valid_cache_child_name() {
   esac
 }
 
+is_valid_config_child_name() {
+  local child="$1"
+  case "$child" in
+    ""|.|..|*/*)
+      return 1
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+}
+
+bridge_managed_config_child() {
+  local child="$1" source target resolved
+
+  if ! is_valid_config_child_name "$child"; then
+    fail "--bridge-managed-config-child $child is not a direct .config child name; refusing automatic managed config-child bridge"
+    return 0
+  fi
+
+  source="$REAL_HOME/.config/$child"
+  target="$ENVCTL_HOME_SOURCE/.config/$child"
+
+  if [ ! -e "$target" ] && [ ! -L "$target" ]; then
+    fail "--bridge-managed-config-child $child: managed source $target is missing; refusing automatic managed config-child bridge"
+    return 0
+  fi
+
+  if [ -L "$target" ]; then
+    resolved="$(readlink -f "$target" 2>/dev/null || true)"
+    if [ -z "$resolved" ] || ! is_under_meta "$resolved"; then
+      fail "--bridge-managed-config-child $child: managed source $target is an external symlink (${resolved:-missing target}); refusing automatic managed config-child bridge"
+      return 0
+    fi
+  fi
+
+  if [ ! -d "$target" ]; then
+    fail "--bridge-managed-config-child $child: managed source $target is not a directory; refusing automatic managed config-child bridge"
+    return 0
+  fi
+
+  if [ -L "$source" ]; then
+    resolved="$(readlink -f "$source" 2>/dev/null || true)"
+    if [ -n "$resolved" ] && is_under_meta "$resolved"; then
+      ok "--bridge-managed-config-child $child: $source already resolves inside META_ROOT ($resolved)"
+    else
+      fail "--bridge-managed-config-child $child: $source is an external symlink (${resolved:-missing target}); refusing automatic managed config-child bridge"
+    fi
+    return 0
+  fi
+
+  if [ -e "$source" ]; then
+    if [ "$APPLY" -ne 1 ]; then
+      say "DRY-RUN: would refuse automatic managed config-child bridge because source $source already exists; owner-reviewed merge/removal required before bridge"
+    else
+      fail "--bridge-managed-config-child $child: source $source already exists; owner-reviewed merge/removal required before bridge"
+    fi
+    return 0
+  fi
+
+  if [ "$APPLY" -ne 1 ]; then
+    say "DRY-RUN: would link $source -> $target"
+    return 0
+  fi
+
+  mkdir -p "$REAL_HOME/.config"
+  ln -s "$target" "$source"
+  changed_msg "bridged $source -> $target"
+}
+
 migrate_real_home_cache_child() {
   local child="$1" source target resolved
 
@@ -2455,12 +2534,15 @@ done
 for child in "${MIGRATE_CACHE_CHILDREN[@]}"; do
   migrate_real_home_cache_child "$child"
 done
+for child in "${BRIDGE_MANAGED_CONFIG_CHILDREN[@]}"; do
+  bridge_managed_config_child "$child"
+done
 
 # 6. Walk every top-level real-home dot entry.  The default audit only mutates .local/.gitconfig;
-# requested --migrate-dot / --migrate-cache-child entries above are reflected here after they have
-# been bridged into META_ROOT.  This keeps the loop honest ("every dot file/folder was observed")
-# without auto-moving credentials, caches, shell histories, broad app state, or unrequested
-# toolchains.
+# requested --migrate-dot / --migrate-cache-child / --bridge-managed-config-child entries above are
+# reflected here after they have been bridged into META_ROOT.  This keeps the loop honest ("every dot
+# file/folder was observed") without auto-moving credentials, caches, shell histories, broad app
+# state, or unrequested toolchains.
 if [ -d "$REAL_HOME" ]; then
   while IFS= read -r -d '' path; do
     dot_entries_seen=$((dot_entries_seen + 1))
