@@ -21,6 +21,7 @@ pub mod layout; // meta-hosted FHS/XDG path resolver (usr/etc/var/opt/run/tmp + 
 pub mod lock; // envctl.lock — content-hashed manifest-of-record + CI gate
 pub mod migration; // adoption engine: scan/plan/apply/verify/purge into meta .local topology
 pub mod model; // Registry, OpResult, OpStatus, EnvReport, Wiring, RunPlan, RunSummary, AddRepoSpec
+pub mod peer; // add-repo PEER path: meta-native .meta.yaml/.gitignore registration (vs component)
 pub mod register; // Phase 4: synthesize the components.d drop-in (provenance + rebuild)
 pub mod runner; // ProcessRunner (real) + DryRunRunner impls of HookRunner
 pub mod runtime; // machine-local last-run state (XDG cache), out of the lock
@@ -60,8 +61,8 @@ pub use migration::{
     MigrationSummary, MigrationVerb,
 };
 pub use model::{
-    AddRepoSpec, AiAgent, BuildStrategy, BuildSystem, ComponentState, DataPath, DesktopEntry,
-    DriftItem, DriftKind, EnvReport, MetaBoundaryReport, MetaBoundaryViolation,
+    AddRepoMode, AddRepoSpec, AiAgent, BuildStrategy, BuildSystem, ComponentState, DataPath,
+    DesktopEntry, DriftItem, DriftKind, EnvReport, MetaBoundaryReport, MetaBoundaryViolation,
     MetaBoundaryViolationKind, OpResult, OpStatus, Refactor, RefactorGoal, Registry, RenameRule,
     ResetGates, RunPlan, RunSummary, Severity, ShellRcBlock, SystemdUnit, ToolState, Wiring,
 };
