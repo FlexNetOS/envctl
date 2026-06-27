@@ -424,9 +424,11 @@ if awk -F '\t' '$1 == ".ssh" { found=1 } END { exit !found }' "$tmp/unknown-app-
   exit 1
 fi
 
-ENVCTL_TEST_LSOF_OPEN_SOURCE="$mig_home/.pki" "$root/scripts/audit-meta-local-paths.sh" --migration-blockers-report "$tmp/migration-blockers.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migration-blockers.out" 2>"$tmp/migration-blockers.err"
+ENVCTL_TEST_LSOF_OPEN_SOURCE="$mig_home/.pki" "$root/scripts/audit-meta-local-paths.sh" --migration-blockers-report "$tmp/migration-blockers.tsv" --migration-blockers-summary "$tmp/migration-blockers-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migration-blockers.out" 2>"$tmp/migration-blockers.err"
 head -n 1 "$tmp/migration-blockers.tsv" | grep -qx $'dot_entry\treal_path\ttype\ttarget_class\taction\tapply_safe\tcanonical_target\tblocker\tblocker_detail\topen_handles\topen_handle_sample\trecommendation'
 awk -F '\t' 'NF != 12 { print "bad migration blocker row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/migration-blockers.tsv"
+head -n 1 "$tmp/migration-blockers-summary.tsv" | grep -qx $'blocker\ttotal\tapply_safe_yes\tapply_safe_no\topen_handles\trecommendations'
+awk -F '\t' 'NF != 6 { print "bad migration blocker summary row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/migration-blockers-summary.tsv"
 awk -F '\t' -v home="$mig_home" -v meta="$mig_meta" '
   $1 == ".pki" {
     if ($2 != home "/.pki") bad=1
@@ -444,6 +446,30 @@ awk -F '\t' -v home="$mig_home" -v meta="$mig_meta" '
   }
   END { exit !(found && !bad) }
 ' "$tmp/migration-blockers.tsv"
+awk -F '\t' '
+  $1 == "open-handles" {
+    if ($2 != "1") bad=1
+    if ($3 != "1") bad=1
+    if ($4 != "0") bad=1
+    if ($5 != "1") bad=1
+    if ($6 != "close-processes-then-run-apply-migrate-dot") bad=1
+    found=1
+  }
+  END { exit !(found && !bad) }
+' "$tmp/migration-blockers-summary.tsv"
+awk -F '\t' '
+  $1 == "owner-supervised-sensitive" {
+    if ($2 < 3) bad=1
+    if ($3 != "0") bad=1
+    if ($4 < 3) bad=1
+    if ($5 != "0") bad=1
+    if ($6 != "owner-supervised-vault-or-bridge") bad=1
+    found=1
+  }
+  END { exit !(found && !bad) }
+' "$tmp/migration-blockers-summary.tsv"
+ENVCTL_TEST_LSOF_OPEN_SOURCE="$mig_home/.pki" "$root/scripts/audit-meta-local-paths.sh" --migration-blockers-summary "$tmp/migration-blockers-summary-only.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migration-blockers-summary-only.out" 2>"$tmp/migration-blockers-summary-only.err"
+awk -F '\t' '$1 == "open-handles" && $2 == "1" && $3 == "1" && $4 == "0" && $5 == "1" && $6 == "close-processes-then-run-apply-migrate-dot" { found=1 } END { exit !found }' "$tmp/migration-blockers-summary-only.tsv"
 grep -qx $'.lane\t'"$mig_home"$'/.lane\tdirectory\tsensitive\towner-supervised-vault-or-bridge\tno\t\towner-supervised-sensitive\tcredential-or-private-state\tn/a\t\towner-supervised-vault-or-bridge' "$tmp/migration-blockers.tsv"
 grep -qx $'.fxapp-gh-profile\t'"$mig_home"$'/.fxapp-gh-profile\tdirectory\tsensitive\towner-supervised-vault-or-bridge\tno\t\towner-supervised-sensitive\tcredential-or-private-state\tn/a\t\towner-supervised-vault-or-bridge' "$tmp/migration-blockers.tsv"
 if awk -F '\t' '$1 == ".gitconfig" { found=1 } END { exit !found }' "$tmp/migration-blockers.tsv"; then

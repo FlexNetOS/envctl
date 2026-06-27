@@ -23,7 +23,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--migration-blockers-report PATH] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
 With --inventory, also writes a tab-separated relocation inventory:
@@ -60,6 +60,8 @@ With --migration-blockers-report, writes read-only residual blocker rows for rea
 that are not already bridged into META_ROOT:
 dot_entry, real_path, type, target_class, action, apply_safe, canonical_target, blocker,
 blocker_detail, open_handles, open_handle_sample, recommendation.
+With --migration-blockers-summary, writes read-only per-blocker residual counts:
+blocker, total, apply_safe_yes, apply_safe_no, open_handles, recommendations.
 With --apply-history-archives and --apply, moves history/backup dot entries under
 $META_ROOT/var/lib/envctl/real-home-dotfile-migration/history-or-backup/<dot-entry> and leaves
 the original real-home path as a symlink bridge. Existing non-identical canonical archive targets
@@ -80,6 +82,7 @@ SHELL_DOTFILE_CONFLICT_REPORT_PATH=""
 APP_CONFIG_CONFLICT_REPORT_PATH=""
 UNKNOWN_APP_CONFIG_REPORT_PATH=""
 MIGRATION_BLOCKERS_REPORT_PATH=""
+MIGRATION_BLOCKERS_SUMMARY_PATH=""
 DEEP_LINK_INVENTORY_PATH=""
 DEEP_LINK_SUMMARY_PATH=""
 FAIL_REAL_HOME_DEEP_LINKS=0
@@ -96,6 +99,7 @@ while [ "$#" -gt 0 ]; do
     --app-config-conflict-report) APP_CONFIG_CONFLICT_REPORT_PATH="${2:?--app-config-conflict-report requires a path}"; shift 2 ;;
     --unknown-app-config-report) UNKNOWN_APP_CONFIG_REPORT_PATH="${2:?--unknown-app-config-report requires a path}"; shift 2 ;;
     --migration-blockers-report) MIGRATION_BLOCKERS_REPORT_PATH="${2:?--migration-blockers-report requires a path}"; shift 2 ;;
+    --migration-blockers-summary) MIGRATION_BLOCKERS_SUMMARY_PATH="${2:?--migration-blockers-summary requires a path}"; shift 2 ;;
     --deep-link-inventory) DEEP_LINK_INVENTORY_PATH="${2:?--deep-link-inventory requires a path}"; shift 2 ;;
     --deep-link-summary) DEEP_LINK_SUMMARY_PATH="${2:?--deep-link-summary requires a path}"; shift 2 ;;
     --fail-real-home-deep-links) FAIL_REAL_HOME_DEEP_LINKS=1; shift ;;
@@ -145,6 +149,9 @@ if [ -n "$MIGRATION_BLOCKERS_REPORT_PATH" ]; then
   mkdir -p "$(dirname "$MIGRATION_BLOCKERS_REPORT_PATH")"
   printf 'dot_entry\treal_path\ttype\ttarget_class\taction\tapply_safe\tcanonical_target\tblocker\tblocker_detail\topen_handles\topen_handle_sample\trecommendation\n' >"$MIGRATION_BLOCKERS_REPORT_PATH"
 fi
+if [ -n "$MIGRATION_BLOCKERS_SUMMARY_PATH" ]; then
+  mkdir -p "$(dirname "$MIGRATION_BLOCKERS_SUMMARY_PATH")"
+fi
 if [ -n "$DEEP_LINK_INVENTORY_PATH" ]; then
   mkdir -p "$(dirname "$DEEP_LINK_INVENTORY_PATH")"
   printf 'scan_root\tsymlink\tlink_text\tresolved_target\ttarget_class\taction\n' >"$DEEP_LINK_INVENTORY_PATH"
@@ -160,6 +167,11 @@ declare -A summary_apply_na=()
 declare -A summary_actions=()
 declare -A deep_link_total=()
 declare -A deep_link_actions=()
+declare -A migration_blocker_total=()
+declare -A migration_blocker_apply_yes=()
+declare -A migration_blocker_apply_no=()
+declare -A migration_blocker_open_handles=()
+declare -A migration_blocker_recommendations=()
 
 say() { printf '%s\n' "$*"; }
 fail() { failures=$((failures + 1)); say "FAIL: $*" >&2; }
@@ -459,7 +471,7 @@ record_migration_blocker() {
   local dot="$1" type="$2" state="$3" target_class="$4" canonical_target="$5" action="$6" apply_safe="$7"
   local path blocker blocker_detail open_handles open_handle_sample recommendation
 
-  [ -n "$MIGRATION_BLOCKERS_REPORT_PATH" ] || return 0
+  [ -n "$MIGRATION_BLOCKERS_REPORT_PATH" ] || [ -n "$MIGRATION_BLOCKERS_SUMMARY_PATH" ] || return 0
   [ "$state" = "real-home-state" ] || [ "$state" = "external-symlink" ] || return 0
 
   path="$REAL_HOME/$dot"
@@ -526,19 +538,23 @@ record_migration_blocker() {
     esac
   fi
 
-  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-    "$dot" \
-    "$path" \
-    "$type" \
-    "$target_class" \
-    "$action" \
-    "$apply_safe" \
-    "$canonical_target" \
-    "$blocker" \
-    "$blocker_detail" \
-    "$open_handles" \
-    "$open_handle_sample" \
-    "$recommendation" >>"$MIGRATION_BLOCKERS_REPORT_PATH"
+  migration_blocker_observe "$blocker" "$apply_safe" "$open_handles" "$recommendation"
+
+  if [ -n "$MIGRATION_BLOCKERS_REPORT_PATH" ]; then
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+      "$dot" \
+      "$path" \
+      "$type" \
+      "$target_class" \
+      "$action" \
+      "$apply_safe" \
+      "$canonical_target" \
+      "$blocker" \
+      "$blocker_detail" \
+      "$open_handles" \
+      "$open_handle_sample" \
+      "$recommendation" >>"$MIGRATION_BLOCKERS_REPORT_PATH"
+  fi
 }
 
 shell_dotfile_action() {
@@ -674,6 +690,50 @@ emit_inventory_summary() {
       done
     fi
   } >"$INVENTORY_SUMMARY_PATH"
+}
+
+migration_blocker_observe() {
+  local blocker="$1" apply_safe="$2" open_handles="$3" recommendation="$4" existing_recommendations
+  [ -n "$MIGRATION_BLOCKERS_SUMMARY_PATH" ] || return 0
+
+  migration_blocker_total["$blocker"]=$(( ${migration_blocker_total["$blocker"]:-0} + 1 ))
+  case "$apply_safe" in
+    yes) migration_blocker_apply_yes["$blocker"]=$(( ${migration_blocker_apply_yes["$blocker"]:-0} + 1 )) ;;
+    no) migration_blocker_apply_no["$blocker"]=$(( ${migration_blocker_apply_no["$blocker"]:-0} + 1 )) ;;
+  esac
+
+  if [[ "$open_handles" =~ ^[0-9]+$ ]]; then
+    migration_blocker_open_handles["$blocker"]=$(( ${migration_blocker_open_handles["$blocker"]:-0} + open_handles ))
+  fi
+
+  existing_recommendations="${migration_blocker_recommendations["$blocker"]:-}"
+  if [ -z "$existing_recommendations" ]; then
+    migration_blocker_recommendations["$blocker"]="$recommendation"
+  else
+    case ",$existing_recommendations," in
+      *,"$recommendation",*) ;;
+      *) migration_blocker_recommendations["$blocker"]="$existing_recommendations,$recommendation" ;;
+    esac
+  fi
+}
+
+emit_migration_blockers_summary() {
+  [ -n "$MIGRATION_BLOCKERS_SUMMARY_PATH" ] || return 0
+
+  {
+    printf 'blocker\ttotal\tapply_safe_yes\tapply_safe_no\topen_handles\trecommendations\n'
+    if [ "${#migration_blocker_total[@]}" -gt 0 ]; then
+      printf '%s\n' "${!migration_blocker_total[@]}" | sort | while IFS= read -r blocker; do
+        printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
+          "$blocker" \
+          "${migration_blocker_total["$blocker"]:-0}" \
+          "${migration_blocker_apply_yes["$blocker"]:-0}" \
+          "${migration_blocker_apply_no["$blocker"]:-0}" \
+          "${migration_blocker_open_handles["$blocker"]:-0}" \
+          "${migration_blocker_recommendations["$blocker"]:-}"
+      done
+    fi
+  } >"$MIGRATION_BLOCKERS_SUMMARY_PATH"
 }
 
 deep_link_observe() {
@@ -1563,6 +1623,7 @@ fi
 scan_deep_links
 
 emit_inventory_summary
+emit_migration_blockers_summary
 emit_deep_link_summary
 
 if [ "$failures" -gt 0 ]; then
