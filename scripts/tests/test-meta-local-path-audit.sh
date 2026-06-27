@@ -126,7 +126,7 @@ printf 'nested-secret\n' >"$supervised_home/.config/app/token"
 printf 'managed-settings\n' >"$supervised_home/.config/managed-app/settings.json"
 ln -s "$outside/hf" "$supervised_home/.config/external-app"
 printf 'key\n' >"$supervised_home/.ssh/id_ed25519"
-"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-state-report "$tmp/owner-supervised-state.tsv" --owner-supervised-child-report "$tmp/owner-supervised-child.tsv" --owner-supervised-child-candidates-report "$tmp/owner-supervised-child-candidates.tsv" --owner-supervised-child-candidate-actions "$tmp/owner-supervised-child-candidate-actions.tsv" --owner-supervised-child-candidate-action-summary "$tmp/owner-supervised-child-candidate-action-summary.tsv" --owner-supervised-child-candidates-summary "$tmp/owner-supervised-child-candidates-summary.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-state.out" 2>"$tmp/owner-supervised-state.err"
+"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-state-report "$tmp/owner-supervised-state.tsv" --owner-supervised-child-report "$tmp/owner-supervised-child.tsv" --owner-supervised-child-candidates-report "$tmp/owner-supervised-child-candidates.tsv" --owner-supervised-child-candidate-actions "$tmp/owner-supervised-child-candidate-actions.tsv" --owner-supervised-cache-child-component-plan "$tmp/owner-supervised-cache-child-component-plan.tsv" --owner-supervised-child-candidate-action-summary "$tmp/owner-supervised-child-candidate-action-summary.tsv" --owner-supervised-child-candidates-summary "$tmp/owner-supervised-child-candidates-summary.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-state.out" 2>"$tmp/owner-supervised-state.err"
 head -n 1 "$tmp/owner-supervised-state.tsv" | grep -qx $'dot_entry\treal_path\ttype\ttarget_class\tshallow_digest\tdirect_entries\tdirect_files\tdirect_dirs\tdirect_symlinks\taction\tapply_safe\trecommendation'
 awk -F '\t' 'NF != 12 { print "bad owner-supervised-state row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/owner-supervised-state.tsv"
 test "$(wc -l <"$tmp/owner-supervised-state.tsv" | tr -d '[:space:]')" = 3
@@ -424,6 +424,31 @@ awk -F '\t' '
 cmp "$tmp/owner-supervised-child-candidates-summary.tsv" "$tmp/owner-supervised-child-candidates-summary-only.tsv"
 "$root/scripts/audit-meta-local-paths.sh" --owner-supervised-child-candidate-actions "$tmp/owner-supervised-child-candidate-actions-only.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-child-candidate-actions-only.out" 2>"$tmp/owner-supervised-child-candidate-actions-only.err"
 cmp "$tmp/owner-supervised-child-candidate-actions.tsv" "$tmp/owner-supervised-child-candidate-actions-only.tsv"
+
+head -n 1 "$tmp/owner-supervised-cache-child-component-plan.tsv" | grep -qx $'dot_entry	child_name	child_path	type	canonical_target	component_key	cache_scope	supervision	next_action	manifest_hint	apply_command'
+awk -F '	' 'NF != 11 { print "bad owner-supervised-cache-child-component-plan row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/owner-supervised-cache-child-component-plan.tsv"
+test "$(wc -l <"$tmp/owner-supervised-cache-child-component-plan.tsv" | tr -d '[:space:]')" = 2
+awk -F '	' -v home="$supervised_home" -v meta="$supervised_meta" '
+  $1 == ".cache" && $2 == "tool" {
+    if ($3 != home "/.cache/tool") bad=1
+    if ($4 != "directory") bad=1
+    if ($5 != meta "/.local/cache/tool") bad=1
+    if ($6 != "tool") bad=1
+    if ($7 != "cache-child") bad=1
+    if ($8 != "component-managed") bad=1
+    if ($9 != "add-component-cache-rule-or-owner-approved-child-migration") bad=1
+    if ($10 != "manifest/components.d/cache-tool.toml") bad=1
+    if ($11 != "") bad=1
+    found_cache=1
+  }
+  $1 == ".cache" && $2 == "meta-cache" { already_meta=1 }
+  $1 == ".config" { config_child=1 }
+  $2 == "settings.json" || $2 == "token" { nested=1 }
+  $1 == ".ssh" { sensitive=1 }
+  END { exit !(found_cache && !bad && !already_meta && !config_child && !nested && !sensitive) }
+' "$tmp/owner-supervised-cache-child-component-plan.tsv"
+"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-cache-child-component-plan "$tmp/owner-supervised-cache-child-component-plan-only.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-cache-child-component-plan-only.out" 2>"$tmp/owner-supervised-cache-child-component-plan-only.err"
+cmp "$tmp/owner-supervised-cache-child-component-plan.tsv" "$tmp/owner-supervised-cache-child-component-plan-only.tsv"
 
 head -n 1 "$tmp/owner-supervised-child-candidate-action-summary.tsv" | grep -qx $'dot_entry\tchild_target_class\tcandidate_action\tapply_safe\tsupervision\tnext_action\ttotal\tenvctl_home_sources'
 awk -F '\t' 'NF != 8 { print "bad owner-supervised-child-candidate-action-summary row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/owner-supervised-child-candidate-action-summary.tsv"
