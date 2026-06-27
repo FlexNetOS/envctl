@@ -370,6 +370,21 @@ verify env health.
   the header. Next slices continue class-by-class (managed dotfiles such as `.config`/agent state,
   app config, sensitive stores, history/archive, cache/bridge) and keep owner-supervised classes
   non-mutating until a safe per-class component/bridge is proven.
+
+  Current history/archive slice adds an explicit `--apply-history-archives` opt-in: plain `--apply`
+  remains non-mutating for history/backup entries, while `--apply --apply-history-archives` moves
+  each file/dir to `$META_ROOT/var/lib/envctl/real-home-dotfile-migration/history-or-backup/<dot-entry>`
+  and leaves the real-home path as a symlink bridge. TDD coverage proves exact canonical targets,
+  default-apply no-op behavior, file+directory archive/bridge preservation, post-apply `already-meta`
+  inventory rows, and collision safety (`owner-supervised merge required` when a non-identical
+  canonical archive target already exists). Live apply evidence 2026-06-27: archived/bridged 17
+  entries (`.bash_history`, `.zsh_history`, `.claude.json.bak.20260617-182538`, `.n8n.bak.1780701915`,
+  all `.bashrc.bak.*`, all `.zshrc.bak.*`) into `/home/drdave/Desktop/meta/var/lib/envctl/`
+  `real-home-dotfile-migration/history-or-backup/`; post-apply audit reports `dot_entries=78`,
+  `warnings=42`, `changed=0`; summary counts are `already-meta=34`, `app-config-state=35`,
+  `sensitive=5`, `managed-dotfile=2`, `cache=1`, `bridge=1`; there are **no remaining
+  `history-or-backup` rows** and the shell conflict report remains header-only. Remaining slices:
+  app-config-state, sensitive stores, managed `.config`, cache, and the single bridge.
 - [x] `envctl env` — discover meta-root via `.meta.yaml` marker (`engine::dashboard::locate_meta_file`),
   emit `export META_ROOT=…` + meta tool dirs on PATH; `--toolchains`/`--materialize` (merged from
   feat/envctl-env, 2026-06-12).

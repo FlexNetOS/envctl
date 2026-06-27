@@ -12,13 +12,15 @@
 # Shell dotfiles are only canonicalized with the explicit --apply-shell-dotfiles opt-in; default
 # --apply remains limited to the proven-safe bridges above plus explicitly requested allow-listed
 # --migrate-dot entries.
+# History/backup dot entries are only archived into META_ROOT with the explicit
+# --apply-history-archives opt-in; default --apply remains non-mutating for them.
 # Explicit --migrate-dot requests are allow-listed, require --apply for mutation, and preserve an
 # existing canonical META_ROOT target by archiving the old real-home state under META_ROOT first.
 set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--shell-dotfile-conflict-report PATH] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
 With --inventory, also writes a tab-separated relocation inventory:
@@ -39,11 +41,16 @@ With --migrate-dot, performs an explicit owner-requested migration for allow-lis
 Mutation still requires --apply; without --apply the script prints the planned move and changes nothing.
 With --shell-dotfile-conflict-report, writes supervised shell-dotfile merge rows:
 dot_entry, real_path, canonical_target, action, apply_safe, real_sha256, canonical_sha256, real_lines, canonical_lines, recommendation.
+With --apply-history-archives and --apply, moves history/backup dot entries under
+$META_ROOT/var/lib/envctl/real-home-dotfile-migration/history-or-backup/<dot-entry> and leaves
+the original real-home path as a symlink bridge. Existing non-identical canonical archive targets
+are left untouched for owner-supervised merge.
 USAGE
 }
 
 APPLY=0
 APPLY_SHELL_DOTFILES=0
+APPLY_HISTORY_ARCHIVES=0
 ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")/.." rev-parse --show-toplevel 2>/dev/null || pwd)"
 META_ROOT="${META_ROOT:-$(cd "$ROOT/.." && pwd)}"
 REAL_HOME="${ENVCTL_REAL_HOME:-$HOME}"
@@ -60,6 +67,7 @@ while [ "$#" -gt 0 ]; do
   case "$1" in
     --apply) APPLY=1; shift ;;
     --apply-shell-dotfiles) APPLY_SHELL_DOTFILES=1; shift ;;
+    --apply-history-archives) APPLY_HISTORY_ARCHIVES=1; shift ;;
     --inventory) INVENTORY_PATH="${2:?--inventory requires a path}"; shift 2 ;;
     --inventory-summary) INVENTORY_SUMMARY_PATH="${2:?--inventory-summary requires a path}"; shift 2 ;;
     --shell-dotfile-conflict-report) SHELL_DOTFILE_CONFLICT_REPORT_PATH="${2:?--shell-dotfile-conflict-report requires a path}"; shift 2 ;;
@@ -87,6 +95,7 @@ changed=0
 dot_entries_seen=0
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
 archive_dir="$META_ROOT/var/lib/envctl/real-home-dotfile-migration/$stamp"
+history_archive_root="$META_ROOT/var/lib/envctl/real-home-dotfile-migration/history-or-backup"
 
 if [ -n "$INVENTORY_PATH" ]; then
   mkdir -p "$(dirname "$INVENTORY_PATH")"
@@ -199,6 +208,18 @@ shell_dotfile_action() {
   fi
 }
 
+is_history_or_backup_dot() {
+  case "$1" in
+    .bash_history|.zsh_history|.*_history|*.bak|*.bak.*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+history_archive_target_for_dot() {
+  local dot="$1"
+  printf '%s/%s\n' "$history_archive_root" "$dot"
+}
+
 apply_shell_dotfile_bridge() {
   local dot="$1" path="$2" canonical_target="$3"
   local action apply_safe
@@ -225,6 +246,36 @@ apply_shell_dotfile_bridge() {
     ln -sfn "$canonical_target" "$path"
     changed_msg "archived duplicate $path to $archive_dir/$dot and linked $path -> $canonical_target"
   fi
+}
+
+apply_history_archive_bridge() {
+  local dot="$1" path="$2" target duplicate_archive
+
+  [ "$APPLY" -eq 1 ] || return 0
+  [ "$APPLY_HISTORY_ARCHIVES" -eq 1 ] || return 0
+  [ -e "$path" ] || [ -L "$path" ] || return 0
+  [ ! -L "$path" ] || return 0
+
+  target="$(history_archive_target_for_dot "$dot")"
+
+  if [ -e "$target" ] || [ -L "$target" ]; then
+    if { [ -f "$path" ] && [ -f "$target" ] && cmp -s "$path" "$target"; } ||
+      { [ -d "$path" ] && [ -d "$target" ] && diff -qr "$path" "$target" >/dev/null 2>&1; }; then
+      duplicate_archive="$archive_dir/history-or-backup"
+      mkdir -p "$duplicate_archive"
+      mv "$path" "$duplicate_archive/$dot"
+      ln -sfn "$target" "$path"
+      changed_msg "archived duplicate $path to $duplicate_archive/$dot and linked $path -> $target"
+    else
+      warn "$path cannot be archived automatically: $target already exists and differs; owner-supervised merge required"
+    fi
+    return 0
+  fi
+
+  mkdir -p "$(dirname "$target")"
+  mv "$path" "$target"
+  ln -sfn "$target" "$path"
+  changed_msg "archived $path to $target and linked $path -> $target"
 }
 
 inventory_row() {
@@ -505,8 +556,9 @@ classify_real_home_dot() {
         ;;
       .bash_history|.zsh_history|.*_history|*.bak|*.bak.*)
         target_class="history-or-backup"
-        canonical_target="$META_ROOT/var/lib/envctl/real-home-dotfile-migration"
-        action="owner-supervised-archive"
+        canonical_target="$(history_archive_target_for_dot "$dot")"
+        action="archive-and-bridge"
+        apply_safe="yes"
         ;;
       .config)
         target_class="app-config-state"
@@ -681,6 +733,9 @@ if [ -d "$REAL_HOME" ]; then
     esac
     if is_shell_dotfile "$dot"; then
       apply_shell_dotfile_bridge "$dot" "$path" "$META_ROOT/$dot"
+    fi
+    if is_history_or_backup_dot "$dot"; then
+      apply_history_archive_bridge "$dot" "$path"
     fi
     classify_real_home_dot "$dot" "$path"
 
