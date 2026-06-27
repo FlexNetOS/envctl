@@ -129,6 +129,7 @@ mkdir -p \
   "$mig_home/.gemini" \
   "$mig_home/.gphoto" \
   "$mig_home/.vscode-shared/sharedStorage" \
+  "$mig_home/.repomix/outputs" \
   "$mig_home/.kimi-code" \
   "$mig_home/.ollama"
 printf '# managed gitconfig\n' >"$mig_meta/envctl/home/.gitconfig"
@@ -142,6 +143,7 @@ printf 'set ideajoin\n' >"$mig_home/.ideavimrc"
 printf '{ "theme": "dark" }\n' >"$mig_home/.gemini/settings.json"
 printf 'camera-port=usb\n' >"$mig_home/.gphoto/settings"
 printf 'sqlite-state\n' >"$mig_home/.vscode-shared/sharedStorage/state.vscdb"
+printf 'repomix-output\n' >"$mig_home/.repomix/outputs/latest.txt"
 printf 'real-home kimi-code credentials\n' >"$mig_home/.kimi-code/credentials.json"
 printf 'real-home ollama history\n' >"$mig_home/.ollama/history"
 printf '{ "mcpServers": {} }\n' >"$mig_home/.claude.json"
@@ -150,6 +152,7 @@ printf '{ "mcpServers": {} }\n' >"$mig_home/.claude.json"
 grep -qx $'.gemini\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/gemini\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
 grep -qx $'.gphoto\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.config/gphoto\tmigrate-dir-to-meta-config-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.vscode-shared\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/vscode-shared\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
+grep -qx $'.repomix\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/repomix\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.kimi-code\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/kimi-code\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
 grep -qx $'.ollama\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/var/lib/ollama\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
 grep -qx $'.claude.json\tfile\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/claude/claude.json\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
@@ -221,6 +224,18 @@ grep -qx 'sqlite-state' "$mig_meta/.local/share/vscode-shared/sharedStorage/stat
 "$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/vscode-shared-post.tsv" --inventory-summary "$tmp/vscode-shared-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/vscode-shared-post.out" 2>"$tmp/vscode-shared-post.err"
 grep -qx $'.vscode-shared\tsymlink\talready-meta\talready-meta\t'"$mig_meta"$'/.local/share/vscode-shared\tnone\tn/a' "$tmp/vscode-shared-post.tsv"
 
+"$root/scripts/audit-meta-local-paths.sh" --migrate-dot .repomix --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-repomix-dry.out" 2>"$tmp/migrate-repomix-dry.err"
+grep -q 'DRY-RUN: would move .*\.repomix to .*\.local/share/repomix' "$tmp/migrate-repomix-dry.out"
+test -d "$mig_home/.repomix"
+test ! -e "$mig_meta/.local/share/repomix"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .repomix --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-repomix.out" 2>"$tmp/migrate-repomix.err"
+test "$(readlink -f "$mig_home/.repomix")" = "$mig_meta/.local/share/repomix"
+grep -qx 'repomix-output' "$mig_meta/.local/share/repomix/outputs/latest.txt"
+
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/repomix-post.tsv" --inventory-summary "$tmp/repomix-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/repomix-post.out" 2>"$tmp/repomix-post.err"
+grep -qx $'.repomix\tsymlink\talready-meta\talready-meta\t'"$mig_meta"$'/.local/share/repomix\tnone\tn/a' "$tmp/repomix-post.tsv"
+
 gphoto_bad_meta="$tmp/gphoto-bad-meta"
 gphoto_bad_home="$tmp/gphoto-bad-home"
 mkdir -p "$gphoto_bad_meta/.local" "$gphoto_bad_meta/envctl/home" "$gphoto_bad_home"
@@ -252,6 +267,22 @@ fi
 test -f "$vscode_shared_bad_home/.vscode-shared"
 test ! -e "$vscode_shared_bad_meta/.local/share/vscode-shared"
 grep -q -- '--migrate-dot .vscode-shared: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-vscode-shared-file.err"
+
+repomix_bad_meta="$tmp/repomix-bad-meta"
+repomix_bad_home="$tmp/repomix-bad-home"
+mkdir -p "$repomix_bad_meta/.local" "$repomix_bad_meta/envctl/home" "$repomix_bad_home"
+printf '# managed gitconfig\n' >"$repomix_bad_meta/envctl/home/.gitconfig"
+ln -s "$repomix_bad_meta/envctl/home/.gitconfig" "$repomix_bad_meta/.gitconfig"
+ln -s "$repomix_bad_meta/.gitconfig" "$repomix_bad_home/.gitconfig"
+ln -s "$repomix_bad_meta/.local" "$repomix_bad_home/.local"
+printf 'not a directory\n' >"$repomix_bad_home/.repomix"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .repomix --meta-root "$repomix_bad_meta" --real-home "$repomix_bad_home" --envctl-home-source "$repomix_bad_meta/envctl/home" >"$tmp/migrate-repomix-file.out" 2>"$tmp/migrate-repomix-file.err"; then
+  echo "expected --migrate-dot .repomix to fail closed for non-directory source" >&2
+  exit 1
+fi
+test -f "$repomix_bad_home/.repomix"
+test ! -e "$repomix_bad_meta/.local/share/repomix"
+grep -q -- '--migrate-dot .repomix: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-repomix-file.err"
 
 
 mkdir -p "$mig_meta/.toolchains/cargo"
