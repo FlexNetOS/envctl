@@ -15,7 +15,7 @@
 - [ ] envctl: fleet environment manager + this loop's run-from
 - [ ] icm: persistent memory (memory-vector-intelligence axis)
 - [ ] grit: symbol-level merge/lock substrate
-- [ ] handoff: continuity kernel (hf)
+- [~] handoff: continuity kernel (hf) — CYCLE 2: planned as the union with rusty-idd (north-star @ $META_ROOT + handoff, owner-confirmed D1)
 - [ ] lane: distributed-compute lane substrate
 - [ ] shimmy: local LLM serving (ollama replacement track)
 - [ ] ruvector: vector intelligence (ollama replacement track)

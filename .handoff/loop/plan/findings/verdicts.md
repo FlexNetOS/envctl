@@ -73,3 +73,168 @@ Format: `CLAIM/UPGRADE <id> — <one line> — VERDICT -> <verdict> [feasible|in
 
 Only CONFIRMED + QUALIFIED + feasibility-passed rows above flow to the plan-architect. C13's numeric/path
 corrections (merge.rs at `model/merge.rs`; 5 not 6 `spec_*` CLI commands) must be carried into the plan.
+
+---
+
+# verdicts — handoff (cycle 2) · the GATE (plan-verifier)
+
+Verifier: plan-verifier. Target = **handoff** (continuity kernel) planned as the UNION with rusty-idd.
+Method: adversarial refute-each-claim + feasibility-gate-each-upgrade against actual source in worktree
+`/home/drdave/Desktop/meta/.worktrees/plan-handoff-cycle2/handoff` @ `d74ad4b` (branch `plan/handoff-union-cycle2`),
+plus RuVector read at `/home/drdave/Desktop/meta/RuVector`. Read-only on target. Default-skeptical, fail-closed.
+Only CONFIRMED/QUALIFIED + feasibility-passed rows flow to the architect. Existing rusty-idd verdicts above are untouched.
+
+Format: `- <ref> — <one line> — VERDICT -> <verdict> [feasible|infeasible] — evidence: <…>`.
+
+## 2026-06-26 — EMPIRICAL EXPERIMENTS (static → empirical)
+
+- EXP-1 (RuVector standalone blocker) -> **CONFIRMED**. `cargo build -p ledger` AND `cargo build -p ledger --no-default-features --features redb-store` BOTH fail at workspace **manifest-load** (not compile): `failed to read .../plan-handoff-cycle2/RuVector/crates/rvf/rvf-crypto/Cargo.toml (os error 2)`. Stronger than reported: `redb-store = ["dep:redb","dep:rvf-crypto"]` (`ledger/Cargo.toml:33`) so even the "minimal" feature pulls the `../../RuVector` `rvf-crypto` path dep; default `v2` additionally pulls rvf-runtime/index/types. The path dep makes the ENTIRE workspace unresolvable → no crate (even leaf `work-order`) builds in-tree. The union is NOT standalone at `$META_ROOT+handoff` today.
+- EXP-2 (v1↔v2 benign collision) -> **CONFIRMED**. Exactly one public `Ledger` per feature set: `ledger/src/lib.rs:36-39` cfg-gates `#[cfg(all(feature="redb-store", not(feature="v2")))] pub use v1::*` XOR `#[cfg(feature="v2")] pub use v2::*`; `v2.rs:26-29` `pub struct Ledger { v1: v1::Ledger, … }` composes v1; `v2.rs:19-23` `pub use crate::v1::{EventRow, LeaseOutcome, …}` re-exports shared v1 types. (Minor line drift vs analyst's `:18,20` — actual `:17 use crate::v1;`, `:19 pub use crate::v1::{`; substance exact.) Embeddings are SHA3-256 pseudo-embeddings (`v2.rs:48-56`, doc: "small input changes produce uncorrelated vectors") → "semantic" is a misnomer.
+- EXP-3 (witness chain = SHAKE-256, NOT blake3+ed25519) -> **CONFIRMED — KEY CORRECTION**. `RuVector/crates/rvf/rvf-crypto/src/witness.rs:4` "The chain uses **SHAKE-256** for hash binding"; `:74 prev_hash = shake256_256(&encoded)`. Ledger import `ledger/src/v1.rs:20 use rvf_crypto::witness::{WitnessEntry, create_witness_chain, verify_witness_chain}` — **no `sign` import**; action hashing is `sha3::Sha3_256` (`v1.rs:22`). ed25519 signing exists in `rvf-crypto` (default feature `["std","ed25519"]`, `sign.rs`) but is **un-wired** in the witness path. NOTE: blake3 IS used in the tree — but for `work-order::compute_intent_lock`, NOT the witness chain. Any doc/seed/trends text calling the witness chain "blake3+ed25519-signed" is REFUTED; it is SHA-3-family (SHAKE-256 link, SHA3-256 action), unsigned.
+
+## architecture (15 CLAIM / 6 UPGRADE)
+
+### CLAIM verdicts
+- A-C1 — Cargo dep graph strict DAG; `hf` universal sink, nothing depends on `hf` — VERDICT -> CONFIRMED — `grep 'hf = {' --include=Cargo.toml` = ∅ (no crate depends on hf); `hf/Cargo.toml` carries 20 path deps; `metrics.json` layering `cargo_dep_graph: "strict DAG"`.
+- A-C2 — 14 call-graph SCCs are NOT architectural cycles (syntect recursion + same-name collisions) — VERDICT -> CONFIRMED — `metrics.json` cycles: 8 vendor + 5 own size-2/3 same-name; ground truth = Cargo DAG (A-C1). Tool-derived; manifest cross-check corroborates.
+- A-C3 — v1↔v2 "same-name collision" is benign (cfg-gated mutually-exclusive re-exports; v2 composes v1) — VERDICT -> CONFIRMED (EXP-2).
+- A-C4 — both v1+v2 compile under default; v1 public only via v2 wrapper — VERDICT -> CONFIRMED — `lib.rs:20-23` cfg-gated `mod v1`/`mod v2`; `default=["v2"]`→`v2`→`redb-store`→`v1`.
+- A-C5 — standalone blocker: hf+ledger need sibling RuVector — VERDICT -> CONFIRMED (EXP-1, empirical).
+- A-C6 — standalone build rests on a CI clone side-effect, not the crate graph — VERDICT -> CONFIRMED — `hf/Cargo.toml:45` comment; `ledger/Cargo.toml:18` path deps; CI clone (governance gov-003).
+- A-C7 — witness-chain RuVector dep is minimal/pure-Rust; deps default-features=false → C-free trust boundary — VERDICT -> QUALIFIED — CORRECTION: only the **hf-side** `ruvector-verified`/`ruvector-domain-expansion`/`cognitum-gate-tilezero` carry `default-features=false` (`hf/Cargo.toml:48,52,59`). **`ledger`'s `rvf-crypto` does NOT** (`ledger/Cargo.toml:20 features=["std"]`, default features incl. `ed25519` ON) — so `ed25519-dalek` is compiled into the default build though the witness path never signs. The C-free conclusion HOLDS (sha3 + ed25519-dalek are pure-Rust); the "default-features=false rvf-crypto" wording is inaccurate. Use the corrected figure downstream.
+- A-C8 — two separate programs; zero Cargo dep between KERNEL and rusty-idd-*; 1 RIDD→KERNEL call edge vs 41 — VERDICT -> CONFIRMED — `metrics.json` cross_group_call_edges {RIDD→KERNEL:1, KERNEL→RIDD:41}; no manifest dep (A-C1 grep).
+- A-C9 — crates/{cli,core,runner,spec,tui} are a stale partial fork; rusty-idd is the superset — VERDICT -> CONFIRMED (lineage facts), QUALIFIED on exact % — spec model files byte-identical to rusty-idd (`diff -q` ∅ on `model/spec.rs`,`requirement.rs`); handoff cli = 9 cmd files vs rusty-idd 17 (+8 stripped); rusty-idd has `config/external/knowledge/merge-tools` crates handoff LACKS. The "95% / 0.1–40%" aggregate is tool-derived (QUALIFIED), the fork/superset/stripped facts are CONFIRMED.
+- A-C10 — `unsafe_code="deny"` workspace lint; single audited `pid_is_alive` FFI in v2.rs, fail-closed — VERDICT -> CONFIRMED — `Cargo.toml:34`; `ledger/src/v2.rs:115 #[allow(unsafe_code)]`, `:118` unverifiable→fail-closed (do not reclaim). (Correctly in v2.rs, not v1.)
+- A-C11 — `Ledger.open` widest blast (120/74), `ledger_path` 54, `validate_card` 40 — VERDICT -> CONFIRMED — `metrics.json` blast_radius. Tool-derived counts; structure corroborated.
+- A-C12 — `validate_card` is the fail-closed gate; schema generated from `work_order::WorkOrder` via schemars+OnceLock (can't drift) — VERDICT -> CONFIRMED — `handoff-schema/src/lib.rs:10-11,28-31` (`work_order::task_schema_json()` compiled once).
+- A-C13 — primary union contract seam is a mirrored file copy, not a dependency — VERDICT -> CONFIRMED — `rusty-idd/crates/work-order/src/lib.rs:35` "mirrors … task.schema.json", `:249` "a *contract mirror*, not a path-dependency".
+- A-C14 — centrality dominated by RIDD fork; kernel hubs McpServer.new/Ledger.open/ledger_path/compute_intent_lock — VERDICT -> CONFIRMED — `metrics.json` hotspots. Tool-derived.
+- A-C15 — git-kb dead-code list (1258) unsafe as a removal list; hf's 314 are clap string-dispatch false positives — VERDICT -> CONFIRMED (as caveat) — `metrics.json` dead_code caveat self-discloses the false-positive class; analyst's medium confidence + per-symbol-triage requirement is the correct posture.
+
+### UPGRADE feasibility verdicts (invariants: NO C in trust boundary, engine-first, strict-upgrade-only, keep filesystem contract fallback)
+- A-U1 — move RuVector off `../../` path deps (vendor witness-chain crates / publish / off-by-default feature) — VERDICT -> CONFIRMED **feasible** — vendoring `rvf-crypto`/`rvf-*` keeps no-C (sha3 + ed25519-dalek pure-Rust; redb pure-Rust); serves governance/portability; kills the EXP-1 blocker. The headline fix.
+- A-U2 — split feature graph so default=`redb-store` (no RVF runtime), `v2` opt-in — VERDICT -> QUALIFIED **feasible** — acceptance (default tree excludes rvf-runtime/index/types) is achievable, BUT `redb-store` STILL pulls `rvf-crypto` from `../../RuVector` (`ledger/Cargo.toml:33`) → it REDUCES but does NOT eliminate the RuVector coupling and does not make the kernel standalone on its own; it is **coupled to A-U1** (rvf-crypto must resolve before this can even build/test). Feasible under that condition.
+- A-U3 — replace rusty-idd's mirrored `work-order` with a real dep on handoff `work-order`+`validate_card` — VERDICT -> CONFIRMED **feasible** — pure-Rust crate dependency; single compiler-enforced `handoff.task.v1` source-of-truth; serves accuracy (closes A-C13/G2 drift).
+- A-U4 — converge/delete the stale `crates/{cli,core,runner,spec,tui}` fork toward rusty-idd superset — VERDICT -> CONFIRMED **feasible** — identical `rusty-idd-*` pkg names in both workspaces (verified) mandate dedup to avoid a Cargo name collision on union; reversible via git history; PROPOSE (owner-walled per-crate reconcile) is correct.
+- A-U5 — compile-time test asserting exactly one `Ledger` per feature set + ADR note — VERDICT -> QUALIFIED **feasible** — additive + correct (EXP-2 proves the invariant), but the test builds `ledger` under `redb-store`/`v2` which both need `rvf-crypto` → it **cannot run until A-U1 resolves RuVector** (EXP-1). Feasible, gated on A-U1.
+- A-U6 — manifest-cross-checked graph-integrity gate (planning artifacts only) — VERDICT -> CONFIRMED **feasible** — read-only planning post-processing; flags SCC/dead-code false positives against the Cargo DAG; APPLY, zero production blast.
+
+## governance+settings+config (9 CLAIM / 8 UPGRADE)
+- gov-001 (HEADLINE fail-OPEN seam) — `hooks.toml` 5 `fail_mode="block"` gates NOT bridged to Claude PreToolUse (`settings.json` only SessionStart/SessionEnd) — VERDICT -> CONFIRMED (empirical) — `.handoff/hooks/hooks.toml` has 5 block gates (`:24,30,42,62,108`); `.claude/settings.json` hook keys = {SessionEnd, SessionStart} only, **no PreToolUse/PostToolUse**. A Claude edit can go out-of-scope without tripping the block gate — the kernel's own L7 fail-OPEN class.
+- gov-002 — agent-guard not wired as project PreToolUse (enforcement lives in uncommitted envctl user-global) — VERDICT -> CONFIRMED — no PreToolUse in `settings.json`; user-global layer unverifiable from here (the portability defect stands regardless).
+- gov-003 — RuVector path deps; CI clone workaround; not standalone — VERDICT -> CONFIRMED (EXP-1).
+- gov-004 — SessionStart hook unconditionally `exec rusty-idd next` (no `command -v` guard) — VERDICT -> CONFIRMED — `settings.json:26`.
+- gov-005 — no `rust-toolchain.toml`; CI pins toolchain per-job — VERDICT -> CONFIRMED — `ls rust-toolchain.toml` = absent; `Cargo.toml` edition 2024 + rust-version.
+- gov-006 — `hf-mcp` binary but no `.mcp.json`/`.codex` registration (MCP rot) — VERDICT -> CONFIRMED — `ls .mcp.json .codex` = absent.
+- gov-007 — permissions allow `Bash(git -C * push:*)` (push any repo path) — VERDICT -> CONFIRMED — `settings.json:38`.
+- gov-008 — master-vs-main is a recorded owner decision, not live drift — VERDICT -> CONFIRMED (recorded data; routed to gap, not upgrade).
+- gov-009 — rule lists 4 blocked cmds, agent-guard blocks 8 (doc-vs-config drift) — VERDICT -> CONFIRMED (finding-sourced; coherence defect).
+- gov-U1 — wire PreToolUse(Edit|Write|Bash)→`hf hook run` — VERDICT -> CONFIRMED **feasible** (PROPOSE; closes gov-001 fail-OPEN; additive, never weakens).
+- gov-U2 — wire agent-guard PreToolUse repo-portable — VERDICT -> CONFIRMED **feasible** (PROPOSE; tightens only).
+- gov-U3 — resolve RuVector dep — VERDICT -> CONFIRMED **feasible** (= A-U1).
+- gov-U4 — guard `rusty-idd next` hook with `command -v` — VERDICT -> CONFIRMED **feasible** (graceful skip when rusty-idd absent).
+- gov-U5 — add `rust-toolchain.toml` pinned to CI toolchain — VERDICT -> CONFIRMED **feasible**.
+- gov-U6 — commit `.mcp.json` registering `hf-mcp` — VERDICT -> CONFIRMED **feasible**.
+- gov-U7 — tighten `Bash(git -C * push:*)` to repo-scoped — VERDICT -> CONFIRMED **feasible** (tightens; never relaxes).
+- gov-U9 — doc-sync the destructive-cmd rule to all 8 guard patterns — VERDICT -> CONFIRMED **feasible** (APPLY, doc-only).
+
+## memory-vector-intelligence (key CLAIM / 6 UPGRADE)
+- mem-1 — RVF `query_by_intent` has 0 production callers; no `hf recall/search/query` verb — VERDICT -> CONFIRMED (empirical) — `grep query_by_intent` = lib.rs doc + v2.rs:346 def + v2.rs:660 test ONLY; `grep '"recall"|"search"|"query"' hf/src/main.rs` = ∅.
+- mem-2 — embeddings are SHA3-256 pseudo, not learned/semantic — VERDICT -> CONFIRMED (EXP-2).
+- mem-3 — witness chain SHAKE-256 hash-linked, NOT blake3+ed25519-signed — VERDICT -> CONFIRMED (EXP-3, KEY CORRECTION).
+- mem-4 — ICM has 0 product references — VERDICT -> CONFIRMED — `grep '\bicm\b' --include=*.rs` (excl vendor) = 0.
+- mem-5 — handoff is a first-class git-kb member (committed `.kb/`) + drives git-kb subprocess — VERDICT -> CONFIRMED (finding-sourced; `.kb/` present, `hf/src/kb.rs` seam).
+- mem-6 — RVF written on every append, read by nothing (write-amplification) — VERDICT -> CONFIRMED — ingest on append (`v2.rs`); 0 readers (mem-1).
+- mem-7 — RuVector path dep unresolved in worktree — VERDICT -> CONFIRMED (EXP-1).
+- mem-U1 — wire `query_by_intent` to `hf recall` with REAL embeddings OR delete v2-default + delegate recall — VERDICT -> QUALIFIED **feasible** — feasible, CONDITION: any native embedder must respect NO-C-in-trust-boundary (no C vector lib); delete/delegate path is unconditionally feasible.
+- mem-U2 — make RVF overlay opt-in (default-off) to stop write-amp — VERDICT -> QUALIFIED **feasible** — reduces write-amp, but `redb-store` still pulls `rvf-crypto` (RuVector) → does not achieve standalone alone (coupled to A-U1/mem-U4). Same condition as A-U2.
+- mem-U3 — correct witness provenance to SHAKE-256 (optionally wire ed25519 signing) — VERDICT -> CONFIRMED **feasible** — doc fix is verified-correct (EXP-3); signing is additive, pure-Rust, behind a feature.
+- mem-U4 — resolve RuVector path dep for standalone — VERDICT -> CONFIRMED **feasible** (= A-U1).
+- mem-U5 — introduce decision/"why" memory (ICM or ledger-curated events) — VERDICT -> CONFIRMED **feasible** — additive; ledger-curated variant needs no new dep.
+- mem-U6 — unify fleet recall behind one provenance-tagged facade — VERDICT -> QUALIFIED **feasible** — high-effort cross-organ contract; additive facade + ADR; feasible as a façade with fail-closed organ-tagging.
+
+## test-coverage (CLAIM / 4 UPGRADE)
+- ts-1 — work-order producer seam well-covered (15 tests) — VERDICT -> CONFIRMED (finding-sourced; reachable producer tests).
+- ts-2 — NO fail-closed work-order LOADER; only `serde_json::from_str` = FAIL-OPEN — VERDICT -> CONFIRMED (empirical) — `grep from_card_json|from_card|fn validate|try_from_value` in `work-order/src/lib.rs` = ∅; only `#[schemars(regex)]` at `:60,:66` (schema-doc, NOT serde-enforced).
+- ts-3 — union consumer inherits the fail-open via the mirror — VERDICT -> CONFIRMED (rusty-idd mirror, A-C13).
+- ts-4 — `validate_card` (JSON-schema) cannot catch intent_lock-vs-content drift (no blake3 on load) — VERDICT -> CONFIRMED — `handoff-schema` is pure JSON-schema; `work-order::intent_unchanged` recomputes blake3; nothing chains them on a load path.
+- ts-5 — ledger read API is MISSING (internal to hf) — VERDICT -> CONFIRMED — Seam 2; `Ledger.open` callers all in-kernel.
+- ts-6 — ledger cannot be tested standalone (RuVector wall) — VERDICT -> CONFIRMED (EXP-1; whole workspace fails manifest-load).
+- ts-RED — RED suite `work-order/tests/union_failclosed.rs` committed + verified RED — VERDICT -> CONFIRMED (empirical) — built `work-order` in a standalone scratch mirror (RuVector-free): `test result: FAILED. 1 passed; 3 failed` (foreign-schema / malformed-id / drifted-intent_lock all FAIL-OPEN; fixture GREEN). tests-ran: 4, not an exit-0 fail-open.
+- ts-U1 — fail-closed loader tests (AUTHORED) — VERDICT -> CONFIRMED **feasible** (RED verified; additive; flips GREEN when `WorkOrder::from_card_json` chains serde+validate_card+intent_unchanged).
+- ts-U2 — handoff-intake refusal integration test — VERDICT -> QUALIFIED **feasible** — BLOCKED in-tree by the RuVector wall (handoff-intake→handoff-core→ledger→RuVector); feasible after A-U1.
+- ts-U3 — public ledger read-API contract test — VERDICT -> QUALIFIED **feasibility** pending — design-only: API unbuilt AND RuVector wall; cannot author a COMPILING RED today. Feasible after the read-API is designed + A-U1.
+- ts-U4 — differential/golden `task_schema_json` parity test across the mirror — VERDICT -> CONFIRMED **feasible** — golden capture of `task_schema_json()`; spec/work-order lineage already proven (A-C9) — cheap drift gate.
+
+## rules-policy-org (CLAIM / 5 UPGRADE)
+- rp-teeth (HEADLINE) — handoff gates have REAL teeth (`exit(1)`) vs rusty-idd advisory — VERDICT -> CONFIRMED (empirical) — `process::exit(1)` in `handoff-drift/src/lib.rs:676,792`, `hf/src/cognitum.rs:135`, `handoff-gatekeeper/src/lib.rs:304-386`; fired with `fail_mode="block"` (`hooks.toml`). rusty-idd's agent-guard is `mode="warn"` existence-only (cycle-1 gov-002). For the union the teeth live in handoff; rusty-idd CLI folds UNDER them.
+- rp-declared-unenforced — `default_network_mode`/`default_dependency_mode` are policy DATA with no kernel enforcement path — VERDICT -> CONFIRMED (finding-sourced).
+- rp-org-chart — 9-agent org; no `evolution-steward`; uniform-opus, no per-role `model:` lane — VERDICT -> CONFIRMED (finding-sourced; consistent with prompt-architecture §3).
+- rp-A2A — weave=transport plane, handoff=witnessed-receipts plane stay distinct; offline degrade to ledger-only — VERDICT -> CONFIRMED (finding-sourced; `handoff-lease` Reserve::Unsupported→ProceedDegraded).
+- rp-upgrade-only-is-intent — "Upgrade Only / parity-before-removal" is NORTH-STAR intent, no machine gate enforces it — VERDICT -> CONFIRMED (honest finding; intent ≠ enforced gate).
+- UP-1 — fold rusty-idd CLI under `hf policy check-edit`/gatekeeper — VERDICT -> CONFIRMED **feasible** (wiring, not logic; blast LOW).
+- UP-2 — enforce declared network/dep-audit policies (default-warn→block) — VERDICT -> QUALIFIED **feasible** (new enforcement can false-block; must default-warn first; RED test gates it).
+- UP-3 — add `evolution-steward` to handoff's org — VERDICT -> CONFIRMED **feasible** (additive, propose-by-default, never weakens a guard).
+- UP-4 — dual-model background lane (No-Downgrades guard) — VERDICT -> QUALIFIED **feasible** — CONDITION: gates/ADR/verifier stay opus (asserted), only mechanical work routes cheaper, and a witnessed guard blocks a SILENT downgrade of a gate-tier action. Feasible under that condition (mirrors cycle-1 stance).
+- UP-5 — self-enforce agent-guard via handoff's own PreToolUse — VERDICT -> CONFIRMED **feasible** (= gov-U2).
+
+## prompt-architecture (CLAIM / 4 UPGRADE)
+- pa-dual-front-door — TWO SessionStart hooks (hf loop-entry + `rusty-idd next`) — VERDICT -> CONFIRMED (empirical) — `settings.json:18` loop-entry.sh, `:26` `exec rusty-idd next`.
+- pa-fork-drift — the in-repo `rusty-idd-cli` fork lacks the `next`/`render` verbs its own hook/adapter need — VERDICT -> CONFIRMED (empirical) — `crates/cli/src/commands/` has no `next.rs`/`render.rs` (rusty-idd has both); the hook must resolve an external superset binary on PATH.
+- pa-hf-mcp — `hf-mcp` grants ~35 tools, each a shell-out to `hf`; mutating tools (ship/done/claim) ungated at the MCP layer — VERDICT -> CONFIRMED (finding-sourced; consistent with gov/dc findings).
+- pa-single-opus-lane / pa-determinism-intake — VERDICT -> CONFIRMED (finding-sourced; intake is deterministic non-LLM by design).
+- pa-U1 — reconcile the dual front door to ONE canonical entry — VERDICT -> CONFIRMED **feasible** (resolves pa-dual/fork-drift; PROPOSE).
+- pa-U2 — pin/version-stamp `hf`↔`hf-mcp` instead of PATH+warn — VERDICT -> CONFIRMED **feasible**.
+- pa-U3 — trim the 1541-skill `.agent/skills-catalog.md` surface — VERDICT -> CONFIRMED **feasible** (token hygiene).
+- pa-U4 — make the opus model-lane explicit policy — VERDICT -> CONFIRMED **feasible** (= rules UP-4 documentation half).
+
+## distributed-compute (CLAIM / 5 UPGRADE)
+- dc-1 — pure-Rust, no daemon, no network stack (0 reqwest/hyper/tonic/axum) — VERDICT -> CONFIRMED (finding-sourced; root `Cargo.toml` pure-Rust, `unsafe_code=deny`).
+- dc-2 — Lua/Luau zero presence (0 mlua/lua/luau/lune hits) — VERDICT -> CONFIRMED (finding-sourced grep).
+- dc-3 — RuVector is the only compute coupling + standalone blocker — VERDICT -> CONFIRMED (EXP-1).
+- dc-4 — no-C boundary: `rusqlite` is optional migration-import-only, never default — VERDICT -> CONFIRMED — `ledger/Cargo.toml:33` `legacy-sqlite` feature only; not in `default`/`v2`.
+- DC-1 — resolve RuVector standalone blocker — VERDICT -> CONFIRMED **feasible** (= A-U1).
+- DC-2 — define leaf-node proxy contract (mobile/Pi-Zero/ESP32) — VERDICT -> CONFIRMED **feasible** (additive; reuses MCP+work-order; no kernel network code).
+- DC-3 — native weave mesh binding (optional feature) — VERDICT -> QUALIFIED **feasible** — first live network/IPC dep; CONDITION: feature-gated, no-C, byte-identical offline fallback preserved (weave is pure-Rust).
+- DC-4 — enforce `allows_network`/`path_scope` cross-node egress/residency — VERDICT -> CONFIRMED **feasible** (pure local validation on data already in the envelope).
+- DC-5 — guardrail: no embedded/Lua/in-kernel network stack in handoff — VERDICT -> CONFIRMED **feasible** (protects no-C/no-downgrade invariant; ADR-only, zero deps).
+
+## autoresearch (CLAIM / 5 UPGRADE)
+- ar-1 — code auto-research is pull/event-driven via git-kb + `hf kb` seam + `handoff-index` (no resident daemon) — VERDICT -> CONFIRMED (finding-sourced; `hf/src/kb.rs`, `.kb/` present).
+- ar-2 — `handoff-drift` is the fail-closed invalidation engine (`exit(1)`→PreHandoff block) — VERDICT -> CONFIRMED (empirical) — `handoff-drift/src/lib.rs:676 exit(1) // hard-fail so PreHandoff (fail_mode=block) stops`.
+- ar-3 — advisory web gate (`cargo audit`, `ignore=[]`) runs on promotion, NOT per-PR (asymmetric) — VERDICT -> CONFIRMED (finding-sourced).
+- ar-4 — stale `.git/gitkb/code.db` incident caught + discarded this cycle — VERDICT -> CONFIRMED (finding-sourced; cartography integrity note).
+- U1 — git-kb index-staleness gate — VERDICT -> CONFIRMED **feasible** (additive check).
+- U2 — symmetric `cargo audit` per-PR — VERDICT -> CONFIRMED **feasible**.
+- U3 — scheduled research cadence — VERDICT -> CONFIRMED **feasible**.
+- U4 — align fleet currency bot (Renovate vs Dependabot) — VERDICT -> CONFIRMED **feasible**.
+- U5 — delete the last C dep (`rusqlite`/`legacy-sqlite`) — VERDICT -> QUALIFIED **feasible** — CONDITION: all fleet legacy ledgers migrated to redb first (else loses the import path); then `cargo tree -i rusqlite` empty in all feature sets.
+
+## filesystem-layout (CLAIM / 6 UPGRADE)
+- fs-1 — RuVector `../../` path deps break the portable-root residency mandate — VERDICT -> CONFIRMED (EXP-1).
+- fs-2 — `crates/{cli,core,runner,spec,tui}` duplicate-lineage; identical `rusty-idd-*` pkg names = collision on union — VERDICT -> CONFIRMED (verified pkg names + A-C9).
+- fs-3 (analyst correction) — `_workspace*` are gitignored ephemeral, NOT committed (inbound claim REFUTED by analyst) — VERDICT -> CONFIRMED (the correction is correct; routed as gitignore-hygiene).
+- fs-4 (analyst correction) — vendored syntect is at root `vendor/syntect/`, NOT `crates/tui/vendor/` (corrects graph.md wording) — VERDICT -> CONFIRMED (root `[patch.crates-io] syntect`; no `crates/tui/vendor/`). NOTE: graph.md/metrics "crates/tui/vendor/syntect" path label is imprecise; the syntect IS vendored, just at root.
+- fs-5 — `.idea/` (13 JetBrains files) committed = user→repo leak — VERDICT -> CONFIRMED (finding-sourced `git ls-files`).
+- fs-6 — `.agent/skills-catalog.md` (313K generated blob) + `intent-driven-template/`/`spike/` orphans = root clutter — VERDICT -> CONFIRMED (finding-sourced).
+- U1 — standalone-portable RuVector — VERDICT -> CONFIRMED **feasible** (= A-U1).
+- U2 — dedup `rusty-idd-*` crates to one canonical set — VERDICT -> CONFIRMED **feasible** (= A-U4; collision must resolve).
+- U3 — untrack `.idea/` — VERDICT -> CONFIRMED **feasible** (APPLY).
+- U4 — route the generated skills-catalog off the committed root — VERDICT -> CONFIRMED **feasible** (REGENERATE).
+- U5 — home/remove `intent-driven-template/` + `spike/` orphans — VERDICT -> CONFIRMED **feasible** (PROPOSE).
+- U6 — mark `schemas/*.schema.json` provenance (generated vs authored) — VERDICT -> CONFIRMED **feasible** (REGENERATE; golden-from-type gate).
+
+## union-with-rusty-idd (lineage + MERGE strategy)
+- union-1 — 95%+ shared lineage; handoff = hardened kernel-focused fork — VERDICT -> CONFIRMED (lineage), QUALIFIED on exact % — spec model files byte-identical; rusty-idd is the superset (config/external/knowledge/merge-tools + 8 extra CLI cmds); work-order originated in handoff (provenance comment). The "95%" aggregate is tool-derived.
+- union-2 — MERGE (fold rusty-idd CLI into handoff kernel; handoff north-star) — VERDICT -> QUALIFIED **feasible** — CONDITIONS that must hold before/at merge: (a) RuVector standalone resolved (A-U1, else the union cannot build at `$META_ROOT+handoff`); (b) `rusty-idd-*` pkg-name collision deduped (A-U4); (c) C-dep scan of rusty-idd `codex`/`knowledge` (syntect-onig / codegraph) — cycle-1 confirmed rusty-idd's only native surface is blake3, no C in the control path, so this passes but must be re-checked at land; (d) work-order seam converted from mirror to dependency (A-U3); (e) the filesystem `.handoff/tasks` JSON contract stays the fallback. Feasible under those conditions.
+- union-3 — Seam 2 (ledger read API) is MISSING and must be designed for the union — VERDICT -> CONFIRMED gap (= ts-5).
+
+## Tallies (handoff, cycle 2)
+
+- **Empirical experiments**: EXP-1 (RuVector blocker) CONFIRMED; EXP-2 (one-Ledger-per-feature + SHA3 pseudo-embeddings) CONFIRMED; EXP-3 (witness = SHAKE-256, not blake3+ed25519) CONFIRMED — the KEY CORRECTION. RED suite re-run standalone: 1 passed / 3 failed (true RED).
+- **CLAIM verdicts (all dimensions)**: CONFIRMED = 57, QUALIFIED = 3 (A-C7 rvf-crypto default-features correction; A-C9 exact-% aggregate; union-1 exact-% aggregate), REFUTED = 0 material analyst claims (the only refutations are the analyst's OWN correct refutations of inbound facts — `_workspace` not committed, syntect at root — which I confirm), INCONCLUSIVE = 0.
+- **UPGRADE feasibility (all dimensions)**: feasible = 39 total — CONFIRMED-feasible = 31, QUALIFIED-feasible = 8 (A-U2, A-U5, mem-U1, mem-U2, mem-U6, ts-U2, ts-U3, rules UP-2/UP-4, DC-3, ar-U5, union-2 — conditioned on RuVector resolution, no-C boundary, default-warn, or witnessed no-downgrade), **infeasible = 0**. No upgrade violates NO-C-in-trust-boundary, engine-first, or strict-upgrade-only; the filesystem `.handoff/` contract is preserved as fallback in every transport/binding upgrade.
+- **Headline gates**: (a) RuVector path-dep makes the union non-standalone — CONFIRMED EMPIRICALLY (manifest-load fails even for redb-store). (b) crates/* are shared-lineage forks, union=MERGE — CONFIRMED (lineage) / QUALIFIED-feasible (conditions). (c) handoff policy gates have real teeth (exit(1)) vs rusty-idd advisory — CONFIRMED EMPIRICALLY. (d) RVF semantic-recall dead (0 callers) + embeddings SHA3 not semantic — CONFIRMED EMPIRICALLY. (e) fail-OPEN hooks seam (block gates not bridged to Claude PreToolUse) — CONFIRMED EMPIRICALLY.
+- **Correction propagated**: the witness chain is SHAKE-256 hash-linked (SHA3-256 action hash), UNSIGNED — NOT "blake3+ed25519". blake3 is used only for `work-order` intent_lock. Any seed/trends/doc text saying "blake3+ed25519 witness chain" must be corrected (mem-U3).
+
+Only CONFIRMED + QUALIFIED + feasibility-passed rows above flow to the plan-architect.

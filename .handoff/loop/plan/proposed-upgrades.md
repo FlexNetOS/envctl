@@ -91,3 +91,93 @@ These are data-refresh actions the next cycle should run; no harness edit:
 - **No cross-harness force-apply** — L1–L4 are scoped to the planning-engineer harness this run stewarded
   (`harness_hub/harness/skills/plan-*` + `envctl/.claude/skills/planning-engineer`). Any value to other
   harnesses is theirs to adopt, not forced here (scope law).
+
+---
+
+# Cycle 2 (handoff / union) — routed harness upgrades
+
+Run: `fleet-convergence-first-run` · cycle 2 · target handoff (UNION with rusty-idd) · 2026-06-26.
+
+**OWNER CONTINUATION APPROVED, but harness edits remain PROPOSE-only this cycle** (owner reviews before
+unattended free-running). Every row below is recorded as a proposal with its risk tier and the
+apply-vs-propose policy that will govern it once free-running begins. Laws honored: **only ever
+strengthen/clarify a gate, never weaken one; fail-closed; when unsure, treat as structural and propose.**
+
+## Carry-forward (cycle 1 P1–P4)
+- **P1 — single-source artifact-name contract — APPLY-when-approved (now FIELD-VALIDATED).** Cycle 2
+  produced ALL gate-named graph splits + trends headers with **0 SendMessage reconciles**
+  (`reports/agent-run-ledger-handoff.md:9-23`) — the lesson works behaviorally; the durable skill-edit
+  (+ optional bundled `scripts/check-artifact-names.sh`) is still un-landed. **Recommend: APPLY first
+  thing once the owner enables free-running** (it has now demonstrated zero-regression value). Low-risk,
+  in-scope (skill checklist + helper); land via feature branch → PR → auto-merge + CLAUDE.md row.
+- **P2 — gate strengthen: promoted upgrades must carry a feasibility verdict — PROPOSE (still open).**
+  Cycle 2 *behaviorally* improved (all 39 upgrade rows carry feasible/infeasible verdicts,
+  `verdicts.md` tallies) but the **gate still doesn't enforce** it. Keep proposed; strengthen-only.
+- **P3 — dimension-flip authority — PROPOSE (behaviorally validated, still un-encoded).** Cycle 2
+  flipped 11/12 dims with per-dim verdict citations (`dimensions.md:20-32`); encode the flip-rule in
+  `plan-loop` + `plan-verifier` to lock it in. Clarifies verified-state authority; fail-closed.
+- **P4 — scale the DAG artifact, not the gate — PROPOSE (unchanged).** Representation-only; JSON stays
+  exhaustive + gated.
+
+## P5 — Clean-clone / standalone-build gate (lesson L6) — **PROPOSE**
+**Problem (CLASS):** a "standalone / portable-root residency" claim passes a crate-graph read but a
+`../../sibling` path-dep fails the instant the repo is cloned alone — EXP-1 proved the union is
+non-standalone (`verdicts.md:91`), the plan's #1 blocker (`handoff-plan.md:18,208`). The harness had no
+*standing* empirical residency check; this cycle the verifier ran it ad-hoc.
+**Route:** (a) `plan-verifier` agent def — make a clean-clone / standalone `cargo build` a STANDING
+experiment for any target that claims standalone residency (resolve path-deps in a sibling-free scratch
+clone; record PASS/FAIL empirically); (b) a CI + `plan-artifact-gate.sh` check that fails closed when a
+target asserting standalone residency carries an unresolved cross-repo path-dep.
+**Risk:** touches a **gate/method** → PROPOSE by law. Pure **strengthening** — it only ADDS an empirical
+residency assertion; it can never let a today-passing target through. Never weakens.
+**Apply-vs-propose:** PROPOSE — gate/verifier-method change, owner approval required even after free-running.
+**Acceptance:** the gate fails closed when a "standalone" target has an unresolved `../../` path-dep; a
+genuinely standalone target (clean-clone `cargo build --workspace` green) passes.
+
+## P6 — Cross-repo schema-drift gate for mirrored contracts (lesson L7) — **PROPOSE**
+**Problem (CLASS):** when a port-and-merge plan finds a **contract mirror** (a file-copied schema, not a
+dependency), the two repos can silently diverge and the consumer inherits any fail-open through the
+mirror — `rusty-idd`'s `work-order` mirrors handoff's `task.schema.json` (`verdicts.md:110`, A-C13), and
+the union inherits the fail-open loader through it (`verdicts.md:159`, ts-3). ts-U4 (golden
+`task_schema_json` parity) is the fix.
+**Route:** `rust-port-merge` / `cross-repo-referencer` SKILL — when a mirrored cross-repo contract is
+detected, REQUIRE a differential-golden drift artifact (capture both sides' schema, diff, fail on
+mismatch) before the merge is planned as feasible.
+**Risk:** strengthens the merge-planning method (adds a required drift artifact) → PROPOSE. Never
+weakens — it only adds a required check; absent the artifact the merge stays NOT-feasible (fail-closed).
+**Cross-harness note:** `rust-port-merge`/`cross-repo-referencer` are NOT the planning-engineer harness
+this run stewarded — this is **proposed TO that harness**, never force-applied here (scope law).
+**Acceptance:** a planned union/merge that finds a mirrored contract carries a golden parity artifact;
+the merge is not feasible-rated without it.
+
+## P7 — Source-derive security-/architecture-critical framing (lesson L5 — recurred, upgrade-now) — **PROPOSE**
+**Problem (CLASS):** inherited framing (seed / doc / trends / prior-cycle) about a crypto/safety/contract
+mechanism is an unverified claim until read at the source line. This cycle the inbound "blake3+ed25519
+witness chain" framing was REFUTED to SHAKE-256-unsigned (`verdicts.md:93`). The *verifier-corrects-
+inherited-framing* class also fired in cycle 1 (merge.rs path + spec_* count), so it **recurs → upgrade-
+now** per the escalation rule.
+**Route:** (a) `plan-verifier` agent def — a security-/architecture-critical claim (crypto, unsafe,
+trust-boundary, signing, schema-contract) must be CONFIRMED from a cited source line, never from a seed/
+doc/trends restatement; mark INHERITED-UNVERIFIED until source-derived; (b) `plan-trend-research` SKILL —
+do not propagate seed/doc crypto/safety framing into findings without a source check.
+**Risk:** strengthens the verifier method (adds a required source-derivation for a claim class) →
+PROPOSE. Never weakens — it raises the bar for a sensitive claim class only.
+**Apply-vs-propose:** PROPOSE — verifier-method change. (The `plan-trend-research` half is the low-risk
+in-scope skill-tightening class and could be APPLY-when-approved; the verifier-method half is PROPOSE.)
+**Acceptance:** next cycle, any crypto/safety/trust-boundary claim in a finding cites a source line or is
+marked INHERITED-UNVERIFIED; no inherited framing reaches the plan unverified.
+
+## Coverage follow-ups (REGENERATE / data-refresh — not harness changes)
+- **R4** — author ts-U2 (handoff-intake refusal) + ts-U3 (ledger read-API contract) as COMPILING RED
+  **after A-U1 resolves the RuVector wall** — both are blocked in-tree today (`verdicts.md:165-166`).
+- **R5** — design the missing ledger read API (Seam 2 / union-3) before the union DONE
+  (`verdicts.md:161`).
+- **R6** — measure the deferred `performance` dimension deltas (build-time/binary-size/runtime) so
+  `handoff/performance` can flip from `[~]` (`dimensions.md:23`).
+
+## Not done (and why)
+- **No auto-apply, no PR this cycle** — owner reviews before unattended free-running (continuation brief).
+- **No gate weakening anywhere** — P2/P5/P6/P7 only strengthen/clarify; any "loosen the gate so cycles
+  pass" framing is refused by default (none proposed).
+- **No cross-harness force-apply** — P6 is proposed TO `rust-port-merge`/`cross-repo-referencer`, not
+  applied here; L5–L7 routing stays scoped to the harness this run stewarded (scope law).

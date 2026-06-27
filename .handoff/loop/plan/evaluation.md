@@ -97,3 +97,88 @@ contract gap worth closing.
   The only repeatable friction is a **producer↔gate artifact-naming drift** that fired twice in one cycle.
 - Mined lessons: **4** (see `LESSONS.md`). Proposed upgrades: **4**, all routed, **none auto-applied**
   (first-run brief §8). No gate is weakened anywhere — two proposals *strengthen* the gate.
+
+---
+
+## Cycle 2 (handoff / union) — self-eval scorecard (evolution-steward)
+
+Run: `fleet-convergence-first-run` · cycle **2** · target **handoff** (continuity kernel) planned as the
+**UNION with rusty-idd** · 2026-06-26 (UTC). Marker: **scorecard / self-eval / evolution**.
+Mode: owner approved continuation but **PROPOSE-only for harness edits this cycle** (record
+APPLY-when-approved); the owner reviews before unattended free-running. This steward
+**evaluates + mines + routes + PROPOSES only** — no harness edit auto-applied or PR'd.
+
+Evidence base: `loop_state.md`, `findings/verdicts.md` (## handoff, cycle 2 — lines 79–214),
+`findings/union-handoff-rusty-idd.md`, `reports/handoff-plan.md`, `reports/union-plan-handoff-rusty-idd.md`,
+`reports/agent-run-ledger-handoff.md`, `dimensions.md:20–32`, `HANDOFF.md`.
+
+### Scorecard — four axes
+
+| axis | grade | one-line |
+|---|---|---|
+| Friction | **A** | Reconcile load **LOW** — every lane wrote **gate-named artifacts directly** (cycle-1 lesson **L1 applied**); `reports/agent-run-ledger-handoff.md` records **0 SendMessage reconcile round-trips** (cycle 1 had 2 of the same class). L2 flip-rule also held: `dimensions.md` flips each handoff dim with a per-dim verdict citation. |
+| Gate quality | **A** | Verifier tally **57 CONFIRMED / 3 QUALIFIED / 0 REFUTED** and it ran **3 empirical experiments** (`cargo build`), incl. correcting the inherited **blake3+ed25519 → SHAKE-256-unsigned** witness-chain framing. Adversarial, not a rubber stamp; 0 false-blocks; every QUALIFIED is a strengthening condition. |
+| Coverage | **B+** | handoff/`performance` left `[~]` (fail-closed — no measured delta); below-leaf tests **genuinely blocked** by the RuVector path-dep wall (ts-U2/ts-U3 can't author a COMPILING RED in-tree); ledger read-API (Seam 2 / union-3) **unbuilt**. All recorded, none silent — but the debt is real and partly external. |
+| Human-walls | **A** | The RuVector resolution (A-U1) and the MERGE (union steps 1+2) are **genuine SUPERVISED owner walls** — large blast, `rusty-idd-*` pkg-name collision, witness-crypto move. None avoidable; correctly fail-closed. |
+
+### Friction (A) — L1 validated in the field
+- `reports/agent-run-ledger-handoff.md:9-23` lists 14 lanes, each emitting the **exact gate-required
+  names** (`graph/handoff.{symbols,callgraph,metrics}.json`, `research/handoff.trends.md` with its
+  required headers). **No lane was resumed via SendMessage to rename an artifact** — the cycle-1
+  friction CLASS (L1) did **not** recur. The behavioral fix worked even though the durable skill edit
+  (P1) is still APPLY-when-approved. This is the strongest signal of the cycle.
+- L2 (flip authority) also held behaviorally: `dimensions.md:20-32` flips 11/12 handoff dims (+ union)
+  to `[x]`, each citing its verifier verdict; the single `[~]` (`performance`, :23) carries a one-line
+  fail-closed reason. Cycle-1's "6 dims left `[~]` despite CONFIRMED claims" did not repeat.
+
+### Gate quality (A) — 57 CONFIRMED / 3 QUALIFIED / 0 REFUTED + 3 empirical experiments
+- **Empirical, not static.** `verdicts.md:89-93` records three `cargo`-level experiments: EXP-1 proved
+  the RuVector path-dep fails the workspace at **manifest-load** (`cargo build -p ledger` AND
+  `--no-default-features --features redb-store` both fail) — the union is provably non-standalone;
+  EXP-2 proved exactly one public `Ledger` per feature set + SHA3-256 pseudo-embeddings; EXP-3 is the
+  **KEY CORRECTION** — the witness chain is `shake256_256` (`RuVector/.../witness.rs:74`), UNSIGNED
+  (`ledger/src/v1.rs:20` imports no `sign`), NOT blake3+ed25519. blake3 is used only for
+  `work-order::compute_intent_lock`. Any seed/doc/trends text saying "blake3+ed25519 witness chain" is
+  REFUTED and the correction is propagated (mem-U3).
+- **Not a rubber stamp despite 0 REFUTED.** The 3 QUALIFIED are precise: A-C7 corrects "rvf-crypto
+  default-features=false" (ledger's `rvf-crypto` ships `ed25519` ON; the no-C conclusion still holds);
+  A-C9/union-1 downgrade the tool-derived "95%" aggregate to QUALIFIED while CONFIRMING the
+  fork/superset/byte-identical facts. The RED suite was **re-run standalone** (`ts-RED`,
+  `verdicts.md:163`): 1 passed / 3 failed — a true RED, not an exit-0 fail-open.
+- **0 false-blocks; gate only strengthens.** Every QUALIFIED-feasible upgrade (A-U2, A-U5, mem-U1/2/6,
+  ts-U2/U3, UP-2/4, DC-3, ar-U5, union-2) carries a *condition* (RuVector-resolve / no-C boundary /
+  default-warn-first / witnessed no-downgrade), never a relaxation. `infeasible = 0`.
+
+### Coverage (B+) — what was left, all recorded
+- **handoff/performance `[~]`** (`dimensions.md:23`) — fail-closed: only perf-adjacent verdicts
+  (mem-U2/RVF write-amp) are QUALIFIED with magnitude unmeasured; no measured build-time/binary-size/
+  runtime delta. Correct posture, real gap.
+- **Below-leaf tests blocked by the RuVector wall** (`verdicts.md:165-166`, `union-plan…:156`): ts-U2
+  (handoff-intake refusal) and ts-U3 (ledger read-API contract) cannot produce a COMPILING RED in-tree
+  because the whole workspace fails manifest-load until A-U1. This is an **external** blocker, not a
+  harness miss — but it caps what the test lane could verify this cycle.
+- **Ledger read API (Seam 2 / union-3) is unbuilt** (`verdicts.md:161`, union-3) — a CONFIRMED design
+  gap the union must close; recorded, not silently dropped.
+- 11/12 handoff dims + the union dim verified; the completeness sweep ran (`reports/codemap-handoff.md`).
+  Honest, but the blocked-test debt is genuine → B+ not A.
+
+### Human-walls (A) — each genuine SUPERVISED
+- **A-U1 (resolve RuVector path-dep)** — `handoff-plan.md:165` tier **SUPERVISED**, blast = entire kernel
+  (`Ledger.open` 120); moves witness-crypto vendoring. The #1 action of the whole plan; correctly walled.
+- **MERGE steps 1+2** — `union-plan…:66,80,150` both **SUPERVISED**: large blast, `rusty-idd-*`
+  pkg-name collision (A-U4), witness-crypto move. `[H]` owner-walled merge in Diagram 2
+  (`handoff-plan.md:101,107`).
+- The 3 decision-findings (north-star home, run-from/residency/transport, harness_hub audience —
+  `HANDOFF.md`) remain owner verdicts by design, not pre-answered. All walls are the structural/
+  destructive class that **must** fail closed to a human. None avoidable.
+
+### Headline (cycle 2)
+- 4-axis: **Friction A · Gate-quality A · Coverage B+ · Human-walls A** — a markedly stronger cycle than
+  cycle 1, driven by cycle-1 lessons **L1 + L2 paying off in the field** (0 reconciles; clean per-dim
+  flips) and a verifier that went **empirical** (3 cargo experiments, the SHAKE-256 correction).
+- Mined lessons this cycle: **3** (L5–L7; see `LESSONS.md`). The framing-vs-source correction CLASS
+  **recurred** (cycle-1 verdict corrections → cycle-2 SHAKE-256) → L5 escalates to upgrade-now.
+- Proposed upgrades: cycle-1 **P1–P4 carried** (P1 now field-validated) + **3 new** (P5 clean-clone
+  standalone-build gate, P6 cross-repo schema-drift gate, P7 source-derive security-critical framing).
+  **None auto-applied** (PROPOSE-only this cycle). **No gate weakened anywhere** — every new proposal
+  strengthens or clarifies a gate, fail-closed.
