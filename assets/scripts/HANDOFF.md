@@ -64,7 +64,7 @@ buildah, skopeo, uidmap, slirp4netns). **No apt nodejs/npm** (node comes via Bun
 
 **Wizard (first login, as user w/ sudo):** Nerd Fonts; **Bun** (JS runtime +
 pkg mgr) with `node`→bun symlink (node-compat); AI CLIs — Claude Code, Kimi,
-Devin (native curl installers), **Codex + Gemini via `bun install -g`**; Rust via
+Devin (native curl installers), **Codex via envctl Rust release/toolchain**, **Gemini via `bun install -g`**; Rust via
 rustup; **rtk** (cargo); **CUDA 13.3 + nvidia-open 610** from NVIDIA's ubuntu2604
 repo (`cuda-keyring` → `cuda-toolkit-13-3 nvidia-open` + llvm-21/clang-21 +
 libclang-{21,cpp21,common-21}-dev); **cuda-oxide** (`cargo install --git
@@ -89,7 +89,7 @@ so nushell + mise come from inside the yazelix runtime (not installed separately
    runtime) and uses OPEN kernel modules (required for consumer Blackwell). It is
    NOT Canonical-signed → only safe unattended because Secure Boot is off.
 2. **node via Bun** (user-corrected me): Bun runs in node-compat mode when invoked
-   as `node`; apt nodejs removed; Codex/Gemini installed via `bun install -g`.
+   as `node`; apt nodejs removed; Gemini installed via `bun install -g`; Codex is the envctl-managed Rust release/toolchain path.
 3. **PyTorch kept** (verified no conflict): cu132 channel ships torch 2.12.0 +
    torchvision 0.27.0 with **cp314** (Python 3.14 — 26.04's version) x86_64
    manylinux_2_28 wheels incl. sm_120; bundles its own CUDA 13.2 runtime in the

@@ -10,6 +10,7 @@
 use crate::component::{Component, HookRunner, Phase};
 use crate::error::{run_phase, RunContext};
 use crate::event::{Event, EventSink, Stream};
+use crate::layout::MetaLayout;
 use crate::model::{
     AddRepoSpec, OpResult, OpStatus, Registry, ResetGates, RunPlan, RunSummary, Wiring,
 };
@@ -408,29 +409,23 @@ fn has_system_scope(w: &Wiring) -> bool {
 /// was undetectable. Now each owned footprint is conservatively probed.
 fn wiring_present(comp: &Component) -> bool {
     let w = &comp.wiring;
+    let layout = MetaLayout::from_env_or_default();
 
     let shell_rc_ok = w.shell_rc.iter().all(|blk| {
-        let file = match blk.file.strip_prefix("~/") {
-            Some(rest) => match std::env::var("HOME") {
-                Ok(h) => format!("{h}/{rest}"),
-                Err(_) => return false,
-            },
-            None => blk.file.clone(),
-        };
+        let file = layout.expand_meta_path(&blk.file);
+        // Suffix-agnostic: wizard-written blocks and envctl-written blocks both
+        // satisfy the same marker. Keep this in sync with detect.rs.
         std::fs::read_to_string(&file)
             .map(|t| t.contains(&format!("BEGIN {}", blk.marker)))
             .unwrap_or(false)
     });
 
     // path_entries are realized into the engine-owned "envctl PATH" block in
-    // ~/.bashrc (see wiring::path_block); probe for that marker.
+    // $META_ROOT/.bashrc (see wiring::path_block); probe for that marker.
     let path_ok = w.path_entries.is_empty() || {
-        match std::env::var("HOME") {
-            Ok(h) => std::fs::read_to_string(format!("{h}/.bashrc"))
-                .map(|t| t.contains("BEGIN envctl PATH"))
-                .unwrap_or(false),
-            Err(_) => false,
-        }
+        std::fs::read_to_string(layout.meta_root().join(".bashrc"))
+            .map(|t| t.contains("BEGIN envctl PATH"))
+            .unwrap_or(false)
     };
 
     // System-scope footprints: each is present iff its on-disk target exists
@@ -994,4 +989,76 @@ fn now_epoch() -> u128 {
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_nanos())
         .unwrap_or(0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::{ShellRcBlock, Wiring};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn wiring_present_probes_meta_root_bashrc_not_os_home() {
+        let root = temp_root("executor-wiring-meta-root");
+        let meta = root.join("meta");
+        let home = root.join("home");
+        std::fs::create_dir_all(&meta).unwrap();
+        std::fs::create_dir_all(&home).unwrap();
+        std::fs::write(
+            meta.join(".bashrc"),
+            "# >>> BEGIN envctl PATH (added by envctl) >>>\n# <<< END envctl PATH <<<\n# >>> BEGIN meta toolchain path (added by envctl) >>>\neval \"$(envctl env --toolchains)\"\n# <<< END meta toolchain path <<<\n",
+        )
+        .unwrap();
+        std::fs::write(home.join(".bashrc"), "").unwrap();
+
+        let old_meta = std::env::var_os("META_ROOT");
+        let old_home = std::env::var_os("HOME");
+        std::env::set_var("META_ROOT", &meta);
+        std::env::set_var("HOME", &home);
+
+        let comp = Component {
+            id: "bun".into(),
+            name: "bun".into(),
+            description: String::new(),
+            requires: Vec::new(),
+            gpu_required: false,
+            destructive: false,
+            detect: None,
+            install: None,
+            verify: None,
+            fix: None,
+            remove: None,
+            wiring: Wiring {
+                path_entries: vec!["$META_ROOT/usr/bin".into()],
+                shell_rc: vec![ShellRcBlock {
+                    file: "$META_ROOT/.bashrc".into(),
+                    marker: "meta toolchain path".into(),
+                    content: "eval \"$(envctl env --toolchains)\"".into(),
+                }],
+                ..Default::default()
+            },
+            guards: Vec::new(),
+        };
+
+        assert!(wiring_present(&comp));
+
+        restore_env("META_ROOT", old_meta);
+        restore_env("HOME", old_home);
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    fn temp_root(name: &str) -> std::path::PathBuf {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        std::env::temp_dir().join(format!("envctl-{name}-{}-{nanos}", std::process::id()))
+    }
+
+    fn restore_env(key: &str, value: Option<std::ffi::OsString>) {
+        match value {
+            Some(value) => std::env::set_var(key, value),
+            None => std::env::remove_var(key),
+        }
+    }
 }
