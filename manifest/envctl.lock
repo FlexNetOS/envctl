@@ -400,8 +400,13 @@ content_hash = "006fa73918596e64"
 requires = []
 resolved = ""
 
+[components.odysseus]
+content_hash = "0319640fb3ff71a9"
+requires = []
+resolved = ""
+
 [components.podman]
-content_hash = "c810446bb0fb4cda"
+content_hash = "919860bc5ba817c3"
 requires = []
 resolved = ""
 
