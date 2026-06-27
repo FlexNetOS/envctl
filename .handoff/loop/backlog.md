@@ -338,26 +338,38 @@ FIRST** (never relocate to older), (4) smoke-test, (5) archive installed copy (t
 delete), (6) symlink `~/.local/bin/<tool>`→meta build, (7) re-verify + ROLLBACK on failure, (8)
 verify env health.
 
-- [~] **TASK-0078 (P0) — real-home dotfile relocation inventory + safe bridge automation (PR #290/#291
-  MERGED; shell-dotfile bridge slice in progress):** Current loop target for the owner goal "walk
-  every dot file/folder under `/home/drdave` and relocate/bridge surgically into meta." PR #290
+- [~] **TASK-0078 (P0) — real-home dotfile relocation inventory + safe bridge automation (PR #290/#291/#293
+  MERGED; bashrc supervised-merge automation in progress):** Current loop target for the owner goal
+  "walk every dot file/folder under `/home/drdave` and relocate/bridge surgically into meta." PR #290
   hardened the read-only audit into a machine-readable `--inventory` TSV that records every top-level
   real-home dot entry with `type/state/target_class/canonical_target/action/apply_safe`, while keeping
   mutation limited to proven-safe bridges (`~/.local`, `.local/bin`, canonical `.gitconfig`). PR #291
   added `--inventory-summary` TSV so the loop can gate class-by-class migrations from stable counts.
-  Live pre-shell evidence 2026-06-27: `dot_entries=78`, `warnings=72`, `changed=0`; summary counts
-  were `app-config-state=36`, `history-or-backup=17`, `toolchain-state=9`, `sensitive=5`,
-  `shell-dotfile=5`, `managed-dotfile=3`, `cache=1`, `bridge=1`, `already-meta=1`. Current shell
-  slice adds explicit opt-in `--apply-shell-dotfiles` behavior plus TDD coverage: only duplicate/safe
-  shell dotfiles are canonicalized into `$META_ROOT` and bridged; differing canonical files remain
-  owner-supervised. Live apply evidence 2026-06-27: relocated/bridged `.bash_logout`, `.profile`,
-  `.zshenv`, `.zshrc` into `/home/drdave/Desktop/meta`; `changed=4`. Current post-apply
-  verification shows the shell class reduced to one remaining item: `shell-dotfile=1`,
-  `already-meta=16`, `app-config-state=35`, `history-or-backup=17`, `sensitive=5`,
-  `managed-dotfile=2`, `cache=1`, `bridge=1`. The remaining shell item is `.bashrc` with action
-  `owner-supervised-merge-and-bridge` because real-home and canonical meta copies differ; next slices
-  continue class-by-class (toolchains/meta-managed state, app config, sensitive stores, history/archive)
-  and keep owner-supervised classes non-mutating until a safe per-class component/bridge is proven.
+  PR #293 added explicit opt-in `--apply-shell-dotfiles` behavior plus TDD coverage: only
+  duplicate/safe shell dotfiles are canonicalized into `$META_ROOT` and bridged; differing canonical
+  files remain owner-supervised. Live apply evidence 2026-06-27: relocated/bridged `.bash_logout`,
+  `.profile`, `.zshenv`, `.zshrc` into `/home/drdave/Desktop/meta`; `changed=4`; PR #293 is
+  MERGED (`04b9e8f`).
+
+  Current bashrc slice adds `--shell-dotfile-conflict-report PATH`, a supervised merge TSV with
+  `dot_entry/real_path/canonical_target/action/apply_safe/real_sha256/canonical_sha256/real_lines/`
+  `canonical_lines/recommendation` so non-identical shell dotfiles have durable merge evidence instead
+  of an ambiguous warning. Live conflict evidence before merge: `.bashrc` action
+  `owner-supervised-merge-and-bridge`, real SHA `ecc4dba1…` (182 lines), canonical SHA `0de115…`
+  (32 lines), recommendation `merge-canonical-then-bridge`. Live apply evidence 2026-06-27: archived
+  originals under `/home/drdave/Desktop/meta/var/lib/envctl/real-home-dotfile-migration/`
+  `20260627T112120Z/`, merged the Ubuntu interactive bash defaults with meta-native env/toolchain
+  blocks into `/home/drdave/Desktop/meta/.bashrc`, and bridged `/home/drdave/.bashrc` to that meta
+  file. Runtime verification: `bash -n /home/drdave/Desktop/meta/.bashrc`; non-login interactive
+  source smoke resolves `META_ROOT=/home/drdave/Desktop/meta`, `envctl` from
+  `/home/drdave/Desktop/meta/usr/bin/envctl`, `SECRETCTL_SOCK=/run/user/1000/env-ctl/secretd.sock`,
+  and `readlink -f /home/drdave/.bashrc` inside `$META_ROOT`. Post-apply audit 2026-06-27:
+  `dot_entries=78`, `warnings=59`, `changed=0`; summary counts are `already-meta=17`,
+  `app-config-state=35`, `history-or-backup=17`, `sensitive=5`, `managed-dotfile=2`, `cache=1`,
+  `bridge=1`; **no remaining `shell-dotfile` class**, and the shell conflict report contains only
+  the header. Next slices continue class-by-class (managed dotfiles such as `.config`/agent state,
+  app config, sensitive stores, history/archive, cache/bridge) and keep owner-supervised classes
+  non-mutating until a safe per-class component/bridge is proven.
 - [x] `envctl env` — discover meta-root via `.meta.yaml` marker (`engine::dashboard::locate_meta_file`),
   emit `export META_ROOT=…` + meta tool dirs on PATH; `--toolchains`/`--materialize` (merged from
   feat/envctl-env, 2026-06-12).
