@@ -146,6 +146,7 @@ mkdir -p \
   "$mig_home/.fxapp-gh-profile/Default/ClientCertificates" \
   "$mig_home/.fxapp-gh-profile/Default/Sessions" \
   "$mig_home/.fxapp-gh-profile/Default/Local Storage" \
+  "$mig_home/.forge/cache/mcp_cache" \
   "$mig_home/.ruvector/models/all-MiniLM-L6-v2" \
   "$mig_home/.repowire" \
   "$mig_home/.nv/ComputeCache/0/7" \
@@ -226,6 +227,13 @@ printf 'session fixture\n' >"$mig_home/.fxapp-gh-profile/Default/Sessions/Sessio
 printf 'client cert fixture\n' >"$mig_home/.fxapp-gh-profile/Default/ClientCertificates/cert.db"
 chmod 700 "$mig_home/.fxapp-gh-profile" "$mig_home/.fxapp-gh-profile/Default" "$mig_home/.fxapp-gh-profile/Default/ClientCertificates" "$mig_home/.fxapp-gh-profile/Default/Sessions" "$mig_home/.fxapp-gh-profile/Default/Local Storage"
 chmod 600 "$mig_home/.fxapp-gh-profile/Local State" "$mig_home/.fxapp-gh-profile/Default/Preferences" "$mig_home/.fxapp-gh-profile/Default/Login Data" "$mig_home/.fxapp-gh-profile/Default/Cookies" "$mig_home/.fxapp-gh-profile/Default/Sessions/Session_1" "$mig_home/.fxapp-gh-profile/Default/ClientCertificates/cert.db"
+printf 'forge history fixture\n' >"$mig_home/.forge/.forge_history"
+printf '{ "token": "redacted-fixture" }\n' >"$mig_home/.forge/.credentials.json"
+printf 'sqlite-state\n' >"$mig_home/.forge/.forge.db"
+printf 'mcp-cache\n' >"$mig_home/.forge/cache/mcp_cache/index"
+chmod 775 "$mig_home/.forge" "$mig_home/.forge/cache" "$mig_home/.forge/cache/mcp_cache"
+chmod 600 "$mig_home/.forge/.forge_history" "$mig_home/.forge/.credentials.json"
+chmod 644 "$mig_home/.forge/.forge.db" "$mig_home/.forge/cache/mcp_cache/index"
 printf '{"embedding":"state"}\n' >"$mig_home/.ruvector/intelligence.json"
 printf 'tokenizer\n' >"$mig_home/.ruvector/models/all-MiniLM-L6-v2/tokenizer.json"
 printf 'onnx-model\n' >"$mig_home/.ruvector/models/all-MiniLM-L6-v2/model.onnx"
@@ -275,6 +283,7 @@ grep -qx $'.n8n-claude-bridge\tdirectory\treal-home-state\tapp-config-state\t'"$
 grep -qx $'.pki\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/pki\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.lane\tdirectory\treal-home-state\tsensitive\t\towner-supervised-vault-or-bridge\tno' "$tmp/app-config-inventory.tsv"
 grep -qx $'.fxapp-gh-profile\tdirectory\treal-home-state\tsensitive\t\towner-supervised-vault-or-bridge\tno' "$tmp/app-config-inventory.tsv"
+grep -qx $'.forge\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/forge\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.ruvector\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/ruvector\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.repowire\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/state/repowire\tmigrate-dir-to-meta-state-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.nv\tdirectory\treal-home-state\tcache\t'"$mig_meta"$'/.local/cache/nvidia\tmigrate-dir-to-meta-cache-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
@@ -362,6 +371,10 @@ if awk -F '\t' '$1 == ".lane" { found=1 } END { exit !found }' "$tmp/unknown-app
 fi
 if awk -F '\t' '$1 == ".fxapp-gh-profile" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
   echo "unexpected unknown app-config report row for sensitive .fxapp-gh-profile" >&2
+  exit 1
+fi
+if awk -F '\t' '$1 == ".forge" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
+  echo "unexpected unknown app-config report row for allow-listed .forge target" >&2
   exit 1
 fi
 if awk -F '\t' '$1 == ".ruvector" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
@@ -578,6 +591,24 @@ test "$(stat -c %a "$mig_meta/.local/share/pki/nssdb/key4.db")" = "600"
 
 "$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/pki-post.tsv" --inventory-summary "$tmp/pki-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/pki-post.out" 2>"$tmp/pki-post.err"
 grep -qx $'.pki	symlink	already-meta	already-meta	'"$mig_meta"$'/.local/share/pki	none	n/a' "$tmp/pki-post.tsv"
+
+"$root/scripts/audit-meta-local-paths.sh" --migrate-dot .forge --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-forge-dry.out" 2>"$tmp/migrate-forge-dry.err"
+grep -q 'DRY-RUN: would move .*\.forge to .*\.local/share/forge' "$tmp/migrate-forge-dry.out"
+test -d "$mig_home/.forge"
+test ! -e "$mig_meta/.local/share/forge"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .forge --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-forge.out" 2>"$tmp/migrate-forge.err"
+test "$(readlink -f "$mig_home/.forge")" = "$mig_meta/.local/share/forge"
+grep -Fqx 'forge history fixture' "$mig_meta/.local/share/forge/.forge_history"
+grep -Fqx '{ "token": "redacted-fixture" }' "$mig_meta/.local/share/forge/.credentials.json"
+grep -Fqx 'sqlite-state' "$mig_meta/.local/share/forge/.forge.db"
+grep -Fqx 'mcp-cache' "$mig_meta/.local/share/forge/cache/mcp_cache/index"
+test "$(stat -c %a "$mig_meta/.local/share/forge")" = "775"
+test "$(stat -c %a "$mig_meta/.local/share/forge/.credentials.json")" = "600"
+test "$(stat -c %a "$mig_meta/.local/share/forge/.forge.db")" = "644"
+
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/forge-post.tsv" --inventory-summary "$tmp/forge-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/forge-post.out" 2>"$tmp/forge-post.err"
+grep -qx $'.forge	symlink	already-meta	already-meta	'"$mig_meta"$'/.local/share/forge	none	n/a' "$tmp/forge-post.tsv"
 
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .ruvector --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-ruvector-dry.out" 2>"$tmp/migrate-ruvector-dry.err"
 grep -q 'DRY-RUN: would move .*\.ruvector to .*\.local/share/ruvector' "$tmp/migrate-ruvector-dry.out"
@@ -869,6 +900,22 @@ fi
 test -f "$pki_bad_home/.pki"
 test ! -e "$pki_bad_meta/.local/share/pki"
 grep -q -- '--migrate-dot .pki: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-pki-file.err"
+
+forge_bad_meta="$tmp/forge-bad-meta"
+forge_bad_home="$tmp/forge-bad-home"
+mkdir -p "$forge_bad_meta/.local" "$forge_bad_meta/envctl/home" "$forge_bad_home"
+printf '# managed gitconfig\n' >"$forge_bad_meta/envctl/home/.gitconfig"
+ln -s "$forge_bad_meta/envctl/home/.gitconfig" "$forge_bad_meta/.gitconfig"
+ln -s "$forge_bad_meta/.gitconfig" "$forge_bad_home/.gitconfig"
+ln -s "$forge_bad_meta/.local" "$forge_bad_home/.local"
+printf 'not a directory\n' >"$forge_bad_home/.forge"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .forge --meta-root "$forge_bad_meta" --real-home "$forge_bad_home" --envctl-home-source "$forge_bad_meta/envctl/home" >"$tmp/migrate-forge-file.out" 2>"$tmp/migrate-forge-file.err"; then
+  echo "expected --migrate-dot .forge to fail closed for non-directory source" >&2
+  exit 1
+fi
+test -f "$forge_bad_home/.forge"
+test ! -e "$forge_bad_meta/.local/share/forge"
+grep -q -- '--migrate-dot .forge: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-forge-file.err"
 
 ruvector_bad_meta="$tmp/ruvector-bad-meta"
 ruvector_bad_home="$tmp/ruvector-bad-home"
