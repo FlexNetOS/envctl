@@ -32,7 +32,7 @@ grep -q '^\[plugins\."harness@harness-marketplace"\]' "$C" || exit 1
 grep -q '^enabled = true' "$C" || exit 1
 grep -q '^default_permissions = "meta-workspace"' "$C" || exit 1
 for a in meta-worker pr-explorer reviewer docs-researcher codex-baseline-researcher; do [ -f "$M/.local/share/codex/agents/$a.toml" ] || { echo "missing agent: $a"; exit 1; }; done
-for slug in gpt-5.5 gpt-5.4-mini gpt-5.4 gpt-5.3-codex-spark gpt-5.6-sol gpt-5.6-terra gpt-5.6-luna; do grep -q '"slug": '"\"$slug\"" "$M/.local/share/codex/model-catalog.json" || { echo "missing model catalog slug: $slug"; exit 1; }; done
+for slug in gpt-5.5 gpt-5.4-mini gpt-5.4-nano gpt-5.4 gpt-5.3-codex-spark gpt-5.6-sol gpt-5.6-terra gpt-5.6-luna; do grep -q '"slug": '"\"$slug\"" "$M/.local/share/codex/model-catalog.json" || { echo "missing model catalog slug: $slug"; exit 1; }; done
 for var in FXN_AGENT_COMMUNICATION FXN_AGENT_TEAM_SWARM FXN_AGENT_TEAM_SWARM_MODEL_TAGS FXN_CODEX_MODEL_SOL FXN_CODEX_MODEL_TERRA FXN_CODEX_MODEL_LUNA FXN_CODEX_REMOTE_CONTROL; do grep -q "export $var=" "$M/.codex/hooks/with-meta-env.sh" || { echo "missing hook env var: $var"; exit 1; }; done
 CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M/usr/bin/codex" plugin list | grep -q 'meta@flexnetos-codex  installed, enabled' || exit 1
 CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M/usr/bin/codex" plugin list | grep -q 'harness@harness-marketplace  installed, enabled' || exit 1
@@ -253,9 +253,10 @@ def model_entry(slug, display_name, description, context_window=4000000, priorit
     }
 (home / 'model-catalog.json').write_text(json.dumps({'models': [
     model_entry('gpt-5.5', 'GPT-5.5', 'Current recommended OpenAI Codex/API model for complex coding, research, and tool-heavy workflows.', priority=0, fast=True),
-    model_entry('gpt-5.4-mini', 'GPT-5.4 mini', 'Fast OpenAI model for lighter coding tasks and subagents.', context_window=1000000, priority=1, reasoning=('low','medium','high')),
-    model_entry('gpt-5.4', 'GPT-5.4', 'OpenAI GPT-5 family model retained for compatibility and explicit routing.', priority=2),
-    model_entry('gpt-5.3-codex-spark', 'GPT-5.3 Codex Spark', 'Research-preview Codex model optimized for near-instant coding iteration when the account has access.', context_window=1000000, priority=3, reasoning=('low','medium','high')),
+    model_entry('gpt-5.4-mini', 'GPT-5.4 mini', 'Fast OpenAI model for lighter coding tasks and subagents.', context_window=400000, priority=1, reasoning=('low','medium','high','xhigh')),
+    model_entry('gpt-5.4-nano', 'GPT-5.4 nano', 'Smallest GPT-5.4 frontier variant for the lowest-latency, lowest-cost text/image tasks when available.', context_window=400000, priority=2, reasoning=('low','medium','high')),
+    model_entry('gpt-5.4', 'GPT-5.4', 'OpenAI GPT-5 family model retained for compatibility and explicit routing.', priority=3),
+    model_entry('gpt-5.3-codex-spark', 'GPT-5.3 Codex Spark', 'Research-preview Codex model optimized for near-instant coding iteration when the account has access.', context_window=1000000, priority=4, reasoning=('low','medium','high')),
     model_entry('gpt-5.6-sol', 'GPT-5.6 Sol', 'FlexNetOS workspace alias requested by owner; routes only if the active OpenAI account/provider exposes this slug.', priority=10),
     model_entry('gpt-5.6-terra', 'GPT-5.6 Terra', 'FlexNetOS workspace alias requested by owner; routes only if the active OpenAI account/provider exposes this slug.', priority=11),
     model_entry('gpt-5.6-luna', 'GPT-5.6 Luna', 'FlexNetOS workspace alias requested by owner; routes only if the active OpenAI account/provider exposes this slug.', priority=12),
@@ -311,7 +312,7 @@ grep -q '^\[plugins\."meta@flexnetos-codex"\]' "$C"
 grep -q '^\[plugins\."harness@harness-marketplace"\]' "$C"
 grep -q '^default_permissions = "meta-workspace"' "$C"
 for a in meta-worker pr-explorer reviewer docs-researcher codex-baseline-researcher; do [ -f "$M/.local/share/codex/agents/$a.toml" ]; done
-for slug in gpt-5.5 gpt-5.4-mini gpt-5.4 gpt-5.3-codex-spark gpt-5.6-sol gpt-5.6-terra gpt-5.6-luna; do grep -q '"slug": '"\"$slug\"" "$M/.local/share/codex/model-catalog.json"; done
+for slug in gpt-5.5 gpt-5.4-mini gpt-5.4-nano gpt-5.4 gpt-5.3-codex-spark gpt-5.6-sol gpt-5.6-terra gpt-5.6-luna; do grep -q '"slug": '"\"$slug\"" "$M/.local/share/codex/model-catalog.json"; done
 for var in FXN_AGENT_COMMUNICATION FXN_AGENT_TEAM_SWARM FXN_AGENT_TEAM_SWARM_MODEL_TAGS FXN_CODEX_MODEL_SOL FXN_CODEX_MODEL_TERRA FXN_CODEX_MODEL_LUNA FXN_CODEX_REMOTE_CONTROL; do grep -q "export $var=" "$M/.codex/hooks/with-meta-env.sh"; done
 CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M/usr/bin/codex" plugin list | grep -q 'meta@flexnetos-codex  installed, enabled'
 CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M/usr/bin/codex" plugin list | grep -q 'harness@harness-marketplace  installed, enabled'
