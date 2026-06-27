@@ -174,6 +174,52 @@ if python3 "$SYNC" --meta-root "$tmp/meta" --project-list-json "$tmp/broken-proj
 fi
 grep -q "fetch failed; refusing to classify or apply" "$tmp/broken-apply.err" || fail "apply fetch failure did not fail closed"
 
+make_remote rewritten
+mkdir -p "$tmp/rewrite-meta"
+gitc init -q "$tmp/rewrite-meta"
+(
+  cd "$tmp/rewrite-meta"
+  echo root > README.md
+  gitc add README.md
+  gitc commit -qm root
+)
+gitc clone -q "$tmp/rewritten.git" "$tmp/rewrite-meta/rewritten"
+gitc -C "$tmp/rewrite-meta/rewritten" checkout -q main
+advance_remote_without_local_fetch rewritten remote-advance
+gitc -C "$tmp/rewrite-meta/rewritten" fetch -q origin
+gitc clone -q "$tmp/rewritten.git" "$tmp/rewritten-rewrite" 2>/dev/null
+(
+  cd "$tmp/rewritten-rewrite"
+  gitc checkout -q --orphan rewritten-main
+  rm -f f
+  echo rewritten > f
+  gitc add f
+  gitc commit -qm rewritten-main
+  gitc push -q --force origin rewritten-main:main
+)
+
+cat > "$tmp/rewritten-projects.json" <<JSON
+{
+  "path": ".",
+  "repo": null,
+  "root": "$tmp/rewrite-meta",
+  "cwd": "$tmp/rewrite-meta",
+  "projects": [
+    {"name": "rewritten", "path": "rewritten", "repo": "$tmp/rewritten.git"}
+  ]
+}
+JSON
+
+if python3 "$SYNC" --meta-root "$tmp/rewrite-meta" --project-list-json "$tmp/rewritten-projects.json" --no-fetch --apply --json > "$tmp/rewritten-apply.json" 2> "$tmp/rewritten-apply.err"; then
+  fail "apply against rewritten remote unexpectedly succeeded"
+fi
+python3 - "$tmp/rewritten-apply.json" <<'PY'
+import json, sys
+data=json.load(open(sys.argv[1]))
+assert data["apply_failures"], data
+assert any("git pull --ff-only failed" in item for item in data["apply_failures"]), data
+PY
+
 behind_before="$(gitc -C "$tmp/meta/behind" rev-parse HEAD)"
 python3 "$SYNC" --meta-root "$tmp/meta" --project-list-json "$tmp/projects.json" --no-fetch --apply --json > "$tmp/apply.json"
 behind_after="$(gitc -C "$tmp/meta/behind" rev-parse HEAD)"

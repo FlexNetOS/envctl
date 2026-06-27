@@ -8,7 +8,9 @@ The script is intentionally conservative:
   * only runs `git push` for clean ahead-only repos.
 It also recognizes linked git worktrees during the fetch phase so shared repos
 in the meta workspace are not silently skipped, and it refuses to classify or
-apply if any fetch fails. When classifying the root checkout, it ignores
+apply if any fetch fails. Any pull/push failure is preserved even after the
+post-apply reclassification pass so apply remains fail-closed. When classifying
+the root checkout, it ignores
 untracked entries that are only managed child worktree paths so nested checkouts
 do not produce a false dirty signal.
 
@@ -233,19 +235,27 @@ def fetch_all(repo_path: pathlib.Path) -> GitResult:
     return git(repo_path, "fetch", "--all", "--prune", timeout=240)
 
 
-def apply_bucket(repo_path: pathlib.Path, state: RepoState) -> None:
+def apply_bucket(repo_path: pathlib.Path, state: RepoState) -> str | None:
     if state.bucket == "safe_pull_ff":
         result = git(repo_path, "pull", "--ff-only", timeout=240)
     elif state.bucket == "safe_push":
         result = git(repo_path, "push", timeout=240)
     else:
-        return
+        return None
     if result.rc != 0:
         state.errors.append(result.stderr or result.stdout)
         state.bucket = f"{state.bucket}_failed"
+        return state.errors[-1]
+    return None
 
 
-def build_report(meta_root: pathlib.Path, states: list[RepoState], apply: bool, fetched: bool) -> dict[str, Any]:
+def build_report(
+    meta_root: pathlib.Path,
+    states: list[RepoState],
+    apply: bool,
+    fetched: bool,
+    apply_failures: list[str],
+) -> dict[str, Any]:
     summary = Counter(state.bucket for state in states)
     return {
         "generated_at": datetime.now().isoformat(timespec="seconds"),
@@ -254,6 +264,7 @@ def build_report(meta_root: pathlib.Path, states: list[RepoState], apply: bool, 
         "fetched": fetched,
         "total": len(states),
         "summary": dict(sorted(summary.items())),
+        "apply_failures": apply_failures,
         "repos": [asdict(state) for state in states],
     }
 
@@ -263,6 +274,10 @@ def print_text(report: dict[str, Any]) -> None:
     print("summary:")
     for bucket, count in report["summary"].items():
         print(f"  {bucket}: {count}")
+    if report.get("apply_failures"):
+        print("\napply_failures:")
+        for item in report["apply_failures"]:
+            print(f"  {item}")
     for bucket in ("safe_pull_ff", "safe_push", "dirty_skip", "diverged_skip", "gone_upstream_skip", "no_upstream_skip", "missing_skip"):
         rows = [repo for repo in report["repos"] if repo["bucket"] == bucket]
         if not rows:
@@ -318,13 +333,17 @@ def main(argv: list[str] | None = None) -> int:
     }
 
     states = [classify_repo(meta_root, repo_def, managed_paths) for repo_def in repo_defs]
+    apply_failures: list[str] = []
 
     if args.apply:
         for state in states:
-            apply_bucket(meta_root / state.path, state)
+            error = apply_bucket(meta_root / state.path, state)
+            if error:
+                command = state.commands[-1] if state.commands else "apply"
+                apply_failures.append(f"{state.path}: {command} failed: {error}")
         states = [classify_repo(meta_root, repo_def, managed_paths) for repo_def in repo_defs]
 
-    report = build_report(meta_root, states, args.apply, should_fetch)
+    report = build_report(meta_root, states, args.apply, should_fetch, apply_failures)
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, indent=2) + "\n")
@@ -334,7 +353,7 @@ def main(argv: list[str] | None = None) -> int:
         print_text(report)
         if args.output:
             print(f"\njson: {args.output}")
-    failed = [state for state in states if state.bucket.endswith("_failed")]
+    failed = apply_failures or [state for state in states if state.bucket.endswith("_failed")]
     return 1 if failed else 0
 
 

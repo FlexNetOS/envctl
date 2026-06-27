@@ -137,7 +137,8 @@ python3 scripts/meta-fleet-sync.py --apply
 `scripts/meta-fleet-sync.py` is the safe alternative to raw `meta exec -- git pull/push` when the
 workspace has many sibling repos. It only fast-forwards clean behind-only checkouts, only pushes
 clean ahead-only checkouts, recognizes linked worktrees during fetch, ignores nested managed
-worktree paths when judging the root checkout, and fails closed if any fetch fails.
+worktree paths when judging the root checkout, and fails closed if any fetch fails or any
+safe pull/push mutation fails.
 
 ### Desktop app
 
