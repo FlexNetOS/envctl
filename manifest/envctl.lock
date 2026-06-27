@@ -368,7 +368,7 @@ requires = []
 resolved = ""
 
 [components.nvidia-open]
-content_hash = "c3e3d91e6e86ab92"
+content_hash = "4f43281c513522a2"
 requires = ["nvidia-cuda-repo"]
 resolved = ""
 
