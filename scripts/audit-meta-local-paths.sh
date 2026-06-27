@@ -551,6 +551,13 @@ is_portable_app_config_dir_dot() {
   esac
 }
 
+is_merge_existing_app_config_dir_dot() {
+  case "$1" in
+    .junie) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 canonical_target_for_dot() {
   local dot="$1"
   case "$dot" in
@@ -579,6 +586,9 @@ is_migratable_dot() {
         return 0
       fi
       if is_portable_app_config_dir_dot "$dot"; then
+        return 0
+      fi
+      if is_merge_existing_app_config_dir_dot "$dot"; then
         return 0
       fi
       is_app_config_dot "$dot" && return 0
@@ -616,6 +626,11 @@ migrate_real_home_dot() {
     return 0
   fi
 
+  if is_merge_existing_app_config_dir_dot "$dot" && [ ! -d "$source" ]; then
+    fail "--migrate-dot $dot: $source is not a directory; refusing automatic merge app-config directory migration"
+    return 0
+  fi
+
   if [ -L "$source" ]; then
     resolved="$(readlink -f "$source" 2>/dev/null || true)"
     if [ -n "$resolved" ] && is_under_meta "$resolved"; then
@@ -627,7 +642,9 @@ migrate_real_home_dot() {
   fi
 
   if [ "$APPLY" -ne 1 ]; then
-    if [ -e "$target" ] || [ -L "$target" ]; then
+    if is_merge_existing_app_config_dir_dot "$dot" && [ -d "$target" ]; then
+      say "DRY-RUN: would merge source-only entries from $source into existing $target, archive original under $archive_dir/$dot, and link $source -> $target"
+    elif [ -e "$target" ] || [ -L "$target" ]; then
       say "DRY-RUN: would archive $source under $archive_dir/$dot and link it to existing $target"
     else
       say "DRY-RUN: would move $source to $target and link $source -> $target"
@@ -636,6 +653,78 @@ migrate_real_home_dot() {
   fi
 
   if [ -e "$target" ] || [ -L "$target" ]; then
+    resolved="$(readlink -f "$target" 2>/dev/null || true)"
+    if [ -z "$resolved" ] || ! is_under_meta "$resolved"; then
+      fail "--migrate-dot $dot: existing target $target resolves outside META_ROOT (${resolved:-missing target}); refusing automatic migration"
+      return 0
+    fi
+    if is_merge_existing_app_config_dir_dot "$dot"; then
+      if [ ! -d "$target" ]; then
+        fail "--migrate-dot $dot: existing target $target is not a directory; refusing merge app-config directory migration"
+        return 0
+      fi
+      if ! SOURCE_DIR="$source" TARGET_DIR="$target" python3 - <<'PY'
+import filecmp
+import os
+import shutil
+import sys
+from pathlib import Path
+
+source = Path(os.environ["SOURCE_DIR"])
+target = Path(os.environ["TARGET_DIR"])
+mismatches = []
+blocked_links = []
+
+for path in source.rglob("*"):
+    rel = path.relative_to(source)
+    dest = target / rel
+    if path.is_symlink():
+        blocked_links.append(str(rel))
+        continue
+    if path.is_dir():
+        if dest.exists() and not dest.is_dir():
+            mismatches.append(f"{rel}: source directory collides with non-directory target")
+        continue
+    if path.is_file():
+        if not dest.exists():
+            continue
+        if not dest.is_file():
+            mismatches.append(f"{rel}: source file collides with non-file target")
+        elif not filecmp.cmp(path, dest, shallow=False):
+            mismatches.append(f"{rel}: source file differs from existing target")
+        continue
+    mismatches.append(f"{rel}: unsupported source entry type")
+
+if blocked_links:
+    print("source symlinks are not safe for merge-copy:", ", ".join(blocked_links[:20]), file=sys.stderr)
+if mismatches:
+    print("merge collision(s):", file=sys.stderr)
+    for item in mismatches[:20]:
+        print(item, file=sys.stderr)
+if blocked_links or mismatches:
+    sys.exit(1)
+
+for path in sorted(source.rglob("*"), key=lambda p: len(p.relative_to(source).parts)):
+    rel = path.relative_to(source)
+    dest = target / rel
+    if path.is_dir():
+        if not dest.exists():
+            dest.mkdir()
+            shutil.copystat(path, dest, follow_symlinks=False)
+    elif path.is_file() and not dest.exists():
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(path, dest, follow_symlinks=False)
+PY
+      then
+        fail "--migrate-dot $dot: existing target $target has conflicting entries or unsafe links; refusing automatic merge"
+        return 0
+      fi
+      mkdir -p "$archive_dir"
+      mv "$source" "$archive_dir/$dot"
+      ln -sfn "$target" "$source"
+      changed_msg "merged $source into existing $target, archived original to $archive_dir/$dot, and linked $source -> $target"
+      return 0
+    fi
     mkdir -p "$archive_dir"
     mv "$source" "$archive_dir/$dot"
     ln -sfn "$target" "$source"
@@ -764,7 +853,18 @@ classify_real_home_dot() {
           apply_safe="no"
         fi
         ;;
-      .agents|.ampcode|.claude|.claude.json|.codex|.codeium|.copilot|.cursor|.gemini|.goose_recipes|.junie|.kimi|.kimi-code|.ollama|.roo|.vscode|.windsurf|.mozilla|.thunderbird)
+      .junie)
+        target_class="app-config-state"
+        canonical_target="$META_ROOT/.local/share/junie"
+        if [ "$type" = "directory" ]; then
+          action="merge-dir-to-existing-meta-share-and-bridge"
+          apply_safe="yes"
+        else
+          action="owner-supervised-type-repair"
+          apply_safe="no"
+        fi
+        ;;
+      .agents|.ampcode|.claude|.claude.json|.codex|.codeium|.copilot|.cursor|.gemini|.goose_recipes|.kimi|.kimi-code|.ollama|.roo|.vscode|.windsurf|.mozilla|.thunderbird)
         target_class="app-config-state"
         canonical_target="$(app_config_target_for_dot "$dot")"
         action="owner-supervised-config-migration"
