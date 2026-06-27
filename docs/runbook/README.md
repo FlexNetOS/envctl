@@ -127,6 +127,18 @@ envctl env [--json]                         # emit $META_ROOT + toolchain env ex
 > **Safety:** destructive verbs (`reset` / `auto-fix` / `self uninstall`) are **PREVIEW by
 > default** and fail-closed — they refuse unless safety is proven and you pass `--apply`/`--purge`.
 
+### Fleet sync — clean-only pull/push across the meta workspace
+
+```bash
+python3 scripts/meta-fleet-sync.py --fetch --json
+python3 scripts/meta-fleet-sync.py --apply
+```
+
+`scripts/meta-fleet-sync.py` is the safe alternative to raw `meta exec -- git pull/push` when the
+workspace has many sibling repos. It only fast-forwards clean behind-only checkouts, only pushes
+clean ahead-only checkouts, recognizes linked worktrees during fetch, ignores nested managed
+worktree paths when judging the root checkout, and fails closed if any fetch fails.
+
 ### Desktop app
 
 `envctl-gui` drives the **same shared `Engine`** as the CLI (they cannot diverge). See the

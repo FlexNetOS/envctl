@@ -128,11 +128,14 @@ data=json.load(open(sys.argv[1]))
 summary=data["summary"]
 assert summary.get("safe_pull_ff") == 1, summary
 assert summary.get("safe_push") == 1, summary
-assert summary.get("dirty_skip") == 2, summary  # dirty project + root seeing child dirs as untracked
+assert summary.get("dirty_skip") == 1, summary
 assert summary.get("diverged_skip") == 1, summary
-assert summary.get("no_upstream_skip") == 1, summary
+assert summary.get("no_upstream_skip") == 2, summary
 assert summary.get("clean_synced") == 1, summary  # linked worktree stays invisible until fetched
 assert summary.get("missing_skip") == 1, summary
+root = next(repo for repo in data["repos"] if repo["path"] == ".")
+assert root["ignored_managed_untracked_count"] == 6, root
+assert root["dirty_count"] == 0, root
 PY
 
 python3 "$SYNC" --meta-root "$tmp/meta" --project-list-json "$tmp/projects.json" --fetch --json > "$tmp/fetched.json"
@@ -144,6 +147,32 @@ assert summary.get("safe_pull_ff") == 2, summary  # behind + worktree
 assert summary.get("safe_push") == 1, summary
 assert "clean_synced" not in summary, summary
 PY
+
+make_remote brokenfetch
+clone_project brokenfetch
+gitc -C "$tmp/meta/brokenfetch" remote set-url origin "$tmp/does-not-exist.git"
+
+cat > "$tmp/broken-projects.json" <<JSON
+{
+  "path": ".",
+  "repo": null,
+  "root": "$tmp/meta",
+  "cwd": "$tmp/meta",
+  "projects": [
+    {"name": "brokenfetch", "path": "brokenfetch", "repo": "$tmp/brokenfetch.git"}
+  ]
+}
+JSON
+
+if python3 "$SYNC" --meta-root "$tmp/meta" --project-list-json "$tmp/broken-projects.json" --fetch --json > "$tmp/broken.json" 2> "$tmp/broken.err"; then
+  fail "fetch failure unexpectedly succeeded"
+fi
+grep -q "fetch failed; refusing to classify or apply" "$tmp/broken.err" || fail "fetch failure did not fail closed"
+
+if python3 "$SYNC" --meta-root "$tmp/meta" --project-list-json "$tmp/broken-projects.json" --apply --json > "$tmp/broken-apply.json" 2> "$tmp/broken-apply.err"; then
+  fail "apply with fetch failure unexpectedly succeeded"
+fi
+grep -q "fetch failed; refusing to classify or apply" "$tmp/broken-apply.err" || fail "apply fetch failure did not fail closed"
 
 behind_before="$(gitc -C "$tmp/meta/behind" rev-parse HEAD)"
 python3 "$SYNC" --meta-root "$tmp/meta" --project-list-json "$tmp/projects.json" --no-fetch --apply --json > "$tmp/apply.json"

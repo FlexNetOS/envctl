@@ -7,7 +7,10 @@ The script is intentionally conservative:
   * only runs `git pull --ff-only` for clean behind-only repos;
   * only runs `git push` for clean ahead-only repos.
 It also recognizes linked git worktrees during the fetch phase so shared repos
-in the meta workspace are not silently skipped.
+in the meta workspace are not silently skipped, and it refuses to classify or
+apply if any fetch fails. When classifying the root checkout, it ignores
+untracked entries that are only managed child worktree paths so nested checkouts
+do not produce a false dirty signal.
 
 Use this after `scripts/reap-worktrees.sh --apply` when the workspace has lots of
 intentional upgrade dirt and raw `meta exec -- git pull/push` would be too broad.
@@ -49,6 +52,7 @@ class RepoState:
     dirty_count: int = 0
     tracked_dirty_count: int = 0
     untracked_count: int = 0
+    ignored_managed_untracked_count: int = 0
     ahead: int | None = None
     behind: int | None = None
     bucket: str = "unknown"
@@ -112,6 +116,38 @@ def repos_from_project_list(project_list: dict[str, Any]) -> list[dict[str, str 
     return repos
 
 
+def normalized_repo_path(path: str | None) -> str:
+    rel = (path or ".").rstrip("/")
+    return rel if rel and rel != "." else "."
+
+
+def overlaps_path(candidate: str, managed: str) -> bool:
+    candidate = candidate.rstrip("/")
+    managed = managed.rstrip("/")
+    if not candidate or not managed:
+        return False
+    return (
+        candidate == managed
+        or candidate.startswith(f"{managed}/")
+        or managed.startswith(f"{candidate}/")
+    )
+
+
+def filter_managed_untracked_lines(
+    dirty_lines: list[str], managed_paths: set[str]
+) -> tuple[list[str], int]:
+    filtered: list[str] = []
+    ignored = 0
+    for line in dirty_lines:
+        if line.startswith("?? "):
+            candidate = line[3:].rstrip("/")
+            if any(overlaps_path(candidate, managed) for managed in managed_paths):
+                ignored += 1
+                continue
+        filtered.append(line)
+    return filtered, ignored
+
+
 def current_branch_track(repo_path: pathlib.Path, branch: str | None) -> str | None:
     if not branch:
         return None
@@ -119,8 +155,12 @@ def current_branch_track(repo_path: pathlib.Path, branch: str | None) -> str | N
     return result_stdout(result)
 
 
-def classify_repo(meta_root: pathlib.Path, repo_def: dict[str, str | None]) -> RepoState:
-    rel = repo_def["path"] or "."
+def classify_repo(
+    meta_root: pathlib.Path,
+    repo_def: dict[str, str | None],
+    managed_paths: set[str] | None = None,
+) -> RepoState:
+    rel = normalized_repo_path(repo_def["path"])
     state = RepoState(name=repo_def["name"] or rel, path=rel, repo=repo_def.get("repo"))
     repo_path = meta_root / rel
     state.exists = repo_path.exists()
@@ -149,6 +189,9 @@ def classify_repo(meta_root: pathlib.Path, repo_def: dict[str, str | None]) -> R
         state.errors.append(porcelain.stderr or porcelain.stdout)
         return state
     dirty_lines = [line for line in porcelain.stdout.splitlines() if line]
+    if rel == "." and managed_paths:
+        dirty_lines, ignored = filter_managed_untracked_lines(dirty_lines, managed_paths)
+        state.ignored_managed_untracked_count = ignored
     state.dirty_count = len(dirty_lines)
     state.tracked_dirty_count = len([line for line in dirty_lines if not line.startswith("??")])
     state.untracked_count = len([line for line in dirty_lines if line.startswith("??")])
@@ -231,6 +274,8 @@ def print_text(report: dict[str, Any]) -> None:
                 detail += f" ahead={repo.get('ahead')} behind={repo.get('behind')}"
             if repo.get("dirty_count"):
                 detail += f" dirty={repo.get('dirty_count')} tracked={repo.get('tracked_dirty_count')} untracked={repo.get('untracked_count')}"
+            if repo.get("ignored_managed_untracked_count"):
+                detail += f" ignored_managed={repo.get('ignored_managed_untracked_count')}"
             if repo.get("commands"):
                 detail += " :: " + " && ".join(repo["commands"])
             print(f"  {detail}")
@@ -252,18 +297,32 @@ def main(argv: list[str] | None = None) -> int:
     repo_defs = repos_from_project_list(project_list)
 
     should_fetch = (args.fetch or args.apply) and not args.no_fetch
+    fetch_failures: list[str] = []
     if should_fetch:
         for repo_def in repo_defs:
-            repo_path = meta_root / (repo_def["path"] or ".")
+            repo_path = meta_root / normalized_repo_path(repo_def["path"])
             if is_git_checkout(repo_path):
-                fetch_all(repo_path)
+                result = fetch_all(repo_path)
+                if result.rc != 0:
+                    fetch_failures.append(
+                        f"{repo_def['path'] or '.'}: {result.stderr or result.stdout or 'fetch failed'}"
+                    )
+        if fetch_failures:
+            joined = "\n".join(f"  - {item}" for item in fetch_failures)
+            raise SystemExit(f"fetch failed; refusing to classify or apply:\n{joined}")
 
-    states = [classify_repo(meta_root, repo_def) for repo_def in repo_defs]
+    managed_paths = {
+        normalized_repo_path(repo_def["path"])
+        for repo_def in repo_defs
+        if normalized_repo_path(repo_def["path"]) != "."
+    }
+
+    states = [classify_repo(meta_root, repo_def, managed_paths) for repo_def in repo_defs]
 
     if args.apply:
         for state in states:
             apply_bucket(meta_root / state.path, state)
-        states = [classify_repo(meta_root, repo_def) for repo_def in repo_defs]
+        states = [classify_repo(meta_root, repo_def, managed_paths) for repo_def in repo_defs]
 
     report = build_report(meta_root, states, args.apply, should_fetch)
     if args.output:
