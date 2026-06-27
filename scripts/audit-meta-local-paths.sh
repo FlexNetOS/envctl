@@ -15,11 +15,13 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--inventory PATH] [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--inventory PATH] [--inventory-summary PATH] [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
 With --inventory, also writes a tab-separated relocation inventory:
 dot_entry, type, state, target_class, canonical_target, action, apply_safe.
+With --inventory-summary, writes a tab-separated per-class migration summary:
+target_class, total, apply_safe_yes, apply_safe_no, apply_safe_na, actions.
 USAGE
 }
 
@@ -29,11 +31,13 @@ META_ROOT="${META_ROOT:-$(cd "$ROOT/.." && pwd)}"
 REAL_HOME="${ENVCTL_REAL_HOME:-$HOME}"
 ENVCTL_HOME_SOURCE="$ROOT/home"
 INVENTORY_PATH=""
+INVENTORY_SUMMARY_PATH=""
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --apply) APPLY=1; shift ;;
     --inventory) INVENTORY_PATH="${2:?--inventory requires a path}"; shift 2 ;;
+    --inventory-summary) INVENTORY_SUMMARY_PATH="${2:?--inventory-summary requires a path}"; shift 2 ;;
     --meta-root) META_ROOT="${2:?--meta-root requires a path}"; shift 2 ;;
     --real-home) REAL_HOME="${2:?--real-home requires a path}"; shift 2 ;;
     --envctl-home-source) ENVCTL_HOME_SOURCE="${2:?--envctl-home-source requires a path}"; shift 2 ;;
@@ -59,6 +63,15 @@ if [ -n "$INVENTORY_PATH" ]; then
   mkdir -p "$(dirname "$INVENTORY_PATH")"
   printf 'dot_entry\ttype\tstate\ttarget_class\tcanonical_target\taction\tapply_safe\n' >"$INVENTORY_PATH"
 fi
+if [ -n "$INVENTORY_SUMMARY_PATH" ]; then
+  mkdir -p "$(dirname "$INVENTORY_SUMMARY_PATH")"
+fi
+
+declare -A summary_total=()
+declare -A summary_apply_yes=()
+declare -A summary_apply_no=()
+declare -A summary_apply_na=()
+declare -A summary_actions=()
 
 say() { printf '%s\n' "$*"; }
 fail() { failures=$((failures + 1)); say "FAIL: $*" >&2; }
@@ -89,9 +102,52 @@ entry_type() {
 }
 
 inventory_row() {
-  [ -n "$INVENTORY_PATH" ] || return 0
   local dot="$1" type="$2" state="$3" target_class="$4" canonical_target="$5" action="$6" apply_safe="$7"
-  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$dot" "$type" "$state" "$target_class" "$canonical_target" "$action" "$apply_safe" >>"$INVENTORY_PATH"
+  if [ -n "$INVENTORY_PATH" ]; then
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$dot" "$type" "$state" "$target_class" "$canonical_target" "$action" "$apply_safe" >>"$INVENTORY_PATH"
+  fi
+  summary_observe "$target_class" "$action" "$apply_safe"
+}
+
+summary_observe() {
+  local target_class="$1" action="$2" apply_safe="$3" existing_actions
+  [ -n "$INVENTORY_SUMMARY_PATH" ] || return 0
+
+  summary_total["$target_class"]=$(( ${summary_total["$target_class"]:-0} + 1 ))
+  case "$apply_safe" in
+    yes) summary_apply_yes["$target_class"]=$(( ${summary_apply_yes["$target_class"]:-0} + 1 )) ;;
+    no) summary_apply_no["$target_class"]=$(( ${summary_apply_no["$target_class"]:-0} + 1 )) ;;
+    n/a) summary_apply_na["$target_class"]=$(( ${summary_apply_na["$target_class"]:-0} + 1 )) ;;
+  esac
+
+  existing_actions="${summary_actions["$target_class"]:-}"
+  if [ -z "$existing_actions" ]; then
+    summary_actions["$target_class"]="$action"
+  else
+    case ",$existing_actions," in
+      *,"$action",*) ;;
+      *) summary_actions["$target_class"]="$existing_actions,$action" ;;
+    esac
+  fi
+}
+
+emit_inventory_summary() {
+  [ -n "$INVENTORY_SUMMARY_PATH" ] || return 0
+
+  {
+    printf 'target_class\ttotal\tapply_safe_yes\tapply_safe_no\tapply_safe_na\tactions\n'
+    if [ "${#summary_total[@]}" -gt 0 ]; then
+      printf '%s\n' "${!summary_total[@]}" | sort | while IFS= read -r target_class; do
+        printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
+          "$target_class" \
+          "${summary_total["$target_class"]:-0}" \
+          "${summary_apply_yes["$target_class"]:-0}" \
+          "${summary_apply_no["$target_class"]:-0}" \
+          "${summary_apply_na["$target_class"]:-0}" \
+          "${summary_actions["$target_class"]:-}"
+      done
+    fi
+  } >"$INVENTORY_SUMMARY_PATH"
 }
 
 classify_real_home_dot() {
@@ -340,6 +396,8 @@ if [ -d "$REAL_HOME" ]; then
     fi
   done < <(find "$REAL_HOME" -mindepth 1 -maxdepth 1 -name '.*' ! -name '.' ! -name '..' -print0 | sort -z)
 fi
+
+emit_inventory_summary
 
 if [ "$failures" -gt 0 ]; then
   say "meta-local audit: FAIL failures=$failures warnings=$warnings changed=$changed dot_entries=$dot_entries_seen" >&2
