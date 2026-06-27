@@ -129,6 +129,7 @@ mkdir -p \
   "$mig_home/.ai/cache" \
   "$mig_home/.ai/tokens" \
   "$mig_home/.gemini" \
+  "$mig_home/.archon" \
   "$mig_home/.gphoto" \
   "$mig_home/.junie" \
   "$mig_home/.vscode-shared/sharedStorage" \
@@ -153,6 +154,7 @@ printf 'real-home npm state\n' >"$mig_home/.npm/npmrc"
 printf 'real-home dotnet state\n' >"$mig_home/.dotnet/state"
 printf 'set ideajoin\n' >"$mig_home/.ideavimrc"
 printf '{ "theme": "dark" }\n' >"$mig_home/.gemini/settings.json"
+printf '{ "lastChecked": "2026-06-27T00:00:00Z" }\n' >"$mig_home/.archon/update-check.json"
 printf 'camera-port=usb\n' >"$mig_home/.gphoto/settings"
 printf 'sqlite-state\n' >"$mig_home/.vscode-shared/sharedStorage/state.vscdb"
 printf 'repomix-output\n' >"$mig_home/.repomix/outputs/latest.txt"
@@ -173,6 +175,7 @@ printf '{ "mcpServers": {} }\n' >"$mig_home/.claude.json"
 "$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/app-config-inventory.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/app-config-inventory.out" 2>"$tmp/app-config-inventory.err"
 grep -qx $'.gemini\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/gemini\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
 grep -qx $'.gphoto\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.config/gphoto\tmigrate-dir-to-meta-config-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
+grep -qx $'.archon\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/archon\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.vscode-shared\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/vscode-shared\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.repomix\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/repomix\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.junie\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/junie\tmerge-dir-to-existing-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
@@ -217,6 +220,10 @@ awk -F '\t' -v home="$mig_home" '
 ' "$tmp/unknown-app-config.tsv"
 if awk -F '\t' '$1 == ".gemini" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
   echo "unexpected unknown app-config report row for known canonical .gemini target" >&2
+  exit 1
+fi
+if awk -F '\t' '$1 == ".archon" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
+  echo "unexpected unknown app-config report row for allow-listed .archon target" >&2
   exit 1
 fi
 if awk -F '\t' '$1 == ".ssh" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
@@ -265,6 +272,18 @@ test -f "$mig_meta/var/lib/ollama/history"
 "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .claude.json --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-claude-json.out" 2>"$tmp/migrate-claude-json.err"
 test "$(readlink -f "$mig_home/.claude.json")" = "$mig_meta/.local/share/claude/claude.json"
 test -f "$mig_meta/.local/share/claude/claude.json"
+
+"$root/scripts/audit-meta-local-paths.sh" --migrate-dot .archon --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-archon-dry.out" 2>"$tmp/migrate-archon-dry.err"
+grep -q 'DRY-RUN: would move .*\.archon to .*\.local/share/archon' "$tmp/migrate-archon-dry.out"
+test -d "$mig_home/.archon"
+test ! -e "$mig_meta/.local/share/archon"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .archon --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-archon.out" 2>"$tmp/migrate-archon.err"
+test "$(readlink -f "$mig_home/.archon")" = "$mig_meta/.local/share/archon"
+grep -qx '{ "lastChecked": "2026-06-27T00:00:00Z" }' "$mig_meta/.local/share/archon/update-check.json"
+
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/archon-post.tsv" --inventory-summary "$tmp/archon-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/archon-post.out" 2>"$tmp/archon-post.err"
+grep -qx $'.archon\tsymlink\talready-meta\talready-meta\t'"$mig_meta"$'/.local/share/archon\tnone\tn/a' "$tmp/archon-post.tsv"
 
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .gphoto --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-gphoto-dry.out" 2>"$tmp/migrate-gphoto-dry.err"
 grep -q 'DRY-RUN: would move .*\.gphoto to .*\.config/gphoto' "$tmp/migrate-gphoto-dry.out"
@@ -359,6 +378,22 @@ fi
 test -f "$vscode_shared_bad_home/.vscode-shared"
 test ! -e "$vscode_shared_bad_meta/.local/share/vscode-shared"
 grep -q -- '--migrate-dot .vscode-shared: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-vscode-shared-file.err"
+
+archon_bad_meta="$tmp/archon-bad-meta"
+archon_bad_home="$tmp/archon-bad-home"
+mkdir -p "$archon_bad_meta/.local" "$archon_bad_meta/envctl/home" "$archon_bad_home"
+printf '# managed gitconfig\n' >"$archon_bad_meta/envctl/home/.gitconfig"
+ln -s "$archon_bad_meta/envctl/home/.gitconfig" "$archon_bad_meta/.gitconfig"
+ln -s "$archon_bad_meta/.gitconfig" "$archon_bad_home/.gitconfig"
+ln -s "$archon_bad_meta/.local" "$archon_bad_home/.local"
+printf 'not a directory\n' >"$archon_bad_home/.archon"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .archon --meta-root "$archon_bad_meta" --real-home "$archon_bad_home" --envctl-home-source "$archon_bad_meta/envctl/home" >"$tmp/migrate-archon-file.out" 2>"$tmp/migrate-archon-file.err"; then
+  echo "expected --migrate-dot .archon to fail closed for non-directory source" >&2
+  exit 1
+fi
+test -f "$archon_bad_home/.archon"
+test ! -e "$archon_bad_meta/.local/share/archon"
+grep -q -- '--migrate-dot .archon: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-archon-file.err"
 
 repomix_bad_meta="$tmp/repomix-bad-meta"
 repomix_bad_home="$tmp/repomix-bad-home"
