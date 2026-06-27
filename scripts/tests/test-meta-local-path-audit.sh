@@ -128,11 +128,27 @@ ln -s "$mig_meta/.local" "$mig_home/.local"
 printf 'real-home cargo state\n' >"$mig_home/.cargo/config"
 printf 'real-home npm state\n' >"$mig_home/.npm/npmrc"
 printf 'real-home dotnet state\n' >"$mig_home/.dotnet/state"
+printf 'set ideajoin\n' >"$mig_home/.ideavimrc"
 
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .cargo --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-dry.out" 2>"$tmp/migrate-dry.err"
 grep -q 'DRY-RUN: would move .*\.cargo to .*\.toolchains/cargo' "$tmp/migrate-dry.out"
 test -d "$mig_home/.cargo"
 test ! -e "$mig_meta/.toolchains/cargo"
+
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/migrate-file-pre.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-file-pre.out" 2>"$tmp/migrate-file-pre.err"
+grep -qx $'.ideavimrc\tfile\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.ideavimrc\tmigrate-file-to-meta-root-and-bridge\tyes' "$tmp/migrate-file-pre.tsv"
+
+"$root/scripts/audit-meta-local-paths.sh" --migrate-dot .ideavimrc --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-ideavim-dry.out" 2>"$tmp/migrate-ideavim-dry.err"
+grep -q 'DRY-RUN: would move .*\.ideavimrc to .*\.ideavimrc' "$tmp/migrate-ideavim-dry.out"
+test -f "$mig_home/.ideavimrc"
+test ! -e "$mig_meta/.ideavimrc"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .ideavimrc --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-ideavim.out" 2>"$tmp/migrate-ideavim.err"
+test "$(readlink -f "$mig_home/.ideavimrc")" = "$mig_meta/.ideavimrc"
+grep -qx 'set ideajoin' "$mig_meta/.ideavimrc"
+
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/migrate-file-post.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-file-post.out" 2>"$tmp/migrate-file-post.err"
+grep -qx $'.ideavimrc\tsymlink\talready-meta\talready-meta\t'"$mig_meta"$'/.ideavimrc\tnone\tn/a' "$tmp/migrate-file-post.tsv"
 
 "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .npm --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-npm.out" 2>"$tmp/migrate-npm.err"
 test "$(readlink -f "$mig_home/.npm")" = "$mig_meta/.toolchains/npm"
@@ -164,6 +180,18 @@ if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .config --met
 fi
 test -d "$mig_home/.config"
 grep -q -- '--migrate-dot .config is not in the supervised migration allowlist' "$tmp/migrate-config.err"
+
+portable_file_meta="$tmp/portable-file-meta"
+portable_file_home="$tmp/portable-file-home"
+mkdir -p "$portable_file_meta/.local" "$portable_file_meta/envctl/home" "$portable_file_home/.ideavimrc"
+ln -s "$portable_file_meta/.local" "$portable_file_home/.local"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .ideavimrc --meta-root "$portable_file_meta" --real-home "$portable_file_home" --envctl-home-source "$portable_file_meta/envctl/home" >"$tmp/migrate-ideavim-dir.out" 2>"$tmp/migrate-ideavim-dir.err"; then
+  echo "expected --migrate-dot .ideavimrc directory to fail closed" >&2
+  exit 1
+fi
+test -d "$portable_file_home/.ideavimrc"
+test ! -e "$portable_file_meta/.ideavimrc"
+grep -q -- '--migrate-dot .ideavimrc expects a regular file; refusing automatic move' "$tmp/migrate-ideavim-dir.err"
 
 # History and backup dot entries are a separately opt-in safe archive class: read-only inventory
 # points at the exact canonical META_ROOT archive target, default --apply does not move them, and

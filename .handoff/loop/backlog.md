@@ -385,6 +385,17 @@ verify env health.
   `sensitive=5`, `managed-dotfile=2`, `cache=1`, `bridge=1`; there are **no remaining
   `history-or-backup` rows** and the shell conflict report remains header-only. Remaining slices:
   app-config-state, sensitive stores, managed `.config`, cache, and the single bridge.
+
+  Current app-config single-file slice adds a narrow portable-file allowlist for `.ideavimrc`:
+  explicit `--migrate-dot .ideavimrc` now targets `$META_ROOT/.ideavimrc`, refuses non-regular-file
+  sources, and remains dry-run unless paired with `--apply`. TDD coverage proves the inventory row
+  (`app-config-state`, `migrate-file-to-meta-root-and-bridge`, `apply_safe=yes`), dry-run no-op,
+  live move+symlink, and post-apply `already-meta` row. Live apply evidence 2026-06-27: moved
+  `/home/drdave/.ideavimrc` to `/home/drdave/Desktop/meta/.ideavimrc`, bridged the real-home path
+  back to that meta file, and `cmp` verified identical content through the symlink. Post-apply audit
+  reports `dot_entries=78`, `warnings=27`, `changed=0`; summary counts are `already-meta=49`,
+  `app-config-state=20`, `sensitive=5`, `managed-dotfile=2`, `cache=1`, `bridge=1`. Remaining
+  slices: app-config directories, sensitive stores, managed `.config`, cache, and the single bridge.
 - [x] `envctl env` — discover meta-root via `.meta.yaml` marker (`engine::dashboard::locate_meta_file`),
   emit `export META_ROOT=…` + meta tool dirs on PATH; `--toolchains`/`--materialize` (merged from
   feat/envctl-env, 2026-06-12).
