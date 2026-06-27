@@ -38,7 +38,7 @@ stores legitimately contain embedded absolute system links and missing internal 
 --fail-real-home-deep-links to fail if any recursive link resolves back into the real home outside
 META_ROOT.
 With --migrate-dot, performs an explicit owner-requested migration for allow-listed entries only
-(known toolchain state, .claude, .codex, portable app-config files like .ideavimrc, or a managed
+(known toolchain state, .claude, .codex, portable app-config files like .ideavimrc, portable app-config dirs like .gphoto, or a managed
 dotfile present under --envctl-home-source).
 Mutation still requires --apply; without --apply the script prints the planned move and changes nothing.
 With --shell-dotfile-conflict-report, writes supervised shell-dotfile merge rows:
@@ -419,6 +419,7 @@ canonical_target_for_dot() {
     .cargo|.rustup|.bun|.npm|.wasmer|.dotnet|.pgrx|.venvs|.go|.gradle|.nix-*)
       printf '%s\n' "$META_ROOT/.toolchains/${dot#.}"
       ;;
+    .gphoto) printf '%s\n' "$META_ROOT/.config/gphoto" ;;
     .claude) printf '%s\n' "$META_ROOT/.local/share/claude" ;;
     .codex) printf '%s\n' "$META_ROOT/.local/share/codex" ;;
     .ideavimrc) printf '%s\n' "$META_ROOT/.ideavimrc" ;;
@@ -433,6 +434,13 @@ is_portable_app_config_file_dot() {
   esac
 }
 
+is_portable_app_config_dir_dot() {
+  case "$1" in
+    .gphoto) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 is_migratable_dot() {
   local dot="$1"
 
@@ -440,7 +448,7 @@ is_migratable_dot() {
     .*/*|.|..|.local|.config|.cache|.ssh|.aws|.gnupg|.mcp-auth|.docker|.kube|.password-store)
       return 1
       ;;
-    .cargo|.rustup|.bun|.npm|.wasmer|.dotnet|.pgrx|.venvs|.go|.gradle|.nix-*|.claude|.codex)
+    .cargo|.rustup|.bun|.npm|.wasmer|.dotnet|.pgrx|.venvs|.go|.gradle|.nix-*|.claude|.codex|.gphoto)
       return 0
       ;;
     .*)
@@ -473,6 +481,11 @@ migrate_real_home_dot() {
 
   if is_portable_app_config_file_dot "$dot" && [ ! -f "$source" ]; then
     fail "--migrate-dot $dot expects a regular file; refusing automatic move"
+    return 0
+  fi
+
+  if is_portable_app_config_dir_dot "$dot" && [ ! -d "$source" ]; then
+    fail "--migrate-dot $dot: $source is not a directory; refusing automatic app-config directory migration"
     return 0
   fi
 
@@ -590,6 +603,17 @@ classify_real_home_dot() {
         target_class="app-config-state"
         canonical_target="$META_ROOT/.config"
         action="component-managed-config-migration"
+        ;;
+      .gphoto)
+        target_class="app-config-state"
+        canonical_target="$META_ROOT/.config/gphoto"
+        if [ "$type" = "directory" ]; then
+          action="migrate-dir-to-meta-config-and-bridge"
+          apply_safe="yes"
+        else
+          action="owner-supervised-type-repair"
+          apply_safe="no"
+        fi
         ;;
       .claude|.codex|.vscode|.mozilla|.thunderbird)
         target_class="app-config-state"

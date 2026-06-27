@@ -396,6 +396,17 @@ verify env health.
   reports `dot_entries=78`, `warnings=27`, `changed=0`; summary counts are `already-meta=49`,
   `app-config-state=20`, `sensitive=5`, `managed-dotfile=2`, `cache=1`, `bridge=1`. Remaining
   slices: app-config directories, sensitive stores, managed `.config`, cache, and the single bridge.
+
+  Current app-config directory slice adds a narrow portable-dir allowlist for `.gphoto`: explicit
+  `--migrate-dot .gphoto` now targets `$META_ROOT/.config/gphoto`, refuses non-directory sources,
+  and remains dry-run unless paired with `--apply`. TDD coverage proves dry-run no-op behavior,
+  live move+symlink preservation, post-apply `already-meta` inventory, and fail-closed type repair
+  for a regular-file `.gphoto`. Live apply evidence 2026-06-27: moved `/home/drdave/.gphoto` to
+  `/home/drdave/Desktop/meta/.config/gphoto` and bridged the real-home path back to that meta
+  directory. Post-apply audit reports `dot_entries=78`, `warnings=26`, `changed=0`; summary counts
+  are `already-meta=50`, `app-config-state=19`, `sensitive=5`, `managed-dotfile=2`, `cache=1`,
+  `bridge=1`. Remaining slices: app-config directories, sensitive stores, managed `.config`, cache,
+  and the single bridge.
 - [x] `envctl env` — discover meta-root via `.meta.yaml` marker (`engine::dashboard::locate_meta_file`),
   emit `export META_ROOT=…` + meta tool dirs on PATH; `--toolchains`/`--materialize` (merged from
   feat/envctl-env, 2026-06-12).
