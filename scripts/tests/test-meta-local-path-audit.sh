@@ -149,6 +149,63 @@ fi
 test -d "$mig_home/.config"
 grep -q -- '--migrate-dot .config is not in the supervised migration allowlist' "$tmp/migrate-config.err"
 
+# Recursive deep-link inventory walks the actual META_ROOT .local/.toolchains stores without
+# failing by default on embedded system/container links or broken toolchain-internal links, but it
+# can be made fail-closed for symlinks that resolve back into the real home outside META_ROOT.
+deep_meta="$tmp/deep-meta"
+deep_home="$tmp/deep-home"
+mkdir -p \
+  "$deep_meta/.local/share/app" \
+  "$deep_meta/.toolchains/cargo/bin" \
+  "$deep_meta/usr/bin" \
+  "$deep_meta/envctl/home" \
+  "$deep_home/.cache/app"
+printf '# managed gitconfig\n' >"$deep_meta/envctl/home/.gitconfig"
+ln -s "$deep_meta/envctl/home/.gitconfig" "$deep_meta/.gitconfig"
+ln -s "$deep_meta/.gitconfig" "$deep_home/.gitconfig"
+ln -s "$deep_meta/.local" "$deep_home/.local"
+printf '#!/usr/bin/env bash\nexit 0\n' >"$deep_meta/usr/bin/rustc"
+chmod +x "$deep_meta/usr/bin/rustc"
+ln -s "$deep_meta/usr/bin/rustc" "$deep_meta/.toolchains/cargo/bin/rustc"
+ln -s /usr/bin/env "$deep_meta/.toolchains/cargo/bin/env"
+ln -s "$deep_home/.cache/app" "$deep_meta/.local/share/app/cache"
+ln -s "$deep_meta/.toolchains/cargo/bin/absent" "$deep_meta/.toolchains/cargo/bin/missing"
+
+"$root/scripts/audit-meta-local-paths.sh" \
+  --deep-link-inventory "$tmp/deep-links.tsv" \
+  --deep-link-summary "$tmp/deep-links-summary.tsv" \
+  --meta-root "$deep_meta" \
+  --real-home "$deep_home" \
+  --envctl-home-source "$deep_meta/envctl/home" \
+  >"$tmp/deep.out" 2>"$tmp/deep.err"
+grep -q 'meta-local audit: PASS' "$tmp/deep.out"
+grep -q 'resolves into real home outside META_ROOT' "$tmp/deep.err"
+head -n 1 "$tmp/deep-links.tsv" | grep -qx $'scan_root\tsymlink\tlink_text\tresolved_target\ttarget_class\taction'
+awk -F '\t' 'NF != 6 { print "bad deep-link row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/deep-links.tsv"
+grep -qx "$deep_meta/.toolchains"$'\t'"$deep_meta/.toolchains/cargo/bin/rustc"$'\t'"$deep_meta/usr/bin/rustc"$'\t'"$deep_meta/usr/bin/rustc"$'\tinside-meta\tnone' "$tmp/deep-links.tsv"
+awk -F '\t' -v p="$deep_meta/.toolchains/cargo/bin/env" \
+  '$2 == p && $5 == "external-system" && $6 == "embedded-toolchain-or-system-reference" { found=1 } END { exit !found }' \
+  "$tmp/deep-links.tsv"
+grep -qx "$deep_meta/.local"$'\t'"$deep_meta/.local/share/app/cache"$'\t'"$deep_home/.cache/app"$'\t'"$deep_home/.cache/app"$'\treal-home-leak\tmigrate-or-relink-to-meta' "$tmp/deep-links.tsv"
+awk -F '\t' -v p="$deep_meta/.toolchains/cargo/bin/missing" \
+  '$2 == p && $5 == "missing-target" && $6 == "owner-supervised-repair-or-ignore-embedded-toolchain-link" { found=1 } END { exit !found }' \
+  "$tmp/deep-links.tsv"
+head -n 1 "$tmp/deep-links-summary.tsv" | grep -qx $'target_class\ttotal\tactions'
+grep -qx $'inside-meta\t1\tnone' "$tmp/deep-links-summary.tsv"
+grep -qx $'external-system\t1\tembedded-toolchain-or-system-reference' "$tmp/deep-links-summary.tsv"
+grep -qx $'real-home-leak\t1\tmigrate-or-relink-to-meta' "$tmp/deep-links-summary.tsv"
+grep -qx $'missing-target\t1\towner-supervised-repair-or-ignore-embedded-toolchain-link' "$tmp/deep-links-summary.tsv"
+
+if "$root/scripts/audit-meta-local-paths.sh" \
+  --fail-real-home-deep-links \
+  --meta-root "$deep_meta" \
+  --real-home "$deep_home" \
+  --envctl-home-source "$deep_meta/envctl/home" \
+  >"$tmp/deep-fail.out" 2>"$tmp/deep-fail.err"; then
+  echo "expected recursive real-home symlink leak to fail when requested" >&2
+  exit 1
+fi
+grep -q 'resolves into real home outside META_ROOT' "$tmp/deep-fail.err"
 
 # If no meta-owned replacement exists for an escaping .local/bin symlink, --apply must fail closed
 # and leave the unsafe link untouched for owner-supervised remediation.

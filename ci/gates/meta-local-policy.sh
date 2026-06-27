@@ -127,9 +127,16 @@ if ! grep -Fq 'find "$REAL_HOME" -mindepth 1 -maxdepth 1 -name' scripts/audit-me
    ! grep -Fq 'dot_entries_seen' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq -- '--inventory) INVENTORY_PATH=' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq -- '--inventory-summary) INVENTORY_SUMMARY_PATH=' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq -- '--deep-link-inventory) DEEP_LINK_INVENTORY_PATH=' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq -- '--deep-link-summary) DEEP_LINK_SUMMARY_PATH=' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq -- '--fail-real-home-deep-links)' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq -- '--migrate-dot) MIGRATE_DOTS+=' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq 'migrate_real_home_dot' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq 'is_migratable_dot' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'scan_deep_links' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'classify_deep_link' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'emit_deep_link_summary' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'real-home-leak' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq 'emit_inventory_summary' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq 'target_class' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq 'owner-supervised-vault-or-bridge' scripts/audit-meta-local-paths.sh || \
@@ -140,6 +147,12 @@ if ! grep -Fq 'find "$REAL_HOME" -mindepth 1 -maxdepth 1 -name' scripts/audit-me
    ! grep -Fq -- '--migrate-dot .cargo' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq -- '--migrate-dot .dotnet' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq -- '--migrate-dot .ssh' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--deep-link-inventory' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--deep-link-summary' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--fail-real-home-deep-links' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq 'missing-target' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq 'external-system' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq 'real-home-leak' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq 'real-home-dotfile-migration' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq 'inventory-summary.tsv' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq 'apply_safe_yes' scripts/tests/test-meta-local-path-audit.sh; then
