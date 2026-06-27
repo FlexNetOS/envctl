@@ -78,9 +78,10 @@ run "Nerd Fonts (JetBrainsMono, FiraCode)" bash -c '
 # "node via Bun": Bun is the JS runtime AND package manager. We install Bun
 # first, then expose `node` as a symlink to Bun — Bun runs in Node-compat mode
 # when invoked as `node`, so `#!/usr/bin/env node` shebangs resolve to Bun and
-# no separate Node.js install is needed. Codex/Gemini are installed with
-# `bun install -g` (their bins run via Bun). Claude/Kimi/Devin use their own
-# native installers (independent of Node).
+# no separate Node.js install is needed. Gemini is installed with Bun. Codex is
+# the envctl-managed Rust release/toolchain path; npm/napi.rs compatibility is
+# deliberately deferred unless upstream needs it later. Claude/Kimi/Devin use
+# their own native installers (independent of Node).
 run "Bun (JS runtime + package manager)" bash -c 'export BUN_INSTALL="$META_ROOT/.toolchains/.bun"; curl -fsSL https://bun.sh/install | bash'
 export BUN_INSTALL="$META_ROOT/.toolchains/.bun"; export PATH="$BUN_INSTALL/bin:$META_ROOT/usr/bin:$PATH"
 grep -q '.bun/bin' "$META_BASHRC" 2>/dev/null || \
@@ -93,9 +94,21 @@ if command -v bun >/dev/null; then
 fi
 
 run "Claude Code CLI"          bash -c 'curl -fsSL https://claude.ai/install.sh | bash'
-run "Codex + Gemini (via bun)" bash -c '
+run "Gemini CLI (via bun)" bash -c '
   export BUN_INSTALL="$META_ROOT/.toolchains/.bun"; export PATH="$BUN_INSTALL/bin:$PATH"
-  bun install -g @openai/codex @google/gemini-cli'
+  bun install -g @google/gemini-cli'
+run "Codex CLI (Rust via envctl)" bash -c '
+  set -e
+  export PATH="$META_ROOT/usr/bin:$META_ROOT/.local/bin:$PATH"
+  if command -v envctl >/dev/null 2>&1; then
+    envctl install codex-cli
+  elif [ -x "$META_ROOT/envctl/target/release/envctl" ]; then
+    "$META_ROOT/envctl/target/release/envctl" install codex-cli
+  elif [ -x "$META_ROOT/envctl/target/debug/envctl" ]; then
+    "$META_ROOT/envctl/target/debug/envctl" install codex-cli
+  else
+    echo "envctl binary not found; skip Codex here and run: envctl install codex-cli" >&2
+  fi'
 run "Kimi CLI"                 bash -c 'curl -LsSf https://code.kimi.com/install.sh | bash'
 run "Devin CLI"                bash -c 'curl -fsSL https://cli.devin.ai/install.sh | bash'
 

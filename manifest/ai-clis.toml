@@ -1,5 +1,5 @@
 # AI coding CLIs (yazelix-setup.sh section 2, lines 89-94).
-# Native installers (claude/kimi/devin) are Node-independent; Codex prefers the meta Rust source build with Bun fallback, while Gemini runs via Bun.
+# Native installers (claude/kimi/devin) are Node-independent; Codex is the envctl-managed Rust release/toolchain, while Gemini runs via Bun.
 # Post-install auth (`/login`) is interactive and NOT automatable.
 
 [[component]]
@@ -340,7 +340,7 @@ script = "curl -fsSL https://cli.devin.ai/install.sh | bash"
 [[component]]
 id = "group-ai-clis"
 name = "All AI CLIs"
-description = "Meta: claude + codex + gemini + kimi + devin (Codex source-build preferred; Gemini via Bun)."
+description = "Meta: claude + codex + gemini + kimi + devin (Codex Rust release/toolchain; Gemini via Bun)."
 requires = ["claude-code-cli", "codex-cli", "gemini-cli", "kimi-cli", "devin-cli"]
 [component.detect]
 kind = "command"

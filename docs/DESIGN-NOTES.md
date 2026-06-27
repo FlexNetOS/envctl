@@ -25,7 +25,7 @@ This scaffold was produced by a design swarm and then adversarially reviewed. Th
 - Full 9-stage add-repo build-system pipeline + artifact wiring (Phase 4).
 
 ## JS runtime: bun-first, with a narrow real-node carve-out
-- **Bun is the default JS runtime.** It is required by `codex-cli`/`gemini-cli` and remains the go-to runtime. `node-via-bun` is an optional bun node-compat nicety (the `~/.bun/bin/node → bun` shim) and **gates nothing** — its detect/verify are truthful (detect succeeds when EITHER the bun node-shim OR a real `node` is present; verify uses `node -e`, which both runtimes satisfy, never `node --version`, which bun's shim cannot do by design).
+- **Bun is the default JS runtime for JS-delivered tools such as `gemini-cli`.** `codex-cli` is the envctl-managed Rust release/toolchain path, not the old npm package. `node-via-bun` is an optional bun node-compat nicety (the `~/.bun/bin/node → bun` shim) and **gates nothing** — its detect/verify are truthful (detect succeeds when EITHER the bun node-shim OR a real `node` is present; verify uses `node -e`, which both runtimes satisfy, never `node --version`, which bun's shim cannot do by design).
 - **`node-real` is the narrow non-bun carve-out** for V8-only tools (n8n / isolated-vm — Bun's JSC engine cannot satisfy these). It owns the real-Node 20–24 requirement (currently v22.22.3 at `$META_ROOT/usr/bin/node`) and has no `remove` hook by design (removing real node would break n8n).
 - `group-ai-clis` no longer requires `node-via-bun` — its detect only probes the five AI CLIs and never needed node; dropping that false edge keeps the healthy ai-clis stack untouched while letting the JS-runtime story read truthfully green.
 
