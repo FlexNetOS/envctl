@@ -88,10 +88,10 @@ command = "npx"
 
 [mcp_servers.memory]
 args = [
-    "-y",
-    "@modelcontextprotocol/server-memory",
+    "-lc",
+    'ROOT="${META_ROOT:-/home/drdave/Desktop/meta}"; exec "$ROOT/envctl/assets/scripts/envctl-mcp-memory-server"',
 ]
-command = "npx"
+command = "bash"
 
 [mcp_servers.n8n-mcp]
 args = [
