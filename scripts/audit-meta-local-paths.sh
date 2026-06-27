@@ -17,6 +17,8 @@
 # Portable app configs are only migrated when they are explicitly allow-listed here.
 # Explicit --migrate-dot requests are allow-listed, require --apply for mutation, and preserve an
 # existing canonical META_ROOT target by archiving the old real-home state under META_ROOT first.
+# Live migrations also require lsof proof that no process has open file handles below the source
+# tree before any --apply move/archive/link mutation is attempted.
 set -euo pipefail
 
 usage() {
@@ -42,6 +44,8 @@ With --migrate-dot, performs an explicit owner-requested migration for allow-lis
 like .ideavimrc, portable app-config dirs like .gphoto/.vscode-shared/.archon/.n8n-mcp/.n8n/.n8n-claude-bridge/.pki/.forge/.ruvector/.hermes/.ai/.jetbrains/.meta/.java/.repowire,
 portable cache dirs like .nv, or a managed dotfile present under --envctl-home-source).
 Mutation still requires --apply; without --apply the script prints the planned move and changes nothing.
+With --apply, migrations require lsof and refuse to mutate while any process has open file handles
+below the source tree.
 With --shell-dotfile-conflict-report, writes supervised shell-dotfile merge rows:
 dot_entry, real_path, canonical_target, action, apply_safe, real_sha256, canonical_sha256, real_lines, canonical_lines, recommendation.
 With --app-config-conflict-report, writes supervised app-config merge rows when a known real-home
@@ -201,8 +205,9 @@ require_no_open_handles_for_migration() {
   count="$(awk 'NR > 1 && NF > 0 { count++ } END { print count + 0 }' "$lsof_out")"
   if [ "$count" -gt 0 ]; then
     sample="$(awk 'NR == 2 && NF >= 2 { print $1 "/" $2; exit }' "$lsof_out")"
-    rm -f "$lsof_out"
     fail "--migrate-dot $dot: $count open file handle(s) under $source${sample:+ ($sample)}; close owning processes before migration"
+    sed 's/^/  /' "$lsof_out" >&2
+    rm -f "$lsof_out"
     return 1
   fi
 

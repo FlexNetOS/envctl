@@ -613,6 +613,7 @@ fi
 test -d "$pki_open_home/.pki"
 test ! -e "$pki_open_meta/.local/share/pki"
 grep -q -- '--migrate-dot .pki: .*open file handle(s).*close owning processes before migration' "$tmp/migrate-pki-open.err"
+grep -q -- 'nssdb/key4.db' "$tmp/migrate-pki-open.err"
 
 "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .pki --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-pki.out" 2>"$tmp/migrate-pki.err"
 test "$(readlink -f "$mig_home/.pki")" = "$mig_meta/.local/share/pki"

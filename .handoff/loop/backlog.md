@@ -397,6 +397,8 @@ verify env health.
 
   PR #329 adds a fail-closed `lsof` preflight before any `--apply --migrate-dot` move/archive/link mutation, so a migration with active readers refuses before touching the source or canonical target. TDD coverage fakes an open `.pki` NSSDB handle and proves `--apply --migrate-dot .pki` exits non-zero, preserves the real-home source directory, and does not create `$META_ROOT/.local/share/pki`; ordinary no-open fixture migration still passes. Runtime verification on 2026-06-27 retried live `.pki` with Chrome still holding NSSDB files open and got `rc=1` with `2 open file handle(s) under /home/drdave/.pki (chrome/1653768)`; `/home/drdave/.pki` remained a real directory, `/home/drdave/Desktop/meta/.local/share/pki` remained absent, and `lsof +D /home/drdave/.pki` still showed `key4.db` and `cert9.db`. The actual `.pki` migration remains deferred until those Chrome handles are closed.
 
+  PR #330 rebases the open-handle guard on top of #329 and makes refusals self-diagnosing by printing the `lsof` report rows in stderr after the fail-closed summary; TDD now asserts the refused `.pki` fixture reports `nssdb/key4.db` while still preserving the source and avoiding target creation. This is evidence-only hardening; the live `.pki` migration remains deferred until Chrome releases NSSDB handles.
+
 - [x] `envctl env` — discover meta-root via `.meta.yaml` marker (`engine::dashboard::locate_meta_file`),
   emit `export META_ROOT=…` + meta tool dirs on PATH; `--toolchains`/`--materialize` (merged from
   feat/envctl-env, 2026-06-12).
