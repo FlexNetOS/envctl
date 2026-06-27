@@ -21,7 +21,7 @@ requires = []
 resolved = ""
 
 [components.bun]
-content_hash = "e775e55ecdaa3933"
+content_hash = "b1a9058d599597df"
 requires = []
 resolved = ""
 
@@ -41,7 +41,7 @@ requires = ["home-config-links"]
 resolved = ""
 
 [components.codex-cli]
-content_hash = "96d1cc935b0a72a0"
+content_hash = "7f5c1c29622d4d64"
 requires = [
     "bun",
     "rustup",
@@ -325,8 +325,11 @@ requires = [
 resolved = ""
 
 [components.n8n-mcp]
-content_hash = "6a51bc90995c579f"
-requires = ["node-via-bun"]
+content_hash = "4e013b68d6abd0bb"
+requires = [
+    "bun",
+    "node-real",
+]
 resolved = ""
 
 [components.nerd-fonts]
