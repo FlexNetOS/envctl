@@ -39,7 +39,7 @@ stores legitimately contain embedded absolute system links and missing internal 
 META_ROOT.
 With --migrate-dot, performs an explicit owner-requested migration for allow-listed entries only
 (known toolchain state, known agent/app config state including portable app-config files
-like .ideavimrc, portable app-config dirs like .gphoto/.vscode-shared/.archon, or a managed dotfile present under --envctl-home-source).
+like .ideavimrc, portable app-config dirs like .gphoto/.vscode-shared/.archon/.n8n-mcp, or a managed dotfile present under --envctl-home-source).
 Mutation still requires --apply; without --apply the script prints the planned move and changes nothing.
 With --shell-dotfile-conflict-report, writes supervised shell-dotfile merge rows:
 dot_entry, real_path, canonical_target, action, apply_safe, real_sha256, canonical_sha256, real_lines, canonical_lines, recommendation.
@@ -612,6 +612,9 @@ app_config_target_for_dot() {
     .archon)
       printf '%s\n' "$META_ROOT/.local/share/archon"
       ;;
+    .n8n-mcp)
+      printf '%s\n' "$META_ROOT/.local/share/n8n-mcp"
+      ;;
     .agents|.ampcode|.claude|.codex|.codeium|.copilot|.cursor|.gemini|.goose_recipes|.junie|.kimi|.kimi-code|.roo|.vscode|.windsurf|.mozilla|.thunderbird)
       printf '%s\n' "$META_ROOT/.local/share/${dot#.}"
       ;;
@@ -634,7 +637,7 @@ is_portable_app_config_file_dot() {
 
 is_portable_app_config_dir_dot() {
   case "$1" in
-    .gphoto|.vscode-shared|.repomix|.archon) return 0 ;;
+    .gphoto|.vscode-shared|.repomix|.archon|.n8n-mcp) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -652,7 +655,7 @@ canonical_target_for_dot() {
     .cargo|.rustup|.bun|.npm|.wasmer|.dotnet|.pgrx|.venvs|.go|.gradle|.nix-*)
       printf '%s\n' "$META_ROOT/.toolchains/${dot#.}"
       ;;
-    .agents|.ampcode|.archon|.claude|.claude.json|.codex|.codeium|.copilot|.cursor|.gemini|.goose_recipes|.gphoto|.vscode-shared|.repomix|.junie|.kimi|.kimi-code|.ollama|.roo|.vscode|.windsurf|.mozilla|.thunderbird|.ideavimrc)
+    .agents|.ampcode|.archon|.claude|.claude.json|.codex|.codeium|.copilot|.cursor|.gemini|.goose_recipes|.gphoto|.vscode-shared|.repomix|.junie|.kimi|.kimi-code|.n8n-mcp|.ollama|.roo|.vscode|.windsurf|.mozilla|.thunderbird|.ideavimrc)
       app_config_target_for_dot "$dot"
       ;;
     *) printf '%s\n' "$ENVCTL_HOME_SOURCE/$dot" ;;
@@ -944,6 +947,17 @@ classify_real_home_dot() {
       .archon)
         target_class="app-config-state"
         canonical_target="$META_ROOT/.local/share/archon"
+        if [ "$type" = "directory" ]; then
+          action="migrate-dir-to-meta-share-and-bridge"
+          apply_safe="yes"
+        else
+          action="owner-supervised-type-repair"
+          apply_safe="no"
+        fi
+        ;;
+      .n8n-mcp)
+        target_class="app-config-state"
+        canonical_target="$META_ROOT/.local/share/n8n-mcp"
         if [ "$type" = "directory" ]; then
           action="migrate-dir-to-meta-share-and-bridge"
           apply_safe="yes"
