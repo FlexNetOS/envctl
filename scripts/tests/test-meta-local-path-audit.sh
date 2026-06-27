@@ -1591,6 +1591,74 @@ awk -F '\t' -v home="$config_bridge_home" -v meta="$config_bridge_meta" '
   END { exit !(found && !bad) }
 ' "$tmp/config-bridge-post.tsv"
 
+config_identical_meta="$tmp/config-identical-meta"
+config_identical_home="$tmp/config-identical-home"
+mkdir -p "$config_identical_meta/.local" "$config_identical_meta/envctl/home/.config/systemd/user" "$config_identical_home/.config/systemd/user"
+printf '# managed gitconfig\n' >"$config_identical_meta/envctl/home/.gitconfig"
+printf 'unit\n' >"$config_identical_meta/envctl/home/.config/systemd/user/envctl.service"
+printf 'unit\n' >"$config_identical_home/.config/systemd/user/envctl.service"
+ln -s "$config_identical_meta/envctl/home/.gitconfig" "$config_identical_meta/.gitconfig"
+ln -s "$config_identical_meta/.local" "$config_identical_home/.local"
+ln -s "$config_identical_meta/.gitconfig" "$config_identical_home/.gitconfig"
+
+"$root/scripts/audit-meta-local-paths.sh" --bridge-identical-managed-config-child systemd --meta-root "$config_identical_meta" --real-home "$config_identical_home" --envctl-home-source "$config_identical_meta/envctl/home" >"$tmp/config-identical-bridge-dry.out" 2>"$tmp/config-identical-bridge-dry.err"
+grep -q 'DRY-RUN: would archive identical managed config child .*\.config/systemd under .*/var/lib/envctl/real-home-dotfile-migration/.*/\.config/systemd and link .*\.config/systemd -> .*envctl/home/.config/systemd' "$tmp/config-identical-bridge-dry.out"
+test ! -L "$config_identical_home/.config/systemd"
+grep -Fqx 'unit' "$config_identical_home/.config/systemd/user/envctl.service"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --bridge-identical-managed-config-child systemd --meta-root "$config_identical_meta" --real-home "$config_identical_home" --envctl-home-source "$config_identical_meta/envctl/home" >"$tmp/config-identical-bridge.out" 2>"$tmp/config-identical-bridge.err"
+test "$(readlink -f "$config_identical_home/.config/systemd")" = "$config_identical_meta/envctl/home/.config/systemd"
+grep -Fqx 'unit' "$config_identical_meta/envctl/home/.config/systemd/user/envctl.service"
+test "$(find "$config_identical_meta/var/lib/envctl/real-home-dotfile-migration" -path '*/.config/systemd/user/envctl.service' -type f | wc -l | tr -d '[:space:]')" = 1
+
+"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-child-candidates-report "$tmp/config-identical-bridge-post.tsv" --meta-root "$config_identical_meta" --real-home "$config_identical_home" --envctl-home-source "$config_identical_meta/envctl/home" >"$tmp/config-identical-bridge-post.out" 2>"$tmp/config-identical-bridge-post.err"
+awk -F '\t' -v home="$config_identical_home" -v meta="$config_identical_meta" '
+  $1 == ".config" && $2 == "systemd" {
+    if ($3 != home "/.config/systemd") bad=1
+    if ($4 != "symlink") bad=1
+    if ($5 != "already-meta") bad=1
+    if ($6 != "already-meta") bad=1
+    if ($7 != meta "/envctl/home/.config/systemd") bad=1
+    if ($13 != "none") bad=1
+    if ($14 != "n/a") bad=1
+    if ($15 != "none") bad=1
+    found=1
+  }
+  END { exit !(found && !bad) }
+' "$tmp/config-identical-bridge-post.tsv"
+
+config_identical_missing_meta="$tmp/config-identical-missing-meta"
+config_identical_missing_home="$tmp/config-identical-missing-home"
+mkdir -p "$config_identical_missing_meta/.local" "$config_identical_missing_meta/envctl/home/.config/managed-app" "$config_identical_missing_home"
+printf '# managed gitconfig\n' >"$config_identical_missing_meta/envctl/home/.gitconfig"
+printf 'managed config\n' >"$config_identical_missing_meta/envctl/home/.config/managed-app/config.toml"
+ln -s "$config_identical_missing_meta/envctl/home/.gitconfig" "$config_identical_missing_meta/.gitconfig"
+ln -s "$config_identical_missing_meta/.local" "$config_identical_missing_home/.local"
+ln -s "$config_identical_missing_meta/.gitconfig" "$config_identical_missing_home/.gitconfig"
+if "$root/scripts/audit-meta-local-paths.sh" --bridge-identical-managed-config-child managed-app --meta-root "$config_identical_missing_meta" --real-home "$config_identical_missing_home" --envctl-home-source "$config_identical_missing_meta/envctl/home" >"$tmp/config-identical-missing.out" 2>"$tmp/config-identical-missing.err"; then
+  echo "expected --bridge-identical-managed-config-child to reject missing real-home sources" >&2
+  exit 1
+fi
+grep -q -- '--bridge-identical-managed-config-child managed-app: source .* is missing; use --bridge-managed-config-child for missing-source bridges' "$tmp/config-identical-missing.err"
+
+config_identical_diff_meta="$tmp/config-identical-diff-meta"
+config_identical_diff_home="$tmp/config-identical-diff-home"
+mkdir -p "$config_identical_diff_meta/.local" "$config_identical_diff_meta/envctl/home/.config/managed-app" "$config_identical_diff_home/.config/managed-app"
+printf '# managed gitconfig\n' >"$config_identical_diff_meta/envctl/home/.gitconfig"
+printf 'managed config\n' >"$config_identical_diff_meta/envctl/home/.config/managed-app/config.toml"
+printf 'real config\n' >"$config_identical_diff_home/.config/managed-app/config.toml"
+ln -s "$config_identical_diff_meta/envctl/home/.gitconfig" "$config_identical_diff_meta/.gitconfig"
+ln -s "$config_identical_diff_meta/.local" "$config_identical_diff_home/.local"
+ln -s "$config_identical_diff_meta/.gitconfig" "$config_identical_diff_home/.gitconfig"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --bridge-identical-managed-config-child managed-app --meta-root "$config_identical_diff_meta" --real-home "$config_identical_diff_home" --envctl-home-source "$config_identical_diff_meta/envctl/home" >"$tmp/config-identical-diff.out" 2>"$tmp/config-identical-diff.err"; then
+  echo "expected --bridge-identical-managed-config-child to reject differing trees" >&2
+  exit 1
+fi
+grep -q -- '--bridge-identical-managed-config-child managed-app: real-home source .* differs from managed source .*; refusing automatic identical bridge' "$tmp/config-identical-diff.err"
+grep -Fqx 'real config' "$config_identical_diff_home/.config/managed-app/config.toml"
+grep -Fqx 'managed config' "$config_identical_diff_meta/envctl/home/.config/managed-app/config.toml"
+test ! -L "$config_identical_diff_home/.config/managed-app"
+
 "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .pki --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-pki.out" 2>"$tmp/migrate-pki.err"
 test "$(readlink -f "$mig_home/.pki")" = "$mig_meta/.local/share/pki"
 grep -Fqx 'cert db fixture' "$mig_meta/.local/share/pki/nssdb/cert9.db"
