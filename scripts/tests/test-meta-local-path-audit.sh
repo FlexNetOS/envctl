@@ -4,6 +4,24 @@ root="$(git -C "$(dirname "${BASH_SOURCE[0]}")/../.." rev-parse --show-toplevel)
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
+fake_bin="$tmp/bin"
+mkdir -p "$fake_bin"
+cat >"$fake_bin/lsof" <<'EOF'
+#!/usr/bin/env bash
+source_arg="${1:-}"
+if [ "${1:-}" = "+D" ]; then
+  source_arg="${2:-}"
+fi
+if [ -n "${ENVCTL_TEST_LSOF_OPEN_SOURCE:-}" ] && [ "$source_arg" = "$ENVCTL_TEST_LSOF_OPEN_SOURCE" ]; then
+  printf 'COMMAND PID USER FD TYPE DEVICE SIZE/OFF NODE NAME\n'
+  printf 'chrome 123 drdave 118u REG 0,0 0 1 %s/nssdb/key4.db\n' "$ENVCTL_TEST_LSOF_OPEN_SOURCE"
+  exit 0
+fi
+exit 1
+EOF
+chmod +x "$fake_bin/lsof"
+export PATH="$fake_bin:$PATH"
+
 meta="$tmp/meta"
 home="$tmp/home"
 outside="$tmp/outside"
@@ -580,19 +598,6 @@ grep -q 'DRY-RUN: would move .*\.pki to .*\.local/share/pki' "$tmp/migrate-pki-d
 test -d "$mig_home/.pki"
 test ! -e "$mig_meta/.local/share/pki"
 
-pki_lsof_bin="$tmp/pki-lsof-bin"
-mkdir -p "$pki_lsof_bin"
-cat >"$pki_lsof_bin/lsof" <<'SH'
-#!/usr/bin/env bash
-if [ "$1" = "+D" ] && [ "${PKI_LSOF_MODE:-clear}" = "open" ]; then
-  printf 'COMMAND PID USER FD TYPE DEVICE SIZE/OFF NODE NAME\n'
-  printf 'chrome 123 user 118u REG 259,6 36864 14423036 %s/nssdb/key4.db\n' "$2"
-  exit 0
-fi
-exit 1
-SH
-chmod +x "$pki_lsof_bin/lsof"
-
 pki_open_meta="$tmp/pki-open-meta"
 pki_open_home="$tmp/pki-open-home"
 mkdir -p "$pki_open_meta/.local" "$pki_open_meta/envctl/home" "$pki_open_home/.pki/nssdb"
@@ -601,16 +606,16 @@ ln -s "$pki_open_meta/envctl/home/.gitconfig" "$pki_open_meta/.gitconfig"
 ln -s "$pki_open_meta/.gitconfig" "$pki_open_home/.gitconfig"
 ln -s "$pki_open_meta/.local" "$pki_open_home/.local"
 printf 'key db fixture\n' >"$pki_open_home/.pki/nssdb/key4.db"
-if PKI_LSOF_MODE=open PATH="$pki_lsof_bin:$PATH" "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .pki --meta-root "$pki_open_meta" --real-home "$pki_open_home" --envctl-home-source "$pki_open_meta/envctl/home" >"$tmp/migrate-pki-open.out" 2>"$tmp/migrate-pki-open.err"; then
-  echo "expected --migrate-dot .pki to fail closed while open handles exist" >&2
+if ENVCTL_TEST_LSOF_OPEN_SOURCE="$pki_open_home/.pki" "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .pki --meta-root "$pki_open_meta" --real-home "$pki_open_home" --envctl-home-source "$pki_open_meta/envctl/home" >"$tmp/migrate-pki-open.out" 2>"$tmp/migrate-pki-open.err"; then
+  echo "expected --migrate-dot .pki to fail closed with open file handles" >&2
   exit 1
 fi
 test -d "$pki_open_home/.pki"
 test ! -e "$pki_open_meta/.local/share/pki"
-grep -q -- '--migrate-dot .pki: open file handles detected under' "$tmp/migrate-pki-open.err"
+grep -q -- '--migrate-dot .pki: .*open file handle(s).*close owning processes before migration' "$tmp/migrate-pki-open.err"
 grep -q -- 'nssdb/key4.db' "$tmp/migrate-pki-open.err"
 
-PATH="$pki_lsof_bin:$PATH" "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .pki --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-pki.out" 2>"$tmp/migrate-pki.err"
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .pki --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-pki.out" 2>"$tmp/migrate-pki.err"
 test "$(readlink -f "$mig_home/.pki")" = "$mig_meta/.local/share/pki"
 grep -Fqx 'cert db fixture' "$mig_meta/.local/share/pki/nssdb/cert9.db"
 grep -Fqx 'key db fixture' "$mig_meta/.local/share/pki/nssdb/key4.db"

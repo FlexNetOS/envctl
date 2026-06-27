@@ -17,8 +17,8 @@
 # Portable app configs are only migrated when they are explicitly allow-listed here.
 # Explicit --migrate-dot requests are allow-listed, require --apply for mutation, and preserve an
 # existing canonical META_ROOT target by archiving the old real-home state under META_ROOT first.
-# Live NSS/key-container state such as .pki additionally requires lsof proof that no process has
-# open file handles below the source tree before any --apply move is attempted.
+# Live migrations also require lsof proof that no process has open file handles below the source
+# tree before any --apply move/archive/link mutation is attempted.
 set -euo pipefail
 
 usage() {
@@ -44,7 +44,7 @@ With --migrate-dot, performs an explicit owner-requested migration for allow-lis
 like .ideavimrc, portable app-config dirs like .gphoto/.vscode-shared/.archon/.n8n-mcp/.n8n/.n8n-claude-bridge/.pki/.forge/.ruvector/.hermes/.ai/.jetbrains/.meta/.java/.repowire,
 portable cache dirs like .nv, or a managed dotfile present under --envctl-home-source).
 Mutation still requires --apply; without --apply the script prints the planned move and changes nothing.
-For .pki, --apply also requires lsof and refuses to mutate while any process has open file handles
+With --apply, migrations require lsof and refuse to mutate while any process has open file handles
 below the source tree.
 With --shell-dotfile-conflict-report, writes supervised shell-dotfile merge rows:
 dot_entry, real_path, canonical_target, action, apply_safe, real_sha256, canonical_sha256, real_lines, canonical_lines, recommendation.
@@ -177,6 +177,42 @@ entry_type() {
   else
     printf 'missing'
   fi
+}
+
+require_no_open_handles_for_migration() {
+  local dot="$1" source="$2" lsof_out count sample
+
+  if ! command -v lsof >/dev/null 2>&1; then
+    fail "--migrate-dot $dot: lsof is unavailable; refusing automatic migration without open-handle proof"
+    return 1
+  fi
+
+  lsof_out="$(mktemp "${TMPDIR:-/tmp}/envctl-lsof.XXXXXX")"
+  if [ -d "$source" ]; then
+    if lsof +D "$source" >"$lsof_out" 2>/dev/null; then
+      :
+    else
+      :
+    fi
+  else
+    if lsof "$source" >"$lsof_out" 2>/dev/null; then
+      :
+    else
+      :
+    fi
+  fi
+
+  count="$(awk 'NR > 1 && NF > 0 { count++ } END { print count + 0 }' "$lsof_out")"
+  if [ "$count" -gt 0 ]; then
+    sample="$(awk 'NR == 2 && NF >= 2 { print $1 "/" $2; exit }' "$lsof_out")"
+    fail "--migrate-dot $dot: $count open file handle(s) under $source${sample:+ ($sample)}; close owning processes before migration"
+    sed 's/^/  /' "$lsof_out" >&2
+    rm -f "$lsof_out"
+    return 1
+  fi
+
+  rm -f "$lsof_out"
+  return 0
 }
 
 is_shell_dotfile() {
@@ -730,35 +766,6 @@ canonical_target_for_dot() {
   esac
 }
 
-
-requires_no_open_handles_for_dot() {
-  case "$1" in
-    .pki) return 0 ;;
-    *) return 1 ;;
-  esac
-}
-
-assert_no_open_handles_for_dot() {
-  local dot="$1" source="$2" report
-
-  requires_no_open_handles_for_dot "$dot" || return 0
-  if ! command -v lsof >/dev/null 2>&1; then
-    fail "--migrate-dot $dot: lsof is required to prove no open file handles under $source before live migration"
-    return 1
-  fi
-
-  report="$(mktemp)"
-  lsof +D "$source" >"$report" 2>/dev/null || true
-  if [ -s "$report" ]; then
-    fail "--migrate-dot $dot: open file handles detected under $source; close the owning app and retry"
-    sed 's/^/  /' "$report" >&2
-    rm -f "$report"
-    return 1
-  fi
-  rm -f "$report"
-  return 0
-}
-
 is_migratable_dot() {
   local dot="$1"
 
@@ -848,9 +855,7 @@ migrate_real_home_dot() {
     return 0
   fi
 
-  if ! assert_no_open_handles_for_dot "$dot" "$source"; then
-    return 0
-  fi
+  require_no_open_handles_for_migration "$dot" "$source" || return 0
 
   if [ -e "$target" ] || [ -L "$target" ]; then
     resolved="$(readlink -f "$target" 2>/dev/null || true)"
