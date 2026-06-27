@@ -1054,13 +1054,13 @@ policy change" — both are available and declarable here.
   does not gate on its own filename, so `huggingface-cli version`/`env` work. `hf` is NEVER placed on
   `~/.local/bin` (kernel's own 9.6M `hf` confirmed untouched). Runtime-verified: `✓ [healthy] wired`,
   `huggingface-cli version`=1.20.1; lock 77 comp; 6 gates green. (gh CLI already migrated — TASK-0057.)
-- [~] **TASK-0072 (H, MEDIUM) — IN REVIEW via PR #294 (opened 2026-06-27): ollama + models → meta; shimmy/ruvllm swap is the exit (owner
+- [x] **TASK-0072 (H, MEDIUM) — DONE 2026-06-27 via PR #294 (MERGED 11:27:19Z, squash `ecb3f31`): ollama + models → meta; shimmy/ruvllm swap is the exit (owner
   2026-06-23):** ollama is officially superseded by **shimmy + ruvllm** (the rust upgrade) but is
   NOT removed yet (corrects TASK-0060 cleanup). PR #294 moves `OLLAMA_MODELS` to
   `$META_ROOT/var/lib/ollama/models`, exports that env seam from `envctl env`, installs a
   `$META_ROOT/usr/bin/ollama` wrapper that forces the meta-owned model store and meta library path,
   non-destructively seeds an empty meta model store from known legacy/root daemon locations, and
-  preserves model blobs on removal. **Tick-on-merged:** mark DONE only after PR #294 is MERGED.
+  preserves model blobs on removal. **Tick-on-merged satisfied:** PR #294 is MERGED.
   **Exit criterion:** ollama is removed ONLY AFTER shimmy & ruvllm officially run and PROVE they can
   swap ollama out — that proof is a `feature-forge` build/eval item (stand up shimmy + ruvllm as the
   rust LLM-serving replacement, parity-check against ollama), not a loop cleanup.
