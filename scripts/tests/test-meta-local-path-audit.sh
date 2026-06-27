@@ -1053,13 +1053,15 @@ awk -F '	' -v home="$mig_home" '
   END { exit !(found && !bad) }
 ' "$tmp/mig-sensitive-review-plan.tsv"
 
-ENVCTL_TEST_LSOF_OPEN_SOURCE="$mig_home/.pki" "$root/scripts/audit-meta-local-paths.sh" --migration-blockers-report "$tmp/migration-blockers.tsv" --migration-blockers-summary "$tmp/migration-blockers-summary.tsv" --migration-blockers-plan "$tmp/migration-blockers-plan.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migration-blockers.out" 2>"$tmp/migration-blockers.err"
+ENVCTL_TEST_LSOF_OPEN_SOURCE="$mig_home/.pki" "$root/scripts/audit-meta-local-paths.sh" --migration-blockers-report "$tmp/migration-blockers.tsv" --migration-blockers-summary "$tmp/migration-blockers-summary.tsv" --migration-blockers-plan "$tmp/migration-blockers-plan.tsv" --open-handle-process-window-plan "$tmp/open-handle-process-window-plan.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migration-blockers.out" 2>"$tmp/migration-blockers.err"
 head -n 1 "$tmp/migration-blockers.tsv" | grep -qx $'dot_entry\treal_path\ttype\ttarget_class\taction\tapply_safe\tcanonical_target\tblocker\tblocker_detail\topen_handles\topen_handle_sample\trecommendation'
 awk -F '\t' 'NF != 12 { print "bad migration blocker row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/migration-blockers.tsv"
 head -n 1 "$tmp/migration-blockers-summary.tsv" | grep -qx $'blocker\ttotal\tapply_safe_yes\tapply_safe_no\topen_handles\trecommendations'
 awk -F '\t' 'NF != 6 { print "bad migration blocker summary row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/migration-blockers-summary.tsv"
 head -n 1 "$tmp/migration-blockers-plan.tsv" | grep -qx $'dot_entry\treal_path\tblocker\tblocker_detail\tapply_safe\topen_handles\trecommendation\tsupervision\tnext_action\tapply_command'
 awk -F '\t' 'NF != 10 { print "bad migration blocker plan row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/migration-blockers-plan.tsv"
+head -n 1 "$tmp/open-handle-process-window-plan.tsv" | grep -qx $'dot_entry\treal_path\ttype\ttarget_class\tblocker_detail\topen_handles\topen_handle_sample\tsupervision\tnext_action\tretry_command\tapply_command'
+awk -F '\t' 'NF != 11 { print "bad open-handle process window plan row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/open-handle-process-window-plan.tsv"
 awk -F '\t' -v home="$mig_home" -v meta="$mig_meta" '
   $1 == ".pki" {
     if ($2 != home "/.pki") bad=1
@@ -1092,6 +1094,25 @@ awk -F '\t' -v home="$mig_home" '
   }
   END { exit !(found && !bad) }
 ' "$tmp/migration-blockers-plan.tsv"
+awk -F '\t' -v home="$mig_home" '
+  $1 == ".pki" {
+    if ($2 != home "/.pki") bad=1
+    if ($3 != "directory") bad=1
+    if ($4 != "app-config-state") bad=1
+    if ($5 != "open-handles-present") bad=1
+    if ($6 != "1") bad=1
+    if ($7 != "chrome/123") bad=1
+    if ($8 != "process-window-required") bad=1
+    if ($9 != "close-open-handles-then-rerun-apply-migrate-dot") bad=1
+    if ($10 != "scripts/audit-meta-local-paths.sh --apply --migrate-dot .pki") bad=1
+    if ($11 != "") bad=1
+    found=1
+  }
+  $1 == ".mcp-auth" { bad=1 }
+  $1 == ".cache" { bad=1 }
+  $1 == ".config" { bad=1 }
+  END { exit !(found && !bad) }
+' "$tmp/open-handle-process-window-plan.tsv"
 awk -F '\t' -v home="$mig_home" '
   $1 == ".mcp-auth" {
     if ($2 != home "/.mcp-auth") bad=1
@@ -1131,6 +1152,8 @@ awk -F '\t' '
 ' "$tmp/migration-blockers-summary.tsv"
 ENVCTL_TEST_LSOF_OPEN_SOURCE="$mig_home/.pki" "$root/scripts/audit-meta-local-paths.sh" --migration-blockers-summary "$tmp/migration-blockers-summary-only.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migration-blockers-summary-only.out" 2>"$tmp/migration-blockers-summary-only.err"
 awk -F '\t' '$1 == "open-handles" && $2 == "1" && $3 == "1" && $4 == "0" && $5 == "1" && $6 == "close-processes-then-run-apply-migrate-dot" { found=1 } END { exit !found }' "$tmp/migration-blockers-summary-only.tsv"
+ENVCTL_TEST_LSOF_OPEN_SOURCE="$mig_home/.pki" "$root/scripts/audit-meta-local-paths.sh" --open-handle-process-window-plan "$tmp/open-handle-process-window-plan-only.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/open-handle-process-window-plan-only.out" 2>"$tmp/open-handle-process-window-plan-only.err"
+grep -qx $'.pki\t'"$mig_home"$'/.pki\tdirectory\tapp-config-state\topen-handles-present\t1\tchrome/123\tprocess-window-required\tclose-open-handles-then-rerun-apply-migrate-dot\tscripts/audit-meta-local-paths.sh --apply --migrate-dot .pki\t' "$tmp/open-handle-process-window-plan-only.tsv"
 if ENVCTL_TEST_LSOF_OPEN_SOURCE="$mig_home/.pki" "$root/scripts/audit-meta-local-paths.sh" --fail-migration-blockers --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migration-blockers-fail.out" 2>"$tmp/migration-blockers-fail.err"; then
   echo "expected --fail-migration-blockers to fail when residual blockers remain" >&2
   exit 1
