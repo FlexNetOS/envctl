@@ -143,6 +143,9 @@ mkdir -p \
   "$mig_home/.lane/ca" \
   "$mig_home/.lane/certs" \
   "$mig_home/.lane/relay" \
+  "$mig_home/.fxapp-gh-profile/Default/ClientCertificates" \
+  "$mig_home/.fxapp-gh-profile/Default/Sessions" \
+  "$mig_home/.fxapp-gh-profile/Default/Local Storage" \
   "$mig_home/.ruvector/models/all-MiniLM-L6-v2" \
   "$mig_home/.repowire" \
   "$mig_home/.nv/ComputeCache/0/7" \
@@ -215,6 +218,14 @@ printf 'relay key fixture\n' >"$mig_home/.lane/relay/node.key"
 printf 'profile\n' >"$mig_home/.lane/config.yaml"
 chmod 700 "$mig_home/.lane"
 chmod 600 "$mig_home/.lane/ca/rootCA-key.pem" "$mig_home/.lane/certs/myapp.test-key.pem" "$mig_home/.lane/relay/node.key"
+printf 'chrome local state fixture\n' >"$mig_home/.fxapp-gh-profile/Local State"
+printf 'chrome preferences fixture\n' >"$mig_home/.fxapp-gh-profile/Default/Preferences"
+printf 'sqlite login fixture\n' >"$mig_home/.fxapp-gh-profile/Default/Login Data"
+printf 'sqlite cookie fixture\n' >"$mig_home/.fxapp-gh-profile/Default/Cookies"
+printf 'session fixture\n' >"$mig_home/.fxapp-gh-profile/Default/Sessions/Session_1"
+printf 'client cert fixture\n' >"$mig_home/.fxapp-gh-profile/Default/ClientCertificates/cert.db"
+chmod 700 "$mig_home/.fxapp-gh-profile" "$mig_home/.fxapp-gh-profile/Default" "$mig_home/.fxapp-gh-profile/Default/ClientCertificates" "$mig_home/.fxapp-gh-profile/Default/Sessions" "$mig_home/.fxapp-gh-profile/Default/Local Storage"
+chmod 600 "$mig_home/.fxapp-gh-profile/Local State" "$mig_home/.fxapp-gh-profile/Default/Preferences" "$mig_home/.fxapp-gh-profile/Default/Login Data" "$mig_home/.fxapp-gh-profile/Default/Cookies" "$mig_home/.fxapp-gh-profile/Default/Sessions/Session_1" "$mig_home/.fxapp-gh-profile/Default/ClientCertificates/cert.db"
 printf '{"embedding":"state"}\n' >"$mig_home/.ruvector/intelligence.json"
 printf 'tokenizer\n' >"$mig_home/.ruvector/models/all-MiniLM-L6-v2/tokenizer.json"
 printf 'onnx-model\n' >"$mig_home/.ruvector/models/all-MiniLM-L6-v2/model.onnx"
@@ -263,6 +274,7 @@ grep -qx $'.n8n\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.l
 grep -qx $'.n8n-claude-bridge\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/n8n-claude-bridge\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.pki\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/pki\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.lane\tdirectory\treal-home-state\tsensitive\t\towner-supervised-vault-or-bridge\tno' "$tmp/app-config-inventory.tsv"
+grep -qx $'.fxapp-gh-profile\tdirectory\treal-home-state\tsensitive\t\towner-supervised-vault-or-bridge\tno' "$tmp/app-config-inventory.tsv"
 grep -qx $'.ruvector\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/ruvector\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.repowire\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/state/repowire\tmigrate-dir-to-meta-state-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.nv\tdirectory\treal-home-state\tcache\t'"$mig_meta"$'/.local/cache/nvidia\tmigrate-dir-to-meta-cache-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
@@ -346,6 +358,10 @@ if awk -F '\t' '$1 == ".pki" { found=1 } END { exit !found }' "$tmp/unknown-app-
 fi
 if awk -F '\t' '$1 == ".lane" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
   echo "unexpected unknown app-config report row for sensitive .lane" >&2
+  exit 1
+fi
+if awk -F '\t' '$1 == ".fxapp-gh-profile" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
+  echo "unexpected unknown app-config report row for sensitive .fxapp-gh-profile" >&2
   exit 1
 fi
 if awk -F '\t' '$1 == ".ruvector" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
