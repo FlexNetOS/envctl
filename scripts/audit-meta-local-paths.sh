@@ -120,8 +120,8 @@ dot_entry, child_target_class, candidate_action, apply_safe, recommendation, tot
 direct_entries, direct_files, direct_dirs, direct_symlinks.
 With --migration-blockers-report, writes read-only residual blocker rows for real-home dot entries
 that are not already bridged into META_ROOT:
-dot_entry, real_path, type, target_class, action, apply_safe, canonical_target, blocker,
-blocker_detail, open_handles, open_handle_sample, recommendation.
+dot_entry, real_path, type, target_class, action, apply_safe, canonical_target,
+sensitive_hints, blocker, blocker_detail, open_handles, open_handle_sample, recommendation.
 With --migration-blockers-summary, writes read-only per-blocker residual counts:
 blocker, total, apply_safe_yes, apply_safe_no, open_handles, recommendations.
 With --migration-blockers-plan, writes read-only owner-action rows for each residual blocker:
@@ -298,7 +298,7 @@ if [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATES_SUMMARY_PATH" ]; then
 fi
 if [ -n "$MIGRATION_BLOCKERS_REPORT_PATH" ]; then
   mkdir -p "$(dirname "$MIGRATION_BLOCKERS_REPORT_PATH")"
-  printf 'dot_entry\treal_path\ttype\ttarget_class\taction\tapply_safe\tcanonical_target\tblocker\tblocker_detail\topen_handles\topen_handle_sample\trecommendation\n' >"$MIGRATION_BLOCKERS_REPORT_PATH"
+  printf 'dot_entry\treal_path\ttype\ttarget_class\taction\tapply_safe\tcanonical_target\tsensitive_hints\tblocker\tblocker_detail\topen_handles\topen_handle_sample\trecommendation\n' >"$MIGRATION_BLOCKERS_REPORT_PATH"
 fi
 if [ -n "$MIGRATION_BLOCKERS_SUMMARY_PATH" ]; then
   mkdir -p "$(dirname "$MIGRATION_BLOCKERS_SUMMARY_PATH")"
@@ -1155,13 +1155,15 @@ migration_blocker_plan_fields() {
 
 record_migration_blocker() {
   local dot="$1" type="$2" state="$3" target_class="$4" canonical_target="$5" action="$6" apply_safe="$7"
-  local path blocker blocker_detail open_handles open_handle_sample recommendation supervision next_action apply_command retry_command
+  local path blocker blocker_detail open_handles open_handle_sample recommendation sensitive_hints
+  local supervision next_action apply_command retry_command
 
   [ -n "$MIGRATION_BLOCKERS_REPORT_PATH" ] || [ -n "$MIGRATION_BLOCKERS_SUMMARY_PATH" ] || [ -n "$MIGRATION_BLOCKERS_PLAN_PATH" ] || [ -n "$OPEN_HANDLE_PROCESS_WINDOW_PLAN_PATH" ] || [ "$FAIL_MIGRATION_BLOCKERS" -eq 1 ] || return 0
   [ "$state" = "real-home-state" ] || [ "$state" = "external-symlink" ] || return 0
 
   path="$REAL_HOME/$dot"
   { [ -e "$path" ] || [ -L "$path" ]; } || return 0
+  sensitive_hints="$(path_sensitive_hint_count "$path")"
 
   blocker="owner-supervised"
   blocker_detail="$action"
@@ -1227,7 +1229,7 @@ record_migration_blocker() {
   migration_blocker_observe "$blocker" "$apply_safe" "$open_handles" "$recommendation"
 
   if [ -n "$MIGRATION_BLOCKERS_REPORT_PATH" ]; then
-    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
       "$dot" \
       "$path" \
       "$type" \
@@ -1235,6 +1237,7 @@ record_migration_blocker() {
       "$action" \
       "$apply_safe" \
       "$canonical_target" \
+      "$sensitive_hints" \
       "$blocker" \
       "$blocker_detail" \
       "$open_handles" \

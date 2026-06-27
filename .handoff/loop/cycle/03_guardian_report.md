@@ -1,4 +1,4 @@
-# TASK-0078 guardian report
+# TASK-0078 guardian report — blocker sensitive hints
 
 Date: 2026-06-27
 
@@ -7,7 +7,6 @@ Date: 2026-06-27
 ```bash
 bash scripts/tests/test-meta-local-path-audit.sh
 bash ci/gates/meta-local-policy.sh
-bash -n scripts/audit-meta-local-paths.sh scripts/tests/test-meta-local-path-audit.sh ci/gates/meta-local-policy.sh
 bash ci/gates/harness-scripts.sh
 ```
 
@@ -15,35 +14,20 @@ All commands passed.
 
 ## Live runtime verification
 
-Read-only live audit command:
-
-```bash
-./scripts/audit-meta-local-paths.sh \
-  --inventory /tmp/.../inventory.tsv \
-  --inventory-summary /tmp/.../summary.tsv \
-  --deep-link-inventory /tmp/.../deep.tsv \
-  --deep-link-summary /tmp/.../deep-summary.tsv \
-  --shell-dotfile-conflict-report /tmp/.../shell-conflicts.tsv \
-  --meta-root /home/drdave/Desktop/meta \
-  --real-home /home/drdave \
-  --envctl-home-source /home/drdave/Desktop/meta/envctl/home
-```
+Read-only live audit wrote:
+`/tmp/envctl-dot-audit-sensitive-hints-final-20260627T184649Z`
 
 Observed:
 
 - exit code: 0
-- `changed=0`
-- inventory summary:
-  - `already-meta=34`
-  - `app-config-state=35`
-  - `bridge=1`
-  - `cache=1`
-  - `managed-dotfile=2`
-  - `sensitive=5`
-- shell conflict report: header only
-- deep-link summary: `inside-meta=5060`, `external-system=1119`, `missing-target=329`, no `real-home-leak` rows
-- backup/history sample rows (`.bash_history`, `.zsh_history`, `.bashrc.bak.*`, `.claude.json.bak.*`, `.n8n.bak.*`, `.zshrc.bak.*`) all resolve inside `$META_ROOT/var/lib/envctl/real-home-dotfile-migration/history-or-backup` as `already-meta`.
+- `meta-local audit: PASS warnings=10 changed=0 dot_entries=79`
+- blocker report header includes `sensitive_hints`
+- selected blocker evidence:
+  - `.pki`: `target_class=app-config-state`, `apply_safe=yes`, `canonical_target=/home/drdave/Desktop/meta/.local/share/pki`, `sensitive_hints=3`, `blocker=open-handles`, `open_handles=2`, sample `chrome/1653768`
+  - `.lane`: `sensitive_hints=7`
+  - `.fxapp-gh-profile`: `sensitive_hints=5`
+  - `.ssh`: `sensitive_hints=1`
 
 ## Result
 
-PASS. The slice adds test-proven migration affordances without weakening the default non-mutating owner-supervised policy.
+PASS. The slice improves surgical blocker visibility without weakening the default non-mutating policy.
