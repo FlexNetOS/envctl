@@ -23,7 +23,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--owner-supervised-state-report PATH] [--owner-supervised-child-report PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--fail-migration-blockers] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--owner-supervised-state-report PATH] [--owner-supervised-child-report PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--migration-blockers-plan PATH] [--fail-migration-blockers] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
 With --inventory, also writes a tab-separated relocation inventory:
@@ -73,6 +73,9 @@ dot_entry, real_path, type, target_class, action, apply_safe, canonical_target, 
 blocker_detail, open_handles, open_handle_sample, recommendation.
 With --migration-blockers-summary, writes read-only per-blocker residual counts:
 blocker, total, apply_safe_yes, apply_safe_no, open_handles, recommendations.
+With --migration-blockers-plan, writes read-only owner-action rows for each residual blocker:
+dot_entry, real_path, blocker, blocker_detail, apply_safe, open_handles, recommendation,
+supervision, next_action, apply_command.
 Add --fail-migration-blockers to make the audit exit non-zero when any migration blockers remain.
 With --apply-history-archives and --apply, moves history/backup dot entries under
 $META_ROOT/var/lib/envctl/real-home-dotfile-migration/history-or-backup/<dot-entry> and leaves
@@ -98,6 +101,7 @@ OWNER_SUPERVISED_STATE_REPORT_PATH=""
 OWNER_SUPERVISED_CHILD_REPORT_PATH=""
 MIGRATION_BLOCKERS_REPORT_PATH=""
 MIGRATION_BLOCKERS_SUMMARY_PATH=""
+MIGRATION_BLOCKERS_PLAN_PATH=""
 FAIL_MIGRATION_BLOCKERS=0
 DEEP_LINK_INVENTORY_PATH=""
 DEEP_LINK_SUMMARY_PATH=""
@@ -119,6 +123,7 @@ while [ "$#" -gt 0 ]; do
     --owner-supervised-child-report) OWNER_SUPERVISED_CHILD_REPORT_PATH="${2:?--owner-supervised-child-report requires a path}"; shift 2 ;;
     --migration-blockers-report) MIGRATION_BLOCKERS_REPORT_PATH="${2:?--migration-blockers-report requires a path}"; shift 2 ;;
     --migration-blockers-summary) MIGRATION_BLOCKERS_SUMMARY_PATH="${2:?--migration-blockers-summary requires a path}"; shift 2 ;;
+    --migration-blockers-plan) MIGRATION_BLOCKERS_PLAN_PATH="${2:?--migration-blockers-plan requires a path}"; shift 2 ;;
     --fail-migration-blockers) FAIL_MIGRATION_BLOCKERS=1; shift ;;
     --deep-link-inventory) DEEP_LINK_INVENTORY_PATH="${2:?--deep-link-inventory requires a path}"; shift 2 ;;
     --deep-link-summary) DEEP_LINK_SUMMARY_PATH="${2:?--deep-link-summary requires a path}"; shift 2 ;;
@@ -183,6 +188,10 @@ if [ -n "$MIGRATION_BLOCKERS_REPORT_PATH" ]; then
 fi
 if [ -n "$MIGRATION_BLOCKERS_SUMMARY_PATH" ]; then
   mkdir -p "$(dirname "$MIGRATION_BLOCKERS_SUMMARY_PATH")"
+fi
+if [ -n "$MIGRATION_BLOCKERS_PLAN_PATH" ]; then
+  mkdir -p "$(dirname "$MIGRATION_BLOCKERS_PLAN_PATH")"
+  printf 'dot_entry\treal_path\tblocker\tblocker_detail\tapply_safe\topen_handles\trecommendation\tsupervision\tnext_action\tapply_command\n' >"$MIGRATION_BLOCKERS_PLAN_PATH"
 fi
 if [ -n "$DEEP_LINK_INVENTORY_PATH" ]; then
   mkdir -p "$(dirname "$DEEP_LINK_INVENTORY_PATH")"
@@ -659,11 +668,70 @@ record_owner_supervised_children() {
   done < <(find "$path" -mindepth 1 -maxdepth 1 -print0 2>/dev/null | LC_ALL=C sort -z)
 }
 
+migration_blocker_plan_fields() {
+  local dot="$1" blocker="$2" recommendation="$3"
+  local supervision next_action apply_command
+
+  supervision="owner-supervised"
+  next_action="review-and-route-before-migration"
+  apply_command=""
+
+  case "$blocker" in
+    open-handles)
+      supervision="process-window-required"
+      next_action="close-open-handles-then-rerun-apply-migrate-dot"
+      apply_command="scripts/audit-meta-local-paths.sh --apply --migrate-dot $dot"
+      ;;
+    ready-for-explicit-migration)
+      supervision="explicit-apply-required"
+      next_action="run-apply-migrate-dot"
+      apply_command="scripts/audit-meta-local-paths.sh --apply --migrate-dot $dot"
+      ;;
+    needs-open-handle-proof)
+      supervision="tooling-required"
+      next_action="install-lsof-or-run-with-lsof"
+      ;;
+    owner-supervised-sensitive)
+      supervision="owner-supervised"
+      next_action="owner-decide-vault-or-bridge-no-automation"
+      ;;
+    owner-supervised-cache)
+      supervision="component-managed"
+      next_action="design-component-managed-cache-migration"
+      ;;
+    owner-supervised-managed-dotfile)
+      supervision="owner-reviewed"
+      next_action="owner-review-managed-config-before-bridge"
+      ;;
+    owner-supervised-shell-dotfile)
+      supervision="owner-reviewed"
+      next_action="merge-canonical-then-bridge"
+      ;;
+    owner-supervised-app-config)
+      supervision="owner-reviewed"
+      next_action="classify-or-migrate-via-explicit-migrate-dot"
+      ;;
+    owner-supervised-toolchain-state)
+      supervision="component-managed"
+      next_action="design-component-managed-toolchain-migration"
+      ;;
+    owner-supervised-external-symlink)
+      supervision="owner-reviewed"
+      next_action="relink-to-meta-local-target"
+      ;;
+    *)
+      next_action="$recommendation"
+      ;;
+  esac
+
+  printf '%s\t%s\t%s\n' "$supervision" "$next_action" "$apply_command"
+}
+
 record_migration_blocker() {
   local dot="$1" type="$2" state="$3" target_class="$4" canonical_target="$5" action="$6" apply_safe="$7"
-  local path blocker blocker_detail open_handles open_handle_sample recommendation
+  local path blocker blocker_detail open_handles open_handle_sample recommendation supervision next_action apply_command
 
-  [ -n "$MIGRATION_BLOCKERS_REPORT_PATH" ] || [ -n "$MIGRATION_BLOCKERS_SUMMARY_PATH" ] || [ "$FAIL_MIGRATION_BLOCKERS" -eq 1 ] || return 0
+  [ -n "$MIGRATION_BLOCKERS_REPORT_PATH" ] || [ -n "$MIGRATION_BLOCKERS_SUMMARY_PATH" ] || [ -n "$MIGRATION_BLOCKERS_PLAN_PATH" ] || [ "$FAIL_MIGRATION_BLOCKERS" -eq 1 ] || return 0
   [ "$state" = "real-home-state" ] || [ "$state" = "external-symlink" ] || return 0
 
   path="$REAL_HOME/$dot"
@@ -746,6 +814,21 @@ record_migration_blocker() {
       "$open_handles" \
       "$open_handle_sample" \
       "$recommendation" >>"$MIGRATION_BLOCKERS_REPORT_PATH"
+  fi
+
+  if [ -n "$MIGRATION_BLOCKERS_PLAN_PATH" ]; then
+    IFS=$'\t' read -r supervision next_action apply_command < <(migration_blocker_plan_fields "$dot" "$blocker" "$recommendation")
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+      "$dot" \
+      "$path" \
+      "$blocker" \
+      "$blocker_detail" \
+      "$apply_safe" \
+      "$open_handles" \
+      "$recommendation" \
+      "$supervision" \
+      "$next_action" \
+      "$apply_command" >>"$MIGRATION_BLOCKERS_PLAN_PATH"
   fi
 }
 
