@@ -18,6 +18,8 @@ grep -q '^model = "gpt-5.5"' "$C" || exit 1
 grep -q '^service_tier = "fast"' "$C" || exit 1
 grep -q '^model_auto_compact_token_limit = 3000000' "$C" || exit 1
 grep -q '^web_search = "live"' "$C" || exit 1
+grep -q '^background_terminal_max_timeout = 300000' "$C" || exit 1
+grep -q '^tool_output_token_limit = 12000' "$C" || exit 1
 for f in apps auto_compaction browser_use browser_use_external computer_use enable_request_compression fast_mode goals guardian_approval hooks image_generation in_app_browser mentions_v2 multi_agent personality plugin_sharing plugins prevent_idle_sleep remote_compaction_v2 secret_auth_storage shell_snapshot shell_tool skill_mcp_dependency_install tool_call_mcp_elicitation tool_suggest unified_exec workspace_dependencies memories network_proxy; do
   grep -q "^$f = true" "$C" || { echo "missing feature: $f"; exit 1; }
 done
@@ -30,6 +32,8 @@ grep -q '^\[plugins\."harness@harness-marketplace"\]' "$C" || exit 1
 grep -q '^enabled = true' "$C" || exit 1
 grep -q '^default_permissions = "meta-workspace"' "$C" || exit 1
 for a in meta-worker pr-explorer reviewer docs-researcher codex-baseline-researcher; do [ -f "$M/.local/share/codex/agents/$a.toml" ] || { echo "missing agent: $a"; exit 1; }; done
+for slug in gpt-5.5 gpt-5.4-mini gpt-5.4-nano gpt-5.4 gpt-5.3-codex-spark gpt-5.6-sol gpt-5.6-terra gpt-5.6-luna; do grep -q '"slug": '"\"$slug\"" "$M/.local/share/codex/model-catalog.json" || { echo "missing model catalog slug: $slug"; exit 1; }; done
+for var in FXN_AGENT_COMMUNICATION FXN_AGENT_TEAM_SWARM FXN_AGENT_TEAM_SWARM_MODEL_TAGS FXN_CODEX_MODEL_SOL FXN_CODEX_MODEL_TERRA FXN_CODEX_MODEL_LUNA FXN_CODEX_REMOTE_CONTROL; do grep -q "export $var=" "$M/.codex/hooks/with-meta-env.sh" || { echo "missing hook env var: $var"; exit 1; }; done
 CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M/usr/bin/codex" plugin list | grep -q 'meta@flexnetos-codex  installed, enabled' || exit 1
 CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M/usr/bin/codex" plugin list | grep -q 'harness@harness-marketplace  installed, enabled' || exit 1
 CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M/usr/bin/codex" mcp list >/dev/null || exit 1
@@ -92,6 +96,8 @@ lines = [
     'model_auto_compact_token_limit = 3000000',
     'model_auto_compact_token_limit_scope = "total"',
     'web_search = "live"',
+    'background_terminal_max_timeout = 300000',
+    'tool_output_token_limit = 12000',
     f'model_catalog_json = "{home}/model-catalog.json"',
     'notify = ["weave", "hook", "wake"]',
     'service_tier = "fast"',
@@ -202,6 +208,59 @@ lines += [
 for p in projects:
     lines += ['', f'[projects."{p}"]', 'trust_level = "trusted"']
 config.write_text('\n'.join(lines) + '\n')
+
+
+def model_entry(slug, display_name, description, context_window=4000000, priority=0, reasoning=('low','medium','high','xhigh'), fast=False, visibility='list'):
+    return {
+        'additional_speed_tiers': ['fast'] if fast else [],
+        'apply_patch_tool_type': 'freeform',
+        'auto_compact_token_limit': None,
+        'availability_nux': {'message': f'{display_name} is configured by the FlexNetOS/meta Codex baseline.'},
+        'base_instructions': '',
+        'context_window': context_window,
+        'default_reasoning_level': 'medium',
+        'default_reasoning_summary': 'none',
+        'default_service_tier': None,
+        'default_verbosity': 'low',
+        'description': description,
+        'display_name': display_name,
+        'effective_context_window_percent': 95,
+        'experimental_supported_tools': [],
+        'input_modalities': ['text', 'image'],
+        'max_context_window': context_window,
+        'priority': priority,
+        'service_tiers': [{'description': '1.5x speed, increased usage', 'id': 'priority', 'name': 'Fast'}] if fast else [],
+        'shell_type': 'shell_command',
+        'slug': slug,
+        'support_verbosity': True,
+        'supported_in_api': True,
+        'supported_reasoning_levels': [
+            {'effort': e, 'description': {
+                'low': 'Fast responses with lighter reasoning',
+                'medium': 'Balances speed and reasoning depth for everyday tasks',
+                'high': 'Greater reasoning depth for complex problems',
+                'xhigh': 'Extra high reasoning depth for complex problems',
+            }.get(e, e)} for e in reasoning
+        ],
+        'supports_image_detail_original': True,
+        'supports_parallel_tool_calls': True,
+        'supports_reasoning_summaries': True,
+        'supports_search_tool': True,
+        'truncation_policy': {'limit': 10000, 'mode': 'tokens'},
+        'upgrade': None,
+        'visibility': visibility,
+        'web_search_tool_type': 'text_and_image',
+    }
+(home / 'model-catalog.json').write_text(json.dumps({'models': [
+    model_entry('gpt-5.5', 'GPT-5.5', 'Current recommended OpenAI Codex/API model for complex coding, research, and tool-heavy workflows.', priority=0, fast=True),
+    model_entry('gpt-5.4-mini', 'GPT-5.4 mini', 'Fast OpenAI model for lighter coding tasks and subagents.', context_window=400000, priority=1, reasoning=('low','medium','high','xhigh')),
+    model_entry('gpt-5.4-nano', 'GPT-5.4 nano', 'Smallest GPT-5.4 frontier variant for the lowest-latency, lowest-cost text/image tasks when available.', context_window=400000, priority=2, reasoning=('low','medium','high')),
+    model_entry('gpt-5.4', 'GPT-5.4', 'OpenAI GPT-5 family model retained for compatibility and explicit routing.', priority=3),
+    model_entry('gpt-5.3-codex-spark', 'GPT-5.3 Codex Spark', 'Research-preview Codex model optimized for near-instant coding iteration when the account has access.', context_window=1000000, priority=4, reasoning=('low','medium','high')),
+    model_entry('gpt-5.6-sol', 'GPT-5.6 Sol', 'FlexNetOS workspace alias requested by owner; routes only if the active OpenAI account/provider exposes this slug.', priority=10),
+    model_entry('gpt-5.6-terra', 'GPT-5.6 Terra', 'FlexNetOS workspace alias requested by owner; routes only if the active OpenAI account/provider exposes this slug.', priority=11),
+    model_entry('gpt-5.6-luna', 'GPT-5.6 Luna', 'FlexNetOS workspace alias requested by owner; routes only if the active OpenAI account/provider exposes this slug.', priority=12),
+]}, indent=2) + '\n')
 agent_dir = home / 'agents'
 agent_dir.mkdir(parents=True, exist_ok=True)
 agent_src = M / '.codex/agents'
@@ -210,15 +269,18 @@ if agent_src.exists():
         (agent_dir / src.name).write_text(src.read_text())
 else:
     raise SystemExit(f'missing project Codex agent source: {agent_src}')
+def meta_env_command(*parts):
+    quoted = ' '.join(__import__('shlex').quote(str(part)) for part in parts)
+    return 'rtk bash -lc ' + __import__('shlex').quote(f'exec "{M}/.codex/hooks/with-meta-env.sh" {quoted}')
 hooks.write_text(json.dumps({
   'hooks': {
-    'SessionStart': [{'hooks': [{'type': 'command', 'command': 'icm hook start'}]}],
-    'PreToolUse': [{'matcher': 'Bash', 'hooks': [{'type': 'command', 'command': 'icm hook pre'}]}],
-    'PostToolUse': [{'hooks': [{'type': 'command', 'command': 'icm hook post'}]}],
-    'UserPromptSubmit': [{'hooks': [{'type': 'command', 'command': 'icm hook prompt'}]}],
-    'PreCompact': [{'hooks': [{'type': 'command', 'command': 'icm hook compact'}]}],
-    'Stop': [{'hooks': [{'type': 'command', 'command': 'weave hook wake'}]}],
-    'SubagentStop': [{'hooks': [{'type': 'command', 'command': 'weave hook wake'}]}]
+    'SessionStart': [{'hooks': [{'type': 'command', 'command': meta_env_command('icm', 'hook', 'start')}]}],
+    'PreToolUse': [{'matcher': 'Bash', 'hooks': [{'type': 'command', 'command': meta_env_command('icm', 'hook', 'pre')}]}],
+    'PostToolUse': [{'hooks': [{'type': 'command', 'command': meta_env_command('icm', 'hook', 'post')}]}],
+    'UserPromptSubmit': [{'hooks': [{'type': 'command', 'command': meta_env_command('icm', 'hook', 'prompt')}]}],
+    'PreCompact': [{'hooks': [{'type': 'command', 'command': meta_env_command('icm', 'hook', 'compact')}]}],
+    'Stop': [{'hooks': [{'type': 'command', 'command': meta_env_command('weave', 'hook', 'wake')}]}],
+    'SubagentStop': [{'hooks': [{'type': 'command', 'command': meta_env_command('weave', 'hook', 'wake')}]}]
   }
 }, indent=2) + '\n')
 PY
@@ -241,6 +303,8 @@ H="$M/.local/share/codex/hooks.json"
 [ "$(readlink -f "$R/.codex" 2>/dev/null)" = "$(readlink -f "$M/.local/share/codex" 2>/dev/null)" ]
 [ "$(readlink -f "$R/.local/bin/codex" 2>/dev/null)" = "$(readlink -f "$M/usr/bin/codex" 2>/dev/null)" ]
 [ -f "$C" ] && [ -f "$H" ]
+grep -q '^background_terminal_max_timeout = 300000' "$C"
+grep -q '^tool_output_token_limit = 12000' "$C"
 for f in apps auto_compaction browser_use browser_use_external computer_use enable_request_compression fast_mode goals guardian_approval hooks image_generation in_app_browser mentions_v2 multi_agent personality plugin_sharing plugins prevent_idle_sleep remote_compaction_v2 secret_auth_storage shell_snapshot shell_tool skill_mcp_dependency_install tool_call_mcp_elicitation tool_suggest unified_exec workspace_dependencies memories network_proxy; do grep -q "^$f = true" "$C"; done
 for s in meta gitkb icm vox context7 weave openaiDeveloperDocs; do grep -q "^\[mcp_servers\.$s\]" "$C"; done
 grep -q '^\[marketplaces\.flexnetos-codex\]' "$C"
@@ -248,6 +312,8 @@ grep -q '^\[plugins\."meta@flexnetos-codex"\]' "$C"
 grep -q '^\[plugins\."harness@harness-marketplace"\]' "$C"
 grep -q '^default_permissions = "meta-workspace"' "$C"
 for a in meta-worker pr-explorer reviewer docs-researcher codex-baseline-researcher; do [ -f "$M/.local/share/codex/agents/$a.toml" ]; done
+for slug in gpt-5.5 gpt-5.4-mini gpt-5.4-nano gpt-5.4 gpt-5.3-codex-spark gpt-5.6-sol gpt-5.6-terra gpt-5.6-luna; do grep -q '"slug": '"\"$slug\"" "$M/.local/share/codex/model-catalog.json"; done
+for var in FXN_AGENT_COMMUNICATION FXN_AGENT_TEAM_SWARM FXN_AGENT_TEAM_SWARM_MODEL_TAGS FXN_CODEX_MODEL_SOL FXN_CODEX_MODEL_TERRA FXN_CODEX_MODEL_LUNA FXN_CODEX_REMOTE_CONTROL; do grep -q "export $var=" "$M/.codex/hooks/with-meta-env.sh"; done
 CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M/usr/bin/codex" plugin list | grep -q 'meta@flexnetos-codex  installed, enabled'
 CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M/usr/bin/codex" plugin list | grep -q 'harness@harness-marketplace  installed, enabled'
 CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M/usr/bin/codex" mcp list >/dev/null
