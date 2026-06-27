@@ -66,6 +66,40 @@ grep -qx $'external-symlink\t1\t0\t1\t0\towner-supervised-relink' "$tmp/inventor
 "$root/scripts/audit-meta-local-paths.sh" --inventory-summary "$tmp/summary-only.tsv" --meta-root "$meta" --real-home "$home" --envctl-home-source "$meta/envctl/home" >"$tmp/summary-only.out" 2>"$tmp/summary-only.err"
 grep -qx $'managed-dotfile\t2\t1\t1\t0\tbridge-canonical,owner-supervised-bridge' "$tmp/summary-only.tsv"
 
+# Shell dotfiles need an explicit owner-supervised apply mode: safe cases move/canonicalize
+# into META_ROOT, while conflicting canonical files stay untouched for a human merge.
+printf '# portable profile\n' >"$home/.profile"
+printf '# portable zshenv\n' >"$home/.zshenv"
+printf '# real bashrc\n' >"$home/.bashrc"
+printf '# canonical bashrc\n' >"$meta/.bashrc"
+printf '# duplicate logout\n' >"$home/.bash_logout"
+printf '# duplicate logout\n' >"$meta/.bash_logout"
+
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/shell-pre.tsv" --meta-root "$meta" --real-home "$home" --envctl-home-source "$meta/envctl/home" >"$tmp/shell-pre.out" 2>"$tmp/shell-pre.err"
+grep -qx $'.profile\tfile\treal-home-state\tshell-dotfile\t'"$meta"$'/.profile\tmove-to-canonical-and-bridge\tyes' "$tmp/shell-pre.tsv"
+grep -qx $'.zshenv\tfile\treal-home-state\tshell-dotfile\t'"$meta"$'/.zshenv\tmove-to-canonical-and-bridge\tyes' "$tmp/shell-pre.tsv"
+grep -qx $'.bashrc\tfile\treal-home-state\tshell-dotfile\t'"$meta"$'/.bashrc\towner-supervised-merge-and-bridge\tno' "$tmp/shell-pre.tsv"
+grep -qx $'.bash_logout\tfile\treal-home-state\tshell-dotfile\t'"$meta"$'/.bash_logout\tbridge-canonical\tyes' "$tmp/shell-pre.tsv"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --apply-shell-dotfiles --meta-root "$meta" --real-home "$home" --envctl-home-source "$meta/envctl/home" >"$tmp/shell-apply.out" 2>"$tmp/shell-apply.err"
+test "$(readlink "$home/.profile")" = "$meta/.profile"
+test "$(readlink -f "$home/.profile")" = "$meta/.profile"
+grep -qx '# portable profile' "$meta/.profile"
+test "$(readlink "$home/.zshenv")" = "$meta/.zshenv"
+grep -qx '# portable zshenv' "$meta/.zshenv"
+test "$(readlink "$home/.bash_logout")" = "$meta/.bash_logout"
+grep -qx '# duplicate logout' "$meta/.bash_logout"
+test ! -L "$home/.bashrc"
+grep -qx '# real bashrc' "$home/.bashrc"
+grep -qx '# canonical bashrc' "$meta/.bashrc"
+grep -q 'WARN: .*\.bashrc differs from canonical .* owner-supervised merge required' "$tmp/shell-apply.err"
+
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/shell-post.tsv" --meta-root "$meta" --real-home "$home" --envctl-home-source "$meta/envctl/home" >"$tmp/shell-post.out" 2>"$tmp/shell-post.err"
+grep -qx $'.profile\tsymlink\talready-meta\talready-meta\t'"$meta"$'/.profile\tnone\tn/a' "$tmp/shell-post.tsv"
+grep -qx $'.zshenv\tsymlink\talready-meta\talready-meta\t'"$meta"$'/.zshenv\tnone\tn/a' "$tmp/shell-post.tsv"
+grep -qx $'.bash_logout\tsymlink\talready-meta\talready-meta\t'"$meta"$'/.bash_logout\tnone\tn/a' "$tmp/shell-post.tsv"
+grep -qx $'.bashrc\tfile\treal-home-state\tshell-dotfile\t'"$meta"$'/.bashrc\towner-supervised-merge-and-bridge\tno' "$tmp/shell-post.tsv"
+
 # If no meta-owned replacement exists for an escaping .local/bin symlink, --apply must fail closed
 # and leave the unsafe link untouched for owner-supervised remediation.
 rm -f "$meta/usr/bin/hf"

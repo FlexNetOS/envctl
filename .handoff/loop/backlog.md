@@ -338,21 +338,26 @@ FIRST** (never relocate to older), (4) smoke-test, (5) archive installed copy (t
 delete), (6) symlink `~/.local/bin/<tool>`→meta build, (7) re-verify + ROLLBACK on failure, (8)
 verify env health.
 
-- [~] **TASK-0078 (P0) — real-home dotfile relocation inventory + safe bridge automation (PR #290
-  ARMED):** Current loop target for the owner goal "walk every dot file/folder under `/home/drdave`
-  and relocate/bridge surgically into meta." PR #290 now hardens the read-only audit into a
-  machine-readable `--inventory` TSV that records every top-level real-home dot entry with
-  `type/state/target_class/canonical_target/action/apply_safe`, while keeping mutation limited to
-  proven-safe bridges (`~/.local`, `.local/bin`, canonical `.gitconfig`). Live dry-run evidence
-  2026-06-27: `dot_entries=78`, `warnings=75`, `changed=0`; class counts were `bridge=1`,
-  `managed-dotfile=3`, `already-meta=1`, `sensitive=5`, `toolchain-state=9`, `cache=1`,
-  `shell-dotfile=5`, `history-or-backup=17`, `app-config-state=36`. Follow-up slice adds
-  `--inventory-summary` TSV so the loop can gate class-by-class migrations from stable counts:
-  `app-config-state=36`, `history-or-backup=17`, `toolchain-state=9`, `sensitive=5`,
-  `shell-dotfile=5`, `managed-dotfile=3`, `cache=1`, `bridge=1`, `already-meta=1`. Next slices
-  consume this summary class-by-class (toolchains, shell dotfiles, app config, sensitive stores) and
-  add tests before any broader apply behavior; owner-supervised classes remain non-mutating until a
-  safe per-class component/bridge is proven.
+- [~] **TASK-0078 (P0) — real-home dotfile relocation inventory + safe bridge automation (PR #290/#291
+  MERGED; shell-dotfile bridge slice in progress):** Current loop target for the owner goal "walk
+  every dot file/folder under `/home/drdave` and relocate/bridge surgically into meta." PR #290
+  hardened the read-only audit into a machine-readable `--inventory` TSV that records every top-level
+  real-home dot entry with `type/state/target_class/canonical_target/action/apply_safe`, while keeping
+  mutation limited to proven-safe bridges (`~/.local`, `.local/bin`, canonical `.gitconfig`). PR #291
+  added `--inventory-summary` TSV so the loop can gate class-by-class migrations from stable counts.
+  Live pre-shell evidence 2026-06-27: `dot_entries=78`, `warnings=72`, `changed=0`; summary counts
+  were `app-config-state=36`, `history-or-backup=17`, `toolchain-state=9`, `sensitive=5`,
+  `shell-dotfile=5`, `managed-dotfile=3`, `cache=1`, `bridge=1`, `already-meta=1`. Current shell
+  slice adds explicit opt-in `--apply-shell-dotfiles` behavior plus TDD coverage: only duplicate/safe
+  shell dotfiles are canonicalized into `$META_ROOT` and bridged; differing canonical files remain
+  owner-supervised. Live apply evidence 2026-06-27: relocated/bridged `.bash_logout`, `.profile`,
+  `.zshenv`, `.zshrc` into `/home/drdave/Desktop/meta`; `changed=4`. Current post-apply
+  verification shows the shell class reduced to one remaining item: `shell-dotfile=1`,
+  `already-meta=16`, `app-config-state=35`, `history-or-backup=17`, `sensitive=5`,
+  `managed-dotfile=2`, `cache=1`, `bridge=1`. The remaining shell item is `.bashrc` with action
+  `owner-supervised-merge-and-bridge` because real-home and canonical meta copies differ; next slices
+  continue class-by-class (toolchains/meta-managed state, app config, sensitive stores, history/archive)
+  and keep owner-supervised classes non-mutating until a safe per-class component/bridge is proven.
 - [x] `envctl env` — discover meta-root via `.meta.yaml` marker (`engine::dashboard::locate_meta_file`),
   emit `export META_ROOT=…` + meta tool dirs on PATH; `--toolchains`/`--materialize` (merged from
   feat/envctl-env, 2026-06-12).
