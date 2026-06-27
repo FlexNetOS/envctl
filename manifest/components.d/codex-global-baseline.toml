@@ -18,16 +18,18 @@ grep -q '^model = "gpt-5.5"' "$C" || exit 1
 grep -q '^service_tier = "fast"' "$C" || exit 1
 grep -q '^model_auto_compact_token_limit = 3000000' "$C" || exit 1
 grep -q '^web_search = "live"' "$C" || exit 1
-for f in apps auto_compaction browser_use browser_use_external computer_use enable_request_compression fast_mode goals guardian_approval hooks image_generation in_app_browser mentions_v2 multi_agent personality plugins prevent_idle_sleep skill_mcp_dependency_install tool_call_mcp_elicitation tool_suggest unified_exec workspace_dependencies memories network_proxy; do
+for f in apps auto_compaction browser_use browser_use_external computer_use enable_request_compression fast_mode goals guardian_approval hooks image_generation in_app_browser mentions_v2 multi_agent personality plugin_sharing plugins prevent_idle_sleep remote_compaction_v2 secret_auth_storage shell_snapshot shell_tool skill_mcp_dependency_install tool_call_mcp_elicitation tool_suggest unified_exec workspace_dependencies memories network_proxy; do
   grep -q "^$f = true" "$C" || { echo "missing feature: $f"; exit 1; }
 done
-for s in meta gitkb icm vox context7 weave; do
+for s in meta gitkb icm vox context7 weave openaiDeveloperDocs; do
   grep -q "^\[mcp_servers\.$s\]" "$C" || { echo "missing mcp: $s"; exit 1; }
 done
 grep -q '^\[marketplaces\.flexnetos-codex\]' "$C" || exit 1
 grep -q '^\[plugins\."meta@flexnetos-codex"\]' "$C" || exit 1
 grep -q '^\[plugins\."harness@harness-marketplace"\]' "$C" || exit 1
 grep -q '^enabled = true' "$C" || exit 1
+grep -q '^default_permissions = "meta-workspace"' "$C" || exit 1
+for a in meta-worker pr-explorer reviewer docs-researcher codex-baseline-researcher; do [ -f "$M/.local/share/codex/agents/$a.toml" ] || { echo "missing agent: $a"; exit 1; }; done
 CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M/usr/bin/codex" plugin list | grep -q 'meta@flexnetos-codex  installed, enabled' || exit 1
 CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M/usr/bin/codex" plugin list | grep -q 'harness@harness-marketplace  installed, enabled' || exit 1
 CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M/usr/bin/codex" mcp list >/dev/null || exit 1
@@ -41,7 +43,7 @@ M="${META_ROOT:?META_ROOT required}"
 R="${ENVCTL_REAL_HOME:-$HOME}"
 CODEX_HOME_DIR="$M/.local/share/codex"
 CODEX_STATE_DIR="$M/.local/state/codex"
-install -d -m 700 "$CODEX_HOME_DIR" "$CODEX_STATE_DIR"
+install -d -m 700 "$CODEX_HOME_DIR" "$CODEX_STATE_DIR" "$CODEX_HOME_DIR/agents"
 install -d -m 755 "$R/.local/bin"
 if [ -e "$R/.codex" ] && [ "$(readlink -f "$R/.codex" 2>/dev/null)" != "$(readlink -f "$CODEX_HOME_DIR" 2>/dev/null)" ]; then
   ARCH="$M/var/lib/envctl/legacy-archives/codex-home-$(date -u +%Y%m%d-%H%M%S)"
@@ -75,7 +77,8 @@ features = [
     'apps', 'auto_compaction', 'browser_use', 'browser_use_external', 'computer_use',
     'enable_request_compression', 'fast_mode', 'goals', 'guardian_approval', 'hooks',
     'image_generation', 'in_app_browser', 'mentions_v2', 'multi_agent', 'personality',
-    'plugins', 'prevent_idle_sleep', 'skill_mcp_dependency_install',
+    'plugin_sharing', 'plugins', 'prevent_idle_sleep', 'remote_compaction_v2',
+    'secret_auth_storage', 'shell_snapshot', 'shell_tool', 'skill_mcp_dependency_install',
     'tool_call_mcp_elicitation', 'tool_suggest', 'unified_exec', 'workspace_dependencies',
     'memories', 'network_proxy'
 ]
@@ -92,6 +95,58 @@ lines = [
     f'model_catalog_json = "{home}/model-catalog.json"',
     'notify = ["weave", "hook", "wake"]',
     'service_tier = "fast"',
+    'default_permissions = "meta-workspace"',
+    '',
+    '[permissions.meta-read-only]',
+    'description = "Read-only meta workspace profile with limited network for documentation and source lookup."',
+    'extends = ":read-only"',
+    '',
+    '[permissions.meta-read-only.workspace_roots]',
+    f'"{M}" = true',
+    '',
+    '[permissions.meta-read-only.network]',
+    'enabled = true',
+    '',
+    '[permissions.meta-read-only.network.domains]',
+    '"developers.openai.com" = "allow"',
+    '"api.openai.com" = "allow"',
+    '"github.com" = "allow"',
+    '"*.github.com" = "allow"',
+    '"objects.githubusercontent.com" = "allow"',
+    '',
+    '[permissions.meta-workspace]',
+    'description = "Default FlexNetOS meta workspace profile: write inside workspace roots, deny env/secrets, allow vetted developer network endpoints."',
+    'extends = ":workspace"',
+    '',
+    '[permissions.meta-workspace.workspace_roots]',
+    f'"{M}" = true',
+    '',
+    '[permissions.meta-workspace.filesystem.":workspace_roots"]',
+    '"**/.env" = "deny"',
+    '"**/.env.*" = "deny"',
+    '"**/*secret*" = "deny"',
+    '"**/*token*" = "deny"',
+    '".codex" = "read"',
+    '".codex/tmp" = "write"',
+    '".local/share/codex" = "read"',
+    '".local/state/codex" = "write"',
+    '',
+    '[permissions.meta-workspace.network]',
+    'enabled = true',
+    '',
+    '[permissions.meta-workspace.network.domains]',
+    '"api.openai.com" = "allow"',
+    '"developers.openai.com" = "allow"',
+    '"github.com" = "allow"',
+    '"*.github.com" = "allow"',
+    '"objects.githubusercontent.com" = "allow"',
+    '"registry.npmjs.org" = "allow"',
+    '"crates.io" = "allow"',
+    '"static.crates.io" = "allow"',
+    '',
+    '[permissions.meta-full-trusted]',
+    'description = "Explicit high-trust escape hatch for owner-approved meta maintenance only."',
+    'extends = ":danger-full-access"',
     '',
     '[features]',
 ]
@@ -109,6 +164,10 @@ lines += [
     '[mcp_servers.context7]', 'command = "bunx"', 'args = ["-y", "@upstash/context7-mcp"]',
     '',
     '[mcp_servers.weave]', 'command = "weave"', 'args = ["mcp"]',
+    '',
+    '[mcp_servers.openaiDeveloperDocs]', 'url = "https://developers.openai.com/mcp"',
+    '',
+    '[agents]', 'max_threads = 6', 'max_depth = 1', 'job_max_runtime_seconds = 1800',
     '',
     '[tui]',
     'status_line = ["model-with-reasoning", "context-used", "used-tokens", "five-hour-usage", "weekly-usage", "fast-mode"]',
@@ -143,6 +202,14 @@ lines += [
 for p in projects:
     lines += ['', f'[projects."{p}"]', 'trust_level = "trusted"']
 config.write_text('\n'.join(lines) + '\n')
+agent_dir = home / 'agents'
+agent_dir.mkdir(parents=True, exist_ok=True)
+agent_src = M / '.codex/agents'
+if agent_src.exists():
+    for src in agent_src.glob('*.toml'):
+        (agent_dir / src.name).write_text(src.read_text())
+else:
+    raise SystemExit(f'missing project Codex agent source: {agent_src}')
 hooks.write_text(json.dumps({
   'hooks': {
     'SessionStart': [{'hooks': [{'type': 'command', 'command': 'icm hook start'}]}],
@@ -174,11 +241,13 @@ H="$M/.local/share/codex/hooks.json"
 [ "$(readlink -f "$R/.codex" 2>/dev/null)" = "$(readlink -f "$M/.local/share/codex" 2>/dev/null)" ]
 [ "$(readlink -f "$R/.local/bin/codex" 2>/dev/null)" = "$(readlink -f "$M/usr/bin/codex" 2>/dev/null)" ]
 [ -f "$C" ] && [ -f "$H" ]
-for f in apps auto_compaction browser_use browser_use_external computer_use enable_request_compression fast_mode goals guardian_approval hooks image_generation in_app_browser mentions_v2 multi_agent personality plugins prevent_idle_sleep skill_mcp_dependency_install tool_call_mcp_elicitation tool_suggest unified_exec workspace_dependencies memories network_proxy; do grep -q "^$f = true" "$C"; done
-for s in meta gitkb icm vox context7 weave; do grep -q "^\[mcp_servers\.$s\]" "$C"; done
+for f in apps auto_compaction browser_use browser_use_external computer_use enable_request_compression fast_mode goals guardian_approval hooks image_generation in_app_browser mentions_v2 multi_agent personality plugin_sharing plugins prevent_idle_sleep remote_compaction_v2 secret_auth_storage shell_snapshot shell_tool skill_mcp_dependency_install tool_call_mcp_elicitation tool_suggest unified_exec workspace_dependencies memories network_proxy; do grep -q "^$f = true" "$C"; done
+for s in meta gitkb icm vox context7 weave openaiDeveloperDocs; do grep -q "^\[mcp_servers\.$s\]" "$C"; done
 grep -q '^\[marketplaces\.flexnetos-codex\]' "$C"
 grep -q '^\[plugins\."meta@flexnetos-codex"\]' "$C"
 grep -q '^\[plugins\."harness@harness-marketplace"\]' "$C"
+grep -q '^default_permissions = "meta-workspace"' "$C"
+for a in meta-worker pr-explorer reviewer docs-researcher codex-baseline-researcher; do [ -f "$M/.local/share/codex/agents/$a.toml" ]; done
 CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M/usr/bin/codex" plugin list | grep -q 'meta@flexnetos-codex  installed, enabled'
 CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M/usr/bin/codex" plugin list | grep -q 'harness@harness-marketplace  installed, enabled'
 CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M/usr/bin/codex" mcp list >/dev/null

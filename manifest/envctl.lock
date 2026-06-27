@@ -50,7 +50,7 @@ requires = [
 resolved = ""
 
 [components.codex-global-baseline]
-content_hash = "f2233ec914057b3d"
+content_hash = "4afdae52492b5b75"
 requires = ["codex-cli"]
 resolved = ""
 
