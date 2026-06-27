@@ -1,56 +1,55 @@
 # meta-env plugin — wires envctl in as a meta subprocess plugin so `meta env <verb>` dispatches into
 # envctl (alongside `meta git`/`project`/`rust`/`dashboard`). meta discovers plugins as `meta-*`
-# executables on PATH (probed with `--meta-plugin-info`), so installing the binary at
-# $META_ROOT/.local/bin/meta-env registers the `env` subcommand. The binary is envctl's own autobin
+# executables on PATH (probed with `--meta-plugin-info`), so this component keeps the private
+# payload under $META_ROOT/usr/libexec/envctl/meta-env and exposes only the canonical
+# $META_ROOT/usr/bin/meta-env front door. The binary is envctl's own autobin
 # (crates/cli/src/bin/meta-env.rs); it forwards each verb to the `envctl` binary verbatim.
 [[component]]
 id = "meta-env-plugin"
 name = "meta env plugin (envctl as a meta subprocess plugin)"
-description = "Builds envctl's meta-env subprocess plugin into $META_ROOT/.toolchains/meta-env + a $META_ROOT/.local/bin/meta-env symlink, so `meta env <verb>` dispatches into envctl (discovered by meta as a meta-* binary on PATH)."
+description = "Builds envctl's meta-env subprocess plugin into $META_ROOT/usr/libexec/envctl/meta-env with a $META_ROOT/usr/bin/meta-env front door, so `meta env <verb>` dispatches into envctl (discovered by meta as a meta-* binary on PATH)."
 requires = ["rustup"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; dest="$M/.toolchains/meta-env/bin/meta-env"; link="$META_ROOT/.local/bin/meta-env"; rd() { readlink -f "$1" 2>/dev/null; }; [ -x "$dest" ] && [ "$(rd "$link")" = "$(rd "$dest")" ] && "$dest" --meta-plugin-info >/dev/null 2>&1''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; dest="$M/usr/libexec/envctl/meta-env/bin/meta-env"; link="$M/usr/bin/meta-env"; rd() { readlink -f "$1" 2>/dev/null; }; [ -x "$dest" ] && [ "$(rd "$link")" = "$(rd "$dest")" ] && "$dest" --meta-plugin-info >/dev/null 2>&1''']
 [component.install]
 kind = "script"
 script = '''
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-DEST="$M/.toolchains/meta-env"
-LINK="$META_ROOT/.local/bin/meta-env"
+DEST="$M/usr/libexec/envctl/meta-env"
+LINK="$M/usr/bin/meta-env"
 export CARGO_HOME="$M/.toolchains/cargo"
-export PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"
+export PATH="$M/usr/bin:$CARGO_HOME/bin:$PATH"
 # Build only the meta-env autobin from the envctl CLI crate (no GUI → no system libs). wild-linker
 # acceleration is inherited via the meta-root $M/.cargo/config.toml.
 cargo build --release -p envctl --bin meta-env --manifest-path "$M/envctl/Cargo.toml"
-install -d -m 755 "$DEST/bin"
+install -d -m 755 "$DEST/bin" "$M/usr/bin"
 install -m 755 "$M/envctl/target/release/meta-env" "$DEST/bin/meta-env"
-install -d -m 755 "$META_ROOT/.local/bin"
 ln -sfn "$DEST/bin/meta-env" "$LINK"
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export PATH="$META_ROOT/.local/bin:$PATH"; dest="$M/.toolchains/meta-env/bin/meta-env"; [ -x "$dest" ] && "$dest" --meta-plugin-info >/dev/null 2>&1 && meta env doctor >/dev/null 2>&1''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export PATH="$M/usr/bin:$PATH"; dest="$M/usr/libexec/envctl/meta-env/bin/meta-env"; [ -x "$dest" ] && "$dest" --meta-plugin-info >/dev/null 2>&1 && meta env doctor >/dev/null 2>&1''']
 [component.fix]
 kind = "script"
 script = '''
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-DEST="$M/.toolchains/meta-env"
-LINK="$META_ROOT/.local/bin/meta-env"
+DEST="$M/usr/libexec/envctl/meta-env"
+LINK="$M/usr/bin/meta-env"
 export CARGO_HOME="$M/.toolchains/cargo"
-export PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"
+export PATH="$M/usr/bin:$CARGO_HOME/bin:$PATH"
 cargo build --release -p envctl --bin meta-env --manifest-path "$M/envctl/Cargo.toml"
-install -d -m 755 "$DEST/bin"
+install -d -m 755 "$DEST/bin" "$M/usr/bin"
 install -m 755 "$M/envctl/target/release/meta-env" "$DEST/bin/meta-env"
-install -d -m 755 "$META_ROOT/.local/bin"
 ln -sfn "$DEST/bin/meta-env" "$LINK"
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; t="$META_ROOT/.local/bin/meta-env"; [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/meta-env" && rm -f "$t"; rm -rf "$M/.toolchains/meta-env"''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; t="$M/usr/bin/meta-env"; dest="$M/usr/libexec/envctl/meta-env"; legacy_link="$M/.local/bin"/meta-env; legacy_dest="$M/.toolchains"/meta-env; [ -L "$t" ] && readlink -f "$t" | grep -q "$dest" && rm -f "$t"; [ -L "$legacy_link" ] && readlink -f "$legacy_link" | grep -q "$legacy_dest" && rm -f "$legacy_link"; rm -rf "$dest"''']
 [component.wiring]
-path_entries = ["$META_ROOT/.local/bin"]
+path_entries = ["$META_ROOT/usr/bin"]
