@@ -126,7 +126,7 @@ printf 'nested-secret\n' >"$supervised_home/.config/app/token"
 printf 'managed-settings\n' >"$supervised_home/.config/managed-app/settings.json"
 ln -s "$outside/hf" "$supervised_home/.config/external-app"
 printf 'key\n' >"$supervised_home/.ssh/id_ed25519"
-"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-state-report "$tmp/owner-supervised-state.tsv" --owner-supervised-child-report "$tmp/owner-supervised-child.tsv" --owner-supervised-child-candidates-report "$tmp/owner-supervised-child-candidates.tsv" --owner-supervised-child-candidate-actions "$tmp/owner-supervised-child-candidate-actions.tsv" --owner-supervised-cache-child-component-plan "$tmp/owner-supervised-cache-child-component-plan.tsv" --owner-supervised-child-candidate-action-summary "$tmp/owner-supervised-child-candidate-action-summary.tsv" --owner-supervised-child-candidates-summary "$tmp/owner-supervised-child-candidates-summary.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-state.out" 2>"$tmp/owner-supervised-state.err"
+"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-state-report "$tmp/owner-supervised-state.tsv" --owner-supervised-child-report "$tmp/owner-supervised-child.tsv" --owner-supervised-child-candidates-report "$tmp/owner-supervised-child-candidates.tsv" --owner-supervised-child-candidate-actions "$tmp/owner-supervised-child-candidate-actions.tsv" --owner-supervised-cache-child-component-plan "$tmp/owner-supervised-cache-child-component-plan.tsv" --owner-supervised-managed-config-child-review-plan "$tmp/owner-supervised-managed-config-child-review-plan.tsv" --owner-supervised-child-candidate-action-summary "$tmp/owner-supervised-child-candidate-action-summary.tsv" --owner-supervised-child-candidates-summary "$tmp/owner-supervised-child-candidates-summary.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-state.out" 2>"$tmp/owner-supervised-state.err"
 head -n 1 "$tmp/owner-supervised-state.tsv" | grep -qx $'dot_entry\treal_path\ttype\ttarget_class\tshallow_digest\tdirect_entries\tdirect_files\tdirect_dirs\tdirect_symlinks\taction\tapply_safe\trecommendation'
 awk -F '\t' 'NF != 12 { print "bad owner-supervised-state row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/owner-supervised-state.tsv"
 test "$(wc -l <"$tmp/owner-supervised-state.tsv" | tr -d '[:space:]')" = 3
@@ -449,6 +449,32 @@ awk -F '	' -v home="$supervised_home" -v meta="$supervised_meta" '
 ' "$tmp/owner-supervised-cache-child-component-plan.tsv"
 "$root/scripts/audit-meta-local-paths.sh" --owner-supervised-cache-child-component-plan "$tmp/owner-supervised-cache-child-component-plan-only.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-cache-child-component-plan-only.out" 2>"$tmp/owner-supervised-cache-child-component-plan-only.err"
 cmp "$tmp/owner-supervised-cache-child-component-plan.tsv" "$tmp/owner-supervised-cache-child-component-plan-only.tsv"
+
+head -n 1 "$tmp/owner-supervised-managed-config-child-review-plan.tsv" | grep -qx $'dot_entry\tchild_name\tchild_path\ttype\tcanonical_target\tenvctl_home_source\tconfig_scope\tsupervision\tnext_action\treview_hint\tapply_command'
+awk -F '\t' 'NF != 11 { print "bad owner-supervised-managed-config-child-review-plan row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/owner-supervised-managed-config-child-review-plan.tsv"
+test "$(wc -l <"$tmp/owner-supervised-managed-config-child-review-plan.tsv" | tr -d '[:space:]')" = 2
+awk -F '\t' -v home="$supervised_home" -v meta="$supervised_meta" '
+  $1 == ".config" && $2 == "managed-app" {
+    if ($3 != home "/.config/managed-app") bad=1
+    if ($4 != "directory") bad=1
+    if ($5 != meta "/envctl/home/.config/managed-app") bad=1
+    if ($6 != meta "/envctl/home/.config/managed-app") bad=1
+    if ($7 != "managed-config-child") bad=1
+    if ($8 != "owner-reviewed") bad=1
+    if ($9 != "review-envctl-home-config-child-before-bridge") bad=1
+    if ($10 != "review-envctl-home-source-before-owner-approved-bridge") bad=1
+    if ($11 != "") bad=1
+    found_managed=1
+  }
+  $1 == ".cache" { cache_child=1 }
+  $1 == ".config" && $2 == "app" { unclassified_config=1 }
+  $1 == ".config" && $2 == "external-app" { external_config=1 }
+  $2 == "settings.json" || $2 == "token" { nested=1 }
+  $1 == ".ssh" { sensitive=1 }
+  END { exit !(found_managed && !bad && !cache_child && !unclassified_config && !external_config && !nested && !sensitive) }
+' "$tmp/owner-supervised-managed-config-child-review-plan.tsv"
+"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-managed-config-child-review-plan "$tmp/owner-supervised-managed-config-child-review-plan-only.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-managed-config-child-review-plan-only.out" 2>"$tmp/owner-supervised-managed-config-child-review-plan-only.err"
+cmp "$tmp/owner-supervised-managed-config-child-review-plan.tsv" "$tmp/owner-supervised-managed-config-child-review-plan-only.tsv"
 
 head -n 1 "$tmp/owner-supervised-child-candidate-action-summary.tsv" | grep -qx $'dot_entry\tchild_target_class\tcandidate_action\tapply_safe\tsupervision\tnext_action\ttotal\tenvctl_home_sources'
 awk -F '\t' 'NF != 8 { print "bad owner-supervised-child-candidate-action-summary row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/owner-supervised-child-candidate-action-summary.tsv"
