@@ -16,7 +16,7 @@
 # --apply-history-archives opt-in; default --apply remains non-mutating for them.
 # Explicit --migrate-dot requests are allow-listed, require --apply for mutation, and preserve an
 # existing canonical META_ROOT target by archiving the old real-home state under META_ROOT first.
-# Portable single-file app configs are only migrated when they are explicitly allow-listed here.
+# Portable app configs are only migrated when they are explicitly allow-listed here.
 set -euo pipefail
 
 usage() {
@@ -38,7 +38,7 @@ stores legitimately contain embedded absolute system links and missing internal 
 --fail-real-home-deep-links to fail if any recursive link resolves back into the real home outside
 META_ROOT.
 With --migrate-dot, performs an explicit owner-requested migration for allow-listed entries only
-(known toolchain state, .claude, .codex, portable app-config files like .ideavimrc, portable app-config dirs like .gphoto, or a managed
+(known toolchain state, .claude, .codex, portable app-config files like .ideavimrc, portable app-config dirs like .gphoto/.vscode-shared, or a managed
 dotfile present under --envctl-home-source).
 Mutation still requires --apply; without --apply the script prints the planned move and changes nothing.
 With --shell-dotfile-conflict-report, writes supervised shell-dotfile merge rows:
@@ -420,6 +420,7 @@ canonical_target_for_dot() {
       printf '%s\n' "$META_ROOT/.toolchains/${dot#.}"
       ;;
     .gphoto) printf '%s\n' "$META_ROOT/.config/gphoto" ;;
+    .vscode-shared) printf '%s\n' "$META_ROOT/.local/share/vscode-shared" ;;
     .claude) printf '%s\n' "$META_ROOT/.local/share/claude" ;;
     .codex) printf '%s\n' "$META_ROOT/.local/share/codex" ;;
     .ideavimrc) printf '%s\n' "$META_ROOT/.ideavimrc" ;;
@@ -436,7 +437,7 @@ is_portable_app_config_file_dot() {
 
 is_portable_app_config_dir_dot() {
   case "$1" in
-    .gphoto) return 0 ;;
+    .gphoto|.vscode-shared) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -448,7 +449,7 @@ is_migratable_dot() {
     .*/*|.|..|.local|.config|.cache|.ssh|.aws|.gnupg|.mcp-auth|.docker|.kube|.password-store)
       return 1
       ;;
-    .cargo|.rustup|.bun|.npm|.wasmer|.dotnet|.pgrx|.venvs|.go|.gradle|.nix-*|.claude|.codex|.gphoto)
+    .cargo|.rustup|.bun|.npm|.wasmer|.dotnet|.pgrx|.venvs|.go|.gradle|.nix-*|.claude|.codex|.gphoto|.vscode-shared)
       return 0
       ;;
     .*)
@@ -609,6 +610,17 @@ classify_real_home_dot() {
         canonical_target="$META_ROOT/.config/gphoto"
         if [ "$type" = "directory" ]; then
           action="migrate-dir-to-meta-config-and-bridge"
+          apply_safe="yes"
+        else
+          action="owner-supervised-type-repair"
+          apply_safe="no"
+        fi
+        ;;
+      .vscode-shared)
+        target_class="app-config-state"
+        canonical_target="$META_ROOT/.local/share/vscode-shared"
+        if [ "$type" = "directory" ]; then
+          action="migrate-dir-to-meta-share-and-bridge"
           apply_safe="yes"
         else
           action="owner-supervised-type-repair"

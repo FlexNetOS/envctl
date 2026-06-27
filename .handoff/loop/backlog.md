@@ -407,6 +407,19 @@ verify env health.
   are `already-meta=50`, `app-config-state=19`, `sensitive=5`, `managed-dotfile=2`, `cache=1`,
   `bridge=1`. Remaining slices: app-config directories, sensitive stores, managed `.config`, cache,
   and the single bridge.
+
+  Current VS Code shared state slice adds a narrow portable-dir allowlist for `.vscode-shared`:
+  explicit `--migrate-dot .vscode-shared` now targets `$META_ROOT/.local/share/vscode-shared`,
+  refuses non-directory sources, and remains dry-run unless paired with `--apply`. TDD coverage
+  proves the inventory row (`app-config-state`, `migrate-dir-to-meta-share-and-bridge`,
+  `apply_safe=yes`), dry-run no-op behavior, live move+symlink preservation, post-apply
+  `already-meta` inventory, and fail-closed type repair for a regular-file `.vscode-shared`. Live
+  apply evidence 2026-06-27: moved `/home/drdave/.vscode-shared` to
+  `/home/drdave/Desktop/meta/.local/share/vscode-shared` and bridged the real-home path back to that
+  meta directory. Post-apply audit reports `dot_entries=78`, `warnings=25`, `changed=0`; summary
+  counts are `already-meta=51`, `app-config-state=18`, `sensitive=5`, `managed-dotfile=2`,
+  `cache=1`, `bridge=1`. Remaining slices: app-config directories, sensitive stores, managed
+  `.config`, cache, and the single bridge.
 - [x] `envctl env` — discover meta-root via `.meta.yaml` marker (`engine::dashboard::locate_meta_file`),
   emit `export META_ROOT=…` + meta tool dirs on PATH; `--toolchains`/`--materialize` (merged from
   feat/envctl-env, 2026-06-12).
