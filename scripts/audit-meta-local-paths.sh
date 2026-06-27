@@ -622,6 +622,9 @@ app_config_target_for_dot() {
     .java)
       printf '%s\n' "$META_ROOT/.local/share/java"
       ;;
+    .pi)
+      printf '%s\n' "$META_ROOT/.local/share/pi"
+      ;;
     .archon)
       printf '%s\n' "$META_ROOT/.local/share/archon"
       ;;
@@ -665,7 +668,7 @@ is_portable_app_config_file_dot() {
 
 is_portable_app_config_dir_dot() {
   case "$1" in
-    .gphoto|.vscode-shared|.repomix|.ai|.jetbrains|.meta|.java|.archon|.hermes|.n8n-mcp) return 0 ;;
+    .gphoto|.vscode-shared|.repomix|.ai|.jetbrains|.meta|.java|.pi|.archon|.hermes|.n8n-mcp) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -690,7 +693,7 @@ canonical_target_for_dot() {
     .cargo|.rustup|.bun|.npm|.wasmer|.dotnet|.pgrx|.venvs|.go|.gradle|.nix-*)
       printf '%s\n' "$META_ROOT/.toolchains/${dot#.}"
       ;;
-    .agents|.ai|.ampcode|.archon|.claude|.claude.json|.codex|.codeium|.copilot|.cursor|.gemini|.goose_recipes|.gphoto|.vscode-shared|.repomix|.hermes|.jetbrains|.meta|.java|.junie|.kimi|.kimi-code|.n8n-mcp|.ollama|.roo|.vscode|.windsurf|.mozilla|.thunderbird|.ideavimrc)
+    .agents|.ai|.ampcode|.archon|.claude|.claude.json|.codex|.codeium|.copilot|.cursor|.gemini|.goose_recipes|.gphoto|.vscode-shared|.repomix|.hermes|.jetbrains|.meta|.java|.pi|.junie|.kimi|.kimi-code|.n8n-mcp|.ollama|.roo|.vscode|.windsurf|.mozilla|.thunderbird|.ideavimrc)
       app_config_target_for_dot "$dot"
       ;;
     .nv)
@@ -1037,6 +1040,17 @@ classify_real_home_dot() {
       .java)
         target_class="app-config-state"
         canonical_target="$META_ROOT/.local/share/java"
+        if [ "$type" = "directory" ]; then
+          action="migrate-dir-to-meta-share-and-bridge"
+          apply_safe="yes"
+        else
+          action="owner-supervised-type-repair"
+          apply_safe="no"
+        fi
+        ;;
+      .pi)
+        target_class="app-config-state"
+        canonical_target="$META_ROOT/.local/share/pi"
         if [ "$type" = "directory" ]; then
           action="migrate-dir-to-meta-share-and-bridge"
           apply_safe="yes"
