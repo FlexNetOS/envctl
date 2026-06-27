@@ -130,6 +130,7 @@ mkdir -p \
   "$mig_home/.ai/tokens" \
   "$mig_home/.gemini" \
   "$mig_home/.archon" \
+  "$mig_home/.hermes" \
   "$mig_home/.n8n-mcp" \
   "$mig_home/.gphoto" \
   "$mig_home/.junie" \
@@ -156,6 +157,7 @@ printf 'real-home dotnet state\n' >"$mig_home/.dotnet/state"
 printf 'set ideajoin\n' >"$mig_home/.ideavimrc"
 printf '{ "theme": "dark" }\n' >"$mig_home/.gemini/settings.json"
 printf '{ "lastChecked": "2026-06-27T00:00:00Z" }\n' >"$mig_home/.archon/update-check.json"
+printf 'provider: ollama\nbase_url: http://localhost:11434/v1\n' >"$mig_home/.hermes/config.yaml"
 printf '{ "telemetry": false }\n' >"$mig_home/.n8n-mcp/telemetry.json"
 printf 'camera-port=usb\n' >"$mig_home/.gphoto/settings"
 printf 'sqlite-state\n' >"$mig_home/.vscode-shared/sharedStorage/state.vscdb"
@@ -178,6 +180,7 @@ printf '{ "mcpServers": {} }\n' >"$mig_home/.claude.json"
 grep -qx $'.gemini\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/gemini\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
 grep -qx $'.gphoto\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.config/gphoto\tmigrate-dir-to-meta-config-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.archon\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/archon\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
+grep -qx $'.hermes\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/hermes\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.n8n-mcp\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/n8n-mcp\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.vscode-shared\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/vscode-shared\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.repomix\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/repomix\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
@@ -227,6 +230,10 @@ if awk -F '\t' '$1 == ".gemini" { found=1 } END { exit !found }' "$tmp/unknown-a
 fi
 if awk -F '\t' '$1 == ".archon" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
   echo "unexpected unknown app-config report row for allow-listed .archon target" >&2
+  exit 1
+fi
+if awk -F '\t' '$1 == ".hermes" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
+  echo "unexpected unknown app-config report row for allow-listed .hermes target" >&2
   exit 1
 fi
 if awk -F '\t' '$1 == ".n8n-mcp" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
@@ -291,6 +298,19 @@ grep -qx '{ "lastChecked": "2026-06-27T00:00:00Z" }' "$mig_meta/.local/share/arc
 
 "$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/archon-post.tsv" --inventory-summary "$tmp/archon-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/archon-post.out" 2>"$tmp/archon-post.err"
 grep -qx $'.archon\tsymlink\talready-meta\talready-meta\t'"$mig_meta"$'/.local/share/archon\tnone\tn/a' "$tmp/archon-post.tsv"
+
+"$root/scripts/audit-meta-local-paths.sh" --migrate-dot .hermes --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-hermes-dry.out" 2>"$tmp/migrate-hermes-dry.err"
+grep -q 'DRY-RUN: would move .*\.hermes to .*\.local/share/hermes' "$tmp/migrate-hermes-dry.out"
+test -d "$mig_home/.hermes"
+test ! -e "$mig_meta/.local/share/hermes"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .hermes --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-hermes.out" 2>"$tmp/migrate-hermes.err"
+test "$(readlink -f "$mig_home/.hermes")" = "$mig_meta/.local/share/hermes"
+grep -qx 'provider: ollama' "$mig_meta/.local/share/hermes/config.yaml"
+grep -qx 'base_url: http://localhost:11434/v1' "$mig_meta/.local/share/hermes/config.yaml"
+
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/hermes-post.tsv" --inventory-summary "$tmp/hermes-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/hermes-post.out" 2>"$tmp/hermes-post.err"
+grep -qx $'.hermes\tsymlink\talready-meta\talready-meta\t'"$mig_meta"$'/.local/share/hermes\tnone\tn/a' "$tmp/hermes-post.tsv"
 
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .n8n-mcp --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-n8n-mcp-dry.out" 2>"$tmp/migrate-n8n-mcp-dry.err"
 grep -q 'DRY-RUN: would move .*\.n8n-mcp to .*\.local/share/n8n-mcp' "$tmp/migrate-n8n-mcp-dry.out"
@@ -413,6 +433,22 @@ fi
 test -f "$archon_bad_home/.archon"
 test ! -e "$archon_bad_meta/.local/share/archon"
 grep -q -- '--migrate-dot .archon: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-archon-file.err"
+
+hermes_bad_meta="$tmp/hermes-bad-meta"
+hermes_bad_home="$tmp/hermes-bad-home"
+mkdir -p "$hermes_bad_meta/.local" "$hermes_bad_meta/envctl/home" "$hermes_bad_home"
+printf '# managed gitconfig\n' >"$hermes_bad_meta/envctl/home/.gitconfig"
+ln -s "$hermes_bad_meta/envctl/home/.gitconfig" "$hermes_bad_meta/.gitconfig"
+ln -s "$hermes_bad_meta/.gitconfig" "$hermes_bad_home/.gitconfig"
+ln -s "$hermes_bad_meta/.local" "$hermes_bad_home/.local"
+printf 'not a directory\n' >"$hermes_bad_home/.hermes"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .hermes --meta-root "$hermes_bad_meta" --real-home "$hermes_bad_home" --envctl-home-source "$hermes_bad_meta/envctl/home" >"$tmp/migrate-hermes-file.out" 2>"$tmp/migrate-hermes-file.err"; then
+  echo "expected --migrate-dot .hermes to fail closed for non-directory source" >&2
+  exit 1
+fi
+test -f "$hermes_bad_home/.hermes"
+test ! -e "$hermes_bad_meta/.local/share/hermes"
+grep -q -- '--migrate-dot .hermes: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-hermes-file.err"
 
 n8n_mcp_bad_meta="$tmp/n8n-mcp-bad-meta"
 n8n_mcp_bad_home="$tmp/n8n-mcp-bad-home"
