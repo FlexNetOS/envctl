@@ -554,6 +554,22 @@ mod tests {
     }
 
     #[test]
+    fn run_capture_timeout_drains_noisy_output() {
+        let out = run_capture_timeout(
+            "sh",
+            &[
+                "-lc",
+                "i=0; while [ \"$i\" -lt 20000 ]; do printf 'line%05d\\n' \"$i\"; i=$((i + 1)); done",
+            ],
+            Duration::from_secs(2),
+        )
+        .expect("noisy command should complete without filling the pipe");
+
+        assert!(out.contains("line00000"), "missing first line");
+        assert!(out.contains("line19999"), "missing final line");
+    }
+
+    #[test]
     fn proc_nvidia_driver_version_from_str_parses_version_token() {
         let sample =
             "NVRM version: NVIDIA UNIX Open Kernel Module for x86_64  610.54.03  Release Build";
