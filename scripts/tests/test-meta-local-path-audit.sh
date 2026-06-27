@@ -111,6 +111,56 @@ awk -F '\t' -v home="$home" '
   END { exit !(found_aws && found_ssh && !bad) }
 ' "$tmp/sensitive-state.tsv"
 
+supervised_meta="$tmp/supervised-meta"
+supervised_home="$tmp/supervised-home"
+mkdir -p "$supervised_meta/.local" "$supervised_meta/envctl/home/.config" "$supervised_home/.cache/tool" "$supervised_home/.config/app" "$supervised_home/.ssh"
+printf '# managed gitconfig\n' >"$supervised_meta/envctl/home/.gitconfig"
+ln -s "$supervised_meta/envctl/home/.gitconfig" "$supervised_meta/.gitconfig"
+ln -s "$supervised_meta/.local" "$supervised_home/.local"
+ln -s "$supervised_meta/.gitconfig" "$supervised_home/.gitconfig"
+printf 'cache-index\n' >"$supervised_home/.cache/tool/index"
+printf 'settings\n' >"$supervised_home/.config/app/settings.json"
+printf 'key\n' >"$supervised_home/.ssh/id_ed25519"
+"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-state-report "$tmp/owner-supervised-state.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-state.out" 2>"$tmp/owner-supervised-state.err"
+head -n 1 "$tmp/owner-supervised-state.tsv" | grep -qx $'dot_entry\treal_path\ttype\ttarget_class\tshallow_digest\tdirect_entries\tdirect_files\tdirect_dirs\tdirect_symlinks\taction\tapply_safe\trecommendation'
+awk -F '\t' 'NF != 12 { print "bad owner-supervised-state row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/owner-supervised-state.tsv"
+test "$(wc -l <"$tmp/owner-supervised-state.tsv" | tr -d '[:space:]')" = 3
+awk -F '\t' -v home="$supervised_home" '
+  $1 == ".cache" {
+    if ($2 != home "/.cache") bad=1
+    if ($3 != "directory") bad=1
+    if ($4 != "cache") bad=1
+    if ($5 !~ /^[0-9a-f]{64}$/) bad=1
+    if ($6 != "1") bad=1
+    if ($7 != "0") bad=1
+    if ($8 != "1") bad=1
+    if ($9 != "0") bad=1
+    if ($10 != "component-managed-cache-migration") bad=1
+    if ($11 != "no") bad=1
+    if ($12 != "use-component-managed-cache-migration") bad=1
+    found_cache=1
+  }
+  $1 == ".config" {
+    if ($2 != home "/.config") bad=1
+    if ($3 != "directory") bad=1
+    if ($4 != "managed-dotfile") bad=1
+    if ($5 !~ /^[0-9a-f]{64}$/) bad=1
+    if ($6 != "1") bad=1
+    if ($7 != "0") bad=1
+    if ($8 != "1") bad=1
+    if ($9 != "0") bad=1
+    if ($10 != "owner-supervised-bridge") bad=1
+    if ($11 != "no") bad=1
+    if ($12 != "owner-review-before-bridge") bad=1
+    found_config=1
+  }
+  END { exit !(found_cache && found_config && !bad) }
+' "$tmp/owner-supervised-state.tsv"
+if awk -F '\t' '$1 == ".ssh" { found=1 } END { exit !found }' "$tmp/owner-supervised-state.tsv"; then
+  echo "unexpected owner-supervised-state report row for sensitive .ssh" >&2
+  exit 1
+fi
+
 head -n 1 "$tmp/inventory-summary.tsv" | grep -qx $'target_class\ttotal\tapply_safe_yes\tapply_safe_no\tapply_safe_na\tactions'
 grep -qx $'bridge\t1\t1\t0\t0\tensure-symlink' "$tmp/inventory-summary.tsv"
 grep -qx $'managed-dotfile\t2\t1\t1\t0\tbridge-canonical,owner-supervised-bridge' "$tmp/inventory-summary.tsv"
