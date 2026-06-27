@@ -19,10 +19,10 @@
     },
     "memory": {
       "args": [
-        "-y",
-        "@modelcontextprotocol/server-memory"
+        "-lc",
+        "ROOT=\"${META_ROOT:-/home/drdave/Desktop/meta}\"; exec \"$ROOT/envctl/assets/scripts/envctl-mcp-memory-server\""
       ],
-      "command": "npx"
+      "command": "bash"
     },
     "n8n-mcp": {
       "args": [

@@ -49,7 +49,7 @@ assets:
   mcp::./agent-skills::memory.json:
     kind: mcp
     name: memory.json
-    hash: a1e431c28f92e4f3460194b07a5e0d078b9894c48e5b24c8b96b8678233e117e
+    hash: 5e402b9b14e5cbc29b4f0dad0e878efd5c98cfc76a4fa922e9702c9804dd4048
     source: ./agent-skills
     destination: memory
     source_revision: local
