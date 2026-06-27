@@ -114,6 +114,61 @@ impl MetaLayout {
         self.usr().join("share")
     }
 
+    pub fn usr_sbin(&self) -> PathBuf {
+        self.usr().join("sbin")
+    }
+
+    pub fn usr_lib64(&self) -> PathBuf {
+        self.usr().join("lib64")
+    }
+
+    pub fn usr_include(&self) -> PathBuf {
+        self.usr().join("include")
+    }
+
+    pub fn usr_src(&self) -> PathBuf {
+        self.usr().join("src")
+    }
+
+    pub fn usr_games(&self) -> PathBuf {
+        self.usr().join("games")
+    }
+
+    /// Pre-formatted/installed manual pages under the canonical share tree.
+    pub fn usr_share_man(&self) -> PathBuf {
+        self.usr_share().join("man")
+    }
+
+    /// Meta-hosted `/usr/local` prefix: locally-built installs that mirror the
+    /// host `/usr/local` convention while staying meta-resident.
+    pub fn usr_local(&self) -> PathBuf {
+        self.usr().join("local")
+    }
+
+    pub fn usr_local_bin(&self) -> PathBuf {
+        self.usr_local().join("bin")
+    }
+
+    pub fn usr_local_sbin(&self) -> PathBuf {
+        self.usr_local().join("sbin")
+    }
+
+    pub fn usr_local_lib(&self) -> PathBuf {
+        self.usr_local().join("lib")
+    }
+
+    pub fn usr_local_lib64(&self) -> PathBuf {
+        self.usr_local().join("lib64")
+    }
+
+    pub fn usr_local_include(&self) -> PathBuf {
+        self.usr_local().join("include")
+    }
+
+    pub fn usr_local_share(&self) -> PathBuf {
+        self.usr_local().join("share")
+    }
+
     pub fn etc(&self) -> PathBuf {
         self.meta_root.join("etc")
     }
@@ -316,6 +371,84 @@ impl MetaLayout {
                 path: self.share(),
                 kind: LayoutKind::Canonical,
                 purpose: "architecture-independent shared data",
+            },
+            LayoutEntry {
+                key: "usr_sbin",
+                path: self.usr_sbin(),
+                kind: LayoutKind::Canonical,
+                purpose: "system administration binaries exposed on PATH",
+            },
+            LayoutEntry {
+                key: "usr_lib64",
+                path: self.usr_lib64(),
+                kind: LayoutKind::Canonical,
+                purpose: "64-bit shared libraries on the library search path",
+            },
+            LayoutEntry {
+                key: "usr_include",
+                path: self.usr_include(),
+                kind: LayoutKind::Canonical,
+                purpose: "C/C++ headers on the compiler include path",
+            },
+            LayoutEntry {
+                key: "usr_src",
+                path: self.usr_src(),
+                kind: LayoutKind::Canonical,
+                purpose: "source trees for meta-managed builds",
+            },
+            LayoutEntry {
+                key: "usr_games",
+                path: self.usr_games(),
+                kind: LayoutKind::Canonical,
+                purpose: "FHS games prefix mirror",
+            },
+            LayoutEntry {
+                key: "usr_share_man",
+                path: self.usr_share_man(),
+                kind: LayoutKind::Canonical,
+                purpose: "installed manual pages on MANPATH",
+            },
+            LayoutEntry {
+                key: "usr_local",
+                path: self.usr_local(),
+                kind: LayoutKind::Canonical,
+                purpose: "meta-hosted /usr/local prefix for locally-built installs",
+            },
+            LayoutEntry {
+                key: "usr_local_bin",
+                path: self.usr_local_bin(),
+                kind: LayoutKind::Canonical,
+                purpose: "locally-built executables on PATH",
+            },
+            LayoutEntry {
+                key: "usr_local_sbin",
+                path: self.usr_local_sbin(),
+                kind: LayoutKind::Canonical,
+                purpose: "locally-built admin binaries on PATH",
+            },
+            LayoutEntry {
+                key: "usr_local_lib",
+                path: self.usr_local_lib(),
+                kind: LayoutKind::Canonical,
+                purpose: "locally-built shared libraries on the library search path",
+            },
+            LayoutEntry {
+                key: "usr_local_lib64",
+                path: self.usr_local_lib64(),
+                kind: LayoutKind::Canonical,
+                purpose: "locally-built 64-bit shared libraries on the library search path",
+            },
+            LayoutEntry {
+                key: "usr_local_include",
+                path: self.usr_local_include(),
+                kind: LayoutKind::Canonical,
+                purpose: "locally-built headers on the compiler include path",
+            },
+            LayoutEntry {
+                key: "usr_local_share",
+                path: self.usr_local_share(),
+                kind: LayoutKind::Canonical,
+                purpose: "locally-built architecture-independent shared data",
             },
             LayoutEntry {
                 key: "etc",
@@ -551,6 +684,19 @@ impl MetaLayout {
             ("ENVCTL_USR_LIB", self.usr_lib()),
             ("ENVCTL_USR_LIBEXEC", self.usr_libexec()),
             ("ENVCTL_USR_SHARE", self.usr_share()),
+            ("ENVCTL_USR_SBIN", self.usr_sbin()),
+            ("ENVCTL_USR_LIB64", self.usr_lib64()),
+            ("ENVCTL_USR_INCLUDE", self.usr_include()),
+            ("ENVCTL_USR_SRC", self.usr_src()),
+            ("ENVCTL_USR_GAMES", self.usr_games()),
+            ("ENVCTL_USR_SHARE_MAN", self.usr_share_man()),
+            ("ENVCTL_USR_LOCAL", self.usr_local()),
+            ("ENVCTL_USR_LOCAL_BIN", self.usr_local_bin()),
+            ("ENVCTL_USR_LOCAL_SBIN", self.usr_local_sbin()),
+            ("ENVCTL_USR_LOCAL_LIB", self.usr_local_lib()),
+            ("ENVCTL_USR_LOCAL_LIB64", self.usr_local_lib64()),
+            ("ENVCTL_USR_LOCAL_INCLUDE", self.usr_local_include()),
+            ("ENVCTL_USR_LOCAL_SHARE", self.usr_local_share()),
             ("ENVCTL_ETC", self.etc()),
             ("ENVCTL_ETC_DIR", self.etc_envctl()),
             ("ENVCTL_VAR", self.var()),
@@ -642,6 +788,49 @@ mod tests {
             l.legacy_seed_ca(),
             Path::new("/m/.toolchains/secrets/ca/cognitum-ca.crt")
         );
+    }
+
+    #[test]
+    fn usr_mirror_completes_the_fhs_skeleton() {
+        let l = MetaLayout::from_meta_root("/m");
+        // The full /usr mirror: every standard subdir resolves under meta's usr.
+        assert_eq!(l.usr_sbin(), Path::new("/m/usr/sbin"));
+        assert_eq!(l.usr_lib64(), Path::new("/m/usr/lib64"));
+        assert_eq!(l.usr_include(), Path::new("/m/usr/include"));
+        assert_eq!(l.usr_src(), Path::new("/m/usr/src"));
+        assert_eq!(l.usr_games(), Path::new("/m/usr/games"));
+        assert_eq!(l.usr_share_man(), Path::new("/m/usr/share/man"));
+        assert_eq!(l.usr_local(), Path::new("/m/usr/local"));
+        assert_eq!(l.usr_local_bin(), Path::new("/m/usr/local/bin"));
+        assert_eq!(l.usr_local_sbin(), Path::new("/m/usr/local/sbin"));
+        assert_eq!(l.usr_local_lib(), Path::new("/m/usr/local/lib"));
+        assert_eq!(l.usr_local_lib64(), Path::new("/m/usr/local/lib64"));
+        assert_eq!(l.usr_local_include(), Path::new("/m/usr/local/include"));
+        assert_eq!(l.usr_local_share(), Path::new("/m/usr/local/share"));
+
+        // Every new mirror dir is Canonical, so ensure_dirs() materializes it.
+        let entries = l.entries();
+        for key in [
+            "usr_sbin",
+            "usr_lib64",
+            "usr_include",
+            "usr_src",
+            "usr_games",
+            "usr_share_man",
+            "usr_local",
+            "usr_local_bin",
+            "usr_local_sbin",
+            "usr_local_lib",
+            "usr_local_lib64",
+            "usr_local_include",
+            "usr_local_share",
+        ] {
+            let e = entries
+                .iter()
+                .find(|entry| entry.key == key)
+                .unwrap_or_else(|| panic!("missing layout entry: {key}"));
+            assert_eq!(e.kind, LayoutKind::Canonical, "{key} must be canonical");
+        }
     }
 
     #[test]
