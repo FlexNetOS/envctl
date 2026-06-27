@@ -79,6 +79,20 @@ gitc push -qu origin master
 gitc worktree add -q "$tmp/wt-squash" feat-squash
 gitc push -q origin --delete feat-squash
 
+# Multi-commit squash: a branch with TWO commits collapsed into ONE squash commit on master.
+# `git cherry` (per-commit patch-id) sees BOTH branch commits as unique (`+`) and the OLD reaper
+# refused to reap it (the >1-commit husk-pileup); the COMBINED-patch-id squash oracle must still
+# recognise it. (feat-squash above only exercises the single-commit cherry path.)
+gitc checkout -qb feat-squash-multi
+printf 'm1\n' > squashmulti.txt; gitc add squashmulti.txt; gitc commit -qm 'multi part 1'
+printf 'm1\nm2\n' > squashmulti.txt; gitc add squashmulti.txt; gitc commit -qm 'multi part 2'
+gitc push -qu origin feat-squash-multi
+gitc checkout -q master
+printf 'm1\nm2\n' > squashmulti.txt; gitc add squashmulti.txt; gitc commit -qm 'squashed multi-commit equivalent on master'
+gitc push -qu origin master
+gitc worktree add -q "$tmp/wt-squash-multi" feat-squash-multi
+gitc push -q origin --delete feat-squash-multi
+
 # put local master strictly BEHIND origin/master so step-1b FF-sync has something to do
 gitc fetch -q --prune origin
 adv="$(mktemp -d)"; gitc clone -q "$tmp/origin.git" "$adv/c"; cd "$adv/c"
@@ -93,6 +107,8 @@ bash "$REAPER" --apply >/dev/null 2>&1 || fail "reaper exited non-zero"
 gitc show-ref --verify --quiet refs/heads/feat-merged       && fail "merged branch was NOT reaped" || true
 [ ! -d "$tmp/wt-squash" ]                                   || fail "squash-equivalent worktree was NOT reaped"
 gitc show-ref --verify --quiet refs/heads/feat-squash       && fail "squash-equivalent branch was NOT reaped" || true
+[ ! -d "$tmp/wt-squash-multi" ]                             || fail "multi-commit squash worktree was NOT reaped (>1-commit squash regression)"
+gitc show-ref --verify --quiet refs/heads/feat-squash-multi && fail "multi-commit squash branch was NOT reaped (>1-commit squash regression)" || true
 [ -d "$tmp/wt-local-only" ]                                 || fail "[gone] branch with local-only patch was destroyed"
 gitc show-ref --verify --quiet refs/heads/feat-local-only   || fail "local-only gone branch was reaped (must preserve)"
 [ -f "$tmp/wt-local-only/local-only.txt" ]                  || fail "local-only committed file was lost"
