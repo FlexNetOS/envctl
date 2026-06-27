@@ -23,7 +23,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--owner-supervised-state-report PATH] [--owner-supervised-child-report PATH] [--owner-supervised-child-plan PATH] [--owner-supervised-child-candidates-report PATH] [--owner-supervised-child-candidate-actions PATH] [--owner-supervised-child-candidates-summary PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--migration-blockers-plan PATH] [--fail-migration-blockers] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--owner-supervised-state-report PATH] [--owner-supervised-child-report PATH] [--owner-supervised-child-plan PATH] [--owner-supervised-child-candidates-report PATH] [--owner-supervised-child-candidate-actions PATH] [--owner-supervised-child-candidate-action-summary PATH] [--owner-supervised-child-candidates-summary PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--migration-blockers-plan PATH] [--fail-migration-blockers] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
 With --inventory, also writes a tab-separated relocation inventory:
@@ -80,6 +80,10 @@ With --owner-supervised-child-candidate-actions, writes read-only owner-action r
 from action-candidate children:
 dot_entry, child_name, child_target_class, candidate_action, apply_safe, supervision,
 next_action, canonical_target, envctl_home_source, apply_command.
+With --owner-supervised-child-candidate-action-summary, writes read-only aggregate
+owner-action rows derived from action-candidate children:
+dot_entry, child_target_class, candidate_action, apply_safe, supervision, next_action,
+total, envctl_home_sources.
 With --owner-supervised-child-candidates-summary, writes read-only aggregate rows for
 action-candidate children:
 dot_entry, child_target_class, candidate_action, apply_safe, recommendation, total,
@@ -119,6 +123,7 @@ OWNER_SUPERVISED_CHILD_REPORT_PATH=""
 OWNER_SUPERVISED_CHILD_PLAN_PATH=""
 OWNER_SUPERVISED_CHILD_CANDIDATES_REPORT_PATH=""
 OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH=""
+OWNER_SUPERVISED_CHILD_CANDIDATE_ACTION_SUMMARY_PATH=""
 OWNER_SUPERVISED_CHILD_CANDIDATES_SUMMARY_PATH=""
 MIGRATION_BLOCKERS_REPORT_PATH=""
 MIGRATION_BLOCKERS_SUMMARY_PATH=""
@@ -145,6 +150,7 @@ while [ "$#" -gt 0 ]; do
     --owner-supervised-child-plan) OWNER_SUPERVISED_CHILD_PLAN_PATH="${2:?--owner-supervised-child-plan requires a path}"; shift 2 ;;
     --owner-supervised-child-candidates-report) OWNER_SUPERVISED_CHILD_CANDIDATES_REPORT_PATH="${2:?--owner-supervised-child-candidates-report requires a path}"; shift 2 ;;
     --owner-supervised-child-candidate-actions) OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH="${2:?--owner-supervised-child-candidate-actions requires a path}"; shift 2 ;;
+    --owner-supervised-child-candidate-action-summary) OWNER_SUPERVISED_CHILD_CANDIDATE_ACTION_SUMMARY_PATH="${2:?--owner-supervised-child-candidate-action-summary requires a path}"; shift 2 ;;
     --owner-supervised-child-candidates-summary) OWNER_SUPERVISED_CHILD_CANDIDATES_SUMMARY_PATH="${2:?--owner-supervised-child-candidates-summary requires a path}"; shift 2 ;;
     --migration-blockers-report) MIGRATION_BLOCKERS_REPORT_PATH="${2:?--migration-blockers-report requires a path}"; shift 2 ;;
     --migration-blockers-summary) MIGRATION_BLOCKERS_SUMMARY_PATH="${2:?--migration-blockers-summary requires a path}"; shift 2 ;;
@@ -219,6 +225,9 @@ if [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH" ]; then
   mkdir -p "$(dirname "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH")"
   printf 'dot_entry\tchild_name\tchild_target_class\tcandidate_action\tapply_safe\tsupervision\tnext_action\tcanonical_target\tenvctl_home_source\tapply_command\n' >"$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH"
 fi
+if [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTION_SUMMARY_PATH" ]; then
+  mkdir -p "$(dirname "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTION_SUMMARY_PATH")"
+fi
 if [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATES_SUMMARY_PATH" ]; then
   mkdir -p "$(dirname "$OWNER_SUPERVISED_CHILD_CANDIDATES_SUMMARY_PATH")"
 fi
@@ -258,6 +267,8 @@ declare -A child_candidate_summary_direct_entries=()
 declare -A child_candidate_summary_direct_files=()
 declare -A child_candidate_summary_direct_dirs=()
 declare -A child_candidate_summary_direct_symlinks=()
+declare -A child_candidate_action_summary_total=()
+declare -A child_candidate_action_summary_envctl_home_sources=()
 
 say() { printf '%s\n' "$*"; }
 fail() { failures=$((failures + 1)); say "FAIL: $*" >&2; }
@@ -857,7 +868,7 @@ record_owner_supervised_child_candidates() {
   local shallow_digest direct_entries direct_files direct_dirs direct_symlinks
   local supervision next_action envctl_home_source apply_command
 
-  [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATES_REPORT_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATES_SUMMARY_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH" ] || return 0
+  [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATES_REPORT_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATES_SUMMARY_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTION_SUMMARY_PATH" ] || return 0
   [ "$state" = "real-home-state" ] || [ "$state" = "external-symlink" ] || return 0
   [ "$apply_safe" = "no" ] || return 0
   case "$dot" in
@@ -895,8 +906,10 @@ record_owner_supervised_child_candidates() {
         "$child_apply_safe" \
         "$child_recommendation" >>"$OWNER_SUPERVISED_CHILD_CANDIDATES_REPORT_PATH"
     fi
-    if [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH" ]; then
+    if [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTION_SUMMARY_PATH" ]; then
       IFS=$'\t' read -r supervision next_action envctl_home_source apply_command < <(owner_supervised_child_candidate_action_fields "$child_target_class" "$candidate_action" "$canonical_target")
+    fi
+    if [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH" ]; then
       printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
         "$dot" \
         "$child_name" \
@@ -908,6 +921,16 @@ record_owner_supervised_child_candidates() {
         "$canonical_target" \
         "$envctl_home_source" \
         "$apply_command" >>"$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH"
+    fi
+    if [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTION_SUMMARY_PATH" ]; then
+      owner_supervised_child_candidate_action_summary_observe \
+        "$dot" \
+        "$child_target_class" \
+        "$candidate_action" \
+        "$child_apply_safe" \
+        "$supervision" \
+        "$next_action" \
+        "$envctl_home_source"
     fi
     owner_supervised_child_candidate_summary_observe \
       "$dot" \
@@ -1232,6 +1255,41 @@ owner_supervised_child_candidate_summary_observe() {
   child_candidate_summary_direct_files["$key"]=$(( ${child_candidate_summary_direct_files["$key"]:-0} + direct_files ))
   child_candidate_summary_direct_dirs["$key"]=$(( ${child_candidate_summary_direct_dirs["$key"]:-0} + direct_dirs ))
   child_candidate_summary_direct_symlinks["$key"]=$(( ${child_candidate_summary_direct_symlinks["$key"]:-0} + direct_symlinks ))
+}
+
+owner_supervised_child_candidate_action_summary_observe() {
+  local dot="$1" child_target_class="$2" candidate_action="$3" child_apply_safe="$4" supervision="$5" next_action="$6" envctl_home_source="$7"
+  local key
+  [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTION_SUMMARY_PATH" ] || return 0
+
+  key="${dot}|${child_target_class}|${candidate_action}|${child_apply_safe}|${supervision}|${next_action}"
+  child_candidate_action_summary_total["$key"]=$(( ${child_candidate_action_summary_total["$key"]:-0} + 1 ))
+  if [ -n "$envctl_home_source" ]; then
+    child_candidate_action_summary_envctl_home_sources["$key"]=$(( ${child_candidate_action_summary_envctl_home_sources["$key"]:-0} + 1 ))
+  fi
+}
+
+emit_owner_supervised_child_candidate_action_summary() {
+  local dot child_target_class candidate_action child_apply_safe supervision next_action key
+  [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTION_SUMMARY_PATH" ] || return 0
+
+  {
+    printf 'dot_entry\tchild_target_class\tcandidate_action\tapply_safe\tsupervision\tnext_action\ttotal\tenvctl_home_sources\n'
+    if [ "${#child_candidate_action_summary_total[@]}" -gt 0 ]; then
+      printf '%s\n' "${!child_candidate_action_summary_total[@]}" | sort | while IFS='|' read -r dot child_target_class candidate_action child_apply_safe supervision next_action; do
+        key="${dot}|${child_target_class}|${candidate_action}|${child_apply_safe}|${supervision}|${next_action}"
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+          "$dot" \
+          "$child_target_class" \
+          "$candidate_action" \
+          "$child_apply_safe" \
+          "$supervision" \
+          "$next_action" \
+          "${child_candidate_action_summary_total["$key"]:-0}" \
+          "${child_candidate_action_summary_envctl_home_sources["$key"]:-0}"
+      done
+    fi
+  } >"$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTION_SUMMARY_PATH"
 }
 
 emit_owner_supervised_child_candidates_summary() {
@@ -2216,6 +2274,7 @@ scan_deep_links
 
 fail_on_migration_blockers
 emit_inventory_summary
+emit_owner_supervised_child_candidate_action_summary
 emit_owner_supervised_child_candidates_summary
 emit_migration_blockers_summary
 emit_deep_link_summary
