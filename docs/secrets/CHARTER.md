@@ -27,7 +27,7 @@ move fast without destabilizing the shipped engine, then merge by **matching con
 | Pure **engine library**, thin front-ends; **the engine never prints** — it emits a structured `Event` stream | same spine |
 | Best-effort orchestration; typed errors for setup-time failures only | same |
 | Fail-closed guards; dry-run by default for destructive ops; back up before clobber; never touch user data | same |
-| XDG layout (`~/.config`, `~/.local/share`, `~/.local/state`) | same roots, `env-ctl`-namespaced |
+| meta-XDG layout (`$META_ROOT/.config`, `$META_ROOT/.local/share`, `$META_ROOT/.local/state`) | same roots, `env-ctl`-namespaced |
 | Few mainstream deps, stable toolchain, **no web / no WebView** | same constraint |
 
 **Merge mechanics (target):** the crates here become `envctl/crates/*` (e.g. a `secrets`

@@ -53,7 +53,7 @@ reading the source/docs in this repo:
   synchronously before the RPC returns (`docs/DESIGN-NOTES.md:55`); the `SecretEvent` mpsc stream is
   cosmetic/best-effort (`DESIGN-NOTES.md:69`). On the remote edge, **FS-S26**: "a remote swap returns
   Allowed before its audit row is durably committed" is forbidden (`SERVER-MODE.md:219`).
-- **The on-disk log home already exists.** `~/.local/state/env-ctl/` (0700) holds `secretd.log` and the
+- **The on-disk log home already exists.** `$META_ROOT/.local/state/env-ctl/` (0700) holds `secretd.log` and the
   **operator-box-local audit mirror / `audit_head` second home** (`docs/ARCHITECTURE.md:126`,
   `SERVER-MODE.md:219`). NDJSON export belongs here — it is an extension of an existing artifact, not a
   new directory.
@@ -306,7 +306,7 @@ journalctl --user-unit=env-ctl-secretd.service -o json --output-fields=EVENT_TYP
 
 Append one JSON object per line to the **already-defined** audit mirror home:
 
-- Path: `~/.local/state/env-ctl/audit.ndjson` (dir is 0700, file 0600; matches
+- Path: `$META_ROOT/.local/state/env-ctl/audit.ndjson` (dir is 0700, file 0600; matches
   `ARCHITECTURE.md:126` / `SERVER-MODE.md:219`).
 - One line per durable row; each line is independently parseable even on truncation.
 
@@ -369,7 +369,7 @@ dispatch is best-effort and MUST NOT gate `Allow`** (same rule as export).
 ### 4.2 Operator alerting config (no new inbound surface)
 
 ```toml
-# ~/.config/env-ctl/alerting.toml   (0600)
+# $META_ROOT/.config/env-ctl/alerting.toml   (0600)
 [alerting]
 enabled        = true
 min_severity   = "medium"            # info|low|medium|high|critical
@@ -451,12 +451,12 @@ After=network-online.target
 
 [Service]
 Type=notify
-ExecStart=%h/.local/bin/envctl secretd --foreground
+ExecStart=%h/Desktop/meta/usr/bin/envctl secretd --foreground
 # Hardening (defense-in-depth ON TOP OF mlockall/RLIMIT_CORE=0/MADV_DONTDUMP done in-process):
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=%h/.local/share/env-ctl %h/.local/state/env-ctl %h/.config/env-ctl %t/env-ctl
+ReadWritePaths=%h/Desktop/meta/.local/share/env-ctl %h/Desktop/meta/.local/state/env-ctl %h/Desktop/meta/.config/env-ctl %t/env-ctl
 ProtectControlGroups=true
 ProtectKernelTunables=true
 ProtectKernelModules=true
@@ -487,7 +487,7 @@ journalctl --user-unit=env-ctl-secretd.service -t envctl_audit -f
 > **[UNVERIFIED]** that `MemoryDenyWriteExecute=true` is compatible with every dependency `secretd`
 > links at runtime (some JITs/TLS stacks trip it) — test on the box; if a dep needs W^X relaxation,
 > drop this one directive and document the residual rather than weakening the others.
-> **[UNVERIFIED]** the exact installed binary path (`%h/.local/bin/envctl`) — confirm against the
+> **[UNVERIFIED]** the exact installed binary path (`%h/Desktop/meta/usr/bin/envctl`) — confirm against the
 > Phase 7 install layout.
 
 ---
@@ -540,8 +540,8 @@ CREATE TABLE audit_tsa_anchor (
    unlock (§2.6); sign head in the durable head-update txn (§2.5).
 5. Phase 5: enable journald + NDJSON dual-sink export (§3) and alert rules (§4) in `secretd`.
 6. Publish the verification bundle (§2.7) to an off-box/air-gapped location periodically.
-7. Point a SIEM agent (Vector/Filebeat/Datadog) at `~/.local/state/env-ctl/audit.ndjson` (§4.3).
-8. Configure `~/.config/env-ctl/alerting.toml` (outbound webhook only; Telegram alerting = separate
+7. Point a SIEM agent (Vector/Filebeat/Datadog) at `$META_ROOT/.local/state/env-ctl/audit.ndjson` (§4.3).
+8. Configure `$META_ROOT/.config/env-ctl/alerting.toml` (outbound webhook only; Telegram alerting = separate
    process per `SERVER-MODE.md:138`).
 
 **Profile B — VPS (DEFERRED — operator-authorizer protocol open, OI-SM-2/3, `ROADMAP.md` Phase -1 note):**
@@ -611,7 +611,7 @@ verifiability and operational visibility**:
 - **Ed25519 head signing** (key per `dek_generation`, sealed under the DEK, all pubkeys published) lets
   an air-gapped auditor verify the head with no ability to forge — the asymmetric anchor the DEK-keyed
   one cannot provide (RFC 8032). Signed in the same durable txn as the head update (HF-14 / FS-S26).
-- **Dual-sink export** (journald + NDJSON in the existing `~/.local/state/env-ctl/` mirror) and
+- **Dual-sink export** (journald + NDJSON in the existing `$META_ROOT/.local/state/env-ctl/` mirror) and
   **outbound-only alerting** give a SIEM an append-only off-box copy that owner-session malware cannot
   retroactively suppress — turning A2/A12's "bounded, not prevented" into "bounded *and visible*."
 - Everything stays **pure-Rust in the engine, I/O in `secretd`, fail-closed, no new listener, no

@@ -2,7 +2,7 @@
 #
 # WHY THIS EXISTS
 # secretd's USB-unlock factor validates the Seed's TLS strictly against a pinned Cognitum Device
-# CA at $META_ROOT/.local/share/envctl/secrets/ca/cognitum-ca.crt (the meta path the
+# CA at $META_ROOT/etc/envctl/secrets/ca/cognitum-ca.crt (the meta path the
 # secretd unit sets via ENVCTL_SEED_CA; crates/secrets-engine/src/seam.rs `ca_path()` honors that
 # env override). When the Seed rotates its Device CA, the host pin goes stale, the
 # TLS handshake fails fail-closed and SILENT, custody/sign fails, usb_possessed=false, and
@@ -13,11 +13,11 @@
 #
 # CANONICAL OPERATION (what install-trust.sh did, now relocated to the meta path):
 #   cp <COGNITUM mount>/trust/cognitum-ca.pem \
-#      $META_ROOT/.local/share/envctl/secrets/ca/cognitum-ca.crt
+#      $META_ROOT/etc/envctl/secrets/ca/cognitum-ca.crt
 #   update-ca-certificates   # (best-effort; the daemon pins the meta path directly via ENVCTL_SEED_CA)
 #
 # DESIGN
-# A self-healing worker ($META_ROOT/.local/libexec/envctl/cognitum-seed-trust-refresh) that locates the COGNITUM
+# A self-healing worker ($META_ROOT/usr/libexec/envctl/cognitum-seed-trust-refresh) that locates the COGNITUM
 # USB trust anchor, and re-pins ONLY when the pin differs from the anchor (idempotent). It runs on
 # boot (systemd oneshot) and on every Seed hotplug (udev rule keyed on the same cdc_ncm NIC trigger
 # as cognitum-seed-net). Absent Seed => clean no-op. Root-owned system integration anchors live
@@ -27,7 +27,7 @@
 # unplugged, which is healthy. So drift never nudges a needless reinstall when the box is fine.
 #
 # NO-SYSTEM-DEPTH NOTE: this pins to the meta toolchains prefix
-# ($META_ROOT/.local/share/envctl/secrets/ca/cognitum-ca.crt), NOT /usr/local. The
+# ($META_ROOT/etc/envctl/secrets/ca/cognitum-ca.crt), NOT /usr/local. The
 # secretd unit sets ENVCTL_SEED_CA to that path (manifest/env-ctl.toml), so the daemon's
 # seam.rs `ca_path()` reads the pin from meta. The relocation off the system-depth /usr/local path
 # is DONE (this IS TASK-0075b) — it is no longer tracked as a follow-up. The worker still honors an
@@ -40,14 +40,14 @@
 [[component]]
 id = "cognitum-seed-trust"
 name = "Cognitum Seed Device-CA auto-refresh"
-description = "Auto-refreshes the pinned Cognitum Device CA (the meta path $META_ROOT/.local/share/envctl/secrets/ca/cognitum-ca.crt that secretd reads via ENVCTL_SEED_CA) from the USB trust anchor (COGNITUM/trust/cognitum-ca.pem) on boot + Seed hotplug, so the vault USB-unlock factor keeps working across Seed CA rotation. Additive; never removes other CAs; absent Seed = no-op."
+description = "Auto-refreshes the pinned Cognitum Device CA (the meta path $META_ROOT/etc/envctl/secrets/ca/cognitum-ca.crt that secretd reads via ENVCTL_SEED_CA) from the USB trust anchor (COGNITUM/trust/cognitum-ca.pem) on boot + Seed hotplug, so the vault USB-unlock factor keeps working across Seed CA rotation. Additive; never removes other CAs; absent Seed = no-op."
 requires = []
 destructive = false
 
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; test -x \"$M/.local/libexec/envctl/cognitum-seed-trust-refresh\" && test -f /etc/systemd/system/cognitum-seed-trust.service && test -f /etc/udev/rules.d/99-cognitum-seed-trust.rules"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; test -x \"$M/usr/libexec/envctl/cognitum-seed-trust-refresh\" && test -f /etc/systemd/system/cognitum-seed-trust.service && test -f /etc/udev/rules.d/99-cognitum-seed-trust.rules"]
 
 # INSTALL: write the self-healing worker + oneshot unit + udev rule, reload udev/systemd, enable
 # for boot, and re-pin now. Idempotent.
@@ -58,7 +58,7 @@ script = '''
 set -euo pipefail
 
 META_ROOT="${META_ROOT:?META_ROOT required by envctl hook}"
-WORKER_PATH="$META_ROOT/.local/libexec/envctl/cognitum-seed-trust-refresh"
+WORKER_PATH="$META_ROOT/usr/libexec/envctl/cognitum-seed-trust-refresh"
 install -d -m755 "$(dirname "$WORKER_PATH")"
 cat > "$WORKER_PATH" <<'WORKER'
 #!/usr/bin/env bash
@@ -82,7 +82,7 @@ fi
 
 SRC="$TRUST_DIR/cognitum-ca.pem"
 META_ROOT="${META_ROOT:?META_ROOT not set by envctl unit}"
-DST="${ENVCTL_SEED_CA:-$META_ROOT/.local/share/envctl/secrets/ca/cognitum-ca.crt}"
+DST="${ENVCTL_SEED_CA:-$META_ROOT/etc/envctl/secrets/ca/cognitum-ca.crt}"
 
 if cmp -s "$SRC" "$DST"; then
   echo "cognitum-seed-trust: pin already current (no-op)"; exit 0
@@ -106,8 +106,8 @@ After=systemd-udevd.service
 [Service]
 Type=oneshot
 Environment=META_ROOT=${META_ROOT_LITERAL}
-Environment=ENVCTL_SEED_CA=${META_ROOT_LITERAL}/.local/share/envctl/secrets/ca/cognitum-ca.crt
-ExecStart=${META_ROOT_LITERAL}/.local/libexec/envctl/cognitum-seed-trust-refresh
+Environment=ENVCTL_SEED_CA=${META_ROOT_LITERAL}/etc/envctl/secrets/ca/cognitum-ca.crt
+ExecStart=${META_ROOT_LITERAL}/usr/libexec/envctl/cognitum-seed-trust-refresh
 
 [Install]
 WantedBy=multi-user.target
@@ -133,7 +133,7 @@ kind = "command"
 command = "bash"
 args = ["-lc", '''
 M="${META_ROOT:?META_ROOT required by envctl hook}"
-test -x "$M/.local/libexec/envctl/cognitum-seed-trust-refresh" \
+test -x "$M/usr/libexec/envctl/cognitum-seed-trust-refresh" \
   && test -f /etc/systemd/system/cognitum-seed-trust.service \
   && test -f /etc/udev/rules.d/99-cognitum-seed-trust.rules || exit 1
 
@@ -151,7 +151,7 @@ if [ -z "${TRUST_DIR:-}" ]; then
 fi
 
 META_ROOT="${META_ROOT:?META_ROOT required by envctl hook}"
-DST="${ENVCTL_SEED_CA:-$META_ROOT/.local/share/envctl/secrets/ca/cognitum-ca.crt}"
+DST="${ENVCTL_SEED_CA:-$META_ROOT/etc/envctl/secrets/ca/cognitum-ca.crt}"
 if cmp -s "$TRUST_DIR/cognitum-ca.pem" "$DST"; then
   echo "pin probe: Device CA pin MATCHES USB anchor (healthy)"
 else
@@ -169,7 +169,7 @@ script = '''
 set -euo pipefail
 
 META_ROOT="${META_ROOT:?META_ROOT required by envctl hook}"
-WORKER_PATH="$META_ROOT/.local/libexec/envctl/cognitum-seed-trust-refresh"
+WORKER_PATH="$META_ROOT/usr/libexec/envctl/cognitum-seed-trust-refresh"
 install -d -m755 "$(dirname "$WORKER_PATH")"
 cat > "$WORKER_PATH" <<'WORKER'
 #!/usr/bin/env bash
@@ -187,7 +187,7 @@ if [ -z "${TRUST_DIR:-}" ]; then
 fi
 SRC="$TRUST_DIR/cognitum-ca.pem"
 META_ROOT="${META_ROOT:?META_ROOT not set by envctl unit}"
-DST="${ENVCTL_SEED_CA:-$META_ROOT/.local/share/envctl/secrets/ca/cognitum-ca.crt}"
+DST="${ENVCTL_SEED_CA:-$META_ROOT/etc/envctl/secrets/ca/cognitum-ca.crt}"
 if cmp -s "$SRC" "$DST"; then
   echo "cognitum-seed-trust: pin already current (no-op)"; exit 0
 fi
@@ -209,8 +209,8 @@ After=systemd-udevd.service
 [Service]
 Type=oneshot
 Environment=META_ROOT=${META_ROOT_LITERAL}
-Environment=ENVCTL_SEED_CA=${META_ROOT_LITERAL}/.local/share/envctl/secrets/ca/cognitum-ca.crt
-ExecStart=${META_ROOT_LITERAL}/.local/libexec/envctl/cognitum-seed-trust-refresh
+Environment=ENVCTL_SEED_CA=${META_ROOT_LITERAL}/etc/envctl/secrets/ca/cognitum-ca.crt
+ExecStart=${META_ROOT_LITERAL}/usr/libexec/envctl/cognitum-seed-trust-refresh
 
 [Install]
 WantedBy=multi-user.target
@@ -227,7 +227,7 @@ systemctl restart cognitum-seed-trust.service || true
 '''
 
 # REMOVE: disable + drop the unit/udev rule/worker. CRITICAL: do NOT delete the pinned CA from
-# the meta path $META_ROOT/.local/share/envctl/secrets/ca/ — removing trust could
+# the meta path $META_ROOT/etc/envctl/secrets/ca/ — removing trust could
 # break a currently-working USB unlock; the owner removes the CA manually if ever desired. This
 # only removes the auto-refresh mechanism.
 [component.remove]
@@ -237,10 +237,10 @@ script = '''
 set -euo pipefail
 systemctl disable --now cognitum-seed-trust.service 2>/dev/null || true
 M="${META_ROOT:?META_ROOT required by envctl hook}"
-rm -f "$M/.local/libexec/envctl/cognitum-seed-trust-refresh" \
+rm -f "$M/usr/libexec/envctl/cognitum-seed-trust-refresh" \
       /etc/systemd/system/cognitum-seed-trust.service \
       /etc/udev/rules.d/99-cognitum-seed-trust.rules
-# NOTE: the pinned CA at $META_ROOT/.local/share/envctl/secrets/ca/cognitum-ca.crt is
+# NOTE: the pinned CA at $META_ROOT/etc/envctl/secrets/ca/cognitum-ca.crt is
 # intentionally LEFT in place — removing it could break a working USB unlock. Only the refresh
 # mechanism is removed here.
 udevadm control --reload-rules || true

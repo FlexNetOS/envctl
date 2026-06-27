@@ -3,7 +3,7 @@
 A first-class **meta** peer member — the fully-automated, **agentic environment manager for
 the whole meta workspace**. It brings every tool, dependency, provider, vendor, CLI, and
 config to a declared state and installs it **into meta** through envctl's canonical
-system-shaped prefix (`$META_ROOT/.local/{bin,lib,share,state,cache,tmp,opt}`), with
+system-shaped prefix (`$META_ROOT/{usr/bin,usr/lib,usr/share,etc,var/lib,var/cache,var/log,var/tmp,opt} plus XDG meta-home roots`), with
 `.toolchains/` retained only as a legacy compatibility store for manager-specific roots.
 There are **no system-depth or user-global installs**: anything meta uses lives in meta, portable
 wherever meta is cloned. One Rust workspace: a shared engine, a CLI (`envctl`), and a native
@@ -24,7 +24,7 @@ target today is a GPU-aware dual-RTX-5090 Ubuntu 26.04 workstation.
 | `graph` | dependency-DAG intelligence: summary, `--impact` blast-radius, `--why` paths, `--dot`/`--json` | — |
 | `lock` | content-hashed `envctl.lock` (reproducible) + `--check` CI gate (exit 1 on drift) | writes |
 | `doctor` | read-only health: writability, toolchains, sudo, UEFI/Secure-Boot, GPU, last-op | — |
-| `migrate` | adopt legacy/global installs into `$META_ROOT/.local`, preserve agent assets, protect shared meta substrates, and refuse unsafe purge | read-only (`apply --apply` materializes dirs) |
+| `migrate` | adopt legacy/global installs into the `$META_ROOT` FHS/XDG layout, preserve agent assets, protect shared meta substrates, and refuse unsafe purge | read-only (`apply --apply` materializes dirs) |
 
 ## Quick start
 
@@ -38,31 +38,34 @@ cargo run  -p envctl -- auto-detect --json # machine-readable EnvReport
 cargo run  -p envctl -- install bun --dry-run
 cargo run  -p envctl -- reset boot-repair-dev      # dry-run by default
 cargo run  -p envctl -- migrate scan               # migration/adoption inventory
-cargo run  -p envctl -- migrate apply --apply      # materialize canonical .local dirs
+cargo run  -p envctl -- migrate apply --apply      # materialize canonical META_ROOT FHS/XDG dirs
 ```
 
 The manifest dir defaults to `./manifest` (override with `ENVCTL_MANIFEST_DIR`).
 
-### Meta-local layout
+### META_ROOT FHS/XDG layout
 
 envctl is the path authority for meta installs. Components and add-repo drop-ins should not
 hand-spell ad hoc host paths; they should resolve through the engine layout and land under:
 
 | purpose | canonical path |
 |---|---|
-| executable exposure | `$META_ROOT/.local/bin` |
-| libraries | `$META_ROOT/.local/lib` |
-| shared data + generated drop-ins | `$META_ROOT/.local/share` |
-| add-repo source/build store | `$META_ROOT/.local/share/envctl/repos` |
-| logs/state | `$META_ROOT/.local/state` |
-| caches | `$META_ROOT/.local/cache` |
-| temporary files | `$META_ROOT/.local/tmp` |
-| component prefixes | `$META_ROOT/.local/opt/<component>` |
+| executable exposure | `$META_ROOT/usr/bin` |
+| libraries | `$META_ROOT/usr/lib` |
+| read-only shared data + generated drop-ins | `$META_ROOT/usr/share` |
+| XDG data (desktop/icons/fonts/app contracts only) | `$META_ROOT/.local/share` |
+| add-repo source/build store | `$META_ROOT/var/lib/envctl/repos` |
+| durable envctl state/logs | `$META_ROOT/var/lib/envctl` / `$META_ROOT/var/log/envctl` |
+| XDG state (app contracts only) | `$META_ROOT/.local/state` |
+| envctl caches | `$META_ROOT/var/cache/envctl` |
+| XDG caches (app contracts only) | `$META_ROOT/.cache` |
+| temporary files | `$META_ROOT/var/tmp` |
+| component prefixes | `$META_ROOT/opt/<component>` |
 
 `$META_ROOT/.toolchains` is a compatibility prefix for existing manager homes
 (`BUN_INSTALL`, `CARGO_HOME`, `RUSTUP_HOME`, `UV_*`, etc.) while manifests migrate to the
-system-shaped `.local` tree. `envctl env --toolchains` exports both the canonical `ENVCTL_*`
-paths and the legacy manager variables, with `$META_ROOT/.local/bin` first on `PATH`.
+FHS/XDG meta-root tree. `envctl env --toolchains` exports both the canonical `ENVCTL_*`
+paths and the legacy manager variables, with `$META_ROOT/usr/bin` first on `PATH`.
 See [`docs/MIGRATION-ADOPTION.md`](docs/MIGRATION-ADOPTION.md) for the upgrade-only
 scan/plan/apply/verify/purge contract, including why `loop_lib` and agent/Codex assets are
 protected during adoption.
@@ -99,7 +102,7 @@ or drive it through the engine like any other component:
 cargo run -p envctl -- install desktop-app   # idempotent; reset removes the launcher + icon
 ```
 
-It installs `$META_ROOT/.local/bin/envctl-gui`, an
+It installs `$META_ROOT/usr/bin/envctl-gui`, an
 `$META_ROOT/.local/share/applications/envctl-gui.desktop` launcher
 (`Categories=System;Monitor;`), and a scalable icon under
 `$META_ROOT/.local/share/icons/hicolor/scalable/apps/`. Re-running is a no-op;

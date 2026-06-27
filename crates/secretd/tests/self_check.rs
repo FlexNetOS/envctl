@@ -2,7 +2,7 @@
 //! `verify` predicate). Runs the COMPILED binary (`CARGO_BIN_EXE_secretd`) so the real CLI surface
 //! and EXIT CODES are exercised — exit 0 = healthy, non-zero = fail-closed. The harness points HOME +
 //! the XDG base-dir vars at a per-test scratch dir so the checks never touch the developer's real
-//! `~/.config/env-ctl` and never collide with a running daemon.
+//! `$META_ROOT/.config/env-ctl` under envctl-managed execution and never collide with a running daemon.
 use std::path::{Path, PathBuf};
 use std::process::Command;
 

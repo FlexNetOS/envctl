@@ -8,7 +8,7 @@
 
 > A first-class **meta** peer member — the GPU-aware, source-building agentic environment
 > manager for the whole meta workspace. Installs every tool/dependency/provider/vendor/CLI/config
-> **into meta** through `$META_ROOT/.local/{bin,lib,share,state,cache,tmp,opt}`, with
+> **into meta** through `$META_ROOT/{usr/bin,usr/lib,usr/share,etc,var/lib,var/cache,var/log,var/tmp,opt} plus XDG meta-home roots`, with
 > `.toolchains/` retained only as a legacy manager-store compatibility prefix and with no
 > system-depth or user-global installs.
 > Deployment target today: one specific box — Ubuntu 26.04 LTS, dual NVIDIA RTX 5090
@@ -246,7 +246,7 @@ script = "sudo apt-get install -y cuda-toolkit-13-3"
 
 [verify]                       # shipped smoke test, referenced (never edited); reboot-gated
 kind = "shipped_script"
-path = "$META_ROOT/.local/bin/yazelix-gpu-verify.sh"
+path = "$META_ROOT/usr/bin/yazelix-gpu-verify.sh"
 
 [fix]
 kind = "command"
@@ -431,7 +431,7 @@ GUI never stalls; everything is user-scope (no system dirs / no root on the comm
 best-effort with refuse-on-ambiguity.
 
 1. **acquire** — `git clone --filter=blob:none` into
-   `$META_ROOT/.local/share/envctl/repos/<slug>`
+   `$META_ROOT/var/lib/envctl/repos/<slug>`
    (slug = sanitized `host_owner_repo`); existing repo → `git fetch && git reset --hard @{u}`.
    `--ref` pins; **record the resolved commit SHA** (resolve-then-record, the boot-repair
    pattern). Local paths are snapshot-copied, never mutated in place. Re-verify before
@@ -449,13 +449,13 @@ best-effort with refuse-on-ambiguity.
 5. **locate artifacts** — resolve the glob, classify (executables, `.so`, completions,
    `.desktop`/icons, man, units), pick the install set. Refuse if zero executables and none
    specified.
-6. **install** — into meta-local roots: bins → `$META_ROOT/.local/bin`, libs →
-   `$META_ROOT/.local/lib`, completions → the shell's XDG dir, `.desktop` →
+6. **install** — into meta-local roots: bins → `$META_ROOT/usr/bin`, libs →
+   `$META_ROOT/usr/lib`, completions → the shell's XDG dir, `.desktop` →
    `$META_ROOT/.local/share/applications`, man → `$META_ROOT/.local/share/man`.
    **Symlink-by-default** (clean update/reset), `--copy` to materialize; always
    timestamped-backup before clobber (the `yazelix-config.sh .bak.$(date)` pattern); refuse to
    overwrite an unmanaged file without `--force`.
-7. **wire-in** — apply the component's `Wiring`: ensure `$META_ROOT/.local/bin` on PATH via a guarded
+7. **wire-in** — apply the component's `Wiring`: ensure `$META_ROOT/usr/bin` on PATH via a guarded
    `# >>> BEGIN envctl path >>>` block; install completions; XDG desktop entry; for
    `daemon`-flagged components write + `systemctl --user enable --now` a unit. All guarded,
    idempotent; dry-run prints without applying.
@@ -505,7 +505,7 @@ impl EventSink {
   immediately (~0% CPU at rest).
 
 The same line stream is **tee'd to disk** by the engine at
-`$META_ROOT/.local/state/envctl/envctl.log` — the direct analogue of `~/yazelix-setup.log` — so a
+`$META_ROOT/var/lib/envctl/envctl.log` — the direct analogue of `~/yazelix-setup.log` — so a
 crash or closed window never loses the record.
 
 ---
@@ -649,7 +649,7 @@ after a transform so an AI port re-detects as cargo) · `addrepo.rs` (the staged
 pipeline: euid-0 refusal, `allow_build` opt-in gate, acquire into a 0700 store with
 origin-verify-on-reuse + hardened git, the patch/AI transform with a
 structurally-confined agent, streamed build in its own process group with a timeout,
-glob locate, strategy shaping) · `install.rs` (symlink into `$META_ROOT/.local/bin`,
+glob locate, strategy shaping) · `install.rs` (symlink into `$META_ROOT/usr/bin`,
 PATH-shadow refusal, canonical managed-symlink ownership, refuse-unmanaged-unless-force,
 PATH wire-in via the existing `Wiring`) · `register.rs` (synthesize the provenance
 drop-in with a SHA-pinned rebuild + owned-symlink remove, written through the
