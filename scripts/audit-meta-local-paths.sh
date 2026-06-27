@@ -17,6 +17,8 @@
 # Portable app configs are only migrated when they are explicitly allow-listed here.
 # Explicit --migrate-dot requests are allow-listed, require --apply for mutation, and preserve an
 # existing canonical META_ROOT target by archiving the old real-home state under META_ROOT first.
+# Live NSS/key-container state such as .pki additionally requires lsof proof that no process has
+# open file handles below the source tree before any --apply move is attempted.
 set -euo pipefail
 
 usage() {
@@ -42,6 +44,8 @@ With --migrate-dot, performs an explicit owner-requested migration for allow-lis
 like .ideavimrc, portable app-config dirs like .gphoto/.vscode-shared/.archon/.n8n-mcp/.n8n/.n8n-claude-bridge/.pki/.forge/.ruvector/.hermes/.ai/.jetbrains/.meta/.java/.repowire,
 portable cache dirs like .nv, or a managed dotfile present under --envctl-home-source).
 Mutation still requires --apply; without --apply the script prints the planned move and changes nothing.
+For .pki, --apply also requires lsof and refuses to mutate while any process has open file handles
+below the source tree.
 With --shell-dotfile-conflict-report, writes supervised shell-dotfile merge rows:
 dot_entry, real_path, canonical_target, action, apply_safe, real_sha256, canonical_sha256, real_lines, canonical_lines, recommendation.
 With --app-config-conflict-report, writes supervised app-config merge rows when a known real-home
@@ -726,6 +730,35 @@ canonical_target_for_dot() {
   esac
 }
 
+
+requires_no_open_handles_for_dot() {
+  case "$1" in
+    .pki) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+assert_no_open_handles_for_dot() {
+  local dot="$1" source="$2" report
+
+  requires_no_open_handles_for_dot "$dot" || return 0
+  if ! command -v lsof >/dev/null 2>&1; then
+    fail "--migrate-dot $dot: lsof is required to prove no open file handles under $source before live migration"
+    return 1
+  fi
+
+  report="$(mktemp)"
+  lsof +D "$source" >"$report" 2>/dev/null || true
+  if [ -s "$report" ]; then
+    fail "--migrate-dot $dot: open file handles detected under $source; close the owning app and retry"
+    sed 's/^/  /' "$report" >&2
+    rm -f "$report"
+    return 1
+  fi
+  rm -f "$report"
+  return 0
+}
+
 is_migratable_dot() {
   local dot="$1"
 
@@ -812,6 +845,10 @@ migrate_real_home_dot() {
     else
       say "DRY-RUN: would move $source to $target and link $source -> $target"
     fi
+    return 0
+  fi
+
+  if ! assert_no_open_handles_for_dot "$dot" "$source"; then
     return 0
   fi
 
