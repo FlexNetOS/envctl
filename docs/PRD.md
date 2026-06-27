@@ -168,7 +168,7 @@ The product surface is five verbs that map onto five lifecycle **phases** on eve
 **REQ-DETECT-2 (GPU graceful-degradation cascade)** — GPU detection always yields a report, even on a driverless first boot:
 - **Tier 0 — PCI floor** (always first, never fails, no driver needed): walk `/sys/bus/pci/devices` + `lspci` for vendor `0x10de`; sets the **authoritative GPU count** (==2 on this box).
 - **Tier 1 — `/proc/driver/nvidia/version`** (driver state): presence of the file means the kernel driver is loaded; parse the version string when available.
-- **Tier 2 — `nvidia-smi` CSV** (default build, zero extra deps): hard timeout; failure/timeout ⇒ `driver_loaded = false`.
+- **Tier 2 — `nvidia-smi` CSV** (default build, zero extra deps): hard timeout; enriches GPU names / per-card telemetry and may fall back to `lspci` names when `nvidia-smi` is unavailable. This tier never defines `driver_loaded`; the proc file remains the source of truth.
 
 `driver_loaded` comes from `/proc/driver/nvidia/version`; `open_kernel_module` comes from `modinfo -F license nvidia` (MIT/GPL means the open kernel module). `software_rendered = (PCI sees NVIDIA) AND NOT driver_loaded` drives the "reboot to load the driver" precondition.
 
