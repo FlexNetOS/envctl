@@ -127,6 +127,9 @@ if ! grep -Fq 'find "$REAL_HOME" -mindepth 1 -maxdepth 1 -name' scripts/audit-me
    ! grep -Fq 'dot_entries_seen' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq -- '--inventory) INVENTORY_PATH=' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq -- '--inventory-summary) INVENTORY_SUMMARY_PATH=' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq -- '--migrate-dot) MIGRATE_DOTS+=' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'migrate_real_home_dot' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'is_migratable_dot' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq 'emit_inventory_summary' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq 'target_class' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq 'owner-supervised-vault-or-bridge' scripts/audit-meta-local-paths.sh || \
@@ -134,6 +137,9 @@ if ! grep -Fq 'find "$REAL_HOME" -mindepth 1 -maxdepth 1 -name' scripts/audit-me
    ! grep -Fq '$home/.aws' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq '$home/.cache' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq '$home/.cargo' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--migrate-dot .cargo' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--migrate-dot .ssh' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq 'real-home-dotfile-migration' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq 'inventory-summary.tsv' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq 'apply_safe_yes' scripts/tests/test-meta-local-path-audit.sh; then
   echo "meta-local-policy: meta-local path audit must walk, inventory, classify, and test every top-level real-home dot entry class" >&2
