@@ -10,12 +10,14 @@
 #
 # It intentionally does not move credentials or broad real-home application state (.ssh, .config,
 # .cache, .codex, .claude, .cargo, ...).  Instead it walks every top-level real-home dot entry and
-# reports the owner-supervised migration work still required.
+# reports the owner-supervised migration work still required.  Shell dotfiles are only canonicalized
+# with the explicit --apply-shell-dotfiles opt-in; default --apply remains limited to the proven-safe
+# bridges above.
 set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--inventory PATH] [--inventory-summary PATH] [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--inventory PATH] [--inventory-summary PATH] [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
 With --inventory, also writes a tab-separated relocation inventory:
@@ -26,6 +28,7 @@ USAGE
 }
 
 APPLY=0
+APPLY_SHELL_DOTFILES=0
 ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")/.." rev-parse --show-toplevel 2>/dev/null || pwd)"
 META_ROOT="${META_ROOT:-$(cd "$ROOT/.." && pwd)}"
 REAL_HOME="${ENVCTL_REAL_HOME:-$HOME}"
@@ -36,6 +39,7 @@ INVENTORY_SUMMARY_PATH=""
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --apply) APPLY=1; shift ;;
+    --apply-shell-dotfiles) APPLY_SHELL_DOTFILES=1; shift ;;
     --inventory) INVENTORY_PATH="${2:?--inventory requires a path}"; shift 2 ;;
     --inventory-summary) INVENTORY_SUMMARY_PATH="${2:?--inventory-summary requires a path}"; shift 2 ;;
     --meta-root) META_ROOT="${2:?--meta-root requires a path}"; shift 2 ;;
@@ -98,6 +102,54 @@ entry_type() {
     printf 'other'
   else
     printf 'missing'
+  fi
+}
+
+is_shell_dotfile() {
+  case "$1" in
+    .bashrc|.profile|.zshrc|.zshenv|.bash_profile|.bash_logout) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+shell_dotfile_action() {
+  local path="$1" canonical_target="$2"
+  if [ -e "$canonical_target" ]; then
+    if [ -f "$path" ] && [ -f "$canonical_target" ] && cmp -s "$path" "$canonical_target"; then
+      printf 'bridge-canonical\tyes\n'
+    else
+      printf 'owner-supervised-merge-and-bridge\tno\n'
+    fi
+  else
+    printf 'move-to-canonical-and-bridge\tyes\n'
+  fi
+}
+
+apply_shell_dotfile_bridge() {
+  local dot="$1" path="$2" canonical_target="$3"
+  local action apply_safe
+
+  [ "$APPLY" -eq 1 ] || return 0
+  [ "$APPLY_SHELL_DOTFILES" -eq 1 ] || return 0
+  [ -e "$path" ] || return 0
+  [ ! -L "$path" ] || return 0
+
+  IFS=$'\t' read -r action apply_safe < <(shell_dotfile_action "$path" "$canonical_target")
+  [ "$apply_safe" = "yes" ] || {
+    warn "$path differs from canonical $canonical_target; owner-supervised merge required"
+    return 0
+  }
+
+  if [ "$action" = "move-to-canonical-and-bridge" ]; then
+    mkdir -p "$(dirname "$canonical_target")"
+    mv "$path" "$canonical_target"
+    ln -sfn "$canonical_target" "$path"
+    changed_msg "moved $path to $canonical_target and linked $path -> $canonical_target"
+  elif [ "$action" = "bridge-canonical" ]; then
+    mkdir -p "$archive_dir"
+    mv "$path" "$archive_dir/$dot"
+    ln -sfn "$canonical_target" "$path"
+    changed_msg "archived duplicate $path to $archive_dir/$dot and linked $path -> $canonical_target"
   fi
 }
 
@@ -204,9 +256,12 @@ classify_real_home_dot() {
         action="component-managed-toolchain-migration"
         ;;
       .bashrc|.profile|.zshrc|.zshenv|.bash_profile|.bash_logout)
+        local shell_action shell_apply_safe
         target_class="shell-dotfile"
         canonical_target="$META_ROOT/$dot"
-        action="owner-supervised-bridge"
+        IFS=$'\t' read -r shell_action shell_apply_safe < <(shell_dotfile_action "$path" "$canonical_target")
+        action="$shell_action"
+        apply_safe="$shell_apply_safe"
         ;;
       .bash_history|.zsh_history|.*_history|*.bak|*.bak.*)
         target_class="history-or-backup"
@@ -378,6 +433,9 @@ if [ -d "$REAL_HOME" ]; then
     case "$dot" in
       .|..|.local|.gitconfig) continue ;;
     esac
+    if is_shell_dotfile "$dot"; then
+      apply_shell_dotfile_bridge "$dot" "$path" "$META_ROOT/$dot"
+    fi
     classify_real_home_dot "$dot" "$path"
 
     if [ -L "$path" ]; then
