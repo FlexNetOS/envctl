@@ -16,8 +16,13 @@ use crate::model::{
     MetaBoundaryViolationKind, OpStatus, Registry, ToolState,
 };
 use std::collections::BTreeSet;
+use std::io::Read;
+use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
+use std::time::{Duration, Instant};
+
+const PROBE_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Tools probed for version (curated to ones that print-and-exit; avoids hangs).
 const PROBE_TOOLS: &[&str] = &[
@@ -65,7 +70,7 @@ pub fn run(reg: &Registry, runner: &dyn HookRunner, sink: &EventSink) -> anyhow:
     if report.gpus.is_empty() && report.gpu_present {
         report.gpus = lspci_nvidia_names();
     }
-    report.driver_version = nvidia_smi_driver_version();
+    report.driver_version = proc_nvidia_driver_version().or_else(nvidia_smi_driver_version);
     report.cuda_version = nvcc_cuda_version();
 
     // ---- installed tool versions (which + --version) ----
@@ -142,16 +147,23 @@ pub(crate) fn pci_nvidia_count() -> usize {
 
 fn nvidia_open_module() -> bool {
     // The open kernel modules report a free license; the proprietary one does not.
-    if let Ok(out) = Command::new("modinfo")
-        .args(["-F", "license", "nvidia"])
-        .output()
-    {
-        if out.status.success() {
-            let s = String::from_utf8_lossy(&out.stdout).to_lowercase();
-            return s.contains("mit") || s.contains("gpl");
-        }
+    if let Some(out) = run_capture("modinfo", &["-F", "license", "nvidia"]) {
+        let s = out.to_lowercase();
+        return s.contains("mit") || s.contains("gpl");
     }
     false
+}
+
+fn proc_nvidia_driver_version() -> Option<String> {
+    let contents = std::fs::read_to_string("/proc/driver/nvidia/version").ok()?;
+    contents.lines().find_map(|line| {
+        line.split_whitespace()
+            .find(|tok| tok.chars().any(|c| c.is_ascii_digit()) && tok.contains('.'))
+            .map(|tok| {
+                tok.trim_matches(|c: char| !c.is_ascii_alphanumeric() && c != '.' && c != '-')
+                    .to_string()
+            })
+    })
 }
 
 fn nvidia_smi_names() -> Vec<String> {
@@ -204,15 +216,76 @@ fn tool_version(tool: &str) -> Option<String> {
 }
 
 fn run_capture(cmd: &str, args: &[&str]) -> Option<String> {
-    let out = Command::new(cmd).args(args).output().ok()?;
-    if !out.status.success() {
-        return None;
+    run_capture_timeout(cmd, args, PROBE_TIMEOUT)
+}
+
+pub(crate) fn run_capture_timeout(cmd: &str, args: &[&str], timeout: Duration) -> Option<String> {
+    let mut command = Command::new(cmd);
+    command
+        .args(args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    unsafe {
+        command.pre_exec(|| {
+            let _ = rustix::process::setsid();
+            Ok(())
+        });
     }
-    let s = String::from_utf8_lossy(&out.stdout).to_string();
-    if s.trim().is_empty() {
-        None
-    } else {
-        Some(s)
+
+    let mut child = command.spawn().ok()?;
+    let pid = child.id();
+    let mut stdout = child.stdout.take();
+    let mut stderr = child.stderr.take();
+    let deadline = Instant::now() + timeout;
+
+    loop {
+        match child.try_wait() {
+            Ok(Some(st)) => {
+                if !st.success() {
+                    return None;
+                }
+                let mut out = String::new();
+                if let Some(mut pipe) = stdout.take() {
+                    let _ = pipe.read_to_string(&mut out);
+                }
+                if let Some(mut pipe) = stderr.take() {
+                    let mut err = String::new();
+                    let _ = pipe.read_to_string(&mut err);
+                    if out.trim().is_empty() && !err.trim().is_empty() {
+                        out = err;
+                    }
+                }
+                return if out.trim().is_empty() {
+                    None
+                } else {
+                    Some(out)
+                };
+            }
+            Ok(None) => {
+                if Instant::now() >= deadline {
+                    kill_group(pid);
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    return None;
+                }
+                std::thread::sleep(Duration::from_millis(100));
+            }
+            Err(_) => {
+                kill_group(pid);
+                let _ = child.kill();
+                let _ = child.wait();
+                return None;
+            }
+        }
+    }
+}
+
+fn kill_group(pid: u32) {
+    if let Some(p) = rustix::process::Pid::from_raw(pid as i32) {
+        if rustix::process::kill_process_group(p, rustix::process::Signal::Kill).is_err() {
+            let _ = rustix::process::kill_process(p, rustix::process::Signal::Kill);
+        }
     }
 }
 

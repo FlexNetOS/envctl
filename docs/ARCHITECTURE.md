@@ -66,7 +66,7 @@ envctl/                         # cargo workspace root
 │   │   │   ├── guard.rs        # RunContext + guard evaluation (UUID resolve+re-verify)
 │   │   │   ├── detect/         # probes (host, gpu cascade, tool_versions, wiring_state)
 │   │   │   ├── addrepo.rs      # the 9-stage build-from-source pipeline
-│   │   │   └── telemetry.rs    # sampler thread (nvidia-smi CSV default; NVML optional)
+│   │   │   └── telemetry.rs    # sampler thread (nvidia-smi CSV with hard timeout)
 │   │   └── manifests/          # SHIPPED base manifest (one *.toml per component)
 │   ├── envctl/                 # bin  — thin CLI (clap) over the engine
 │   └── envctl-gui/             # bin  — eframe/egui native app over the engine
@@ -81,10 +81,9 @@ envctl/                         # cargo workspace root
 
 **Dependency discipline (constraint: mainstream + few, stable Rust).** Everything compiles on
 stable. `serde`/`toml`/`anyhow`/`thiserror` live behind the engine's public API; the GUI sees
-only the engine's types. GPU telemetry's default path shells out to `nvidia-smi` (zero extra
-deps, exactly what the kit already does); typed NVML (`nvml-wrapper`) is an **optional cargo
-feature** (`gpu-nvml`) that upgrades telemetry to a fork-free FFI when available and degrades to
-`nvidia-smi` then the PCI floor when not. `sysinfo` covers CPU/mem/disk/kernel; `which` locates
+only the engine's types. GPU telemetry uses `nvidia-smi` with a hard timeout and falls back to an
+empty sample when the driver is not active, matching the kit's existing command-line probe path
+without adding GPU FFI dependencies. `sysinfo` covers CPU/mem/disk/kernel; `which` locates
 binaries for version probes; `chrono` stamps reports. No web, no WebView, nothing nightly.
 
 ---
@@ -393,18 +392,15 @@ Always yields a report, even on the software-rendered first boot with no driver:
   enrich via `lspci -mm -nn -d 10de:`. Sets the **authoritative GPU count** (==2 on this box) and
   device id `0x2b85` (GB202 → "Blackwell"/"sm_120" inferable pre-driver). Catches a GPU that
   fell off the bus (Xid) when a later tier sees fewer.
-* **Tier 1 — NVML (preferred when driver live, optional `gpu-nvml` feature).** `Nvml::init()`
-  gives `compute_capability()` directly as `(12,0)=sm_120`, plus pci/uuid/memory/temp/util/power
-  and the CUDA driver version, with no fork/parse/locale fragility. `init()` is fallible by
-  design → on a driverless boot it returns `Err`, which we treat as "not active" and fall
-  through. No `unwrap`, polled off the UI thread.
-* **Tier 2 — `nvidia-smi` CSV fallback (default build, zero extra deps).**
-  `nvidia-smi --query-gpu=index,name,uuid,pci.bus_id,compute_cap,driver_version,memory.total,memory.used,temperature.gpu,utilization.gpu,power.draw --format=csv,noheader,nounits`
-  with a hard timeout; non-zero/timeout ⇒ `driver_loaded=false`.
+* **Tier 1 — `/proc/driver/nvidia/version` (driver state).** Presence of the file means
+  `driver_loaded=true`; the parsed version string becomes `driver_version` when available.
+* **Tier 2 — `nvidia-smi` / `nvcc` enrichment (best-effort, hard timeout).**
+  `nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw --format=csv,noheader,nounits`
+  samples the live telemetry fields; `nvidia-smi --query-gpu=name --format=csv,noheader` and
+  `nvcc --version` supply best-effort inventory details. These are optional enrichments, never the
+  source of truth for driver presence.
 
-`driver_loaded` and `open_kernel_module` come independently from
-`/proc/driver/nvidia/version` (the `NRVM version …` line + the `Open Kernel Module` marker), so
-the driver-present signal doesn't depend on NVML or nvidia-smi succeeding.
+`open_kernel_module` comes from `modinfo -F license nvidia` (MIT/GPL means the open kernel module).
 `software_rendered = (PCI sees NVIDIA) AND NOT driver_loaded` drives the "reboot to load the
 driver" precondition — mirroring the wizard's pre-reboot reality rather than reporting a false
 failure.
@@ -560,14 +556,12 @@ owns its state, the worker owns the engine, they communicate only by message-pas
 ## 11. Telemetry
 
 Source mirrors the kit: shell out to
-`nvidia-smi --query-gpu=index,name,driver_version,temperature.gpu,utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits`,
-one `GpuSample` per GPU (handles the dual 5090 by index). Pre-reboot, nvidia-smi is
-absent/failing → reported as `GpuState::DriverNotActive` (the yellow card), never a panic. When
-the optional `gpu-nvml` feature is built and the driver is live, telemetry upgrades to typed
-NVML. CPU+mem come from `sysinfo` (or `/proc/stat` + `/proc/meminfo` directly to stay lean). The
-sampler emits `Event::Telemetry` every ~1s while the Dashboard is active, backing off to ~3-5s
-on other screens and pausing when the window is unfocused — so it never needlessly spawns
-nvidia-smi.
+`nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw --format=csv,noheader,nounits`
+with a hard timeout, one `GpuSample` per GPU (handles the dual 5090 by index). Pre-reboot,
+nvidia-smi is absent/failing → reported as `GpuState::DriverNotActive` (the yellow card), never a
+panic. CPU+mem come from `sysinfo` (or `/proc/stat` + `/proc/meminfo` directly to stay lean). The
+sampler emits `Event::Telemetry` every ~1s while the Dashboard is active, backing off to ~3-5s on
+other screens and pausing when the window is unfocused — so it never needlessly spawns nvidia-smi.
 
 ---
 
@@ -632,7 +626,7 @@ subcommands — inherit the boot script's discipline verbatim:
 
 ```
 envctl-engine = { serde, toml, anyhow, thiserror, sysinfo, which, chrono,
-                  optional: nvml-wrapper (feature "gpu-nvml"), serde_json (lsblk -J parse) }
+                  serde_json (lsblk -J parse) }
 envctl        = { envctl-engine, clap, anyhow }
 envctl-gui    = { envctl-engine, eframe, egui, egui_extras }
 ```
