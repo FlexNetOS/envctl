@@ -18,7 +18,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--shell-dotfile-conflict-report PATH] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
 With --inventory, also writes a tab-separated relocation inventory:
@@ -37,6 +37,8 @@ META_ROOT.
 With --migrate-dot, performs an explicit owner-requested migration for allow-listed entries only
 (known toolchain state, .claude, .codex, or a managed dotfile present under --envctl-home-source).
 Mutation still requires --apply; without --apply the script prints the planned move and changes nothing.
+With --shell-dotfile-conflict-report, writes supervised shell-dotfile merge rows:
+dot_entry, real_path, canonical_target, action, apply_safe, real_sha256, canonical_sha256, real_lines, canonical_lines, recommendation.
 USAGE
 }
 
@@ -48,6 +50,7 @@ REAL_HOME="${ENVCTL_REAL_HOME:-$HOME}"
 ENVCTL_HOME_SOURCE="$ROOT/home"
 INVENTORY_PATH=""
 INVENTORY_SUMMARY_PATH=""
+SHELL_DOTFILE_CONFLICT_REPORT_PATH=""
 DEEP_LINK_INVENTORY_PATH=""
 DEEP_LINK_SUMMARY_PATH=""
 FAIL_REAL_HOME_DEEP_LINKS=0
@@ -59,6 +62,7 @@ while [ "$#" -gt 0 ]; do
     --apply-shell-dotfiles) APPLY_SHELL_DOTFILES=1; shift ;;
     --inventory) INVENTORY_PATH="${2:?--inventory requires a path}"; shift 2 ;;
     --inventory-summary) INVENTORY_SUMMARY_PATH="${2:?--inventory-summary requires a path}"; shift 2 ;;
+    --shell-dotfile-conflict-report) SHELL_DOTFILE_CONFLICT_REPORT_PATH="${2:?--shell-dotfile-conflict-report requires a path}"; shift 2 ;;
     --deep-link-inventory) DEEP_LINK_INVENTORY_PATH="${2:?--deep-link-inventory requires a path}"; shift 2 ;;
     --deep-link-summary) DEEP_LINK_SUMMARY_PATH="${2:?--deep-link-summary requires a path}"; shift 2 ;;
     --fail-real-home-deep-links) FAIL_REAL_HOME_DEEP_LINKS=1; shift ;;
@@ -90,6 +94,10 @@ if [ -n "$INVENTORY_PATH" ]; then
 fi
 if [ -n "$INVENTORY_SUMMARY_PATH" ]; then
   mkdir -p "$(dirname "$INVENTORY_SUMMARY_PATH")"
+fi
+if [ -n "$SHELL_DOTFILE_CONFLICT_REPORT_PATH" ]; then
+  mkdir -p "$(dirname "$SHELL_DOTFILE_CONFLICT_REPORT_PATH")"
+  printf 'dot_entry\treal_path\tcanonical_target\taction\tapply_safe\treal_sha256\tcanonical_sha256\treal_lines\tcanonical_lines\trecommendation\n' >"$SHELL_DOTFILE_CONFLICT_REPORT_PATH"
 fi
 if [ -n "$DEEP_LINK_INVENTORY_PATH" ]; then
   mkdir -p "$(dirname "$DEEP_LINK_INVENTORY_PATH")"
@@ -140,6 +148,42 @@ is_shell_dotfile() {
     .bashrc|.profile|.zshrc|.zshenv|.bash_profile|.bash_logout) return 0 ;;
     *) return 1 ;;
   esac
+}
+
+
+file_sha256() {
+  local path="$1"
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum "$path" | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 "$path" | awk '{print $1}'
+  else
+    printf 'unknown'
+  fi
+}
+
+file_line_count() {
+  local path="$1"
+  wc -l <"$path" | tr -d '[:space:]'
+}
+
+record_shell_dotfile_conflict() {
+  local dot="$1" path="$2" canonical_target="$3" action="$4" apply_safe="$5"
+  [ -n "$SHELL_DOTFILE_CONFLICT_REPORT_PATH" ] || return 0
+  [ -f "$path" ] || return 0
+  [ -f "$canonical_target" ] || return 0
+
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$dot" \
+    "$path" \
+    "$canonical_target" \
+    "$action" \
+    "$apply_safe" \
+    "$(file_sha256 "$path")" \
+    "$(file_sha256 "$canonical_target")" \
+    "$(file_line_count "$path")" \
+    "$(file_line_count "$canonical_target")" \
+    "merge-canonical-then-bridge" >>"$SHELL_DOTFILE_CONFLICT_REPORT_PATH"
 }
 
 shell_dotfile_action() {
@@ -455,6 +499,9 @@ classify_real_home_dot() {
         IFS=$'\t' read -r shell_action shell_apply_safe < <(shell_dotfile_action "$path" "$canonical_target")
         action="$shell_action"
         apply_safe="$shell_apply_safe"
+        if [ "$action" = "owner-supervised-merge-and-bridge" ]; then
+          record_shell_dotfile_conflict "$dot" "$path" "$canonical_target" "$action" "$apply_safe"
+        fi
         ;;
       .bash_history|.zsh_history|.*_history|*.bak|*.bak.*)
         target_class="history-or-backup"

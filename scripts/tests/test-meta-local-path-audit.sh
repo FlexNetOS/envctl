@@ -75,11 +75,27 @@ printf '# canonical bashrc\n' >"$meta/.bashrc"
 printf '# duplicate logout\n' >"$home/.bash_logout"
 printf '# duplicate logout\n' >"$meta/.bash_logout"
 
-"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/shell-pre.tsv" --meta-root "$meta" --real-home "$home" --envctl-home-source "$meta/envctl/home" >"$tmp/shell-pre.out" 2>"$tmp/shell-pre.err"
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/shell-pre.tsv" --shell-dotfile-conflict-report "$tmp/shell-conflicts.tsv" --meta-root "$meta" --real-home "$home" --envctl-home-source "$meta/envctl/home" >"$tmp/shell-pre.out" 2>"$tmp/shell-pre.err"
 grep -qx $'.profile\tfile\treal-home-state\tshell-dotfile\t'"$meta"$'/.profile\tmove-to-canonical-and-bridge\tyes' "$tmp/shell-pre.tsv"
 grep -qx $'.zshenv\tfile\treal-home-state\tshell-dotfile\t'"$meta"$'/.zshenv\tmove-to-canonical-and-bridge\tyes' "$tmp/shell-pre.tsv"
 grep -qx $'.bashrc\tfile\treal-home-state\tshell-dotfile\t'"$meta"$'/.bashrc\towner-supervised-merge-and-bridge\tno' "$tmp/shell-pre.tsv"
 grep -qx $'.bash_logout\tfile\treal-home-state\tshell-dotfile\t'"$meta"$'/.bash_logout\tbridge-canonical\tyes' "$tmp/shell-pre.tsv"
+head -n 1 "$tmp/shell-conflicts.tsv" | grep -qx $'dot_entry\treal_path\tcanonical_target\taction\tapply_safe\treal_sha256\tcanonical_sha256\treal_lines\tcanonical_lines\trecommendation'
+awk -F '\t' 'NF != 10 { print "bad shell conflict row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/shell-conflicts.tsv"
+test "$(wc -l <"$tmp/shell-conflicts.tsv" | tr -d '[:space:]')" = 2
+awk -F '\t' -v home="$home" -v meta="$meta" '
+  $1 == ".bashrc" {
+    if ($2 != home "/.bashrc") bad=1
+    if ($3 != meta "/.bashrc") bad=1
+    if ($4 != "owner-supervised-merge-and-bridge") bad=1
+    if ($5 != "no") bad=1
+    if ($6 !~ /^[0-9a-f]{64}$/ || $7 !~ /^[0-9a-f]{64}$/) bad=1
+    if ($8 != "1" || $9 != "1") bad=1
+    if ($10 != "merge-canonical-then-bridge") bad=1
+    found=1
+  }
+  END { exit !(found && !bad) }
+' "$tmp/shell-conflicts.tsv"
 
 "$root/scripts/audit-meta-local-paths.sh" --apply --apply-shell-dotfiles --meta-root "$meta" --real-home "$home" --envctl-home-source "$meta/envctl/home" >"$tmp/shell-apply.out" 2>"$tmp/shell-apply.err"
 test "$(readlink "$home/.profile")" = "$meta/.profile"
