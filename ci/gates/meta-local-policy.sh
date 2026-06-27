@@ -47,11 +47,48 @@ git ls-files -z --cached --others --exclude-standard -- "${ACTIVE_PATHS[@]}" >"$
 
 if [ -s "$SOURCE_LIST" ] && xargs -0 grep -HEnI "$PATTERN" <"$SOURCE_LIST" |
   grep -v '^ci/gates/meta-local-policy.sh:' |
-  grep -v '^crates/engine/src/migration.rs:' >"$TMP"; then
+  grep -v '^crates/engine/src/migration.rs:' |
+  grep -v '^scripts/audit-meta-local-paths.sh:' |
+  grep -v '^scripts/tests/test-meta-local-path-audit.sh:' >"$TMP"; then
   echo "meta-local-policy: real-home .local/symlink-farm references remain in active install sources:" >&2
   cat "$TMP" >&2
   exit 1
 fi
+
+
+# High-confidence active-source regressions caught by the live audit work: front-door binaries must
+# not be installed into $META_ROOT/.local/bin, cargo-installed tools must use the explicit meta
+# .toolchains/cargo home, and managed git credential helpers must not route through legacy .local/bin.
+check_absent() {
+  local path="$1" pattern="$2" message="$3"
+  if grep -HEnI "$pattern" "$path" >"$TMP" 2>/dev/null; then
+    echo "meta-local-policy: $message" >&2
+    cat "$TMP" >&2
+    exit 1
+  fi
+}
+
+check_absent manifest/components.d/meta-env-plugin.toml '\$META_ROOT/\.local/bin/meta-env|\.toolchains/meta-env' \
+  "meta-env plugin must install private payloads under usr/libexec and expose only a usr/bin front door"
+check_absent manifest/grit.toml '\$META_ROOT/\.cargo/bin' \
+  'grit must not wire the legacy META_ROOT .cargo bin path'
+check_absent manifest/prompt_hub.toml '\$META_ROOT/\.cargo/bin' \
+  'prompt_hub must not wire the legacy META_ROOT .cargo bin path'
+
+check_present() {
+  local path="$1" needle="$2" message="$3"
+  if ! grep -Fq "$needle" "$path"; then
+    echo "meta-local-policy: $message" >&2
+    exit 1
+  fi
+}
+
+check_present manifest/grit.toml 'export CARGO_HOME="$META_ROOT/.toolchains/cargo"' \
+  'grit must force cargo installs into the meta toolchains cargo home'
+check_present manifest/prompt_hub.toml 'export CARGO_HOME="$META_ROOT/.toolchains/cargo"' \
+  'prompt_hub must force cargo installs into the meta toolchains cargo home'
+check_absent home/.gitconfig '\.local/bin/gh|/home/drdave/Desktop/meta/\.local/bin/gh' \
+  "managed git credential helper must use the canonical META_ROOT usr/bin gh front door"
 
 if ! grep -q 'home-local-single-link' manifest/components.d/portability-links.toml; then
   echo "meta-local-policy: missing single real-home .local bridge component" >&2
@@ -83,6 +120,19 @@ fi
 
 if ! grep -Eq '\$ENVCTL_REAL_HOME/\.local -> \$META_ROOT/\.local' docs/adr-install-locations-and-local-state.md home/README.md; then
   echo "meta-local-policy: bridge policy is not documented in the canonical ADR/home README" >&2
+  exit 1
+fi
+
+if ! grep -Fq 'find "$REAL_HOME" -mindepth 1 -maxdepth 1 -name' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'dot_entries_seen' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq -- '--inventory) INVENTORY_PATH=' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'target_class' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'owner-supervised-vault-or-bridge' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq '$home/.zshrc' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '$home/.aws' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '$home/.cache' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '$home/.cargo' scripts/tests/test-meta-local-path-audit.sh; then
+  echo "meta-local-policy: meta-local path audit must walk, inventory, classify, and test every top-level real-home dot entry class" >&2
   exit 1
 fi
 

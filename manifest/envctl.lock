@@ -21,7 +21,7 @@ requires = []
 resolved = ""
 
 [components.bun]
-content_hash = "e775e55ecdaa3933"
+content_hash = "b1a9058d599597df"
 requires = []
 resolved = ""
 
@@ -31,7 +31,7 @@ requires = ["rustup"]
 resolved = ""
 
 [components.claude-code-cli]
-content_hash = "fbdbc3c5ff7dedd1"
+content_hash = "890aa96fe3b72b1b"
 requires = []
 resolved = ""
 
@@ -41,7 +41,7 @@ requires = ["home-config-links"]
 resolved = ""
 
 [components.codex-cli]
-content_hash = "96d1cc935b0a72a0"
+content_hash = "7f5c1c29622d4d64"
 requires = [
     "bun",
     "rustup",
@@ -151,7 +151,7 @@ requires = [
 resolved = ""
 
 [components.grit]
-content_hash = "59ed9276d0889c14"
+content_hash = "d36f376b362300cb"
 requires = [
     "libssl-dev",
     "rustup",
@@ -213,6 +213,11 @@ requires = [
 ]
 resolved = ""
 
+[components.handoff-hf]
+content_hash = "6cac08bf85f4a08b"
+requires = ["rustup"]
+resolved = ""
+
 [components.helix]
 content_hash = "8b5c849f7d2c80d7"
 requires = []
@@ -224,7 +229,7 @@ requires = ["home-local-single-link"]
 resolved = ""
 
 [components.home-config-links]
-content_hash = "5c1b3e1fdb2486b6"
+content_hash = "99f3c9aadff825e2"
 requires = []
 resolved = ""
 
@@ -292,8 +297,13 @@ requires = [
 resolved = ""
 
 [components.meta-env-plugin]
-content_hash = "272d130d0dc8eddd"
+content_hash = "cf2b5d5884bf4847"
 requires = ["rustup"]
+resolved = ""
+
+[components.meta-session-env]
+content_hash = "a5a3182e47746a47"
+requires = []
 resolved = ""
 
 [components.meta-tool-links]
@@ -315,8 +325,11 @@ requires = [
 resolved = ""
 
 [components.n8n-mcp]
-content_hash = "6a51bc90995c579f"
-requires = ["node-via-bun"]
+content_hash = "4e013b68d6abd0bb"
+requires = [
+    "bun",
+    "node-real",
+]
 resolved = ""
 
 [components.nerd-fonts]
@@ -372,6 +385,11 @@ content_hash = "4f43281c513522a2"
 requires = ["nvidia-cuda-repo"]
 resolved = ""
 
+[components.odysseus]
+content_hash = "4ce9bee15e4ba7af"
+requires = ["podman"]
+resolved = ""
+
 [components.ohmyzsh]
 content_hash = "6a79cfc53860251d"
 requires = ["zsh"]
@@ -393,7 +411,7 @@ requires = []
 resolved = ""
 
 [components.prompt_hub]
-content_hash = "40b883d5f7c31b35"
+content_hash = "414ed17ff80443b8"
 requires = [
     "libssl-dev",
     "llvm-clang",
@@ -492,7 +510,7 @@ requires = ["yazelix"]
 resolved = ""
 
 [components.yazelix-shell]
-content_hash = "f9ccd3cf5a933e33"
+content_hash = "585dda49f145bbbd"
 requires = ["yazelix"]
 resolved = ""
 

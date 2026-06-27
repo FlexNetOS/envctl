@@ -13,6 +13,13 @@ def n8n-down [...rest] { ^$"($env.META_ROOT)/usr/bin/n8n-down" ...$rest }
 source ../nushell/rtk-wrappers.nu
 # =========================================================================
 
+# === meta /usr mirror on PATH (added by envctl) ==========================
+# Prepend $META_ROOT/usr/{bin,sbin,local/...} to PATH + the usr lib tree to
+# LD_LIBRARY_PATH so meta-native tools resolve inside yazelix/nushell. Same
+# relative-source rule as above (../nushell, no hardcoded $HOME).
+source ../nushell/meta-usr-path.nu
+# =========================================================================
+
 # === rtk monitor pane (live coverage + savings) ==========================
 # `rtk-mon` opens it on demand; it also auto-opens ONCE per zellij session.
 # Opt out: set $env.RTK_MONITOR_AUTOSTART = "0" before nu starts.

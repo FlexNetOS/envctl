@@ -107,3 +107,27 @@ System-depth installs are not the envctl target. A host prerequisite such as the
 or OS build floor may be detected and verified, but envctl-owned tools must be installed into
 `$META_ROOT`. Existing system-depth or user-global tools are migration debt unless a component
 explicitly classifies them as host prerequisites.
+
+## Complete `$META_ROOT/usr` mirror + the three PATH surfaces
+
+`$META_ROOT/usr` is a **structural mirror of `/usr`**, not just `bin/lib`. `MetaLayout`
+(`crates/engine/src/layout.rs`) exposes the full FHS skeleton — `bin`, `sbin`, `lib`, `lib64`,
+`libexec`, `include`, `share` (+ `share/man`), `src`, `games`, and `local/{bin,sbin,lib,lib64,
+include,share}` — all `Canonical`, so `ensure_dirs()` materializes the complete tree on install.
+This is a *structure* mirror (a canonical prefix ready to receive meta-native installs), never a
+content symlink-farm of the host `/usr` (which would re-introduce system-depth tools).
+
+`envctl env --toolchains` carries that mirror onto every search path, prepend-with-fallback so an
+inherited value (e.g. the CUDA `LD_LIBRARY_PATH` block) is preserved, never clobbered:
+`PATH` (bin/sbin/local/bin/local/sbin), `LD_LIBRARY_PATH` (lib/lib64/local), `CPATH` (include),
+`PKG_CONFIG_PATH` (lib+share `pkgconfig`), `MANPATH` (share/man). The skeleton starts empty, so no
+system binary/lib/header is shadowed until meta actually installs into it.
+
+Three session surfaces consume this — because each reads a different startup file:
+- **bash/zsh** — the `eval "$(envctl env --toolchains)"` shell-rc block. The `yazelix auto-enter`
+  block evals it *before* `yzx enter` so re-exec'd zellij/nushell panes inherit the full PATH.
+- **nushell/yazelix** — the version-controlled overlay module `home/.config/nushell/meta-usr-path.nu`,
+  sourced (relative, `$HOME`-independent) from `config.nu` and `yazelix/shell_nu.nu`.
+- **graphical/desktop login** — the `meta-session-env` component renders `systemd` user
+  `environment.d/10-meta.conf` from `envctl env`, so `.desktop` launchers + GUI sessions (which
+  never read `~/.bashrc`) resolve `$META_ROOT/usr/bin`.
