@@ -129,6 +129,8 @@ printf 'real-home cargo state\n' >"$mig_home/.cargo/config"
 printf 'real-home npm state\n' >"$mig_home/.npm/npmrc"
 printf 'real-home dotnet state\n' >"$mig_home/.dotnet/state"
 printf 'set ideajoin\n' >"$mig_home/.ideavimrc"
+mkdir -p "$mig_home/.gphoto"
+printf 'camera-port=usb\n' >"$mig_home/.gphoto/settings"
 
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .cargo --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-dry.out" 2>"$tmp/migrate-dry.err"
 grep -q 'DRY-RUN: would move .*\.cargo to .*\.toolchains/cargo' "$tmp/migrate-dry.out"
@@ -157,6 +159,34 @@ test -f "$mig_meta/.toolchains/npm/npmrc"
 "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .dotnet --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-dotnet.out" 2>"$tmp/migrate-dotnet.err"
 test "$(readlink -f "$mig_home/.dotnet")" = "$mig_meta/.toolchains/dotnet"
 test -f "$mig_meta/.toolchains/dotnet/state"
+
+"$root/scripts/audit-meta-local-paths.sh" --migrate-dot .gphoto --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-gphoto-dry.out" 2>"$tmp/migrate-gphoto-dry.err"
+grep -q 'DRY-RUN: would move .*\.gphoto to .*\.config/gphoto' "$tmp/migrate-gphoto-dry.out"
+test -d "$mig_home/.gphoto"
+test ! -e "$mig_meta/.config/gphoto"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .gphoto --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-gphoto.out" 2>"$tmp/migrate-gphoto.err"
+test "$(readlink -f "$mig_home/.gphoto")" = "$mig_meta/.config/gphoto"
+grep -qx 'camera-port=usb' "$mig_meta/.config/gphoto/settings"
+
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/gphoto-post.tsv" --inventory-summary "$tmp/gphoto-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/gphoto-post.out" 2>"$tmp/gphoto-post.err"
+grep -qx $'.gphoto\tsymlink\talready-meta\talready-meta\t'"$mig_meta"$'/.config/gphoto\tnone\tn/a' "$tmp/gphoto-post.tsv"
+
+gphoto_bad_meta="$tmp/gphoto-bad-meta"
+gphoto_bad_home="$tmp/gphoto-bad-home"
+mkdir -p "$gphoto_bad_meta/.local" "$gphoto_bad_meta/envctl/home" "$gphoto_bad_home"
+printf '# managed gitconfig\n' >"$gphoto_bad_meta/envctl/home/.gitconfig"
+ln -s "$gphoto_bad_meta/envctl/home/.gitconfig" "$gphoto_bad_meta/.gitconfig"
+ln -s "$gphoto_bad_meta/.gitconfig" "$gphoto_bad_home/.gitconfig"
+ln -s "$gphoto_bad_meta/.local" "$gphoto_bad_home/.local"
+printf 'not a directory\n' >"$gphoto_bad_home/.gphoto"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .gphoto --meta-root "$gphoto_bad_meta" --real-home "$gphoto_bad_home" --envctl-home-source "$gphoto_bad_meta/envctl/home" >"$tmp/migrate-gphoto-file.out" 2>"$tmp/migrate-gphoto-file.err"; then
+  echo "expected --migrate-dot .gphoto to fail closed for non-directory source" >&2
+  exit 1
+fi
+test -f "$gphoto_bad_home/.gphoto"
+test ! -e "$gphoto_bad_meta/.config/gphoto"
+grep -q -- '--migrate-dot .gphoto: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-gphoto-file.err"
 
 mkdir -p "$mig_meta/.toolchains/cargo"
 printf 'canonical cargo state\n' >"$mig_meta/.toolchains/cargo/config"
