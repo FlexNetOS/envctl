@@ -167,8 +167,8 @@ The product surface is five verbs that map onto five lifecycle **phases** on eve
 
 **REQ-DETECT-2 (GPU graceful-degradation cascade)** — GPU detection always yields a report, even on a driverless first boot:
 - **Tier 0 — PCI floor** (always first, never fails, no driver needed): walk `/sys/bus/pci/devices` + `lspci` for vendor `0x10de`; sets the **authoritative GPU count** (==2 on this box).
-- **Tier 1 — `/proc/driver/nvidia/version`** (driver state): presence of the file means `driver_loaded=true`; the parsed version string becomes `driver_version` when available.
-- **Tier 2 — `nvidia-smi` CSV + `nvcc`** (best-effort, hard timeout): `nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw --format=csv,noheader,nounits` feeds the live telemetry cards, while `nvidia-smi --query-gpu=name --format=csv,noheader` and `nvcc --version` supply best-effort inventory/version details; failures only degrade the report.
+- **Tier 1 — `/proc/driver/nvidia/version`** (driver state): presence of the file means `driver_loaded=true`; parse its strict `major.minor.patch` token into `driver_version` when available.
+- **Tier 2 — `nvidia-smi` CSV + `nvcc`** (best-effort, hard timeout): `nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw --format=csv,noheader,nounits` feeds the live telemetry cards, while `nvidia-smi --query-gpu=name --format=csv,noheader`, `lspci` fallback names, and `nvcc --version` supply best-effort inventory/CUDA details. This tier never defines `driver_loaded`; the proc file remains the source of truth.
 
 `open_kernel_module` comes from `modinfo -F license nvidia` (MIT/GPL means the open kernel module). `software_rendered = (PCI sees NVIDIA) AND NOT driver_loaded` drives the "reboot to load the driver" precondition.
 
