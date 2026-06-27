@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 # test-reaper.sh — proves scripts/reap-worktrees.sh upholds its destructive-safety invariants:
 #   * REAPS a merged/clean per-cycle worktree+branch (upstream [gone] after origin deleted the head)
+#   * REAPS a squash-equivalent branch whose PR-head SHA is not an ancestor of master
+#   * PRESERVES a [gone] branch with local-only patches (upstream gone is not proof of merge)
 #   * SKIPS a dirty worktree (uncommitted work is NEVER destroyed) even when its upstream is [gone]
 #   * PROTECTS master/develop (never reaped)
 #   * FF-syncs a protected trunk that is strictly behind origin (FF-only, clean-only)
@@ -50,6 +52,12 @@ mk_gone_worktree() { # $1=branch $2=worktree-dir  -> branch with a [gone] upstre
 mk_gone_worktree feat-merged "$tmp/wt-merged"
 mk_gone_worktree feat-dirty  "$tmp/wt-dirty"
 echo "uncommitted change" > "$tmp/wt-dirty/dirtyfile"   # make wt-dirty DIRTY (untracked file)
+# A gone branch with local-only patches must be preserved. This is the fail-closed correction for
+# the confusing "upstream gone" case: remote branch deletion is not the same thing as merged work.
+mk_gone_worktree feat-local-only "$tmp/wt-local-only"
+echo "local-only" > "$tmp/wt-local-only/local-only.txt"
+gitc -C "$tmp/wt-local-only" add local-only.txt
+gitc -C "$tmp/wt-local-only" commit -qm local-only
 # Husk-cleanup case: a merged/clean worktree UNDER a meta/.worktrees/<slug>/ layout — after the
 # worktree is removed, the now-empty <slug> husk dir must be rmdir'd (FIX: empty husks piled up).
 mk_gone_worktree feat-husk "$tmp/.worktrees/huskslug/envctl"
@@ -57,6 +65,19 @@ mk_gone_worktree feat-husk "$tmp/.worktrees/huskslug/envctl"
 # `.handoff` state must be REFUSED, never reaped (owner FIX #4).
 mk_gone_worktree feat-handoff "$tmp/wt-handoff"
 mkdir -p "$tmp/wt-handoff/.handoff"; echo "loop state" > "$tmp/wt-handoff/.handoff/state.md"
+
+# Squash-equivalent branch: its branch tip is not an ancestor of master, but its patch is already
+# represented on origin/master, matching GitHub squash merge behavior.
+gitc checkout -qb feat-squash
+printf 'squash
+' > squash.txt; gitc add squash.txt; gitc commit -qm 'squash branch patch'
+gitc push -qu origin feat-squash
+gitc checkout -q master
+printf 'squash
+' > squash.txt; gitc add squash.txt; gitc commit -qm 'squashed equivalent patch on master'
+gitc push -qu origin master
+gitc worktree add -q "$tmp/wt-squash" feat-squash
+gitc push -q origin --delete feat-squash
 
 # put local master strictly BEHIND origin/master so step-1b FF-sync has something to do
 gitc fetch -q --prune origin
@@ -70,6 +91,11 @@ bash "$REAPER" --apply >/dev/null 2>&1 || fail "reaper exited non-zero"
 # assertions
 [ ! -d "$tmp/wt-merged" ]                                   || fail "merged/clean worktree was NOT reaped"
 gitc show-ref --verify --quiet refs/heads/feat-merged       && fail "merged branch was NOT reaped" || true
+[ ! -d "$tmp/wt-squash" ]                                   || fail "squash-equivalent worktree was NOT reaped"
+gitc show-ref --verify --quiet refs/heads/feat-squash       && fail "squash-equivalent branch was NOT reaped" || true
+[ -d "$tmp/wt-local-only" ]                                 || fail "[gone] branch with local-only patch was destroyed"
+gitc show-ref --verify --quiet refs/heads/feat-local-only   || fail "local-only gone branch was reaped (must preserve)"
+[ -f "$tmp/wt-local-only/local-only.txt" ]                  || fail "local-only committed file was lost"
 [ -d "$tmp/wt-dirty" ]                                      || fail "DIRTY worktree was destroyed (must skip)"
 gitc show-ref --verify --quiet refs/heads/feat-dirty        || fail "branch of dirty worktree was reaped (must protect)"
 [ -f "$tmp/wt-dirty/dirtyfile" ]                            || fail "uncommitted file in dirty worktree was lost"
@@ -85,4 +111,4 @@ gitc show-ref --verify --quiet refs/heads/develop          || fail "develop was 
 [ -f "$tmp/wt-handoff/.handoff/state.md" ]                 || fail "uncommitted .handoff state was lost"
 gitc show-ref --verify --quiet refs/heads/feat-handoff     || fail "branch of .handoff worktree was reaped (must protect)"
 
-echo "PASS: reaper reaped merged+clean, skipped dirty, protected master/develop, FF-synced trunk, cleaned husk dir, preserved .handoff state"
+echo "PASS: reaper reaped merged+clean and squash-equivalent branches, preserved local-only/dirty/.handoff work, protected master/develop, FF-synced trunk, cleaned husks"
