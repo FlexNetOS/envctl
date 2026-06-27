@@ -150,23 +150,36 @@ export CUDA_OXIDE_LLC="$(command -v llc-22 || command -v llc-21 || command -v ll
 
 [[component]]
 id = "nvidia-open"
-name = "nvidia-open 610 driver"
-description = "GA-matched OPEN kernel modules for Blackwell sm_120. REBOOT to load."
+name = "nvidia-open driver (rolling latest)"
+# UNPINNED, rolling: the CUDA repo's `nvidia-open` metapackage tracks forward to the repo's
+# latest GA OPEN kernel modules (currently 610.43.02 for Blackwell sm_120) — the owner's
+# "same track as rust nightly" intent: a rolling channel, never a number-pin. Supersedes the
+# Ubuntu-archive `nvidia-driver-595-open` lineage (apt removes it during the swap). REBOOT to
+# load a freshly installed/upgraded module (the live module can't hot-swap while the GPU is in use).
+description = "Rolling OPEN kernel modules (Blackwell sm_120) from the CUDA repo's UNPINNED nvidia-open metapackage — always the repo's latest, currently 610.43.02. REBOOT to load. Supersedes archive nvidia-driver-595-open."
 requires = ["nvidia-cuda-repo"]
 gpu_required = true
+# Candidate-aware roll-forward: 'present' ONLY when the installed nvidia-open equals the repo
+# CANDIDATE (latest). A newer candidate (610 > 595, or a future 611) makes detect false => envctl
+# upgrades. Deliberately drops the old `|| nvidia-smi -L` blanket fallback, which let ANY live
+# driver satisfy detect and silently froze the box at its current version. apt-cache is read-only.
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "dpkg -l nvidia-open 2>/dev/null | grep -q '^ii' || (command -v nvidia-smi >/dev/null && nvidia-smi -L >/dev/null 2>&1)"]
+args = ["-lc", "inst=$(apt-cache policy nvidia-open 2>/dev/null | awk '/Installed:/{print $2}'); cand=$(apt-cache policy nvidia-open 2>/dev/null | awk '/Candidate:/{print $2}'); [ -n \"$inst\" ] && [ \"$inst\" != \"(none)\" ] && [ \"$inst\" = \"$cand\" ]"]
 [component.install]
 kind = "command"
 needs_sudo = true
 command = "apt-get"
 args = ["install", "-y", "nvidia-open"]
+# Reboot-tolerant + truthful: assert the PACKAGE is installed and the GPUs enumerate. Does NOT
+# assert the live module == candidate — after an upgrade the package is at the new version but
+# the loaded kernel module stays at the old one until reboot (that would false-fail the
+# pre-reboot window). Post-reboot, nvidia-smi --query-gpu=driver_version reflects the new driver.
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "command -v nvidia-smi >/dev/null && nvidia-smi -L >/dev/null 2>&1"]
+args = ["-lc", "dpkg -l nvidia-open 2>/dev/null | grep -q '^ii' && command -v nvidia-smi >/dev/null && nvidia-smi -L >/dev/null 2>&1"]
 [component.fix]
 kind = "command"
 needs_sudo = true
