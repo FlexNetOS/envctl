@@ -1374,6 +1374,81 @@ test ! -e "$pki_open_meta/.local/share/pki"
 grep -q -- '--migrate-dot .pki: .*open file handle(s).*close owning processes before migration' "$tmp/migrate-pki-open.err"
 grep -q -- 'nssdb/key4.db' "$tmp/migrate-pki-open.err"
 
+cache_child_meta="$tmp/cache-child-meta"
+cache_child_home="$tmp/cache-child-home"
+mkdir -p "$cache_child_meta/.local" "$cache_child_meta/envctl/home" "$cache_child_home/.cache/tool"
+printf '# managed gitconfig\n' >"$cache_child_meta/envctl/home/.gitconfig"
+ln -s "$cache_child_meta/envctl/home/.gitconfig" "$cache_child_meta/.gitconfig"
+ln -s "$cache_child_meta/.local" "$cache_child_home/.local"
+ln -s "$cache_child_meta/.gitconfig" "$cache_child_home/.gitconfig"
+printf 'cache-index\n' >"$cache_child_home/.cache/tool/index"
+
+"$root/scripts/audit-meta-local-paths.sh" --migrate-cache-child tool --meta-root "$cache_child_meta" --real-home "$cache_child_home" --envctl-home-source "$cache_child_meta/envctl/home" >"$tmp/migrate-cache-child-dry.out" 2>"$tmp/migrate-cache-child-dry.err"
+grep -q 'DRY-RUN: would move .*\.cache/tool to .*\.local/cache/tool and link .*\.cache/tool -> .*\.local/cache/tool' "$tmp/migrate-cache-child-dry.out"
+test -d "$cache_child_home/.cache/tool"
+test ! -e "$cache_child_meta/.local/cache/tool"
+
+if "$root/scripts/audit-meta-local-paths.sh" --migrate-cache-child ../evil --meta-root "$cache_child_meta" --real-home "$cache_child_home" --envctl-home-source "$cache_child_meta/envctl/home" >"$tmp/migrate-cache-child-invalid.out" 2>"$tmp/migrate-cache-child-invalid.err"; then
+  echo "expected --migrate-cache-child to reject path-like child names" >&2
+  exit 1
+fi
+grep -q -- '--migrate-cache-child ../evil is not a direct .cache child name' "$tmp/migrate-cache-child-invalid.err"
+
+cache_child_open_meta="$tmp/cache-child-open-meta"
+cache_child_open_home="$tmp/cache-child-open-home"
+mkdir -p "$cache_child_open_meta/.local" "$cache_child_open_meta/envctl/home" "$cache_child_open_home/.cache/tool"
+printf '# managed gitconfig\n' >"$cache_child_open_meta/envctl/home/.gitconfig"
+ln -s "$cache_child_open_meta/envctl/home/.gitconfig" "$cache_child_open_meta/.gitconfig"
+ln -s "$cache_child_open_meta/.local" "$cache_child_open_home/.local"
+ln -s "$cache_child_open_meta/.gitconfig" "$cache_child_open_home/.gitconfig"
+printf 'cache-index\n' >"$cache_child_open_home/.cache/tool/index"
+if ENVCTL_TEST_LSOF_OPEN_SOURCE="$cache_child_open_home/.cache/tool" "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-cache-child tool --meta-root "$cache_child_open_meta" --real-home "$cache_child_open_home" --envctl-home-source "$cache_child_open_meta/envctl/home" >"$tmp/migrate-cache-child-open.out" 2>"$tmp/migrate-cache-child-open.err"; then
+  echo "expected --migrate-cache-child to fail closed with open file handles" >&2
+  exit 1
+fi
+test -d "$cache_child_open_home/.cache/tool"
+test ! -e "$cache_child_open_meta/.local/cache/tool"
+grep -q -- '--migrate-cache-child tool: .*open file handle(s).*close owning processes before migration' "$tmp/migrate-cache-child-open.err"
+grep -q -- 'tool/nssdb/key4.db' "$tmp/migrate-cache-child-open.err"
+
+cache_child_collision_meta="$tmp/cache-child-collision-meta"
+cache_child_collision_home="$tmp/cache-child-collision-home"
+mkdir -p "$cache_child_collision_meta/.local/cache/tool" "$cache_child_collision_meta/envctl/home" "$cache_child_collision_home/.cache/tool"
+printf '# managed gitconfig\n' >"$cache_child_collision_meta/envctl/home/.gitconfig"
+ln -s "$cache_child_collision_meta/envctl/home/.gitconfig" "$cache_child_collision_meta/.gitconfig"
+ln -s "$cache_child_collision_meta/.local" "$cache_child_collision_home/.local"
+ln -s "$cache_child_collision_meta/.gitconfig" "$cache_child_collision_home/.gitconfig"
+printf 'source-cache\n' >"$cache_child_collision_home/.cache/tool/index"
+printf 'target-cache\n' >"$cache_child_collision_meta/.local/cache/tool/index"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-cache-child tool --meta-root "$cache_child_collision_meta" --real-home "$cache_child_collision_home" --envctl-home-source "$cache_child_collision_meta/envctl/home" >"$tmp/migrate-cache-child-collision.out" 2>"$tmp/migrate-cache-child-collision.err"; then
+  echo "expected --migrate-cache-child to reject existing targets" >&2
+  exit 1
+fi
+grep -q -- '--migrate-cache-child tool: existing target .* already exists; refusing automatic cache-child migration' "$tmp/migrate-cache-child-collision.err"
+grep -Fqx 'source-cache' "$cache_child_collision_home/.cache/tool/index"
+grep -Fqx 'target-cache' "$cache_child_collision_meta/.local/cache/tool/index"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-cache-child tool --meta-root "$cache_child_meta" --real-home "$cache_child_home" --envctl-home-source "$cache_child_meta/envctl/home" >"$tmp/migrate-cache-child.out" 2>"$tmp/migrate-cache-child.err"
+test "$(readlink -f "$cache_child_home/.cache/tool")" = "$cache_child_meta/.local/cache/tool"
+grep -Fqx 'cache-index' "$cache_child_meta/.local/cache/tool/index"
+test -d "$cache_child_home/.cache"
+
+"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-child-candidates-report "$tmp/cache-child-post.tsv" --meta-root "$cache_child_meta" --real-home "$cache_child_home" --envctl-home-source "$cache_child_meta/envctl/home" >"$tmp/cache-child-post.out" 2>"$tmp/cache-child-post.err"
+awk -F '\t' -v home="$cache_child_home" -v meta="$cache_child_meta" '
+  $1 == ".cache" && $2 == "tool" {
+    if ($3 != home "/.cache/tool") bad=1
+    if ($4 != "symlink") bad=1
+    if ($5 != "already-meta") bad=1
+    if ($6 != "already-meta") bad=1
+    if ($7 != meta "/.local/cache/tool") bad=1
+    if ($13 != "none") bad=1
+    if ($14 != "n/a") bad=1
+    if ($15 != "none") bad=1
+    found=1
+  }
+  END { exit !(found && !bad) }
+' "$tmp/cache-child-post.tsv"
+
 "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .pki --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-pki.out" 2>"$tmp/migrate-pki.err"
 test "$(readlink -f "$mig_home/.pki")" = "$mig_meta/.local/share/pki"
 grep -Fqx 'cert db fixture' "$mig_meta/.local/share/pki/nssdb/cert9.db"

@@ -11,7 +11,7 @@
 # It intentionally does not move credentials or broad real-home application state by default.
 # Shell dotfiles are only canonicalized with the explicit --apply-shell-dotfiles opt-in; default
 # --apply remains limited to the proven-safe bridges above plus explicitly requested allow-listed
-# --migrate-dot entries.
+# --migrate-dot entries and explicit one-child --migrate-cache-child NAME entries.
 # History/backup dot entries are only archived+bridged into META_ROOT with the explicit
 # --apply-history-archives opt-in; default --apply remains non-mutating for them.
 # Portable app configs are only migrated when they are explicitly allow-listed here.
@@ -23,7 +23,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--owner-supervised-sensitive-review-plan PATH] [--owner-supervised-state-report PATH] [--owner-supervised-child-report PATH] [--owner-supervised-child-plan PATH] [--owner-supervised-child-candidates-report PATH] [--owner-supervised-child-candidate-actions PATH] [--owner-supervised-cache-child-component-plan PATH] [--owner-supervised-managed-config-child-review-plan PATH] [--owner-supervised-config-child-classification-plan PATH] [--owner-supervised-child-candidate-action-summary PATH] [--owner-supervised-child-candidates-summary PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--migration-blockers-plan PATH] [--open-handle-process-window-plan PATH] [--fail-migration-blockers] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--owner-supervised-sensitive-review-plan PATH] [--owner-supervised-state-report PATH] [--owner-supervised-child-report PATH] [--owner-supervised-child-plan PATH] [--owner-supervised-child-candidates-report PATH] [--owner-supervised-child-candidate-actions PATH] [--owner-supervised-cache-child-component-plan PATH] [--owner-supervised-managed-config-child-review-plan PATH] [--owner-supervised-config-child-classification-plan PATH] [--owner-supervised-child-candidate-action-summary PATH] [--owner-supervised-child-candidates-summary PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--migration-blockers-plan PATH] [--open-handle-process-window-plan PATH] [--fail-migration-blockers] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--migrate-cache-child NAME]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
 With --inventory, also writes a tab-separated relocation inventory:
@@ -46,6 +46,10 @@ portable cache dirs like .nv, or a managed dotfile present under --envctl-home-s
 Mutation still requires --apply; without --apply the script prints the planned move and changes nothing.
 With --apply, migrations require lsof and refuse to mutate while any process has open file handles
 below the source tree.
+With --migrate-cache-child, performs an explicit owner-requested migration for one direct child of
+real-home .cache at a time, moving it to $META_ROOT/.local/cache/<name> and leaving a symlink bridge.
+Mutation still requires --apply; without --apply the script prints the planned move and changes nothing.
+Names must be direct .cache child names, and existing targets are never merged automatically.
 With --shell-dotfile-conflict-report, writes supervised shell-dotfile merge rows:
 dot_entry, real_path, canonical_target, action, apply_safe, real_sha256, canonical_sha256, real_lines, canonical_lines, recommendation.
 With --app-config-conflict-report, writes supervised app-config merge rows when a known real-home
@@ -162,6 +166,7 @@ DEEP_LINK_INVENTORY_PATH=""
 DEEP_LINK_SUMMARY_PATH=""
 FAIL_REAL_HOME_DEEP_LINKS=0
 MIGRATE_DOTS=()
+MIGRATE_CACHE_CHILDREN=()
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -194,6 +199,7 @@ while [ "$#" -gt 0 ]; do
     --deep-link-summary) DEEP_LINK_SUMMARY_PATH="${2:?--deep-link-summary requires a path}"; shift 2 ;;
     --fail-real-home-deep-links) FAIL_REAL_HOME_DEEP_LINKS=1; shift ;;
     --migrate-dot) MIGRATE_DOTS+=("${2:?--migrate-dot requires a dot entry}"); shift 2 ;;
+    --migrate-cache-child) MIGRATE_CACHE_CHILDREN+=("${2:?--migrate-cache-child requires a child name}"); shift 2 ;;
     --meta-root) META_ROOT="${2:?--meta-root requires a path}"; shift 2 ;;
     --real-home) REAL_HOME="${2:?--real-home requires a path}"; shift 2 ;;
     --envctl-home-source) ENVCTL_HOME_SOURCE="${2:?--envctl-home-source requires a path}"; shift 2 ;;
@@ -353,10 +359,10 @@ entry_type() {
 }
 
 require_no_open_handles_for_migration() {
-  local dot="$1" source="$2" lsof_out count sample
+  local label="$1" source="$2" lsof_out count sample
 
   if ! command -v lsof >/dev/null 2>&1; then
-    fail "--migrate-dot $dot: lsof is unavailable; refusing automatic migration without open-handle proof"
+    fail "$label: lsof is unavailable; refusing automatic migration without open-handle proof"
     return 1
   fi
 
@@ -378,7 +384,7 @@ require_no_open_handles_for_migration() {
   count="$(awk 'NR > 1 && NF > 0 { count++ } END { print count + 0 }' "$lsof_out")"
   if [ "$count" -gt 0 ]; then
     sample="$(awk 'NR == 2 && NF >= 2 { print $1 "/" $2; exit }' "$lsof_out")"
-    fail "--migrate-dot $dot: $count open file handle(s) under $source${sample:+ ($sample)}; close owning processes before migration"
+    fail "$label: $count open file handle(s) under $source${sample:+ ($sample)}; close owning processes before migration"
     sed 's/^/  /' "$lsof_out" >&2
     rm -f "$lsof_out"
     return 1
@@ -1778,6 +1784,71 @@ is_migratable_dot() {
   esac
 }
 
+is_valid_cache_child_name() {
+  local child="$1"
+  case "$child" in
+    ""|.|..|*/*)
+      return 1
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+}
+
+migrate_real_home_cache_child() {
+  local child="$1" source target resolved
+
+  if ! is_valid_cache_child_name "$child"; then
+    fail "--migrate-cache-child $child is not a direct .cache child name; refusing automatic cache-child migration"
+    return 0
+  fi
+
+  source="$REAL_HOME/.cache/$child"
+  target="$META_ROOT/.local/cache/$child"
+
+  if [ ! -e "$source" ] && [ ! -L "$source" ]; then
+    ok "--migrate-cache-child $child: $source is missing; nothing to migrate"
+    return 0
+  fi
+
+  if [ -L "$source" ]; then
+    resolved="$(readlink -f "$source" 2>/dev/null || true)"
+    if [ -n "$resolved" ] && is_under_meta "$resolved"; then
+      ok "--migrate-cache-child $child: $source already resolves inside META_ROOT ($resolved)"
+    else
+      fail "--migrate-cache-child $child: $source is an external symlink (${resolved:-missing target}); refusing automatic relink"
+    fi
+    return 0
+  fi
+
+  if [ ! -d "$source" ]; then
+    fail "--migrate-cache-child $child: $source is not a directory; refusing automatic cache-child migration"
+    return 0
+  fi
+
+  if [ "$APPLY" -ne 1 ]; then
+    if [ -e "$target" ] || [ -L "$target" ]; then
+      say "DRY-RUN: would refuse automatic cache-child migration because target $target already exists"
+    else
+      say "DRY-RUN: would move $source to $target and link $source -> $target"
+    fi
+    return 0
+  fi
+
+  require_no_open_handles_for_migration "--migrate-cache-child $child" "$source" || return 0
+
+  if [ -e "$target" ] || [ -L "$target" ]; then
+    fail "--migrate-cache-child $child: existing target $target already exists; refusing automatic cache-child migration"
+    return 0
+  fi
+
+  mkdir -p "$(dirname "$target")"
+  mv "$source" "$target"
+  ln -sfn "$target" "$source"
+  changed_msg "migrated $source to $target and linked $source"
+}
+
 migrate_real_home_dot() {
   local dot="$1" source target resolved
 
@@ -1835,7 +1906,7 @@ migrate_real_home_dot() {
     return 0
   fi
 
-  require_no_open_handles_for_migration "$dot" "$source" || return 0
+  require_no_open_handles_for_migration "--migrate-dot $dot" "$source" || return 0
 
   if [ -e "$target" ] || [ -L "$target" ]; then
     resolved="$(readlink -f "$target" 2>/dev/null || true)"
@@ -2381,11 +2452,15 @@ fi
 for dot in "${MIGRATE_DOTS[@]}"; do
   migrate_real_home_dot "$dot"
 done
+for child in "${MIGRATE_CACHE_CHILDREN[@]}"; do
+  migrate_real_home_cache_child "$child"
+done
 
 # 6. Walk every top-level real-home dot entry.  The default audit only mutates .local/.gitconfig;
-# requested --migrate-dot entries above are reflected here after they have been bridged into
-# META_ROOT.  This keeps the loop honest ("every dot file/folder was observed") without auto-moving
-# credentials, caches, shell histories, broad app state, or unrequested toolchains.
+# requested --migrate-dot / --migrate-cache-child entries above are reflected here after they have
+# been bridged into META_ROOT.  This keeps the loop honest ("every dot file/folder was observed")
+# without auto-moving credentials, caches, shell histories, broad app state, or unrequested
+# toolchains.
 if [ -d "$REAL_HOME" ]; then
   while IFS= read -r -d '' path; do
     dot_entries_seen=$((dot_entries_seen + 1))
