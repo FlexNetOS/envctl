@@ -130,6 +130,7 @@ mkdir -p \
   "$mig_home/.unknown-ai-sensitive/tokens" \
   "$mig_home/.gemini" \
   "$mig_home/.ai/mcp" \
+  "$mig_home/.jetbrains" \
   "$mig_home/.archon" \
   "$mig_home/.hermes" \
   "$mig_home/.n8n-mcp" \
@@ -158,6 +159,7 @@ printf 'real-home dotnet state\n' >"$mig_home/.dotnet/state"
 printf 'set ideajoin\n' >"$mig_home/.ideavimrc"
 printf '{ "theme": "dark" }\n' >"$mig_home/.gemini/settings.json"
 printf '' >"$mig_home/.ai/mcp/mcp.json"
+printf '{"default_mcp_settings":{},"agent_servers":{"goose":{"command":"/usr/bin/goose","args":["acp"]},"kimi":{"command":"/home/drdave/.local/bin/kimi","args":["--acp"]}}}\n' >"$mig_home/.jetbrains/acp.json"
 printf '{ "lastChecked": "2026-06-27T00:00:00Z" }\n' >"$mig_home/.archon/update-check.json"
 printf 'provider: ollama\nbase_url: http://localhost:11434/v1\n' >"$mig_home/.hermes/config.yaml"
 printf '{ "telemetry": false }\n' >"$mig_home/.n8n-mcp/telemetry.json"
@@ -181,6 +183,7 @@ printf '{ "mcpServers": {} }\n' >"$mig_home/.claude.json"
 "$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/app-config-inventory.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/app-config-inventory.out" 2>"$tmp/app-config-inventory.err"
 grep -qx $'.gemini\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/gemini\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
 grep -qx $'.ai\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/ai\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
+grep -qx $'.jetbrains\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/jetbrains\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.gphoto\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.config/gphoto\tmigrate-dir-to-meta-config-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.archon\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/archon\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.hermes\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/hermes\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
@@ -233,6 +236,10 @@ if awk -F '\t' '$1 == ".gemini" { found=1 } END { exit !found }' "$tmp/unknown-a
 fi
 if awk -F '\t' '$1 == ".ai" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
   echo "unexpected unknown app-config report row for allow-listed .ai target" >&2
+  exit 1
+fi
+if awk -F '\t' '$1 == ".jetbrains" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
+  echo "unexpected unknown app-config report row for allow-listed .jetbrains target" >&2
   exit 1
 fi
 if awk -F '\t' '$1 == ".archon" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
@@ -306,6 +313,18 @@ test ! -s "$mig_meta/.local/share/ai/mcp/mcp.json"
 
 "$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/ai-post.tsv" --inventory-summary "$tmp/ai-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/ai-post.out" 2>"$tmp/ai-post.err"
 grep -qx $'.ai	symlink	already-meta	already-meta	'"$mig_meta"$'/.local/share/ai	none	n/a' "$tmp/ai-post.tsv"
+
+"$root/scripts/audit-meta-local-paths.sh" --migrate-dot .jetbrains --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-jetbrains-dry.out" 2>"$tmp/migrate-jetbrains-dry.err"
+grep -q 'DRY-RUN: would move .*\.jetbrains to .*\.local/share/jetbrains' "$tmp/migrate-jetbrains-dry.out"
+test -d "$mig_home/.jetbrains"
+test ! -e "$mig_meta/.local/share/jetbrains"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .jetbrains --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-jetbrains.out" 2>"$tmp/migrate-jetbrains.err"
+test "$(readlink -f "$mig_home/.jetbrains")" = "$mig_meta/.local/share/jetbrains"
+grep -Fqx '{"default_mcp_settings":{},"agent_servers":{"goose":{"command":"/usr/bin/goose","args":["acp"]},"kimi":{"command":"/home/drdave/.local/bin/kimi","args":["--acp"]}}}' "$mig_meta/.local/share/jetbrains/acp.json"
+
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/jetbrains-post.tsv" --inventory-summary "$tmp/jetbrains-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/jetbrains-post.out" 2>"$tmp/jetbrains-post.err"
+grep -qx $'.jetbrains	symlink	already-meta	already-meta	'"$mig_meta"$'/.local/share/jetbrains	none	n/a' "$tmp/jetbrains-post.tsv"
 
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .archon --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-archon-dry.out" 2>"$tmp/migrate-archon-dry.err"
 grep -q 'DRY-RUN: would move .*\.archon to .*\.local/share/archon' "$tmp/migrate-archon-dry.out"
@@ -455,6 +474,22 @@ fi
 test -f "$ai_bad_home/.ai"
 test ! -e "$ai_bad_meta/.local/share/ai"
 grep -q -- '--migrate-dot .ai: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-ai-file.err"
+
+jetbrains_bad_meta="$tmp/jetbrains-bad-meta"
+jetbrains_bad_home="$tmp/jetbrains-bad-home"
+mkdir -p "$jetbrains_bad_meta/.local" "$jetbrains_bad_meta/envctl/home" "$jetbrains_bad_home"
+printf '# managed gitconfig\n' >"$jetbrains_bad_meta/envctl/home/.gitconfig"
+ln -s "$jetbrains_bad_meta/envctl/home/.gitconfig" "$jetbrains_bad_meta/.gitconfig"
+ln -s "$jetbrains_bad_meta/.gitconfig" "$jetbrains_bad_home/.gitconfig"
+ln -s "$jetbrains_bad_meta/.local" "$jetbrains_bad_home/.local"
+printf 'not a directory\n' >"$jetbrains_bad_home/.jetbrains"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .jetbrains --meta-root "$jetbrains_bad_meta" --real-home "$jetbrains_bad_home" --envctl-home-source "$jetbrains_bad_meta/envctl/home" >"$tmp/migrate-jetbrains-file.out" 2>"$tmp/migrate-jetbrains-file.err"; then
+  echo "expected --migrate-dot .jetbrains to fail closed for non-directory source" >&2
+  exit 1
+fi
+test -f "$jetbrains_bad_home/.jetbrains"
+test ! -e "$jetbrains_bad_meta/.local/share/jetbrains"
+grep -q -- '--migrate-dot .jetbrains: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-jetbrains-file.err"
 
 archon_bad_meta="$tmp/archon-bad-meta"
 archon_bad_home="$tmp/archon-bad-home"
