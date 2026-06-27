@@ -433,6 +433,9 @@ app_config_target_for_dot() {
     .vscode-shared)
       printf '%s\n' "$META_ROOT/.local/share/vscode-shared"
       ;;
+    .repomix)
+      printf '%s\n' "$META_ROOT/.local/share/repomix"
+      ;;
     .agents|.ampcode|.claude|.codex|.codeium|.copilot|.cursor|.gemini|.goose_recipes|.junie|.kimi|.kimi-code|.roo|.vscode|.windsurf|.mozilla|.thunderbird)
       printf '%s\n' "$META_ROOT/.local/share/${dot#.}"
       ;;
@@ -455,7 +458,7 @@ is_portable_app_config_file_dot() {
 
 is_portable_app_config_dir_dot() {
   case "$1" in
-    .gphoto|.vscode-shared) return 0 ;;
+    .gphoto|.vscode-shared|.repomix) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -466,7 +469,7 @@ canonical_target_for_dot() {
     .cargo|.rustup|.bun|.npm|.wasmer|.dotnet|.pgrx|.venvs|.go|.gradle|.nix-*)
       printf '%s\n' "$META_ROOT/.toolchains/${dot#.}"
       ;;
-    .agents|.ampcode|.claude|.claude.json|.codex|.codeium|.copilot|.cursor|.gemini|.goose_recipes|.gphoto|.vscode-shared|.junie|.kimi|.kimi-code|.ollama|.roo|.vscode|.windsurf|.mozilla|.thunderbird|.ideavimrc)
+    .agents|.ampcode|.claude|.claude.json|.codex|.codeium|.copilot|.cursor|.gemini|.goose_recipes|.gphoto|.vscode-shared|.repomix|.junie|.kimi|.kimi-code|.ollama|.roo|.vscode|.windsurf|.mozilla|.thunderbird|.ideavimrc)
       app_config_target_for_dot "$dot"
       ;;
     *) printf '%s\n' "$ENVCTL_HOME_SOURCE/$dot" ;;
@@ -654,6 +657,17 @@ classify_real_home_dot() {
       .vscode-shared)
         target_class="app-config-state"
         canonical_target="$META_ROOT/.local/share/vscode-shared"
+        if [ "$type" = "directory" ]; then
+          action="migrate-dir-to-meta-share-and-bridge"
+          apply_safe="yes"
+        else
+          action="owner-supervised-type-repair"
+          apply_safe="no"
+        fi
+        ;;
+      .repomix)
+        target_class="app-config-state"
+        canonical_target="$META_ROOT/.local/share/repomix"
         if [ "$type" = "directory" ]; then
           action="migrate-dir-to-meta-share-and-bridge"
           apply_safe="yes"
