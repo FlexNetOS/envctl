@@ -58,6 +58,29 @@ if ! grep -q 'home-local-single-link' manifest/components.d/portability-links.to
   exit 1
 fi
 
+if ! grep -Fq 'pub fn usr_bin(&self)' crates/engine/src/layout.rs || \
+   ! grep -Fq 'self.usr_bin()' crates/engine/src/layout.rs || \
+   ! grep -Fq 'pub fn var_lib_envctl(&self)' crates/engine/src/layout.rs || \
+   ! grep -Fq 'pub fn xdg_config_home(&self)' crates/engine/src/layout.rs || \
+   ! grep -Fq 'LegacyCompatibility' crates/engine/src/layout.rs; then
+  echo "meta-local-policy: layout must expose canonical META_ROOT FHS/XDG paths and mark legacy compatibility prefixes" >&2
+  exit 1
+fi
+
+if ! grep -Fq "ENVCTL_BIN_DIR" crates/cli/tests/env.rs || \
+   ! grep -Fq "/usr/bin" crates/cli/tests/env.rs || \
+   ! grep -Fq "ENVCTL_LOCAL_BIN" crates/cli/tests/env.rs; then
+  echo "meta-local-policy: env output tests must prove usr/bin primary path plus .local/bin compatibility export" >&2
+  exit 1
+fi
+
+if ! grep -Fq 'layout.local_bin()' crates/engine/src/runner.rs || \
+   ! grep -Fq 'XDG_CONFIG_HOME' crates/engine/src/runner.rs || \
+   ! grep -Fq 'layout.bin()' crates/engine/src/runner.rs; then
+  echo "meta-local-policy: hook runner must force META_ROOT FHS/XDG env and PATH with usr/bin first" >&2
+  exit 1
+fi
+
 if ! grep -Eq '\$ENVCTL_REAL_HOME/\.local -> \$META_ROOT/\.local' docs/adr-install-locations-and-local-state.md home/README.md; then
   echo "meta-local-policy: bridge policy is not documented in the canonical ADR/home README" >&2
   exit 1
@@ -78,4 +101,4 @@ for path_file in crates/secrets-engine/src/paths.rs crates/secretctl/src/main.rs
   fi
 done
 
-echo "meta-local-policy: active install sources target META_ROOT; only the single real-home .local bridge is allowed"
+echo "meta-local-policy: active install sources target META_ROOT FHS/XDG; only the single real-home .local bridge is allowed"

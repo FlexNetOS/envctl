@@ -697,7 +697,7 @@ pub fn add_repo(
 
     // Re-check id-collision against a FRESH registry (close the long-pipeline
     // TOCTOU) BEFORE installing — so a concurrent registration can't leave
-    // orphaned meta .local/bin symlinks + a PATH block behind on the bail path (audit fix).
+    // orphaned meta usr/bin frontdoors + a PATH block behind on the bail path (audit fix).
     if let Ok(fresh) = Registry::load(manifest_dir) {
         if fresh.get(&id).is_some() {
             anyhow::bail!(

@@ -192,7 +192,7 @@ fn action_phase_streams_and_tees_to_log() {
         "action phase must emit Event::Log lines"
     );
     let logged =
-        std::fs::read_to_string(meta.join(".local/state/envctl/envctl.log")).unwrap_or_default();
+        std::fs::read_to_string(meta.join("var/lib/envctl/envctl.log")).unwrap_or_default();
     assert!(
         logged.contains("[test-comp] streamed-line"),
         "action phase must tee to envctl.log, got: {:?}",

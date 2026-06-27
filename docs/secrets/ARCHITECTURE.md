@@ -121,9 +121,9 @@ Fail-closed `SecGuard` engine (Phase 0, real signatures + refusal types, `todo!(
 ## 11. XDG layout (env-ctl-namespaced, sits beside envctl's dirs)
 
 ```
-~/.config/env-ctl/                      config (profiles defaults, daemon config, trusted-profile-roots allowlist)
-~/.local/share/env-ctl/        (0700)   vault.db (0600), ca/ca.pem (0644, public cert), ca/bundles/<tool>.pem
-~/.local/state/env-ctl/        (0700)   secretd.log, audit mirror (audit_head second home)
+$META_ROOT/.config/env-ctl/                      config (profiles defaults, daemon config, trusted-profile-roots allowlist)
+$META_ROOT/.local/share/env-ctl/        (0700)   vault.db (0600), ca/ca.pem (0644, public cert), ca/bundles/<tool>.pem
+$META_ROOT/.local/state/env-ctl/        (0700)   secretd.log, audit mirror (audit_head second home)
 $XDG_RUNTIME_DIR/env-ctl/      (0700)   control.sock (0600), relay-proxy bind config
 USB <partition-uuid>:/env-ctl/keyfile  (0400) 64-byte CSPRNG keyfile (mode bits advisory on vfat/exfat — see THREAT-MODEL A5/A11)
 ```

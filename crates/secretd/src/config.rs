@@ -2,7 +2,7 @@
 //! store — OI-1 (a), Phase 1) and the libSQL connection parameters.
 //!
 //! ## Precedence (highest first)
-//! environment variables > the optional TOML config file (`~/.config/env-ctl/secretd.toml`) >
+//! environment variables > the optional TOML config file (`$META_ROOT/.config/env-ctl/secretd.toml` under envctl-managed execution) >
 //! defaults (`backend = "inmem"`).
 //!
 //! ## Credential hygiene

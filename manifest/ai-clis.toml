@@ -8,7 +8,7 @@ name = "Claude Code CLI"
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/claude/bin/claude\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/claude\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/claude/bin/claude\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/claude/bin/claude\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/claude\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/claude/bin/claude\")\" ]"]
 [component.install]
 kind = "script"
 script = '''
@@ -16,20 +16,20 @@ set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/claude"
 # Upstream's installer may stage under $META_ROOT/.local/share/claude; mirror the resulting
-# executable into the meta-owned prefix and expose only a thin $META_ROOT/.local/bin symlink.
+# executable into the meta-owned prefix and expose only a thin $META_ROOT/usr/bin symlink.
 curl -fsSL https://claude.ai/install.sh | bash
-src="$(readlink -f "$META_ROOT/.local/bin/claude" 2>/dev/null || true)"
+src="$(readlink -f "$META_ROOT/usr/bin/claude" 2>/dev/null || true)"
 if [ -z "$src" ] || [ ! -x "$src" ]; then
   src="$(command -v claude)"
 fi
 install -d -m 755 "$DEST/bin"
 install -m 755 "$src" "$DEST/bin/claude"
-ln -sfn "$DEST/bin/claude" "$META_ROOT/.local/bin/claude"
+ln -sfn "$DEST/bin/claude" "$META_ROOT/usr/bin/claude"
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/.local/bin:$PATH\"; [ \"$(readlink -f \"$(command -v claude)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/claude/bin/claude\")\" ] && claude --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/usr/bin:$PATH\"; [ \"$(readlink -f \"$(command -v claude)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/claude/bin/claude\")\" ] && claude --version"]
 [component.fix]
 kind = "script"
 script = '''
@@ -37,13 +37,13 @@ set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/claude"
 curl -fsSL https://claude.ai/install.sh | bash
-src="$(readlink -f "$META_ROOT/.local/bin/claude" 2>/dev/null || true)"
+src="$(readlink -f "$META_ROOT/usr/bin/claude" 2>/dev/null || true)"
 if [ -z "$src" ] || [ ! -x "$src" ]; then
   src="$(command -v claude)"
 fi
 install -d -m 755 "$DEST/bin"
 install -m 755 "$src" "$DEST/bin/claude"
-ln -sfn "$DEST/bin/claude" "$META_ROOT/.local/bin/claude"
+ln -sfn "$DEST/bin/claude" "$META_ROOT/usr/bin/claude"
 '''
 
 
@@ -52,17 +52,17 @@ id = "codex-cli"
 name = "Codex CLI (meta toolchain; pinned upstream release rust-v0.142.0, source-build opt-in)"
 requires = ["rustup", "bun", "wild-linker"]
 # Pinned, VERSIONED install into $META_ROOT/.toolchains/openai-codex/<version>/ with a stable
-# `current -> <version>` indirection, exposed as `codex` via the meta-local single bridge. The
-# DEFAULT install path downloads the pinned upstream release (static musl tarball) so the version
-# is deterministic and portable. Set CODEX_BUILD_FROM_SOURCE=1 to instead build from a local
-# $M/codex/codex-rs checkout (wild-linker-accelerated) — the opt-in path for future in-place
-# upgrades. Override the pin with CODEX_VERSION=<x.y.z>. The install/fix hooks perform a
+# `current -> <version>` indirection, exposed as `codex` via the canonical $META_ROOT/usr/bin
+# front door. The DEFAULT install path downloads the pinned upstream release (static musl tarball)
+# so the version is deterministic and portable. Set CODEX_BUILD_FROM_SOURCE=1 to instead build
+# from a local $M/codex/codex-rs checkout (wild-linker-accelerated) — the opt-in path for future
+# in-place upgrades. Override the pin with CODEX_VERSION=<x.y.z>. The install/fix hooks perform a
 # strict-upgrade swap: the legacy flat $M/.toolchains/codex install is archived (never deleted)
 # only AFTER the new pinned binary verifies with `--version`.
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; VER="${CODEX_VERSION:-0.142.0}"; vdir="$M/.toolchains/openai-codex/${VER}"; dest="$vdir/bin/codex"; cur="$M/.toolchains/openai-codex/current/bin/codex"; link="$META_ROOT/.local/bin/codex"; rd() { readlink -f "$1" 2>/dev/null; }; [ -x "$dest" ] && [ "$(rd "$cur")" = "$(rd "$dest")" ] && [ "$(rd "$link")" = "$(rd "$dest")" ]''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; VER="${CODEX_VERSION:-0.142.0}"; vdir="$M/.toolchains/openai-codex/${VER}"; dest="$vdir/bin/codex"; cur="$M/.toolchains/openai-codex/current/bin/codex"; link="$META_ROOT/usr/bin/codex"; rd() { readlink -f "$1" 2>/dev/null; }; [ -x "$dest" ] && [ "$(rd "$cur")" = "$(rd "$dest")" ] && [ "$(rd "$link")" = "$(rd "$dest")" ]''']
 [component.install]
 kind = "script"
 script = '''
@@ -72,7 +72,7 @@ ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 VER="${CODEX_VERSION:-0.142.0}"
 BASE="$M/.toolchains/openai-codex"
 CUR="$BASE/current"
-LINK="$META_ROOT/.local/bin/codex"
+LINK="$META_ROOT/usr/bin/codex"
 if [ "${CODEX_BUILD_FROM_SOURCE:-0}" = "1" ] && [ -d "$M/codex/codex-rs/cli" ]; then
   # Opt-in: build from the local checkout (future portable in-place upgrade path). Linker
   # acceleration is provided by the wild-linker component (Epic H TASK-0054): it wires
@@ -103,12 +103,12 @@ VDIR="$BASE/${VER}"
 install -d -m 755 "$VDIR/bin"
 install -m 755 "$src" "$VDIR/bin/codex"
 ln -sfn "$VER" "$CUR"
-install -d -m 755 "$META_ROOT/.local/bin"
-# Single bin link (gh/mise pattern) under $META_ROOT/.local/bin only. The real-home
-# .local is served by the home-local-single-link bridge, so no per-tool home link is
-# created. Archive a pre-existing non-symlink (a copied binary) before replacing it.
+install -d -m 755 "$META_ROOT/usr/bin"
+# Canonical front door is $META_ROOT/usr/bin. The real-home .local bridge is provided by the
+# home-local-single-link component, so this component must not create a per-tool real-home link.
+# Archive a pre-existing non-symlink (a copied binary) before replacing it.
 if [ -e "$LINK" ] && [ ! -L "$LINK" ]; then
-  ARCH="$M/.local/archive/home-links-$(date -u +%Y-%m-%d)/.local/bin"
+  ARCH="$META_ROOT/var/lib/envctl/legacy-archives/usr-bin-$(date -u +%Y-%m-%d)/usr/bin"
   install -d -m 755 "$ARCH"
   mv "$LINK" "$ARCH/codex"
   echo "archived copy: codex"
@@ -117,7 +117,7 @@ ln -sfn "$CUR/bin/codex" "$LINK"
 # Strict-upgrade swap: retire the legacy flat install ONLY after the new pinned binary runs.
 if "$VDIR/bin/codex" --version >/dev/null 2>&1; then
   if [ -d "$M/.toolchains/codex" ]; then
-    FLATARCH="$M/.local/archive/codex-flat-$(date -u +%Y-%m-%d)"
+    FLATARCH="$META_ROOT/var/lib/envctl/legacy-archives/codex-flat-$(date -u +%Y-%m-%d)"
     install -d -m 755 "$FLATARCH"
     mv "$M/.toolchains/codex" "$FLATARCH/codex"
     echo "archived legacy flat install: .toolchains/codex -> $FLATARCH/codex"
@@ -132,7 +132,7 @@ fi
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export PATH="$META_ROOT/.local/bin:$M/.local/bin:$PATH"; cur="$M/.toolchains/openai-codex/current/bin/codex"; [ -x "$cur" ] && [ "$(readlink -f "$(command -v codex)" 2>/dev/null)" = "$(readlink -f "$cur")" ] && codex --version''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export PATH="$META_ROOT/usr/bin:$M/usr/bin:$PATH"; cur="$M/.toolchains/openai-codex/current/bin/codex"; [ -x "$cur" ] && [ "$(readlink -f "$(command -v codex)" 2>/dev/null)" = "$(readlink -f "$cur")" ] && codex --version''']
 [component.fix]
 kind = "script"
 script = '''
@@ -142,7 +142,7 @@ ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 VER="${CODEX_VERSION:-0.142.0}"
 BASE="$M/.toolchains/openai-codex"
 CUR="$BASE/current"
-LINK="$META_ROOT/.local/bin/codex"
+LINK="$META_ROOT/usr/bin/codex"
 if [ "${CODEX_BUILD_FROM_SOURCE:-0}" = "1" ] && [ -d "$M/codex/codex-rs/cli" ]; then
   export CARGO_HOME="$M/.toolchains/cargo"
   export PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"
@@ -166,14 +166,14 @@ VDIR="$BASE/${VER}"
 install -d -m 755 "$VDIR/bin"
 install -m 755 "$src" "$VDIR/bin/codex"
 ln -sfn "$VER" "$CUR"
-install -d -m 755 "$META_ROOT/.local/bin"
+install -d -m 755 "$META_ROOT/usr/bin"
 if [ -e "$LINK" ] && [ ! -L "$LINK" ]; then
-  ARCH="$M/.local/archive/home-links-$(date -u +%Y-%m-%d)/.local/bin"
+  ARCH="$META_ROOT/var/lib/envctl/legacy-archives/usr-bin-$(date -u +%Y-%m-%d)/usr/bin"
   install -d -m 755 "$ARCH"; mv "$LINK" "$ARCH/codex"; echo "archived copy: codex"
 fi
 ln -sfn "$CUR/bin/codex" "$LINK"
 if "$VDIR/bin/codex" --version >/dev/null 2>&1 && [ -d "$M/.toolchains/codex" ]; then
-  FLATARCH="$M/.local/archive/codex-flat-$(date -u +%Y-%m-%d)"
+  FLATARCH="$META_ROOT/var/lib/envctl/legacy-archives/codex-flat-$(date -u +%Y-%m-%d)"
   install -d -m 755 "$FLATARCH"
   mv "$M/.toolchains/codex" "$FLATARCH/codex"
   echo "archived legacy flat install: .toolchains/codex -> $FLATARCH/codex"
@@ -182,8 +182,7 @@ fi
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; BUN_INSTALL="$M/.toolchains/.bun"; [ -x "$BUN_INSTALL/bin/bun" ] && PATH="$BUN_INSTALL/bin:$PATH" bun remove -g @openai/codex >/dev/null 2>&1 || true; for t in "$META_ROOT/.local/bin/codex" "$M/.local/bin/codex"; do [ -L "$t" ] && rm -f "$t"; done; rm -rf "$M/.toolchains/openai-codex"''']
-
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; BUN_INSTALL="$M/.toolchains/.bun"; [ -x "$BUN_INSTALL/bin/bun" ] && PATH="$BUN_INSTALL/bin:$PATH" bun remove -g @openai/codex >/dev/null 2>&1 || true; for t in "$META_ROOT/usr/bin/codex" "$M/usr/bin/codex" "$META_ROOT/.local/bin/codex" "$M/.local/bin/codex"; do [ -L "$t" ] && rm -f "$t"; done; rm -rf "$M/.toolchains/openai-codex"''']
 
 [[component]]
 id = "gemini-cli"
@@ -192,7 +191,7 @@ requires = ["bun"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/.bun/bin/gemini\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/gemini\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/.bun/bin/gemini\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/.bun/bin/gemini\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/gemini\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/.bun/bin/gemini\")\" ]"]
 [component.install]
 kind = "script"
 script = '''
@@ -201,10 +200,10 @@ M="${META_ROOT:?META_ROOT required}"
 export BUN_INSTALL="$M/.toolchains/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 bun install -g @google/gemini-cli
-mkdir -p "$META_ROOT/.local/bin"
-dst="$META_ROOT/.local/bin/gemini"
+mkdir -p "$META_ROOT/usr/bin"
+dst="$META_ROOT/usr/bin/gemini"
 src="$BUN_INSTALL/bin/gemini"
-ARCH="$META_ROOT/.local/state/envctl/legacy-archives/home-links-$(date +%Y-%m-%d)"
+ARCH="$META_ROOT/var/lib/envctl/legacy-archives/home-links-$(date +%Y-%m-%d)"
 if [ -e "$dst" ] && [ ! -L "$dst" ]; then mkdir -p "$ARCH/.local/bin"; mv "$dst" "$ARCH/.local/bin/gemini"; echo "archived copy: gemini"; fi
 [ -L "$dst" ] && rm "$dst"
 ln -s "$src" "$dst"
@@ -212,7 +211,7 @@ ln -s "$src" "$dst"
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$META_ROOT/.local/bin:$BUN_INSTALL/bin:$PATH\"; gemini --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$META_ROOT/usr/bin:$BUN_INSTALL/bin:$PATH\"; gemini --version"]
 [component.fix]
 kind = "script"
 script = '''
@@ -221,13 +220,13 @@ M="${META_ROOT:?META_ROOT required}"
 export BUN_INSTALL="$M/.toolchains/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 bun install -g @google/gemini-cli
-mkdir -p "$META_ROOT/.local/bin"
-ln -sfn "$BUN_INSTALL/bin/gemini" "$META_ROOT/.local/bin/gemini"
+mkdir -p "$META_ROOT/usr/bin"
+ln -sfn "$BUN_INSTALL/bin/gemini" "$META_ROOT/usr/bin/gemini"
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; bun remove -g @google/gemini-cli; [ -L \"$META_ROOT/.local/bin/gemini\" ] && rm \"$META_ROOT/.local/bin/gemini\" || true"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; bun remove -g @google/gemini-cli; [ -L \"$META_ROOT/usr/bin/gemini\" ] && rm \"$META_ROOT/usr/bin/gemini\" || true"]
 
 
 [[component]]
@@ -236,14 +235,14 @@ name = "Kimi CLI"
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "command -v kimi || [ -x \"$META_ROOT/.local/bin/kimi\" ]"]
+args = ["-lc", "command -v kimi || [ -x \"$META_ROOT/usr/bin/kimi\" ]"]
 [component.install]
 kind = "script"
 script = "curl -LsSf https://code.kimi.com/install.sh | bash"
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$META_ROOT/.local/bin:$PATH\"; kimi --version"]
+args = ["-lc", "export PATH=\"$META_ROOT/usr/bin:$PATH\"; kimi --version"]
 [component.fix]
 kind = "script"
 script = "curl -LsSf https://code.kimi.com/install.sh | bash"
@@ -255,14 +254,14 @@ name = "Devin CLI"
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "command -v devin || [ -x \"$META_ROOT/.local/bin/devin\" ]"]
+args = ["-lc", "command -v devin || [ -x \"$META_ROOT/usr/bin/devin\" ]"]
 [component.install]
 kind = "script"
 script = "curl -fsSL https://cli.devin.ai/install.sh | bash"
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$META_ROOT/.local/bin:$PATH\"; devin --version"]
+args = ["-lc", "export PATH=\"$META_ROOT/usr/bin:$PATH\"; devin --version"]
 [component.fix]
 kind = "script"
 script = "curl -fsSL https://cli.devin.ai/install.sh | bash"
@@ -278,4 +277,4 @@ requires = ["claude-code-cli", "codex-cli", "gemini-cli", "kimi-cli", "devin-cli
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/.local/bin:$M/.toolchains/.bun/bin:$PATH\"; for c in claude codex gemini kimi devin; do command -v $c >/dev/null || exit 1; done"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/usr/bin:$M/.toolchains/.bun/bin:$PATH\"; for c in claude codex gemini kimi devin; do command -v $c >/dev/null || exit 1; done"]

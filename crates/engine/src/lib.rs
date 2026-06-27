@@ -16,8 +16,8 @@ pub mod executor; // Engine::run(plan) best-effort loop + RunContext resolve + a
 pub mod graph; // graph intelligence over the component dependency DAG
 pub mod guard; // fail-closed UuidResolves/NotLiveDevice/NotMounted/PathExists/HookSucceeds
 pub mod hub_registry; // read-only federation over *_hub/registry.json
-pub mod install; // Phase 4: symlink artifacts into meta .local/bin (refuse-unmanaged) + wire-in
-pub mod layout; // meta-hosted .local/bin/lib/share/state/cache/tmp/opt path resolver
+pub mod install; // Phase 4: symlink artifacts into meta usr/bin (refuse-unmanaged) + wire-in
+pub mod layout; // meta-hosted FHS/XDG path resolver (usr/etc/var/opt/run/tmp + XDG roots)
 pub mod lock; // envctl.lock — content-hashed manifest-of-record + CI gate
 pub mod migration; // adoption engine: scan/plan/apply/verify/purge into meta .local topology
 pub mod model; // Registry, OpResult, OpStatus, EnvReport, Wiring, RunPlan, RunSummary, AddRepoSpec
@@ -252,7 +252,7 @@ impl Engine {
         Ok(outcome)
     }
 
-    /// Read-only migration/adoption scan: inventory canonical meta `.local` dirs,
+    /// Read-only migration/adoption scan: inventory canonical meta FHS/XDG dirs,
     /// legacy manifest tokens, preserved agent assets, and protected meta shared
     /// substrates such as `loop_lib`.
     pub fn migrate_scan(
@@ -278,7 +278,7 @@ impl Engine {
     }
 
     /// Apply the safe subset of the migration plan. Preview unless `apply=true`;
-    /// the first implementation only materializes canonical meta `.local`
+    /// the first implementation only materializes canonical meta FHS/XDG
     /// directories and writes the migration ledger.
     pub fn migrate_apply(
         &self,

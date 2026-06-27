@@ -10,7 +10,7 @@
 frontdoors, support files, state, cache, and temporary files must resolve under:
 
 ```text
-$META_ROOT/.local/{bin,lib,share,state,cache,tmp,opt}
+$META_ROOT/{usr/bin,usr/lib,usr/share,etc,var/lib,var/cache,var/log,var/tmp,opt} plus XDG meta-home roots
 $META_ROOT/.toolchains/        # legacy compatibility prefix while older manifests migrate
 $META_ROOT/.config/            # tracked/configured dot roots that are intentionally meta-hosted
 ```
@@ -29,20 +29,26 @@ the real user home must use `ENVCTL_REAL_HOME` and must document why.
 
 ## Install-location map
 
-### Root 1 — `$META_ROOT/.local/`: canonical envctl install tree
+### Root 1 — `$META_ROOT/{usr,etc,var,opt}` plus meta-XDG roots: canonical envctl install tree
 
 `crates/engine/src/layout.rs::MetaLayout` defines the canonical topology. New components should use
 these paths through the layout registry rather than re-deriving strings by hand.
 
 | surface | canonical location | rule |
 |---|---|---|
-| CLI/application frontdoors | `$META_ROOT/.local/bin` | Exposed on PATH by the envctl PATH block. Links inside this tree may point to other `$META_ROOT` paths; the host-home `.local` tree is only the single directory bridge. |
-| Libraries/support files | `$META_ROOT/.local/lib` | Component-owned support payloads. |
-| Shared data | `$META_ROOT/.local/share` | Envctl-owned persistent data, including component stores and secrets data. |
-| Mutable state/logs | `$META_ROOT/.local/state` | Envctl-owned state and logs. |
-| Cache | `$META_ROOT/.local/cache` | Regenerable caches. |
-| Temp | `$META_ROOT/.local/tmp` | Meta-local temp space. |
-| Component prefixes | `$META_ROOT/.local/opt/<component>` | Preferred install prefix for new third-party component payloads. |
+| CLI/application frontdoors | `$META_ROOT/usr/bin` | Exposed on PATH by the envctl PATH block. Links inside this tree may point to other `$META_ROOT` paths; the host-home `.local` tree is only the single directory bridge. |
+| Libraries/support files | `$META_ROOT/usr/lib` | Component-owned libraries and support payloads. |
+| Private executables | `$META_ROOT/usr/libexec` | Non-PATH helper binaries, including private envctl/secrets executables. |
+| Config/trust pins | `$META_ROOT/etc/envctl` | Envctl-owned config fragments and trust pins that are not reviewed dotfiles. |
+| Read-only shared payloads | `$META_ROOT/usr/share` | Envctl-owned read-only shared assets, templates, manpages, and generated drop-ins when they are not desktop/XDG assets. |
+| XDG data | `$META_ROOT/.local/share` | Only for host/XDG contracts such as desktop entries, icons, fonts, and component data that explicitly requires XDG data semantics. |
+| Mutable envctl state | `$META_ROOT/var/lib/envctl` | Envctl-owned durable operational state such as migration ledgers, repo stores, and logs that are not app-XDG state. |
+| Logs | `$META_ROOT/var/log/envctl` | Envctl-owned log files when separated from state. |
+| XDG state | `$META_ROOT/.local/state` | Only for host/XDG app contracts that explicitly require XDG state semantics. |
+| Cache | `$META_ROOT/var/cache/envctl` | Envctl-owned regenerable caches. |
+| XDG cache | `$META_ROOT/.cache` | Only for host/XDG app caches that explicitly require XDG cache semantics. |
+| Temp | `$META_ROOT/var/tmp` | Meta-local temp space. |
+| Component prefixes | `$META_ROOT/opt/<component>` | Preferred install prefix for new third-party component payloads. |
 
 ### Root 2 — `$META_ROOT/.toolchains/`: compatibility toolchain store
 
@@ -54,8 +60,9 @@ regenerable, and still meta-hosted; it is not a user-global install.
 ### Root 3 — `$META_ROOT/.config/` and `home/`: dot-root policy
 
 The tracked `home/` overlay remains the source of truth for reviewed dotfiles and user service
-units. Runtime dot directories that contain mutable state should move to `$META_ROOT/.config` or
-`$META_ROOT/.local/{share,state,cache}` as their components are upgraded. A future central dot-root
+units. Runtime dot directories that contain mutable state should move to `$META_ROOT/var/lib`,
+`$META_ROOT/var/cache`, `$META_ROOT/var/log`, or an explicit meta-XDG root only when an upstream
+contract requires XDG semantics. A future central dot-root
 may add one bridge per top-level dot directory, but it must follow the same rule: real file in meta,
 host path is only a bridge.
 
@@ -67,7 +74,7 @@ contain large, host-specific, regenerable install state. The correct reproducibi
 1. manifests and component hooks,
 2. `manifest/envctl.lock`,
 3. `envctl doctor --json` / `envctl auto-detect --json`, and
-4. targeted component state under `$META_ROOT/.local`.
+4. targeted component state under `$META_ROOT/var/lib/envctl`, `$META_ROOT/var/cache/envctl`, `$META_ROOT/opt/<component>`, or an explicitly declared meta-XDG root.
 
 Tracking a snapshot of `.local` would bloat git, pin one host's absolute state, and duplicate the
 declarative manifests. The invariant is declaration plus verification, not filesystem snapshotting.
@@ -86,12 +93,12 @@ component's explicit guarded reset flow.
 |---|---|---|
 | Component registry | `manifest/*.toml` plus `manifest/components.d/*.toml`, loaded by `Registry::load`; pinned by `manifest/envctl.lock` | `envctl lock --check` gates manifest drift. |
 | Hub/tool registry | each `<name>_hub/registry.json` under the envctl workspace root; today `mcp_hub/registry.json` is discovered by `envctl registry --json` | Read-only federation; `envctl registry --check` fails when a hub entry binds to a missing component. |
-| Runtime/last-run state | `$META_ROOT/.local/cache/envctl/<hash-of-manifest-dir>/state.json` when envctl owns it; otherwise explicit component state under `$META_ROOT/.local/state` | Machine-local and intentionally uncommitted. |
-| CLI exposure | `$META_ROOT/.local/bin` | Recreated by `envctl install`; host `$ENVCTL_REAL_HOME/.local` is only the directory bridge. |
-| Secrets daemon binaries | `$META_ROOT/.local/lib/envctl/secrets/bin/{secretd,secretctl}` with frontdoors in `$META_ROOT/.local/bin` | Legacy compatibility paths are retained only until migrated and parity-proven. |
+| Runtime/last-run state | `$META_ROOT/var/cache/envctl/<hash-of-manifest-dir>/state.json` when envctl owns it; otherwise explicit component state under `$META_ROOT/var/lib/<component>` or a declared meta-XDG state root | Machine-local and intentionally uncommitted. |
+| CLI exposure | `$META_ROOT/usr/bin` | Recreated by `envctl install`; host `$ENVCTL_REAL_HOME/.local` is only the directory bridge. |
+| Secrets daemon binaries | `$META_ROOT/usr/libexec/envctl/secrets/bin/{secretd,secretctl}` with frontdoors in `$META_ROOT/usr/bin` | Legacy compatibility paths are retained only until migrated and parity-proven. |
 | Secrets config | `$META_ROOT/.config/env-ctl/secretd.toml` | Preserved unless the owning reset flow explicitly removes it; auth tokens are never stored here. |
 | Secrets data/audit | `$META_ROOT/.local/share/env-ctl` and `$META_ROOT/.local/state/env-ctl` | Data paths are deleted only by the guarded `envctl reset env-ctl --purge --confirm --apply` flow. |
-| Cognitum Seed Device CA pin | `$META_ROOT/.local/share/envctl/secrets/ca/cognitum-ca.crt` | `env-ctl.service` exports `ENVCTL_SEED_CA` to this path. |
+| Cognitum Seed Device CA pin | `$META_ROOT/etc/envctl/secrets/ca/cognitum-ca.crt` | `env-ctl.service` exports `ENVCTL_SEED_CA` to this path. |
 | Local MITM/remote-client CAs | sealed in the encrypted vault store (`ca_key`/`certs` rows and `mitm.ca_cert_der` / `remote_clients.ca_cert_der` metadata) | Private keys never leave the daemon; public trust apply remains explicit/dry-run by default. |
 
 ## System-depth convergence principle

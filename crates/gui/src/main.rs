@@ -1365,7 +1365,7 @@ impl EnvctlApp {
         ui.add_space(10.0);
         ui.colored_label(
             theme::TEXT_FAINT,
-            "Acquire + detect + preview by default. 'Build now' clones, builds from source, installs into $META_ROOT/.local/bin, and registers a managed drop-in.",
+            "Acquire + detect + preview by default. 'Build now' clones, builds from source, installs into $META_ROOT/usr/bin, and registers a managed drop-in.",
         );
     }
 

@@ -7,7 +7,7 @@ This file provides guidance to Codex (Codex.ai/code) when working with code in t
 `envctl` is a first-class **meta** peer member — the **agentic environment manager for the
 whole meta workspace**. It is a **pure-Rust Cargo workspace** (8 crates) that declaratively
 brings every tool, dependency, provider, vendor, CLI, and config to a declared state and
-installs it **into meta** (`$META_ROOT/.local/{bin,lib,share,state,cache,tmp,opt}`,
+installs it **into meta** (`$META_ROOT/{usr/bin,usr/lib,usr/share,etc,var/lib,var/cache,var/log,var/tmp,opt} plus XDG meta-home roots`,
 legacy `meta/.toolchains/`, `$META_ROOT`), with **no system-depth or user-global installs** —
 anything meta uses lives in meta. Its deployment target today is a dual-RTX-5090 Ubuntu 26.04
 workstation. Two halves share one engine:
@@ -61,7 +61,7 @@ bash ci/gates/enable.sh         # secretd systemd-unit enable invariant
 bash ci/gates/p7.sh             # .handoff Tier-A p7-conformance: schema tags + ledger residency (ADR-0004 §3)
 bash ci/gates/kdf-feature-off.sh # test-speed Argon2 floor must be off by default (TASK-0032)
 bash ci/gates/agent-env.sh      # agent-env.yaml ↔ agent-env.lock no-drift (TASK-0040)
-bash ci/gates/meta-local-policy.sh # active install sources target $META_ROOT/.local only; single real-home .local bridge
+bash ci/gates/meta-local-policy.sh # active install sources target $META_ROOT FHS/XDG only; single real-home .local bridge
 bash ci/gates/cargo-audit.sh    # RustSec advisories; fails vulnerable tonic/hyper regressions
 bash ci/gates/loop-state.sh     # forge-loop counter integrity: ints, cadence>=1, cycles_total monotonic & >= last_wrapup (TASK-0041)
 bash ci/gates/harness-scripts.sh # Feature-Forge harness tooling safety (merge-driver + reaper + loop-state-gate invariants)
@@ -139,7 +139,7 @@ JS imports) — those are **wrong for this repo**.
 
 ## meta mission-control dashboard (zellij layout)
 
-The `dashboard` component (`manifest/dashboard.toml`) installs two launchers on `$META_ROOT/.local/bin`:
+The `dashboard` component (`manifest/dashboard.toml`) installs two launchers on `$META_ROOT/usr/bin`:
 - `envctl-dashboard-pane <repo>` — called by every pane in the generated zellij
   `mission-control.kdl` layout.
 - `envctl-open-Codex` — run by a human inside a pane when they actually want a

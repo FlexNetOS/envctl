@@ -56,7 +56,7 @@ use envctl_engine::{
     color = clap::ColorChoice::Auto,
     styles = clap_styles(),
     about = "meta's agentic environment manager — installs every tool into meta's .local layout",
-    long_about = "A declarative, GPU-aware, agentic environment manager for the whole meta workspace, written in Rust.\n\nenvctl is a first-class meta peer member: it brings every tool, dependency, provider, vendor, CLI, and config to a declared state and installs it INTO meta's system-shaped local prefix ($META_ROOT/.local/{bin,lib,share,state,cache,tmp,opt}) — no system-depth or user-global installs, so anything meta uses lives in meta and travels wherever meta is cloned. Existing .toolchains managers remain a legacy compatibility prefix while manifests migrate. It works from TOML components whose lifecycle hooks wrap proven scripts: detect, install, fix, reset, and wire-in toolchains, repos, and the agent environment. One shared engine drives both the CLI and the GUI, so they never diverge. Destructive verbs (reset / auto-fix / self uninstall) are PREVIEW by default and fail-closed — they refuse unless they can prove the operation is safe and you pass the explicit act flag (--apply / --build / --confirm). Deployment target today: a GPU-aware dual-RTX-5090 Ubuntu 26.04 workstation.",
+    long_about = "A declarative, GPU-aware, agentic environment manager for the whole meta workspace, written in Rust.\n\nenvctl is a first-class meta peer member: it brings every tool, dependency, provider, vendor, CLI, and config to a declared state and installs it INTO meta's standard $META_ROOT layout ($META_ROOT/usr, $META_ROOT/etc, $META_ROOT/var, $META_ROOT/opt, plus meta-home XDG roots) — no system-depth or user-global installs, so anything meta uses lives in meta and travels wherever meta is cloned. Existing .toolchains managers remain a legacy compatibility prefix while manifests migrate. It works from TOML components whose lifecycle hooks wrap proven scripts: detect, install, fix, reset, and wire-in toolchains, repos, and the agent environment. One shared engine drives both the CLI and the GUI, so they never diverge. Destructive verbs (reset / auto-fix / self uninstall) are PREVIEW by default and fail-closed — they refuse unless they can prove the operation is safe and you pass the explicit act flag (--apply / --build / --confirm). Deployment target today: a GPU-aware dual-RTX-5090 Ubuntu 26.04 workstation.",
     after_help = envctl_examples!(
         "envctl auto-detect",
         "envctl doctor",
@@ -447,7 +447,7 @@ enum Cmd {
         meta_file: Option<std::path::PathBuf>,
         /// ALSO emit the meta-hosted .local layout, legacy toolchain prefix
         /// exports, and PATH. Manager stores still point at `$META_ROOT/.toolchains`
-        /// until manifests migrate, but envctl-owned exposure begins at `.local/bin`.
+        /// until manifests migrate, but envctl-owned exposure begins at `usr/bin`.
         #[arg(long)]
         toolchains: bool,
         /// Instead of emitting exports, read FILE and print it with `${META_ROOT}`
@@ -457,9 +457,9 @@ enum Cmd {
         #[arg(long, value_name = "FILE")]
         materialize: Option<std::path::PathBuf>,
     },
-    /// Adopt existing installs/configs into envctl's canonical `$META_ROOT/.local` topology.
+    /// Adopt existing installs/configs into envctl's canonical `$META_ROOT` FHS/XDG topology.
     #[command(
-        long_about = "Migrate/adopt an existing meta machine into envctl's canonical `$META_ROOT/.local/{bin,lib,share,state,cache,tmp,opt}` layout. scan/plan/verify are read-only. apply previews unless --apply is passed. purge is strict upgrade-only: it refuses deletion unless a legacy path already has verified canonical parity/adoption evidence. Shared meta substrates (loop_lib / meta_plugin_protocol) and agent/Codex configs are protected, not removed or rebuilt blindly.",
+        long_about = "Migrate/adopt an existing meta machine into envctl's canonical `$META_ROOT` FHS/XDG layout (`usr`, `etc`, `var`, `opt`, and meta-home XDG roots). scan/plan/verify are read-only. apply previews unless --apply is passed. purge is strict upgrade-only: it refuses deletion unless a legacy path already has verified canonical parity/adoption evidence. Shared meta substrates (loop_lib / meta_plugin_protocol) and agent/Codex configs are protected, not removed or rebuilt blindly.",
         after_help = envctl_examples!(
             "envctl migrate scan",
             "envctl migrate plan --scope component-registry",
@@ -543,7 +543,7 @@ enum Cmd {
 enum MigrateCmd {
     /// Read the meta layout, manifests, agent assets, and protected substrates.
     #[command(
-        long_about = "Read-only scan of the existing meta checkout: canonical .local directories, manifest references to legacy/global paths, agent/Codex assets, and shared meta substrates such as loop_lib.",
+        long_about = "Read-only scan of the existing meta checkout: canonical FHS/XDG directories, manifest references to legacy/global paths, agent/Codex assets, and shared meta substrates such as loop_lib.",
         after_help = envctl_examples!(
             "envctl migrate scan",
             "envctl migrate scan --scope layout --scope meta-substrates",
@@ -558,7 +558,7 @@ enum MigrateCmd {
     },
     /// Build the migration/adoption worklist without writing anything.
     #[command(
-        long_about = "Read-only plan for adopting old paths into the canonical meta-hosted .local topology. The plan is the same engine report as scan, but with the verb set to plan for automation.",
+        long_about = "Read-only plan for adopting old paths into the canonical meta-hosted FHS/XDG topology. The plan is the same engine report as scan, but with the verb set to plan for automation.",
         after_help = envctl_examples!(
             "envctl migrate plan",
             "envctl migrate plan --scope component-registry",
@@ -572,7 +572,7 @@ enum MigrateCmd {
     },
     /// Materialize canonical meta directories. Preview unless --apply is set.
     #[command(
-        long_about = "Materialize the canonical `$META_ROOT/.local` directory structure and append a migration ledger entry. Without --apply this is a zero-write preview.",
+        long_about = "Materialize the canonical `$META_ROOT` FHS/XDG directory structure and append a migration ledger entry. Without --apply this is a zero-write preview.",
         after_help = envctl_examples!(
             "envctl migrate apply",
             "envctl migrate apply --apply",
@@ -1432,7 +1432,7 @@ pub struct RunArgs {
     /// Mint a one-off ephemeral bearer for this process.
     #[arg(long)]
     pub ephemeral: bool,
-    /// Skip loading the default ~/.config/env-ctl/relay.toml profile.
+    /// Skip loading the default envctl-managed `$META_ROOT/.config/env-ctl/relay.toml` profile.
     #[arg(long = "no-profile")]
     pub no_profile: bool,
     /// Use an explicit relay config path instead of the default.
@@ -2042,10 +2042,11 @@ fn run_env(
     }
 
     // The meta-hosted install layout (opt-in via --toolchains for now because
-    // this is the shell seam that mutates PATH). `.local/bin` is canonical for
-    // envctl-owned exposure; `.toolchains` remains a compatibility manager store.
+    // this is the shell seam that mutates PATH). `usr/bin` is canonical for
+    // envctl-owned exposure; `.local/bin` and `.toolchains` remain compatibility surfaces.
     let tc = layout.legacy_toolchains().to_string_lossy().to_string();
     let bin_dir = layout.bin().to_string_lossy().to_string();
+    let compat_local_bin = layout.local_bin().to_string_lossy().to_string();
     if json {
         let mut map = serde_json::json!({ "META_ROOT": meta_root, "META_FILE": meta_yaml });
         if toolchains {
@@ -2077,8 +2078,8 @@ fn run_env(
             println!("export {key}={}", sh_single_quote(&path.to_string_lossy()));
         }
         // Redirect each manager's install prefix INTO meta (ADR: meta-located
-        // toolchain prefix). Canonical exposure starts at `.local/bin`; legacy
-        // manager bins trail it for compatibility. PATH uses double quotes so
+        // toolchain prefix). Canonical exposure starts at `usr/bin`; the meta-home
+        // `.local/bin` bridge and legacy manager bins trail it for compatibility. PATH uses double quotes so
         // `$PATH` expands.
         println!(
             "export BUN_INSTALL={}",
@@ -2136,7 +2137,7 @@ fn run_env(
             "export HELIX_RUNTIME={}",
             sh_single_quote(&format!("{tc}/helix/runtime"))
         );
-        println!("export PATH=\"{bin_dir}:{tc}/.bun/bin:{tc}/cargo/bin:{tc}/uv/tools/bin:$PATH\"");
+        println!("export PATH=\"{bin_dir}:{compat_local_bin}:{tc}/.bun/bin:{tc}/cargo/bin:{tc}/uv/tools/bin:$PATH\"");
     }
     Ok(())
 }
@@ -3637,7 +3638,7 @@ fn print_doctor(engine: &Engine, json: bool) -> anyhow::Result<()> {
         .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
         .filter(|s| !s.is_empty());
     let driver_loaded = std::path::Path::new("/proc/driver/nvidia/version").exists();
-    let run_log = layout.state().join("envctl/envctl.log");
+    let run_log = layout.state().join("envctl.log");
     let log_exists = run_log.exists();
 
     if json {
