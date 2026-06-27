@@ -319,10 +319,10 @@ fn json_shapes_cover_detect_doctor_graph_and_registry() {
 #[test]
 fn secret_wrapper_forwards_frozen_argv_without_live_daemon() {
     let fx = Fixture::new();
-    let local_bin = fx.meta.join(".local/bin");
-    std::fs::create_dir_all(&local_bin).unwrap();
+    let bin_dir = fx.meta.join("usr/bin");
+    std::fs::create_dir_all(&bin_dir).unwrap();
     let log = fx.root.join("secretctl-argv.log");
-    let fake = local_bin.join("secretctl");
+    let fake = bin_dir.join("secretctl");
     std::fs::write(
         &fake,
         format!(
@@ -476,10 +476,9 @@ args = ["-c", "echo $META_ROOT/.toolchains/legacy && echo {legacy_home_local} &&
     assert_eq!(v["meta_root"], fx.meta.display().to_string());
     assert!(
         v["layout"].as_array().unwrap().iter().any(|entry| {
-            entry["key"] == "bin"
-                && entry["path"] == fx.meta.join(".local/bin").display().to_string()
+            entry["key"] == "bin" && entry["path"] == fx.meta.join("usr/bin").display().to_string()
         }),
-        "layout missing canonical meta .local/bin: {v}"
+        "layout missing canonical meta usr/bin: {v}"
     );
     let items = v["items"].as_array().unwrap();
     assert!(

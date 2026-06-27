@@ -179,8 +179,8 @@ test -d "$repo" || { echo "FATAL: workspace not found at $repo (set ENV_CTL_REPO
 cargo build --release --manifest-path "$repo/Cargo.toml" \
   -p envctl-secretd -p envctl-secretctl
 
-install -Dm755 "$repo/target/release/secretd"   "$META_ROOT/.local/bin/secretd"
-install -Dm755 "$repo/target/release/secretctl" "$META_ROOT/.local/bin/secretctl"
+install -Dm755 "$repo/target/release/secretd"   "$META_ROOT/usr/bin/secretd"
+install -Dm755 "$repo/target/release/secretctl" "$META_ROOT/usr/bin/secretctl"
 
 # XDG dirs, fail-closed perms (ARCHITECTURE.md layout). RUNTIME dir is created by the unit at start.
 install -d -m700 "$META_ROOT/.config/env-ctl"
@@ -433,7 +433,7 @@ to the child pid at swap (HF-8), allowlist + quota capped, re-checked at every s
 ```bash
 envctl reset env-ctl --apply               # disable + remove unit and bins; KEEPS the vault
 envctl reset env-ctl --apply --purge --confirm   # ALSO deletes vault.db/ca/audit (data_paths), after UUID re-verify
-envctl reset env-ctl --apply --keep-config       # remove daemon but keep ~/.config/env-ctl
+envctl reset env-ctl --apply --keep-config       # remove daemon but keep $META_ROOT/.config/env-ctl
 ```
 
 ---
@@ -541,7 +541,7 @@ a CI `control-types-not-in-edge` grep, and a strongly-preferred separate edge PR
 toward bearer-only (replay-bounded-by-scope-and-TTL) if it cannot hold a non-exportable key —
 push-model, per-task minting, and the bot-token/relay-bearer never co-locating in one process are
 the structural mitigations (SERVER-MODE.md §"Telegram"). **None of this is in the manifest** — it
-is daemon config under `~/.config/env-ctl`; the component just refrains from exposing it by default.
+is daemon config under `$META_ROOT/.config/env-ctl`; the component just refrains from exposing it by default.
 
 ---
 

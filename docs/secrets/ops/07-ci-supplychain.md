@@ -501,9 +501,9 @@ This is the deploy half of the doc. SERVER-MODE §7.2 lists the steps; here are 
 ### 8.1 Paths and modes (from ARCHITECTURE §125–127)
 
 ```
-~/.config/env-ctl/                 (0700)  config; relay-tls/{cert.pem,key.pem} (key 0600) — edge cert
-~/.local/share/env-ctl/            (0700)  vault.db (0600), ca/ca.pem (0644 public cert), ca/bundles/<tool>.pem
-~/.local/state/env-ctl/            (0700)  secretd.log, audit mirror (durable deny audit second home)
+$META_ROOT/.config/env-ctl/                 (0700)  config; relay-tls/{cert.pem,key.pem} (key 0600) — edge cert
+$META_ROOT/.local/share/env-ctl/            (0700)  vault.db (0600), ca/ca.pem (0644 public cert), ca/bundles/<tool>.pem
+$META_ROOT/.local/state/env-ctl/            (0700)  secretd.log, audit mirror (durable deny audit second home)
 $XDG_RUNTIME_DIR/env-ctl/          (0700)  control.sock (0600), relay-proxy bind config
 ```
 
@@ -519,7 +519,7 @@ After=default.target
 
 [Service]
 Type=notify                       # secretd uses sd_notify READY=1 after listeners + mlockall + USB-keyslot check
-ExecStart=%h/.local/bin/secretd --config %h/.config/env-ctl/secretd.toml
+ExecStart=%h/Desktop/meta/usr/bin/secretd --config %h/Desktop/meta/.config/env-ctl/secretd.toml
 # --- key-material hygiene (HF-4 / FS-S4) ---
 LimitCORE=0                       # no core dumps of the address space holding the DEK / real keys
 LimitMEMLOCK=infinity             # allow mlockall(MCL_CURRENT|MCL_FUTURE) of the whole address space
@@ -527,7 +527,7 @@ LimitMEMLOCK=infinity             # allow mlockall(MCL_CURRENT|MCL_FUTURE) of th
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only             # secretd writes only to its XDG dirs (granted below)
-ReadWritePaths=%h/.local/share/env-ctl %h/.local/state/env-ctl %t/env-ctl
+ReadWritePaths=%h/Desktop/meta/.local/share/env-ctl %h/Desktop/meta/.local/state/env-ctl %t/env-ctl
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
@@ -574,7 +574,7 @@ sync_url = "http://127.0.0.1:8081"   # loopback-only sqld; NEVER a public bind
 
 ### 8.4 Edge cert + reachability (SERVER-MODE §6, §7.2 step 3)
 
-- Edge SERVER cert is **publicly-trusted** (ACME/Let's Encrypt for a FQDN, or an org CA the phone/Telegram agent already trusts), loaded from `~/.config/env-ctl/relay-tls/{cert.pem,key.pem}` (key 0600). NEVER the local MITM CA (FS-S25 — enforced by the §1.2 grep).
+- Edge SERVER cert is **publicly-trusted** (ACME/Let's Encrypt for a FQDN, or an org CA the phone/Telegram agent already trusts), loaded from `$META_ROOT/.config/env-ctl/relay-tls/{cert.pem,key.pem}` (key 0600). NEVER the local MITM CA (FS-S25 — enforced by the §1.2 grep).
 - Home-box default: a **reverse tunnel from a small public VPS to the on-box daemon**, with public TLS terminated **on-box** (so DPoP/EKM binding survives, §4 of SERVER-MODE). No MITM-CA fallback exists by design (FS-S25); a lapsed cert fails closed (refuse remote clients).
 
 ### 8.5 Deploy smoke test (SERVER-MODE §3.4, §7.2 step 6) — a CI-adjacent ops gate

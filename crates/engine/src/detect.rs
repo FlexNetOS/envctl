@@ -443,10 +443,10 @@ mod tests {
     use std::time::{SystemTime, UNIX_EPOCH};
 
     #[test]
-    fn meta_boundary_accepts_meta_local_bin_symlink_into_meta_root() {
-        let root = temp_root("accepts-meta-local-bin-symlink");
+    fn meta_boundary_accepts_meta_usr_bin_symlink_into_meta_root() {
+        let root = temp_root("accepts-meta-usr-bin-symlink");
         let meta = root.join("meta");
-        let local_bin = meta.join(".local/bin");
+        let local_bin = meta.join("usr/bin");
         let cargo_bin = meta.join(".toolchains/cargo/bin");
         std::fs::create_dir_all(meta.join("target/release")).unwrap();
         std::fs::create_dir_all(&local_bin).unwrap();
@@ -462,10 +462,10 @@ mod tests {
     }
 
     #[test]
-    fn meta_boundary_accepts_meta_local_bin_real_file_inside_meta_root() {
-        let root = temp_root("accepts-meta-local-bin-real-file");
+    fn meta_boundary_accepts_meta_usr_bin_real_file_inside_meta_root() {
+        let root = temp_root("accepts-meta-usr-bin-real-file");
         let meta = root.join("meta");
-        let local_bin = meta.join(".local/bin");
+        let local_bin = meta.join("usr/bin");
         let cargo_bin = meta.join(".toolchains/cargo/bin");
         std::fs::create_dir_all(&meta).unwrap();
         std::fs::create_dir_all(&local_bin).unwrap();
@@ -483,7 +483,7 @@ mod tests {
         let root = temp_root("refuses-foreign-symlink");
         let meta = root.join("meta");
         let outside = root.join("outside");
-        let local_bin = meta.join(".local/bin");
+        let local_bin = meta.join("usr/bin");
         let cargo_bin = meta.join(".toolchains/cargo/bin");
         std::fs::create_dir_all(&meta).unwrap();
         std::fs::create_dir_all(&outside).unwrap();

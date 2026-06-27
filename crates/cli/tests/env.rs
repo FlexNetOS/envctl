@@ -1,9 +1,10 @@
 //! Integration tests for `envctl env --toolchains`. Drives the real binary
 //! against a fixture `.meta.yaml` and asserts the meta-hosted install layout:
-//! canonical exposure/state under `.local/{bin,lib,share,state,cache,tmp,opt}`,
-//! plus legacy manager stores under `.toolchains`. In particular RUSTUP_HOME
-//! travels with CARGO_HOME so an `eval "$(envctl env --toolchains)"` shell points
-//! rustup at the meta-owned compatibility store, not user-global ~/.rustup.
+//! canonical exposure/state under `$META_ROOT/usr`, `$META_ROOT/var`, and
+//! `$META_ROOT/opt`, meta-home XDG roots under `$META_ROOT`, plus legacy manager
+//! stores under `.toolchains`. In particular RUSTUP_HOME travels with CARGO_HOME
+//! so an `eval "$(envctl env --toolchains)"` shell points rustup at the
+//! meta-owned compatibility store, not user-global ~/.rustup.
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -45,27 +46,47 @@ fn run(root: &Path, json: bool) -> String {
     String::from_utf8(out.stdout).unwrap()
 }
 
-/// Shell form exposes the canonical meta `.local` layout and pairs RUSTUP_HOME
+/// Shell form exposes the canonical meta FHS/XDG layout and pairs RUSTUP_HOME
 /// with CARGO_HOME under the legacy `.toolchains/` manager store. Without
 /// RUSTUP_HOME the eval-seam silently leaks to ~/.rustup.
 #[test]
-fn toolchains_shell_exports_meta_local_layout_and_rustup_home() {
+fn toolchains_shell_exports_meta_root_layout_and_rustup_home() {
     let root = fixture_dir();
     let r = root.to_string_lossy();
     let out = run(&root, false);
     assert!(
         out.contains(&format!("export ENVCTL_LOCAL='{r}/.local'")),
-        "missing canonical meta .local prefix:\n{out}"
+        "missing meta-home .local compatibility prefix:\n{out}"
     );
     assert!(
-        out.contains(&format!("export ENVCTL_BIN_DIR='{r}/.local/bin'")),
-        "missing canonical meta .local/bin export:\n{out}"
+        out.contains(&format!("export ENVCTL_BIN_DIR='{r}/usr/bin'")),
+        "missing canonical meta usr/bin export:\n{out}"
+    );
+    assert!(
+        out.contains(&format!("export ENVCTL_LOCAL_BIN='{r}/.local/bin'")),
+        "missing compatibility meta .local/bin export:\n{out}"
     );
     assert!(
         out.contains(&format!(
-            "export ENVCTL_REPO_STORE='{r}/.local/share/envctl/repos'"
+            "export ENVCTL_REPO_STORE='{r}/var/lib/envctl/repos'"
         )),
         "missing canonical envctl repo store export:\n{out}"
+    );
+    assert!(
+        out.contains(&format!("export ENVCTL_XDG_CONFIG_HOME='{r}/.config'")),
+        "missing meta XDG config export:\n{out}"
+    );
+    assert!(
+        out.contains(&format!("export ENVCTL_XDG_DATA_HOME='{r}/.local/share'")),
+        "missing meta XDG data export:\n{out}"
+    );
+    assert!(
+        out.contains(&format!("export ENVCTL_XDG_STATE_HOME='{r}/.local/state'")),
+        "missing meta XDG state export:\n{out}"
+    );
+    assert!(
+        out.contains(&format!("export ENVCTL_XDG_CACHE_HOME='{r}/.cache'")),
+        "missing meta XDG cache export:\n{out}"
     );
     assert!(
         out.contains(&format!(
@@ -103,16 +124,16 @@ fn toolchains_shell_exports_meta_local_layout_and_rustup_home() {
     );
     assert!(
         out.contains(&format!(
-            "export PATH=\"{r}/.local/bin:{r}/.toolchains/.bun/bin:{r}/.toolchains/cargo/bin:{r}/.toolchains/uv/tools/bin:$PATH\""
+            "export PATH=\"{r}/usr/bin:{r}/.local/bin:{r}/.toolchains/.bun/bin:{r}/.toolchains/cargo/bin:{r}/.toolchains/uv/tools/bin:$PATH\""
         )),
-        "PATH must put canonical meta .local/bin ahead of legacy manager bins:\n{out}"
+        "PATH must put canonical meta usr/bin ahead of compatibility bins:\n{out}"
     );
 }
 
 /// JSON form carries the layout variables and RUSTUP_HOME too, so machine
 /// consumers see the same seam.
 #[test]
-fn toolchains_json_carries_meta_local_layout_and_rustup_home() {
+fn toolchains_json_carries_meta_root_layout_and_rustup_home() {
     let root = fixture_dir();
     let out = run(&root, true);
     let v: serde_json::Value = serde_json::from_str(&out).unwrap();
@@ -124,13 +145,38 @@ fn toolchains_json_carries_meta_local_layout_and_rustup_home() {
     );
     assert_eq!(
         v["ENVCTL_BIN_DIR"].as_str(),
-        Some(format!("{r}/.local/bin").as_str()),
+        Some(format!("{r}/usr/bin").as_str()),
         "json ENVCTL_BIN_DIR"
     );
     assert_eq!(
+        v["ENVCTL_LOCAL_BIN"].as_str(),
+        Some(format!("{r}/.local/bin").as_str()),
+        "json ENVCTL_LOCAL_BIN"
+    );
+    assert_eq!(
         v["ENVCTL_REPO_STORE"].as_str(),
-        Some(format!("{r}/.local/share/envctl/repos").as_str()),
+        Some(format!("{r}/var/lib/envctl/repos").as_str()),
         "json ENVCTL_REPO_STORE"
+    );
+    assert_eq!(
+        v["ENVCTL_XDG_CONFIG_HOME"].as_str(),
+        Some(format!("{r}/.config").as_str()),
+        "json ENVCTL_XDG_CONFIG_HOME"
+    );
+    assert_eq!(
+        v["ENVCTL_XDG_DATA_HOME"].as_str(),
+        Some(format!("{r}/.local/share").as_str()),
+        "json ENVCTL_XDG_DATA_HOME"
+    );
+    assert_eq!(
+        v["ENVCTL_XDG_STATE_HOME"].as_str(),
+        Some(format!("{r}/.local/state").as_str()),
+        "json ENVCTL_XDG_STATE_HOME"
+    );
+    assert_eq!(
+        v["ENVCTL_XDG_CACHE_HOME"].as_str(),
+        Some(format!("{r}/.cache").as_str()),
+        "json ENVCTL_XDG_CACHE_HOME"
     );
     assert_eq!(
         v["ENVCTL_LEGACY_TOOLCHAINS"].as_str(),

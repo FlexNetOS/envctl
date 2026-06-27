@@ -67,7 +67,7 @@ parallel-repo phase.
 1. **At-or-below cwd:** `$PWD/.env-ctl`, then walk DOWN is N/A — only the cwd file is honored
    without trust config. A file strictly *below* cwd is never auto-discovered.
 2. **Walk UP toward `/` only inside an operator-trusted root.** The allowlist lives in
-   `~/.config/env-ctl/trusted-roots` (ARCHITECTURE.md §11 names this the
+   `$META_ROOT/.config/env-ctl/trusted-roots` (ARCHITECTURE.md §11 names this the
    "trusted-profile-roots allowlist"). A profile in an ancestor dir that is NOT under a trusted
    root is **refused**, not silently honored.
 3. **`--profile <path>`** loads exactly that file (still gated for named relays).
@@ -78,7 +78,7 @@ parallel-repo phase.
 > locked. The recommendation below (a newline-delimited path allowlist) is a **proposal**, not a
 > ratified format.
 
-**Proposed `~/.config/env-ctl/trusted-roots`:**
+**Proposed `$META_ROOT/.config/env-ctl/trusted-roots`:**
 
 ```
 # env-ctl trusted profile roots — one absolute path per line; '#' comments.
@@ -312,7 +312,7 @@ git     -> GIT_SSL_CAINFO=<ca.pem>
 generic -> REQUESTS_CA_BUNDLE, CURL_CA_BUNDLE, GIT_SSL_CAINFO, NODE_EXTRA_CA_CERTS, SSL_CERT_FILE
 ```
 
-`<ca.pem>` is the public CA cert at `~/.local/share/env-ctl/ca/ca.pem` (0644, public cert only —
+`<ca.pem>` is the public CA cert at `$META_ROOT/.local/share/env-ctl/ca/ca.pem` (0644, public cert only —
 ARCHITECTURE.md §11). The CA private key stays sealed under the DEK and never touches disk in clear
 (ARCHITECTURE.md §8).
 
@@ -324,7 +324,7 @@ monolithic bundle is NEVER hand-edited:
 ```bash
 # APPLY (--apply --confirm): backup, write an OWNED discrete file, regenerate.
 cp /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt.bak-$(date +%s)
-install -m 0644 ~/.local/share/env-ctl/ca/ca.pem \
+install -m 0644 $META_ROOT/.local/share/env-ctl/ca/ca.pem \
   /usr/local/share/ca-certificates/env-ctl-local-mitm-ca.crt
 update-ca-certificates
 
@@ -368,7 +368,7 @@ After=default.target
 
 [Service]
 Type=notify
-ExecStart=%h/.local/bin/secretd --store-profile embedded
+ExecStart=%h/Desktop/meta/usr/bin/secretd --store-profile embedded
 # Control socket lives under the per-user runtime dir; 0700 dir / 0600 sock.
 RuntimeDirectory=env-ctl
 RuntimeDirectoryMode=0700
@@ -379,7 +379,7 @@ NoNewPrivileges=true
 MemoryDenyWriteExecute=true
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=%h/.local/share/env-ctl %h/.local/state/env-ctl
+ReadWritePaths=%h/Desktop/meta/.local/share/env-ctl %h/Desktop/meta/.local/state/env-ctl
 PrivateTmp=true
 Restart=on-failure
 
@@ -420,7 +420,7 @@ WantedBy=default.target
 ## 7. Open questions (carry into Phase 6 implementation)
 
 1. **Trusted-root config UX (OI-3, NOT locked).** Format/location of
-   `~/.config/env-ctl/trusted-roots`, per-root vs glob semantics, and how a root is enrolled
+   `$META_ROOT/.config/env-ctl/trusted-roots`, per-root vs glob semantics, and how a root is enrolled
    (CLI verb? interactive on first walk-up?) are unspecified. §1.2's allowlist file is a proposal.
 2. **Anthropic rate-limit header policy (research/08 §9).** Pass through verbatim vs rewrite when
    env-ctl imposes a stricter quota than the upstream — undecided.

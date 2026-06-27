@@ -19,8 +19,8 @@ use zeroize::Zeroizing;
 
 /// Resolve the `secretctl` binary, fail-closed (returns `None` if it cannot be found):
 /// (a) alongside the current executable when that executable is already under `$META_ROOT`,
-/// (b) `$META_ROOT/.local/bin/secretctl` (the canonical envctl exposure prefix),
-/// (c) `$META_ROOT/.local/lib/envctl/secrets/bin/secretctl` (private canonical install),
+/// (b) `$META_ROOT/usr/bin/secretctl` (the canonical envctl exposure prefix),
+/// (c) `$META_ROOT/usr/libexec/envctl/secrets/bin/secretctl` (private canonical install),
 /// (d) `$META_ROOT/.toolchains/secrets/bin/secretctl` (legacy manifest prefix), and
 /// (e) the first `secretctl` on `PATH` whose resolved target is still under `$META_ROOT`.
 /// Host-global user-local and Cargo-home copies are intentionally ignored.
@@ -86,8 +86,8 @@ pub fn run_secretctl(
             verb,
             json_stdout: String::new(),
             stderr: "secretctl not installed under $META_ROOT (looked alongside the binary \
-                     when meta-hosted, in $META_ROOT/.local/bin, \
-                     $META_ROOT/.local/lib/envctl/secrets/bin, legacy \
+                     when meta-hosted, in $META_ROOT/usr/bin, \
+                     $META_ROOT/usr/libexec/envctl/secrets/bin, legacy \
                      $META_ROOT/.toolchains/secrets/bin, and meta-hosted PATH entries)"
                 .to_string(),
             code: None,
@@ -215,12 +215,12 @@ mod tests {
     }
 
     #[test]
-    fn resolve_secretctl_accepts_meta_local_target() {
+    fn resolve_secretctl_accepts_meta_usr_bin_target() {
         let _g = crate::test_env_lock();
-        let root = temp_root("accept-meta-local");
+        let root = temp_root("accept-meta-usr-bin");
         let home = root.join("home");
         let meta = root.join("meta");
-        let secretctl = meta.join(".local/bin/secretctl");
+        let secretctl = meta.join("usr/bin/secretctl");
         write_executable(&secretctl);
         let prev_path = std::env::var("PATH").ok();
         let prev_home = std::env::var("HOME").ok();

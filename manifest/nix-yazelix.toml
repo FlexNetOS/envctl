@@ -8,7 +8,7 @@ name = "Nix (Determinate, flakes)"
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/nix/bin/nix\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/nix\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/nix/bin/nix\")\" ] && [ -e /nix ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/nix/bin/nix\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/nix\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/nix/bin/nix\")\" ] && [ -e /nix ]"]
 [component.install]
 kind = "script"
 script = '''
@@ -17,32 +17,32 @@ M="${META_ROOT:?META_ROOT required}"
 if [ ! -e /nix ]; then
   curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
 fi
-install -d -m 755 "$M/.toolchains/nix/bin" "$META_ROOT/.local/bin"
+install -d -m 755 "$M/.toolchains/nix/bin" "$META_ROOT/usr/bin"
 src="$(readlink -f /nix/var/nix/profiles/default/bin/nix)"
 install -m 755 "$src" "$M/.toolchains/nix/bin/nix"
-ln -sfn "$M/.toolchains/nix/bin/nix" "$META_ROOT/.local/bin/nix"
+ln -sfn "$M/.toolchains/nix/bin/nix" "$META_ROOT/usr/bin/nix"
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/.local/bin:$PATH\"; [ \"$(readlink -f \"$(command -v nix)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/nix/bin/nix\")\" ] && nix --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/usr/bin:$PATH\"; [ \"$(readlink -f \"$(command -v nix)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/nix/bin/nix\")\" ] && nix --version"]
 [component.fix]
 kind = "script"
 script = '''
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 sudo systemctl restart nix-daemon 2>/dev/null || true
-install -d -m 755 "$M/.toolchains/nix/bin" "$META_ROOT/.local/bin"
+install -d -m 755 "$M/.toolchains/nix/bin" "$META_ROOT/usr/bin"
 src="$(readlink -f /nix/var/nix/profiles/default/bin/nix)"
 install -m 755 "$src" "$M/.toolchains/nix/bin/nix"
-ln -sfn "$M/.toolchains/nix/bin/nix" "$META_ROOT/.local/bin/nix"
+ln -sfn "$M/.toolchains/nix/bin/nix" "$META_ROOT/usr/bin/nix"
 "$M/.toolchains/nix/bin/nix" --version
 '''
 [component.remove]
 kind = "script"
-script = "M=\"${META_ROOT:?META_ROOT required}\"; t=\"$META_ROOT/.local/bin/nix\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/nix\" && rm -f \"$t\"; rm -rf \"$M/.toolchains/nix\""
+script = "M=\"${META_ROOT:?META_ROOT required}\"; t=\"$META_ROOT/usr/bin/nix\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/nix\" && rm -f \"$t\"; rm -rf \"$M/.toolchains/nix\""
 [component.wiring]
-path_entries = ["$META_ROOT/.local/bin"]
+path_entries = ["$META_ROOT/usr/bin"]
 
 
 [[component]]

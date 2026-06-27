@@ -42,8 +42,8 @@ if it does not start automatically.
 - `/usr/local/bin/yazelix-setup-launch.sh` (written by cloud-init `write_files`).
 - `~/.config/autostart/yazelix-setup.desktop` (first-login wizard autostart;
   the wizard deletes it on clean finish).
-- Wizard generates at runtime: `$META_ROOT/.local/bin/yazelix-gpu-verify.sh`,
-  `$META_ROOT/.local/bin/yazelix-gpu-verify-launch.sh`,
+- Wizard generates at runtime: `$META_ROOT/usr/bin/yazelix-gpu-verify.sh`,
+  `$META_ROOT/usr/bin/yazelix-gpu-verify-launch.sh`,
   `~/.config/autostart/yazelix-gpu-verify.desktop` (one-shot, self-disables).
 
 ## Pre-flight edits REQUIRED before flashing (in `autoinstall.yaml` `identity:`)
