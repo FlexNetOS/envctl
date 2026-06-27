@@ -49,21 +49,35 @@ ln -sfn "$DEST/bin/claude" "$META_ROOT/.local/bin/claude"
 
 [[component]]
 id = "codex-cli"
-name = "Codex CLI (meta toolchain install; source build preferred)"
+name = "Codex CLI (meta toolchain; pinned upstream release rust-v0.142.0, source-build opt-in)"
 requires = ["rustup", "bun", "wild-linker"]
+# Pinned, VERSIONED install into $META_ROOT/.toolchains/openai-codex/<version>/ with a stable
+# `current -> <version>` indirection, exposed as `codex` via the meta-local single bridge. The
+# DEFAULT install path downloads the pinned upstream release (static musl tarball) so the version
+# is deterministic and portable. Set CODEX_BUILD_FROM_SOURCE=1 to instead build from a local
+# $M/codex/codex-rs checkout (wild-linker-accelerated) — the opt-in path for future in-place
+# upgrades. Override the pin with CODEX_VERSION=<x.y.z>. The install/fix hooks perform a
+# strict-upgrade swap: the legacy flat $M/.toolchains/codex install is archived (never deleted)
+# only AFTER the new pinned binary verifies with `--version`.
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; dest="$M/.toolchains/codex/bin/codex"; meta_link="$M/.local/bin/codex"; user_link="$META_ROOT/.local/bin/codex"; [ -x "$dest" ] && [ "$(readlink -f "$meta_link" 2>/dev/null)" = "$(readlink -f "$dest")" ] && [ "$(readlink -f "$user_link" 2>/dev/null)" = "$(readlink -f "$dest")" ]''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; VER="${CODEX_VERSION:-0.142.0}"; vdir="$M/.toolchains/openai-codex/${VER}"; dest="$vdir/bin/codex"; cur="$M/.toolchains/openai-codex/current/bin/codex"; link="$META_ROOT/.local/bin/codex"; rd() { readlink -f "$1" 2>/dev/null; }; [ -x "$dest" ] && [ "$(rd "$cur")" = "$(rd "$dest")" ] && [ "$(rd "$link")" = "$(rd "$dest")" ]''']
 [component.install]
 kind = "script"
 script = '''
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-DEST="$M/.toolchains/codex"
-META_BIN="$M/.local/bin"
-USER_BIN="$META_ROOT/.local/bin"
-if [ -d "$M/codex/codex-rs/cli" ]; then
+ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
+VER="${CODEX_VERSION:-0.142.0}"
+BASE="$M/.toolchains/openai-codex"
+CUR="$BASE/current"
+LINK="$META_ROOT/.local/bin/codex"
+if [ "${CODEX_BUILD_FROM_SOURCE:-0}" = "1" ] && [ -d "$M/codex/codex-rs/cli" ]; then
+  # Opt-in: build from the local checkout (future portable in-place upgrade path). Linker
+  # acceleration is provided by the wild-linker component (Epic H TASK-0054): it wires
+  # clang + --ld-path=wild via the meta-root $M/.cargo/config.toml, which this cargo build
+  # (run under the meta tree) inherits automatically. mold dropped (TASK-0070).
   export CARGO_HOME="$M/.toolchains/cargo"
   export PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"
   jobs="${CODEX_CARGO_JOBS:-$(nproc --all)}"
@@ -71,45 +85,65 @@ if [ -d "$M/codex/codex-rs/cli" ]; then
   export CARGO_PROFILE_RELEASE_LTO="${CARGO_PROFILE_RELEASE_LTO:-false}"
   export CARGO_PROFILE_RELEASE_CODEGEN_UNITS="${CARGO_PROFILE_RELEASE_CODEGEN_UNITS:-$jobs}"
   export CARGO_PROFILE_RELEASE_INCREMENTAL="${CARGO_PROFILE_RELEASE_INCREMENTAL:-true}"
-  # Linker acceleration is provided by the wild-linker component (Epic H TASK-0054): it wires
-  # clang + --ld-path=wild via the meta-root $M/.cargo/config.toml, which this cargo build
-  # (run under the meta tree) inherits automatically. mold dropped (TASK-0070) — setting a
-  # -fuse-ld=mold RUSTFLAGS here would override (and conflict with) that wild config.
   cargo build --release -p codex-cli --jobs "$jobs" --timings --manifest-path "$M/codex/codex-rs/Cargo.toml"
+  VER="src-$(git -C "$M/codex" rev-parse --short HEAD 2>/dev/null || echo unknown)"
   src="$M/codex/codex-rs/target/release/codex"
-  install -d -m 755 "$DEST/bin"
-  install -m 755 "$src" "$DEST/bin/codex"
 else
-  export BUN_INSTALL="$M/.toolchains/.bun"
-  export PATH="$BUN_INSTALL/bin:$PATH"
-  bun install -g @openai/codex
-  src="$BUN_INSTALL/bin/codex"
-  install -d -m 755 "$DEST/bin"
-  ln -sfn "$src" "$DEST/bin/codex"
+  # Default: pinned upstream release (static musl) via the authenticated gh-fetch resolver. The
+  # explicit pinned URL is used directly (NOT envctl_gh_release_download, whose fallback resolves
+  # `latest` and would defeat the pin).
+  tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+  URL="https://github.com/openai/codex/releases/download/rust-v${VER}/codex-x86_64-unknown-linux-musl.tar.gz"
+  envctl_gh_curl "$URL" -o "$tmp/codex.tgz"
+  tar -xzf "$tmp/codex.tgz" -C "$tmp"
+  src="$(find "$tmp" -type f \( -name codex -o -name 'codex-*-linux-musl' \) | head -1)"
+  [ -n "$src" ] && [ -f "$src" ] || { echo "codex: no binary found in release tarball" >&2; exit 1; }
 fi
-install -d -m 755 "$META_BIN" "$USER_BIN"
-ln -sfn "$DEST/bin/codex" "$META_BIN/codex"
-ARCH="$M/.local/archive/home-links-$(date -u +%Y-%m-%d)"
-if [ -e "$USER_BIN/codex" ] && [ ! -L "$USER_BIN/codex" ]; then
-  install -d -m 755 "$ARCH/.local/bin"
-  mv "$USER_BIN/codex" "$ARCH/.local/bin/codex"
+VDIR="$BASE/${VER}"
+install -d -m 755 "$VDIR/bin"
+install -m 755 "$src" "$VDIR/bin/codex"
+ln -sfn "$VER" "$CUR"
+install -d -m 755 "$META_ROOT/.local/bin"
+# Single bin link (gh/mise pattern) under $META_ROOT/.local/bin only. The real-home
+# .local is served by the home-local-single-link bridge, so no per-tool home link is
+# created. Archive a pre-existing non-symlink (a copied binary) before replacing it.
+if [ -e "$LINK" ] && [ ! -L "$LINK" ]; then
+  ARCH="$M/.local/archive/home-links-$(date -u +%Y-%m-%d)/.local/bin"
+  install -d -m 755 "$ARCH"
+  mv "$LINK" "$ARCH/codex"
   echo "archived copy: codex"
 fi
-ln -sfn "$META_BIN/codex" "$USER_BIN/codex"
+ln -sfn "$CUR/bin/codex" "$LINK"
+# Strict-upgrade swap: retire the legacy flat install ONLY after the new pinned binary runs.
+if "$VDIR/bin/codex" --version >/dev/null 2>&1; then
+  if [ -d "$M/.toolchains/codex" ]; then
+    FLATARCH="$M/.local/archive/codex-flat-$(date -u +%Y-%m-%d)"
+    install -d -m 755 "$FLATARCH"
+    mv "$M/.toolchains/codex" "$FLATARCH/codex"
+    echo "archived legacy flat install: .toolchains/codex -> $FLATARCH/codex"
+  fi
+  BUN_INSTALL="$M/.toolchains/.bun"
+  [ -x "$BUN_INSTALL/bin/bun" ] && PATH="$BUN_INSTALL/bin:$PATH" bun remove -g @openai/codex >/dev/null 2>&1 || true
+else
+  echo "codex: new pinned binary failed --version; legacy install left in place" >&2
+  exit 1
+fi
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export CARGO_HOME="$M/.toolchains/cargo"; export BUN_INSTALL="$M/.toolchains/.bun"; export PATH="$META_ROOT/.local/bin:$M/.local/bin:$CARGO_HOME/bin:$BUN_INSTALL/bin:$PATH"; dest="$M/.toolchains/codex/bin/codex"; [ -x "$dest" ] && [ "$(readlink -f "$(command -v codex)" 2>/dev/null)" = "$(readlink -f "$dest")" ] && codex --version''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export PATH="$META_ROOT/.local/bin:$M/.local/bin:$PATH"; cur="$M/.toolchains/openai-codex/current/bin/codex"; [ -x "$cur" ] && [ "$(readlink -f "$(command -v codex)" 2>/dev/null)" = "$(readlink -f "$cur")" ] && codex --version''']
 [component.fix]
 kind = "script"
 script = '''
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-DEST="$M/.toolchains/codex"
-META_BIN="$M/.local/bin"
-USER_BIN="$META_ROOT/.local/bin"
-if [ -d "$M/codex/codex-rs/cli" ]; then
+ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
+VER="${CODEX_VERSION:-0.142.0}"
+BASE="$M/.toolchains/openai-codex"
+CUR="$BASE/current"
+LINK="$META_ROOT/.local/bin/codex"
+if [ "${CODEX_BUILD_FROM_SOURCE:-0}" = "1" ] && [ -d "$M/codex/codex-rs/cli" ]; then
   export CARGO_HOME="$M/.toolchains/cargo"
   export PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"
   jobs="${CODEX_CARGO_JOBS:-$(nproc --all)}"
@@ -117,30 +151,38 @@ if [ -d "$M/codex/codex-rs/cli" ]; then
   export CARGO_PROFILE_RELEASE_LTO="${CARGO_PROFILE_RELEASE_LTO:-false}"
   export CARGO_PROFILE_RELEASE_CODEGEN_UNITS="${CARGO_PROFILE_RELEASE_CODEGEN_UNITS:-$jobs}"
   export CARGO_PROFILE_RELEASE_INCREMENTAL="${CARGO_PROFILE_RELEASE_INCREMENTAL:-true}"
-  # Linker acceleration is provided by the wild-linker component (Epic H TASK-0054): it wires
-  # clang + --ld-path=wild via the meta-root $M/.cargo/config.toml, which this cargo build
-  # (run under the meta tree) inherits automatically. mold dropped (TASK-0070) — setting a
-  # -fuse-ld=mold RUSTFLAGS here would override (and conflict with) that wild config.
   cargo build --release -p codex-cli --jobs "$jobs" --timings --manifest-path "$M/codex/codex-rs/Cargo.toml"
+  VER="src-$(git -C "$M/codex" rev-parse --short HEAD 2>/dev/null || echo unknown)"
   src="$M/codex/codex-rs/target/release/codex"
-  install -d -m 755 "$DEST/bin"
-  install -m 755 "$src" "$DEST/bin/codex"
 else
-  export BUN_INSTALL="$M/.toolchains/.bun"
-  export PATH="$BUN_INSTALL/bin:$PATH"
-  bun install -g @openai/codex
-  src="$BUN_INSTALL/bin/codex"
-  install -d -m 755 "$DEST/bin"
-  ln -sfn "$src" "$DEST/bin/codex"
+  tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+  URL="https://github.com/openai/codex/releases/download/rust-v${VER}/codex-x86_64-unknown-linux-musl.tar.gz"
+  envctl_gh_curl "$URL" -o "$tmp/codex.tgz"
+  tar -xzf "$tmp/codex.tgz" -C "$tmp"
+  src="$(find "$tmp" -type f \( -name codex -o -name 'codex-*-linux-musl' \) | head -1)"
+  [ -n "$src" ] && [ -f "$src" ] || { echo "codex: no binary found in release tarball" >&2; exit 1; }
 fi
-install -d -m 755 "$META_BIN" "$USER_BIN"
-ln -sfn "$DEST/bin/codex" "$META_BIN/codex"
-ln -sfn "$META_BIN/codex" "$USER_BIN/codex"
+VDIR="$BASE/${VER}"
+install -d -m 755 "$VDIR/bin"
+install -m 755 "$src" "$VDIR/bin/codex"
+ln -sfn "$VER" "$CUR"
+install -d -m 755 "$META_ROOT/.local/bin"
+if [ -e "$LINK" ] && [ ! -L "$LINK" ]; then
+  ARCH="$M/.local/archive/home-links-$(date -u +%Y-%m-%d)/.local/bin"
+  install -d -m 755 "$ARCH"; mv "$LINK" "$ARCH/codex"; echo "archived copy: codex"
+fi
+ln -sfn "$CUR/bin/codex" "$LINK"
+if "$VDIR/bin/codex" --version >/dev/null 2>&1 && [ -d "$M/.toolchains/codex" ]; then
+  FLATARCH="$M/.local/archive/codex-flat-$(date -u +%Y-%m-%d)"
+  install -d -m 755 "$FLATARCH"
+  mv "$M/.toolchains/codex" "$FLATARCH/codex"
+  echo "archived legacy flat install: .toolchains/codex -> $FLATARCH/codex"
+fi
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export BUN_INSTALL="$M/.toolchains/.bun"; export PATH="$BUN_INSTALL/bin:$PATH"; bun remove -g @openai/codex || true; [ -L "$META_ROOT/.local/bin/codex" ] && rm "$META_ROOT/.local/bin/codex" || true; [ -L "$M/.local/bin/codex" ] && rm "$M/.local/bin/codex" || true; rm -f "$M/.toolchains/codex/bin/codex"''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; BUN_INSTALL="$M/.toolchains/.bun"; [ -x "$BUN_INSTALL/bin/bun" ] && PATH="$BUN_INSTALL/bin:$PATH" bun remove -g @openai/codex >/dev/null 2>&1 || true; for t in "$META_ROOT/.local/bin/codex" "$M/.local/bin/codex"; do [ -L "$t" ] && rm -f "$t"; done; rm -rf "$M/.toolchains/openai-codex"''']
 
 
 [[component]]

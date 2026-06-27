@@ -41,7 +41,7 @@ requires = ["home-config-links"]
 resolved = ""
 
 [components.codex-cli]
-content_hash = "e2014e719461c5ac"
+content_hash = "686f29b3fc67c650"
 requires = [
     "bun",
     "rustup",
