@@ -135,6 +135,8 @@ mkdir -p \
   "$mig_home/.java/.userPrefs/jetbrains/auth-tokens" \
   "$mig_home/.java/fonts/25.0.3" \
   "$mig_home/.pi/agent/sessions/--home-drdave-Desktop-meta-Archon--" \
+  "$mig_home/.n8n/nodes" \
+  "$mig_home/.n8n/storage" \
   "$mig_home/.nv/ComputeCache/0/7" \
   "$mig_home/.archon" \
   "$mig_home/.hermes" \
@@ -177,6 +179,15 @@ printf 'session event\n' >"$mig_home/.pi/agent/sessions/--home-drdave-Desktop-me
 chmod 700 "$mig_home/.pi" "$mig_home/.pi/agent" "$mig_home/.pi/agent/sessions/--home-drdave-Desktop-meta-Archon--"
 chmod 775 "$mig_home/.pi/agent/sessions"
 chmod 600 "$mig_home/.pi/agent/auth.json"
+printf 'n8n config placeholder\n' >"$mig_home/.n8n/config"
+printf 'sqlite-db\n' >"$mig_home/.n8n/database.sqlite"
+printf 'sqlite-shm\n' >"$mig_home/.n8n/database.sqlite-shm"
+printf 'sqlite-wal\n' >"$mig_home/.n8n/database.sqlite-wal"
+printf 'event-log\n' >"$mig_home/.n8n/n8nEventLog-3.log"
+printf '{"dependencies":{}}\n' >"$mig_home/.n8n/nodes/package.json"
+chmod 775 "$mig_home/.n8n" "$mig_home/.n8n/nodes" "$mig_home/.n8n/storage"
+chmod 600 "$mig_home/.n8n/config"
+chmod 664 "$mig_home/.n8n/n8nEventLog-3.log" "$mig_home/.n8n/nodes/package.json"
 printf 'cache-index\n' >"$mig_home/.nv/ComputeCache/index"
 printf 'compiled-kernel\n' >"$mig_home/.nv/ComputeCache/0/7/kernel.bin"
 chmod 700 "$mig_home/.nv" "$mig_home/.nv/ComputeCache" "$mig_home/.nv/ComputeCache/0" "$mig_home/.nv/ComputeCache/0/7"
@@ -208,6 +219,7 @@ grep -qx $'.jetbrains\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta
 grep -qx $'.meta\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/meta\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.java\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/java\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.pi\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/pi\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
+grep -qx $'.n8n\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/n8n\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.nv\tdirectory\treal-home-state\tcache\t'"$mig_meta"$'/.local/cache/nvidia\tmigrate-dir-to-meta-cache-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.gphoto\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.config/gphoto\tmigrate-dir-to-meta-config-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.archon\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/archon\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
@@ -277,6 +289,10 @@ if awk -F '\t' '$1 == ".java" { found=1 } END { exit !found }' "$tmp/unknown-app
 fi
 if awk -F '\t' '$1 == ".pi" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
   echo "unexpected unknown app-config report row for allow-listed .pi target" >&2
+  exit 1
+fi
+if awk -F '\t' '$1 == ".n8n" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
+  echo "unexpected unknown app-config report row for allow-listed .n8n target" >&2
   exit 1
 fi
 if awk -F '\t' '$1 == ".nv" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
@@ -411,6 +427,26 @@ test "$(stat -c %a "$mig_meta/.local/share/pi/agent/auth.json")" = "600"
 
 "$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/pi-post.tsv" --inventory-summary "$tmp/pi-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/pi-post.out" 2>"$tmp/pi-post.err"
 grep -qx $'.pi	symlink	already-meta	already-meta	'"$mig_meta"$'/.local/share/pi	none	n/a' "$tmp/pi-post.tsv"
+
+"$root/scripts/audit-meta-local-paths.sh" --migrate-dot .n8n --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-n8n-dry.out" 2>"$tmp/migrate-n8n-dry.err"
+grep -q 'DRY-RUN: would move .*\.n8n to .*\.local/share/n8n' "$tmp/migrate-n8n-dry.out"
+test -d "$mig_home/.n8n"
+test ! -e "$mig_meta/.local/share/n8n"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .n8n --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-n8n.out" 2>"$tmp/migrate-n8n.err"
+test "$(readlink -f "$mig_home/.n8n")" = "$mig_meta/.local/share/n8n"
+grep -Fqx 'n8n config placeholder' "$mig_meta/.local/share/n8n/config"
+grep -Fqx 'sqlite-db' "$mig_meta/.local/share/n8n/database.sqlite"
+grep -Fqx 'sqlite-shm' "$mig_meta/.local/share/n8n/database.sqlite-shm"
+grep -Fqx 'sqlite-wal' "$mig_meta/.local/share/n8n/database.sqlite-wal"
+grep -Fqx 'event-log' "$mig_meta/.local/share/n8n/n8nEventLog-3.log"
+grep -Fqx '{"dependencies":{}}' "$mig_meta/.local/share/n8n/nodes/package.json"
+test "$(stat -c %a "$mig_meta/.local/share/n8n")" = "775"
+test "$(stat -c %a "$mig_meta/.local/share/n8n/config")" = "600"
+test "$(stat -c %a "$mig_meta/.local/share/n8n/n8nEventLog-3.log")" = "664"
+
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/n8n-post.tsv" --inventory-summary "$tmp/n8n-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/n8n-post.out" 2>"$tmp/n8n-post.err"
+grep -qx $'.n8n	symlink	already-meta	already-meta	'"$mig_meta"$'/.local/share/n8n	none	n/a' "$tmp/n8n-post.tsv"
 
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .nv --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-nv-dry.out" 2>"$tmp/migrate-nv-dry.err"
 grep -q 'DRY-RUN: would move .*\.nv to .*\.local/cache/nvidia' "$tmp/migrate-nv-dry.out"
@@ -639,6 +675,22 @@ fi
 test -f "$pi_bad_home/.pi"
 test ! -e "$pi_bad_meta/.local/share/pi"
 grep -q -- '--migrate-dot .pi: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-pi-file.err"
+
+n8n_bad_meta="$tmp/n8n-bad-meta"
+n8n_bad_home="$tmp/n8n-bad-home"
+mkdir -p "$n8n_bad_meta/.local" "$n8n_bad_meta/envctl/home" "$n8n_bad_home"
+printf '# managed gitconfig\n' >"$n8n_bad_meta/envctl/home/.gitconfig"
+ln -s "$n8n_bad_meta/envctl/home/.gitconfig" "$n8n_bad_meta/.gitconfig"
+ln -s "$n8n_bad_meta/.gitconfig" "$n8n_bad_home/.gitconfig"
+ln -s "$n8n_bad_meta/.local" "$n8n_bad_home/.local"
+printf 'not a directory\n' >"$n8n_bad_home/.n8n"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .n8n --meta-root "$n8n_bad_meta" --real-home "$n8n_bad_home" --envctl-home-source "$n8n_bad_meta/envctl/home" >"$tmp/migrate-n8n-file.out" 2>"$tmp/migrate-n8n-file.err"; then
+  echo "expected --migrate-dot .n8n to fail closed for non-directory source" >&2
+  exit 1
+fi
+test -f "$n8n_bad_home/.n8n"
+test ! -e "$n8n_bad_meta/.local/share/n8n"
+grep -q -- '--migrate-dot .n8n: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-n8n-file.err"
 
 nv_bad_meta="$tmp/nv-bad-meta"
 nv_bad_home="$tmp/nv-bad-home"
