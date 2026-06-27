@@ -49,20 +49,18 @@ ln -sfn "$DEST/bin/claude" "$META_ROOT/usr/bin/claude"
 
 [[component]]
 id = "codex-cli"
-name = "Codex CLI (meta toolchain; pinned upstream release rust-v0.142.0, source-build opt-in)"
+name = "Codex CLI (meta toolchain; pinned upstream release rust-v0.142.0, meta-owned CODEX_HOME wrapper)"
 requires = ["rustup", "bun", "wild-linker"]
 # Pinned, VERSIONED install into $META_ROOT/.toolchains/openai-codex/<version>/ with a stable
-# `current -> <version>` indirection, exposed as `codex` via the canonical $META_ROOT/usr/bin
-# front door. The DEFAULT install path downloads the pinned upstream release (static musl tarball)
-# so the version is deterministic and portable. Set CODEX_BUILD_FROM_SOURCE=1 to instead build
-# from a local $M/codex/codex-rs checkout (wild-linker-accelerated) — the opt-in path for future
-# in-place upgrades. Override the pin with CODEX_VERSION=<x.y.z>. The install/fix hooks perform a
-# strict-upgrade swap: the legacy flat $M/.toolchains/codex install is archived (never deleted)
-# only AFTER the new pinned binary verifies with `--version`.
+# `current -> <version>` indirection. The canonical user-facing executable is an envctl-managed
+# wrapper at $META_ROOT/usr/bin/codex, not a direct symlink to the release binary. The wrapper
+# discovers META_ROOT from its own location, exports CODEX_HOME/CODEX_SQLITE_HOME under meta by
+# default, and prepends meta-owned tool paths. Legacy ~/.codex content is copied into the new
+# meta-owned CODEX_HOME only when missing; legacy data is never deleted by this component.
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; VER="${CODEX_VERSION:-0.142.0}"; vdir="$M/.toolchains/openai-codex/${VER}"; dest="$vdir/bin/codex"; cur="$M/.toolchains/openai-codex/current/bin/codex"; link="$META_ROOT/usr/bin/codex"; rd() { readlink -f "$1" 2>/dev/null; }; [ -x "$dest" ] && [ "$(rd "$cur")" = "$(rd "$dest")" ] && [ "$(rd "$link")" = "$(rd "$dest")" ]''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; VER="${CODEX_VERSION:-0.142.0}"; vdir="$M/.toolchains/openai-codex/${VER}"; dest="$vdir/bin/codex"; cur="$M/.toolchains/openai-codex/current/bin/codex"; link="$M/usr/bin/codex"; [ -x "$dest" ] && [ "$(readlink -f "$cur" 2>/dev/null)" = "$(readlink -f "$dest" 2>/dev/null)" ] && [ -x "$link" ] && grep -q "envctl codex wrapper" "$link" && CODEX_HOME= CODEX_SQLITE_HOME= "$link" --version >/dev/null && ! grep -RqsE '/home/[^[:space:]]+/(\.local/bin/icm|\.cargo/bin/weave)|/usr/local/bin/vox' "$M/.local/share/codex/config.toml" "$M/.local/share/codex/hooks.json" 2>/dev/null''']
 [component.install]
 kind = "script"
 script = '''
@@ -72,14 +70,10 @@ ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 VER="${CODEX_VERSION:-0.142.0}"
 BASE="$M/.toolchains/openai-codex"
 CUR="$BASE/current"
-LINK="$META_ROOT/usr/bin/codex"
+LINK="$M/usr/bin/codex"
 if [ "${CODEX_BUILD_FROM_SOURCE:-0}" = "1" ] && [ -d "$M/codex/codex-rs/cli" ]; then
-  # Opt-in: build from the local checkout (future portable in-place upgrade path). Linker
-  # acceleration is provided by the wild-linker component (Epic H TASK-0054): it wires
-  # clang + --ld-path=wild via the meta-root $M/.cargo/config.toml, which this cargo build
-  # (run under the meta tree) inherits automatically. mold dropped (TASK-0070).
   export CARGO_HOME="$M/.toolchains/cargo"
-  export PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"
+  export PATH="$CARGO_HOME/bin:$M/.toolchains/cargo/bin:$PATH"
   jobs="${CODEX_CARGO_JOBS:-$(nproc --all)}"
   export CARGO_BUILD_JOBS="$jobs"
   export CARGO_PROFILE_RELEASE_LTO="${CARGO_PROFILE_RELEASE_LTO:-false}"
@@ -89,9 +83,6 @@ if [ "${CODEX_BUILD_FROM_SOURCE:-0}" = "1" ] && [ -d "$M/codex/codex-rs/cli" ]; 
   VER="src-$(git -C "$M/codex" rev-parse --short HEAD 2>/dev/null || echo unknown)"
   src="$M/codex/codex-rs/target/release/codex"
 else
-  # Default: pinned upstream release (static musl) via the authenticated gh-fetch resolver. The
-  # explicit pinned URL is used directly (NOT envctl_gh_release_download, whose fallback resolves
-  # `latest` and would defeat the pin).
   tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
   URL="https://github.com/openai/codex/releases/download/rust-v${VER}/codex-x86_64-unknown-linux-musl.tar.gz"
   envctl_gh_curl "$URL" -o "$tmp/codex.tgz"
@@ -103,21 +94,67 @@ VDIR="$BASE/${VER}"
 install -d -m 755 "$VDIR/bin"
 install -m 755 "$src" "$VDIR/bin/codex"
 ln -sfn "$VER" "$CUR"
-install -d -m 755 "$META_ROOT/usr/bin"
-# Canonical front door is $META_ROOT/usr/bin. The real-home .local bridge is provided by the
-# home-local-single-link component, so this component must not create a per-tool real-home link.
-# Archive a pre-existing non-symlink (a copied binary) before replacing it.
-if [ -e "$LINK" ] && [ ! -L "$LINK" ]; then
-  ARCH="$META_ROOT/var/lib/envctl/legacy-archives/usr-bin-$(date -u +%Y-%m-%d)/usr/bin"
+install -d -m 755 "$M/usr/bin"
+if [ -e "$LINK" ] && ! grep -q "envctl codex wrapper" "$LINK" 2>/dev/null; then
+  ARCH="$M/var/lib/envctl/legacy-archives/usr-bin-$(date -u +%Y-%m-%d)/usr/bin"
   install -d -m 755 "$ARCH"
   mv "$LINK" "$ARCH/codex"
-  echo "archived copy: codex"
+  echo "archived previous codex front door: $ARCH/codex"
 fi
-ln -sfn "$CUR/bin/codex" "$LINK"
-# Strict-upgrade swap: retire the legacy flat install ONLY after the new pinned binary runs.
-if "$VDIR/bin/codex" --version >/dev/null 2>&1; then
+cat >"$LINK" <<'WRAPPER'
+#!/usr/bin/env bash
+# envctl codex wrapper
+set -euo pipefail
+self="${BASH_SOURCE[0]}"
+while [ -L "$self" ]; do
+  dir="$(cd -P "$(dirname "$self")" && pwd)"
+  target="$(readlink "$self")"
+  case "$target" in
+    /*) self="$target" ;;
+    *) self="$dir/$target" ;;
+  esac
+done
+bindir="$(cd -P "$(dirname "$self")" && pwd)"
+META_ROOT="$(cd "$bindir/../.." && pwd)"
+export META_ROOT
+export CODEX_HOME="${CODEX_HOME:-$META_ROOT/.local/share/codex}"
+export CODEX_SQLITE_HOME="${CODEX_SQLITE_HOME:-$META_ROOT/.local/state/codex}"
+export PATH="$META_ROOT/usr/bin:$META_ROOT/.local/bin:$META_ROOT/.toolchains/cargo/bin:$META_ROOT/.toolchains/.bun/bin:$PATH"
+umask 077
+mkdir -p "$CODEX_HOME" "$CODEX_SQLITE_HOME"
+exec "$META_ROOT/.toolchains/openai-codex/current/bin/codex" "$@"
+WRAPPER
+chmod 755 "$LINK"
+install -d -m 700 "$M/.local/share/codex" "$M/.local/state/codex"
+if [ -n "${ENVCTL_REAL_HOME:-}" ] && [ -d "$ENVCTL_REAL_HOME/.codex" ]; then
+  tar -C "$ENVCTL_REAL_HOME/.codex" -cf - . | tar -C "$M/.local/share/codex" --keep-old-files -xf - 2>/dev/null || true
+fi
+python3 - <<PYCONF
+from pathlib import Path
+import json, re
+home = Path("$M/.local/share/codex")
+config = home / "config.toml"
+if config.exists():
+    text = config.read_text()
+    text = text.replace("/home/drdave/.cargo/bin/weave", "weave")
+    text = text.replace("/home/drdave/.local/bin/icm", "icm")
+    text = text.replace("/usr/local/bin/vox", "vox")
+    text = re.sub(r'model_catalog_json = ".*?/model-catalog\.json"', f'model_catalog_json = "{home}/model-catalog.json"', text)
+    text = re.sub(r'\n\[hooks\.state\](?:\n\n?\[hooks\.state\."[^"]+"\]\ntrusted_hash = "[^"]*")+', '\n[hooks.state]\n', text)
+    config.write_text(text)
+hooks = home / "hooks.json"
+if hooks.exists():
+    data = json.loads(hooks.read_text())
+    for entries in data.get("hooks", {}).values():
+        for entry in entries:
+            for hook in entry.get("hooks", []):
+                if isinstance(hook.get("command"), str):
+                    hook["command"] = hook["command"].replace("/home/drdave/.local/bin/icm", "icm")
+    hooks.write_text(json.dumps(data, indent=2) + "\n")
+PYCONF
+if "$VDIR/bin/codex" --version >/dev/null 2>&1 && "$LINK" --version >/dev/null 2>&1; then
   if [ -d "$M/.toolchains/codex" ]; then
-    FLATARCH="$META_ROOT/var/lib/envctl/legacy-archives/codex-flat-$(date -u +%Y-%m-%d)"
+    FLATARCH="$M/var/lib/envctl/legacy-archives/codex-flat-$(date -u +%Y-%m-%d)"
     install -d -m 755 "$FLATARCH"
     mv "$M/.toolchains/codex" "$FLATARCH/codex"
     echo "archived legacy flat install: .toolchains/codex -> $FLATARCH/codex"
@@ -125,14 +162,14 @@ if "$VDIR/bin/codex" --version >/dev/null 2>&1; then
   BUN_INSTALL="$M/.toolchains/.bun"
   [ -x "$BUN_INSTALL/bin/bun" ] && PATH="$BUN_INSTALL/bin:$PATH" bun remove -g @openai/codex >/dev/null 2>&1 || true
 else
-  echo "codex: new pinned binary failed --version; legacy install left in place" >&2
+  echo "codex: new pinned binary or wrapper failed --version; legacy install left in place" >&2
   exit 1
 fi
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export PATH="$META_ROOT/usr/bin:$M/usr/bin:$PATH"; cur="$M/.toolchains/openai-codex/current/bin/codex"; [ -x "$cur" ] && [ "$(readlink -f "$(command -v codex)" 2>/dev/null)" = "$(readlink -f "$cur")" ] && codex --version''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export PATH="$M/usr/bin:$M/.local/bin:$PATH"; link="$M/usr/bin/codex"; cur="$M/.toolchains/openai-codex/current/bin/codex"; [ -x "$cur" ] && [ -x "$link" ] && grep -q "envctl codex wrapper" "$link" && CODEX_HOME= CODEX_SQLITE_HOME= codex --version''']
 [component.fix]
 kind = "script"
 script = '''
@@ -142,47 +179,78 @@ ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 VER="${CODEX_VERSION:-0.142.0}"
 BASE="$M/.toolchains/openai-codex"
 CUR="$BASE/current"
-LINK="$META_ROOT/usr/bin/codex"
-if [ "${CODEX_BUILD_FROM_SOURCE:-0}" = "1" ] && [ -d "$M/codex/codex-rs/cli" ]; then
-  export CARGO_HOME="$M/.toolchains/cargo"
-  export PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"
-  jobs="${CODEX_CARGO_JOBS:-$(nproc --all)}"
-  export CARGO_BUILD_JOBS="$jobs"
-  export CARGO_PROFILE_RELEASE_LTO="${CARGO_PROFILE_RELEASE_LTO:-false}"
-  export CARGO_PROFILE_RELEASE_CODEGEN_UNITS="${CARGO_PROFILE_RELEASE_CODEGEN_UNITS:-$jobs}"
-  export CARGO_PROFILE_RELEASE_INCREMENTAL="${CARGO_PROFILE_RELEASE_INCREMENTAL:-true}"
-  cargo build --release -p codex-cli --jobs "$jobs" --timings --manifest-path "$M/codex/codex-rs/Cargo.toml"
-  VER="src-$(git -C "$M/codex" rev-parse --short HEAD 2>/dev/null || echo unknown)"
-  src="$M/codex/codex-rs/target/release/codex"
-else
+LINK="$M/usr/bin/codex"
+if [ ! -x "$CUR/bin/codex" ]; then
   tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
   URL="https://github.com/openai/codex/releases/download/rust-v${VER}/codex-x86_64-unknown-linux-musl.tar.gz"
   envctl_gh_curl "$URL" -o "$tmp/codex.tgz"
   tar -xzf "$tmp/codex.tgz" -C "$tmp"
   src="$(find "$tmp" -type f \( -name codex -o -name 'codex-*-linux-musl' \) | head -1)"
   [ -n "$src" ] && [ -f "$src" ] || { echo "codex: no binary found in release tarball" >&2; exit 1; }
+  VDIR="$BASE/${VER}"
+  install -d -m 755 "$VDIR/bin"
+  install -m 755 "$src" "$VDIR/bin/codex"
+  ln -sfn "$VER" "$CUR"
 fi
-VDIR="$BASE/${VER}"
-install -d -m 755 "$VDIR/bin"
-install -m 755 "$src" "$VDIR/bin/codex"
-ln -sfn "$VER" "$CUR"
-install -d -m 755 "$META_ROOT/usr/bin"
-if [ -e "$LINK" ] && [ ! -L "$LINK" ]; then
-  ARCH="$META_ROOT/var/lib/envctl/legacy-archives/usr-bin-$(date -u +%Y-%m-%d)/usr/bin"
-  install -d -m 755 "$ARCH"; mv "$LINK" "$ARCH/codex"; echo "archived copy: codex"
+install -d -m 755 "$M/usr/bin"
+if [ -e "$LINK" ] && ! grep -q "envctl codex wrapper" "$LINK" 2>/dev/null; then
+  ARCH="$M/var/lib/envctl/legacy-archives/usr-bin-$(date -u +%Y-%m-%d)/usr/bin"
+  install -d -m 755 "$ARCH"; mv "$LINK" "$ARCH/codex"; echo "archived previous codex front door: $ARCH/codex"
 fi
-ln -sfn "$CUR/bin/codex" "$LINK"
-if "$VDIR/bin/codex" --version >/dev/null 2>&1 && [ -d "$M/.toolchains/codex" ]; then
-  FLATARCH="$META_ROOT/var/lib/envctl/legacy-archives/codex-flat-$(date -u +%Y-%m-%d)"
-  install -d -m 755 "$FLATARCH"
-  mv "$M/.toolchains/codex" "$FLATARCH/codex"
-  echo "archived legacy flat install: .toolchains/codex -> $FLATARCH/codex"
+cat >"$LINK" <<'WRAPPER'
+#!/usr/bin/env bash
+# envctl codex wrapper
+set -euo pipefail
+self="${BASH_SOURCE[0]}"
+while [ -L "$self" ]; do
+  dir="$(cd -P "$(dirname "$self")" && pwd)"
+  target="$(readlink "$self")"
+  case "$target" in /*) self="$target" ;; *) self="$dir/$target" ;; esac
+done
+bindir="$(cd -P "$(dirname "$self")" && pwd)"
+META_ROOT="$(cd "$bindir/../.." && pwd)"
+export META_ROOT
+export CODEX_HOME="${CODEX_HOME:-$META_ROOT/.local/share/codex}"
+export CODEX_SQLITE_HOME="${CODEX_SQLITE_HOME:-$META_ROOT/.local/state/codex}"
+export PATH="$META_ROOT/usr/bin:$META_ROOT/.local/bin:$META_ROOT/.toolchains/cargo/bin:$META_ROOT/.toolchains/.bun/bin:$PATH"
+umask 077
+mkdir -p "$CODEX_HOME" "$CODEX_SQLITE_HOME"
+exec "$META_ROOT/.toolchains/openai-codex/current/bin/codex" "$@"
+WRAPPER
+chmod 755 "$LINK"
+install -d -m 700 "$M/.local/share/codex" "$M/.local/state/codex"
+if [ -n "${ENVCTL_REAL_HOME:-}" ] && [ -d "$ENVCTL_REAL_HOME/.codex" ]; then
+  tar -C "$ENVCTL_REAL_HOME/.codex" -cf - . | tar -C "$M/.local/share/codex" --keep-old-files -xf - 2>/dev/null || true
 fi
+python3 - <<PYCONF
+from pathlib import Path
+import json, re
+home = Path("$M/.local/share/codex")
+config = home / "config.toml"
+if config.exists():
+    text = config.read_text()
+    text = text.replace("/home/drdave/.cargo/bin/weave", "weave")
+    text = text.replace("/home/drdave/.local/bin/icm", "icm")
+    text = text.replace("/usr/local/bin/vox", "vox")
+    text = re.sub(r'model_catalog_json = ".*?/model-catalog\.json"', f'model_catalog_json = "{home}/model-catalog.json"', text)
+    text = re.sub(r'\n\[hooks\.state\](?:\n\n?\[hooks\.state\."[^"]+"\]\ntrusted_hash = "[^"]*")+', '\n[hooks.state]\n', text)
+    config.write_text(text)
+hooks = home / "hooks.json"
+if hooks.exists():
+    data = json.loads(hooks.read_text())
+    for entries in data.get("hooks", {}).values():
+        for entry in entries:
+            for hook in entry.get("hooks", []):
+                if isinstance(hook.get("command"), str):
+                    hook["command"] = hook["command"].replace("/home/drdave/.local/bin/icm", "icm")
+    hooks.write_text(json.dumps(data, indent=2) + "\n")
+PYCONF
+"$LINK" --version >/dev/null
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; BUN_INSTALL="$M/.toolchains/.bun"; [ -x "$BUN_INSTALL/bin/bun" ] && PATH="$BUN_INSTALL/bin:$PATH" bun remove -g @openai/codex >/dev/null 2>&1 || true; for t in "$META_ROOT/usr/bin/codex" "$M/usr/bin/codex" "$META_ROOT/.local/bin/codex" "$M/.local/bin/codex"; do [ -L "$t" ] && rm -f "$t"; done; rm -rf "$M/.toolchains/openai-codex"''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; BUN_INSTALL="$M/.toolchains/.bun"; [ -x "$BUN_INSTALL/bin/bun" ] && PATH="$BUN_INSTALL/bin:$PATH" bun remove -g @openai/codex >/dev/null 2>&1 || true; for t in "$M/usr/bin/codex" "$M/.local/bin/codex"; do if { [ -L "$t" ] || grep -q "envctl codex wrapper" "$t" 2>/dev/null; }; then rm -f "$t"; fi; done; rm -rf "$M/.toolchains/openai-codex"''']
 
 [[component]]
 id = "gemini-cli"
