@@ -538,6 +538,23 @@ awk -F '\t' '
 ' "$tmp/migration-blockers-summary.tsv"
 ENVCTL_TEST_LSOF_OPEN_SOURCE="$mig_home/.pki" "$root/scripts/audit-meta-local-paths.sh" --migration-blockers-summary "$tmp/migration-blockers-summary-only.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migration-blockers-summary-only.out" 2>"$tmp/migration-blockers-summary-only.err"
 awk -F '\t' '$1 == "open-handles" && $2 == "1" && $3 == "1" && $4 == "0" && $5 == "1" && $6 == "close-processes-then-run-apply-migrate-dot" { found=1 } END { exit !found }' "$tmp/migration-blockers-summary-only.tsv"
+if ENVCTL_TEST_LSOF_OPEN_SOURCE="$mig_home/.pki" "$root/scripts/audit-meta-local-paths.sh" --fail-migration-blockers --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migration-blockers-fail.out" 2>"$tmp/migration-blockers-fail.err"; then
+  echo "expected --fail-migration-blockers to fail when residual blockers remain" >&2
+  exit 1
+fi
+grep -q 'FAIL: migration blockers remain' "$tmp/migration-blockers-fail.err"
+grep -q 'open-handles=1' "$tmp/migration-blockers-fail.err"
+grep -q 'owner-supervised-sensitive=' "$tmp/migration-blockers-fail.err"
+
+clean_meta="$tmp/clean-meta"
+clean_home="$tmp/clean-home"
+mkdir -p "$clean_meta/.local/bin" "$clean_meta/envctl/home" "$clean_home"
+printf '%s\n' '# managed gitconfig' >"$clean_meta/envctl/home/.gitconfig"
+ln -s "$clean_meta/envctl/home/.gitconfig" "$clean_meta/.gitconfig"
+ln -s "$clean_meta/.local" "$clean_home/.local"
+ln -s "$clean_meta/.gitconfig" "$clean_home/.gitconfig"
+"$root/scripts/audit-meta-local-paths.sh" --fail-migration-blockers --meta-root "$clean_meta" --real-home "$clean_home" --envctl-home-source "$clean_meta/envctl/home" >"$tmp/migration-blockers-clean.out" 2>"$tmp/migration-blockers-clean.err"
+grep -q 'meta-local audit: PASS' "$tmp/migration-blockers-clean.out"
 grep -qx $'.mcp-auth\t'"$mig_home"$'/.mcp-auth\tdirectory\tsensitive\towner-supervised-vault-or-bridge\tno\t\towner-supervised-sensitive\tcredential-or-private-state\tn/a\t\towner-supervised-vault-or-bridge' "$tmp/migration-blockers.tsv"
 grep -qx $'.lane\t'"$mig_home"$'/.lane\tdirectory\tsensitive\towner-supervised-vault-or-bridge\tno\t\towner-supervised-sensitive\tcredential-or-private-state\tn/a\t\towner-supervised-vault-or-bridge' "$tmp/migration-blockers.tsv"
 grep -qx $'.fxapp-gh-profile\t'"$mig_home"$'/.fxapp-gh-profile\tdirectory\tsensitive\towner-supervised-vault-or-bridge\tno\t\towner-supervised-sensitive\tcredential-or-private-state\tn/a\t\towner-supervised-vault-or-bridge' "$tmp/migration-blockers.tsv"

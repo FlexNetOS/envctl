@@ -23,7 +23,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--fail-migration-blockers] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
 With --inventory, also writes a tab-separated relocation inventory:
@@ -65,6 +65,7 @@ dot_entry, real_path, type, target_class, action, apply_safe, canonical_target, 
 blocker_detail, open_handles, open_handle_sample, recommendation.
 With --migration-blockers-summary, writes read-only per-blocker residual counts:
 blocker, total, apply_safe_yes, apply_safe_no, open_handles, recommendations.
+Add --fail-migration-blockers to make the audit exit non-zero when any migration blockers remain.
 With --apply-history-archives and --apply, moves history/backup dot entries under
 $META_ROOT/var/lib/envctl/real-home-dotfile-migration/history-or-backup/<dot-entry> and leaves
 the original real-home path as a symlink bridge. Existing non-identical canonical archive targets
@@ -87,6 +88,7 @@ UNKNOWN_APP_CONFIG_REPORT_PATH=""
 SENSITIVE_STATE_REPORT_PATH=""
 MIGRATION_BLOCKERS_REPORT_PATH=""
 MIGRATION_BLOCKERS_SUMMARY_PATH=""
+FAIL_MIGRATION_BLOCKERS=0
 DEEP_LINK_INVENTORY_PATH=""
 DEEP_LINK_SUMMARY_PATH=""
 FAIL_REAL_HOME_DEEP_LINKS=0
@@ -105,6 +107,7 @@ while [ "$#" -gt 0 ]; do
     --sensitive-state-report) SENSITIVE_STATE_REPORT_PATH="${2:?--sensitive-state-report requires a path}"; shift 2 ;;
     --migration-blockers-report) MIGRATION_BLOCKERS_REPORT_PATH="${2:?--migration-blockers-report requires a path}"; shift 2 ;;
     --migration-blockers-summary) MIGRATION_BLOCKERS_SUMMARY_PATH="${2:?--migration-blockers-summary requires a path}"; shift 2 ;;
+    --fail-migration-blockers) FAIL_MIGRATION_BLOCKERS=1; shift ;;
     --deep-link-inventory) DEEP_LINK_INVENTORY_PATH="${2:?--deep-link-inventory requires a path}"; shift 2 ;;
     --deep-link-summary) DEEP_LINK_SUMMARY_PATH="${2:?--deep-link-summary requires a path}"; shift 2 ;;
     --fail-real-home-deep-links) FAIL_REAL_HOME_DEEP_LINKS=1; shift ;;
@@ -500,7 +503,7 @@ record_migration_blocker() {
   local dot="$1" type="$2" state="$3" target_class="$4" canonical_target="$5" action="$6" apply_safe="$7"
   local path blocker blocker_detail open_handles open_handle_sample recommendation
 
-  [ -n "$MIGRATION_BLOCKERS_REPORT_PATH" ] || [ -n "$MIGRATION_BLOCKERS_SUMMARY_PATH" ] || return 0
+  [ -n "$MIGRATION_BLOCKERS_REPORT_PATH" ] || [ -n "$MIGRATION_BLOCKERS_SUMMARY_PATH" ] || [ "$FAIL_MIGRATION_BLOCKERS" -eq 1 ] || return 0
   [ "$state" = "real-home-state" ] || [ "$state" = "external-symlink" ] || return 0
 
   path="$REAL_HOME/$dot"
@@ -723,7 +726,7 @@ emit_inventory_summary() {
 
 migration_blocker_observe() {
   local blocker="$1" apply_safe="$2" open_handles="$3" recommendation="$4" existing_recommendations
-  [ -n "$MIGRATION_BLOCKERS_SUMMARY_PATH" ] || return 0
+  [ -n "$MIGRATION_BLOCKERS_SUMMARY_PATH" ] || [ "$FAIL_MIGRATION_BLOCKERS" -eq 1 ] || return 0
 
   migration_blocker_total["$blocker"]=$(( ${migration_blocker_total["$blocker"]:-0} + 1 ))
   case "$apply_safe" in
@@ -763,6 +766,25 @@ emit_migration_blockers_summary() {
       done
     fi
   } >"$MIGRATION_BLOCKERS_SUMMARY_PATH"
+}
+
+fail_on_migration_blockers() {
+  [ "$FAIL_MIGRATION_BLOCKERS" -eq 1 ] || return 0
+
+  local total=0 blocker details=""
+  if [ "${#migration_blocker_total[@]}" -gt 0 ]; then
+    for blocker in "${!migration_blocker_total[@]}"; do
+      total=$(( total + ${migration_blocker_total["$blocker"]:-0} ))
+    done
+  fi
+  [ "$total" -gt 0 ] || return 0
+
+  while IFS= read -r blocker; do
+    [ -n "$blocker" ] || continue
+    details="${details}${details:+, }${blocker}=${migration_blocker_total["$blocker"]:-0}"
+  done < <(printf '%s\n' "${!migration_blocker_total[@]}" | sort)
+
+  fail "migration blockers remain ($total): $details"
 }
 
 deep_link_observe() {
@@ -1654,6 +1676,7 @@ fi
 # points at system/container internals, or is a missing embedded toolchain link.
 scan_deep_links
 
+fail_on_migration_blockers
 emit_inventory_summary
 emit_migration_blockers_summary
 emit_deep_link_summary
