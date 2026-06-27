@@ -338,88 +338,20 @@ FIRST** (never relocate to older), (4) smoke-test, (5) archive installed copy (t
 delete), (6) symlink `~/.local/bin/<tool>`→meta build, (7) re-verify + ROLLBACK on failure, (8)
 verify env health.
 
-- [~] **TASK-0078 (P0) — real-home dotfile relocation inventory + safe bridge automation (PR #290/#291/#293
-  MERGED; bashrc supervised-merge automation in progress):** Current loop target for the owner goal
-  "walk every dot file/folder under `/home/drdave` and relocate/bridge surgically into meta." PR #290
-  hardened the read-only audit into a machine-readable `--inventory` TSV that records every top-level
-  real-home dot entry with `type/state/target_class/canonical_target/action/apply_safe`, while keeping
-  mutation limited to proven-safe bridges (`~/.local`, `.local/bin`, canonical `.gitconfig`). PR #291
-  added `--inventory-summary` TSV so the loop can gate class-by-class migrations from stable counts.
-  PR #293 added explicit opt-in `--apply-shell-dotfiles` behavior plus TDD coverage: only
-  duplicate/safe shell dotfiles are canonicalized into `$META_ROOT` and bridged; differing canonical
-  files remain owner-supervised. Live apply evidence 2026-06-27: relocated/bridged `.bash_logout`,
-  `.profile`, `.zshenv`, `.zshrc` into `/home/drdave/Desktop/meta`; `changed=4`; PR #293 is
-  MERGED (`04b9e8f`).
+- [~] **TASK-0078 (P0) — real-home dotfile relocation inventory + safe bridge automation (PR #290/#291/#293/#296/#298/#300/#301/#303 MERGED; PR #299 app-config target slice in progress, rebased over #303):** Current loop target for the owner goal "walk every dot file/folder under `/home/drdave` and relocate/bridge surgically into meta." PR #290 hardened the read-only audit into a machine-readable `--inventory` TSV that records every top-level real-home dot entry with `type/state/target_class/canonical_target/action/apply_safe`, while keeping mutation limited to proven-safe bridges (`~/.local`, `.local/bin`, canonical `.gitconfig`). PR #291 added `--inventory-summary` TSV so the loop can gate class-by-class migrations from stable counts. PR #293 added explicit opt-in `--apply-shell-dotfiles` behavior plus TDD coverage: only duplicate/safe shell dotfiles are canonicalized into `$META_ROOT` and bridged; differing canonical files remain owner-supervised. Live apply evidence 2026-06-27: relocated/bridged `.bash_logout`, `.profile`, `.zshenv`, `.zshrc` into `/home/drdave/Desktop/meta`; `changed=4`; PR #293 is MERGED (`04b9e8f`).
 
-  Current bashrc slice adds `--shell-dotfile-conflict-report PATH`, a supervised merge TSV with
-  `dot_entry/real_path/canonical_target/action/apply_safe/real_sha256/canonical_sha256/real_lines/`
-  `canonical_lines/recommendation` so non-identical shell dotfiles have durable merge evidence instead
-  of an ambiguous warning. Live conflict evidence before merge: `.bashrc` action
-  `owner-supervised-merge-and-bridge`, real SHA `ecc4dba1…` (182 lines), canonical SHA `0de115…`
-  (32 lines), recommendation `merge-canonical-then-bridge`. Live apply evidence 2026-06-27: archived
-  originals under `/home/drdave/Desktop/meta/var/lib/envctl/real-home-dotfile-migration/`
-  `20260627T112120Z/`, merged the Ubuntu interactive bash defaults with meta-native env/toolchain
-  blocks into `/home/drdave/Desktop/meta/.bashrc`, and bridged `/home/drdave/.bashrc` to that meta
-  file. Runtime verification: `bash -n /home/drdave/Desktop/meta/.bashrc`; non-login interactive
-  source smoke resolves `META_ROOT=/home/drdave/Desktop/meta`, `envctl` from
-  `/home/drdave/Desktop/meta/usr/bin/envctl`, `SECRETCTL_SOCK=/run/user/1000/env-ctl/secretd.sock`,
-  and `readlink -f /home/drdave/.bashrc` inside `$META_ROOT`. Post-apply audit 2026-06-27:
-  `dot_entries=78`, `warnings=59`, `changed=0`; summary counts are `already-meta=17`,
-  `app-config-state=35`, `history-or-backup=17`, `sensitive=5`, `managed-dotfile=2`, `cache=1`,
-  `bridge=1`; **no remaining `shell-dotfile` class**, and the shell conflict report contains only
-  the header. Next slices continue class-by-class (managed dotfiles such as `.config`/agent state,
-  app config, sensitive stores, history/archive, cache/bridge) and keep owner-supervised classes
-  non-mutating until a safe per-class component/bridge is proven.
+  PR #296 added `--shell-dotfile-conflict-report PATH`, a supervised merge TSV with `dot_entry/real_path/canonical_target/action/apply_safe/real_sha256/canonical_sha256/real_lines/canonical_lines/recommendation` so non-identical shell dotfiles have durable merge evidence instead of an ambiguous warning. Live conflict evidence before merge: `.bashrc` action `owner-supervised-merge-and-bridge`, real SHA `ecc4dba1…` (182 lines), canonical SHA `0de115…` (32 lines), recommendation `merge-canonical-then-bridge`. Live apply evidence 2026-06-27: archived originals under `/home/drdave/Desktop/meta/var/lib/envctl/real-home-dotfile-migration/20260627T112120Z/`, merged the Ubuntu interactive bash defaults with meta-native env/toolchain blocks into `/home/drdave/Desktop/meta/.bashrc`, and bridged `/home/drdave/.bashrc` to that meta file. Runtime verification: `bash -n /home/drdave/Desktop/meta/.bashrc`; non-login interactive source smoke resolves `META_ROOT=/home/drdave/Desktop/meta`, `envctl` from `/home/drdave/Desktop/meta/usr/bin/envctl`, `SECRETCTL_SOCK=/run/user/1000/env-ctl/secretd.sock`, and `readlink -f /home/drdave/.bashrc` inside `$META_ROOT`. Post-apply audit 2026-06-27: no remaining `shell-dotfile` class and shell conflict report header-only. PR #296 is MERGED (`a7451e6`).
 
-  Current history/archive slice adds an explicit `--apply-history-archives` opt-in: plain `--apply`
-  remains non-mutating for history/backup entries, while `--apply --apply-history-archives` moves
-  each file/dir to `$META_ROOT/var/lib/envctl/real-home-dotfile-migration/history-or-backup/<dot-entry>`
-  and leaves the real-home path as a symlink bridge. TDD coverage proves exact canonical targets,
-  default-apply no-op behavior, file+directory archive/bridge preservation, post-apply `already-meta`
-  inventory rows, and collision safety (`owner-supervised merge required` when a non-identical
-  canonical archive target already exists). Live apply evidence 2026-06-27: archived/bridged 17
-  entries (`.bash_history`, `.zsh_history`, `.claude.json.bak.20260617-182538`, `.n8n.bak.1780701915`,
-  all `.bashrc.bak.*`, all `.zshrc.bak.*`) into `/home/drdave/Desktop/meta/var/lib/envctl/`
-  `real-home-dotfile-migration/history-or-backup/`; post-apply audit reports `dot_entries=78`,
-  `warnings=42`, `changed=0`; summary counts are `already-meta=34`, `app-config-state=35`,
-  `sensitive=5`, `managed-dotfile=2`, `cache=1`, `bridge=1`; there are **no remaining
-  `history-or-backup` rows** and the shell conflict report remains header-only. Remaining slices:
-  app-config-state, sensitive stores, managed `.config`, cache, and the single bridge.
+  PR #298 added an explicit `--apply-history-archives` opt-in: plain `--apply` remains non-mutating for history/backup entries, while `--apply --apply-history-archives` moves each file/dir to `$META_ROOT/var/lib/envctl/real-home-dotfile-migration/history-or-backup/<dot-entry>` and leaves the real-home path as a symlink bridge. TDD coverage proves exact canonical targets, default-apply no-op behavior, file+directory archive/bridge preservation, post-apply `already-meta` inventory rows, and collision safety (`owner-supervised merge required` when a non-identical canonical archive target already exists). Live apply evidence 2026-06-27: archived/bridged 17 entries (`.bash_history`, `.zsh_history`, `.claude.json.bak.20260617-182538`, `.n8n.bak.1780701915`, all `.bashrc.bak.*`, all `.zshrc.bak.*`) into `/home/drdave/Desktop/meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/`; post-apply audit reports `dot_entries=78`, `warnings=42`, `changed=0`; summary counts are `already-meta=34`, `app-config-state=35`, `sensitive=5`, `managed-dotfile=2`, `cache=1`, `bridge=1`; there are **no remaining `history-or-backup` rows** and the shell conflict report remains header-only. PR #298 is MERGED (`30b5bda`). The canonical history/archive path is still the only owner-approved history-or-backup mutation path; stale backup-only archive mode (`--archive-backup-dotfiles`) is intentionally absent and guarded against in CI.
 
-  Current app-config single-file slice adds a narrow portable-file allowlist for `.ideavimrc`:
-  explicit `--migrate-dot .ideavimrc` now targets `$META_ROOT/.ideavimrc`, refuses non-regular-file
-  sources, and remains dry-run unless paired with `--apply`. TDD coverage proves the inventory row
-  (`app-config-state`, `migrate-file-to-meta-root-and-bridge`, `apply_safe=yes`), dry-run no-op,
-  live move+symlink, and post-apply `already-meta` row. Live apply evidence 2026-06-27: moved
-  `/home/drdave/.ideavimrc` to `/home/drdave/Desktop/meta/.ideavimrc`, bridged the real-home path
-  back to that meta file, and `cmp` verified identical content through the symlink. Post-apply audit
-  reports `dot_entries=78`, `warnings=27`, `changed=0`; summary counts are `already-meta=49`,
-  `app-config-state=20`, `sensitive=5`, `managed-dotfile=2`, `cache=1`, `bridge=1`. Remaining
-  slices: app-config directories, sensitive stores, managed `.config`, cache, and the single bridge.
+  PR #300 added a narrow portable-file allowlist for `.ideavimrc`: explicit `--migrate-dot .ideavimrc` now targets `$META_ROOT/.ideavimrc`, refuses non-regular-file sources, and remains dry-run unless paired with `--apply`. TDD coverage proves the inventory row (`app-config-state`, `migrate-file-to-meta-root-and-bridge`, `apply_safe=yes`), dry-run no-op, live move+symlink, and post-apply `already-meta` row. Live apply evidence 2026-06-27: moved `/home/drdave/.ideavimrc` to `/home/drdave/Desktop/meta/.ideavimrc`, bridged the real-home path back to that meta file, and `cmp` verified identical content through the symlink. Post-apply audit reports `dot_entries=78`, `warnings=27`, `changed=0`; summary counts are `already-meta=49`, `app-config-state=20`, `sensitive=5`, `managed-dotfile=2`, `cache=1`, `bridge=1`. PR #300 is MERGED (`05694bf`).
 
-  Current app-config directory slice adds a narrow portable-dir allowlist for `.gphoto`: explicit
-  `--migrate-dot .gphoto` now targets `$META_ROOT/.config/gphoto`, refuses non-directory sources,
-  and remains dry-run unless paired with `--apply`. TDD coverage proves dry-run no-op behavior,
-  live move+symlink preservation, post-apply `already-meta` inventory, and fail-closed type repair
-  for a regular-file `.gphoto`. Live apply evidence 2026-06-27: moved `/home/drdave/.gphoto` to
-  `/home/drdave/Desktop/meta/.config/gphoto` and bridged the real-home path back to that meta
-  directory. Post-apply audit reports `dot_entries=78`, `warnings=26`, `changed=0`; summary counts
-  are `already-meta=50`, `app-config-state=19`, `sensitive=5`, `managed-dotfile=2`, `cache=1`,
-  `bridge=1`. Remaining slices: app-config directories, sensitive stores, managed `.config`, cache,
-  and the single bridge.
+  PR #301 added a narrow portable-dir allowlist for `.gphoto`: explicit `--migrate-dot .gphoto` now targets `$META_ROOT/.config/gphoto`, refuses non-directory sources, and remains dry-run unless paired with `--apply`. TDD coverage proves dry-run no-op behavior, live move+symlink preservation, post-apply `already-meta` inventory, and fail-closed type repair for a regular-file `.gphoto`. Live apply evidence 2026-06-27: moved `/home/drdave/.gphoto` to `/home/drdave/Desktop/meta/.config/gphoto` and bridged the real-home path back to that meta directory. Post-apply audit reports `dot_entries=78`, `warnings=26`, `changed=0`; summary counts are `already-meta=50`, `app-config-state=19`, `sensitive=5`, `managed-dotfile=2`, `cache=1`, `bridge=1`. PR #301 is MERGED (`da05a35`).
 
-  Current VS Code shared state slice adds a narrow portable-dir allowlist for `.vscode-shared`:
-  explicit `--migrate-dot .vscode-shared` now targets `$META_ROOT/.local/share/vscode-shared`,
-  refuses non-directory sources, and remains dry-run unless paired with `--apply`. TDD coverage
-  proves the inventory row (`app-config-state`, `migrate-dir-to-meta-share-and-bridge`,
-  `apply_safe=yes`), dry-run no-op behavior, live move+symlink preservation, post-apply
-  `already-meta` inventory, and fail-closed type repair for a regular-file `.vscode-shared`. Live
-  apply evidence 2026-06-27: moved `/home/drdave/.vscode-shared` to
-  `/home/drdave/Desktop/meta/.local/share/vscode-shared` and bridged the real-home path back to that
-  meta directory. Post-apply audit reports `dot_entries=78`, `warnings=25`, `changed=0`; summary
-  counts are `already-meta=51`, `app-config-state=18`, `sensitive=5`, `managed-dotfile=2`,
-  `cache=1`, `bridge=1`. Remaining slices: app-config directories, sensitive stores, managed
-  `.config`, cache, and the single bridge.
+  PR #303 added a narrow portable-dir allowlist for `.vscode-shared`: explicit `--migrate-dot .vscode-shared` now targets `$META_ROOT/.local/share/vscode-shared`, refuses non-directory sources, and remains dry-run unless paired with `--apply`. TDD coverage proves the inventory row (`app-config-state`, `migrate-dir-to-meta-share-and-bridge`, `apply_safe=yes`), dry-run no-op behavior, live move+symlink preservation, post-apply `already-meta` inventory, and fail-closed type repair for a regular-file `.vscode-shared`. Live apply evidence 2026-06-27: moved `/home/drdave/.vscode-shared` to `/home/drdave/Desktop/meta/.local/share/vscode-shared` and bridged the real-home path back to that meta directory. Post-apply audit reports `dot_entries=78`, `warnings=25`, `changed=0`; summary counts are `already-meta=51`, `app-config-state=18`, `sensitive=5`, `managed-dotfile=2`, `cache=1`, `bridge=1`. PR #303 is MERGED (`b1cd4ca`).
+
+  Current app-config target slice (PR #299) adds canonical inventory/migration affordances for known agent/app config state without changing the default non-mutating policy: named `--migrate-dot` remains required; `.ollama` maps to `$META_ROOT/var/lib/ollama`; `.claude.json` maps to `$META_ROOT/.local/share/claude/claude.json`; `.gphoto` maps to `$META_ROOT/.config/gphoto`; `.vscode-shared` maps to `$META_ROOT/.local/share/vscode-shared`; `.ideavimrc` maps to `$META_ROOT/.ideavimrc`; and known agent/app config dotdirs (`.agents`, `.ampcode`, `.claude`, `.codex`, `.codeium`, `.copilot`, `.cursor`, `.gemini`, `.goose_recipes`, `.junie`, `.kimi`, `.kimi-code`, `.roo`, `.vscode`, `.windsurf`, `.mozilla`, `.thunderbird`) map under `$META_ROOT/.local/share/<name>`. Broad `.config`, credentials, caches, and sensitive stores remain owner-supervised. The slice preserves PR #300's `.ideavimrc` portable-file behavior, PR #301's `.gphoto` portable-dir behavior, PR #303's `.vscode-shared` portable-dir behavior, PR #302's global Codex baseline, and PR #298's canonical `--apply-history-archives` behavior, while removing the stale backup-only archive affordance. Live migration evidence 2026-06-27: migrated/bridged `.agents`, `.ampcode`, `.claude.json`, `.codeium`, `.copilot`, `.cursor`, `.gemini`, `.goose_recipes`, `.kimi`, `.kimi-code`, `.ollama`, `.roo`, `.vscode`, and `.windsurf` into `$META_ROOT` canonical targets; `.vscode-shared` was migrated by PR #303, `.gphoto` by PR #301, `.ideavimrc` by PR #300; `.junie` was left owner-supervised because `$META_ROOT/.local/share/junie` already exists and differs/needs merge. Post-migration audit from branch `task-0078-next-inventory` after rebase over PR #300/#301/#302/#303: `dot_entries=78`, `warnings=25`, `changed=0`, summary `already-meta=51`, `app-config-state=18`, `bridge=1`, `cache=1`, `managed-dotfile=2`, `sensitive=5`; deep-link summary `inside-meta=5156`, `external-system=1119`, `missing-target=329`, with no `real-home-leak`. Gates after rebase over PR #300/#301/#302/#303 are green (`test-meta-local-path-audit`, `meta-local-policy`, bash syntax); PR #299 is open and re-armed for auto-merge. Remaining slices after PR #299/#300/#301/#302/#303: owner-supervised app-config-state (`.junie` plus unknown app dirs), sensitive stores, managed `.config`, cache, and the single bridge.
+
 - [x] `envctl env` — discover meta-root via `.meta.yaml` marker (`engine::dashboard::locate_meta_file`),
   emit `export META_ROOT=…` + meta tool dirs on PATH; `--toolchains`/`--materialize` (merged from
   feat/envctl-env, 2026-06-12).

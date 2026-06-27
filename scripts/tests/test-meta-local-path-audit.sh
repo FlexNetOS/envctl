@@ -120,7 +120,17 @@ grep -qx $'.bashrc\tfile\treal-home-state\tshell-dotfile\t'"$meta"$'/.bashrc\tow
 # canonical META_ROOT target by archiving the real-home state inside META_ROOT instead of clobbering.
 mig_meta="$tmp/mig-meta"
 mig_home="$tmp/mig-home"
-mkdir -p "$mig_meta/.local" "$mig_meta/envctl/home" "$mig_home/.cargo" "$mig_home/.npm" "$mig_home/.dotnet"
+mkdir -p \
+  "$mig_meta/.local" \
+  "$mig_meta/envctl/home" \
+  "$mig_home/.cargo" \
+  "$mig_home/.npm" \
+  "$mig_home/.dotnet" \
+  "$mig_home/.gemini" \
+  "$mig_home/.gphoto" \
+  "$mig_home/.vscode-shared/sharedStorage" \
+  "$mig_home/.kimi-code" \
+  "$mig_home/.ollama"
 printf '# managed gitconfig\n' >"$mig_meta/envctl/home/.gitconfig"
 ln -s "$mig_meta/envctl/home/.gitconfig" "$mig_meta/.gitconfig"
 ln -s "$mig_meta/.gitconfig" "$mig_home/.gitconfig"
@@ -129,18 +139,31 @@ printf 'real-home cargo state\n' >"$mig_home/.cargo/config"
 printf 'real-home npm state\n' >"$mig_home/.npm/npmrc"
 printf 'real-home dotnet state\n' >"$mig_home/.dotnet/state"
 printf 'set ideajoin\n' >"$mig_home/.ideavimrc"
-mkdir -p "$mig_home/.gphoto"
+printf '{ "theme": "dark" }\n' >"$mig_home/.gemini/settings.json"
 printf 'camera-port=usb\n' >"$mig_home/.gphoto/settings"
-mkdir -p "$mig_home/.vscode-shared/sharedStorage"
 printf 'sqlite-state\n' >"$mig_home/.vscode-shared/sharedStorage/state.vscdb"
+printf 'real-home kimi-code credentials\n' >"$mig_home/.kimi-code/credentials.json"
+printf 'real-home ollama history\n' >"$mig_home/.ollama/history"
+printf '{ "mcpServers": {} }\n' >"$mig_home/.claude.json"
+
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/app-config-inventory.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/app-config-inventory.out" 2>"$tmp/app-config-inventory.err"
+grep -qx $'.gemini\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/gemini\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
+grep -qx $'.gphoto\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.config/gphoto\tmigrate-dir-to-meta-config-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
+grep -qx $'.vscode-shared\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/vscode-shared\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
+grep -qx $'.kimi-code\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/kimi-code\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
+grep -qx $'.ollama\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/var/lib/ollama\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
+grep -qx $'.claude.json\tfile\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/claude/claude.json\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
+grep -qx $'.ideavimrc\tfile\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.ideavimrc\tmigrate-file-to-meta-root-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .cargo --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-dry.out" 2>"$tmp/migrate-dry.err"
 grep -q 'DRY-RUN: would move .*\.cargo to .*\.toolchains/cargo' "$tmp/migrate-dry.out"
 test -d "$mig_home/.cargo"
 test ! -e "$mig_meta/.toolchains/cargo"
 
-"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/migrate-file-pre.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-file-pre.out" 2>"$tmp/migrate-file-pre.err"
-grep -qx $'.ideavimrc\tfile\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.ideavimrc\tmigrate-file-to-meta-root-and-bridge\tyes' "$tmp/migrate-file-pre.tsv"
+"$root/scripts/audit-meta-local-paths.sh" --migrate-dot .gemini --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-gemini-dry.out" 2>"$tmp/migrate-gemini-dry.err"
+grep -q 'DRY-RUN: would move .*\.gemini to .*\.local/share/gemini' "$tmp/migrate-gemini-dry.out"
+test -d "$mig_home/.gemini"
+test ! -e "$mig_meta/.local/share/gemini"
 
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .ideavimrc --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-ideavim-dry.out" 2>"$tmp/migrate-ideavim-dry.err"
 grep -q 'DRY-RUN: would move .*\.ideavimrc to .*\.ideavimrc' "$tmp/migrate-ideavim-dry.out"
@@ -162,6 +185,18 @@ test -f "$mig_meta/.toolchains/npm/npmrc"
 test "$(readlink -f "$mig_home/.dotnet")" = "$mig_meta/.toolchains/dotnet"
 test -f "$mig_meta/.toolchains/dotnet/state"
 
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .kimi-code --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-kimi-code.out" 2>"$tmp/migrate-kimi-code.err"
+test "$(readlink -f "$mig_home/.kimi-code")" = "$mig_meta/.local/share/kimi-code"
+test -f "$mig_meta/.local/share/kimi-code/credentials.json"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .ollama --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-ollama.out" 2>"$tmp/migrate-ollama.err"
+test "$(readlink -f "$mig_home/.ollama")" = "$mig_meta/var/lib/ollama"
+test -f "$mig_meta/var/lib/ollama/history"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .claude.json --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-claude-json.out" 2>"$tmp/migrate-claude-json.err"
+test "$(readlink -f "$mig_home/.claude.json")" = "$mig_meta/.local/share/claude/claude.json"
+test -f "$mig_meta/.local/share/claude/claude.json"
+
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .gphoto --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-gphoto-dry.out" 2>"$tmp/migrate-gphoto-dry.err"
 grep -q 'DRY-RUN: would move .*\.gphoto to .*\.config/gphoto' "$tmp/migrate-gphoto-dry.out"
 test -d "$mig_home/.gphoto"
@@ -173,9 +208,6 @@ grep -qx 'camera-port=usb' "$mig_meta/.config/gphoto/settings"
 
 "$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/gphoto-post.tsv" --inventory-summary "$tmp/gphoto-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/gphoto-post.out" 2>"$tmp/gphoto-post.err"
 grep -qx $'.gphoto\tsymlink\talready-meta\talready-meta\t'"$mig_meta"$'/.config/gphoto\tnone\tn/a' "$tmp/gphoto-post.tsv"
-
-"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/vscode-shared-pre.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/vscode-shared-pre.out" 2>"$tmp/vscode-shared-pre.err"
-grep -qx $'.vscode-shared\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/vscode-shared\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/vscode-shared-pre.tsv"
 
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .vscode-shared --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-vscode-shared-dry.out" 2>"$tmp/migrate-vscode-shared-dry.err"
 grep -q 'DRY-RUN: would move .*\.vscode-shared to .*\.local/share/vscode-shared' "$tmp/migrate-vscode-shared-dry.out"
@@ -220,6 +252,7 @@ fi
 test -f "$vscode_shared_bad_home/.vscode-shared"
 test ! -e "$vscode_shared_bad_meta/.local/share/vscode-shared"
 grep -q -- '--migrate-dot .vscode-shared: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-vscode-shared-file.err"
+
 
 mkdir -p "$mig_meta/.toolchains/cargo"
 printf 'canonical cargo state\n' >"$mig_meta/.toolchains/cargo/config"
@@ -268,6 +301,7 @@ ln -s "$hist_meta/.gitconfig" "$hist_home/.gitconfig"
 ln -s "$hist_meta/.local" "$hist_home/.local"
 printf 'ls -la\n' >"$hist_home/.bash_history"
 printf '# old bashrc\n' >"$hist_home/.bashrc.bak.1780388793"
+printf 'backup backup\n' >"$hist_home/.tool.backup"
 printf 'state\n' >"$hist_home/.n8n.bak.1780701915/state"
 
 "$root/scripts/audit-meta-local-paths.sh" \
@@ -279,8 +313,9 @@ printf 'state\n' >"$hist_home/.n8n.bak.1780701915/state"
   >"$tmp/history-pre.out" 2>"$tmp/history-pre.err"
 grep -qx $'.bash_history\tfile\treal-home-state\thistory-or-backup\t'"$hist_meta"$'/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bash_history\tarchive-and-bridge\tyes' "$tmp/history-pre.tsv"
 grep -qx $'.bashrc.bak.1780388793\tfile\treal-home-state\thistory-or-backup\t'"$hist_meta"$'/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bashrc.bak.1780388793\tarchive-and-bridge\tyes' "$tmp/history-pre.tsv"
+grep -qx $'.tool.backup\tfile\treal-home-state\thistory-or-backup\t'"$hist_meta"$'/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.tool.backup\tarchive-and-bridge\tyes' "$tmp/history-pre.tsv"
 grep -qx $'.n8n.bak.1780701915\tdirectory\treal-home-state\thistory-or-backup\t'"$hist_meta"$'/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.n8n.bak.1780701915\tarchive-and-bridge\tyes' "$tmp/history-pre.tsv"
-grep -qx $'history-or-backup\t3\t3\t0\t0\tarchive-and-bridge' "$tmp/history-pre-summary.tsv"
+grep -qx $'history-or-backup\t4\t4\t0\t0\tarchive-and-bridge' "$tmp/history-pre-summary.tsv"
 
 "$root/scripts/audit-meta-local-paths.sh" \
   --apply \
@@ -302,6 +337,8 @@ test "$(readlink -f "$hist_home/.bash_history")" = "$hist_meta/var/lib/envctl/re
 grep -qx 'ls -la' "$hist_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bash_history"
 test "$(readlink -f "$hist_home/.bashrc.bak.1780388793")" = "$hist_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bashrc.bak.1780388793"
 grep -qx '# old bashrc' "$hist_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bashrc.bak.1780388793"
+test "$(readlink -f "$hist_home/.tool.backup")" = "$hist_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.tool.backup"
+grep -qx 'backup backup' "$hist_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.tool.backup"
 test "$(readlink -f "$hist_home/.n8n.bak.1780701915")" = "$hist_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.n8n.bak.1780701915"
 grep -qx 'state' "$hist_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.n8n.bak.1780701915/state"
 
@@ -314,8 +351,9 @@ grep -qx 'state' "$hist_meta/var/lib/envctl/real-home-dotfile-migration/history-
   >"$tmp/history-post.out" 2>"$tmp/history-post.err"
 grep -qx $'.bash_history\tsymlink\talready-meta\talready-meta\t'"$hist_meta"$'/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bash_history\tnone\tn/a' "$tmp/history-post.tsv"
 grep -qx $'.bashrc.bak.1780388793\tsymlink\talready-meta\talready-meta\t'"$hist_meta"$'/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bashrc.bak.1780388793\tnone\tn/a' "$tmp/history-post.tsv"
+grep -qx $'.tool.backup\tsymlink\talready-meta\talready-meta\t'"$hist_meta"$'/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.tool.backup\tnone\tn/a' "$tmp/history-post.tsv"
 grep -qx $'.n8n.bak.1780701915\tsymlink\talready-meta\talready-meta\t'"$hist_meta"$'/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.n8n.bak.1780701915\tnone\tn/a' "$tmp/history-post.tsv"
-grep -qx $'already-meta\t3\t0\t0\t3\tnone' "$tmp/history-post-summary.tsv"
+grep -qx $'already-meta\t4\t0\t0\t4\tnone' "$tmp/history-post-summary.tsv"
 
 hist_collision_meta="$tmp/hist-collision-meta"
 hist_collision_home="$tmp/hist-collision-home"
@@ -337,6 +375,51 @@ test ! -L "$hist_collision_home/.zsh_history"
 grep -qx 'real' "$hist_collision_home/.zsh_history"
 grep -qx 'canonical' "$hist_collision_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.zsh_history"
 grep -q 'owner-supervised merge required' "$tmp/history-collision.err"
+
+
+# History/backup dot entries have a single owner-approved mutation path: --apply-history-archives
+# archives into stable meta-owned state and preserves the real-home path as a symlink bridge.
+backup_meta="$tmp/backup-meta"
+backup_home="$tmp/backup-home"
+mkdir -p "$backup_meta/.local" "$backup_meta/envctl/home" "$backup_home/.n8n.bak.1780701915"
+printf '# managed gitconfig\n' >"$backup_meta/envctl/home/.gitconfig"
+ln -s "$backup_meta/envctl/home/.gitconfig" "$backup_meta/.gitconfig"
+ln -s "$backup_meta/.gitconfig" "$backup_home/.gitconfig"
+ln -s "$backup_meta/.local" "$backup_home/.local"
+printf 'active history\n' >"$backup_home/.bash_history"
+printf '# backup bashrc\n' >"$backup_home/.bashrc.bak.123"
+printf '# backup zshrc\n' >"$backup_home/.zshrc.bak.2026-06-03_05-44-02"
+printf 'state\n' >"$backup_home/.n8n.bak.1780701915/state"
+
+"$root/scripts/audit-meta-local-paths.sh" \
+  --inventory "$tmp/backup-pre.tsv" \
+  --inventory-summary "$tmp/backup-pre-summary.tsv" \
+  --meta-root "$backup_meta" \
+  --real-home "$backup_home" \
+  --envctl-home-source "$backup_meta/envctl/home" \
+  >"$tmp/backup-pre.out" 2>"$tmp/backup-pre.err"
+grep -qx $'.bash_history\tfile\treal-home-state\thistory-or-backup\t'"$backup_meta"$'/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bash_history\tarchive-and-bridge\tyes' "$tmp/backup-pre.tsv"
+grep -qx $'.bashrc.bak.123\tfile\treal-home-state\thistory-or-backup\t'"$backup_meta"$'/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bashrc.bak.123\tarchive-and-bridge\tyes' "$tmp/backup-pre.tsv"
+grep -qx $'.zshrc.bak.2026-06-03_05-44-02\tfile\treal-home-state\thistory-or-backup\t'"$backup_meta"$'/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.zshrc.bak.2026-06-03_05-44-02\tarchive-and-bridge\tyes' "$tmp/backup-pre.tsv"
+grep -qx $'.n8n.bak.1780701915\tdirectory\treal-home-state\thistory-or-backup\t'"$backup_meta"$'/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.n8n.bak.1780701915\tarchive-and-bridge\tyes' "$tmp/backup-pre.tsv"
+grep -qx $'history-or-backup\t4\t4\t0\t0\tarchive-and-bridge' "$tmp/backup-pre-summary.tsv"
+
+"$root/scripts/audit-meta-local-paths.sh" \
+  --apply \
+  --apply-history-archives \
+  --meta-root "$backup_meta" \
+  --real-home "$backup_home" \
+  --envctl-home-source "$backup_meta/envctl/home" \
+  >"$tmp/backup-apply.out" 2>"$tmp/backup-apply.err"
+test "$(readlink -f "$backup_home/.bash_history")" = "$backup_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bash_history"
+test "$(readlink -f "$backup_home/.bashrc.bak.123")" = "$backup_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bashrc.bak.123"
+test "$(readlink -f "$backup_home/.zshrc.bak.2026-06-03_05-44-02")" = "$backup_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.zshrc.bak.2026-06-03_05-44-02"
+test "$(readlink -f "$backup_home/.n8n.bak.1780701915")" = "$backup_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.n8n.bak.1780701915"
+grep -qx 'active history' "$backup_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bash_history"
+grep -qx '# backup bashrc' "$backup_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bashrc.bak.123"
+grep -qx '# backup zshrc' "$backup_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.zshrc.bak.2026-06-03_05-44-02"
+grep -qx 'state' "$backup_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.n8n.bak.1780701915/state"
+grep -Eq 'APPLY: archived .*\.bashrc\.bak\.123 to .*history-or-backup/\.bashrc\.bak\.123' "$tmp/backup-apply.out"
 
 # Recursive deep-link inventory walks the actual META_ROOT .local/.toolchains stores without
 # failing by default on embedded system/container links or broken toolchain-internal links, but it
@@ -395,6 +478,7 @@ if "$root/scripts/audit-meta-local-paths.sh" \
   exit 1
 fi
 grep -q 'resolves into real home outside META_ROOT' "$tmp/deep-fail.err"
+
 
 # If no meta-owned replacement exists for an escaping .local/bin symlink, --apply must fail closed
 # and leave the unsafe link untouched for owner-supervised remediation.
