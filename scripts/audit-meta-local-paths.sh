@@ -23,7 +23,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
 With --inventory, also writes a tab-separated relocation inventory:
@@ -56,6 +56,9 @@ With --unknown-app-config-report, writes read-only classification rows for app-c
 that do not yet have a canonical META_ROOT target:
 dot_entry, real_path, type, digest, entries, direct_files, direct_dirs, symlinks,
 sensitive_hints, recommendation.
+With --sensitive-state-report, writes read-only metadata rows for sensitive real-home entries:
+dot_entry, real_path, type, digest, entries, direct_files, direct_dirs, symlinks,
+sensitive_hints, action, apply_safe, recommendation.
 With --migration-blockers-report, writes read-only residual blocker rows for real-home dot entries
 that are not already bridged into META_ROOT:
 dot_entry, real_path, type, target_class, action, apply_safe, canonical_target, blocker,
@@ -81,6 +84,7 @@ INVENTORY_SUMMARY_PATH=""
 SHELL_DOTFILE_CONFLICT_REPORT_PATH=""
 APP_CONFIG_CONFLICT_REPORT_PATH=""
 UNKNOWN_APP_CONFIG_REPORT_PATH=""
+SENSITIVE_STATE_REPORT_PATH=""
 MIGRATION_BLOCKERS_REPORT_PATH=""
 MIGRATION_BLOCKERS_SUMMARY_PATH=""
 DEEP_LINK_INVENTORY_PATH=""
@@ -98,6 +102,7 @@ while [ "$#" -gt 0 ]; do
     --shell-dotfile-conflict-report) SHELL_DOTFILE_CONFLICT_REPORT_PATH="${2:?--shell-dotfile-conflict-report requires a path}"; shift 2 ;;
     --app-config-conflict-report) APP_CONFIG_CONFLICT_REPORT_PATH="${2:?--app-config-conflict-report requires a path}"; shift 2 ;;
     --unknown-app-config-report) UNKNOWN_APP_CONFIG_REPORT_PATH="${2:?--unknown-app-config-report requires a path}"; shift 2 ;;
+    --sensitive-state-report) SENSITIVE_STATE_REPORT_PATH="${2:?--sensitive-state-report requires a path}"; shift 2 ;;
     --migration-blockers-report) MIGRATION_BLOCKERS_REPORT_PATH="${2:?--migration-blockers-report requires a path}"; shift 2 ;;
     --migration-blockers-summary) MIGRATION_BLOCKERS_SUMMARY_PATH="${2:?--migration-blockers-summary requires a path}"; shift 2 ;;
     --deep-link-inventory) DEEP_LINK_INVENTORY_PATH="${2:?--deep-link-inventory requires a path}"; shift 2 ;;
@@ -144,6 +149,10 @@ fi
 if [ -n "$UNKNOWN_APP_CONFIG_REPORT_PATH" ]; then
   mkdir -p "$(dirname "$UNKNOWN_APP_CONFIG_REPORT_PATH")"
   printf 'dot_entry\treal_path\ttype\tdigest\tentries\tdirect_files\tdirect_dirs\tsymlinks\tsensitive_hints\trecommendation\n' >"$UNKNOWN_APP_CONFIG_REPORT_PATH"
+fi
+if [ -n "$SENSITIVE_STATE_REPORT_PATH" ]; then
+  mkdir -p "$(dirname "$SENSITIVE_STATE_REPORT_PATH")"
+  printf 'dot_entry\treal_path\ttype\tdigest\tentries\tdirect_files\tdirect_dirs\tsymlinks\tsensitive_hints\taction\tapply_safe\trecommendation\n' >"$SENSITIVE_STATE_REPORT_PATH"
 fi
 if [ -n "$MIGRATION_BLOCKERS_REPORT_PATH" ]; then
   mkdir -p "$(dirname "$MIGRATION_BLOCKERS_REPORT_PATH")"
@@ -465,6 +474,26 @@ record_unknown_app_config() {
     "$(path_symlink_count "$path")" \
     "$(path_sensitive_hint_count "$path")" \
     "classify-canonical-target-before-migration" >>"$UNKNOWN_APP_CONFIG_REPORT_PATH"
+}
+
+record_sensitive_state() {
+  local dot="$1" path="$2" type="$3" action="$4" apply_safe="$5"
+  [ -n "$SENSITIVE_STATE_REPORT_PATH" ] || return 0
+  { [ -e "$path" ] || [ -L "$path" ]; } || return 0
+
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$dot" \
+    "$path" \
+    "$type" \
+    "$(path_digest "$path")" \
+    "$(path_entry_count "$path")" \
+    "$(path_direct_file_count "$path")" \
+    "$(path_direct_dir_count "$path")" \
+    "$(path_symlink_count "$path")" \
+    "$(path_sensitive_hint_count "$path")" \
+    "$action" \
+    "$apply_safe" \
+    "owner-supervised-vault-or-bridge-before-migration" >>"$SENSITIVE_STATE_REPORT_PATH"
 }
 
 record_migration_blocker() {
@@ -1428,6 +1457,9 @@ classify_real_home_dot() {
     esac
   fi
 
+  if [ "$target_class" = "sensitive" ]; then
+    record_sensitive_state "$dot" "$path" "$type" "$action" "$apply_safe"
+  fi
   if [ "$target_class" = "app-config-state" ] && [ "$action" = "owner-supervised-config-migration" ]; then
     record_app_config_conflict "$dot" "$path" "$canonical_target" "$action" "$apply_safe"
   fi
