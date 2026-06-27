@@ -2057,6 +2057,7 @@ fn run_env(
     // this is the shell seam that mutates PATH). `usr/bin` is canonical for
     // envctl-owned exposure; `.local/bin` and `.toolchains` remain compatibility surfaces.
     let tc = layout.legacy_toolchains().to_string_lossy().to_string();
+    let ollama_models = layout.ollama_models().to_string_lossy().to_string();
     let usr = layout.usr().to_string_lossy().to_string();
     let bin_dir = layout.bin().to_string_lossy().to_string();
     let compat_local_bin = layout.local_bin().to_string_lossy().to_string();
@@ -2073,6 +2074,7 @@ fn run_env(
             map["UV_TOOL_DIR"] = format!("{tc}/uv/tools").into();
             map["UV_PYTHON_INSTALL_DIR"] = format!("{tc}/uv/python").into();
             map["OLLAMA_LIBRARY_PATH"] = format!("{tc}/ollama/lib/ollama").into();
+            map["OLLAMA_MODELS"] = ollama_models.clone().into();
             map["LIBCLANG_PATH"] = format!("{tc}/llvm/lib").into();
             map["GCC_PATH"] = format!("{tc}/libgccjit/lib").into();
             map["HELIX_RUNTIME"] = format!("{tc}/helix/runtime").into();
@@ -2131,6 +2133,10 @@ fn run_env(
             "export OLLAMA_LIBRARY_PATH={}",
             sh_single_quote(&format!("{tc}/ollama/lib/ollama"))
         );
+        // Model blobs are persistent state, not runner binaries. Keep them under
+        // meta's canonical var/lib tree so pulls never fall back to the root
+        // daemon's /usr/share/ollama or a real-home ~/.ollama store (TASK-0072).
+        println!("export OLLAMA_MODELS={}", sh_single_quote(&ollama_models));
         // libclang.so redirect for the meta-owned LLVM/clang (.toolchains/llvm/lib
         // holds libclang.so) so bindgen-style consumers find it (Epic H TASK-0061).
         println!(
