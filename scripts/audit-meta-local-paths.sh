@@ -727,7 +727,7 @@ is_migratable_dot() {
   local dot="$1"
 
   case "$dot" in
-    .*/*|.|..|.local|.config|.cache|.ssh|.aws|.gnupg|.mcp-auth|.docker|.kube|.password-store)
+    .*/*|.|..|.local|.config|.cache|.ssh|.aws|.gnupg|.mcp-auth|.docker|.kube|.password-store|.lane)
       return 1
       ;;
     .cargo|.rustup|.bun|.npm|.wasmer|.dotnet|.pgrx|.venvs|.go|.gradle|.nix-*)
@@ -926,7 +926,7 @@ classify_real_home_dot() {
     action="owner-supervised-bridge"
   else
     case "$dot" in
-      .ssh|.aws|.gnupg|.mcp-auth|.docker|.kube|.password-store)
+      .ssh|.aws|.gnupg|.mcp-auth|.docker|.kube|.password-store|.lane)
         target_class="sensitive"
         action="owner-supervised-vault-or-bridge"
         ;;

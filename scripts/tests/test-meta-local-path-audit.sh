@@ -140,6 +140,9 @@ mkdir -p \
   "$mig_home/.n8n-claude-bridge/sandbox/.claude/sessions" \
   "$mig_home/.n8n-claude-bridge/sandbox/.cache/claude-cli-nodejs" \
   "$mig_home/.pki/nssdb" \
+  "$mig_home/.lane/ca" \
+  "$mig_home/.lane/certs" \
+  "$mig_home/.lane/relay" \
   "$mig_home/.ruvector/models/all-MiniLM-L6-v2" \
   "$mig_home/.repowire" \
   "$mig_home/.nv/ComputeCache/0/7" \
@@ -206,6 +209,12 @@ printf 'key db fixture\n' >"$mig_home/.pki/nssdb/key4.db"
 printf 'library=\nname=NSS Internal PKCS #11 Module\n' >"$mig_home/.pki/nssdb/pkcs11.txt"
 chmod 700 "$mig_home/.pki" "$mig_home/.pki/nssdb"
 chmod 600 "$mig_home/.pki/nssdb/cert9.db" "$mig_home/.pki/nssdb/key4.db" "$mig_home/.pki/nssdb/pkcs11.txt"
+printf 'root ca key fixture\n' >"$mig_home/.lane/ca/rootCA-key.pem"
+printf 'app key fixture\n' >"$mig_home/.lane/certs/myapp.test-key.pem"
+printf 'relay key fixture\n' >"$mig_home/.lane/relay/node.key"
+printf 'profile\n' >"$mig_home/.lane/config.yaml"
+chmod 700 "$mig_home/.lane"
+chmod 600 "$mig_home/.lane/ca/rootCA-key.pem" "$mig_home/.lane/certs/myapp.test-key.pem" "$mig_home/.lane/relay/node.key"
 printf '{"embedding":"state"}\n' >"$mig_home/.ruvector/intelligence.json"
 printf 'tokenizer\n' >"$mig_home/.ruvector/models/all-MiniLM-L6-v2/tokenizer.json"
 printf 'onnx-model\n' >"$mig_home/.ruvector/models/all-MiniLM-L6-v2/model.onnx"
@@ -253,6 +262,7 @@ grep -qx $'.pi\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.lo
 grep -qx $'.n8n\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/n8n\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.n8n-claude-bridge\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/n8n-claude-bridge\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.pki\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/pki\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
+grep -qx $'.lane\tdirectory\treal-home-state\tsensitive\t\towner-supervised-vault-or-bridge\tno' "$tmp/app-config-inventory.tsv"
 grep -qx $'.ruvector\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/ruvector\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.repowire\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/state/repowire\tmigrate-dir-to-meta-state-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.nv\tdirectory\treal-home-state\tcache\t'"$mig_meta"$'/.local/cache/nvidia\tmigrate-dir-to-meta-cache-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
@@ -332,6 +342,10 @@ if awk -F '\t' '$1 == ".n8n" { found=1 } END { exit !found }' "$tmp/unknown-app-
 fi
 if awk -F '\t' '$1 == ".pki" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
   echo "unexpected unknown app-config report row for allow-listed .pki target" >&2
+  exit 1
+fi
+if awk -F '\t' '$1 == ".lane" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
+  echo "unexpected unknown app-config report row for sensitive .lane" >&2
   exit 1
 fi
 if awk -F '\t' '$1 == ".ruvector" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
