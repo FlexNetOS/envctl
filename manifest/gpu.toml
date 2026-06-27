@@ -172,14 +172,17 @@ kind = "command"
 needs_sudo = true
 command = "apt-get"
 args = ["install", "-y", "nvidia-open"]
-# Reboot-tolerant + truthful: assert the PACKAGE is installed and the GPUs enumerate. Does NOT
-# assert the live module == candidate — after an upgrade the package is at the new version but
-# the loaded kernel module stays at the old one until reboot (that would false-fail the
-# pre-reboot window). Post-reboot, nvidia-smi --query-gpu=driver_version reflects the new driver.
+# Reboot-tolerant + truthful. Package must be installed. Then: if nvidia-smi enumerates the GPUs,
+# healthy (post-reboot steady state). If it does NOT, that's only OK when a reboot is pending —
+# after upgrading the userspace libs to the new version while the kernel module is still the old
+# one, NVML refuses to init ("Driver/library version mismatch") and nvidia-smi fails for the whole
+# install→reboot window. So we tolerate the failure IFF the LOADED module version differs from the
+# INSTALLED package version (pending reboot). If they match and nvidia-smi still fails, that's a
+# genuine breakage → FAIL. Post-reboot loaded==installed and nvidia-smi works → first check passes.
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "dpkg -l nvidia-open 2>/dev/null | grep -q '^ii' && command -v nvidia-smi >/dev/null && nvidia-smi -L >/dev/null 2>&1"]
+args = ["-lc", "dpkg -l nvidia-open 2>/dev/null | grep -q '^ii' || exit 1; command -v nvidia-smi >/dev/null || exit 1; nvidia-smi -L >/dev/null 2>&1 && exit 0; loaded=$(grep -oE '[0-9]+\\.[0-9]+\\.[0-9]+' /proc/driver/nvidia/version 2>/dev/null | head -1); pkg=$(dpkg-query -W -f='${Version}' nvidia-open 2>/dev/null | grep -oE '^[0-9]+\\.[0-9]+\\.[0-9]+'); [ -n \"$loaded\" ] && [ -n \"$pkg\" ] && [ \"$loaded\" != \"$pkg\" ]"]
 [component.fix]
 kind = "command"
 needs_sudo = true
