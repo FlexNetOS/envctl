@@ -386,8 +386,8 @@ requires = ["nvidia-cuda-repo"]
 resolved = ""
 
 [components.odysseus]
-content_hash = "4ce9bee15e4ba7af"
-requires = ["podman"]
+content_hash = "0319640fb3ff71a9"
+requires = []
 resolved = ""
 
 [components.ohmyzsh]
@@ -396,12 +396,7 @@ requires = ["zsh"]
 resolved = ""
 
 [components.ollama]
-content_hash = "006fa73918596e64"
-requires = []
-resolved = ""
-
-[components.odysseus]
-content_hash = "0319640fb3ff71a9"
+content_hash = "9cbb1436801f865b"
 requires = []
 resolved = ""
 
