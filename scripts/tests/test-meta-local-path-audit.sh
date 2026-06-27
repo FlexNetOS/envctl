@@ -131,6 +131,7 @@ mkdir -p \
   "$mig_home/.gemini" \
   "$mig_home/.ai/mcp" \
   "$mig_home/.jetbrains" \
+  "$mig_home/.meta/plugins" \
   "$mig_home/.archon" \
   "$mig_home/.hermes" \
   "$mig_home/.n8n-mcp" \
@@ -160,6 +161,9 @@ printf 'set ideajoin\n' >"$mig_home/.ideavimrc"
 printf '{ "theme": "dark" }\n' >"$mig_home/.gemini/settings.json"
 printf '' >"$mig_home/.ai/mcp/mcp.json"
 printf '{"default_mcp_settings":{},"agent_servers":{"goose":{"command":"/usr/bin/goose","args":["acp"]},"kimi":{"command":"/home/drdave/.local/bin/kimi","args":["--acp"]}}}\n' >"$mig_home/.jetbrains/acp.json"
+printf '{ "active": "main" }\n' >"$mig_home/.meta/worktree.json"
+printf '{ "cache": true }\n' >"$mig_home/.meta/context_cache.json"
+printf 'plugin registry\n' >"$mig_home/.meta/plugins/registry.json"
 printf '{ "lastChecked": "2026-06-27T00:00:00Z" }\n' >"$mig_home/.archon/update-check.json"
 printf 'provider: ollama\nbase_url: http://localhost:11434/v1\n' >"$mig_home/.hermes/config.yaml"
 printf '{ "telemetry": false }\n' >"$mig_home/.n8n-mcp/telemetry.json"
@@ -184,6 +188,7 @@ printf '{ "mcpServers": {} }\n' >"$mig_home/.claude.json"
 grep -qx $'.gemini\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/gemini\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
 grep -qx $'.ai\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/ai\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.jetbrains\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/jetbrains\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
+grep -qx $'.meta\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/meta\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.gphoto\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.config/gphoto\tmigrate-dir-to-meta-config-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.archon\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/archon\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.hermes\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/hermes\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
@@ -325,6 +330,20 @@ grep -Fqx '{"default_mcp_settings":{},"agent_servers":{"goose":{"command":"/usr/
 
 "$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/jetbrains-post.tsv" --inventory-summary "$tmp/jetbrains-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/jetbrains-post.out" 2>"$tmp/jetbrains-post.err"
 grep -qx $'.jetbrains	symlink	already-meta	already-meta	'"$mig_meta"$'/.local/share/jetbrains	none	n/a' "$tmp/jetbrains-post.tsv"
+
+"$root/scripts/audit-meta-local-paths.sh" --migrate-dot .meta --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-meta-dry.out" 2>"$tmp/migrate-meta-dry.err"
+grep -q 'DRY-RUN: would move .*\.meta to .*\.local/share/meta' "$tmp/migrate-meta-dry.out"
+test -d "$mig_home/.meta"
+test ! -e "$mig_meta/.local/share/meta"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .meta --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-meta.out" 2>"$tmp/migrate-meta.err"
+test "$(readlink -f "$mig_home/.meta")" = "$mig_meta/.local/share/meta"
+grep -qx '{ "active": "main" }' "$mig_meta/.local/share/meta/worktree.json"
+grep -qx '{ "cache": true }' "$mig_meta/.local/share/meta/context_cache.json"
+grep -qx 'plugin registry' "$mig_meta/.local/share/meta/plugins/registry.json"
+
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/meta-post.tsv" --inventory-summary "$tmp/meta-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/meta-post.out" 2>"$tmp/meta-post.err"
+grep -qx $'.meta	symlink	already-meta	already-meta	'"$mig_meta"$'/.local/share/meta	none	n/a' "$tmp/meta-post.tsv"
 
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .archon --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-archon-dry.out" 2>"$tmp/migrate-archon-dry.err"
 grep -q 'DRY-RUN: would move .*\.archon to .*\.local/share/archon' "$tmp/migrate-archon-dry.out"
@@ -554,6 +573,24 @@ fi
 test -f "$repomix_bad_home/.repomix"
 test ! -e "$repomix_bad_meta/.local/share/repomix"
 grep -q -- '--migrate-dot .repomix: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-repomix-file.err"
+
+meta_bad_meta="$tmp/meta-bad-meta"
+meta_bad_home="$tmp/meta-bad-home"
+mkdir -p "$meta_bad_meta/.local" "$meta_bad_meta/envctl/home" "$meta_bad_home"
+printf '# managed gitconfig
+' >"$meta_bad_meta/envctl/home/.gitconfig"
+ln -s "$meta_bad_meta/envctl/home/.gitconfig" "$meta_bad_meta/.gitconfig"
+ln -s "$meta_bad_meta/.gitconfig" "$meta_bad_home/.gitconfig"
+ln -s "$meta_bad_meta/.local" "$meta_bad_home/.local"
+printf 'not a directory
+' >"$meta_bad_home/.meta"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .meta --meta-root "$meta_bad_meta" --real-home "$meta_bad_home" --envctl-home-source "$meta_bad_meta/envctl/home" >"$tmp/migrate-meta-file.out" 2>"$tmp/migrate-meta-file.err"; then
+  echo "expected --migrate-dot .meta to fail closed for non-directory source" >&2
+  exit 1
+fi
+test -f "$meta_bad_home/.meta"
+test ! -e "$meta_bad_meta/.local/share/meta"
+grep -q -- '--migrate-dot .meta: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-meta-file.err"
 
 junie_bad_meta="$tmp/junie-bad-meta"
 junie_bad_home="$tmp/junie-bad-home"
