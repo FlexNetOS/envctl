@@ -1,8 +1,11 @@
 //! GPU/system telemetry sampler. `sample()` shells `nvidia-smi --query-gpu` CSV
-//! and parses it into a `Telemetry`; degrades gracefully (empty `gpus`) when the
-//! driver is not active. CPU/mem come from sysinfo. Used by the GUI sampler tick.
+//! with a hard timeout and parses it into a `Telemetry`; degrades gracefully
+//! (empty `gpus`) when the driver is not active. CPU/mem come from sysinfo.
+//! Used by the GUI sampler tick.
 use crate::event::{GpuSample, Telemetry};
 use std::time::Duration;
+
+const TELEMETRY_TIMEOUT: Duration = Duration::from_secs(3);
 
 pub fn sample() -> Telemetry {
     let mut t = Telemetry {
@@ -26,7 +29,7 @@ pub fn sample() -> Telemetry {
             &format!("--query-gpu={query}"),
             "--format=csv,noheader,nounits",
         ],
-        Duration::from_secs(5),
+        TELEMETRY_TIMEOUT,
     ) {
         for line in out.lines() {
             let f: Vec<&str> = line.split(',').map(|s| s.trim()).collect();

@@ -1,7 +1,9 @@
 # GPU / CUDA stack (yazelix-setup.sh section 3b + 3f). All gpu_required: the whole
 # set auto-skips (with reason) on a non-NVIDIA box. CUDA 13.3 + nvidia-open 610,
 # cuda-oxide, container toolkit + CDI, PyTorch cu132. nvidia-open verify is
-# reboot-gated (nvidia-smi only goes live after a reboot).
+# reboot-gated: the driver package may be installed before the live module and
+# nvidia-smi match the new stack, so the check tolerates a reboot-pending version
+# skew and only fails when the package/module state is inconsistent.
 
 [[component]]
 id = "nvidia-cuda-repo"
@@ -175,10 +177,10 @@ args = ["install", "-y", "nvidia-open"]
 # Reboot-tolerant + truthful. Package must be installed. Then: if nvidia-smi enumerates the GPUs,
 # healthy (post-reboot steady state). If it does NOT, that's only OK when a reboot is pending —
 # after upgrading the userspace libs to the new version while the kernel module is still the old
-# one, NVML refuses to init ("Driver/library version mismatch") and nvidia-smi fails for the whole
-# install→reboot window. So we tolerate the failure IFF the LOADED module version differs from the
-# INSTALLED package version (pending reboot). If they match and nvidia-smi still fails, that's a
-# genuine breakage → FAIL. Post-reboot loaded==installed and nvidia-smi works → first check passes.
+# one, the userspace probe fails until reboot. So we tolerate the failure IFF the LOADED module
+# version differs from the INSTALLED package version (pending reboot). If they match and nvidia-smi
+# still fails, that's a genuine breakage → FAIL. Post-reboot loaded==installed and nvidia-smi works
+# → first check passes.
 [component.verify]
 kind = "command"
 command = "bash"

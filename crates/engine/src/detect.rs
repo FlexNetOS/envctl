@@ -5,7 +5,7 @@
 //!   Tier 0  PCI floor — scan /sys/bus/pci/devices for vendor 0x10de + display
 //!           class 0x03xx. Authoritative count, works with NO driver.
 //!   Tier 1  /proc/driver/nvidia/version — driver_loaded + version.
-//!   Tier 2  nvidia-smi / nvcc — names, driver/CUDA versions (enrichment only).
+//!   Tier 2  modinfo/nvidia-smi/nvcc — open-module + names + CUDA/driver enrichment.
 //! `software_rendered = pci_sees_nvidia && !driver_loaded` → the GUI shows a
 //! "reboot to load nvidia-open" hint instead of a false "no GPU".
 use crate::component::{HookRunner, Phase};
@@ -147,23 +147,9 @@ pub(crate) fn pci_nvidia_count() -> usize {
 
 fn nvidia_open_module() -> bool {
     // The open kernel modules report a free license; the proprietary one does not.
-    if let Some(out) = run_capture("modinfo", &["-F", "license", "nvidia"]) {
-        let s = out.to_lowercase();
-        return s.contains("mit") || s.contains("gpl");
-    }
-    false
-}
-
-fn proc_nvidia_driver_version() -> Option<String> {
-    let contents = std::fs::read_to_string("/proc/driver/nvidia/version").ok()?;
-    contents.lines().find_map(|line| {
-        line.split_whitespace()
-            .find(|tok| tok.chars().any(|c| c.is_ascii_digit()) && tok.contains('.'))
-            .map(|tok| {
-                tok.trim_matches(|c: char| !c.is_ascii_alphanumeric() && c != '.' && c != '-')
-                    .to_string()
-            })
-    })
+    run_capture("modinfo", &["-F", "license", "nvidia"])
+        .map(|s| s.to_lowercase())
+        .is_some_and(|s| s.contains("mit") || s.contains("gpl"))
 }
 
 fn nvidia_smi_names() -> Vec<String> {
@@ -184,6 +170,31 @@ fn nvidia_smi_driver_version() -> Option<String> {
     )
     .and_then(|s| s.lines().next().map(|l| l.trim().to_string()))
     .filter(|s| !s.is_empty())
+}
+
+fn proc_nvidia_driver_version() -> Option<String> {
+    let text = std::fs::read_to_string("/proc/driver/nvidia/version").ok()?;
+    proc_nvidia_driver_version_from_str(&text)
+}
+
+fn proc_nvidia_driver_version_from_str(text: &str) -> Option<String> {
+    text.lines()
+        .flat_map(|line| line.split_whitespace())
+        .map(|token| token.trim_matches(|c: char| !c.is_ascii_digit() && c != '.'))
+        .find(|token| is_nvidia_version_token(token))
+        .map(|token| token.to_string())
+}
+
+fn is_nvidia_version_token(token: &str) -> bool {
+    let mut parts = token.split('.');
+    let (Some(major), Some(minor), Some(patch), None) =
+        (parts.next(), parts.next(), parts.next(), parts.next())
+    else {
+        return false;
+    };
+    [major, minor, patch]
+        .into_iter()
+        .all(|part| !part.is_empty() && part.chars().all(|c| c.is_ascii_digit()))
 }
 
 fn lspci_nvidia_names() -> Vec<String> {
@@ -232,34 +243,27 @@ pub(crate) fn run_capture_timeout(cmd: &str, args: &[&str], timeout: Duration) -
             Ok(())
         });
     }
-
     let mut child = command.spawn().ok()?;
     let pid = child.id();
-    let mut stdout = child.stdout.take();
-    let mut stderr = child.stderr.take();
-    let deadline = Instant::now() + timeout;
+    let stdout = child.stdout.take()?;
+    let stderr = child.stderr.take()?;
+    let stdout_reader = std::thread::spawn(move || read_pipe(stdout));
+    let stderr_reader = std::thread::spawn(move || read_pipe(stderr));
 
+    let deadline = Instant::now() + timeout;
     loop {
         match child.try_wait() {
-            Ok(Some(st)) => {
-                if !st.success() {
+            Ok(Some(status)) => {
+                let out = stdout_reader.join().ok().unwrap_or_default();
+                let err = stderr_reader.join().ok().unwrap_or_default();
+                if !status.success() {
                     return None;
                 }
-                let mut out = String::new();
-                if let Some(mut pipe) = stdout.take() {
-                    let _ = pipe.read_to_string(&mut out);
-                }
-                if let Some(mut pipe) = stderr.take() {
-                    let mut err = String::new();
-                    let _ = pipe.read_to_string(&mut err);
-                    if out.trim().is_empty() && !err.trim().is_empty() {
-                        out = err;
-                    }
-                }
-                return if out.trim().is_empty() {
+                let text = if !out.trim().is_empty() { out } else { err };
+                return if text.trim().is_empty() {
                     None
                 } else {
-                    Some(out)
+                    Some(text)
                 };
             }
             Ok(None) => {
@@ -267,6 +271,8 @@ pub(crate) fn run_capture_timeout(cmd: &str, args: &[&str], timeout: Duration) -
                     kill_group(pid);
                     let _ = child.kill();
                     let _ = child.wait();
+                    let _ = stdout_reader.join();
+                    let _ = stderr_reader.join();
                     return None;
                 }
                 std::thread::sleep(Duration::from_millis(100));
@@ -275,14 +281,25 @@ pub(crate) fn run_capture_timeout(cmd: &str, args: &[&str], timeout: Duration) -
                 kill_group(pid);
                 let _ = child.kill();
                 let _ = child.wait();
+                let _ = stdout_reader.join();
+                let _ = stderr_reader.join();
                 return None;
             }
         }
     }
 }
 
+fn read_pipe<R: Read>(mut pipe: R) -> String {
+    let mut text = String::new();
+    let _ = pipe.read_to_string(&mut text);
+    text
+}
+
 fn kill_group(pid: u32) {
     if let Some(p) = rustix::process::Pid::from_raw(pid as i32) {
+        // If the child never became a group leader (for example, if pre_exec
+        // failed before setsid() took effect), fall back to killing the child
+        // PID directly so a wedged probe cannot linger.
         if rustix::process::kill_process_group(p, rustix::process::Signal::Kill).is_err() {
             let _ = rustix::process::kill_process(p, rustix::process::Signal::Kill);
         }
@@ -513,7 +530,63 @@ fn wiring_present(comp: &crate::component::Component) -> bool {
 mod tests {
     use super::*;
     use std::os::unix::fs::symlink;
-    use std::time::{SystemTime, UNIX_EPOCH};
+    use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn run_capture_timeout_returns_output() {
+        let out = run_capture_timeout("sh", &["-lc", "printf 'hello\\n'"], Duration::from_secs(1));
+        assert_eq!(out.as_deref(), Some("hello\n"));
+    }
+
+    #[test]
+    fn run_capture_timeout_times_out() {
+        let started = Instant::now();
+        let out = run_capture_timeout(
+            "sh",
+            &["-lc", "sleep 1; printf 'late\\n'"],
+            Duration::from_millis(150),
+        );
+        assert!(out.is_none(), "expected timeout, got {out:?}");
+        assert!(
+            started.elapsed() < Duration::from_secs(1),
+            "timeout helper should return promptly"
+        );
+    }
+
+    #[test]
+    fn run_capture_timeout_drains_noisy_output() {
+        let out = run_capture_timeout(
+            "sh",
+            &[
+                "-lc",
+                "i=0; while [ \"$i\" -lt 20000 ]; do printf 'line%05d\\n' \"$i\"; i=$((i + 1)); done",
+            ],
+            Duration::from_secs(2),
+        )
+        .expect("noisy command should complete without filling the pipe");
+
+        assert!(out.contains("line00000"), "missing first line");
+        assert!(out.contains("line19999"), "missing final line");
+    }
+
+    #[test]
+    fn proc_nvidia_driver_version_from_str_parses_version_token() {
+        let sample =
+            "NVRM version: NVIDIA UNIX Open Kernel Module for x86_64  610.54.03  Release Build";
+
+        let parsed = proc_nvidia_driver_version_from_str(sample);
+
+        assert_eq!(parsed.as_deref(), Some("610.54.03"));
+    }
+
+    #[test]
+    fn proc_nvidia_driver_version_from_str_rejects_non_version_tokens() {
+        let sample = "NVRM version: not-a-version";
+
+        let parsed = proc_nvidia_driver_version_from_str(sample);
+
+        assert_eq!(parsed, None);
+    }
 
     #[test]
     fn meta_boundary_accepts_meta_usr_bin_symlink_into_meta_root() {

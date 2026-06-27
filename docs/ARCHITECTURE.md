@@ -81,10 +81,11 @@ envctl/                         # cargo workspace root
 
 **Dependency discipline (constraint: mainstream + few, stable Rust).** Everything compiles on
 stable. `serde`/`toml`/`anyhow`/`thiserror` live behind the engine's public API; the GUI sees
-only the engine's types. GPU telemetry uses `nvidia-smi` with a hard timeout and falls back to an
-empty sample when the driver is not active, matching the kit's existing command-line probe path
-without adding GPU FFI dependencies. `sysinfo` covers CPU/mem/disk/kernel; `which` locates
-binaries for version probes; `chrono` stamps reports. No web, no WebView, nothing nightly.
+only the engine's types. GPU inventory uses the proc-backed driver source of truth plus
+`nvidia-smi`/`nvcc` best-effort enrichment with a hard timeout, and the telemetry sampler reuses
+the same hard-timeout `nvidia-smi` probe to avoid hangs when the driver is absent or wedged.
+`sysinfo` covers CPU/mem/disk/kernel; `which` locates binaries for version probes; `chrono` stamps
+reports. No web, no WebView, nothing nightly.
 
 ---
 
@@ -557,7 +558,7 @@ owns its state, the worker owns the engine, they communicate only by message-pas
 
 Source mirrors the kit: shell out to
 `nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw --format=csv,noheader,nounits`
-with a hard timeout, one `GpuSample` per GPU (handles the dual 5090 by index). Pre-reboot,
+through the same hard-timeout helper as inventory probes, one `GpuSample` per GPU (handles the dual 5090 by index). Pre-reboot,
 nvidia-smi is absent/failing → reported as `GpuState::DriverNotActive` (the yellow card), never a
 panic. CPU+mem come from `sysinfo` (or `/proc/stat` + `/proc/meminfo` directly to stay lean). The
 sampler emits `Event::Telemetry` every ~1s while the Dashboard is active, backing off to ~3-5s on

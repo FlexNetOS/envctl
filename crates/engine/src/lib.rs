@@ -7,7 +7,7 @@ pub mod agent; // agent-env subsystem: the 6 agent-asset verbs over envctl-agent
 pub mod command;
 pub mod component; // Component, Hook, Guard, Phase, HookRunner
 pub mod dashboard; // meta mission-control: read .meta.yaml -> render zellij KDL layout
-pub mod detect; // EnvReport assembly: PCI floor / nvidia-smi / sysinfo / which probes
+pub mod detect; // EnvReport assembly: PCI floor / proc-backed driver state / nvidia-smi / sysinfo / which probes
 pub mod detect_build; // Phase 4: build-system detector table -> BuildPlan
 pub mod drift; // pure diff(EnvReport, Registry) -> Vec<DriftItem>
 pub mod error; // EngineError, RunContext, run_phase
@@ -28,7 +28,7 @@ pub mod runtime; // machine-local last-run state (XDG cache), out of the lock
 pub mod secrets; // TASK-0028: engine-owned `secretctl` subprocess seam for the GUI secrets verbs
 pub mod self_uninstall; // `self uninstall` — destructive, fail-closed, dry-run-by-default removal
 pub mod self_update; // `self update` CORE: fetch_latest_release / is_newer / verify_checksum
-pub mod telemetry; // sample() -> Telemetry (nvidia-smi CSV + sysinfo)
+pub mod telemetry; // sample() -> Telemetry (hard-timeout nvidia-smi CSV + sysinfo)
 pub mod update_notifier; // end-of-run "new version available" cache + check (CLI renders)
 pub mod wiring; // apply()/revert() for Wiring (shell_rc backup-then-excise) // EngineCommand / EngineEvent + run_event_loop (GUI worker API)
 
