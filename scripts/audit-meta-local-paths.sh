@@ -8,22 +8,35 @@
 #     executable replacement already exists under $META_ROOT/usr/bin or $META_ROOT/.toolchains/cargo/bin;
 #   * relink real-home .gitconfig through $META_ROOT/.gitconfig, archiving a non-symlink first.
 #
-# It intentionally does not move credentials or broad real-home application state (.ssh, .config,
-# .cache, .codex, .claude, .cargo, ...).  Instead it walks every top-level real-home dot entry and
-# reports the owner-supervised migration work still required.  Shell dotfiles are only canonicalized
-# with the explicit --apply-shell-dotfiles opt-in; default --apply remains limited to the proven-safe
-# bridges above.
+# It intentionally does not move credentials or broad real-home application state by default.
+# Shell dotfiles are only canonicalized with the explicit --apply-shell-dotfiles opt-in; default
+# --apply remains limited to the proven-safe bridges above plus explicitly requested allow-listed
+# --migrate-dot entries.
+# Explicit --migrate-dot requests are allow-listed, require --apply for mutation, and preserve an
+# existing canonical META_ROOT target by archiving the old real-home state under META_ROOT first.
 set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--inventory PATH] [--inventory-summary PATH] [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
 With --inventory, also writes a tab-separated relocation inventory:
 dot_entry, type, state, target_class, canonical_target, action, apply_safe.
 With --inventory-summary, writes a tab-separated per-class migration summary:
 target_class, total, apply_safe_yes, apply_safe_no, apply_safe_na, actions.
+With --deep-link-inventory, recursively inventories symlinks below $META_ROOT/.local and
+$META_ROOT/.toolchains:
+scan_root, symlink, link_text, resolved_target, target_class, action.
+With --deep-link-summary, writes a per-class recursive symlink summary:
+target_class, total, actions.
+Recursive deep-link inventory is report-only by default because toolchains, venvs, and container
+stores legitimately contain embedded absolute system links and missing internal links.  Add
+--fail-real-home-deep-links to fail if any recursive link resolves back into the real home outside
+META_ROOT.
+With --migrate-dot, performs an explicit owner-requested migration for allow-listed entries only
+(known toolchain state, .claude, .codex, or a managed dotfile present under --envctl-home-source).
+Mutation still requires --apply; without --apply the script prints the planned move and changes nothing.
 USAGE
 }
 
@@ -35,6 +48,10 @@ REAL_HOME="${ENVCTL_REAL_HOME:-$HOME}"
 ENVCTL_HOME_SOURCE="$ROOT/home"
 INVENTORY_PATH=""
 INVENTORY_SUMMARY_PATH=""
+DEEP_LINK_INVENTORY_PATH=""
+DEEP_LINK_SUMMARY_PATH=""
+FAIL_REAL_HOME_DEEP_LINKS=0
+MIGRATE_DOTS=()
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
@@ -42,6 +59,10 @@ while [ "$#" -gt 0 ]; do
     --apply-shell-dotfiles) APPLY_SHELL_DOTFILES=1; shift ;;
     --inventory) INVENTORY_PATH="${2:?--inventory requires a path}"; shift 2 ;;
     --inventory-summary) INVENTORY_SUMMARY_PATH="${2:?--inventory-summary requires a path}"; shift 2 ;;
+    --deep-link-inventory) DEEP_LINK_INVENTORY_PATH="${2:?--deep-link-inventory requires a path}"; shift 2 ;;
+    --deep-link-summary) DEEP_LINK_SUMMARY_PATH="${2:?--deep-link-summary requires a path}"; shift 2 ;;
+    --fail-real-home-deep-links) FAIL_REAL_HOME_DEEP_LINKS=1; shift ;;
+    --migrate-dot) MIGRATE_DOTS+=("${2:?--migrate-dot requires a dot entry}"); shift 2 ;;
     --meta-root) META_ROOT="${2:?--meta-root requires a path}"; shift 2 ;;
     --real-home) REAL_HOME="${2:?--real-home requires a path}"; shift 2 ;;
     --envctl-home-source) ENVCTL_HOME_SOURCE="${2:?--envctl-home-source requires a path}"; shift 2 ;;
@@ -70,12 +91,21 @@ fi
 if [ -n "$INVENTORY_SUMMARY_PATH" ]; then
   mkdir -p "$(dirname "$INVENTORY_SUMMARY_PATH")"
 fi
+if [ -n "$DEEP_LINK_INVENTORY_PATH" ]; then
+  mkdir -p "$(dirname "$DEEP_LINK_INVENTORY_PATH")"
+  printf 'scan_root\tsymlink\tlink_text\tresolved_target\ttarget_class\taction\n' >"$DEEP_LINK_INVENTORY_PATH"
+fi
+if [ -n "$DEEP_LINK_SUMMARY_PATH" ]; then
+  mkdir -p "$(dirname "$DEEP_LINK_SUMMARY_PATH")"
+fi
 
 declare -A summary_total=()
 declare -A summary_apply_yes=()
 declare -A summary_apply_no=()
 declare -A summary_apply_na=()
 declare -A summary_actions=()
+declare -A deep_link_total=()
+declare -A deep_link_actions=()
 
 say() { printf '%s\n' "$*"; }
 fail() { failures=$((failures + 1)); say "FAIL: $*" >&2; }
@@ -200,6 +230,169 @@ emit_inventory_summary() {
       done
     fi
   } >"$INVENTORY_SUMMARY_PATH"
+}
+
+deep_link_observe() {
+  local target_class="$1" action="$2" existing_actions
+  [ -n "$DEEP_LINK_SUMMARY_PATH" ] || return 0
+
+  deep_link_total["$target_class"]=$(( ${deep_link_total["$target_class"]:-0} + 1 ))
+  existing_actions="${deep_link_actions["$target_class"]:-}"
+  if [ -z "$existing_actions" ]; then
+    deep_link_actions["$target_class"]="$action"
+  else
+    case ",$existing_actions," in
+      *,"$action",*) ;;
+      *) deep_link_actions["$target_class"]="$existing_actions,$action" ;;
+    esac
+  fi
+}
+
+emit_deep_link_summary() {
+  [ -n "$DEEP_LINK_SUMMARY_PATH" ] || return 0
+
+  {
+    printf 'target_class\ttotal\tactions\n'
+    if [ "${#deep_link_total[@]}" -gt 0 ]; then
+      printf '%s\n' "${!deep_link_total[@]}" | sort | while IFS= read -r target_class; do
+        printf '%s\t%s\t%s\n' \
+          "$target_class" \
+          "${deep_link_total["$target_class"]:-0}" \
+          "${deep_link_actions["$target_class"]:-}"
+      done
+    fi
+  } >"$DEEP_LINK_SUMMARY_PATH"
+}
+
+deep_link_row() {
+  local scan_root="$1" symlink="$2" link_text="$3" resolved_target="$4" target_class="$5" action="$6"
+  if [ -n "$DEEP_LINK_INVENTORY_PATH" ]; then
+    printf '%s\t%s\t%s\t%s\t%s\t%s\n' "$scan_root" "$symlink" "$link_text" "$resolved_target" "$target_class" "$action" >>"$DEEP_LINK_INVENTORY_PATH"
+  fi
+  deep_link_observe "$target_class" "$action"
+}
+
+classify_deep_link() {
+  local scan_root="$1" symlink="$2" link_text resolved target_class action
+  link_text="$(readlink "$symlink" 2>/dev/null || true)"
+  resolved="$(readlink -f "$symlink" 2>/dev/null || true)"
+
+  if [ -z "$resolved" ] || { [ ! -e "$resolved" ] && [ ! -L "$resolved" ]; }; then
+    target_class="missing-target"
+    action="owner-supervised-repair-or-ignore-embedded-toolchain-link"
+  elif is_under_meta "$resolved"; then
+    target_class="inside-meta"
+    action="none"
+  else
+    case "$resolved" in
+      "$REAL_HOME"|"$REAL_HOME"/*)
+        target_class="real-home-leak"
+        action="migrate-or-relink-to-meta"
+        if [ "$FAIL_REAL_HOME_DEEP_LINKS" -eq 1 ]; then
+          fail "$symlink resolves into real home outside META_ROOT ($resolved)"
+        else
+          warn "$symlink resolves into real home outside META_ROOT ($resolved); owner-supervised migration required"
+        fi
+        ;;
+      *)
+        target_class="external-system"
+        action="embedded-toolchain-or-system-reference"
+        ;;
+    esac
+  fi
+
+  deep_link_row "$scan_root" "$symlink" "$link_text" "$resolved" "$target_class" "$action"
+}
+
+scan_deep_links() {
+  local scan_root
+  [ -n "$DEEP_LINK_INVENTORY_PATH" ] || [ -n "$DEEP_LINK_SUMMARY_PATH" ] || [ "$FAIL_REAL_HOME_DEEP_LINKS" -eq 1 ] || return 0
+
+  for scan_root in "$META_ROOT/.local" "$META_ROOT/.toolchains"; do
+    [ -d "$scan_root" ] || continue
+    while IFS= read -r -d '' symlink; do
+      classify_deep_link "$scan_root" "$symlink"
+    done < <(find "$scan_root" -type l -print0 2>/dev/null | sort -z)
+  done
+}
+
+canonical_target_for_dot() {
+  local dot="$1"
+  case "$dot" in
+    .cargo|.rustup|.bun|.npm|.wasmer|.dotnet|.pgrx|.venvs|.go|.gradle|.nix-*)
+      printf '%s\n' "$META_ROOT/.toolchains/${dot#.}"
+      ;;
+    .claude) printf '%s\n' "$META_ROOT/.local/share/claude" ;;
+    .codex) printf '%s\n' "$META_ROOT/.local/share/codex" ;;
+    *) printf '%s\n' "$ENVCTL_HOME_SOURCE/$dot" ;;
+  esac
+}
+
+is_migratable_dot() {
+  local dot="$1"
+
+  case "$dot" in
+    .*/*|.|..|.local|.config|.cache|.ssh|.aws|.gnupg|.mcp-auth|.docker|.kube|.password-store)
+      return 1
+      ;;
+    .cargo|.rustup|.bun|.npm|.wasmer|.dotnet|.pgrx|.venvs|.go|.gradle|.nix-*|.claude|.codex)
+      return 0
+      ;;
+    .*)
+      [ -e "$ENVCTL_HOME_SOURCE/$dot" ] || [ -L "$ENVCTL_HOME_SOURCE/$dot" ]
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+migrate_real_home_dot() {
+  local dot="$1" source target resolved
+
+  if ! is_migratable_dot "$dot"; then
+    fail "--migrate-dot $dot is not in the supervised migration allowlist; refusing automatic move"
+    return 0
+  fi
+
+  source="$REAL_HOME/$dot"
+  target="$(canonical_target_for_dot "$dot")"
+
+  if [ ! -e "$source" ] && [ ! -L "$source" ]; then
+    ok "--migrate-dot $dot: $source is missing; nothing to migrate"
+    return 0
+  fi
+
+  if [ -L "$source" ]; then
+    resolved="$(readlink -f "$source" 2>/dev/null || true)"
+    if [ -n "$resolved" ] && is_under_meta "$resolved"; then
+      ok "--migrate-dot $dot: $source already resolves inside META_ROOT ($resolved)"
+    else
+      fail "--migrate-dot $dot: $source is an external symlink (${resolved:-missing target}); refusing automatic relink"
+    fi
+    return 0
+  fi
+
+  if [ "$APPLY" -ne 1 ]; then
+    if [ -e "$target" ] || [ -L "$target" ]; then
+      say "DRY-RUN: would archive $source under $archive_dir/$dot and link it to existing $target"
+    else
+      say "DRY-RUN: would move $source to $target and link $source -> $target"
+    fi
+    return 0
+  fi
+
+  if [ -e "$target" ] || [ -L "$target" ]; then
+    mkdir -p "$archive_dir"
+    mv "$source" "$archive_dir/$dot"
+    ln -sfn "$target" "$source"
+    changed_msg "archived $source to $archive_dir/$dot and linked $source -> $target"
+  else
+    mkdir -p "$(dirname "$target")"
+    mv "$source" "$target"
+    ln -sfn "$target" "$source"
+    changed_msg "moved $source to $target and linked $source -> $target"
+  fi
 }
 
 classify_real_home_dot() {
@@ -422,10 +615,16 @@ else
   inventory_row ".gitconfig" "missing" "missing" "managed-dotfile" "$canonical_gitconfig" "bridge-canonical" "yes"
 fi
 
-# 5. Walk every top-level real-home dot entry.  The two entries that this script may safely mutate
-# (.local and .gitconfig) are handled above; everything else is inventory-only here unless already
-# bridged into META_ROOT.  This keeps the loop honest ("every dot file/folder was observed") without
-# auto-moving credentials, caches, shell histories, language toolchains, or app state.
+# 5. Apply only explicitly requested allow-listed real-home migrations.  This phase is deliberately
+# opt-in so the default audit remains read-only outside the conservative .local/.gitconfig repairs.
+for dot in "${MIGRATE_DOTS[@]}"; do
+  migrate_real_home_dot "$dot"
+done
+
+# 6. Walk every top-level real-home dot entry.  The default audit only mutates .local/.gitconfig;
+# requested --migrate-dot entries above are reflected here after they have been bridged into
+# META_ROOT.  This keeps the loop honest ("every dot file/folder was observed") without auto-moving
+# credentials, caches, shell histories, broad app state, or unrequested toolchains.
 if [ -d "$REAL_HOME" ]; then
   while IFS= read -r -d '' path; do
     dot_entries_seen=$((dot_entries_seen + 1))
@@ -455,7 +654,14 @@ if [ -d "$REAL_HOME" ]; then
   done < <(find "$REAL_HOME" -mindepth 1 -maxdepth 1 -name '.*' ! -name '.' ! -name '..' -print0 | sort -z)
 fi
 
+# 7. Optional recursive symlink inventory for the actual meta-local/toolchain stores.  This is the
+# "walk the folders" proof surface: report every link below META_ROOT/.local and
+# META_ROOT/.toolchains, classify whether it stays in META_ROOT, points back into the real home,
+# points at system/container internals, or is a missing embedded toolchain link.
+scan_deep_links
+
 emit_inventory_summary
+emit_deep_link_summary
 
 if [ "$failures" -gt 0 ]; then
   say "meta-local audit: FAIL failures=$failures warnings=$warnings changed=$changed dot_entries=$dot_entries_seen" >&2

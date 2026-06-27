@@ -100,6 +100,113 @@ grep -qx $'.zshenv\tsymlink\talready-meta\talready-meta\t'"$meta"$'/.zshenv\tnon
 grep -qx $'.bash_logout\tsymlink\talready-meta\talready-meta\t'"$meta"$'/.bash_logout\tnone\tn/a' "$tmp/shell-post.tsv"
 grep -qx $'.bashrc\tfile\treal-home-state\tshell-dotfile\t'"$meta"$'/.bashrc\towner-supervised-merge-and-bridge\tno' "$tmp/shell-post.tsv"
 
+# Explicit dot migration is opt-in, allow-listed, dry-run by default, and preserves any existing
+# canonical META_ROOT target by archiving the real-home state inside META_ROOT instead of clobbering.
+mig_meta="$tmp/mig-meta"
+mig_home="$tmp/mig-home"
+mkdir -p "$mig_meta/.local" "$mig_meta/envctl/home" "$mig_home/.cargo" "$mig_home/.npm" "$mig_home/.dotnet"
+printf '# managed gitconfig\n' >"$mig_meta/envctl/home/.gitconfig"
+ln -s "$mig_meta/envctl/home/.gitconfig" "$mig_meta/.gitconfig"
+ln -s "$mig_meta/.gitconfig" "$mig_home/.gitconfig"
+ln -s "$mig_meta/.local" "$mig_home/.local"
+printf 'real-home cargo state\n' >"$mig_home/.cargo/config"
+printf 'real-home npm state\n' >"$mig_home/.npm/npmrc"
+printf 'real-home dotnet state\n' >"$mig_home/.dotnet/state"
+
+"$root/scripts/audit-meta-local-paths.sh" --migrate-dot .cargo --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-dry.out" 2>"$tmp/migrate-dry.err"
+grep -q 'DRY-RUN: would move .*\.cargo to .*\.toolchains/cargo' "$tmp/migrate-dry.out"
+test -d "$mig_home/.cargo"
+test ! -e "$mig_meta/.toolchains/cargo"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .npm --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-npm.out" 2>"$tmp/migrate-npm.err"
+test "$(readlink -f "$mig_home/.npm")" = "$mig_meta/.toolchains/npm"
+test -f "$mig_meta/.toolchains/npm/npmrc"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .dotnet --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-dotnet.out" 2>"$tmp/migrate-dotnet.err"
+test "$(readlink -f "$mig_home/.dotnet")" = "$mig_meta/.toolchains/dotnet"
+test -f "$mig_meta/.toolchains/dotnet/state"
+
+mkdir -p "$mig_meta/.toolchains/cargo"
+printf 'canonical cargo state\n' >"$mig_meta/.toolchains/cargo/config"
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .cargo --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-cargo.out" 2>"$tmp/migrate-cargo.err"
+test "$(readlink -f "$mig_home/.cargo")" = "$mig_meta/.toolchains/cargo"
+grep -qx 'canonical cargo state' "$mig_meta/.toolchains/cargo/config"
+archive_cargo="$(find "$mig_meta/var/lib/envctl/real-home-dotfile-migration" -mindepth 2 -maxdepth 2 -type d -name .cargo -print -quit)"
+test -n "$archive_cargo"
+grep -qx 'real-home cargo state' "$archive_cargo/config"
+
+mkdir -p "$mig_home/.ssh" "$mig_home/.config"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .ssh --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-ssh.out" 2>"$tmp/migrate-ssh.err"; then
+  echo "expected --migrate-dot .ssh to fail closed" >&2
+  exit 1
+fi
+test -d "$mig_home/.ssh"
+grep -q -- '--migrate-dot .ssh is not in the supervised migration allowlist' "$tmp/migrate-ssh.err"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .config --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-config.out" 2>"$tmp/migrate-config.err"; then
+  echo "expected --migrate-dot .config to fail closed" >&2
+  exit 1
+fi
+test -d "$mig_home/.config"
+grep -q -- '--migrate-dot .config is not in the supervised migration allowlist' "$tmp/migrate-config.err"
+
+# Recursive deep-link inventory walks the actual META_ROOT .local/.toolchains stores without
+# failing by default on embedded system/container links or broken toolchain-internal links, but it
+# can be made fail-closed for symlinks that resolve back into the real home outside META_ROOT.
+deep_meta="$tmp/deep-meta"
+deep_home="$tmp/deep-home"
+mkdir -p \
+  "$deep_meta/.local/share/app" \
+  "$deep_meta/.toolchains/cargo/bin" \
+  "$deep_meta/usr/bin" \
+  "$deep_meta/envctl/home" \
+  "$deep_home/.cache/app"
+printf '# managed gitconfig\n' >"$deep_meta/envctl/home/.gitconfig"
+ln -s "$deep_meta/envctl/home/.gitconfig" "$deep_meta/.gitconfig"
+ln -s "$deep_meta/.gitconfig" "$deep_home/.gitconfig"
+ln -s "$deep_meta/.local" "$deep_home/.local"
+printf '#!/usr/bin/env bash\nexit 0\n' >"$deep_meta/usr/bin/rustc"
+chmod +x "$deep_meta/usr/bin/rustc"
+ln -s "$deep_meta/usr/bin/rustc" "$deep_meta/.toolchains/cargo/bin/rustc"
+ln -s /usr/bin/env "$deep_meta/.toolchains/cargo/bin/env"
+ln -s "$deep_home/.cache/app" "$deep_meta/.local/share/app/cache"
+ln -s "$deep_meta/.toolchains/cargo/bin/absent" "$deep_meta/.toolchains/cargo/bin/missing"
+
+"$root/scripts/audit-meta-local-paths.sh" \
+  --deep-link-inventory "$tmp/deep-links.tsv" \
+  --deep-link-summary "$tmp/deep-links-summary.tsv" \
+  --meta-root "$deep_meta" \
+  --real-home "$deep_home" \
+  --envctl-home-source "$deep_meta/envctl/home" \
+  >"$tmp/deep.out" 2>"$tmp/deep.err"
+grep -q 'meta-local audit: PASS' "$tmp/deep.out"
+grep -q 'resolves into real home outside META_ROOT' "$tmp/deep.err"
+head -n 1 "$tmp/deep-links.tsv" | grep -qx $'scan_root\tsymlink\tlink_text\tresolved_target\ttarget_class\taction'
+awk -F '\t' 'NF != 6 { print "bad deep-link row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/deep-links.tsv"
+grep -qx "$deep_meta/.toolchains"$'\t'"$deep_meta/.toolchains/cargo/bin/rustc"$'\t'"$deep_meta/usr/bin/rustc"$'\t'"$deep_meta/usr/bin/rustc"$'\tinside-meta\tnone' "$tmp/deep-links.tsv"
+awk -F '\t' -v p="$deep_meta/.toolchains/cargo/bin/env" \
+  '$2 == p && $5 == "external-system" && $6 == "embedded-toolchain-or-system-reference" { found=1 } END { exit !found }' \
+  "$tmp/deep-links.tsv"
+grep -qx "$deep_meta/.local"$'\t'"$deep_meta/.local/share/app/cache"$'\t'"$deep_home/.cache/app"$'\t'"$deep_home/.cache/app"$'\treal-home-leak\tmigrate-or-relink-to-meta' "$tmp/deep-links.tsv"
+awk -F '\t' -v p="$deep_meta/.toolchains/cargo/bin/missing" \
+  '$2 == p && $5 == "missing-target" && $6 == "owner-supervised-repair-or-ignore-embedded-toolchain-link" { found=1 } END { exit !found }' \
+  "$tmp/deep-links.tsv"
+head -n 1 "$tmp/deep-links-summary.tsv" | grep -qx $'target_class\ttotal\tactions'
+grep -qx $'inside-meta\t1\tnone' "$tmp/deep-links-summary.tsv"
+grep -qx $'external-system\t1\tembedded-toolchain-or-system-reference' "$tmp/deep-links-summary.tsv"
+grep -qx $'real-home-leak\t1\tmigrate-or-relink-to-meta' "$tmp/deep-links-summary.tsv"
+grep -qx $'missing-target\t1\towner-supervised-repair-or-ignore-embedded-toolchain-link' "$tmp/deep-links-summary.tsv"
+
+if "$root/scripts/audit-meta-local-paths.sh" \
+  --fail-real-home-deep-links \
+  --meta-root "$deep_meta" \
+  --real-home "$deep_home" \
+  --envctl-home-source "$deep_meta/envctl/home" \
+  >"$tmp/deep-fail.out" 2>"$tmp/deep-fail.err"; then
+  echo "expected recursive real-home symlink leak to fail when requested" >&2
+  exit 1
+fi
+grep -q 'resolves into real home outside META_ROOT' "$tmp/deep-fail.err"
+
 # If no meta-owned replacement exists for an escaping .local/bin symlink, --apply must fail closed
 # and leave the unsafe link untouched for owner-supervised remediation.
 rm -f "$meta/usr/bin/hf"
