@@ -50,7 +50,7 @@ grep -q 'FAIL: .*\.local/bin/hf resolves outside META_ROOT' "$tmp/pre.err"
 grep -q 'FAIL: .*\.gitconfig resolves to' "$tmp/pre.err"
 
 "$root/scripts/audit-meta-local-paths.sh" --apply --meta-root "$meta" --real-home "$home" --envctl-home-source "$meta/envctl/home" >"$tmp/apply.out" 2>"$tmp/apply.err"
-"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/inventory.tsv" --inventory-summary "$tmp/inventory-summary.tsv" --sensitive-state-report "$tmp/sensitive-state.tsv" --meta-root "$meta" --real-home "$home" --envctl-home-source "$meta/envctl/home" >"$tmp/post.out" 2>"$tmp/post.err"
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/inventory.tsv" --inventory-summary "$tmp/inventory-summary.tsv" --sensitive-state-report "$tmp/sensitive-state.tsv" --owner-supervised-sensitive-review-plan "$tmp/sensitive-review-plan.tsv" --meta-root "$meta" --real-home "$home" --envctl-home-source "$meta/envctl/home" >"$tmp/post.out" 2>"$tmp/post.err"
 
 test "$(readlink -f "$home/.local")" = "$meta/.local"
 test "$(readlink "$home/.gitconfig")" = "$meta/.gitconfig"
@@ -110,6 +110,52 @@ awk -F '\t' -v home="$home" '
   }
   END { exit !(found_aws && found_ssh && !bad) }
 ' "$tmp/sensitive-state.tsv"
+
+head -n 1 "$tmp/sensitive-review-plan.tsv" | grep -qx $'dot_entry	real_path	type	target_class	digest	entries	direct_files	direct_dirs	symlinks	sensitive_hints	supervision	next_action	sensitive_scope	review_hint	apply_command'
+awk -F '	' 'NF != 15 { print "bad sensitive review plan row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/sensitive-review-plan.tsv"
+test "$(wc -l <"$tmp/sensitive-review-plan.tsv" | tr -d '[:space:]')" = 3
+awk -F '	' -v home="$home" '
+  $1 == ".aws" {
+    if ($2 != home "/.aws") bad=1
+    if ($3 != "directory") bad=1
+    if ($4 != "sensitive") bad=1
+    if ($5 !~ /^[0-9a-f]{64}$/) bad=1
+    if ($6 != "1") bad=1
+    if ($7 != "1") bad=1
+    if ($8 != "0") bad=1
+    if ($9 != "0") bad=1
+    if ($10 != "1") bad=1
+    if ($11 != "owner-reviewed") bad=1
+    if ($12 != "owner-supervised-vault-or-bridge") bad=1
+    if ($13 != "credential-or-private-state") bad=1
+    if ($14 != "inspect-sensitive-state-before-owner-approved-vault-or-bridge") bad=1
+    if ($15 != "") bad=1
+    found_aws=1
+  }
+  $1 == ".ssh" {
+    if ($2 != home "/.ssh") bad=1
+    if ($3 != "directory") bad=1
+    if ($4 != "sensitive") bad=1
+    if ($5 !~ /^[0-9a-f]{64}$/) bad=1
+    if ($6 != "1") bad=1
+    if ($7 != "1") bad=1
+    if ($8 != "0") bad=1
+    if ($9 != "0") bad=1
+    if ($10 != "1") bad=1
+    if ($11 != "owner-reviewed") bad=1
+    if ($12 != "owner-supervised-vault-or-bridge") bad=1
+    if ($13 != "credential-or-private-state") bad=1
+    if ($14 != "inspect-sensitive-state-before-owner-approved-vault-or-bridge") bad=1
+    if ($15 != "") bad=1
+    found_ssh=1
+  }
+  $1 == ".cache" { bad=1 }
+  $1 == ".config" { bad=1 }
+  $1 == ".gitconfig" { bad=1 }
+  END { exit !(found_aws && found_ssh && !bad) }
+' "$tmp/sensitive-review-plan.tsv"
+"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-sensitive-review-plan "$tmp/sensitive-review-plan-only.tsv" --meta-root "$meta" --real-home "$home" --envctl-home-source "$meta/envctl/home" >"$tmp/sensitive-review-plan-only.out" 2>"$tmp/sensitive-review-plan-only.err"
+cmp "$tmp/sensitive-review-plan.tsv" "$tmp/sensitive-review-plan-only.tsv"
 
 supervised_meta="$tmp/supervised-meta"
 supervised_home="$tmp/supervised-home"
@@ -960,7 +1006,7 @@ if awk -F '\t' '$1 == ".mcp-auth" { found=1 } END { exit !found }' "$tmp/unknown
   exit 1
 fi
 
-"$root/scripts/audit-meta-local-paths.sh" --sensitive-state-report "$tmp/mig-sensitive-state.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/mig-sensitive-state.out" 2>"$tmp/mig-sensitive-state.err"
+"$root/scripts/audit-meta-local-paths.sh" --sensitive-state-report "$tmp/mig-sensitive-state.tsv" --owner-supervised-sensitive-review-plan "$tmp/mig-sensitive-review-plan.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/mig-sensitive-state.out" 2>"$tmp/mig-sensitive-state.err"
 head -n 1 "$tmp/mig-sensitive-state.tsv" | grep -qx $'dot_entry\treal_path\ttype\tdigest\tentries\tdirect_files\tdirect_dirs\tsymlinks\tsensitive_hints\taction\tapply_safe\trecommendation'
 awk -F '\t' 'NF != 12 { print "bad migration sensitive-state row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/mig-sensitive-state.tsv"
 awk -F '\t' -v home="$mig_home" '
@@ -980,6 +1026,32 @@ awk -F '\t' -v home="$mig_home" '
   }
   END { exit !(found && !bad) }
 ' "$tmp/mig-sensitive-state.tsv"
+
+head -n 1 "$tmp/mig-sensitive-review-plan.tsv" | grep -qx $'dot_entry	real_path	type	target_class	digest	entries	direct_files	direct_dirs	symlinks	sensitive_hints	supervision	next_action	sensitive_scope	review_hint	apply_command'
+awk -F '	' 'NF != 15 { print "bad migration sensitive review plan row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/mig-sensitive-review-plan.tsv"
+awk -F '	' -v home="$mig_home" '
+  $1 == ".mcp-auth" {
+    if ($2 != home "/.mcp-auth") bad=1
+    if ($3 != "directory") bad=1
+    if ($4 != "sensitive") bad=1
+    if ($5 !~ /^[0-9a-f]{64}$/) bad=1
+    if ($6 != "2") bad=1
+    if ($7 != "0") bad=1
+    if ($8 != "1") bad=1
+    if ($9 != "0") bad=1
+    if ($10 != "1") bad=1
+    if ($11 != "owner-reviewed") bad=1
+    if ($12 != "owner-supervised-vault-or-bridge") bad=1
+    if ($13 != "credential-or-private-state") bad=1
+    if ($14 != "inspect-sensitive-state-before-owner-approved-vault-or-bridge") bad=1
+    if ($15 != "") bad=1
+    found=1
+  }
+  $1 == ".pki" { bad=1 }
+  $1 == ".config" { bad=1 }
+  $1 == ".cache" { bad=1 }
+  END { exit !(found && !bad) }
+' "$tmp/mig-sensitive-review-plan.tsv"
 
 ENVCTL_TEST_LSOF_OPEN_SOURCE="$mig_home/.pki" "$root/scripts/audit-meta-local-paths.sh" --migration-blockers-report "$tmp/migration-blockers.tsv" --migration-blockers-summary "$tmp/migration-blockers-summary.tsv" --migration-blockers-plan "$tmp/migration-blockers-plan.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migration-blockers.out" 2>"$tmp/migration-blockers.err"
 head -n 1 "$tmp/migration-blockers.tsv" | grep -qx $'dot_entry\treal_path\ttype\ttarget_class\taction\tapply_safe\tcanonical_target\tblocker\tblocker_detail\topen_handles\topen_handle_sample\trecommendation'
