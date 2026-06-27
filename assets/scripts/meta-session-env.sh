@@ -42,6 +42,16 @@ if [ "$ACTION" = "remove" ]; then
   exit 0
 fi
 
+# Ensure the FHS /usr mirror tree exists. The engine's ensure_dirs() materializes
+# it on a full install/add-repo; this component completes the usr-mirror wiring, so
+# it also guarantees the tree (from envctl's own resolved layout — not a hand-kept
+# path list) for the single-component install / fix path.
+install -d \
+  "$ENVCTL_USR_SBIN" "$ENVCTL_USR_LIB64" "$ENVCTL_USR_INCLUDE" "$ENVCTL_USR_SRC" \
+  "$ENVCTL_USR_GAMES" "$ENVCTL_USR_SHARE_MAN" "$ENVCTL_USR_LOCAL_BIN" \
+  "$ENVCTL_USR_LOCAL_SBIN" "$ENVCTL_USR_LOCAL_LIB" "$ENVCTL_USR_LOCAL_LIB64" \
+  "$ENVCTL_USR_LOCAL_INCLUDE" "$ENVCTL_USR_LOCAL_SHARE"
+
 install -d -m 755 "$ENVD"
 TMP="$FILE.envctl-tmp.$$"
 # environment.d is static KEY=VALUE parsed by systemd (NOT a shell): `${PATH}`
