@@ -39,7 +39,8 @@ stores legitimately contain embedded absolute system links and missing internal 
 META_ROOT.
 With --migrate-dot, performs an explicit owner-requested migration for allow-listed entries only
 (known toolchain state, known agent/app config state including portable app-config files
-like .ideavimrc, portable app-config dirs like .gphoto/.vscode-shared/.archon/.n8n-mcp/.hermes/.ai/.jetbrains/.meta, or a managed dotfile present under --envctl-home-source).
+like .ideavimrc, portable app-config dirs like .gphoto/.vscode-shared/.archon/.n8n-mcp/.hermes/.ai/.jetbrains/.meta,
+portable cache dirs like .nv, or a managed dotfile present under --envctl-home-source).
 Mutation still requires --apply; without --apply the script prints the planned move and changes nothing.
 With --shell-dotfile-conflict-report, writes supervised shell-dotfile merge rows:
 dot_entry, real_path, canonical_target, action, apply_safe, real_sha256, canonical_sha256, real_lines, canonical_lines, recommendation.
@@ -640,6 +641,18 @@ is_app_config_dot() {
   app_config_target_for_dot "$1" >/dev/null 2>&1
 }
 
+cache_target_for_dot() {
+  local dot="$1"
+  case "$dot" in
+    .nv)
+      printf '%s\n' "$META_ROOT/.local/cache/nvidia"
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
 is_portable_app_config_file_dot() {
   case "$1" in
     .ideavimrc) return 0 ;;
@@ -650,6 +663,13 @@ is_portable_app_config_file_dot() {
 is_portable_app_config_dir_dot() {
   case "$1" in
     .gphoto|.vscode-shared|.repomix|.ai|.jetbrains|.meta|.archon|.hermes|.n8n-mcp) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+is_portable_cache_dir_dot() {
+  case "$1" in
+    .nv) return 0 ;;
     *) return 1 ;;
   esac
 }
@@ -670,6 +690,9 @@ canonical_target_for_dot() {
     .agents|.ai|.ampcode|.archon|.claude|.claude.json|.codex|.codeium|.copilot|.cursor|.gemini|.goose_recipes|.gphoto|.vscode-shared|.repomix|.hermes|.jetbrains|.meta|.junie|.kimi|.kimi-code|.n8n-mcp|.ollama|.roo|.vscode|.windsurf|.mozilla|.thunderbird|.ideavimrc)
       app_config_target_for_dot "$dot"
       ;;
+    .nv)
+      cache_target_for_dot "$dot"
+      ;;
     *) printf '%s\n' "$ENVCTL_HOME_SOURCE/$dot" ;;
   esac
 }
@@ -689,6 +712,9 @@ is_migratable_dot() {
         return 0
       fi
       if is_portable_app_config_dir_dot "$dot"; then
+        return 0
+      fi
+      if is_portable_cache_dir_dot "$dot"; then
         return 0
       fi
       if is_merge_existing_app_config_dir_dot "$dot"; then
@@ -726,6 +752,11 @@ migrate_real_home_dot() {
 
   if is_portable_app_config_dir_dot "$dot" && [ ! -d "$source" ]; then
     fail "--migrate-dot $dot: $source is not a directory; refusing automatic app-config directory migration"
+    return 0
+  fi
+
+  if is_portable_cache_dir_dot "$dot" && [ ! -d "$source" ]; then
+    fail "--migrate-dot $dot: $source is not a directory; refusing automatic cache directory migration"
     return 0
   fi
 
@@ -877,6 +908,17 @@ classify_real_home_dot() {
         target_class="cache"
         canonical_target="$META_ROOT/.local/cache"
         action="component-managed-cache-migration"
+        ;;
+      .nv)
+        target_class="cache"
+        canonical_target="$(cache_target_for_dot "$dot")"
+        if [ "$type" = "directory" ]; then
+          action="migrate-dir-to-meta-cache-and-bridge"
+          apply_safe="yes"
+        else
+          action="owner-supervised-type-repair"
+          apply_safe="no"
+        fi
         ;;
       .cargo)
         target_class="toolchain-state"
