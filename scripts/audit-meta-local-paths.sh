@@ -21,7 +21,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
 With --inventory, also writes a tab-separated relocation inventory:
@@ -43,6 +43,10 @@ like .ideavimrc, portable app-config dirs like .gphoto/.vscode-shared, or a mana
 Mutation still requires --apply; without --apply the script prints the planned move and changes nothing.
 With --shell-dotfile-conflict-report, writes supervised shell-dotfile merge rows:
 dot_entry, real_path, canonical_target, action, apply_safe, real_sha256, canonical_sha256, real_lines, canonical_lines, recommendation.
+With --app-config-conflict-report, writes supervised app-config merge rows when a known real-home
+app-config entry has an existing canonical META_ROOT target:
+dot_entry, real_path, canonical_target, action, apply_safe, real_type, canonical_type,
+real_digest, canonical_digest, real_entries, canonical_entries, recommendation.
 With --apply-history-archives and --apply, moves history/backup dot entries under
 $META_ROOT/var/lib/envctl/real-home-dotfile-migration/history-or-backup/<dot-entry> and leaves
 the original real-home path as a symlink bridge. Existing non-identical canonical archive targets
@@ -60,6 +64,7 @@ ENVCTL_HOME_SOURCE="$ROOT/home"
 INVENTORY_PATH=""
 INVENTORY_SUMMARY_PATH=""
 SHELL_DOTFILE_CONFLICT_REPORT_PATH=""
+APP_CONFIG_CONFLICT_REPORT_PATH=""
 DEEP_LINK_INVENTORY_PATH=""
 DEEP_LINK_SUMMARY_PATH=""
 FAIL_REAL_HOME_DEEP_LINKS=0
@@ -73,6 +78,7 @@ while [ "$#" -gt 0 ]; do
     --inventory) INVENTORY_PATH="${2:?--inventory requires a path}"; shift 2 ;;
     --inventory-summary) INVENTORY_SUMMARY_PATH="${2:?--inventory-summary requires a path}"; shift 2 ;;
     --shell-dotfile-conflict-report) SHELL_DOTFILE_CONFLICT_REPORT_PATH="${2:?--shell-dotfile-conflict-report requires a path}"; shift 2 ;;
+    --app-config-conflict-report) APP_CONFIG_CONFLICT_REPORT_PATH="${2:?--app-config-conflict-report requires a path}"; shift 2 ;;
     --deep-link-inventory) DEEP_LINK_INVENTORY_PATH="${2:?--deep-link-inventory requires a path}"; shift 2 ;;
     --deep-link-summary) DEEP_LINK_SUMMARY_PATH="${2:?--deep-link-summary requires a path}"; shift 2 ;;
     --fail-real-home-deep-links) FAIL_REAL_HOME_DEEP_LINKS=1; shift ;;
@@ -109,6 +115,10 @@ fi
 if [ -n "$SHELL_DOTFILE_CONFLICT_REPORT_PATH" ]; then
   mkdir -p "$(dirname "$SHELL_DOTFILE_CONFLICT_REPORT_PATH")"
   printf 'dot_entry\treal_path\tcanonical_target\taction\tapply_safe\treal_sha256\tcanonical_sha256\treal_lines\tcanonical_lines\trecommendation\n' >"$SHELL_DOTFILE_CONFLICT_REPORT_PATH"
+fi
+if [ -n "$APP_CONFIG_CONFLICT_REPORT_PATH" ]; then
+  mkdir -p "$(dirname "$APP_CONFIG_CONFLICT_REPORT_PATH")"
+  printf 'dot_entry\treal_path\tcanonical_target\taction\tapply_safe\treal_type\tcanonical_type\treal_digest\tcanonical_digest\treal_entries\tcanonical_entries\trecommendation\n' >"$APP_CONFIG_CONFLICT_REPORT_PATH"
 fi
 if [ -n "$DEEP_LINK_INVENTORY_PATH" ]; then
   mkdir -p "$(dirname "$DEEP_LINK_INVENTORY_PATH")"
@@ -173,9 +183,65 @@ file_sha256() {
   fi
 }
 
+sha256_stdin() {
+  if command -v sha256sum >/dev/null 2>&1; then
+    sha256sum | awk '{print $1}'
+  elif command -v shasum >/dev/null 2>&1; then
+    shasum -a 256 | awk '{print $1}'
+  else
+    cat >/dev/null
+    printf 'unknown'
+  fi
+}
+
 file_line_count() {
   local path="$1"
   wc -l <"$path" | tr -d '[:space:]'
+}
+
+path_digest() {
+  local path="$1" rel link_text
+
+  if [ -L "$path" ]; then
+    link_text="$(readlink "$path" 2>/dev/null || true)"
+    printf 'L\t%s\n' "$link_text" | sha256_stdin
+  elif [ -f "$path" ]; then
+    file_sha256 "$path"
+  elif [ -d "$path" ]; then
+    (
+      cd "$path"
+      while IFS= read -r -d '' rel; do
+        rel="${rel#./}"
+        if [ -L "$rel" ]; then
+          link_text="$(readlink "$rel" 2>/dev/null || true)"
+          printf 'L\t%s\t%s\n' "$rel" "$link_text"
+        elif [ -f "$rel" ]; then
+          printf 'F\t%s\t%s\n' "$rel" "$(file_sha256 "$rel")"
+        elif [ -d "$rel" ]; then
+          printf 'D\t%s\n' "$rel"
+        else
+          printf 'O\t%s\n' "$rel"
+        fi
+      done < <(find . -mindepth 1 -print0 | LC_ALL=C sort -z)
+    ) | sha256_stdin
+  elif [ -e "$path" ]; then
+    printf 'O\t%s\n' "$(entry_type "$path")" | sha256_stdin
+  else
+    printf 'missing'
+  fi
+}
+
+path_entry_count() {
+  local path="$1"
+  if [ -L "$path" ] || [ -f "$path" ]; then
+    printf '1'
+  elif [ -d "$path" ]; then
+    find "$path" -mindepth 1 -printf . 2>/dev/null | wc -c | tr -d '[:space:]'
+  elif [ -e "$path" ]; then
+    printf '1'
+  else
+    printf '0'
+  fi
 }
 
 record_shell_dotfile_conflict() {
@@ -195,6 +261,28 @@ record_shell_dotfile_conflict() {
     "$(file_line_count "$path")" \
     "$(file_line_count "$canonical_target")" \
     "merge-canonical-then-bridge" >>"$SHELL_DOTFILE_CONFLICT_REPORT_PATH"
+}
+
+record_app_config_conflict() {
+  local dot="$1" path="$2" canonical_target="$3" action="$4" apply_safe="$5"
+  [ -n "$APP_CONFIG_CONFLICT_REPORT_PATH" ] || return 0
+  [ -n "$canonical_target" ] || return 0
+  { [ -e "$path" ] || [ -L "$path" ]; } || return 0
+  { [ -e "$canonical_target" ] || [ -L "$canonical_target" ]; } || return 0
+
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$dot" \
+    "$path" \
+    "$canonical_target" \
+    "$action" \
+    "$apply_safe" \
+    "$(entry_type "$path")" \
+    "$(entry_type "$canonical_target")" \
+    "$(path_digest "$path")" \
+    "$(path_digest "$canonical_target")" \
+    "$(path_entry_count "$path")" \
+    "$(path_entry_count "$canonical_target")" \
+    "merge-canonical-then-bridge" >>"$APP_CONFIG_CONFLICT_REPORT_PATH"
 }
 
 shell_dotfile_action() {
@@ -684,6 +772,9 @@ classify_real_home_dot() {
     esac
   fi
 
+  if [ "$target_class" = "app-config-state" ] && [ "$action" = "owner-supervised-config-migration" ]; then
+    record_app_config_conflict "$dot" "$path" "$canonical_target" "$action" "$apply_safe"
+  fi
   inventory_row "$dot" "$type" "$state" "$target_class" "$canonical_target" "$action" "$apply_safe"
 }
 
