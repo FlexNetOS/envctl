@@ -131,6 +131,8 @@ printf 'real-home dotnet state\n' >"$mig_home/.dotnet/state"
 printf 'set ideajoin\n' >"$mig_home/.ideavimrc"
 mkdir -p "$mig_home/.gphoto"
 printf 'camera-port=usb\n' >"$mig_home/.gphoto/settings"
+mkdir -p "$mig_home/.vscode-shared/sharedStorage"
+printf 'sqlite-state\n' >"$mig_home/.vscode-shared/sharedStorage/state.vscdb"
 
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .cargo --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-dry.out" 2>"$tmp/migrate-dry.err"
 grep -q 'DRY-RUN: would move .*\.cargo to .*\.toolchains/cargo' "$tmp/migrate-dry.out"
@@ -172,6 +174,21 @@ grep -qx 'camera-port=usb' "$mig_meta/.config/gphoto/settings"
 "$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/gphoto-post.tsv" --inventory-summary "$tmp/gphoto-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/gphoto-post.out" 2>"$tmp/gphoto-post.err"
 grep -qx $'.gphoto\tsymlink\talready-meta\talready-meta\t'"$mig_meta"$'/.config/gphoto\tnone\tn/a' "$tmp/gphoto-post.tsv"
 
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/vscode-shared-pre.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/vscode-shared-pre.out" 2>"$tmp/vscode-shared-pre.err"
+grep -qx $'.vscode-shared\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/vscode-shared\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/vscode-shared-pre.tsv"
+
+"$root/scripts/audit-meta-local-paths.sh" --migrate-dot .vscode-shared --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-vscode-shared-dry.out" 2>"$tmp/migrate-vscode-shared-dry.err"
+grep -q 'DRY-RUN: would move .*\.vscode-shared to .*\.local/share/vscode-shared' "$tmp/migrate-vscode-shared-dry.out"
+test -d "$mig_home/.vscode-shared"
+test ! -e "$mig_meta/.local/share/vscode-shared"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .vscode-shared --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-vscode-shared.out" 2>"$tmp/migrate-vscode-shared.err"
+test "$(readlink -f "$mig_home/.vscode-shared")" = "$mig_meta/.local/share/vscode-shared"
+grep -qx 'sqlite-state' "$mig_meta/.local/share/vscode-shared/sharedStorage/state.vscdb"
+
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/vscode-shared-post.tsv" --inventory-summary "$tmp/vscode-shared-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/vscode-shared-post.out" 2>"$tmp/vscode-shared-post.err"
+grep -qx $'.vscode-shared\tsymlink\talready-meta\talready-meta\t'"$mig_meta"$'/.local/share/vscode-shared\tnone\tn/a' "$tmp/vscode-shared-post.tsv"
+
 gphoto_bad_meta="$tmp/gphoto-bad-meta"
 gphoto_bad_home="$tmp/gphoto-bad-home"
 mkdir -p "$gphoto_bad_meta/.local" "$gphoto_bad_meta/envctl/home" "$gphoto_bad_home"
@@ -187,6 +204,22 @@ fi
 test -f "$gphoto_bad_home/.gphoto"
 test ! -e "$gphoto_bad_meta/.config/gphoto"
 grep -q -- '--migrate-dot .gphoto: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-gphoto-file.err"
+
+vscode_shared_bad_meta="$tmp/vscode-shared-bad-meta"
+vscode_shared_bad_home="$tmp/vscode-shared-bad-home"
+mkdir -p "$vscode_shared_bad_meta/.local" "$vscode_shared_bad_meta/envctl/home" "$vscode_shared_bad_home"
+printf '# managed gitconfig\n' >"$vscode_shared_bad_meta/envctl/home/.gitconfig"
+ln -s "$vscode_shared_bad_meta/envctl/home/.gitconfig" "$vscode_shared_bad_meta/.gitconfig"
+ln -s "$vscode_shared_bad_meta/.gitconfig" "$vscode_shared_bad_home/.gitconfig"
+ln -s "$vscode_shared_bad_meta/.local" "$vscode_shared_bad_home/.local"
+printf 'not a directory\n' >"$vscode_shared_bad_home/.vscode-shared"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .vscode-shared --meta-root "$vscode_shared_bad_meta" --real-home "$vscode_shared_bad_home" --envctl-home-source "$vscode_shared_bad_meta/envctl/home" >"$tmp/migrate-vscode-shared-file.out" 2>"$tmp/migrate-vscode-shared-file.err"; then
+  echo "expected --migrate-dot .vscode-shared to fail closed for non-directory source" >&2
+  exit 1
+fi
+test -f "$vscode_shared_bad_home/.vscode-shared"
+test ! -e "$vscode_shared_bad_meta/.local/share/vscode-shared"
+grep -q -- '--migrate-dot .vscode-shared: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-vscode-shared-file.err"
 
 mkdir -p "$mig_meta/.toolchains/cargo"
 printf 'canonical cargo state\n' >"$mig_meta/.toolchains/cargo/config"
