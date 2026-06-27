@@ -1,29 +1,49 @@
-# Feature Forge guardian report — TASK-0072 Ollama model store into meta
+# TASK-0078 guardian report
 
 Date: 2026-06-27
-Branch/worktree: `task-0072-ollama-models-meta`
 
-## Verdict
+## Verification commands
 
-PASS WITH NOTES — ready for PR and merge polling. Do not tick TASK-0072 done until the PR is MERGED.
+```bash
+bash scripts/tests/test-meta-local-path-audit.sh
+bash ci/gates/meta-local-policy.sh
+bash -n scripts/audit-meta-local-paths.sh scripts/tests/test-meta-local-path-audit.sh ci/gates/meta-local-policy.sh
+bash ci/gates/harness-scripts.sh
+```
 
-## Verification run
+All commands passed.
 
-- `cargo fmt --manifest-path Cargo.toml -p envctl-engine -p envctl` — PASS
-- `cargo test -p envctl-engine layout` — PASS (8 layout/matching tests passed)
-- `cargo test -p envctl --test env` — PASS (2 env export tests passed)
-- `cargo run -p envctl --bin envctl -- env --toolchains | grep -E 'OLLAMA_(MODELS|LIBRARY_PATH)'` — PASS
-  - observed `OLLAMA_LIBRARY_PATH=/home/drdave/Desktop/meta/.toolchains/ollama/lib/ollama`
-  - observed `OLLAMA_MODELS=/home/drdave/Desktop/meta/var/lib/ollama/models`
-- `cargo run -p envctl --bin envctl -- env --toolchains --json | jq -r '.OLLAMA_MODELS, .OLLAMA_LIBRARY_PATH'` — PASS
-  - observed `/home/drdave/Desktop/meta/var/lib/ollama/models`
-  - observed `/home/drdave/Desktop/meta/.toolchains/ollama/lib/ollama`
-- `cargo run -p envctl --bin envctl -- lock --check` — PASS (`envctl.lock matches the manifest (91 components)`)
-- `bash ci/gates/meta-local-policy.sh` — PASS
-- `bash ci/gates/no-c.sh` — PASS
-- `bash ci/gates/shape.sh` — PASS
-- `cargo clippy -p envctl-engine -p envctl -- -D warnings` — PASS
+## Live runtime verification
 
-## Notes / inherited environment issue
+Read-only live audit command:
 
-`cargo fmt --all` failed in this worktree because the single-repo worktree has detached sibling path-dependency worktrees, and cargo/rustfmt tries to treat `loop_lib` as part of `/home/drdave/Desktop/meta/.worktrees/Cargo.toml`. This is a worktree-construction issue, not a touched-code formatting failure; touched packages were formatted explicitly.
+```bash
+./scripts/audit-meta-local-paths.sh \
+  --inventory /tmp/.../inventory.tsv \
+  --inventory-summary /tmp/.../summary.tsv \
+  --deep-link-inventory /tmp/.../deep.tsv \
+  --deep-link-summary /tmp/.../deep-summary.tsv \
+  --shell-dotfile-conflict-report /tmp/.../shell-conflicts.tsv \
+  --meta-root /home/drdave/Desktop/meta \
+  --real-home /home/drdave \
+  --envctl-home-source /home/drdave/Desktop/meta/envctl/home
+```
+
+Observed:
+
+- exit code: 0
+- `changed=0`
+- inventory summary:
+  - `already-meta=34`
+  - `app-config-state=35`
+  - `bridge=1`
+  - `cache=1`
+  - `managed-dotfile=2`
+  - `sensitive=5`
+- shell conflict report: header only
+- deep-link summary: `inside-meta=5060`, `external-system=1119`, `missing-target=329`, no `real-home-leak` rows
+- backup/history sample rows (`.bash_history`, `.zsh_history`, `.bashrc.bak.*`, `.claude.json.bak.*`, `.n8n.bak.*`, `.zshrc.bak.*`) all resolve inside `$META_ROOT/var/lib/envctl/real-home-dotfile-migration/history-or-backup` as `already-meta`.
+
+## Result
+
+PASS. The slice adds test-proven migration affordances without weakening the default non-mutating owner-supervised policy.

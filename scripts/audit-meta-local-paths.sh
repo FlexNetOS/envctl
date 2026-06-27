@@ -12,11 +12,11 @@
 # Shell dotfiles are only canonicalized with the explicit --apply-shell-dotfiles opt-in; default
 # --apply remains limited to the proven-safe bridges above plus explicitly requested allow-listed
 # --migrate-dot entries.
-# History/backup dot entries are only archived into META_ROOT with the explicit
+# History/backup dot entries are only archived+bridged into META_ROOT with the explicit
 # --apply-history-archives opt-in; default --apply remains non-mutating for them.
+# Portable app configs are only migrated when they are explicitly allow-listed here.
 # Explicit --migrate-dot requests are allow-listed, require --apply for mutation, and preserve an
 # existing canonical META_ROOT target by archiving the old real-home state under META_ROOT first.
-# Portable app configs are only migrated when they are explicitly allow-listed here.
 set -euo pipefail
 
 usage() {
@@ -38,8 +38,8 @@ stores legitimately contain embedded absolute system links and missing internal 
 --fail-real-home-deep-links to fail if any recursive link resolves back into the real home outside
 META_ROOT.
 With --migrate-dot, performs an explicit owner-requested migration for allow-listed entries only
-(known toolchain state, .claude, .codex, portable app-config files like .ideavimrc, portable app-config dirs like .gphoto/.vscode-shared, or a managed
-dotfile present under --envctl-home-source).
+(known toolchain state, known agent/app config state including portable app-config files
+like .ideavimrc, portable app-config dirs like .gphoto/.vscode-shared, or a managed dotfile present under --envctl-home-source).
 Mutation still requires --apply; without --apply the script prints the planned move and changes nothing.
 With --shell-dotfile-conflict-report, writes supervised shell-dotfile merge rows:
 dot_entry, real_path, canonical_target, action, apply_safe, real_sha256, canonical_sha256, real_lines, canonical_lines, recommendation.
@@ -212,10 +212,11 @@ shell_dotfile_action() {
 
 is_history_or_backup_dot() {
   case "$1" in
-    .bash_history|.zsh_history|.*_history|*.bak|*.bak.*) return 0 ;;
+    .bash_history|.zsh_history|.*_history|*.bak|*.bak.*|*.backup|*.backup.*) return 0 ;;
     *) return 1 ;;
   esac
 }
+
 
 history_archive_target_for_dot() {
   local dot="$1"
@@ -279,6 +280,7 @@ apply_history_archive_bridge() {
   ln -sfn "$target" "$path"
   changed_msg "archived $path to $target and linked $path -> $target"
 }
+
 
 inventory_row() {
   local dot="$1" type="$2" state="$3" target_class="$4" canonical_target="$5" action="$6" apply_safe="$7"
@@ -413,19 +415,35 @@ scan_deep_links() {
   done
 }
 
-canonical_target_for_dot() {
+app_config_target_for_dot() {
   local dot="$1"
   case "$dot" in
-    .cargo|.rustup|.bun|.npm|.wasmer|.dotnet|.pgrx|.venvs|.go|.gradle|.nix-*)
-      printf '%s\n' "$META_ROOT/.toolchains/${dot#.}"
+    .ideavimrc)
+      printf '%s\n' "$META_ROOT/.ideavimrc"
       ;;
-    .gphoto) printf '%s\n' "$META_ROOT/.config/gphoto" ;;
-    .vscode-shared) printf '%s\n' "$META_ROOT/.local/share/vscode-shared" ;;
-    .claude) printf '%s\n' "$META_ROOT/.local/share/claude" ;;
-    .codex) printf '%s\n' "$META_ROOT/.local/share/codex" ;;
-    .ideavimrc) printf '%s\n' "$META_ROOT/.ideavimrc" ;;
-    *) printf '%s\n' "$ENVCTL_HOME_SOURCE/$dot" ;;
+    .ollama)
+      printf '%s\n' "$META_ROOT/var/lib/ollama"
+      ;;
+    .claude.json)
+      printf '%s\n' "$META_ROOT/.local/share/claude/claude.json"
+      ;;
+    .gphoto)
+      printf '%s\n' "$META_ROOT/.config/gphoto"
+      ;;
+    .vscode-shared)
+      printf '%s\n' "$META_ROOT/.local/share/vscode-shared"
+      ;;
+    .agents|.ampcode|.claude|.codex|.codeium|.copilot|.cursor|.gemini|.goose_recipes|.junie|.kimi|.kimi-code|.roo|.vscode|.windsurf|.mozilla|.thunderbird)
+      printf '%s\n' "$META_ROOT/.local/share/${dot#.}"
+      ;;
+    *)
+      return 1
+      ;;
   esac
+}
+
+is_app_config_dot() {
+  app_config_target_for_dot "$1" >/dev/null 2>&1
 }
 
 is_portable_app_config_file_dot() {
@@ -442,6 +460,19 @@ is_portable_app_config_dir_dot() {
   esac
 }
 
+canonical_target_for_dot() {
+  local dot="$1"
+  case "$dot" in
+    .cargo|.rustup|.bun|.npm|.wasmer|.dotnet|.pgrx|.venvs|.go|.gradle|.nix-*)
+      printf '%s\n' "$META_ROOT/.toolchains/${dot#.}"
+      ;;
+    .agents|.ampcode|.claude|.claude.json|.codex|.codeium|.copilot|.cursor|.gemini|.goose_recipes|.gphoto|.vscode-shared|.junie|.kimi|.kimi-code|.ollama|.roo|.vscode|.windsurf|.mozilla|.thunderbird|.ideavimrc)
+      app_config_target_for_dot "$dot"
+      ;;
+    *) printf '%s\n' "$ENVCTL_HOME_SOURCE/$dot" ;;
+  esac
+}
+
 is_migratable_dot() {
   local dot="$1"
 
@@ -449,13 +480,17 @@ is_migratable_dot() {
     .*/*|.|..|.local|.config|.cache|.ssh|.aws|.gnupg|.mcp-auth|.docker|.kube|.password-store)
       return 1
       ;;
-    .cargo|.rustup|.bun|.npm|.wasmer|.dotnet|.pgrx|.venvs|.go|.gradle|.nix-*|.claude|.codex|.gphoto|.vscode-shared)
+    .cargo|.rustup|.bun|.npm|.wasmer|.dotnet|.pgrx|.venvs|.go|.gradle|.nix-*)
       return 0
       ;;
     .*)
       if is_portable_app_config_file_dot "$dot"; then
         return 0
       fi
+      if is_portable_app_config_dir_dot "$dot"; then
+        return 0
+      fi
+      is_app_config_dot "$dot" && return 0
       [ -e "$ENVCTL_HOME_SOURCE/$dot" ] || [ -L "$ENVCTL_HOME_SOURCE/$dot" ]
       ;;
     *)
@@ -586,7 +621,7 @@ classify_real_home_dot() {
           record_shell_dotfile_conflict "$dot" "$path" "$canonical_target" "$action" "$apply_safe"
         fi
         ;;
-      .bash_history|.zsh_history|.*_history|*.bak|*.bak.*)
+      .bash_history|.zsh_history|.*_history|*.bak|*.bak.*|*.backup|*.backup.*)
         target_class="history-or-backup"
         canonical_target="$(history_archive_target_for_dot "$dot")"
         action="archive-and-bridge"
@@ -627,9 +662,9 @@ classify_real_home_dot() {
           apply_safe="no"
         fi
         ;;
-      .claude|.codex|.vscode|.mozilla|.thunderbird)
+      .agents|.ampcode|.claude|.claude.json|.codex|.codeium|.copilot|.cursor|.gemini|.goose_recipes|.junie|.kimi|.kimi-code|.ollama|.roo|.vscode|.windsurf|.mozilla|.thunderbird)
         target_class="app-config-state"
-        canonical_target="$META_ROOT/.local/share/${dot#.}"
+        canonical_target="$(app_config_target_for_dot "$dot")"
         action="owner-supervised-config-migration"
         ;;
     esac
@@ -800,7 +835,6 @@ if [ -d "$REAL_HOME" ]; then
       apply_history_archive_bridge "$dot" "$path"
     fi
     classify_real_home_dot "$dot" "$path"
-
     if [ -L "$path" ]; then
       resolved="$(readlink -f "$path" 2>/dev/null || true)"
       if [ -n "$resolved" ] && is_under_meta "$resolved"; then

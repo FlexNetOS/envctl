@@ -45,6 +45,13 @@ trap 'rm -f "$TMP" "$SOURCE_LIST"' EXIT
 
 git ls-files -z --cached --others --exclude-standard -- "${ACTIVE_PATHS[@]}" >"$SOURCE_LIST"
 
+
+if grep -RIn -- '--archive-backup-dotfiles\|ARCHIVE_BACKUP_DOTFILES\|apply_backup_dotfile_archive\|is_backup_dotfile\|archive-backup' \
+  scripts/audit-meta-local-paths.sh scripts/tests/test-meta-local-path-audit.sh >/dev/null; then
+  echo "meta-local-policy: stale backup-only archive mode must not return; use --apply-history-archives" >&2
+  exit 1
+fi
+
 if [ -s "$SOURCE_LIST" ] && xargs -0 grep -HEnI "$PATTERN" <"$SOURCE_LIST" |
   grep -v '^ci/gates/meta-local-policy.sh:' |
   grep -v '^crates/engine/src/migration.rs:' |
@@ -131,8 +138,15 @@ if ! grep -Fq 'find "$REAL_HOME" -mindepth 1 -maxdepth 1 -name' scripts/audit-me
    ! grep -Fq -- '--deep-link-summary) DEEP_LINK_SUMMARY_PATH=' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq -- '--fail-real-home-deep-links)' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq -- '--migrate-dot) MIGRATE_DOTS+=' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq -- '--apply-history-archives) APPLY_HISTORY_ARCHIVES=1' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq 'migrate_real_home_dot' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq 'is_migratable_dot' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'app_config_target_for_dot' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'is_portable_app_config_file_dot' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'is_portable_app_config_dir_dot' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq '.ideavimrc)' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq '.gphoto)' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq '.vscode-shared)' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq 'scan_deep_links' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq 'classify_deep_link' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq 'emit_deep_link_summary' scripts/audit-meta-local-paths.sh || \
@@ -146,7 +160,17 @@ if ! grep -Fq 'find "$REAL_HOME" -mindepth 1 -maxdepth 1 -name' scripts/audit-me
    ! grep -Fq '$home/.cargo' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq -- '--migrate-dot .cargo' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq -- '--migrate-dot .dotnet' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--migrate-dot .gemini' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--migrate-dot .ideavimrc' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--migrate-dot .gphoto' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--migrate-dot .vscode-shared' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq -- '--migrate-dot .ssh' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq 'backup-pre-summary.tsv' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '.ollama' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '.kimi-code' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '.ideavimrc' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '.config/gphoto' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '.local/share/vscode-shared' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq -- '--deep-link-inventory' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq -- '--deep-link-summary' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq -- '--fail-real-home-deep-links' scripts/tests/test-meta-local-path-audit.sh || \
@@ -154,6 +178,7 @@ if ! grep -Fq 'find "$REAL_HOME" -mindepth 1 -maxdepth 1 -name' scripts/audit-me
    ! grep -Fq 'external-system' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq 'real-home-leak' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq 'real-home-dotfile-migration' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--apply-history-archives' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq 'inventory-summary.tsv' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq 'apply_safe_yes' scripts/tests/test-meta-local-path-audit.sh; then
   echo "meta-local-policy: meta-local path audit must walk, inventory, classify, and test every top-level real-home dot entry class" >&2

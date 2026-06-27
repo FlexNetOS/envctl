@@ -1,20 +1,22 @@
-# Feature Forge implementer log — TASK-0072 Ollama model store into meta
+# TASK-0078 implementer log
 
 Date: 2026-06-27
-Branch/worktree: `task-0072-ollama-models-meta`
 
-## Changes
+## Changes made
 
-- Added `MetaLayout::ollama_models()` returning `$META_ROOT/var/lib/ollama/models`, with a layout unit test.
-- Added `OLLAMA_MODELS` to `envctl env --toolchains` shell and JSON outputs, with CLI integration tests.
-- Reworked the `ollama` manifest component:
-  - detect now requires a non-symlink executable wrapper and the meta model directory;
-  - install creates `$META_ROOT/var/lib/ollama/models`, downloads/extracts the upstream runner under `.toolchains/ollama`, non-destructively adopts existing legacy model stores when the meta store is empty, and writes the wrapper;
-  - verify checks wrapper contents and runs `ollama -v` through the wrapper with `OLLAMA_MODELS` unset;
-  - remove deletes only envctl-owned wrapper/toolchain bytes and preserves `$META_ROOT/var/lib/ollama/models`.
-- Regenerated `manifest/envctl.lock`.
-- Archived stale cycle artifacts from a prior task into `.handoff/loop/cycle/_done/` before writing current TASK-0072 artifacts.
+- Added `--archive-backup-dotfiles` to `scripts/audit-meta-local-paths.sh`.
+  - It is inert unless paired with `--apply`.
+  - It archives only top-level backup-like dot entries under `$META_ROOT/var/lib/envctl/real-home-dotfile-migration/<timestamp>/`.
+  - It refuses symlink backups and leaves active `.bash_history`, `.zsh_history`, and `.*_history` owner-supervised.
+- Added `app_config_target_for_dot` / `is_app_config_dot` and routed known agent/app config state to canonical meta-owned targets.
+- Expanded TDD coverage for:
+  - app-config inventory targets (`.gemini`, `.kimi-code`, `.ollama`, `.claude.json`),
+  - explicit `--migrate-dot` dry-run/apply behavior for those app config entries,
+  - backup archive pre-summary and apply behavior,
+  - active shell history remaining untouched.
+- Strengthened `ci/gates/meta-local-policy.sh` to require the new backup/app-config audit affordances and tests.
 
 ## Notes
 
-`cargo fmt --all` is blocked in this isolated single-repo worktree because `--all` tries to format sibling path deps (`loop_lib`, `meta_plugin_protocol`) as workspace members under `/home/drdave/Desktop/meta/.worktrees/Cargo.toml`. Targeted formatting for touched crates succeeded: `cargo fmt --manifest-path Cargo.toml -p envctl-engine -p envctl`.
+- No live `--apply --archive-backup-dotfiles` was necessary: the live backup/history rows currently resolve inside `$META_ROOT` as symlinks, and the read-only audit has no remaining `history-or-backup` real-home class.
+- Broad unknown app config entries remain classified `owner-supervised-migration` with no canonical target and no automatic move.

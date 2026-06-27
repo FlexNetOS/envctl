@@ -1,30 +1,29 @@
-# Feature Forge architect plan — TASK-0072 Ollama model store into meta
+# TASK-0078 next slice plan — app-config target inventory + backup archive guard
 
 Date: 2026-06-27
-Branch/worktree: `task-0072-ollama-models-meta`
+Worktree: `/home/drdave/Desktop/meta/.worktrees/task-0078-next-inventory/envctl`
+Branch: `task-0078-next-inventory`
 
-## Verified claim
+## Verified baseline
 
-Backlog TASK-0072 requires keeping the meta-owned Ollama runner/client primary while moving model blobs out of root/real-home daemon stores into a meta-owned location. Ollama removal is explicitly deferred until shimmy+ruvllm prove parity.
-
-Existing state before this cycle:
-- `ollama` component installed runner bytes under `$META_ROOT/.toolchains/ollama` and exposed `$META_ROOT/usr/bin/ollama` as a symlink to the toolchain binary.
-- `envctl env --toolchains` exported `OLLAMA_LIBRARY_PATH` only.
-- No canonical layout helper/export existed for `OLLAMA_MODELS`.
+- `origin/master` already contains the prior TASK-0078 slices: PR #290/#291/#293/#296 are merged.
+- Live audit from this worktree reported `dot_entries=78`, `changed=0`, and no remaining `shell-dotfile` class or shell conflicts.
+- Current class counts: `already-meta=34`, `app-config-state=35`, `bridge=1`, `cache=1`, `managed-dotfile=2`, `sensitive=5`.
+- History/backup entries that were real-home state in an earlier inventory now resolve inside `$META_ROOT/var/lib/envctl/real-home-dotfile-migration/history-or-backup`, so no live backup mutation is needed today.
 
 ## Design
 
-1. Treat Ollama model layers as persistent state, not toolchain binaries:
-   - canonical path: `$META_ROOT/var/lib/ollama/models`.
-2. Add `MetaLayout::ollama_models()` and export it from `envctl env --toolchains` in shell and JSON modes as `OLLAMA_MODELS`.
-3. Change the manifest component from a symlink to a meta-owned wrapper at `$META_ROOT/usr/bin/ollama`:
-   - wrapper forces `META_ROOT`, `OLLAMA_MODELS`, and `OLLAMA_LIBRARY_PATH`;
-   - wrapper execs `$META_ROOT/.toolchains/ollama/bin/ollama`.
-4. During install, create `$META_ROOT/var/lib/ollama/models` and non-destructively copy legacy stores into it only when the meta store is empty. Never delete root/real-home legacy model stores behind envctl's back.
-5. Preserve the runner binary under `.toolchains/ollama`; do not implement shimmy/ruvllm removal in this task.
+1. Keep default audit/apply conservative: no broad app state migration happens unless an owner names a dot entry with `--migrate-dot`.
+2. Extend the supervised app-config allowlist with canonical targets for known agent/app state that appears in the live inventory:
+   - `.gemini`, `.kimi-code`, `.agents`, `.ampcode`, `.codeium`, `.copilot`, `.cursor`, `.goose_recipes`, `.junie`, `.kimi`, `.roo`, `.vscode`, `.windsurf`, `.mozilla`, `.thunderbird` -> `$META_ROOT/.local/share/<name>`.
+   - `.ollama` -> `$META_ROOT/var/lib/ollama` to preserve the existing model-store decision.
+   - `.claude.json` -> `$META_ROOT/.local/share/claude/claude.json`.
+3. Add a separate backup-only archive mode, `--archive-backup-dotfiles`, requiring `--apply`, for backup-like top-level dot entries only (`*.bak`, `*.bak.*`, `*.backup`, `*.backup.*`). Active shell histories stay owner-supervised.
+4. Add gate checks so future regressions cannot drop the new app-config target function, backup archive mode, or TDD coverage.
 
 ## Runtime surface
 
-- `envctl env --toolchains` must print `OLLAMA_MODELS=$META_ROOT/var/lib/ollama/models`.
-- `envctl env --toolchains --json` must carry the same path.
-- `envctl lock --check` must accept the updated manifest lock.
+- `scripts/tests/test-meta-local-path-audit.sh`
+- `ci/gates/meta-local-policy.sh`
+- `ci/gates/harness-scripts.sh`
+- Live read-only audit against `/home/drdave` and `/home/drdave/Desktop/meta` with inventory, summaries, shell conflict report, and deep link summaries.
