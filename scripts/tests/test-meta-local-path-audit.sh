@@ -131,9 +131,14 @@ mkdir -p \
   "$mig_home/.junie" \
   "$mig_home/.vscode-shared/sharedStorage" \
   "$mig_home/.repomix/outputs" \
+  "$mig_home/.junie/sessions" \
+  "$mig_home/.junie/mcp" \
+  "$mig_home/.junie/versions/1892.22/skills" \
   "$mig_home/.kimi-code" \
   "$mig_home/.ollama" \
-  "$mig_meta/.local/share/junie"
+  "$mig_meta/.local/share/junie/current" \
+  "$mig_meta/.local/share/junie/updates" \
+  "$mig_meta/.local/share/junie/versions/1892.22"
 printf '# managed gitconfig\n' >"$mig_meta/envctl/home/.gitconfig"
 ln -s "$mig_meta/envctl/home/.gitconfig" "$mig_meta/.gitconfig"
 ln -s "$mig_meta/.gitconfig" "$mig_home/.gitconfig"
@@ -144,20 +149,28 @@ printf 'real-home dotnet state\n' >"$mig_home/.dotnet/state"
 printf 'set ideajoin\n' >"$mig_home/.ideavimrc"
 printf '{ "theme": "dark" }\n' >"$mig_home/.gemini/settings.json"
 printf 'camera-port=usb\n' >"$mig_home/.gphoto/settings"
-printf 'real-home junie state\n' >"$mig_home/.junie/state.json"
-printf 'canonical junie state\n' >"$mig_meta/.local/share/junie/state.json"
 printf 'sqlite-state\n' >"$mig_home/.vscode-shared/sharedStorage/state.vscdb"
 printf 'repomix-output\n' >"$mig_home/.repomix/outputs/latest.txt"
+printf '{ "theme": "light" }\n' >"$mig_home/.junie/settings.json"
+printf '{ "secrets": {} }\n' >"$mig_home/.junie/secure_credentials.json"
+chmod 600 "$mig_home/.junie/secure_credentials.json"
+printf '{ "mcpServers": {} }\n' >"$mig_home/.junie/mcp/mcp.json"
+printf 'session event\n' >"$mig_home/.junie/sessions/events.jsonl"
+printf 'skill note\n' >"$mig_home/.junie/versions/1892.22/skills/local.md"
+printf '#!/usr/bin/env bash\nexit 0\n' >"$mig_meta/.local/share/junie/current/junie"
+chmod +x "$mig_meta/.local/share/junie/current/junie"
+printf '{ "pending": true }\n' >"$mig_meta/.local/share/junie/updates/pending-update.json"
+printf 'bundled app asset\n' >"$mig_meta/.local/share/junie/versions/1892.22/app.txt"
 printf 'real-home kimi-code credentials\n' >"$mig_home/.kimi-code/credentials.json"
 printf 'real-home ollama history\n' >"$mig_home/.ollama/history"
 printf '{ "mcpServers": {} }\n' >"$mig_home/.claude.json"
 
 "$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/app-config-inventory.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/app-config-inventory.out" 2>"$tmp/app-config-inventory.err"
 grep -qx $'.gemini\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/gemini\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
-grep -qx $'.junie\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/junie\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
 grep -qx $'.gphoto\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.config/gphoto\tmigrate-dir-to-meta-config-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.vscode-shared\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/vscode-shared\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.repomix\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/repomix\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
+grep -qx $'.junie\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/junie\tmerge-dir-to-existing-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.kimi-code\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/kimi-code\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
 grep -qx $'.ollama\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/var/lib/ollama\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
 grep -qx $'.claude.json\tfile\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/claude/claude.json\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
@@ -166,22 +179,11 @@ grep -qx $'.ideavimrc\tfile\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.
 "$root/scripts/audit-meta-local-paths.sh" --app-config-conflict-report "$tmp/app-config-conflicts.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/app-config-conflicts.out" 2>"$tmp/app-config-conflicts.err"
 head -n 1 "$tmp/app-config-conflicts.tsv" | grep -qx $'dot_entry\treal_path\tcanonical_target\taction\tapply_safe\treal_type\tcanonical_type\treal_digest\tcanonical_digest\treal_entries\tcanonical_entries\trecommendation'
 awk -F '\t' 'NF != 12 { print "bad app-config conflict row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/app-config-conflicts.tsv"
-test "$(wc -l <"$tmp/app-config-conflicts.tsv" | tr -d '[:space:]')" = 2
-awk -F '\t' -v home="$mig_home" -v meta="$mig_meta" '
-  $1 == ".junie" {
-    if ($2 != home "/.junie") bad=1
-    if ($3 != meta "/.local/share/junie") bad=1
-    if ($4 != "owner-supervised-config-migration") bad=1
-    if ($5 != "no") bad=1
-    if ($6 != "directory" || $7 != "directory") bad=1
-    if ($8 !~ /^[0-9a-f]{64}$/ || $9 !~ /^[0-9a-f]{64}$/) bad=1
-    if ($8 == $9) bad=1
-    if ($10 != "1" || $11 != "1") bad=1
-    if ($12 != "merge-canonical-then-bridge") bad=1
-    found=1
-  }
-  END { exit !(found && !bad) }
-' "$tmp/app-config-conflicts.tsv"
+test "$(wc -l <"$tmp/app-config-conflicts.tsv" | tr -d '[:space:]')" = 1
+if awk -F '\t' '$1 == ".junie" { found=1 } END { exit !found }' "$tmp/app-config-conflicts.tsv"; then
+  echo "unexpected app-config conflict report row for merge-safe .junie target" >&2
+  exit 1
+fi
 if awk -F '\t' '$1 == ".gemini" { found=1 } END { exit !found }' "$tmp/app-config-conflicts.tsv"; then
   echo "unexpected app-config conflict report row for missing canonical .gemini target" >&2
   exit 1
@@ -265,6 +267,32 @@ grep -qx 'repomix-output' "$mig_meta/.local/share/repomix/outputs/latest.txt"
 "$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/repomix-post.tsv" --inventory-summary "$tmp/repomix-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/repomix-post.out" 2>"$tmp/repomix-post.err"
 grep -qx $'.repomix\tsymlink\talready-meta\talready-meta\t'"$mig_meta"$'/.local/share/repomix\tnone\tn/a' "$tmp/repomix-post.tsv"
 
+"$root/scripts/audit-meta-local-paths.sh" --migrate-dot .junie --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-junie-dry.out" 2>"$tmp/migrate-junie-dry.err"
+grep -q 'DRY-RUN: would merge source-only entries from .*\.junie into existing .*\.local/share/junie' "$tmp/migrate-junie-dry.out"
+test -d "$mig_home/.junie"
+test -f "$mig_meta/.local/share/junie/current/junie"
+test -f "$mig_meta/.local/share/junie/updates/pending-update.json"
+test ! -f "$mig_meta/.local/share/junie/settings.json"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .junie --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-junie.out" 2>"$tmp/migrate-junie.err"
+test "$(readlink -f "$mig_home/.junie")" = "$mig_meta/.local/share/junie"
+grep -qx '{ "theme": "light" }' "$mig_meta/.local/share/junie/settings.json"
+grep -qx '{ "secrets": {} }' "$mig_meta/.local/share/junie/secure_credentials.json"
+test "$(stat -c %a "$mig_meta/.local/share/junie/secure_credentials.json")" = "600"
+grep -qx '{ "mcpServers": {} }' "$mig_meta/.local/share/junie/mcp/mcp.json"
+grep -qx 'session event' "$mig_meta/.local/share/junie/sessions/events.jsonl"
+grep -qx 'skill note' "$mig_meta/.local/share/junie/versions/1892.22/skills/local.md"
+grep -qx 'bundled app asset' "$mig_meta/.local/share/junie/versions/1892.22/app.txt"
+test -x "$mig_meta/.local/share/junie/current/junie"
+grep -qx '{ "pending": true }' "$mig_meta/.local/share/junie/updates/pending-update.json"
+archive_junie="$(find "$mig_meta/var/lib/envctl/real-home-dotfile-migration" -mindepth 2 -maxdepth 2 -type d -name .junie -print -quit)"
+test -n "$archive_junie"
+grep -qx '{ "theme": "light" }' "$archive_junie/settings.json"
+test "$(stat -c %a "$archive_junie/secure_credentials.json")" = "600"
+
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/junie-post.tsv" --inventory-summary "$tmp/junie-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/junie-post.out" 2>"$tmp/junie-post.err"
+grep -qx $'.junie\tsymlink\talready-meta\talready-meta\t'"$mig_meta"$'/.local/share/junie\tnone\tn/a' "$tmp/junie-post.tsv"
+
 gphoto_bad_meta="$tmp/gphoto-bad-meta"
 gphoto_bad_home="$tmp/gphoto-bad-home"
 mkdir -p "$gphoto_bad_meta/.local" "$gphoto_bad_meta/envctl/home" "$gphoto_bad_home"
@@ -312,6 +340,42 @@ fi
 test -f "$repomix_bad_home/.repomix"
 test ! -e "$repomix_bad_meta/.local/share/repomix"
 grep -q -- '--migrate-dot .repomix: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-repomix-file.err"
+
+junie_bad_meta="$tmp/junie-bad-meta"
+junie_bad_home="$tmp/junie-bad-home"
+mkdir -p "$junie_bad_meta/.local" "$junie_bad_meta/envctl/home" "$junie_bad_home"
+printf '# managed gitconfig\n' >"$junie_bad_meta/envctl/home/.gitconfig"
+ln -s "$junie_bad_meta/envctl/home/.gitconfig" "$junie_bad_meta/.gitconfig"
+ln -s "$junie_bad_meta/.gitconfig" "$junie_bad_home/.gitconfig"
+ln -s "$junie_bad_meta/.local" "$junie_bad_home/.local"
+printf 'not a directory\n' >"$junie_bad_home/.junie"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .junie --meta-root "$junie_bad_meta" --real-home "$junie_bad_home" --envctl-home-source "$junie_bad_meta/envctl/home" >"$tmp/migrate-junie-file.out" 2>"$tmp/migrate-junie-file.err"; then
+  echo "expected --migrate-dot .junie to fail closed for non-directory source" >&2
+  exit 1
+fi
+test -f "$junie_bad_home/.junie"
+test ! -e "$junie_bad_meta/.local/share/junie"
+grep -q -- '--migrate-dot .junie: .* is not a directory; refusing automatic merge app-config directory migration' "$tmp/migrate-junie-file.err"
+
+junie_collision_meta="$tmp/junie-collision-meta"
+junie_collision_home="$tmp/junie-collision-home"
+mkdir -p "$junie_collision_meta/.local/share/junie/current" "$junie_collision_meta/envctl/home" "$junie_collision_home/.junie/sessions"
+printf '# managed gitconfig\n' >"$junie_collision_meta/envctl/home/.gitconfig"
+ln -s "$junie_collision_meta/envctl/home/.gitconfig" "$junie_collision_meta/.gitconfig"
+ln -s "$junie_collision_meta/.gitconfig" "$junie_collision_home/.gitconfig"
+ln -s "$junie_collision_meta/.local" "$junie_collision_home/.local"
+printf 'target settings\n' >"$junie_collision_meta/.local/share/junie/settings.json"
+printf 'source settings\n' >"$junie_collision_home/.junie/settings.json"
+printf 'source session\n' >"$junie_collision_home/.junie/sessions/events.jsonl"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .junie --meta-root "$junie_collision_meta" --real-home "$junie_collision_home" --envctl-home-source "$junie_collision_meta/envctl/home" >"$tmp/migrate-junie-collision.out" 2>"$tmp/migrate-junie-collision.err"; then
+  echo "expected --migrate-dot .junie to fail closed for conflicting target file" >&2
+  exit 1
+fi
+test -d "$junie_collision_home/.junie"
+test ! -L "$junie_collision_home/.junie"
+grep -qx 'target settings' "$junie_collision_meta/.local/share/junie/settings.json"
+test ! -e "$junie_collision_meta/.local/share/junie/sessions/events.jsonl"
+grep -q -- '--migrate-dot .junie: existing target .* has conflicting entries or unsafe links; refusing automatic merge' "$tmp/migrate-junie-collision.err"
 
 
 mkdir -p "$mig_meta/.toolchains/cargo"
