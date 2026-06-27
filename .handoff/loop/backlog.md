@@ -338,6 +338,18 @@ FIRST** (never relocate to older), (4) smoke-test, (5) archive installed copy (t
 delete), (6) symlink `~/.local/bin/<tool>`→meta build, (7) re-verify + ROLLBACK on failure, (8)
 verify env health.
 
+- [~] **TASK-0078 (P0) — real-home dotfile relocation inventory + safe bridge automation (PR #290
+  ARMED):** Current loop target for the owner goal "walk every dot file/folder under `/home/drdave`
+  and relocate/bridge surgically into meta." PR #290 now hardens the read-only audit into a
+  machine-readable `--inventory` TSV that records every top-level real-home dot entry with
+  `type/state/target_class/canonical_target/action/apply_safe`, while keeping mutation limited to
+  proven-safe bridges (`~/.local`, `.local/bin`, canonical `.gitconfig`). Live dry-run evidence
+  2026-06-27: `dot_entries=78`, `warnings=75`, `changed=0`; class counts were `bridge=1`,
+  `managed-dotfile=3`, `already-meta=1`, `sensitive=5`, `toolchain-state=9`, `cache=1`,
+  `shell-dotfile=5`, `history-or-backup=17`, `app-config-state=36`. Next slices consume this
+  inventory class-by-class (toolchains, shell dotfiles, app config, sensitive stores) and add tests
+  before any broader apply behavior; owner-supervised classes remain non-mutating until a safe
+  per-class component/bridge is proven.
 - [x] `envctl env` — discover meta-root via `.meta.yaml` marker (`engine::dashboard::locate_meta_file`),
   emit `export META_ROOT=…` + meta tool dirs on PATH; `--toolchains`/`--materialize` (merged from
   feat/envctl-env, 2026-06-12).

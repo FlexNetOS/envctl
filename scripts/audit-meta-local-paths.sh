@@ -15,9 +15,11 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--inventory PATH] [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
+With --inventory, also writes a tab-separated relocation inventory:
+dot_entry, type, state, target_class, canonical_target, action, apply_safe.
 USAGE
 }
 
@@ -26,10 +28,12 @@ ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")/.." rev-parse --show-toplevel 2>/
 META_ROOT="${META_ROOT:-$(cd "$ROOT/.." && pwd)}"
 REAL_HOME="${ENVCTL_REAL_HOME:-$HOME}"
 ENVCTL_HOME_SOURCE="$ROOT/home"
+INVENTORY_PATH=""
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --apply) APPLY=1; shift ;;
+    --inventory) INVENTORY_PATH="${2:?--inventory requires a path}"; shift 2 ;;
     --meta-root) META_ROOT="${2:?--meta-root requires a path}"; shift 2 ;;
     --real-home) REAL_HOME="${2:?--real-home requires a path}"; shift 2 ;;
     --envctl-home-source) ENVCTL_HOME_SOURCE="${2:?--envctl-home-source requires a path}"; shift 2 ;;
@@ -51,6 +55,11 @@ dot_entries_seen=0
 stamp="$(date -u +%Y%m%dT%H%M%SZ)"
 archive_dir="$META_ROOT/var/lib/envctl/real-home-dotfile-migration/$stamp"
 
+if [ -n "$INVENTORY_PATH" ]; then
+  mkdir -p "$(dirname "$INVENTORY_PATH")"
+  printf 'dot_entry\ttype\tstate\ttarget_class\tcanonical_target\taction\tapply_safe\n' >"$INVENTORY_PATH"
+fi
+
 say() { printf '%s\n' "$*"; }
 fail() { failures=$((failures + 1)); say "FAIL: $*" >&2; }
 warn() { warnings=$((warnings + 1)); say "WARN: $*" >&2; }
@@ -62,6 +71,106 @@ is_under_meta() {
     "$META_ROOT"|"$META_ROOT"/*) return 0 ;;
     *) return 1 ;;
   esac
+}
+
+entry_type() {
+  local path="$1"
+  if [ -L "$path" ]; then
+    printf 'symlink'
+  elif [ -d "$path" ]; then
+    printf 'directory'
+  elif [ -f "$path" ]; then
+    printf 'file'
+  elif [ -e "$path" ]; then
+    printf 'other'
+  else
+    printf 'missing'
+  fi
+}
+
+inventory_row() {
+  [ -n "$INVENTORY_PATH" ] || return 0
+  local dot="$1" type="$2" state="$3" target_class="$4" canonical_target="$5" action="$6" apply_safe="$7"
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$dot" "$type" "$state" "$target_class" "$canonical_target" "$action" "$apply_safe" >>"$INVENTORY_PATH"
+}
+
+classify_real_home_dot() {
+  local dot="$1" path="$2" type state target_class canonical_target action apply_safe resolved
+  type="$(entry_type "$path")"
+  state="real-home-state"
+  target_class="app-config-state"
+  canonical_target=""
+  action="owner-supervised-migration"
+  apply_safe="no"
+
+  if [ -L "$path" ]; then
+    resolved="$(readlink -f "$path" 2>/dev/null || true)"
+    canonical_target="$resolved"
+    if [ -n "$resolved" ] && is_under_meta "$resolved"; then
+      state="already-meta"
+      target_class="already-meta"
+      action="none"
+      apply_safe="n/a"
+    else
+      state="external-symlink"
+      target_class="external-symlink"
+      action="owner-supervised-relink"
+      apply_safe="no"
+    fi
+  elif [ -e "$ENVCTL_HOME_SOURCE/$dot" ]; then
+    target_class="managed-dotfile"
+    canonical_target="$ENVCTL_HOME_SOURCE/$dot"
+    action="owner-supervised-bridge"
+  else
+    case "$dot" in
+      .ssh|.aws|.gnupg|.mcp-auth|.docker|.kube|.password-store)
+        target_class="sensitive"
+        action="owner-supervised-vault-or-bridge"
+        ;;
+      .cache)
+        target_class="cache"
+        canonical_target="$META_ROOT/.local/cache"
+        action="component-managed-cache-migration"
+        ;;
+      .cargo)
+        target_class="toolchain-state"
+        canonical_target="$META_ROOT/.toolchains/cargo"
+        action="component-managed-toolchain-migration"
+        ;;
+      .rustup)
+        target_class="toolchain-state"
+        canonical_target="$META_ROOT/.toolchains/rustup"
+        action="component-managed-toolchain-migration"
+        ;;
+      .bun|.npm|.wasmer|.dotnet|.pgrx|.venvs|.nix-*|.go|.gradle)
+        target_class="toolchain-state"
+        canonical_target="$META_ROOT/.toolchains/${dot#.}"
+        action="component-managed-toolchain-migration"
+        ;;
+      .bashrc|.profile|.zshrc|.zshenv|.bash_profile|.bash_logout)
+        target_class="shell-dotfile"
+        canonical_target="$META_ROOT/$dot"
+        action="owner-supervised-bridge"
+        ;;
+      .bash_history|.zsh_history|.*_history|*.bak|*.bak.*)
+        target_class="history-or-backup"
+        canonical_target="$META_ROOT/var/lib/envctl/real-home-dotfile-migration"
+        action="owner-supervised-archive"
+        ;;
+      .config)
+        target_class="app-config-state"
+        canonical_target="$META_ROOT/.config"
+        action="component-managed-config-migration"
+        ;;
+      .claude|.codex|.vscode|.mozilla|.thunderbird)
+        target_class="app-config-state"
+        canonical_target="$META_ROOT/.local/share/${dot#.}"
+        action="owner-supervised-config-migration"
+        ;;
+    esac
+  fi
+
+  inventory_row "$dot" "$type" "$state" "$target_class" "$canonical_target" "$action" "$apply_safe"
 }
 
 relocate_symlink() {
@@ -100,6 +209,18 @@ elif [ "$APPLY" -eq 1 ]; then
   changed_msg "created $local_link -> $META_ROOT/.local"
 else
   fail "$local_link missing; expected symlink to $META_ROOT/.local"
+fi
+if [ -L "$local_link" ]; then
+  local_resolved="$(readlink -f "$local_link" 2>/dev/null || true)"
+  if [ "$local_resolved" = "$META_ROOT/.local" ]; then
+    inventory_row ".local" "symlink" "meta-bridge" "bridge" "$META_ROOT/.local" "ensure-symlink" "yes"
+  else
+    inventory_row ".local" "symlink" "bridge-drift" "bridge" "$META_ROOT/.local" "ensure-symlink" "yes"
+  fi
+elif [ -e "$local_link" ]; then
+  inventory_row ".local" "$(entry_type "$local_link")" "real-home-state" "bridge" "$META_ROOT/.local" "owner-supervised-archive-and-bridge" "no"
+else
+  inventory_row ".local" "missing" "missing" "bridge" "$META_ROOT/.local" "ensure-symlink" "yes"
 fi
 
 # 2. No symlink under $META_ROOT/.local/bin may point outside META_ROOT.
@@ -176,6 +297,19 @@ elif [ "$APPLY" -eq 1 ] && [ -e "$canonical_gitconfig" ]; then
 else
   warn "$real_gitconfig missing; no credential helper bridge installed"
 fi
+if [ -L "$real_gitconfig" ]; then
+  real_gitconfig_resolved="$(readlink -f "$real_gitconfig" 2>/dev/null || true)"
+  canonical_resolved="$(readlink -f "$canonical_gitconfig" 2>/dev/null || true)"
+  if [ -n "$canonical_resolved" ] && [ "$real_gitconfig_resolved" = "$canonical_resolved" ] && [ "$(readlink "$real_gitconfig")" = "$canonical_gitconfig" ]; then
+    inventory_row ".gitconfig" "symlink" "managed-bridge" "managed-dotfile" "$canonical_gitconfig" "bridge-canonical" "yes"
+  else
+    inventory_row ".gitconfig" "symlink" "bridge-drift" "managed-dotfile" "$canonical_gitconfig" "bridge-canonical" "yes"
+  fi
+elif [ -e "$real_gitconfig" ]; then
+  inventory_row ".gitconfig" "$(entry_type "$real_gitconfig")" "real-home-state" "managed-dotfile" "$canonical_gitconfig" "archive-and-bridge-canonical" "yes"
+else
+  inventory_row ".gitconfig" "missing" "missing" "managed-dotfile" "$canonical_gitconfig" "bridge-canonical" "yes"
+fi
 
 # 5. Walk every top-level real-home dot entry.  The two entries that this script may safely mutate
 # (.local and .gitconfig) are handled above; everything else is inventory-only here unless already
@@ -188,6 +322,7 @@ if [ -d "$REAL_HOME" ]; then
     case "$dot" in
       .|..|.local|.gitconfig) continue ;;
     esac
+    classify_real_home_dot "$dot" "$path"
 
     if [ -L "$path" ]; then
       resolved="$(readlink -f "$path" 2>/dev/null || true)"

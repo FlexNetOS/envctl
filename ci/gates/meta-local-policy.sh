@@ -125,9 +125,14 @@ fi
 
 if ! grep -Fq 'find "$REAL_HOME" -mindepth 1 -maxdepth 1 -name' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq 'dot_entries_seen' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq -- '--inventory) INVENTORY_PATH=' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'target_class' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'owner-supervised-vault-or-bridge' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq '$home/.zshrc' scripts/tests/test-meta-local-path-audit.sh || \
-   ! grep -Fq '$home/.aws' scripts/tests/test-meta-local-path-audit.sh; then
-  echo "meta-local-policy: meta-local path audit must walk and test every top-level real-home dot entry class" >&2
+   ! grep -Fq '$home/.aws' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '$home/.cache' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '$home/.cargo' scripts/tests/test-meta-local-path-audit.sh; then
+  echo "meta-local-policy: meta-local path audit must walk, inventory, classify, and test every top-level real-home dot entry class" >&2
   exit 1
 fi
 
