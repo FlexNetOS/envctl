@@ -33,11 +33,13 @@ use crate::config_edit::{Pin, Section, Selector, SourceItem};
 use crate::dirs::{dirs_agent_env_config, dirs_home};
 use crate::fsops::{
     copy_dir, relativize_dest, resolve_command_targets, resolve_dest, resolve_destinations,
-    resolve_mcp_settings_targets, scope_root, select_targets, BrokenSkill,
+    resolve_mcp_settings_targets, resolve_path, scope_root, select_targets, BrokenSkill,
 };
 use crate::hash::{hash_dir, hash_file};
 use crate::lock::{AgentLockEntry, AgentLockFile, AssetEntry, LockMode};
-use crate::mcp::{merge_mcp_config, remove_mcp_server, servers_present_in_settings};
+use crate::mcp::{
+    merge_mcp_config, remove_mcp_server, servers_match_source, servers_present_in_settings,
+};
 use crate::profile::{format_updated_ago, read_skill_profile, read_skill_profile_from_dir};
 use crate::report::{Action, InstalledSkill, Summary};
 use crate::source::{
@@ -1198,8 +1200,14 @@ fn sync_mcps(ctx: &DriverCtx, lock: &mut AgentLockFile, res: &mut SyncResult) {
             })
             .collect();
         let update_active = ctx.update_active_for_source(&update_names);
-        let fetch =
-            update_active || needs_fetch_mcps(src, &desired_file_names, lock, &mcp_settings_list);
+        let fetch = update_active
+            || needs_fetch_mcps(
+                src,
+                ctx.cfg_dir,
+                &desired_file_names,
+                lock,
+                &mcp_settings_list,
+            );
 
         if fetch && ctx.locked {
             res.summary.failed += 1;
@@ -1247,7 +1255,7 @@ fn sync_mcps(ctx: &DriverCtx, lock: &mut AgentLockFile, res: &mut SyncResult) {
         let root = materialized
             .cleanup_dir
             .as_deref()
-            .unwrap_or_else(|| Path::new(&src.source));
+            .unwrap_or(&materialized.source_root);
         let resolve_result: Result<Vec<PathBuf>> = match &src.mcps {
             McpsField::Wildcard(s) if s == "*" => discover_mcps(root),
             McpsField::Wildcard(s) => Err(err(format!(
@@ -1331,7 +1339,7 @@ fn sync_mcps(ctx: &DriverCtx, lock: &mut AgentLockFile, res: &mut SyncResult) {
                         h == &hash
                             && mcp_settings_list
                                 .iter()
-                                .all(|target| servers_present_in_settings(&server_names, target))
+                                .all(|target| servers_match_source(mcp_path, target))
                     })
                     .unwrap_or(false);
 
@@ -1386,13 +1394,7 @@ fn desired_mcp_file_names(src: &crate::config::McpSourceSpec, lock: &AgentLockFi
     match &src.mcps {
         McpsField::List(entries) => entries
             .iter()
-            .map(|e| {
-                let name = match e {
-                    McpEntry::Name(n) => n.clone(),
-                    McpEntry::Obj { name, .. } => name.clone(),
-                };
-                format!("{name}.json")
-            })
+            .map(desired_mcp_file_name_for_entry)
             .collect(),
         McpsField::Wildcard(s) if s == "*" => lock
             .assets
@@ -1404,8 +1406,62 @@ fn desired_mcp_file_names(src: &crate::config::McpSourceSpec, lock: &AgentLockFi
     }
 }
 
+fn desired_mcp_file_name_for_entry(entry: &McpEntry) -> String {
+    let name = match entry {
+        McpEntry::Name(n) => n.clone(),
+        McpEntry::Obj { name, .. } => name.clone(),
+    };
+    if name.ends_with(".json") {
+        name
+    } else {
+        format!("{name}.json")
+    }
+}
+
+fn current_local_mcp_hash(
+    src: &crate::config::McpSourceSpec,
+    cfg_dir: &Path,
+    file_name: &str,
+) -> Result<Option<String>> {
+    Ok(current_local_mcp_path(src, cfg_dir, file_name)?
+        .map(|path| hash_file(&path))
+        .transpose()?)
+}
+
+fn current_local_mcp_path(
+    src: &crate::config::McpSourceSpec,
+    cfg_dir: &Path,
+    file_name: &str,
+) -> Result<Option<PathBuf>> {
+    if src.source.contains("://") {
+        return Ok(None);
+    }
+
+    let root = resolve_path(cfg_dir, &src.source);
+    match &src.mcps {
+        McpsField::List(entries) => {
+            for entry in entries {
+                if desired_mcp_file_name_for_entry(entry) == file_name {
+                    return Ok(Some(resolve_mcp_entry(&root, entry)?));
+                }
+            }
+            Ok(None)
+        }
+        McpsField::Wildcard(s) if s == "*" => {
+            for path in discover_mcps(&root)? {
+                if file_name_str(&path) == file_name {
+                    return Ok(Some(path));
+                }
+            }
+            Ok(None)
+        }
+        McpsField::Wildcard(_) => Ok(None),
+    }
+}
+
 fn needs_fetch_mcps(
     src: &crate::config::McpSourceSpec,
+    cfg_dir: &Path,
     desired_file_names: &[String],
     lock: &AgentLockFile,
     mcp_settings_list: &[McpSettingsTarget],
@@ -1426,6 +1482,19 @@ fn needs_fetch_mcps(
         };
         if !asset.source_revision.is_empty() && asset.source_revision != expected_revision {
             return true;
+        }
+        match current_local_mcp_hash(src, cfg_dir, file_name) {
+            Ok(Some(current_hash)) if current_hash != asset.hash => return true,
+            Err(_) => return true,
+            _ => {}
+        }
+        if let Ok(Some(source_path)) = current_local_mcp_path(src, cfg_dir, file_name) {
+            if mcp_settings_list
+                .iter()
+                .any(|target| !servers_match_source(&source_path, target))
+            {
+                return true;
+            }
         }
         let server_names: Vec<String> = asset
             .destination
@@ -1501,6 +1570,24 @@ fn apply_pending_mcps(
         if !ctx.dry_run {
             let mut failed = false;
             for target in mcp_settings_list {
+                if !p.is_new {
+                    for server_name in &p.server_names {
+                        if let Err(e) = remove_mcp_server(server_name, target) {
+                            res.summary.failed += 1;
+                            res.actions.push(Action {
+                                source: Some(p.source.clone()),
+                                skill: Some(mcp_action_label(&p.file_name)),
+                                status: "source_error".into(),
+                                error: Some(e.to_string()),
+                            });
+                            failed = true;
+                            break;
+                        }
+                    }
+                    if failed {
+                        break;
+                    }
+                }
                 if let Err(e) = merge_mcp_config(&p.mcp_path, target) {
                     res.summary.failed += 1;
                     res.actions.push(Action {
@@ -2083,6 +2170,13 @@ fn named_skills(edits: &[SectionEdit]) -> Option<&Vec<String>> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::{Agent, AgentField};
+
+    fn temp_dir(name: &str) -> PathBuf {
+        let p = std::env::temp_dir().join(format!("{name}-{}-{}", std::process::id(), now_unix()));
+        let _ = fs::remove_dir_all(&p);
+        p
+    }
 
     #[test]
     fn driver_ctx_from_mode_maps_lock_modes() {
@@ -2172,5 +2266,111 @@ mod tests {
         // MCP edits never carry sub-dir.
         let mcp = edits.iter().find(|e| e.section == Section::Mcps).unwrap();
         assert!(mcp.item.sub_dir.is_none());
+    }
+
+    #[test]
+    fn sync_mcps_replaces_locked_local_server_when_source_hash_changes() {
+        let root = temp_dir("agent-env-driver-mcp-local-refresh");
+        let source_dir = root.join("agent-skills/mcps");
+        fs::create_dir_all(&source_dir).unwrap();
+        fs::create_dir_all(root.join(".codex")).unwrap();
+
+        let source = source_dir.join("github.json");
+        fs::write(
+            &source,
+            r#"{"mcpServers":{"github":{"command":"npx","args":["-y","old"]}}}"#,
+        )
+        .unwrap();
+        let old_hash = hash_file(&source).unwrap();
+        fs::write(
+            &source,
+            r#"{"mcpServers":{"github":{"command":"bash","args":["-lc","exec \"$META_ROOT/usr/bin/bunx\" @modelcontextprotocol/server-github"]}}}"#,
+        )
+        .unwrap();
+        let new_hash = hash_file(&source).unwrap();
+        assert_ne!(old_hash, new_hash);
+
+        fs::write(
+            root.join(".mcp.json"),
+            r#"{"mcpServers":{"github":{"command":"npx","args":["-y","old"]},"weave":{"command":"weave"}}}"#,
+        )
+        .unwrap();
+        fs::write(
+            root.join(".codex/config.toml"),
+            r#"[mcp_servers.github]
+command = "npx"
+args = ["-y", "old"]
+
+[mcp_servers.weave]
+command = "weave"
+"#,
+        )
+        .unwrap();
+
+        let cfg = Config {
+            destination: None,
+            scope: Some(Scope::Project),
+            agent: Some(AgentField::Many(vec![Agent::ClaudeCode, Agent::Codex])),
+            skills: Vec::new(),
+            mcps: vec![crate::config::McpSourceSpec {
+                source: "./agent-skills".into(),
+                branch: None,
+                git_ref: None,
+                mcps: McpsField::List(vec![McpEntry::Name("github".into())]),
+            }],
+            commands: Vec::new(),
+        };
+        let mut lock = AgentLockFile::default();
+        lock.save_tracked_asset(
+            &mcp_asset_id("./agent-skills", "github.json"),
+            AssetEntry {
+                kind: "mcp".into(),
+                name: "github.json".into(),
+                hash: old_hash,
+                source: "./agent-skills".into(),
+                destination: "github".into(),
+                source_revision: "local".into(),
+            },
+        );
+        let destinations = Vec::new();
+        let ctx = DriverCtx::from_mode(
+            &cfg,
+            &root,
+            &destinations,
+            root.clone(),
+            Scope::Project,
+            true,
+            &LockMode::Plain,
+        );
+        let mut updated = UpdatedAt::default();
+        let res = sync(&ctx, &mut lock, &mut updated);
+        assert_eq!(res.summary.failed, 0);
+        assert_eq!(res.summary.updated, 1);
+
+        let claude: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(root.join(".mcp.json")).unwrap()).unwrap();
+        assert_eq!(claude["mcpServers"]["github"]["command"], "bash");
+        assert_eq!(claude["mcpServers"]["weave"]["command"], "weave");
+
+        let codex: toml::Value = fs::read_to_string(root.join(".codex/config.toml"))
+            .unwrap()
+            .parse()
+            .unwrap();
+        assert_eq!(
+            codex["mcp_servers"]["github"]["command"].as_str().unwrap(),
+            "bash"
+        );
+        assert_eq!(
+            codex["mcp_servers"]["weave"]["command"].as_str().unwrap(),
+            "weave"
+        );
+
+        let (locked_hash, servers) = lock
+            .get_tracked_asset("mcp", &mcp_asset_id("./agent-skills", "github.json"))
+            .unwrap();
+        assert_eq!(locked_hash, new_hash);
+        assert_eq!(servers, "github");
+
+        let _ = fs::remove_dir_all(&root);
     }
 }
