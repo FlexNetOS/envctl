@@ -2,7 +2,7 @@
 
 **Status:** Living document · Phases 0–2 complete & dogfooded on the live box · Phase 3 in progress
 **Owner:** Single power-user (owner of the dual-RTX-5090 workstation)
-**Last updated:** 2026-06-02
+**Last updated:** 2026-06-27
 **Related docs:** [`README.md`](../README.md) · [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) · [`docs/ROADMAP.md`](ROADMAP.md) · [`docs/DESIGN-NOTES.md`](DESIGN-NOTES.md) · [`assets/scripts/HANDOFF.md`](../assets/scripts/HANDOFF.md)
 
 ---
@@ -52,7 +52,7 @@ That leaves four capability gaps that bite a working developer:
 | G4 | Make the manifest **extensible** via `add-repo`: turn an arbitrary upstream git repo into a first-class, removable, source-built component drop-in. |
 | G5 | Stream all activity as **structured events** to both a live console (CLI/GUI) and an on-disk run log, so a crash or closed window never loses the record. |
 | G6 | Ship a **native egui GUI** (no web) with live dual-5090 telemetry, a component grid, add-repo form, live logs, and settings — where the UI thread never blocks. |
-| G7 | Keep the build **pure-Rust, stable-toolchain, few mainstream deps**, compiling green with and without the optional `gpu-nvml` feature. |
+| G7 | Keep the build **pure-Rust, stable-toolchain, few mainstream deps**, compiling green on stable with the current GPU probe path. |
 
 ### 2.2 Non-Goals
 
@@ -64,7 +64,7 @@ That leaves four capability gaps that bite a working developer:
 | N4 | **Not a boot-repair tool of its own.** Host boot/driver repair is *delegated* to `ubuntu-boot-repair.sh` (opt-in behind `--allow-boot`); envctl never improvises GRUB/ESP/NVRAM edits. |
 | N5 | **Not a daemon / always-on service.** It runs on demand (CLI invocation or GUI session). |
 | N6 | **Not a secrets/credentials manager.** Interactive auth (`claude /login`, `gh auth login`) is explicitly out of scope and left to the user. |
-| N7 | **No web UI, no WebView, nothing nightly** (the optional `gpu-nvml` feature aside, which is still stable). |
+| N7 | **No web UI, no WebView, nothing nightly**. |
 
 ---
 
@@ -167,10 +167,10 @@ The product surface is five verbs that map onto five lifecycle **phases** on eve
 
 **REQ-DETECT-2 (GPU graceful-degradation cascade)** — GPU detection always yields a report, even on a driverless first boot:
 - **Tier 0 — PCI floor** (always first, never fails, no driver needed): walk `/sys/bus/pci/devices` + `lspci` for vendor `0x10de`; sets the **authoritative GPU count** (==2 on this box).
-- **Tier 1 — NVML** (preferred when the driver is live; optional `gpu-nvml` feature): `Nvml::init()` is fallible by design → driverless boot falls through, never panics.
+- **Tier 1 — `/proc/driver/nvidia/version`** (driver state): presence of the file means the kernel driver is loaded; parse the version string when available.
 - **Tier 2 — `nvidia-smi` CSV** (default build, zero extra deps): hard timeout; failure/timeout ⇒ `driver_loaded = false`.
 
-`driver_loaded` / `open_kernel_module` come independently from `/proc/driver/nvidia/version`. `software_rendered = (PCI sees NVIDIA) AND NOT driver_loaded` drives the "reboot to load the driver" precondition.
+`driver_loaded` comes from `/proc/driver/nvidia/version`; `open_kernel_module` comes from `modinfo -F license nvidia` (MIT/GPL means the open kernel module). `software_rendered = (PCI sees NVIDIA) AND NOT driver_loaded` drives the "reboot to load the driver" precondition.
 
 **REQ-DETECT-3** — Every probe failure is a **non-fatal warning**, never an error. Absence is a normal `Option`/`bool`/enum state. Each probe has a hard timeout.
 
@@ -339,7 +339,7 @@ These are **hard invariants** inherited verbatim from `ubuntu-boot-repair.sh`'s 
 
 **REQ-NFR-1 (pure Rust, single binary)** — One Cargo workspace, three members: `envctl-engine` (lib), `envctl` (CLI bin), `envctl-gui` (eframe bin). **All behavior lives in the library** so CLI and GUI cannot diverge. Each front-end is a self-contained binary.
 
-**REQ-NFR-2 (stable toolchain, few mainstream deps)** — Compiles on **stable Rust**, nothing nightly. Engine deps: serde, toml, anyhow, thiserror, sysinfo, which, chrono (+ optional `nvml-wrapper` behind `gpu-nvml`, serde_json for `lsblk -J`). CLI adds clap; GUI adds only eframe/egui/egui_extras. No web, no WebView. `cargo build` must be green **with and without** the `gpu-nvml` feature.
+**REQ-NFR-2 (stable toolchain, few mainstream deps)** — Compiles on **stable Rust**, nothing nightly. Engine deps: serde, toml, anyhow, thiserror, sysinfo, which, chrono, serde_json for `lsblk -J`. CLI adds clap; GUI adds only eframe/egui/egui_extras. No web, no WebView. `cargo build` must be green on stable.
 
 **REQ-NFR-3 (best-effort)** — One component's failure (or panic, isolated via `catch_unwind`) never aborts the run. The run always ends with a `RunSummary` roster (`failed` / `refused` / `skipped_blocked`). `RunSummary::ok()` ⟺ no failures and no refusals.
 
@@ -364,7 +364,7 @@ These are **hard invariants** inherited verbatim from `ubuntu-boot-repair.sh`'s 
 | M5 | **Safety: no forbidden states** | Across all runs, **none of FS-1…FS-8 ever occur**; every ambiguous destructive op is `Refused`, never silently executed. |
 | M6 | **Best-effort resilience** | A single failing installer never aborts the batch; the final `RunSummary` accurately rosters `failed` / `refused` / `skipped_blocked`. |
 | M7 | **Responsive GUI** | The UI thread never blocks during a multi-minute CUDA build; telemetry keeps updating; CPU at rest ≈ 0%. |
-| M8 | **Build hygiene** | `cargo build` green on stable, **with and without** `gpu-nvml`; clippy clean. |
+| M8 | **Build hygiene** | `cargo build` green on stable; clippy clean. |
 | M9 | **Extensibility** | `add-repo` of a real cargo `--git` tool makes it appear in `auto-detect` and be managed by install/reset/auto-fix end-to-end. |
 
 ---
@@ -380,7 +380,7 @@ Six roadmap phases. **Phases 0–2 are complete and dogfooded on the live dual-5
 | **2 — install (additive, idempotent, streaming)** | `ProcessRunner` line-streaming + tee to disk; best-effort `run_phase` (gpu skip, NoHook, catch_unwind, sudo keepalive, timeouts); idempotent skip-if-detected; `Wiring::apply` (grep-guarded rc blocks, PATH, .desktop, alternatives); **full 44-component base manifest**; forward traversal w/ SkippedBlocked + RebootRequired; CLI install flags; GUI per-row install + Live Logs + health pill. | ✅ **Done & dogfooded** |
 | **3 — reset + auto-fix (destructive, full guard discipline)** | `RunContext` resolve-once; `Wiring::revert` backup-then-excise-owned-block; reset reverse-order/`--cascade`/`--all --confirm`/re-detect-ABSENT; auto-fix BROKEN/PARTIAL-only, atomic backup→apply→verify w/ revert-on-failure; **system-scope revert** (`/etc/nix`, `/etc/apt`, `/etc/cdi`, alternatives); boot-repair delegation behind `--allow-boot`; GUI confirmation modals. | 🚧 **In progress** (dry-run defaults, guards, owned-block revert shipped; system-scope revert + post-verify being completed) |
 | **4 — add-repo (build-from-source + wire-in)** | Full 9-stage pipeline (acquire→detect-build-system→deps→build→locate→install→wire→register→verify); component synthesis + atomic drop-in; refuse-on-ambiguity edges; CLI/GUI add-repo; end-to-end on a real cargo `--git` tool. | ⏳ **Pending** (hardened drop-in writer already shipped) |
-| **5 — GUI polish + telemetry + hardening** | Live ~1s sampler w/ cadence backoff + sparklines; yellow DriverNotActive card; Settings/Manifest screen; Live Logs ring + filters; NDJSON CLI stream; RecordingRunner golden runs, drift/wiring/guard tests; green build with/without `gpu-nvml`. | ⏳ **Pending** |
+| **5 — GUI polish + telemetry + hardening** | Live ~1s sampler w/ cadence backoff + sparklines; yellow DriverNotActive card; Settings/Manifest screen; Live Logs ring + filters; NDJSON CLI stream; RecordingRunner golden runs, drift/wiring/guard tests; green build on stable. | ⏳ **Pending** |
 
 ---
 
