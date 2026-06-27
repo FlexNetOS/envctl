@@ -139,6 +139,7 @@ mkdir -p \
   "$mig_home/.n8n/storage" \
   "$mig_home/.n8n-claude-bridge/sandbox/.claude/sessions" \
   "$mig_home/.n8n-claude-bridge/sandbox/.cache/claude-cli-nodejs" \
+  "$mig_home/.pki/nssdb" \
   "$mig_home/.ruvector/models/all-MiniLM-L6-v2" \
   "$mig_home/.repowire" \
   "$mig_home/.nv/ComputeCache/0/7" \
@@ -164,6 +165,7 @@ ln -s "$mig_meta/.local" "$mig_home/.local"
 printf 'real-home cargo state\n' >"$mig_home/.cargo/config"
 printf 'ai-profile\n' >"$mig_home/.unknown-ai-sensitive/settings.toml"
 printf 'secret\n' >"$mig_home/.unknown-ai-sensitive/tokens/api-token"
+printf 'nss private key db fixture\n' >"$mig_home/.unknown-ai-sensitive/key4.db"
 ln -s ../settings.toml "$mig_home/.unknown-ai-sensitive/cache/settings-link"
 printf 'real-home npm state\n' >"$mig_home/.npm/npmrc"
 printf 'real-home dotnet state\n' >"$mig_home/.dotnet/state"
@@ -199,6 +201,11 @@ printf 'cache-index\n' >"$mig_home/.n8n-claude-bridge/sandbox/.cache/claude-cli-
 chmod 700 "$mig_home/.n8n-claude-bridge" "$mig_home/.n8n-claude-bridge/sandbox" "$mig_home/.n8n-claude-bridge/sandbox/.claude"
 chmod 775 "$mig_home/.n8n-claude-bridge/sandbox/.claude/sessions"
 chmod 600 "$mig_home/.n8n-claude-bridge/sandbox/.claude.json" "$mig_home/.n8n-claude-bridge/sandbox/.claude/.credentials.json"
+printf 'cert db fixture\n' >"$mig_home/.pki/nssdb/cert9.db"
+printf 'key db fixture\n' >"$mig_home/.pki/nssdb/key4.db"
+printf 'library=\nname=NSS Internal PKCS #11 Module\n' >"$mig_home/.pki/nssdb/pkcs11.txt"
+chmod 700 "$mig_home/.pki" "$mig_home/.pki/nssdb"
+chmod 600 "$mig_home/.pki/nssdb/cert9.db" "$mig_home/.pki/nssdb/key4.db" "$mig_home/.pki/nssdb/pkcs11.txt"
 printf '{"embedding":"state"}\n' >"$mig_home/.ruvector/intelligence.json"
 printf 'tokenizer\n' >"$mig_home/.ruvector/models/all-MiniLM-L6-v2/tokenizer.json"
 printf 'onnx-model\n' >"$mig_home/.ruvector/models/all-MiniLM-L6-v2/model.onnx"
@@ -245,6 +252,7 @@ grep -qx $'.java\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.
 grep -qx $'.pi\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/pi\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.n8n\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/n8n\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.n8n-claude-bridge\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/n8n-claude-bridge\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
+grep -qx $'.pki\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/pki\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.ruvector\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/ruvector\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.repowire\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/state/repowire\tmigrate-dir-to-meta-state-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.nv\tdirectory\treal-home-state\tcache\t'"$mig_meta"$'/.local/cache/nvidia\tmigrate-dir-to-meta-cache-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
@@ -284,11 +292,11 @@ awk -F '\t' -v home="$mig_home" '
     if ($2 != home "/.unknown-ai-sensitive") bad=1
     if ($3 != "directory") bad=1
     if ($4 !~ /^[0-9a-f]{64}$/) bad=1
-    if ($5 != "5") bad=1
-    if ($6 != "1") bad=1
+    if ($5 != "6") bad=1
+    if ($6 != "2") bad=1
     if ($7 != "2") bad=1
     if ($8 != "1") bad=1
-    if ($9 != "2") bad=1
+    if ($9 != "3") bad=1
     if ($10 != "classify-canonical-target-before-migration") bad=1
     found=1
   }
@@ -320,6 +328,10 @@ if awk -F '\t' '$1 == ".pi" { found=1 } END { exit !found }' "$tmp/unknown-app-c
 fi
 if awk -F '\t' '$1 == ".n8n" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
   echo "unexpected unknown app-config report row for allow-listed .n8n target" >&2
+  exit 1
+fi
+if awk -F '\t' '$1 == ".pki" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
+  echo "unexpected unknown app-config report row for allow-listed .pki target" >&2
   exit 1
 fi
 if awk -F '\t' '$1 == ".ruvector" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
@@ -519,6 +531,23 @@ test "$(stat -c %a "$mig_meta/.local/share/n8n-claude-bridge/sandbox/.claude/.cr
 
 "$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/n8n-claude-bridge-post.tsv" --inventory-summary "$tmp/n8n-claude-bridge-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/n8n-claude-bridge-post.out" 2>"$tmp/n8n-claude-bridge-post.err"
 grep -qx $'.n8n-claude-bridge	symlink	already-meta	already-meta	'"$mig_meta"$'/.local/share/n8n-claude-bridge	none	n/a' "$tmp/n8n-claude-bridge-post.tsv"
+
+"$root/scripts/audit-meta-local-paths.sh" --migrate-dot .pki --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-pki-dry.out" 2>"$tmp/migrate-pki-dry.err"
+grep -q 'DRY-RUN: would move .*\.pki to .*\.local/share/pki' "$tmp/migrate-pki-dry.out"
+test -d "$mig_home/.pki"
+test ! -e "$mig_meta/.local/share/pki"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .pki --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-pki.out" 2>"$tmp/migrate-pki.err"
+test "$(readlink -f "$mig_home/.pki")" = "$mig_meta/.local/share/pki"
+grep -Fqx 'cert db fixture' "$mig_meta/.local/share/pki/nssdb/cert9.db"
+grep -Fqx 'key db fixture' "$mig_meta/.local/share/pki/nssdb/key4.db"
+grep -Fqx 'library=' "$mig_meta/.local/share/pki/nssdb/pkcs11.txt"
+test "$(stat -c %a "$mig_meta/.local/share/pki")" = "700"
+test "$(stat -c %a "$mig_meta/.local/share/pki/nssdb")" = "700"
+test "$(stat -c %a "$mig_meta/.local/share/pki/nssdb/key4.db")" = "600"
+
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/pki-post.tsv" --inventory-summary "$tmp/pki-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/pki-post.out" 2>"$tmp/pki-post.err"
+grep -qx $'.pki	symlink	already-meta	already-meta	'"$mig_meta"$'/.local/share/pki	none	n/a' "$tmp/pki-post.tsv"
 
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .ruvector --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-ruvector-dry.out" 2>"$tmp/migrate-ruvector-dry.err"
 grep -q 'DRY-RUN: would move .*\.ruvector to .*\.local/share/ruvector' "$tmp/migrate-ruvector-dry.out"
@@ -794,6 +823,22 @@ fi
 test -f "$n8n_claude_bridge_bad_home/.n8n-claude-bridge"
 test ! -e "$n8n_claude_bridge_bad_meta/.local/share/n8n-claude-bridge"
 grep -q -- '--migrate-dot .n8n-claude-bridge: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-n8n-claude-bridge-file.err"
+
+pki_bad_meta="$tmp/pki-bad-meta"
+pki_bad_home="$tmp/pki-bad-home"
+mkdir -p "$pki_bad_meta/.local" "$pki_bad_meta/envctl/home" "$pki_bad_home"
+printf '# managed gitconfig\n' >"$pki_bad_meta/envctl/home/.gitconfig"
+ln -s "$pki_bad_meta/envctl/home/.gitconfig" "$pki_bad_meta/.gitconfig"
+ln -s "$pki_bad_meta/.gitconfig" "$pki_bad_home/.gitconfig"
+ln -s "$pki_bad_meta/.local" "$pki_bad_home/.local"
+printf 'not a directory\n' >"$pki_bad_home/.pki"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .pki --meta-root "$pki_bad_meta" --real-home "$pki_bad_home" --envctl-home-source "$pki_bad_meta/envctl/home" >"$tmp/migrate-pki-file.out" 2>"$tmp/migrate-pki-file.err"; then
+  echo "expected --migrate-dot .pki to fail closed for non-directory source" >&2
+  exit 1
+fi
+test -f "$pki_bad_home/.pki"
+test ! -e "$pki_bad_meta/.local/share/pki"
+grep -q -- '--migrate-dot .pki: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-pki-file.err"
 
 ruvector_bad_meta="$tmp/ruvector-bad-meta"
 ruvector_bad_home="$tmp/ruvector-bad-home"

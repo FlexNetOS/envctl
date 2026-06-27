@@ -165,6 +165,7 @@ if ! grep -Fq 'find "$REAL_HOME" -mindepth 1 -maxdepth 1 -name' scripts/audit-me
    ! grep -Fq -- '--migrate-dot .gphoto' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq -- '--migrate-dot .vscode-shared' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq -- '--migrate-dot .n8n-claude-bridge' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--migrate-dot .pki' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq -- '--migrate-dot .ssh' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq 'backup-pre-summary.tsv' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq '.ollama' scripts/tests/test-meta-local-path-audit.sh || \
@@ -173,6 +174,7 @@ if ! grep -Fq 'find "$REAL_HOME" -mindepth 1 -maxdepth 1 -name' scripts/audit-me
    ! grep -Fq '.config/gphoto' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq '.local/share/vscode-shared' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq '.local/share/n8n-claude-bridge' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '.local/share/pki' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq -- '--deep-link-inventory' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq -- '--deep-link-summary' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq -- '--fail-real-home-deep-links' scripts/tests/test-meta-local-path-audit.sh || \
