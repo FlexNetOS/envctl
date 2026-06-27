@@ -137,6 +137,7 @@ mkdir -p \
   "$mig_home/.pi/agent/sessions/--home-drdave-Desktop-meta-Archon--" \
   "$mig_home/.n8n/nodes" \
   "$mig_home/.n8n/storage" \
+  "$mig_home/.ruvector/models/all-MiniLM-L6-v2" \
   "$mig_home/.repowire" \
   "$mig_home/.nv/ComputeCache/0/7" \
   "$mig_home/.archon" \
@@ -189,6 +190,11 @@ printf '{"dependencies":{}}\n' >"$mig_home/.n8n/nodes/package.json"
 chmod 775 "$mig_home/.n8n" "$mig_home/.n8n/nodes" "$mig_home/.n8n/storage"
 chmod 600 "$mig_home/.n8n/config"
 chmod 664 "$mig_home/.n8n/n8nEventLog-3.log" "$mig_home/.n8n/nodes/package.json"
+printf '{"embedding":"state"}\n' >"$mig_home/.ruvector/intelligence.json"
+printf 'tokenizer\n' >"$mig_home/.ruvector/models/all-MiniLM-L6-v2/tokenizer.json"
+printf 'onnx-model\n' >"$mig_home/.ruvector/models/all-MiniLM-L6-v2/model.onnx"
+chmod 775 "$mig_home/.ruvector" "$mig_home/.ruvector/models" "$mig_home/.ruvector/models/all-MiniLM-L6-v2"
+chmod 664 "$mig_home/.ruvector/intelligence.json" "$mig_home/.ruvector/models/all-MiniLM-L6-v2/tokenizer.json" "$mig_home/.ruvector/models/all-MiniLM-L6-v2/model.onnx"
 printf 'dsn=local\n' >"$mig_home/.repowire/config.yaml"
 printf 'sqlite-state\n' >"$mig_home/.repowire/state.db"
 printf '{}\n' >"$mig_home/.repowire/spawn_ownership.json"
@@ -229,6 +235,7 @@ grep -qx $'.meta\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.
 grep -qx $'.java\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/java\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.pi\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/pi\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.n8n\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/n8n\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
+grep -qx $'.ruvector\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/ruvector\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.repowire\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/state/repowire\tmigrate-dir-to-meta-state-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.nv\tdirectory\treal-home-state\tcache\t'"$mig_meta"$'/.local/cache/nvidia\tmigrate-dir-to-meta-cache-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.gphoto\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.config/gphoto\tmigrate-dir-to-meta-config-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
@@ -303,6 +310,10 @@ if awk -F '\t' '$1 == ".pi" { found=1 } END { exit !found }' "$tmp/unknown-app-c
 fi
 if awk -F '\t' '$1 == ".n8n" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
   echo "unexpected unknown app-config report row for allow-listed .n8n target" >&2
+  exit 1
+fi
+if awk -F '\t' '$1 == ".ruvector" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
+  echo "unexpected unknown app-config report row for allow-listed .ruvector target" >&2
   exit 1
 fi
 if awk -F '\t' '$1 == ".repowire" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
@@ -481,6 +492,23 @@ test "$(stat -c %a "$mig_meta/.local/share/n8n/n8nEventLog-3.log")" = "664"
 
 "$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/n8n-post.tsv" --inventory-summary "$tmp/n8n-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/n8n-post.out" 2>"$tmp/n8n-post.err"
 grep -qx $'.n8n	symlink	already-meta	already-meta	'"$mig_meta"$'/.local/share/n8n	none	n/a' "$tmp/n8n-post.tsv"
+
+"$root/scripts/audit-meta-local-paths.sh" --migrate-dot .ruvector --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-ruvector-dry.out" 2>"$tmp/migrate-ruvector-dry.err"
+grep -q 'DRY-RUN: would move .*\.ruvector to .*\.local/share/ruvector' "$tmp/migrate-ruvector-dry.out"
+test -d "$mig_home/.ruvector"
+test ! -e "$mig_meta/.local/share/ruvector"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .ruvector --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-ruvector.out" 2>"$tmp/migrate-ruvector.err"
+test "$(readlink -f "$mig_home/.ruvector")" = "$mig_meta/.local/share/ruvector"
+grep -Fqx '{"embedding":"state"}' "$mig_meta/.local/share/ruvector/intelligence.json"
+grep -Fqx 'tokenizer' "$mig_meta/.local/share/ruvector/models/all-MiniLM-L6-v2/tokenizer.json"
+grep -Fqx 'onnx-model' "$mig_meta/.local/share/ruvector/models/all-MiniLM-L6-v2/model.onnx"
+test "$(stat -c %a "$mig_meta/.local/share/ruvector")" = "775"
+test "$(stat -c %a "$mig_meta/.local/share/ruvector/intelligence.json")" = "664"
+test "$(stat -c %a "$mig_meta/.local/share/ruvector/models/all-MiniLM-L6-v2/model.onnx")" = "664"
+
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/ruvector-post.tsv" --inventory-summary "$tmp/ruvector-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/ruvector-post.out" 2>"$tmp/ruvector-post.err"
+grep -qx $'.ruvector	symlink	already-meta	already-meta	'"$mig_meta"$'/.local/share/ruvector	none	n/a' "$tmp/ruvector-post.tsv"
 
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .nv --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-nv-dry.out" 2>"$tmp/migrate-nv-dry.err"
 grep -q 'DRY-RUN: would move .*\.nv to .*\.local/cache/nvidia' "$tmp/migrate-nv-dry.out"
@@ -723,6 +751,22 @@ fi
 test -f "$n8n_bad_home/.n8n"
 test ! -e "$n8n_bad_meta/.local/share/n8n"
 grep -q -- '--migrate-dot .n8n: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-n8n-file.err"
+
+ruvector_bad_meta="$tmp/ruvector-bad-meta"
+ruvector_bad_home="$tmp/ruvector-bad-home"
+mkdir -p "$ruvector_bad_meta/.local" "$ruvector_bad_meta/envctl/home" "$ruvector_bad_home"
+printf '# managed gitconfig\n' >"$ruvector_bad_meta/envctl/home/.gitconfig"
+ln -s "$ruvector_bad_meta/envctl/home/.gitconfig" "$ruvector_bad_meta/.gitconfig"
+ln -s "$ruvector_bad_meta/.gitconfig" "$ruvector_bad_home/.gitconfig"
+ln -s "$ruvector_bad_meta/.local" "$ruvector_bad_home/.local"
+printf 'not a directory\n' >"$ruvector_bad_home/.ruvector"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .ruvector --meta-root "$ruvector_bad_meta" --real-home "$ruvector_bad_home" --envctl-home-source "$ruvector_bad_meta/envctl/home" >"$tmp/migrate-ruvector-file.out" 2>"$tmp/migrate-ruvector-file.err"; then
+  echo "expected --migrate-dot .ruvector to fail closed for non-directory source" >&2
+  exit 1
+fi
+test -f "$ruvector_bad_home/.ruvector"
+test ! -e "$ruvector_bad_meta/.local/share/ruvector"
+grep -q -- '--migrate-dot .ruvector: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-ruvector-file.err"
 
 repowire_bad_meta="$tmp/repowire-bad-meta"
 repowire_bad_home="$tmp/repowire-bad-home"
