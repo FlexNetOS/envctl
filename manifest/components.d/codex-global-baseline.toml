@@ -18,7 +18,7 @@ grep -q '^model = "gpt-5.5"' "$C" || exit 1
 grep -q '^service_tier = "fast"' "$C" || exit 1
 grep -q '^model_auto_compact_token_limit = 3000000' "$C" || exit 1
 grep -q '^web_search = "live"' "$C" || exit 1
-for f in apps auto_compaction browser_use browser_use_external computer_use enable_request_compression fast_mode goals guardian_approval hooks image_generation in_app_browser mentions_v2 multi_agent personality plugins prevent_idle_sleep skill_mcp_dependency_install tool_call_mcp_elicitation tool_suggest unified_exec workspace_dependencies memories network_proxy; do
+for f in apps auto_compaction browser_use browser_use_external computer_use enable_request_compression fast_mode goals guardian_approval hooks image_generation in_app_browser mentions_v2 multi_agent personality plugin_sharing plugins prevent_idle_sleep remote_compaction_v2 secret_auth_storage shell_snapshot shell_tool skill_mcp_dependency_install tool_call_mcp_elicitation tool_suggest unified_exec workspace_dependencies memories network_proxy; do
   grep -q "^$f = true" "$C" || { echo "missing feature: $f"; exit 1; }
 done
 for s in meta gitkb icm vox context7 weave; do
@@ -75,7 +75,8 @@ features = [
     'apps', 'auto_compaction', 'browser_use', 'browser_use_external', 'computer_use',
     'enable_request_compression', 'fast_mode', 'goals', 'guardian_approval', 'hooks',
     'image_generation', 'in_app_browser', 'mentions_v2', 'multi_agent', 'personality',
-    'plugins', 'prevent_idle_sleep', 'skill_mcp_dependency_install',
+    'plugin_sharing', 'plugins', 'prevent_idle_sleep', 'remote_compaction_v2',
+    'secret_auth_storage', 'shell_snapshot', 'shell_tool', 'skill_mcp_dependency_install',
     'tool_call_mcp_elicitation', 'tool_suggest', 'unified_exec', 'workspace_dependencies',
     'memories', 'network_proxy'
 ]
@@ -174,7 +175,7 @@ H="$M/.local/share/codex/hooks.json"
 [ "$(readlink -f "$R/.codex" 2>/dev/null)" = "$(readlink -f "$M/.local/share/codex" 2>/dev/null)" ]
 [ "$(readlink -f "$R/.local/bin/codex" 2>/dev/null)" = "$(readlink -f "$M/usr/bin/codex" 2>/dev/null)" ]
 [ -f "$C" ] && [ -f "$H" ]
-for f in apps auto_compaction browser_use browser_use_external computer_use enable_request_compression fast_mode goals guardian_approval hooks image_generation in_app_browser mentions_v2 multi_agent personality plugins prevent_idle_sleep skill_mcp_dependency_install tool_call_mcp_elicitation tool_suggest unified_exec workspace_dependencies memories network_proxy; do grep -q "^$f = true" "$C"; done
+for f in apps auto_compaction browser_use browser_use_external computer_use enable_request_compression fast_mode goals guardian_approval hooks image_generation in_app_browser mentions_v2 multi_agent personality plugin_sharing plugins prevent_idle_sleep remote_compaction_v2 secret_auth_storage shell_snapshot shell_tool skill_mcp_dependency_install tool_call_mcp_elicitation tool_suggest unified_exec workspace_dependencies memories network_proxy; do grep -q "^$f = true" "$C"; done
 for s in meta gitkb icm vox context7 weave; do grep -q "^\[mcp_servers\.$s\]" "$C"; done
 grep -q '^\[marketplaces\.flexnetos-codex\]' "$C"
 grep -q '^\[plugins\."meta@flexnetos-codex"\]' "$C"
