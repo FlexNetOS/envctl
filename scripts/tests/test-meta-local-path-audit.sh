@@ -29,6 +29,9 @@ mkdir -p "$meta/.local/bin" "$meta/usr/bin" "$meta/envctl/home" "$home" "$outsid
 printf '# managed gitconfig\n' >"$meta/envctl/home/.gitconfig"
 printf '# managed shell config\n' >"$meta/envctl/home/.zshrc"
 printf '# unmanaged shell config\n' >"$home/.zshrc"
+printf 'fixture private key\n' >"$home/.ssh/id_ed25519"
+printf 'fixture token\n' >"$home/.aws/session-token"
+chmod 600 "$home/.ssh/id_ed25519" "$home/.aws/session-token"
 printf '#!/usr/bin/env bash\nexit 0\n' >"$meta/usr/bin/hf"
 chmod +x "$meta/usr/bin/hf"
 printf '#!/usr/bin/env bash\nexit 0\n' >"$outside/hf"
@@ -47,7 +50,7 @@ grep -q 'FAIL: .*\.local/bin/hf resolves outside META_ROOT' "$tmp/pre.err"
 grep -q 'FAIL: .*\.gitconfig resolves to' "$tmp/pre.err"
 
 "$root/scripts/audit-meta-local-paths.sh" --apply --meta-root "$meta" --real-home "$home" --envctl-home-source "$meta/envctl/home" >"$tmp/apply.out" 2>"$tmp/apply.err"
-"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/inventory.tsv" --inventory-summary "$tmp/inventory-summary.tsv" --meta-root "$meta" --real-home "$home" --envctl-home-source "$meta/envctl/home" >"$tmp/post.out" 2>"$tmp/post.err"
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/inventory.tsv" --inventory-summary "$tmp/inventory-summary.tsv" --sensitive-state-report "$tmp/sensitive-state.tsv" --meta-root "$meta" --real-home "$home" --envctl-home-source "$meta/envctl/home" >"$tmp/post.out" 2>"$tmp/post.err"
 
 test "$(readlink -f "$home/.local")" = "$meta/.local"
 test "$(readlink "$home/.gitconfig")" = "$meta/.gitconfig"
@@ -72,6 +75,41 @@ grep -qx $'.cache\tdirectory\treal-home-state\tcache\t'"$meta"$'/.local/cache\tc
 grep -qx $'.cargo\tdirectory\treal-home-state\ttoolchain-state\t'"$meta"$'/.toolchains/cargo\tcomponent-managed-toolchain-migration\tno' "$tmp/inventory.tsv"
 grep -qx $'.inside-link\tsymlink\talready-meta\talready-meta\t'"$meta"$'/usr/bin/hf\tnone\tn/a' "$tmp/inventory.tsv"
 grep -qx $'.outside-link\tsymlink\texternal-symlink\texternal-symlink\t'"$outside"$'/hf\towner-supervised-relink\tno' "$tmp/inventory.tsv"
+
+head -n 1 "$tmp/sensitive-state.tsv" | grep -qx $'dot_entry\treal_path\ttype\tdigest\tentries\tdirect_files\tdirect_dirs\tsymlinks\tsensitive_hints\taction\tapply_safe\trecommendation'
+awk -F '\t' 'NF != 12 { print "bad sensitive-state row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/sensitive-state.tsv"
+test "$(wc -l <"$tmp/sensitive-state.tsv" | tr -d '[:space:]')" = 3
+awk -F '\t' -v home="$home" '
+  $1 == ".aws" {
+    if ($2 != home "/.aws") bad=1
+    if ($3 != "directory") bad=1
+    if ($4 !~ /^[0-9a-f]{64}$/) bad=1
+    if ($5 != "1") bad=1
+    if ($6 != "1") bad=1
+    if ($7 != "0") bad=1
+    if ($8 != "0") bad=1
+    if ($9 != "1") bad=1
+    if ($10 != "owner-supervised-vault-or-bridge") bad=1
+    if ($11 != "no") bad=1
+    if ($12 != "owner-supervised-vault-or-bridge-before-migration") bad=1
+    found_aws=1
+  }
+  $1 == ".ssh" {
+    if ($2 != home "/.ssh") bad=1
+    if ($3 != "directory") bad=1
+    if ($4 !~ /^[0-9a-f]{64}$/) bad=1
+    if ($5 != "1") bad=1
+    if ($6 != "1") bad=1
+    if ($7 != "0") bad=1
+    if ($8 != "0") bad=1
+    if ($9 != "1") bad=1
+    if ($10 != "owner-supervised-vault-or-bridge") bad=1
+    if ($11 != "no") bad=1
+    if ($12 != "owner-supervised-vault-or-bridge-before-migration") bad=1
+    found_ssh=1
+  }
+  END { exit !(found_aws && found_ssh && !bad) }
+' "$tmp/sensitive-state.tsv"
 
 head -n 1 "$tmp/inventory-summary.tsv" | grep -qx $'target_class\ttotal\tapply_safe_yes\tapply_safe_no\tapply_safe_na\tactions'
 grep -qx $'bridge\t1\t1\t0\t0\tensure-symlink' "$tmp/inventory-summary.tsv"
@@ -158,6 +196,7 @@ mkdir -p \
   "$mig_home/.n8n-claude-bridge/sandbox/.claude/sessions" \
   "$mig_home/.n8n-claude-bridge/sandbox/.cache/claude-cli-nodejs" \
   "$mig_home/.pki/nssdb" \
+  "$mig_home/.mcp-auth/mcp-remote-0.1.37" \
   "$mig_home/.lane/ca" \
   "$mig_home/.lane/certs" \
   "$mig_home/.lane/relay" \
@@ -231,6 +270,9 @@ printf 'key db fixture\n' >"$mig_home/.pki/nssdb/key4.db"
 printf 'library=\nname=NSS Internal PKCS #11 Module\n' >"$mig_home/.pki/nssdb/pkcs11.txt"
 chmod 700 "$mig_home/.pki" "$mig_home/.pki/nssdb"
 chmod 600 "$mig_home/.pki/nssdb/cert9.db" "$mig_home/.pki/nssdb/key4.db" "$mig_home/.pki/nssdb/pkcs11.txt"
+printf '{"access_token":"redacted-fixture"}\n' >"$mig_home/.mcp-auth/mcp-remote-0.1.37/oauth_tokens.json"
+chmod 700 "$mig_home/.mcp-auth" "$mig_home/.mcp-auth/mcp-remote-0.1.37"
+chmod 600 "$mig_home/.mcp-auth/mcp-remote-0.1.37/oauth_tokens.json"
 printf 'root ca key fixture\n' >"$mig_home/.lane/ca/rootCA-key.pem"
 printf 'app key fixture\n' >"$mig_home/.lane/certs/myapp.test-key.pem"
 printf 'relay key fixture\n' >"$mig_home/.lane/relay/node.key"
@@ -299,6 +341,7 @@ grep -qx $'.pi\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.lo
 grep -qx $'.n8n\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/n8n\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.n8n-claude-bridge\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/n8n-claude-bridge\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.pki\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/pki\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
+grep -qx $'.mcp-auth\tdirectory\treal-home-state\tsensitive\t\towner-supervised-vault-or-bridge\tno' "$tmp/app-config-inventory.tsv"
 grep -qx $'.lane\tdirectory\treal-home-state\tsensitive\t\towner-supervised-vault-or-bridge\tno' "$tmp/app-config-inventory.tsv"
 grep -qx $'.fxapp-gh-profile\tdirectory\treal-home-state\tsensitive\t\towner-supervised-vault-or-bridge\tno' "$tmp/app-config-inventory.tsv"
 grep -qx $'.forge\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/forge\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
@@ -423,6 +466,31 @@ if awk -F '\t' '$1 == ".ssh" { found=1 } END { exit !found }' "$tmp/unknown-app-
   echo "unexpected unknown app-config report row for sensitive .ssh" >&2
   exit 1
 fi
+if awk -F '\t' '$1 == ".mcp-auth" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
+  echo "unexpected unknown app-config report row for sensitive .mcp-auth" >&2
+  exit 1
+fi
+
+"$root/scripts/audit-meta-local-paths.sh" --sensitive-state-report "$tmp/mig-sensitive-state.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/mig-sensitive-state.out" 2>"$tmp/mig-sensitive-state.err"
+head -n 1 "$tmp/mig-sensitive-state.tsv" | grep -qx $'dot_entry\treal_path\ttype\tdigest\tentries\tdirect_files\tdirect_dirs\tsymlinks\tsensitive_hints\taction\tapply_safe\trecommendation'
+awk -F '\t' 'NF != 12 { print "bad migration sensitive-state row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/mig-sensitive-state.tsv"
+awk -F '\t' -v home="$mig_home" '
+  $1 == ".mcp-auth" {
+    if ($2 != home "/.mcp-auth") bad=1
+    if ($3 != "directory") bad=1
+    if ($4 !~ /^[0-9a-f]{64}$/) bad=1
+    if ($5 != "2") bad=1
+    if ($6 != "0") bad=1
+    if ($7 != "1") bad=1
+    if ($8 != "0") bad=1
+    if ($9 != "1") bad=1
+    if ($10 != "owner-supervised-vault-or-bridge") bad=1
+    if ($11 != "no") bad=1
+    if ($12 != "owner-supervised-vault-or-bridge-before-migration") bad=1
+    found=1
+  }
+  END { exit !(found && !bad) }
+' "$tmp/mig-sensitive-state.tsv"
 
 ENVCTL_TEST_LSOF_OPEN_SOURCE="$mig_home/.pki" "$root/scripts/audit-meta-local-paths.sh" --migration-blockers-report "$tmp/migration-blockers.tsv" --migration-blockers-summary "$tmp/migration-blockers-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migration-blockers.out" 2>"$tmp/migration-blockers.err"
 head -n 1 "$tmp/migration-blockers.tsv" | grep -qx $'dot_entry\treal_path\ttype\ttarget_class\taction\tapply_safe\tcanonical_target\tblocker\tblocker_detail\topen_handles\topen_handle_sample\trecommendation'
@@ -470,6 +538,7 @@ awk -F '\t' '
 ' "$tmp/migration-blockers-summary.tsv"
 ENVCTL_TEST_LSOF_OPEN_SOURCE="$mig_home/.pki" "$root/scripts/audit-meta-local-paths.sh" --migration-blockers-summary "$tmp/migration-blockers-summary-only.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migration-blockers-summary-only.out" 2>"$tmp/migration-blockers-summary-only.err"
 awk -F '\t' '$1 == "open-handles" && $2 == "1" && $3 == "1" && $4 == "0" && $5 == "1" && $6 == "close-processes-then-run-apply-migrate-dot" { found=1 } END { exit !found }' "$tmp/migration-blockers-summary-only.tsv"
+grep -qx $'.mcp-auth\t'"$mig_home"$'/.mcp-auth\tdirectory\tsensitive\towner-supervised-vault-or-bridge\tno\t\towner-supervised-sensitive\tcredential-or-private-state\tn/a\t\towner-supervised-vault-or-bridge' "$tmp/migration-blockers.tsv"
 grep -qx $'.lane\t'"$mig_home"$'/.lane\tdirectory\tsensitive\towner-supervised-vault-or-bridge\tno\t\towner-supervised-sensitive\tcredential-or-private-state\tn/a\t\towner-supervised-vault-or-bridge' "$tmp/migration-blockers.tsv"
 grep -qx $'.fxapp-gh-profile\t'"$mig_home"$'/.fxapp-gh-profile\tdirectory\tsensitive\towner-supervised-vault-or-bridge\tno\t\towner-supervised-sensitive\tcredential-or-private-state\tn/a\t\towner-supervised-vault-or-bridge' "$tmp/migration-blockers.tsv"
 if awk -F '\t' '$1 == ".gitconfig" { found=1 } END { exit !found }' "$tmp/migration-blockers.tsv"; then
