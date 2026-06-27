@@ -29,7 +29,7 @@ ln -sfn "$DEST/bin/claude" "$META_ROOT/usr/bin/claude"
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/usr/bin:$PATH\"; [ \"$(readlink -f \"$(command -v claude)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/claude/bin/claude\")\" ] && claude --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/usr/bin:$PATH\"; [ \"$(readlink -f \"$(command -v claude)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/claude/bin/claude\")\" ] && timeout --kill-after=2s 5s claude --version"]
 [component.fix]
 kind = "script"
 script = '''
