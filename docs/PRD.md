@@ -36,7 +36,7 @@ That leaves four capability gaps that bite a working developer:
 - **One engine, two front-ends.** All behavior lives in `envctl-engine`. The CLI and GUI are thin shells over the identical `Engine` API, so they can never diverge.
 - **Best-effort, never abort the batch.** A failing hook is recorded and the run continues (the wizard's `fail[]` roster), exactly as `yazelix-setup.sh:run()` does.
 - **Boot-repair discipline for anything destructive.** Resolve-then-re-verify, dry-run by default, refuse on ambiguity, back up before clobber, never touch user data.
-- **Few mainstream deps, stable Rust, no web/WebView.** Single binary per front-end; the GPU telemetry default path shells out to `nvidia-smi` with a hard timeout, sampling live utilization/memory/temp/power fields without extra FFI deps.
+- **Few mainstream deps, stable Rust, no web/WebView.** Single binary per front-end; GPU inventory reads `/proc/driver/nvidia/version` as the driver source of truth, while the telemetry path shells out to `nvidia-smi` with a hard timeout to sample live utilization/memory/temp/power fields without extra FFI deps.
 
 ---
 
@@ -329,7 +329,7 @@ These are **hard invariants** inherited verbatim from `ubuntu-boot-repair.sh`'s 
 
 **REQ-GUI-6 (Settings / Manifest)** — Read-mostly viewer: each component's five hooks (read-only monospace) + wiring badges; global options — telemetry-interval slider, log-cap, **"destructive ops dry-run by default" checkbox (ON)**, "require confirmation for Remove/Reset/AutoFix", "Reload manifest from disk". Deep edits happen in `$EDITOR`; the manifest is the source of truth.
 
-**REQ-GUI-7 (telemetry cadence)** — A dedicated ~1s sampler thread emits `Event::Telemetry` while the Dashboard is active, backing off to ~3–5s off-Dashboard and pausing when the window is unfocused — so a 10-minute CUDA build never starves the GPU gauges and never needlessly spawns `nvidia-smi`.
+**REQ-GUI-7 (telemetry cadence)** — A dedicated ~1s sampler thread emits `Event::Telemetry` while the Dashboard is active, backing off to ~3–5s off-Dashboard and pausing when the window is unfocused — so a 10-minute CUDA build never starves the GPU gauges and never needlessly spawns `nvidia-smi` (the sampler uses the same hard-timeout helper as inventory probes).
 
 *Status:* Dashboard + Components grid render the live `EnvReport` read-only (Phase 1); per-row install + Live Logs streaming (Phase 2); confirmation modals, full telemetry, and polish are Phase 3/5.
 
