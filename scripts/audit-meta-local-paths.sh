@@ -23,7 +23,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--owner-supervised-state-report PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--fail-migration-blockers] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--owner-supervised-state-report PATH] [--owner-supervised-child-report PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--fail-migration-blockers] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
 With --inventory, also writes a tab-separated relocation inventory:
@@ -63,6 +63,10 @@ With --owner-supervised-state-report, writes read-only shallow metadata rows for
 owner-supervised broad residual state (.cache/.config):
 dot_entry, real_path, type, target_class, shallow_digest, direct_entries, direct_files,
 direct_dirs, direct_symlinks, action, apply_safe, recommendation.
+With --owner-supervised-child-report, writes read-only shallow metadata rows for the direct
+children of non-sensitive owner-supervised broad residual state (.cache/.config):
+dot_entry, child_name, child_path, type, target_class, shallow_digest, direct_entries,
+direct_files, direct_dirs, direct_symlinks, recommendation.
 With --migration-blockers-report, writes read-only residual blocker rows for real-home dot entries
 that are not already bridged into META_ROOT:
 dot_entry, real_path, type, target_class, action, apply_safe, canonical_target, blocker,
@@ -91,6 +95,7 @@ APP_CONFIG_CONFLICT_REPORT_PATH=""
 UNKNOWN_APP_CONFIG_REPORT_PATH=""
 SENSITIVE_STATE_REPORT_PATH=""
 OWNER_SUPERVISED_STATE_REPORT_PATH=""
+OWNER_SUPERVISED_CHILD_REPORT_PATH=""
 MIGRATION_BLOCKERS_REPORT_PATH=""
 MIGRATION_BLOCKERS_SUMMARY_PATH=""
 FAIL_MIGRATION_BLOCKERS=0
@@ -111,6 +116,7 @@ while [ "$#" -gt 0 ]; do
     --unknown-app-config-report) UNKNOWN_APP_CONFIG_REPORT_PATH="${2:?--unknown-app-config-report requires a path}"; shift 2 ;;
     --sensitive-state-report) SENSITIVE_STATE_REPORT_PATH="${2:?--sensitive-state-report requires a path}"; shift 2 ;;
     --owner-supervised-state-report) OWNER_SUPERVISED_STATE_REPORT_PATH="${2:?--owner-supervised-state-report requires a path}"; shift 2 ;;
+    --owner-supervised-child-report) OWNER_SUPERVISED_CHILD_REPORT_PATH="${2:?--owner-supervised-child-report requires a path}"; shift 2 ;;
     --migration-blockers-report) MIGRATION_BLOCKERS_REPORT_PATH="${2:?--migration-blockers-report requires a path}"; shift 2 ;;
     --migration-blockers-summary) MIGRATION_BLOCKERS_SUMMARY_PATH="${2:?--migration-blockers-summary requires a path}"; shift 2 ;;
     --fail-migration-blockers) FAIL_MIGRATION_BLOCKERS=1; shift ;;
@@ -166,6 +172,10 @@ fi
 if [ -n "$OWNER_SUPERVISED_STATE_REPORT_PATH" ]; then
   mkdir -p "$(dirname "$OWNER_SUPERVISED_STATE_REPORT_PATH")"
   printf 'dot_entry\treal_path\ttype\ttarget_class\tshallow_digest\tdirect_entries\tdirect_files\tdirect_dirs\tdirect_symlinks\taction\tapply_safe\trecommendation\n' >"$OWNER_SUPERVISED_STATE_REPORT_PATH"
+fi
+if [ -n "$OWNER_SUPERVISED_CHILD_REPORT_PATH" ]; then
+  mkdir -p "$(dirname "$OWNER_SUPERVISED_CHILD_REPORT_PATH")"
+  printf 'dot_entry\tchild_name\tchild_path\ttype\ttarget_class\tshallow_digest\tdirect_entries\tdirect_files\tdirect_dirs\tdirect_symlinks\trecommendation\n' >"$OWNER_SUPERVISED_CHILD_REPORT_PATH"
 fi
 if [ -n "$MIGRATION_BLOCKERS_REPORT_PATH" ]; then
   mkdir -p "$(dirname "$MIGRATION_BLOCKERS_REPORT_PATH")"
@@ -581,6 +591,15 @@ owner_supervised_state_recommendation() {
   esac
 }
 
+owner_supervised_child_recommendation() {
+  local dot="$1"
+  case "$dot" in
+    .cache) printf 'classify-cache-child-component-before-migration' ;;
+    .config) printf 'classify-config-child-before-bridge-or-migration' ;;
+    *) printf 'classify-child-before-migration' ;;
+  esac
+}
+
 record_owner_supervised_state() {
   local dot="$1" path="$2" type="$3" state="$4" target_class="$5" action="$6" apply_safe="$7"
   [ -n "$OWNER_SUPERVISED_STATE_REPORT_PATH" ] || return 0
@@ -605,6 +624,39 @@ record_owner_supervised_state() {
     "$action" \
     "$apply_safe" \
     "$(owner_supervised_state_recommendation "$dot" "$target_class" "$action")" >>"$OWNER_SUPERVISED_STATE_REPORT_PATH"
+}
+
+record_owner_supervised_children() {
+  local dot="$1" path="$2" type="$3" state="$4" target_class="$5" apply_safe="$6"
+  local child child_name child_type
+
+  [ -n "$OWNER_SUPERVISED_CHILD_REPORT_PATH" ] || return 0
+  [ "$state" = "real-home-state" ] || [ "$state" = "external-symlink" ] || return 0
+  [ "$apply_safe" = "no" ] || return 0
+  case "$dot" in
+    .cache|.config) ;;
+    *) return 0 ;;
+  esac
+  [ "$type" = "directory" ] || return 0
+  [ -d "$path" ] || return 0
+  [ ! -L "$path" ] || return 0
+
+  while IFS= read -r -d '' child; do
+    child_name="$(basename "$child")"
+    child_type="$(entry_type "$child")"
+    printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+      "$dot" \
+      "$child_name" \
+      "$child" \
+      "$child_type" \
+      "$target_class" \
+      "$(path_shallow_digest "$child")" \
+      "$(path_direct_entry_count "$child")" \
+      "$(path_direct_file_count "$child")" \
+      "$(path_direct_dir_count "$child")" \
+      "$(path_direct_symlink_count "$child")" \
+      "$(owner_supervised_child_recommendation "$dot")" >>"$OWNER_SUPERVISED_CHILD_REPORT_PATH"
+  done < <(find "$path" -mindepth 1 -maxdepth 1 -print0 2>/dev/null | LC_ALL=C sort -z)
 }
 
 record_migration_blocker() {
@@ -1591,6 +1643,7 @@ classify_real_home_dot() {
     record_sensitive_state "$dot" "$path" "$type" "$action" "$apply_safe"
   fi
   record_owner_supervised_state "$dot" "$path" "$type" "$state" "$target_class" "$action" "$apply_safe"
+  record_owner_supervised_children "$dot" "$path" "$type" "$state" "$target_class" "$apply_safe"
   if [ "$target_class" = "app-config-state" ] && [ "$action" = "owner-supervised-config-migration" ]; then
     record_app_config_conflict "$dot" "$path" "$canonical_target" "$action" "$apply_safe"
   fi
