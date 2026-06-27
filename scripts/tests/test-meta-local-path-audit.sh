@@ -137,6 +137,7 @@ mkdir -p \
   "$mig_home/.pi/agent/sessions/--home-drdave-Desktop-meta-Archon--" \
   "$mig_home/.n8n/nodes" \
   "$mig_home/.n8n/storage" \
+  "$mig_home/.repowire" \
   "$mig_home/.nv/ComputeCache/0/7" \
   "$mig_home/.archon" \
   "$mig_home/.hermes" \
@@ -188,6 +189,14 @@ printf '{"dependencies":{}}\n' >"$mig_home/.n8n/nodes/package.json"
 chmod 775 "$mig_home/.n8n" "$mig_home/.n8n/nodes" "$mig_home/.n8n/storage"
 chmod 600 "$mig_home/.n8n/config"
 chmod 664 "$mig_home/.n8n/n8nEventLog-3.log" "$mig_home/.n8n/nodes/package.json"
+printf 'dsn=local\n' >"$mig_home/.repowire/config.yaml"
+printf 'sqlite-state\n' >"$mig_home/.repowire/state.db"
+printf '{}\n' >"$mig_home/.repowire/spawn_ownership.json"
+printf 'daemon log\n' >"$mig_home/.repowire/daemon.log"
+chmod 700 "$mig_home/.repowire"
+chmod 600 "$mig_home/.repowire/config.yaml"
+chmod 644 "$mig_home/.repowire/state.db"
+chmod 664 "$mig_home/.repowire/spawn_ownership.json" "$mig_home/.repowire/daemon.log"
 printf 'cache-index\n' >"$mig_home/.nv/ComputeCache/index"
 printf 'compiled-kernel\n' >"$mig_home/.nv/ComputeCache/0/7/kernel.bin"
 chmod 700 "$mig_home/.nv" "$mig_home/.nv/ComputeCache" "$mig_home/.nv/ComputeCache/0" "$mig_home/.nv/ComputeCache/0/7"
@@ -220,6 +229,7 @@ grep -qx $'.meta\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.
 grep -qx $'.java\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/java\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.pi\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/pi\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.n8n\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/n8n\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
+grep -qx $'.repowire\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/state/repowire\tmigrate-dir-to-meta-state-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.nv\tdirectory\treal-home-state\tcache\t'"$mig_meta"$'/.local/cache/nvidia\tmigrate-dir-to-meta-cache-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.gphoto\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.config/gphoto\tmigrate-dir-to-meta-config-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.archon\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/archon\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
@@ -293,6 +303,10 @@ if awk -F '\t' '$1 == ".pi" { found=1 } END { exit !found }' "$tmp/unknown-app-c
 fi
 if awk -F '\t' '$1 == ".n8n" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
   echo "unexpected unknown app-config report row for allow-listed .n8n target" >&2
+  exit 1
+fi
+if awk -F '\t' '$1 == ".repowire" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
+  echo "unexpected unknown app-config report row for allow-listed .repowire target" >&2
   exit 1
 fi
 if awk -F '\t' '$1 == ".nv" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
@@ -427,6 +441,26 @@ test "$(stat -c %a "$mig_meta/.local/share/pi/agent/auth.json")" = "600"
 
 "$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/pi-post.tsv" --inventory-summary "$tmp/pi-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/pi-post.out" 2>"$tmp/pi-post.err"
 grep -qx $'.pi	symlink	already-meta	already-meta	'"$mig_meta"$'/.local/share/pi	none	n/a' "$tmp/pi-post.tsv"
+"$root/scripts/audit-meta-local-paths.sh" --migrate-dot .repowire --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-repowire-dry.out" 2>"$tmp/migrate-repowire-dry.err"
+grep -q 'DRY-RUN: would move .*\.repowire to .*\.local/state/repowire' "$tmp/migrate-repowire-dry.out"
+test -d "$mig_home/.repowire"
+test ! -e "$mig_meta/.local/state/repowire"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .repowire --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-repowire.out" 2>"$tmp/migrate-repowire.err"
+test "$(readlink -f "$mig_home/.repowire")" = "$mig_meta/.local/state/repowire"
+grep -Fqx 'dsn=local' "$mig_meta/.local/state/repowire/config.yaml"
+grep -Fqx 'sqlite-state' "$mig_meta/.local/state/repowire/state.db"
+grep -Fqx '{}' "$mig_meta/.local/state/repowire/spawn_ownership.json"
+grep -Fqx 'daemon log' "$mig_meta/.local/state/repowire/daemon.log"
+test "$(stat -c %a "$mig_meta/.local/state/repowire")" = "700"
+test "$(stat -c %a "$mig_meta/.local/state/repowire/config.yaml")" = "600"
+test "$(stat -c %a "$mig_meta/.local/state/repowire/state.db")" = "644"
+test "$(stat -c %a "$mig_meta/.local/state/repowire/spawn_ownership.json")" = "664"
+test "$(stat -c %a "$mig_meta/.local/state/repowire/daemon.log")" = "664"
+
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/repowire-post.tsv" --inventory-summary "$tmp/repowire-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/repowire-post.out" 2>"$tmp/repowire-post.err"
+grep -qx $'.repowire\tsymlink\talready-meta\talready-meta\t'"$mig_meta"$'/.local/state/repowire\tnone\tn/a' "$tmp/repowire-post.tsv"
+
 
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .n8n --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-n8n-dry.out" 2>"$tmp/migrate-n8n-dry.err"
 grep -q 'DRY-RUN: would move .*\.n8n to .*\.local/share/n8n' "$tmp/migrate-n8n-dry.out"
@@ -597,13 +631,11 @@ grep -q -- '--migrate-dot .vscode-shared: .* is not a directory; refusing automa
 ai_bad_meta="$tmp/ai-bad-meta"
 ai_bad_home="$tmp/ai-bad-home"
 mkdir -p "$ai_bad_meta/.local" "$ai_bad_meta/envctl/home" "$ai_bad_home"
-printf '# managed gitconfig
-' >"$ai_bad_meta/envctl/home/.gitconfig"
+printf '# managed gitconfig\n' >"$ai_bad_meta/envctl/home/.gitconfig"
 ln -s "$ai_bad_meta/envctl/home/.gitconfig" "$ai_bad_meta/.gitconfig"
 ln -s "$ai_bad_meta/.gitconfig" "$ai_bad_home/.gitconfig"
 ln -s "$ai_bad_meta/.local" "$ai_bad_home/.local"
-printf 'not a directory
-' >"$ai_bad_home/.ai"
+printf 'not a directory\n' >"$ai_bad_home/.ai"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .ai --meta-root "$ai_bad_meta" --real-home "$ai_bad_home" --envctl-home-source "$ai_bad_meta/envctl/home" >"$tmp/migrate-ai-file.out" 2>"$tmp/migrate-ai-file.err"; then
   echo "expected --migrate-dot .ai to fail closed for non-directory source" >&2
   exit 1
@@ -691,6 +723,22 @@ fi
 test -f "$n8n_bad_home/.n8n"
 test ! -e "$n8n_bad_meta/.local/share/n8n"
 grep -q -- '--migrate-dot .n8n: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-n8n-file.err"
+
+repowire_bad_meta="$tmp/repowire-bad-meta"
+repowire_bad_home="$tmp/repowire-bad-home"
+mkdir -p "$repowire_bad_meta/.local" "$repowire_bad_meta/envctl/home" "$repowire_bad_home"
+printf '# managed gitconfig\n' >"$repowire_bad_meta/envctl/home/.gitconfig"
+ln -s "$repowire_bad_meta/envctl/home/.gitconfig" "$repowire_bad_meta/.gitconfig"
+ln -s "$repowire_bad_meta/.gitconfig" "$repowire_bad_home/.gitconfig"
+ln -s "$repowire_bad_meta/.local" "$repowire_bad_home/.local"
+printf 'not a directory\n' >"$repowire_bad_home/.repowire"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .repowire --meta-root "$repowire_bad_meta" --real-home "$repowire_bad_home" --envctl-home-source "$repowire_bad_meta/envctl/home" >"$tmp/migrate-repowire-file.out" 2>"$tmp/migrate-repowire-file.err"; then
+  echo "expected --migrate-dot .repowire to fail closed for non-directory source" >&2
+  exit 1
+fi
+test -f "$repowire_bad_home/.repowire"
+test ! -e "$repowire_bad_meta/.local/state/repowire"
+grep -q -- '--migrate-dot .repowire: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-repowire-file.err"
 
 nv_bad_meta="$tmp/nv-bad-meta"
 nv_bad_home="$tmp/nv-bad-home"
