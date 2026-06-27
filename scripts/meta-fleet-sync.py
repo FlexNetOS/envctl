@@ -6,6 +6,8 @@ The script is intentionally conservative:
   * skips every dirty, diverged, no-upstream, or gone-upstream checkout;
   * only runs `git pull --ff-only` for clean behind-only repos;
   * only runs `git push` for clean ahead-only repos.
+It also recognizes linked git worktrees during the fetch phase so shared repos
+in the meta workspace are not silently skipped.
 
 Use this after `scripts/reap-worktrees.sh --apply` when the workspace has lots of
 intentional upgrade dirt and raw `meta exec -- git pull/push` would be too broad.
@@ -73,6 +75,19 @@ def git(repo: pathlib.Path, *args: str, timeout: int = 90) -> GitResult:
     return run(["git", *args], repo, timeout=timeout)
 
 
+def result_stdout(result: GitResult) -> str | None:
+    if result.rc != 0:
+        return None
+    return result.stdout or None
+
+
+def is_git_checkout(repo_path: pathlib.Path) -> bool:
+    if not repo_path.exists():
+        return False
+    result = git(repo_path, "rev-parse", "--is-inside-work-tree")
+    return result.rc == 0 and result.stdout == "true"
+
+
 def load_project_list(meta_root: pathlib.Path, project_list_json: pathlib.Path | None) -> dict[str, Any]:
     if project_list_json:
         return json.loads(project_list_json.read_text())
@@ -101,7 +116,7 @@ def current_branch_track(repo_path: pathlib.Path, branch: str | None) -> str | N
     if not branch:
         return None
     result = git(repo_path, "for-each-ref", "--format=%(upstream:track)", f"refs/heads/{branch}")
-    return result.stdout or None if result.rc == 0 else None
+    return result_stdout(result)
 
 
 def classify_repo(meta_root: pathlib.Path, repo_def: dict[str, str | None]) -> RepoState:
@@ -121,11 +136,11 @@ def classify_repo(meta_root: pathlib.Path, repo_def: dict[str, str | None]) -> R
 
     state.is_git = True
     branch = git(repo_path, "branch", "--show-current")
-    state.branch = branch.stdout or None if branch.rc == 0 else None
+    state.branch = result_stdout(branch)
     origin = git(repo_path, "remote", "get-url", "origin")
-    state.origin = origin.stdout or None if origin.rc == 0 else None
+    state.origin = result_stdout(origin)
     upstream = git(repo_path, "rev-parse", "--abbrev-ref", "--symbolic-full-name", "@{u}")
-    state.upstream = upstream.stdout or None if upstream.rc == 0 else None
+    state.upstream = result_stdout(upstream)
     state.upstream_track = current_branch_track(repo_path, state.branch)
 
     porcelain = git(repo_path, "status", "--porcelain=v1")
@@ -240,7 +255,7 @@ def main(argv: list[str] | None = None) -> int:
     if should_fetch:
         for repo_def in repo_defs:
             repo_path = meta_root / (repo_def["path"] or ".")
-            if repo_path.exists() and (repo_path / ".git").exists():
+            if is_git_checkout(repo_path):
                 fetch_all(repo_path)
 
     states = [classify_repo(meta_root, repo_def) for repo_def in repo_defs]
