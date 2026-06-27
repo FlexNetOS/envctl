@@ -134,6 +134,7 @@ mkdir -p \
   "$mig_home/.meta/plugins" \
   "$mig_home/.java/.userPrefs/jetbrains/auth-tokens" \
   "$mig_home/.java/fonts/25.0.3" \
+  "$mig_home/.pi/agent/sessions/--home-drdave-Desktop-meta-Archon--" \
   "$mig_home/.nv/ComputeCache/0/7" \
   "$mig_home/.archon" \
   "$mig_home/.hermes" \
@@ -171,6 +172,11 @@ touch "$mig_home/.java/.userPrefs/.userRootModFile.drdave"
 printf '<map MAP_XML_VERSION="1.0"><entry key="sample" value="present"/></map>\n' >"$mig_home/.java/.userPrefs/jetbrains/auth-tokens/prefs.xml"
 printf 'font-cache\n' >"$mig_home/.java/fonts/25.0.3/fcinfo.properties"
 chmod 600 "$mig_home/.java/.userPrefs/.user.lock.drdave" "$mig_home/.java/.userPrefs/.userRootModFile.drdave" "$mig_home/.java/fonts/25.0.3/fcinfo.properties"
+printf '{}\n' >"$mig_home/.pi/agent/auth.json"
+printf 'session event\n' >"$mig_home/.pi/agent/sessions/--home-drdave-Desktop-meta-Archon--/events.jsonl"
+chmod 700 "$mig_home/.pi" "$mig_home/.pi/agent" "$mig_home/.pi/agent/sessions/--home-drdave-Desktop-meta-Archon--"
+chmod 775 "$mig_home/.pi/agent/sessions"
+chmod 600 "$mig_home/.pi/agent/auth.json"
 printf 'cache-index\n' >"$mig_home/.nv/ComputeCache/index"
 printf 'compiled-kernel\n' >"$mig_home/.nv/ComputeCache/0/7/kernel.bin"
 chmod 700 "$mig_home/.nv" "$mig_home/.nv/ComputeCache" "$mig_home/.nv/ComputeCache/0" "$mig_home/.nv/ComputeCache/0/7"
@@ -201,6 +207,7 @@ grep -qx $'.ai\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.lo
 grep -qx $'.jetbrains\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/jetbrains\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.meta\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/meta\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.java\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/java\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
+grep -qx $'.pi\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/pi\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.nv\tdirectory\treal-home-state\tcache\t'"$mig_meta"$'/.local/cache/nvidia\tmigrate-dir-to-meta-cache-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.gphoto\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.config/gphoto\tmigrate-dir-to-meta-config-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.archon\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/archon\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
@@ -266,6 +273,10 @@ if awk -F '\t' '$1 == ".meta" { found=1 } END { exit !found }' "$tmp/unknown-app
 fi
 if awk -F '\t' '$1 == ".java" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
   echo "unexpected unknown app-config report row for allow-listed .java target" >&2
+  exit 1
+fi
+if awk -F '\t' '$1 == ".pi" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
+  echo "unexpected unknown app-config report row for allow-listed .pi target" >&2
   exit 1
 fi
 if awk -F '\t' '$1 == ".nv" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
@@ -385,6 +396,21 @@ test "$(stat -c %a "$mig_meta/.local/share/java/fonts/25.0.3/fcinfo.properties")
 
 "$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/java-post.tsv" --inventory-summary "$tmp/java-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/java-post.out" 2>"$tmp/java-post.err"
 grep -qx $'.java	symlink	already-meta	already-meta	'"$mig_meta"$'/.local/share/java	none	n/a' "$tmp/java-post.tsv"
+
+"$root/scripts/audit-meta-local-paths.sh" --migrate-dot .pi --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-pi-dry.out" 2>"$tmp/migrate-pi-dry.err"
+grep -q 'DRY-RUN: would move .*\.pi to .*\.local/share/pi' "$tmp/migrate-pi-dry.out"
+test -d "$mig_home/.pi"
+test ! -e "$mig_meta/.local/share/pi"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .pi --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-pi.out" 2>"$tmp/migrate-pi.err"
+test "$(readlink -f "$mig_home/.pi")" = "$mig_meta/.local/share/pi"
+grep -Fqx '{}' "$mig_meta/.local/share/pi/agent/auth.json"
+grep -Fqx 'session event' "$mig_meta/.local/share/pi/agent/sessions/--home-drdave-Desktop-meta-Archon--/events.jsonl"
+test "$(stat -c %a "$mig_meta/.local/share/pi")" = "700"
+test "$(stat -c %a "$mig_meta/.local/share/pi/agent/auth.json")" = "600"
+
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/pi-post.tsv" --inventory-summary "$tmp/pi-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/pi-post.out" 2>"$tmp/pi-post.err"
+grep -qx $'.pi	symlink	already-meta	already-meta	'"$mig_meta"$'/.local/share/pi	none	n/a' "$tmp/pi-post.tsv"
 
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .nv --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-nv-dry.out" 2>"$tmp/migrate-nv-dry.err"
 grep -q 'DRY-RUN: would move .*\.nv to .*\.local/cache/nvidia' "$tmp/migrate-nv-dry.out"
@@ -597,6 +623,22 @@ fi
 test -f "$java_bad_home/.java"
 test ! -e "$java_bad_meta/.local/share/java"
 grep -q -- '--migrate-dot .java: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-java-file.err"
+
+pi_bad_meta="$tmp/pi-bad-meta"
+pi_bad_home="$tmp/pi-bad-home"
+mkdir -p "$pi_bad_meta/.local" "$pi_bad_meta/envctl/home" "$pi_bad_home"
+printf '# managed gitconfig\n' >"$pi_bad_meta/envctl/home/.gitconfig"
+ln -s "$pi_bad_meta/envctl/home/.gitconfig" "$pi_bad_meta/.gitconfig"
+ln -s "$pi_bad_meta/.gitconfig" "$pi_bad_home/.gitconfig"
+ln -s "$pi_bad_meta/.local" "$pi_bad_home/.local"
+printf 'not a directory\n' >"$pi_bad_home/.pi"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .pi --meta-root "$pi_bad_meta" --real-home "$pi_bad_home" --envctl-home-source "$pi_bad_meta/envctl/home" >"$tmp/migrate-pi-file.out" 2>"$tmp/migrate-pi-file.err"; then
+  echo "expected --migrate-dot .pi to fail closed for non-directory source" >&2
+  exit 1
+fi
+test -f "$pi_bad_home/.pi"
+test ! -e "$pi_bad_meta/.local/share/pi"
+grep -q -- '--migrate-dot .pi: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-pi-file.err"
 
 nv_bad_meta="$tmp/nv-bad-meta"
 nv_bad_home="$tmp/nv-bad-home"
