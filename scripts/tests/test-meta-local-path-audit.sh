@@ -104,13 +104,14 @@ grep -qx $'.bashrc\tfile\treal-home-state\tshell-dotfile\t'"$meta"$'/.bashrc\tow
 # canonical META_ROOT target by archiving the real-home state inside META_ROOT instead of clobbering.
 mig_meta="$tmp/mig-meta"
 mig_home="$tmp/mig-home"
-mkdir -p "$mig_meta/.local" "$mig_meta/envctl/home" "$mig_home/.cargo" "$mig_home/.npm"
+mkdir -p "$mig_meta/.local" "$mig_meta/envctl/home" "$mig_home/.cargo" "$mig_home/.npm" "$mig_home/.dotnet"
 printf '# managed gitconfig\n' >"$mig_meta/envctl/home/.gitconfig"
 ln -s "$mig_meta/envctl/home/.gitconfig" "$mig_meta/.gitconfig"
 ln -s "$mig_meta/.gitconfig" "$mig_home/.gitconfig"
 ln -s "$mig_meta/.local" "$mig_home/.local"
 printf 'real-home cargo state\n' >"$mig_home/.cargo/config"
 printf 'real-home npm state\n' >"$mig_home/.npm/npmrc"
+printf 'real-home dotnet state\n' >"$mig_home/.dotnet/state"
 
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .cargo --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-dry.out" 2>"$tmp/migrate-dry.err"
 grep -q 'DRY-RUN: would move .*\.cargo to .*\.toolchains/cargo' "$tmp/migrate-dry.out"
@@ -120,6 +121,10 @@ test ! -e "$mig_meta/.toolchains/cargo"
 "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .npm --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-npm.out" 2>"$tmp/migrate-npm.err"
 test "$(readlink -f "$mig_home/.npm")" = "$mig_meta/.toolchains/npm"
 test -f "$mig_meta/.toolchains/npm/npmrc"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .dotnet --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-dotnet.out" 2>"$tmp/migrate-dotnet.err"
+test "$(readlink -f "$mig_home/.dotnet")" = "$mig_meta/.toolchains/dotnet"
+test -f "$mig_meta/.toolchains/dotnet/state"
 
 mkdir -p "$mig_meta/.toolchains/cargo"
 printf 'canonical cargo state\n' >"$mig_meta/.toolchains/cargo/config"

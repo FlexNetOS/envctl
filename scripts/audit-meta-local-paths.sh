@@ -26,7 +26,7 @@ dot_entry, type, state, target_class, canonical_target, action, apply_safe.
 With --inventory-summary, writes a tab-separated per-class migration summary:
 target_class, total, apply_safe_yes, apply_safe_no, apply_safe_na, actions.
 With --migrate-dot, performs an explicit owner-requested migration for allow-listed entries only
-(.cargo, .rustup, .bun, .npm, .claude, .codex, or a managed dotfile present under --envctl-home-source).
+(known toolchain state, .claude, .codex, or a managed dotfile present under --envctl-home-source).
 Mutation still requires --apply; without --apply the script prints the planned move and changes nothing.
 USAGE
 }
@@ -211,10 +211,9 @@ emit_inventory_summary() {
 canonical_target_for_dot() {
   local dot="$1"
   case "$dot" in
-    .cargo) printf '%s\n' "$META_ROOT/.toolchains/cargo" ;;
-    .rustup) printf '%s\n' "$META_ROOT/.toolchains/rustup" ;;
-    .bun) printf '%s\n' "$META_ROOT/.toolchains/bun" ;;
-    .npm) printf '%s\n' "$META_ROOT/.toolchains/npm" ;;
+    .cargo|.rustup|.bun|.npm|.wasmer|.dotnet|.pgrx|.venvs|.go|.gradle|.nix-*)
+      printf '%s\n' "$META_ROOT/.toolchains/${dot#.}"
+      ;;
     .claude) printf '%s\n' "$META_ROOT/.local/share/claude" ;;
     .codex) printf '%s\n' "$META_ROOT/.local/share/codex" ;;
     *) printf '%s\n' "$ENVCTL_HOME_SOURCE/$dot" ;;
@@ -228,7 +227,7 @@ is_migratable_dot() {
     .*/*|.|..|.local|.config|.cache|.ssh|.aws|.gnupg|.mcp-auth|.docker|.kube|.password-store)
       return 1
       ;;
-    .cargo|.rustup|.bun|.npm|.claude|.codex)
+    .cargo|.rustup|.bun|.npm|.wasmer|.dotnet|.pgrx|.venvs|.go|.gradle|.nix-*|.claude|.codex)
       return 0
       ;;
     .*)

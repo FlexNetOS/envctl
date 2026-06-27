@@ -138,6 +138,7 @@ if ! grep -Fq 'find "$REAL_HOME" -mindepth 1 -maxdepth 1 -name' scripts/audit-me
    ! grep -Fq '$home/.cache' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq '$home/.cargo' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq -- '--migrate-dot .cargo' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--migrate-dot .dotnet' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq -- '--migrate-dot .ssh' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq 'real-home-dotfile-migration' scripts/tests/test-meta-local-path-audit.sh || \
    ! grep -Fq 'inventory-summary.tsv' scripts/tests/test-meta-local-path-audit.sh || \
