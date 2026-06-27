@@ -16,8 +16,8 @@
 | recency_window_days | 90 |
 | graph_snapshot | rusty-idd: graph/rusty-idd.{symbols,callgraph,metrics}.json (baseline; 19429 symbols @ SHA 5a55284). handoff (cycle 2): graph/handoff.symbols.json@f6abf962413bafe164d56fa26b70b0a5fdacb8a2 — 2974 symbols (2128 own + 846 vendored), 141 files, 7265 edges, 0 genuine cycles |
 | last_item | handoff (cycle 2; planned-with-gaps — 12/13 dims verified, artifact gate PASS) |
-| status | HAND OFF — cycle budget (2) reached; awaiting owner review before unattended continuation |
-| resume_pointer | cycle 3: pick `weave` (A2A transport; the union's distinct transport plane) OR execute the union MERGE (RuVector A-U1 first, SUPERVISED); see HANDOFF.md |
+| status | EXECUTING union — cycle 3 = A-U1 DONE (handoff builds standalone; PR handoff#184). Next: ledger read API + MERGE dedup. |
+| resume_pointer | cycle 4: union step 2 (dedup 95% shared crates/{cli,core,runner,spec,tui}) + step 4 (ledger read API), gated on #184 merging; OR plan `weave`. See HANDOFF.md |
 
 ## Frame
 meta is ONE converging system. Each member repo is an organ heading to a shared north-star.
@@ -56,3 +56,10 @@ cycle_budget=1, wrap_every=1 -> one full planning cycle on rusty-idd, then HAND 
   (tests-ran 4: 3 RED + 1 GREEN, branch plan/handoff-union-cycle2 @ d74ad4b). Artifact gate PASS.
   handoff [~] planned-with-gaps (performance only). HAND OFF — owner review.
   Self-eval: Friction A (0 reconciles — lesson L1 validated), Gate A. Lessons L5-L7 (proposed-upgrades).
+- 2026-06-26: OWNER chose cycle 3 = "Start the union (A-U1)". EXECUTED A-U1 (impl, not plan):
+  git-pinned all 8 repo-escaping path deps (7 RuVector@d8cb103 + 1 envctl@0fa1248) in
+  hf/ledger/handoff-secrets. VERIFIED standalone build GREEN from a sibling-less worktree
+  (cargo build -p ledger -p hf -p handoff-secrets). PR handoff#184 (base develop, auto-merge armed).
+  Found + fixed a 2nd escape class (envctl-secrets-engine) the cycle-2 audit hadn't surfaced, and a
+  package=/lib-name extern-alias gotcha (envctl_secrets). The north-star residency ($META_ROOT+handoff
+  portable kernel) is now real. Follow-up: CI sibling-clone steps now redundant (left minimal).
