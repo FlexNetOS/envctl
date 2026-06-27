@@ -4,6 +4,24 @@ root="$(git -C "$(dirname "${BASH_SOURCE[0]}")/../.." rev-parse --show-toplevel)
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
+fake_bin="$tmp/bin"
+mkdir -p "$fake_bin"
+cat >"$fake_bin/lsof" <<'EOF'
+#!/usr/bin/env bash
+source_arg="${1:-}"
+if [ "${1:-}" = "+D" ]; then
+  source_arg="${2:-}"
+fi
+if [ -n "${ENVCTL_TEST_LSOF_OPEN_SOURCE:-}" ] && [ "$source_arg" = "$ENVCTL_TEST_LSOF_OPEN_SOURCE" ]; then
+  printf 'COMMAND PID USER FD TYPE DEVICE SIZE/OFF NODE NAME\n'
+  printf 'chrome 123 drdave 118u REG 0,0 0 1 %s/nssdb/key4.db\n' "$ENVCTL_TEST_LSOF_OPEN_SOURCE"
+  exit 0
+fi
+exit 1
+EOF
+chmod +x "$fake_bin/lsof"
+export PATH="$fake_bin:$PATH"
+
 meta="$tmp/meta"
 home="$tmp/home"
 outside="$tmp/outside"
@@ -579,6 +597,22 @@ grep -qx $'.n8n-claude-bridge	symlink	already-meta	already-meta	'"$mig_meta"$'/.
 grep -q 'DRY-RUN: would move .*\.pki to .*\.local/share/pki' "$tmp/migrate-pki-dry.out"
 test -d "$mig_home/.pki"
 test ! -e "$mig_meta/.local/share/pki"
+
+pki_open_meta="$tmp/pki-open-meta"
+pki_open_home="$tmp/pki-open-home"
+mkdir -p "$pki_open_meta/.local" "$pki_open_meta/envctl/home" "$pki_open_home/.pki/nssdb"
+printf '# managed gitconfig\n' >"$pki_open_meta/envctl/home/.gitconfig"
+ln -s "$pki_open_meta/envctl/home/.gitconfig" "$pki_open_meta/.gitconfig"
+ln -s "$pki_open_meta/.gitconfig" "$pki_open_home/.gitconfig"
+ln -s "$pki_open_meta/.local" "$pki_open_home/.local"
+printf 'key db fixture\n' >"$pki_open_home/.pki/nssdb/key4.db"
+if ENVCTL_TEST_LSOF_OPEN_SOURCE="$pki_open_home/.pki" "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .pki --meta-root "$pki_open_meta" --real-home "$pki_open_home" --envctl-home-source "$pki_open_meta/envctl/home" >"$tmp/migrate-pki-open.out" 2>"$tmp/migrate-pki-open.err"; then
+  echo "expected --migrate-dot .pki to fail closed with open file handles" >&2
+  exit 1
+fi
+test -d "$pki_open_home/.pki"
+test ! -e "$pki_open_meta/.local/share/pki"
+grep -q -- '--migrate-dot .pki: .*open file handle(s).*close owning processes before migration' "$tmp/migrate-pki-open.err"
 
 "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .pki --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-pki.out" 2>"$tmp/migrate-pki.err"
 test "$(readlink -f "$mig_home/.pki")" = "$mig_meta/.local/share/pki"
