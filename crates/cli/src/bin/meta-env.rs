@@ -107,11 +107,20 @@ fn execute(request: PluginRequest) -> CommandResult {
     }
     let cmd = parts.join(" ");
 
-    // envctl manages the box once (it is not a per-repo fan-out); run in the host's cwd.
-    let dir = if request.cwd.is_empty() {
-        ".".to_string()
+    // envctl manages the box once (it is not a per-repo fan-out). It must run with its OWN repo as
+    // the working dir so its default `./manifest` resolves — the host may dispatch us from the meta
+    // root or any child repo, where `./manifest` does not exist. Resolve the meta root from the host
+    // cwd via the `.meta.yaml` marker (like git finds `.git`) and run in `<meta_root>/envctl`. Fall
+    // back to the host cwd when no marker is found, so nothing regresses outside a meta tree.
+    let start = if request.cwd.is_empty() {
+        std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
     } else {
-        request.cwd.clone()
+        std::path::PathBuf::from(&request.cwd)
+    };
+    let dir = match find_meta_root(&start) {
+        Some(root) => root.join("envctl").to_string_lossy().into_owned(),
+        None if request.cwd.is_empty() => ".".to_string(),
+        None => request.cwd.clone(),
     };
 
     CommandResult::Plan(
@@ -122,4 +131,51 @@ fn execute(request: PluginRequest) -> CommandResult {
         }],
         Some(false), // never parallelize a single box-management command
     )
+}
+
+/// Walk up from `start` to the first ancestor containing a `.meta.yaml` marker (the meta workspace
+/// root), like git resolving `.git`. Returns `None` outside a meta tree. Kept dependency-free (the
+/// plugin bin only links `meta_plugin_protocol`); the engine has its own richer resolver.
+fn find_meta_root(start: &std::path::Path) -> Option<std::path::PathBuf> {
+    let mut dir = if start.is_absolute() {
+        start.to_path_buf()
+    } else {
+        std::env::current_dir().ok()?.join(start)
+    };
+    loop {
+        if dir.join(".meta.yaml").is_file() {
+            return Some(dir);
+        }
+        if !dir.pop() {
+            return None;
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::find_meta_root;
+    use std::fs;
+
+    #[test]
+    fn find_meta_root_walks_up_to_marker_and_none_without_one() {
+        // <base>/root/.meta.yaml  +  <base>/root/envctl/crates/cli  (a child dir to walk up from)
+        let base =
+            std::env::temp_dir().join(format!("envctl-meta-env-test-{}", std::process::id()));
+        let root = base.join("root");
+        let child = root.join("envctl/crates/cli");
+        fs::create_dir_all(&child).unwrap();
+        fs::write(root.join(".meta.yaml"), "projects: {}\n").unwrap();
+
+        // From deep inside the tree, the resolver finds the marker-bearing root.
+        assert_eq!(find_meta_root(&child).as_deref(), Some(root.as_path()));
+        // The root itself also resolves to itself.
+        assert_eq!(find_meta_root(&root).as_deref(), Some(root.as_path()));
+        // A sibling tree with no marker resolves to None (no ancestor has `.meta.yaml`).
+        let bare = base.join("bare/sub");
+        fs::create_dir_all(&bare).unwrap();
+        assert_eq!(find_meta_root(&bare), None);
+
+        let _ = fs::remove_dir_all(&base);
+    }
 }
