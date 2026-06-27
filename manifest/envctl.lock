@@ -41,12 +41,17 @@ requires = ["home-config-links"]
 resolved = ""
 
 [components.codex-cli]
-content_hash = "7f5c1c29622d4d64"
+content_hash = "5fbec313583ddc1e"
 requires = [
     "bun",
     "rustup",
     "wild-linker",
 ]
+resolved = ""
+
+[components.codex-global-baseline]
+content_hash = "f2233ec914057b3d"
+requires = ["codex-cli"]
 resolved = ""
 
 [components.cognitum-seed-autounlock]
