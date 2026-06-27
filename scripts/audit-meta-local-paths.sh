@@ -23,7 +23,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--owner-supervised-state-report PATH] [--owner-supervised-child-report PATH] [--owner-supervised-child-plan PATH] [--owner-supervised-child-candidates-report PATH] [--owner-supervised-child-candidate-actions PATH] [--owner-supervised-cache-child-component-plan PATH] [--owner-supervised-managed-config-child-review-plan PATH] [--owner-supervised-config-child-classification-plan PATH] [--owner-supervised-child-candidate-action-summary PATH] [--owner-supervised-child-candidates-summary PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--migration-blockers-plan PATH] [--fail-migration-blockers] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--owner-supervised-sensitive-review-plan PATH] [--owner-supervised-state-report PATH] [--owner-supervised-child-report PATH] [--owner-supervised-child-plan PATH] [--owner-supervised-child-candidates-report PATH] [--owner-supervised-child-candidate-actions PATH] [--owner-supervised-cache-child-component-plan PATH] [--owner-supervised-managed-config-child-review-plan PATH] [--owner-supervised-config-child-classification-plan PATH] [--owner-supervised-child-candidate-action-summary PATH] [--owner-supervised-child-candidates-summary PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--migration-blockers-plan PATH] [--fail-migration-blockers] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
 With --inventory, also writes a tab-separated relocation inventory:
@@ -59,6 +59,11 @@ sensitive_hints, recommendation.
 With --sensitive-state-report, writes read-only metadata rows for sensitive real-home entries:
 dot_entry, real_path, type, digest, entries, direct_files, direct_dirs, symlinks,
 sensitive_hints, action, apply_safe, recommendation.
+With --owner-supervised-sensitive-review-plan, writes read-only owner-review planning rows for
+sensitive real-home entries:
+dot_entry, real_path, type, target_class, digest, entries, direct_files, direct_dirs, symlinks,
+sensitive_hints, supervision, next_action, sensitive_scope, review_hint, apply_command.
+The plan is intentionally non-mutating: supervision=owner-reviewed and apply_command is empty.
 With --owner-supervised-state-report, writes read-only shallow metadata rows for non-sensitive
 owner-supervised broad residual state (.cache/.config):
 dot_entry, real_path, type, target_class, shallow_digest, direct_entries, direct_files,
@@ -132,6 +137,7 @@ SHELL_DOTFILE_CONFLICT_REPORT_PATH=""
 APP_CONFIG_CONFLICT_REPORT_PATH=""
 UNKNOWN_APP_CONFIG_REPORT_PATH=""
 SENSITIVE_STATE_REPORT_PATH=""
+OWNER_SUPERVISED_SENSITIVE_REVIEW_PLAN_PATH=""
 OWNER_SUPERVISED_STATE_REPORT_PATH=""
 OWNER_SUPERVISED_CHILD_REPORT_PATH=""
 OWNER_SUPERVISED_CHILD_PLAN_PATH=""
@@ -162,6 +168,7 @@ while [ "$#" -gt 0 ]; do
     --app-config-conflict-report) APP_CONFIG_CONFLICT_REPORT_PATH="${2:?--app-config-conflict-report requires a path}"; shift 2 ;;
     --unknown-app-config-report) UNKNOWN_APP_CONFIG_REPORT_PATH="${2:?--unknown-app-config-report requires a path}"; shift 2 ;;
     --sensitive-state-report) SENSITIVE_STATE_REPORT_PATH="${2:?--sensitive-state-report requires a path}"; shift 2 ;;
+    --owner-supervised-sensitive-review-plan) OWNER_SUPERVISED_SENSITIVE_REVIEW_PLAN_PATH="${2:?--owner-supervised-sensitive-review-plan requires a path}"; shift 2 ;;
     --owner-supervised-state-report) OWNER_SUPERVISED_STATE_REPORT_PATH="${2:?--owner-supervised-state-report requires a path}"; shift 2 ;;
     --owner-supervised-child-report) OWNER_SUPERVISED_CHILD_REPORT_PATH="${2:?--owner-supervised-child-report requires a path}"; shift 2 ;;
     --owner-supervised-child-plan) OWNER_SUPERVISED_CHILD_PLAN_PATH="${2:?--owner-supervised-child-plan requires a path}"; shift 2 ;;
@@ -224,6 +231,10 @@ fi
 if [ -n "$SENSITIVE_STATE_REPORT_PATH" ]; then
   mkdir -p "$(dirname "$SENSITIVE_STATE_REPORT_PATH")"
   printf 'dot_entry\treal_path\ttype\tdigest\tentries\tdirect_files\tdirect_dirs\tsymlinks\tsensitive_hints\taction\tapply_safe\trecommendation\n' >"$SENSITIVE_STATE_REPORT_PATH"
+fi
+if [ -n "$OWNER_SUPERVISED_SENSITIVE_REVIEW_PLAN_PATH" ]; then
+  mkdir -p "$(dirname "$OWNER_SUPERVISED_SENSITIVE_REVIEW_PLAN_PATH")"
+  printf 'dot_entry\treal_path\ttype\ttarget_class\tdigest\tentries\tdirect_files\tdirect_dirs\tsymlinks\tsensitive_hints\tsupervision\tnext_action\tsensitive_scope\treview_hint\tapply_command\n' >"$OWNER_SUPERVISED_SENSITIVE_REVIEW_PLAN_PATH"
 fi
 if [ -n "$OWNER_SUPERVISED_STATE_REPORT_PATH" ]; then
   mkdir -p "$(dirname "$OWNER_SUPERVISED_STATE_REPORT_PATH")"
@@ -670,6 +681,29 @@ record_sensitive_state() {
     "$action" \
     "$apply_safe" \
     "owner-supervised-vault-or-bridge-before-migration" >>"$SENSITIVE_STATE_REPORT_PATH"
+}
+
+record_owner_supervised_sensitive_review_plan() {
+  local dot="$1" path="$2" type="$3" action="$4"
+  [ -n "$OWNER_SUPERVISED_SENSITIVE_REVIEW_PLAN_PATH" ] || return 0
+  { [ -e "$path" ] || [ -L "$path" ]; } || return 0
+
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$dot" \
+    "$path" \
+    "$type" \
+    "sensitive" \
+    "$(path_digest "$path")" \
+    "$(path_entry_count "$path")" \
+    "$(path_direct_file_count "$path")" \
+    "$(path_direct_dir_count "$path")" \
+    "$(path_symlink_count "$path")" \
+    "$(path_sensitive_hint_count "$path")" \
+    "owner-reviewed" \
+    "$action" \
+    "credential-or-private-state" \
+    "inspect-sensitive-state-before-owner-approved-vault-or-bridge" \
+    "" >>"$OWNER_SUPERVISED_SENSITIVE_REVIEW_PLAN_PATH"
 }
 
 owner_supervised_state_recommendation() {
@@ -2163,6 +2197,7 @@ classify_real_home_dot() {
 
   if [ "$target_class" = "sensitive" ]; then
     record_sensitive_state "$dot" "$path" "$type" "$action" "$apply_safe"
+    record_owner_supervised_sensitive_review_plan "$dot" "$path" "$type" "$action"
   fi
   record_owner_supervised_state "$dot" "$path" "$type" "$state" "$target_class" "$action" "$apply_safe"
   record_owner_supervised_children "$dot" "$path" "$type" "$state" "$target_class" "$apply_safe"
