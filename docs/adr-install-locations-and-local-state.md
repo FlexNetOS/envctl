@@ -85,6 +85,15 @@ allowlisted target. The current canonical map is:
 | Known agent/app config dirs (`.agents`, `.ampcode`, `.claude`, `.codex`, `.codeium`, `.copilot`, `.cursor`, `.gemini`, `.goose_recipes`, `.junie`, `.kimi`, `.kimi-code`, `.roo`, `.vscode`, `.windsurf`, `.mozilla`, `.thunderbird`, `.repomix`) | `$META_ROOT/.local/share/<name>` | Named `--migrate-dot <entry>` only; conflicts/different existing targets stay owner-supervised. |
 | Broad config/cache/credential stores (`.config`, `.cache`, `.aws`, `.gnupg`, `.ssh`, and similar) | owner-supervised-vault-or-bridge | No automatic move; audit reports the class so a later component-specific upgrade can prove safety first. |
 
+For direct `.cache` children, `scripts/audit-meta-local-paths.sh` keeps the upgrade path read-only
+until a component manifest has been reviewed. Use `--owner-supervised-cache-child-component-plan`
+to derive the bounded component key and manifest hint, then
+`--owner-supervised-cache-child-component-manifest-status` to prove whether
+`manifest/components.d/cache-<component_key>.toml` already exists. Missing manifests must be
+created and reviewed before a named `--migrate-cache-child NAME` run; existing manifests must be
+reviewed before use. These reports intentionally leave `apply_command` empty and do not move
+owner-supervised cache state.
+
 The review loop must keep this map synchronized with `scripts/audit-meta-local-paths.sh`,
 `scripts/tests/test-meta-local-path-audit.sh`, `home/README.md`, and `ci/gates/meta-local-policy.sh`.
 
