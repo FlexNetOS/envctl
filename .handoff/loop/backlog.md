@@ -346,10 +346,13 @@ verify env health.
   proven-safe bridges (`~/.local`, `.local/bin`, canonical `.gitconfig`). Live dry-run evidence
   2026-06-27: `dot_entries=78`, `warnings=75`, `changed=0`; class counts were `bridge=1`,
   `managed-dotfile=3`, `already-meta=1`, `sensitive=5`, `toolchain-state=9`, `cache=1`,
-  `shell-dotfile=5`, `history-or-backup=17`, `app-config-state=36`. Next slices consume this
-  inventory class-by-class (toolchains, shell dotfiles, app config, sensitive stores) and add tests
-  before any broader apply behavior; owner-supervised classes remain non-mutating until a safe
-  per-class component/bridge is proven.
+  `shell-dotfile=5`, `history-or-backup=17`, `app-config-state=36`. Follow-up slice adds
+  `--inventory-summary` TSV so the loop can gate class-by-class migrations from stable counts:
+  `app-config-state=36`, `history-or-backup=17`, `toolchain-state=9`, `sensitive=5`,
+  `shell-dotfile=5`, `managed-dotfile=3`, `cache=1`, `bridge=1`, `already-meta=1`. Next slices
+  consume this summary class-by-class (toolchains, shell dotfiles, app config, sensitive stores) and
+  add tests before any broader apply behavior; owner-supervised classes remain non-mutating until a
+  safe per-class component/bridge is proven.
 - [x] `envctl env` — discover meta-root via `.meta.yaml` marker (`engine::dashboard::locate_meta_file`),
   emit `export META_ROOT=…` + meta tool dirs on PATH; `--toolchains`/`--materialize` (merged from
   feat/envctl-env, 2026-06-12).
