@@ -424,6 +424,33 @@ if awk -F '\t' '$1 == ".ssh" { found=1 } END { exit !found }' "$tmp/unknown-app-
   exit 1
 fi
 
+ENVCTL_TEST_LSOF_OPEN_SOURCE="$mig_home/.pki" "$root/scripts/audit-meta-local-paths.sh" --migration-blockers-report "$tmp/migration-blockers.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migration-blockers.out" 2>"$tmp/migration-blockers.err"
+head -n 1 "$tmp/migration-blockers.tsv" | grep -qx $'dot_entry\treal_path\ttype\ttarget_class\taction\tapply_safe\tcanonical_target\tblocker\tblocker_detail\topen_handles\topen_handle_sample\trecommendation'
+awk -F '\t' 'NF != 12 { print "bad migration blocker row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/migration-blockers.tsv"
+awk -F '\t' -v home="$mig_home" -v meta="$mig_meta" '
+  $1 == ".pki" {
+    if ($2 != home "/.pki") bad=1
+    if ($3 != "directory") bad=1
+    if ($4 != "app-config-state") bad=1
+    if ($5 != "migrate-dir-to-meta-share-and-bridge") bad=1
+    if ($6 != "yes") bad=1
+    if ($7 != meta "/.local/share/pki") bad=1
+    if ($8 != "open-handles") bad=1
+    if ($9 != "open-handles-present") bad=1
+    if ($10 != "1") bad=1
+    if ($11 != "chrome/123") bad=1
+    if ($12 != "close-processes-then-run-apply-migrate-dot") bad=1
+    found=1
+  }
+  END { exit !(found && !bad) }
+' "$tmp/migration-blockers.tsv"
+grep -qx $'.lane\t'"$mig_home"$'/.lane\tdirectory\tsensitive\towner-supervised-vault-or-bridge\tno\t\towner-supervised-sensitive\tcredential-or-private-state\tn/a\t\towner-supervised-vault-or-bridge' "$tmp/migration-blockers.tsv"
+grep -qx $'.fxapp-gh-profile\t'"$mig_home"$'/.fxapp-gh-profile\tdirectory\tsensitive\towner-supervised-vault-or-bridge\tno\t\towner-supervised-sensitive\tcredential-or-private-state\tn/a\t\towner-supervised-vault-or-bridge' "$tmp/migration-blockers.tsv"
+if awk -F '\t' '$1 == ".gitconfig" { found=1 } END { exit !found }' "$tmp/migration-blockers.tsv"; then
+  echo "unexpected migration blocker row for already-bridged .gitconfig" >&2
+  exit 1
+fi
+
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .cargo --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-dry.out" 2>"$tmp/migrate-dry.err"
 grep -q 'DRY-RUN: would move .*\.cargo to .*\.toolchains/cargo' "$tmp/migrate-dry.out"
 test -d "$mig_home/.cargo"

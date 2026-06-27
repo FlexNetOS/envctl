@@ -23,7 +23,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--migration-blockers-report PATH] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
 With --inventory, also writes a tab-separated relocation inventory:
@@ -56,6 +56,10 @@ With --unknown-app-config-report, writes read-only classification rows for app-c
 that do not yet have a canonical META_ROOT target:
 dot_entry, real_path, type, digest, entries, direct_files, direct_dirs, symlinks,
 sensitive_hints, recommendation.
+With --migration-blockers-report, writes read-only residual blocker rows for real-home dot entries
+that are not already bridged into META_ROOT:
+dot_entry, real_path, type, target_class, action, apply_safe, canonical_target, blocker,
+blocker_detail, open_handles, open_handle_sample, recommendation.
 With --apply-history-archives and --apply, moves history/backup dot entries under
 $META_ROOT/var/lib/envctl/real-home-dotfile-migration/history-or-backup/<dot-entry> and leaves
 the original real-home path as a symlink bridge. Existing non-identical canonical archive targets
@@ -75,6 +79,7 @@ INVENTORY_SUMMARY_PATH=""
 SHELL_DOTFILE_CONFLICT_REPORT_PATH=""
 APP_CONFIG_CONFLICT_REPORT_PATH=""
 UNKNOWN_APP_CONFIG_REPORT_PATH=""
+MIGRATION_BLOCKERS_REPORT_PATH=""
 DEEP_LINK_INVENTORY_PATH=""
 DEEP_LINK_SUMMARY_PATH=""
 FAIL_REAL_HOME_DEEP_LINKS=0
@@ -90,6 +95,7 @@ while [ "$#" -gt 0 ]; do
     --shell-dotfile-conflict-report) SHELL_DOTFILE_CONFLICT_REPORT_PATH="${2:?--shell-dotfile-conflict-report requires a path}"; shift 2 ;;
     --app-config-conflict-report) APP_CONFIG_CONFLICT_REPORT_PATH="${2:?--app-config-conflict-report requires a path}"; shift 2 ;;
     --unknown-app-config-report) UNKNOWN_APP_CONFIG_REPORT_PATH="${2:?--unknown-app-config-report requires a path}"; shift 2 ;;
+    --migration-blockers-report) MIGRATION_BLOCKERS_REPORT_PATH="${2:?--migration-blockers-report requires a path}"; shift 2 ;;
     --deep-link-inventory) DEEP_LINK_INVENTORY_PATH="${2:?--deep-link-inventory requires a path}"; shift 2 ;;
     --deep-link-summary) DEEP_LINK_SUMMARY_PATH="${2:?--deep-link-summary requires a path}"; shift 2 ;;
     --fail-real-home-deep-links) FAIL_REAL_HOME_DEEP_LINKS=1; shift ;;
@@ -134,6 +140,10 @@ fi
 if [ -n "$UNKNOWN_APP_CONFIG_REPORT_PATH" ]; then
   mkdir -p "$(dirname "$UNKNOWN_APP_CONFIG_REPORT_PATH")"
   printf 'dot_entry\treal_path\ttype\tdigest\tentries\tdirect_files\tdirect_dirs\tsymlinks\tsensitive_hints\trecommendation\n' >"$UNKNOWN_APP_CONFIG_REPORT_PATH"
+fi
+if [ -n "$MIGRATION_BLOCKERS_REPORT_PATH" ]; then
+  mkdir -p "$(dirname "$MIGRATION_BLOCKERS_REPORT_PATH")"
+  printf 'dot_entry\treal_path\ttype\ttarget_class\taction\tapply_safe\tcanonical_target\tblocker\tblocker_detail\topen_handles\topen_handle_sample\trecommendation\n' >"$MIGRATION_BLOCKERS_REPORT_PATH"
 fi
 if [ -n "$DEEP_LINK_INVENTORY_PATH" ]; then
   mkdir -p "$(dirname "$DEEP_LINK_INVENTORY_PATH")"
@@ -213,6 +223,35 @@ require_no_open_handles_for_migration() {
 
   rm -f "$lsof_out"
   return 0
+}
+
+open_handle_report_for_path() {
+  local source="$1" lsof_out count sample
+
+  if ! command -v lsof >/dev/null 2>&1; then
+    printf 'unknown\tlsof-unavailable\n'
+    return 0
+  fi
+
+  lsof_out="$(mktemp "${TMPDIR:-/tmp}/envctl-lsof-report.XXXXXX")"
+  if [ -d "$source" ]; then
+    if lsof +D "$source" >"$lsof_out" 2>/dev/null; then
+      :
+    else
+      :
+    fi
+  else
+    if lsof "$source" >"$lsof_out" 2>/dev/null; then
+      :
+    else
+      :
+    fi
+  fi
+
+  count="$(awk 'NR > 1 && NF > 0 { count++ } END { print count + 0 }' "$lsof_out")"
+  sample="$(awk 'NR == 2 && NF >= 2 { print $1 "/" $2; exit }' "$lsof_out")"
+  rm -f "$lsof_out"
+  printf '%s\t%s\n' "$count" "$sample"
 }
 
 is_shell_dotfile() {
@@ -416,6 +455,92 @@ record_unknown_app_config() {
     "classify-canonical-target-before-migration" >>"$UNKNOWN_APP_CONFIG_REPORT_PATH"
 }
 
+record_migration_blocker() {
+  local dot="$1" type="$2" state="$3" target_class="$4" canonical_target="$5" action="$6" apply_safe="$7"
+  local path blocker blocker_detail open_handles open_handle_sample recommendation
+
+  [ -n "$MIGRATION_BLOCKERS_REPORT_PATH" ] || return 0
+  [ "$state" = "real-home-state" ] || [ "$state" = "external-symlink" ] || return 0
+
+  path="$REAL_HOME/$dot"
+  { [ -e "$path" ] || [ -L "$path" ]; } || return 0
+
+  blocker="owner-supervised"
+  blocker_detail="$action"
+  open_handles="n/a"
+  open_handle_sample=""
+  recommendation="$action"
+
+  if [ "$apply_safe" = "yes" ]; then
+    IFS=$'\t' read -r open_handles open_handle_sample < <(open_handle_report_for_path "$path")
+    if [ "$open_handles" = "unknown" ]; then
+      blocker="needs-open-handle-proof"
+      blocker_detail="lsof-unavailable"
+      recommendation="install-lsof-or-run-with-lsof-before-apply"
+    elif [ "$open_handles" -gt 0 ]; then
+      blocker="open-handles"
+      blocker_detail="open-handles-present"
+      recommendation="close-processes-then-run-apply-migrate-dot"
+    else
+      blocker="ready-for-explicit-migration"
+      blocker_detail="no-open-handles-observed"
+      recommendation="run-apply-migrate-dot"
+    fi
+  else
+    case "$target_class" in
+      sensitive)
+        blocker="owner-supervised-sensitive"
+        blocker_detail="credential-or-private-state"
+        recommendation="owner-supervised-vault-or-bridge"
+        ;;
+      cache)
+        blocker="owner-supervised-cache"
+        blocker_detail="component-managed-cache-migration"
+        recommendation="use-component-managed-cache-migration"
+        ;;
+      managed-dotfile)
+        blocker="owner-supervised-managed-dotfile"
+        blocker_detail="$action"
+        recommendation="owner-review-before-bridge"
+        ;;
+      shell-dotfile)
+        blocker="owner-supervised-shell-dotfile"
+        blocker_detail="$action"
+        recommendation="merge-canonical-then-bridge"
+        ;;
+      app-config-state)
+        blocker="owner-supervised-app-config"
+        blocker_detail="$action"
+        recommendation="classify-or-migrate-via-explicit-migrate-dot"
+        ;;
+      toolchain-state)
+        blocker="owner-supervised-toolchain-state"
+        blocker_detail="$action"
+        recommendation="use-component-managed-toolchain-migration"
+        ;;
+      external-symlink)
+        blocker="owner-supervised-external-symlink"
+        blocker_detail="$action"
+        recommendation="relink-to-meta-local-target"
+        ;;
+    esac
+  fi
+
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$dot" \
+    "$path" \
+    "$type" \
+    "$target_class" \
+    "$action" \
+    "$apply_safe" \
+    "$canonical_target" \
+    "$blocker" \
+    "$blocker_detail" \
+    "$open_handles" \
+    "$open_handle_sample" \
+    "$recommendation" >>"$MIGRATION_BLOCKERS_REPORT_PATH"
+}
+
 shell_dotfile_action() {
   local path="$1" canonical_target="$2"
   if [ -e "$canonical_target" ]; then
@@ -506,6 +631,7 @@ inventory_row() {
   if [ -n "$INVENTORY_PATH" ]; then
     printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' "$dot" "$type" "$state" "$target_class" "$canonical_target" "$action" "$apply_safe" >>"$INVENTORY_PATH"
   fi
+  record_migration_blocker "$dot" "$type" "$state" "$target_class" "$canonical_target" "$action" "$apply_safe"
   summary_observe "$target_class" "$action" "$apply_safe"
 }
 
