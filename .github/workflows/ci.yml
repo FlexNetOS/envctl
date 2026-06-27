@@ -165,6 +165,8 @@ jobs:
         run: bash ci/gates/agent-env.sh
       - name: meta-local policy gate (META_ROOT-hosted installs only)
         run: bash ci/gates/meta-local-policy.sh
+      - name: add-repo policy gate (owned repos register as .meta.yaml peers, not child components)
+        run: bash ci/gates/add-repo-policy.sh
       - name: loop-state gate (forge-loop counter integrity)
         run: bash ci/gates/loop-state.sh
       - name: harness-scripts gate (merge-driver + reaper + loop-state safety invariants)

@@ -12,7 +12,7 @@ use crate::error::{run_phase, RunContext};
 use crate::event::{Event, EventSink, Stream};
 use crate::layout::MetaLayout;
 use crate::model::{
-    AddRepoSpec, OpResult, OpStatus, Registry, ResetGates, RunPlan, RunSummary, Wiring,
+    AddRepoMode, AddRepoSpec, OpResult, OpStatus, Registry, ResetGates, RunPlan, RunSummary, Wiring,
 };
 use std::collections::HashSet;
 use std::path::Path;
@@ -655,6 +655,15 @@ pub fn add_repo(
 ) -> anyhow::Result<RunSummary> {
     let id = spec.id.trim().to_string();
     validate_add_repo_spec(&spec)?; // shared gate: id slug + ''' + leading-dash guard
+
+    // ROUTE: peer (meta-native, .meta.yaml) vs component (build-from-source drop-in).
+    // `Auto` (default) sends owned/FlexNetOS remotes down the peer path — the
+    // meta-repo model — and everything else down the legacy component path. This
+    // is what un-drifts add-repo from the child-repo policy.
+    if resolve_peer(&spec) {
+        return crate::peer::register_peer(&spec, dry_run, sink);
+    }
+
     if reg.get(&id).is_some() {
         anyhow::bail!(
             "component id '{id}' already exists — refusing to shadow it (pick another --id)"
@@ -757,6 +766,21 @@ use crate::register::RegisterSpec;
 /// injection, `'''` manifest break, ref shape). Call this BEFORE any path join
 /// or git invocation. (AUDIT-FIX blocker: the `--connect` path used to skip both
 /// of these, allowing `--id ../../etc/x` traversal and git option-injection.)
+/// Decide whether this add-repo goes down the PEER path. `Auto` (default) routes
+/// owned/FlexNetOS remotes to peer; an explicit `--mode peer|component` overrides.
+/// A local-only working tree (no remote URL) can never be a peer, so `Auto`/`Peer`
+/// fall back to component there (and `peer::plan_peer` bails with a clear message
+/// if `Peer` was forced).
+pub(crate) fn resolve_peer(spec: &AddRepoSpec) -> bool {
+    match spec.mode {
+        AddRepoMode::Component => false,
+        AddRepoMode::Peer => true,
+        AddRepoMode::Auto => {
+            !spec.git_url.trim().is_empty() && crate::peer::is_owned_remote(&spec.git_url)
+        }
+    }
+}
+
 pub(crate) fn validate_add_repo_spec(spec: &AddRepoSpec) -> anyhow::Result<()> {
     let id = spec.id.trim();
     if !is_valid_slug(id) {

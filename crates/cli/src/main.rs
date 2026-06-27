@@ -40,13 +40,13 @@ macro_rules! envctl_examples {
 
 use envctl_engine::secrets::run_secretctl;
 use envctl_engine::{
-    AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentDoctorSpec, AgentInitSpec, AgentListKind,
-    AgentListSpec, AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentScope, AgentSectionSel,
-    AgentSyncSpec, AiAgent, BuildStrategy, BuildSystem, DashboardSpec, DriftSummary, Engine,
-    EnvReport, Event, EventSink, HubRegistryReport, HubRegistryStatus, MigrationAction,
-    MigrationReport, MigrationRisk, MigrationScope, MigrationSpec, MigrationStatus, MigrationVerb,
-    OpStatus, Phase, Refactor, RefactorGoal, RenameRule, ResetGates, RunPlan, SelfUninstallSpec,
-    Severity,
+    AddRepoMode, AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentDoctorSpec, AgentInitSpec,
+    AgentListKind, AgentListSpec, AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentScope,
+    AgentSectionSel, AgentSyncSpec, AiAgent, BuildStrategy, BuildSystem, DashboardSpec,
+    DriftSummary, Engine, EnvReport, Event, EventSink, HubRegistryReport, HubRegistryStatus,
+    MigrationAction, MigrationReport, MigrationRisk, MigrationScope, MigrationSpec,
+    MigrationStatus, MigrationVerb, OpStatus, Phase, Refactor, RefactorGoal, RenameRule,
+    ResetGates, RunPlan, SelfUninstallSpec, Severity,
 };
 
 #[derive(Parser)]
@@ -353,7 +353,19 @@ enum Cmd {
         /// Artifact glob relative to the clone. Repeatable.
         #[arg(long = "artifact")]
         artifacts: Vec<String>,
-        /// Strategy: as-is | cherry-pick | rename | refactor.
+        /// Registration mode: auto | peer | component. `auto` (default) routes
+        /// owned/FlexNetOS remotes to a first-class `.meta.yaml` PEER and everything
+        /// else to a build-from-source managed component. `peer` forces meta-native
+        /// registration; `component` forces the legacy drop-in.
+        #[arg(long, default_value = "auto")]
+        mode: String,
+        /// peer mode: `provides:` capabilities for the `.meta.yaml` entry. Repeatable.
+        #[arg(long = "provides")]
+        provides: Vec<String>,
+        /// peer mode: `tags:` for the `.meta.yaml` entry. Repeatable.
+        #[arg(long = "tag")]
+        tags: Vec<String>,
+        /// Strategy: as-is | cherry-pick | rename | refactor (component mode only).
         #[arg(long, default_value = "as-is")]
         strategy: String,
         /// cherry-pick: only install these binaries (by file-stem). Repeatable.
@@ -2300,6 +2312,9 @@ fn run_action(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
                 build_system,
                 build_cmd,
                 artifacts,
+                mode,
+                provides,
+                tags,
                 strategy,
                 bins,
                 renames,
@@ -2323,6 +2338,9 @@ fn run_action(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
                     build_system,
                     build_cmd,
                     artifacts,
+                    mode,
+                    provides,
+                    tags,
                     strategy,
                     bins,
                     renames,
@@ -3496,6 +3514,9 @@ fn handle_connect(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
         build_system,
         build_cmd,
         artifacts,
+        mode,
+        provides,
+        tags,
         strategy,
         bins,
         renames,
@@ -3522,6 +3543,9 @@ fn handle_connect(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
         build_system,
         build_cmd,
         artifacts,
+        mode,
+        provides,
+        tags,
         strategy,
         bins,
         renames,
@@ -3849,9 +3873,18 @@ struct AddRepoArgs {
     build: bool,
     force: bool,
     recurse_submodules: bool,
+    mode: String,
+    provides: Vec<String>,
+    tags: Vec<String>,
 }
 
 fn build_spec(a: AddRepoArgs) -> Result<AddRepoSpec, String> {
+    let mode = match a.mode.as_str() {
+        "auto" => AddRepoMode::Auto,
+        "peer" => AddRepoMode::Peer,
+        "component" => AddRepoMode::Component,
+        other => return Err(format!("unknown --mode `{other}` (auto|peer|component)")),
+    };
     let strategy = match a.strategy.as_str() {
         "as-is" => BuildStrategy::AsIs,
         "cherry-pick" => BuildStrategy::CherryPick { bins: a.bins },
@@ -3898,6 +3931,9 @@ fn build_spec(a: AddRepoArgs) -> Result<AddRepoSpec, String> {
         allow_build: a.build,
         force: a.force,
         recurse_submodules: a.recurse_submodules,
+        mode,
+        provides: a.provides,
+        tags: a.tags,
     })
 }
 
