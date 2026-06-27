@@ -165,6 +165,88 @@ fi
 test -d "$mig_home/.config"
 grep -q -- '--migrate-dot .config is not in the supervised migration allowlist' "$tmp/migrate-config.err"
 
+# History and backup dot entries are a separately opt-in safe archive class: read-only inventory
+# points at the exact canonical META_ROOT archive target, default --apply does not move them, and
+# --apply-history-archives preserves the real-home path as a symlink bridge.
+hist_meta="$tmp/hist-meta"
+hist_home="$tmp/hist-home"
+mkdir -p "$hist_meta/.local" "$hist_meta/envctl/home" "$hist_home/.n8n.bak.1780701915"
+printf '# managed gitconfig\n' >"$hist_meta/envctl/home/.gitconfig"
+ln -s "$hist_meta/envctl/home/.gitconfig" "$hist_meta/.gitconfig"
+ln -s "$hist_meta/.gitconfig" "$hist_home/.gitconfig"
+ln -s "$hist_meta/.local" "$hist_home/.local"
+printf 'ls -la\n' >"$hist_home/.bash_history"
+printf '# old bashrc\n' >"$hist_home/.bashrc.bak.1780388793"
+printf 'state\n' >"$hist_home/.n8n.bak.1780701915/state"
+
+"$root/scripts/audit-meta-local-paths.sh" \
+  --inventory "$tmp/history-pre.tsv" \
+  --inventory-summary "$tmp/history-pre-summary.tsv" \
+  --meta-root "$hist_meta" \
+  --real-home "$hist_home" \
+  --envctl-home-source "$hist_meta/envctl/home" \
+  >"$tmp/history-pre.out" 2>"$tmp/history-pre.err"
+grep -qx $'.bash_history\tfile\treal-home-state\thistory-or-backup\t'"$hist_meta"$'/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bash_history\tarchive-and-bridge\tyes' "$tmp/history-pre.tsv"
+grep -qx $'.bashrc.bak.1780388793\tfile\treal-home-state\thistory-or-backup\t'"$hist_meta"$'/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bashrc.bak.1780388793\tarchive-and-bridge\tyes' "$tmp/history-pre.tsv"
+grep -qx $'.n8n.bak.1780701915\tdirectory\treal-home-state\thistory-or-backup\t'"$hist_meta"$'/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.n8n.bak.1780701915\tarchive-and-bridge\tyes' "$tmp/history-pre.tsv"
+grep -qx $'history-or-backup\t3\t3\t0\t0\tarchive-and-bridge' "$tmp/history-pre-summary.tsv"
+
+"$root/scripts/audit-meta-local-paths.sh" \
+  --apply \
+  --meta-root "$hist_meta" \
+  --real-home "$hist_home" \
+  --envctl-home-source "$hist_meta/envctl/home" \
+  >"$tmp/history-default-apply.out" 2>"$tmp/history-default-apply.err"
+test -f "$hist_home/.bash_history"
+test ! -e "$hist_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bash_history"
+
+"$root/scripts/audit-meta-local-paths.sh" \
+  --apply \
+  --apply-history-archives \
+  --meta-root "$hist_meta" \
+  --real-home "$hist_home" \
+  --envctl-home-source "$hist_meta/envctl/home" \
+  >"$tmp/history-apply.out" 2>"$tmp/history-apply.err"
+test "$(readlink -f "$hist_home/.bash_history")" = "$hist_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bash_history"
+grep -qx 'ls -la' "$hist_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bash_history"
+test "$(readlink -f "$hist_home/.bashrc.bak.1780388793")" = "$hist_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bashrc.bak.1780388793"
+grep -qx '# old bashrc' "$hist_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bashrc.bak.1780388793"
+test "$(readlink -f "$hist_home/.n8n.bak.1780701915")" = "$hist_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.n8n.bak.1780701915"
+grep -qx 'state' "$hist_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.n8n.bak.1780701915/state"
+
+"$root/scripts/audit-meta-local-paths.sh" \
+  --inventory "$tmp/history-post.tsv" \
+  --inventory-summary "$tmp/history-post-summary.tsv" \
+  --meta-root "$hist_meta" \
+  --real-home "$hist_home" \
+  --envctl-home-source "$hist_meta/envctl/home" \
+  >"$tmp/history-post.out" 2>"$tmp/history-post.err"
+grep -qx $'.bash_history\tsymlink\talready-meta\talready-meta\t'"$hist_meta"$'/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bash_history\tnone\tn/a' "$tmp/history-post.tsv"
+grep -qx $'.bashrc.bak.1780388793\tsymlink\talready-meta\talready-meta\t'"$hist_meta"$'/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.bashrc.bak.1780388793\tnone\tn/a' "$tmp/history-post.tsv"
+grep -qx $'.n8n.bak.1780701915\tsymlink\talready-meta\talready-meta\t'"$hist_meta"$'/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.n8n.bak.1780701915\tnone\tn/a' "$tmp/history-post.tsv"
+grep -qx $'already-meta\t3\t0\t0\t3\tnone' "$tmp/history-post-summary.tsv"
+
+hist_collision_meta="$tmp/hist-collision-meta"
+hist_collision_home="$tmp/hist-collision-home"
+mkdir -p "$hist_collision_meta/.local" "$hist_collision_meta/envctl/home" "$hist_collision_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup" "$hist_collision_home"
+printf '# managed gitconfig\n' >"$hist_collision_meta/envctl/home/.gitconfig"
+ln -s "$hist_collision_meta/envctl/home/.gitconfig" "$hist_collision_meta/.gitconfig"
+ln -s "$hist_collision_meta/.gitconfig" "$hist_collision_home/.gitconfig"
+ln -s "$hist_collision_meta/.local" "$hist_collision_home/.local"
+printf 'real\n' >"$hist_collision_home/.zsh_history"
+printf 'canonical\n' >"$hist_collision_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.zsh_history"
+"$root/scripts/audit-meta-local-paths.sh" \
+  --apply \
+  --apply-history-archives \
+  --meta-root "$hist_collision_meta" \
+  --real-home "$hist_collision_home" \
+  --envctl-home-source "$hist_collision_meta/envctl/home" \
+  >"$tmp/history-collision.out" 2>"$tmp/history-collision.err"
+test ! -L "$hist_collision_home/.zsh_history"
+grep -qx 'real' "$hist_collision_home/.zsh_history"
+grep -qx 'canonical' "$hist_collision_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.zsh_history"
+grep -q 'owner-supervised merge required' "$tmp/history-collision.err"
+
 # Recursive deep-link inventory walks the actual META_ROOT .local/.toolchains stores without
 # failing by default on embedded system/container links or broken toolchain-internal links, but it
 # can be made fail-closed for symlinks that resolve back into the real home outside META_ROOT.
