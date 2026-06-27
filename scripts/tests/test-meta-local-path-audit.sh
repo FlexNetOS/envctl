@@ -132,6 +132,8 @@ mkdir -p \
   "$mig_home/.ai/mcp" \
   "$mig_home/.jetbrains" \
   "$mig_home/.meta/plugins" \
+  "$mig_home/.java/.userPrefs/jetbrains/auth-tokens" \
+  "$mig_home/.java/fonts/25.0.3" \
   "$mig_home/.nv/ComputeCache/0/7" \
   "$mig_home/.archon" \
   "$mig_home/.hermes" \
@@ -164,6 +166,11 @@ printf '' >"$mig_home/.ai/mcp/mcp.json"
 printf '{"default_mcp_settings":{},"agent_servers":{"goose":{"command":"/usr/bin/goose","args":["acp"]},"kimi":{"command":"/home/drdave/.local/bin/kimi","args":["--acp"]}}}\n' >"$mig_home/.jetbrains/acp.json"
 printf '{"context":{},"timestamp":"2026-06-27T00:00:00Z","workspace_root":"/home/drdave/Desktop/meta"}\n' >"$mig_home/.meta/context_cache.json"
 printf '{"worktrees":[]}\n' >"$mig_home/.meta/worktree.json"
+touch "$mig_home/.java/.userPrefs/.user.lock.drdave"
+touch "$mig_home/.java/.userPrefs/.userRootModFile.drdave"
+printf '<map MAP_XML_VERSION="1.0"><entry key="sample" value="present"/></map>\n' >"$mig_home/.java/.userPrefs/jetbrains/auth-tokens/prefs.xml"
+printf 'font-cache\n' >"$mig_home/.java/fonts/25.0.3/fcinfo.properties"
+chmod 600 "$mig_home/.java/.userPrefs/.user.lock.drdave" "$mig_home/.java/.userPrefs/.userRootModFile.drdave" "$mig_home/.java/fonts/25.0.3/fcinfo.properties"
 printf 'cache-index\n' >"$mig_home/.nv/ComputeCache/index"
 printf 'compiled-kernel\n' >"$mig_home/.nv/ComputeCache/0/7/kernel.bin"
 chmod 700 "$mig_home/.nv" "$mig_home/.nv/ComputeCache" "$mig_home/.nv/ComputeCache/0" "$mig_home/.nv/ComputeCache/0/7"
@@ -193,6 +200,7 @@ grep -qx $'.gemini\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'
 grep -qx $'.ai\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/ai\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.jetbrains\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/jetbrains\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.meta\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/meta\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
+grep -qx $'.java\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/java\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.nv\tdirectory\treal-home-state\tcache\t'"$mig_meta"$'/.local/cache/nvidia\tmigrate-dir-to-meta-cache-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.gphoto\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.config/gphoto\tmigrate-dir-to-meta-config-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.archon\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/archon\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
@@ -254,6 +262,10 @@ if awk -F '\t' '$1 == ".jetbrains" { found=1 } END { exit !found }' "$tmp/unknow
 fi
 if awk -F '\t' '$1 == ".meta" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
   echo "unexpected unknown app-config report row for allow-listed .meta target" >&2
+  exit 1
+fi
+if awk -F '\t' '$1 == ".java" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
+  echo "unexpected unknown app-config report row for allow-listed .java target" >&2
   exit 1
 fi
 if awk -F '\t' '$1 == ".nv" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
@@ -357,6 +369,22 @@ test -d "$mig_meta/.local/share/meta/plugins"
 
 "$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/meta-post.tsv" --inventory-summary "$tmp/meta-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/meta-post.out" 2>"$tmp/meta-post.err"
 grep -qx $'.meta	symlink	already-meta	already-meta	'"$mig_meta"$'/.local/share/meta	none	n/a' "$tmp/meta-post.tsv"
+
+"$root/scripts/audit-meta-local-paths.sh" --migrate-dot .java --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-java-dry.out" 2>"$tmp/migrate-java-dry.err"
+grep -q 'DRY-RUN: would move .*\.java to .*\.local/share/java' "$tmp/migrate-java-dry.out"
+test -d "$mig_home/.java"
+test ! -e "$mig_meta/.local/share/java"
+
+"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .java --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-java.out" 2>"$tmp/migrate-java.err"
+test "$(readlink -f "$mig_home/.java")" = "$mig_meta/.local/share/java"
+grep -Fqx '<map MAP_XML_VERSION="1.0"><entry key="sample" value="present"/></map>' "$mig_meta/.local/share/java/.userPrefs/jetbrains/auth-tokens/prefs.xml"
+grep -Fqx 'font-cache' "$mig_meta/.local/share/java/fonts/25.0.3/fcinfo.properties"
+test "$(stat -c %a "$mig_meta/.local/share/java/.userPrefs/.user.lock.drdave")" = "600"
+test "$(stat -c %a "$mig_meta/.local/share/java/.userPrefs/.userRootModFile.drdave")" = "600"
+test "$(stat -c %a "$mig_meta/.local/share/java/fonts/25.0.3/fcinfo.properties")" = "600"
+
+"$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/java-post.tsv" --inventory-summary "$tmp/java-post-summary.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/java-post.out" 2>"$tmp/java-post.err"
+grep -qx $'.java	symlink	already-meta	already-meta	'"$mig_meta"$'/.local/share/java	none	n/a' "$tmp/java-post.tsv"
 
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .nv --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-nv-dry.out" 2>"$tmp/migrate-nv-dry.err"
 grep -q 'DRY-RUN: would move .*\.nv to .*\.local/cache/nvidia' "$tmp/migrate-nv-dry.out"
@@ -553,6 +581,22 @@ fi
 test -f "$meta_bad_home/.meta"
 test ! -e "$meta_bad_meta/.local/share/meta"
 grep -q -- '--migrate-dot .meta: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-meta-file.err"
+
+java_bad_meta="$tmp/java-bad-meta"
+java_bad_home="$tmp/java-bad-home"
+mkdir -p "$java_bad_meta/.local" "$java_bad_meta/envctl/home" "$java_bad_home"
+printf '# managed gitconfig\n' >"$java_bad_meta/envctl/home/.gitconfig"
+ln -s "$java_bad_meta/envctl/home/.gitconfig" "$java_bad_meta/.gitconfig"
+ln -s "$java_bad_meta/.gitconfig" "$java_bad_home/.gitconfig"
+ln -s "$java_bad_meta/.local" "$java_bad_home/.local"
+printf 'not a directory\n' >"$java_bad_home/.java"
+if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .java --meta-root "$java_bad_meta" --real-home "$java_bad_home" --envctl-home-source "$java_bad_meta/envctl/home" >"$tmp/migrate-java-file.out" 2>"$tmp/migrate-java-file.err"; then
+  echo "expected --migrate-dot .java to fail closed for non-directory source" >&2
+  exit 1
+fi
+test -f "$java_bad_home/.java"
+test ! -e "$java_bad_meta/.local/share/java"
+grep -q -- '--migrate-dot .java: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-java-file.err"
 
 nv_bad_meta="$tmp/nv-bad-meta"
 nv_bad_home="$tmp/nv-bad-home"
