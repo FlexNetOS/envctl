@@ -84,7 +84,7 @@ check_absent manifest/prompt_hub.toml '\$META_ROOT/\.cargo/bin' \
 
 check_present() {
   local path="$1" needle="$2" message="$3"
-  if ! grep -Fq "$needle" "$path"; then
+  if ! grep -Fq -- "$needle" "$path"; then
     echo "meta-local-policy: $message" >&2
     exit 1
   fi
@@ -129,6 +129,51 @@ if ! grep -Eq '\$ENVCTL_REAL_HOME/\.local -> \$META_ROOT/\.local' docs/adr-insta
   echo "meta-local-policy: bridge policy is not documented in the canonical ADR/home README" >&2
   exit 1
 fi
+
+for agent_doc in AGENTS.md CLAUDE.md; do
+  if grep -Fq 'active install sources target $META_ROOT/.local only' "$agent_doc" || \
+     grep -Fq 'installs two launchers on `$META_ROOT/.local/bin`' "$agent_doc"; then
+    echo "meta-local-policy: $agent_doc has stale meta-local install-location documentation" >&2
+    exit 1
+  fi
+
+  check_present "$agent_doc" 'active install sources target $META_ROOT FHS/XDG only; single real-home .local bridge' \
+    "$agent_doc must document the FHS/XDG meta-local policy in the gate list"
+  check_present "$agent_doc" 'installs two launchers on `$META_ROOT/usr/bin`' \
+    "$agent_doc dashboard docs must name the canonical usr/bin launcher location"
+done
+check_present docs/adr-install-locations-and-local-state.md '## Real-home dot-entry relocation map' \
+  'install-location ADR must document the real-home dot-entry relocation map'
+check_present docs/adr-install-locations-and-local-state.md '`$META_ROOT/.ideavimrc`' \
+  'install-location ADR must document the .ideavimrc canonical target'
+check_present docs/adr-install-locations-and-local-state.md '`$META_ROOT/.config/gphoto`' \
+  'install-location ADR must document the .gphoto canonical target'
+check_present docs/adr-install-locations-and-local-state.md '`$META_ROOT/.local/share/vscode-shared`' \
+  'install-location ADR must document the .vscode-shared canonical target'
+check_present docs/adr-install-locations-and-local-state.md '`$META_ROOT/.local/share/claude/claude.json`' \
+  'install-location ADR must document the .claude.json canonical target'
+check_present docs/adr-install-locations-and-local-state.md '`$META_ROOT/var/lib/ollama`' \
+  'install-location ADR must document the .ollama canonical target'
+check_present docs/adr-install-locations-and-local-state.md 'owner-supervised-vault-or-bridge' \
+  'install-location ADR must document sensitive/broad config residual handling'
+check_present docs/adr-meta-tool-location-and-portability.md 'Real-home dot-entry review loop' \
+  'portability ADR must document the audit review loop'
+check_present docs/adr-meta-tool-location-and-portability.md '--inventory-summary' \
+  'portability ADR must document inventory summary output'
+check_present docs/adr-meta-tool-location-and-portability.md '--deep-link-summary' \
+  'portability ADR must document deep-link summary output'
+check_present docs/adr-meta-tool-location-and-portability.md '--fail-real-home-deep-links' \
+  'portability ADR must document fail-closed deep-link audits'
+check_present docs/adr-meta-tool-location-and-portability.md '--apply-history-archives' \
+  'portability ADR must document history/archive opt-in mutation'
+check_present docs/adr-meta-tool-location-and-portability.md '--migrate-dot <entry>' \
+  'portability ADR must document named dot-entry migrations'
+check_present home/README.md 'agent-env.yaml` + `agent-env.lock`' \
+  'home README must document agent-env as the current agent layer authority'
+check_present home/README.md 'Review loop and known materialized host-local paths' \
+  'home README must document the audit review loop and reviewed residuals'
+check_present home/README.md '--deep-link-summary' \
+  'home README must show deep-link audit output flags'
 
 if ! grep -Fq 'find "$REAL_HOME" -mindepth 1 -maxdepth 1 -name' scripts/audit-meta-local-paths.sh || \
    ! grep -Fq 'dot_entries_seen' scripts/audit-meta-local-paths.sh || \
