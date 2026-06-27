@@ -92,9 +92,14 @@ chmod 600 "$SRC/.env"
 #    /var/run/docker.sock becomes the rootless PODMAN socket (never the root daemon), drop the
 #    docker-GID group_add (no docker group under rootless podman), and make SearXNG/ntfy
 #    internal-only (no host port → avoids the sqld:8080 clash; SECURITY.md wants them internal).
+#    `logging: json-file` on every service: the meta-local static conmon has NO journald support,
+#    and the podman socket service defaults to journald → conmon exits 1; json-file maps to
+#    podman's k8s-file driver and makes the stack start. (Set per-service so it reaches the socket
+#    service that actually creates the containers — a CONTAINERS_CONF_OVERRIDE env would not.)
 cat > "$SRC/compose.meta.yml" <<EOF
 services:
   odysseus:
+    logging: { driver: json-file }
     volumes: !override
       - "$DATA:/app/data:z"
       - "$LOGS:/app/logs:z"
@@ -104,9 +109,13 @@ services:
       - "$SOCK:/var/run/docker.sock"
     group_add: !reset null
   searxng:
+    logging: { driver: json-file }
     ports: !reset null
   ntfy:
+    logging: { driver: json-file }
     ports: !reset null
+  chromadb:
+    logging: { driver: json-file }
 EOF
 
 # 6) bring the stack up on the meta-local Podman engine.
