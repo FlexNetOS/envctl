@@ -32,7 +32,14 @@ id = "odysseus"
 name = "Odysseus (self-hosted AI workspace, sandboxed)"
 description = "Pinned, reversible Odysseus stack (AGPL, NOT source-merged) run via podman compose on the meta-local rootless Podman engine. Loopback-only (127.0.0.1:7000), AUTH on, side services internal-only, docker-socket redirected to the Podman API socket. State under $META_ROOT/.local/share/odysseus. QUALIFY adoption — not yet the default LifeOS front door."
 destructive = false
-requires = ["podman"]
+# NB: intentionally NOT `requires = ["podman"]`. The podman component's `install` is destructive
+# (`rm -rf $DEST`, which includes its container graphroot), and its `detect` currently mis-resolves
+# the podman bridge path on a post-#271 layout (checks $M/usr/bin/podman; the bridge is at
+# $M/.local/bin/podman) → it falsely reports uninstalled. A hard dependency therefore makes a bare
+# `envctl install odysseus` re-trigger that destructive podman reinstall (it wiped the live
+# container store once during development). We instead require podman as a FAIL-CLOSED PRECONDITION
+# in `install` (below) — explicit + safe, with no dependency-driven reinstall. (Fixing the podman
+# component's detect/non-destructive-reinstall is a separate, tracked follow-up.)
 
 # DETECT — read-only, fast: pinned clone present, the odysseus container is running on the
 # meta-local engine, and the loopback UI answers. (No compose invocation — cheap `podman ps`.)
@@ -57,6 +64,10 @@ ROOT="$M/.local/share/odysseus"; SRC="$ROOT/src"; DATA="$ROOT/data"; LOGS="$ROOT
 REPO="${ODYSSEUS_REPO:-https://github.com/pewdiepie-archdaemon/odysseus.git}"
 REF="${ODYSSEUS_REF:-ebead8083e84f58f7e1012f22c9a9266a13fa1ee}"
 SOCK="$rt/podman/podman.sock"
+
+# 0) fail-closed precondition: the meta-local podman engine must be present (we do NOT declare it
+#    as a hard `requires`, to avoid the destructive podman-reinstall footgun — see the note above).
+command -v podman >/dev/null 2>&1 || { echo "odysseus needs the meta-local podman engine; run: envctl install podman"; exit 1; }
 
 # 1) Docker-API endpoint on the meta-local Podman engine (rootless; no sudo).
 systemctl --user enable --now podman.socket 2>/dev/null || true
