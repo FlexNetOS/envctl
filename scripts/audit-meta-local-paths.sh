@@ -175,6 +175,41 @@ entry_type() {
   fi
 }
 
+require_no_open_handles_for_migration() {
+  local dot="$1" source="$2" lsof_out count sample
+
+  if ! command -v lsof >/dev/null 2>&1; then
+    fail "--migrate-dot $dot: lsof is unavailable; refusing automatic migration without open-handle proof"
+    return 1
+  fi
+
+  lsof_out="$(mktemp "${TMPDIR:-/tmp}/envctl-lsof.XXXXXX")"
+  if [ -d "$source" ]; then
+    if lsof +D "$source" >"$lsof_out" 2>/dev/null; then
+      :
+    else
+      :
+    fi
+  else
+    if lsof "$source" >"$lsof_out" 2>/dev/null; then
+      :
+    else
+      :
+    fi
+  fi
+
+  count="$(awk 'NR > 1 && NF > 0 { count++ } END { print count + 0 }' "$lsof_out")"
+  if [ "$count" -gt 0 ]; then
+    sample="$(awk 'NR == 2 && NF >= 2 { print $1 "/" $2; exit }' "$lsof_out")"
+    rm -f "$lsof_out"
+    fail "--migrate-dot $dot: $count open file handle(s) under $source${sample:+ ($sample)}; close owning processes before migration"
+    return 1
+  fi
+
+  rm -f "$lsof_out"
+  return 0
+}
+
 is_shell_dotfile() {
   case "$1" in
     .bashrc|.profile|.zshrc|.zshenv|.bash_profile|.bash_logout) return 0 ;;
@@ -814,6 +849,8 @@ migrate_real_home_dot() {
     fi
     return 0
   fi
+
+  require_no_open_handles_for_migration "$dot" "$source" || return 0
 
   if [ -e "$target" ] || [ -L "$target" ]; then
     resolved="$(readlink -f "$target" 2>/dev/null || true)"
