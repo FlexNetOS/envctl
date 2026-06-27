@@ -2057,6 +2057,7 @@ fn run_env(
     // this is the shell seam that mutates PATH). `usr/bin` is canonical for
     // envctl-owned exposure; `.local/bin` and `.toolchains` remain compatibility surfaces.
     let tc = layout.legacy_toolchains().to_string_lossy().to_string();
+    let usr = layout.usr().to_string_lossy().to_string();
     let bin_dir = layout.bin().to_string_lossy().to_string();
     let compat_local_bin = layout.local_bin().to_string_lossy().to_string();
     if json {
@@ -2149,7 +2150,19 @@ fn run_env(
             "export HELIX_RUNTIME={}",
             sh_single_quote(&format!("{tc}/helix/runtime"))
         );
-        println!("export PATH=\"{bin_dir}:{compat_local_bin}:{tc}/.bun/bin:{tc}/cargo/bin:{tc}/uv/tools/bin:$PATH\"");
+        println!("export PATH=\"{bin_dir}:{usr}/sbin:{usr}/local/bin:{usr}/local/sbin:{compat_local_bin}:{tc}/.bun/bin:{tc}/cargo/bin:{tc}/uv/tools/bin:$PATH\"");
+        // The rest of the meta /usr mirror on its respective search paths. Each is
+        // prepend-with-fallback so an inherited value (e.g. the CUDA LD_LIBRARY_PATH
+        // shell-rc block) is preserved, never clobbered. The skeleton starts empty,
+        // so no system binary/lib/header is shadowed until meta installs into it.
+        println!(
+            "export LD_LIBRARY_PATH=\"{usr}/lib:{usr}/lib64:{usr}/local/lib:{usr}/local/lib64:${{LD_LIBRARY_PATH:-}}\""
+        );
+        println!("export CPATH=\"{usr}/include:{usr}/local/include:${{CPATH:-}}\"");
+        println!(
+            "export PKG_CONFIG_PATH=\"{usr}/lib/pkgconfig:{usr}/share/pkgconfig:${{PKG_CONFIG_PATH:-}}\""
+        );
+        println!("export MANPATH=\"{usr}/share/man:{usr}/local/share/man${{MANPATH:+:$MANPATH}}\"");
     }
     Ok(())
 }
