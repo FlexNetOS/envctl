@@ -126,6 +126,8 @@ mkdir -p \
   "$mig_home/.cargo" \
   "$mig_home/.npm" \
   "$mig_home/.dotnet" \
+  "$mig_home/.ai/cache" \
+  "$mig_home/.ai/tokens" \
   "$mig_home/.gemini" \
   "$mig_home/.gphoto" \
   "$mig_home/.junie" \
@@ -144,6 +146,9 @@ ln -s "$mig_meta/envctl/home/.gitconfig" "$mig_meta/.gitconfig"
 ln -s "$mig_meta/.gitconfig" "$mig_home/.gitconfig"
 ln -s "$mig_meta/.local" "$mig_home/.local"
 printf 'real-home cargo state\n' >"$mig_home/.cargo/config"
+printf 'ai-profile\n' >"$mig_home/.ai/settings.toml"
+printf 'secret\n' >"$mig_home/.ai/tokens/api-token"
+ln -s ../settings.toml "$mig_home/.ai/cache/settings-link"
 printf 'real-home npm state\n' >"$mig_home/.npm/npmrc"
 printf 'real-home dotnet state\n' >"$mig_home/.dotnet/state"
 printf 'set ideajoin\n' >"$mig_home/.ideavimrc"
@@ -186,6 +191,36 @@ if awk -F '\t' '$1 == ".junie" { found=1 } END { exit !found }' "$tmp/app-config
 fi
 if awk -F '\t' '$1 == ".gemini" { found=1 } END { exit !found }' "$tmp/app-config-conflicts.tsv"; then
   echo "unexpected app-config conflict report row for missing canonical .gemini target" >&2
+  exit 1
+fi
+
+mkdir -p "$mig_home/.ssh"
+printf 'key\n' >"$mig_home/.ssh/id_ed25519"
+"$root/scripts/audit-meta-local-paths.sh" --unknown-app-config-report "$tmp/unknown-app-config.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/unknown-app-config.out" 2>"$tmp/unknown-app-config.err"
+head -n 1 "$tmp/unknown-app-config.tsv" | grep -qx $'dot_entry	real_path	type	digest	entries	direct_files	direct_dirs	symlinks	sensitive_hints	recommendation'
+awk -F '\t' 'NF != 10 { print "bad unknown app-config row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/unknown-app-config.tsv"
+test "$(wc -l <"$tmp/unknown-app-config.tsv" | tr -d '[:space:]')" = 2
+awk -F '\t' -v home="$mig_home" '
+  $1 == ".ai" {
+    if ($2 != home "/.ai") bad=1
+    if ($3 != "directory") bad=1
+    if ($4 !~ /^[0-9a-f]{64}$/) bad=1
+    if ($5 != "5") bad=1
+    if ($6 != "1") bad=1
+    if ($7 != "2") bad=1
+    if ($8 != "1") bad=1
+    if ($9 != "2") bad=1
+    if ($10 != "classify-canonical-target-before-migration") bad=1
+    found=1
+  }
+  END { exit !(found && !bad) }
+' "$tmp/unknown-app-config.tsv"
+if awk -F '\t' '$1 == ".gemini" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
+  echo "unexpected unknown app-config report row for known canonical .gemini target" >&2
+  exit 1
+fi
+if awk -F '\t' '$1 == ".ssh" { found=1 } END { exit !found }' "$tmp/unknown-app-config.tsv"; then
+  echo "unexpected unknown app-config report row for sensitive .ssh" >&2
   exit 1
 fi
 

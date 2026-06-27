@@ -21,7 +21,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
 With --inventory, also writes a tab-separated relocation inventory:
@@ -47,6 +47,10 @@ With --app-config-conflict-report, writes supervised app-config merge rows when 
 app-config entry has an existing canonical META_ROOT target:
 dot_entry, real_path, canonical_target, action, apply_safe, real_type, canonical_type,
 real_digest, canonical_digest, real_entries, canonical_entries, recommendation.
+With --unknown-app-config-report, writes read-only classification rows for app-config-state entries
+that do not yet have a canonical META_ROOT target:
+dot_entry, real_path, type, digest, entries, direct_files, direct_dirs, symlinks,
+sensitive_hints, recommendation.
 With --apply-history-archives and --apply, moves history/backup dot entries under
 $META_ROOT/var/lib/envctl/real-home-dotfile-migration/history-or-backup/<dot-entry> and leaves
 the original real-home path as a symlink bridge. Existing non-identical canonical archive targets
@@ -65,6 +69,7 @@ INVENTORY_PATH=""
 INVENTORY_SUMMARY_PATH=""
 SHELL_DOTFILE_CONFLICT_REPORT_PATH=""
 APP_CONFIG_CONFLICT_REPORT_PATH=""
+UNKNOWN_APP_CONFIG_REPORT_PATH=""
 DEEP_LINK_INVENTORY_PATH=""
 DEEP_LINK_SUMMARY_PATH=""
 FAIL_REAL_HOME_DEEP_LINKS=0
@@ -79,6 +84,7 @@ while [ "$#" -gt 0 ]; do
     --inventory-summary) INVENTORY_SUMMARY_PATH="${2:?--inventory-summary requires a path}"; shift 2 ;;
     --shell-dotfile-conflict-report) SHELL_DOTFILE_CONFLICT_REPORT_PATH="${2:?--shell-dotfile-conflict-report requires a path}"; shift 2 ;;
     --app-config-conflict-report) APP_CONFIG_CONFLICT_REPORT_PATH="${2:?--app-config-conflict-report requires a path}"; shift 2 ;;
+    --unknown-app-config-report) UNKNOWN_APP_CONFIG_REPORT_PATH="${2:?--unknown-app-config-report requires a path}"; shift 2 ;;
     --deep-link-inventory) DEEP_LINK_INVENTORY_PATH="${2:?--deep-link-inventory requires a path}"; shift 2 ;;
     --deep-link-summary) DEEP_LINK_SUMMARY_PATH="${2:?--deep-link-summary requires a path}"; shift 2 ;;
     --fail-real-home-deep-links) FAIL_REAL_HOME_DEEP_LINKS=1; shift ;;
@@ -119,6 +125,10 @@ fi
 if [ -n "$APP_CONFIG_CONFLICT_REPORT_PATH" ]; then
   mkdir -p "$(dirname "$APP_CONFIG_CONFLICT_REPORT_PATH")"
   printf 'dot_entry\treal_path\tcanonical_target\taction\tapply_safe\treal_type\tcanonical_type\treal_digest\tcanonical_digest\treal_entries\tcanonical_entries\trecommendation\n' >"$APP_CONFIG_CONFLICT_REPORT_PATH"
+fi
+if [ -n "$UNKNOWN_APP_CONFIG_REPORT_PATH" ]; then
+  mkdir -p "$(dirname "$UNKNOWN_APP_CONFIG_REPORT_PATH")"
+  printf 'dot_entry\treal_path\ttype\tdigest\tentries\tdirect_files\tdirect_dirs\tsymlinks\tsensitive_hints\trecommendation\n' >"$UNKNOWN_APP_CONFIG_REPORT_PATH"
 fi
 if [ -n "$DEEP_LINK_INVENTORY_PATH" ]; then
   mkdir -p "$(dirname "$DEEP_LINK_INVENTORY_PATH")"
@@ -244,6 +254,63 @@ path_entry_count() {
   fi
 }
 
+path_direct_file_count() {
+  local path="$1"
+  if [ -f "$path" ] && [ ! -L "$path" ]; then
+    printf '1'
+  elif [ -d "$path" ] && [ ! -L "$path" ]; then
+    find "$path" -mindepth 1 -maxdepth 1 -type f -printf . 2>/dev/null | wc -c | tr -d '[:space:]'
+  else
+    printf '0'
+  fi
+}
+
+path_direct_dir_count() {
+  local path="$1"
+  if [ -d "$path" ] && [ ! -L "$path" ]; then
+    find "$path" -mindepth 1 -maxdepth 1 -type d -printf . 2>/dev/null | wc -c | tr -d '[:space:]'
+  else
+    printf '0'
+  fi
+}
+
+path_symlink_count() {
+  local path="$1"
+  if [ -L "$path" ]; then
+    printf '1'
+  elif [ -d "$path" ]; then
+    find "$path" -type l -printf . 2>/dev/null | wc -c | tr -d '[:space:]'
+  else
+    printf '0'
+  fi
+}
+
+path_sensitive_hint_count() {
+  local path="$1" name
+  if [ ! -e "$path" ] && [ ! -L "$path" ]; then
+    printf '0'
+  elif [ -d "$path" ] && [ ! -L "$path" ]; then
+    find "$path" -mindepth 1 \
+      \( -iname '*token*' \
+        -o -iname '*secret*' \
+        -o -iname '*credential*' \
+        -o -iname '*apikey*' \
+        -o -iname '*api-key*' \
+        -o -iname '*private-key*' \
+        -o -iname '*.pem' \
+        -o -iname '*.key' \
+        -o -iname 'id_rsa' \
+        -o -iname 'id_ed25519' \) \
+      -printf . 2>/dev/null | wc -c | tr -d '[:space:]'
+  else
+    name="$(basename "$path")"
+    case "${name,,}" in
+      *token*|*secret*|*credential*|*apikey*|*api-key*|*private-key*|*.pem|*.key|id_rsa|id_ed25519) printf '1' ;;
+      *) printf '0' ;;
+    esac
+  fi
+}
+
 record_shell_dotfile_conflict() {
   local dot="$1" path="$2" canonical_target="$3" action="$4" apply_safe="$5"
   [ -n "$SHELL_DOTFILE_CONFLICT_REPORT_PATH" ] || return 0
@@ -283,6 +350,24 @@ record_app_config_conflict() {
     "$(path_entry_count "$path")" \
     "$(path_entry_count "$canonical_target")" \
     "merge-canonical-then-bridge" >>"$APP_CONFIG_CONFLICT_REPORT_PATH"
+}
+
+record_unknown_app_config() {
+  local dot="$1" path="$2" type="$3"
+  [ -n "$UNKNOWN_APP_CONFIG_REPORT_PATH" ] || return 0
+  { [ -e "$path" ] || [ -L "$path" ]; } || return 0
+
+  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+    "$dot" \
+    "$path" \
+    "$type" \
+    "$(path_digest "$path")" \
+    "$(path_entry_count "$path")" \
+    "$(path_direct_file_count "$path")" \
+    "$(path_direct_dir_count "$path")" \
+    "$(path_symlink_count "$path")" \
+    "$(path_sensitive_hint_count "$path")" \
+    "classify-canonical-target-before-migration" >>"$UNKNOWN_APP_CONFIG_REPORT_PATH"
 }
 
 shell_dotfile_action() {
@@ -874,6 +959,9 @@ classify_real_home_dot() {
 
   if [ "$target_class" = "app-config-state" ] && [ "$action" = "owner-supervised-config-migration" ]; then
     record_app_config_conflict "$dot" "$path" "$canonical_target" "$action" "$apply_safe"
+  fi
+  if [ "$target_class" = "app-config-state" ] && [ -z "$canonical_target" ] && [ "$action" = "owner-supervised-migration" ]; then
+    record_unknown_app_config "$dot" "$path" "$type"
   fi
   inventory_row "$dot" "$type" "$state" "$target_class" "$canonical_target" "$action" "$apply_safe"
 }
