@@ -161,6 +161,37 @@ if awk -F '\t' '$1 == ".ssh" { found=1 } END { exit !found }' "$tmp/owner-superv
   echo "unexpected owner-supervised-state report row for sensitive .ssh" >&2
   exit 1
 fi
+
+"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-child-plan "$tmp/owner-supervised-child-plan.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-child-plan.out" 2>"$tmp/owner-supervised-child-plan.err"
+head -n 1 "$tmp/owner-supervised-child-plan.tsv" | grep -qx $'dot_entry\tchild_name\tchild_path\ttype\ttarget_class\tsupervision\tnext_action\tmigration_scope\trecommendation'
+awk -F '\t' 'NF != 9 { print "bad owner-supervised-child-plan row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/owner-supervised-child-plan.tsv"
+test "$(wc -l <"$tmp/owner-supervised-child-plan.tsv" | tr -d '[:space:]')" = 3
+awk -F '\t' -v home="$supervised_home" '
+  $1 == ".cache" && $2 == "tool" {
+    if ($3 != home "/.cache/tool") bad=1
+    if ($4 != "directory") bad=1
+    if ($5 != "cache") bad=1
+    if ($6 != "component-managed") bad=1
+    if ($7 != "component-manifest-or-tool-cache-route") bad=1
+    if ($8 != "cache-child") bad=1
+    if ($9 != "classify-cache-child-component-before-migration") bad=1
+    found_cache=1
+  }
+  $1 == ".config" && $2 == "app" {
+    if ($3 != home "/.config/app") bad=1
+    if ($4 != "directory") bad=1
+    if ($5 != "managed-dotfile") bad=1
+    if ($6 != "owner-reviewed") bad=1
+    if ($7 != "owner-review-config-child-before-bridge-or-migration") bad=1
+    if ($8 != "config-child") bad=1
+    if ($9 != "classify-config-child-before-bridge-or-migration") bad=1
+    found_config=1
+  }
+  $2 == "settings.json" || $2 == "token" { nested=1 }
+  $1 == ".ssh" { sensitive=1 }
+  END { exit !(found_cache && found_config && !bad && !nested && !sensitive) }
+' "$tmp/owner-supervised-child-plan.tsv"
+
 head -n 1 "$tmp/owner-supervised-child.tsv" | grep -qx $'dot_entry\tchild_name\tchild_path\ttype\ttarget_class\tshallow_digest\tdirect_entries\tdirect_files\tdirect_dirs\tdirect_symlinks\trecommendation'
 awk -F '\t' 'NF != 11 { print "bad owner-supervised-child row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/owner-supervised-child.tsv"
 test "$(wc -l <"$tmp/owner-supervised-child.tsv" | tr -d '[:space:]')" = 3
