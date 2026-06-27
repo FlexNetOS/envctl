@@ -1423,9 +1423,9 @@ fn current_local_mcp_hash(
     cfg_dir: &Path,
     file_name: &str,
 ) -> Result<Option<String>> {
-    Ok(current_local_mcp_path(src, cfg_dir, file_name)?
+    current_local_mcp_path(src, cfg_dir, file_name)?
         .map(|path| hash_file(&path))
-        .transpose()?)
+        .transpose()
 }
 
 fn current_local_mcp_path(
