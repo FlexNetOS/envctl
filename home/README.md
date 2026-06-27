@@ -51,6 +51,12 @@ scripts/audit-meta-local-paths.sh \
   --fail-real-home-deep-links
 ```
 
+For owner-supervised `.cache` child upgrades, keep the loop read-only until the component surface
+is declared: add `--owner-supervised-cache-child-component-plan /tmp/cache-plan.tsv` and
+`--owner-supervised-cache-child-component-manifest-status /tmp/cache-manifest-status.tsv` to prove
+the bounded component key and whether `manifest/components.d/cache-<component_key>.toml` exists
+before any named `--migrate-cache-child NAME` apply run.
+
 - `home/.claude/settings.json` is rendered from the tracked template; materialized absolute
   marketplace/statusline paths are expected for this workstation, not a reason to reintroduce
   real-home install roots.

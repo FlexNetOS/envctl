@@ -525,6 +525,24 @@ awk -F '	' -v home="$supervised_home" -v meta="$supervised_meta" '
 ' "$tmp/owner-supervised-cache-child-component-manifest-status.tsv"
 "$root/scripts/audit-meta-local-paths.sh" --owner-supervised-cache-child-component-manifest-status "$tmp/owner-supervised-cache-child-component-manifest-status-only.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-cache-child-component-manifest-status-only.out" 2>"$tmp/owner-supervised-cache-child-component-manifest-status-only.err"
 cmp "$tmp/owner-supervised-cache-child-component-manifest-status.tsv" "$tmp/owner-supervised-cache-child-component-manifest-status-only.tsv"
+manifest_status_repo="$tmp/manifest-status-repo"
+mkdir -p "$manifest_status_repo/scripts" "$manifest_status_repo/manifest/components.d"
+cp "$root/scripts/audit-meta-local-paths.sh" "$manifest_status_repo/scripts/audit-meta-local-paths.sh"
+printf '# fixture manifest proving existing-manifest status routing\n' >"$manifest_status_repo/manifest/components.d/cache-tool.toml"
+(
+  cd "$manifest_status_repo"
+  scripts/audit-meta-local-paths.sh --owner-supervised-cache-child-component-manifest-status "$tmp/owner-supervised-cache-child-component-manifest-status-existing.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-cache-child-component-manifest-status-existing.out" 2>"$tmp/owner-supervised-cache-child-component-manifest-status-existing.err"
+)
+awk -F '	' '
+  $1 == ".cache" && $2 == "tool" {
+    if ($8 != "manifest/components.d/cache-tool.toml") bad=1
+    if ($9 != "yes") bad=1
+    if ($11 != "review-existing-cache-component-manifest-before-migration") bad=1
+    if ($12 != "") bad=1
+    found_cache=1
+  }
+  END { exit !(found_cache && !bad) }
+' "$tmp/owner-supervised-cache-child-component-manifest-status-existing.tsv"
 
 head -n 1 "$tmp/owner-supervised-managed-config-child-review-plan.tsv" | grep -qx $'dot_entry\tchild_name\tchild_path\ttype\tcanonical_target\tenvctl_home_source\tconfig_scope\tsupervision\tnext_action\treview_hint\tapply_command'
 awk -F '\t' 'NF != 11 { print "bad owner-supervised-managed-config-child-review-plan row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/owner-supervised-managed-config-child-review-plan.tsv"
