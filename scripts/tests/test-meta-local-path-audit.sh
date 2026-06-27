@@ -128,10 +128,12 @@ mkdir -p \
   "$mig_home/.dotnet" \
   "$mig_home/.gemini" \
   "$mig_home/.gphoto" \
+  "$mig_home/.junie" \
   "$mig_home/.vscode-shared/sharedStorage" \
   "$mig_home/.repomix/outputs" \
   "$mig_home/.kimi-code" \
-  "$mig_home/.ollama"
+  "$mig_home/.ollama" \
+  "$mig_meta/.local/share/junie"
 printf '# managed gitconfig\n' >"$mig_meta/envctl/home/.gitconfig"
 ln -s "$mig_meta/envctl/home/.gitconfig" "$mig_meta/.gitconfig"
 ln -s "$mig_meta/.gitconfig" "$mig_home/.gitconfig"
@@ -142,6 +144,8 @@ printf 'real-home dotnet state\n' >"$mig_home/.dotnet/state"
 printf 'set ideajoin\n' >"$mig_home/.ideavimrc"
 printf '{ "theme": "dark" }\n' >"$mig_home/.gemini/settings.json"
 printf 'camera-port=usb\n' >"$mig_home/.gphoto/settings"
+printf 'real-home junie state\n' >"$mig_home/.junie/state.json"
+printf 'canonical junie state\n' >"$mig_meta/.local/share/junie/state.json"
 printf 'sqlite-state\n' >"$mig_home/.vscode-shared/sharedStorage/state.vscdb"
 printf 'repomix-output\n' >"$mig_home/.repomix/outputs/latest.txt"
 printf 'real-home kimi-code credentials\n' >"$mig_home/.kimi-code/credentials.json"
@@ -150,6 +154,7 @@ printf '{ "mcpServers": {} }\n' >"$mig_home/.claude.json"
 
 "$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/app-config-inventory.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/app-config-inventory.out" 2>"$tmp/app-config-inventory.err"
 grep -qx $'.gemini\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/gemini\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
+grep -qx $'.junie\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/junie\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
 grep -qx $'.gphoto\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.config/gphoto\tmigrate-dir-to-meta-config-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.vscode-shared\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/vscode-shared\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
 grep -qx $'.repomix\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/repomix\tmigrate-dir-to-meta-share-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
@@ -157,6 +162,30 @@ grep -qx $'.kimi-code\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta
 grep -qx $'.ollama\tdirectory\treal-home-state\tapp-config-state\t'"$mig_meta"$'/var/lib/ollama\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
 grep -qx $'.claude.json\tfile\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.local/share/claude/claude.json\towner-supervised-config-migration\tno' "$tmp/app-config-inventory.tsv"
 grep -qx $'.ideavimrc\tfile\treal-home-state\tapp-config-state\t'"$mig_meta"$'/.ideavimrc\tmigrate-file-to-meta-root-and-bridge\tyes' "$tmp/app-config-inventory.tsv"
+
+"$root/scripts/audit-meta-local-paths.sh" --app-config-conflict-report "$tmp/app-config-conflicts.tsv" --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/app-config-conflicts.out" 2>"$tmp/app-config-conflicts.err"
+head -n 1 "$tmp/app-config-conflicts.tsv" | grep -qx $'dot_entry\treal_path\tcanonical_target\taction\tapply_safe\treal_type\tcanonical_type\treal_digest\tcanonical_digest\treal_entries\tcanonical_entries\trecommendation'
+awk -F '\t' 'NF != 12 { print "bad app-config conflict row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/app-config-conflicts.tsv"
+test "$(wc -l <"$tmp/app-config-conflicts.tsv" | tr -d '[:space:]')" = 2
+awk -F '\t' -v home="$mig_home" -v meta="$mig_meta" '
+  $1 == ".junie" {
+    if ($2 != home "/.junie") bad=1
+    if ($3 != meta "/.local/share/junie") bad=1
+    if ($4 != "owner-supervised-config-migration") bad=1
+    if ($5 != "no") bad=1
+    if ($6 != "directory" || $7 != "directory") bad=1
+    if ($8 !~ /^[0-9a-f]{64}$/ || $9 !~ /^[0-9a-f]{64}$/) bad=1
+    if ($8 == $9) bad=1
+    if ($10 != "1" || $11 != "1") bad=1
+    if ($12 != "merge-canonical-then-bridge") bad=1
+    found=1
+  }
+  END { exit !(found && !bad) }
+' "$tmp/app-config-conflicts.tsv"
+if awk -F '\t' '$1 == ".gemini" { found=1 } END { exit !found }' "$tmp/app-config-conflicts.tsv"; then
+  echo "unexpected app-config conflict report row for missing canonical .gemini target" >&2
+  exit 1
+fi
 
 "$root/scripts/audit-meta-local-paths.sh" --migrate-dot .cargo --meta-root "$mig_meta" --real-home "$mig_home" --envctl-home-source "$mig_meta/envctl/home" >"$tmp/migrate-dry.out" 2>"$tmp/migrate-dry.err"
 grep -q 'DRY-RUN: would move .*\.cargo to .*\.toolchains/cargo' "$tmp/migrate-dry.out"
