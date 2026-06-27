@@ -83,10 +83,26 @@ pub fn render_meta_entry(id: &str, repo_url: &str, provides: &[String], tags: &[
 }
 
 /// Is `id` already declared as a project in this `.meta.yaml` text? Grep-guard on
-/// the exact 2-space-indented `  <id>:` key so we never double-register.
+/// the exact 2-space-indented `  <id>:` key, scoped to the `projects:` block so an
+/// `<id>` colliding with a `defaults:` sub-key (e.g. `parallel`) is not a false hit.
 pub fn meta_has_project(meta_yaml: &str, id: &str) -> bool {
     let needle = format!("  {id}:");
-    meta_yaml.lines().any(|l| l.trim_end() == needle)
+    let mut in_projects = false;
+    for line in meta_yaml.lines() {
+        let t = line.trim_end();
+        if t == "projects:" {
+            in_projects = true;
+            continue;
+        }
+        // A new unindented top-level key (`foo:` at column 0) closes the block.
+        if in_projects && !t.is_empty() && !line.starts_with([' ', '\t']) {
+            in_projects = false;
+        }
+        if in_projects && t == needle {
+            return true;
+        }
+    }
+    false
 }
 
 /// Is `<id>/` already present (uncommented) in this `.gitignore` text?
@@ -309,11 +325,14 @@ fn clone_sibling(url: &str, git_ref: Option<&str>, target: &Path) -> anyhow::Res
     Ok(())
 }
 
+/// Write via a sibling temp file + atomic rename (same dir, so rename is atomic).
 fn atomic_write(path: &Path, contents: &str) -> anyhow::Result<()> {
-    let tmp = path.with_extension(format!(
-        "{}.envctl-tmp",
-        path.extension().and_then(|e| e.to_str()).unwrap_or("")
-    ));
+    let mut name = path
+        .file_name()
+        .map(|n| n.to_os_string())
+        .unwrap_or_default();
+    name.push(".envctl-tmp");
+    let tmp = path.with_file_name(name);
     std::fs::write(&tmp, contents)?;
     std::fs::rename(&tmp, path)?;
     Ok(())
@@ -400,10 +419,96 @@ mod tests {
         // substring must not false-match
         assert!(!meta_has_project(yaml, "env"));
 
+        // scoping: an id colliding with a `defaults:` sub-key is NOT a project hit
+        assert!(!meta_has_project(yaml, "parallel"));
+
         let gi = "target/\nenvctl/\n# comment\n/dist/\n";
         assert!(gitignore_has(gi, "envctl"));
         assert!(!gitignore_has(gi, "beads_rust"));
         assert!(!gitignore_has(gi, "env"));
+    }
+
+    #[test]
+    fn register_peer_apply_is_idempotent() {
+        let _guard = crate::test_env_lock();
+        let dir = std::env::temp_dir().join(format!("envctl-peer-apply-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(
+            dir.join(".meta.yaml"),
+            "defaults:\n  parallel: true\nprojects:\n  envctl:\n    repo: git@github.com:FlexNetOS/envctl.git\n",
+        )
+        .unwrap();
+        std::fs::write(dir.join(".gitignore"), "target/\nenvctl/\n").unwrap();
+        std::env::set_var("META_ROOT", &dir);
+
+        // file:// URL → git clone fails fast (128); the DECLARATION must still land.
+        let spec = AddRepoSpec {
+            id: "beads_rust".into(),
+            git_url: "file:///nonexistent-xyz".into(),
+            allow_build: true,
+            mode: crate::model::AddRepoMode::Peer,
+            tags: vec!["tools".into(), "rust".into()],
+            ..Default::default()
+        };
+
+        // Apply twice; the second run must be a no-op on durable state.
+        for _ in 0..2 {
+            let (sink, rx) = EventSink::channel();
+            let _ = register_peer(&spec, false, &sink);
+            drop(sink);
+            let _ = rx.iter().count(); // drain
+        }
+
+        let yaml = std::fs::read_to_string(dir.join(".meta.yaml")).unwrap();
+        let gi = std::fs::read_to_string(dir.join(".gitignore")).unwrap();
+        assert_eq!(
+            yaml.matches("  beads_rust:").count(),
+            1,
+            "one .meta.yaml entry"
+        );
+        assert!(yaml.contains("tags: [tools, rust]"));
+        assert!(meta_has_project(&yaml, "beads_rust"));
+        assert!(meta_has_project(&yaml, "envctl"));
+        assert_eq!(gi.matches("beads_rust/").count(), 1, "one .gitignore line");
+
+        std::env::remove_var("META_ROOT");
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn preview_mutates_nothing() {
+        let _guard = crate::test_env_lock();
+        let dir = std::env::temp_dir().join(format!("envctl-peer-prev-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let before = "defaults:\n  parallel: true\nprojects:\n  envctl:\n    repo: x\n";
+        std::fs::write(dir.join(".meta.yaml"), before).unwrap();
+        std::fs::write(dir.join(".gitignore"), "target/\n").unwrap();
+        std::env::set_var("META_ROOT", &dir);
+
+        let spec = AddRepoSpec {
+            id: "beads_rust".into(),
+            git_url: "https://github.com/FlexNetOS/beads_rust".into(),
+            allow_build: false, // preview
+            mode: crate::model::AddRepoMode::Peer,
+            ..Default::default()
+        };
+        let (sink, rx) = EventSink::channel();
+        register_peer(&spec, false, &sink).unwrap();
+        drop(sink);
+        let _ = rx.iter().count();
+
+        // preview must not touch the files
+        assert_eq!(
+            std::fs::read_to_string(dir.join(".meta.yaml")).unwrap(),
+            before
+        );
+        assert_eq!(
+            std::fs::read_to_string(dir.join(".gitignore")).unwrap(),
+            "target/\n"
+        );
+
+        std::env::remove_var("META_ROOT");
+        std::fs::remove_dir_all(&dir).ok();
     }
 
     #[test]

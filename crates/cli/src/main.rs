@@ -323,17 +323,17 @@ enum Cmd {
         #[arg(long)]
         confirm: bool,
     },
-    /// Add a repo as a managed component (build-from-source + wire-in).
-    /// Acquire+detect+PREVIEW by default; pass --build to actually build + install.
+    /// Register a repo into the workspace as a meta PEER or a managed component.
+    /// Acquire+detect+PREVIEW by default; pass --build to actually apply / build + install.
     #[command(
-        long_about = "Adopt an external git repo as a managed component: clone it, detect its build system, build from source, install the artifacts, and wire it in. Acquire + detect + PREVIEW by default; pass --build to actually run the upstream build / AI agent / install. The --strategy chooses how it lands: as-is, cherry-pick (--bin), rename (--rename old=new), or refactor (--patch-cmd, or --refactor=ai with --ai-goal port-to-rust). Use --connect to drop into an interactive agent session inside the clone. An --id is required to name the component.",
+        long_about = "Register a git repo into the meta workspace. --mode (default auto) chooses how: `peer` registers it the meta-native way — a grep-guarded, idempotent edit of the meta-root .meta.yaml + .gitignore and a sibling clone, so it's a first-class member reachable by `meta exec/git/worktree` (no managed drop-in); `component` adopts it as a build-from-source managed component (clone, detect build system, build, install, wire in, register a components.d drop-in). `auto` routes owned/FlexNetOS remotes to PEER and everything else to COMPONENT. PREVIEW by default; pass --build to apply (peer: edit + clone; component: run the upstream build / AI agent / install). Peer takes --provides/--tag; component takes --strategy (as-is, cherry-pick --bin, rename --rename old=new, refactor --patch-cmd or --ai-goal port-to-rust) and --connect. An --id is required.",
         after_help = envctl_examples!(
-            "envctl add-repo https://github.com/FlexNetOS/example --id example",
-            "envctl add-repo https://github.com/FlexNetOS/example --id example --build",
-            "envctl add-repo https://github.com/FlexNetOS/example --id example --strategy cherry-pick --bin foo",
-            "envctl add-repo https://github.com/FlexNetOS/example --id example --strategy rename --rename foo=bar",
-            "envctl add-repo https://github.com/FlexNetOS/example --id example --strategy refactor --ai-goal port-to-rust --build",
-            "envctl add-repo https://github.com/FlexNetOS/example --id example --connect",
+            "envctl add-repo https://github.com/FlexNetOS/beads_rust --id beads_rust          # auto -> PEER (preview)",
+            "envctl add-repo https://github.com/FlexNetOS/beads_rust --id beads_rust --tag tools --build",
+            "envctl add-repo https://github.com/sharkdp/pastel --id pastel --build           # auto -> COMPONENT",
+            "envctl add-repo https://github.com/FlexNetOS/example --id example --mode component --strategy cherry-pick --bin foo",
+            "envctl add-repo https://github.com/BurntSushi/ripgrep --id rg --strategy rename --rename rg=rgx --build",
+            "envctl add-repo https://github.com/sharkdp/pastel --id pastel-rs --mode component --strategy refactor --ai-goal port-to-rust --build",
         )
     )]
     AddRepo {

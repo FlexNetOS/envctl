@@ -1018,8 +1018,35 @@ fn now_epoch() -> u128 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::{ShellRcBlock, Wiring};
+    use crate::model::{AddRepoSpec, ShellRcBlock, Wiring};
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn resolve_peer_routes_by_owner_and_honors_mode_override() {
+        let owned = |mode| AddRepoSpec {
+            git_url: "https://github.com/FlexNetOS/beads_rust".into(),
+            mode,
+            ..Default::default()
+        };
+        let foreign = |mode| AddRepoSpec {
+            git_url: "https://github.com/someone/tool".into(),
+            mode,
+            ..Default::default()
+        };
+        // Auto: owned → peer, foreign → component.
+        assert!(resolve_peer(&owned(AddRepoMode::Auto)));
+        assert!(!resolve_peer(&foreign(AddRepoMode::Auto)));
+        // Explicit override wins either way.
+        assert!(resolve_peer(&foreign(AddRepoMode::Peer)));
+        assert!(!resolve_peer(&owned(AddRepoMode::Component)));
+        // Local-only (no remote) never auto-routes to peer.
+        assert!(!resolve_peer(&AddRepoSpec {
+            git_url: String::new(),
+            local_path: Some("/tmp/x".into()),
+            mode: AddRepoMode::Auto,
+            ..Default::default()
+        }));
+    }
 
     #[test]
     fn wiring_present_probes_meta_root_bashrc_not_os_home() {
