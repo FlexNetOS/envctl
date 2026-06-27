@@ -291,6 +291,11 @@ requires = [
 ]
 resolved = ""
 
+[components.meta-env-plugin]
+content_hash = "272d130d0dc8eddd"
+requires = ["rustup"]
+resolved = ""
+
 [components.meta-tool-links]
 content_hash = "fd2aa289bbe452ac"
 requires = ["home-local-single-link"]
