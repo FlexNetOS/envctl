@@ -3628,7 +3628,9 @@ fn print_doctor(engine: &Engine, json: bool) -> anyhow::Result<()> {
         let out = std::process::Command::new("bash")
             .args([
                 "-lc",
-                &format!("command -v {bin} && {bin} --version 2>/dev/null | head -1"),
+                &format!(
+                    "timeout --kill-after=2s 5s bash -lc 'command -v \"$1\" && \"$1\" --version 2>/dev/null | head -1' _ {bin}"
+                ),
             ])
             .output()
             .ok()?;

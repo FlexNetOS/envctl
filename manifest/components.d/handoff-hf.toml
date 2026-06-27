@@ -14,7 +14,7 @@ path_entries = ["$META_ROOT/usr/bin"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; [ -x "$M/usr/bin/hf" ] && [ -x "$M/usr/bin/hf-mcp" ] && case "$(readlink -f "$M/usr/bin/hf" 2>/dev/null)" in "$M"/*) ;; *) exit 1;; esac && "$M/usr/bin/hf" version >/dev/null''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; [ -x "$M/usr/bin/hf" ] && [ -x "$M/usr/bin/hf-mcp" ] && [ "$(readlink "$M/.local/bin/hf" 2>/dev/null || true)" = "$M/usr/bin/hf" ] && case "$(readlink -f "$M/usr/bin/hf" 2>/dev/null)" in "$M"/*) ;; *) exit 1;; esac && case "$(readlink -f "$M/usr/bin/hf-mcp" 2>/dev/null)" in "$M"/*) ;; *) exit 1;; esac''']
 
 [component.install]
 kind = "script"
@@ -46,7 +46,7 @@ ln -sfn "$M/usr/bin/hf" "$M/.local/bin/hf"
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export PATH="$M/usr/bin:$PATH"; [ "$(readlink -f "$M/.local/bin/hf" 2>/dev/null)" = "$(readlink -f "$M/usr/bin/hf" 2>/dev/null)" ] && case "$(readlink -f "$M/usr/bin/hf" 2>/dev/null)" in "$M"/*) ;; *) echo "handoff-hf: hf resolves outside META_ROOT" >&2; exit 1;; esac && "$M/usr/bin/hf" version && "$M/usr/bin/hf-mcp" --help >/dev/null 2>&1''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export PATH="$M/usr/bin:$PATH"; [ "$(readlink -f "$M/.local/bin/hf" 2>/dev/null)" = "$(readlink -f "$M/usr/bin/hf" 2>/dev/null)" ] && case "$(readlink -f "$M/usr/bin/hf" 2>/dev/null)" in "$M"/*) ;; *) echo "handoff-hf: hf resolves outside META_ROOT" >&2; exit 1;; esac && case "$(readlink -f "$M/usr/bin/hf-mcp" 2>/dev/null)" in "$M"/*) ;; *) echo "handoff-hf: hf-mcp resolves outside META_ROOT" >&2; exit 1;; esac && timeout 5 "$M/usr/bin/hf" version && timeout 5 "$M/usr/bin/hf-mcp" --help >/dev/null 2>&1''']
 
 [component.fix]
 kind = "script"

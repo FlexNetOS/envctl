@@ -31,7 +31,7 @@ requires = ["rustup"]
 resolved = ""
 
 [components.claude-code-cli]
-content_hash = "fbdbc3c5ff7dedd1"
+content_hash = "890aa96fe3b72b1b"
 requires = []
 resolved = ""
 
@@ -214,7 +214,7 @@ requires = [
 resolved = ""
 
 [components.handoff-hf]
-content_hash = "8df00ccaded2ea27"
+content_hash = "6cac08bf85f4a08b"
 requires = ["rustup"]
 resolved = ""
 
