@@ -113,16 +113,20 @@ awk -F '\t' -v home="$home" '
 
 supervised_meta="$tmp/supervised-meta"
 supervised_home="$tmp/supervised-home"
-mkdir -p "$supervised_meta/.local" "$supervised_meta/envctl/home/.config" "$supervised_home/.cache/tool" "$supervised_home/.config/app" "$supervised_home/.ssh"
+mkdir -p "$supervised_meta/.local/cache/meta-cache" "$supervised_meta/envctl/home/.config/managed-app" "$supervised_home/.cache/tool" "$supervised_home/.config/app" "$supervised_home/.config/managed-app" "$supervised_home/.ssh"
 printf '# managed gitconfig\n' >"$supervised_meta/envctl/home/.gitconfig"
 ln -s "$supervised_meta/envctl/home/.gitconfig" "$supervised_meta/.gitconfig"
 ln -s "$supervised_meta/.local" "$supervised_home/.local"
 ln -s "$supervised_meta/.gitconfig" "$supervised_home/.gitconfig"
 printf 'cache-index\n' >"$supervised_home/.cache/tool/index"
+printf 'meta-cache-index\n' >"$supervised_meta/.local/cache/meta-cache/index"
+ln -s "$supervised_meta/.local/cache/meta-cache" "$supervised_home/.cache/meta-cache"
 printf 'settings\n' >"$supervised_home/.config/app/settings.json"
 printf 'nested-secret\n' >"$supervised_home/.config/app/token"
+printf 'managed-settings\n' >"$supervised_home/.config/managed-app/settings.json"
+ln -s "$outside/hf" "$supervised_home/.config/external-app"
 printf 'key\n' >"$supervised_home/.ssh/id_ed25519"
-"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-state-report "$tmp/owner-supervised-state.tsv" --owner-supervised-child-report "$tmp/owner-supervised-child.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-state.out" 2>"$tmp/owner-supervised-state.err"
+"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-state-report "$tmp/owner-supervised-state.tsv" --owner-supervised-child-report "$tmp/owner-supervised-child.tsv" --owner-supervised-child-candidates-report "$tmp/owner-supervised-child-candidates.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-state.out" 2>"$tmp/owner-supervised-state.err"
 head -n 1 "$tmp/owner-supervised-state.tsv" | grep -qx $'dot_entry\treal_path\ttype\ttarget_class\tshallow_digest\tdirect_entries\tdirect_files\tdirect_dirs\tdirect_symlinks\taction\tapply_safe\trecommendation'
 awk -F '\t' 'NF != 12 { print "bad owner-supervised-state row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/owner-supervised-state.tsv"
 test "$(wc -l <"$tmp/owner-supervised-state.tsv" | tr -d '[:space:]')" = 3
@@ -132,10 +136,10 @@ awk -F '\t' -v home="$supervised_home" '
     if ($3 != "directory") bad=1
     if ($4 != "cache") bad=1
     if ($5 !~ /^[0-9a-f]{64}$/) bad=1
-    if ($6 != "1") bad=1
+    if ($6 != "2") bad=1
     if ($7 != "0") bad=1
     if ($8 != "1") bad=1
-    if ($9 != "0") bad=1
+    if ($9 != "1") bad=1
     if ($10 != "component-managed-cache-migration") bad=1
     if ($11 != "no") bad=1
     if ($12 != "use-component-managed-cache-migration") bad=1
@@ -146,10 +150,10 @@ awk -F '\t' -v home="$supervised_home" '
     if ($3 != "directory") bad=1
     if ($4 != "managed-dotfile") bad=1
     if ($5 !~ /^[0-9a-f]{64}$/) bad=1
-    if ($6 != "1") bad=1
+    if ($6 != "3") bad=1
     if ($7 != "0") bad=1
-    if ($8 != "1") bad=1
-    if ($9 != "0") bad=1
+    if ($8 != "2") bad=1
+    if ($9 != "1") bad=1
     if ($10 != "owner-supervised-bridge") bad=1
     if ($11 != "no") bad=1
     if ($12 != "owner-review-before-bridge") bad=1
@@ -165,7 +169,7 @@ fi
 "$root/scripts/audit-meta-local-paths.sh" --owner-supervised-child-plan "$tmp/owner-supervised-child-plan.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-child-plan.out" 2>"$tmp/owner-supervised-child-plan.err"
 head -n 1 "$tmp/owner-supervised-child-plan.tsv" | grep -qx $'dot_entry\tchild_name\tchild_path\ttype\ttarget_class\tsupervision\tnext_action\tmigration_scope\trecommendation'
 awk -F '\t' 'NF != 9 { print "bad owner-supervised-child-plan row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/owner-supervised-child-plan.tsv"
-test "$(wc -l <"$tmp/owner-supervised-child-plan.tsv" | tr -d '[:space:]')" = 3
+test "$(wc -l <"$tmp/owner-supervised-child-plan.tsv" | tr -d '[:space:]')" = 6
 awk -F '\t' -v home="$supervised_home" '
   $1 == ".cache" && $2 == "tool" {
     if ($3 != home "/.cache/tool") bad=1
@@ -194,7 +198,7 @@ awk -F '\t' -v home="$supervised_home" '
 
 head -n 1 "$tmp/owner-supervised-child.tsv" | grep -qx $'dot_entry\tchild_name\tchild_path\ttype\ttarget_class\tshallow_digest\tdirect_entries\tdirect_files\tdirect_dirs\tdirect_symlinks\trecommendation'
 awk -F '\t' 'NF != 11 { print "bad owner-supervised-child row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/owner-supervised-child.tsv"
-test "$(wc -l <"$tmp/owner-supervised-child.tsv" | tr -d '[:space:]')" = 3
+test "$(wc -l <"$tmp/owner-supervised-child.tsv" | tr -d '[:space:]')" = 6
 awk -F '\t' -v home="$supervised_home" '
   $1 == ".cache" && $2 == "tool" {
     if ($3 != home "/.cache/tool") bad=1
@@ -224,6 +228,83 @@ awk -F '\t' -v home="$supervised_home" '
   $1 == ".ssh" { sensitive=1 }
   END { exit !(found_cache && found_config && !bad && !nested && !sensitive) }
 ' "$tmp/owner-supervised-child.tsv"
+
+head -n 1 "$tmp/owner-supervised-child-candidates.tsv" | grep -qx $'dot_entry\tchild_name\tchild_path\ttype\tchild_state\tchild_target_class\tcanonical_target\tshallow_digest\tdirect_entries\tdirect_files\tdirect_dirs\tdirect_symlinks\tcandidate_action\tapply_safe\trecommendation'
+awk -F '\t' 'NF != 15 { print "bad owner-supervised-child-candidates row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/owner-supervised-child-candidates.tsv"
+test "$(wc -l <"$tmp/owner-supervised-child-candidates.tsv" | tr -d '[:space:]')" = 6
+awk -F '\t' -v home="$supervised_home" -v meta="$supervised_meta" -v outside="$outside" '
+  $1 == ".cache" && $2 == "tool" {
+    if ($3 != home "/.cache/tool") bad=1
+    if ($4 != "directory") bad=1
+    if ($5 != "real-home-state") bad=1
+    if ($6 != "cache-child") bad=1
+    if ($7 != meta "/.local/cache/tool") bad=1
+    if ($8 !~ /^[0-9a-f]{64}$/) bad=1
+    if ($9 != "1") bad=1
+    if ($10 != "1") bad=1
+    if ($11 != "0") bad=1
+    if ($12 != "0") bad=1
+    if ($13 != "component-managed-cache-child-migration") bad=1
+    if ($14 != "no") bad=1
+    if ($15 != "add-component-cache-rule-or-owner-approved-child-migration") bad=1
+    found_cache=1
+  }
+  $1 == ".cache" && $2 == "meta-cache" {
+    if ($3 != home "/.cache/meta-cache") bad=1
+    if ($4 != "symlink") bad=1
+    if ($5 != "already-meta") bad=1
+    if ($6 != "already-meta") bad=1
+    if ($7 != meta "/.local/cache/meta-cache") bad=1
+    if ($13 != "none") bad=1
+    if ($14 != "n/a") bad=1
+    if ($15 != "none") bad=1
+    found_meta_cache=1
+  }
+  $1 == ".config" && $2 == "managed-app" {
+    if ($3 != home "/.config/managed-app") bad=1
+    if ($4 != "directory") bad=1
+    if ($5 != "real-home-state") bad=1
+    if ($6 != "managed-config-child") bad=1
+    if ($7 != meta "/envctl/home/.config/managed-app") bad=1
+    if ($9 != "1") bad=1
+    if ($10 != "1") bad=1
+    if ($11 != "0") bad=1
+    if ($12 != "0") bad=1
+    if ($13 != "owner-supervised-config-child-bridge") bad=1
+    if ($14 != "no") bad=1
+    if ($15 != "owner-review-managed-config-child-before-bridge") bad=1
+    found_managed=1
+  }
+  $1 == ".config" && $2 == "app" {
+    if ($3 != home "/.config/app") bad=1
+    if ($4 != "directory") bad=1
+    if ($5 != "real-home-state") bad=1
+    if ($6 != "config-child") bad=1
+    if ($7 != meta "/.config/app") bad=1
+    if ($9 != "2") bad=1
+    if ($10 != "2") bad=1
+    if ($11 != "0") bad=1
+    if ($12 != "0") bad=1
+    if ($13 != "classify-config-child-before-bridge-or-migration") bad=1
+    if ($14 != "no") bad=1
+    if ($15 != "classify-config-child-before-bridge-or-migration") bad=1
+    found_config=1
+  }
+  $1 == ".config" && $2 == "external-app" {
+    if ($3 != home "/.config/external-app") bad=1
+    if ($4 != "symlink") bad=1
+    if ($5 != "external-symlink") bad=1
+    if ($6 != "external-symlink") bad=1
+    if ($7 != outside "/hf") bad=1
+    if ($13 != "owner-supervised-relink") bad=1
+    if ($14 != "no") bad=1
+    if ($15 != "owner-review-before-relink") bad=1
+    found_external=1
+  }
+  $2 == "settings.json" || $2 == "token" { nested=1 }
+  $1 == ".ssh" { sensitive=1 }
+  END { exit !(found_cache && found_meta_cache && found_managed && found_config && found_external && !bad && !nested && !sensitive) }
+' "$tmp/owner-supervised-child-candidates.tsv"
 
 "$root/scripts/audit-meta-local-paths.sh" --migration-blockers-plan "$tmp/owner-supervised-plan.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-plan.out" 2>"$tmp/owner-supervised-plan.err"
 head -n 1 "$tmp/owner-supervised-plan.tsv" | grep -qx $'dot_entry\treal_path\tblocker\tblocker_detail\tapply_safe\topen_handles\trecommendation\tsupervision\tnext_action\tapply_command'
