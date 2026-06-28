@@ -109,4 +109,3 @@ Each node may read **only**: `.handoff/loop/plan/targets.md`, `.handoff/loop/pla
 and its own `.handoff/loop/plan/graph/<id>.graph.md` snapshot (see each node's `context_paths` in
 `target-dag.json`). This keeps planning of one organ decoupled from the rest of the fleet and makes
 self-revision strictly local.
-

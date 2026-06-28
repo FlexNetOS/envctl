@@ -81,7 +81,7 @@ risk_policy version: 1 · target: rusty-idd · SHA `5a55284` · author: plan-arc
 
 ## Laws honored
 - Upgrade-Only / No-Downgrades: every row is additive; none weakens a guard, rule, gate, or permission
-  (U7/U10/gov-class candidates STRENGTHEN). 
+  (U7/U10/gov-class candidates STRENGTHEN).
 - Owner-wall: rusty-idd code untouched; all rows are owner-applies-with-gate.
 - Fail-closed: every tier carries a falsifiable RED gate that fails on drift.
 

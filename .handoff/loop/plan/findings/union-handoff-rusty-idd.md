@@ -1,7 +1,7 @@
 # Union: Handoff ↔ Rusty-IDD Cross-Repo Reference Map
 
-**Date:** 2026-06-26  
-**Scope:** Lineage analysis, unique surfaces, seams, and union strategy recommendation for the handoff + rusty-idd unified continuity+intent control plane  
+**Date:** 2026-06-26
+**Scope:** Lineage analysis, unique surfaces, seams, and union strategy recommendation for the handoff + rusty-idd unified continuity+intent control plane
 **Status:** PRELIMINARY (PRE-MERGE DISCOVERY)
 
 ---
@@ -203,9 +203,9 @@ $META_ROOT/.handoff (north-star)
 
 Keep repos separate; add a thin adapter layer.
 
-**Pros:** Minimal coupling, independent CI/release cycles.  
-**Cons:** Duplicate crates (spec/core/runner/tui); missed SINGLE ledger authority; no unified control plane; CLI commands can't directly call hf verbs (only JSON over filesystem).  
-**Risk:** High fragmentation; easy to drift (handoff spec bug fixes don't reach rusty-idd automatically).  
+**Pros:** Minimal coupling, independent CI/release cycles.
+**Cons:** Duplicate crates (spec/core/runner/tui); missed SINGLE ledger authority; no unified control plane; CLI commands can't directly call hf verbs (only JSON over filesystem).
+**Risk:** High fragmentation; easy to drift (handoff spec bug fixes don't reach rusty-idd automatically).
 **Reversibility:** Medium. Requires ongoing sync.
 
 **Verdict:** NOT RECOMMENDED. The 95%+ code identity + lack of rusty-idd ledger support makes this wasteful.
@@ -216,8 +216,8 @@ Keep repos separate; add a thin adapter layer.
 
 Extract spec/core/runner/tui into a shared crate (e.g., `rusty-idd-shared`). Both handoff and rusty-idd depend on it.
 
-**Pros:** Avoids duplication; each repo can specialize (handoff = kernel, rusty-idd = CLI).  
-**Cons:** Requires a new repo or workspace; adds a crate-dependency edge. CLI commands still can't directly call hf verbs.  
+**Pros:** Avoids duplication; each repo can specialize (handoff = kernel, rusty-idd = CLI).
+**Cons:** Requires a new repo or workspace; adds a crate-dependency edge. CLI commands still can't directly call hf verbs.
 **Reversibility:** Medium-low. Adds coupling via crate imports.
 
 **Verdict:** WORTH CONSIDERING if separation is a long-term goal. But MERGE (Option A) is simpler for the MVP.
@@ -230,9 +230,9 @@ When MERGING rusty-idd CLI into handoff, these are the exact attachment points:
 
 ### Seam 1: Work-Order Filesystem Contract
 
-**Location:** `.handoff/tasks/*.json`  
-**Producer:** Rusty-IDD CLI commands (e.g., `codex`, `deploy`, `harness`)  
-**Consumer:** Handoff hf (reads via `handoff-intake` verb)  
+**Location:** `.handoff/tasks/*.json`
+**Producer:** Rusty-IDD CLI commands (e.g., `codex`, `deploy`, `harness`)
+**Consumer:** Handoff hf (reads via `handoff-intake` verb)
 **Schema:** `work-order/src/lib.rs::struct WorkOrder` + JSON schema generated via schemars
 
 **Evidence:**
@@ -247,8 +247,8 @@ When MERGING rusty-idd CLI into handoff, these are the exact attachment points:
 
 ### Seam 2: Ledger Read API (Handoff → Rusty-IDD)
 
-**Location:** `ledger/src/lib.rs` (undefined in this spike — internal to hf today)  
-**Producer:** Handoff hf (writes witness, claim, checkpoint, handoff, resume)  
+**Location:** `ledger/src/lib.rs` (undefined in this spike — internal to hf today)
+**Producer:** Handoff hf (writes witness, claim, checkpoint, handoff, resume)
 **Consumer:** Future rusty-idd commands that need to READ ledger state (e.g., `harness` → "what tasks are claimed?", `deploy` → "what's the last checkpoint?")
 
 **Current State:** MISSING. Rusty-IDD has NO ledger consumer library API (only hf CLI).
@@ -266,8 +266,8 @@ When MERGING rusty-idd CLI into handoff, these are the exact attachment points:
 
 ### Seam 3: Spec/Core/Runner/TUI CLI Integration
 
-**Location:** `crates/cli/src/lib.rs::pub fn dispatch(...)`  
-**Producer:** The unified `rusty-idd` binary  
+**Location:** `crates/cli/src/lib.rs::pub fn dispatch(...)`
+**Producer:** The unified `rusty-idd` binary
 **Consumer:** CLI subcommands (spec, run, tui, and the stripped commands codex/deploy/harness/knowledge)
 
 **Current State:** Handoff has a subset; rusty-idd has the full set.
@@ -314,7 +314,7 @@ When MERGING rusty-idd CLI into handoff, these are the exact attachment points:
    - Check codex.rs: codegraph, LLM, syntect deps (syntect has C onig).
    - Check knowledge.rs: repomix backend (bundled?), codegraph.
    - Check harness.rs, deploy.rs, next.rs for weave/ledger imports.
-   
+
 2. **Design ledger read API** (1 week)
    - Extract handoff-ledger-api (read-only surface).
    - Methods: get_claimed_tasks(), get_latest_checkpoint(), get_witness_chain(), etc.
@@ -358,6 +358,6 @@ When MERGING rusty-idd CLI into handoff, these are the exact attachment points:
 
 ---
 
-**Map Status:** COMPLETE (PRE-MERGE DISCOVERY)  
-**Confidence:** HIGH (95%+ on lineage/unique-surfaces; MODERATE on ledger API design + C-dep scanning still pending)  
+**Map Status:** COMPLETE (PRE-MERGE DISCOVERY)
+**Confidence:** HIGH (95%+ on lineage/unique-surfaces; MODERATE on ledger API design + C-dep scanning still pending)
 **Next Phase:** Merge execution (handoff-merge-integrator agent) after C-dep scan + ledger API design.
