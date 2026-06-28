@@ -1,25 +1,28 @@
-# TASK-0078 reviewed JNA cache-child manifest implementer log
+# Implementer log — worktree slug vs main checkout
 
-## Red
-Before adding the JNA manifest, the live non-mutating probe reported a dry-run refusal because `manifest/components.d/cache-jna.toml` was missing.
+Date: 2026-06-28
 
-Candidate preflight confirmed the live source `/home/drdave/.cache/JNA` exists and the meta target `/home/drdave/Desktop/meta/.local/cache/JNA` is absent. No state was moved.
+## Implemented
 
-## Change
-- Added `manifest/components.d/cache-jna.toml` with the minimal reviewed component declaration for `cache-jna`.
-- Added fixture coverage for a repo-reviewed `JNA` cache child: dry-run reports would-move/would-link and leaves both source and target untouched.
-- Did not change the migration engine and did not run any live apply migration.
+- Extended `scripts/reap-worktrees.sh` with read-only helper modes before any
+  fetch/prune/reap logic:
+  - `--managed-worktree-slug [path] [repo]`
+  - `--meta-worktree-status [path] [repo]`
+- The helper resolves the checkout root and succeeds only for the path shape
+  `.worktrees/<slug>/<repo>`. It rejects the main checkout and malformed paths,
+  while allowing the valid edge where slug equals repo name:
+  `.worktrees/envctl/envctl`.
+- Added regression coverage in `scripts/tests/test-reaper.sh` for main checkout,
+  managed checkout, slug-equals-repo, malformed paths, and the status wrapper's
+  no-call behavior on main checkout.
+- Updated `AGENTS.md`, `CLAUDE.md`, forge-loop skills, session-relay skills, and
+  continuity-steward docs to explain that `<slug>` is a worktree-set slug, not
+  the repo name.
+- Added `scripts/tests/test-skill-contract.sh` guard against reintroducing stale
+  `[gone] (merged)` or `meta git worktree status envctl` doctrine in active
+  harness docs/agent config.
 
-## Green
-PASS. Local gates passed in the worktree:
+## Invariant notes
 
-- `bash -n scripts/audit-meta-local-paths.sh scripts/tests/test-meta-local-path-audit.sh`
-- `bash scripts/tests/test-meta-local-path-audit.sh`
-- `git diff --check`
-- `bash ci/gates/loop-state.sh`
-- `bash ci/gates/meta-local-policy.sh`
-- `bash ci/gates/harness-scripts.sh`
-- `bash ci/gates/p7.sh`
-
-## Runtime
-PASS. Live non-mutating dry-run emitted `DRY-RUN: would move /home/drdave/.cache/JNA to /home/drdave/Desktop/meta/.local/cache/JNA and link /home/drdave/.cache/JNA -> /home/drdave/Desktop/meta/.local/cache/JNA`, then `meta-local audit: PASS warnings=10 changed=0 dot_entries=79`. The validation row reported `manifest_exists=yes`, `manifest_declares_expected_id=yes`, `next_action=review-existing-cache-component-manifest-before-migration`, and an empty `apply_command`. `/home/drdave/.cache/JNA` still exists and `/home/drdave/Desktop/meta/.local/cache/JNA` remains absent.
+This is a shell/docs/harness safety change only. It does not alter Rust engine
+logic, dependency graphs, trust-boundary dependencies, or install targets.
