@@ -6,3 +6,6 @@
 # file, so the sibling module loads regardless of $HOME (portability: no
 # hardcoded path). Was an absolute /home/drdave path before ADR-0006 wave 2.
 source rtk-wrappers.nu
+# Meta /usr mirror on PATH/LD_LIBRARY_PATH (relative source: resolved against this
+# file's dir, so it loads regardless of $HOME). See the module header for rationale.
+source meta-usr-path.nu

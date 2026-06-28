@@ -192,7 +192,7 @@ The remote relay edge is a NEW network attack surface. Resolution across all fou
 
 | Cert/CA | Role | Trust path | Never |
 |---|---|---|---|
-| **Edge SERVER cert** | secures the inbound remote hop | **PUBLICLY-TRUSTED** (ACME/Let's Encrypt for a VPS FQDN, or an org CA the phone/Telegram agent already trusts). Loaded from `~/.config/env-ctl/relay-tls/{cert.pem,key.pem}` (key 0600). | NEVER the local MITM CA |
+| **Edge SERVER cert** | secures the inbound remote hop | **PUBLICLY-TRUSTED** (ACME/Let's Encrypt for a VPS FQDN, or an org CA the phone/Telegram agent already trusts). Loaded from `$META_ROOT/.config/env-ctl/relay-tls/{cert.pem,key.pem}` (key 0600). | NEVER the local MITM CA |
 | **Remote-clients CA** (hardened mTLS mode only) | the edge's `ClientCertVerifier` trusts ONLY this root | private, env-ctl-owned, app-encrypted under the DEK; signs SHORT-lived client leaves (≤7d, auto-renewed on USB-gated liveness) | NEVER the MITM CA, never the public server cert |
 | **MITM CA** | UNCHANGED; signs upstream-interception leaves on the daemon host only | local, loud subject `env-ctl LOCAL MITM CA — DO NOT TRUST GLOBALLY` | NEVER network-served; NEVER presented to remote clients |
 | **Upstream egress roots** | UNCHANGED; verify the real upstream | frozen `webpki_roots::TLS_SERVER_ROOTS` only (FS-S7) | never the OS store, never any local CA |
@@ -216,7 +216,7 @@ The remote-swap order is pinned (reuses CF-9 default-deny-by-construction):
 edge: mTLS/DPoP verify  →  per-client rate/quota admission  →  decide() == Allow
    →  durable append_audit + fsync_barrier confirmed  →  THEN fetch real key (inside Allow)  →  Upstream::send
 ```
-Any failure before the barrier maps to `InternalRefused` / 403 with a durable deny audit — never a fall-through to `Upstream::send`. For a remote `sqld`, a barrier timeout is a hard fail-closed deny, and the deny itself is durably auditable on a path that does not depend on the same stalled node (the operator-box-local audit mirror under `~/.local/state/env-ctl`). Forbidden state FS-S26: a remote swap returns Allowed before its audit row is durably committed.
+Any failure before the barrier maps to `InternalRefused` / 403 with a durable deny audit — never a fall-through to `Upstream::send`. For a remote `sqld`, a barrier timeout is a hard fail-closed deny, and the deny itself is durably auditable on a path that does not depend on the same stalled node (the operator-box-local audit mirror under `$META_ROOT/.local/state/env-ctl`). Forbidden state FS-S26: a remote swap returns Allowed before its audit row is durably committed.
 
 If audit appends are ever batched, FS-S26 applies to the batch as a single commit group: max 100 rows
 or 100 ms of waiting, whichever comes first; no response in the group may return until the shared

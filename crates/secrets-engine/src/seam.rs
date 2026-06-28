@@ -185,8 +185,9 @@ impl UsbProbe for RealUsbProbe {
 /// # Auth (bearer token, possession-floored)
 /// `custody/sign` requires a bearer token minted by the **USB-only** pair window. The token is
 /// device-bound and revocable (not a master secret); it is resolved from `ENVCTL_SEED_TOKEN`, else
-/// the token file (`ENVCTL_SEED_TOKEN_FILE`, default `$XDG_DATA_HOME/env-ctl/seed-token`, which is
-/// inside the unit's `ReadWritePaths`). If absent or rejected, the daemon **re-mints on demand** by
+/// the token file (`ENVCTL_SEED_TOKEN_FILE`, default `$XDG_DATA_HOME/env-ctl/seed-token`, else
+/// `$META_ROOT/.local/share/env-ctl/seed-token`, which is inside the unit's `ReadWritePaths`). If
+/// absent or rejected, the daemon **re-mints on demand** by
 /// re-opening the USB-only pair window (possession of the USB is the floor of trust — ADR-057), so
 /// a lost/expired token is self-healing as long as the Seed is present. Every device call is bound
 /// by `IO_TIMEOUT` so a wedged device can never hang the synchronous unlock path.
@@ -206,7 +207,7 @@ pub(crate) mod seed_factor {
 
     /// Pinned Cognitum CA (PEM). The CA is name-constrained to `169.254.x.x` + `.local`; we
     /// pin THIS root explicitly (FS-S7 frozen-roots) rather than trusting the OS store. The
-    /// envctl unit sets `ENVCTL_SEED_CA`; the fallback is the canonical meta-local share path,
+    /// envctl unit sets `ENVCTL_SEED_CA`; the fallback is the canonical meta etc path,
     /// with a read-only legacy `.toolchains` fallback only when that file already exists.
     fn ca_path() -> String {
         if let Ok(path) = std::env::var("ENVCTL_SEED_CA") {
@@ -228,12 +229,14 @@ pub(crate) mod seed_factor {
         if let Ok(meta) = std::env::var("META_ROOT") {
             return std::path::PathBuf::from(meta);
         }
-        let home = std::env::var("HOME").unwrap_or_else(|_| String::from("/home/drdave"));
-        std::path::PathBuf::from(home).join("Desktop/meta")
+        if let Ok(home) = std::env::var("HOME") {
+            return std::path::PathBuf::from(home).join("Desktop/meta");
+        }
+        std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from("."))
     }
 
     fn canonical_seed_ca(meta: &std::path::Path) -> std::path::PathBuf {
-        meta.join(".local/share/envctl/secrets/ca/cognitum-ca.crt")
+        meta.join("etc/envctl/secrets/ca/cognitum-ca.crt")
     }
 
     fn legacy_seed_ca(meta: &std::path::Path) -> std::path::PathBuf {
@@ -249,16 +252,22 @@ pub(crate) mod seed_factor {
     const IO_TIMEOUT: Duration = Duration::from_secs(15);
 
     /// Device-bound bearer token at rest. Default lives in the unit's `ReadWritePaths`
-    /// (`%h/.local/share/env-ctl`) so the daemon can both read and refresh it under the sandbox.
+    /// (`$META_ROOT/.local/share/env-ctl`) so the daemon can both read and refresh it under the sandbox.
     fn token_file() -> std::path::PathBuf {
         if let Ok(p) = std::env::var("ENVCTL_SEED_TOKEN_FILE") {
             return std::path::PathBuf::from(p);
         }
         let base = std::env::var("XDG_DATA_HOME")
+            .ok()
+            .filter(|p| !p.is_empty())
             .map(std::path::PathBuf::from)
-            .unwrap_or_else(|_| {
-                std::path::PathBuf::from(std::env::var("HOME").unwrap_or_default())
-                    .join(".local/share")
+            .unwrap_or_else(|| {
+                let root = std::env::var("META_ROOT")
+                    .ok()
+                    .filter(|p| !p.is_empty())
+                    .or_else(|| std::env::var("HOME").ok().filter(|p| !p.is_empty()))
+                    .unwrap_or_default();
+                std::path::PathBuf::from(root).join(".local/share")
             });
         base.join("env-ctl").join("seed-token")
     }
@@ -544,7 +553,7 @@ pub(crate) mod seed_factor {
     mod tests {
         use super::{
             ca_path, canonical_seed_ca, extract_field, host_port, legacy_seed_ca, parse_pubkey_hex,
-            parse_sig_hex, parse_status,
+            parse_sig_hex, parse_status, token_file,
         };
         use std::sync::{Mutex, MutexGuard, OnceLock};
 
@@ -581,7 +590,7 @@ pub(crate) mod seed_factor {
         }
 
         #[test]
-        fn ca_path_defaults_to_meta_local_share() {
+        fn ca_path_defaults_to_meta_etc() {
             let _guard = env_lock();
             let old_seed_ca = std::env::var("ENVCTL_SEED_CA").ok();
             let old_meta = std::env::var("META_ROOT").ok();
@@ -589,7 +598,7 @@ pub(crate) mod seed_factor {
             std::env::set_var("META_ROOT", "/tmp/meta-envctl-test");
             assert_eq!(
                 ca_path(),
-                "/tmp/meta-envctl-test/.local/share/envctl/secrets/ca/cognitum-ca.crt"
+                "/tmp/meta-envctl-test/etc/envctl/secrets/ca/cognitum-ca.crt"
             );
             restore_var("ENVCTL_SEED_CA", old_seed_ca);
             restore_var("META_ROOT", old_meta);
@@ -627,6 +636,45 @@ pub(crate) mod seed_factor {
             std::env::set_var("ENVCTL_SEED_CA", "/tmp/custom-ca.pem");
             assert_eq!(ca_path(), "/tmp/custom-ca.pem");
             restore_var("ENVCTL_SEED_CA", old_seed_ca);
+        }
+
+        #[test]
+        fn token_file_defaults_to_meta_local_share() {
+            let _guard = env_lock();
+            let old_token_file = std::env::var("ENVCTL_SEED_TOKEN_FILE").ok();
+            let old_xdg_data = std::env::var("XDG_DATA_HOME").ok();
+            let old_meta = std::env::var("META_ROOT").ok();
+            let old_home = std::env::var("HOME").ok();
+            std::env::remove_var("ENVCTL_SEED_TOKEN_FILE");
+            std::env::remove_var("XDG_DATA_HOME");
+            std::env::set_var("META_ROOT", "/tmp/meta-envctl-test");
+            std::env::set_var("HOME", "/tmp/real-home");
+            assert_eq!(
+                token_file(),
+                std::path::PathBuf::from("/tmp/meta-envctl-test/.local/share/env-ctl/seed-token")
+            );
+            restore_var("ENVCTL_SEED_TOKEN_FILE", old_token_file);
+            restore_var("XDG_DATA_HOME", old_xdg_data);
+            restore_var("META_ROOT", old_meta);
+            restore_var("HOME", old_home);
+        }
+
+        #[test]
+        fn token_file_honors_explicit_overrides() {
+            let _guard = env_lock();
+            let old_token_file = std::env::var("ENVCTL_SEED_TOKEN_FILE").ok();
+            let old_xdg_data = std::env::var("XDG_DATA_HOME").ok();
+            std::env::set_var("ENVCTL_SEED_TOKEN_FILE", "/tmp/seed-token");
+            assert_eq!(token_file(), std::path::PathBuf::from("/tmp/seed-token"));
+
+            std::env::remove_var("ENVCTL_SEED_TOKEN_FILE");
+            std::env::set_var("XDG_DATA_HOME", "/tmp/xdg-data");
+            assert_eq!(
+                token_file(),
+                std::path::PathBuf::from("/tmp/xdg-data/env-ctl/seed-token")
+            );
+            restore_var("ENVCTL_SEED_TOKEN_FILE", old_token_file);
+            restore_var("XDG_DATA_HOME", old_xdg_data);
         }
 
         #[test]

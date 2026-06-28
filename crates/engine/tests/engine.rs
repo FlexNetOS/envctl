@@ -44,6 +44,29 @@ fn manifest_loads_and_topo_sorts() {
 }
 
 #[test]
+fn manifest_path_entries_are_meta_root_hosted() {
+    let reg = Registry::load(&manifest_dir()).expect("manifest dir loads");
+    let mut bad = Vec::new();
+
+    for component in reg.ordered() {
+        for entry in &component.wiring.path_entries {
+            if entry.contains('~') || entry.contains("$HOME") || entry.contains("${HOME") {
+                bad.push(format!("{}: {}", component.id, entry));
+                continue;
+            }
+            if !entry.starts_with("$META_ROOT/") {
+                bad.push(format!("{}: {}", component.id, entry));
+            }
+        }
+    }
+
+    assert!(
+        bad.is_empty(),
+        "manifest path_entries must be explicit META_ROOT-hosted paths, not HOME/tilde/absolute host paths: {bad:#?}"
+    );
+}
+
+#[test]
 fn manifest_extends_merges_components_by_id() {
     let root = temp_manifest_dir("extends-merge");
     std::fs::create_dir_all(root.join("profiles")).unwrap();
@@ -213,7 +236,7 @@ fn tagged_enums_round_trip_through_toml() {
 
         [component.verify]
         kind = "shipped_script"
-        path = "/usr/local/bin/demo.sh"
+        path = "$META_ROOT/envctl/assets/scripts/demo.sh"
         args = ["check"]
 
         [[component.guards]]
@@ -564,16 +587,15 @@ fn dropin_filters_injection_in_relinks() {
         "unsafe relink REL must be filtered"
     );
     assert!(
-        toml.contains("ln -sfn \"$SRC/target/release/good\" \"$BIN/good\""),
-        "safe relink kept"
+        toml.contains("envctl_frontdoor \"$SRC/target/release/good\" \"$BIN/good\"")
+            && toml.contains("envctl_frontdoor()"),
+        "safe regular frontdoor install kept"
     );
     assert!(
-        toml.contains("STORE=\"$M/.local/share/envctl/repos\"")
-            && toml.contains("BIN=\"$M/.local/bin\"")
-            && toml.contains(
-                "[component.wiring]\npath_entries = [\"${META_ROOT:-$HOME/Desktop/meta}/.local/bin\"]"
-            ),
-        "drop-in must resolve through the meta-hosted .local registry/layout"
+        toml.contains("STORE=\"$M/var/lib/envctl/repos\"")
+            && toml.contains("BIN=\"$M/usr/bin\"")
+            && toml.contains("[component.wiring]\npath_entries = [\"$META_ROOT/usr/bin\"]"),
+        "drop-in must resolve through the meta-hosted FHS registry/layout"
     );
     // and the generated TOML still parses (one component with the expected hooks)
     let reg_ok = toml.contains("[[component]]") && toml.contains("[component.install]");

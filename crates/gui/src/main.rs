@@ -13,12 +13,12 @@ mod theme;
 use eframe::egui::{self, Color32, RichText};
 use egui_extras::{Column, TableBuilder};
 use envctl_engine::{
-    run_event_loop, AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentCommandSpec, AgentDoctorReport,
-    AgentDoctorSpec, AgentEditOutcome, AgentList, AgentListKind, AgentListSpec, AgentLockDriftItem,
-    AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentReport, AgentScope, AgentSectionSel,
-    AgentSyncSpec, BuildStrategy, ComponentState, DashboardPlan, DashboardSpec, DriftItem,
-    DriftKind, Engine, EngineCommand, EngineEvent, Event, OpStatus, Refactor, RefactorGoal,
-    RenameRule, Severity, Stream, Telemetry, TelemetryControl, Zeroizing,
+    run_event_loop, AddRepoMode, AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentCommandSpec,
+    AgentDoctorReport, AgentDoctorSpec, AgentEditOutcome, AgentList, AgentListKind, AgentListSpec,
+    AgentLockDriftItem, AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentReport, AgentScope,
+    AgentSectionSel, AgentSyncSpec, BuildStrategy, ComponentState, DashboardPlan, DashboardSpec,
+    DriftItem, DriftKind, Engine, EngineCommand, EngineEvent, Event, OpStatus, Refactor,
+    RefactorGoal, RenameRule, Severity, Stream, Telemetry, TelemetryControl, Zeroizing,
 };
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -215,6 +215,11 @@ struct EnvctlApp {
     add_url: String,
     add_id: String,
     add_build: String,
+    // registration mode: auto | peer | component
+    add_mode: String,
+    // peer mode: comma-separated provides/tags for the .meta.yaml entry
+    add_provides: String,
+    add_tags: String,
     add_strategy: String,
     add_ref: String,
     add_bins: String,
@@ -329,6 +334,9 @@ impl EnvctlApp {
             add_url: String::new(),
             add_id: String::new(),
             add_build: String::new(),
+            add_mode: "auto".into(),
+            add_provides: String::new(),
+            add_tags: String::new(),
             add_strategy: "as-is".into(),
             add_ref: String::new(),
             add_bins: String::new(),
@@ -1266,7 +1274,7 @@ impl EnvctlApp {
 
     // ── Add Repo ──────────────────────────────────────────────────────────────
     fn add_repo_screen(&mut self, ui: &mut egui::Ui) {
-        ui.label(RichText::new("Add a repo as a managed component").heading());
+        ui.label(RichText::new("Add a repo to the workspace").heading());
         ui.add_space(10.0);
 
         theme::inset().show(ui, |ui| {
@@ -1299,74 +1307,171 @@ impl EnvctlApp {
                     ui.add(egui::TextEdit::singleline(&mut self.add_build).hint_text("(blank = auto-detect)").desired_width(380.0));
                     ui.end_row();
 
-                    ui.label(RichText::new("Strategy").color(theme::TEXT_MUTED));
-                    egui::ComboBox::from_id_salt("strategy")
-                        .selected_text(&self.add_strategy)
+                    ui.label(RichText::new("Register as").color(theme::TEXT_MUTED));
+                    egui::ComboBox::from_id_salt("mode")
+                        .selected_text(&self.add_mode)
                         .show_ui(ui, |ui| {
-                            for s in ["as-is", "cherry-pick", "rename", "refactor"] {
-                                ui.selectable_value(&mut self.add_strategy, s.to_string(), s);
+                            for m in ["auto", "peer", "component"] {
+                                ui.selectable_value(&mut self.add_mode, m.to_string(), m);
                             }
                         });
                     ui.end_row();
                 });
 
-            // strategy-specific fields
+            // Resolve the effective registration mode for the live form (mirrors the
+            // engine's router): `auto` → peer when the remote is owned (FlexNetOS).
+            let as_peer = match self.add_mode.as_str() {
+                "peer" => true,
+                "component" => false,
+                _ => envctl_engine::peer::is_owned_remote(self.add_url.trim()),
+            };
+
             ui.add_space(8.0);
-            match self.add_strategy.as_str() {
-                "cherry-pick" => {
-                    ui.label(RichText::new("Bins (comma-separated file-stems)").color(theme::TEXT_MUTED));
-                    ui.add(egui::TextEdit::singleline(&mut self.add_bins).hint_text("rg, foo").desired_width(420.0));
-                }
-                "rename" => {
-                    ui.label(RichText::new("Renames (old=new, comma-separated)").color(theme::TEXT_MUTED));
-                    ui.add(egui::TextEdit::singleline(&mut self.add_renames).hint_text("rg=rgx").desired_width(420.0));
-                }
-                "refactor" => {
-                    ui.label(RichText::new("Patch cmd (leave blank for AI refactor)").color(theme::TEXT_MUTED));
-                    ui.add(egui::TextEdit::singleline(&mut self.add_patch).desired_width(420.0));
-                    if self.add_patch.trim().is_empty() {
-                        ui.horizontal(|ui| {
-                            ui.label(RichText::new("AI goal").color(theme::TEXT_MUTED));
-                            egui::ComboBox::from_id_salt("ai_goal")
-                                .selected_text(&self.add_ai_goal)
-                                .show_ui(ui, |ui| {
-                                    for g in ["port-to-rust", "cherry-pick-to-crate", "rename-for-synergy", "custom"] {
-                                        ui.selectable_value(&mut self.add_ai_goal, g.to_string(), g);
-                                    }
-                                });
-                        });
-                        ui.add(egui::TextEdit::singleline(&mut self.add_ai_instruction).hint_text("extra instruction (optional)").desired_width(420.0));
-                        ui.colored_label(theme::WARN, "envctl invokes the agent NON-INTERACTIVELY in the clone; it never auto-commits or pushes.");
-                    }
-                }
-                _ => {}
+            if as_peer {
+                // PEER mode: meta-native .meta.yaml registration. Strategy/build-from-
+                // source do not apply — the cargo workspace + `meta git update` build it.
+                ui.colored_label(
+                    theme::ACCENT_TEXT,
+                    "Peer: registers in .meta.yaml + .gitignore and clones as a meta sibling (reachable by meta exec/git/worktree).",
+                );
+                egui::Grid::new("addrepo_peer")
+                    .num_columns(2)
+                    .spacing([14.0, 12.0])
+                    .show(ui, |ui| {
+                        ui.label(RichText::new("provides").color(theme::TEXT_MUTED));
+                        ui.add(egui::TextEdit::singleline(&mut self.add_provides).hint_text("comma-separated capabilities (optional)").desired_width(380.0));
+                        ui.end_row();
+                        ui.label(RichText::new("tags").color(theme::TEXT_MUTED));
+                        ui.add(egui::TextEdit::singleline(&mut self.add_tags).hint_text("e.g. tools, env (optional)").desired_width(380.0));
+                        ui.end_row();
+                    });
+            } else {
+                self.add_repo_component_fields(ui);
             }
 
             ui.add_space(10.0);
-            ui.checkbox(&mut self.add_build_flag, "Build now (run the upstream build / AI agent + install) — off = preview only");
-
-            ui.add_space(12.0);
-            let ready = !self.add_url.trim().is_empty() && !self.add_id.trim().is_empty();
-            ui.horizontal(|ui| {
-                if ui.add_enabled(ready, egui::Button::new("Validate (dry-run)")).clicked() {
-                    self.dispatch(self.add_repo_cmd(true), None);
-                    self.screen = Screen::Logs;
-                }
-                let label = if self.add_build_flag { "Build + Register" } else { "Register (preview)" };
-                let reg = egui::Button::new(RichText::new(label).color(if ready { theme::ACCENT_TEXT } else { theme::TEXT_FAINT }))
-                    .fill(if ready { theme::ACCENT } else { theme::SURFACE });
-                if ui.add_enabled(ready, reg).clicked() {
-                    self.dispatch(self.add_repo_cmd(false), None);
-                    self.screen = Screen::Logs;
-                }
-            });
+            self.add_repo_actions(ui, as_peer);
         });
 
         ui.add_space(10.0);
-        ui.colored_label(
-            theme::TEXT_FAINT,
-            "Acquire + detect + preview by default. 'Build now' clones, builds from source, installs into ~/.local/bin, and registers a managed drop-in.",
-        );
+        let footer = match self.add_mode.as_str() {
+            "peer" => "Peer registration: grep-guarded .meta.yaml + .gitignore edit and a sibling clone — dry-run by default; 'Build now' applies the edits and clones (or run `meta git update`).",
+            "component" => "Component: acquire + detect + preview by default. 'Build now' clones, builds from source, installs into $META_ROOT/usr/bin, and registers a managed drop-in.",
+            _ => "Auto: owned/FlexNetOS remotes register as a .meta.yaml PEER; others as a managed component. Preview by default; 'Build now' applies.",
+        };
+        ui.colored_label(theme::TEXT_FAINT, footer);
+    }
+
+    /// Component-mode strategy picker + strategy-specific fields.
+    fn add_repo_component_fields(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            ui.label(RichText::new("Strategy").color(theme::TEXT_MUTED));
+            egui::ComboBox::from_id_salt("strategy")
+                .selected_text(&self.add_strategy)
+                .show_ui(ui, |ui| {
+                    for s in ["as-is", "cherry-pick", "rename", "refactor"] {
+                        ui.selectable_value(&mut self.add_strategy, s.to_string(), s);
+                    }
+                });
+        });
+        ui.add_space(8.0);
+        match self.add_strategy.as_str() {
+            "cherry-pick" => {
+                ui.label(
+                    RichText::new("Bins (comma-separated file-stems)").color(theme::TEXT_MUTED),
+                );
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.add_bins)
+                        .hint_text("rg, foo")
+                        .desired_width(420.0),
+                );
+            }
+            "rename" => {
+                ui.label(
+                    RichText::new("Renames (old=new, comma-separated)").color(theme::TEXT_MUTED),
+                );
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.add_renames)
+                        .hint_text("rg=rgx")
+                        .desired_width(420.0),
+                );
+            }
+            "refactor" => {
+                ui.label(
+                    RichText::new("Patch cmd (leave blank for AI refactor)")
+                        .color(theme::TEXT_MUTED),
+                );
+                ui.add(egui::TextEdit::singleline(&mut self.add_patch).desired_width(420.0));
+                if self.add_patch.trim().is_empty() {
+                    ui.horizontal(|ui| {
+                        ui.label(RichText::new("AI goal").color(theme::TEXT_MUTED));
+                        egui::ComboBox::from_id_salt("ai_goal")
+                            .selected_text(&self.add_ai_goal)
+                            .show_ui(ui, |ui| {
+                                for g in [
+                                    "port-to-rust",
+                                    "cherry-pick-to-crate",
+                                    "rename-for-synergy",
+                                    "custom",
+                                ] {
+                                    ui.selectable_value(&mut self.add_ai_goal, g.to_string(), g);
+                                }
+                            });
+                    });
+                    ui.add(
+                        egui::TextEdit::singleline(&mut self.add_ai_instruction)
+                            .hint_text("extra instruction (optional)")
+                            .desired_width(420.0),
+                    );
+                    ui.colored_label(theme::WARN, "envctl invokes the agent NON-INTERACTIVELY in the clone; it never auto-commits or pushes.");
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// The build-now toggle + Validate/Register buttons, shared by both modes.
+    /// `as_peer` adjusts the labels: peer "Build now" applies the meta-file edits +
+    /// clone, component "Build now" builds-from-source + installs.
+    fn add_repo_actions(&mut self, ui: &mut egui::Ui, as_peer: bool) {
+        let toggle = if as_peer {
+            "Build now (apply the .meta.yaml/.gitignore edits + clone the peer) — off = preview only"
+        } else {
+            "Build now (run the upstream build / AI agent + install) — off = preview only"
+        };
+        ui.checkbox(&mut self.add_build_flag, toggle);
+
+        ui.add_space(12.0);
+        let ready = !self.add_url.trim().is_empty() && !self.add_id.trim().is_empty();
+        ui.horizontal(|ui| {
+            if ui
+                .add_enabled(ready, egui::Button::new("Validate (dry-run)"))
+                .clicked()
+            {
+                self.dispatch(self.add_repo_cmd(true), None);
+                self.screen = Screen::Logs;
+            }
+            let verb = if as_peer {
+                "Register peer"
+            } else {
+                "Build + Register"
+            };
+            let label = if self.add_build_flag {
+                verb
+            } else {
+                "Register (preview)"
+            };
+            let reg = egui::Button::new(RichText::new(label).color(if ready {
+                theme::ACCENT_TEXT
+            } else {
+                theme::TEXT_FAINT
+            }))
+            .fill(if ready { theme::ACCENT } else { theme::SURFACE });
+            if ui.add_enabled(ready, reg).clicked() {
+                self.dispatch(self.add_repo_cmd(false), None);
+                self.screen = Screen::Logs;
+            }
+        });
     }
 
     fn add_repo_cmd(&self, dry_run: bool) -> EngineCommand {
@@ -1411,6 +1516,11 @@ impl EnvctlApp {
             },
             _ => BuildStrategy::AsIs,
         };
+        let mode = match self.add_mode.as_str() {
+            "peer" => AddRepoMode::Peer,
+            "component" => AddRepoMode::Component,
+            _ => AddRepoMode::Auto,
+        };
         EngineCommand::AddRepo {
             spec: AddRepoSpec {
                 id: self.add_id.trim().to_string(),
@@ -1419,6 +1529,9 @@ impl EnvctlApp {
                 build_cmd: self.add_build.trim().to_string(),
                 strategy,
                 allow_build: self.add_build_flag,
+                mode,
+                provides: split_csv(&self.add_provides),
+                tags: split_csv(&self.add_tags),
                 ..Default::default()
             },
             dry_run,
@@ -2829,6 +2942,9 @@ mod agent_spec_tests {
             add_url: String::new(),
             add_id: String::new(),
             add_build: String::new(),
+            add_mode: "auto".into(),
+            add_provides: String::new(),
+            add_tags: String::new(),
             add_strategy: "as-is".into(),
             add_ref: String::new(),
             add_bins: String::new(),

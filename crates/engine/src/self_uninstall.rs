@@ -179,7 +179,7 @@ impl Engine {
     }
 }
 
-/// The file stem of an executable path (e.g. `/usr/local/bin/envctl` → `envctl`).
+/// The file stem of an executable path (e.g. `/tmp/meta/usr/bin/envctl` → `envctl`).
 fn exe_stem(p: &Path) -> Option<String> {
     p.file_stem().map(|s| s.to_string_lossy().to_string())
 }
@@ -209,7 +209,7 @@ mod tests {
     #[test]
     fn exe_stem_extracts_known_binaries() {
         assert_eq!(
-            exe_stem(Path::new("/usr/local/bin/envctl")).as_deref(),
+            exe_stem(Path::new("/tmp/meta/usr/bin/envctl")).as_deref(),
             Some("envctl")
         );
         assert_eq!(
