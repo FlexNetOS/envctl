@@ -1,132 +1,19 @@
 {
-  "schema": "plan-dependency-graph/target-dag@1",
-  "run": "plan-grit-20260627",
-  "cycle": 5,
-  "frame": "meta is ONE converging system: grit = symbol-level merge/lock substrate powering union step 2 (dedup ~95% shared handoff<->rusty-idd crates); handoff = continuity kernel + union target; rusty-idd = union target; weave = transport; harness-hub = Front-Door interpreter.",
   "nodes": [
-    {
-      "id": "grit",
-      "spec": "Symbol-level merge/lock substrate. Powers union step 2 (dedup of the ~95% shared handoff<->rusty-idd crates: cli/core/runner/spec/tui). Substrate root.",
-      "status": "in-flight",
-      "deps": [],
-      "downstream": ["handoff", "rusty-idd"],
-      "artifact_prefix": "grit",
-      "context_paths": ["targets.md", "dimensions.md", "loop_state.md", "graph/grit.json"]
-    },
-    {
-      "id": "rusty-idd",
-      "spec": "Intent-driven development tool. Union target: its cli/core/runner/spec/tui crates dedup-merge into handoff via grit locks (gated on handoff#184).",
-      "status": "planned",
-      "deps": ["grit"],
-      "downstream": [],
-      "artifact_prefix": "rusty-idd",
-      "context_paths": ["targets.md", "dimensions.md", "graph/rusty-idd.json"]
-    },
-    {
-      "id": "handoff",
-      "spec": "Continuity ledger kernel (hf). Union target + dedup destination; renders packets from the witnessed ledger. Consumes grit (symbol dedup), weave (transport heartbeat), icm (persistent memory).",
-      "status": "planned",
-      "deps": ["grit", "weave", "icm"],
-      "downstream": ["harness-hub"],
-      "artifact_prefix": "handoff",
-      "context_paths": ["targets.md", "dimensions.md", "graph/handoff.json"]
-    },
-    {
-      "id": "weave",
-      "spec": "A2A transport / observable heartbeat for the loop. Carries relay broadcasts over the lane spine.",
-      "status": "planned",
-      "deps": ["lane"],
-      "downstream": ["handoff", "harness-hub"],
-      "artifact_prefix": "weave",
-      "context_paths": ["targets.md", "dimensions.md", "graph/weave.json"]
-    },
-    {
-      "id": "icm",
-      "spec": "Infinite Context Memory: persistent cross-session recall/store substrate; uses vector embeddings from ruvector.",
-      "status": "planned",
-      "deps": ["ruvector"],
-      "downstream": ["handoff"],
-      "artifact_prefix": "icm",
-      "context_paths": ["targets.md", "dimensions.md", "graph/icm.json"]
-    },
-    {
-      "id": "harness-hub",
-      "spec": "Front-Door interpreter: catalog/registry that routes harnesses; sits atop the continuity kernel, transport, and prompt registry. (fleet id: harness_hub; standardized to kebab-case here.)",
-      "status": "planned",
-      "deps": ["handoff", "weave", "prompt-hub"],
-      "downstream": [],
-      "artifact_prefix": "harness-hub",
-      "context_paths": ["targets.md", "dimensions.md", "graph/harness-hub.json"]
-    },
-    {
-      "id": "envctl",
-      "spec": "Agentic environment manager: installs every tool/dep into meta (.toolchains), no system-global installs. Substrate root (loop run-from host).",
-      "status": "planned",
-      "deps": [],
-      "downstream": [],
-      "artifact_prefix": "envctl",
-      "context_paths": ["targets.md", "dimensions.md", "graph/envctl.json"]
-    },
-    {
-      "id": "lane",
-      "spec": "Network/transport spine substrate. Provides the channel weave and the network-control plane compose over. Substrate root.",
-      "status": "planned",
-      "deps": [],
-      "downstream": ["weave"],
-      "artifact_prefix": "lane",
-      "context_paths": ["targets.md", "dimensions.md", "graph/lane.json"]
-    },
-    {
-      "id": "prompt-hub",
-      "spec": "Prompt/model registry substrate: prompt architecture + model lanes served from shimmy. (fleet id: prompt_hub; standardized to kebab-case here.)",
-      "status": "planned",
-      "deps": ["shimmy"],
-      "downstream": ["harness-hub"],
-      "artifact_prefix": "prompt-hub",
-      "context_paths": ["targets.md", "dimensions.md", "graph/prompt-hub.json"]
-    },
-    {
-      "id": "shimmy",
-      "spec": "Local model server substrate (local inference lane). Substrate root.",
-      "status": "planned",
-      "deps": [],
-      "downstream": ["prompt-hub"],
-      "artifact_prefix": "shimmy",
-      "context_paths": ["targets.md", "dimensions.md", "graph/shimmy.json"]
-    },
-    {
-      "id": "ruvector",
-      "spec": "Vector compute / code-intelligence substrate (fleet path: meta-ruvector). Backs icm embeddings and graph intelligence. Substrate root.",
-      "status": "planned",
-      "deps": [],
-      "downstream": ["icm"],
-      "artifact_prefix": "ruvector",
-      "context_paths": ["targets.md", "dimensions.md", "graph/ruvector.json"]
-    }
+    {"id": "weave", "spec": "A2A transport plane — cycle 4 (this instance)", "status": "in-flight", "deps": [], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "handoff", "spec": "continuity kernel (witnessed ledger) — planned cycle 2; union home", "status": "done", "deps": [], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "rusty-idd", "spec": "intent control plane — planned cycle 1", "status": "done", "deps": ["handoff"], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "harness_hub", "spec": "Front-Door interpreter (intent->model language)", "status": "todo", "deps": ["handoff"], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "envctl", "spec": "fleet environment manager + loop run-from", "status": "todo", "deps": ["handoff", "weave"], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "icm", "spec": "persistent memory organ", "status": "todo", "deps": [], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "grit", "spec": "symbol-level merge/lock substrate", "status": "todo", "deps": [], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "lane", "spec": "distributed-compute lane substrate", "status": "todo", "deps": ["weave"], "artifact_prefix": ".handoff/loop/plan"}
   ],
   "edges": [
-    {"from": "ruvector", "to": "icm", "reason": "icm recall/store uses ruvector vector embeddings"},
-    {"from": "lane", "to": "weave", "reason": "weave transport rides the lane network spine"},
-    {"from": "shimmy", "to": "prompt-hub", "reason": "prompt-hub model lanes are served by shimmy"},
-    {"from": "grit", "to": "handoff", "reason": "symbol-level merge/lock powers union dedup into the continuity kernel"},
-    {"from": "grit", "to": "rusty-idd", "reason": "grit dedups the ~95% shared rusty-idd crates against handoff"},
-    {"from": "weave", "to": "handoff", "reason": "handoff continuity emits/observes the weave heartbeat"},
-    {"from": "icm", "to": "handoff", "reason": "handoff resume hydrates persistent memory from icm"},
-    {"from": "rusty-idd", "to": "handoff", "reason": "union: rusty-idd cli/core/runner/spec/tui merge into handoff via grit locks"},
-    {"from": "handoff", "to": "harness-hub", "reason": "Front-Door interpreter runs on the continuity kernel"},
-    {"from": "weave", "to": "harness-hub", "reason": "Front-Door routes A2A traffic over weave"},
-    {"from": "prompt-hub", "to": "harness-hub", "reason": "Front-Door resolves prompts/model lanes via prompt-hub"}
-  ],
-  "ready_set": ["grit", "envctl", "lane", "shimmy", "ruvector"],
-  "picked": "grit",
-  "self_revision": [
-    {
-      "id": "sr-001",
-      "trigger": "grit verifier outcome on symbol-level merge feasibility / dedup ratio",
-      "scope": "downstream-only",
-      "affected": ["handoff", "rusty-idd"],
-      "action": "If grit's verifier QUALIFIES or REFUTES the symbol-level dedup spec (e.g. the ~95% shared-crate ratio is lower in practice), revise only the union dedup spec on handoff and rusty-idd; preserve weave/icm/lane/shimmy/ruvector/envctl/harness-hub nodes.",
-      "status": "armed-not-triggered"
-    }
+    {"from": "rusty-idd", "to": "handoff"},
+    {"from": "harness_hub", "to": "handoff"},
+    {"from": "envctl", "to": "handoff"},
+    {"from": "envctl", "to": "weave"},
+    {"from": "lane", "to": "weave"}
   ]
 }

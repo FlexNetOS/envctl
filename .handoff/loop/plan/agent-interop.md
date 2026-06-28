@@ -1,30 +1,84 @@
-# Agent interop posture
+# agent-interop — weave (cycle 4)
 
-How `grit` interoperates with the fleet's agent-communication and execution planes, and the named
-bridges to build.
+Where **weave** sits in the fleet's agent-interop topology, and what the A2A-v1.0 convergence changes.
+Built from CONFIRMED/QUALIFIED verdicts + `research/weave.trends.md` (A2A state-of-standard) +
+prompt-architecture/rules-policy findings.
 
 ---
 
-## grit
+## North-star split (who interprets, who transports, who witnesses)
 
-grit is the **code-contention authority** (it gates who may edit which AST symbol); it is not a
-message bus. Its interop posture is defined by what it emits (lock-lifecycle events) and what consumes
-them. Both grit and `weave` are tagged `orchestration` in `.meta.yaml:184-200` and are complementary
-planes — grit arbitrates writes on code, weave arbitrates messages between sessions.
+```
+   harness_hub ──interprets──▶  weave ──transports──▶  handoff
+   (Front-Door interpreter:     (A2A transport plane:   (witnessed-receipts plane:
+    intent → model language)     moves messages/jobs/     durable signed ledger,
+                                 leases/approvals)        proof work occurred)
+```
 
-| Plane | grit today | Posture / named bridge |
-|---|---|---|
-| **weave** (cross-session A2A session mesh) | none in `src/` — no direct grit→weave bridge | **Build the grit→weave bridge** (roadmap #10, rpo-A): forward room `Released`/`AgentDone` events as weave nudges so the next queued agent's *session* is pinged. Additive, fail-open like the existing `notify`. Live proof: the weave A2A round-trip this cycle (envctl asked rusty-idd to verify the front-door plan; rusty-idd corrected; envctl shipped prompt_hub PR #182). |
-| **mcp** | none — grit ships no MCP server; no `.mcp.json`/`.codex` MCP surface | **Candidate (ADR):** expose grit verbs as an `mcp` server (or a stable `--json` mode) so agents consume a machine contract instead of scraping ANSI-colored stdout (PA-U2/PA-G1, roadmap #11). Today an agent's only "tool" is `Bash(grit:*)` + exit-code/substring scraping — string-fragile even internally. |
-| **ACP** (agent-client execution protocol) | not implemented | grit has no `ACP` surface; it is driven as a CLI. If a consuming harness speaks `ACP`, grit sits *beneath* it as the contention gate — the harness's `ACP` execution requests must first pass grit's `claim`. No grit-side `ACP` work is warranted until the `--json`/MCP contract (above) lands. |
-| **A2A** (agent-to-agent) | indirect only — agents observe each other through the shared lock truth + the `room` socket pub/sub (Claimed/Released/AgentDone) | grit's local `A2A` analogue is `room.sock`; the distributed analogue is Azure Event Grid / S3 notifications (poll). The cross-session `A2A` transport is weave (see the bridge above). grit's emission is non-blocking/fail-open, so it never stalls a foreground agent. |
-| **GitHub cloud agent** | partial — `session pr` runs `git push` + PR create; release workflows exist (but hardcode `rtk-ai/grit`) | A **GitHub cloud agent** can open PRs via `session pr` and coordinate over a cloud lock backend (S3/Azure). Two interop fixes required: parameterize the release/homebrew workflows to `${{ github.repository }}` (gov-010) so the FlexNetOS fork's path doesn't target upstream; and gate the push/PR destructive seam (`[!!]`). Caller-identity binding (roadmap #6) is needed before an untrusted cloud agent can be allowed to `release`/`done` others' locks. |
+- **weave = transport (this target).** Carries live A2A traffic over a SQLite-mailbox broker + pane
+  injector. It does **not** interpret intent and carries **no model-routing logic** (prompt-arch
+  CLAIM, transport-not-interpreter CONFIRMED).
+- **weave ≠ handoff.** weave carries in-flight coordination traffic; **handoff** records *what
+  happened* (tamper-evident receipts). The 2026 reliability field explicitly separates transport from
+  durable verifiable state (research §C1) — **do not fuse the two planes**. Bridge them by emitting
+  handoff witness records as A2A-compatible signed artifacts.
+- **harness_hub = interpreter upstream.** It turns intent into model language; weave then transports
+  the resulting messages/jobs between sessions.
 
-### Interop summary
+---
 
-grit's authoritative interop today is: **emit** lock events on `room`/Event-Grid, **consume** nothing
-from other planes (no recall-informed merge). The two highest-value interop upgrades are (1) the
-grit→weave A2A bridge (makes coordination cross-session, not just cross-process) and (2) a machine
-contract (`--json`/`mcp`) so any agent — local, container, remote-vm, or GitHub cloud agent — drives
-grit without prose-scraping. Both are additive and fail-open; the cloud-agent path additionally needs
-caller-identity authorization (ADR) before it is safe across a trust boundary.
+## Interop surfaces today
+
+| surface | protocol | status | evidence |
+|---|---|---|---|
+| **weave** mailbox + inject | own `Intent` schema over SQLite + HTTP push | the A2A **substrate** — fleet's live A2A-shaped transport | codemap §What weave is; `model.rs:216` |
+| **mcp** (weave-mcp) | MCP / JSON-RPC 2.0 (`tools/call`) | carried — 72 dispatch arms / 76 catalog behind ONE byte-budget-gated `weave` meta-tool | ARCH-06 QUALIFIED; PA-TOOLS; `mcp.rs:434` |
+| **A2A** (formal LF v1.0) | JSON-RPC 2.0 / SSE / gRPC + signed AgentCards | **NOT implemented** — convergence target | ARCH-09 CONFIRMED (grep-empty); research §A1 |
+| **ACP** | Agent Communication Protocol | **N/A — not implemented, not chosen** | recorded non-choice (research §B1 transport×protocol×topology); A2A is the chosen protocol convergence |
+| **GitHub cloud agent** | host coding-agent wiring | weave is the bus the host agent rides; `weave setup` registers weave's MCP server + lifecycle hooks into the host | codemap §Entry points; setup.rs |
+
+A key distinction proven by the gate: the `jsonrpc:"2.0"` strings in weave's tree are all **MCP**
+(`tools/call`, `notifications/initialized`), never A2A `message/send` — A2A and MCP are distinct
+standards (test-strategy CLAIM, verdicts empirical bench).
+
+---
+
+## The A2A-v1.0 adapter = the interop convergence
+
+`Source: reports/weave-plan.md R1; verdicts.md U-ARCH-2; research §A1/§A2/§E1`
+
+- **Decomposition (research §B1):** inter-agent comms = transport × protocol × topology. weave owns
+  **transport + topology** (message-bus + controlled peer-mesh); A2A becomes the swappable **protocol**
+  envelope. This is why the adapter is non-destructive: keep the mailbox, add A2A as a strict upgrade.
+- **What it adds:** `Intent ⇄ A2A Message` mapping (`to_a2a`/`from_a2a`), a JSON-RPC
+  `{jsonrpc,method:"message/send",params.message}` envelope, and a **signed AgentCard** built on
+  weave's existing default-off `sign` (ed25519) feature — the local analogue of A2A v1.0's signed
+  Agent Cards (research §A2, distributed-compute DC-W2). Version negotiation lets one card advertise
+  both v0.3 and v1.0 (research §A1).
+- **Why it's the convergence:** it lets weave-mediated agents talk to **external, non-meta A2A agents**
+  over the same wire (the canonical cross-vendor pattern — Google ADK uses A2A for cross-agent comms,
+  research §B2) without abandoning the SQLite-mailbox transport. Additive, default-off `a2a` feature,
+  no new dependency (rides serde_json + ed25519), no C in the trust boundary.
+- **Acceptance contract:** the committed RED suite `weave-core/tests/a2a_interop.rs` (3 cases,
+  tests-ran 3, all RED-on-assertion) is the GREEN target for Feature Forge.
+
+---
+
+## Cross-vendor model lane (interop at the model layer)
+
+- The autonomous loop delegates the Phase-4 invariant/drift/docs **guardian to MiniMax
+  `minimax-m3:cloud`** (non-Anthropic) while workers run on claude/opus — a genuine dual-model /
+  cross-vendor split (CLAIM-P3 CONFIRMED; `ralph-weave.sh:18-21`, `weave-guardian.md:16`). weave
+  itself carries no model-routing logic — MiniMax writes its verdict into the shared `.handoff/loop/`
+  ledger that weave-transported sessions read.
+- A non-Anthropic model gating auto-merge is **architecturally ADR-uncovered** → see
+  `reports/ADR-DRAFT-weave-cross-vendor-model-lane.md`.
+
+---
+
+## Interop summary
+
+- weave is the fleet's **A2A substrate**; the **A2A-v1.0 adapter is the interop convergence** (R1).
+- weave = transport vs handoff = receipts — two planes, never fused.
+- harness_hub interprets upstream; MiniMax is the cross-vendor model edge; A2A is the cross-vendor
+  protocol edge. ACP is an explicit non-choice. GitHub cloud agents ride weave as the host bus.

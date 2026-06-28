@@ -7,27 +7,30 @@ cycles_total: 5
 cycles_this_session: 1
 <!-- /loop-state-gate:counters -->
 
-# Planning Engineer Loop — state (grit instance)
+# Planning Engineer Loop — state (PARALLEL instance: weave)
 
 | key | value |
 |---|---|
-| run | plan-grit-20260627 (cycle 5; parallel instance) |
-| session_started | 2026-06-27 (UTC) |
+| run | plan-loop-parallel / weave |
+| session_started | 2026-06-26 (UTC) |
+| instance | weave (cycle 4; parallel-run per prompt_hub/prompts/plan-loop-parallel-run.md) |
 | cycles_this_session | 1 |
 | cycles_total | 5 |
-| cycle_budget | 1 |
+| last_wrapup_total | 4 |
 | wrap_every | 1 |
-| planning_target | grit (cycle 5; merge/lock substrate for the union) |
-| target_root | /home/drdave/Desktop/meta/grit |
-| run_from | /home/drdave/Desktop/meta/.worktrees/plan-grit/envctl |
-| loop_branch | plan/loop-grit |
-| lease | plan:claim:grit (HF_LEASE_HOLDER=plan-grit-20260627, ttl 1800) |
+| cycle_budget | 1 |
+| planning_target | weave |
+| target_root | /home/drdave/Desktop/meta/weave |
+| run_from | /home/drdave/Desktop/meta/.worktrees/plan-weave/envctl |
+| loop_branch | plan/loop-weave |
+| lease | plan:claim:weave (HF_LEASE_HOLDER=plan-weave-20260626) |
+| red_worktree | /home/drdave/Desktop/meta/.worktrees/plan-weave-red/weave (plan/weave-red-tests off origin/develop) |
 | recency_window_days | 90 |
-| status | EXECUTING cycle 5 (grit) via plan-loop-parallel-run.md — isolated from union loop branch |
-| graph_snapshot | graph/grit.symbols.json@57b60842d71145c271b994bb7a8c33c3bca42dfe (305 sym / 548 edges / 74 pub; 0 true cycles; 0 layering violations) |
+| status | COMPLETE — weave cycle done (5/12 dims verified; artifact gate PASS); HAND OFF. Parallel-isolated from the union loop. |
+| conflict_sync | grit branch sync preserved branch-local loop-state under `instances/grit/` and advanced shared counters monotonically. |
+| graph_snapshot | graph/weave.symbols.json@4fe2419 (cycle 4 baseline; 2722 sym / 9571 edges / 4 crates) |
 
 ## Frame
-meta is ONE converging system. grit = symbol-level merge/lock substrate. Planned here as the engine
-that will power union step 2 (dedup the ~95% shared handoff<->rusty-idd crates/{cli,core,runner,spec,tui}),
-which is otherwise gated on handoff#184. North-star @ $META_ROOT + handoff; goal = handoff+rusty-idd union;
-harness_hub = Front-Door interpreter; weave = transport.
+meta is ONE converging system; north-star @ $META_ROOT+handoff; goal = handoff+rusty-idd union.
+weave = the A2A TRANSPORT plane (nervous system) — DISTINCT from handoff's witnessed-receipts plane.
+This instance plans weave's path INTO the fabric, in parallel with the union work.

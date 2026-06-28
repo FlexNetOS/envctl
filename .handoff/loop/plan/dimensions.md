@@ -1,17 +1,15 @@
-# Dimension ledger (verifier-gated)
+# Dimension ledger (parallel instance: weave). [ ] open · [~] analysed · [x] verified · [!] blocked.
 
-Legend: [ ] todo  [~] analysed-not-verified  [x] verified  [!] blocked
-
-## grit
-
-<!-- Seeded by plan-cartographer (cycle 5) from graph/grit.* — dependency-ordered. Do not reset existing [x]/[~]/[!] rows. -->
-- [x] architecture — VERIFIED (verdicts.md#grit): line-level git merge (git/mod.rs:243), write-only hash (db/mod.rs:156-171), room dies w/ init (room/mod.rs:66-96), partial-claim leak (cli/mod.rs:612-616), 0 layering violations + 0 true cycles (open↔open = resolver artifact)
-- [x] public-api-contracts — VERIFIED: `LockStore::try_lock` (lock_store.rs:29) is a LOCK contract, not a merge engine; union-fitness answered = UNFIT as-is (claim-1a/1b CONFIRMED)
-- [x] data-flow — VERIFIED: claim→grant→bail leak path (cli/mod.rs:563-616), queue promotion 600s TTL (cli/mod.rs:693-700), AST scan→upsert→hash spine (parser:329→db:156); deps-precision over-link carried as accuracy UPGRADE (not gate-blocking)
-- [~] correctness-concurrency — PARTIAL: sqlite `BEGIN IMMEDIATE` race + regression test CONFIRMED (sqlite_store.rs:68,451), partial-claim non-atomicity CONFIRMED; S3/Azure conditional-write atomicity NOT run (no cloud creds) — fail-closed
-- [x] hotspots-coupling — VERIFIED: parser/ hottest (SymbolIndex.new in-deg 39), LockStore trait change spans all 3 backends (graph/grit.graph.md confirmed by spot-reads)
-- [~] external-backends-network — PARTIAL: cloud read-skew + no-resync CONFIRMED (db:179-227 LEFT JOIN local locks; s3/azure keyspace .grit/locks/, zero local writes), SDK currency azure 0.21 CONFIRMED; retry/timeout config (s3_store.rs:52-60) + S3Config secret field NOT line-verified — fail-closed
-- [x] dead-code — VERIFIED: `NameExtractor::ChildKind` declared (parser:90) + matched (:386) but NEVER constructed; `get_deps`/`count_deps` `#[allow(dead_code)]`; default_mode = serde false-positive (graph)
-- [x] tooling-dependencies — VERIFIED: deps confirmed (azure_* 0.21 pre-GA, rusqlite 0.31 bundled=C, 14 tree-sitter C grammars, no MSRV); grit substrate is NOT no-C (trust-boundary feasibility note in verdicts)
-- [~] governance-config — PARTIAL: gov-008 catch-all `_=>SQLite` (cli:407), gov-009 Azure plaintext key (azure_store.rs:29), gov-005 no-MSRV CONFIRMED; remaining gov-001..004/006/007/010/011 analysed-not-gate-verified — fail-closed
-- [x] test-coverage — VERIFIED: RED suite ran 3, all RED for `unrecognized subcommand 'reconcile'` (capability absence, compiled+ran 0.01s); binary-only (no lib.rs) + 77 inline tests confirmed
+## weave
+- [x] weave/architecture — verdicts.md "## weave (cycle 4)": 12 ARCH rows gated (9 CONFIRMED, 3 QUALIFIED), 4 UPGRADEs feasible
+- [~] weave/code-quality — no dedicated `code-quality-weave.md`; only the `main.rs` god-file slice is covered (ARCH-07/U-ARCH-3). Missing: full quality analysis to gate.
+- [~] weave/correctness — no dedicated `correctness-weave.md`; `send`/dedup/parity paths spot-verified inside ARCH-05/08/11 only. Missing: correctness-axis findings to gate.
+- [~] weave/performance — no dedicated `performance-weave.md`; not analysed or gated this cycle.
+- [x] weave/test-coverage — verdicts.md: A2A RED suite (U-TEST) + conformance-harness absence (ARCH-11/U-ARCH-1) gated; empirical bench run.
+- [x] weave/governance-config — verdicts.md: GOV-001 (PreToolUse), GOV-003 (CI 6→7), GOV-004 (Python) CONFIRMED; gov UPGRADEs feasibility-gated.
+- [~] weave/filesystem-layout — `filesystem-layout-weave.md` present but not gated this pass. Missing: verdicts for layout claims.
+- [x] weave/memory-vector-intelligence — verdicts.md: MEM-1/2/3 CONFIRMED (empirical: memory.rs organ, no ICM ref, no vector deps); U-MEM-1 feasible, U-MEM-2 feasibility-qualified.
+- [~] weave/autoresearch — `autoresearch-weave.md` present but not gated this pass. Missing: verdicts for autoresearch claims.
+- [~] weave/rules-policy-org — `rules-policy-org-weave.md` present but not gated this pass. Missing: verdicts for org/A2A-comms claims.
+- [~] weave/distributed-compute — `distributed-compute-weave.md` present but not gated this pass. Missing: verdicts for distributed-compute claims.
+- [x] weave/prompt-architecture — verdicts.md: PA-TOOLS (token-safe meta-tool, QUALIFIED count) + PA-METACALL (gate not bypass) CONFIRMED; meta-tool budget/gate empirically verified.

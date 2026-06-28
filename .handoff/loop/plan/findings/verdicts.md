@@ -1,137 +1,88 @@
-# Verdicts — plan-verifier (the GATE)
+# verdicts — plan-verifier gate (the GATE)
 
-Adversarial verification of analyst CLAIMs + feasibility-gating of UPGRADEs.
-Verdict grammar: CONFIRMED | REFUTED (<counter>) | QUALIFIED (<cond>) | INCONCLUSIVE (<why>).
-Only CONFIRMED/QUALIFIED + feasible rows flow to the architect.
+Adversarial refutation of analyst CLAIMs + feasibility-gating of UPGRADEs. Only CONFIRMED/QUALIFIED +
+feasible rows flow to the architect. Default-skeptical; fail-closed; gate never weakened.
 
-## grit
+---
 
-Dated: 2026-06-27. TARGET = grit (cycle 5). Source verified at `/home/drdave/Desktop/meta/grit`;
-build/test probes in the RED worktree `/home/drdave/Desktop/meta/.worktrees/plan-grit-red/grit`.
+## weave (cycle 4)
 
-### Material claims (adversarial)
+- Date: 2026-06-26
+- Target code (READ-ONLY): `/home/drdave/Desktop/meta/.worktrees/plan-weave-red/weave` @ `4fe2419`
+- Findings gated: `architecture-weave.md` (11+1 CLAIM / 4 UPGRADE) + axis findings
+  (`governance-config`, `memory-vector-intelligence`, `prompt-architecture`, `test-strategy`).
+- Method: opened cited source, ran empirical `grep`/`wc`/`awk` over the real tree as oracle, hunted
+  counter-examples. Empirical commands re-run, not trusted from the analyst summary.
 
-- VERDICT claim-1a (merge is line-level git, NOT symbol-level) -> CONFIRMED. `merge_worktree`
-  shells `git merge --no-ff <branch>` after `git rebase` — src/git/mod.rs:221-224 (rebase),
-  :243-253 (merge). No symbol-level reconciliation; "no conflicts" comes from partitioning, not
-  reconciliation.
-- VERDICT claim-1b (per-symbol content hash computed but NEVER read for merge/dedup) -> CONFIRMED.
-  Hash computed at src/parser/mod.rs:329 via `hash_str` (:420-424, `DefaultHasher`/SipHash) and
-  stored on `Symbol` (:357,363). In db it is ONLY written: INSERT/`ON CONFLICT DO UPDATE SET hash`
-  at src/db/mod.rs:156-161,171; schema col :89. `grep` of src/db for `hash` shows zero `SELECT`/
-  comparison of the column outside `#[cfg(test)]` fixtures (db/mod.rs:476,520,528 tests; :717,729 a
-  fixture symbol literally named "hash"). No production read path. **HEADLINE CONFIRMED: grit is an
-  advisory symbol-LOCK + git-worktree coordinator, not a symbol-level reconciliation engine.**
-- VERDICT claim-2 (RED suite is RED-for-the-right-reason: capability absence, not compile error)
-  -> CONFIRMED. Ran `cargo test --test union_dedup_contract` in the RED worktree (after a transient
-  empty `[workspace]` table appended to grit's Cargo.toml to clear the phantom-workspace wall;
-  reverted via `git checkout -- Cargo.toml Cargo.lock`, worktree clean after). Result:
-  `test result: FAILED. 0 passed; 3 failed; 0 ignored; finished in 0.01s`. All three fail with
-  `error: unrecognized subcommand 'reconcile'` (clap rejects the absent command). The tests
-  COMPILE and RUN — failure is capability-absence. Binary-only confirmed: no src/lib.rs; src/main.rs
-  declares private `mod cli/config/db/git/parser/room`, so a `tests/` file can only drive the binary.
-  Primitives exist: `Symbol.hash` deterministic; `LockStore::try_lock` at db/lock_store.rs:29.
-  Composition (a `Reconcile{a,b}` command) absent.
-- VERDICT claim-3a (backend catch-all `_ => SQLite` silently downgrades a typo'd backend) ->
-  CONFIRMED. src/cli/mod.rs:392 `match config.backend.as_str()` with :407-410 `_ => SqliteLockStore`.
-  `backend: String` (config.rs:11) — `"azur"`/`"s33"` route to local locking with no error.
-- VERDICT claim-3b (cloud access keys plaintext in .grit/config.json) -> CONFIRMED (Azure half).
-  `pub access_key: String` with serde Serialize, no skip, at src/db/azure_store.rs:29; used at :51.
-  S3 half not line-verified for an embedded secret field (s3_store.rs S3Config :636) -> that sub-part
-  INCONCLUSIVE; Azure exposure stands.
-- VERDICT claim-4a (cloud read/write skew: reads JOIN local `locks` table cloud never populates)
-  -> CONFIRMED. `available_symbols_in_files` (db/mod.rs:179-205) and `list_symbols`
-  (db/mod.rs:214-227) both `LEFT JOIN locks` (the local SQLite table). S3/Azure stores keep ALL lock
-  state in cloud objects under prefix `.grit/locks/` (s3_store.rs:24; azure_store.rs:36) — `grep` of
-  s3_store.rs + azure_store.rs shows NO `INSERT`/`Database`/`registry.db`/local-`locks` write and NO
-  resync path back to the local table. The analyst's QUALIFIED-downgrade condition (a resync exists)
-  is FALSE, so the claim is NOT downgraded: under s3/azure, `symbols`/`plan`/`assign` views report
-  stale/empty lock state.
-- VERDICT claim-4b (non-atomic multi-symbol claim leaks partial locks) -> CONFIRMED. Terminal path:
-  granted locks are committed + notified (cli/mod.rs:563-575) then the command `bail!`s "Some symbols
-  are blocked" (:612-616) WITHOUT releasing the granted subset; contrast the retry/wait path which
-  DOES release before sleeping (:626-628). A 2-symbol claim with 1 blocked (no `--wait`/`--queue`)
-  leaves the granted lock held by the "failed" agent.
-- VERDICT claim-4c (room socket server dies with `grit init`; real-time watch never works) ->
-  CONFIRMED. `NotificationServer::start` only `thread::spawn`s and returns ("runs until the process
-  exits", room/mod.rs:66-96). Sole `.start()` caller is `cmd_init` (cli/mod.rs:448-449), which then
-  prints and returns Ok (:451-456) -> main exits -> the background thread is killed; the socket file
-  is left with no Drop cleanup. The other `Room::new` sites (cli/mod.rs:569,666,687,966,1261) are
-  connect-send `notify` producers, not server starts. Functional eventing path is `--poll`.
-- VERDICT claim-5 (0 true architectural cycles — the open↔open SCC is a resolver artifact; 0 layering
-  violations) -> CONFIRMED. Spot-checked both bodies: `Database::open` (db/mod.rs:44) and
-  `SqliteLockStore::open` (sqlite_store.rs:31) each call `rusqlite::Connection::open(path)`; neither
-  calls the other — git-kb's ambiguous-name resolver mis-linked the bare `open`. graph/grit.graph.md
-  records strictly-downward module edges (main→cli→{db,git,room,parser,config}, plus db→config), no
-  back-edges -> layering violations 0.
-- VERDICT claim-6a (deprecated pre-GA azure_* 0.21; rusqlite 0.31 stale; no MSRV) -> CONFIRMED
-  (in-repo facts). Cargo.toml:58-60 `azure_core/azure_storage/azure_storage_blobs = "0.21"`;
-  Cargo.toml:15 `rusqlite = "0.31"` (bundled); no `rust-version` key (MSRV absent).
-- VERDICT claim-6b (azure_storage_blob 1.0.0 GA 2026-05-14; Rust >= 1.96.0 for Cargo
-  CVE-2026-5223/5222) -> QUALIFIED (web-sourced; not independently re-verified by the GATE here).
-  The actionable in-repo half (deps are old/pre-GA) is CONFIRMED above; the exact GA date and CVE IDs
-  are trend-researcher web claims — treat as advisory currency input, verify the GA/CVE specifics at
-  apply-time. (`research/grit.trends.md` carries the citations.)
-- VERDICT claim-7 (stray /home/drdave/Desktop/meta/.worktrees/Cargo.toml phantom workspace hijacks
-  grit's standalone build) -> CONFIRMED. File exists (196B): `[workspace] members =
-  ["loop_lib","meta_plugin_protocol"]`. From grit's worktree dir, `cargo build` fails:
-  "current package believes it's in a workspace when it's not ... workspace:
-  /home/drdave/Desktop/meta/.worktrees/Cargo.toml". (The two members ARE present as symlinks in
-  .worktrees/, so the manifest is a real but mis-scoped root that captures any nested crate; building
-  grit requires an empty `[workspace]` in grit's Cargo.toml or removing/relocating the stray
-  manifest.)
+### Empirical bench (the oracle results)
 
-Counter-checks that did NOT refute (defensive): no cloud→local lock resync exists (claim-4a holds);
-the cross-process try_lock race IS correctly closed by `BEGIN IMMEDIATE` (sqlite_store.rs:68) with a
-separate-connections regression test — that analyst sub-claim CONFIRMED, not a defect.
+| probe | analyst said | I measured | verdict impact |
+|---|---|---|---|
+| A2A symbols in `weave-core/src`+`weave-mcp/src` (`to_a2a/from_a2a/AgentCard/"message/send"/a2a`) | empty | **empty** (0 hits) | (a) CONFIRMED |
+| `jsonrpc` strings in tree | MCP, not A2A | all MCP (`obscura.rs` `tools/call`, `notifications/initialized`); no A2A `message/send` | (a) CONFIRMED — distinct standard |
+| `wc -l weave/src/main.rs` | 9631 | **9631** | (c) CONFIRMED |
+| `^\s+Cmd::` arms | 76 | **76**; two matches at `:4494`/`:4660`; `fn main` at `:4489` | (c) CONFIRMED |
+| `enum Cmd` variants | 71 CLI verbs | **71** | corroborates verb surface |
+| `weave-core/tests/store_conformance` (shared dual-backend harness) | absent | **absent** (no `run_store_conformance`/`store_test!`/`both_backends`) | (b) CONFIRMED |
+| `#[test]` store.rs vs store_libsql.rs | 160 / 95 | **160 / 95** | (b) CONFIRMED |
+| `weave-core/src/memory.rs` | real organ, `~/.config/weave/memory`, 5 MCP tools | **present (25.9K)**; doc confirms FS-backed scoped notes; 5 `weave_memory_*` tools; **0 `icm` refs** | (e) CONFIRMED |
+| `MAX_STANDING_TOOLS_BYTES` | 8192 | **8192** (`mcp.rs:233`); budget test `standing_mcp_surface_is_within_token_budget` present | (f) CONFIRMED |
+| `weave_*` tool count | 78 (arch) / 70 arms,74 catalog (prompt) | **72 dispatch arms / 76 catalog entries** | (f) QUALIFIED — number drifts |
+| `sync-master.yml` required checks | 6 documented | **7 enforced** incl. `audit` (`:46`); CLAUDE.md:43 + policy.toml:37 list 6 | (g) CONFIRMED |
+| Python in CI | invariant says no-Python | **`ci.yml:69,181`** run `python3 scripts/{target_smoke,supply_chain_audit}.py` | (g) CONFIRMED |
+| vector/RAG deps (`embedding/faiss/qdrant/hnsw/candle/onnx…`) | none | **none** (only a false-positive prose comment in `model.rs:23`) | CONFIRMED |
 
-### UPGRADE feasibility verdicts (buildable within grit's invariants?)
+### CLAIM verdicts — architecture
 
-Invariant note (load-bearing): grit's own substrate is NOT no-C — `rusqlite` uses `bundled` SQLite (C)
-and all 14 tree-sitter grammars are C. So:
+- ARCH-01 (crate layering strictly downward, `weave-core` zero internal deps) -> **CONFIRMED** (manifest DAG `weave-core <- inject <- mcp <- weave`; "upward-apparent" call edges are name-ambiguity, cannot exist at compile time).
+- ARCH-02 (upward call edges are resolver artifacts) -> **CONFIRMED** (cross-checked against the SCC probe below: `open_conn` resolves `open` to rusqlite `Connection::open`, a real downward call mis-bound to `SqliteStore::open`).
+- ARCH-03 (`Store` trait is the single broker abstraction, **29 methods**) -> **QUALIFIED** — the abstraction is CONFIRMED (`store.rs:73` `pub trait Store: Send`; `open_store -> Result<Box<dyn Store>>` at `main.rs:1657`; CLI dispatches `&dyn Store`). **Counter-evidence on the count:** the trait body (lines 73–873) declares **~95 `fn` signatures (~90 required + 3 default-bodied)**, NOT 29. The "29" understates the broker surface; the conformance-harness UPGRADE acceptance ("all 29 Store methods") must be re-scoped to the real method count or the harness will silently under-cover the trait.
+- ARCH-04 (`model.rs`/`Intent` is the cross-store wire schema, highest blast 1238) -> **CONFIRMED** (`Intent` at `model.rs:216` with the cited fields incl. `#[serde(default)]` `to_host`/`sig`; blast 1238 from metrics).
+- ARCH-05 (`SqliteStore.send` is the owner-only, idempotent, guarded deliver verb) -> **CONFIRMED** (`store.rs:3153`: `check_ident`(sender,recipient) → `check_body` → `idempotency_key_valid`/`trace_id_valid` → SELECT-existing-by-key short-circuit → owner INSERT into `messages`).
+- ARCH-06 (MCP plane is a flat string-match router over the tool surface) -> **QUALIFIED** — the flat `match name { "weave_*" => tool_* }` router IS CONFIRMED (`call_tool` `mcp.rs:434`). **Counter-evidence on the count:** the surface is **72 dispatch arms / 76 catalog entries**, not 78. Use the measured numbers in any drift-guard test.
+- ARCH-07 (CLI is a 9631-line god-file, 76 `Cmd::` arms, two sequential matches) -> **CONFIRMED** (empirically exact; corrects the anchor's "4489").
+- ARCH-08 (Tier-2 delivery is owner-pull via `pull_from_store`/`commit_pulled`/`verify_pulled_intent`, dedup on `(source,id)` via `pull_cursor`) -> **CONFIRMED** — the owner-only-write `send` path was directly verified (ARCH-05); the pull/commit/cursor surface is corroborated independently by the `pull_cursor` table (`store.rs:1561`, memory-finding schema) and codemap §Federation. No counter-example (no sender-push-write path found).
+- ARCH-09 (**No A2A v1.0/gRPC/AgentCard/JSON-RPC-A2A adapter exists**) -> **CONFIRMED** — grep empty across both crates; the only `jsonrpc` strings are MCP. Strengthened by `weave-core/tests/a2a_interop.rs`, a committed RED suite that compiles against the *existing flat* `Intent` and asserts the unbuilt A2A shape (i.e. it exists precisely *because* the adapter does not). Convergence is schema-mapping work over the `Store`/`Intent` seam.
+- ARCH-10 (`Harness.new` #1 hotspot is test-only) -> **CONFIRMED** (`obscura.rs:396` `mod tests`, `:413` `impl Harness`, `:414` `fn new`). Production hubs (`now`, `send`, `check_ident`) stand.
+- ARCH-11 (dual backends implement `Store` independently; parity comment-asserted only; no conformance harness; 160 vs 95 tests) -> **CONFIRMED** — no shared conformance test exists; counts exact. Adversarial probe found a *real* backend asymmetry that proves the risk: `LibsqlStore.send` (`store_libsql.rs:1499`) opens with `self.guard_writable()?` **before** the `check_ident` block; `SqliteStore.send` has **no** `guard_writable` call. Core idempotency/check ordering matches, but the impls are NOT byte-identical — exactly the silent drift the harness would catch.
+- ARCH-12 (the 3 Tarjan SCCs are resolver back-edges, not real recursion; confidence medium) -> **QUALIFIED** — split verdict:
+  - `open ↔ open_conn`: **CONFIRMED resolver artifact** — `open_conn` (`store.rs:2499`) calls rusqlite `Connection::open(path)`, mis-bound to `SqliteStore::open`. Not real recursion.
+  - `call_tool ↔ tool_meta`: **REFUTED as artifact** — it is a **genuine bounded mutual recursion**: `tool_meta` `mode=call` dispatches the inner op back through `call_tool` (`mcp.rs` ~4925), and `call_tool` routes the `weave` meta-tool to `tool_meta`. Termination is guaranteed by the `if want == "weave" { return Err }` self-target guard, not by the edge being fake. The "resolver artifact" framing is wrong for this pair (the cycle is real and safe).
+  - inject 5-cluster (`spawn/kill/run_bounded*`): **INCONCLUSIVE** — `spawn` (`:714`) really calls `run_bounded_env`; the full cycle was not traced this pass.
 
-- FEASIBILITY union-engine direction (build `grit reconcile` / symbol dedup over two roots; the
-  test-strategy + architecture UPGRADE) -> **feasible WITHIN grit as additive Rust** (reuses
-  `scan_all` + `Symbol.hash` + `LockStore::try_lock`; additive `Reconcile` clap variant + dispatch +
-  `cmd_reconcile`; the 3 RED tests pin the contract). BUT **infeasible as the engine "inside the
-  envctl no-C trust boundary"** — grit's C substrate (rusqlite-bundled + tree-sitter) violates the
-  NON-NEGOTIABLE no-C trust boundary. Architect routing: build reconcile in grit as the
-  coordination/dedup substrate OUTSIDE the trust boundary, or lift the pure-Rust dedup logic into a
-  no-C component that uses grit only for coordination. The "make grit the in-boundary union engine
-  as-is" framing is REFUTED on feasibility.
-- FEASIBILITY stable version-independent symbol hash (replace `DefaultHasher`) -> feasible. Pure-Rust,
-  additive, single function (parser/mod.rs:420-424); APPLY-tier. Serves axis:accuracy (DefaultHasher
-  is not guaranteed stable across toolchains; any persisted dedup key needs a fixed algo).
-- FEASIBILITY route lock-availability reads through the active LockStore / unify cloud locks ->
-  feasible (additive read path); serves axis:accuracy (fixes the confirmed cloud read-skew). PROPOSE
-  (touches central read helpers; blast medium-high).
-- FEASIBILITY atomic multi-symbol claim (release granted on terminal bail) -> feasible, additive,
-  single command; APPLY-tier; serves correctness. Mirrors the existing release at :626-628.
-- FEASIBILITY disambiguate symbol ids (add kind/positional discriminator) -> feasible WITH a schema/
-  contract migration (id is the system-wide PK across locks/deps/queue/CLI args); PROPOSE.
-- FEASIBILITY parse-each-file-once + single tree glob -> feasible, additive, init-internal; serves
-  axis:speed; differential-output acceptance is sound.
-- FEASIBILITY call-edge scope resolution -> feasible (accuracy); reduces `--with-deps` over-locking.
-- FEASIBILITY retire socket Room or run a real `grit serve` daemon -> feasible; quality.
-- FEASIBILITY remove dead code (`NameExtractor::ChildKind` declared :90 + matched :386 but NEVER
-  constructed; `get_deps`/`count_deps` `#[allow(dead_code)]`) -> feasible, APPLY; confirmed dead.
-- FEASIBILITY governance upgrades (AGENTS.md hard-rules + `.claude/rules` destructive guard; trim RTK
-  noise in CLAUDE.md; MSRV + rust-toolchain pin; clippy `--all-targets` + `cargo audit`/`deny`;
-  `enum Backend` deny-unknown replacing the catch-all; 0600 config perms / keyref for secrets;
-  parameterize release `rtk-ai`→`${{ github.repository }}`) -> all feasible (docs/CI/config-additive,
-  no trust-boundary or no-C conflict). Each STRENGTHENS a gate; none weakens one.
-- FEASIBILITY phantom-workspace remediation (remove/relocate stray .worktrees/Cargo.toml, or add an
-  empty `[workspace]` to grit's manifest) -> feasible; prerequisite for any grit standalone build/CI.
+### CLAIM verdicts — cross-axis (key gates d/e/f/g)
 
-### Tally (grit)
+- GOV-001 (PreToolUse gate has real teeth AND is opt-in) [key (d)] -> **CONFIRMED both clauses.** Teeth: `main.rs:8896-8919` deny-by-default for a dangerous tool unless an approver is positively proven; broadcast approver → DENY; the drain enforces its **own** short `pretooluse_timeout` and emits an explicit `deny`, never relying on Claude's 600s fail-OPEN timeout (`main.rs:8800-8809`); in-drain `pretooluse_is_dangerous` reconfirms danger so an over-broad matcher can't sneak a benign tool through. Opt-in: `setup.rs:194-196` — the `PreToolUse` hook is installed only with `weave setup --pretooluse`; default leaves it uninstalled, and with no approver configured it denies everything. (Strongest control in the repo, dormant by default.)
+- GOV-003 (docs say "6" CI checks; gate enforces "7" incl. `audit`/WL-044) [key (g)] -> **CONFIRMED** (`sync-master.yml:46` = 7; `CLAUDE.md:43` & `policy.toml:37` = 6). Teeth-bearing supply-chain `audit` gate is real but understated in both human and machine policy.
+- GOV-004 (Python in CI vs the no-Python Rust-native invariant) [key (g)] -> **CONFIRMED** (`ci.yml:69` `target_smoke.py`, `:181` `supply_chain_audit.py`; invariant `CLAUDE.md:22,47-59`). Genuine language drift in the build/CI plane.
+- PA-TOOLS (78-tool surface collapses to one byte-budget-gated meta-tool) [key (f)] -> **QUALIFIED** — the token-safety MECHANISM is CONFIRMED (single `weave` meta-tool default via `tools()`; `MAX_STANDING_TOOLS_BYTES=8192`; budget + progressive-default tests). Count QUALIFIED: 72 arms / 76 catalog, not 78. Eager-flat (`WEAVE_MCP_EAGER=1`) is opt-in and budget-exempt.
+- PA-METACALL (meta-tool `call` re-applies the destructive gate; not a bypass) [key (f)] -> **CONFIRMED** (`mcp.rs:4925-4933`: `call` rejects `want=="weave"` and re-checks `is_dangerous_tool` under safe-HTTP mode; locked by test `meta_call_preserves_safe_http_gate`).
+- MEM-1 (the SQLite store is transport/event log, not recall memory) -> **CONFIRMED** (mailbox/queue/receipt schema; only query surface is FTS5 over message bodies — searching traffic, not recalled facts).
+- MEM-2 (weave ships a real memory organ in `memory.rs`; a 6th memory surface that can't see ICM) [key (e)] -> **CONFIRMED** — module present (25.9K), FS-backed scoped notes under `~/.config/weave/memory`, full CRUD+search, exposed on CLI + 5 MCP tools, auto-injected via `build_context_prefix` (`memory.rs:332`); **zero `icm` references** in `memory.rs` (it cannot read ICM). Separation-of-concerns risk is real.
+- MEM-3 (no vector/embeddings/RAG anywhere) -> **CONFIRMED** (empirical grep: 0 vector deps/symbols; sole hit is a prose false-positive). Correct state for a transport plane.
 
-- Material claims: CONFIRMED 12 (1a,1b,2,3a,4a,4b,4c,5,6a,7 + the two defensive sub-claims) ·
-  QUALIFIED 1 (6b web GA/CVE specifics) · partial INCONCLUSIVE 1 (3b S3-secret-field sub-part;
-  Azure half CONFIRMED) · REFUTED 0.
-- UPGRADES: feasible — all upgrade rows buildable additively within grit. INFEASIBLE 1 framing:
-  "grit as-is = the in-boundary (no-C) union engine" (REFUTED on the no-C trust-boundary invariant);
-  the union/dedup capability itself is feasible in grit as an out-of-boundary coordination substrate.
-- Union-fitness verdict: **UNFIT as-is** for union step 2 — confirmed advisory symbol-LOCK +
-  git-worktree (line-level) coordinator; the dedup hash exists but is never read; reconcile is absent
-  (RED-proven). Usable as the parallel-agent coordination substrate AROUND a dedup engine that must
-  be built (pure-Rust if it is to sit inside the no-C trust boundary).
+### UPGRADE verdicts (feasibility-gate: NO-C-in-trust-boundary · pure-Rust · strict-upgrade)
+
+- U-ARCH-1 (backend-conformance test harness over both `dyn Store` impls) -> **FEASIBLE** — additive test crate, pure Rust, touches no production code (APPLY tier holds). **Condition:** re-scope acceptance from "all 29 methods" to the trait's real surface (~90 required methods, ARCH-03) so it does not under-cover. The verified `guard_writable` asymmetry (ARCH-11) is a ready first divergence target.
+- U-ARCH-2 (A2A v1.0 interop adapter, default-off, over the `Store`/`Intent` seam) -> **FEASIBLE** — passes the hard gate. The RED suite proves the mapping rides the **already-present `serde_json`** (no new dep); AgentCard signing rides the existing pure-Rust `ed25519-dalek` under the default-off `sign` feature → **no C enters the trust boundary**. Must be ADDITIVE (new `to_a2a`/`from_a2a` + new `a2a.rs`/types, feature-gated default-off) and must **not** re-derive `Intent`'s existing serde — the native Tier-2 goldens (`integration.rs:3541/3646`) and the SQLite-mailbox transport stay intact (strict-upgrade preserved). If a gRPC binding is ever added it must use pure-Rust `tonic`/`prost`, not a C protobuf — flagged for the architect, not required for the JSON-RPC binding.
+- U-ARCH-3 (extract post-store CLI dispatch into a `dispatch/*` module) -> **FEASIBLE** — pure behavior-identical move, pure Rust, extends the existing `dispatch_memory/lease/job` pattern. PROPOSE tier (highest-blast bin) is appropriate; reversible.
+- U-ARCH-4 (single-source the CLI↔MCP verb surface / cross-guard test) -> **FEASIBLE** — the additive cross-guard-test variant is the low-risk pure-Rust path; the full declarative-registry derive is the heavier option. **Condition:** the parity test must enumerate the *measured* surfaces (71 CLI verbs / 72 MCP arms / 76 catalog), not the stale "71↔78".
+- U-GOV-001 (align documented CI gate 6→7) -> **FEASIBLE** — doc-only edit; PROPOSE (protected files). Pure tightening of truthfulness.
+- U-GOV-002 (remove Python from the CI/build plane, Rust `xtask` replacement) -> **FEASIBLE** — restores the Rust-native invariant; pure Rust. **Condition (never weaken):** the Rust replacement must reproduce the same supply-chain/target-smoke gate outputs (same `target-smoke.json` schema, same `cargo deny` posture) — a port, not a relaxation.
+- U-GOV-009 (document + optionally arm the PreToolUse gate) -> **FEASIBLE** — security TIGHTENING only; must not weaken the deny-by-default semantics (`main.rs:8896-8919`). Reversible to current opt-in default.
+- U-MEM-1 (ADR classifying/quarantining `memory.rs` as a bounded send-time cache) -> **FEASIBLE** — docs/ADR + doc-gate; no code deletion required. Pure governance.
+- U-MEM-2 (reconcile weave's send-time recall with ICM, or document it as a local cache) -> **FEASIBILITY: QUALIFIED** — option (b) doc-contract (weave memory is an explicit local augmentation cache, durable recall stays ICM+handoff) is **feasible** and preferred. Option (a) wiring `build_context_prefix` to read ICM is **feasibility-constrained**: it adds a cross-binary coupling from `weave-core` to ICM that the transport plane should not own; pursue only if (a)'s coupling is itself ADR'd. Default to (b).
+- U-TEST (A2A interop RED tests: to_a2a / from_a2a / JSON-RPC envelope) -> **FEASIBLE** — already authored and committed RED (`weave-core/tests/a2a_interop.rs`, 3 cases, tests-ran=3 all-RED-on-assertion); pure Rust over `serde_json`. These are the GREEN target for U-ARCH-2.
+
+### Counts (weave, cycle 4)
+
+- CLAIMS: **CONFIRMED 16 · QUALIFIED 4 · REFUTED 0 · INCONCLUSIVE 0** (20 verdicts).
+  - QUALIFIED: ARCH-03 (29→~90 methods), ARCH-06 (78→72/76 tools), ARCH-12 (one SCC pair is real bounded recursion, not an artifact), PA-TOOLS (count).
+  - No fully-REFUTED claim; the only refutation is *internal* to ARCH-12 (the `call_tool↔tool_meta` "resolver artifact" sub-claim is refuted — it is genuine guarded recursion).
+- UPGRADES: **FEASIBLE 9 · FEASIBILITY-QUALIFIED 1 (U-MEM-2) · INFEASIBLE 0.** No-C / strict-upgrade gate held on every row (notably U-ARCH-2 A2A adapter is feasible because it rides existing pure-Rust serde_json + ed25519, additive/default-off).
+
+### Routed back to analyst (corrections required before plan facts)
+
+1. `Store` method count 29 → real surface ~90 (fix U-ARCH-1 acceptance).
+2. MCP tool count 78 (and 70/74) → 72 arms / 76 catalog (fix U-ARCH-4 test + ARCH-06).
+3. ARCH-12: re-label the `call_tool↔tool_meta` SCC as a real bounded recursion (self-target guard), not a resolver artifact; inject 5-cluster left INCONCLUSIVE pending a trace.

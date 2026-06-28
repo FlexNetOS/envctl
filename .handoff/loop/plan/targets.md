@@ -1,10 +1,8 @@
-# Planning backlog — grit instance (parallel run via plan-loop-parallel-run.md)
-#
-# This is an isolated per-target instance (plan/loop-grit, off origin/master). It plans ONE target:
-# grit. Shared-state files here are grit-scoped (per-target write discipline §7). The full fleet
-# backlog lives on the union loop branch (plan/fleet-convergence-first-run).
-#
-# Legend: [ ] todo  [~] in-flight / planned-with-gaps  [x] planned+verified  [!] blocked  [!!] SUPERVISED
+# Planning backlog (parallel instance: weave). One kebab-slug per active row (gate-strict).
 
-## Cycle 5 (this instance)
-- [~] grit: symbol-level merge/lock substrate — enables union step 2 (dedup ~95% shared handoff/rusty-idd crates)
+## This instance
+- [~] weave: communication layer / A2A transport (nervous system) — cycle 4, parallel run
+
+## Context (other organs — not this instance)
+# rusty-idd [~] (cycle 1) · handoff [~] (cycle 2) · union A-U1 done (handoff#184)
+# snake_case fleet members live in the commented backlog of the union loop branch's targets.md
