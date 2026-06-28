@@ -41,7 +41,8 @@ ACTIVE_PATHS=(
 
 TMP="$(mktemp)"
 SOURCE_LIST="$(mktemp)"
-trap 'rm -f "$TMP" "$SOURCE_LIST"' EXIT
+FRONTDOOR_TMP="$(mktemp)"
+trap 'rm -f "$TMP" "$SOURCE_LIST" "$FRONTDOOR_TMP"' EXIT
 
 git ls-files -z --cached --others --exclude-standard -- "${ACTIVE_PATHS[@]}" >"$SOURCE_LIST"
 
@@ -89,6 +90,84 @@ check_present() {
     exit 1
   fi
 }
+
+check_present crates/engine/src/install.rs 'fn install_regular_frontdoor' \
+  'installer must write regular executable frontdoors, not symlink/copy canonical usr/bin'
+check_absent crates/engine/src/install.rs 'std::os::unix::fs::symlink' \
+  'installer must not create canonical usr/bin symlink frontdoors'
+check_present crates/engine/src/register.rs 'envctl_frontdoor()' \
+  'add-repo drop-ins must expose regular frontdoor wrappers'
+check_present crates/engine/src/model.rs 'MetaFrontdoorSymlink' \
+  'meta boundary model must distinguish canonical usr/bin symlink regressions'
+check_present crates/engine/src/detect.rs 'MetaFrontdoorSymlink' \
+  'doctor must flag canonical usr/bin symlink regressions'
+
+python3 - "$SOURCE_LIST" >"$FRONTDOOR_TMP" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+ln_re = re.compile(r'\bln\s+-sfn?\s+(?P<src>"[^"]+"|[^ \t\n;]+)\s+(?P<dst>"[^"]+"|[^ \t\n;]+)')
+install_res = [
+    re.compile(r'\binstall\s+-Dm?755\s+(?P<src>"[^"]+"|[^ \t\n;]+)\s+(?P<dst>"[^"]+"|[^ \t\n;]+)'),
+    re.compile(r'\binstall\s+(?:-[A-Za-z0-9]+\s+)*-m\s*755\s+(?P<src>"[^"]+"|[^ \t\n;]+)\s+(?P<dst>"[^"]+"|[^ \t\n;]+)'),
+]
+
+allowed_path_fragments = (
+    '/.local/bin/',
+    '/.config/',
+    '/.toolchains/cargo/bin/',
+    'portability-links.toml',
+    'codex-global-baseline.toml',
+)
+
+def q(value: str) -> str:
+    return value.strip('"').strip("'")
+
+def canonical_usr_bin(dst: str) -> bool:
+    d = q(dst)
+    return any(token in d for token in (
+        '$META_ROOT/usr/bin/',
+        '${META_ROOT}/usr/bin/',
+        '$M/usr/bin/',
+        '${M}/usr/bin/',
+        '$BIN/',
+    )) or d.endswith('/usr/bin')
+
+for raw in Path(sys.argv[1]).read_bytes().split(b'\0'):
+    if not raw:
+        continue
+    path = raw.decode()
+    if path == 'ci/gates/meta-local-policy.sh':
+        continue
+    if not (path.startswith('manifest/') or path.startswith('assets/scripts/') or path.startswith('scripts/') or path.startswith('crates/engine/src/register.rs')):
+        continue
+    if any(fragment in path for fragment in allowed_path_fragments):
+        continue
+    try:
+        text = Path(path).read_text(errors='ignore')
+    except OSError:
+        continue
+    for idx, line in enumerate(text.splitlines(), 1):
+        stripped = line.lstrip()
+        if stripped.startswith('#'):
+            continue
+        m = ln_re.search(line)
+        if m and canonical_usr_bin(m.group('dst')):
+            print(f"{path}:{idx}: canonical usr/bin frontdoor symlink: {line}")
+        if 'install -d' in line or 'install -dm' in line:
+            continue
+        for rx in install_res:
+            m = rx.search(line)
+            if m and canonical_usr_bin(m.group('dst')):
+                print(f"{path}:{idx}: canonical usr/bin frontdoor direct copy: {line}")
+PY
+
+if [ -s "$FRONTDOOR_TMP" ]; then
+  echo "meta-local-policy: canonical usr/bin frontdoors must be regular executable wrappers, not symlinks/direct copies:" >&2
+  cat "$FRONTDOOR_TMP" >&2
+  exit 1
+fi
 
 check_present manifest/grit.toml 'export CARGO_HOME="$META_ROOT/.toolchains/cargo"' \
   'grit must force cargo installs into the meta toolchains cargo home'

@@ -272,7 +272,7 @@ The product surface is five verbs that map onto five lifecycle **phases** on eve
 
 **REQ-ADDREPO-3 (dry-run)** — `--dry-run` prints the exact TOML that would be written and changes nothing.
 
-**REQ-ADDREPO-4 (full pipeline — Phase 4)** — The complete 9-stage pipeline: acquire (clone/fetch, record resolved SHA, snapshot local paths), detect build system (nix flake > cargo > meson > cmake > make > python/uv > bun/npm), best-effort dep resolution, build (kit CUDA/LLVM/PATH env sourced, SHA+flags-keyed cache), locate+classify artifacts, install (symlink-default into `$META_ROOT/.local`, backup-before-clobber), wire-in (guarded PATH/completions/desktop/systemd `--user`), register, verify. All user-scope, best-effort, refuse-on-ambiguity.
+**REQ-ADDREPO-4 (full pipeline — Phase 4)** — The complete 9-stage pipeline: acquire (clone/fetch, record resolved SHA, snapshot local paths), detect build system (nix flake > cargo > meson > cmake > make > python/uv > bun/npm), best-effort dep resolution, build (kit CUDA/LLVM/PATH env sourced, SHA+flags-keyed cache), locate+classify artifacts, install (frontdoor wrapper-default into `$META_ROOT/.local`, backup-before-clobber), wire-in (guarded PATH/completions/desktop/systemd `--user`), register, verify. All user-scope, best-effort, refuse-on-ambiguity.
 
 *Status:* hardened drop-in writer (validation, collision-refusal, atomic write, dry-run, clone into `$META_ROOT/var/lib/envctl/repos/<slug>` at 0700, escaped interpolation) shipped; full 9-stage build pipeline is Phase 4.
 

@@ -8,45 +8,61 @@ name = "Claude Code CLI"
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/claude/bin/claude\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/claude\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/claude/bin/claude\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/claude/bin/claude\" ] && [ -x \"$META_ROOT/usr/bin/claude\" ] && [ ! -L \"$META_ROOT/usr/bin/claude\" ] && grep -Fqx \"exec \\\"$M/.toolchains/claude/bin/claude\\\" \\\"\\$@\\\"\" \"$META_ROOT/usr/bin/claude\""]
 [component.install]
 kind = "script"
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/claude"
 # Upstream's installer may stage under $META_ROOT/.local/share/claude; mirror the resulting
-# executable into the meta-owned prefix and expose only a thin $META_ROOT/usr/bin symlink.
+# executable into the meta-owned prefix and expose only a thin regular $META_ROOT/usr/bin wrapper.
 curl -fsSL https://claude.ai/install.sh | bash
-src="$(readlink -f "$META_ROOT/usr/bin/claude" 2>/dev/null || true)"
-if [ -z "$src" ] || [ ! -x "$src" ]; then
-  src="$(command -v claude)"
+src="$M/.toolchains/claude/bin/claude"
+if [ ! -x "$src" ]; then
+  maybe="$(command -v claude || true)"
+  case "$maybe" in
+    "$META_ROOT/usr/bin/claude"|"") echo "FATAL: claude installer did not expose a source binary outside the managed front door" >&2; exit 1;;
+    *) src="$(readlink -f "$maybe")";;
+  esac
 fi
 install -d -m 755 "$DEST/bin"
-install -m 755 "$src" "$DEST/bin/claude"
-ln -sfn "$DEST/bin/claude" "$META_ROOT/usr/bin/claude"
+if [ "$(readlink -f "$src" 2>/dev/null || true)" != "$(readlink -f "$DEST/bin/claude" 2>/dev/null || true)" ]; then
+  install -m 755 "$src" "$DEST/bin/claude"
+fi
+envctl_frontdoor "$DEST/bin/claude" "$META_ROOT/usr/bin/claude"
+
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/usr/bin:$PATH\"; [ \"$(readlink -f \"$(command -v claude)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/claude/bin/claude\")\" ] && timeout --kill-after=2s 5s claude --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$M/usr/bin:$PATH\"; [ -x \"$M/.toolchains/claude/bin/claude\" ] && [ -x \"$M/usr/bin/claude\" ] && [ ! -L \"$M/usr/bin/claude\" ] && grep -Fqx \"exec \\\"$M/.toolchains/claude/bin/claude\\\" \\\"\\$@\\\"\" \"$M/usr/bin/claude\" && timeout --kill-after=2s 5s claude --version"]
 [component.fix]
 kind = "script"
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/claude"
 curl -fsSL https://claude.ai/install.sh | bash
-src="$(readlink -f "$META_ROOT/usr/bin/claude" 2>/dev/null || true)"
-if [ -z "$src" ] || [ ! -x "$src" ]; then
-  src="$(command -v claude)"
+src="$M/.toolchains/claude/bin/claude"
+if [ ! -x "$src" ]; then
+  maybe="$(command -v claude || true)"
+  case "$maybe" in
+    "$META_ROOT/usr/bin/claude"|"") echo "FATAL: claude installer did not expose a source binary outside the managed front door" >&2; exit 1;;
+    *) src="$(readlink -f "$maybe")";;
+  esac
 fi
 install -d -m 755 "$DEST/bin"
-install -m 755 "$src" "$DEST/bin/claude"
-ln -sfn "$DEST/bin/claude" "$META_ROOT/usr/bin/claude"
+if [ "$(readlink -f "$src" 2>/dev/null || true)" != "$(readlink -f "$DEST/bin/claude" 2>/dev/null || true)" ]; then
+  install -m 755 "$src" "$DEST/bin/claude"
+fi
+envctl_frontdoor "$DEST/bin/claude" "$META_ROOT/usr/bin/claude"
+
+
+
 '''
-
-
 [[component]]
 id = "codex-cli"
 name = "Codex CLI (meta toolchain; pinned upstream release rust-v0.142.0, meta-owned CODEX_HOME wrapper)"
@@ -322,22 +338,18 @@ requires = ["bun"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/.bun/bin/gemini\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/gemini\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/.bun/bin/gemini\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/.bun/bin/gemini\" ] && [ -x \"$META_ROOT/usr/bin/gemini\" ] && [ ! -L \"$META_ROOT/usr/bin/gemini\" ] && grep -Fqx \"exec \\\"$M/.toolchains/.bun/bin/gemini\\\" \\\"\\$@\\\"\" \"$META_ROOT/usr/bin/gemini\""]
 [component.install]
 kind = "script"
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -e
 M="${META_ROOT:?META_ROOT required}"
 export BUN_INSTALL="$M/.toolchains/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 bun install -g @google/gemini-cli
 mkdir -p "$META_ROOT/usr/bin"
-dst="$META_ROOT/usr/bin/gemini"
-src="$BUN_INSTALL/bin/gemini"
-ARCH="$META_ROOT/var/lib/envctl/legacy-archives/home-links-$(date +%Y-%m-%d)"
-if [ -e "$dst" ] && [ ! -L "$dst" ]; then mkdir -p "$ARCH/.local/bin"; mv "$dst" "$ARCH/.local/bin/gemini"; echo "archived copy: gemini"; fi
-[ -L "$dst" ] && rm "$dst"
-ln -s "$src" "$dst"
+envctl_frontdoor "$BUN_INSTALL/bin/gemini" "$META_ROOT/usr/bin/gemini"
 '''
 [component.verify]
 kind = "command"
@@ -346,13 +358,15 @@ args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export BUN_INSTALL=\"$M/
 [component.fix]
 kind = "script"
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -e
 M="${META_ROOT:?META_ROOT required}"
 export BUN_INSTALL="$M/.toolchains/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 bun install -g @google/gemini-cli
 mkdir -p "$META_ROOT/usr/bin"
-ln -sfn "$BUN_INSTALL/bin/gemini" "$META_ROOT/usr/bin/gemini"
+envctl_frontdoor "$BUN_INSTALL/bin/gemini" "$META_ROOT/usr/bin/gemini"
+
 '''
 [component.remove]
 kind = "command"
