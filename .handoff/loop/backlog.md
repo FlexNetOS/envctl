@@ -1227,6 +1227,47 @@ policy change" — both are available and declarable here.
   `ReadWritePaths=`/`ReadOnlyPaths=` carve-out or a non-$HOME meta location). Verify by `secretctl unlock`
   succeeding with the pin living only at the meta path and `/usr/local` empty. Origin: TASK-0075 architect plan.
 
+## Harness upgrade intake — drained from proposed-upgrades.md (2026-06-28 batch boundary 54)
+
+> Origin: `.handoff/loop/proposed-upgrades.md`, plan-loop / fleet-convergence cycle 6
+> (prompt-hub), 2026-06-27. Drained fail-closed by `session-relay-wrap-up` step 3b so no
+> evolution-steward proposal remains only in the transient escalation file. These rows are
+> open triage items (`- [?]`) until accepted, declined, or proven already resolved.
+
+- [?] **TASK-0079 (harness, LOW/P1) — Scope git-kb code index to member `src/`, exclude `vendor/`:**
+  Apply-eligible recurrence from plan-loop cycle 6: vendored roots dominated the code index
+  (1.42M/1.43M symbols under `vendor/`) and yielded near-zero useful call edges. Tighten the
+  plan-cartographer indexing step to index each Cargo member's `src/` or pass an explicit `vendor/`
+  exclude. This is an additive planning-harness reliability improvement; no product-code behavior
+  should change.
+- [?] **TASK-0080 (harness, MEDIUM/P2) — Auditor output-channel clarity:** add a one-line directive
+  to the plan-architecture-auditor and sibling dimension auditors: write the deliverable to
+  `findings/<dimension>-<target>.md`; return only a short summary. Origin friction: an auditor
+  returned findings as chat text and the orchestrator had to materialize the file. Touches agent
+  briefs, so owner/maintainer review is required before applying.
+- [?] **TASK-0081 (harness, MEDIUM/P2) — Name verifier dispute-reconciliation as an explicit duty:**
+  strengthen the plan-verifier brief so factual disagreements are reconciled by enumerating the
+  actual artifacts (both findings may describe different files) instead of picking a winner. Origin:
+  cycle-6 `.db` tracking reconciliation.
+- [?] **TASK-0082 (harness, MEDIUM/P2) — Cross-repo schema-binding gate language:** strengthen the
+  plan-verifier feasibility gate and plan-analyst upgrade-authoring guidance so any upgrade encoding
+  a cross-repo contract is bound to the consumer's real schema or marked conditional. A guessed wire
+  format that satisfies a self-authored RED test must not pin a fiction.
+- [?] **TASK-0083 (harness, MEDIUM/P2) — Relax plan-loop slug/regex without weakening guards:**
+  cycles 4-5 carried this forward because the target/loop-name slug regex rejected valid fleet
+  targets. Investigate the exact rejected target set and widen only that syntax surface.
+- [?] **TASK-0084 (harness, MEDIUM/P2) — Namespace plan-loop artifacts under `runs/<target>/`:**
+  structural proposal from cycles 4-6 to avoid collisions when parallel planning instances share
+  `.handoff/loop/`. Keep committed artifacts authoritative while separating per-target run outputs.
+- [?] **TASK-0085 (harness, MEDIUM/P2) — Phantom-workspace pre-cycle check:** add a planning-loop
+  preflight that verifies the claimed worktree exists and is the intended target before running, and
+  detects stray ancestor workspace manifests that would make build tooling escape into a sibling
+  workspace.
+- [?] **TASK-0086 (harness, MEDIUM/P2) — Oblique sentinel-token rule:** generalize the existing
+  forbidden-token gate so auditors discuss placeholder/unsupported-claim sentinel categories
+  obliquely rather than spelling literal banned words or obfuscated variants that trip the gate on
+  their own findings. This strengthens, not weakens, the completeness gate.
+
 ## Key finding (carried)
 
 Most meta-built tools' installed binaries are NEWER than their committed meta sources
