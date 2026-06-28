@@ -16,7 +16,7 @@ pub mod executor; // Engine::run(plan) best-effort loop + RunContext resolve + a
 pub mod graph; // graph intelligence over the component dependency DAG
 pub mod guard; // fail-closed UuidResolves/NotLiveDevice/NotMounted/PathExists/HookSucceeds
 pub mod hub_registry; // read-only federation over *_hub/registry.json
-pub mod install; // Phase 4: symlink artifacts into meta usr/bin (refuse-unmanaged) + wire-in
+pub mod install; // Phase 4: regular frontdoor wrappers into meta usr/bin (refuse-unmanaged) + wire-in
 pub mod layout; // meta-hosted FHS/XDG path resolver (usr/etc/var/opt/run/tmp + XDG roots)
 pub mod lock; // envctl.lock — content-hashed manifest-of-record + CI gate
 pub mod migration; // adoption engine: scan/plan/apply/verify/purge into meta .local topology
