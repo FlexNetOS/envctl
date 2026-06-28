@@ -1,3 +1,12 @@
+<!-- loop-state-gate:counters -->
+# Machine-readable mirror for ci/gates/loop-state.sh (keeps the markdown table human-readable).
+cycle_budget: 1
+wrap_every: 1
+last_wrapup_total: 3
+cycles_total: 4
+cycles_this_session: 0
+<!-- /loop-state-gate:counters -->
+
 # Planning Engineer Loop — state (PARALLEL instance: weave)
 
 | key | value |
