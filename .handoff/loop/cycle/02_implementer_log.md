@@ -1,31 +1,23 @@
-# TASK-0078 managed config deep-diff summary implementer log
+# TASK-0078 cache-child manifest writer implementer log
 
 ## Red
-
-Focused TDD started by adding fixture expectations for
-`--owner-supervised-managed-config-child-deep-diff-summary PATH`; the first probe failed because the
-flag did not exist and the expected TSV was not created.
+Added focused expectations for `--write-cache-child-component-manifest`; the first probe exited 2 with `unknown argument: --write-cache-child-component-manifest`.
 
 ## Change
-
-- Added the new read-only deep-diff summary report flag to `scripts/audit-meta-local-paths.sh`.
-- Added sorted deep-entry/deep-file helper lists for non-symlink directory pairs and aggregate
-  counting for shared, real-only, managed-only, type-conflict, and differing shared regular files.
-- Integrated the report into managed `.config` child candidate recording without changing apply
-  behavior.
-- Kept the report bounded to aggregate counts only; nested paths and file contents are never emitted.
-- Extended `scripts/tests/test-meta-local-path-audit.sh` with identical and differing managed-config
-  fixtures, including real-only, managed-only, type-conflict, and differing-file cases.
+- Added the new explicit writer flag and usage documentation.
+- Split cache-child manifest stub generation into a TOML file-body helper plus escaped TSV helper so scaffold output stays stable while apply writes real TOML.
+- Added fail-closed source/name/manifest validation before any write.
+- Added dry-run/no-op and `--apply` materialization behavior for `manifest/components.d/cache-<component>.toml`.
+- Ordered writer execution after migration attempts to preserve the migration precondition in combined invocations.
+- Extended `scripts/tests/test-meta-local-path-audit.sh` with dry-run, apply, idempotence, wrong-manifest, invalid-name, and missing-source coverage.
 
 ## Green
+- `bash -n scripts/audit-meta-local-paths.sh scripts/tests/test-meta-local-path-audit.sh`
+- `bash scripts/tests/test-meta-local-path-audit.sh`
+- `git diff --check`
+- `bash ci/gates/meta-local-policy.sh`
+- `bash ci/gates/harness-scripts.sh`
+- `bash ci/gates/p7.sh`
 
-Focused test evidence:
-
-```text
-bash -n scripts/audit-meta-local-paths.sh scripts/tests/test-meta-local-path-audit.sh
-bash scripts/tests/test-meta-local-path-audit.sh
-# test-meta-local-path-audit: PASS
-```
-
-Runtime and full gate evidence are recorded in the guardian report for this slice. No `--apply` was
-used and no live managed-config state was bridged or archived.
+## Runtime
+Live dry-run for `.wasm-pack` reported it would write `manifest/components.d/cache-wasm-pack.toml`, created no manifest, emitted validation rows for 84 cache children with `bad_apply=0`, and moved no live cache state.

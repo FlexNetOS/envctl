@@ -6,7 +6,9 @@
 #     missing or already a symlink;
 #   * repoint $META_ROOT/.local/bin/<name> symlinks that resolve outside META_ROOT only when an
 #     executable replacement already exists under $META_ROOT/usr/bin or $META_ROOT/.toolchains/cargo/bin;
-#   * relink real-home .gitconfig through $META_ROOT/.gitconfig, archiving a non-symlink first.
+#   * relink real-home .gitconfig through $META_ROOT/.gitconfig, archiving a non-symlink first;
+#   * write owner-reviewed cache-child component manifest stubs only with the explicit
+#     --write-cache-child-component-manifest NAME opt-in.
 #
 # It intentionally does not move credentials or broad real-home application state by default.
 # Shell dotfiles are only canonicalized with the explicit --apply-shell-dotfiles opt-in; default
@@ -19,13 +21,16 @@
 # Portable app configs are only migrated when they are explicitly allow-listed here.
 # Explicit --migrate-dot requests are allow-listed, require --apply for mutation, and preserve an
 # existing canonical META_ROOT target by archiving the old real-home state under META_ROOT first.
+# Explicit --write-cache-child-component-manifest requests only materialize deterministic reviewed
+# manifest stubs; they never move live cache data and intentionally do not satisfy migration in the
+# same invocation before the missing-manifest refusal fires.
 # Live migrations also require lsof proof that no process has open file handles below the source
 # tree before any --apply move/archive/link mutation is attempted.
 set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--owner-supervised-sensitive-review-plan PATH] [--owner-supervised-state-report PATH] [--owner-supervised-child-report PATH] [--owner-supervised-child-plan PATH] [--owner-supervised-child-candidates-report PATH] [--owner-supervised-child-candidate-actions PATH] [--owner-supervised-cache-child-component-plan PATH] [--owner-supervised-cache-child-component-manifest-status PATH] [--owner-supervised-cache-child-component-manifest-validation PATH] [--owner-supervised-cache-child-component-manifest-scaffold PATH] [--owner-supervised-managed-config-child-review-plan PATH] [--owner-supervised-managed-config-child-conflict-plan PATH] [--owner-supervised-managed-config-child-conflict-summary PATH] [--owner-supervised-managed-config-child-deep-status PATH] [--owner-supervised-managed-config-child-deep-diff-summary PATH] [--owner-supervised-config-child-classification-plan PATH] [--owner-supervised-child-candidate-action-summary PATH] [--owner-supervised-child-candidates-summary PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--migration-blockers-plan PATH] [--open-handle-process-window-plan PATH] [--fail-migration-blockers] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--migrate-cache-child NAME]... [--bridge-managed-config-child NAME]... [--bridge-identical-managed-config-child NAME]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--owner-supervised-sensitive-review-plan PATH] [--owner-supervised-state-report PATH] [--owner-supervised-child-report PATH] [--owner-supervised-child-plan PATH] [--owner-supervised-child-candidates-report PATH] [--owner-supervised-child-candidate-actions PATH] [--owner-supervised-cache-child-component-plan PATH] [--owner-supervised-cache-child-component-manifest-status PATH] [--owner-supervised-cache-child-component-manifest-validation PATH] [--owner-supervised-cache-child-component-manifest-scaffold PATH] [--owner-supervised-managed-config-child-review-plan PATH] [--owner-supervised-managed-config-child-conflict-plan PATH] [--owner-supervised-managed-config-child-conflict-summary PATH] [--owner-supervised-managed-config-child-deep-status PATH] [--owner-supervised-managed-config-child-deep-diff-summary PATH] [--owner-supervised-config-child-classification-plan PATH] [--owner-supervised-child-candidate-action-summary PATH] [--owner-supervised-child-candidates-summary PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--migration-blockers-plan PATH] [--open-handle-process-window-plan PATH] [--fail-migration-blockers] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--write-cache-child-component-manifest NAME]... [--migrate-cache-child NAME]... [--bridge-managed-config-child NAME]... [--bridge-identical-managed-config-child NAME]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
 With --inventory, also writes a tab-separated relocation inventory:
@@ -48,6 +53,11 @@ portable cache dirs like .nv, or a managed dotfile present under --envctl-home-s
 Mutation still requires --apply; without --apply the script prints the planned move and changes nothing.
 With --apply, migrations require lsof and refuse to mutate while any process has open file handles
 below the source tree.
+With --write-cache-child-component-manifest, materializes a deterministic reviewed manifest stub for
+one direct child of real-home .cache under manifest/components.d/cache-<component>.toml. Mutation
+still requires --apply; without --apply the script prints the planned manifest write and changes
+nothing. Names must be direct .cache child names, missing/external-symlink/non-directory sources are
+rejected, and existing wrong manifests are never overwritten automatically.
 With --migrate-cache-child, performs an explicit owner-requested migration for one direct child of
 real-home .cache at a time, moving it to $META_ROOT/.local/cache/<name> and leaving a symlink bridge.
 Mutation still requires --apply; without --apply the script prints the planned move and changes nothing.
@@ -233,6 +243,7 @@ DEEP_LINK_INVENTORY_PATH=""
 DEEP_LINK_SUMMARY_PATH=""
 FAIL_REAL_HOME_DEEP_LINKS=0
 MIGRATE_DOTS=()
+WRITE_CACHE_CHILD_COMPONENT_MANIFESTS=()
 MIGRATE_CACHE_CHILDREN=()
 BRIDGE_MANAGED_CONFIG_CHILDREN=()
 BRIDGE_IDENTICAL_MANAGED_CONFIG_CHILDREN=()
@@ -275,6 +286,7 @@ while [ "$#" -gt 0 ]; do
     --deep-link-summary) DEEP_LINK_SUMMARY_PATH="${2:?--deep-link-summary requires a path}"; shift 2 ;;
     --fail-real-home-deep-links) FAIL_REAL_HOME_DEEP_LINKS=1; shift ;;
     --migrate-dot) MIGRATE_DOTS+=("${2:?--migrate-dot requires a dot entry}"); shift 2 ;;
+    --write-cache-child-component-manifest) WRITE_CACHE_CHILD_COMPONENT_MANIFESTS+=("${2:?--write-cache-child-component-manifest requires a child name}"); shift 2 ;;
     --migrate-cache-child) MIGRATE_CACHE_CHILDREN+=("${2:?--migrate-cache-child requires a child name}"); shift 2 ;;
     --bridge-managed-config-child) BRIDGE_MANAGED_CONFIG_CHILDREN+=("${2:?--bridge-managed-config-child requires a child name}"); shift 2 ;;
     --bridge-identical-managed-config-child) BRIDGE_IDENTICAL_MANAGED_CONFIG_CHILDREN+=("${2:?--bridge-identical-managed-config-child requires a child name}"); shift 2 ;;
@@ -1154,15 +1166,30 @@ cache_child_component_id() {
   printf 'cache-%s' "$component_key"
 }
 
-cache_child_component_manifest_stub() {
+cache_child_component_manifest_file_body() {
   local child_name="$1" component_key expected_component_id
 
   component_key="$(cache_child_component_key "$child_name")"
   expected_component_id="$(cache_child_component_id "$child_name")"
-  printf '[[component]]\\nid = "%s"\\nname = "Cache child %s"\\ndescription = "Owner-reviewed manifest stub for %s; review detect/install/fix hooks before any --migrate-cache-child apply."' \
-    "$expected_component_id" \
-    "$component_key" \
-    "$expected_component_id"
+  cat <<EOF
+[[component]]
+id = "$expected_component_id"
+name = "Cache child $component_key"
+description = "Owner-reviewed manifest stub for $expected_component_id; review detect/install/fix hooks before any --migrate-cache-child apply."
+EOF
+}
+
+cache_child_component_manifest_stub() {
+  local child_name="$1" first=1 line
+
+  while IFS= read -r line; do
+    if [ "$first" -eq 1 ]; then
+      first=0
+    else
+      printf '\\n'
+    fi
+    printf '%s' "$line"
+  done < <(cache_child_component_manifest_file_body "$child_name")
 }
 
 cache_child_component_manifest_declares_id() {
@@ -1195,6 +1222,64 @@ cache_child_component_manifest_declares_id() {
       exit found ? 0 : 1
     }
   ' "$manifest_path"
+}
+
+write_cache_child_component_manifest() {
+  local child="$1" source resolved manifest_hint manifest_path expected_component_id manifest_dir tmp_manifest
+
+  if ! is_valid_cache_child_name "$child"; then
+    fail "--write-cache-child-component-manifest $child is not a direct .cache child name; refusing automatic cache component manifest materialization"
+    return 0
+  fi
+
+  source="$REAL_HOME/.cache/$child"
+  if [ ! -e "$source" ] && [ ! -L "$source" ]; then
+    fail "--write-cache-child-component-manifest $child: source $source is missing; refusing cache component manifest materialization"
+    return 0
+  fi
+
+  if [ -L "$source" ]; then
+    resolved="$(readlink -f "$source" 2>/dev/null || true)"
+    if [ -n "$resolved" ] && is_under_meta "$resolved"; then
+      ok "--write-cache-child-component-manifest $child: $source already resolves inside META_ROOT ($resolved); manifest materialization not needed"
+    else
+      fail "--write-cache-child-component-manifest $child: $source is an external symlink (${resolved:-missing target}); refusing cache component manifest materialization"
+    fi
+    return 0
+  fi
+
+  if [ ! -d "$source" ]; then
+    fail "--write-cache-child-component-manifest $child: $source is not a directory; refusing cache component manifest materialization"
+    return 0
+  fi
+
+  manifest_hint="$(cache_child_component_manifest_hint "$child")"
+  manifest_path="$ROOT/$manifest_hint"
+  expected_component_id="$(cache_child_component_id "$child")"
+  if [ -f "$manifest_path" ]; then
+    if cache_child_component_manifest_declares_id "$manifest_path" "$expected_component_id"; then
+      ok "--write-cache-child-component-manifest $child: component manifest $manifest_hint already declares $expected_component_id"
+    else
+      fail "--write-cache-child-component-manifest $child: component manifest $manifest_hint already exists but does not declare component id $expected_component_id; review/fix manually"
+    fi
+    return 0
+  fi
+  if [ -e "$manifest_path" ] || [ -L "$manifest_path" ]; then
+    fail "--write-cache-child-component-manifest $child: component manifest $manifest_hint exists but is not a regular file; review/fix manually"
+    return 0
+  fi
+
+  if [ "$APPLY" -ne 1 ]; then
+    say "DRY-RUN: would write $manifest_hint declaring $expected_component_id for cache child $child"
+    return 0
+  fi
+
+  manifest_dir="$(dirname "$manifest_path")"
+  mkdir -p "$manifest_dir"
+  tmp_manifest="$(mktemp "$manifest_dir/.cache-child-manifest.XXXXXX")"
+  cache_child_component_manifest_file_body "$child" >"$tmp_manifest"
+  mv "$tmp_manifest" "$manifest_path"
+  changed_msg "wrote $manifest_hint declaring $expected_component_id for cache child $child"
 }
 
 owner_supervised_child_candidate_action_fields() {
@@ -3099,6 +3184,11 @@ done
 for child in "${MIGRATE_CACHE_CHILDREN[@]}"; do
   migrate_real_home_cache_child "$child"
 done
+# Manifest materialization intentionally runs after migration attempts so one invocation cannot
+# silently satisfy --migrate-cache-child's reviewed-manifest precondition before review.
+for child in "${WRITE_CACHE_CHILD_COMPONENT_MANIFESTS[@]}"; do
+  write_cache_child_component_manifest "$child"
+done
 for child in "${BRIDGE_MANAGED_CONFIG_CHILDREN[@]}"; do
   bridge_managed_config_child "$child"
 done
@@ -3107,8 +3197,8 @@ for child in "${BRIDGE_IDENTICAL_MANAGED_CONFIG_CHILDREN[@]}"; do
 done
 
 # 6. Walk every top-level real-home dot entry.  The default audit only mutates .local/.gitconfig;
-# requested --migrate-dot / --migrate-cache-child / --bridge-managed-config-child /
-# --bridge-identical-managed-config-child entries above are reflected here after they have been
+# requested --migrate-dot / --write-cache-child-component-manifest / --migrate-cache-child /
+# --bridge-managed-config-child / --bridge-identical-managed-config-child entries above are reflected here after they have been
 # bridged into META_ROOT.  This keeps the loop honest ("every dot file/folder was observed")
 # without auto-moving credentials, caches, shell histories, broad app state, or unrequested
 # toolchains.
