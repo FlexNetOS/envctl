@@ -18,7 +18,11 @@ Resume the planning-engineer harness (external Ralph runner, fresh context): run
    targets.md (Cargo workspace members + major modules), then start the first target.
 2. Run up to $BUDGET planning cycles: per target, cartographer ‖ trend-researcher (fan-out) -> analysts
    (cited gaps + quality/speed/accuracy/governance+settings+config upgrades) -> adversarially VERIFY claims + feasibility-gate
-   upgrades vs the code -> architect synthesizes the plan (ASCII diagrams + tool-eval) + ROADMAP row.
+   upgrades vs the code -> architect synthesizes the plan (ASCII diagrams + tool-eval) + ROADMAP row
+   -> evolution-steward SELF-EVALUATES + SELF-UPGRADES the harness via harness-evolution (evaluate ->
+   mine generalizable lessons -> route -> queue/apply fail-closed: low-risk in-scope via feature-branch
+   -> PR -> auto-merge, structural -> proposed-upgrades.md; only ever STRENGTHEN the verify/DONE gate;
+   at the cycle boundary, never mid-cycle) writing evaluation.md + a LESSONS.md row each cycle.
    Read-only on production code. Commit .handoff/loop/plan/ per cycle. Never let an unverified claim or
    an infeasible upgrade into a plan.
 3. Then write EXACTLY ONE sentinel under .handoff/loop/plan/ and stop (no ScheduleWakeup):

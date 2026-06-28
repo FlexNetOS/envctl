@@ -27,7 +27,7 @@
 
 ## 0. TL;DR recommended posture
 
-1. **Back up exactly one file: `~/.local/share/env-ctl/vault.db`** (dir `0700`,
+1. **Back up exactly one file: `$META_ROOT/.local/share/env-ctl/vault.db`** (dir `0700`,
    file `0600`). It is 100% app-AEAD ciphertext + non-secret metadata; the DEK
    and unlock factors are never in it. A stolen backup is useless without a
    factor (`THREAT-MODEL.md` A4, line 26; `ARCHITECTURE.md` line 66).
@@ -57,10 +57,10 @@
 
 ### 1.1 The single backup target
 
-`~/.local/share/env-ctl/vault.db` is the **sole required** target
+`$META_ROOT/.local/share/env-ctl/vault.db` is the **sole required** target
 (`ARCHITECTURE.md` lines 125–127; `schema.sql` line 15). Everything else under
-`~/.local/share/env-ctl/` is either public (`ca/ca.pem`, `0644`) or
-regenerable. The audit mirror at `~/.local/state/env-ctl/` (`0700`) is a
+`$META_ROOT/.local/share/env-ctl/` is either public (`ca/ca.pem`, `0644`) or
+regenerable. The audit mirror at `$META_ROOT/.local/state/env-ctl/` (`0700`) is a
 second home for the audit head (`ARCHITECTURE.md` lines 126–127) and is worth
 co-archiving as an independent tamper cross-check, but it is not required for
 data recovery.
@@ -142,7 +142,7 @@ mkdir -p "$(dirname "$SNAP")" && chmod 0700 "$(dirname "$SNAP")"
 # Against the loopback sqld Hrana/HTTP endpoint (loopback-only, never exposed):
 #   the C-SQLite client lives in sqld's process; this shells the sqlite3 CLI
 #   that ships with the sqld toolchain. Adjust the bind to match the unit.
-sqlite3 "$HOME/.local/share/env-ctl/vault.db" "VACUUM INTO '$SNAP'"
+sqlite3 "$META_ROOT/.local/share/env-ctl/vault.db" "VACUUM INTO '$SNAP'"
 chmod 0600 "$SNAP"
 ```
 
@@ -158,7 +158,7 @@ If the daemon is stopped, a plain copy is safe **after** a checkpoint:
 
 ```bash
 # Cold copy path (daemon stopped — see §4 for the stop command per unit type):
-cp --reflink=auto "$HOME/.local/share/env-ctl/vault.db" "$SNAP"
+cp --reflink=auto "$META_ROOT/.local/share/env-ctl/vault.db" "$SNAP"
 chmod 0600 "$SNAP"
 ```
 
@@ -358,7 +358,7 @@ systemctl stop secretd            # system unit
 # systemctl --user stop secretd   # user unit  [UNVERIFIED which the shipped component uses]
 
 # 2. Restore the file with the correct mode:
-install -m 0600 "$SNAP" "$HOME/.local/share/env-ctl/vault.db"
+install -m 0600 "$SNAP" "$META_ROOT/.local/share/env-ctl/vault.db"
 
 # 3. Start the daemon. With the USB inserted it auto-unlocks (USB-PARTUUID default):
 systemctl start secretd
@@ -386,10 +386,10 @@ so the correct sequence is **restore first, enroll never** (enrolling creates a
 envctl install secretd                     # Phase-7 SystemdUnit component (ARCHITECTURE line 137)
 
 # 2. Remove any fresh vault the installer created:
-rm -f "$HOME/.local/share/env-ctl/vault.db"
+rm -f "$META_ROOT/.local/share/env-ctl/vault.db"
 
 # 3. Restore the snapshot (verify hash first, §4.1):
-install -m 0600 "$SNAP" "$HOME/.local/share/env-ctl/vault.db"
+install -m 0600 "$SNAP" "$META_ROOT/.local/share/env-ctl/vault.db"
 
 # 4. Provide a factor and start. The restored keyslots already wrap the DEK:
 #    - USB path: insert the SAME enrolled USB (PARTUUID recorded in keyslots) and start.
@@ -547,7 +547,7 @@ LimitMEMLOCK=infinity                # allow mlockall(MCL_CURRENT|MCL_FUTURE) to
 NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=read-only                # but allow the vault + state dirs:
-ReadWritePaths=%h/.local/share/env-ctl %h/.local/state/env-ctl
+ReadWritePaths=%h/Desktop/meta/.local/share/env-ctl %h/Desktop/meta/.local/state/env-ctl
 RuntimeDirectory=env-ctl             # $XDG_RUNTIME_DIR/env-ctl (0700) for control.sock
 RuntimeDirectoryMode=0700
 PrivateTmp=true

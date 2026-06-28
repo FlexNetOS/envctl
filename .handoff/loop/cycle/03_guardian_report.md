@@ -1,15 +1,42 @@
-# TASK-0076 guardian report — PASS (runtime-proven)
-Invariants: no-c PASS (no dep change), one-rustls N/A, engine-single-lib N/A (manifest-only),
-fail-closed PASS (worker exits 0 on absent Seed/daemon; the HOME-unbound regression that broke
-this was caught by runtime-verify and fixed), shape PASS, no-system-depth = matches sibling
-/usr/local+/etc convention (udev irreducibly system; family relocation is separate).
-Gates: no-c shape enable p7 kdf-feature-off agent-env loop-state harness-scripts = ALL PASS.
-Lock: envctl.lock 79 components, lock --check rc=0, [components.cognitum-seed-autounlock] present.
-Runtime (Phase 3.5, hardware-in-the-loop, Seed present at /run/media/drdave/COGNITUM):
-  - component discovered (auto-detect), detect=FALSE on clean box (honest predicate)
-  - after install: oneshot ExecStart code=exited status=0/SUCCESS
-  - journal: "autounlock: vault unlocked via USB possession factor"
-  - secretctl status: unlocked  usb_possessed=true  → setpriv owner-drop SO_PEERCRED fix WORKS
-Deferred (honest): a true reboot-persistence test (boot with Seed plugged, no session) needs
-linger + a physical reboot — owner hardware-in-the-loop. The hotplug/owner-session path is proven.
-VERDICT: PASS-WITH-NOTES (feature runtime-proven; reboot-without-login persistence deferred to owner).
+# TASK-0078 cache manifest scaffold guardian report
+
+Status: PASS
+
+## Invariants checked
+
+- Existing cache-child status and validation report schemas remain unchanged.
+- New scaffold report is read-only and leaves `apply_command` empty.
+- Missing manifests receive deterministic escaped TOML stubs and owner-review next actions.
+- Existing matching manifests receive no stub and route to review-before-migration.
+- Existing wrong/empty manifests receive no stub and route to fix-id-before-migration.
+- No broad `.cache` mutation, manifest write, or cache-child apply is performed.
+
+## Verification evidence
+
+```text
+bash -n scripts/audit-meta-local-paths.sh scripts/tests/test-meta-local-path-audit.sh
+bash scripts/tests/test-meta-local-path-audit.sh
+# test-meta-local-path-audit: PASS
+git diff --check
+bash ci/gates/meta-local-policy.sh
+# meta-local-policy: active install sources target META_ROOT FHS/XDG; only the single real-home .local bridge is allowed
+bash ci/gates/harness-scripts.sh
+# HARNESS-SCRIPTS GATE PASS
+bash ci/gates/p7.sh
+# P7 GATE PASS
+```
+
+## Runtime evidence
+
+Live non-mutating audit against `/home/drdave/Desktop/meta` and `/home/drdave`:
+
+```text
+rc=0
+meta-local audit: PASS warnings=10 changed=0 dot_entries=79
+scaffold_lines=85 validation_lines=85
+rows=84 missing=84 no_decl=84 scaffold=84 pending=84 stub=84 next=84 nonempty_apply=0
+config=0 nested=0 sensitive=0
+apply_empty=PASS
+```
+
+The runtime command used report-only owner-supervised flags, did not pass `--apply`, and emitted no non-empty scaffold `apply_command` values.

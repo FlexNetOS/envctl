@@ -1,11 +1,13 @@
-//! Phase 4 INSTALL + WIRE-IN. Lands built artifacts into `$META_ROOT/.local/bin` under the
+//! Phase 4 INSTALL + WIRE-IN. Lands built artifacts into `$META_ROOT/usr/bin` under the
 //! engine's gold-standard discipline:
-//!   * symlink-default into the 0700 repo store;
+//!   * regular executable frontdoor wrappers in `$META_ROOT/usr/bin` that exec artifacts
+//!     from the 0700 repo store (never symlink frontdoors);
 //!   * REFUSE to shadow a system binary (a name that already resolves on PATH
-//!     outside the meta-hosted `.local/bin`) and HARD-refuse well-known names (sudo/git/bash…);
-//!   * refuse-overwrite-unmanaged: a target is "ours" only if it's a symlink whose
-//!     CANONICAL target is inside `$META_ROOT/.local/share/envctl/repos/<slug>/` — a foreign
-//!     file/symlink is reported + skipped unless `force`, and force backs it up;
+//!     outside the meta-hosted `usr/bin`) and HARD-refuse well-known names (sudo/git/bash…);
+//!   * refuse-overwrite-unmanaged: a target is "ours" only if it is the byte-identical
+//!     regular wrapper, a byte-identical legacy regular copy, or a legacy managed symlink
+//!     whose CANONICAL target is inside `$META_ROOT/var/lib/envctl/repos/<slug>/` — a
+//!     foreign file/symlink is reported + skipped unless `force`, and force backs it up;
 //!   * PATH ownership goes through the existing `wiring::apply` (owned block);
 //!   * best-effort (one failure never aborts) + dry-run-previewable.
 #![cfg(unix)]
@@ -13,13 +15,13 @@ use crate::event::{Event, EventSink, Stream};
 use crate::layout::MetaLayout;
 use crate::model::Wiring;
 use std::collections::HashSet;
-use std::os::unix::fs::symlink;
+use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 
 #[derive(Clone, Debug)]
 pub struct ArtifactPlan {
     pub source: PathBuf,
-    /// Name in `$META_ROOT/.local/bin` (post-rename). `renamed` = the user explicitly chose it.
+    /// Name in `$META_ROOT/usr/bin` (post-rename). `renamed` = the user explicitly chose it.
     pub install_name: String,
     pub renamed: bool,
 }
@@ -29,7 +31,7 @@ pub struct InstallPlan {
     pub id: String,
     pub slug: String,
     pub artifacts: Vec<ArtifactPlan>,
-    /// Extra PATH dirs beyond the meta-hosted `.local/bin`.
+    /// Extra PATH dirs beyond the meta-hosted `usr/bin`.
     pub extra_path_entries: Vec<String>,
 }
 
@@ -137,7 +139,7 @@ impl From<std::io::Error> for InstallErr {
 }
 
 /// An install name must be exactly ONE path component — no separators, no `.`/`..`,
-/// non-empty — so `local_bin().join(name)` can never escape meta's `.local/bin`.
+/// non-empty — so `local_bin().join(name)` can never escape meta's `usr/bin`.
 fn is_safe_install_name(name: &str) -> bool {
     use std::path::Component;
     if name.is_empty() || name.contains('/') || name.contains('\\') {
@@ -158,7 +160,7 @@ fn install_artifact(
 ) -> Result<Option<String>, InstallErr> {
     // AUDIT-FIX (blocker): the install name lands in `local_bin().join(name)`. A
     // rename/cherry-pick name like `../../.config/evil` would plant (or, with
-    // --force, overwrite) a managed symlink OUTSIDE meta's .local/bin. Refuse anything
+    // --force, overwrite) a managed symlink OUTSIDE meta's usr/bin. Refuse anything
     // that is not exactly one safe path component, at the sink — independent of
     // upstream slug validation.
     if !is_safe_install_name(&a.install_name) {
@@ -185,7 +187,7 @@ fn install_artifact(
     let target_s = target.display().to_string();
 
     if target.symlink_metadata().is_ok() {
-        if is_managed_symlink(&target, &plan.slug) {
+        if is_managed_frontdoor(&a.source, &target, &plan.slug) {
             if !dry_run {
                 let _ = std::fs::remove_file(&target); // ours — replace
             }
@@ -216,21 +218,20 @@ fn install_artifact(
         return Ok(Some(target_s));
     }
     layout.ensure_dirs()?;
-    let src = std::fs::canonicalize(&a.source).unwrap_or_else(|_| a.source.clone());
     if target.symlink_metadata().is_ok() {
         let _ = std::fs::remove_file(&target);
     }
-    symlink(&src, &target)?;
+    install_regular_frontdoor(&a.source, &target)?;
     Ok(Some(target_s))
 }
 
-/// True if `name` resolves on the system PATH OUTSIDE meta's .local/bin, or is a
+/// True if `name` resolves on the system PATH OUTSIDE meta's usr/bin, or is a
 /// hard-refused well-known command.
 fn shadows_system(name: &str) -> bool {
     if WELL_KNOWN.contains(&name) {
         return true;
     }
-    // AUDIT-FIX: canonicalize meta .local/bin so a PATH entry that points at it via a
+    // AUDIT-FIX: canonicalize meta usr/bin so a PATH entry that points at it via a
     // trailing slash, unexpanded `~`, or symlinked HOME still excludes itself —
     // otherwise our OWN managed symlink would count as a shadow and an idempotent
     // re-install would be falsely refused. Fall back to the raw path if canonicalize
@@ -268,9 +269,38 @@ fn shadows_system(name: &str) -> bool {
     false
 }
 
-/// A target is OURS iff it's a symlink whose CANONICAL target is inside the repo
-/// store for this slug. Unreadable/dangling => foreign (never substring-match).
-fn is_managed_symlink(target: &Path, slug: &str) -> bool {
+/// A target is OURS iff it is either the byte-identical regular executable
+/// frontdoor or a legacy symlink whose CANONICAL target is inside the repo store
+/// for this slug. Unreadable/dangling => foreign (never substring-match).
+fn is_managed_frontdoor(source: &Path, target: &Path, slug: &str) -> bool {
+    wrapper_matches(source, target)
+        || files_equal(source, target)
+        || is_legacy_managed_symlink(target, slug)
+}
+
+fn files_equal(source: &Path, target: &Path) -> bool {
+    let Ok(source_md) = std::fs::metadata(source) else {
+        return false;
+    };
+    let Ok(target_md) = std::fs::symlink_metadata(target) else {
+        return false;
+    };
+    if !source_md.is_file()
+        || !target_md.file_type().is_file()
+        || source_md.len() != target_md.len()
+    {
+        return false;
+    }
+    let Ok(source_bytes) = std::fs::read(source) else {
+        return false;
+    };
+    let Ok(target_bytes) = std::fs::read(target) else {
+        return false;
+    };
+    source_bytes == target_bytes
+}
+
+fn is_legacy_managed_symlink(target: &Path, slug: &str) -> bool {
     if !target.is_symlink() {
         return false;
     }
@@ -282,6 +312,32 @@ fn is_managed_symlink(target: &Path, slug: &str) -> bool {
         Ok(real) => real.starts_with(&store),
         Err(_) => false,
     }
+}
+
+fn install_regular_frontdoor(source: &Path, target: &Path) -> std::io::Result<()> {
+    std::fs::write(target, wrapper_bytes(source))?;
+    std::fs::set_permissions(target, std::fs::Permissions::from_mode(0o755))?;
+    Ok(())
+}
+
+fn wrapper_matches(source: &Path, target: &Path) -> bool {
+    let Ok(md) = std::fs::symlink_metadata(target) else {
+        return false;
+    };
+    if !md.file_type().is_file() {
+        return false;
+    }
+    std::fs::read(target).is_ok_and(|bytes| bytes == wrapper_bytes(source))
+}
+
+fn wrapper_bytes(source: &Path) -> Vec<u8> {
+    let source = std::fs::canonicalize(source).unwrap_or_else(|_| source.to_path_buf());
+    let source_s = source.display().to_string();
+    format!("#!/bin/sh\nexec {} \"$@\"\n", sh_single_quote(&source_s)).into_bytes()
+}
+
+fn sh_single_quote(s: &str) -> String {
+    format!("'{}'", s.replace('\'', "'\\''"))
 }
 
 fn synth_wiring(plan: &InstallPlan) -> Wiring {
@@ -325,12 +381,41 @@ mod tests {
         assert!(!shadows_system("zzqx-envctl-unlikely-9000"));
     }
     #[test]
-    fn managed_symlink_needs_canonical_containment() {
+    fn legacy_managed_symlink_needs_canonical_containment() {
         // a path that doesn't exist is never ours
-        assert!(!is_managed_symlink(
+        assert!(!is_legacy_managed_symlink(
             Path::new("/no/such/envctl/link"),
             "slug"
         ));
+    }
+    #[test]
+    fn install_regular_frontdoor_writes_executable_wrapper() {
+        let root = std::env::temp_dir().join(format!(
+            "envctl-install-regular-{}-{}",
+            std::process::id(),
+            now_epoch()
+        ));
+        let canonical_source = root.join("src/tool");
+        let source = root.join("src/../src/tool");
+        let target = root.join("bin/tool");
+        std::fs::create_dir_all(canonical_source.parent().unwrap()).unwrap();
+        std::fs::create_dir_all(target.parent().unwrap()).unwrap();
+        std::fs::write(&canonical_source, b"#!/bin/sh\necho envctl\n").unwrap();
+        std::fs::set_permissions(&canonical_source, std::fs::Permissions::from_mode(0o744))
+            .unwrap();
+
+        install_regular_frontdoor(&source, &target).unwrap();
+
+        let target_md = std::fs::symlink_metadata(&target).unwrap();
+        assert!(target_md.file_type().is_file());
+        assert!(!target_md.file_type().is_symlink());
+        assert_eq!(std::fs::read(&target).unwrap(), wrapper_bytes(&source));
+        assert!(String::from_utf8(std::fs::read(&target).unwrap())
+            .unwrap()
+            .contains(&canonical_source.display().to_string()));
+        assert_ne!(target_md.permissions().mode() & 0o111, 0);
+        assert!(is_managed_frontdoor(&source, &target, "slug"));
+        let _ = std::fs::remove_dir_all(root);
     }
     #[test]
     fn rename_cannot_shadow_a_well_known_command() {
@@ -367,7 +452,7 @@ mod tests {
         // safe: ordinary bin names
         assert!(is_safe_install_name("ripgrep"));
         assert!(is_safe_install_name("my-tool_v2.bin"));
-        // unsafe: traversal / separators / dot-dirs / empty — would escape meta .local/bin
+        // unsafe: traversal / separators / dot-dirs / empty — would escape meta usr/bin
         assert!(!is_safe_install_name("../evil"));
         assert!(!is_safe_install_name("../../.config/evil"));
         assert!(!is_safe_install_name("sub/dir"));

@@ -76,13 +76,21 @@ the creation+implementation path: you write + RED-run the additive tests; Featur
 ## RED authoring and count verification (prompt P8)
 
 For every accepted plan item or UPGRADE row, create at least one additive test that encodes its
-acceptance criterion. Use the repo's real test surfaces (`tests/`, `#[cfg(test)]`, integration tests,
-`scripts/differential-drive.cases.sh`, golden fixtures) and never modify production code. Run the
-narrow command and record:
+acceptance criterion — a **full suite, per the repo's real runners**, never a single test:
+- **unit + integration** — `tests/` + `#[cfg(test)]`, run with `cargo test` / `cargo nextest` for Rust
+  or `bun test` for JS (**bun**, never pnpm/node);
+- a **differential-drive live case** for any item touching a binary/CLI's observable behavior — author
+  cases in `scripts/differential-drive.cases.sh` and drive them with the harness's
+  `scripts/differential-drive.sh` (drives the REAL binary and diffs its output against a golden;
+  fail-closed when 0 cases run). Green unit tests are not proof (HFTASK-0078);
+- **property / golden** fixtures where behavior warrants.
+Never modify production code (tests are additive-only). Run the narrow command — `hf test <id>` or the
+card's `test_commands` where available — and record:
 
 - command,
 - expected RED failure reason,
-- tests-ran count (`> 0` required),
+- **tests-ran count** (`> 0` required — an exit-0 that ran **zero** tests is a FAIL, the
+  `parse_tests_ran` / fail-open ban),
 - traceability: plan item ↔ acceptance criterion ↔ test path/name ↔ RED|GREEN.
 
 A pre-implementation PASS is a bad test and must be rewritten. An exit-0 with zero tests is FAIL.

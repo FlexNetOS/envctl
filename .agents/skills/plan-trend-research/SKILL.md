@@ -48,6 +48,8 @@ For each sub-question, search 2–3 keyword variations across the available tool
   training data may lag the current release.
 - **exa** (if configured) — `web_search_exa` / `web_search_advanced_exa` with a `startPublishedDate`
   set to the window start (below) to bias toward in-window results.
+- **Hugging Face** MCP — for **papers + models**: latest research and model releases in the target's
+  domain (the in-window primary-source axis for ML/agentic-OS targets). Cite the paper/model URL + date.
 
 Aim for the `deep-research` coverage bar (≈15–30 unique sources for a broad target; fewer is fine for
 a narrow one). Mix academic/official/reputable-news over blogs over forums.

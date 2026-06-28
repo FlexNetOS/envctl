@@ -5,18 +5,24 @@
 //!   Tier 0  PCI floor — scan /sys/bus/pci/devices for vendor 0x10de + display
 //!           class 0x03xx. Authoritative count, works with NO driver.
 //!   Tier 1  /proc/driver/nvidia/version — driver_loaded + version.
-//!   Tier 2  nvidia-smi / nvcc — names, driver/CUDA versions (enrichment only).
+//!   Tier 2  modinfo/nvidia-smi/nvcc — open-module + names + CUDA/driver enrichment.
 //! `software_rendered = pci_sees_nvidia && !driver_loaded` → the GUI shows a
 //! "reboot to load nvidia-open" hint instead of a false "no GPU".
 use crate::component::{HookRunner, Phase};
 use crate::event::{Event, EventSink};
+use crate::layout::MetaLayout;
 use crate::model::{
     ComponentState, EnvReport, MetaBoundaryReport, MetaBoundaryViolation,
     MetaBoundaryViolationKind, OpStatus, Registry, ToolState,
 };
 use std::collections::BTreeSet;
+use std::io::Read;
+use std::os::unix::process::CommandExt;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
+use std::time::{Duration, Instant};
+
+const PROBE_TIMEOUT: Duration = Duration::from_secs(10);
 
 /// Tools probed for version (curated to ones that print-and-exit; avoids hangs).
 const PROBE_TOOLS: &[&str] = &[
@@ -64,7 +70,7 @@ pub fn run(reg: &Registry, runner: &dyn HookRunner, sink: &EventSink) -> anyhow:
     if report.gpus.is_empty() && report.gpu_present {
         report.gpus = lspci_nvidia_names();
     }
-    report.driver_version = nvidia_smi_driver_version();
+    report.driver_version = proc_nvidia_driver_version().or_else(nvidia_smi_driver_version);
     report.cuda_version = nvcc_cuda_version();
 
     // ---- installed tool versions (which + --version) ----
@@ -141,16 +147,9 @@ pub(crate) fn pci_nvidia_count() -> usize {
 
 fn nvidia_open_module() -> bool {
     // The open kernel modules report a free license; the proprietary one does not.
-    if let Ok(out) = Command::new("modinfo")
-        .args(["-F", "license", "nvidia"])
-        .output()
-    {
-        if out.status.success() {
-            let s = String::from_utf8_lossy(&out.stdout).to_lowercase();
-            return s.contains("mit") || s.contains("gpl");
-        }
-    }
-    false
+    run_capture("modinfo", &["-F", "license", "nvidia"])
+        .map(|s| s.to_lowercase())
+        .is_some_and(|s| s.contains("mit") || s.contains("gpl"))
 }
 
 fn nvidia_smi_names() -> Vec<String> {
@@ -171,6 +170,31 @@ fn nvidia_smi_driver_version() -> Option<String> {
     )
     .and_then(|s| s.lines().next().map(|l| l.trim().to_string()))
     .filter(|s| !s.is_empty())
+}
+
+fn proc_nvidia_driver_version() -> Option<String> {
+    let text = std::fs::read_to_string("/proc/driver/nvidia/version").ok()?;
+    proc_nvidia_driver_version_from_str(&text)
+}
+
+fn proc_nvidia_driver_version_from_str(text: &str) -> Option<String> {
+    text.lines()
+        .flat_map(|line| line.split_whitespace())
+        .map(|token| token.trim_matches(|c: char| !c.is_ascii_digit() && c != '.'))
+        .find(|token| is_nvidia_version_token(token))
+        .map(|token| token.to_string())
+}
+
+fn is_nvidia_version_token(token: &str) -> bool {
+    let mut parts = token.split('.');
+    let (Some(major), Some(minor), Some(patch), None) =
+        (parts.next(), parts.next(), parts.next(), parts.next())
+    else {
+        return false;
+    };
+    [major, minor, patch]
+        .into_iter()
+        .all(|part| !part.is_empty() && part.chars().all(|c| c.is_ascii_digit()))
 }
 
 fn lspci_nvidia_names() -> Vec<String> {
@@ -203,15 +227,82 @@ fn tool_version(tool: &str) -> Option<String> {
 }
 
 fn run_capture(cmd: &str, args: &[&str]) -> Option<String> {
-    let out = Command::new(cmd).args(args).output().ok()?;
-    if !out.status.success() {
-        return None;
+    run_capture_timeout(cmd, args, PROBE_TIMEOUT)
+}
+
+pub(crate) fn run_capture_timeout(cmd: &str, args: &[&str], timeout: Duration) -> Option<String> {
+    let mut command = Command::new(cmd);
+    command
+        .args(args)
+        .stdin(Stdio::null())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    unsafe {
+        command.pre_exec(|| {
+            let _ = rustix::process::setsid();
+            Ok(())
+        });
     }
-    let s = String::from_utf8_lossy(&out.stdout).to_string();
-    if s.trim().is_empty() {
-        None
-    } else {
-        Some(s)
+    let mut child = command.spawn().ok()?;
+    let pid = child.id();
+    let stdout = child.stdout.take()?;
+    let stderr = child.stderr.take()?;
+    let stdout_reader = std::thread::spawn(move || read_pipe(stdout));
+    let stderr_reader = std::thread::spawn(move || read_pipe(stderr));
+
+    let deadline = Instant::now() + timeout;
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) => {
+                let out = stdout_reader.join().ok().unwrap_or_default();
+                let err = stderr_reader.join().ok().unwrap_or_default();
+                if !status.success() {
+                    return None;
+                }
+                let text = if !out.trim().is_empty() { out } else { err };
+                return if text.trim().is_empty() {
+                    None
+                } else {
+                    Some(text)
+                };
+            }
+            Ok(None) => {
+                if Instant::now() >= deadline {
+                    kill_group(pid);
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    let _ = stdout_reader.join();
+                    let _ = stderr_reader.join();
+                    return None;
+                }
+                std::thread::sleep(Duration::from_millis(100));
+            }
+            Err(_) => {
+                kill_group(pid);
+                let _ = child.kill();
+                let _ = child.wait();
+                let _ = stdout_reader.join();
+                let _ = stderr_reader.join();
+                return None;
+            }
+        }
+    }
+}
+
+fn read_pipe<R: Read>(mut pipe: R) -> String {
+    let mut text = String::new();
+    let _ = pipe.read_to_string(&mut text);
+    text
+}
+
+fn kill_group(pid: u32) {
+    if let Some(p) = rustix::process::Pid::from_raw(pid as i32) {
+        // If the child never became a group leader (for example, if pre_exec
+        // failed before setsid() took effect), fall back to killing the child
+        // PID directly so a wedged probe cannot linger.
+        if rustix::process::kill_process_group(p, rustix::process::Signal::Kill).is_err() {
+            let _ = rustix::process::kill_process(p, rustix::process::Signal::Kill);
+        }
     }
 }
 
@@ -235,8 +326,9 @@ const LOCAL_META_TOOLS: &[&str] = &[
 const CARGO_META_TOOLS: &[&str] = &["weave", "grit", "secretctl", "secretd"];
 
 fn meta_boundary_report() -> MetaBoundaryReport {
-    let local_bin = home_join(".local/bin");
-    let cargo_bin = home_join(".cargo/bin");
+    let layout = MetaLayout::from_env_or_default();
+    let local_bin = layout.bin();
+    let cargo_bin = layout.legacy_toolchains().join("cargo/bin");
     let Some(meta_root) = resolve_meta_root() else {
         return MetaBoundaryReport {
             meta_root: None,
@@ -270,13 +362,6 @@ fn normalize_meta_root(root: PathBuf) -> PathBuf {
         before_worktrees.push(component.as_os_str());
     }
     root
-}
-
-fn home_join(rel: &str) -> PathBuf {
-    std::env::var("HOME")
-        .map(PathBuf::from)
-        .unwrap_or_else(|_| PathBuf::from(""))
-        .join(rel)
 }
 
 fn meta_boundary_report_for(
@@ -353,15 +438,31 @@ fn inspect_bin_entry(
         return;
     };
     let resolved = canonical_or_self(path.to_path_buf());
+    if md.file_type().is_symlink() {
+        let kind = if resolved.starts_with(meta_root)
+            && matches!(file_kind, MetaBoundaryViolationKind::ForeignLocalBinFile)
+        {
+            MetaBoundaryViolationKind::MetaFrontdoorSymlink
+        } else if resolved.starts_with(meta_root) {
+            return;
+        } else {
+            MetaBoundaryViolationKind::ForeignSymlinkTarget
+        };
+        push_violation(tool, path, &resolved, expected_root, kind, seen, violations);
+        return;
+    }
     if resolved.starts_with(meta_root) {
         return;
     }
-    let kind = if md.file_type().is_symlink() {
-        MetaBoundaryViolationKind::ForeignSymlinkTarget
-    } else {
-        file_kind
-    };
-    push_violation(tool, path, &resolved, expected_root, kind, seen, violations);
+    push_violation(
+        tool,
+        path,
+        &resolved,
+        expected_root,
+        file_kind,
+        seen,
+        violations,
+    );
 }
 
 fn push_violation(
@@ -398,15 +499,10 @@ fn canonical_or_self(path: PathBuf) -> PathBuf {
 /// wiring_present); a component that declares no wiring at all reports true.
 fn wiring_present(comp: &crate::component::Component) -> bool {
     let w = &comp.wiring;
+    let layout = crate::layout::MetaLayout::from_env_or_default();
 
     let shell_rc_ok = w.shell_rc.iter().all(|blk| {
-        let file = match blk.file.strip_prefix("~/") {
-            Some(rest) => match std::env::var("HOME") {
-                Ok(h) => format!("{h}/{rest}"),
-                Err(_) => return false,
-            },
-            None => blk.file.clone(),
-        };
+        let file = layout.expand_meta_path(&blk.file);
         // Suffix-agnostic: the wizard writes the same blocks as
         // "BEGIN <marker> (added by yazelix-setup.sh)"; envctl writes
         // "(added by envctl)". Match the marker regardless of who wrote it.
@@ -416,14 +512,11 @@ fn wiring_present(comp: &crate::component::Component) -> bool {
     });
 
     // path_entries are realized into the engine-owned "envctl PATH" block in
-    // ~/.bashrc (see wiring::path_block); probe for that marker.
+    // $META_ROOT/.bashrc (see wiring::path_block); probe for that marker.
     let path_ok = w.path_entries.is_empty() || {
-        match std::env::var("HOME") {
-            Ok(h) => std::fs::read_to_string(format!("{h}/.bashrc"))
-                .map(|t| t.contains("BEGIN envctl PATH"))
-                .unwrap_or(false),
-            Err(_) => false,
-        }
+        std::fs::read_to_string(layout.meta_root().join(".bashrc"))
+            .map(|t| t.contains("BEGIN envctl PATH"))
+            .unwrap_or(false)
     };
 
     // System-scope footprints: each is present iff its on-disk target exists
@@ -453,14 +546,70 @@ fn wiring_present(comp: &crate::component::Component) -> bool {
 mod tests {
     use super::*;
     use std::os::unix::fs::symlink;
-    use std::time::{SystemTime, UNIX_EPOCH};
+    use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
     #[test]
-    fn meta_boundary_accepts_local_bin_symlink_into_meta_root() {
-        let root = temp_root("accepts-local-bin-symlink");
+    fn run_capture_timeout_returns_output() {
+        let out = run_capture_timeout("sh", &["-lc", "printf 'hello\\n'"], Duration::from_secs(1));
+        assert_eq!(out.as_deref(), Some("hello\n"));
+    }
+
+    #[test]
+    fn run_capture_timeout_times_out() {
+        let started = Instant::now();
+        let out = run_capture_timeout(
+            "sh",
+            &["-lc", "sleep 1; printf 'late\\n'"],
+            Duration::from_millis(150),
+        );
+        assert!(out.is_none(), "expected timeout, got {out:?}");
+        assert!(
+            started.elapsed() < Duration::from_secs(1),
+            "timeout helper should return promptly"
+        );
+    }
+
+    #[test]
+    fn run_capture_timeout_drains_noisy_output() {
+        let out = run_capture_timeout(
+            "sh",
+            &[
+                "-lc",
+                "i=0; while [ \"$i\" -lt 20000 ]; do printf 'line%05d\\n' \"$i\"; i=$((i + 1)); done",
+            ],
+            Duration::from_secs(2),
+        )
+        .expect("noisy command should complete without filling the pipe");
+
+        assert!(out.contains("line00000"), "missing first line");
+        assert!(out.contains("line19999"), "missing final line");
+    }
+
+    #[test]
+    fn proc_nvidia_driver_version_from_str_parses_version_token() {
+        let sample =
+            "NVRM version: NVIDIA UNIX Open Kernel Module for x86_64  610.54.03  Release Build";
+
+        let parsed = proc_nvidia_driver_version_from_str(sample);
+
+        assert_eq!(parsed.as_deref(), Some("610.54.03"));
+    }
+
+    #[test]
+    fn proc_nvidia_driver_version_from_str_rejects_non_version_tokens() {
+        let sample = "NVRM version: not-a-version";
+
+        let parsed = proc_nvidia_driver_version_from_str(sample);
+
+        assert_eq!(parsed, None);
+    }
+
+    #[test]
+    fn meta_boundary_refuses_meta_usr_bin_symlink_into_meta_root() {
+        let root = temp_root("refuses-meta-usr-bin-symlink");
         let meta = root.join("meta");
-        let local_bin = root.join("home/.local/bin");
-        let cargo_bin = root.join("home/.cargo/bin");
+        let local_bin = meta.join("usr/bin");
+        let cargo_bin = meta.join(".toolchains/cargo/bin");
         std::fs::create_dir_all(meta.join("target/release")).unwrap();
         std::fs::create_dir_all(&local_bin).unwrap();
         std::fs::create_dir_all(&cargo_bin).unwrap();
@@ -470,29 +619,28 @@ mod tests {
 
         let report = meta_boundary_report_for(&meta, &local_bin, &cargo_bin, false);
 
-        assert!(report.ok(), "{:?}", report.violations);
+        assert_eq!(report.violations.len(), 1);
+        assert_eq!(
+            report.violations[0].kind,
+            MetaBoundaryViolationKind::MetaFrontdoorSymlink
+        );
         let _ = std::fs::remove_dir_all(root);
     }
 
     #[test]
-    fn meta_boundary_refuses_real_local_bin_copy_outside_meta_root() {
-        let root = temp_root("refuses-foreign-copy");
+    fn meta_boundary_accepts_meta_usr_bin_real_file_inside_meta_root() {
+        let root = temp_root("accepts-meta-usr-bin-real-file");
         let meta = root.join("meta");
-        let local_bin = root.join("home/.local/bin");
-        let cargo_bin = root.join("home/.cargo/bin");
+        let local_bin = meta.join("usr/bin");
+        let cargo_bin = meta.join(".toolchains/cargo/bin");
         std::fs::create_dir_all(&meta).unwrap();
         std::fs::create_dir_all(&local_bin).unwrap();
         std::fs::create_dir_all(&cargo_bin).unwrap();
-        std::fs::write(local_bin.join("meta"), b"foreign copy").unwrap();
+        std::fs::write(local_bin.join("meta"), b"meta-hosted frontdoor").unwrap();
 
         let report = meta_boundary_report_for(&meta, &local_bin, &cargo_bin, false);
 
-        assert_eq!(report.violations.len(), 1);
-        assert_eq!(report.violations[0].tool, "meta");
-        assert_eq!(
-            report.violations[0].kind,
-            MetaBoundaryViolationKind::ForeignLocalBinFile
-        );
+        assert!(report.ok(), "{:?}", report.violations);
         let _ = std::fs::remove_dir_all(root);
     }
 
@@ -501,8 +649,8 @@ mod tests {
         let root = temp_root("refuses-foreign-symlink");
         let meta = root.join("meta");
         let outside = root.join("outside");
-        let local_bin = root.join("home/.local/bin");
-        let cargo_bin = root.join("home/.cargo/bin");
+        let local_bin = meta.join("usr/bin");
+        let cargo_bin = meta.join(".toolchains/cargo/bin");
         std::fs::create_dir_all(&meta).unwrap();
         std::fs::create_dir_all(&outside).unwrap();
         std::fs::create_dir_all(&local_bin).unwrap();

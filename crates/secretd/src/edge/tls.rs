@@ -1,6 +1,6 @@
 //! The remote relay edge's server-TLS config (F2 / TASK-0031). [`RelayTlsConfig`] is a newtype that
 //! can ONLY build a rustls [`ServerConfig`] from the operator-provisioned, publicly-trusted relay
-//! cert under `paths.relay_tls_dir()` (`~/.config/env-ctl/relay-tls/{cert.pem,key.pem}`).
+//! cert under `paths.relay_tls_dir()` (`$META_ROOT/.config/env-ctl/relay-tls/{cert.pem,key.pem}` under envctl-managed execution).
 //!
 //! ## FS-S18 / FS-S25 (structural, not grep-only)
 //! This module is the structural enforcement of "the relay edge cert is NEVER the local MITM CA":

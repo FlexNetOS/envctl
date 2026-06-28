@@ -82,8 +82,8 @@ Before=secretd.service
 After=basic.target
 
 # Fail-closed preconditions: refuse to start if the data dir or JWT key is missing.
-ConditionPathExists=%h/.local/share/env-ctl
-ConditionPathExists=%h/.local/share/env-ctl/sqld_jwt_pub.pem
+ConditionPathExists=%h/Desktop/meta/.local/share/env-ctl
+ConditionPathExists=%h/Desktop/meta/.local/share/env-ctl/sqld_jwt_pub.pem
 
 [Service]
 Type=notify
@@ -93,8 +93,8 @@ NotifyAccess=main
 # Bind loopback only. No TLS on the loopback hop (ciphertext-only payloads; app-AEAD authoritative).
 ExecStart=/usr/local/bin/sqld \
   --http-listen-addr 127.0.0.1:8080 \
-  --db-path %h/.local/share/env-ctl/vault.db \
-  --auth-jwt-key-file %h/.local/share/env-ctl/sqld_jwt_pub.pem \
+  --db-path %h/Desktop/meta/.local/share/env-ctl/vault.db \
+  --auth-jwt-key-file %h/Desktop/meta/.local/share/env-ctl/sqld_jwt_pub.pem \
   --no-welcome
 
 Restart=on-failure
@@ -131,7 +131,7 @@ ProtectHostname=yes
 # ---- filesystem isolation ----
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=%h/.local/share/env-ctl
+ReadWritePaths=%h/Desktop/meta/.local/share/env-ctl
 PrivateTmp=yes
 PrivateDevices=yes
 ProtectControlGroups=yes
@@ -178,8 +178,8 @@ After=sqld.service
 Before=default.target
 
 # Fail-closed preconditions (FS-S9, REQ-SEC-4).
-ConditionPathExists=%h/.config/env-ctl/secrets.toml
-ConditionPathExists=%h/.local/share/env-ctl/vault.db
+ConditionPathExists=%h/Desktop/meta/.config/env-ctl/secrets.toml
+ConditionPathExists=%h/Desktop/meta/.local/share/env-ctl/vault.db
 
 [Service]
 Type=notify
@@ -189,9 +189,9 @@ NotifyAccess=main
 # control UDS. It performs its OWN in-process hardening (mlockall + PR_SET_DUMPABLE)
 # BEFORE the unlock path runs — see research/05 §"USB-unlock timing is the critical window".
 ExecStart=/usr/local/bin/secretd \
-  --config %h/.config/env-ctl/secrets.toml \
+  --config %h/Desktop/meta/.config/env-ctl/secrets.toml \
   --sqld-url http://127.0.0.1:8080 \
-  --sqld-jwt-priv %h/.local/share/env-ctl/sqld_jwt_priv.pem \
+  --sqld-jwt-priv %h/Desktop/meta/.local/share/env-ctl/sqld_jwt_priv.pem \
   --control-socket %t/env-ctl/control.sock
 
 ExecReload=/bin/kill -HUP $MAINPID
@@ -236,8 +236,8 @@ ProtectSystem=strict
 ProtectHome=read-only
 # RW: vault state + audit mirror + (config writes for keyslot rotation). USB mount is read
 # via the device path / by-partuuid; secretd reads the keyfile, never writes the USB.
-ReadWritePaths=%h/.local/share/env-ctl %h/.local/state/env-ctl
-ReadOnlyPaths=%h/.config/env-ctl
+ReadWritePaths=%h/Desktop/meta/.local/share/env-ctl %h/Desktop/meta/.local/state/env-ctl
+ReadOnlyPaths=%h/Desktop/meta/.config/env-ctl
 PrivateTmp=yes
 # NOT PrivateDevices=yes here: secretd must read the USB block device / by-partuuid for
 # REQ-SEC-3 possession proof. Use DeviceAllow to scope it instead (see Open Questions Q3).
@@ -364,15 +364,15 @@ Note on `ptrace_scope=2`: stricter than the Ubuntu default (`1`) — only root m
 
 ```bash
 # XDG layout (research/05 paths model)
-mkdir -p ~/.config/env-ctl ~/.local/share/env-ctl ~/.local/state/env-ctl
-chmod 700 ~/.config/env-ctl ~/.local/share/env-ctl ~/.local/state/env-ctl
+mkdir -p $META_ROOT/.config/env-ctl $META_ROOT/.local/share/env-ctl $META_ROOT/.local/state/env-ctl
+chmod 700 $META_ROOT/.config/env-ctl $META_ROOT/.local/share/env-ctl $META_ROOT/.local/state/env-ctl
 
 # sqld JWT signing keypair (Ed25519). PRIVATE half -> secretd only; PUBLIC half -> sqld.
-openssl genpkey -algorithm Ed25519 -out ~/.local/share/env-ctl/sqld_jwt_priv.pem
-openssl pkey -in ~/.local/share/env-ctl/sqld_jwt_priv.pem \
-  -pubout -out ~/.local/share/env-ctl/sqld_jwt_pub.pem
-chmod 600 ~/.local/share/env-ctl/sqld_jwt_priv.pem
-chmod 644 ~/.local/share/env-ctl/sqld_jwt_pub.pem
+openssl genpkey -algorithm Ed25519 -out $META_ROOT/.local/share/env-ctl/sqld_jwt_priv.pem
+openssl pkey -in $META_ROOT/.local/share/env-ctl/sqld_jwt_priv.pem \
+  -pubout -out $META_ROOT/.local/share/env-ctl/sqld_jwt_pub.pem
+chmod 600 $META_ROOT/.local/share/env-ctl/sqld_jwt_priv.pem
+chmod 644 $META_ROOT/.local/share/env-ctl/sqld_jwt_pub.pem
 # [UNVERIFIED] sqld v0.24.32's exact JWT key-file format expectation (PEM vs raw vs JWK).
 # research/03 confirms Ed25519 JWT auth via --auth-jwt-key-file; confirm the encoding
 # against `sqld --help` / libsql-server docs before init.
@@ -385,7 +385,7 @@ secretctl vault init --usb-partuuid AUTO_DETECT
 `secrets.toml` (Profile A, the install-time gate that blocks VPS mode):
 
 ```toml
-# ~/.config/env-ctl/secrets.toml
+# $META_ROOT/.config/env-ctl/secrets.toml
 [store]
 profile = "embedded"          # Profile A. "remote"/VPS is install-gated (see §8).
 
@@ -445,8 +445,8 @@ Per [SERVER-MODE.md §5.3](../SERVER-MODE.md), VPS mode is **non-shippable until
 
 ```bash
 # install-time guard (envctl install script). Refuse VPS profile without a substitute factor.
-if grep -qE '^\s*profile\s*=\s*"remote"' ~/.config/env-ctl/secrets.toml; then
-  if ! grep -q 'operator_authorizer_url' ~/.config/env-ctl/secrets.toml; then
+if grep -qE '^\s*profile\s*=\s*"remote"' $META_ROOT/.config/env-ctl/secrets.toml; then
+  if ! grep -q 'operator_authorizer_url' $META_ROOT/.config/env-ctl/secrets.toml; then
     echo "FATAL: profile=remote (VPS) requires an operator-box authorizer (OI-SM-2 unshipped)." >&2
     exit 1
   fi

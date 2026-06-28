@@ -15,6 +15,7 @@
 //! apply()/revert() return a `WiringReport` (advisory notes + per-kind failures)
 //! so the executor can surface what happened without aborting the run.
 use crate::error::RunContext;
+use crate::layout::MetaLayout;
 use crate::model::{
     Alternative, AptRepo, CdiSpec, DesktopEntry, NixConfLine, ResetGates, ShellRcBlock,
     SystemdUnit, Wiring,
@@ -228,12 +229,7 @@ fn markers(marker: &str) -> (String, String) {
 }
 
 fn expand_tilde(p: &str) -> String {
-    if let Some(rest) = p.strip_prefix("~/") {
-        if let Ok(home) = std::env::var("HOME") {
-            return format!("{home}/{rest}");
-        }
-    }
-    p.to_string()
+    MetaLayout::from_env_or_default().expand_meta_path(p)
 }
 
 /// PATH entries realized as ONE owned, marker'd export block so reset can excise
@@ -249,7 +245,7 @@ fn path_export_block(w: &Wiring) -> Option<ShellRcBlock> {
         ));
     }
     Some(ShellRcBlock {
-        file: "~/.bashrc".into(),
+        file: "$META_ROOT/.bashrc".into(),
         marker: "envctl PATH".into(),
         content,
     })

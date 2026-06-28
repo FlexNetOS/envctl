@@ -1,0 +1,15 @@
+# Plan-loop lessons ledger (durable, append-only)
+
+Fleet-convergence planning loop. One row per generalizable lesson (the CLASS, not the instance).
+Append-only across runs — never truncate; recurrence history is the point. Columns:
+`date · harness · lesson (class) · evidence · recurrence · routed-to · status`.
+
+Status: noted (1st sighting) · proposed (escalated, awaiting owner) · applied (low-risk in-scope, landed).
+A class at 2nd+ recurrence is apply-eligible (harness-evolution Phase 7-4).
+
+| date | harness | lesson (class) | evidence | recurrence | routed-to | status |
+|---|---|---|---|---|---|---|
+| 2026-06-27 | plan-loop | **Sub-agent output-channel ambiguity** — an auditor can read a "return directly" directive as "return text" and skip writing its `findings/<dim>-<target>.md`, then the gate has no file to read and the orchestrator must materialize it by hand. The brief must state the output channel unambiguously (WRITE the file; the return text is a summary, not the deliverable). | `findings/prompt-architecture-prompt-hub.md` header note (the prompt-architecture auditor returned text; orchestrator materialized the file) | 1 (NEW) | plan-prompt-architecture-auditor agent brief (+ pattern applies to all dimension auditors) | proposed |
+| 2026-06-27 | plan-loop | **Vendor-pollutes-code-index** — building the code graph over a repo with a large vendored tree drowns the real symbols (here 1.42M/1.43M symbols were `vendor/`) and resolves ~0 call edges; must index each member `src/` in isolation, not the vendored root. | cartographer had to re-index member `src/` after the vendored-root index returned 0 call edges | 2 (RECURRENCE — seen prior cycle) | plan-cartographer indexing step (scope git-kb index to member `src/`, exclude `vendor/`) | applied-eligible |
+| 2026-06-27 | plan-loop | **Verifier reconciles cross-auditor disputes** [capability win] — when two auditors disagree on a fact, both can be right about different artifacts; the verifier is the right place to reconcile by enumerating the actual files, not to pick a winner. Keep this as an explicit verifier responsibility. | `findings/verdicts.md` VERDICT 4 (.db tracking: `prompt-hub/{prompthub.db,test.db}` tracked vs root gitignored — both auditors correct) | 1 (NEW) | plan-verifier brief (affirm dispute-reconciliation as a named duty) | noted |
+| 2026-06-27 | plan-loop | **Cross-repo-schema-binding** — never let an upgrade hard-code a cross-repo contract (here a `GoalArtifact` envelope to rusty-idd) from a plausible-but-unbound guess; gate it on the consumer's ACTUAL schema before it can land as canonical. A guessed wire format that passes a self-authored RED test still pins a fiction. | `verdicts.md` upgrade-feasibility gate, CONDITION on upgrades A/B/H (envelope must derive from `rusty-idd/.handoff/loop/plan/` schema) | 1 (NEW; reinforces cycle-5 cross-loop binding) | plan-verifier feasibility gate + plan-analyst upgrade-authoring (state cross-repo contracts as bound-or-conditional) | noted |

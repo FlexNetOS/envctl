@@ -23,7 +23,7 @@ command = "bash"
 args = ["-lc", "[ -d /sys/firmware/efi ] && command -v blkid >/dev/null && command -v efibootmgr >/dev/null"]
 [component.fix]
 kind = "shipped_script"
-path = "/usr/local/bin/ubuntu-boot-repair.sh"
+path = "$META_ROOT/envctl/assets/scripts/ubuntu-boot-repair.sh"
 args = ["diagnose"]
 needs_sudo = true
 
@@ -41,7 +41,7 @@ command = "bash"
 args = ["-lc", "efibootmgr -v | grep -qi ubuntu26dev"]
 [component.fix]
 kind = "shipped_script"
-path = "/usr/local/bin/ubuntu-boot-repair.sh"
+path = "$META_ROOT/envctl/assets/scripts/ubuntu-boot-repair.sh"
 args = ["repair-dev"]
 needs_sudo = true
 [component.verify]
@@ -79,7 +79,7 @@ command = "bash"
 args = ["-lc", "efibootmgr -v | grep -qi ubuntu26pro"]
 [component.fix]
 kind = "shipped_script"
-path = "/usr/local/bin/ubuntu-boot-repair.sh"
+path = "$META_ROOT/envctl/assets/scripts/ubuntu-boot-repair.sh"
 args = ["rename-pro"]
 needs_sudo = true
 [component.verify]
@@ -113,7 +113,7 @@ command = "bash"
 args = ["-lc", "efibootmgr | grep -qw ubuntu26dev && efibootmgr | grep -qw ubuntu26pro"]
 [component.fix]
 kind = "shipped_script"
-path = "/usr/local/bin/ubuntu-boot-repair.sh"
+path = "$META_ROOT/envctl/assets/scripts/ubuntu-boot-repair.sh"
 args = ["finalize"]
 needs_sudo = true
 [component.verify]
