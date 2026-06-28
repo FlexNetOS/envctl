@@ -2,7 +2,48 @@
 
 Cold-start resume pointer. State precedence: Git > this markdown. Read `loop_state.md` first.
 
-## Where we are (after cycle 2)
+
+## Root roll-up — TASK-0078 planning-harness convergence (2026-06-28)
+
+**Status: HAND_OFF, not COMPLETE.** This root artifact is now the latest truth for the envctl
+planning-harness reconciliation lane. The historical cycle-1/2 narrative below remains useful
+provenance, but it is superseded by this roll-up until all root targets are terminal.
+
+Evidence captured so far:
+- **Task id:** `TASK-0078/envctl` planning-harness convergence / upgrade-only review slice.
+- **envctl branch/worktree:** `plan-convergence-envctl-20260628` at
+  `/home/drdave/Desktop/meta/.worktrees/plan-convergence-20260628/envctl`.
+- **Canonical package branch/worktree:** `plan-convergence-harness-20260628` at
+  `/home/drdave/Desktop/meta/.worktrees/plan-convergence-20260628/harness_hub`.
+- **Canonical package PR:** `harness_hub` PR #64
+  (`https://github.com/FlexNetOS/harness_hub/pull/64`) merged with commit `d31fb44`.
+- **Upgrade-only invariant:** no production Rust code changed in this lane; changes are harness/docs/
+  planning-state hardening only. A blind re-eject attempted to replace richer envctl ejected docs/tests
+  with the package's thinner copy; that downgrade was rejected, the rich envctl contract was preserved,
+  and only additive hardening was kept.
+
+What changed in the current envctl slice:
+1. `plan-artifact-gate.sh` now fails closed when a terminal root state (`status: COMPLETE`/`DONE` or
+   `DONE`) has zero target rows, a nonterminal target row, or no `[x]` completed target. This closes the
+   root-roll-up ambiguity that let a status document say complete while `targets.md` still said `[~]`.
+2. `plan-weave-dispatch.sh` keeps the five-lane Opus/weave transport contract and removes the
+   envctl-specific orchestrator prefix so the packaged harness remains reusable.
+3. `test-plan-contract.sh`, `test-plan-artifact-gate.sh`, `test-plan-evals.sh`, and
+   `test-plan-weave-dispatch.sh` lock the source-of-truth, PromptHub intent, Opus transport,
+   terminal-roll-up, eval-fixture, and P9 pending-vs-missing contracts.
+4. P9 is applied in the axis-agent prompts: an expected peer artifact absent during parallel fan-out is
+   `PENDING` until its producer lane reports done; it becomes a hard missing-artifact finding only after
+   producer completion.
+5. P8 is accepted as the direction, partially satisfied by `instances/<target>/` namespace plus the new
+   root terminal gate, and left open for a non-destructive `runs/<target>/` compatibility/migration PR.
+
+Known open coordination items (not silently claimed done):
+- `rusty-idd` PRs #130/#131 remain separate planning-run outputs to triage/merge independently.
+- `prompt_hub` PRs #184/#188 remain upstream prompt/contract PRs to reconcile independently.
+- The Odysseus service note reported source at `/home/drdave/Desktop/meta/.local/share/odysseus/src`
+  and a live service, but the address was truncated; no exact endpoint is asserted here.
+
+## Historical baseline (after cycle 2) — superseded by root roll-up above
 - **Cycles 1 + 2 COMPLETE and HANDED OFF.** cycle_budget=2 reached.
 - Cycle 1 = **rusty-idd** (`- [~]` planned-with-gaps; 8/12 dims verified; gate PASS).
 - Cycle 2 = **handoff**, planned as the **union with rusty-idd** (`- [~]` planned-with-gaps; 12/13 dims

@@ -26,7 +26,7 @@ cycles_this_session: 1
 | lease | plan:claim:weave (HF_LEASE_HOLDER=plan-weave-20260626) |
 | red_worktree | /home/drdave/Desktop/meta/.worktrees/plan-weave-red/weave (plan/weave-red-tests off origin/develop) |
 | recency_window_days | 90 |
-| status | COMPLETE — weave cycle done (5/12 dims verified; artifact gate PASS); HAND OFF. Parallel-isolated from the union loop. |
+| status | HAND_OFF — weave instance captured as qualified/in-flight (5/12 dims verified; artifact gate PASS); root roll-up is not terminal until shared targets are `[x]`/`[!]`. Parallel-isolated from the union loop. |
 | conflict_sync | icm branch sync preserved branch-local loop-state under `instances/icm/` and advanced shared counters monotonically. |
 | graph_snapshot | graph/weave.symbols.json@4fe2419 (cycle 4 baseline; 2722 sym / 9571 edges / 4 crates) |
 

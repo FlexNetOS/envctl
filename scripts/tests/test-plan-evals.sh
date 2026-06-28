@@ -2,7 +2,19 @@
 # test-plan-evals.sh — small golden evals for planning quality gates beyond file presence.
 set -euo pipefail
 root="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
-gate="$root/scripts/plan-artifact-gate.sh"
+resolve_script_under_test() {
+  local rel="$1"
+  local candidate
+  for candidate in \
+    "$root/scripts/$rel" \
+    "$root/harness/skills/planning-engineer/scripts/$rel" \
+    "$root/.claude/skills/planning-engineer/scripts/$rel" \
+    "$root/.agents/skills/planning-engineer/scripts/$rel"; do
+    [ -x "$candidate" ] && { printf '%s\n' "$candidate"; return 0; }
+  done
+  return 1
+}
+gate="$(resolve_script_under_test plan-artifact-gate.sh)" || { echo "FAIL: missing executable plan-artifact-gate.sh" >&2; exit 1; }
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
