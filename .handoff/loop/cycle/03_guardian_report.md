@@ -1,36 +1,61 @@
-# Guardian report — worktree slug vs main checkout
+# Guardian Report — ADR-0003 Catalog Phase 1
 
-Date: 2026-06-28
+## Verdict
 
-## Runtime surface
+PASS-WITH-NOTES
 
-Observable behavior is the helper CLI surface in `scripts/reap-worktrees.sh`:
+This slice safely establishes the ADR-0003 read-only catalog/table foundation and CLI inspection surface. It does not claim ADR completion.
 
-- Managed worktree checkout prints a slug.
-- Main checkout prints nothing and returns nonzero.
-- Status wrapper invokes `meta git worktree status` only with a derived slug.
+## Invariants checked
 
-## Verification results
+- Existing TOML/YAML/JSON/Rust/handoff inputs remain accepted; no source format was removed or replaced.
+- Catalog scan and table commands are read-only inspection paths.
+- No generated file writes, lock updates, or sync mutations were added.
+- Engine owns the catalog logic; CLI only invokes the shared engine surface and formats output.
+- Row contracts include first-class ownership/source/provenance fields and explicit manual override metadata.
+- `config_files` rows represent scanned source/control-plane files.
+- `observed_facts` rows capture read-only verifier-style observations from current repo files.
 
-PASS:
+## Validation evidence
 
-- `bash -n scripts/reap-worktrees.sh scripts/tests/test-reaper.sh scripts/tests/test-skill-contract.sh ci/gates/harness-scripts.sh`
-- `bash scripts/tests/test-reaper.sh`
-  - `PASS: reaper reaped merged+clean and squash-equivalent branches, preserved local-only/dirty/.handoff work, protected master/develop, FF-synced trunk, cleaned husks`
-- `bash scripts/tests/test-skill-contract.sh`
-  - `SKILL-CONTRACT TEST PASS`
-- `bash ci/gates/harness-scripts.sh`
-  - `HARNESS-SCRIPTS GATE PASS`
+Passed:
+
+- `cargo fmt --all`
+- `cargo test -p envctl-engine catalog`
+- `cargo test -p envctl-engine`
+- `cargo test -p envctl`
+- `cargo clippy --workspace -- -D warnings`
+- `bash ci/gates/shape.sh`
+- `bash ci/gates/agent-env.sh`
+- `bash ci/gates/p7.sh`
 - `bash ci/gates/loop-state.sh`
-  - `LOOP-STATE GATE PASS` for `.handoff/loop/loop_state.md`
-  - `LOOP-STATE GATE PASS` for `.handoff/loop/plan/loop_state.md`
+- `bash ci/gates/harness-scripts.sh`
 - `bash ci/gates/meta-local-policy.sh`
-  - `meta-local-policy: active install sources target META_ROOT FHS/XDG; only the single real-home .local bridge is allowed`
-- Runtime proof:
-  - `bash scripts/reap-worktrees.sh --managed-worktree-slug "$PWD" envctl` printed `fix-worktree-slug-main-checkout` from the managed worktree.
-  - `bash scripts/reap-worktrees.sh --managed-worktree-slug /home/drdave/Desktop/meta/envctl envctl` returned nonzero/no output for the main checkout.
-- `git diff --check`
 
-## Status
+Runtime smoke passed:
 
-PASS. The change is docs/shell-harness only; no Rust trust-boundary or dependency changes.
+- `cargo run -q -p envctl --bin envctl -- catalog scan --json`
+- `cargo run -q -p envctl --bin envctl -- catalog table components`
+- `cargo run -q -p envctl --bin envctl -- catalog table observed-facts`
+- `cargo run -q -p envctl --bin envctl -- catalog table env-vars --json`
+
+Observed normalized row counts from the current repo:
+
+```text
+components: 96
+component_hooks: 376
+paths: 49
+settings: 2928
+env_vars: 105
+agent_assets: 51
+registries: 16
+config_files: 342
+migration_evidence: 0
+observed_facts: 694
+```
+
+## Notes / remaining ADR risk
+
+- `migration_evidence` has a row contract but no current evidence rows because this slice does not perform migrations or adoption actions.
+- ADR-0003 still requires diff/render/import/sync/lock/config-edit/widget behavior and final code-research-verify coverage.
+- The next safe slice should add read-only `catalog diff` and/or `catalog render --out <tempdir>` without applying mutations.

@@ -5,6 +5,7 @@ mod self_update;
 
 use clap::{Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::Shell;
+use std::collections::BTreeSet;
 use std::io::IsTerminal;
 use std::time::Duration;
 
@@ -42,11 +43,11 @@ use envctl_engine::secrets::run_secretctl;
 use envctl_engine::{
     AddRepoMode, AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentDoctorSpec, AgentInitSpec,
     AgentListKind, AgentListSpec, AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentScope,
-    AgentSectionSel, AgentSyncSpec, AiAgent, BuildStrategy, BuildSystem, DashboardSpec,
-    DriftSummary, Engine, EnvReport, Event, EventSink, HubRegistryReport, HubRegistryStatus,
-    MigrationAction, MigrationReport, MigrationRisk, MigrationScope, MigrationSpec,
-    MigrationStatus, MigrationVerb, OpStatus, Phase, Refactor, RefactorGoal, RenameRule,
-    ResetGates, RunPlan, SelfUninstallSpec, Severity,
+    AgentSectionSel, AgentSyncSpec, AiAgent, BuildStrategy, BuildSystem, CatalogSnapshot,
+    CatalogTableName, DashboardSpec, DriftSummary, Engine, EnvReport, Event, EventSink,
+    HubRegistryReport, HubRegistryStatus, MigrationAction, MigrationReport, MigrationRisk,
+    MigrationScope, MigrationSpec, MigrationStatus, MigrationVerb, OpStatus, Phase, Refactor,
+    RefactorGoal, RenameRule, ResetGates, RunPlan, SelfUninstallSpec, Severity,
 };
 
 #[derive(Parser)]
@@ -62,6 +63,7 @@ use envctl_engine::{
         "envctl doctor",
         "envctl install --dry-run",
         "envctl migrate scan",
+        "envctl catalog scan --json",
         "envctl agent sync --apply",
         "envctl graph --impact secretd",
     )
@@ -236,6 +238,19 @@ enum Cmd {
         /// Exit 1 when any hub entry binds to a missing envctl component.
         #[arg(long)]
         check: bool,
+    },
+    /// Read-only ADR-0003 catalog tables over envctl control-plane files.
+    #[command(
+        long_about = "Read the current envctl repo files into normalized, queryable catalog rows without mutating anything. This is the ADR-0003 bridge from existing TOML/YAML/JSON/Rust/handoff sources to table-first control-plane behavior. Use the global --json flag for machine-readable snapshots or tables.",
+        after_help = envctl_examples!(
+            "envctl catalog scan --json",
+            "envctl catalog table components",
+            "envctl catalog table env-vars --json",
+        )
+    )]
+    Catalog {
+        #[command(subcommand)]
+        cmd: CatalogCmd,
     },
     /// Write/verify envctl.lock — a content hash of every component for reproducible
     /// installs + a CI gate. No flags = (re)write the lock; --check = verify (exit 1 on drift).
@@ -546,6 +561,33 @@ enum Cmd {
     Secret {
         #[command(subcommand)]
         cmd: SecretCmd,
+    },
+}
+
+/// Read-only catalog subcommands. Later ADR-0003 slices add diff/render/sync/edit.
+#[derive(Subcommand)]
+enum CatalogCmd {
+    /// Import current files into an in-memory catalog snapshot.
+    #[command(
+        long_about = "Read manifest, lock, agent-env, Codex/MCP, hub registry, layout, secrets, and handoff surfaces into normalized in-memory tables. Read-only: no lock writes, no renders, no sync.",
+        after_help = envctl_examples!(
+            "envctl catalog scan",
+            "envctl catalog scan --json",
+        )
+    )]
+    Scan,
+    /// Print one normalized catalog table.
+    #[command(
+        long_about = "Print one read-only catalog table. Names accept snake_case or kebab-case: components, component-hooks, paths, settings, env-vars, agent-assets, registries, config-files, migration-evidence, observed-facts.",
+        after_help = envctl_examples!(
+            "envctl catalog table components",
+            "envctl catalog table component-hooks",
+            "envctl catalog table observed-facts --json",
+        )
+    )]
+    Table {
+        /// Table name, e.g. components or env-vars.
+        name: String,
     },
 }
 
@@ -1571,6 +1613,7 @@ fn main() -> anyhow::Result<()> {
             }
             Ok(())
         }
+        Cmd::Catalog { cmd } => run_catalog(&engine, cmd, json),
         Cmd::Lock { check } => {
             use envctl_engine::lock;
             let reg = engine.registry();
@@ -1867,6 +1910,97 @@ fn migration_marker(status: MigrationStatus, protected: bool) -> &'static str {
     }
 }
 
+fn run_catalog(engine: &Engine, cmd: CatalogCmd, json: bool) -> anyhow::Result<()> {
+    let snapshot = engine.catalog_scan()?;
+    match cmd {
+        CatalogCmd::Scan => {
+            if json {
+                println!("{}", serde_json::to_string_pretty(&snapshot)?);
+            } else {
+                print_catalog_summary(&snapshot);
+            }
+        }
+        CatalogCmd::Table { name } => {
+            let table = name
+                .parse::<CatalogTableName>()
+                .map_err(|err| anyhow::anyhow!(err))?;
+            let table_value = snapshot.table_value(table);
+            if json {
+                println!("{}", serde_json::to_string_pretty(&table_value)?);
+            } else {
+                print_catalog_table(table, &table_value)?;
+            }
+        }
+    }
+    Ok(())
+}
+
+fn print_catalog_summary(snapshot: &CatalogSnapshot) {
+    println!("envctl catalog scan (read-only)");
+    println!("repo_root: {}", snapshot.repo_root);
+    println!("manifest_dir: {}", snapshot.manifest_dir);
+    println!("tables:");
+    for table in CatalogTableName::all() {
+        println!(
+            "  {:<20} {}",
+            table.canonical_name(),
+            snapshot.table_count(*table)
+        );
+    }
+}
+
+fn print_catalog_table(table: CatalogTableName, value: &serde_json::Value) -> anyhow::Result<()> {
+    let rows = value
+        .as_array()
+        .ok_or_else(|| anyhow::anyhow!("catalog table {table} did not serialize as an array"))?;
+    println!("catalog table: {table}");
+    println!("rows: {}", rows.len());
+    if rows.is_empty() {
+        return Ok(());
+    }
+
+    let mut columns = BTreeSet::new();
+    for row in rows {
+        if let Some(object) = row.as_object() {
+            columns.extend(object.keys().cloned());
+        }
+    }
+    let columns: Vec<_> = columns.into_iter().collect();
+    println!("{}", columns.join("\t"));
+    for row in rows {
+        let object = row
+            .as_object()
+            .ok_or_else(|| anyhow::anyhow!("catalog table {table} contained a non-object row"))?;
+        let cells = columns
+            .iter()
+            .map(|column| object.get(column).map(catalog_cell).unwrap_or_default())
+            .collect::<Vec<_>>();
+        println!("{}", cells.join("\t"));
+    }
+    Ok(())
+}
+
+fn catalog_cell(value: &serde_json::Value) -> String {
+    match value {
+        serde_json::Value::Null => String::new(),
+        serde_json::Value::Bool(value) => value.to_string(),
+        serde_json::Value::Number(value) => value.to_string(),
+        serde_json::Value::String(value) => value.clone(),
+        serde_json::Value::Array(values) => {
+            if values.iter().all(|value| value.is_string()) {
+                values
+                    .iter()
+                    .filter_map(|value| value.as_str())
+                    .collect::<Vec<_>>()
+                    .join(",")
+            } else {
+                serde_json::to_string(values).unwrap_or_default()
+            }
+        }
+        serde_json::Value::Object(_) => serde_json::to_string(value).unwrap_or_default(),
+    }
+}
+
 fn print_hub_registry(report: &HubRegistryReport) {
     if report.sources.is_empty() {
         println!("hub registry: no *_hub/registry.json files found");
@@ -1919,7 +2053,8 @@ fn should_suppress_notice(cmd: &Cmd, json: bool, quiet: u8) -> bool {
         | Cmd::Manage { .. }
         | Cmd::Env { .. }
         | Cmd::Migrate { .. }
-        | Cmd::Registry { .. } => true,
+        | Cmd::Registry { .. }
+        | Cmd::Catalog { .. } => true,
         // `auto-detect`/`graph`/`lock`/`agent ... --json` are gated by the global `json` above;
         // their human forms may still show the notice. Everything else: don't suppress.
         _ => false,
@@ -2386,6 +2521,7 @@ fn run_action(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
             | Cmd::Agent { .. }
             | Cmd::Secret { .. }
             | Cmd::Registry { .. }
+            | Cmd::Catalog { .. }
             | Cmd::Completions { .. }
             | Cmd::Manage { .. } => {
                 unreachable!("handled in main")
