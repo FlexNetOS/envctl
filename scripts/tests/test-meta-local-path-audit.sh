@@ -528,7 +528,10 @@ cmp "$tmp/owner-supervised-cache-child-component-manifest-status.tsv" "$tmp/owne
 manifest_status_repo="$tmp/manifest-status-repo"
 mkdir -p "$manifest_status_repo/scripts" "$manifest_status_repo/manifest/components.d"
 cp "$root/scripts/audit-meta-local-paths.sh" "$manifest_status_repo/scripts/audit-meta-local-paths.sh"
-printf '# fixture manifest proving existing-manifest status routing\n' >"$manifest_status_repo/manifest/components.d/cache-tool.toml"
+cat >"$manifest_status_repo/manifest/components.d/cache-tool.toml" <<'MANIFEST'
+[[component]]
+id = "cache-tool"
+MANIFEST
 (
   cd "$manifest_status_repo"
   scripts/audit-meta-local-paths.sh --owner-supervised-cache-child-component-manifest-status "$tmp/owner-supervised-cache-child-component-manifest-status-existing.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-cache-child-component-manifest-status-existing.out" 2>"$tmp/owner-supervised-cache-child-component-manifest-status-existing.err"
@@ -1485,12 +1488,22 @@ cache_child_meta="$tmp/cache-child-meta"
 cache_child_home="$tmp/cache-child-home"
 cache_child_manifest_repo="$tmp/cache-child-manifest-repo"
 cache_child_missing_manifest_repo="$tmp/cache-child-missing-manifest-repo"
+cache_child_invalid_manifest_repo="$tmp/cache-child-invalid-manifest-repo"
 mkdir -p "$cache_child_meta/.local" "$cache_child_meta/envctl/home" "$cache_child_home/.cache/tool"
 mkdir -p "$cache_child_manifest_repo/scripts" "$cache_child_manifest_repo/manifest/components.d"
 mkdir -p "$cache_child_missing_manifest_repo/scripts" "$cache_child_missing_manifest_repo/manifest/components.d"
+mkdir -p "$cache_child_invalid_manifest_repo/scripts" "$cache_child_invalid_manifest_repo/manifest/components.d"
 cp "$root/scripts/audit-meta-local-paths.sh" "$cache_child_manifest_repo/scripts/audit-meta-local-paths.sh"
 cp "$root/scripts/audit-meta-local-paths.sh" "$cache_child_missing_manifest_repo/scripts/audit-meta-local-paths.sh"
-printf '# fixture manifest approving cache child tool migration\n' >"$cache_child_manifest_repo/manifest/components.d/cache-tool.toml"
+cp "$root/scripts/audit-meta-local-paths.sh" "$cache_child_invalid_manifest_repo/scripts/audit-meta-local-paths.sh"
+cat >"$cache_child_manifest_repo/manifest/components.d/cache-tool.toml" <<'MANIFEST'
+[[component]]
+id = "cache-tool"
+MANIFEST
+cat >"$cache_child_invalid_manifest_repo/manifest/components.d/cache-tool.toml" <<'MANIFEST'
+[[component]]
+id = "cache-other"
+MANIFEST
 printf '# managed gitconfig\n' >"$cache_child_meta/envctl/home/.gitconfig"
 ln -s "$cache_child_meta/envctl/home/.gitconfig" "$cache_child_meta/.gitconfig"
 ln -s "$cache_child_meta/.local" "$cache_child_home/.local"
@@ -1529,6 +1542,25 @@ fi
 test -d "$cache_child_missing_manifest_home/.cache/tool"
 test ! -e "$cache_child_missing_manifest_meta/.local/cache/tool"
 grep -q -- '--migrate-cache-child tool: component manifest manifest/components.d/cache-tool.toml is missing; create/review the manifest before migration' "$tmp/migrate-cache-child-missing-manifest.err"
+
+cache_child_invalid_manifest_meta="$tmp/cache-child-invalid-manifest-meta"
+cache_child_invalid_manifest_home="$tmp/cache-child-invalid-manifest-home"
+mkdir -p "$cache_child_invalid_manifest_meta/.local" "$cache_child_invalid_manifest_meta/envctl/home" "$cache_child_invalid_manifest_home/.cache/tool"
+printf '# managed gitconfig\n' >"$cache_child_invalid_manifest_meta/envctl/home/.gitconfig"
+ln -s "$cache_child_invalid_manifest_meta/envctl/home/.gitconfig" "$cache_child_invalid_manifest_meta/.gitconfig"
+ln -s "$cache_child_invalid_manifest_meta/.local" "$cache_child_invalid_manifest_home/.local"
+ln -s "$cache_child_invalid_manifest_meta/.gitconfig" "$cache_child_invalid_manifest_home/.gitconfig"
+printf 'cache-index\n' >"$cache_child_invalid_manifest_home/.cache/tool/index"
+if (
+  cd "$cache_child_invalid_manifest_repo"
+  scripts/audit-meta-local-paths.sh --apply --migrate-cache-child tool --meta-root "$cache_child_invalid_manifest_meta" --real-home "$cache_child_invalid_manifest_home" --envctl-home-source "$cache_child_invalid_manifest_meta/envctl/home"
+) >"$tmp/migrate-cache-child-invalid-manifest.out" 2>"$tmp/migrate-cache-child-invalid-manifest.err"; then
+  echo "expected --migrate-cache-child to require a matching cache component id before applying" >&2
+  exit 1
+fi
+test -d "$cache_child_invalid_manifest_home/.cache/tool"
+test ! -e "$cache_child_invalid_manifest_meta/.local/cache/tool"
+grep -q -- '--migrate-cache-child tool: component manifest manifest/components.d/cache-tool.toml does not declare component id cache-tool; review/fix the manifest before migration' "$tmp/migrate-cache-child-invalid-manifest.err"
 
 cache_child_open_meta="$tmp/cache-child-open-meta"
 cache_child_open_home="$tmp/cache-child-open-home"
