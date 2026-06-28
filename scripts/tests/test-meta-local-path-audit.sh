@@ -1635,6 +1635,52 @@ awk -F '\t' -v home="$config_bridge_home" -v meta="$config_bridge_meta" '
   END { exit !(found && !bad) }
 ' "$tmp/config-bridge-post.tsv"
 
+
+managed_config_deep_meta="$tmp/managed-config-deep-meta"
+managed_config_deep_home="$tmp/managed-config-deep-home"
+mkdir -p "$managed_config_deep_meta/.local" \
+  "$managed_config_deep_meta/envctl/home/.config/same-app" \
+  "$managed_config_deep_meta/envctl/home/.config/diff-app" \
+  "$managed_config_deep_home/.config/same-app" \
+  "$managed_config_deep_home/.config/diff-app"
+printf '# managed gitconfig\n' >"$managed_config_deep_meta/envctl/home/.gitconfig"
+printf 'same\n' >"$managed_config_deep_meta/envctl/home/.config/same-app/config.toml"
+printf 'same\n' >"$managed_config_deep_home/.config/same-app/config.toml"
+printf 'managed\n' >"$managed_config_deep_meta/envctl/home/.config/diff-app/config.toml"
+printf 'real\n' >"$managed_config_deep_home/.config/diff-app/config.toml"
+ln -s "$managed_config_deep_meta/envctl/home/.gitconfig" "$managed_config_deep_meta/.gitconfig"
+ln -s "$managed_config_deep_meta/.local" "$managed_config_deep_home/.local"
+ln -s "$managed_config_deep_meta/.gitconfig" "$managed_config_deep_home/.gitconfig"
+"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-managed-config-child-deep-status "$tmp/managed-config-deep-status.tsv" --meta-root "$managed_config_deep_meta" --real-home "$managed_config_deep_home" --envctl-home-source "$managed_config_deep_meta/envctl/home" >"$tmp/managed-config-deep-status.out" 2>"$tmp/managed-config-deep-status.err"
+head -n 1 "$tmp/managed-config-deep-status.tsv" | grep -qx $'dot_entry\tchild_name\treal_path\tmanaged_source\treal_type\tmanaged_type\tdeep_identical\tsupervision\tnext_action\tapply_command'
+awk -F '\t' 'NF != 10 { print "bad managed config deep-status row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/managed-config-deep-status.tsv"
+test "$(wc -l <"$tmp/managed-config-deep-status.tsv" | tr -d '[:space:]')" = 3
+awk -F '\t' -v home="$managed_config_deep_home" -v meta="$managed_config_deep_meta" '
+  $1 == ".config" && $2 == "same-app" {
+    if ($3 != home "/.config/same-app") bad=1
+    if ($4 != meta "/envctl/home/.config/same-app") bad=1
+    if ($5 != "directory") bad=1
+    if ($6 != "directory") bad=1
+    if ($7 != "yes") bad=1
+    if ($8 != "owner-reviewed") bad=1
+    if ($9 != "review-then-bridge-identical-managed-config-child") bad=1
+    if ($10 != "") bad=1
+    found_same=1
+  }
+  $1 == ".config" && $2 == "diff-app" {
+    if ($3 != home "/.config/diff-app") bad=1
+    if ($4 != meta "/envctl/home/.config/diff-app") bad=1
+    if ($5 != "directory") bad=1
+    if ($6 != "directory") bad=1
+    if ($7 != "no") bad=1
+    if ($8 != "owner-reviewed") bad=1
+    if ($9 != "owner-review-real-home-config-child-merge-or-remove-before-bridge") bad=1
+    if ($10 != "") bad=1
+    found_diff=1
+  }
+  END { exit !(found_same && found_diff && !bad) }
+' "$tmp/managed-config-deep-status.tsv"
+
 config_identical_meta="$tmp/config-identical-meta"
 config_identical_home="$tmp/config-identical-home"
 mkdir -p "$config_identical_meta/.local" "$config_identical_meta/envctl/home/.config/systemd/user" "$config_identical_home/.config/systemd/user"

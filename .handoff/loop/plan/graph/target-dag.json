@@ -1,156 +1,19 @@
 {
-  "schema": "plan-dependency-graph/target-dag@1",
-  "run": "plan-prompt-hub-20260627",
-  "cycle": 6,
-  "frame": "meta is ONE converging system. prompt-hub = the merged prompt_hub#182 two-layer Front-Door: harness_hub is the intent INTERPRETER (user intent -> model-ready language), prompt_hub is the durable intent STORE + boundary (ADR-0007). The store emits provenance-stamped goal artifacts that rusty-idd CONSUMES; prompt_hub never owns rusty-idd's lifecycle (owner decision D3, reply #178). handoff (+) rusty-idd union (D1) is the continuity+intent control plane; weave = transport; grit = symbol-level coordination substrate; north-star @ META_ROOT + handoff.",
-  "id_convention": "kebab-case ids ONLY. Fleet repos use snake_case (prompt_hub, harness_hub, meta-ruvector); standardized to kebab-case here: prompt_hub->prompt-hub, harness_hub->harness-hub, meta-ruvector->ruvector.",
   "nodes": [
-    {
-      "id": "prompt-hub",
-      "spec": "Front-Door intent STORE + boundary (merged prompt_hub#182, ADR-0007). Durable, provenance-stamped goal-artifact store; emits goal artifacts that rusty-idd consumes. Substrate-ish root for this run; the harness_hub interpreter is an upstream SEAM (soft) but the store is planned independently (D3).",
-      "status": "in-flight",
-      "deps": [],
-      "downstream": ["rusty-idd"],
-      "artifact_prefix": "prompt-hub",
-      "context_paths": ["targets.md", "dimensions.md", "loop_state.md", "graph/prompt-hub.json"],
-      "seams": [
-        {"from": "harness-hub", "kind": "interpreter", "hard": false, "note": "harness_hub interprets intent -> model-ready language ahead of the store; soft seam, prompt-hub planned independently (D3)"},
-        {"from": "shimmy", "kind": "model-lanes", "hard": false, "note": "prompt-hub model lanes served by shimmy; soft seam, not a blocking dep"}
-      ]
-    },
-    {
-      "id": "rusty-idd",
-      "spec": "Intent-driven development tool. CONSUMES prompt-hub's goal artifacts (ADR-0007) and owns the OpenSpec/ADR/task/validation/manifest/PR flow. Union target: its cli/core/runner/spec/tui crates dedup-merge into handoff via grit coordination.",
-      "status": "planned",
-      "deps": ["prompt-hub", "grit"],
-      "downstream": ["handoff"],
-      "artifact_prefix": "rusty-idd",
-      "context_paths": ["targets.md", "dimensions.md", "graph/rusty-idd.json"]
-    },
-    {
-      "id": "handoff",
-      "spec": "Continuity ledger kernel (hf). Union target + dedup destination; renders packets from the witnessed ledger. Consumes grit (symbol coordination), weave (transport heartbeat), icm (persistent memory), and the rusty-idd union crates.",
-      "status": "planned",
-      "deps": ["grit", "weave", "icm", "rusty-idd"],
-      "downstream": ["harness-hub"],
-      "artifact_prefix": "handoff",
-      "context_paths": ["targets.md", "dimensions.md", "graph/handoff.json"]
-    },
-    {
-      "id": "weave",
-      "spec": "A2A transport / observable heartbeat for the loop. Carries relay broadcasts over the lane spine.",
-      "status": "planned",
-      "deps": ["lane"],
-      "downstream": ["handoff", "harness-hub"],
-      "artifact_prefix": "weave",
-      "context_paths": ["targets.md", "dimensions.md", "graph/weave.json"]
-    },
-    {
-      "id": "grit",
-      "spec": "Symbol-level merge/lock coordination substrate. Coordinates union step 2 (dedup of the ~95% shared handoff<->rusty-idd crates: cli/core/runner/spec/tui). Per reply #178: advisory symbol-LOCK + git-worktree coordinator around a separate reconciler, not the reconciler itself. Substrate root.",
-      "status": "planned",
-      "deps": [],
-      "downstream": ["rusty-idd", "handoff"],
-      "artifact_prefix": "grit",
-      "context_paths": ["targets.md", "dimensions.md", "graph/grit.json"]
-    },
-    {
-      "id": "harness-hub",
-      "spec": "Front-Door intent INTERPRETER: transforms user intent -> model-ready language ahead of the prompt-hub store (two-layer front door, D3). Catalog/registry that routes harnesses; runs atop the continuity kernel + transport. (fleet id: harness_hub; kebab-cased here.)",
-      "status": "planned",
-      "deps": ["handoff", "weave"],
-      "downstream": [],
-      "artifact_prefix": "harness-hub",
-      "context_paths": ["targets.md", "dimensions.md", "graph/harness-hub.json"]
-    },
-    {
-      "id": "icm",
-      "spec": "Infinite Context Memory: persistent cross-session recall/store substrate; uses vector embeddings from ruvector.",
-      "status": "planned",
-      "deps": ["ruvector"],
-      "downstream": ["handoff"],
-      "artifact_prefix": "icm",
-      "context_paths": ["targets.md", "dimensions.md", "graph/icm.json"]
-    },
-    {
-      "id": "envctl",
-      "spec": "Agentic environment manager: installs every tool/dep into meta (.toolchains), no system-global installs. Substrate root (loop run-from host).",
-      "status": "planned",
-      "deps": [],
-      "downstream": [],
-      "artifact_prefix": "envctl",
-      "context_paths": ["targets.md", "dimensions.md", "graph/envctl.json"]
-    },
-    {
-      "id": "lane",
-      "spec": "Network/transport spine substrate. Provides the channel weave and the network-control plane compose over. Substrate root.",
-      "status": "planned",
-      "deps": [],
-      "downstream": ["weave"],
-      "artifact_prefix": "lane",
-      "context_paths": ["targets.md", "dimensions.md", "graph/lane.json"]
-    },
-    {
-      "id": "shimmy",
-      "spec": "Local model server substrate (local inference lane). Serves prompt-hub model lanes via a soft seam. Substrate root.",
-      "status": "planned",
-      "deps": [],
-      "downstream": [],
-      "artifact_prefix": "shimmy",
-      "context_paths": ["targets.md", "dimensions.md", "graph/shimmy.json"]
-    },
-    {
-      "id": "ruvector",
-      "spec": "Vector compute / code-intelligence substrate (fleet path: meta-ruvector). Backs icm embeddings and graph intelligence. Substrate root.",
-      "status": "planned",
-      "deps": [],
-      "downstream": ["icm"],
-      "artifact_prefix": "ruvector",
-      "context_paths": ["targets.md", "dimensions.md", "graph/ruvector.json"]
-    }
+    {"id": "weave", "spec": "A2A transport plane — cycle 4 (this instance)", "status": "in-flight", "deps": [], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "handoff", "spec": "continuity kernel (witnessed ledger) — planned cycle 2; union home", "status": "done", "deps": [], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "rusty-idd", "spec": "intent control plane — planned cycle 1", "status": "done", "deps": ["handoff"], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "harness_hub", "spec": "Front-Door interpreter (intent->model language)", "status": "todo", "deps": ["handoff"], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "envctl", "spec": "fleet environment manager + loop run-from", "status": "todo", "deps": ["handoff", "weave"], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "icm", "spec": "persistent memory organ", "status": "todo", "deps": [], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "grit", "spec": "symbol-level merge/lock substrate", "status": "todo", "deps": [], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "lane", "spec": "distributed-compute lane substrate", "status": "todo", "deps": ["weave"], "artifact_prefix": ".handoff/loop/plan"}
   ],
   "edges": [
-    {"from": "prompt-hub", "to": "rusty-idd", "reason": "ADR-0007: the intent store emits provenance-stamped goal artifacts that rusty-idd consumes (prompt-hub never owns rusty-idd lifecycle)"},
-    {"from": "grit", "to": "rusty-idd", "reason": "grit coordinates dedup of the ~95% shared rusty-idd crates against handoff"},
-    {"from": "grit", "to": "handoff", "reason": "symbol-level lock/coordination powers union dedup into the continuity kernel"},
-    {"from": "rusty-idd", "to": "handoff", "reason": "union (D1): rusty-idd cli/core/runner/spec/tui merge into handoff via grit coordination"},
-    {"from": "weave", "to": "handoff", "reason": "handoff continuity emits/observes the weave heartbeat"},
-    {"from": "icm", "to": "handoff", "reason": "handoff resume hydrates persistent memory from icm"},
-    {"from": "ruvector", "to": "icm", "reason": "icm recall/store uses ruvector vector embeddings"},
-    {"from": "lane", "to": "weave", "reason": "weave transport rides the lane network spine"},
-    {"from": "handoff", "to": "harness-hub", "reason": "Front-Door interpreter runs on the continuity kernel"},
-    {"from": "weave", "to": "harness-hub", "reason": "Front-Door routes A2A traffic over weave"}
-  ],
-  "soft_seams": [
-    {"from": "harness-hub", "to": "prompt-hub", "kind": "interpreter", "reason": "two-layer front door (D3): harness_hub interprets intent -> model-ready language ahead of the store; SOFT (prompt-hub planned independently this cycle)"},
-    {"from": "shimmy", "to": "prompt-hub", "kind": "model-lanes", "reason": "prompt-hub model lanes are served by shimmy; SOFT (does not block prompt-hub planning)"}
-  ],
-  "ready_set": ["prompt-hub", "grit", "envctl", "lane", "shimmy", "ruvector"],
-  "picked": "prompt-hub",
-  "self_revision": [
-    {
-      "id": "sr-001",
-      "trigger": "verifier-qualified: prompt-hub role corrected (cycle 6 vs prior cycles)",
-      "scope": "downstream-only",
-      "affected": ["rusty-idd", "harness-hub"],
-      "action": "Prior cycles modeled prompt-hub as a prompt/model registry feeding harness-hub (edge prompt-hub -> harness-hub, see plan-grit DAG). The verified ADR-0007 + owner decision D3 / reply #178 reframe it as the intent STORE feeding rusty-idd: (1) ADDED hard edge prompt-hub -> rusty-idd and rusty-idd now lists prompt-hub as an upstream dep; (2) the old prompt-hub -> harness-hub edge is RETIRED and replaced by a SOFT interpreter seam harness-hub ⇢ prompt-hub (direction flipped). Localized: only rusty-idd and harness-hub specs revised; grit/handoff/weave/icm/lane/shimmy/ruvector/envctl preserved.",
-      "status": "applied"
-    },
-    {
-      "id": "sr-002",
-      "trigger": "prompt-hub verifier outcome on the ADR-0007 emit contract (goal-artifact schema + provenance stamping)",
-      "scope": "downstream-only",
-      "affected": ["rusty-idd"],
-      "action": "If prompt-hub's verifier QUALIFIES or REFUTES the goal-artifact emit contract, revise ONLY rusty-idd's consume spec (the downstream consumer); preserve all other nodes. Do not touch the union (rusty-idd -> handoff) dedup spec unless the contract change cascades there.",
-      "status": "armed-not-triggered"
-    },
-    {
-      "id": "sr-003",
-      "trigger": "harness_hub interpreter seam verified as a HARD prerequisite",
-      "scope": "topology",
-      "affected": ["prompt-hub"],
-      "action": "If a verifier finds the harness_hub interpreter is a hard prerequisite (intent must be interpreted before the store can be specified), PROMOTE the soft seam harness-hub ⇢ prompt-hub to a hard dep (prompt-hub.deps += harness-hub), which removes prompt-hub from the ready-set and re-runs the topological order. Currently held as SOFT per owner decision D3 (planned independently).",
-      "status": "armed-not-triggered"
-    }
+    {"from": "rusty-idd", "to": "handoff"},
+    {"from": "harness_hub", "to": "handoff"},
+    {"from": "envctl", "to": "handoff"},
+    {"from": "envctl", "to": "weave"},
+    {"from": "lane", "to": "weave"}
   ]
 }
