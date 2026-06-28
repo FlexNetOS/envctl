@@ -1,33 +1,35 @@
-# TASK-0078 guardian report — blocker sensitive hints
+# TASK-0078 cache manifest id readiness guardian report
 
-Date: 2026-06-27
+Status: PASS
 
-## Verification commands
+## Invariants checked
 
-```bash
+- Existing `--owner-supervised-cache-child-component-manifest-status` schema remains unchanged.
+- New validation report is read-only and leaves `apply_command` empty.
+- Missing manifests route to create-before-migration.
+- Existing matching manifests route to review-before-migration.
+- Existing wrong/empty manifests route to fix-id-before-migration.
+- No broad `.cache` mutation or cache-child apply was performed.
+
+## Evidence
+
+```text
+bash -n scripts/audit-meta-local-paths.sh scripts/tests/test-meta-local-path-audit.sh
 bash scripts/tests/test-meta-local-path-audit.sh
+# test-meta-local-path-audit: PASS
+git diff --check
 bash ci/gates/meta-local-policy.sh
 bash ci/gates/harness-scripts.sh
+bash ci/gates/p7.sh
+# all PASS
 ```
 
-All commands passed.
+Runtime evidence:
 
-## Live runtime verification
+```text
+rc=0
+validation_rows=84 manifest_exists_yes=0 manifest_declares_expected_id_yes=0 create_next_action=84 nonempty_apply=0
+blockers unchanged: open-handles=1, owner-supervised-cache=1, owner-supervised-managed-dotfile=1, owner-supervised-sensitive=7
+```
 
-Read-only live audit wrote:
-`/tmp/envctl-dot-audit-sensitive-hints-final-20260627T184649Z`
-
-Observed:
-
-- exit code: 0
-- `meta-local audit: PASS warnings=10 changed=0 dot_entries=79`
-- blocker report header includes `sensitive_hints`
-- selected blocker evidence:
-  - `.pki`: `target_class=app-config-state`, `apply_safe=yes`, `canonical_target=/home/drdave/Desktop/meta/.local/share/pki`, `sensitive_hints=3`, `blocker=open-handles`, `open_handles=2`, sample `chrome/1653768`
-  - `.lane`: `sensitive_hints=7`
-  - `.fxapp-gh-profile`: `sensitive_hints=5`
-  - `.ssh`: `sensitive_hints=1`
-
-## Result
-
-PASS. The slice improves surgical blocker visibility without weakening the default non-mutating policy.
+Result: safe to publish this slice.

@@ -1,19 +1,38 @@
-# TASK-0078 implementer log — blocker sensitive hints
+# TASK-0078 cache manifest id readiness implementer log
 
-Date: 2026-06-27
+## Red
 
-## Changes made
+Focused TDD started by adding fixture expectations for `--owner-supervised-cache-child-component-manifest-validation PATH`; the first direct probe failed with `unknown argument: --owner-supervised-cache-child-component-manifest-validation`.
 
-- Extended `--migration-blockers-report` with a `sensitive_hints` column.
-- Reused the existing `path_sensitive_hint_count` scanner for every residual blocker row.
-- Updated TDD coverage to lock the 13-column schema and fixture hint counts:
-  - `.pki` = 3 (`cert9.db`, `key4.db`, `pkcs11.txt`)
-  - `.mcp-auth` = 1 (`oauth_tokens.json`)
-  - `.lane` = 3 (`*.pem`, `*.key`)
-  - `.fxapp-gh-profile` = 0 in the fixture
-- Strengthened `ci/gates/meta-local-policy.sh` so this schema/test coverage cannot silently regress.
+## Change
 
-## Notes
+- Added the new read-only validation report flag to `scripts/audit-meta-local-paths.sh`.
+- Reused existing cache component-key/id helpers and `cache_child_component_manifest_declares_id`.
+- Preserved the 12-column manifest-status report unchanged.
+- Added a separate 14-column validation TSV with `expected_component_id` and `manifest_declares_expected_id`.
+- Documented the status + validation review sequence in the ADR and envctl-home README.
 
-- This is report-only/read-only. No live real-home dot entry was moved.
-- The live audit now makes `.pki` show `sensitive_hints=3` while still failing closed on Chrome open handles.
+## Green
+
+Focused test and gate evidence:
+
+```text
+bash -n scripts/audit-meta-local-paths.sh scripts/tests/test-meta-local-path-audit.sh
+bash scripts/tests/test-meta-local-path-audit.sh
+# test-meta-local-path-audit: PASS
+git diff --check
+bash ci/gates/meta-local-policy.sh
+bash ci/gates/harness-scripts.sh
+bash ci/gates/p7.sh
+# all PASS
+```
+
+Runtime non-mutating evidence on 2026-06-28:
+
+```text
+rc=0
+85 cache-validation.tsv
+validation_rows=84 manifest_exists_yes=0 manifest_declares_expected_id_yes=0 create_next_action=84 nonempty_apply=0
+```
+
+No `--apply` was used and no live cache-child state was moved.

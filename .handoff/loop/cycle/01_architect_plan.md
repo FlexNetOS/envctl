@@ -1,26 +1,28 @@
-# TASK-0078 plan — migration blocker sensitive hint visibility
+# TASK-0078 cache manifest id readiness plan
 
-Date: 2026-06-27
-Worktree: `/home/drdave/Desktop/meta/.worktrees/meta-local-blocker-sensitive-hints/envctl`
-Branch: `meta-local-blocker-sensitive-hints`
+## Target
 
-## Verified baseline
+Add a read-only owner-supervised cache-child component manifest validation report that preserves the existing manifest-status schema while surfacing the exact component-id contract required by `--migrate-cache-child NAME`.
 
-- `origin/master` is at `c8f2e48 Generate Codex model swarm baseline (#335)` (and includes `5be9041` from #334).
-- Focused baseline passed:
-  - `bash scripts/tests/test-meta-local-path-audit.sh`
-  - `bash ci/gates/meta-local-policy.sh`
-- Live read-only audit reported `meta-local audit: PASS warnings=10 changed=0 dot_entries=79`.
-- Remaining real-home blockers are `.aws`, `.cache`, `.config`, `.docker`, `.fxapp-gh-profile`, `.gnupg`, `.lane`, `.mcp-auth`, `.pki`, `.ssh`.
-- `.pki` is an apply-safe app-config migration target, but Chrome has open handles and the blocker report did not expose NSS/private-state hint counts.
+## Contract
 
-## Design
+New flag: `--owner-supervised-cache-child-component-manifest-validation PATH`.
 
-Add `sensitive_hints` to every `--migration-blockers-report` row, immediately after `canonical_target`, so surgical migration planning sees credential/private-key/NSS hints even when a dot entry is classified as app-config-state rather than sensitive.
+TSV columns:
 
-## Runtime surface
+```text
+dot_entry child_name child_path type canonical_target component_key expected_component_id cache_scope manifest_hint manifest_exists manifest_declares_expected_id supervision next_action apply_command
+```
 
-- `scripts/audit-meta-local-paths.sh --migration-blockers-report`
-- `scripts/tests/test-meta-local-path-audit.sh`
-- `ci/gates/meta-local-policy.sh`
-- Live read-only audit against `/home/drdave` and `/home/drdave/Desktop/meta`
+Routing:
+
+- missing manifest: `manifest_exists=no`, `manifest_declares_expected_id=no`, `next_action=create-cache-component-manifest-before-migration`
+- existing manifest with expected `[[component]] id = "cache-<component>"`: `yes/yes`, `next_action=review-existing-cache-component-manifest-before-migration`
+- existing manifest with no/wrong id: `manifest_exists=yes`, `manifest_declares_expected_id=no`, `next_action=fix-cache-component-manifest-id-before-migration`
+- `apply_command` stays empty; report-only, no cache migration.
+
+## Verification plan
+
+- Red: focused fixture test fails because the new flag is unknown.
+- Green: lock the 14-column schema plus missing/valid/wrong manifest branches and validation-only mode.
+- Runtime: live non-mutating audit should emit 84 current cache-child rows, all missing manifests, all empty apply commands.
