@@ -1,0 +1,4 @@
+[[component]]
+id = "cache-jna"
+name = "Cache child JNA"
+description = "Owner-reviewed manifest stub for cache-jna; review detect/install/fix hooks before any --migrate-cache-child apply."
