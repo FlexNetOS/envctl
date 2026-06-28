@@ -1,8 +1,11 @@
 {
   "mcpServers": {
     "memory": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-memory"]
+      "command": "bash",
+      "args": [
+        "-lc",
+        "ROOT=\"${META_ROOT:-/home/drdave/Desktop/meta}\"; exec \"$ROOT/envctl/assets/scripts/envctl-mcp-memory-server\""
+      ]
     }
   }
 }

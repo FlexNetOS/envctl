@@ -25,11 +25,21 @@ Scan these surfaces when present; a missing expected surface is itself a finding
 - **rules** — `.claude/rules/*.md`.
 - **instructions** — `CLAUDE.md`, `AGENTS.md`, `.kb/AGENTS.md`, `.instructions.md`, `.agent.md`,
   `.prompt.md`, `AGENT_GUIDE.md`, `GEMINI.md`, fleet-level north-star/architecture docs when in scope.
-- **hooks** — `.claude/settings.json` hooks, `.handoff/hooks/hooks.toml`, `.handoff/hooks/*.sh`,
-  `.githooks/*`, `scripts/preflight.sh`.
-- **policy** — `.handoff/policies/rules.toml`, `.handoff/policy.toml`, cognitum/`hf policy gate`, ADRs.
+- **hooks** — `.claude/settings.json` lifecycle hooks (SessionStart/SessionEnd/UserPromptSubmit/
+  PreToolUse/PostToolUse), `.handoff/hooks/hooks.toml` (schema `handoff.hooks.v1`, **14 typed events**),
+  `.handoff/hooks/*.sh` (`loop-entry.sh`, `session-end.sh`), `.githooks/*`, `scripts/preflight.sh`.
+- **policy** — `.handoff/policies/rules.toml` (schema `handoff.policy.rules.v1`), `.handoff/policy.toml`,
+  cognitum/`hf policy gate` (Permit/Defer/Deny), `docs/adr-*.md`, `.handoff/fleet/PILOT.toml`.
 - **CLAUDE.md** — harness pointers and change-history table.
 - **AGENTS.md** — mission, hard rules, fail-closed law, and repo-local instruction drift.
+
+**Cross-surface drift (first-class — a coherent-per-file surface can still be incoherent across
+files):** the `CLAUDE.md` "## Harness: …" pointer vs the REAL `.claude/skills/` + `.claude/agents/`
+(a pointer naming a skill that no longer exists, or a skill with no pointer); `AGENTS.md` Hard rules
+vs the enforced `.handoff/policies/rules.toml` (a stated rule with no policy teeth, or policy with no
+rationale); the `hooks.toml` 14-event contract vs `.claude/settings.json` vs the deployed
+`.handoff/hooks/*.sh` (a declared event with no script, or a wired hook absent from the contract — the
+fail-OPEN drift class); a `.claude/rules/*.md` that contradicts a policy, an ADR, or another rule.
 
 ### Settings / config plane
 
@@ -37,8 +47,10 @@ Scan these surfaces when present; a missing expected surface is itself a finding
   `.codex/hooks.json`, `.claude/agent-guard.toml`; keys include permissions, env, model/effort,
   skillListingBudgetFraction, enabled plugins, hooks, status line, MCP servers, `[agents]`, `[features]`.
 - **project/build/tool config** — `.meta.yaml`, `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`,
-  `.cargo/config.toml`, `.kb/config.toml`, `.handoff/policy.toml`, `.github/workflows/*.yml`,
-  `package.json`, `bun.lock`, `bunfig.toml`, `manifest/*.toml`, `envctl.lock`, `.env*`, `.envrc`.
+  `.cargo/config.toml`, `.kb/config.toml`, `.handoff/policy.toml` (`[loop]` budget/cadence, `[merge]`,
+  `[preflight]`), `.handoff/fleet/PILOT.toml`, `.github/workflows/*.yml`, `package.json`, `bun.lock`,
+  `bunfig.toml`, `manifest/*.toml`, `envctl.lock`, `.cliff.toml`, `qodana.yaml`, `.looprc`, `.env*`,
+  `.envrc`.
 
 ## Hygiene detectors (required)
 

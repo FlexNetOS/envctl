@@ -18,7 +18,7 @@ libSQL dependency stack). The no-C-**library** tenet still holds — `ci/gates/n
 
 Precedence (highest first): **environment variables > the TOML file > defaults** (`inmem`).
 
-### 1.1 TOML file — `~/.config/env-ctl/secretd.toml` (optional)
+### 1.1 TOML file — `$META_ROOT/.config/env-ctl/secretd.toml` (optional)
 
 ```toml
 [store]

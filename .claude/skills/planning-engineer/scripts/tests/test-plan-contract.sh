@@ -40,6 +40,20 @@ grep -q '.agents/skills/plan-loop/SKILL.md' "$repo_root/.codex/prompts/plan-loop
   || fail "plan-loop prompt does not point at the authoritative .agents skill"
 grep -q '.codex/prompts/plan-loop.md' "$repo_root/.codex/prompts/plan-engineering-loop.md" \
   || fail "plan-engineering-loop alias does not route to plan-loop"
+
+# Claude Code slash-command shims: `.claude/skills/*` are not slash commands by themselves.
+# Keep `/plan-loop`, `/plan-engineering-loop`, and `/planning-engineer` directly loadable in Claude.
+for command in planning-engineer plan-loop plan-engineering-loop; do
+  [ -f "$repo_root/.claude/commands/$command.md" ] || fail "missing Claude slash command front door: $command"
+done
+grep -q '.codex/prompts/planning-engineer.md' "$repo_root/.claude/commands/planning-engineer.md" \
+  || fail "Claude planning-engineer command does not route to Codex canonical prompt"
+grep -q '.codex/prompts/plan-loop.md' "$repo_root/.claude/commands/plan-loop.md" \
+  || fail "Claude plan-loop command does not route to Codex canonical prompt"
+grep -q '.claude/commands/plan-loop.md' "$repo_root/.claude/commands/plan-engineering-loop.md" \
+  || fail "Claude plan-engineering-loop alias does not route to plan-loop"
+grep -q 'five required Opus background lanes through weave' "$repo_root/.claude/commands/plan-loop.md" \
+  || fail "Claude plan-loop command does not preserve weave background lane contract"
 for agent in \
   plan-analyst \
   plan-architect \
@@ -241,5 +255,30 @@ for da in "${doc_arts[@]}"; do
   concrete="${da//<T>/secrets-proto}"
   valid_graph_artifact "$concrete" || fail "documented graph artifact does not satisfy the validator: '$da'"
 done
+
+# ---- self-eval + self-upgrade after EVERY cycle is wired (anti-drift on the harness-evolution contract) ----
+# Resolve the sibling skill/agent files from the located CONTRACT so this works in BOTH the plugin
+# layout (.../harness/skills + .../harness/agents) and the ejected layout (.../.claude/skills + agents).
+PE_DIR="$(dirname "$(dirname "$CONTRACT")")"     # .../skills/planning-engineer
+SKILLS_DIR="$(dirname "$PE_DIR")"                # .../skills
+HARNESS_ROOT="$(dirname "$SKILLS_DIR")"          # .../harness (plugin) | .../.claude (ejected)
+PE_SKILL="$PE_DIR/SKILL.md"
+PLAN_LOOP_SKILL="$SKILLS_DIR/plan-loop/SKILL.md"
+EVO_AGENT="$HARNESS_ROOT/agents/evolution-steward.md"
+for f in "$PE_SKILL" "$PLAN_LOOP_SKILL" "$EVO_AGENT"; do
+  [ -f "$f" ] || fail "self-eval contract: required file missing: $f"
+done
+# planning-engineer single cycle: the every-cycle self-eval phase + the harness-evolution method.
+grep -qiE 'SELF-EVAL \(every cycle\)' "$PE_SKILL" || fail "planning-engineer SKILL.md lost the 'SELF-EVAL (every cycle)' phase"
+grep -qi  'harness-evolution'          "$PE_SKILL" || fail "planning-engineer SKILL.md no longer references the harness-evolution method"
+# plan-loop: must self-evaluate AND self-upgrade every cycle (not only at the batch boundary), fail-closed.
+grep -qiE 'self-eval.*self-upgrade'    "$PLAN_LOOP_SKILL" || fail "plan-loop SKILL.md must state per-cycle self-eval + self-upgrade"
+grep -qiE 'after every cycle'          "$PLAN_LOOP_SKILL" || fail "plan-loop SKILL.md must run the evolution after every cycle"
+grep -qi  'harness-evolution'          "$PLAN_LOOP_SKILL" || fail "plan-loop SKILL.md must reference the harness-evolution method"
+grep -qiE 'never weaken'               "$PLAN_LOOP_SKILL" || fail "plan-loop SKILL.md must keep the never-weaken-a-gate guard"
+# shared evolution-steward: fires every cycle, fail-closed, never mid-cycle.
+grep -qiE 'every cycle'                "$EVO_AGENT" || fail "evolution-steward must run every cycle"
+grep -qiE 'never mid-cycle'            "$EVO_AGENT" || fail "evolution-steward must keep the never-mid-cycle rule"
+echo "PASS: self-eval+self-upgrade-every-cycle contract locked (planning-engineer Phase 5 · plan-loop · evolution-steward)"
 
 echo "PASS: plan contract locked — targets rows, graph artifact names, JSON validity, and the documented examples all conform ($jq_note)"

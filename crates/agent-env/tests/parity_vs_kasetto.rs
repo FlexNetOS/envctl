@@ -30,8 +30,11 @@ use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-// A process-wide lock so the GITHUB_TOKEN-sensitive archive tests don't race each
-// other (kasetto guards these with the same pattern — src/source/remote.rs:ENV_LOCK).
+// A process-wide lock so process-global environment mutations/readers do not
+// race each other under Rust's parallel test runner. This protects both the
+// GITHUB_TOKEN-sensitive archive tests and the HOME/XDG parity vectors
+// (kasetto guards remote-source env with the same pattern —
+// src/source/remote.rs:ENV_LOCK).
 static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 fn tmp(tag: &str) -> PathBuf {
@@ -2173,6 +2176,7 @@ fn parity_settings_file_load_save() {
 // Oracle: kasetto src/fsops/mod.rs::tests::resolve_path_expands_only_leading_tilde.
 #[test]
 fn parity_resolve_path_expands_only_leading_tilde() {
+    let _g = ENV_LOCK.lock().unwrap();
     let base = Path::new("/base");
     let home = dirs_home().expect("home");
     assert_eq!(resolve_path(base, "~/skills"), home.join("skills"));
@@ -2283,6 +2287,7 @@ fn parity_select_targets_invalid_field_errors() {
 // Agent path table per src/model/agent.rs::tests::agent_paths_cover_supported_presets.
 #[test]
 fn parity_resolve_destinations() {
+    let _g = ENV_LOCK.lock().unwrap();
     let base = Path::new("/proj");
 
     // Explicit destination wins, resolved against base.
@@ -2340,6 +2345,7 @@ fn parity_resolve_mcp_settings_targets() {
 // global command path (src/model/agent.rs::commands_global_path → None for Cursor).
 #[test]
 fn parity_resolve_command_targets() {
+    let _g = ENV_LOCK.lock().unwrap();
     let proj = Path::new("/proj");
 
     // No agents → empty.
@@ -2360,6 +2366,7 @@ fn parity_resolve_command_targets() {
 // Lock-portability core: store install paths relative to a scope root, resolve back.
 #[test]
 fn parity_scope_root_relativize_resolve_dest() {
+    let _g = ENV_LOCK.lock().unwrap();
     let proj = Path::new("/proj");
 
     // scope_root: Project → project_root; Global → home.
@@ -2818,7 +2825,7 @@ fn parity_dirs_xdg_resolution() {
         PathBuf::from("/home/tester/.config/agent-env")
     );
 
-    // XDG_DATA_HOME: unset → `$HOME/.local/share`; leaf renamed kasetto → agent-env.
+    // XDG_DATA_HOME: unset -> the XDG data fallback under HOME; leaf renamed kasetto -> agent-env.
     std::env::remove_var("XDG_DATA_HOME");
     assert_eq!(
         dirs_xdg_data_home().unwrap(),

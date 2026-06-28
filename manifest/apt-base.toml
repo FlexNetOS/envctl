@@ -24,16 +24,22 @@ args = ["-lc", "ghostty --version"]
 [[component]]
 id = "podman"
 name = "Podman (rootless containers)"
-description = "Rootless container stack from the static podman release, installed under $META_ROOT/.toolchains/podman. No wrapper: ~/.local/bin/podman is a direct symlink to the meta-hosted podman binary; helper binaries and containers config are also meta-hosted."
+description = "Rootless container stack from the static podman release, installed under $META_ROOT/.toolchains/podman. $META_ROOT/usr/bin/podman is a regular executable frontdoor wrapper for the meta-hosted podman binary; helper binaries and containers config are also meta-hosted."
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/podman/usr/local/bin/podman\" ] && [ \"$(readlink -f \"$HOME/.local/bin/podman\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/podman/usr/local/bin/podman\")\" ]"]
+# Installed iff the meta-hosted podman binary exists AND a meta frontdoor bridge to it runs —
+# accepting EITHER the canonical $M/usr/bin (post-#271) OR the legacy $M/.local/bin compatibility
+# bridge. The old check hard-required a $M/usr/bin/podman *symlink*, so on a box that bridges via
+# .local/bin it falsely reported "not installed" → `envctl install` re-triggered the (formerly
+# destructive) podman reinstall. This is read-only and strictly more correct.
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; B=\"$M/.toolchains/podman/usr/local/bin/podman\"; [ -x \"$B\" ] || exit 1; for c in \"$M/usr/bin/podman\" \"$M/.local/bin/podman\"; do [ -x \"$c\" ] && \"$c\" --version >/dev/null 2>&1 && exit 0; done; exit 1"]
 [component.install]
 kind = "script"
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/podman"
 VER="${PODMAN_STATIC_VERSION:-v5.8.3}"
 ARCH="$(uname -m)"; case "$ARCH" in x86_64) A=amd64;; aarch64) A=arm64;; *) echo "unsupported arch: $ARCH"; exit 1;; esac
@@ -43,12 +49,16 @@ tarball="$cache/podman-linux-$A-$VER.tar.gz"
 [ -s "$tarball" ] || curl -fSL "$URL" -o "$tarball"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 tar -xzf "$tarball" -C "$tmp"
-rm -rf "$DEST"; install -d -m 755 "$DEST"
+# Re-extract the binary/config tree ONLY. Do NOT `rm -rf "$DEST"` — the container store
+# (graphroot/runroot/rootless-storage, set under $DEST in storage.conf below) lives here; wiping
+# it on a reinstall destroys every image/container (it once nuked a live stack). Removing just
+# usr/ + etc/ refreshes the payload while preserving the store; cp -a overlays the new binaries.
+rm -rf "$DEST/usr" "$DEST/etc"; install -d -m 755 "$DEST"
 cp -a "$tmp/podman-linux-$A/." "$DEST/"
 
 # Relocated, meta-hosted config. The podman binary is direct; config is read via
 # normal XDG/user config symlinks, not a launcher wrapper.
-install -d -m 755 "$DEST/etc/containers" "$HOME/.config/containers" "$HOME/.local/bin"
+install -d -m 755 "$DEST/etc/containers" "$META_ROOT/.config/containers" "$META_ROOT/usr/bin"
 cat > "$DEST/etc/containers/containers.conf" <<EOF
 [engine]
 cgroup_manager = "cgroupfs"
@@ -75,22 +85,28 @@ mount_program = "$DEST/usr/local/bin/fuse-overlayfs"
 mountopt = "nodev,fsync=0"
 EOF
 for f in containers.conf storage.conf registries.conf policy.json; do
-  [ -f "$DEST/etc/containers/$f" ] && ln -sfn "$DEST/etc/containers/$f" "$HOME/.config/containers/$f"
+  [ -f "$DEST/etc/containers/$f" ] && ln -sfn "$DEST/etc/containers/$f" "$META_ROOT/.config/containers/$f"
 done
-ln -sfn "$DEST/usr/local/bin/podman" "$HOME/.local/bin/podman"
+envctl_frontdoor "$DEST/usr/local/bin/podman" "$META_ROOT/usr/bin/podman"
 for b in crun runc fuse-overlayfs fusermount3 pasta; do
-  [ -x "$DEST/usr/local/bin/$b" ] && ln -sfn "$DEST/usr/local/bin/$b" "$HOME/.local/bin/$b"
+  [ -x "$DEST/usr/local/bin/$b" ] && envctl_frontdoor "$DEST/usr/local/bin/$b" "$META_ROOT/usr/bin/$b"
 done
+
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export PATH=\"$HOME/.local/bin:$PATH\"; [ \"$(readlink -f \"$(command -v podman)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/podman/usr/local/bin/podman\")\" ] && podman --version | grep -q '5\\.8\\.3' && podman info --format '{{.Host.Conmon.Path}} {{.Host.OCIRuntime.Path}}' | grep -q \"$M/.toolchains/podman\""]
+# Verify the META-LOCAL podman is the active engine: pinned version AND its conmon + OCI runtime
+# resolve under $M/.toolchains/podman. The old check also required the frontdoor to be a *symlink*
+# to the toolchains binary (`readlink -f` equality), which false-fails on a box whose bridge is a
+# copy at $M/.local/bin — the conmon/runtime-under-toolchains assertion already proves authenticity.
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; P=\"$(command -v podman 2>/dev/null || echo \"$M/.toolchains/podman/usr/local/bin/podman\")\"; \"$P\" --version 2>/dev/null | grep -q '5\\.8\\.3' && \"$P\" info --format '{{.Host.Conmon.Path}} {{.Host.OCIRuntime.Path}}' 2>/dev/null | grep -q \"$M/.toolchains/podman\""]
 [component.fix]
 kind = "script"
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/podman"
 VER="${PODMAN_STATIC_VERSION:-v5.8.3}"
 ARCH="$(uname -m)"; case "$ARCH" in x86_64) A=amd64;; aarch64) A=arm64;; *) echo "unsupported arch: $ARCH"; exit 1;; esac
@@ -100,9 +116,13 @@ tarball="$cache/podman-linux-$A-$VER.tar.gz"
 [ -s "$tarball" ] || curl -fSL "$URL" -o "$tarball"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 tar -xzf "$tarball" -C "$tmp"
-rm -rf "$DEST"; install -d -m 755 "$DEST"
+# Re-extract the binary/config tree ONLY. Do NOT `rm -rf "$DEST"` — the container store
+# (graphroot/runroot/rootless-storage, set under $DEST in storage.conf below) lives here; wiping
+# it on a reinstall destroys every image/container (it once nuked a live stack). Removing just
+# usr/ + etc/ refreshes the payload while preserving the store; cp -a overlays the new binaries.
+rm -rf "$DEST/usr" "$DEST/etc"; install -d -m 755 "$DEST"
 cp -a "$tmp/podman-linux-$A/." "$DEST/"
-install -d -m 755 "$DEST/etc/containers" "$HOME/.config/containers" "$HOME/.local/bin"
+install -d -m 755 "$DEST/etc/containers" "$META_ROOT/.config/containers" "$META_ROOT/usr/bin"
 cat > "$DEST/etc/containers/containers.conf" <<EOF
 [engine]
 cgroup_manager = "cgroupfs"
@@ -129,19 +149,20 @@ mount_program = "$DEST/usr/local/bin/fuse-overlayfs"
 mountopt = "nodev,fsync=0"
 EOF
 for f in containers.conf storage.conf registries.conf policy.json; do
-  [ -f "$DEST/etc/containers/$f" ] && ln -sfn "$DEST/etc/containers/$f" "$HOME/.config/containers/$f"
+  [ -f "$DEST/etc/containers/$f" ] && ln -sfn "$DEST/etc/containers/$f" "$META_ROOT/.config/containers/$f"
 done
-ln -sfn "$DEST/usr/local/bin/podman" "$HOME/.local/bin/podman"
+envctl_frontdoor "$DEST/usr/local/bin/podman" "$META_ROOT/usr/bin/podman"
 for b in crun runc fuse-overlayfs fusermount3 pasta; do
-  [ -x "$DEST/usr/local/bin/$b" ] && ln -sfn "$DEST/usr/local/bin/$b" "$HOME/.local/bin/$b"
+  [ -x "$DEST/usr/local/bin/$b" ] && envctl_frontdoor "$DEST/usr/local/bin/$b" "$META_ROOT/usr/bin/$b"
 done
+
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; for b in podman crun runc fuse-overlayfs fusermount3 pasta; do t=\"$HOME/.local/bin/$b\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/podman\" && rm -f \"$t\"; done; for f in containers.conf storage.conf registries.conf policy.json; do t=\"$HOME/.config/containers/$f\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/podman\" && rm -f \"$t\"; done; rm -rf \"$M/.toolchains/podman\""]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; for b in podman crun runc fuse-overlayfs fusermount3 pasta; do t=\"$META_ROOT/usr/bin/$b\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/podman\" && rm -f \"$t\"; done; for f in containers.conf storage.conf registries.conf policy.json; do t=\"$META_ROOT/.config/containers/$f\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/podman\" && rm -f \"$t\"; done; rm -rf \"$M/.toolchains/podman\""]
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/usr/bin"]
 
 
 [[component]]

@@ -8,41 +8,45 @@ name = "Nix (Determinate, flakes)"
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; [ -x \"$M/.toolchains/nix/bin/nix\" ] && [ \"$(readlink -f \"$HOME/.local/bin/nix\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/nix/bin/nix\")\" ] && [ -e /nix ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/nix/bin/nix\" ] && [ -x \"$META_ROOT/usr/bin/nix\" ] && [ ! -L \"$META_ROOT/usr/bin/nix\" ] && grep -Fqx \"exec \\\"$M/.toolchains/nix/bin/nix\\\" \\\"\\$@\\\"\" \"$META_ROOT/usr/bin/nix\" && [ -e /nix ]"]
 [component.install]
 kind = "script"
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 if [ ! -e /nix ]; then
   curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --no-confirm
 fi
-install -d -m 755 "$M/.toolchains/nix/bin" "$HOME/.local/bin"
+install -d -m 755 "$M/.toolchains/nix/bin" "$META_ROOT/usr/bin"
 src="$(readlink -f /nix/var/nix/profiles/default/bin/nix)"
 install -m 755 "$src" "$M/.toolchains/nix/bin/nix"
-ln -sfn "$M/.toolchains/nix/bin/nix" "$HOME/.local/bin/nix"
+envctl_frontdoor "$M/.toolchains/nix/bin/nix" "$META_ROOT/usr/bin/nix"
+
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; export PATH=\"$HOME/.local/bin:$PATH\"; [ \"$(readlink -f \"$(command -v nix)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/nix/bin/nix\")\" ] && nix --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$M/usr/bin:$PATH\"; [ -x \"$M/usr/bin/nix\" ] && [ ! -L \"$M/usr/bin/nix\" ] && grep -Fqx \"exec \\\"$M/.toolchains/nix/bin/nix\\\" \\\"\\$@\\\"\" \"$M/usr/bin/nix\" && nix --version"]
 [component.fix]
 kind = "script"
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
-M="${META_ROOT:-$HOME/Desktop/meta}"
+M="${META_ROOT:?META_ROOT required}"
 sudo systemctl restart nix-daemon 2>/dev/null || true
-install -d -m 755 "$M/.toolchains/nix/bin" "$HOME/.local/bin"
+install -d -m 755 "$M/.toolchains/nix/bin" "$META_ROOT/usr/bin"
 src="$(readlink -f /nix/var/nix/profiles/default/bin/nix)"
 install -m 755 "$src" "$M/.toolchains/nix/bin/nix"
-ln -sfn "$M/.toolchains/nix/bin/nix" "$HOME/.local/bin/nix"
+envctl_frontdoor "$M/.toolchains/nix/bin/nix" "$META_ROOT/usr/bin/nix"
 "$M/.toolchains/nix/bin/nix" --version
+
 '''
 [component.remove]
 kind = "script"
-script = "M=\"${META_ROOT:-$HOME/Desktop/meta}\"; t=\"$HOME/.local/bin/nix\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/nix\" && rm -f \"$t\"; rm -rf \"$M/.toolchains/nix\""
+script = "M=\"${META_ROOT:?META_ROOT required}\"; t=\"$META_ROOT/usr/bin/nix\"; src=\"$M/.toolchains/nix/bin/nix\"; if { [ -L \"$t\" ] && [ \"$(readlink -f \"$t\" 2>/dev/null || true)\" = \"$(readlink -f \"$src\" 2>/dev/null || true)\" ]; } || { [ -f \"$t\" ] && grep -Fqx \"exec \\\"$src\\\" \\\"\\$@\\\"\" \"$t\"; }; then rm -f \"$t\"; fi; rm -rf \"$M/.toolchains/nix\""
 [component.wiring]
-path_entries = ["~/.local/bin"]
+path_entries = ["$META_ROOT/usr/bin"]
 
 
 [[component]]
@@ -95,14 +99,14 @@ requires = ["nix"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", ". /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null; export PATH=\"$HOME/.nix-profile/bin:$PATH\"; command -v home-manager"]
+args = ["-lc", ". /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null; export PATH=\"$META_ROOT/.nix-profile/bin:$PATH\"; command -v home-manager"]
 [component.install]
 kind = "script"
 script = ". /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null; nix profile install nixpkgs#home-manager"
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", ". /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null; export PATH=\"$HOME/.nix-profile/bin:$PATH\"; home-manager --version"]
+args = ["-lc", ". /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null; export PATH=\"$META_ROOT/.nix-profile/bin:$PATH\"; home-manager --version"]
 [component.fix]
 kind = "script"
 script = ". /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null; nix profile upgrade home-manager || nix profile install nixpkgs#home-manager"
@@ -119,17 +123,17 @@ requires = ["nix", "nix-yazelix-cache", "home-manager", "ghostty"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", ". /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null; export PATH=\"$HOME/.nix-profile/bin:$PATH\"; command -v yzx"]
+args = ["-lc", ". /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null; export PATH=\"$META_ROOT/.nix-profile/bin:$PATH\"; command -v yzx"]
 [component.install]
 kind = "script"
 script = ". /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null; nix profile add --refresh github:FlexNetOS/yazelix#yazelix"
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", ". /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null; export PATH=\"$HOME/.nix-profile/bin:$PATH\"; yzx --version 2>/dev/null || command -v yzx"]
+args = ["-lc", ". /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null; export PATH=\"$META_ROOT/.nix-profile/bin:$PATH\"; yzx --version 2>/dev/null || command -v yzx"]
 [component.fix]
 kind = "script"
-script = ". /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null; export PATH=\"$HOME/.nix-profile/bin:$PATH\"; nix profile upgrade yazelix 2>/dev/null || nix profile add --refresh github:FlexNetOS/yazelix#yazelix; yzx doctor || true"
+script = ". /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null; export PATH=\"$META_ROOT/.nix-profile/bin:$PATH\"; nix profile upgrade yazelix 2>/dev/null || nix profile add --refresh github:FlexNetOS/yazelix#yazelix; yzx doctor || true"
 [component.remove]
 kind = "script"
 script = ". /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null; nix profile remove yazelix"
@@ -142,23 +146,23 @@ requires = ["yazelix"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "ls \"$HOME/.local/share/applications/\"*[yY]azelix* >/dev/null 2>&1"]
+args = ["-lc", "ls \"$META_ROOT/.local/share/applications/\"*[yY]azelix* >/dev/null 2>&1"]
 [component.install]
 kind = "script"
-script = ". /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null; export PATH=\"$HOME/.nix-profile/bin:$PATH\"; yzx desktop install"
+script = ". /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh 2>/dev/null; export PATH=\"$META_ROOT/.nix-profile/bin:$PATH\"; yzx desktop install"
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "ls \"$HOME/.local/share/applications/\"*[yY]azelix* >/dev/null 2>&1"]
+args = ["-lc", "ls \"$META_ROOT/.local/share/applications/\"*[yY]azelix* >/dev/null 2>&1"]
 [component.fix]
 kind = "script"
-script = "export PATH=\"$HOME/.nix-profile/bin:$PATH\"; yzx desktop install"
+script = "export PATH=\"$META_ROOT/.nix-profile/bin:$PATH\"; yzx desktop install"
 [component.remove]
 kind = "script"
-script = "export PATH=\"$HOME/.nix-profile/bin:$PATH\"; yzx desktop uninstall 2>/dev/null || rm -f \"$HOME/.local/share/applications/\"*[yY]azelix*.desktop"
+script = "export PATH=\"$META_ROOT/.nix-profile/bin:$PATH\"; yzx desktop uninstall 2>/dev/null || rm -f \"$META_ROOT/.local/share/applications/\"*[yY]azelix*.desktop"
 
 
-# Wiring-owned: the guarded ~/.bashrc auto-enter block (Wiring::apply/revert owns
+# Wiring-owned: the guarded $META_ROOT/.bashrc auto-enter block (Wiring::apply/revert owns
 # the marker block — no hand-rolled sed). Makes yazelix the default everyday shell.
 [[component]]
 id = "yazelix-shell"
@@ -167,17 +171,21 @@ requires = ["yazelix"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "grep -q 'BEGIN yazelix auto-enter' \"$HOME/.bashrc\""]
+args = ["-lc", "grep -q 'BEGIN yazelix auto-enter' \"$META_ROOT/.bashrc\""]
 [[component.wiring.shell_rc]]
-file = "~/.bashrc"
+file = "$META_ROOT/.bashrc"
 marker = "yazelix auto-enter"
 content = '''
 if [ -e /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
   . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
 fi
-export PATH="$HOME/.nix-profile/bin:$PATH"
+export PATH="$META_ROOT/.nix-profile/bin:$PATH"
 if [[ $- == *i* ]] && [[ -z "${ZELLIJ:-}" ]] && [[ -z "${YAZELIX_ACTIVE:-}" ]] && [[ "${TERM:-dumb}" != "dumb" ]] && command -v yzx >/dev/null 2>&1; then
   export YAZELIX_ACTIVE=1
+  # Bring the meta /usr mirror onto PATH/LD_LIBRARY_PATH BEFORE re-exec'ing into
+  # zellij/nushell, so the yazelix panes inherit usr/bin regardless of where the
+  # standalone `meta toolchain path` block lands in this file (it trails this one).
+  command -v envctl >/dev/null 2>&1 && eval "$(envctl env --toolchains)"
   yzx enter
 fi
 '''
@@ -210,27 +218,27 @@ priority = 60
 [[component]]
 id = "yazelix-config"
 name = "yazelix settings.jsonc"
-description = "Restores ~/.config/yazelix/settings.jsonc via the shipped helper (install-if-missing)."
+description = "Restores $META_ROOT/.config/yazelix/settings.jsonc via the shipped helper (install-if-missing)."
 requires = ["yazelix"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "[ -f \"$HOME/.config/yazelix/settings.jsonc\" ]"]
+args = ["-lc", "[ -f \"$META_ROOT/.config/yazelix/settings.jsonc\" ]"]
 [component.install]
 kind = "shipped_script"
-path = "/usr/local/bin/yazelix-config.sh"
+path = "$META_ROOT/envctl/assets/scripts/yazelix-config.sh"
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "[ -f \"$HOME/.config/yazelix/settings.jsonc\" ] && grep -q '\"default_shell\"' \"$HOME/.config/yazelix/settings.jsonc\""]
+args = ["-lc", "[ -f \"$META_ROOT/.config/yazelix/settings.jsonc\" ] && grep -q '\"default_shell\"' \"$META_ROOT/.config/yazelix/settings.jsonc\""]
 [component.fix]
 kind = "shipped_script"
-path = "/usr/local/bin/yazelix-config.sh"
+path = "$META_ROOT/envctl/assets/scripts/yazelix-config.sh"
 args = ["--force"]
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "mv \"$HOME/.config/yazelix/settings.jsonc\" \"$HOME/.config/yazelix/settings.jsonc.removed.$(date +%s)\" 2>/dev/null || true"]
+args = ["-lc", "mv \"$META_ROOT/.config/yazelix/settings.jsonc\" \"$META_ROOT/.config/yazelix/settings.jsonc.removed.$(date +%s)\" 2>/dev/null || true"]
 
 
 # Group/meta: the whole Nix+yazelix stack in order.

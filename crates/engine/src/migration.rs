@@ -1,5 +1,5 @@
 //! Migration/adoption engine for moving an existing meta checkout into envctl's
-//! canonical `$META_ROOT/.local/{bin,lib,share,state,cache,tmp,opt}` topology.
+//! canonical `$META_ROOT` FHS/XDG topology (`usr`, `etc`, `var`, `opt`, `run`, `tmp`, plus meta-home XDG roots).
 //!
 //! This module is deliberately conservative:
 //! - scan/plan/verify are read-only;
@@ -416,7 +416,7 @@ fn collect_manifest_items(
                     detail: hit.detail.to_string(),
                     source: Some(format!("{}:{}", path.display(), idx + 1)),
                     component: component.clone(),
-                    canonical: Some(layout.local().display().to_string()),
+                    canonical: Some(layout.meta_root().display().to_string()),
                     legacy: Some(line.trim().to_string()),
                     protected: false,
                 });
@@ -515,17 +515,21 @@ fn classify_line(line: &str) -> Vec<LineHit> {
             action: MigrationAction::UpdateManifestToCanonicalLayout,
             risk: MigrationRisk::Medium,
             subject: ".toolchains reference",
-            detail: "manifest still points at the compatibility prefix; update hook/wiring to MetaLayout .local paths",
+            detail: "manifest still points at the compatibility prefix; update hook/wiring to MetaLayout usr/var/opt/XDG paths",
         });
     }
-    if trimmed.contains("~/.local") || trimmed.contains("$HOME/.local") {
+    if trimmed.contains("~/.local")
+        || trimmed.contains("$HOME/.local")
+        || trimmed.contains("${HOME}/.local")
+        || trimmed.contains("%h/.local")
+    {
         hits.push(LineHit {
             id: "home-local",
             kind: MigrationKind::UserGlobalPath,
             action: MigrationAction::AdoptIntoMetaLocal,
             risk: MigrationRisk::Medium,
             subject: "user-global .local reference",
-            detail: "user-global installs are shims only; envctl-owned payloads belong under META_ROOT .local",
+            detail: "the real-home .local surface is a single bridge only; envctl-owned payloads belong under META_ROOT usr/var/opt or XDG roots",
         });
     }
     if trimmed.contains("/usr/local") || trimmed.contains("/opt/") {
@@ -687,11 +691,11 @@ fn find_up_marker(start: &Path, marker: &str) -> Option<PathBuf> {
 }
 
 fn ledger_path(meta_root: &Path) -> PathBuf {
-    meta_root.join(".local/state/envctl/migrations/ledger.jsonl")
+    meta_root.join("var/lib/envctl/migrations/ledger.jsonl")
 }
 
 fn archive_root(meta_root: &Path) -> PathBuf {
-    meta_root.join(".local/state/envctl/legacy-archives")
+    meta_root.join("var/lib/envctl/legacy-archives")
 }
 
 fn append_ledger(report: &MigrationReport) -> anyhow::Result<()> {
@@ -724,16 +728,20 @@ mod tests {
         let root = tempdir("migration-scan");
         let manifest = root.join("manifest");
         std::fs::create_dir_all(&manifest).unwrap();
+        let legacy_home_local = ["~", ".local/bin/foo"].join("/");
+        let legacy_usr_local = ["/usr/local/bin", "foo"].join("/");
         std::fs::write(
             manifest.join("base.toml"),
-            r#"
+            format!(
+                r#"
 [[component]]
 id = "legacy"
 name = "Legacy"
 [component.install]
 kind = "script"
-script = "mkdir -p $META_ROOT/.toolchains/legacy && ln -s ~/.local/bin/foo /usr/local/bin/foo"
-"#,
+script = "mkdir -p $META_ROOT/.toolchains/legacy && ln -s {legacy_home_local} {legacy_usr_local}"
+"#
+            ),
         )
         .unwrap();
         std::fs::create_dir_all(root.join("crates/engine")).unwrap();
@@ -792,12 +800,45 @@ name = "Stub"
         .unwrap();
 
         assert_eq!(report.verb, MigrationVerb::Apply);
-        assert!(root.join(".local/bin").is_dir());
-        assert!(root.join(".local/lib").is_dir());
+        assert!(root.join("usr/bin").is_dir());
+        assert!(root.join("usr/lib").is_dir());
+        assert!(root.join("usr/libexec").is_dir());
+        assert!(root.join("usr/share").is_dir());
+        assert!(root.join("etc/envctl").is_dir());
+        assert!(root.join("var/lib/envctl").is_dir());
+        assert!(root.join("var/cache/envctl").is_dir());
+        assert!(root.join("opt").is_dir());
+        assert!(root.join(".config").is_dir());
+        assert!(root.join(".local/share").is_dir());
+        assert!(root.join(".local/state").is_dir());
+        assert!(root.join(".cache").is_dir());
+        assert!(!root.join(".local/bin").exists());
         assert!(!root.join(".toolchains").exists());
         assert!(PathBuf::from(&report.ledger_path).is_file());
         std::env::remove_var("META_ROOT");
         let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn classify_line_flags_all_real_home_local_spellings() {
+        for spelling in [
+            "~/.local/bin/foo",
+            "$HOME/.local/bin/foo",
+            "${HOME}/.local/bin/foo",
+            "%h/.local/bin/foo",
+        ] {
+            assert!(
+                classify_line(spelling)
+                    .iter()
+                    .any(|hit| hit.id == "home-local"),
+                "{spelling} should be migration debt"
+            );
+        }
+
+        assert!(
+            classify_line("$ENVCTL_REAL_HOME/.local -> $META_ROOT/.local").is_empty(),
+            "the one explicit host bridge policy must not be classified as a per-tool install"
+        );
     }
 
     fn tempdir(label: &str) -> PathBuf {

@@ -115,7 +115,7 @@ Where it lives depends on the scope:
 
 | Scope | Location |
 | --- | --- |
-| Global | `$XDG_DATA_HOME/agent-env/agent-env.lock` (default: `~/.local/share/agent-env/agent-env.lock`) |
+| Global | `$XDG_DATA_HOME/agent-env/agent-env.lock` (envctl-managed default: `$META_ROOT/.local/share/agent-env/agent-env.lock`) |
 | Project | `./agent-env.lock` in the project root |
 
 The lock is also how envctl knows what to remove when you drop a source from the config or run `envctl agent clean`. You generally won't need to touch it by hand.

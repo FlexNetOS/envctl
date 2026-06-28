@@ -22,14 +22,14 @@
 # to any envctl `Cargo.toml` [workspace.members]/[dependencies] — so `ci/gates/no-c.sh` stays green.
 # It is managed as *data* (this TOML), not as code, identical to how grit (which also links C) is.
 #
-# Installed box-wide to ~/.cargo/bin from the meta-cloned checkout, offline/reproducible via the
+# Installed box-wide to $META_ROOT/.toolchains/cargo/bin from the meta-cloned checkout, offline/reproducible via the
 # committed prompt_hub/Cargo.lock (`--locked`). The `prompthub` CLI is the front door; the
 # `prompthub-server` HTTP binary is installed alongside it from the same workspace.
 
 [[component]]
 id = "prompt_hub"
 name = "prompt_hub — prompt management for LLM agent swarms"
-description = "Builds + installs the prompthub CLI and prompthub-server binaries from the meta-cloned prompt_hub checkout. External product binary on ~/.cargo/bin; NOT linked into any envctl crate. Declares prompt_hub's build needs (rustup + a C compiler + OpenSSL headers) so the repo is provisioned, not assumed-broken."
+description = "Builds + installs the prompthub CLI and prompthub-server binaries from the meta-cloned prompt_hub checkout. External product binary on $META_ROOT/.toolchains/cargo/bin; NOT linked into any envctl crate. Declares prompt_hub's build needs (rustup + a C compiler + OpenSSL headers) so the repo is provisioned, not assumed-broken."
 requires = ["rustup", "llvm-clang", "libssl-dev"]   # cargo+toolchain (base.toml) + C compiler for the
                                                      # *-sys crates (epic-h-toolchains) + openssl-sys
                                                      # dev headers (apt-base.toml).
@@ -39,7 +39,7 @@ destructive = false
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "command -v prompthub >/dev/null || [ -x \"$HOME/.cargo/bin/prompthub\" ]"]
+args = ["-lc", "export CARGO_HOME=\"$META_ROOT/.toolchains/cargo\"; export PATH=\"$CARGO_HOME/bin:$PATH\"; command -v prompthub >/dev/null || [ -x \"$META_ROOT/.toolchains/cargo/bin/prompthub\" ]"]
 
 # INSTALL: MSRV-gate (fail-closed, never silently upgrade), then build+place the binaries from the
 # meta-cloned checkout. `--locked` honours prompt_hub's committed Cargo.lock for a reproducible build.
@@ -47,7 +47,8 @@ args = ["-lc", "command -v prompthub >/dev/null || [ -x \"$HOME/.cargo/bin/promp
 kind = "script"
 script = '''
 set -euo pipefail
-export PATH="$HOME/.cargo/bin:$PATH"
+export CARGO_HOME="$META_ROOT/.toolchains/cargo"
+export PATH="$CARGO_HOME/bin:$PATH"
 
 # MSRV gate: pass iff cargo >= 1.91.1 (prompt_hub workspace rust-version). MSRV line FIRST so
 # `sort -V -C` succeeds only when the pair is ascending (1.91.1 <= $ver). (Same ordering idiom as
@@ -56,7 +57,7 @@ ver="$(cargo --version | awk '{print $2}')"
 printf '1.91.1\n%s\n' "$ver" | sort -V -C || { echo "FATAL: cargo $ver < prompt_hub MSRV 1.91.1"; exit 1; }
 
 # prompt_hub lives in the meta workspace (registered in ../.meta.yaml, .gitignore'd, its own repo).
-repo="${PROMPT_HUB_REPO:-$HOME/Desktop/meta/prompt_hub}"
+repo="${PROMPT_HUB_REPO:-$META_ROOT/prompt_hub}"
 test -d "$repo" || { echo "FATAL: prompt_hub checkout not found at $repo (set PROMPT_HUB_REPO)"; exit 1; }
 
 # Front-door CLI (package `prompthub`, bin `prompthub`) + the HTTP server (`prompthub-server`).
@@ -71,15 +72,16 @@ cargo install --path "$repo/prompthub-server" --locked
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.cargo/bin:$PATH\"; prompthub --version >/dev/null && prompthub-server --help >/dev/null"]
+args = ["-lc", "export CARGO_HOME=\"$META_ROOT/.toolchains/cargo\"; export PATH=\"$CARGO_HOME/bin:$PATH\"; prompthub --version >/dev/null && prompthub-server --help >/dev/null"]
 
 # FIX: idempotent rebuild+reinstall (force-overwrite). The dev-tools `cargo install --force` idiom.
 [component.fix]
 kind = "script"
 script = '''
 set -euo pipefail
-export PATH="$HOME/.cargo/bin:$PATH"
-repo="${PROMPT_HUB_REPO:-$HOME/Desktop/meta/prompt_hub}"
+export CARGO_HOME="$META_ROOT/.toolchains/cargo"
+export PATH="$CARGO_HOME/bin:$PATH"
+repo="${PROMPT_HUB_REPO:-$META_ROOT/prompt_hub}"
 test -d "$repo" || { echo "FATAL: prompt_hub checkout not found at $repo (set PROMPT_HUB_REPO)"; exit 1; }
 cargo install --path "$repo/prompthub" --force --locked
 cargo install --path "$repo/prompthub-server" --force --locked
@@ -89,9 +91,9 @@ cargo install --path "$repo/prompthub-server" --force --locked
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$HOME/.cargo/bin:$PATH\"; cargo uninstall prompthub || true; cargo uninstall prompthub-server || true"]
+args = ["-lc", "export CARGO_HOME=\"$META_ROOT/.toolchains/cargo\"; export PATH=\"$CARGO_HOME/bin:$PATH\"; cargo uninstall prompthub || true; cargo uninstall prompthub-server || true"]
 
-# ---- WIRING: ~/.cargo/bin is already on PATH via other components; declared so reset can reason
+# ---- WIRING: $META_ROOT/.toolchains/cargo/bin is already on PATH via other components; declared so reset can reason
 # ---- about it reversibly. No shell_rc / systemd / data_paths — prompthub is a plain binary.
 [component.wiring]
-path_entries = ["~/.cargo/bin"]
+path_entries = ["$META_ROOT/.toolchains/cargo/bin"]

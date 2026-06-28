@@ -2,49 +2,48 @@
   "mcpServers": {
     "context7": {
       "args": [
-        "-y",
-        "@upstash/context7-mcp@latest"
+        "-lc",
+        "ROOT=\"${META_ROOT:-/home/drdave/Desktop/meta}\"; export META_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @upstash/context7-mcp@latest"
       ],
-      "command": "npx"
+      "command": "bash"
     },
     "exa": {
       "url": "https://mcp.exa.ai/mcp"
     },
     "github": {
       "args": [
-        "-y",
-        "@modelcontextprotocol/server-github"
+        "-lc",
+        "ROOT=\"${META_ROOT:-/home/drdave/Desktop/meta}\"; export META_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @modelcontextprotocol/server-github"
       ],
-      "command": "npx"
+      "command": "bash"
     },
     "memory": {
       "args": [
-        "-y",
-        "@modelcontextprotocol/server-memory"
+        "-lc",
+        "ROOT=\"${META_ROOT:-/home/drdave/Desktop/meta}\"; exec \"$ROOT/envctl/assets/scripts/envctl-mcp-memory-server\""
       ],
-      "command": "npx"
+      "command": "bash"
     },
     "n8n-mcp": {
       "args": [
         "-lc",
-        "export PATH=\"$HOME/.bun/bin:$HOME/.local/bin:$PATH\"; export N8N_API_URL=http://localhost:5678; export N8N_API_KEY=\"$(secretctl secret get n8n-api-key --reveal --apply)\"; exec npx -y n8n-mcp"
+        "ROOT=\"${META_ROOT:-/home/drdave/Desktop/meta}\"; export META_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH\"; export N8N_API_URL=\"${N8N_API_URL:-http://localhost:5678}\"; if [ -z \"${N8N_API_KEY:-}\" ] && [ -x \"$ROOT/usr/bin/secretctl\" ]; then N8N_API_KEY=\"$(\"$ROOT/usr/bin/secretctl\" secret get n8n-api-key --reveal --apply 2>/dev/null || true)\"; export N8N_API_KEY; fi; exec \"$ROOT/usr/bin/bunx\" n8n-mcp"
       ],
       "command": "bash"
     },
     "playwright": {
       "args": [
-        "-y",
-        "@playwright/mcp@latest",
-        "--extension"
+        "-lc",
+        "ROOT=\"${META_ROOT:-/home/drdave/Desktop/meta}\"; export META_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @playwright/mcp@latest --extension"
       ],
-      "command": "npx"
+      "command": "bash"
     },
     "sequential-thinking": {
       "args": [
-        "-y",
-        "@modelcontextprotocol/server-sequential-thinking"
+        "-lc",
+        "ROOT=\"${META_ROOT:-/home/drdave/Desktop/meta}\"; export META_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @modelcontextprotocol/server-sequential-thinking"
       ],
-      "command": "npx"
+      "command": "bash"
     }
   }
 }

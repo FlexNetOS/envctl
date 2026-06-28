@@ -9,7 +9,7 @@
 
 ## TL;DR
 
-`envctl` is a first-class **meta** peer member — the **pure-Rust, GPU-aware, source-building agentic environment manager for the whole meta workspace**. It brings every tool, dependency, provider, vendor, CLI, and config to a declared state and installs it **into meta** through envctl's canonical system-shaped prefix (`$META_ROOT/.local/{bin,lib,share,state,cache,tmp,opt}`), with `.toolchains/` retained only as a legacy compatibility store for manager-specific roots. There are **no system-depth or user-global installs** — anything meta uses lives in meta, portable wherever meta is cloned. Its deployment target today is one specific machine: an Ubuntu 26.04 LTS developer workstation with **two NVIDIA RTX 5090** (GB202 / Blackwell / sm_120) GPUs. It takes the proven first-login wizard (`yazelix-setup.sh`) and the hardened boot-repair script (`ubuntu-boot-repair.sh`) and makes the whole toolchain **idempotent, resumable, observable, and reversible** — without rewriting any of the proven bash. Every tool is a declarative TOML **component** whose lifecycle hooks *wrap* the original bash verbatim. One Cargo workspace ships a shared **engine** library, an **`envctl`** CLI, and a native egui **`envctl-gui`** desktop app, all driven by the same five verbs: `auto-detect`, `install`, `auto-fix`, `reset`, `add-repo`. Destructive operations inherit the boot-repair "gold standard": **dry-run by default, resolve-then-re-verify, refuse on ambiguity, back up before clobber, never touch user data.**
+`envctl` is a first-class **meta** peer member — the **pure-Rust, GPU-aware, source-building agentic environment manager for the whole meta workspace**. It brings every tool, dependency, provider, vendor, CLI, and config to a declared state and installs it **into meta** through envctl's canonical system-shaped prefix (`$META_ROOT/{usr/bin,usr/lib,usr/share,etc,var/lib,var/cache,var/log,var/tmp,opt} plus XDG meta-home roots`), with `.toolchains/` retained only as a legacy compatibility store for manager-specific roots. There are **no system-depth or user-global installs** — anything meta uses lives in meta, portable wherever meta is cloned. Its deployment target today is one specific machine: an Ubuntu 26.04 LTS developer workstation with **two NVIDIA RTX 5090** (GB202 / Blackwell / sm_120) GPUs. It takes the proven first-login wizard (`yazelix-setup.sh`) and the hardened boot-repair script (`ubuntu-boot-repair.sh`) and makes the whole toolchain **idempotent, resumable, observable, and reversible** — without rewriting any of the proven bash. Every tool is a declarative TOML **component** whose lifecycle hooks *wrap* the original bash verbatim. One Cargo workspace ships a shared **engine** library, an **`envctl`** CLI, and a native egui **`envctl-gui`** desktop app, all driven by the same five verbs: `auto-detect`, `install`, `auto-fix`, `reset`, `add-repo`. Destructive operations inherit the boot-repair "gold standard": **dry-run by default, resolve-then-re-verify, refuse on ambiguity, back up before clobber, never touch user data.**
 
 ---
 
@@ -36,7 +36,7 @@ That leaves four capability gaps that bite a working developer:
 - **One engine, two front-ends.** All behavior lives in `envctl-engine`. The CLI and GUI are thin shells over the identical `Engine` API, so they can never diverge.
 - **Best-effort, never abort the batch.** A failing hook is recorded and the run continues (the wizard's `fail[]` roster), exactly as `yazelix-setup.sh:run()` does.
 - **Boot-repair discipline for anything destructive.** Resolve-then-re-verify, dry-run by default, refuse on ambiguity, back up before clobber, never touch user data.
-- **Few mainstream deps, stable Rust, no web/WebView.** Single binary per front-end; the GPU telemetry default path shells out to `nvidia-smi` (zero extra deps).
+- **Few mainstream deps, stable Rust, no web/WebView.** Single binary per front-end; GPU inventory reads `/proc/driver/nvidia/version` as the driver source of truth, while the telemetry path shells out to `nvidia-smi` with a hard timeout to sample live utilization/memory/temp/power fields without extra FFI deps.
 
 ---
 
@@ -52,7 +52,7 @@ That leaves four capability gaps that bite a working developer:
 | G4 | Make the manifest **extensible** via `add-repo`: turn an arbitrary upstream git repo into a first-class, removable, source-built component drop-in. |
 | G5 | Stream all activity as **structured events** to both a live console (CLI/GUI) and an on-disk run log, so a crash or closed window never loses the record. |
 | G6 | Ship a **native egui GUI** (no web) with live dual-5090 telemetry, a component grid, add-repo form, live logs, and settings — where the UI thread never blocks. |
-| G7 | Keep the build **pure-Rust, stable-toolchain, few mainstream deps**, compiling green with and without the optional `gpu-nvml` feature. |
+| G7 | Keep the build **pure-Rust, stable-toolchain, few mainstream deps**, compiling green with the current GPU probe path and no Web/WebView. |
 
 ### 2.2 Non-Goals
 
@@ -64,7 +64,7 @@ That leaves four capability gaps that bite a working developer:
 | N4 | **Not a boot-repair tool of its own.** Host boot/driver repair is *delegated* to `ubuntu-boot-repair.sh` (opt-in behind `--allow-boot`); envctl never improvises GRUB/ESP/NVRAM edits. |
 | N5 | **Not a daemon / always-on service.** It runs on demand (CLI invocation or GUI session). |
 | N6 | **Not a secrets/credentials manager.** Interactive auth (`claude /login`, `gh auth login`) is explicitly out of scope and left to the user. |
-| N7 | **No web UI, no WebView, nothing nightly** (the optional `gpu-nvml` feature aside, which is still stable). |
+| N7 | **No web UI, no WebView, nothing nightly**. |
 
 ---
 
@@ -167,10 +167,10 @@ The product surface is five verbs that map onto five lifecycle **phases** on eve
 
 **REQ-DETECT-2 (GPU graceful-degradation cascade)** — GPU detection always yields a report, even on a driverless first boot:
 - **Tier 0 — PCI floor** (always first, never fails, no driver needed): walk `/sys/bus/pci/devices` + `lspci` for vendor `0x10de`; sets the **authoritative GPU count** (==2 on this box).
-- **Tier 1 — NVML** (preferred when the driver is live; optional `gpu-nvml` feature): `Nvml::init()` is fallible by design → driverless boot falls through, never panics.
-- **Tier 2 — `nvidia-smi` CSV** (default build, zero extra deps): hard timeout; failure/timeout ⇒ `driver_loaded = false`.
+- **Tier 1 — `/proc/driver/nvidia/version`** (driver state): presence of the file means `driver_loaded=true`; parse its strict `major.minor.patch` token into `driver_version` when available.
+- **Tier 2 — `nvidia-smi` CSV + `nvcc`** (best-effort, hard timeout): `nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw --format=csv,noheader,nounits` feeds the live telemetry cards, while `nvidia-smi --query-gpu=name --format=csv,noheader`, `lspci` fallback names, and `nvcc --version` supply best-effort inventory/CUDA details. This tier never defines `driver_loaded`; the proc file remains the source of truth.
 
-`driver_loaded` / `open_kernel_module` come independently from `/proc/driver/nvidia/version`. `software_rendered = (PCI sees NVIDIA) AND NOT driver_loaded` drives the "reboot to load the driver" precondition.
+`open_kernel_module` comes from `modinfo -F license nvidia` (MIT/GPL means the open kernel module). `software_rendered = (PCI sees NVIDIA) AND NOT driver_loaded` drives the "reboot to load the driver" precondition.
 
 **REQ-DETECT-3** — Every probe failure is a **non-fatal warning**, never an error. Absence is a normal `Option`/`bool`/enum state. Each probe has a hard timeout.
 
@@ -209,7 +209,7 @@ The product surface is five verbs that map onto five lifecycle **phases** on eve
 
 **REQ-INSTALL-6 (wiring apply)** — On successful install, `Wiring::apply()` runs idempotently: guarded `# >>> BEGIN <marker> >>> … <<< END <<<` shell-rc blocks written only if `grep -q` of the marker fails; PATH entries appended only if absent; `.desktop` autostarts (incl. one-shot self-disabling); `update-alternatives`.
 
-**REQ-INSTALL-7 (streaming + on-disk log)** — The real `ProcessRunner` spawns each hook with piped stdout/stderr, reads line-by-line, emits each as `Event::Log`, classifies the exit into an `OpResult`, and **tees every line to `$META_ROOT/.local/state/envctl/envctl.log`** (the analogue of `~/yazelix-setup.log`). Per-hook timeout + `catch_unwind` isolate one bad component from the run. `needs_sudo` is pre-warmed once (with keepalive) so streamed, TTY-less hooks don't prompt mid-run; no TTY ⇒ fail fast with a warning rather than hang.
+**REQ-INSTALL-7 (streaming + on-disk log)** — The real `ProcessRunner` spawns each hook with piped stdout/stderr, reads line-by-line, emits each as `Event::Log`, classifies the exit into an `OpResult`, and **tees every line to `$META_ROOT/var/lib/envctl/envctl.log`** (the analogue of `~/yazelix-setup.log`). Per-hook timeout + `catch_unwind` isolate one bad component from the run. `needs_sudo` is pre-warmed once (with keepalive) so streamed, TTY-less hooks don't prompt mid-run; no TTY ⇒ fail fast with a warning rather than hang.
 
 *Acceptance (met & dogfooded):* real streaming install with wiring, timeouts, and sudo keepalive validated on the live box; idempotent re-run skips present components; a forced failure blocks its dependents.
 
@@ -272,9 +272,9 @@ The product surface is five verbs that map onto five lifecycle **phases** on eve
 
 **REQ-ADDREPO-3 (dry-run)** — `--dry-run` prints the exact TOML that would be written and changes nothing.
 
-**REQ-ADDREPO-4 (full pipeline — Phase 4)** — The complete 9-stage pipeline: acquire (clone/fetch, record resolved SHA, snapshot local paths), detect build system (nix flake > cargo > meson > cmake > make > python/uv > bun/npm), best-effort dep resolution, build (kit CUDA/LLVM/PATH env sourced, SHA+flags-keyed cache), locate+classify artifacts, install (symlink-default into `$META_ROOT/.local`, backup-before-clobber), wire-in (guarded PATH/completions/desktop/systemd `--user`), register, verify. All user-scope, best-effort, refuse-on-ambiguity.
+**REQ-ADDREPO-4 (full pipeline — Phase 4)** — The complete 9-stage pipeline: acquire (clone/fetch, record resolved SHA, snapshot local paths), detect build system (nix flake > cargo > meson > cmake > make > python/uv > bun/npm), best-effort dep resolution, build (kit CUDA/LLVM/PATH env sourced, SHA+flags-keyed cache), locate+classify artifacts, install (frontdoor wrapper-default into `$META_ROOT/.local`, backup-before-clobber), wire-in (guarded PATH/completions/desktop/systemd `--user`), register, verify. All user-scope, best-effort, refuse-on-ambiguity.
 
-*Status:* hardened drop-in writer (validation, collision-refusal, atomic write, dry-run, clone into `$META_ROOT/.local/share/envctl/repos/<slug>` at 0700, escaped interpolation) shipped; full 9-stage build pipeline is Phase 4.
+*Status:* hardened drop-in writer (validation, collision-refusal, atomic write, dry-run, clone into `$META_ROOT/var/lib/envctl/repos/<slug>` at 0700, escaped interpolation) shipped; full 9-stage build pipeline is Phase 4.
 
 ---
 
@@ -329,7 +329,7 @@ These are **hard invariants** inherited verbatim from `ubuntu-boot-repair.sh`'s 
 
 **REQ-GUI-6 (Settings / Manifest)** — Read-mostly viewer: each component's five hooks (read-only monospace) + wiring badges; global options — telemetry-interval slider, log-cap, **"destructive ops dry-run by default" checkbox (ON)**, "require confirmation for Remove/Reset/AutoFix", "Reload manifest from disk". Deep edits happen in `$EDITOR`; the manifest is the source of truth.
 
-**REQ-GUI-7 (telemetry cadence)** — A dedicated ~1s sampler thread emits `Event::Telemetry` while the Dashboard is active, backing off to ~3–5s off-Dashboard and pausing when the window is unfocused — so a 10-minute CUDA build never starves the GPU gauges and never needlessly spawns `nvidia-smi`.
+**REQ-GUI-7 (telemetry cadence)** — A dedicated ~1s sampler thread emits `Event::Telemetry` while the Dashboard is active, backing off to ~3–5s off-Dashboard and pausing when the window is unfocused — so a 10-minute CUDA build never starves the GPU gauges and never needlessly spawns `nvidia-smi` (the sampler uses the same hard-timeout helper as inventory probes).
 
 *Status:* Dashboard + Components grid render the live `EnvReport` read-only (Phase 1); per-row install + Live Logs streaming (Phase 2); confirmation modals, full telemetry, and polish are Phase 3/5.
 
@@ -339,15 +339,15 @@ These are **hard invariants** inherited verbatim from `ubuntu-boot-repair.sh`'s 
 
 **REQ-NFR-1 (pure Rust, single binary)** — One Cargo workspace, three members: `envctl-engine` (lib), `envctl` (CLI bin), `envctl-gui` (eframe bin). **All behavior lives in the library** so CLI and GUI cannot diverge. Each front-end is a self-contained binary.
 
-**REQ-NFR-2 (stable toolchain, few mainstream deps)** — Compiles on **stable Rust**, nothing nightly. Engine deps: serde, toml, anyhow, thiserror, sysinfo, which, chrono (+ optional `nvml-wrapper` behind `gpu-nvml`, serde_json for `lsblk -J`). CLI adds clap; GUI adds only eframe/egui/egui_extras. No web, no WebView. `cargo build` must be green **with and without** the `gpu-nvml` feature.
+**REQ-NFR-2 (stable toolchain, few mainstream deps)** — Compiles on **stable Rust**, nothing nightly. Engine deps: serde, toml, anyhow, thiserror, sysinfo, which, chrono, serde_json for `lsblk -J`. CLI adds clap; GUI adds only eframe/egui/egui_extras. No web, no WebView. `cargo build` must be green.
 
 **REQ-NFR-3 (best-effort)** — One component's failure (or panic, isolated via `catch_unwind`) never aborts the run. The run always ends with a `RunSummary` roster (`failed` / `refused` / `skipped_blocked`). `RunSummary::ok()` ⟺ no failures and no refusals.
 
-**REQ-NFR-4 (observability)** — The engine **never prints**; it emits structured `Event`s over an mpsc channel (`RunStarted` / `StepStarted` / `Log` / `StepFinished` / `Telemetry` / `GuardRefused` / `RunFinished`). The CLI drains on the main thread and pretty-prints (`--json` ⇒ NDJSON for scripting); the GUI drains via `try_recv`. The line stream is tee'd to `$META_ROOT/.local/state/envctl/envctl.log` so a crash never loses the record; the log is replayable.
+**REQ-NFR-4 (observability)** — The engine **never prints**; it emits structured `Event`s over an mpsc channel (`RunStarted` / `StepStarted` / `Log` / `StepFinished` / `Telemetry` / `GuardRefused` / `RunFinished`). The CLI drains on the main thread and pretty-prints (`--json` ⇒ NDJSON for scripting); the GUI drains via `try_recv`. The line stream is tee'd to `$META_ROOT/var/lib/envctl/envctl.log` so a crash never loses the record; the log is replayable.
 
 **REQ-NFR-5 (deterministic & reproducible)** — Dependency order is a deterministic Kahn sort (declaration-order tie-break), so built-ins reproduce the wizard's proven sequence and runs are reproducible.
 
-**REQ-NFR-6 (meta-local layout)** — envctl is the path authority for meta installs. Repos: `$META_ROOT/.local/share/envctl/repos/<slug>` (0700). Binaries: `$META_ROOT/.local/bin`. Libraries: `$META_ROOT/.local/lib`. Shared data: `$META_ROOT/.local/share`. State/log: `$META_ROOT/.local/state/envctl/envctl.log`. Cache/tmp: `$META_ROOT/.local/{cache,tmp}`. Component prefixes: `$META_ROOT/.local/opt/<component>`. `.toolchains/` remains a legacy compatibility prefix for existing manager homes while manifests migrate.
+**REQ-NFR-6 (meta-local layout)** — envctl is the path authority for meta installs. Repos: `$META_ROOT/var/lib/envctl/repos/<slug>` (0700). Binaries: `$META_ROOT/usr/bin`. Libraries: `$META_ROOT/usr/lib`. Shared data: `$META_ROOT/.local/share`. State/log: `$META_ROOT/var/lib/envctl/envctl.log`. Cache/tmp: `$META_ROOT/.local/{cache,tmp}`. Component prefixes: `$META_ROOT/opt/<component>`. `.toolchains/` remains a legacy compatibility prefix for existing manager homes while manifests migrate.
 
 **REQ-NFR-7 (testability)** — The one behavioral seam (`HookRunner`) lets tests inject `DryRunRunner` / recording runners. Targets: golden runs, drift fixtures, wiring apply/revert round-trip, guard refusal cases, manifest serde round-trip.
 
@@ -364,7 +364,7 @@ These are **hard invariants** inherited verbatim from `ubuntu-boot-repair.sh`'s 
 | M5 | **Safety: no forbidden states** | Across all runs, **none of FS-1…FS-8 ever occur**; every ambiguous destructive op is `Refused`, never silently executed. |
 | M6 | **Best-effort resilience** | A single failing installer never aborts the batch; the final `RunSummary` accurately rosters `failed` / `refused` / `skipped_blocked`. |
 | M7 | **Responsive GUI** | The UI thread never blocks during a multi-minute CUDA build; telemetry keeps updating; CPU at rest ≈ 0%. |
-| M8 | **Build hygiene** | `cargo build` green on stable, **with and without** `gpu-nvml`; clippy clean. |
+| M8 | **Build hygiene** | `cargo build` green on stable; clippy clean. |
 | M9 | **Extensibility** | `add-repo` of a real cargo `--git` tool makes it appear in `auto-detect` and be managed by install/reset/auto-fix end-to-end. |
 
 ---
@@ -380,7 +380,7 @@ Six roadmap phases. **Phases 0–2 are complete and dogfooded on the live dual-5
 | **2 — install (additive, idempotent, streaming)** | `ProcessRunner` line-streaming + tee to disk; best-effort `run_phase` (gpu skip, NoHook, catch_unwind, sudo keepalive, timeouts); idempotent skip-if-detected; `Wiring::apply` (grep-guarded rc blocks, PATH, .desktop, alternatives); **full 44-component base manifest**; forward traversal w/ SkippedBlocked + RebootRequired; CLI install flags; GUI per-row install + Live Logs + health pill. | ✅ **Done & dogfooded** |
 | **3 — reset + auto-fix (destructive, full guard discipline)** | `RunContext` resolve-once; `Wiring::revert` backup-then-excise-owned-block; reset reverse-order/`--cascade`/`--all --confirm`/re-detect-ABSENT; auto-fix BROKEN/PARTIAL-only, atomic backup→apply→verify w/ revert-on-failure; **system-scope revert** (`/etc/nix`, `/etc/apt`, `/etc/cdi`, alternatives); boot-repair delegation behind `--allow-boot`; GUI confirmation modals. | 🚧 **In progress** (dry-run defaults, guards, owned-block revert shipped; system-scope revert + post-verify being completed) |
 | **4 — add-repo (build-from-source + wire-in)** | Full 9-stage pipeline (acquire→detect-build-system→deps→build→locate→install→wire→register→verify); component synthesis + atomic drop-in; refuse-on-ambiguity edges; CLI/GUI add-repo; end-to-end on a real cargo `--git` tool. | ⏳ **Pending** (hardened drop-in writer already shipped) |
-| **5 — GUI polish + telemetry + hardening** | Live ~1s sampler w/ cadence backoff + sparklines; yellow DriverNotActive card; Settings/Manifest screen; Live Logs ring + filters; NDJSON CLI stream; RecordingRunner golden runs, drift/wiring/guard tests; green build with/without `gpu-nvml`. | ⏳ **Pending** |
+| **5 — GUI polish + telemetry + hardening** | Live ~1s sampler w/ cadence backoff + sparklines; yellow DriverNotActive card; Settings/Manifest screen; Live Logs ring + filters; NDJSON CLI stream; RecordingRunner golden runs, drift/wiring/guard tests; green build on stable. | ⏳ **Pending** |
 
 ---
 
