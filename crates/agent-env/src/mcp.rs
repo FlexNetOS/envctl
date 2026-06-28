@@ -84,6 +84,58 @@ pub fn servers_present_in_settings(server_names: &[String], target: &McpSettings
     }
 }
 
+/// Return `true` iff every server from `source_path` is present in `target` with the same
+/// agent-native representation that [`merge_mcp_config`] would write.
+///
+/// The driver uses this only for lock-tracked MCPs. The merge primitive remains additive and
+/// no-clobber for unrelated/pre-existing servers; lock-tracked updates first remove the stale
+/// same-name server, then call the normal additive merge.
+pub fn servers_match_source(source_path: &Path, target: &McpSettingsTarget) -> bool {
+    match target.format {
+        McpSettingsFormat::CodexToml => codex_servers_match_source(source_path, &target.path),
+        McpSettingsFormat::McpServers => {
+            json_servers_match_source(source_path, &target.path, "mcpServers", |_name, v| Ok(v))
+        }
+        McpSettingsFormat::VsCodeServers => {
+            json_servers_match_source(source_path, &target.path, "servers", |_name, v| {
+                Ok(normalize_vscode_server(v))
+            })
+        }
+        McpSettingsFormat::OpenCode => {
+            json_servers_match_source(source_path, &target.path, "mcp", |name, v| {
+                mcp_entry_to_opencode(name, &v)
+            })
+        }
+    }
+}
+
+fn json_servers_match_source(
+    source_path: &Path,
+    target_path: &Path,
+    root_key: &str,
+    transform: fn(&str, serde_json::Value) -> Result<serde_json::Value>,
+) -> bool {
+    let Ok(src_map) = read_source_mcp_servers(source_path) else {
+        return false;
+    };
+    let Ok(text) = fs::read_to_string(target_path) else {
+        return false;
+    };
+    let Ok(val) = serde_json::from_str::<serde_json::Value>(&text) else {
+        return false;
+    };
+    let Some(map) = val.get(root_key).and_then(|v| v.as_object()) else {
+        return false;
+    };
+
+    src_map.into_iter().all(|(name, value)| {
+        let Ok(expected) = transform(&name, value) else {
+            return false;
+        };
+        map.get(&name) == Some(&expected)
+    })
+}
+
 fn json_all_keys_present(server_names: &[String], path: &Path, root_key: &str) -> bool {
     let Ok(text) = fs::read_to_string(path) else {
         return false;
@@ -271,6 +323,25 @@ fn codex_servers_present(server_names: &[String], target_path: &Path) -> bool {
         return false;
     };
     server_names.iter().all(|name| map.contains_key(name))
+}
+
+fn codex_servers_match_source(source_path: &Path, target_path: &Path) -> bool {
+    let Ok(src_map) = read_source_mcp_servers(source_path) else {
+        return false;
+    };
+    let Ok(root) = load_or_empty_toml(target_path) else {
+        return false;
+    };
+    let Some(map) = root.get("mcp_servers").and_then(|v| v.as_table()) else {
+        return false;
+    };
+
+    src_map.into_iter().all(|(name, value)| {
+        let Ok(expected) = json_mcp_server_to_codex_toml_table(&value) else {
+            return false;
+        };
+        map.get(&name) == Some(&Toml::Table(expected))
+    })
 }
 
 fn load_or_empty_toml(target_path: &Path) -> Result<Toml> {

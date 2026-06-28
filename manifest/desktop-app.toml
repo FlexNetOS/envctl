@@ -5,6 +5,10 @@
 # scalable icon — all meta-scoped (no sudo), driven by the repo's idempotent
 # packaging/install-desktop.sh (which is also the standalone entry point).
 #
+# install lands the binary in the canonical `$META_ROOT/usr/bin` (the script's
+# default), which is exactly what detect/verify below check — so this component
+# detects as present after install (override the target with ENVCTL_BIN_DIR).
+#
 # Build deps: the GUI needs the system dev libs listed under README "Native GUI"
 # (cmake, libxkbcommon/wayland/xcb, libgl1-mesa, libgtk-3). They are assumed
 # present (the build fails loudly otherwise); this component does not pull apt.
@@ -12,14 +16,14 @@
 [[component]]
 id = "desktop-app"
 name = "envctl-gui desktop integration"
-description = "Install the native GUI as a desktop app: $META_ROOT/.local/bin binary + app-menu .desktop launcher + scalable icon (meta-scoped, no sudo)."
+description = "Install the native GUI as a desktop app: $META_ROOT/usr/bin binary + app-menu .desktop launcher + scalable icon (meta-scoped, no sudo)."
 requires = ["rustup"]
 
 # Present iff the launcher exists AND the binary is resolvable on PATH.
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; B=\"${ENVCTL_BIN_DIR:-$M/.local/bin}\"; S=\"${ENVCTL_SHARE_DIR:-$M/.local/share}\"; test -x \"$B/envctl-gui\" && test -f \"$S/applications/envctl-gui.desktop\""]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; B=\"${ENVCTL_BIN_DIR:-$M/usr/bin}\"; S=\"${ENVCTL_SHARE_DIR:-$M/.local/share}\"; test -x \"$B/envctl-gui\" && test -f \"$S/applications/envctl-gui.desktop\""]
 
 # Build (release) + install binary, launcher, and icon. cwd-independent: the repo
 # root is derived from the manifest dir (ENVCTL_MANIFEST_DIR defaults to ./manifest).
@@ -36,7 +40,7 @@ bash "$ROOT/packaging/install-desktop.sh"
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; B=\"${ENVCTL_BIN_DIR:-$M/.local/bin}\"; S=\"${ENVCTL_SHARE_DIR:-$M/.local/share}\"; test -x \"$B/envctl-gui\" && { command -v desktop-file-validate >/dev/null && desktop-file-validate \"$S/applications/envctl-gui.desktop\" || true; }"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; B=\"${ENVCTL_BIN_DIR:-$M/usr/bin}\"; S=\"${ENVCTL_SHARE_DIR:-$M/.local/share}\"; test -x \"$B/envctl-gui\" && { command -v desktop-file-validate >/dev/null && desktop-file-validate \"$S/applications/envctl-gui.desktop\" || true; }"]
 
 # Idempotent repair: reinstall integration from the already-built binary if present,
 # else build then install.

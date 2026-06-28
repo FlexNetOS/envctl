@@ -13,6 +13,8 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
+bash scripts/tests/test-mcp-memory-meta-root.sh
+
 BIN=""
 for c in target/release/envctl target/debug/envctl; do
   [ -x "$c" ] && BIN="$c" && break

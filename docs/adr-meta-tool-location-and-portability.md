@@ -28,7 +28,7 @@ Two hard facts shape the design:
 
 **envctl owns the portability seam.** It discovers meta-root, exports it, sets toolchain install
 prefixes into meta, materializes configs that cannot self-expand, and maintains the
-`$META_ROOT/.local/bin` frontdoor tree plus the single real-home local bridge — idempotently,
+`$META_ROOT/usr/bin` frontdoor tree plus the single real-home local bridge — idempotently,
 never-downgrade, archive-first.
 
 1. **`META_ROOT` from the marker, exported by `envctl env`** (SHIPPED, `feat/envctl-env`):
@@ -44,9 +44,9 @@ never-downgrade, archive-first.
      MATERIALIZES** from `META_ROOT`. The committed source holds a `${META_ROOT}` token; envctl
      renders the live file with the resolved absolute path per machine (re-rendered if meta moves).
 
-3. **Two tool categories, two relocation mechanisms** (both exposed through `$META_ROOT/.local/bin`):
+3. **Two tool categories, two relocation mechanisms** (both exposed through `$META_ROOT/usr/bin`):
    - **FlexNetOS-built tools** (rtk, agent-env, meta-mcp, icm, vox, weave, **and gitkb — adopted**,
-     since gitkb is meta's foundation): built in their meta repo; `$META_ROOT/.local/bin/<tool>`
+     since gitkb is meta's foundation): built in their meta repo; `$META_ROOT/usr/bin/<tool>`
      points at the meta-hosted build output. **Always latest:** if the installed copy is newer than
      the meta source, bring **meta UP** to that version and build (never downgrade, never "migrate") —
      then swap the install with a meta-hosted frontdoor.
@@ -54,15 +54,23 @@ never-downgrade, archive-first.
      Redirect each manager's install prefix INTO meta via its native env var, owned by envctl:
      `BUN_INSTALL=$META_ROOT/.toolchains/.bun`, `MISE_DATA_DIR=$META_ROOT/.toolchains/mise`,
      `CARGO_HOME=$META_ROOT/.toolchains/cargo`, `UV_TOOL_DIR`/`UV_PYTHON_INSTALL_DIR=$META_ROOT/.toolchains/uv`.
-     Installs land physically in meta and are exposed through `$META_ROOT/.local/bin`; "latest" is
+     Installs land physically in meta and are exposed through `$META_ROOT/usr/bin`; "latest" is
      the managers' own `upgrade`. node is installed via bun/mise into that prefix.
 
 4. **envctl responsibilities (the env-ownership build-out):** export `META_ROOT` + the toolchain
    prefixes + meta tool-dir PATH into the session env (the shell/nushell env envctl owns);
    materialize the home-tree `settings.json` literal paths from `META_ROOT`; idempotently
-   maintain `$META_ROOT/.local/bin` and the single real-home bridge; **refuse** (doctor/boundary)
+   maintain `$META_ROOT/usr/bin` and the single real-home bridge; **refuse** (doctor/boundary)
    when a real FlexNetOS install is found outside meta. All idempotent, never-delete (archive),
    never-downgrade.
+
+5. **Real-home dot-entry review loop:** `scripts/audit-meta-local-paths.sh` is the class-by-class
+   portability review surface for top-level dot entries under `$ENVCTL_REAL_HOME`. It emits
+   machine-readable `--inventory`, `--inventory-summary`, `--deep-link-inventory`, and
+   `--deep-link-summary` TSVs, can fail closed with `--fail-real-home-deep-links`, and exposes
+   only narrow opt-in mutations (`--apply-shell-dotfiles`, `--apply-history-archives`, and named
+   `--migrate-dot <entry>` allowlist entries). The loop keeps mutation dry-run by default while
+   making remaining app config, cache, sensitive, and managed-dotfile gaps explicit.
 
 ## Consequences
 
@@ -72,6 +80,9 @@ never-downgrade, archive-first.
 - gitkb is reclassified from "external" to **adopted foundation** (bring latest into meta).
 - Prereq for the relocation loop: the env-export + materialization must land before the live
   symlink swaps (so configs resolve through `META_ROOT`).
+- The dotfile relocation loop is now evidence-backed rather than ad hoc: every slice records stable
+  class counts, deep-link classes, and an owner-supervised residual list before another narrow
+  upgrade is allowed.
 
 ## Research / Cross-References
 

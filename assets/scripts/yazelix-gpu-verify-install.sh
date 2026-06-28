@@ -21,10 +21,10 @@ if ! lspci 2>/dev/null | grep -iE 'nvidia' >/dev/null 2>&1; then
   exit 0
 fi
 
-mkdir -p "$META_ROOT/.local/bin" "$META_ROOT/.config/autostart"
+mkdir -p "$META_ROOT/usr/bin" "$META_ROOT/.config/autostart"
 
 # --- the smoke test (verbatim from yazelix-setup.sh 3f; META_ROOT stays literal) ---
-cat > "$META_ROOT/.local/bin/yazelix-gpu-verify.sh" <<'YZXGPU'
+cat > "$META_ROOT/usr/bin/yazelix-gpu-verify.sh" <<'YZXGPU'
 #!/usr/bin/env bash
 # GPU stack smoke test: NVIDIA driver, PyTorch CUDA (+ sm_120 kernel), cuda-oxide,
 # and Podman CDI. Auto-runs once after the post-install reboot, then self-disables.
@@ -37,9 +37,12 @@ warn(){ printf '\033[1;33m  ! %s\033[0m\n' "$*"; }
 echo; echo "================  GPU stack verification  ================"; echo
 
 DRIVER_OK=0
-if command -v nvidia-smi >/dev/null && nvidia-smi -L >/dev/null 2>&1; then
-  nvidia-smi -L | sed 's/^/  /'; ok "NVIDIA driver active"; DRIVER_OK=1
-  nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader 2>/dev/null | sed 's/^/  /'
+if [ -r /proc/driver/nvidia/version ]; then
+  ok "NVIDIA driver active (/proc/driver/nvidia/version)"; DRIVER_OK=1
+  if command -v nvidia-smi >/dev/null; then
+    nvidia-smi -L 2>/dev/null | sed 's/^/  /'
+    nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader 2>/dev/null | sed 's/^/  /'
+  fi
 else
   no "NVIDIA driver not active yet — REBOOT, then this re-runs automatically at login"
 fi
@@ -82,18 +85,18 @@ echo
 if [ "$DRIVER_OK" = 1 ]; then
   rm -f "$AUTOSTART" 2>/dev/null && ok "Verification complete — disabled the post-reboot auto-run."
 else
-  warn "Re-run after reboot:  $META_ROOT/.local/bin/yazelix-gpu-verify.sh"
+  warn "Re-run after reboot:  $META_ROOT/usr/bin/yazelix-gpu-verify.sh"
 fi
 echo "=========================================================="
 read -rp "  Press Enter to close… " _ 2>/dev/null || true
 YZXGPU
-chmod +x "$META_ROOT/.local/bin/yazelix-gpu-verify.sh"
+chmod +x "$META_ROOT/usr/bin/yazelix-gpu-verify.sh"
 
 # --- terminal launcher for the autostart (same fallback chain as the wizard) ---
-cat > "$META_ROOT/.local/bin/yazelix-gpu-verify-launch.sh" <<'YZXGPUL'
+cat > "$META_ROOT/usr/bin/yazelix-gpu-verify-launch.sh" <<'YZXGPUL'
 #!/usr/bin/env bash
 META_ROOT="${META_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
-V="$META_ROOT/.local/bin/yazelix-gpu-verify.sh"
+V="$META_ROOT/usr/bin/yazelix-gpu-verify.sh"
 [ -x "$V" ] || exit 0
 if   command -v ghostty        >/dev/null; then exec ghostty -e bash -lc "$V"
 elif command -v kgx            >/dev/null; then exec kgx -- bash -lc "$V"
@@ -101,7 +104,7 @@ elif command -v gnome-terminal >/dev/null; then exec gnome-terminal -- bash -lc 
 elif command -v xterm          >/dev/null; then exec xterm -e bash -lc "$V"
 else bash -lc "$V"; fi
 YZXGPUL
-chmod +x "$META_ROOT/.local/bin/yazelix-gpu-verify-launch.sh"
+chmod +x "$META_ROOT/usr/bin/yazelix-gpu-verify-launch.sh"
 
 # --- one-shot autostart: re-runs the smoke test on next login (post-reboot) ---
 # META_ROOT expands now (the .desktop needs an absolute Exec path).
@@ -110,10 +113,10 @@ cat > "$META_ROOT/.config/autostart/yazelix-gpu-verify.desktop" <<EOF
 Type=Application
 Name=GPU Stack Verification
 Comment=Verifies NVIDIA driver, PyTorch CUDA, cuda-oxide, Podman GPU after reboot
-Exec=$META_ROOT/.local/bin/yazelix-gpu-verify-launch.sh
+Exec=$META_ROOT/usr/bin/yazelix-gpu-verify-launch.sh
 Terminal=false
 X-GNOME-Autostart-enabled=true
 X-GNOME-Autostart-Delay=12
 EOF
 
-echo "yazelix-gpu-verify installed: $META_ROOT/.local/bin/yazelix-gpu-verify.sh + launcher + post-reboot autostart"
+echo "yazelix-gpu-verify installed: $META_ROOT/usr/bin/yazelix-gpu-verify.sh + launcher + post-reboot autostart"

@@ -7,7 +7,7 @@ Type=simple
 # Loopback-only (no remote exposure), open auth (acceptable for a single-user local box; secretd's
 # config.rs permits an empty auth token ONLY for a loopback URL). Data persists under the data dir.
 Environment=META_ROOT=%h/Desktop/meta
-ExecStart=%h/Desktop/meta/.local/bin/sqld --http-listen-addr 127.0.0.1:8080 -d %h/Desktop/meta/.local/share/sqld
+ExecStart=%h/Desktop/meta/usr/bin/sqld --http-listen-addr 127.0.0.1:8080 -d %h/Desktop/meta/.local/share/sqld
 Restart=on-failure
 RestartSec=5
 # Defense-in-depth sandbox (sqld is external; keep it boxed).

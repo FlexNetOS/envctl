@@ -38,8 +38,8 @@ set -e
 M="${META_ROOT:?META_ROOT required}"
 export META_ROOT="$M"
 export ZDOTDIR="$M/.toolchains/zsh-config"
-ZSH_BIN="$META_ROOT/.local/bin/zsh"
-export PATH="$META_ROOT/.local/bin:$PATH"
+ZSH_BIN="$META_ROOT/usr/bin/zsh"
+export PATH="$META_ROOT/usr/bin:$PATH"
 # Prefer the on-box, NON-/nix terminals (survive the system-nix teardown) by
 # ABSOLUTE path — never yazelix's /nix ghostty. Ptyxis is the Ubuntu 26.04 /
 # GNOME default; /usr/bin/ghostty is the system ghostty.

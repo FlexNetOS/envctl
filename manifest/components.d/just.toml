@@ -5,7 +5,7 @@
 #   resolved_sha  = 5097d64c8b765f8f6bf0f19d13be199bb1d1769c
 #   build_system  = cargo
 #   build_cmd     = cargo build --release --locked || cargo build --release
-#   artifacts     = $META_ROOT/.local/bin/just
+#   artifacts     = $META_ROOT/usr/bin/just
 
 [[component]]
 id = "just"
@@ -13,13 +13,13 @@ name = "just (add-repo)"
 description = """
 Built from source via envctl add-repo (build-from-source; only runs when named).
 strategy=as-is source=https://github.com/casey/just ref=(default branch) sha=5097d64c8b765f8f6bf0f19d13be199bb1d1769c build_system=cargo
-artifacts=$META_ROOT/.local/bin/just
+artifacts=$META_ROOT/usr/bin/just
 """
 
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/src/just/target/release/just\" ] && [ \"$(readlink -f \"$M/.local/bin/just\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/src/just/target/release/just\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/src/just/target/release/just\" ] && [ \"$(readlink -f \"$M/usr/bin/just\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/src/just/target/release/just\")\" ]"]
 
 [component.install]
 kind = "script"
@@ -33,8 +33,8 @@ if [ -d "$SRC/.git" ]; then git -C "$SRC" remote set-url origin 'https://github.
 git -C "$SRC" fetch --depth 1 origin 5097d64c8b765f8f6bf0f19d13be199bb1d1769c && git -C "$SRC" checkout --detach 5097d64c8b765f8f6bf0f19d13be199bb1d1769c
 cd "$SRC"
 cargo build --release --locked || cargo build --release
-install -d -m 755 "$M/.local/bin"
-ln -sfn "$SRC/target/release/just" "$M/.local/bin/just"
+install -d -m 755 "$M/usr/bin"
+ln -sfn "$SRC/target/release/just" "$M/usr/bin/just"
 '''
 
 [component.verify]
@@ -49,9 +49,9 @@ script = '''
 set -u
 M="${META_ROOT:?META_ROOT required}"
 STORE="$M/.toolchains/src"
-for t in "$M/.local/bin/just"; do if [ -L "$t" ] && readlink "$t" | grep -q "$STORE/just"; then rm -f "$t"; fi; done
+for t in "$M/usr/bin/just"; do if [ -L "$t" ] && readlink "$t" | grep -q "$STORE/just"; then rm -f "$t"; fi; done
 rm -rf "$STORE/just"
 '''
 
 [component.wiring]
-path_entries = ["$META_ROOT/.local/bin"]
+path_entries = ["$META_ROOT/usr/bin"]

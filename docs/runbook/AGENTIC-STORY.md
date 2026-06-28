@@ -157,7 +157,7 @@ With the owner's doctrine and gates in place, the following run **with no human*
 
 - Detecting drift and converging every meta-prefix toolchain (Epic H): gh, nushell, zellij, mise,
   ollama, llvm-clang, libgccjit, CUDA toolkit, yazi, helix, huggingface-cli, wild-linker, kache,
-  nix-portable, the secrets stack — all to `.toolchains` + `~/.local/bin`, verified on-box.
+  nix-portable, the secrets stack — all to `.toolchains` + `$META_ROOT/usr/bin`, verified on-box.
 - Building features through architect→implementer→guardian→PR→merge, with runtime proof.
 - GitHub fetches at 5000/hr via authenticated `gh` (a meta-owned component), so rate limits stop
   blocking installs.
