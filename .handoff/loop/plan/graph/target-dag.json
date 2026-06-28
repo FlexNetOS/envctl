@@ -1,73 +1,19 @@
 {
- "schema": "plan-target-dag/v1",
- "generated": "2026-06-27",
- "cycle": 7,
- "north_star": "meta converges on handoff + rusty-idd UNION (one continuity+intent control plane) @ $META_ROOT",
- "edge_semantics": "deps = planning-order 'binds-into / depends-on' edges; a node is ready when its deps are at least planned-with-gaps. Refined per cycle (Task-Decoupled Planning).",
- "status_values": ["unplanned", "planned", "in-flight", "planned-with-gaps", "done"],
- "nodes": [
-  {
-   "id": "handoff",
-   "spec": "Continuity kernel — the witnessed ledger; packets rendered, never hand-written. One half of the north-star union.",
-   "status": "planned-with-gaps",
-   "deps": [],
-   "artifact_prefix": "graph/handoff",
-   "note": "cycle 2; A-U1 executing"
-  },
-  {
-   "id": "rusty-idd",
-   "spec": "Intent control plane — OpenSpec artifacts + merge-tools; binds intent to continuity. Other half of the north-star union.",
-   "status": "planned-with-gaps",
-   "deps": [],
-   "artifact_prefix": "graph/rusty-idd",
-   "note": "cycle 1"
-  },
-  {
-   "id": "weave",
-   "spec": "A2A transport — agent-to-agent comms / observable heartbeat substrate.",
-   "status": "planned",
-   "deps": [],
-   "artifact_prefix": "graph/weave"
-  },
-  {
-   "id": "grit",
-   "spec": "Merge/lock substrate — symbol-level conflict resolution + locks for cross-repo merges.",
-   "status": "planned-with-gaps",
-   "deps": [],
-   "artifact_prefix": "graph/grit",
-   "note": "cycle 5"
-  },
-  {
-   "id": "icm",
-   "spec": "Persistent-memory organ (Infinite Context Memory) — recall/store across sessions; SQLite+sqlite-vec+FTS5 store, fastembed embeddings, 31 MCP tools, ~40 CLI verbs, axum dashboard. Candidate canonical memory plane binding into the handoff+rusty-idd union.",
-   "status": "in-flight",
-   "deps": ["handoff", "rusty-idd", "weave"],
-   "artifact_prefix": "graph/icm",
-   "note": "cycle 7 (this cycle); graph baseline @ 5fde8fc; 1629 sym / 56 files / 3069 edges / 0 layering-violations / 7 intra-crate cycles / 225 public-API / 31 MCP tools / 15 web routes"
-  },
-  {
-   "id": "harness-hub",
-   "spec": "Front-Door INTERPRETER — routes intent/continuity into harness runs.",
-   "status": "unplanned",
-   "deps": ["handoff", "rusty-idd"],
-   "artifact_prefix": "graph/harness-hub"
-  },
-  {
-   "id": "prompt-hub",
-   "spec": "Front-Door STORE — prompt/template store of the front door.",
-   "status": "planned-with-gaps",
-   "deps": ["icm", "harness-hub"],
-   "artifact_prefix": "graph/prompt-hub",
-   "note": "cycle 6"
-  },
-  {
-   "id": "lane",
-   "spec": "Execution / model-lane organ — drives model lanes for harness execution.",
-   "status": "unplanned",
-   "deps": ["harness-hub"],
-   "artifact_prefix": "graph/lane"
-  }
- ],
- "ready_set": ["handoff", "rusty-idd", "weave", "grit", "icm", "harness-hub"],
- "topological_order": ["handoff", "rusty-idd", "weave", "grit", "harness-hub", "icm", "lane", "prompt-hub"]
+  "nodes": [
+    {"id": "weave", "spec": "A2A transport plane — cycle 4 (this instance)", "status": "in-flight", "deps": [], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "handoff", "spec": "continuity kernel (witnessed ledger) — planned cycle 2; union home", "status": "done", "deps": [], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "rusty-idd", "spec": "intent control plane — planned cycle 1", "status": "done", "deps": ["handoff"], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "harness_hub", "spec": "Front-Door interpreter (intent->model language)", "status": "todo", "deps": ["handoff"], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "envctl", "spec": "fleet environment manager + loop run-from", "status": "todo", "deps": ["handoff", "weave"], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "icm", "spec": "persistent memory organ", "status": "todo", "deps": [], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "grit", "spec": "symbol-level merge/lock substrate", "status": "todo", "deps": [], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "lane", "spec": "distributed-compute lane substrate", "status": "todo", "deps": ["weave"], "artifact_prefix": ".handoff/loop/plan"}
+  ],
+  "edges": [
+    {"from": "rusty-idd", "to": "handoff"},
+    {"from": "harness_hub", "to": "handoff"},
+    {"from": "envctl", "to": "handoff"},
+    {"from": "envctl", "to": "weave"},
+    {"from": "lane", "to": "weave"}
+  ]
 }

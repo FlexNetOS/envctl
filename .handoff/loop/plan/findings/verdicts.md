@@ -1,131 +1,88 @@
-# Plan-verifier verdicts (THE GATE)
+# verdicts — plan-verifier gate (the GATE)
 
-Default-skeptical, fail-closed. Only CONFIRMED/QUALIFIED + feasible rows flow to the architect.
-Verdict format: `<ref> -> CONFIRMED | REFUTED (<counter>) | QUALIFIED (<cond>) | INCONCLUSIVE (<why>)`.
+Adversarial refutation of analyst CLAIMs + feasibility-gating of UPGRADEs. Only CONFIRMED/QUALIFIED +
+feasible rows flow to the architect. Default-skeptical; fail-closed; gate never weakened.
 
-## icm
+---
 
-Date: 2026-06-27 · Verifier pass cycle 7 · target=icm · source verified at /home/drdave/Desktop/meta/icm
-Build probe: `cargo build -p icm-store` -> **EXIT 0** (icm-core + rusqlite 0.34.0 bundled + icm-store
-compiled clean, 5.98s). The C-floor and std facts below are real in THIS env.
+## weave (cycle 4)
 
-### Material claims
+- Date: 2026-06-26
+- Target code (READ-ONLY): `/home/drdave/Desktop/meta/.worktrees/plan-weave-red/weave` @ `4fe2419`
+- Findings gated: `architecture-weave.md` (11+1 CLAIM / 4 UPGRADE) + axis findings
+  (`governance-config`, `memory-vector-intelligence`, `prompt-architecture`, `test-strategy`).
+- Method: opened cited source, ran empirical `grep`/`wc`/`awk` over the real tree as oracle, hunted
+  counter-examples. Empirical commands re-run, not trusted from the analyst summary.
 
-- **Claim 1 (embedding-dim drift, HIGH)** -> **QUALIFIED**. The *documentation/const drift* is CONFIRMED;
-  the *"latent insert-failure/silent-truncation bug"* hypothesis is **REFUTED**.
-  - CONFIRMED facts: `fastembed_embedder.rs:36` `DEFAULT_MODEL = "intfloat/multilingual-e5-base"`, but the
-    doc comment `:35` says "multilingual-e5-small (384d)"; `model_dimensions` `:58-65` maps
-    `MultilingualE5Base => 768`; the fail-open `unwrap_or(384)` at `:93` fires ONLY when `resolve_model`
-    fails to parse the name (not for the valid default). So `FastEmbedder::dimensions()` returns **768** for
-    the default model — comment + the `DEFAULT_EMBEDDING_DIMS` const name (`lib.rs:18`, doc'd "used when no
-    embedder is configured") are misleading.
-  - REFUTED (counter-example): the vec0 table is created at the **runtime embedder dim**, not 384.
-    `main.rs:1087-1093` → `embedding_dims = embedder.dimensions()` (768 with embeddings on) and only
-    `unwrap_or(DEFAULT_EMBEDDING_DIMS=384)` with embeddings off; `create_vec_table` (schema.rs:17-37) emits
-    `embedding float[{embedding_dims}]` at that dim. Storage is dimension-consistent; on a model/dim change
-    the vec table is dropped + embeddings NULLed + self-healed (schema.rs:416-464, issue #200). Net: a
-    cosmetic doc/const-naming defect, **not** a data-corruption bug. The "384d" must be corrected to
-    "768d (e5-base); 384 = no-embeddings fallback" before any plan fact uses the number.
+### Empirical bench (the oracle results)
 
-- **Claim 2 (C-floor unconditional)** -> **CONFIRMED**. `icm-store/Cargo.toml:7-9` always depends on
-  `rusqlite` + `sqlite-vec` (no feature gate); workspace `Cargo.toml:19` `rusqlite { features=["bundled",
-  "modern_sqlite"] }`; `store.rs:8` imports `rusqlite::ffi::sqlite3_auto_extension` and `:81-88`
-  unconditionally registers `sqlite_vec::sqlite3_vec_init` via `Once`. ONNX/fastembed are the *optional*
-  layer (`icm-core/src/lib.rs:4` `#[cfg(feature="embeddings")]`, `ICM_NO_EMBEDDINGS`/`--no-embeddings`
-  at `main.rs:1080`) — they sit in icm-core, NOT icm-store. Build probe linked the bundled C path clean.
+| probe | analyst said | I measured | verdict impact |
+|---|---|---|---|
+| A2A symbols in `weave-core/src`+`weave-mcp/src` (`to_a2a/from_a2a/AgentCard/"message/send"/a2a`) | empty | **empty** (0 hits) | (a) CONFIRMED |
+| `jsonrpc` strings in tree | MCP, not A2A | all MCP (`obscura.rs` `tools/call`, `notifications/initialized`); no A2A `message/send` | (a) CONFIRMED — distinct standard |
+| `wc -l weave/src/main.rs` | 9631 | **9631** | (c) CONFIRMED |
+| `^\s+Cmd::` arms | 76 | **76**; two matches at `:4494`/`:4660`; `fn main` at `:4489` | (c) CONFIRMED |
+| `enum Cmd` variants | 71 CLI verbs | **71** | corroborates verb surface |
+| `weave-core/tests/store_conformance` (shared dual-backend harness) | absent | **absent** (no `run_store_conformance`/`store_test!`/`both_backends`) | (b) CONFIRMED |
+| `#[test]` store.rs vs store_libsql.rs | 160 / 95 | **160 / 95** | (b) CONFIRMED |
+| `weave-core/src/memory.rs` | real organ, `~/.config/weave/memory`, 5 MCP tools | **present (25.9K)**; doc confirms FS-backed scoped notes; 5 `weave_memory_*` tools; **0 `icm` refs** | (e) CONFIRMED |
+| `MAX_STANDING_TOOLS_BYTES` | 8192 | **8192** (`mcp.rs:233`); budget test `standing_mcp_surface_is_within_token_budget` present | (f) CONFIRMED |
+| `weave_*` tool count | 78 (arch) / 70 arms,74 catalog (prompt) | **72 dispatch arms / 76 catalog entries** | (f) QUALIFIED — number drifts |
+| `sync-master.yml` required checks | 6 documented | **7 enforced** incl. `audit` (`:46`); CLAUDE.md:43 + policy.toml:37 list 6 | (g) CONFIRMED |
+| Python in CI | invariant says no-Python | **`ci.yml:69,181`** run `python3 scripts/{target_smoke,supply_chain_audit}.py` | (g) CONFIRMED |
+| vector/RAG deps (`embedding/faiss/qdrant/hnsw/candle/onnx…`) | none | **none** (only a false-positive prose comment in `model.rs:23`) | CONFIRMED |
 
-- **Claim 3 (no recency decay — the RED contract)** -> **CONFIRMED**. `apply_decay` (store.rs:1267-1311)
-  SQL `:1293-1302` multiplies `weight` by a factor derived ONLY from `importance` (CASE high/low/else) and
-  `MIN(access_count,5)` — it never references `last_accessed`/`created_at`. The 5 RED tests
-  (`recency_decay_red.rs`) seed rows identical except `last_accessed` and drive `apply_decay(0.95)`; they
-  fail for the RIGHT reason (time-blindness, not a compile/API error): e.g. CONTRACT 1 asserts
-  `stale.weight < fresh.weight` but the flat factor yields equal weights; CONTRACT 4 asserts `w > 0.99`
-  but flat 0.95 floors a Medium row at ~0.95. Genuine absent capability.
+### CLAIM verdicts — architecture
 
-- **Claim 4 (no write-side RBAC)** -> **CONFIRMED**. `tools.rs:717-764` `call_tool(store, embedder, name,
-  args, compact)` dispatches on `name` with no principal/auth/caller-identity parameter and no gate; all
-  **31** `icm_*` tools (11 memory + 10 memoir + 1 learn + 3 feedback + 5 transcript + 1 wake_up) are
-  reachable ungated, including destructive `icm_memory_forget` (`:728`) and `icm_memory_forget_topic`
-  (`:729`). Any MCP caller can forget any topic.
+- ARCH-01 (crate layering strictly downward, `weave-core` zero internal deps) -> **CONFIRMED** (manifest DAG `weave-core <- inject <- mcp <- weave`; "upward-apparent" call edges are name-ambiguity, cannot exist at compile time).
+- ARCH-02 (upward call edges are resolver artifacts) -> **CONFIRMED** (cross-checked against the SCC probe below: `open_conn` resolves `open` to rusqlite `Connection::open`, a real downward call mis-bound to `SqliteStore::open`).
+- ARCH-03 (`Store` trait is the single broker abstraction, **29 methods**) -> **QUALIFIED** — the abstraction is CONFIRMED (`store.rs:73` `pub trait Store: Send`; `open_store -> Result<Box<dyn Store>>` at `main.rs:1657`; CLI dispatches `&dyn Store`). **Counter-evidence on the count:** the trait body (lines 73–873) declares **~95 `fn` signatures (~90 required + 3 default-bodied)**, NOT 29. The "29" understates the broker surface; the conformance-harness UPGRADE acceptance ("all 29 Store methods") must be re-scoped to the real method count or the harness will silently under-cover the trait.
+- ARCH-04 (`model.rs`/`Intent` is the cross-store wire schema, highest blast 1238) -> **CONFIRMED** (`Intent` at `model.rs:216` with the cited fields incl. `#[serde(default)]` `to_host`/`sig`; blast 1238 from metrics).
+- ARCH-05 (`SqliteStore.send` is the owner-only, idempotent, guarded deliver verb) -> **CONFIRMED** (`store.rs:3153`: `check_ident`(sender,recipient) → `check_body` → `idempotency_key_valid`/`trace_id_valid` → SELECT-existing-by-key short-circuit → owner INSERT into `messages`).
+- ARCH-06 (MCP plane is a flat string-match router over the tool surface) -> **QUALIFIED** — the flat `match name { "weave_*" => tool_* }` router IS CONFIRMED (`call_tool` `mcp.rs:434`). **Counter-evidence on the count:** the surface is **72 dispatch arms / 76 catalog entries**, not 78. Use the measured numbers in any drift-guard test.
+- ARCH-07 (CLI is a 9631-line god-file, 76 `Cmd::` arms, two sequential matches) -> **CONFIRMED** (empirically exact; corrects the anchor's "4489").
+- ARCH-08 (Tier-2 delivery is owner-pull via `pull_from_store`/`commit_pulled`/`verify_pulled_intent`, dedup on `(source,id)` via `pull_cursor`) -> **CONFIRMED** — the owner-only-write `send` path was directly verified (ARCH-05); the pull/commit/cursor surface is corroborated independently by the `pull_cursor` table (`store.rs:1561`, memory-finding schema) and codemap §Federation. No counter-example (no sender-push-write path found).
+- ARCH-09 (**No A2A v1.0/gRPC/AgentCard/JSON-RPC-A2A adapter exists**) -> **CONFIRMED** — grep empty across both crates; the only `jsonrpc` strings are MCP. Strengthened by `weave-core/tests/a2a_interop.rs`, a committed RED suite that compiles against the *existing flat* `Intent` and asserts the unbuilt A2A shape (i.e. it exists precisely *because* the adapter does not). Convergence is schema-mapping work over the `Store`/`Intent` seam.
+- ARCH-10 (`Harness.new` #1 hotspot is test-only) -> **CONFIRMED** (`obscura.rs:396` `mod tests`, `:413` `impl Harness`, `:414` `fn new`). Production hubs (`now`, `send`, `check_ident`) stand.
+- ARCH-11 (dual backends implement `Store` independently; parity comment-asserted only; no conformance harness; 160 vs 95 tests) -> **CONFIRMED** — no shared conformance test exists; counts exact. Adversarial probe found a *real* backend asymmetry that proves the risk: `LibsqlStore.send` (`store_libsql.rs:1499`) opens with `self.guard_writable()?` **before** the `check_ident` block; `SqliteStore.send` has **no** `guard_writable` call. Core idempotency/check ordering matches, but the impls are NOT byte-identical — exactly the silent drift the harness would catch.
+- ARCH-12 (the 3 Tarjan SCCs are resolver back-edges, not real recursion; confidence medium) -> **QUALIFIED** — split verdict:
+  - `open ↔ open_conn`: **CONFIRMED resolver artifact** — `open_conn` (`store.rs:2499`) calls rusqlite `Connection::open(path)`, mis-bound to `SqliteStore::open`. Not real recursion.
+  - `call_tool ↔ tool_meta`: **REFUTED as artifact** — it is a **genuine bounded mutual recursion**: `tool_meta` `mode=call` dispatches the inner op back through `call_tool` (`mcp.rs` ~4925), and `call_tool` routes the `weave` meta-tool to `tool_meta`. Termination is guaranteed by the `if want == "weave" { return Err }` self-target guard, not by the edge being fake. The "resolver artifact" framing is wrong for this pair (the cycle is real and safe).
+  - inject 5-cluster (`spawn/kill/run_bounded*`): **INCONCLUSIVE** — `spawn` (`:714`) really calls `run_bounded_env`; the full cycle was not traced this pass.
 
-- **Claim 5 (bundled-SQLite CVE blind spot)** -> **QUALIFIED**. Version facts CONFIRMED: `Cargo.lock`
-  `libsqlite3-sys 0.32.0`, and the vendored amalgamation header defines `SQLITE_VERSION "3.49.1"` (read
-  from `libsqlite3-sys-0.32*/sqlite3.h`); `rusqlite 0.34.0`, `sqlite-vec 0.1.6`, `fastembed 4.9.1`,
-  `ort 2.0.0-rc.9`. QUALIFIED because: (a) cargo-audit operates on the crate graph and CANNOT see a CVE in
-  C source vendored inside `libsqlite3-sys` — that "blind spot" is a real CI-coverage gap and stands; but
-  (b) the *specific* "in-window CVE-2026-11822 (FTS5)" is a research-supplied advisory I cannot adjudicate
-  from the repo — it does not become a plan fact on this gate. The mechanism (bundled C invisible to
-  cargo-audit) is the confirmable, plan-worthy part.
+### CLAIM verdicts — cross-axis (key gates d/e/f/g)
 
-- **Claim 6 (stale CLAUDE.md)** -> **CONFIRMED**. `icm/CLAUDE.md` is 26.2K and references the abandoned
-  stack: "Turso" (lines 8,16,37,119), "libsql" (16,37,41), "1536" (96,134), with 42 French/persistence
-  keyword hits — while the repo actually ships `rusqlite`+`sqlite-vec`+`fastembed` (e5-base 768d). Doc
-  describes architecture the code no longer has = high-value doc-vs-code gap.
+- GOV-001 (PreToolUse gate has real teeth AND is opt-in) [key (d)] -> **CONFIRMED both clauses.** Teeth: `main.rs:8896-8919` deny-by-default for a dangerous tool unless an approver is positively proven; broadcast approver → DENY; the drain enforces its **own** short `pretooluse_timeout` and emits an explicit `deny`, never relying on Claude's 600s fail-OPEN timeout (`main.rs:8800-8809`); in-drain `pretooluse_is_dangerous` reconfirms danger so an over-broad matcher can't sneak a benign tool through. Opt-in: `setup.rs:194-196` — the `PreToolUse` hook is installed only with `weave setup --pretooluse`; default leaves it uninstalled, and with no approver configured it denies everything. (Strongest control in the repo, dormant by default.)
+- GOV-003 (docs say "6" CI checks; gate enforces "7" incl. `audit`/WL-044) [key (g)] -> **CONFIRMED** (`sync-master.yml:46` = 7; `CLAUDE.md:43` & `policy.toml:37` = 6). Teeth-bearing supply-chain `audit` gate is real but understated in both human and machine policy.
+- GOV-004 (Python in CI vs the no-Python Rust-native invariant) [key (g)] -> **CONFIRMED** (`ci.yml:69` `target_smoke.py`, `:181` `supply_chain_audit.py`; invariant `CLAUDE.md:22,47-59`). Genuine language drift in the build/CI plane.
+- PA-TOOLS (78-tool surface collapses to one byte-budget-gated meta-tool) [key (f)] -> **QUALIFIED** — the token-safety MECHANISM is CONFIRMED (single `weave` meta-tool default via `tools()`; `MAX_STANDING_TOOLS_BYTES=8192`; budget + progressive-default tests). Count QUALIFIED: 72 arms / 76 catalog, not 78. Eager-flat (`WEAVE_MCP_EAGER=1`) is opt-in and budget-exempt.
+- PA-METACALL (meta-tool `call` re-applies the destructive gate; not a bypass) [key (f)] -> **CONFIRMED** (`mcp.rs:4925-4933`: `call` rejects `want=="weave"` and re-checks `is_dangerous_tool` under safe-HTTP mode; locked by test `meta_call_preserves_safe_http_gate`).
+- MEM-1 (the SQLite store is transport/event log, not recall memory) -> **CONFIRMED** (mailbox/queue/receipt schema; only query surface is FTS5 over message bodies — searching traffic, not recalled facts).
+- MEM-2 (weave ships a real memory organ in `memory.rs`; a 6th memory surface that can't see ICM) [key (e)] -> **CONFIRMED** — module present (25.9K), FS-backed scoped notes under `~/.config/weave/memory`, full CRUD+search, exposed on CLI + 5 MCP tools, auto-injected via `build_context_prefix` (`memory.rs:332`); **zero `icm` references** in `memory.rs` (it cannot read ICM). Separation-of-concerns risk is real.
+- MEM-3 (no vector/embeddings/RAG anywhere) -> **CONFIRMED** (empirical grep: 0 vector deps/symbols; sole hit is a prose false-positive). Correct state for a transport plane.
 
-- **Claim 7 (XDG residency)** -> **CONFIRMED**. Runtime state lives under XDG/`ProjectDirs`, none
-  meta-owned: data `main.rs:1042-1043` (`ProjectDirs`/`data_dir`), config `config.rs:4,292-301`
-  (`ICM_CONFIG`, `XDG_`, `ProjectDirs`, `.config`), cache `fastembed_embedder.rs:14-26`
-  (`ProjectDirs ... cache_dir().join("models")`, `~/.cache/icm/models`), `main.rs:5183-5185` (`XDG_`,
-  `.cache`). Redirectable via `ICM_CONFIG` / `[store] path` / `--db` / `XDG_CACHE_HOME`. Confirmed.
+### UPGRADE verdicts (feasibility-gate: NO-C-in-trust-boundary · pure-Rust · strict-upgrade)
 
-- **Claim 8 (convergence verdicts)** -> **CONFIRMED (with one corrected sub-fact)**.
-  - icm = canonical memory plane + PEER of handoff/git-kb, 3 disjoint corpora -> CONFIRMED: distinct
-    corpora cited (`memory.rs:6-30` agent knowledge vs handoff redb event ledger vs git-kb AST graph);
-    zero code coupling (grep icm in handoff = none, memory-vector §3).
-  - NOT bound as data (no `memory` field in `handoff.context_capsule.v1`) -> CONFIRMED: capsule key list
-    `[schema,project_name,role,plane,tier,northstar,next_command,source]`; `init_capsule`
-    (`handoff/hf/src/main.rs:237-253`) writes exactly those — no memory pointer. Binding is CLAUDE.md/
-    AGENTS.md convention + connected MCP, not a typed contract.
-  - SIDECAR (C-floor vs no-C kernel) -> CONFIRMED: icm links bundled C (claim 2, build probe) while the
-    union kernel is no-C (handoff redb/RVF, ADR-0001/0017) → icm must sit OUTSIDE as a sidecar.
-  - icm vs prompt_hub distinct planes / duplicate substrate -> CONFIRMED, but the convergence-analysis
-    sub-claim "two 384-dim spaces" is **QUALIFIED/corrected**: icm's real default is **768d** (e5-base),
-    prompt_hub is 384d (MiniLM-L6) — they share neither model NOR dimensionality under the real default,
-    which *strengthens* "not mergeable as-is" but refutes the "both 384" phrasing. Planes are distinct
-    (agent memory vs intent store).
-  - CORRECTION routed to analyst: `convergence-analysis-icm.md` A3 (line 18) and A5 (line 45-46) state the
-    default embedding is "384-dim" — factually wrong; real default-with-embeddings is 768d. The downstream
-    peer/sidecar/distinct-plane verdicts do NOT depend on the number and stand, but the figure must be
-    fixed before becoming a plan fact.
+- U-ARCH-1 (backend-conformance test harness over both `dyn Store` impls) -> **FEASIBLE** — additive test crate, pure Rust, touches no production code (APPLY tier holds). **Condition:** re-scope acceptance from "all 29 methods" to the trait's real surface (~90 required methods, ARCH-03) so it does not under-cover. The verified `guard_writable` asymmetry (ARCH-11) is a ready first divergence target.
+- U-ARCH-2 (A2A v1.0 interop adapter, default-off, over the `Store`/`Intent` seam) -> **FEASIBLE** — passes the hard gate. The RED suite proves the mapping rides the **already-present `serde_json`** (no new dep); AgentCard signing rides the existing pure-Rust `ed25519-dalek` under the default-off `sign` feature → **no C enters the trust boundary**. Must be ADDITIVE (new `to_a2a`/`from_a2a` + new `a2a.rs`/types, feature-gated default-off) and must **not** re-derive `Intent`'s existing serde — the native Tier-2 goldens (`integration.rs:3541/3646`) and the SQLite-mailbox transport stay intact (strict-upgrade preserved). If a gRPC binding is ever added it must use pure-Rust `tonic`/`prost`, not a C protobuf — flagged for the architect, not required for the JSON-RPC binding.
+- U-ARCH-3 (extract post-store CLI dispatch into a `dispatch/*` module) -> **FEASIBLE** — pure behavior-identical move, pure Rust, extends the existing `dispatch_memory/lease/job` pattern. PROPOSE tier (highest-blast bin) is appropriate; reversible.
+- U-ARCH-4 (single-source the CLI↔MCP verb surface / cross-guard test) -> **FEASIBLE** — the additive cross-guard-test variant is the low-risk pure-Rust path; the full declarative-registry derive is the heavier option. **Condition:** the parity test must enumerate the *measured* surfaces (71 CLI verbs / 72 MCP arms / 76 catalog), not the stale "71↔78".
+- U-GOV-001 (align documented CI gate 6→7) -> **FEASIBLE** — doc-only edit; PROPOSE (protected files). Pure tightening of truthfulness.
+- U-GOV-002 (remove Python from the CI/build plane, Rust `xtask` replacement) -> **FEASIBLE** — restores the Rust-native invariant; pure Rust. **Condition (never weaken):** the Rust replacement must reproduce the same supply-chain/target-smoke gate outputs (same `target-smoke.json` schema, same `cargo deny` posture) — a port, not a relaxation.
+- U-GOV-009 (document + optionally arm the PreToolUse gate) -> **FEASIBLE** — security TIGHTENING only; must not weaken the deny-by-default semantics (`main.rs:8896-8919`). Reversible to current opt-in default.
+- U-MEM-1 (ADR classifying/quarantining `memory.rs` as a bounded send-time cache) -> **FEASIBLE** — docs/ADR + doc-gate; no code deletion required. Pure governance.
+- U-MEM-2 (reconcile weave's send-time recall with ICM, or document it as a local cache) -> **FEASIBILITY: QUALIFIED** — option (b) doc-contract (weave memory is an explicit local augmentation cache, durable recall stays ICM+handoff) is **feasible** and preferred. Option (a) wiring `build_context_prefix` to read ICM is **feasibility-constrained**: it adds a cross-binary coupling from `weave-core` to ICM that the transport plane should not own; pursue only if (a)'s coupling is itself ADR'd. Default to (b).
+- U-TEST (A2A interop RED tests: to_a2a / from_a2a / JSON-RPC envelope) -> **FEASIBLE** — already authored and committed RED (`weave-core/tests/a2a_interop.rs`, 3 cases, tests-ran=3 all-RED-on-assertion); pure Rust over `serde_json`. These are the GREEN target for U-ARCH-2.
 
-- **Claim 9 (empirical build probe)** -> **CONFIRMED**. `cargo build -p icm-store` succeeds (EXIT 0) in
-  this env; rusqlite 0.34.0 (bundled C) + icm-store compiled. C-floor + std facts are real here.
+### Counts (weave, cycle 4)
 
-### Upgrade feasibility gate
+- CLAIMS: **CONFIRMED 16 · QUALIFIED 4 · REFUTED 0 · INCONCLUSIVE 0** (20 verdicts).
+  - QUALIFIED: ARCH-03 (29→~90 methods), ARCH-06 (78→72/76 tools), ARCH-12 (one SCC pair is real bounded recursion, not an artifact), PA-TOOLS (count).
+  - No fully-REFUTED claim; the only refutation is *internal* to ARCH-12 (the `call_tool↔tool_meta` "resolver artifact" sub-claim is refuted — it is genuine guarded recursion).
+- UPGRADES: **FEASIBLE 9 · FEASIBILITY-QUALIFIED 1 (U-MEM-2) · INFEASIBLE 0.** No-C / strict-upgrade gate held on every row (notably U-ARCH-2 A2A adapter is feasible because it rides existing pure-Rust serde_json + ed25519, additive/default-off).
 
-All upgrade rows below pass the no-C trust-boundary check: every icm-internal upgrade stays in the C-bearing
-**sidecar** (never linked into the no-C union kernel), and the one cross-repo upgrade touches handoff only
-with a string/metadata pointer (no C deps imported). The gate is NOT weakened.
+### Routed back to analyst (corrections required before plan facts)
 
-- UPGRADE *outcome-aware reinforcement + true time-decay* (memory-vector §1) -> **feasible**. `last_accessed`
-  already exists on `Memory` and the RED suite drives it; touches `apply_decay`; serves axis:accuracy.
-  This is the GREEN target the RED suite gates. feasible.
-- UPGRADE *bump sqlite-vec ≥0.1.9 + switch blend to RRF* (memory-vector §2) -> **feasible**. Version bump +
-  ranking change, additive, sidecar-internal; serves accuracy/quality. feasibility OK.
-- UPGRADE *fix default-model doc/const drift* (memory-vector §2) -> **feasible** (trivial; comment+naming);
-  directly closes claim 1's confirmed defect.
-- UPGRADE *provenance-aware recall + admission policy* (memory-vector §4) -> **feasible**. `MemorySource`
-  already persisted (`memory.rs:130-151`); add ranking + store-time policy hook; serves accuracy/governance.
-- UPGRADE *configurable hybrid fusion weight 0.3/0.7* (convergence C) -> **feasible**. Default-preserving;
-  `search_hybrid` (store.rs:1153-1212); serves accuracy.
-- UPGRADE *add `memory` pointer block to `handoff.context_capsule.v1`* (convergence C) -> **feasible**.
-  Feasibility gate: this touches the no-C kernel repo, but it adds an additive **string pointer**
-  (endpoint/scope/recall-contract), NOT a link to icm's rusqlite/sqlite-vec/ort — so it does NOT breach the
-  no-C trust boundary. feasible (PROPOSE; fleet-wide capsule schema = high blast).
-- UPGRADE *ADR "memory/vector plane ownership"* (convergence C) -> **feasible** (doc-only).
-- UPGRADE *fail-closed no-C BUILD gate on the union kernel* (convergence C) -> **feasible** and
-  **STRENGTHENS** the invariant (cargo-deny/dep-graph assert kernel links none of rusqlite/sqlite-vec/ort/
-  fastembed). Asserting the gate, not weakening it. feasible.
-- UPGRADE *single embedding/recall contract across icm+prompt_hub+handoff* (convergence C) -> **feasible**
-  as metadata descriptors (high blast, 3 repos, PROPOSE/long-horizon). feasibility OK.
-- Hypothetical INFEASIBLE check (not proposed, recorded for the gate): consolidating the 3 vector engines by
-  linking icm's sqlite-vec/ONNX *in-process into the no-C kernel* would be **infeasible** (breaches the no-C
-  boundary). Correctly, no upgrade proposes this — consolidation is routed to handoff's pure-Rust RVF.
-
-### Tally (icm)
-- CONFIRMED: 6 (claims 2,3,4,6,7,9) + claim 8 cluster CONFIRMED
-- QUALIFIED: 2 (claim 1 doc-drift-yes/data-bug-no; claim 5 mechanism-yes/specific-CVE-unadjudicable)
-- REFUTED: 1 sub-hypothesis (claim 1 "latent insert-failure/truncation bug"); 1 corrected sub-fact
-  (convergence "default 384d" → 768d)
-- INCONCLUSIVE: 0
-- Upgrades: 9 feasible / 0 infeasible (1 hypothetical recorded as infeasible to hold the gate)
+1. `Store` method count 29 → real surface ~90 (fix U-ARCH-1 acceptance).
+2. MCP tool count 78 (and 70/74) → 72 arms / 76 catalog (fix U-ARCH-4 test + ARCH-06).
+3. ARCH-12: re-label the `call_tool↔tool_meta` SCC as a real bounded recursion (self-target guard), not a resolver artifact; inject 5-cluster left INCONCLUSIVE pending a trace.

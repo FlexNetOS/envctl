@@ -1,46 +1,55 @@
-# HANDOFF — fleet-convergence planning loop → cycle 8 (Codex lane)
+# HANDOFF — Planning Engineer Loop (fleet-convergence-first-run)
 
-> Written at the cycle-7 close under a hard token ceiling (~5% Opus remaining). Owner directive:
-> **"strictly swap codex for opus — Claude tokens exhausted."** Cycle 8 must run on the **Codex**
-> foreground lane, NOT by spawning Opus sub-agents. This is a model-lane swap, not a scope change.
+Cold-start resume pointer. State precedence: Git > this markdown. Read `loop_state.md` first.
 
-## State at handoff (Git is source of truth)
-- **Cycle 7 (icm) = COMPLETE + SHIPPED.** envctl PR **#287** (base master, auto-merge armed) ·
-  icm RED PR **#5** (base develop, acceptance contract — NOT auto-merged). Lease `plan:claim:icm`
-  released. ICM store `01KW407HX8HC8XDXA1Y44JRXTV`.
-- Verdict: icm = canonical agent-memory plane, PEER of handoff ledger + git-kb. Convergence = **SIDECAR**
-  (unconditional C-floor vs handoff no-C redb kernel) + **bind-as-data** via a typed `memory` pointer in
-  `handoff.context_capsule.v1`. RED GREEN target = time-aware recency/decay (5 tests @ 258667e).
-- Planned organs so far: rusty-idd · handoff · weave · grit · prompt_hub · **icm**. Front-door pair:
-  prompt_hub (STORE) done; **harness_hub (INTERPRETER) still unplanned**.
-- Counters: cycles_this_session=1, cycles_total=7, cycle_budget=1 (per-instance), wrap_every=1.
+## Where we are (after cycle 2)
+- **Cycles 1 + 2 COMPLETE and HANDED OFF.** cycle_budget=2 reached.
+- Cycle 1 = **rusty-idd** (`- [~]` planned-with-gaps; 8/12 dims verified; gate PASS).
+- Cycle 2 = **handoff**, planned as the **union with rusty-idd** (`- [~]` planned-with-gaps; 12/13 dims
+  verified, only performance `[~]`; gate PASS). Verifier 57 CONFIRMED / 3 QUALIFIED / 0 REFUTED.
+- Run-from: `meta/.worktrees/plan-fleet-convergence/envctl` (branch `plan/fleet-convergence-first-run`).
+- RED worktrees (separate, isolated): `plan-rusty-idd-red/rusty-idd` (@ `2f8a42f`), `plan-handoff-cycle2/handoff` (@ `d74ad4b`).
+- **Owner review gate:** do NOT continue unattended until the owner approves.
 
-## Cycle 8 — recommended target + why
-**Recommended: `harness_hub`** — the Front-Door INTERPRETER (owner D3 north-star: transforms user
-intent → model-ready language). It is the last unplanned half of the two-layer front door (prompt_hub
-STORE is planned). Alternatives in the ready-set: `lane` (execution/model-lane organ). Owner may
-override; if unsure, auto-claim the top unclaimed ready node in `graph/target-dag.md`.
+## Owner verdicts (RESOLVED — binding north-star data; findings/resolved-decisions.md)
+- **D1:** north-star lives @ `$META_ROOT` + handoff; **goal = handoff + rusty-idd UNION** (one continuity+intent control plane).
+- **D2:** run from envctl (confirmed).
+- **D3:** harness_hub = the **Front-Door interpreter** (transforms user intent → model-ready language).
+- Three-way fit: **harness_hub interprets → handoff witnesses (deterministic classifier + ledger) → rusty-idd specifies (OpenSpec)**; weave = transport (distinct plane).
 
-## How to run cycle 8 on Codex (resume instructions)
-1. From `meta/envctl`, export `META_ROOT=/home/drdave/Desktop/meta`.
-2. **Reap** (mandatory): `bash scripts/reap-worktrees.sh` then `--apply`.
-3. **Claim**: `HF_LEASE_HOLDER="plan-harness-hub-<date>" weave lease reserve --resource "plan:claim:harness-hub" --ttl 1800 --note "plan-loop cycle 8 (codex)"`.
-4. **Worktree**: `git worktree add meta/.worktrees/plan-harness-hub/envctl -b plan/loop-harness-hub origin/master`. Seed targets.md (single kebab row `harness-hub`), loop_state.md, dimensions.md (mirror this cycle's skeleton; note targets.md prose lines MUST be `#`-prefixed or blank — the gate parser rejects bare prose rows).
-5. **Drive with Codex** (the swap): run the crew via the Codex CLI as the foreground analyst, e.g.
-   `codex` re-entering `/harness:plan-loop` against `prompt_hub/prompts/plan-loop-parallel-run.md`,
-   target=`harness-hub`. Do NOT spawn Opus sub-agents. If a bg lane is needed, route via
-   `scripts/plan-weave-dispatch.sh --target harness-hub --root meta/harness_hub ...` with
-   `PLAN_OPUS_CMD` pointed at the available (non-Opus) runtime.
-6. Gate (`scripts/plan-artifact-gate.sh`), ship (envctl PR base master + auto-merge; RED PR on the
-   target repo — CHECK its PR-base rule first), release lease, `icm store`, notify envctl via weave.
+## The union verdict (cycle 2)
+**MERGE.** handoff + rusty-idd's `crates/{cli,core,runner,spec,tui}` are **~95% shared-lineage forks**
+(work-order originated in handoff). handoff is the production-hardened kernel with **real-teeth policy
+gates** (`exit(1)`); rusty-idd is the intent/OpenSpec superset with the CLI handoff stripped. Fold
+rusty-idd's CLI UNDER handoff's gates into one workspace. Sequenced union (reports/union-plan-handoff-rusty-idd.md):
+1. **Resolve the RuVector `../../RuVector/*` path-dep** (A-U1) — SUPERVISED; the union is provably
+   non-standalone today (fails at workspace manifest-load). **Everything sequences behind this.**
+2. Dedup the shared crates (rusty-idd superset wins + re-apply handoff HFTASK-0082 lint) — SUPERVISED.
+3. rusty-idd depends on handoff `work-order` + `validate_card` (kill the mirrored schema) — PROPOSE.
+4. Design the missing **ledger read API** (intent plane reads witnessed state) — PROPOSE (gated on #1).
+5. Bridge `hooks.toml` block-gates → Claude `PreToolUse` (closes the fail-OPEN seam for BOTH forks) — PROPOSE.
 
-## Gate gotchas carried forward (save a re-run)
-- targets.md: every non-target line `#`-prefixed or blank; active rows = ONE kebab slug.
-- No bare sentinel tokens (TODO/TBD/"placeholder evidence"/"citation needed") ANYWHERE in
-  `require_contains` files — incl. meta-notes like "no TODO used"; hyphen-break them.
-- Numeric cross-agent facts (dims/versions) must be verifier-adjudicated before becoming plan facts
-  (L-icm-2, now 2nd recurrence — apply-eligible).
+## To resume (cycle 3) — owner choice
+Reap first (`cd meta/envctl && bash scripts/reap-worktrees.sh` → `--apply`). Then EITHER:
+- **(a) Plan `weave`** — the A2A transport plane (ready-set; the union's distinct transport; A2A v1.0 is the interop target), OR
+- **(b) Begin executing the union** — start with **RuVector A-U1** (SUPERVISED owner wall: vendor/publish/git-pin the `../../RuVector/*` deps so handoff builds standalone), the gate on which all other union steps depend.
+Recommendation: (b)-A-U1 first if the owner wants to move the union forward; (a) if continuing breadth-first fleet mapping.
 
-## Apply-eligible upgrades queued (steward)
-- L-icm-2 (2nd recurrence): add "numeric facts are must-refute" to the verifier agent def.
-- P1 (carried from cycle 6): scope git-kb index to member `src/`, excluding `vendor/`.
+## Key corrections carried forward (verify against source, don't trust framing — lesson L5)
+- Witness chain = **SHAKE-256 hash-link, UNSIGNED** (not blake3+ed25519). blake3 is only work-order intent_lock; ed25519-dalek compiles but never signs.
+- RVF "semantic recall" is **dead** (0 callers, SHA3 pseudo-embeddings, write-amplified) — same class as rusty-idd's dead vector store.
+- Fleet has **5 disjoint memory surfaces, no unified recall** (handoff ledger, RVF-dead, ICM, git-kb, rusty-idd .idd/knowledge 47MB).
+
+## Residuals (cycle-3 follow-ups, non-blocking)
+- rusty-idd: 4 dims [~] (performance/autoresearch/rules-policy-org/prompt-architecture); 500-row graph truncation.
+- handoff: performance [~] (no measured delta); below-leaf tests blocked by RuVector; ledger read API unbuilt.
+
+## North-star DRAFT (owner D1 — PROPOSE, not yet canon)
+`reports/north-star-DRAFT.md` — proposed home: `$META_ROOT` + handoff, carried as DATA in the witnessed
+`.handoff/context/capsule.json` `northstar` field (drift-invalidated by `handoff-drift`). Owner approves before it becomes canon.
+
+## Proposed harness upgrades (propose-only; proposed-upgrades.md)
+P1 (single-source artifact naming — VALIDATED this cycle, APPLY first when free-running enabled),
+P2 (gate: feasibility verdict required), P3 (dimension-flip authority), P4 (DAG/backlog scaling),
+P5 (clean-clone standalone-build gate — L6), P6 (cross-repo schema-drift gate — L7),
+P7 (verifier must source-derive security-critical framing — L5, recurred). Plus the slug-regex relax/canonicalize item.

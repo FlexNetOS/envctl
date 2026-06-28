@@ -1,15 +1,8 @@
-# Planning Engineer Loop — target backlog (VIEW; Git is source of truth)
-#
-# Cycle 7 instance — plans exactly ONE target (icm), parallel-isolated.
-# Active rows = a single kebab-case slug each. snake_case fleet members stay in the #-commented backlog.
+# Planning backlog (parallel instance: weave). One kebab-slug per active row (gate-strict).
 
-- [~] icm: persistent-memory plane (Infinite Context Memory) — recall/store substrate; bind into the handoff+rusty-idd union (memory/vector axis)
+## This instance
+- [~] weave: communication layer / A2A transport (nervous system) — cycle 4, parallel run
 
-# fleet backlog (other organs, planned in their own cycles / instances):
-#  - rusty-idd (cycle 1, planned-with-gaps) — intent control plane
-#  - handoff (cycle 2, planned-with-gaps; A-U1 executing) — continuity kernel
-#  - weave (planned) — A2A transport
-#  - grit (cycle 5, planned-with-gaps) — merge/lock substrate
-#  - prompt_hub (cycle 6, planned-with-gaps) — Front-Door STORE
-#  - harness_hub — Front-Door INTERPRETER (unplanned)
-#  - lane — execution / model-lane organ (unplanned)
+## Context (other organs — not this instance)
+# rusty-idd [~] (cycle 1) · handoff [~] (cycle 2) · union A-U1 done (handoff#184)
+# snake_case fleet members live in the commented backlog of the union loop branch's targets.md
