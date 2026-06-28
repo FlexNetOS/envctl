@@ -1,35 +1,35 @@
-# TASK-0078 guardian report — cache-child manifest id validation
+# TASK-0078 cache manifest id readiness guardian report
 
-Date: 2026-06-28
+Status: PASS
 
-## Verification commands
+## Invariants checked
 
-```bash
-bash scripts/tests/test-meta-local-path-audit.sh   # red first, then PASS after implementation
+- Existing `--owner-supervised-cache-child-component-manifest-status` schema remains unchanged.
+- New validation report is read-only and leaves `apply_command` empty.
+- Missing manifests route to create-before-migration.
+- Existing matching manifests route to review-before-migration.
+- Existing wrong/empty manifests route to fix-id-before-migration.
+- No broad `.cache` mutation or cache-child apply was performed.
+
+## Evidence
+
+```text
 bash -n scripts/audit-meta-local-paths.sh scripts/tests/test-meta-local-path-audit.sh
 bash scripts/tests/test-meta-local-path-audit.sh
+# test-meta-local-path-audit: PASS
 git diff --check
 bash ci/gates/meta-local-policy.sh
 bash ci/gates/harness-scripts.sh
 bash ci/gates/p7.sh
+# all PASS
 ```
 
-All final commands passed.
+Runtime evidence:
 
-## Live runtime verification
+```text
+rc=0
+validation_rows=84 manifest_exists_yes=0 manifest_declares_expected_id_yes=0 create_next_action=84 nonempty_apply=0
+blockers unchanged: open-handles=1, owner-supervised-cache=1, owner-supervised-managed-dotfile=1, owner-supervised-sensitive=7
+```
 
-Non-mutating live audit wrote:
-`/tmp/envctl-cache-manifest-validation-20260628T003958Z.Hg6Q1b`
-
-Observed:
-
-- exit code: 0
-- `meta-local audit: PASS warnings=10 changed=0 dot_entries=79`
-- `--migrate-cache-child .wasm-pack` dry-ran a refusal because `manifest/components.d/cache-wasm-pack.toml` is missing
-- cache-child manifest-status emitted 84 current cache-child rows
-- all 84 current cache-child manifest hints reported `manifest_exists=no`
-- no live cache-child apply was performed
-
-## Result
-
-PASS. The slice strengthens the PR #368 manifest gate from "file exists" to "matching reviewed component id exists" while preserving all non-mutating/default-fail-closed behavior.
+Result: safe to publish this slice.

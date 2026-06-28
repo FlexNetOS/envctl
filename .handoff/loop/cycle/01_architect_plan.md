@@ -1,30 +1,28 @@
-# TASK-0078 plan — cache-child manifest id validation
+# TASK-0078 cache manifest id readiness plan
 
-Date: 2026-06-28
-Worktree: `/home/drdave/Desktop/meta/.worktrees/task-0078-cache-manifest-validation/envctl`
-Branch: `task-0078-cache-manifest-validation`
+## Target
 
-## Verified baseline
+Add a read-only owner-supervised cache-child component manifest validation report that preserves the existing manifest-status schema while surfacing the exact component-id contract required by `--migrate-cache-child NAME`.
 
-- `origin/master` includes PR #368 (`35a542b`) gating `--migrate-cache-child NAME` on the existence of `manifest/components.d/cache-<component>.toml`.
-- Gap found: existence alone lets an empty or unrelated manifest unlock a cache-child migration, which is weaker than the backlog/docs phrase "reviewed cache component manifest".
-- Live state remains owner-supervised: as of the PR #368 evidence, current cache-child manifests are missing and no live cache-child apply has been performed.
+## Contract
 
-## Design
+New flag: `--owner-supervised-cache-child-component-manifest-validation PATH`.
 
-Add a narrow manifest-content guard for named cache-child migration:
+TSV columns:
 
-1. Derive the expected component id as `cache-$(cache_child_component_key NAME)`.
-2. Parse only the hinted manifest enough to find a matching `[[component]]` table with `id = "<expected>"`.
-3. For an existing manifest that does not declare the expected id:
-   - dry-run reports a refusal and returns without moving state;
-   - `--apply` fails closed before open-handle and target-collision checks;
-   - source and target remain unchanged.
-4. Preserve the already-approved path when the manifest declares the matching id.
+```text
+dot_entry child_name child_path type canonical_target component_key expected_component_id cache_scope manifest_hint manifest_exists manifest_declares_expected_id supervision next_action apply_command
+```
 
-## Runtime surface
+Routing:
 
-- `scripts/audit-meta-local-paths.sh --migrate-cache-child NAME`
-- `scripts/tests/test-meta-local-path-audit.sh`
-- `ci/gates/meta-local-policy.sh`
-- Live non-mutating `--migrate-cache-child .wasm-pack` evidence against the current real home.
+- missing manifest: `manifest_exists=no`, `manifest_declares_expected_id=no`, `next_action=create-cache-component-manifest-before-migration`
+- existing manifest with expected `[[component]] id = "cache-<component>"`: `yes/yes`, `next_action=review-existing-cache-component-manifest-before-migration`
+- existing manifest with no/wrong id: `manifest_exists=yes`, `manifest_declares_expected_id=no`, `next_action=fix-cache-component-manifest-id-before-migration`
+- `apply_command` stays empty; report-only, no cache migration.
+
+## Verification plan
+
+- Red: focused fixture test fails because the new flag is unknown.
+- Green: lock the 14-column schema plus missing/valid/wrong manifest branches and validation-only mode.
+- Runtime: live non-mutating audit should emit 84 current cache-child rows, all missing manifests, all empty apply commands.

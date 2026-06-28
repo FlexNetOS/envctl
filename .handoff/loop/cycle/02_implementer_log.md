@@ -1,32 +1,38 @@
-# TASK-0078 implementer log — cache-child manifest id validation
+# TASK-0078 cache manifest id readiness implementer log
 
-Date: 2026-06-28
+## Red
 
-## Red test
+Focused TDD started by adding fixture expectations for `--owner-supervised-cache-child-component-manifest-validation PATH`; the first direct probe failed with `unknown argument: --owner-supervised-cache-child-component-manifest-validation`.
 
-Added fixture coverage for an existing but wrong manifest:
+## Change
 
-```toml
-[[component]]
-id = "cache-other"
-```
+- Added the new read-only validation report flag to `scripts/audit-meta-local-paths.sh`.
+- Reused existing cache component-key/id helpers and `cache_child_component_manifest_declares_id`.
+- Preserved the 12-column manifest-status report unchanged.
+- Added a separate 14-column validation TSV with `expected_component_id` and `manifest_declares_expected_id`.
+- Documented the status + validation review sequence in the ADR and envctl-home README.
 
-The new test expects `--apply --migrate-cache-child tool` to fail with:
+## Green
+
+Focused test and gate evidence:
 
 ```text
---migrate-cache-child tool: component manifest manifest/components.d/cache-tool.toml does not declare component id cache-tool; review/fix the manifest before migration
+bash -n scripts/audit-meta-local-paths.sh scripts/tests/test-meta-local-path-audit.sh
+bash scripts/tests/test-meta-local-path-audit.sh
+# test-meta-local-path-audit: PASS
+git diff --check
+bash ci/gates/meta-local-policy.sh
+bash ci/gates/harness-scripts.sh
+bash ci/gates/p7.sh
+# all PASS
 ```
 
-Red result: the existing code moved the cache child, proving that manifest existence alone was insufficient.
+Runtime non-mutating evidence on 2026-06-28:
 
-## Changes made
+```text
+rc=0
+85 cache-validation.tsv
+validation_rows=84 manifest_exists_yes=0 manifest_declares_expected_id_yes=0 create_next_action=84 nonempty_apply=0
+```
 
-- Added `cache_child_component_id` to derive the canonical component id from the requested cache child name.
-- Added `cache_child_component_manifest_declares_id`, a small shell/awk TOML-enough check scoped to `[[component]]` id fields.
-- Added a dry-run/apply refusal path when the hinted manifest is present but lacks the expected id.
-- Updated approved cache-child migration fixtures to use minimal matching component manifests instead of comment-only placeholders.
-
-## Notes
-
-- This is a strict safety upgrade on top of PR #368; no broad `.cache` migration is introduced.
-- Missing-manifest, invalid-name, open-handle, target-collision, and approved migration coverage remain intact.
+No `--apply` was used and no live cache-child state was moved.
