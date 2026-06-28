@@ -2,8 +2,8 @@
 # Machine-readable mirror for ci/gates/loop-state.sh (keeps the markdown table human-readable).
 cycle_budget: 1
 wrap_every: 1
-last_wrapup_total: 5
-cycles_total: 6
+last_wrapup_total: 6
+cycles_total: 7
 cycles_this_session: 1
 <!-- /loop-state-gate:counters -->
 
@@ -15,8 +15,8 @@ cycles_this_session: 1
 | session_started | 2026-06-26 (UTC) |
 | instance | weave (cycle 4; parallel-run per prompt_hub/prompts/plan-loop-parallel-run.md) |
 | cycles_this_session | 1 |
-| cycles_total | 6 |
-| last_wrapup_total | 5 |
+| cycles_total | 7 |
+| last_wrapup_total | 6 |
 | wrap_every | 1 |
 | cycle_budget | 1 |
 | planning_target | weave |
@@ -27,7 +27,7 @@ cycles_this_session: 1
 | red_worktree | /home/drdave/Desktop/meta/.worktrees/plan-weave-red/weave (plan/weave-red-tests off origin/develop) |
 | recency_window_days | 90 |
 | status | COMPLETE — weave cycle done (5/12 dims verified; artifact gate PASS); HAND OFF. Parallel-isolated from the union loop. |
-| conflict_sync | prompt-hub branch sync preserved branch-local loop-state under `instances/prompt-hub/` and advanced shared counters monotonically. |
+| conflict_sync | icm branch sync preserved branch-local loop-state under `instances/icm/` and advanced shared counters monotonically. |
 | graph_snapshot | graph/weave.symbols.json@4fe2419 (cycle 4 baseline; 2722 sym / 9571 edges / 4 crates) |
 
 ## Frame
