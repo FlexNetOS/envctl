@@ -25,6 +25,11 @@ content_hash = "3d99fd6a69e799b9"
 requires = []
 resolved = ""
 
+[components.cache-starship]
+content_hash = "f5b5701fde03d4cb"
+requires = []
+resolved = ""
+
 [components.cache-wasm-pack]
 content_hash = "3cbf0bb0e345a085"
 requires = []
