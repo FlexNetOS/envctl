@@ -1033,6 +1033,45 @@ cache_child_component_manifest_hint() {
   printf 'manifest/components.d/cache-%s.toml' "$component_key"
 }
 
+cache_child_component_id() {
+  local child_name="$1" component_key
+
+  component_key="$(cache_child_component_key "$child_name")"
+  printf 'cache-%s' "$component_key"
+}
+
+cache_child_component_manifest_declares_id() {
+  local manifest_path="$1" expected_component_id="$2"
+
+  awk -v expected="$expected_component_id" '
+    /^[[:space:]]*\[\[component\]\][[:space:]]*($|#)/ {
+      in_component = 1
+      next
+    }
+    /^[[:space:]]*\[/ {
+      in_component = 0
+      next
+    }
+    in_component && /^[[:space:]]*id[[:space:]]*=/ {
+      line = $0
+      sub(/#.*/, "", line)
+      sub(/^[[:space:]]*id[[:space:]]*=[[:space:]]*/, "", line)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", line)
+      first = substr(line, 1, 1)
+      last = substr(line, length(line), 1)
+      if ((first == "\"" && last == "\"") || (first == sprintf("%c", 39) && last == sprintf("%c", 39))) {
+        line = substr(line, 2, length(line) - 2)
+      }
+      if (line == expected) {
+        found = 1
+      }
+    }
+    END {
+      exit found ? 0 : 1
+    }
+  ' "$manifest_path"
+}
+
 owner_supervised_child_candidate_action_fields() {
   local child_target_class="$1" candidate_action="$2" canonical_target="$3"
   local supervision next_action envctl_home_source apply_command
@@ -2154,7 +2193,7 @@ bridge_identical_managed_config_child() {
 }
 
 migrate_real_home_cache_child() {
-  local child="$1" source target resolved manifest_hint manifest_path
+  local child="$1" source target resolved manifest_hint manifest_path expected_component_id
 
   if ! is_valid_cache_child_name "$child"; then
     fail "--migrate-cache-child $child is not a direct .cache child name; refusing automatic cache-child migration"
@@ -2191,6 +2230,15 @@ migrate_real_home_cache_child() {
       say "DRY-RUN: would refuse automatic cache-child migration because component manifest $manifest_hint is missing; create/review the manifest before migration"
     else
       fail "--migrate-cache-child $child: component manifest $manifest_hint is missing; create/review the manifest before migration"
+    fi
+    return 0
+  fi
+  expected_component_id="$(cache_child_component_id "$child")"
+  if ! cache_child_component_manifest_declares_id "$manifest_path" "$expected_component_id"; then
+    if [ "$APPLY" -ne 1 ]; then
+      say "DRY-RUN: would refuse automatic cache-child migration because component manifest $manifest_hint does not declare component id $expected_component_id; review/fix the manifest before migration"
+    else
+      fail "--migrate-cache-child $child: component manifest $manifest_hint does not declare component id $expected_component_id; review/fix the manifest before migration"
     fi
     return 0
   fi

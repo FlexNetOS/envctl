@@ -1,26 +1,30 @@
-# TASK-0078 plan — migration blocker sensitive hint visibility
+# TASK-0078 plan — cache-child manifest id validation
 
-Date: 2026-06-27
-Worktree: `/home/drdave/Desktop/meta/.worktrees/meta-local-blocker-sensitive-hints/envctl`
-Branch: `meta-local-blocker-sensitive-hints`
+Date: 2026-06-28
+Worktree: `/home/drdave/Desktop/meta/.worktrees/task-0078-cache-manifest-validation/envctl`
+Branch: `task-0078-cache-manifest-validation`
 
 ## Verified baseline
 
-- `origin/master` is at `c8f2e48 Generate Codex model swarm baseline (#335)` (and includes `5be9041` from #334).
-- Focused baseline passed:
-  - `bash scripts/tests/test-meta-local-path-audit.sh`
-  - `bash ci/gates/meta-local-policy.sh`
-- Live read-only audit reported `meta-local audit: PASS warnings=10 changed=0 dot_entries=79`.
-- Remaining real-home blockers are `.aws`, `.cache`, `.config`, `.docker`, `.fxapp-gh-profile`, `.gnupg`, `.lane`, `.mcp-auth`, `.pki`, `.ssh`.
-- `.pki` is an apply-safe app-config migration target, but Chrome has open handles and the blocker report did not expose NSS/private-state hint counts.
+- `origin/master` includes PR #368 (`35a542b`) gating `--migrate-cache-child NAME` on the existence of `manifest/components.d/cache-<component>.toml`.
+- Gap found: existence alone lets an empty or unrelated manifest unlock a cache-child migration, which is weaker than the backlog/docs phrase "reviewed cache component manifest".
+- Live state remains owner-supervised: as of the PR #368 evidence, current cache-child manifests are missing and no live cache-child apply has been performed.
 
 ## Design
 
-Add `sensitive_hints` to every `--migration-blockers-report` row, immediately after `canonical_target`, so surgical migration planning sees credential/private-key/NSS hints even when a dot entry is classified as app-config-state rather than sensitive.
+Add a narrow manifest-content guard for named cache-child migration:
+
+1. Derive the expected component id as `cache-$(cache_child_component_key NAME)`.
+2. Parse only the hinted manifest enough to find a matching `[[component]]` table with `id = "<expected>"`.
+3. For an existing manifest that does not declare the expected id:
+   - dry-run reports a refusal and returns without moving state;
+   - `--apply` fails closed before open-handle and target-collision checks;
+   - source and target remain unchanged.
+4. Preserve the already-approved path when the manifest declares the matching id.
 
 ## Runtime surface
 
-- `scripts/audit-meta-local-paths.sh --migration-blockers-report`
+- `scripts/audit-meta-local-paths.sh --migrate-cache-child NAME`
 - `scripts/tests/test-meta-local-path-audit.sh`
 - `ci/gates/meta-local-policy.sh`
-- Live read-only audit against `/home/drdave` and `/home/drdave/Desktop/meta`
+- Live non-mutating `--migrate-cache-child .wasm-pack` evidence against the current real home.

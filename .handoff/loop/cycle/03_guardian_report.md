@@ -1,33 +1,35 @@
-# TASK-0078 guardian report — blocker sensitive hints
+# TASK-0078 guardian report — cache-child manifest id validation
 
-Date: 2026-06-27
+Date: 2026-06-28
 
 ## Verification commands
 
 ```bash
+bash scripts/tests/test-meta-local-path-audit.sh   # red first, then PASS after implementation
+bash -n scripts/audit-meta-local-paths.sh scripts/tests/test-meta-local-path-audit.sh
 bash scripts/tests/test-meta-local-path-audit.sh
+git diff --check
 bash ci/gates/meta-local-policy.sh
 bash ci/gates/harness-scripts.sh
+bash ci/gates/p7.sh
 ```
 
-All commands passed.
+All final commands passed.
 
 ## Live runtime verification
 
-Read-only live audit wrote:
-`/tmp/envctl-dot-audit-sensitive-hints-final-20260627T184649Z`
+Non-mutating live audit wrote:
+`/tmp/envctl-cache-manifest-validation-20260628T003958Z.Hg6Q1b`
 
 Observed:
 
 - exit code: 0
 - `meta-local audit: PASS warnings=10 changed=0 dot_entries=79`
-- blocker report header includes `sensitive_hints`
-- selected blocker evidence:
-  - `.pki`: `target_class=app-config-state`, `apply_safe=yes`, `canonical_target=/home/drdave/Desktop/meta/.local/share/pki`, `sensitive_hints=3`, `blocker=open-handles`, `open_handles=2`, sample `chrome/1653768`
-  - `.lane`: `sensitive_hints=7`
-  - `.fxapp-gh-profile`: `sensitive_hints=5`
-  - `.ssh`: `sensitive_hints=1`
+- `--migrate-cache-child .wasm-pack` dry-ran a refusal because `manifest/components.d/cache-wasm-pack.toml` is missing
+- cache-child manifest-status emitted 84 current cache-child rows
+- all 84 current cache-child manifest hints reported `manifest_exists=no`
+- no live cache-child apply was performed
 
 ## Result
 
-PASS. The slice improves surgical blocker visibility without weakening the default non-mutating policy.
+PASS. The slice strengthens the PR #368 manifest gate from "file exists" to "matching reviewed component id exists" while preserving all non-mutating/default-fail-closed behavior.
