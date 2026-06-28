@@ -25,6 +25,16 @@ content_hash = "3d99fd6a69e799b9"
 requires = []
 resolved = ""
 
+[components.cache-agent-env]
+content_hash = "76f7409bbc06d110"
+requires = []
+resolved = ""
+
+[components.cache-jna]
+content_hash = "5da1b364e1dfb198"
+requires = []
+resolved = ""
+
 [components.cache-starship]
 content_hash = "f5b5701fde03d4cb"
 requires = []
@@ -51,7 +61,7 @@ requires = ["home-config-links"]
 resolved = ""
 
 [components.codex-cli]
-content_hash = "5fbec313583ddc1e"
+content_hash = "97e7328e1a3617c2"
 requires = [
     "bun",
     "rustup",
@@ -60,7 +70,7 @@ requires = [
 resolved = ""
 
 [components.codex-global-baseline]
-content_hash = "e72e01906300c104"
+content_hash = "ac7c788c6e0bb19e"
 requires = ["codex-cli"]
 resolved = ""
 
