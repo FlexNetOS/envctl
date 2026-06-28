@@ -1,34 +1,47 @@
-# HANDOFF — envctl forge-loop (AUTONOMOUS SWEEP, session 6)
+# HANDOFF — envctl forge-loop batch boundary 54
 
-**Written:** 2026-06-23 · **Branch:** develop (current with origin) · **hf:** present · **META_ROOT:** /home/drdave/Desktop/meta
+Written: 2026-06-28T02:23:07Z
+Branch/worktree for this wrap-up: `task-0078-batch-boundary-54` at `/home/drdave/Desktop/meta/.worktrees/task-0078-batch-boundary-54/envctl`
 
 ## Resume in one line
-`/forge-loop resume` — FIRST action: re-poll the in-flight PR, tick `- [x]` if MERGED, then pick the next non-deferred item.
 
-## In-flight (re-poll FIRST — TICK-ON-MERGED)
-- **PR #204** — TASK-0077 (shared GitHub fetch-token resolver). Armed auto-merge --squash, was OPEN/BLOCKED on pending checks. `gh pr view 204 --json state` → if `MERGED`, tick TASK-0077 `- [x]` in backlog.md and reap its worktree (`/home/drdave/Desktop/meta/.worktrees/task-0077-fetch-token/envctl`). Shell+manifest only (no Rust) → all gates should pass.
+Confirm the batch-boundary PR merged, fast-forward `/home/drdave/Desktop/meta/envctl`, run the reaper, then continue TASK-0078 from `.handoff/loop/backlog.md` with another safe reviewed slice. Do not broad-migrate `.cache`/`.config` or sensitive stores.
 
-## This session (6/6 cycles — budget reached → handed off)
-- **Cycle 6 = TASK-0077 BUILT** (PR #204 armed). New `assets/scripts/envctl-gh-fetch.sh` (3-tier resolver: `secretctl mint-github` → authed `gh` → unauth; functions-only, stderr-only diagnostics, fail-open) + all 10 Epic-H fetch sites repointed in `epic-h-toolchains.toml`; lock 79 comp (10 hashes changed). Mint tier gated on operator `ENVCTL_GH_INSTALLATION_ID` (no fabricated id). Guardian PASS, runtime-proven (fail-through → real tag v2.95.0; live mise fetch; no-c/shape/p7/agent-env/harness-scripts + lock --check + clippy -D clean; Cargo.lock diff empty).
-- Also confirmed **PR #203 MERGED** (runbook docs deliverable — diagrams §11–16 + AGENTIC-STORY.md + USER-STORY.md; a direct owner request, not a loop cycle).
-- Reaper applied: reaped merged `docs-diagrams` worktree + branch.
+## Loop counters
 
-## NEXT (dependency-correct, all NON-deferred — pick in order after re-poll)
-1. **TASK-0022** — agent-web-access Phases 2–3 (real feature; Phase 1 n8n-mcp already done). Largest remaining autonomous value — fresh context helps.
-2. **TASK-0006** (P2) — repoint global `home/.config/kasetto/kasetto.yaml` mcps source to in-meta; **needs care** (superseded by the TASK-0040 `kasetto.yaml`→`agent-env.yaml` rename — verify which file the live home overlay actually uses before editing).
-3. **TASK-0039** — remote-clients-CA lifecycle (mint/≤7d-leaf/renew/revoke + revocation-set) — secrets-stack sub-item under the relay edge.
-4. **Reconcile** stale cards: TASK-0029 (no `portability-links.toml` found — likely stale), TASK-0065 (host-prereq classification — essentially resolved, tick/close).
+- `cycles_total: 54`
+- `last_wrapup_total: 54`
+- `cycles_this_session: 7`
+- `wrap_every: 5`
+- Next batch boundary: `cycles_total >= 59`
 
-## DEFERRED-TO-END (do NOT auto-run — route around, surface to owner only)
-- **nvidia 595→610 driver bump + reboot** — THE final task (unlocks CUDA 13.3/ruvllm). Hold to the very end.
-- **TASK-0067** — destructive `/nix` removal + yazelix repoint (`[!!]` SUPERVISED; owner: "i will tell you when to run it").
-- **TASK-0064** — JOINT `/nix` close-out (owner runs live yazelix repoint; build meta-prefix yazi+helix first).
-- **TASK-0072** — ollama + models → meta (~100GB move while ollama serves the qwen workers — needs a quiescent window + owner timing).
-- Blocked/gated: TASK-0033 [!] (VPS Profile B), TASK-0009 [!] (kasetto relocate, superseded), TASK-0056 [!] (archon port), KBTASK-SEED-UNLOCK [!] (live hardware).
-- Owner-sudo cleanups (pure cleanup, meta already wins PATH): `apt remove cuda-toolkit-13-3 / mold / gh`.
+## Landed since boundary 48
 
-## Honest state for the owner
-The autonomous build backlog is nearly drained. After TASK-0022/0006/0039 + the reconcile ticks, **what remains is the owner-gated tier** — the env is "not fully set" not from agent inaction but because the final steps (reboot, `/nix` live migration, ~100GB ollama move, sudo cleanups) require a human window. Truly-unattended continuation needs the **external `auto-provision` runner** (the in-session cron does not survive process exit); `/forge-loop resume` continues attended.
+- PR #368 — TASK-0078 cache-child manifest precondition for `--migrate-cache-child`; merged `35a542b9f1098d825973d56031f42c86f346f237`.
+- PR #369 — validate cache-child manifest declares the expected `cache-<component>` id; merged `cd023a19576d2d902a4ee30fb56c3b9a728b7d84`.
+- PR #370 — read-only cache-child manifest validation TSV; merged `8bf16722e75404f1765b68e38d0243916cdeb25a`.
+- PR #371 — read-only deterministic cache-child component-manifest scaffold TSV; merged `f8c271977c35baf0b51de74fc36b41dccb00ea30`.
+- PR #372 — read-only managed-config deep-diff summary TSV; merged `2e7c4aac141f033225b22d89a2490d2194fb586b`.
+- PR #373 — dry-run-default `--write-cache-child-component-manifest NAME` writer for reviewed minimal cache-child stubs; merged `3f93261fbfe4f9cdfd840aa353bc340f671d3181`.
 
-## Ledger
-cycles_this_session 6 · cycles_total 47 · cycle_budget 6 · wrap_every 5 · last_wrapup_total 43 (next boundary at 48) · state precedence Git > ledger.db > task cards > active.md > markdown.
+## Current TASK-0078 state
+
+- Cache-child migration is now gated on a reviewed component manifest: missing/wrong manifests refuse, the scaffold/validation/status reports are read-only, and the writer can materialize a deterministic stub only with explicit `--apply`. The writer intentionally runs after migration attempts so one invocation cannot create a manifest and migrate live cache state. No live cache-child state has been moved by the #368-#373 slices.
+- Managed `.config` conflicts remain owner-reviewed. Live deep-diff summary on 2026-06-28 emitted 5 rows (`ghostty`, `kasetto`, `nushell`, `systemd`, `yazelix`), all `deep_identical=no`; no bridge apply was performed.
+- `.pki` still waits for a Chrome/NSSDB handle-free window before any explicit migration.
+- Sensitive stores (`.aws`, `.docker`, `.gnupg`, `.lane`, `.mcp-auth`, `.ssh`, `.fxapp-gh-profile`) remain owner-supervised with no autonomous apply command.
+- Plan-loop/fleet-convergence proposed harness upgrades were drained to backlog TASK-0079 through TASK-0086 and `proposed-upgrades.md` was reset to the drained header.
+
+## Verification to rerun on resume
+
+```bash
+git fetch origin
+git status --short --branch
+bash ci/gates/loop-state.sh
+bash ci/gates/harness-scripts.sh
+bash ci/gates/p7.sh
+```
+
+## Next safe pick
+
+Continue TASK-0078 by either (a) adding/reviewing one explicit cache-child component manifest without moving live cache state, or (b) adding another read-only review/reporting or manifest validation slice. Avoid live cache/config/sensitive migration unless the relevant owner-reviewed precondition is already committed and the command remains explicit, narrow, and dry-run by default.
