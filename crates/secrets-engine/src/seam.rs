@@ -207,7 +207,7 @@ pub(crate) mod seed_factor {
 
     /// Pinned Cognitum CA (PEM). The CA is name-constrained to `169.254.x.x` + `.local`; we
     /// pin THIS root explicitly (FS-S7 frozen-roots) rather than trusting the OS store. The
-    /// envctl unit sets `ENVCTL_SEED_CA`; the fallback is the canonical meta-local share path,
+    /// envctl unit sets `ENVCTL_SEED_CA`; the fallback is the canonical meta etc path,
     /// with a read-only legacy `.toolchains` fallback only when that file already exists.
     fn ca_path() -> String {
         if let Ok(path) = std::env::var("ENVCTL_SEED_CA") {
@@ -236,7 +236,7 @@ pub(crate) mod seed_factor {
     }
 
     fn canonical_seed_ca(meta: &std::path::Path) -> std::path::PathBuf {
-        meta.join(".local/share/envctl/secrets/ca/cognitum-ca.crt")
+        meta.join("etc/envctl/secrets/ca/cognitum-ca.crt")
     }
 
     fn legacy_seed_ca(meta: &std::path::Path) -> std::path::PathBuf {
@@ -590,7 +590,7 @@ pub(crate) mod seed_factor {
         }
 
         #[test]
-        fn ca_path_defaults_to_meta_local_share() {
+        fn ca_path_defaults_to_meta_etc() {
             let _guard = env_lock();
             let old_seed_ca = std::env::var("ENVCTL_SEED_CA").ok();
             let old_meta = std::env::var("META_ROOT").ok();
@@ -598,7 +598,7 @@ pub(crate) mod seed_factor {
             std::env::set_var("META_ROOT", "/tmp/meta-envctl-test");
             assert_eq!(
                 ca_path(),
-                "/tmp/meta-envctl-test/.local/share/envctl/secrets/ca/cognitum-ca.crt"
+                "/tmp/meta-envctl-test/etc/envctl/secrets/ca/cognitum-ca.crt"
             );
             restore_var("ENVCTL_SEED_CA", old_seed_ca);
             restore_var("META_ROOT", old_meta);

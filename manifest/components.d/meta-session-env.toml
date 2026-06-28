@@ -1,0 +1,62 @@
+# Meta /usr mirror on the graphical / desktop login session.
+#
+# Three surfaces carry the meta /usr mirror onto a session's PATH/LD_LIBRARY_PATH:
+#   1. bash/zsh        — `envctl env --toolchains` eval (shell-rc blocks)
+#   2. nushell/yazelix — the version-controlled overlay module
+#                        home/.config/nushell/meta-usr-path.nu (sourced from
+#                        config.nu + yazelix/shell_nu.nu)
+#   3. graphical login — THIS component: systemd user `environment.d`, which
+#                        .desktop launchers + GUI sessions read (they never source
+#                        ~/.bashrc). Generated from `envctl env` by the idempotent
+#                        assets/scripts/meta-session-env.sh.
+#
+# Meta-resident (writes only under $META_ROOT/.config); no sudo, no system writes.
+
+[[component]]
+id = "meta-session-env"
+name = "meta /usr mirror on the desktop/login session"
+description = "Wire $META_ROOT/usr/{bin,lib,...} onto the graphical login session via systemd environment.d so .desktop launchers and GUI sessions resolve meta-native tools (meta-scoped, no sudo)."
+
+# Present iff the environment.d drop-in exists and carries our marker + a meta PATH.
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; C=\"${ENVCTL_XDG_CONFIG_HOME:-$M/.config}\"; F=\"$C/environment.d/10-meta.conf\"; test -f \"$F\" && grep -qF 'meta /usr mirror (added by envctl)' \"$F\" && grep -q \"$M/usr/bin\" \"$F\""]
+
+# Materialize the environment.d drop-in from `envctl env`. cwd-independent: repo
+# root derived from the manifest dir (ENVCTL_MANIFEST_DIR defaults to ./manifest;
+# components.d is one level under it, so the repo root is two levels up).
+[component.install]
+kind = "script"
+login_shell = true
+script = '''
+set -e
+ROOT="$(cd "${ENVCTL_MANIFEST_DIR:-./manifest}/.." && pwd)"
+bash "$ROOT/assets/scripts/meta-session-env.sh"
+'''
+
+# Smoke: the drop-in carries the meta usr/bin PATH entry and parses as KEY=VALUE.
+[component.verify]
+kind = "command"
+command = "bash"
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; C=\"${ENVCTL_XDG_CONFIG_HOME:-$M/.config}\"; F=\"$C/environment.d/10-meta.conf\"; grep -q \"^PATH=$M/usr/bin:\" \"$F\" && ! grep -vE '^(#|[A-Z_]+=|$)' \"$F\""]
+
+# Idempotent repair: regenerate the drop-in from current `envctl env`.
+[component.fix]
+kind = "script"
+login_shell = true
+script = '''
+set -e
+ROOT="$(cd "${ENVCTL_MANIFEST_DIR:-./manifest}/.." && pwd)"
+bash "$ROOT/assets/scripts/meta-session-env.sh"
+'''
+
+# Unwire: remove the drop-in (backs it up first inside the script).
+[component.remove]
+kind = "script"
+login_shell = true
+script = '''
+set -e
+ROOT="$(cd "${ENVCTL_MANIFEST_DIR:-./manifest}/.." && pwd)"
+bash "$ROOT/assets/scripts/meta-session-env.sh" remove
+'''

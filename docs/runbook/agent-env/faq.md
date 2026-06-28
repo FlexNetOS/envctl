@@ -18,7 +18,7 @@ No. MCP merges are **additive** and existing server entries are **never overwrit
 
 ## Where Is The Lock File?
 
-- **Global scope**: `$XDG_DATA_HOME/agent-env/agent-env.lock` (default: `~/.local/share/agent-env/agent-env.lock`)
+- **Global scope**: `$XDG_DATA_HOME/agent-env/agent-env.lock` (envctl-managed default: `$META_ROOT/.local/share/agent-env/agent-env.lock`)
 - **Project scope**: `./agent-env.lock`
 
 See [How Sync Works](./how-sync-works.md).

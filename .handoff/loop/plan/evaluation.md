@@ -1,14 +1,15 @@
 # evaluation.md — self-eval scorecard (evolution-steward)
 
-Run: `fleet-convergence-first-run` · cycle **1** · target **rusty-idd** · 2026-06-26 (UTC).
-Marker: **scorecard / self-eval / evolution**. Mode: FIRST owner-reviewed capped run
-(`cycle_budget=1`, `wrap_every=1`) — this steward **evaluates + mines + routes + PROPOSES only**.
-Per the first-run brief §8, **no harness edit is auto-applied or PR'd this cycle**; every routed
-upgrade is recorded as a proposal for owner review in `proposed-upgrades.md`.
+Run: `plan-loop-parallel / weave` · cycle **4** · target **weave** · 2026-06-26 (UTC).
+Marker: **scorecard / self-eval / evolution**. Mode: PARALLEL isolated instance
+(`cycle_budget=1`), first run of the new parallel prompt `prompt_hub/prompts/plan-loop-parallel-run.md`
+(#181). This steward **evaluates + mines + routes + PROPOSES only** — no harness edit is auto-applied
+or PR'd this cycle (PROPOSE-only per the run brief). Every routed upgrade is recorded as a proposal in
+`proposed-upgrades.md`.
 
-Evidence base: `loop_state.md`, `findings/verdicts.md`, `findings/*.md`, `reports/rusty-idd-plan.md`,
-`reports/agent-run-ledger-rusty-idd.md`, `graph/target-dag.md`, `graph/rusty-idd.metrics.json`,
-`dimensions.md`, `scripts/plan-artifact-gate.sh` (the gate this run answers to).
+Evidence base: `loop_state.md`, `findings/verdicts.md` (## weave cycle 4), `findings/architecture-weave.md`,
+`findings/*-weave.md` (axis findings), `reports/weave-plan.md`, `reports/agent-run-ledger-weave.md`,
+`dimensions.md`, `graph/weave.{symbols,metrics}.json`.
 
 ---
 
@@ -16,169 +17,78 @@ Evidence base: `loop_state.md`, `findings/verdicts.md`, `findings/*.md`, `report
 
 | axis | grade | one-line |
 |---|---|---|
-| Friction | **B** | Clean run, but **2 within-cycle reconcile round-trips** (SendMessage), both the same CLASS — producer artifact-naming did not match gate-required names. |
-| Gate quality | **A-** | Verifier caught a real fail-open defect and made 2 precise corrections that flowed into the plan; **0 false-blocks**; only soft spot is partial upgrade-row gating. |
-| Coverage | **B** | Nothing silently capped — every gap (truncation lower-bounds, UNCONFIRMED cross-repo edges, ungated per-axis upgrades) is **honestly recorded**, but the debt is real. |
-| Human-walls | **A** | Every NEEDS-HUMAN/`[H]` wall is **genuine** (architecture decision / deletes tracked trees / first live net dep); none avoidable. The cap itself is the brief, not a failure. |
+| Friction | **A-** | First run of the new PARALLEL prompt; gate-named artifacts emitted directly, lease claimed first try, own-worktree isolation clean. Only rough edge: a transient concurrency-timing read (a peer artifact briefly "not yet present"), no false finding shipped. |
+| Gate quality | **A** | Verifier re-ran every empirical probe as its own oracle, CONFIRMED 16 / QUALIFIED 4 / REFUTED 0, corrected three undercounts the analyst had carried, and found a real backend asymmetry. Strong adversarial reading; 0 false-blocks; no gate weakened. |
+| Coverage | **B** | 5/12 dims `[x]`; 3 axes (code-quality/correctness/performance) folded into architecture with no dedicated file, 4 axis findings present-but-not-gated this pass. All gaps recorded honestly in `dimensions.md`, but the un-gated debt is real. |
+| Human-walls | **A** | Both walls are genuine: the `main.rs` extraction is correctly SUPERVISED (highest-blast bin file), and the unmanaged `~/.config/weave/memory` user-global writes need an exemption ADR, not an auto-fix. Neither is avoidable. |
 
-### Friction (B)
-- **2 reconcile round-trips, one CLASS.** `reports/agent-run-ledger-rusty-idd.md:32-35` records that
-  agents 1 (cartographer) and 2 (trend-researcher) were **resumed via SendMessage** to emit
-  **gate-named** artifacts: the split graph JSONs (`graph/rusty-idd.{symbols,callgraph,metrics}.json`)
-  and the trends file's required `"Tool-currency & advisories"` / `"Sources"` headers. Both are exactly
-  what `scripts/plan-artifact-gate.sh:155-157,187` asserts as REQUIRED. No re-index was needed and the
-  existing graph was reused, so cost was bounded — but the round-trip was avoidable: the producers and
-  the gate independently encode the same artifact names/headers and **drifted**. Two different producers
-  hit the **same class** in one cycle → the class is systemic, not incidental.
-- No items bounced `- [~]`→`- [ ]`; no wasted cycles; no retried agents. Friction was self-corrected
-  in-cycle, not carried forward.
+### Friction (A-) — first run of the parallel prompt
+- **The parallel design worked on first contact.** This instance ran entirely in its own worktree
+  (`meta/.worktrees/plan-weave/envctl` on `plan/loop-weave`) under the weave lease `plan:claim:weave`
+  (`HF_LEASE_HOLDER=plan-weave-20260626`), with a separate RED worktree
+  (`.worktrees/plan-weave-red/weave`). Zero edits to the union loop branch
+  (`reports/agent-run-ledger-weave.md:27-30` parallel-isolation proof). Lease claim succeeded first try.
+- **Gate-named artifacts emitted directly** — the 13-lane fan-out produced every gate-named graph split,
+  trends headers, findings file and report with **no SendMessage reconcile round-trips** recorded in the
+  agent-run ledger. This is the L1 (artifact-name contract) behavior holding under parallelism — the
+  drift class that cost two round-trips in the union cycle 1 did **not** recur here.
+- **Only rough edge (harmless):** under the parallel fan-out, an axis agent can read a sibling artifact
+  before a peer lane has finished writing it and momentarily observe it as "not yet present". This was a
+  transient read timing artifact, not a fail-closed finding — **no false "missing" finding shipped** to
+  `verdicts.md` (the orchestrator gates analysis on orientation completion). Recorded as L9 below.
+- No items bounced `- [~]`→`- [ ]`; no retried/abandoned agents; one limit-free cycle.
 
-### Gate quality (A-) — verifier tally 22 CONFIRMED / 1 QUALIFIED / 0 REFUTED
-- **Caught a real defect.** The fail-open `work-order` card load (`ts-24/25/26`, `verdicts.md:55`) —
-  `serde_json::from_str::<WorkOrder>` silently accepts a foreign `schema` discriminator / bad `id` /
-  drifted `intent_lock`; the verifier CONFIRMED it against source and a RED suite already fails for the
-  right reason (`crates/work-order/tests/handoff_card_consumer.rs`, 3 RED + 1 GREEN). This is the plan's
-  headline first-step (`reports/rusty-idd-plan.md:42-46`).
-- **Not a rubber stamp despite 0 REFUTED.** It QUALIFIED C13 with two concrete corrections —
-  `merge.rs` is at `crates/spec/src/model/merge.rs` (not `crates/spec/src/merge.rs`); there are **5**
-  `spec_*` CLI commands, not 6 (`verdicts.md:27`) — and both corrections were carried verbatim into the
-  plan (`rusty-idd-plan.md:9-12`). It also *lifted* C12 from analyst-medium after re-reading the cited
-  lines (`verdicts.md:26`). That is genuine adversarial reading, so 0 REFUTED reflects strong analyst
-  input, not under-skepticism.
-- **0 false-blocks.** No upgrade was found infeasible; the conditions attached to U7/DC-2 (C-free trust
-  path + weave-required + filesystem fallback) and U4 (measure the speed magnitude) are **strengthenings**,
-  not blocks (`verdicts.md:36,39,61`).
-- **Soft spot (→ Coverage, not Quality):** only the architecture set (U1–U10) + DC-2/DC-5/FL-3 were
-  *feasibility-gated*; the governance/memory/autoresearch/rules-policy/filesystem **upgrade** rows reached
-  the report as **candidates, explicitly not promoted** (`rusty-idd-plan.md:440-444`). The architect
-  labelled them honestly — the gate held — but the upgrade set was only partially gated this cycle.
+### Gate quality (A) — verifier tally 16 CONFIRMED / 4 QUALIFIED / 0 REFUTED (20 verdicts)
+- **Empirical oracle, not summary-trust.** The verifier re-ran `grep`/`wc`/`awk` over the real tree as
+  the oracle rather than trusting the analyst's numbers (`verdicts.md:14-15` "Empirical commands re-run,
+  not trusted from the analyst summary"). The empirical bench (`verdicts.md:19-33`) independently
+  measured: A2A symbols **absent** (0 hits across both crates), `main.rs` = **9631** lines / 76 `Cmd::`
+  arms, the dual-backend conformance harness **absent**, the `memory.rs` organ **present** with **0 ICM
+  refs**, and **no** vector/RAG deps.
+- **Caught real undercounts and routed them back.** Three analyst figures were QUALIFIED against source
+  and corrected: `Store` trait **29 → ~90 methods** (ARCH-03), MCP tool surface **78 → 72 arms / 76
+  catalog** (ARCH-06/PA-TOOLS), and one Tarjan SCC re-labelled — `call_tool↔tool_meta` is **genuine
+  bounded recursion** (guarded by the `want=="weave"` self-target check), **not** a resolver artifact
+  (ARCH-12). These are routed back to the analyst as required corrections before they become plan facts
+  (`verdicts.md:84-88`), and the dependent UPGRADE acceptance (U-ARCH-1 "all 29 methods") was re-scoped
+  to the real surface so the conformance harness can't silently under-cover.
+- **Found a real defect the harness would lock down.** Adversarial probing surfaced a genuine backend
+  asymmetry: `LibsqlStore.send` (`store_libsql.rs:1499`) calls `self.guard_writable()?` before the
+  `check_ident` block; `SqliteStore.send` (`store.rs:3153`) has no such call (ARCH-11). The impls are
+  not byte-identical — exactly the silent drift the proposed conformance harness (U-ARCH-1) would catch,
+  and a ready first divergence target.
+- **0 false-blocks, no gate weakened.** Every UPGRADE passed the no-C / strict-upgrade feasibility gate
+  (9 FEASIBLE, 1 FEASIBILITY-QUALIFIED U-MEM-2, 0 INFEASIBLE); the conditions attached (re-scope
+  U-ARCH-1 acceptance, additive default-off A2A adapter, pure-Rust `tonic`/`prost` if gRPC ever added)
+  are **strengthenings**, not blocks (`verdicts.md:64-75`).
 
-### Coverage (B) — what was left behind, all recorded
-- **Truncation lower-bounds:** dead-code (≥278) and public-API (≥500) are truncated at the git-kb
-  500-row cap (`graph/rusty-idd.metrics.json:100,117-118`; `rusty-idd-plan.md:432-434`). Recorded as a
-  lower bound with a named "re-run explicit per-crate `code symbols`/`code dead`" follow-up before any
-  DONE that needs an exhaustive count.
-- **Cross-repo fabric edges UNCONFIRMED:** rusty-idd↔hf/weave, weave-as-load-bearing-transport, grit
-  cross-repo adoption, hf↔icm (`findings/fleet-north-star-map.md:45-52,138`; `rusty-idd-plan.md:437-439`)
-  — need cross-repo `kb_callers` before U7/DC-2 detail design.
-- **Per-axis upgrade rows not feasibility-gated** (see above) — deferred to the next verifier pass.
-- **Symbol-level cycles not computed** (`code flows` returned `[]`); clean-DAG verdict is authoritative
-  at **crate** level only (`rusty-idd-plan.md:435-436`).
-- Verdict: zero silent capping — the completeness sweep ran (`reports/codemap-rusty-idd.md`), all 11
-  crates + convergence axis re-derived non-zero. Honest, but the debt is genuine, hence B not A.
+### Coverage (B) — 5/12 dims verified, all gaps recorded
+- **Verified `[x]` (5):** architecture, test-coverage, governance-config, memory-vector-intelligence,
+  prompt-architecture (`dimensions.md:4,8,9,11,15`).
+- **Folded, no dedicated file (3):** code-quality, correctness, performance — covered only as slices
+  inside the architecture findings (`main.rs` god-file = ARCH-07/U-ARCH-3; `send`/dedup/parity =
+  ARCH-05/08/11), not as standalone gated axes (`dimensions.md:5-7`). Honestly marked `[~]`.
+- **Present-but-not-gated (4):** filesystem-layout, autoresearch, rules-policy-org, distributed-compute
+  each have a findings file but no verdicts this pass (`dimensions.md:10,12,13,14`). The debt is real and
+  named — a future cycle must run the verifier over these four before any weave DONE that needs them.
+- Nothing was silently capped; every un-gated axis is enumerated with its missing artifact.
 
-### Human-walls (A) — each genuine, none avoidable
-- `[H]` OWNER intent / OpenSpec goal (`rusty-idd-plan.md:137`) — the why/what binding is owner-owned by
-  design (the `sr-001` north-star OPEN finding).
-- `[H]` `agent-guard.toml` (`:178`) — control-plane policy, correctly human-gated.
-- **U7 / DC-2 owner-gated** (`:402`, `verdicts.md:39,61`) — introduces the **first live network/IPC
-  dependency** into an offline-by-construction binary; a real architecture decision (the DRAFT ADR).
-- U5 (delete triple-vendored trees) / U6 (integrate-or-retire `work-order`) are PROPOSE — deletes tracked
-  state / changes membership; owner-decision class.
-- All walls are the structural/destructive class that **must** fail closed to a human. None is an
-  avoidable stop. The whole-run cap (propose-only, 1 cycle) is the first-run brief, not a loop wall.
-
----
-
-## Dimension-ledger observation (feeds lesson L2)
-`dimensions.md` shows the verifier flipped 6 dims to `- [x]` (architecture, test-coverage,
-governance-config, filesystem-layout, memory-vector-intelligence, distributed-compute) but left 6 at
-`- [~]` (code-quality, correctness, performance, autoresearch, rules-policy-org, prompt-architecture).
-Those 6 were analysed and their *claims* are CONFIRMED in `verdicts.md`, yet the ledger marks stayed
-conservative — **flip authority is unstated** (who flips, on what signal), so the orchestrator had to
-reconcile. Not a defect this cycle (the plan correctly treats those dims' upgrades as candidates), but a
-contract gap worth closing.
+### Human-walls (A) — both walls genuine
+- **`main.rs` dispatch extraction — SUPERVISED (correct).** U-ARCH-3 extracts the post-store CLI dispatch
+  out of the 9631-line, highest-blast bin file into a `dispatch/*` module; rated PROPOSE/SUPERVISED
+  because it is a large structural move on the top-blast file (`verdicts.md:68`,
+  `architecture-weave.md:54`). A behavior-identical move on the riskiest file is a correct human wall, not
+  an avoidable stop.
+- **Unmanaged user-global writes → exemption ADR (correct).** `memory.rs` writes scoped notes under
+  `~/.config/weave/memory` (MEM-2, `verdicts.md:61`) — an unmanaged user-global write that conflicts with
+  the meta/envctl "everything lives in meta, globals hold only symlinks" invariant. The plan routes this
+  to a docs/ADR (U-MEM-1 classify/quarantine as a bounded send-time cache; U-MEM-2 reconcile-or-document
+  vs ICM), not an auto-deletion. Deciding a cross-plane residency exemption is genuinely an owner call.
 
 ---
 
-## Headline
-- 4-axis: **Friction B · Gate-quality A- · Coverage B · Human-walls A.**
-- A strong, honest first cycle: the gate caught the one defect that matters and every wall was genuine.
-  The only repeatable friction is a **producer↔gate artifact-naming drift** that fired twice in one cycle.
-- Mined lessons: **4** (see `LESSONS.md`). Proposed upgrades: **4**, all routed, **none auto-applied**
-  (first-run brief §8). No gate is weakened anywhere — two proposals *strengthen* the gate.
-
----
-
-## Cycle 2 (handoff / union) — self-eval scorecard (evolution-steward)
-
-Run: `fleet-convergence-first-run` · cycle **2** · target **handoff** (continuity kernel) planned as the
-**UNION with rusty-idd** · 2026-06-26 (UTC). Marker: **scorecard / self-eval / evolution**.
-Mode: owner approved continuation but **PROPOSE-only for harness edits this cycle** (record
-APPLY-when-approved); the owner reviews before unattended free-running. This steward
-**evaluates + mines + routes + PROPOSES only** — no harness edit auto-applied or PR'd.
-
-Evidence base: `loop_state.md`, `findings/verdicts.md` (## handoff, cycle 2 — lines 79–214),
-`findings/union-handoff-rusty-idd.md`, `reports/handoff-plan.md`, `reports/union-plan-handoff-rusty-idd.md`,
-`reports/agent-run-ledger-handoff.md`, `dimensions.md:20–32`, `HANDOFF.md`.
-
-### Scorecard — four axes
-
-| axis | grade | one-line |
-|---|---|---|
-| Friction | **A** | Reconcile load **LOW** — every lane wrote **gate-named artifacts directly** (cycle-1 lesson **L1 applied**); `reports/agent-run-ledger-handoff.md` records **0 SendMessage reconcile round-trips** (cycle 1 had 2 of the same class). L2 flip-rule also held: `dimensions.md` flips each handoff dim with a per-dim verdict citation. |
-| Gate quality | **A** | Verifier tally **57 CONFIRMED / 3 QUALIFIED / 0 REFUTED** and it ran **3 empirical experiments** (`cargo build`), incl. correcting the inherited **blake3+ed25519 → SHAKE-256-unsigned** witness-chain framing. Adversarial, not a rubber stamp; 0 false-blocks; every QUALIFIED is a strengthening condition. |
-| Coverage | **B+** | handoff/`performance` left `[~]` (fail-closed — no measured delta); below-leaf tests **genuinely blocked** by the RuVector path-dep wall (ts-U2/ts-U3 can't author a COMPILING RED in-tree); ledger read-API (Seam 2 / union-3) **unbuilt**. All recorded, none silent — but the debt is real and partly external. |
-| Human-walls | **A** | The RuVector resolution (A-U1) and the MERGE (union steps 1+2) are **genuine SUPERVISED owner walls** — large blast, `rusty-idd-*` pkg-name collision, witness-crypto move. None avoidable; correctly fail-closed. |
-
-### Friction (A) — L1 validated in the field
-- `reports/agent-run-ledger-handoff.md:9-23` lists 14 lanes, each emitting the **exact gate-required
-  names** (`graph/handoff.{symbols,callgraph,metrics}.json`, `research/handoff.trends.md` with its
-  required headers). **No lane was resumed via SendMessage to rename an artifact** — the cycle-1
-  friction CLASS (L1) did **not** recur. The behavioral fix worked even though the durable skill edit
-  (P1) is still APPLY-when-approved. This is the strongest signal of the cycle.
-- L2 (flip authority) also held behaviorally: `dimensions.md:20-32` flips 11/12 handoff dims (+ union)
-  to `[x]`, each citing its verifier verdict; the single `[~]` (`performance`, :23) carries a one-line
-  fail-closed reason. Cycle-1's "6 dims left `[~]` despite CONFIRMED claims" did not repeat.
-
-### Gate quality (A) — 57 CONFIRMED / 3 QUALIFIED / 0 REFUTED + 3 empirical experiments
-- **Empirical, not static.** `verdicts.md:89-93` records three `cargo`-level experiments: EXP-1 proved
-  the RuVector path-dep fails the workspace at **manifest-load** (`cargo build -p ledger` AND
-  `--no-default-features --features redb-store` both fail) — the union is provably non-standalone;
-  EXP-2 proved exactly one public `Ledger` per feature set + SHA3-256 pseudo-embeddings; EXP-3 is the
-  **KEY CORRECTION** — the witness chain is `shake256_256` (`RuVector/.../witness.rs:74`), UNSIGNED
-  (`ledger/src/v1.rs:20` imports no `sign`), NOT blake3+ed25519. blake3 is used only for
-  `work-order::compute_intent_lock`. Any seed/doc/trends text saying "blake3+ed25519 witness chain" is
-  REFUTED and the correction is propagated (mem-U3).
-- **Not a rubber stamp despite 0 REFUTED.** The 3 QUALIFIED are precise: A-C7 corrects "rvf-crypto
-  default-features=false" (ledger's `rvf-crypto` ships `ed25519` ON; the no-C conclusion still holds);
-  A-C9/union-1 downgrade the tool-derived "95%" aggregate to QUALIFIED while CONFIRMING the
-  fork/superset/byte-identical facts. The RED suite was **re-run standalone** (`ts-RED`,
-  `verdicts.md:163`): 1 passed / 3 failed — a true RED, not an exit-0 fail-open.
-- **0 false-blocks; gate only strengthens.** Every QUALIFIED-feasible upgrade (A-U2, A-U5, mem-U1/2/6,
-  ts-U2/U3, UP-2/4, DC-3, ar-U5, union-2) carries a *condition* (RuVector-resolve / no-C boundary /
-  default-warn-first / witnessed no-downgrade), never a relaxation. `infeasible = 0`.
-
-### Coverage (B+) — what was left, all recorded
-- **handoff/performance `[~]`** (`dimensions.md:23`) — fail-closed: only perf-adjacent verdicts
-  (mem-U2/RVF write-amp) are QUALIFIED with magnitude unmeasured; no measured build-time/binary-size/
-  runtime delta. Correct posture, real gap.
-- **Below-leaf tests blocked by the RuVector wall** (`verdicts.md:165-166`, `union-plan…:156`): ts-U2
-  (handoff-intake refusal) and ts-U3 (ledger read-API contract) cannot produce a COMPILING RED in-tree
-  because the whole workspace fails manifest-load until A-U1. This is an **external** blocker, not a
-  harness miss — but it caps what the test lane could verify this cycle.
-- **Ledger read API (Seam 2 / union-3) is unbuilt** (`verdicts.md:161`, union-3) — a CONFIRMED design
-  gap the union must close; recorded, not silently dropped.
-- 11/12 handoff dims + the union dim verified; the completeness sweep ran (`reports/codemap-handoff.md`).
-  Honest, but the blocked-test debt is genuine → B+ not A.
-
-### Human-walls (A) — each genuine SUPERVISED
-- **A-U1 (resolve RuVector path-dep)** — `handoff-plan.md:165` tier **SUPERVISED**, blast = entire kernel
-  (`Ledger.open` 120); moves witness-crypto vendoring. The #1 action of the whole plan; correctly walled.
-- **MERGE steps 1+2** — `union-plan…:66,80,150` both **SUPERVISED**: large blast, `rusty-idd-*`
-  pkg-name collision (A-U4), witness-crypto move. `[H]` owner-walled merge in Diagram 2
-  (`handoff-plan.md:101,107`).
-- The 3 decision-findings (north-star home, run-from/residency/transport, harness_hub audience —
-  `HANDOFF.md`) remain owner verdicts by design, not pre-answered. All walls are the structural/
-  destructive class that **must** fail closed to a human. None avoidable.
-
-### Headline (cycle 2)
-- 4-axis: **Friction A · Gate-quality A · Coverage B+ · Human-walls A** — a markedly stronger cycle than
-  cycle 1, driven by cycle-1 lessons **L1 + L2 paying off in the field** (0 reconciles; clean per-dim
-  flips) and a verifier that went **empirical** (3 cargo experiments, the SHAKE-256 correction).
-- Mined lessons this cycle: **3** (L5–L7; see `LESSONS.md`). The framing-vs-source correction CLASS
-  **recurred** (cycle-1 verdict corrections → cycle-2 SHAKE-256) → L5 escalates to upgrade-now.
-- Proposed upgrades: cycle-1 **P1–P4 carried** (P1 now field-validated) + **3 new** (P5 clean-clone
-  standalone-build gate, P6 cross-repo schema-drift gate, P7 source-derive security-critical framing).
-  **None auto-applied** (PROPOSE-only this cycle). **No gate weakened anywhere** — every new proposal
-  strengthens or clarifies a gate, fail-closed.
+## Net read
+A clean, well-isolated first run of the parallel prompt with a strong adversarial gate. The headline
+value this cycle is the **gate catching three analyst undercounts and a real backend asymmetry** before
+they reached the plan. The headline debt is **coverage** (7/12 dims un-gated) and one new low-severity
+parallel-mode artifact (peer-pending-vs-missing reads). Both are routed below; nothing is auto-applied.

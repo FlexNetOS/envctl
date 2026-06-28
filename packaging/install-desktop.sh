@@ -1,7 +1,11 @@
 #!/usr/bin/env bash
 # Install envctl-gui as a desktop application (binary + launcher + icon).
-# Idempotent: safe to re-run. Meta-scoped (no sudo) by default: artifacts land
-# under $META_ROOT/.local rather than the host user's local tree.
+# Idempotent: safe to re-run. Meta-scoped (no sudo): artifacts land inside meta.
+#
+# The binary goes to the canonical frontdoor `$META_ROOT/usr/bin` (matching the
+# `desktop-app` manifest component's detect/verify, which key on `$META_ROOT/usr/bin`).
+# Override with ENVCTL_BIN_DIR; the data dir (.desktop + icon) stays under
+# $META_ROOT/.local/share (XDG data, per the install-locations ADR).
 #
 #   bash packaging/install-desktop.sh           # build (release) + install for current user
 #   bash packaging/install-desktop.sh --no-build # install an already-built binary
@@ -12,7 +16,7 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 BIN_NAME="envctl-gui"
 META_ROOT="${META_ROOT:-$HOME/Desktop/meta}"
 ENVCTL_LOCAL="${ENVCTL_LOCAL:-$META_ROOT/.local}"
-BIN_DIR="${ENVCTL_BIN_DIR:-$ENVCTL_LOCAL/bin}"
+BIN_DIR="${ENVCTL_BIN_DIR:-$META_ROOT/usr/bin}"
 SHARE_DIR="${ENVCTL_SHARE_DIR:-$ENVCTL_LOCAL/share}"
 APP_DIR="$SHARE_DIR/applications"
 ICON_DIR="$SHARE_DIR/icons/hicolor/scalable/apps"

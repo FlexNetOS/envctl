@@ -38,42 +38,86 @@ description = "JS runtime + package manager; provides node via a bun symlink."
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/.bun/bin/bun\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/bun\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/.bun/bin/bun\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/.bun/bin/bun\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/bun\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/.bun/bin/bun\")\" ] && [ -x \"$META_ROOT/usr/bin/bunx\" ] && grep -q 'envctl bunx wrapper' \"$META_ROOT/usr/bin/bunx\""]
 [component.install]
 kind = "script"
 script = '''
 set -e
 M="${META_ROOT:?META_ROOT required}"
 export BUN_INSTALL="$M/.toolchains/.bun"
-mkdir -p "$BUN_INSTALL" "$META_ROOT/.local/bin"
+mkdir -p "$BUN_INSTALL" "$META_ROOT/usr/bin"
 curl -fsSL https://bun.sh/install | bash
-dst="$META_ROOT/.local/bin/bun"
+dst="$META_ROOT/usr/bin/bun"
 src="$BUN_INSTALL/bin/bun"
-ARCH="$META_ROOT/.local/state/envctl/legacy-archives/home-links-$(date +%Y-%m-%d)"
+ARCH="$META_ROOT/var/lib/envctl/legacy-archives/home-links-$(date +%Y-%m-%d)"
 if [ -e "$dst" ] && [ ! -L "$dst" ]; then mkdir -p "$ARCH/.local/bin"; mv "$dst" "$ARCH/.local/bin/bun"; echo "archived copy: bun"; fi
 [ -L "$dst" ] && rm "$dst"
 ln -s "$src" "$dst"
+cat >"$META_ROOT/usr/bin/bunx" <<'BUNX'
+#!/usr/bin/env bash
+# envctl bunx wrapper
+set -euo pipefail
+self="${BASH_SOURCE[0]}"
+while [ -L "$self" ]; do
+  dir="$(cd -P "$(dirname "$self")" && pwd)"
+  target="$(readlink "$self")"
+  case "$target" in
+    /*) self="$target" ;;
+    *) self="$dir/$target" ;;
+  esac
+done
+bindir="$(cd -P "$(dirname "$self")" && pwd)"
+META_ROOT="$(cd "$bindir/../.." && pwd)"
+export META_ROOT
+export BUN_INSTALL="${BUN_INSTALL:-$META_ROOT/.toolchains/.bun}"
+export HOME="${HOME:-$META_ROOT/.local}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$META_ROOT/.local/cache}"
+exec "$BUN_INSTALL/bin/bun" x "$@"
+BUNX
+chmod 755 "$META_ROOT/usr/bin/bunx"
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; bun --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$M/usr/bin:$BUN_INSTALL/bin:$PATH\"; bun --version >/dev/null && [ -x \"$M/usr/bin/bunx\" ] && grep -q 'envctl bunx wrapper' \"$M/usr/bin/bunx\""]
 [component.fix]
 kind = "script"
 script = '''
 set -e
 M="${META_ROOT:?META_ROOT required}"
 export BUN_INSTALL="$M/.toolchains/.bun"
-mkdir -p "$BUN_INSTALL" "$META_ROOT/.local/bin"
+mkdir -p "$BUN_INSTALL" "$META_ROOT/usr/bin"
 curl -fsSL https://bun.sh/install | bash
-ln -sfn "$BUN_INSTALL/bin/bun" "$META_ROOT/.local/bin/bun"
+ln -sfn "$BUN_INSTALL/bin/bun" "$META_ROOT/usr/bin/bun"
+cat >"$META_ROOT/usr/bin/bunx" <<'BUNX'
+#!/usr/bin/env bash
+# envctl bunx wrapper
+set -euo pipefail
+self="${BASH_SOURCE[0]}"
+while [ -L "$self" ]; do
+  dir="$(cd -P "$(dirname "$self")" && pwd)"
+  target="$(readlink "$self")"
+  case "$target" in
+    /*) self="$target" ;;
+    *) self="$dir/$target" ;;
+  esac
+done
+bindir="$(cd -P "$(dirname "$self")" && pwd)"
+META_ROOT="$(cd "$bindir/../.." && pwd)"
+export META_ROOT
+export BUN_INSTALL="${BUN_INSTALL:-$META_ROOT/.toolchains/.bun}"
+export HOME="${HOME:-$META_ROOT/.local}"
+export XDG_CACHE_HOME="${XDG_CACHE_HOME:-$META_ROOT/.local/cache}"
+exec "$BUN_INSTALL/bin/bun" x "$@"
+BUNX
+chmod 755 "$META_ROOT/usr/bin/bunx"
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; rm -rf \"$M/.toolchains/.bun\"; [ -L \"$META_ROOT/.local/bin/bun\" ] && rm \"$META_ROOT/.local/bin/bun\" || true"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; rm -rf \"$M/.toolchains/.bun\"; [ -L \"$META_ROOT/usr/bin/bun\" ] && rm \"$META_ROOT/usr/bin/bun\" || true; if grep -q 'envctl bunx wrapper' \"$META_ROOT/usr/bin/bunx\" 2>/dev/null; then rm -f \"$META_ROOT/usr/bin/bunx\"; fi"]
 [component.wiring]
-path_entries = ["$META_ROOT/.toolchains/.bun/bin", "$META_ROOT/.local/bin"]
+path_entries = ["$META_ROOT/.toolchains/.bun/bin", "$META_ROOT/usr/bin"]
 [[component.wiring.shell_rc]]
 file = "$META_ROOT/.bashrc"
 marker = "meta toolchain path"
@@ -90,7 +134,7 @@ kind = "command"
 command = "bash"
 # Truthful: node-compat is satisfied if EITHER ~/.bun/bin/node points at bun
 # (the bun node shim) OR a real `node` resolves on PATH. On an n8n box the real
-# node ($META_ROOT/.local/bin/node) precedes the inert bun symlink — that still counts.
+# node ($META_ROOT/usr/bin/node) precedes the inert bun symlink — that still counts.
 args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; { [ -x \"$M/.toolchains/.bun/bin/node\" ] && readlink -f \"$M/.toolchains/.bun/bin/node\" 2>/dev/null | grep -q bun; } || command -v node >/dev/null"]
 [component.install]
 kind = "command"
@@ -116,12 +160,12 @@ args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; rm -f \"$M/.toolchains/.
 [[component]]
 id = "node-real"
 name = "Real Node.js (n8n V8 runtime)"
-description = "Real Node 20-24 for tools that need V8 (n8n's isolated-vm), installed into $META_ROOT/.toolchains/node with $META_ROOT/.local/bin symlinks. Bun (JSC) cannot satisfy these; this is the narrow non-bun carve-out. Bun remains the default JS runtime."
+description = "Real Node 20-24 for tools that need V8 (n8n's isolated-vm), installed into $META_ROOT/.toolchains/node with $META_ROOT/usr/bin symlinks. Bun (JSC) cannot satisfy these; this is the narrow non-bun carve-out. Bun remains the default JS runtime."
 [component.detect]
 kind = "command"
 command = "bash"
 # A REAL node (not the bun shim) in n8n's supported range 20-24.
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/node/bin/node\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/node\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/node/bin/node\")\" ] && ! readlink -f \"$META_ROOT/.local/bin/node\" | grep -q bun && \"$META_ROOT/.local/bin/node\" -e 'const m=+process.versions.node.split(\".\")[0]; process.exit(m>=20 && m<=24 ? 0 : 1)'"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/node/bin/node\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/node\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/node/bin/node\")\" ] && ! readlink -f \"$META_ROOT/usr/bin/node\" | grep -q bun && \"$META_ROOT/usr/bin/node\" -e 'const m=+process.versions.node.split(\".\")[0]; process.exit(m>=20 && m<=24 ? 0 : 1)'"]
 [component.verify]
 kind = "command"
 command = "bash"
@@ -138,10 +182,10 @@ DEST="$M/.toolchains/node"
 cd "$(mktemp -d)"
 curl -fsSL -o node.tar.xz "https://nodejs.org/dist/$VER/node-$VER-linux-$A.tar.xz"
 rm -rf "$DEST"
-mkdir -p "$DEST" "$META_ROOT/.local/bin"
+mkdir -p "$DEST" "$META_ROOT/usr/bin"
 tar -xJf node.tar.xz --strip-components=1 -C "$DEST"
 for b in node npm npx corepack; do
-  [ -x "$DEST/bin/$b" ] && ln -sfn "$DEST/bin/$b" "$META_ROOT/.local/bin/$b"
+  [ -x "$DEST/bin/$b" ] && ln -sfn "$DEST/bin/$b" "$META_ROOT/usr/bin/$b"
 done
 '''
 [component.fix]
@@ -155,18 +199,18 @@ DEST="$M/.toolchains/node"
 cd "$(mktemp -d)"
 curl -fsSL -o node.tar.xz "https://nodejs.org/dist/$VER/node-$VER-linux-$A.tar.xz"
 rm -rf "$DEST"
-mkdir -p "$DEST" "$META_ROOT/.local/bin"
+mkdir -p "$DEST" "$META_ROOT/usr/bin"
 tar -xJf node.tar.xz --strip-components=1 -C "$DEST"
 for b in node npm npx corepack; do
-  [ -x "$DEST/bin/$b" ] && ln -sfn "$DEST/bin/$b" "$META_ROOT/.local/bin/$b"
+  [ -x "$DEST/bin/$b" ] && ln -sfn "$DEST/bin/$b" "$META_ROOT/usr/bin/$b"
 done
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; for b in node npm npx corepack; do t=\"$META_ROOT/.local/bin/$b\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/node\" && rm -f \"$t\"; done; rm -rf \"$M/.toolchains/node\""]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; for b in node npm npx corepack; do t=\"$META_ROOT/usr/bin/$b\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/node\" && rm -f \"$t\"; done; rm -rf \"$M/.toolchains/node\""]
 [component.wiring]
-path_entries = ["$META_ROOT/.local/bin"]
+path_entries = ["$META_ROOT/usr/bin"]
 
 
 [[component]]
@@ -233,7 +277,7 @@ requires = ["rustup"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "command -v rtk || [ -x \"$META_ROOT/.local/bin/rtk\" ] || [ -x \"$META_ROOT/.toolchains/cargo/bin/rtk\" ]"]
+args = ["-lc", "command -v rtk || [ -x \"$META_ROOT/usr/bin/rtk\" ] || [ -x \"$META_ROOT/.toolchains/cargo/bin/rtk\" ]"]
 [component.install]
 kind = "script"
 script = "export PATH=\"$META_ROOT/.toolchains/cargo/bin:$PATH\"; cargo install --git https://github.com/rtk-ai/rtk"

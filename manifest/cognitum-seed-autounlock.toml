@@ -33,7 +33,7 @@ destructive = false
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; test -x \"$M/.local/libexec/envctl/cognitum-seed-autounlock\" && test -f /etc/systemd/system/cognitum-seed-autounlock.service && test -f /etc/udev/rules.d/99-cognitum-seed-autounlock.rules"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; test -x \"$M/usr/libexec/envctl/cognitum-seed-autounlock\" && test -f /etc/systemd/system/cognitum-seed-autounlock.service && test -f /etc/udev/rules.d/99-cognitum-seed-autounlock.rules"]
 
 # INSTALL: write the worker + system oneshot + cdc_ncm udev rule, reload udev/systemd, enable+start.
 [component.install]
@@ -43,7 +43,7 @@ script = '''
 set -euo pipefail
 
 META_ROOT="${META_ROOT:?META_ROOT required by envctl hook}"
-WORKER_PATH="$META_ROOT/.local/libexec/envctl/cognitum-seed-autounlock"
+WORKER_PATH="$META_ROOT/usr/libexec/envctl/cognitum-seed-autounlock"
 install -d -m755 "$(dirname "$WORKER_PATH")"
 cat > "$WORKER_PATH" <<'WORKER'
 #!/usr/bin/env bash
@@ -56,7 +56,7 @@ set -euo pipefail
 # and must not rediscover binaries from the operator's real HOME.
 SECRETCTL=""
 META_ROOT="${META_ROOT:?META_ROOT not set by envctl unit}"
-for c in "$META_ROOT/.local/bin/secretctl" "$META_ROOT/.local/lib/envctl/secrets/bin/secretctl" "$META_ROOT/.toolchains/secrets/bin/secretctl"; do
+for c in "$META_ROOT/usr/bin/secretctl" "$META_ROOT/usr/libexec/envctl/secrets/bin/secretctl" "$META_ROOT/.toolchains/secrets/bin/secretctl"; do
   if command -v "$c" >/dev/null 2>&1; then SECRETCTL="$c"; break; fi
 done
 # No meta-hosted secretctl => nothing to do.
@@ -104,7 +104,7 @@ After=systemd-udevd.service
 [Service]
 Type=oneshot
 Environment=META_ROOT=${META_ROOT_LITERAL}
-ExecStart=${META_ROOT_LITERAL}/.local/libexec/envctl/cognitum-seed-autounlock
+ExecStart=${META_ROOT_LITERAL}/usr/libexec/envctl/cognitum-seed-autounlock
 
 [Install]
 WantedBy=multi-user.target
@@ -128,14 +128,14 @@ kind = "command"
 command = "bash"
 args = ["-lc", '''
 M="${META_ROOT:?META_ROOT required by envctl hook}"
-test -x "$M/.local/libexec/envctl/cognitum-seed-autounlock" \
+test -x "$M/usr/libexec/envctl/cognitum-seed-autounlock" \
   && test -f /etc/systemd/system/cognitum-seed-autounlock.service \
   && test -f /etc/udev/rules.d/99-cognitum-seed-autounlock.rules || exit 1
 
 # Non-fatal probe (runs as the invoking user; verify carries no sudo so it cannot setpriv).
 SECRETCTL=""
 META_ROOT="${META_ROOT:?META_ROOT required by envctl hook}"
-for c in "$META_ROOT/.local/bin/secretctl" "$META_ROOT/.local/lib/envctl/secrets/bin/secretctl" "$META_ROOT/.toolchains/secrets/bin/secretctl"; do
+for c in "$META_ROOT/usr/bin/secretctl" "$META_ROOT/usr/libexec/envctl/secrets/bin/secretctl" "$META_ROOT/.toolchains/secrets/bin/secretctl"; do
   if command -v "$c" >/dev/null 2>&1; then SECRETCTL="$c"; break; fi
 done
 if [ -n "${SECRETCTL:-}" ] && "$SECRETCTL" status >/dev/null 2>&1; then
@@ -155,7 +155,7 @@ script = '''
 set -euo pipefail
 
 META_ROOT="${META_ROOT:?META_ROOT required by envctl hook}"
-WORKER_PATH="$META_ROOT/.local/libexec/envctl/cognitum-seed-autounlock"
+WORKER_PATH="$META_ROOT/usr/libexec/envctl/cognitum-seed-autounlock"
 install -d -m755 "$(dirname "$WORKER_PATH")"
 cat > "$WORKER_PATH" <<'WORKER'
 #!/usr/bin/env bash
@@ -166,7 +166,7 @@ set -euo pipefail
 
 SECRETCTL=""
 META_ROOT="${META_ROOT:?META_ROOT not set by envctl unit}"
-for c in "$META_ROOT/.local/bin/secretctl" "$META_ROOT/.local/lib/envctl/secrets/bin/secretctl" "$META_ROOT/.toolchains/secrets/bin/secretctl"; do
+for c in "$META_ROOT/usr/bin/secretctl" "$META_ROOT/usr/libexec/envctl/secrets/bin/secretctl" "$META_ROOT/.toolchains/secrets/bin/secretctl"; do
   if command -v "$c" >/dev/null 2>&1; then SECRETCTL="$c"; break; fi
 done
 [ -n "${SECRETCTL:-}" ] || { echo "autounlock: secretctl not found (no-op)"; exit 0; }
@@ -204,7 +204,7 @@ After=systemd-udevd.service
 [Service]
 Type=oneshot
 Environment=META_ROOT=${META_ROOT_LITERAL}
-ExecStart=${META_ROOT_LITERAL}/.local/libexec/envctl/cognitum-seed-autounlock
+ExecStart=${META_ROOT_LITERAL}/usr/libexec/envctl/cognitum-seed-autounlock
 
 [Install]
 WantedBy=multi-user.target
@@ -229,7 +229,7 @@ script = '''
 set -euo pipefail
 systemctl disable --now cognitum-seed-autounlock.service 2>/dev/null || true
 M="${META_ROOT:?META_ROOT required by envctl hook}"
-rm -f "$M/.local/libexec/envctl/cognitum-seed-autounlock"
+rm -f "$M/usr/libexec/envctl/cognitum-seed-autounlock"
 rm -f /etc/systemd/system/cognitum-seed-autounlock.service
 rm -f /etc/udev/rules.d/99-cognitum-seed-autounlock.rules
 udevadm control --reload-rules || true

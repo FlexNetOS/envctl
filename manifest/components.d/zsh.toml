@@ -1,6 +1,6 @@
 # ── zsh (shell, meta-owned) ─────────────────────────────────────────────────
 # Builds the LATEST stable zsh from source into $META_ROOT/.toolchains/zsh and
-# symlinks $META_ROOT/.local/bin/zsh. Replaces the /nix/store zsh (yazelix bundle + the
+# symlinks $META_ROOT/usr/bin/zsh. Replaces the /nix/store zsh (yazelix bundle + the
 # standalone nix zsh) so a meta-owned shell exists OUTSIDE /nix — it survives the
 # system-nix→nix-portable teardown and is the terminal that drives that migration.
 #
@@ -13,12 +13,12 @@
 [[component]]
 id = "zsh"
 name = "zsh shell (meta-owned)"
-description = "Latest stable zsh built from source (zsh-users/zsh) into .toolchains/zsh + $META_ROOT/.local/bin/zsh. Meta-owned shell outside /nix; the migration terminal. Unpinned: resolves newest tag at install."
+description = "Latest stable zsh built from source (zsh-users/zsh) into .toolchains/zsh + $META_ROOT/usr/bin/zsh. Meta-owned shell outside /nix; the migration terminal. Unpinned: resolves newest tag at install."
 
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/zsh/bin/zsh\" ] && [ \"$(readlink -f \"$META_ROOT/.local/bin/zsh\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/zsh/bin/zsh\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/zsh/bin/zsh\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/zsh\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/zsh/bin/zsh\")\" ]"]
 
 [component.install]
 kind = "script"
@@ -61,15 +61,15 @@ src="$tmp/zsh-${VER}"
   && make -j"$(nproc)" >/dev/null \
   && rm -rf "$DEST" && make install >/dev/null )
 
-# 4. Wire into $META_ROOT/.local/bin (already on PATH via run_env()).
-install -d -m 755 "$META_ROOT/.local/bin"
-ln -sfn "$DEST/bin/zsh" "$META_ROOT/.local/bin/zsh"
+# 4. Wire into $META_ROOT/usr/bin (already on PATH via run_env()).
+install -d -m 755 "$META_ROOT/usr/bin"
+ln -sfn "$DEST/bin/zsh" "$META_ROOT/usr/bin/zsh"
 '''
 
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; PATH=\"$META_ROOT/.local/bin:$PATH\"; zsh --version && ! ldd \"$M/.toolchains/zsh/bin/zsh\" | grep -q /nix/store"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; PATH=\"$META_ROOT/usr/bin:$PATH\"; zsh --version && ! ldd \"$M/.toolchains/zsh/bin/zsh\" | grep -q /nix/store"]
 
 [component.remove]
 kind = "script"
@@ -77,9 +77,9 @@ login_shell = true
 script = '''
 set -u
 M="${META_ROOT:?META_ROOT required}"
-t="$META_ROOT/.local/bin/zsh"; [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/zsh" && rm -f "$t"
+t="$META_ROOT/usr/bin/zsh"; [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/zsh" && rm -f "$t"
 rm -rf "$M/.toolchains/zsh"
 '''
 
 [component.wiring]
-path_entries = ["$META_ROOT/.local/bin"]
+path_entries = ["$META_ROOT/usr/bin"]

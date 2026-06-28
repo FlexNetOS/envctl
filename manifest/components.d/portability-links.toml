@@ -10,7 +10,7 @@
 [[component]]
 id = "home-local-single-link"
 name = "single real-home .local link to META_ROOT"
-description = "The only sanctioned real-home bridge: $ENVCTL_REAL_HOME/.local points at $META_ROOT/.local. Existing real-home .local content is archived under $META_ROOT/.local/state/envctl before the link is created."
+description = "The only sanctioned real-home bridge: $ENVCTL_REAL_HOME/.local points at $META_ROOT/.local. Existing real-home .local content is archived under $META_ROOT/var/lib/envctl before the link is created."
 [component.detect]
 kind = "command"
 command = "bash"
@@ -30,7 +30,7 @@ R="${ENVCTL_REAL_HOME:-}"
 [ -n "$R" ] && [ "$R" != "$M" ] || { echo "SKIP home-local-single-link: real home unavailable or already META_ROOT"; exit 0; }
 TARGET="$M/.local"
 LINK="$R/.local"
-ARCH="$M/.local/state/envctl/archives/home-local-$(date +%Y%m%d-%H%M%S)"
+ARCH="$M/var/lib/envctl/archives/home-local-$(date +%Y%m%d-%H%M%S)"
 mkdir -p "$TARGET" "$(dirname "$ARCH")"
 if [ "$(readlink -f "$LINK" 2>/dev/null)" = "$(readlink -f "$TARGET" 2>/dev/null)" ]; then
   echo "home .local already linked to META_ROOT"
@@ -73,7 +73,7 @@ script = '''
 set -e
 M="${META_ROOT:?META_ROOT required}"
 T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
-ARCH="$M/.local/state/envctl/archives/home-links-$(date +%Y%m%d-%H%M%S)"
+ARCH="$M/var/lib/envctl/archives/home-links-$(date +%Y%m%d-%H%M%S)"
 link() {
   src="$T/$1"
   dst="$M/$1"
@@ -94,6 +94,7 @@ link .gitconfig
 link .config/ghostty/config.ghostty
 link .config/nushell/config.nu
 link .config/nushell/rtk-wrappers.nu
+link .config/nushell/meta-usr-path.nu
 link .config/kasetto/kasetto.yaml
 link .config/yazelix/settings.jsonc
 link .config/yazelix/shell_bash.sh
@@ -114,7 +115,7 @@ args = ["-lc", '''
 M="${META_ROOT:?META_ROOT required}"
 T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
 ok=1
-for p in .gitconfig .config/nushell/config.nu .config/nushell/rtk-wrappers.nu .config/kasetto/kasetto.yaml .config/yazelix/settings.jsonc .config/systemd/user/env-ctl.service .config/systemd/user/sqld.service; do
+for p in .gitconfig .config/nushell/config.nu .config/nushell/rtk-wrappers.nu .config/nushell/meta-usr-path.nu .config/kasetto/kasetto.yaml .config/yazelix/settings.jsonc .config/systemd/user/env-ctl.service .config/systemd/user/sqld.service; do
   [ "$(readlink -f "$M/$p" 2>/dev/null)" = "$(readlink -f "$T/$p" 2>/dev/null)" ] || { echo "NOT META_ROOT-LINKED: $p"; ok=0; }
 done
 [ $ok = 1 ]
@@ -123,7 +124,7 @@ done
 kind = "script"
 script = '''
 M="${META_ROOT:?META_ROOT required}"
-for p in .gitconfig .config/ghostty/config.ghostty .config/nushell/config.nu .config/nushell/rtk-wrappers.nu .config/kasetto/kasetto.yaml .config/yazelix/settings.jsonc .config/yazelix/shell_bash.sh .config/yazelix/shell_nu.nu .config/yazelix/terminal_ghostty.conf .config/yazelix/tombi.toml .config/systemd/user/env-ctl.service .config/systemd/user/sqld.service .config/systemd/user/repowire.service; do
+for p in .gitconfig .config/ghostty/config.ghostty .config/nushell/config.nu .config/nushell/rtk-wrappers.nu .config/nushell/meta-usr-path.nu .config/kasetto/kasetto.yaml .config/yazelix/settings.jsonc .config/yazelix/shell_bash.sh .config/yazelix/shell_nu.nu .config/yazelix/terminal_ghostty.conf .config/yazelix/tombi.toml .config/systemd/user/env-ctl.service .config/systemd/user/sqld.service .config/systemd/user/repowire.service; do
   [ -L "$M/$p" ] && rm "$M/$p"
 done
 systemctl --user daemon-reload 2>/dev/null || true
@@ -132,7 +133,7 @@ systemctl --user daemon-reload 2>/dev/null || true
 [[component]]
 id = "home-bin-links"
 name = "retired per-tool home bin links"
-description = "Compatibility id only. Per-tool real-home bin links are retired; tools must install under $META_ROOT/.local/bin and be exposed through the single real-home .local link."
+description = "Compatibility id only. Per-tool real-home bin links are retired; tools must install under $META_ROOT/usr/bin and be exposed through the single real-home .local link."
 requires = ["home-local-single-link"]
 [component.detect]
 kind = "command"
@@ -141,7 +142,7 @@ args = ["-lc", "true"]
 [component.install]
 kind = "script"
 script = '''
-echo "home-bin-links retired: use META_ROOT/.local/bin plus home-local-single-link"
+echo "home-bin-links retired: use META_ROOT/usr/bin plus home-local-single-link"
 '''
 [component.verify]
 kind = "command"
@@ -169,7 +170,7 @@ M="${META_ROOT:?META_ROOT required}"
 T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
 src="$T/.config/rtk"
 dst="$M/.config/rtk"
-ARCH="$M/.local/state/envctl/archives/home-links-$(date +%Y%m%d-%H%M%S)"
+ARCH="$M/var/lib/envctl/archives/home-links-$(date +%Y%m%d-%H%M%S)"
 [ -d "$src" ] || { echo "SKIP rtk-config-links: missing $src"; exit 0; }
 [ "$(readlink -f "$dst" 2>/dev/null)" = "$(readlink -f "$src" 2>/dev/null)" ] && exit 0
 mkdir -p "$(dirname "$dst")"
@@ -210,7 +211,7 @@ args = ["-lc", "true"]
 [component.install]
 kind = "script"
 script = '''
-echo "meta-tool-links retired: install binaries into META_ROOT/.local/bin or META_ROOT/.toolchains"
+echo "meta-tool-links retired: install binaries into META_ROOT/usr/bin, META_ROOT/opt, or legacy META_ROOT/.toolchains"
 '''
 [component.verify]
 kind = "command"
@@ -236,7 +237,7 @@ script = '''
 set -e
 M="${META_ROOT:?META_ROOT required}"
 T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
-ARCH="$M/.local/state/envctl/archives/home-links-$(date +%Y%m%d-%H%M%S)"
+ARCH="$M/var/lib/envctl/archives/home-links-$(date +%Y%m%d-%H%M%S)"
 if [ -f "$T/.claude/settings.json.tmpl" ]; then
   sed "s|\${META_ROOT}|$M|g" "$T/.claude/settings.json.tmpl" > "$T/.claude/settings.json"
   echo "rendered .claude/settings.json from tmpl (META_ROOT=$M)"
@@ -277,7 +278,7 @@ done
 [[component]]
 id = "usrlocal-script-links"
 name = "retired system-depth helper script links"
-description = "Compatibility id only. /usr/local/bin symlink creation is retired; helper scripts must be launched from META_ROOT or installed into META_ROOT/.local/bin."
+description = "Compatibility id only. /usr/local/bin symlink creation is retired; helper scripts must be launched from META_ROOT or installed into META_ROOT/usr/bin."
 [component.detect]
 kind = "command"
 command = "bash"

@@ -31,20 +31,20 @@ args = ["-lc", "command -v envctl >/dev/null 2>&1 && [ -f agent-env.yaml ]"]
 [component.install]
 kind = "script"
 script = '''
-export PATH="$META_ROOT/.toolchains/cargo/bin:$META_ROOT/.local/bin:$PATH"
+export PATH="$META_ROOT/.toolchains/cargo/bin:$META_ROOT/usr/bin:$PATH"
 envctl agent sync --config agent-env.yaml --apply
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$META_ROOT/.toolchains/cargo/bin:$META_ROOT/.local/bin:$PATH\"; envctl agent lock --config agent-env.yaml --check --locked"]
+args = ["-lc", "export PATH=\"$META_ROOT/.toolchains/cargo/bin:$META_ROOT/usr/bin:$PATH\"; envctl agent lock --config agent-env.yaml --check --locked"]
 [component.fix]
 kind = "script"
 script = '''
-export PATH="$META_ROOT/.toolchains/cargo/bin:$META_ROOT/.local/bin:$PATH"
+export PATH="$META_ROOT/.toolchains/cargo/bin:$META_ROOT/usr/bin:$PATH"
 envctl agent sync --config agent-env.yaml --apply
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$META_ROOT/.toolchains/cargo/bin:$META_ROOT/.local/bin:$PATH\"; envctl agent clean --scope project --apply"]
+args = ["-lc", "export PATH=\"$META_ROOT/.toolchains/cargo/bin:$META_ROOT/usr/bin:$PATH\"; envctl agent clean --scope project --apply"]

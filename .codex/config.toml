@@ -1,31 +1,25 @@
-# Codex project configuration for envctl.
-# Source-checked against the OpenAI Codex manual fetched 2026-06-26.
-# Personal credentials/provider redirects stay in ~/.codex/config.toml.
-
-# Core model/context defaults for long-running agentic work.
+approval_policy = "on-request"
+background_terminal_max_timeout = 300000
 model = "gpt-5.5"
+model_auto_compact_token_limit = 64000
+model_context_window = 128000
 model_reasoning_effort = "high"
-plan_mode_reasoning_effort = "xhigh"
 model_reasoning_summary = "auto"
 model_verbosity = "medium"
-model_context_window = 128000
-model_auto_compact_token_limit = 64000
-tool_output_token_limit = 12000
-background_terminal_max_timeout = 300000
-
-# Keep the root AGENTS.md (currently ~37 KiB) from being truncated at the 32 KiB default.
+plan_mode_reasoning_effort = "xhigh"
+project_doc_fallback_filenames = [
+    ".agents.md",
+    "CLAUDE.md",
+]
 project_doc_max_bytes = 65536
-project_doc_fallback_filenames = [".agents.md", "CLAUDE.md"]
-
-# Trusted envctl worktrees need write access plus current docs/web research, but not full-access.
-approval_policy = "on-request"
 sandbox_mode = "workspace-write"
+tool_output_token_limit = 12000
 web_search = "live"
 
 [agents]
+job_max_runtime_seconds = 3600
 max_depth = 1
 max_threads = 12
-job_max_runtime_seconds = 3600
 
 [agents.docs_researcher]
 config_file = "agents/docs-researcher.toml"
@@ -40,77 +34,86 @@ config_file = "agents/reviewer.toml"
 description = "PR reviewer focused on correctness, security, and missing tests."
 
 [features]
+fast_mode = true
 hooks = true
 memories = true
 multi_agent = true
 shell_snapshot = true
-unified_exec = true
-fast_mode = true
 shell_tool = true
+unified_exec = true
 
 [history]
-persistence = "save-all"
 max_bytes = 104857600
+persistence = "save-all"
 
-[memories]
-generate_memories = true
-use_memories = true
-disable_on_external_context = false
-min_rate_limit_remaining_percent = 15
-
-[tui]
-notifications = ["agent-turn-complete", "approval-requested"]
-status_line = ["model-with-reasoning", "context-remaining", "git-branch"]
-terminal_title = ["spinner", "project", "git-branch"]
-
-[sandbox_workspace_write]
-network_access = true
-exclude_tmpdir_env_var = false
-exclude_slash_tmp = false
-
-# Envctl's standard MCP baseline, provisioned from agent-env.yaml/agent-skills.
 [mcp_servers.context7]
 args = [
-    "-y",
-    "@upstash/context7-mcp@latest",
+    "-lc",
+    'ROOT="${META_ROOT:-/home/drdave/Desktop/meta}"; export META_ROOT="$ROOT"; export PATH="$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH"; exec "$ROOT/usr/bin/bunx" @upstash/context7-mcp@latest',
 ]
-command = "npx"
+command = "bash"
 
 [mcp_servers.exa]
 url = "https://mcp.exa.ai/mcp"
 
 [mcp_servers.github]
 args = [
-    "-y",
-    "@modelcontextprotocol/server-github",
+    "-lc",
+    'ROOT="${META_ROOT:-/home/drdave/Desktop/meta}"; export META_ROOT="$ROOT"; export PATH="$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH"; exec "$ROOT/usr/bin/bunx" @modelcontextprotocol/server-github',
 ]
-command = "npx"
+command = "bash"
 
 [mcp_servers.memory]
 args = [
-    "-y",
-    "@modelcontextprotocol/server-memory",
+    "-lc",
+    'ROOT="${META_ROOT:-/home/drdave/Desktop/meta}"; exec "$ROOT/envctl/assets/scripts/envctl-mcp-memory-server"',
 ]
-command = "npx"
+command = "bash"
 
 [mcp_servers.n8n-mcp]
 args = [
     "-lc",
-    'if [ -z "${META_ROOT:-}" ]; then if [ -f "$HOME/.meta.yaml" ]; then export META_ROOT="$HOME"; else export META_ROOT="$HOME/Desktop/meta"; fi; fi; export PATH="$META_ROOT/.toolchains/.bun/bin:$META_ROOT/.local/bin:$PATH"; export N8N_API_URL=http://localhost:5678; export N8N_API_KEY="$(secretctl secret get n8n-api-key --reveal --apply)"; exec npx -y n8n-mcp',
+    'ROOT="${META_ROOT:-/home/drdave/Desktop/meta}"; export META_ROOT="$ROOT"; export PATH="$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH"; export N8N_API_URL="${N8N_API_URL:-http://localhost:5678}"; if [ -z "${N8N_API_KEY:-}" ] && [ -x "$ROOT/usr/bin/secretctl" ]; then N8N_API_KEY="$("$ROOT/usr/bin/secretctl" secret get n8n-api-key --reveal --apply 2>/dev/null || true)"; export N8N_API_KEY; fi; exec "$ROOT/usr/bin/bunx" n8n-mcp',
 ]
 command = "bash"
 
 [mcp_servers.playwright]
 args = [
-    "-y",
-    "@playwright/mcp@latest",
-    "--extension",
+    "-lc",
+    'ROOT="${META_ROOT:-/home/drdave/Desktop/meta}"; export META_ROOT="$ROOT"; export PATH="$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH"; exec "$ROOT/usr/bin/bunx" @playwright/mcp@latest --extension',
 ]
-command = "npx"
+command = "bash"
 
 [mcp_servers.sequential-thinking]
 args = [
-    "-y",
-    "@modelcontextprotocol/server-sequential-thinking",
+    "-lc",
+    'ROOT="${META_ROOT:-/home/drdave/Desktop/meta}"; export META_ROOT="$ROOT"; export PATH="$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH"; exec "$ROOT/usr/bin/bunx" @modelcontextprotocol/server-sequential-thinking',
 ]
-command = "npx"
+command = "bash"
+
+[memories]
+disable_on_external_context = false
+generate_memories = true
+min_rate_limit_remaining_percent = 15
+use_memories = true
+
+[sandbox_workspace_write]
+exclude_slash_tmp = false
+exclude_tmpdir_env_var = false
+network_access = true
+
+[tui]
+notifications = [
+    "agent-turn-complete",
+    "approval-requested",
+]
+status_line = [
+    "model-with-reasoning",
+    "context-remaining",
+    "git-branch",
+]
+terminal_title = [
+    "spinner",
+    "project",
+    "git-branch",
+]
