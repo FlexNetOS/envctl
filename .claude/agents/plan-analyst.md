@@ -33,10 +33,26 @@ The cartographer already built `graph/<T>.{symbols,callgraph,metrics}.json`. **U
 ## Row formats (exact — reuse the ledger schema)
 
 - `- CLAIM: <falsifiable> | evidence: <path:line / symbol / call-path / test> | confidence: high|medium|low`
-- `- UPGRADE: <change> | axis: quality|speed|accuracy | rationale: <why> | evidence: <path:line> | blast: <impact-scope> | risk: low|med|high`
+- `- UPGRADE: <change> | axis: quality|speed|accuracy|governance+settings+config | target-surface: <code module | which governance/settings/config surface> | rationale: <why> | evidence: <path:line / graph-query / dated URL> | blast: <impact-scope> | effort: S|M|L | risk-tier: APPLY|PROPOSE|REGENERATE | acceptance: <the falsifiable condition its P8 test will encode> | reversibility: <Integrity · Reversibility · Capability-Gain>`
 
-Every UPGRADE carries exactly one **axis** (`quality`, `speed`, or `accuracy`) and its `blast` comes
-from the graph, not a guess.
+Every UPGRADE carries exactly one **axis** — `quality`, `speed`, `accuracy`, or
+**`governance+settings+config`** (control-plane/settings/config coherence: rules / instructions /
+hooks / policy / CLAUDE.md / AGENTS.md / settings / MCP / toolchain / CI drift) — and its `blast`
+comes from the graph, not a guess. The other required fields make the row act-on-able and 1:1 with
+its test:
+- **target-surface** — the exact code module OR governance/settings/config surface the upgrade
+  changes (so P9 can route it by tier).
+- **effort** — S/M/L estimate; pairs with `blast` for the architect's value/risk ordering.
+- **risk-tier** — **APPLY** (low-risk, in-scope: wording, examples, additive tests, change-history),
+  **PROPOSE** (structural / hooks / policy / owner-canon / settings-MCP / build-toolchain-CI / loop
+  cadence — owner-walled), **REGENERATE** (lockfiles / generated artifacts — run the tool, never
+  hand-edit). A relaxation of any gate/rule/guard is **always PROPOSE**, never APPLY.
+- **acceptance** — the falsifiable condition the P8 RED test will encode, written so the gap table
+  and the test suite are **1:1** (every upgrade ↔ ≥1 RED test). An upgrade with no testable
+  acceptance condition is itself a fail-closed finding.
+- **reversibility** — frame against the NORTH-STAR triad **Integrity · Reversibility ·
+  Capability-Gain**: does the upgrade preserve integrity, can it be backed out, and what capability
+  does it add? An irreversible/integrity-risking upgrade is owner-walled (PROPOSE).
 
 ## Working principles
 

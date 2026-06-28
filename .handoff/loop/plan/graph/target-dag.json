@@ -1,0 +1,19 @@
+{
+  "nodes": [
+    {"id": "weave", "spec": "A2A transport plane — cycle 4 (this instance)", "status": "in-flight", "deps": [], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "handoff", "spec": "continuity kernel (witnessed ledger) — planned cycle 2; union home", "status": "done", "deps": [], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "rusty-idd", "spec": "intent control plane — planned cycle 1", "status": "done", "deps": ["handoff"], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "harness_hub", "spec": "Front-Door interpreter (intent->model language)", "status": "todo", "deps": ["handoff"], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "envctl", "spec": "fleet environment manager + loop run-from", "status": "todo", "deps": ["handoff", "weave"], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "icm", "spec": "persistent memory organ", "status": "todo", "deps": [], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "grit", "spec": "symbol-level merge/lock substrate", "status": "todo", "deps": [], "artifact_prefix": ".handoff/loop/plan"},
+    {"id": "lane", "spec": "distributed-compute lane substrate", "status": "todo", "deps": ["weave"], "artifact_prefix": ".handoff/loop/plan"}
+  ],
+  "edges": [
+    {"from": "rusty-idd", "to": "handoff"},
+    {"from": "harness_hub", "to": "handoff"},
+    {"from": "envctl", "to": "handoff"},
+    {"from": "envctl", "to": "weave"},
+    {"from": "lane", "to": "weave"}
+  ]
+}

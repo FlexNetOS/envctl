@@ -256,4 +256,71 @@ for da in "${doc_arts[@]}"; do
   valid_graph_artifact "$concrete" || fail "documented graph artifact does not satisfy the validator: '$da'"
 done
 
+# ---- self-eval + self-upgrade after EVERY cycle is wired (anti-drift on the harness-evolution contract) ----
+# Resolve the sibling skill/agent files from the located CONTRACT so this works in BOTH the plugin
+# layout (.../harness/skills + .../harness/agents) and the ejected layout (.../.claude/skills + agents).
+PE_DIR="$(dirname "$(dirname "$CONTRACT")")"     # .../skills/planning-engineer
+SKILLS_DIR="$(dirname "$PE_DIR")"                # .../skills
+HARNESS_ROOT="$(dirname "$SKILLS_DIR")"          # .../harness (plugin) | .../.claude (ejected)
+PE_SKILL="$PE_DIR/SKILL.md"
+PLAN_LOOP_SKILL="$SKILLS_DIR/plan-loop/SKILL.md"
+EVO_AGENT="$HARNESS_ROOT/agents/evolution-steward.md"
+for f in "$PE_SKILL" "$PLAN_LOOP_SKILL" "$EVO_AGENT"; do
+  [ -f "$f" ] || fail "self-eval contract: required file missing: $f"
+done
+# planning-engineer single cycle: the every-cycle self-eval phase + the harness-evolution method.
+grep -qiE 'SELF-EVAL \(every cycle\)' "$PE_SKILL" || fail "planning-engineer SKILL.md lost the 'SELF-EVAL (every cycle)' phase"
+grep -qi  'harness-evolution'          "$PE_SKILL" || fail "planning-engineer SKILL.md no longer references the harness-evolution method"
+# plan-loop: must self-evaluate AND self-upgrade every cycle (not only at the batch boundary), fail-closed.
+grep -qiE 'self-eval.*self-upgrade'    "$PLAN_LOOP_SKILL" || fail "plan-loop SKILL.md must state per-cycle self-eval + self-upgrade"
+grep -qiE 'after every cycle'          "$PLAN_LOOP_SKILL" || fail "plan-loop SKILL.md must run the evolution after every cycle"
+grep -qi  'harness-evolution'          "$PLAN_LOOP_SKILL" || fail "plan-loop SKILL.md must reference the harness-evolution method"
+grep -qiE 'never weaken'               "$PLAN_LOOP_SKILL" || fail "plan-loop SKILL.md must keep the never-weaken-a-gate guard"
+# shared evolution-steward: fires every cycle, fail-closed, never mid-cycle.
+grep -qiE 'every cycle'                "$EVO_AGENT" || fail "evolution-steward must run every cycle"
+grep -qiE 'never mid-cycle'            "$EVO_AGENT" || fail "evolution-steward must keep the never-mid-cycle rule"
+echo "PASS: self-eval+self-upgrade-every-cycle contract locked (planning-engineer Phase 5 · plan-loop · evolution-steward)"
+
+# ---- prompt-parity: the loop has what the north-star prompt describes (laws · P4 · P5 · P6 · P8) ----
+# (reuses PE_DIR/SKILLS_DIR/HARNESS_ROOT resolved above; ejected layout → these land under .claude/.)
+TREND_SKILL="$SKILLS_DIR/plan-trend-research/SKILL.md"
+SYNTH_SKILL="$SKILLS_DIR/plan-synthesis/SKILL.md"
+TSTRAT_SKILL="$SKILLS_DIR/plan-test-strategy/SKILL.md"
+ANALYST="$HARNESS_ROOT/agents/plan-analyst.md"
+CARTO="$HARNESS_ROOT/agents/plan-cartographer.md"
+GCAUD="$HARNESS_ROOT/agents/plan-governance-config-auditor.md"
+DDRIVE="$PE_DIR/scripts/differential-drive.sh"
+for f in "$TREND_SKILL" "$SYNTH_SKILL" "$TSTRAT_SKILL" "$ANALYST" "$CARTO" "$GCAUD" "$DDRIVE"; do
+  [ -f "$f" ] || fail "prompt-parity: required file missing: $f"
+done
+# LAW: latest-toolchain standing rule (bun-not-pnpm + shimmy/ruvllm-don't-remove-ollama-until-proven).
+grep -qiE 'ruvllm'        "$PE_SKILL"  || fail "planning-engineer SKILL must carry the shimmy/ruvllm toolchain law"
+grep -qiE '\bbun\b'       "$PE_SKILL"  || fail "planning-engineer SKILL must carry the bun-not-pnpm rule"
+# P4: the control-plane diagram is REQUIRED (not just a prose governance section).
+grep -qiE 'control-plane' "$SYNTH_SKILL" || fail "plan-synthesis must require the control-plane diagram"
+# P5: the UPGRADE row carries the full schema (4th axis + risk-tier + acceptance↔test + reversibility).
+grep -qiE 'governance\+settings\+config' "$ANALYST" || fail "plan-analyst UPGRADE row must include the governance+settings+config axis"
+grep -qiE 'risk-tier'     "$ANALYST"  || fail "plan-analyst UPGRADE row must carry risk-tier APPLY/PROPOSE/REGENERATE"
+grep -qiE 'acceptance'    "$ANALYST"  || fail "plan-analyst UPGRADE row must carry the acceptance criterion (1:1 with the P8 test)"
+grep -qiE 'reversibility' "$ANALYST"  || fail "plan-analyst UPGRADE row must carry NORTH-STAR reversibility"
+# P2: HuggingFace research + cross-repo-reference edges.
+grep -qiE 'hugging ?face' "$TREND_SKILL" || fail "plan-trend-research must list the Hugging Face research tool"
+grep -qiE 'cross-repo'    "$CARTO"    || fail "plan-cartographer must map cross-repo edges via cross-repo-reference"
+# P8: the differential-drive driver EXISTS (was vaporware), is fail-closed, and is wired into the strategy.
+grep -q  'tests-ran must be > 0' "$DDRIVE"      || fail "differential-drive.sh must enforce the fail-closed tests-ran>0 gate"
+grep -qiE 'differential-drive\.sh' "$TSTRAT_SKILL" || fail "plan-test-strategy must drive cases via differential-drive.sh"
+grep -qiE 'tests-ran'     "$TSTRAT_SKILL" || fail "plan-test-strategy must keep the tests-ran>0 count-verify"
+echo "PASS: prompt-parity contract locked (toolchain law · P4 control-plane diagram · P5 row schema · P2 HF/cross-repo · P8 differential-drive + count-verify)"
+
+# ---- Codex-tree parity: the .agents/skills mirror must not drift from the parity content the Claude
+# tree carries (the eject maintains BOTH .claude/skills and the Codex-front-door .agents/skills). The
+# Codex mirror lagged once and only re-synced here, so lock the three parity carriers in .agents too.
+AG="$repo_root/.agents/skills"
+if [ -d "$AG" ]; then
+  grep -qiE 'ruvllm'                "$AG/planning-engineer/SKILL.md"  || fail ".agents Codex mirror: planning-engineer SKILL lost the shimmy/ruvllm toolchain law"
+  grep -qiE 'hugging ?face'         "$AG/plan-trend-research/SKILL.md" || fail ".agents Codex mirror: plan-trend-research lost the Hugging Face research tool"
+  grep -qiE 'differential-drive\.sh' "$AG/plan-test-strategy/SKILL.md" || fail ".agents Codex mirror: plan-test-strategy lost the differential-drive.sh driver"
+  echo "PASS: Codex-tree parity locked (.agents/skills mirror carries the toolchain law · HF · differential-drive driver)"
+fi
+
 echo "PASS: plan contract locked — targets rows, graph artifact names, JSON validity, and the documented examples all conform ($jq_note)"

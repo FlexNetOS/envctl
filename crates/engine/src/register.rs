@@ -24,7 +24,7 @@ pub struct RegisterSpec {
     pub verify_cmd: Option<String>,
     /// (install_name, path-relative-to-clone) so rebuild can relink artifacts.
     pub relinks: Vec<(String, String)>,
-    /// absolute install targets (`$META_ROOT/.local/bin/<name>`) — provenance + remove list.
+    /// absolute install targets (`$META_ROOT/usr/bin/<name>`) — provenance + remove list.
     pub installed_targets: Vec<String>,
 }
 
@@ -161,9 +161,9 @@ pub fn synth_dropin(spec: &RegisterSpec) -> String {
 
     s.push_str("[component.install]\nkind = \"script\"\nlogin_shell = true\nscript = '''\n");
     s.push_str("set -euo pipefail\n");
-    s.push_str("M=\"${META_ROOT:-$HOME/Desktop/meta}\"\n");
-    s.push_str("STORE=\"$M/.local/share/envctl/repos\"\n");
-    s.push_str("BIN=\"$M/.local/bin\"\n");
+    s.push_str("M=\"${META_ROOT:?META_ROOT required}\"\n");
+    s.push_str("STORE=\"$M/var/lib/envctl/repos\"\n");
+    s.push_str("BIN=\"$M/usr/bin\"\n");
     s.push_str("install -d -m 700 \"$STORE\"\n");
     s.push_str(&format!("SRC=\"$STORE/{}\"\n", spec.slug));
     s.push_str(&format!(
@@ -187,17 +187,15 @@ pub fn synth_dropin(spec: &RegisterSpec) -> String {
 
     s.push_str("[component.remove]\nkind = \"script\"\nlogin_shell = true\nscript = '''\n");
     s.push_str("set -u\n");
-    s.push_str("M=\"${META_ROOT:-$HOME/Desktop/meta}\"\n");
-    s.push_str("STORE=\"$M/.local/share/envctl/repos\"\n");
-    s.push_str("BIN=\"$M/.local/bin\"\n");
+    s.push_str("M=\"${META_ROOT:?META_ROOT required}\"\n");
+    s.push_str("STORE=\"$M/var/lib/envctl/repos\"\n");
+    s.push_str("BIN=\"$M/usr/bin\"\n");
     s.push_str(&excise);
     s.push('\n');
     s.push_str(&format!("rm -rf \"$STORE/{}\"\n", spec.slug));
     s.push_str("'''\n\n");
 
-    s.push_str(
-        "[component.wiring]\npath_entries = [\"${META_ROOT:-$HOME/Desktop/meta}/.local/bin\"]\n",
-    );
+    s.push_str("[component.wiring]\npath_entries = [\"$META_ROOT/usr/bin\"]\n");
     s
 }
 

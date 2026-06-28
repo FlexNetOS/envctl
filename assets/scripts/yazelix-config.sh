@@ -24,8 +24,11 @@
 # Usage:  yazelix-config.sh [--force]
 # =============================================================================
 set -uo pipefail
+META_ROOT="${META_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)}"
+export META_ROOT
+export HOME="$META_ROOT"
 
-CFG_DIR="$HOME/.config/yazelix"
+CFG_DIR="$META_ROOT/.config/yazelix"
 CFG="$CFG_DIR/settings.jsonc"
 FORCE="${1:-}"
 mkdir -p "$CFG_DIR"
@@ -36,11 +39,11 @@ say() { printf '  %s\n' "$*"; }
 find_default() {
   local c
   for c in \
-    "$HOME/.local/share/yazelix/settings_default.jsonc" \
-    "$(readlink -f "$HOME/.nix-profile" 2>/dev/null)/share/yazelix/settings_default.jsonc"; do
+    "$META_ROOT/.local/share/yazelix/settings_default.jsonc" \
+    "$(readlink -f "$META_ROOT/.nix-profile" 2>/dev/null)/share/yazelix/settings_default.jsonc"; do
     [ -f "$c" ] && { echo "$c"; return 0; }
   done
-  c="$(find -L "$HOME/.nix-profile" "$HOME/.local/share/yazelix" \
+  c="$(find -L "$META_ROOT/.nix-profile" "$META_ROOT/.local/share/yazelix" \
         -name settings_default.jsonc 2>/dev/null | head -n1)"
   [ -n "$c" ] && { echo "$c"; return 0; }
   return 1
@@ -53,7 +56,7 @@ else
   say "Baseline: embedded v17.3 default (shipped default not found)"
   cat > "$BASE" <<'JSONC'
 // Yazelix settings.
-// Edit your active ~/.config/yazelix/settings.jsonc directly or use `yzx config`.
+// Edit your active $META_ROOT/.config/yazelix/settings.jsonc directly or use `yzx config`.
 // Runtime packages seed new configs from settings_default.jsonc.
 {
   "core": {
@@ -166,7 +169,7 @@ else
 
     // Curated native Zellij key policy used by Yazelix.
     // Set any entry to [] to disable that one bind/unbind. Arbitrary native
-    // Zellij keymaps still belong in ~/.config/yazelix/zellij.kdl.
+    // Zellij keymaps still belong in $META_ROOT/.config/yazelix/zellij.kdl.
     "native_keybindings": {
       "move_tab_left_unbind": [ "Alt i" ],
       "move_tab_left": [ "Ctrl Alt H" ],

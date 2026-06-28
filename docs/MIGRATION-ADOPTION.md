@@ -4,7 +4,7 @@
 the canonical meta-hosted install topology:
 
 ```text
-$META_ROOT/.local/{bin,lib,share,state,cache,tmp,opt}
+$META_ROOT/{usr/bin,usr/lib,usr/share,etc,var/lib,var/cache,var/log,var/tmp,opt} plus XDG meta-home roots
 ```
 
 The command exists so operators do **not** hand-edit paths. envctl inventories
@@ -14,8 +14,9 @@ proven.
 
 ## Non-negotiable rules
 
-- **Meta-root first:** envctl-owned payloads belong under `$META_ROOT/.local`,
-  not `/usr/local`, `/opt`, or `$HOME/.local`.
+- **Meta-root first:** envctl-owned payloads belong under `$META_ROOT`
+  using the canonical FHS/XDG layout (`usr`, `etc`, `var`, `opt`, and meta-home XDG roots),
+  not `/usr/local`, `/opt`, or a real-home local tree.
 - **No blind rebuilds:** Codex/agent assets are adopted/preserved in place. This
   includes `agent-env.yaml`, `agent-env.lock`, `.codex/config.toml`, `.mcp.json`,
   and the ejected harness mirrors under `.Codex/` / `.agents/`.
@@ -35,7 +36,7 @@ proven.
 | `envctl migrate scan` | no | Inventory canonical layout, manifest path debt, protected agent assets, and protected meta substrates. |
 | `envctl migrate plan` | no | Same report, labeled as a migration plan for automation/front-ends. |
 | `envctl migrate apply` | no | Preview the safe apply set. |
-| `envctl migrate apply --apply` | yes | Create missing canonical `.local` directories and append a migration ledger entry. |
+| `envctl migrate apply --apply` | yes | Create missing canonical META_ROOT FHS/XDG directories and append a migration ledger entry. |
 | `envctl migrate verify` | no | CI/automation gate. Exits non-zero while unresolved migration debt remains. |
 | `envctl migrate purge` | no | Explain purge protections and required evidence. |
 | `envctl migrate purge --apply --confirm` | guarded | Refuses until the ledger contains verified adoption/parity evidence for a typed legacy candidate. |
@@ -62,8 +63,8 @@ envctl migrate plan --component bun --component rust
 
 The engine reports these roots in every JSON/human report:
 
-- ledger: `$META_ROOT/.local/state/envctl/migrations/ledger.jsonl`
-- future archive root: `$META_ROOT/.local/state/envctl/legacy-archives`
+- ledger: `$META_ROOT/var/lib/envctl/migrations/ledger.jsonl`
+- future archive root: `$META_ROOT/var/lib/envctl/legacy-archives`
 
 The ledger is append-only JSONL. `apply --apply` records the safe materialization
 step. Purge attempts that reach the destructive guard also ledger the refusal so
@@ -74,10 +75,10 @@ operators have an audit trail for why legacy compatibility roots were preserved.
 The first implementation classifies manifest references conservatively:
 
 - `.toolchains` / `ENVCTL_LEGACY_TOOLCHAINS` → manifest must move to
-  `MetaLayout` / canonical `.local` paths; `.toolchains` itself remains a
+  `MetaLayout` / canonical FHS/XDG paths; `.toolchains` itself remains a
   protected compatibility root.
-- `~/.local` / `$HOME/.local` → user-global install debt; adopt into
-  `$META_ROOT/.local`.
+- legacy real-home local spellings → user-global install debt; adopt into
+  `$META_ROOT` FHS/XDG paths.
 - `/usr/local` / `/opt/` → high-risk system/global path; report only until a
   component-specific adoption plan proves ownership and safety.
 
