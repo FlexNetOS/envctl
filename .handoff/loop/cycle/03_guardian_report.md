@@ -1,26 +1,36 @@
-# TASK-0078 reviewed JNA cache-child manifest guardian report
+# Guardian report — worktree slug vs main checkout
 
-## Status
-PASS — reviewed manifest and fixture added; local gates and live non-mutating runtime dry-run passed. PR #379 created; merge pending.
+Date: 2026-06-28
 
-## Invariants to check
-- The slice commits only a reviewed component manifest and a regression test.
-- No live cache data is moved; no `--migrate-cache-child --apply` is run.
-- `--migrate-cache-child` remains narrow, dry-run by default, and gated by matching component manifest content.
-- Owner-supervised planning/validation rows still carry empty `apply_command`.
-- The broad `.cache` root remains owner-supervised/component-managed rather than auto-migrated.
-- The chosen `JNA` candidate has live source present and meta target absent.
+## Runtime surface
 
-## Verification
+Observable behavior is the helper CLI surface in `scripts/reap-worktrees.sh`:
+
+- Managed worktree checkout prints a slug.
+- Main checkout prints nothing and returns nonzero.
+- Status wrapper invokes `meta git worktree status` only with a derived slug.
+
+## Verification results
+
 PASS:
 
-- `bash -n scripts/audit-meta-local-paths.sh scripts/tests/test-meta-local-path-audit.sh`
-- `bash scripts/tests/test-meta-local-path-audit.sh` (`test-meta-local-path-audit: PASS`)
-- `git diff --check`
-- `bash ci/gates/loop-state.sh` (`LOOP-STATE GATE PASS`)
+- `bash -n scripts/reap-worktrees.sh scripts/tests/test-reaper.sh scripts/tests/test-skill-contract.sh ci/gates/harness-scripts.sh`
+- `bash scripts/tests/test-reaper.sh`
+  - `PASS: reaper reaped merged+clean and squash-equivalent branches, preserved local-only/dirty/.handoff work, protected master/develop, FF-synced trunk, cleaned husks`
+- `bash scripts/tests/test-skill-contract.sh`
+  - `SKILL-CONTRACT TEST PASS`
+- `bash ci/gates/harness-scripts.sh`
+  - `HARNESS-SCRIPTS GATE PASS`
+- `bash ci/gates/loop-state.sh`
+  - `LOOP-STATE GATE PASS` for `.handoff/loop/loop_state.md`
+  - `LOOP-STATE GATE PASS` for `.handoff/loop/plan/loop_state.md`
 - `bash ci/gates/meta-local-policy.sh`
-- `bash ci/gates/harness-scripts.sh` (`HARNESS-SCRIPTS GATE PASS`)
-- `bash ci/gates/p7.sh` (`P7 GATE PASS`)
+  - `meta-local-policy: active install sources target META_ROOT FHS/XDG; only the single real-home .local bridge is allowed`
+- Runtime proof:
+  - `bash scripts/reap-worktrees.sh --managed-worktree-slug "$PWD" envctl` printed `fix-worktree-slug-main-checkout` from the managed worktree.
+  - `bash scripts/reap-worktrees.sh --managed-worktree-slug /home/drdave/Desktop/meta/envctl envctl` returned nonzero/no output for the main checkout.
+- `git diff --check`
 
-## Runtime check
-PASS. Live dry-run with `--migrate-cache-child JNA` reported the expected would-move/would-link plan from `/home/drdave/.cache/JNA` to `/home/drdave/Desktop/meta/.local/cache/JNA`, `changed=0`, and a validation row with `manifest_exists=yes`, `manifest_declares_expected_id=yes`, `next_action=review-existing-cache-component-manifest-before-migration`, and an empty `apply_command`. Source remains present; target remains absent; no `--apply` migration was run.
+## Status
+
+PASS. The change is docs/shell-harness only; no Rust trust-boundary or dependency changes.
