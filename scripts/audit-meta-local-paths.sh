@@ -25,7 +25,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--owner-supervised-sensitive-review-plan PATH] [--owner-supervised-state-report PATH] [--owner-supervised-child-report PATH] [--owner-supervised-child-plan PATH] [--owner-supervised-child-candidates-report PATH] [--owner-supervised-child-candidate-actions PATH] [--owner-supervised-cache-child-component-plan PATH] [--owner-supervised-cache-child-component-manifest-status PATH] [--owner-supervised-cache-child-component-manifest-validation PATH] [--owner-supervised-managed-config-child-review-plan PATH] [--owner-supervised-managed-config-child-conflict-plan PATH] [--owner-supervised-managed-config-child-conflict-summary PATH] [--owner-supervised-managed-config-child-deep-status PATH] [--owner-supervised-config-child-classification-plan PATH] [--owner-supervised-child-candidate-action-summary PATH] [--owner-supervised-child-candidates-summary PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--migration-blockers-plan PATH] [--open-handle-process-window-plan PATH] [--fail-migration-blockers] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--migrate-cache-child NAME]... [--bridge-managed-config-child NAME]... [--bridge-identical-managed-config-child NAME]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--owner-supervised-sensitive-review-plan PATH] [--owner-supervised-state-report PATH] [--owner-supervised-child-report PATH] [--owner-supervised-child-plan PATH] [--owner-supervised-child-candidates-report PATH] [--owner-supervised-child-candidate-actions PATH] [--owner-supervised-cache-child-component-plan PATH] [--owner-supervised-cache-child-component-manifest-status PATH] [--owner-supervised-cache-child-component-manifest-validation PATH] [--owner-supervised-cache-child-component-manifest-scaffold PATH] [--owner-supervised-managed-config-child-review-plan PATH] [--owner-supervised-managed-config-child-conflict-plan PATH] [--owner-supervised-managed-config-child-conflict-summary PATH] [--owner-supervised-managed-config-child-deep-status PATH] [--owner-supervised-config-child-classification-plan PATH] [--owner-supervised-child-candidate-action-summary PATH] [--owner-supervised-child-candidates-summary PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--migration-blockers-plan PATH] [--open-handle-process-window-plan PATH] [--fail-migration-blockers] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--migrate-cache-child NAME]... [--bridge-managed-config-child NAME]... [--bridge-identical-managed-config-child NAME]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
 With --inventory, also writes a tab-separated relocation inventory:
@@ -121,6 +121,12 @@ expected component id, and whether an existing manifest declares that exact id:
 dot_entry, child_name, child_path, type, canonical_target, component_key, expected_component_id,
 cache_scope, manifest_hint, manifest_exists, manifest_declares_expected_id, supervision,
 next_action, apply_command.
+With --owner-supervised-cache-child-component-manifest-scaffold, writes read-only rows that extend
+the cache-child manifest validation state with a deterministic escaped TOML stub for missing
+component manifests. The report never writes manifests or emits an apply command:
+dot_entry, child_name, child_path, type, canonical_target, component_key, expected_component_id,
+cache_scope, manifest_hint, manifest_exists, manifest_declares_expected_id, scaffold_kind,
+scaffold_status, manifest_stub, supervision, next_action, apply_command.
 With --owner-supervised-managed-config-child-review-plan, writes read-only review planning rows
 for .config direct children that have a managed envctl-home source and require owner approval
 before bridge creation:
@@ -201,6 +207,7 @@ OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH=""
 OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_PLAN_PATH=""
 OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_STATUS_PATH=""
 OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_VALIDATION_PATH=""
+OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_SCAFFOLD_PATH=""
 OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_REVIEW_PLAN_PATH=""
 OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_PLAN_PATH=""
 OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_SUMMARY_PATH=""
@@ -241,6 +248,7 @@ while [ "$#" -gt 0 ]; do
     --owner-supervised-cache-child-component-plan) OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_PLAN_PATH="${2:?--owner-supervised-cache-child-component-plan requires a path}"; shift 2 ;;
     --owner-supervised-cache-child-component-manifest-status) OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_STATUS_PATH="${2:?--owner-supervised-cache-child-component-manifest-status requires a path}"; shift 2 ;;
     --owner-supervised-cache-child-component-manifest-validation) OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_VALIDATION_PATH="${2:?--owner-supervised-cache-child-component-manifest-validation requires a path}"; shift 2 ;;
+    --owner-supervised-cache-child-component-manifest-scaffold) OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_SCAFFOLD_PATH="${2:?--owner-supervised-cache-child-component-manifest-scaffold requires a path}"; shift 2 ;;
     --owner-supervised-managed-config-child-review-plan) OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_REVIEW_PLAN_PATH="${2:?--owner-supervised-managed-config-child-review-plan requires a path}"; shift 2 ;;
     --owner-supervised-managed-config-child-conflict-plan) OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_PLAN_PATH="${2:?--owner-supervised-managed-config-child-conflict-plan requires a path}"; shift 2 ;;
     --owner-supervised-managed-config-child-conflict-summary) OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_SUMMARY_PATH="${2:?--owner-supervised-managed-config-child-conflict-summary requires a path}"; shift 2 ;;
@@ -340,6 +348,10 @@ fi
 if [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_VALIDATION_PATH" ]; then
   mkdir -p "$(dirname "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_VALIDATION_PATH")"
   printf 'dot_entry\tchild_name\tchild_path\ttype\tcanonical_target\tcomponent_key\texpected_component_id\tcache_scope\tmanifest_hint\tmanifest_exists\tmanifest_declares_expected_id\tsupervision\tnext_action\tapply_command\n' >"$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_VALIDATION_PATH"
+fi
+if [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_SCAFFOLD_PATH" ]; then
+  mkdir -p "$(dirname "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_SCAFFOLD_PATH")"
+  printf 'dot_entry\tchild_name\tchild_path\ttype\tcanonical_target\tcomponent_key\texpected_component_id\tcache_scope\tmanifest_hint\tmanifest_exists\tmanifest_declares_expected_id\tscaffold_kind\tscaffold_status\tmanifest_stub\tsupervision\tnext_action\tapply_command\n' >"$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_SCAFFOLD_PATH"
 fi
 if [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_REVIEW_PLAN_PATH" ]; then
   mkdir -p "$(dirname "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_REVIEW_PLAN_PATH")"
@@ -1052,6 +1064,17 @@ cache_child_component_id() {
   printf 'cache-%s' "$component_key"
 }
 
+cache_child_component_manifest_stub() {
+  local child_name="$1" component_key expected_component_id
+
+  component_key="$(cache_child_component_key "$child_name")"
+  expected_component_id="$(cache_child_component_id "$child_name")"
+  printf '[[component]]\\nid = "%s"\\nname = "Cache child %s"\\ndescription = "Owner-reviewed manifest stub for %s; review detect/install/fix hooks before any --migrate-cache-child apply."' \
+    "$expected_component_id" \
+    "$component_key" \
+    "$expected_component_id"
+}
+
 cache_child_component_manifest_declares_id() {
   local manifest_path="$1" expected_component_id="$2"
 
@@ -1126,10 +1149,10 @@ record_owner_supervised_child_candidates() {
   local dot="$1" path="$2" type="$3" state="$4" apply_safe="$5"
   local child child_name child_type child_state child_target_class canonical_target candidate_action child_apply_safe child_recommendation
   local shallow_digest direct_entries direct_files direct_dirs direct_symlinks
-  local supervision next_action envctl_home_source apply_command component_key expected_component_id manifest_hint manifest_exists manifest_declares_expected_id manifest_next_action review_hint classification_scope managed_type managed_digest managed_direct_entries
+  local supervision next_action envctl_home_source apply_command component_key expected_component_id manifest_hint manifest_exists manifest_declares_expected_id manifest_next_action scaffold_kind scaffold_status manifest_stub review_hint classification_scope managed_type managed_digest managed_direct_entries
   local shared_direct_entries real_only_direct_entries managed_only_direct_entries type_conflict_direct_entries digest_match deep_identical deep_next_action
 
-  [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATES_REPORT_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATES_SUMMARY_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_STATUS_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_VALIDATION_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_REVIEW_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_SUMMARY_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_DEEP_STATUS_PATH" ] || [ -n "$OWNER_SUPERVISED_CONFIG_CHILD_CLASSIFICATION_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTION_SUMMARY_PATH" ] || return 0
+  [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATES_REPORT_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATES_SUMMARY_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_STATUS_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_VALIDATION_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_SCAFFOLD_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_REVIEW_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_SUMMARY_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_DEEP_STATUS_PATH" ] || [ -n "$OWNER_SUPERVISED_CONFIG_CHILD_CLASSIFICATION_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTION_SUMMARY_PATH" ] || return 0
   [ "$state" = "real-home-state" ] || [ "$state" = "external-symlink" ] || return 0
   [ "$apply_safe" = "no" ] || return 0
   case "$dot" in
@@ -1167,7 +1190,7 @@ record_owner_supervised_child_candidates() {
         "$child_apply_safe" \
         "$child_recommendation" >>"$OWNER_SUPERVISED_CHILD_CANDIDATES_REPORT_PATH"
     fi
-    if [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_STATUS_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_VALIDATION_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_REVIEW_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_SUMMARY_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_DEEP_STATUS_PATH" ] || [ -n "$OWNER_SUPERVISED_CONFIG_CHILD_CLASSIFICATION_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTION_SUMMARY_PATH" ]; then
+    if [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_STATUS_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_VALIDATION_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_SCAFFOLD_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_REVIEW_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_SUMMARY_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_DEEP_STATUS_PATH" ] || [ -n "$OWNER_SUPERVISED_CONFIG_CHILD_CLASSIFICATION_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTION_SUMMARY_PATH" ]; then
       IFS=$'\t' read -r supervision next_action envctl_home_source apply_command < <(owner_supervised_child_candidate_action_fields "$child_target_class" "$candidate_action" "$canonical_target")
     fi
     if [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH" ]; then
@@ -1252,6 +1275,47 @@ record_owner_supervised_child_candidates() {
         "$supervision" \
         "$manifest_next_action" \
         "$apply_command" >>"$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_VALIDATION_PATH"
+    fi
+    if [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_SCAFFOLD_PATH" ] && [ "$dot" = ".cache" ] && [ "$candidate_action" = "component-managed-cache-child-migration" ]; then
+      component_key="$(cache_child_component_key "$child_name")"
+      expected_component_id="$(cache_child_component_id "$child_name")"
+      manifest_hint="$(cache_child_component_manifest_hint "$child_name")"
+      manifest_exists="no"
+      manifest_declares_expected_id="no"
+      manifest_next_action="owner-review-cache-component-manifest-scaffold"
+      scaffold_kind="component-manifest-minimal"
+      scaffold_status="stub-needs-owner-review"
+      manifest_stub="$(cache_child_component_manifest_stub "$child_name")"
+      if [ -f "$ROOT/$manifest_hint" ]; then
+        manifest_exists="yes"
+        manifest_next_action="fix-cache-component-manifest-id-before-migration"
+        scaffold_kind="none"
+        scaffold_status="existing-manifest-id-mismatch"
+        manifest_stub=""
+        if cache_child_component_manifest_declares_id "$ROOT/$manifest_hint" "$expected_component_id"; then
+          manifest_declares_expected_id="yes"
+          manifest_next_action="review-existing-cache-component-manifest-before-migration"
+          scaffold_status="existing-manifest-declares-expected-id"
+        fi
+      fi
+      printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$dot" \
+        "$child_name" \
+        "$child" \
+        "$child_type" \
+        "$canonical_target" \
+        "$component_key" \
+        "$expected_component_id" \
+        "cache-child" \
+        "$manifest_hint" \
+        "$manifest_exists" \
+        "$manifest_declares_expected_id" \
+        "$scaffold_kind" \
+        "$scaffold_status" \
+        "$manifest_stub" \
+        "$supervision" \
+        "$manifest_next_action" \
+        "$apply_command" >>"$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_SCAFFOLD_PATH"
     fi
     if [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_REVIEW_PLAN_PATH" ] && [ "$dot" = ".config" ] && [ "$candidate_action" = "owner-supervised-config-child-bridge" ]; then
       review_hint="review-envctl-home-source-before-owner-approved-bridge"
