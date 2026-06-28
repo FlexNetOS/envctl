@@ -1,17 +1,17 @@
 # HANDOFF — envctl forge-loop continuation after boundary 54
 
-Written: 2026-06-28T03:05:00Z
-Branch/worktree for current slice: `task-0078-cache-wasm-pack-manifest` at `/home/drdave/Desktop/meta/.worktrees/task-0078-cache-wasm-pack-manifest/envctl`
+Written: 2026-06-28T03:25:00Z
+Branch/worktree for current slice: `task-0078-cache-starship-manifest` at `/home/drdave/Desktop/meta/.worktrees/task-0078-cache-zellij-manifest/envctl`
 
 ## Resume in one line
 
-Confirm the reviewed `.wasm-pack` cache-child manifest PR merged, fast-forward `/home/drdave/Desktop/meta/envctl`, run the reaper, then continue TASK-0078 from `.handoff/loop/backlog.md` with another safe reviewed slice. Do not broad-migrate `.cache`/`.config`, do not run live cache-child apply without explicit reviewed preconditions, and do not move sensitive stores.
+Confirm the reviewed `starship` cache-child manifest PR merged, fast-forward `/home/drdave/Desktop/meta/envctl`, run the reaper, then continue TASK-0078 from `.handoff/loop/backlog.md` with another safe reviewed slice. Do not broad-migrate `.cache`/`.config`, do not run live cache-child apply without explicit reviewed preconditions, and do not move sensitive stores.
 
 ## Loop counters
 
-- `cycles_total: 55`
+- `cycles_total: 56`
 - `last_wrapup_total: 54`
-- `cycles_this_session: 8`
+- `cycles_this_session: 9`
 - `wrap_every: 5`
 - Next batch boundary: `cycles_total >= 59`
 
@@ -23,11 +23,13 @@ Confirm the reviewed `.wasm-pack` cache-child manifest PR merged, fast-forward `
 - PR #371 — read-only deterministic cache-child component-manifest scaffold TSV; merged `f8c271977c35baf0b51de74fc36b41dccb00ea30`.
 - PR #372 — read-only managed-config deep-diff summary TSV; merged `2e7c4aac141f033225b22d89a2490d2194fb586b`.
 - PR #373 — dry-run-default `--write-cache-child-component-manifest NAME` writer for reviewed minimal cache-child stubs; merged `3f93261fbfe4f9cdfd840aa353bc340f671d3181`.
-- PR #376 — reviewed `manifest/components.d/cache-wasm-pack.toml` for the live `.wasm-pack` cache child; no live cache state moved.
+- PR #376 — reviewed `manifest/components.d/cache-wasm-pack.toml` for the live `.wasm-pack` cache child; no live cache state moved; merged `7d8ebff87f07c77b351a6471d57aa1c5455268c5`.
+- PR TBD — reviewed `manifest/components.d/cache-starship.toml` for the live `starship` cache child; zellij was avoided due to target collision; no live cache state moved.
 
 ## Current TASK-0078 state
 
-- Cache-child migration is now gated on a reviewed component manifest: missing/wrong manifests refuse, the scaffold/validation/status reports are read-only, and the writer can materialize a deterministic stub only with explicit `--apply`. The writer intentionally runs after migration attempts so one invocation cannot create a manifest and migrate live cache state. The first reviewed cache-child manifest is now `manifest/components.d/cache-wasm-pack.toml`; live dry-run reports would-move/would-link for `.wasm-pack`, but no live cache-child state has been moved by the #368-#TBD slices.
+- Cache-child migration is gated on a reviewed component manifest: missing/wrong manifests refuse, the scaffold/validation/status reports are read-only, and the writer can materialize a deterministic stub only with explicit `--apply`. The writer intentionally runs after migration attempts so one invocation cannot create a manifest and migrate live cache state. Reviewed cache-child manifests now include `.wasm-pack` and the in-flight `starship` slice; both were runtime-verified only in dry-run mode, and no live cache-child state has been moved.
+- Candidate selection note: `zellij` was not committed for this slice because live dry-run found `/home/drdave/Desktop/meta/.local/cache/zellij` already exists; `starship` was selected only after confirming live source present and meta target absent.
 - Managed `.config` conflicts remain owner-reviewed. Live deep-diff summary on 2026-06-28 emitted 5 rows (`ghostty`, `kasetto`, `nushell`, `systemd`, `yazelix`), all `deep_identical=no`; no bridge apply was performed.
 - `.pki` still waits for a Chrome/NSSDB handle-free window before any explicit migration.
 - Sensitive stores (`.aws`, `.docker`, `.gnupg`, `.lane`, `.mcp-auth`, `.ssh`, `.fxapp-gh-profile`) remain owner-supervised with no autonomous apply command.

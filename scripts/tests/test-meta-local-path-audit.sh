@@ -1733,6 +1733,13 @@ grep -q 'DRY-RUN: would move .*\.cache/\.wasm-pack to .*\.local/cache/\.wasm-pac
 test -d "$repo_reviewed_cache_child_home/.cache/.wasm-pack"
 test ! -e "$repo_reviewed_cache_child_meta/.local/cache/.wasm-pack"
 
+mkdir -p "$repo_reviewed_cache_child_home/.cache/starship"
+printf 'starship-cache-index\n' >"$repo_reviewed_cache_child_home/.cache/starship/index"
+"$root/scripts/audit-meta-local-paths.sh" --migrate-cache-child starship --meta-root "$repo_reviewed_cache_child_meta" --real-home "$repo_reviewed_cache_child_home" --envctl-home-source "$repo_reviewed_cache_child_meta/envctl/home" >"$tmp/repo-reviewed-cache-child-starship-dry.out" 2>"$tmp/repo-reviewed-cache-child-starship-dry.err"
+grep -q 'DRY-RUN: would move .*\.cache/starship to .*\.local/cache/starship and link .*\.cache/starship -> .*\.local/cache/starship' "$tmp/repo-reviewed-cache-child-starship-dry.out"
+test -d "$repo_reviewed_cache_child_home/.cache/starship"
+test ! -e "$repo_reviewed_cache_child_meta/.local/cache/starship"
+
 (
   cd "$cache_child_manifest_repo"
   scripts/audit-meta-local-paths.sh --migrate-cache-child tool --meta-root "$cache_child_meta" --real-home "$cache_child_home" --envctl-home-source "$cache_child_meta/envctl/home"
