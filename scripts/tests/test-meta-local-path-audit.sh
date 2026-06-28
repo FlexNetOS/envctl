@@ -1856,6 +1856,14 @@ printf 'same\n' >"$managed_config_deep_meta/envctl/home/.config/same-app/config.
 printf 'same\n' >"$managed_config_deep_home/.config/same-app/config.toml"
 printf 'managed\n' >"$managed_config_deep_meta/envctl/home/.config/diff-app/config.toml"
 printf 'real\n' >"$managed_config_deep_home/.config/diff-app/config.toml"
+mkdir -p "$managed_config_deep_meta/envctl/home/.config/diff-app/shared-dir" \
+  "$managed_config_deep_home/.config/diff-app/shared-dir" \
+  "$managed_config_deep_home/.config/diff-app/type-conflict"
+printf 'managed nested\n' >"$managed_config_deep_meta/envctl/home/.config/diff-app/shared-dir/nested.txt"
+printf 'real nested\n' >"$managed_config_deep_home/.config/diff-app/shared-dir/nested.txt"
+printf 'managed-only\n' >"$managed_config_deep_meta/envctl/home/.config/diff-app/managed-only.txt"
+printf 'real-only\n' >"$managed_config_deep_home/.config/diff-app/real-only.txt"
+printf 'managed file\n' >"$managed_config_deep_meta/envctl/home/.config/diff-app/type-conflict"
 ln -s "$managed_config_deep_meta/envctl/home/.gitconfig" "$managed_config_deep_meta/.gitconfig"
 ln -s "$managed_config_deep_meta/.local" "$managed_config_deep_home/.local"
 ln -s "$managed_config_deep_meta/.gitconfig" "$managed_config_deep_home/.gitconfig"
@@ -1888,6 +1896,54 @@ awk -F '\t' -v home="$managed_config_deep_home" -v meta="$managed_config_deep_me
   }
   END { exit !(found_same && found_diff && !bad) }
 ' "$tmp/managed-config-deep-status.tsv"
+
+"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-managed-config-child-deep-diff-summary "$tmp/managed-config-deep-diff-summary.tsv" --meta-root "$managed_config_deep_meta" --real-home "$managed_config_deep_home" --envctl-home-source "$managed_config_deep_meta/envctl/home" >"$tmp/managed-config-deep-diff-summary.out" 2>"$tmp/managed-config-deep-diff-summary.err"
+head -n 1 "$tmp/managed-config-deep-diff-summary.tsv" | grep -qx $'dot_entry\tchild_name\treal_path\tmanaged_source\treal_type\tmanaged_type\treal_deep_entries\tmanaged_deep_entries\treal_deep_files\tmanaged_deep_files\tshared_deep_entries\treal_only_deep_entries\tmanaged_only_deep_entries\ttype_conflict_deep_entries\tdiffering_files\tdeep_identical\tsupervision\tnext_action\tapply_command'
+awk -F '\t' 'NF != 19 { print "bad managed config deep-diff-summary row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/managed-config-deep-diff-summary.tsv"
+test "$(wc -l <"$tmp/managed-config-deep-diff-summary.tsv" | tr -d '[:space:]')" = 3
+awk -F '\t' -v home="$managed_config_deep_home" -v meta="$managed_config_deep_meta" '
+  $1 == ".config" && $2 == "same-app" {
+    if ($3 != home "/.config/same-app") bad=1
+    if ($4 != meta "/envctl/home/.config/same-app") bad=1
+    if ($5 != "directory") bad=1
+    if ($6 != "directory") bad=1
+    if ($7 != "1") bad=1
+    if ($8 != "1") bad=1
+    if ($9 != "1") bad=1
+    if ($10 != "1") bad=1
+    if ($11 != "1") bad=1
+    if ($12 != "0") bad=1
+    if ($13 != "0") bad=1
+    if ($14 != "0") bad=1
+    if ($15 != "0") bad=1
+    if ($16 != "yes") bad=1
+    if ($17 != "owner-reviewed") bad=1
+    if ($18 != "review-then-bridge-identical-managed-config-child") bad=1
+    if ($19 != "") bad=1
+    found_same=1
+  }
+  $1 == ".config" && $2 == "diff-app" {
+    if ($3 != home "/.config/diff-app") bad=1
+    if ($4 != meta "/envctl/home/.config/diff-app") bad=1
+    if ($5 != "directory") bad=1
+    if ($6 != "directory") bad=1
+    if ($7 != "5") bad=1
+    if ($8 != "5") bad=1
+    if ($9 != "3") bad=1
+    if ($10 != "4") bad=1
+    if ($11 != "4") bad=1
+    if ($12 != "1") bad=1
+    if ($13 != "1") bad=1
+    if ($14 != "1") bad=1
+    if ($15 != "2") bad=1
+    if ($16 != "no") bad=1
+    if ($17 != "owner-reviewed") bad=1
+    if ($18 != "owner-review-real-home-config-child-deep-diff-before-bridge") bad=1
+    if ($19 != "") bad=1
+    found_diff=1
+  }
+  END { exit !(found_same && found_diff && !bad) }
+' "$tmp/managed-config-deep-diff-summary.tsv"
 
 config_identical_meta="$tmp/config-identical-meta"
 config_identical_home="$tmp/config-identical-home"
