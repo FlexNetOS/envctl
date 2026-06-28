@@ -1,16 +1,18 @@
-# TASK-0078 reviewed agent-env cache-child manifest implementer log
+# TASK-0078 reviewed JNA cache-child manifest implementer log
 
 ## Red
-Before adding the agent-env manifest, the live non-mutating probe reported a dry-run refusal because `manifest/components.d/cache-agent-env.toml` was missing.
+Before adding the JNA manifest, the live non-mutating probe reported a dry-run refusal because `manifest/components.d/cache-jna.toml` was missing.
 
-Candidate preflight confirmed the live source `/home/drdave/.cache/agent-env` exists and the meta target `/home/drdave/Desktop/meta/.local/cache/agent-env` is absent. No state was moved.
+Candidate preflight confirmed the live source `/home/drdave/.cache/JNA` exists and the meta target `/home/drdave/Desktop/meta/.local/cache/JNA` is absent. No state was moved.
 
 ## Change
-- Added `manifest/components.d/cache-agent-env.toml` with the minimal reviewed component declaration for `cache-agent-env`.
-- Added fixture coverage for a repo-reviewed `agent-env` cache child: dry-run reports would-move/would-link and leaves both source and target untouched.
+- Added `manifest/components.d/cache-jna.toml` with the minimal reviewed component declaration for `cache-jna`.
+- Added fixture coverage for a repo-reviewed `JNA` cache child: dry-run reports would-move/would-link and leaves both source and target untouched.
 - Did not change the migration engine and did not run any live apply migration.
 
 ## Green
+PASS. Local gates passed in the worktree:
+
 - `bash -n scripts/audit-meta-local-paths.sh scripts/tests/test-meta-local-path-audit.sh`
 - `bash scripts/tests/test-meta-local-path-audit.sh`
 - `git diff --check`
@@ -20,4 +22,4 @@ Candidate preflight confirmed the live source `/home/drdave/.cache/agent-env` ex
 - `bash ci/gates/p7.sh`
 
 ## Runtime
-Live dry-run reports it would move `/home/drdave/.cache/agent-env` to `/home/drdave/Desktop/meta/.local/cache/agent-env` and link it back. Validation row for `.cache/agent-env` reports `manifest_exists=yes`, `manifest_declares_expected_id=yes`, `review-existing-cache-component-manifest-before-migration`, and empty `apply_command`. The source cache still exists, the meta cache target is absent, and the apply command count is zero.
+PASS. Live non-mutating dry-run emitted `DRY-RUN: would move /home/drdave/.cache/JNA to /home/drdave/Desktop/meta/.local/cache/JNA and link /home/drdave/.cache/JNA -> /home/drdave/Desktop/meta/.local/cache/JNA`, then `meta-local audit: PASS warnings=10 changed=0 dot_entries=79`. The validation row reported `manifest_exists=yes`, `manifest_declares_expected_id=yes`, `next_action=review-existing-cache-component-manifest-before-migration`, and an empty `apply_command`. `/home/drdave/.cache/JNA` still exists and `/home/drdave/Desktop/meta/.local/cache/JNA` remains absent.
