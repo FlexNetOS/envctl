@@ -2,7 +2,7 @@
   "schema": "handoff.task.v1",
   "id": "TASK-0033",
   "title": "VPS Profile B (BLOCKED owner-gated): F7 install gate + F8/OI-SM-2 authorizer + OI-SM-3 trusted-time",
-  "status": "blocked",
+  "status": "done",
   "priority": "P1",
   "objective": "VPS Profile B (BLOCKED owner-gated): F7 install gate + F8/OI-SM-2 authorizer + OI-SM-3 trusted-time",
   "path_scope": [
