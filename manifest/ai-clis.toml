@@ -1,5 +1,5 @@
 # AI coding CLIs (yazelix-setup.sh section 2, lines 89-94).
-# Native installers (claude/kimi/devin) are Node-independent; Codex prefers the meta Rust source build with Bun fallback, while Gemini runs via Bun.
+# Native installers (claude/kimi/devin) are Node-independent; Codex is the envctl-managed Rust release/toolchain, while Gemini runs via Bun.
 # Post-install auth (`/login`) is interactive and NOT automatable.
 
 [[component]]
@@ -29,7 +29,7 @@ ln -sfn "$DEST/bin/claude" "$META_ROOT/usr/bin/claude"
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/usr/bin:$PATH\"; [ \"$(readlink -f \"$(command -v claude)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/claude/bin/claude\")\" ] && claude --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/usr/bin:$PATH\"; [ \"$(readlink -f \"$(command -v claude)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/claude/bin/claude\")\" ] && timeout --kill-after=2s 5s claude --version"]
 [component.fix]
 kind = "script"
 script = '''
@@ -60,7 +60,7 @@ requires = ["rustup", "bun", "wild-linker"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; VER="${CODEX_VERSION:-0.142.0}"; vdir="$M/.toolchains/openai-codex/${VER}"; dest="$vdir/bin/codex"; cur="$M/.toolchains/openai-codex/current/bin/codex"; link="$M/usr/bin/codex"; [ -x "$dest" ] && [ "$(readlink -f "$cur" 2>/dev/null)" = "$(readlink -f "$dest" 2>/dev/null)" ] && [ -x "$link" ] && grep -q "envctl codex wrapper" "$link" && CODEX_HOME= CODEX_SQLITE_HOME= "$link" --version >/dev/null && ! grep -RqsE '/home/[^[:space:]]+/(\.local/bin/icm|\.cargo/bin/weave)|/usr/local/bin/vox' "$M/.local/share/codex/config.toml" "$M/.local/share/codex/hooks.json" 2>/dev/null''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; VER="${CODEX_VERSION:-0.142.0}"; vdir="$M/.toolchains/openai-codex/${VER}"; dest="$vdir/bin/codex"; cur="$M/.toolchains/openai-codex/current/bin/codex"; link="$M/usr/bin/codex"; meta_compat="$M/.local/bin/codex"; real_compat="${ENVCTL_REAL_HOME:-}/.local/bin/codex"; config="$M/.local/share/codex/config.toml"; [ -x "$dest" ] && [ "$(readlink -f "$cur" 2>/dev/null)" = "$(readlink -f "$dest" 2>/dev/null)" ] && [ -x "$link" ] && grep -q "envctl codex wrapper" "$link" && [ "$(readlink -f "$meta_compat" 2>/dev/null)" = "$(readlink -f "$link" 2>/dev/null)" ] && { [ -z "${ENVCTL_REAL_HOME:-}" ] || [ "$(readlink -f "$real_compat" 2>/dev/null)" = "$(readlink -f "$link" 2>/dev/null)" ]; } && CODEX_HOME= CODEX_SQLITE_HOME= "$link" --version >/dev/null && CODEX_HOME= CODEX_SQLITE_HOME= "$link" mcp list >/dev/null && grep -q 'CODEX_BIN_PATH=.*openai-codex/current/bin/codex' "$link" && [ ! -e "$M/.toolchains/bun/bin/codex" ] && [ ! -L "$M/.toolchains/bun/bin/codex" ] && [ ! -e "$M/.toolchains/.bun/bin/codex" ] && [ ! -L "$M/.toolchains/.bun/bin/codex" ] && [ ! -e "$M/.toolchains/bun/install/global/node_modules/.bin/codex" ] && [ ! -L "$M/.toolchains/bun/install/global/node_modules/.bin/codex" ] && [ ! -e "$M/.toolchains/.bun/install/global/node_modules/.bin/codex" ] && [ ! -L "$M/.toolchains/.bun/install/global/node_modules/.bin/codex" ] && ! grep -Rqs '"@openai/codex"' "$M/.toolchains/bun/install/global/package.json" "$M/.toolchains/bun/install/global/bun.lock" "$M/.toolchains/.bun/install/global/package.json" "$M/.toolchains/.bun/install/global/bun.lock" 2>/dev/null && ! find "$M/.toolchains/bun" "$M/.toolchains/.bun" -path '*/@openai/codex*' -print -quit 2>/dev/null | grep -q . && { [ ! -f "$config" ] || ! awk 'BEGIN{s=0;bad=0} /^\[/{s=($0=="[hooks.state]")} s && /^[[:space:]]*enabled[[:space:]]*=/{bad=1} END{exit bad?0:1}' "$config"; } && ! grep -RqsE '/home/[^[:space:]]+/(\.local/bin/icm|\.cargo/bin/weave)|/usr/local/bin/vox' "$M/.local/share/codex/config.toml" "$M/.local/share/codex/hooks.json" 2>/dev/null''']
 [component.install]
 kind = "script"
 script = '''
@@ -119,12 +119,30 @@ META_ROOT="$(cd "$bindir/../.." && pwd)"
 export META_ROOT
 export CODEX_HOME="${CODEX_HOME:-$META_ROOT/.local/share/codex}"
 export CODEX_SQLITE_HOME="${CODEX_SQLITE_HOME:-$META_ROOT/.local/state/codex}"
-export PATH="$META_ROOT/usr/bin:$META_ROOT/.local/bin:$META_ROOT/.toolchains/cargo/bin:$META_ROOT/.toolchains/.bun/bin:$PATH"
+# Codex must resolve to the Rust CLI, never the legacy Bun-installed JS shim.
+export CODEX_BIN_PATH="${CODEX_BIN_PATH:-$META_ROOT/.toolchains/openai-codex/current/bin/codex}"
+export CODEX_CLI_BIN="$CODEX_BIN_PATH"
+# Keep meta shims first. The Bun tool-bin directory remains available for non-Codex
+# tools such as gemini/vite, but the old @openai/codex Bun package is not on this path.
+export PATH="$META_ROOT/usr/bin:$META_ROOT/.local/bin:$META_ROOT/.toolchains/cargo/bin:$META_ROOT/.toolchains/.bun/bin:$META_ROOT/.toolchains/node/bin:$PATH"
 umask 077
 mkdir -p "$CODEX_HOME" "$CODEX_SQLITE_HOME"
 exec "$META_ROOT/.toolchains/openai-codex/current/bin/codex" "$@"
 WRAPPER
 chmod 755 "$LINK"
+install -d -m 755 "$M/.local/bin"
+ln -sfn "$LINK" "$M/.local/bin/codex"
+if [ -n "${ENVCTL_REAL_HOME:-}" ]; then
+  real_link="$ENVCTL_REAL_HOME/.local/bin/codex"
+  install -d -m 755 "$(dirname "$real_link")"
+  if [ -e "$real_link" ] && [ ! -L "$real_link" ]; then
+    ARCH="$M/var/lib/envctl/legacy-archives/real-home-bin-$(date -u +%Y-%m-%d)/.local/bin"
+    install -d -m 755 "$ARCH"
+    mv "$real_link" "$ARCH/codex"
+    echo "archived previous real-home codex front door: $ARCH/codex"
+  fi
+  ln -sfn "$LINK" "$real_link"
+fi
 install -d -m 700 "$M/.local/share/codex" "$M/.local/state/codex"
 if [ -n "${ENVCTL_REAL_HOME:-}" ] && [ -d "$ENVCTL_REAL_HOME/.codex" ]; then
   tar -C "$ENVCTL_REAL_HOME/.codex" -cf - . | tar -C "$M/.local/share/codex" --keep-old-files -xf - 2>/dev/null || true
@@ -139,8 +157,19 @@ if config.exists():
     text = text.replace("/home/drdave/.cargo/bin/weave", "weave")
     text = text.replace("/home/drdave/.local/bin/icm", "icm")
     text = text.replace("/usr/local/bin/vox", "vox")
+    text = text.replace('command = "npx"', 'command = "bunx"')
     text = re.sub(r'model_catalog_json = ".*?/model-catalog\.json"', f'model_catalog_json = "{home}/model-catalog.json"', text)
     text = re.sub(r'\n\[hooks\.state\](?:\n\n?\[hooks\.state\."[^"]+"\]\ntrusted_hash = "[^"]*")+', '\n[hooks.state]\n', text)
+    lines = []
+    in_hooks_state = False
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            in_hooks_state = stripped == "[hooks.state]"
+        if in_hooks_state and re.match(r"^\s*enabled\s*=", line):
+            continue
+        lines.append(line)
+    text = "\n".join(lines) + ("\n" if text.endswith("\n") else "")
     config.write_text(text)
 hooks = home / "hooks.json"
 if hooks.exists():
@@ -152,24 +181,28 @@ if hooks.exists():
                     hook["command"] = hook["command"].replace("/home/drdave/.local/bin/icm", "icm")
     hooks.write_text(json.dumps(data, indent=2) + "\n")
 PYCONF
-if "$VDIR/bin/codex" --version >/dev/null 2>&1 && "$LINK" --version >/dev/null 2>&1; then
+if "$VDIR/bin/codex" --version >/dev/null 2>&1 && "$LINK" --version >/dev/null 2>&1 && CODEX_HOME= CODEX_SQLITE_HOME= "$LINK" mcp list >/dev/null 2>&1; then
   if [ -d "$M/.toolchains/codex" ]; then
     FLATARCH="$M/var/lib/envctl/legacy-archives/codex-flat-$(date -u +%Y-%m-%d)"
     install -d -m 755 "$FLATARCH"
     mv "$M/.toolchains/codex" "$FLATARCH/codex"
     echo "archived legacy flat install: .toolchains/codex -> $FLATARCH/codex"
   fi
-  BUN_INSTALL="$M/.toolchains/.bun"
-  [ -x "$BUN_INSTALL/bin/bun" ] && PATH="$BUN_INSTALL/bin:$PATH" bun remove -g @openai/codex >/dev/null 2>&1 || true
+  for BUN_INSTALL in "$M/.toolchains/.bun" "$M/.toolchains/bun"; do
+    [ -x "$BUN_INSTALL/bin/bun" ] && PATH="$BUN_INSTALL/bin:$PATH" bun remove -g @openai/codex >/dev/null 2>&1 || true
+    rm -f "$BUN_INSTALL/bin/codex" "$BUN_INSTALL/install/global/node_modules/.bin/codex"
+    rm -rf "$BUN_INSTALL/install/cache/@openai/codex" "$BUN_INSTALL/install/cache/@openai/codex"* \
+      "$BUN_INSTALL/install/global/node_modules/@openai/codex" "$BUN_INSTALL/install/global/node_modules/@openai/codex"*
+  done
 else
-  echo "codex: new pinned binary or wrapper failed --version; legacy install left in place" >&2
+  echo "codex: new pinned binary, wrapper, or MCP config failed verification; legacy install left in place" >&2
   exit 1
 fi
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export PATH="$M/usr/bin:$M/.local/bin:$PATH"; link="$M/usr/bin/codex"; cur="$M/.toolchains/openai-codex/current/bin/codex"; [ -x "$cur" ] && [ -x "$link" ] && grep -q "envctl codex wrapper" "$link" && CODEX_HOME= CODEX_SQLITE_HOME= codex --version''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export PATH="$M/usr/bin:$M/.local/bin:$M/.toolchains/node/bin:$PATH"; link="$M/usr/bin/codex"; cur="$M/.toolchains/openai-codex/current/bin/codex"; [ -x "$cur" ] && [ -x "$link" ] && grep -q "envctl codex wrapper" "$link" && [ "$(readlink -f "$M/.local/bin/codex" 2>/dev/null)" = "$(readlink -f "$link" 2>/dev/null)" ] && CODEX_HOME= CODEX_SQLITE_HOME= codex --version >/dev/null && CODEX_HOME= CODEX_SQLITE_HOME= codex mcp list >/dev/null && grep -q 'CODEX_BIN_PATH=.*openai-codex/current/bin/codex' "$link" && [ ! -e "$M/.toolchains/bun/bin/codex" ] && [ ! -L "$M/.toolchains/bun/bin/codex" ] && [ ! -e "$M/.toolchains/.bun/bin/codex" ] && [ ! -L "$M/.toolchains/.bun/bin/codex" ] && [ ! -e "$M/.toolchains/bun/install/global/node_modules/.bin/codex" ] && [ ! -L "$M/.toolchains/bun/install/global/node_modules/.bin/codex" ] && [ ! -e "$M/.toolchains/.bun/install/global/node_modules/.bin/codex" ] && [ ! -L "$M/.toolchains/.bun/install/global/node_modules/.bin/codex" ] && ! grep -Rqs '"@openai/codex"' "$M/.toolchains/bun/install/global/package.json" "$M/.toolchains/bun/install/global/bun.lock" "$M/.toolchains/.bun/install/global/package.json" "$M/.toolchains/.bun/install/global/bun.lock" 2>/dev/null && ! find "$M/.toolchains/bun" "$M/.toolchains/.bun" -path '*/@openai/codex*' -print -quit 2>/dev/null | grep -q .''']
 [component.fix]
 kind = "script"
 script = '''
@@ -212,12 +245,30 @@ META_ROOT="$(cd "$bindir/../.." && pwd)"
 export META_ROOT
 export CODEX_HOME="${CODEX_HOME:-$META_ROOT/.local/share/codex}"
 export CODEX_SQLITE_HOME="${CODEX_SQLITE_HOME:-$META_ROOT/.local/state/codex}"
-export PATH="$META_ROOT/usr/bin:$META_ROOT/.local/bin:$META_ROOT/.toolchains/cargo/bin:$META_ROOT/.toolchains/.bun/bin:$PATH"
+# Codex must resolve to the Rust CLI, never the legacy Bun-installed JS shim.
+export CODEX_BIN_PATH="${CODEX_BIN_PATH:-$META_ROOT/.toolchains/openai-codex/current/bin/codex}"
+export CODEX_CLI_BIN="$CODEX_BIN_PATH"
+# Keep meta shims first. The Bun tool-bin directory remains available for non-Codex
+# tools such as gemini/vite, but the old @openai/codex Bun package is not on this path.
+export PATH="$META_ROOT/usr/bin:$META_ROOT/.local/bin:$META_ROOT/.toolchains/cargo/bin:$META_ROOT/.toolchains/.bun/bin:$META_ROOT/.toolchains/node/bin:$PATH"
 umask 077
 mkdir -p "$CODEX_HOME" "$CODEX_SQLITE_HOME"
 exec "$META_ROOT/.toolchains/openai-codex/current/bin/codex" "$@"
 WRAPPER
 chmod 755 "$LINK"
+install -d -m 755 "$M/.local/bin"
+ln -sfn "$LINK" "$M/.local/bin/codex"
+if [ -n "${ENVCTL_REAL_HOME:-}" ]; then
+  real_link="$ENVCTL_REAL_HOME/.local/bin/codex"
+  install -d -m 755 "$(dirname "$real_link")"
+  if [ -e "$real_link" ] && [ ! -L "$real_link" ]; then
+    ARCH="$M/var/lib/envctl/legacy-archives/real-home-bin-$(date -u +%Y-%m-%d)/.local/bin"
+    install -d -m 755 "$ARCH"
+    mv "$real_link" "$ARCH/codex"
+    echo "archived previous real-home codex front door: $ARCH/codex"
+  fi
+  ln -sfn "$LINK" "$real_link"
+fi
 install -d -m 700 "$M/.local/share/codex" "$M/.local/state/codex"
 if [ -n "${ENVCTL_REAL_HOME:-}" ] && [ -d "$ENVCTL_REAL_HOME/.codex" ]; then
   tar -C "$ENVCTL_REAL_HOME/.codex" -cf - . | tar -C "$M/.local/share/codex" --keep-old-files -xf - 2>/dev/null || true
@@ -232,8 +283,19 @@ if config.exists():
     text = text.replace("/home/drdave/.cargo/bin/weave", "weave")
     text = text.replace("/home/drdave/.local/bin/icm", "icm")
     text = text.replace("/usr/local/bin/vox", "vox")
+    text = text.replace('command = "npx"', 'command = "bunx"')
     text = re.sub(r'model_catalog_json = ".*?/model-catalog\.json"', f'model_catalog_json = "{home}/model-catalog.json"', text)
     text = re.sub(r'\n\[hooks\.state\](?:\n\n?\[hooks\.state\."[^"]+"\]\ntrusted_hash = "[^"]*")+', '\n[hooks.state]\n', text)
+    lines = []
+    in_hooks_state = False
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith("[") and stripped.endswith("]"):
+            in_hooks_state = stripped == "[hooks.state]"
+        if in_hooks_state and re.match(r"^\s*enabled\s*=", line):
+            continue
+        lines.append(line)
+    text = "\n".join(lines) + ("\n" if text.endswith("\n") else "")
     config.write_text(text)
 hooks = home / "hooks.json"
 if hooks.exists():
@@ -246,11 +308,12 @@ if hooks.exists():
     hooks.write_text(json.dumps(data, indent=2) + "\n")
 PYCONF
 "$LINK" --version >/dev/null
+CODEX_HOME= CODEX_SQLITE_HOME= "$LINK" mcp list >/dev/null
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; BUN_INSTALL="$M/.toolchains/.bun"; [ -x "$BUN_INSTALL/bin/bun" ] && PATH="$BUN_INSTALL/bin:$PATH" bun remove -g @openai/codex >/dev/null 2>&1 || true; for t in "$M/usr/bin/codex" "$M/.local/bin/codex"; do if { [ -L "$t" ] || grep -q "envctl codex wrapper" "$t" 2>/dev/null; }; then rm -f "$t"; fi; done; rm -rf "$M/.toolchains/openai-codex"''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; for BUN_INSTALL in "$M/.toolchains/.bun" "$M/.toolchains/bun"; do [ -x "$BUN_INSTALL/bin/bun" ] && PATH="$BUN_INSTALL/bin:$PATH" bun remove -g @openai/codex >/dev/null 2>&1 || true; rm -f "$BUN_INSTALL/bin/codex" "$BUN_INSTALL/install/global/node_modules/.bin/codex"; rm -rf "$BUN_INSTALL/install/cache/@openai/codex" "$BUN_INSTALL/install/cache/@openai/codex"* "$BUN_INSTALL/install/global/node_modules/@openai/codex" "$BUN_INSTALL/install/global/node_modules/@openai/codex"*; done; for t in "$M/usr/bin/codex" "$M/.local/bin/codex"; do if { [ -L "$t" ] || grep -q "envctl codex wrapper" "$t" 2>/dev/null; }; then rm -f "$t"; fi; done; if [ -n "${ENVCTL_REAL_HOME:-}" ]; then t="$ENVCTL_REAL_HOME/.local/bin/codex"; if { [ -L "$t" ] || grep -q "envctl codex wrapper" "$t" 2>/dev/null; }; then rm -f "$t"; fi; fi; rm -rf "$M/.toolchains/openai-codex"''']
 
 [[component]]
 id = "gemini-cli"
@@ -340,7 +403,7 @@ script = "curl -fsSL https://cli.devin.ai/install.sh | bash"
 [[component]]
 id = "group-ai-clis"
 name = "All AI CLIs"
-description = "Meta: claude + codex + gemini + kimi + devin (Codex source-build preferred; Gemini via Bun)."
+description = "Meta: claude + codex + gemini + kimi + devin (Codex Rust release/toolchain; Gemini via Bun)."
 requires = ["claude-code-cli", "codex-cli", "gemini-cli", "kimi-cli", "devin-cli"]
 [component.detect]
 kind = "command"

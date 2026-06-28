@@ -178,6 +178,10 @@ fi
 export PATH="$META_ROOT/.nix-profile/bin:$PATH"
 if [[ $- == *i* ]] && [[ -z "${ZELLIJ:-}" ]] && [[ -z "${YAZELIX_ACTIVE:-}" ]] && [[ "${TERM:-dumb}" != "dumb" ]] && command -v yzx >/dev/null 2>&1; then
   export YAZELIX_ACTIVE=1
+  # Bring the meta /usr mirror onto PATH/LD_LIBRARY_PATH BEFORE re-exec'ing into
+  # zellij/nushell, so the yazelix panes inherit usr/bin regardless of where the
+  # standalone `meta toolchain path` block lands in this file (it trails this one).
+  command -v envctl >/dev/null 2>&1 && eval "$(envctl env --toolchains)"
   yzx enter
 fi
 '''

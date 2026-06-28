@@ -12,7 +12,7 @@ context_access:
 
 quick_commands:
   check_kb_state: "git-kb list --path context/ --json"
-  bootstrap_context: "git-kb checkout --path context/"
+  bootstrap_context: "git-kb checkout context/"
   view_tasks: "git-kb board --json"
   show_active: "git-kb show context/overridable/active --json"
   create_doc: "git-kb create --type <type> --slug <slug> --title <title> --json"
@@ -160,7 +160,7 @@ git-kb create --type context --slug context/overridable/progress --title "Progre
 
 After creating, checkout to edit:
 ```bash
-git-kb checkout --path context/
+git-kb checkout context/
 ```
 
 Edit files in `.kb/workspace/context/` with the gathered information.
@@ -221,7 +221,7 @@ Before ANY work or file access:
 1. [ ] AGENTS.md fully read
 2. [ ] Context documents loaded:
    ```bash
-   git-kb checkout --path context/
+   git-kb checkout context/
    ```
 3. [ ] All required context read:
    - [ ] `git-kb show context/immutable/project-brief --json`
@@ -293,7 +293,7 @@ For agent or script workflows, prefer MCP tools. If using CLI fallback, use `--j
 | `git-kb show <slug> --json` | View document content |
 | `git-kb board --json` | Kanban view of tasks (supports `--group-by`, `--columns`, `--sort-by`, `--sort-direction`) |
 | `git-kb checkout <slug>` | Materialize for editing |
-| `git-kb checkout --path context/` | Checkout by path prefix |
+| `git-kb checkout context/` | Checkout by path prefix |
 | `git-kb status --json` | Show workspace changes |
 | `git-kb commit -m "msg" [pathspecs...]` | Save changes to database (for multi-doc commits, pass pathspecs or `--all`) |
 | `git-kb create --type <t> --slug <s> --title <t> --json` | Create new document |
@@ -626,7 +626,7 @@ Epic (tasks/gitkb-1: "M3: Local Platform")
 - Hitting a blocker that affects overall progress
 
 **The Bootstrap Flow** - every session should start with context:
-1. **Load context**: `kb_context` or `kb_checkout --path context/`
+1. **Load context**: `kb_context` or `kb_checkout context/`
 2. **Read active context**: Understand current focus
 3. **Check board**: `kb_board` to see task states
 4. **Then work**: With full situational awareness

@@ -206,6 +206,7 @@ general "`.Codex/skills/*` are kasetto-generated" rule above — the kasetto-man
 **Change history:**
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
+| 2026-06-27 | Harden loop-state gate for planning-engineer table state | `ci/gates/loop-state.sh`; `scripts/tests/test-loop-state-gate.sh` | Review found open planning PRs carried `.handoff/loop/plan/loop_state.md` as markdown tables while the gate only parsed `key: value`, causing false missing-counter failures. The gate now accepts both presentations while preserving the same required counter schema and fail-closed tests for missing fields. |
 | 2026-06-26 | Recover and eject planning-engineer harness | `.claude`/`.agents` planning skills+agents; `.handoff/loop/plan`; `ci/gates/{loop-state,harness-scripts}.sh`; `scripts/tests/test-plan-*` | Recovered Claude-lost `/harness:planning-engineer` + `/harness:plan-loop` work from transcript, re-ejected into envctl, and added hermetic gates so the plan-loop state/eject/contract cannot silently drift |
 | 2026-06-04 | Initial harness build | agents/{feature-architect,rust-implementer,invariant-guardian}; skills/{feature-forge,rust-feature-impl} | Build a feature-delivery construction crew (design/implement/verify) that upholds the non-negotiable invariants |
 | 2026-06-04 | Architect uses return-value (not Write) | agents/feature-architect; skills/feature-forge | Smoke test: `Plan` type is read-only and cannot Write its plan file — orchestrator persists the returned text |

@@ -255,7 +255,12 @@ fn wait_timeout(child: &mut Child, dur: Duration, pid: u32) -> (Option<i32>, boo
 /// Kill the child's whole process group (it is the group leader via setsid).
 fn kill_group(pid: u32) {
     if let Some(p) = rustix::process::Pid::from_raw(pid as i32) {
-        let _ = rustix::process::kill_process_group(p, rustix::process::Signal::Kill);
+        // If the child never became a group leader (for example, if pre_exec
+        // failed before setsid() took effect), fall back to killing the child
+        // PID directly so a wedged probe cannot linger.
+        if rustix::process::kill_process_group(p, rustix::process::Signal::Kill).is_err() {
+            let _ = rustix::process::kill_process(p, rustix::process::Signal::Kill);
+        }
     }
 }
 
@@ -432,6 +437,30 @@ fn enforced_meta_env(mut hook_env: Vec<(String, String)>) -> Vec<(String, String
     env
 }
 
+/// Resolve `(program, leading-args)` for an optional non-interactive `sudo -n`
+/// prefix. Without sudo the program is the command itself and there are no leading
+/// args; with sudo the program is `sudo` and the command becomes its first arg.
+fn sudo_wrap(command: String, needs_sudo: bool) -> (String, Vec<String>) {
+    if needs_sudo {
+        ("sudo".to_string(), vec!["-n".to_string(), command])
+    } else {
+        (command, Vec::new())
+    }
+}
+
+fn env_pairs(env: &BTreeMap<String, String>) -> Vec<(String, String)> {
+    env.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
+}
+
+/// Never executes; reports every hook as `DryRun`. Used by tests + previews.
+pub struct DryRunRunner;
+
+impl HookRunner for DryRunRunner {
+    fn run(&self, comp: &str, phase: Phase, _h: &Hook, _d: bool, _sink: &EventSink) -> OpResult {
+        mk(comp, phase, OpStatus::DryRun, None, "dry-run")
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -496,29 +525,5 @@ mod tests {
         assert!(!entries.contains(&"/home/alice/.local/bin"));
         assert!(!entries.contains(&"/home/alice/.cargo/bin"));
         assert!(!entries.contains(&"/home/alice/.nix-profile/bin"));
-    }
-}
-
-/// Resolve `(program, leading-args)` for an optional non-interactive `sudo -n`
-/// prefix. Without sudo the program is the command itself and there are no leading
-/// args; with sudo the program is `sudo` and the command becomes its first arg.
-fn sudo_wrap(command: String, needs_sudo: bool) -> (String, Vec<String>) {
-    if needs_sudo {
-        ("sudo".to_string(), vec!["-n".to_string(), command])
-    } else {
-        (command, Vec::new())
-    }
-}
-
-fn env_pairs(env: &BTreeMap<String, String>) -> Vec<(String, String)> {
-    env.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
-}
-
-/// Never executes; reports every hook as `DryRun`. Used by tests + previews.
-pub struct DryRunRunner;
-
-impl HookRunner for DryRunRunner {
-    fn run(&self, comp: &str, phase: Phase, _h: &Hook, _d: bool, _sink: &EventSink) -> OpResult {
-        mk(comp, phase, OpStatus::DryRun, None, "dry-run")
     }
 }
