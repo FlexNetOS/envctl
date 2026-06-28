@@ -10,8 +10,9 @@
 use crate::component::{Component, HookRunner, Phase};
 use crate::error::{run_phase, RunContext};
 use crate::event::{Event, EventSink, Stream};
+use crate::layout::MetaLayout;
 use crate::model::{
-    AddRepoSpec, OpResult, OpStatus, Registry, ResetGates, RunPlan, RunSummary, Wiring,
+    AddRepoMode, AddRepoSpec, OpResult, OpStatus, Registry, ResetGates, RunPlan, RunSummary, Wiring,
 };
 use std::collections::HashSet;
 use std::path::Path;
@@ -408,29 +409,23 @@ fn has_system_scope(w: &Wiring) -> bool {
 /// was undetectable. Now each owned footprint is conservatively probed.
 fn wiring_present(comp: &Component) -> bool {
     let w = &comp.wiring;
+    let layout = MetaLayout::from_env_or_default();
 
     let shell_rc_ok = w.shell_rc.iter().all(|blk| {
-        let file = match blk.file.strip_prefix("~/") {
-            Some(rest) => match std::env::var("HOME") {
-                Ok(h) => format!("{h}/{rest}"),
-                Err(_) => return false,
-            },
-            None => blk.file.clone(),
-        };
+        let file = layout.expand_meta_path(&blk.file);
+        // Suffix-agnostic: wizard-written blocks and envctl-written blocks both
+        // satisfy the same marker. Keep this in sync with detect.rs.
         std::fs::read_to_string(&file)
             .map(|t| t.contains(&format!("BEGIN {}", blk.marker)))
             .unwrap_or(false)
     });
 
     // path_entries are realized into the engine-owned "envctl PATH" block in
-    // ~/.bashrc (see wiring::path_block); probe for that marker.
+    // $META_ROOT/.bashrc (see wiring::path_block); probe for that marker.
     let path_ok = w.path_entries.is_empty() || {
-        match std::env::var("HOME") {
-            Ok(h) => std::fs::read_to_string(format!("{h}/.bashrc"))
-                .map(|t| t.contains("BEGIN envctl PATH"))
-                .unwrap_or(false),
-            Err(_) => false,
-        }
+        std::fs::read_to_string(layout.meta_root().join(".bashrc"))
+            .map(|t| t.contains("BEGIN envctl PATH"))
+            .unwrap_or(false)
     };
 
     // System-scope footprints: each is present iff its on-disk target exists
@@ -660,6 +655,15 @@ pub fn add_repo(
 ) -> anyhow::Result<RunSummary> {
     let id = spec.id.trim().to_string();
     validate_add_repo_spec(&spec)?; // shared gate: id slug + ''' + leading-dash guard
+
+    // ROUTE: peer (meta-native, .meta.yaml) vs component (build-from-source drop-in).
+    // `Auto` (default) sends owned/FlexNetOS remotes down the peer path — the
+    // meta-repo model — and everything else down the legacy component path. This
+    // is what un-drifts add-repo from the child-repo policy.
+    if resolve_peer(&spec) {
+        return crate::peer::register_peer(&spec, dry_run, sink);
+    }
+
     if reg.get(&id).is_some() {
         anyhow::bail!(
             "component id '{id}' already exists — refusing to shadow it (pick another --id)"
@@ -697,7 +701,7 @@ pub fn add_repo(
 
     // Re-check id-collision against a FRESH registry (close the long-pipeline
     // TOCTOU) BEFORE installing — so a concurrent registration can't leave
-    // orphaned meta .local/bin frontdoors + a PATH block behind on the bail path (audit fix).
+    // orphaned meta usr/bin frontdoors + a PATH block behind on the bail path (audit fix).
     if let Ok(fresh) = Registry::load(manifest_dir) {
         if fresh.get(&id).is_some() {
             anyhow::bail!(
@@ -706,12 +710,12 @@ pub fn add_repo(
         }
     }
 
-    // INSTALL + WIRE-IN (regular frontdoor, refuse-shadow, refuse-unmanaged-unless-force).
+    // INSTALL + WIRE-IN (symlink, refuse-shadow, refuse-unmanaged-unless-force).
     let iplan = build_install_plan(&id, &spec, &outcome);
     let ireport = crate::install::install_and_wire(&iplan, spec.force, false, sink);
     // AUDIT-FIX (#24): a half-installed add-repo must NOT persist a drop-in. If
     // install_and_wire reported failures — or produced no installed paths when
-    // installs were expected — the frontdoors/targets we'd record never landed, so
+    // installs were expected — the symlinks/targets we'd record never landed, so
     // writing components.d/<id>.toml would create permanent drift (and a later
     // `reset <id>` would try to unwire links that never existed). Bail BEFORE
     // write_dropin so a failed install leaves nothing registered.
@@ -762,6 +766,21 @@ use crate::register::RegisterSpec;
 /// injection, `'''` manifest break, ref shape). Call this BEFORE any path join
 /// or git invocation. (AUDIT-FIX blocker: the `--connect` path used to skip both
 /// of these, allowing `--id ../../etc/x` traversal and git option-injection.)
+/// Decide whether this add-repo goes down the PEER path. `Auto` (default) routes
+/// owned/FlexNetOS remotes to peer; an explicit `--mode peer|component` overrides.
+/// A local-only working tree (no remote URL) can never be a peer, so `Auto`/`Peer`
+/// fall back to component there (and `peer::plan_peer` bails with a clear message
+/// if `Peer` was forced).
+pub(crate) fn resolve_peer(spec: &AddRepoSpec) -> bool {
+    match spec.mode {
+        AddRepoMode::Component => false,
+        AddRepoMode::Peer => true,
+        AddRepoMode::Auto => {
+            !spec.git_url.trim().is_empty() && crate::peer::is_owned_remote(&spec.git_url)
+        }
+    }
+}
+
 pub(crate) fn validate_add_repo_spec(spec: &AddRepoSpec) -> anyhow::Result<()> {
     let id = spec.id.trim();
     if !is_valid_slug(id) {
@@ -994,4 +1013,103 @@ fn now_epoch() -> u128 {
         .duration_since(std::time::UNIX_EPOCH)
         .map(|d| d.as_nanos())
         .unwrap_or(0)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::model::{AddRepoSpec, ShellRcBlock, Wiring};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[test]
+    fn resolve_peer_routes_by_owner_and_honors_mode_override() {
+        let owned = |mode| AddRepoSpec {
+            git_url: "https://github.com/FlexNetOS/beads_rust".into(),
+            mode,
+            ..Default::default()
+        };
+        let foreign = |mode| AddRepoSpec {
+            git_url: "https://github.com/someone/tool".into(),
+            mode,
+            ..Default::default()
+        };
+        // Auto: owned → peer, foreign → component.
+        assert!(resolve_peer(&owned(AddRepoMode::Auto)));
+        assert!(!resolve_peer(&foreign(AddRepoMode::Auto)));
+        // Explicit override wins either way.
+        assert!(resolve_peer(&foreign(AddRepoMode::Peer)));
+        assert!(!resolve_peer(&owned(AddRepoMode::Component)));
+        // Local-only (no remote) never auto-routes to peer.
+        assert!(!resolve_peer(&AddRepoSpec {
+            git_url: String::new(),
+            local_path: Some("/tmp/x".into()),
+            mode: AddRepoMode::Auto,
+            ..Default::default()
+        }));
+    }
+
+    #[test]
+    fn wiring_present_probes_meta_root_bashrc_not_os_home() {
+        let root = temp_root("executor-wiring-meta-root");
+        let meta = root.join("meta");
+        let home = root.join("home");
+        std::fs::create_dir_all(&meta).unwrap();
+        std::fs::create_dir_all(&home).unwrap();
+        std::fs::write(
+            meta.join(".bashrc"),
+            "# >>> BEGIN envctl PATH (added by envctl) >>>\n# <<< END envctl PATH <<<\n# >>> BEGIN meta toolchain path (added by envctl) >>>\neval \"$(envctl env --toolchains)\"\n# <<< END meta toolchain path <<<\n",
+        )
+        .unwrap();
+        std::fs::write(home.join(".bashrc"), "").unwrap();
+
+        let old_meta = std::env::var_os("META_ROOT");
+        let old_home = std::env::var_os("HOME");
+        std::env::set_var("META_ROOT", &meta);
+        std::env::set_var("HOME", &home);
+
+        let comp = Component {
+            id: "bun".into(),
+            name: "bun".into(),
+            description: String::new(),
+            requires: Vec::new(),
+            gpu_required: false,
+            destructive: false,
+            detect: None,
+            install: None,
+            verify: None,
+            fix: None,
+            remove: None,
+            wiring: Wiring {
+                path_entries: vec!["$META_ROOT/usr/bin".into()],
+                shell_rc: vec![ShellRcBlock {
+                    file: "$META_ROOT/.bashrc".into(),
+                    marker: "meta toolchain path".into(),
+                    content: "eval \"$(envctl env --toolchains)\"".into(),
+                }],
+                ..Default::default()
+            },
+            guards: Vec::new(),
+        };
+
+        assert!(wiring_present(&comp));
+
+        restore_env("META_ROOT", old_meta);
+        restore_env("HOME", old_home);
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    fn temp_root(name: &str) -> std::path::PathBuf {
+        let nanos = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        std::env::temp_dir().join(format!("envctl-{name}-{}-{nanos}", std::process::id()))
+    }
+
+    fn restore_env(key: &str, value: Option<std::ffi::OsString>) {
+        match value {
+            Some(value) => std::env::set_var(key, value),
+            None => std::env::remove_var(key),
+        }
+    }
 }

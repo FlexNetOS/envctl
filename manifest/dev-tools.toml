@@ -48,7 +48,7 @@ requires = ["bun"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; t=\"$META_ROOT/.local/bin/vite\"; [ -x \"$M/.toolchains/.bun/bin/vite\" ] && [ -x \"$t\" ] && [ ! -L \"$t\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/.bun/bin/vite\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/vite\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/.bun/bin/vite\")\" ]"]
 [component.install]
 kind = "script"
 script = '''
@@ -57,13 +57,13 @@ M="${META_ROOT:?META_ROOT required}"
 export BUN_INSTALL="$M/.toolchains/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 bun add -g vite
-mkdir -p "$META_ROOT/.local/bin"
-dst="$META_ROOT/.local/bin/vite"
+mkdir -p "$META_ROOT/usr/bin"
+dst="$META_ROOT/usr/bin/vite"
 src="$BUN_INSTALL/bin/vite"
-ARCH="$META_ROOT/.local/state/envctl/legacy-archives/home-links-$(date +%Y-%m-%d)"
+ARCH="$META_ROOT/var/lib/envctl/legacy-archives/home-links-$(date +%Y-%m-%d)"
 if [ -e "$dst" ] && [ ! -L "$dst" ]; then mkdir -p "$ARCH/.local/bin"; mv "$dst" "$ARCH/.local/bin/vite"; echo "archived copy: vite"; fi
 [ -L "$dst" ] && rm "$dst"
-install -m 755 "$src" "$dst"
+ln -s "$src" "$dst"
 '''
 [component.verify]
 kind = "command"
@@ -77,13 +77,13 @@ M="${META_ROOT:?META_ROOT required}"
 export BUN_INSTALL="$M/.toolchains/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 bun add -g vite
-mkdir -p "$META_ROOT/.local/bin"
-install -m 755 "$BUN_INSTALL/bin/vite" "$META_ROOT/.local/bin/vite"
+mkdir -p "$META_ROOT/usr/bin"
+ln -sfn "$BUN_INSTALL/bin/vite" "$META_ROOT/usr/bin/vite"
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; bun remove -g vite; [ -L \"$META_ROOT/.local/bin/vite\" ] && rm \"$META_ROOT/.local/bin/vite\" || true"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export BUN_INSTALL=\"$M/.toolchains/.bun\"; export PATH=\"$BUN_INSTALL/bin:$PATH\"; bun remove -g vite; [ -L \"$META_ROOT/usr/bin/vite\" ] && rm \"$META_ROOT/usr/bin/vite\" || true"]
 
 
 [[component]]
@@ -94,7 +94,7 @@ requires = ["rustup"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; t=\"$META_ROOT/.local/bin/cargo-nextest\"; [ -x \"$M/.toolchains/cargo/bin/cargo-nextest\" ] && [ -x \"$t\" ] && [ ! -L \"$t\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/cargo/bin/cargo-nextest\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/cargo-nextest\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/cargo/bin/cargo-nextest\")\" ]"]
 [component.install]
 kind = "script"
 script = '''
@@ -103,13 +103,13 @@ M="${META_ROOT:?META_ROOT required}"
 export CARGO_HOME="$M/.toolchains/cargo"
 export PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"
 cargo install cargo-nextest --version 0.9.137 --locked
-mkdir -p "$META_ROOT/.local/bin"
-dst="$META_ROOT/.local/bin/cargo-nextest"
+mkdir -p "$META_ROOT/usr/bin"
+dst="$META_ROOT/usr/bin/cargo-nextest"
 src="$CARGO_HOME/bin/cargo-nextest"
-ARCH="$META_ROOT/.local/state/envctl/legacy-archives/home-links-$(date +%Y-%m-%d)"
+ARCH="$META_ROOT/var/lib/envctl/legacy-archives/home-links-$(date +%Y-%m-%d)"
 if [ -e "$dst" ] && [ ! -L "$dst" ]; then mkdir -p "$ARCH/.local/bin"; mv "$dst" "$ARCH/.local/bin/cargo-nextest"; echo "archived copy: cargo-nextest"; fi
 [ -L "$dst" ] && rm "$dst"
-install -m 755 "$src" "$dst"
+ln -s "$src" "$dst"
 '''
 [component.verify]
 kind = "command"
@@ -123,13 +123,13 @@ M="${META_ROOT:?META_ROOT required}"
 export CARGO_HOME="$M/.toolchains/cargo"
 export PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"
 cargo install cargo-nextest --version 0.9.137 --force --locked
-mkdir -p "$META_ROOT/.local/bin"
-install -m 755 "$CARGO_HOME/bin/cargo-nextest" "$META_ROOT/.local/bin/cargo-nextest"
+mkdir -p "$META_ROOT/usr/bin"
+ln -sfn "$CARGO_HOME/bin/cargo-nextest" "$META_ROOT/usr/bin/cargo-nextest"
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export CARGO_HOME=\"$M/.toolchains/cargo\"; export PATH=\"$CARGO_HOME/bin:$PATH\"; cargo uninstall cargo-nextest || true; [ -L \"$META_ROOT/.local/bin/cargo-nextest\" ] && rm \"$META_ROOT/.local/bin/cargo-nextest\" || true"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export CARGO_HOME=\"$M/.toolchains/cargo\"; export PATH=\"$CARGO_HOME/bin:$PATH\"; cargo uninstall cargo-nextest || true; [ -L \"$META_ROOT/usr/bin/cargo-nextest\" ] && rm \"$META_ROOT/usr/bin/cargo-nextest\" || true"]
 
 
 # mold-linker REMOVED (Epic H TASK-0070): the apt mold linker is superseded by the meta-owned
@@ -141,11 +141,11 @@ args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export CARGO_HOME=\"$M/.
 [[component]]
 id = "wasmer"
 name = "Wasmer (WASM runtime)"
-description = "Wasmer runtime mirrored into $META_ROOT/.toolchains/wasmer with a $META_ROOT/.local/bin frontdoor."
+description = "Wasmer runtime mirrored into $META_ROOT/.toolchains/wasmer with a $META_ROOT/usr/bin frontdoor."
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; t=\"$META_ROOT/.local/bin/wasmer\"; [ -x \"$M/.toolchains/wasmer/bin/wasmer\" ] && [ -x \"$t\" ] && [ ! -L \"$t\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/wasmer/bin/wasmer\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/wasmer\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/wasmer/bin/wasmer\")\" ]"]
 [component.install]
 kind = "script"
 script = '''
@@ -155,14 +155,14 @@ DEST="$M/.toolchains/wasmer"
 export HOME="$M"
 curl -fsSL https://get.wasmer.io | sh
 rm -rf "$DEST"
-install -d -m 755 "$DEST" "$META_ROOT/.local/bin"
+install -d -m 755 "$DEST" "$META_ROOT/usr/bin"
 cp -a "$M/.wasmer/." "$DEST/"
-install -m 755 "$DEST/bin/wasmer" "$META_ROOT/.local/bin/wasmer"
+ln -sfn "$DEST/bin/wasmer" "$META_ROOT/usr/bin/wasmer"
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/.local/bin:$PATH\"; p=\"$(command -v wasmer)\"; [ \"$(realpath -e \"$p\")\" = \"$META_ROOT/.local/bin/wasmer\" ] && [ ! -L \"$META_ROOT/.local/bin/wasmer\" ] && wasmer --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/usr/bin:$PATH\"; [ \"$(readlink -f \"$(command -v wasmer)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/wasmer/bin/wasmer\")\" ] && wasmer --version"]
 [component.fix]
 kind = "script"
 script = '''
@@ -172,16 +172,16 @@ DEST="$M/.toolchains/wasmer"
 export HOME="$M"
 curl -fsSL https://get.wasmer.io | sh
 rm -rf "$DEST"
-install -d -m 755 "$DEST" "$META_ROOT/.local/bin"
+install -d -m 755 "$DEST" "$META_ROOT/usr/bin"
 cp -a "$M/.wasmer/." "$DEST/"
-install -m 755 "$DEST/bin/wasmer" "$META_ROOT/.local/bin/wasmer"
+ln -sfn "$DEST/bin/wasmer" "$META_ROOT/usr/bin/wasmer"
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; t=\"$META_ROOT/.local/bin/wasmer\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/wasmer\" && rm -f \"$t\"; rm -rf \"$M/.toolchains/wasmer\""]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; t=\"$META_ROOT/usr/bin/wasmer\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/wasmer\" && rm -f \"$t\"; rm -rf \"$M/.toolchains/wasmer\""]
 [component.wiring]
-path_entries = ["$META_ROOT/.local/bin"]
+path_entries = ["$META_ROOT/usr/bin"]
 
 
 [[component]]
@@ -190,60 +190,56 @@ name = "uv (Python toolchain)"
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; for b in uv uvx python3 python3.14; do t=\"$META_ROOT/.local/bin/$b\"; [ -x \"$t\" ] && [ ! -L \"$t\" ] || exit 1; done; [ -x \"$M/.toolchains/uv/bin/uv\" ] && [ -x \"$M/.toolchains/uv/bin/uvx\" ] && grep -q \".toolchains/uv/python\" \"$META_ROOT/.local/bin/python3\""]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/uv/bin/uv\" ] && [ -x \"$M/.toolchains/uv/bin/uvx\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/uv\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/uv/bin/uv\")\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/uvx\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/uv/bin/uvx\")\" ] && case \"$(readlink -f \"$META_ROOT/usr/bin/python3\" 2>/dev/null)\" in \"$M/.toolchains/uv/python\"/*) true;; *) false;; esac"]
 [component.install]
 kind = "script"
 script = '''
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/uv/bin"
-install -d -m 755 "$DEST" "$META_ROOT/.local/bin"
+install -d -m 755 "$DEST" "$META_ROOT/usr/bin"
 curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="$DEST" sh
-install -m 755 "$DEST/uv" "$META_ROOT/.local/bin/uv"
-install -m 755 "$DEST/uvx" "$META_ROOT/.local/bin/uvx"
+ln -sfn "$DEST/uv" "$META_ROOT/usr/bin/uv"
+ln -sfn "$DEST/uvx" "$META_ROOT/usr/bin/uvx"
 export UV_PYTHON_INSTALL_DIR="$M/.toolchains/uv/python"
 "$DEST/uv" python install 3.14 --preview || "$DEST/uv" python install 3.13
-py="$(find "$UV_PYTHON_INSTALL_DIR" -path '*/bin/python3*' -type f | sort -V | tail -n1)"
-if [ -n "$py" ]; then
-  cat > "$META_ROOT/.local/bin/python3" <<EOF
-#!/usr/bin/env bash
-exec "$py" "\$@"
-EOF
-  chmod 755 "$META_ROOT/.local/bin/python3"
-  install -m 755 "$META_ROOT/.local/bin/python3" "$META_ROOT/.local/bin/python3.14"
-fi
+# Select the python3 INTERPRETER (the canonical bin/python3), never a *-config script or the bare
+# versioned binary; the old `*/bin/python3*` -type f glob dropped the python3 symlink and let
+# `python3.14-config` sort last, silently linking python3 to a config script. Verify the pick imports
+# its stdlib before linking, so a broken/partial install can never leave python3 pointing at a
+# non-working interpreter. Link into the meta-local prefix ($META_ROOT), never $HOME (meta-local policy).
+py="$(find "$UV_PYTHON_INSTALL_DIR" -path '*/bin/python3' | sort -V | tail -n1)"
+[ -n "$py" ] && "$py" -c 'import encodings' 2>/dev/null && ln -sfn "$py" "$META_ROOT/usr/bin/python3"
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/.local/bin:$PATH\"; p=\"$(command -v uv)\"; py=\"$(command -v python3)\"; [ \"$(realpath -e \"$p\")\" = \"$META_ROOT/.local/bin/uv\" ] && [ \"$(realpath -e \"$py\")\" = \"$META_ROOT/.local/bin/python3\" ] && [ ! -L \"$META_ROOT/.local/bin/uv\" ] && [ ! -L \"$META_ROOT/.local/bin/python3\" ] && uv --version && python3 --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/usr/bin:$PATH\"; [ \"$(readlink -f \"$(command -v uv)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/uv/bin/uv\")\" ] && case \"$(readlink -f \"$(command -v python3)\" 2>/dev/null)\" in \"$M/.toolchains/uv/python\"/*) true;; *) false;; esac && uv --version && python3 --version"]
 [component.fix]
 kind = "script"
 script = '''
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/uv/bin"
-install -d -m 755 "$DEST" "$META_ROOT/.local/bin"
+install -d -m 755 "$DEST" "$META_ROOT/usr/bin"
 export PATH="$DEST:$PATH"
 uv self update || curl -LsSf https://astral.sh/uv/install.sh | env UV_INSTALL_DIR="$DEST" sh
-install -m 755 "$DEST/uv" "$META_ROOT/.local/bin/uv"
-install -m 755 "$DEST/uvx" "$META_ROOT/.local/bin/uvx"
+ln -sfn "$DEST/uv" "$META_ROOT/usr/bin/uv"
+ln -sfn "$DEST/uvx" "$META_ROOT/usr/bin/uvx"
 export UV_PYTHON_INSTALL_DIR="$M/.toolchains/uv/python"
 "$DEST/uv" python install 3.14 --preview || "$DEST/uv" python install 3.13
-py="$(find "$UV_PYTHON_INSTALL_DIR" -path '*/bin/python3*' -type f | sort -V | tail -n1)"
-if [ -n "$py" ]; then
-  cat > "$META_ROOT/.local/bin/python3" <<EOF
-#!/usr/bin/env bash
-exec "$py" "\$@"
-EOF
-  chmod 755 "$META_ROOT/.local/bin/python3"
-  install -m 755 "$META_ROOT/.local/bin/python3" "$META_ROOT/.local/bin/python3.14"
-fi
+# Select the python3 INTERPRETER (the canonical bin/python3), never a *-config script or the bare
+# versioned binary; the old `*/bin/python3*` -type f glob dropped the python3 symlink and let
+# `python3.14-config` sort last, silently linking python3 to a config script. Verify the pick imports
+# its stdlib before linking, so a broken/partial install can never leave python3 pointing at a
+# non-working interpreter. Link into the meta-local prefix ($META_ROOT), never $HOME (meta-local policy).
+py="$(find "$UV_PYTHON_INSTALL_DIR" -path '*/bin/python3' | sort -V | tail -n1)"
+[ -n "$py" ] && "$py" -c 'import encodings' 2>/dev/null && ln -sfn "$py" "$META_ROOT/usr/bin/python3"
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; for b in uv uvx python3 python3.14; do t=\"$META_ROOT/.local/bin/$b\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/uv\" && rm -f \"$t\"; done; rm -rf \"$M/.toolchains/uv/bin\""]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; for b in uv uvx python3; do t=\"$META_ROOT/usr/bin/$b\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/uv\" && rm -f \"$t\"; done; rm -rf \"$M/.toolchains/uv/bin\""]
 
 
 # mlua — Lua-in-Rust scripting substrate (vendored Lua 5.4, pure rust-native, ZERO system-depth).
@@ -314,8 +310,8 @@ RS
 export CARGO_HOME="$M/.toolchains/cargo"
 export PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"
 cargo build --release --manifest-path "$SRC/Cargo.toml" --target-dir "$DEST/target"
-install -d -m 755 "$META_ROOT/.local/bin"
-install -m 755 "$DEST/target/release/lua-mlua" "$META_ROOT/.local/bin/lua-mlua"
+install -d -m 755 "$META_ROOT/usr/bin"
+ln -sfn "$DEST/target/release/lua-mlua" "$META_ROOT/usr/bin/lua-mlua"
 '''
 [component.verify]
 kind = "command"
@@ -330,11 +326,11 @@ M="${META_ROOT:?META_ROOT required}"
 export CARGO_HOME="$M/.toolchains/cargo"
 export PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"
 cargo build --release --manifest-path "$M/.toolchains/mlua/src/Cargo.toml" --target-dir "$M/.toolchains/mlua/target"
-install -m 755 "$M/.toolchains/mlua/target/release/lua-mlua" "$META_ROOT/.local/bin/lua-mlua"
+ln -sfn "$M/.toolchains/mlua/target/release/lua-mlua" "$META_ROOT/usr/bin/lua-mlua"
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -L \"$META_ROOT/.local/bin/lua-mlua\" ] && rm -f \"$META_ROOT/.local/bin/lua-mlua\"; rm -rf \"$M/.toolchains/mlua\"; true"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -L \"$META_ROOT/usr/bin/lua-mlua\" ] && rm -f \"$META_ROOT/usr/bin/lua-mlua\"; rm -rf \"$M/.toolchains/mlua\"; true"]
 [component.wiring]
-path_entries = ["$META_ROOT/.local/bin"]
+path_entries = ["$META_ROOT/usr/bin"]

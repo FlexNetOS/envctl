@@ -40,13 +40,13 @@ macro_rules! envctl_examples {
 
 use envctl_engine::secrets::run_secretctl;
 use envctl_engine::{
-    AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentDoctorSpec, AgentInitSpec, AgentListKind,
-    AgentListSpec, AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentScope, AgentSectionSel,
-    AgentSyncSpec, AiAgent, BuildStrategy, BuildSystem, DashboardSpec, DriftSummary, Engine,
-    EnvReport, Event, EventSink, HubRegistryReport, HubRegistryStatus, MigrationAction,
-    MigrationReport, MigrationRisk, MigrationScope, MigrationSpec, MigrationStatus, MigrationVerb,
-    OpStatus, Phase, Refactor, RefactorGoal, RenameRule, ResetGates, RunPlan, SelfUninstallSpec,
-    Severity,
+    AddRepoMode, AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentDoctorSpec, AgentInitSpec,
+    AgentListKind, AgentListSpec, AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentScope,
+    AgentSectionSel, AgentSyncSpec, AiAgent, BuildStrategy, BuildSystem, DashboardSpec,
+    DriftSummary, Engine, EnvReport, Event, EventSink, HubRegistryReport, HubRegistryStatus,
+    MigrationAction, MigrationReport, MigrationRisk, MigrationScope, MigrationSpec,
+    MigrationStatus, MigrationVerb, OpStatus, Phase, Refactor, RefactorGoal, RenameRule,
+    ResetGates, RunPlan, SelfUninstallSpec, Severity,
 };
 
 #[derive(Parser)]
@@ -56,7 +56,7 @@ use envctl_engine::{
     color = clap::ColorChoice::Auto,
     styles = clap_styles(),
     about = "meta's agentic environment manager — installs every tool into meta's .local layout",
-    long_about = "A declarative, GPU-aware, agentic environment manager for the whole meta workspace, written in Rust.\n\nenvctl is a first-class meta peer member: it brings every tool, dependency, provider, vendor, CLI, and config to a declared state and installs it INTO meta's system-shaped local prefix ($META_ROOT/.local/{bin,lib,share,state,cache,tmp,opt}) — no system-depth or user-global installs, so anything meta uses lives in meta and travels wherever meta is cloned. Existing .toolchains managers remain a legacy compatibility prefix while manifests migrate. It works from TOML components whose lifecycle hooks wrap proven scripts: detect, install, fix, reset, and wire-in toolchains, repos, and the agent environment. One shared engine drives both the CLI and the GUI, so they never diverge. Destructive verbs (reset / auto-fix / self uninstall) are PREVIEW by default and fail-closed — they refuse unless they can prove the operation is safe and you pass the explicit act flag (--apply / --build / --confirm). Deployment target today: a GPU-aware dual-RTX-5090 Ubuntu 26.04 workstation.",
+    long_about = "A declarative, GPU-aware, agentic environment manager for the whole meta workspace, written in Rust.\n\nenvctl is a first-class meta peer member: it brings every tool, dependency, provider, vendor, CLI, and config to a declared state and installs it INTO meta's standard $META_ROOT layout ($META_ROOT/usr, $META_ROOT/etc, $META_ROOT/var, $META_ROOT/opt, plus meta-home XDG roots) — no system-depth or user-global installs, so anything meta uses lives in meta and travels wherever meta is cloned. Existing .toolchains managers remain a legacy compatibility prefix while manifests migrate. It works from TOML components whose lifecycle hooks wrap proven scripts: detect, install, fix, reset, and wire-in toolchains, repos, and the agent environment. One shared engine drives both the CLI and the GUI, so they never diverge. Destructive verbs (reset / auto-fix / self uninstall) are PREVIEW by default and fail-closed — they refuse unless they can prove the operation is safe and you pass the explicit act flag (--apply / --build / --confirm). Deployment target today: a GPU-aware dual-RTX-5090 Ubuntu 26.04 workstation.",
     after_help = envctl_examples!(
         "envctl auto-detect",
         "envctl doctor",
@@ -323,17 +323,17 @@ enum Cmd {
         #[arg(long)]
         confirm: bool,
     },
-    /// Add a repo as a managed component (build-from-source + wire-in).
-    /// Acquire+detect+PREVIEW by default; pass --build to actually build + install.
+    /// Register a repo into the workspace as a meta PEER or a managed component.
+    /// Acquire+detect+PREVIEW by default; pass --build to actually apply / build + install.
     #[command(
-        long_about = "Adopt an external git repo as a managed component: clone it, detect its build system, build from source, install the artifacts, and wire it in. Acquire + detect + PREVIEW by default; pass --build to actually run the upstream build / AI agent / install. The --strategy chooses how it lands: as-is, cherry-pick (--bin), rename (--rename old=new), or refactor (--patch-cmd, or --refactor=ai with --ai-goal port-to-rust). Use --connect to drop into an interactive agent session inside the clone. An --id is required to name the component.",
+        long_about = "Register a git repo into the meta workspace. --mode (default auto) chooses how: `peer` registers it the meta-native way — a grep-guarded, idempotent edit of the meta-root .meta.yaml + .gitignore and a sibling clone, so it's a first-class member reachable by `meta exec/git/worktree` (no managed drop-in); `component` adopts it as a build-from-source managed component (clone, detect build system, build, install, wire in, register a components.d drop-in). `auto` routes owned/FlexNetOS remotes to PEER and everything else to COMPONENT. PREVIEW by default; pass --build to apply (peer: edit + clone; component: run the upstream build / AI agent / install). Peer takes --provides/--tag; component takes --strategy (as-is, cherry-pick --bin, rename --rename old=new, refactor --patch-cmd or --ai-goal port-to-rust) and --connect. An --id is required.",
         after_help = envctl_examples!(
-            "envctl add-repo https://github.com/FlexNetOS/example --id example",
-            "envctl add-repo https://github.com/FlexNetOS/example --id example --build",
-            "envctl add-repo https://github.com/FlexNetOS/example --id example --strategy cherry-pick --bin foo",
-            "envctl add-repo https://github.com/FlexNetOS/example --id example --strategy rename --rename foo=bar",
-            "envctl add-repo https://github.com/FlexNetOS/example --id example --strategy refactor --ai-goal port-to-rust --build",
-            "envctl add-repo https://github.com/FlexNetOS/example --id example --connect",
+            "envctl add-repo https://github.com/FlexNetOS/beads_rust --id beads_rust          # auto -> PEER (preview)",
+            "envctl add-repo https://github.com/FlexNetOS/beads_rust --id beads_rust --tag tools --build",
+            "envctl add-repo https://github.com/sharkdp/pastel --id pastel --build           # auto -> COMPONENT",
+            "envctl add-repo https://github.com/FlexNetOS/example --id example --mode component --strategy cherry-pick --bin foo",
+            "envctl add-repo https://github.com/BurntSushi/ripgrep --id rg --strategy rename --rename rg=rgx --build",
+            "envctl add-repo https://github.com/sharkdp/pastel --id pastel-rs --mode component --strategy refactor --ai-goal port-to-rust --build",
         )
     )]
     AddRepo {
@@ -353,7 +353,19 @@ enum Cmd {
         /// Artifact glob relative to the clone. Repeatable.
         #[arg(long = "artifact")]
         artifacts: Vec<String>,
-        /// Strategy: as-is | cherry-pick | rename | refactor.
+        /// Registration mode: auto | peer | component. `auto` (default) routes
+        /// owned/FlexNetOS remotes to a first-class `.meta.yaml` PEER and everything
+        /// else to a build-from-source managed component. `peer` forces meta-native
+        /// registration; `component` forces the legacy drop-in.
+        #[arg(long, default_value = "auto")]
+        mode: String,
+        /// peer mode: `provides:` capabilities for the `.meta.yaml` entry. Repeatable.
+        #[arg(long = "provides")]
+        provides: Vec<String>,
+        /// peer mode: `tags:` for the `.meta.yaml` entry. Repeatable.
+        #[arg(long = "tag")]
+        tags: Vec<String>,
+        /// Strategy: as-is | cherry-pick | rename | refactor (component mode only).
         #[arg(long, default_value = "as-is")]
         strategy: String,
         /// cherry-pick: only install these binaries (by file-stem). Repeatable.
@@ -447,7 +459,7 @@ enum Cmd {
         meta_file: Option<std::path::PathBuf>,
         /// ALSO emit the meta-hosted .local layout, legacy toolchain prefix
         /// exports, and PATH. Manager stores still point at `$META_ROOT/.toolchains`
-        /// until manifests migrate, but envctl-owned exposure begins at `.local/bin`.
+        /// until manifests migrate, but envctl-owned exposure begins at `usr/bin`.
         #[arg(long)]
         toolchains: bool,
         /// Instead of emitting exports, read FILE and print it with `${META_ROOT}`
@@ -457,9 +469,9 @@ enum Cmd {
         #[arg(long, value_name = "FILE")]
         materialize: Option<std::path::PathBuf>,
     },
-    /// Adopt existing installs/configs into envctl's canonical `$META_ROOT/.local` topology.
+    /// Adopt existing installs/configs into envctl's canonical `$META_ROOT` FHS/XDG topology.
     #[command(
-        long_about = "Migrate/adopt an existing meta machine into envctl's canonical `$META_ROOT/.local/{bin,lib,share,state,cache,tmp,opt}` layout. scan/plan/verify are read-only. apply previews unless --apply is passed. purge is strict upgrade-only: it refuses deletion unless a legacy path already has verified canonical parity/adoption evidence. Shared meta substrates (loop_lib / meta_plugin_protocol) and agent/Codex configs are protected, not removed or rebuilt blindly.",
+        long_about = "Migrate/adopt an existing meta machine into envctl's canonical `$META_ROOT` FHS/XDG layout (`usr`, `etc`, `var`, `opt`, and meta-home XDG roots). scan/plan/verify are read-only. apply previews unless --apply is passed. purge is strict upgrade-only: it refuses deletion unless a legacy path already has verified canonical parity/adoption evidence. Shared meta substrates (loop_lib / meta_plugin_protocol) and agent/Codex configs are protected, not removed or rebuilt blindly.",
         after_help = envctl_examples!(
             "envctl migrate scan",
             "envctl migrate plan --scope component-registry",
@@ -543,7 +555,7 @@ enum Cmd {
 enum MigrateCmd {
     /// Read the meta layout, manifests, agent assets, and protected substrates.
     #[command(
-        long_about = "Read-only scan of the existing meta checkout: canonical .local directories, manifest references to legacy/global paths, agent/Codex assets, and shared meta substrates such as loop_lib.",
+        long_about = "Read-only scan of the existing meta checkout: canonical FHS/XDG directories, manifest references to legacy/global paths, agent/Codex assets, and shared meta substrates such as loop_lib.",
         after_help = envctl_examples!(
             "envctl migrate scan",
             "envctl migrate scan --scope layout --scope meta-substrates",
@@ -558,7 +570,7 @@ enum MigrateCmd {
     },
     /// Build the migration/adoption worklist without writing anything.
     #[command(
-        long_about = "Read-only plan for adopting old paths into the canonical meta-hosted .local topology. The plan is the same engine report as scan, but with the verb set to plan for automation.",
+        long_about = "Read-only plan for adopting old paths into the canonical meta-hosted FHS/XDG topology. The plan is the same engine report as scan, but with the verb set to plan for automation.",
         after_help = envctl_examples!(
             "envctl migrate plan",
             "envctl migrate plan --scope component-registry",
@@ -572,7 +584,7 @@ enum MigrateCmd {
     },
     /// Materialize canonical meta directories. Preview unless --apply is set.
     #[command(
-        long_about = "Materialize the canonical `$META_ROOT/.local` directory structure and append a migration ledger entry. Without --apply this is a zero-write preview.",
+        long_about = "Materialize the canonical `$META_ROOT` FHS/XDG directory structure and append a migration ledger entry. Without --apply this is a zero-write preview.",
         after_help = envctl_examples!(
             "envctl migrate apply",
             "envctl migrate apply --apply",
@@ -1432,7 +1444,7 @@ pub struct RunArgs {
     /// Mint a one-off ephemeral bearer for this process.
     #[arg(long)]
     pub ephemeral: bool,
-    /// Skip loading the default ~/.config/env-ctl/relay.toml profile.
+    /// Skip loading the default envctl-managed `$META_ROOT/.config/env-ctl/relay.toml` profile.
     #[arg(long = "no-profile")]
     pub no_profile: bool,
     /// Use an explicit relay config path instead of the default.
@@ -2042,10 +2054,13 @@ fn run_env(
     }
 
     // The meta-hosted install layout (opt-in via --toolchains for now because
-    // this is the shell seam that mutates PATH). `.local/bin` is canonical for
-    // envctl-owned exposure; `.toolchains` remains a compatibility manager store.
+    // this is the shell seam that mutates PATH). `usr/bin` is canonical for
+    // envctl-owned exposure; `.local/bin` and `.toolchains` remain compatibility surfaces.
     let tc = layout.legacy_toolchains().to_string_lossy().to_string();
+    let ollama_models = layout.ollama_models().to_string_lossy().to_string();
+    let usr = layout.usr().to_string_lossy().to_string();
     let bin_dir = layout.bin().to_string_lossy().to_string();
+    let compat_local_bin = layout.local_bin().to_string_lossy().to_string();
     if json {
         let mut map = serde_json::json!({ "META_ROOT": meta_root, "META_FILE": meta_yaml });
         if toolchains {
@@ -2059,6 +2074,7 @@ fn run_env(
             map["UV_TOOL_DIR"] = format!("{tc}/uv/tools").into();
             map["UV_PYTHON_INSTALL_DIR"] = format!("{tc}/uv/python").into();
             map["OLLAMA_LIBRARY_PATH"] = format!("{tc}/ollama/lib/ollama").into();
+            map["OLLAMA_MODELS"] = ollama_models.clone().into();
             map["LIBCLANG_PATH"] = format!("{tc}/llvm/lib").into();
             map["GCC_PATH"] = format!("{tc}/libgccjit/lib").into();
             map["HELIX_RUNTIME"] = format!("{tc}/helix/runtime").into();
@@ -2077,8 +2093,8 @@ fn run_env(
             println!("export {key}={}", sh_single_quote(&path.to_string_lossy()));
         }
         // Redirect each manager's install prefix INTO meta (ADR: meta-located
-        // toolchain prefix). Canonical exposure starts at `.local/bin`; legacy
-        // manager bins trail it for compatibility. PATH uses double quotes so
+        // toolchain prefix). Canonical exposure starts at `usr/bin`; the meta-home
+        // `.local/bin` bridge and legacy manager bins trail it for compatibility. PATH uses double quotes so
         // `$PATH` expands.
         println!(
             "export BUN_INSTALL={}",
@@ -2117,6 +2133,10 @@ fn run_env(
             "export OLLAMA_LIBRARY_PATH={}",
             sh_single_quote(&format!("{tc}/ollama/lib/ollama"))
         );
+        // Model blobs are persistent state, not runner binaries. Keep them under
+        // meta's canonical var/lib tree so pulls never fall back to the root
+        // daemon's /usr/share/ollama or a real-home ~/.ollama store (TASK-0072).
+        println!("export OLLAMA_MODELS={}", sh_single_quote(&ollama_models));
         // libclang.so redirect for the meta-owned LLVM/clang (.toolchains/llvm/lib
         // holds libclang.so) so bindgen-style consumers find it (Epic H TASK-0061).
         println!(
@@ -2136,7 +2156,19 @@ fn run_env(
             "export HELIX_RUNTIME={}",
             sh_single_quote(&format!("{tc}/helix/runtime"))
         );
-        println!("export PATH=\"{bin_dir}:{tc}/.bun/bin:{tc}/cargo/bin:{tc}/uv/tools/bin:$PATH\"");
+        println!("export PATH=\"{bin_dir}:{usr}/sbin:{usr}/local/bin:{usr}/local/sbin:{compat_local_bin}:{tc}/.bun/bin:{tc}/cargo/bin:{tc}/uv/tools/bin:$PATH\"");
+        // The rest of the meta /usr mirror on its respective search paths. Each is
+        // prepend-with-fallback so an inherited value (e.g. the CUDA LD_LIBRARY_PATH
+        // shell-rc block) is preserved, never clobbered. The skeleton starts empty,
+        // so no system binary/lib/header is shadowed until meta installs into it.
+        println!(
+            "export LD_LIBRARY_PATH=\"{usr}/lib:{usr}/lib64:{usr}/local/lib:{usr}/local/lib64:${{LD_LIBRARY_PATH:-}}\""
+        );
+        println!("export CPATH=\"{usr}/include:{usr}/local/include:${{CPATH:-}}\"");
+        println!(
+            "export PKG_CONFIG_PATH=\"{usr}/lib/pkgconfig:{usr}/share/pkgconfig:${{PKG_CONFIG_PATH:-}}\""
+        );
+        println!("export MANPATH=\"{usr}/share/man:{usr}/local/share/man${{MANPATH:+:$MANPATH}}\"");
     }
     Ok(())
 }
@@ -2299,6 +2331,9 @@ fn run_action(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
                 build_system,
                 build_cmd,
                 artifacts,
+                mode,
+                provides,
+                tags,
                 strategy,
                 bins,
                 renames,
@@ -2322,6 +2357,9 @@ fn run_action(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
                     build_system,
                     build_cmd,
                     artifacts,
+                    mode,
+                    provides,
+                    tags,
                     strategy,
                     bins,
                     renames,
@@ -3495,6 +3533,9 @@ fn handle_connect(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
         build_system,
         build_cmd,
         artifacts,
+        mode,
+        provides,
+        tags,
         strategy,
         bins,
         renames,
@@ -3521,6 +3562,9 @@ fn handle_connect(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
         build_system,
         build_cmd,
         artifacts,
+        mode,
+        provides,
+        tags,
         strategy,
         bins,
         renames,
@@ -3586,23 +3630,7 @@ fn print_doctor(engine: &Engine, json: bool) -> anyhow::Result<()> {
         let _ = std::fs::remove_file(&t);
         ok
     };
-    let has = |bin: &str| -> Option<String> {
-        let out = std::process::Command::new("bash")
-            .args([
-                "-lc",
-                &format!("command -v {bin} && {bin} --version 2>/dev/null | head -1"),
-            ])
-            .output()
-            .ok()?;
-        out.status.success().then(|| {
-            String::from_utf8_lossy(&out.stdout)
-                .lines()
-                .last()
-                .unwrap_or("present")
-                .trim()
-                .to_string()
-        })
-    };
+    let has = |bin: &str| -> Option<String> { doctor_tool_version(bin) };
     let layout_entries = layout.entries();
     let mut dirs: Vec<String> = layout_entries
         .iter()
@@ -3637,7 +3665,7 @@ fn print_doctor(engine: &Engine, json: bool) -> anyhow::Result<()> {
         .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
         .filter(|s| !s.is_empty());
     let driver_loaded = std::path::Path::new("/proc/driver/nvidia/version").exists();
-    let run_log = layout.state().join("envctl/envctl.log");
+    let run_log = layout.state().join("envctl.log");
     let log_exists = run_log.exists();
 
     if json {
@@ -3744,6 +3772,79 @@ fn print_doctor(engine: &Engine, json: bool) -> anyhow::Result<()> {
     Ok(())
 }
 
+fn doctor_tool_version(bin: &str) -> Option<String> {
+    let path = find_on_path(bin)?;
+    let out = command_output_timeout(
+        std::process::Command::new(&path).arg("--version"),
+        std::time::Duration::from_secs(2),
+    )
+    .ok()
+    .flatten();
+    out.and_then(|out| {
+        out.status.success().then(|| {
+            String::from_utf8_lossy(&out.stdout)
+                .lines()
+                .next()
+                .map(str::trim)
+                .filter(|line| !line.is_empty())
+                .map(str::to_string)
+        })?
+    })
+    .or_else(|| Some(path.display().to_string()))
+}
+
+fn find_on_path(bin: &str) -> Option<std::path::PathBuf> {
+    let candidate = std::path::Path::new(bin);
+    if candidate.components().count() > 1 {
+        return executable_file(candidate).then(|| candidate.to_path_buf());
+    }
+    std::env::var_os("PATH").and_then(|path| {
+        std::env::split_paths(&path)
+            .map(|dir| dir.join(bin))
+            .find(|candidate| executable_file(candidate))
+    })
+}
+
+fn executable_file(path: &std::path::Path) -> bool {
+    let Ok(meta) = std::fs::metadata(path) else {
+        return false;
+    };
+    if !meta.is_file() {
+        return false;
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        meta.permissions().mode() & 0o111 != 0
+    }
+    #[cfg(not(unix))]
+    {
+        true
+    }
+}
+
+fn command_output_timeout(
+    cmd: &mut std::process::Command,
+    timeout: std::time::Duration,
+) -> std::io::Result<Option<std::process::Output>> {
+    let start = std::time::Instant::now();
+    let mut child = cmd
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .spawn()?;
+    loop {
+        if child.try_wait()?.is_some() {
+            return child.wait_with_output().map(Some);
+        }
+        if start.elapsed() >= timeout {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Ok(None);
+        }
+        std::thread::sleep(std::time::Duration::from_millis(25));
+    }
+}
+
 fn print_graph_summary(reg: &envctl_engine::Registry) {
     let g = envctl_engine::graph::analyze(reg);
     let c = "\x1b[1;36m";
@@ -3848,9 +3949,18 @@ struct AddRepoArgs {
     build: bool,
     force: bool,
     recurse_submodules: bool,
+    mode: String,
+    provides: Vec<String>,
+    tags: Vec<String>,
 }
 
 fn build_spec(a: AddRepoArgs) -> Result<AddRepoSpec, String> {
+    let mode = match a.mode.as_str() {
+        "auto" => AddRepoMode::Auto,
+        "peer" => AddRepoMode::Peer,
+        "component" => AddRepoMode::Component,
+        other => return Err(format!("unknown --mode `{other}` (auto|peer|component)")),
+    };
     let strategy = match a.strategy.as_str() {
         "as-is" => BuildStrategy::AsIs,
         "cherry-pick" => BuildStrategy::CherryPick { bins: a.bins },
@@ -3897,6 +4007,9 @@ fn build_spec(a: AddRepoArgs) -> Result<AddRepoSpec, String> {
         allow_build: a.build,
         force: a.force,
         recurse_submodules: a.recurse_submodules,
+        mode,
+        provides: a.provides,
+        tags: a.tags,
     })
 }
 

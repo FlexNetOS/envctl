@@ -109,7 +109,7 @@ autoinstall:
     - pipx
     # No apt nodejs/npm: the wizard installs Bun as the JS runtime + package
     # manager and exposes `node` as a symlink to Bun (Node-compat mode), so
-    # node-shebang CLIs (Codex/Gemini) run via Bun. ("node via bun".)
+    # node-shebang CLIs such as Gemini run via Bun. Codex is installed separately as envctl-managed Rust Codex.
     - fontconfig                    # for installing Nerd Fonts in the wizard
     - software-properties-common
     - apt-transport-https

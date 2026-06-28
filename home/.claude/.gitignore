@@ -1,0 +1,44 @@
+# ~/.claude now lives in meta (envctl/home/.claude) — ~/.claude holds only symlinks INTO here
+# (ADR-0006 meta portability: everything meta uses lives in meta; globals are symlinks into meta).
+#
+# Everything physically lives in meta. This file governs only what is COMMITTED: the agent CONFIG
+# (behavior — tracked) vs machine-local STATE / caches / SECRETS (present in-meta, never committed).
+# CONTENTS-FORM only — each rule names a specific child, so no excluded parent hides a tracked path
+# (same discipline as the .handoff durability policy).
+#
+# TRACKED config (NOT ignored, stay committed): CLAUDE.md, RTK.md, settings.json(.tmpl),
+# statusline-command.sh, commands/, hooks/, rules/, skills/, agents/.
+
+# --- secrets (NEVER commit) ---
+/.credentials.json
+/mcp-needs-auth-cache.json
+
+# --- machine-local state + caches (rebuilt per machine; some enormous, e.g. projects/ ~79G) ---
+/projects/
+/sessions/
+/session-env/
+/session-env.tar.xz
+/history.jsonl
+/shell-snapshots/
+/paste-cache/
+/file-history/
+/downloads/
+/chrome/
+/ide/
+/cache/
+/telemetry/
+/stats-cache.json
+/backups/
+/plans/
+/tasks/
+/teams/
+/.last-cleanup
+/.last-update-result.json
+
+# --- installed plugin packages (63M; re-installable, not source) ---
+/plugins/
+
+# --- editor/settings backups ---
+/settings.json.bak
+/settings.json.bak.*
+/settings.json.weave.bak

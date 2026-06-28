@@ -14,10 +14,10 @@ After=sqld.service
 Type=notify
 NotifyAccess=main
 # Meta-local binary (Epic H TASK-0069). %h=home; META_ROOT is %h/Desktop/meta on this box.
-ExecStart=%h/Desktop/meta/.local/lib/envctl/secrets/bin/secretd
+ExecStart=%h/Desktop/meta/usr/libexec/envctl/secrets/bin/secretd
 # Cognitum Seed Device-CA pin lives under the meta-local share prefix, NOT /usr/local (TASK-0075b,
 # no-system-depth doctrine). seam.rs `ca_path()` reads ENVCTL_SEED_CA; cognitum-seed-trust pins here.
-Environment=ENVCTL_SEED_CA=%h/Desktop/meta/.local/share/envctl/secrets/ca/cognitum-ca.crt
+Environment=ENVCTL_SEED_CA=%h/Desktop/meta/etc/envctl/secrets/ca/cognitum-ca.crt
 Environment=META_ROOT=%h/Desktop/meta
 Environment=XDG_CONFIG_HOME=%h/Desktop/meta/.config
 Environment=XDG_DATA_HOME=%h/Desktop/meta/.local/share
@@ -36,7 +36,7 @@ ProtectHome=read-only
 ReadWritePaths=%h/Desktop/meta/.local/share/env-ctl %h/Desktop/meta/.local/state/env-ctl %t/env-ctl
 # Belt-and-suspenders read access to the Seed Device-CA dir (TASK-0075b). NOT ReadWritePaths — the
 # daemon must never overwrite its trust root; survives any future ProtectHome=tmpfs hardening.
-ReadOnlyPaths=%h/Desktop/meta/.local/share/envctl/secrets/ca
+ReadOnlyPaths=%h/Desktop/meta/etc/envctl/secrets/ca
 RuntimeDirectory=env-ctl
 RuntimeDirectoryMode=0700
 PrivateTmp=true

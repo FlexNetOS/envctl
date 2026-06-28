@@ -460,7 +460,7 @@ override `ENVCTL_MANIFEST_DIR`); docs/ARCHITECTURE.md §3 (component model), §6
  dashboard.toml :  [A] dashboard (zellij mission-control)                             │
  desktop-app.toml :  [A] desktop-app (envctl-gui .desktop entry)                      │
  n8n-mcp.toml :  [A] n8n-mcp     grit.toml : [A] grit     rusty-idd.toml : [A] rusty-idd│
- components.d/portability-links.toml ─ ~/.config, ~/.local/bin, /usr/local symlinks ─┤
+ components.d/portability-links.toml ─ ~/.config, $META_ROOT/usr/bin, /usr/local symlinks ─┤
    [A]  home-config-links · home-bin-links · rtk-config-links · meta-tool-links       │
    [A]  claude-global-links · usrlocal-script-links            group-portability      │
  boot-repair.toml ─ recovery (DESTRUCTIVE; not in the normal converge path) ─────────┤
@@ -516,7 +516,7 @@ CLAUDE.md (install applies by default; auto-fix/reset/add-repo preview).*
 **Owner doctrine:** meta and its peers use **NO system-depth installs** (`apt /usr`,
 `/usr/local`, nix `/nix`, kernel). Every system-depth tool has an upstream repo and must be
 either (a) installed at `$META_ROOT/.toolchains/<x>` (tarball / `cargo install --root` / runfile
-`--toolkitpath`) with a `~/.local/bin` symlink, (b) cloned+added as a `.meta.yaml` peer, or (c)
+`--toolkitpath`) with a `$META_ROOT/usr/bin` symlink, (b) cloned+added as a `.meta.yaml` peer, or (c)
 — only if *physically* irreducible — declared a `system:` host-prerequisite (detect/verify only).
 The convergence is itself a set of `[A]` components; the only genuinely irreducible item is the
 NVIDIA **kernel module**. `/nix` is **reducible** (nix-portable) but its live removal is `[!!]`.
@@ -528,7 +528,7 @@ NVIDIA **kernel module**. `/nix` is **reducible** (nix-portable) but its live re
 ```
    SYSTEM DEPTH (being eliminated)                 META PREFIX (the target)
    ───────────────────────────────                ─────────────────────────────────────────
-   apt /usr/bin · /usr/local/bin                  $META_ROOT/.toolchains/<tool>/  +  ~/.local/bin/<tool>
+   apt /usr/bin · /usr/local/bin                  $META_ROOT/.toolchains/<tool>/  +  $META_ROOT/usr/bin/<tool>
    /nix/store (14G, multi-user daemon)            $HOME/.nix-portable  (bwrap, no root)   [A] shipped
                                                   └ live /nix removal + yazelix repoint    [!!] TASK-0067
    ~/.cargo  ~/.rustup  (user-global)             $META_ROOT/.toolchains/{cargo,rustup}

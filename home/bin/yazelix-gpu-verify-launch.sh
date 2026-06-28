@@ -5,7 +5,7 @@ if [ -z "${META_ROOT:-}" ]; then
     *) META_ROOT="${HOME:-/home/drdave}/Desktop/meta" ;;
   esac
 fi
-V="$META_ROOT/.local/bin/yazelix-gpu-verify.sh"
+V="$META_ROOT/usr/bin/yazelix-gpu-verify.sh"
 [ -x "$V" ] || exit 0
 if   command -v ghostty        >/dev/null; then exec ghostty -e bash -lc "$V"
 elif command -v kgx            >/dev/null; then exec kgx -- bash -lc "$V"

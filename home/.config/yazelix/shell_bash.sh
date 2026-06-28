@@ -27,12 +27,12 @@ if [ -z "${META_ROOT:-}" ]; then
     *) export META_ROOT="${HOME:-/home/drdave}/Desktop/meta" ;;
   esac
 fi
-alias rtk-mon='zellij run --name rtk --direction down -- "$META_ROOT/.local/bin/rtk-monitor"'
+alias rtk-mon='zellij run --name rtk --direction down -- "$META_ROOT/usr/bin/rtk-monitor"'
 if [ -n "${ZELLIJ_SESSION_NAME:-}" ] && [ "${RTK_MONITOR_AUTOSTART:-1}" != "0" ]; then
   _rtk_marker="/tmp/rtk-monitor-${ZELLIJ_SESSION_NAME}.lock"
   if [ ! -e "$_rtk_marker" ]; then
     : > "$_rtk_marker"
-    zellij run --name rtk --direction down -- "$META_ROOT/.local/bin/rtk-monitor" >/dev/null 2>&1 || true
+    zellij run --name rtk --direction down -- "$META_ROOT/usr/bin/rtk-monitor" >/dev/null 2>&1 || true
   fi
   unset _rtk_marker
 fi
