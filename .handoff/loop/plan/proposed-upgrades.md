@@ -16,6 +16,19 @@ Risk tiers:
 
 ---
 
+
+## TASK-0078 disposition (2026-06-28)
+
+- **P8 accepted / partially implemented:** this lane adds a root terminal-roll-up gate so a shared root
+  state cannot claim `COMPLETE`/`DONE` while target rows are missing or nonterminal. Existing parallel
+  artifacts under `instances/<target>/` remain intact; a full `runs/<target>/` path migration is deferred
+  to a dedicated non-destructive compatibility PR so historical artifacts are not moved or broken.
+- **P9 applied:** axis-agent prompts now classify expected peer artifacts that are absent before their
+  producing lane completes as `PENDING`, with a required re-check after producer completion. The contract
+  test locks this behavior on `plan-analyst` and representative axis auditors.
+
+---
+
 ## NEW this cycle (P8, P9)
 
 ## P8 — Namespace per-instance loop state under `runs/<target>/` (lesson L8) — **PROPOSE**
