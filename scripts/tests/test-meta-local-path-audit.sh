@@ -1483,14 +1483,24 @@ grep -q -- 'nssdb/key4.db' "$tmp/migrate-pki-open.err"
 
 cache_child_meta="$tmp/cache-child-meta"
 cache_child_home="$tmp/cache-child-home"
+cache_child_manifest_repo="$tmp/cache-child-manifest-repo"
+cache_child_missing_manifest_repo="$tmp/cache-child-missing-manifest-repo"
 mkdir -p "$cache_child_meta/.local" "$cache_child_meta/envctl/home" "$cache_child_home/.cache/tool"
+mkdir -p "$cache_child_manifest_repo/scripts" "$cache_child_manifest_repo/manifest/components.d"
+mkdir -p "$cache_child_missing_manifest_repo/scripts" "$cache_child_missing_manifest_repo/manifest/components.d"
+cp "$root/scripts/audit-meta-local-paths.sh" "$cache_child_manifest_repo/scripts/audit-meta-local-paths.sh"
+cp "$root/scripts/audit-meta-local-paths.sh" "$cache_child_missing_manifest_repo/scripts/audit-meta-local-paths.sh"
+printf '# fixture manifest approving cache child tool migration\n' >"$cache_child_manifest_repo/manifest/components.d/cache-tool.toml"
 printf '# managed gitconfig\n' >"$cache_child_meta/envctl/home/.gitconfig"
 ln -s "$cache_child_meta/envctl/home/.gitconfig" "$cache_child_meta/.gitconfig"
 ln -s "$cache_child_meta/.local" "$cache_child_home/.local"
 ln -s "$cache_child_meta/.gitconfig" "$cache_child_home/.gitconfig"
 printf 'cache-index\n' >"$cache_child_home/.cache/tool/index"
 
-"$root/scripts/audit-meta-local-paths.sh" --migrate-cache-child tool --meta-root "$cache_child_meta" --real-home "$cache_child_home" --envctl-home-source "$cache_child_meta/envctl/home" >"$tmp/migrate-cache-child-dry.out" 2>"$tmp/migrate-cache-child-dry.err"
+(
+  cd "$cache_child_manifest_repo"
+  scripts/audit-meta-local-paths.sh --migrate-cache-child tool --meta-root "$cache_child_meta" --real-home "$cache_child_home" --envctl-home-source "$cache_child_meta/envctl/home"
+) >"$tmp/migrate-cache-child-dry.out" 2>"$tmp/migrate-cache-child-dry.err"
 grep -q 'DRY-RUN: would move .*\.cache/tool to .*\.local/cache/tool and link .*\.cache/tool -> .*\.local/cache/tool' "$tmp/migrate-cache-child-dry.out"
 test -d "$cache_child_home/.cache/tool"
 test ! -e "$cache_child_meta/.local/cache/tool"
@@ -1501,6 +1511,25 @@ if "$root/scripts/audit-meta-local-paths.sh" --migrate-cache-child ../evil --met
 fi
 grep -q -- '--migrate-cache-child ../evil is not a direct .cache child name' "$tmp/migrate-cache-child-invalid.err"
 
+cache_child_missing_manifest_meta="$tmp/cache-child-missing-manifest-meta"
+cache_child_missing_manifest_home="$tmp/cache-child-missing-manifest-home"
+mkdir -p "$cache_child_missing_manifest_meta/.local" "$cache_child_missing_manifest_meta/envctl/home" "$cache_child_missing_manifest_home/.cache/tool"
+printf '# managed gitconfig\n' >"$cache_child_missing_manifest_meta/envctl/home/.gitconfig"
+ln -s "$cache_child_missing_manifest_meta/envctl/home/.gitconfig" "$cache_child_missing_manifest_meta/.gitconfig"
+ln -s "$cache_child_missing_manifest_meta/.local" "$cache_child_missing_manifest_home/.local"
+ln -s "$cache_child_missing_manifest_meta/.gitconfig" "$cache_child_missing_manifest_home/.gitconfig"
+printf 'cache-index\n' >"$cache_child_missing_manifest_home/.cache/tool/index"
+if (
+  cd "$cache_child_missing_manifest_repo"
+  scripts/audit-meta-local-paths.sh --apply --migrate-cache-child tool --meta-root "$cache_child_missing_manifest_meta" --real-home "$cache_child_missing_manifest_home" --envctl-home-source "$cache_child_missing_manifest_meta/envctl/home"
+) >"$tmp/migrate-cache-child-missing-manifest.out" 2>"$tmp/migrate-cache-child-missing-manifest.err"; then
+  echo "expected --migrate-cache-child to require a cache component manifest before applying" >&2
+  exit 1
+fi
+test -d "$cache_child_missing_manifest_home/.cache/tool"
+test ! -e "$cache_child_missing_manifest_meta/.local/cache/tool"
+grep -q -- '--migrate-cache-child tool: component manifest manifest/components.d/cache-tool.toml is missing; create/review the manifest before migration' "$tmp/migrate-cache-child-missing-manifest.err"
+
 cache_child_open_meta="$tmp/cache-child-open-meta"
 cache_child_open_home="$tmp/cache-child-open-home"
 mkdir -p "$cache_child_open_meta/.local" "$cache_child_open_meta/envctl/home" "$cache_child_open_home/.cache/tool"
@@ -1509,7 +1538,10 @@ ln -s "$cache_child_open_meta/envctl/home/.gitconfig" "$cache_child_open_meta/.g
 ln -s "$cache_child_open_meta/.local" "$cache_child_open_home/.local"
 ln -s "$cache_child_open_meta/.gitconfig" "$cache_child_open_home/.gitconfig"
 printf 'cache-index\n' >"$cache_child_open_home/.cache/tool/index"
-if ENVCTL_TEST_LSOF_OPEN_SOURCE="$cache_child_open_home/.cache/tool" "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-cache-child tool --meta-root "$cache_child_open_meta" --real-home "$cache_child_open_home" --envctl-home-source "$cache_child_open_meta/envctl/home" >"$tmp/migrate-cache-child-open.out" 2>"$tmp/migrate-cache-child-open.err"; then
+if (
+  cd "$cache_child_manifest_repo"
+  ENVCTL_TEST_LSOF_OPEN_SOURCE="$cache_child_open_home/.cache/tool" scripts/audit-meta-local-paths.sh --apply --migrate-cache-child tool --meta-root "$cache_child_open_meta" --real-home "$cache_child_open_home" --envctl-home-source "$cache_child_open_meta/envctl/home"
+) >"$tmp/migrate-cache-child-open.out" 2>"$tmp/migrate-cache-child-open.err"; then
   echo "expected --migrate-cache-child to fail closed with open file handles" >&2
   exit 1
 fi
@@ -1527,7 +1559,10 @@ ln -s "$cache_child_collision_meta/.local" "$cache_child_collision_home/.local"
 ln -s "$cache_child_collision_meta/.gitconfig" "$cache_child_collision_home/.gitconfig"
 printf 'source-cache\n' >"$cache_child_collision_home/.cache/tool/index"
 printf 'target-cache\n' >"$cache_child_collision_meta/.local/cache/tool/index"
-if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-cache-child tool --meta-root "$cache_child_collision_meta" --real-home "$cache_child_collision_home" --envctl-home-source "$cache_child_collision_meta/envctl/home" >"$tmp/migrate-cache-child-collision.out" 2>"$tmp/migrate-cache-child-collision.err"; then
+if (
+  cd "$cache_child_manifest_repo"
+  scripts/audit-meta-local-paths.sh --apply --migrate-cache-child tool --meta-root "$cache_child_collision_meta" --real-home "$cache_child_collision_home" --envctl-home-source "$cache_child_collision_meta/envctl/home"
+) >"$tmp/migrate-cache-child-collision.out" 2>"$tmp/migrate-cache-child-collision.err"; then
   echo "expected --migrate-cache-child to reject existing targets" >&2
   exit 1
 fi
@@ -1535,7 +1570,10 @@ grep -q -- '--migrate-cache-child tool: existing target .* already exists; refus
 grep -Fqx 'source-cache' "$cache_child_collision_home/.cache/tool/index"
 grep -Fqx 'target-cache' "$cache_child_collision_meta/.local/cache/tool/index"
 
-"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-cache-child tool --meta-root "$cache_child_meta" --real-home "$cache_child_home" --envctl-home-source "$cache_child_meta/envctl/home" >"$tmp/migrate-cache-child.out" 2>"$tmp/migrate-cache-child.err"
+(
+  cd "$cache_child_manifest_repo"
+  scripts/audit-meta-local-paths.sh --apply --migrate-cache-child tool --meta-root "$cache_child_meta" --real-home "$cache_child_home" --envctl-home-source "$cache_child_meta/envctl/home"
+) >"$tmp/migrate-cache-child.out" 2>"$tmp/migrate-cache-child.err"
 test "$(readlink -f "$cache_child_home/.cache/tool")" = "$cache_child_meta/.local/cache/tool"
 grep -Fqx 'cache-index' "$cache_child_meta/.local/cache/tool/index"
 test -d "$cache_child_home/.cache"
