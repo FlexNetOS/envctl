@@ -1720,6 +1720,19 @@ if (
 fi
 grep -q -- '--write-cache-child-component-manifest missing: source .*\.cache/missing is missing; refusing cache component manifest materialization' "$tmp/write-cache-child-manifest-missing.err"
 
+repo_reviewed_cache_child_meta="$tmp/repo-reviewed-cache-child-meta"
+repo_reviewed_cache_child_home="$tmp/repo-reviewed-cache-child-home"
+mkdir -p "$repo_reviewed_cache_child_meta/.local" "$repo_reviewed_cache_child_meta/envctl/home" "$repo_reviewed_cache_child_home/.cache/.wasm-pack"
+printf '# managed gitconfig\n' >"$repo_reviewed_cache_child_meta/envctl/home/.gitconfig"
+ln -s "$repo_reviewed_cache_child_meta/envctl/home/.gitconfig" "$repo_reviewed_cache_child_meta/.gitconfig"
+ln -s "$repo_reviewed_cache_child_meta/.local" "$repo_reviewed_cache_child_home/.local"
+ln -s "$repo_reviewed_cache_child_meta/.gitconfig" "$repo_reviewed_cache_child_home/.gitconfig"
+printf 'wasm-pack-cache-index\n' >"$repo_reviewed_cache_child_home/.cache/.wasm-pack/index"
+"$root/scripts/audit-meta-local-paths.sh" --migrate-cache-child .wasm-pack --meta-root "$repo_reviewed_cache_child_meta" --real-home "$repo_reviewed_cache_child_home" --envctl-home-source "$repo_reviewed_cache_child_meta/envctl/home" >"$tmp/repo-reviewed-cache-child-wasm-pack-dry.out" 2>"$tmp/repo-reviewed-cache-child-wasm-pack-dry.err"
+grep -q 'DRY-RUN: would move .*\.cache/\.wasm-pack to .*\.local/cache/\.wasm-pack and link .*\.cache/\.wasm-pack -> .*\.local/cache/\.wasm-pack' "$tmp/repo-reviewed-cache-child-wasm-pack-dry.out"
+test -d "$repo_reviewed_cache_child_home/.cache/.wasm-pack"
+test ! -e "$repo_reviewed_cache_child_meta/.local/cache/.wasm-pack"
+
 (
   cd "$cache_child_manifest_repo"
   scripts/audit-meta-local-paths.sh --migrate-cache-child tool --meta-root "$cache_child_meta" --real-home "$cache_child_home" --envctl-home-source "$cache_child_meta/envctl/home"

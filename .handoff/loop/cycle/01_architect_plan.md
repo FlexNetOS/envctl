@@ -1,22 +1,18 @@
-# TASK-0078 cache-child manifest writer plan
+# TASK-0078 reviewed .wasm-pack cache-child manifest plan
 
 ## Target
-Add an explicit owner-reviewed materialization path for deterministic cache-child component manifest stubs, without migrating cache data.
+Commit the first reviewed cache-child component manifest for live `.wasm-pack` so the existing narrow `--migrate-cache-child .wasm-pack` path can pass its reviewed-manifest precondition in dry-run mode.
 
 ## Contract
-New flag: `--write-cache-child-component-manifest NAME`.
-
-- `NAME` must be one direct child of real-home `.cache`.
-- Dry-run by default prints the manifest write; `--apply` writes only `manifest/components.d/cache-<component>.toml`.
-- Written TOML is deterministic and matches the scaffold report's minimal component stub.
-- Existing matching manifests are OK/no-op; existing wrong/non-regular manifests fail closed and are never overwritten.
-- Missing sources, external symlink sources, non-directory sources, and invalid/path-like names fail closed.
-- It never moves cache data and preserves `--migrate-cache-child`'s reviewed-manifest precondition. Writer execution intentionally follows migration attempts, so one invocation cannot write and immediately migrate without review.
+- Add `manifest/components.d/cache-wasm-pack.toml` declaring `[[component]] id = "cache-wasm-pack"`.
+- Do not move cache state and do not run `--migrate-cache-child --apply`.
+- Preserve the reviewed manifest gate: absent/wrong manifests still refuse; matching manifests only allow the existing dry-run/apply path to continue to normal safety checks.
+- Add a regression fixture proving a repo-reviewed `.wasm-pack` manifest changes the dry-run from missing-manifest refusal to would-move/would-link without touching source or target.
 
 ## Runtime surface
-`runtime_verifiable? yes` — drive the shell script against live `.wasm-pack` in dry-run mode and prove no manifest file is created.
+`runtime_verifiable? yes` — run the live audit in dry-run mode and prove `/home/drdave/.cache/.wasm-pack` remains in place while `/home/drdave/Desktop/meta/.local/cache/.wasm-pack` is absent.
 
 ## Verification plan
-- Red: focused test/probe fails because the flag is unknown.
-- Green: fixture tests for dry-run, apply write, idempotent existing manifest, wrong-manifest refusal, invalid name, and missing source.
-- Runtime: live dry-run for `.wasm-pack`, validation report unchanged/non-mutating.
+- Red: before the manifest, live dry-run refuses because `manifest/components.d/cache-wasm-pack.toml` is missing; focused fixture fails.
+- Green: add only the manifest and the fixture; run audit tests and harness gates.
+- Runtime: live dry-run emits would-move/would-link plus validation `manifest_exists=yes` / `manifest_declares_expected_id=yes` / empty `apply_command`.

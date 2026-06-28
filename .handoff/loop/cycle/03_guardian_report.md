@@ -1,15 +1,14 @@
-# TASK-0078 cache-child manifest writer guardian report
+# TASK-0078 reviewed .wasm-pack cache-child manifest guardian report
 
 ## Status
-PASS — PR #373.
+PASS — PR #376.
 
 ## Invariants checked
-- Dry-run remains default; mutation requires `--apply`.
-- The new writer writes only a reviewed deterministic component manifest stub and never moves cache data.
-- Invalid child names, missing sources, non-directory/external sources, and existing wrong/non-regular manifests fail closed.
-- Existing matching manifests are idempotent no-ops.
-- `--migrate-cache-child` still requires a reviewed matching manifest before migration; writer execution follows migration attempts to prevent same-invocation materialize-and-migrate.
-- `apply_command` in owner-supervised reports remains empty for review/planning surfaces.
+- The slice commits only a reviewed component manifest and a regression test.
+- No live cache data was moved; no `--migrate-cache-child --apply` was run.
+- `--migrate-cache-child` remains narrow, dry-run by default, and gated by matching component manifest content.
+- Owner-supervised planning/validation rows still carry empty `apply_command`.
+- The broad `.cache` root remains owner-supervised/component-managed rather than auto-migrated.
 
 ## Verification
 - `bash -n scripts/audit-meta-local-paths.sh scripts/tests/test-meta-local-path-audit.sh`
@@ -20,4 +19,4 @@ PASS — PR #373.
 - `bash ci/gates/p7.sh`
 
 ## Runtime check
-Live non-mutating `.wasm-pack` dry-run printed `would write manifest/components.d/cache-wasm-pack.toml declaring cache-wasm-pack`, produced validation rows for 84 cache children with `bad_apply=0`, and confirmed `manifest/components.d/cache-wasm-pack.toml` was not created.
+Live non-mutating `.wasm-pack` dry-run emitted `DRY-RUN: would move /home/drdave/.cache/.wasm-pack to /home/drdave/Desktop/meta/.local/cache/.wasm-pack and link ...`, `changed=0`, validation row `manifest_exists=yes` and `manifest_declares_expected_id=yes`, and the live state guards confirmed the source cache still exists while the meta cache target is absent.

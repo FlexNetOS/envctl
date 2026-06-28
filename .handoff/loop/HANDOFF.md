@@ -1,17 +1,17 @@
-# HANDOFF — envctl forge-loop batch boundary 54
+# HANDOFF — envctl forge-loop continuation after boundary 54
 
-Written: 2026-06-28T02:23:07Z
-Branch/worktree for this wrap-up: `task-0078-batch-boundary-54` at `/home/drdave/Desktop/meta/.worktrees/task-0078-batch-boundary-54/envctl`
+Written: 2026-06-28T03:05:00Z
+Branch/worktree for current slice: `task-0078-cache-wasm-pack-manifest` at `/home/drdave/Desktop/meta/.worktrees/task-0078-cache-wasm-pack-manifest/envctl`
 
 ## Resume in one line
 
-Confirm the batch-boundary PR merged, fast-forward `/home/drdave/Desktop/meta/envctl`, run the reaper, then continue TASK-0078 from `.handoff/loop/backlog.md` with another safe reviewed slice. Do not broad-migrate `.cache`/`.config` or sensitive stores.
+Confirm the reviewed `.wasm-pack` cache-child manifest PR merged, fast-forward `/home/drdave/Desktop/meta/envctl`, run the reaper, then continue TASK-0078 from `.handoff/loop/backlog.md` with another safe reviewed slice. Do not broad-migrate `.cache`/`.config`, do not run live cache-child apply without explicit reviewed preconditions, and do not move sensitive stores.
 
 ## Loop counters
 
-- `cycles_total: 54`
+- `cycles_total: 55`
 - `last_wrapup_total: 54`
-- `cycles_this_session: 7`
+- `cycles_this_session: 8`
 - `wrap_every: 5`
 - Next batch boundary: `cycles_total >= 59`
 
@@ -23,10 +23,11 @@ Confirm the batch-boundary PR merged, fast-forward `/home/drdave/Desktop/meta/en
 - PR #371 — read-only deterministic cache-child component-manifest scaffold TSV; merged `f8c271977c35baf0b51de74fc36b41dccb00ea30`.
 - PR #372 — read-only managed-config deep-diff summary TSV; merged `2e7c4aac141f033225b22d89a2490d2194fb586b`.
 - PR #373 — dry-run-default `--write-cache-child-component-manifest NAME` writer for reviewed minimal cache-child stubs; merged `3f93261fbfe4f9cdfd840aa353bc340f671d3181`.
+- PR #376 — reviewed `manifest/components.d/cache-wasm-pack.toml` for the live `.wasm-pack` cache child; no live cache state moved.
 
 ## Current TASK-0078 state
 
-- Cache-child migration is now gated on a reviewed component manifest: missing/wrong manifests refuse, the scaffold/validation/status reports are read-only, and the writer can materialize a deterministic stub only with explicit `--apply`. The writer intentionally runs after migration attempts so one invocation cannot create a manifest and migrate live cache state. No live cache-child state has been moved by the #368-#373 slices.
+- Cache-child migration is now gated on a reviewed component manifest: missing/wrong manifests refuse, the scaffold/validation/status reports are read-only, and the writer can materialize a deterministic stub only with explicit `--apply`. The writer intentionally runs after migration attempts so one invocation cannot create a manifest and migrate live cache state. The first reviewed cache-child manifest is now `manifest/components.d/cache-wasm-pack.toml`; live dry-run reports would-move/would-link for `.wasm-pack`, but no live cache-child state has been moved by the #368-#TBD slices.
 - Managed `.config` conflicts remain owner-reviewed. Live deep-diff summary on 2026-06-28 emitted 5 rows (`ghostty`, `kasetto`, `nushell`, `systemd`, `yazelix`), all `deep_identical=no`; no bridge apply was performed.
 - `.pki` still waits for a Chrome/NSSDB handle-free window before any explicit migration.
 - Sensitive stores (`.aws`, `.docker`, `.gnupg`, `.lane`, `.mcp-auth`, `.ssh`, `.fxapp-gh-profile`) remain owner-supervised with no autonomous apply command.
