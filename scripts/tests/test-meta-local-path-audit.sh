@@ -176,7 +176,7 @@ printf 'real-only\n' >"$supervised_home/.config/managed-app/real-only.json"
 printf 'real-type-conflict\n' >"$supervised_home/.config/managed-app/type-conflict"
 ln -s "$outside/hf" "$supervised_home/.config/external-app"
 printf 'key\n' >"$supervised_home/.ssh/id_ed25519"
-"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-state-report "$tmp/owner-supervised-state.tsv" --owner-supervised-child-report "$tmp/owner-supervised-child.tsv" --owner-supervised-child-candidates-report "$tmp/owner-supervised-child-candidates.tsv" --owner-supervised-child-candidate-actions "$tmp/owner-supervised-child-candidate-actions.tsv" --owner-supervised-cache-child-component-plan "$tmp/owner-supervised-cache-child-component-plan.tsv" --owner-supervised-cache-child-component-manifest-status "$tmp/owner-supervised-cache-child-component-manifest-status.tsv" --owner-supervised-cache-child-component-manifest-validation "$tmp/owner-supervised-cache-child-component-manifest-validation.tsv" --owner-supervised-managed-config-child-review-plan "$tmp/owner-supervised-managed-config-child-review-plan.tsv" --owner-supervised-managed-config-child-conflict-plan "$tmp/owner-supervised-managed-config-child-conflict-plan.tsv" --owner-supervised-managed-config-child-conflict-summary "$tmp/owner-supervised-managed-config-child-conflict-summary.tsv" --owner-supervised-config-child-classification-plan "$tmp/owner-supervised-config-child-classification-plan.tsv" --owner-supervised-child-candidate-action-summary "$tmp/owner-supervised-child-candidate-action-summary.tsv" --owner-supervised-child-candidates-summary "$tmp/owner-supervised-child-candidates-summary.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-state.out" 2>"$tmp/owner-supervised-state.err"
+"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-state-report "$tmp/owner-supervised-state.tsv" --owner-supervised-child-report "$tmp/owner-supervised-child.tsv" --owner-supervised-child-candidates-report "$tmp/owner-supervised-child-candidates.tsv" --owner-supervised-child-candidate-actions "$tmp/owner-supervised-child-candidate-actions.tsv" --owner-supervised-cache-child-component-plan "$tmp/owner-supervised-cache-child-component-plan.tsv" --owner-supervised-cache-child-component-manifest-status "$tmp/owner-supervised-cache-child-component-manifest-status.tsv" --owner-supervised-cache-child-component-manifest-validation "$tmp/owner-supervised-cache-child-component-manifest-validation.tsv" --owner-supervised-cache-child-component-manifest-scaffold "$tmp/owner-supervised-cache-child-component-manifest-scaffold.tsv" --owner-supervised-managed-config-child-review-plan "$tmp/owner-supervised-managed-config-child-review-plan.tsv" --owner-supervised-managed-config-child-conflict-plan "$tmp/owner-supervised-managed-config-child-conflict-plan.tsv" --owner-supervised-managed-config-child-conflict-summary "$tmp/owner-supervised-managed-config-child-conflict-summary.tsv" --owner-supervised-config-child-classification-plan "$tmp/owner-supervised-config-child-classification-plan.tsv" --owner-supervised-child-candidate-action-summary "$tmp/owner-supervised-child-candidate-action-summary.tsv" --owner-supervised-child-candidates-summary "$tmp/owner-supervised-child-candidates-summary.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-state.out" 2>"$tmp/owner-supervised-state.err"
 head -n 1 "$tmp/owner-supervised-state.tsv" | grep -qx $'dot_entry\treal_path\ttype\ttarget_class\tshallow_digest\tdirect_entries\tdirect_files\tdirect_dirs\tdirect_symlinks\taction\tapply_safe\trecommendation'
 awk -F '\t' 'NF != 12 { print "bad owner-supervised-state row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/owner-supervised-state.tsv"
 test "$(wc -l <"$tmp/owner-supervised-state.tsv" | tr -d '[:space:]')" = 3
@@ -613,6 +613,77 @@ awk -F '	' '
   }
   END { exit !(found_cache && !bad) }
 ' "$tmp/owner-supervised-cache-child-component-manifest-validation-wrong.tsv"
+
+head -n 1 "$tmp/owner-supervised-cache-child-component-manifest-scaffold.tsv" | grep -qx $'dot_entry	child_name	child_path	type	canonical_target	component_key	expected_component_id	cache_scope	manifest_hint	manifest_exists	manifest_declares_expected_id	scaffold_kind	scaffold_status	manifest_stub	supervision	next_action	apply_command'
+awk -F '	' 'NF != 17 { print "bad owner-supervised-cache-child-component-manifest-scaffold row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/owner-supervised-cache-child-component-manifest-scaffold.tsv"
+test "$(wc -l <"$tmp/owner-supervised-cache-child-component-manifest-scaffold.tsv" | tr -d '[:space:]')" = 2
+awk -F '	' -v home="$supervised_home" -v meta="$supervised_meta" '
+  BEGIN { bs = sprintf("%c", 92) }
+  $1 == ".cache" && $2 == "tool" {
+    if ($3 != home "/.cache/tool") bad=1
+    if ($4 != "directory") bad=1
+    if ($5 != meta "/.local/cache/tool") bad=1
+    if ($6 != "tool") bad=1
+    if ($7 != "cache-tool") bad=1
+    if ($8 != "cache-child") bad=1
+    if ($9 != "manifest/components.d/cache-tool.toml") bad=1
+    if ($10 != "no") bad=1
+    if ($11 != "no") bad=1
+    if ($12 != "component-manifest-minimal") bad=1
+    if ($13 != "stub-needs-owner-review") bad=1
+    expected_stub = "[[component]]" bs "nid = \"cache-tool\"" bs "nname = \"Cache child tool\"" bs "ndescription = \"Owner-reviewed manifest stub for cache-tool; review detect/install/fix hooks before any --migrate-cache-child apply.\""
+    if ($14 != expected_stub) bad=1
+    if ($15 != "component-managed") bad=1
+    if ($16 != "owner-review-cache-component-manifest-scaffold") bad=1
+    if ($17 != "") bad=1
+    found_cache=1
+  }
+  $1 == ".cache" && $2 == "meta-cache" { already_meta=1 }
+  $1 == ".config" { config_child=1 }
+  $2 == "settings.json" || $2 == "token" { nested=1 }
+  $1 == ".ssh" { sensitive=1 }
+  END { exit !(found_cache && !bad && !already_meta && !config_child && !nested && !sensitive) }
+' "$tmp/owner-supervised-cache-child-component-manifest-scaffold.tsv"
+"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-cache-child-component-manifest-scaffold "$tmp/owner-supervised-cache-child-component-manifest-scaffold-only.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-cache-child-component-manifest-scaffold-only.out" 2>"$tmp/owner-supervised-cache-child-component-manifest-scaffold-only.err"
+cmp "$tmp/owner-supervised-cache-child-component-manifest-scaffold.tsv" "$tmp/owner-supervised-cache-child-component-manifest-scaffold-only.tsv"
+(
+  cd "$manifest_status_repo"
+  scripts/audit-meta-local-paths.sh --owner-supervised-cache-child-component-manifest-scaffold "$tmp/owner-supervised-cache-child-component-manifest-scaffold-existing.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-cache-child-component-manifest-scaffold-existing.out" 2>"$tmp/owner-supervised-cache-child-component-manifest-scaffold-existing.err"
+)
+awk -F '	' '
+  $1 == ".cache" && $2 == "tool" {
+    if ($7 != "cache-tool") bad=1
+    if ($9 != "manifest/components.d/cache-tool.toml") bad=1
+    if ($10 != "yes") bad=1
+    if ($11 != "yes") bad=1
+    if ($12 != "none") bad=1
+    if ($13 != "existing-manifest-declares-expected-id") bad=1
+    if ($14 != "") bad=1
+    if ($16 != "review-existing-cache-component-manifest-before-migration") bad=1
+    if ($17 != "") bad=1
+    found_cache=1
+  }
+  END { exit !(found_cache && !bad) }
+' "$tmp/owner-supervised-cache-child-component-manifest-scaffold-existing.tsv"
+(
+  cd "$manifest_validation_wrong_repo"
+  scripts/audit-meta-local-paths.sh --owner-supervised-cache-child-component-manifest-scaffold "$tmp/owner-supervised-cache-child-component-manifest-scaffold-wrong.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-cache-child-component-manifest-scaffold-wrong.out" 2>"$tmp/owner-supervised-cache-child-component-manifest-scaffold-wrong.err"
+)
+awk -F '	' '
+  $1 == ".cache" && $2 == "tool" {
+    if ($7 != "cache-tool") bad=1
+    if ($9 != "manifest/components.d/cache-tool.toml") bad=1
+    if ($10 != "yes") bad=1
+    if ($11 != "no") bad=1
+    if ($12 != "none") bad=1
+    if ($13 != "existing-manifest-id-mismatch") bad=1
+    if ($14 != "") bad=1
+    if ($16 != "fix-cache-component-manifest-id-before-migration") bad=1
+    if ($17 != "") bad=1
+    found_cache=1
+  }
+  END { exit !(found_cache && !bad) }
+' "$tmp/owner-supervised-cache-child-component-manifest-scaffold-wrong.tsv"
 
 head -n 1 "$tmp/owner-supervised-managed-config-child-review-plan.tsv" | grep -qx $'dot_entry\tchild_name\tchild_path\ttype\tcanonical_target\tenvctl_home_source\tconfig_scope\tsupervision\tnext_action\treview_hint\tapply_command'
 awk -F '\t' 'NF != 11 { print "bad owner-supervised-managed-config-child-review-plan row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/owner-supervised-managed-config-child-review-plan.tsv"
