@@ -2070,6 +2070,7 @@ fn run_env(
             map["MISE_DATA_DIR"] = format!("{tc}/mise").into();
             map["CARGO_HOME"] = format!("{tc}/cargo").into();
             map["RUSTUP_HOME"] = format!("{tc}/rustup").into();
+            map["XDG_CACHE_HOME"] = layout.xdg_cache_home().to_string_lossy().to_string().into();
             map["UV_TOOL_DIR"] = format!("{tc}/uv/tools").into();
             map["UV_PYTHON_INSTALL_DIR"] = format!("{tc}/uv/python").into();
             map["OLLAMA_LIBRARY_PATH"] = format!("{tc}/ollama/lib/ollama").into();
@@ -2115,6 +2116,13 @@ fn run_env(
         println!(
             "export RUSTUP_HOME={}",
             sh_single_quote(&format!("{tc}/rustup"))
+        );
+        // Cache-heavy toolchain frontdoors (notably kache as Cargo's rustc-wrapper)
+        // must default to meta-owned XDG cache instead of leaking active state into
+        // ~/.cache when a shell has only sourced `envctl env --toolchains`.
+        println!(
+            "export XDG_CACHE_HOME={}",
+            sh_single_quote(&layout.xdg_cache_home().to_string_lossy())
         );
         println!(
             "export UV_TOOL_DIR={}",

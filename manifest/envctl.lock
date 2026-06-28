@@ -224,7 +224,7 @@ requires = ["home-local-single-link"]
 resolved = ""
 
 [components.home-config-links]
-content_hash = "5c1b3e1fdb2486b6"
+content_hash = "99f3c9aadff825e2"
 requires = []
 resolved = ""
 
@@ -249,7 +249,7 @@ requires = []
 resolved = ""
 
 [components.kache]
-content_hash = "8409458b7fab3899"
+content_hash = "f5cf742c90024cad"
 requires = []
 resolved = ""
 
@@ -294,6 +294,11 @@ resolved = ""
 [components.meta-env-plugin]
 content_hash = "272d130d0dc8eddd"
 requires = ["rustup"]
+resolved = ""
+
+[components.meta-session-env]
+content_hash = "a5a3182e47746a47"
+requires = []
 resolved = ""
 
 [components.meta-tool-links]
@@ -370,6 +375,11 @@ resolved = ""
 [components.nvidia-open]
 content_hash = "4f43281c513522a2"
 requires = ["nvidia-cuda-repo"]
+resolved = ""
+
+[components.odysseus]
+content_hash = "4ce9bee15e4ba7af"
+requires = ["podman"]
 resolved = ""
 
 [components.ohmyzsh]
@@ -487,7 +497,7 @@ requires = ["yazelix"]
 resolved = ""
 
 [components.yazelix-shell]
-content_hash = "f9ccd3cf5a933e33"
+content_hash = "585dda49f145bbbd"
 requires = ["yazelix"]
 resolved = ""
 
