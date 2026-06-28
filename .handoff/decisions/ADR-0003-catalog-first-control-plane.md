@@ -60,6 +60,10 @@ envctl catalog table paths
 envctl catalog table settings
 envctl catalog table env-vars
 envctl catalog table agent-assets
+envctl catalog table registries
+envctl catalog table config-files
+envctl catalog table observed-facts
+envctl catalog table migration-evidence
 envctl catalog table migration-candidates
 ```
 
@@ -203,6 +207,30 @@ One row per external or internal registry item.
 | `source_file` | Source file that produced the row. |
 | `drift_status` | Registry drift status. |
 
+### `config_files`
+
+One row per imported or rendered control-plane/config file. This prevents "configs" from being only incidental sources of settings; the file/projection itself is queryable.
+
+| Field | Meaning |
+| --- | --- |
+| `config_id` | Stable config/projection identifier. |
+| `path` | Source or destination path. |
+| `file_kind` | Manifest, lock, agent-env, Codex config, MCP config, hub registry, secretd config, handoff export, shell snippet, dashboard layout, systemd unit, etc. |
+| `format` | TOML, YAML, JSON, KDL, shell, Rust registry, rendered report, etc. |
+| `owner_component` | Owning component, when component-scoped. |
+| `owner_subsystem` | Owning subsystem when not component-scoped. |
+| `source_file` | Existing file that produced the row, if imported. |
+| `source_table` | Catalog table/view that renders the projection, if generated. |
+| `generated` | Whether envctl is expected to render the file. |
+| `manual_edits_allowed` | Whether human edits are accepted and importable. |
+| `override_path` | Override/import path for manual control. |
+| `precedence_scope` | Scope in which this file wins or loses precedence. |
+| `sensitive_policy` | Redaction/reference policy for sensitive content. |
+| `renderer` | Renderer responsible for producing the file, if generated. |
+| `validator` | Validator/verifier for import or render acceptance. |
+| `lock_hash` | Lock/effective content hash. |
+| `drift_status` | File/catalog/lock drift status. |
+
 ### `migration_evidence`
 
 One row per adoption or migration action.
@@ -223,6 +251,26 @@ One row per adoption or migration action.
 | `quarantine_path` | Quarantine location, if any. |
 | `rollback_plan` | Recovery plan. |
 | `purge_eligible` | Whether later purge is allowed. |
+
+### `observed_facts`
+
+One row per verifier/probe result about the live machine. Desired-state tables say what envctl intends; observed facts say what the host actually proves right now.
+
+| Field | Meaning |
+| --- | --- |
+| `fact_id` | Stable observation identifier for this probe run/result. |
+| `subject_kind` | Component, path, setting, env var, registry entry, agent asset, config file, service, binary, migration, etc. |
+| `subject_id` | Catalog row id or external subject id being observed. |
+| `probe_kind` | Existence, version, PATH resolution, service status, config-consumed check, parity verifier, etc. |
+| `expected_value` | Desired/effective value being checked, redacted when sensitive. |
+| `observed_value` | Observed value/result, redacted when sensitive. |
+| `status` | Pass, fail, missing, conflict, skipped, unknown. |
+| `evidence_ref` | Log/report/probe output reference, not a secret payload dump. |
+| `verifier` | Verifier command or Rust verifier that produced the fact. |
+| `observed_at` | Observation timestamp. |
+| `source` | Source of the observation. |
+| `drift_status` | Drift interpretation when compared with desired state. |
+| `remediation_hint` | Optional fix/action pointer. |
 
 ## Phase 3 — Generated files as catalog projections
 
@@ -251,7 +299,7 @@ Manual edits allowed: yes/no
 Override path: ...
 ```
 
-Some files become fully generated. Some files may allow manual sections during the transition. Every generated output must be deterministic, diffable, and lockable.
+Some files become fully generated. Some files may allow manual sections during the transition. Every generated output must be deterministic, diffable, lockable, and represented by a `config_files` row so the projection itself has ownership, precedence, manual-edit policy, and drift status.
 
 ## Phase 4 — Bidirectional sync
 
@@ -362,10 +410,11 @@ What envctl intends. Examples:
 - env vars
 - registries
 - agent assets
+- config files/projections
 
 ### Observed state
 
-What the machine actually has. Examples:
+What the machine actually has, captured as `observed_facts` rows. Examples:
 
 - binary exists
 - version probe result
@@ -377,7 +426,7 @@ What the machine actually has. Examples:
 Doctor becomes a table diff:
 
 ```text
-desired_state - observed_state = drift
+desired_state - observed_facts = drift
 ```
 
 That is cleaner and safer than scattered checks whose ownership and precedence are hard to inspect.
@@ -411,7 +460,8 @@ That is cleaner and safer than scattered checks whose ownership and precedence a
 - Read-only import comes first and must not change behavior.
 - Generated outputs are deterministic and diffable.
 - Every row carries source/provenance where practical.
-- Ownership and precedence are explicit for settings, paths, env vars, registries, and agent assets.
+- Ownership and precedence are explicit for settings, config files/projections, paths, env vars, registries, and agent assets.
+- Observed machine facts carry verifier, evidence reference, timestamp, and drift interpretation before doctor treats drift as proven.
 - Sensitive values are redacted or represented by references, never casually rendered in plaintext.
 - Manual overrides require reason/owner/timestamp and should expire or require review.
 - Migration/adoption remains strict-upgrade-only: replacement must be installed, activated, and parity-proven before quarantine or purge.
@@ -431,7 +481,7 @@ That is cleaner and safer than scattered checks whose ownership and precedence a
 This ADR is satisfied when envctl can perform the following without changing existing behavior in the initial phase:
 
 1. `envctl catalog scan --json` emits normalized catalog data from current repo files.
-2. `envctl catalog table <name>` can print at least `components`, `component_hooks`, `paths`, `settings`, `env_vars`, `agent_assets`, `registries`, and `migration_evidence` views, even if early tables are partially populated.
+2. `envctl catalog table <name>` can print at least `components`, `component_hooks`, `paths`, `settings`, `env_vars`, `agent_assets`, `registries`, `config_files`, `migration_evidence`, and `observed_facts` views, even if early tables are partially populated.
 3. `envctl catalog diff` reports file/catalog/lock drift without mutation.
 4. `envctl catalog render --out <tempdir>` produces deterministic projections that can be compared against current files.
 5. Later implementation adds `import`, `sync`, `lock`, and controlled `envctl config edit ...` flows with verifier-gated apply.
