@@ -1648,6 +1648,78 @@ ln -s "$cache_child_meta/.local" "$cache_child_home/.local"
 ln -s "$cache_child_meta/.gitconfig" "$cache_child_home/.gitconfig"
 printf 'cache-index\n' >"$cache_child_home/.cache/tool/index"
 
+cache_child_writer_repo="$tmp/cache-child-writer-repo"
+cache_child_writer_wrong_repo="$tmp/cache-child-writer-wrong-repo"
+cache_child_writer_meta="$tmp/cache-child-writer-meta"
+cache_child_writer_home="$tmp/cache-child-writer-home"
+cache_child_writer_missing_home="$tmp/cache-child-writer-missing-home"
+mkdir -p "$cache_child_writer_repo/scripts" "$cache_child_writer_repo/manifest/components.d"
+mkdir -p "$cache_child_writer_wrong_repo/scripts" "$cache_child_writer_wrong_repo/manifest/components.d"
+mkdir -p "$cache_child_writer_meta/.local" "$cache_child_writer_meta/envctl/home" "$cache_child_writer_home/.cache/tool" "$cache_child_writer_missing_home/.cache"
+cp "$root/scripts/audit-meta-local-paths.sh" "$cache_child_writer_repo/scripts/audit-meta-local-paths.sh"
+cp "$root/scripts/audit-meta-local-paths.sh" "$cache_child_writer_wrong_repo/scripts/audit-meta-local-paths.sh"
+printf '# managed gitconfig\n' >"$cache_child_writer_meta/envctl/home/.gitconfig"
+ln -s "$cache_child_writer_meta/envctl/home/.gitconfig" "$cache_child_writer_meta/.gitconfig"
+ln -s "$cache_child_writer_meta/.local" "$cache_child_writer_home/.local"
+ln -s "$cache_child_writer_meta/.gitconfig" "$cache_child_writer_home/.gitconfig"
+ln -s "$cache_child_writer_meta/.local" "$cache_child_writer_missing_home/.local"
+ln -s "$cache_child_writer_meta/.gitconfig" "$cache_child_writer_missing_home/.gitconfig"
+printf 'cache-index\n' >"$cache_child_writer_home/.cache/tool/index"
+cat >"$cache_child_writer_wrong_repo/manifest/components.d/cache-tool.toml" <<'MANIFEST'
+[[component]]
+id = "cache-other"
+MANIFEST
+
+(
+  cd "$cache_child_writer_repo"
+  scripts/audit-meta-local-paths.sh --write-cache-child-component-manifest tool --meta-root "$cache_child_writer_meta" --real-home "$cache_child_writer_home" --envctl-home-source "$cache_child_writer_meta/envctl/home"
+) >"$tmp/write-cache-child-manifest-dry.out" 2>"$tmp/write-cache-child-manifest-dry.err"
+grep -q 'DRY-RUN: would write manifest/components.d/cache-tool.toml declaring cache-tool for cache child tool' "$tmp/write-cache-child-manifest-dry.out"
+test ! -e "$cache_child_writer_repo/manifest/components.d/cache-tool.toml"
+
+(
+  cd "$cache_child_writer_repo"
+  scripts/audit-meta-local-paths.sh --apply --write-cache-child-component-manifest tool --meta-root "$cache_child_writer_meta" --real-home "$cache_child_writer_home" --envctl-home-source "$cache_child_writer_meta/envctl/home"
+) >"$tmp/write-cache-child-manifest-apply.out" 2>"$tmp/write-cache-child-manifest-apply.err"
+grep -q 'wrote manifest/components.d/cache-tool.toml declaring cache-tool for cache child tool' "$tmp/write-cache-child-manifest-apply.out"
+grep -Fxq '[[component]]' "$cache_child_writer_repo/manifest/components.d/cache-tool.toml"
+grep -Fxq 'id = "cache-tool"' "$cache_child_writer_repo/manifest/components.d/cache-tool.toml"
+grep -Fxq 'name = "Cache child tool"' "$cache_child_writer_repo/manifest/components.d/cache-tool.toml"
+grep -Fxq 'description = "Owner-reviewed manifest stub for cache-tool; review detect/install/fix hooks before any --migrate-cache-child apply."' "$cache_child_writer_repo/manifest/components.d/cache-tool.toml"
+writer_manifest_before="$(sha256sum "$cache_child_writer_repo/manifest/components.d/cache-tool.toml")"
+(
+  cd "$cache_child_writer_repo"
+  scripts/audit-meta-local-paths.sh --apply --write-cache-child-component-manifest tool --meta-root "$cache_child_writer_meta" --real-home "$cache_child_writer_home" --envctl-home-source "$cache_child_writer_meta/envctl/home"
+) >"$tmp/write-cache-child-manifest-idempotent.out" 2>"$tmp/write-cache-child-manifest-idempotent.err"
+writer_manifest_after="$(sha256sum "$cache_child_writer_repo/manifest/components.d/cache-tool.toml")"
+test "$writer_manifest_before" = "$writer_manifest_after"
+grep -q -- '--write-cache-child-component-manifest tool: component manifest manifest/components.d/cache-tool.toml already declares cache-tool' "$tmp/write-cache-child-manifest-idempotent.out"
+
+if (
+  cd "$cache_child_writer_wrong_repo"
+  scripts/audit-meta-local-paths.sh --apply --write-cache-child-component-manifest tool --meta-root "$cache_child_writer_meta" --real-home "$cache_child_writer_home" --envctl-home-source "$cache_child_writer_meta/envctl/home"
+) >"$tmp/write-cache-child-manifest-wrong.out" 2>"$tmp/write-cache-child-manifest-wrong.err"; then
+  echo "expected --write-cache-child-component-manifest to reject existing wrong manifests" >&2
+  exit 1
+fi
+grep -q -- '--write-cache-child-component-manifest tool: component manifest manifest/components.d/cache-tool.toml already exists but does not declare component id cache-tool; review/fix manually' "$tmp/write-cache-child-manifest-wrong.err"
+grep -Fxq 'id = "cache-other"' "$cache_child_writer_wrong_repo/manifest/components.d/cache-tool.toml"
+
+if "$root/scripts/audit-meta-local-paths.sh" --write-cache-child-component-manifest ../evil --meta-root "$cache_child_writer_meta" --real-home "$cache_child_writer_home" --envctl-home-source "$cache_child_writer_meta/envctl/home" >"$tmp/write-cache-child-manifest-invalid.out" 2>"$tmp/write-cache-child-manifest-invalid.err"; then
+  echo "expected --write-cache-child-component-manifest to reject path-like child names" >&2
+  exit 1
+fi
+grep -q -- '--write-cache-child-component-manifest ../evil is not a direct .cache child name' "$tmp/write-cache-child-manifest-invalid.err"
+
+if (
+  cd "$cache_child_writer_repo"
+  scripts/audit-meta-local-paths.sh --apply --write-cache-child-component-manifest missing --meta-root "$cache_child_writer_meta" --real-home "$cache_child_writer_missing_home" --envctl-home-source "$cache_child_writer_meta/envctl/home"
+) >"$tmp/write-cache-child-manifest-missing.out" 2>"$tmp/write-cache-child-manifest-missing.err"; then
+  echo "expected --write-cache-child-component-manifest to reject missing cache children" >&2
+  exit 1
+fi
+grep -q -- '--write-cache-child-component-manifest missing: source .*\.cache/missing is missing; refusing cache component manifest materialization' "$tmp/write-cache-child-manifest-missing.err"
+
 (
   cd "$cache_child_manifest_repo"
   scripts/audit-meta-local-paths.sh --migrate-cache-child tool --meta-root "$cache_child_meta" --real-home "$cache_child_home" --envctl-home-source "$cache_child_meta/envctl/home"

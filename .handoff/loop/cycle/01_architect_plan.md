@@ -1,39 +1,22 @@
-# TASK-0078 managed config deep-diff summary plan
+# TASK-0078 cache-child manifest writer plan
 
 ## Target
-
-Add a read-only owner-supervised deep-diff summary report for managed `.config` child conflicts so
-existing real-home state can be reviewed with aggregate counts before any managed-source bridge is
-attempted.
+Add an explicit owner-reviewed materialization path for deterministic cache-child component manifest stubs, without migrating cache data.
 
 ## Contract
+New flag: `--write-cache-child-component-manifest NAME`.
 
-New flag: `--owner-supervised-managed-config-child-deep-diff-summary PATH`.
+- `NAME` must be one direct child of real-home `.cache`.
+- Dry-run by default prints the manifest write; `--apply` writes only `manifest/components.d/cache-<component>.toml`.
+- Written TOML is deterministic and matches the scaffold report's minimal component stub.
+- Existing matching manifests are OK/no-op; existing wrong/non-regular manifests fail closed and are never overwritten.
+- Missing sources, external symlink sources, non-directory sources, and invalid/path-like names fail closed.
+- It never moves cache data and preserves `--migrate-cache-child`'s reviewed-manifest precondition. Writer execution intentionally follows migration attempts, so one invocation cannot write and immediately migrate without review.
 
-TSV columns:
-
-```text
-dot_entry child_name real_path managed_source real_type managed_type real_deep_entries managed_deep_entries real_deep_files managed_deep_files shared_deep_entries real_only_deep_entries managed_only_deep_entries type_conflict_deep_entries differing_files deep_identical supervision next_action apply_command
-```
-
-Rows are emitted only for direct `.config/<child>` candidates whose action is
-`owner-supervised-config-child-bridge` and where both the real-home child and
-`$ENVCTL_HOME_SOURCE/.config/<child>` exist. The report is aggregate-only: it may expose the direct
-child name and source roots already present in earlier owner-supervised reports, but it must not emit
-nested relative paths or file contents.
-
-Routing:
-
-- deep-identical trees: `deep_identical=yes`, `next_action=review-then-bridge-identical-managed-config-child`
-- differing/type-conflict/missing-entry trees: `deep_identical=no`,
-  `next_action=owner-review-real-home-config-child-deep-diff-before-bridge`
-- `supervision=owner-reviewed`
-- `apply_command` stays empty; report-only, no bridge or archive mutation.
+## Runtime surface
+`runtime_verifiable? yes` — drive the shell script against live `.wasm-pack` in dry-run mode and prove no manifest file is created.
 
 ## Verification plan
-
-- Red: focused fixture test fails because the new flag is unknown.
-- Green: lock the 19-column schema plus identical and differing fixture branches, including
-  real-only, managed-only, type-conflict, and differing shared-file counts.
-- Runtime: live non-mutating audit should emit the current managed-config child conflict rows with
-  empty apply commands and review-only next actions.
+- Red: focused test/probe fails because the flag is unknown.
+- Green: fixture tests for dry-run, apply write, idempotent existing manifest, wrong-manifest refusal, invalid name, and missing source.
+- Runtime: live dry-run for `.wasm-pack`, validation report unchanged/non-mutating.
