@@ -59,7 +59,24 @@ has_unique_patch() {
 is_patch_equivalent_to_master() {
   local b="$1"
   git show-ref --verify --quiet "refs/heads/$b" || return 1
-  ! has_unique_patch "$b"
+  # Fast path: every commit is individually patch-present upstream (normal/rebase/cherry-pick
+  # merges, and SINGLE-commit squashes — one commit's patch-id == the squash's patch-id).
+  has_unique_patch "$b" || return 0
+  # Squash path (the >1-commit case `git cherry` MISSES): a multi-commit branch collapses to ONE
+  # commit on master, so per-commit patch-id matching sees every branch commit as unique (`+`) and
+  # would refuse to reap it forever (the husk-pileup the owner flagged). Detect it by the branch's
+  # COMBINED patch-id (merge-base..branch) matching some master commit's patch-id since that
+  # merge-base — i.e. the squash commit. Robust to master advancing past the squash (unrelated
+  # commits simply don't match) and fail-closed (no match => not reapable).
+  local mb bpid c
+  mb="$(git merge-base "refs/heads/$b" origin/master 2>/dev/null)" || return 1
+  [ -n "$mb" ] || return 1
+  bpid="$(git diff "$mb" "refs/heads/$b" | git patch-id --stable 2>/dev/null | awk '{print $1}')"
+  [ -n "$bpid" ] || return 1
+  for c in $(git rev-list "$mb"..origin/master 2>/dev/null); do
+    [ "$(git diff "$c^" "$c" 2>/dev/null | git patch-id --stable 2>/dev/null | awk '{print $1}')" = "$bpid" ] && return 0
+  done
+  return 1
 }
 
 # Branch is reapable iff it is already in origin/master OR all remaining commits are

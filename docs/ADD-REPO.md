@@ -1,9 +1,57 @@
-# envctl `add-repo` — build any repo from source and wire it in
+# envctl `add-repo` — register a repo into the workspace
 
-`add-repo` turns an upstream git repo (or local working tree) into a **first-class
-managed component**: it clones, optionally transforms, detects the build system,
-builds from source, installs the artifacts, wires them onto `PATH`, and registers a
-drop-in so `auto-detect` / `install` / `reset` / `auto-fix` manage it from then on.
+`add-repo` brings an upstream git repo into the meta workspace one of two ways,
+chosen by `--mode` (default `auto`):
+
+- **`peer`** — register it the **meta-native** way: a first-class workspace member.
+  envctl grep-guards-inserts a `projects:` entry into the meta-root `.meta.yaml`,
+  adds `<id>/` to the root `.gitignore`, and clones the repo as a **meta sibling**.
+  From then on it is reachable by `meta exec`/`git`/`worktree` and built in the cargo
+  workspace — exactly like every other peer. **No managed drop-in is written.**
+- **`component`** — turn it into a **managed component**: clone into a private store,
+  optionally transform, detect the build system, build from source, install the
+  artifacts onto `PATH`, and register a `components.d/<id>.toml` drop-in so
+  `auto-detect` / `install` / `reset` / `auto-fix` manage it. For irreducible
+  third-party tools that cannot be a workspace member.
+
+**`auto` (default) routes by remote owner:** an owned/FlexNetOS remote becomes a
+**peer**; everything else becomes a **component**. Force either with
+`--mode peer|component`. This is what keeps add-repo aligned with meta's peer-repo
+model instead of treating every owned repo as a private child.
+
+## Peer mode (the meta-native default for owned repos)
+
+meta has no mutating `meta project add` verb **by design** — the workspace topology
+is declared in `.meta.yaml` and `meta git update` syncs the filesystem to it (KB
+`patterns.md`; ADR-0001 §6 "grep-guard file edits, never blind append"). So envctl
+owns the registration seam and performs the sanctioned edit, **fail-closed and
+dry-run-by-default** like the rest of add-repo:
+
+- **Preview by default.** A bare `add-repo` (no `--build`) prints the exact
+  `.meta.yaml` + `.gitignore` edits and the clone target — and mutates nothing.
+- **Idempotent + grep-guarded.** The `.meta.yaml` entry is inserted **only if**
+  `  <id>:` is absent; `<id>/` is appended to `.gitignore` **only if** absent; the
+  sibling is cloned **only if** missing. Re-running is a no-op.
+- **The declaration is the source of truth.** On `--build`, envctl edits the files
+  then clones the sibling; a clone failure leaves the peer *declared* (a later
+  `meta git update` materializes it) rather than half-registered.
+- **`provides:` / `tags:`** for the entry come from `--provides`/`--tag` (repeatable);
+  the GitHub remote is canonicalized to the `git@github.com:Org/Repo.git` form every
+  existing peer uses.
+
+```bash
+# preview a peer registration (owned remote auto-routes to peer; mutates nothing):
+envctl add-repo https://github.com/FlexNetOS/beads_rust --id beads_rust
+
+# apply it: edit .meta.yaml + .gitignore, clone the sibling, tag it:
+envctl add-repo https://github.com/FlexNetOS/beads_rust --id beads_rust \
+  --tag tools --tag rust --build
+meta project list -r     # verify · meta git update keeps it in sync
+```
+
+## Component mode
+
+The build-from-source path for tools that aren't workspace members:
 
 ```
 acquire → [strategy transform] → detect → build (streamed) → locate
@@ -108,8 +156,14 @@ envctl reset pastel --apply # removes symlinks + drops the clone
 
 ## GUI
 
-The **Add Repo** screen exposes URL / id / ref / build-cmd, a **strategy** picker
-with strategy-specific fields (cherry-pick bins, rename map, refactor patch/AI-goal),
-and a **"Build now"** toggle (off = preview). The AI flavor shows a banner that the
-agent runs non-interactively and never auto-commits. Output streams live into the
-**Logs** tab.
+The **Add Repo** screen exposes URL / id / ref / build-cmd and a **"Register as"**
+picker (`auto` / `peer` / `component`). The form adapts to the resolved mode:
+
+- **peer** — shows `provides` / `tags` inputs for the `.meta.yaml` entry; "Build now"
+  applies the `.meta.yaml`/`.gitignore` edits + sibling clone (off = preview).
+- **component** — shows the **strategy** picker with strategy-specific fields
+  (cherry-pick bins, rename map, refactor patch/AI-goal); the AI flavor banners that
+  the agent runs non-interactively and never auto-commits.
+
+`auto` resolves to peer for owned/FlexNetOS remotes and component otherwise, mirroring
+the CLI router. Output streams live into the **Logs** tab.

@@ -1,9 +1,9 @@
 [credential "https://github.com"]
 	helper = 
-	helper = !/usr/bin/gh auth git-credential
+	helper = "!f() { M=${META_ROOT:?META_ROOT required}; exec \"$M/usr/bin/gh\" auth git-credential \"$@\"; }; f"
 [credential "https://gist.github.com"]
 	helper = 
-	helper = !/usr/bin/gh auth git-credential
+	helper = "!f() { M=${META_ROOT:?META_ROOT required}; exec \"$M/usr/bin/gh\" auth git-credential \"$@\"; }; f"
 [user]
 	name = FlexNetOS
 	email = flexnetos@de-flex.net

@@ -28,7 +28,12 @@ description = "Rootless container stack from the static podman release, installe
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/podman/usr/local/bin/podman\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/podman\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/podman/usr/local/bin/podman\")\" ]"]
+# Installed iff the meta-hosted podman binary exists AND a meta frontdoor bridge to it runs —
+# accepting EITHER the canonical $M/usr/bin (post-#271) OR the legacy $M/.local/bin compatibility
+# bridge. The old check hard-required a $M/usr/bin/podman *symlink*, so on a box that bridges via
+# .local/bin it falsely reported "not installed" → `envctl install` re-triggered the (formerly
+# destructive) podman reinstall. This is read-only and strictly more correct.
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; B=\"$M/.toolchains/podman/usr/local/bin/podman\"; [ -x \"$B\" ] || exit 1; for c in \"$M/usr/bin/podman\" \"$M/.local/bin/podman\"; do [ -x \"$c\" ] && \"$c\" --version >/dev/null 2>&1 && exit 0; done; exit 1"]
 [component.install]
 kind = "script"
 script = '''
@@ -43,7 +48,11 @@ tarball="$cache/podman-linux-$A-$VER.tar.gz"
 [ -s "$tarball" ] || curl -fSL "$URL" -o "$tarball"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 tar -xzf "$tarball" -C "$tmp"
-rm -rf "$DEST"; install -d -m 755 "$DEST"
+# Re-extract the binary/config tree ONLY. Do NOT `rm -rf "$DEST"` — the container store
+# (graphroot/runroot/rootless-storage, set under $DEST in storage.conf below) lives here; wiping
+# it on a reinstall destroys every image/container (it once nuked a live stack). Removing just
+# usr/ + etc/ refreshes the payload while preserving the store; cp -a overlays the new binaries.
+rm -rf "$DEST/usr" "$DEST/etc"; install -d -m 755 "$DEST"
 cp -a "$tmp/podman-linux-$A/." "$DEST/"
 
 # Relocated, meta-hosted config. The podman binary is direct; config is read via
@@ -85,7 +94,11 @@ done
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$META_ROOT/usr/bin:$PATH\"; [ \"$(readlink -f \"$(command -v podman)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/podman/usr/local/bin/podman\")\" ] && podman --version | grep -q '5\\.8\\.3' && podman info --format '{{.Host.Conmon.Path}} {{.Host.OCIRuntime.Path}}' | grep -q \"$M/.toolchains/podman\""]
+# Verify the META-LOCAL podman is the active engine: pinned version AND its conmon + OCI runtime
+# resolve under $M/.toolchains/podman. The old check also required the frontdoor to be a *symlink*
+# to the toolchains binary (`readlink -f` equality), which false-fails on a box whose bridge is a
+# copy at $M/.local/bin — the conmon/runtime-under-toolchains assertion already proves authenticity.
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; P=\"$(command -v podman 2>/dev/null || echo \"$M/.toolchains/podman/usr/local/bin/podman\")\"; \"$P\" --version 2>/dev/null | grep -q '5\\.8\\.3' && \"$P\" info --format '{{.Host.Conmon.Path}} {{.Host.OCIRuntime.Path}}' 2>/dev/null | grep -q \"$M/.toolchains/podman\""]
 [component.fix]
 kind = "script"
 script = '''
@@ -100,7 +113,11 @@ tarball="$cache/podman-linux-$A-$VER.tar.gz"
 [ -s "$tarball" ] || curl -fSL "$URL" -o "$tarball"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 tar -xzf "$tarball" -C "$tmp"
-rm -rf "$DEST"; install -d -m 755 "$DEST"
+# Re-extract the binary/config tree ONLY. Do NOT `rm -rf "$DEST"` — the container store
+# (graphroot/runroot/rootless-storage, set under $DEST in storage.conf below) lives here; wiping
+# it on a reinstall destroys every image/container (it once nuked a live stack). Removing just
+# usr/ + etc/ refreshes the payload while preserving the store; cp -a overlays the new binaries.
+rm -rf "$DEST/usr" "$DEST/etc"; install -d -m 755 "$DEST"
 cp -a "$tmp/podman-linux-$A/." "$DEST/"
 install -d -m 755 "$DEST/etc/containers" "$META_ROOT/.config/containers" "$META_ROOT/usr/bin"
 cat > "$DEST/etc/containers/containers.conf" <<EOF

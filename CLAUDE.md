@@ -82,7 +82,7 @@ bash ci/gates/enable.sh         # secretd systemd-unit enable invariant
 bash ci/gates/p7.sh             # .handoff Tier-A p7-conformance: schema tags + ledger residency (ADR-0004 §3)
 bash ci/gates/kdf-feature-off.sh # test-speed Argon2 floor must be off by default (TASK-0032)
 bash ci/gates/agent-env.sh      # agent-env.yaml ↔ agent-env.lock no-drift (TASK-0040)
-bash ci/gates/meta-local-policy.sh # active install sources target $META_ROOT/.local only; single real-home .local bridge
+bash ci/gates/meta-local-policy.sh # active install sources target $META_ROOT FHS/XDG only; single real-home .local bridge
 bash ci/gates/loop-state.sh     # forge-loop counter integrity: ints, cadence>=1, cycles_total monotonic & >= last_wrapup (TASK-0041)
 bash ci/gates/harness-scripts.sh # Feature-Forge harness tooling safety (merge-driver + reaper + loop-state-gate invariants)
 ```
@@ -167,7 +167,7 @@ caches) and it **deliberately overrides `git-kb init`'s tool default**, which ig
 
 ## meta mission-control dashboard (zellij layout)
 
-The `dashboard` component (`manifest/dashboard.toml`) installs two launchers on `$META_ROOT/.local/bin`:
+The `dashboard` component (`manifest/dashboard.toml`) installs two launchers on `$META_ROOT/usr/bin`:
 - `envctl-dashboard-pane <repo>` — called by every pane in the generated zellij
   `mission-control.kdl` layout.
 - `envctl-open-claude` — run by a human inside a pane when they actually want a
