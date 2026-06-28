@@ -25,6 +25,11 @@ content_hash = "3d99fd6a69e799b9"
 requires = []
 resolved = ""
 
+[components.cache-wasm-pack]
+content_hash = "3cbf0bb0e345a085"
+requires = []
+resolved = ""
+
 [components.cargo-nextest]
 content_hash = "9932be9784fb68b2"
 requires = ["rustup"]
