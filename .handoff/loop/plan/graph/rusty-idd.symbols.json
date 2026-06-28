@@ -1,0 +1,4511 @@
+{
+  "target": "rusty-idd",
+  "git_sha": "5a55284",
+  "branch": "plan/lifeos-meta-front-door",
+  "source": "git-kb code symbols (AST), scoped to crates/",
+  "symbol_count_total_repo": 19429,
+  "symbols_returned_in_crates": 500,
+  "truncation_note": "result truncated at git-kb 500-row cap; this is a LOWER BOUND, not exhaustive",
+  "symbols": [
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::enum::CodexCommand",
+      "name": "CodexCommand",
+      "kind": "enum",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 15,
+      "visibility": "pub",
+      "signature": "pub enum CodexCommand {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::struct::EnvCheckArgs",
+      "name": "EnvCheckArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 29,
+      "visibility": "pub",
+      "signature": "pub struct EnvCheckArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::struct::ModelLoopArgs",
+      "name": "ModelLoopArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 35,
+      "visibility": "pub",
+      "signature": "pub struct ModelLoopArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::struct::RuntimeAuditArgs",
+      "name": "RuntimeAuditArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 47,
+      "visibility": "pub",
+      "signature": "pub struct RuntimeAuditArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::struct::SystemAuditArgs",
+      "name": "SystemAuditArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 53,
+      "visibility": "pub",
+      "signature": "pub struct SystemAuditArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::struct::WorkflowCheckArgs",
+      "name": "WorkflowCheckArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 91,
+      "visibility": "pub",
+      "signature": "pub struct WorkflowCheckArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::enum::WorkflowPhase",
+      "name": "WorkflowPhase",
+      "kind": "enum",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 101,
+      "visibility": "pub",
+      "signature": "pub enum WorkflowPhase {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::struct::LoopConfig",
+      "name": "LoopConfig",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 108,
+      "visibility": null,
+      "signature": "struct LoopConfig {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::struct::ModelPass",
+      "name": "ModelPass",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 115,
+      "visibility": null,
+      "signature": "struct ModelPass {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::struct::AgentConfig",
+      "name": "AgentConfig",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 125,
+      "visibility": null,
+      "signature": "struct AgentConfig {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::struct::LoopEntry",
+      "name": "LoopEntry",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 132,
+      "visibility": null,
+      "signature": "struct LoopEntry {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::struct::LoopManifest",
+      "name": "LoopManifest",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 146,
+      "visibility": null,
+      "signature": "struct LoopManifest {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::run",
+      "name": "run",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 154,
+      "visibility": "pub",
+      "signature": "pub fn run(command: CodexCommand) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::try_run",
+      "name": "try_run",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 164,
+      "visibility": null,
+      "signature": "fn try_run(command: CodexCommand) -> anyhow::Result<()> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::env_check",
+      "name": "env_check",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 174,
+      "visibility": null,
+      "signature": "fn env_check(workspace: &Path) -> anyhow::Result<()> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::workflow_check",
+      "name": "workflow_check",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 386,
+      "visibility": null,
+      "signature": "fn workflow_check(args: WorkflowCheckArgs) -> anyhow::Result<()> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::read_hook_input",
+      "name": "read_hook_input",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 439,
+      "visibility": null,
+      "signature": "fn read_hook_input() -> Option<Value> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::hook_input_is_write_intent",
+      "name": "hook_input_is_write_intent",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 447,
+      "visibility": null,
+      "signature": "fn hook_input_is_write_intent(input: &Option<Value>) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::command_is_write_intent",
+      "name": "command_is_write_intent",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 471,
+      "visibility": null,
+      "signature": "fn command_is_write_intent(command: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::hook_input_requires_validation",
+      "name": "hook_input_requires_validation",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 503,
+      "visibility": null,
+      "signature": "fn hook_input_requires_validation(input: &Option<Value>) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::command_requires_validation",
+      "name": "command_requires_validation",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 517,
+      "visibility": null,
+      "signature": "fn command_requires_validation(command: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::check_develop_worktree",
+      "name": "check_develop_worktree",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 533,
+      "visibility": null,
+      "signature": "fn check_develop_worktree(root: &Path, failures: &mut Vec<String>) {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::active_change",
+      "name": "active_change",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 556,
+      "visibility": null,
+      "signature": "fn active_change(root: &Path) -> Option<String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::check_openspec_change_ready",
+      "name": "check_openspec_change_ready",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 569,
+      "visibility": null,
+      "signature": "fn check_openspec_change_ready(root: &Path, change: &str, failures: &mut Vec<String>) {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::check_task_evidence",
+      "name": "check_task_evidence",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 592,
+      "visibility": null,
+      "signature": "fn check_task_evidence(root: &Path, failures: &mut Vec<String>) {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::has_work_requiring_delivery",
+      "name": "has_work_requiring_delivery",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 613,
+      "visibility": null,
+      "signature": "fn has_work_requiring_delivery(root: &Path) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::develop_base_ref",
+      "name": "develop_base_ref",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 623,
+      "visibility": null,
+      "signature": "fn develop_base_ref(root: &Path) -> &'static str {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::check_delivery_evidence",
+      "name": "check_delivery_evidence",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 641,
+      "visibility": null,
+      "signature": "fn check_delivery_evidence(root: &Path, failures: &mut Vec<String>) {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::check_validation_evidence",
+      "name": "check_validation_evidence",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 657,
+      "visibility": null,
+      "signature": "fn check_validation_evidence(root: &Path, failures: &mut Vec<String>) {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::constant::VALIDATION_SECTIONS",
+      "name": "VALIDATION_SECTIONS",
+      "kind": "constant",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 671,
+      "visibility": null,
+      "signature": "const VALIDATION_SECTIONS: [&str; 6] = ["
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::validation_evidence_is_complete",
+      "name": "validation_evidence_is_complete",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 680,
+      "visibility": null,
+      "signature": "fn validation_evidence_is_complete(text: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::pr_evidence_is_complete",
+      "name": "pr_evidence_is_complete",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 695,
+      "visibility": null,
+      "signature": "fn pr_evidence_is_complete(root: &Path, text: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::evidence_matches_active_change",
+      "name": "evidence_matches_active_change",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 730,
+      "visibility": null,
+      "signature": "fn evidence_matches_active_change(root: &Path, text: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::current_branch",
+      "name": "current_branch",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 741,
+      "visibility": null,
+      "signature": "fn current_branch(root: &Path) -> Option<String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::section_after",
+      "name": "section_after",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 748,
+      "visibility": null,
+      "signature": "fn section_after(sections: &[(&str, usize, String)], before: &str, after: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::validation_section",
+      "name": "validation_section",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 762,
+      "visibility": null,
+      "signature": "fn validation_section(text: &str, label: &'static str) -> Option<(&'static str, usize, String)> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::validation_line_after_label",
+      "name": "validation_line_after_label",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 791,
+      "visibility": null,
+      "signature": "fn validation_line_after_label<'a>(line: &'a str, label: &str) -> Option<&'a str> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::validation_line_label",
+      "name": "validation_line_label",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 796,
+      "visibility": null,
+      "signature": "fn validation_line_label(line: &str) -> Option<&'static str> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::strip_markdown_list_prefix",
+      "name": "strip_markdown_list_prefix",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 804,
+      "visibility": null,
+      "signature": "fn strip_markdown_list_prefix(line: &str) -> &str {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::markdown_list_item",
+      "name": "markdown_list_item",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 808,
+      "visibility": null,
+      "signature": "fn markdown_list_item(line: &str) -> Option<&str> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::validation_section_is_success",
+      "name": "validation_section_is_success",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 823,
+      "visibility": null,
+      "signature": "fn validation_section_is_success(evidence: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::check_required_file",
+      "name": "check_required_file",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 872,
+      "visibility": null,
+      "signature": "fn check_required_file(root: &Path, rel: &str, detail: &str, failures: &mut Vec<String>) {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::contains_spec_file",
+      "name": "contains_spec_file",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 878,
+      "visibility": null,
+      "signature": "fn contains_spec_file(dir: &Path) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::contains_markdown_file",
+      "name": "contains_markdown_file",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 882,
+      "visibility": null,
+      "signature": "fn contains_markdown_file(dir: &Path) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::contains_task_card",
+      "name": "contains_task_card",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 886,
+      "visibility": null,
+      "signature": "fn contains_task_card(dir: &Path) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::contains_file_named",
+      "name": "contains_file_named",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 890,
+      "visibility": null,
+      "signature": "fn contains_file_named(dir: &Path, name: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::contains_file_with_extension",
+      "name": "contains_file_with_extension",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 904,
+      "visibility": null,
+      "signature": "fn contains_file_with_extension(dir: &Path, extension: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::git_status",
+      "name": "git_status",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 918,
+      "visibility": null,
+      "signature": "fn git_status(root: &Path, args: &[&str]) -> anyhow::Result<()> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::git_output",
+      "name": "git_output",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 930,
+      "visibility": null,
+      "signature": "fn git_output(root: &Path, args: &[&str]) -> anyhow::Result<String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::runtime_audit",
+      "name": "runtime_audit",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 946,
+      "visibility": null,
+      "signature": "fn runtime_audit(workspace: &Path) -> anyhow::Result<()> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::system_audit",
+      "name": "system_audit",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1000,
+      "visibility": null,
+      "signature": "fn system_audit(args: SystemAuditArgs) -> anyhow::Result<()> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::struct::CodexSourceAudit",
+      "name": "CodexSourceAudit",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1126,
+      "visibility": null,
+      "signature": "struct CodexSourceAudit {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::struct::EnvctlCodexAudit",
+      "name": "EnvctlCodexAudit",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1133,
+      "visibility": null,
+      "signature": "struct EnvctlCodexAudit {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::struct::RustToolchainAudit",
+      "name": "RustToolchainAudit",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1143,
+      "visibility": null,
+      "signature": "struct RustToolchainAudit {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::audit_codex_source_root",
+      "name": "audit_codex_source_root",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1160,
+      "visibility": null,
+      "signature": "fn audit_codex_source_root(root: &Path) -> anyhow::Result<CodexSourceAudit> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::audit_envctl_codex_component",
+      "name": "audit_envctl_codex_component",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1184,
+      "visibility": null,
+      "signature": "fn audit_envctl_codex_component(root: &Path) -> anyhow::Result<EnvctlCodexAudit> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::audit_rust_toolchain",
+      "name": "audit_rust_toolchain",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1203,
+      "visibility": null,
+      "signature": "fn audit_rust_toolchain(args: &SystemAuditArgs) -> anyhow::Result<RustToolchainAudit> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::impl::RustToolchainAudit",
+      "name": "RustToolchainAudit",
+      "kind": "impl",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1303,
+      "visibility": null,
+      "signature": "impl RustToolchainAudit {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::method::RustToolchainAudit.validate",
+      "name": "validate",
+      "kind": "method",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1304,
+      "visibility": null,
+      "signature": "fn validate(&mut self) {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::absolute_path",
+      "name": "absolute_path",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1373,
+      "visibility": null,
+      "signature": "fn absolute_path(path: &Path) -> anyhow::Result<PathBuf> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::absolute_path_lossy",
+      "name": "absolute_path_lossy",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1383,
+      "visibility": null,
+      "signature": "fn absolute_path_lossy(path: &Path) -> PathBuf {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::rustup_which",
+      "name": "rustup_which",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1387,
+      "visibility": null,
+      "signature": "fn rustup_which(binary: &str) -> Option<PathBuf> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::active_toolchain",
+      "name": "active_toolchain",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1400,
+      "visibility": null,
+      "signature": "fn active_toolchain() -> Option<String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::cache_root_from_env",
+      "name": "cache_root_from_env",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1414,
+      "visibility": null,
+      "signature": "fn cache_root_from_env() -> Option<PathBuf> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::linker_from_rustflags",
+      "name": "linker_from_rustflags",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1427,
+      "visibility": null,
+      "signature": "fn linker_from_rustflags() -> Option<String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::codegen_backend_from_rustflags",
+      "name": "codegen_backend_from_rustflags",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1446,
+      "visibility": null,
+      "signature": "fn codegen_backend_from_rustflags() -> Option<String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::wrapper_name",
+      "name": "wrapper_name",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1453,
+      "visibility": null,
+      "signature": "fn wrapper_name(path: &Path) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::is_wild_linker",
+      "name": "is_wild_linker",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1461,
+      "visibility": null,
+      "signature": "fn is_wild_linker(path: &Path) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::empty_marker",
+      "name": "empty_marker",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1469,
+      "visibility": null,
+      "signature": "fn empty_marker(value: &str) -> &str {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::version_at_least",
+      "name": "version_at_least",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1477,
+      "visibility": null,
+      "signature": "fn version_at_least(value: &str, major: u64, minor: u64, patch: u64) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::extract_component_block",
+      "name": "extract_component_block",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1491,
+      "visibility": null,
+      "signature": "fn extract_component_block(text: &str, id: &str) -> Option<String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::count_python_markers_under",
+      "name": "count_python_markers_under",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1500,
+      "visibility": null,
+      "signature": "fn count_python_markers_under(path: &Path) -> anyhow::Result<usize> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::binary_kind",
+      "name": "binary_kind",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1522,
+      "visibility": null,
+      "signature": "fn binary_kind(path: &Path) -> anyhow::Result<&'static str> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::find_on_path",
+      "name": "find_on_path",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1533,
+      "visibility": null,
+      "signature": "fn find_on_path(command: &str) -> anyhow::Result<PathBuf> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::struct::RuntimePythonAudit",
+      "name": "RuntimePythonAudit",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1545,
+      "visibility": null,
+      "signature": "struct RuntimePythonAudit {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::struct::RuntimeFinding",
+      "name": "RuntimeFinding",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1558,
+      "visibility": null,
+      "signature": "struct RuntimeFinding {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::scan_dir",
+      "name": "scan_dir",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1563,
+      "visibility": null,
+      "signature": "fn scan_dir(root: &Path, dir: &Path, audit: &mut RuntimePythonAudit) -> anyhow::Result<()> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::scan_file",
+      "name": "scan_file",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1583,
+      "visibility": null,
+      "signature": "fn scan_file(root: &Path, path: &Path, audit: &mut RuntimePythonAudit) -> anyhow::Result<()> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::live_python_lines",
+      "name": "live_python_lines",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1632,
+      "visibility": null,
+      "signature": "fn live_python_lines(text: &str) -> Vec<String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::python_marker_count",
+      "name": "python_marker_count",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1640,
+      "visibility": null,
+      "signature": "fn python_marker_count(path: &str, text: &str) -> usize {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::contains_python_marker",
+      "name": "contains_python_marker",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1649,
+      "visibility": null,
+      "signature": "fn contains_python_marker(text: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::is_obsolete_python_tool",
+      "name": "is_obsolete_python_tool",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1661,
+      "visibility": null,
+      "signature": "fn is_obsolete_python_tool(rel: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::is_live_runtime_surface",
+      "name": "is_live_runtime_surface",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1666,
+      "visibility": null,
+      "signature": "fn is_live_runtime_surface(rel: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::is_parser_support",
+      "name": "is_parser_support",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1674,
+      "visibility": null,
+      "signature": "fn is_parser_support(rel: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::is_test_fixture",
+      "name": "is_test_fixture",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1683,
+      "visibility": null,
+      "signature": "fn is_test_fixture(rel: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::is_audit_implementation",
+      "name": "is_audit_implementation",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1687,
+      "visibility": null,
+      "signature": "fn is_audit_implementation(rel: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::is_core_inventory_support",
+      "name": "is_core_inventory_support",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1691,
+      "visibility": null,
+      "signature": "fn is_core_inventory_support(rel: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::is_legacy_bridge_material",
+      "name": "is_legacy_bridge_material",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1695,
+      "visibility": null,
+      "signature": "fn is_legacy_bridge_material(rel: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::is_policy_or_doc",
+      "name": "is_policy_or_doc",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1699,
+      "visibility": null,
+      "signature": "fn is_policy_or_doc(rel: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::rel_path",
+      "name": "rel_path",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1712,
+      "visibility": null,
+      "signature": "fn rel_path<'a>(root: &'a Path, path: &'a Path) -> &'a Path {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::validate_json",
+      "name": "validate_json",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1716,
+      "visibility": null,
+      "signature": "fn validate_json(path: &Path, failures: &mut Vec<String>) {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::validate_toml",
+      "name": "validate_toml",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1726,
+      "visibility": null,
+      "signature": "fn validate_toml(path: &Path, failures: &mut Vec<String>) {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::model_loop",
+      "name": "model_loop",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1736,
+      "visibility": null,
+      "signature": "fn model_loop(args: ModelLoopArgs) -> anyhow::Result<()> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::prompt_with_agent",
+      "name": "prompt_with_agent",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1824,
+      "visibility": null,
+      "signature": "fn prompt_with_agent(agent_dir: &Path, pass: &ModelPass) -> anyhow::Result<String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::codex_exec_command",
+      "name": "codex_exec_command",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1859,
+      "visibility": null,
+      "signature": "fn codex_exec_command(pass: &ModelPass, prompt: &str, output: &Path) -> Vec<String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::write_manifest",
+      "name": "write_manifest",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1876,
+      "visibility": null,
+      "signature": "fn write_manifest("
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::canonical_workspace",
+      "name": "canonical_workspace",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1887,
+      "visibility": null,
+      "signature": "fn canonical_workspace(workspace: &Path) -> anyhow::Result<PathBuf> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::git_root",
+      "name": "git_root",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1898,
+      "visibility": null,
+      "signature": "fn git_root() -> Option<PathBuf> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::read_text",
+      "name": "read_text",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1909,
+      "visibility": null,
+      "signature": "fn read_text(path: &Path) -> anyhow::Result<String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::unix_run_id",
+      "name": "unix_run_id",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1913,
+      "visibility": null,
+      "signature": "fn unix_run_id() -> anyhow::Result<String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::shell_join",
+      "name": "shell_join",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1921,
+      "visibility": null,
+      "signature": "fn shell_join(command: &[String]) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/codex.rs::function::shell_quote",
+      "name": "shell_quote",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/codex.rs",
+      "line": 1929,
+      "visibility": null,
+      "signature": "fn shell_quote(value: &str) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/core.rs::function::delegate",
+      "name": "delegate",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/core.rs",
+      "line": 11,
+      "visibility": "pub",
+      "signature": "pub fn delegate(verb: &str, passthrough: &[String]) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/deploy.rs::constant::DEPLOY_HOOK_CMD",
+      "name": "DEPLOY_HOOK_CMD",
+      "kind": "constant",
+      "file_path": "crates/cli/src/commands/deploy.rs",
+      "line": 26,
+      "visibility": null,
+      "signature": "const DEPLOY_HOOK_CMD: &str ="
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/deploy.rs::constant::FRONT_DOOR_MARKER",
+      "name": "FRONT_DOOR_MARKER",
+      "kind": "constant",
+      "file_path": "crates/cli/src/commands/deploy.rs",
+      "line": 34,
+      "visibility": null,
+      "signature": "const FRONT_DOOR_MARKER: &str = \"next --base\";"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/deploy.rs::struct::DeployArgs",
+      "name": "DeployArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/deploy.rs",
+      "line": 38,
+      "visibility": "pub",
+      "signature": "pub struct DeployArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/deploy.rs::function::hook_config_rel",
+      "name": "hook_config_rel",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/deploy.rs",
+      "line": 59,
+      "visibility": null,
+      "signature": "fn hook_config_rel(vendor: &str) -> Option<&'static str> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/deploy.rs::function::run",
+      "name": "run",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/deploy.rs",
+      "line": 68,
+      "visibility": "pub",
+      "signature": "pub fn run(args: DeployArgs) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/deploy.rs::function::run_check",
+      "name": "run_check",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/deploy.rs",
+      "line": 113,
+      "visibility": null,
+      "signature": "fn run_check(args: &DeployArgs, targets: &[(&str, &str)]) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/deploy.rs::function::run_write",
+      "name": "run_write",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/deploy.rs",
+      "line": 161,
+      "visibility": null,
+      "signature": "fn run_write(args: &DeployArgs, targets: &[(&str, &str)]) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/deploy.rs::function::read_json",
+      "name": "read_json",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/deploy.rs",
+      "line": 207,
+      "visibility": null,
+      "signature": "fn read_json(path: &Path) -> Result<Option<Value>, String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/deploy.rs::function::front_door_hook_present",
+      "name": "front_door_hook_present",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/deploy.rs",
+      "line": 220,
+      "visibility": null,
+      "signature": "fn front_door_hook_present(value: &Value) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/deploy.rs::function::entry_has_front_door",
+      "name": "entry_has_front_door",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/deploy.rs",
+      "line": 229,
+      "visibility": null,
+      "signature": "fn entry_has_front_door(entry: &Value) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/deploy.rs::function::canonical_hook_entry",
+      "name": "canonical_hook_entry",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/deploy.rs",
+      "line": 245,
+      "visibility": null,
+      "signature": "fn canonical_hook_entry() -> Value {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/deploy.rs::function::ensure_front_door_hook_file",
+      "name": "ensure_front_door_hook_file",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/deploy.rs",
+      "line": 262,
+      "visibility": null,
+      "signature": "fn ensure_front_door_hook_file(path: &Path) -> Result<bool, String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/deploy.rs::function::ensure_front_door_hook",
+      "name": "ensure_front_door_hook",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/deploy.rs",
+      "line": 280,
+      "visibility": null,
+      "signature": "fn ensure_front_door_hook(value: &mut Value) -> Result<bool, String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/deploy.rs::module::tests",
+      "name": "tests",
+      "kind": "module",
+      "file_path": "crates/cli/src/commands/deploy.rs",
+      "line": 300,
+      "visibility": null,
+      "signature": "mod tests {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/deploy.rs::function::deploy_uses_the_render_vendor_set_and_adapter",
+      "name": "deploy_uses_the_render_vendor_set_and_adapter",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/deploy.rs",
+      "line": 304,
+      "visibility": null,
+      "signature": "fn deploy_uses_the_render_vendor_set_and_adapter() {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/deploy.rs::function::hook_config_rel_only_for_hook_capable_vendors",
+      "name": "hook_config_rel_only_for_hook_capable_vendors",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/deploy.rs",
+      "line": 317,
+      "visibility": null,
+      "signature": "fn hook_config_rel_only_for_hook_capable_vendors() {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/deploy.rs::function::front_door_present_matches_both_cargo_run_and_path_forms",
+      "name": "front_door_present_matches_both_cargo_run_and_path_forms",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/deploy.rs",
+      "line": 325,
+      "visibility": null,
+      "signature": "fn front_door_present_matches_both_cargo_run_and_path_forms() {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/deploy.rs::function::front_door_absent_when_only_other_phases",
+      "name": "front_door_absent_when_only_other_phases",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/deploy.rs",
+      "line": 340,
+      "visibility": null,
+      "signature": "fn front_door_absent_when_only_other_phases() {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/deploy.rs::function::ensure_hook_appends_then_is_idempotent_and_preserves_keys",
+      "name": "ensure_hook_appends_then_is_idempotent_and_preserves_keys",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/deploy.rs",
+      "line": 350,
+      "visibility": null,
+      "signature": "fn ensure_hook_appends_then_is_idempotent_and_preserves_keys() {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/deploy.rs::function::ensure_hook_creates_structure_from_empty",
+      "name": "ensure_hook_creates_structure_from_empty",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/deploy.rs",
+      "line": 374,
+      "visibility": null,
+      "signature": "fn ensure_hook_creates_structure_from_empty() {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/deploy.rs::function::ensure_hook_errors_on_malformed_shape",
+      "name": "ensure_hook_errors_on_malformed_shape",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/deploy.rs",
+      "line": 381,
+      "visibility": null,
+      "signature": "fn ensure_hook_errors_on_malformed_shape() {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/harness.rs::enum::HarnessCommand",
+      "name": "HarnessCommand",
+      "kind": "enum",
+      "file_path": "crates/cli/src/commands/harness.rs",
+      "line": 8,
+      "visibility": "pub",
+      "signature": "pub enum HarnessCommand {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/harness.rs::struct::PackageArgs",
+      "name": "PackageArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/harness.rs",
+      "line": 14,
+      "visibility": "pub",
+      "signature": "pub struct PackageArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/harness.rs::enum::HarnessStage",
+      "name": "HarnessStage",
+      "kind": "enum",
+      "file_path": "crates/cli/src/commands/harness.rs",
+      "line": 36,
+      "visibility": "pub",
+      "signature": "pub enum HarnessStage {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/harness.rs::enum::PackageFormat",
+      "name": "PackageFormat",
+      "kind": "enum",
+      "file_path": "crates/cli/src/commands/harness.rs",
+      "line": 42,
+      "visibility": "pub",
+      "signature": "pub enum PackageFormat {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/harness.rs::struct::HarnessPackage",
+      "name": "HarnessPackage",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/harness.rs",
+      "line": 48,
+      "visibility": null,
+      "signature": "struct HarnessPackage {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/harness.rs::struct::PackageEntry",
+      "name": "PackageEntry",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/harness.rs",
+      "line": 73,
+      "visibility": null,
+      "signature": "struct PackageEntry {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/harness.rs::function::run",
+      "name": "run",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/harness.rs",
+      "line": 78,
+      "visibility": "pub",
+      "signature": "pub fn run(command: HarnessCommand) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/harness.rs::function::try_run",
+      "name": "try_run",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/harness.rs",
+      "line": 88,
+      "visibility": null,
+      "signature": "fn try_run(command: HarnessCommand) -> anyhow::Result<()> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/harness.rs::function::package_for",
+      "name": "package_for",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/harness.rs",
+      "line": 111,
+      "visibility": null,
+      "signature": "fn package_for("
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/harness.rs::function::scan_package",
+      "name": "scan_package",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/harness.rs",
+      "line": 130,
+      "visibility": null,
+      "signature": "fn scan_package(target: PathBuf) -> HarnessPackage {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/harness.rs::function::verify_package",
+      "name": "verify_package",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/harness.rs",
+      "line": 188,
+      "visibility": null,
+      "signature": "fn verify_package("
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/harness.rs::function::entry",
+      "name": "entry",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/harness.rs",
+      "line": 279,
+      "visibility": null,
+      "signature": "fn entry(name: &'static str, purpose: &'static str) -> PackageEntry {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/harness.rs::function::render_markdown",
+      "name": "render_markdown",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/harness.rs",
+      "line": 283,
+      "visibility": null,
+      "signature": "fn render_markdown(package: &HarnessPackage) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/harness.rs::function::render_section",
+      "name": "render_section",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/harness.rs",
+      "line": 323,
+      "visibility": null,
+      "signature": "fn render_section(out: &mut String, title: &str, entries: &[PackageEntry]) {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::enum::KnowledgeCommand",
+      "name": "KnowledgeCommand",
+      "kind": "enum",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 18,
+      "visibility": "pub",
+      "signature": "pub enum KnowledgeCommand {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::struct::IndexArgs",
+      "name": "IndexArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 50,
+      "visibility": "pub",
+      "signature": "pub struct IndexArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::struct::PackArgs",
+      "name": "PackArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 58,
+      "visibility": "pub",
+      "signature": "pub struct PackArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::struct::ReportArgs",
+      "name": "ReportArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 98,
+      "visibility": "pub",
+      "signature": "pub struct ReportArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::struct::ArchitectureArgs",
+      "name": "ArchitectureArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 106,
+      "visibility": "pub",
+      "signature": "pub struct ArchitectureArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::struct::DiagramArgs",
+      "name": "DiagramArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 114,
+      "visibility": "pub",
+      "signature": "pub struct DiagramArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::struct::SystemArchitectureArgs",
+      "name": "SystemArchitectureArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 122,
+      "visibility": "pub",
+      "signature": "pub struct SystemArchitectureArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::struct::OperatingModelArgs",
+      "name": "OperatingModelArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 132,
+      "visibility": "pub",
+      "signature": "pub struct OperatingModelArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::struct::IntegrationPlanArgs",
+      "name": "IntegrationPlanArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 142,
+      "visibility": "pub",
+      "signature": "pub struct IntegrationPlanArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::struct::IntegrationStatusArgs",
+      "name": "IntegrationStatusArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 152,
+      "visibility": "pub",
+      "signature": "pub struct IntegrationStatusArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::struct::IntegrationOwnersArgs",
+      "name": "IntegrationOwnersArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 162,
+      "visibility": "pub",
+      "signature": "pub struct IntegrationOwnersArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::struct::IntegrationReadinessArgs",
+      "name": "IntegrationReadinessArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 184,
+      "visibility": "pub",
+      "signature": "pub struct IntegrationReadinessArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::struct::PlanContextArgs",
+      "name": "PlanContextArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 206,
+      "visibility": "pub",
+      "signature": "pub struct PlanContextArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::struct::QueryArgs",
+      "name": "QueryArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 228,
+      "visibility": "pub",
+      "signature": "pub struct QueryArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::struct::RefreshArgs",
+      "name": "RefreshArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 240,
+      "visibility": "pub",
+      "signature": "pub struct RefreshArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::function::run",
+      "name": "run",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 245,
+      "visibility": "pub",
+      "signature": "pub fn run(command: KnowledgeCommand) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::function::try_run",
+      "name": "try_run",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 255,
+      "visibility": null,
+      "signature": "fn try_run(command: KnowledgeCommand) -> anyhow::Result<()> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::function::selected_goal",
+      "name": "selected_goal",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 518,
+      "visibility": null,
+      "signature": "fn selected_goal("
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::function::selected_query",
+      "name": "selected_query",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 532,
+      "visibility": null,
+      "signature": "fn selected_query(args: &QueryArgs) -> anyhow::Result<KnowledgeQuery> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::function::print_query_result",
+      "name": "print_query_result",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 553,
+      "visibility": null,
+      "signature": "fn print_query_result(result: &rusty_idd_knowledge::QueryResult) {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::function::write_json",
+      "name": "write_json",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 610,
+      "visibility": null,
+      "signature": "fn write_json(path: &PathBuf, value: &impl serde::Serialize) -> anyhow::Result<()> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/knowledge.rs::function::write_text",
+      "name": "write_text",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/knowledge.rs",
+      "line": 615,
+      "visibility": null,
+      "signature": "fn write_text(path: &PathBuf, content: &str) -> anyhow::Result<()> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/merge_tools.rs::enum::MergeToolsCommand",
+      "name": "MergeToolsCommand",
+      "kind": "enum",
+      "file_path": "crates/cli/src/commands/merge_tools.rs",
+      "line": 6,
+      "visibility": "pub",
+      "signature": "pub enum MergeToolsCommand {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/merge_tools.rs::function::run",
+      "name": "run",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/merge_tools.rs",
+      "line": 18,
+      "visibility": "pub",
+      "signature": "pub fn run(command: MergeToolsCommand) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/mod.rs::module::codex",
+      "name": "codex",
+      "kind": "module",
+      "file_path": "crates/cli/src/commands/mod.rs",
+      "line": 3,
+      "visibility": "pub",
+      "signature": "pub mod codex;"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/mod.rs::module::core",
+      "name": "core",
+      "kind": "module",
+      "file_path": "crates/cli/src/commands/mod.rs",
+      "line": 4,
+      "visibility": "pub",
+      "signature": "pub mod core;"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/mod.rs::module::deploy",
+      "name": "deploy",
+      "kind": "module",
+      "file_path": "crates/cli/src/commands/mod.rs",
+      "line": 5,
+      "visibility": "pub",
+      "signature": "pub mod deploy;"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/mod.rs::module::harness",
+      "name": "harness",
+      "kind": "module",
+      "file_path": "crates/cli/src/commands/mod.rs",
+      "line": 6,
+      "visibility": "pub",
+      "signature": "pub mod harness;"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/mod.rs::module::knowledge",
+      "name": "knowledge",
+      "kind": "module",
+      "file_path": "crates/cli/src/commands/mod.rs",
+      "line": 7,
+      "visibility": "pub",
+      "signature": "pub mod knowledge;"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/mod.rs::module::merge_tools",
+      "name": "merge_tools",
+      "kind": "module",
+      "file_path": "crates/cli/src/commands/mod.rs",
+      "line": 8,
+      "visibility": "pub",
+      "signature": "pub mod merge_tools;"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/mod.rs::module::next",
+      "name": "next",
+      "kind": "module",
+      "file_path": "crates/cli/src/commands/mod.rs",
+      "line": 9,
+      "visibility": "pub",
+      "signature": "pub mod next;"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/mod.rs::module::render",
+      "name": "render",
+      "kind": "module",
+      "file_path": "crates/cli/src/commands/mod.rs",
+      "line": 10,
+      "visibility": "pub",
+      "signature": "pub mod render;"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/mod.rs::module::run",
+      "name": "run",
+      "kind": "module",
+      "file_path": "crates/cli/src/commands/mod.rs",
+      "line": 11,
+      "visibility": "pub",
+      "signature": "pub mod run;"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/mod.rs::module::spec",
+      "name": "spec",
+      "kind": "module",
+      "file_path": "crates/cli/src/commands/mod.rs",
+      "line": 12,
+      "visibility": "pub",
+      "signature": "pub mod spec;"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/mod.rs::module::spec_adr",
+      "name": "spec_adr",
+      "kind": "module",
+      "file_path": "crates/cli/src/commands/mod.rs",
+      "line": 13,
+      "visibility": "pub",
+      "signature": "pub mod spec_adr;"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/mod.rs::module::spec_archive",
+      "name": "spec_archive",
+      "kind": "module",
+      "file_path": "crates/cli/src/commands/mod.rs",
+      "line": 14,
+      "visibility": "pub",
+      "signature": "pub mod spec_archive;"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/mod.rs::module::spec_plan_integration",
+      "name": "spec_plan_integration",
+      "kind": "module",
+      "file_path": "crates/cli/src/commands/mod.rs",
+      "line": 15,
+      "visibility": "pub",
+      "signature": "pub mod spec_plan_integration;"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/mod.rs::module::spec_scaffold",
+      "name": "spec_scaffold",
+      "kind": "module",
+      "file_path": "crates/cli/src/commands/mod.rs",
+      "line": 16,
+      "visibility": "pub",
+      "signature": "pub mod spec_scaffold;"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/mod.rs::module::spec_status",
+      "name": "spec_status",
+      "kind": "module",
+      "file_path": "crates/cli/src/commands/mod.rs",
+      "line": 17,
+      "visibility": "pub",
+      "signature": "pub mod spec_status;"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/mod.rs::module::tui",
+      "name": "tui",
+      "kind": "module",
+      "file_path": "crates/cli/src/commands/mod.rs",
+      "line": 18,
+      "visibility": "pub",
+      "signature": "pub mod tui;"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/next.rs::struct::NextArgs",
+      "name": "NextArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/next.rs",
+      "line": 22,
+      "visibility": "pub",
+      "signature": "pub struct NextArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/next.rs::struct::FrontDoorView",
+      "name": "FrontDoorView",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/next.rs",
+      "line": 36,
+      "visibility": null,
+      "signature": "struct FrontDoorView {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/next.rs::function::next_command_for",
+      "name": "next_command_for",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/next.rs",
+      "line": 43,
+      "visibility": null,
+      "signature": "fn next_command_for(active: &str, next_id: Option<&str>) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/next.rs::function::resolve_active_change",
+      "name": "resolve_active_change",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/next.rs",
+      "line": 52,
+      "visibility": "pub(crate)",
+      "signature": "pub(crate) fn resolve_active_change(base: &Path) -> Option<String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/next.rs::function::run",
+      "name": "run",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/next.rs",
+      "line": 61,
+      "visibility": "pub",
+      "signature": "pub fn run(args: NextArgs) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/next.rs::function::run_json",
+      "name": "run_json",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/next.rs",
+      "line": 70,
+      "visibility": null,
+      "signature": "fn run_json(base: &Path) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/next.rs::function::run_text",
+      "name": "run_text",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/next.rs",
+      "line": 116,
+      "visibility": null,
+      "signature": "fn run_text(base: &Path) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/next.rs::module::tests",
+      "name": "tests",
+      "kind": "module",
+      "file_path": "crates/cli/src/commands/next.rs",
+      "line": 163,
+      "visibility": null,
+      "signature": "mod tests {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/next.rs::function::write",
+      "name": "write",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/next.rs",
+      "line": 166,
+      "visibility": null,
+      "signature": "fn write(path: &Path, contents: &str) {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/next.rs::function::resolve_active_change_trims_and_filters_empty",
+      "name": "resolve_active_change_trims_and_filters_empty",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/next.rs",
+      "line": 172,
+      "visibility": null,
+      "signature": "fn resolve_active_change_trims_and_filters_empty() {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/render.rs::constant::VENDORS",
+      "name": "VENDORS",
+      "kind": "constant",
+      "file_path": "crates/cli/src/commands/render.rs",
+      "line": 18,
+      "visibility": "pub(crate)",
+      "signature": "pub(crate) const VENDORS: &[(&str, &str)] = &["
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/render.rs::constant::ADAPTER_FILE",
+      "name": "ADAPTER_FILE",
+      "kind": "constant",
+      "file_path": "crates/cli/src/commands/render.rs",
+      "line": 25,
+      "visibility": "pub(crate)",
+      "signature": "pub(crate) const ADAPTER_FILE: &str = \"rusty-idd-adapter.md\";"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/render.rs::struct::RenderArgs",
+      "name": "RenderArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/render.rs",
+      "line": 29,
+      "visibility": "pub",
+      "signature": "pub struct RenderArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/render.rs::function::expected_adapter",
+      "name": "expected_adapter",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/render.rs",
+      "line": 47,
+      "visibility": "pub",
+      "signature": "pub fn expected_adapter(vendor: &str) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/render.rs::function::lookup",
+      "name": "lookup",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/render.rs",
+      "line": 66,
+      "visibility": "pub(crate)",
+      "signature": "pub(crate) fn lookup(name: &str) -> Option<(&'static str, &'static str)> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/render.rs::function::run",
+      "name": "run",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/render.rs",
+      "line": 71,
+      "visibility": "pub",
+      "signature": "pub fn run(args: RenderArgs) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/render.rs::function::run_check",
+      "name": "run_check",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/render.rs",
+      "line": 105,
+      "visibility": null,
+      "signature": "fn run_check(args: &RenderArgs, targets: &[(&str, &str)]) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/render.rs::function::run_write",
+      "name": "run_write",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/render.rs",
+      "line": 135,
+      "visibility": null,
+      "signature": "fn run_write(args: &RenderArgs, targets: &[(&str, &str)]) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/render.rs::module::tests",
+      "name": "tests",
+      "kind": "module",
+      "file_path": "crates/cli/src/commands/render.rs",
+      "line": 161,
+      "visibility": null,
+      "signature": "mod tests {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/render.rs::function::expected_adapter_is_deterministic_and_points_at_next",
+      "name": "expected_adapter_is_deterministic_and_points_at_next",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/render.rs",
+      "line": 165,
+      "visibility": null,
+      "signature": "fn expected_adapter_is_deterministic_and_points_at_next() {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/render.rs::function::lookup_knows_the_vendor_set",
+      "name": "lookup_knows_the_vendor_set",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/render.rs",
+      "line": 175,
+      "visibility": null,
+      "signature": "fn lookup_knows_the_vendor_set() {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/run.rs::struct::RunArgs",
+      "name": "RunArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/run.rs",
+      "line": 15,
+      "visibility": "pub",
+      "signature": "pub struct RunArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/run.rs::function::run",
+      "name": "run",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/run.rs",
+      "line": 30,
+      "visibility": "pub",
+      "signature": "pub fn run(args: RunArgs) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec.rs::enum::SpecCommand",
+      "name": "SpecCommand",
+      "kind": "enum",
+      "file_path": "crates/cli/src/commands/spec.rs",
+      "line": 11,
+      "visibility": "pub",
+      "signature": "pub enum SpecCommand {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec.rs::function::run",
+      "name": "run",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec.rs",
+      "line": 132,
+      "visibility": "pub",
+      "signature": "pub fn run(cmd: SpecCommand) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec.rs::function::capability_id",
+      "name": "capability_id",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec.rs",
+      "line": 189,
+      "visibility": "pub",
+      "signature": "pub fn capability_id(path: &Path) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec.rs::function::cmd_validate",
+      "name": "cmd_validate",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec.rs",
+      "line": 201,
+      "visibility": null,
+      "signature": "fn cmd_validate("
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec.rs::function::update_summary",
+      "name": "update_summary",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec.rs",
+      "line": 312,
+      "visibility": null,
+      "signature": "fn update_summary(report: &mut Report) {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec.rs::function::item_failed",
+      "name": "item_failed",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec.rs",
+      "line": 350,
+      "visibility": null,
+      "signature": "fn item_failed(item: &rusty_idd_spec::validate::Item, strict: bool) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec.rs::function::report_failed",
+      "name": "report_failed",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec.rs",
+      "line": 357,
+      "visibility": null,
+      "signature": "fn report_failed(report: &Report, strict: bool) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec.rs::function::print_human_report",
+      "name": "print_human_report",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec.rs",
+      "line": 361,
+      "visibility": null,
+      "signature": "fn print_human_report(report: &Report, strict: bool) {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec.rs::function::cmd_show",
+      "name": "cmd_show",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec.rs",
+      "line": 397,
+      "visibility": null,
+      "signature": "fn cmd_show(file: &Path) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec.rs::function::cmd_sync",
+      "name": "cmd_sync",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec.rs",
+      "line": 418,
+      "visibility": null,
+      "signature": "fn cmd_sync(delta_path: &Path, base_path: &Path) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_adr.rs::constant::ACCEPTED_DUPLICATE_ADRS",
+      "name": "ACCEPTED_DUPLICATE_ADRS",
+      "kind": "constant",
+      "file_path": "crates/cli/src/commands/spec_adr.rs",
+      "line": 23,
+      "visibility": null,
+      "signature": "const ACCEPTED_DUPLICATE_ADRS: &[(u32, usize)] = &[(2, 2), (4, 2), (5, 2), (6, 2)];"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_adr.rs::enum::AdrCommand",
+      "name": "AdrCommand",
+      "kind": "enum",
+      "file_path": "crates/cli/src/commands/spec_adr.rs",
+      "line": 26,
+      "visibility": "pub",
+      "signature": "pub enum AdrCommand {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_adr.rs::function::run",
+      "name": "run",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_adr.rs",
+      "line": 51,
+      "visibility": "pub",
+      "signature": "pub fn run(cmd: AdrCommand) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_adr.rs::function::load_adrs",
+      "name": "load_adrs",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_adr.rs",
+      "line": 69,
+      "visibility": null,
+      "signature": "fn load_adrs(adr_dir: &Path) -> Result<AdrSet, String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_adr.rs::function::run_list",
+      "name": "run_list",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_adr.rs",
+      "line": 98,
+      "visibility": null,
+      "signature": "fn run_list(adr_dir: &Path, all: bool) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_adr.rs::function::status_label",
+      "name": "status_label",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_adr.rs",
+      "line": 133,
+      "visibility": null,
+      "signature": "fn status_label(set: &AdrSet, a: &Adr) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_adr.rs::function::run_next",
+      "name": "run_next",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_adr.rs",
+      "line": 153,
+      "visibility": null,
+      "signature": "fn run_next(adr_dir: &Path) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_adr.rs::function::run_check",
+      "name": "run_check",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_adr.rs",
+      "line": 163,
+      "visibility": null,
+      "signature": "fn run_check(adr_dir: &Path) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_adr.rs::function::collisions",
+      "name": "collisions",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_adr.rs",
+      "line": 224,
+      "visibility": null,
+      "signature": "fn collisions(set: &AdrSet) -> BTreeMap<u32, usize> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_adr.rs::module::tests",
+      "name": "tests",
+      "kind": "module",
+      "file_path": "crates/cli/src/commands/spec_adr.rs",
+      "line": 233,
+      "visibility": null,
+      "signature": "mod tests {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_adr.rs::function::adr",
+      "name": "adr",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_adr.rs",
+      "line": 236,
+      "visibility": null,
+      "signature": "fn adr(number: u32, slug: &str) -> Adr {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_adr.rs::function::collisions_finds_only_shared_numbers",
+      "name": "collisions_finds_only_shared_numbers",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_adr.rs",
+      "line": 246,
+      "visibility": null,
+      "signature": "fn collisions_finds_only_shared_numbers() {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_adr.rs::function::baseline_numbers_are_the_four_known_collisions",
+      "name": "baseline_numbers_are_the_four_known_collisions",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_adr.rs",
+      "line": 255,
+      "visibility": null,
+      "signature": "fn baseline_numbers_are_the_four_known_collisions() {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_archive.rs::function::run",
+      "name": "run",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_archive.rs",
+      "line": 25,
+      "visibility": "pub",
+      "signature": "pub fn run(change_dir: &Path, skip_specs: bool, no_validate: bool, yes: bool) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_archive.rs::struct::Loaded",
+      "name": "Loaded",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/spec_archive.rs",
+      "line": 63,
+      "visibility": null,
+      "signature": "struct Loaded {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_archive.rs::function::seed_base_spec",
+      "name": "seed_base_spec",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_archive.rs",
+      "line": 212,
+      "visibility": null,
+      "signature": "fn seed_base_spec(capability: &str) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_archive.rs::function::title_case",
+      "name": "title_case",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_archive.rs",
+      "line": 222,
+      "visibility": null,
+      "signature": "fn title_case(capability: &str) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_archive.rs::function::base_specs_root",
+      "name": "base_specs_root",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_archive.rs",
+      "line": 240,
+      "visibility": null,
+      "signature": "fn base_specs_root(change_dir: &Path) -> Option<PathBuf> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_archive.rs::function::move_change_dir",
+      "name": "move_change_dir",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_archive.rs",
+      "line": 252,
+      "visibility": null,
+      "signature": "fn move_change_dir(change_dir: &Path) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_archive.rs::function::needs_prompt",
+      "name": "needs_prompt",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_archive.rs",
+      "line": 293,
+      "visibility": null,
+      "signature": "fn needs_prompt(yes: bool, is_terminal: bool) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_archive.rs::function::confirm_archive",
+      "name": "confirm_archive",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_archive.rs",
+      "line": 299,
+      "visibility": null,
+      "signature": "fn confirm_archive(change_dir: &Path, spec_count: usize, yes: bool) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_archive.rs::module::tests",
+      "name": "tests",
+      "kind": "module",
+      "file_path": "crates/cli/src/commands/spec_archive.rs",
+      "line": 319,
+      "visibility": null,
+      "signature": "mod tests {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_archive.rs::function::title_case_handles_kebab_and_snake",
+      "name": "title_case_handles_kebab_and_snake",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_archive.rs",
+      "line": 324,
+      "visibility": null,
+      "signature": "fn title_case_handles_kebab_and_snake() {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_archive.rs::function::seeded_base_parses_to_titled_empty_spec",
+      "name": "seeded_base_parses_to_titled_empty_spec",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_archive.rs",
+      "line": 331,
+      "visibility": null,
+      "signature": "fn seeded_base_parses_to_titled_empty_spec() {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_archive.rs::function::yes_flag_never_prompts",
+      "name": "yes_flag_never_prompts",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_archive.rs",
+      "line": 341,
+      "visibility": null,
+      "signature": "fn yes_flag_never_prompts() {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_archive.rs::function::non_tty_never_prompts",
+      "name": "non_tty_never_prompts",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_archive.rs",
+      "line": 347,
+      "visibility": null,
+      "signature": "fn non_tty_never_prompts() {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_archive.rs::function::interactive_without_yes_prompts",
+      "name": "interactive_without_yes_prompts",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_archive.rs",
+      "line": 352,
+      "visibility": null,
+      "signature": "fn interactive_without_yes_prompts() {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_plan_integration.rs::struct::PlanIntegrationArgs",
+      "name": "PlanIntegrationArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/spec_plan_integration.rs",
+      "line": 8,
+      "visibility": "pub",
+      "signature": "pub struct PlanIntegrationArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_plan_integration.rs::function::run",
+      "name": "run",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_plan_integration.rs",
+      "line": 17,
+      "visibility": "pub",
+      "signature": "pub fn run(args: PlanIntegrationArgs) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_plan_integration.rs::function::try_run",
+      "name": "try_run",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_plan_integration.rs",
+      "line": 31,
+      "visibility": null,
+      "signature": "fn try_run(args: PlanIntegrationArgs) -> Result<PathBuf> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_plan_integration.rs::function::read_plan",
+      "name": "read_plan",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_plan_integration.rs",
+      "line": 46,
+      "visibility": null,
+      "signature": "fn read_plan(path: &Path) -> Result<IntegrationAutomationPlan> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_plan_integration.rs::function::select_work_item",
+      "name": "select_work_item",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_plan_integration.rs",
+      "line": 53,
+      "visibility": null,
+      "signature": "fn select_work_item<'a>("
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_plan_integration.rs::function::work_item_has_openspec_slot",
+      "name": "work_item_has_openspec_slot",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_plan_integration.rs",
+      "line": 102,
+      "visibility": null,
+      "signature": "fn work_item_has_openspec_slot(base: &Path, item: &IntegrationWorkItem) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_plan_integration.rs::function::write_change",
+      "name": "write_change",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_plan_integration.rs",
+      "line": 108,
+      "visibility": null,
+      "signature": "fn write_change(base: &Path, item: &IntegrationWorkItem, force: bool) -> Result<PathBuf> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_plan_integration.rs::function::render_proposal",
+      "name": "render_proposal",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_plan_integration.rs",
+      "line": 140,
+      "visibility": null,
+      "signature": "fn render_proposal(item: &IntegrationWorkItem) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_plan_integration.rs::function::render_design",
+      "name": "render_design",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_plan_integration.rs",
+      "line": 182,
+      "visibility": null,
+      "signature": "fn render_design(item: &IntegrationWorkItem) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_plan_integration.rs::function::render_tasks",
+      "name": "render_tasks",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_plan_integration.rs",
+      "line": 231,
+      "visibility": null,
+      "signature": "fn render_tasks(item: &IntegrationWorkItem) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_plan_integration.rs::function::render_spec",
+      "name": "render_spec",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_plan_integration.rs",
+      "line": 266,
+      "visibility": null,
+      "signature": "fn render_spec(item: &IntegrationWorkItem) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_plan_integration.rs::function::push_markdown_list",
+      "name": "push_markdown_list",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_plan_integration.rs",
+      "line": 289,
+      "visibility": null,
+      "signature": "fn push_markdown_list(out: &mut String, values: &[String], indent: &str) {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_plan_integration.rs::function::capability_id",
+      "name": "capability_id",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_plan_integration.rs",
+      "line": 299,
+      "visibility": null,
+      "signature": "fn capability_id(value: &str) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_plan_integration.rs::function::capability_slug",
+      "name": "capability_slug",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_plan_integration.rs",
+      "line": 307,
+      "visibility": null,
+      "signature": "fn capability_slug(value: &str) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_plan_integration.rs::function::slug",
+      "name": "slug",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_plan_integration.rs",
+      "line": 311,
+      "visibility": null,
+      "signature": "fn slug(value: &str) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_scaffold.rs::function::run_scaffold",
+      "name": "run_scaffold",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_scaffold.rs",
+      "line": 11,
+      "visibility": "pub",
+      "signature": "pub fn run_scaffold("
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_scaffold.rs::function::run_new",
+      "name": "run_new",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_scaffold.rs",
+      "line": 45,
+      "visibility": "pub",
+      "signature": "pub fn run_new(change: &str, base: &Path) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_status.rs::constant::DEFAULT_SCHEMA",
+      "name": "DEFAULT_SCHEMA",
+      "kind": "constant",
+      "file_path": "crates/cli/src/commands/spec_status.rs",
+      "line": 16,
+      "visibility": null,
+      "signature": "const DEFAULT_SCHEMA: &str ="
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_status.rs::function::load_for",
+      "name": "load_for",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_status.rs",
+      "line": 22,
+      "visibility": null,
+      "signature": "fn load_for(change_dir: &Path) -> Result<Schema, String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_status.rs::function::done_set",
+      "name": "done_set",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_status.rs",
+      "line": 40,
+      "visibility": null,
+      "signature": "fn done_set(change_dir: &Path, schema: &Schema) -> BTreeSet<String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_status.rs::function::generates_matches",
+      "name": "generates_matches",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_status.rs",
+      "line": 52,
+      "visibility": null,
+      "signature": "fn generates_matches(change_dir: &Path, generates: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_status.rs::function::extension_of",
+      "name": "extension_of",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_status.rs",
+      "line": 68,
+      "visibility": null,
+      "signature": "fn extension_of(glob: &str) -> Option<String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_status.rs::function::any_file_with_ext",
+      "name": "any_file_with_ext",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_status.rs",
+      "line": 77,
+      "visibility": null,
+      "signature": "fn any_file_with_ext(dir: &Path, ext: Option<&str>, recurse: bool) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_status.rs::function::run_status",
+      "name": "run_status",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_status.rs",
+      "line": 106,
+      "visibility": "pub",
+      "signature": "pub fn run_status(change_dir: &Path, json: bool) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_status.rs::function::snapshot_for",
+      "name": "snapshot_for",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_status.rs",
+      "line": 182,
+      "visibility": "pub",
+      "signature": "pub fn snapshot_for(change_dir: &Path) -> Result<StatusSnapshot, String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_status.rs::struct::StatusSnapshot",
+      "name": "StatusSnapshot",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/spec_status.rs",
+      "line": 188,
+      "visibility": "pub",
+      "signature": "pub struct StatusSnapshot {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_status.rs::struct::SchemaSummary",
+      "name": "SchemaSummary",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/spec_status.rs",
+      "line": 200,
+      "visibility": null,
+      "signature": "struct SchemaSummary {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_status.rs::struct::ArtifactStatus",
+      "name": "ArtifactStatus",
+      "kind": "struct",
+      "file_path": "crates/cli/src/commands/spec_status.rs",
+      "line": 206,
+      "visibility": null,
+      "signature": "struct ArtifactStatus {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_status.rs::function::status_snapshot",
+      "name": "status_snapshot",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_status.rs",
+      "line": 214,
+      "visibility": null,
+      "signature": "fn status_snapshot(change_dir: &Path, schema: &Schema) -> Result<StatusSnapshot, String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_status.rs::function::next_artifact_id",
+      "name": "next_artifact_id",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_status.rs",
+      "line": 260,
+      "visibility": "pub",
+      "signature": "pub fn next_artifact_id(change_dir: &Path) -> Option<String> {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/spec_status.rs::function::run_next",
+      "name": "run_next",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/spec_status.rs",
+      "line": 268,
+      "visibility": "pub",
+      "signature": "pub fn run_next(change_dir: &Path) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/commands/tui.rs::function::run",
+      "name": "run",
+      "kind": "function",
+      "file_path": "crates/cli/src/commands/tui.rs",
+      "line": 6,
+      "visibility": "pub",
+      "signature": "pub fn run() -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/lib.rs::module::commands",
+      "name": "commands",
+      "kind": "module",
+      "file_path": "crates/cli/src/lib.rs",
+      "line": 21,
+      "visibility": null,
+      "signature": "mod commands;"
+    },
+    {
+      "symbol_id": "crates/cli/src/lib.rs::struct::Cli",
+      "name": "Cli",
+      "kind": "struct",
+      "file_path": "crates/cli/src/lib.rs",
+      "line": 32,
+      "visibility": null,
+      "signature": "struct Cli {"
+    },
+    {
+      "symbol_id": "crates/cli/src/lib.rs::enum::Command",
+      "name": "Command",
+      "kind": "enum",
+      "file_path": "crates/cli/src/lib.rs",
+      "line": 38,
+      "visibility": null,
+      "signature": "enum Command {"
+    },
+    {
+      "symbol_id": "crates/cli/src/lib.rs::struct::CoreArgs",
+      "name": "CoreArgs",
+      "kind": "struct",
+      "file_path": "crates/cli/src/lib.rs",
+      "line": 102,
+      "visibility": null,
+      "signature": "struct CoreArgs {"
+    },
+    {
+      "symbol_id": "crates/cli/src/lib.rs::function::run",
+      "name": "run",
+      "kind": "function",
+      "file_path": "crates/cli/src/lib.rs",
+      "line": 108,
+      "visibility": "pub",
+      "signature": "pub fn run() -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/lib.rs::function::dispatch",
+      "name": "dispatch",
+      "kind": "function",
+      "file_path": "crates/cli/src/lib.rs",
+      "line": 113,
+      "visibility": null,
+      "signature": "fn dispatch(command: Command) -> i32 {"
+    },
+    {
+      "symbol_id": "crates/cli/src/main.rs::function::main",
+      "name": "main",
+      "kind": "function",
+      "file_path": "crates/cli/src/main.rs",
+      "line": 4,
+      "visibility": null,
+      "signature": "fn main() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/adr_check_cli.rs::function::bin",
+      "name": "bin",
+      "kind": "function",
+      "file_path": "crates/cli/tests/adr_check_cli.rs",
+      "line": 7,
+      "visibility": null,
+      "signature": "fn bin() -> &'static str {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/adr_check_cli.rs::function::check",
+      "name": "check",
+      "kind": "function",
+      "file_path": "crates/cli/tests/adr_check_cli.rs",
+      "line": 12,
+      "visibility": null,
+      "signature": "fn check(adr_dir: &Path) -> (i32, String, String) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/adr_check_cli.rs::function::write_adr",
+      "name": "write_adr",
+      "kind": "function",
+      "file_path": "crates/cli/tests/adr_check_cli.rs",
+      "line": 26,
+      "visibility": null,
+      "signature": "fn write_adr(dir: &Path, number: u32, slug: &str) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/adr_check_cli.rs::function::no_duplicates_passes",
+      "name": "no_duplicates_passes",
+      "kind": "function",
+      "file_path": "crates/cli/tests/adr_check_cli.rs",
+      "line": 33,
+      "visibility": null,
+      "signature": "fn no_duplicates_passes() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/adr_check_cli.rs::function::baseline_collision_passes_but_is_reported",
+      "name": "baseline_collision_passes_but_is_reported",
+      "kind": "function",
+      "file_path": "crates/cli/tests/adr_check_cli.rs",
+      "line": 43,
+      "visibility": null,
+      "signature": "fn baseline_collision_passes_but_is_reported() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/adr_check_cli.rs::function::third_file_at_baseline_number_exceeds_baseline_and_fails",
+      "name": "third_file_at_baseline_number_exceeds_baseline_and_fails",
+      "kind": "function",
+      "file_path": "crates/cli/tests/adr_check_cli.rs",
+      "line": 56,
+      "visibility": null,
+      "signature": "fn third_file_at_baseline_number_exceeds_baseline_and_fails() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/adr_check_cli.rs::function::new_collision_fails_closed",
+      "name": "new_collision_fails_closed",
+      "kind": "function",
+      "file_path": "crates/cli/tests/adr_check_cli.rs",
+      "line": 69,
+      "visibility": null,
+      "signature": "fn new_collision_fails_closed() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/adr_check_cli.rs::function::new_collision_fails_even_alongside_baseline",
+      "name": "new_collision_fails_even_alongside_baseline",
+      "kind": "function",
+      "file_path": "crates/cli/tests/adr_check_cli.rs",
+      "line": 84,
+      "visibility": null,
+      "signature": "fn new_collision_fails_even_alongside_baseline() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/archive_cli.rs::function::bin",
+      "name": "bin",
+      "kind": "function",
+      "file_path": "crates/cli/tests/archive_cli.rs",
+      "line": 10,
+      "visibility": null,
+      "signature": "fn bin() -> &'static str {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/archive_cli.rs::function::repo_root",
+      "name": "repo_root",
+      "kind": "function",
+      "file_path": "crates/cli/tests/archive_cli.rs",
+      "line": 14,
+      "visibility": null,
+      "signature": "fn repo_root() -> PathBuf {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/archive_cli.rs::function::fixture",
+      "name": "fixture",
+      "kind": "function",
+      "file_path": "crates/cli/tests/archive_cli.rs",
+      "line": 23,
+      "visibility": null,
+      "signature": "fn fixture(name: &str) -> PathBuf {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/archive_cli.rs::function::make_change",
+      "name": "make_change",
+      "kind": "function",
+      "file_path": "crates/cli/tests/archive_cli.rs",
+      "line": 31,
+      "visibility": null,
+      "signature": "fn make_change(delta_fixture: &str) -> (tempfile::TempDir, PathBuf, PathBuf) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/archive_cli.rs::function::archive_merges_and_moves",
+      "name": "archive_merges_and_moves",
+      "kind": "function",
+      "file_path": "crates/cli/tests/archive_cli.rs",
+      "line": 47,
+      "visibility": null,
+      "signature": "fn archive_merges_and_moves() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/archive_cli.rs::function::make_change_invalid_after_merge",
+      "name": "make_change_invalid_after_merge",
+      "kind": "function",
+      "file_path": "crates/cli/tests/archive_cli.rs",
+      "line": 103,
+      "visibility": null,
+      "signature": "fn make_change_invalid_after_merge() -> (tempfile::TempDir, PathBuf, PathBuf) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/archive_cli.rs::function::archive_default_validates_merged_and_aborts_on_error",
+      "name": "archive_default_validates_merged_and_aborts_on_error",
+      "kind": "function",
+      "file_path": "crates/cli/tests/archive_cli.rs",
+      "line": 126,
+      "visibility": null,
+      "signature": "fn archive_default_validates_merged_and_aborts_on_error() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/archive_cli.rs::function::archive_no_validate_skips_validation_and_archives",
+      "name": "archive_no_validate_skips_validation_and_archives",
+      "kind": "function",
+      "file_path": "crates/cli/tests/archive_cli.rs",
+      "line": 155,
+      "visibility": null,
+      "signature": "fn archive_no_validate_skips_validation_and_archives() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/archive_cli.rs::function::archive_yes_flag_is_accepted_and_archives",
+      "name": "archive_yes_flag_is_accepted_and_archives",
+      "kind": "function",
+      "file_path": "crates/cli/tests/archive_cli.rs",
+      "line": 190,
+      "visibility": null,
+      "signature": "fn archive_yes_flag_is_accepted_and_archives() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/archive_cli.rs::function::archive_creates_base_for_new_capability",
+      "name": "archive_creates_base_for_new_capability",
+      "kind": "function",
+      "file_path": "crates/cli/tests/archive_cli.rs",
+      "line": 212,
+      "visibility": null,
+      "signature": "fn archive_creates_base_for_new_capability() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/archive_cli.rs::function::archive_aborts_transactionally_on_bad_delta",
+      "name": "archive_aborts_transactionally_on_bad_delta",
+      "kind": "function",
+      "file_path": "crates/cli/tests/archive_cli.rs",
+      "line": 260,
+      "visibility": null,
+      "signature": "fn archive_aborts_transactionally_on_bad_delta() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::bin",
+      "name": "bin",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 6,
+      "visibility": null,
+      "signature": "fn bin() -> &'static str {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::run_ok",
+      "name": "run_ok",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 10,
+      "visibility": null,
+      "signature": "fn run_ok(args: &[&str], cwd: &Path) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::run_fail",
+      "name": "run_fail",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 26,
+      "visibility": null,
+      "signature": "fn run_fail(args: &[&str], cwd: &Path) -> (String, String) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::run_fail_with_stdin",
+      "name": "run_fail_with_stdin",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 45,
+      "visibility": null,
+      "signature": "fn run_fail_with_stdin(args: &[&str], cwd: &Path, stdin: &str) -> (String, String) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::write",
+      "name": "write",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 74,
+      "visibility": null,
+      "signature": "fn write(path: &Path, content: &str) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::git_ok",
+      "name": "git_ok",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 81,
+      "visibility": null,
+      "signature": "fn git_ok(cwd: &Path, args: &[&str]) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::constant::STOP_HOOK_JSON",
+      "name": "STOP_HOOK_JSON",
+      "kind": "constant",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 96,
+      "visibility": null,
+      "signature": "const STOP_HOOK_JSON: &str = r#\"{"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::constant::VALIDATION_PASS",
+      "name": "VALIDATION_PASS",
+      "kind": "constant",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 162,
+      "visibility": null,
+      "signature": "const VALIDATION_PASS: &str = \"\\"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::constant::VALIDATION_FAILING_MARKERS",
+      "name": "VALIDATION_FAILING_MARKERS",
+      "kind": "constant",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 172,
+      "visibility": null,
+      "signature": "const VALIDATION_FAILING_MARKERS: &str = \"\\"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::write_validation",
+      "name": "write_validation",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 181,
+      "visibility": null,
+      "signature": "fn write_validation(root: &Path, content: &str) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::write_pr_evidence",
+      "name": "write_pr_evidence",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 188,
+      "visibility": null,
+      "signature": "fn write_pr_evidence(root: &Path) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::write_stale_pr_evidence",
+      "name": "write_stale_pr_evidence",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 195,
+      "visibility": null,
+      "signature": "fn write_stale_pr_evidence(root: &Path) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::setup_workflow_repo",
+      "name": "setup_workflow_repo",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 202,
+      "visibility": null,
+      "signature": "fn setup_workflow_repo() -> tempfile::TempDir {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_env_check_passes_on_required_repo_artifacts",
+      "name": "codex_env_check_passes_on_required_repo_artifacts",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 259,
+      "visibility": null,
+      "signature": "fn codex_env_check_passes_on_required_repo_artifacts() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_workflow_check_passes_for_ready_feature_worktree",
+      "name": "codex_workflow_check_passes_for_ready_feature_worktree",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 354,
+      "visibility": null,
+      "signature": "fn codex_workflow_check_passes_for_ready_feature_worktree() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_workflow_check_rejects_missing_openspec_readiness",
+      "name": "codex_workflow_check_rejects_missing_openspec_readiness",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 373,
+      "visibility": null,
+      "signature": "fn codex_workflow_check_rejects_missing_openspec_readiness() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_workflow_check_stop_requires_delivery_evidence_for_dirty_work",
+      "name": "codex_workflow_check_stop_requires_delivery_evidence_for_dirty_work",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 397,
+      "visibility": null,
+      "signature": "fn codex_workflow_check_stop_requires_delivery_evidence_for_dirty_work() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_workflow_check_stop_prefers_origin_develop_for_delivery_base",
+      "name": "codex_workflow_check_stop_prefers_origin_develop_for_delivery_base",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 434,
+      "visibility": null,
+      "signature": "fn codex_workflow_check_stop_prefers_origin_develop_for_delivery_base() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_workflow_check_rejects_test_before_generated_artifacts",
+      "name": "codex_workflow_check_rejects_test_before_generated_artifacts",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 460,
+      "visibility": null,
+      "signature": "fn codex_workflow_check_rejects_test_before_generated_artifacts() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_workflow_check_rejects_failed_validation_markers_at_stop",
+      "name": "codex_workflow_check_rejects_failed_validation_markers_at_stop",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 485,
+      "visibility": null,
+      "signature": "fn codex_workflow_check_rejects_failed_validation_markers_at_stop() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_workflow_check_rejects_pr_evidence_for_different_change_at_stop",
+      "name": "codex_workflow_check_rejects_pr_evidence_for_different_change_at_stop",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 507,
+      "visibility": null,
+      "signature": "fn codex_workflow_check_rejects_pr_evidence_for_different_change_at_stop() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_workflow_check_ignores_trailing_nonrequired_evidence_bullets",
+      "name": "codex_workflow_check_ignores_trailing_nonrequired_evidence_bullets",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 530,
+      "visibility": null,
+      "signature": "fn codex_workflow_check_ignores_trailing_nonrequired_evidence_bullets() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_workflow_check_requires_validation_before_push",
+      "name": "codex_workflow_check_requires_validation_before_push",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 556,
+      "visibility": null,
+      "signature": "fn codex_workflow_check_requires_validation_before_push() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_workflow_check_rejects_failed_validation_before_push",
+      "name": "codex_workflow_check_rejects_failed_validation_before_push",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 578,
+      "visibility": null,
+      "signature": "fn codex_workflow_check_rejects_failed_validation_before_push() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_workflow_check_rejects_placeholder_validation_before_pr_create",
+      "name": "codex_workflow_check_rejects_placeholder_validation_before_pr_create",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 601,
+      "visibility": null,
+      "signature": "fn codex_workflow_check_rejects_placeholder_validation_before_pr_create() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_workflow_check_rejects_failed_validation_before_pr_merge",
+      "name": "codex_workflow_check_rejects_failed_validation_before_pr_merge",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 627,
+      "visibility": null,
+      "signature": "fn codex_workflow_check_rejects_failed_validation_before_pr_merge() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_workflow_check_rejects_validation_for_different_change_before_push",
+      "name": "codex_workflow_check_rejects_validation_for_different_change_before_push",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 649,
+      "visibility": null,
+      "signature": "fn codex_workflow_check_rejects_validation_for_different_change_before_push() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_workflow_check_requires_validation_before_task_completion",
+      "name": "codex_workflow_check_requires_validation_before_task_completion",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 683,
+      "visibility": null,
+      "signature": "fn codex_workflow_check_requires_validation_before_task_completion() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_workflow_check_rejects_failed_validation_before_task_completion",
+      "name": "codex_workflow_check_rejects_failed_validation_before_task_completion",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 704,
+      "visibility": null,
+      "signature": "fn codex_workflow_check_rejects_failed_validation_before_task_completion() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_model_loop_dry_run_emits_codex_exec_commands",
+      "name": "codex_model_loop_dry_run_emits_codex_exec_commands",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 726,
+      "visibility": null,
+      "signature": "fn codex_model_loop_dry_run_emits_codex_exec_commands() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_runtime_audit_reports_rust_native_runtime",
+      "name": "codex_runtime_audit_reports_rust_native_runtime",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 790,
+      "visibility": null,
+      "signature": "fn codex_runtime_audit_reports_rust_native_runtime() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_runtime_audit_fails_on_live_python_runtime",
+      "name": "codex_runtime_audit_fails_on_live_python_runtime",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 822,
+      "visibility": null,
+      "signature": "fn codex_runtime_audit_fails_on_live_python_runtime() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_system_audit_classifies_active_rust_binary_and_upstream_python_tooling",
+      "name": "codex_system_audit_classifies_active_rust_binary_and_upstream_python_tooling",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 836,
+      "visibility": null,
+      "signature": "fn codex_system_audit_classifies_active_rust_binary_and_upstream_python_tooling() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_system_audit_accepts_meta_owned_rust_toolchain_surface",
+      "name": "codex_system_audit_accepts_meta_owned_rust_toolchain_surface",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 914,
+      "visibility": null,
+      "signature": "fn codex_system_audit_accepts_meta_owned_rust_toolchain_surface() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_system_audit_accepts_envctl_toolchains_rust_layout",
+      "name": "codex_system_audit_accepts_envctl_toolchains_rust_layout",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 966,
+      "visibility": null,
+      "signature": "fn codex_system_audit_accepts_envctl_toolchains_rust_layout() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_system_audit_allows_rust_toolchain_only_without_codex_binary",
+      "name": "codex_system_audit_allows_rust_toolchain_only_without_codex_binary",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 1019,
+      "visibility": null,
+      "signature": "fn codex_system_audit_allows_rust_toolchain_only_without_codex_binary() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_system_audit_rejects_user_global_rust_toolchain_surface",
+      "name": "codex_system_audit_rejects_user_global_rust_toolchain_surface",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 1066,
+      "visibility": null,
+      "signature": "fn codex_system_audit_rejects_user_global_rust_toolchain_surface() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::codex_system_audit_fails_when_active_codex_is_script",
+      "name": "codex_system_audit_fails_when_active_codex_is_script",
+      "kind": "function",
+      "file_path": "crates/cli/tests/codex_cli.rs",
+      "line": 1124,
+      "visibility": null,
+      "signature": "fn codex_system_audit_fails_when_active_codex_is_script() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/deploy_cli.rs::function::bin",
+      "name": "bin",
+      "kind": "function",
+      "file_path": "crates/cli/tests/deploy_cli.rs",
+      "line": 8,
+      "visibility": null,
+      "signature": "fn bin() -> &'static str {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/deploy_cli.rs::function::run",
+      "name": "run",
+      "kind": "function",
+      "file_path": "crates/cli/tests/deploy_cli.rs",
+      "line": 12,
+      "visibility": null,
+      "signature": "fn run(args: &[&str]) -> std::process::Output {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/deploy_cli.rs::function::ok",
+      "name": "ok",
+      "kind": "function",
+      "file_path": "crates/cli/tests/deploy_cli.rs",
+      "line": 19,
+      "visibility": null,
+      "signature": "fn ok(args: &[&str]) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/deploy_cli.rs::function::mkdirs",
+      "name": "mkdirs",
+      "kind": "function",
+      "file_path": "crates/cli/tests/deploy_cli.rs",
+      "line": 31,
+      "visibility": null,
+      "signature": "fn mkdirs(root: &Path, rels: &[&str]) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/deploy_cli.rs::function::adapter",
+      "name": "adapter",
+      "kind": "function",
+      "file_path": "crates/cli/tests/deploy_cli.rs",
+      "line": 37,
+      "visibility": null,
+      "signature": "fn adapter(root: &Path, vendor_dir: &str) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/deploy_cli.rs::function::deploy_writes_adapter_and_session_start_hook",
+      "name": "deploy_writes_adapter_and_session_start_hook",
+      "kind": "function",
+      "file_path": "crates/cli/tests/deploy_cli.rs",
+      "line": 42,
+      "visibility": null,
+      "signature": "fn deploy_writes_adapter_and_session_start_hook() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/deploy_cli.rs::function::deploy_adapter_is_byte_identical_to_render",
+      "name": "deploy_adapter_is_byte_identical_to_render",
+      "kind": "function",
+      "file_path": "crates/cli/tests/deploy_cli.rs",
+      "line": 88,
+      "visibility": null,
+      "signature": "fn deploy_adapter_is_byte_identical_to_render() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/deploy_cli.rs::function::deploy_all_only_targets_existing_vendor_dirs",
+      "name": "deploy_all_only_targets_existing_vendor_dirs",
+      "kind": "function",
+      "file_path": "crates/cli/tests/deploy_cli.rs",
+      "line": 119,
+      "visibility": null,
+      "signature": "fn deploy_all_only_targets_existing_vendor_dirs() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/deploy_cli.rs::function::deploy_preserves_existing_hooks_and_comment",
+      "name": "deploy_preserves_existing_hooks_and_comment",
+      "kind": "function",
+      "file_path": "crates/cli/tests/deploy_cli.rs",
+      "line": 139,
+      "visibility": null,
+      "signature": "fn deploy_preserves_existing_hooks_and_comment() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/deploy_cli.rs::function::deploy_is_idempotent_and_check_passes",
+      "name": "deploy_is_idempotent_and_check_passes",
+      "kind": "function",
+      "file_path": "crates/cli/tests/deploy_cli.rs",
+      "line": 181,
+      "visibility": null,
+      "signature": "fn deploy_is_idempotent_and_check_passes() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/deploy_cli.rs::function::check_fails_on_missing_adapter",
+      "name": "check_fails_on_missing_adapter",
+      "kind": "function",
+      "file_path": "crates/cli/tests/deploy_cli.rs",
+      "line": 206,
+      "visibility": null,
+      "signature": "fn check_fails_on_missing_adapter() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/deploy_cli.rs::function::check_fails_on_drifted_adapter_and_dry_run_is_alias",
+      "name": "check_fails_on_drifted_adapter_and_dry_run_is_alias",
+      "kind": "function",
+      "file_path": "crates/cli/tests/deploy_cli.rs",
+      "line": 218,
+      "visibility": null,
+      "signature": "fn check_fails_on_drifted_adapter_and_dry_run_is_alias() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/deploy_cli.rs::function::check_fails_when_front_door_hook_absent",
+      "name": "check_fails_when_front_door_hook_absent",
+      "kind": "function",
+      "file_path": "crates/cli/tests/deploy_cli.rs",
+      "line": 240,
+      "visibility": null,
+      "signature": "fn check_fails_when_front_door_hook_absent() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/deploy_cli.rs::function::deploy_does_not_touch_target_runtime_files",
+      "name": "deploy_does_not_touch_target_runtime_files",
+      "kind": "function",
+      "file_path": "crates/cli/tests/deploy_cli.rs",
+      "line": 254,
+      "visibility": null,
+      "signature": "fn deploy_does_not_touch_target_runtime_files() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/deploy_cli.rs::function::deploy_rejects_missing_target",
+      "name": "deploy_rejects_missing_target",
+      "kind": "function",
+      "file_path": "crates/cli/tests/deploy_cli.rs",
+      "line": 281,
+      "visibility": null,
+      "signature": "fn deploy_rejects_missing_target() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/harness_cli.rs::function::bin",
+      "name": "bin",
+      "kind": "function",
+      "file_path": "crates/cli/tests/harness_cli.rs",
+      "line": 4,
+      "visibility": null,
+      "signature": "fn bin() -> &'static str {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/harness_cli.rs::function::run_ok",
+      "name": "run_ok",
+      "kind": "function",
+      "file_path": "crates/cli/tests/harness_cli.rs",
+      "line": 8,
+      "visibility": null,
+      "signature": "fn run_ok(args: &[&str], cwd: &Path) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/harness_cli.rs::function::run_fail",
+      "name": "run_fail",
+      "kind": "function",
+      "file_path": "crates/cli/tests/harness_cli.rs",
+      "line": 24,
+      "visibility": null,
+      "signature": "fn run_fail(args: &[&str], cwd: &Path) -> (String, String) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/harness_cli.rs::function::harness_scan_package_markdown_is_stage_scoped",
+      "name": "harness_scan_package_markdown_is_stage_scoped",
+      "kind": "function",
+      "file_path": "crates/cli/tests/harness_cli.rs",
+      "line": 44,
+      "visibility": null,
+      "signature": "fn harness_scan_package_markdown_is_stage_scoped() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/harness_cli.rs::function::harness_scan_package_json_declares_evidence_schema_and_adapters",
+      "name": "harness_scan_package_json_declares_evidence_schema_and_adapters",
+      "kind": "function",
+      "file_path": "crates/cli/tests/harness_cli.rs",
+      "line": 66,
+      "visibility": null,
+      "signature": "fn harness_scan_package_json_declares_evidence_schema_and_adapters() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/harness_cli.rs::function::harness_package_rejects_missing_target",
+      "name": "harness_package_rejects_missing_target",
+      "kind": "function",
+      "file_path": "crates/cli/tests/harness_cli.rs",
+      "line": 91,
+      "visibility": null,
+      "signature": "fn harness_package_rejects_missing_target() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/harness_cli.rs::function::harness_verify_package_markdown_is_stage_scoped",
+      "name": "harness_verify_package_markdown_is_stage_scoped",
+      "kind": "function",
+      "file_path": "crates/cli/tests/harness_cli.rs",
+      "line": 104,
+      "visibility": null,
+      "signature": "fn harness_verify_package_markdown_is_stage_scoped() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/harness_cli.rs::function::harness_verify_package_json_declares_evidence_schema_and_adapters",
+      "name": "harness_verify_package_json_declares_evidence_schema_and_adapters",
+      "kind": "function",
+      "file_path": "crates/cli/tests/harness_cli.rs",
+      "line": 135,
+      "visibility": null,
+      "signature": "fn harness_verify_package_json_declares_evidence_schema_and_adapters() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/harness_cli.rs::function::harness_verify_package_binds_goal_task_plan_files",
+      "name": "harness_verify_package_binds_goal_task_plan_files",
+      "kind": "function",
+      "file_path": "crates/cli/tests/harness_cli.rs",
+      "line": 177,
+      "visibility": null,
+      "signature": "fn harness_verify_package_binds_goal_task_plan_files() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/knowledge_cli.rs::function::bin",
+      "name": "bin",
+      "kind": "function",
+      "file_path": "crates/cli/tests/knowledge_cli.rs",
+      "line": 5,
+      "visibility": null,
+      "signature": "fn bin() -> &'static str {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/knowledge_cli.rs::function::run_ok",
+      "name": "run_ok",
+      "kind": "function",
+      "file_path": "crates/cli/tests/knowledge_cli.rs",
+      "line": 9,
+      "visibility": null,
+      "signature": "fn run_ok(args: &[&str], cwd: &Path) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/knowledge_cli.rs::function::knowledge_commands_cover_index_pack_report_query_and_refresh",
+      "name": "knowledge_commands_cover_index_pack_report_query_and_refresh",
+      "kind": "function",
+      "file_path": "crates/cli/tests/knowledge_cli.rs",
+      "line": 26,
+      "visibility": null,
+      "signature": "fn knowledge_commands_cover_index_pack_report_query_and_refresh() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/knowledge_cli.rs::function::system_architecture_cli_discovers_peer_repos_without_meta",
+      "name": "system_architecture_cli_discovers_peer_repos_without_meta",
+      "kind": "function",
+      "file_path": "crates/cli/tests/knowledge_cli.rs",
+      "line": 171,
+      "visibility": null,
+      "signature": "fn system_architecture_cli_discovers_peer_repos_without_meta() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/knowledge_cli.rs::function::run_git",
+      "name": "run_git",
+      "kind": "function",
+      "file_path": "crates/cli/tests/knowledge_cli.rs",
+      "line": 366,
+      "visibility": null,
+      "signature": "fn run_git(args: &[&str], cwd: &Path) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/merge_tools_cli.rs::function::bin",
+      "name": "bin",
+      "kind": "function",
+      "file_path": "crates/cli/tests/merge_tools_cli.rs",
+      "line": 4,
+      "visibility": null,
+      "signature": "fn bin() -> &'static str {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/merge_tools_cli.rs::function::run_ok",
+      "name": "run_ok",
+      "kind": "function",
+      "file_path": "crates/cli/tests/merge_tools_cli.rs",
+      "line": 8,
+      "visibility": null,
+      "signature": "fn run_ok(args: &[&str], cwd: &Path) -> String {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/merge_tools_cli.rs::function::merge_tools_show_exposes_canonical_package",
+      "name": "merge_tools_show_exposes_canonical_package",
+      "kind": "function",
+      "file_path": "crates/cli/tests/merge_tools_cli.rs",
+      "line": 25,
+      "visibility": null,
+      "signature": "fn merge_tools_show_exposes_canonical_package() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/merge_tools_cli.rs::function::merge_tools_legacy_lists_retired_bridge_surfaces",
+      "name": "merge_tools_legacy_lists_retired_bridge_surfaces",
+      "kind": "function",
+      "file_path": "crates/cli/tests/merge_tools_cli.rs",
+      "line": 35,
+      "visibility": null,
+      "signature": "fn merge_tools_legacy_lists_retired_bridge_surfaces() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/merge_tools_cli.rs::function::merge_tools_verify_passes_on_minimal_rust_workspace",
+      "name": "merge_tools_verify_passes_on_minimal_rust_workspace",
+      "kind": "function",
+      "file_path": "crates/cli/tests/merge_tools_cli.rs",
+      "line": 44,
+      "visibility": null,
+      "signature": "fn merge_tools_verify_passes_on_minimal_rust_workspace() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/next_cli.rs::function::bin",
+      "name": "bin",
+      "kind": "function",
+      "file_path": "crates/cli/tests/next_cli.rs",
+      "line": 7,
+      "visibility": null,
+      "signature": "fn bin() -> &'static str {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/next_cli.rs::function::write",
+      "name": "write",
+      "kind": "function",
+      "file_path": "crates/cli/tests/next_cli.rs",
+      "line": 11,
+      "visibility": null,
+      "signature": "fn write(path: &Path, contents: &str) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/next_cli.rs::function::run_next",
+      "name": "run_next",
+      "kind": "function",
+      "file_path": "crates/cli/tests/next_cli.rs",
+      "line": 16,
+      "visibility": null,
+      "signature": "fn run_next(base: &Path) -> (i32, String, String) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/next_cli.rs::function::next_with_no_active_change_guides_the_user",
+      "name": "next_with_no_active_change_guides_the_user",
+      "kind": "function",
+      "file_path": "crates/cli/tests/next_cli.rs",
+      "line": 30,
+      "visibility": null,
+      "signature": "fn next_with_no_active_change_guides_the_user() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/next_cli.rs::function::next_routes_to_the_active_changes_imperative",
+      "name": "next_routes_to_the_active_changes_imperative",
+      "kind": "function",
+      "file_path": "crates/cli/tests/next_cli.rs",
+      "line": 39,
+      "visibility": null,
+      "signature": "fn next_routes_to_the_active_changes_imperative() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/next_cli.rs::function::next_errors_when_active_change_dir_is_missing",
+      "name": "next_errors_when_active_change_dir_is_missing",
+      "kind": "function",
+      "file_path": "crates/cli/tests/next_cli.rs",
+      "line": 65,
+      "visibility": null,
+      "signature": "fn next_errors_when_active_change_dir_is_missing() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/next_cli.rs::function::run_next_json",
+      "name": "run_next_json",
+      "kind": "function",
+      "file_path": "crates/cli/tests/next_cli.rs",
+      "line": 76,
+      "visibility": null,
+      "signature": "fn run_next_json(base: &Path) -> (i32, String, String) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/next_cli.rs::function::next_json_emits_fields_for_a_partial_change",
+      "name": "next_json_emits_fields_for_a_partial_change",
+      "kind": "function",
+      "file_path": "crates/cli/tests/next_cli.rs",
+      "line": 90,
+      "visibility": null,
+      "signature": "fn next_json_emits_fields_for_a_partial_change() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/next_cli.rs::function::next_json_is_deterministic_across_runs",
+      "name": "next_json_is_deterministic_across_runs",
+      "kind": "function",
+      "file_path": "crates/cli/tests/next_cli.rs",
+      "line": 114,
+      "visibility": null,
+      "signature": "fn next_json_is_deterministic_across_runs() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/next_cli.rs::function::next_json_fails_closed_on_dangling_pointer",
+      "name": "next_json_fails_closed_on_dangling_pointer",
+      "kind": "function",
+      "file_path": "crates/cli/tests/next_cli.rs",
+      "line": 133,
+      "visibility": null,
+      "signature": "fn next_json_fails_closed_on_dangling_pointer() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/render_cli.rs::function::bin",
+      "name": "bin",
+      "kind": "function",
+      "file_path": "crates/cli/tests/render_cli.rs",
+      "line": 7,
+      "visibility": null,
+      "signature": "fn bin() -> &'static str {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/render_cli.rs::function::run",
+      "name": "run",
+      "kind": "function",
+      "file_path": "crates/cli/tests/render_cli.rs",
+      "line": 11,
+      "visibility": null,
+      "signature": "fn run(args: &[&str], base: &Path) -> (i32, String, String) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/render_cli.rs::function::base_with_vendors",
+      "name": "base_with_vendors",
+      "kind": "function",
+      "file_path": "crates/cli/tests/render_cli.rs",
+      "line": 26,
+      "visibility": null,
+      "signature": "fn base_with_vendors() -> tempfile::TempDir {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/render_cli.rs::function::render_all_then_check_passes_and_is_deterministic",
+      "name": "render_all_then_check_passes_and_is_deterministic",
+      "kind": "function",
+      "file_path": "crates/cli/tests/render_cli.rs",
+      "line": 35,
+      "visibility": null,
+      "signature": "fn render_all_then_check_passes_and_is_deterministic() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/render_cli.rs::function::check_fails_closed_on_hand_edit",
+      "name": "check_fails_closed_on_hand_edit",
+      "kind": "function",
+      "file_path": "crates/cli/tests/render_cli.rs",
+      "line": 55,
+      "visibility": null,
+      "signature": "fn check_fails_closed_on_hand_edit() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/render_cli.rs::function::check_fails_closed_on_missing_adapter",
+      "name": "check_fails_closed_on_missing_adapter",
+      "kind": "function",
+      "file_path": "crates/cli/tests/render_cli.rs",
+      "line": 72,
+      "visibility": null,
+      "signature": "fn check_fails_closed_on_missing_adapter() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/render_cli.rs::function::unknown_vendor_is_rejected",
+      "name": "unknown_vendor_is_rejected",
+      "kind": "function",
+      "file_path": "crates/cli/tests/render_cli.rs",
+      "line": 82,
+      "visibility": null,
+      "signature": "fn unknown_vendor_is_rejected() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/run_cli.rs::function::bin",
+      "name": "bin",
+      "kind": "function",
+      "file_path": "crates/cli/tests/run_cli.rs",
+      "line": 6,
+      "visibility": null,
+      "signature": "fn bin() -> &'static str {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/run_cli.rs::function::run_finishes_when_all_tasks_checked",
+      "name": "run_finishes_when_all_tasks_checked",
+      "kind": "function",
+      "file_path": "crates/cli/tests/run_cli.rs",
+      "line": 11,
+      "visibility": null,
+      "signature": "fn run_finishes_when_all_tasks_checked() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_adr_cli.rs::function::bin",
+      "name": "bin",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_adr_cli.rs",
+      "line": 7,
+      "visibility": null,
+      "signature": "fn bin() -> &'static str {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_adr_cli.rs::function::make_adr_dir",
+      "name": "make_adr_dir",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_adr_cli.rs",
+      "line": 13,
+      "visibility": null,
+      "signature": "fn make_adr_dir() -> (tempfile::TempDir, PathBuf) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_adr_cli.rs::function::run",
+      "name": "run",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_adr_cli.rs",
+      "line": 36,
+      "visibility": null,
+      "signature": "fn run(args: &[&str]) -> (i32, String) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_adr_cli.rs::function::adr_list_shows_only_in_force",
+      "name": "adr_list_shows_only_in_force",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_adr_cli.rs",
+      "line": 48,
+      "visibility": null,
+      "signature": "fn adr_list_shows_only_in_force() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_adr_cli.rs::function::adr_list_all_shows_status_for_each",
+      "name": "adr_list_all_shows_status_for_each",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_adr_cli.rs",
+      "line": 63,
+      "visibility": null,
+      "signature": "fn adr_list_all_shows_status_for_each() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_adr_cli.rs::function::adr_next_is_max_plus_one_zero_padded",
+      "name": "adr_next_is_max_plus_one_zero_padded",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_adr_cli.rs",
+      "line": 84,
+      "visibility": null,
+      "signature": "fn adr_next_is_max_plus_one_zero_padded() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_adr_cli.rs::function::adr_next_on_missing_dir_starts_at_0001",
+      "name": "adr_next_on_missing_dir_starts_at_0001",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_adr_cli.rs",
+      "line": 92,
+      "visibility": null,
+      "signature": "fn adr_next_on_missing_dir_starts_at_0001() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_cli.rs::function::bin",
+      "name": "bin",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_cli.rs",
+      "line": 7,
+      "visibility": null,
+      "signature": "fn bin() -> &'static str {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_cli.rs::function::repo_root",
+      "name": "repo_root",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_cli.rs",
+      "line": 13,
+      "visibility": null,
+      "signature": "fn repo_root() -> PathBuf {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_cli.rs::function::fixture",
+      "name": "fixture",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_cli.rs",
+      "line": 22,
+      "visibility": null,
+      "signature": "fn fixture(name: &str) -> PathBuf {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_cli.rs::function::spec_validate_base_fixture_is_valid_json",
+      "name": "spec_validate_base_fixture_is_valid_json",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_cli.rs",
+      "line": 29,
+      "visibility": null,
+      "signature": "fn spec_validate_base_fixture_is_valid_json() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_cli.rs::function::spec_validate_no_scenario_is_invalid_with_error",
+      "name": "spec_validate_no_scenario_is_invalid_with_error",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_cli.rs",
+      "line": 53,
+      "visibility": null,
+      "signature": "fn spec_validate_no_scenario_is_invalid_with_error() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_cli.rs::function::spec_validate_strict_fails_on_warning",
+      "name": "spec_validate_strict_fails_on_warning",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_cli.rs",
+      "line": 91,
+      "visibility": null,
+      "signature": "fn spec_validate_strict_fails_on_warning() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_cli.rs::function::spec_validate_strict_human_summary_matches_exit_code",
+      "name": "spec_validate_strict_human_summary_matches_exit_code",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_cli.rs",
+      "line": 103,
+      "visibility": null,
+      "signature": "fn spec_validate_strict_human_summary_matches_exit_code() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_cli.rs::function::spec_validate_json_is_strict_blind",
+      "name": "spec_validate_json_is_strict_blind",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_cli.rs",
+      "line": 139,
+      "visibility": null,
+      "signature": "fn spec_validate_json_is_strict_blind() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_cli.rs::function::spec_validate_all_finds_all_specs",
+      "name": "spec_validate_all_finds_all_specs",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_cli.rs",
+      "line": 160,
+      "visibility": null,
+      "signature": "fn spec_validate_all_finds_all_specs() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_scaffold_cli.rs::function::bin",
+      "name": "bin",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_scaffold_cli.rs",
+      "line": 6,
+      "visibility": null,
+      "signature": "fn bin() -> &'static str {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_scaffold_cli.rs::function::scaffold_proposal_injects_change_and_has_no_jinja",
+      "name": "scaffold_proposal_injects_change_and_has_no_jinja",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_scaffold_cli.rs",
+      "line": 11,
+      "visibility": null,
+      "signature": "fn scaffold_proposal_injects_change_and_has_no_jinja() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_scaffold_cli.rs::function::scaffold_adr_injects_number_title_date",
+      "name": "scaffold_adr_injects_number_title_date",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_scaffold_cli.rs",
+      "line": 27,
+      "visibility": null,
+      "signature": "fn scaffold_adr_injects_number_title_date() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_scaffold_cli.rs::function::scaffold_unknown_artifact_errors",
+      "name": "scaffold_unknown_artifact_errors",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_scaffold_cli.rs",
+      "line": 49,
+      "visibility": null,
+      "signature": "fn scaffold_unknown_artifact_errors() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_scaffold_cli.rs::function::new_creates_proposal_and_refuses_overwrite",
+      "name": "new_creates_proposal_and_refuses_overwrite",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_scaffold_cli.rs",
+      "line": 58,
+      "visibility": null,
+      "signature": "fn new_creates_proposal_and_refuses_overwrite() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_scaffold_cli.rs::function::scaffolded_spec_stub_is_show_able",
+      "name": "scaffolded_spec_stub_is_show_able",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_scaffold_cli.rs",
+      "line": 88,
+      "visibility": null,
+      "signature": "fn scaffolded_spec_stub_is_show_able() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_scaffold_cli.rs::function::plan_integration_creates_openspec_artifacts_from_integration_plan",
+      "name": "plan_integration_creates_openspec_artifacts_from_integration_plan",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_scaffold_cli.rs",
+      "line": 110,
+      "visibility": null,
+      "signature": "fn plan_integration_creates_openspec_artifacts_from_integration_plan() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_scaffold_cli.rs::function::plan_integration_default_skips_existing_queue_slots",
+      "name": "plan_integration_default_skips_existing_queue_slots",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_scaffold_cli.rs",
+      "line": 217,
+      "visibility": null,
+      "signature": "fn plan_integration_default_skips_existing_queue_slots() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_scaffold_cli.rs::function::plan_integration_default_errors_when_no_planned_work_remains",
+      "name": "plan_integration_default_errors_when_no_planned_work_remains",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_scaffold_cli.rs",
+      "line": 252,
+      "visibility": null,
+      "signature": "fn plan_integration_default_errors_when_no_planned_work_remains() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_scaffold_cli.rs::function::write_two_item_integration_plan",
+      "name": "write_two_item_integration_plan",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_scaffold_cli.rs",
+      "line": 279,
+      "visibility": null,
+      "signature": "fn write_two_item_integration_plan(base: &std::path::Path) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_status_cli.rs::function::bin",
+      "name": "bin",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_status_cli.rs",
+      "line": 7,
+      "visibility": null,
+      "signature": "fn bin() -> &'static str {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_status_cli.rs::function::make_change",
+      "name": "make_change",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_status_cli.rs",
+      "line": 14,
+      "visibility": null,
+      "signature": "fn make_change(files: &[&str]) -> (tempfile::TempDir, PathBuf) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_status_cli.rs::function::write",
+      "name": "write",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_status_cli.rs",
+      "line": 31,
+      "visibility": null,
+      "signature": "fn write(path: &Path, contents: &str) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_status_cli.rs::function::run",
+      "name": "run",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_status_cli.rs",
+      "line": 36,
+      "visibility": null,
+      "signature": "fn run(args: &[&str], change_dir: &Path) -> (i32, String) {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_status_cli.rs::function::status_reports_next_and_blockers",
+      "name": "status_reports_next_and_blockers",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_status_cli.rs",
+      "line": 49,
+      "visibility": null,
+      "signature": "fn status_reports_next_and_blockers() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_status_cli.rs::function::status_json_reports_deterministic_automation_snapshot",
+      "name": "status_json_reports_deterministic_automation_snapshot",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_status_cli.rs",
+      "line": 68,
+      "visibility": null,
+      "signature": "fn status_json_reports_deterministic_automation_snapshot() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_status_cli.rs::function::next_prints_first_ready_artifact",
+      "name": "next_prints_first_ready_artifact",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_status_cli.rs",
+      "line": 94,
+      "visibility": null,
+      "signature": "fn next_prints_first_ready_artifact() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_status_cli.rs::function::status_archivable_when_all_done",
+      "name": "status_archivable_when_all_done",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_status_cli.rs",
+      "line": 106,
+      "visibility": null,
+      "signature": "fn status_archivable_when_all_done() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/spec_status_cli.rs::function::status_missing_change_dir_errors",
+      "name": "status_missing_change_dir_errors",
+      "kind": "function",
+      "file_path": "crates/cli/tests/spec_status_cli.rs",
+      "line": 121,
+      "visibility": null,
+      "signature": "fn status_missing_change_dir_errors() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/vendor_hooks.rs::function::repo_root",
+      "name": "repo_root",
+      "kind": "function",
+      "file_path": "crates/cli/tests/vendor_hooks.rs",
+      "line": 11,
+      "visibility": null,
+      "signature": "fn repo_root() -> PathBuf {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/vendor_hooks.rs::function::load_json",
+      "name": "load_json",
+      "kind": "function",
+      "file_path": "crates/cli/tests/vendor_hooks.rs",
+      "line": 19,
+      "visibility": null,
+      "signature": "fn load_json(rel: &str) -> Value {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/vendor_hooks.rs::function::session_start_commands",
+      "name": "session_start_commands",
+      "kind": "function",
+      "file_path": "crates/cli/tests/vendor_hooks.rs",
+      "line": 27,
+      "visibility": null,
+      "signature": "fn session_start_commands(cfg: &Value) -> Vec<String> {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/vendor_hooks.rs::function::invokes_next",
+      "name": "invokes_next",
+      "kind": "function",
+      "file_path": "crates/cli/tests/vendor_hooks.rs",
+      "line": 49,
+      "visibility": null,
+      "signature": "fn invokes_next(cmds: &[String]) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/vendor_hooks.rs::function::next_uses_base",
+      "name": "next_uses_base",
+      "kind": "function",
+      "file_path": "crates/cli/tests/vendor_hooks.rs",
+      "line": 57,
+      "visibility": null,
+      "signature": "fn next_uses_base(cmds: &[String]) -> bool {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/vendor_hooks.rs::function::codex_session_start_calls_front_door",
+      "name": "codex_session_start_calls_front_door",
+      "kind": "function",
+      "file_path": "crates/cli/tests/vendor_hooks.rs",
+      "line": 64,
+      "visibility": null,
+      "signature": "fn codex_session_start_calls_front_door() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/vendor_hooks.rs::function::codex_keeps_existing_hooks",
+      "name": "codex_keeps_existing_hooks",
+      "kind": "function",
+      "file_path": "crates/cli/tests/vendor_hooks.rs",
+      "line": 82,
+      "visibility": null,
+      "signature": "fn codex_keeps_existing_hooks() {"
+    },
+    {
+      "symbol_id": "crates/cli/tests/vendor_hooks.rs::function::claude_session_start_calls_front_door",
+      "name": "claude_session_start_calls_front_door",
+      "kind": "function",
+      "file_path": "crates/cli/tests/vendor_hooks.rs",
+      "line": 92,
+      "visibility": null,
+      "signature": "fn claude_session_start_calls_front_door() {"
+    },
+    {
+      "symbol_id": "crates/core/src/cli.rs::function::run",
+      "name": "run",
+      "kind": "function",
+      "file_path": "crates/core/src/cli.rs",
+      "line": 12,
+      "visibility": "pub",
+      "signature": "pub fn run<I, S>(args: I) -> Result<(), String>"
+    },
+    {
+      "symbol_id": "crates/core/src/cli.rs::function::cmd_init",
+      "name": "cmd_init",
+      "kind": "function",
+      "file_path": "crates/core/src/cli.rs",
+      "line": 36,
+      "visibility": null,
+      "signature": "fn cmd_init(args: &[String]) -> Result<(), String> {"
+    },
+    {
+      "symbol_id": "crates/core/src/cli.rs::function::cmd_scan",
+      "name": "cmd_scan",
+      "kind": "function",
+      "file_path": "crates/core/src/cli.rs",
+      "line": 106,
+      "visibility": null,
+      "signature": "fn cmd_scan(args: &[String]) -> Result<(), String> {"
+    },
+    {
+      "symbol_id": "crates/core/src/cli.rs::function::cmd_plan",
+      "name": "cmd_plan",
+      "kind": "function",
+      "file_path": "crates/core/src/cli.rs",
+      "line": 126,
+      "visibility": null,
+      "signature": "fn cmd_plan(args: &[String]) -> Result<(), String> {"
+    },
+    {
+      "symbol_id": "crates/core/src/cli.rs::function::cmd_task",
+      "name": "cmd_task",
+      "kind": "function",
+      "file_path": "crates/core/src/cli.rs",
+      "line": 140,
+      "visibility": null,
+      "signature": "fn cmd_task(args: &[String]) -> Result<(), String> {"
+    },
+    {
+      "symbol_id": "crates/core/src/cli.rs::function::cmd_validate",
+      "name": "cmd_validate",
+      "kind": "function",
+      "file_path": "crates/core/src/cli.rs",
+      "line": 154,
+      "visibility": null,
+      "signature": "fn cmd_validate(args: &[String]) -> Result<(), String> {"
+    },
+    {
+      "symbol_id": "crates/core/src/cli.rs::function::cmd_manifest",
+      "name": "cmd_manifest",
+      "kind": "function",
+      "file_path": "crates/core/src/cli.rs",
+      "line": 182,
+      "visibility": null,
+      "signature": "fn cmd_manifest(args: &[String]) -> Result<(), String> {"
+    },
+    {
+      "symbol_id": "crates/core/src/cli.rs::function::cmd_github",
+      "name": "cmd_github",
+      "kind": "function",
+      "file_path": "crates/core/src/cli.rs",
+      "line": 198,
+      "visibility": null,
+      "signature": "fn cmd_github(args: &[String]) -> Result<(), String> {"
+    },
+    {
+      "symbol_id": "crates/core/src/cli.rs::function::parse_flags",
+      "name": "parse_flags",
+      "kind": "function",
+      "file_path": "crates/core/src/cli.rs",
+      "line": 230,
+      "visibility": null,
+      "signature": "fn parse_flags(args: &[String]) -> BTreeMap<String, String> {"
+    },
+    {
+      "symbol_id": "crates/core/src/cli.rs::function::required",
+      "name": "required",
+      "kind": "function",
+      "file_path": "crates/core/src/cli.rs",
+      "line": 255,
+      "visibility": null,
+      "signature": "fn required<'a>(flags: &'a BTreeMap<String, String>, key: &str) -> Result<&'a str, String> {"
+    },
+    {
+      "symbol_id": "crates/core/src/cli.rs::function::write_template",
+      "name": "write_template",
+      "kind": "function",
+      "file_path": "crates/core/src/cli.rs",
+      "line": 262,
+      "visibility": null,
+      "signature": "fn write_template(path: &Path, content: &str) -> Result<(), String> {"
+    },
+    {
+      "symbol_id": "crates/core/src/cli.rs::function::print_help",
+      "name": "print_help",
+      "kind": "function",
+      "file_path": "crates/core/src/cli.rs",
+      "line": 267,
+      "visibility": null,
+      "signature": "fn print_help() {"
+    },
+    {
+      "symbol_id": "crates/core/src/cli.rs::function::_task_preview",
+      "name": "_task_preview",
+      "kind": "function",
+      "file_path": "crates/core/src/cli.rs",
+      "line": 291,
+      "visibility": null,
+      "signature": "fn _task_preview(title: &str, kind: &str) -> String {"
+    },
+    {
+      "symbol_id": "crates/core/src/cli.rs::module::tests",
+      "name": "tests",
+      "kind": "module",
+      "file_path": "crates/core/src/cli.rs",
+      "line": 296,
+      "visibility": null,
+      "signature": "mod tests {"
+    },
+    {
+      "symbol_id": "crates/core/src/cli.rs::function::test_parse_flags_basic",
+      "name": "test_parse_flags_basic",
+      "kind": "function",
+      "file_path": "crates/core/src/cli.rs",
+      "line": 301,
+      "visibility": null,
+      "signature": "fn test_parse_flags_basic() {"
+    },
+    {
+      "symbol_id": "crates/core/src/cli.rs::function::test_parse_flags_boolean",
+      "name": "test_parse_flags_boolean",
+      "kind": "function",
+      "file_path": "crates/core/src/cli.rs",
+      "line": 313,
+      "visibility": null,
+      "signature": "fn test_parse_flags_boolean() {"
+    },
+    {
+      "symbol_id": "crates/core/src/cli.rs::function::test_required_flag_missing",
+      "name": "test_required_flag_missing",
+      "kind": "function",
+      "file_path": "crates/core/src/cli.rs",
+      "line": 320,
+      "visibility": null,
+      "signature": "fn test_required_flag_missing() {"
+    },
+    {
+      "symbol_id": "crates/core/src/cli.rs::function::test_cmd_init_executes",
+      "name": "test_cmd_init_executes",
+      "kind": "function",
+      "file_path": "crates/core/src/cli.rs",
+      "line": 328,
+      "visibility": null,
+      "signature": "fn test_cmd_init_executes() {"
+    },
+    {
+      "symbol_id": "crates/core/src/cli.rs::function::test_cmd_task_creates_file",
+      "name": "test_cmd_task_creates_file",
+      "kind": "function",
+      "file_path": "crates/core/src/cli.rs",
+      "line": 338,
+      "visibility": null,
+      "signature": "fn test_cmd_task_creates_file() {"
+    },
+    {
+      "symbol_id": "crates/core/src/cli.rs::function::test_cmd_scan_requires_repo",
+      "name": "test_cmd_scan_requires_repo",
+      "kind": "function",
+      "file_path": "crates/core/src/cli.rs",
+      "line": 352,
+      "visibility": null,
+      "signature": "fn test_cmd_scan_requires_repo() {"
+    },
+    {
+      "symbol_id": "crates/core/src/env_contract.rs::function::extract_env_keys_from_dotenv",
+      "name": "extract_env_keys_from_dotenv",
+      "kind": "function",
+      "file_path": "crates/core/src/env_contract.rs",
+      "line": 5,
+      "visibility": "pub",
+      "signature": "pub fn extract_env_keys_from_dotenv(content: &str) -> Vec<String> {"
+    },
+    {
+      "symbol_id": "crates/core/src/env_contract.rs::function::extract_secret_refs",
+      "name": "extract_secret_refs",
+      "kind": "function",
+      "file_path": "crates/core/src/env_contract.rs",
+      "line": 26,
+      "visibility": "pub",
+      "signature": "pub fn extract_secret_refs(file: &str, content: &str) -> Vec<SecretReference> {"
+    },
+    {
+      "symbol_id": "crates/core/src/env_contract.rs::function::implied_tool_reference",
+      "name": "implied_tool_reference",
+      "kind": "function",
+      "file_path": "crates/core/src/env_contract.rs",
+      "line": 145,
+      "visibility": "pub",
+      "signature": "pub fn implied_tool_reference(file: &str) -> Option<SecretReference> {"
+    },
+    {
+      "symbol_id": "crates/core/src/env_contract.rs::function::extract_after_marker",
+      "name": "extract_after_marker",
+      "kind": "function",
+      "file_path": "crates/core/src/env_contract.rs",
+      "line": 187,
+      "visibility": null,
+      "signature": "fn extract_after_marker("
+    },
+    {
+      "symbol_id": "crates/core/src/env_contract.rs::function::extract_bracket_marker",
+      "name": "extract_bracket_marker",
+      "kind": "function",
+      "file_path": "crates/core/src/env_contract.rs",
+      "line": 214,
+      "visibility": null,
+      "signature": "fn extract_bracket_marker("
+    },
+    {
+      "symbol_id": "crates/core/src/env_contract.rs::function::extract_quoted_arg",
+      "name": "extract_quoted_arg",
+      "kind": "function",
+      "file_path": "crates/core/src/env_contract.rs",
+      "line": 252,
+      "visibility": null,
+      "signature": "fn extract_quoted_arg("
+    },
+    {
+      "symbol_id": "crates/core/src/env_contract.rs::function::extract_tooling_markers",
+      "name": "extract_tooling_markers",
+      "kind": "function",
+      "file_path": "crates/core/src/env_contract.rs",
+      "line": 291,
+      "visibility": null,
+      "signature": "fn extract_tooling_markers(file: &str, content: &str) -> Vec<SecretReference> {"
+    },
+    {
+      "symbol_id": "crates/core/src/env_contract.rs::function::dedup_refs",
+      "name": "dedup_refs",
+      "kind": "function",
+      "file_path": "crates/core/src/env_contract.rs",
+      "line": 318,
+      "visibility": null,
+      "signature": "fn dedup_refs(refs: Vec<SecretReference>) -> Vec<SecretReference> {"
+    },
+    {
+      "symbol_id": "crates/core/src/env_contract.rs::function::is_env_key",
+      "name": "is_env_key",
+      "kind": "function",
+      "file_path": "crates/core/src/env_contract.rs",
+      "line": 330,
+      "visibility": "pub",
+      "signature": "pub fn is_env_key(key: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/core/src/env_contract.rs::module::tests",
+      "name": "tests",
+      "kind": "module",
+      "file_path": "crates/core/src/env_contract.rs",
+      "line": 343,
+      "visibility": null,
+      "signature": "mod tests {"
+    },
+    {
+      "symbol_id": "crates/core/src/env_contract.rs::function::extracts_dotenv_keys",
+      "name": "extracts_dotenv_keys",
+      "kind": "function",
+      "file_path": "crates/core/src/env_contract.rs",
+      "line": 347,
+      "visibility": null,
+      "signature": "fn extracts_dotenv_keys() {"
+    },
+    {
+      "symbol_id": "crates/core/src/env_contract.rs::function::extracts_polyglot_env_refs",
+      "name": "extracts_polyglot_env_refs",
+      "kind": "function",
+      "file_path": "crates/core/src/env_contract.rs",
+      "line": 354,
+      "visibility": null,
+      "signature": "fn extracts_polyglot_env_refs() {"
+    },
+    {
+      "symbol_id": "crates/core/src/fs_utils.rs::function::ensure_dir",
+      "name": "ensure_dir",
+      "kind": "function",
+      "file_path": "crates/core/src/fs_utils.rs",
+      "line": 5,
+      "visibility": "pub",
+      "signature": "pub fn ensure_dir(path: &Path) -> io::Result<()> {"
+    },
+    {
+      "symbol_id": "crates/core/src/fs_utils.rs::function::write_string",
+      "name": "write_string",
+      "kind": "function",
+      "file_path": "crates/core/src/fs_utils.rs",
+      "line": 12,
+      "visibility": "pub",
+      "signature": "pub fn write_string(path: &Path, content: &str) -> io::Result<()> {"
+    },
+    {
+      "symbol_id": "crates/core/src/fs_utils.rs::function::write_string_preserving_existing",
+      "name": "write_string_preserving_existing",
+      "kind": "function",
+      "file_path": "crates/core/src/fs_utils.rs",
+      "line": 19,
+      "visibility": "pub",
+      "signature": "pub fn write_string_preserving_existing(path: &Path, content: &str) -> io::Result<()> {"
+    },
+    {
+      "symbol_id": "crates/core/src/fs_utils.rs::function::append_string",
+      "name": "append_string",
+      "kind": "function",
+      "file_path": "crates/core/src/fs_utils.rs",
+      "line": 35,
+      "visibility": "pub",
+      "signature": "pub fn append_string(path: &Path, content: &str) -> io::Result<()> {"
+    },
+    {
+      "symbol_id": "crates/core/src/fs_utils.rs::function::normalize_path",
+      "name": "normalize_path",
+      "kind": "function",
+      "file_path": "crates/core/src/fs_utils.rs",
+      "line": 47,
+      "visibility": "pub",
+      "signature": "pub fn normalize_path(path: &Path) -> String {"
+    },
+    {
+      "symbol_id": "crates/core/src/fs_utils.rs::function::relative_path",
+      "name": "relative_path",
+      "kind": "function",
+      "file_path": "crates/core/src/fs_utils.rs",
+      "line": 54,
+      "visibility": "pub",
+      "signature": "pub fn relative_path(root: &Path, path: &Path) -> String {"
+    },
+    {
+      "symbol_id": "crates/core/src/fs_utils.rs::function::read_to_string_lossy",
+      "name": "read_to_string_lossy",
+      "kind": "function",
+      "file_path": "crates/core/src/fs_utils.rs",
+      "line": 61,
+      "visibility": "pub",
+      "signature": "pub fn read_to_string_lossy(path: &Path, max_bytes: u64) -> io::Result<String> {"
+    },
+    {
+      "symbol_id": "crates/core/src/fs_utils.rs::function::stable_walk",
+      "name": "stable_walk",
+      "kind": "function",
+      "file_path": "crates/core/src/fs_utils.rs",
+      "line": 72,
+      "visibility": "pub",
+      "signature": "pub fn stable_walk(root: &Path) -> io::Result<Vec<PathBuf>> {"
+    },
+    {
+      "symbol_id": "crates/core/src/fs_utils.rs::function::walk_inner",
+      "name": "walk_inner",
+      "kind": "function",
+      "file_path": "crates/core/src/fs_utils.rs",
+      "line": 79,
+      "visibility": null,
+      "signature": "fn walk_inner(path: &Path, out: &mut Vec<PathBuf>) -> io::Result<()> {"
+    },
+    {
+      "symbol_id": "crates/core/src/fs_utils.rs::function::should_ignore",
+      "name": "should_ignore",
+      "kind": "function",
+      "file_path": "crates/core/src/fs_utils.rs",
+      "line": 108,
+      "visibility": "pub",
+      "signature": "pub fn should_ignore(path: &Path) -> bool {"
+    },
+    {
+      "symbol_id": "crates/core/src/fs_utils.rs::function::is_manifest_self_file",
+      "name": "is_manifest_self_file",
+      "kind": "function",
+      "file_path": "crates/core/src/fs_utils.rs",
+      "line": 141,
+      "visibility": null,
+      "signature": "fn is_manifest_self_file(path: &Path) -> bool {"
+    },
+    {
+      "symbol_id": "crates/core/src/fs_utils.rs::function::next_backup_path",
+      "name": "next_backup_path",
+      "kind": "function",
+      "file_path": "crates/core/src/fs_utils.rs",
+      "line": 150,
+      "visibility": null,
+      "signature": "fn next_backup_path(path: &Path) -> PathBuf {"
+    },
+    {
+      "symbol_id": "crates/core/src/fs_utils.rs::module::tests",
+      "name": "tests",
+      "kind": "module",
+      "file_path": "crates/core/src/fs_utils.rs",
+      "line": 165,
+      "visibility": null,
+      "signature": "mod tests {"
+    },
+    {
+      "symbol_id": "crates/core/src/fs_utils.rs::function::test_ensure_dir_creates_missing",
+      "name": "test_ensure_dir_creates_missing",
+      "kind": "function",
+      "file_path": "crates/core/src/fs_utils.rs",
+      "line": 170,
+      "visibility": null,
+      "signature": "fn test_ensure_dir_creates_missing() {"
+    },
+    {
+      "symbol_id": "crates/core/src/fs_utils.rs::function::test_write_string_creates_parents",
+      "name": "test_write_string_creates_parents",
+      "kind": "function",
+      "file_path": "crates/core/src/fs_utils.rs",
+      "line": 180,
+      "visibility": null,
+      "signature": "fn test_write_string_creates_parents() {"
+    },
+    {
+      "symbol_id": "crates/core/src/fs_utils.rs::function::test_write_string_preserving_existing_backups",
+      "name": "test_write_string_preserving_existing_backups",
+      "kind": "function",
+      "file_path": "crates/core/src/fs_utils.rs",
+      "line": 188,
+      "visibility": null,
+      "signature": "fn test_write_string_preserving_existing_backups() {"
+    },
+    {
+      "symbol_id": "crates/core/src/fs_utils.rs::function::test_stable_walk_is_deterministic",
+      "name": "test_stable_walk_is_deterministic",
+      "kind": "function",
+      "file_path": "crates/core/src/fs_utils.rs",
+      "line": 216,
+      "visibility": null,
+      "signature": "fn test_stable_walk_is_deterministic() {"
+    },
+    {
+      "symbol_id": "crates/core/src/fs_utils.rs::function::test_should_ignore",
+      "name": "test_should_ignore",
+      "kind": "function",
+      "file_path": "crates/core/src/fs_utils.rs",
+      "line": 238,
+      "visibility": null,
+      "signature": "fn test_should_ignore() {"
+    },
+    {
+      "symbol_id": "crates/core/src/fs_utils.rs::function::test_normalize_path",
+      "name": "test_normalize_path",
+      "kind": "function",
+      "file_path": "crates/core/src/fs_utils.rs",
+      "line": 253,
+      "visibility": null,
+      "signature": "fn test_normalize_path() {"
+    },
+    {
+      "symbol_id": "crates/core/src/lib.rs::module::cli",
+      "name": "cli",
+      "kind": "module",
+      "file_path": "crates/core/src/lib.rs",
+      "line": 9,
+      "visibility": "pub",
+      "signature": "pub mod cli;"
+    },
+    {
+      "symbol_id": "crates/core/src/lib.rs::module::env_contract",
+      "name": "env_contract",
+      "kind": "module",
+      "file_path": "crates/core/src/lib.rs",
+      "line": 10,
+      "visibility": "pub",
+      "signature": "pub mod env_contract;"
+    },
+    {
+      "symbol_id": "crates/core/src/lib.rs::module::fs_utils",
+      "name": "fs_utils",
+      "kind": "module",
+      "file_path": "crates/core/src/lib.rs",
+      "line": 11,
+      "visibility": "pub",
+      "signature": "pub mod fs_utils;"
+    },
+    {
+      "symbol_id": "crates/core/src/lib.rs::module::manifest",
+      "name": "manifest",
+      "kind": "module",
+      "file_path": "crates/core/src/lib.rs",
+      "line": 12,
+      "visibility": "pub",
+      "signature": "pub mod manifest;"
+    },
+    {
+      "symbol_id": "crates/core/src/lib.rs::module::model",
+      "name": "model",
+      "kind": "module",
+      "file_path": "crates/core/src/lib.rs",
+      "line": 13,
+      "visibility": "pub",
+      "signature": "pub mod model;"
+    },
+    {
+      "symbol_id": "crates/core/src/lib.rs::module::planner",
+      "name": "planner",
+      "kind": "module",
+      "file_path": "crates/core/src/lib.rs",
+      "line": 14,
+      "visibility": "pub",
+      "signature": "pub mod planner;"
+    },
+    {
+      "symbol_id": "crates/core/src/lib.rs::module::scanner",
+      "name": "scanner",
+      "kind": "module",
+      "file_path": "crates/core/src/lib.rs",
+      "line": 15,
+      "visibility": "pub",
+      "signature": "pub mod scanner;"
+    },
+    {
+      "symbol_id": "crates/core/src/lib.rs::module::templates",
+      "name": "templates",
+      "kind": "module",
+      "file_path": "crates/core/src/lib.rs",
+      "line": 16,
+      "visibility": "pub",
+      "signature": "pub mod templates;"
+    },
+    {
+      "symbol_id": "crates/core/src/lib.rs::module::validation",
+      "name": "validation",
+      "kind": "module",
+      "file_path": "crates/core/src/lib.rs",
+      "line": 17,
+      "visibility": "pub",
+      "signature": "pub mod validation;"
+    },
+    {
+      "symbol_id": "crates/core/src/lib.rs::function::run_from_env",
+      "name": "run_from_env",
+      "kind": "function",
+      "file_path": "crates/core/src/lib.rs",
+      "line": 19,
+      "visibility": "pub",
+      "signature": "pub fn run_from_env() -> Result<(), String> {"
+    },
+    {
+      "symbol_id": "crates/core/src/manifest.rs::function::generate_manifest",
+      "name": "generate_manifest",
+      "kind": "function",
+      "file_path": "crates/core/src/manifest.rs",
+      "line": 7,
+      "visibility": "pub",
+      "signature": "pub fn generate_manifest(root: impl AsRef<Path>) -> Result<Vec<ManifestEntry>, String> {"
+    },
+    {
+      "symbol_id": "crates/core/src/manifest.rs::function::manifest_tsv",
+      "name": "manifest_tsv",
+      "kind": "function",
+      "file_path": "crates/core/src/manifest.rs",
+      "line": 41,
+      "visibility": "pub",
+      "signature": "pub fn manifest_tsv(entries: &[ManifestEntry]) -> String {"
+    },
+    {
+      "symbol_id": "crates/core/src/manifest.rs::function::write_manifest",
+      "name": "write_manifest",
+      "kind": "function",
+      "file_path": "crates/core/src/manifest.rs",
+      "line": 52,
+      "visibility": "pub",
+      "signature": "pub fn write_manifest("
+    },
+    {
+      "symbol_id": "crates/core/src/manifest.rs::function::workspace_fingerprint",
+      "name": "workspace_fingerprint",
+      "kind": "function",
+      "file_path": "crates/core/src/manifest.rs",
+      "line": 62,
+      "visibility": "pub",
+      "signature": "pub fn workspace_fingerprint(root: impl AsRef<Path>) -> Result<String, String> {"
+    },
+    {
+      "symbol_id": "crates/core/src/manifest.rs::function::fingerprint_should_skip",
+      "name": "fingerprint_should_skip",
+      "kind": "function",
+      "file_path": "crates/core/src/manifest.rs",
+      "line": 93,
+      "visibility": null,
+      "signature": "fn fingerprint_should_skip(rel: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/core/src/manifest.rs::function::manifest_should_skip",
+      "name": "manifest_should_skip",
+      "kind": "function",
+      "file_path": "crates/core/src/manifest.rs",
+      "line": 102,
+      "visibility": null,
+      "signature": "fn manifest_should_skip(rel: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/core/src/manifest.rs::function::is_upstream_generated_local_artifact",
+      "name": "is_upstream_generated_local_artifact",
+      "kind": "function",
+      "file_path": "crates/core/src/manifest.rs",
+      "line": 106,
+      "visibility": null,
+      "signature": "fn is_upstream_generated_local_artifact(rel: &str) -> bool {"
+    },
+    {
+      "symbol_id": "crates/core/src/manifest.rs::function::fnv1a64_file",
+      "name": "fnv1a64_file",
+      "kind": "function",
+      "file_path": "crates/core/src/manifest.rs",
+      "line": 111,
+      "visibility": null,
+      "signature": "fn fnv1a64_file(path: &Path) -> io::Result<u64> {"
+    },
+    {
+      "symbol_id": "crates/core/src/manifest.rs::module::tests",
+      "name": "tests",
+      "kind": "module",
+      "file_path": "crates/core/src/manifest.rs",
+      "line": 129,
+      "visibility": null,
+      "signature": "mod tests {"
+    }
+  ]
+}
