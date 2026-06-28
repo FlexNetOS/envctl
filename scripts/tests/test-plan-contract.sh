@@ -40,6 +40,20 @@ grep -q '.agents/skills/plan-loop/SKILL.md' "$repo_root/.codex/prompts/plan-loop
   || fail "plan-loop prompt does not point at the authoritative .agents skill"
 grep -q '.codex/prompts/plan-loop.md' "$repo_root/.codex/prompts/plan-engineering-loop.md" \
   || fail "plan-engineering-loop alias does not route to plan-loop"
+
+# Claude Code slash-command shims: `.claude/skills/*` are not slash commands by themselves.
+# Keep `/plan-loop`, `/plan-engineering-loop`, and `/planning-engineer` directly loadable in Claude.
+for command in planning-engineer plan-loop plan-engineering-loop; do
+  [ -f "$repo_root/.claude/commands/$command.md" ] || fail "missing Claude slash command front door: $command"
+done
+grep -q '.codex/prompts/planning-engineer.md' "$repo_root/.claude/commands/planning-engineer.md" \
+  || fail "Claude planning-engineer command does not route to Codex canonical prompt"
+grep -q '.codex/prompts/plan-loop.md' "$repo_root/.claude/commands/plan-loop.md" \
+  || fail "Claude plan-loop command does not route to Codex canonical prompt"
+grep -q '.claude/commands/plan-loop.md' "$repo_root/.claude/commands/plan-engineering-loop.md" \
+  || fail "Claude plan-engineering-loop alias does not route to plan-loop"
+grep -q 'five required Opus background lanes through weave' "$repo_root/.claude/commands/plan-loop.md" \
+  || fail "Claude plan-loop command does not preserve weave background lane contract"
 for agent in \
   plan-analyst \
   plan-architect \
