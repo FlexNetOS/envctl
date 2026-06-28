@@ -109,6 +109,10 @@ fn toolchains_shell_exports_meta_root_layout_and_rustup_home() {
         "OLLAMA_LIBRARY_PATH must redirect ollama at the meta-owned GPU runner libs:\n{out}"
     );
     assert!(
+        out.contains(&format!("export OLLAMA_MODELS='{r}/var/lib/ollama/models'")),
+        "OLLAMA_MODELS must keep ollama model blobs in meta-owned var/lib state:\n{out}"
+    );
+    assert!(
         out.contains(&format!("export LIBCLANG_PATH='{r}/.toolchains/llvm/lib'")),
         "LIBCLANG_PATH must point at the meta-owned LLVM/clang lib dir:\n{out}"
     );
@@ -124,10 +128,49 @@ fn toolchains_shell_exports_meta_root_layout_and_rustup_home() {
     );
     assert!(
         out.contains(&format!(
-            "export PATH=\"{r}/usr/bin:{r}/.local/bin:{r}/.toolchains/.bun/bin:{r}/.toolchains/cargo/bin:{r}/.toolchains/uv/tools/bin:$PATH\""
+            "export PATH=\"{r}/usr/bin:{r}/usr/sbin:{r}/usr/local/bin:{r}/usr/local/sbin:{r}/.local/bin:{r}/.toolchains/.bun/bin:{r}/.toolchains/cargo/bin:{r}/.toolchains/uv/tools/bin:$PATH\""
         )),
-        "PATH must put canonical meta usr/bin ahead of compatibility bins:\n{out}"
+        "PATH must put the canonical meta usr bin tree ahead of compatibility bins:\n{out}"
     );
+    // The rest of the /usr mirror lands on its search paths, prepend-with-fallback.
+    assert!(
+        out.contains(&format!(
+            "export LD_LIBRARY_PATH=\"{r}/usr/lib:{r}/usr/lib64:{r}/usr/local/lib:{r}/usr/local/lib64:${{LD_LIBRARY_PATH:-}}\""
+        )),
+        "LD_LIBRARY_PATH must carry the meta usr lib tree without clobbering inherited values:\n{out}"
+    );
+    assert!(
+        out.contains(&format!(
+            "export CPATH=\"{r}/usr/include:{r}/usr/local/include:${{CPATH:-}}\""
+        )),
+        "CPATH must carry the meta usr include tree:\n{out}"
+    );
+    assert!(
+        out.contains(&format!(
+            "export PKG_CONFIG_PATH=\"{r}/usr/lib/pkgconfig:{r}/usr/share/pkgconfig:${{PKG_CONFIG_PATH:-}}\""
+        )),
+        "PKG_CONFIG_PATH must carry the meta usr pkgconfig dirs:\n{out}"
+    );
+    assert!(
+        out.contains(&format!(
+            "export MANPATH=\"{r}/usr/share/man:{r}/usr/local/share/man${{MANPATH:+:$MANPATH}}\""
+        )),
+        "MANPATH must carry the meta usr man dirs:\n{out}"
+    );
+    // The new FHS-mirror layout exports are present.
+    for (key, sub) in [
+        ("ENVCTL_USR_SBIN", "usr/sbin"),
+        ("ENVCTL_USR_LIB64", "usr/lib64"),
+        ("ENVCTL_USR_INCLUDE", "usr/include"),
+        ("ENVCTL_USR_LOCAL", "usr/local"),
+        ("ENVCTL_USR_LOCAL_BIN", "usr/local/bin"),
+        ("ENVCTL_USR_LOCAL_LIB", "usr/local/lib"),
+    ] {
+        assert!(
+            out.contains(&format!("export {key}='{r}/{sub}'")),
+            "missing {key} usr-mirror export:\n{out}"
+        );
+    }
 }
 
 /// JSON form carries the layout variables and RUSTUP_HOME too, so machine
@@ -199,6 +242,11 @@ fn toolchains_json_carries_meta_root_layout_and_rustup_home() {
         "json OLLAMA_LIBRARY_PATH must redirect ollama at the meta-owned GPU runner libs"
     );
     assert_eq!(
+        v["OLLAMA_MODELS"].as_str(),
+        Some(format!("{r}/var/lib/ollama/models").as_str()),
+        "json OLLAMA_MODELS must keep ollama model blobs in meta-owned var/lib state"
+    );
+    assert_eq!(
         v["LIBCLANG_PATH"].as_str(),
         Some(format!("{r}/.toolchains/llvm/lib").as_str()),
         "json LIBCLANG_PATH must point at the meta-owned LLVM/clang lib dir"
@@ -213,4 +261,19 @@ fn toolchains_json_carries_meta_root_layout_and_rustup_home() {
         Some(format!("{r}/.toolchains/helix/runtime").as_str()),
         "json HELIX_RUNTIME must point at the meta-owned helix tree-sitter runtime dir"
     );
+    // The FHS /usr mirror dirs are carried as discrete JSON vars too, so nushell
+    // (and other machine consumers) can build their own search paths from them.
+    for (key, sub) in [
+        ("ENVCTL_USR_SBIN", "usr/sbin"),
+        ("ENVCTL_USR_LIB64", "usr/lib64"),
+        ("ENVCTL_USR_INCLUDE", "usr/include"),
+        ("ENVCTL_USR_LOCAL_BIN", "usr/local/bin"),
+        ("ENVCTL_USR_LOCAL_LIB", "usr/local/lib"),
+    ] {
+        assert_eq!(
+            v[key].as_str(),
+            Some(format!("{r}/{sub}").as_str()),
+            "json {key} usr-mirror export"
+        );
+    }
 }
