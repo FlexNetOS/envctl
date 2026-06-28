@@ -1,0 +1,1149 @@
+{
+  "generated_at": "2026-06-27T07:39:45.419785492+00:00",
+  "kernel": "7.0.0-22-generic",
+  "os": "Linux (Ubuntu 26.04)",
+  "cpu_model": "AMD Ryzen Threadripper PRO 7965WX 24-Cores",
+  "cpu_threads": 48,
+  "mem_total_mb": 510895,
+  "gpu_present": true,
+  "gpu_count": 2,
+  "gpus": [
+    "NVIDIA Corporation GB202 [GeForce RTX 5090] (rev a1)",
+    "NVIDIA Corporation GB202 [GeForce RTX 5090] (rev a1)"
+  ],
+  "driver_loaded": true,
+  "driver_version": null,
+  "cuda_version": "13.3",
+  "open_kernel_module": true,
+  "software_rendered": false,
+  "tools": [
+    {
+      "name": "cargo",
+      "path": "/home/drdave/.cargo/bin/cargo",
+      "version": "cargo 1.96.0 (30a34c682 2026-05-25)"
+    },
+    {
+      "name": "rustc",
+      "path": "/home/drdave/.cargo/bin/rustc",
+      "version": "rustc 1.96.0 (ac68faa20 2026-05-25)"
+    },
+    {
+      "name": "bun",
+      "path": "/home/drdave/.local/bin/bun",
+      "version": "1.3.14"
+    },
+    {
+      "name": "node",
+      "path": "/home/drdave/.local/bin/node",
+      "version": "v22.22.3"
+    },
+    {
+      "name": "nvcc",
+      "path": "/home/drdave/.local/bin/nvcc",
+      "version": "nvcc: NVIDIA (R) Cuda compiler driver"
+    },
+    {
+      "name": "nvidia-smi",
+      "path": "/home/drdave/.local/bin/nvidia-smi",
+      "version": null
+    },
+    {
+      "name": "nix",
+      "path": "/nix/var/nix/profiles/default/bin/nix",
+      "version": "nix (Determinate Nix 3.21.0) 2.34.6"
+    },
+    {
+      "name": "gh",
+      "path": "/home/drdave/.local/bin/gh",
+      "version": "gh version 2.95.0 (2026-06-17)"
+    },
+    {
+      "name": "uv",
+      "path": "/home/drdave/.local/bin/uv",
+      "version": "uv 0.11.24 (x86_64-unknown-linux-gnu)"
+    },
+    {
+      "name": "wasmer",
+      "path": "/home/drdave/.local/bin/wasmer",
+      "version": "wasmer 7.1.0"
+    },
+    {
+      "name": "podman",
+      "path": "/home/drdave/.local/bin/podman",
+      "version": "podman version 5.8.3"
+    },
+    {
+      "name": "python3",
+      "path": "/home/drdave/.local/bin/python3",
+      "version": "Python 3.14.6"
+    },
+    {
+      "name": "git",
+      "path": "/nix/store/xyzvhlm5d0k8iybsfqq8brw5bkrlpq61-yazelix/toolbin/git",
+      "version": "git version 2.54.0"
+    },
+    {
+      "name": "curl",
+      "path": "/home/drdave/.local/bin/curl",
+      "version": "curl 8.21.0 (x86_64-pc-linux-gnu) libcurl/8.21.0 OpenSSL/4.0.1 zlib/1.3.2 brotli/1.2.0 zstd/1.5.7 c-ares/1.34.6 libidn2/2.3.8 libpsl/0.22.0 libssh2/1.11.1 nghttp2/1.69.0 ngtcp2/1.23.0 nghttp3/1.16.0"
+    }
+  ],
+  "components": [
+    {
+      "id": "boot-repair-dev",
+      "name": "Boot repair: dev disk (ubuntu26dev)",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "boot-repair-diagnose",
+      "name": "Boot repair: diagnose (read-only)",
+      "detected": true,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "boot-repair-finalize",
+      "name": "Boot repair: finalize NVRAM entries",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "boot-repair-rename-pro",
+      "name": "Boot repair: rename live → ubuntu26pro",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "bun",
+      "name": "Bun JS runtime",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "claude-code-cli",
+      "name": "Claude Code CLI",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "cognitum-seed-autounlock",
+      "name": "Cognitum Seed reboot-persistent auto-unlock",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "cognitum-seed-net",
+      "name": "Cognitum Seed USB link-local addressing",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "cognitum-seed-trust",
+      "name": "Cognitum Seed Device-CA auto-refresh",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "curl",
+      "name": "curl (static meta binary)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "devin-cli",
+      "name": "Devin CLI",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "gh",
+      "name": "GitHub CLI (official apt repo)",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "gh-cli",
+      "name": "GitHub CLI (meta-owned)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "ghostty",
+      "name": "Ghostty terminal",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "git",
+      "name": "Git SCM (meta-hosted binary tree)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "group-boot-repair",
+      "name": "Boot repair (UEFI present)",
+      "detected": true,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "helix",
+      "name": "helix (meta-owned)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "home-config-links",
+      "name": "META_ROOT config links",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "home-local-single-link",
+      "name": "single real-home .local link to META_ROOT",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "huggingface-cli",
+      "name": "HuggingFace CLI (meta-owned venv)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "just",
+      "name": "just (add-repo)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "kache",
+      "name": "kache compiler cache (meta-owned, wired + verified)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "kasetto",
+      "name": "agent-env toolkit (envctl agent — kasetto v3.2.0 absorbed)",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "keepassxc",
+      "name": "KeePassXC",
+      "detected": true,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "kimi-cli",
+      "name": "Kimi CLI",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "libgccjit",
+      "name": "libgccjit (meta-owned)",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "libssl-dev",
+      "name": "OpenSSL dev headers (libssl-dev)",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "llvm-clang",
+      "name": "LLVM/clang (meta-owned)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "mise",
+      "name": "mise (meta-owned)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "nerd-fonts",
+      "name": "Nerd Fonts (JetBrainsMono, FiraCode)",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "nix",
+      "name": "Nix (Determinate, flakes)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "nix-portable",
+      "name": "nix-portable (meta-owned)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "node-real",
+      "name": "Real Node.js (n8n V8 runtime)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "nushell",
+      "name": "nushell (meta-owned)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "nvidia-cuda-repo",
+      "name": "NVIDIA CUDA apt repo",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "ollama",
+      "name": "ollama (meta-owned)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "podman",
+      "name": "Podman (rootless containers)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "pytorch-venv",
+      "name": "PyTorch cu132 (isolated venv)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "rustup",
+      "name": "rustup toolchain",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "sqld",
+      "name": "sqld (libSQL server, loopback)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "usrlocal-script-links",
+      "name": "retired system-depth helper script links",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "uv",
+      "name": "uv (Python toolchain)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "virt-stack",
+      "name": "QEMU/KVM + libvirt",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "wasmer",
+      "name": "Wasmer (WASM runtime)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "wild-linker",
+      "name": "wild linker (meta-owned, wired + verified)",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "yazi",
+      "name": "yazi (meta-owned)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "zellij",
+      "name": "zellij (meta-owned)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "zsh",
+      "name": "zsh shell (meta-owned)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "gemini-cli",
+      "name": "Gemini CLI (via bun)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "node-via-bun",
+      "name": "node → bun symlink",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "vite",
+      "name": "Vite (via bun add -g)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "ghostty-default-terminal",
+      "name": "Ghostty as default terminal",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "claude-global-links",
+      "name": "Claude META_ROOT settings links",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "rtk-config-links",
+      "name": "RTK config -> META_ROOT home tree",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "home-bin-links",
+      "name": "retired per-tool home bin links",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "meta-tool-links",
+      "name": "retired per-tool meta binary links",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "home-manager",
+      "name": "home-manager",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "nix-yazelix-cache",
+      "name": "yazelix Cachix cache + eval-cores",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "nvidia-open",
+      "name": "nvidia-open driver (rolling latest)",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "meta-base-sanity",
+      "name": "Base preconditions",
+      "detected": true,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "odysseus",
+      "name": "Odysseus (self-hosted AI workspace, sandboxed)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "cargo-nextest",
+      "name": "cargo-nextest (Rust test runner)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "cuda-toolkit",
+      "name": "CUDA toolkit 13.3 (meta-owned)",
+      "detected": true,
+      "healthy": false,
+      "wiring_present": false,
+      "note": ""
+    },
+    {
+      "id": "desktop-app",
+      "name": "envctl-gui desktop integration",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "grit",
+      "name": "grit — parallel-agent AST git-lock coordinator",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "meta-env-plugin",
+      "name": "meta env plugin (envctl as a meta subprocess plugin)",
+      "detected": true,
+      "healthy": false,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "mlua",
+      "name": "mlua (Lua-in-Rust, vendored Lua 5.4)",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "prompt_hub",
+      "name": "prompt_hub — prompt management for LLM agent swarms",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "rtk",
+      "name": "rtk (Rust Token Killer)",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "rust-nightly-cuda-oxide",
+      "name": "Rust nightly + components (cuda-oxide)",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "rusty-idd",
+      "name": "rusty-idd — harness control-plane front door",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "env-ctl",
+      "name": "env-ctl secrets daemon",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": false,
+      "note": ""
+    },
+    {
+      "id": "codex-cli",
+      "name": "Codex CLI (meta toolchain; pinned upstream release rust-v0.142.0, meta-owned CODEX_HOME wrapper)",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "ohmyzsh",
+      "name": "oh-my-zsh config (meta-owned, full features)",
+      "detected": true,
+      "healthy": false,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "n8n-mcp",
+      "name": "n8n MCP server (docs-only key-less)",
+      "detected": true,
+      "healthy": false,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "group-portability",
+      "name": "META_ROOT portability layer",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "yazelix",
+      "name": "yazelix (Ghostty variant)",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "nvidia-container-toolkit",
+      "name": "NVIDIA Container Toolkit + CDI",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "cuda-oxide",
+      "name": "cuda-oxide (cargo-oxide)",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "secretd",
+      "name": "secretd — secrets vault daemon",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "group-ai-clis",
+      "name": "All AI CLIs",
+      "detected": true,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "zsh-migration-launcher",
+      "name": "Meta zsh migration terminal (desktop launcher)",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "dashboard",
+      "name": "meta mission-control dashboard",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "yazelix-config",
+      "name": "yazelix settings.jsonc",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "yazelix-desktop",
+      "name": "yazelix desktop launcher",
+      "detected": true,
+      "healthy": true,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "yazelix-shell",
+      "name": "yazelix auto-enter",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": false,
+      "note": ""
+    },
+    {
+      "id": "gpu-verify-scripts",
+      "name": "GPU smoke-test scripts",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "group-nix-yazelix",
+      "name": "Full Nix + yazelix stack",
+      "detected": true,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    },
+    {
+      "id": "group-gpu-stack",
+      "name": "Full GPU stack",
+      "detected": false,
+      "healthy": null,
+      "wiring_present": true,
+      "note": ""
+    }
+  ],
+  "meta_boundary": {
+    "meta_root": "/home/drdave/Desktop/meta",
+    "local_bin": "/home/drdave/Desktop/meta/usr/bin",
+    "cargo_bin": "/home/drdave/Desktop/meta/.toolchains/cargo/bin",
+    "violations": []
+  },
+  "drift": [
+    {
+      "component": "cuda-toolkit",
+      "kind": "unhealthy",
+      "severity": "high",
+      "suggested_verb": "envctl auto-fix cuda-toolkit --apply",
+      "detail": "installed but verify failed"
+    },
+    {
+      "component": "meta-env-plugin",
+      "kind": "unhealthy",
+      "severity": "high",
+      "suggested_verb": "envctl auto-fix meta-env-plugin --apply",
+      "detail": "installed but verify failed"
+    },
+    {
+      "component": "ohmyzsh",
+      "kind": "unhealthy",
+      "severity": "high",
+      "suggested_verb": "envctl auto-fix ohmyzsh --apply",
+      "detail": "installed but verify failed"
+    },
+    {
+      "component": "n8n-mcp",
+      "kind": "unhealthy",
+      "severity": "high",
+      "suggested_verb": "envctl auto-fix n8n-mcp --apply",
+      "detail": "installed but verify failed"
+    },
+    {
+      "component": "claude-code-cli",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install claude-code-cli",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "cognitum-seed-autounlock",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install cognitum-seed-autounlock",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "cognitum-seed-trust",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install cognitum-seed-trust",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "curl",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install curl",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "gh-cli",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install gh-cli",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "git",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install git",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "helix",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install helix",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "home-config-links",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install home-config-links",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "huggingface-cli",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install huggingface-cli",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "just",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install just",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "kache",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install kache",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "llvm-clang",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install llvm-clang",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "mise",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install mise",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "nix",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install nix",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "nix-portable",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install nix-portable",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "node-real",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install node-real",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "nushell",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install nushell",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "ollama",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install ollama",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "podman",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install podman",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "pytorch-venv",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install pytorch-venv",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "sqld",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install sqld",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "uv",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install uv",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "wasmer",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install wasmer",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "yazi",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install yazi",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "zellij",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install zellij",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "zsh",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install zsh",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "gemini-cli",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install gemini-cli",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "vite",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install vite",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "claude-global-links",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install claude-global-links",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "rtk-config-links",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install rtk-config-links",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "home-manager",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install home-manager",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "odysseus",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install odysseus",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "cargo-nextest",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install cargo-nextest",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "desktop-app",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install desktop-app",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "prompt_hub",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install prompt_hub",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "rusty-idd",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install rusty-idd",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "env-ctl",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install env-ctl",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "cuda-oxide",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install cuda-oxide",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "secretd",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install secretd",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "dashboard",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install dashboard",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "yazelix-config",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install yazelix-config",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "yazelix-shell",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install yazelix-shell",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "gpu-verify-scripts",
+      "kind": "missing",
+      "severity": "medium",
+      "suggested_verb": "envctl install gpu-verify-scripts",
+      "detail": "declared but not installed"
+    },
+    {
+      "component": "cuda-toolkit",
+      "kind": "wiring_missing",
+      "severity": "low",
+      "suggested_verb": "envctl install cuda-toolkit",
+      "detail": "detected, but envctl's shell-rc wiring block is absent"
+    }
+  ]
+}
