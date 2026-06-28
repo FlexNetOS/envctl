@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # test-loop-state-gate.sh — proves ci/gates/loop-state.sh enforces forge-loop counter integrity:
 #   * PASS on a well-formed loop_state.md (integers, cadence>=1, cycles_total>=last_wrapup_total)
+#   * PASS on a planning-engineer markdown-table loop_state.md with the same required counters
 #   * FAIL on a non-integer cycles_total
 #   * FAIL on cycles_total < last_wrapup_total (negative boundary delta)
 #   * FAIL on wrap_every: 0 (would fire a boundary every turn)
@@ -67,8 +68,36 @@ write_state 1 5 18 20 1
 gitc add -A >/dev/null; gitc commit -q -m "advance cycles_total to 20" || true
 run_gate || fail "monotonic-forward cycles_total (18->20) should PASS"
 
-# 7. no loop_state.md -> SKIP (exit 0)
+# 7. planning-engineer table syntax with the same required counters -> PASS
+PLAN_LS="$tmp/.handoff/loop/plan/loop_state.md"
+mkdir -p "$(dirname "$PLAN_LS")"
+cat > "$PLAN_LS" <<'EOF'
+# Planning Engineer Loop — state
+
+| key | value |
+|---|---|
+| run | synthetic-plan |
+| cycles_this_session | 1 |
+| cycle_budget | 1 |
+| wrap_every | 1 |
+| last_wrapup_total | 20 |
+| cycles_total | 20 |
+EOF
 rm -f "$LS"
+gitc add -A >/dev/null; gitc commit -q -m "add planning loop table state"
+run_gate || fail "planning-engineer table loop_state.md with required counters should PASS"
+
+# 8. planning table still fail-closes on missing required counters
+python3 - <<PY
+from pathlib import Path
+p=Path('$PLAN_LS')
+s=p.read_text().replace('| wrap_every | 1 |\n', '')
+p.write_text(s)
+PY
+run_gate && fail "planning table missing wrap_every should FAIL" || true
+
+# 9. no loop_state.md -> SKIP (exit 0)
+rm -f "$PLAN_LS"
 run_gate || fail "missing loop_state.md should SKIP (exit 0), not fail"
 
 echo "test-loop-state-gate: PASS"
