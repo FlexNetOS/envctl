@@ -1740,6 +1740,13 @@ grep -q 'DRY-RUN: would move .*\.cache/starship to .*\.local/cache/starship and 
 test -d "$repo_reviewed_cache_child_home/.cache/starship"
 test ! -e "$repo_reviewed_cache_child_meta/.local/cache/starship"
 
+mkdir -p "$repo_reviewed_cache_child_home/.cache/agent-env"
+printf 'agent-env-cache-index\n' >"$repo_reviewed_cache_child_home/.cache/agent-env/index"
+"$root/scripts/audit-meta-local-paths.sh" --migrate-cache-child agent-env --meta-root "$repo_reviewed_cache_child_meta" --real-home "$repo_reviewed_cache_child_home" --envctl-home-source "$repo_reviewed_cache_child_meta/envctl/home" >"$tmp/repo-reviewed-cache-child-agent-env-dry.out" 2>"$tmp/repo-reviewed-cache-child-agent-env-dry.err"
+grep -q 'DRY-RUN: would move .*\.cache/agent-env to .*\.local/cache/agent-env and link .*\.cache/agent-env -> .*\.local/cache/agent-env' "$tmp/repo-reviewed-cache-child-agent-env-dry.out"
+test -d "$repo_reviewed_cache_child_home/.cache/agent-env"
+test ! -e "$repo_reviewed_cache_child_meta/.local/cache/agent-env"
+
 (
   cd "$cache_child_manifest_repo"
   scripts/audit-meta-local-paths.sh --migrate-cache-child tool --meta-root "$cache_child_meta" --real-home "$cache_child_home" --envctl-home-source "$cache_child_meta/envctl/home"
