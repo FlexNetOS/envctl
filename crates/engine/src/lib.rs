@@ -4,6 +4,7 @@
 //! *identical* `Engine` API below, so the two front-ends can never diverge.
 pub mod addrepo; // Phase 4: the staged build-from-source pipeline + confined AI agent
 pub mod agent; // agent-env subsystem: the 6 agent-asset verbs over envctl-agent-env
+pub mod catalog; // ADR-0003: read-only query catalog over files -> normalized tables
 pub mod command;
 pub mod component; // Component, Hook, Guard, Phase, HookRunner
 pub mod dashboard; // meta mission-control: read .meta.yaml -> render zellij KDL layout
@@ -39,6 +40,7 @@ pub use agent::{
     AgentRemoveSpec, AgentReport, AgentScope, AgentSectionSel, AgentSyncSpec, AgentUpdateCheck,
     AgentVerb,
 };
+pub use catalog::{CatalogScanSpec, CatalogSnapshot, CatalogTableName};
 pub use command::{
     run_event_loop, AgentCommandSpec, EngineCommand, EngineEvent, MigrationCommandSpec,
     TelemetryControl,
@@ -158,6 +160,18 @@ impl Engine {
     pub fn hub_registry(&self) -> anyhow::Result<HubRegistryReport> {
         let root = workspace_root_for_manifest_dir(&self.inner.manifest_dir);
         hub_registry::load(&root, &self.inner.registry)
+    }
+
+    /// Read-only ADR-0003 catalog import: current files -> normalized in-memory tables.
+    pub fn catalog_scan(&self) -> anyhow::Result<CatalogSnapshot> {
+        let root = workspace_root_for_manifest_dir(&self.inner.manifest_dir);
+        catalog::scan(
+            catalog::CatalogScanSpec {
+                repo_root: root,
+                manifest_dir: self.inner.manifest_dir.clone(),
+            },
+            &self.inner.registry,
+        )
     }
 
     /// The manifest directory (where `envctl.lock` + `components.d/` live).
