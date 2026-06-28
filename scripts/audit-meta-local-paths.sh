@@ -51,7 +51,9 @@ below the source tree.
 With --migrate-cache-child, performs an explicit owner-requested migration for one direct child of
 real-home .cache at a time, moving it to $META_ROOT/.local/cache/<name> and leaving a symlink bridge.
 Mutation still requires --apply; without --apply the script prints the planned move and changes nothing.
-Names must be direct .cache child names, and existing targets are never merged automatically.
+Names must be direct .cache child names, existing targets are never merged automatically, and a
+reviewed cache component manifest must exist under manifest/components.d/cache-<component>.toml
+before migration can be applied.
 With --bridge-managed-config-child, performs an explicit owner-requested bridge for one direct child
 of real-home .config at a time when $ENVCTL_HOME_SOURCE/.config/<name> already exists as the managed
 source. Mutation still requires --apply; without --apply the script prints the planned bridge and
@@ -1024,6 +1026,13 @@ cache_child_component_key() {
   printf '%s' "$key"
 }
 
+cache_child_component_manifest_hint() {
+  local child_name="$1" component_key
+
+  component_key="$(cache_child_component_key "$child_name")"
+  printf 'manifest/components.d/cache-%s.toml' "$component_key"
+}
+
 owner_supervised_child_candidate_action_fields() {
   local child_target_class="$1" candidate_action="$2" canonical_target="$3"
   local supervision next_action envctl_home_source apply_command
@@ -1125,7 +1134,7 @@ record_owner_supervised_child_candidates() {
     fi
     if [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_PLAN_PATH" ] && [ "$dot" = ".cache" ] && [ "$candidate_action" = "component-managed-cache-child-migration" ]; then
       component_key="$(cache_child_component_key "$child_name")"
-      manifest_hint="manifest/components.d/cache-${component_key}.toml"
+      manifest_hint="$(cache_child_component_manifest_hint "$child_name")"
       printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
         "$dot" \
         "$child_name" \
@@ -1141,7 +1150,7 @@ record_owner_supervised_child_candidates() {
     fi
     if [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_STATUS_PATH" ] && [ "$dot" = ".cache" ] && [ "$candidate_action" = "component-managed-cache-child-migration" ]; then
       component_key="$(cache_child_component_key "$child_name")"
-      manifest_hint="manifest/components.d/cache-${component_key}.toml"
+      manifest_hint="$(cache_child_component_manifest_hint "$child_name")"
       manifest_exists="no"
       manifest_next_action="create-cache-component-manifest-before-migration"
       if [ -f "$ROOT/$manifest_hint" ]; then
@@ -2145,7 +2154,7 @@ bridge_identical_managed_config_child() {
 }
 
 migrate_real_home_cache_child() {
-  local child="$1" source target resolved
+  local child="$1" source target resolved manifest_hint manifest_path
 
   if ! is_valid_cache_child_name "$child"; then
     fail "--migrate-cache-child $child is not a direct .cache child name; refusing automatic cache-child migration"
@@ -2172,6 +2181,17 @@ migrate_real_home_cache_child() {
 
   if [ ! -d "$source" ]; then
     fail "--migrate-cache-child $child: $source is not a directory; refusing automatic cache-child migration"
+    return 0
+  fi
+
+  manifest_hint="$(cache_child_component_manifest_hint "$child")"
+  manifest_path="$ROOT/$manifest_hint"
+  if [ ! -f "$manifest_path" ]; then
+    if [ "$APPLY" -ne 1 ]; then
+      say "DRY-RUN: would refuse automatic cache-child migration because component manifest $manifest_hint is missing; create/review the manifest before migration"
+    else
+      fail "--migrate-cache-child $child: component manifest $manifest_hint is missing; create/review the manifest before migration"
+    fi
     return 0
   fi
 
