@@ -1,7 +1,7 @@
-# TASK-0078 reviewed starship cache-child manifest guardian report
+# TASK-0078 reviewed agent-env cache-child manifest guardian report
 
 ## Status
-PASS — PR TBD.
+PASS — PR #378 (auto-merge armed; rebased head pending required CI rerun).
 
 ## Invariants checked
 - The slice commits only a reviewed component manifest and a regression test.
@@ -9,7 +9,7 @@ PASS — PR TBD.
 - `--migrate-cache-child` remains narrow, dry-run by default, and gated by matching component manifest content.
 - Owner-supervised planning/validation rows still carry empty `apply_command`.
 - The broad `.cache` root remains owner-supervised/component-managed rather than auto-migrated.
-- `zellij` was not committed after live dry-run found an existing meta target; the chosen `starship` candidate has live source present and meta target absent.
+- The chosen `agent-env` candidate has live source present and meta target absent.
 
 ## Verification
 - `bash -n scripts/audit-meta-local-paths.sh scripts/tests/test-meta-local-path-audit.sh`
@@ -21,4 +21,4 @@ PASS — PR TBD.
 - `bash ci/gates/p7.sh`
 
 ## Runtime check
-Live non-mutating `starship` dry-run emitted `DRY-RUN: would move /home/drdave/.cache/starship to /home/drdave/Desktop/meta/.local/cache/starship and link ...`, `changed=0`, validation row `manifest_exists=yes` and `manifest_declares_expected_id=yes`, and the live state guards confirmed the source cache still exists while the meta cache target is absent. Apply command count was 0.
+Live non-mutating `agent-env` dry-run emitted `DRY-RUN: would move /home/drdave/.cache/agent-env to /home/drdave/Desktop/meta/.local/cache/agent-env and link ...`, `changed=0`, validation row `manifest_exists=yes` and `manifest_declares_expected_id=yes`, and the live state guards confirmed the source cache still exists while the meta cache target is absent. Apply command count was 0.
