@@ -27,6 +27,7 @@ make_remote() {
     gitc branch -M main
     gitc push -qu origin main
   )
+  gitc -C "$tmp/$name.git" symbolic-ref HEAD refs/heads/main
 }
 
 clone_project() {

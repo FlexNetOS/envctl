@@ -133,6 +133,7 @@ crates/cli/      # envctl
 crates/gui/      # envctl-gui (eframe/egui)
 manifest/        # declarative components (base.toml, cuda.toml, boot-repair.toml) + components.d/ drop-ins
 assets/scripts/  # the proven Desktop kit, referenced verbatim by ShippedScript hooks
+scripts/         # operational helpers and smoke tests (including meta-fleet-sync.py)
 docs/            # ARCHITECTURE.md · ROADMAP.md · DESIGN-NOTES.md · MIGRATION-ADOPTION.md
 ```
 
