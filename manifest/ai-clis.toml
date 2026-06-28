@@ -4,65 +4,206 @@
 
 [[component]]
 id = "claude-code-cli"
-name = "Claude Code CLI"
+name = "Claude Code CLI (meta toolchain; versioned binary, meta-owned state wrapper)"
+# Claude Code upstream stages versioned ELF binaries in the active Claude version store.
+# envctl mirrors the latest upstream version into $META_ROOT/.toolchains/claude/<version>/bin,
+# exposes only regular envctl wrappers at $META_ROOT/usr/bin and $META_ROOT/.local/bin, and
+# archives/removes the old executable version path after the new toolchain route works. Claude
+# config/state stays under $META_ROOT/.local/share/claude with ~/.claude pointing there.
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/claude/bin/claude\" ] && [ -x \"$META_ROOT/usr/bin/claude\" ] && [ ! -L \"$META_ROOT/usr/bin/claude\" ] && grep -Fqx \"exec \\\"$M/.toolchains/claude/bin/claude\\\" \\\"\\$@\\\"\" \"$META_ROOT/usr/bin/claude\""]
+args = ["-lc", """
+M="${META_ROOT:?META_ROOT required}"
+R="${ENVCTL_REAL_HOME:-$HOME}"
+cur="$M/.toolchains/claude/current/bin/claude"
+link="$M/usr/bin/claude"
+meta_compat="$M/.local/bin/claude"
+real_compat="$R/.local/bin/claude"
+[ -x "$cur" ]
+[ -x "$link" ] && [ ! -L "$link" ] && grep -q "envctl claude wrapper" "$link"
+[ -x "$meta_compat" ] && grep -q "envctl claude wrapper" "$meta_compat"
+[ -x "$real_compat" ] && grep -q "envctl claude wrapper" "$real_compat"
+[ "$(readlink -f "$R/.claude" 2>/dev/null)" = "$(readlink -f "$M/.local/share/claude" 2>/dev/null)" ]
+timeout --kill-after=2s 8s "$link" --version >/dev/null
+CLEANUP="${ENVCTL_CLAUDE_CLEANUP:-$M/envctl/assets/scripts/envctl-claude-cleanup.sh}"
+[ -x "$CLEANUP" ] || CLEANUP="$PWD/assets/scripts/envctl-claude-cleanup.sh"
+"$CLEANUP" verify
+"""]
 [component.install]
 kind = "script"
-script = '''
-envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
+script = """
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-DEST="$M/.toolchains/claude"
-# Upstream's installer may stage under $META_ROOT/.local/share/claude; mirror the resulting
-# executable into the meta-owned prefix and expose only a thin regular $META_ROOT/usr/bin wrapper.
-curl -fsSL https://claude.ai/install.sh | bash
-src="$M/.toolchains/claude/bin/claude"
-if [ ! -x "$src" ]; then
-  maybe="$(command -v claude || true)"
-  case "$maybe" in
-    "$META_ROOT/usr/bin/claude"|"") echo "FATAL: claude installer did not expose a source binary outside the managed front door" >&2; exit 1;;
-    *) src="$(readlink -f "$maybe")";;
-  esac
-fi
-install -d -m 755 "$DEST/bin"
-if [ "$(readlink -f "$src" 2>/dev/null || true)" != "$(readlink -f "$DEST/bin/claude" 2>/dev/null || true)" ]; then
-  install -m 755 "$src" "$DEST/bin/claude"
-fi
-envctl_frontdoor "$DEST/bin/claude" "$META_ROOT/usr/bin/claude"
+R="${ENVCTL_REAL_HOME:-$HOME}"
+BASE="$M/.toolchains/claude"
+STATE="$M/.local/share/claude"
+LINK="$M/usr/bin/claude"
+META_COMPAT="$M/.local/bin/claude"
+REAL_COMPAT="$R/.local/bin/claude"
 
-'''
+write_wrapper() {
+  dst="$1"
+  install -d -m 755 "$(dirname "$dst")"
+  cat > "$dst" <<'WRAPPER'
+#!/usr/bin/env bash
+# envctl claude wrapper
+set -euo pipefail
+self="${BASH_SOURCE[0]}"
+while [ -L "$self" ]; do
+  dir="$(cd -P "$(dirname "$self")" && pwd)"
+  target="$(readlink "$self")"
+  case "$target" in
+    /*) self="$target" ;;
+    *) self="$dir/$target" ;;
+  esac
+done
+bindir="$(cd -P "$(dirname "$self")" && pwd)"
+META_ROOT="$(cd "$bindir/../.." && pwd)"
+export META_ROOT
+exec "$META_ROOT/.toolchains/claude/current/bin/claude" "$@"
+WRAPPER
+  chmod 755 "$dst"
+}
+
+latest_claude_source() {
+  for dir in "$STATE/versions" "$R/.local/share/claude/versions"; do
+    [ -d "$dir" ] || continue
+    find "$dir" -maxdepth 1 -mindepth 1 -type f -perm -111 -printf '%f\t%p\n' 2>/dev/null | sort -V | tail -1 | cut -f2-
+  done | tail -1
+}
+
+install -d -m 700 "$STATE"
+if [ -e "$R/.claude" ] && [ "$(readlink -f "$R/.claude" 2>/dev/null)" != "$(readlink -f "$STATE" 2>/dev/null)" ]; then
+  ARCH="$M/var/lib/envctl/legacy-archives/claude-home-$(date -u +%Y%m%d-%H%M%S)"
+  install -d -m 700 "$ARCH"
+  mv "$R/.claude" "$ARCH/.claude"
+  echo "archived previous real-home .claude: $ARCH/.claude"
+fi
+[ -L "$R/.claude" ] || ln -sfn "$STATE" "$R/.claude"
+
+# Run the official updater with the old self-recursing wrappers hidden from PATH. It should leave
+# a versioned ELF under $STATE/versions; if the network/updater is unavailable but an existing
+# versioned ELF is present, we still repair the envctl toolchain from that local version.
+PATH_CLEAN="$M/.toolchains/node/bin:$M/.toolchains/.bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+PATH="$PATH_CLEAN" curl -fsSL https://claude.ai/install.sh | PATH="$PATH_CLEAN" bash || true
+src="$(latest_claude_source)"
+[ -n "$src" ] && [ -x "$src" ] || { echo "FATAL: no Claude Code versioned ELF found under $STATE/versions" >&2; exit 1; }
+ver="$(basename "$src")"
+case "$ver" in
+  *[!0-9.]*|"" ) ver="local-$(sha256sum "$src" | awk '{print substr($1,1,12)}')" ;;
+esac
+VDIR="$BASE/$ver"
+install -d -m 755 "$VDIR/bin"
+install -m 755 "$src" "$VDIR/bin/claude"
+ln -sfn "$ver" "$BASE/current"
+
+if timeout --kill-after=2s 8s "$VDIR/bin/claude" --version >/dev/null; then
+  for old in "$LINK" "$META_COMPAT" "$REAL_COMPAT"; do
+    if [ -e "$old" ] && { [ -L "$old" ] || ! grep -q "envctl claude wrapper" "$old" 2>/dev/null; }; then
+      ARCH="$M/var/lib/envctl/legacy-archives/claude-bin-$(date -u +%Y%m%d-%H%M%S)/$(dirname "${old#/}")"
+      install -d -m 755 "$ARCH"
+      mv "$old" "$ARCH/claude"
+      echo "archived previous Claude front door: $ARCH/claude"
+    fi
+  done
+  write_wrapper "$LINK"
+  write_wrapper "$META_COMPAT"
+  write_wrapper "$REAL_COMPAT"
+  timeout --kill-after=2s 8s "$LINK" --version >/dev/null
+  CLEANUP="${ENVCTL_CLAUDE_CLEANUP:-$M/envctl/assets/scripts/envctl-claude-cleanup.sh}"
+  [ -x "$CLEANUP" ] || CLEANUP="$PWD/assets/scripts/envctl-claude-cleanup.sh"
+  "$CLEANUP" clean
+  "$CLEANUP" verify
+else
+  echo "FATAL: envctl Claude binary failed verification; legacy front doors left in place" >&2
+  exit 1
+fi
+"""
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$M/usr/bin:$PATH\"; [ -x \"$M/.toolchains/claude/bin/claude\" ] && [ -x \"$M/usr/bin/claude\" ] && [ ! -L \"$M/usr/bin/claude\" ] && grep -Fqx \"exec \\\"$M/.toolchains/claude/bin/claude\\\" \\\"\\$@\\\"\" \"$M/usr/bin/claude\" && timeout --kill-after=2s 5s claude --version"]
+args = ["-lc", """
+M="${META_ROOT:?META_ROOT required}"
+R="${ENVCTL_REAL_HOME:-$HOME}"
+cur="$M/.toolchains/claude/current/bin/claude"
+link="$M/usr/bin/claude"
+meta_compat="$M/.local/bin/claude"
+real_compat="$R/.local/bin/claude"
+[ -x "$cur" ]
+[ -x "$link" ] && [ ! -L "$link" ] && grep -q "envctl claude wrapper" "$link"
+[ -x "$meta_compat" ] && grep -q "envctl claude wrapper" "$meta_compat"
+[ -x "$real_compat" ] && grep -q "envctl claude wrapper" "$real_compat"
+[ "$(readlink -f "$R/.claude" 2>/dev/null)" = "$(readlink -f "$M/.local/share/claude" 2>/dev/null)" ]
+timeout --kill-after=2s 8s "$link" --version >/dev/null
+CLEANUP="${ENVCTL_CLAUDE_CLEANUP:-$M/envctl/assets/scripts/envctl-claude-cleanup.sh}"
+[ -x "$CLEANUP" ] || CLEANUP="$PWD/assets/scripts/envctl-claude-cleanup.sh"
+"$CLEANUP" verify
+"""]
 [component.fix]
 kind = "script"
-script = '''
-envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
+script = """
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-DEST="$M/.toolchains/claude"
-curl -fsSL https://claude.ai/install.sh | bash
-src="$M/.toolchains/claude/bin/claude"
-if [ ! -x "$src" ]; then
-  maybe="$(command -v claude || true)"
-  case "$maybe" in
-    "$META_ROOT/usr/bin/claude"|"") echo "FATAL: claude installer did not expose a source binary outside the managed front door" >&2; exit 1;;
-    *) src="$(readlink -f "$maybe")";;
+R="${ENVCTL_REAL_HOME:-$HOME}"
+BASE="$M/.toolchains/claude"
+STATE="$M/.local/share/claude"
+LINK="$M/usr/bin/claude"
+META_COMPAT="$M/.local/bin/claude"
+REAL_COMPAT="$R/.local/bin/claude"
+
+write_wrapper() {
+  dst="$1"
+  install -d -m 755 "$(dirname "$dst")"
+  cat > "$dst" <<'WRAPPER'
+#!/usr/bin/env bash
+# envctl claude wrapper
+set -euo pipefail
+self="${BASH_SOURCE[0]}"
+while [ -L "$self" ]; do
+  dir="$(cd -P "$(dirname "$self")" && pwd)"
+  target="$(readlink "$self")"
+  case "$target" in
+    /*) self="$target" ;;
+    *) self="$dir/$target" ;;
   esac
+done
+bindir="$(cd -P "$(dirname "$self")" && pwd)"
+META_ROOT="$(cd "$bindir/../.." && pwd)"
+export META_ROOT
+exec "$META_ROOT/.toolchains/claude/current/bin/claude" "$@"
+WRAPPER
+  chmod 755 "$dst"
+}
+latest_claude_source() {
+  for dir in "$STATE/versions" "$R/.local/share/claude/versions" "$BASE"/*/bin; do
+    [ -d "$dir" ] || continue
+    find "$dir" -maxdepth 1 -mindepth 1 -type f -name claude -perm -111 -printf '%f\t%p\n' 2>/dev/null
+    find "$dir" -maxdepth 1 -mindepth 1 -type f -perm -111 -printf '%f\t%p\n' 2>/dev/null
+  done | sort -V | tail -1 | cut -f2-
+}
+install -d -m 700 "$STATE"
+[ -L "$R/.claude" ] || ln -sfn "$STATE" "$R/.claude"
+src="$(latest_claude_source)"
+[ -n "$src" ] && [ -x "$src" ] || { echo "FATAL: no local Claude Code ELF found; run envctl install claude-code-cli" >&2; exit 1; }
+ver="$(basename "$src")"
+case "$src" in */bin/claude) ver="$(basename "$(dirname "$(dirname "$src")")")" ;; esac
+case "$ver" in *[!0-9.]*|""|claude ) ver="local-$(sha256sum "$src" | awk '{print substr($1,1,12)}')" ;; esac
+VDIR="$BASE/$ver"
+install -d -m 755 "$VDIR/bin"
+if [ "$(readlink -f "$src")" != "$(readlink -f "$VDIR/bin/claude" 2>/dev/null || true)" ]; then
+  install -m 755 "$src" "$VDIR/bin/claude"
 fi
-install -d -m 755 "$DEST/bin"
-if [ "$(readlink -f "$src" 2>/dev/null || true)" != "$(readlink -f "$DEST/bin/claude" 2>/dev/null || true)" ]; then
-  install -m 755 "$src" "$DEST/bin/claude"
-fi
-envctl_frontdoor "$DEST/bin/claude" "$META_ROOT/usr/bin/claude"
-
-
-
-'''
+ln -sfn "$ver" "$BASE/current"
+write_wrapper "$LINK"
+write_wrapper "$META_COMPAT"
+write_wrapper "$REAL_COMPAT"
+timeout --kill-after=2s 8s "$LINK" --version >/dev/null
+CLEANUP="${ENVCTL_CLAUDE_CLEANUP:-$M/envctl/assets/scripts/envctl-claude-cleanup.sh}"
+[ -x "$CLEANUP" ] || CLEANUP="$PWD/assets/scripts/envctl-claude-cleanup.sh"
+"$CLEANUP" clean
+"$CLEANUP" verify
+"""
 [[component]]
 id = "codex-cli"
 name = "Codex CLI (meta toolchain; pinned upstream release rust-v0.142.0, meta-owned CODEX_HOME wrapper)"
