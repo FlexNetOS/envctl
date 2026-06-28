@@ -2057,6 +2057,8 @@ fn run_env(
     // this is the shell seam that mutates PATH). `usr/bin` is canonical for
     // envctl-owned exposure; `.local/bin` and `.toolchains` remain compatibility surfaces.
     let tc = layout.legacy_toolchains().to_string_lossy().to_string();
+    let ollama_models = layout.ollama_models().to_string_lossy().to_string();
+    let usr = layout.usr().to_string_lossy().to_string();
     let bin_dir = layout.bin().to_string_lossy().to_string();
     let compat_local_bin = layout.local_bin().to_string_lossy().to_string();
     if json {
@@ -2072,6 +2074,7 @@ fn run_env(
             map["UV_TOOL_DIR"] = format!("{tc}/uv/tools").into();
             map["UV_PYTHON_INSTALL_DIR"] = format!("{tc}/uv/python").into();
             map["OLLAMA_LIBRARY_PATH"] = format!("{tc}/ollama/lib/ollama").into();
+            map["OLLAMA_MODELS"] = ollama_models.clone().into();
             map["LIBCLANG_PATH"] = format!("{tc}/llvm/lib").into();
             map["GCC_PATH"] = format!("{tc}/libgccjit/lib").into();
             map["HELIX_RUNTIME"] = format!("{tc}/helix/runtime").into();
@@ -2130,6 +2133,10 @@ fn run_env(
             "export OLLAMA_LIBRARY_PATH={}",
             sh_single_quote(&format!("{tc}/ollama/lib/ollama"))
         );
+        // Model blobs are persistent state, not runner binaries. Keep them under
+        // meta's canonical var/lib tree so pulls never fall back to the root
+        // daemon's /usr/share/ollama or a real-home ~/.ollama store (TASK-0072).
+        println!("export OLLAMA_MODELS={}", sh_single_quote(&ollama_models));
         // libclang.so redirect for the meta-owned LLVM/clang (.toolchains/llvm/lib
         // holds libclang.so) so bindgen-style consumers find it (Epic H TASK-0061).
         println!(
@@ -2149,7 +2156,19 @@ fn run_env(
             "export HELIX_RUNTIME={}",
             sh_single_quote(&format!("{tc}/helix/runtime"))
         );
-        println!("export PATH=\"{bin_dir}:{compat_local_bin}:{tc}/.bun/bin:{tc}/cargo/bin:{tc}/uv/tools/bin:$PATH\"");
+        println!("export PATH=\"{bin_dir}:{usr}/sbin:{usr}/local/bin:{usr}/local/sbin:{compat_local_bin}:{tc}/.bun/bin:{tc}/cargo/bin:{tc}/uv/tools/bin:$PATH\"");
+        // The rest of the meta /usr mirror on its respective search paths. Each is
+        // prepend-with-fallback so an inherited value (e.g. the CUDA LD_LIBRARY_PATH
+        // shell-rc block) is preserved, never clobbered. The skeleton starts empty,
+        // so no system binary/lib/header is shadowed until meta installs into it.
+        println!(
+            "export LD_LIBRARY_PATH=\"{usr}/lib:{usr}/lib64:{usr}/local/lib:{usr}/local/lib64:${{LD_LIBRARY_PATH:-}}\""
+        );
+        println!("export CPATH=\"{usr}/include:{usr}/local/include:${{CPATH:-}}\"");
+        println!(
+            "export PKG_CONFIG_PATH=\"{usr}/lib/pkgconfig:{usr}/share/pkgconfig:${{PKG_CONFIG_PATH:-}}\""
+        );
+        println!("export MANPATH=\"{usr}/share/man:{usr}/local/share/man${{MANPATH:+:$MANPATH}}\"");
     }
     Ok(())
 }
@@ -3611,23 +3630,7 @@ fn print_doctor(engine: &Engine, json: bool) -> anyhow::Result<()> {
         let _ = std::fs::remove_file(&t);
         ok
     };
-    let has = |bin: &str| -> Option<String> {
-        let out = std::process::Command::new("bash")
-            .args([
-                "-lc",
-                &format!("command -v {bin} && {bin} --version 2>/dev/null | head -1"),
-            ])
-            .output()
-            .ok()?;
-        out.status.success().then(|| {
-            String::from_utf8_lossy(&out.stdout)
-                .lines()
-                .last()
-                .unwrap_or("present")
-                .trim()
-                .to_string()
-        })
-    };
+    let has = |bin: &str| -> Option<String> { doctor_tool_version(bin) };
     let layout_entries = layout.entries();
     let mut dirs: Vec<String> = layout_entries
         .iter()
@@ -3767,6 +3770,79 @@ fn print_doctor(engine: &Engine, json: bool) -> anyhow::Result<()> {
         println!("\n  note: sudo not pre-authorized — privileged installs need `sudo -v` in a real terminal first.");
     }
     Ok(())
+}
+
+fn doctor_tool_version(bin: &str) -> Option<String> {
+    let path = find_on_path(bin)?;
+    let out = command_output_timeout(
+        std::process::Command::new(&path).arg("--version"),
+        std::time::Duration::from_secs(2),
+    )
+    .ok()
+    .flatten();
+    out.and_then(|out| {
+        out.status.success().then(|| {
+            String::from_utf8_lossy(&out.stdout)
+                .lines()
+                .next()
+                .map(str::trim)
+                .filter(|line| !line.is_empty())
+                .map(str::to_string)
+        })?
+    })
+    .or_else(|| Some(path.display().to_string()))
+}
+
+fn find_on_path(bin: &str) -> Option<std::path::PathBuf> {
+    let candidate = std::path::Path::new(bin);
+    if candidate.components().count() > 1 {
+        return executable_file(candidate).then(|| candidate.to_path_buf());
+    }
+    std::env::var_os("PATH").and_then(|path| {
+        std::env::split_paths(&path)
+            .map(|dir| dir.join(bin))
+            .find(|candidate| executable_file(candidate))
+    })
+}
+
+fn executable_file(path: &std::path::Path) -> bool {
+    let Ok(meta) = std::fs::metadata(path) else {
+        return false;
+    };
+    if !meta.is_file() {
+        return false;
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        meta.permissions().mode() & 0o111 != 0
+    }
+    #[cfg(not(unix))]
+    {
+        true
+    }
+}
+
+fn command_output_timeout(
+    cmd: &mut std::process::Command,
+    timeout: std::time::Duration,
+) -> std::io::Result<Option<std::process::Output>> {
+    let start = std::time::Instant::now();
+    let mut child = cmd
+        .stdout(std::process::Stdio::piped())
+        .stderr(std::process::Stdio::null())
+        .spawn()?;
+    loop {
+        if child.try_wait()?.is_some() {
+            return child.wait_with_output().map(Some);
+        }
+        if start.elapsed() >= timeout {
+            let _ = child.kill();
+            let _ = child.wait();
+            return Ok(None);
+        }
+        std::thread::sleep(std::time::Duration::from_millis(25));
+    }
 }
 
 fn print_graph_summary(reg: &envctl_engine::Registry) {
