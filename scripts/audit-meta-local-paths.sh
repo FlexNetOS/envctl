@@ -25,7 +25,7 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--owner-supervised-sensitive-review-plan PATH] [--owner-supervised-state-report PATH] [--owner-supervised-child-report PATH] [--owner-supervised-child-plan PATH] [--owner-supervised-child-candidates-report PATH] [--owner-supervised-child-candidate-actions PATH] [--owner-supervised-cache-child-component-plan PATH] [--owner-supervised-cache-child-component-manifest-status PATH] [--owner-supervised-managed-config-child-review-plan PATH] [--owner-supervised-managed-config-child-conflict-plan PATH] [--owner-supervised-managed-config-child-conflict-summary PATH] [--owner-supervised-config-child-classification-plan PATH] [--owner-supervised-child-candidate-action-summary PATH] [--owner-supervised-child-candidates-summary PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--migration-blockers-plan PATH] [--open-handle-process-window-plan PATH] [--fail-migration-blockers] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--migrate-cache-child NAME]... [--bridge-managed-config-child NAME]... [--bridge-identical-managed-config-child NAME]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--owner-supervised-sensitive-review-plan PATH] [--owner-supervised-state-report PATH] [--owner-supervised-child-report PATH] [--owner-supervised-child-plan PATH] [--owner-supervised-child-candidates-report PATH] [--owner-supervised-child-candidate-actions PATH] [--owner-supervised-cache-child-component-plan PATH] [--owner-supervised-cache-child-component-manifest-status PATH] [--owner-supervised-managed-config-child-review-plan PATH] [--owner-supervised-managed-config-child-conflict-plan PATH] [--owner-supervised-managed-config-child-conflict-summary PATH] [--owner-supervised-managed-config-child-deep-status PATH] [--owner-supervised-config-child-classification-plan PATH] [--owner-supervised-child-candidate-action-summary PATH] [--owner-supervised-child-candidates-summary PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--migration-blockers-plan PATH] [--open-handle-process-window-plan PATH] [--fail-migration-blockers] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--migrate-cache-child NAME]... [--bridge-managed-config-child NAME]... [--bridge-identical-managed-config-child NAME]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
 With --inventory, also writes a tab-separated relocation inventory:
@@ -131,6 +131,11 @@ dot_entry, child_name, real_type, managed_type, real_direct_entries, managed_dir
 shared_direct_entries, real_only_direct_entries, managed_only_direct_entries,
 type_conflict_direct_entries, digest_match, supervision, next_action, apply_command.
 The summary intentionally omits direct child names/content and apply_command is empty.
+With --owner-supervised-managed-config-child-deep-status, writes read-only deep identity rows
+for .config direct children where both real-home state and a managed envctl-home source exist:
+dot_entry, child_name, real_path, managed_source, real_type, managed_type, deep_identical,
+supervision, next_action, apply_command.
+The report uses deep directory comparison only to choose a review path; apply_command is empty.
 With --owner-supervised-config-child-classification-plan, writes read-only classification planning
 rows for .config direct children that are not managed envctl-home sources, already-meta symlinks,
 or external symlinks:
@@ -190,6 +195,7 @@ OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_STATUS_PATH=""
 OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_REVIEW_PLAN_PATH=""
 OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_PLAN_PATH=""
 OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_SUMMARY_PATH=""
+OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_DEEP_STATUS_PATH=""
 OWNER_SUPERVISED_CONFIG_CHILD_CLASSIFICATION_PLAN_PATH=""
 OWNER_SUPERVISED_CHILD_CANDIDATE_ACTION_SUMMARY_PATH=""
 OWNER_SUPERVISED_CHILD_CANDIDATES_SUMMARY_PATH=""
@@ -228,6 +234,7 @@ while [ "$#" -gt 0 ]; do
     --owner-supervised-managed-config-child-review-plan) OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_REVIEW_PLAN_PATH="${2:?--owner-supervised-managed-config-child-review-plan requires a path}"; shift 2 ;;
     --owner-supervised-managed-config-child-conflict-plan) OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_PLAN_PATH="${2:?--owner-supervised-managed-config-child-conflict-plan requires a path}"; shift 2 ;;
     --owner-supervised-managed-config-child-conflict-summary) OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_SUMMARY_PATH="${2:?--owner-supervised-managed-config-child-conflict-summary requires a path}"; shift 2 ;;
+    --owner-supervised-managed-config-child-deep-status) OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_DEEP_STATUS_PATH="${2:?--owner-supervised-managed-config-child-deep-status requires a path}"; shift 2 ;;
     --owner-supervised-config-child-classification-plan) OWNER_SUPERVISED_CONFIG_CHILD_CLASSIFICATION_PLAN_PATH="${2:?--owner-supervised-config-child-classification-plan requires a path}"; shift 2 ;;
     --owner-supervised-child-candidate-action-summary) OWNER_SUPERVISED_CHILD_CANDIDATE_ACTION_SUMMARY_PATH="${2:?--owner-supervised-child-candidate-action-summary requires a path}"; shift 2 ;;
     --owner-supervised-child-candidates-summary) OWNER_SUPERVISED_CHILD_CANDIDATES_SUMMARY_PATH="${2:?--owner-supervised-child-candidates-summary requires a path}"; shift 2 ;;
@@ -331,6 +338,10 @@ fi
 if [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_SUMMARY_PATH" ]; then
   mkdir -p "$(dirname "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_SUMMARY_PATH")"
   printf 'dot_entry\tchild_name\treal_type\tmanaged_type\treal_direct_entries\tmanaged_direct_entries\tshared_direct_entries\treal_only_direct_entries\tmanaged_only_direct_entries\ttype_conflict_direct_entries\tdigest_match\tsupervision\tnext_action\tapply_command\n' >"$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_SUMMARY_PATH"
+fi
+if [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_DEEP_STATUS_PATH" ]; then
+  mkdir -p "$(dirname "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_DEEP_STATUS_PATH")"
+  printf 'dot_entry\tchild_name\treal_path\tmanaged_source\treal_type\tmanaged_type\tdeep_identical\tsupervision\tnext_action\tapply_command\n' >"$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_DEEP_STATUS_PATH"
 fi
 if [ -n "$OWNER_SUPERVISED_CONFIG_CHILD_CLASSIFICATION_PLAN_PATH" ]; then
   mkdir -p "$(dirname "$OWNER_SUPERVISED_CONFIG_CHILD_CLASSIFICATION_PLAN_PATH")"
@@ -1056,9 +1067,9 @@ record_owner_supervised_child_candidates() {
   local child child_name child_type child_state child_target_class canonical_target candidate_action child_apply_safe child_recommendation
   local shallow_digest direct_entries direct_files direct_dirs direct_symlinks
   local supervision next_action envctl_home_source apply_command component_key manifest_hint manifest_exists manifest_next_action review_hint classification_scope managed_type managed_digest managed_direct_entries
-  local shared_direct_entries real_only_direct_entries managed_only_direct_entries type_conflict_direct_entries digest_match
+  local shared_direct_entries real_only_direct_entries managed_only_direct_entries type_conflict_direct_entries digest_match deep_identical deep_next_action
 
-  [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATES_REPORT_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATES_SUMMARY_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_STATUS_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_REVIEW_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_SUMMARY_PATH" ] || [ -n "$OWNER_SUPERVISED_CONFIG_CHILD_CLASSIFICATION_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTION_SUMMARY_PATH" ] || return 0
+  [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATES_REPORT_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATES_SUMMARY_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_STATUS_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_REVIEW_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_SUMMARY_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_DEEP_STATUS_PATH" ] || [ -n "$OWNER_SUPERVISED_CONFIG_CHILD_CLASSIFICATION_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTION_SUMMARY_PATH" ] || return 0
   [ "$state" = "real-home-state" ] || [ "$state" = "external-symlink" ] || return 0
   [ "$apply_safe" = "no" ] || return 0
   case "$dot" in
@@ -1096,7 +1107,7 @@ record_owner_supervised_child_candidates() {
         "$child_apply_safe" \
         "$child_recommendation" >>"$OWNER_SUPERVISED_CHILD_CANDIDATES_REPORT_PATH"
     fi
-    if [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_STATUS_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_REVIEW_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_SUMMARY_PATH" ] || [ -n "$OWNER_SUPERVISED_CONFIG_CHILD_CLASSIFICATION_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTION_SUMMARY_PATH" ]; then
+    if [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_CACHE_CHILD_COMPONENT_MANIFEST_STATUS_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_REVIEW_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_SUMMARY_PATH" ] || [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_DEEP_STATUS_PATH" ] || [ -n "$OWNER_SUPERVISED_CONFIG_CHILD_CLASSIFICATION_PLAN_PATH" ] || [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTION_SUMMARY_PATH" ]; then
       IFS=$'\t' read -r supervision next_action envctl_home_source apply_command < <(owner_supervised_child_candidate_action_fields "$child_target_class" "$candidate_action" "$canonical_target")
     fi
     if [ -n "$OWNER_SUPERVISED_CHILD_CANDIDATE_ACTIONS_PATH" ]; then
@@ -1212,6 +1223,26 @@ record_owner_supervised_child_candidates() {
         "owner-reviewed" \
         "owner-review-real-home-config-child-merge-or-remove-before-bridge" \
         "" >>"$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_CONFLICT_SUMMARY_PATH"
+    fi
+    if [ -n "$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_DEEP_STATUS_PATH" ] && [ "$dot" = ".config" ] && [ "$candidate_action" = "owner-supervised-config-child-bridge" ] && { [ -e "$child" ] || [ -L "$child" ]; } && { [ -e "$canonical_target" ] || [ -L "$canonical_target" ]; }; then
+      managed_type="$(entry_type "$canonical_target")"
+      deep_identical="no"
+      deep_next_action="owner-review-real-home-config-child-merge-or-remove-before-bridge"
+      if [ "$child_type" = "directory" ] && [ "$managed_type" = "directory" ] && [ ! -L "$child" ] && [ ! -L "$canonical_target" ] && directories_deep_identical "$child" "$canonical_target"; then
+        deep_identical="yes"
+        deep_next_action="review-then-bridge-identical-managed-config-child"
+      fi
+      printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "$dot" \
+        "$child_name" \
+        "$child" \
+        "$canonical_target" \
+        "$child_type" \
+        "$managed_type" \
+        "$deep_identical" \
+        "owner-reviewed" \
+        "$deep_next_action" \
+        "" >>"$OWNER_SUPERVISED_MANAGED_CONFIG_CHILD_DEEP_STATUS_PATH"
     fi
     if [ -n "$OWNER_SUPERVISED_CONFIG_CHILD_CLASSIFICATION_PLAN_PATH" ] && [ "$dot" = ".config" ] && [ "$candidate_action" = "classify-config-child-before-bridge-or-migration" ]; then
       classification_scope="unclassified-config-child"
