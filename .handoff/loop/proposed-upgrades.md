@@ -10,54 +10,49 @@
 
 ---
 
-# Plan-loop (fleet-convergence) — structural proposals (PROPOSE-only)
+## plan-loop / fleet-convergence — cycle 6 (prompt-hub) · 2026-06-27
 
-> Separate ledger from the forge-loop block above (this worktree hosts the plan-loop too). These are
-> STRUCTURAL items the evolution-steward will not auto-apply (orchestrator ordering, harness docs,
-> cross-skill edits) — owner approval required. None weakens a gate; all strengthen or are additive.
-> `[FLAG-APPLY]` = a class at its 2nd recurrence (apply-eligible now per once→noted / 2nd→upgrade-now).
+Escalated by the evolution-steward (harness-evolution Phase E). Propose-by-default; gates only ever
+strengthened. The plan-loop shares envctl's `.handoff/loop/` so its escalations land here; drain
+these alongside the forge-loop entries.
 
-## Carried forward from cycle 4 (still open)
+### Apply-eligible (2nd+ recurrence — low-risk, in-scope)
 
-- **P-C4-1 — Relax the snake_case slug regex.** The plan-loop's target/finding slug validation
-  rejects legitimate target names that aren't strict snake_case (hyphenated repo names, dotted
-  crate paths). Relax the regex to accept the real fleet naming surface without weakening any other
-  validation. STRUCTURAL (touches a validation gate's input grammar — widening, so PROPOSE + verify
-  it never admits a path-traversal/empty slug). Status: OPEN (carried from cycle 4).
-- **P-C4-2 — Namespace durable state under `runs/<target>/`.** Per-cycle plan artifacts currently
-  collide on shared filenames across targets when not isolated by worktree; namespace them under
-  `runs/<target>/` so cycles are independently addressable and a multi-target batch can't overwrite a
-  prior target's findings. STRUCTURAL (changes the state-contract layout other skills read). Status:
-  OPEN (carried from cycle 4).
+- [ ] **P1 · Scope git-kb code index to member `src/`, exclude `vendor/`** — RECURRENCE (cycle 6
+  again: 1.42M/1.43M symbols were `vendor/`; vendored-root index resolved ~0 call edges).
+  Fix: plan-cartographer indexing step indexes each Cargo-member `src/` (or passes a `vendor/`
+  exclude) rather than the repo root. In-scope, additive to the cartographer skill — apply via PR.
+  Evidence: cycle-6 friction #2; `plan/LESSONS.md` row 2.
 
-## New this cycle (cycle 5 / grit)
+### Proposed structural / clarity (owner approval)
 
-- **P-C5-1 — Pre-cycle environment check for stray phantom-workspace manifests. [FLAG-APPLY — 2nd
-  recurrence]** Before any build/verify gate, scan ancestor directories for a stray `Cargo.toml`
-  that would make Cargo walk up and absorb the target into a foreign virtual workspace; either fail
-  closed with a clear remediation (remove/relocate the stray manifest) or pin the target with an
-  empty `[workspace]`. Recurs across the fleet (handoff A-U1 sibling-escape was the 1st occurrence;
-  grit cycle 5 the 2nd) → eligible to apply now. STRUCTURAL (adds an orchestrator pre-cycle step).
-  Evidence: verdicts.md FEASIBILITY phantom-workspace remediation row (verified feasible).
-- **P-C5-2 — Document weave as an in-cycle cross-loop coordination primitive.** Add a harness note
-  that a loop MAY use a weave A2A round-trip DURING a cycle (ask another loop/session to verify a
-  plan, fold corrections, ship) — not only for async handoff heartbeats. Keep propose-by-default: the
-  committed artifact stays authoritative; weave is the observable coordination channel. STRUCTURAL
-  (orchestrator/harness-doc capability statement). Evidence: cycle-5 envctl↔rusty-idd round-trip →
-  prompt_hub PR #182 (3 corrections folded). First demonstrated occurrence → noted, propose.
-- **P-C5-3 — Graph-before-analysis ordering in the plan-loop schedule.** Make the cartographer's
-  graph JSON a topological upstream dependency of the axis-auditor/analyst ready-set (or have those
-  agents explicitly declare a graph-absent gap, never proceed graph-blind). Removes the depth loss
-  from the cycle-5 race where analysis ran before the graph existed. STRUCTURAL (orchestrator
-  scheduling / dependency DAG). Evidence: `findings/architecture-grit.md:10` (declared-gap, correct
-  fail-closed behavior — fix the race so depth isn't lost). First occurrence → noted, propose.
+- [ ] **P2 · Auditor output-channel clarity [NEW]** — add a one-line directive to the
+  plan-architecture-auditor (and, by pattern, every dimension auditor) brief: "WRITE your findings to
+  `findings/<dimension>-<target>.md` (do not return them as text); the message you return is a short
+  summary, not the deliverable." Root cause of cycle-6 friction #1 (auditor returned text; orchestrator
+  had to materialize the file). Touches an agent brief → propose. Evidence: `plan/LESSONS.md` row 1;
+  `findings/prompt-architecture-prompt-hub.md` header note.
+- [ ] **P3 · Affirm verifier dispute-reconciliation as a named duty** — make explicit in the
+  plan-verifier brief that when auditors disagree on a fact, the verifier enumerates the actual
+  artifacts and reconciles (both may be right about different files) rather than picking a winner.
+  Captures the cycle-6 capability win (.db-tracking reconciliation). Evidence: `plan/LESSONS.md` row 3.
+- [ ] **P4 · Cross-repo-schema-binding gate language** — state in the plan-verifier feasibility gate
+  + plan-analyst upgrade-authoring guidance that any upgrade encoding a cross-repo contract must be
+  authored as bound (to the consumer's real schema) or explicitly conditional; a guessed wire format
+  that passes a self-authored RED test still pins a fiction. STRENGTHENS the gate. Evidence:
+  `verdicts.md` CONDITION on upgrades A/B/H; `plan/LESSONS.md` row 4.
 
-## Cross-skill (route to owner; scope law — propose, never force-apply)
+### Carried forward (open from cycles 4-5 — still undrained)
 
-- **P-C5-4 — Oblique-reference rule for the sentinel-token gate trap. [FLAG-APPLY — 2nd
-  recurrence]** Add to the plan-* auditor skill bodies a one-line rule + example: when writing a
-  finding ABOUT the completeness gate's rejection vocabulary, reference the class obliquely (name the
-  sentinel category; never quote the literal tokens) so an honest gap-finding still passes the gate.
-  STRENGTHENS reliability, weakens nothing. 2nd recurrence (1st = cycle 4) → apply-eligible; queued
-  for the batch boundary because the skill sources live in harness_hub, outside this isolated
-  worktree (record + route, never a live mutation here).
+- [ ] **C1 · Relax the loop slug/regex** (cycles 4-5) — the target/loop-name slug regex rejected
+  valid targets; relax to admit the fleet targets without weakening any guard. (structural — propose)
+- [ ] **C2 · `runs/<target>/` namespacing** (cycles 4-5) — namespace per-cycle run artifacts under
+  `runs/<target>/` so parallel instances don't collide in shared `.handoff/loop/`. (structural — propose)
+- [ ] **C3 · Phantom-workspace check** (cycles 4-5) — add a pre-cycle check that the claimed worktree
+  actually exists / is the intended one before executing. (structural — propose)
+- [ ] **C4 · Oblique sentinel-token rule** (cycles 4-5) — generalize the no-literal-sentinel rule
+  (the unfinished-work and unsupported-claim marker words the gate already forbids) to
+  oblique/spaced/obfuscated variants in the gate's forbidden-token scan. STRENGTHENS the gate —
+  propose. (Note: cycle-6 parallel-isolation success —
+  4th proof, 1st cross-loop proof — is partial evidence that C2/C3 are working in practice and could
+  be promoted once formalized.)
