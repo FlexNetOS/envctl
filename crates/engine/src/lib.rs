@@ -41,8 +41,11 @@ pub use agent::{
     AgentVerb,
 };
 pub use catalog::{
-    CatalogDiffReport, CatalogDiffSummary, CatalogDriftRow, CatalogRenderReport, CatalogRenderSpec,
-    CatalogRenderSummary, CatalogRenderedFile, CatalogScanSpec, CatalogSnapshot, CatalogTableName,
+    CatalogDiffReport, CatalogDiffSummary, CatalogDriftRow, CatalogImportReport,
+    CatalogImportSummary, CatalogLockReport, CatalogLockSpec, CatalogLockSummary,
+    CatalogRenderReport, CatalogRenderSpec, CatalogRenderSummary, CatalogRenderedFile,
+    CatalogScanSpec, CatalogSnapshot, CatalogSyncAction, CatalogSyncReport, CatalogSyncSpec,
+    CatalogSyncSummary, CatalogTableName,
 };
 pub use command::{
     run_event_loop, AgentCommandSpec, EngineCommand, EngineEvent, MigrationCommandSpec,
@@ -177,6 +180,18 @@ impl Engine {
         )
     }
 
+    /// ADR-0003 explicit import report: current files -> normalized rows, no writes.
+    pub fn catalog_import(&self) -> anyhow::Result<CatalogImportReport> {
+        let root = workspace_root_for_manifest_dir(&self.inner.manifest_dir);
+        catalog::import_current(
+            catalog::CatalogScanSpec {
+                repo_root: root,
+                manifest_dir: self.inner.manifest_dir.clone(),
+            },
+            &self.inner.registry,
+        )
+    }
+
     /// Read-only ADR-0003 catalog diff: file/catalog/lock drift without mutation.
     pub fn catalog_diff(&self) -> anyhow::Result<CatalogDiffReport> {
         let root = workspace_root_for_manifest_dir(&self.inner.manifest_dir);
@@ -184,6 +199,37 @@ impl Engine {
             catalog::CatalogScanSpec {
                 repo_root: root,
                 manifest_dir: self.inner.manifest_dir.clone(),
+            },
+            &self.inner.registry,
+        )
+    }
+
+    /// ADR-0003 bidirectional-sync preview: import + diff + optional render evidence.
+    pub fn catalog_sync(
+        &self,
+        render_out_dir: Option<&Path>,
+        apply: bool,
+    ) -> anyhow::Result<CatalogSyncReport> {
+        let root = workspace_root_for_manifest_dir(&self.inner.manifest_dir);
+        catalog::sync(
+            catalog::CatalogSyncSpec {
+                repo_root: root,
+                manifest_dir: self.inner.manifest_dir.clone(),
+                render_out_dir: render_out_dir.map(Path::to_path_buf),
+                apply,
+            },
+            &self.inner.registry,
+        )
+    }
+
+    /// ADR-0003 catalog-native lock check/update for `manifest/envctl.lock`.
+    pub fn catalog_lock(&self, apply: bool) -> anyhow::Result<CatalogLockReport> {
+        let root = workspace_root_for_manifest_dir(&self.inner.manifest_dir);
+        catalog::lock(
+            catalog::CatalogLockSpec {
+                repo_root: root,
+                manifest_dir: self.inner.manifest_dir.clone(),
+                apply,
             },
             &self.inner.registry,
         )

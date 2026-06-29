@@ -3,9 +3,11 @@
 //! The catalog layer absorbs envctl's current files into normalized, queryable
 //! rows. This first slice is intentionally in-memory and non-mutating: TOML,
 //! YAML, JSON, Rust registries, and `.handoff` exports remain the accepted inputs
-//! while later slices add sync/DB-first behavior. Diff and render are still
+//! while later slices add DB-first behavior. Diff/render/import/sync remain
 //! no-apply surfaces: they report drift and write generated projections only to
-//! an explicit output directory outside the repo.
+//! an explicit output directory outside the repo. The catalog lock path is the
+//! first explicit apply surface and only updates `manifest/envctl.lock` when a
+//! caller opts in.
 
 use crate::component::{Component, Hook, Phase};
 use crate::layout::{LayoutKind, MetaLayout};
@@ -16,6 +18,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::fmt::{self, Write as _};
+use std::io::ErrorKind;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 
@@ -242,6 +245,107 @@ pub struct CatalogRenderedFile {
     pub generated: bool,
     pub manual_edits_allowed: bool,
     pub provenance: String,
+}
+
+/// Report for `envctl catalog import`: files -> normalized rows, no writes.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CatalogImportReport {
+    pub repo_root: String,
+    pub manifest_dir: String,
+    pub generated_by: String,
+    pub summary: CatalogImportSummary,
+    pub snapshot: CatalogSnapshot,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CatalogImportSummary {
+    pub tables: usize,
+    pub rows: usize,
+    pub components: usize,
+    pub config_files: usize,
+    pub settings: usize,
+    pub env_vars: usize,
+    pub mutating: bool,
+}
+
+/// Bidirectional reconcile request. `apply` is intentionally refused until the
+/// verifier-gated row mutation path lands; preview + optional out-of-repo render
+/// are the safe ADR-0003 stepping stones.
+#[derive(Clone, Debug)]
+pub struct CatalogSyncSpec {
+    pub repo_root: PathBuf,
+    pub manifest_dir: PathBuf,
+    pub render_out_dir: Option<PathBuf>,
+    pub apply: bool,
+}
+
+/// Preview report for `envctl catalog sync`.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CatalogSyncReport {
+    pub repo_root: String,
+    pub manifest_dir: String,
+    pub generated_by: String,
+    pub summary: CatalogSyncSummary,
+    pub planned_actions: Vec<CatalogSyncAction>,
+    pub diff: CatalogDiffReport,
+    pub render: Option<CatalogRenderReport>,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CatalogSyncSummary {
+    pub drift_count: usize,
+    pub planned_actions: usize,
+    pub rendered_files: usize,
+    pub applied: bool,
+    pub mutating: bool,
+    pub verifier_status: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CatalogSyncAction {
+    pub action_id: String,
+    pub action_kind: String,
+    pub subject_kind: String,
+    pub subject_id: String,
+    pub source: String,
+    pub target: Option<String>,
+    pub reason: String,
+    pub apply_required: bool,
+    pub verifier_status: String,
+    pub mutating: bool,
+}
+
+/// Catalog-native lock request. `apply=false` is a read-only check; `apply=true`
+/// writes only `manifest/envctl.lock` after regenerating it from the current
+/// manifest registry.
+#[derive(Clone, Debug)]
+pub struct CatalogLockSpec {
+    pub repo_root: PathBuf,
+    pub manifest_dir: PathBuf,
+    pub apply: bool,
+}
+
+/// Report for `envctl catalog lock`.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CatalogLockReport {
+    pub repo_root: String,
+    pub manifest_dir: String,
+    pub generated_by: String,
+    pub lock_path: String,
+    pub before_sha256: Option<String>,
+    pub after_sha256: Option<String>,
+    pub summary: CatalogLockSummary,
+    pub drift: Vec<CatalogDriftRow>,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CatalogLockSummary {
+    pub components: usize,
+    pub before_drifts: usize,
+    pub after_drifts: usize,
+    pub applied: bool,
+    pub mutating: bool,
+    pub lock_written: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
@@ -826,6 +930,188 @@ pub fn render(spec: CatalogRenderSpec, registry: &Registry) -> anyhow::Result<Ca
     })
 }
 
+/// Import current files into normalized catalog tables without writing anything.
+pub fn import_current(
+    spec: CatalogScanSpec,
+    registry: &Registry,
+) -> anyhow::Result<CatalogImportReport> {
+    let snapshot = scan(spec, registry)?;
+    let summary = CatalogImportSummary {
+        tables: CatalogTableName::all().len(),
+        rows: catalog_total_rows(&snapshot),
+        components: snapshot.components.len(),
+        config_files: snapshot.config_files.len(),
+        settings: snapshot.settings.len(),
+        env_vars: snapshot.env_vars.len(),
+        mutating: false,
+    };
+
+    Ok(CatalogImportReport {
+        repo_root: snapshot.repo_root.clone(),
+        manifest_dir: snapshot.manifest_dir.clone(),
+        generated_by: "envctl catalog import".to_string(),
+        summary,
+        snapshot,
+    })
+}
+
+/// Plan a bidirectional catalog sync without applying repository mutations.
+///
+/// The apply path is deliberately fail-closed until the verifier-gated row edit
+/// engine lands. For now `sync` is the round-trip safety report that combines
+/// import, diff, and optional out-of-repo render evidence.
+pub fn sync(spec: CatalogSyncSpec, registry: &Registry) -> anyhow::Result<CatalogSyncReport> {
+    if spec.apply {
+        bail!(
+            "catalog sync --apply requires verifier-gated row edit/apply support; \
+             preview with `envctl catalog sync` and use `envctl catalog lock --apply` \
+             for lock-only acceptance"
+        );
+    }
+
+    let repo_root = spec.repo_root.clone();
+    let manifest_dir = spec.manifest_dir.clone();
+    let diff_report = diff(
+        CatalogScanSpec {
+            repo_root: repo_root.clone(),
+            manifest_dir: manifest_dir.clone(),
+        },
+        registry,
+    )?;
+
+    let mut planned_actions = sync_actions_from_drift(&diff_report.drift);
+    let render_report = if let Some(out_dir) = spec.render_out_dir {
+        let report = render(
+            CatalogRenderSpec {
+                repo_root,
+                manifest_dir,
+                out_dir,
+            },
+            registry,
+        )?;
+        planned_actions.push(CatalogSyncAction {
+            action_id: String::new(),
+            action_kind: "review_render_projection".to_string(),
+            subject_kind: "render".to_string(),
+            subject_id: report.out_dir.clone(),
+            source: "catalog_tables".to_string(),
+            target: Some(report.out_dir.clone()),
+            reason: "rendered generated-file projections for human/CI review".to_string(),
+            apply_required: false,
+            verifier_status: "catalog_render".to_string(),
+            mutating: false,
+        });
+        Some(report)
+    } else {
+        None
+    };
+    renumber_sync_actions(&mut planned_actions);
+
+    let summary = CatalogSyncSummary {
+        drift_count: diff_report.summary.drift_count,
+        planned_actions: planned_actions.len(),
+        rendered_files: render_report
+            .as_ref()
+            .map(|report| report.summary.generated_files)
+            .unwrap_or(0),
+        applied: false,
+        mutating: false,
+        verifier_status: "preview_only".to_string(),
+    };
+
+    Ok(CatalogSyncReport {
+        repo_root: diff_report.repo_root.clone(),
+        manifest_dir: diff_report.manifest_dir.clone(),
+        generated_by: "envctl catalog sync".to_string(),
+        summary,
+        planned_actions,
+        diff: diff_report,
+        render: render_report,
+    })
+}
+
+/// Check or update the catalog lock projection (`manifest/envctl.lock`).
+pub fn lock(spec: CatalogLockSpec, registry: &Registry) -> anyhow::Result<CatalogLockReport> {
+    let repo_root = absolute_existing_path(&spec.repo_root)?;
+    let manifest_dir = absolute_existing_path(&spec.manifest_dir)?;
+    let lock_path = lock::lock_path(&manifest_dir);
+    let lock_rel = repo_relative(&repo_root, &lock_path);
+    let before_sha256 = file_hash_optional(&lock_path)?;
+
+    let before_lock = match LockFile::load(&manifest_dir) {
+        Ok(lock_file) => lock_file,
+        Err(err) => {
+            let mut drift = Vec::new();
+            push_drift(
+                &mut drift,
+                DriftInput {
+                    subject_kind: "lock_file",
+                    subject_id: &lock_rel,
+                    drift_kind: "lock_read_error",
+                    source: &lock_rel,
+                    desired: Some("lock parse ok".to_string()),
+                    observed: Some(err.to_string()),
+                    severity: "error",
+                    verifier_status: "envctl_lock_diff",
+                    details: "envctl.lock could not be loaded; catalog lock will not overwrite unreadable lock files",
+                },
+            );
+            renumber_drift_ids(&mut drift);
+            let summary = CatalogLockSummary {
+                components: registry.len(),
+                before_drifts: drift.len(),
+                after_drifts: drift.len(),
+                applied: false,
+                mutating: false,
+                lock_written: false,
+            };
+            return Ok(CatalogLockReport {
+                repo_root: repo_root.display().to_string(),
+                manifest_dir: manifest_dir.display().to_string(),
+                generated_by: "envctl catalog lock".to_string(),
+                lock_path: lock_rel,
+                before_sha256: before_sha256.clone(),
+                after_sha256: before_sha256,
+                summary,
+                drift,
+            });
+        }
+    };
+
+    let before_drift = lock_drift_rows(&repo_root, &manifest_dir, registry, &before_lock);
+    let mut lock_written = false;
+    if spec.apply && !before_drift.is_empty() {
+        let mut generated = lock::generate(registry);
+        generated.save(&manifest_dir)?;
+        lock_written = true;
+    }
+
+    let after_sha256 = file_hash_optional(&lock_path)?;
+    let after_drifts = match LockFile::load(&manifest_dir) {
+        Ok(after_lock) => lock::diff(registry, &after_lock).len(),
+        Err(_) => before_drift.len(),
+    };
+    let summary = CatalogLockSummary {
+        components: registry.len(),
+        before_drifts: before_drift.len(),
+        after_drifts,
+        applied: lock_written,
+        mutating: lock_written,
+        lock_written,
+    };
+
+    Ok(CatalogLockReport {
+        repo_root: repo_root.display().to_string(),
+        manifest_dir: manifest_dir.display().to_string(),
+        generated_by: "envctl catalog lock".to_string(),
+        lock_path: lock_rel,
+        before_sha256,
+        after_sha256,
+        summary,
+        drift: before_drift,
+    })
+}
+
 struct DriftInput<'a> {
     subject_kind: &'a str,
     subject_id: &'a str,
@@ -865,6 +1151,127 @@ fn lock_drift_kind_name(kind: lock::LockDriftKind) -> &'static str {
         lock::LockDriftKind::Added => "added",
         lock::LockDriftKind::Removed => "removed",
         lock::LockDriftKind::Changed => "changed",
+    }
+}
+
+fn lock_drift_rows(
+    repo_root: &Path,
+    manifest_dir: &Path,
+    registry: &Registry,
+    lock_file: &LockFile,
+) -> Vec<CatalogDriftRow> {
+    let lock_path = lock::lock_path(manifest_dir);
+    let lock_rel = repo_relative(repo_root, &lock_path);
+    let generated = lock::generate(registry);
+    let mut drift = Vec::new();
+    for (component_id, kind) in lock::diff(registry, lock_file) {
+        let current = generated.components.get(&component_id);
+        let locked = lock_file.components.get(&component_id);
+        let (desired, observed, details) = match kind {
+            lock::LockDriftKind::Added => (
+                current.map(|entry| entry.content_hash.clone()),
+                None,
+                "component exists in manifest but is absent from envctl.lock",
+            ),
+            lock::LockDriftKind::Removed => (
+                None,
+                locked.map(|entry| entry.content_hash.clone()),
+                "component exists in envctl.lock but is absent from manifest",
+            ),
+            lock::LockDriftKind::Changed => (
+                current.map(|entry| entry.content_hash.clone()),
+                locked.map(|entry| entry.content_hash.clone()),
+                "component manifest hash differs from envctl.lock",
+            ),
+        };
+        push_drift(
+            &mut drift,
+            DriftInput {
+                subject_kind: "component",
+                subject_id: &component_id,
+                drift_kind: &format!("lock_{}", lock_drift_kind_name(kind)),
+                source: &lock_rel,
+                desired,
+                observed,
+                severity: "error",
+                verifier_status: "envctl_lock_diff",
+                details,
+            },
+        );
+    }
+    drift.sort_by(|a, b| {
+        a.subject_kind
+            .cmp(&b.subject_kind)
+            .then(a.subject_id.cmp(&b.subject_id))
+            .then(a.drift_kind.cmp(&b.drift_kind))
+            .then(a.source.cmp(&b.source))
+    });
+    renumber_drift_ids(&mut drift);
+    drift
+}
+
+fn sync_actions_from_drift(drift: &[CatalogDriftRow]) -> Vec<CatalogSyncAction> {
+    let mut actions = drift
+        .iter()
+        .map(|row| {
+            let (action_kind, target, reason) = if row.drift_kind.starts_with("lock_") {
+                (
+                    "catalog_lock_apply",
+                    Some(row.source.clone()),
+                    "accept current manifest hashes into envctl.lock with `envctl catalog lock --apply`",
+                )
+            } else if row.subject_kind == "config_file" {
+                (
+                    "manual_import_reconcile",
+                    Some(row.source.clone()),
+                    "fix or accept source-file change through catalog import before rendering",
+                )
+            } else if row.subject_kind == "registry" {
+                (
+                    "registry_link_verify",
+                    Some(row.source.clone()),
+                    "link registry entry to a known component or document the unresolved row",
+                )
+            } else if row.subject_kind == "observed_fact" {
+                (
+                    "verifier_follow_up",
+                    None,
+                    "re-run verifier or reconcile desired state against observed fact",
+                )
+            } else {
+                (
+                    "catalog_review",
+                    Some(row.source.clone()),
+                    "review catalog drift before any apply step",
+                )
+            };
+            CatalogSyncAction {
+                action_id: String::new(),
+                action_kind: action_kind.to_string(),
+                subject_kind: row.subject_kind.clone(),
+                subject_id: row.subject_id.clone(),
+                source: row.source.clone(),
+                target,
+                reason: reason.to_string(),
+                apply_required: true,
+                verifier_status: row.verifier_status.clone(),
+                mutating: false,
+            }
+        })
+        .collect::<Vec<_>>();
+    actions.sort_by(|a, b| {
+        a.action_kind
+            .cmp(&b.action_kind)
+            .then(a.subject_kind.cmp(&b.subject_kind))
+            .then(a.subject_id.cmp(&b.subject_id))
+            .then(a.source.cmp(&b.source))
+    });
+    actions
+}
+
+fn renumber_sync_actions(actions: &mut [CatalogSyncAction]) {
+    for (idx, row) in actions.iter_mut().enumerate() {
+        row.action_id = format!("sync.{:04}", idx + 1);
     }
 }
 
@@ -2480,6 +2887,14 @@ fn file_hash(path: &Path) -> anyhow::Result<String> {
     Ok(sha256_hex(&bytes))
 }
 
+fn file_hash_optional(path: &Path) -> anyhow::Result<Option<String>> {
+    match std::fs::read(path) {
+        Ok(bytes) => Ok(Some(sha256_hex(&bytes))),
+        Err(err) if err.kind() == ErrorKind::NotFound => Ok(None),
+        Err(err) => Err(err).with_context(|| format!("reading {}", path.display())),
+    }
+}
+
 fn sha256_hex(bytes: &[u8]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(bytes);
@@ -2725,6 +3140,156 @@ mod tests {
             err.to_string().contains("outside repo root"),
             "unexpected error: {err:#}"
         );
+    }
+
+    #[test]
+    fn import_report_wraps_scan_without_writes() {
+        let root = fixture_root();
+        write_fixture(&root);
+        let agent_env = root.join("agent-env.yaml");
+        let before = std::fs::read(&agent_env).unwrap();
+        let manifest_dir = root.join("manifest");
+        let registry = Registry::load(&manifest_dir).unwrap();
+
+        let report = import_current(
+            CatalogScanSpec {
+                repo_root: root.clone(),
+                manifest_dir,
+            },
+            &registry,
+        )
+        .unwrap();
+
+        assert_eq!(std::fs::read(&agent_env).unwrap(), before);
+        assert_eq!(report.generated_by, "envctl catalog import");
+        assert!(!report.summary.mutating);
+        assert_eq!(report.summary.tables, CatalogTableName::all().len());
+        assert_eq!(report.summary.components, 2);
+        assert!(report.summary.rows >= report.summary.components);
+    }
+
+    #[test]
+    fn sync_preview_reports_actions_without_mutation() {
+        let root = fixture_root();
+        write_fixture(&root);
+        let lock_path = root.join("manifest/envctl.lock");
+        let before = std::fs::read(&lock_path).unwrap();
+        let manifest_dir = root.join("manifest");
+        let registry = Registry::load(&manifest_dir).unwrap();
+        let out = fixture_root();
+
+        let report = sync(
+            CatalogSyncSpec {
+                repo_root: root.clone(),
+                manifest_dir,
+                render_out_dir: Some(out.clone()),
+                apply: false,
+            },
+            &registry,
+        )
+        .unwrap();
+
+        assert_eq!(std::fs::read(&lock_path).unwrap(), before);
+        assert!(!report.summary.mutating);
+        assert!(!report.summary.applied);
+        assert_eq!(report.summary.verifier_status, "preview_only");
+        assert!(report.summary.planned_actions > 0, "{report:#?}");
+        assert!(report
+            .planned_actions
+            .iter()
+            .any(|row| row.action_kind == "catalog_lock_apply"));
+        assert!(report
+            .planned_actions
+            .iter()
+            .any(|row| row.action_kind == "review_render_projection"));
+        assert!(report
+            .render
+            .as_ref()
+            .is_some_and(|render| render.summary.generated_files > 0));
+        assert!(out.join("catalog/scan.json").is_file());
+    }
+
+    #[test]
+    fn sync_apply_refuses_without_verifier_gate() {
+        let root = fixture_root();
+        write_fixture(&root);
+        let manifest_dir = root.join("manifest");
+        let registry = Registry::load(&manifest_dir).unwrap();
+
+        let err = sync(
+            CatalogSyncSpec {
+                repo_root: root,
+                manifest_dir,
+                render_out_dir: None,
+                apply: true,
+            },
+            &registry,
+        )
+        .unwrap_err();
+
+        assert!(
+            err.to_string().contains("verifier-gated"),
+            "unexpected error: {err:#}"
+        );
+    }
+
+    #[test]
+    fn lock_check_reports_drift_without_writes() {
+        let root = fixture_root();
+        write_fixture(&root);
+        let lock_path = root.join("manifest/envctl.lock");
+        let before = std::fs::read(&lock_path).unwrap();
+        let manifest_dir = root.join("manifest");
+        let registry = Registry::load(&manifest_dir).unwrap();
+
+        let report = lock(
+            CatalogLockSpec {
+                repo_root: root.clone(),
+                manifest_dir,
+                apply: false,
+            },
+            &registry,
+        )
+        .unwrap();
+
+        assert_eq!(std::fs::read(&lock_path).unwrap(), before);
+        assert!(!report.summary.mutating);
+        assert!(!report.summary.applied);
+        assert!(!report.summary.lock_written);
+        assert!(report.summary.before_drifts > 0, "{report:#?}");
+        assert_eq!(report.summary.before_drifts, report.summary.after_drifts);
+        assert_eq!(report.before_sha256, report.after_sha256);
+    }
+
+    #[test]
+    fn lock_apply_updates_envctl_lock() {
+        let root = fixture_root();
+        write_fixture(&root);
+        let lock_path = root.join("manifest/envctl.lock");
+        let before = std::fs::read_to_string(&lock_path).unwrap();
+        let manifest_dir = root.join("manifest");
+        let registry = Registry::load(&manifest_dir).unwrap();
+
+        let report = lock(
+            CatalogLockSpec {
+                repo_root: root.clone(),
+                manifest_dir: manifest_dir.clone(),
+                apply: true,
+            },
+            &registry,
+        )
+        .unwrap();
+
+        let after = std::fs::read_to_string(&lock_path).unwrap();
+        assert_ne!(before, after);
+        assert!(report.summary.mutating);
+        assert!(report.summary.applied);
+        assert!(report.summary.lock_written);
+        assert!(report.summary.before_drifts > 0, "{report:#?}");
+        assert_eq!(report.summary.after_drifts, 0);
+        assert_ne!(report.before_sha256, report.after_sha256);
+        let lock_file = LockFile::load(&manifest_dir).unwrap();
+        assert!(lock::diff(&registry, &lock_file).is_empty());
     }
 
     fn render_tree_hashes(root: &Path) -> std::collections::BTreeMap<String, String> {
