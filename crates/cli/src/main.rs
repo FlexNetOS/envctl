@@ -7,6 +7,7 @@ use clap::{Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::Shell;
 use std::collections::BTreeSet;
 use std::io::IsTerminal;
+use std::path::PathBuf;
 use std::time::Duration;
 
 /// Clap help styling (ported from kasetto `colors::clap_styles`): amber `#e8a94d`
@@ -43,11 +44,12 @@ use envctl_engine::secrets::run_secretctl;
 use envctl_engine::{
     AddRepoMode, AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentDoctorSpec, AgentInitSpec,
     AgentListKind, AgentListSpec, AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentScope,
-    AgentSectionSel, AgentSyncSpec, AiAgent, BuildStrategy, BuildSystem, CatalogSnapshot,
-    CatalogTableName, DashboardSpec, DriftSummary, Engine, EnvReport, Event, EventSink,
-    HubRegistryReport, HubRegistryStatus, MigrationAction, MigrationReport, MigrationRisk,
-    MigrationScope, MigrationSpec, MigrationStatus, MigrationVerb, OpStatus, Phase, Refactor,
-    RefactorGoal, RenameRule, ResetGates, RunPlan, SelfUninstallSpec, Severity,
+    AgentSectionSel, AgentSyncSpec, AiAgent, BuildStrategy, BuildSystem, CatalogDiffReport,
+    CatalogImportReport, CatalogLockReport, CatalogRenderReport, CatalogSnapshot,
+    CatalogSyncReport, CatalogTableName, DashboardSpec, DriftSummary, Engine, EnvReport, Event,
+    EventSink, HubRegistryReport, HubRegistryStatus, MigrationAction, MigrationReport,
+    MigrationRisk, MigrationScope, MigrationSpec, MigrationStatus, MigrationVerb, OpStatus, Phase,
+    Refactor, RefactorGoal, RenameRule, ResetGates, RunPlan, SelfUninstallSpec, Severity,
 };
 
 #[derive(Parser)]
@@ -64,6 +66,12 @@ use envctl_engine::{
         "envctl install --dry-run",
         "envctl migrate scan",
         "envctl catalog scan --json",
+        "envctl catalog import --json",
+        "envctl catalog diff",
+        "envctl catalog render --out /tmp/envctl-catalog",
+        "envctl catalog sync --render-out /tmp/envctl-catalog-sync",
+        "envctl catalog lock --check",
+        "envctl catalog lock --apply",
         "envctl agent sync --apply",
         "envctl graph --impact secretd",
     )
@@ -564,7 +572,7 @@ enum Cmd {
     },
 }
 
-/// Read-only catalog subcommands. Later ADR-0003 slices add diff/render/sync/edit.
+/// Catalog control-plane subcommands. ADR-0003 keeps file import/diff/render/sync read-only until verifier-gated apply slices; lock writes require explicit opt-in.
 #[derive(Subcommand)]
 enum CatalogCmd {
     /// Import current files into an in-memory catalog snapshot.
@@ -588,6 +596,71 @@ enum CatalogCmd {
     Table {
         /// Table name, e.g. components or env-vars.
         name: String,
+    },
+    /// Import current files into normalized catalog rows with an explicit report.
+    #[command(
+        long_about = "Read manifest, lock, agent-env, Codex/MCP, hub registry, layout, secrets, and handoff surfaces into normalized catalog rows. Read-only: no lock writes, no renders, no sync.",
+        after_help = envctl_examples!(
+            "envctl catalog import",
+            "envctl catalog import --json",
+        )
+    )]
+    Import,
+    /// Report file/catalog/lock drift without writing files.
+    #[command(
+        long_about = "Compare the normalized catalog with source config files, lock state, registry drift, and observed facts. Read-only: no lock writes, no renders, no sync.",
+        after_help = envctl_examples!(
+            "envctl catalog diff",
+            "envctl catalog diff --json",
+        )
+    )]
+    Diff,
+    /// Render deterministic catalog projections into an explicit output directory.
+    #[command(
+        long_about = "Render ADR-0003 generated-file projections into an explicit output directory for review. The output directory must be outside the repo root; current repo files are never mutated.",
+        after_help = envctl_examples!(
+            "envctl catalog render --out /tmp/envctl-catalog",
+            "envctl catalog render --out /tmp/envctl-catalog --json",
+        )
+    )]
+    Render {
+        /// Output directory for generated projections; must be outside the repo root.
+        #[arg(long, value_name = "DIR")]
+        out: PathBuf,
+    },
+    /// Preview bidirectional file/catalog reconciliation without mutating repo files.
+    #[command(
+        long_about = "Preview ADR-0003 bidirectional reconciliation. The command imports current files, reports drift, and can render projections into an out-of-repo directory. --apply is fail-closed until verifier-gated row edits land.",
+        after_help = envctl_examples!(
+            "envctl catalog sync",
+            "envctl catalog sync --json",
+            "envctl catalog sync --render-out /tmp/envctl-catalog-sync",
+        )
+    )]
+    Sync {
+        /// Optional output directory for generated projections; must be outside the repo root.
+        #[arg(long = "render-out", value_name = "DIR")]
+        render_out: Option<PathBuf>,
+        /// Attempt apply. Currently fail-closed until verifier-gated row edit/apply support lands.
+        #[arg(long)]
+        apply: bool,
+    },
+    /// Check or accept the catalog lock projection.
+    #[command(
+        long_about = "Check or update ADR-0003's lock projection at manifest/envctl.lock. Default and --check are read-only; --apply writes only envctl.lock from the current manifest registry.",
+        after_help = envctl_examples!(
+            "envctl catalog lock",
+            "envctl catalog lock --check --json",
+            "envctl catalog lock --apply",
+        )
+    )]
+    Lock {
+        /// Exit non-zero when catalog/lock drift exists; never writes files.
+        #[arg(long)]
+        check: bool,
+        /// Accept current manifest registry into manifest/envctl.lock.
+        #[arg(long)]
+        apply: bool,
     },
 }
 
@@ -1911,9 +1984,9 @@ fn migration_marker(status: MigrationStatus, protected: bool) -> &'static str {
 }
 
 fn run_catalog(engine: &Engine, cmd: CatalogCmd, json: bool) -> anyhow::Result<()> {
-    let snapshot = engine.catalog_scan()?;
     match cmd {
         CatalogCmd::Scan => {
+            let snapshot = engine.catalog_scan()?;
             if json {
                 println!("{}", serde_json::to_string_pretty(&snapshot)?);
             } else {
@@ -1921,6 +1994,7 @@ fn run_catalog(engine: &Engine, cmd: CatalogCmd, json: bool) -> anyhow::Result<(
             }
         }
         CatalogCmd::Table { name } => {
+            let snapshot = engine.catalog_scan()?;
             let table = name
                 .parse::<CatalogTableName>()
                 .map_err(|err| anyhow::anyhow!(err))?;
@@ -1929,6 +2003,52 @@ fn run_catalog(engine: &Engine, cmd: CatalogCmd, json: bool) -> anyhow::Result<(
                 println!("{}", serde_json::to_string_pretty(&table_value)?);
             } else {
                 print_catalog_table(table, &table_value)?;
+            }
+        }
+        CatalogCmd::Import => {
+            let report = engine.catalog_import()?;
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            } else {
+                print_catalog_import(&report);
+            }
+        }
+        CatalogCmd::Diff => {
+            let report = engine.catalog_diff()?;
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            } else {
+                print_catalog_diff(&report);
+            }
+        }
+        CatalogCmd::Render { out } => {
+            let report = engine.catalog_render(&out)?;
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            } else {
+                print_catalog_render(&report);
+            }
+        }
+        CatalogCmd::Sync { render_out, apply } => {
+            let report = engine.catalog_sync(render_out.as_deref(), apply)?;
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            } else {
+                print_catalog_sync(&report);
+            }
+        }
+        CatalogCmd::Lock { check, apply } => {
+            if check && apply {
+                anyhow::bail!("catalog lock accepts either --check or --apply, not both");
+            }
+            let report = engine.catalog_lock(apply)?;
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            } else {
+                print_catalog_lock(&report);
+            }
+            if check && report.summary.before_drifts > 0 {
+                std::process::exit(1);
             }
         }
     }
@@ -1978,6 +2098,122 @@ fn print_catalog_table(table: CatalogTableName, value: &serde_json::Value) -> an
         println!("{}", cells.join("\t"));
     }
     Ok(())
+}
+
+fn print_catalog_import(report: &CatalogImportReport) {
+    println!("envctl catalog import (read-only)");
+    println!("repo_root: {}", report.repo_root);
+    println!("manifest_dir: {}", report.manifest_dir);
+    println!("mutating: {}", yes_no(report.summary.mutating));
+    println!("tables: {}", report.summary.tables);
+    println!("rows: {}", report.summary.rows);
+    println!("components: {}", report.summary.components);
+    println!("config_files: {}", report.summary.config_files);
+    println!("settings: {}", report.summary.settings);
+    println!("env_vars: {}", report.summary.env_vars);
+}
+
+fn print_catalog_diff(report: &CatalogDiffReport) {
+    println!("envctl catalog diff (read-only)");
+    println!("repo_root: {}", report.repo_root);
+    println!("manifest_dir: {}", report.manifest_dir);
+    println!("mutating: {}", yes_no(report.summary.mutating));
+    println!("config_files: {}", report.summary.config_files);
+    println!("components: {}", report.summary.components);
+    println!("drift_count: {}", report.summary.drift_count);
+    println!("lock_drifts: {}", report.summary.lock_drifts);
+    println!("parse_errors: {}", report.summary.parse_errors);
+    println!("read_errors: {}", report.summary.read_errors);
+    println!("missing_files: {}", report.summary.missing_files);
+    if report.drift.is_empty() {
+        println!("\nno catalog drift found");
+        return;
+    }
+
+    println!("\ndrift:");
+    for row in &report.drift {
+        println!(
+            "  {:<18} {:<14} {:<32} {}",
+            row.severity, row.drift_kind, row.subject_id, row.details
+        );
+    }
+}
+
+fn print_catalog_render(report: &CatalogRenderReport) {
+    println!("envctl catalog render (no repo mutation)");
+    println!("repo_root: {}", report.repo_root);
+    println!("manifest_dir: {}", report.manifest_dir);
+    println!("out_dir: {}", report.out_dir);
+    println!("mutating_repo: {}", yes_no(report.summary.mutating_repo));
+    println!("generated_files: {}", report.summary.generated_files);
+    println!(
+        "generated_config_rows: {}",
+        report.summary.generated_config_rows
+    );
+    println!("bytes: {}", report.summary.bytes);
+    println!("\nfiles:");
+    for file in &report.files {
+        println!(
+            "  {:<52} {:>8} bytes  {}",
+            file.path, file.bytes, file.sha256
+        );
+    }
+}
+
+fn print_catalog_sync(report: &CatalogSyncReport) {
+    println!("envctl catalog sync (preview)");
+    println!("repo_root: {}", report.repo_root);
+    println!("manifest_dir: {}", report.manifest_dir);
+    println!("mutating: {}", yes_no(report.summary.mutating));
+    println!("applied: {}", yes_no(report.summary.applied));
+    println!("verifier_status: {}", report.summary.verifier_status);
+    println!("drift_count: {}", report.summary.drift_count);
+    println!("planned_actions: {}", report.summary.planned_actions);
+    println!("rendered_files: {}", report.summary.rendered_files);
+    if report.planned_actions.is_empty() {
+        println!("\nno sync actions planned");
+    } else {
+        println!("\nactions:");
+        for action in &report.planned_actions {
+            println!(
+                "  {:<12} {:<24} {:<18} {}",
+                action.action_id, action.action_kind, action.subject_id, action.reason
+            );
+        }
+    }
+    if let Some(render) = &report.render {
+        println!("\nrendered_projection: {}", render.out_dir);
+        println!("rendered_files: {}", render.summary.generated_files);
+    }
+}
+
+fn print_catalog_lock(report: &CatalogLockReport) {
+    println!("envctl catalog lock");
+    println!("lock_path: {}", report.lock_path);
+    println!("mutating: {}", yes_no(report.summary.mutating));
+    println!("components: {}", report.summary.components);
+    println!("before_drifts: {}", report.summary.before_drifts);
+    println!("after_drifts: {}", report.summary.after_drifts);
+    println!("lock_written: {}", yes_no(report.summary.lock_written));
+    if report.drift.is_empty() {
+        println!("\nlock projection is current");
+    } else {
+        println!("\nlock drift:");
+        for row in &report.drift {
+            println!(
+                "  {:<14} {:<32} {}",
+                row.drift_kind, row.subject_id, row.details
+            );
+        }
+    }
+}
+
+fn yes_no(value: bool) -> &'static str {
+    if value {
+        "yes"
+    } else {
+        "no"
+    }
 }
 
 fn catalog_cell(value: &serde_json::Value) -> String {
