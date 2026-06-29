@@ -4,7 +4,7 @@
 //! *identical* `Engine` API below, so the two front-ends can never diverge.
 pub mod addrepo; // Phase 4: the staged build-from-source pipeline + confined AI agent
 pub mod agent; // agent-env subsystem: the 6 agent-asset verbs over envctl-agent-env
-pub mod catalog; // ADR-0003: read-only query catalog over files -> normalized tables
+pub mod catalog; // ADR-0003: catalog tables plus read-only diff/render projections
 pub mod command;
 pub mod component; // Component, Hook, Guard, Phase, HookRunner
 pub mod dashboard; // meta mission-control: read .meta.yaml -> render zellij KDL layout
@@ -40,7 +40,10 @@ pub use agent::{
     AgentRemoveSpec, AgentReport, AgentScope, AgentSectionSel, AgentSyncSpec, AgentUpdateCheck,
     AgentVerb,
 };
-pub use catalog::{CatalogScanSpec, CatalogSnapshot, CatalogTableName};
+pub use catalog::{
+    CatalogDiffReport, CatalogDiffSummary, CatalogDriftRow, CatalogRenderReport, CatalogRenderSpec,
+    CatalogRenderSummary, CatalogRenderedFile, CatalogScanSpec, CatalogSnapshot, CatalogTableName,
+};
 pub use command::{
     run_event_loop, AgentCommandSpec, EngineCommand, EngineEvent, MigrationCommandSpec,
     TelemetryControl,
@@ -79,7 +82,7 @@ pub use self_update::{
 // GUI dep set frozen). The engine owns the zeroize dep; the GUI uses it through this path.
 pub use zeroize::Zeroizing;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 /// Top-level engine handle: owns the Registry, manifest dir, and a HookRunner.
@@ -169,6 +172,31 @@ impl Engine {
             catalog::CatalogScanSpec {
                 repo_root: root,
                 manifest_dir: self.inner.manifest_dir.clone(),
+            },
+            &self.inner.registry,
+        )
+    }
+
+    /// Read-only ADR-0003 catalog diff: file/catalog/lock drift without mutation.
+    pub fn catalog_diff(&self) -> anyhow::Result<CatalogDiffReport> {
+        let root = workspace_root_for_manifest_dir(&self.inner.manifest_dir);
+        catalog::diff(
+            catalog::CatalogScanSpec {
+                repo_root: root,
+                manifest_dir: self.inner.manifest_dir.clone(),
+            },
+            &self.inner.registry,
+        )
+    }
+
+    /// Render deterministic ADR-0003 catalog projections into an explicit output dir.
+    pub fn catalog_render(&self, out_dir: impl AsRef<Path>) -> anyhow::Result<CatalogRenderReport> {
+        let root = workspace_root_for_manifest_dir(&self.inner.manifest_dir);
+        catalog::render(
+            catalog::CatalogRenderSpec {
+                repo_root: root,
+                manifest_dir: self.inner.manifest_dir.clone(),
+                out_dir: out_dir.as_ref().to_path_buf(),
             },
             &self.inner.registry,
         )
