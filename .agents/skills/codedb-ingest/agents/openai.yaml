@@ -1,0 +1,4 @@
+interface:
+  display_name: "CodeDB Ingest"
+  short_description: "Transform files and repo facts into CodeDB tables"
+  default_prompt: "Use $codedb-ingest to transform configs, settings, environments, and source files into CodeDB table exports."
