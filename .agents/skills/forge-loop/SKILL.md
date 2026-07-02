@@ -167,11 +167,20 @@ instead the reap runs at the safe boundaries where merge status is settled:
 - **`session-relay-wrap-up`** reaps after the handoff commit.
 Both call `scripts/reap-worktrees.sh` — dry-run by default, never `--force`, protects
 `master`/`develop`/the current worktree, skips any dirty worktree, and only reaps a branch whose
-upstream is `[gone]` (merged) or that is an ancestor of `origin/master`. You may also run
-`bash scripts/reap-worktrees.sh` anytime to preview, or `--apply` to reap on demand. The reaper
-also **fast-forwards the protected trunk branches** (`master`, `develop`) to origin — FF-only and
-clean-only (an ahead/diverged/dirty branch is left untouched) — so the main checkout's `master`
-mirror and `develop` stay in lockstep with origin without a manual merge after each develop push.
+patches are already represented on `origin/master` (ancestor or squash/patch-equivalent). An upstream
+`[gone]` marker is only a diagnostic that the temporary remote branch disappeared; it is **not** proof
+of merge. You may also run `bash scripts/reap-worktrees.sh` anytime to preview, or `--apply` to reap
+on demand. The reaper also **fast-forwards the protected trunk branches** (`master`, `develop`) to
+origin — FF-only and clean-only (an ahead/diverged/dirty branch is left untouched) — so the main
+checkout's `master` mirror and `develop` stay in lockstep with origin without a manual merge after
+each develop push.
+
+**Checkout identity rule:** in `meta/.worktrees/<slug>/envctl`, `<slug>` is the managed meta
+worktree-set slug and `envctl` is only the repo checkout name. The main checkout
+`/home/drdave/Desktop/meta/envctl` has no managed slug. Never derive a slug with `basename "$PWD"`
+or `basename "$(git rev-parse --show-toplevel)"`; guard it with
+`bash scripts/reap-worktrees.sh --managed-worktree-slug <path> envctl` before any
+`meta git worktree status <slug>` call.
 
 ## Batch wrap-up cadence (the periodic boundary — keeps long sessions from drifting)
 The loop runs tasks **back-to-back with no per-task pause** (one PR each, tick-on-merged), and batches

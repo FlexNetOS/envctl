@@ -2,7 +2,8 @@
 //! repo becomes a first-class managed component. Captures full provenance
 //! (source/ref/sha/strategy/build_system/build_cmd/transform/artifacts), a
 //! SHA-pinned rebuild-from-source `install` hook, a `verify`, and a `remove` that
-//! excises ONLY our managed symlinks then drops the 0700 clone. The text is fed
+//! excises ONLY our managed regular frontdoors or legacy managed symlinks then
+//! drops the 0700 clone. The text is fed
 //! into executor::add_repo's existing atomic temp+rename+backup writer (one code
 //! path over components.d). For Refactor::Ai the rebuild REPLAYS the recorded SHA,
 //! never re-drives the agent.
@@ -73,23 +74,23 @@ pub fn synth_dropin(spec: &RegisterSpec) -> String {
         .relinks
         .iter()
         .filter(|(name, rel)| safe_name(name) && safe_rel(rel))
-        .map(|(name, rel)| format!("ln -sfn \"$SRC/{rel}\" \"$BIN/{name}\""))
+        .map(|(name, rel)| format!("envctl_frontdoor \"$SRC/{rel}\" \"$BIN/{name}\""))
         .collect::<Vec<_>>()
         .join("\n");
-    let excise_names: Vec<String> = spec
+    let excise_entries: Vec<(String, String)> = spec
         .relinks
         .iter()
-        .map(|(name, _)| name.clone())
-        .filter(|name| safe_name(name))
+        .filter(|(name, rel)| safe_name(name) && safe_rel(rel))
+        .map(|(name, rel)| (name.clone(), rel.clone()))
         .collect();
-    let excise: String = if excise_names.is_empty() {
+    let excise: String = if excise_entries.is_empty() {
         "true".into()
     } else {
-        excise_names
+        excise_entries
             .iter()
-            .map(|name| format!(
-                "t=\"$BIN/{name}\"; if [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$STORE/{slug}\"; then rm -f \"$t\"; fi",
-                slug = spec.slug
+            .map(|(name, rel)| format!(
+                "t=\"$BIN/{name}\"; s=\"$SRC/{rel}\"; if [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$STORE/{slug}\"; then rm -f \"$t\"; elif [ -f \"$t\" ] && [ -f \"$s\" ] && {{ cmp -s \"$t\" \"$s\" || grep -Fqx \"exec \\\"$s\\\" \\\"\\$@\\\"\" \"$t\"; }}; then rm -f \"$t\"; fi",
+                slug = spec.slug,
             ))
             .collect::<Vec<_>>()
             .join("\n")
@@ -164,6 +165,9 @@ pub fn synth_dropin(spec: &RegisterSpec) -> String {
     s.push_str("M=\"${META_ROOT:?META_ROOT required}\"\n");
     s.push_str("STORE=\"$M/var/lib/envctl/repos\"\n");
     s.push_str("BIN=\"$M/usr/bin\"\n");
+    s.push_str(
+        "envctl_frontdoor() { src=\"$1\"; dst=\"$2\"; printf '%s\\n' '#!/bin/sh' \"exec \\\"$src\\\" \\\"\\$@\\\"\" > \"$dst\"; chmod 755 \"$dst\"; }\n",
+    );
     s.push_str("install -d -m 700 \"$STORE\"\n");
     s.push_str(&format!("SRC=\"$STORE/{}\"\n", spec.slug));
     s.push_str(&format!(

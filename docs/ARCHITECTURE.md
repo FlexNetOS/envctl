@@ -81,10 +81,11 @@ envctl/                         # cargo workspace root
 
 **Dependency discipline (constraint: mainstream + few, stable Rust).** Everything compiles on
 stable. `serde`/`toml`/`anyhow`/`thiserror` live behind the engine's public API; the GUI sees
-only the engine's types. GPU telemetry uses `nvidia-smi` with a hard timeout and falls back to an
-empty sample when the driver is not active, matching the kit's existing command-line probe path
-without adding GPU FFI dependencies. `sysinfo` covers CPU/mem/disk/kernel; `which` locates
-binaries for version probes; `chrono` stamps reports. No web, no WebView, nothing nightly.
+only the engine's types. GPU inventory uses the proc-backed driver source of truth plus
+`nvidia-smi`/`nvcc` best-effort enrichment with a hard timeout, and the telemetry sampler reuses
+the same hard-timeout `nvidia-smi` probe to avoid hangs when the driver is absent or wedged.
+`sysinfo` covers CPU/mem/disk/kernel; `which` locates binaries for version probes; `chrono` stamps
+reports. No web, no WebView, nothing nightly.
 
 ---
 
@@ -395,9 +396,10 @@ Always yields a report, even on the software-rendered first boot with no driver:
 * **Tier 1 — `/proc/driver/nvidia/version` (driver state).** Presence of the file means
   `driver_loaded=true`; the parsed version string becomes `driver_version` when available.
 * **Tier 2 — `nvidia-smi` / `nvcc` enrichment (best-effort, hard timeout).**
-  `nvidia-smi --query-gpu=index,name,uuid,pci.bus_id,compute_cap,driver_version,memory.total,memory.used,temperature.gpu,utilization.gpu,power.draw --format=csv,noheader,nounits`
-  enriches the GPU list; `nvcc --version` supplies the CUDA toolchain version. Both are optional
-  enrichments, never the source of truth for driver presence.
+  `nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw --format=csv,noheader,nounits`
+  samples the live telemetry fields; `nvidia-smi --query-gpu=name --format=csv,noheader` and
+  `nvcc --version` supply best-effort inventory details. These are optional enrichments, never the
+  source of truth for driver presence.
 
 `open_kernel_module` comes from `modinfo -F license nvidia` (MIT/GPL means the open kernel module).
 `software_rendered = (PCI sees NVIDIA) AND NOT driver_loaded` drives the "reboot to load the
@@ -447,9 +449,11 @@ best-effort with refuse-on-ambiguity.
 6. **install** — into meta-local roots: bins → `$META_ROOT/usr/bin`, libs →
    `$META_ROOT/usr/lib`, completions → the shell's XDG dir, `.desktop` →
    `$META_ROOT/.local/share/applications`, man → `$META_ROOT/.local/share/man`.
-   **Symlink-by-default** (clean update/reset), `--copy` to materialize; always
-   timestamped-backup before clobber (the `yazelix-config.sh .bak.$(date)` pattern); refuse to
-   overwrite an unmanaged file without `--force`.
+   **Regular-wrapper-by-default** for binaries: `$META_ROOT/usr/bin/<name>` is an
+   executable shell frontdoor that `exec`s the private meta-owned artifact, not a symlink or
+   direct copy. Updates replace only byte-identical managed wrappers or legacy managed
+   symlinks; always timestamped-backup before clobber; refuse to overwrite an unmanaged
+   file without `--force`.
 7. **wire-in** — apply the component's `Wiring`: ensure `$META_ROOT/usr/bin` on PATH via a guarded
    `# >>> BEGIN envctl path >>>` block; install completions; XDG desktop entry; for
    `daemon`-flagged components write + `systemctl --user enable --now` a unit. All guarded,
@@ -555,8 +559,8 @@ owns its state, the worker owns the engine, they communicate only by message-pas
 ## 11. Telemetry
 
 Source mirrors the kit: shell out to
-`nvidia-smi --query-gpu=index,name,driver_version,temperature.gpu,utilization.gpu,memory.used,memory.total --format=csv,noheader,nounits`
-with a hard timeout, one `GpuSample` per GPU (handles the dual 5090 by index). Pre-reboot,
+`nvidia-smi --query-gpu=index,name,utilization.gpu,memory.used,memory.total,temperature.gpu,power.draw --format=csv,noheader,nounits`
+through the same hard-timeout helper as inventory probes, one `GpuSample` per GPU (handles the dual 5090 by index). Pre-reboot,
 nvidia-smi is absent/failing → reported as `GpuState::DriverNotActive` (the yellow card), never a
 panic. CPU+mem come from `sysinfo` (or `/proc/stat` + `/proc/meminfo` directly to stay lean). The
 sampler emits `Event::Telemetry` every ~1s while the Dashboard is active, backing off to ~3-5s on
@@ -643,9 +647,9 @@ pipeline: euid-0 refusal, `allow_build` opt-in gate, acquire into a 0700 store w
 origin-verify-on-reuse + hardened git, the patch/AI transform with a
 structurally-confined agent, streamed build in its own process group with a timeout,
 glob locate, strategy shaping) · `install.rs` (symlink into `$META_ROOT/usr/bin`,
-PATH-shadow refusal, canonical managed-symlink ownership, refuse-unmanaged-unless-force,
+PATH-shadow refusal, canonical managed-wrapper ownership with legacy symlink migration, refuse-unmanaged-unless-force,
 PATH wire-in via the existing `Wiring`) · `register.rs` (synthesize the provenance
-drop-in with a SHA-pinned rebuild + owned-symlink remove, written through the
+drop-in with a SHA-pinned rebuild + owned-wrapper remove, written through the
 executor's atomic temp+rename+backup writer). Streaming reuses `Event::Log` /
 `StepFinished{phase: Install}` so CLI + GUI render identically.
 

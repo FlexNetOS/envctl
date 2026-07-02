@@ -438,15 +438,31 @@ fn inspect_bin_entry(
         return;
     };
     let resolved = canonical_or_self(path.to_path_buf());
+    if md.file_type().is_symlink() {
+        let kind = if resolved.starts_with(meta_root)
+            && matches!(file_kind, MetaBoundaryViolationKind::ForeignLocalBinFile)
+        {
+            MetaBoundaryViolationKind::MetaFrontdoorSymlink
+        } else if resolved.starts_with(meta_root) {
+            return;
+        } else {
+            MetaBoundaryViolationKind::ForeignSymlinkTarget
+        };
+        push_violation(tool, path, &resolved, expected_root, kind, seen, violations);
+        return;
+    }
     if resolved.starts_with(meta_root) {
         return;
     }
-    let kind = if md.file_type().is_symlink() {
-        MetaBoundaryViolationKind::ForeignSymlinkTarget
-    } else {
-        file_kind
-    };
-    push_violation(tool, path, &resolved, expected_root, kind, seen, violations);
+    push_violation(
+        tool,
+        path,
+        &resolved,
+        expected_root,
+        file_kind,
+        seen,
+        violations,
+    );
 }
 
 fn push_violation(
@@ -554,6 +570,22 @@ mod tests {
     }
 
     #[test]
+    fn run_capture_timeout_drains_noisy_output() {
+        let out = run_capture_timeout(
+            "sh",
+            &[
+                "-lc",
+                "i=0; while [ \"$i\" -lt 20000 ]; do printf 'line%05d\\n' \"$i\"; i=$((i + 1)); done",
+            ],
+            Duration::from_secs(2),
+        )
+        .expect("noisy command should complete without filling the pipe");
+
+        assert!(out.contains("line00000"), "missing first line");
+        assert!(out.contains("line19999"), "missing final line");
+    }
+
+    #[test]
     fn proc_nvidia_driver_version_from_str_parses_version_token() {
         let sample =
             "NVRM version: NVIDIA UNIX Open Kernel Module for x86_64  610.54.03  Release Build";
@@ -573,8 +605,8 @@ mod tests {
     }
 
     #[test]
-    fn meta_boundary_accepts_meta_usr_bin_symlink_into_meta_root() {
-        let root = temp_root("accepts-meta-usr-bin-symlink");
+    fn meta_boundary_refuses_meta_usr_bin_symlink_into_meta_root() {
+        let root = temp_root("refuses-meta-usr-bin-symlink");
         let meta = root.join("meta");
         let local_bin = meta.join("usr/bin");
         let cargo_bin = meta.join(".toolchains/cargo/bin");
@@ -587,7 +619,11 @@ mod tests {
 
         let report = meta_boundary_report_for(&meta, &local_bin, &cargo_bin, false);
 
-        assert!(report.ok(), "{:?}", report.violations);
+        assert_eq!(report.violations.len(), 1);
+        assert_eq!(
+            report.violations[0].kind,
+            MetaBoundaryViolationKind::MetaFrontdoorSymlink
+        );
         let _ = std::fs::remove_dir_all(root);
     }
 
