@@ -1,0 +1,376 @@
+{
+ "target": "icm",
+ "branch": "chore/rusty-idd-fleet-adapter",
+ "git_sha": "5fde8fc0726675facaadc01a447e3220ccba7844",
+ "generated": "2026-06-27",
+ "symbol_count": 1629,
+ "file_count": 56,
+ "edge_count_resolved": 3069,
+ "edge_count_indexed_intra": 3069,
+ "by_crate": {
+  "icm-cli": {
+   "symbols": 862,
+   "files": 29
+  },
+  "icm-core": {
+   "symbols": 224,
+   "files": 16
+  },
+  "icm-mcp": {
+   "symbols": 148,
+   "files": 4
+  },
+  "icm-store": {
+   "symbols": 323,
+   "files": 3
+  },
+  "plugins": {
+   "symbols": 4,
+   "files": 1
+  },
+  "scripts": {
+   "symbols": 68,
+   "files": 3
+  }
+ },
+ "scc_total": 1620,
+ "cycle_count": 7,
+ "self_loops": 0,
+ "largest_cycles": [
+  {
+   "size": 3,
+   "members": [
+    "new_cache",
+    "with_dims",
+    "new"
+   ],
+   "crates": [
+    "icm-store"
+   ]
+  },
+  {
+   "size": 3,
+   "members": [
+    "load_memoirs",
+    "load_health",
+    "new"
+   ],
+   "crates": [
+    "icm-cli"
+   ]
+  },
+  {
+   "size": 2,
+   "members": [
+    "with_model",
+    "new"
+   ],
+   "crates": [
+    "icm-core"
+   ]
+  },
+  {
+   "size": 2,
+   "members": [
+    "new",
+    "new"
+   ],
+   "crates": [
+    "icm-core"
+   ]
+  },
+  {
+   "size": 2,
+   "members": [
+    "new",
+    "new"
+   ],
+   "crates": [
+    "icm-core"
+   ]
+  },
+  {
+   "size": 2,
+   "members": [
+    "cache_get",
+    "get"
+   ],
+   "crates": [
+    "icm-store"
+   ]
+  },
+  {
+   "size": 2,
+   "members": [
+    "update",
+    "summary_hash"
+   ],
+   "crates": [
+    "icm-store"
+   ]
+  }
+ ],
+ "layering_violation_count": 0,
+ "layering_violations_sample": [],
+ "cross_crate_edges": {
+  "icm-cli->icm-core": 40,
+  "icm-store->icm-core": 38,
+  "icm-cli->icm-store": 35,
+  "icm-mcp->icm-core": 17,
+  "icm-mcp->icm-store": 1
+ },
+ "public_api_count": 225,
+ "public_api_by_crate": {
+  "icm-cli": 100,
+  "icm-core": 77,
+  "icm-mcp": 17,
+  "icm-store": 31
+ },
+ "dead_code_candidates": 326,
+ "top_hotspots": [
+  {
+   "name": "get",
+   "crate": "icm-store",
+   "file": "crates/icm-store/src/store.rs",
+   "line": 926,
+   "caller_count": 183
+  },
+  {
+   "name": "make_memory",
+   "crate": "icm-store",
+   "file": "crates/icm-store/src/store.rs",
+   "line": 3369,
+   "caller_count": 151
+  },
+  {
+   "name": "test_store",
+   "crate": "icm-store",
+   "file": "crates/icm-store/src/store.rs",
+   "line": 3365,
+   "caller_count": 147
+  },
+  {
+   "name": "store",
+   "crate": "icm-store",
+   "file": "crates/icm-store/src/store.rs",
+   "line": 907,
+   "caller_count": 143
+  },
+  {
+   "name": "error",
+   "crate": "icm-mcp",
+   "file": "crates/icm-mcp/src/protocol.rs",
+   "line": 87,
+   "caller_count": 108
+  },
+  {
+   "name": "call_tool",
+   "crate": "icm-mcp",
+   "file": "crates/icm-mcp/src/tools.rs",
+   "line": 717,
+   "caller_count": 89
+  },
+  {
+   "name": "test_store",
+   "crate": "icm-mcp",
+   "file": "crates/icm-mcp/src/tools.rs",
+   "line": 2357,
+   "caller_count": 62
+  },
+  {
+   "name": "new",
+   "crate": "icm-store",
+   "file": "crates/icm-store/src/store.rs",
+   "line": 104,
+   "caller_count": 60
+  },
+  {
+   "name": "text",
+   "crate": "icm-mcp",
+   "file": "crates/icm-mcp/src/protocol.rs",
+   "line": 77,
+   "caller_count": 55
+  },
+  {
+   "name": "get_str",
+   "crate": "icm-mcp",
+   "file": "crates/icm-mcp/src/tools.rs",
+   "line": 905,
+   "caller_count": 54
+  },
+  {
+   "name": "new",
+   "crate": "icm-core",
+   "file": "crates/icm-core/src/memory.rs",
+   "line": 38,
+   "caller_count": 47
+  },
+  {
+   "name": "is_icm_command",
+   "crate": "icm-cli",
+   "file": "crates/icm-cli/src/main.rs",
+   "line": 2371,
+   "caller_count": 35
+  },
+  {
+   "name": "add_concept",
+   "crate": "icm-store",
+   "file": "crates/icm-store/src/store.rs",
+   "line": 1714,
+   "caller_count": 34
+  },
+  {
+   "name": "from",
+   "crate": "icm-cli",
+   "file": "crates/icm-cli/src/main.rs",
+   "line": 949,
+   "caller_count": 33
+  },
+  {
+   "name": "make_concept",
+   "crate": "icm-store",
+   "file": "crates/icm-store/src/store.rs",
+   "line": 3377,
+   "caller_count": 33
+  },
+  {
+   "name": "new",
+   "crate": "icm-cli",
+   "file": "crates/icm-cli/src/tui.rs",
+   "line": 94,
+   "caller_count": 31
+  },
+  {
+   "name": "new",
+   "crate": "icm-core",
+   "file": "crates/icm-core/src/memoir.rs",
+   "line": 207,
+   "caller_count": 28
+  },
+  {
+   "name": "in_memory",
+   "crate": "icm-store",
+   "file": "crates/icm-store/src/store.rs",
+   "line": 441,
+   "caller_count": 28
+  },
+  {
+   "name": "sanitize_fts_query",
+   "crate": "icm-store",
+   "file": "crates/icm-store/src/store.rs",
+   "line": 603,
+   "caller_count": 26
+  },
+  {
+   "name": "insert",
+   "crate": "icm-store",
+   "file": "crates/icm-store/src/store.rs",
+   "line": 6239,
+   "caller_count": 26
+  }
+ ],
+ "top_blast_radius": [
+  {
+   "name": "new",
+   "crate": "icm-store",
+   "caller_count": 60,
+   "transitive_dependents": 281
+  },
+  {
+   "name": "new",
+   "crate": "icm-core",
+   "caller_count": 47,
+   "transitive_dependents": 232
+  },
+  {
+   "name": "test_store",
+   "crate": "icm-store",
+   "caller_count": 147,
+   "transitive_dependents": 147
+  },
+  {
+   "name": "get",
+   "crate": "icm-store",
+   "caller_count": 183,
+   "transitive_dependents": 142
+  },
+  {
+   "name": "make_memory",
+   "crate": "icm-store",
+   "caller_count": 151,
+   "transitive_dependents": 98
+  },
+  {
+   "name": "store",
+   "crate": "icm-store",
+   "caller_count": 143,
+   "transitive_dependents": 97
+  },
+  {
+   "name": "error",
+   "crate": "icm-mcp",
+   "caller_count": 108,
+   "transitive_dependents": 97
+  },
+  {
+   "name": "text",
+   "crate": "icm-mcp",
+   "caller_count": 55,
+   "transitive_dependents": 97
+  },
+  {
+   "name": "get_str",
+   "crate": "icm-mcp",
+   "caller_count": 54,
+   "transitive_dependents": 85
+  },
+  {
+   "name": "call_tool",
+   "crate": "icm-mcp",
+   "caller_count": 89,
+   "transitive_dependents": 62
+  },
+  {
+   "name": "test_store",
+   "crate": "icm-mcp",
+   "caller_count": 62,
+   "transitive_dependents": 62
+  },
+  {
+   "name": "add_concept",
+   "crate": "icm-store",
+   "caller_count": 34,
+   "transitive_dependents": 18
+  },
+  {
+   "name": "is_icm_command",
+   "crate": "icm-cli",
+   "caller_count": 35,
+   "transitive_dependents": 17
+  },
+  {
+   "name": "make_concept",
+   "crate": "icm-store",
+   "caller_count": 33,
+   "transitive_dependents": 17
+  },
+  {
+   "name": "from",
+   "crate": "icm-cli",
+   "caller_count": 33,
+   "transitive_dependents": 14
+  }
+ ],
+ "entrypoint_kinds": {
+  "binary": 4,
+  "handler": 16,
+  "public_api": 120,
+  "test": 294
+ },
+ "mcp_tool_count": 31,
+ "web_route_count": 15,
+ "dead_code_git_kb_test_excluded": 99,
+ "dead_code_note": "326 = raw caller_count==0 (functions/methods, name-excludes test); inflated by test-helpers, trait Default impls (trait dispatch unresolved), and TS web fns (get/post/del) called from Svelte (cross-language edges unresolved). git-kb dead (test-excluded) = 99. True dead code is a subset; verify per-symbol with callers before pruning.",
+ "scc_note": "7 cyclic SCCs, all size 2-3 and all intra-crate (constructor/cache helper clusters, e.g. new<->with_dims). No cross-crate cycles. self_loops=0.",
+ "layering_note": "0 violations. Crate edges flow downward only: icm-cli(L3)->icm-mcp(L2)->icm-store(L1)->icm-core(L0). Cross-crate edge counts: {\"icm-cli->icm-core\": 40, \"icm-store->icm-core\": 38, \"icm-cli->icm-store\": 35, \"icm-mcp->icm-core\": 17, \"icm-mcp->icm-store\": 1}"
+}

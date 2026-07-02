@@ -7,6 +7,7 @@ Cargo.lock.bak
 # Test/playwright ephemeral artifacts
 .meta-snapshots/
 # .playwright-mcp/
+scripts/__pycache__/
 
 # Agent harness output (generated, not committed)
 # .agent/
@@ -46,3 +47,4 @@ Cargo.lock.bak
 .handoff/**/*.redb.tmp
 /.handoff/workspaces/
 /.handoff/locks/
+/.handoff/maps/

@@ -12,18 +12,28 @@
 set -euo pipefail
 
 fail() { echo "FAIL: $*" >&2; exit 1; }
-# Locate the packaged planning-engineer eject.sh regardless of which of the two byte-identical copies
-# is running (mirrored into envctl/scripts/tests/ and the harness_hub plugin). Walk up from this
-# script to the meta-worktree root (holding both envctl/ and harness_hub/) and descend to the plugin.
+# Locate planning-engineer eject.sh from repo-local ejected mirrors first, then the packaged
+# harness_hub copy. Local-first prevents a stale sibling checkout from downgrading this PR
+# during envctl CI; package fallbacks keep the same test runnable in harness_hub.
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"; root="$here"
-# Prefer the repo-local ejected copy first; a sibling harness_hub checkout can be older than this PR.
-EJECT="$(git -C "$here" rev-parse --show-toplevel 2>/dev/null)/.claude/skills/planning-engineer/scripts/eject.sh"
-REL="harness_hub/harness/skills/planning-engineer/scripts/eject.sh"
-if [ ! -f "$EJECT" ]; then
-  while [ "$root" != "/" ] && [ ! -f "$root/$REL" ]; do root="$(dirname "$root")"; done
-  EJECT="$root/$REL"
+repo_root="$(git -C "$here" rev-parse --show-toplevel 2>/dev/null || true)"
+# Prefer the repo-local ejected copy first; a sibling harness_hub checkout can lag this PR and would
+# make the test validate stale package code instead of the version this repo is about to ship.
+EJECT=""
+if [ -n "$repo_root" ] && [ -f "$repo_root/.claude/skills/planning-engineer/scripts/eject.sh" ]; then
+  EJECT="$repo_root/.claude/skills/planning-engineer/scripts/eject.sh"
 fi
-[ -f "$EJECT" ] || { echo "FAIL: planning-engineer eject.sh not found from $here" >&2; exit 1; }
+# Fallback for harness_hub package CI (or a meta-worktree root that has only the packaged copy).
+REL="harness_hub/harness/skills/planning-engineer/scripts/eject.sh"
+if [ -z "$EJECT" ]; then
+  while [ "$root" != "/" ] && [ ! -f "$root/$REL" ]; do root="$(dirname "$root")"; done
+  [ -f "$root/$REL" ] && EJECT="$root/$REL"
+fi
+# Final fallback for package-repo standalone CI.
+if [ -z "$EJECT" ] && [ -n "$repo_root" ] && [ -f "$repo_root/harness/skills/planning-engineer/scripts/eject.sh" ]; then
+  EJECT="$repo_root/harness/skills/planning-engineer/scripts/eject.sh"
+fi
+[ -n "$EJECT" ] && [ -f "$EJECT" ] || { echo "FAIL: planning-engineer eject.sh not found from $here" >&2; exit 1; }
 PLUGIN="$(cd "$(dirname "$EJECT")/../../.." && pwd)"   # harness/  — same root eject.sh computes
 
 tmp="$(mktemp -d)"
@@ -35,10 +45,19 @@ run_eject() { bash "$EJECT" "$TARGET" >/dev/null 2>&1; }
 
 # 1. first eject — OWN skills + agents must land
 run_eject || fail "first eject exited non-zero"
-for s in planning-engineer plan-loop plan-cartography plan-memory-vector-intelligence plan-autoresearch-loop plan-rules-policy-org plan-distributed-compute plan-dependency-graph plan-trend-research plan-governance-config plan-filesystem-layout plan-prompt-architecture plan-test-strategy plan-synthesis code-research-verify; do
+for s in planning-engineer plan-loop plan-cartography plan-memory-vector-intelligence \
+         plan-autoresearch-loop plan-rules-policy-org plan-distributed-compute \
+         plan-dependency-graph plan-trend-research plan-governance-config \
+         plan-filesystem-layout plan-prompt-architecture plan-test-strategy \
+         plan-synthesis code-research-verify; do
   [ -d "$TARGET/.claude/skills/$s" ] || fail "OWN skill not copied: $s"
 done
-for a in plan-cartographer plan-memory-vector-intelligence-auditor plan-autoresearch-loop-auditor plan-rules-policy-org-auditor plan-distributed-compute-auditor plan-dependency-graph-auditor plan-trend-researcher plan-governance-config-auditor plan-filesystem-layout-auditor plan-prompt-architecture-auditor plan-analyst plan-test-strategist plan-verifier plan-architect; do
+for a in plan-cartographer plan-memory-vector-intelligence-auditor \
+         plan-autoresearch-loop-auditor plan-rules-policy-org-auditor \
+         plan-distributed-compute-auditor plan-dependency-graph-auditor \
+         plan-trend-researcher plan-governance-config-auditor \
+         plan-filesystem-layout-auditor plan-prompt-architecture-auditor \
+         plan-analyst plan-test-strategist plan-verifier plan-architect; do
   [ -f "$TARGET/.claude/agents/$a.md" ] || fail "OWN agent not copied: $a"
 done
 

@@ -14,11 +14,12 @@ path_entries = ["$META_ROOT/usr/bin"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; [ -x "$M/usr/bin/hf" ] && [ -x "$M/usr/bin/hf-mcp" ] && [ "$(readlink "$M/.local/bin/hf" 2>/dev/null || true)" = "$M/usr/bin/hf" ] && case "$(readlink -f "$M/usr/bin/hf" 2>/dev/null)" in "$M"/*) ;; *) exit 1;; esac && case "$(readlink -f "$M/usr/bin/hf-mcp" 2>/dev/null)" in "$M"/*) ;; *) exit 1;; esac''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; [ -x "$M/usr/bin/hf" ] && [ ! -L "$M/usr/bin/hf" ] && [ -x "$M/usr/bin/hf-mcp" ] && [ ! -L "$M/usr/bin/hf-mcp" ] && grep -Fq 'exec "' "$M/usr/bin/hf" && grep -Fq 'exec "' "$M/usr/bin/hf-mcp" && [ "$(readlink "$M/.local/bin/hf" 2>/dev/null || true)" = "$M/usr/bin/hf" ]''']
 
 [component.install]
 kind = "script"
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 repo="${HANDOFF_REPO:-$M/handoff}"
@@ -32,13 +33,7 @@ for bin in hf hf-mcp; do
   src="$CARGO_TARGET_DIR/release/$bin"
   [ -x "$src" ] || { echo "handoff-hf: missing built binary $src" >&2; exit 1; }
   link="$M/usr/bin/$bin"
-  if [ -e "$link" ] && [ "$(readlink -f "$link" 2>/dev/null || true)" != "$(readlink -f "$src")" ]; then
-    arch="$M/var/lib/envctl/legacy-archives/usr-bin-$(date -u +%Y-%m-%d)/usr/bin"
-    install -d -m 755 "$arch"
-    mv "$link" "$arch/$bin"
-    echo "handoff-hf: archived previous $link to $arch/$bin"
-  fi
-  ln -sfn "$src" "$link"
+  envctl_frontdoor "$src" "$link"
 done
 ln -sfn "$M/usr/bin/hf" "$M/.local/bin/hf"
 '''
@@ -46,11 +41,12 @@ ln -sfn "$M/usr/bin/hf" "$M/.local/bin/hf"
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export PATH="$M/usr/bin:$PATH"; [ "$(readlink -f "$M/.local/bin/hf" 2>/dev/null)" = "$(readlink -f "$M/usr/bin/hf" 2>/dev/null)" ] && case "$(readlink -f "$M/usr/bin/hf" 2>/dev/null)" in "$M"/*) ;; *) echo "handoff-hf: hf resolves outside META_ROOT" >&2; exit 1;; esac && case "$(readlink -f "$M/usr/bin/hf-mcp" 2>/dev/null)" in "$M"/*) ;; *) echo "handoff-hf: hf-mcp resolves outside META_ROOT" >&2; exit 1;; esac && timeout 5 "$M/usr/bin/hf" version && timeout 5 "$M/usr/bin/hf-mcp" --help >/dev/null 2>&1''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export PATH="$M/usr/bin:$PATH"; [ "$(readlink "$M/.local/bin/hf" 2>/dev/null || true)" = "$M/usr/bin/hf" ] && [ -x "$M/usr/bin/hf" ] && [ ! -L "$M/usr/bin/hf" ] && [ -x "$M/usr/bin/hf-mcp" ] && [ ! -L "$M/usr/bin/hf-mcp" ] && grep -Fq 'exec "' "$M/usr/bin/hf" && grep -Fq 'exec "' "$M/usr/bin/hf-mcp" && timeout 5 "$M/usr/bin/hf" version && timeout 5 "$M/usr/bin/hf-mcp" --help >/dev/null 2>&1''']
 
 [component.fix]
 kind = "script"
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 repo="${HANDOFF_REPO:-$M/handoff}"
@@ -60,12 +56,13 @@ export CARGO_TARGET_DIR="$M/var/cache/envctl/cargo-target/handoff"
 export PATH="$M/usr/bin:$CARGO_HOME/bin:$PATH"
 cargo build --release -p hf --manifest-path "$repo/Cargo.toml" --locked --target-dir "$CARGO_TARGET_DIR"
 install -d -m 755 "$M/usr/bin" "$M/.local/bin"
-ln -sfn "$CARGO_TARGET_DIR/release/hf" "$M/usr/bin/hf"
-ln -sfn "$CARGO_TARGET_DIR/release/hf-mcp" "$M/usr/bin/hf-mcp"
+envctl_frontdoor "$CARGO_TARGET_DIR/release/hf" "$M/usr/bin/hf"
+envctl_frontdoor "$CARGO_TARGET_DIR/release/hf-mcp" "$M/usr/bin/hf-mcp"
 ln -sfn "$M/usr/bin/hf" "$M/.local/bin/hf"
-'''
 
+
+'''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; rm -f "$M/usr/bin/hf" "$M/usr/bin/hf-mcp"; if [ "$(readlink "$M/.local/bin/hf" 2>/dev/null || true)" = "$M/usr/bin/hf" ]; then rm -f "$M/.local/bin/hf"; fi''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; frontdoor_is_managed(){ front="$1"; private="$2"; if [ -L "$front" ] && [ "$(readlink -f "$front" 2>/dev/null || true)" = "$(readlink -f "$private" 2>/dev/null || true)" ]; then return 0; fi; [ -f "$front" ] && grep -Fqx "exec \"$private\" \"\$@\"" "$front"; }; for bin in hf hf-mcp; do private="$M/var/cache/envctl/cargo-target/handoff/release/$bin"; front="$M/usr/bin/$bin"; if frontdoor_is_managed "$front" "$private"; then rm -f "$front"; fi; done; if [ "$(readlink "$M/.local/bin/hf" 2>/dev/null || true)" = "$M/usr/bin/hf" ]; then rm -f "$M/.local/bin/hf"; fi''']
