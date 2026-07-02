@@ -1,0 +1,1585 @@
+{
+ "target": "grit",
+ "graph_snapshot": "graph/grit.symbols.json@57b60842d71145c271b994bb7a8c33c3bca42dfe",
+ "generated": "2026-06-27",
+ "file_count": 11,
+ "symbol_count": 305,
+ "edge_count": 548,
+ "public_api_count": 74,
+ "centrality": {
+  "top_in_degree": [
+   {
+    "symbol_id": "src/parser/mod.rs::method::SymbolIndex.new",
+    "in_degree": 39,
+    "name": "new",
+    "file": "src/parser/mod.rs"
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::write_file",
+    "in_degree": 25,
+    "name": "write_file",
+    "file": "src/parser/mod.rs"
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+    "in_degree": 23,
+    "name": "scan_all",
+    "file": "src/parser/mod.rs"
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::ensure_initialized",
+    "in_degree": 19,
+    "name": "ensure_initialized",
+    "file": "src/cli/mod.rs"
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+    "in_degree": 19,
+    "name": "try_lock",
+    "file": "src/db/sqlite_store.rs"
+   },
+   {
+    "symbol_id": "src/db/mod.rs::method::Database.open",
+    "in_degree": 18,
+    "name": "open",
+    "file": "src/db/mod.rs"
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::find_sym",
+    "in_degree": 18,
+    "name": "find_sym",
+    "file": "src/parser/mod.rs"
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::setup_db",
+    "in_degree": 17,
+    "name": "setup_db",
+    "file": "src/db/mod.rs"
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::function::setup",
+    "in_degree": 14,
+    "name": "setup",
+    "file": "src/db/sqlite_store.rs"
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::method::SqliteLockStore.all_locks",
+    "in_degree": 13,
+    "name": "all_locks",
+    "file": "src/db/sqlite_store.rs"
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::resolve_lock_store",
+    "in_degree": 12,
+    "name": "resolve_lock_store",
+    "file": "src/cli/mod.rs"
+   },
+   {
+    "symbol_id": "src/db/mod.rs::method::Database.upsert_symbols",
+    "in_degree": 11,
+    "name": "upsert_symbols",
+    "file": "src/db/mod.rs"
+   },
+   {
+    "symbol_id": "src/git/mod.rs::method::GitRepo.open",
+    "in_degree": 10,
+    "name": "open",
+    "file": "src/git/mod.rs"
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::make_symbol",
+    "in_degree": 10,
+    "name": "make_symbol",
+    "file": "src/db/mod.rs"
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::validate_identifier",
+    "in_degree": 8,
+    "name": "validate_identifier",
+    "file": "src/cli/mod.rs"
+   }
+  ],
+  "top_out_degree": [
+   {
+    "symbol_id": "src/cli/mod.rs::function::run",
+    "out_degree": 23,
+    "name": "run",
+    "file": "src/cli/mod.rs"
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::cmd_claim",
+    "out_degree": 14,
+    "name": "cmd_claim",
+    "file": "src/cli/mod.rs"
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::cmd_done",
+    "out_degree": 13,
+    "name": "cmd_done",
+    "file": "src/cli/mod.rs"
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::cmd_assign",
+    "out_degree": 10,
+    "name": "cmd_assign",
+    "file": "src/cli/mod.rs"
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::cmd_release",
+    "out_degree": 9,
+    "name": "cmd_release",
+    "file": "src/cli/mod.rs"
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::cmd_init",
+    "out_degree": 9,
+    "name": "cmd_init",
+    "file": "src/cli/mod.rs"
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::cmd_session_pr",
+    "out_degree": 9,
+    "name": "cmd_session_pr",
+    "file": "src/cli/mod.rs"
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::cmd_status",
+    "out_degree": 8,
+    "name": "cmd_status",
+    "file": "src/cli/mod.rs"
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::cmd_session_end",
+    "out_degree": 8,
+    "name": "cmd_session_end",
+    "file": "src/cli/mod.rs"
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::cmd_session_status",
+    "out_degree": 7,
+    "name": "cmd_session_status",
+    "file": "src/cli/mod.rs"
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::cmd_session_start",
+    "out_degree": 6,
+    "name": "cmd_session_start",
+    "file": "src/cli/mod.rs"
+   },
+   {
+    "symbol_id": "src/db/azure_store.rs::method::AzureLockStore.try_read_lock",
+    "out_degree": 6,
+    "name": "try_read_lock",
+    "file": "src/db/azure_store.rs"
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::test_enqueue_preserves_position_on_requeue",
+    "out_degree": 6,
+    "name": "test_enqueue_preserves_position_on_requeue",
+    "file": "src/db/mod.rs"
+   },
+   {
+    "symbol_id": "src/db/s3_store.rs::method::S3LockStore.try_read_lock",
+    "out_degree": 6,
+    "name": "try_read_lock",
+    "file": "src/db/s3_store.rs"
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::promote_queued",
+    "out_degree": 5,
+    "name": "promote_queued",
+    "file": "src/cli/mod.rs"
+   }
+  ]
+ },
+ "hotspots": [
+  {
+   "symbol_id": "src/parser/mod.rs::method::SymbolIndex.new",
+   "name": "new",
+   "file": "src/parser/mod.rs",
+   "line": 94,
+   "caller_count": 81,
+   "indeg": 39,
+   "outdeg": 0
+  },
+  {
+   "symbol_id": "src/parser/mod.rs::function::find_sym",
+   "name": "find_sym",
+   "file": "src/parser/mod.rs",
+   "line": 605,
+   "caller_count": 68,
+   "indeg": 18,
+   "outdeg": 0
+  },
+  {
+   "symbol_id": "src/parser/mod.rs::method::SymbolQuery.new",
+   "name": "new",
+   "file": "src/parser/mod.rs",
+   "line": 54,
+   "caller_count": 53,
+   "indeg": 1,
+   "outdeg": 0
+  },
+  {
+   "symbol_id": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "name": "try_lock",
+   "file": "src/db/sqlite_store.rs",
+   "line": 48,
+   "caller_count": 36,
+   "indeg": 19,
+   "outdeg": 2
+  },
+  {
+   "symbol_id": "src/parser/mod.rs::function::write_file",
+   "name": "write_file",
+   "file": "src/parser/mod.rs",
+   "line": 595,
+   "caller_count": 29,
+   "indeg": 25,
+   "outdeg": 0
+  },
+  {
+   "symbol_id": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "name": "scan_all",
+   "file": "src/parser/mod.rs",
+   "line": 250,
+   "caller_count": 24,
+   "indeg": 23,
+   "outdeg": 3
+  },
+  {
+   "symbol_id": "src/db/mod.rs::function::make_symbol",
+   "name": "make_symbol",
+   "file": "src/db/mod.rs",
+   "line": 468,
+   "caller_count": 22,
+   "indeg": 10,
+   "outdeg": 0
+  },
+  {
+   "symbol_id": "src/db/mod.rs::method::Database.open",
+   "name": "open",
+   "file": "src/db/mod.rs",
+   "line": 44,
+   "caller_count": 19,
+   "indeg": 18,
+   "outdeg": 2
+  },
+  {
+   "symbol_id": "src/cli/mod.rs::function::ensure_initialized",
+   "name": "ensure_initialized",
+   "file": "src/cli/mod.rs",
+   "line": 369,
+   "caller_count": 19,
+   "indeg": 19,
+   "outdeg": 1
+  },
+  {
+   "symbol_id": "src/db/mod.rs::function::setup_db",
+   "name": "setup_db",
+   "file": "src/db/mod.rs",
+   "line": 480,
+   "caller_count": 17,
+   "indeg": 17,
+   "outdeg": 2
+  },
+  {
+   "symbol_id": "src/db/sqlite_store.rs::method::SqliteLockStore.all_locks",
+   "name": "all_locks",
+   "file": "src/db/sqlite_store.rs",
+   "line": 151,
+   "caller_count": 16,
+   "indeg": 13,
+   "outdeg": 1
+  },
+  {
+   "symbol_id": "src/db/mod.rs::method::Database.enqueue",
+   "name": "enqueue",
+   "file": "src/db/mod.rs",
+   "line": 387,
+   "caller_count": 16,
+   "indeg": 7,
+   "outdeg": 0
+  },
+  {
+   "symbol_id": "src/db/sqlite_store.rs::function::setup",
+   "name": "setup",
+   "file": "src/db/sqlite_store.rs",
+   "line": 204,
+   "caller_count": 14,
+   "indeg": 14,
+   "outdeg": 1
+  },
+  {
+   "symbol_id": "src/cli/mod.rs::function::validate_identifier",
+   "name": "validate_identifier",
+   "file": "src/cli/mod.rs",
+   "line": 262,
+   "caller_count": 14,
+   "indeg": 8,
+   "outdeg": 0
+  },
+  {
+   "symbol_id": "src/db/mod.rs::method::Database.upsert_symbols",
+   "name": "upsert_symbols",
+   "file": "src/db/mod.rs",
+   "line": 152,
+   "caller_count": 12,
+   "indeg": 11,
+   "outdeg": 0
+  }
+ ],
+ "cycles": {
+  "multi_node_sccs": [
+   [
+    {
+     "symbol_id": "src/db/mod.rs::method::Database.open",
+     "name": "open",
+     "file": "src/db/mod.rs"
+    },
+    {
+     "symbol_id": "src/db/sqlite_store.rs::method::SqliteLockStore.open",
+     "name": "open",
+     "file": "src/db/sqlite_store.rs"
+    }
+   ]
+  ],
+  "multi_node_scc_count": 1,
+  "self_recursive": [],
+  "interpretation": "The single multi-node SCC (Database.open <-> SqliteLockStore.open) is a RESOLVER ARTIFACT, not a true cycle: both methods call rusqlite::Connection::open(path) (db/mod.rs:45, sqlite_store.rs:32) and git-kb mis-resolved the ambiguous bare name open to each other. No true architectural cycle exists; the module call graph is a DAG.",
+  "true_architectural_cycles": 0
+ },
+ "dead_code": {
+  "internal_no_caller_count": 167,
+  "symbols": [
+   {
+    "symbol_id": "src/cli/mod.rs::struct::Cli",
+    "name": "Cli",
+    "file": "src/cli/mod.rs",
+    "kind": "struct",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::enum::Command",
+    "name": "Command",
+    "file": "src/cli/mod.rs",
+    "kind": "enum",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::enum::WorktreeAction",
+    "name": "WorktreeAction",
+    "file": "src/cli/mod.rs",
+    "kind": "enum",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::enum::SessionAction",
+    "name": "SessionAction",
+    "file": "src/cli/mod.rs",
+    "kind": "enum",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::enum::QueueAction",
+    "name": "QueueAction",
+    "file": "src/cli/mod.rs",
+    "kind": "enum",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::enum::ConfigAction",
+    "name": "ConfigAction",
+    "file": "src/cli/mod.rs",
+    "kind": "enum",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::grit_dir",
+    "name": "grit_dir",
+    "file": "src/cli/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::module::tests",
+    "name": "tests",
+    "file": "src/cli/mod.rs",
+    "kind": "module",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::test_validate_identifier_valid",
+    "name": "test_validate_identifier_valid",
+    "file": "src/cli/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::test_validate_identifier_empty",
+    "name": "test_validate_identifier_empty",
+    "file": "src/cli/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::test_validate_identifier_path_traversal",
+    "name": "test_validate_identifier_path_traversal",
+    "file": "src/cli/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::test_validate_identifier_slash",
+    "name": "test_validate_identifier_slash",
+    "file": "src/cli/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::test_validate_identifier_backslash",
+    "name": "test_validate_identifier_backslash",
+    "file": "src/cli/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::test_validate_identifier_starts_with_dash",
+    "name": "test_validate_identifier_starts_with_dash",
+    "file": "src/cli/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::test_validate_identifier_special_chars",
+    "name": "test_validate_identifier_special_chars",
+    "file": "src/cli/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::test_is_entry_expired_local_fresh",
+    "name": "test_is_entry_expired_local_fresh",
+    "file": "src/cli/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::test_is_entry_expired_local_expired",
+    "name": "test_is_entry_expired_local_expired",
+    "file": "src/cli/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::test_is_entry_expired_local_bad_timestamp",
+    "name": "test_is_entry_expired_local_bad_timestamp",
+    "file": "src/cli/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/cli/mod.rs::function::test_claim_wait_backoff_gives_up_after_timeout",
+    "name": "test_claim_wait_backoff_gives_up_after_timeout",
+    "file": "src/cli/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/config.rs::struct::GritConfig",
+    "name": "GritConfig",
+    "file": "src/config.rs",
+    "kind": "struct",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/config.rs::impl::Default_for_GritConfig",
+    "name": "GritConfig",
+    "file": "src/config.rs",
+    "kind": "impl",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/config.rs::impl::GritConfig",
+    "name": "GritConfig",
+    "file": "src/config.rs",
+    "kind": "impl",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/config.rs::module::tests",
+    "name": "tests",
+    "file": "src/config.rs",
+    "kind": "module",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/config.rs::function::test_default_config",
+    "name": "test_default_config",
+    "file": "src/config.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/config.rs::function::test_save_and_load",
+    "name": "test_save_and_load",
+    "file": "src/config.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/config.rs::function::test_load_missing_file",
+    "name": "test_load_missing_file",
+    "file": "src/config.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/config.rs::function::test_load_malformed_json",
+    "name": "test_load_malformed_json",
+    "file": "src/config.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/config.rs::function::test_s3_config_roundtrip",
+    "name": "test_s3_config_roundtrip",
+    "file": "src/config.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/azure_store.rs::struct::AzureLockStore",
+    "name": "AzureLockStore",
+    "file": "src/db/azure_store.rs",
+    "kind": "struct",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/db/azure_store.rs::struct::AzureConfig",
+    "name": "AzureConfig",
+    "file": "src/db/azure_store.rs",
+    "kind": "struct",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/db/azure_store.rs::constant::DEFAULT_PREFIX",
+    "name": "DEFAULT_PREFIX",
+    "file": "src/db/azure_store.rs",
+    "kind": "constant",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/azure_store.rs::enum::WriteReserve",
+    "name": "WriteReserve",
+    "file": "src/db/azure_store.rs",
+    "kind": "enum",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/azure_store.rs::impl::AzureLockStore",
+    "name": "AzureLockStore",
+    "file": "src/db/azure_store.rs",
+    "kind": "impl",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/azure_store.rs::method::AzureLockStore.from_config",
+    "name": "from_config",
+    "file": "src/db/azure_store.rs",
+    "kind": "method",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/db/azure_store.rs::impl::LockStore_for_AzureLockStore",
+    "name": "AzureLockStore",
+    "file": "src/db/azure_store.rs",
+    "kind": "impl",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/azure_store.rs::method::AzureLockStore.try_lock",
+    "name": "try_lock",
+    "file": "src/db/azure_store.rs",
+    "kind": "method",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/azure_store.rs::method::AzureLockStore.release",
+    "name": "release",
+    "file": "src/db/azure_store.rs",
+    "kind": "method",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/azure_store.rs::method::AzureLockStore.release_all",
+    "name": "release_all",
+    "file": "src/db/azure_store.rs",
+    "kind": "method",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/azure_store.rs::method::AzureLockStore.all_locks",
+    "name": "all_locks",
+    "file": "src/db/azure_store.rs",
+    "kind": "method",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/azure_store.rs::method::AzureLockStore.locks_for_agent",
+    "name": "locks_for_agent",
+    "file": "src/db/azure_store.rs",
+    "kind": "method",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/azure_store.rs::method::AzureLockStore.gc_expired_locks",
+    "name": "gc_expired_locks",
+    "file": "src/db/azure_store.rs",
+    "kind": "method",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/azure_store.rs::method::AzureLockStore.refresh_ttl",
+    "name": "refresh_ttl",
+    "file": "src/db/azure_store.rs",
+    "kind": "method",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/lock_store.rs::struct::LockEntry",
+    "name": "LockEntry",
+    "file": "src/db/lock_store.rs",
+    "kind": "struct",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/db/lock_store.rs::function::default_mode",
+    "name": "default_mode",
+    "file": "src/db/lock_store.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/lock_store.rs::enum::LockResult",
+    "name": "LockResult",
+    "file": "src/db/lock_store.rs",
+    "kind": "enum",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/db/lock_store.rs::trait::LockStore",
+    "name": "LockStore",
+    "file": "src/db/lock_store.rs",
+    "kind": "trait",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/db/mod.rs::module::azure_store",
+    "name": "azure_store",
+    "file": "src/db/mod.rs",
+    "kind": "module",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/db/mod.rs::module::lock_store",
+    "name": "lock_store",
+    "file": "src/db/mod.rs",
+    "kind": "module",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/db/mod.rs::module::s3_store",
+    "name": "s3_store",
+    "file": "src/db/mod.rs",
+    "kind": "module",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/db/mod.rs::module::sqlite_store",
+    "name": "sqlite_store",
+    "file": "src/db/mod.rs",
+    "kind": "module",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/db/mod.rs::type_alias::SymbolRow",
+    "name": "SymbolRow",
+    "file": "src/db/mod.rs",
+    "kind": "type_alias",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/db/mod.rs::type_alias::QueueRow",
+    "name": "QueueRow",
+    "file": "src/db/mod.rs",
+    "kind": "type_alias",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/db/mod.rs::struct::Database",
+    "name": "Database",
+    "file": "src/db/mod.rs",
+    "kind": "struct",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/db/mod.rs::impl::Database",
+    "name": "Database",
+    "file": "src/db/mod.rs",
+    "kind": "impl",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/mod.rs::method::Database.count_deps",
+    "name": "count_deps",
+    "file": "src/db/mod.rs",
+    "kind": "method",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/db/mod.rs::module::tests",
+    "name": "tests",
+    "file": "src/db/mod.rs",
+    "kind": "module",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::test_open_and_init_schema",
+    "name": "test_open_and_init_schema",
+    "file": "src/db/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::test_upsert_and_count_symbols",
+    "name": "test_upsert_and_count_symbols",
+    "file": "src/db/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::test_upsert_updates_existing",
+    "name": "test_upsert_updates_existing",
+    "file": "src/db/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::test_list_symbols_no_filter",
+    "name": "test_list_symbols_no_filter",
+    "file": "src/db/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::test_list_symbols_with_filter",
+    "name": "test_list_symbols_with_filter",
+    "file": "src/db/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::test_search_symbols",
+    "name": "test_search_symbols",
+    "file": "src/db/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::test_available_symbols_in_files",
+    "name": "test_available_symbols_in_files",
+    "file": "src/db/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::test_session_lifecycle",
+    "name": "test_session_lifecycle",
+    "file": "src/db/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::test_no_active_session",
+    "name": "test_no_active_session",
+    "file": "src/db/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::test_integrity_check_on_open",
+    "name": "test_integrity_check_on_open",
+    "file": "src/db/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::test_queue_enqueue_and_list",
+    "name": "test_queue_enqueue_and_list",
+    "file": "src/db/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::test_queue_position",
+    "name": "test_queue_position",
+    "file": "src/db/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::test_queue_next_in_queue",
+    "name": "test_queue_next_in_queue",
+    "file": "src/db/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::test_queue_dequeue",
+    "name": "test_queue_dequeue",
+    "file": "src/db/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::test_queue_dequeue_all",
+    "name": "test_queue_dequeue_all",
+    "file": "src/db/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::test_upsert_and_get_deps",
+    "name": "test_upsert_and_get_deps",
+    "file": "src/db/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::test_transitive_deps",
+    "name": "test_transitive_deps",
+    "file": "src/db/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::test_enqueue_preserves_position_on_requeue",
+    "name": "test_enqueue_preserves_position_on_requeue",
+    "file": "src/db/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/mod.rs::function::test_availability_ignores_expired_locks",
+    "name": "test_availability_ignores_expired_locks",
+    "file": "src/db/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/s3_store.rs::struct::S3LockStore",
+    "name": "S3LockStore",
+    "file": "src/db/s3_store.rs",
+    "kind": "struct",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/db/s3_store.rs::constant::DEFAULT_LOCK_PREFIX",
+    "name": "DEFAULT_LOCK_PREFIX",
+    "file": "src/db/s3_store.rs",
+    "kind": "constant",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/s3_store.rs::enum::WriteReserve",
+    "name": "WriteReserve",
+    "file": "src/db/s3_store.rs",
+    "kind": "enum",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/s3_store.rs::impl::S3LockStore",
+    "name": "S3LockStore",
+    "file": "src/db/s3_store.rs",
+    "kind": "impl",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/s3_store.rs::method::S3LockStore.from_config",
+    "name": "from_config",
+    "file": "src/db/s3_store.rs",
+    "kind": "method",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/db/s3_store.rs::impl::LockStore_for_S3LockStore",
+    "name": "S3LockStore",
+    "file": "src/db/s3_store.rs",
+    "kind": "impl",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/s3_store.rs::method::S3LockStore.try_lock",
+    "name": "try_lock",
+    "file": "src/db/s3_store.rs",
+    "kind": "method",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/s3_store.rs::method::S3LockStore.release",
+    "name": "release",
+    "file": "src/db/s3_store.rs",
+    "kind": "method",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/s3_store.rs::method::S3LockStore.release_all",
+    "name": "release_all",
+    "file": "src/db/s3_store.rs",
+    "kind": "method",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/s3_store.rs::method::S3LockStore.all_locks",
+    "name": "all_locks",
+    "file": "src/db/s3_store.rs",
+    "kind": "method",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/s3_store.rs::method::S3LockStore.locks_for_agent",
+    "name": "locks_for_agent",
+    "file": "src/db/s3_store.rs",
+    "kind": "method",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/s3_store.rs::method::S3LockStore.gc_expired_locks",
+    "name": "gc_expired_locks",
+    "file": "src/db/s3_store.rs",
+    "kind": "method",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/s3_store.rs::method::S3LockStore.refresh_ttl",
+    "name": "refresh_ttl",
+    "file": "src/db/s3_store.rs",
+    "kind": "method",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/s3_store.rs::struct::S3Config",
+    "name": "S3Config",
+    "file": "src/db/s3_store.rs",
+    "kind": "struct",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::struct::SqliteLockStore",
+    "name": "SqliteLockStore",
+    "file": "src/db/sqlite_store.rs",
+    "kind": "struct",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::impl::SqliteLockStore",
+    "name": "SqliteLockStore",
+    "file": "src/db/sqlite_store.rs",
+    "kind": "impl",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::impl::LockStore_for_SqliteLockStore",
+    "name": "SqliteLockStore",
+    "file": "src/db/sqlite_store.rs",
+    "kind": "impl",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::module::tests",
+    "name": "tests",
+    "file": "src/db/sqlite_store.rs",
+    "kind": "module",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::function::test_lock_and_release",
+    "name": "test_lock_and_release",
+    "file": "src/db/sqlite_store.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::function::test_lock_blocked_by_other_agent",
+    "name": "test_lock_blocked_by_other_agent",
+    "file": "src/db/sqlite_store.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::function::test_same_agent_relock",
+    "name": "test_same_agent_relock",
+    "file": "src/db/sqlite_store.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::function::test_release_all",
+    "name": "test_release_all",
+    "file": "src/db/sqlite_store.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::function::test_all_locks",
+    "name": "test_all_locks",
+    "file": "src/db/sqlite_store.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::function::test_locks_for_agent",
+    "name": "test_locks_for_agent",
+    "file": "src/db/sqlite_store.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::function::test_gc_expired_locks",
+    "name": "test_gc_expired_locks",
+    "file": "src/db/sqlite_store.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::function::test_refresh_ttl",
+    "name": "test_refresh_ttl",
+    "file": "src/db/sqlite_store.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::function::test_concurrent_access",
+    "name": "test_concurrent_access",
+    "file": "src/db/sqlite_store.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::function::test_concurrent_access_separate_connections",
+    "name": "test_concurrent_access_separate_connections",
+    "file": "src/db/sqlite_store.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::function::test_read_lock_allows_multiple_readers",
+    "name": "test_read_lock_allows_multiple_readers",
+    "file": "src/db/sqlite_store.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::function::test_write_lock_blocks_readers",
+    "name": "test_write_lock_blocks_readers",
+    "file": "src/db/sqlite_store.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::function::test_read_lock_blocks_writers",
+    "name": "test_read_lock_blocks_writers",
+    "file": "src/db/sqlite_store.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::function::test_read_lock_does_not_block_readers",
+    "name": "test_read_lock_does_not_block_readers",
+    "file": "src/db/sqlite_store.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/db/sqlite_store.rs::function::test_mode_stored_in_lock_entry",
+    "name": "test_mode_stored_in_lock_entry",
+    "file": "src/db/sqlite_store.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/git/mod.rs::struct::GitRepo",
+    "name": "GitRepo",
+    "file": "src/git/mod.rs",
+    "kind": "struct",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/git/mod.rs::impl::GitRepo",
+    "name": "GitRepo",
+    "file": "src/git/mod.rs",
+    "kind": "impl",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/git/mod.rs::struct::FileLock",
+    "name": "FileLock",
+    "file": "src/git/mod.rs",
+    "kind": "struct",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/git/mod.rs::impl::Drop_for_FileLock",
+    "name": "FileLock",
+    "file": "src/git/mod.rs",
+    "kind": "impl",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/git/mod.rs::method::FileLock.drop",
+    "name": "drop",
+    "file": "src/git/mod.rs",
+    "kind": "method",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/git/mod.rs::module::tests",
+    "name": "tests",
+    "file": "src/git/mod.rs",
+    "kind": "module",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/git/mod.rs::function::merge_worktree_succeeds_on_clean_main_tree",
+    "name": "merge_worktree_succeeds_on_clean_main_tree",
+    "file": "src/git/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/git/mod.rs::function::merge_worktree_refuses_dirty_main_tree_and_preserves_branch",
+    "name": "merge_worktree_refuses_dirty_main_tree_and_preserves_branch",
+    "file": "src/git/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/main.rs::module::cli",
+    "name": "cli",
+    "file": "src/main.rs",
+    "kind": "module",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/main.rs::module::config",
+    "name": "config",
+    "file": "src/main.rs",
+    "kind": "module",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/main.rs::module::db",
+    "name": "db",
+    "file": "src/main.rs",
+    "kind": "module",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/main.rs::module::git",
+    "name": "git",
+    "file": "src/main.rs",
+    "kind": "module",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/main.rs::module::parser",
+    "name": "parser",
+    "file": "src/main.rs",
+    "kind": "module",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/main.rs::module::room",
+    "name": "room",
+    "file": "src/main.rs",
+    "kind": "module",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/main.rs::function::main",
+    "name": "main",
+    "file": "src/main.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::struct::Symbol",
+    "name": "Symbol",
+    "file": "src/parser/mod.rs",
+    "kind": "struct",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::struct::Dep",
+    "name": "Dep",
+    "file": "src/parser/mod.rs",
+    "kind": "struct",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::struct::SymbolIndex",
+    "name": "SymbolIndex",
+    "file": "src/parser/mod.rs",
+    "kind": "struct",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::struct::LangConfig",
+    "name": "LangConfig",
+    "file": "src/parser/mod.rs",
+    "kind": "struct",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::struct::SymbolQuery",
+    "name": "SymbolQuery",
+    "file": "src/parser/mod.rs",
+    "kind": "struct",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::enum::KindOverride",
+    "name": "KindOverride",
+    "file": "src/parser/mod.rs",
+    "kind": "enum",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::impl::SymbolQuery",
+    "name": "SymbolQuery",
+    "file": "src/parser/mod.rs",
+    "kind": "impl",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::method::SymbolQuery.with_kind_field",
+    "name": "with_kind_field",
+    "file": "src/parser/mod.rs",
+    "kind": "method",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::method::SymbolQuery.with_keyword",
+    "name": "with_keyword",
+    "file": "src/parser/mod.rs",
+    "kind": "method",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::enum::NameExtractor",
+    "name": "NameExtractor",
+    "file": "src/parser/mod.rs",
+    "kind": "enum",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::impl::SymbolIndex",
+    "name": "SymbolIndex",
+    "file": "src/parser/mod.rs",
+    "kind": "impl",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::module::tests",
+    "name": "tests",
+    "file": "src/parser/mod.rs",
+    "kind": "module",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_parse_rust_functions",
+    "name": "test_parse_rust_functions",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_parse_rust_struct_and_impl",
+    "name": "test_parse_rust_struct_and_impl",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_parse_rust_enum_and_trait",
+    "name": "test_parse_rust_enum_and_trait",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_parse_typescript_functions",
+    "name": "test_parse_typescript_functions",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_parse_typescript_class",
+    "name": "test_parse_typescript_class",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_parse_typescript_interface",
+    "name": "test_parse_typescript_interface",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_parse_python_functions",
+    "name": "test_parse_python_functions",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_parse_python_class",
+    "name": "test_parse_python_class",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_parse_javascript_functions",
+    "name": "test_parse_javascript_functions",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_symbol_id_format",
+    "name": "test_symbol_id_format",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_symbol_hash_deterministic",
+    "name": "test_symbol_hash_deterministic",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_skips_node_modules",
+    "name": "test_skips_node_modules",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_normalize_kind",
+    "name": "test_normalize_kind",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_parse_csharp",
+    "name": "test_parse_csharp",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_parse_go",
+    "name": "test_parse_go",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_parse_java",
+    "name": "test_parse_java",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_parse_c",
+    "name": "test_parse_c",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_parse_cpp",
+    "name": "test_parse_cpp",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_parse_ruby",
+    "name": "test_parse_ruby",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_parse_php",
+    "name": "test_parse_php",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_parse_swift",
+    "name": "test_parse_swift",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_parse_kotlin",
+    "name": "test_parse_kotlin",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_extract_deps_rust",
+    "name": "test_extract_deps_rust",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_extract_deps_typescript",
+    "name": "test_extract_deps_typescript",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/parser/mod.rs::function::test_extract_deps_python",
+    "name": "test_extract_deps_python",
+    "file": "src/parser/mod.rs",
+    "kind": "function",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/room/mod.rs::struct::RoomEvent",
+    "name": "RoomEvent",
+    "file": "src/room/mod.rs",
+    "kind": "struct",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/room/mod.rs::enum::EventType",
+    "name": "EventType",
+    "file": "src/room/mod.rs",
+    "kind": "enum",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/room/mod.rs::struct::Room",
+    "name": "Room",
+    "file": "src/room/mod.rs",
+    "kind": "struct",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/room/mod.rs::impl::Room",
+    "name": "Room",
+    "file": "src/room/mod.rs",
+    "kind": "impl",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/room/mod.rs::struct::NotificationServer",
+    "name": "NotificationServer",
+    "file": "src/room/mod.rs",
+    "kind": "struct",
+    "visibility": "pub"
+   },
+   {
+    "symbol_id": "src/room/mod.rs::impl::NotificationServer",
+    "name": "NotificationServer",
+    "file": "src/room/mod.rs",
+    "kind": "impl",
+    "visibility": null
+   },
+   {
+    "symbol_id": "src/room/mod.rs::constant::MAX_WATCHERS",
+    "name": "MAX_WATCHERS",
+    "file": "src/room/mod.rs",
+    "kind": "constant",
+    "visibility": null
+   }
+  ],
+  "interpretation": "167 symbols have zero INTERNAL graph callers. This is dominated by (a) trait/LockStore methods invoked via dyn dispatch, (b) CLI command handler arms reached through clap match dispatch in cli::run (not call edges), (c) pub API surface, and (d) serde helper default_mode (used via #[serde(default)] attribute, db/lock_store.rs:12). Not literal dead code; flagged for analyst review of any genuinely-unreferenced helper."
+ },
+ "layering": {
+  "module_call_edges": [
+   {
+    "from": "cli",
+    "to": "db",
+    "weight": 58
+   },
+   {
+    "from": "cli",
+    "to": "git",
+    "weight": 23
+   },
+   {
+    "from": "cli",
+    "to": "room",
+    "weight": 12
+   },
+   {
+    "from": "cli",
+    "to": "parser",
+    "weight": 10
+   },
+   {
+    "from": "cli",
+    "to": "config",
+    "weight": 6
+   },
+   {
+    "from": "db",
+    "to": "config",
+    "weight": 1
+   },
+   {
+    "from": "main",
+    "to": "cli",
+    "weight": 1
+   }
+  ],
+  "interpretation": "Clean layered DAG: main -> cli -> {db,git,room,parser,config}; db -> config. No upward/back edges (e.g. db->cli, parser->cli). Zero layering violations."
+ },
+ "index_health": {
+  "total_index_symbols": 511,
+  "total_index_files": 93,
+  "total_call_edges_index": 995,
+  "unresolved_calls_index": 3094,
+  "unresolved_by_reason": {
+   "no_match": 1977,
+   "skip_list": 1008,
+   "ambiguous": 101,
+   "stdlib_allowlist": 8
+  },
+  "files_skipped_on_index": 1
+ },
+ "notes": [
+  "git-kb code entrypoints query + entrypoints command both returned [] (no inferred entrypoints); the real entrypoint is src/main.rs::function::main -> cli::run, asserted from source.",
+  "dead_code here = zero INTERNAL callers in the intra-src call graph; CLI handler fns are dispatched via clap match in cli::run and report 0 graph callers (framework dispatch, not truly dead).",
+  "edge_count is intra-src resolved edges only; index reports 995 total call edges incl. test-projects + 3094 unresolved (mostly external crate calls: rusqlite/aws-sdk/tree-sitter/std)."
+ ]
+}

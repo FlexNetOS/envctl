@@ -24,7 +24,7 @@ args = ["-lc", "ghostty --version"]
 [[component]]
 id = "podman"
 name = "Podman (rootless containers)"
-description = "Rootless container stack from the static podman release, installed under $META_ROOT/.toolchains/podman. No wrapper: $META_ROOT/usr/bin/podman is a direct symlink to the meta-hosted podman binary; helper binaries and containers config are also meta-hosted."
+description = "Rootless container stack from the static podman release, installed under $META_ROOT/.toolchains/podman. $META_ROOT/usr/bin/podman is a regular executable frontdoor wrapper for the meta-hosted podman binary; helper binaries and containers config are also meta-hosted."
 [component.detect]
 kind = "command"
 command = "bash"
@@ -37,6 +37,7 @@ args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; B=\"$M/.toolchains/podma
 [component.install]
 kind = "script"
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/podman"
@@ -86,10 +87,11 @@ EOF
 for f in containers.conf storage.conf registries.conf policy.json; do
   [ -f "$DEST/etc/containers/$f" ] && ln -sfn "$DEST/etc/containers/$f" "$META_ROOT/.config/containers/$f"
 done
-ln -sfn "$DEST/usr/local/bin/podman" "$META_ROOT/usr/bin/podman"
+envctl_frontdoor "$DEST/usr/local/bin/podman" "$META_ROOT/usr/bin/podman"
 for b in crun runc fuse-overlayfs fusermount3 pasta; do
-  [ -x "$DEST/usr/local/bin/$b" ] && ln -sfn "$DEST/usr/local/bin/$b" "$META_ROOT/usr/bin/$b"
+  [ -x "$DEST/usr/local/bin/$b" ] && envctl_frontdoor "$DEST/usr/local/bin/$b" "$META_ROOT/usr/bin/$b"
 done
+
 '''
 [component.verify]
 kind = "command"
@@ -102,6 +104,7 @@ args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; P=\"$(command -v podman 
 [component.fix]
 kind = "script"
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/podman"
@@ -148,10 +151,11 @@ EOF
 for f in containers.conf storage.conf registries.conf policy.json; do
   [ -f "$DEST/etc/containers/$f" ] && ln -sfn "$DEST/etc/containers/$f" "$META_ROOT/.config/containers/$f"
 done
-ln -sfn "$DEST/usr/local/bin/podman" "$META_ROOT/usr/bin/podman"
+envctl_frontdoor "$DEST/usr/local/bin/podman" "$META_ROOT/usr/bin/podman"
 for b in crun runc fuse-overlayfs fusermount3 pasta; do
-  [ -x "$DEST/usr/local/bin/$b" ] && ln -sfn "$DEST/usr/local/bin/$b" "$META_ROOT/usr/bin/$b"
+  [ -x "$DEST/usr/local/bin/$b" ] && envctl_frontdoor "$DEST/usr/local/bin/$b" "$META_ROOT/usr/bin/$b"
 done
+
 '''
 [component.remove]
 kind = "command"

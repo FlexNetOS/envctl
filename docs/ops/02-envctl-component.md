@@ -179,8 +179,10 @@ test -d "$repo" || { echo "FATAL: workspace not found at $repo (set ENV_CTL_REPO
 cargo build --release --manifest-path "$repo/Cargo.toml" \
   -p envctl-secretd -p envctl-secretctl
 
-install -Dm755 "$repo/target/release/secretd"   "$META_ROOT/usr/bin/secretd"
-install -Dm755 "$repo/target/release/secretctl" "$META_ROOT/usr/bin/secretctl"
+install -Dm755 "$repo/target/release/secretd"   "$META_ROOT/usr/libexec/envctl/secrets/bin/secretd"
+install -Dm755 "$repo/target/release/secretctl" "$META_ROOT/usr/libexec/envctl/secrets/bin/secretctl"
+envctl_frontdoor "$META_ROOT/usr/libexec/envctl/secrets/bin/secretd" "$META_ROOT/usr/bin/secretd"
+envctl_frontdoor "$META_ROOT/usr/libexec/envctl/secrets/bin/secretctl" "$META_ROOT/usr/bin/secretctl"
 
 # XDG dirs, fail-closed perms (ARCHITECTURE.md layout). RUNTIME dir is created by the unit at start.
 install -d -m700 "$META_ROOT/.config/env-ctl"

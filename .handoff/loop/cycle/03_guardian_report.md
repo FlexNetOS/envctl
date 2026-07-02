@@ -1,29 +1,61 @@
-# Feature Forge guardian report — TASK-0072 Ollama model store into meta
-
-Date: 2026-06-27
-Branch/worktree: `task-0072-ollama-models-meta`
+# Guardian Report — ADR-0003 Catalog Phase 1
 
 ## Verdict
 
-PASS WITH NOTES — ready for PR and merge polling. Do not tick TASK-0072 done until the PR is MERGED.
+PASS-WITH-NOTES
 
-## Verification run
+This slice safely establishes the ADR-0003 read-only catalog/table foundation and CLI inspection surface. It does not claim ADR completion.
 
-- `cargo fmt --manifest-path Cargo.toml -p envctl-engine -p envctl` — PASS
-- `cargo test -p envctl-engine layout` — PASS (8 layout/matching tests passed)
-- `cargo test -p envctl --test env` — PASS (2 env export tests passed)
-- `cargo run -p envctl --bin envctl -- env --toolchains | grep -E 'OLLAMA_(MODELS|LIBRARY_PATH)'` — PASS
-  - observed `OLLAMA_LIBRARY_PATH=/home/drdave/Desktop/meta/.toolchains/ollama/lib/ollama`
-  - observed `OLLAMA_MODELS=/home/drdave/Desktop/meta/var/lib/ollama/models`
-- `cargo run -p envctl --bin envctl -- env --toolchains --json | jq -r '.OLLAMA_MODELS, .OLLAMA_LIBRARY_PATH'` — PASS
-  - observed `/home/drdave/Desktop/meta/var/lib/ollama/models`
-  - observed `/home/drdave/Desktop/meta/.toolchains/ollama/lib/ollama`
-- `cargo run -p envctl --bin envctl -- lock --check` — PASS (`envctl.lock matches the manifest (91 components)`)
-- `bash ci/gates/meta-local-policy.sh` — PASS
-- `bash ci/gates/no-c.sh` — PASS
-- `bash ci/gates/shape.sh` — PASS
-- `cargo clippy -p envctl-engine -p envctl -- -D warnings` — PASS
+## Invariants checked
 
-## Notes / inherited environment issue
+- Existing TOML/YAML/JSON/Rust/handoff inputs remain accepted; no source format was removed or replaced.
+- Catalog scan and table commands are read-only inspection paths.
+- No generated file writes, lock updates, or sync mutations were added.
+- Engine owns the catalog logic; CLI only invokes the shared engine surface and formats output.
+- Row contracts include first-class ownership/source/provenance fields and explicit manual override metadata.
+- `config_files` rows represent scanned source/control-plane files.
+- `observed_facts` rows capture read-only verifier-style observations from current repo files.
 
-`cargo fmt --all` failed in this worktree because the single-repo worktree has detached sibling path-dependency worktrees, and cargo/rustfmt tries to treat `loop_lib` as part of `/home/drdave/Desktop/meta/.worktrees/Cargo.toml`. This is a worktree-construction issue, not a touched-code formatting failure; touched packages were formatted explicitly.
+## Validation evidence
+
+Passed:
+
+- `cargo fmt --all`
+- `cargo test -p envctl-engine catalog`
+- `cargo test -p envctl-engine`
+- `cargo test -p envctl`
+- `cargo clippy --workspace -- -D warnings`
+- `bash ci/gates/shape.sh`
+- `bash ci/gates/agent-env.sh`
+- `bash ci/gates/p7.sh`
+- `bash ci/gates/loop-state.sh`
+- `bash ci/gates/harness-scripts.sh`
+- `bash ci/gates/meta-local-policy.sh`
+
+Runtime smoke passed:
+
+- `cargo run -q -p envctl --bin envctl -- catalog scan --json`
+- `cargo run -q -p envctl --bin envctl -- catalog table components`
+- `cargo run -q -p envctl --bin envctl -- catalog table observed-facts`
+- `cargo run -q -p envctl --bin envctl -- catalog table env-vars --json`
+
+Observed normalized row counts from the current repo:
+
+```text
+components: 96
+component_hooks: 376
+paths: 49
+settings: 2928
+env_vars: 105
+agent_assets: 51
+registries: 16
+config_files: 342
+migration_evidence: 0
+observed_facts: 694
+```
+
+## Notes / remaining ADR risk
+
+- `migration_evidence` has a row contract but no current evidence rows because this slice does not perform migrations or adoption actions.
+- ADR-0003 still requires diff/render/import/sync/lock/config-edit/widget behavior and final code-research-verify coverage.
+- The next safe slice should add read-only `catalog diff` and/or `catalog render --out <tempdir>` without applying mutations.

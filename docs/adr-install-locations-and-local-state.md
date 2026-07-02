@@ -66,6 +66,42 @@ contract requires XDG semantics. A future central dot-root
 may add one bridge per top-level dot directory, but it must follow the same rule: real file in meta,
 host path is only a bridge.
 
+## Real-home dot-entry relocation map
+
+The TASK-0078 audit/migration loop classifies every top-level real-home dot entry before any
+mutation. Default audit mode is read-only; mutation requires an explicit opt-in flag and a named
+allowlisted target. The current canonical map is:
+
+| real-home source | canonical target | mutation rule |
+|---|---|---|
+| `$ENVCTL_REAL_HOME/.local` | `$META_ROOT/.local` | The only sanctioned real-home `.local` object is the single directory bridge. |
+| Safe duplicate shell dotfiles (`.bash_logout`, `.profile`, `.zshenv`, `.zshrc`) | `$META_ROOT/<dot-entry>` | `--apply-shell-dotfiles` moves only duplicate/safe sources; differing files stay owner-supervised. |
+| History/backup dot entries | `$META_ROOT/var/lib/envctl/real-home-dotfile-migration/history-or-backup/<dot-entry>` | `--apply-history-archives` is required in addition to `--apply`; stale backup-only archive mode is intentionally absent. |
+| `.ideavimrc` | `$META_ROOT/.ideavimrc` | Named `--migrate-dot .ideavimrc` only; refuses non-regular-file sources. |
+| `.gphoto` | `$META_ROOT/.config/gphoto` | Named `--migrate-dot .gphoto` only; refuses non-directory sources. |
+| `.vscode-shared` | `$META_ROOT/.local/share/vscode-shared` | Named `--migrate-dot .vscode-shared` only; refuses non-directory sources. |
+| `.claude.json` | `$META_ROOT/.local/share/claude/claude.json` | Named `--migrate-dot .claude.json` only; preserves a real-home bridge for app compatibility. |
+| `.ollama` | `$META_ROOT/var/lib/ollama` | Named `--migrate-dot .ollama` only; model/state payloads remain meta-local and outside git. |
+| Known agent/app config dirs (`.agents`, `.ampcode`, `.claude`, `.codex`, `.codeium`, `.copilot`, `.cursor`, `.gemini`, `.goose_recipes`, `.junie`, `.kimi`, `.kimi-code`, `.roo`, `.vscode`, `.windsurf`, `.mozilla`, `.thunderbird`, `.repomix`) | `$META_ROOT/.local/share/<name>` | Named `--migrate-dot <entry>` only; conflicts/different existing targets stay owner-supervised. |
+| Broad config/cache/credential stores (`.config`, `.cache`, `.aws`, `.gnupg`, `.ssh`, and similar) | owner-supervised-vault-or-bridge | No automatic move; audit reports the class so a later component-specific upgrade can prove safety first. |
+
+For direct `.cache` children, `scripts/audit-meta-local-paths.sh` keeps the upgrade path read-only
+until a component manifest has been reviewed. Use `--owner-supervised-cache-child-component-plan`
+to derive the bounded component key and manifest hint, then
+`--owner-supervised-cache-child-component-manifest-status` to prove whether
+`manifest/components.d/cache-<component_key>.toml` already exists, and
+`--owner-supervised-cache-child-component-manifest-validation` to prove whether an existing
+manifest declares the expected `[[component]] id = "cache-<component_key>"`. When a manifest is
+missing, `--owner-supervised-cache-child-component-manifest-scaffold` emits the same validation
+state plus a deterministic escaped TOML stub (`manifest_stub`) for owner review; it does not write
+the file. Missing manifests must be created and reviewed before a named `--migrate-cache-child NAME`
+run; existing manifests must be reviewed before use; existing manifests with a missing or unrelated
+component id must be fixed before migration. These reports intentionally leave `apply_command` empty
+and do not move owner-supervised cache state.
+
+The review loop must keep this map synchronized with `scripts/audit-meta-local-paths.sh`,
+`scripts/tests/test-meta-local-path-audit.sh`, `home/README.md`, and `ci/gates/meta-local-policy.sh`.
+
 ## Decision: no `.local` peer repo
 
 A separate `.local` git peer is the wrong shape. `$META_ROOT/.local` and `$META_ROOT/.toolchains`
