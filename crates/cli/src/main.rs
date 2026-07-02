@@ -2165,22 +2165,37 @@ fn run_catalog(
 fn resolve_catalog_scan_spec(
     roots: CatalogRootArgs,
 ) -> anyhow::Result<(CatalogScanSpec, Option<Registry>)> {
-    let repo_root = roots
-        .repo_root
-        .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
+    let repo_root_arg = roots.repo_root;
+    let manifest_dir_arg = roots.manifest_dir;
+    let repo_root_was_explicit = repo_root_arg.is_some();
+    let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    let repo_root = repo_root_arg.unwrap_or_else(|| {
+        manifest_dir_arg
+            .as_ref()
+            .map(|manifest_dir| {
+                let manifest_dir = if manifest_dir.is_absolute() {
+                    manifest_dir.clone()
+                } else {
+                    cwd.join(manifest_dir)
+                };
+                manifest_dir
+                    .parent()
+                    .map(PathBuf::from)
+                    .unwrap_or_else(|| cwd.clone())
+            })
+            .unwrap_or_else(|| cwd.clone())
+    });
     let repo_root = std::fs::canonicalize(&repo_root).map_err(|err| {
         anyhow::anyhow!(
             "catalog repo root not found or unreadable: {}: {err}",
             repo_root.display()
         )
     })?;
-    let manifest_dir = roots
-        .manifest_dir
-        .unwrap_or_else(|| repo_root.join("manifest"));
-    let manifest_dir = if manifest_dir.is_absolute() {
-        manifest_dir
-    } else {
-        repo_root.join(manifest_dir)
+    let manifest_dir = match manifest_dir_arg {
+        Some(manifest_dir) if manifest_dir.is_absolute() => manifest_dir,
+        Some(manifest_dir) if repo_root_was_explicit => repo_root.join(manifest_dir),
+        Some(manifest_dir) => cwd.join(manifest_dir),
+        None => repo_root.join("manifest"),
     };
     let registry = if manifest_dir.is_dir() {
         Some(Registry::load(&manifest_dir)?)

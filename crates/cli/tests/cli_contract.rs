@@ -242,6 +242,33 @@ default = false
 }
 
 #[test]
+fn catalog_manifest_dir_defaults_repo_root_to_parent() {
+    let fx = Fixture::new();
+    let yazelix = fx.root.join("yazelix");
+    std::fs::create_dir_all(&yazelix).unwrap();
+    std::fs::write(
+        yazelix.join("settings_default.jsonc"),
+        r#"{"debug_mode":false}"#,
+    )
+    .unwrap();
+
+    let out = Command::new(bin())
+        .current_dir(&fx.root)
+        .args(["--json", "--manifest-dir"])
+        .arg(yazelix.join("missing-manifest"))
+        .args(["catalog", "table", "config-files"])
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "stderr: {}", stderr(&out));
+    let rows: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    let rows = rows.as_array().unwrap();
+    assert!(rows.iter().any(|row| {
+        row.get("path").and_then(|v| v.as_str()) == Some("settings_default.jsonc")
+            && row.get("file_kind").and_then(|v| v.as_str()) == Some("yazelix_settings_default")
+    }));
+}
+
+#[test]
 fn catalog_repo_root_imports_yazelix_codedb_file_inventory() {
     let fx = Fixture::new();
     let yazelix = fx.root.join("yazelix");
