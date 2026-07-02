@@ -2321,6 +2321,13 @@ canonical_target_for_dot() {
   esac
 }
 
+is_portable_app_config_file_dot() {
+  case "$1" in
+    .ideavimrc) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 is_migratable_dot() {
   local dot="$1"
 
