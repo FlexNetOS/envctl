@@ -37,9 +37,12 @@ warn(){ printf '\033[1;33m  ! %s\033[0m\n' "$*"; }
 echo; echo "================  GPU stack verification  ================"; echo
 
 DRIVER_OK=0
-if command -v nvidia-smi >/dev/null && nvidia-smi -L >/dev/null 2>&1; then
-  nvidia-smi -L | sed 's/^/  /'; ok "NVIDIA driver active"; DRIVER_OK=1
-  nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader 2>/dev/null | sed 's/^/  /'
+if [ -r /proc/driver/nvidia/version ]; then
+  ok "NVIDIA driver active (/proc/driver/nvidia/version)"; DRIVER_OK=1
+  if command -v nvidia-smi >/dev/null; then
+    nvidia-smi -L 2>/dev/null | sed 's/^/  /'
+    nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader 2>/dev/null | sed 's/^/  /'
+  fi
 else
   no "NVIDIA driver not active yet — REBOOT, then this re-runs automatically at login"
 fi

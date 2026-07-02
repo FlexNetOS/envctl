@@ -1,0 +1,155 @@
+{
+  "target": "rusty-idd",
+  "git_sha": "5a55284",
+  "branch": "plan/lifeos-meta-front-door",
+  "symbol_count": 19429,
+  "file_count": 1234,
+  "hotspots": [
+    {
+      "symbol_id": "crates/spec/src/model/spec.rs::method::SpecDoc.contains",
+      "caller_count": 842
+    },
+    {
+      "symbol_id": "crates/tui/src/app.rs::method::App.new",
+      "caller_count": 355
+    },
+    {
+      "symbol_id": "crates/runner/src/config.rs::method::TuiConfig.default",
+      "caller_count": 343
+    },
+    {
+      "symbol_id": "crates/runner/src/runner.rs::method::BatchImplState.new",
+      "caller_count": 221
+    },
+    {
+      "symbol_id": "crates/external/codegraph-core/src/node.rs::method::CodeNode.new",
+      "caller_count": 159
+    },
+    {
+      "symbol_id": "crates/core/src/model.rs::method::RepoInventory.new",
+      "caller_count": 137
+    },
+    {
+      "symbol_id": "crates/tui/src/app.rs::method::App.handle_config_input",
+      "caller_count": 126
+    },
+    {
+      "symbol_id": "crates/knowledge/src/lib.rs::method::ArchitectureDiagramOptions.new",
+      "caller_count": 98
+    },
+    {
+      "symbol_id": "crates/external/codegraph-core/src/watch/mod.rs::method::IntelligentFileWatcher.new",
+      "caller_count": 80
+    },
+    {
+      "symbol_id": "crates/external/codegraph-parser/src/semantic.rs::method::ChangeImpactAnalysis.new",
+      "caller_count": 69
+    },
+    {
+      "symbol_id": "crates/core/tests/smoke.rs::function::temp_dir",
+      "caller_count": 69
+    },
+    {
+      "symbol_id": "crates/external/codegraph-core/src/node.rs::method::CodeNode.with_content",
+      "caller_count": 62
+    },
+    {
+      "symbol_id": "crates/external/codegraph-core/src/memory/compact_map.rs::function::remove",
+      "caller_count": 51
+    },
+    {
+      "symbol_id": "crates/cli/tests/codex_cli.rs::function::write",
+      "caller_count": 47
+    },
+    {
+      "symbol_id": "crates/external/codegraph-core/src/incremental/updater.rs::method::IncrementalCache.insert",
+      "caller_count": 46
+    },
+    {
+      "symbol_id": "crates/work-order/src/lib.rs::method::WorkOrder.compute_intent_lock",
+      "caller_count": 44
+    },
+    {
+      "symbol_id": "crates/spec/src/model/delta.rs::method::Delta.new",
+      "caller_count": 42
+    },
+    {
+      "symbol_id": "crates/external/codegraph-core/src/incremental/updater.rs::method::IncrementalCache.new",
+      "caller_count": 41
+    },
+    {
+      "symbol_id": "crates/external/codegraph-core/src/performance_monitor.rs::method::MovingAverage.count",
+      "caller_count": 39
+    },
+    {
+      "symbol_id": "crates/tui/src/app.rs::method::App.push_config_screen",
+      "caller_count": 38
+    }
+  ],
+  "blast_radius": {
+    "crates/runner/src/runner.rs": 803,
+    "crates/tui/src/app.rs": 248,
+    "crates/knowledge/src/lib.rs": 105,
+    "crates/merge-tools/src/lib.rs": 11,
+    "crates/cli/src/lib.rs": 2,
+    "crates/core/src/lib.rs": 0,
+    "crates/spec/src/lib.rs": 0
+  },
+  "dead_code": {
+    "count_in_crates": 278,
+    "truncation_note": "result truncated at git-kb 500-row cap; this is a LOWER BOUND, not exhaustive",
+    "by_crate": {
+      "external/codegraph-core": 120,
+      "external/codegraph-parser": 62,
+      "spec": 30,
+      "work-order": 24,
+      "core": 20,
+      "knowledge": 18,
+      "merge-tools": 4
+    }
+  },
+  "cycles": {
+    "method": "in-process Tarjan SCC over crate_dependency_edges",
+    "cross_crate_cycles": [],
+    "verdict": "clean DAG, zero cross-crate cycles"
+  },
+  "public_api": {
+    "count_in_crates": 500,
+    "truncation_note": "result truncated at git-kb 500-row cap; this is a LOWER BOUND, not exhaustive",
+    "by_crate_visible": {
+      "external/codegraph-core": 355,
+      "cli": 74,
+      "core": 71
+    }
+  },
+  "entrypoints": [
+    {
+      "symbol_id": "crates/cli/src/main.rs::function::main",
+      "reason": "main_function"
+    },
+    {
+      "symbol_id": "crates/cli/tests/adr_check_cli.rs::function::bin",
+      "reason": "test_symbol_or_file"
+    },
+    {
+      "symbol_id": "crates/cli/tests/adr_check_cli.rs::function::check",
+      "reason": "test_symbol_or_file"
+    },
+    {
+      "symbol_id": "crates/cli/tests/adr_check_cli.rs::function::write_adr",
+      "reason": "test_symbol_or_file"
+    },
+    {
+      "symbol_id": "crates/cli/tests/adr_check_cli.rs::function::no_duplicates_passes",
+      "reason": "test_symbol_or_file"
+    },
+    {
+      "symbol_id": "crates/cli/tests/adr_check_cli.rs::function::baseline_collision_passes_but_is_reported",
+      "reason": "test_symbol_or_file"
+    }
+  ],
+  "layering": {
+    "internal_http_routes": 0,
+    "note": "cross-service-impact empty in crates/; CLI+TUI+lib, not a service; no service-boundary violations"
+  }
+}

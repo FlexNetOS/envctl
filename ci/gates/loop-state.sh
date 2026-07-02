@@ -10,7 +10,9 @@
 #
 # This gate makes the counters trustworthy. Fail-closed on what it can PROVE; never false-block:
 #   1. cycle_budget, wrap_every, last_wrapup_total, cycles_total, cycles_this_session each parse as
-#      a non-negative integer.
+#      a non-negative integer. Both forge-loop colon records (`key: value`) and planning-engineer
+#      markdown table rows (`| key | value |`) are accepted so the gate checks the real state
+#      schema instead of its presentation syntax.
 #   2. wrap_every >= 1 and cycle_budget >= 1 (a 0 would trigger a boundary/hand-off every turn).
 #   3. cycles_total >= last_wrapup_total (the boundary delta can never be negative).
 #   4. cycles_total is MONOTONIC (non-decreasing) vs the previous committed loop_state.md — checked
@@ -30,9 +32,22 @@ if [ "${#LOOP_STATES[@]}" -eq 0 ]; then
   exit 0
 fi
 
-# field <key> [file]  -> prints the value token after "<key>:" (strips trailing "# comment")
+# field <key> [file]  -> prints the value token for either supported loop-state presentation:
+#   * forge-loop colon records:       key: value   # optional comment
+#   * planning-engineer table rows:   | key | value |
+# The required schema is identical for both forms; accepting both syntaxes is not a downgrade.
 field() {
-  awk -v k="$1:" '$1==k{print $2; exit}' "$2"
+  awk -v key="$1" '
+    $1 == key ":" { print $2; exit }
+    $1 == "|" && $2 == key && $3 == "|" { print $4; exit }
+  ' "$2"
+}
+
+field_from_text() {
+  awk -v key="$1" '
+    $1 == key ":" { print $2; exit }
+    $1 == "|" && $2 == key && $3 == "|" { print $4; exit }
+  '
 }
 
 fail() { echo "LOOP-STATE GATE FAIL — $1" >&2; exit 1; }
@@ -68,7 +83,7 @@ for LS in "${LOOP_STATES[@]}"; do
   # 4. monotonic cycles_total vs the prior committed version (skip if unreadable — never false-block)
   prev=""
   if prev_file="$(git show HEAD~1:"$LS" 2>/dev/null)"; then
-    prev="$(printf '%s\n' "$prev_file" | awk -v k="cycles_total:" '$1==k{print $2; exit}')"
+    prev="$(printf '%s\n' "$prev_file" | field_from_text cycles_total)"
   fi
   if [ -n "$prev" ] && is_uint "$prev"; then
     [ "$cycles_total" -ge "$prev" ] \

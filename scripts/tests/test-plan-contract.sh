@@ -40,6 +40,20 @@ grep -q '.agents/skills/plan-loop/SKILL.md' "$repo_root/.codex/prompts/plan-loop
   || fail "plan-loop prompt does not point at the authoritative .agents skill"
 grep -q '.codex/prompts/plan-loop.md' "$repo_root/.codex/prompts/plan-engineering-loop.md" \
   || fail "plan-engineering-loop alias does not route to plan-loop"
+
+# Claude Code slash-command shims: `.claude/skills/*` are not slash commands by themselves.
+# Keep `/plan-loop`, `/plan-engineering-loop`, and `/planning-engineer` directly loadable in Claude.
+for command in planning-engineer plan-loop plan-engineering-loop; do
+  [ -f "$repo_root/.claude/commands/$command.md" ] || fail "missing Claude slash command front door: $command"
+done
+grep -q '.codex/prompts/planning-engineer.md' "$repo_root/.claude/commands/planning-engineer.md" \
+  || fail "Claude planning-engineer command does not route to Codex canonical prompt"
+grep -q '.codex/prompts/plan-loop.md' "$repo_root/.claude/commands/plan-loop.md" \
+  || fail "Claude plan-loop command does not route to Codex canonical prompt"
+grep -q '.claude/commands/plan-loop.md' "$repo_root/.claude/commands/plan-engineering-loop.md" \
+  || fail "Claude plan-engineering-loop alias does not route to plan-loop"
+grep -q 'five required Opus background lanes through weave' "$repo_root/.claude/commands/plan-loop.md" \
+  || fail "Claude plan-loop command does not preserve weave background lane contract"
 for agent in \
   plan-analyst \
   plan-architect \
@@ -308,5 +322,46 @@ if [ -d "$AG" ]; then
   grep -qiE 'differential-drive\.sh' "$AG/plan-test-strategy/SKILL.md" || fail ".agents Codex mirror: plan-test-strategy lost the differential-drive.sh driver"
   echo "PASS: Codex-tree parity locked (.agents/skills mirror carries the toolchain law · HF · differential-drive driver)"
 fi
+
+
+# ---- source-of-truth + transport + terminal artifact-gate hardening ----
+PE_SCRIPT_DIR="$PE_DIR/scripts"
+ARTIFACT_GATE="$PE_SCRIPT_DIR/plan-artifact-gate.sh"
+WEAVE_DISPATCH="$PE_SCRIPT_DIR/plan-weave-dispatch.sh"
+LOOP_TEMPLATE="$PE_SCRIPT_DIR/loop_state.template.md"
+for f in "$ARTIFACT_GATE" "$WEAVE_DISPATCH" "$LOOP_TEMPLATE"; do
+  [ -f "$f" ] || fail "source/transport contract: required file missing: $f"
+done
+# Source-of-truth/PromptHub contract: package first, then ejected mirrors; preserve owner prompt intent.
+grep -q  'harness_hub'          "$PE_SKILL"        || fail "planning-engineer must name harness_hub as package source-of-truth"
+grep -q  'harness_hub'          "$PLAN_LOOP_SKILL" || fail "plan-loop must name harness_hub as package source-of-truth"
+grep -q  'PromptHub'            "$PE_SKILL"        || fail "planning-engineer must preserve upstream PromptHub intent"
+grep -q  'PromptHub'            "$PLAN_LOOP_SKILL" || fail "plan-loop must preserve upstream PromptHub intent"
+# Transport contract: no model downgrade; weave dispatch is the required background lane escape hatch.
+grep -q  'plan-weave-dispatch.sh' "$PE_SKILL"        || fail "planning-engineer must route background Opus via plan-weave-dispatch.sh"
+grep -q  'plan-weave-dispatch.sh' "$PLAN_LOOP_SKILL" || fail "plan-loop must route background Opus via plan-weave-dispatch.sh"
+grep -q  'claude-opus-4-8'        "$WEAVE_DISPATCH"  || fail "weave dispatcher must preserve the claude-opus-4-8 capability contract"
+grep -q  'rusty-idd-north-star'   "$WEAVE_DISPATCH"  || fail "weave dispatcher must include the rusty-idd north-star lane"
+grep -q  'weave_dispatch'         "$LOOP_TEMPLATE"   || fail "loop_state template must include weave_dispatch"
+# Durable state contract: the P8/P9-style ledgers and artifact gate must be first-class fields.
+for field in target_dag artifact_gate source_ledger agent_run_ledger risk_policy agent_backend_matrix agent_interop; do
+  grep -q "$field" "$LOOP_TEMPLATE" || fail "loop_state template missing field: $field"
+done
+grep -q 'plan-artifact-gate.sh' "$PE_SKILL"        || fail "planning-engineer DONE gate must invoke plan-artifact-gate.sh"
+grep -q 'plan-artifact-gate.sh' "$PLAN_LOOP_SKILL" || fail "plan-loop DONE gate must invoke plan-artifact-gate.sh"
+grep -q 'terminal plan state'   "$ARTIFACT_GATE"   || fail "artifact gate must reject terminal zero-target/nonterminal roll-ups"
+# P9: concurrent fan-out peer artifacts are PENDING until the producer lane reports done.
+for agent in "$HARNESS_ROOT/agents/plan-analyst.md" \
+             "$HARNESS_ROOT/agents/plan-governance-config-auditor.md" \
+             "$HARNESS_ROOT/agents/plan-memory-vector-intelligence-auditor.md" \
+             "$HARNESS_ROOT/agents/plan-prompt-architecture-auditor.md"; do
+  grep -q 'Concurrent peer-artifact rule (P9)' "$agent" || fail "agent missing P9 peer-artifact pending rule: $agent"
+  grep -q 'PENDING' "$agent" || fail "agent must record not-yet-produced peer artifacts as PENDING: $agent"
+done
+# New runtime/ejection regression tests must be packaged so envctl can mirror them.
+for t in test-plan-artifact-gate.sh test-plan-evals.sh test-plan-weave-dispatch.sh; do
+  [ -f "$PE_SCRIPT_DIR/tests/$t" ] || fail "new planning regression test missing: $t"
+done
+echo "PASS: source-of-truth + weave transport + terminal artifact-gate contract locked"
 
 echo "PASS: plan contract locked — targets rows, graph artifact names, JSON validity, and the documented examples all conform ($jq_note)"
