@@ -254,9 +254,9 @@ fn catalog_manifest_dir_defaults_repo_root_to_parent() {
 
     let out = Command::new(bin())
         .current_dir(&fx.root)
-        .args(["--json", "--manifest-dir"])
+        .args(["--json", "catalog", "--manifest-dir"])
         .arg(yazelix.join("missing-manifest"))
-        .args(["catalog", "table", "config-files"])
+        .args(["table", "config-files"])
         .output()
         .unwrap();
     assert!(out.status.success(), "stderr: {}", stderr(&out));
