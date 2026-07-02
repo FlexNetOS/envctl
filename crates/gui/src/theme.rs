@@ -95,7 +95,7 @@ pub fn apply(ctx: &egui::Context) {
     let round = Rounding::same(8.0);
     v.window_rounding = round;
     v.menu_rounding = round;
-    v.window_stroke = Stroke::new(1.0, BORDER);
+    v.window_stroke = Stroke::new(1.0_f32, BORDER);
     v.window_shadow = Shadow {
         offset: egui::vec2(0.0, 6.0),
         blur: 18.0,
@@ -106,14 +106,14 @@ pub fn apply(ctx: &egui::Context) {
 
     // Selection (used by selectable_value / text selection).
     v.selection.bg_fill = ACCENT_DIM;
-    v.selection.stroke = Stroke::new(1.0, ACCENT);
+    v.selection.stroke = Stroke::new(1.0_f32, ACCENT);
 
     // Widget states.
     let w = &mut v.widgets;
     w.noninteractive.bg_fill = SURFACE;
     w.noninteractive.weak_bg_fill = SURFACE;
-    w.noninteractive.bg_stroke = Stroke::new(1.0, BORDER);
-    w.noninteractive.fg_stroke = Stroke::new(1.0, TEXT_MUTED);
+    w.noninteractive.bg_stroke = Stroke::new(1.0_f32, BORDER);
+    w.noninteractive.fg_stroke = Stroke::new(1.0_f32, TEXT_MUTED);
     w.noninteractive.rounding = round;
 
     w.inactive.bg_fill = SURFACE;
