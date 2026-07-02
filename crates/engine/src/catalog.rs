@@ -3666,7 +3666,7 @@ mod tests {
         }));
         assert!(snapshot.config_files.iter().any(|row| {
             row.path == "configs/zellij/layouts/flexnetos_agent_workspace.kdl"
-                && row.file_kind == "yazelix_runtime_config"
+            && row.file_kind == "yazelix_runtime_config"
                 && row.format == "kdl"
                 && row.parse_status == "ok"
         }));
