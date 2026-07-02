@@ -41,6 +41,7 @@ pub enum CatalogTableName {
     AgentAssets,
     Registries,
     ConfigFiles,
+    CodedbFileImports,
     MigrationEvidence,
     ObservedFacts,
 }
@@ -56,6 +57,7 @@ impl CatalogTableName {
             CatalogTableName::AgentAssets => "agent_assets",
             CatalogTableName::Registries => "registries",
             CatalogTableName::ConfigFiles => "config_files",
+            CatalogTableName::CodedbFileImports => "codedb_file_imports",
             CatalogTableName::MigrationEvidence => "migration_evidence",
             CatalogTableName::ObservedFacts => "observed_facts",
         }
@@ -71,6 +73,7 @@ impl CatalogTableName {
             CatalogTableName::AgentAssets,
             CatalogTableName::Registries,
             CatalogTableName::ConfigFiles,
+            CatalogTableName::CodedbFileImports,
             CatalogTableName::MigrationEvidence,
             CatalogTableName::ObservedFacts,
         ]
@@ -97,6 +100,9 @@ impl FromStr for CatalogTableName {
             "agent_assets" => Ok(CatalogTableName::AgentAssets),
             "registries" => Ok(CatalogTableName::Registries),
             "config_files" => Ok(CatalogTableName::ConfigFiles),
+            "codedb_file_imports" | "envctl_yazelix_file_import" => {
+                Ok(CatalogTableName::CodedbFileImports)
+            }
             "migration_evidence" | "migration_candidates" => {
                 Ok(CatalogTableName::MigrationEvidence)
             }
@@ -127,6 +133,7 @@ pub struct CatalogSnapshot {
     pub agent_assets: Vec<AgentAssetRow>,
     pub registries: Vec<RegistryRow>,
     pub config_files: Vec<ConfigFileRow>,
+    pub codedb_file_imports: Vec<CodedbFileImportRow>,
     pub migration_evidence: Vec<MigrationEvidenceRow>,
     pub observed_facts: Vec<ObservedFactRow>,
 }
@@ -143,6 +150,7 @@ impl CatalogSnapshot {
             CatalogTableName::AgentAssets => serde_json::to_value(&self.agent_assets),
             CatalogTableName::Registries => serde_json::to_value(&self.registries),
             CatalogTableName::ConfigFiles => serde_json::to_value(&self.config_files),
+            CatalogTableName::CodedbFileImports => serde_json::to_value(&self.codedb_file_imports),
             CatalogTableName::MigrationEvidence => serde_json::to_value(&self.migration_evidence),
             CatalogTableName::ObservedFacts => serde_json::to_value(&self.observed_facts),
         }
@@ -159,6 +167,7 @@ impl CatalogSnapshot {
             CatalogTableName::AgentAssets => self.agent_assets.len(),
             CatalogTableName::Registries => self.registries.len(),
             CatalogTableName::ConfigFiles => self.config_files.len(),
+            CatalogTableName::CodedbFileImports => self.codedb_file_imports.len(),
             CatalogTableName::MigrationEvidence => self.migration_evidence.len(),
             CatalogTableName::ObservedFacts => self.observed_facts.len(),
         }
@@ -492,6 +501,65 @@ pub struct MigrationEvidenceRow {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CodedbFileImportRow {
+    pub table: String,
+    pub target_id: String,
+    pub logical_owner: String,
+    pub absolute_path: String,
+    pub normalized_path: String,
+    pub source_of_truth_class: String,
+    pub file_kind: String,
+    pub parser_hint: String,
+    pub content_hash: Option<String>,
+    pub byte_length: u64,
+    pub blob_ref: Option<String>,
+    pub import_safety_policy: String,
+    pub reproduction_policy: String,
+    pub import_mode: String,
+    pub import_status: String,
+    pub skip_reason: String,
+    pub structured_table: String,
+    pub structured_status: String,
+    pub structured_row_count: usize,
+    pub structured_rows: Vec<CodedbStructuredFileRow>,
+    pub last_observed: String,
+    pub provenance: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CodedbStructuredFileRow {
+    pub row_index: usize,
+    pub row_kind: String,
+    pub format: String,
+    pub key: String,
+    pub value: String,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+struct YazelixFileInventoryRow {
+    #[serde(default)]
+    target_id: String,
+    #[serde(default)]
+    absolute_path: String,
+    #[serde(default, alias = "normalized_path")]
+    normalized_logical_path: String,
+    #[serde(default, alias = "logical_owner")]
+    owner: String,
+    #[serde(default)]
+    source_of_truth_class: String,
+    #[serde(default)]
+    file_kind: String,
+    #[serde(default)]
+    parser_hint: String,
+    #[serde(default)]
+    reproduction_policy: String,
+    #[serde(default, alias = "import_safety_policy")]
+    safety_policy: String,
+    #[serde(default)]
+    import_mode: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ObservedFactRow {
     pub fact_id: String,
     pub subject_kind: String,
@@ -554,6 +622,7 @@ pub fn scan(spec: CatalogScanSpec, registry: &Registry) -> anyhow::Result<Catalo
     ingest_layout_paths(&repo_root, &mut snapshot.paths, &mut snapshot.env_vars);
     ingest_env_schema_vars(&repo_root, &mut snapshot.env_vars);
     ingest_agent_files(&repo_root, &mut snapshot.agent_assets);
+    ingest_codedb_file_imports(&repo_root, &observed_at, &mut snapshot.codedb_file_imports)?;
     snapshot.observed_facts.push(ObservedFactRow {
         fact_id: "catalog.table_count.components".to_string(),
         subject_kind: "catalog_table".to_string(),
@@ -613,6 +682,12 @@ pub fn scan(spec: CatalogScanSpec, registry: &Registry) -> anyhow::Result<Catalo
             .then(a.source_file.cmp(&b.source_file))
     });
     snapshot.config_files.sort_by(|a, b| a.path.cmp(&b.path));
+    snapshot.codedb_file_imports.sort_by(|a, b| {
+        a.source_of_truth_class
+            .cmp(&b.source_of_truth_class)
+            .then(a.normalized_path.cmp(&b.normalized_path))
+            .then(a.target_id.cmp(&b.target_id))
+    });
     snapshot
         .observed_facts
         .sort_by(|a, b| a.fact_id.cmp(&b.fact_id).then(a.source.cmp(&b.source)));
@@ -826,7 +901,7 @@ pub fn diff(spec: CatalogScanSpec, registry: &Registry) -> anyhow::Result<Catalo
 /// system.
 pub fn render(spec: CatalogRenderSpec, registry: &Registry) -> anyhow::Result<CatalogRenderReport> {
     let repo_root = absolute_existing_path(&spec.repo_root)?;
-    let manifest_dir = absolute_existing_path(&spec.manifest_dir)?;
+    let manifest_dir = absolute_optional_path(&spec.manifest_dir)?;
     let planned_out_dir = absolute_target_path(&spec.out_dir)?;
     if planned_out_dir == repo_root || planned_out_dir.starts_with(&repo_root) {
         bail!(
@@ -1477,6 +1552,18 @@ fn safe_relative_render_path(path: &str) -> anyhow::Result<PathBuf> {
 fn absolute_existing_path(path: &Path) -> anyhow::Result<PathBuf> {
     path.canonicalize()
         .with_context(|| format!("canonicalizing {}", path.display()))
+}
+
+fn absolute_optional_path(path: &Path) -> anyhow::Result<PathBuf> {
+    if path.exists() {
+        absolute_existing_path(path)
+    } else if path.is_absolute() {
+        Ok(path.to_path_buf())
+    } else {
+        Ok(std::env::current_dir()
+            .context("resolving current directory for optional catalog path")?
+            .join(path))
+    }
 }
 
 fn absolute_target_path(path: &Path) -> anyhow::Result<PathBuf> {
@@ -2155,6 +2242,182 @@ fn ingest_agent_files(repo_root: &Path, assets: &mut Vec<AgentAssetRow>) {
     }
 }
 
+fn ingest_codedb_file_imports(
+    repo_root: &Path,
+    observed_at: &str,
+    rows: &mut Vec<CodedbFileImportRow>,
+) -> anyhow::Result<()> {
+    let inventory_path = repo_root.join("docs/generated/yazelix_file_target_inventory.json");
+    if !inventory_path.is_file() {
+        return Ok(());
+    }
+
+    let bytes = std::fs::read(&inventory_path).with_context(|| {
+        format!(
+            "reading Yazelix file inventory {}",
+            inventory_path.display()
+        )
+    })?;
+    let inventory: Vec<YazelixFileInventoryRow> =
+        serde_json::from_slice(&bytes).with_context(|| {
+            format!(
+                "parsing Yazelix file inventory {}",
+                inventory_path.display()
+            )
+        })?;
+
+    for item in inventory {
+        let target = PathBuf::from(&item.absolute_path);
+        let file_bytes = if item.import_mode == "content_blob" {
+            std::fs::read(&target).ok()
+        } else {
+            None
+        };
+        let metadata_len = std::fs::metadata(&target)
+            .ok()
+            .filter(|meta| meta.is_file())
+            .map(|meta| meta.len())
+            .unwrap_or(0);
+        let content_hash = file_bytes.as_deref().map(sha256_hex);
+        let byte_length = file_bytes
+            .as_ref()
+            .map(|bytes| bytes.len() as u64)
+            .unwrap_or(metadata_len);
+        let blob_ref = content_hash.as_ref().map(|hash| format!("sha256:{hash}"));
+        let content_ready = blob_ref.is_some();
+        let import_status = if item.import_mode == "content_blob" {
+            if content_ready {
+                "blob_metadata_ready"
+            } else {
+                "metadata_only"
+            }
+        } else {
+            "metadata_only"
+        };
+        let skip_reason = if content_ready {
+            String::new()
+        } else if item.import_mode == "content_blob" {
+            "content_blob target is not readable as a regular file".to_string()
+        } else if item.safety_policy.is_empty() {
+            "metadata_only import mode".to_string()
+        } else {
+            item.safety_policy.clone()
+        };
+        let structured_rows = if content_ready {
+            structured_file_rows(&target, &item.parser_hint)
+        } else {
+            Vec::new()
+        };
+        let structured_status = if !structured_rows.is_empty() {
+            "structured_rows_ready"
+        } else if item.import_mode == "metadata_only" {
+            "metadata_only"
+        } else {
+            "unstructured_blob"
+        };
+
+        rows.push(CodedbFileImportRow {
+            table: "envctl_yazelix_file_import".to_string(),
+            target_id: item.target_id,
+            logical_owner: item.owner,
+            absolute_path: item.absolute_path,
+            normalized_path: item.normalized_logical_path,
+            source_of_truth_class: item.source_of_truth_class,
+            file_kind: item.file_kind,
+            parser_hint: item.parser_hint,
+            content_hash,
+            byte_length,
+            blob_ref,
+            import_safety_policy: item.safety_policy,
+            reproduction_policy: item.reproduction_policy,
+            import_mode: item.import_mode,
+            import_status: import_status.to_string(),
+            skip_reason,
+            structured_table: "envctl_yazelix_file_structured_rows".to_string(),
+            structured_status: structured_status.to_string(),
+            structured_row_count: structured_rows.len(),
+            structured_rows,
+            last_observed: observed_at.to_string(),
+            provenance: repo_relative(repo_root, &inventory_path),
+        });
+    }
+
+    Ok(())
+}
+
+fn structured_file_rows(path: &Path, parser_hint: &str) -> Vec<CodedbStructuredFileRow> {
+    if matches!(
+        parser_hint,
+        "json" | "jsonc" | "toml" | "yaml" | "yml" | "nu" | "kdl"
+    ) {
+        if let Ok(Some(value)) = parse_config_to_json(path, parser_hint) {
+            let mut flattened = Vec::new();
+            flatten_json(None, &value, &mut flattened);
+            return flattened
+                .into_iter()
+                .enumerate()
+                .map(|(idx, (key, value))| CodedbStructuredFileRow {
+                    row_index: idx,
+                    row_kind: "structured_value".to_string(),
+                    format: parser_hint.to_string(),
+                    key,
+                    value,
+                })
+                .collect();
+        }
+    }
+
+    if !matches!(
+        parser_hint,
+        "nix"
+            | "lua"
+            | "markdown"
+            | "desktop"
+            | "service"
+            | "shell"
+            | "conf"
+            | "terminal_conf"
+            | "plain_config"
+    ) {
+        return Vec::new();
+    }
+    let Ok(text) = std::fs::read_to_string(path) else {
+        return Vec::new();
+    };
+    text.lines()
+        .enumerate()
+        .filter_map(|(idx, line)| {
+            let trimmed = line.trim();
+            if trimmed.is_empty() {
+                return None;
+            }
+            let (row_kind, key, value) = text_line_parts(trimmed);
+            Some(CodedbStructuredFileRow {
+                row_index: idx,
+                row_kind: row_kind.to_string(),
+                format: parser_hint.to_string(),
+                key,
+                value,
+            })
+        })
+        .collect()
+}
+
+fn text_line_parts(line: &str) -> (&'static str, String, String) {
+    if line.starts_with('#') || line.starts_with("//") || line.starts_with("--") {
+        return ("comment", String::new(), line.to_string());
+    }
+    for delimiter in ["=", ":", " "] {
+        if let Some((key, value)) = line.split_once(delimiter) {
+            let key = key.trim().to_string();
+            if !key.is_empty() {
+                return ("entry", key, value.trim().to_string());
+            }
+        }
+    }
+    ("line", String::new(), line.to_string())
+}
+
 fn ingest_registries_from_file(
     repo_root: &Path,
     path: &Path,
@@ -2403,8 +2666,44 @@ fn discover_control_plane_files(repo_root: &Path, manifest_dir: &Path) -> Vec<Pa
     collect_matching_files(&repo_root.join(".handoff"), &["jsonl"], &mut paths);
     collect_matching_files(&repo_root.join(".handoff/loop"), &["md"], &mut paths);
     collect_matching_files(&repo_root.join(".handoff/decisions"), &["md"], &mut paths);
+    collect_yazelix_config_files(repo_root, &mut paths);
     paths.sort();
     paths
+}
+
+fn collect_yazelix_config_files(repo_root: &Path, out: &mut Vec<PathBuf>) {
+    let has_yazelix_config_contract = repo_root
+        .join("config_metadata/main_config_contract.toml")
+        .is_file()
+        || repo_root.join("settings_default.jsonc").is_file();
+    if !has_yazelix_config_contract {
+        return;
+    }
+
+    for rel in [
+        "settings_default.jsonc",
+        "release_metadata.toml",
+        "flake.nix",
+        "flake.lock",
+    ] {
+        push_if_present(out, repo_root.join(rel));
+    }
+
+    for (rel, exts) in [
+        ("config_metadata", &["toml", "json"][..]),
+        (
+            "configs",
+            &[
+                "toml", "json", "jsonc", "kdl", "yml", "yaml", "conf", "lua", "scm",
+            ][..],
+        ),
+        ("nushell", &["nu", "toml", "md"][..]),
+        ("home_manager", &["nix", "md"][..]),
+        ("packaging", &["nix", "toml"][..]),
+        ("rust_core/yazelix_zellij_config_pack", &["toml", "kdl"][..]),
+    ] {
+        collect_matching_files(&repo_root.join(rel), exts, out);
+    }
 }
 
 fn collect_manifest_files(manifest_dir: &Path, out: &mut Vec<PathBuf>) {
@@ -2522,13 +2821,252 @@ fn parse_config_to_json(path: &Path, format: &str) -> anyhow::Result<Option<serd
             let value: toml::Value = toml::from_str(&text)?;
             Ok(Some(serde_json::to_value(value)?))
         }
+        "jsonc" => Ok(Some(serde_json::from_str(&jsonc_to_json(&text))?)),
+        "nushell" => Ok(Some(nushell_reproduction_metadata(&text))),
+        "nix" | "lua" | "terminal_conf" | "markdown" => {
+            Ok(Some(text_reproduction_metadata(format, &text)))
+        }
         "yaml" => {
             let value: serde_yaml::Value = serde_yaml::from_str(&text)?;
             Ok(Some(serde_json::to_value(value)?))
         }
         "json" => Ok(Some(serde_json::from_str(&text)?)),
+        "kdl" => Ok(Some(kdl_reproduction_metadata(&text))),
         _ => Ok(None),
     }
+}
+
+fn nushell_reproduction_metadata(text: &str) -> serde_json::Value {
+    let lines: Vec<&str> = text.lines().collect();
+    let source_lines: Vec<String> = trimmed_lines_with_prefix(&lines, "source ");
+    let use_lines: Vec<String> = trimmed_lines_with_prefix(&lines, "use ");
+    let plugin_use_lines: Vec<String> = lines
+        .iter()
+        .map(|line| line.trim())
+        .filter(|line| line.starts_with("plugin use ") || line.starts_with("plugin add "))
+        .map(str::to_string)
+        .collect();
+    let env_assignment_count = lines
+        .iter()
+        .map(|line| line.trim())
+        .filter(|line| {
+            line.starts_with("$env.")
+                || line.starts_with("load-env ")
+                || line.starts_with("with-env ")
+        })
+        .count();
+
+    serde_json::json!({
+        "format": "nushell",
+        "byte_count": text.len(),
+        "line_count": lines.len(),
+        "nonempty_line_count": lines.iter().filter(|line| !line.trim().is_empty()).count(),
+        "sha256": sha256_hex(text.as_bytes()),
+        "reproduction_policy": "source_bytes_required",
+        "structured_metadata": true,
+        "source_lines": source_lines,
+        "use_lines": use_lines,
+        "plugin_use_lines": plugin_use_lines,
+        "def_count": lines.iter().filter(|line| line.trim_start().starts_with("def ")).count(),
+        "alias_count": lines.iter().filter(|line| line.trim_start().starts_with("alias ")).count(),
+        "env_assignment_count": env_assignment_count,
+        "references_yazelix_init": text.contains("yazelix_init"),
+        "references_yazelix_extern": text.contains("extern") || text.contains("completions"),
+    })
+}
+
+fn kdl_reproduction_metadata(text: &str) -> serde_json::Value {
+    let lines: Vec<&str> = text.lines().collect();
+    let node_names = kdl_node_names(&lines);
+
+    serde_json::json!({
+        "format": "kdl",
+        "byte_count": text.len(),
+        "line_count": lines.len(),
+        "nonempty_line_count": lines.iter().filter(|line| !line.trim().is_empty()).count(),
+        "sha256": sha256_hex(text.as_bytes()),
+        "reproduction_policy": "source_bytes_required",
+        "structured_metadata": true,
+        "node_names": node_names.iter().cloned().collect::<Vec<_>>(),
+        "layout_count": node_names.iter().filter(|name| name.as_str() == "layout").count(),
+        "tab_count": node_names.iter().filter(|name| name.as_str() == "tab").count(),
+        "pane_count": node_names.iter().filter(|name| name.as_str() == "pane").count(),
+        "plugin_count": node_names.iter().filter(|name| name.as_str() == "plugin").count(),
+        "has_layout_node": node_names.contains("layout"),
+    })
+}
+
+fn text_reproduction_metadata(format: &str, text: &str) -> serde_json::Value {
+    let lines: Vec<&str> = text.lines().collect();
+    let comment_line_count = lines
+        .iter()
+        .map(|line| line.trim_start())
+        .filter(|line| line.starts_with('#') || line.starts_with("//") || line.starts_with("--"))
+        .count();
+
+    serde_json::json!({
+        "format": format,
+        "byte_count": text.len(),
+        "line_count": lines.len(),
+        "nonempty_line_count": lines.iter().filter(|line| !line.trim().is_empty()).count(),
+        "comment_line_count": comment_line_count,
+        "sha256": sha256_hex(text.as_bytes()),
+        "reproduction_policy": "source_bytes_required",
+        "structured_metadata": true,
+        "top_level_tokens": top_level_tokens(&lines),
+    })
+}
+
+fn top_level_tokens(lines: &[&str]) -> Vec<String> {
+    let mut tokens = BTreeSet::new();
+    for line in lines {
+        let trimmed = line.trim_start();
+        if trimmed.is_empty()
+            || trimmed.starts_with('#')
+            || trimmed.starts_with("//")
+            || trimmed.starts_with("--")
+        {
+            continue;
+        }
+        if let Some(token) = trimmed
+            .split(|ch: char| ch.is_whitespace() || ch == '=' || ch == '{' || ch == '(')
+            .next()
+            .filter(|token| !token.is_empty())
+        {
+            tokens.insert(token.to_string());
+        }
+    }
+    tokens.into_iter().collect()
+}
+
+fn trimmed_lines_with_prefix(lines: &[&str], prefix: &str) -> Vec<String> {
+    lines
+        .iter()
+        .map(|line| line.trim())
+        .filter(|line| line.starts_with(prefix))
+        .map(str::to_string)
+        .collect()
+}
+
+fn kdl_node_names(lines: &[&str]) -> BTreeSet<String> {
+    let mut names = BTreeSet::new();
+    for line in lines {
+        let trimmed = line.trim_start();
+        if trimmed.is_empty()
+            || trimmed.starts_with("//")
+            || trimmed.starts_with('#')
+            || trimmed.starts_with('}')
+        {
+            continue;
+        }
+        if let Some(name) = trimmed
+            .split(|ch: char| ch.is_whitespace() || ch == '{' || ch == '(' || ch == ';')
+            .next()
+            .filter(|name| !name.is_empty())
+        {
+            names.insert(name.to_string());
+        }
+    }
+    names
+}
+
+fn jsonc_to_json(input: &str) -> String {
+    let mut without_comments = String::with_capacity(input.len());
+    let mut chars = input.chars().peekable();
+    let mut in_string = false;
+    let mut escaped = false;
+
+    while let Some(ch) = chars.next() {
+        if in_string {
+            without_comments.push(ch);
+            if escaped {
+                escaped = false;
+            } else if ch == '\\' {
+                escaped = true;
+            } else if ch == '"' {
+                in_string = false;
+            }
+            continue;
+        }
+
+        if ch == '"' {
+            in_string = true;
+            without_comments.push(ch);
+            continue;
+        }
+
+        if ch == '/' {
+            match chars.peek().copied() {
+                Some('/') => {
+                    chars.next();
+                    for next in chars.by_ref() {
+                        if next == '\n' {
+                            without_comments.push('\n');
+                            break;
+                        }
+                    }
+                    continue;
+                }
+                Some('*') => {
+                    chars.next();
+                    let mut previous = '\0';
+                    for next in chars.by_ref() {
+                        if previous == '*' && next == '/' {
+                            break;
+                        }
+                        previous = next;
+                    }
+                    continue;
+                }
+                _ => {}
+            }
+        }
+
+        without_comments.push(ch);
+    }
+
+    remove_json_trailing_commas(&without_comments)
+}
+
+fn remove_json_trailing_commas(input: &str) -> String {
+    let mut output = String::with_capacity(input.len());
+    let mut chars = input.chars().peekable();
+    let mut in_string = false;
+    let mut escaped = false;
+
+    while let Some(ch) = chars.next() {
+        if in_string {
+            output.push(ch);
+            if escaped {
+                escaped = false;
+            } else if ch == '\\' {
+                escaped = true;
+            } else if ch == '"' {
+                in_string = false;
+            }
+            continue;
+        }
+
+        if ch == '"' {
+            in_string = true;
+            output.push(ch);
+            continue;
+        }
+
+        if ch == ',' {
+            let mut lookahead = chars.clone();
+            while matches!(lookahead.peek(), Some(next) if next.is_whitespace()) {
+                lookahead.next();
+            }
+            if matches!(lookahead.peek(), Some('}' | ']')) {
+                continue;
+            }
+        }
+
+        output.push(ch);
+    }
+
+    output
 }
 
 fn parse_status(path: &Path, format: &str) -> String {
@@ -2710,10 +3248,14 @@ fn env_schema_consumer(source: &str) -> &'static str {
 }
 
 fn infer_format(rel: &str) -> &'static str {
-    if rel.ends_with(".toml") || rel.ends_with(".lock") && rel.contains("envctl") {
+    if rel == "flake.lock" {
+        "json"
+    } else if rel.ends_with(".toml") || rel.ends_with(".lock") && rel.contains("envctl") {
         "toml"
     } else if rel.ends_with(".yaml") || rel.ends_with(".yml") || rel.ends_with("agent-env.lock") {
         "yaml"
+    } else if rel.ends_with(".jsonc") {
+        "jsonc"
     } else if rel.ends_with(".json") {
         "json"
     } else if rel.ends_with(".jsonl") {
@@ -2726,6 +3268,14 @@ fn infer_format(rel: &str) -> &'static str {
         "markdown"
     } else if rel.ends_with(".kdl") {
         "kdl"
+    } else if rel.ends_with(".nix") {
+        "nix"
+    } else if rel.ends_with(".lua") {
+        "lua"
+    } else if rel.ends_with(".conf") {
+        "terminal_conf"
+    } else if rel.ends_with(".nu") {
+        "nushell"
     } else if rel.ends_with(".sh") || rel.ends_with(".bash") {
         "shell"
     } else {
@@ -2736,6 +3286,22 @@ fn infer_format(rel: &str) -> &'static str {
 fn infer_file_kind(manifest_dir: &Path, path: &Path, rel: &str) -> &'static str {
     if path.starts_with(manifest_dir) && rel.ends_with(".toml") {
         "manifest"
+    } else if rel == "settings_default.jsonc" {
+        "yazelix_settings_default"
+    } else if rel.starts_with("config_metadata/") {
+        "yazelix_config_metadata"
+    } else if rel.starts_with("configs/") {
+        "yazelix_runtime_config"
+    } else if rel.starts_with("nushell/") {
+        "yazelix_nushell_config"
+    } else if rel.starts_with("home_manager/") {
+        "yazelix_home_manager_config"
+    } else if rel.starts_with("packaging/") || rel == "flake.nix" || rel == "flake.lock" {
+        "yazelix_packaging_config"
+    } else if rel.starts_with("rust_core/yazelix_zellij_config_pack/") {
+        "yazelix_zellij_config_pack"
+    } else if rel == "release_metadata.toml" {
+        "yazelix_release_metadata"
     } else if rel == "manifest/envctl.lock" {
         "envctl_lock"
     } else if rel == "agent-env.yaml" {
@@ -2784,6 +3350,18 @@ fn owner_component_from_path(rel: &str) -> Option<String> {
     {
         rel.rsplit_once('/')
             .map(|(_, name)| name.trim_end_matches(".toml").to_string())
+    } else if rel == "settings_default.jsonc"
+        || rel == "release_metadata.toml"
+        || rel == "flake.nix"
+        || rel == "flake.lock"
+        || rel.starts_with("config_metadata/")
+        || rel.starts_with("configs/")
+        || rel.starts_with("nushell/")
+        || rel.starts_with("home_manager/")
+        || rel.starts_with("packaging/")
+        || rel.starts_with("rust_core/yazelix_zellij_config_pack/")
+    {
+        Some("yazelix".to_string())
     } else if rel.contains("secretd") {
         Some("secretd".to_string())
     } else {
@@ -2798,6 +3376,14 @@ fn setting_scope(file_kind: &str) -> &'static str {
         "agent_env" => "agent_env",
         "codex_config" | "mcp_config" => "agent_runtime",
         "secretd_config" | "secrets_env_schema" | "secrets_proto" => "secrets",
+        "yazelix_settings_default"
+        | "yazelix_config_metadata"
+        | "yazelix_runtime_config"
+        | "yazelix_nushell_config"
+        | "yazelix_home_manager_config"
+        | "yazelix_packaging_config"
+        | "yazelix_zellij_config_pack"
+        | "yazelix_release_metadata" => "yazelix",
         "handoff_task" | "handoff_ledger_export" | "handoff_report" => "handoff",
         _ => "workspace",
     }
@@ -2810,6 +3396,11 @@ fn setting_precedence(file_kind: &str) -> u32 {
         "manifest" => 60,
         "secretd_config" => 55,
         "secrets_env_schema" | "secrets_proto" => 45,
+        "yazelix_settings_default" | "yazelix_config_metadata" => 90,
+        "yazelix_runtime_config" | "yazelix_nushell_config" => 85,
+        "yazelix_home_manager_config" | "yazelix_packaging_config" => 75,
+        "yazelix_zellij_config_pack" => 70,
+        "yazelix_release_metadata" => 65,
         "envctl_lock" | "agent_env_lock" => 50,
         "handoff_task" | "handoff_ledger_export" | "handoff_report" => 20,
         _ => 10,
@@ -2950,6 +3541,25 @@ mod tests {
     }
 
     #[test]
+    fn jsonc_parser_keeps_strings_and_removes_comments_and_trailing_commas() {
+        let value: serde_json::Value = serde_json::from_str(&jsonc_to_json(
+            r#"
+// leading comment
+{
+  "url": "https://example.test/a//b",
+  "items": [
+    "/* literal */",
+  ],
+}
+"#,
+        ))
+        .unwrap();
+
+        assert_eq!(value["url"], "https://example.test/a//b");
+        assert_eq!(value["items"][0], "/* literal */");
+    }
+
+    #[test]
     fn scan_normalizes_current_file_shapes_without_writes() {
         let root = fixture_root();
         write_fixture(&root);
@@ -3022,6 +3632,151 @@ mod tests {
             .unwrap()
             .iter()
             .any(|row| { row.get("var_name").and_then(|v| v.as_str()) == Some("API_TOKEN") }));
+    }
+
+    #[test]
+    fn scan_imports_yazelix_config_files_without_manifest() {
+        let root = fixture_root();
+        write_yazelix_fixture(&root);
+        let before = std::fs::read(root.join("settings_default.jsonc")).unwrap();
+
+        let snapshot = scan(
+            CatalogScanSpec {
+                repo_root: root.clone(),
+                manifest_dir: root.join("missing-manifest"),
+            },
+            &Registry::empty(),
+        )
+        .unwrap();
+
+        assert_eq!(
+            std::fs::read(root.join("settings_default.jsonc")).unwrap(),
+            before
+        );
+        assert_eq!(snapshot.components.len(), 0);
+        assert!(snapshot.config_files.iter().any(|row| {
+            row.path == "settings_default.jsonc"
+                && row.file_kind == "yazelix_settings_default"
+                && row.owner_component.as_deref() == Some("yazelix")
+        }));
+        assert!(snapshot.config_files.iter().any(|row| {
+            row.path == "config_metadata/main_config_contract.toml"
+                && row.file_kind == "yazelix_config_metadata"
+                && row.parse_status == "ok"
+        }));
+        assert!(snapshot.config_files.iter().any(|row| {
+            row.path == "configs/zellij/layouts/flexnetos_agent_workspace.kdl"
+                && row.file_kind == "yazelix_runtime_config"
+                && row.format == "kdl"
+                && row.parse_status == "ok"
+        }));
+        assert!(snapshot.config_files.iter().any(|row| {
+            row.path == "nushell/config/config.nu"
+                && row.file_kind == "yazelix_nushell_config"
+                && row.format == "nushell"
+                && row.parse_status == "ok"
+        }));
+        assert!(snapshot
+            .settings
+            .iter()
+            .any(|row| row.source_file == "settings_default.jsonc"
+                && row.scope == "yazelix"
+                && row.precedence == 90));
+        assert!(snapshot.settings.iter().any(|row| {
+            row.source_file == "nushell/config/config.nu"
+                && row.setting_key == "source_lines"
+                && row.value.contains("yazelix_init.nu")
+        }));
+        assert!(snapshot.settings.iter().any(|row| {
+            row.source_file == "configs/zellij/layouts/flexnetos_agent_workspace.kdl"
+                && row.setting_key == "node_names"
+                && row.value.contains("layout")
+                && row.value.contains("pane")
+        }));
+        for (source_file, format) in [
+            ("home_manager/module.nix", "nix"),
+            ("packaging/mk_runtime_tree.nix", "nix"),
+            (
+                "configs/terminal_emulators/kitty/kitty.conf",
+                "terminal_conf",
+            ),
+            ("configs/yazi/plugins/sidebar-status.yazi/main.lua", "lua"),
+            ("home_manager/README.md", "markdown"),
+        ] {
+            assert!(
+                snapshot.config_files.iter().any(|row| {
+                    row.path == source_file && row.format == format && row.parse_status == "ok"
+                }),
+                "missing parsed config row for {source_file}"
+            );
+            assert!(
+                snapshot.settings.iter().any(|row| {
+                    row.source_file == source_file
+                        && row.setting_key == "reproduction_policy"
+                        && row.value == "source_bytes_required"
+                }),
+                "missing reproduction row for {source_file}"
+            );
+        }
+        assert!(snapshot.codedb_file_imports.iter().any(|row| {
+            row.target_id == "repo_settings_default"
+                && row.import_status == "blob_metadata_ready"
+                && row
+                    .content_hash
+                    .as_deref()
+                    .is_some_and(|hash| hash.len() == 64)
+                && row
+                    .blob_ref
+                    .as_deref()
+                    .is_some_and(|blob| blob.starts_with("sha256:"))
+                && row.byte_length == r#"{"debug_mode":false}"#.len() as u64
+                && row.last_observed.contains('T')
+                && row.structured_status == "structured_rows_ready"
+                && row.structured_row_count >= 1
+                && row
+                    .structured_rows
+                    .iter()
+                    .any(|structured| structured.key == "debug_mode" && structured.value == "false")
+        }));
+        assert!(snapshot.codedb_file_imports.iter().any(|row| {
+            row.target_id == "nix_store_runtime"
+                && row.source_of_truth_class == "nix_store_package_output"
+                && row.import_status == "metadata_only"
+                && row.content_hash.is_none()
+                && row.blob_ref.is_none()
+                && row.structured_status == "metadata_only"
+                && row.structured_row_count == 0
+                && row.skip_reason == "nix_store_metadata_only"
+        }));
+    }
+
+    #[test]
+    fn render_imports_yazelix_config_files_without_manifest() {
+        let root = fixture_root();
+        write_yazelix_fixture(&root);
+        let out = fixture_root();
+
+        let report = render(
+            CatalogRenderSpec {
+                repo_root: root,
+                manifest_dir: out.join("missing-manifest"),
+                out_dir: out.clone(),
+            },
+            &Registry::empty(),
+        )
+        .unwrap();
+
+        assert!(!report.summary.mutating_repo);
+        let config_files_path = out.join("catalog/tables/config_files.json");
+        assert!(config_files_path.is_file());
+        assert!(out.join("dashboard/mission-control.catalog.kdl").is_file());
+        let rows: Vec<ConfigFileRow> =
+            serde_json::from_slice(&std::fs::read(config_files_path).unwrap()).unwrap();
+        assert!(rows.iter().any(|row| row.path == "settings_default.jsonc"
+            && row.file_kind == "yazelix_settings_default"));
+        assert!(out
+            .join("catalog/tables/codedb_file_imports.json")
+            .is_file());
     }
 
     #[test]
@@ -3320,11 +4075,13 @@ mod tests {
     }
 
     fn fixture_root() -> PathBuf {
+        static SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let id = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        let root = std::env::temp_dir().join(format!("envctl-catalog-test-{id}"));
+        let seq = SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let root = std::env::temp_dir().join(format!("envctl-catalog-test-{id}-{seq}"));
         let _ = std::fs::remove_dir_all(&root);
         root
     }
@@ -3435,6 +4192,139 @@ command = "context7"
 const ENVCTL_SEED_TOKEN: &str = "ENVCTL_SEED_TOKEN";
 const ENVCTL_SEED_TOKEN_FILE: &str = "ENVCTL_SEED_TOKEN_FILE";
 "#,
+        )
+        .unwrap();
+    }
+
+    fn write_yazelix_fixture(root: &Path) {
+        std::fs::create_dir_all(root.join("config_metadata")).unwrap();
+        std::fs::create_dir_all(root.join("configs/zellij/layouts")).unwrap();
+        std::fs::create_dir_all(root.join("configs/helix")).unwrap();
+        std::fs::create_dir_all(root.join("configs/terminal_emulators/kitty")).unwrap();
+        std::fs::create_dir_all(root.join("configs/yazi/plugins/sidebar-status.yazi")).unwrap();
+        std::fs::create_dir_all(root.join("nushell/config")).unwrap();
+        std::fs::create_dir_all(root.join("home_manager")).unwrap();
+        std::fs::create_dir_all(root.join("packaging")).unwrap();
+        std::fs::create_dir_all(root.join("docs/generated")).unwrap();
+        std::fs::create_dir_all(root.join("rust_core/yazelix_zellij_config_pack/layouts")).unwrap();
+
+        std::fs::write(
+            root.join("settings_default.jsonc"),
+            r#"{"debug_mode":false}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("config_metadata/main_config_contract.toml"),
+            r#"
+[[field]]
+key = "debug_mode"
+default = false
+"#,
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("config_metadata/yazelix_settings.schema.json"),
+            r#"{"type":"object"}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("configs/zellij/layouts/flexnetos_agent_workspace.kdl"),
+            r#"layout {
+    tab name="agent" {
+        pane command="nu"
+    }
+}
+"#,
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("configs/helix/yazelix_config.toml"),
+            "theme = \"zed\"\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("configs/terminal_emulators/kitty/kitty.conf"),
+            "font_family JetBrainsMono Nerd Font\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("configs/yazi/plugins/sidebar-status.yazi/main.lua"),
+            "return { setup = function() end }\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("nushell/config/config.nu"),
+            r#"source /opt/yazelix/share/initializers/nushell/yazelix_init.nu
+use /opt/yazelix/share/completions/yazelix_extern.nu *
+alias yzx = yazelix
+def yzx_ready [] { true }
+$env.config.show_banner = false
+"#,
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home_manager/module.nix"),
+            "{ config, ... }: {}\n",
+        )
+        .unwrap();
+        std::fs::write(root.join("home_manager/README.md"), "# Home Manager\n").unwrap();
+        std::fs::write(root.join("packaging/mk_runtime_tree.nix"), "{ }:\n").unwrap();
+        std::fs::write(
+            root.join("rust_core/yazelix_zellij_config_pack/layouts/yzx_side.kdl"),
+            "layout {}\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("docs/generated/yazelix_file_target_inventory.json"),
+            format!(
+                r#"[
+  {{
+    "target_id": "repo_settings_default",
+    "absolute_path": "{}",
+    "normalized_logical_path": "repo_source:settings_default.jsonc",
+    "owner": "yazelix",
+    "source_of_truth_class": "repo_source",
+    "exists": true,
+    "file_kind": "regular_file",
+    "parser_hint": "jsonc",
+    "mutability": "source_controlled",
+    "reproduction_policy": "git_checkout",
+    "safety_policy": "source_content_import_allowed",
+    "import_mode": "content_blob"
+  }},
+  {{
+    "target_id": "nix_store_runtime",
+    "absolute_path": "/nix/store/example-yazelix-runtime",
+    "normalized_logical_path": "nix_store:/nix/store/example-yazelix-runtime",
+    "owner": "nix",
+    "source_of_truth_class": "nix_store_package_output",
+    "exists": true,
+    "file_kind": "package_output",
+    "parser_hint": "nix_store_path",
+    "mutability": "immutable_store",
+    "reproduction_policy": "nix_realise",
+    "safety_policy": "nix_store_metadata_only",
+    "import_mode": "metadata_only"
+  }},
+  {{
+    "target_id": "local_state",
+    "absolute_path": "{}/.local/share/yazelix/state.json",
+    "normalized_logical_path": "real_home_runtime_state:.local/share/yazelix/state.json",
+    "owner": "user",
+    "source_of_truth_class": "real_home_runtime_state",
+    "exists": true,
+    "file_kind": "regular_file",
+    "parser_hint": "json",
+    "mutability": "user_state",
+    "reproduction_policy": "runtime_observed",
+    "safety_policy": "real_home_metadata_only",
+    "import_mode": "metadata_only"
+  }}
+]
+"#,
+                root.join("settings_default.jsonc").display(),
+                root.display()
+            ),
         )
         .unwrap();
     }

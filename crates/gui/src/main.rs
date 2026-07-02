@@ -283,7 +283,7 @@ struct EnvctlApp {
     sec_mint_expires: Option<i64>,
     sec_mint_has_token: bool,
     // token to copy ONCE: held only between a mint SecretsResult landing and the next copy-affordance
-    // render that consumes it via ui.output().copied_text, then immediately cleared. Never persisted,
+    // render that emits a clipboard command, then immediately cleared. Never persisted,
     // never to push_log / self.log.
     sec_mint_copy_once: Option<String>,
     sec_relay_result: Option<RelayMintMeta>,
@@ -689,9 +689,9 @@ impl eframe::App for EnvctlApp {
 
         egui::TopBottomPanel::top("nav")
             .frame(
-                egui::Frame::none()
+                egui::Frame::NONE
                     .fill(theme::PANEL)
-                    .inner_margin(egui::Margin::symmetric(14.0, 10.0))
+                    .inner_margin(egui::Margin::symmetric(14, 10))
                     .stroke(egui::Stroke::new(1.0_f32, theme::BORDER)),
             )
             .show(ctx, |ui| {
@@ -736,9 +736,9 @@ impl eframe::App for EnvctlApp {
 
         egui::CentralPanel::default()
             .frame(
-                egui::Frame::none()
+                egui::Frame::NONE
                     .fill(theme::BG)
-                    .inner_margin(egui::Margin::same(16.0)),
+                    .inner_margin(egui::Margin::same(16)),
             )
             .show(ctx, |ui| match self.screen {
                 Screen::Dashboard => self.dashboard(ui),
@@ -786,7 +786,7 @@ impl EnvctlApp {
                 Color32::TRANSPARENT
             })
             .stroke(egui::Stroke::NONE)
-            .rounding(egui::Rounding::same(7.0));
+            .corner_radius(egui::CornerRadius::same(7));
         if ui.add(btn).clicked() {
             self.screen = s;
         }
@@ -834,7 +834,7 @@ impl EnvctlApp {
                                             egui::ProgressBar::new(frac)
                                                 .fill(theme::load_color(frac))
                                                 .desired_height(10.0)
-                                                .rounding(egui::Rounding::same(5.0)),
+                                                .corner_radius(egui::CornerRadius::same(5)),
                                         );
                                     } else {
                                         ui.colored_label(theme::TEXT_FAINT, "memory: n/a");
@@ -926,7 +926,7 @@ impl EnvctlApp {
                         .text(RichText::new(format!("{}%", g.util_pct)).color(theme::TEXT))
                         .fill(theme::load_color(util))
                         .desired_height(14.0)
-                        .rounding(egui::Rounding::same(6.0)),
+                        .corner_radius(egui::CornerRadius::same(6)),
                 );
             });
             ui.add_space(4.0);
@@ -943,7 +943,7 @@ impl EnvctlApp {
                         )
                         .fill(theme::load_color(vram))
                         .desired_height(14.0)
-                        .rounding(egui::Rounding::same(6.0)),
+                        .corner_radius(egui::CornerRadius::same(6)),
                 );
             });
             ui.add_space(8.0);
@@ -964,7 +964,7 @@ impl EnvctlApp {
     fn sparkline(&self, ui: &mut egui::Ui, hist: &VecDeque<f32>) {
         let (rect, _resp) = ui.allocate_exact_size(egui::vec2(120.0, 28.0), egui::Sense::hover());
         let painter = ui.painter_at(rect);
-        painter.rect_filled(rect, egui::Rounding::same(5.0), theme::BG);
+        painter.rect_filled(rect, egui::CornerRadius::same(5), theme::BG);
 
         if hist.len() < 2 {
             return;
@@ -1679,7 +1679,7 @@ impl EnvctlApp {
                     } else {
                         Color32::TRANSPARENT
                     })
-                    .rounding(egui::Rounding::same(7.0));
+                    .corner_radius(egui::CornerRadius::same(7));
                 if ui.add(btn).clicked() {
                     self.agent_verb = v;
                 }
@@ -2280,7 +2280,7 @@ impl EnvctlApp {
                     } else {
                         Color32::TRANSPARENT
                     })
-                    .rounding(egui::Rounding::same(7.0));
+                    .corner_radius(egui::CornerRadius::same(7));
                 if ui.add(btn).clicked() {
                     self.secrets_verb = v;
                 }
@@ -2499,7 +2499,7 @@ impl EnvctlApp {
                     if ui.button("Copy token (once)").clicked() {
                         // take() so the token is moved out and dropped after this frame — copy once.
                         if let Some(tok) = self.sec_mint_copy_once.take() {
-                            ui.output_mut(|o| o.copied_text = tok);
+                            ui.output_mut(|o| o.commands.push(egui::OutputCommand::CopyText(tok)));
                             self.sec_status =
                                 "token copied to clipboard (cleared from memory)".into();
                         }
@@ -2569,11 +2569,11 @@ impl EnvctlApp {
         });
         ui.add_space(6.0);
 
-        egui::Frame::none()
+        egui::Frame::NONE
             .fill(theme::BG)
             .stroke(egui::Stroke::new(1.0_f32, theme::BORDER))
-            .rounding(egui::Rounding::same(8.0))
-            .inner_margin(egui::Margin::same(10.0))
+            .corner_radius(egui::CornerRadius::same(8))
+            .inner_margin(egui::Margin::same(10))
             .show(ui, |ui| {
                 ui.set_width(ui.available_width());
                 egui::ScrollArea::vertical()
@@ -2718,10 +2718,10 @@ impl EnvctlApp {
 
 /// A compact "LABEL value" stat chip on a faint surface.
 fn stat_chip(ui: &mut egui::Ui, label: &str, value: &str, value_col: Color32) {
-    egui::Frame::none()
+    egui::Frame::NONE
         .fill(theme::BG)
-        .rounding(egui::Rounding::same(6.0))
-        .inner_margin(egui::Margin::symmetric(10.0, 5.0))
+        .corner_radius(egui::CornerRadius::same(6))
+        .inner_margin(egui::Margin::symmetric(10, 5))
         .show(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.label(RichText::new(label).size(10.0).color(theme::TEXT_FAINT));

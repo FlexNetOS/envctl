@@ -40,16 +40,17 @@ macro_rules! envctl_examples {
     };
 }
 
+use envctl_engine::catalog as catalog_engine;
 use envctl_engine::secrets::run_secretctl;
 use envctl_engine::{
     AddRepoMode, AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentDoctorSpec, AgentInitSpec,
     AgentListKind, AgentListSpec, AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentScope,
     AgentSectionSel, AgentSyncSpec, AiAgent, BuildStrategy, BuildSystem, CatalogDiffReport,
-    CatalogImportReport, CatalogLockReport, CatalogRenderReport, CatalogSnapshot,
+    CatalogImportReport, CatalogLockReport, CatalogRenderReport, CatalogScanSpec, CatalogSnapshot,
     CatalogSyncReport, CatalogTableName, DashboardSpec, DriftSummary, Engine, EnvReport, Event,
     EventSink, HubRegistryReport, HubRegistryStatus, MigrationAction, MigrationReport,
     MigrationRisk, MigrationScope, MigrationSpec, MigrationStatus, MigrationVerb, OpStatus, Phase,
-    Refactor, RefactorGoal, RenameRule, ResetGates, RunPlan, SelfUninstallSpec, Severity,
+    Refactor, RefactorGoal, Registry, RenameRule, ResetGates, RunPlan, SelfUninstallSpec, Severity,
 };
 
 #[derive(Parser)]
@@ -257,6 +258,8 @@ enum Cmd {
         )
     )]
     Catalog {
+        #[command(flatten)]
+        roots: CatalogRootArgs,
         #[command(subcommand)]
         cmd: CatalogCmd,
     },
@@ -662,6 +665,16 @@ enum CatalogCmd {
         #[arg(long)]
         apply: bool,
     },
+}
+
+#[derive(Args, Clone, Debug, Default)]
+struct CatalogRootArgs {
+    /// Repository root to import into catalog tables. Defaults to the parent of the envctl manifest dir.
+    #[arg(long = "repo-root", value_name = "DIR", global = true)]
+    repo_root: Option<PathBuf>,
+    /// Manifest directory for component rows. If omitted with --repo-root and no manifest exists under that root, catalog uses an empty registry.
+    #[arg(long = "manifest-dir", value_name = "DIR", global = true)]
+    manifest_dir: Option<PathBuf>,
 }
 
 /// The migration/adoption subcommands. All variants share optional scope and
@@ -1617,7 +1630,27 @@ fn main() -> anyhow::Result<()> {
         envctl_engine::update_notifier::wait_for_check(update_handle, Duration::from_millis(800));
     }
 
-    let engine = if matches!(cli.cmd, Cmd::Dashboard { .. } | Cmd::Env { .. }) {
+    let engine = if matches!(cli.cmd, Cmd::Dashboard { .. } | Cmd::Env { .. })
+        || matches!(
+            cli.cmd,
+            Cmd::Catalog {
+                roots: CatalogRootArgs {
+                    repo_root: Some(_),
+                    ..
+                },
+                ..
+            }
+        )
+        || matches!(
+            cli.cmd,
+            Cmd::Catalog {
+                roots: CatalogRootArgs {
+                    manifest_dir: Some(_),
+                    ..
+                },
+                ..
+            }
+        ) {
         Engine::detached()
     } else {
         Engine::load_default()?
@@ -1686,7 +1719,7 @@ fn main() -> anyhow::Result<()> {
             }
             Ok(())
         }
-        Cmd::Catalog { cmd } => run_catalog(&engine, cmd, json),
+        Cmd::Catalog { roots, cmd } => run_catalog(&engine, roots, cmd, json),
         Cmd::Lock { check } => {
             use envctl_engine::lock;
             let reg = engine.registry();
@@ -1983,10 +2016,38 @@ fn migration_marker(status: MigrationStatus, protected: bool) -> &'static str {
     }
 }
 
-fn run_catalog(engine: &Engine, cmd: CatalogCmd, json: bool) -> anyhow::Result<()> {
+fn run_catalog(
+    engine: &Engine,
+    roots: CatalogRootArgs,
+    cmd: CatalogCmd,
+    json: bool,
+) -> anyhow::Result<()> {
+    let explicit_roots = roots.repo_root.is_some() || roots.manifest_dir.is_some();
+    let (spec, registry) = if explicit_roots {
+        resolve_catalog_scan_spec(roots)?
+    } else {
+        (
+            CatalogScanSpec {
+                repo_root: engine
+                    .manifest_dir()
+                    .parent()
+                    .map(PathBuf::from)
+                    .unwrap_or_else(|| {
+                        std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
+                    }),
+                manifest_dir: engine.manifest_dir().to_path_buf(),
+            },
+            None,
+        )
+    };
+    let registry = registry.as_ref().unwrap_or_else(|| engine.registry());
     match cmd {
         CatalogCmd::Scan => {
-            let snapshot = engine.catalog_scan()?;
+            let snapshot = if explicit_roots {
+                catalog_engine::scan(spec, registry)?
+            } else {
+                engine.catalog_scan()?
+            };
             if json {
                 println!("{}", serde_json::to_string_pretty(&snapshot)?);
             } else {
@@ -1994,7 +2055,11 @@ fn run_catalog(engine: &Engine, cmd: CatalogCmd, json: bool) -> anyhow::Result<(
             }
         }
         CatalogCmd::Table { name } => {
-            let snapshot = engine.catalog_scan()?;
+            let snapshot = if explicit_roots {
+                catalog_engine::scan(spec, registry)?
+            } else {
+                engine.catalog_scan()?
+            };
             let table = name
                 .parse::<CatalogTableName>()
                 .map_err(|err| anyhow::anyhow!(err))?;
@@ -2006,7 +2071,11 @@ fn run_catalog(engine: &Engine, cmd: CatalogCmd, json: bool) -> anyhow::Result<(
             }
         }
         CatalogCmd::Import => {
-            let report = engine.catalog_import()?;
+            let report = if explicit_roots {
+                catalog_engine::import_current(spec, registry)?
+            } else {
+                engine.catalog_import()?
+            };
             if json {
                 println!("{}", serde_json::to_string_pretty(&report)?);
             } else {
@@ -2014,7 +2083,11 @@ fn run_catalog(engine: &Engine, cmd: CatalogCmd, json: bool) -> anyhow::Result<(
             }
         }
         CatalogCmd::Diff => {
-            let report = engine.catalog_diff()?;
+            let report = if explicit_roots {
+                catalog_engine::diff(spec, registry)?
+            } else {
+                engine.catalog_diff()?
+            };
             if json {
                 println!("{}", serde_json::to_string_pretty(&report)?);
             } else {
@@ -2022,7 +2095,18 @@ fn run_catalog(engine: &Engine, cmd: CatalogCmd, json: bool) -> anyhow::Result<(
             }
         }
         CatalogCmd::Render { out } => {
-            let report = engine.catalog_render(&out)?;
+            let report = if explicit_roots {
+                catalog_engine::render(
+                    catalog_engine::CatalogRenderSpec {
+                        repo_root: spec.repo_root,
+                        manifest_dir: spec.manifest_dir,
+                        out_dir: out,
+                    },
+                    registry,
+                )?
+            } else {
+                engine.catalog_render(&out)?
+            };
             if json {
                 println!("{}", serde_json::to_string_pretty(&report)?);
             } else {
@@ -2030,7 +2114,19 @@ fn run_catalog(engine: &Engine, cmd: CatalogCmd, json: bool) -> anyhow::Result<(
             }
         }
         CatalogCmd::Sync { render_out, apply } => {
-            let report = engine.catalog_sync(render_out.as_deref(), apply)?;
+            let report = if explicit_roots {
+                catalog_engine::sync(
+                    catalog_engine::CatalogSyncSpec {
+                        repo_root: spec.repo_root,
+                        manifest_dir: spec.manifest_dir,
+                        render_out_dir: render_out,
+                        apply,
+                    },
+                    registry,
+                )?
+            } else {
+                engine.catalog_sync(render_out.as_deref(), apply)?
+            };
             if json {
                 println!("{}", serde_json::to_string_pretty(&report)?);
             } else {
@@ -2041,7 +2137,18 @@ fn run_catalog(engine: &Engine, cmd: CatalogCmd, json: bool) -> anyhow::Result<(
             if check && apply {
                 anyhow::bail!("catalog lock accepts either --check or --apply, not both");
             }
-            let report = engine.catalog_lock(apply)?;
+            let report = if explicit_roots {
+                catalog_engine::lock(
+                    catalog_engine::CatalogLockSpec {
+                        repo_root: spec.repo_root,
+                        manifest_dir: spec.manifest_dir,
+                        apply,
+                    },
+                    registry,
+                )?
+            } else {
+                engine.catalog_lock(apply)?
+            };
             if json {
                 println!("{}", serde_json::to_string_pretty(&report)?);
             } else {
@@ -2053,6 +2160,40 @@ fn run_catalog(engine: &Engine, cmd: CatalogCmd, json: bool) -> anyhow::Result<(
         }
     }
     Ok(())
+}
+
+fn resolve_catalog_scan_spec(
+    roots: CatalogRootArgs,
+) -> anyhow::Result<(CatalogScanSpec, Option<Registry>)> {
+    let repo_root = roots
+        .repo_root
+        .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| PathBuf::from(".")));
+    let repo_root = std::fs::canonicalize(&repo_root).map_err(|err| {
+        anyhow::anyhow!(
+            "catalog repo root not found or unreadable: {}: {err}",
+            repo_root.display()
+        )
+    })?;
+    let manifest_dir = roots
+        .manifest_dir
+        .unwrap_or_else(|| repo_root.join("manifest"));
+    let manifest_dir = if manifest_dir.is_absolute() {
+        manifest_dir
+    } else {
+        repo_root.join(manifest_dir)
+    };
+    let registry = if manifest_dir.is_dir() {
+        Some(Registry::load(&manifest_dir)?)
+    } else {
+        None
+    };
+    Ok((
+        CatalogScanSpec {
+            repo_root,
+            manifest_dir,
+        },
+        registry,
+    ))
 }
 
 fn print_catalog_summary(snapshot: &CatalogSnapshot) {
