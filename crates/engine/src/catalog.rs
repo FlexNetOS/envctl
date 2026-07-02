@@ -518,7 +518,21 @@ pub struct CodedbFileImportRow {
     pub import_mode: String,
     pub import_status: String,
     pub skip_reason: String,
+    pub structured_table: String,
+    pub structured_status: String,
+    pub structured_row_count: usize,
+    pub structured_rows: Vec<CodedbStructuredFileRow>,
+    pub last_observed: String,
     pub provenance: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CodedbStructuredFileRow {
+    pub row_index: usize,
+    pub row_kind: String,
+    pub format: String,
+    pub key: String,
+    pub value: String,
 }
 
 #[derive(Clone, Debug, Default, Deserialize)]
@@ -608,7 +622,7 @@ pub fn scan(spec: CatalogScanSpec, registry: &Registry) -> anyhow::Result<Catalo
     ingest_layout_paths(&repo_root, &mut snapshot.paths, &mut snapshot.env_vars);
     ingest_env_schema_vars(&repo_root, &mut snapshot.env_vars);
     ingest_agent_files(&repo_root, &mut snapshot.agent_assets);
-    ingest_codedb_file_imports(&repo_root, &mut snapshot.codedb_file_imports)?;
+    ingest_codedb_file_imports(&repo_root, &observed_at, &mut snapshot.codedb_file_imports)?;
     snapshot.observed_facts.push(ObservedFactRow {
         fact_id: "catalog.table_count.components".to_string(),
         subject_kind: "catalog_table".to_string(),
@@ -2230,6 +2244,7 @@ fn ingest_agent_files(repo_root: &Path, assets: &mut Vec<AgentAssetRow>) {
 
 fn ingest_codedb_file_imports(
     repo_root: &Path,
+    observed_at: &str,
     rows: &mut Vec<CodedbFileImportRow>,
 ) -> anyhow::Result<()> {
     let inventory_path = repo_root.join("docs/generated/yazelix_file_target_inventory.json");
@@ -2288,6 +2303,18 @@ fn ingest_codedb_file_imports(
         } else {
             item.safety_policy.clone()
         };
+        let structured_rows = if content_ready {
+            structured_file_rows(&target, &item.parser_hint)
+        } else {
+            Vec::new()
+        };
+        let structured_status = if !structured_rows.is_empty() {
+            "structured_rows_ready"
+        } else if item.import_mode == "metadata_only" {
+            "metadata_only"
+        } else {
+            "unstructured_blob"
+        };
 
         rows.push(CodedbFileImportRow {
             table: "envctl_yazelix_file_import".to_string(),
@@ -2306,11 +2333,89 @@ fn ingest_codedb_file_imports(
             import_mode: item.import_mode,
             import_status: import_status.to_string(),
             skip_reason,
+            structured_table: "envctl_yazelix_file_structured_rows".to_string(),
+            structured_status: structured_status.to_string(),
+            structured_row_count: structured_rows.len(),
+            structured_rows,
+            last_observed: observed_at.to_string(),
             provenance: repo_relative(repo_root, &inventory_path),
         });
     }
 
     Ok(())
+}
+
+fn structured_file_rows(path: &Path, parser_hint: &str) -> Vec<CodedbStructuredFileRow> {
+    if matches!(
+        parser_hint,
+        "json" | "jsonc" | "toml" | "yaml" | "yml" | "nu" | "kdl"
+    ) {
+        if let Ok(Some(value)) = parse_config_to_json(path, parser_hint) {
+            let mut flattened = Vec::new();
+            flatten_json(None, &value, &mut flattened);
+            return flattened
+                .into_iter()
+                .enumerate()
+                .map(|(idx, (key, value))| CodedbStructuredFileRow {
+                    row_index: idx,
+                    row_kind: "structured_value".to_string(),
+                    format: parser_hint.to_string(),
+                    key,
+                    value,
+                })
+                .collect();
+        }
+    }
+
+    if !matches!(
+        parser_hint,
+        "nix"
+            | "lua"
+            | "markdown"
+            | "desktop"
+            | "service"
+            | "shell"
+            | "conf"
+            | "terminal_conf"
+            | "plain_config"
+    ) {
+        return Vec::new();
+    }
+    let Ok(text) = std::fs::read_to_string(path) else {
+        return Vec::new();
+    };
+    text.lines()
+        .enumerate()
+        .filter_map(|(idx, line)| {
+            let trimmed = line.trim();
+            if trimmed.is_empty() {
+                return None;
+            }
+            let (row_kind, key, value) = text_line_parts(trimmed);
+            Some(CodedbStructuredFileRow {
+                row_index: idx,
+                row_kind: row_kind.to_string(),
+                format: parser_hint.to_string(),
+                key,
+                value,
+            })
+        })
+        .collect()
+}
+
+fn text_line_parts(line: &str) -> (&'static str, String, String) {
+    if line.starts_with('#') || line.starts_with("//") || line.starts_with("--") {
+        return ("comment", String::new(), line.to_string());
+    }
+    for delimiter in ["=", ":", " "] {
+        if let Some((key, value)) = line.split_once(delimiter) {
+            let key = key.trim().to_string();
+            if !key.is_empty() {
+                return ("entry", key, value.trim().to_string());
+            }
+        }
+    }
+    ("line", String::new(), line.to_string())
 }
 
 fn ingest_registries_from_file(
@@ -3625,6 +3730,13 @@ mod tests {
                     .as_deref()
                     .is_some_and(|blob| blob.starts_with("sha256:"))
                 && row.byte_length == r#"{"debug_mode":false}"#.len() as u64
+                && row.last_observed.contains('T')
+                && row.structured_status == "structured_rows_ready"
+                && row.structured_row_count >= 1
+                && row
+                    .structured_rows
+                    .iter()
+                    .any(|structured| structured.key == "debug_mode" && structured.value == "false")
         }));
         assert!(snapshot.codedb_file_imports.iter().any(|row| {
             row.target_id == "nix_store_runtime"
@@ -3632,6 +3744,8 @@ mod tests {
                 && row.import_status == "metadata_only"
                 && row.content_hash.is_none()
                 && row.blob_ref.is_none()
+                && row.structured_status == "metadata_only"
+                && row.structured_row_count == 0
                 && row.skip_reason == "nix_store_metadata_only"
         }));
     }

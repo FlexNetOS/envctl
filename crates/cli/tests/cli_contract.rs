@@ -336,6 +336,25 @@ fn catalog_repo_root_imports_yazelix_codedb_file_inventory() {
         .get("blob_ref")
         .and_then(|v| v.as_str())
         .is_some_and(|blob| blob.starts_with("sha256:")));
+    assert!(repo_row
+        .get("last_observed")
+        .and_then(|v| v.as_str())
+        .is_some_and(|value| value.contains('T')));
+    assert_eq!(
+        repo_row.get("structured_status").and_then(|v| v.as_str()),
+        Some("structured_rows_ready")
+    );
+    assert!(repo_row
+        .get("structured_row_count")
+        .and_then(|v| v.as_u64())
+        .is_some_and(|count| count > 0));
+    assert!(repo_row
+        .get("structured_rows")
+        .and_then(|v| v.as_array())
+        .is_some_and(|rows| rows.iter().any(|row| {
+            row.get("key").and_then(|v| v.as_str()) == Some("debug_mode")
+                && row.get("value").and_then(|v| v.as_str()) == Some("false")
+        })));
 
     for target_id in ["nix_store_runtime", "local_state"] {
         let row = rows
@@ -352,6 +371,14 @@ fn catalog_repo_root_imports_yazelix_codedb_file_inventory() {
             .get("skip_reason")
             .and_then(|v| v.as_str())
             .is_some_and(|reason| reason.ends_with("metadata_only")));
+        assert_eq!(
+            row.get("structured_status").and_then(|v| v.as_str()),
+            Some("metadata_only")
+        );
+        assert_eq!(
+            row.get("structured_row_count").and_then(|v| v.as_u64()),
+            Some(0)
+        );
     }
 }
 
