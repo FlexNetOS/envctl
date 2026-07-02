@@ -5,5 +5,7 @@
 > tracked disposition (open → `- [?]` backlog item; addressed → recorded resolved; declined →
 > recorded) and resets this file. A **non-empty body at end of wrap-up means wrap-up is INCOMPLETE.**
 >
-> Last drained: 2026-06-18 (TASK-0042) — P1 merge-driver test RESOLVED, P2 reaper test RESOLVED,
-> P3 scheduled-reaper DECLINED (accept loop-boundary-only). See backlog Epic G / TASK-0042.
+> Last drained: 2026-06-28 (batch boundary 54) — plan-loop / fleet-convergence cycle 6 proposals
+> drained to backlog TASK-0079 through TASK-0086.
+
+---
