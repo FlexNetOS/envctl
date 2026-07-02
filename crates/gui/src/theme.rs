@@ -150,7 +150,7 @@ pub fn apply(ctx: &egui::Context) {
 
 /// A framed "card" surface for grouped content (GPU cards, forms).
 pub fn card() -> egui::Frame {
-    egui::Frame::none()
+    egui::Frame::NONE
         .fill(SURFACE)
         .stroke(Stroke::new(1.0_f32, BORDER))
         .corner_radius(CornerRadius::same(10))
@@ -160,7 +160,7 @@ pub fn card() -> egui::Frame {
 
 /// A subtle inset panel (used for the form / settings).
 pub fn inset() -> egui::Frame {
-    egui::Frame::none()
+    egui::Frame::NONE
         .fill(PANEL)
         .stroke(Stroke::new(1.0_f32, BORDER))
         .corner_radius(CornerRadius::same(10))

@@ -689,7 +689,7 @@ impl eframe::App for EnvctlApp {
 
         egui::TopBottomPanel::top("nav")
             .frame(
-                egui::Frame::none()
+                egui::Frame::NONE
                     .fill(theme::PANEL)
                     .inner_margin(egui::Margin::symmetric(14, 10))
                     .stroke(egui::Stroke::new(1.0_f32, theme::BORDER)),
@@ -736,7 +736,7 @@ impl eframe::App for EnvctlApp {
 
         egui::CentralPanel::default()
             .frame(
-                egui::Frame::none()
+                egui::Frame::NONE
                     .fill(theme::BG)
                     .inner_margin(egui::Margin::same(16)),
             )
@@ -2569,7 +2569,7 @@ impl EnvctlApp {
         });
         ui.add_space(6.0);
 
-        egui::Frame::none()
+        egui::Frame::NONE
             .fill(theme::BG)
             .stroke(egui::Stroke::new(1.0_f32, theme::BORDER))
             .corner_radius(egui::CornerRadius::same(8))
@@ -2718,7 +2718,7 @@ impl EnvctlApp {
 
 /// A compact "LABEL value" stat chip on a faint surface.
 fn stat_chip(ui: &mut egui::Ui, label: &str, value: &str, value_col: Color32) {
-    egui::Frame::none()
+    egui::Frame::NONE
         .fill(theme::BG)
         .corner_radius(egui::CornerRadius::same(6))
         .inner_margin(egui::Margin::symmetric(10, 5))
