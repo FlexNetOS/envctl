@@ -2298,6 +2298,13 @@ is_merge_existing_app_config_dir_dot() {
   esac
 }
 
+is_merge_existing_app_config_dir_dot() {
+  case "$1" in
+    .junie) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 canonical_target_for_dot() {
   local dot="$1"
   case "$dot" in
