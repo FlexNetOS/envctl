@@ -189,6 +189,59 @@ fn manifest_independent_commands_work_without_a_manifest() {
 }
 
 #[test]
+fn catalog_repo_root_imports_yazelix_config_without_manifest() {
+    let fx = Fixture::new();
+    let yazelix = fx.root.join("yazelix");
+    std::fs::create_dir_all(yazelix.join("config_metadata")).unwrap();
+    std::fs::create_dir_all(yazelix.join("configs/zellij/layouts")).unwrap();
+    std::fs::create_dir_all(yazelix.join("nushell/config")).unwrap();
+    std::fs::write(
+        yazelix.join("settings_default.jsonc"),
+        r#"{"debug_mode":false}"#,
+    )
+    .unwrap();
+    std::fs::write(
+        yazelix.join("config_metadata/main_config_contract.toml"),
+        r#"
+[[field]]
+key = "debug_mode"
+default = false
+"#,
+    )
+    .unwrap();
+    std::fs::write(
+        yazelix.join("configs/zellij/layouts/flexnetos_agent_workspace.kdl"),
+        "layout {}\n",
+    )
+    .unwrap();
+    std::fs::write(
+        yazelix.join("nushell/config/config.nu"),
+        "$env.config.show_banner = false\n",
+    )
+    .unwrap();
+
+    let out = Command::new(bin())
+        .current_dir(&fx.root)
+        .env("ENVCTL_MANIFEST_DIR", fx.root.join("missing-manifest"))
+        .args(["--json", "catalog", "--repo-root"])
+        .arg(&yazelix)
+        .args(["table", "config-files"])
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "stderr: {}", stderr(&out));
+    let rows: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    let rows = rows.as_array().unwrap();
+    assert!(rows.iter().any(|row| {
+        row.get("path").and_then(|v| v.as_str()) == Some("settings_default.jsonc")
+            && row.get("file_kind").and_then(|v| v.as_str()) == Some("yazelix_settings_default")
+    }));
+    assert!(rows.iter().any(|row| {
+        row.get("path").and_then(|v| v.as_str()) == Some("nushell/config/config.nu")
+            && row.get("owner_component").and_then(|v| v.as_str()) == Some("yazelix")
+    }));
+}
+
+#[test]
 fn reset_whole_roster_refuses_before_worker_and_writes_nothing() {
     let fx = Fixture::new();
     let before = tree_snapshot(&fx.root);

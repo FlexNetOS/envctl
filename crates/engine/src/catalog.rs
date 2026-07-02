@@ -826,7 +826,7 @@ pub fn diff(spec: CatalogScanSpec, registry: &Registry) -> anyhow::Result<Catalo
 /// system.
 pub fn render(spec: CatalogRenderSpec, registry: &Registry) -> anyhow::Result<CatalogRenderReport> {
     let repo_root = absolute_existing_path(&spec.repo_root)?;
-    let manifest_dir = absolute_existing_path(&spec.manifest_dir)?;
+    let manifest_dir = absolute_optional_path(&spec.manifest_dir)?;
     let planned_out_dir = absolute_target_path(&spec.out_dir)?;
     if planned_out_dir == repo_root || planned_out_dir.starts_with(&repo_root) {
         bail!(
@@ -1477,6 +1477,18 @@ fn safe_relative_render_path(path: &str) -> anyhow::Result<PathBuf> {
 fn absolute_existing_path(path: &Path) -> anyhow::Result<PathBuf> {
     path.canonicalize()
         .with_context(|| format!("canonicalizing {}", path.display()))
+}
+
+fn absolute_optional_path(path: &Path) -> anyhow::Result<PathBuf> {
+    if path.exists() {
+        absolute_existing_path(path)
+    } else if path.is_absolute() {
+        Ok(path.to_path_buf())
+    } else {
+        Ok(std::env::current_dir()
+            .context("resolving current directory for optional catalog path")?
+            .join(path))
+    }
 }
 
 fn absolute_target_path(path: &Path) -> anyhow::Result<PathBuf> {
@@ -2403,8 +2415,44 @@ fn discover_control_plane_files(repo_root: &Path, manifest_dir: &Path) -> Vec<Pa
     collect_matching_files(&repo_root.join(".handoff"), &["jsonl"], &mut paths);
     collect_matching_files(&repo_root.join(".handoff/loop"), &["md"], &mut paths);
     collect_matching_files(&repo_root.join(".handoff/decisions"), &["md"], &mut paths);
+    collect_yazelix_config_files(repo_root, &mut paths);
     paths.sort();
     paths
+}
+
+fn collect_yazelix_config_files(repo_root: &Path, out: &mut Vec<PathBuf>) {
+    let has_yazelix_config_contract = repo_root
+        .join("config_metadata/main_config_contract.toml")
+        .is_file()
+        || repo_root.join("settings_default.jsonc").is_file();
+    if !has_yazelix_config_contract {
+        return;
+    }
+
+    for rel in [
+        "settings_default.jsonc",
+        "release_metadata.toml",
+        "flake.nix",
+        "flake.lock",
+    ] {
+        push_if_present(out, repo_root.join(rel));
+    }
+
+    for (rel, exts) in [
+        ("config_metadata", &["toml", "json"][..]),
+        (
+            "configs",
+            &[
+                "toml", "json", "jsonc", "kdl", "yml", "yaml", "conf", "lua", "scm",
+            ][..],
+        ),
+        ("nushell", &["nu", "toml", "md"][..]),
+        ("home_manager", &["nix", "md"][..]),
+        ("packaging", &["nix", "toml"][..]),
+        ("rust_core/yazelix_zellij_config_pack", &["toml", "kdl"][..]),
+    ] {
+        collect_matching_files(&repo_root.join(rel), exts, out);
+    }
 }
 
 fn collect_manifest_files(manifest_dir: &Path, out: &mut Vec<PathBuf>) {
@@ -2522,6 +2570,7 @@ fn parse_config_to_json(path: &Path, format: &str) -> anyhow::Result<Option<serd
             let value: toml::Value = toml::from_str(&text)?;
             Ok(Some(serde_json::to_value(value)?))
         }
+        "jsonc" => Ok(Some(serde_json::from_str(&jsonc_to_json(&text))?)),
         "yaml" => {
             let value: serde_yaml::Value = serde_yaml::from_str(&text)?;
             Ok(Some(serde_json::to_value(value)?))
@@ -2529,6 +2578,105 @@ fn parse_config_to_json(path: &Path, format: &str) -> anyhow::Result<Option<serd
         "json" => Ok(Some(serde_json::from_str(&text)?)),
         _ => Ok(None),
     }
+}
+
+fn jsonc_to_json(input: &str) -> String {
+    let mut without_comments = String::with_capacity(input.len());
+    let mut chars = input.chars().peekable();
+    let mut in_string = false;
+    let mut escaped = false;
+
+    while let Some(ch) = chars.next() {
+        if in_string {
+            without_comments.push(ch);
+            if escaped {
+                escaped = false;
+            } else if ch == '\\' {
+                escaped = true;
+            } else if ch == '"' {
+                in_string = false;
+            }
+            continue;
+        }
+
+        if ch == '"' {
+            in_string = true;
+            without_comments.push(ch);
+            continue;
+        }
+
+        if ch == '/' {
+            match chars.peek().copied() {
+                Some('/') => {
+                    chars.next();
+                    for next in chars.by_ref() {
+                        if next == '\n' {
+                            without_comments.push('\n');
+                            break;
+                        }
+                    }
+                    continue;
+                }
+                Some('*') => {
+                    chars.next();
+                    let mut previous = '\0';
+                    for next in chars.by_ref() {
+                        if previous == '*' && next == '/' {
+                            break;
+                        }
+                        previous = next;
+                    }
+                    continue;
+                }
+                _ => {}
+            }
+        }
+
+        without_comments.push(ch);
+    }
+
+    remove_json_trailing_commas(&without_comments)
+}
+
+fn remove_json_trailing_commas(input: &str) -> String {
+    let mut output = String::with_capacity(input.len());
+    let mut chars = input.chars().peekable();
+    let mut in_string = false;
+    let mut escaped = false;
+
+    while let Some(ch) = chars.next() {
+        if in_string {
+            output.push(ch);
+            if escaped {
+                escaped = false;
+            } else if ch == '\\' {
+                escaped = true;
+            } else if ch == '"' {
+                in_string = false;
+            }
+            continue;
+        }
+
+        if ch == '"' {
+            in_string = true;
+            output.push(ch);
+            continue;
+        }
+
+        if ch == ',' {
+            let mut lookahead = chars.clone();
+            while matches!(lookahead.peek(), Some(next) if next.is_whitespace()) {
+                lookahead.next();
+            }
+            if matches!(lookahead.peek(), Some('}' | ']')) {
+                continue;
+            }
+        }
+
+        output.push(ch);
+    }
+
+    output
 }
 
 fn parse_status(path: &Path, format: &str) -> String {
@@ -2714,6 +2862,8 @@ fn infer_format(rel: &str) -> &'static str {
         "toml"
     } else if rel.ends_with(".yaml") || rel.ends_with(".yml") || rel.ends_with("agent-env.lock") {
         "yaml"
+    } else if rel.ends_with(".jsonc") {
+        "jsonc"
     } else if rel.ends_with(".json") {
         "json"
     } else if rel.ends_with(".jsonl") {
@@ -2736,6 +2886,22 @@ fn infer_format(rel: &str) -> &'static str {
 fn infer_file_kind(manifest_dir: &Path, path: &Path, rel: &str) -> &'static str {
     if path.starts_with(manifest_dir) && rel.ends_with(".toml") {
         "manifest"
+    } else if rel == "settings_default.jsonc" {
+        "yazelix_settings_default"
+    } else if rel.starts_with("config_metadata/") {
+        "yazelix_config_metadata"
+    } else if rel.starts_with("configs/") {
+        "yazelix_runtime_config"
+    } else if rel.starts_with("nushell/") {
+        "yazelix_nushell_config"
+    } else if rel.starts_with("home_manager/") {
+        "yazelix_home_manager_config"
+    } else if rel.starts_with("packaging/") || rel == "flake.nix" || rel == "flake.lock" {
+        "yazelix_packaging_config"
+    } else if rel.starts_with("rust_core/yazelix_zellij_config_pack/") {
+        "yazelix_zellij_config_pack"
+    } else if rel == "release_metadata.toml" {
+        "yazelix_release_metadata"
     } else if rel == "manifest/envctl.lock" {
         "envctl_lock"
     } else if rel == "agent-env.yaml" {
@@ -2784,6 +2950,18 @@ fn owner_component_from_path(rel: &str) -> Option<String> {
     {
         rel.rsplit_once('/')
             .map(|(_, name)| name.trim_end_matches(".toml").to_string())
+    } else if rel == "settings_default.jsonc"
+        || rel == "release_metadata.toml"
+        || rel == "flake.nix"
+        || rel == "flake.lock"
+        || rel.starts_with("config_metadata/")
+        || rel.starts_with("configs/")
+        || rel.starts_with("nushell/")
+        || rel.starts_with("home_manager/")
+        || rel.starts_with("packaging/")
+        || rel.starts_with("rust_core/yazelix_zellij_config_pack/")
+    {
+        Some("yazelix".to_string())
     } else if rel.contains("secretd") {
         Some("secretd".to_string())
     } else {
@@ -2798,6 +2976,14 @@ fn setting_scope(file_kind: &str) -> &'static str {
         "agent_env" => "agent_env",
         "codex_config" | "mcp_config" => "agent_runtime",
         "secretd_config" | "secrets_env_schema" | "secrets_proto" => "secrets",
+        "yazelix_settings_default"
+        | "yazelix_config_metadata"
+        | "yazelix_runtime_config"
+        | "yazelix_nushell_config"
+        | "yazelix_home_manager_config"
+        | "yazelix_packaging_config"
+        | "yazelix_zellij_config_pack"
+        | "yazelix_release_metadata" => "yazelix",
         "handoff_task" | "handoff_ledger_export" | "handoff_report" => "handoff",
         _ => "workspace",
     }
@@ -2810,6 +2996,11 @@ fn setting_precedence(file_kind: &str) -> u32 {
         "manifest" => 60,
         "secretd_config" => 55,
         "secrets_env_schema" | "secrets_proto" => 45,
+        "yazelix_settings_default" | "yazelix_config_metadata" => 90,
+        "yazelix_runtime_config" | "yazelix_nushell_config" => 85,
+        "yazelix_home_manager_config" | "yazelix_packaging_config" => 75,
+        "yazelix_zellij_config_pack" => 70,
+        "yazelix_release_metadata" => 65,
         "envctl_lock" | "agent_env_lock" => 50,
         "handoff_task" | "handoff_ledger_export" | "handoff_report" => 20,
         _ => 10,
@@ -2950,6 +3141,25 @@ mod tests {
     }
 
     #[test]
+    fn jsonc_parser_keeps_strings_and_removes_comments_and_trailing_commas() {
+        let value: serde_json::Value = serde_json::from_str(&jsonc_to_json(
+            r#"
+// leading comment
+{
+  "url": "https://example.test/a//b",
+  "items": [
+    "/* literal */",
+  ],
+}
+"#,
+        ))
+        .unwrap();
+
+        assert_eq!(value["url"], "https://example.test/a//b");
+        assert_eq!(value["items"][0], "/* literal */");
+    }
+
+    #[test]
     fn scan_normalizes_current_file_shapes_without_writes() {
         let root = fixture_root();
         write_fixture(&root);
@@ -3022,6 +3232,77 @@ mod tests {
             .unwrap()
             .iter()
             .any(|row| { row.get("var_name").and_then(|v| v.as_str()) == Some("API_TOKEN") }));
+    }
+
+    #[test]
+    fn scan_imports_yazelix_config_files_without_manifest() {
+        let root = fixture_root();
+        write_yazelix_fixture(&root);
+        let before = std::fs::read(root.join("settings_default.jsonc")).unwrap();
+
+        let snapshot = scan(
+            CatalogScanSpec {
+                repo_root: root.clone(),
+                manifest_dir: root.join("missing-manifest"),
+            },
+            &Registry::empty(),
+        )
+        .unwrap();
+
+        assert_eq!(
+            std::fs::read(root.join("settings_default.jsonc")).unwrap(),
+            before
+        );
+        assert_eq!(snapshot.components.len(), 0);
+        assert!(snapshot.config_files.iter().any(|row| {
+            row.path == "settings_default.jsonc"
+                && row.file_kind == "yazelix_settings_default"
+                && row.owner_component.as_deref() == Some("yazelix")
+        }));
+        assert!(snapshot.config_files.iter().any(|row| {
+            row.path == "config_metadata/main_config_contract.toml"
+                && row.file_kind == "yazelix_config_metadata"
+                && row.parse_status == "ok"
+        }));
+        assert!(snapshot.config_files.iter().any(|row| {
+            row.path == "configs/zellij/layouts/flexnetos_agent_workspace.kdl"
+                && row.file_kind == "yazelix_runtime_config"
+        }));
+        assert!(snapshot.config_files.iter().any(|row| {
+            row.path == "nushell/config/config.nu" && row.file_kind == "yazelix_nushell_config"
+        }));
+        assert!(snapshot
+            .settings
+            .iter()
+            .any(|row| row.source_file == "settings_default.jsonc"
+                && row.scope == "yazelix"
+                && row.precedence == 90));
+    }
+
+    #[test]
+    fn render_imports_yazelix_config_files_without_manifest() {
+        let root = fixture_root();
+        write_yazelix_fixture(&root);
+        let out = fixture_root();
+
+        let report = render(
+            CatalogRenderSpec {
+                repo_root: root,
+                manifest_dir: out.join("missing-manifest"),
+                out_dir: out.clone(),
+            },
+            &Registry::empty(),
+        )
+        .unwrap();
+
+        assert!(!report.summary.mutating_repo);
+        let config_files_path = out.join("catalog/tables/config_files.json");
+        assert!(config_files_path.is_file());
+        assert!(out.join("dashboard/mission-control.catalog.kdl").is_file());
+        let rows: Vec<ConfigFileRow> =
+            serde_json::from_slice(&std::fs::read(config_files_path).unwrap()).unwrap();
+        assert!(rows.iter().any(|row| row.path == "settings_default.jsonc"
+            && row.file_kind == "yazelix_settings_default"));
     }
 
     #[test]
@@ -3320,11 +3601,13 @@ mod tests {
     }
 
     fn fixture_root() -> PathBuf {
+        static SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
         let id = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .unwrap()
             .as_nanos();
-        let root = std::env::temp_dir().join(format!("envctl-catalog-test-{id}"));
+        let seq = SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+        let root = std::env::temp_dir().join(format!("envctl-catalog-test-{id}-{seq}"));
         let _ = std::fs::remove_dir_all(&root);
         root
     }
@@ -3435,6 +3718,62 @@ command = "context7"
 const ENVCTL_SEED_TOKEN: &str = "ENVCTL_SEED_TOKEN";
 const ENVCTL_SEED_TOKEN_FILE: &str = "ENVCTL_SEED_TOKEN_FILE";
 "#,
+        )
+        .unwrap();
+    }
+
+    fn write_yazelix_fixture(root: &Path) {
+        std::fs::create_dir_all(root.join("config_metadata")).unwrap();
+        std::fs::create_dir_all(root.join("configs/zellij/layouts")).unwrap();
+        std::fs::create_dir_all(root.join("configs/helix")).unwrap();
+        std::fs::create_dir_all(root.join("nushell/config")).unwrap();
+        std::fs::create_dir_all(root.join("home_manager")).unwrap();
+        std::fs::create_dir_all(root.join("packaging")).unwrap();
+        std::fs::create_dir_all(root.join("rust_core/yazelix_zellij_config_pack/layouts")).unwrap();
+
+        std::fs::write(
+            root.join("settings_default.jsonc"),
+            r#"{"debug_mode":false}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("config_metadata/main_config_contract.toml"),
+            r#"
+[[field]]
+key = "debug_mode"
+default = false
+"#,
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("config_metadata/yazelix_settings.schema.json"),
+            r#"{"type":"object"}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("configs/zellij/layouts/flexnetos_agent_workspace.kdl"),
+            "layout {}\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("configs/helix/yazelix_config.toml"),
+            "theme = \"zed\"\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("nushell/config/config.nu"),
+            "$env.config.show_banner = false\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home_manager/module.nix"),
+            "{ config, ... }: {}\n",
+        )
+        .unwrap();
+        std::fs::write(root.join("packaging/mk_runtime_tree.nix"), "{ }:\n").unwrap();
+        std::fs::write(
+            root.join("rust_core/yazelix_zellij_config_pack/layouts/yzx_side.kdl"),
+            "layout {}\n",
         )
         .unwrap();
     }
