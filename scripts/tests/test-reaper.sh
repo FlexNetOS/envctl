@@ -21,7 +21,11 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
 # neutralise the reaper's optional `meta git worktree prune` tail (it must not touch the real tree).
-mkdir -p "$tmp/bin"; printf '#!/bin/sh\nexit 0\n' > "$tmp/bin/meta"; chmod +x "$tmp/bin/meta"
+mkdir -p "$tmp/bin"; cat > "$tmp/bin/meta" <<'SH'
+#!/bin/sh
+exit 0
+SH
+chmod +x "$tmp/bin/meta"
 # Stub `gh` to FAIL: the squash-merge oracle in is_reapable() is fail-closed, so against this
 # hermetic (non-GitHub) repo it must fall through to the [gone]/ancestor predicates. Stubbing gh
 # to exit 1 makes that deterministic (independent of whether the host has a real, authed gh).
@@ -29,6 +33,65 @@ printf '#!/bin/sh\nexit 1\n' > "$tmp/bin/gh"; chmod +x "$tmp/bin/gh"
 export PATH="$tmp/bin:$PATH"
 
 gitc() { git -c user.email=t@example.com -c user.name=test -c commit.gpgsign=false "$@"; }
+
+# Worktree identity guard: project/repo name (envctl) is not a meta worktree-set slug.
+# Only a checkout root shaped .worktrees/<slug>/envctl may drive `meta git worktree status <slug>`.
+slug_tmp="$tmp/slug-guard"
+main_checkout="$slug_tmp/main/envctl"
+managed_checkout="$slug_tmp/.worktrees/fix-worktree-slug-main-checkout/envctl"
+malformed_short="$slug_tmp/.worktrees/envctl"
+malformed_wrong_repo="$slug_tmp/.worktrees/fix-worktree-slug-main-checkout/not-envctl"
+mkdir -p "$main_checkout" "$managed_checkout" "$malformed_short" "$malformed_wrong_repo"
+gitc -C "$main_checkout" init -q
+gitc -C "$managed_checkout" init -q
+gitc -C "$malformed_short" init -q
+gitc -C "$malformed_wrong_repo" init -q
+
+main_out="$tmp/main-slug.out"
+if bash "$REAPER" --managed-worktree-slug "$main_checkout" envctl >"$main_out" 2>&1; then
+  fail "main checkout produced a managed worktree slug"
+fi
+[ ! -s "$main_out" ] || fail "main checkout slug helper printed output"
+
+slug_out="$(bash "$REAPER" --managed-worktree-slug "$managed_checkout" envctl)" || fail "managed checkout did not produce a slug"
+[ "$slug_out" = "fix-worktree-slug-main-checkout" ] || fail "managed slug was '$slug_out'"
+
+# A managed worktree-set slug may literally be named "envctl". That valid edge is distinct
+# from the main checkout, because the path shape is .worktrees/envctl/envctl.
+slug_named_repo="$slug_tmp/.worktrees/envctl/envctl"
+mkdir -p "$slug_named_repo"
+gitc -C "$slug_named_repo" init -q
+repo_slug_out="$(bash "$REAPER" --managed-worktree-slug "$slug_named_repo" envctl)" || fail "slug named envctl was rejected despite managed path shape"
+[ "$repo_slug_out" = "envctl" ] || fail "slug named envctl produced '$repo_slug_out'"
+
+bash "$REAPER" --managed-worktree-slug "$malformed_short" envctl >/dev/null 2>&1 && fail "malformed .worktrees/envctl path produced a slug" || true
+bash "$REAPER" --managed-worktree-slug "$malformed_wrong_repo" envctl >/dev/null 2>&1 && fail "wrong repo leaf produced a slug" || true
+
+export META_CALL="$tmp/meta-call"
+cat > "$tmp/bin/meta" <<'SH'
+#!/bin/sh
+printf '%s\n' "$*" > "$META_CALL"
+exit 0
+SH
+chmod +x "$tmp/bin/meta"
+rm -f "$META_CALL"
+bash "$REAPER" --meta-worktree-status "$managed_checkout" envctl >/dev/null || fail "managed status helper failed"
+[ "$(cat "$META_CALL")" = "git worktree status fix-worktree-slug-main-checkout" ] || fail "managed status used wrong meta arguments: $(cat "$META_CALL")"
+rm -f "$META_CALL"
+bash "$REAPER" --meta-worktree-status "$slug_named_repo" envctl >/dev/null || fail "slug-named-envctl status helper failed"
+[ "$(cat "$META_CALL")" = "git worktree status envctl" ] || fail "slug-named-envctl status used wrong meta arguments: $(cat "$META_CALL")"
+rm -f "$META_CALL"
+if bash "$REAPER" --meta-worktree-status "$main_checkout" envctl >"$tmp/main-status.out" 2>"$tmp/main-status.err"; then
+  fail "main checkout status helper succeeded (should skip/fail closed)"
+fi
+[ ! -e "$META_CALL" ] || fail "main checkout status helper called meta"
+grep -q "main/unmanaged checkout; skipping meta git worktree status" "$tmp/main-status.err" || fail "main checkout skip message missing"
+# Restore the no-op `meta` stub for the destructive reaper scenario below.
+cat > "$tmp/bin/meta" <<'SH'
+#!/bin/sh
+exit 0
+SH
+chmod +x "$tmp/bin/meta"
 
 # bare origin
 git init -q --bare "$tmp/origin.git"
@@ -61,7 +124,7 @@ gitc -C "$tmp/wt-local-only" commit -qm local-only
 # Husk-cleanup case: a merged/clean worktree UNDER a meta/.worktrees/<slug>/ layout — after the
 # worktree is removed, the now-empty <slug> husk dir must be rmdir'd (FIX: empty husks piled up).
 mk_gone_worktree feat-husk "$tmp/.worktrees/huskslug/envctl"
-# .handoff source-of-truth guard: a [gone] (merged) worktree whose ONLY change is uncommitted
+# .handoff source-of-truth guard: a branch whose upstream disappeared but whose ONLY change is uncommitted
 # `.handoff` state must be REFUSED, never reaped (owner FIX #4).
 mk_gone_worktree feat-handoff "$tmp/wt-handoff"
 mkdir -p "$tmp/wt-handoff/.handoff"; echo "loop state" > "$tmp/wt-handoff/.handoff/state.md"

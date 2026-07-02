@@ -39,6 +39,7 @@ CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M
 CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M/usr/bin/codex" plugin list | grep -q 'harness@harness-marketplace  installed, enabled' || exit 1
 CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M/usr/bin/codex" mcp list >/dev/null || exit 1
 ! find "$M/.toolchains/bun" "$M/.toolchains/.bun" -path '*/@openai/codex*' -print -quit 2>/dev/null | grep -q .
+"$M/envctl/assets/scripts/envctl-codex-cleanup.sh" verify
 ''']
 [component.install]
 kind = "script"
@@ -293,6 +294,8 @@ export CODEX_HOME="$CODEX_HOME_DIR" CODEX_SQLITE_HOME="$CODEX_STATE_DIR"
 "$M/usr/bin/codex" plugin add meta@gitkb >/dev/null || true
 "$M/usr/bin/codex" plugin add harness@harness-marketplace >/dev/null || true
 "$M/usr/bin/codex" mcp list >/dev/null
+"$M/envctl/assets/scripts/envctl-codex-cleanup.sh" clean
+"$M/envctl/assets/scripts/envctl-codex-cleanup.sh" verify
 '''
 [component.verify]
 kind = "command"
@@ -321,4 +324,5 @@ CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M
 CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M/usr/bin/codex" plugin list | grep -q 'harness@harness-marketplace  installed, enabled'
 CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M/usr/bin/codex" mcp list >/dev/null
 ! find "$M/.toolchains/bun" "$M/.toolchains/.bun" -path '*/@openai/codex*' -print -quit 2>/dev/null | grep -q .
+"$M/envctl/assets/scripts/envctl-codex-cleanup.sh" verify
 ''']

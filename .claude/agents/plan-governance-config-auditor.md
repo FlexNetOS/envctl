@@ -99,3 +99,7 @@ Write `.handoff/loop/plan/findings/governance-config-<T>.md`:
 
 Never weaken a rule, policy, hook, gate, or permission guard. A relaxation is always PROPOSED and
 owner-walled.
+
+## Concurrent peer-artifact rule (P9)
+
+During parallel fan-out, an expected peer artifact that is absent before its producing lane reports done is **PENDING**, not a hard missing-artifact finding. Record the pending dependency and re-check after the producer lane is complete. Escalate a fail-closed missing-artifact finding only when the artifact is still absent after the producer is known complete; this preserves fail-closed behavior without false negatives from timing.

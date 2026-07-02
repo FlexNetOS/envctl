@@ -1,42 +1,61 @@
-# TASK-0078 cache manifest scaffold guardian report
+# Guardian Report — ADR-0003 Catalog Phase 1
 
-Status: PASS
+## Verdict
+
+PASS-WITH-NOTES
+
+This slice safely establishes the ADR-0003 read-only catalog/table foundation and CLI inspection surface. It does not claim ADR completion.
 
 ## Invariants checked
 
-- Existing cache-child status and validation report schemas remain unchanged.
-- New scaffold report is read-only and leaves `apply_command` empty.
-- Missing manifests receive deterministic escaped TOML stubs and owner-review next actions.
-- Existing matching manifests receive no stub and route to review-before-migration.
-- Existing wrong/empty manifests receive no stub and route to fix-id-before-migration.
-- No broad `.cache` mutation, manifest write, or cache-child apply is performed.
+- Existing TOML/YAML/JSON/Rust/handoff inputs remain accepted; no source format was removed or replaced.
+- Catalog scan and table commands are read-only inspection paths.
+- No generated file writes, lock updates, or sync mutations were added.
+- Engine owns the catalog logic; CLI only invokes the shared engine surface and formats output.
+- Row contracts include first-class ownership/source/provenance fields and explicit manual override metadata.
+- `config_files` rows represent scanned source/control-plane files.
+- `observed_facts` rows capture read-only verifier-style observations from current repo files.
 
-## Verification evidence
+## Validation evidence
+
+Passed:
+
+- `cargo fmt --all`
+- `cargo test -p envctl-engine catalog`
+- `cargo test -p envctl-engine`
+- `cargo test -p envctl`
+- `cargo clippy --workspace -- -D warnings`
+- `bash ci/gates/shape.sh`
+- `bash ci/gates/agent-env.sh`
+- `bash ci/gates/p7.sh`
+- `bash ci/gates/loop-state.sh`
+- `bash ci/gates/harness-scripts.sh`
+- `bash ci/gates/meta-local-policy.sh`
+
+Runtime smoke passed:
+
+- `cargo run -q -p envctl --bin envctl -- catalog scan --json`
+- `cargo run -q -p envctl --bin envctl -- catalog table components`
+- `cargo run -q -p envctl --bin envctl -- catalog table observed-facts`
+- `cargo run -q -p envctl --bin envctl -- catalog table env-vars --json`
+
+Observed normalized row counts from the current repo:
 
 ```text
-bash -n scripts/audit-meta-local-paths.sh scripts/tests/test-meta-local-path-audit.sh
-bash scripts/tests/test-meta-local-path-audit.sh
-# test-meta-local-path-audit: PASS
-git diff --check
-bash ci/gates/meta-local-policy.sh
-# meta-local-policy: active install sources target META_ROOT FHS/XDG; only the single real-home .local bridge is allowed
-bash ci/gates/harness-scripts.sh
-# HARNESS-SCRIPTS GATE PASS
-bash ci/gates/p7.sh
-# P7 GATE PASS
+components: 96
+component_hooks: 376
+paths: 49
+settings: 2928
+env_vars: 105
+agent_assets: 51
+registries: 16
+config_files: 342
+migration_evidence: 0
+observed_facts: 694
 ```
 
-## Runtime evidence
+## Notes / remaining ADR risk
 
-Live non-mutating audit against `/home/drdave/Desktop/meta` and `/home/drdave`:
-
-```text
-rc=0
-meta-local audit: PASS warnings=10 changed=0 dot_entries=79
-scaffold_lines=85 validation_lines=85
-rows=84 missing=84 no_decl=84 scaffold=84 pending=84 stub=84 next=84 nonempty_apply=0
-config=0 nested=0 sensitive=0
-apply_empty=PASS
-```
-
-The runtime command used report-only owner-supervised flags, did not pass `--apply`, and emitted no non-empty scaffold `apply_command` values.
+- `migration_evidence` has a row contract but no current evidence rows because this slice does not perform migrations or adoption actions.
+- ADR-0003 still requires diff/render/import/sync/lock/config-edit/widget behavior and final code-research-verify coverage.
+- The next safe slice should add read-only `catalog diff` and/or `catalog render --out <tempdir>` without applying mutations.
