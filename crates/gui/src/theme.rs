@@ -118,28 +118,28 @@ pub fn apply(ctx: &egui::Context) {
 
     w.inactive.bg_fill = SURFACE;
     w.inactive.weak_bg_fill = SURFACE;
-    w.inactive.bg_stroke = Stroke::new(1.0, BORDER);
-    w.inactive.fg_stroke = Stroke::new(1.0, TEXT);
+    w.inactive.bg_stroke = Stroke::new(1.0_f32, BORDER);
+    w.inactive.fg_stroke = Stroke::new(1.0_f32, TEXT);
     w.inactive.rounding = round;
 
     w.hovered.bg_fill = SURFACE_HOVER;
     w.hovered.weak_bg_fill = SURFACE_HOVER;
-    w.hovered.bg_stroke = Stroke::new(1.0, ACCENT);
-    w.hovered.fg_stroke = Stroke::new(1.5, TEXT);
+    w.hovered.bg_stroke = Stroke::new(1.0_f32, ACCENT);
+    w.hovered.fg_stroke = Stroke::new(1.5_f32, TEXT);
     w.hovered.rounding = round;
     w.hovered.expansion = 1.0;
 
     w.active.bg_fill = ACCENT_DIM;
     w.active.weak_bg_fill = ACCENT_DIM;
-    w.active.bg_stroke = Stroke::new(1.0, ACCENT);
-    w.active.fg_stroke = Stroke::new(1.5, TEXT);
+    w.active.bg_stroke = Stroke::new(1.0_f32, ACCENT);
+    w.active.fg_stroke = Stroke::new(1.5_f32, TEXT);
     w.active.rounding = round;
     w.active.expansion = 1.0;
 
     w.open.bg_fill = SURFACE;
     w.open.weak_bg_fill = SURFACE;
-    w.open.bg_stroke = Stroke::new(1.0, BORDER);
-    w.open.fg_stroke = Stroke::new(1.0, TEXT);
+    w.open.bg_stroke = Stroke::new(1.0_f32, BORDER);
+    w.open.fg_stroke = Stroke::new(1.0_f32, TEXT);
     w.open.rounding = round;
 
     v.slider_trailing_fill = true;
@@ -152,7 +152,7 @@ pub fn apply(ctx: &egui::Context) {
 pub fn card() -> egui::Frame {
     egui::Frame::none()
         .fill(SURFACE)
-        .stroke(Stroke::new(1.0, BORDER))
+        .stroke(Stroke::new(1.0_f32, BORDER))
         .rounding(Rounding::same(10.0))
         .inner_margin(Margin::same(14.0))
         .outer_margin(Margin::symmetric(0.0, 4.0))
@@ -162,7 +162,7 @@ pub fn card() -> egui::Frame {
 pub fn inset() -> egui::Frame {
     egui::Frame::none()
         .fill(PANEL)
-        .stroke(Stroke::new(1.0, BORDER))
+        .stroke(Stroke::new(1.0_f32, BORDER))
         .rounding(Rounding::same(10.0))
         .inner_margin(Margin::same(16.0))
 }
