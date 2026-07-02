@@ -130,4 +130,20 @@ if grep -RInE 'redirect the shared ledger|no per-repo ledger|forbidden per-repo|
   fail "stale handoff residency doctrine found in active skill/agent config"
 fi
 
+# Worktree doctrine must not regress to treating a repo name as a managed worktree slug,
+# or to treating a [gone] upstream as merge proof.  The safe status path is the
+# path-shape helper in scripts/reap-worktrees.sh.
+if grep -RInE '\[gone\].*\(merged\)|upstream is `\[gone\]` \(merged\)|meta git worktree status envctl' \
+  "$root/.agents/skills/forge-loop" \
+  "$root/.claude/skills/forge-loop" \
+  "$root/.agents/skills/session-relay-resume" \
+  "$root/.claude/skills/session-relay-resume" \
+  "$root/.agents/skills/session-relay-wrap-up" \
+  "$root/.claude/skills/session-relay-wrap-up" \
+  "$root/.codex/agents/continuity-steward.toml" \
+  "$root/.claude/agents/continuity-steward.md" >/tmp/envctl-worktree-contract-grep.txt 2>/dev/null; then
+  cat /tmp/envctl-worktree-contract-grep.txt >&2
+  fail "stale worktree slug or gone-equals-merged doctrine found in active config"
+fi
+
 echo "SKILL-CONTRACT TEST PASS"

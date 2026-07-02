@@ -1,30 +1,49 @@
-# Feature Forge architect plan — TASK-0072 Ollama model store into meta
+# ADR-0003 catalog-first control plane — implementation slice 1 plan
 
-Date: 2026-06-27
-Branch/worktree: `task-0072-ollama-models-meta`
+## Goal
 
-## Verified claim
+Build the first read-only implementation slice for ADR-0003: an engine-owned catalog scanner plus CLI table output. This slice must not mutate repo files or replace the existing TOML/YAML/JSON sources. It turns existing files into normalized in-memory rows so later PRs can add diff/render/sync/widget behavior.
 
-Backlog TASK-0072 requires keeping the meta-owned Ollama runner/client primary while moving model blobs out of root/real-home daemon stores into a meta-owned location. Ollama removal is explicitly deferred until shimmy+ruvllm prove parity.
+## Scope
 
-Existing state before this cycle:
-- `ollama` component installed runner bytes under `$META_ROOT/.toolchains/ollama` and exposed `$META_ROOT/usr/bin/ollama` as a symlink to the toolchain binary.
-- `envctl env --toolchains` exported `OLLAMA_LIBRARY_PATH` only.
-- No canonical layout helper/export existed for `OLLAMA_MODELS`.
+- Add `envctl_engine::catalog` with row contracts for:
+  - components
+  - component_hooks
+  - paths
+  - settings
+  - env_vars
+  - agent_assets
+  - registries
+  - config_files
+  - migration_evidence
+  - observed_facts
+- Add `Engine::catalog_scan()` as the non-printing shared API.
+- Add CLI surfaces:
+  - `envctl catalog scan --json`
+  - `envctl catalog table <name> [--json]`
+- Populate rows from live repo sources where available:
+  - manifest TOML + envctl lock
+  - agent-env YAML/lock
+  - `.codex/config.toml`
+  - `.mcp.json`
+  - hub `registry.json`
+  - `layout.rs` path registry through `MetaLayout`
+  - secretd config surfaces when present
+  - `.handoff` tasks/ledger/report exports
+- Add tests for row contracts, aliases, redaction, and source coverage.
 
-## Design
+## Non-goals for this PR
 
-1. Treat Ollama model layers as persistent state, not toolchain binaries:
-   - canonical path: `$META_ROOT/var/lib/ollama/models`.
-2. Add `MetaLayout::ollama_models()` and export it from `envctl env --toolchains` in shell and JSON modes as `OLLAMA_MODELS`.
-3. Change the manifest component from a symlink to a meta-owned wrapper at `$META_ROOT/usr/bin/ollama`:
-   - wrapper forces `META_ROOT`, `OLLAMA_MODELS`, and `OLLAMA_LIBRARY_PATH`;
-   - wrapper execs `$META_ROOT/.toolchains/ollama/bin/ollama`.
-4. During install, create `$META_ROOT/var/lib/ollama/models` and non-destructively copy legacy stores into it only when the meta store is empty. Never delete root/real-home legacy model stores behind envctl's back.
-5. Preserve the runner binary under `.toolchains/ollama`; do not implement shimmy/ruvllm removal in this task.
+- No apply/mutation.
+- No DB persistence.
+- No authoritative generated-file replacement.
+- No bidirectional sync or widget yet.
+- No removal of legacy file inputs.
 
-## Runtime surface
+## Verification
 
-- `envctl env --toolchains` must print `OLLAMA_MODELS=$META_ROOT/var/lib/ollama/models`.
-- `envctl env --toolchains --json` must carry the same path.
-- `envctl lock --check` must accept the updated manifest lock.
+- `cargo fmt --all`
+- `cargo test -p envctl-engine catalog`
+- `cargo build -p envctl`
+- runtime checks for catalog scan/table
+- relevant gates if touched: shape, agent-env, p7, loop-state, harness-scripts, meta-local-policy
