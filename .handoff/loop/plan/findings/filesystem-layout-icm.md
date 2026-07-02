@@ -113,7 +113,7 @@ user-level (XDG, ~) — where icm ACTUALLY lives (WRONG boundary for meta)
   ~/.local/bin/icm                       binary (should be symlink INTO meta)
   ~/.local/share/icm/memories.db         the memory plane (should be meta-owned)
   ~/.local/share/icm/install-manifest.json
-  ~/.config/icm/config.toml + credentials (secret!) 
+  ~/.config/icm/config.toml + credentials (secret!)
   ~/.cache/icm/models + extract-pending.lock
   ~/.claude ~/.gemini ~/.codex ~/.copilot ~/.config/{Code,amp,zed,opencode}
       = host-injection targets (other tools' user-global config)
