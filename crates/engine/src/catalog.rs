@@ -3969,8 +3969,8 @@ default = false
         .unwrap();
         std::fs::write(
             root.join("nushell/config/config.nu"),
-            r#"source ~/.local/share/yazelix/initializers/nushell/yazelix_init.nu
-use ~/.local/share/yazelix/completions/yazelix_extern.nu *
+            r#"source /opt/yazelix/share/initializers/nushell/yazelix_init.nu
+use /opt/yazelix/share/completions/yazelix_extern.nu *
 alias yzx = yazelix
 def yzx_ready [] { true }
 $env.config.show_banner = false
