@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Launch the MCP memory server with every writable path rooted in $META_ROOT.
-# The server-memory package honors MEMORY_FILE_PATH; npm/npx honor npm_config_*.
+# The server-memory package honors MEMORY_FILE_PATH; bun/bunx honor the XDG/HOME roots.
 set -euo pipefail
 
 if [ -z "${META_ROOT:-}" ]; then
@@ -27,7 +27,7 @@ export XDG_CACHE_HOME="$META_ROOT/.local/cache"
 export npm_config_cache="$META_ROOT/.local/cache/npm"
 export npm_config_prefix="$META_ROOT/.local"
 export MEMORY_FILE_PATH="$META_ROOT/.local/share/mcp-memory/memory.jsonl"
-export PATH="$META_ROOT/.toolchains/node/bin:$META_ROOT/.local/bin:$PATH"
+export PATH="$META_ROOT/usr/bin:$META_ROOT/.toolchains/.bun/bin:$META_ROOT/.toolchains/node/bin:$META_ROOT/.local/bin:$PATH"
 
 mkdir -p \
   "$HOME" \
@@ -35,10 +35,10 @@ mkdir -p \
   "$XDG_STATE_HOME" \
   "$XDG_CACHE_HOME/npm"
 
-npx_bin="$META_ROOT/.toolchains/node/bin/npx"
-if [ ! -x "$npx_bin" ]; then
-  echo "envctl-mcp-memory-server: missing meta node npx at $npx_bin" >&2
+bunx_bin="$META_ROOT/usr/bin/bunx"
+if [ ! -x "$bunx_bin" ]; then
+  echo "envctl-mcp-memory-server: missing meta bunx wrapper at $bunx_bin" >&2
   exit 1
 fi
 
-exec "$npx_bin" -y @modelcontextprotocol/server-memory
+exec "$bunx_bin" @modelcontextprotocol/server-memory

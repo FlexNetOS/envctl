@@ -107,17 +107,24 @@ just the loop state.)
    commit). Skipping this would re-trigger the boundary every turn via the hook.
 
 5b. **Reap merged worktrees/branches (keep the workspace in sync).** The loop creates a fresh
-   `meta/.worktrees/<slug>/envctl` per cycle; once a cycle's PR auto-merges, origin deletes the head
+   `meta/.worktrees/<slug>/envctl` per cycle; `<slug>` is the managed meta worktree-set slug and
+   `envctl` is only the repo checkout name. Once a cycle's PR auto-merges, origin deletes the head
    (`delete_branch_on_merge`) but the *local* worktree/branch/tracking-ref linger and pile up. After
    the handoff commit, run the reaper to mirror origin's cleanup locally:
    ```bash
    bash scripts/reap-worktrees.sh            # preview first
    bash scripts/reap-worktrees.sh --apply    # reap merged/clean worktrees + branches + prune refs
    ```
+   If you need to check a meta worktree set before/after reaping, derive it from path shape first:
+   `bash scripts/reap-worktrees.sh --managed-worktree-slug <worktree-dir> envctl`; never pass the
+   repo name `envctl` as a guessed slug for the main checkout.
+
    It is **safe by construction**: dry-run by default, never `--force`, protects `master`/`develop`/the
    current worktree/branch, **skips any dirty worktree** (uncommitted work is never destroyed), and
-   never touches remotes. A branch is reaped only when its upstream is `[gone]` (PR resolved) or it is an
-   ancestor of `origin/master`. This is the step that stops the 46-worktree / 85-branch pileup.
+   never touches remotes. A branch is reaped only when its patches are already represented on
+   `origin/master` (ancestor or squash/patch-equivalent). `[gone]` is only a diagnostic that the
+   temporary remote branch disappeared, not proof of merge. This is the step that stops the
+   46-worktree / 85-branch pileup.
    > **Local reap vs. remote delete (irreversible-action discipline).** The reaper is LOCAL-only by
    > design; origin self-cleans merged heads. If you ever delete **origin** branches manually (an
    > irreversible off-box action), that is a human wall: get explicit owner authorization, write a

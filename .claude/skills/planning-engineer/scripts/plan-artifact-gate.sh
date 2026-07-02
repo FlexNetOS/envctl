@@ -230,6 +230,35 @@ def validate_done(target_rows: list[tuple[str, str, str]]) -> None:
         err("DONE must record completeness sweep and confirmed/qualified evidence")
 
 
+def terminal_loop_state() -> bool:
+    p = plan / "loop_state.md"
+    if not p.exists():
+        return False
+    try:
+        s = p.read_text(encoding="utf-8")
+    except Exception as exc:
+        err(f"loop_state.md unreadable: {exc}")
+        return False
+    # HAND OFF is intentionally not terminal: it can be an in-flight context-boundary state.
+    # COMPLETE/DONE are terminal roll-ups and therefore must not be allowed to pass with no
+    # target rows or only in-flight rows. This closes the historical zero-target false pass.
+    return bool(re.search(r"^status:\s*(?:COMPLETE|DONE)\b", s, re.I | re.M))
+
+
+def validate_terminal_rollup(target_rows: list[tuple[str, str, str]]) -> None:
+    if not ((plan / "DONE").exists() or terminal_loop_state()):
+        return
+    if not target_rows:
+        err("terminal plan state exists but no target rows were parsed")
+        return
+    terminal = {"x", "!"}
+    for status, slug, _ in target_rows:
+        if status not in terminal:
+            err(f"terminal plan state exists but target {slug} is not terminal: [{status or ' '}]")
+    if not any(status == "x" for status, _, _ in target_rows):
+        err("terminal plan state exists but no planned target is marked [x]")
+
+
 target_rows = parse_targets()
 terminal_planned = [slug for status, slug, _ in target_rows if status == "x"]
 if terminal_planned:
@@ -237,6 +266,7 @@ if terminal_planned:
     validate_verdicts()
     for slug in terminal_planned:
         validate_target(slug)
+validate_terminal_rollup(target_rows)
 validate_done(target_rows)
 
 if errors:

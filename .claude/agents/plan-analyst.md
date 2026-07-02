@@ -95,3 +95,7 @@ its test:
 Extend the dimension note — keep verified claims, refine low-confidence ones with new evidence/graph
 data, and add upgrades the latest graph delta surfaces. On a partial-redo of this one dimension,
 rewrite only this `findings/<dim>.md`; don't touch the other dimensions' findings.
+
+## Concurrent peer-artifact rule (P9)
+
+During parallel fan-out, an expected peer artifact that is absent before its producing lane reports done is **PENDING**, not a hard missing-artifact finding. Record the pending dependency and re-check after the producer lane is complete. Escalate a fail-closed missing-artifact finding only when the artifact is still absent after the producer is known complete; this preserves fail-closed behavior without false negatives from timing.

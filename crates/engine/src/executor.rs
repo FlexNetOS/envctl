@@ -710,7 +710,7 @@ pub fn add_repo(
         }
     }
 
-    // INSTALL + WIRE-IN (symlink, refuse-shadow, refuse-unmanaged-unless-force).
+    // INSTALL + WIRE-IN (regular frontdoor, refuse-shadow, refuse-unmanaged-unless-force).
     let iplan = build_install_plan(&id, &spec, &outcome);
     let ireport = crate::install::install_and_wire(&iplan, spec.force, false, sink);
     // AUDIT-FIX (#24): a half-installed add-repo must NOT persist a drop-in. If
