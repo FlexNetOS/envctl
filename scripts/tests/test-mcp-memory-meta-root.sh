@@ -7,8 +7,8 @@ tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 
 meta="$tmp/meta"
-mkdir -p "$meta/.toolchains/node/bin"
-cat > "$meta/.toolchains/node/bin/npx" <<'NPX'
+mkdir -p "$meta/usr/bin"
+cat > "$meta/usr/bin/bunx" <<'BUNX'
 #!/usr/bin/env bash
 set -euo pipefail
 {
@@ -21,8 +21,8 @@ set -euo pipefail
   printf 'MEMORY_FILE_PATH=%s\n' "$MEMORY_FILE_PATH"
   printf 'argv=%s\n' "$*"
 } > "$META_ROOT/env.out"
-NPX
-chmod +x "$meta/.toolchains/node/bin/npx"
+BUNX
+chmod +x "$meta/usr/bin/bunx"
 
 META_ROOT="$meta" "$root/assets/scripts/envctl-mcp-memory-server"
 
@@ -43,7 +43,7 @@ want XDG_CACHE_HOME "$meta/.local/cache"
 want npm_config_cache "$meta/.local/cache/npm"
 want npm_config_prefix "$meta/.local"
 want MEMORY_FILE_PATH "$meta/.local/share/mcp-memory/memory.jsonl"
-want argv "-y @modelcontextprotocol/server-memory"
+want argv "@modelcontextprotocol/server-memory"
 
 test -d "$meta/.local/share/mcp-memory" || { echo "FAIL: memory data dir was not created" >&2; exit 1; }
 test -d "$meta/.local/cache/npm" || { echo "FAIL: npm cache dir was not created" >&2; exit 1; }

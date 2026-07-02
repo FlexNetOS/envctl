@@ -43,7 +43,7 @@ done
 [ -n "$TARGET" ] || { echo "error: --target required" >&2; usage; exit 2; }
 [ -n "$TARGET_ROOT" ] || { echo "error: --root required" >&2; usage; exit 2; }
 RUN_ID="${RUN_ID:-run-$$}"
-ORCH="${PLAN_WEAVE_ORCH:-envctl-plan-orchestrator-$RUN_ID}"
+ORCH="${PLAN_WEAVE_ORCH:-plan-orchestrator-$RUN_ID}"
 mkdir -p "$STATE_DIR"
 OUT="$STATE_DIR/$RUN_ID.jsonl"
 : > "$OUT"

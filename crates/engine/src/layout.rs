@@ -189,6 +189,16 @@ impl MetaLayout {
         self.var_lib().join("envctl")
     }
 
+    /// Meta-owned Ollama model blob store.
+    ///
+    /// Ollama model layers are persistent data, not binaries, so they live under
+    /// the canonical meta `var/lib` tree while the runner binary remains in the
+    /// legacy `.toolchains/ollama` compatibility prefix until shimmy+ruvllm
+    /// proves the replacement path.
+    pub fn ollama_models(&self) -> PathBuf {
+        self.var_lib().join("ollama/models")
+    }
+
     pub fn var_cache(&self) -> PathBuf {
         self.var().join("cache")
     }
@@ -768,6 +778,7 @@ mod tests {
         assert_eq!(l.xdg_state_home(), Path::new("/m/.local/state"));
         assert_eq!(l.xdg_cache_home(), Path::new("/m/.cache"));
         assert_eq!(l.repo_store(), Path::new("/m/var/lib/envctl/repos"));
+        assert_eq!(l.ollama_models(), Path::new("/m/var/lib/ollama/models"));
         assert_eq!(l.envctl_lib(), Path::new("/m/usr/lib/envctl"));
         assert_eq!(
             l.secrets_libexec(),

@@ -587,8 +587,9 @@ fn dropin_filters_injection_in_relinks() {
         "unsafe relink REL must be filtered"
     );
     assert!(
-        toml.contains("ln -sfn \"$SRC/target/release/good\" \"$BIN/good\""),
-        "safe relink kept"
+        toml.contains("envctl_frontdoor \"$SRC/target/release/good\" \"$BIN/good\"")
+            && toml.contains("envctl_frontdoor()"),
+        "safe regular frontdoor install kept"
     );
     assert!(
         toml.contains("STORE=\"$M/var/lib/envctl/repos\"")
