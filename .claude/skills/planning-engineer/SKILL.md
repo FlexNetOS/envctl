@@ -51,9 +51,11 @@ fail-closed finding, never a recommendation:
 
 This ejected harness must stay aligned with the owner prompt in
 `/home/drdave/Desktop/meta/prompt_hub/prompts/planning-engineer-loop.prompt.yml`. Treat that
-PromptHub file as the upstream **north-star intent** and this envctl package as the runnable, tested
-Codex/agent implementation of it. When they differ, preserve the stricter requirement and patch the
-harness; never silently downgrade the prompt's intent.
+PromptHub file as the upstream **north-star intent** and `harness_hub` as the reusable packaged
+source-of-truth for this planning-engineer harness. The envctl `.claude/`/`.agents/` trees are
+ejected, runnable, tested mirrors of that package. When they differ, preserve the stricter
+requirement, patch the `harness_hub` package first, then re-eject/sync envctl; never silently
+downgrade the prompt's intent.
 
 Current relationship truth:
 - `meta` is the fleet/workspace mission-control root (`/home/drdave/Desktop/meta`) and `.meta.yaml`

@@ -1,29 +1,49 @@
-# TASK-0078 next slice plan — app-config target inventory + backup archive guard
+# ADR-0003 catalog-first control plane — implementation slice 1 plan
 
-Date: 2026-06-27
-Worktree: `/home/drdave/Desktop/meta/.worktrees/task-0078-next-inventory/envctl`
-Branch: `task-0078-next-inventory`
+## Goal
 
-## Verified baseline
+Build the first read-only implementation slice for ADR-0003: an engine-owned catalog scanner plus CLI table output. This slice must not mutate repo files or replace the existing TOML/YAML/JSON sources. It turns existing files into normalized in-memory rows so later PRs can add diff/render/sync/widget behavior.
 
-- `origin/master` already contains the prior TASK-0078 slices: PR #290/#291/#293/#296 are merged.
-- Live audit from this worktree reported `dot_entries=78`, `changed=0`, and no remaining `shell-dotfile` class or shell conflicts.
-- Current class counts: `already-meta=34`, `app-config-state=35`, `bridge=1`, `cache=1`, `managed-dotfile=2`, `sensitive=5`.
-- History/backup entries that were real-home state in an earlier inventory now resolve inside `$META_ROOT/var/lib/envctl/real-home-dotfile-migration/history-or-backup`, so no live backup mutation is needed today.
+## Scope
 
-## Design
+- Add `envctl_engine::catalog` with row contracts for:
+  - components
+  - component_hooks
+  - paths
+  - settings
+  - env_vars
+  - agent_assets
+  - registries
+  - config_files
+  - migration_evidence
+  - observed_facts
+- Add `Engine::catalog_scan()` as the non-printing shared API.
+- Add CLI surfaces:
+  - `envctl catalog scan --json`
+  - `envctl catalog table <name> [--json]`
+- Populate rows from live repo sources where available:
+  - manifest TOML + envctl lock
+  - agent-env YAML/lock
+  - `.codex/config.toml`
+  - `.mcp.json`
+  - hub `registry.json`
+  - `layout.rs` path registry through `MetaLayout`
+  - secretd config surfaces when present
+  - `.handoff` tasks/ledger/report exports
+- Add tests for row contracts, aliases, redaction, and source coverage.
 
-1. Keep default audit/apply conservative: no broad app state migration happens unless an owner names a dot entry with `--migrate-dot`.
-2. Extend the supervised app-config allowlist with canonical targets for known agent/app state that appears in the live inventory:
-   - `.gemini`, `.kimi-code`, `.agents`, `.ampcode`, `.codeium`, `.copilot`, `.cursor`, `.goose_recipes`, `.junie`, `.kimi`, `.roo`, `.vscode`, `.windsurf`, `.mozilla`, `.thunderbird` -> `$META_ROOT/.local/share/<name>`.
-   - `.ollama` -> `$META_ROOT/var/lib/ollama` to preserve the existing model-store decision.
-   - `.claude.json` -> `$META_ROOT/.local/share/claude/claude.json`.
-3. Add a separate backup-only archive mode, `--archive-backup-dotfiles`, requiring `--apply`, for backup-like top-level dot entries only (`*.bak`, `*.bak.*`, `*.backup`, `*.backup.*`). Active shell histories stay owner-supervised.
-4. Add gate checks so future regressions cannot drop the new app-config target function, backup archive mode, or TDD coverage.
+## Non-goals for this PR
 
-## Runtime surface
+- No apply/mutation.
+- No DB persistence.
+- No authoritative generated-file replacement.
+- No bidirectional sync or widget yet.
+- No removal of legacy file inputs.
 
-- `scripts/tests/test-meta-local-path-audit.sh`
-- `ci/gates/meta-local-policy.sh`
-- `ci/gates/harness-scripts.sh`
-- Live read-only audit against `/home/drdave` and `/home/drdave/Desktop/meta` with inventory, summaries, shell conflict report, and deep link summaries.
+## Verification
+
+- `cargo fmt --all`
+- `cargo test -p envctl-engine catalog`
+- `cargo build -p envctl`
+- runtime checks for catalog scan/table
+- relevant gates if touched: shape, agent-env, p7, loop-state, harness-scripts, meta-local-policy

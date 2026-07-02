@@ -1,0 +1,737 @@
+{
+ "target": "handoff",
+ "snapshot_sha": "f6abf962413bafe164d56fa26b70b0a5fdacb8a2",
+ "branch": "feat/hftask-0072-full-kb-adoption",
+ "generated": "2026-06-26",
+ "symbol_count": 2974,
+ "own_symbol_count": 2128,
+ "vendor_symbols": 846,
+ "file_count": 141,
+ "edge_count": 4945,
+ "crate_count": {
+  "workspace_members": 21,
+  "kernel": 16,
+  "rusty_idd_lineage_toolkit": 5,
+  "note": "21 Cargo workspace members: 16 kernel (hf+ledger+work-order+13 handoff-*) + 5 rusty-idd-* toolkit (crates/*). vendor/syntect is vendored under crates/tui, not a member."
+ },
+ "hotspots": [
+  {
+   "name": "contains",
+   "file": "crates/spec/src/model/spec.rs",
+   "line": 30,
+   "in": 157,
+   "out": 1,
+   "group": "RIDD-TOOLKIT"
+  },
+  {
+   "name": "default",
+   "file": "crates/runner/src/config.rs",
+   "line": 64,
+   "in": 143,
+   "out": 4,
+   "group": "RIDD-TOOLKIT"
+  },
+  {
+   "name": "new",
+   "file": "crates/tui/src/app.rs",
+   "line": 114,
+   "in": 136,
+   "out": 3,
+   "group": "RIDD-TOOLKIT"
+  },
+  {
+   "name": "write",
+   "file": "crates/cli/tests/spec_status_cli.rs",
+   "line": 34,
+   "in": 112,
+   "out": 0,
+   "group": "RIDD-TOOLKIT"
+  },
+  {
+   "name": "new",
+   "file": "hf/src/bin/hf-mcp.rs",
+   "line": 114,
+   "in": 109,
+   "out": 1,
+   "group": "KERNEL"
+  },
+  {
+   "name": "new",
+   "file": "crates/runner/src/runner.rs",
+   "line": 54,
+   "in": 78,
+   "out": 0,
+   "group": "RIDD-TOOLKIT"
+  },
+  {
+   "name": "open",
+   "file": "ledger/src/v1.rs",
+   "line": 415,
+   "in": 74,
+   "out": 3,
+   "group": "KERNEL"
+  },
+  {
+   "name": "temp_dir",
+   "file": "crates/core/tests/smoke.rs",
+   "line": 11,
+   "in": 66,
+   "out": 1,
+   "group": "RIDD-TOOLKIT"
+  },
+  {
+   "name": "new",
+   "file": "crates/core/src/model.rs",
+   "line": 115,
+   "in": 55,
+   "out": 0,
+   "group": "RIDD-TOOLKIT"
+  },
+  {
+   "name": "push_config_screen",
+   "file": "crates/tui/src/app.rs",
+   "line": 683,
+   "in": 38,
+   "out": 0,
+   "group": "RIDD-TOOLKIT"
+  },
+  {
+   "name": "make_config_app",
+   "file": "crates/tui/src/app.rs",
+   "line": 2686,
+   "in": 34,
+   "out": 3,
+   "group": "RIDD-TOOLKIT"
+  },
+  {
+   "name": "handle_config_input",
+   "file": "crates/tui/src/app.rs",
+   "line": 702,
+   "in": 31,
+   "out": 2,
+   "group": "RIDD-TOOLKIT"
+  },
+  {
+   "name": "ledger_path",
+   "file": "handoff-core/src/lib.rs",
+   "line": 58,
+   "in": 27,
+   "out": 1,
+   "group": "KERNEL"
+  },
+  {
+   "name": "handle_artifact_menu_input",
+   "file": "crates/tui/src/app.rs",
+   "line": 561,
+   "in": 21,
+   "out": 6,
+   "group": "RIDD-TOOLKIT"
+  },
+  {
+   "name": "apply_delta",
+   "file": "crates/spec/src/model/merge.rs",
+   "line": 62,
+   "in": 20,
+   "out": 2,
+   "group": "RIDD-TOOLKIT"
+  },
+  {
+   "name": "draw",
+   "file": "crates/tui/src/ui.rs",
+   "line": 15,
+   "in": 20,
+   "out": 9,
+   "group": "RIDD-TOOLKIT"
+  },
+  {
+   "name": "handle_change_list_input",
+   "file": "crates/tui/src/app.rs",
+   "line": 421,
+   "in": 19,
+   "out": 8,
+   "group": "RIDD-TOOLKIT"
+  },
+  {
+   "name": "compute_intent_lock",
+   "file": "work-order/src/lib.rs",
+   "line": 175,
+   "in": 18,
+   "out": 1,
+   "group": "KERNEL"
+  },
+  {
+   "name": "parse_spec",
+   "file": "crates/spec/src/parse/spec_parser.rs",
+   "line": 21,
+   "in": 17,
+   "out": 9,
+   "group": "RIDD-TOOLKIT"
+  },
+  {
+   "name": "current_statuses",
+   "file": "handoff-core/src/lib.rs",
+   "line": 72,
+   "in": 17,
+   "out": 3,
+   "group": "KERNEL"
+  },
+  {
+   "name": "load_tasks",
+   "file": "handoff-core/src/lib.rs",
+   "line": 197,
+   "in": 17,
+   "out": 2,
+   "group": "KERNEL"
+  },
+  {
+   "name": "stop_running_implementation",
+   "file": "crates/tui/src/app.rs",
+   "line": 205,
+   "in": 16,
+   "out": 1,
+   "group": "RIDD-TOOLKIT"
+  },
+  {
+   "name": "route_for_task",
+   "file": "hf/src/route.rs",
+   "line": 56,
+   "in": 16,
+   "out": 3,
+   "group": "KERNEL"
+  },
+  {
+   "name": "pretty_json",
+   "file": "handoff-core/src/lib.rs",
+   "line": 134,
+   "in": 16,
+   "out": 0,
+   "group": "KERNEL"
+  },
+  {
+   "name": "read_dependencies",
+   "file": "crates/runner/src/data.rs",
+   "line": 317,
+   "in": 15,
+   "out": 1,
+   "group": "RIDD-TOOLKIT"
+  }
+ ],
+ "hotspots_git_kb_query": [
+  {
+   "name": "new",
+   "symbol_id": "crates/tui/src/app.rs::method::App.new",
+   "file": "crates/tui/src/app.rs",
+   "line": 114,
+   "caller_count": 352
+  },
+  {
+   "name": "contains",
+   "symbol_id": "crates/spec/src/model/spec.rs::method::SpecDoc.contains",
+   "file": "crates/spec/src/model/spec.rs",
+   "line": 30,
+   "caller_count": 301
+  },
+  {
+   "name": "write",
+   "symbol_id": "crates/cli/tests/spec_status_cli.rs::function::write",
+   "file": "crates/cli/tests/spec_status_cli.rs",
+   "line": 34,
+   "caller_count": 174
+  },
+  {
+   "name": "new",
+   "symbol_id": "crates/runner/src/runner.rs::method::BatchImplState.new",
+   "file": "crates/runner/src/runner.rs",
+   "line": 54,
+   "caller_count": 170
+  },
+  {
+   "name": "new",
+   "symbol_id": "vendor/syntect/src/parsing/scope.rs::method::Scope.new",
+   "file": "vendor/syntect/src/parsing/scope.rs",
+   "line": 239,
+   "caller_count": 145
+  },
+  {
+   "name": "default",
+   "symbol_id": "crates/runner/src/config.rs::method::TuiConfig.default",
+   "file": "crates/runner/src/config.rs",
+   "line": 64,
+   "caller_count": 143
+  },
+  {
+   "name": "new",
+   "symbol_id": "hf/src/bin/hf-mcp.rs::method::McpServer.new",
+   "file": "hf/src/bin/hf-mcp.rs",
+   "line": 114,
+   "caller_count": 141
+  },
+  {
+   "name": "load_from_str",
+   "symbol_id": "vendor/syntect/src/parsing/yaml_load.rs::method::SyntaxDefinition.load_from_str",
+   "file": "vendor/syntect/src/parsing/yaml_load.rs",
+   "line": 92,
+   "caller_count": 126
+  },
+  {
+   "name": "handle_config_input",
+   "symbol_id": "crates/tui/src/app.rs::method::App.handle_config_input",
+   "file": "crates/tui/src/app.rs",
+   "line": 702,
+   "caller_count": 126
+  },
+  {
+   "name": "open",
+   "symbol_id": "ledger/src/v1.rs::method::Ledger.open",
+   "file": "ledger/src/v1.rs",
+   "line": 415,
+   "caller_count": 106
+  },
+  {
+   "name": "new",
+   "symbol_id": "vendor/syntect/src/parsing/parser.rs::method::ParseState.new",
+   "file": "vendor/syntect/src/parsing/parser.rs",
+   "line": 312,
+   "caller_count": 99
+  },
+  {
+   "name": "contains",
+   "symbol_id": "vendor/syntect/src/highlighting/style.rs::method::FontStyle.contains",
+   "file": "vendor/syntect/src/highlighting/style.rs",
+   "line": 148,
+   "caller_count": 98
+  },
+  {
+   "name": "default",
+   "symbol_id": "vendor/syntect/src/highlighting/style.rs::method::Style.default",
+   "file": "vendor/syntect/src/highlighting/style.rs",
+   "line": 441,
+   "caller_count": 81
+  },
+  {
+   "name": "new",
+   "symbol_id": "crates/core/src/model.rs::method::RepoInventory.new",
+   "file": "crates/core/src/model.rs",
+   "line": 115,
+   "caller_count": 73
+  },
+  {
+   "name": "parse_line",
+   "symbol_id": "vendor/syntect/src/parsing/parser.rs::method::ParseState.parse_line",
+   "file": "vendor/syntect/src/parsing/parser.rs",
+   "line": 350,
+   "caller_count": 72
+  }
+ ],
+ "blast_radius": [
+  {
+   "symbol": "ledger/src/v1.rs::open",
+   "transitive_callers": 120,
+   "direct_callers": 74,
+   "note": "highest \u2014 ledger open is the kernel foundation"
+  },
+  {
+   "symbol": "handoff-core/src/lib.rs::ledger_path",
+   "transitive_callers": 54,
+   "direct_callers": 27
+  },
+  {
+   "symbol": "handoff-schema/src/lib.rs::validate_card",
+   "transitive_callers": 40,
+   "direct_callers": 5,
+   "note": "the handoff.task.v1 fail-closed validation gate"
+  },
+  {
+   "symbol": "handoff-core/src/lib.rs::now_ns",
+   "transitive_callers": 13,
+   "direct_callers": 7
+  },
+  {
+   "symbol": "work-order/src/lib.rs::compute_intent_lock",
+   "transitive_callers": 0,
+   "direct_callers": 18,
+   "note": "high direct fan-in; IntentLock derivation"
+  }
+ ],
+ "blast_radius_file_impact": {
+  "handoff-core/src/lib.rs": 116,
+  "work-order/src/lib.rs": 111,
+  "ledger/src/v1.rs": 153,
+  "source": "git-kb code impact --depth 3 total_count"
+ },
+ "dead_code": {
+  "own_candidates": 1258,
+  "by_crate": {
+   "hf": 314,
+   "crates/spec": 110,
+   "handoff-secrets": 8,
+   "crates/runner": 193,
+   "crates/cli": 23,
+   "handoff-lease": 21,
+   "crates/tui": 214,
+   "handoff-core": 7,
+   "handoff-drift": 15,
+   "crates/core": 74,
+   "ledger": 101,
+   "work-order": 44,
+   "handoff-hooks": 17,
+   "handoff-gatekeeper": 17,
+   "handoff-fleet": 19,
+   "spike": 6,
+   "handoff-policy": 41,
+   "handoff-schema": 6,
+   "handoff-route": 6,
+   "handoff-intake": 12,
+   "handoff-index": 10
+  },
+  "caveat": "HIGH false-positive rate. caller_count==0 AND indeg==0 captures: (a) hf's ~314 cmd_* verb handlers dispatched via string-match on clap args (not resolved as call edges), (b) public API / trait impls / serde derives, (c) test-only helpers. NOT confirmed-dead; the analyst must triage with git-kb dead + dead-code-explain per symbol."
+ },
+ "cycles": {
+  "scc_count_ge2": 14,
+  "algorithm": "Tarjan SCC (in-process, over resolved edge list)",
+  "vendor_cycles": 8,
+  "own_cycles": [
+   {
+    "members": [
+     "temp_dir",
+     "temp_dir"
+    ],
+    "files": [
+     "crates/core/tests/smoke.rs",
+     "ledger/src/migrate.rs"
+    ]
+   },
+   {
+    "members": [
+     "file_is_legacy_sqlite",
+     "open"
+    ],
+    "files": [
+     "ledger/src/v1.rs"
+    ]
+   },
+   {
+    "members": [
+     "verify_witness_chain",
+     "verify_witness_chain"
+    ],
+    "files": [
+     "ledger/src/v1.rs",
+     "ledger/src/v2.rs"
+    ]
+   },
+   {
+    "members": [
+     "acquire_store",
+     "open"
+    ],
+    "files": [
+     "ledger/src/v2.rs"
+    ]
+   },
+   {
+    "members": [
+     "strip_prefix",
+     "strip_prefix"
+    ],
+    "files": [
+     "crates/spec/src/parse/delta_parser.rs",
+     "crates/spec/src/parse/spec_parser.rs"
+    ]
+   },
+   {
+    "members": [
+     "deserialize",
+     "deserialize"
+    ],
+    "files": [
+     "ledger/src/v1.rs"
+    ]
+   }
+  ],
+  "interpretation": "All 14 SCCs are size 2-5. ~9 are vendor/syntect parser recursion (expected). The 5 own SCCs are size-2/3 same-name collisions across parallel modules (ledger v1.rs<->v2.rs verify_witness_chain/acquire_store/open/deserialize; spec delta_parser<->spec_parser strip_prefix) \u2014 resolver artifacts of duplicate symbol names, NOT genuine architectural mutual-recursion. No genuine cross-crate logic cycle found.",
+  "crate_level_call_cycles": [
+   [
+    "hf",
+    "handoff-core"
+   ],
+   [
+    "hf",
+    "handoff-index"
+   ],
+   [
+    "hf",
+    "handoff-lease"
+   ],
+   [
+    "hf",
+    "handoff-fleet"
+   ],
+   [
+    "crates/cli",
+    "crates/core"
+   ],
+   [
+    "crates/cli",
+    "crates/runner"
+   ],
+   [
+    "crates/core",
+    "ledger"
+   ]
+  ],
+  "crate_level_caveat": "These call-graph crate cycles (hf<->handoff-*, crates/cli<->crates/core, crates/core<->ledger) are ALSO same-name resolver collisions. GROUND TRUTH = the Cargo manifest dependency graph, which is a strict DAG with NO cycles (see layering)."
+ },
+ "public_api": {
+  "count": 50,
+  "top": [
+   {
+    "name": "delegate"
+   },
+   {
+    "name": "core"
+   },
+   {
+    "name": "run"
+   },
+   {
+    "name": "spec"
+   },
+   {
+    "name": "spec_adr"
+   },
+   {
+    "name": "spec_archive"
+   },
+   {
+    "name": "spec_scaffold"
+   },
+   {
+    "name": "spec_status"
+   },
+   {
+    "name": "tui"
+   },
+   {
+    "name": "RunArgs"
+   },
+   {
+    "name": "run"
+   },
+   {
+    "name": "SpecCommand"
+   },
+   {
+    "name": "run"
+   },
+   {
+    "name": "capability_id"
+   },
+   {
+    "name": "AdrCommand"
+   },
+   {
+    "name": "run"
+   },
+   {
+    "name": "run"
+   },
+   {
+    "name": "run_scaffold"
+   },
+   {
+    "name": "run_new"
+   },
+   {
+    "name": "run_status"
+   }
+  ]
+ },
+ "entrypoints": {
+  "total": 100,
+  "binaries": 3,
+  "binary_list": [
+   "hf (hf/src/main.rs)",
+   "hf-mcp (hf/src/bin/hf-mcp.rs)",
+   "rusty-idd-cli (crates/cli/src/main.rs)"
+  ],
+  "by_reason": {
+   "test_symbol_or_file": 87,
+   "main_function": 13
+  }
+ },
+ "layering": {
+  "cargo_dep_graph": "strict DAG \u2014 no cycles",
+  "kernel_dep_edges": {
+   "hf": [
+    "crates/cli",
+    "crates/spec",
+    "handoff-core",
+    "handoff-fleet",
+    "handoff-index",
+    "handoff-lease",
+    "handoff-policy",
+    "handoff-secrets",
+    "ledger",
+    "vendor",
+    "work-order"
+   ],
+   "handoff-lease": [
+    "crates/cli",
+    "hf"
+   ],
+   "crates/cli": [
+    "crates/core",
+    "crates/runner",
+    "crates/spec"
+   ],
+   "vendor": [
+    "crates/cli"
+   ],
+   "crates/tui": [
+    "crates/cli",
+    "crates/core",
+    "crates/runner",
+    "crates/spec",
+    "vendor"
+   ],
+   "handoff-core": [
+    "crates/cli",
+    "crates/spec",
+    "handoff-schema",
+    "hf",
+    "ledger",
+    "vendor",
+    "work-order"
+   ],
+   "crates/runner": [
+    "crates/cli",
+    "crates/core",
+    "crates/spec",
+    "vendor"
+   ],
+   "handoff-drift": [
+    "crates/spec",
+    "handoff-core",
+    "hf",
+    "ledger",
+    "work-order"
+   ],
+   "handoff-test-support": [
+    "hf"
+   ],
+   "crates/core": [
+    "crates/cli",
+    "crates/spec",
+    "ledger",
+    "vendor"
+   ],
+   "ledger": [
+    "crates/cli",
+    "crates/core",
+    "vendor",
+    "work-order"
+   ],
+   "work-order": [
+    "vendor"
+   ],
+   "handoff-hooks": [
+    "handoff-core",
+    "hf"
+   ],
+   "handoff-gatekeeper": [
+    "crates/cli",
+    "handoff-core",
+    "handoff-policy",
+    "handoff-route",
+    "handoff-secrets",
+    "handoff-test-support",
+    "hf",
+    "ledger",
+    "vendor"
+   ],
+   "handoff-fleet": [
+    "crates/cli",
+    "handoff-core",
+    "hf",
+    "ledger",
+    "vendor",
+    "work-order"
+   ],
+   "handoff-schema": [
+    "crates/cli",
+    "hf",
+    "work-order"
+   ],
+   "handoff-route": [
+    "crates/cli",
+    "handoff-core",
+    "handoff-test-support",
+    "hf",
+    "vendor"
+   ],
+   "handoff-intake": [
+    "handoff-core",
+    "hf",
+    "work-order"
+   ],
+   "handoff-index": [
+    "crates/cli",
+    "crates/spec",
+    "handoff-core",
+    "hf",
+    "work-order"
+   ]
+  },
+  "two_subsystems": {
+   "KERNEL": [
+    "handoff-core",
+    "handoff-drift",
+    "handoff-fleet",
+    "handoff-gatekeeper",
+    "handoff-hooks",
+    "handoff-index",
+    "handoff-intake",
+    "handoff-lease",
+    "handoff-policy",
+    "handoff-route",
+    "handoff-schema",
+    "handoff-secrets",
+    "handoff-test-support",
+    "hf",
+    "ledger",
+    "work-order"
+   ],
+   "RIDD_TOOLKIT": [
+    "crates/cli",
+    "crates/core",
+    "crates/runner",
+    "crates/spec",
+    "crates/tui"
+   ],
+   "VENDOR": [
+    "vendor/syntect (under crates/tui)"
+   ]
+  },
+  "cross_group_call_edges": {
+   "KERNEL->RIDD-TOOLKIT": 41,
+   "KERNEL->VENDOR": 25,
+   "VENDOR->RIDD-TOOLKIT": 10,
+   "RIDD-TOOLKIT->VENDOR": 28,
+   "RIDD-TOOLKIT->KERNEL": 1
+  },
+  "decoupling_finding": "RIDD-TOOLKIT -> KERNEL has only 1 call edge; KERNEL -> RIDD-TOOLKIT 41 (both dominated by same-name collisions). The two subsystems are effectively SEPARATE programs sharing one workspace + Cargo.lock. No Cargo dependency exists between any handoff-*/hf/ledger crate and any rusty-idd-* crate.",
+  "ruvector_coupling": {
+   "hf": [
+    "ruvector-verified",
+    "ruvector-domain-expansion",
+    "cognitum-gate-tilezero(optional)"
+   ],
+   "ledger": [
+    "rvf-crypto(redb-store feat)",
+    "rvf-runtime/rvf-index/rvf-types(v2 default feat)"
+   ],
+   "note": "path deps ../../RuVector/* \u2014 the standalone-ization blocker for a union @ $META_ROOT+handoff (per ICM decisions-rusty-idd)."
+  }
+ }
+}

@@ -59,6 +59,7 @@ The generated `src/compose.meta.yml` override + `src/.env` enforce:
 | No committed secrets | `.env` is generated locally (gitignored upstream); provider keys come from the envctl secret stack (`secretctl`) at runtime, not from a committed file |
 | Reversible | data/logs are `data_paths` (preserved on `remove`; only `reset --purge` deletes); `remove` runs `podman compose down` + drops the clone |
 | Pinned | clone is `checkout --detach <SHA>` — never floating `dev`/`latest` (`ODYSSEUS_REF`) |
+| Re-run idempotent | `install` creates missing data/log volume dirs, but does not chmod/chown existing data/log trees; rootless Podman shifted-ID state remains authoritative |
 
 ## Operate it (via envctl)
 
@@ -73,6 +74,11 @@ envctl reset   odysseus --apply --purge # also delete data/ + logs/ (irreversibl
 First `install` builds the Odysseus image + pulls chromadb/searxng/ntfy — minutes. The admin
 password is auto-generated and printed in the container logs:
 `podman logs $(podman ps --filter name=odysseus -q | head -1)`.
+
+Re-running `envctl install odysseus` is safe after the containers have written state: the
+component only creates missing volume directories and deliberately leaves existing `data/` and
+`logs/` ownership/mode alone. If a missing child has to be created below a rootless-Podman-owned
+parent, the installer uses `podman unshare` rather than any system-depth `chown`/`chmod` repair.
 
 ## Promotion gates (must clear before Odysseus becomes a default LifeOS `/ai` surface)
 

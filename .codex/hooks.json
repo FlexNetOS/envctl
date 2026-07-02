@@ -4,7 +4,52 @@
       {
         "hooks": [
           {
+            "command": "sh -lc 'root=\"$(git rev-parse --show-toplevel)\"; exec bash \"$root/.codex/hooks/flexnetos-runtime-gate.sh\" pre-compact'",
+            "statusMessage": "FlexNetOS runtime gate: pre compact",
+            "timeout": 10,
+            "type": "command"
+          },
+          {
             "command": "sh -lc 'root=\"$(git rev-parse --show-toplevel)\"; exec bash \"$root/.codex/hooks/hf-checkpoint.sh\"'",
+            "timeout": 10,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "matcher": "Bash|apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "command": "sh -lc 'root=\"$(git rev-parse --show-toplevel)\"; exec bash \"$root/.codex/hooks/flexnetos-runtime-gate.sh\" permission-request'",
+            "statusMessage": "FlexNetOS runtime gate: permission",
+            "timeout": 10,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "command": "sh -lc 'root=\"$(git rev-parse --show-toplevel)\"; exec bash \"$root/.codex/hooks/flexnetos-runtime-gate.sh\" post-tool-use'",
+            "statusMessage": "FlexNetOS runtime gate: post tool",
+            "timeout": 10,
+            "type": "command"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash|apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "command": "sh -lc 'root=\"$(git rev-parse --show-toplevel)\"; exec bash \"$root/.codex/hooks/flexnetos-runtime-gate.sh\" pre-tool-use'",
+            "statusMessage": "FlexNetOS runtime gate: pre tool",
             "timeout": 10,
             "type": "command"
           }
@@ -13,7 +58,14 @@
     ],
     "SessionStart": [
       {
+        "matcher": "startup|resume|clear|compact",
         "hooks": [
+          {
+            "command": "sh -lc 'root=\"$(git rev-parse --show-toplevel)\"; exec bash \"$root/.codex/hooks/flexnetos-runtime-gate.sh\" session-start'",
+            "statusMessage": "FlexNetOS runtime gate: session start",
+            "timeout": 10,
+            "type": "command"
+          },
           {
             "command": "sh -lc 'root=\"$(git rev-parse --show-toplevel)\"; exec rusty-idd next --base \"$root\"'",
             "statusMessage": "Rusty IDD front door: computing the next step",
@@ -28,6 +80,12 @@
         "hooks": [
           {
             "command": "sh -lc 'root=\"$(git rev-parse --show-toplevel)\"; exec bash \"$root/.codex/hooks/hf-checkpoint.sh\"'",
+            "timeout": 10,
+            "type": "command"
+          },
+          {
+            "command": "sh -lc 'root=\"$(git rev-parse --show-toplevel)\"; exec bash \"$root/.codex/hooks/flexnetos-runtime-gate.sh\" stop'",
+            "statusMessage": "FlexNetOS runtime gate: stop",
             "timeout": 10,
             "type": "command"
           }

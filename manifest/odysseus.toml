@@ -77,7 +77,34 @@ loginctl enable-linger "$(id -un)" 2>/dev/null || true
 systemctl --user enable podman-restart.service 2>/dev/null || true
 
 # 2) meta-local state dirs.
-install -d -m 700 "$ROOT" "$DATA" "$LOGS" "$DATA/ssh" "$DATA/huggingface" "$DATA/local"
+#
+# Rootless Podman can leave bind-mounted volume trees owned by shifted IDs after a run. Re-running
+# install must not downgrade the service by chmod/chowning existing data/log paths back from the
+# namespace owner (or failing when the host user cannot chmod them). Create missing dirs only; leave
+# existing state untouched. The podman-unshare fallback lets rootless Podman create a missing child
+# below a shifted-ID parent without any system-depth privilege escalation.
+install -d -m 700 "$ROOT"
+
+odysseus_ensure_state_dir() {
+  d="$1"
+  if [ -d "$d" ]; then
+    return 0
+  fi
+
+  if mkdir -p "$d" 2>/dev/null; then
+    chmod 700 "$d" 2>/dev/null || true
+    return 0
+  fi
+
+  podman unshare mkdir -p "$d"
+  podman unshare chmod 700 "$d" 2>/dev/null || true
+}
+
+odysseus_ensure_state_dir "$DATA"
+odysseus_ensure_state_dir "$LOGS"
+odysseus_ensure_state_dir "$DATA/ssh"
+odysseus_ensure_state_dir "$DATA/huggingface"
+odysseus_ensure_state_dir "$DATA/local"
 
 # 3) pinned clone (idempotent; detached at the exact SHA — never floating).
 if [ -d "$SRC/.git" ]; then git -C "$SRC" remote set-url origin "$REPO" || true; else git clone "$REPO" "$SRC"; fi
@@ -157,10 +184,32 @@ script = '''
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"; rt="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 export PATH="$M/.local/bin:$M/.toolchains/podman/usr/local/bin:$M/usr/bin:$PATH"
-SRC="$M/.local/share/odysseus/src"
+ROOT="$M/.local/share/odysseus"; SRC="$ROOT/src"; DATA="$ROOT/data"; LOGS="$ROOT/logs"
 command -v podman >/dev/null 2>&1 || { echo "odysseus needs the meta-local podman engine; run: envctl install podman"; exit 1; }
 systemctl --user enable --now podman.socket 2>/dev/null || true
 [ -d "$SRC/.git" ] || { echo "odysseus not installed; run install"; exit 1; }
+
+odysseus_ensure_state_dir() {
+  d="$1"
+  if [ -d "$d" ]; then
+    return 0
+  fi
+
+  if mkdir -p "$d" 2>/dev/null; then
+    chmod 700 "$d" 2>/dev/null || true
+    return 0
+  fi
+
+  podman unshare mkdir -p "$d"
+  podman unshare chmod 700 "$d" 2>/dev/null || true
+}
+
+odysseus_ensure_state_dir "$DATA"
+odysseus_ensure_state_dir "$LOGS"
+odysseus_ensure_state_dir "$DATA/ssh"
+odysseus_ensure_state_dir "$DATA/huggingface"
+odysseus_ensure_state_dir "$DATA/local"
+
 cd "$SRC"
 podman compose -f docker-compose.yml -f compose.meta.yml up -d
 '''

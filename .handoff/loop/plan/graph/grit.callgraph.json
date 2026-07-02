@@ -1,0 +1,2751 @@
+{
+ "target": "grit",
+ "graph_snapshot": "graph/grit.symbols.json@57b60842d71145c271b994bb7a8c33c3bca42dfe",
+ "source": "git-kb code (v0.2.10) callees per symbol, intra-src resolved",
+ "node_count": 305,
+ "edge_count": 548,
+ "unresolved_callee_endpoints": 0,
+ "entrypoints": [],
+ "edges": [
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_assign",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_claim",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_config_set_azure",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_config_set_local",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_config_set_s3",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_config_show",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_done",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_gc",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_heartbeat",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_init",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_plan",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_queue_cancel",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_queue_list",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_release",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_session_end",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_session_pr",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_session_start",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_session_status",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_status",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_watch",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::cmd_worktree_list",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::run",
+   "to": "src/cli/mod.rs::function::validate_identifier",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::grit_dir",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::ensure_initialized",
+   "to": "src/git/mod.rs::method::GitRepo.grit_dir",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::resolve_lock_store",
+   "to": "src/cli/mod.rs::function::ensure_initialized",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::resolve_lock_store",
+   "to": "src/config.rs::method::GritConfig.load",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::resolve_lock_store",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::resolve_lock_store",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_release",
+   "to": "src/cli/mod.rs::function::ensure_initialized",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_release",
+   "to": "src/cli/mod.rs::function::promote_queued",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_release",
+   "to": "src/cli/mod.rs::function::resolve_lock_store",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_release",
+   "to": "src/db/mod.rs::method::Database.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_release",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.locks_for_agent",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_release",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.release",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_release",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.release_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_release",
+   "to": "src/room/mod.rs::method::Room.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_release",
+   "to": "src/room/mod.rs::method::Room.notify",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::promote_queued",
+   "to": "src/db/mod.rs::method::Database.dequeue",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::promote_queued",
+   "to": "src/db/mod.rs::method::Database.next_in_queue",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::promote_queued",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::promote_queued",
+   "to": "src/room/mod.rs::method::Room.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::promote_queued",
+   "to": "src/room/mod.rs::method::Room.notify",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_status",
+   "to": "src/cli/mod.rs::function::ensure_initialized",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_status",
+   "to": "src/cli/mod.rs::function::is_entry_expired_local",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_status",
+   "to": "src/cli/mod.rs::function::resolve_lock_store",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_status",
+   "to": "src/db/mod.rs::method::Database.count_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_status",
+   "to": "src/db/mod.rs::method::Database.list_queue",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_status",
+   "to": "src/db/mod.rs::method::Database.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_status",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_status",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_claim",
+   "to": "src/cli/mod.rs::function::ensure_initialized",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_claim",
+   "to": "src/cli/mod.rs::function::resolve_lock_store",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_claim",
+   "to": "src/db/mod.rs::method::Database.available_symbols_in_files",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_claim",
+   "to": "src/db/mod.rs::method::Database.enqueue",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_claim",
+   "to": "src/db/mod.rs::method::Database.get_transitive_deps",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_claim",
+   "to": "src/db/mod.rs::method::Database.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_claim",
+   "to": "src/db/mod.rs::method::Database.queue_position",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_claim",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.release",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_claim",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_claim",
+   "to": "src/git/mod.rs::method::GitRepo.create_worktree",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_claim",
+   "to": "src/git/mod.rs::method::GitRepo.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_claim",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_claim",
+   "to": "src/room/mod.rs::method::Room.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_claim",
+   "to": "src/room/mod.rs::method::Room.notify",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_plan",
+   "to": "src/cli/mod.rs::function::ensure_initialized",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_plan",
+   "to": "src/db/mod.rs::method::Database.get_transitive_deps",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_plan",
+   "to": "src/db/mod.rs::method::Database.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_plan",
+   "to": "src/db/mod.rs::method::Database.search_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_symbols",
+   "to": "src/cli/mod.rs::function::ensure_initialized",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_symbols",
+   "to": "src/db/mod.rs::method::Database.list_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_symbols",
+   "to": "src/db/mod.rs::method::Database.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_symbols",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_watch",
+   "to": "src/cli/mod.rs::function::cmd_watch_poll",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_watch",
+   "to": "src/cli/mod.rs::function::ensure_initialized",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_watch",
+   "to": "src/cli/mod.rs::function::print_event",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_watch",
+   "to": "src/config.rs::method::GritConfig.load",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_watch",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_watch_poll",
+   "to": "src/cli/mod.rs::function::print_event",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_watch_poll",
+   "to": "src/cli/mod.rs::function::resolve_lock_store",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_watch_poll",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_init",
+   "to": "src/db/mod.rs::method::Database.init_schema",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_init",
+   "to": "src/db/mod.rs::method::Database.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_init",
+   "to": "src/db/mod.rs::method::Database.upsert_deps",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_init",
+   "to": "src/db/mod.rs::method::Database.upsert_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_init",
+   "to": "src/git/mod.rs::method::GitRepo.grit_dir",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_init",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_init",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_with_deps",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_init",
+   "to": "src/room/mod.rs::method::NotificationServer.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_init",
+   "to": "src/room/mod.rs::method::NotificationServer.start",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_worktree_list",
+   "to": "src/git/mod.rs::method::GitRepo.grit_dir",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_worktree_list",
+   "to": "src/git/mod.rs::method::GitRepo.list_worktrees",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_worktree_list",
+   "to": "src/git/mod.rs::method::GitRepo.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_queue_list",
+   "to": "src/cli/mod.rs::function::ensure_initialized",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_queue_list",
+   "to": "src/db/mod.rs::method::Database.list_queue",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_queue_list",
+   "to": "src/db/mod.rs::method::Database.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_queue_list",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_queue_cancel",
+   "to": "src/cli/mod.rs::function::ensure_initialized",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_queue_cancel",
+   "to": "src/db/mod.rs::method::Database.dequeue",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_queue_cancel",
+   "to": "src/db/mod.rs::method::Database.dequeue_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_queue_cancel",
+   "to": "src/db/mod.rs::method::Database.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_gc",
+   "to": "src/cli/mod.rs::function::resolve_lock_store",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_gc",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.gc_expired_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_start",
+   "to": "src/cli/mod.rs::function::ensure_initialized",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_start",
+   "to": "src/db/mod.rs::method::Database.create_session",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_start",
+   "to": "src/db/mod.rs::method::Database.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_start",
+   "to": "src/git/mod.rs::method::GitRepo.create_session_branch",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_start",
+   "to": "src/git/mod.rs::method::GitRepo.current_branch",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_start",
+   "to": "src/git/mod.rs::method::GitRepo.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_status",
+   "to": "src/cli/mod.rs::function::ensure_initialized",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_status",
+   "to": "src/cli/mod.rs::function::resolve_lock_store",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_status",
+   "to": "src/db/mod.rs::method::Database.get_active_session",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_status",
+   "to": "src/db/mod.rs::method::Database.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_status",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_status",
+   "to": "src/git/mod.rs::method::GitRepo.list_worktrees",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_status",
+   "to": "src/git/mod.rs::method::GitRepo.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_assign",
+   "to": "src/cli/mod.rs::function::ensure_initialized",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_assign",
+   "to": "src/cli/mod.rs::function::resolve_lock_store",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_assign",
+   "to": "src/db/mod.rs::method::Database.available_symbols_in_files",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_assign",
+   "to": "src/db/mod.rs::method::Database.list_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_assign",
+   "to": "src/db/mod.rs::method::Database.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_assign",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_assign",
+   "to": "src/git/mod.rs::method::GitRepo.create_worktree",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_assign",
+   "to": "src/git/mod.rs::method::GitRepo.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_assign",
+   "to": "src/room/mod.rs::method::Room.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_assign",
+   "to": "src/room/mod.rs::method::Room.notify",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_heartbeat",
+   "to": "src/cli/mod.rs::function::resolve_lock_store",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_heartbeat",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.refresh_ttl",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_end",
+   "to": "src/cli/mod.rs::function::ensure_initialized",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_end",
+   "to": "src/cli/mod.rs::function::resolve_lock_store",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_end",
+   "to": "src/db/mod.rs::method::Database.close_session",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_end",
+   "to": "src/db/mod.rs::method::Database.get_active_session",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_end",
+   "to": "src/db/mod.rs::method::Database.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_end",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.gc_expired_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_end",
+   "to": "src/git/mod.rs::method::GitRepo.checkout",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_end",
+   "to": "src/git/mod.rs::method::GitRepo.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_config_set_local",
+   "to": "src/cli/mod.rs::function::ensure_initialized",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_config_set_local",
+   "to": "src/config.rs::method::GritConfig.save",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_pr",
+   "to": "src/cli/mod.rs::function::ensure_initialized",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_pr",
+   "to": "src/cli/mod.rs::function::resolve_lock_store",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_pr",
+   "to": "src/db/mod.rs::method::Database.count_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_pr",
+   "to": "src/db/mod.rs::method::Database.get_active_session",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_pr",
+   "to": "src/db/mod.rs::method::Database.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_pr",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_pr",
+   "to": "src/git/mod.rs::method::GitRepo.list_worktrees",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_pr",
+   "to": "src/git/mod.rs::method::GitRepo.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_session_pr",
+   "to": "src/git/mod.rs::method::GitRepo.push_and_create_pr",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_config_show",
+   "to": "src/cli/mod.rs::function::ensure_initialized",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_config_show",
+   "to": "src/config.rs::method::GritConfig.load",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::test_validate_identifier_valid",
+   "to": "src/cli/mod.rs::function::validate_identifier",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::test_validate_identifier_empty",
+   "to": "src/cli/mod.rs::function::validate_identifier",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_config_set_s3",
+   "to": "src/cli/mod.rs::function::ensure_initialized",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_config_set_s3",
+   "to": "src/config.rs::method::GritConfig.save",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_config_set_azure",
+   "to": "src/cli/mod.rs::function::ensure_initialized",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_config_set_azure",
+   "to": "src/config.rs::method::GritConfig.save",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::test_validate_identifier_backslash",
+   "to": "src/cli/mod.rs::function::validate_identifier",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::test_validate_identifier_starts_with_dash",
+   "to": "src/cli/mod.rs::function::validate_identifier",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::test_validate_identifier_slash",
+   "to": "src/cli/mod.rs::function::validate_identifier",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::test_validate_identifier_path_traversal",
+   "to": "src/cli/mod.rs::function::validate_identifier",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::test_is_entry_expired_local_bad_timestamp",
+   "to": "src/cli/mod.rs::function::is_entry_expired_local",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::test_is_entry_expired_local_bad_timestamp",
+   "to": "src/cli/mod.rs::function::make_entry",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::test_claim_wait_backoff_gives_up_after_timeout",
+   "to": "src/cli/mod.rs::function::cmd_claim",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::test_claim_wait_backoff_gives_up_after_timeout",
+   "to": "src/cli/mod.rs::function::cmd_init",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::test_claim_wait_backoff_gives_up_after_timeout",
+   "to": "src/cli/mod.rs::function::resolve_lock_store",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::test_claim_wait_backoff_gives_up_after_timeout",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::test_claim_wait_backoff_gives_up_after_timeout",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::test_validate_identifier_special_chars",
+   "to": "src/cli/mod.rs::function::validate_identifier",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::test_is_entry_expired_local_fresh",
+   "to": "src/cli/mod.rs::function::is_entry_expired_local",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::test_is_entry_expired_local_fresh",
+   "to": "src/cli/mod.rs::function::make_entry",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/config.rs::method::GritConfig.load",
+   "to": "src/config.rs::method::GritConfig.default",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/config.rs::function::test_default_config",
+   "to": "src/config.rs::method::GritConfig.default",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/config.rs::function::test_save_and_load",
+   "to": "src/config.rs::method::GritConfig.load",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/config.rs::function::test_save_and_load",
+   "to": "src/config.rs::method::GritConfig.save",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/config.rs::function::test_load_missing_file",
+   "to": "src/config.rs::method::GritConfig.load",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/config.rs::function::test_s3_config_roundtrip",
+   "to": "src/config.rs::method::GritConfig.load",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/config.rs::function::test_s3_config_roundtrip",
+   "to": "src/config.rs::method::GritConfig.save",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/config.rs::function::test_load_malformed_json",
+   "to": "src/config.rs::method::GritConfig.load",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.key_for_entry",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.lock_key",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.key_for_entry",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.reader_key",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.other_active_readers",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.is_entry_expired",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.other_active_readers",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.list_under_prefix",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.try_write_lock",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.delete_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.try_write_lock",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.other_active_readers",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.try_write_lock",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.reserve_write_slot",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.try_read_lock",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.delete_at",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.try_read_lock",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.delete_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.try_read_lock",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.get_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.try_read_lock",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.is_entry_expired",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.try_read_lock",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.put_at",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.try_read_lock",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.reader_key",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.get_lock",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.lock_key",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.put_lock_if_absent",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.lock_key",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.reserve_write_slot",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.delete_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.reserve_write_slot",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.get_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.reserve_write_slot",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.is_entry_expired",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.reserve_write_slot",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.put_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.reserve_write_slot",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.put_lock_if_absent",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.delete_lock",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.lock_key",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.list_all_locks",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.list_under_prefix",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.put_lock",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.lock_key",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.try_lock",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.try_read_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.try_lock",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.try_write_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.release_all",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.delete_at",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.release_all",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.key_for_entry",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.release_all",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.list_all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.all_locks",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.is_entry_expired",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.all_locks",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.list_all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.locks_for_agent",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.is_entry_expired",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.locks_for_agent",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.list_all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.gc_expired_locks",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.delete_at",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.gc_expired_locks",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.is_entry_expired",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.gc_expired_locks",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.key_for_entry",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.gc_expired_locks",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.list_all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.refresh_ttl",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.get_at",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.refresh_ttl",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.key_for_entry",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.refresh_ttl",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.list_all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.refresh_ttl",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.put_at",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.release",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.delete_at",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.release",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.delete_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.release",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.get_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/azure_store.rs::method::AzureLockStore.release",
+   "to": "src/db/azure_store.rs::method::AzureLockStore.reader_key",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_done",
+   "to": "src/cli/mod.rs::function::ensure_initialized",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_done",
+   "to": "src/cli/mod.rs::function::promote_queued",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_done",
+   "to": "src/cli/mod.rs::function::resolve_lock_store",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_done",
+   "to": "src/db/mod.rs::method::Database.dequeue_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_done",
+   "to": "src/db/mod.rs::method::Database.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_done",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.locks_for_agent",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_done",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.release_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_done",
+   "to": "src/git/mod.rs::method::GitRepo.delete_agent_branch",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_done",
+   "to": "src/git/mod.rs::method::GitRepo.merge_worktree",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_done",
+   "to": "src/git/mod.rs::method::GitRepo.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_done",
+   "to": "src/git/mod.rs::method::GitRepo.remove_worktree",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_done",
+   "to": "src/room/mod.rs::method::Room.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::cmd_done",
+   "to": "src/room/mod.rs::method::Room.notify",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::method::Database.open",
+   "to": "src/db/mod.rs::function::configure_connection",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::method::Database.open",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_open_and_init_schema",
+   "to": "src/db/mod.rs::method::Database.init_schema",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_open_and_init_schema",
+   "to": "src/db/mod.rs::method::Database.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_upsert_and_count_symbols",
+   "to": "src/db/mod.rs::function::make_symbol",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_upsert_and_count_symbols",
+   "to": "src/db/mod.rs::function::setup_db",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_upsert_and_count_symbols",
+   "to": "src/db/mod.rs::method::Database.count_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_upsert_and_count_symbols",
+   "to": "src/db/mod.rs::method::Database.upsert_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::setup_db",
+   "to": "src/db/mod.rs::method::Database.init_schema",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::setup_db",
+   "to": "src/db/mod.rs::method::Database.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_upsert_updates_existing",
+   "to": "src/db/mod.rs::function::make_symbol",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_upsert_updates_existing",
+   "to": "src/db/mod.rs::function::setup_db",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_upsert_updates_existing",
+   "to": "src/db/mod.rs::method::Database.count_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_upsert_updates_existing",
+   "to": "src/db/mod.rs::method::Database.upsert_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_list_symbols_with_filter",
+   "to": "src/db/mod.rs::function::make_symbol",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_list_symbols_with_filter",
+   "to": "src/db/mod.rs::function::setup_db",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_list_symbols_with_filter",
+   "to": "src/db/mod.rs::method::Database.list_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_list_symbols_with_filter",
+   "to": "src/db/mod.rs::method::Database.upsert_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_search_symbols",
+   "to": "src/db/mod.rs::function::make_symbol",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_search_symbols",
+   "to": "src/db/mod.rs::function::setup_db",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_search_symbols",
+   "to": "src/db/mod.rs::method::Database.search_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_search_symbols",
+   "to": "src/db/mod.rs::method::Database.upsert_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_available_symbols_in_files",
+   "to": "src/db/mod.rs::function::make_symbol",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_available_symbols_in_files",
+   "to": "src/db/mod.rs::function::setup_db",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_available_symbols_in_files",
+   "to": "src/db/mod.rs::method::Database.available_symbols_in_files",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_available_symbols_in_files",
+   "to": "src/db/mod.rs::method::Database.upsert_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_session_lifecycle",
+   "to": "src/db/mod.rs::function::setup_db",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_session_lifecycle",
+   "to": "src/db/mod.rs::method::Database.close_session",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_session_lifecycle",
+   "to": "src/db/mod.rs::method::Database.create_session",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_session_lifecycle",
+   "to": "src/db/mod.rs::method::Database.get_active_session",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_no_active_session",
+   "to": "src/db/mod.rs::function::setup_db",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_no_active_session",
+   "to": "src/db/mod.rs::method::Database.get_active_session",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_integrity_check_on_open",
+   "to": "src/db/mod.rs::method::Database.init_schema",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_integrity_check_on_open",
+   "to": "src/db/mod.rs::method::Database.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_queue_enqueue_and_list",
+   "to": "src/db/mod.rs::function::setup_db",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_queue_enqueue_and_list",
+   "to": "src/db/mod.rs::method::Database.enqueue",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_queue_enqueue_and_list",
+   "to": "src/db/mod.rs::method::Database.list_queue",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_queue_position",
+   "to": "src/db/mod.rs::function::setup_db",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_queue_position",
+   "to": "src/db/mod.rs::method::Database.enqueue",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_queue_position",
+   "to": "src/db/mod.rs::method::Database.queue_position",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_queue_next_in_queue",
+   "to": "src/db/mod.rs::function::setup_db",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_queue_next_in_queue",
+   "to": "src/db/mod.rs::method::Database.enqueue",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_queue_next_in_queue",
+   "to": "src/db/mod.rs::method::Database.next_in_queue",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_queue_dequeue",
+   "to": "src/db/mod.rs::function::setup_db",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_queue_dequeue",
+   "to": "src/db/mod.rs::method::Database.dequeue",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_queue_dequeue",
+   "to": "src/db/mod.rs::method::Database.enqueue",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_queue_dequeue",
+   "to": "src/db/mod.rs::method::Database.list_queue",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_upsert_and_get_deps",
+   "to": "src/db/mod.rs::function::make_symbol",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_upsert_and_get_deps",
+   "to": "src/db/mod.rs::function::setup_db",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_upsert_and_get_deps",
+   "to": "src/db/mod.rs::method::Database.get_deps",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_upsert_and_get_deps",
+   "to": "src/db/mod.rs::method::Database.upsert_deps",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_upsert_and_get_deps",
+   "to": "src/db/mod.rs::method::Database.upsert_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_list_symbols_no_filter",
+   "to": "src/db/mod.rs::function::make_symbol",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_list_symbols_no_filter",
+   "to": "src/db/mod.rs::function::setup_db",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_list_symbols_no_filter",
+   "to": "src/db/mod.rs::method::Database.list_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_list_symbols_no_filter",
+   "to": "src/db/mod.rs::method::Database.upsert_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_transitive_deps",
+   "to": "src/db/mod.rs::function::make_symbol",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_transitive_deps",
+   "to": "src/db/mod.rs::function::setup_db",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_transitive_deps",
+   "to": "src/db/mod.rs::method::Database.get_transitive_deps",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_transitive_deps",
+   "to": "src/db/mod.rs::method::Database.upsert_deps",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_transitive_deps",
+   "to": "src/db/mod.rs::method::Database.upsert_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_enqueue_preserves_position_on_requeue",
+   "to": "src/db/mod.rs::function::make_symbol",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_enqueue_preserves_position_on_requeue",
+   "to": "src/db/mod.rs::function::setup_db",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_enqueue_preserves_position_on_requeue",
+   "to": "src/db/mod.rs::method::Database.enqueue",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_enqueue_preserves_position_on_requeue",
+   "to": "src/db/mod.rs::method::Database.next_in_queue",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_enqueue_preserves_position_on_requeue",
+   "to": "src/db/mod.rs::method::Database.queue_position",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_enqueue_preserves_position_on_requeue",
+   "to": "src/db/mod.rs::method::Database.upsert_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_availability_ignores_expired_locks",
+   "to": "src/db/mod.rs::function::make_symbol",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_availability_ignores_expired_locks",
+   "to": "src/db/mod.rs::function::setup_db",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_availability_ignores_expired_locks",
+   "to": "src/db/mod.rs::method::Database.available_symbols_in_files",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_availability_ignores_expired_locks",
+   "to": "src/db/mod.rs::method::Database.upsert_symbols",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_queue_dequeue_all",
+   "to": "src/db/mod.rs::function::setup_db",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_queue_dequeue_all",
+   "to": "src/db/mod.rs::method::Database.dequeue_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_queue_dequeue_all",
+   "to": "src/db/mod.rs::method::Database.enqueue",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/mod.rs::function::test_queue_dequeue_all",
+   "to": "src/db/mod.rs::method::Database.list_queue",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.from_config",
+   "to": "src/config.rs::method::GritConfig.load",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.key_for_entry",
+   "to": "src/db/s3_store.rs::method::S3LockStore.lock_key",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.key_for_entry",
+   "to": "src/db/s3_store.rs::method::S3LockStore.reader_key",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.get_at",
+   "to": "src/db/s3_store.rs::method::S3LockStore.parse_entry",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.other_active_readers",
+   "to": "src/db/s3_store.rs::method::S3LockStore.is_entry_expired",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.other_active_readers",
+   "to": "src/db/s3_store.rs::method::S3LockStore.list_under_prefix",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.reserve_write_slot",
+   "to": "src/db/s3_store.rs::method::S3LockStore.delete_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.reserve_write_slot",
+   "to": "src/db/s3_store.rs::method::S3LockStore.get_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.reserve_write_slot",
+   "to": "src/db/s3_store.rs::method::S3LockStore.is_entry_expired",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.reserve_write_slot",
+   "to": "src/db/s3_store.rs::method::S3LockStore.put_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.reserve_write_slot",
+   "to": "src/db/s3_store.rs::method::S3LockStore.put_lock_if_absent",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.try_read_lock",
+   "to": "src/db/s3_store.rs::method::S3LockStore.delete_at",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.try_read_lock",
+   "to": "src/db/s3_store.rs::method::S3LockStore.delete_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.try_read_lock",
+   "to": "src/db/s3_store.rs::method::S3LockStore.get_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.try_read_lock",
+   "to": "src/db/s3_store.rs::method::S3LockStore.is_entry_expired",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.try_read_lock",
+   "to": "src/db/s3_store.rs::method::S3LockStore.put_at",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.try_read_lock",
+   "to": "src/db/s3_store.rs::method::S3LockStore.reader_key",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.get_lock",
+   "to": "src/db/s3_store.rs::method::S3LockStore.lock_key",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.get_lock",
+   "to": "src/db/s3_store.rs::method::S3LockStore.parse_entry",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.try_write_lock",
+   "to": "src/db/s3_store.rs::method::S3LockStore.delete_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.try_write_lock",
+   "to": "src/db/s3_store.rs::method::S3LockStore.other_active_readers",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.try_write_lock",
+   "to": "src/db/s3_store.rs::method::S3LockStore.reserve_write_slot",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.put_lock",
+   "to": "src/db/s3_store.rs::method::S3LockStore.lock_key",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.put_lock_if_absent",
+   "to": "src/db/s3_store.rs::method::S3LockStore.get_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.put_lock_if_absent",
+   "to": "src/db/s3_store.rs::method::S3LockStore.lock_key",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.put_lock_if_absent",
+   "to": "src/db/s3_store.rs::method::S3LockStore.put_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.delete_lock",
+   "to": "src/db/s3_store.rs::method::S3LockStore.lock_key",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.list_all_locks",
+   "to": "src/db/s3_store.rs::method::S3LockStore.list_under_prefix",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.try_lock",
+   "to": "src/db/s3_store.rs::method::S3LockStore.try_read_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.try_lock",
+   "to": "src/db/s3_store.rs::method::S3LockStore.try_write_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.release",
+   "to": "src/db/s3_store.rs::method::S3LockStore.delete_at",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.release",
+   "to": "src/db/s3_store.rs::method::S3LockStore.delete_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.release",
+   "to": "src/db/s3_store.rs::method::S3LockStore.get_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.release",
+   "to": "src/db/s3_store.rs::method::S3LockStore.reader_key",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.release_all",
+   "to": "src/db/s3_store.rs::method::S3LockStore.delete_at",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.release_all",
+   "to": "src/db/s3_store.rs::method::S3LockStore.key_for_entry",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.release_all",
+   "to": "src/db/s3_store.rs::method::S3LockStore.list_all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.all_locks",
+   "to": "src/db/s3_store.rs::method::S3LockStore.is_entry_expired",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.all_locks",
+   "to": "src/db/s3_store.rs::method::S3LockStore.list_all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.gc_expired_locks",
+   "to": "src/db/s3_store.rs::method::S3LockStore.delete_at",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.gc_expired_locks",
+   "to": "src/db/s3_store.rs::method::S3LockStore.is_entry_expired",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.gc_expired_locks",
+   "to": "src/db/s3_store.rs::method::S3LockStore.key_for_entry",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.gc_expired_locks",
+   "to": "src/db/s3_store.rs::method::S3LockStore.list_all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.refresh_ttl",
+   "to": "src/db/s3_store.rs::method::S3LockStore.get_at",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.refresh_ttl",
+   "to": "src/db/s3_store.rs::method::S3LockStore.key_for_entry",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.refresh_ttl",
+   "to": "src/db/s3_store.rs::method::S3LockStore.list_all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.refresh_ttl",
+   "to": "src/db/s3_store.rs::method::S3LockStore.put_at",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::method::SqliteLockStore.open",
+   "to": "src/db/mod.rs::function::configure_connection",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::method::SqliteLockStore.open",
+   "to": "src/db/mod.rs::method::Database.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "to": "src/db/sqlite_store.rs::function::unknown_symbol_error",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.conn",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::method::SqliteLockStore.release",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.conn",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::method::SqliteLockStore.release_all",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.conn",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::method::SqliteLockStore.all_locks",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.conn",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::method::SqliteLockStore.locks_for_agent",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.conn",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::method::SqliteLockStore.gc_expired_locks",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.conn",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::method::SqliteLockStore.refresh_ttl",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.conn",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::setup",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_lock_and_release",
+   "to": "src/db/sqlite_store.rs::function::setup",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_lock_and_release",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_lock_and_release",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.release",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_lock_and_release",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_lock_blocked_by_other_agent",
+   "to": "src/db/sqlite_store.rs::function::setup",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_lock_blocked_by_other_agent",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.locks_for_agent",
+   "to": "src/db/s3_store.rs::method::S3LockStore.is_entry_expired",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/s3_store.rs::method::S3LockStore.locks_for_agent",
+   "to": "src/db/s3_store.rs::method::S3LockStore.list_all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_release_all",
+   "to": "src/db/sqlite_store.rs::function::setup",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_release_all",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_release_all",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.release_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_release_all",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_all_locks",
+   "to": "src/db/sqlite_store.rs::function::setup",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_all_locks",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_all_locks",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_gc_expired_locks",
+   "to": "src/db/sqlite_store.rs::function::setup",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_gc_expired_locks",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_gc_expired_locks",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.gc_expired_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_gc_expired_locks",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_refresh_ttl",
+   "to": "src/db/sqlite_store.rs::function::setup",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_refresh_ttl",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_refresh_ttl",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.refresh_ttl",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_refresh_ttl",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_concurrent_access",
+   "to": "src/db/sqlite_store.rs::function::setup",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_concurrent_access",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_concurrent_access_separate_connections",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_concurrent_access_separate_connections",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_concurrent_access_separate_connections",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_same_agent_relock",
+   "to": "src/db/sqlite_store.rs::function::setup",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_same_agent_relock",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_same_agent_relock",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_read_lock_allows_multiple_readers",
+   "to": "src/db/sqlite_store.rs::function::setup",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_read_lock_allows_multiple_readers",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_read_lock_allows_multiple_readers",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_write_lock_blocks_readers",
+   "to": "src/db/sqlite_store.rs::function::setup",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_write_lock_blocks_readers",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_read_lock_blocks_writers",
+   "to": "src/db/sqlite_store.rs::function::setup",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_read_lock_blocks_writers",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_mode_stored_in_lock_entry",
+   "to": "src/db/sqlite_store.rs::function::setup",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_mode_stored_in_lock_entry",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.all_locks",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_mode_stored_in_lock_entry",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_read_lock_does_not_block_readers",
+   "to": "src/db/sqlite_store.rs::function::setup",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_read_lock_does_not_block_readers",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::test_is_entry_expired_local_expired",
+   "to": "src/cli/mod.rs::function::is_entry_expired_local",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/cli/mod.rs::function::test_is_entry_expired_local_expired",
+   "to": "src/cli/mod.rs::function::make_entry",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_locks_for_agent",
+   "to": "src/db/sqlite_store.rs::function::setup",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_locks_for_agent",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.locks_for_agent",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/db/sqlite_store.rs::function::test_locks_for_agent",
+   "to": "src/db/sqlite_store.rs::method::SqliteLockStore.try_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/git/mod.rs::method::GitRepo.remove_worktree",
+   "to": "src/git/mod.rs::method::GitRepo.grit_dir",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/git/mod.rs::method::GitRepo.merge_worktree",
+   "to": "src/git/mod.rs::method::GitRepo.acquire_file_lock",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/git/mod.rs::method::GitRepo.merge_worktree",
+   "to": "src/git/mod.rs::method::GitRepo.current_branch",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/git/mod.rs::method::GitRepo.merge_worktree",
+   "to": "src/git/mod.rs::method::GitRepo.grit_dir",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/git/mod.rs::method::GitRepo.acquire_file_lock",
+   "to": "src/git/mod.rs::method::GitRepo.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/git/mod.rs::method::GitRepo.list_worktrees",
+   "to": "src/git/mod.rs::method::GitRepo.grit_dir",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/git/mod.rs::method::GitRepo.create_worktree",
+   "to": "src/git/mod.rs::method::GitRepo.grit_dir",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/git/mod.rs::function::setup_repo_with_agent_commit",
+   "to": "src/git/mod.rs::function::git",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/git/mod.rs::function::setup_repo_with_agent_commit",
+   "to": "src/git/mod.rs::method::GitRepo.create_worktree",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/git/mod.rs::function::setup_repo_with_agent_commit",
+   "to": "src/git/mod.rs::method::GitRepo.open",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/git/mod.rs::function::merge_worktree_succeeds_on_clean_main_tree",
+   "to": "src/git/mod.rs::function::git_stdout",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/git/mod.rs::function::merge_worktree_succeeds_on_clean_main_tree",
+   "to": "src/git/mod.rs::function::setup_repo_with_agent_commit",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/git/mod.rs::function::merge_worktree_succeeds_on_clean_main_tree",
+   "to": "src/git/mod.rs::method::GitRepo.merge_worktree",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/git/mod.rs::function::merge_worktree_refuses_dirty_main_tree_and_preserves_branch",
+   "to": "src/git/mod.rs::function::git",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/git/mod.rs::function::merge_worktree_refuses_dirty_main_tree_and_preserves_branch",
+   "to": "src/git/mod.rs::function::git_stdout",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/git/mod.rs::function::merge_worktree_refuses_dirty_main_tree_and_preserves_branch",
+   "to": "src/git/mod.rs::function::setup_repo_with_agent_commit",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/git/mod.rs::function::merge_worktree_refuses_dirty_main_tree_and_preserves_branch",
+   "to": "src/git/mod.rs::method::GitRepo.merge_worktree",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/main.rs::function::main",
+   "to": "src/cli/mod.rs::function::run",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::method::SymbolIndex.walk_calls",
+   "to": "src/parser/mod.rs::method::SymbolIndex.resolve_call_name",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::method::SymbolIndex.scan_with_deps",
+   "to": "src/parser/mod.rs::method::SymbolIndex.extract_calls",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::method::SymbolIndex.scan_with_deps",
+   "to": "src/parser/mod.rs::method::SymbolIndex.lang_configs",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::method::SymbolIndex.scan_with_deps",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::method::SymbolIndex.scan_with_deps",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::method::SymbolIndex.extract_calls",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::method::SymbolIndex.extract_calls",
+   "to": "src/parser/mod.rs::method::SymbolIndex.walk_calls",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::method::SymbolIndex.parse_file",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::method::SymbolIndex.parse_file",
+   "to": "src/parser/mod.rs::method::SymbolIndex.walk_tree",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::method::SymbolIndex.walk_tree",
+   "to": "src/parser/mod.rs::method::SymbolIndex.extract_name",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::method::SymbolIndex.walk_tree",
+   "to": "src/parser/mod.rs::method::SymbolIndex.hash_str",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::method::SymbolIndex.walk_tree",
+   "to": "src/parser/mod.rs::method::SymbolIndex.normalize_kind",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::method::SymbolIndex.hash_str",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::method::SymbolIndex.lang_configs",
+   "to": "src/parser/mod.rs::method::SymbolQuery.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "to": "src/parser/mod.rs::method::SymbolIndex.lang_configs",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "to": "src/parser/mod.rs::method::SymbolIndex.parse_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_rust_functions",
+   "to": "src/parser/mod.rs::function::find_sym",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_rust_functions",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_rust_functions",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_rust_functions",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_rust_struct_and_impl",
+   "to": "src/parser/mod.rs::function::find_sym",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_rust_struct_and_impl",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_rust_struct_and_impl",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_rust_struct_and_impl",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_rust_enum_and_trait",
+   "to": "src/parser/mod.rs::function::find_sym",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_rust_enum_and_trait",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_rust_enum_and_trait",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_rust_enum_and_trait",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_typescript_functions",
+   "to": "src/parser/mod.rs::function::find_sym",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_typescript_functions",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_typescript_functions",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_typescript_functions",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_python_functions",
+   "to": "src/parser/mod.rs::function::find_sym",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_python_functions",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_python_functions",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_python_functions",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_python_class",
+   "to": "src/parser/mod.rs::function::find_sym",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_python_class",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_python_class",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_python_class",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_javascript_functions",
+   "to": "src/parser/mod.rs::function::find_sym",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_javascript_functions",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_javascript_functions",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_javascript_functions",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_symbol_id_format",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_symbol_id_format",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_symbol_id_format",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_symbol_hash_deterministic",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_symbol_hash_deterministic",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_symbol_hash_deterministic",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_skips_node_modules",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_skips_node_modules",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_skips_node_modules",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_normalize_kind",
+   "to": "src/parser/mod.rs::function::find_sym",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_normalize_kind",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_normalize_kind",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_normalize_kind",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_typescript_interface",
+   "to": "src/parser/mod.rs::function::find_sym",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_typescript_interface",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_typescript_interface",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_typescript_interface",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_java",
+   "to": "src/parser/mod.rs::function::find_sym",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_java",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_java",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_java",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_go",
+   "to": "src/parser/mod.rs::function::find_sym",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_go",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_go",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_go",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_c",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_c",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_c",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_cpp",
+   "to": "src/parser/mod.rs::function::find_sym",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_cpp",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_cpp",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_cpp",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_typescript_class",
+   "to": "src/parser/mod.rs::function::find_sym",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_typescript_class",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_typescript_class",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_typescript_class",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_csharp",
+   "to": "src/parser/mod.rs::function::find_sym",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_csharp",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_csharp",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_csharp",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_ruby",
+   "to": "src/parser/mod.rs::function::find_sym",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_ruby",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_ruby",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_ruby",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_swift",
+   "to": "src/parser/mod.rs::function::find_sym",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_swift",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_swift",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_swift",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_kotlin",
+   "to": "src/parser/mod.rs::function::find_sym",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_kotlin",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_kotlin",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_kotlin",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_php",
+   "to": "src/parser/mod.rs::function::find_sym",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_php",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_php",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_parse_php",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_all",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_extract_deps_python",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_extract_deps_python",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_extract_deps_python",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_with_deps",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_extract_deps_typescript",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_extract_deps_typescript",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_extract_deps_typescript",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_with_deps",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/room/mod.rs::method::NotificationServer.start",
+   "to": "src/room/mod.rs::function::handle_connection",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/room/mod.rs::method::NotificationServer.start",
+   "to": "src/room/mod.rs::method::NotificationServer.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/room/mod.rs::function::handle_connection",
+   "to": "src/room/mod.rs::function::broadcast_to_watchers",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/room/mod.rs::function::handle_connection",
+   "to": "src/room/mod.rs::method::NotificationServer.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/room/mod.rs::function::broadcast_to_watchers",
+   "to": "src/room/mod.rs::method::NotificationServer.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_extract_deps_rust",
+   "to": "src/parser/mod.rs::function::write_file",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_extract_deps_rust",
+   "to": "src/parser/mod.rs::method::SymbolIndex.new",
+   "edge_type": "call"
+  },
+  {
+   "from": "src/parser/mod.rs::function::test_extract_deps_rust",
+   "to": "src/parser/mod.rs::method::SymbolIndex.scan_with_deps",
+   "edge_type": "call"
+  }
+ ]
+}

@@ -64,6 +64,14 @@ never-downgrade, archive-first.
    when a real FlexNetOS install is found outside meta. All idempotent, never-delete (archive),
    never-downgrade.
 
+5. **Real-home dot-entry review loop:** `scripts/audit-meta-local-paths.sh` is the class-by-class
+   portability review surface for top-level dot entries under `$ENVCTL_REAL_HOME`. It emits
+   machine-readable `--inventory`, `--inventory-summary`, `--deep-link-inventory`, and
+   `--deep-link-summary` TSVs, can fail closed with `--fail-real-home-deep-links`, and exposes
+   only narrow opt-in mutations (`--apply-shell-dotfiles`, `--apply-history-archives`, and named
+   `--migrate-dot <entry>` allowlist entries). The loop keeps mutation dry-run by default while
+   making remaining app config, cache, sensitive, and managed-dotfile gaps explicit.
+
 ## Consequences
 
 - The 3 hardcoded `settings.json` refs heal cleanly: statusline → `$META_ROOT/…`; the 2
@@ -72,6 +80,9 @@ never-downgrade, archive-first.
 - gitkb is reclassified from "external" to **adopted foundation** (bring latest into meta).
 - Prereq for the relocation loop: the env-export + materialization must land before the live
   symlink swaps (so configs resolve through `META_ROOT`).
+- The dotfile relocation loop is now evidence-backed rather than ad hoc: every slice records stable
+  class counts, deep-link classes, and an owner-supervised residual list before another narrow
+  upgrade is allowed.
 
 ## Research / Cross-References
 
