@@ -2572,6 +2572,9 @@ fn parse_config_to_json(path: &Path, format: &str) -> anyhow::Result<Option<serd
         }
         "jsonc" => Ok(Some(serde_json::from_str(&jsonc_to_json(&text))?)),
         "nushell" => Ok(Some(nushell_reproduction_metadata(&text))),
+        "nix" | "lua" | "terminal_conf" | "markdown" => {
+            Ok(Some(text_reproduction_metadata(format, &text)))
+        }
         "yaml" => {
             let value: serde_yaml::Value = serde_yaml::from_str(&text)?;
             Ok(Some(serde_json::to_value(value)?))
@@ -2640,6 +2643,49 @@ fn kdl_reproduction_metadata(text: &str) -> serde_json::Value {
         "plugin_count": node_names.iter().filter(|name| name.as_str() == "plugin").count(),
         "has_layout_node": node_names.contains("layout"),
     })
+}
+
+fn text_reproduction_metadata(format: &str, text: &str) -> serde_json::Value {
+    let lines: Vec<&str> = text.lines().collect();
+    let comment_line_count = lines
+        .iter()
+        .map(|line| line.trim_start())
+        .filter(|line| line.starts_with('#') || line.starts_with("//") || line.starts_with("--"))
+        .count();
+
+    serde_json::json!({
+        "format": format,
+        "byte_count": text.len(),
+        "line_count": lines.len(),
+        "nonempty_line_count": lines.iter().filter(|line| !line.trim().is_empty()).count(),
+        "comment_line_count": comment_line_count,
+        "sha256": sha256_hex(text.as_bytes()),
+        "reproduction_policy": "source_bytes_required",
+        "structured_metadata": true,
+        "top_level_tokens": top_level_tokens(&lines),
+    })
+}
+
+fn top_level_tokens(lines: &[&str]) -> Vec<String> {
+    let mut tokens = BTreeSet::new();
+    for line in lines {
+        let trimmed = line.trim_start();
+        if trimmed.is_empty()
+            || trimmed.starts_with('#')
+            || trimmed.starts_with("//")
+            || trimmed.starts_with("--")
+        {
+            continue;
+        }
+        if let Some(token) = trimmed
+            .split(|ch: char| ch.is_whitespace() || ch == '=' || ch == '{' || ch == '(')
+            .next()
+            .filter(|token| !token.is_empty())
+        {
+            tokens.insert(token.to_string());
+        }
+    }
+    tokens.into_iter().collect()
 }
 
 fn trimmed_lines_with_prefix(lines: &[&str], prefix: &str) -> Vec<String> {
@@ -2951,7 +2997,9 @@ fn env_schema_consumer(source: &str) -> &'static str {
 }
 
 fn infer_format(rel: &str) -> &'static str {
-    if rel.ends_with(".toml") || rel.ends_with(".lock") && rel.contains("envctl") {
+    if rel == "flake.lock" {
+        "json"
+    } else if rel.ends_with(".toml") || rel.ends_with(".lock") && rel.contains("envctl") {
         "toml"
     } else if rel.ends_with(".yaml") || rel.ends_with(".yml") || rel.ends_with("agent-env.lock") {
         "yaml"
@@ -2969,6 +3017,12 @@ fn infer_format(rel: &str) -> &'static str {
         "markdown"
     } else if rel.ends_with(".kdl") {
         "kdl"
+    } else if rel.ends_with(".nix") {
+        "nix"
+    } else if rel.ends_with(".lua") {
+        "lua"
+    } else if rel.ends_with(".conf") {
+        "terminal_conf"
     } else if rel.ends_with(".nu") {
         "nushell"
     } else if rel.ends_with(".sh") || rel.ends_with(".bash") {
@@ -3388,6 +3442,31 @@ mod tests {
                 && row.value.contains("layout")
                 && row.value.contains("pane")
         }));
+        for (source_file, format) in [
+            ("home_manager/module.nix", "nix"),
+            ("packaging/mk_runtime_tree.nix", "nix"),
+            (
+                "configs/terminal_emulators/kitty/kitty.conf",
+                "terminal_conf",
+            ),
+            ("configs/yazi/plugins/sidebar-status.yazi/main.lua", "lua"),
+            ("home_manager/README.md", "markdown"),
+        ] {
+            assert!(
+                snapshot.config_files.iter().any(|row| {
+                    row.path == source_file && row.format == format && row.parse_status == "ok"
+                }),
+                "missing parsed config row for {source_file}"
+            );
+            assert!(
+                snapshot.settings.iter().any(|row| {
+                    row.source_file == source_file
+                        && row.setting_key == "reproduction_policy"
+                        && row.value == "source_bytes_required"
+                }),
+                "missing reproduction row for {source_file}"
+            );
+        }
     }
 
     #[test]
@@ -3837,6 +3916,8 @@ const ENVCTL_SEED_TOKEN_FILE: &str = "ENVCTL_SEED_TOKEN_FILE";
         std::fs::create_dir_all(root.join("config_metadata")).unwrap();
         std::fs::create_dir_all(root.join("configs/zellij/layouts")).unwrap();
         std::fs::create_dir_all(root.join("configs/helix")).unwrap();
+        std::fs::create_dir_all(root.join("configs/terminal_emulators/kitty")).unwrap();
+        std::fs::create_dir_all(root.join("configs/yazi/plugins/sidebar-status.yazi")).unwrap();
         std::fs::create_dir_all(root.join("nushell/config")).unwrap();
         std::fs::create_dir_all(root.join("home_manager")).unwrap();
         std::fs::create_dir_all(root.join("packaging")).unwrap();
@@ -3877,6 +3958,16 @@ default = false
         )
         .unwrap();
         std::fs::write(
+            root.join("configs/terminal_emulators/kitty/kitty.conf"),
+            "font_family JetBrainsMono Nerd Font\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("configs/yazi/plugins/sidebar-status.yazi/main.lua"),
+            "return { setup = function() end }\n",
+        )
+        .unwrap();
+        std::fs::write(
             root.join("nushell/config/config.nu"),
             r#"source ~/.local/share/yazelix/initializers/nushell/yazelix_init.nu
 use ~/.local/share/yazelix/completions/yazelix_extern.nu *
@@ -3891,6 +3982,7 @@ $env.config.show_banner = false
             "{ config, ... }: {}\n",
         )
         .unwrap();
+        std::fs::write(root.join("home_manager/README.md"), "# Home Manager\n").unwrap();
         std::fs::write(root.join("packaging/mk_runtime_tree.nix"), "{ }:\n").unwrap();
         std::fs::write(
             root.join("rust_core/yazelix_zellij_config_pack/layouts/yzx_side.kdl"),
