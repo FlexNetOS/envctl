@@ -1,26 +1,49 @@
-# TASK-0078 plan — migration blocker sensitive hint visibility
+# ADR-0003 catalog-first control plane — implementation slice 1 plan
 
-Date: 2026-06-27
-Worktree: `/home/drdave/Desktop/meta/.worktrees/meta-local-blocker-sensitive-hints/envctl`
-Branch: `meta-local-blocker-sensitive-hints`
+## Goal
 
-## Verified baseline
+Build the first read-only implementation slice for ADR-0003: an engine-owned catalog scanner plus CLI table output. This slice must not mutate repo files or replace the existing TOML/YAML/JSON sources. It turns existing files into normalized in-memory rows so later PRs can add diff/render/sync/widget behavior.
 
-- `origin/master` is at `c8f2e48 Generate Codex model swarm baseline (#335)` (and includes `5be9041` from #334).
-- Focused baseline passed:
-  - `bash scripts/tests/test-meta-local-path-audit.sh`
-  - `bash ci/gates/meta-local-policy.sh`
-- Live read-only audit reported `meta-local audit: PASS warnings=10 changed=0 dot_entries=79`.
-- Remaining real-home blockers are `.aws`, `.cache`, `.config`, `.docker`, `.fxapp-gh-profile`, `.gnupg`, `.lane`, `.mcp-auth`, `.pki`, `.ssh`.
-- `.pki` is an apply-safe app-config migration target, but Chrome has open handles and the blocker report did not expose NSS/private-state hint counts.
+## Scope
 
-## Design
+- Add `envctl_engine::catalog` with row contracts for:
+  - components
+  - component_hooks
+  - paths
+  - settings
+  - env_vars
+  - agent_assets
+  - registries
+  - config_files
+  - migration_evidence
+  - observed_facts
+- Add `Engine::catalog_scan()` as the non-printing shared API.
+- Add CLI surfaces:
+  - `envctl catalog scan --json`
+  - `envctl catalog table <name> [--json]`
+- Populate rows from live repo sources where available:
+  - manifest TOML + envctl lock
+  - agent-env YAML/lock
+  - `.codex/config.toml`
+  - `.mcp.json`
+  - hub `registry.json`
+  - `layout.rs` path registry through `MetaLayout`
+  - secretd config surfaces when present
+  - `.handoff` tasks/ledger/report exports
+- Add tests for row contracts, aliases, redaction, and source coverage.
 
-Add `sensitive_hints` to every `--migration-blockers-report` row, immediately after `canonical_target`, so surgical migration planning sees credential/private-key/NSS hints even when a dot entry is classified as app-config-state rather than sensitive.
+## Non-goals for this PR
 
-## Runtime surface
+- No apply/mutation.
+- No DB persistence.
+- No authoritative generated-file replacement.
+- No bidirectional sync or widget yet.
+- No removal of legacy file inputs.
 
-- `scripts/audit-meta-local-paths.sh --migration-blockers-report`
-- `scripts/tests/test-meta-local-path-audit.sh`
-- `ci/gates/meta-local-policy.sh`
-- Live read-only audit against `/home/drdave` and `/home/drdave/Desktop/meta`
+## Verification
+
+- `cargo fmt --all`
+- `cargo test -p envctl-engine catalog`
+- `cargo build -p envctl`
+- runtime checks for catalog scan/table
+- relevant gates if touched: shape, agent-env, p7, loop-state, harness-scripts, meta-local-policy

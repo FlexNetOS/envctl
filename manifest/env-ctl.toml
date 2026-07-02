@@ -22,13 +22,14 @@ destructive = false
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; PRIV=\"$M/usr/libexec/envctl/secrets/bin\"; META_BIN=\"$M/usr/bin\"; test -x \"$PRIV/secretd\" && test -x \"$PRIV/secretctl\" && test -f \"$META_ROOT/.config/systemd/user/env-ctl.service\" && [ \"$(readlink -f \"$META_BIN/secretd\" 2>/dev/null)\" = \"$(readlink -f \"$PRIV/secretd\" 2>/dev/null)\" ] && [ \"$(readlink -f \"$META_BIN/secretctl\" 2>/dev/null)\" = \"$(readlink -f \"$PRIV/secretctl\" 2>/dev/null)\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; PRIV=\"$M/usr/libexec/envctl/secrets/bin\"; META_BIN=\"$M/usr/bin\"; frontdoor_ok() { f=\"$1\"; p=\"$2\"; [ -x \"$f\" ] && [ ! -L \"$f\" ] && grep -Fqx \"exec \\\"$p\\\" \\\"\\$@\\\"\" \"$f\"; }; test -x \"$PRIV/secretd\" && test -x \"$PRIV/secretctl\" && test -f \"$META_ROOT/.config/systemd/user/env-ctl.service\" && frontdoor_ok \"$META_BIN/secretd\" \"$PRIV/secretd\" && frontdoor_ok \"$META_BIN/secretctl\" \"$PRIV/secretctl\""]
 
 # INSTALL: MSRV-gate, build from the in-workspace sources, place bins, create XDG dirs (0700).
 # Does NOT init the vault or enroll keyslots — those are operator-driven, USB-gated daemon ops.
 [component.install]
 kind = "script"
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 # Meta-owned toolchain (Epic H TASK-0069): build with the meta cargo, NOT $META_ROOT/.toolchains/cargo/bin.
 M="${META_ROOT:?META_ROOT required}"
@@ -61,15 +62,13 @@ cargo build --release --manifest-path "$repo/Cargo.toml" -p envctl-secretd --fea
 cargo build --release --manifest-path "$repo/Cargo.toml" -p envctl-secretctl
 
 # Meta-prefix install (Epic H TASK-0069): private binaries live under
-# $M/usr/libexec/envctl/secrets/bin, exposed through $M/usr/bin. $META_ROOT/usr/bin
-# gets compatibility symlinks only; never install directly into $META_ROOT/.toolchains/cargo/bin (system-depth).
+# $M/usr/libexec/envctl/secrets/bin, exposed through regular executable wrappers in $M/usr/bin.
+# Never install directly into $META_ROOT/.toolchains/cargo/bin (system-depth).
 install -Dm755 "$repo/target/release/secretd"   "$DEST/secretd"
 install -Dm755 "$repo/target/release/secretctl" "$DEST/secretctl"
-install -d -m755 "$META_BIN" "$META_ROOT/usr/bin"
-ln -sfn "$DEST/secretd"   "$META_BIN/secretd"
-ln -sfn "$DEST/secretctl" "$META_BIN/secretctl"
-ln -sfn "$META_BIN/secretd"   "$META_ROOT/usr/bin/secretd"
-ln -sfn "$META_BIN/secretctl" "$META_ROOT/usr/bin/secretctl"
+install -d -m755 "$META_BIN"
+envctl_frontdoor "$DEST/secretd"   "$META_BIN/secretd"
+envctl_frontdoor "$DEST/secretctl" "$META_BIN/secretctl"
 
 cleanup_legacy_cargo_bin() {
   b="$1"
@@ -126,7 +125,7 @@ if grep -Eq '^\s*topology\s*=\s*"(remote|vps)"' "$cfg" 2>/dev/null; then
   grep -Eq '^\s*operator_authorizer_url\s*=' "$cfg" \
     || { echo "FATAL: secretd.toml has [profile] topology=remote (VPS) but no operator_authorizer_url (FS-S21 substitute presence factor); refusing to install a silently ungated VPS"; exit 1; }
 fi
-'''
+
 
 # VERIFY: bins answer, AND secretd's own non-serving self-check passes. `secretd --self-check` runs
 # the daemon's startup pre-flight (ring crypto provider, XDG paths, store-config validation) and
@@ -139,6 +138,7 @@ fi
 # strictly best-effort: a not-yet-started/locked daemon must NOT fail verify (locked is HEALTHY; the
 # vault is simply unprovisioned), and verify never asserts "unlocked" and never triggers a fix. The
 # hard predicate stays the two binary/self-check checks; the serving probe only logs.
+'''
 [component.verify]
 kind = "command"
 command = "bash"
@@ -182,6 +182,7 @@ exit 0
 [component.fix]
 kind = "script"
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 # Meta-owned toolchain + prefix (Epic H TASK-0069). See install.
 M="${META_ROOT:?META_ROOT required}"
@@ -197,11 +198,9 @@ cargo build --release --manifest-path "$repo/Cargo.toml" -p envctl-secretd --fea
 cargo build --release --manifest-path "$repo/Cargo.toml" -p envctl-secretctl
 install -Dm755 "$repo/target/release/secretd"   "$DEST/secretd"
 install -Dm755 "$repo/target/release/secretctl" "$DEST/secretctl"
-install -d -m755 "$META_BIN" "$META_ROOT/usr/bin"
-ln -sfn "$DEST/secretd"   "$META_BIN/secretd"
-ln -sfn "$DEST/secretctl" "$META_BIN/secretctl"
-ln -sfn "$META_BIN/secretd"   "$META_ROOT/usr/bin/secretd"
-ln -sfn "$META_BIN/secretctl" "$META_ROOT/usr/bin/secretctl"
+install -d -m755 "$META_BIN"
+envctl_frontdoor "$DEST/secretd"   "$META_BIN/secretd"
+envctl_frontdoor "$DEST/secretctl" "$META_BIN/secretctl"
 
 cleanup_legacy_cargo_bin() {
   b="$1"
@@ -243,33 +242,34 @@ fi
 
 systemctl --user daemon-reload || true
 systemctl --user try-restart env-ctl.service || true
-'''
+
 
 # REMOVE: disable + drop the unit and bins. The vault is data_paths and is touched ONLY on --purge.
+'''
 [component.remove]
 kind = "script"
 script = '''
 set -euo pipefail
 systemctl --user disable --now env-ctl.service 2>/dev/null || true
 M="${META_ROOT:?META_ROOT required}"
-# Self-guarded: drop only symlinks that resolve to the canonical meta-local install,
-# then remove the canonical private binaries. Legacy .toolchains binaries are strict-upgrade
-# fallbacks and are never removed here.
+# Self-guarded: drop only managed regular wrappers or legacy symlinks that resolve to the
+# canonical meta-local install, then remove the canonical private binaries. Legacy
+# .toolchains binaries are strict-upgrade fallbacks and are never removed here.
+meta_frontdoor_is_managed() {
+  front="$1"
+  private="$2"
+  private_real="$(readlink -f "$private" 2>/dev/null || true)"
+  if [ -L "$front" ] && [ -n "$private_real" ] && [ "$(readlink -f "$front" 2>/dev/null || true)" = "$private_real" ]; then
+    return 0
+  fi
+  [ -f "$front" ] && grep -Fqx "exec \"$private\" \"\$@\"" "$front"
+}
 for b in secretd secretctl; do
   private="$M/usr/libexec/envctl/secrets/bin/$b"
   meta_link="$M/usr/bin/$b"
   host_link="$META_ROOT/usr/bin/$b"
-  private_real="$(readlink -f "$private" 2>/dev/null || true)"
-  meta_real="$(readlink -f "$meta_link" 2>/dev/null || true)"
-  if [ -L "$host_link" ]; then
-    host_real="$(readlink -f "$host_link" 2>/dev/null || true)"
-    if [ -n "$host_real" ] && { [ "$host_real" = "$private_real" ] || [ "$host_real" = "$meta_real" ]; }; then
-      rm -f "$host_link"
-    fi
-  fi
-  if [ -L "$meta_link" ] && [ -n "$private_real" ] && [ "$(readlink -f "$meta_link" 2>/dev/null || true)" = "$private_real" ]; then
-    rm -f "$meta_link"
-  fi
+  if meta_frontdoor_is_managed "$host_link" "$private"; then rm -f "$host_link"; fi
+  if [ "$meta_link" != "$host_link" ] && meta_frontdoor_is_managed "$meta_link" "$private"; then rm -f "$meta_link"; fi
 done
 rm -f "$M/usr/libexec/envctl/secrets/bin/secretd" "$M/usr/libexec/envctl/secrets/bin/secretctl"
 systemctl --user daemon-reload || true

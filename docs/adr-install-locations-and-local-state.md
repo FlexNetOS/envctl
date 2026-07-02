@@ -89,10 +89,15 @@ For direct `.cache` children, `scripts/audit-meta-local-paths.sh` keeps the upgr
 until a component manifest has been reviewed. Use `--owner-supervised-cache-child-component-plan`
 to derive the bounded component key and manifest hint, then
 `--owner-supervised-cache-child-component-manifest-status` to prove whether
-`manifest/components.d/cache-<component_key>.toml` already exists. Missing manifests must be
-created and reviewed before a named `--migrate-cache-child NAME` run; existing manifests must be
-reviewed before use. These reports intentionally leave `apply_command` empty and do not move
-owner-supervised cache state.
+`manifest/components.d/cache-<component_key>.toml` already exists, and
+`--owner-supervised-cache-child-component-manifest-validation` to prove whether an existing
+manifest declares the expected `[[component]] id = "cache-<component_key>"`. When a manifest is
+missing, `--owner-supervised-cache-child-component-manifest-scaffold` emits the same validation
+state plus a deterministic escaped TOML stub (`manifest_stub`) for owner review; it does not write
+the file. Missing manifests must be created and reviewed before a named `--migrate-cache-child NAME`
+run; existing manifests must be reviewed before use; existing manifests with a missing or unrelated
+component id must be fixed before migration. These reports intentionally leave `apply_command` empty
+and do not move owner-supervised cache state.
 
 The review loop must keep this map synchronized with `scripts/audit-meta-local-paths.sh`,
 `scripts/tests/test-meta-local-path-audit.sh`, `home/README.md`, and `ci/gates/meta-local-policy.sh`.

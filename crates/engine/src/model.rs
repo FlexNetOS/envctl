@@ -437,6 +437,7 @@ pub enum MetaBoundaryViolationKind {
     ForeignLocalBinFile,
     ForeignCargoBinFile,
     ForeignSymlinkTarget,
+    MetaFrontdoorSymlink,
 }
 
 /// One way the detected environment diverges from the manifest's desired state.

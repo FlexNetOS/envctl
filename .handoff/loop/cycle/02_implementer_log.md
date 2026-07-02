@@ -1,19 +1,105 @@
-# TASK-0078 implementer log — blocker sensitive hints
+# Implementer Log — ADR-0003 Catalog Phase 1
 
-Date: 2026-06-27
+## Scope
 
-## Changes made
+First implementation slice for ADR-0003: establish a read-only catalog/table foundation without changing current file ownership.
 
-- Extended `--migration-blockers-report` with a `sensitive_hints` column.
-- Reused the existing `path_sensitive_hint_count` scanner for every residual blocker row.
-- Updated TDD coverage to lock the 13-column schema and fixture hint counts:
-  - `.pki` = 3 (`cert9.db`, `key4.db`, `pkcs11.txt`)
-  - `.mcp-auth` = 1 (`oauth_tokens.json`)
-  - `.lane` = 3 (`*.pem`, `*.key`)
-  - `.fxapp-gh-profile` = 0 in the fixture
-- Strengthened `ci/gates/meta-local-policy.sh` so this schema/test coverage cannot silently regress.
+## Built
 
-## Notes
+- Added `crates/engine/src/catalog.rs` as an in-memory, read-only catalog importer.
+- Added canonical row contracts for:
+  - `components`
+  - `component_hooks`
+  - `paths`
+  - `settings`
+  - `env_vars`
+  - `agent_assets`
+  - `registries`
+  - `config_files`
+  - `migration_evidence`
+  - `observed_facts`
+- Added explicit manual override fields on settings rows:
+  - `manual_override`
+  - `override_reason`
+  - `override_owner`
+  - `override_timestamp`
+  - `expires_at`
+  - `review_required`
+  - `generated_conflict_policy`
+- Wired `Engine::catalog_scan()` and exported catalog types from `envctl-engine`.
+- Added CLI surfaces:
+  - `envctl catalog scan`
+  - `envctl catalog scan --json`
+  - `envctl catalog table <name>`
+  - `envctl catalog table <name> --json`
 
-- This is report-only/read-only. No live real-home dot entry was moved.
-- The live audit now makes `.pki` show `sensitive_hints=3` while still failing closed on Chrome open handles.
+## Current source coverage
+
+The importer scans current repo surfaces and normalizes them into rows without mutation:
+
+- `manifest/**/*.toml`
+- `manifest/envctl.lock`
+- `agent-env.yaml`
+- `agent-env.lock`
+- `.codex/config.toml`
+- `.mcp.json`
+- hub `registry.json` files
+- `crates/engine/src/layout.rs` / `MetaLayout` path registry
+- `secretd.toml`
+- secrets env schema surfaces in `secretd`, `secrets-engine`, and `secrets-proto`
+- `.handoff/tasks/*.json`
+- `.handoff/**/*.jsonl`
+- `.handoff/loop/*.md`
+- `.handoff/decisions/*.md`
+- checked-in agent assets under `.agents` / `.Codex`
+
+## Runtime smoke evidence
+
+Current repo scan emits normalized catalog data:
+
+```text
+components: 96
+component_hooks: 376
+paths: 49
+settings: 2928
+env_vars: 105
+agent_assets: 51
+registries: 16
+config_files: 342
+migration_evidence: 0
+observed_facts: 694
+```
+
+`envctl catalog table env-vars --json` includes 61 secrets/env-schema-derived rows.
+
+## Validation
+
+Passed:
+
+- `cargo fmt --all`
+- `cargo test -p envctl-engine catalog`
+- `cargo test -p envctl-engine`
+- `cargo test -p envctl`
+- `cargo clippy --workspace -- -D warnings`
+- `bash ci/gates/shape.sh`
+- `bash ci/gates/agent-env.sh`
+- `bash ci/gates/p7.sh`
+- `bash ci/gates/loop-state.sh`
+- `bash ci/gates/harness-scripts.sh`
+- `bash ci/gates/meta-local-policy.sh`
+- runtime `cargo run -q -p envctl --bin envctl -- catalog scan --json`
+- runtime `cargo run -q -p envctl --bin envctl -- catalog table components`
+- runtime `cargo run -q -p envctl --bin envctl -- catalog table observed-facts`
+- runtime `cargo run -q -p envctl --bin envctl -- catalog table env-vars --json`
+
+## Not in this slice
+
+This PR intentionally does not complete ADR-0003. Remaining work includes:
+
+- `catalog diff`
+- `catalog render --out <tempdir>`
+- import/sync/lock behavior
+- deterministic projections
+- verifier-gated observed drift reports
+- controlled `envctl config edit ...` row mutation/widget flow
+- final ADR gap verification pass

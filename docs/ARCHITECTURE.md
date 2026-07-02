@@ -449,9 +449,11 @@ best-effort with refuse-on-ambiguity.
 6. **install** — into meta-local roots: bins → `$META_ROOT/usr/bin`, libs →
    `$META_ROOT/usr/lib`, completions → the shell's XDG dir, `.desktop` →
    `$META_ROOT/.local/share/applications`, man → `$META_ROOT/.local/share/man`.
-   **Symlink-by-default** (clean update/reset), `--copy` to materialize; always
-   timestamped-backup before clobber (the `yazelix-config.sh .bak.$(date)` pattern); refuse to
-   overwrite an unmanaged file without `--force`.
+   **Regular-wrapper-by-default** for binaries: `$META_ROOT/usr/bin/<name>` is an
+   executable shell frontdoor that `exec`s the private meta-owned artifact, not a symlink or
+   direct copy. Updates replace only byte-identical managed wrappers or legacy managed
+   symlinks; always timestamped-backup before clobber; refuse to overwrite an unmanaged
+   file without `--force`.
 7. **wire-in** — apply the component's `Wiring`: ensure `$META_ROOT/usr/bin` on PATH via a guarded
    `# >>> BEGIN envctl path >>>` block; install completions; XDG desktop entry; for
    `daemon`-flagged components write + `systemctl --user enable --now` a unit. All guarded,
@@ -645,9 +647,9 @@ pipeline: euid-0 refusal, `allow_build` opt-in gate, acquire into a 0700 store w
 origin-verify-on-reuse + hardened git, the patch/AI transform with a
 structurally-confined agent, streamed build in its own process group with a timeout,
 glob locate, strategy shaping) · `install.rs` (symlink into `$META_ROOT/usr/bin`,
-PATH-shadow refusal, canonical managed-symlink ownership, refuse-unmanaged-unless-force,
+PATH-shadow refusal, canonical managed-wrapper ownership with legacy symlink migration, refuse-unmanaged-unless-force,
 PATH wire-in via the existing `Wiring`) · `register.rs` (synthesize the provenance
-drop-in with a SHA-pinned rebuild + owned-symlink remove, written through the
+drop-in with a SHA-pinned rebuild + owned-wrapper remove, written through the
 executor's atomic temp+rename+backup writer). Streaming reuses `Event::Log` /
 `StepFinished{phase: Install}` so CLI + GUI render identically.
 

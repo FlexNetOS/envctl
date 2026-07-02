@@ -176,7 +176,7 @@ printf 'real-only\n' >"$supervised_home/.config/managed-app/real-only.json"
 printf 'real-type-conflict\n' >"$supervised_home/.config/managed-app/type-conflict"
 ln -s "$outside/hf" "$supervised_home/.config/external-app"
 printf 'key\n' >"$supervised_home/.ssh/id_ed25519"
-"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-state-report "$tmp/owner-supervised-state.tsv" --owner-supervised-child-report "$tmp/owner-supervised-child.tsv" --owner-supervised-child-candidates-report "$tmp/owner-supervised-child-candidates.tsv" --owner-supervised-child-candidate-actions "$tmp/owner-supervised-child-candidate-actions.tsv" --owner-supervised-cache-child-component-plan "$tmp/owner-supervised-cache-child-component-plan.tsv" --owner-supervised-cache-child-component-manifest-status "$tmp/owner-supervised-cache-child-component-manifest-status.tsv" --owner-supervised-managed-config-child-review-plan "$tmp/owner-supervised-managed-config-child-review-plan.tsv" --owner-supervised-managed-config-child-conflict-plan "$tmp/owner-supervised-managed-config-child-conflict-plan.tsv" --owner-supervised-managed-config-child-conflict-summary "$tmp/owner-supervised-managed-config-child-conflict-summary.tsv" --owner-supervised-config-child-classification-plan "$tmp/owner-supervised-config-child-classification-plan.tsv" --owner-supervised-child-candidate-action-summary "$tmp/owner-supervised-child-candidate-action-summary.tsv" --owner-supervised-child-candidates-summary "$tmp/owner-supervised-child-candidates-summary.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-state.out" 2>"$tmp/owner-supervised-state.err"
+"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-state-report "$tmp/owner-supervised-state.tsv" --owner-supervised-child-report "$tmp/owner-supervised-child.tsv" --owner-supervised-child-candidates-report "$tmp/owner-supervised-child-candidates.tsv" --owner-supervised-child-candidate-actions "$tmp/owner-supervised-child-candidate-actions.tsv" --owner-supervised-cache-child-component-plan "$tmp/owner-supervised-cache-child-component-plan.tsv" --owner-supervised-cache-child-component-manifest-status "$tmp/owner-supervised-cache-child-component-manifest-status.tsv" --owner-supervised-cache-child-component-manifest-validation "$tmp/owner-supervised-cache-child-component-manifest-validation.tsv" --owner-supervised-cache-child-component-manifest-scaffold "$tmp/owner-supervised-cache-child-component-manifest-scaffold.tsv" --owner-supervised-managed-config-child-review-plan "$tmp/owner-supervised-managed-config-child-review-plan.tsv" --owner-supervised-managed-config-child-conflict-plan "$tmp/owner-supervised-managed-config-child-conflict-plan.tsv" --owner-supervised-managed-config-child-conflict-summary "$tmp/owner-supervised-managed-config-child-conflict-summary.tsv" --owner-supervised-config-child-classification-plan "$tmp/owner-supervised-config-child-classification-plan.tsv" --owner-supervised-child-candidate-action-summary "$tmp/owner-supervised-child-candidate-action-summary.tsv" --owner-supervised-child-candidates-summary "$tmp/owner-supervised-child-candidates-summary.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-state.out" 2>"$tmp/owner-supervised-state.err"
 head -n 1 "$tmp/owner-supervised-state.tsv" | grep -qx $'dot_entry\treal_path\ttype\ttarget_class\tshallow_digest\tdirect_entries\tdirect_files\tdirect_dirs\tdirect_symlinks\taction\tapply_safe\trecommendation'
 awk -F '\t' 'NF != 12 { print "bad owner-supervised-state row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/owner-supervised-state.tsv"
 test "$(wc -l <"$tmp/owner-supervised-state.tsv" | tr -d '[:space:]')" = 3
@@ -528,7 +528,10 @@ cmp "$tmp/owner-supervised-cache-child-component-manifest-status.tsv" "$tmp/owne
 manifest_status_repo="$tmp/manifest-status-repo"
 mkdir -p "$manifest_status_repo/scripts" "$manifest_status_repo/manifest/components.d"
 cp "$root/scripts/audit-meta-local-paths.sh" "$manifest_status_repo/scripts/audit-meta-local-paths.sh"
-printf '# fixture manifest proving existing-manifest status routing\n' >"$manifest_status_repo/manifest/components.d/cache-tool.toml"
+cat >"$manifest_status_repo/manifest/components.d/cache-tool.toml" <<'MANIFEST'
+[[component]]
+id = "cache-tool"
+MANIFEST
 (
   cd "$manifest_status_repo"
   scripts/audit-meta-local-paths.sh --owner-supervised-cache-child-component-manifest-status "$tmp/owner-supervised-cache-child-component-manifest-status-existing.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-cache-child-component-manifest-status-existing.out" 2>"$tmp/owner-supervised-cache-child-component-manifest-status-existing.err"
@@ -543,6 +546,144 @@ awk -F '	' '
   }
   END { exit !(found_cache && !bad) }
 ' "$tmp/owner-supervised-cache-child-component-manifest-status-existing.tsv"
+
+head -n 1 "$tmp/owner-supervised-cache-child-component-manifest-validation.tsv" | grep -qx $'dot_entry	child_name	child_path	type	canonical_target	component_key	expected_component_id	cache_scope	manifest_hint	manifest_exists	manifest_declares_expected_id	supervision	next_action	apply_command'
+awk -F '	' 'NF != 14 { print "bad owner-supervised-cache-child-component-manifest-validation row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/owner-supervised-cache-child-component-manifest-validation.tsv"
+test "$(wc -l <"$tmp/owner-supervised-cache-child-component-manifest-validation.tsv" | tr -d '[:space:]')" = 2
+awk -F '	' -v home="$supervised_home" -v meta="$supervised_meta" '
+  $1 == ".cache" && $2 == "tool" {
+    if ($3 != home "/.cache/tool") bad=1
+    if ($4 != "directory") bad=1
+    if ($5 != meta "/.local/cache/tool") bad=1
+    if ($6 != "tool") bad=1
+    if ($7 != "cache-tool") bad=1
+    if ($8 != "cache-child") bad=1
+    if ($9 != "manifest/components.d/cache-tool.toml") bad=1
+    if ($10 != "no") bad=1
+    if ($11 != "no") bad=1
+    if ($12 != "component-managed") bad=1
+    if ($13 != "create-cache-component-manifest-before-migration") bad=1
+    if ($14 != "") bad=1
+    found_cache=1
+  }
+  $1 == ".cache" && $2 == "meta-cache" { already_meta=1 }
+  $1 == ".config" { config_child=1 }
+  $2 == "settings.json" || $2 == "token" { nested=1 }
+  $1 == ".ssh" { sensitive=1 }
+  END { exit !(found_cache && !bad && !already_meta && !config_child && !nested && !sensitive) }
+' "$tmp/owner-supervised-cache-child-component-manifest-validation.tsv"
+"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-cache-child-component-manifest-validation "$tmp/owner-supervised-cache-child-component-manifest-validation-only.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-cache-child-component-manifest-validation-only.out" 2>"$tmp/owner-supervised-cache-child-component-manifest-validation-only.err"
+cmp "$tmp/owner-supervised-cache-child-component-manifest-validation.tsv" "$tmp/owner-supervised-cache-child-component-manifest-validation-only.tsv"
+(
+  cd "$manifest_status_repo"
+  scripts/audit-meta-local-paths.sh --owner-supervised-cache-child-component-manifest-validation "$tmp/owner-supervised-cache-child-component-manifest-validation-existing.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-cache-child-component-manifest-validation-existing.out" 2>"$tmp/owner-supervised-cache-child-component-manifest-validation-existing.err"
+)
+awk -F '	' '
+  $1 == ".cache" && $2 == "tool" {
+    if ($7 != "cache-tool") bad=1
+    if ($9 != "manifest/components.d/cache-tool.toml") bad=1
+    if ($10 != "yes") bad=1
+    if ($11 != "yes") bad=1
+    if ($13 != "review-existing-cache-component-manifest-before-migration") bad=1
+    if ($14 != "") bad=1
+    found_cache=1
+  }
+  END { exit !(found_cache && !bad) }
+' "$tmp/owner-supervised-cache-child-component-manifest-validation-existing.tsv"
+manifest_validation_wrong_repo="$tmp/manifest-validation-wrong-repo"
+mkdir -p "$manifest_validation_wrong_repo/scripts" "$manifest_validation_wrong_repo/manifest/components.d"
+cp "$root/scripts/audit-meta-local-paths.sh" "$manifest_validation_wrong_repo/scripts/audit-meta-local-paths.sh"
+cat >"$manifest_validation_wrong_repo/manifest/components.d/cache-tool.toml" <<'MANIFEST'
+[[component]]
+id = "cache-other"
+MANIFEST
+(
+  cd "$manifest_validation_wrong_repo"
+  scripts/audit-meta-local-paths.sh --owner-supervised-cache-child-component-manifest-validation "$tmp/owner-supervised-cache-child-component-manifest-validation-wrong.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-cache-child-component-manifest-validation-wrong.out" 2>"$tmp/owner-supervised-cache-child-component-manifest-validation-wrong.err"
+)
+awk -F '	' '
+  $1 == ".cache" && $2 == "tool" {
+    if ($7 != "cache-tool") bad=1
+    if ($9 != "manifest/components.d/cache-tool.toml") bad=1
+    if ($10 != "yes") bad=1
+    if ($11 != "no") bad=1
+    if ($13 != "fix-cache-component-manifest-id-before-migration") bad=1
+    if ($14 != "") bad=1
+    found_cache=1
+  }
+  END { exit !(found_cache && !bad) }
+' "$tmp/owner-supervised-cache-child-component-manifest-validation-wrong.tsv"
+
+head -n 1 "$tmp/owner-supervised-cache-child-component-manifest-scaffold.tsv" | grep -qx $'dot_entry	child_name	child_path	type	canonical_target	component_key	expected_component_id	cache_scope	manifest_hint	manifest_exists	manifest_declares_expected_id	scaffold_kind	scaffold_status	manifest_stub	supervision	next_action	apply_command'
+awk -F '	' 'NF != 17 { print "bad owner-supervised-cache-child-component-manifest-scaffold row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/owner-supervised-cache-child-component-manifest-scaffold.tsv"
+test "$(wc -l <"$tmp/owner-supervised-cache-child-component-manifest-scaffold.tsv" | tr -d '[:space:]')" = 2
+awk -F '	' -v home="$supervised_home" -v meta="$supervised_meta" '
+  BEGIN { bs = sprintf("%c", 92) }
+  $1 == ".cache" && $2 == "tool" {
+    if ($3 != home "/.cache/tool") bad=1
+    if ($4 != "directory") bad=1
+    if ($5 != meta "/.local/cache/tool") bad=1
+    if ($6 != "tool") bad=1
+    if ($7 != "cache-tool") bad=1
+    if ($8 != "cache-child") bad=1
+    if ($9 != "manifest/components.d/cache-tool.toml") bad=1
+    if ($10 != "no") bad=1
+    if ($11 != "no") bad=1
+    if ($12 != "component-manifest-minimal") bad=1
+    if ($13 != "stub-needs-owner-review") bad=1
+    expected_stub = "[[component]]" bs "nid = \"cache-tool\"" bs "nname = \"Cache child tool\"" bs "ndescription = \"Owner-reviewed manifest stub for cache-tool; review detect/install/fix hooks before any --migrate-cache-child apply.\""
+    if ($14 != expected_stub) bad=1
+    if ($15 != "component-managed") bad=1
+    if ($16 != "owner-review-cache-component-manifest-scaffold") bad=1
+    if ($17 != "") bad=1
+    found_cache=1
+  }
+  $1 == ".cache" && $2 == "meta-cache" { already_meta=1 }
+  $1 == ".config" { config_child=1 }
+  $2 == "settings.json" || $2 == "token" { nested=1 }
+  $1 == ".ssh" { sensitive=1 }
+  END { exit !(found_cache && !bad && !already_meta && !config_child && !nested && !sensitive) }
+' "$tmp/owner-supervised-cache-child-component-manifest-scaffold.tsv"
+"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-cache-child-component-manifest-scaffold "$tmp/owner-supervised-cache-child-component-manifest-scaffold-only.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-cache-child-component-manifest-scaffold-only.out" 2>"$tmp/owner-supervised-cache-child-component-manifest-scaffold-only.err"
+cmp "$tmp/owner-supervised-cache-child-component-manifest-scaffold.tsv" "$tmp/owner-supervised-cache-child-component-manifest-scaffold-only.tsv"
+(
+  cd "$manifest_status_repo"
+  scripts/audit-meta-local-paths.sh --owner-supervised-cache-child-component-manifest-scaffold "$tmp/owner-supervised-cache-child-component-manifest-scaffold-existing.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-cache-child-component-manifest-scaffold-existing.out" 2>"$tmp/owner-supervised-cache-child-component-manifest-scaffold-existing.err"
+)
+awk -F '	' '
+  $1 == ".cache" && $2 == "tool" {
+    if ($7 != "cache-tool") bad=1
+    if ($9 != "manifest/components.d/cache-tool.toml") bad=1
+    if ($10 != "yes") bad=1
+    if ($11 != "yes") bad=1
+    if ($12 != "none") bad=1
+    if ($13 != "existing-manifest-declares-expected-id") bad=1
+    if ($14 != "") bad=1
+    if ($16 != "review-existing-cache-component-manifest-before-migration") bad=1
+    if ($17 != "") bad=1
+    found_cache=1
+  }
+  END { exit !(found_cache && !bad) }
+' "$tmp/owner-supervised-cache-child-component-manifest-scaffold-existing.tsv"
+(
+  cd "$manifest_validation_wrong_repo"
+  scripts/audit-meta-local-paths.sh --owner-supervised-cache-child-component-manifest-scaffold "$tmp/owner-supervised-cache-child-component-manifest-scaffold-wrong.tsv" --meta-root "$supervised_meta" --real-home "$supervised_home" --envctl-home-source "$supervised_meta/envctl/home" >"$tmp/owner-supervised-cache-child-component-manifest-scaffold-wrong.out" 2>"$tmp/owner-supervised-cache-child-component-manifest-scaffold-wrong.err"
+)
+awk -F '	' '
+  $1 == ".cache" && $2 == "tool" {
+    if ($7 != "cache-tool") bad=1
+    if ($9 != "manifest/components.d/cache-tool.toml") bad=1
+    if ($10 != "yes") bad=1
+    if ($11 != "no") bad=1
+    if ($12 != "none") bad=1
+    if ($13 != "existing-manifest-id-mismatch") bad=1
+    if ($14 != "") bad=1
+    if ($16 != "fix-cache-component-manifest-id-before-migration") bad=1
+    if ($17 != "") bad=1
+    found_cache=1
+  }
+  END { exit !(found_cache && !bad) }
+' "$tmp/owner-supervised-cache-child-component-manifest-scaffold-wrong.tsv"
 
 head -n 1 "$tmp/owner-supervised-managed-config-child-review-plan.tsv" | grep -qx $'dot_entry\tchild_name\tchild_path\ttype\tcanonical_target\tenvctl_home_source\tconfig_scope\tsupervision\tnext_action\treview_hint\tapply_command'
 awk -F '\t' 'NF != 11 { print "bad owner-supervised-managed-config-child-review-plan row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/owner-supervised-managed-config-child-review-plan.tsv"
@@ -1483,14 +1624,140 @@ grep -q -- 'nssdb/key4.db' "$tmp/migrate-pki-open.err"
 
 cache_child_meta="$tmp/cache-child-meta"
 cache_child_home="$tmp/cache-child-home"
+cache_child_manifest_repo="$tmp/cache-child-manifest-repo"
+cache_child_missing_manifest_repo="$tmp/cache-child-missing-manifest-repo"
+cache_child_invalid_manifest_repo="$tmp/cache-child-invalid-manifest-repo"
 mkdir -p "$cache_child_meta/.local" "$cache_child_meta/envctl/home" "$cache_child_home/.cache/tool"
+mkdir -p "$cache_child_manifest_repo/scripts" "$cache_child_manifest_repo/manifest/components.d"
+mkdir -p "$cache_child_missing_manifest_repo/scripts" "$cache_child_missing_manifest_repo/manifest/components.d"
+mkdir -p "$cache_child_invalid_manifest_repo/scripts" "$cache_child_invalid_manifest_repo/manifest/components.d"
+cp "$root/scripts/audit-meta-local-paths.sh" "$cache_child_manifest_repo/scripts/audit-meta-local-paths.sh"
+cp "$root/scripts/audit-meta-local-paths.sh" "$cache_child_missing_manifest_repo/scripts/audit-meta-local-paths.sh"
+cp "$root/scripts/audit-meta-local-paths.sh" "$cache_child_invalid_manifest_repo/scripts/audit-meta-local-paths.sh"
+cat >"$cache_child_manifest_repo/manifest/components.d/cache-tool.toml" <<'MANIFEST'
+[[component]]
+id = "cache-tool"
+MANIFEST
+cat >"$cache_child_invalid_manifest_repo/manifest/components.d/cache-tool.toml" <<'MANIFEST'
+[[component]]
+id = "cache-other"
+MANIFEST
 printf '# managed gitconfig\n' >"$cache_child_meta/envctl/home/.gitconfig"
 ln -s "$cache_child_meta/envctl/home/.gitconfig" "$cache_child_meta/.gitconfig"
 ln -s "$cache_child_meta/.local" "$cache_child_home/.local"
 ln -s "$cache_child_meta/.gitconfig" "$cache_child_home/.gitconfig"
 printf 'cache-index\n' >"$cache_child_home/.cache/tool/index"
 
-"$root/scripts/audit-meta-local-paths.sh" --migrate-cache-child tool --meta-root "$cache_child_meta" --real-home "$cache_child_home" --envctl-home-source "$cache_child_meta/envctl/home" >"$tmp/migrate-cache-child-dry.out" 2>"$tmp/migrate-cache-child-dry.err"
+cache_child_writer_repo="$tmp/cache-child-writer-repo"
+cache_child_writer_wrong_repo="$tmp/cache-child-writer-wrong-repo"
+cache_child_writer_meta="$tmp/cache-child-writer-meta"
+cache_child_writer_home="$tmp/cache-child-writer-home"
+cache_child_writer_missing_home="$tmp/cache-child-writer-missing-home"
+mkdir -p "$cache_child_writer_repo/scripts" "$cache_child_writer_repo/manifest/components.d"
+mkdir -p "$cache_child_writer_wrong_repo/scripts" "$cache_child_writer_wrong_repo/manifest/components.d"
+mkdir -p "$cache_child_writer_meta/.local" "$cache_child_writer_meta/envctl/home" "$cache_child_writer_home/.cache/tool" "$cache_child_writer_missing_home/.cache"
+cp "$root/scripts/audit-meta-local-paths.sh" "$cache_child_writer_repo/scripts/audit-meta-local-paths.sh"
+cp "$root/scripts/audit-meta-local-paths.sh" "$cache_child_writer_wrong_repo/scripts/audit-meta-local-paths.sh"
+printf '# managed gitconfig\n' >"$cache_child_writer_meta/envctl/home/.gitconfig"
+ln -s "$cache_child_writer_meta/envctl/home/.gitconfig" "$cache_child_writer_meta/.gitconfig"
+ln -s "$cache_child_writer_meta/.local" "$cache_child_writer_home/.local"
+ln -s "$cache_child_writer_meta/.gitconfig" "$cache_child_writer_home/.gitconfig"
+ln -s "$cache_child_writer_meta/.local" "$cache_child_writer_missing_home/.local"
+ln -s "$cache_child_writer_meta/.gitconfig" "$cache_child_writer_missing_home/.gitconfig"
+printf 'cache-index\n' >"$cache_child_writer_home/.cache/tool/index"
+cat >"$cache_child_writer_wrong_repo/manifest/components.d/cache-tool.toml" <<'MANIFEST'
+[[component]]
+id = "cache-other"
+MANIFEST
+
+(
+  cd "$cache_child_writer_repo"
+  scripts/audit-meta-local-paths.sh --write-cache-child-component-manifest tool --meta-root "$cache_child_writer_meta" --real-home "$cache_child_writer_home" --envctl-home-source "$cache_child_writer_meta/envctl/home"
+) >"$tmp/write-cache-child-manifest-dry.out" 2>"$tmp/write-cache-child-manifest-dry.err"
+grep -q 'DRY-RUN: would write manifest/components.d/cache-tool.toml declaring cache-tool for cache child tool' "$tmp/write-cache-child-manifest-dry.out"
+test ! -e "$cache_child_writer_repo/manifest/components.d/cache-tool.toml"
+
+(
+  cd "$cache_child_writer_repo"
+  scripts/audit-meta-local-paths.sh --apply --write-cache-child-component-manifest tool --meta-root "$cache_child_writer_meta" --real-home "$cache_child_writer_home" --envctl-home-source "$cache_child_writer_meta/envctl/home"
+) >"$tmp/write-cache-child-manifest-apply.out" 2>"$tmp/write-cache-child-manifest-apply.err"
+grep -q 'wrote manifest/components.d/cache-tool.toml declaring cache-tool for cache child tool' "$tmp/write-cache-child-manifest-apply.out"
+grep -Fxq '[[component]]' "$cache_child_writer_repo/manifest/components.d/cache-tool.toml"
+grep -Fxq 'id = "cache-tool"' "$cache_child_writer_repo/manifest/components.d/cache-tool.toml"
+grep -Fxq 'name = "Cache child tool"' "$cache_child_writer_repo/manifest/components.d/cache-tool.toml"
+grep -Fxq 'description = "Owner-reviewed manifest stub for cache-tool; review detect/install/fix hooks before any --migrate-cache-child apply."' "$cache_child_writer_repo/manifest/components.d/cache-tool.toml"
+writer_manifest_before="$(sha256sum "$cache_child_writer_repo/manifest/components.d/cache-tool.toml")"
+(
+  cd "$cache_child_writer_repo"
+  scripts/audit-meta-local-paths.sh --apply --write-cache-child-component-manifest tool --meta-root "$cache_child_writer_meta" --real-home "$cache_child_writer_home" --envctl-home-source "$cache_child_writer_meta/envctl/home"
+) >"$tmp/write-cache-child-manifest-idempotent.out" 2>"$tmp/write-cache-child-manifest-idempotent.err"
+writer_manifest_after="$(sha256sum "$cache_child_writer_repo/manifest/components.d/cache-tool.toml")"
+test "$writer_manifest_before" = "$writer_manifest_after"
+grep -q -- '--write-cache-child-component-manifest tool: component manifest manifest/components.d/cache-tool.toml already declares cache-tool' "$tmp/write-cache-child-manifest-idempotent.out"
+
+if (
+  cd "$cache_child_writer_wrong_repo"
+  scripts/audit-meta-local-paths.sh --apply --write-cache-child-component-manifest tool --meta-root "$cache_child_writer_meta" --real-home "$cache_child_writer_home" --envctl-home-source "$cache_child_writer_meta/envctl/home"
+) >"$tmp/write-cache-child-manifest-wrong.out" 2>"$tmp/write-cache-child-manifest-wrong.err"; then
+  echo "expected --write-cache-child-component-manifest to reject existing wrong manifests" >&2
+  exit 1
+fi
+grep -q -- '--write-cache-child-component-manifest tool: component manifest manifest/components.d/cache-tool.toml already exists but does not declare component id cache-tool; review/fix manually' "$tmp/write-cache-child-manifest-wrong.err"
+grep -Fxq 'id = "cache-other"' "$cache_child_writer_wrong_repo/manifest/components.d/cache-tool.toml"
+
+if "$root/scripts/audit-meta-local-paths.sh" --write-cache-child-component-manifest ../evil --meta-root "$cache_child_writer_meta" --real-home "$cache_child_writer_home" --envctl-home-source "$cache_child_writer_meta/envctl/home" >"$tmp/write-cache-child-manifest-invalid.out" 2>"$tmp/write-cache-child-manifest-invalid.err"; then
+  echo "expected --write-cache-child-component-manifest to reject path-like child names" >&2
+  exit 1
+fi
+grep -q -- '--write-cache-child-component-manifest ../evil is not a direct .cache child name' "$tmp/write-cache-child-manifest-invalid.err"
+
+if (
+  cd "$cache_child_writer_repo"
+  scripts/audit-meta-local-paths.sh --apply --write-cache-child-component-manifest missing --meta-root "$cache_child_writer_meta" --real-home "$cache_child_writer_missing_home" --envctl-home-source "$cache_child_writer_meta/envctl/home"
+) >"$tmp/write-cache-child-manifest-missing.out" 2>"$tmp/write-cache-child-manifest-missing.err"; then
+  echo "expected --write-cache-child-component-manifest to reject missing cache children" >&2
+  exit 1
+fi
+grep -q -- '--write-cache-child-component-manifest missing: source .*\.cache/missing is missing; refusing cache component manifest materialization' "$tmp/write-cache-child-manifest-missing.err"
+
+repo_reviewed_cache_child_meta="$tmp/repo-reviewed-cache-child-meta"
+repo_reviewed_cache_child_home="$tmp/repo-reviewed-cache-child-home"
+mkdir -p "$repo_reviewed_cache_child_meta/.local" "$repo_reviewed_cache_child_meta/envctl/home" "$repo_reviewed_cache_child_home/.cache/.wasm-pack"
+printf '# managed gitconfig\n' >"$repo_reviewed_cache_child_meta/envctl/home/.gitconfig"
+ln -s "$repo_reviewed_cache_child_meta/envctl/home/.gitconfig" "$repo_reviewed_cache_child_meta/.gitconfig"
+ln -s "$repo_reviewed_cache_child_meta/.local" "$repo_reviewed_cache_child_home/.local"
+ln -s "$repo_reviewed_cache_child_meta/.gitconfig" "$repo_reviewed_cache_child_home/.gitconfig"
+printf 'wasm-pack-cache-index\n' >"$repo_reviewed_cache_child_home/.cache/.wasm-pack/index"
+"$root/scripts/audit-meta-local-paths.sh" --migrate-cache-child .wasm-pack --meta-root "$repo_reviewed_cache_child_meta" --real-home "$repo_reviewed_cache_child_home" --envctl-home-source "$repo_reviewed_cache_child_meta/envctl/home" >"$tmp/repo-reviewed-cache-child-wasm-pack-dry.out" 2>"$tmp/repo-reviewed-cache-child-wasm-pack-dry.err"
+grep -q 'DRY-RUN: would move .*\.cache/\.wasm-pack to .*\.local/cache/\.wasm-pack and link .*\.cache/\.wasm-pack -> .*\.local/cache/\.wasm-pack' "$tmp/repo-reviewed-cache-child-wasm-pack-dry.out"
+test -d "$repo_reviewed_cache_child_home/.cache/.wasm-pack"
+test ! -e "$repo_reviewed_cache_child_meta/.local/cache/.wasm-pack"
+
+mkdir -p "$repo_reviewed_cache_child_home/.cache/starship"
+printf 'starship-cache-index\n' >"$repo_reviewed_cache_child_home/.cache/starship/index"
+"$root/scripts/audit-meta-local-paths.sh" --migrate-cache-child starship --meta-root "$repo_reviewed_cache_child_meta" --real-home "$repo_reviewed_cache_child_home" --envctl-home-source "$repo_reviewed_cache_child_meta/envctl/home" >"$tmp/repo-reviewed-cache-child-starship-dry.out" 2>"$tmp/repo-reviewed-cache-child-starship-dry.err"
+grep -q 'DRY-RUN: would move .*\.cache/starship to .*\.local/cache/starship and link .*\.cache/starship -> .*\.local/cache/starship' "$tmp/repo-reviewed-cache-child-starship-dry.out"
+test -d "$repo_reviewed_cache_child_home/.cache/starship"
+test ! -e "$repo_reviewed_cache_child_meta/.local/cache/starship"
+
+mkdir -p "$repo_reviewed_cache_child_home/.cache/agent-env"
+printf 'agent-env-cache-index\n' >"$repo_reviewed_cache_child_home/.cache/agent-env/index"
+"$root/scripts/audit-meta-local-paths.sh" --migrate-cache-child agent-env --meta-root "$repo_reviewed_cache_child_meta" --real-home "$repo_reviewed_cache_child_home" --envctl-home-source "$repo_reviewed_cache_child_meta/envctl/home" >"$tmp/repo-reviewed-cache-child-agent-env-dry.out" 2>"$tmp/repo-reviewed-cache-child-agent-env-dry.err"
+grep -q 'DRY-RUN: would move .*\.cache/agent-env to .*\.local/cache/agent-env and link .*\.cache/agent-env -> .*\.local/cache/agent-env' "$tmp/repo-reviewed-cache-child-agent-env-dry.out"
+test -d "$repo_reviewed_cache_child_home/.cache/agent-env"
+test ! -e "$repo_reviewed_cache_child_meta/.local/cache/agent-env"
+
+mkdir -p "$repo_reviewed_cache_child_home/.cache/JNA"
+printf 'jna-cache-index\n' >"$repo_reviewed_cache_child_home/.cache/JNA/index"
+"$root/scripts/audit-meta-local-paths.sh" --migrate-cache-child JNA --meta-root "$repo_reviewed_cache_child_meta" --real-home "$repo_reviewed_cache_child_home" --envctl-home-source "$repo_reviewed_cache_child_meta/envctl/home" >"$tmp/repo-reviewed-cache-child-jna-dry.out" 2>"$tmp/repo-reviewed-cache-child-jna-dry.err"
+grep -q 'DRY-RUN: would move .*\.cache/JNA to .*\.local/cache/JNA and link .*\.cache/JNA -> .*\.local/cache/JNA' "$tmp/repo-reviewed-cache-child-jna-dry.out"
+test -d "$repo_reviewed_cache_child_home/.cache/JNA"
+test ! -e "$repo_reviewed_cache_child_meta/.local/cache/JNA"
+
+(
+  cd "$cache_child_manifest_repo"
+  scripts/audit-meta-local-paths.sh --migrate-cache-child tool --meta-root "$cache_child_meta" --real-home "$cache_child_home" --envctl-home-source "$cache_child_meta/envctl/home"
+) >"$tmp/migrate-cache-child-dry.out" 2>"$tmp/migrate-cache-child-dry.err"
 grep -q 'DRY-RUN: would move .*\.cache/tool to .*\.local/cache/tool and link .*\.cache/tool -> .*\.local/cache/tool' "$tmp/migrate-cache-child-dry.out"
 test -d "$cache_child_home/.cache/tool"
 test ! -e "$cache_child_meta/.local/cache/tool"
@@ -1501,6 +1768,44 @@ if "$root/scripts/audit-meta-local-paths.sh" --migrate-cache-child ../evil --met
 fi
 grep -q -- '--migrate-cache-child ../evil is not a direct .cache child name' "$tmp/migrate-cache-child-invalid.err"
 
+cache_child_missing_manifest_meta="$tmp/cache-child-missing-manifest-meta"
+cache_child_missing_manifest_home="$tmp/cache-child-missing-manifest-home"
+mkdir -p "$cache_child_missing_manifest_meta/.local" "$cache_child_missing_manifest_meta/envctl/home" "$cache_child_missing_manifest_home/.cache/tool"
+printf '# managed gitconfig\n' >"$cache_child_missing_manifest_meta/envctl/home/.gitconfig"
+ln -s "$cache_child_missing_manifest_meta/envctl/home/.gitconfig" "$cache_child_missing_manifest_meta/.gitconfig"
+ln -s "$cache_child_missing_manifest_meta/.local" "$cache_child_missing_manifest_home/.local"
+ln -s "$cache_child_missing_manifest_meta/.gitconfig" "$cache_child_missing_manifest_home/.gitconfig"
+printf 'cache-index\n' >"$cache_child_missing_manifest_home/.cache/tool/index"
+if (
+  cd "$cache_child_missing_manifest_repo"
+  scripts/audit-meta-local-paths.sh --apply --migrate-cache-child tool --meta-root "$cache_child_missing_manifest_meta" --real-home "$cache_child_missing_manifest_home" --envctl-home-source "$cache_child_missing_manifest_meta/envctl/home"
+) >"$tmp/migrate-cache-child-missing-manifest.out" 2>"$tmp/migrate-cache-child-missing-manifest.err"; then
+  echo "expected --migrate-cache-child to require a cache component manifest before applying" >&2
+  exit 1
+fi
+test -d "$cache_child_missing_manifest_home/.cache/tool"
+test ! -e "$cache_child_missing_manifest_meta/.local/cache/tool"
+grep -q -- '--migrate-cache-child tool: component manifest manifest/components.d/cache-tool.toml is missing; create/review the manifest before migration' "$tmp/migrate-cache-child-missing-manifest.err"
+
+cache_child_invalid_manifest_meta="$tmp/cache-child-invalid-manifest-meta"
+cache_child_invalid_manifest_home="$tmp/cache-child-invalid-manifest-home"
+mkdir -p "$cache_child_invalid_manifest_meta/.local" "$cache_child_invalid_manifest_meta/envctl/home" "$cache_child_invalid_manifest_home/.cache/tool"
+printf '# managed gitconfig\n' >"$cache_child_invalid_manifest_meta/envctl/home/.gitconfig"
+ln -s "$cache_child_invalid_manifest_meta/envctl/home/.gitconfig" "$cache_child_invalid_manifest_meta/.gitconfig"
+ln -s "$cache_child_invalid_manifest_meta/.local" "$cache_child_invalid_manifest_home/.local"
+ln -s "$cache_child_invalid_manifest_meta/.gitconfig" "$cache_child_invalid_manifest_home/.gitconfig"
+printf 'cache-index\n' >"$cache_child_invalid_manifest_home/.cache/tool/index"
+if (
+  cd "$cache_child_invalid_manifest_repo"
+  scripts/audit-meta-local-paths.sh --apply --migrate-cache-child tool --meta-root "$cache_child_invalid_manifest_meta" --real-home "$cache_child_invalid_manifest_home" --envctl-home-source "$cache_child_invalid_manifest_meta/envctl/home"
+) >"$tmp/migrate-cache-child-invalid-manifest.out" 2>"$tmp/migrate-cache-child-invalid-manifest.err"; then
+  echo "expected --migrate-cache-child to require a matching cache component id before applying" >&2
+  exit 1
+fi
+test -d "$cache_child_invalid_manifest_home/.cache/tool"
+test ! -e "$cache_child_invalid_manifest_meta/.local/cache/tool"
+grep -q -- '--migrate-cache-child tool: component manifest manifest/components.d/cache-tool.toml does not declare component id cache-tool; review/fix the manifest before migration' "$tmp/migrate-cache-child-invalid-manifest.err"
+
 cache_child_open_meta="$tmp/cache-child-open-meta"
 cache_child_open_home="$tmp/cache-child-open-home"
 mkdir -p "$cache_child_open_meta/.local" "$cache_child_open_meta/envctl/home" "$cache_child_open_home/.cache/tool"
@@ -1509,7 +1814,10 @@ ln -s "$cache_child_open_meta/envctl/home/.gitconfig" "$cache_child_open_meta/.g
 ln -s "$cache_child_open_meta/.local" "$cache_child_open_home/.local"
 ln -s "$cache_child_open_meta/.gitconfig" "$cache_child_open_home/.gitconfig"
 printf 'cache-index\n' >"$cache_child_open_home/.cache/tool/index"
-if ENVCTL_TEST_LSOF_OPEN_SOURCE="$cache_child_open_home/.cache/tool" "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-cache-child tool --meta-root "$cache_child_open_meta" --real-home "$cache_child_open_home" --envctl-home-source "$cache_child_open_meta/envctl/home" >"$tmp/migrate-cache-child-open.out" 2>"$tmp/migrate-cache-child-open.err"; then
+if (
+  cd "$cache_child_manifest_repo"
+  ENVCTL_TEST_LSOF_OPEN_SOURCE="$cache_child_open_home/.cache/tool" scripts/audit-meta-local-paths.sh --apply --migrate-cache-child tool --meta-root "$cache_child_open_meta" --real-home "$cache_child_open_home" --envctl-home-source "$cache_child_open_meta/envctl/home"
+) >"$tmp/migrate-cache-child-open.out" 2>"$tmp/migrate-cache-child-open.err"; then
   echo "expected --migrate-cache-child to fail closed with open file handles" >&2
   exit 1
 fi
@@ -1527,7 +1835,10 @@ ln -s "$cache_child_collision_meta/.local" "$cache_child_collision_home/.local"
 ln -s "$cache_child_collision_meta/.gitconfig" "$cache_child_collision_home/.gitconfig"
 printf 'source-cache\n' >"$cache_child_collision_home/.cache/tool/index"
 printf 'target-cache\n' >"$cache_child_collision_meta/.local/cache/tool/index"
-if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-cache-child tool --meta-root "$cache_child_collision_meta" --real-home "$cache_child_collision_home" --envctl-home-source "$cache_child_collision_meta/envctl/home" >"$tmp/migrate-cache-child-collision.out" 2>"$tmp/migrate-cache-child-collision.err"; then
+if (
+  cd "$cache_child_manifest_repo"
+  scripts/audit-meta-local-paths.sh --apply --migrate-cache-child tool --meta-root "$cache_child_collision_meta" --real-home "$cache_child_collision_home" --envctl-home-source "$cache_child_collision_meta/envctl/home"
+) >"$tmp/migrate-cache-child-collision.out" 2>"$tmp/migrate-cache-child-collision.err"; then
   echo "expected --migrate-cache-child to reject existing targets" >&2
   exit 1
 fi
@@ -1535,7 +1846,10 @@ grep -q -- '--migrate-cache-child tool: existing target .* already exists; refus
 grep -Fqx 'source-cache' "$cache_child_collision_home/.cache/tool/index"
 grep -Fqx 'target-cache' "$cache_child_collision_meta/.local/cache/tool/index"
 
-"$root/scripts/audit-meta-local-paths.sh" --apply --migrate-cache-child tool --meta-root "$cache_child_meta" --real-home "$cache_child_home" --envctl-home-source "$cache_child_meta/envctl/home" >"$tmp/migrate-cache-child.out" 2>"$tmp/migrate-cache-child.err"
+(
+  cd "$cache_child_manifest_repo"
+  scripts/audit-meta-local-paths.sh --apply --migrate-cache-child tool --meta-root "$cache_child_meta" --real-home "$cache_child_home" --envctl-home-source "$cache_child_meta/envctl/home"
+) >"$tmp/migrate-cache-child.out" 2>"$tmp/migrate-cache-child.err"
 test "$(readlink -f "$cache_child_home/.cache/tool")" = "$cache_child_meta/.local/cache/tool"
 grep -Fqx 'cache-index' "$cache_child_meta/.local/cache/tool/index"
 test -d "$cache_child_home/.cache"
@@ -1634,6 +1948,108 @@ awk -F '\t' -v home="$config_bridge_home" -v meta="$config_bridge_meta" '
   }
   END { exit !(found && !bad) }
 ' "$tmp/config-bridge-post.tsv"
+
+
+managed_config_deep_meta="$tmp/managed-config-deep-meta"
+managed_config_deep_home="$tmp/managed-config-deep-home"
+mkdir -p "$managed_config_deep_meta/.local" \
+  "$managed_config_deep_meta/envctl/home/.config/same-app" \
+  "$managed_config_deep_meta/envctl/home/.config/diff-app" \
+  "$managed_config_deep_home/.config/same-app" \
+  "$managed_config_deep_home/.config/diff-app"
+printf '# managed gitconfig\n' >"$managed_config_deep_meta/envctl/home/.gitconfig"
+printf 'same\n' >"$managed_config_deep_meta/envctl/home/.config/same-app/config.toml"
+printf 'same\n' >"$managed_config_deep_home/.config/same-app/config.toml"
+printf 'managed\n' >"$managed_config_deep_meta/envctl/home/.config/diff-app/config.toml"
+printf 'real\n' >"$managed_config_deep_home/.config/diff-app/config.toml"
+mkdir -p "$managed_config_deep_meta/envctl/home/.config/diff-app/shared-dir" \
+  "$managed_config_deep_home/.config/diff-app/shared-dir" \
+  "$managed_config_deep_home/.config/diff-app/type-conflict"
+printf 'managed nested\n' >"$managed_config_deep_meta/envctl/home/.config/diff-app/shared-dir/nested.txt"
+printf 'real nested\n' >"$managed_config_deep_home/.config/diff-app/shared-dir/nested.txt"
+printf 'managed-only\n' >"$managed_config_deep_meta/envctl/home/.config/diff-app/managed-only.txt"
+printf 'real-only\n' >"$managed_config_deep_home/.config/diff-app/real-only.txt"
+printf 'managed file\n' >"$managed_config_deep_meta/envctl/home/.config/diff-app/type-conflict"
+ln -s "$managed_config_deep_meta/envctl/home/.gitconfig" "$managed_config_deep_meta/.gitconfig"
+ln -s "$managed_config_deep_meta/.local" "$managed_config_deep_home/.local"
+ln -s "$managed_config_deep_meta/.gitconfig" "$managed_config_deep_home/.gitconfig"
+"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-managed-config-child-deep-status "$tmp/managed-config-deep-status.tsv" --meta-root "$managed_config_deep_meta" --real-home "$managed_config_deep_home" --envctl-home-source "$managed_config_deep_meta/envctl/home" >"$tmp/managed-config-deep-status.out" 2>"$tmp/managed-config-deep-status.err"
+head -n 1 "$tmp/managed-config-deep-status.tsv" | grep -qx $'dot_entry\tchild_name\treal_path\tmanaged_source\treal_type\tmanaged_type\tdeep_identical\tsupervision\tnext_action\tapply_command'
+awk -F '\t' 'NF != 10 { print "bad managed config deep-status row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/managed-config-deep-status.tsv"
+test "$(wc -l <"$tmp/managed-config-deep-status.tsv" | tr -d '[:space:]')" = 3
+awk -F '\t' -v home="$managed_config_deep_home" -v meta="$managed_config_deep_meta" '
+  $1 == ".config" && $2 == "same-app" {
+    if ($3 != home "/.config/same-app") bad=1
+    if ($4 != meta "/envctl/home/.config/same-app") bad=1
+    if ($5 != "directory") bad=1
+    if ($6 != "directory") bad=1
+    if ($7 != "yes") bad=1
+    if ($8 != "owner-reviewed") bad=1
+    if ($9 != "review-then-bridge-identical-managed-config-child") bad=1
+    if ($10 != "") bad=1
+    found_same=1
+  }
+  $1 == ".config" && $2 == "diff-app" {
+    if ($3 != home "/.config/diff-app") bad=1
+    if ($4 != meta "/envctl/home/.config/diff-app") bad=1
+    if ($5 != "directory") bad=1
+    if ($6 != "directory") bad=1
+    if ($7 != "no") bad=1
+    if ($8 != "owner-reviewed") bad=1
+    if ($9 != "owner-review-real-home-config-child-merge-or-remove-before-bridge") bad=1
+    if ($10 != "") bad=1
+    found_diff=1
+  }
+  END { exit !(found_same && found_diff && !bad) }
+' "$tmp/managed-config-deep-status.tsv"
+
+"$root/scripts/audit-meta-local-paths.sh" --owner-supervised-managed-config-child-deep-diff-summary "$tmp/managed-config-deep-diff-summary.tsv" --meta-root "$managed_config_deep_meta" --real-home "$managed_config_deep_home" --envctl-home-source "$managed_config_deep_meta/envctl/home" >"$tmp/managed-config-deep-diff-summary.out" 2>"$tmp/managed-config-deep-diff-summary.err"
+head -n 1 "$tmp/managed-config-deep-diff-summary.tsv" | grep -qx $'dot_entry\tchild_name\treal_path\tmanaged_source\treal_type\tmanaged_type\treal_deep_entries\tmanaged_deep_entries\treal_deep_files\tmanaged_deep_files\tshared_deep_entries\treal_only_deep_entries\tmanaged_only_deep_entries\ttype_conflict_deep_entries\tdiffering_files\tdeep_identical\tsupervision\tnext_action\tapply_command'
+awk -F '\t' 'NF != 19 { print "bad managed config deep-diff-summary row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/managed-config-deep-diff-summary.tsv"
+test "$(wc -l <"$tmp/managed-config-deep-diff-summary.tsv" | tr -d '[:space:]')" = 3
+awk -F '\t' -v home="$managed_config_deep_home" -v meta="$managed_config_deep_meta" '
+  $1 == ".config" && $2 == "same-app" {
+    if ($3 != home "/.config/same-app") bad=1
+    if ($4 != meta "/envctl/home/.config/same-app") bad=1
+    if ($5 != "directory") bad=1
+    if ($6 != "directory") bad=1
+    if ($7 != "1") bad=1
+    if ($8 != "1") bad=1
+    if ($9 != "1") bad=1
+    if ($10 != "1") bad=1
+    if ($11 != "1") bad=1
+    if ($12 != "0") bad=1
+    if ($13 != "0") bad=1
+    if ($14 != "0") bad=1
+    if ($15 != "0") bad=1
+    if ($16 != "yes") bad=1
+    if ($17 != "owner-reviewed") bad=1
+    if ($18 != "review-then-bridge-identical-managed-config-child") bad=1
+    if ($19 != "") bad=1
+    found_same=1
+  }
+  $1 == ".config" && $2 == "diff-app" {
+    if ($3 != home "/.config/diff-app") bad=1
+    if ($4 != meta "/envctl/home/.config/diff-app") bad=1
+    if ($5 != "directory") bad=1
+    if ($6 != "directory") bad=1
+    if ($7 != "5") bad=1
+    if ($8 != "5") bad=1
+    if ($9 != "3") bad=1
+    if ($10 != "4") bad=1
+    if ($11 != "4") bad=1
+    if ($12 != "1") bad=1
+    if ($13 != "1") bad=1
+    if ($14 != "1") bad=1
+    if ($15 != "2") bad=1
+    if ($16 != "no") bad=1
+    if ($17 != "owner-reviewed") bad=1
+    if ($18 != "owner-review-real-home-config-child-deep-diff-before-bridge") bad=1
+    if ($19 != "") bad=1
+    found_diff=1
+  }
+  END { exit !(found_same && found_diff && !bad) }
+' "$tmp/managed-config-deep-diff-summary.tsv"
 
 config_identical_meta="$tmp/config-identical-meta"
 config_identical_home="$tmp/config-identical-home"
