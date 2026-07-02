@@ -9,7 +9,8 @@
 # wild (the linker) is now FULLY WIRED + verified (Epic H TASK-0054): its install
 # writes the meta-root $META_ROOT/.cargo/config.toml linker section and a full
 # `cargo build` was confirmed to link via `clang --ld-path=wild` before it landed.
-# kache (RUSTC_WRAPPER) remains install-only — its wiring is a separate step.
+# kache (RUSTC_WRAPPER) is wired and verified: absolute wrapper, meta XDG cache,
+# and a user-systemd bridge whose real unit file lives under $META_ROOT/etc.
 
 # ── gh (GitHub CLI) ── replaces apt `gh` (/usr/bin/gh). Pure tarball, additive.
 [[component]]
@@ -183,13 +184,15 @@ path_entries = ["$META_ROOT/usr/bin"]
 # FULLY WIRED (Epic H TASK-0055): install ALSO writes a delimited `[build] rustc-wrapper`
 # block into the meta-root $META_ROOT/.cargo/config.toml (CO-MANAGED with the wild-linker
 # component via non-clobbering block-upsert), so local cargo builds are cache-wrapped by
-# kache. The env-seam (`envctl env`) was NOT used: it is not sourced into the interactive
-# shell, so an env-var wiring would be inert — the cargo config is the only automatic path.
-# Verify proves a real throwaway build is actually intercepted by kache (index.db written).
+# the canonical `$META_ROOT/usr/bin/kache` frontdoor. The frontdoor is a wrapper (not a
+# symlink) so kache always uses meta-owned XDG state/cache, even from shells that have not
+# sourced `envctl env --toolchains`.
+# Verify proves a real throwaway build is actually intercepted by kache and writes the
+# active cache under `$META_ROOT/.cache/kache`, never `~/.cache/kache`.
 [[component]]
 id = "kache"
 name = "kache compiler cache (meta-owned, wired + verified)"
-description = "Content-addressed Rust compiler cache (kunobi-ninja/kache) via `cargo install kache` into .toolchains/kache, wired as RUSTC_WRAPPER via a delimited [build] block in the meta-root .cargo/config.toml (co-managed with wild via block-upsert). Wiring is verified — a throwaway cargo build is confirmed to be kache-intercepted before it lands. sccache only as last-resort fallback."
+description = "Content-addressed Rust compiler cache (kunobi-ninja/kache) via `cargo install kache` into .toolchains/kache, exposed through a $META_ROOT/usr/bin/kache XDG wrapper, and wired as RUSTC_WRAPPER via an absolute delimited [build] block in the meta-root .cargo/config.toml (co-managed with wild via block-upsert). Wiring is verified by a throwaway cargo build that must write $META_ROOT/.cache/kache, not ~/.cache/kache. sccache only as last-resort fallback."
 
 [component.detect]
 kind = "command"
@@ -210,9 +213,8 @@ envctl_frontdoor "$DEST/bin/kache" "$META_ROOT/usr/bin/kache"
 # Wire kache as RUSTC_WRAPPER via the meta-root .cargo/config.toml [build] section. Same
 # CO-MANAGED file as the wild-linker component (TASK-0054): each owns a delimited block,
 # written by a non-clobbering upsert so the two never overwrite each other and foreign
-# content is preserved. The file is a $META_ROOT runtime artifact (like .toolchains/),
-# outside the repo; CI clones repos standalone so it never sees it. `kache` is PATH-resolved
-# ($META_ROOT/usr/bin), matching kache's own `doctor` recommendation and wild's bare `clang`/`wild`.
+# content is preserved. Use an ABSOLUTE wrapper path so Cargo never falls through to an
+# older host-local kache or any PATH-shadowed binary.
 install -d -m 755 "$M/.cargo"
 CFG="$M/.cargo/config.toml"
 touch "$CFG"
@@ -229,19 +231,23 @@ login_shell = true
 script = '''
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-export PATH="$META_ROOT/usr/bin:$PATH"
+export PATH="$M/usr/bin:$PATH"
 # Bypass any interactive `grep` shell-function wrapper (rtk/ugrep hook in login shells).
 g() { command grep "$@"; }
-# 1) tool resolves
+# 1) tools resolve to the meta wrapper + real binary exists.
+[ "$(command -v kache)" = "$M/usr/bin/kache" ]
+[ -x "$M/usr/bin/kache" ] && g -q 'envctl kache wrapper' "$M/usr/bin/kache"
+[ -x "$M/.toolchains/kache/bin/kache" ]
 kache --version
-# 2) the co-managed config carries the rustc-wrapper wiring
+# 2) the co-managed config carries the absolute rustc-wrapper wiring (not bare PATH lookup).
 CFG="$M/.cargo/config.toml"
-[ -f "$CFG" ] && g -q 'rustc-wrapper' "$CFG"
-# 3) prove kache actually wraps a real build. Build a throwaway crate in /tmp (outside the
-#    meta tree) with the meta-root config applied, against an ISOLATED kache cache via
-#    XDG_CACHE_HOME, then confirm kache recorded the wrapped build (index.db written).
+[ -f "$CFG" ] && g -q "rustc-wrapper = \"$M/usr/bin/kache\"" "$CFG"
+! awk '/^# >>> envctl kache /{s=1} s&&/^# <<< envctl kache /{s=0} s&&/rustc-wrapper = "kache"/{bad=1} END{exit bad?0:1}' "$CFG"
+# 3) prove kache actually wraps a real build and that the active cache lands in meta.
+#    The throwaway HOME catches regressions where kache falls back to ~/.cache/kache.
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-export XDG_CACHE_HOME="$tmp/xdg"; mkdir -p "$XDG_CACHE_HOME"
+mkdir -p "$tmp/home" "$M/.cache"
+rm -f "$tmp/home/.cache/kache/index.db"
 mkdir -p "$tmp/proj/src"
 cat > "$tmp/proj/Cargo.toml" <<EOF
 [package]
@@ -253,8 +259,18 @@ name = "kache-wire-probe"
 path = "src/main.rs"
 EOF
 echo 'fn main() {}' > "$tmp/proj/src/main.rs"
-( cd "$tmp/proj" && cargo build --config "$CFG" --target-dir "$tmp/td" 2>&1 )
-[ -s "$XDG_CACHE_HOME/kache/index.db" ] || { echo "kache did not record the wrapped build"; exit 1; }
+( cd "$tmp/proj" && env -u XDG_CACHE_HOME HOME="$tmp/home" PATH="$M/usr/bin:$PATH" cargo build --config "$CFG" --target-dir "$tmp/td" 2>&1 )
+[ -s "$M/.cache/kache/index.db" ] || { echo "kache did not record the wrapped build under $M/.cache/kache"; exit 1; }
+[ ! -e "$tmp/home/.cache/kache/index.db" ] || { echo "kache leaked cache state to HOME/.cache/kache"; exit 1; }
+# 4) daemon service restarts must also stay meta-owned.
+if command -v systemctl >/dev/null 2>&1; then
+  UNIT_BRIDGE="$HOME/.config/systemd/user/kache.service"
+  UNIT_SRC="$M/etc/systemd/user/kache.service"
+  [ -L "$UNIT_BRIDGE" ] && [ "$(readlink "$UNIT_BRIDGE")" = "$UNIT_SRC" ]
+  g -q "ExecStart=$M/.toolchains/kache/bin/kache daemon run" "$UNIT_SRC"
+  g -q "Environment=XDG_CACHE_HOME=$M/.cache" "$UNIT_SRC"
+fi
+kache doctor
 '''
 
 [component.remove]
@@ -263,7 +279,12 @@ login_shell = true
 script = '''
 set -u
 M="${META_ROOT:?META_ROOT required}"
-t="$META_ROOT/usr/bin/kache"; [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/kache" && rm -f "$t"
+t="$M/usr/bin/kache"
+if [ -e "$t" ] || [ -L "$t" ]; then
+  if { [ -f "$t" ] && grep -q 'envctl kache wrapper' "$t"; } || { [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/kache"; }; then
+    rm -f "$t"
+  fi
+fi
 rm -rf "$M/.toolchains/kache"
 # Strip ONLY the kache block from the co-managed config (leaves wild's block + foreign
 # content intact). Self-guarded by OUR delimiters. Remove the file if nothing remains.
@@ -274,6 +295,14 @@ if [ -f "$CFG" ]; then
   awk -v b="$BEG" -v e="$END" '$0==b{s=1} s&&$0==e{s=0;next} !s{print}' "$CFG" > "$CFG.tmp" && mv "$CFG.tmp" "$CFG"
   grep -q '[^[:space:]]' "$CFG" || rm -f "$CFG"
 fi
+if command -v systemctl >/dev/null 2>&1; then
+  systemctl --user disable --now kache.service >/dev/null 2>&1 || true
+  systemctl --user daemon-reload >/dev/null 2>&1 || true
+fi
+UNIT_BRIDGE="$HOME/.config/systemd/user/kache.service"
+UNIT_SRC="$M/etc/systemd/user/kache.service"
+[ -L "$UNIT_BRIDGE" ] && [ "$(readlink "$UNIT_BRIDGE")" = "$UNIT_SRC" ] && rm -f "$UNIT_BRIDGE"
+rm -f "$UNIT_SRC"
 '''
 
 [component.wiring]

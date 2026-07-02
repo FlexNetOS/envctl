@@ -692,7 +692,7 @@ impl eframe::App for EnvctlApp {
                 egui::Frame::none()
                     .fill(theme::PANEL)
                     .inner_margin(egui::Margin::symmetric(14.0, 10.0))
-                    .stroke(egui::Stroke::new(1.0, theme::BORDER)),
+                    .stroke(egui::Stroke::new(1.0_f32, theme::BORDER)),
             )
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
@@ -984,7 +984,10 @@ impl EnvctlApp {
             .collect();
         let last = hist.back().copied().unwrap_or(0.0) / 100.0;
         let col = theme::load_color(last);
-        painter.add(egui::Shape::line(pts.clone(), egui::Stroke::new(1.6, col)));
+        painter.add(egui::Shape::line(
+            pts.clone(),
+            egui::Stroke::new(1.6_f32, col),
+        ));
         if let Some(p) = pts.last() {
             painter.circle_filled(*p, 2.2, col);
         }
@@ -2568,7 +2571,7 @@ impl EnvctlApp {
 
         egui::Frame::none()
             .fill(theme::BG)
-            .stroke(egui::Stroke::new(1.0, theme::BORDER))
+            .stroke(egui::Stroke::new(1.0_f32, theme::BORDER))
             .rounding(egui::Rounding::same(8.0))
             .inner_margin(egui::Margin::same(10.0))
             .show(ui, |ui| {
