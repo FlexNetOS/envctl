@@ -73,6 +73,13 @@ Read-only on production code; writes plans/graph under .handoff/loop/plan/ + doc
 #   .claude/skills/planning-engineer/scripts/tests/test-plan-{eject,loop-state,contract,weave-dispatch,artifact-gate,evals}.sh
 # They resolve their scripts-under-test from the repo root; wire them into CI (run each with `bash`).
 # The loop-state test needs ci/gates/loop-state.sh present (copy it if your repo runs the plan loop).
+#
+# Runtime gate/dispatch helpers (copy to the target's repo-root scripts/ if your repo runs the loop):
+#   install -m755 .claude/skills/planning-engineer/scripts/plan-artifact-gate.sh  scripts/plan-artifact-gate.sh
+#   install -m755 .claude/skills/planning-engineer/scripts/plan-weave-dispatch.sh scripts/plan-weave-dispatch.sh
+# plan-artifact-gate.sh fails closed on incomplete per-cycle artifacts, terminal zero-target roll-ups,
+# and DONE/COMPLETE drift; plan-weave-dispatch.sh fans the required Opus lanes out through weave
+# (override PLAN_WEAVE_ORCH / the lane list per repo).
 
 Done. Invoke as: /planning-engineer  (single cycle)  ·  /plan-loop  (continuous)
 SNIP

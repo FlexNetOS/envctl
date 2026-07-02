@@ -5,6 +5,10 @@
 # scalable icon — all meta-scoped (no sudo), driven by the repo's idempotent
 # packaging/install-desktop.sh (which is also the standalone entry point).
 #
+# install lands the binary in the canonical `$META_ROOT/usr/bin` (the script's
+# default), which is exactly what detect/verify below check — so this component
+# detects as present after install (override the target with ENVCTL_BIN_DIR).
+#
 # Build deps: the GUI needs the system dev libs listed under README "Native GUI"
 # (cmake, libxkbcommon/wayland/xcb, libgl1-mesa, libgtk-3). They are assumed
 # present (the build fails loudly otherwise); this component does not pull apt.

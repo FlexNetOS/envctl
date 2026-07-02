@@ -1,0 +1,4 @@
+[[component]]
+id = "cache-wasm-pack"
+name = "Cache child wasm-pack"
+description = "Owner-reviewed manifest stub for cache-wasm-pack; review detect/install/fix hooks before any --migrate-cache-child apply."

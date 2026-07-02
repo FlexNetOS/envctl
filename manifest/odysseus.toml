@@ -32,17 +32,16 @@ id = "odysseus"
 name = "Odysseus (self-hosted AI workspace, sandboxed)"
 description = "Pinned, reversible Odysseus stack (AGPL, NOT source-merged) run via podman compose on the meta-local rootless Podman engine. Loopback-only (127.0.0.1:7000), AUTH on, side services internal-only, docker-socket redirected to the Podman API socket. State under $META_ROOT/.local/share/odysseus. QUALIFY adoption — not yet the default LifeOS front door."
 destructive = false
-# NB: intentionally NOT `requires = ["podman"]`. The podman component's `install` is destructive
-# (`rm -rf $DEST`, which includes its container graphroot), and its `detect` currently mis-resolves
-# the podman bridge path on a post-#271 layout (checks $M/usr/bin/podman; the bridge is at
-# $M/.local/bin/podman) → it falsely reports uninstalled. A hard dependency therefore makes a bare
-# `envctl install odysseus` re-trigger that destructive podman reinstall (it wiped the live
-# container store once during development). We instead require podman as a FAIL-CLOSED PRECONDITION
-# in `install` (below) — explicit + safe, with no dependency-driven reinstall. (Fixing the podman
-# component's detect/non-destructive-reinstall is a separate, tracked follow-up.)
+# NB: intentionally NOT `requires = ["podman"]`. The podman component's `install` was destructive
+# (`rm -rf $DEST`, incl. its container graphroot) and its `detect` mis-resolves the bridge path on
+# a post-#271 layout (now both fixed in apt-base.toml). To avoid ANY dependency-driven podman
+# reinstall (one wiped the live container store during development), we require podman as a
+# FAIL-CLOSED PRECONDITION in `install` (below) instead — explicit + safe.
 
 # DETECT — read-only, fast: pinned clone present, the odysseus container is running on the
 # meta-local engine, and the loopback UI answers. (No compose invocation — cheap `podman ps`.)
+# Podman is resolved via PATH (the meta bridge) with a toolchains fallback — never a hardcoded
+# $M/usr/bin/podman, which does not exist on a box that bridges via .local/bin.
 [component.detect]
 kind = "command"
 command = "bash"
@@ -59,6 +58,7 @@ script = '''
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 rt="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+# Prepend the meta podman bridges so a bare `podman` resolves even in a stripped engine env.
 export PATH="$M/.local/bin:$M/.toolchains/podman/usr/local/bin:$M/usr/bin:$PATH"
 ROOT="$M/.local/share/odysseus"; SRC="$ROOT/src"; DATA="$ROOT/data"; LOGS="$ROOT/logs"
 REPO="${ODYSSEUS_REPO:-https://github.com/pewdiepie-archdaemon/odysseus.git}"
@@ -69,12 +69,42 @@ SOCK="$rt/podman/podman.sock"
 #    as a hard `requires`, to avoid the destructive podman-reinstall footgun — see the note above).
 command -v podman >/dev/null 2>&1 || { echo "odysseus needs the meta-local podman engine; run: envctl install podman"; exit 1; }
 
-# 1) Docker-API endpoint on the meta-local Podman engine (rootless; no sudo).
+# 1) Docker-API endpoint on the meta-local Podman engine (rootless; no sudo) + reboot persistence.
 systemctl --user enable --now podman.socket 2>/dev/null || true
 loginctl enable-linger "$(id -un)" 2>/dev/null || true
+# the compose services declare `restart: unless-stopped`; podman-restart.service (+ linger) brings
+# them back after a reboot. Without it the stack stays down post-reboot.
+systemctl --user enable podman-restart.service 2>/dev/null || true
 
 # 2) meta-local state dirs.
-install -d -m 700 "$ROOT" "$DATA" "$LOGS" "$DATA/ssh" "$DATA/huggingface" "$DATA/local"
+#
+# Rootless Podman can leave bind-mounted volume trees owned by shifted IDs after a run. Re-running
+# install must not downgrade the service by chmod/chowning existing data/log paths back from the
+# namespace owner (or failing when the host user cannot chmod them). Create missing dirs only; leave
+# existing state untouched. The podman-unshare fallback lets rootless Podman create a missing child
+# below a shifted-ID parent without any system-depth privilege escalation.
+install -d -m 700 "$ROOT"
+
+odysseus_ensure_state_dir() {
+  d="$1"
+  if [ -d "$d" ]; then
+    return 0
+  fi
+
+  if mkdir -p "$d" 2>/dev/null; then
+    chmod 700 "$d" 2>/dev/null || true
+    return 0
+  fi
+
+  podman unshare mkdir -p "$d"
+  podman unshare chmod 700 "$d" 2>/dev/null || true
+}
+
+odysseus_ensure_state_dir "$DATA"
+odysseus_ensure_state_dir "$LOGS"
+odysseus_ensure_state_dir "$DATA/ssh"
+odysseus_ensure_state_dir "$DATA/huggingface"
+odysseus_ensure_state_dir "$DATA/local"
 
 # 3) pinned clone (idempotent; detached at the exact SHA — never floating).
 if [ -d "$SRC/.git" ]; then git -C "$SRC" remote set-url origin "$REPO" || true; else git clone "$REPO" "$SRC"; fi
@@ -140,7 +170,7 @@ echo "odysseus stack started; admin password in: podman logs \$(podman ps --filt
 '''
 
 # VERIFY — read-only: the odysseus container is running on the meta-local engine and the loopback
-# UI answers; assert nothing is published off-loopback.
+# UI answers; assert nothing is published off-loopback. Podman resolved via PATH + toolchains.
 [component.verify]
 kind = "command"
 command = "bash"
@@ -154,9 +184,32 @@ script = '''
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"; rt="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
 export PATH="$M/.local/bin:$M/.toolchains/podman/usr/local/bin:$M/usr/bin:$PATH"
-SRC="$M/.local/share/odysseus/src"
+ROOT="$M/.local/share/odysseus"; SRC="$ROOT/src"; DATA="$ROOT/data"; LOGS="$ROOT/logs"
+command -v podman >/dev/null 2>&1 || { echo "odysseus needs the meta-local podman engine; run: envctl install podman"; exit 1; }
 systemctl --user enable --now podman.socket 2>/dev/null || true
 [ -d "$SRC/.git" ] || { echo "odysseus not installed; run install"; exit 1; }
+
+odysseus_ensure_state_dir() {
+  d="$1"
+  if [ -d "$d" ]; then
+    return 0
+  fi
+
+  if mkdir -p "$d" 2>/dev/null; then
+    chmod 700 "$d" 2>/dev/null || true
+    return 0
+  fi
+
+  podman unshare mkdir -p "$d"
+  podman unshare chmod 700 "$d" 2>/dev/null || true
+}
+
+odysseus_ensure_state_dir "$DATA"
+odysseus_ensure_state_dir "$LOGS"
+odysseus_ensure_state_dir "$DATA/ssh"
+odysseus_ensure_state_dir "$DATA/huggingface"
+odysseus_ensure_state_dir "$DATA/local"
+
 cd "$SRC"
 podman compose -f docker-compose.yml -f compose.meta.yml up -d
 '''
@@ -171,7 +224,7 @@ set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 export PATH="$M/.local/bin:$M/.toolchains/podman/usr/local/bin:$M/usr/bin:$PATH"
 SRC="$M/.local/share/odysseus/src"
-if [ -d "$SRC" ]; then
+if [ -d "$SRC" ] && command -v podman >/dev/null 2>&1; then
   ( cd "$SRC" && podman compose -f docker-compose.yml -f compose.meta.yml down 2>/dev/null ) || true
 fi
 rm -rf "$SRC"

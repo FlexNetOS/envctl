@@ -33,12 +33,84 @@
 # For IRREVERSIBLE actions against a REMOTE, `[gone]`/ancestor/patch-equivalence are still not
 # sufficient — confirm the PR actually MERGED via the GitHub oracle before deleting remote state.
 #
-# Usage:  scripts/reap-worktrees.sh            # preview (dry-run)
-#         scripts/reap-worktrees.sh --apply    # actually reap
+# Usage:  scripts/reap-worktrees.sh                               # preview (dry-run)
+#         scripts/reap-worktrees.sh --apply                       # actually reap
+#         scripts/reap-worktrees.sh --managed-worktree-slug [path] [repo]
+#                                                                 # read-only: print slug only
+#         scripts/reap-worktrees.sh --meta-worktree-status [path] [repo]
+#                                                                 # read-only: call meta status
+#
+# IMPORTANT: `meta git worktree status <slug>` takes a meta-managed worktree-set slug,
+# not a repo/project name. The main checkout (`.../meta/envctl`) has no managed slug.
+# Only paths shaped `.../meta/.worktrees/<slug>/<repo>` may produce `<slug>`.
 set -euo pipefail
 
+realpath_portable() {
+  if command -v realpath >/dev/null 2>&1; then
+    realpath "$1"
+  else
+    python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$1"
+  fi
+}
+
+checkout_root_for_path() {
+  local path="${1:-.}"
+  if git -C "$path" rev-parse --show-toplevel >/dev/null 2>&1; then
+    git -C "$path" rev-parse --show-toplevel
+  else
+    realpath_portable "$path"
+  fi
+}
+
+managed_worktree_slug_for_path() {
+  local path="${1:-.}" repo="${2:-}" root leaf parent slug grand
+  root="$(checkout_root_for_path "$path")" || return 1
+  root="$(realpath_portable "$root")" || return 1
+  if [ -z "$repo" ]; then
+    repo="$(basename "$root")"
+  fi
+  leaf="$(basename "$root")"
+  [ "$leaf" = "$repo" ] || return 1
+  parent="$(dirname "$root")"
+  slug="$(basename "$parent")"
+  grand="$(dirname "$parent")"
+  [ "$(basename "$grand")" = ".worktrees" ] || return 1
+  [ -n "$slug" ] || return 1
+  printf '%s\n' "$slug"
+}
+
+meta_worktree_status_for_path() {
+  local path="${1:-.}" repo="${2:-}" slug
+  if ! slug="$(managed_worktree_slug_for_path "$path" "$repo")"; then
+    echo "main/unmanaged checkout; skipping meta git worktree status (path is not .worktrees/<slug>/<repo>)" >&2
+    return 2
+  fi
+  meta git worktree status "$slug"
+}
+
 APPLY=0
-[ "${1:-}" = "--apply" ] && APPLY=1
+case "${1:-}" in
+  --apply)
+    APPLY=1
+    shift
+    ;;
+  --managed-worktree-slug)
+    shift
+    managed_worktree_slug_for_path "${1:-.}" "${2:-}"
+    exit $?
+    ;;
+  --meta-worktree-status)
+    shift
+    meta_worktree_status_for_path "${1:-.}" "${2:-}"
+    exit $?
+    ;;
+  "")
+    ;;
+  *)
+    echo "usage: $0 [--apply|--managed-worktree-slug [path] [repo]|--meta-worktree-status [path] [repo]]" >&2
+    exit 64
+    ;;
+esac
 run() { if [ "$APPLY" = 1 ]; then "$@"; else printf '    DRY-RUN: %s\n' "$*"; fi; }
 
 CUR_WT="$(git rev-parse --show-toplevel)"

@@ -52,7 +52,10 @@ wake-up.)
    ```
    Run it after the baseline (4) so it never reaps while the tree is unproven. It removes only
    merged/clean per-cycle worktrees + branches and prunes dangling tracking refs — never remotes,
-   never dirty worktrees. Keeps worktrees ↔ branches ↔ origin consistent every session.
+   never dirty worktrees. If you need `meta git worktree status`, first derive a managed set slug
+   with `bash scripts/reap-worktrees.sh --managed-worktree-slug <worktree-dir> envctl`; the main
+   checkout has no managed slug, and `envctl` by itself is the repo name, not proof of a slug. Keeps
+   worktrees ↔ branches ↔ origin consistent every session.
 
 4c. **Owed-wrap-up check — FAIL-CLOSED.** If `.handoff/loop/WRAP-UP-OWED` exists, the prior session hit
    a forge-loop batch boundary (`wrap_every`) and ended without running the owed wrap-up — the

@@ -437,6 +437,7 @@ pub enum MetaBoundaryViolationKind {
     ForeignLocalBinFile,
     ForeignCargoBinFile,
     ForeignSymlinkTarget,
+    MetaFrontdoorSymlink,
 }
 
 /// One way the detected environment diverges from the manifest's desired state.
@@ -700,6 +701,38 @@ pub struct AddRepoSpec {
     /// Opt-in to `git clone --recurse-submodules` (off by default).
     #[serde(default)]
     pub recurse_submodules: bool,
+    /// HOW the repo is registered into the workspace. `Auto` (default) routes by
+    /// remote owner: owned/FlexNetOS remotes become first-class meta peers, everything
+    /// else stays a managed-from-source component. See [`AddRepoMode`].
+    #[serde(default)]
+    pub mode: AddRepoMode,
+    /// PEER mode only: `provides:` capabilities for the `.meta.yaml` peer record.
+    /// Empty = omit the key (the meta config tolerates a bare `repo:`-only entry).
+    #[serde(default)]
+    pub provides: Vec<String>,
+    /// PEER mode only: `tags:` for the `.meta.yaml` peer record. Empty = omit the key.
+    #[serde(default)]
+    pub tags: Vec<String>,
+}
+
+/// WHERE/HOW an added repo is registered into the workspace.
+///
+/// meta is a meta-repo of co-equal **peer** repos declared in the meta-root
+/// `.meta.yaml` — not a tree of child components. `Peer` registers the repo the
+/// meta-native way (clone as a meta sibling + a grep-guarded `.meta.yaml`/`.gitignore`
+/// entry, then `meta git update`); `Component` keeps the legacy build-from-source
+/// managed-drop-in path for irreducible third-party tools that cannot be a workspace
+/// member. `Auto` (default) routes by remote owner.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum AddRepoMode {
+    /// Decide by remote: owned/FlexNetOS remotes → `Peer`, otherwise → `Component`.
+    #[default]
+    Auto,
+    /// Register as a first-class meta peer (`.meta.yaml` + `.gitignore` + sibling clone).
+    Peer,
+    /// Build-from-source managed component (`manifest/components.d/<id>.toml` drop-in).
+    Component,
 }
 
 /// Which build-system the pipeline drives. `Auto` (default) sniffs signal files.
