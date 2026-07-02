@@ -1,37 +1,36 @@
-# Planning Engineer Loop — state (cycle 8 / harness-hub instance; CODEX-driven)
+<!-- loop-state-gate:counters -->
+# Machine-readable mirror for ci/gates/loop-state.sh (keeps the markdown table human-readable).
+cycle_budget: 1
+wrap_every: 1
+last_wrapup_total: 6
+cycles_total: 7
+cycles_this_session: 1
+<!-- /loop-state-gate:counters -->
+
+# Planning Engineer Loop — state (PARALLEL instance: weave)
 
 | key | value |
 |---|---|
-| run | plan-harness-hub-20260627 |
-| session_started | 2026-06-27 (UTC) |
-| cycles_this_session | 0 |
-| cycles_total | 8 |
-| cycle_budget | 1 |
+| run | plan-loop-parallel / weave |
+| session_started | 2026-06-26 (UTC) |
+| instance | weave (cycle 4; parallel-run per prompt_hub/prompts/plan-loop-parallel-run.md) |
+| cycles_this_session | 1 |
+| cycles_total | 7 |
+| last_wrapup_total | 6 |
 | wrap_every | 1 |
-| last_wrapup_total | 7 |
-| planning_target | harness-hub |
-| target_root | /home/drdave/Desktop/meta/harness_hub |
-| run_from | /home/drdave/Desktop/meta/.worktrees/plan-harness-hub/envctl |
-| loop_branch | plan/loop-harness-hub |
+| cycle_budget | 1 |
+| planning_target | weave |
+| target_root | /home/drdave/Desktop/meta/weave |
+| run_from | /home/drdave/Desktop/meta/.worktrees/plan-weave/envctl |
+| loop_branch | plan/loop-weave |
+| lease | plan:claim:weave (HF_LEASE_HOLDER=plan-weave-20260626) |
+| red_worktree | /home/drdave/Desktop/meta/.worktrees/plan-weave-red/weave (plan/weave-red-tests off origin/develop) |
 | recency_window_days | 90 |
-| graph_snapshot | (pending cartographer) |
-| last_item | (cycle 8 in-flight) |
-| status | EXECUTING cycle 8 — planning harness-hub via CODEX agents (owner: swap codex for opus). Orchestrator = Opus foreground; all lanes = codex exec workers. |
-| lease | plan:claim:harness-hub (holder plan-harness-hub-20260627, ttl 1800) |
-| model_lane | CODEX (codex exec -s workspace-write, background workers; re-invokes orchestrator on exit; result via -o file) |
+| status | HAND_OFF — weave instance captured as qualified/in-flight (5/12 dims verified; artifact gate PASS); root roll-up is not terminal until shared targets are `[x]`/`[!]`. Parallel-isolated from the union loop. |
+| conflict_sync | icm branch sync preserved branch-local loop-state under `instances/icm/` and advanced shared counters monotonically. |
+| graph_snapshot | graph/weave.symbols.json@4fe2419 (cycle 4 baseline; 2722 sym / 9571 edges / 4 crates) |
 
 ## Frame
-meta is ONE converging system. harness-hub = the Front-Door INTERPRETER (owner D3): transforms user
-intent -> model-ready language. It is the SELF-REFERENTIAL harness hub — it holds the skills
-(plan-loop, planning-engineer, session-relay, harness-evolution) and agents (plan-cartographer,
-plan-verifier, evolution-steward, ...) that THIS loop runs on, plus registry.json + a Rust-native
-catalog validator (scripts/validate.sh -> hub-validate/). Cycle 8 plans how harness-hub realizes the
-interpreter role and binds into the handoff+rusty-idd union.
-
-## Cap
-cycle_budget=1, wrap_every=1 -> one full planning cycle on harness-hub, then PR + HAND OFF.
-
-## Progress
-- 2026-06-27: cycle 8 start (CODEX lane). Lease claimed. Worktree off origin/master. Skeleton seeded.
-  Mechanism: each crew lane = a background `codex exec -s workspace-write` worker writing gate-named
-  artifacts to this loop dir; orchestrator (Opus foreground) fans out, gates, synthesizes, ships.
+meta is ONE converging system; north-star @ $META_ROOT+handoff; goal = handoff+rusty-idd union.
+weave = the A2A TRANSPORT plane (nervous system) — DISTINCT from handoff's witnessed-receipts plane.
+This instance plans weave's path INTO the fabric, in parallel with the union work.

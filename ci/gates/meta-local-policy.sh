@@ -41,17 +41,140 @@ ACTIVE_PATHS=(
 
 TMP="$(mktemp)"
 SOURCE_LIST="$(mktemp)"
-trap 'rm -f "$TMP" "$SOURCE_LIST"' EXIT
+FRONTDOOR_TMP="$(mktemp)"
+trap 'rm -f "$TMP" "$SOURCE_LIST" "$FRONTDOOR_TMP"' EXIT
 
 git ls-files -z --cached --others --exclude-standard -- "${ACTIVE_PATHS[@]}" >"$SOURCE_LIST"
 
+
+if grep -RIn -- '--archive-backup-dotfiles\|ARCHIVE_BACKUP_DOTFILES\|apply_backup_dotfile_archive\|is_backup_dotfile\|archive-backup' \
+  scripts/audit-meta-local-paths.sh scripts/tests/test-meta-local-path-audit.sh >/dev/null; then
+  echo "meta-local-policy: stale backup-only archive mode must not return; use --apply-history-archives" >&2
+  exit 1
+fi
+
 if [ -s "$SOURCE_LIST" ] && xargs -0 grep -HEnI "$PATTERN" <"$SOURCE_LIST" |
   grep -v '^ci/gates/meta-local-policy.sh:' |
-  grep -v '^crates/engine/src/migration.rs:' >"$TMP"; then
+  grep -v '^crates/engine/src/migration.rs:' |
+  grep -v '^scripts/audit-meta-local-paths.sh:' |
+  grep -v '^scripts/tests/test-meta-local-path-audit.sh:' >"$TMP"; then
   echo "meta-local-policy: real-home .local/symlink-farm references remain in active install sources:" >&2
   cat "$TMP" >&2
   exit 1
 fi
+
+
+# High-confidence active-source regressions caught by the live audit work: front-door binaries must
+# not be installed into $META_ROOT/.local/bin, cargo-installed tools must use the explicit meta
+# .toolchains/cargo home, and managed git credential helpers must not route through legacy .local/bin.
+check_absent() {
+  local path="$1" pattern="$2" message="$3"
+  if grep -HEnI "$pattern" "$path" >"$TMP" 2>/dev/null; then
+    echo "meta-local-policy: $message" >&2
+    cat "$TMP" >&2
+    exit 1
+  fi
+}
+
+check_absent manifest/components.d/meta-env-plugin.toml '\$META_ROOT/\.local/bin/meta-env|\.toolchains/meta-env' \
+  "meta-env plugin must install private payloads under usr/libexec and expose only a usr/bin front door"
+check_absent manifest/grit.toml '\$META_ROOT/\.cargo/bin' \
+  'grit must not wire the legacy META_ROOT .cargo bin path'
+check_absent manifest/prompt_hub.toml '\$META_ROOT/\.cargo/bin' \
+  'prompt_hub must not wire the legacy META_ROOT .cargo bin path'
+
+check_present() {
+  local path="$1" needle="$2" message="$3"
+  if ! grep -Fq -- "$needle" "$path"; then
+    echo "meta-local-policy: $message" >&2
+    exit 1
+  fi
+}
+
+check_present crates/engine/src/install.rs 'fn install_regular_frontdoor' \
+  'installer must write regular executable frontdoors, not symlink/copy canonical usr/bin'
+check_absent crates/engine/src/install.rs 'std::os::unix::fs::symlink' \
+  'installer must not create canonical usr/bin symlink frontdoors'
+check_present crates/engine/src/register.rs 'envctl_frontdoor()' \
+  'add-repo drop-ins must expose regular frontdoor wrappers'
+check_present crates/engine/src/model.rs 'MetaFrontdoorSymlink' \
+  'meta boundary model must distinguish canonical usr/bin symlink regressions'
+check_present crates/engine/src/detect.rs 'MetaFrontdoorSymlink' \
+  'doctor must flag canonical usr/bin symlink regressions'
+
+python3 - "$SOURCE_LIST" >"$FRONTDOOR_TMP" <<'PY'
+from pathlib import Path
+import re
+import sys
+
+ln_re = re.compile(r'\bln\s+-sfn?\s+(?P<src>"[^"]+"|[^ \t\n;]+)\s+(?P<dst>"[^"]+"|[^ \t\n;]+)')
+install_res = [
+    re.compile(r'\binstall\s+-Dm?755\s+(?P<src>"[^"]+"|[^ \t\n;]+)\s+(?P<dst>"[^"]+"|[^ \t\n;]+)'),
+    re.compile(r'\binstall\s+(?:-[A-Za-z0-9]+\s+)*-m\s*755\s+(?P<src>"[^"]+"|[^ \t\n;]+)\s+(?P<dst>"[^"]+"|[^ \t\n;]+)'),
+]
+
+allowed_path_fragments = (
+    '/.local/bin/',
+    '/.config/',
+    '/.toolchains/cargo/bin/',
+    'portability-links.toml',
+    'codex-global-baseline.toml',
+)
+
+def q(value: str) -> str:
+    return value.strip('"').strip("'")
+
+def canonical_usr_bin(dst: str) -> bool:
+    d = q(dst)
+    return any(token in d for token in (
+        '$META_ROOT/usr/bin/',
+        '${META_ROOT}/usr/bin/',
+        '$M/usr/bin/',
+        '${M}/usr/bin/',
+        '$BIN/',
+    )) or d.endswith('/usr/bin')
+
+for raw in Path(sys.argv[1]).read_bytes().split(b'\0'):
+    if not raw:
+        continue
+    path = raw.decode()
+    if path == 'ci/gates/meta-local-policy.sh':
+        continue
+    if not (path.startswith('manifest/') or path.startswith('assets/scripts/') or path.startswith('scripts/') or path.startswith('crates/engine/src/register.rs')):
+        continue
+    if any(fragment in path for fragment in allowed_path_fragments):
+        continue
+    try:
+        text = Path(path).read_text(errors='ignore')
+    except OSError:
+        continue
+    for idx, line in enumerate(text.splitlines(), 1):
+        stripped = line.lstrip()
+        if stripped.startswith('#'):
+            continue
+        m = ln_re.search(line)
+        if m and canonical_usr_bin(m.group('dst')):
+            print(f"{path}:{idx}: canonical usr/bin frontdoor symlink: {line}")
+        if 'install -d' in line or 'install -dm' in line:
+            continue
+        for rx in install_res:
+            m = rx.search(line)
+            if m and canonical_usr_bin(m.group('dst')):
+                print(f"{path}:{idx}: canonical usr/bin frontdoor direct copy: {line}")
+PY
+
+if [ -s "$FRONTDOOR_TMP" ]; then
+  echo "meta-local-policy: canonical usr/bin frontdoors must be regular executable wrappers, not symlinks/direct copies:" >&2
+  cat "$FRONTDOOR_TMP" >&2
+  exit 1
+fi
+
+check_present manifest/grit.toml 'export CARGO_HOME="$META_ROOT/.toolchains/cargo"' \
+  'grit must force cargo installs into the meta toolchains cargo home'
+check_present manifest/prompt_hub.toml 'export CARGO_HOME="$META_ROOT/.toolchains/cargo"' \
+  'prompt_hub must force cargo installs into the meta toolchains cargo home'
+check_absent home/.gitconfig '\.local/bin/gh|/home/drdave/Desktop/meta/\.local/bin/gh' \
+  "managed git credential helper must use the canonical META_ROOT usr/bin gh front door"
 
 if ! grep -q 'home-local-single-link' manifest/components.d/portability-links.toml; then
   echo "meta-local-policy: missing single real-home .local bridge component" >&2
@@ -86,6 +209,115 @@ if ! grep -Eq '\$ENVCTL_REAL_HOME/\.local -> \$META_ROOT/\.local' docs/adr-insta
   exit 1
 fi
 
+for agent_doc in AGENTS.md CLAUDE.md; do
+  if grep -Fq 'active install sources target $META_ROOT/.local only' "$agent_doc" || \
+     grep -Fq 'installs two launchers on `$META_ROOT/.local/bin`' "$agent_doc"; then
+    echo "meta-local-policy: $agent_doc has stale meta-local install-location documentation" >&2
+    exit 1
+  fi
+
+  check_present "$agent_doc" 'active install sources target $META_ROOT FHS/XDG only; single real-home .local bridge' \
+    "$agent_doc must document the FHS/XDG meta-local policy in the gate list"
+  check_present "$agent_doc" 'installs two launchers on `$META_ROOT/usr/bin`' \
+    "$agent_doc dashboard docs must name the canonical usr/bin launcher location"
+done
+check_present docs/adr-install-locations-and-local-state.md '## Real-home dot-entry relocation map' \
+  'install-location ADR must document the real-home dot-entry relocation map'
+check_present docs/adr-install-locations-and-local-state.md '`$META_ROOT/.ideavimrc`' \
+  'install-location ADR must document the .ideavimrc canonical target'
+check_present docs/adr-install-locations-and-local-state.md '`$META_ROOT/.config/gphoto`' \
+  'install-location ADR must document the .gphoto canonical target'
+check_present docs/adr-install-locations-and-local-state.md '`$META_ROOT/.local/share/vscode-shared`' \
+  'install-location ADR must document the .vscode-shared canonical target'
+check_present docs/adr-install-locations-and-local-state.md '`$META_ROOT/.local/share/claude/claude.json`' \
+  'install-location ADR must document the .claude.json canonical target'
+check_present docs/adr-install-locations-and-local-state.md '`$META_ROOT/var/lib/ollama`' \
+  'install-location ADR must document the .ollama canonical target'
+check_present docs/adr-install-locations-and-local-state.md 'owner-supervised-vault-or-bridge' \
+  'install-location ADR must document sensitive/broad config residual handling'
+check_present docs/adr-meta-tool-location-and-portability.md 'Real-home dot-entry review loop' \
+  'portability ADR must document the audit review loop'
+check_present docs/adr-meta-tool-location-and-portability.md '--inventory-summary' \
+  'portability ADR must document inventory summary output'
+check_present docs/adr-meta-tool-location-and-portability.md '--deep-link-summary' \
+  'portability ADR must document deep-link summary output'
+check_present docs/adr-meta-tool-location-and-portability.md '--fail-real-home-deep-links' \
+  'portability ADR must document fail-closed deep-link audits'
+check_present docs/adr-meta-tool-location-and-portability.md '--apply-history-archives' \
+  'portability ADR must document history/archive opt-in mutation'
+check_present docs/adr-meta-tool-location-and-portability.md '--migrate-dot <entry>' \
+  'portability ADR must document named dot-entry migrations'
+check_present home/README.md 'agent-env.yaml` + `agent-env.lock`' \
+  'home README must document agent-env as the current agent layer authority'
+check_present home/README.md 'Review loop and known materialized host-local paths' \
+  'home README must document the audit review loop and reviewed residuals'
+check_present home/README.md '--deep-link-summary' \
+  'home README must show deep-link audit output flags'
+
+if ! grep -Fq 'find "$REAL_HOME" -mindepth 1 -maxdepth 1 -name' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'dot_entries_seen' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq -- '--inventory) INVENTORY_PATH=' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq -- '--inventory-summary) INVENTORY_SUMMARY_PATH=' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq -- '--deep-link-inventory) DEEP_LINK_INVENTORY_PATH=' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq -- '--deep-link-summary) DEEP_LINK_SUMMARY_PATH=' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq -- '--fail-real-home-deep-links)' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq -- '--migrate-dot) MIGRATE_DOTS+=' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq -- '--apply-history-archives) APPLY_HISTORY_ARCHIVES=1' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'migrate_real_home_dot' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'is_migratable_dot' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'app_config_target_for_dot' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'is_portable_app_config_file_dot' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'is_portable_app_config_dir_dot' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq '.ideavimrc)' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq '.gphoto)' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq '.vscode-shared)' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq '.forge)' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'scan_deep_links' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'classify_deep_link' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'emit_deep_link_summary' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'real-home-leak' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'emit_inventory_summary' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'target_class' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'owner-supervised-vault-or-bridge' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq 'canonical_target\tsensitive_hints\tblocker' scripts/audit-meta-local-paths.sh || \
+   ! grep -Fq '$home/.zshrc' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '$home/.aws' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '$home/.cache' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '$home/.cargo' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--migrate-dot .cargo' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--migrate-dot .dotnet' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--migrate-dot .gemini' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--migrate-dot .ideavimrc' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--migrate-dot .gphoto' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--migrate-dot .vscode-shared' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--migrate-dot .n8n-claude-bridge' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--migrate-dot .pki' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--migrate-dot .forge' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--migrate-dot .ssh' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq 'backup-pre-summary.tsv' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '.ollama' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '.kimi-code' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '.ideavimrc' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '.config/gphoto' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '.local/share/vscode-shared' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '.local/share/n8n-claude-bridge' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '.local/share/pki' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq '.local/share/forge' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--deep-link-inventory' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--deep-link-summary' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--fail-real-home-deep-links' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq 'missing-target' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq 'external-system' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq 'real-home-leak' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq 'real-home-dotfile-migration' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq -- '--apply-history-archives' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq 'inventory-summary.tsv' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq 'apply_safe_yes' scripts/tests/test-meta-local-path-audit.sh || \
+   ! grep -Fq 'sensitive_hints' scripts/tests/test-meta-local-path-audit.sh; then
+  echo "meta-local-policy: meta-local path audit must walk, inventory, classify, and test every top-level real-home dot entry class" >&2
+  exit 1
+fi
+
 if ! grep -Fq 'trimmed.contains("~/.local")' crates/engine/src/migration.rs || \
    ! grep -Fq 'trimmed.contains("$HOME/.local")' crates/engine/src/migration.rs || \
    ! grep -Fq 'trimmed.contains("${HOME}/.local")' crates/engine/src/migration.rs || \
@@ -100,5 +332,7 @@ for path_file in crates/secrets-engine/src/paths.rs crates/secretctl/src/main.rs
     exit 1
   fi
 done
+
+bash scripts/tests/test-odysseus-install-idempotence.sh
 
 echo "meta-local-policy: active install sources target META_ROOT FHS/XDG; only the single real-home .local bridge is allowed"

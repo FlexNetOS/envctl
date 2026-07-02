@@ -4,10 +4,11 @@
 //! *identical* `Engine` API below, so the two front-ends can never diverge.
 pub mod addrepo; // Phase 4: the staged build-from-source pipeline + confined AI agent
 pub mod agent; // agent-env subsystem: the 6 agent-asset verbs over envctl-agent-env
+pub mod catalog; // ADR-0003: catalog tables plus read-only diff/render projections
 pub mod command;
 pub mod component; // Component, Hook, Guard, Phase, HookRunner
 pub mod dashboard; // meta mission-control: read .meta.yaml -> render zellij KDL layout
-pub mod detect; // EnvReport assembly: PCI floor / nvidia-smi / sysinfo / which probes
+pub mod detect; // EnvReport assembly: PCI floor / proc-backed driver state / nvidia-smi / sysinfo / which probes
 pub mod detect_build; // Phase 4: build-system detector table -> BuildPlan
 pub mod drift; // pure diff(EnvReport, Registry) -> Vec<DriftItem>
 pub mod error; // EngineError, RunContext, run_phase
@@ -16,7 +17,7 @@ pub mod executor; // Engine::run(plan) best-effort loop + RunContext resolve + a
 pub mod graph; // graph intelligence over the component dependency DAG
 pub mod guard; // fail-closed UuidResolves/NotLiveDevice/NotMounted/PathExists/HookSucceeds
 pub mod hub_registry; // read-only federation over *_hub/registry.json
-pub mod install; // Phase 4: symlink artifacts into meta usr/bin (refuse-unmanaged) + wire-in
+pub mod install; // Phase 4: regular frontdoor wrappers into meta usr/bin (refuse-unmanaged) + wire-in
 pub mod layout; // meta-hosted FHS/XDG path resolver (usr/etc/var/opt/run/tmp + XDG roots)
 pub mod lock; // envctl.lock — content-hashed manifest-of-record + CI gate
 pub mod migration; // adoption engine: scan/plan/apply/verify/purge into meta .local topology
@@ -28,7 +29,7 @@ pub mod runtime; // machine-local last-run state (XDG cache), out of the lock
 pub mod secrets; // TASK-0028: engine-owned `secretctl` subprocess seam for the GUI secrets verbs
 pub mod self_uninstall; // `self uninstall` — destructive, fail-closed, dry-run-by-default removal
 pub mod self_update; // `self update` CORE: fetch_latest_release / is_newer / verify_checksum
-pub mod telemetry; // sample() -> Telemetry (nvidia-smi CSV + sysinfo)
+pub mod telemetry; // sample() -> Telemetry (hard-timeout nvidia-smi CSV + sysinfo)
 pub mod update_notifier; // end-of-run "new version available" cache + check (CLI renders)
 pub mod wiring; // apply()/revert() for Wiring (shell_rc backup-then-excise) // EngineCommand / EngineEvent + run_event_loop (GUI worker API)
 
@@ -38,6 +39,13 @@ pub use agent::{
     AgentListSpec, AgentLockDriftItem, AgentLockMode, AgentLockOutcome, AgentLockSpec,
     AgentRemoveSpec, AgentReport, AgentScope, AgentSectionSel, AgentSyncSpec, AgentUpdateCheck,
     AgentVerb,
+};
+pub use catalog::{
+    CatalogDiffReport, CatalogDiffSummary, CatalogDriftRow, CatalogImportReport,
+    CatalogImportSummary, CatalogLockReport, CatalogLockSpec, CatalogLockSummary,
+    CatalogRenderReport, CatalogRenderSpec, CatalogRenderSummary, CatalogRenderedFile,
+    CatalogScanSpec, CatalogSnapshot, CatalogSyncAction, CatalogSyncReport, CatalogSyncSpec,
+    CatalogSyncSummary, CatalogTableName,
 };
 pub use command::{
     run_event_loop, AgentCommandSpec, EngineCommand, EngineEvent, MigrationCommandSpec,
@@ -77,7 +85,7 @@ pub use self_update::{
 // GUI dep set frozen). The engine owns the zeroize dep; the GUI uses it through this path.
 pub use zeroize::Zeroizing;
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 /// Top-level engine handle: owns the Registry, manifest dir, and a HookRunner.
@@ -158,6 +166,86 @@ impl Engine {
     pub fn hub_registry(&self) -> anyhow::Result<HubRegistryReport> {
         let root = workspace_root_for_manifest_dir(&self.inner.manifest_dir);
         hub_registry::load(&root, &self.inner.registry)
+    }
+
+    /// Read-only ADR-0003 catalog import: current files -> normalized in-memory tables.
+    pub fn catalog_scan(&self) -> anyhow::Result<CatalogSnapshot> {
+        let root = workspace_root_for_manifest_dir(&self.inner.manifest_dir);
+        catalog::scan(
+            catalog::CatalogScanSpec {
+                repo_root: root,
+                manifest_dir: self.inner.manifest_dir.clone(),
+            },
+            &self.inner.registry,
+        )
+    }
+
+    /// ADR-0003 explicit import report: current files -> normalized rows, no writes.
+    pub fn catalog_import(&self) -> anyhow::Result<CatalogImportReport> {
+        let root = workspace_root_for_manifest_dir(&self.inner.manifest_dir);
+        catalog::import_current(
+            catalog::CatalogScanSpec {
+                repo_root: root,
+                manifest_dir: self.inner.manifest_dir.clone(),
+            },
+            &self.inner.registry,
+        )
+    }
+
+    /// Read-only ADR-0003 catalog diff: file/catalog/lock drift without mutation.
+    pub fn catalog_diff(&self) -> anyhow::Result<CatalogDiffReport> {
+        let root = workspace_root_for_manifest_dir(&self.inner.manifest_dir);
+        catalog::diff(
+            catalog::CatalogScanSpec {
+                repo_root: root,
+                manifest_dir: self.inner.manifest_dir.clone(),
+            },
+            &self.inner.registry,
+        )
+    }
+
+    /// ADR-0003 bidirectional-sync preview: import + diff + optional render evidence.
+    pub fn catalog_sync(
+        &self,
+        render_out_dir: Option<&Path>,
+        apply: bool,
+    ) -> anyhow::Result<CatalogSyncReport> {
+        let root = workspace_root_for_manifest_dir(&self.inner.manifest_dir);
+        catalog::sync(
+            catalog::CatalogSyncSpec {
+                repo_root: root,
+                manifest_dir: self.inner.manifest_dir.clone(),
+                render_out_dir: render_out_dir.map(Path::to_path_buf),
+                apply,
+            },
+            &self.inner.registry,
+        )
+    }
+
+    /// ADR-0003 catalog-native lock check/update for `manifest/envctl.lock`.
+    pub fn catalog_lock(&self, apply: bool) -> anyhow::Result<CatalogLockReport> {
+        let root = workspace_root_for_manifest_dir(&self.inner.manifest_dir);
+        catalog::lock(
+            catalog::CatalogLockSpec {
+                repo_root: root,
+                manifest_dir: self.inner.manifest_dir.clone(),
+                apply,
+            },
+            &self.inner.registry,
+        )
+    }
+
+    /// Render deterministic ADR-0003 catalog projections into an explicit output dir.
+    pub fn catalog_render(&self, out_dir: impl AsRef<Path>) -> anyhow::Result<CatalogRenderReport> {
+        let root = workspace_root_for_manifest_dir(&self.inner.manifest_dir);
+        catalog::render(
+            catalog::CatalogRenderSpec {
+                repo_root: root,
+                manifest_dir: self.inner.manifest_dir.clone(),
+                out_dir: out_dir.as_ref().to_path_buf(),
+            },
+            &self.inner.registry,
+        )
     }
 
     /// The manifest directory (where `envctl.lock` + `components.d/` live).

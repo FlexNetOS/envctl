@@ -1,10 +1,11 @@
-# Planning Engineer Loop — target backlog (VIEW; Git is source of truth)
-#
-# Cycle 8 instance — plans exactly ONE target (harness-hub), parallel-isolated, CODEX-driven.
-# Active rows = a single kebab-case slug each. Non-target lines MUST be #-prefixed or blank.
+# Planning backlog (parallel instance: weave). One kebab-slug per active row (gate-strict).
 
-- [~] harness-hub: Front-Door INTERPRETER (intent -> model-ready language); self-referential harness/skill/agent + registry hub; bind into the handoff+rusty-idd union
+## Root roll-up
+- [~] planning-harness-convergence: TASK-0078 source-of-truth, gate, mirror, and open-PR reconciliation — envctl PR pending; root not terminal
 
-# fleet backlog (other organs, planned in their own cycles / instances):
-#  - rusty-idd (cycle 1) · handoff (cycle 2) · weave · grit (cycle 5) · prompt_hub (cycle 6) · icm (cycle 7)
-#  - lane — execution / model-lane organ (unplanned)
+## This instance
+- [~] weave: communication layer / A2A transport (nervous system) — cycle 4, parallel run
+
+## Context (other organs — not this instance)
+# rusty-idd [~] (cycle 1) · handoff [~] (cycle 2) · union A-U1 done (handoff#184)
+# snake_case fleet members live in the commented backlog of the union loop branch's targets.md
