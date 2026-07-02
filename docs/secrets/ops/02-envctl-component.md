@@ -135,7 +135,7 @@ rustix = { version = "0.38", features = ["process", "net"] }
 
 > **Current source truth (2026-06-26):** the excerpt below is historical design context. The live
 > manifest installs `secretd` and `secretctl` to
-> `$META_ROOT/.toolchains/secrets/bin/` and exposes them via `$META_ROOT/usr/bin` symlinks, not
+> `$META_ROOT/.toolchains/secrets/bin/` and exposes them via `$META_ROOT/usr/bin` regular frontdoor wrappers, not
 > `~/.cargo/bin`. The meta-owned install/fix path archives only proven duplicate legacy
 > `~/.cargo/bin/{secretd,secretctl}` copies; foreign/different binaries are left in place and
 > surfaced by verify.

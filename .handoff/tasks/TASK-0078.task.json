@@ -1,0 +1,53 @@
+{
+  "schema": "handoff.task.v1",
+  "id": "TASK-0078",
+  "title": "Upgrade migration/adoption engine to typed parity-proven v2",
+  "status": "backlog",
+  "priority": "P0",
+  "objective": "Implement ADR-0002: upgrade envctl migration/adoption from audit/bootstrap into a typed, parity-proven meta layout engine. Envctl must scan/classify/plan/adopt/verify/activate/quarantine/purge component-scoped migrations into $META_ROOT system-shaped paths (.local/bin, .local/lib, .local/share, .local/state, .local/cache, .local/tmp, component toolchain roots) without manual path surgery, downgrades, or blind deletion. Broad migration/purge remains blocked until this task's v2 planner, evidence ledger, verification gates, activation proof, protected-path rules, and CI no-new-debt ratchet are implemented.",
+  "path_scope": [
+    ".handoff/decisions/ADR-0002-migration-adoption-engine-v2.md",
+    ".handoff/loop/plan/reports/TASK-0078-migration-adoption-engine-v2-design.md",
+    ".handoff/tasks/TASK-0078.task.json",
+    ".handoff/loop/backlog.md",
+    "crates/engine/src/migration.rs",
+    "crates/engine/src/layout.rs",
+    "crates/cli/src/main.rs",
+    "crates/cli/tests/**",
+    "ci/gates/**",
+    "docs/MIGRATION-ADOPTION.md",
+    "manifest/**/*.toml"
+  ],
+  "acceptance_criteria": [
+    "ADR-0002, the TASK-0078 design/spec, the task card, and the backlog entry are committed under .handoff.",
+    "The migration planner emits typed component ownership, canonical meta paths, adoption method, verifier, risk, and purge policy for every migration candidate.",
+    "Unknown and protected candidates are read-only findings and cannot be moved, rewritten, quarantined, or purged.",
+    "Evidence ledger v2 records before/after identity, checksums where meaningful, path resolution, verifier commands/results, activation changes, rollback/quarantine data, and purge eligibility.",
+    "All mutating migration commands are dry-run by default and require --apply; mutating apply is component-scoped or explicitly grouped.",
+    "Activation proves meta-owned paths resolve first through envctl env/dashboard surfaces before any legacy path is eligible for quarantine.",
+    "Purge is refused until canonical parity and a second verification pass succeed; protected surfaces such as loop_lib, .handoff, .kb, Codex/agent assets, and secrets state are preserve-only by default.",
+    "A CI no-new-debt gate prevents new hardcoded user-global/system-global install targets unless covered by a typed adoption rule or host-prereq exception.",
+    "No downgrade is introduced; if a canonical candidate is older or less capable than legacy, the migration fails and requires an upgrade plan."
+  ],
+  "test_commands": [
+    "hf doctor --json",
+    "hf gitignore --check",
+    "bash ci/gates/p7.sh",
+    "cargo test -p envctl-engine migration",
+    "cargo test -p envctl --test cli_contract migration",
+    "bash ci/gates/migration-debt.sh",
+    "cargo fmt --all --check",
+    "cargo clippy --workspace -- -D warnings"
+  ],
+  "dependencies": [],
+  "blocked_by": [],
+  "allows_network": false,
+  "allows_dependency_addition": false,
+  "correlation_id": "tasks/envctl-migration-adoption-engine-v2",
+  "role": "architect",
+  "intent_lock": {
+    "acceptance_hash": "blake3:8bb521e782d1d33f45507412efbd10f0db9cb76b81b8f0332d45315829c2d8ee",
+    "objective_hash": "blake3:e1b5087922b9e1ef6cba0a749c5e6264900e29adf6ce1fa3005c7293010f7536",
+    "path_scope_hash": "blake3:04c122d436664968b68d8319c18dc7a649794133933ad7c7db9e412fc492ceaf"
+  }
+}

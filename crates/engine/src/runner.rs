@@ -255,7 +255,12 @@ fn wait_timeout(child: &mut Child, dur: Duration, pid: u32) -> (Option<i32>, boo
 /// Kill the child's whole process group (it is the group leader via setsid).
 fn kill_group(pid: u32) {
     if let Some(p) = rustix::process::Pid::from_raw(pid as i32) {
-        let _ = rustix::process::kill_process_group(p, rustix::process::Signal::Kill);
+        // If the child never became a group leader (for example, if pre_exec
+        // failed before setsid() took effect), fall back to killing the child
+        // PID directly so a wedged probe cannot linger.
+        if rustix::process::kill_process_group(p, rustix::process::Signal::Kill).is_err() {
+            let _ = rustix::process::kill_process(p, rustix::process::Signal::Kill);
+        }
     }
 }
 

@@ -1,0 +1,4 @@
+[[component]]
+id = "cache-starship"
+name = "Cache child starship"
+description = "Owner-reviewed manifest stub for cache-starship; review detect/install/fix hooks before any --migrate-cache-child apply."
