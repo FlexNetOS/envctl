@@ -1,0 +1,459 @@
+{
+ "schema": "weave.metrics.v1",
+ "target": "weave",
+ "snapshot": "graph/weave.metrics.json@4fe2419",
+ "centrality_hotspots": {
+  "method": "git-kb query hotspots (caller_count) + in/out degree over production edge list",
+  "top_by_caller_count": [
+   {
+    "name": "new",
+    "symbol_id": "weave-mcp/src/obscura.rs::method::Harness.new",
+    "caller_count": 302
+   },
+   {
+    "name": "now",
+    "symbol_id": "weave-core/src/model.rs::function::now",
+    "caller_count": 290
+   },
+   {
+    "name": "params",
+    "symbol_id": "weave-core/src/store_libsql.rs::function::params",
+    "caller_count": 283
+   },
+   {
+    "name": "display",
+    "symbol_id": "weave/src/provider_switch.rs::method::ProviderSwitchApp.display",
+    "caller_count": 142
+   },
+   {
+    "name": "mem",
+    "symbol_id": "weave-core/src/store.rs::function::mem",
+    "caller_count": 112
+   },
+   {
+    "name": "html_escape",
+    "symbol_id": "weave-core/src/export.rs::function::html_escape",
+    "caller_count": 95
+   },
+   {
+    "name": "check_ident",
+    "symbol_id": "weave-core/src/store.rs::function::check_ident",
+    "caller_count": 93
+   },
+   {
+    "name": "from",
+    "symbol_id": "weave/src/main.rs::function::from",
+    "caller_count": 88
+   },
+   {
+    "name": "send",
+    "symbol_id": "weave-core/src/store.rs::method::SqliteStore.send",
+    "caller_count": 79
+   },
+   {
+    "name": "mem",
+    "symbol_id": "weave-core/src/store_libsql.rs::function::mem",
+    "caller_count": 75
+   },
+   {
+    "name": "open",
+    "symbol_id": "weave-core/src/store.rs::method::SqliteStore.open",
+    "caller_count": 73
+   },
+   {
+    "name": "send",
+    "symbol_id": "weave-core/src/store_libsql.rs::method::LibsqlStore.send",
+    "caller_count": 67
+   },
+   {
+    "name": "fmt_ts",
+    "symbol_id": "weave-core/src/model.rs::function::fmt_ts",
+    "caller_count": 66
+   },
+   {
+    "name": "argv",
+    "symbol_id": "weave-inject/src/inject.rs::function::argv",
+    "caller_count": 53
+   },
+   {
+    "name": "get_peer",
+    "symbol_id": "weave-core/src/store_libsql.rs::method::LibsqlStore.get_peer",
+    "caller_count": 53
+   },
+   {
+    "name": "get_peer",
+    "symbol_id": "weave-core/src/store.rs::method::SqliteStore.get_peer",
+    "caller_count": 46
+   },
+   {
+    "name": "guard_writable",
+    "symbol_id": "weave-core/src/store_libsql.rs::method::LibsqlStore.guard_writable",
+    "caller_count": 44
+   },
+   {
+    "name": "this_host",
+    "symbol_id": "weave-core/src/config.rs::function::this_host",
+    "caller_count": 39
+   },
+   {
+    "name": "ident",
+    "symbol_id": "weave-mcp/src/mcp.rs::function::ident",
+    "caller_count": 38
+   },
+   {
+    "name": "column_exists",
+    "symbol_id": "weave-core/src/store.rs::function::column_exists",
+    "caller_count": 38
+   }
+  ],
+  "top_in_degree": [
+   {
+    "symbol": "now (weave-core/src/model.rs:98)",
+    "in_degree": 199
+   },
+   {
+    "symbol": "params (weave-core/src/store_libsql.rs:1490)",
+    "in_degree": 195
+   },
+   {
+    "symbol": "new (weave-mcp/src/obscura.rs:414)",
+    "in_degree": 165
+   },
+   {
+    "symbol": "mem (weave-core/src/store.rs:5943)",
+    "in_degree": 112
+   },
+   {
+    "symbol": "mem (weave-core/src/store_libsql.rs:4903)",
+    "in_degree": 75
+   },
+   {
+    "symbol": "check_ident (weave-core/src/store.rs:1235)",
+    "in_degree": 61
+   },
+   {
+    "symbol": "display (weave/src/provider_switch.rs:36)",
+    "in_degree": 54
+   },
+   {
+    "symbol": "fmt_ts (weave-core/src/model.rs:107)",
+    "in_degree": 44
+   },
+   {
+    "symbol": "guard_writable (weave-core/src/store_libsql.rs:1181)",
+    "in_degree": 44
+   },
+   {
+    "symbol": "send (weave-core/src/store.rs:3153)",
+    "in_degree": 42
+   },
+   {
+    "symbol": "ident (weave-mcp/src/mcp.rs:276)",
+    "in_degree": 38
+   },
+   {
+    "symbol": "send (weave-core/src/store_libsql.rs:1499)",
+    "in_degree": 35
+   },
+   {
+    "symbol": "from (weave/src/main.rs:1644)",
+    "in_degree": 32
+   },
+   {
+    "symbol": "clamp_limit (weave-core/src/store.rs:1439)",
+    "in_degree": 30
+   },
+   {
+    "symbol": "open (weave-core/src/store.rs:2469)",
+    "in_degree": 30
+   },
+   {
+    "symbol": "argv (weave-inject/src/inject.rs:488)",
+    "in_degree": 27
+   },
+   {
+    "symbol": "t (weave-inject/src/inject.rs:1699)",
+    "in_degree": 27
+   },
+   {
+    "symbol": "inbox (weave-core/src/store.rs:3192)",
+    "in_degree": 24
+   },
+   {
+    "symbol": "check_body (weave-core/src/store.rs:1204)",
+    "in_degree": 24
+   },
+   {
+    "symbol": "commands_for (weave-inject/src/inject.rs:351)",
+    "in_degree": 23
+   }
+  ],
+  "top_out_degree_dispatch": [
+   {
+    "symbol": "call_tool (weave-mcp/src/mcp.rs:434)",
+    "out_degree": 50
+   },
+   {
+    "symbol": "doctor (weave/src/main.rs:2776)",
+    "out_degree": 37
+   },
+   {
+    "symbol": "tool_doctor (weave-mcp/src/mcp.rs:2229)",
+    "out_degree": 26
+   },
+   {
+    "symbol": "handle_dashboard_connection (weave-mcp/src/http.rs:180)",
+    "out_degree": 26
+   },
+   {
+    "symbol": "handle_connection (weave-mcp/src/http.rs:309)",
+    "out_degree": 20
+   },
+   {
+    "symbol": "tool_send (weave-mcp/src/mcp.rs:574)",
+    "out_degree": 19
+   },
+   {
+    "symbol": "read_only_handle_traps_every_write_and_leaves_file_unchanged (weave-core/src/store_libsql.rs:6758)",
+    "out_degree": 18
+   },
+   {
+    "symbol": "main (weave/src/main.rs:4489)",
+    "out_degree": 17
+   },
+   {
+    "symbol": "handle_hook (weave/src/main.rs:8531)",
+    "out_degree": 17
+   },
+   {
+    "symbol": "run_import (weave/src/session.rs:248)",
+    "out_degree": 16
+   },
+   {
+    "symbol": "tool_scan (weave-mcp/src/mcp.rs:1915)",
+    "out_degree": 16
+   },
+   {
+    "symbol": "tool_peers (weave-mcp/src/mcp.rs:1697)",
+    "out_degree": 16
+   },
+   {
+    "symbol": "handle_key (weave/src/main.rs:8030)",
+    "out_degree": 16
+   },
+   {
+    "symbol": "render_dashboard (weave-mcp/src/dashboard.rs:180)",
+    "out_degree": 16
+   },
+   {
+    "symbol": "tool_notify (weave-mcp/src/mcp.rs:1071)",
+    "out_degree": 15
+   },
+   {
+    "symbol": "tool_push (weave-mcp/src/mcp.rs:841)",
+    "out_degree": 15
+   },
+   {
+    "symbol": "render_tui_frame (weave/src/main.rs:3998)",
+    "out_degree": 14
+   },
+   {
+    "symbol": "run (weave/src/slack.rs:99)",
+    "out_degree": 14
+   },
+   {
+    "symbol": "dispatch_memory (weave/src/main.rs:7090)",
+    "out_degree": 13
+   },
+   {
+    "symbol": "run (weave/src/telegram.rs:336)",
+    "out_degree": 12
+   }
+  ]
+ },
+ "blast_radius": {
+  "method": "git-kb code impact --depth 5 (total transitive dependents)",
+  "by_file": {
+   "weave-core/src/model.rs": 1238,
+   "weave-core/src/store_libsql.rs": 488,
+   "weave-core/src/store.rs": 462,
+   "weave/src/main.rs": 427,
+   "weave-core/src/config.rs": 345,
+   "weave-inject/src/inject.rs": 205,
+   "weave-mcp/src/mcp.rs": 124,
+   "weave-core/src/sign.rs": 88,
+   "weave-core/src/webpolicy.rs": 63,
+   "weave-mcp/src/http.rs": 27
+  }
+ },
+ "dead_code": {
+  "method": "git-kb query dead-code-explain (NoCallers)",
+  "reported_count": 200,
+  "verdict": "ZERO genuine dead production code. All entries are (a) #[cfg(test)] inline tests / bench fns the resolver can't link to the test runner, or (b) serde #[serde(default=...)] helper fns (default_worktree, default_ask_kind) invoked via attribute the AST resolver doesn't traverse.",
+  "production_nontest_candidates_reviewed": [
+   "default_worktree (weave/src/harness.rs) \u2014 serde/clap default helper, live",
+   "default_ask_kind (weave-core/src/session.rs) \u2014 serde default helper, live"
+  ]
+ },
+ "cycles": {
+  "method": "Tarjan SCC (in-process, iterative) over production edge list keyed file:def_line",
+  "node_count": 1717,
+  "edge_count": 4204,
+  "multi_node_scc_count": 3,
+  "self_recursive_count": 0,
+  "cycles": [
+   {
+    "size": 5,
+    "members": [
+     "run_bounded_env (weave-inject/src/inject.rs:1088)",
+     "run_capture_env (weave-inject/src/inject.rs:1116)",
+     "run_bounded (weave-inject/src/inject.rs:1576)",
+     "spawn (weave-inject/src/inject.rs:714)",
+     "kill (weave-inject/src/inject.rs:816)"
+    ]
+   },
+   {
+    "size": 2,
+    "members": [
+     "open (weave-core/src/store.rs:2469)",
+     "open_conn (weave-core/src/store.rs:2499)"
+    ]
+   },
+   {
+    "size": 2,
+    "members": [
+     "call_tool (weave-mcp/src/mcp.rs:434)",
+     "tool_meta (weave-mcp/src/mcp.rs:4854)"
+    ]
+   }
+  ],
+  "verdict": "No cross-crate or architectural cycles. The 3 small same-file SCCs (inject spawn/kill/run_* cluster; store open/open_conn; mcp call_tool/tool_meta) are most consistent with resolver back-edges among overloaded same-name helpers (774 ambiguous index resolutions) rather than true mutual recursion \u2014 flagged for verifier."
+ },
+ "layering": {
+  "declared_order_low_to_high": [
+   "weave-core",
+   "weave-inject",
+   "weave-mcp",
+   "weave"
+  ],
+  "manifest_dag": "weave-core(0 internal deps) <- weave-inject <- weave-mcp <- weave ; STRICTLY downward, compiler-enforced (Cargo path deps).",
+  "cross_crate_edges": [
+   {
+    "from": "weave-mcp",
+    "to": "weave-core",
+    "edge_count": 206,
+    "classification": "downward (manifest-allowed)"
+   },
+   {
+    "from": "weave",
+    "to": "weave-core",
+    "edge_count": 191,
+    "classification": "downward (manifest-allowed)"
+   },
+   {
+    "from": "weave-core",
+    "to": "weave-mcp",
+    "edge_count": 98,
+    "classification": "upward-apparent (resolver name-ambiguity; NOT a compile-time dep)"
+   },
+   {
+    "from": "weave-core",
+    "to": "weave",
+    "edge_count": 36,
+    "classification": "upward-apparent (resolver name-ambiguity; NOT a compile-time dep)"
+   },
+   {
+    "from": "weave-mcp",
+    "to": "weave-inject",
+    "edge_count": 29,
+    "classification": "downward (manifest-allowed)"
+   },
+   {
+    "from": "weave",
+    "to": "weave-inject",
+    "edge_count": 27,
+    "classification": "downward (manifest-allowed)"
+   },
+   {
+    "from": "weave-inject",
+    "to": "weave-mcp",
+    "edge_count": 16,
+    "classification": "upward-apparent (resolver name-ambiguity; NOT a compile-time dep)"
+   },
+   {
+    "from": "weave-inject",
+    "to": "weave-core",
+    "edge_count": 16,
+    "classification": "downward (manifest-allowed)"
+   },
+   {
+    "from": "weave-mcp",
+    "to": "weave",
+    "edge_count": 3,
+    "classification": "upward-apparent (resolver name-ambiguity; NOT a compile-time dep)"
+   },
+   {
+    "from": "weave",
+    "to": "weave-mcp",
+    "edge_count": 3,
+    "classification": "downward (manifest-allowed)"
+   },
+   {
+    "from": "weave-inject",
+    "to": "weave",
+    "edge_count": 1,
+    "classification": "upward-apparent (resolver name-ambiguity; NOT a compile-time dep)"
+   }
+  ],
+  "verdict": "Compile-time layering is CLEAN (weave-core has zero internal weave deps in Cargo.toml). All 'upward-apparent' call edges (weave-core->weave-mcp etc.) are name-ambiguity resolver artifacts \u2014 they cannot exist at compile time. No real layering violation."
+ },
+ "public_api": {
+  "method": "git-kb query public-api",
+  "reported_count": 200,
+  "by_crate": {
+   "weave-core": 200
+  }
+ },
+ "unresolved": [
+  {
+   "kind": "unresolved_reason",
+   "name": "no_match",
+   "symbol_id": null,
+   "file_path": null,
+   "line": null,
+   "count": 14492,
+   "score": null,
+   "reason": "no_match"
+  },
+  {
+   "kind": "unresolved_reason",
+   "name": "skip_list",
+   "symbol_id": null,
+   "file_path": null,
+   "line": null,
+   "count": 10534,
+   "score": null,
+   "reason": "skip_list"
+  },
+  {
+   "kind": "unresolved_reason",
+   "name": "ambiguous",
+   "symbol_id": null,
+   "file_path": null,
+   "line": null,
+   "count": 774,
+   "score": null,
+   "reason": "ambiguous"
+  },
+  {
+   "kind": "unresolved_reason",
+   "name": "stdlib_allowlist",
+   "symbol_id": null,
+   "file_path": null,
+   "line": null,
+   "count": 21,
+   "score": null,
+   "reason": "stdlib_allowlist"
+  }
+ ]
+}
