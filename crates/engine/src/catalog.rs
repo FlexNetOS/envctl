@@ -2571,13 +2571,106 @@ fn parse_config_to_json(path: &Path, format: &str) -> anyhow::Result<Option<serd
             Ok(Some(serde_json::to_value(value)?))
         }
         "jsonc" => Ok(Some(serde_json::from_str(&jsonc_to_json(&text))?)),
+        "nushell" => Ok(Some(nushell_reproduction_metadata(&text))),
         "yaml" => {
             let value: serde_yaml::Value = serde_yaml::from_str(&text)?;
             Ok(Some(serde_json::to_value(value)?))
         }
         "json" => Ok(Some(serde_json::from_str(&text)?)),
+        "kdl" => Ok(Some(kdl_reproduction_metadata(&text))),
         _ => Ok(None),
     }
+}
+
+fn nushell_reproduction_metadata(text: &str) -> serde_json::Value {
+    let lines: Vec<&str> = text.lines().collect();
+    let source_lines: Vec<String> = trimmed_lines_with_prefix(&lines, "source ");
+    let use_lines: Vec<String> = trimmed_lines_with_prefix(&lines, "use ");
+    let plugin_use_lines: Vec<String> = lines
+        .iter()
+        .map(|line| line.trim())
+        .filter(|line| line.starts_with("plugin use ") || line.starts_with("plugin add "))
+        .map(str::to_string)
+        .collect();
+    let env_assignment_count = lines
+        .iter()
+        .map(|line| line.trim())
+        .filter(|line| {
+            line.starts_with("$env.")
+                || line.starts_with("load-env ")
+                || line.starts_with("with-env ")
+        })
+        .count();
+
+    serde_json::json!({
+        "format": "nushell",
+        "byte_count": text.len(),
+        "line_count": lines.len(),
+        "nonempty_line_count": lines.iter().filter(|line| !line.trim().is_empty()).count(),
+        "sha256": sha256_hex(text.as_bytes()),
+        "reproduction_policy": "source_bytes_required",
+        "structured_metadata": true,
+        "source_lines": source_lines,
+        "use_lines": use_lines,
+        "plugin_use_lines": plugin_use_lines,
+        "def_count": lines.iter().filter(|line| line.trim_start().starts_with("def ")).count(),
+        "alias_count": lines.iter().filter(|line| line.trim_start().starts_with("alias ")).count(),
+        "env_assignment_count": env_assignment_count,
+        "references_yazelix_init": text.contains("yazelix_init"),
+        "references_yazelix_extern": text.contains("extern") || text.contains("completions"),
+    })
+}
+
+fn kdl_reproduction_metadata(text: &str) -> serde_json::Value {
+    let lines: Vec<&str> = text.lines().collect();
+    let node_names = kdl_node_names(&lines);
+
+    serde_json::json!({
+        "format": "kdl",
+        "byte_count": text.len(),
+        "line_count": lines.len(),
+        "nonempty_line_count": lines.iter().filter(|line| !line.trim().is_empty()).count(),
+        "sha256": sha256_hex(text.as_bytes()),
+        "reproduction_policy": "source_bytes_required",
+        "structured_metadata": true,
+        "node_names": node_names.iter().cloned().collect::<Vec<_>>(),
+        "layout_count": node_names.iter().filter(|name| name.as_str() == "layout").count(),
+        "tab_count": node_names.iter().filter(|name| name.as_str() == "tab").count(),
+        "pane_count": node_names.iter().filter(|name| name.as_str() == "pane").count(),
+        "plugin_count": node_names.iter().filter(|name| name.as_str() == "plugin").count(),
+        "has_layout_node": node_names.contains("layout"),
+    })
+}
+
+fn trimmed_lines_with_prefix(lines: &[&str], prefix: &str) -> Vec<String> {
+    lines
+        .iter()
+        .map(|line| line.trim())
+        .filter(|line| line.starts_with(prefix))
+        .map(str::to_string)
+        .collect()
+}
+
+fn kdl_node_names(lines: &[&str]) -> BTreeSet<String> {
+    let mut names = BTreeSet::new();
+    for line in lines {
+        let trimmed = line.trim_start();
+        if trimmed.is_empty()
+            || trimmed.starts_with("//")
+            || trimmed.starts_with('#')
+            || trimmed.starts_with('}')
+        {
+            continue;
+        }
+        if let Some(name) = trimmed
+            .split(|ch: char| ch.is_whitespace() || ch == '{' || ch == '(' || ch == ';')
+            .next()
+            .filter(|name| !name.is_empty())
+        {
+            names.insert(name.to_string());
+        }
+    }
+    names
 }
 
 fn jsonc_to_json(input: &str) -> String {
@@ -2876,6 +2969,8 @@ fn infer_format(rel: &str) -> &'static str {
         "markdown"
     } else if rel.ends_with(".kdl") {
         "kdl"
+    } else if rel.ends_with(".nu") {
+        "nushell"
     } else if rel.ends_with(".sh") || rel.ends_with(".bash") {
         "shell"
     } else {
@@ -3267,9 +3362,14 @@ mod tests {
         assert!(snapshot.config_files.iter().any(|row| {
             row.path == "configs/zellij/layouts/flexnetos_agent_workspace.kdl"
                 && row.file_kind == "yazelix_runtime_config"
+                && row.format == "kdl"
+                && row.parse_status == "ok"
         }));
         assert!(snapshot.config_files.iter().any(|row| {
-            row.path == "nushell/config/config.nu" && row.file_kind == "yazelix_nushell_config"
+            row.path == "nushell/config/config.nu"
+                && row.file_kind == "yazelix_nushell_config"
+                && row.format == "nushell"
+                && row.parse_status == "ok"
         }));
         assert!(snapshot
             .settings
@@ -3277,6 +3377,17 @@ mod tests {
             .any(|row| row.source_file == "settings_default.jsonc"
                 && row.scope == "yazelix"
                 && row.precedence == 90));
+        assert!(snapshot.settings.iter().any(|row| {
+            row.source_file == "nushell/config/config.nu"
+                && row.setting_key == "source_lines"
+                && row.value.contains("yazelix_init.nu")
+        }));
+        assert!(snapshot.settings.iter().any(|row| {
+            row.source_file == "configs/zellij/layouts/flexnetos_agent_workspace.kdl"
+                && row.setting_key == "node_names"
+                && row.value.contains("layout")
+                && row.value.contains("pane")
+        }));
     }
 
     #[test]
@@ -3752,7 +3863,12 @@ default = false
         .unwrap();
         std::fs::write(
             root.join("configs/zellij/layouts/flexnetos_agent_workspace.kdl"),
-            "layout {}\n",
+            r#"layout {
+    tab name="agent" {
+        pane command="nu"
+    }
+}
+"#,
         )
         .unwrap();
         std::fs::write(
@@ -3762,7 +3878,12 @@ default = false
         .unwrap();
         std::fs::write(
             root.join("nushell/config/config.nu"),
-            "$env.config.show_banner = false\n",
+            r#"source ~/.local/share/yazelix/initializers/nushell/yazelix_init.nu
+use ~/.local/share/yazelix/completions/yazelix_extern.nu *
+alias yzx = yazelix
+def yzx_ready [] { true }
+$env.config.show_banner = false
+"#,
         )
         .unwrap();
         std::fs::write(
