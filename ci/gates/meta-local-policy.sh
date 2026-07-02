@@ -333,4 +333,6 @@ for path_file in crates/secrets-engine/src/paths.rs crates/secretctl/src/main.rs
   fi
 done
 
+bash scripts/tests/test-odysseus-install-idempotence.sh
+
 echo "meta-local-policy: active install sources target META_ROOT FHS/XDG; only the single real-home .local bridge is allowed"

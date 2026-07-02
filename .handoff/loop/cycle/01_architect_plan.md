@@ -1,39 +1,49 @@
-# TASK-0078 cache manifest scaffold plan
+# ADR-0003 catalog-first control plane — implementation slice 1 plan
 
-## Target
+## Goal
 
-Add a read-only owner-supervised cache-child component manifest scaffold report that extends the
-validated cache-manifest state with deterministic owner-review TOML stubs for missing component
-manifests.
+Build the first read-only implementation slice for ADR-0003: an engine-owned catalog scanner plus CLI table output. This slice must not mutate repo files or replace the existing TOML/YAML/JSON sources. It turns existing files into normalized in-memory rows so later PRs can add diff/render/sync/widget behavior.
 
-## Contract
+## Scope
 
-New flag: `--owner-supervised-cache-child-component-manifest-scaffold PATH`.
+- Add `envctl_engine::catalog` with row contracts for:
+  - components
+  - component_hooks
+  - paths
+  - settings
+  - env_vars
+  - agent_assets
+  - registries
+  - config_files
+  - migration_evidence
+  - observed_facts
+- Add `Engine::catalog_scan()` as the non-printing shared API.
+- Add CLI surfaces:
+  - `envctl catalog scan --json`
+  - `envctl catalog table <name> [--json]`
+- Populate rows from live repo sources where available:
+  - manifest TOML + envctl lock
+  - agent-env YAML/lock
+  - `.codex/config.toml`
+  - `.mcp.json`
+  - hub `registry.json`
+  - `layout.rs` path registry through `MetaLayout`
+  - secretd config surfaces when present
+  - `.handoff` tasks/ledger/report exports
+- Add tests for row contracts, aliases, redaction, and source coverage.
 
-TSV columns:
+## Non-goals for this PR
 
-```text
-dot_entry child_name child_path type canonical_target component_key expected_component_id cache_scope manifest_hint manifest_exists manifest_declares_expected_id scaffold_kind scaffold_status manifest_stub supervision next_action apply_command
-```
+- No apply/mutation.
+- No DB persistence.
+- No authoritative generated-file replacement.
+- No bidirectional sync or widget yet.
+- No removal of legacy file inputs.
 
-Routing:
+## Verification
 
-- missing manifest: `manifest_exists=no`, `manifest_declares_expected_id=no`,
-  `scaffold_kind=component-manifest-minimal`, `scaffold_status=stub-needs-owner-review`, a
-  deterministic escaped TOML `manifest_stub`, and
-  `next_action=owner-review-cache-component-manifest-scaffold`
-- existing manifest with expected `[[component]] id = "cache-<component>"`:
-  `scaffold_kind=none`, `scaffold_status=existing-manifest-declares-expected-id`, empty
-  `manifest_stub`, and `next_action=review-existing-cache-component-manifest-before-migration`
-- existing manifest with no/wrong id: `scaffold_kind=none`,
-  `scaffold_status=existing-manifest-id-mismatch`, empty `manifest_stub`, and
-  `next_action=fix-cache-component-manifest-id-before-migration`
-- `apply_command` stays empty; report-only, no manifest writes and no cache migration.
-
-## Verification plan
-
-- Red: focused fixture test fails because the new flag is unknown.
-- Green: lock the 17-column schema plus missing/valid/wrong manifest branches, escaped stub
-  content, direct-child exclusions, and scaffold-only mode.
-- Runtime: live non-mutating audit should emit the current cache-child rows, all missing manifests,
-  all deterministic stubs, all empty apply commands.
+- `cargo fmt --all`
+- `cargo test -p envctl-engine catalog`
+- `cargo build -p envctl`
+- runtime checks for catalog scan/table
+- relevant gates if touched: shape, agent-env, p7, loop-state, harness-scripts, meta-local-policy

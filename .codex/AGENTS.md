@@ -38,3 +38,19 @@ The project baseline enables GitHub, Context7, Exa, Memory, Playwright, Sequenti
 
 Use these workflow files as thin shims only; the authoritative workflow bodies remain in
 `.agents/skills/*/SKILL.md` and the durable state remains in `.handoff/`.
+
+## Runtime Gates
+
+- `.codex/hooks/flexnetos-runtime-gate.sh` is the tracked Codex runtime gate for
+  FlexNetOS sessions. It blocks peer-repo edits until a current git snapshot is
+  recorded and blocks profile, Home Manager, and desktop-launcher mutation until
+  Yazelix install-check proof, source-validation proof, and an explicit unlock
+  marker exist.
+- Session start and stop also fail closed unless the foundation context is
+  readable and initialized: Beads from `src/yazelix`, direct GitKB verification
+  and status from `src/yazelix` and `src/meta`, `meta project check`, and
+  `meta exec -- git-kb verify/status` across the meta project set.
+- Runtime copies under `/home/flexnetos/workspace/.codex` and
+  `/home/flexnetos/FlexNetOS/.codex` are installed from
+  `.codex/hooks/install-flexnetos-runtime-hooks.sh`; they point back to this
+  repo-owned script rather than carrying independent policy.
