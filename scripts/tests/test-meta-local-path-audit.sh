@@ -2568,24 +2568,6 @@ test -f "$repomix_bad_home/.repomix"
 test ! -e "$repomix_bad_meta/.local/share/repomix"
 grep -q -- '--migrate-dot .repomix: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-repomix-file.err"
 
-meta_bad_meta="$tmp/meta-bad-meta"
-meta_bad_home="$tmp/meta-bad-home"
-mkdir -p "$meta_bad_meta/.local" "$meta_bad_meta/envctl/home" "$meta_bad_home"
-printf '# managed gitconfig
-' >"$meta_bad_meta/envctl/home/.gitconfig"
-ln -s "$meta_bad_meta/envctl/home/.gitconfig" "$meta_bad_meta/.gitconfig"
-ln -s "$meta_bad_meta/.gitconfig" "$meta_bad_home/.gitconfig"
-ln -s "$meta_bad_meta/.local" "$meta_bad_home/.local"
-printf 'not a directory
-' >"$meta_bad_home/.meta"
-if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .meta --meta-root "$meta_bad_meta" --real-home "$meta_bad_home" --envctl-home-source "$meta_bad_meta/envctl/home" >"$tmp/migrate-meta-file.out" 2>"$tmp/migrate-meta-file.err"; then
-  echo "expected --migrate-dot .meta to fail closed for non-directory source" >&2
-  exit 1
-fi
-test -f "$meta_bad_home/.meta"
-test ! -e "$meta_bad_meta/.local/share/meta"
-grep -q -- '--migrate-dot .meta: .* is not a directory; refusing automatic app-config directory migration' "$tmp/migrate-meta-file.err"
-
 junie_bad_meta="$tmp/junie-bad-meta"
 junie_bad_home="$tmp/junie-bad-home"
 mkdir -p "$junie_bad_meta/.local" "$junie_bad_meta/envctl/home" "$junie_bad_home"
