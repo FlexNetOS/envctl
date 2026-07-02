@@ -242,6 +242,120 @@ default = false
 }
 
 #[test]
+fn catalog_repo_root_imports_yazelix_codedb_file_inventory() {
+    let fx = Fixture::new();
+    let yazelix = fx.root.join("yazelix");
+    std::fs::create_dir_all(yazelix.join("docs/generated")).unwrap();
+    std::fs::create_dir_all(yazelix.join(".local/share/yazelix")).unwrap();
+    std::fs::write(
+        yazelix.join("settings_default.jsonc"),
+        r#"{"debug_mode":false}"#,
+    )
+    .unwrap();
+    std::fs::write(yazelix.join(".local/share/yazelix/state.json"), "{}\n").unwrap();
+    std::fs::write(
+        yazelix.join("docs/generated/yazelix_file_target_inventory.json"),
+        format!(
+            r#"[
+  {{
+    "target_id": "repo_settings_default",
+    "absolute_path": "{}",
+    "normalized_logical_path": "repo_source:settings_default.jsonc",
+    "owner": "yazelix",
+    "source_of_truth_class": "repo_source",
+    "exists": true,
+    "file_kind": "regular_file",
+    "parser_hint": "jsonc",
+    "mutability": "source_controlled",
+    "reproduction_policy": "git_checkout",
+    "safety_policy": "source_content_import_allowed",
+    "import_mode": "content_blob"
+  }},
+  {{
+    "target_id": "nix_store_runtime",
+    "absolute_path": "/nix/store/example-yazelix-runtime",
+    "normalized_logical_path": "nix_store:/nix/store/example-yazelix-runtime",
+    "owner": "nix",
+    "source_of_truth_class": "nix_store_package_output",
+    "exists": true,
+    "file_kind": "package_output",
+    "parser_hint": "nix_store_path",
+    "mutability": "immutable_store",
+    "reproduction_policy": "nix_realise",
+    "safety_policy": "nix_store_metadata_only",
+    "import_mode": "metadata_only"
+  }},
+  {{
+    "target_id": "local_state",
+    "absolute_path": "{}",
+    "normalized_logical_path": "real_home_runtime_state:.local/share/yazelix/state.json",
+    "owner": "user",
+    "source_of_truth_class": "real_home_runtime_state",
+    "exists": true,
+    "file_kind": "regular_file",
+    "parser_hint": "json",
+    "mutability": "user_state",
+    "reproduction_policy": "runtime_observed",
+    "safety_policy": "real_home_metadata_only",
+    "import_mode": "metadata_only"
+  }}
+]
+"#,
+            yazelix.join("settings_default.jsonc").display(),
+            yazelix.join(".local/share/yazelix/state.json").display(),
+        ),
+    )
+    .unwrap();
+
+    let out = Command::new(bin())
+        .current_dir(&fx.root)
+        .env("ENVCTL_MANIFEST_DIR", fx.root.join("missing-manifest"))
+        .args(["--json", "catalog", "--repo-root"])
+        .arg(&yazelix)
+        .args(["table", "codedb-file-imports"])
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "stderr: {}", stderr(&out));
+    let rows: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    let rows = rows.as_array().unwrap();
+
+    assert_eq!(rows.len(), 3, "{rows:#?}");
+    let repo_row = rows
+        .iter()
+        .find(|row| row.get("target_id").and_then(|v| v.as_str()) == Some("repo_settings_default"))
+        .expect("repo content row");
+    assert_eq!(
+        repo_row.get("import_status").and_then(|v| v.as_str()),
+        Some("blob_metadata_ready")
+    );
+    assert!(repo_row
+        .get("content_hash")
+        .and_then(|v| v.as_str())
+        .is_some_and(|hash| hash.len() == 64));
+    assert!(repo_row
+        .get("blob_ref")
+        .and_then(|v| v.as_str())
+        .is_some_and(|blob| blob.starts_with("sha256:")));
+
+    for target_id in ["nix_store_runtime", "local_state"] {
+        let row = rows
+            .iter()
+            .find(|row| row.get("target_id").and_then(|v| v.as_str()) == Some(target_id))
+            .unwrap_or_else(|| panic!("missing {target_id} row"));
+        assert_eq!(
+            row.get("import_status").and_then(|v| v.as_str()),
+            Some("metadata_only")
+        );
+        assert!(row.get("content_hash").is_some_and(|v| v.is_null()));
+        assert!(row.get("blob_ref").is_some_and(|v| v.is_null()));
+        assert!(row
+            .get("skip_reason")
+            .and_then(|v| v.as_str())
+            .is_some_and(|reason| reason.ends_with("metadata_only")));
+    }
+}
+
+#[test]
 fn reset_whole_roster_refuses_before_worker_and_writes_nothing() {
     let fx = Fixture::new();
     let before = tree_snapshot(&fx.root);

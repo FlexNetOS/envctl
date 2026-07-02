@@ -41,6 +41,7 @@ pub enum CatalogTableName {
     AgentAssets,
     Registries,
     ConfigFiles,
+    CodedbFileImports,
     MigrationEvidence,
     ObservedFacts,
 }
@@ -56,6 +57,7 @@ impl CatalogTableName {
             CatalogTableName::AgentAssets => "agent_assets",
             CatalogTableName::Registries => "registries",
             CatalogTableName::ConfigFiles => "config_files",
+            CatalogTableName::CodedbFileImports => "codedb_file_imports",
             CatalogTableName::MigrationEvidence => "migration_evidence",
             CatalogTableName::ObservedFacts => "observed_facts",
         }
@@ -71,6 +73,7 @@ impl CatalogTableName {
             CatalogTableName::AgentAssets,
             CatalogTableName::Registries,
             CatalogTableName::ConfigFiles,
+            CatalogTableName::CodedbFileImports,
             CatalogTableName::MigrationEvidence,
             CatalogTableName::ObservedFacts,
         ]
@@ -97,6 +100,9 @@ impl FromStr for CatalogTableName {
             "agent_assets" => Ok(CatalogTableName::AgentAssets),
             "registries" => Ok(CatalogTableName::Registries),
             "config_files" => Ok(CatalogTableName::ConfigFiles),
+            "codedb_file_imports" | "envctl_yazelix_file_import" => {
+                Ok(CatalogTableName::CodedbFileImports)
+            }
             "migration_evidence" | "migration_candidates" => {
                 Ok(CatalogTableName::MigrationEvidence)
             }
@@ -127,6 +133,7 @@ pub struct CatalogSnapshot {
     pub agent_assets: Vec<AgentAssetRow>,
     pub registries: Vec<RegistryRow>,
     pub config_files: Vec<ConfigFileRow>,
+    pub codedb_file_imports: Vec<CodedbFileImportRow>,
     pub migration_evidence: Vec<MigrationEvidenceRow>,
     pub observed_facts: Vec<ObservedFactRow>,
 }
@@ -143,6 +150,7 @@ impl CatalogSnapshot {
             CatalogTableName::AgentAssets => serde_json::to_value(&self.agent_assets),
             CatalogTableName::Registries => serde_json::to_value(&self.registries),
             CatalogTableName::ConfigFiles => serde_json::to_value(&self.config_files),
+            CatalogTableName::CodedbFileImports => serde_json::to_value(&self.codedb_file_imports),
             CatalogTableName::MigrationEvidence => serde_json::to_value(&self.migration_evidence),
             CatalogTableName::ObservedFacts => serde_json::to_value(&self.observed_facts),
         }
@@ -159,6 +167,7 @@ impl CatalogSnapshot {
             CatalogTableName::AgentAssets => self.agent_assets.len(),
             CatalogTableName::Registries => self.registries.len(),
             CatalogTableName::ConfigFiles => self.config_files.len(),
+            CatalogTableName::CodedbFileImports => self.codedb_file_imports.len(),
             CatalogTableName::MigrationEvidence => self.migration_evidence.len(),
             CatalogTableName::ObservedFacts => self.observed_facts.len(),
         }
@@ -492,6 +501,51 @@ pub struct MigrationEvidenceRow {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CodedbFileImportRow {
+    pub table: String,
+    pub target_id: String,
+    pub logical_owner: String,
+    pub absolute_path: String,
+    pub normalized_path: String,
+    pub source_of_truth_class: String,
+    pub file_kind: String,
+    pub parser_hint: String,
+    pub content_hash: Option<String>,
+    pub byte_length: u64,
+    pub blob_ref: Option<String>,
+    pub import_safety_policy: String,
+    pub reproduction_policy: String,
+    pub import_mode: String,
+    pub import_status: String,
+    pub skip_reason: String,
+    pub provenance: String,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+struct YazelixFileInventoryRow {
+    #[serde(default)]
+    target_id: String,
+    #[serde(default)]
+    absolute_path: String,
+    #[serde(default, alias = "normalized_path")]
+    normalized_logical_path: String,
+    #[serde(default, alias = "logical_owner")]
+    owner: String,
+    #[serde(default)]
+    source_of_truth_class: String,
+    #[serde(default)]
+    file_kind: String,
+    #[serde(default)]
+    parser_hint: String,
+    #[serde(default)]
+    reproduction_policy: String,
+    #[serde(default, alias = "import_safety_policy")]
+    safety_policy: String,
+    #[serde(default)]
+    import_mode: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ObservedFactRow {
     pub fact_id: String,
     pub subject_kind: String,
@@ -554,6 +608,7 @@ pub fn scan(spec: CatalogScanSpec, registry: &Registry) -> anyhow::Result<Catalo
     ingest_layout_paths(&repo_root, &mut snapshot.paths, &mut snapshot.env_vars);
     ingest_env_schema_vars(&repo_root, &mut snapshot.env_vars);
     ingest_agent_files(&repo_root, &mut snapshot.agent_assets);
+    ingest_codedb_file_imports(&repo_root, &mut snapshot.codedb_file_imports)?;
     snapshot.observed_facts.push(ObservedFactRow {
         fact_id: "catalog.table_count.components".to_string(),
         subject_kind: "catalog_table".to_string(),
@@ -613,6 +668,12 @@ pub fn scan(spec: CatalogScanSpec, registry: &Registry) -> anyhow::Result<Catalo
             .then(a.source_file.cmp(&b.source_file))
     });
     snapshot.config_files.sort_by(|a, b| a.path.cmp(&b.path));
+    snapshot.codedb_file_imports.sort_by(|a, b| {
+        a.source_of_truth_class
+            .cmp(&b.source_of_truth_class)
+            .then(a.normalized_path.cmp(&b.normalized_path))
+            .then(a.target_id.cmp(&b.target_id))
+    });
     snapshot
         .observed_facts
         .sort_by(|a, b| a.fact_id.cmp(&b.fact_id).then(a.source.cmp(&b.source)));
@@ -2167,6 +2228,91 @@ fn ingest_agent_files(repo_root: &Path, assets: &mut Vec<AgentAssetRow>) {
     }
 }
 
+fn ingest_codedb_file_imports(
+    repo_root: &Path,
+    rows: &mut Vec<CodedbFileImportRow>,
+) -> anyhow::Result<()> {
+    let inventory_path = repo_root.join("docs/generated/yazelix_file_target_inventory.json");
+    if !inventory_path.is_file() {
+        return Ok(());
+    }
+
+    let bytes = std::fs::read(&inventory_path).with_context(|| {
+        format!(
+            "reading Yazelix file inventory {}",
+            inventory_path.display()
+        )
+    })?;
+    let inventory: Vec<YazelixFileInventoryRow> =
+        serde_json::from_slice(&bytes).with_context(|| {
+            format!(
+                "parsing Yazelix file inventory {}",
+                inventory_path.display()
+            )
+        })?;
+
+    for item in inventory {
+        let target = PathBuf::from(&item.absolute_path);
+        let file_bytes = if item.import_mode == "content_blob" {
+            std::fs::read(&target).ok()
+        } else {
+            None
+        };
+        let metadata_len = std::fs::metadata(&target)
+            .ok()
+            .filter(|meta| meta.is_file())
+            .map(|meta| meta.len())
+            .unwrap_or(0);
+        let content_hash = file_bytes.as_deref().map(sha256_hex);
+        let byte_length = file_bytes
+            .as_ref()
+            .map(|bytes| bytes.len() as u64)
+            .unwrap_or(metadata_len);
+        let blob_ref = content_hash.as_ref().map(|hash| format!("sha256:{hash}"));
+        let content_ready = blob_ref.is_some();
+        let import_status = if item.import_mode == "content_blob" {
+            if content_ready {
+                "blob_metadata_ready"
+            } else {
+                "metadata_only"
+            }
+        } else {
+            "metadata_only"
+        };
+        let skip_reason = if content_ready {
+            String::new()
+        } else if item.import_mode == "content_blob" {
+            "content_blob target is not readable as a regular file".to_string()
+        } else if item.safety_policy.is_empty() {
+            "metadata_only import mode".to_string()
+        } else {
+            item.safety_policy.clone()
+        };
+
+        rows.push(CodedbFileImportRow {
+            table: "envctl_yazelix_file_import".to_string(),
+            target_id: item.target_id,
+            logical_owner: item.owner,
+            absolute_path: item.absolute_path,
+            normalized_path: item.normalized_logical_path,
+            source_of_truth_class: item.source_of_truth_class,
+            file_kind: item.file_kind,
+            parser_hint: item.parser_hint,
+            content_hash,
+            byte_length,
+            blob_ref,
+            import_safety_policy: item.safety_policy,
+            reproduction_policy: item.reproduction_policy,
+            import_mode: item.import_mode,
+            import_status: import_status.to_string(),
+            skip_reason,
+            provenance: repo_relative(repo_root, &inventory_path),
+        });
+    }
+
+    Ok(())
+}
+
 fn ingest_registries_from_file(
     repo_root: &Path,
     path: &Path,
@@ -3467,6 +3613,27 @@ mod tests {
                 "missing reproduction row for {source_file}"
             );
         }
+        assert!(snapshot.codedb_file_imports.iter().any(|row| {
+            row.target_id == "repo_settings_default"
+                && row.import_status == "blob_metadata_ready"
+                && row
+                    .content_hash
+                    .as_deref()
+                    .is_some_and(|hash| hash.len() == 64)
+                && row
+                    .blob_ref
+                    .as_deref()
+                    .is_some_and(|blob| blob.starts_with("sha256:"))
+                && row.byte_length == r#"{"debug_mode":false}"#.len() as u64
+        }));
+        assert!(snapshot.codedb_file_imports.iter().any(|row| {
+            row.target_id == "nix_store_runtime"
+                && row.source_of_truth_class == "nix_store_package_output"
+                && row.import_status == "metadata_only"
+                && row.content_hash.is_none()
+                && row.blob_ref.is_none()
+                && row.skip_reason == "nix_store_metadata_only"
+        }));
     }
 
     #[test]
@@ -3493,6 +3660,9 @@ mod tests {
             serde_json::from_slice(&std::fs::read(config_files_path).unwrap()).unwrap();
         assert!(rows.iter().any(|row| row.path == "settings_default.jsonc"
             && row.file_kind == "yazelix_settings_default"));
+        assert!(out
+            .join("catalog/tables/codedb_file_imports.json")
+            .is_file());
     }
 
     #[test]
@@ -3921,6 +4091,7 @@ const ENVCTL_SEED_TOKEN_FILE: &str = "ENVCTL_SEED_TOKEN_FILE";
         std::fs::create_dir_all(root.join("nushell/config")).unwrap();
         std::fs::create_dir_all(root.join("home_manager")).unwrap();
         std::fs::create_dir_all(root.join("packaging")).unwrap();
+        std::fs::create_dir_all(root.join("docs/generated")).unwrap();
         std::fs::create_dir_all(root.join("rust_core/yazelix_zellij_config_pack/layouts")).unwrap();
 
         std::fs::write(
@@ -3987,6 +4158,59 @@ $env.config.show_banner = false
         std::fs::write(
             root.join("rust_core/yazelix_zellij_config_pack/layouts/yzx_side.kdl"),
             "layout {}\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("docs/generated/yazelix_file_target_inventory.json"),
+            format!(
+                r#"[
+  {{
+    "target_id": "repo_settings_default",
+    "absolute_path": "{}",
+    "normalized_logical_path": "repo_source:settings_default.jsonc",
+    "owner": "yazelix",
+    "source_of_truth_class": "repo_source",
+    "exists": true,
+    "file_kind": "regular_file",
+    "parser_hint": "jsonc",
+    "mutability": "source_controlled",
+    "reproduction_policy": "git_checkout",
+    "safety_policy": "source_content_import_allowed",
+    "import_mode": "content_blob"
+  }},
+  {{
+    "target_id": "nix_store_runtime",
+    "absolute_path": "/nix/store/example-yazelix-runtime",
+    "normalized_logical_path": "nix_store:/nix/store/example-yazelix-runtime",
+    "owner": "nix",
+    "source_of_truth_class": "nix_store_package_output",
+    "exists": true,
+    "file_kind": "package_output",
+    "parser_hint": "nix_store_path",
+    "mutability": "immutable_store",
+    "reproduction_policy": "nix_realise",
+    "safety_policy": "nix_store_metadata_only",
+    "import_mode": "metadata_only"
+  }},
+  {{
+    "target_id": "local_state",
+    "absolute_path": "{}/.local/share/yazelix/state.json",
+    "normalized_logical_path": "real_home_runtime_state:.local/share/yazelix/state.json",
+    "owner": "user",
+    "source_of_truth_class": "real_home_runtime_state",
+    "exists": true,
+    "file_kind": "regular_file",
+    "parser_hint": "json",
+    "mutability": "user_state",
+    "reproduction_policy": "runtime_observed",
+    "safety_policy": "real_home_metadata_only",
+    "import_mode": "metadata_only"
+  }}
+]
+"#,
+                root.join("settings_default.jsonc").display(),
+                root.display()
+            ),
         )
         .unwrap();
     }
