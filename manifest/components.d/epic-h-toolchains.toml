@@ -214,7 +214,7 @@ envctl_frontdoor "$DEST/bin/kache" "$META_ROOT/usr/bin/kache"
 # CO-MANAGED file as the wild-linker component (TASK-0054): each owns a delimited block,
 # written by a non-clobbering upsert so the two never overwrite each other and foreign
 # content is preserved. Use an ABSOLUTE wrapper path so Cargo never falls through to an
-# older ~/.local/bin/kache or any PATH-shadowed binary.
+# older host-local kache or any PATH-shadowed binary.
 install -d -m 755 "$M/.cargo"
 CFG="$M/.cargo/config.toml"
 touch "$CFG"
