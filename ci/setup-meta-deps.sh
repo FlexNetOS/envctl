@@ -61,7 +61,7 @@ ensure_repo() {
   local ref="HEAD"
   url="$(repo_url "$repo")"
   if [ "$repo" = "loop_lib" ]; then
-    ref="${LOOP_LIB_REF:-refs/heads/codex/envctl-runner-command-builder}"
+    ref="${LOOP_LIB_REF:-HEAD}"
   fi
 
   if [ -d "$target/.git" ]; then
@@ -71,7 +71,7 @@ ensure_repo() {
   else
     echo "meta-dep: cloning $repo to $target"
     rm -rf "$target"
-    GIT_TERMINAL_PROMPT=0 git clone --depth=1 --no-single-branch "$url" "$target"
+    GIT_TERMINAL_PROMPT=0 git clone --depth=1 "$url" "$target"
     git -C "$target" fetch --depth=1 origin "$ref"
     git -C "$target" checkout --detach FETCH_HEAD
   fi
