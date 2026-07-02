@@ -2,7 +2,7 @@
 
 **Status:** Living document · Phases 0–2 complete & dogfooded on the live box · Phase 3 in progress
 **Owner:** Single power-user (owner of the dual-RTX-5090 workstation)
-**Last updated:** 2026-06-02
+**Last updated:** 2026-06-27
 **Related docs:** [`README.md`](../README.md) · [`docs/ARCHITECTURE.md`](ARCHITECTURE.md) · [`docs/ROADMAP.md`](ROADMAP.md) · [`docs/DESIGN-NOTES.md`](DESIGN-NOTES.md) · [`assets/scripts/HANDOFF.md`](../assets/scripts/HANDOFF.md)
 
 ---
