@@ -2,8 +2,19 @@
 # test-plan-artifact-gate.sh — hermetic tests for the runtime .handoff/loop/plan artifact gate.
 set -euo pipefail
 root="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
-gate="$root/scripts/plan-artifact-gate.sh"
-[ -x "$gate" ] || { echo "FAIL: missing executable $gate" >&2; exit 1; }
+resolve_script_under_test() {
+  local rel="$1"
+  local candidate
+  for candidate in \
+    "$root/scripts/$rel" \
+    "$root/harness/skills/planning-engineer/scripts/$rel" \
+    "$root/.claude/skills/planning-engineer/scripts/$rel" \
+    "$root/.agents/skills/planning-engineer/scripts/$rel"; do
+    [ -x "$candidate" ] && { printf '%s\n' "$candidate"; return 0; }
+  done
+  return 1
+}
+gate="$(resolve_script_under_test plan-artifact-gate.sh)" || { echo "FAIL: missing executable plan-artifact-gate.sh" >&2; exit 1; }
 
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
@@ -146,4 +157,33 @@ if bash "$gate" "$defect2" >/tmp/plan-artifact-bad2.out 2>/tmp/plan-artifact-bad
 fi
 grep -q 'not terminal' /tmp/plan-artifact-bad2.err || { cat /tmp/plan-artifact-bad2.err >&2; echo "FAIL: nonterminal DONE error missing" >&2; exit 1; }
 
-echo "PASS: plan artifact gate rejects incomplete runtime artifacts and DONE drift"
+defect3="$tmp/defect3"
+cp -R "$plan" "$defect3"
+rm "$defect3/DONE"
+sed -i 's/- \[x\] engine/- [~] engine/' "$defect3/targets.md"
+cat > "$defect3/loop_state.md" <<'EOF'
+status: COMPLETE
+cycles_total: 7
+last_wrapup_total: 5
+EOF
+if bash "$gate" "$defect3" >/tmp/plan-artifact-bad3.out 2>/tmp/plan-artifact-bad3.err; then
+  echo "FAIL: gate accepted terminal loop_state with nonterminal target" >&2
+  exit 1
+fi
+grep -q 'terminal plan state' /tmp/plan-artifact-bad3.err || { cat /tmp/plan-artifact-bad3.err >&2; echo "FAIL: terminal loop_state error missing" >&2; exit 1; }
+
+defect4="$tmp/defect4"
+cp -R "$plan" "$defect4"
+rm "$defect4/DONE" "$defect4/targets.md"
+cat > "$defect4/loop_state.md" <<'EOF'
+status: COMPLETE
+cycles_total: 7
+last_wrapup_total: 5
+EOF
+if bash "$gate" "$defect4" >/tmp/plan-artifact-bad4.out 2>/tmp/plan-artifact-bad4.err; then
+  echo "FAIL: gate accepted terminal loop_state with zero target rows" >&2
+  exit 1
+fi
+grep -q 'no target rows' /tmp/plan-artifact-bad4.err || { cat /tmp/plan-artifact-bad4.err >&2; echo "FAIL: zero-target terminal loop_state error missing" >&2; exit 1; }
+
+echo "PASS: plan artifact gate rejects incomplete runtime artifacts, DONE drift, and zero-target terminal roll-ups"

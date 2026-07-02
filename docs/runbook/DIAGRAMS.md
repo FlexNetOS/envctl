@@ -516,7 +516,7 @@ CLAUDE.md (install applies by default; auto-fix/reset/add-repo preview).*
 **Owner doctrine:** meta and its peers use **NO system-depth installs** (`apt /usr`,
 `/usr/local`, nix `/nix`, kernel). Every system-depth tool has an upstream repo and must be
 either (a) installed at `$META_ROOT/.toolchains/<x>` (tarball / `cargo install --root` / runfile
-`--toolkitpath`) with a `$META_ROOT/usr/bin` symlink, (b) cloned+added as a `.meta.yaml` peer, or (c)
+`--toolkitpath`) with a `$META_ROOT/usr/bin` regular frontdoor wrapper, (b) cloned+added as a `.meta.yaml` peer, or (c)
 — only if *physically* irreducible — declared a `system:` host-prerequisite (detect/verify only).
 The convergence is itself a set of `[A]` components; the only genuinely irreducible item is the
 NVIDIA **kernel module**. `/nix` is **reducible** (nix-portable) but its live removal is `[!!]`.

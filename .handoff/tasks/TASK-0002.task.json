@@ -24,7 +24,7 @@
   "correlation_id": "envctl-agenticos-consolidation",
   "role": "implementer",
   "intent_lock": {
-    "objective_hash": "blake3:31ea35b54353c57a0a4f0ddf934fb41edba1dc282160f3cda47be98e2005d04a",
+    "objective_hash": "blake3:32aa7244c0c6eb4a468a283faf77816edc557471c6bdcc6c740686d244f76309",
     "path_scope_hash": "blake3:f9c172b2971d269a1472ee50322c857b61594c7c0b5dcf298cd884a2fd59101c",
     "acceptance_hash": "blake3:45a875e0e3fcec1855d57aa7ffc802fb3f6fbcf38942cee5e6243e62490172df"
   }
