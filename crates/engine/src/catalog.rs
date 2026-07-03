@@ -174,6 +174,59 @@ impl CatalogSnapshot {
     }
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CatalogTableSummaryRow {
+    pub table: String,
+    pub rows: usize,
+    pub columns: Vec<String>,
+    pub purpose: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CatalogFacetCount {
+    pub key: String,
+    pub count: usize,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CatalogToolchainSignalRow {
+    pub signal_kind: String,
+    pub key: String,
+    pub value: String,
+    pub source: String,
+    pub detail: String,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CatalogAnalyzeSummary {
+    pub tables: usize,
+    pub rows: usize,
+    pub config_files: usize,
+    pub env_vars: usize,
+    pub toolchain_signals: usize,
+    pub codedb_imports: usize,
+    pub mutating: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CatalogAnalyzeReport {
+    pub repo_root: String,
+    pub manifest_dir: String,
+    pub generated_by: String,
+    pub summary: CatalogAnalyzeSummary,
+    pub table_inventory: Vec<CatalogTableSummaryRow>,
+    pub config_formats: Vec<CatalogFacetCount>,
+    pub config_file_kinds: Vec<CatalogFacetCount>,
+    pub env_scopes: Vec<CatalogFacetCount>,
+    pub env_producers: Vec<CatalogFacetCount>,
+    pub env_sensitive: Vec<CatalogFacetCount>,
+    pub path_artifact_kinds: Vec<CatalogFacetCount>,
+    pub path_verification_statuses: Vec<CatalogFacetCount>,
+    pub codedb_file_kinds: Vec<CatalogFacetCount>,
+    pub codedb_parser_hints: Vec<CatalogFacetCount>,
+    pub toolchain_signals: Vec<CatalogToolchainSignalRow>,
+}
+
 /// Read-only drift report over the current catalog import.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CatalogDiffReport {
@@ -219,6 +272,7 @@ pub struct CatalogRenderSpec {
     pub repo_root: PathBuf,
     pub manifest_dir: PathBuf,
     pub out_dir: PathBuf,
+    pub target_root: Option<PathBuf>,
 }
 
 /// Report for deterministic render projections written outside the repo.
@@ -227,6 +281,7 @@ pub struct CatalogRenderReport {
     pub repo_root: String,
     pub manifest_dir: String,
     pub out_dir: String,
+    pub target_root: Option<String>,
     pub generated_by: String,
     pub summary: CatalogRenderSummary,
     pub files: Vec<CatalogRenderedFile>,
@@ -264,6 +319,101 @@ pub struct CatalogImportReport {
     pub generated_by: String,
     pub summary: CatalogImportSummary,
     pub snapshot: CatalogSnapshot,
+}
+
+pub fn table_inventory(snapshot: &CatalogSnapshot) -> Vec<CatalogTableSummaryRow> {
+    CatalogTableName::all()
+        .iter()
+        .map(|table| CatalogTableSummaryRow {
+            table: table.canonical_name().to_string(),
+            rows: snapshot.table_count(*table),
+            columns: table_columns(snapshot, *table),
+            purpose: table_purpose(*table).to_string(),
+        })
+        .collect()
+}
+
+pub fn analyze_snapshot(snapshot: &CatalogSnapshot) -> CatalogAnalyzeReport {
+    let table_inventory = table_inventory(snapshot);
+    let config_formats = facet_counts(snapshot.config_files.iter().map(|row| row.format.as_str()));
+    let config_file_kinds = facet_counts(
+        snapshot
+            .config_files
+            .iter()
+            .map(|row| row.file_kind.as_str()),
+    );
+    let env_scopes = facet_counts(snapshot.env_vars.iter().map(|row| row.scope.as_str()));
+    let env_producers = facet_counts(snapshot.env_vars.iter().map(|row| row.producer.as_str()));
+    let env_sensitive = vec![
+        CatalogFacetCount {
+            key: "sensitive".to_string(),
+            count: snapshot.env_vars.iter().filter(|row| row.sensitive).count(),
+        },
+        CatalogFacetCount {
+            key: "non_sensitive".to_string(),
+            count: snapshot
+                .env_vars
+                .iter()
+                .filter(|row| !row.sensitive)
+                .count(),
+        },
+    ];
+    let path_artifact_kinds =
+        facet_counts(snapshot.paths.iter().map(|row| row.artifact_kind.as_str()));
+    let path_verification_statuses = facet_counts(
+        snapshot
+            .paths
+            .iter()
+            .map(|row| row.verification_status.as_str()),
+    );
+    let codedb_file_kinds = facet_counts(
+        snapshot
+            .codedb_file_imports
+            .iter()
+            .map(|row| row.file_kind.as_str()),
+    );
+    let codedb_parser_hints = facet_counts(
+        snapshot
+            .codedb_file_imports
+            .iter()
+            .map(|row| row.parser_hint.as_str()),
+    );
+    let toolchain_signals = toolchain_signals(snapshot);
+    let summary = CatalogAnalyzeSummary {
+        tables: table_inventory.len(),
+        rows: catalog_total_rows(snapshot),
+        config_files: snapshot.config_files.len(),
+        env_vars: snapshot.env_vars.len(),
+        toolchain_signals: toolchain_signals.len(),
+        codedb_imports: snapshot.codedb_file_imports.len(),
+        mutating: false,
+    };
+
+    CatalogAnalyzeReport {
+        repo_root: snapshot.repo_root.clone(),
+        manifest_dir: snapshot.manifest_dir.clone(),
+        generated_by: "envctl catalog analyze".to_string(),
+        summary,
+        table_inventory,
+        config_formats,
+        config_file_kinds,
+        env_scopes,
+        env_producers,
+        env_sensitive,
+        path_artifact_kinds,
+        path_verification_statuses,
+        codedb_file_kinds,
+        codedb_parser_hints,
+        toolchain_signals,
+    }
+}
+
+pub fn analyze_current(
+    spec: CatalogScanSpec,
+    registry: &Registry,
+) -> anyhow::Result<CatalogAnalyzeReport> {
+    let snapshot = scan(spec, registry)?;
+    Ok(analyze_snapshot(&snapshot))
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
@@ -903,6 +1053,11 @@ pub fn render(spec: CatalogRenderSpec, registry: &Registry) -> anyhow::Result<Ca
     let repo_root = absolute_existing_path(&spec.repo_root)?;
     let manifest_dir = absolute_optional_path(&spec.manifest_dir)?;
     let planned_out_dir = absolute_target_path(&spec.out_dir)?;
+    let target_root = spec
+        .target_root
+        .as_ref()
+        .map(|path| absolute_target_path(path.as_path()))
+        .transpose()?;
     if planned_out_dir == repo_root || planned_out_dir.starts_with(&repo_root) {
         bail!(
             "catalog render output must be outside repo root (out={}, repo={})",
@@ -924,13 +1079,16 @@ pub fn render(spec: CatalogRenderSpec, registry: &Registry) -> anyhow::Result<Ca
         )
     })?;
 
-    let snapshot = stable_snapshot_for_render(scan(
-        CatalogScanSpec {
-            repo_root: repo_root.clone(),
-            manifest_dir: manifest_dir.clone(),
-        },
-        registry,
-    )?);
+    let snapshot = stable_snapshot_for_render(
+        scan(
+            CatalogScanSpec {
+                repo_root: repo_root.clone(),
+                manifest_dir: manifest_dir.clone(),
+            },
+            registry,
+        )?,
+        target_root.as_deref(),
+    );
 
     let mut projections = render_projections(&snapshot)?;
     let mut generated_config_rows = projections
@@ -998,6 +1156,7 @@ pub fn render(spec: CatalogRenderSpec, registry: &Registry) -> anyhow::Result<Ca
         repo_root: repo_root.display().to_string(),
         manifest_dir: manifest_dir.display().to_string(),
         out_dir: out_dir.display().to_string(),
+        target_root: target_root.map(|path| path.display().to_string()),
         generated_by: "envctl catalog render".to_string(),
         summary,
         files: rendered_files,
@@ -1028,6 +1187,167 @@ pub fn import_current(
         summary,
         snapshot,
     })
+}
+
+fn table_columns(snapshot: &CatalogSnapshot, table: CatalogTableName) -> Vec<String> {
+    let value = snapshot.table_value(table);
+    let mut columns = BTreeSet::new();
+    if let Some(rows) = value.as_array() {
+        for row in rows {
+            if let Some(object) = row.as_object() {
+                columns.extend(object.keys().cloned());
+            }
+        }
+    }
+    columns.into_iter().collect()
+}
+
+fn table_purpose(table: CatalogTableName) -> &'static str {
+    match table {
+        CatalogTableName::Components => "component registry rows and lifecycle intent",
+        CatalogTableName::ComponentHooks => "detect/install/fix/reset hook wiring",
+        CatalogTableName::Paths => "canonical, legacy, and bridged filesystem targets",
+        CatalogTableName::Settings => "normalized config/settings key-value rows",
+        CatalogTableName::EnvVars => "environment variables with producer and scope metadata",
+        CatalogTableName::AgentAssets => "skills, agents, hooks, and lock-tracked assets",
+        CatalogTableName::Registries => "hub and MCP registry entries",
+        CatalogTableName::ConfigFiles => "source and generated config file inventory",
+        CatalogTableName::CodedbFileImports => {
+            "blob/structured import rows for file-backed code DB coverage"
+        }
+        CatalogTableName::MigrationEvidence => "adoption and purge-safety evidence",
+        CatalogTableName::ObservedFacts => "runtime observations and verifier-produced facts",
+    }
+}
+
+fn facet_counts<'a>(values: impl Iterator<Item = &'a str>) -> Vec<CatalogFacetCount> {
+    let mut counts = BTreeMap::<String, usize>::new();
+    for value in values {
+        let key = if value.trim().is_empty() {
+            "unknown".to_string()
+        } else {
+            value.to_string()
+        };
+        *counts.entry(key).or_default() += 1;
+    }
+    counts
+        .into_iter()
+        .map(|(key, count)| CatalogFacetCount { key, count })
+        .collect()
+}
+
+fn toolchain_signals(snapshot: &CatalogSnapshot) -> Vec<CatalogToolchainSignalRow> {
+    let mut rows = Vec::new();
+
+    for row in &snapshot.env_vars {
+        if let Some(value) = row
+            .effective_value
+            .as_deref()
+            .or(row.value.as_deref())
+            .or(row.default_value.as_deref())
+        {
+            if is_toolchain_token(&row.var_name) || is_toolchain_token(value) {
+                rows.push(CatalogToolchainSignalRow {
+                    signal_kind: "env_var".to_string(),
+                    key: row.var_name.clone(),
+                    value: value.to_string(),
+                    source: row.source.clone(),
+                    detail: format!(
+                        "producer={} scope={} sensitive={}",
+                        row.producer, row.scope, row.sensitive
+                    ),
+                });
+            }
+        }
+    }
+
+    for row in &snapshot.settings {
+        if is_toolchain_token(&row.setting_key) || is_toolchain_token(&row.value) {
+            rows.push(CatalogToolchainSignalRow {
+                signal_kind: "setting".to_string(),
+                key: row.setting_key.clone(),
+                value: row.value.clone(),
+                source: row.source_file.clone(),
+                detail: format!("scope={} source_kind={}", row.scope, row.source_kind),
+            });
+        }
+    }
+
+    for row in &snapshot.paths {
+        if is_toolchain_token(&row.path)
+            || is_toolchain_token(&row.path_kind)
+            || is_toolchain_token(&row.artifact_kind)
+            || is_toolchain_token(&row.source)
+        {
+            rows.push(CatalogToolchainSignalRow {
+                signal_kind: "path".to_string(),
+                key: row.path_kind.clone(),
+                value: row.path.clone(),
+                source: row.source.clone(),
+                detail: format!(
+                    "artifact_kind={} canonical={} legacy={} bridge={} verification={}",
+                    row.artifact_kind,
+                    row.canonical,
+                    row.legacy,
+                    row.bridge,
+                    row.verification_status
+                ),
+            });
+        }
+    }
+
+    for row in &snapshot.codedb_file_imports {
+        if is_toolchain_token(&row.normalized_path)
+            || is_toolchain_token(&row.file_kind)
+            || is_toolchain_token(&row.parser_hint)
+        {
+            rows.push(CatalogToolchainSignalRow {
+                signal_kind: "codedb_import".to_string(),
+                key: row.target_id.clone(),
+                value: row.normalized_path.clone(),
+                source: row.provenance.clone(),
+                detail: format!(
+                    "file_kind={} parser_hint={} structured_rows={}",
+                    row.file_kind, row.parser_hint, row.structured_row_count
+                ),
+            });
+        }
+    }
+
+    rows.sort_by(|a, b| {
+        (&a.signal_kind, &a.key, &a.source, &a.value).cmp(&(
+            &b.signal_kind,
+            &b.key,
+            &b.source,
+            &b.value,
+        ))
+    });
+    rows.dedup_by(|a, b| {
+        a.signal_kind == b.signal_kind
+            && a.key == b.key
+            && a.value == b.value
+            && a.source == b.source
+            && a.detail == b.detail
+    });
+    rows
+}
+
+fn is_toolchain_token(value: &str) -> bool {
+    let lower = value.to_ascii_lowercase();
+    [
+        "cargo",
+        "rust",
+        "rustup",
+        "toolchain",
+        "linker",
+        "wild",
+        "kache",
+        "sccache",
+        "nix",
+        "felix",
+    ]
+    .iter()
+    .any(|needle| lower.contains(needle))
 }
 
 /// Plan a bidirectional catalog sync without applying repository mutations.
@@ -1061,6 +1381,7 @@ pub fn sync(spec: CatalogSyncSpec, registry: &Registry) -> anyhow::Result<Catalo
                 repo_root,
                 manifest_dir,
                 out_dir,
+                target_root: None,
             },
             registry,
         )?;
@@ -1458,6 +1779,98 @@ fn render_projections(snapshot: &CatalogSnapshot) -> anyhow::Result<Vec<RenderPr
             render_systemd_unit(snapshot).into_bytes(),
             "Generated by envctl catalog render. Source table: observed_facts. Manual edits allowed: no.",
         ),
+        RenderProjection::new(
+            "docs/generated/current-database-file-inventory.md",
+            "config_files+codedb_file_imports",
+            snapshot.config_files.len() + snapshot.codedb_file_imports.len(),
+            false,
+            render_current_database_file_inventory(snapshot).into_bytes(),
+            "Generated by envctl catalog render. Source tables: config_files, codedb_file_imports. Manual edits allowed: no.",
+        ),
+        RenderProjection::new(
+            "docs/generated/catalog-table-inventory.md",
+            "catalog_tables",
+            CatalogTableName::all().len(),
+            false,
+            render_catalog_table_inventory(snapshot).into_bytes(),
+            "Generated by envctl catalog render. Source tables: all catalog tables. Manual edits allowed: no.",
+        ),
+        RenderProjection::new(
+            "docs/generated/env-var-inventory.md",
+            "env_vars",
+            snapshot.env_vars.len(),
+            false,
+            render_env_var_inventory(snapshot).into_bytes(),
+            "Generated by envctl catalog render. Source table: env_vars. Manual edits allowed: no.",
+        ),
+        RenderProjection::new(
+            "docs/generated/toolchain-signal-inventory.md",
+            "env_vars+settings+paths+codedb_file_imports",
+            toolchain_signals(snapshot).len(),
+            false,
+            render_toolchain_signal_inventory(snapshot).into_bytes(),
+            "Generated by envctl catalog render. Source tables: env_vars, settings, paths, codedb_file_imports. Manual edits allowed: no.",
+        ),
+        RenderProjection::new(
+            "docs/generated/codedb-import-targets.txt",
+            "codedb_file_imports",
+            snapshot.codedb_file_imports.len(),
+            false,
+            render_codedb_target_list(snapshot.codedb_file_imports.iter()).into_bytes(),
+            "Generated by envctl catalog render. Source table: codedb_file_imports. Manual edits allowed: no.",
+        ),
+        RenderProjection::new(
+            "docs/generated/codedb-content-blob-targets.txt",
+            "codedb_file_imports",
+            snapshot
+                .codedb_file_imports
+                .iter()
+                .filter(|row| row.import_mode == "content_blob")
+                .count(),
+            false,
+            render_codedb_target_list(
+                snapshot
+                    .codedb_file_imports
+                    .iter()
+                    .filter(|row| row.import_mode == "content_blob"),
+            )
+            .into_bytes(),
+            "Generated by envctl catalog render. Source table: codedb_file_imports filtered to content_blob rows. Manual edits allowed: no.",
+        ),
+        RenderProjection::new(
+            "docs/generated/codedb-metadata-only-targets.txt",
+            "codedb_file_imports",
+            snapshot
+                .codedb_file_imports
+                .iter()
+                .filter(|row| row.import_mode == "metadata_only")
+                .count(),
+            false,
+            render_codedb_target_list(
+                snapshot
+                    .codedb_file_imports
+                    .iter()
+                    .filter(|row| row.import_mode == "metadata_only"),
+            )
+            .into_bytes(),
+            "Generated by envctl catalog render. Source table: codedb_file_imports filtered to metadata_only rows. Manual edits allowed: no.",
+        ),
+        RenderProjection::new(
+            "docs/generated/codedb-upload-inventory.md",
+            "codedb_file_imports",
+            snapshot.codedb_file_imports.len(),
+            false,
+            render_codedb_upload_inventory(snapshot).into_bytes(),
+            "Generated by envctl catalog render. Source table: codedb_file_imports. Manual edits allowed: no.",
+        ),
+        RenderProjection::new(
+            "docs/generated/codedb-semantic-coverage.md",
+            "codedb_file_imports",
+            snapshot.codedb_file_imports.len(),
+            false,
+            render_codedb_semantic_coverage(snapshot).into_bytes(),
+            "Generated by envctl catalog render. Source table: codedb_file_imports. Manual edits allowed: no.",
+        ),
     ];
 
     for table in CatalogTableName::all() {
@@ -1488,12 +1901,500 @@ fn render_projections(snapshot: &CatalogSnapshot) -> anyhow::Result<Vec<RenderPr
     Ok(projections)
 }
 
-fn stable_snapshot_for_render(mut snapshot: CatalogSnapshot) -> CatalogSnapshot {
+fn render_current_database_file_inventory(snapshot: &CatalogSnapshot) -> String {
+    let mut out = String::new();
+    let _ = writeln!(out, "# Current envctl Database-Bound File Inventory");
+    let _ = writeln!(out);
+    let _ = writeln!(
+        out,
+        "This inventory is generated from the live `envctl catalog render` snapshot."
+    );
+    let _ = writeln!(out, "Repo root: `{}`", snapshot.repo_root);
+    let _ = writeln!(out, "Manifest dir: `{}`", snapshot.manifest_dir);
+    let _ = writeln!(out);
+    let _ = writeln!(out, "## Summary");
+    let _ = writeln!(out);
+    let _ = writeln!(
+        out,
+        "- `codedb_file_imports`: `{}` current target files",
+        snapshot.codedb_file_imports.len()
+    );
+    let _ = writeln!(
+        out,
+        "- direct catalog scan set from `discover_control_plane_files()`: `{}` current files",
+        snapshot.config_files.len()
+    );
+    let _ = writeln!(
+        out,
+        "- `env_vars`: `{}` current rows in the catalog",
+        snapshot.env_vars.len()
+    );
+    let _ = writeln!(out);
+    let _ = writeln!(out, "## `codedb_file_imports`");
+    let _ = writeln!(out);
+    if snapshot.codedb_file_imports.is_empty() {
+        let _ = writeln!(out, "Current imported target files:");
+        let _ = writeln!(out);
+        let _ = writeln!(out, "```text");
+        let _ = writeln!(out, "none");
+        let _ = writeln!(out, "```");
+    } else {
+        let provenances = snapshot
+            .codedb_file_imports
+            .iter()
+            .map(|row| row.provenance.as_str())
+            .collect::<BTreeSet<_>>();
+        let _ = writeln!(out, "Source inventory manifests:");
+        let _ = writeln!(out);
+        let _ = writeln!(out, "```text");
+        for provenance in provenances {
+            let _ = writeln!(out, "{provenance}");
+        }
+        let _ = writeln!(out, "```");
+        let _ = writeln!(out);
+        let _ = writeln!(out, "Current imported target files:");
+        let _ = writeln!(out);
+        let _ = writeln!(out, "```text");
+        for line in snapshot
+            .codedb_file_imports
+            .iter()
+            .map(|row| row.absolute_path.as_str())
+            .collect::<BTreeSet<_>>()
+        {
+            let _ = writeln!(out, "{line}");
+        }
+        let _ = writeln!(out, "```");
+    }
+    let _ = writeln!(out);
+    let _ = writeln!(out, "## Direct Catalog Scan Files");
+    let _ = writeln!(out);
+    let _ = writeln!(
+        out,
+        "These files are database-bound through the direct catalog scan path."
+    );
+    let _ = writeln!(out);
+    let _ = writeln!(out, "```text");
+    for line in snapshot
+        .config_files
+        .iter()
+        .map(|row| row.path.as_str())
+        .collect::<BTreeSet<_>>()
+    {
+        let _ = writeln!(out, "{line}");
+    }
+    let _ = writeln!(out, "```");
+    out
+}
+
+fn render_catalog_table_inventory(snapshot: &CatalogSnapshot) -> String {
+    let inventory = table_inventory(snapshot);
+    let mut out = String::new();
+    let _ = writeln!(out, "# envctl Catalog Table Inventory");
+    let _ = writeln!(out);
+    let _ = writeln!(
+        out,
+        "This report summarizes every normalized table currently present in the live catalog snapshot."
+    );
+    let _ = writeln!(out);
+    let _ = writeln!(out, "- repo root: `{}`", snapshot.repo_root);
+    let _ = writeln!(out, "- manifest dir: `{}`", snapshot.manifest_dir);
+    let _ = writeln!(out, "- tables: `{}`", inventory.len());
+    let _ = writeln!(out, "- total rows: `{}`", catalog_total_rows(snapshot));
+    let _ = writeln!(out);
+    let _ = writeln!(out, "| table | rows | columns | purpose |");
+    let _ = writeln!(out, "| --- | ---: | --- | --- |");
+    for row in inventory {
+        let _ = writeln!(
+            out,
+            "| `{}` | `{}` | `{}` | {} |",
+            row.table,
+            row.rows,
+            row.columns.join(", "),
+            row.purpose
+        );
+    }
+    out
+}
+
+fn render_env_var_inventory(snapshot: &CatalogSnapshot) -> String {
+    let report = analyze_snapshot(snapshot);
+    let mut out = String::new();
+    let _ = writeln!(out, "# envctl Environment Variable Inventory");
+    let _ = writeln!(out);
+    let _ = writeln!(
+        out,
+        "This report lists the environment-variable rows envctl currently stores in the catalog, along with producer, scope, sensitivity, and resolved value shape."
+    );
+    let _ = writeln!(out);
+    let _ = writeln!(out, "## Summary");
+    let _ = writeln!(out);
+    let _ = writeln!(out, "- total env vars: `{}`", snapshot.env_vars.len());
+    let _ = writeln!(out, "- repo root: `{}`", snapshot.repo_root);
+    let _ = writeln!(out, "- manifest dir: `{}`", snapshot.manifest_dir);
+    let _ = writeln!(out);
+    let _ = writeln!(out, "## Facets");
+    let _ = writeln!(out);
+    write_facet_section(&mut out, "Scopes", &report.env_scopes);
+    write_facet_section(&mut out, "Producers", &report.env_producers);
+    write_facet_section(&mut out, "Sensitivity", &report.env_sensitive);
+    let _ = writeln!(out, "## Rows");
+    let _ = writeln!(out);
+    let _ = writeln!(
+        out,
+        "| var | producer | scope | source | sensitive | value source | current value |"
+    );
+    let _ = writeln!(out, "| --- | --- | --- | --- | --- | --- | --- |");
+    for row in &snapshot.env_vars {
+        let (value_source, value) = env_value_source_and_value(row);
+        let _ = writeln!(
+            out,
+            "| `{}` | `{}` | `{}` | `{}` | `{}` | `{}` | `{}` |",
+            row.var_name,
+            row.producer,
+            row.scope,
+            row.source,
+            yes_no(row.sensitive),
+            value_source,
+            markdown_inline_code(&value),
+        );
+    }
+    out
+}
+
+fn render_toolchain_signal_inventory(snapshot: &CatalogSnapshot) -> String {
+    let signals = toolchain_signals(snapshot);
+    let mut out = String::new();
+    let _ = writeln!(out, "# envctl Toolchain Signal Inventory");
+    let _ = writeln!(out);
+    let _ = writeln!(
+        out,
+        "This report highlights catalog rows that appear relevant to Rust and adjacent toolchain wiring, including Cargo, rustup, nix, Felix, Wild, and kache signals."
+    );
+    let _ = writeln!(out);
+    let _ = writeln!(out, "## Summary");
+    let _ = writeln!(out);
+    let _ = writeln!(out, "- toolchain signals: `{}`", signals.len());
+    let _ = writeln!(out, "- env var rows scanned: `{}`", snapshot.env_vars.len());
+    let _ = writeln!(
+        out,
+        "- settings rows scanned: `{}`",
+        snapshot.settings.len()
+    );
+    let _ = writeln!(out, "- path rows scanned: `{}`", snapshot.paths.len());
+    let _ = writeln!(
+        out,
+        "- codedb import rows scanned: `{}`",
+        snapshot.codedb_file_imports.len()
+    );
+    let _ = writeln!(out);
+    let _ = writeln!(out, "## Signal Kinds");
+    let _ = writeln!(out);
+    write_facet_section(
+        &mut out,
+        "Kinds",
+        &facet_counts(signals.iter().map(|row| row.signal_kind.as_str())),
+    );
+    let _ = writeln!(out, "## Rows");
+    let _ = writeln!(out);
+    let _ = writeln!(out, "| kind | key | source | detail | value |");
+    let _ = writeln!(out, "| --- | --- | --- | --- | --- |");
+    for row in signals {
+        let _ = writeln!(
+            out,
+            "| `{}` | `{}` | `{}` | `{}` | `{}` |",
+            row.signal_kind,
+            row.key,
+            row.source,
+            row.detail,
+            markdown_inline_code(&row.value),
+        );
+    }
+    out
+}
+
+fn render_codedb_target_list<'a>(rows: impl Iterator<Item = &'a CodedbFileImportRow>) -> String {
+    let mut out = String::new();
+    for line in rows
+        .map(|row| row.absolute_path.as_str())
+        .collect::<BTreeSet<_>>()
+    {
+        let _ = writeln!(out, "{line}");
+    }
+    out
+}
+
+fn render_codedb_upload_inventory(snapshot: &CatalogSnapshot) -> String {
+    let content_blob = snapshot
+        .codedb_file_imports
+        .iter()
+        .filter(|row| row.import_mode == "content_blob")
+        .count();
+    let metadata_only = snapshot
+        .codedb_file_imports
+        .iter()
+        .filter(|row| row.import_mode == "metadata_only")
+        .count();
+    let blob_metadata_ready = snapshot
+        .codedb_file_imports
+        .iter()
+        .filter(|row| row.import_status == "blob_metadata_ready")
+        .count();
+    let structured_rows_ready = snapshot
+        .codedb_file_imports
+        .iter()
+        .filter(|row| row.structured_status == "structured_rows_ready")
+        .count();
+    let metadata_structured = snapshot
+        .codedb_file_imports
+        .iter()
+        .filter(|row| row.structured_status == "metadata_only")
+        .count();
+
+    let mut out = String::new();
+    let _ = writeln!(out, "# CodeDB Upload Inventory");
+    let _ = writeln!(out);
+    let _ = writeln!(
+        out,
+        "This report is generated from the live `codedb_file_imports` catalog rows."
+    );
+    let _ = writeln!(out);
+    let _ = writeln!(out, "## Summary");
+    let _ = writeln!(out);
+    let _ = writeln!(
+        out,
+        "- total targets: `{}`",
+        snapshot.codedb_file_imports.len()
+    );
+    let _ = writeln!(out, "- `content_blob` targets: `{content_blob}`");
+    let _ = writeln!(out, "- `metadata_only` targets: `{metadata_only}`");
+    let _ = writeln!(out, "- `blob_metadata_ready` rows: `{blob_metadata_ready}`");
+    let _ = writeln!(
+        out,
+        "- `structured_rows_ready` rows: `{structured_rows_ready}`"
+    );
+    let _ = writeln!(
+        out,
+        "- `structured_status = metadata_only` rows: `{metadata_structured}`"
+    );
+    let _ = writeln!(out);
+    let _ = writeln!(out, "## Import Modes");
+    let _ = writeln!(out);
+    for facet in facet_counts(
+        snapshot
+            .codedb_file_imports
+            .iter()
+            .map(|row| row.import_mode.as_str()),
+    ) {
+        let _ = writeln!(out, "- `{}`: `{}`", facet.key, facet.count);
+    }
+    let _ = writeln!(out);
+    let _ = writeln!(out, "## Parser Hints");
+    let _ = writeln!(out);
+    for facet in facet_counts(
+        snapshot
+            .codedb_file_imports
+            .iter()
+            .map(|row| row.parser_hint.as_str()),
+    ) {
+        let _ = writeln!(out, "- `{}`: `{}`", facet.key, facet.count);
+    }
+    let _ = writeln!(out);
+    let _ = writeln!(out, "## Import Safety Policies");
+    let _ = writeln!(out);
+    for facet in facet_counts(
+        snapshot
+            .codedb_file_imports
+            .iter()
+            .map(|row| row.import_safety_policy.as_str()),
+    ) {
+        let _ = writeln!(out, "- `{}`: `{}`", facet.key, facet.count);
+    }
+    out
+}
+
+fn render_codedb_semantic_coverage(snapshot: &CatalogSnapshot) -> String {
+    let structured_rows_total = snapshot
+        .codedb_file_imports
+        .iter()
+        .map(|row| row.structured_row_count)
+        .sum::<usize>();
+    let blob_ready = snapshot
+        .codedb_file_imports
+        .iter()
+        .filter(|row| row.import_status == "blob_metadata_ready")
+        .count();
+    let metadata_only = snapshot
+        .codedb_file_imports
+        .iter()
+        .filter(|row| row.import_status == "metadata_only")
+        .count();
+
+    let mut out = String::new();
+    let _ = writeln!(out, "# CodeDB Semantic Coverage");
+    let _ = writeln!(out);
+    let _ = writeln!(
+        out,
+        "This document summarizes the semantic surface envctl currently imports into `codedb_file_imports`."
+    );
+    let _ = writeln!(out);
+    let _ = writeln!(out, "## Summary");
+    let _ = writeln!(out);
+    let _ = writeln!(
+        out,
+        "- import rows: `{}`",
+        snapshot.codedb_file_imports.len()
+    );
+    let _ = writeln!(out, "- blob-backed rows: `{blob_ready}`");
+    let _ = writeln!(out, "- metadata-only rows: `{metadata_only}`");
+    let _ = writeln!(
+        out,
+        "- flattened structured rows: `{structured_rows_total}`"
+    );
+    let _ = writeln!(out);
+    let _ = writeln!(out, "## Semantic Columns");
+    let _ = writeln!(out);
+    for column in [
+        "logical_owner",
+        "normalized_path",
+        "source_of_truth_class",
+        "file_kind",
+        "parser_hint",
+        "content_hash",
+        "blob_ref",
+        "import_safety_policy",
+        "reproduction_policy",
+        "import_mode",
+        "import_status",
+        "skip_reason",
+        "structured_table",
+        "structured_status",
+        "structured_row_count",
+        "structured_rows",
+        "last_observed",
+        "provenance",
+    ] {
+        let _ = writeln!(out, "- `{column}`");
+    }
+    let _ = writeln!(out);
+    let _ = writeln!(out, "## Structured Statuses");
+    let _ = writeln!(out);
+    for facet in facet_counts(
+        snapshot
+            .codedb_file_imports
+            .iter()
+            .map(|row| row.structured_status.as_str()),
+    ) {
+        let _ = writeln!(out, "- `{}`: `{}`", facet.key, facet.count);
+    }
+    let _ = writeln!(out);
+    let _ = writeln!(out, "## Source-of-Truth Classes");
+    let _ = writeln!(out);
+    for facet in facet_counts(
+        snapshot
+            .codedb_file_imports
+            .iter()
+            .map(|row| row.source_of_truth_class.as_str()),
+    ) {
+        let _ = writeln!(out, "- `{}`: `{}`", facet.key, facet.count);
+    }
+    let _ = writeln!(out);
+    let _ = writeln!(out, "## Structured Parser Hints");
+    let _ = writeln!(out);
+    for facet in facet_counts(
+        snapshot
+            .codedb_file_imports
+            .iter()
+            .filter(|row| row.structured_row_count > 0)
+            .map(|row| row.parser_hint.as_str()),
+    ) {
+        let _ = writeln!(out, "- `{}`: `{}`", facet.key, facet.count);
+    }
+    out
+}
+
+fn write_facet_section(out: &mut String, label: &str, rows: &[CatalogFacetCount]) {
+    let _ = writeln!(out, "### {label}");
+    let _ = writeln!(out);
+    if rows.is_empty() {
+        let _ = writeln!(out, "- none");
+    } else {
+        for row in rows {
+            let _ = writeln!(out, "- `{}`: `{}`", row.key, row.count);
+        }
+    }
+    let _ = writeln!(out);
+}
+
+fn env_value_source_and_value(row: &EnvVarRow) -> (&'static str, String) {
+    if let Some(value) = row.effective_value.as_deref() {
+        ("effective_value", value.to_string())
+    } else if let Some(value) = row.value.as_deref() {
+        ("value", value.to_string())
+    } else if let Some(value) = row.default_value.as_deref() {
+        ("default_value", value.to_string())
+    } else {
+        ("missing", "unset".to_string())
+    }
+}
+
+fn yes_no(value: bool) -> &'static str {
+    if value {
+        "yes"
+    } else {
+        "no"
+    }
+}
+
+fn markdown_inline_code(value: &str) -> String {
+    value.replace('`', "\\`")
+}
+
+fn stable_snapshot_for_render(
+    mut snapshot: CatalogSnapshot,
+    target_root: Option<&Path>,
+) -> CatalogSnapshot {
     snapshot.generated_by = "envctl catalog render".to_string();
     for row in &mut snapshot.observed_facts {
         row.observed_at = "catalog_render".to_string();
     }
+    if let Some(target_root) = target_root {
+        retarget_layout_rows(target_root, &mut snapshot.paths, &mut snapshot.env_vars);
+    }
     snapshot
+}
+
+fn retarget_layout_rows(target_root: &Path, paths: &mut [PathRow], env_vars: &mut [EnvVarRow]) {
+    let layout = MetaLayout::from_meta_root(target_root);
+    let path_map = layout
+        .entries()
+        .into_iter()
+        .map(|entry| (entry.key.to_string(), entry.path.display().to_string()))
+        .collect::<BTreeMap<_, _>>();
+    for row in paths
+        .iter_mut()
+        .filter(|row| row.source == "crates/engine/src/layout.rs")
+    {
+        if let Some(path) = path_map.get(&row.path_id) {
+            row.path = path.clone();
+            row.verification_status = layout_path_verification_status(Path::new(path));
+        }
+    }
+
+    let env_map = layout
+        .env_exports()
+        .into_iter()
+        .map(|(var, value)| (var.to_string(), value.display().to_string()))
+        .collect::<BTreeMap<_, _>>();
+    for row in env_vars.iter_mut().filter(|row| {
+        row.source == "crates/engine/src/layout.rs"
+            && row.producer == "layout"
+            && row.scope == "layout"
+    }) {
+        if let Some(value) = env_map.get(&row.var_name) {
+            row.value = Some(value.clone());
+            row.effective_value = Some(value.clone());
+        }
+    }
 }
 
 fn catalog_total_rows(snapshot: &CatalogSnapshot) -> usize {
@@ -2055,7 +2956,7 @@ fn ingest_layout_paths(repo_root: &Path, paths: &mut Vec<PathRow>, env_vars: &mu
             bridge: legacy || entry.key.contains("bridge") || entry.key.contains("legacy"),
             protected: is_protected_layout_key(entry.key),
             source: "crates/engine/src/layout.rs".to_string(),
-            verification_status: "not_checked".to_string(),
+            verification_status: layout_path_verification_status(&entry.path),
         });
     }
 
@@ -2072,6 +2973,26 @@ fn ingest_layout_paths(repo_root: &Path, paths: &mut Vec<PathRow>, env_vars: &mu
             source: "crates/engine/src/layout.rs".to_string(),
             generated_by: Some("envctl env".to_string()),
         });
+    }
+}
+
+fn layout_path_verification_status(path: &Path) -> String {
+    match std::fs::symlink_metadata(path) {
+        Ok(metadata) => {
+            let file_type = metadata.file_type();
+            if file_type.is_symlink() {
+                "symlink_exists".to_string()
+            } else if file_type.is_dir() {
+                "dir_exists".to_string()
+            } else if file_type.is_file() {
+                "file_exists".to_string()
+            } else {
+                "special_exists".to_string()
+            }
+        }
+        Err(err) if err.kind() == ErrorKind::NotFound => "missing".to_string(),
+        Err(err) if err.kind() == ErrorKind::PermissionDenied => "inaccessible".to_string(),
+        Err(_) => "error".to_string(),
     }
 }
 
@@ -2247,10 +3168,9 @@ fn ingest_codedb_file_imports(
     observed_at: &str,
     rows: &mut Vec<CodedbFileImportRow>,
 ) -> anyhow::Result<()> {
-    let inventory_path = repo_root.join("docs/generated/yazelix_file_target_inventory.json");
-    if !inventory_path.is_file() {
+    let Some(inventory_path) = resolve_yazelix_inventory_path(repo_root) else {
         return Ok(());
-    }
+    };
 
     let bytes = std::fs::read(&inventory_path).with_context(|| {
         format!(
@@ -2343,6 +3263,15 @@ fn ingest_codedb_file_imports(
     }
 
     Ok(())
+}
+
+fn resolve_yazelix_inventory_path(repo_root: &Path) -> Option<PathBuf> {
+    let relative = Path::new("docs/generated/yazelix_file_target_inventory.json");
+    let mut candidates = vec![repo_root.join(relative)];
+    if let Some(parent) = repo_root.parent() {
+        candidates.push(parent.join("yazelix").join(relative));
+    }
+    candidates.into_iter().find(|candidate| candidate.is_file())
 }
 
 fn structured_file_rows(path: &Path, parser_hint: &str) -> Vec<CodedbStructuredFileRow> {
@@ -3751,6 +4680,80 @@ mod tests {
     }
 
     #[test]
+    fn table_inventory_covers_all_catalog_tables() {
+        let root = fixture_root();
+        write_fixture(&root);
+        let manifest_dir = root.join("manifest");
+        let registry = Registry::load(&manifest_dir).unwrap();
+
+        let snapshot = scan(
+            CatalogScanSpec {
+                repo_root: root,
+                manifest_dir,
+            },
+            &registry,
+        )
+        .unwrap();
+
+        let inventory = table_inventory(&snapshot);
+        assert_eq!(inventory.len(), CatalogTableName::all().len());
+        assert!(inventory.iter().any(|row| {
+            row.table == "env_vars"
+                && row.rows == snapshot.env_vars.len()
+                && row.columns.iter().any(|column| column == "var_name")
+        }));
+        assert!(inventory
+            .iter()
+            .any(|row| row.table == "codedb_file_imports" && !row.purpose.is_empty()));
+    }
+
+    #[test]
+    fn analyze_snapshot_surfaces_env_and_toolchain_facets() {
+        let root = fixture_root();
+        write_fixture(&root);
+        let manifest_dir = root.join("manifest");
+        let registry = Registry::load(&manifest_dir).unwrap();
+
+        let snapshot = scan(
+            CatalogScanSpec {
+                repo_root: root,
+                manifest_dir,
+            },
+            &registry,
+        )
+        .unwrap();
+
+        let report = analyze_snapshot(&snapshot);
+        assert_eq!(report.summary.tables, CatalogTableName::all().len());
+        assert_eq!(report.summary.env_vars, snapshot.env_vars.len());
+        assert_eq!(report.summary.config_files, snapshot.config_files.len());
+        assert!(report
+            .config_file_kinds
+            .iter()
+            .any(|row| row.key == "agent_env" && row.count >= 1));
+        assert!(report
+            .env_producers
+            .iter()
+            .any(|row| row.key == "secrets_env_schema" && row.count >= 1));
+        assert!(report
+            .env_sensitive
+            .iter()
+            .any(|row| row.key == "sensitive" && row.count >= 1));
+        assert!(report
+            .path_verification_statuses
+            .iter()
+            .any(|row| row.key == "dir_exists" && row.count >= 1));
+        assert!(report
+            .path_verification_statuses
+            .iter()
+            .any(|row| row.key == "missing" && row.count >= 1));
+        assert!(report
+            .toolchain_signals
+            .iter()
+            .any(|row| row.signal_kind == "path" && row.source == "crates/engine/src/layout.rs"));
+    }
+
+    #[test]
     fn render_imports_yazelix_config_files_without_manifest() {
         let root = fixture_root();
         write_yazelix_fixture(&root);
@@ -3761,6 +4764,7 @@ mod tests {
                 repo_root: root,
                 manifest_dir: out.join("missing-manifest"),
                 out_dir: out.clone(),
+                target_root: None,
             },
             &Registry::empty(),
         )
@@ -3777,6 +4781,31 @@ mod tests {
         assert!(out
             .join("catalog/tables/codedb_file_imports.json")
             .is_file());
+    }
+
+    #[test]
+    fn scan_imports_yazelix_inventory_from_workspace_sibling_repo() {
+        let workspace_root = fixture_root();
+        let envctl_root = workspace_root.join("envctl");
+        let yazelix_root = workspace_root.join("yazelix");
+        write_fixture(&envctl_root);
+        write_yazelix_fixture(&yazelix_root);
+        let registry = Registry::empty();
+
+        let snapshot = scan(
+            CatalogScanSpec {
+                repo_root: envctl_root,
+                manifest_dir: workspace_root.join("missing-manifest"),
+            },
+            &registry,
+        )
+        .unwrap();
+
+        assert!(snapshot.codedb_file_imports.iter().any(|row| row.target_id
+            == "repo_settings_default"
+            && row
+                .provenance
+                .ends_with("yazelix/docs/generated/yazelix_file_target_inventory.json")));
     }
 
     #[test]
@@ -3826,6 +4855,7 @@ mod tests {
                 repo_root: root.clone(),
                 manifest_dir: manifest_dir.clone(),
                 out_dir: out_a.clone(),
+                target_root: None,
             },
             &registry,
         )
@@ -3835,6 +4865,7 @@ mod tests {
                 repo_root: root.clone(),
                 manifest_dir,
                 out_dir: out_b.clone(),
+                target_root: None,
             },
             &registry,
         )
@@ -3855,6 +4886,15 @@ mod tests {
             "shell/env.catalog.sh",
             "dashboard/mission-control.catalog.kdl",
             "systemd/user/envctl-catalog-check.service",
+            "docs/generated/current-database-file-inventory.md",
+            "docs/generated/catalog-table-inventory.md",
+            "docs/generated/env-var-inventory.md",
+            "docs/generated/toolchain-signal-inventory.md",
+            "docs/generated/codedb-import-targets.txt",
+            "docs/generated/codedb-content-blob-targets.txt",
+            "docs/generated/codedb-metadata-only-targets.txt",
+            "docs/generated/codedb-upload-inventory.md",
+            "docs/generated/codedb-semantic-coverage.md",
             "catalog/rendered-config-files.json",
         ] {
             assert!(out_a.join(rel).is_file(), "missing rendered file {rel}");
@@ -3872,6 +4912,18 @@ mod tests {
             render_tree_hashes(&out_b),
             "catalog render must be deterministic across output dirs"
         );
+
+        let env_inventory =
+            std::fs::read_to_string(out_a.join("docs/generated/env-var-inventory.md")).unwrap();
+        assert!(env_inventory.contains("# envctl Environment Variable Inventory"));
+        assert!(env_inventory.contains("ENVCTL_META_ROOT"));
+        assert!(env_inventory.contains("secrets_env_schema"));
+
+        let toolchain_inventory =
+            std::fs::read_to_string(out_a.join("docs/generated/toolchain-signal-inventory.md"))
+                .unwrap();
+        assert!(toolchain_inventory.contains("# envctl Toolchain Signal Inventory"));
+        assert!(toolchain_inventory.contains("crates/engine/src/layout.rs"));
     }
 
     #[test]
@@ -3886,6 +4938,7 @@ mod tests {
                 repo_root: root.clone(),
                 manifest_dir,
                 out_dir: root.join("rendered"),
+                target_root: None,
             },
             &registry,
         )
@@ -3921,6 +4974,55 @@ mod tests {
         assert_eq!(report.summary.tables, CatalogTableName::all().len());
         assert_eq!(report.summary.components, 2);
         assert!(report.summary.rows >= report.summary.components);
+    }
+
+    #[test]
+    fn render_can_retarget_layout_paths_and_env_exports() {
+        let root = fixture_root();
+        write_fixture(&root);
+        let manifest_dir = root.join("manifest");
+        let registry = Registry::load(&manifest_dir).unwrap();
+        let out = fixture_root();
+        let target_root = fixture_root().join("meta-root");
+        std::fs::create_dir_all(&target_root).unwrap();
+
+        let report = render(
+            CatalogRenderSpec {
+                repo_root: root,
+                manifest_dir,
+                out_dir: out.clone(),
+                target_root: Some(target_root.clone()),
+            },
+            &registry,
+        )
+        .unwrap();
+
+        assert_eq!(report.target_root, Some(target_root.display().to_string()));
+
+        let paths: Vec<PathRow> =
+            serde_json::from_slice(&std::fs::read(out.join("catalog/tables/paths.json")).unwrap())
+                .unwrap();
+        let env_vars: Vec<EnvVarRow> = serde_json::from_slice(
+            &std::fs::read(out.join("catalog/tables/env_vars.json")).unwrap(),
+        )
+        .unwrap();
+
+        let usr = paths
+            .iter()
+            .find(|row| row.path_id == "usr")
+            .expect("usr path row");
+        assert_eq!(usr.path, target_root.join("usr").display().to_string());
+
+        let expected_usr = target_root.join("usr").display().to_string();
+        let envctl_usr = env_vars
+            .iter()
+            .find(|row| row.var_name == "ENVCTL_USR" && row.producer == "layout")
+            .expect("layout env var row");
+        assert_eq!(envctl_usr.value.as_deref(), Some(expected_usr.as_str()));
+        assert_eq!(
+            envctl_usr.effective_value.as_deref(),
+            Some(expected_usr.as_str())
+        );
     }
 
     #[test]
@@ -4097,6 +5199,7 @@ mod tests {
         std::fs::create_dir_all(root.join(".handoff/loop")).unwrap();
         std::fs::create_dir_all(root.join("crates/engine/src")).unwrap();
         std::fs::create_dir_all(root.join("crates/secrets-engine/src")).unwrap();
+        std::fs::create_dir_all(root.join("usr/bin")).unwrap();
 
         std::fs::write(
             root.join("manifest/base.toml"),

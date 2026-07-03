@@ -59,6 +59,10 @@ pub enum Event {
     DashboardDeployed {
         outcome: DeployOutcome,
     },
+    /// Deterministic catalog projections rendered outside the repo root.
+    CatalogRendered {
+        report: Box<crate::catalog::CatalogRenderReport>,
+    },
     /// The migration/adoption report over the meta-hosted install topology. This
     /// is emitted by every `migrate` verb so the CLI and GUI consume one shared
     /// engine surface for scan/plan/apply/verify/purge.
