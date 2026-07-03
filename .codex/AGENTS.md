@@ -41,16 +41,16 @@ Use these workflow files as thin shims only; the authoritative workflow bodies r
 
 ## Runtime Gates
 
-- `.codex/hooks/flexnetos-runtime-gate.sh` is the tracked Codex runtime gate for
-  FlexNetOS sessions. It blocks peer-repo edits until a current git snapshot is
-  recorded and blocks profile, Home Manager, and desktop-launcher mutation until
-  Yazelix install-check proof, source-validation proof, and an explicit unlock
-  marker exist.
-- Session start and stop also fail closed unless the foundation context is
-  readable and initialized: Beads from `src/yazelix`, direct GitKB verification
-  and status from `src/yazelix` and `src/meta`, `meta project check`, and
-  `meta exec -- git-kb verify/status` across the meta project set.
+- The pre-cleanroom Codex runtime gate and `hooks.json` are archived evidence,
+  not active lifecycle wiring. Do not restore
+  `.codex/hooks/install-flexnetos-runtime-hooks.sh`, `.codex/hooks.json`, or
+  `.codex/hooks/flexnetos-runtime-gate.sh` from the archive.
+- Hooks remain mandatory for the control plane, but the replacement must be a
+  clean-room design owned by the root lifecycle contract. Until that rebuild
+  lands, envctl must keep `[features].hooks = false` and purge stale generated
+  `~/.codex/hooks.json` state.
 - Runtime copies under `/home/flexnetos/workspace/.codex` and
-  `/home/flexnetos/FlexNetOS/.codex` are installed from
-  `.codex/hooks/install-flexnetos-runtime-hooks.sh`; they point back to this
-  repo-owned script rather than carrying independent policy.
+  `/home/flexnetos/FlexNetOS/.codex` must not carry independent lifecycle hook
+  policy. Root lifecycle hooks are owned by
+  `/home/flexnetos/FlexNetOS/.codex/hooks.json` when the clean-room gate is
+  deliberately reintroduced.
