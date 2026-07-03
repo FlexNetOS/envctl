@@ -13,7 +13,7 @@ use crate::component::{Component, Hook, Phase};
 use crate::layout::{LayoutKind, MetaLayout};
 use crate::lock::{self, LockFile};
 use crate::model::Registry;
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
@@ -389,6 +389,12 @@ pub struct NixComponentRow {
     pub name: String,
     pub source_file: String,
     pub nix_surface: String,
+    pub owner_component: Option<String>,
+    pub profile_entry: Option<String>,
+    pub original_url: Option<String>,
+    pub profile_url: Option<String>,
+    pub store_paths: Vec<String>,
+    pub frontdoor_paths: Vec<String>,
     pub requires: Vec<String>,
     pub status: String,
     pub lock_hash: String,
@@ -416,7 +422,10 @@ pub struct PathRow {
     pub path: String,
     pub path_kind: String,
     pub owner_component: Option<String>,
+    pub owner_record_id: Option<String>,
     pub artifact_kind: String,
+    pub resolved_path: Option<String>,
+    pub link_target_id: Option<String>,
     pub canonical: bool,
     pub legacy: bool,
     pub bridge: bool,
@@ -639,6 +648,12 @@ pub fn scan(spec: CatalogScanSpec, registry: &Registry) -> anyhow::Result<Catalo
         &mut snapshot.component_hooks,
         &mut snapshot.env_vars,
     );
+    ingest_live_nix_profile(
+        &repo_root,
+        &mut snapshot.nix_components,
+        &mut snapshot.paths,
+    );
+    ingest_envctl_home_frontdoors(&repo_root, &mut snapshot.paths);
     ingest_layout_paths(&repo_root, &mut snapshot.paths, &mut snapshot.env_vars);
     ingest_env_schema_vars(&repo_root, &mut snapshot.env_vars);
     ingest_agent_files(&repo_root, &mut snapshot.agent_assets);
@@ -1965,6 +1980,12 @@ fn ingest_components(
                 name: component_row.name.clone(),
                 source_file: component_row.source_file.clone(),
                 nix_surface: nix_surface.to_string(),
+                owner_component: None,
+                profile_entry: None,
+                original_url: None,
+                profile_url: None,
+                store_paths: Vec::new(),
+                frontdoor_paths: Vec::new(),
                 requires: component_row.requires.clone(),
                 status: component_row.status.clone(),
                 lock_hash: component_row.lock_hash.clone(),
@@ -2005,6 +2026,313 @@ fn ingest_components(
             }
         }
     }
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+struct NixProfileList {
+    #[serde(default)]
+    elements: BTreeMap<String, NixProfileElement>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+struct NixProfileElement {
+    #[serde(default)]
+    active: bool,
+    #[serde(rename = "attrPath", default)]
+    attr_path: Option<String>,
+    #[serde(rename = "originalUrl", default)]
+    original_url: Option<String>,
+    #[serde(rename = "storePaths", default)]
+    store_paths: Vec<String>,
+    #[serde(default)]
+    url: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct NixProfileFrontdoor {
+    path: String,
+    resolved_path: String,
+    store_path: String,
+    path_kind: String,
+    artifact_kind: String,
+}
+
+fn ingest_live_nix_profile(
+    repo_root: &Path,
+    nix_components: &mut Vec<NixComponentRow>,
+    paths: &mut Vec<PathRow>,
+) {
+    let Some(home_dir) = catalog_home_dir() else {
+        return;
+    };
+    if !repo_root.starts_with(&home_dir) {
+        return;
+    }
+    let Some(profile) = load_nix_profile(&home_dir) else {
+        return;
+    };
+    let base_order = nix_components.len();
+    ingest_nix_profile_snapshot(&home_dir, &profile, nix_components, paths, base_order);
+}
+
+fn catalog_home_dir() -> Option<PathBuf> {
+    std::env::var_os("HOME").map(PathBuf::from)
+}
+
+fn load_nix_profile(home_dir: &Path) -> Option<NixProfileList> {
+    let profile_root = home_dir.join(".nix-profile");
+    if !profile_root.exists() {
+        return None;
+    }
+    let output = std::process::Command::new("nix")
+        .args(["profile", "list", "--json"])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    serde_json::from_slice(&output.stdout).ok()
+}
+
+fn ingest_nix_profile_snapshot(
+    home_dir: &Path,
+    profile: &NixProfileList,
+    nix_components: &mut Vec<NixComponentRow>,
+    paths: &mut Vec<PathRow>,
+    base_order: usize,
+) {
+    let profile_root = home_dir.join(".nix-profile");
+    let entries = profile
+        .elements
+        .iter()
+        .map(|(name, element)| (name.as_str(), element))
+        .collect::<Vec<_>>();
+    let frontdoors_by_entry = collect_nix_profile_frontdoors(&profile_root, &entries);
+    for (idx, (entry_name, element)) in entries.into_iter().enumerate() {
+        let owner_component = nix_profile_owner_component(entry_name, element);
+        let row_id = format!("profile:{entry_name}");
+        let mut store_paths = element.store_paths.clone();
+        store_paths.sort();
+        let mut frontdoor_paths = frontdoors_by_entry
+            .get(entry_name)
+            .cloned()
+            .unwrap_or_default();
+        frontdoor_paths.sort_by(|a, b| {
+            a.path
+                .cmp(&b.path)
+                .then(a.resolved_path.cmp(&b.resolved_path))
+        });
+        let lock_hash = nix_profile_lock_hash(entry_name, element, &store_paths, &frontdoor_paths);
+        nix_components.push(NixComponentRow {
+            component_id: row_id.clone(),
+            name: entry_name.to_string(),
+            source_file: "nix profile list --json".to_string(),
+            nix_surface: "nix_profile".to_string(),
+            owner_component: owner_component.clone(),
+            profile_entry: Some(entry_name.to_string()),
+            original_url: element.original_url.clone(),
+            profile_url: element.url.clone(),
+            store_paths: store_paths.clone(),
+            frontdoor_paths: frontdoor_paths.iter().map(|fd| fd.path.clone()).collect(),
+            requires: Vec::new(),
+            status: if element.active {
+                "active".to_string()
+            } else {
+                "inactive".to_string()
+            },
+            lock_hash,
+            resolved_order: base_order + idx + 1,
+        });
+        for store_path in &store_paths {
+            let store_id = nix_store_path_id(entry_name, store_path);
+            paths.push(PathRow {
+                path_id: store_id.clone(),
+                path: store_path.clone(),
+                path_kind: "nix_store_path".to_string(),
+                owner_component: owner_component.clone(),
+                owner_record_id: Some(row_id.clone()),
+                artifact_kind: "nix_store_object".to_string(),
+                resolved_path: None,
+                link_target_id: None,
+                canonical: true,
+                legacy: false,
+                bridge: false,
+                protected: true,
+                source: "nix profile list --json".to_string(),
+                verification_status: if element.active {
+                    "listed_active".to_string()
+                } else {
+                    "listed_inactive".to_string()
+                },
+            });
+        }
+        for frontdoor in &frontdoor_paths {
+            let target_id = nix_store_path_id(entry_name, &frontdoor.store_path);
+            paths.push(PathRow {
+                path_id: nix_frontdoor_path_id(entry_name, &frontdoor.path),
+                path: frontdoor.path.clone(),
+                path_kind: frontdoor.path_kind.clone(),
+                owner_component: owner_component.clone(),
+                owner_record_id: Some(row_id.clone()),
+                artifact_kind: frontdoor.artifact_kind.clone(),
+                resolved_path: Some(frontdoor.resolved_path.clone()),
+                link_target_id: Some(target_id),
+                canonical: false,
+                legacy: false,
+                bridge: true,
+                protected: false,
+                source: "nix profile list --json".to_string(),
+                verification_status: "resolved".to_string(),
+            });
+        }
+    }
+}
+
+fn collect_nix_profile_frontdoors(
+    profile_root: &Path,
+    entries: &[(&str, &NixProfileElement)],
+) -> BTreeMap<String, Vec<NixProfileFrontdoor>> {
+    let mut by_entry: BTreeMap<String, Vec<NixProfileFrontdoor>> = BTreeMap::new();
+    let mut store_index = Vec::new();
+    for (entry_name, element) in entries {
+        for store_path in &element.store_paths {
+            store_index.push((store_path.clone(), (*entry_name).to_string()));
+        }
+    }
+    store_index.sort_by(|a, b| b.0.len().cmp(&a.0.len()).then(a.0.cmp(&b.0)));
+
+    for (relative_dir, path_kind, artifact_kind) in [
+        (
+            "bin",
+            "nix_profile_frontdoor_bin",
+            "nix_profile_frontdoor_symlink",
+        ),
+        (
+            "share/applications",
+            "nix_profile_frontdoor_desktop",
+            "nix_profile_frontdoor_desktop_entry",
+        ),
+    ] {
+        let dir = profile_root.join(relative_dir);
+        let Ok(read_dir) = std::fs::read_dir(&dir) else {
+            continue;
+        };
+        for entry in read_dir.flatten() {
+            let path = entry.path();
+            let Ok(metadata) = std::fs::symlink_metadata(&path) else {
+                continue;
+            };
+            if !metadata.file_type().is_symlink() {
+                continue;
+            }
+            let Ok(resolved_path) = path.canonicalize() else {
+                continue;
+            };
+            let resolved = resolved_path.display().to_string();
+            let Some((store_path, owner_entry)) = store_index
+                .iter()
+                .find(|(store_path, _)| resolved.starts_with(store_path))
+                .cloned()
+            else {
+                continue;
+            };
+            by_entry
+                .entry(owner_entry)
+                .or_default()
+                .push(NixProfileFrontdoor {
+                    path: path.display().to_string(),
+                    resolved_path: resolved,
+                    store_path,
+                    path_kind: path_kind.to_string(),
+                    artifact_kind: artifact_kind.to_string(),
+                });
+        }
+    }
+    by_entry
+}
+
+fn nix_profile_owner_component(entry_name: &str, element: &NixProfileElement) -> Option<String> {
+    let mut candidates = Vec::new();
+    candidates.push(entry_name.to_string());
+    if let Some(attr_path) = &element.attr_path {
+        candidates.push(attr_path.clone());
+    }
+    if let Some(original_url) = &element.original_url {
+        candidates.push(original_url.clone());
+    }
+    if let Some(url) = &element.url {
+        candidates.push(url.clone());
+    }
+    if candidates
+        .iter()
+        .any(|candidate| candidate.contains("yazelix"))
+    {
+        Some("yazelix".to_string())
+    } else {
+        None
+    }
+}
+
+fn nix_profile_lock_hash(
+    entry_name: &str,
+    element: &NixProfileElement,
+    store_paths: &[String],
+    frontdoors: &[NixProfileFrontdoor],
+) -> String {
+    let mut out = String::new();
+    out.push_str(entry_name);
+    out.push('\n');
+    if let Some(attr_path) = &element.attr_path {
+        out.push_str(attr_path);
+    }
+    out.push('\n');
+    if let Some(original_url) = &element.original_url {
+        out.push_str(original_url);
+    }
+    out.push('\n');
+    if let Some(url) = &element.url {
+        out.push_str(url);
+    }
+    out.push('\n');
+    for store_path in store_paths {
+        out.push_str(store_path);
+        out.push('\n');
+    }
+    for frontdoor in frontdoors {
+        out.push_str(&frontdoor.path);
+        out.push('\n');
+        out.push_str(&frontdoor.resolved_path);
+        out.push('\n');
+    }
+    sha256_hex(out.as_bytes())
+}
+
+fn nix_store_path_id(entry_name: &str, store_path: &str) -> String {
+    format!(
+        "nix_store:{}:{}",
+        sanitize_catalog_id(entry_name),
+        sha256_hex(store_path.as_bytes())
+    )
+}
+
+fn nix_frontdoor_path_id(entry_name: &str, frontdoor_path: &str) -> String {
+    format!(
+        "nix_frontdoor:{}:{}",
+        sanitize_catalog_id(entry_name),
+        sha256_hex(frontdoor_path.as_bytes())
+    )
+}
+
+fn sanitize_catalog_id(raw: &str) -> String {
+    raw.chars()
+        .map(|ch| {
+            if ch.is_ascii_alphanumeric() || ch == '_' || ch == '-' {
+                ch
+            } else {
+                '_'
+            }
+        })
+        .collect()
 }
 
 fn nix_component_surface(row: &ComponentRow) -> Option<&'static str> {
@@ -2086,6 +2414,58 @@ fn hook_row(
     }
 }
 
+fn ingest_envctl_home_frontdoors(repo_root: &Path, paths: &mut Vec<PathRow>) {
+    if !repo_root.join("home").is_dir() {
+        return;
+    }
+
+    let meta_root = catalog_meta_root(repo_root);
+    for spec in envctl_home_frontdoor_specs() {
+        let source_abs = repo_root.join(spec.repo_relative_source);
+        if !source_abs.is_file() {
+            continue;
+        }
+
+        let source_rel = spec.repo_relative_source;
+        let source_id = envctl_home_source_path_id(source_rel);
+        let source_display = source_abs.display().to_string();
+        paths.push(PathRow {
+            path_id: source_id.clone(),
+            path: source_display.clone(),
+            path_kind: "envctl_home_source".to_string(),
+            owner_component: Some("home-config-links".to_string()),
+            owner_record_id: Some("home-config-links".to_string()),
+            artifact_kind: "envctl_home_source_file".to_string(),
+            resolved_path: None,
+            link_target_id: None,
+            canonical: true,
+            legacy: false,
+            bridge: false,
+            protected: true,
+            source: source_rel.to_string(),
+            verification_status: "tracked".to_string(),
+        });
+
+        let runtime_abs = meta_root.join(spec.runtime_relative_path);
+        paths.push(PathRow {
+            path_id: envctl_home_frontdoor_path_id(spec.runtime_relative_path),
+            path: runtime_abs.display().to_string(),
+            path_kind: spec.path_kind.to_string(),
+            owner_component: Some("home-config-links".to_string()),
+            owner_record_id: Some("home-config-links".to_string()),
+            artifact_kind: spec.artifact_kind.to_string(),
+            resolved_path: Some(source_display),
+            link_target_id: Some(source_id),
+            canonical: true,
+            legacy: false,
+            bridge: true,
+            protected: true,
+            source: "manifest/components.d/portability-links.toml".to_string(),
+            verification_status: "declared".to_string(),
+        });
+    }
+}
+
 fn ingest_layout_paths(repo_root: &Path, paths: &mut Vec<PathRow>, env_vars: &mut Vec<EnvVarRow>) {
     let layout = MetaLayout::from_meta_root(repo_root);
     for entry in layout.entries() {
@@ -2096,7 +2476,10 @@ fn ingest_layout_paths(repo_root: &Path, paths: &mut Vec<PathRow>, env_vars: &mu
             path: entry.path.display().to_string(),
             path_kind: layout_path_kind(entry.key, entry.purpose).to_string(),
             owner_component: None,
+            owner_record_id: None,
             artifact_kind: entry.purpose.to_string(),
+            resolved_path: None,
+            link_target_id: None,
             canonical,
             legacy,
             bridge: legacy || entry.key.contains("bridge") || entry.key.contains("legacy"),
@@ -2713,9 +3096,19 @@ fn discover_control_plane_files(repo_root: &Path, manifest_dir: &Path) -> Vec<Pa
     collect_matching_files(&repo_root.join(".handoff"), &["jsonl"], &mut paths);
     collect_matching_files(&repo_root.join(".handoff/loop"), &["md"], &mut paths);
     collect_matching_files(&repo_root.join(".handoff/decisions"), &["md"], &mut paths);
+    collect_envctl_home_files(repo_root, &mut paths);
     collect_yazelix_config_files(repo_root, &mut paths);
     paths.sort();
     paths
+}
+
+fn collect_envctl_home_files(repo_root: &Path, out: &mut Vec<PathBuf>) {
+    for rel in envctl_home_frontdoor_specs()
+        .iter()
+        .map(|spec| spec.repo_relative_source)
+    {
+        push_if_present(out, repo_root.join(rel));
+    }
 }
 
 fn collect_yazelix_config_files(repo_root: &Path, out: &mut Vec<PathBuf>) {
@@ -3333,6 +3726,10 @@ fn infer_format(rel: &str) -> &'static str {
 fn infer_file_kind(manifest_dir: &Path, path: &Path, rel: &str) -> &'static str {
     if path.starts_with(manifest_dir) && rel.ends_with(".toml") {
         "manifest"
+    } else if rel.starts_with("home/.config/yazelix/") {
+        "envctl_home_yazelix_config"
+    } else if rel == "home/.config/nushell/meta-usr-path.nu" {
+        "envctl_home_nushell_path"
     } else if rel == "settings_default.jsonc" {
         "yazelix_settings_default"
     } else if rel.starts_with("config_metadata/") {
@@ -3391,6 +3788,10 @@ fn owner_component_from_path(rel: &str) -> Option<String> {
     if rel.starts_with("manifest/components.d/") && rel.ends_with(".toml") {
         rel.rsplit_once('/')
             .map(|(_, name)| name.trim_end_matches(".toml").to_string())
+    } else if rel.starts_with("home/.config/yazelix/")
+        || rel == "home/.config/nushell/meta-usr-path.nu"
+    {
+        Some("home-config-links".to_string())
     } else if rel.starts_with("manifest/")
         && rel.ends_with(".toml")
         && rel != "manifest/envctl.lock"
@@ -3422,6 +3823,8 @@ fn setting_scope(file_kind: &str) -> &'static str {
         "envctl_lock" | "agent_env_lock" => "lock",
         "agent_env" => "agent_env",
         "codex_config" | "mcp_config" => "agent_runtime",
+        "envctl_home_yazelix_config" => "yazelix",
+        "envctl_home_nushell_path" => "shell",
         "secretd_config" | "secrets_env_schema" | "secrets_proto" => "secrets",
         "yazelix_settings_default"
         | "yazelix_config_metadata"
@@ -3441,6 +3844,8 @@ fn setting_precedence(file_kind: &str) -> u32 {
         "codex_config" | "mcp_config" => 80,
         "agent_env" => 70,
         "manifest" => 60,
+        "envctl_home_yazelix_config" => 88,
+        "envctl_home_nushell_path" => 82,
         "secretd_config" => 55,
         "secrets_env_schema" | "secrets_proto" => 45,
         "yazelix_settings_default" | "yazelix_config_metadata" => 90,
@@ -3460,6 +3865,94 @@ fn config_id(rel: &str) -> String {
         .collect::<String>()
         .trim_matches('_')
         .to_string()
+}
+
+#[derive(Clone, Copy)]
+struct EnvctlHomeFrontdoorSpec {
+    repo_relative_source: &'static str,
+    runtime_relative_path: &'static str,
+    path_kind: &'static str,
+    artifact_kind: &'static str,
+}
+
+fn envctl_home_frontdoor_specs() -> &'static [EnvctlHomeFrontdoorSpec] {
+    &[
+        EnvctlHomeFrontdoorSpec {
+            repo_relative_source: "home/.config/yazelix/settings.jsonc",
+            runtime_relative_path: ".config/yazelix/settings.jsonc",
+            path_kind: "envctl_home_yazelix_frontdoor",
+            artifact_kind: "envctl_managed_runtime_config",
+        },
+        EnvctlHomeFrontdoorSpec {
+            repo_relative_source: "home/.config/yazelix/shell_bash.sh",
+            runtime_relative_path: ".config/yazelix/shell_bash.sh",
+            path_kind: "envctl_home_yazelix_frontdoor",
+            artifact_kind: "envctl_managed_runtime_config",
+        },
+        EnvctlHomeFrontdoorSpec {
+            repo_relative_source: "home/.config/yazelix/shell_nu.nu",
+            runtime_relative_path: ".config/yazelix/shell_nu.nu",
+            path_kind: "envctl_home_yazelix_frontdoor",
+            artifact_kind: "envctl_managed_runtime_config",
+        },
+        EnvctlHomeFrontdoorSpec {
+            repo_relative_source: "home/.config/yazelix/terminal_ghostty.conf",
+            runtime_relative_path: ".config/yazelix/terminal_ghostty.conf",
+            path_kind: "envctl_home_yazelix_frontdoor",
+            artifact_kind: "envctl_managed_runtime_config",
+        },
+        EnvctlHomeFrontdoorSpec {
+            repo_relative_source: "home/.config/yazelix/tombi.toml",
+            runtime_relative_path: ".config/yazelix/tombi.toml",
+            path_kind: "envctl_home_yazelix_frontdoor",
+            artifact_kind: "envctl_managed_runtime_config",
+        },
+        EnvctlHomeFrontdoorSpec {
+            repo_relative_source: "home/.config/yazelix/helix/steel_plugins/README.md",
+            runtime_relative_path: ".config/yazelix/helix/steel_plugins/README.md",
+            path_kind: "envctl_home_yazelix_frontdoor",
+            artifact_kind: "envctl_managed_runtime_config",
+        },
+        EnvctlHomeFrontdoorSpec {
+            repo_relative_source: "home/.config/yazelix/configs/zellij/layouts/mission-control.kdl",
+            runtime_relative_path: ".config/yazelix/configs/zellij/layouts/mission-control.kdl",
+            path_kind: "envctl_home_yazelix_frontdoor",
+            artifact_kind: "envctl_managed_runtime_layout",
+        },
+        EnvctlHomeFrontdoorSpec {
+            repo_relative_source: "home/.config/nushell/meta-usr-path.nu",
+            runtime_relative_path: ".config/nushell/meta-usr-path.nu",
+            path_kind: "envctl_home_nushell_frontdoor",
+            artifact_kind: "envctl_managed_shell_overlay",
+        },
+    ]
+}
+
+fn catalog_meta_root(repo_root: &Path) -> PathBuf {
+    if let Some(root) = std::env::var_os("META_ROOT").filter(|value| !value.is_empty()) {
+        return PathBuf::from(root);
+    }
+    if repo_root
+        .parent()
+        .and_then(|parent| parent.file_name())
+        .and_then(|name| name.to_str())
+        == Some("src")
+    {
+        return repo_root
+            .parent()
+            .and_then(|parent| parent.parent())
+            .map(Path::to_path_buf)
+            .unwrap_or_else(|| repo_root.to_path_buf());
+    }
+    repo_root.to_path_buf()
+}
+
+fn envctl_home_source_path_id(source_rel: &str) -> String {
+    format!("envctl_home_source:{}", config_id(source_rel))
+}
+
+fn envctl_home_frontdoor_path_id(runtime_rel: &str) -> String {
+    format!("envctl_home_frontdoor:{}", config_id(runtime_rel))
 }
 
 fn phase_name(phase: Phase) -> &'static str {
@@ -3627,29 +4120,39 @@ mod tests {
         .unwrap();
 
         assert_eq!(snapshot.components.len(), 2, "{:#?}", snapshot.components);
-        assert!(snapshot
-            .components
-            .iter()
-            .any(|row| row.component_id == "base" && row.has_detect));
+        assert!(
+            snapshot
+                .components
+                .iter()
+                .any(|row| row.component_id == "base" && row.has_detect)
+        );
         assert!(snapshot.nix_components.is_empty());
-        assert!(snapshot
-            .component_hooks
-            .iter()
-            .any(|row| row.component_id == "extra" && row.phase == "install"));
+        assert!(
+            snapshot
+                .component_hooks
+                .iter()
+                .any(|row| row.component_id == "extra" && row.phase == "install")
+        );
         assert!(snapshot.paths.iter().any(|row| row.path_id == "bin"));
-        assert!(snapshot
-            .config_files
-            .iter()
-            .any(|row| row.path == "agent-env.yaml" && row.file_kind == "agent_env"));
-        assert!(snapshot
-            .config_files
-            .iter()
-            .any(|row| row.path == "mcp_hub/registry.json" && row.file_kind == "hub_registry"));
-        assert!(snapshot
-            .config_files
-            .iter()
-            .any(|row| row.path == "crates/secrets-engine/src/seam.rs"
-                && row.file_kind == "secrets_env_schema"));
+        assert!(
+            snapshot
+                .config_files
+                .iter()
+                .any(|row| row.path == "agent-env.yaml" && row.file_kind == "agent_env")
+        );
+        assert!(
+            snapshot
+                .config_files
+                .iter()
+                .any(|row| row.path == "mcp_hub/registry.json" && row.file_kind == "hub_registry")
+        );
+        assert!(
+            snapshot
+                .config_files
+                .iter()
+                .any(|row| row.path == "crates/secrets-engine/src/seam.rs"
+                    && row.file_kind == "secrets_env_schema")
+        );
         assert!(snapshot.settings.iter().any(
             |row| row.setting_key == "components[0].source" || row.setting_key == "sources[0]"
         ));
@@ -3665,25 +4168,33 @@ mod tests {
                 && row.scope == "schema"
                 && row.sensitive
         }));
-        assert!(snapshot
-            .agent_assets
-            .iter()
-            .any(|row| row.asset_kind == "skill" && row.name == "demo"));
-        assert!(snapshot
-            .registries
-            .iter()
-            .any(|row| row.registry_kind == "hub" && row.entry_id == "demo-tool"));
-        assert!(snapshot
-            .observed_facts
-            .iter()
-            .any(|row| row.fact_id == "catalog.table_count.components"));
+        assert!(
+            snapshot
+                .agent_assets
+                .iter()
+                .any(|row| row.asset_kind == "skill" && row.name == "demo")
+        );
+        assert!(
+            snapshot
+                .registries
+                .iter()
+                .any(|row| row.registry_kind == "hub" && row.entry_id == "demo-tool")
+        );
+        assert!(
+            snapshot
+                .observed_facts
+                .iter()
+                .any(|row| row.fact_id == "catalog.table_count.components")
+        );
 
         let env_vars = snapshot.table_value(CatalogTableName::EnvVars);
-        assert!(env_vars
-            .as_array()
-            .unwrap()
-            .iter()
-            .any(|row| { row.get("var_name").and_then(|v| v.as_str()) == Some("API_TOKEN") }));
+        assert!(
+            env_vars
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|row| { row.get("var_name").and_then(|v| v.as_str()) == Some("API_TOKEN") })
+        );
     }
 
     #[test]
@@ -3728,12 +4239,14 @@ mod tests {
                 && row.format == "nushell"
                 && row.parse_status == "ok"
         }));
-        assert!(snapshot
-            .settings
-            .iter()
-            .any(|row| row.source_file == "settings_default.jsonc"
-                && row.scope == "yazelix"
-                && row.precedence == 90));
+        assert!(
+            snapshot
+                .settings
+                .iter()
+                .any(|row| row.source_file == "settings_default.jsonc"
+                    && row.scope == "yazelix"
+                    && row.precedence == 90)
+        );
         assert!(snapshot.settings.iter().any(|row| {
             row.source_file == "nushell/config/config.nu"
                 && row.setting_key == "source_lines"
@@ -3826,9 +4339,10 @@ mod tests {
             serde_json::from_slice(&std::fs::read(config_files_path).unwrap()).unwrap();
         assert!(rows.iter().any(|row| row.path == "settings_default.jsonc"
             && row.file_kind == "yazelix_settings_default"));
-        assert!(out
-            .join("catalog/tables/codedb_file_imports.json")
-            .is_file());
+        assert!(
+            out.join("catalog/tables/codedb_file_imports.json")
+                .is_file()
+        );
     }
 
     #[test]
@@ -3858,10 +4372,12 @@ mod tests {
             row.drift_kind == "parse_error" && row.subject_id == ".mcp.json" && !row.mutating
         }));
         assert!(report.summary.lock_drifts > 0, "{report:#?}");
-        assert!(report
-            .drift
-            .iter()
-            .any(|row| row.drift_kind.starts_with("lock_")));
+        assert!(
+            report
+                .drift
+                .iter()
+                .any(|row| row.drift_kind.starts_with("lock_"))
+        );
     }
 
     #[test]
@@ -4038,10 +4554,180 @@ name = "nix-portable"
         }));
         let table_value = snapshot.table_value(CatalogTableName::NixComponents);
         assert_eq!(table_value.as_array().unwrap().len(), 3);
-        assert!(snapshot
-            .observed_facts
-            .iter()
-            .any(|row| row.fact_id == "catalog.table_count.nix_components"));
+        assert!(
+            snapshot
+                .observed_facts
+                .iter()
+                .any(|row| row.fact_id == "catalog.table_count.nix_components")
+        );
+    }
+
+    #[test]
+    fn ingest_nix_profile_adds_frontdoor_and_store_provenance_rows() {
+        let home = fixture_root();
+        let profile_root = home.join(".nix-profile");
+        std::fs::create_dir_all(profile_root.join("bin")).unwrap();
+        std::fs::create_dir_all(profile_root.join("share/applications")).unwrap();
+
+        let store_root = home.join("fake-store/yazelix-flexnetos-foundation");
+        std::fs::create_dir_all(store_root.join("bin")).unwrap();
+        std::fs::create_dir_all(store_root.join("share/applications")).unwrap();
+        std::fs::write(store_root.join("bin/yzx"), "#!/bin/sh\n").unwrap();
+        std::fs::write(
+            store_root.join("share/applications/com.yazelix.Yazelix.Mars.desktop"),
+            "[Desktop Entry]\nName=Yazelix\n",
+        )
+        .unwrap();
+
+        std::os::unix::fs::symlink(store_root.join("bin/yzx"), profile_root.join("bin/yzx"))
+            .unwrap();
+        std::os::unix::fs::symlink(
+            store_root.join("share/applications/com.yazelix.Yazelix.Mars.desktop"),
+            profile_root.join("share/applications/com.yazelix.Yazelix.Mars.desktop"),
+        )
+        .unwrap();
+
+        let mut profile = NixProfileList::default();
+        profile.elements.insert(
+            "yazelix_flexnetos_foundation".to_string(),
+            NixProfileElement {
+                active: true,
+                attr_path: Some("packages.x86_64-linux.yazelix_flexnetos_foundation".to_string()),
+                original_url: Some("path:/home/flexnetos/FlexNetOS/src/yazelix".to_string()),
+                store_paths: vec![store_root.display().to_string()],
+                url: Some("path:/home/flexnetos/FlexNetOS/src/yazelix".to_string()),
+            },
+        );
+
+        let mut nix_components = Vec::new();
+        let mut paths = Vec::new();
+        ingest_nix_profile_snapshot(&home, &profile, &mut nix_components, &mut paths, 0);
+
+        assert!(nix_components.iter().any(|row| {
+            row.component_id == "profile:yazelix_flexnetos_foundation"
+                && row.nix_surface == "nix_profile"
+                && row.owner_component.as_deref() == Some("yazelix")
+                && row.frontdoor_paths
+                    == vec![
+                        profile_root.join("bin/yzx").display().to_string(),
+                        profile_root
+                            .join("share/applications/com.yazelix.Yazelix.Mars.desktop")
+                            .display()
+                            .to_string(),
+                    ]
+                && row.store_paths == vec![store_root.display().to_string()]
+        }));
+
+        let store_path_id = nix_store_path_id(
+            "yazelix_flexnetos_foundation",
+            &store_root.display().to_string(),
+        );
+        assert!(paths.iter().any(|row| {
+            row.path_id == store_path_id
+                && row.path_kind == "nix_store_path"
+                && row.owner_component.as_deref() == Some("yazelix")
+                && row.owner_record_id.as_deref() == Some("profile:yazelix_flexnetos_foundation")
+                && row.artifact_kind == "nix_store_object"
+                && row.canonical
+                && row.protected
+        }));
+        assert!(paths.iter().any(|row| {
+            row.path == profile_root.join("bin/yzx").display().to_string()
+                && row.path_kind == "nix_profile_frontdoor_bin"
+                && row.resolved_path.as_deref()
+                    == Some(&store_root.join("bin/yzx").display().to_string())
+                && row.link_target_id.as_deref() == Some(store_path_id.as_str())
+                && row.owner_component.as_deref() == Some("yazelix")
+                && row.verification_status == "resolved"
+        }));
+        assert!(paths.iter().any(|row| {
+            row.path
+                == profile_root
+                    .join("share/applications/com.yazelix.Yazelix.Mars.desktop")
+                    .display()
+                    .to_string()
+                && row.path_kind == "nix_profile_frontdoor_desktop"
+                && row.resolved_path.as_deref()
+                    == Some(
+                        &store_root
+                            .join("share/applications/com.yazelix.Yazelix.Mars.desktop")
+                            .display()
+                            .to_string(),
+                    )
+                && row.link_target_id.as_deref() == Some(store_path_id.as_str())
+                && row.owner_component.as_deref() == Some("yazelix")
+        }));
+    }
+
+    #[test]
+    fn scan_catalogs_envctl_home_yazelix_sources_and_frontdoors() {
+        let root = fixture_root();
+        std::fs::create_dir_all(root.join("manifest/components.d")).unwrap();
+        std::fs::write(
+            root.join("manifest/components.d/portability-links.toml"),
+            "[[component]]\nid = \"home-config-links\"\nname = \"home-config-links\"\n",
+        )
+        .unwrap();
+        write_envctl_home_fixture(&root);
+
+        let snapshot = scan(
+            CatalogScanSpec {
+                repo_root: root.clone(),
+                manifest_dir: root.join("manifest"),
+            },
+            &Registry::empty(),
+        )
+        .unwrap();
+
+        let source_rel = "home/.config/yazelix/settings.jsonc";
+        let source_abs = root.join(source_rel).display().to_string();
+        let runtime_abs = root
+            .join(".config/yazelix/settings.jsonc")
+            .display()
+            .to_string();
+        let source_id = envctl_home_source_path_id(source_rel);
+
+        assert!(snapshot.config_files.iter().any(|row| {
+            row.path == source_rel
+                && row.file_kind == "envctl_home_yazelix_config"
+                && row.owner_component.as_deref() == Some("home-config-links")
+                && row.parse_status == "ok"
+        }));
+        assert!(snapshot.config_files.iter().any(|row| {
+            row.path == "home/.config/nushell/meta-usr-path.nu"
+                && row.file_kind == "envctl_home_nushell_path"
+                && row.owner_component.as_deref() == Some("home-config-links")
+        }));
+        assert!(snapshot.settings.iter().any(|row| {
+            row.source_file == source_rel
+                && row.scope == "yazelix"
+                && row.precedence == 88
+                && row.setting_key == "default_shell"
+                && row.value == "nu"
+        }));
+        assert!(snapshot.settings.iter().any(|row| {
+            row.source_file == "home/.config/nushell/meta-usr-path.nu"
+                && row.scope == "shell"
+                && row.setting_key == "source_lines"
+                && row.value.contains("meta-usr-path")
+        }));
+        assert!(snapshot.paths.iter().any(|row| {
+            row.path_id == source_id
+                && row.path == source_abs
+                && row.path_kind == "envctl_home_source"
+                && row.owner_component.as_deref() == Some("home-config-links")
+                && row.verification_status == "tracked"
+        }));
+        assert!(snapshot.paths.iter().any(|row| {
+            row.path == runtime_abs
+                && row.path_kind == "envctl_home_yazelix_frontdoor"
+                && row.owner_component.as_deref() == Some("home-config-links")
+                && row.resolved_path.as_deref() == Some(source_abs.as_str())
+                && row.link_target_id.as_deref() == Some(source_id.as_str())
+                && row.bridge
+                && row.protected
+                && row.verification_status == "declared"
+        }));
     }
 
     #[test]
@@ -4070,18 +4756,24 @@ name = "nix-portable"
         assert!(!report.summary.applied);
         assert_eq!(report.summary.verifier_status, "preview_only");
         assert!(report.summary.planned_actions > 0, "{report:#?}");
-        assert!(report
-            .planned_actions
-            .iter()
-            .any(|row| row.action_kind == "catalog_lock_apply"));
-        assert!(report
-            .planned_actions
-            .iter()
-            .any(|row| row.action_kind == "review_render_projection"));
-        assert!(report
-            .render
-            .as_ref()
-            .is_some_and(|render| render.summary.generated_files > 0));
+        assert!(
+            report
+                .planned_actions
+                .iter()
+                .any(|row| row.action_kind == "catalog_lock_apply")
+        );
+        assert!(
+            report
+                .planned_actions
+                .iter()
+                .any(|row| row.action_kind == "review_render_projection")
+        );
+        assert!(
+            report
+                .render
+                .as_ref()
+                .is_some_and(|render| render.summary.generated_files > 0)
+        );
         assert!(out.join("catalog/scan.json").is_file());
     }
 
@@ -4313,6 +5005,52 @@ command = "context7"
 const ENVCTL_SEED_TOKEN: &str = "ENVCTL_SEED_TOKEN";
 const ENVCTL_SEED_TOKEN_FILE: &str = "ENVCTL_SEED_TOKEN_FILE";
 "#,
+        )
+        .unwrap();
+    }
+
+    fn write_envctl_home_fixture(root: &Path) {
+        std::fs::create_dir_all(root.join("home/.config/yazelix/configs/zellij/layouts")).unwrap();
+        std::fs::create_dir_all(root.join("home/.config/yazelix/helix/steel_plugins")).unwrap();
+        std::fs::create_dir_all(root.join("home/.config/nushell")).unwrap();
+        std::fs::write(
+            root.join("home/.config/yazelix/settings.jsonc"),
+            "{\n  \"default_shell\": \"nu\"\n}\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/yazelix/shell_bash.sh"),
+            "export YAZELIX_ACTIVE=1\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/yazelix/shell_nu.nu"),
+            "source ./meta-usr-path.nu\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/yazelix/terminal_ghostty.conf"),
+            "theme = dawn\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/yazelix/tombi.toml"),
+            "[ui]\nlayout = \"stack\"\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/yazelix/helix/steel_plugins/README.md"),
+            "# steel plugins\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/yazelix/configs/zellij/layouts/mission-control.kdl"),
+            "layout {\n    pane\n}\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/nushell/meta-usr-path.nu"),
+            "source ./meta-usr-path.nu\n",
         )
         .unwrap();
     }
