@@ -2420,21 +2420,22 @@ fn ingest_envctl_home_frontdoors(repo_root: &Path, paths: &mut Vec<PathRow>) {
     }
 
     let meta_root = catalog_meta_root(repo_root);
-    for spec in envctl_home_frontdoor_specs() {
-        let source_abs = repo_root.join(spec.repo_relative_source);
-        if !source_abs.is_file() {
+    for source_rel in collect_envctl_home_managed_relpaths(repo_root) {
+        let Some(runtime_rel) = envctl_home_runtime_relative_path(&source_rel) else {
             continue;
-        }
-
-        let source_rel = spec.repo_relative_source;
-        let source_id = envctl_home_source_path_id(source_rel);
+        };
+        let Some(owner_component) = envctl_home_owner_component(&source_rel) else {
+            continue;
+        };
+        let source_abs = repo_root.join(&source_rel);
+        let source_id = envctl_home_source_path_id(&source_rel);
         let source_display = source_abs.display().to_string();
         paths.push(PathRow {
             path_id: source_id.clone(),
             path: source_display.clone(),
             path_kind: "envctl_home_source".to_string(),
-            owner_component: Some("home-config-links".to_string()),
-            owner_record_id: Some("home-config-links".to_string()),
+            owner_component: Some(owner_component.to_string()),
+            owner_record_id: Some(owner_component.to_string()),
             artifact_kind: "envctl_home_source_file".to_string(),
             resolved_path: None,
             link_target_id: None,
@@ -2442,18 +2443,18 @@ fn ingest_envctl_home_frontdoors(repo_root: &Path, paths: &mut Vec<PathRow>) {
             legacy: false,
             bridge: false,
             protected: true,
-            source: source_rel.to_string(),
+            source: source_rel.clone(),
             verification_status: "tracked".to_string(),
         });
 
-        let runtime_abs = meta_root.join(spec.runtime_relative_path);
+        let runtime_abs = meta_root.join(&runtime_rel);
         paths.push(PathRow {
-            path_id: envctl_home_frontdoor_path_id(spec.runtime_relative_path),
+            path_id: envctl_home_frontdoor_path_id(&runtime_rel),
             path: runtime_abs.display().to_string(),
-            path_kind: spec.path_kind.to_string(),
-            owner_component: Some("home-config-links".to_string()),
-            owner_record_id: Some("home-config-links".to_string()),
-            artifact_kind: spec.artifact_kind.to_string(),
+            path_kind: envctl_home_frontdoor_kind(&source_rel).to_string(),
+            owner_component: Some(owner_component.to_string()),
+            owner_record_id: Some(owner_component.to_string()),
+            artifact_kind: envctl_home_frontdoor_artifact(&source_rel).to_string(),
             resolved_path: Some(source_display),
             link_target_id: Some(source_id),
             canonical: true,
@@ -3103,10 +3104,7 @@ fn discover_control_plane_files(repo_root: &Path, manifest_dir: &Path) -> Vec<Pa
 }
 
 fn collect_envctl_home_files(repo_root: &Path, out: &mut Vec<PathBuf>) {
-    for rel in envctl_home_frontdoor_specs()
-        .iter()
-        .map(|spec| spec.repo_relative_source)
-    {
+    for rel in collect_envctl_home_managed_relpaths(repo_root) {
         push_if_present(out, repo_root.join(rel));
     }
 }
@@ -3726,10 +3724,24 @@ fn infer_format(rel: &str) -> &'static str {
 fn infer_file_kind(manifest_dir: &Path, path: &Path, rel: &str) -> &'static str {
     if path.starts_with(manifest_dir) && rel.ends_with(".toml") {
         "manifest"
-    } else if rel.starts_with("home/.config/yazelix/") {
-        "envctl_home_yazelix_config"
+    } else if rel.starts_with("home/.claude/") {
+        "envctl_home_claude_config"
+    } else if rel == "home/.gitconfig" {
+        "envctl_home_git_config"
+    } else if rel.starts_with("home/.config/ghostty/") {
+        "envctl_home_ghostty_config"
+    } else if rel.starts_with("home/.config/kasetto/") {
+        "envctl_home_kasetto_config"
     } else if rel == "home/.config/nushell/meta-usr-path.nu" {
         "envctl_home_nushell_path"
+    } else if rel.starts_with("home/.config/nushell/") {
+        "envctl_home_nushell_config"
+    } else if rel.starts_with("home/.config/rtk/") {
+        "envctl_home_rtk_config"
+    } else if rel.starts_with("home/.config/systemd/user/") {
+        "envctl_home_systemd_user_unit"
+    } else if rel.starts_with("home/.config/yazelix/") {
+        "envctl_home_yazelix_config"
     } else if rel == "settings_default.jsonc" {
         "yazelix_settings_default"
     } else if rel.starts_with("config_metadata/") {
@@ -3788,10 +3800,8 @@ fn owner_component_from_path(rel: &str) -> Option<String> {
     if rel.starts_with("manifest/components.d/") && rel.ends_with(".toml") {
         rel.rsplit_once('/')
             .map(|(_, name)| name.trim_end_matches(".toml").to_string())
-    } else if rel.starts_with("home/.config/yazelix/")
-        || rel == "home/.config/nushell/meta-usr-path.nu"
-    {
-        Some("home-config-links".to_string())
+    } else if let Some(owner) = envctl_home_owner_component(rel) {
+        Some(owner.to_string())
     } else if rel.starts_with("manifest/")
         && rel.ends_with(".toml")
         && rel != "manifest/envctl.lock"
@@ -3823,8 +3833,14 @@ fn setting_scope(file_kind: &str) -> &'static str {
         "envctl_lock" | "agent_env_lock" => "lock",
         "agent_env" => "agent_env",
         "codex_config" | "mcp_config" => "agent_runtime",
+        "envctl_home_claude_config" => "agent_runtime",
+        "envctl_home_git_config" => "git",
+        "envctl_home_ghostty_config" => "terminal",
+        "envctl_home_kasetto_config" => "agent_env",
+        "envctl_home_nushell_config" | "envctl_home_nushell_path" => "shell",
+        "envctl_home_rtk_config" => "tooling",
+        "envctl_home_systemd_user_unit" => "systemd",
         "envctl_home_yazelix_config" => "yazelix",
-        "envctl_home_nushell_path" => "shell",
         "secretd_config" | "secrets_env_schema" | "secrets_proto" => "secrets",
         "yazelix_settings_default"
         | "yazelix_config_metadata"
@@ -3844,6 +3860,13 @@ fn setting_precedence(file_kind: &str) -> u32 {
         "codex_config" | "mcp_config" => 80,
         "agent_env" => 70,
         "manifest" => 60,
+        "envctl_home_claude_config" => 88,
+        "envctl_home_git_config" => 86,
+        "envctl_home_ghostty_config" => 84,
+        "envctl_home_kasetto_config" => 83,
+        "envctl_home_nushell_config" => 83,
+        "envctl_home_rtk_config" => 84,
+        "envctl_home_systemd_user_unit" => 81,
         "envctl_home_yazelix_config" => 88,
         "envctl_home_nushell_path" => 82,
         "secretd_config" => 55,
@@ -3867,65 +3890,69 @@ fn config_id(rel: &str) -> String {
         .to_string()
 }
 
-#[derive(Clone, Copy)]
-struct EnvctlHomeFrontdoorSpec {
-    repo_relative_source: &'static str,
-    runtime_relative_path: &'static str,
-    path_kind: &'static str,
-    artifact_kind: &'static str,
+fn collect_envctl_home_managed_relpaths(repo_root: &Path) -> Vec<String> {
+    let mut paths = Vec::new();
+    walk_files(&repo_root.join("home"), &mut paths, &mut |path| {
+        let rel = repo_relative(repo_root, path);
+        envctl_home_runtime_relative_path(&rel).is_some()
+    });
+    paths
+        .into_iter()
+        .map(|path| repo_relative(repo_root, &path))
+        .collect()
 }
 
-fn envctl_home_frontdoor_specs() -> &'static [EnvctlHomeFrontdoorSpec] {
-    &[
-        EnvctlHomeFrontdoorSpec {
-            repo_relative_source: "home/.config/yazelix/settings.jsonc",
-            runtime_relative_path: ".config/yazelix/settings.jsonc",
-            path_kind: "envctl_home_yazelix_frontdoor",
-            artifact_kind: "envctl_managed_runtime_config",
-        },
-        EnvctlHomeFrontdoorSpec {
-            repo_relative_source: "home/.config/yazelix/shell_bash.sh",
-            runtime_relative_path: ".config/yazelix/shell_bash.sh",
-            path_kind: "envctl_home_yazelix_frontdoor",
-            artifact_kind: "envctl_managed_runtime_config",
-        },
-        EnvctlHomeFrontdoorSpec {
-            repo_relative_source: "home/.config/yazelix/shell_nu.nu",
-            runtime_relative_path: ".config/yazelix/shell_nu.nu",
-            path_kind: "envctl_home_yazelix_frontdoor",
-            artifact_kind: "envctl_managed_runtime_config",
-        },
-        EnvctlHomeFrontdoorSpec {
-            repo_relative_source: "home/.config/yazelix/terminal_ghostty.conf",
-            runtime_relative_path: ".config/yazelix/terminal_ghostty.conf",
-            path_kind: "envctl_home_yazelix_frontdoor",
-            artifact_kind: "envctl_managed_runtime_config",
-        },
-        EnvctlHomeFrontdoorSpec {
-            repo_relative_source: "home/.config/yazelix/tombi.toml",
-            runtime_relative_path: ".config/yazelix/tombi.toml",
-            path_kind: "envctl_home_yazelix_frontdoor",
-            artifact_kind: "envctl_managed_runtime_config",
-        },
-        EnvctlHomeFrontdoorSpec {
-            repo_relative_source: "home/.config/yazelix/helix/steel_plugins/README.md",
-            runtime_relative_path: ".config/yazelix/helix/steel_plugins/README.md",
-            path_kind: "envctl_home_yazelix_frontdoor",
-            artifact_kind: "envctl_managed_runtime_config",
-        },
-        EnvctlHomeFrontdoorSpec {
-            repo_relative_source: "home/.config/yazelix/configs/zellij/layouts/mission-control.kdl",
-            runtime_relative_path: ".config/yazelix/configs/zellij/layouts/mission-control.kdl",
-            path_kind: "envctl_home_yazelix_frontdoor",
-            artifact_kind: "envctl_managed_runtime_layout",
-        },
-        EnvctlHomeFrontdoorSpec {
-            repo_relative_source: "home/.config/nushell/meta-usr-path.nu",
-            runtime_relative_path: ".config/nushell/meta-usr-path.nu",
-            path_kind: "envctl_home_nushell_frontdoor",
-            artifact_kind: "envctl_managed_shell_overlay",
-        },
-    ]
+fn envctl_home_runtime_relative_path(rel: &str) -> Option<String> {
+    envctl_home_owner_component(rel)
+        .and_then(|_| rel.strip_prefix("home/").map(ToString::to_string))
+}
+
+fn envctl_home_owner_component(rel: &str) -> Option<&'static str> {
+    if rel == "home/.gitconfig"
+        || rel.starts_with("home/.config/ghostty/")
+        || rel.starts_with("home/.config/kasetto/")
+        || rel.starts_with("home/.config/nushell/")
+        || rel.starts_with("home/.config/systemd/user/")
+        || rel.starts_with("home/.config/yazelix/")
+    {
+        Some("home-config-links")
+    } else if rel.starts_with("home/.config/rtk/") {
+        Some("rtk-config-links")
+    } else if rel.starts_with("home/.claude/") {
+        Some("claude-global-links")
+    } else {
+        None
+    }
+}
+
+fn envctl_home_frontdoor_kind(rel: &str) -> &'static str {
+    if rel.starts_with("home/.config/yazelix/") {
+        "envctl_home_yazelix_frontdoor"
+    } else if rel == "home/.config/nushell/meta-usr-path.nu" {
+        "envctl_home_nushell_frontdoor"
+    } else if rel.starts_with("home/.config/rtk/") {
+        "envctl_home_rtk_frontdoor"
+    } else if rel.starts_with("home/.claude/") {
+        "envctl_home_claude_frontdoor"
+    } else {
+        "envctl_home_frontdoor"
+    }
+}
+
+fn envctl_home_frontdoor_artifact(rel: &str) -> &'static str {
+    if rel.starts_with("home/.config/yazelix/configs/zellij/layouts/") {
+        "envctl_managed_runtime_layout"
+    } else if rel == "home/.config/nushell/meta-usr-path.nu" {
+        "envctl_managed_shell_overlay"
+    } else if rel.starts_with("home/.config/systemd/user/") {
+        "envctl_managed_systemd_user_unit"
+    } else if rel.starts_with("home/.claude/") {
+        "envctl_managed_agent_config"
+    } else if rel == "home/.gitconfig" {
+        "envctl_managed_git_config"
+    } else {
+        "envctl_managed_runtime_config"
+    }
 }
 
 fn catalog_meta_root(repo_root: &Path) -> PathBuf {
@@ -4660,12 +4687,12 @@ name = "nix-portable"
     }
 
     #[test]
-    fn scan_catalogs_envctl_home_yazelix_sources_and_frontdoors() {
+    fn scan_catalogs_envctl_home_managed_sources_and_frontdoors() {
         let root = fixture_root();
         std::fs::create_dir_all(root.join("manifest/components.d")).unwrap();
         std::fs::write(
             root.join("manifest/components.d/portability-links.toml"),
-            "[[component]]\nid = \"home-config-links\"\nname = \"home-config-links\"\n",
+            "[[component]]\nid = \"home-config-links\"\nname = \"home-config-links\"\n\n[[component]]\nid = \"rtk-config-links\"\nname = \"rtk-config-links\"\n\n[[component]]\nid = \"claude-global-links\"\nname = \"claude-global-links\"\n",
         )
         .unwrap();
         write_envctl_home_fixture(&root);
@@ -4698,6 +4725,16 @@ name = "nix-portable"
                 && row.file_kind == "envctl_home_nushell_path"
                 && row.owner_component.as_deref() == Some("home-config-links")
         }));
+        assert!(snapshot.config_files.iter().any(|row| {
+            row.path == "home/.claude/settings.json"
+                && row.file_kind == "envctl_home_claude_config"
+                && row.owner_component.as_deref() == Some("claude-global-links")
+        }));
+        assert!(snapshot.config_files.iter().any(|row| {
+            row.path == "home/.config/rtk/config.toml"
+                && row.file_kind == "envctl_home_rtk_config"
+                && row.owner_component.as_deref() == Some("rtk-config-links")
+        }));
         assert!(snapshot.settings.iter().any(|row| {
             row.source_file == source_rel
                 && row.scope == "yazelix"
@@ -4727,6 +4764,27 @@ name = "nix-portable"
                 && row.bridge
                 && row.protected
                 && row.verification_status == "declared"
+        }));
+        assert!(snapshot.paths.iter().any(|row| {
+            row.path == root.join(".claude/settings.json").display().to_string()
+                && row.path_kind == "envctl_home_claude_frontdoor"
+                && row.owner_component.as_deref() == Some("claude-global-links")
+                && row.artifact_kind == "envctl_managed_agent_config"
+        }));
+        assert!(snapshot.paths.iter().any(|row| {
+            row.path == root.join(".config/rtk/config.toml").display().to_string()
+                && row.path_kind == "envctl_home_rtk_frontdoor"
+                && row.owner_component.as_deref() == Some("rtk-config-links")
+                && row.artifact_kind == "envctl_managed_runtime_config"
+        }));
+        assert!(snapshot.paths.iter().any(|row| {
+            row.path == root
+                .join(".config/systemd/user/env-ctl.service")
+                .display()
+                .to_string()
+                && row.path_kind == "envctl_home_frontdoor"
+                && row.owner_component.as_deref() == Some("home-config-links")
+                && row.artifact_kind == "envctl_managed_systemd_user_unit"
         }));
     }
 
@@ -5010,9 +5068,36 @@ const ENVCTL_SEED_TOKEN_FILE: &str = "ENVCTL_SEED_TOKEN_FILE";
     }
 
     fn write_envctl_home_fixture(root: &Path) {
+        std::fs::create_dir_all(root.join("home/.claude/commands")).unwrap();
         std::fs::create_dir_all(root.join("home/.config/yazelix/configs/zellij/layouts")).unwrap();
         std::fs::create_dir_all(root.join("home/.config/yazelix/helix/steel_plugins")).unwrap();
+        std::fs::create_dir_all(root.join("home/.config/ghostty")).unwrap();
+        std::fs::create_dir_all(root.join("home/.config/kasetto")).unwrap();
         std::fs::create_dir_all(root.join("home/.config/nushell")).unwrap();
+        std::fs::create_dir_all(root.join("home/.config/rtk")).unwrap();
+        std::fs::create_dir_all(root.join("home/.config/systemd/user")).unwrap();
+        std::fs::write(root.join("home/.gitconfig"), "[user]\nname = Envctl\n").unwrap();
+        std::fs::write(
+            root.join("home/.claude/settings.json"),
+            "{\n  \"model\": \"opus\"\n}\n",
+        )
+        .unwrap();
+        std::fs::write(root.join("home/.claude/CLAUDE.md"), "# claude\n").unwrap();
+        std::fs::write(
+            root.join("home/.claude/commands/remember.md"),
+            "# remember\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/ghostty/config.ghostty"),
+            "theme = dusk\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/kasetto/kasetto.yaml"),
+            "agent: codex\n",
+        )
+        .unwrap();
         std::fs::write(
             root.join("home/.config/yazelix/settings.jsonc"),
             "{\n  \"default_shell\": \"nu\"\n}\n",
@@ -5051,6 +5136,21 @@ const ENVCTL_SEED_TOKEN_FILE: &str = "ENVCTL_SEED_TOKEN_FILE";
         std::fs::write(
             root.join("home/.config/nushell/meta-usr-path.nu"),
             "source ./meta-usr-path.nu\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/nushell/config.nu"),
+            "source ./meta-usr-path.nu\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/rtk/config.toml"),
+            "[display]\nmode = \"compact\"\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/systemd/user/env-ctl.service"),
+            "[Unit]\nDescription=envctl\n",
         )
         .unwrap();
     }
