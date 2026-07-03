@@ -80,6 +80,11 @@
       "document_id": "019f2588-5a5e-7420-b390-22040e0af7fd",
       "slug": "tasks/catalog-runtime-closure-and-toolchain-proof",
       "tip_commit_id": "019f25be-1090-7090-a9dc-8b5c6bb10b64"
+    },
+    {
+      "document_id": "019f2a52-3abb-79a3-b941-73f974623260",
+      "slug": "retire-broken-pre-cleanroom-codex-hook-baseline",
+      "tip_commit_id": "019f2a56-e524-74a3-a034-3a3cc2473e3f"
     }
   ]
 }
