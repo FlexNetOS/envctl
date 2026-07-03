@@ -34,6 +34,7 @@ pub struct CatalogScanSpec {
 #[serde(rename_all = "snake_case")]
 pub enum CatalogTableName {
     Components,
+    NixComponents,
     ComponentHooks,
     Paths,
     Settings,
@@ -50,6 +51,7 @@ impl CatalogTableName {
     pub const fn canonical_name(self) -> &'static str {
         match self {
             CatalogTableName::Components => "components",
+            CatalogTableName::NixComponents => "nix_components",
             CatalogTableName::ComponentHooks => "component_hooks",
             CatalogTableName::Paths => "paths",
             CatalogTableName::Settings => "settings",
@@ -66,6 +68,7 @@ impl CatalogTableName {
     pub const fn all() -> &'static [CatalogTableName] {
         &[
             CatalogTableName::Components,
+            CatalogTableName::NixComponents,
             CatalogTableName::ComponentHooks,
             CatalogTableName::Paths,
             CatalogTableName::Settings,
@@ -93,6 +96,7 @@ impl FromStr for CatalogTableName {
         let normalized = raw.trim().replace('-', "_");
         match normalized.as_str() {
             "components" => Ok(CatalogTableName::Components),
+            "nix_components" => Ok(CatalogTableName::NixComponents),
             "component_hooks" => Ok(CatalogTableName::ComponentHooks),
             "paths" => Ok(CatalogTableName::Paths),
             "settings" => Ok(CatalogTableName::Settings),
@@ -126,6 +130,7 @@ pub struct CatalogSnapshot {
     pub manifest_dir: String,
     pub generated_by: String,
     pub components: Vec<ComponentRow>,
+    pub nix_components: Vec<NixComponentRow>,
     pub component_hooks: Vec<ComponentHookRow>,
     pub paths: Vec<PathRow>,
     pub settings: Vec<SettingRow>,
@@ -143,6 +148,7 @@ impl CatalogSnapshot {
     pub fn table_value(&self, table: CatalogTableName) -> serde_json::Value {
         match table {
             CatalogTableName::Components => serde_json::to_value(&self.components),
+            CatalogTableName::NixComponents => serde_json::to_value(&self.nix_components),
             CatalogTableName::ComponentHooks => serde_json::to_value(&self.component_hooks),
             CatalogTableName::Paths => serde_json::to_value(&self.paths),
             CatalogTableName::Settings => serde_json::to_value(&self.settings),
@@ -160,6 +166,7 @@ impl CatalogSnapshot {
     pub fn table_count(&self, table: CatalogTableName) -> usize {
         match table {
             CatalogTableName::Components => self.components.len(),
+            CatalogTableName::NixComponents => self.nix_components.len(),
             CatalogTableName::ComponentHooks => self.component_hooks.len(),
             CatalogTableName::Paths => self.paths.len(),
             CatalogTableName::Settings => self.settings.len(),
@@ -371,6 +378,18 @@ pub struct ComponentRow {
     pub has_verify: bool,
     pub has_fix: bool,
     pub has_remove: bool,
+    pub status: String,
+    pub lock_hash: String,
+    pub resolved_order: usize,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct NixComponentRow {
+    pub component_id: String,
+    pub name: String,
+    pub source_file: String,
+    pub nix_surface: String,
+    pub requires: Vec<String>,
     pub status: String,
     pub lock_hash: String,
     pub resolved_order: usize,
@@ -616,6 +635,7 @@ pub fn scan(spec: CatalogScanSpec, registry: &Registry) -> anyhow::Result<Catalo
         &component_sources,
         &lock,
         &mut snapshot.components,
+        &mut snapshot.nix_components,
         &mut snapshot.component_hooks,
         &mut snapshot.env_vars,
     );
@@ -652,6 +672,9 @@ pub fn scan(spec: CatalogScanSpec, registry: &Registry) -> anyhow::Result<Catalo
     }
 
     snapshot.components.sort_by_key(|row| row.resolved_order);
+    snapshot
+        .nix_components
+        .sort_by_key(|row| row.resolved_order);
     snapshot.component_hooks.sort_by(|a, b| {
         a.component_id
             .cmp(&b.component_id)
@@ -1904,6 +1927,7 @@ fn ingest_components(
     component_sources: &BTreeMap<String, String>,
     lock: &LockFile,
     components: &mut Vec<ComponentRow>,
+    nix_components: &mut Vec<NixComponentRow>,
     hooks: &mut Vec<ComponentHookRow>,
     env_vars: &mut Vec<EnvVarRow>,
 ) {
@@ -1918,7 +1942,7 @@ fn ingest_components(
             .map(|entry| entry.content_hash.clone())
             .filter(|hash| !hash.is_empty())
             .unwrap_or_else(|| lock::component_hash(component));
-        components.push(ComponentRow {
+        let component_row = ComponentRow {
             component_id: component.id.clone(),
             name: component.name.clone(),
             source_file: source_file.clone(),
@@ -1934,7 +1958,20 @@ fn ingest_components(
             status: "declared".to_string(),
             lock_hash,
             resolved_order: idx + 1,
-        });
+        };
+        if let Some(nix_surface) = nix_component_surface(&component_row) {
+            nix_components.push(NixComponentRow {
+                component_id: component_row.component_id.clone(),
+                name: component_row.name.clone(),
+                source_file: component_row.source_file.clone(),
+                nix_surface: nix_surface.to_string(),
+                requires: component_row.requires.clone(),
+                status: component_row.status.clone(),
+                lock_hash: component_row.lock_hash.clone(),
+                resolved_order: component_row.resolved_order,
+            });
+        }
+        components.push(component_row);
         for phase in [
             Phase::Detect,
             Phase::Install,
@@ -1967,6 +2004,16 @@ fn ingest_components(
                 hooks.push(row);
             }
         }
+    }
+}
+
+fn nix_component_surface(row: &ComponentRow) -> Option<&'static str> {
+    if row.source_file.starts_with("manifest/nix") {
+        Some("nix_manifest")
+    } else if row.component_id == "nix-portable" {
+        Some("nix_portable_toolchain")
+    } else {
+        None
     }
 }
 
@@ -3526,6 +3573,10 @@ mod tests {
     #[test]
     fn table_name_aliases_accept_kebab_case() {
         assert_eq!(
+            "nix-components".parse::<CatalogTableName>().unwrap(),
+            CatalogTableName::NixComponents
+        );
+        assert_eq!(
             "component-hooks".parse::<CatalogTableName>().unwrap(),
             CatalogTableName::ComponentHooks
         );
@@ -3580,6 +3631,7 @@ mod tests {
             .components
             .iter()
             .any(|row| row.component_id == "base" && row.has_detect));
+        assert!(snapshot.nix_components.is_empty());
         assert!(snapshot
             .component_hooks
             .iter()
@@ -3921,6 +3973,75 @@ mod tests {
         assert_eq!(report.summary.tables, CatalogTableName::all().len());
         assert_eq!(report.summary.components, 2);
         assert!(report.summary.rows >= report.summary.components);
+    }
+
+    #[test]
+    fn scan_projects_nix_components_into_dedicated_table() {
+        let root = fixture_root();
+        let manifest_dir = root.join("manifest");
+        std::fs::create_dir_all(&manifest_dir).unwrap();
+        std::fs::create_dir_all(manifest_dir.join("components.d")).unwrap();
+
+        std::fs::write(
+            manifest_dir.join("nix-yazelix.toml"),
+            r#"
+[[component]]
+id = "nix"
+name = "Nix"
+
+[[component]]
+id = "home-manager"
+name = "home-manager"
+requires = ["nix"]
+"#,
+        )
+        .unwrap();
+        std::fs::write(
+            manifest_dir.join("components.d/epic-h-toolchains.toml"),
+            r#"
+[[component]]
+id = "nix-portable"
+name = "nix-portable"
+"#,
+        )
+        .unwrap();
+        std::fs::write(manifest_dir.join("envctl.lock"), "").unwrap();
+
+        let registry = Registry::load(&manifest_dir).unwrap();
+        let snapshot = scan(
+            CatalogScanSpec {
+                repo_root: root,
+                manifest_dir,
+            },
+            &registry,
+        )
+        .unwrap();
+
+        assert_eq!(
+            snapshot.nix_components.len(),
+            3,
+            "{:#?}",
+            snapshot.nix_components
+        );
+        assert!(snapshot.nix_components.iter().any(|row| {
+            row.component_id == "nix"
+                && row.source_file == "manifest/nix-yazelix.toml"
+                && row.nix_surface == "nix_manifest"
+        }));
+        assert!(snapshot.nix_components.iter().any(|row| {
+            row.component_id == "home-manager" && row.nix_surface == "nix_manifest"
+        }));
+        assert!(snapshot.nix_components.iter().any(|row| {
+            row.component_id == "nix-portable"
+                && row.source_file == "manifest/components.d/epic-h-toolchains.toml"
+                && row.nix_surface == "nix_portable_toolchain"
+        }));
+        let table_value = snapshot.table_value(CatalogTableName::NixComponents);
+        assert_eq!(table_value.as_array().unwrap().len(), 3);
+        assert!(snapshot
+            .observed_facts
+            .iter()
+            .any(|row| row.fact_id == "catalog.table_count.nix_components"));
     }
 
     #[test]

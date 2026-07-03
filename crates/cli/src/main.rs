@@ -254,6 +254,7 @@ enum Cmd {
         after_help = envctl_examples!(
             "envctl catalog scan --json",
             "envctl catalog table components",
+            "envctl catalog table nix-components",
             "envctl catalog table env-vars --json",
         )
     )]
@@ -589,9 +590,10 @@ enum CatalogCmd {
     Scan,
     /// Print one normalized catalog table.
     #[command(
-        long_about = "Print one read-only catalog table. Names accept snake_case or kebab-case: components, component-hooks, paths, settings, env-vars, agent-assets, registries, config-files, migration-evidence, observed-facts.",
+        long_about = "Print one read-only catalog table. Names accept snake_case or kebab-case: components, nix-components, component-hooks, paths, settings, env-vars, agent-assets, registries, config-files, migration-evidence, observed-facts.",
         after_help = envctl_examples!(
             "envctl catalog table components",
+            "envctl catalog table nix-components",
             "envctl catalog table component-hooks",
             "envctl catalog table observed-facts --json",
         )
