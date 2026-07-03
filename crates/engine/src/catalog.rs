@@ -2657,19 +2657,151 @@ fn render_codex_config_toml(snapshot: &CatalogSnapshot) -> String {
         ],
     );
     out.push_str("manual_edits_allowed = false\n\n");
+    for server in rendered_mcp_servers(snapshot) {
+        let table_key =
+            serde_json::to_string(&server.name).unwrap_or_else(|_| "\"unknown\"".to_string());
+        let _ = writeln!(out, "[mcp_servers.{table_key}]");
+        if let Some(command) = server.command.as_deref() {
+            write_toml_string(&mut out, "command", command);
+        }
+        if !server.args.is_empty() {
+            write_toml_string_array(&mut out, "args", &server.args);
+        }
+        if let Some(url) = server.url.as_deref() {
+            write_toml_string(&mut out, "url", url);
+        }
+        if !server.env.is_empty() {
+            out.push_str("[mcp_servers.");
+            out.push_str(&table_key);
+            out.push_str(".env]\n");
+            for (key, value) in &server.env {
+                write_toml_string(&mut out, key, value);
+            }
+        }
+        out.push('\n');
+    }
+    out
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+struct RenderedMcpServer {
+    name: String,
+    command: Option<String>,
+    args: Vec<String>,
+    url: Option<String>,
+    env: BTreeMap<String, String>,
+}
+
+fn rendered_mcp_servers(snapshot: &CatalogSnapshot) -> Vec<RenderedMcpServer> {
+    let mut servers = BTreeMap::<String, RenderedMcpServer>::new();
+    ingest_mcp_json_servers(snapshot, &mut servers);
+    ingest_codex_toml_servers(snapshot, &mut servers);
+
     for registry in snapshot
         .registries
         .iter()
         .filter(|row| row.registry_kind == "mcp")
     {
-        out.push_str("[[mcp_server]]\n");
-        write_toml_string(&mut out, "name", &registry.name);
-        write_toml_string(&mut out, "entry_id", &registry.entry_id);
-        write_toml_string(&mut out, "source_file", &registry.source_file);
-        write_toml_string(&mut out, "status", &registry.status);
-        out.push('\n');
+        servers
+            .entry(registry.name.clone())
+            .or_insert_with(|| RenderedMcpServer {
+                name: registry.name.clone(),
+                ..RenderedMcpServer::default()
+            });
     }
-    out
+
+    servers.into_values().collect()
+}
+
+fn ingest_mcp_json_servers(
+    snapshot: &CatalogSnapshot,
+    servers: &mut BTreeMap<String, RenderedMcpServer>,
+) {
+    let path = Path::new(&snapshot.repo_root).join(".mcp.json");
+    let Ok(Some(value)) = parse_config_to_json(&path, "json") else {
+        return;
+    };
+    let Some(entries) = value.get("mcpServers").and_then(|value| value.as_object()) else {
+        return;
+    };
+
+    for (name, value) in entries {
+        let mut server = RenderedMcpServer {
+            name: name.clone(),
+            ..RenderedMcpServer::default()
+        };
+        if let Some(command) = value.get("command").and_then(|value| value.as_str()) {
+            server.command = Some(command.to_string());
+        }
+        if let Some(args) = value.get("args").and_then(|value| value.as_array()) {
+            server.args = args
+                .iter()
+                .filter_map(|value| value.as_str().map(str::to_string))
+                .collect();
+        }
+        if let Some(url) = value.get("url").and_then(|value| value.as_str()) {
+            server.url = Some(url.to_string());
+        }
+        if let Some(env) = value.get("env").and_then(|value| value.as_object()) {
+            server.env = env
+                .iter()
+                .filter_map(|(key, value)| {
+                    value.as_str().map(|value| (key.clone(), value.to_string()))
+                })
+                .collect();
+        }
+        servers.insert(name.clone(), server);
+    }
+}
+
+fn ingest_codex_toml_servers(
+    snapshot: &CatalogSnapshot,
+    servers: &mut BTreeMap<String, RenderedMcpServer>,
+) {
+    let path = Path::new(&snapshot.repo_root).join(".codex/config.toml");
+    let Ok(Some(value)) = parse_config_to_json(&path, "toml") else {
+        return;
+    };
+    let Some(entries) = value.get("mcp_servers").and_then(|value| value.as_object()) else {
+        return;
+    };
+
+    for (name, value) in entries {
+        let server = servers
+            .entry(name.clone())
+            .or_insert_with(|| RenderedMcpServer {
+                name: name.clone(),
+                ..RenderedMcpServer::default()
+            });
+        if server.command.is_none() {
+            if let Some(command) = value.get("command").and_then(|value| value.as_str()) {
+                server.command = Some(command.to_string());
+            }
+        }
+        if server.args.is_empty() {
+            if let Some(args) = value.get("args").and_then(|value| value.as_array()) {
+                server.args = args
+                    .iter()
+                    .filter_map(|value| value.as_str().map(str::to_string))
+                    .collect();
+            }
+        }
+        if server.url.is_none() {
+            if let Some(url) = value.get("url").and_then(|value| value.as_str()) {
+                server.url = Some(url.to_string());
+            }
+        }
+        if server.env.is_empty() {
+            if let Some(env) = value.get("env").and_then(|value| value.as_object()) {
+                server.env = env
+                    .iter()
+                    .filter_map(|(key, value)| {
+                        value.as_str().map(|value| (key.clone(), value.to_string()))
+                    })
+                    .collect();
+            }
+        }
+    }
 }
 
 fn render_mcp_json(snapshot: &CatalogSnapshot) -> anyhow::Result<Vec<u8>> {
@@ -4919,6 +5051,12 @@ mod tests {
         assert!(env_inventory.contains("ENVCTL_META_ROOT"));
         assert!(env_inventory.contains("secrets_env_schema"));
 
+        let codex_config = std::fs::read_to_string(out_a.join(".codex/config.toml")).unwrap();
+        assert!(codex_config.contains("[mcp_servers.\"memory\"]"));
+        assert!(codex_config.contains("envctl-mcp-memory-server"));
+        assert!(codex_config.contains("[mcp_servers.\"memory\".env]"));
+        assert!(codex_config.contains("META_ROOT"));
+
         let toolchain_inventory =
             std::fs::read_to_string(out_a.join("docs/generated/toolchain-signal-inventory.md"))
                 .unwrap();
@@ -5267,7 +5405,7 @@ command = "context7"
         .unwrap();
         std::fs::write(
             root.join(".mcp.json"),
-            r#"{"mcpServers":{"github":{"command":"github"}}}"#,
+            r#"{"mcpServers":{"github":{"command":"github"},"memory":{"command":"bash","args":["-lc","ROOT=\"${META_ROOT:-/fixture}\"; exec \"$ROOT/envctl/assets/scripts/envctl-mcp-memory-server\""],"env":{"META_ROOT":"/fixture"}}}}"#,
         )
         .unwrap();
         std::fs::write(

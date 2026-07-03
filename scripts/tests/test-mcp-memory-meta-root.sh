@@ -48,8 +48,25 @@ want argv "@modelcontextprotocol/server-memory"
 test -d "$meta/.local/share/mcp-memory" || { echo "FAIL: memory data dir was not created" >&2; exit 1; }
 test -d "$meta/.local/cache/npm" || { echo "FAIL: npm cache dir was not created" >&2; exit 1; }
 
-# Source and rendered MCP configs must launch the same meta-rooted wrapper.
-for file in "$root/agent-skills/mcps/memory.json" "$root/.mcp.json" "$root/.codex/config.toml"; do
+# Source MCP configs and the generated Codex config must launch the same
+# meta-rooted wrapper. Active repo-local `.codex/config.toml` is intentionally
+# optional: CI should validate a clean generated render, not require committed
+# runtime state.
+files=(
+  "$root/agent-skills/mcps/memory.json"
+  "$root/.mcp.json"
+)
+if [ -n "${ENVCTL_RENDERED_CODEX_CONFIG:-}" ]; then
+  files+=("$ENVCTL_RENDERED_CODEX_CONFIG")
+elif [ -f "$root/.codex/config.toml" ]; then
+  files+=("$root/.codex/config.toml")
+else
+  echo "FAIL: set ENVCTL_RENDERED_CODEX_CONFIG or provide .codex/config.toml" >&2
+  exit 1
+fi
+
+for file in "${files[@]}"; do
+  [ -f "$file" ] || { echo "FAIL: expected config file $file" >&2; exit 1; }
   grep -q 'envctl-mcp-memory-server' "$file" || { echo "FAIL: $file does not use envctl-mcp-memory-server" >&2; exit 1; }
   grep -q 'META_ROOT' "$file" || { echo "FAIL: $file does not preserve META_ROOT routing" >&2; exit 1; }
 done

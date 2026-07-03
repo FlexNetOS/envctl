@@ -13,16 +13,13 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-bash scripts/tests/test-mcp-memory-meta-root.sh
+cargo build -q -p envctl
+BIN=target/debug/envctl
 
-BIN=""
-for c in target/release/envctl target/debug/envctl; do
-  [ -x "$c" ] && BIN="$c" && break
-done
-if [ -z "$BIN" ]; then
-  cargo build -q -p envctl
-  BIN=target/debug/envctl
-fi
+render_tmp="$(mktemp -d)"
+trap 'rm -rf "$render_tmp"' EXIT
+"$BIN" catalog render --out "$render_tmp/catalog" --target-root "$(pwd)" >/dev/null
+ENVCTL_RENDERED_CODEX_CONFIG="$render_tmp/catalog/.codex/config.toml" bash scripts/tests/test-mcp-memory-meta-root.sh
 
 if "$BIN" agent lock --config agent-env.yaml --check --locked; then
   echo "AGENT-ENV GATE PASS"
