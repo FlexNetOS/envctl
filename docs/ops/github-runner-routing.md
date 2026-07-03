@@ -1,6 +1,6 @@
 # GitHub runner routing policy
 
-`envctl` uses both GitHub-hosted runners and the FlexNetOS organization self-hosted runner. The goal is to keep the protected status contexts stable while avoiding the single local runner becoming a serial bottleneck.
+`envctl` CI uses GitHub-hosted runners for every required status context. The goal is to keep protected-branch proof clean, reproducible, and independent of local FlexNetOS runner availability.
 
 ## Required context routing
 
@@ -24,9 +24,9 @@ Current routing:
 | `MSRV (Rust 1.88)` | `ubuntu-latest` | Independent compatibility gate; benefits from hosted fan-out. |
 | `cargo audit` | `ubuntu-latest` | Network/tooling gate; keep it off the single local queue. |
 | `gates` | `ubuntu-latest` | Policy/invariant gate; also validates this runner-routing policy. |
-| `test` | trusted refs: `[self-hosted, linux, x64, local, flexnetos]`; fork PRs: `ubuntu-latest` | The workspace test job is the cache-heavy local workload. Fork PRs must never execute untrusted code on the local host. |
+| `test` | `ubuntu-latest` | Required PR proof must come from a clean hosted environment, not the local FlexNetOS host. |
 
-`sync-master` is a trusted maintenance workflow and remains on `[self-hosted, linux, x64, local, flexnetos]`.
+`sync-master` is a trusted maintenance workflow, not a required PR context, and remains on `[self-hosted, linux, x64, local, flexnetos]`.
 
 ## Queue policy
 
@@ -34,4 +34,4 @@ CI cancels stale non-`develop` runs with workflow concurrency. Protected `develo
 
 ## Regression guard
 
-`ci/gates/runner-routing.sh` fails closed if the workflow drifts from this split. The `gates` job runs that check first so a PR cannot silently route every required status context back onto the single local runner.
+`ci/gates/runner-routing.sh` fails closed if the workflow drifts from this split. The `gates` job runs that check first so a PR cannot silently route a required status context onto the local runner.
