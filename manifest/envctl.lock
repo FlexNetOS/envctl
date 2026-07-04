@@ -21,7 +21,7 @@ requires = []
 resolved = ""
 
 [components.bun]
-content_hash = "3d99fd6a69e799b9"
+content_hash = "cb45d8cadd47d5fd"
 requires = []
 resolved = ""
 
@@ -61,7 +61,7 @@ requires = ["home-config-links"]
 resolved = ""
 
 [components.codex-cli]
-content_hash = "97e7328e1a3617c2"
+content_hash = "2e477e80b6e7a5b4"
 requires = [
     "bun",
     "rustup",
@@ -69,8 +69,13 @@ requires = [
 ]
 resolved = ""
 
+[components.codex-cli-alpha]
+content_hash = "0e35a49db1ad3ab5"
+requires = ["codex-cli"]
+resolved = ""
+
 [components.codex-global-baseline]
-content_hash = "ac7c788c6e0bb19e"
+content_hash = "d256bef83b131b5b"
 requires = ["codex-cli"]
 resolved = ""
 
@@ -279,7 +284,7 @@ requires = []
 resolved = ""
 
 [components.kache]
-content_hash = "42b0fa78f8673a95"
+content_hash = "03ae9e5f9076f19d"
 requires = []
 resolved = ""
 
@@ -378,7 +383,7 @@ requires = ["nix"]
 resolved = ""
 
 [components.node-real]
-content_hash = "1df06cd047593fb7"
+content_hash = "17c5e470990a81ed"
 requires = []
 resolved = ""
 
