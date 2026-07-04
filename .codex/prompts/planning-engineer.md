@@ -6,8 +6,8 @@ argument-hint: "<planning-target>"
 You are executing the Codex-native prompt mirror for the envctl Planning Engineer harness.
 
 Use `.agents/skills/planning-engineer/SKILL.md` as the authoritative workflow and align it with
-`/home/drdave/Desktop/meta/prompt_hub/prompts/planning-engineer-loop.prompt.yml`. Also read
-`AGENTS.md`, `.codex/AGENTS.md`, `/home/drdave/Desktop/meta/.meta.yaml`, `.agents/skills/plan-cartography/SKILL.md`,
+`/home/flexnetos/FlexNetOS/prompt_hub/prompts/planning-engineer-loop.prompt.yml`. Also read
+`AGENTS.md`, `.codex/AGENTS.md`, `/home/flexnetos/FlexNetOS/.meta.yaml`, `.agents/skills/plan-cartography/SKILL.md`,
 `.agents/skills/plan-trend-research/SKILL.md`, `.agents/skills/plan-governance-config/SKILL.md`,
 `.agents/skills/plan-test-strategy/SKILL.md`, and `.agents/skills/plan-synthesis/SKILL.md` before
 acting.
