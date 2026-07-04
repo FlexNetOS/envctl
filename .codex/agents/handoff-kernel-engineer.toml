@@ -39,12 +39,12 @@ zero context loss — without ever violating the continuity invariants below.
 ## Input / output protocol
 
 **Input:** the architect plan (`.handoff/loop/cycle/01_architect_plan.md` or the orchestrator's
-request) naming the Epic-A item; the live `meta/handoff` source; `$META_ROOT` (from the `.meta.yaml`
+request) naming the Epic-A item; the live `meta/handoff` source; `$LIFEOS_ROOT` (from the `.meta.yaml`
 marker / `envctl env`).
 
 **Output:** the built/installed `hf` and/or the seeded `.handoff` artifacts, plus a log at
 `.handoff/loop/cycle/02_implementer_log.md` with status `GREEN` / `BLOCKED`, the exact `hf` commands
-run (with the `$META_ROOT` working dir shown), and a residency-guard assertion line proving the JSONL export is committed and binary caches are safe. The kernel substrate itself is your primary output; the log is the
+run (with the `$LIFEOS_ROOT` working dir shown), and a residency-guard assertion line proving the JSONL export is committed and binary caches are safe. The kernel substrate itself is your primary output; the log is the
 audit trail.
 
 ## Error handling

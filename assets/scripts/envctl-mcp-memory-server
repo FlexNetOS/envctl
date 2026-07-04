@@ -1,33 +1,34 @@
 #!/usr/bin/env bash
-# Launch the MCP memory server with every writable path rooted in $META_ROOT.
+# Launch the MCP memory server with every writable path rooted in $LIFEOS_ROOT.
 # The server-memory package honors MEMORY_FILE_PATH; bun/bunx honor the XDG/HOME roots.
 set -euo pipefail
 
-if [ -z "${META_ROOT:-}" ]; then
+if [ -z "${LIFEOS_ROOT:-}" ]; then
   script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
   candidate="$(cd -- "$script_dir/../../.." && pwd)"
   if [ -f "$candidate/.meta.yaml" ]; then
-    export META_ROOT="$candidate"
-  elif [ -f /home/drdave/Desktop/meta/.meta.yaml ]; then
-    export META_ROOT=/home/drdave/Desktop/meta
-  elif [ -f "$HOME/Desktop/meta/.meta.yaml" ]; then
-    export META_ROOT="$HOME/Desktop/meta"
+    export LIFEOS_ROOT="$candidate"
+  elif [ -f /home/flexnetos/FlexNetOS/.meta.yaml ]; then
+    export LIFEOS_ROOT=/home/flexnetos/FlexNetOS
+  elif [ -f "$HOME/FlexNetOS/.meta.yaml" ]; then
+    export LIFEOS_ROOT="$HOME/FlexNetOS"
   else
-    echo "envctl-mcp-memory-server: cannot resolve META_ROOT" >&2
+    echo "envctl-mcp-memory-server: cannot resolve LIFEOS_ROOT" >&2
     exit 1
   fi
 fi
+ROOT="$LIFEOS_ROOT"
 
 # For this child process, HOME is the meta-owned home bridge. This prevents npm,
 # node, and the MCP server from creating state under the real /home/<user> tree.
-export HOME="$META_ROOT/.local"
-export XDG_DATA_HOME="$META_ROOT/.local/share"
-export XDG_STATE_HOME="$META_ROOT/.local/state"
-export XDG_CACHE_HOME="$META_ROOT/.local/cache"
-export npm_config_cache="$META_ROOT/.local/cache/npm"
-export npm_config_prefix="$META_ROOT/.local"
-export MEMORY_FILE_PATH="$META_ROOT/.local/share/mcp-memory/memory.jsonl"
-export PATH="$META_ROOT/usr/bin:$META_ROOT/.toolchains/.bun/bin:$META_ROOT/.toolchains/node/bin:$META_ROOT/.local/bin:$PATH"
+export HOME="$ROOT/.local"
+export XDG_DATA_HOME="$ROOT/.local/share"
+export XDG_STATE_HOME="$ROOT/.local/state"
+export XDG_CACHE_HOME="$ROOT/.local/cache"
+export npm_config_cache="$ROOT/.local/cache/npm"
+export npm_config_prefix="$ROOT/.local"
+export MEMORY_FILE_PATH="$ROOT/.local/share/mcp-memory/memory.jsonl"
+export PATH="$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH"
 
 mkdir -p \
   "$HOME" \
@@ -35,7 +36,7 @@ mkdir -p \
   "$XDG_STATE_HOME" \
   "$XDG_CACHE_HOME/npm"
 
-bunx_bin="$META_ROOT/usr/bin/bunx"
+bunx_bin="$ROOT/usr/bin/bunx"
 if [ ! -x "$bunx_bin" ]; then
   echo "envctl-mcp-memory-server: missing meta bunx wrapper at $bunx_bin" >&2
   exit 1
