@@ -33,7 +33,7 @@ markdown view disagree, the ledger wins.
   the rendered packet (`.handoff/packets/latest.md`) and carries loop-only operational context
   (which session, which worktree set, A2 per-repo table, dead ends). It **MUST NOT duplicate** the
   kernel-owned fields — do **not** re-state State-Precedence or the Next-Command / next-task in
-  HANDOFF.md; point at the packet for those. (Run all ledger-touching `hf` verbs from `$META_ROOT`,
+  HANDOFF.md; point at the packet for those. (Run all ledger-touching `hf` verbs from `$LIFEOS_ROOT`,
   and re-run the residency fail-closed check; if it fails, fall back to the ELSE branch.)
 
 **ELSE (`hf` absent, or residency guard not satisfied):** fall back to today's hand-written
