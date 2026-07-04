@@ -41,16 +41,13 @@ Use these workflow files as thin shims only; the authoritative workflow bodies r
 
 ## Runtime Gates
 
-- The pre-cleanroom Codex runtime gate and `hooks.json` are archived evidence,
-  not active lifecycle wiring. Do not restore
-  `.codex/hooks/install-flexnetos-runtime-hooks.sh`, `.codex/hooks.json`, or
-  `.codex/hooks/flexnetos-runtime-gate.sh` from the archive.
+- Legacy repo-local Codex lifecycle hook sources from the pre-clean-room
+  baseline are purged and archived evidence only. Do not restore or regenerate
+  them from this repo.
 - Hooks remain mandatory for the control plane, but the replacement must be a
   clean-room design owned by the root lifecycle contract. Until that rebuild
-  lands, envctl must keep `[features].hooks = false` and purge stale generated
-  `~/.codex/hooks.json` state.
+  lands, envctl-derived Codex config must keep hook features disabled and purge
+  stale generated hook state.
 - Runtime copies under `/home/flexnetos/workspace/.codex` and
   `/home/flexnetos/FlexNetOS/.codex` must not carry independent lifecycle hook
-  policy. Root lifecycle hooks are owned by
-  `/home/flexnetos/FlexNetOS/.codex/hooks.json` when the clean-room gate is
-  deliberately reintroduced.
+  policy.
