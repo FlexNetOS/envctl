@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-07-05T05:18:48+00:00",
+  "generated_at": "2026-07-05T05:27:46+00:00",
   "tasks": [
     {
       "task_id": "EF-001_SCAN_PACKAGE",
@@ -202,7 +202,7 @@
       "task_id": "REQ-045_RUN_REPLAY",
       "phase": "04-shared",
       "owner_lane": "lane_d_filesystem",
-      "status": "pending",
+      "status": "completed",
       "proof_uri": "proof_records/REQ-045_RUN_REPLAY.proof.json"
     },
     {

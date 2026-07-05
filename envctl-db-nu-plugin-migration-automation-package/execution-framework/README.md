@@ -14,6 +14,7 @@ python3 scripts/validate_task_graph.py generated/task_graph.csv
 python3 scripts/task_graph_to_packets.py generated/task_graph.csv
 python3 scripts/goal_loop.py generated/task_graph.csv
 python3 scripts/verify_install_bootstrap.py
+python3 scripts/verify_run_replay.py
 python3 scripts/verify_history_and_completeness.py
 ```
 
@@ -28,6 +29,16 @@ python3 scripts/verify_install_bootstrap.py
 ```
 
 The generated operator entrypoint is `docs/INSTALL_BOOTSTRAP.md`; the machine-readable command template manifest is `generated/install_bootstrap_manifest.json`. The verifier checks the package-level `INSTALL_IN_REPOS.sh` and `RUN_WITH_CODEX_ENVCTL.sh` inputs, writes `state/REQ-044_INSTALL_BOOTSTRAP.heartbeat.json`, and records proof at `proof_records/REQ-044_INSTALL_BOOTSTRAP.proof.json`.
+
+## Run And Replay
+
+The run/replay operator command templates are generated and verified by:
+
+```bash
+python3 scripts/verify_run_replay.py
+```
+
+The generated operator entrypoint is `docs/RUN_REPLAY.md`; the machine-readable command template manifest is `generated/run_replay_manifest.json`. The verifier checks replay, rollback, approval, and convenience-template prerequisites, writes `state/REQ-045_RUN_REPLAY.heartbeat.json`, and records proof at `proof_records/REQ-045_RUN_REPLAY.proof.json`.
 
 ## Source intent preserved
 
