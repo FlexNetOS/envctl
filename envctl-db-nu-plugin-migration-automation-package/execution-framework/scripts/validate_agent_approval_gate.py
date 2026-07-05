@@ -10,7 +10,7 @@ from _common import load_ledger, now, root, write_json
 from goal_loop import load_agent_approval
 
 
-TASK_ID = 'REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS'
+TASK_ID = '__APPROVAL_GATE_SELF_TEST__'
 
 
 def backup(path: Path) -> bytes | None:
