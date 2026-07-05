@@ -1,0 +1,405 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-124_TEST_COVERAGE",
+  "generated_at": "2026-07-04T23:29:11+00:00",
+  "status": "passed",
+  "matrix": {
+    "schema_version": "1.0",
+    "task_id": "ART-124_TEST_COVERAGE",
+    "title": "Test coverage matrix",
+    "generated_at": "2026-07-04T23:29:11+00:00",
+    "target": {
+      "target_id": "flexnetos-vs-lifeos",
+      "target_type": "mixed",
+      "primary_root": "/home/flexnetos/FlexNetOS",
+      "compare_root": "/home/flexnetos/lifeos",
+      "safety_mode": "approval-gated"
+    },
+    "coverage_summary": {
+      "required_classes": [
+        "unit",
+        "integration",
+        "regression",
+        "performance",
+        "security",
+        "UAT"
+      ],
+      "covered_class_count": 6,
+      "automation_status_counts": {
+        "ready": 2,
+        "partial": 2,
+        "planned": 2
+      },
+      "ver300_entry_status": "ready_with_open_runtime_gates"
+    },
+    "coverage_rows": [
+      {
+        "coverage_id": "TCOV-UNIT-001",
+        "test_class": "unit",
+        "scope": "envctl database schema, views, validators, artifact registry, validation evidence, operation state, and shared protocol sample records",
+        "required_checks": [
+          "apply SQL migrations to an isolated SQLite database",
+          "validate target, recipe, run event, operation, artifact, evidence, validation, replay, and proof record schemas",
+          "exercise artifact registry path, hash, producer, contract, provenance, validation link, and fail-closed cases",
+          "exercise validation evidence rows for reconciliation, parity, test results, and proof evidence"
+        ],
+        "current_evidence": [
+          "execution-framework/generated/envctl_migration_db_validation_report.json",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/generated/envctl_validation_evidence_report.json",
+          "execution-framework/generated/shared_protocol_validation_report.json",
+          "execution-framework/generated/operation_state_machine_validation_report.json"
+        ],
+        "automation_status": "ready",
+        "readiness": "covered_for_ver300_entry",
+        "owner": "validation-agent",
+        "blocks": [
+          "VER-300_UNIT_VALIDATION",
+          "VER-301_SQL_SCHEMA_TEST",
+          "VER-302_PACKET_SCHEMA_VALIDATION"
+        ],
+        "open_gaps": [
+          "Replay and rollback unit checks remain pending until REQ-026, REQ-027, and REQ-045 complete."
+        ]
+      },
+      {
+        "coverage_id": "TCOV-INTEGRATION-001",
+        "test_class": "integration",
+        "scope": "envctl database to nu_plugin shared protocol boundary for targets, runs, operations, status streams, artifacts, approvals, graph, and validation rows",
+        "required_checks": [
+          "create a run in envctl and read it through the plugin-shaped shared protocol records",
+          "append operation events and confirm timeline/status rows are visible to the operator surface",
+          "list artifact records with hashes, evidence IDs, and graph links through the shared protocol shape",
+          "verify approval and replay status are represented as structured records when backing gates exist"
+        ],
+        "current_evidence": [
+          "execution-framework/generated/shared_protocol_manifest.json",
+          "execution-framework/generated/nu_plugin_command_manifest.json",
+          "execution-framework/generated/live_visuals.json",
+          "execution-framework/generated/envctl_run_ledger_report.json",
+          "execution-framework/generated/operation_state_machine.json"
+        ],
+        "automation_status": "partial",
+        "readiness": "protocol_ready_runtime_pairing_required",
+        "owner": "validation-agent",
+        "blocks": [
+          "VER-300_UNIT_VALIDATION"
+        ],
+        "open_gaps": [
+          "REQ-041_TWO_REPO_INTEGRATION is pending, so this matrix does not certify a live envctl-to-nu_plugin run."
+        ]
+      },
+      {
+        "coverage_id": "TCOV-REGRESSION-001",
+        "test_class": "regression",
+        "scope": "artifact contract paths, proof ledger, task graph packets, registry hashes, and reusable generated reports across repeated package runs",
+        "required_checks": [
+          "re-run generation for completed artifact tasks and verify path/hash stability or intentional proof updates",
+          "validate execution packets against task graph and schema contracts",
+          "rebuild status from proof ledger and confirm completed tasks remain queryable",
+          "detect stale or missing canonical contract paths in migration-artifacts"
+        ],
+        "current_evidence": [
+          "execution-framework/generated/task_graph.validation_report.json",
+          "execution-framework/generated/execution_manifest.json",
+          "execution-framework/generated/status_from_proofs.json",
+          "execution-framework/proof_records/proof_ledger.jsonl",
+          "execution-framework/generated/contract_manifest.json"
+        ],
+        "automation_status": "ready",
+        "readiness": "covered_for_artifact_replay_checks",
+        "owner": "validation-agent",
+        "blocks": [
+          "VER-300_UNIT_VALIDATION",
+          "VER-303_GOAL_LOOP_COMPUTE",
+          "VER-304_FINAL_COMPLETENESS"
+        ],
+        "open_gaps": [
+          "Full replay identity remains pending until REQ-045_RUN_REPLAY is complete."
+        ]
+      },
+      {
+        "coverage_id": "TCOV-PERF-001",
+        "test_class": "performance",
+        "scope": "SQLite migration application, artifact registration throughput, proof/status rebuild, and plugin status stream responsiveness",
+        "required_checks": [
+          "time migration application and registry insertion for representative artifact batches",
+          "time status/proof rebuild against the proof ledger and generated task graph",
+          "set a baseline for plugin status and live visual reads over fixture data",
+          "record acceptable thresholds before release validation begins"
+        ],
+        "current_evidence": [
+          "execution-framework/generated/envctl_migration_db_model.json",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/generated/status_from_proofs.json",
+          "execution-framework/generated/live_visuals.json"
+        ],
+        "automation_status": "planned",
+        "readiness": "baseline_required",
+        "owner": "validation-agent",
+        "blocks": [
+          "VER-300_UNIT_VALIDATION"
+        ],
+        "open_gaps": [
+          "No timing baseline artifact exists yet for migration DB, registry, or plugin status commands."
+        ]
+      },
+      {
+        "coverage_id": "TCOV-SECURITY-001",
+        "test_class": "security",
+        "scope": "blocked path policy, redaction controls, approval gates, command redaction, hash coverage, sandbox boundaries, and reproducibility identity",
+        "required_checks": [
+          "reject blocked evidence paths including .env, secrets, private_keys, pem, and key files",
+          "verify redaction controls and filesystem boundaries before any target write",
+          "confirm risky operations require approval and mutating plugin commands remain auditable",
+          "ensure generated artifacts and evidence rows carry SHA-256 hashes"
+        ],
+        "current_evidence": [
+          "execution-framework/generated/security_redaction_validation_report.json",
+          "execution-framework/generated/filesystem_boundary_validation_report.json",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/proof_records/REQ-043_SECURITY_REDACTION.proof.json",
+          "execution-framework/proof_records/REQ-042_FILESYSTEM_BOUNDS.proof.json"
+        ],
+        "automation_status": "partial",
+        "readiness": "controls_ready_approval_and_replay_pending",
+        "owner": "security-reproducibility-agent",
+        "blocks": [
+          "VER-300_UNIT_VALIDATION",
+          "VER-302_PACKET_SCHEMA_VALIDATION"
+        ],
+        "open_gaps": [
+          "REQ-033_PLUGIN_HUMAN_APPROVAL and REQ-045_RUN_REPLAY are pending, so end-to-end approval/replay security is not certified here."
+        ]
+      },
+      {
+        "coverage_id": "TCOV-UAT-001",
+        "test_class": "UAT",
+        "scope": "operator-facing migration workflow for target intake, package import, run planning, approvals, live status, artifact review, proof review, replay, and handoff",
+        "required_checks": [
+          "walk the operator session template using fixture target and recipe records",
+          "confirm live visual/status screens expose blockers, approvals, artifacts, validations, and proof URIs",
+          "review generated migration-artifacts index paths and canonical testing-validation artifacts",
+          "capture human signoff criteria and unresolved blockers before release handoff"
+        ],
+        "current_evidence": [
+          "examples/nu/operator-session-template.nu",
+          "execution-framework/generated/live_visuals.md",
+          "execution-framework/generated/nu_plugin_command_manifest.json",
+          "execution-framework/generated/status_from_proofs.json",
+          "execution-framework/generated/final_verification_report.json"
+        ],
+        "automation_status": "planned",
+        "readiness": "uat_script_ready_human_run_required",
+        "owner": "artifact-agent",
+        "blocks": [
+          "VER-300_UNIT_VALIDATION",
+          "REL-401_HANDOFF"
+        ],
+        "open_gaps": [
+          "Human approval support is pending; replay support is pending."
+        ]
+      }
+    ],
+    "dependency_status": {
+      "REQ-024_ENVCTL_ARTIFACT_REGISTRY": "completed",
+      "REQ-040_SHARED_PROTOCOL_SCHEMAS": "completed",
+      "REQ-025_ENVCTL_VALIDATION_EVIDENCE": "completed",
+      "REQ-033_PLUGIN_HUMAN_APPROVAL": "pending",
+      "REQ-041_TWO_REPO_INTEGRATION": "pending",
+      "REQ-045_RUN_REPLAY": "pending"
+    },
+    "verification_entrypoints": [
+      "python3 scripts/verify_envctl_db_schema.py",
+      "python3 scripts/verify_artifact_registry.py",
+      "python3 scripts/verify_validation_evidence.py",
+      "python3 scripts/verify_shared_protocol_schemas.py",
+      "python3 scripts/verify_security_redaction.py",
+      "python3 scripts/verify_filesystem_boundaries.py",
+      "VER-300_UNIT_VALIDATION"
+    ],
+    "source_inputs": {
+      "target_descriptor": "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+      "repo_scan": "execution-framework/generated/package_scan.json",
+      "envctl_database": "execution-framework/generated/envctl_migration_db_model.json",
+      "artifact_registry": "execution-framework/generated/envctl_artifact_registry_report.json",
+      "validation_evidence": "execution-framework/generated/envctl_validation_evidence_report.json",
+      "shared_protocols": "execution-framework/generated/shared_protocol_validation_report.json",
+      "task_status": "execution-framework/generated/status_from_proofs.json",
+      "contract_manifest": "execution-framework/generated/contract_manifest.json"
+    },
+    "input_hashes": {
+      "examples/target-descriptors/flexnetos-vs-lifeos.yaml": "71f4aab77e91d0fa9a414350dee50f23fc3c6492b265c607fe9e4de93c3fe190",
+      "execution-framework/generated/package_scan.json": "0d851e9f6a67044bfd6b6df77231c518292a385304e1830d579e6520634b9487",
+      "execution-framework/generated/envctl_migration_db_model.json": "7347f6629cc4fb0dbae56105dec65d5937a2a55860e0df4215b309e3ef766cef",
+      "execution-framework/generated/envctl_artifact_registry_report.json": "b3d33175a5ec64d95bb2a2dc0b503ca897c97990bf78fd80fc159780b3df113c",
+      "execution-framework/generated/envctl_validation_evidence_report.json": "0ac5c601eb16c8df54d7f70573aacf950b18a0ecfe56606ebe9a3ab9d092d3bf",
+      "execution-framework/generated/shared_protocol_validation_report.json": "0863b9b28e702c704c96f50a50954181f42b35aaa16e4ecb6643497093c4c4d0",
+      "execution-framework/generated/status_from_proofs.json": "72a97f935a3e589a84abebd22ae2cd78c9947611d5c8d6316a343c4667167ea5",
+      "execution-framework/generated/contract_manifest.json": "3c2e2a883b6dfc7f135c4dc101484cced9f877191b46bb378f1cc4fcd07e1270"
+    },
+    "contract_mapping": {
+      "contract_row_id": "artifact:06-testing-validation-test-coverage-matrix-md",
+      "contract_required_path": "migration-artifacts/06-testing-validation/test-coverage-matrix.md",
+      "task_scoped_paths": [
+        "migration-artifacts/art-124_test_coverage/test-coverage-matrix.md",
+        "migration-artifacts/art-124_test_coverage/test-coverage-matrix.json"
+      ]
+    }
+  },
+  "registry_results": [
+    {
+      "artifact_row_id": "artifact-6be567bce1d457d12a47ad0e",
+      "artifact_id": "art-124-test-coverage-md",
+      "run_id": "run-art124-test-coverage",
+      "path": "execution-framework/migration-artifacts/art-124_test_coverage/test-coverage-matrix.md",
+      "content_hash": "sha256:fd2dcae0259887d017b796f7210c5359034ca1e7b1af9befb7cbbd798b3c5b95",
+      "producer_operation_id": "produce-06-testing-validation-test-coverage-matrix-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-56df926415bb80bc31bd6051",
+        "evidence-a072415c7e82a93bb69c6055",
+        "evidence-ca6ff1ff9036caf34d97cdd2",
+        "evidence-01a3e1b14f7d49a26f705eba",
+        "evidence-0732e3b91dd8402f5af91d78",
+        "evidence-3baa6021f7fe52b819620bc3",
+        "evidence-8d74cfd3f2ee104209f96ae7",
+        "evidence-c01e1cf419fc74658eb81b77",
+        "evidence-c1fec74875dd8bb57635478e",
+        "evidence-5ff4a83cba4304dc5a369983"
+      ],
+      "graph_edge_ids": [
+        "edge-a105249738192d6cc07e8f75",
+        "edge-8787898ad18155137680c8da",
+        "edge-457d7e7f4ffd70153f9918ac",
+        "edge-6aea98e5a1220783ac1bb487",
+        "edge-e8e8b4e909562447984397da",
+        "edge-653d696de9953d8d0f49a34e"
+      ],
+      "validation_ids": [
+        "validation-174976bbda5c9a312b5d8a89",
+        "validation-c9bd73b96d86a4c2d11f0e3e",
+        "validation-3af402191e56b9d9bfedc967",
+        "validation-b0b94aceff2491dfbd671122",
+        "validation-c7df2120f6b20594f37a5972"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-e4bee49c69c883d3abdad20b",
+      "artifact_id": "art-124-test-coverage-json",
+      "run_id": "run-art124-test-coverage",
+      "path": "execution-framework/migration-artifacts/art-124_test_coverage/test-coverage-matrix.json",
+      "content_hash": "sha256:954d6a0776de4fecb8476c3868c5acd88dcc6366d4d1ba2f6976800a4dcafee8",
+      "producer_operation_id": "produce-06-testing-validation-test-coverage-matrix-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-bc5fffb9edd7748e202e984c",
+        "evidence-c04d3cf6c0318c581a4a20a4",
+        "evidence-ba118662345777beb5f18f1f",
+        "evidence-8e0d2274d9cd750a399ebbbb",
+        "evidence-59b40d9a346a6ebfd8059d5b",
+        "evidence-c3a96a3d094f082d95f7c297",
+        "evidence-9a8eb51e8ae39f4b2f94029f",
+        "evidence-e7dc9e1fbcc8709a2c19d8f3",
+        "evidence-534e89fdb789be50ca9b4ea8",
+        "evidence-86781542423fc55a90e97f2c"
+      ],
+      "graph_edge_ids": [
+        "edge-e6ba27f997a7ee0263b40a60",
+        "edge-6872376c6ab5d68119c67805",
+        "edge-a0e67b5738b1c23d25ec200c",
+        "edge-f0b11f6d021b77d8fa7a7860",
+        "edge-205082c5dbb4cda57771d635",
+        "edge-fd8499dadd144ab4b0ac6a28"
+      ],
+      "validation_ids": [
+        "validation-fb3371a9cce6b928782f6940",
+        "validation-3d5e4d7fabb27334c6be7a49",
+        "validation-e17b00504eb056ecc37bc517",
+        "validation-75168837008d433dd19e630c",
+        "validation-98ff1ff9c78fe86e7d7701eb"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-10839ca84eb727437b76294e",
+      "artifact_id": "06-testing-validation-test-coverage-matrix-md",
+      "run_id": "run-art124-test-coverage",
+      "path": "execution-framework/migration-artifacts/06-testing-validation/test-coverage-matrix.md",
+      "content_hash": "sha256:fd2dcae0259887d017b796f7210c5359034ca1e7b1af9befb7cbbd798b3c5b95",
+      "producer_operation_id": "produce-06-testing-validation-test-coverage-matrix-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-e46b0ded496023ee15046ea5",
+        "evidence-5c585caa4380eba1a08062d0",
+        "evidence-5a3559f62960d0a2dba036d2",
+        "evidence-0b730c22deee168509f580db",
+        "evidence-eb6ec4223df411515c40320c",
+        "evidence-acc61158032d591572bba6b6",
+        "evidence-30a56959a2566ff437ad6ade",
+        "evidence-521e691585f6e4dd33897235",
+        "evidence-8676421b1774ffaecc628382",
+        "evidence-4a30cb33b81f545f97caac43"
+      ],
+      "graph_edge_ids": [
+        "edge-d8a43216fb1f1bc0d094f3e0",
+        "edge-5b17efd48566cfd351992720",
+        "edge-c8bdab30b6e76dff4549e006",
+        "edge-d39ead063e72a29761001a60",
+        "edge-523b267719840306bb3220c3",
+        "edge-eeeb094543c0fd53aef68a7f"
+      ],
+      "validation_ids": [
+        "validation-daa659f190b97022ea0050ef",
+        "validation-0ac9ecdc94f328aa6aa70394",
+        "validation-5b6138571ffe9f740cc52827",
+        "validation-beaf986314bd10216aadb423",
+        "validation-c040f831b44292ab4fdaab95"
+      ]
+    }
+  ],
+  "artifact_index_rows": [
+    {
+      "artifact_id": "06-testing-validation-test-coverage-matrix-md",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/06-testing-validation/test-coverage-matrix.md",
+      "content_hash": "sha256:fd2dcae0259887d017b796f7210c5359034ca1e7b1af9befb7cbbd798b3c5b95"
+    },
+    {
+      "artifact_id": "art-124-test-coverage-json",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-124_test_coverage/test-coverage-matrix.json",
+      "content_hash": "sha256:954d6a0776de4fecb8476c3868c5acd88dcc6366d4d1ba2f6976800a4dcafee8"
+    },
+    {
+      "artifact_id": "art-124-test-coverage-md",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-124_test_coverage/test-coverage-matrix.md",
+      "content_hash": "sha256:fd2dcae0259887d017b796f7210c5359034ca1e7b1af9befb7cbbd798b3c5b95"
+    }
+  ],
+  "validation_scorecard_row": [
+    15,
+    0,
+    0,
+    0,
+    0
+  ],
+  "replay_readiness_row": [
+    1,
+    0,
+    0,
+    0
+  ],
+  "errors": [],
+  "evidence": [
+    "execution-framework/migration-artifacts/art-124_test_coverage/test-coverage-matrix.md",
+    "execution-framework/migration-artifacts/art-124_test_coverage/test-coverage-matrix.json",
+    "execution-framework/migration-artifacts/06-testing-validation/test-coverage-matrix.md",
+    "execution-framework/generated/art124_test_coverage_report.json",
+    "execution-framework/generated/envctl_artifact_registry_report.json",
+    "execution-framework/generated/envctl_validation_evidence_report.json",
+    "execution-framework/generated/shared_protocol_validation_report.json",
+    "execution-framework/generated/status_from_proofs.json",
+    "execution-framework/generated/contract_manifest.json"
+  ]
+}

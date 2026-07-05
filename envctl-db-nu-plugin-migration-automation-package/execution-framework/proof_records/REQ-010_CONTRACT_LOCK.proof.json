@@ -1,0 +1,74 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-010_CONTRACT_LOCK",
+  "status": "completed",
+  "started_at": "2026-07-04T22:55:06+00:00",
+  "completed_at": "2026-07-04T22:55:06+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-plan-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/lock_contract.py",
+    "execution-framework/generated/contract_manifest.json",
+    "execution-framework/generated/contract_manifest.validation_report.json",
+    "execution-framework/generated/contract_manifest.seed.sql",
+    "execution-framework/generated/task_graph.index.json",
+    "execution-framework/docs/CONTRACT_MANIFEST.md",
+    "execution-framework/logs/REQ-010_CONTRACT_LOCK.log",
+    "execution-framework/proof_records/REQ-010_CONTRACT_LOCK.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/validate_task_graph.py generated/task_graph.csv",
+    "python3 scripts/task_graph_to_packets.py generated/task_graph.csv",
+    "python3 scripts/goal_loop.py generated/task_graph.csv",
+    "python3 scripts/verify_history_and_completeness.py",
+    "python3 scripts/lock_contract.py"
+  ],
+  "verification_output": {
+    "contract_manifest": "generated/contract_manifest.json",
+    "validation": {
+      "schema_version": "1.0",
+      "generated_at": "2026-07-04T22:55:06+00:00",
+      "status": "passed",
+      "errors": [],
+      "checks": {
+        "source_file_count": 8,
+        "artifact_row_count": 136,
+        "automation_row_count": 16,
+        "key_path_count": 21,
+        "recipe_phase_count": 14
+      }
+    },
+    "summary": {
+      "artifact_row_count": 136,
+      "automation_row_count": 16,
+      "total_contract_row_count": 152,
+      "recipe_phase_count": 14,
+      "linked_task_count": 37
+    }
+  },
+  "checksums": {
+    "execution-framework/scripts/lock_contract.py": "5d5ac978f95a97d076ccbc279f6a3728e2bee1713d02b39b3590a9fd9d1e672e",
+    "execution-framework/generated/contract_manifest.json": "3c2e2a883b6dfc7f135c4dc101484cced9f877191b46bb378f1cc4fcd07e1270",
+    "execution-framework/generated/contract_manifest.validation_report.json": "d50ce5336291d10543f01fa2d95846cd4330ca2977c9db9eb8bd74671f8d0d9a",
+    "execution-framework/generated/contract_manifest.seed.sql": "399c1092118d57f78c7647a2d5c2fbd914c5b2ac97d5e41e4deda44722dc8c06",
+    "execution-framework/generated/task_graph.index.json": "752138f53a50172916a96945138361755ba513da12c083b0804f48642c04d0be",
+    "execution-framework/docs/CONTRACT_MANIFEST.md": "6fd7f410b9be1e306e6225e86c7da769f685ccca2453d960a076573426a3e6ab",
+    "execution-framework/logs/REQ-010_CONTRACT_LOCK.log": "6dd702e3507bbf74726fd00a6320df98b6b13f0504fd4fae918f55270b3bab0e",
+    "execution-framework/proof_records/REQ-010_CONTRACT_LOCK.proof.json": "a17b75f036e85edd8e56028d6d49bcca39a145290ba7ea9b65e3a7d3c7517bc6",
+    "execution-framework/proof_records/proof_ledger.jsonl": "41fa49412f00d71100051dab75794944d720881b035a69b9e81a3ca5f591c8da"
+  },
+  "logs_uri": "logs/REQ-010_CONTRACT_LOCK.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "generated/contract_manifest.json",
+    "generated/contract_manifest.validation_report.json",
+    "generated/contract_manifest.seed.sql",
+    "docs/CONTRACT_MANIFEST.md",
+    "generated/task_graph.index.json#contract_lock"
+  ],
+  "failure_reason": "",
+  "next_action": "run REQ-020_ENVCTL_DB_SCHEMA, REQ-030_PLUGIN_PROTOCOL_MANIFEST, and REQ-040_SHARED_PROTOCOL_SCHEMAS"
+}

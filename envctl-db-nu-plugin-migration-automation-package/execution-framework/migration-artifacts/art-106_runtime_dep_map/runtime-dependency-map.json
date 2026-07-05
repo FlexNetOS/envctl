@@ -1,0 +1,4211 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-106_RUNTIME_DEP_MAP",
+  "generated_at": "2026-07-04T23:29:22+00:00",
+  "status": "complete",
+  "scope": {
+    "source": "target descriptor, repo scan, envctl database reports, and safe text scan",
+    "runtime_live_state_confirmed": false,
+    "secret_material_read": false,
+    "blocked_patterns": [
+      "**/.env",
+      "**/secrets/**",
+      "**/private_keys/**",
+      "**/*.pem",
+      "**/*.key"
+    ],
+    "categories": [
+      "databases",
+      "env_vars",
+      "secret_refs",
+      "queues",
+      "apis",
+      "caches"
+    ]
+  },
+  "target_context": {
+    "target_registry_status": "passed",
+    "target": {
+      "id": "target-flexnetos-vs-lifeos",
+      "target_id": "flexnetos-vs-lifeos",
+      "target_type": "mixed",
+      "primary_root": "/home/flexnetos/FlexNetOS",
+      "compare_root": "/home/flexnetos/lifeos",
+      "descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384",
+      "safety_mode": "approval-gated",
+      "max_auto_risk": "R2"
+    },
+    "resolved_target_root": "/home/flexnetos/FlexNetOS",
+    "descriptor_inputs": [
+      {
+        "source": "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+        "target_id": "flexnetos-vs-lifeos",
+        "target_type": "mixed",
+        "descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384"
+      },
+      {
+        "source": "examples/target-descriptors/generic-codebase.yaml",
+        "target_id": "replace-with-target-id",
+        "target_type": "codebase",
+        "descriptor_hash": "sha256:e79f5c931d50fb8193c678d61ddecc1405c8030ab9528946fcb65a7bde06bff9"
+      },
+      {
+        "source": "generated:synthetic-data-target",
+        "target_id": "synthetic-data-target",
+        "target_type": "data",
+        "descriptor_hash": "sha256:b60cc1a1afc87e27ced7bcd8cd986a858d8bc85fa7509692133faf682e1d6c7d"
+      },
+      {
+        "source": "generated:synthetic-infrastructure-target",
+        "target_id": "synthetic-infrastructure-target",
+        "target_type": "infrastructure",
+        "descriptor_hash": "sha256:0527a67aad464952377710ed804063fb78f929cfb6db7580a33911ca34884f79"
+      },
+      {
+        "source": "generated:synthetic-integration-target",
+        "target_id": "synthetic-integration-target",
+        "target_type": "integration",
+        "descriptor_hash": "sha256:2c0b9fff80948d3964bfb88006d579c33ee3cb26c9dea98478e9085c9ffcb6e6"
+      }
+    ]
+  },
+  "envctl_database_context": {
+    "db_status": "passed",
+    "database_backend": "sqlite",
+    "runtime": "python sqlite3 in-memory",
+    "required_tables": [
+      "envctl_migration_agent_sessions",
+      "envctl_migration_approvals",
+      "envctl_migration_artifact_contracts",
+      "envctl_migration_artifacts",
+      "envctl_migration_checkpoints",
+      "envctl_migration_evidence",
+      "envctl_migration_graph_edges",
+      "envctl_migration_operations",
+      "envctl_migration_packages",
+      "envctl_migration_plugin_sessions",
+      "envctl_migration_recipes",
+      "envctl_migration_rollbacks",
+      "envctl_migration_run_events",
+      "envctl_migration_runs",
+      "envctl_migration_targets",
+      "envctl_migration_validations"
+    ],
+    "capability_coverage": {
+      "target descriptor registry": {
+        "object": "envctl_migration_targets",
+        "covered": true
+      },
+      "package import registry": {
+        "object": "envctl_migration_packages",
+        "covered": true
+      },
+      "artifact contract registry": {
+        "object": "envctl_migration_artifact_contracts",
+        "covered": true
+      },
+      "migration recipe registry": {
+        "object": "envctl_migration_recipes",
+        "covered": true
+      },
+      "run ledger": {
+        "object": "envctl_migration_runs",
+        "covered": true
+      },
+      "operation queue": {
+        "object": "envctl_migration_operations",
+        "covered": true
+      },
+      "append-only event log": {
+        "object": "envctl_migration_run_events",
+        "covered": true
+      },
+      "evidence store": {
+        "object": "envctl_migration_evidence",
+        "covered": true
+      },
+      "artifact registry": {
+        "object": "envctl_migration_artifacts",
+        "covered": true
+      },
+      "link graph": {
+        "object": "envctl_migration_graph_edges",
+        "covered": true
+      },
+      "approval gate": {
+        "object": "envctl_migration_approvals",
+        "covered": true
+      },
+      "validation ledger": {
+        "object": "envctl_migration_validations",
+        "covered": true
+      },
+      "checkpoint registry": {
+        "object": "envctl_migration_checkpoints",
+        "covered": true
+      },
+      "rollback handles": {
+        "object": "envctl_migration_rollbacks",
+        "covered": true
+      },
+      "agent sessions": {
+        "object": "envctl_migration_agent_sessions",
+        "covered": true
+      },
+      "plugin sessions": {
+        "object": "envctl_migration_plugin_sessions",
+        "covered": true
+      },
+      "live status views": {
+        "object": "envctl_migration_run_latest_status",
+        "covered": true
+      },
+      "timeline views": {
+        "object": "envctl_migration_live_timeline",
+        "covered": true
+      },
+      "replay readiness": {
+        "object": "envctl_migration_replay_readiness",
+        "covered": true
+      }
+    },
+    "artifact_registry_status": "passed",
+    "shared_protocol_status": null,
+    "shared_protocol_records": [
+      "TargetDescriptor",
+      "MigrationRecipe",
+      "MigrationRun",
+      "RunEvent",
+      "Operation",
+      "ApprovalRequest",
+      "ApprovalDecision",
+      "ArtifactRecord",
+      "EvidenceRecord",
+      "GraphEdge",
+      "ValidationResult",
+      "ReplayRequest",
+      "ReplayResult",
+      "ProofRecord"
+    ]
+  },
+  "safe_scan": {
+    "target_root": "/home/flexnetos/FlexNetOS",
+    "visited_file_count": 3000,
+    "scan_limits": {
+      "target_exists": true,
+      "skipped": {
+        "unsupported_suffix": 1094,
+        "max_files_reached": 1
+      },
+      "truncated": true,
+      "max_files": 3000,
+      "max_file_bytes": 700000,
+      "blocked_patterns": [
+        "**/.env",
+        "**/secrets/**",
+        "**/private_keys/**",
+        "**/*.pem",
+        "**/*.key"
+      ],
+      "secret_material_read": false
+    },
+    "suffix_counts": {
+      ".md": 1955,
+      ".json": 378,
+      ".yaml": 349,
+      ".py": 226,
+      ".js": 48,
+      ".sh": 25,
+      ".toml": 11,
+      ".ts": 6,
+      ".nu": 2
+    },
+    "top_level_counts": {
+      "oh-my-codex-main": 2855,
+      "artifacts": 116,
+      ".codex": 22,
+      "AGENTS.md": 1,
+      "LOCAL_WORKAROUNDS.md": 1,
+      "WORKLOG.md": 1,
+      "WORKSPACE_LAYOUT.md": 1,
+      "release-baseline.json": 1,
+      "_quarantine": 1,
+      "etc": 1
+    },
+    "errors": []
+  },
+  "coverage": {
+    "databases": {
+      "status": "repo_evidence_found",
+      "evidence_count": 180,
+      "file_count": 74,
+      "top_names": [
+        {
+          "name": ".DB",
+          "count": 102
+        },
+        {
+          "name": "SQLite",
+          "count": 98
+        },
+        {
+          "name": "sqlite3",
+          "count": 88
+        },
+        {
+          "name": "postgres",
+          "count": 84
+        },
+        {
+          "name": "Postgres",
+          "count": 75
+        },
+        {
+          "name": "PostgreSQL",
+          "count": 74
+        },
+        {
+          "name": "sqlite",
+          "count": 34
+        },
+        {
+          "name": "postgresql",
+          "count": 31
+        },
+        {
+          "name": "libSQL",
+          "count": 14
+        },
+        {
+          "name": ".sqlite",
+          "count": 9
+        },
+        {
+          "name": "MySQL",
+          "count": 8
+        },
+        {
+          "name": ".db",
+          "count": 6
+        },
+        {
+          "name": "libsql",
+          "count": 6
+        },
+        {
+          "name": "mysql",
+          "count": 6
+        },
+        {
+          "name": "DATABASE_URL",
+          "count": 5
+        },
+        {
+          "name": "LIBSQL",
+          "count": 4
+        },
+        {
+          "name": "SQLITE",
+          "count": 4
+        },
+        {
+          "name": "MariaDB",
+          "count": 1
+        }
+      ],
+      "sample_evidence": [
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 273,
+          "signal": "postgres",
+          "names": [
+            "postgres"
+          ],
+          "snippet": "codex plugin add neon-postgres@meta-plugins-codex --json"
+        },
+        {
+          "path": "WORKLOG.md",
+          "line": 475,
+          "signal": "postgres",
+          "names": [
+            "postgres"
+          ],
+          "snippet": "neon-postgres"
+        },
+        {
+          "path": "WORKLOG.md",
+          "line": 1298,
+          "signal": "sqlite",
+          "names": [
+            "SQLite"
+          ],
+          "snippet": "That repaired the SQLite projection and restored `head`, but"
+        },
+        {
+          "path": "WORKSPACE_LAYOUT.md",
+          "line": 50,
+          "signal": "sqlite",
+          "names": [
+            "SQLite",
+            "sqlite"
+          ],
+          "snippet": "| `/home/flexnetos/FlexNetO...` | Untracked Codex SQLite state candidate. |"
+        },
+        {
+          "path": ".codex/config.toml",
+          "line": 144,
+          "signal": "postgres",
+          "names": [
+            "postgres"
+          ],
+          "snippet": "[plugins.\"neon-postgres@meta-plugins-codex\"]"
+        },
+        {
+          "path": "artifacts/generated/T036/bootstrap.nu",
+          "line": 20,
+          "signal": "sqlite",
+          "names": [
+            "sqlite"
+          ],
+          "snippet": "$env.CODEX_SQLITE_HOME = \"/home/flexnetos/FlexNetO...\""
+        },
+        {
+          "path": "artifacts/generated/T036/bootstrap.sh",
+          "line": 21,
+          "signal": "sqlite",
+          "names": [
+            "sqlite"
+          ],
+          "snippet": "export CODEX_SQLITE_HOME='/home/flexnetos/FlexNetO...'"
+        },
+        {
+          "path": "artifacts/generated/T036-repeat/bootstrap.nu",
+          "line": 20,
+          "signal": "sqlite",
+          "names": [
+            "sqlite"
+          ],
+          "snippet": "$env.CODEX_SQLITE_HOME = \"/home/flexnetos/FlexNetO...\""
+        },
+        {
+          "path": "artifacts/generated/T036-repeat/bootstrap.sh",
+          "line": 21,
+          "signal": "sqlite",
+          "names": [
+            "sqlite"
+          ],
+          "snippet": "export CODEX_SQLITE_HOME='/home/flexnetos/FlexNetO...'"
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/WORKLOG.md",
+          "line": 773,
+          "signal": "sqlite",
+          "names": [
+            "SQLite"
+          ],
+          "snippet": "- Classified `auth.json`, config, history, SQLite DBs and sidecars, sessions, caches, package cache, plugins, skills, temp dirs, model cache, and metadata as envctl seed rows."
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/WORKLOG.md",
+          "line": 1096,
+          "signal": "sqlite",
+          "names": [
+            ".db"
+          ],
+          "snippet": "- `/home/flexnetos/.cache/kache/index.db`"
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/WORKLOG.md",
+          "line": 1112,
+          "signal": "sqlite",
+          "names": [
+            "SQLite"
+          ],
+          "snippet": "- Documented local Kache cache state and SQLite index under `/home/flexnetos/.cache/kache`."
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/WORKLOG.md",
+          "line": 1125,
+          "signal": "sqlite",
+          "names": [
+            "SQLite"
+          ],
+          "snippet": "- 2026-06-30T21:54:16Z: required rows were present for release tag, binary, init dry-run, no-service policy, Cargo config, wrapper setting, doctor after config, smoke build, SQLite store DB, service status, and pgrep sta"
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/WORKLOG.md",
+          "line": 1676,
+          "signal": "sqlite",
+          "names": [
+            "libSQL"
+          ],
+          "snippet": "- Classified Codex auth/state, Nix netrc, GitHub/gh token names, RTK/Kache refs, registry/release token names, envctl/secretd/libSQL token names, MCP configs, runner injected secret refs, and the redacted parser fixture "
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/WORKLOG.md",
+          "line": 1742,
+          "signal": "sqlite",
+          "names": [
+            "libSQL"
+          ],
+          "snippet": "- Recorded tool-specific exceptions for Codex auth, envctl/secretd, Kache, RTK, Nix, Yazelix, runner FXRUN, and database/libSQL envs."
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/execution_artifacts/blocked_decisions.md",
+          "line": 42,
+          "signal": "postgres",
+          "names": [
+            "Postgres"
+          ],
+          "snippet": "10. **Non-v0.1 database services.** Postgres/Neon, Redis/Valkey, Qdrant, Chroma, DuckDB, LanceDB, RocksDB, sled/redb, DataFusion/Arrow stay deferred unless source scan proves a v0.1 dependency."
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/execution_artifacts/codex_settings_blueprint.md",
+          "line": 26,
+          "signal": "sqlite",
+          "names": [
+            "sqlite"
+          ],
+          "snippet": "$META_ROOT/var/lib/codex/sqlite/ # untracked CODEX_SQLITE_HOME candidate"
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/execution_artifacts/codex_settings_blueprint.md",
+          "line": 31,
+          "signal": "sqlite",
+          "names": [
+            "SQLite"
+          ],
+          "snippet": "`CODEX_HOME` changes where Codex reads config/auth/log/session data; `CODEX_SQLITE_HOME` controls SQLite-backed state location. The directory must exist before use. \ue200filecite\ue202turn89file0\ue202L73-L85\ue201 \ue200cite\ue202turn973925view7\ue202tu"
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/execution_artifacts/codex_settings_blueprint.md",
+          "line": 91,
+          "signal": "sqlite",
+          "names": [
+            "libSQL"
+          ],
+          "snippet": "- **No MCP server may receive raw OpenAI/GitHub/libSQL secrets through tracked config.** Use env var names or envctl secret references only."
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/execution_artifacts/coverage_matrix.md",
+          "line": 20,
+          "signal": "sqlite",
+          "names": [
+            "SQLite"
+          ],
+          "snippet": "| Kache replacement/RUSTC_WRAPPER | T024,T085,T105,T106,T107,T121,T122 | Preview before mutation, SQLite cache policy, remote planner deferred. |"
+        }
+      ]
+    },
+    "env_vars": {
+      "status": "repo_evidence_found",
+      "evidence_count": 180,
+      "file_count": 16,
+      "top_names": [
+        {
+          "name": "HF_TOKEN",
+          "count": 130
+        },
+        {
+          "name": "HOME",
+          "count": 69
+        },
+        {
+          "name": "X",
+          "count": 48
+        },
+        {
+          "name": "SKILL_DIR",
+          "count": 45
+        },
+        {
+          "name": "SO_HOME",
+          "count": 36
+        },
+        {
+          "name": "BINARY_NAME",
+          "count": 30
+        },
+        {
+          "name": "PATH",
+          "count": 28
+        },
+        {
+          "name": "XXX",
+          "count": 28
+        },
+        {
+          "name": "REPO",
+          "count": 27
+        },
+        {
+          "name": "TF_DIR",
+          "count": 27
+        },
+        {
+          "name": "PHYSICAL_AI_SKILL_HUB_UPSTREAM_ROOT",
+          "count": 26
+        },
+        {
+          "name": "CLOUDFLARE_API_TOKEN",
+          "count": 25
+        },
+        {
+          "name": "CF_API_TOKEN",
+          "count": 24
+        },
+        {
+          "name": "SCRIPT_DIR",
+          "count": 24
+        },
+        {
+          "name": "USD_ASSET_ROOT",
+          "count": 24
+        },
+        {
+          "name": "VERSION",
+          "count": 23
+        },
+        {
+          "name": "REPO_ROOT",
+          "count": 21
+        },
+        {
+          "name": "OSMO_DIR",
+          "count": 21
+        },
+        {
+          "name": "UPSTREAM_ROOT",
+          "count": 18
+        },
+        {
+          "name": "META_ROOT",
+          "count": 17
+        }
+      ],
+      "sample_evidence": [
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 378,
+          "signal": "shell-env",
+          "names": [
+            "PATH"
+          ],
+          "snippet": "PATH=/home/flexnetos/FlexNetO...:$PATH meta exec -- /home/flexnetos/FlexNetO... verify -> 17 commands complete"
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 379,
+          "signal": "shell-env",
+          "names": [
+            "PATH"
+          ],
+          "snippet": "PATH=/home/flexnetos/FlexNetO...:$PATH meta exec -- /home/flexnetos/FlexNetO... status --json -> 17 commands complete"
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 424,
+          "signal": "shell-env",
+          "names": [
+            "PATH"
+          ],
+          "snippet": "PATH=/home/flexnetos/FlexNetO...:$PATH /home/flexnetos/FlexNetO... doctor --json -> 16 repos discovered"
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 635,
+          "signal": "shell-env",
+          "names": [
+            "HOME"
+          ],
+          "snippet": "and place the workspace tool surface, `${HOME}/.nix-profile/bin`, and the system"
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 945,
+          "signal": "nu-env",
+          "names": [
+            "PATH"
+          ],
+          "snippet": "yzx run nu -c 'codex --version; $env.PATH | to json --raw'"
+        },
+        {
+          "path": "WORKLOG.md",
+          "line": 178,
+          "signal": "shell-env",
+          "names": [
+            "FXRUN_WORKSPACE_ROOT"
+          ],
+          "snippet": "env -i ... scripts/build-local-ubun....sh --help -> FXRUN_RELEASE_DIR default is $FXRUN_WORKSPACE_ROOT/release"
+        },
+        {
+          "path": "WORKLOG.md",
+          "line": 683,
+          "signal": "shell-env",
+          "names": [
+            "PATH"
+          ],
+          "snippet": "PATH=/home/flexnetos/FlexNetO...:$PATH meta exec -- /home/flexnetos/FlexNetO... verify -> 17 commands complete"
+        },
+        {
+          "path": "WORKLOG.md",
+          "line": 684,
+          "signal": "shell-env",
+          "names": [
+            "PATH"
+          ],
+          "snippet": "PATH=/home/flexnetos/FlexNetO...:$PATH meta exec -- /home/flexnetos/FlexNetO... status --json -> 17 commands complete"
+        },
+        {
+          "path": "WORKLOG.md",
+          "line": 730,
+          "signal": "shell-env",
+          "names": [
+            "PATH"
+          ],
+          "snippet": "PATH=/home/flexnetos/FlexNetO...:$PATH git-kb doctor --json -> repos.discovery ok, 16 repos discovered"
+        },
+        {
+          "path": "WORKLOG.md",
+          "line": 1258,
+          "signal": "shell-env",
+          "names": [
+            "HOME"
+          ],
+          "snippet": "path, avoiding the installer default of `$HOME/.local/bin` and placing the"
+        },
+        {
+          "path": "WORKLOG.md",
+          "line": 1588,
+          "signal": "shell-env",
+          "names": [
+            "PATH"
+          ],
+          "snippet": "PATH=/home/flexnetos/FlexNetO...:$PATH git-kb code index --force --prune --branch codex/clean-room-foundat..."
+        },
+        {
+          "path": "WORKLOG.md",
+          "line": 1991,
+          "signal": "shell-env",
+          "names": [
+            "HOME"
+          ],
+          "snippet": "`${HOME}/.nix-profile/bin`, and `/nix/var/nix/profiles/de...`. This is"
+        },
+        {
+          "path": ".codex/config.toml",
+          "line": 159,
+          "signal": "shell-env",
+          "names": [
+            "PATH",
+            "ROOT"
+          ],
+          "snippet": "'ROOT=\"${LIFEOS_ROOT:-/home/flexnetos/FlexNetOS}\"; export LIFEOS_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @upstash/"
+        },
+        {
+          "path": ".codex/config.toml",
+          "line": 169,
+          "signal": "shell-env",
+          "names": [
+            "PATH",
+            "ROOT"
+          ],
+          "snippet": "'ROOT=\"${LIFEOS_ROOT:-/home/flexnetos/FlexNetOS}\"; export LIFEOS_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @modelcon"
+        },
+        {
+          "path": ".codex/config.toml",
+          "line": 176,
+          "signal": "shell-env",
+          "names": [
+            "ROOT"
+          ],
+          "snippet": "'ROOT=\"${LIFEOS_ROOT:-/home/flexnetos/FlexNetOS}\"; export LIFEOS_ROOT=\"$ROOT\"; exec \"$ROOT/src/envctl/assets/s...\"',"
+        },
+        {
+          "path": ".codex/config.toml",
+          "line": 183,
+          "signal": "shell-env",
+          "names": [
+            "PATH",
+            "ROOT"
+          ],
+          "snippet": "'ROOT=\"${LIFEOS_ROOT:-/home/flexnetos/FlexNetOS}\"; export LIFEOS_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH\"; export N8N_API_URL=\"${N8N_API_URL:-"
+        },
+        {
+          "path": ".codex/config.toml",
+          "line": 190,
+          "signal": "shell-env",
+          "names": [
+            "PATH",
+            "ROOT"
+          ],
+          "snippet": "'ROOT=\"${LIFEOS_ROOT:-/home/flexnetos/FlexNetOS}\"; export LIFEOS_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @playwrig"
+        },
+        {
+          "path": ".codex/config.toml",
+          "line": 197,
+          "signal": "shell-env",
+          "names": [
+            "PATH",
+            "ROOT"
+          ],
+          "snippet": "'ROOT=\"${LIFEOS_ROOT:-/home/flexnetos/FlexNetOS}\"; export LIFEOS_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @modelcon"
+        },
+        {
+          "path": ".codex/agents/meta-worker.toml",
+          "line": 4,
+          "signal": "shell-env",
+          "names": [
+            "LIFEOS_ROOT"
+          ],
+          "snippet": "You are a meta-worker for $LIFEOS_ROOT."
+        },
+        {
+          "path": ".codex/prompts/codex-rust-forge.md",
+          "line": 12,
+          "signal": "shell-env",
+          "names": [
+            "TARGET"
+          ],
+          "snippet": "$TARGET"
+        }
+      ]
+    },
+    "secret_refs": {
+      "status": "repo_evidence_found",
+      "evidence_count": 180,
+      "file_count": 26,
+      "top_names": [
+        {
+          "name": "HF_TOKEN",
+          "count": 276
+        },
+        {
+          "name": "credential",
+          "count": 156
+        },
+        {
+          "name": "NGC_API_KEY",
+          "count": 65
+        },
+        {
+          "name": "CLOUDFLARE_API_TOKEN",
+          "count": 61
+        },
+        {
+          "name": "hf_token",
+          "count": 54
+        },
+        {
+          "name": "apiToken",
+          "count": 53
+        },
+        {
+          "name": "redaction",
+          "count": 51
+        },
+        {
+          "name": "redacted",
+          "count": 49
+        },
+        {
+          "name": "NVIDIA_API_KEY",
+          "count": 46
+        },
+        {
+          "name": "OPENAI_API_KEY",
+          "count": 45
+        },
+        {
+          "name": "CF_API_TOKEN",
+          "count": 40
+        },
+        {
+          "name": "trigger_cost_tokens",
+          "count": 38
+        },
+        {
+          "name": "get_token",
+          "count": 37
+        },
+        {
+          "name": "invoke_cost_tokens",
+          "count": 35
+        },
+        {
+          "name": "API_TOKEN",
+          "count": 27
+        },
+        {
+          "name": "api_token",
+          "count": 24
+        },
+        {
+          "name": "pending_action_claim_token",
+          "count": 24
+        },
+        {
+          "name": "deferred_cost_tokens",
+          "count": 24
+        },
+        {
+          "name": "ast_token_count",
+          "count": 22
+        },
+        {
+          "name": "action_token",
+          "count": 22
+        }
+      ],
+      "sample_evidence": [
+        {
+          "path": "WORKLOG.md",
+          "line": 2126,
+          "signal": "secret-store",
+          "names": [
+            "keyring"
+          ],
+          "snippet": "The local GitHub CLI account `drdave-flexnetos` is authenticated in the keyring"
+        },
+        {
+          "path": ".codex/config.toml",
+          "line": 15,
+          "signal": "secret-name",
+          "names": [
+            "tool_output_token_limit"
+          ],
+          "snippet": "tool_output_token_limit = 12000"
+        },
+        {
+          "path": ".codex/config.toml",
+          "line": 183,
+          "signal": "secret-name",
+          "names": [
+            "N8N_API_KEY"
+          ],
+          "snippet": "'ROOT=\"${LIFEOS_ROOT:-/home/flexnetos/FlexNetOS}\"; export LIFEOS_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH\"; export N8N_API_URL=\"${N8N_API_URL:-"
+        },
+        {
+          "path": "artifacts/logs/T036/header-and-secret-predicates.json",
+          "line": 4,
+          "signal": "secret-name",
+          "names": [
+            "nu_secret_refs"
+          ],
+          "snippet": "\"nu_secret_refs\": false,"
+        },
+        {
+          "path": "artifacts/logs/T036/header-and-secret-predicates.json",
+          "line": 5,
+          "signal": "secret-name",
+          "names": [
+            "sh_secret_refs"
+          ],
+          "snippet": "\"sh_secret_refs\": false,"
+        },
+        {
+          "path": "artifacts/logs/T036/header-and-secret-predicates.json",
+          "line": 8,
+          "signal": "secret-name",
+          "names": [
+            "nu_github_token"
+          ],
+          "snippet": "\"nu_github_token\": false,"
+        },
+        {
+          "path": "artifacts/logs/T036/header-and-secret-predicates.json",
+          "line": 9,
+          "signal": "secret-name",
+          "names": [
+            "sh_github_token"
+          ],
+          "snippet": "\"sh_github_token\": false"
+        },
+        {
+          "path": "artifacts/logs/T037/negative-validation-summary.json",
+          "line": 12,
+          "signal": "secret-name",
+          "names": [
+            "raw_secret_pattern_scan"
+          ],
+          "snippet": "\"validation_id\": \"raw_secret_pattern_scan\","
+        },
+        {
+          "path": "artifacts/logs/T037/negative-validation-summary.json",
+          "line": 13,
+          "signal": "secret-name",
+          "names": [
+            "raw_secret_patterns"
+          ],
+          "snippet": "\"check_name\": \"raw_secret_patterns\","
+        },
+        {
+          "path": "artifacts/logs/T037/validate-env-tables-negative.json",
+          "line": 201,
+          "signal": "secret-name",
+          "names": [
+            "required_table_secrets_exists"
+          ],
+          "snippet": "\"validation_id\": \"required_table_secrets_exists\","
+        },
+        {
+          "path": "artifacts/logs/T037/validate-env-tables-negative.json",
+          "line": 212,
+          "signal": "secret-name",
+          "names": [
+            "required_table_secrets_columns"
+          ],
+          "snippet": "\"validation_id\": \"required_table_secrets_columns\","
+        },
+        {
+          "path": "artifacts/logs/T037/validate-env-tables-negative.json",
+          "line": 223,
+          "signal": "secret-name",
+          "names": [
+            "required_table_secrets_rows"
+          ],
+          "snippet": "\"validation_id\": \"required_table_secrets_rows\","
+        },
+        {
+          "path": "artifacts/logs/T037/validate-env-tables-negative.json",
+          "line": 410,
+          "signal": "secret-name",
+          "names": [
+            "bootstrap_secret_refs_not_generated"
+          ],
+          "snippet": "\"validation_id\": \"bootstrap_secret_refs_no...\","
+        },
+        {
+          "path": "artifacts/logs/T037/validate-env-tables-negative.json",
+          "line": 454,
+          "signal": "secret-name",
+          "names": [
+            "raw_secret_pattern_scan"
+          ],
+          "snippet": "\"validation_id\": \"raw_secret_pattern_scan\","
+        },
+        {
+          "path": "artifacts/logs/T037/validate-env-tables-negative.json",
+          "line": 457,
+          "signal": "secret-name",
+          "names": [
+            "raw_secret_patterns"
+          ],
+          "snippet": "\"check_name\": \"raw_secret_patterns\","
+        },
+        {
+          "path": "artifacts/logs/T037/validate-env-tables-negative.json",
+          "line": 465,
+          "signal": "secret-name",
+          "names": [
+            "bootstrap_no_secret_refs"
+          ],
+          "snippet": "\"validation_id\": \"bootstrap_no_secret_refs\","
+        },
+        {
+          "path": "artifacts/logs/T037/validate-env-tables-negative.json",
+          "line": 468,
+          "signal": "secret-name",
+          "names": [
+            "bootstrap_no_secret_refs"
+          ],
+          "snippet": "\"check_name\": \"bootstrap_no_secret_refs\","
+        },
+        {
+          "path": "artifacts/logs/T037/validate-env-tables.json",
+          "line": 201,
+          "signal": "secret-name",
+          "names": [
+            "required_table_secrets_exists"
+          ],
+          "snippet": "\"validation_id\": \"required_table_secrets_exists\","
+        },
+        {
+          "path": "artifacts/logs/T037/validate-env-tables.json",
+          "line": 212,
+          "signal": "secret-name",
+          "names": [
+            "required_table_secrets_columns"
+          ],
+          "snippet": "\"validation_id\": \"required_table_secrets_columns\","
+        },
+        {
+          "path": "artifacts/logs/T037/validate-env-tables.json",
+          "line": 223,
+          "signal": "secret-name",
+          "names": [
+            "required_table_secrets_rows"
+          ],
+          "snippet": "\"validation_id\": \"required_table_secrets_rows\","
+        }
+      ]
+    },
+    "queues": {
+      "status": "repo_evidence_found",
+      "evidence_count": 180,
+      "file_count": 54,
+      "top_names": [
+        {
+          "name": "queue",
+          "count": 193
+        },
+        {
+          "name": "Queue",
+          "count": 67
+        },
+        {
+          "name": "QUEUE",
+          "count": 12
+        },
+        {
+          "name": "MQTT",
+          "count": 12
+        },
+        {
+          "name": "mqtt",
+          "count": 4
+        },
+        {
+          "name": "NATs",
+          "count": 2
+        },
+        {
+          "name": "kafka",
+          "count": 2
+        },
+        {
+          "name": "Redis queue",
+          "count": 1
+        },
+        {
+          "name": "Kafka",
+          "count": 1
+        },
+        {
+          "name": "RabbitMQ",
+          "count": 1
+        },
+        {
+          "name": "NATS",
+          "count": 1
+        },
+        {
+          "name": "Celery",
+          "count": 1
+        }
+      ],
+      "sample_evidence": [
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T013-runner-audit.md",
+          "line": 36,
+          "signal": "task-queue",
+          "names": [
+            "queue"
+          ],
+          "snippet": "- `fxrun forge-loop` surfaces include `run`, `eval`, `research`, `self-upgrade`, `doctor`, runner health/flow/fleet/queue audits, agentic-system audit, docs drift, components audit, target mining audit, and output schema"
+        },
+        {
+          "path": "oh-my-codex-main/CHANGELOG.md",
+          "line": 1803,
+          "signal": "task-queue",
+          "names": [
+            "queue"
+          ],
+          "snippet": "- Team operator docs now clarify Claude-pane Enter (`C-m`) can queue while busy and document state-first/safe manual intervention guidance for `$team`."
+        },
+        {
+          "path": "oh-my-codex-main/DEMO.md",
+          "line": 192,
+          "signal": "task-queue",
+          "names": [
+            "Queue"
+          ],
+          "snippet": "\u2502 \u2502 Shared Task Queue \u2502 \u2502"
+        },
+        {
+          "path": "oh-my-codex-main/DEMO.md",
+          "line": 451,
+          "signal": "task-queue",
+          "names": [
+            "queue"
+          ],
+          "snippet": "[3/8] Create task \u2192 Creates a test task in the shared queue"
+        },
+        {
+          "path": "oh-my-codex-main/package-lock.json",
+          "line": 1437,
+          "signal": "task-queue",
+          "names": [
+            "queue"
+          ],
+          "snippet": "\"yocto-queue\": \"^0.1.0\""
+        },
+        {
+          "path": "oh-my-codex-main/package-lock.json",
+          "line": 2008,
+          "signal": "task-queue",
+          "names": [
+            "queue"
+          ],
+          "snippet": "\"node_modules/yocto-queue\": {"
+        },
+        {
+          "path": "oh-my-codex-main/package-lock.json",
+          "line": 2010,
+          "signal": "task-queue",
+          "names": [
+            "queue"
+          ],
+          "snippet": "\"resolved\": \"https://registry.npmjs.org/yocto-queue/-/yocto-queue-0.1.0.tgz\","
+        },
+        {
+          "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/atlassian-rovo/skills/search-company-knowledge/SKILL.md",
+          "line": 211,
+          "signal": "task-queue",
+          "names": [
+            "queue"
+          ],
+          "snippet": "According to the Confluence documentation, they process jobs from the queue and"
+        },
+        {
+          "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/atlassian-rovo/skills/search-company-knowledge/SKILL.md",
+          "line": 421,
+          "signal": "message-broker",
+          "names": [
+            "Redis queue"
+          ],
+          "snippet": "- Process jobs from a Redis queue"
+        },
+        {
+          "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/atlassian-rovo/skills/search-company-knowledge/SKILL.md",
+          "line": 427,
+          "signal": "task-queue",
+          "names": [
+            "queue"
+          ],
+          "snippet": "worker-queue pattern where:"
+        },
+        {
+          "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/atlassian-rovo/skills/search-company-knowledge/SKILL.md",
+          "line": 429,
+          "signal": "task-queue",
+          "names": [
+            "queue"
+          ],
+          "snippet": "2. Minions poll the queue for work"
+        },
+        {
+          "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/atlassian-rovo/skills/spec-to-backlog/references/breakdown-examples.md",
+          "line": 41,
+          "signal": "task-queue",
+          "names": [
+            "queue"
+          ],
+          "snippet": "- Implement async email sending queue"
+        },
+        {
+          "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/build-ios-apps/skills/swiftui-performance-audit/references/understanding-hangs-in-your-app.md",
+          "line": 9,
+          "signal": "task-queue",
+          "names": [
+            "queue"
+          ],
+          "snippet": "- The main run loop processes UI events, timers, and main-queue work sequentially."
+        },
+        {
+          "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/build-ios-apps/skills/swiftui-performance-audit/references/understanding-hangs-in-your-app.md",
+          "line": 20,
+          "signal": "task-queue",
+          "names": [
+            "queue"
+          ],
+          "snippet": "- The run loop is the foundation that executes main-queue work."
+        },
+        {
+          "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/build-ios-apps/skills/swiftui-performance-audit/references/understanding-hangs-in-your-app.md",
+          "line": 32,
+          "signal": "task-queue",
+          "names": [
+            "queue"
+          ],
+          "snippet": "- Avoid long-running tasks on the main dispatch queue or main actor."
+        },
+        {
+          "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/build-ios-apps/skills/swiftui-ui-patterns/references/overlay.md",
+          "line": 45,
+          "signal": "task-queue",
+          "names": [
+            "queue"
+          ],
+          "snippet": "- Don\u2019t stack many overlays; use a queue or replace the current toast."
+        },
+        {
+          "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/build-web-apps/skills/supabase-best-practices/references/lock-skip-locked.md",
+          "line": 2,
+          "signal": "task-queue",
+          "names": [
+            "Queue"
+          ],
+          "snippet": "title: Use SKIP LOCKED for Non-Blocking Queue Processing"
+        },
+        {
+          "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/build-web-apps/skills/supabase-best-practices/references/lock-skip-locked.md",
+          "line": 5,
+          "signal": "task-queue",
+          "names": [
+            "queue"
+          ],
+          "snippet": "tags: skip-locked, queue, workers, concurrency"
+        },
+        {
+          "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/build-web-apps/skills/supabase-best-practices/references/lock-skip-locked.md",
+          "line": 8,
+          "signal": "task-queue",
+          "names": [
+            "Queue"
+          ],
+          "snippet": "## Use SKIP LOCKED for Non-Blocking Queue Processing"
+        },
+        {
+          "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/build-web-apps/skills/supabase-best-practices/references/lock-skip-locked.md",
+          "line": 10,
+          "signal": "task-queue",
+          "names": [
+            "queue"
+          ],
+          "snippet": "When multiple workers process a queue, SKIP LOCKED allows workers to process different rows without waiting."
+        }
+      ]
+    },
+    "apis": {
+      "status": "repo_evidence_found",
+      "evidence_count": 180,
+      "file_count": 27,
+      "top_names": [
+        {
+          "name": "MCP",
+          "count": 785
+        },
+        {
+          "name": "http",
+          "count": 393
+        },
+        {
+          "name": "fetch(",
+          "count": 364
+        },
+        {
+          "name": "mcp",
+          "count": 323
+        },
+        {
+          "name": "HTTP",
+          "count": 321
+        },
+        {
+          "name": "REST",
+          "count": 241
+        },
+        {
+          "name": "rest",
+          "count": 197
+        },
+        {
+          "name": "requests.",
+          "count": 151
+        },
+        {
+          "name": "initialize",
+          "count": 143
+        },
+        {
+          "name": "GraphQL",
+          "count": 87
+        },
+        {
+          "name": "urllib",
+          "count": 65
+        },
+        {
+          "name": "graphql",
+          "count": 64
+        },
+        {
+          "name": "Initialize",
+          "count": 55
+        },
+        {
+          "name": "curl ",
+          "count": 34
+        },
+        {
+          "name": "grpc",
+          "count": 20
+        },
+        {
+          "name": "router.",
+          "count": 18
+        },
+        {
+          "name": "gRPC",
+          "count": 18
+        },
+        {
+          "name": "OpenAPI",
+          "count": 17
+        },
+        {
+          "name": "openapi",
+          "count": 9
+        },
+        {
+          "name": "Flask",
+          "count": 7
+        }
+      ],
+      "sample_evidence": [
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 122,
+          "signal": "protocol",
+          "names": [
+            "MCP"
+          ],
+          "snippet": "## Codex GitKB MCP Route Dedup - 2026-07-03"
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 124,
+          "signal": "protocol",
+          "names": [
+            "MCP"
+          ],
+          "snippet": "The active Codex config had two GitKB MCP server registrations:"
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 127,
+          "signal": "protocol",
+          "names": [
+            "mcp"
+          ],
+          "snippet": "gitkb -> /home/flexnetos/FlexNetO..."
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 128,
+          "signal": "protocol",
+          "names": [
+            "mcp"
+          ],
+          "snippet": "gitkb-yazelix -> /home/flexnetos/FlexNetO..."
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 136,
+          "signal": "protocol",
+          "names": [
+            "mcp"
+          ],
+          "snippet": "/home/flexnetos/FlexNetO....tar.gz"
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 143,
+          "signal": "protocol",
+          "names": [
+            "MCP"
+          ],
+          "snippet": "Codex MCP: gitkb only"
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 144,
+          "signal": "protocol",
+          "names": [
+            "mcp"
+          ],
+          "snippet": "Wrapper: /home/flexnetos/FlexNetO..."
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 149,
+          "signal": "protocol",
+          "names": [
+            "MCP"
+          ],
+          "snippet": "manual use, but it should not be registered as a second top-level Codex MCP"
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 467,
+          "signal": "protocol",
+          "names": [
+            "MCP"
+          ],
+          "snippet": "The installed GitKB Codex plugin payload has a portable MCP declaration using"
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 468,
+          "signal": "protocol",
+          "names": [
+            "MCP",
+            "mcp"
+          ],
+          "snippet": "`git-kb mcp`. This host's live MCP front door remains pinned through the"
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 472,
+          "signal": "protocol",
+          "names": [
+            "mcp"
+          ],
+          "snippet": "/home/flexnetos/FlexNetO..."
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 473,
+          "signal": "protocol",
+          "names": [
+            "mcp"
+          ],
+          "snippet": "/home/flexnetos/FlexNetO..."
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 479,
+          "signal": "protocol",
+          "names": [
+            "mcp"
+          ],
+          "snippet": "codex mcp list -> gitkb and gitkb-yazelix enabled with wrapper commands"
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 624,
+          "signal": "protocol",
+          "names": [
+            "MCP"
+          ],
+          "snippet": "## GitKB MCP Local Runtime State"
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 626,
+          "signal": "protocol",
+          "names": [
+            "MCP"
+          ],
+          "snippet": "GitKB MCP is configured as local-only FlexNetOS infrastructure, not GitKB cloud"
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 630,
+          "signal": "protocol",
+          "names": [
+            "mcp"
+          ],
+          "snippet": "/home/flexnetos/FlexNetO..."
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 631,
+          "signal": "protocol",
+          "names": [
+            "mcp"
+          ],
+          "snippet": "/home/flexnetos/FlexNetO..."
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 637,
+          "signal": "protocol",
+          "names": [
+            "mcp"
+          ],
+          "snippet": "`/home/flexnetos/FlexNetO... mcp`."
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 639,
+          "signal": "protocol",
+          "names": [
+            "MCP"
+          ],
+          "snippet": "User-level MCP files currently touched by this setup:"
+        },
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 647,
+          "signal": "protocol",
+          "names": [
+            "MCP"
+          ],
+          "snippet": "Project-level MCP files currently touched by this setup:"
+        }
+      ]
+    },
+    "caches": {
+      "status": "repo_evidence_found",
+      "evidence_count": 180,
+      "file_count": 81,
+      "top_names": [
+        {
+          "name": "Redis",
+          "count": 58
+        },
+        {
+          "name": "Cache-Control",
+          "count": 47
+        },
+        {
+          "name": ".cache",
+          "count": 36
+        },
+        {
+          "name": "cache_dir",
+          "count": 17
+        },
+        {
+          "name": "XDG_CACHE_HOME",
+          "count": 15
+        },
+        {
+          "name": "sccache",
+          "count": 10
+        },
+        {
+          "name": ".CACHE",
+          "count": 8
+        },
+        {
+          "name": "redis",
+          "count": 7
+        },
+        {
+          "name": "xdg_cache_home",
+          "count": 4
+        },
+        {
+          "name": "Memcached",
+          "count": 4
+        },
+        {
+          "name": "cache-control",
+          "count": 3
+        },
+        {
+          "name": "npm cache",
+          "count": 2
+        },
+        {
+          "name": ".Cache",
+          "count": 2
+        },
+        {
+          "name": "Nix-store",
+          "count": 1
+        }
+      ],
+      "sample_evidence": [
+        {
+          "path": "LOCAL_WORKAROUNDS.md",
+          "line": 119,
+          "signal": "build-cache",
+          "names": [
+            "Nix-store"
+          ],
+          "snippet": "the packaged `0.143.0-alpha.35` Nix-store binary until a patched Codex package,"
+        },
+        {
+          "path": "artifacts/generated/T036/bootstrap.nu",
+          "line": 34,
+          "signal": "cache-api",
+          "names": [
+            "XDG_CACHE_HOME"
+          ],
+          "snippet": "$env.XDG_CACHE_HOME = \"/home/flexnetos/.cache\""
+        },
+        {
+          "path": "artifacts/generated/T036/bootstrap.sh",
+          "line": 35,
+          "signal": "cache-api",
+          "names": [
+            "XDG_CACHE_HOME"
+          ],
+          "snippet": "export XDG_CACHE_HOME='/home/flexnetos/.cache'"
+        },
+        {
+          "path": "artifacts/generated/T036-repeat/bootstrap.nu",
+          "line": 34,
+          "signal": "cache-api",
+          "names": [
+            "XDG_CACHE_HOME"
+          ],
+          "snippet": "$env.XDG_CACHE_HOME = \"/home/flexnetos/.cache\""
+        },
+        {
+          "path": "artifacts/generated/T036-repeat/bootstrap.sh",
+          "line": 35,
+          "signal": "cache-api",
+          "names": [
+            "XDG_CACHE_HOME"
+          ],
+          "snippet": "export XDG_CACHE_HOME='/home/flexnetos/.cache'"
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/execution_artifacts/blocked_decisions.md",
+          "line": 22,
+          "signal": "build-cache",
+          "names": [
+            "sccache"
+          ],
+          "snippet": "| Kache | required, replaces sccache |"
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/execution_artifacts/blocked_decisions.md",
+          "line": 42,
+          "signal": "redis",
+          "names": [
+            "Redis"
+          ],
+          "snippet": "10. **Non-v0.1 database services.** Postgres/Neon, Redis/Valkey, Qdrant, Chroma, DuckDB, LanceDB, RocksDB, sled/redb, DataFusion/Arrow stay deferred unless source scan proves a v0.1 dependency."
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/execution_artifacts/database_env_audit.md",
+          "line": 30,
+          "signal": "redis",
+          "names": [
+            "Redis"
+          ],
+          "snippet": "- Redis / Valkey."
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/execution_artifacts/yazelix_comprehensive_setup.md",
+          "line": 64,
+          "signal": "cache-api",
+          "names": [
+            "XDG_CACHE_HOME"
+          ],
+          "snippet": "`yazelix-zellij-bar` can be used standalone; its optional provider widgets need tokenusage on `PATH` for Codex/Claude and default or explicit SQLite DB paths for OpenCode Go. Its cache files live under `$XDG_CACHE_HOME/y"
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T024-kache-readme-main.md",
+          "line": 162,
+          "signal": "build-cache",
+          "names": [
+            "sccache"
+          ],
+          "snippet": "verdict. For sccache comparison runs it isolates the sccache daemon/cache,"
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T024-kache-readme-main.md",
+          "line": 163,
+          "signal": "build-cache",
+          "names": [
+            "sccache"
+          ],
+          "snippet": "validates the cache location/base-dir wiring, and stores sccache stats beside"
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T024-kache-readme-main.md",
+          "line": 179,
+          "signal": "build-cache",
+          "names": [
+            "sccache"
+          ],
+          "snippet": "just bench-sccache # list sccache-backed benchmark profiles"
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T024-kache-readme-main.md",
+          "line": 180,
+          "signal": "build-cache",
+          "names": [
+            "sccache"
+          ],
+          "snippet": "just bench-sccache firefox # same Firefox shape, with sccache"
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T024-kache-readme-main.md",
+          "line": 193,
+          "signal": "build-cache",
+          "names": [
+            "sccache"
+          ],
+          "snippet": "- `report-*.sccache.json` and `report-*.sccache-adv.txt` for sccache runs"
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T024-kache-readme-main.md",
+          "line": 198,
+          "signal": "build-cache",
+          "names": [
+            "sccache"
+          ],
+          "snippet": "kache and sccache measurements accumulate without clobbering each other."
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T024-kache-readme-main.md",
+          "line": 207,
+          "signal": "build-cache",
+          "names": [
+            "sccache"
+          ],
+          "snippet": "Each benchmark scenario uses a **per-scenario scratch dir** \u2014 `./tmp/bench/<scenario>` by default (override with `--work-dir`) \u2014 so firefox, firefox-sccache, substrate, and any other scenario **coexist** without clobberi"
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T024-kache-readme-main.md",
+          "line": 209,
+          "signal": "build-cache",
+          "names": [
+            "sccache"
+          ],
+          "snippet": "Each project is described by a [scenario](scenarios/) (`scenarios/bench-*/scenario.toml`) \u2014 repo/ref, how to wire kache or sccache in, and how to build. The Substrate probe is `RUSTC_WRAPPER`-only: it caches the Rust com"
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T024-kache-readme-main.md",
+          "line": 219,
+          "signal": "build-cache",
+          "names": [
+            "sccache"
+          ],
+          "snippet": "| `kache doctor [--fix [--purge-sccache]] [--verify] [--checksums] [--repair]` | Diagnose setup; `--fix` migrates from sccache, `--verify` checks cache integrity, `--checksums` also hashes blobs, `--repair` deletes corru"
+        },
+        {
+          "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T024-kache-readme-main.md",
+          "line": 252,
+          "signal": "cache-api",
+          "names": [
+            "cache_dir"
+          ],
+          "snippet": "- **Store**: content-addressed blobs under `{cache_dir}/store/blobs/<prefix>/<hash>`, indexed by a SQLite DB; cache hits reflink or hardlink those blobs into `target/`"
+        },
+        {
+          "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/atlassian-rovo/skills/search-company-knowledge/SKILL.md",
+          "line": 421,
+          "signal": "redis",
+          "names": [
+            "Redis"
+          ],
+          "snippet": "- Process jobs from a Redis queue"
+        }
+      ]
+    }
+  },
+  "dependencies": [
+    {
+      "id": "databases:.DB",
+      "category": "databases",
+      "name": ".DB",
+      "evidence_count": 102,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "databases:SQLite",
+      "category": "databases",
+      "name": "SQLite",
+      "evidence_count": 98,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "databases:sqlite3",
+      "category": "databases",
+      "name": "sqlite3",
+      "evidence_count": 88,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "databases:postgres",
+      "category": "databases",
+      "name": "postgres",
+      "evidence_count": 84,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "databases:Postgres",
+      "category": "databases",
+      "name": "Postgres",
+      "evidence_count": 75,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "databases:PostgreSQL",
+      "category": "databases",
+      "name": "PostgreSQL",
+      "evidence_count": 74,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "databases:sqlite",
+      "category": "databases",
+      "name": "sqlite",
+      "evidence_count": 34,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "databases:postgresql",
+      "category": "databases",
+      "name": "postgresql",
+      "evidence_count": 31,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "databases:libSQL",
+      "category": "databases",
+      "name": "libSQL",
+      "evidence_count": 14,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "databases:.sqlite",
+      "category": "databases",
+      "name": ".sqlite",
+      "evidence_count": 9,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "databases:MySQL",
+      "category": "databases",
+      "name": "MySQL",
+      "evidence_count": 8,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "databases:.db",
+      "category": "databases",
+      "name": ".db",
+      "evidence_count": 6,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "databases:libsql",
+      "category": "databases",
+      "name": "libsql",
+      "evidence_count": 6,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "databases:mysql",
+      "category": "databases",
+      "name": "mysql",
+      "evidence_count": 6,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "databases:DATABASE_URL",
+      "category": "databases",
+      "name": "DATABASE_URL",
+      "evidence_count": 5,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "databases:LIBSQL",
+      "category": "databases",
+      "name": "LIBSQL",
+      "evidence_count": 4,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "databases:SQLITE",
+      "category": "databases",
+      "name": "SQLITE",
+      "evidence_count": 4,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "databases:MariaDB",
+      "category": "databases",
+      "name": "MariaDB",
+      "evidence_count": 1,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "env_vars:HF_TOKEN",
+      "category": "env_vars",
+      "name": "HF_TOKEN",
+      "evidence_count": 130,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "env_vars:HOME",
+      "category": "env_vars",
+      "name": "HOME",
+      "evidence_count": 69,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "env_vars:X",
+      "category": "env_vars",
+      "name": "X",
+      "evidence_count": 48,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "env_vars:SKILL_DIR",
+      "category": "env_vars",
+      "name": "SKILL_DIR",
+      "evidence_count": 45,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "env_vars:SO_HOME",
+      "category": "env_vars",
+      "name": "SO_HOME",
+      "evidence_count": 36,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "env_vars:BINARY_NAME",
+      "category": "env_vars",
+      "name": "BINARY_NAME",
+      "evidence_count": 30,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "env_vars:PATH",
+      "category": "env_vars",
+      "name": "PATH",
+      "evidence_count": 28,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "env_vars:XXX",
+      "category": "env_vars",
+      "name": "XXX",
+      "evidence_count": 28,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "env_vars:REPO",
+      "category": "env_vars",
+      "name": "REPO",
+      "evidence_count": 27,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "env_vars:TF_DIR",
+      "category": "env_vars",
+      "name": "TF_DIR",
+      "evidence_count": 27,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "env_vars:PHYSICAL_AI_SKILL_HUB_UPSTREAM_ROOT",
+      "category": "env_vars",
+      "name": "PHYSICAL_AI_SKILL_HUB_UPSTREAM_ROOT",
+      "evidence_count": 26,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "env_vars:CLOUDFLARE_API_TOKEN",
+      "category": "env_vars",
+      "name": "CLOUDFLARE_API_TOKEN",
+      "evidence_count": 25,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "env_vars:CF_API_TOKEN",
+      "category": "env_vars",
+      "name": "CF_API_TOKEN",
+      "evidence_count": 24,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "env_vars:SCRIPT_DIR",
+      "category": "env_vars",
+      "name": "SCRIPT_DIR",
+      "evidence_count": 24,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "env_vars:USD_ASSET_ROOT",
+      "category": "env_vars",
+      "name": "USD_ASSET_ROOT",
+      "evidence_count": 24,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "env_vars:VERSION",
+      "category": "env_vars",
+      "name": "VERSION",
+      "evidence_count": 23,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "env_vars:REPO_ROOT",
+      "category": "env_vars",
+      "name": "REPO_ROOT",
+      "evidence_count": 21,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "env_vars:OSMO_DIR",
+      "category": "env_vars",
+      "name": "OSMO_DIR",
+      "evidence_count": 21,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "env_vars:UPSTREAM_ROOT",
+      "category": "env_vars",
+      "name": "UPSTREAM_ROOT",
+      "evidence_count": 18,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "env_vars:META_ROOT",
+      "category": "env_vars",
+      "name": "META_ROOT",
+      "evidence_count": 17,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "secret_refs:HF_TOKEN",
+      "category": "secret_refs",
+      "name": "HF_TOKEN",
+      "evidence_count": 276,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "secret_refs:credential",
+      "category": "secret_refs",
+      "name": "credential",
+      "evidence_count": 156,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "secret_refs:NGC_API_KEY",
+      "category": "secret_refs",
+      "name": "NGC_API_KEY",
+      "evidence_count": 65,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "secret_refs:CLOUDFLARE_API_TOKEN",
+      "category": "secret_refs",
+      "name": "CLOUDFLARE_API_TOKEN",
+      "evidence_count": 61,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "secret_refs:hf_token",
+      "category": "secret_refs",
+      "name": "hf_token",
+      "evidence_count": 54,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "secret_refs:apiToken",
+      "category": "secret_refs",
+      "name": "apiToken",
+      "evidence_count": 53,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "secret_refs:redaction",
+      "category": "secret_refs",
+      "name": "redaction",
+      "evidence_count": 51,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "secret_refs:redacted",
+      "category": "secret_refs",
+      "name": "redacted",
+      "evidence_count": 49,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "secret_refs:NVIDIA_API_KEY",
+      "category": "secret_refs",
+      "name": "NVIDIA_API_KEY",
+      "evidence_count": 46,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "secret_refs:OPENAI_API_KEY",
+      "category": "secret_refs",
+      "name": "OPENAI_API_KEY",
+      "evidence_count": 45,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "secret_refs:CF_API_TOKEN",
+      "category": "secret_refs",
+      "name": "CF_API_TOKEN",
+      "evidence_count": 40,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "secret_refs:trigger_cost_tokens",
+      "category": "secret_refs",
+      "name": "trigger_cost_tokens",
+      "evidence_count": 38,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "secret_refs:get_token",
+      "category": "secret_refs",
+      "name": "get_token",
+      "evidence_count": 37,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "secret_refs:invoke_cost_tokens",
+      "category": "secret_refs",
+      "name": "invoke_cost_tokens",
+      "evidence_count": 35,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "secret_refs:API_TOKEN",
+      "category": "secret_refs",
+      "name": "API_TOKEN",
+      "evidence_count": 27,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "secret_refs:api_token",
+      "category": "secret_refs",
+      "name": "api_token",
+      "evidence_count": 24,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "secret_refs:pending_action_claim_token",
+      "category": "secret_refs",
+      "name": "pending_action_claim_token",
+      "evidence_count": 24,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "secret_refs:deferred_cost_tokens",
+      "category": "secret_refs",
+      "name": "deferred_cost_tokens",
+      "evidence_count": 24,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "secret_refs:ast_token_count",
+      "category": "secret_refs",
+      "name": "ast_token_count",
+      "evidence_count": 22,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "secret_refs:action_token",
+      "category": "secret_refs",
+      "name": "action_token",
+      "evidence_count": 22,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "queues:queue",
+      "category": "queues",
+      "name": "queue",
+      "evidence_count": 193,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "queues:Queue",
+      "category": "queues",
+      "name": "Queue",
+      "evidence_count": 67,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "queues:QUEUE",
+      "category": "queues",
+      "name": "QUEUE",
+      "evidence_count": 12,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "queues:MQTT",
+      "category": "queues",
+      "name": "MQTT",
+      "evidence_count": 12,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "queues:mqtt",
+      "category": "queues",
+      "name": "mqtt",
+      "evidence_count": 4,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "queues:NATs",
+      "category": "queues",
+      "name": "NATs",
+      "evidence_count": 2,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "queues:kafka",
+      "category": "queues",
+      "name": "kafka",
+      "evidence_count": 2,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "queues:Redis queue",
+      "category": "queues",
+      "name": "Redis queue",
+      "evidence_count": 1,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "queues:Kafka",
+      "category": "queues",
+      "name": "Kafka",
+      "evidence_count": 1,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "queues:RabbitMQ",
+      "category": "queues",
+      "name": "RabbitMQ",
+      "evidence_count": 1,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "queues:NATS",
+      "category": "queues",
+      "name": "NATS",
+      "evidence_count": 1,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "queues:Celery",
+      "category": "queues",
+      "name": "Celery",
+      "evidence_count": 1,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "apis:MCP",
+      "category": "apis",
+      "name": "MCP",
+      "evidence_count": 785,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "apis:http",
+      "category": "apis",
+      "name": "http",
+      "evidence_count": 393,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "apis:fetch(",
+      "category": "apis",
+      "name": "fetch(",
+      "evidence_count": 364,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "apis:mcp",
+      "category": "apis",
+      "name": "mcp",
+      "evidence_count": 323,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "apis:HTTP",
+      "category": "apis",
+      "name": "HTTP",
+      "evidence_count": 321,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "apis:REST",
+      "category": "apis",
+      "name": "REST",
+      "evidence_count": 241,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "apis:rest",
+      "category": "apis",
+      "name": "rest",
+      "evidence_count": 197,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "apis:requests.",
+      "category": "apis",
+      "name": "requests.",
+      "evidence_count": 151,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "apis:initialize",
+      "category": "apis",
+      "name": "initialize",
+      "evidence_count": 143,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "apis:GraphQL",
+      "category": "apis",
+      "name": "GraphQL",
+      "evidence_count": 87,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "apis:urllib",
+      "category": "apis",
+      "name": "urllib",
+      "evidence_count": 65,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "apis:graphql",
+      "category": "apis",
+      "name": "graphql",
+      "evidence_count": 64,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "apis:Initialize",
+      "category": "apis",
+      "name": "Initialize",
+      "evidence_count": 55,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "apis:curl ",
+      "category": "apis",
+      "name": "curl ",
+      "evidence_count": 34,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "apis:grpc",
+      "category": "apis",
+      "name": "grpc",
+      "evidence_count": 20,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "apis:router.",
+      "category": "apis",
+      "name": "router.",
+      "evidence_count": 18,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "apis:gRPC",
+      "category": "apis",
+      "name": "gRPC",
+      "evidence_count": 18,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "apis:OpenAPI",
+      "category": "apis",
+      "name": "OpenAPI",
+      "evidence_count": 17,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "apis:openapi",
+      "category": "apis",
+      "name": "openapi",
+      "evidence_count": 9,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "apis:Flask",
+      "category": "apis",
+      "name": "Flask",
+      "evidence_count": 7,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "caches:Redis",
+      "category": "caches",
+      "name": "Redis",
+      "evidence_count": 58,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "caches:Cache-Control",
+      "category": "caches",
+      "name": "Cache-Control",
+      "evidence_count": 47,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "caches:.cache",
+      "category": "caches",
+      "name": ".cache",
+      "evidence_count": 36,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "caches:cache_dir",
+      "category": "caches",
+      "name": "cache_dir",
+      "evidence_count": 17,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "caches:XDG_CACHE_HOME",
+      "category": "caches",
+      "name": "XDG_CACHE_HOME",
+      "evidence_count": 15,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "caches:sccache",
+      "category": "caches",
+      "name": "sccache",
+      "evidence_count": 10,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "caches:.CACHE",
+      "category": "caches",
+      "name": ".CACHE",
+      "evidence_count": 8,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "caches:redis",
+      "category": "caches",
+      "name": "redis",
+      "evidence_count": 7,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "caches:xdg_cache_home",
+      "category": "caches",
+      "name": "xdg_cache_home",
+      "evidence_count": 4,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "caches:Memcached",
+      "category": "caches",
+      "name": "Memcached",
+      "evidence_count": 4,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "caches:cache-control",
+      "category": "caches",
+      "name": "cache-control",
+      "evidence_count": 3,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "caches:npm cache",
+      "category": "caches",
+      "name": "npm cache",
+      "evidence_count": 2,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "caches:.Cache",
+      "category": "caches",
+      "name": ".Cache",
+      "evidence_count": 2,
+      "source": "safe-scan extracted reference name"
+    },
+    {
+      "id": "caches:Nix-store",
+      "category": "caches",
+      "name": "Nix-store",
+      "evidence_count": 1,
+      "source": "safe-scan extracted reference name"
+    }
+  ],
+  "envctl_runtime_nodes": [
+    {
+      "id": "database:envctl-migration-sqlite",
+      "category": "databases",
+      "name": "envctl migration SQLite model",
+      "evidence": [
+        "generated/envctl_migration_db_model.json",
+        "sql/001_migration_automation_schema.sql"
+      ]
+    },
+    {
+      "id": "registry:artifact-registry",
+      "category": "databases",
+      "name": "artifact registry hash/evidence tables",
+      "evidence": [
+        "generated/envctl_artifact_registry_report.json",
+        "scripts/artifact_registry.py"
+      ]
+    },
+    {
+      "id": "queue:envctl-operation-queue",
+      "category": "queues",
+      "name": "envctl_migration_operations and run_events queue/event surfaces",
+      "evidence": [
+        "generated/envctl_migration_db_model.json"
+      ]
+    },
+    {
+      "id": "api:shared-protocol-records",
+      "category": "apis",
+      "name": "envctl shared protocol schema records",
+      "evidence": [
+        "generated/shared_protocol_manifest.json",
+        "schemas/shared_protocol.schema.json"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "target:flexnetos-vs-lifeos",
+      "to": "database:envctl-migration-sqlite",
+      "type": "uses_control_plane_db"
+    },
+    {
+      "from": "registry:artifact-registry",
+      "to": "database:envctl-migration-sqlite",
+      "type": "persists_hashes_to"
+    },
+    {
+      "from": "queue:envctl-operation-queue",
+      "to": "database:envctl-migration-sqlite",
+      "type": "stored_in"
+    },
+    {
+      "from": "api:shared-protocol-records",
+      "to": "registry:artifact-registry",
+      "type": "validates_artifact_records"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/cloud-scale.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/cloud-scale.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/cloud-scale.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/cloud-scale.md",
+      "to": "category:queues",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/cloud-scale.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/equivalents-azure.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/equivalents-azure.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/equivalents-azure.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/equivalents-azure.md",
+      "to": "category:queues",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/equivalents-azure.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/notion/skills/notion-knowledge-capture/examples/conversation-to-faq.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/notion/skills/notion-knowledge-capture/examples/conversation-to-faq.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/notion/skills/notion-knowledge-capture/examples/conversation-to-faq.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/notion/skills/notion-knowledge-capture/examples/conversation-to-faq.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/notion/skills/notion-knowledge-capture/examples/conversation-to-faq.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/physical-ai-infrastructure-setup-and-resilient-scaling/components/osmo-azure/reference.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/physical-ai-infrastructure-setup-and-resilient-scaling/components/osmo-azure/reference.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/physical-ai-infrastructure-setup-and-resilient-scaling/components/osmo-azure/reference.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/physical-ai-infrastructure-setup-and-resilient-scaling/components/osmo-azure/reference.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/physical-ai-infrastructure-setup-and-resilient-scaling/components/osmo-azure/reference.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/physical-ai-infrastructure-setup-and-resilient-scaling/components/osmo-cli/reference.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/physical-ai-infrastructure-setup-and-resilient-scaling/components/osmo-cli/reference.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/physical-ai-infrastructure-setup-and-resilient-scaling/components/osmo-cli/reference.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/physical-ai-infrastructure-setup-and-resilient-scaling/components/osmo-cli/reference.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/physical-ai-infrastructure-setup-and-resilient-scaling/components/osmo-cli/reference.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:.codex/config.toml",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:.codex/config.toml",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:.codex/config.toml",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:.codex/config.toml",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:WORKLOG.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:WORKLOG.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:WORKLOG.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:WORKLOG.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/d1/api.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/d1/api.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/d1/api.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/d1/api.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/d1/configuration.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/d1/configuration.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/d1/configuration.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/d1/configuration.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/r2-data-catalog/configuration.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/r2-data-catalog/configuration.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/r2-data-catalog/configuration.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/r2-data-catalog/configuration.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/r2-data-catalog/patterns.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/r2-data-catalog/patterns.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/r2-data-catalog/patterns.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/r2-data-catalog/patterns.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/secrets-store/api.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/secrets-store/api.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/secrets-store/api.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/secrets-store/api.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers-vpc/configuration.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers-vpc/configuration.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers-vpc/configuration.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers-vpc/configuration.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers/api.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers/api.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers/api.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers/api.md",
+      "to": "category:queues",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers/api.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/expo/skills/expo-api-routes/SKILL.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/expo/skills/expo-api-routes/SKILL.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/expo/skills/expo-api-routes/SKILL.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/expo/skills/expo-api-routes/SKILL.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/hugging-face/skills/jobs/SKILL.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/hugging-face/skills/jobs/SKILL.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/hugging-face/skills/jobs/SKILL.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/hugging-face/skills/jobs/SKILL.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/hugging-face/skills/llm-trainer/references/trackio_guide.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/hugging-face/skills/llm-trainer/references/trackio_guide.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/hugging-face/skills/llm-trainer/references/trackio_guide.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/hugging-face/skills/llm-trainer/references/trackio_guide.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/aiq-deploy/SKILL.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/aiq-deploy/SKILL.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/aiq-deploy/SKILL.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/aiq-deploy/SKILL.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/build-web-apps/skills/react-best-practices/AGENTS.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/build-web-apps/skills/react-best-practices/AGENTS.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/build-web-apps/skills/react-best-practices/AGENTS.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/build-web-apps/skills/react-best-practices/AGENTS.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/SKILL.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/SKILL.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/SKILL.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/SKILL.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/equivalents-aws.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/equivalents-aws.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/equivalents-aws.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/equivalents-aws.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/functions-and-sdk.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/functions-and-sdk.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/functions-and-sdk.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/functions-and-sdk.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/cache-reserve/configuration.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/cache-reserve/configuration.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/cache-reserve/configuration.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/cache-reserve/configuration.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/queues/api.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/queues/api.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/queues/api.md",
+      "to": "category:queues",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/queues/api.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/web-analytics/configuration.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/web-analytics/configuration.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/web-analytics/configuration.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/web-analytics/configuration.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers-for-platforms/configuration.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers-for-platforms/configuration.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers-for-platforms/configuration.md",
+      "to": "category:queues",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers-for-platforms/configuration.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers-vpc/README.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers-vpc/README.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers-vpc/README.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers-vpc/README.md",
+      "to": "category:queues",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers-vpc/patterns.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers-vpc/patterns.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers-vpc/patterns.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers-vpc/patterns.md",
+      "to": "category:queues",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/expo/skills/native-data-fetching/SKILL.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/expo/skills/native-data-fetching/SKILL.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/expo/skills/native-data-fetching/SKILL.md",
+      "to": "category:queues",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/expo/skills/native-data-fetching/SKILL.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/expo/skills/native-data-fetching/references/expo-router-loaders.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/expo/skills/native-data-fetching/references/expo-router-loaders.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/expo/skills/native-data-fetching/references/expo-router-loaders.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/expo/skills/native-data-fetching/references/expo-router-loaders.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/figma/skills/figma-generate-diagram/references/architecture.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/figma/skills/figma-generate-diagram/references/architecture.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/figma/skills/figma-generate-diagram/references/architecture.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/figma/skills/figma-generate-diagram/references/architecture.md",
+      "to": "category:queues",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/hugging-face/skills/vision-trainer/scripts/object_detection_training.py",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/hugging-face/skills/vision-trainer/scripts/object_detection_training.py",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/hugging-face/skills/vision-trainer/scripts/object_detection_training.py",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/hugging-face/skills/vision-trainer/scripts/object_detection_training.py",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/notion/skills/notion-spec-to-implementation/examples/api-feature.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/notion/skills/notion-spec-to-implementation/examples/api-feature.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/notion/skills/notion-spec-to-implementation/examples/api-feature.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/notion/skills/notion-spec-to-implementation/examples/api-feature.md",
+      "to": "category:queues",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/omniverse-realtime-viewer/references/cloud-assets/README.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/omniverse-realtime-viewer/references/cloud-assets/README.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/omniverse-realtime-viewer/references/cloud-assets/README.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/omniverse-realtime-viewer/references/cloud-assets/README.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/DEMO.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/DEMO.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/DEMO.md",
+      "to": "category:queues",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:oh-my-codex-main/DEMO.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:LOCAL_WORKAROUNDS.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:LOCAL_WORKAROUNDS.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:LOCAL_WORKAROUNDS.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:LOCAL_WORKAROUNDS.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/execution_artifacts/blocked_decisions.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/execution_artifacts/blocked_decisions.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/execution_artifacts/blocked_decisions.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/execution_artifacts/blocked_decisions.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/execution_artifacts/yazelix_comprehensive_setup.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/execution_artifacts/yazelix_comprehensive_setup.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/execution_artifacts/yazelix_comprehensive_setup.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/execution_artifacts/yazelix_comprehensive_setup.md",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T024-kache-readme-main.md",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T024-kache-readme-main.md",
+      "to": "category:caches",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T024-kache-readme-main.md",
+      "to": "category:databases",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T024-kache-readme-main.md",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T031-parse-nushell-fixture-v2.json",
+      "to": "category:apis",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T031-parse-nushell-fixture-v2.json",
+      "to": "category:env_vars",
+      "type": "contains_reference"
+    },
+    {
+      "from": "file:artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T031-parse-nushell-fixture-v2.json",
+      "to": "category:secret_refs",
+      "type": "contains_reference"
+    }
+  ],
+  "hotspots": [
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/cloud-scale.md",
+      "categories": [
+        "apis",
+        "caches",
+        "env_vars",
+        "queues",
+        "secret_refs"
+      ],
+      "score": 8
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/equivalents-azure.md",
+      "categories": [
+        "apis",
+        "caches",
+        "env_vars",
+        "queues",
+        "secret_refs"
+      ],
+      "score": 8
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/notion/skills/notion-knowledge-capture/examples/conversation-to-faq.md",
+      "categories": [
+        "apis",
+        "caches",
+        "databases",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 8
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/physical-ai-infrastructure-setup-and-resilient-scaling/components/osmo-azure/reference.md",
+      "categories": [
+        "apis",
+        "caches",
+        "databases",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 8
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/physical-ai-infrastructure-setup-and-resilient-scaling/components/osmo-cli/reference.md",
+      "categories": [
+        "apis",
+        "caches",
+        "databases",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 8
+    },
+    {
+      "path": ".codex/config.toml",
+      "categories": [
+        "apis",
+        "databases",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 7
+    },
+    {
+      "path": "WORKLOG.md",
+      "categories": [
+        "apis",
+        "databases",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 7
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/d1/api.md",
+      "categories": [
+        "apis",
+        "databases",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 7
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/d1/configuration.md",
+      "categories": [
+        "apis",
+        "databases",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 7
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/r2-data-catalog/configuration.md",
+      "categories": [
+        "apis",
+        "databases",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 7
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/r2-data-catalog/patterns.md",
+      "categories": [
+        "apis",
+        "databases",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 7
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/secrets-store/api.md",
+      "categories": [
+        "apis",
+        "databases",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 7
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers-vpc/configuration.md",
+      "categories": [
+        "apis",
+        "databases",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 7
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers/api.md",
+      "categories": [
+        "apis",
+        "caches",
+        "databases",
+        "queues",
+        "secret_refs"
+      ],
+      "score": 7
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/expo/skills/expo-api-routes/SKILL.md",
+      "categories": [
+        "apis",
+        "databases",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 7
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/hugging-face/skills/jobs/SKILL.md",
+      "categories": [
+        "apis",
+        "databases",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 7
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/hugging-face/skills/llm-trainer/references/trackio_guide.md",
+      "categories": [
+        "apis",
+        "databases",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 7
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/aiq-deploy/SKILL.md",
+      "categories": [
+        "apis",
+        "databases",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 7
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/build-web-apps/skills/react-best-practices/AGENTS.md",
+      "categories": [
+        "apis",
+        "caches",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 6
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/SKILL.md",
+      "categories": [
+        "apis",
+        "caches",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 6
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/equivalents-aws.md",
+      "categories": [
+        "apis",
+        "caches",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 6
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/functions-and-sdk.md",
+      "categories": [
+        "apis",
+        "caches",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 6
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/cache-reserve/configuration.md",
+      "categories": [
+        "apis",
+        "caches",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 6
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/queues/api.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "queues",
+        "secret_refs"
+      ],
+      "score": 6
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/web-analytics/configuration.md",
+      "categories": [
+        "apis",
+        "caches",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 6
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers-for-platforms/configuration.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "queues",
+        "secret_refs"
+      ],
+      "score": 6
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers-vpc/README.md",
+      "categories": [
+        "apis",
+        "caches",
+        "databases",
+        "queues"
+      ],
+      "score": 6
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/workers-vpc/patterns.md",
+      "categories": [
+        "apis",
+        "caches",
+        "databases",
+        "queues"
+      ],
+      "score": 6
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/expo/skills/native-data-fetching/SKILL.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "queues",
+        "secret_refs"
+      ],
+      "score": 6
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/expo/skills/native-data-fetching/references/expo-router-loaders.md",
+      "categories": [
+        "apis",
+        "caches",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 6
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/figma/skills/figma-generate-diagram/references/architecture.md",
+      "categories": [
+        "apis",
+        "caches",
+        "databases",
+        "queues"
+      ],
+      "score": 6
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/hugging-face/skills/vision-trainer/scripts/object_detection_training.py",
+      "categories": [
+        "apis",
+        "caches",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 6
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/notion/skills/notion-spec-to-implementation/examples/api-feature.md",
+      "categories": [
+        "apis",
+        "caches",
+        "databases",
+        "queues"
+      ],
+      "score": 6
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/nvidia/skills/omniverse-realtime-viewer/references/cloud-assets/README.md",
+      "categories": [
+        "apis",
+        "caches",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 6
+    },
+    {
+      "path": "oh-my-codex-main/DEMO.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "queues",
+        "secret_refs"
+      ],
+      "score": 6
+    },
+    {
+      "path": "LOCAL_WORKAROUNDS.md",
+      "categories": [
+        "apis",
+        "caches",
+        "databases",
+        "env_vars"
+      ],
+      "score": 5
+    },
+    {
+      "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/execution_artifacts/blocked_decisions.md",
+      "categories": [
+        "apis",
+        "caches",
+        "databases",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/execution_artifacts/yazelix_comprehensive_setup.md",
+      "categories": [
+        "apis",
+        "caches",
+        "databases",
+        "env_vars"
+      ],
+      "score": 5
+    },
+    {
+      "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T024-kache-readme-main.md",
+      "categories": [
+        "apis",
+        "caches",
+        "databases",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T031-parse-nushell-fixture-v2.json",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T031-parse-nushell-fixture.json",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "artifacts/recovery/old-pack-context/flexnetos_production_execution_pack/logs/T034-env-precedence.json",
+      "categories": [
+        "databases",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/box/skills/box/scripts/box_rest.py",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/build-web-apps/skills/shadcn-best-practices/mcp.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/architecture-patterns.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/deployment-sops.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/equivalents-heroku.md",
+      "categories": [
+        "apis",
+        "caches",
+        "databases",
+        "env_vars"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/sdk-web.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/services.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/catalyst-by-zoho/skills/catalyst-by-zoho/references/troubleshooting.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/building-mcp-server-on-cloudflare/references/oauth-setup.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/SKILL.md",
+      "categories": [
+        "apis",
+        "databases",
+        "queues",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/ai-gateway/README.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/ai-gateway/configuration.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/ai-gateway/sdk-integration.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/ai-gateway/troubleshooting.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/api/api.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/api/configuration.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/api/gotchas.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/argo-smart-routing/README.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/argo-smart-routing/api.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/bindings/patterns.md",
+      "categories": [
+        "apis",
+        "caches",
+        "databases",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/cache-reserve/README.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/ddos/api.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/email-routing/api.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/email-routing/configuration.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/graphql-api/configuration.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/images/configuration.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/kv/configuration.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/network-interconnect/api.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/pages/api.md",
+      "categories": [
+        "apis",
+        "databases",
+        "queues",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/pages/configuration.md",
+      "categories": [
+        "apis",
+        "caches",
+        "queues",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/pages/patterns.md",
+      "categories": [
+        "apis",
+        "databases",
+        "queues",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/pulumi/README.md",
+      "categories": [
+        "env_vars",
+        "queues",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/r2-sql/gotchas.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/realtime-sfu/api.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/realtime-sfu/patterns.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/secrets-store/patterns.md",
+      "categories": [
+        "apis",
+        "caches",
+        "databases",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/snippets/configuration.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    },
+    {
+      "path": "oh-my-codex-main/.codex/.tmp/plugins/plugins/cloudflare/skills/cloudflare/references/spectrum/api.md",
+      "categories": [
+        "apis",
+        "env_vars",
+        "secret_refs"
+      ],
+      "score": 5
+    }
+  ],
+  "gaps": [],
+  "database_tables_considered": [
+    "envctl_migration_agent_sessions",
+    "envctl_migration_approvals",
+    "envctl_migration_artifact_contracts",
+    "envctl_migration_artifacts",
+    "envctl_migration_checkpoints",
+    "envctl_migration_evidence",
+    "envctl_migration_graph_edges",
+    "envctl_migration_operations",
+    "envctl_migration_packages",
+    "envctl_migration_plugin_sessions",
+    "envctl_migration_recipes",
+    "envctl_migration_rollbacks",
+    "envctl_migration_run_events",
+    "envctl_migration_runs",
+    "envctl_migration_targets",
+    "envctl_migration_validations"
+  ],
+  "source_artifacts": [
+    "generated/envctl_target_registry.json",
+    "generated/package_scan.json",
+    "generated/envctl_migration_db_model.json",
+    "generated/envctl_artifact_registry_report.json",
+    "generated/shared_protocol_manifest.json",
+    "generated/execution_packets/ART-106_RUNTIME_DEP_MAP.json"
+  ]
+}

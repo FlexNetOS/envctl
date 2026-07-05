@@ -1,0 +1,1 @@
+ART-132 parity dashboard status=passed artifacts=3 evidence=33 graph_edges=21 gate={"artifact_exists": true, "registry_contains_hash": true, "validation_evidence_linked": true}

@@ -1,0 +1,1070 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-105_PACKAGE_LIB_GRAPH",
+  "generated_at": "2026-07-04T23:20:41+00:00",
+  "source_inputs": {
+    "package_manifest_file_count": 281,
+    "source_manifest_file_count": 38,
+    "package_scan_folders": [
+      "codex",
+      "examples",
+      "expected-output",
+      "helpers",
+      "history",
+      "prompts",
+      "schemas",
+      "source",
+      "specs",
+      "sql"
+    ],
+    "target_registry_status": "passed",
+    "shared_protocol_status": null,
+    "contract_rows": [
+      {
+        "contract_row_id": "artifact:03-code-analysis-package-dependencies-md",
+        "artifact_id": "03-code-analysis-package-dependencies-md",
+        "title": "Package Dependencies",
+        "required_path": "migration-artifacts/03-code-analysis/package-dependencies.md",
+        "section": "03-code-analysis",
+        "artifact_type": "migration_artifact",
+        "format": "md",
+        "status": "required",
+        "source_refs": [
+          "source/codex-flexnetos-migration-prompt-package/expected-output/migration-artifacts-tree.md",
+          "source/previous-migration-artifact-context.md"
+        ],
+        "producer_task_id": "ART-105_PACKAGE_LIB_GRAPH",
+        "validators": [
+          "path_registered",
+          "evidence_or_status_recorded",
+          "linked_from_index"
+        ]
+      },
+      {
+        "contract_row_id": "artifact:03-code-analysis-package-library-dependency-graph-md",
+        "artifact_id": "03-code-analysis-package-library-dependency-graph-md",
+        "title": "Package Library Dependency Graph",
+        "required_path": "migration-artifacts/03-code-analysis/package-library-dependency-graph.md",
+        "section": "03-code-analysis",
+        "artifact_type": "migration_artifact",
+        "format": "md",
+        "status": "required",
+        "source_refs": [
+          "source/codex-flexnetos-migration-prompt-package/expected-output/migration-artifacts-tree.md",
+          "source/previous-migration-artifact-context.md"
+        ],
+        "producer_task_id": "ART-103_SERVICE_DEP_GRAPH",
+        "validators": [
+          "path_registered",
+          "evidence_or_status_recorded",
+          "linked_from_index"
+        ]
+      }
+    ]
+  },
+  "summary": {
+    "node_count": 8,
+    "edge_count": 6,
+    "python_file_count": 49,
+    "third_party_python_import_count": 2,
+    "shell_script_count": 6,
+    "issue_count": 4,
+    "vulnerability_count": 1,
+    "deprecation_count": 1,
+    "incompatibility_count": 2
+  },
+  "nodes": [
+    {
+      "id": "package:envctl-db-nu-plugin-migration-automation-package",
+      "kind": "package",
+      "name": "envctl-db-nu-plugin-migration-automation-package",
+      "evidence": [
+        "PACKAGE_MANIFEST.json",
+        "execution-framework/generated/package_scan.json"
+      ]
+    },
+    {
+      "id": "package:codex-flexnetos-migration-prompt-package",
+      "kind": "source_package",
+      "name": "codex-flexnetos-migration-prompt-package",
+      "evidence": [
+        "source/codex-flexnetos-migration-prompt-package/PACKAGE_MANIFEST.json"
+      ]
+    },
+    {
+      "id": "runtime:python-stdlib",
+      "kind": "runtime_library",
+      "name": "Python standard library",
+      "evidence": [
+        "execution-framework/scripts/*.py",
+        "helpers/*.py"
+      ]
+    },
+    {
+      "id": "runtime:sqlite",
+      "kind": "embedded_database",
+      "name": "SQLite via python sqlite3",
+      "evidence": [
+        "sql/001_migration_automation_schema.sql",
+        "sql/002_views_and_indexes.sql",
+        "sql/003_seed_artifact_contract.sql",
+        "execution-framework/generated/contract_manifest.seed.sql"
+      ]
+    },
+    {
+      "id": "tool:codex-cli",
+      "kind": "tool",
+      "name": "codex CLI",
+      "evidence": [
+        "RUN_WITH_CODEX_ENVCTL.sh",
+        "codex/envctl-nu-plugin-migration.config.toml"
+      ]
+    },
+    {
+      "id": "schema:json-schema",
+      "kind": "schema_contract",
+      "name": "JSON Schema documents",
+      "evidence": [
+        "schemas/artifact_record.schema.json",
+        "schemas/migration_recipe.schema.json",
+        "schemas/operation.schema.json",
+        "schemas/run_event.schema.json",
+        "schemas/target_descriptor.schema.json",
+        "schemas/validation_result.schema.json",
+        "execution-framework/schemas/shared_protocol.schema.json",
+        "execution-framework/schemas/proof_record.schema.json"
+      ]
+    },
+    {
+      "id": "contract:shared-protocol",
+      "kind": "protocol_contract",
+      "name": "Shared protocol manifest",
+      "evidence": [
+        "execution-framework/generated/shared_protocol_manifest.json"
+      ]
+    },
+    {
+      "id": "contract:artifact-contract",
+      "kind": "artifact_contract",
+      "name": "Full migration artifact contract",
+      "evidence": [
+        "execution-framework/generated/contract_manifest.json"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "package:envctl-db-nu-plugin-migration-automation-package",
+      "to": "package:codex-flexnetos-migration-prompt-package",
+      "type": "bundles_source_package",
+      "evidence": [
+        "source/codex-flexnetos-migration-prompt-package/PACKAGE_MANIFEST.json"
+      ]
+    },
+    {
+      "from": "package:envctl-db-nu-plugin-migration-automation-package",
+      "to": "runtime:python-stdlib",
+      "type": "uses_runtime_libraries",
+      "evidence": [
+        "execution-framework/scripts/*.py",
+        "helpers/*.py"
+      ]
+    },
+    {
+      "from": "package:envctl-db-nu-plugin-migration-automation-package",
+      "to": "runtime:sqlite",
+      "type": "persists_registry_state",
+      "evidence": [
+        "sql/001_migration_automation_schema.sql",
+        "sql/002_views_and_indexes.sql",
+        "sql/003_seed_artifact_contract.sql",
+        "execution-framework/generated/contract_manifest.seed.sql"
+      ]
+    },
+    {
+      "from": "package:envctl-db-nu-plugin-migration-automation-package",
+      "to": "tool:codex-cli",
+      "type": "executed_by",
+      "evidence": [
+        "generated/execution_packets/ART-105_PACKAGE_LIB_GRAPH.json"
+      ]
+    },
+    {
+      "from": "contract:artifact-contract",
+      "to": "schema:json-schema",
+      "type": "validated_by",
+      "evidence": [
+        "schemas/artifact_record.schema.json",
+        "schemas/migration_recipe.schema.json",
+        "schemas/operation.schema.json",
+        "schemas/run_event.schema.json",
+        "schemas/target_descriptor.schema.json",
+        "schemas/validation_result.schema.json",
+        "execution-framework/schemas/shared_protocol.schema.json",
+        "execution-framework/schemas/proof_record.schema.json"
+      ]
+    },
+    {
+      "from": "contract:shared-protocol",
+      "to": "schema:json-schema",
+      "type": "materialized_as",
+      "evidence": [
+        "execution-framework/schemas/shared_protocol.schema.json"
+      ]
+    }
+  ],
+  "python_imports": {
+    "files": [
+      {
+        "path": "execution-framework/scripts/_common.py",
+        "stdlib_imports": [
+          "__future__",
+          "csv",
+          "datetime",
+          "hashlib",
+          "json",
+          "os",
+          "pathlib",
+          "sys",
+          "time"
+        ],
+        "local_imports": [],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/artifact_registry.py",
+        "stdlib_imports": [
+          "__future__",
+          "dataclasses",
+          "fnmatch",
+          "hashlib",
+          "json",
+          "pathlib",
+          "re",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/build_art126_decision_log.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/envctl_run_ledger.py",
+        "stdlib_imports": [
+          "__future__",
+          "dataclasses",
+          "hashlib",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art102_repository_map.py",
+        "stdlib_imports": [
+          "__future__",
+          "collections",
+          "json",
+          "os",
+          "pathlib",
+          "sqlite3",
+          "subprocess",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art104_toolchain_tree.py",
+        "stdlib_imports": [
+          "__future__",
+          "collections",
+          "fnmatch",
+          "json",
+          "os",
+          "pathlib",
+          "sqlite3",
+          "subprocess",
+          "tomllib",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art112_code_ownership.py",
+        "stdlib_imports": [
+          "__future__",
+          "hashlib",
+          "json",
+          "os",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art113_debug_code_map.py",
+        "stdlib_imports": [
+          "__future__",
+          "collections",
+          "json",
+          "os",
+          "pathlib",
+          "re",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art116_infra_topology.py",
+        "stdlib_imports": [
+          "__future__",
+          "datetime",
+          "fnmatch",
+          "hashlib",
+          "json",
+          "os",
+          "pathlib",
+          "re",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art125_risk_register.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "status_from_proofs",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art128_readiness_scorecard.py",
+        "stdlib_imports": [
+          "__future__",
+          "hashlib",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art_117_iam_matrix.py",
+        "stdlib_imports": [
+          "__future__",
+          "fnmatch",
+          "json",
+          "pathlib",
+          "re",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art_127_blast_radius.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_art_129_business_capability.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_config_inventory.py",
+        "stdlib_imports": [
+          "__future__",
+          "collections",
+          "fnmatch",
+          "hashlib",
+          "json",
+          "os",
+          "pathlib",
+          "re",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_directory_tree_artifact.py",
+        "stdlib_imports": [
+          "__future__",
+          "collections",
+          "fnmatch",
+          "hashlib",
+          "json",
+          "os",
+          "pathlib",
+          "sqlite3",
+          "subprocess",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_env_config_matrix.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_package_lib_graph.py",
+        "stdlib_imports": [
+          "__future__",
+          "ast",
+          "json",
+          "pathlib",
+          "re",
+          "sqlite3",
+          "sys",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/generate_system_inventory.py",
+        "stdlib_imports": [
+          "__future__",
+          "collections",
+          "json",
+          "os",
+          "pathlib",
+          "re",
+          "sqlite3",
+          "tomllib",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/goal_loop.py",
+        "stdlib_imports": [
+          "__future__",
+          "collections",
+          "json",
+          "pathlib",
+          "sys"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/goal_to_task_graph.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/lock_contract.py",
+        "stdlib_imports": [
+          "__future__",
+          "hashlib",
+          "json",
+          "pathlib",
+          "re"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/merge_proofs.py",
+        "stdlib_imports": [
+          "__future__"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/operation_state_machine.py",
+        "stdlib_imports": [
+          "__future__",
+          "dataclasses",
+          "enum",
+          "typing"
+        ],
+        "local_imports": [],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/redaction_controls.py",
+        "stdlib_imports": [
+          "__future__",
+          "dataclasses",
+          "fnmatch",
+          "hashlib",
+          "json",
+          "pathlib",
+          "re",
+          "typing"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/render_live_visuals.py",
+        "stdlib_imports": [
+          "__future__",
+          "argparse",
+          "collections",
+          "pathlib"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/scan_package.py",
+        "stdlib_imports": [
+          "__future__",
+          "argparse",
+          "pathlib"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/status_from_proofs.py",
+        "stdlib_imports": [
+          "__future__"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/task_graph_to_packets.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "sys"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/validate_task_graph.py",
+        "stdlib_imports": [
+          "__future__",
+          "pathlib",
+          "sys"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/validation_evidence.py",
+        "stdlib_imports": [
+          "__future__",
+          "dataclasses",
+          "fnmatch",
+          "hashlib",
+          "json",
+          "pathlib",
+          "re",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/verify_artifact_registry.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "sqlite3"
+        ],
+        "local_imports": [
+          "_common",
+          "artifact_registry",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/verify_envctl_db_schema.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "sqlite3"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/verify_envctl_run_ledger.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "sqlite3"
+        ],
+        "local_imports": [
+          "_common",
+          "envctl_run_ledger"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/verify_filesystem_boundaries.py",
+        "stdlib_imports": [
+          "__future__",
+          "copy",
+          "fnmatch",
+          "json",
+          "posixpath"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": [
+          "jsonschema"
+        ]
+      },
+      {
+        "path": "execution-framework/scripts/verify_flexnetos_target_descriptor.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "re",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "verify_target_registry"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/verify_history_and_completeness.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/verify_install_bootstrap.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "shlex"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/verify_operation_state_machine.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "operation_state_machine",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/verify_plugin_command_surface.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib",
+          "sys"
+        ],
+        "local_imports": [],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/verify_security_redaction.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "pathlib"
+        ],
+        "local_imports": [
+          "_common",
+          "redaction_controls"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "execution-framework/scripts/verify_shared_protocol_schemas.py",
+        "stdlib_imports": [
+          "__future__",
+          "copy",
+          "json",
+          "pathlib"
+        ],
+        "local_imports": [
+          "_common"
+        ],
+        "third_party_imports": [
+          "jsonschema"
+        ]
+      },
+      {
+        "path": "execution-framework/scripts/verify_target_registry.py",
+        "stdlib_imports": [
+          "__future__",
+          "copy",
+          "hashlib",
+          "json",
+          "pathlib",
+          "sqlite3",
+          "typing"
+        ],
+        "local_imports": [
+          "_common",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": [
+          "yaml"
+        ]
+      },
+      {
+        "path": "execution-framework/scripts/verify_validation_evidence.py",
+        "stdlib_imports": [
+          "__future__",
+          "json",
+          "sqlite3"
+        ],
+        "local_imports": [
+          "_common",
+          "validation_evidence",
+          "verify_envctl_db_schema"
+        ],
+        "third_party_imports": []
+      },
+      {
+        "path": "helpers/build_combined_prompt.py",
+        "stdlib_imports": [
+          "pathlib",
+          "sys"
+        ],
+        "local_imports": [],
+        "third_party_imports": []
+      },
+      {
+        "path": "helpers/package_manifest.py",
+        "stdlib_imports": [
+          "hashlib",
+          "json",
+          "pathlib",
+          "sys"
+        ],
+        "local_imports": [],
+        "third_party_imports": []
+      },
+      {
+        "path": "helpers/validate_package.py",
+        "stdlib_imports": [
+          "json",
+          "pathlib",
+          "sqlite3",
+          "subprocess",
+          "sys",
+          "tempfile"
+        ],
+        "local_imports": [],
+        "third_party_imports": []
+      },
+      {
+        "path": "source/codex-flexnetos-migration-prompt-package/helpers/artifact_manifest.py",
+        "stdlib_imports": [
+          "datetime",
+          "hashlib",
+          "json",
+          "pathlib",
+          "sys"
+        ],
+        "local_imports": [],
+        "third_party_imports": []
+      },
+      {
+        "path": "source/codex-flexnetos-migration-prompt-package/helpers/make_wiki_index.py",
+        "stdlib_imports": [
+          "datetime",
+          "pathlib",
+          "sys"
+        ],
+        "local_imports": [],
+        "third_party_imports": []
+      }
+    ],
+    "third_party_imports": [
+      "jsonschema",
+      "yaml"
+    ]
+  },
+  "shell_tools": [
+    {
+      "path": "INSTALL_IN_REPOS.sh",
+      "tools": [
+        "bash",
+        "codex",
+        "cp",
+        "mkdir"
+      ]
+    },
+    {
+      "path": "RUN_WITH_CODEX_ENVCTL.sh",
+      "tools": [
+        "bash",
+        "codex",
+        "date"
+      ]
+    },
+    {
+      "path": "helpers/copy_to_repos.sh",
+      "tools": [
+        "bash"
+      ]
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/INSTALL_IN_REPO.sh",
+      "tools": [
+        "bash",
+        "codex",
+        "cp",
+        "date",
+        "mkdir"
+      ]
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/RUN_WITH_CODEX.sh",
+      "tools": [
+        "bash",
+        "codex",
+        "mkdir"
+      ]
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/helpers/background_scan.sh",
+      "tools": [
+        "bash",
+        "date",
+        "find",
+        "git",
+        "mkdir",
+        "python",
+        "python3",
+        "sed",
+        "sha256sum"
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "id": "ART105-VULN-001",
+      "category": "vulnerability",
+      "severity": "unknown",
+      "component": "all",
+      "status": "no_external_lockfile_detected",
+      "finding": "The package contains no third-party package lockfile or version-pinned library manifest for CVE correlation; observed external Python imports are recorded without versions, so CVE status is unknown rather than clean.",
+      "evidence": [
+        "PACKAGE_MANIFEST.json",
+        "execution-framework/generated/package_scan.json"
+      ]
+    },
+    {
+      "id": "ART105-DEP-001",
+      "category": "deprecation",
+      "severity": "medium",
+      "component": "source/codex-flexnetos-migration-prompt-package/helpers/__pycache__",
+      "status": "present_in_source_manifest",
+      "finding": "The source package manifest includes CPython 3.13 bytecode cache files; treat them as generated compatibility artifacts, not authoritative migration source.",
+      "evidence": [
+        "source/codex-flexnetos-migration-prompt-package/PACKAGE_MANIFEST.json"
+      ]
+    },
+    {
+      "id": "ART105-INCOMPAT-001",
+      "category": "incompatibility",
+      "severity": "medium",
+      "component": "sqlite schema",
+      "status": "requires_sqlite_features",
+      "finding": "Artifact registry verification depends on SQLite foreign keys, views, unique constraints, and upsert semantics; alternate DB backends need compatible migrations before replay.",
+      "evidence": [
+        "sql/001_migration_automation_schema.sql",
+        "sql/002_views_and_indexes.sql",
+        "sql/003_seed_artifact_contract.sql",
+        "execution-framework/generated/contract_manifest.seed.sql"
+      ]
+    },
+    {
+      "id": "ART105-INCOMPAT-002",
+      "category": "incompatibility",
+      "severity": "medium",
+      "component": "codex execution runtime",
+      "status": "tool_required",
+      "finding": "Execution packets require codex, python3, and shell tools. The package does not vendor these tools, so target hosts must provide them through the envctl runtime.",
+      "evidence": [
+        "generated/execution_packets/ART-105_PACKAGE_LIB_GRAPH.json",
+        "RUN_WITH_CODEX_ENVCTL.sh"
+      ]
+    }
+  ]
+}

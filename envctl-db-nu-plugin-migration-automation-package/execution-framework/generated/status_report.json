@@ -1,0 +1,213 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-05T00:09:50+00:00",
+  "task_count": 80,
+  "complete_count": 64,
+  "failed_count": 0,
+  "pending_count": 16,
+  "runnable_count": 0,
+  "dispatch_count": 0,
+  "approval_blocker_count": 3,
+  "blocked_count": 13,
+  "runnable_tasks": [],
+  "dispatch_packets": [],
+  "approval_blockers": [
+    {
+      "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+      "reason": "agent approval required",
+      "packet_uri": "generated/execution_packets/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.json",
+      "agent_approval_uri": "approvals/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.agent_approval.json"
+    },
+    {
+      "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API",
+      "reason": "agent approval required",
+      "packet_uri": "generated/execution_packets/REQ-028_ENVCTL_AGENT_CONTROL_API.json",
+      "agent_approval_uri": "approvals/REQ-028_ENVCTL_AGENT_CONTROL_API.agent_approval.json"
+    },
+    {
+      "task_id": "REQ-033_PLUGIN_HUMAN_APPROVAL",
+      "reason": "agent approval required",
+      "packet_uri": "generated/execution_packets/REQ-033_PLUGIN_HUMAN_APPROVAL.json",
+      "agent_approval_uri": "approvals/REQ-033_PLUGIN_HUMAN_APPROVAL.agent_approval.json"
+    }
+  ],
+  "blocked_tasks": [
+    {
+      "task_id": "REQ-027_ENVCTL_REPLAY_ENGINE",
+      "reason": "unmet dependencies",
+      "dependencies": [
+        "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
+      ]
+    },
+    {
+      "task_id": "REQ-041_TWO_REPO_INTEGRATION",
+      "reason": "unmet dependencies",
+      "dependencies": [
+        "REQ-027_ENVCTL_REPLAY_ENGINE",
+        "REQ-028_ENVCTL_AGENT_CONTROL_API",
+        "REQ-033_PLUGIN_HUMAN_APPROVAL"
+      ]
+    },
+    {
+      "task_id": "REQ-045_RUN_REPLAY",
+      "reason": "unmet dependencies",
+      "dependencies": [
+        "REQ-027_ENVCTL_REPLAY_ENGINE"
+      ]
+    },
+    {
+      "task_id": "ART-121_CUTOVER",
+      "reason": "unmet dependencies",
+      "dependencies": [
+        "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
+      ]
+    },
+    {
+      "task_id": "ART-122_ROLLBACK",
+      "reason": "unmet dependencies",
+      "dependencies": [
+        "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
+      ]
+    },
+    {
+      "task_id": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+      "reason": "unmet dependencies",
+      "dependencies": [
+        "REQ-027_ENVCTL_REPLAY_ENGINE"
+      ]
+    },
+    {
+      "task_id": "VER-300_UNIT_VALIDATION",
+      "reason": "unmet dependencies",
+      "dependencies": [
+        "REQ-041_TWO_REPO_INTEGRATION",
+        "REQ-202_FLEXNETOS_ADAPTER_RECIPE"
+      ]
+    },
+    {
+      "task_id": "VER-301_SQL_SCHEMA_TEST",
+      "reason": "unmet dependencies",
+      "dependencies": [
+        "VER-300_UNIT_VALIDATION"
+      ]
+    },
+    {
+      "task_id": "VER-302_PACKET_SCHEMA_VALIDATION",
+      "reason": "unmet dependencies",
+      "dependencies": [
+        "VER-301_SQL_SCHEMA_TEST"
+      ]
+    },
+    {
+      "task_id": "VER-303_GOAL_LOOP_COMPUTE",
+      "reason": "unmet dependencies",
+      "dependencies": [
+        "VER-302_PACKET_SCHEMA_VALIDATION",
+        "REQ-045_RUN_REPLAY"
+      ]
+    },
+    {
+      "task_id": "VER-304_FINAL_COMPLETENESS",
+      "reason": "unmet dependencies",
+      "dependencies": [
+        "VER-303_GOAL_LOOP_COMPUTE"
+      ]
+    },
+    {
+      "task_id": "REL-400_PACKAGE_ARCHIVE",
+      "reason": "unmet dependencies",
+      "dependencies": [
+        "VER-304_FINAL_COMPLETENESS"
+      ]
+    },
+    {
+      "task_id": "REL-401_HANDOFF",
+      "reason": "unmet dependencies",
+      "dependencies": [
+        "REL-400_PACKAGE_ARCHIVE"
+      ]
+    }
+  ],
+  "statuses": {
+    "EF-001_SCAN_PACKAGE": "complete",
+    "EF-002_GAP_REPORT": "complete",
+    "EF-003_APPLY_FRAMEWORK": "complete",
+    "EF-004_GENERATE_TASK_GRAPH": "complete",
+    "EF-005_VALIDATE_TASK_GRAPH": "complete",
+    "EF-006_TASK_GRAPH_TO_PACKETS": "complete",
+    "EF-007_GOAL_LOOP": "complete",
+    "EF-008_VERIFY_HISTORY_COMPLETENESS": "complete",
+    "REQ-010_CONTRACT_LOCK": "complete",
+    "REQ-020_ENVCTL_DB_SCHEMA": "complete",
+    "REQ-021_ENVCTL_TARGET_REGISTRY": "complete",
+    "REQ-022_ENVCTL_RUN_LEDGER": "complete",
+    "REQ-023_ENVCTL_OPERATION_STATE": "complete",
+    "REQ-024_ENVCTL_ARTIFACT_REGISTRY": "complete",
+    "REQ-025_ENVCTL_VALIDATION_EVIDENCE": "complete",
+    "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS": "pending",
+    "REQ-027_ENVCTL_REPLAY_ENGINE": "pending",
+    "REQ-028_ENVCTL_AGENT_CONTROL_API": "pending",
+    "REQ-030_PLUGIN_PROTOCOL_MANIFEST": "complete",
+    "REQ-031_PLUGIN_COMMAND_SURFACE": "complete",
+    "REQ-032_PLUGIN_LIVE_VISUALS": "complete",
+    "REQ-033_PLUGIN_HUMAN_APPROVAL": "pending",
+    "REQ-034_PLUGIN_STATUS_STREAMS": "complete",
+    "REQ-040_SHARED_PROTOCOL_SCHEMAS": "complete",
+    "REQ-041_TWO_REPO_INTEGRATION": "pending",
+    "REQ-042_FILESYSTEM_BOUNDS": "complete",
+    "REQ-043_SECURITY_REDACTION": "complete",
+    "REQ-044_INSTALL_BOOTSTRAP": "complete",
+    "REQ-045_RUN_REPLAY": "pending",
+    "ART-100_SYSTEM_INVENTORY": "complete",
+    "ART-101_DIRECTORY_TREE": "complete",
+    "ART-102_REPOSITORY_MAP": "complete",
+    "ART-103_SERVICE_DEP_GRAPH": "complete",
+    "ART-104_TOOLCHAIN_TREE": "complete",
+    "ART-105_PACKAGE_LIB_GRAPH": "complete",
+    "ART-106_RUNTIME_DEP_MAP": "complete",
+    "ART-107_DATA_FLOW_GRAPH": "complete",
+    "ART-108_DB_SCHEMA_MAP": "complete",
+    "ART-109_DATA_LINEAGE": "complete",
+    "ART-110_API_CATALOG": "complete",
+    "ART-111_EVENT_MAP": "complete",
+    "ART-112_CODE_OWNERSHIP": "complete",
+    "ART-113_DEBUG_CODE_MAP": "complete",
+    "ART-114_ENV_CONFIG_MATRIX": "complete",
+    "ART-115_CONFIG_INVENTORY": "complete",
+    "ART-116_INFRA_TOPOLOGY": "complete",
+    "ART-117_IAM_MATRIX": "complete",
+    "ART-118_OBSERVABILITY": "complete",
+    "ART-119_BUSINESS_PROCESS": "complete",
+    "ART-120_WAVE_PLAN": "complete",
+    "ART-121_CUTOVER": "pending",
+    "ART-122_ROLLBACK": "pending",
+    "ART-123_VALIDATION_RECONCILIATION": "complete",
+    "ART-124_TEST_COVERAGE": "complete",
+    "ART-125_RISK_REGISTER": "complete",
+    "ART-126_DECISION_LOG": "complete",
+    "ART-127_BLAST_RADIUS": "complete",
+    "ART-128_READINESS_SCORECARD": "complete",
+    "ART-129_BUSINESS_CAPABILITY": "complete",
+    "ART-130_SHADOW_TRAFFIC": "complete",
+    "ART-131_GOLDEN_DATASET": "complete",
+    "ART-132_PARITY_DASHBOARD": "complete",
+    "ART-133_DEPRECATION_MAP": "complete",
+    "ART-134_EXCEPTION_INVENTORY": "complete",
+    "ART-135_RACI": "complete",
+    "ART-136_TECH_DEBT_LEDGER": "complete",
+    "REQ-200_FLEXNETOS_TARGET_DESCRIPTOR": "complete",
+    "REQ-201_FLEXNETOS_LIFEOS_COMPARISON": "complete",
+    "REQ-202_FLEXNETOS_ADAPTER_RECIPE": "pending",
+    "VER-300_UNIT_VALIDATION": "pending",
+    "VER-301_SQL_SCHEMA_TEST": "pending",
+    "VER-302_PACKET_SCHEMA_VALIDATION": "pending",
+    "VER-303_GOAL_LOOP_COMPUTE": "pending",
+    "VER-304_FINAL_COMPLETENESS": "pending",
+    "REL-400_PACKAGE_ARCHIVE": "pending",
+    "REL-401_HANDOFF": "pending",
+    "MAINT-500_README_NAV_BACKTRACE": "complete",
+    "MAINT-501_RESTORE_PROOF_TEMPLATE": "complete",
+    "MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC": "complete",
+    "MAINT-503_CODEX_FINAL_PROMPT": "complete"
+  }
+}

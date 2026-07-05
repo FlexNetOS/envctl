@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "envctl Migration Operation",
+  "type": "object",
+  "required": [
+    "operation_id",
+    "run_id",
+    "operation_type",
+    "status",
+    "risk"
+  ],
+  "properties": {
+    "operation_id": {
+      "type": "string"
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "parent_operation_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "operation_type": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "queued",
+        "ready",
+        "awaiting_approval",
+        "running",
+        "succeeded",
+        "failed",
+        "blocked",
+        "denied",
+        "cancelled"
+      ]
+    },
+    "risk": {
+      "enum": [
+        "R0",
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5"
+      ]
+    },
+    "idempotency_key": {
+      "type": "string"
+    },
+    "input": {
+      "type": "object"
+    },
+    "output_ref": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "error": {
+      "type": [
+        "object",
+        "null"
+      ]
+    }
+  }
+}

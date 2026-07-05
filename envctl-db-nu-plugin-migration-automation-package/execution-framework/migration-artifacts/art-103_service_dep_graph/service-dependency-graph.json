@@ -1,0 +1,1661 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-103_SERVICE_DEP_GRAPH",
+  "generated_at": "2026-07-04T23:19:59+00:00",
+  "target_root": "/home/flexnetos/FlexNetOS",
+  "source_inputs": {
+    "target_descriptor": "generated/envctl_target_registry.json",
+    "repo_scan": [
+      "target root bounded scan",
+      "generated/package_scan.json"
+    ],
+    "envctl_database": [
+      "generated/envctl_migration_db_model.json",
+      "generated/envctl_artifact_registry_report.json"
+    ],
+    "task_graph": "generated/task_graph.normalized.json",
+    "contract_manifest": "generated/contract_manifest.json"
+  },
+  "scan_summary": {
+    "target_root": "/home/flexnetos/FlexNetOS",
+    "service_definition_count": 46,
+    "manifest_count": 10314,
+    "code_file_count": 60573,
+    "selected_service_definitions": [
+      "src/envctl/home/.config/systemd/user/repowire.service",
+      "src/envctl/home/.config/systemd/user/env-ctl.service",
+      "src/envctl/home/.config/systemd/user/sqld.service",
+      "src/meta-ruvector/crates/ruvector-hailo-cluster/deploy/ruvector-mmwave-bridge.service",
+      "src/meta-ruvector/crates/ruvector-hailo-cluster/deploy/ruvector-hailo-worker.service",
+      "src/meta-ruvector/crates/ruvector-hailo-cluster/deploy/ruview-csi-bridge.service",
+      "src/meta-ruvector/crates/ruvector-hailo-cluster/deploy/ruvllm-pi-worker.service",
+      "src/meta-ruvector/crates/ruos-thermal/deploy/ruos-thermal.timer",
+      "src/meta-ruvector/crates/ruos-thermal/deploy/ruos-thermal.service",
+      "src/hermes-agent/plugins/kanban/systemd/hermes-kanban-dispatcher.service",
+      "src/envctl-nix-components-db/home/.config/systemd/user/repowire.service",
+      "src/envctl-nix-components-db/home/.config/systemd/user/env-ctl.service",
+      "src/envctl-nix-components-db/home/.config/systemd/user/sqld.service",
+      "src/envctl-codedb-config-to-tables/home/.config/systemd/user/repowire.service",
+      "src/envctl-codedb-config-to-tables/home/.config/systemd/user/env-ctl.service",
+      "src/envctl-codedb-config-to-tables/home/.config/systemd/user/sqld.service",
+      "src/envctl-nu-plugin-db-skill/home/.config/systemd/user/repowire.service",
+      "src/envctl-nu-plugin-db-skill/home/.config/systemd/user/env-ctl.service",
+      "src/envctl-nu-plugin-db-skill/home/.config/systemd/user/sqld.service",
+      "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/home/.config/systemd/user/repowire.service",
+      "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/home/.config/systemd/user/env-ctl.service",
+      "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/home/.config/systemd/user/sqld.service",
+      "src/flexnetos_runner/_work/actions-runner-02-work/meta/meta/envctl/home/.config/systemd/user/repowire.service",
+      "src/flexnetos_runner/_work/actions-runner-02-work/meta/meta/envctl/home/.config/systemd/user/env-ctl.service",
+      "src/flexnetos_runner/_work/actions-runner-02-work/meta/meta/envctl/home/.config/systemd/user/sqld.service",
+      "src/flexnetos_runner/_work/actions-runner-02-work/flexnetos_runner/flexnetos_runner/systemd/user/flexnetos-cache-maintenance.timer",
+      "src/flexnetos_runner/_work/actions-runner-02-work/flexnetos_runner/flexnetos_runner/systemd/user/flexnetos-cache-maintenance.service",
+      "src/flexnetos_runner/_work/actions-runner-01-work/envctl/envctl/home/.config/systemd/user/repowire.service",
+      "src/flexnetos_runner/_work/actions-runner-01-work/envctl/envctl/home/.config/systemd/user/env-ctl.service",
+      "src/flexnetos_runner/_work/actions-runner-01-work/envctl/envctl/home/.config/systemd/user/sqld.service",
+      "src/flexnetos_runner/_work/actions-runner-01-work/meta/meta/envctl/home/.config/systemd/user/repowire.service",
+      "src/flexnetos_runner/_work/actions-runner-01-work/meta/meta/envctl/home/.config/systemd/user/env-ctl.service",
+      "src/flexnetos_runner/_work/actions-runner-01-work/meta/meta/envctl/home/.config/systemd/user/sqld.service",
+      "src/flexnetos_runner/_work/actions-runner-01-work/flexnetos_runner/flexnetos_runner/systemd/user/flexnetos-cache-maintenance.timer",
+      "src/flexnetos_runner/_work/actions-runner-01-work/flexnetos_runner/flexnetos_runner/systemd/user/flexnetos-cache-maintenance.service",
+      "src/flexnetos_runner/systemd/user/flexnetos-cache-maintenance.timer",
+      "src/flexnetos_runner/systemd/user/flexnetos-cache-maintenance.service",
+      "src/envctl-hooks-clean-baseline/home/.config/systemd/user/repowire.service",
+      "src/envctl-hooks-clean-baseline/home/.config/systemd/user/env-ctl.service",
+      "src/envctl-hooks-clean-baseline/home/.config/systemd/user/sqld.service",
+      "src/envctl-db-nu-migration-req020/home/.config/systemd/user/repowire.service",
+      "src/envctl-db-nu-migration-req020/home/.config/systemd/user/env-ctl.service",
+      "src/envctl-db-nu-migration-req020/home/.config/systemd/user/sqld.service",
+      "var/tmp/envctl-catalog-render-20260703T1842Z/systemd/user/envctl-catalog-check.service",
+      "var/tmp/envctl-catalog-render-20260703T1844Z/systemd/user/envctl-catalog-check.service",
+      "var/log/raw/envctl-catalog-render-audit-20260702/systemd/user/envctl-catalog-check.service"
+    ],
+    "selected_manifests": [
+      "src/release-workspace.meta.yaml",
+      "src/Cargo.toml",
+      "src/teri/deny.toml",
+      "src/teri/.pre-commit-config.yaml",
+      "src/teri/agent-env.toml",
+      "src/teri/rust-toolchain.toml",
+      "src/teri/.rustfmt.toml",
+      "src/teri/Cargo.toml",
+      "src/teri/frontend/package.json",
+      "src/teri/.worktrees/issue-86-source-wires/deny.toml",
+      "src/teri/.worktrees/issue-86-source-wires/.pre-commit-config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/agent-env.toml",
+      "src/teri/.worktrees/issue-86-source-wires/rust-toolchain.toml",
+      "src/teri/.worktrees/issue-86-source-wires/.rustfmt.toml",
+      "src/teri/.worktrees/issue-86-source-wires/Cargo.toml",
+      "src/teri/.worktrees/issue-86-source-wires/frontend/package.json",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/Cargo.toml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/examples/ellipse-rubric.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/examples/custom-rubric.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/crates/cli/Cargo.toml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/crates/mcp/Cargo.toml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/crates/core/Cargo.toml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/.github/workflows/release.yml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/.github/workflows/ci.yml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/.github/workflows/docker.yml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/.pre-commit-config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/pyproject.toml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/configs/island_config_example.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/configs/early_stopping_example.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/configs/default_config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/configs/island_examples.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/circle_packing_with_artifacts/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/circle_packing_with_artifacts/config_phase_1.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/circle_packing_with_artifacts/config_phase_2.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/first_autocorr_ineq/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/sums_diffs_finite_sets/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/minimizing_max_min_dist/3/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/minimizing_max_min_dist/2/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/kissing_number/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/erdos_min_overlap/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/third_autocorr_ineq/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/heilbronn_triangle/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/matmul/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/circle_packing_rect/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/heilbronn_convex/14/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/heilbronn_convex/13/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/hexagon_packing/11/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/hexagon_packing/12/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/uncertainty_ineq/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/second_autocorr_ineq/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/rust_adaptive_sort/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/rust_adaptive_sort/sort_test/Cargo.toml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/sldbench/configs/vocab_scaling_law.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/sldbench/configs/easy_question_scaling_law.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/sldbench/configs/data_constrained_scaling_law.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/sldbench/configs/lr_bsz_scaling_law.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/sldbench/configs/sft_scaling_law.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/sldbench/configs/domain_mixture_scaling_law.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/sldbench/configs/moe_scaling_law.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/sldbench/configs/parallel_scaling_law.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/tsp_tour_minimization/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/web_scraper_optillm/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/arc_benchmark/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/arc_benchmark/base_config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/lm_eval/config.yml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/function_minimization/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/mlx_metal_kernel_opt/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/signal_processing/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/k_module_problem/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/config_qwen3_evolution.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/ifeval_prompt_dataset.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/gsm8k_prompt_dataset.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/dataset_settings.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/emotion_prompt_dataset.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/initial_prompt_dataset.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/hover_prompt_dataset.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/hotpotqa_prompt_dataset.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/config_qwen3_baseline.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/r_robust_regression/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/attention_optimization/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/attention_optimization/configs/failing_config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/online_judge_programming/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/circle_packing/config_phase_1.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/circle_packing/config_phase_2.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/circle_packing/config_phase_2_anthropic.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/circle_packing/config_phase_1_anthropic.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/algotune/fft_convolution/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/algotune/fft_cmplx_scipy_fftpack/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/algotune/eigenvectors_complex/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/algotune/lu_factorization/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/algotune/convolve2d_full_fill/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/algotune/affine_transform_2d/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/algotune/polynomial_real/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/algotune/psd_cone_projection/config.yaml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/.github/workflows/claude.yml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/.github/workflows/python-test.yml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/.github/workflows/release.yml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/rust-toolchain.toml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/rustfmt.toml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/Cargo.toml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/vscode-splitrail/package.json",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.github/workflows/checks.yml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.github/workflows/release.yml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.cargo/audit.toml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.cargo/config.toml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/web-rwkv/Cargo.toml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/web-rwkv/crates/web-rwkv-derive/Cargo.toml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/web-rwkv/crates/web-rwkv-wasm/Cargo.toml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/web-rwkv/.github/workflows/wasm-npm.yml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/web-rwkv/.github/workflows/release.yml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/web-rwkv/.github/workflows/rust.yml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/web-rwkv/.cargo/Config.toml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/BettaFish/docker-compose.yml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/BettaFish/.github/FUNDING.yml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/BettaFish/.github/workflows/docker_ci.yml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/package.json",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/Cargo.toml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/interface-engines/utils/Cargo.toml",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/interface-engines/neural_core/Cargo.toml"
+    ],
+    "selected_docs": [
+      "LOCAL_WORKAROUNDS.md",
+      "WORKSPACE_LAYOUT.md",
+      "WORKLOG.md",
+      "AGENTS.md",
+      "src/OWNERSHIP.md",
+      "src/teri/SPRINT.md",
+      "src/teri/TODO.md",
+      "src/teri/FEATURE-PARITY.md",
+      "src/teri/README.md",
+      "src/teri/README-ZH.md",
+      "src/teri/ARCHITECTURE.md",
+      "src/teri/CLAUDE.md",
+      "src/teri/RUNBOOK.md",
+      "src/teri/AGENTS.md",
+      "src/teri/code-research/references/research-ledger.md",
+      "src/teri/.codex/rusty-idd-adapter.md",
+      "src/teri/.codex/prompts/teri-simulation-truth.md",
+      "src/teri/.codex/prompts/teri-docs-sync.md",
+      "src/teri/.worktrees/issue-86-source-wires/SPRINT.md",
+      "src/teri/.worktrees/issue-86-source-wires/TODO.md",
+      "src/teri/.worktrees/issue-86-source-wires/FEATURE-PARITY.md",
+      "src/teri/.worktrees/issue-86-source-wires/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/README-ZH.md",
+      "src/teri/.worktrees/issue-86-source-wires/ARCHITECTURE.md",
+      "src/teri/.worktrees/issue-86-source-wires/CLAUDE.md",
+      "src/teri/.worktrees/issue-86-source-wires/RUNBOOK.md",
+      "src/teri/.worktrees/issue-86-source-wires/AGENTS.md",
+      "src/teri/.worktrees/issue-86-source-wires/code-research/references/research-ledger.md",
+      "src/teri/.worktrees/issue-86-source-wires/uploads/reports/report_627a237e35ce/full_report.md",
+      "src/teri/.worktrees/issue-86-source-wires/uploads/reports/report_627a237e35ce/section_01.md",
+      "src/teri/.worktrees/issue-86-source-wires/.codex/rusty-idd-adapter.md",
+      "src/teri/.worktrees/issue-86-source-wires/.codex/prompts/teri-simulation-truth.md",
+      "src/teri/.worktrees/issue-86-source-wires/.codex/prompts/teri-docs-sync.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/SKILL.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/CHANGELOG.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/CLAUDE.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/CONTRIBUTING.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/case-studies/01-fabrication-detection.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/case-studies/02-prompt-firewall.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/CLAUDE.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/CONTRIBUTING.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/configs/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/tests/integration/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/circle_packing_with_artifacts/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/symbolic_regression/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/rust_adaptive_sort/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/sldbench/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/tsp_tour_minimization/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/web_scraper_optillm/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/arc_benchmark/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/lm_eval/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/function_minimization/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/mlx_metal_kernel_opt/EVOLUTION_ANALYSIS.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/mlx_metal_kernel_opt/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/signal_processing/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/k_module_problem/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/r_robust_regression/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/attention_optimization/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/online_judge_programming/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/circle_packing/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/algotune/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/.github/instructions/sidebar-node-logic.instructions.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/CHANGELOG.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/CLAUDE.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/AGENTS.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/vscode-splitrail/README.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/vscode-splitrail/CHANGELOG.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.claude/skills/SKILLS.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.claude/skills/types/SKILL.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.claude/skills/performance/SKILL.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.claude/skills/mcp/SKILL.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.claude/skills/new-analyzer/SKILL.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.claude/skills/tui/SKILL.md",
+      "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.claude/skills/pricing/SKILL.md"
+    ],
+    "blocked_patterns": [
+      "**/.env",
+      "**/secrets/**",
+      "**/private_keys/**",
+      "**/*.pem",
+      "**/*.key"
+    ],
+    "skipped_dirs": [
+      ".cache",
+      ".git",
+      ".kb",
+      ".mypy_cache",
+      ".pytest_cache",
+      "__pycache__",
+      "node_modules",
+      "target"
+    ]
+  },
+  "nodes": [
+    {
+      "id": "workspace:flexnetos",
+      "label": "FlexNetOS hollow workspace",
+      "type": "workspace",
+      "path": "/home/flexnetos/FlexNetOS",
+      "wave": 0
+    },
+    {
+      "id": "service:meta-control-plane",
+      "label": "Meta control plane",
+      "type": "service",
+      "path": "src/meta",
+      "wave": 1
+    },
+    {
+      "id": "service:envctl",
+      "label": "envctl environment authority",
+      "type": "service",
+      "path": "src/envctl",
+      "wave": 1
+    },
+    {
+      "id": "service:envctl-db",
+      "label": "envctl migration database model",
+      "type": "data_service",
+      "path": "src/envctl/envctl-db-nu-plugin-migration-automation-package/sql",
+      "wave": 2
+    },
+    {
+      "id": "service:artifact-registry",
+      "label": "envctl artifact registry",
+      "type": "data_service",
+      "path": "execution-framework/scripts/artifact_registry.py",
+      "wave": 2
+    },
+    {
+      "id": "service:shared-protocol",
+      "label": "Shared protocol schemas",
+      "type": "contract",
+      "path": "execution-framework/schemas/shared_protocol.schema.json",
+      "wave": 1
+    },
+    {
+      "id": "service:nu-plugin-control",
+      "label": "Nu plugin command surface",
+      "type": "operator_interface",
+      "path": "generated/nu_plugin_command_manifest.json",
+      "wave": 3
+    },
+    {
+      "id": "service:execution-framework",
+      "label": "Migration execution framework",
+      "type": "orchestrator",
+      "path": "execution-framework",
+      "wave": 2
+    },
+    {
+      "id": "service:artifact-set",
+      "label": "Migration artifact set",
+      "type": "artifact_sink",
+      "path": "migration-artifacts",
+      "wave": 4
+    },
+    {
+      "id": "service:flexnetos-adapter",
+      "label": "FlexNetOS target adapter",
+      "type": "adapter",
+      "path": "generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json",
+      "wave": 5
+    },
+    {
+      "id": "service:flexnetos-runner",
+      "label": "FlexNetOS release runner",
+      "type": "release_service",
+      "path": "src/flexnetos_runner",
+      "wave": 6
+    },
+    {
+      "id": "service:yazelix-runtime",
+      "label": "Yazelix operator runtime",
+      "type": "runtime",
+      "path": "src/yazelix",
+      "wave": 1
+    },
+    {
+      "id": "service:gitkb-memory",
+      "label": "GitKB durable memory",
+      "type": "knowledge_service",
+      "path": "var/lib/gitkb",
+      "wave": 1
+    },
+    {
+      "id": "service:rtk",
+      "label": "RTK command summarization frontdoor",
+      "type": "tooling_service",
+      "path": "usr/bin/rtk",
+      "wave": 1
+    },
+    {
+      "id": "service:upstream-evidence",
+      "label": "Upstream evidence mirrors",
+      "type": "evidence_source",
+      "path": "src/upstream",
+      "wave": 1
+    },
+    {
+      "id": "service:envctl-state",
+      "label": "envctl managed state/tables",
+      "type": "state_store",
+      "path": "var/lib/envctl/tables",
+      "wave": 2
+    }
+  ],
+  "edges": [
+    {
+      "from": "workspace:flexnetos",
+      "to": "service:meta-control-plane",
+      "type": "contains_peer",
+      "confidence": "high",
+      "evidence": [
+        "AGENTS.md",
+        "WORKSPACE_LAYOUT.md"
+      ]
+    },
+    {
+      "from": "workspace:flexnetos",
+      "to": "service:envctl",
+      "type": "contains_peer",
+      "confidence": "high",
+      "evidence": [
+        "AGENTS.md",
+        "WORKSPACE_LAYOUT.md"
+      ]
+    },
+    {
+      "from": "workspace:flexnetos",
+      "to": "service:flexnetos-runner",
+      "type": "contains_peer",
+      "confidence": "high",
+      "evidence": [
+        "AGENTS.md",
+        "WORKSPACE_LAYOUT.md"
+      ]
+    },
+    {
+      "from": "workspace:flexnetos",
+      "to": "service:yazelix-runtime",
+      "type": "contains_peer",
+      "confidence": "high",
+      "evidence": [
+        "AGENTS.md"
+      ]
+    },
+    {
+      "from": "service:meta-control-plane",
+      "to": "service:gitkb-memory",
+      "type": "uses_memory_graph",
+      "confidence": "medium",
+      "evidence": [
+        "AGENTS.md"
+      ]
+    },
+    {
+      "from": "service:envctl",
+      "to": "service:envctl-state",
+      "type": "owns_state_tables",
+      "confidence": "high",
+      "evidence": [
+        "WORKSPACE_LAYOUT.md"
+      ]
+    },
+    {
+      "from": "service:envctl",
+      "to": "service:envctl-db",
+      "type": "owns_database_contract",
+      "confidence": "high",
+      "evidence": [
+        "generated/envctl_migration_db_model.json"
+      ]
+    },
+    {
+      "from": "service:envctl-db",
+      "to": "service:artifact-registry",
+      "type": "provides_tables_for",
+      "confidence": "high",
+      "evidence": [
+        "scripts/artifact_registry.py",
+        "generated/envctl_artifact_registry_report.json"
+      ]
+    },
+    {
+      "from": "service:artifact-registry",
+      "to": "service:artifact-set",
+      "type": "registers_hashes_for",
+      "confidence": "high",
+      "evidence": [
+        "generated/envctl_artifact_registry_report.json"
+      ]
+    },
+    {
+      "from": "service:shared-protocol",
+      "to": "service:envctl-db",
+      "type": "defines_records_for",
+      "confidence": "high",
+      "evidence": [
+        "generated/shared_protocol_validation_report.json"
+      ]
+    },
+    {
+      "from": "service:nu-plugin-control",
+      "to": "service:shared-protocol",
+      "type": "implements_protocol",
+      "confidence": "high",
+      "evidence": [
+        "generated/nu_plugin_command_manifest.json",
+        "generated/shared_protocol_manifest.json"
+      ]
+    },
+    {
+      "from": "service:nu-plugin-control",
+      "to": "service:envctl-db",
+      "type": "calls_control_operations",
+      "confidence": "medium",
+      "evidence": [
+        "generated/task_graph.normalized.json"
+      ]
+    },
+    {
+      "from": "service:execution-framework",
+      "to": "service:artifact-registry",
+      "type": "registers_outputs_with",
+      "confidence": "high",
+      "evidence": [
+        "generated/execution_packets/ART-103_SERVICE_DEP_GRAPH.json"
+      ]
+    },
+    {
+      "from": "service:execution-framework",
+      "to": "service:artifact-set",
+      "type": "produces",
+      "confidence": "high",
+      "evidence": [
+        "generated/contract_manifest.json"
+      ]
+    },
+    {
+      "from": "service:flexnetos-adapter",
+      "to": "service:execution-framework",
+      "type": "reuses_packets_and_replay",
+      "confidence": "high",
+      "evidence": [
+        "generated/task_graph.normalized.json"
+      ]
+    },
+    {
+      "from": "service:yazelix-runtime",
+      "to": "service:envctl",
+      "type": "consumes_environment_contracts",
+      "confidence": "medium",
+      "evidence": [
+        "AGENTS.md",
+        "LOCAL_WORKAROUNDS.md"
+      ]
+    },
+    {
+      "from": "service:rtk",
+      "to": "service:execution-framework",
+      "type": "supports_command_capture",
+      "confidence": "medium",
+      "evidence": [
+        "/home/flexnetos/.codex/RTK.md",
+        "/home/flexnetos/.codex/AGENTS.rtk.md"
+      ]
+    },
+    {
+      "from": "service:upstream-evidence",
+      "to": "service:execution-framework",
+      "type": "feeds_scan_evidence",
+      "confidence": "medium",
+      "evidence": [
+        "src/release-workspace.meta.yaml"
+      ]
+    },
+    {
+      "from": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "task:ART-103_SERVICE_DEP_GRAPH",
+      "type": "migration_wave_dependency",
+      "confidence": "high",
+      "evidence": [
+        "generated/task_graph.normalized.json"
+      ]
+    },
+    {
+      "from": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "task:ART-103_SERVICE_DEP_GRAPH",
+      "type": "migration_wave_dependency",
+      "confidence": "high",
+      "evidence": [
+        "generated/task_graph.normalized.json"
+      ]
+    },
+    {
+      "from": "task:ART-103_SERVICE_DEP_GRAPH",
+      "to": "task:VER-300_UNIT_VALIDATION",
+      "type": "blocks_validation",
+      "confidence": "high",
+      "evidence": [
+        "generated/task_graph.normalized.json"
+      ]
+    }
+  ],
+  "migration_waves": [
+    {
+      "wave": 0,
+      "name": "Contract lock",
+      "tasks": [
+        "REQ-010_CONTRACT_LOCK"
+      ]
+    },
+    {
+      "wave": 1,
+      "name": "Shared contracts and protocol surfaces",
+      "tasks": [
+        "REQ-020_ENVCTL_DB_SCHEMA",
+        "REQ-030_PLUGIN_PROTOCOL_MANIFEST",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "wave": 2,
+      "name": "Envctl registries and operation state",
+      "tasks": [
+        "REQ-021_ENVCTL_TARGET_REGISTRY",
+        "REQ-022_ENVCTL_RUN_LEDGER",
+        "REQ-023_ENVCTL_OPERATION_STATE",
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-025_ENVCTL_VALIDATION_EVIDENCE",
+        "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
+      ]
+    },
+    {
+      "wave": 3,
+      "name": "Control APIs, replay, and plugin UX",
+      "tasks": [
+        "REQ-027_ENVCTL_REPLAY_ENGINE",
+        "REQ-028_ENVCTL_AGENT_CONTROL_API",
+        "REQ-031_PLUGIN_COMMAND_SURFACE",
+        "REQ-032_PLUGIN_LIVE_VISUALS",
+        "REQ-033_PLUGIN_HUMAN_APPROVAL",
+        "REQ-034_PLUGIN_STATUS_STREAMS",
+        "REQ-041_TWO_REPO_INTEGRATION"
+      ]
+    },
+    {
+      "wave": 4,
+      "name": "Artifact generation",
+      "tasks": [
+        "ART-100_SYSTEM_INVENTORY",
+        "ART-101_DIRECTORY_TREE",
+        "ART-102_REPOSITORY_MAP",
+        "ART-103_SERVICE_DEP_GRAPH",
+        "ART-104_TOOLCHAIN_TREE",
+        "ART-105_PACKAGE_LIB_GRAPH",
+        "ART-106_RUNTIME_DEP_MAP",
+        "ART-107_DATA_FLOW_GRAPH",
+        "ART-108_DB_SCHEMA_MAP",
+        "ART-109_DATA_LINEAGE",
+        "ART-110_API_CATALOG",
+        "ART-111_EVENT_MAP",
+        "ART-112_CODE_OWNERSHIP",
+        "ART-113_DEBUG_CODE_MAP",
+        "ART-114_ENV_CONFIG_MATRIX",
+        "ART-115_CONFIG_INVENTORY",
+        "ART-116_INFRA_TOPOLOGY",
+        "ART-117_IAM_MATRIX",
+        "ART-118_OBSERVABILITY",
+        "ART-119_BUSINESS_PROCESS",
+        "ART-120_WAVE_PLAN",
+        "ART-121_CUTOVER",
+        "ART-122_ROLLBACK",
+        "ART-123_VALIDATION_RECONCILIATION",
+        "ART-124_TEST_COVERAGE",
+        "ART-125_RISK_REGISTER",
+        "ART-126_DECISION_LOG",
+        "ART-127_BLAST_RADIUS",
+        "ART-128_READINESS_SCORECARD",
+        "ART-129_BUSINESS_CAPABILITY",
+        "ART-130_SHADOW_TRAFFIC",
+        "ART-131_GOLDEN_DATASET",
+        "ART-132_PARITY_DASHBOARD",
+        "ART-133_DEPRECATION_MAP",
+        "ART-134_EXCEPTION_INVENTORY",
+        "ART-135_RACI",
+        "ART-136_TECH_DEBT_LEDGER"
+      ]
+    },
+    {
+      "wave": 5,
+      "name": "FlexNetOS target adapter",
+      "tasks": [
+        "REQ-200_FLEXNETOS_TARGET_DESCRIPTOR",
+        "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+        "REQ-202_FLEXNETOS_ADAPTER_RECIPE"
+      ]
+    },
+    {
+      "wave": 6,
+      "name": "Validation and release",
+      "tasks": [
+        "VER-300_UNIT_VALIDATION",
+        "VER-301_SQL_SCHEMA_TEST",
+        "VER-302_PACKET_SCHEMA_VALIDATION",
+        "VER-303_GOAL_LOOP_COMPUTE",
+        "VER-304_FINAL_COMPLETENESS",
+        "REL-400_PACKAGE_ARCHIVE",
+        "REL-401_HANDOFF"
+      ]
+    }
+  ],
+  "task_dependency_edges": [
+    {
+      "from": "EF-001_SCAN_PACKAGE",
+      "to": "EF-002_GAP_REPORT",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "EF-002_GAP_REPORT",
+      "to": "EF-003_APPLY_FRAMEWORK",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "EF-003_APPLY_FRAMEWORK",
+      "to": "EF-004_GENERATE_TASK_GRAPH",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "EF-004_GENERATE_TASK_GRAPH",
+      "to": "EF-005_VALIDATE_TASK_GRAPH",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "EF-005_VALIDATE_TASK_GRAPH",
+      "to": "EF-006_TASK_GRAPH_TO_PACKETS",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "EF-006_TASK_GRAPH_TO_PACKETS",
+      "to": "EF-007_GOAL_LOOP",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "EF-007_GOAL_LOOP",
+      "to": "EF-008_VERIFY_HISTORY_COMPLETENESS",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "EF-008_VERIFY_HISTORY_COMPLETENESS",
+      "to": "REQ-010_CONTRACT_LOCK",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-010_CONTRACT_LOCK",
+      "to": "REQ-020_ENVCTL_DB_SCHEMA",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-020_ENVCTL_DB_SCHEMA",
+      "to": "REQ-021_ENVCTL_TARGET_REGISTRY",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-020_ENVCTL_DB_SCHEMA",
+      "to": "REQ-022_ENVCTL_RUN_LEDGER",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-020_ENVCTL_DB_SCHEMA",
+      "to": "REQ-023_ENVCTL_OPERATION_STATE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-020_ENVCTL_DB_SCHEMA",
+      "to": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-020_ENVCTL_DB_SCHEMA",
+      "to": "REQ-025_ENVCTL_VALIDATION_EVIDENCE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-020_ENVCTL_DB_SCHEMA",
+      "to": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-021_ENVCTL_TARGET_REGISTRY",
+      "to": "REQ-027_ENVCTL_REPLAY_ENGINE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-022_ENVCTL_RUN_LEDGER",
+      "to": "REQ-027_ENVCTL_REPLAY_ENGINE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+      "to": "REQ-027_ENVCTL_REPLAY_ENGINE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-023_ENVCTL_OPERATION_STATE",
+      "to": "REQ-028_ENVCTL_AGENT_CONTROL_API",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-025_ENVCTL_VALIDATION_EVIDENCE",
+      "to": "REQ-028_ENVCTL_AGENT_CONTROL_API",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-010_CONTRACT_LOCK",
+      "to": "REQ-030_PLUGIN_PROTOCOL_MANIFEST",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-030_PLUGIN_PROTOCOL_MANIFEST",
+      "to": "REQ-031_PLUGIN_COMMAND_SURFACE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-030_PLUGIN_PROTOCOL_MANIFEST",
+      "to": "REQ-032_PLUGIN_LIVE_VISUALS",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-030_PLUGIN_PROTOCOL_MANIFEST",
+      "to": "REQ-033_PLUGIN_HUMAN_APPROVAL",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-030_PLUGIN_PROTOCOL_MANIFEST",
+      "to": "REQ-034_PLUGIN_STATUS_STREAMS",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-010_CONTRACT_LOCK",
+      "to": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-027_ENVCTL_REPLAY_ENGINE",
+      "to": "REQ-041_TWO_REPO_INTEGRATION",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-028_ENVCTL_AGENT_CONTROL_API",
+      "to": "REQ-041_TWO_REPO_INTEGRATION",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-031_PLUGIN_COMMAND_SURFACE",
+      "to": "REQ-041_TWO_REPO_INTEGRATION",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-032_PLUGIN_LIVE_VISUALS",
+      "to": "REQ-041_TWO_REPO_INTEGRATION",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-033_PLUGIN_HUMAN_APPROVAL",
+      "to": "REQ-041_TWO_REPO_INTEGRATION",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-034_PLUGIN_STATUS_STREAMS",
+      "to": "REQ-041_TWO_REPO_INTEGRATION",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "REQ-041_TWO_REPO_INTEGRATION",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "REQ-042_FILESYSTEM_BOUNDS",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "REQ-043_SECURITY_REDACTION",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "REQ-044_INSTALL_BOOTSTRAP",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-044_INSTALL_BOOTSTRAP",
+      "to": "REQ-045_RUN_REPLAY",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-027_ENVCTL_REPLAY_ENGINE",
+      "to": "REQ-045_RUN_REPLAY",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-100_SYSTEM_INVENTORY",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-100_SYSTEM_INVENTORY",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-101_DIRECTORY_TREE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-101_DIRECTORY_TREE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-102_REPOSITORY_MAP",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-102_REPOSITORY_MAP",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-103_SERVICE_DEP_GRAPH",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-103_SERVICE_DEP_GRAPH",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-104_TOOLCHAIN_TREE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-104_TOOLCHAIN_TREE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-105_PACKAGE_LIB_GRAPH",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-105_PACKAGE_LIB_GRAPH",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-106_RUNTIME_DEP_MAP",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-106_RUNTIME_DEP_MAP",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-107_DATA_FLOW_GRAPH",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-107_DATA_FLOW_GRAPH",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-108_DB_SCHEMA_MAP",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-108_DB_SCHEMA_MAP",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-109_DATA_LINEAGE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-109_DATA_LINEAGE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-110_API_CATALOG",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-110_API_CATALOG",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-111_EVENT_MAP",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-111_EVENT_MAP",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-112_CODE_OWNERSHIP",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-112_CODE_OWNERSHIP",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-113_DEBUG_CODE_MAP",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-113_DEBUG_CODE_MAP",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-114_ENV_CONFIG_MATRIX",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-114_ENV_CONFIG_MATRIX",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-115_CONFIG_INVENTORY",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-115_CONFIG_INVENTORY",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-116_INFRA_TOPOLOGY",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-116_INFRA_TOPOLOGY",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-117_IAM_MATRIX",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-117_IAM_MATRIX",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-118_OBSERVABILITY",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-118_OBSERVABILITY",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-119_BUSINESS_PROCESS",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-119_BUSINESS_PROCESS",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-120_WAVE_PLAN",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-120_WAVE_PLAN",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-121_CUTOVER",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-121_CUTOVER",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+      "to": "ART-121_CUTOVER",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-122_ROLLBACK",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-122_ROLLBACK",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+      "to": "ART-122_ROLLBACK",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-123_VALIDATION_RECONCILIATION",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-123_VALIDATION_RECONCILIATION",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-025_ENVCTL_VALIDATION_EVIDENCE",
+      "to": "ART-123_VALIDATION_RECONCILIATION",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-124_TEST_COVERAGE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-124_TEST_COVERAGE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-025_ENVCTL_VALIDATION_EVIDENCE",
+      "to": "ART-124_TEST_COVERAGE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-125_RISK_REGISTER",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-125_RISK_REGISTER",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-126_DECISION_LOG",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-126_DECISION_LOG",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-127_BLAST_RADIUS",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-127_BLAST_RADIUS",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-128_READINESS_SCORECARD",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-128_READINESS_SCORECARD",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-129_BUSINESS_CAPABILITY",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-129_BUSINESS_CAPABILITY",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-130_SHADOW_TRAFFIC",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-130_SHADOW_TRAFFIC",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-131_GOLDEN_DATASET",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-131_GOLDEN_DATASET",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-132_PARITY_DASHBOARD",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-132_PARITY_DASHBOARD",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-025_ENVCTL_VALIDATION_EVIDENCE",
+      "to": "ART-132_PARITY_DASHBOARD",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-133_DEPRECATION_MAP",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-133_DEPRECATION_MAP",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-134_EXCEPTION_INVENTORY",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-134_EXCEPTION_INVENTORY",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-135_RACI",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-135_RACI",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "to": "ART-136_TECH_DEBT_LEDGER",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "ART-136_TECH_DEBT_LEDGER",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "to": "REQ-200_FLEXNETOS_TARGET_DESCRIPTOR",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-200_FLEXNETOS_TARGET_DESCRIPTOR",
+      "to": "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "ART-101_DIRECTORY_TREE",
+      "to": "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "ART-102_REPOSITORY_MAP",
+      "to": "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "ART-103_SERVICE_DEP_GRAPH",
+      "to": "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "ART-113_DEBUG_CODE_MAP",
+      "to": "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+      "to": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-027_ENVCTL_REPLAY_ENGINE",
+      "to": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-041_TWO_REPO_INTEGRATION",
+      "to": "VER-300_UNIT_VALIDATION",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+      "to": "VER-300_UNIT_VALIDATION",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "ART-123_VALIDATION_RECONCILIATION",
+      "to": "VER-300_UNIT_VALIDATION",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "VER-300_UNIT_VALIDATION",
+      "to": "VER-301_SQL_SCHEMA_TEST",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "VER-301_SQL_SCHEMA_TEST",
+      "to": "VER-302_PACKET_SCHEMA_VALIDATION",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-042_FILESYSTEM_BOUNDS",
+      "to": "VER-302_PACKET_SCHEMA_VALIDATION",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-043_SECURITY_REDACTION",
+      "to": "VER-302_PACKET_SCHEMA_VALIDATION",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "VER-302_PACKET_SCHEMA_VALIDATION",
+      "to": "VER-303_GOAL_LOOP_COMPUTE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REQ-045_RUN_REPLAY",
+      "to": "VER-303_GOAL_LOOP_COMPUTE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "VER-303_GOAL_LOOP_COMPUTE",
+      "to": "VER-304_FINAL_COMPLETENESS",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "VER-304_FINAL_COMPLETENESS",
+      "to": "REL-400_PACKAGE_ARCHIVE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "EF-008_VERIFY_HISTORY_COMPLETENESS",
+      "to": "REL-401_HANDOFF",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "REL-400_PACKAGE_ARCHIVE",
+      "to": "REL-401_HANDOFF",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "EF-008_VERIFY_HISTORY_COMPLETENESS",
+      "to": "MAINT-500_README_NAV_BACKTRACE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "EF-008_VERIFY_HISTORY_COMPLETENESS",
+      "to": "MAINT-501_RESTORE_PROOF_TEMPLATE",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "MAINT-500_README_NAV_BACKTRACE",
+      "to": "MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "MAINT-501_RESTORE_PROOF_TEMPLATE",
+      "to": "MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    },
+    {
+      "from": "MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC",
+      "to": "MAINT-503_CODEX_FINAL_PROMPT",
+      "type": "task_depends_on",
+      "source": "generated/task_graph.normalized.json"
+    }
+  ],
+  "contract_rows": [
+    {
+      "contract_row_id": "artifact:01-current-state-dependency-graph-md",
+      "artifact_id": "01-current-state-dependency-graph-md",
+      "title": "Dependency Graph",
+      "required_path": "migration-artifacts/01-current-state/dependency-graph.md",
+      "section": "01-current-state",
+      "artifact_type": "migration_artifact",
+      "format": "md",
+      "status": "required",
+      "source_refs": [
+        "source/codex-flexnetos-migration-prompt-package/expected-output/migration-artifacts-tree.md",
+        "source/previous-migration-artifact-context.md"
+      ],
+      "producer_task_id": "ART-103_SERVICE_DEP_GRAPH",
+      "validators": [
+        "path_registered",
+        "evidence_or_status_recorded",
+        "linked_from_index"
+      ]
+    },
+    {
+      "contract_row_id": "artifact:01-current-state-application-service-dependency-graph-md",
+      "artifact_id": "01-current-state-application-service-dependency-graph-md",
+      "title": "Application Service Dependency Graph",
+      "required_path": "migration-artifacts/01-current-state/application-service-dependency-graph.md",
+      "section": "01-current-state",
+      "artifact_type": "migration_artifact",
+      "format": "md",
+      "status": "required",
+      "source_refs": [
+        "source/codex-flexnetos-migration-prompt-package/expected-output/migration-artifacts-tree.md",
+        "source/previous-migration-artifact-context.md"
+      ],
+      "producer_task_id": "ART-103_SERVICE_DEP_GRAPH",
+      "validators": [
+        "path_registered",
+        "evidence_or_status_recorded",
+        "linked_from_index"
+      ]
+    },
+    {
+      "contract_row_id": "artifact:03-code-analysis-import-dependency-graph-md",
+      "artifact_id": "03-code-analysis-import-dependency-graph-md",
+      "title": "Import Dependency Graph",
+      "required_path": "migration-artifacts/03-code-analysis/import-dependency-graph.md",
+      "section": "03-code-analysis",
+      "artifact_type": "migration_artifact",
+      "format": "md",
+      "status": "required",
+      "source_refs": [
+        "source/codex-flexnetos-migration-prompt-package/expected-output/migration-artifacts-tree.md",
+        "source/previous-migration-artifact-context.md"
+      ],
+      "producer_task_id": "ART-103_SERVICE_DEP_GRAPH",
+      "validators": [
+        "path_registered",
+        "evidence_or_status_recorded",
+        "linked_from_index"
+      ]
+    },
+    {
+      "contract_row_id": "artifact:03-code-analysis-package-library-dependency-graph-md",
+      "artifact_id": "03-code-analysis-package-library-dependency-graph-md",
+      "title": "Package Library Dependency Graph",
+      "required_path": "migration-artifacts/03-code-analysis/package-library-dependency-graph.md",
+      "section": "03-code-analysis",
+      "artifact_type": "migration_artifact",
+      "format": "md",
+      "status": "required",
+      "source_refs": [
+        "source/codex-flexnetos-migration-prompt-package/expected-output/migration-artifacts-tree.md",
+        "source/previous-migration-artifact-context.md"
+      ],
+      "producer_task_id": "ART-103_SERVICE_DEP_GRAPH",
+      "validators": [
+        "path_registered",
+        "evidence_or_status_recorded",
+        "linked_from_index"
+      ]
+    }
+  ],
+  "assumptions": [
+    "The target is a hollow workspace with independent peer repositories, so graph nodes represent control-plane services and migration surfaces rather than one deployable application.",
+    "Direct runtime call tracing was not performed; call edges are classified by documented ownership, generated manifests, and task graph dependencies.",
+    "Blocked secret/key paths were excluded from scans and from artifact evidence."
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "compare": {
+      "type": "string"
+    },
+    "finished_at_utc": {
+      "type": "string"
+    },
+    "raw_dir": {
+      "type": "string"
+    },
+    "root": {
+      "type": "string"
+    },
+    "run_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "root",
+    "raw_dir",
+    "finished_at_utc"
+  ],
+  "type": "object"
+}

@@ -1,0 +1,9 @@
+# REQ-030_PLUGIN_PROTOCOL_MANIFEST
+completed_at: 2026-07-04T23:04:49+00:00
+manifest: generated/nu_plugin_command_manifest.json
+schema: ../schemas/nu_plugin_command_manifest.schema.json
+verification: passed
+command_count: 23
+mutating_command_count: 7
+read_command_count: 16
+sandbox_note: NU_PLUGIN_REPO was readable but not writable from this execution-framework sandbox; generated artifact remains package-local.

@@ -1,0 +1,325 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-107_DATA_FLOW_GRAPH",
+  "status": "passed",
+  "generated_at": "2026-07-04T23:28:55+00:00",
+  "artifact_paths": {
+    "markdown": "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.md",
+    "json": "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.json"
+  },
+  "registry_results": [
+    {
+      "artifact_row_id": "artifact-a418ed8acd9169dc3c8ca1af",
+      "artifact_id": "art107-data-flow-graph-md",
+      "run_id": "run-art107-data-flow-graph",
+      "path": "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.md",
+      "content_hash": "sha256:39f2b4a41c2a74b492fdfc86708d3d2acff0148f10803499561fd7cf5ff0c51e",
+      "producer_operation_id": "op-art107-generate-data-flow-graph",
+      "contract_id": "contract-art107-full-migration-artifacts",
+      "evidence_ids": [
+        "evidence-b7502e13de13aa0267effff9",
+        "evidence-f3a8f915b60f4d29442ff606",
+        "evidence-df33eb324ea669c488a5d81e",
+        "evidence-0c3f26070e5ab363640197d8",
+        "evidence-99a9300191cbbbae1f071d1d",
+        "evidence-5cbb41f084f8eddb3701ddcd",
+        "evidence-8b543bb09b6a1eaaa71653b7"
+      ],
+      "graph_edge_ids": [
+        "edge-c8d6b2154b40c7d49686513c",
+        "edge-29137a73697f2cf555385efc",
+        "edge-0d6ebaaa4d5b11f86f568733",
+        "edge-6232cf816ebe962956f2528d",
+        "edge-20a7313cb21ff0e6b0b54399",
+        "edge-b767a7b7f3fe5ca6787923e2",
+        "edge-0611f42af5a20730965789c6",
+        "edge-d0995941b0c2a8e60c7d2ebe",
+        "edge-7b682beae023d489373357d9"
+      ],
+      "validation_ids": [
+        "validation-7b119006bffe8d2218193bdc",
+        "validation-26cf3d582db7933351ead042"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-ef5fa64e048ce6780dbba6d4",
+      "artifact_id": "art107-data-flow-graph-json",
+      "run_id": "run-art107-data-flow-graph",
+      "path": "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.json",
+      "content_hash": "sha256:2e19c1153235521cafaa7606fdc3568958163e7d072260e53c0df214e2206828",
+      "producer_operation_id": "op-art107-generate-data-flow-graph",
+      "contract_id": "contract-art107-full-migration-artifacts",
+      "evidence_ids": [
+        "evidence-ccf008f2f2e5e09786a2393f",
+        "evidence-ff91d9478441b36f0e8d49d3",
+        "evidence-415b3ca31846627783c607ab",
+        "evidence-f2cadcd75afe6e38c287a3e8",
+        "evidence-974227cc6c04869b55c29ab6",
+        "evidence-4592fb04e96f82715dab6428",
+        "evidence-2e73b884a027653c42eb483a"
+      ],
+      "graph_edge_ids": [
+        "edge-264553fc1b9cb1922d9e92f9",
+        "edge-9194452741a3c4a5da4a5981",
+        "edge-5f3e70d92c9d482f0f54aba1",
+        "edge-ef3f635ea223a2350eabdf98",
+        "edge-8e9294b65aeec6dea8ebe253",
+        "edge-d51d01a35265d0e75590dfa8",
+        "edge-7e3ba99ed2feca5dbb1fe7f5",
+        "edge-b18e2417a22e6cb099a941b2",
+        "edge-be4cfb801b80e56b9ac2c26f"
+      ],
+      "validation_ids": [
+        "validation-31cdc74971abf7ce83184263",
+        "validation-223623b95c3972bfe30b6211"
+      ]
+    }
+  ],
+  "registered_artifacts": [
+    {
+      "id": "artifact-a418ed8acd9169dc3c8ca1af",
+      "run_id": "run-art107-data-flow-graph",
+      "artifact_id": "art107-data-flow-graph-md",
+      "title": "ART-107 Data Flow Graph",
+      "artifact_type": "data_flow_graph_markdown",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.md",
+      "content_hash": "sha256:39f2b4a41c2a74b492fdfc86708d3d2acff0148f10803499561fd7cf5ff0c51e",
+      "generated_by_operation_id": "op-art107-generate-data-flow-graph",
+      "evidence": {
+        "contract_id": "contract-art107-full-migration-artifacts",
+        "evidence_ids": [
+          "evidence-b7502e13de13aa0267effff9",
+          "evidence-f3a8f915b60f4d29442ff606",
+          "evidence-df33eb324ea669c488a5d81e",
+          "evidence-0c3f26070e5ab363640197d8",
+          "evidence-99a9300191cbbbae1f071d1d",
+          "evidence-5cbb41f084f8eddb3701ddcd",
+          "evidence-8b543bb09b6a1eaaa71653b7"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.md",
+          "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.json",
+          "execution-framework/generated/package_scan.json",
+          "execution-framework/generated/envctl_migration_db_model.json",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/generated/shared_protocol_manifest.json",
+          "execution-framework/generated/nu_plugin_command_manifest.json"
+        ],
+        "producer_operation_id": "op-art107-generate-data-flow-graph",
+        "provenance": {
+          "helper_id": "helper-artifact-08",
+          "owner_agent": "artifact-agent",
+          "source_inputs": [
+            "execution-framework/migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+            "execution-framework/generated/package_scan.json",
+            "execution-framework/generated/envctl_migration_db_model.json",
+            "execution-framework/generated/envctl_artifact_registry_report.json",
+            "execution-framework/generated/shared_protocol_manifest.json"
+          ],
+          "task_id": "ART-107_DATA_FLOW_GRAPH"
+        },
+        "validation_ids": [
+          "validation-7b119006bffe8d2218193bdc",
+          "validation-26cf3d582db7933351ead042"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-art107-full-migration-artifacts",
+        "graph_edge_ids": [
+          "edge-c8d6b2154b40c7d49686513c",
+          "edge-29137a73697f2cf555385efc",
+          "edge-0d6ebaaa4d5b11f86f568733",
+          "edge-6232cf816ebe962956f2528d",
+          "edge-20a7313cb21ff0e6b0b54399",
+          "edge-b767a7b7f3fe5ca6787923e2",
+          "edge-0611f42af5a20730965789c6",
+          "edge-d0995941b0c2a8e60c7d2ebe",
+          "edge-7b682beae023d489373357d9"
+        ],
+        "links": [
+          {
+            "to": "artifact:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "artifact:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "artifact:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          },
+          {
+            "to": "data-stage:data-entry",
+            "type": "maps_stage"
+          },
+          {
+            "to": "data-stage:movement",
+            "type": "maps_stage"
+          },
+          {
+            "to": "data-stage:transformation",
+            "type": "maps_stage"
+          },
+          {
+            "to": "data-stage:persistence",
+            "type": "maps_stage"
+          },
+          {
+            "to": "data-stage:exit",
+            "type": "maps_stage"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-ef5fa64e048ce6780dbba6d4",
+      "run_id": "run-art107-data-flow-graph",
+      "artifact_id": "art107-data-flow-graph-json",
+      "title": "ART-107 Data Flow Graph Source",
+      "artifact_type": "data_flow_graph_json",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.json",
+      "content_hash": "sha256:2e19c1153235521cafaa7606fdc3568958163e7d072260e53c0df214e2206828",
+      "generated_by_operation_id": "op-art107-generate-data-flow-graph",
+      "evidence": {
+        "contract_id": "contract-art107-full-migration-artifacts",
+        "evidence_ids": [
+          "evidence-ccf008f2f2e5e09786a2393f",
+          "evidence-ff91d9478441b36f0e8d49d3",
+          "evidence-415b3ca31846627783c607ab",
+          "evidence-f2cadcd75afe6e38c287a3e8",
+          "evidence-974227cc6c04869b55c29ab6",
+          "evidence-4592fb04e96f82715dab6428",
+          "evidence-2e73b884a027653c42eb483a"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.md",
+          "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.json",
+          "execution-framework/generated/package_scan.json",
+          "execution-framework/generated/envctl_migration_db_model.json",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/generated/shared_protocol_manifest.json",
+          "execution-framework/generated/nu_plugin_command_manifest.json"
+        ],
+        "producer_operation_id": "op-art107-generate-data-flow-graph",
+        "provenance": {
+          "helper_id": "helper-artifact-08",
+          "owner_agent": "artifact-agent",
+          "source_inputs": [
+            "execution-framework/migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+            "execution-framework/generated/package_scan.json",
+            "execution-framework/generated/envctl_migration_db_model.json",
+            "execution-framework/generated/envctl_artifact_registry_report.json",
+            "execution-framework/generated/shared_protocol_manifest.json"
+          ],
+          "task_id": "ART-107_DATA_FLOW_GRAPH"
+        },
+        "validation_ids": [
+          "validation-31cdc74971abf7ce83184263",
+          "validation-223623b95c3972bfe30b6211"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-art107-full-migration-artifacts",
+        "graph_edge_ids": [
+          "edge-264553fc1b9cb1922d9e92f9",
+          "edge-9194452741a3c4a5da4a5981",
+          "edge-5f3e70d92c9d482f0f54aba1",
+          "edge-ef3f635ea223a2350eabdf98",
+          "edge-8e9294b65aeec6dea8ebe253",
+          "edge-d51d01a35265d0e75590dfa8",
+          "edge-7e3ba99ed2feca5dbb1fe7f5",
+          "edge-b18e2417a22e6cb099a941b2",
+          "edge-be4cfb801b80e56b9ac2c26f"
+        ],
+        "links": [
+          {
+            "to": "artifact:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "artifact:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "artifact:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          },
+          {
+            "to": "data-stage:data-entry",
+            "type": "maps_stage"
+          },
+          {
+            "to": "data-stage:movement",
+            "type": "maps_stage"
+          },
+          {
+            "to": "data-stage:transformation",
+            "type": "maps_stage"
+          },
+          {
+            "to": "data-stage:persistence",
+            "type": "maps_stage"
+          },
+          {
+            "to": "data-stage:exit",
+            "type": "maps_stage"
+          }
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "node_count": 12,
+    "edge_count": 13,
+    "flow_path_count": 3,
+    "stage_counts": {
+      "data_entry": 3,
+      "movement": 2,
+      "transformation": 3,
+      "persistence": 2,
+      "exit": 2
+    },
+    "entry_stage_count": 3,
+    "movement_stage_count": 2,
+    "transformation_stage_count": 3,
+    "persistence_stage_count": 2,
+    "exit_stage_count": 2,
+    "all_required_stages_present": true,
+    "evidence_count": 14,
+    "graph_edge_count": 18,
+    "validation_count": 4,
+    "artifact_index_rows": [
+      [
+        "art107-data-flow-graph-json",
+        "complete",
+        "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.json",
+        "sha256:2e19c1153235521cafaa7606fdc3568958163e7d072260e53c0df214e2206828"
+      ],
+      [
+        "art107-data-flow-graph-md",
+        "complete",
+        "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.md",
+        "sha256:39f2b4a41c2a74b492fdfc86708d3d2acff0148f10803499561fd7cf5ff0c51e"
+      ]
+    ]
+  },
+  "completion_gate": {
+    "artifact_exists": true,
+    "hash_recorded": true,
+    "validation_evidence_linked": true
+  },
+  "errors": [],
+  "evidence": [
+    "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.md",
+    "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.json",
+    "execution-framework/generated/art_107_data_flow_graph_registry_report.json",
+    "execution-framework/generated/package_scan.json",
+    "execution-framework/generated/envctl_migration_db_model.json",
+    "execution-framework/generated/envctl_artifact_registry_report.json",
+    "execution-framework/generated/shared_protocol_manifest.json",
+    "execution-framework/generated/nu_plugin_command_manifest.json"
+  ]
+}
