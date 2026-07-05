@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "envctl Migration Target Descriptor",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "target_id",
+    "target_type",
+    "primary_root",
+    "safety",
+    "artifact_contract",
+    "recipe"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "target_id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "target_type": {
+      "enum": [
+        "codebase",
+        "data",
+        "infrastructure",
+        "integration",
+        "mixed"
+      ]
+    },
+    "primary_root": {
+      "type": "string",
+      "minLength": 1
+    },
+    "compare_root": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "output_root": {
+      "type": "string",
+      "default": "migration-artifacts"
+    },
+    "include": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "exclude": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "safety": {
+      "$ref": "#/$defs/safety"
+    },
+    "collectors": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "boolean"
+      }
+    },
+    "artifact_contract": {
+      "$ref": "#/$defs/namedVersion"
+    },
+    "recipe": {
+      "$ref": "#/$defs/namedVersion"
+    },
+    "metadata": {
+      "type": "object"
+    }
+  },
+  "$defs": {
+    "namedVersion": {
+      "type": "object",
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "version": {
+          "type": [
+            "integer",
+            "string"
+          ]
+        }
+      }
+    },
+    "safety": {
+      "type": "object",
+      "required": [
+        "default_mode",
+        "max_auto_risk",
+        "allow_network",
+        "allow_destructive"
+      ],
+      "properties": {
+        "default_mode": {
+          "enum": [
+            "observer",
+            "approval-gated",
+            "operator",
+            "agent-only"
+          ]
+        },
+        "max_auto_risk": {
+          "enum": [
+            "R0",
+            "R1",
+            "R2",
+            "R3",
+            "R4",
+            "R5"
+          ]
+        },
+        "allow_network": {
+          "type": "boolean"
+        },
+        "allow_destructive": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

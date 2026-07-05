@@ -1,0 +1,208 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-104_TOOLCHAIN_TREE",
+  "status": "passed",
+  "generated_at": "2026-07-04T23:22:31+00:00",
+  "run_id": "run-art104-toolchain-tree",
+  "operation_id": "op-art104-generate-register",
+  "contract_id": "contract-art104-toolchain-tree",
+  "registered_artifacts": [
+    {
+      "result": {
+        "artifact_row_id": "artifact-fa9ea1bbf4056743c16fa30e",
+        "artifact_id": "art104-toolchain-tree-md",
+        "run_id": "run-art104-toolchain-tree",
+        "path": "execution-framework/migration-artifacts/art-104_toolchain_tree/toolchain-dependency-tree.md",
+        "content_hash": "sha256:c8313d75a8f13bd241cf9334483d730da18475762adb9d6dc4e5670ab409fe3b",
+        "producer_operation_id": "op-art104-generate-register",
+        "contract_id": "contract-art104-toolchain-tree",
+        "evidence_ids": [
+          "evidence-be26425e322adb18aea6d7ae",
+          "evidence-4be1b4a6e7d0148035cd42dd",
+          "evidence-8c2c4b71ff06f18661679d72",
+          "evidence-933dc57f2107ba3acd0faddf",
+          "evidence-e7cf767b0e7903e6daecbe06"
+        ],
+        "graph_edge_ids": [
+          "edge-c194c2309829c1e50ae81439",
+          "edge-915d39efed5772ddb9a637be",
+          "edge-b633ff7e471a63005c3d4e2d",
+          "edge-72982bd802e84a93bb71ca00"
+        ],
+        "validation_ids": [
+          "validation-bc76bff21adeffd9e27db3bf",
+          "validation-132980a4786ba86065749f59"
+        ]
+      },
+      "row": {
+        "id": "artifact-fa9ea1bbf4056743c16fa30e",
+        "run_id": "run-art104-toolchain-tree",
+        "artifact_id": "art104-toolchain-tree-md",
+        "title": "ART-104 Toolchain Dependency Tree Markdown",
+        "artifact_type": "toolchain_dependency_tree_markdown",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/art-104_toolchain_tree/toolchain-dependency-tree.md",
+        "content_hash": "sha256:c8313d75a8f13bd241cf9334483d730da18475762adb9d6dc4e5670ab409fe3b",
+        "generated_by_operation_id": "op-art104-generate-register",
+        "evidence": {
+          "contract_id": "contract-art104-toolchain-tree",
+          "evidence_ids": [
+            "evidence-be26425e322adb18aea6d7ae",
+            "evidence-4be1b4a6e7d0148035cd42dd",
+            "evidence-8c2c4b71ff06f18661679d72",
+            "evidence-933dc57f2107ba3acd0faddf",
+            "evidence-e7cf767b0e7903e6daecbe06"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/art-104_toolchain_tree/toolchain-dependency-tree.md",
+            "execution-framework/migration-artifacts/art-104_toolchain_tree/toolchain-dependency-tree.json",
+            "execution-framework/generated/envctl_target_registry.json",
+            "execution-framework/generated/package_scan.json",
+            "execution-framework/docs/CONTRACT_MANIFEST.md"
+          ],
+          "producer_operation_id": "op-art104-generate-register",
+          "provenance": {
+            "helper_id": "helper-artifact-05",
+            "owner_agent": "artifact-agent",
+            "source_inputs": [
+              "target descriptor",
+              "repo scan",
+              "envctl database"
+            ],
+            "target_root": "/home/flexnetos/FlexNetOS",
+            "task_id": "ART-104_TOOLCHAIN_TREE"
+          },
+          "validation_ids": [
+            "validation-bc76bff21adeffd9e27db3bf",
+            "validation-132980a4786ba86065749f59"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-art104-toolchain-tree",
+          "graph_edge_ids": [
+            "edge-c194c2309829c1e50ae81439",
+            "edge-915d39efed5772ddb9a637be",
+            "edge-b633ff7e471a63005c3d4e2d",
+            "edge-72982bd802e84a93bb71ca00"
+          ],
+          "links": [
+            {
+              "to": "artifact:03-code-analysis-toolchain-dependency-tree-md",
+              "type": "satisfies"
+            },
+            {
+              "to": "artifact:spark-spark-toolchain-deps-md",
+              "type": "relates_to"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "result": {
+        "artifact_row_id": "artifact-b319b4106dac19c1c08ad930",
+        "artifact_id": "art104-toolchain-tree-json",
+        "run_id": "run-art104-toolchain-tree",
+        "path": "execution-framework/migration-artifacts/art-104_toolchain_tree/toolchain-dependency-tree.json",
+        "content_hash": "sha256:c73a7ece8c79775c80da22fb230e31743005d6616fdc3e746a27390ca1fd7d9c",
+        "producer_operation_id": "op-art104-generate-register",
+        "contract_id": "contract-art104-toolchain-tree",
+        "evidence_ids": [
+          "evidence-57c4904fad4f189778c9416c",
+          "evidence-778d36dd3124fd46d1bfac01",
+          "evidence-53909f029a672146a2b42675",
+          "evidence-441dcf5cb1270b69b0945697",
+          "evidence-cdf5858e5204793d3c98994c"
+        ],
+        "graph_edge_ids": [
+          "edge-7525cba2d63d4cb12a3cb560",
+          "edge-e155338442b97e047df5b956",
+          "edge-f1f583850058f4fadeff4a76",
+          "edge-c6ec3fee8804d6d246a6b3ca"
+        ],
+        "validation_ids": [
+          "validation-c6557f67aea4ed415b0e1588",
+          "validation-221ef61812351ece68faf20d"
+        ]
+      },
+      "row": {
+        "id": "artifact-b319b4106dac19c1c08ad930",
+        "run_id": "run-art104-toolchain-tree",
+        "artifact_id": "art104-toolchain-tree-json",
+        "title": "ART-104 Toolchain Dependency Tree JSON",
+        "artifact_type": "toolchain_dependency_tree_json",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/art-104_toolchain_tree/toolchain-dependency-tree.json",
+        "content_hash": "sha256:c73a7ece8c79775c80da22fb230e31743005d6616fdc3e746a27390ca1fd7d9c",
+        "generated_by_operation_id": "op-art104-generate-register",
+        "evidence": {
+          "contract_id": "contract-art104-toolchain-tree",
+          "evidence_ids": [
+            "evidence-57c4904fad4f189778c9416c",
+            "evidence-778d36dd3124fd46d1bfac01",
+            "evidence-53909f029a672146a2b42675",
+            "evidence-441dcf5cb1270b69b0945697",
+            "evidence-cdf5858e5204793d3c98994c"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/art-104_toolchain_tree/toolchain-dependency-tree.md",
+            "execution-framework/migration-artifacts/art-104_toolchain_tree/toolchain-dependency-tree.json",
+            "execution-framework/generated/envctl_target_registry.json",
+            "execution-framework/generated/package_scan.json",
+            "execution-framework/docs/CONTRACT_MANIFEST.md"
+          ],
+          "producer_operation_id": "op-art104-generate-register",
+          "provenance": {
+            "helper_id": "helper-artifact-05",
+            "owner_agent": "artifact-agent",
+            "source_inputs": [
+              "target descriptor",
+              "repo scan",
+              "envctl database"
+            ],
+            "target_root": "/home/flexnetos/FlexNetOS",
+            "task_id": "ART-104_TOOLCHAIN_TREE"
+          },
+          "validation_ids": [
+            "validation-c6557f67aea4ed415b0e1588",
+            "validation-221ef61812351ece68faf20d"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-art104-toolchain-tree",
+          "graph_edge_ids": [
+            "edge-7525cba2d63d4cb12a3cb560",
+            "edge-e155338442b97e047df5b956",
+            "edge-f1f583850058f4fadeff4a76",
+            "edge-c6ec3fee8804d6d246a6b3ca"
+          ],
+          "links": [
+            {
+              "to": "artifact:03-code-analysis-toolchain-dependency-tree-md",
+              "type": "satisfies"
+            },
+            {
+              "to": "artifact:spark-spark-toolchain-deps-md",
+              "type": "relates_to"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "counts": {
+    "artifact_rows": 2,
+    "evidence_rows": 10,
+    "graph_edges": 8,
+    "validation_rows": 4
+  },
+  "errors": []
+}

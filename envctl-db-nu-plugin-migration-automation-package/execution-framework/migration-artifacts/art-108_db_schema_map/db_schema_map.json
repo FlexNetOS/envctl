@@ -1,0 +1,3636 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-108_DB_SCHEMA_MAP",
+  "generated_at": "2026-07-04T23:28:33+00:00",
+  "status": "complete",
+  "database": {
+    "backend": "sqlite",
+    "runtime": "python sqlite3 in-memory",
+    "source": "sql migrations plus generated contract seed",
+    "procedures_supported": false
+  },
+  "applied_migrations": [
+    {
+      "path": "sql/001_migration_automation_schema.sql",
+      "sha256": "f0a8ad6ce7fba6023d8bfb765843fef07710387f9e720f7fe01305ce2d52bb0e",
+      "bytes": 8608
+    },
+    {
+      "path": "sql/002_views_and_indexes.sql",
+      "sha256": "b9c4fee76504746742695119c84bfbb46dedb1e29da480103f2e6b6c5a83106e",
+      "bytes": 3819
+    },
+    {
+      "path": "execution-framework/generated/contract_manifest.seed.sql",
+      "sha256": "399c1092118d57f78c7647a2d5c2fbd914c5b2ac97d5e41e4deda44722dc8c06",
+      "bytes": 155594
+    }
+  ],
+  "summary": {
+    "table_count": 16,
+    "column_count": 155,
+    "index_count": 31,
+    "foreign_key_count": 24,
+    "constraint_count": 128,
+    "view_count": 6,
+    "trigger_count": 0,
+    "procedure_count": 0
+  },
+  "tables": {
+    "envctl_migration_agent_sessions": {
+      "name": "envctl_migration_agent_sessions",
+      "columns": [
+        {
+          "position": 0,
+          "name": "id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 1,
+          "primary_key": true
+        },
+        {
+          "position": 1,
+          "name": "run_id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 2,
+          "name": "agent_name",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 3,
+          "name": "model_label",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 4,
+          "name": "authority_level",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 5,
+          "name": "session_json",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 6,
+          "name": "created_at_utc",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": "strftime('%Y-%m-%dT%H:%M:%fZ','now')",
+          "primary_key_position": 0,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_envctl_migration_agent_sessions_1",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 0,
+              "name": "id"
+            }
+          ],
+          "sql": null
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "references_table": "envctl_migration_runs",
+          "from_column": "run_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        }
+      ],
+      "constraints": [
+        {
+          "name": null,
+          "type": "primary_key",
+          "column": "id",
+          "expression": "id TEXT PRIMARY KEY"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "agent_name",
+          "expression": "agent_name TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "created_at_utc",
+          "expression": "created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id)"
+        }
+      ],
+      "create_sql": "CREATE TABLE envctl_migration_agent_sessions (\n  id TEXT PRIMARY KEY,\n  run_id TEXT,\n  agent_name TEXT NOT NULL,\n  model_label TEXT,\n  authority_level TEXT,\n  session_json TEXT,\n  created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id)\n)"
+    },
+    "envctl_migration_approvals": {
+      "name": "envctl_migration_approvals",
+      "columns": [
+        {
+          "position": 0,
+          "name": "id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 1,
+          "primary_key": true
+        },
+        {
+          "position": 1,
+          "name": "run_id",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 2,
+          "name": "operation_id",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 3,
+          "name": "risk",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 4,
+          "name": "status",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 5,
+          "name": "requested_by",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 6,
+          "name": "decided_by",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 7,
+          "name": "reason",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 8,
+          "name": "requested_at_utc",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": "strftime('%Y-%m-%dT%H:%M:%fZ','now')",
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 9,
+          "name": "decided_at_utc",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_envctl_migration_approvals_run_status",
+          "unique": false,
+          "origin": "c",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 1,
+              "name": "run_id"
+            },
+            {
+              "sequence": 1,
+              "cid": 4,
+              "name": "status"
+            }
+          ],
+          "sql": "CREATE INDEX idx_envctl_migration_approvals_run_status ON envctl_migration_approvals(run_id, status)"
+        },
+        {
+          "name": "sqlite_autoindex_envctl_migration_approvals_1",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 0,
+              "name": "id"
+            }
+          ],
+          "sql": null
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "references_table": "envctl_migration_operations",
+          "from_column": "operation_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "references_table": "envctl_migration_runs",
+          "from_column": "run_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        }
+      ],
+      "constraints": [
+        {
+          "name": null,
+          "type": "primary_key",
+          "column": "id",
+          "expression": "id TEXT PRIMARY KEY"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "run_id",
+          "expression": "run_id TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "operation_id",
+          "expression": "operation_id TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "risk",
+          "expression": "risk TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "check",
+          "column": "status",
+          "expression": "status TEXT NOT NULL CHECK (status IN ('open','approved','denied','expired','cancelled'))"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "requested_at_utc",
+          "expression": "requested_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id)"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(operation_id) REFERENCES envctl_migration_operations(id)"
+        }
+      ],
+      "create_sql": "CREATE TABLE envctl_migration_approvals (\n  id TEXT PRIMARY KEY,\n  run_id TEXT NOT NULL,\n  operation_id TEXT NOT NULL,\n  risk TEXT NOT NULL,\n  status TEXT NOT NULL CHECK (status IN ('open','approved','denied','expired','cancelled')),\n  requested_by TEXT,\n  decided_by TEXT,\n  reason TEXT,\n  requested_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  decided_at_utc TEXT,\n  FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id),\n  FOREIGN KEY(operation_id) REFERENCES envctl_migration_operations(id)\n)"
+    },
+    "envctl_migration_artifact_contracts": {
+      "name": "envctl_migration_artifact_contracts",
+      "columns": [
+        {
+          "position": 0,
+          "name": "id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 1,
+          "primary_key": true
+        },
+        {
+          "position": 1,
+          "name": "contract_name",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 2,
+          "name": "contract_version",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 3,
+          "name": "source_package_id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 4,
+          "name": "contract_hash",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 5,
+          "name": "contract_json",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 6,
+          "name": "created_at_utc",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": "strftime('%Y-%m-%dT%H:%M:%fZ','now')",
+          "primary_key_position": 0,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_envctl_migration_artifact_contracts_2",
+          "unique": true,
+          "origin": "u",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 1,
+              "name": "contract_name"
+            },
+            {
+              "sequence": 1,
+              "cid": 2,
+              "name": "contract_version"
+            }
+          ],
+          "sql": null
+        },
+        {
+          "name": "sqlite_autoindex_envctl_migration_artifact_contracts_1",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 0,
+              "name": "id"
+            }
+          ],
+          "sql": null
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "references_table": "envctl_migration_packages",
+          "from_column": "source_package_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        }
+      ],
+      "constraints": [
+        {
+          "name": null,
+          "type": "primary_key",
+          "column": "id",
+          "expression": "id TEXT PRIMARY KEY"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "contract_name",
+          "expression": "contract_name TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "contract_version",
+          "expression": "contract_version TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "contract_hash",
+          "expression": "contract_hash TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "contract_json",
+          "expression": "contract_json TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "created_at_utc",
+          "expression": "created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))"
+        },
+        {
+          "name": null,
+          "type": "unique",
+          "column": null,
+          "expression": "UNIQUE(contract_name, contract_version)"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(source_package_id) REFERENCES envctl_migration_packages(id)"
+        }
+      ],
+      "create_sql": "CREATE TABLE envctl_migration_artifact_contracts (\n  id TEXT PRIMARY KEY,\n  contract_name TEXT NOT NULL,\n  contract_version TEXT NOT NULL,\n  source_package_id TEXT,\n  contract_hash TEXT NOT NULL,\n  contract_json TEXT NOT NULL,\n  created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  UNIQUE(contract_name, contract_version),\n  FOREIGN KEY(source_package_id) REFERENCES envctl_migration_packages(id)\n)"
+    },
+    "envctl_migration_artifacts": {
+      "name": "envctl_migration_artifacts",
+      "columns": [
+        {
+          "position": 0,
+          "name": "id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 1,
+          "primary_key": true
+        },
+        {
+          "position": 1,
+          "name": "run_id",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 2,
+          "name": "artifact_id",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 3,
+          "name": "title",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 4,
+          "name": "artifact_type",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 5,
+          "name": "status",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 6,
+          "name": "path",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 7,
+          "name": "content_hash",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 8,
+          "name": "generated_by_operation_id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 9,
+          "name": "evidence_json",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 10,
+          "name": "links_json",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 11,
+          "name": "created_at_utc",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": "strftime('%Y-%m-%dT%H:%M:%fZ','now')",
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 12,
+          "name": "updated_at_utc",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": "strftime('%Y-%m-%dT%H:%M:%fZ','now')",
+          "primary_key_position": 0,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_envctl_migration_artifacts_run_status",
+          "unique": false,
+          "origin": "c",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 1,
+              "name": "run_id"
+            },
+            {
+              "sequence": 1,
+              "cid": 5,
+              "name": "status"
+            }
+          ],
+          "sql": "CREATE INDEX idx_envctl_migration_artifacts_run_status ON envctl_migration_artifacts(run_id, status)"
+        },
+        {
+          "name": "sqlite_autoindex_envctl_migration_artifacts_2",
+          "unique": true,
+          "origin": "u",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 1,
+              "name": "run_id"
+            },
+            {
+              "sequence": 1,
+              "cid": 2,
+              "name": "artifact_id"
+            }
+          ],
+          "sql": null
+        },
+        {
+          "name": "sqlite_autoindex_envctl_migration_artifacts_1",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 0,
+              "name": "id"
+            }
+          ],
+          "sql": null
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "references_table": "envctl_migration_operations",
+          "from_column": "generated_by_operation_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "references_table": "envctl_migration_runs",
+          "from_column": "run_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        }
+      ],
+      "constraints": [
+        {
+          "name": null,
+          "type": "primary_key",
+          "column": "id",
+          "expression": "id TEXT PRIMARY KEY"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "run_id",
+          "expression": "run_id TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "artifact_id",
+          "expression": "artifact_id TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "title",
+          "expression": "title TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "check",
+          "column": "status",
+          "expression": "status TEXT NOT NULL CHECK (status IN ('complete','partial','unknown','blocked'))"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "created_at_utc",
+          "expression": "created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "updated_at_utc",
+          "expression": "updated_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))"
+        },
+        {
+          "name": null,
+          "type": "unique",
+          "column": null,
+          "expression": "UNIQUE(run_id, artifact_id)"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id)"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(generated_by_operation_id) REFERENCES envctl_migration_operations(id)"
+        }
+      ],
+      "create_sql": "CREATE TABLE envctl_migration_artifacts (\n  id TEXT PRIMARY KEY,\n  run_id TEXT NOT NULL,\n  artifact_id TEXT NOT NULL,\n  title TEXT NOT NULL,\n  artifact_type TEXT,\n  status TEXT NOT NULL CHECK (status IN ('complete','partial','unknown','blocked')),\n  path TEXT,\n  content_hash TEXT,\n  generated_by_operation_id TEXT,\n  evidence_json TEXT,\n  links_json TEXT,\n  created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  updated_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  UNIQUE(run_id, artifact_id),\n  FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id),\n  FOREIGN KEY(generated_by_operation_id) REFERENCES envctl_migration_operations(id)\n)"
+    },
+    "envctl_migration_checkpoints": {
+      "name": "envctl_migration_checkpoints",
+      "columns": [
+        {
+          "position": 0,
+          "name": "id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 1,
+          "primary_key": true
+        },
+        {
+          "position": 1,
+          "name": "run_id",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 2,
+          "name": "operation_id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 3,
+          "name": "checkpoint_kind",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 4,
+          "name": "checkpoint_ref",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 5,
+          "name": "checkpoint_hash",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 6,
+          "name": "metadata_json",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 7,
+          "name": "created_at_utc",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": "strftime('%Y-%m-%dT%H:%M:%fZ','now')",
+          "primary_key_position": 0,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_envctl_migration_checkpoints_1",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 0,
+              "name": "id"
+            }
+          ],
+          "sql": null
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "references_table": "envctl_migration_operations",
+          "from_column": "operation_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "references_table": "envctl_migration_runs",
+          "from_column": "run_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        }
+      ],
+      "constraints": [
+        {
+          "name": null,
+          "type": "primary_key",
+          "column": "id",
+          "expression": "id TEXT PRIMARY KEY"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "run_id",
+          "expression": "run_id TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "check",
+          "column": null,
+          "expression": "checkpoint_kind TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "check",
+          "column": null,
+          "expression": "checkpoint_ref TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "check",
+          "column": null,
+          "expression": "checkpoint_hash TEXT"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "created_at_utc",
+          "expression": "created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id)"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(operation_id) REFERENCES envctl_migration_operations(id)"
+        }
+      ],
+      "create_sql": "CREATE TABLE envctl_migration_checkpoints (\n  id TEXT PRIMARY KEY,\n  run_id TEXT NOT NULL,\n  operation_id TEXT,\n  checkpoint_kind TEXT NOT NULL,\n  checkpoint_ref TEXT NOT NULL,\n  checkpoint_hash TEXT,\n  metadata_json TEXT,\n  created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id),\n  FOREIGN KEY(operation_id) REFERENCES envctl_migration_operations(id)\n)"
+    },
+    "envctl_migration_evidence": {
+      "name": "envctl_migration_evidence",
+      "columns": [
+        {
+          "position": 0,
+          "name": "id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 1,
+          "primary_key": true
+        },
+        {
+          "position": 1,
+          "name": "run_id",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 2,
+          "name": "operation_id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 3,
+          "name": "uri",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 4,
+          "name": "evidence_kind",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 5,
+          "name": "sha256",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 6,
+          "name": "redacted",
+          "type": "INTEGER",
+          "nullable": false,
+          "not_null": true,
+          "default": "0",
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 7,
+          "name": "metadata_json",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 8,
+          "name": "created_at_utc",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": "strftime('%Y-%m-%dT%H:%M:%fZ','now')",
+          "primary_key_position": 0,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_envctl_migration_evidence_1",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 0,
+              "name": "id"
+            }
+          ],
+          "sql": null
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "references_table": "envctl_migration_operations",
+          "from_column": "operation_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "references_table": "envctl_migration_runs",
+          "from_column": "run_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        }
+      ],
+      "constraints": [
+        {
+          "name": null,
+          "type": "primary_key",
+          "column": "id",
+          "expression": "id TEXT PRIMARY KEY"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "run_id",
+          "expression": "run_id TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "uri",
+          "expression": "uri TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "evidence_kind",
+          "expression": "evidence_kind TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "redacted",
+          "expression": "redacted INTEGER NOT NULL DEFAULT 0"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "created_at_utc",
+          "expression": "created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id)"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(operation_id) REFERENCES envctl_migration_operations(id)"
+        }
+      ],
+      "create_sql": "CREATE TABLE envctl_migration_evidence (\n  id TEXT PRIMARY KEY,\n  run_id TEXT NOT NULL,\n  operation_id TEXT,\n  uri TEXT NOT NULL,\n  evidence_kind TEXT NOT NULL,\n  sha256 TEXT,\n  redacted INTEGER NOT NULL DEFAULT 0,\n  metadata_json TEXT,\n  created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id),\n  FOREIGN KEY(operation_id) REFERENCES envctl_migration_operations(id)\n)"
+    },
+    "envctl_migration_graph_edges": {
+      "name": "envctl_migration_graph_edges",
+      "columns": [
+        {
+          "position": 0,
+          "name": "id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 1,
+          "primary_key": true
+        },
+        {
+          "position": 1,
+          "name": "run_id",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 2,
+          "name": "from_node",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 3,
+          "name": "to_node",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 4,
+          "name": "edge_type",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 5,
+          "name": "source_artifact_id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 6,
+          "name": "confidence",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 7,
+          "name": "evidence_json",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 8,
+          "name": "created_at_utc",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": "strftime('%Y-%m-%dT%H:%M:%fZ','now')",
+          "primary_key_position": 0,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_envctl_migration_graph_run_nodes",
+          "unique": false,
+          "origin": "c",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 1,
+              "name": "run_id"
+            },
+            {
+              "sequence": 1,
+              "cid": 2,
+              "name": "from_node"
+            },
+            {
+              "sequence": 2,
+              "cid": 3,
+              "name": "to_node"
+            }
+          ],
+          "sql": "CREATE INDEX idx_envctl_migration_graph_run_nodes ON envctl_migration_graph_edges(run_id, from_node, to_node)"
+        },
+        {
+          "name": "sqlite_autoindex_envctl_migration_graph_edges_1",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 0,
+              "name": "id"
+            }
+          ],
+          "sql": null
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "references_table": "envctl_migration_runs",
+          "from_column": "run_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        }
+      ],
+      "constraints": [
+        {
+          "name": null,
+          "type": "primary_key",
+          "column": "id",
+          "expression": "id TEXT PRIMARY KEY"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "run_id",
+          "expression": "run_id TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "from_node",
+          "expression": "from_node TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "to_node",
+          "expression": "to_node TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "edge_type",
+          "expression": "edge_type TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "created_at_utc",
+          "expression": "created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id)"
+        }
+      ],
+      "create_sql": "CREATE TABLE envctl_migration_graph_edges (\n  id TEXT PRIMARY KEY,\n  run_id TEXT NOT NULL,\n  from_node TEXT NOT NULL,\n  to_node TEXT NOT NULL,\n  edge_type TEXT NOT NULL,\n  source_artifact_id TEXT,\n  confidence TEXT,\n  evidence_json TEXT,\n  created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id)\n)"
+    },
+    "envctl_migration_operations": {
+      "name": "envctl_migration_operations",
+      "columns": [
+        {
+          "position": 0,
+          "name": "id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 1,
+          "primary_key": true
+        },
+        {
+          "position": 1,
+          "name": "run_id",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 2,
+          "name": "parent_operation_id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 3,
+          "name": "operation_type",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 4,
+          "name": "phase",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 5,
+          "name": "status",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 6,
+          "name": "risk",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 7,
+          "name": "idempotency_key",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 8,
+          "name": "command_hash",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 9,
+          "name": "command_redacted",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 10,
+          "name": "input_json",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 11,
+          "name": "output_ref",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 12,
+          "name": "error_json",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 13,
+          "name": "started_at_utc",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 14,
+          "name": "completed_at_utc",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 15,
+          "name": "created_at_utc",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": "strftime('%Y-%m-%dT%H:%M:%fZ','now')",
+          "primary_key_position": 0,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_envctl_migration_operations_run_status",
+          "unique": false,
+          "origin": "c",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 1,
+              "name": "run_id"
+            },
+            {
+              "sequence": 1,
+              "cid": 5,
+              "name": "status"
+            }
+          ],
+          "sql": "CREATE INDEX idx_envctl_migration_operations_run_status ON envctl_migration_operations(run_id, status)"
+        },
+        {
+          "name": "sqlite_autoindex_envctl_migration_operations_2",
+          "unique": true,
+          "origin": "u",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 1,
+              "name": "run_id"
+            },
+            {
+              "sequence": 1,
+              "cid": 7,
+              "name": "idempotency_key"
+            }
+          ],
+          "sql": null
+        },
+        {
+          "name": "sqlite_autoindex_envctl_migration_operations_1",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 0,
+              "name": "id"
+            }
+          ],
+          "sql": null
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "references_table": "envctl_migration_operations",
+          "from_column": "parent_operation_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "references_table": "envctl_migration_runs",
+          "from_column": "run_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        }
+      ],
+      "constraints": [
+        {
+          "name": null,
+          "type": "primary_key",
+          "column": "id",
+          "expression": "id TEXT PRIMARY KEY"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "run_id",
+          "expression": "run_id TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "operation_type",
+          "expression": "operation_type TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "check",
+          "column": "status",
+          "expression": "status TEXT NOT NULL CHECK (status IN ('queued','ready','awaiting_approval','running','succeeded','failed','blocked','denied','cancelled'))"
+        },
+        {
+          "name": null,
+          "type": "check",
+          "column": "risk",
+          "expression": "risk TEXT NOT NULL CHECK (risk IN ('R0','R1','R2','R3','R4','R5'))"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "idempotency_key",
+          "expression": "idempotency_key TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "created_at_utc",
+          "expression": "created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))"
+        },
+        {
+          "name": null,
+          "type": "unique",
+          "column": null,
+          "expression": "UNIQUE(run_id, idempotency_key)"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id)"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(parent_operation_id) REFERENCES envctl_migration_operations(id)"
+        }
+      ],
+      "create_sql": "CREATE TABLE envctl_migration_operations (\n  id TEXT PRIMARY KEY,\n  run_id TEXT NOT NULL,\n  parent_operation_id TEXT,\n  operation_type TEXT NOT NULL,\n  phase TEXT,\n  status TEXT NOT NULL CHECK (status IN ('queued','ready','awaiting_approval','running','succeeded','failed','blocked','denied','cancelled')),\n  risk TEXT NOT NULL CHECK (risk IN ('R0','R1','R2','R3','R4','R5')),\n  idempotency_key TEXT NOT NULL,\n  command_hash TEXT,\n  command_redacted TEXT,\n  input_json TEXT,\n  output_ref TEXT,\n  error_json TEXT,\n  started_at_utc TEXT,\n  completed_at_utc TEXT,\n  created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  UNIQUE(run_id, idempotency_key),\n  FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id),\n  FOREIGN KEY(parent_operation_id) REFERENCES envctl_migration_operations(id)\n)"
+    },
+    "envctl_migration_packages": {
+      "name": "envctl_migration_packages",
+      "columns": [
+        {
+          "position": 0,
+          "name": "id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 1,
+          "primary_key": true
+        },
+        {
+          "position": 1,
+          "name": "package_name",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 2,
+          "name": "package_path",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 3,
+          "name": "package_hash",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 4,
+          "name": "manifest_json",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 5,
+          "name": "imported_at_utc",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": "strftime('%Y-%m-%dT%H:%M:%fZ','now')",
+          "primary_key_position": 0,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_envctl_migration_packages_2",
+          "unique": true,
+          "origin": "u",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 1,
+              "name": "package_name"
+            },
+            {
+              "sequence": 1,
+              "cid": 3,
+              "name": "package_hash"
+            }
+          ],
+          "sql": null
+        },
+        {
+          "name": "sqlite_autoindex_envctl_migration_packages_1",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 0,
+              "name": "id"
+            }
+          ],
+          "sql": null
+        }
+      ],
+      "foreign_keys": [],
+      "constraints": [
+        {
+          "name": null,
+          "type": "primary_key",
+          "column": "id",
+          "expression": "id TEXT PRIMARY KEY"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "package_name",
+          "expression": "package_name TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "package_path",
+          "expression": "package_path TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "package_hash",
+          "expression": "package_hash TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "manifest_json",
+          "expression": "manifest_json TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "imported_at_utc",
+          "expression": "imported_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))"
+        },
+        {
+          "name": null,
+          "type": "unique",
+          "column": null,
+          "expression": "UNIQUE(package_name, package_hash)"
+        }
+      ],
+      "create_sql": "CREATE TABLE envctl_migration_packages (\n  id TEXT PRIMARY KEY,\n  package_name TEXT NOT NULL,\n  package_path TEXT NOT NULL,\n  package_hash TEXT NOT NULL,\n  manifest_json TEXT NOT NULL,\n  imported_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  UNIQUE(package_name, package_hash)\n)"
+    },
+    "envctl_migration_plugin_sessions": {
+      "name": "envctl_migration_plugin_sessions",
+      "columns": [
+        {
+          "position": 0,
+          "name": "id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 1,
+          "primary_key": true
+        },
+        {
+          "position": 1,
+          "name": "run_id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 2,
+          "name": "plugin_name",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 3,
+          "name": "plugin_version",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 4,
+          "name": "nu_version",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 5,
+          "name": "human_mode",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 6,
+          "name": "session_json",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 7,
+          "name": "created_at_utc",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": "strftime('%Y-%m-%dT%H:%M:%fZ','now')",
+          "primary_key_position": 0,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_envctl_migration_plugin_sessions_1",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 0,
+              "name": "id"
+            }
+          ],
+          "sql": null
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "references_table": "envctl_migration_runs",
+          "from_column": "run_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        }
+      ],
+      "constraints": [
+        {
+          "name": null,
+          "type": "primary_key",
+          "column": "id",
+          "expression": "id TEXT PRIMARY KEY"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "plugin_name",
+          "expression": "plugin_name TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "created_at_utc",
+          "expression": "created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id)"
+        }
+      ],
+      "create_sql": "CREATE TABLE envctl_migration_plugin_sessions (\n  id TEXT PRIMARY KEY,\n  run_id TEXT,\n  plugin_name TEXT NOT NULL,\n  plugin_version TEXT,\n  nu_version TEXT,\n  human_mode TEXT,\n  session_json TEXT,\n  created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id)\n)"
+    },
+    "envctl_migration_recipes": {
+      "name": "envctl_migration_recipes",
+      "columns": [
+        {
+          "position": 0,
+          "name": "id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 1,
+          "primary_key": true
+        },
+        {
+          "position": 1,
+          "name": "recipe_name",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 2,
+          "name": "recipe_version",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 3,
+          "name": "artifact_contract_id",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 4,
+          "name": "recipe_hash",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 5,
+          "name": "recipe_json",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 6,
+          "name": "created_at_utc",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": "strftime('%Y-%m-%dT%H:%M:%fZ','now')",
+          "primary_key_position": 0,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_envctl_migration_recipes_2",
+          "unique": true,
+          "origin": "u",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 1,
+              "name": "recipe_name"
+            },
+            {
+              "sequence": 1,
+              "cid": 2,
+              "name": "recipe_version"
+            }
+          ],
+          "sql": null
+        },
+        {
+          "name": "sqlite_autoindex_envctl_migration_recipes_1",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 0,
+              "name": "id"
+            }
+          ],
+          "sql": null
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "references_table": "envctl_migration_artifact_contracts",
+          "from_column": "artifact_contract_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        }
+      ],
+      "constraints": [
+        {
+          "name": null,
+          "type": "primary_key",
+          "column": "id",
+          "expression": "id TEXT PRIMARY KEY"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "recipe_name",
+          "expression": "recipe_name TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "recipe_version",
+          "expression": "recipe_version TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "artifact_contract_id",
+          "expression": "artifact_contract_id TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "recipe_hash",
+          "expression": "recipe_hash TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "recipe_json",
+          "expression": "recipe_json TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "created_at_utc",
+          "expression": "created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))"
+        },
+        {
+          "name": null,
+          "type": "unique",
+          "column": null,
+          "expression": "UNIQUE(recipe_name, recipe_version)"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(artifact_contract_id) REFERENCES envctl_migration_artifact_contracts(id)"
+        }
+      ],
+      "create_sql": "CREATE TABLE envctl_migration_recipes (\n  id TEXT PRIMARY KEY,\n  recipe_name TEXT NOT NULL,\n  recipe_version TEXT NOT NULL,\n  artifact_contract_id TEXT NOT NULL,\n  recipe_hash TEXT NOT NULL,\n  recipe_json TEXT NOT NULL,\n  created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  UNIQUE(recipe_name, recipe_version),\n  FOREIGN KEY(artifact_contract_id) REFERENCES envctl_migration_artifact_contracts(id)\n)"
+    },
+    "envctl_migration_rollbacks": {
+      "name": "envctl_migration_rollbacks",
+      "columns": [
+        {
+          "position": 0,
+          "name": "id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 1,
+          "primary_key": true
+        },
+        {
+          "position": 1,
+          "name": "run_id",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 2,
+          "name": "operation_id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 3,
+          "name": "rollback_type",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 4,
+          "name": "status",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 5,
+          "name": "plan_json",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 6,
+          "name": "result_json",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 7,
+          "name": "created_at_utc",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": "strftime('%Y-%m-%dT%H:%M:%fZ','now')",
+          "primary_key_position": 0,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_envctl_migration_rollbacks_1",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 0,
+              "name": "id"
+            }
+          ],
+          "sql": null
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "references_table": "envctl_migration_operations",
+          "from_column": "operation_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "references_table": "envctl_migration_runs",
+          "from_column": "run_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        }
+      ],
+      "constraints": [
+        {
+          "name": null,
+          "type": "primary_key",
+          "column": "id",
+          "expression": "id TEXT PRIMARY KEY"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "run_id",
+          "expression": "run_id TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "rollback_type",
+          "expression": "rollback_type TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "check",
+          "column": "status",
+          "expression": "status TEXT NOT NULL CHECK (status IN ('planned','awaiting_approval','running','succeeded','failed','blocked','cancelled'))"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "plan_json",
+          "expression": "plan_json TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "created_at_utc",
+          "expression": "created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id)"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(operation_id) REFERENCES envctl_migration_operations(id)"
+        }
+      ],
+      "create_sql": "CREATE TABLE envctl_migration_rollbacks (\n  id TEXT PRIMARY KEY,\n  run_id TEXT NOT NULL,\n  operation_id TEXT,\n  rollback_type TEXT NOT NULL,\n  status TEXT NOT NULL CHECK (status IN ('planned','awaiting_approval','running','succeeded','failed','blocked','cancelled')),\n  plan_json TEXT NOT NULL,\n  result_json TEXT,\n  created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id),\n  FOREIGN KEY(operation_id) REFERENCES envctl_migration_operations(id)\n)"
+    },
+    "envctl_migration_run_events": {
+      "name": "envctl_migration_run_events",
+      "columns": [
+        {
+          "position": 0,
+          "name": "id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 1,
+          "primary_key": true
+        },
+        {
+          "position": 1,
+          "name": "run_id",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 2,
+          "name": "event_seq",
+          "type": "INTEGER",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 3,
+          "name": "event_type",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 4,
+          "name": "phase",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 5,
+          "name": "actor_type",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 6,
+          "name": "actor_id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 7,
+          "name": "operation_id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 8,
+          "name": "payload_json",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 9,
+          "name": "evidence_refs_json",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 10,
+          "name": "previous_event_hash",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 11,
+          "name": "event_hash",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 12,
+          "name": "created_at_utc",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": "strftime('%Y-%m-%dT%H:%M:%fZ','now')",
+          "primary_key_position": 0,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_envctl_migration_events_run_seq",
+          "unique": false,
+          "origin": "c",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 1,
+              "name": "run_id"
+            },
+            {
+              "sequence": 1,
+              "cid": 2,
+              "name": "event_seq"
+            }
+          ],
+          "sql": "CREATE INDEX idx_envctl_migration_events_run_seq ON envctl_migration_run_events(run_id, event_seq)"
+        },
+        {
+          "name": "sqlite_autoindex_envctl_migration_run_events_2",
+          "unique": true,
+          "origin": "u",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 1,
+              "name": "run_id"
+            },
+            {
+              "sequence": 1,
+              "cid": 2,
+              "name": "event_seq"
+            }
+          ],
+          "sql": null
+        },
+        {
+          "name": "sqlite_autoindex_envctl_migration_run_events_1",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 0,
+              "name": "id"
+            }
+          ],
+          "sql": null
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "references_table": "envctl_migration_operations",
+          "from_column": "operation_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "references_table": "envctl_migration_runs",
+          "from_column": "run_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        }
+      ],
+      "constraints": [
+        {
+          "name": null,
+          "type": "primary_key",
+          "column": "id",
+          "expression": "id TEXT PRIMARY KEY"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "run_id",
+          "expression": "run_id TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "event_seq",
+          "expression": "event_seq INTEGER NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "event_type",
+          "expression": "event_type TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "check",
+          "column": "actor_type",
+          "expression": "actor_type TEXT NOT NULL CHECK (actor_type IN ('system','agent','human','plugin','external'))"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "payload_json",
+          "expression": "payload_json TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "created_at_utc",
+          "expression": "created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))"
+        },
+        {
+          "name": null,
+          "type": "unique",
+          "column": null,
+          "expression": "UNIQUE(run_id, event_seq)"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id)"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(operation_id) REFERENCES envctl_migration_operations(id)"
+        }
+      ],
+      "create_sql": "CREATE TABLE envctl_migration_run_events (\n  id TEXT PRIMARY KEY,\n  run_id TEXT NOT NULL,\n  event_seq INTEGER NOT NULL,\n  event_type TEXT NOT NULL,\n  phase TEXT,\n  actor_type TEXT NOT NULL CHECK (actor_type IN ('system','agent','human','plugin','external')),\n  actor_id TEXT,\n  operation_id TEXT,\n  payload_json TEXT NOT NULL,\n  evidence_refs_json TEXT,\n  previous_event_hash TEXT,\n  event_hash TEXT,\n  created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  UNIQUE(run_id, event_seq),\n  FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id),\n  FOREIGN KEY(operation_id) REFERENCES envctl_migration_operations(id)\n)"
+    },
+    "envctl_migration_runs": {
+      "name": "envctl_migration_runs",
+      "columns": [
+        {
+          "position": 0,
+          "name": "id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 1,
+          "primary_key": true
+        },
+        {
+          "position": 1,
+          "name": "target_id",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 2,
+          "name": "recipe_id",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 3,
+          "name": "artifact_contract_id",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 4,
+          "name": "status",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 5,
+          "name": "human_mode",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 6,
+          "name": "initiated_by",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 7,
+          "name": "sandbox_policy",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 8,
+          "name": "approval_policy",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 9,
+          "name": "tool_versions_json",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 10,
+          "name": "reproducibility_hash",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 11,
+          "name": "started_at_utc",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 12,
+          "name": "completed_at_utc",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 13,
+          "name": "created_at_utc",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": "strftime('%Y-%m-%dT%H:%M:%fZ','now')",
+          "primary_key_position": 0,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_envctl_migration_runs_target",
+          "unique": false,
+          "origin": "c",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 1,
+              "name": "target_id"
+            }
+          ],
+          "sql": "CREATE INDEX idx_envctl_migration_runs_target ON envctl_migration_runs(target_id)"
+        },
+        {
+          "name": "idx_envctl_migration_runs_status",
+          "unique": false,
+          "origin": "c",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 4,
+              "name": "status"
+            }
+          ],
+          "sql": "CREATE INDEX idx_envctl_migration_runs_status ON envctl_migration_runs(status)"
+        },
+        {
+          "name": "sqlite_autoindex_envctl_migration_runs_1",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 0,
+              "name": "id"
+            }
+          ],
+          "sql": null
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "references_table": "envctl_migration_artifact_contracts",
+          "from_column": "artifact_contract_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "references_table": "envctl_migration_recipes",
+          "from_column": "recipe_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        },
+        {
+          "id": 2,
+          "sequence": 0,
+          "references_table": "envctl_migration_targets",
+          "from_column": "target_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        }
+      ],
+      "constraints": [
+        {
+          "name": null,
+          "type": "primary_key",
+          "column": "id",
+          "expression": "id TEXT PRIMARY KEY"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "target_id",
+          "expression": "target_id TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "recipe_id",
+          "expression": "recipe_id TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "artifact_contract_id",
+          "expression": "artifact_contract_id TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "check",
+          "column": "status",
+          "expression": "status TEXT NOT NULL CHECK (status IN ('created','planning','awaiting_approval','running','paused','validating','completed','failed','blocked','cancelled','denied'))"
+        },
+        {
+          "name": null,
+          "type": "check",
+          "column": "human_mode",
+          "expression": "human_mode TEXT NOT NULL CHECK (human_mode IN ('observer','approval-gated','operator','agent-only'))"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "created_at_utc",
+          "expression": "created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(target_id) REFERENCES envctl_migration_targets(id)"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(recipe_id) REFERENCES envctl_migration_recipes(id)"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(artifact_contract_id) REFERENCES envctl_migration_artifact_contracts(id)"
+        }
+      ],
+      "create_sql": "CREATE TABLE envctl_migration_runs (\n  id TEXT PRIMARY KEY,\n  target_id TEXT NOT NULL,\n  recipe_id TEXT NOT NULL,\n  artifact_contract_id TEXT NOT NULL,\n  status TEXT NOT NULL CHECK (status IN ('created','planning','awaiting_approval','running','paused','validating','completed','failed','blocked','cancelled','denied')),\n  human_mode TEXT NOT NULL CHECK (human_mode IN ('observer','approval-gated','operator','agent-only')),\n  initiated_by TEXT,\n  sandbox_policy TEXT,\n  approval_policy TEXT,\n  tool_versions_json TEXT,\n  reproducibility_hash TEXT,\n  started_at_utc TEXT,\n  completed_at_utc TEXT,\n  created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  FOREIGN KEY(target_id) REFERENCES envctl_migration_targets(id),\n  FOREIGN KEY(recipe_id) REFERENCES envctl_migration_recipes(id),\n  FOREIGN KEY(artifact_contract_id) REFERENCES envctl_migration_artifact_contracts(id)\n)"
+    },
+    "envctl_migration_targets": {
+      "name": "envctl_migration_targets",
+      "columns": [
+        {
+          "position": 0,
+          "name": "id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 1,
+          "primary_key": true
+        },
+        {
+          "position": 1,
+          "name": "target_id",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 2,
+          "name": "target_type",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 3,
+          "name": "primary_root",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 4,
+          "name": "compare_root",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 5,
+          "name": "descriptor_json",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 6,
+          "name": "descriptor_hash",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 7,
+          "name": "safety_mode",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 8,
+          "name": "max_auto_risk",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 9,
+          "name": "created_at_utc",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": "strftime('%Y-%m-%dT%H:%M:%fZ','now')",
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 10,
+          "name": "updated_at_utc",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": "strftime('%Y-%m-%dT%H:%M:%fZ','now')",
+          "primary_key_position": 0,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "sqlite_autoindex_envctl_migration_targets_2",
+          "unique": true,
+          "origin": "u",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 1,
+              "name": "target_id"
+            }
+          ],
+          "sql": null
+        },
+        {
+          "name": "sqlite_autoindex_envctl_migration_targets_1",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 0,
+              "name": "id"
+            }
+          ],
+          "sql": null
+        }
+      ],
+      "foreign_keys": [],
+      "constraints": [
+        {
+          "name": null,
+          "type": "primary_key",
+          "column": "id",
+          "expression": "id TEXT PRIMARY KEY"
+        },
+        {
+          "name": null,
+          "type": "unique",
+          "column": "target_id",
+          "expression": "target_id TEXT NOT NULL UNIQUE"
+        },
+        {
+          "name": null,
+          "type": "check",
+          "column": "target_type",
+          "expression": "target_type TEXT NOT NULL CHECK (target_type IN ('codebase','data','infrastructure','integration','mixed'))"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": null,
+          "expression": "primary_root TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "descriptor_json",
+          "expression": "descriptor_json TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "descriptor_hash",
+          "expression": "descriptor_hash TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "safety_mode",
+          "expression": "safety_mode TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "max_auto_risk",
+          "expression": "max_auto_risk TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "created_at_utc",
+          "expression": "created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "updated_at_utc",
+          "expression": "updated_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))"
+        }
+      ],
+      "create_sql": "CREATE TABLE envctl_migration_targets (\n  id TEXT PRIMARY KEY,\n  target_id TEXT NOT NULL UNIQUE,\n  target_type TEXT NOT NULL CHECK (target_type IN ('codebase','data','infrastructure','integration','mixed')),\n  primary_root TEXT NOT NULL,\n  compare_root TEXT,\n  descriptor_json TEXT NOT NULL,\n  descriptor_hash TEXT NOT NULL,\n  safety_mode TEXT NOT NULL,\n  max_auto_risk TEXT NOT NULL,\n  created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  updated_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))\n)"
+    },
+    "envctl_migration_validations": {
+      "name": "envctl_migration_validations",
+      "columns": [
+        {
+          "position": 0,
+          "name": "id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 1,
+          "primary_key": true
+        },
+        {
+          "position": 1,
+          "name": "run_id",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 2,
+          "name": "artifact_id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 3,
+          "name": "operation_id",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 4,
+          "name": "validator",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 5,
+          "name": "status",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 6,
+          "name": "details_json",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 7,
+          "name": "evidence_json",
+          "type": "TEXT",
+          "nullable": true,
+          "not_null": false,
+          "default": null,
+          "primary_key_position": 0,
+          "primary_key": false
+        },
+        {
+          "position": 8,
+          "name": "created_at_utc",
+          "type": "TEXT",
+          "nullable": false,
+          "not_null": true,
+          "default": "strftime('%Y-%m-%dT%H:%M:%fZ','now')",
+          "primary_key_position": 0,
+          "primary_key": false
+        }
+      ],
+      "indexes": [
+        {
+          "name": "idx_envctl_migration_validations_run_status",
+          "unique": false,
+          "origin": "c",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 1,
+              "name": "run_id"
+            },
+            {
+              "sequence": 1,
+              "cid": 5,
+              "name": "status"
+            }
+          ],
+          "sql": "CREATE INDEX idx_envctl_migration_validations_run_status ON envctl_migration_validations(run_id, status)"
+        },
+        {
+          "name": "sqlite_autoindex_envctl_migration_validations_1",
+          "unique": true,
+          "origin": "pk",
+          "partial": false,
+          "columns": [
+            {
+              "sequence": 0,
+              "cid": 0,
+              "name": "id"
+            }
+          ],
+          "sql": null
+        }
+      ],
+      "foreign_keys": [
+        {
+          "id": 0,
+          "sequence": 0,
+          "references_table": "envctl_migration_operations",
+          "from_column": "operation_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        },
+        {
+          "id": 1,
+          "sequence": 0,
+          "references_table": "envctl_migration_runs",
+          "from_column": "run_id",
+          "to_column": "id",
+          "on_update": "NO ACTION",
+          "on_delete": "NO ACTION",
+          "match": "NONE"
+        }
+      ],
+      "constraints": [
+        {
+          "name": null,
+          "type": "primary_key",
+          "column": "id",
+          "expression": "id TEXT PRIMARY KEY"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "run_id",
+          "expression": "run_id TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "validator",
+          "expression": "validator TEXT NOT NULL"
+        },
+        {
+          "name": null,
+          "type": "check",
+          "column": "status",
+          "expression": "status TEXT NOT NULL CHECK (status IN ('pass','fail','warn','blocked','unknown'))"
+        },
+        {
+          "name": null,
+          "type": "not_null",
+          "column": "created_at_utc",
+          "expression": "created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now'))"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id)"
+        },
+        {
+          "name": null,
+          "type": "foreign_key",
+          "column": null,
+          "expression": "FOREIGN KEY(operation_id) REFERENCES envctl_migration_operations(id)"
+        }
+      ],
+      "create_sql": "CREATE TABLE envctl_migration_validations (\n  id TEXT PRIMARY KEY,\n  run_id TEXT NOT NULL,\n  artifact_id TEXT,\n  operation_id TEXT,\n  validator TEXT NOT NULL,\n  status TEXT NOT NULL CHECK (status IN ('pass','fail','warn','blocked','unknown')),\n  details_json TEXT,\n  evidence_json TEXT,\n  created_at_utc TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),\n  FOREIGN KEY(run_id) REFERENCES envctl_migration_runs(id),\n  FOREIGN KEY(operation_id) REFERENCES envctl_migration_operations(id)\n)"
+    }
+  },
+  "views": {
+    "envctl_migration_artifact_index": {
+      "name": "envctl_migration_artifact_index",
+      "columns": [
+        {
+          "position": 0,
+          "name": "run_id",
+          "type": "TEXT"
+        },
+        {
+          "position": 1,
+          "name": "artifact_id",
+          "type": "TEXT"
+        },
+        {
+          "position": 2,
+          "name": "title",
+          "type": "TEXT"
+        },
+        {
+          "position": 3,
+          "name": "artifact_type",
+          "type": "TEXT"
+        },
+        {
+          "position": 4,
+          "name": "status",
+          "type": "TEXT"
+        },
+        {
+          "position": 5,
+          "name": "path",
+          "type": "TEXT"
+        },
+        {
+          "position": 6,
+          "name": "content_hash",
+          "type": "TEXT"
+        },
+        {
+          "position": 7,
+          "name": "updated_at_utc",
+          "type": "TEXT"
+        }
+      ],
+      "sql": "CREATE VIEW envctl_migration_artifact_index AS\nSELECT\n  run_id,\n  artifact_id,\n  title,\n  artifact_type,\n  status,\n  path,\n  content_hash,\n  updated_at_utc\nFROM envctl_migration_artifacts"
+    },
+    "envctl_migration_live_timeline": {
+      "name": "envctl_migration_live_timeline",
+      "columns": [
+        {
+          "position": 0,
+          "name": "run_id",
+          "type": "TEXT"
+        },
+        {
+          "position": 1,
+          "name": "event_seq",
+          "type": "INTEGER"
+        },
+        {
+          "position": 2,
+          "name": "created_at_utc",
+          "type": "TEXT"
+        },
+        {
+          "position": 3,
+          "name": "phase",
+          "type": "TEXT"
+        },
+        {
+          "position": 4,
+          "name": "event_type",
+          "type": "TEXT"
+        },
+        {
+          "position": 5,
+          "name": "actor_type",
+          "type": "TEXT"
+        },
+        {
+          "position": 6,
+          "name": "actor_id",
+          "type": "TEXT"
+        },
+        {
+          "position": 7,
+          "name": "operation_id",
+          "type": "TEXT"
+        },
+        {
+          "position": 8,
+          "name": "operation_type",
+          "type": "TEXT"
+        },
+        {
+          "position": 9,
+          "name": "operation_status",
+          "type": "TEXT"
+        },
+        {
+          "position": 10,
+          "name": "payload_json",
+          "type": "TEXT"
+        }
+      ],
+      "sql": "CREATE VIEW envctl_migration_live_timeline AS\nSELECT\n  e.run_id,\n  e.event_seq,\n  e.created_at_utc,\n  e.phase,\n  e.event_type,\n  e.actor_type,\n  e.actor_id,\n  e.operation_id,\n  o.operation_type,\n  o.status AS operation_status,\n  e.payload_json\nFROM envctl_migration_run_events e\nLEFT JOIN envctl_migration_operations o ON o.id = e.operation_id\nORDER BY e.run_id, e.event_seq"
+    },
+    "envctl_migration_open_approvals": {
+      "name": "envctl_migration_open_approvals",
+      "columns": [
+        {
+          "position": 0,
+          "name": "approval_id",
+          "type": "TEXT"
+        },
+        {
+          "position": 1,
+          "name": "run_id",
+          "type": "TEXT"
+        },
+        {
+          "position": 2,
+          "name": "operation_id",
+          "type": "TEXT"
+        },
+        {
+          "position": 3,
+          "name": "operation_type",
+          "type": "TEXT"
+        },
+        {
+          "position": 4,
+          "name": "risk",
+          "type": "TEXT"
+        },
+        {
+          "position": 5,
+          "name": "status",
+          "type": "TEXT"
+        },
+        {
+          "position": 6,
+          "name": "requested_by",
+          "type": "TEXT"
+        },
+        {
+          "position": 7,
+          "name": "reason",
+          "type": "TEXT"
+        },
+        {
+          "position": 8,
+          "name": "requested_at_utc",
+          "type": "TEXT"
+        }
+      ],
+      "sql": "CREATE VIEW envctl_migration_open_approvals AS\nSELECT\n  a.id AS approval_id,\n  a.run_id,\n  a.operation_id,\n  o.operation_type,\n  a.risk,\n  a.status,\n  a.requested_by,\n  a.reason,\n  a.requested_at_utc\nFROM envctl_migration_approvals a\nJOIN envctl_migration_operations o ON o.id = a.operation_id\nWHERE a.status = 'open'"
+    },
+    "envctl_migration_replay_readiness": {
+      "name": "envctl_migration_replay_readiness",
+      "columns": [
+        {
+          "position": 0,
+          "name": "run_id",
+          "type": "TEXT"
+        },
+        {
+          "position": 1,
+          "name": "status",
+          "type": "TEXT"
+        },
+        {
+          "position": 2,
+          "name": "reproducibility_hash",
+          "type": "TEXT"
+        },
+        {
+          "position": 3,
+          "name": "has_reproducibility_hash",
+          "type": ""
+        },
+        {
+          "position": 4,
+          "name": "evidence_missing_hashes",
+          "type": ""
+        },
+        {
+          "position": 5,
+          "name": "artifacts_missing_hashes",
+          "type": ""
+        },
+        {
+          "position": 6,
+          "name": "open_approvals",
+          "type": ""
+        }
+      ],
+      "sql": "CREATE VIEW envctl_migration_replay_readiness AS\nSELECT\n  r.id AS run_id,\n  r.status,\n  r.reproducibility_hash,\n  CASE WHEN r.reproducibility_hash IS NULL THEN 0 ELSE 1 END AS has_reproducibility_hash,\n  (SELECT COUNT(*) FROM envctl_migration_evidence ev WHERE ev.run_id = r.id AND ev.sha256 IS NULL) AS evidence_missing_hashes,\n  (SELECT COUNT(*) FROM envctl_migration_artifacts ar WHERE ar.run_id = r.id AND ar.content_hash IS NULL) AS artifacts_missing_hashes,\n  (SELECT COUNT(*) FROM envctl_migration_approvals a WHERE a.run_id = r.id AND a.status = 'open') AS open_approvals\nFROM envctl_migration_runs r"
+    },
+    "envctl_migration_run_latest_status": {
+      "name": "envctl_migration_run_latest_status",
+      "columns": [
+        {
+          "position": 0,
+          "name": "run_id",
+          "type": "TEXT"
+        },
+        {
+          "position": 1,
+          "name": "target_id",
+          "type": "TEXT"
+        },
+        {
+          "position": 2,
+          "name": "target_type",
+          "type": "TEXT"
+        },
+        {
+          "position": 3,
+          "name": "status",
+          "type": "TEXT"
+        },
+        {
+          "position": 4,
+          "name": "human_mode",
+          "type": "TEXT"
+        },
+        {
+          "position": 5,
+          "name": "started_at_utc",
+          "type": "TEXT"
+        },
+        {
+          "position": 6,
+          "name": "completed_at_utc",
+          "type": "TEXT"
+        },
+        {
+          "position": 7,
+          "name": "operation_count",
+          "type": ""
+        },
+        {
+          "position": 8,
+          "name": "failed_operation_count",
+          "type": ""
+        },
+        {
+          "position": 9,
+          "name": "open_approval_count",
+          "type": ""
+        },
+        {
+          "position": 10,
+          "name": "artifact_count",
+          "type": ""
+        },
+        {
+          "position": 11,
+          "name": "last_event_at_utc",
+          "type": ""
+        }
+      ],
+      "sql": "CREATE VIEW envctl_migration_run_latest_status AS\nSELECT\n  r.id AS run_id,\n  t.target_id,\n  t.target_type,\n  r.status,\n  r.human_mode,\n  r.started_at_utc,\n  r.completed_at_utc,\n  (SELECT COUNT(*) FROM envctl_migration_operations o WHERE o.run_id = r.id) AS operation_count,\n  (SELECT COUNT(*) FROM envctl_migration_operations o WHERE o.run_id = r.id AND o.status = 'failed') AS failed_operation_count,\n  (SELECT COUNT(*) FROM envctl_migration_approvals a WHERE a.run_id = r.id AND a.status = 'open') AS open_approval_count,\n  (SELECT COUNT(*) FROM envctl_migration_artifacts ar WHERE ar.run_id = r.id) AS artifact_count,\n  (SELECT MAX(e.created_at_utc) FROM envctl_migration_run_events e WHERE e.run_id = r.id) AS last_event_at_utc\nFROM envctl_migration_runs r\nJOIN envctl_migration_targets t ON t.id = r.target_id"
+    },
+    "envctl_migration_validation_scorecard": {
+      "name": "envctl_migration_validation_scorecard",
+      "columns": [
+        {
+          "position": 0,
+          "name": "run_id",
+          "type": "TEXT"
+        },
+        {
+          "position": 1,
+          "name": "pass_count",
+          "type": ""
+        },
+        {
+          "position": 2,
+          "name": "fail_count",
+          "type": ""
+        },
+        {
+          "position": 3,
+          "name": "warn_count",
+          "type": ""
+        },
+        {
+          "position": 4,
+          "name": "blocked_count",
+          "type": ""
+        },
+        {
+          "position": 5,
+          "name": "unknown_count",
+          "type": ""
+        }
+      ],
+      "sql": "CREATE VIEW envctl_migration_validation_scorecard AS\nSELECT\n  run_id,\n  SUM(CASE WHEN status = 'pass' THEN 1 ELSE 0 END) AS pass_count,\n  SUM(CASE WHEN status = 'fail' THEN 1 ELSE 0 END) AS fail_count,\n  SUM(CASE WHEN status = 'warn' THEN 1 ELSE 0 END) AS warn_count,\n  SUM(CASE WHEN status = 'blocked' THEN 1 ELSE 0 END) AS blocked_count,\n  SUM(CASE WHEN status = 'unknown' THEN 1 ELSE 0 END) AS unknown_count\nFROM envctl_migration_validations\nGROUP BY run_id"
+    }
+  },
+  "triggers": [],
+  "procedures": [],
+  "source_context": {
+    "req020_status": "passed",
+    "req020_summary": {
+      "required_table_count": 16,
+      "actual_table_count": 16,
+      "required_view_count": 6,
+      "actual_view_count": 6,
+      "capability_count": 19,
+      "index_count": 31,
+      "foreign_key_count": 24
+    },
+    "shared_protocol_records": [
+      "TargetDescriptor",
+      "MigrationRecipe",
+      "MigrationRun",
+      "RunEvent",
+      "Operation",
+      "ApprovalRequest",
+      "ApprovalDecision",
+      "ArtifactRecord",
+      "EvidenceRecord",
+      "GraphEdge",
+      "ValidationResult",
+      "ReplayRequest",
+      "ReplayResult",
+      "ProofRecord"
+    ],
+    "artifact_registry_status": "passed",
+    "artifact_registry_sample_hash": "sha256:d83a779c4f5ba4274c455c016193ad62f58d974033e53f9b11a78369cb94cded"
+  },
+  "evidence": [
+    "execution-framework/generated/envctl_migration_db_model.json",
+    "execution-framework/docs/ENVCTL_DB_SCHEMA.md",
+    "execution-framework/generated/envctl_artifact_registry_report.json",
+    "execution-framework/generated/shared_protocol_manifest.json",
+    "sql/001_migration_automation_schema.sql",
+    "sql/002_views_and_indexes.sql",
+    "execution-framework/generated/contract_manifest.seed.sql"
+  ],
+  "notes": [
+    "SQLite has no stored-procedure catalog in this schema; procedures is intentionally empty.",
+    "No envctl_migration_* triggers are present in sqlite_master at generation time."
+  ]
+}

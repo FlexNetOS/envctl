@@ -1,0 +1,313 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-025_ENVCTL_VALIDATION_EVIDENCE",
+  "status": "completed",
+  "started_at": "2026-07-04T23:19:04+00:00",
+  "completed_at": "2026-07-04T23:19:04+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-envctl-validation-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/validation_evidence.py",
+    "execution-framework/scripts/verify_validation_evidence.py",
+    "execution-framework/generated/envctl_validation_evidence_report.json",
+    "execution-framework/generated/validation_evidence/reconciliation.json",
+    "execution-framework/generated/validation_evidence/parity.json",
+    "execution-framework/generated/validation_evidence/test_results.json",
+    "execution-framework/docs/ENVCTL_VALIDATION_EVIDENCE.md",
+    "execution-framework/state/REQ-025_ENVCTL_VALIDATION_EVIDENCE.heartbeat.json",
+    "execution-framework/logs/REQ-025_ENVCTL_VALIDATION_EVIDENCE.log",
+    "execution-framework/proof_records/REQ-025_ENVCTL_VALIDATION_EVIDENCE.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/verify_validation_evidence.py",
+    "python3 -m py_compile scripts/validation_evidence.py scripts/verify_validation_evidence.py"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "REQ-025_ENVCTL_VALIDATION_EVIDENCE",
+    "status": "passed",
+    "generated_at": "2026-07-04T23:19:04+00:00",
+    "fixture": {
+      "run_id": "run-req025",
+      "operation_id": "op-req025-validate",
+      "artifact_id": "art-123-validation-reconciliation"
+    },
+    "schema_source": {
+      "path": "schemas/validation_result.schema.json",
+      "required": [
+        "validation_id",
+        "run_id",
+        "validator",
+        "status"
+      ],
+      "status_values": [
+        "pass",
+        "fail",
+        "warn",
+        "blocked",
+        "unknown"
+      ]
+    },
+    "results": [
+      {
+        "validation_id": "validation-req025-reconciliation",
+        "run_id": "run-req025",
+        "artifact_id": "art-123-validation-reconciliation",
+        "operation_id": "op-req025-validate",
+        "validator": "validation_evidence.py:reconciliation",
+        "status": "pass",
+        "evidence_ids": [
+          "evidence-3542b27eae8c9398a623ea46",
+          "evidence-bce922396e187fd45fd62539"
+        ],
+        "evidence_uris": [
+          "execution-framework/generated/validation_evidence/reconciliation.json",
+          "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json"
+        ],
+        "schema_shape": {
+          "validation_id": "validation-req025-reconciliation",
+          "run_id": "run-req025",
+          "artifact_id": "art-123-validation-reconciliation",
+          "validator": "validation_evidence.py:reconciliation",
+          "status": "pass",
+          "details": {
+            "matched": 12,
+            "missing": 0,
+            "blocks": [
+              "ART-123_VALIDATION_RECONCILIATION"
+            ]
+          },
+          "evidence_refs": [
+            "execution-framework/generated/validation_evidence/reconciliation.json",
+            "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json"
+          ]
+        }
+      },
+      {
+        "validation_id": "validation-req025-parity",
+        "run_id": "run-req025",
+        "artifact_id": "art-123-validation-reconciliation",
+        "operation_id": "op-req025-validate",
+        "validator": "validation_evidence.py:parity",
+        "status": "warn",
+        "evidence_ids": [
+          "evidence-daa23ba3150cacd9b7fa547f"
+        ],
+        "evidence_uris": [
+          "execution-framework/generated/validation_evidence/parity.json"
+        ],
+        "schema_shape": {
+          "validation_id": "validation-req025-parity",
+          "run_id": "run-req025",
+          "artifact_id": "art-123-validation-reconciliation",
+          "validator": "validation_evidence.py:parity",
+          "status": "warn",
+          "details": {
+            "source": "envctl",
+            "target": "nu_plugin",
+            "pending": [
+              "ART-132_PARITY_DASHBOARD"
+            ]
+          },
+          "evidence_refs": [
+            "execution-framework/generated/validation_evidence/parity.json"
+          ]
+        }
+      },
+      {
+        "validation_id": "validation-req025-tests",
+        "run_id": "run-req025",
+        "artifact_id": null,
+        "operation_id": "op-req025-validate",
+        "validator": "validation_evidence.py:test-results",
+        "status": "pass",
+        "evidence_ids": [
+          "evidence-17a2f93c58c9e307621d7416"
+        ],
+        "evidence_uris": [
+          "execution-framework/generated/validation_evidence/test_results.json"
+        ],
+        "schema_shape": {
+          "validation_id": "validation-req025-tests",
+          "run_id": "run-req025",
+          "artifact_id": null,
+          "validator": "validation_evidence.py:test-results",
+          "status": "pass",
+          "details": {
+            "command": "python3 scripts/verify_validation_evidence.py"
+          },
+          "evidence_refs": [
+            "execution-framework/generated/validation_evidence/test_results.json"
+          ]
+        }
+      }
+    ],
+    "validation_rows": [
+      {
+        "id": "validation-req025-reconciliation",
+        "run_id": "run-req025",
+        "artifact_id": "art-123-validation-reconciliation",
+        "operation_id": "op-req025-validate",
+        "validator": "validation_evidence.py:reconciliation",
+        "status": "pass",
+        "details": {
+          "details": {
+            "blocks": [
+              "ART-123_VALIDATION_RECONCILIATION"
+            ],
+            "matched": 12,
+            "missing": 0
+          },
+          "evidence_ids": [
+            "evidence-3542b27eae8c9398a623ea46",
+            "evidence-bce922396e187fd45fd62539"
+          ],
+          "evidence_kinds": [
+            "proof_record",
+            "reconciliation"
+          ]
+        },
+        "evidence": [
+          "execution-framework/generated/validation_evidence/reconciliation.json",
+          "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json"
+        ]
+      },
+      {
+        "id": "validation-req025-parity",
+        "run_id": "run-req025",
+        "artifact_id": "art-123-validation-reconciliation",
+        "operation_id": "op-req025-validate",
+        "validator": "validation_evidence.py:parity",
+        "status": "warn",
+        "details": {
+          "details": {
+            "pending": [
+              "ART-132_PARITY_DASHBOARD"
+            ],
+            "source": "envctl",
+            "target": "nu_plugin"
+          },
+          "evidence_ids": [
+            "evidence-daa23ba3150cacd9b7fa547f"
+          ],
+          "evidence_kinds": [
+            "parity"
+          ]
+        },
+        "evidence": [
+          "execution-framework/generated/validation_evidence/parity.json"
+        ]
+      },
+      {
+        "id": "validation-req025-tests",
+        "run_id": "run-req025",
+        "artifact_id": null,
+        "operation_id": "op-req025-validate",
+        "validator": "validation_evidence.py:test-results",
+        "status": "pass",
+        "details": {
+          "details": {
+            "command": "python3 scripts/verify_validation_evidence.py"
+          },
+          "evidence_ids": [
+            "evidence-17a2f93c58c9e307621d7416"
+          ],
+          "evidence_kinds": [
+            "test_result"
+          ]
+        },
+        "evidence": [
+          "execution-framework/generated/validation_evidence/test_results.json"
+        ]
+      }
+    ],
+    "scorecard": {
+      "run_id": "run-req025",
+      "counts": {
+        "pass": 2,
+        "fail": 0,
+        "warn": 1,
+        "blocked": 0,
+        "unknown": 0
+      },
+      "evidence_by_kind": {
+        "parity": 1,
+        "proof_record": 1,
+        "reconciliation": 1,
+        "test_result": 1
+      },
+      "total": 3
+    },
+    "summary": {
+      "validation_count": 3,
+      "evidence_count": 4,
+      "hashed_evidence_count": 4,
+      "rejection_count": 3
+    },
+    "coverage": {
+      "reconciliation": true,
+      "parity": true,
+      "test_results": true,
+      "proof_evidence": true,
+      "scorecard_view": true,
+      "fail_closed_rejections": true
+    },
+    "rejection_cases": [
+      {
+        "case": "invalid-status",
+        "status": "rejected",
+        "message": "invalid validation status: done"
+      },
+      {
+        "case": "blocked-secret-path",
+        "status": "rejected",
+        "message": "validation evidence path is blocked by policy: execution-framework/secrets/token.txt"
+      },
+      {
+        "case": "foreign-operation",
+        "status": "rejected",
+        "message": "operation does not belong to run: op-does-not-exist"
+      }
+    ],
+    "errors": [],
+    "evidence": [
+      "scripts/validation_evidence.py",
+      "scripts/verify_validation_evidence.py",
+      "generated/envctl_validation_evidence_report.json",
+      "generated/validation_evidence/reconciliation.json",
+      "generated/validation_evidence/parity.json",
+      "generated/validation_evidence/test_results.json",
+      "docs/ENVCTL_VALIDATION_EVIDENCE.md",
+      "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json"
+    ]
+  },
+  "checksums": {
+    "execution-framework/scripts/validation_evidence.py": "8d855dc775f69b6b4cfecfdb02fd908e3d6ee53dd68c54e6ef801f77e55bf710",
+    "execution-framework/scripts/verify_validation_evidence.py": "609e8f9f4cca61329af8b97d21ea7b4c68b3925c81759ce1b83fe5310b5c7455",
+    "execution-framework/generated/envctl_validation_evidence_report.json": "0ac5c601eb16c8df54d7f70573aacf950b18a0ecfe56606ebe9a3ab9d092d3bf",
+    "execution-framework/generated/validation_evidence/reconciliation.json": "4229612cc535682fb96e2afa5f33fa0195e0cc713791e5cc44b77e30bb922756",
+    "execution-framework/generated/validation_evidence/parity.json": "8a25eddbe76cae5aad05e65e21baa67041ad41fd798deb7fc60c12bcda8e4d8d",
+    "execution-framework/generated/validation_evidence/test_results.json": "a712d96ac61c5e680395cf156033d1d753e61b693bbd1a82762e25266ce9568a",
+    "execution-framework/docs/ENVCTL_VALIDATION_EVIDENCE.md": "05a17a78048b6a8f101b34f1a9a5f533835658ed6de8c26ab16abffb4160c408",
+    "execution-framework/state/REQ-025_ENVCTL_VALIDATION_EVIDENCE.heartbeat.json": "52c5eab596192be547fe147207f8fb0f24ebe7a984385886a10ef726f998c6de",
+    "execution-framework/logs/REQ-025_ENVCTL_VALIDATION_EVIDENCE.log": "0ac5c601eb16c8df54d7f70573aacf950b18a0ecfe56606ebe9a3ab9d092d3bf",
+    "execution-framework/proof_records/proof_ledger.jsonl": "f1ff81ea021497ac9e6b81ad23107402ae74182e7c75f70c118c624d55924e56"
+  },
+  "logs_uri": "logs/REQ-025_ENVCTL_VALIDATION_EVIDENCE.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "scripts/validation_evidence.py",
+    "scripts/verify_validation_evidence.py",
+    "generated/envctl_validation_evidence_report.json",
+    "generated/validation_evidence/reconciliation.json",
+    "generated/validation_evidence/parity.json",
+    "generated/validation_evidence/test_results.json",
+    "docs/ENVCTL_VALIDATION_EVIDENCE.md",
+    "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json"
+  ],
+  "failure_reason": "",
+  "next_action": "run ART-123_VALIDATION_RECONCILIATION against the validation evidence store"
+}

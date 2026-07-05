@@ -1,0 +1,5 @@
+$ python3 helpers/validate_package.py .
+OK: package structure, JSON schemas, and SQLite baseline SQL validated
+$ python3 helpers/package_manifest.py . > PACKAGE_MANIFEST.json
+$ python3 helpers/validate_package.py .
+OK: package structure, JSON schemas, and SQLite baseline SQL validated

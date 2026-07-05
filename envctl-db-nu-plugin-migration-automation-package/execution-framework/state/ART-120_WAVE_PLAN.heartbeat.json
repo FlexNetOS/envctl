@@ -1,0 +1,11 @@
+{
+  "task_id": "ART-120_WAVE_PLAN",
+  "status": "completed",
+  "updated_at": "2026-07-04T23:28:32+00:00",
+  "artifact_paths": [
+    "migration-artifacts/07-cutover/wave-plan.md",
+    "migration-artifacts/07-cutover/migration-wave-plan.md",
+    "migration-artifacts/art-120_wave_plan/wave-plan.md",
+    "migration-artifacts/art-120_wave_plan/wave-plan.json"
+  ]
+}

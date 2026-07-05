@@ -1,0 +1,7 @@
+{
+  "task_id": "REQ-030_PLUGIN_PROTOCOL_MANIFEST",
+  "status": "completed",
+  "updated_at": "2026-07-04T23:04:49+00:00",
+  "artifact": "generated/nu_plugin_command_manifest.json",
+  "proof": "proof_records/REQ-030_PLUGIN_PROTOCOL_MANIFEST.proof.json"
+}

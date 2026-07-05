@@ -1,0 +1,77 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "ART-132_PARITY_DASHBOARD",
+  "status": "completed",
+  "started_at": "2026-07-04T23:29:06+00:00",
+  "completed_at": "2026-07-04T23:29:06+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-artifact-33",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/generate_art132_parity_dashboard.py",
+    "execution-framework/migration-artifacts/art-132_parity_dashboard/parity-dashboard.md",
+    "execution-framework/migration-artifacts/art-132_parity_dashboard/parity-dashboard.json",
+    "execution-framework/migration-artifacts/06-testing-validation/parity-dashboard.md",
+    "execution-framework/generated/art132_parity_dashboard_registry_report.json",
+    "execution-framework/logs/ART-132_PARITY_DASHBOARD.log",
+    "execution-framework/state/ART-132_PARITY_DASHBOARD.heartbeat.json",
+    "execution-framework/proof_records/ART-132_PARITY_DASHBOARD.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/generate_art132_parity_dashboard.py",
+    "python3 -m py_compile scripts/generate_art132_parity_dashboard.py"
+  ],
+  "verification_output": {
+    "status": "passed",
+    "dashboard_status": "complete_with_live_capture_gap",
+    "artifact_index_rows": 3,
+    "validation_scorecard_row": [
+      12,
+      0,
+      3,
+      0,
+      0
+    ],
+    "replay_readiness_row": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "completion_gate": {
+      "artifact_exists": true,
+      "registry_contains_hash": true,
+      "validation_evidence_linked": true
+    }
+  },
+  "checksums": {
+    "execution-framework/scripts/generate_art132_parity_dashboard.py": "e4ccbbd1dbecd3a1921c104819000e710c7f5bfbc59cb77d8532c19319201b55",
+    "execution-framework/migration-artifacts/art-132_parity_dashboard/parity-dashboard.md": "8860623612ef79c06a1f482985b81863da4f66153274f9db9257396db016be3c",
+    "execution-framework/migration-artifacts/art-132_parity_dashboard/parity-dashboard.json": "3bf360174c452289a273a6919750d6283bf3d66fab25b26d5ea76cb5c9380f91",
+    "execution-framework/migration-artifacts/06-testing-validation/parity-dashboard.md": "8860623612ef79c06a1f482985b81863da4f66153274f9db9257396db016be3c",
+    "execution-framework/generated/art132_parity_dashboard_registry_report.json": "6758fb06853562fec90cff38e911e68ca9f40c5b5b4d456faf8de8e78d55aae5",
+    "execution-framework/logs/ART-132_PARITY_DASHBOARD.log": "6758fb06853562fec90cff38e911e68ca9f40c5b5b4d456faf8de8e78d55aae5",
+    "execution-framework/state/ART-132_PARITY_DASHBOARD.heartbeat.json": "6008855e97ed53beae983fb9057a174b8e0703e9dc000a94e09c421eda29b55f",
+    "execution-framework/proof_records/proof_ledger.jsonl": "27be25e9ec372babb31b9572d54e83b99078a174544d09bc0b3eb1629a223b85"
+  },
+  "logs_uri": "logs/ART-132_PARITY_DASHBOARD.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "execution-framework/migration-artifacts/art-132_parity_dashboard/parity-dashboard.md",
+    "execution-framework/migration-artifacts/art-132_parity_dashboard/parity-dashboard.json",
+    "execution-framework/migration-artifacts/06-testing-validation/parity-dashboard.md",
+    "execution-framework/generated/art132_parity_dashboard_registry_report.json",
+    "execution-framework/generated/envctl_artifact_registry_report.json",
+    "execution-framework/generated/envctl_validation_evidence_report.json",
+    "execution-framework/generated/validation_evidence/parity.json",
+    "execution-framework/generated/shared_protocol_manifest.json",
+    "execution-framework/generated/shared_protocol_validation_report.json",
+    "execution-framework/generated/nu_plugin_command_manifest.json",
+    "execution-framework/generated/live_visuals.json",
+    "execution-framework/migration-artifacts/art-130_shadow_traffic/shadow-traffic-comparison-report.json"
+  ],
+  "failure_reason": "",
+  "next_action": "run VER-300_UNIT_VALIDATION after remaining artifact tasks are generated"
+}

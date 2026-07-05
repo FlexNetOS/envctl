@@ -1,0 +1,14 @@
+$ python3 scripts/lock_contract.py
+contract lock status=passed artifact_rows=136 automation_rows=16 hash=9016f9a579812c51a10f1852279392b48521c31e958cddb8bf92361090ca9d07
+$ python3 scripts/validate_task_graph.py generated/task_graph.csv
+validation status=passed tasks=80 errors=0 warnings=0
+$ python3 scripts/task_graph_to_packets.py generated/task_graph.csv
+generated 80 execution packets
+$ python3 scripts/status_from_proofs.py
+wrote status for 80 tasks
+$ python3 scripts/merge_proofs.py
+merged 13 proof records
+$ python3 scripts/goal_loop.py generated/task_graph.csv
+goal loop status: complete=13 runnable=3 approvals=0 blocked=64
+$ python3 scripts/verify_history_and_completeness.py
+final verification status=pass_with_external_blocker tasks=80 packets=80 proofs=13

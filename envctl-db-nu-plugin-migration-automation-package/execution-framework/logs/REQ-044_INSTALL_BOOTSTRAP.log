@@ -1,0 +1,24 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-044_INSTALL_BOOTSTRAP",
+  "status": "passed",
+  "generated_at": "2026-07-04T23:18:33+00:00",
+  "summary": {
+    "source_file_count": 3,
+    "install_target_count": 2,
+    "command_template_count": 4
+  },
+  "command_template_ids": [
+    "install-into-repos",
+    "run-codex-master-prompt",
+    "run-single-execution-packet",
+    "run-background-helper"
+  ],
+  "errors": [],
+  "evidence": [
+    "execution-framework/docs/INSTALL_BOOTSTRAP.md",
+    "execution-framework/generated/install_bootstrap_manifest.json",
+    "execution-framework/state/REQ-044_INSTALL_BOOTSTRAP.heartbeat.json",
+    "execution-framework/logs/REQ-044_INSTALL_BOOTSTRAP.log"
+  ]
+}

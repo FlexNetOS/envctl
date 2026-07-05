@@ -1,0 +1,10 @@
+{
+  "task_id": "ART-129_BUSINESS_CAPABILITY",
+  "status": "completed",
+  "updated_at": "2026-07-04T23:19:56+00:00",
+  "proof_uri": "proof_records/ART-129_BUSINESS_CAPABILITY.proof.json",
+  "artifact_paths": {
+    "markdown": "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md",
+    "json": "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.json"
+  }
+}

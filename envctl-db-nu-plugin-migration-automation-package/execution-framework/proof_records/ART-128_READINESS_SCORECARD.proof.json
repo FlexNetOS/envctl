@@ -1,0 +1,70 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "ART-128_READINESS_SCORECARD",
+  "status": "completed",
+  "started_at": "2026-07-04T23:19:30+00:00",
+  "completed_at": "2026-07-04T23:19:30+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-artifact-29",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/generate_art128_readiness_scorecard.py",
+    "execution-framework/migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.md",
+    "execution-framework/migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json",
+    "execution-framework/migration-artifacts/09-governance/migration-readiness-scorecard.md",
+    "execution-framework/generated/art128_readiness_scorecard_report.json",
+    "execution-framework/logs/ART-128_READINESS_SCORECARD.log",
+    "execution-framework/state/ART-128_READINESS_SCORECARD.heartbeat.json",
+    "execution-framework/proof_records/ART-128_READINESS_SCORECARD.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/generate_art128_readiness_scorecard.py",
+    "python3 -m py_compile scripts/generate_art128_readiness_scorecard.py"
+  ],
+  "verification_output": {
+    "status": "passed",
+    "overall_score": 75.3,
+    "readiness_band": "conditional",
+    "artifact_index_rows": 3,
+    "validation_scorecard_row": [
+      12,
+      0,
+      0,
+      0,
+      0
+    ],
+    "replay_readiness_row": [
+      1,
+      0,
+      0,
+      0
+    ]
+  },
+  "checksums": {
+    "execution-framework/scripts/generate_art128_readiness_scorecard.py": "60664be683634cde87f461106fd1013f7da78b5fa3a5e06dccbfbafa9abfdda7",
+    "execution-framework/migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.md": "3b3db7ddaafee244423116885c288e64ce7e7a1b62709c7ef9b954d9e20562d5",
+    "execution-framework/migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json": "6a3edf44602b59a37f343044cce019aeec8cb893f9451f5284255b445e9d1dca",
+    "execution-framework/migration-artifacts/09-governance/migration-readiness-scorecard.md": "3b3db7ddaafee244423116885c288e64ce7e7a1b62709c7ef9b954d9e20562d5",
+    "execution-framework/generated/art128_readiness_scorecard_report.json": "a8674905c8b72cd3852ea99aa04f6ade637ce7f5ba5228e8eb798336ea501bd9",
+    "execution-framework/logs/ART-128_READINESS_SCORECARD.log": "a8674905c8b72cd3852ea99aa04f6ade637ce7f5ba5228e8eb798336ea501bd9",
+    "execution-framework/state/ART-128_READINESS_SCORECARD.heartbeat.json": "aff1ab84a3ca3d5e0dadf6f41098db1a9bb4aa9dbefcd56dbc72fe1b7afaf5e9",
+    "execution-framework/proof_records/proof_ledger.jsonl": "a57008a9d772b53df5242d7dbc8104676676440735cc73715afa35c642817a14"
+  },
+  "logs_uri": "logs/ART-128_READINESS_SCORECARD.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "execution-framework/migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.md",
+    "execution-framework/migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json",
+    "execution-framework/migration-artifacts/09-governance/migration-readiness-scorecard.md",
+    "execution-framework/generated/art128_readiness_scorecard_report.json",
+    "execution-framework/generated/envctl_target_registry.json",
+    "execution-framework/generated/envctl_artifact_registry_report.json",
+    "execution-framework/generated/shared_protocol_validation_report.json",
+    "execution-framework/generated/status_from_proofs.json",
+    "execution-framework/generated/contract_manifest.json"
+  ],
+  "failure_reason": "",
+  "next_action": "run VER-300_UNIT_VALIDATION after remaining artifact tasks are generated"
+}

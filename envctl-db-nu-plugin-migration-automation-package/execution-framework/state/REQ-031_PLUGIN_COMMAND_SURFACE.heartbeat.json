@@ -1,0 +1,17 @@
+{
+  "task_id": "REQ-031_PLUGIN_COMMAND_SURFACE",
+  "status": "completed",
+  "updated_at": "2026-07-04T23:08:41+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-nu-command-01",
+  "phase": "03-nu-plugin",
+  "proof_uri": "proof_records/REQ-031_PLUGIN_COMMAND_SURFACE.proof.json",
+  "logs_uri": "logs/REQ-031_PLUGIN_COMMAND_SURFACE.log",
+  "verification": {
+    "command": "python3 scripts/verify_plugin_command_surface.py",
+    "status": "passed",
+    "required_command_count": 9,
+    "mutating_command_count": 4,
+    "read_command_count": 5
+  }
+}
