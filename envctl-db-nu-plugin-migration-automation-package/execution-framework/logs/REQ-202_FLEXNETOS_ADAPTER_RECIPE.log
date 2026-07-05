@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+  "status": "pass",
+  "generated_at": "2026-07-05T05:39:53+00:00",
+  "recipe_summary": {
+    "recipe_id": "flexnetos-codex-package-target-adapter",
+    "version": "1.0.0",
+    "phase_count": 4,
+    "operation_count": 8,
+    "approval_gate_phases": [
+      "04-approved-apply"
+    ],
+    "target_descriptor_id": "flexnetos-vs-lifeos"
+  },
+  "checks": {
+    "packet_present": true,
+    "approval_present": true,
+    "approval_review_present": true,
+    "req201_dependency_proof_present": true,
+    "req027_dependency_proof_present": true,
+    "recipe_json_exists": true,
+    "recipe_doc_exists": true,
+    "allowed_paths_only": true,
+    "recipe_shape_valid": true,
+    "documentation_checks_passed": true,
+    "approval_gate_present": true,
+    "high_risk_apply_present": true,
+    "secret_exposure_status_pass": true
+  },
+  "documentation_checks": {
+    "doc_mentions_recipe_id": true,
+    "doc_mentions_verification_command": true,
+    "doc_mentions_replay_dependency": true,
+    "doc_mentions_comparison_dependency": true
+  },
+  "dependency_evidence": {
+    "req201_proof_path": "proof_records/REQ-201_FLEXNETOS_LIFEOS_COMPARISON.proof.json",
+    "req027_proof_path": "proof_records/REQ-027_ENVCTL_REPLAY_ENGINE.proof.json",
+    "approval_path": "approvals/REQ-202_FLEXNETOS_ADAPTER_RECIPE.agent_approval.json"
+  },
+  "warnings": [],
+  "errors": [],
+  "secret_scan": {
+    "paths": [
+      "docs/FLEXNETOS_ADAPTER_RECIPE.md",
+      "generated/flexnetos_adapter_recipe.json",
+      "scripts/verify_flexnetos_adapter_recipe.py"
+    ],
+    "findings": []
+  },
+  "allowed_paths": [
+    "docs/FLEXNETOS_ADAPTER_RECIPE.md",
+    "generated/flexnetos_adapter_recipe.json",
+    "generated/flexnetos_adapter_recipe_validation_report.json",
+    "scripts/verify_flexnetos_adapter_recipe.py",
+    "proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json",
+    "state/REQ-202_FLEXNETOS_ADAPTER_RECIPE.heartbeat.json",
+    "logs/REQ-202_FLEXNETOS_ADAPTER_RECIPE.log"
+  ],
+  "output_paths": [
+    "docs/FLEXNETOS_ADAPTER_RECIPE.md",
+    "generated/flexnetos_adapter_recipe.json",
+    "generated/flexnetos_adapter_recipe_validation_report.json",
+    "scripts/verify_flexnetos_adapter_recipe.py",
+    "proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json",
+    "state/REQ-202_FLEXNETOS_ADAPTER_RECIPE.heartbeat.json",
+    "logs/REQ-202_FLEXNETOS_ADAPTER_RECIPE.log"
+  ],
+  "evidence": [
+    "docs/FLEXNETOS_ADAPTER_RECIPE.md",
+    "generated/flexnetos_adapter_recipe.json",
+    "generated/flexnetos_adapter_recipe_validation_report.json",
+    "approvals/REQ-202_FLEXNETOS_ADAPTER_RECIPE.agent_approval.json",
+    "proof_records/REQ-201_FLEXNETOS_LIFEOS_COMPARISON.proof.json",
+    "proof_records/REQ-027_ENVCTL_REPLAY_ENGINE.proof.json",
+    "schemas/shared_protocol.schema.json"
+  ],
+  "sha256": {
+    "docs/FLEXNETOS_ADAPTER_RECIPE.md": "sha256:13e1e4e4b5df0f0c5d840e3c8bf3daecda0c65401a175c2d58925a39dd8c32d8",
+    "generated/flexnetos_adapter_recipe.json": "sha256:4732e80f5243bd4270b5442d9358d805d1dee167a34da8e4d43c0b5222659cd7",
+    "scripts/verify_flexnetos_adapter_recipe.py": "sha256:3a59b31f3490f51f3f8f276717ea21ab835954bd63666d4000a82b973363a75f"
+  }
+}
