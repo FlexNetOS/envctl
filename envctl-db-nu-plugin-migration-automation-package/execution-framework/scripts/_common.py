@@ -30,7 +30,9 @@ def write_json(path: str | Path, obj):
     if not p.is_absolute():
         p = root() / p
     p.parent.mkdir(parents=True, exist_ok=True)
-    p.write_text(json.dumps(obj, indent=2, sort_keys=False) + '\n', encoding='utf-8')
+    with p.open('w', encoding='utf-8') as f:
+        json.dump(obj, f, indent=2, sort_keys=False)
+        f.write('\n')
 
 def read_json(path: str | Path):
     p = Path(path)

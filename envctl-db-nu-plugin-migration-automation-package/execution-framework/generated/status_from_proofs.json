@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-07-05T05:39:53+00:00",
+  "generated_at": "2026-07-05T06:18:54+00:00",
   "tasks": [
     {
       "task_id": "EF-001_SCAN_PACKAGE",
@@ -489,49 +489,49 @@
       "task_id": "VER-300_UNIT_VALIDATION",
       "phase": "07-verification",
       "owner_lane": "lane_e_verification",
-      "status": "pending",
+      "status": "completed",
       "proof_uri": "proof_records/VER-300_UNIT_VALIDATION.proof.json"
     },
     {
       "task_id": "VER-301_SQL_SCHEMA_TEST",
       "phase": "07-verification",
       "owner_lane": "lane_e_verification",
-      "status": "pending",
+      "status": "completed",
       "proof_uri": "proof_records/VER-301_SQL_SCHEMA_TEST.proof.json"
     },
     {
       "task_id": "VER-302_PACKET_SCHEMA_VALIDATION",
       "phase": "07-verification",
       "owner_lane": "lane_e_verification",
-      "status": "pending",
+      "status": "completed",
       "proof_uri": "proof_records/VER-302_PACKET_SCHEMA_VALIDATION.proof.json"
     },
     {
       "task_id": "VER-303_GOAL_LOOP_COMPUTE",
       "phase": "07-verification",
       "owner_lane": "lane_e_verification",
-      "status": "pending",
+      "status": "completed",
       "proof_uri": "proof_records/VER-303_GOAL_LOOP_COMPUTE.proof.json"
     },
     {
       "task_id": "VER-304_FINAL_COMPLETENESS",
       "phase": "07-verification",
       "owner_lane": "lane_e_verification",
-      "status": "pending",
+      "status": "completed",
       "proof_uri": "proof_records/VER-304_FINAL_COMPLETENESS.proof.json"
     },
     {
       "task_id": "REL-400_PACKAGE_ARCHIVE",
       "phase": "08-release",
       "owner_lane": "lane_f_release",
-      "status": "pending",
+      "status": "completed",
       "proof_uri": "proof_records/REL-400_PACKAGE_ARCHIVE.proof.json"
     },
     {
       "task_id": "REL-401_HANDOFF",
       "phase": "08-release",
       "owner_lane": "lane_f_release",
-      "status": "pending",
+      "status": "completed",
       "proof_uri": "proof_records/REL-401_HANDOFF.proof.json"
     },
     {

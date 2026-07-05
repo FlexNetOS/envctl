@@ -2,8 +2,8 @@
   "proof_schema_version": "1.0",
   "task_id": "REQ-020_ENVCTL_DB_SCHEMA",
   "status": "completed",
-  "started_at": "2026-07-04T23:10:50+00:00",
-  "completed_at": "2026-07-04T23:10:50+00:00",
+  "started_at": "2026-07-05T05:51:29+00:00",
+  "completed_at": "2026-07-05T05:51:29+00:00",
   "actor": "codex-cli-local",
   "helper_id": "helper-envctl-db-01",
   "model_tag": "gpt-5.3-spark",
@@ -24,7 +24,7 @@
     "schema_version": "1.0",
     "task_id": "REQ-020_ENVCTL_DB_SCHEMA",
     "status": "passed",
-    "generated_at": "2026-07-04T23:10:50+00:00",
+    "generated_at": "2026-07-05T05:51:29+00:00",
     "summary": {
       "required_table_count": 16,
       "actual_table_count": 16,
@@ -43,12 +43,12 @@
   },
   "checksums": {
     "execution-framework/scripts/verify_envctl_db_schema.py": "68828eca9d152b4033e0fb5969c0c011886b73d688616a9f30b7de351a14fe00",
-    "execution-framework/generated/envctl_migration_db_model.json": "7347f6629cc4fb0dbae56105dec65d5937a2a55860e0df4215b309e3ef766cef",
-    "execution-framework/generated/envctl_migration_db_validation_report.json": "652f839cfd8a46e3d9057588a051c56fc090dce0fbf7ed8c0407c032b4e19d84",
-    "execution-framework/docs/ENVCTL_DB_SCHEMA.md": "23c519cbb721aa0430b30faedf11b51de3f71830231d7c90c4022ebede2decff",
-    "execution-framework/logs/REQ-020_ENVCTL_DB_SCHEMA.log": "652f839cfd8a46e3d9057588a051c56fc090dce0fbf7ed8c0407c032b4e19d84",
-    "execution-framework/proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json": "a688e40cf0d46acc81c2d7f7eba644f1cded1209fd6bb056688aa94dc4a5050d",
-    "execution-framework/proof_records/proof_ledger.jsonl": "1177e522b5eb449f352ba69c516dadab924bcb18037944ab2daa1c210ab6fbf5"
+    "execution-framework/generated/envctl_migration_db_model.json": "428bdb55eb14f34f5d0e5ddc360ea1deb4d441b2713c2a91335f09e358abd456",
+    "execution-framework/generated/envctl_migration_db_validation_report.json": "1a4c94b25e7a951cfcc17316adb6ab59bf5c8571be8f5b4abb777b0a45e90e01",
+    "execution-framework/docs/ENVCTL_DB_SCHEMA.md": "5688a8b9d3f3a2955b15a92d362ca8f74dd9e0a65a370008fd19d2b746e9b112",
+    "execution-framework/logs/REQ-020_ENVCTL_DB_SCHEMA.log": "1a4c94b25e7a951cfcc17316adb6ab59bf5c8571be8f5b4abb777b0a45e90e01",
+    "execution-framework/proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json": "99c881f1199484b312bc3487d8b023b1725d427be7fa47f62474c1f80ec72bd5",
+    "execution-framework/proof_records/proof_ledger.jsonl": "c3547d389e67447938b5851d5d69af5556091303080c17137d29ddb50f8aacb9"
   },
   "logs_uri": "logs/REQ-020_ENVCTL_DB_SCHEMA.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",

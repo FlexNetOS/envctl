@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-07-05T05:39:53+00:00",
-  "proof_count": 80,
+  "generated_at": "2026-07-05T06:18:54+00:00",
+  "proof_count": 88,
   "proofs": [
     {
       "proof_schema_version": "1.0",
@@ -808,68 +808,6 @@
       ],
       "failure_reason": "",
       "next_action": "run REQ-027 replay engine once ledger/artifact registry tasks are complete"
-    },
-    {
-      "proof_schema_version": "1.0",
-      "task_id": "REQ-020_ENVCTL_DB_SCHEMA",
-      "status": "completed",
-      "started_at": "2026-07-04T23:10:50+00:00",
-      "completed_at": "2026-07-04T23:10:50+00:00",
-      "actor": "codex-cli-local",
-      "helper_id": "helper-envctl-db-01",
-      "model_tag": "gpt-5.3-spark",
-      "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
-      "files_changed": [
-        "execution-framework/scripts/verify_envctl_db_schema.py",
-        "execution-framework/generated/envctl_migration_db_model.json",
-        "execution-framework/generated/envctl_migration_db_validation_report.json",
-        "execution-framework/docs/ENVCTL_DB_SCHEMA.md",
-        "execution-framework/logs/REQ-020_ENVCTL_DB_SCHEMA.log",
-        "execution-framework/proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json",
-        "execution-framework/proof_records/proof_ledger.jsonl"
-      ],
-      "commands_run": [
-        "python3 scripts/verify_envctl_db_schema.py"
-      ],
-      "verification_output": {
-        "schema_version": "1.0",
-        "task_id": "REQ-020_ENVCTL_DB_SCHEMA",
-        "status": "passed",
-        "generated_at": "2026-07-04T23:10:50+00:00",
-        "summary": {
-          "required_table_count": 16,
-          "actual_table_count": 16,
-          "required_view_count": 6,
-          "actual_view_count": 6,
-          "capability_count": 19,
-          "index_count": 31,
-          "foreign_key_count": 24
-        },
-        "errors": [],
-        "evidence": [
-          "generated/envctl_migration_db_model.json",
-          "generated/envctl_migration_db_validation_report.json",
-          "docs/ENVCTL_DB_SCHEMA.md"
-        ]
-      },
-      "checksums": {
-        "execution-framework/scripts/verify_envctl_db_schema.py": "68828eca9d152b4033e0fb5969c0c011886b73d688616a9f30b7de351a14fe00",
-        "execution-framework/generated/envctl_migration_db_model.json": "7347f6629cc4fb0dbae56105dec65d5937a2a55860e0df4215b309e3ef766cef",
-        "execution-framework/generated/envctl_migration_db_validation_report.json": "652f839cfd8a46e3d9057588a051c56fc090dce0fbf7ed8c0407c032b4e19d84",
-        "execution-framework/docs/ENVCTL_DB_SCHEMA.md": "23c519cbb721aa0430b30faedf11b51de3f71830231d7c90c4022ebede2decff",
-        "execution-framework/logs/REQ-020_ENVCTL_DB_SCHEMA.log": "652f839cfd8a46e3d9057588a051c56fc090dce0fbf7ed8c0407c032b4e19d84",
-        "execution-framework/proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json": "a688e40cf0d46acc81c2d7f7eba644f1cded1209fd6bb056688aa94dc4a5050d",
-        "execution-framework/proof_records/proof_ledger.jsonl": "1177e522b5eb449f352ba69c516dadab924bcb18037944ab2daa1c210ab6fbf5"
-      },
-      "logs_uri": "logs/REQ-020_ENVCTL_DB_SCHEMA.log",
-      "rollback_point": "history/pre_execution_framework_manifest.json",
-      "evidence": [
-        "generated/envctl_migration_db_model.json",
-        "generated/envctl_migration_db_validation_report.json",
-        "docs/ENVCTL_DB_SCHEMA.md"
-      ],
-      "failure_reason": "",
-      "next_action": "run REQ-021 through REQ-028 envctl database API tasks"
     },
     {
       "proof_schema_version": "1.0",
@@ -14890,325 +14828,6 @@
     },
     {
       "proof_schema_version": "1.0",
-      "task_id": "EF-007_GOAL_LOOP",
-      "status": "completed",
-      "started_at": "2026-07-05T05:39:16+00:00",
-      "completed_at": "2026-07-05T05:39:16+00:00",
-      "actor": "local-execution-framework",
-      "helper_id": "helper-goal-01",
-      "model_tag": "gpt-5.3-spark",
-      "repo_path": "execution-framework",
-      "files_changed": [
-        "execution-framework/state/goal_loop_state.json",
-        "execution-framework/generated/status_report.json"
-      ],
-      "commands_run": [
-        "python3 scripts/goal_loop.py generated/task_graph.csv"
-      ],
-      "verification_output": {
-        "dispatch_count": 0,
-        "approval_blocker_count": 1,
-        "blocked_count": 6
-      },
-      "checksums": {
-        "execution-framework/state/goal_loop_state.json": "c269103678574231b00410fc2b87e57f404f5b53cbe85e25a3ef4279ca1a0723",
-        "execution-framework/generated/status_report.json": "c269103678574231b00410fc2b87e57f404f5b53cbe85e25a3ef4279ca1a0723"
-      },
-      "logs_uri": "logs/EF-007_GOAL_LOOP.log",
-      "rollback_point": "history/pre_execution_framework_manifest.json",
-      "evidence": [
-        "state/goal_loop_state.json",
-        "generated/status_report.json"
-      ],
-      "failure_reason": "",
-      "next_action": "run verify_history_and_completeness.py"
-    },
-    {
-      "proof_schema_version": "1.0",
-      "task_id": "EF-008_VERIFY_HISTORY_COMPLETENESS",
-      "status": "completed",
-      "started_at": "2026-07-05T05:39:16+00:00",
-      "completed_at": "2026-07-05T05:39:16+00:00",
-      "actor": "local-execution-framework",
-      "helper_id": "helper-final-01",
-      "model_tag": "gpt-5.3-spark",
-      "repo_path": "execution-framework",
-      "files_changed": [
-        "execution-framework/generated/final_verification_report.json",
-        "execution-framework/docs/FINAL_VERIFICATION.md"
-      ],
-      "commands_run": [
-        "python3 scripts/verify_history_and_completeness.py"
-      ],
-      "verification_output": {
-        "schema_version": "1.0",
-        "generated_at": "2026-07-05T05:39:16+00:00",
-        "status": "pass_with_external_blocker",
-        "local_package_complete": true,
-        "task_count": 80,
-        "packet_count": 80,
-        "proof_count": 80,
-        "missing_outputs": [],
-        "tasks_without_packets": [],
-        "packet_missing_fields": [],
-        "source_sections": {
-          "README.md": true,
-          "PACKAGE_MANIFEST.json": true,
-          "specs": true,
-          "prompts": true,
-          "codex": true,
-          "schemas": true,
-          "examples": true,
-          "helpers": true,
-          "sql": true,
-          "source": true,
-          "expected-output": true,
-          "history": true
-        },
-        "ignored_sections": [],
-        "completed_without_proof": [],
-        "coverage": {
-          "system_inventory": {
-            "task_id": "ART-100_SYSTEM_INVENTORY",
-            "covered": true
-          },
-          "dependency_graph": {
-            "task_id": "ART-103_SERVICE_DEP_GRAPH",
-            "covered": true
-          },
-          "data_flow_graph": {
-            "task_id": "ART-107_DATA_FLOW_GRAPH",
-            "covered": true
-          },
-          "source_to_target_mapping": {
-            "task_id": "ART-109_DATA_LINEAGE",
-            "covered": true
-          },
-          "environment_matrix": {
-            "task_id": "ART-114_ENV_CONFIG_MATRIX",
-            "covered": true
-          },
-          "toolchain_dependency_tree": {
-            "task_id": "ART-104_TOOLCHAIN_TREE",
-            "covered": true
-          },
-          "api_event_contract_catalog": {
-            "task_id": "ART-110_API_CATALOG",
-            "covered": true
-          },
-          "cutover_checklist": {
-            "task_id": "ART-121_CUTOVER",
-            "covered": true
-          },
-          "rollback_plan": {
-            "task_id": "ART-122_ROLLBACK",
-            "covered": true
-          },
-          "risk_register": {
-            "task_id": "ART-125_RISK_REGISTER",
-            "covered": true
-          },
-          "decision_log": {
-            "task_id": "ART-126_DECISION_LOG",
-            "covered": true
-          },
-          "envctl_database": {
-            "task_id": "REQ-020_ENVCTL_DB_SCHEMA",
-            "covered": true
-          },
-          "nu_plugin": {
-            "task_id": "REQ-030_PLUGIN_PROTOCOL_MANIFEST",
-            "covered": true
-          },
-          "goal_loop": {
-            "task_id": "EF-007_GOAL_LOOP",
-            "covered": true
-          },
-          "proof_ledger": {
-            "task_id": "EF-008_VERIFY_HISTORY_COMPLETENESS",
-            "covered": true
-          },
-          "two_repo": {
-            "task_id": "REQ-041_TWO_REPO_INTEGRATION",
-            "covered": true
-          },
-          "flexnetos": {
-            "task_id": "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
-            "covered": true
-          }
-        },
-        "unresolved_gaps": [],
-        "goal_loop_summary": {
-          "schema_version": "1.0",
-          "generated_at": "2026-07-05T05:39:16+00:00",
-          "task_count": 80,
-          "complete_count": 73,
-          "failed_count": 0,
-          "pending_count": 7,
-          "runnable_count": 0,
-          "dispatch_count": 0,
-          "approval_blocker_count": 1,
-          "blocked_count": 6,
-          "runnable_tasks": [],
-          "dispatch_packets": [],
-          "approval_blockers": [
-            {
-              "task_id": "VER-300_UNIT_VALIDATION",
-              "reason": "agent approval required",
-              "packet_uri": "generated/execution_packets/VER-300_UNIT_VALIDATION.json",
-              "agent_approval_uri": "approvals/VER-300_UNIT_VALIDATION.agent_approval.json"
-            }
-          ],
-          "blocked_tasks": [
-            {
-              "task_id": "VER-301_SQL_SCHEMA_TEST",
-              "reason": "unmet dependencies",
-              "dependencies": [
-                "VER-300_UNIT_VALIDATION"
-              ]
-            },
-            {
-              "task_id": "VER-302_PACKET_SCHEMA_VALIDATION",
-              "reason": "unmet dependencies",
-              "dependencies": [
-                "VER-301_SQL_SCHEMA_TEST"
-              ]
-            },
-            {
-              "task_id": "VER-303_GOAL_LOOP_COMPUTE",
-              "reason": "unmet dependencies",
-              "dependencies": [
-                "VER-302_PACKET_SCHEMA_VALIDATION"
-              ]
-            },
-            {
-              "task_id": "VER-304_FINAL_COMPLETENESS",
-              "reason": "unmet dependencies",
-              "dependencies": [
-                "VER-303_GOAL_LOOP_COMPUTE"
-              ]
-            },
-            {
-              "task_id": "REL-400_PACKAGE_ARCHIVE",
-              "reason": "unmet dependencies",
-              "dependencies": [
-                "VER-304_FINAL_COMPLETENESS"
-              ]
-            },
-            {
-              "task_id": "REL-401_HANDOFF",
-              "reason": "unmet dependencies",
-              "dependencies": [
-                "REL-400_PACKAGE_ARCHIVE"
-              ]
-            }
-          ],
-          "statuses": {
-            "EF-001_SCAN_PACKAGE": "complete",
-            "EF-002_GAP_REPORT": "complete",
-            "EF-003_APPLY_FRAMEWORK": "complete",
-            "EF-004_GENERATE_TASK_GRAPH": "complete",
-            "EF-005_VALIDATE_TASK_GRAPH": "complete",
-            "EF-006_TASK_GRAPH_TO_PACKETS": "complete",
-            "EF-007_GOAL_LOOP": "complete",
-            "EF-008_VERIFY_HISTORY_COMPLETENESS": "complete",
-            "REQ-010_CONTRACT_LOCK": "complete",
-            "REQ-020_ENVCTL_DB_SCHEMA": "complete",
-            "REQ-021_ENVCTL_TARGET_REGISTRY": "complete",
-            "REQ-022_ENVCTL_RUN_LEDGER": "complete",
-            "REQ-023_ENVCTL_OPERATION_STATE": "complete",
-            "REQ-024_ENVCTL_ARTIFACT_REGISTRY": "complete",
-            "REQ-025_ENVCTL_VALIDATION_EVIDENCE": "complete",
-            "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS": "complete",
-            "REQ-027_ENVCTL_REPLAY_ENGINE": "complete",
-            "REQ-028_ENVCTL_AGENT_CONTROL_API": "complete",
-            "REQ-030_PLUGIN_PROTOCOL_MANIFEST": "complete",
-            "REQ-031_PLUGIN_COMMAND_SURFACE": "complete",
-            "REQ-032_PLUGIN_LIVE_VISUALS": "complete",
-            "REQ-033_PLUGIN_HUMAN_APPROVAL": "complete",
-            "REQ-034_PLUGIN_STATUS_STREAMS": "complete",
-            "REQ-040_SHARED_PROTOCOL_SCHEMAS": "complete",
-            "REQ-041_TWO_REPO_INTEGRATION": "complete",
-            "REQ-042_FILESYSTEM_BOUNDS": "complete",
-            "REQ-043_SECURITY_REDACTION": "complete",
-            "REQ-044_INSTALL_BOOTSTRAP": "complete",
-            "REQ-045_RUN_REPLAY": "complete",
-            "ART-100_SYSTEM_INVENTORY": "complete",
-            "ART-101_DIRECTORY_TREE": "complete",
-            "ART-102_REPOSITORY_MAP": "complete",
-            "ART-103_SERVICE_DEP_GRAPH": "complete",
-            "ART-104_TOOLCHAIN_TREE": "complete",
-            "ART-105_PACKAGE_LIB_GRAPH": "complete",
-            "ART-106_RUNTIME_DEP_MAP": "complete",
-            "ART-107_DATA_FLOW_GRAPH": "complete",
-            "ART-108_DB_SCHEMA_MAP": "complete",
-            "ART-109_DATA_LINEAGE": "complete",
-            "ART-110_API_CATALOG": "complete",
-            "ART-111_EVENT_MAP": "complete",
-            "ART-112_CODE_OWNERSHIP": "complete",
-            "ART-113_DEBUG_CODE_MAP": "complete",
-            "ART-114_ENV_CONFIG_MATRIX": "complete",
-            "ART-115_CONFIG_INVENTORY": "complete",
-            "ART-116_INFRA_TOPOLOGY": "complete",
-            "ART-117_IAM_MATRIX": "complete",
-            "ART-118_OBSERVABILITY": "complete",
-            "ART-119_BUSINESS_PROCESS": "complete",
-            "ART-120_WAVE_PLAN": "complete",
-            "ART-121_CUTOVER": "complete",
-            "ART-122_ROLLBACK": "complete",
-            "ART-123_VALIDATION_RECONCILIATION": "complete",
-            "ART-124_TEST_COVERAGE": "complete",
-            "ART-125_RISK_REGISTER": "complete",
-            "ART-126_DECISION_LOG": "complete",
-            "ART-127_BLAST_RADIUS": "complete",
-            "ART-128_READINESS_SCORECARD": "complete",
-            "ART-129_BUSINESS_CAPABILITY": "complete",
-            "ART-130_SHADOW_TRAFFIC": "complete",
-            "ART-131_GOLDEN_DATASET": "complete",
-            "ART-132_PARITY_DASHBOARD": "complete",
-            "ART-133_DEPRECATION_MAP": "complete",
-            "ART-134_EXCEPTION_INVENTORY": "complete",
-            "ART-135_RACI": "complete",
-            "ART-136_TECH_DEBT_LEDGER": "complete",
-            "REQ-200_FLEXNETOS_TARGET_DESCRIPTOR": "complete",
-            "REQ-201_FLEXNETOS_LIFEOS_COMPARISON": "complete",
-            "REQ-202_FLEXNETOS_ADAPTER_RECIPE": "complete",
-            "VER-300_UNIT_VALIDATION": "pending",
-            "VER-301_SQL_SCHEMA_TEST": "pending",
-            "VER-302_PACKET_SCHEMA_VALIDATION": "pending",
-            "VER-303_GOAL_LOOP_COMPUTE": "pending",
-            "VER-304_FINAL_COMPLETENESS": "pending",
-            "REL-400_PACKAGE_ARCHIVE": "pending",
-            "REL-401_HANDOFF": "pending",
-            "MAINT-500_README_NAV_BACKTRACE": "complete",
-            "MAINT-501_RESTORE_PROOF_TEMPLATE": "complete",
-            "MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC": "complete",
-            "MAINT-503_CODEX_FINAL_PROMPT": "complete"
-          }
-        },
-        "external_blockers": [
-          {
-            "blocker_id": "EXT-DRIVE-WRITE",
-            "status": "documented",
-            "detail": "Authenticated Google Drive file edit/revision API is not available in this environment; upgraded package archive is produced for upload/application to Drive."
-          }
-        ]
-      },
-      "checksums": {
-        "execution-framework/generated/final_verification_report.json": "7b2b82a54bd861001eb4cbfa5dcf6eee44bc8f91222034fbd630abb870e1c40c",
-        "execution-framework/docs/FINAL_VERIFICATION.md": "9a291c45e35c23f82acf879f6a8a557db68780a82507b91891734953a3e9bd5e"
-      },
-      "logs_uri": "logs/EF-008_VERIFY_HISTORY_COMPLETENESS.log",
-      "rollback_point": "history/pre_execution_framework_manifest.json",
-      "evidence": [
-        "generated/final_verification_report.json",
-        "docs/FINAL_VERIFICATION.md"
-      ],
-      "failure_reason": "",
-      "next_action": "upload/apply upgraded archive to Drive with authenticated Drive access"
-    },
-    {
-      "proof_schema_version": "1.0",
       "task_id": "EF-005_VALIDATE_TASK_GRAPH",
       "status": "completed",
       "started_at": "2026-07-05T05:39:53+00:00",
@@ -15445,6 +15064,2628 @@
       ],
       "failure_reason": "",
       "next_action": "unblock VER-300_UNIT_VALIDATION"
+    },
+    {
+      "proof_schema_version": "1.0",
+      "task_id": "APPROVAL-VER-300_UNIT_VALIDATION",
+      "status": "completed",
+      "started_at": "2026-07-05T05:44:32+00:00",
+      "completed_at": "2026-07-05T05:44:32+00:00",
+      "actor": "agent-approval-gate",
+      "helper_id": "helper-agent-approval-01",
+      "model_tag": "gpt-5.5",
+      "repo_path": "execution-framework",
+      "files_changed": [
+        "execution-framework/approvals/VER-300_UNIT_VALIDATION.agent_approval.json",
+        "execution-framework/reviews/GPT55_VER-300_UNIT_VALIDATION_APPROVAL_REVIEW.md"
+      ],
+      "commands_run": [
+        "python3 scripts/agent_approval_gate.py ..."
+      ],
+      "verification_output": {
+        "decision": "approved",
+        "reviewer": "gpt-5.5-fallback",
+        "model": "gpt-5.5",
+        "review_artifact": "reviews/GPT55_VER-300_UNIT_VALIDATION_APPROVAL_REVIEW.md",
+        "approval_artifact": "approvals/VER-300_UNIT_VALIDATION.agent_approval.json",
+        "fallback_reason": "weave reviewer path unavailable in PATH and available local claude frontdoor is Claude Code rather than the requested Claude Opus reviewer route; using GPT-5.5 fallback per package approval protocol."
+      },
+      "checksums": {
+        "execution-framework/approvals/VER-300_UNIT_VALIDATION.agent_approval.json": "05fcb6d281c73019c014b134ad664f9d9ff473ce867b06d5a6c8d20d23ffa267",
+        "execution-framework/reviews/GPT55_VER-300_UNIT_VALIDATION_APPROVAL_REVIEW.md": "f75dcda3a56d790b438d755ab5bad00f211e57547c03fe718ce5c2b6c9e63ce6"
+      },
+      "logs_uri": "logs/APPROVAL-VER-300_UNIT_VALIDATION.log",
+      "rollback_point": "history/pre_execution_framework_manifest.json",
+      "evidence": [
+        "approvals/VER-300_UNIT_VALIDATION.agent_approval.json",
+        "reviews/GPT55_VER-300_UNIT_VALIDATION_APPROVAL_REVIEW.md"
+      ],
+      "failure_reason": "",
+      "next_action": "run goal_loop.py; VER-300_UNIT_VALIDATION becomes dispatchable only when approved"
+    },
+    {
+      "proof_schema_version": "1.0",
+      "task_id": "VER-300_UNIT_VALIDATION",
+      "status": "completed",
+      "started_at": "2026-07-05T05:48:28+00:00",
+      "completed_at": "2026-07-05T05:48:28+00:00",
+      "actor": "validation-agent",
+      "helper_id": "helper-validate-01",
+      "model_tag": "gpt-5.3-spark",
+      "repo_path": "${ENVCTL_REPO}|${NU_PLUGIN_REPO}",
+      "files_changed": [
+        "execution-framework/scripts/verify_ver300_unit_validation.py",
+        "execution-framework/generated/ver300_unit_validation_report.json",
+        "execution-framework/state/VER-300_UNIT_VALIDATION.heartbeat.json",
+        "execution-framework/logs/VER-300_UNIT_VALIDATION.log",
+        "execution-framework/proof_records/VER-300_UNIT_VALIDATION.proof.json",
+        "execution-framework/proof_records/proof_ledger.jsonl"
+      ],
+      "commands_run": [
+        "python3 scripts/verify_ver300_unit_validation.py",
+        "python3 -m py_compile scripts/verify_ver300_unit_validation.py"
+      ],
+      "verification_output": {
+        "schema_version": "1.0",
+        "task_id": "VER-300_UNIT_VALIDATION",
+        "status": "pass",
+        "generated_at": "2026-07-05T05:48:28+00:00",
+        "packet_summary": {
+          "goal": "Validate envctl DB, nu_plugin, shared protocol, artifacts, and FlexNetOS adapter",
+          "repo_target": "multi_repo",
+          "repo_path": "${ENVCTL_REPO}|${NU_PLUGIN_REPO}",
+          "filesystem_scope": "repo-pair",
+          "verification_command": "python3 scripts/verify_ver300_unit_validation.py"
+        },
+        "approval": {
+          "path": "approvals/VER-300_UNIT_VALIDATION.agent_approval.json",
+          "decision": "approved",
+          "reviewed_at": "2026-07-05T05:44:32+00:00",
+          "reviewer": "gpt-5.5-fallback",
+          "model": "gpt-5.5"
+        },
+        "checks": {
+          "approval_decision_approved": true,
+          "packet_proof_required": true,
+          "packet_single_threaded": true,
+          "status_report_dispatchable": true,
+          "status_report_pending_before_execution": true,
+          "final_verification_local_package_complete": true,
+          "final_verification_no_failed_tasks": true,
+          "coverage_classes_complete": true,
+          "coverage_dependencies_completed": true,
+          "dependency_proofs_completed": true,
+          "validation_inputs_passed": true
+        },
+        "dependency_proofs": {
+          "REQ-041_TWO_REPO_INTEGRATION": {
+            "proof_path": "proof_records/REQ-041_TWO_REPO_INTEGRATION.proof.json",
+            "status": "completed",
+            "ok": true
+          },
+          "REQ-202_FLEXNETOS_ADAPTER_RECIPE": {
+            "proof_path": "proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json",
+            "status": "completed",
+            "ok": true
+          },
+          "ART-123_VALIDATION_RECONCILIATION": {
+            "proof_path": "proof_records/ART-123_VALIDATION_RECONCILIATION.proof.json",
+            "status": "completed",
+            "ok": true
+          }
+        },
+        "validation_inputs": {
+          "envctl_db": {
+            "path": "generated/envctl_migration_db_validation_report.json",
+            "status": "passed",
+            "ok": true
+          },
+          "artifact_registry": {
+            "path": "generated/envctl_artifact_registry_report.json",
+            "status": "passed",
+            "ok": true
+          },
+          "validation_evidence": {
+            "path": "generated/envctl_validation_evidence_report.json",
+            "status": "passed",
+            "ok": true
+          },
+          "shared_protocol": {
+            "path": "generated/shared_protocol_validation_report.json",
+            "status": "passed",
+            "ok": true
+          },
+          "two_repo_integration": {
+            "path": "generated/req041_two_repo_integration_report.json",
+            "status": "passed",
+            "ok": true
+          },
+          "filesystem_boundaries": {
+            "path": "generated/filesystem_boundary_validation_report.json",
+            "status": "passed",
+            "ok": true
+          },
+          "security_redaction": {
+            "path": "generated/security_redaction_validation_report.json",
+            "status": "passed",
+            "ok": true
+          },
+          "adapter_recipe": {
+            "path": "generated/flexnetos_adapter_recipe_validation_report.json",
+            "status": "pass",
+            "ok": true
+          },
+          "validation_reconciliation": {
+            "path": "generated/art123_validation_reconciliation_report.json",
+            "status": "passed",
+            "ok": true
+          },
+          "test_coverage": {
+            "path": "generated/art124_test_coverage_report.json",
+            "status": "passed",
+            "ok": true
+          }
+        },
+        "coverage_summary": {
+          "required_classes": [
+            "unit",
+            "integration",
+            "regression",
+            "performance",
+            "security",
+            "UAT"
+          ],
+          "covered_class_count": 6,
+          "automation_status_counts": {
+            "ready": 2,
+            "partial": 2,
+            "planned": 2
+          },
+          "ver300_entry_status": "ready_with_open_runtime_gates"
+        },
+        "coverage_dependency_status": {
+          "REQ-024_ENVCTL_ARTIFACT_REGISTRY": "completed",
+          "REQ-040_SHARED_PROTOCOL_SCHEMAS": "completed",
+          "REQ-025_ENVCTL_VALIDATION_EVIDENCE": "completed",
+          "REQ-033_PLUGIN_HUMAN_APPROVAL": "pending",
+          "REQ-041_TWO_REPO_INTEGRATION": "pending",
+          "REQ-045_RUN_REPLAY": "pending"
+        },
+        "status_surfaces": {
+          "status_report_generated_at": "2026-07-05T05:44:44+00:00",
+          "status_report_task_status": "pending",
+          "final_verification_status": "pass_with_external_blocker",
+          "final_verification_failed_count": 0
+        },
+        "warnings": [
+          "test coverage dependency_status is stale for: REQ-033_PLUGIN_HUMAN_APPROVAL, REQ-041_TWO_REPO_INTEGRATION, REQ-045_RUN_REPLAY"
+        ],
+        "errors": [],
+        "allowed_paths": [
+          "${ENVCTL_REPO}/**",
+          "${NU_PLUGIN_REPO}/**",
+          "${MIGRATION_TARGET_ROOT}/**",
+          "execution-framework/**",
+          "migration-artifacts/**"
+        ],
+        "output_paths": [
+          "execution-framework/scripts/verify_ver300_unit_validation.py",
+          "execution-framework/generated/ver300_unit_validation_report.json",
+          "execution-framework/state/VER-300_UNIT_VALIDATION.heartbeat.json",
+          "execution-framework/logs/VER-300_UNIT_VALIDATION.log",
+          "execution-framework/proof_records/VER-300_UNIT_VALIDATION.proof.json"
+        ],
+        "sha256": {
+          "approvals/VER-300_UNIT_VALIDATION.agent_approval.json": "sha256:05fcb6d281c73019c014b134ad664f9d9ff473ce867b06d5a6c8d20d23ffa267",
+          "proof_records/REQ-041_TWO_REPO_INTEGRATION.proof.json": "sha256:f5ebaa00ee18e234094a1bc133464424a9ad3a25dd828efa7dd4d506b36f383b",
+          "proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json": "sha256:57bc43d2e2e51ab1114e955958c620d91b2a9b7a5ebde29161d88d35680cb27b",
+          "proof_records/ART-123_VALIDATION_RECONCILIATION.proof.json": "sha256:cfe2f59a77faadc15f0e01d55230a2b39412fb031fe1a9b129f1909cfa07bc54",
+          "generated/envctl_migration_db_validation_report.json": "sha256:652f839cfd8a46e3d9057588a051c56fc090dce0fbf7ed8c0407c032b4e19d84",
+          "generated/envctl_artifact_registry_report.json": "sha256:b3d33175a5ec64d95bb2a2dc0b503ca897c97990bf78fd80fc159780b3df113c",
+          "generated/envctl_validation_evidence_report.json": "sha256:0ac5c601eb16c8df54d7f70573aacf950b18a0ecfe56606ebe9a3ab9d092d3bf",
+          "generated/shared_protocol_validation_report.json": "sha256:0863b9b28e702c704c96f50a50954181f42b35aaa16e4ecb6643497093c4c4d0",
+          "generated/req041_two_repo_integration_report.json": "sha256:74ab82fdc8d05e20361af55fe4db259b04888eeb665ef0fd4de4ccc97a38228d",
+          "generated/filesystem_boundary_validation_report.json": "sha256:52a1879ab31e2ff2fa753646f15bcdd954874a4804f5f434d7cd0165e347a538",
+          "generated/security_redaction_validation_report.json": "sha256:223f0a8e6377b0ad8b938623300f51a024031ae80351cc8fc6a4de42e16d8542",
+          "generated/flexnetos_adapter_recipe_validation_report.json": "sha256:8db3e9b4b6003419f30f187d34bf7945ca49cc152a4ad87e39953bd0980a8636",
+          "generated/art123_validation_reconciliation_report.json": "sha256:0a105f49dbf425c1026c713c472cf55edf4accd463e587d486f19b2b5420a3d7",
+          "generated/art124_test_coverage_report.json": "sha256:9a8832410cbae022b758e73601eebec02f45d3d261082840cf8b53dc1c1e1957"
+        },
+        "secret_scan": {
+          "paths": [
+            "generated/ver300_unit_validation_report.json",
+            "logs/VER-300_UNIT_VALIDATION.log",
+            "scripts/verify_ver300_unit_validation.py"
+          ],
+          "findings": []
+        }
+      },
+      "checksums": {
+        "execution-framework/scripts/verify_ver300_unit_validation.py": "07fc8d43296be17451f0972bc912cbfa4ea77c2bbb03de41be9c650f8e0bec76",
+        "execution-framework/generated/ver300_unit_validation_report.json": "519fe3dcba84a46caadb41470865850679b4a8aeb8ffb5159b92241c6f536535",
+        "execution-framework/state/VER-300_UNIT_VALIDATION.heartbeat.json": "5986cbf6fb4e0714a7ed9aa367e998876caa80281736551b590c766f31a289f0",
+        "execution-framework/logs/VER-300_UNIT_VALIDATION.log": "519fe3dcba84a46caadb41470865850679b4a8aeb8ffb5159b92241c6f536535",
+        "execution-framework/proof_records/VER-300_UNIT_VALIDATION.proof.json": "36f471bc8f306d4a8924de57bf6b5e07c8c250e7c0c9a0ff7082a56d0d44593e",
+        "execution-framework/proof_records/proof_ledger.jsonl": "3082b5539134fffd258c4f8fdc2e9d4252d0b6a00afb53a852f7361a6f02fae1"
+      },
+      "logs_uri": "logs/VER-300_UNIT_VALIDATION.log",
+      "rollback_point": "history/pre_execution_framework_manifest.json",
+      "evidence": [
+        "approvals/VER-300_UNIT_VALIDATION.agent_approval.json",
+        "proof_records/REQ-041_TWO_REPO_INTEGRATION.proof.json",
+        "proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json",
+        "proof_records/ART-123_VALIDATION_RECONCILIATION.proof.json",
+        "generated/envctl_migration_db_validation_report.json",
+        "generated/envctl_artifact_registry_report.json",
+        "generated/envctl_validation_evidence_report.json",
+        "generated/shared_protocol_validation_report.json",
+        "generated/req041_two_repo_integration_report.json",
+        "generated/filesystem_boundary_validation_report.json",
+        "generated/security_redaction_validation_report.json",
+        "generated/flexnetos_adapter_recipe_validation_report.json",
+        "generated/art123_validation_reconciliation_report.json",
+        "generated/art124_test_coverage_report.json",
+        "generated/status_report.json",
+        "generated/status_from_proofs.json",
+        "generated/final_verification_report.json"
+      ],
+      "failure_reason": "",
+      "next_action": "unblock VER-301_SQL_SCHEMA_TEST"
+    },
+    {
+      "proof_schema_version": "1.0",
+      "task_id": "REQ-020_ENVCTL_DB_SCHEMA",
+      "status": "completed",
+      "started_at": "2026-07-05T05:51:29+00:00",
+      "completed_at": "2026-07-05T05:51:29+00:00",
+      "actor": "codex-cli-local",
+      "helper_id": "helper-envctl-db-01",
+      "model_tag": "gpt-5.3-spark",
+      "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+      "files_changed": [
+        "execution-framework/scripts/verify_envctl_db_schema.py",
+        "execution-framework/generated/envctl_migration_db_model.json",
+        "execution-framework/generated/envctl_migration_db_validation_report.json",
+        "execution-framework/docs/ENVCTL_DB_SCHEMA.md",
+        "execution-framework/logs/REQ-020_ENVCTL_DB_SCHEMA.log",
+        "execution-framework/proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json",
+        "execution-framework/proof_records/proof_ledger.jsonl"
+      ],
+      "commands_run": [
+        "python3 scripts/verify_envctl_db_schema.py"
+      ],
+      "verification_output": {
+        "schema_version": "1.0",
+        "task_id": "REQ-020_ENVCTL_DB_SCHEMA",
+        "status": "passed",
+        "generated_at": "2026-07-05T05:51:29+00:00",
+        "summary": {
+          "required_table_count": 16,
+          "actual_table_count": 16,
+          "required_view_count": 6,
+          "actual_view_count": 6,
+          "capability_count": 19,
+          "index_count": 31,
+          "foreign_key_count": 24
+        },
+        "errors": [],
+        "evidence": [
+          "generated/envctl_migration_db_model.json",
+          "generated/envctl_migration_db_validation_report.json",
+          "docs/ENVCTL_DB_SCHEMA.md"
+        ]
+      },
+      "checksums": {
+        "execution-framework/scripts/verify_envctl_db_schema.py": "68828eca9d152b4033e0fb5969c0c011886b73d688616a9f30b7de351a14fe00",
+        "execution-framework/generated/envctl_migration_db_model.json": "428bdb55eb14f34f5d0e5ddc360ea1deb4d441b2713c2a91335f09e358abd456",
+        "execution-framework/generated/envctl_migration_db_validation_report.json": "1a4c94b25e7a951cfcc17316adb6ab59bf5c8571be8f5b4abb777b0a45e90e01",
+        "execution-framework/docs/ENVCTL_DB_SCHEMA.md": "5688a8b9d3f3a2955b15a92d362ca8f74dd9e0a65a370008fd19d2b746e9b112",
+        "execution-framework/logs/REQ-020_ENVCTL_DB_SCHEMA.log": "1a4c94b25e7a951cfcc17316adb6ab59bf5c8571be8f5b4abb777b0a45e90e01",
+        "execution-framework/proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json": "99c881f1199484b312bc3487d8b023b1725d427be7fa47f62474c1f80ec72bd5",
+        "execution-framework/proof_records/proof_ledger.jsonl": "c3547d389e67447938b5851d5d69af5556091303080c17137d29ddb50f8aacb9"
+      },
+      "logs_uri": "logs/REQ-020_ENVCTL_DB_SCHEMA.log",
+      "rollback_point": "history/pre_execution_framework_manifest.json",
+      "evidence": [
+        "generated/envctl_migration_db_model.json",
+        "generated/envctl_migration_db_validation_report.json",
+        "docs/ENVCTL_DB_SCHEMA.md"
+      ],
+      "failure_reason": "",
+      "next_action": "run REQ-021 through REQ-028 envctl database API tasks"
+    },
+    {
+      "proof_schema_version": "1.0",
+      "task_id": "VER-301_SQL_SCHEMA_TEST",
+      "status": "completed",
+      "started_at": "2026-07-05T05:51:29+00:00",
+      "completed_at": "2026-07-05T05:51:29+00:00",
+      "actor": "sql-test-agent",
+      "helper_id": "helper-sql-test-01",
+      "model_tag": "gpt-5.3-spark",
+      "repo_path": "${ENVCTL_REPO}",
+      "files_changed": [
+        "execution-framework/scripts/verify_ver301_sql_schema_test.py",
+        "execution-framework/generated/ver301_sql_schema_test_report.json",
+        "execution-framework/state/VER-301_SQL_SCHEMA_TEST.heartbeat.json",
+        "execution-framework/logs/VER-301_SQL_SCHEMA_TEST.log",
+        "execution-framework/proof_records/VER-301_SQL_SCHEMA_TEST.proof.json",
+        "execution-framework/proof_records/proof_ledger.jsonl"
+      ],
+      "commands_run": [
+        "python3 scripts/verify_ver301_sql_schema_test.py",
+        "python3 scripts/verify_envctl_db_schema.py",
+        "python3 -m py_compile scripts/verify_ver301_sql_schema_test.py"
+      ],
+      "verification_output": {
+        "schema_version": "1.0",
+        "task_id": "VER-301_SQL_SCHEMA_TEST",
+        "status": "pass",
+        "generated_at": "2026-07-05T05:51:29+00:00",
+        "packet_summary": {
+          "goal": "Apply schema migrations to test DB and validate views/indexes/seed data",
+          "repo_target": "repo_a",
+          "repo_path": "${ENVCTL_REPO}",
+          "filesystem_scope": "repo",
+          "verification_command": "python3 scripts/verify_ver301_sql_schema_test.py"
+        },
+        "dependency_proof": {
+          "path": "proof_records/VER-300_UNIT_VALIDATION.proof.json",
+          "status": "completed",
+          "ok": true
+        },
+        "schema_execution": {
+          "command": "python3 scripts/verify_envctl_db_schema.py",
+          "exit_code": 0,
+          "stdout": [
+            "envctl db schema status=passed tables=16 views=6 indexes=31 fks=24"
+          ],
+          "stderr": []
+        },
+        "req020_artifacts": {
+          "report_path": "generated/envctl_migration_db_validation_report.json",
+          "proof_path": "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json",
+          "model_path": "generated/envctl_migration_db_model.json",
+          "doc_path": "docs/ENVCTL_DB_SCHEMA.md",
+          "status": "passed",
+          "proof_status": "completed"
+        },
+        "checks": {
+          "dependency_ver300_completed": true,
+          "schema_verifier_exit_zero": true,
+          "req020_report_passed": true,
+          "req020_proof_completed": true,
+          "table_count_matches_required": true,
+          "view_count_matches_required": true,
+          "constraint_check_rejected_invalid_risk": true,
+          "foreign_key_check_clean": true,
+          "required_view_queries_passed": true
+        },
+        "schema_summary": {
+          "required_table_count": 16,
+          "actual_table_count": 16,
+          "required_view_count": 6,
+          "actual_view_count": 6,
+          "capability_count": 19,
+          "index_count": 31,
+          "foreign_key_count": 24
+        },
+        "required_views": [
+          "envctl_migration_artifact_index",
+          "envctl_migration_live_timeline",
+          "envctl_migration_open_approvals",
+          "envctl_migration_replay_readiness",
+          "envctl_migration_run_latest_status",
+          "envctl_migration_validation_scorecard"
+        ],
+        "view_runtime_queries": {
+          "envctl_migration_artifact_index": {
+            "query_ok": true,
+            "sample_row_count": 1
+          },
+          "envctl_migration_live_timeline": {
+            "query_ok": true,
+            "sample_row_count": 1
+          },
+          "envctl_migration_open_approvals": {
+            "query_ok": true,
+            "sample_row_count": 0
+          },
+          "envctl_migration_replay_readiness": {
+            "query_ok": true,
+            "sample_row_count": 1
+          },
+          "envctl_migration_run_latest_status": {
+            "query_ok": true,
+            "sample_row_count": 1
+          },
+          "envctl_migration_validation_scorecard": {
+            "query_ok": true,
+            "sample_row_count": 1
+          }
+        },
+        "constraint_check": {
+          "invalid_operation_risk_rejected": true,
+          "error": "CHECK constraint failed: risk IN ('R0','R1','R2','R3','R4','R5')"
+        },
+        "foreign_key_check": [],
+        "applied_migrations": [
+          {
+            "path": "sql/001_migration_automation_schema.sql",
+            "sha256": "f0a8ad6ce7fba6023d8bfb765843fef07710387f9e720f7fe01305ce2d52bb0e",
+            "bytes": 8608
+          },
+          {
+            "path": "sql/002_views_and_indexes.sql",
+            "sha256": "b9c4fee76504746742695119c84bfbb46dedb1e29da480103f2e6b6c5a83106e",
+            "bytes": 3819
+          },
+          {
+            "path": "execution-framework/generated/contract_manifest.seed.sql",
+            "sha256": "399c1092118d57f78c7647a2d5c2fbd914c5b2ac97d5e41e4deda44722dc8c06",
+            "bytes": 155594
+          }
+        ],
+        "errors": [],
+        "allowed_paths": [
+          "${ENVCTL_REPO}/**",
+          "${NU_PLUGIN_REPO}/**",
+          "${MIGRATION_TARGET_ROOT}/**",
+          "execution-framework/**",
+          "migration-artifacts/**"
+        ],
+        "output_paths": [
+          "execution-framework/scripts/verify_ver301_sql_schema_test.py",
+          "execution-framework/generated/ver301_sql_schema_test_report.json",
+          "execution-framework/state/VER-301_SQL_SCHEMA_TEST.heartbeat.json",
+          "execution-framework/logs/VER-301_SQL_SCHEMA_TEST.log",
+          "execution-framework/proof_records/VER-301_SQL_SCHEMA_TEST.proof.json"
+        ],
+        "sha256": {
+          "proof_records/VER-300_UNIT_VALIDATION.proof.json": "sha256:9809ca14ae7af78e4d6229ad2cf71825739242eb42b62cd862c47cb3bad64054",
+          "generated/envctl_migration_db_validation_report.json": "sha256:1a4c94b25e7a951cfcc17316adb6ab59bf5c8571be8f5b4abb777b0a45e90e01",
+          "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json": "sha256:511472c8fcb71cf31e489e98f99062bc2169e87790c9e028db111c4bf543e2d6",
+          "generated/envctl_migration_db_model.json": "sha256:428bdb55eb14f34f5d0e5ddc360ea1deb4d441b2713c2a91335f09e358abd456",
+          "docs/ENVCTL_DB_SCHEMA.md": "sha256:5688a8b9d3f3a2955b15a92d362ca8f74dd9e0a65a370008fd19d2b746e9b112"
+        },
+        "secret_scan": {
+          "paths": [
+            "generated/ver301_sql_schema_test_report.json",
+            "logs/VER-301_SQL_SCHEMA_TEST.log",
+            "scripts/verify_ver301_sql_schema_test.py"
+          ],
+          "findings": []
+        }
+      },
+      "checksums": {
+        "execution-framework/scripts/verify_ver301_sql_schema_test.py": "e86f904cf35bdb6b695cad4530eb6a5d129e766dbd0f6106f0adaf1723fbf8d8",
+        "execution-framework/generated/ver301_sql_schema_test_report.json": "042785732fb494a54ab9767534389ac7f29f949cec33e4070b1c01a5eea37650",
+        "execution-framework/state/VER-301_SQL_SCHEMA_TEST.heartbeat.json": "54e82c65c91ecffd2b42cc810e22c7481d786bd4552e855ad98a7c232e4e9f2d",
+        "execution-framework/logs/VER-301_SQL_SCHEMA_TEST.log": "042785732fb494a54ab9767534389ac7f29f949cec33e4070b1c01a5eea37650",
+        "execution-framework/proof_records/proof_ledger.jsonl": "27b3eae77db75a007eac54af044d7a2e9e68039ac0362916ad282f92fd6735b4"
+      },
+      "logs_uri": "logs/VER-301_SQL_SCHEMA_TEST.log",
+      "rollback_point": "history/pre_execution_framework_manifest.json",
+      "evidence": [
+        "proof_records/VER-300_UNIT_VALIDATION.proof.json",
+        "generated/envctl_migration_db_validation_report.json",
+        "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json",
+        "generated/envctl_migration_db_model.json",
+        "docs/ENVCTL_DB_SCHEMA.md"
+      ],
+      "failure_reason": "",
+      "next_action": "unblock VER-302_PACKET_SCHEMA_VALIDATION"
+    },
+    {
+      "proof_schema_version": "1.0",
+      "task_id": "VER-302_PACKET_SCHEMA_VALIDATION",
+      "status": "completed",
+      "started_at": "2026-07-05T05:57:45+00:00",
+      "completed_at": "2026-07-05T05:57:45+00:00",
+      "actor": "schema-validation-agent",
+      "helper_id": "helper-schema-01",
+      "model_tag": "gpt-5.3-spark",
+      "repo_path": "..",
+      "files_changed": [
+        "execution-framework/scripts/verify_ver302_packet_schema_validation.py",
+        "execution-framework/generated/ver302_packet_schema_validation_report.json",
+        "execution-framework/state/VER-302_PACKET_SCHEMA_VALIDATION.heartbeat.json",
+        "execution-framework/logs/VER-302_PACKET_SCHEMA_VALIDATION.log",
+        "execution-framework/proof_records/VER-302_PACKET_SCHEMA_VALIDATION.proof.json",
+        "execution-framework/proof_records/proof_ledger.jsonl"
+      ],
+      "commands_run": [
+        "python3 scripts/verify_ver302_packet_schema_validation.py",
+        "python3 -m py_compile scripts/verify_ver302_packet_schema_validation.py"
+      ],
+      "verification_output": {
+        "schema_version": "1.0",
+        "task_id": "VER-302_PACKET_SCHEMA_VALIDATION",
+        "status": "pass",
+        "generated_at": "2026-07-05T05:57:45+00:00",
+        "packet_summary": {
+          "goal": "Validate every execution packet and JSON schema contract",
+          "repo_target": "filesystem",
+          "repo_path": "..",
+          "filesystem_scope": "package-root",
+          "verification_command": "python3 scripts/verify_ver302_packet_schema_validation.py"
+        },
+        "dependencies": [
+          {
+            "path": "proof_records/VER-301_SQL_SCHEMA_TEST.proof.json",
+            "status": "completed",
+            "ok": true
+          },
+          {
+            "path": "proof_records/REQ-042_FILESYSTEM_BOUNDS.proof.json",
+            "status": "completed",
+            "ok": true
+          },
+          {
+            "path": "proof_records/REQ-043_SECURITY_REDACTION.proof.json",
+            "status": "completed",
+            "ok": true
+          },
+          {
+            "path": "proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json",
+            "status": "completed",
+            "ok": true
+          }
+        ],
+        "counts": {
+          "execution_packets": 80,
+          "task_graph_rows": 80,
+          "schemas": 8,
+          "proof_records": 84
+        },
+        "packet_set_parity": {
+          "missing_packets": [],
+          "unexpected_packets": [],
+          "expected_task_count": 80,
+          "packet_task_count": 80
+        },
+        "packet_validations": [
+          {
+            "packet_path": "generated/execution_packets/ART-100_SYSTEM_INVENTORY.json",
+            "task_id": "ART-100_SYSTEM_INVENTORY",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-101_DIRECTORY_TREE.json",
+            "task_id": "ART-101_DIRECTORY_TREE",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-102_REPOSITORY_MAP.json",
+            "task_id": "ART-102_REPOSITORY_MAP",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-103_SERVICE_DEP_GRAPH.json",
+            "task_id": "ART-103_SERVICE_DEP_GRAPH",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-104_TOOLCHAIN_TREE.json",
+            "task_id": "ART-104_TOOLCHAIN_TREE",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-105_PACKAGE_LIB_GRAPH.json",
+            "task_id": "ART-105_PACKAGE_LIB_GRAPH",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-106_RUNTIME_DEP_MAP.json",
+            "task_id": "ART-106_RUNTIME_DEP_MAP",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-107_DATA_FLOW_GRAPH.json",
+            "task_id": "ART-107_DATA_FLOW_GRAPH",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-108_DB_SCHEMA_MAP.json",
+            "task_id": "ART-108_DB_SCHEMA_MAP",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-109_DATA_LINEAGE.json",
+            "task_id": "ART-109_DATA_LINEAGE",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-110_API_CATALOG.json",
+            "task_id": "ART-110_API_CATALOG",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-111_EVENT_MAP.json",
+            "task_id": "ART-111_EVENT_MAP",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-112_CODE_OWNERSHIP.json",
+            "task_id": "ART-112_CODE_OWNERSHIP",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-113_DEBUG_CODE_MAP.json",
+            "task_id": "ART-113_DEBUG_CODE_MAP",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-114_ENV_CONFIG_MATRIX.json",
+            "task_id": "ART-114_ENV_CONFIG_MATRIX",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-115_CONFIG_INVENTORY.json",
+            "task_id": "ART-115_CONFIG_INVENTORY",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-116_INFRA_TOPOLOGY.json",
+            "task_id": "ART-116_INFRA_TOPOLOGY",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-117_IAM_MATRIX.json",
+            "task_id": "ART-117_IAM_MATRIX",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-118_OBSERVABILITY.json",
+            "task_id": "ART-118_OBSERVABILITY",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-119_BUSINESS_PROCESS.json",
+            "task_id": "ART-119_BUSINESS_PROCESS",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-120_WAVE_PLAN.json",
+            "task_id": "ART-120_WAVE_PLAN",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-121_CUTOVER.json",
+            "task_id": "ART-121_CUTOVER",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-122_ROLLBACK.json",
+            "task_id": "ART-122_ROLLBACK",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-123_VALIDATION_RECONCILIATION.json",
+            "task_id": "ART-123_VALIDATION_RECONCILIATION",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-124_TEST_COVERAGE.json",
+            "task_id": "ART-124_TEST_COVERAGE",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-125_RISK_REGISTER.json",
+            "task_id": "ART-125_RISK_REGISTER",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-126_DECISION_LOG.json",
+            "task_id": "ART-126_DECISION_LOG",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-127_BLAST_RADIUS.json",
+            "task_id": "ART-127_BLAST_RADIUS",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-128_READINESS_SCORECARD.json",
+            "task_id": "ART-128_READINESS_SCORECARD",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-129_BUSINESS_CAPABILITY.json",
+            "task_id": "ART-129_BUSINESS_CAPABILITY",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-130_SHADOW_TRAFFIC.json",
+            "task_id": "ART-130_SHADOW_TRAFFIC",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-131_GOLDEN_DATASET.json",
+            "task_id": "ART-131_GOLDEN_DATASET",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-132_PARITY_DASHBOARD.json",
+            "task_id": "ART-132_PARITY_DASHBOARD",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-133_DEPRECATION_MAP.json",
+            "task_id": "ART-133_DEPRECATION_MAP",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-134_EXCEPTION_INVENTORY.json",
+            "task_id": "ART-134_EXCEPTION_INVENTORY",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-135_RACI.json",
+            "task_id": "ART-135_RACI",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/ART-136_TECH_DEBT_LEDGER.json",
+            "task_id": "ART-136_TECH_DEBT_LEDGER",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/EF-001_SCAN_PACKAGE.json",
+            "task_id": "EF-001_SCAN_PACKAGE",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/EF-002_GAP_REPORT.json",
+            "task_id": "EF-002_GAP_REPORT",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/EF-003_APPLY_FRAMEWORK.json",
+            "task_id": "EF-003_APPLY_FRAMEWORK",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/EF-004_GENERATE_TASK_GRAPH.json",
+            "task_id": "EF-004_GENERATE_TASK_GRAPH",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/EF-005_VALIDATE_TASK_GRAPH.json",
+            "task_id": "EF-005_VALIDATE_TASK_GRAPH",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/EF-006_TASK_GRAPH_TO_PACKETS.json",
+            "task_id": "EF-006_TASK_GRAPH_TO_PACKETS",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/EF-007_GOAL_LOOP.json",
+            "task_id": "EF-007_GOAL_LOOP",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/EF-008_VERIFY_HISTORY_COMPLETENESS.json",
+            "task_id": "EF-008_VERIFY_HISTORY_COMPLETENESS",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/MAINT-500_README_NAV_BACKTRACE.json",
+            "task_id": "MAINT-500_README_NAV_BACKTRACE",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/MAINT-501_RESTORE_PROOF_TEMPLATE.json",
+            "task_id": "MAINT-501_RESTORE_PROOF_TEMPLATE",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC.json",
+            "task_id": "MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/MAINT-503_CODEX_FINAL_PROMPT.json",
+            "task_id": "MAINT-503_CODEX_FINAL_PROMPT",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REL-400_PACKAGE_ARCHIVE.json",
+            "task_id": "REL-400_PACKAGE_ARCHIVE",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REL-401_HANDOFF.json",
+            "task_id": "REL-401_HANDOFF",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-010_CONTRACT_LOCK.json",
+            "task_id": "REQ-010_CONTRACT_LOCK",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-020_ENVCTL_DB_SCHEMA.json",
+            "task_id": "REQ-020_ENVCTL_DB_SCHEMA",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-021_ENVCTL_TARGET_REGISTRY.json",
+            "task_id": "REQ-021_ENVCTL_TARGET_REGISTRY",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-022_ENVCTL_RUN_LEDGER.json",
+            "task_id": "REQ-022_ENVCTL_RUN_LEDGER",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-023_ENVCTL_OPERATION_STATE.json",
+            "task_id": "REQ-023_ENVCTL_OPERATION_STATE",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-024_ENVCTL_ARTIFACT_REGISTRY.json",
+            "task_id": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-025_ENVCTL_VALIDATION_EVIDENCE.json",
+            "task_id": "REQ-025_ENVCTL_VALIDATION_EVIDENCE",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.json",
+            "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-027_ENVCTL_REPLAY_ENGINE.json",
+            "task_id": "REQ-027_ENVCTL_REPLAY_ENGINE",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-028_ENVCTL_AGENT_CONTROL_API.json",
+            "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-030_PLUGIN_PROTOCOL_MANIFEST.json",
+            "task_id": "REQ-030_PLUGIN_PROTOCOL_MANIFEST",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-031_PLUGIN_COMMAND_SURFACE.json",
+            "task_id": "REQ-031_PLUGIN_COMMAND_SURFACE",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-032_PLUGIN_LIVE_VISUALS.json",
+            "task_id": "REQ-032_PLUGIN_LIVE_VISUALS",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-033_PLUGIN_HUMAN_APPROVAL.json",
+            "task_id": "REQ-033_PLUGIN_HUMAN_APPROVAL",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-034_PLUGIN_STATUS_STREAMS.json",
+            "task_id": "REQ-034_PLUGIN_STATUS_STREAMS",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-040_SHARED_PROTOCOL_SCHEMAS.json",
+            "task_id": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-041_TWO_REPO_INTEGRATION.json",
+            "task_id": "REQ-041_TWO_REPO_INTEGRATION",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-042_FILESYSTEM_BOUNDS.json",
+            "task_id": "REQ-042_FILESYSTEM_BOUNDS",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-043_SECURITY_REDACTION.json",
+            "task_id": "REQ-043_SECURITY_REDACTION",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-044_INSTALL_BOOTSTRAP.json",
+            "task_id": "REQ-044_INSTALL_BOOTSTRAP",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-045_RUN_REPLAY.json",
+            "task_id": "REQ-045_RUN_REPLAY",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-200_FLEXNETOS_TARGET_DESCRIPTOR.json",
+            "task_id": "REQ-200_FLEXNETOS_TARGET_DESCRIPTOR",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-201_FLEXNETOS_LIFEOS_COMPARISON.json",
+            "task_id": "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json",
+            "task_id": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/VER-300_UNIT_VALIDATION.json",
+            "task_id": "VER-300_UNIT_VALIDATION",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/VER-301_SQL_SCHEMA_TEST.json",
+            "task_id": "VER-301_SQL_SCHEMA_TEST",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/VER-302_PACKET_SCHEMA_VALIDATION.json",
+            "task_id": "VER-302_PACKET_SCHEMA_VALIDATION",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/VER-303_GOAL_LOOP_COMPUTE.json",
+            "task_id": "VER-303_GOAL_LOOP_COMPUTE",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          },
+          {
+            "packet_path": "generated/execution_packets/VER-304_FINAL_COMPLETENESS.json",
+            "task_id": "VER-304_FINAL_COMPLETENESS",
+            "status": "pass",
+            "filename_matches_task_id": true,
+            "task_id_present_in_graph": true,
+            "schema_error_count": 0,
+            "schema_errors": [],
+            "graph_mismatch_fields": [],
+            "blocked_field_refs": []
+          }
+        ],
+        "schema_validations": [
+          {
+            "schema_path": "schemas/agent_lane.schema.json",
+            "draft": "http://json-schema.org/draft-07/schema#",
+            "self_valid": true,
+            "schema_title": "AgentLane",
+            "fixture_checks": [
+              {
+                "artifact": "templates/AGENT_LANE_TEMPLATE.json",
+                "status": "pass",
+                "error_count": 0,
+                "errors": []
+              }
+            ],
+            "validator": "Draft7Validator"
+          },
+          {
+            "schema_path": "schemas/execution_packet.schema.json",
+            "draft": "http://json-schema.org/draft-07/schema#",
+            "self_valid": true,
+            "schema_title": "ExecutionPacket",
+            "fixture_checks": [],
+            "validator": "Draft7Validator"
+          },
+          {
+            "schema_path": "schemas/filesystem_boundaries.schema.json",
+            "draft": "https://json-schema.org/draft/2020-12/schema",
+            "self_valid": true,
+            "schema_title": "envctl Background Helper Filesystem Boundaries",
+            "fixture_checks": [
+              {
+                "artifact": "generated/filesystem_boundaries.json",
+                "status": "pass",
+                "error_count": 0,
+                "errors": []
+              }
+            ],
+            "validator": "Draft202012Validator"
+          },
+          {
+            "schema_path": "schemas/gap_report.schema.json",
+            "draft": "http://json-schema.org/draft-07/schema#",
+            "self_valid": true,
+            "schema_title": "GapReport",
+            "fixture_checks": [
+              {
+                "artifact": "generated/gap_report.json",
+                "status": "pass",
+                "error_count": 0,
+                "errors": []
+              }
+            ],
+            "validator": "Draft7Validator"
+          },
+          {
+            "schema_path": "schemas/proof_record.schema.json",
+            "draft": "http://json-schema.org/draft-07/schema#",
+            "self_valid": true,
+            "schema_title": "ProofRecord",
+            "fixture_checks": [
+              {
+                "artifact": "proof_templates/PROOF_RECORD_TEMPLATE.json",
+                "status": "pass",
+                "error_count": 0,
+                "errors": []
+              },
+              {
+                "artifact": "proof_records/REQ-031_PLUGIN_COMMAND_SURFACE.proof.json",
+                "status": "pass",
+                "error_count": 0,
+                "errors": []
+              }
+            ],
+            "validator": "Draft7Validator"
+          },
+          {
+            "schema_path": "schemas/shared_protocol.schema.json",
+            "draft": "https://json-schema.org/draft/2020-12/schema",
+            "self_valid": true,
+            "schema_title": "envctl / nu_plugin Shared Migration Protocol",
+            "fixture_checks": [
+              {
+                "artifact": "generated/shared_protocol_manifest.json",
+                "status": "pass",
+                "checks": {
+                  "required_record_count_matches_manifest": true,
+                  "shared_protocol_validation_report_passed": true
+                }
+              },
+              {
+                "artifact": "proof_records/VER-301_SQL_SCHEMA_TEST.proof.json",
+                "status": "pass",
+                "error_count": 0,
+                "errors": []
+              }
+            ],
+            "validator": "Draft202012Validator"
+          },
+          {
+            "schema_path": "schemas/task_graph.schema.json",
+            "draft": "http://json-schema.org/draft-07/schema#",
+            "self_valid": true,
+            "schema_title": "TaskGraphRow",
+            "fixture_checks": [
+              {
+                "artifact": "generated/task_graph.normalized.json",
+                "checked_count": 80,
+                "status": "pass",
+                "invalid_task_ids": []
+              }
+            ],
+            "validator": "Draft7Validator"
+          },
+          {
+            "schema_path": "schemas/upgrade_report.schema.json",
+            "draft": "http://json-schema.org/draft-07/schema#",
+            "self_valid": true,
+            "schema_title": "UpgradeReport",
+            "fixture_checks": [
+              {
+                "artifact": "generated/upgrade_report.json",
+                "status": "pass",
+                "error_count": 0,
+                "errors": []
+              }
+            ],
+            "validator": "Draft7Validator"
+          }
+        ],
+        "warnings": [],
+        "errors": [],
+        "allowed_paths": [
+          "${ENVCTL_REPO}/**",
+          "${NU_PLUGIN_REPO}/**",
+          "${MIGRATION_TARGET_ROOT}/**",
+          "execution-framework/**",
+          "migration-artifacts/**"
+        ],
+        "blocked_paths": [
+          "**/.env",
+          "**/secrets/**",
+          "**/private_keys/**",
+          "**/*.pem",
+          "**/*.key"
+        ],
+        "output_paths": [
+          "execution-framework/scripts/verify_ver302_packet_schema_validation.py",
+          "execution-framework/generated/ver302_packet_schema_validation_report.json",
+          "execution-framework/state/VER-302_PACKET_SCHEMA_VALIDATION.heartbeat.json",
+          "execution-framework/logs/VER-302_PACKET_SCHEMA_VALIDATION.log",
+          "execution-framework/proof_records/VER-302_PACKET_SCHEMA_VALIDATION.proof.json"
+        ],
+        "sha256": {
+          "execution-framework/generated/task_graph.csv": "b752be4c4cf53cb3db3daf5daaef180ec291269ce67a7bb7f0dbb2e835168009",
+          "execution-framework/generated/task_graph.normalized.json": "0a628b5d30eb631e141547100095abd6632d15b1e8903b5589ec37ec9d52786e",
+          "execution-framework/generated/filesystem_boundaries.json": "2afc23d8f58bc096388b56cba0742b1ae46bec95d36b065e890acc5c1fda0eba",
+          "execution-framework/generated/gap_report.json": "3c5bf7490846f4eae56b1d1c1c97dbf44ebc00368393b9e176687f07ee9d1677",
+          "execution-framework/generated/upgrade_report.json": "5703caa3d0f99c38bfae6219f6cc4c11ad8089767f90f2dbb4f95670576f966e",
+          "execution-framework/generated/shared_protocol_manifest.json": "846beff278ee11a96b7eb9aa45bff6b476ee1fc406fcfb3cea3de92c79d057ca",
+          "execution-framework/generated/shared_protocol_validation_report.json": "0863b9b28e702c704c96f50a50954181f42b35aaa16e4ecb6643497093c4c4d0",
+          "execution-framework/templates/AGENT_LANE_TEMPLATE.json": "fbac2f99486fe699114ab11b61da98e21c9be8a1e1ec4c3759f0f33b51d9164a",
+          "execution-framework/proof_templates/PROOF_RECORD_TEMPLATE.json": "aec4889373e824e1ed9b4bce48744129747aebe8e7147782d6f2c5e98a0de426",
+          "execution-framework/schemas/execution_packet.schema.json": "a4305a40557ebea88f5699b6000000750563df9228916c21116b498e2e74a7e0",
+          "execution-framework/schemas/proof_record.schema.json": "76c64fdf3f5943c8041610ee303b0e4cdcc1ba4321d9ade8e0f907a88a15f862",
+          "execution-framework/schemas/task_graph.schema.json": "2f3c8c1dec72a3317f0cfb8e419f0e5711bd61444cb65cdb89c8d3a9d6c111ea",
+          "execution-framework/schemas/agent_lane.schema.json": "e54c8c0ffade0a37babd9660053069145390957d566718e293cc8ede2b2b9d9f",
+          "execution-framework/schemas/gap_report.schema.json": "8889b598049ddf02f8f9fcd38a5504d3d20949d6975de1b7bc45fa1d16c6e647",
+          "execution-framework/schemas/upgrade_report.schema.json": "fc5d58a6c441abf2e2fbfd86cb37859350d300924cfe6daeb07a512485e696d9",
+          "execution-framework/schemas/filesystem_boundaries.schema.json": "75901030b7fee3fba0aed8447dc8d78520be803627c13959efe1532c96b0a555",
+          "execution-framework/schemas/shared_protocol.schema.json": "a897b67a1ec37804d74cbc60eb1360667d823b4661016a76a29906f016275007"
+        },
+        "secret_scan": {
+          "paths": [
+            "generated/ver302_packet_schema_validation_report.json",
+            "logs/VER-302_PACKET_SCHEMA_VALIDATION.log",
+            "scripts/verify_ver302_packet_schema_validation.py"
+          ],
+          "findings": []
+        }
+      },
+      "checksums": {
+        "execution-framework/scripts/verify_ver302_packet_schema_validation.py": "1a8f78e0955cc4af4e7eed57171611146dab481cd0aec2201344d88d61454c2d",
+        "execution-framework/generated/ver302_packet_schema_validation_report.json": "e2b397b75c790ec2a005596c62342b597c60997871303a99084c8f263f9d9259",
+        "execution-framework/state/VER-302_PACKET_SCHEMA_VALIDATION.heartbeat.json": "4135d20a166f43c7dab34ed7922af16ce6a4ab2f3eeae198a743eabff1e69680",
+        "execution-framework/logs/VER-302_PACKET_SCHEMA_VALIDATION.log": "e2b397b75c790ec2a005596c62342b597c60997871303a99084c8f263f9d9259",
+        "execution-framework/proof_records/VER-302_PACKET_SCHEMA_VALIDATION.proof.json": "60bc1ddf377ed6261fadfb9bc038f15dc8c567ef2c0be79420b29cc58f701dd9",
+        "execution-framework/proof_records/proof_ledger.jsonl": "61e89bf53f472ca2a33f2242471ce58eefdcb03eafb9aeac1f2f309455b53067"
+      },
+      "logs_uri": "logs/VER-302_PACKET_SCHEMA_VALIDATION.log",
+      "rollback_point": "history/pre_execution_framework_manifest.json",
+      "evidence": [
+        "proof_records/VER-301_SQL_SCHEMA_TEST.proof.json",
+        "proof_records/REQ-042_FILESYSTEM_BOUNDS.proof.json",
+        "proof_records/REQ-043_SECURITY_REDACTION.proof.json",
+        "proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json",
+        "generated/task_graph.csv",
+        "generated/task_graph.normalized.json",
+        "generated/filesystem_boundaries.json",
+        "generated/gap_report.json",
+        "generated/upgrade_report.json",
+        "generated/shared_protocol_manifest.json",
+        "generated/shared_protocol_validation_report.json",
+        "templates/AGENT_LANE_TEMPLATE.json",
+        "proof_templates/PROOF_RECORD_TEMPLATE.json",
+        "schemas/execution_packet.schema.json",
+        "schemas/proof_record.schema.json",
+        "schemas/task_graph.schema.json",
+        "schemas/agent_lane.schema.json",
+        "schemas/gap_report.schema.json",
+        "schemas/upgrade_report.schema.json",
+        "schemas/filesystem_boundaries.schema.json",
+        "schemas/shared_protocol.schema.json"
+      ],
+      "failure_reason": "",
+      "next_action": "unblock VER-303_GOAL_LOOP_COMPUTE"
+    },
+    {
+      "proof_schema_version": "1.0",
+      "task_id": "VER-303_GOAL_LOOP_COMPUTE",
+      "status": "completed",
+      "started_at": "2026-07-05T06:01:26+00:00",
+      "completed_at": "2026-07-05T06:01:26+00:00",
+      "actor": "goal-validation-agent",
+      "helper_id": "helper-goal-validate-01",
+      "model_tag": "gpt-5.3-spark",
+      "repo_path": "..",
+      "files_changed": [
+        "execution-framework/scripts/verify_ver303_goal_loop_compute.py",
+        "execution-framework/generated/ver303_goal_loop_compute_report.json",
+        "execution-framework/state/VER-303_GOAL_LOOP_COMPUTE.heartbeat.json",
+        "execution-framework/logs/VER-303_GOAL_LOOP_COMPUTE.log",
+        "execution-framework/proof_records/VER-303_GOAL_LOOP_COMPUTE.proof.json",
+        "execution-framework/proof_records/proof_ledger.jsonl",
+        "execution-framework/state/goal_loop_state.json",
+        "execution-framework/generated/status_report.json",
+        "execution-framework/generated/status_from_proofs.json"
+      ],
+      "commands_run": [
+        "python3 scripts/verify_ver303_goal_loop_compute.py",
+        "python3 -m py_compile scripts/verify_ver303_goal_loop_compute.py"
+      ],
+      "verification_output": {
+        "schema_version": "1.0",
+        "task_id": "VER-303_GOAL_LOOP_COMPUTE",
+        "status": "pass",
+        "generated_at": "2026-07-05T06:01:26+00:00",
+        "packet_summary": {
+          "goal": "Ensure the /goal loop can compute a complete run path or stop at explicit approval blockers",
+          "repo_target": "filesystem",
+          "repo_path": "..",
+          "filesystem_scope": "package-root",
+          "verification_command": "python3 scripts/verify_ver303_goal_loop_compute.py"
+        },
+        "dependency_proofs": {
+          "VER-302_PACKET_SCHEMA_VALIDATION": {
+            "proof_path": "proof_records/VER-302_PACKET_SCHEMA_VALIDATION.proof.json",
+            "status": "completed",
+            "ok": true
+          },
+          "REQ-045_RUN_REPLAY": {
+            "proof_path": "proof_records/REQ-045_RUN_REPLAY.proof.json",
+            "status": "completed",
+            "ok": true
+          }
+        },
+        "current_state": {
+          "generated_at": "2026-07-05T06:01:26+00:00",
+          "dispatch_packets": [
+            {
+              "task_id": "VER-303_GOAL_LOOP_COMPUTE",
+              "parallel_group": "verification",
+              "max_parallel": 1,
+              "packet_uri": "generated/execution_packets/VER-303_GOAL_LOOP_COMPUTE.json"
+            }
+          ],
+          "runnable_tasks": [
+            {
+              "task_id": "VER-303_GOAL_LOOP_COMPUTE",
+              "parallel_group": "verification",
+              "max_parallel": 1,
+              "packet_uri": "generated/execution_packets/VER-303_GOAL_LOOP_COMPUTE.json"
+            }
+          ],
+          "approval_blockers": [],
+          "blocked_tasks": [
+            {
+              "task_id": "VER-304_FINAL_COMPLETENESS",
+              "reason": "unmet dependencies",
+              "dependencies": [
+                "VER-303_GOAL_LOOP_COMPUTE"
+              ]
+            },
+            {
+              "task_id": "REL-400_PACKAGE_ARCHIVE",
+              "reason": "unmet dependencies",
+              "dependencies": [
+                "VER-304_FINAL_COMPLETENESS"
+              ]
+            },
+            {
+              "task_id": "REL-401_HANDOFF",
+              "reason": "unmet dependencies",
+              "dependencies": [
+                "REL-400_PACKAGE_ARCHIVE"
+              ]
+            }
+          ],
+          "status_ver303": "pending",
+          "status_ver304": "pending"
+        },
+        "projected_run_path": [
+          "VER-303_GOAL_LOOP_COMPUTE",
+          "VER-304_FINAL_COMPLETENESS",
+          "REL-400_PACKAGE_ARCHIVE",
+          "REL-401_HANDOFF"
+        ],
+        "projected_stop_reason": "complete",
+        "projected_terminal_state": {
+          "complete_count": 80,
+          "failed_count": 0,
+          "pending_count": 0,
+          "approval_blocker_count": 0,
+          "blocked_count": 0,
+          "dispatch_count": 0
+        },
+        "checks": {
+          "dependencies_completed": true,
+          "current_dispatch_targets_ver303": true,
+          "current_runnable_contains_only_ver303": true,
+          "current_has_no_approval_blockers": true,
+          "current_status_marks_ver303_pending": true,
+          "current_status_surface_matches_compute": true,
+          "projected_path_begins_with_ver303": true,
+          "projected_advances_to_ver304": true,
+          "projected_reaches_release_tasks": true,
+          "projected_stops_as_complete": true,
+          "projected_has_no_approval_blockers": true,
+          "projected_has_no_failed_tasks": true,
+          "projected_finishes_all_tasks": true,
+          "ver304_is_currently_blocked_only_by_ver303": true,
+          "packet_proof_required": true,
+          "packet_single_threaded": true
+        },
+        "warnings": [],
+        "errors": [],
+        "sha256": {
+          "generated/execution_packets/VER-303_GOAL_LOOP_COMPUTE.json": "sha256:50751f2c157ff264c985651496826947c71c6c3de92b6bef04d367f257a3ffe4",
+          "generated/status_report.json": "sha256:899311abcd5bdf0f98b4022ed5eb878c604abf4f66212fdce77b123f4807822f",
+          "proof_records/proof_ledger.jsonl": "sha256:6df857f3f04fd97be4efe7905b66848d88a4e40ad8e3f11af80c5078256d69bf",
+          "proof_records/VER-302_PACKET_SCHEMA_VALIDATION.proof.json": "sha256:8eee6aa74eeadac471eb09043156d92ed4a9d8b2886e68a59adfc041cb95b899",
+          "proof_records/REQ-045_RUN_REPLAY.proof.json": "sha256:4193576929a715a017d7d0d699b5ed7d0b0ce3da28a50d4f03c629ffa2fca896"
+        },
+        "secret_scan": {
+          "paths": [
+            "generated/ver303_goal_loop_compute_report.json",
+            "logs/VER-303_GOAL_LOOP_COMPUTE.log",
+            "scripts/verify_ver303_goal_loop_compute.py"
+          ],
+          "findings": []
+        }
+      },
+      "checksums": {
+        "execution-framework/scripts/verify_ver303_goal_loop_compute.py": "96b964ebd83eea94cbc215504efd13da93373cc29a8a974c8be9ceda45f3a17e",
+        "execution-framework/generated/ver303_goal_loop_compute_report.json": "ceaa4abb5fca1b2869ae6f8e8d1787aa9a2244645aa5fdb96fb15f0ee4f35186",
+        "execution-framework/state/VER-303_GOAL_LOOP_COMPUTE.heartbeat.json": "7a72e22828024940a7c81b683b79197c77ed72e78400b5e5e54bc8d2291c357f",
+        "execution-framework/logs/VER-303_GOAL_LOOP_COMPUTE.log": "ceaa4abb5fca1b2869ae6f8e8d1787aa9a2244645aa5fdb96fb15f0ee4f35186",
+        "execution-framework/proof_records/proof_ledger.jsonl": "6df857f3f04fd97be4efe7905b66848d88a4e40ad8e3f11af80c5078256d69bf",
+        "execution-framework/state/goal_loop_state.json": "899311abcd5bdf0f98b4022ed5eb878c604abf4f66212fdce77b123f4807822f",
+        "execution-framework/generated/status_report.json": "899311abcd5bdf0f98b4022ed5eb878c604abf4f66212fdce77b123f4807822f",
+        "execution-framework/generated/status_from_proofs.json": "6efa06f302f0da7cc3a309c4c397c543877522133241ba8a53750d858f511aeb"
+      },
+      "logs_uri": "logs/VER-303_GOAL_LOOP_COMPUTE.log",
+      "rollback_point": "history/pre_execution_framework_manifest.json",
+      "evidence": [
+        "generated/execution_packets/VER-303_GOAL_LOOP_COMPUTE.json",
+        "generated/status_report.json",
+        "proof_records/proof_ledger.jsonl",
+        "generated/ver303_goal_loop_compute_report.json",
+        "proof_records/VER-302_PACKET_SCHEMA_VALIDATION.proof.json",
+        "proof_records/REQ-045_RUN_REPLAY.proof.json"
+      ],
+      "failure_reason": "",
+      "next_action": "run VER-304_FINAL_COMPLETENESS"
+    },
+    {
+      "proof_schema_version": "1.0",
+      "task_id": "VER-304_FINAL_COMPLETENESS",
+      "status": "completed",
+      "started_at": "2026-07-05T06:04:08+00:00",
+      "completed_at": "2026-07-05T06:04:08+00:00",
+      "actor": "final-completeness-agent",
+      "helper_id": "helper-complete-01",
+      "model_tag": "gpt-5.3-spark",
+      "repo_path": "..",
+      "files_changed": [
+        "execution-framework/generated/final_verification_report.json",
+        "execution-framework/generated/ver304_final_completeness_report.json",
+        "execution-framework/state/VER-304_FINAL_COMPLETENESS.heartbeat.json",
+        "execution-framework/logs/VER-304_FINAL_COMPLETENESS.log",
+        "execution-framework/proof_records/VER-304_FINAL_COMPLETENESS.proof.json",
+        "execution-framework/proof_records/proof_ledger.jsonl"
+      ],
+      "commands_run": [
+        "python3 scripts/verify_ver304_final_completeness.py",
+        "python3 scripts/verify_history_and_completeness.py",
+        "python3 -m py_compile scripts/verify_ver304_final_completeness.py"
+      ],
+      "verification_output": {
+        "schema_version": "1.0",
+        "task_id": "VER-304_FINAL_COMPLETENESS",
+        "generated_at": "2026-07-05T06:04:08+00:00",
+        "status": "pass",
+        "packet_summary": {
+          "goal": "Prove every source requirement is covered by a task or explicit blocker",
+          "repo_target": "filesystem",
+          "repo_path": "..",
+          "filesystem_scope": "package-root",
+          "verification_command": "python3 scripts/verify_ver304_final_completeness.py"
+        },
+        "dependency_proof": {
+          "task_id": "VER-303_GOAL_LOOP_COMPUTE",
+          "path": "proof_records/VER-303_GOAL_LOOP_COMPUTE.proof.json",
+          "status": "completed",
+          "ok": true
+        },
+        "completeness_validator": {
+          "command": "python3 scripts/verify_history_and_completeness.py",
+          "exit_code": 0,
+          "stdout": [
+            "final verification status=pass_with_external_blocker tasks=80 packets=80 proofs=85"
+          ],
+          "stderr": []
+        },
+        "checks": {
+          "dependency_completed": true,
+          "validator_exit_zero": true,
+          "final_status_allowed": true,
+          "local_package_complete": true,
+          "all_source_sections_present": true,
+          "no_unresolved_gaps": true,
+          "no_missing_outputs": true,
+          "no_tasks_without_packets": true,
+          "no_packet_missing_fields": true
+        },
+        "final_verification_report": {
+          "schema_version": "1.0",
+          "generated_at": "2026-07-05T06:04:08+00:00",
+          "status": "pass_with_external_blocker",
+          "local_package_complete": true,
+          "task_count": 80,
+          "packet_count": 80,
+          "proof_count": 85,
+          "missing_outputs": [],
+          "tasks_without_packets": [],
+          "packet_missing_fields": [],
+          "source_sections": {
+            "README.md": true,
+            "PACKAGE_MANIFEST.json": true,
+            "specs": true,
+            "prompts": true,
+            "codex": true,
+            "schemas": true,
+            "examples": true,
+            "helpers": true,
+            "sql": true,
+            "source": true,
+            "expected-output": true,
+            "history": true
+          },
+          "ignored_sections": [],
+          "completed_without_proof": [],
+          "coverage": {
+            "system_inventory": {
+              "task_id": "ART-100_SYSTEM_INVENTORY",
+              "covered": true
+            },
+            "dependency_graph": {
+              "task_id": "ART-103_SERVICE_DEP_GRAPH",
+              "covered": true
+            },
+            "data_flow_graph": {
+              "task_id": "ART-107_DATA_FLOW_GRAPH",
+              "covered": true
+            },
+            "source_to_target_mapping": {
+              "task_id": "ART-109_DATA_LINEAGE",
+              "covered": true
+            },
+            "environment_matrix": {
+              "task_id": "ART-114_ENV_CONFIG_MATRIX",
+              "covered": true
+            },
+            "toolchain_dependency_tree": {
+              "task_id": "ART-104_TOOLCHAIN_TREE",
+              "covered": true
+            },
+            "api_event_contract_catalog": {
+              "task_id": "ART-110_API_CATALOG",
+              "covered": true
+            },
+            "cutover_checklist": {
+              "task_id": "ART-121_CUTOVER",
+              "covered": true
+            },
+            "rollback_plan": {
+              "task_id": "ART-122_ROLLBACK",
+              "covered": true
+            },
+            "risk_register": {
+              "task_id": "ART-125_RISK_REGISTER",
+              "covered": true
+            },
+            "decision_log": {
+              "task_id": "ART-126_DECISION_LOG",
+              "covered": true
+            },
+            "envctl_database": {
+              "task_id": "REQ-020_ENVCTL_DB_SCHEMA",
+              "covered": true
+            },
+            "nu_plugin": {
+              "task_id": "REQ-030_PLUGIN_PROTOCOL_MANIFEST",
+              "covered": true
+            },
+            "goal_loop": {
+              "task_id": "EF-007_GOAL_LOOP",
+              "covered": true
+            },
+            "proof_ledger": {
+              "task_id": "EF-008_VERIFY_HISTORY_COMPLETENESS",
+              "covered": true
+            },
+            "two_repo": {
+              "task_id": "REQ-041_TWO_REPO_INTEGRATION",
+              "covered": true
+            },
+            "flexnetos": {
+              "task_id": "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+              "covered": true
+            }
+          },
+          "unresolved_gaps": [],
+          "goal_loop_summary": {
+            "schema_version": "1.0",
+            "generated_at": "2026-07-05T06:01:54+00:00",
+            "task_count": 80,
+            "complete_count": 77,
+            "failed_count": 0,
+            "pending_count": 3,
+            "runnable_count": 1,
+            "dispatch_count": 1,
+            "approval_blocker_count": 0,
+            "blocked_count": 2,
+            "runnable_tasks": [
+              {
+                "task_id": "VER-304_FINAL_COMPLETENESS",
+                "parallel_group": "verification",
+                "max_parallel": 1,
+                "packet_uri": "generated/execution_packets/VER-304_FINAL_COMPLETENESS.json"
+              }
+            ],
+            "dispatch_packets": [
+              {
+                "task_id": "VER-304_FINAL_COMPLETENESS",
+                "parallel_group": "verification",
+                "max_parallel": 1,
+                "packet_uri": "generated/execution_packets/VER-304_FINAL_COMPLETENESS.json"
+              }
+            ],
+            "approval_blockers": [],
+            "blocked_tasks": [
+              {
+                "task_id": "REL-400_PACKAGE_ARCHIVE",
+                "reason": "unmet dependencies",
+                "dependencies": [
+                  "VER-304_FINAL_COMPLETENESS"
+                ]
+              },
+              {
+                "task_id": "REL-401_HANDOFF",
+                "reason": "unmet dependencies",
+                "dependencies": [
+                  "REL-400_PACKAGE_ARCHIVE"
+                ]
+              }
+            ],
+            "statuses": {
+              "EF-001_SCAN_PACKAGE": "complete",
+              "EF-002_GAP_REPORT": "complete",
+              "EF-003_APPLY_FRAMEWORK": "complete",
+              "EF-004_GENERATE_TASK_GRAPH": "complete",
+              "EF-005_VALIDATE_TASK_GRAPH": "complete",
+              "EF-006_TASK_GRAPH_TO_PACKETS": "complete",
+              "EF-007_GOAL_LOOP": "complete",
+              "EF-008_VERIFY_HISTORY_COMPLETENESS": "complete",
+              "REQ-010_CONTRACT_LOCK": "complete",
+              "REQ-020_ENVCTL_DB_SCHEMA": "complete",
+              "REQ-021_ENVCTL_TARGET_REGISTRY": "complete",
+              "REQ-022_ENVCTL_RUN_LEDGER": "complete",
+              "REQ-023_ENVCTL_OPERATION_STATE": "complete",
+              "REQ-024_ENVCTL_ARTIFACT_REGISTRY": "complete",
+              "REQ-025_ENVCTL_VALIDATION_EVIDENCE": "complete",
+              "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS": "complete",
+              "REQ-027_ENVCTL_REPLAY_ENGINE": "complete",
+              "REQ-028_ENVCTL_AGENT_CONTROL_API": "complete",
+              "REQ-030_PLUGIN_PROTOCOL_MANIFEST": "complete",
+              "REQ-031_PLUGIN_COMMAND_SURFACE": "complete",
+              "REQ-032_PLUGIN_LIVE_VISUALS": "complete",
+              "REQ-033_PLUGIN_HUMAN_APPROVAL": "complete",
+              "REQ-034_PLUGIN_STATUS_STREAMS": "complete",
+              "REQ-040_SHARED_PROTOCOL_SCHEMAS": "complete",
+              "REQ-041_TWO_REPO_INTEGRATION": "complete",
+              "REQ-042_FILESYSTEM_BOUNDS": "complete",
+              "REQ-043_SECURITY_REDACTION": "complete",
+              "REQ-044_INSTALL_BOOTSTRAP": "complete",
+              "REQ-045_RUN_REPLAY": "complete",
+              "ART-100_SYSTEM_INVENTORY": "complete",
+              "ART-101_DIRECTORY_TREE": "complete",
+              "ART-102_REPOSITORY_MAP": "complete",
+              "ART-103_SERVICE_DEP_GRAPH": "complete",
+              "ART-104_TOOLCHAIN_TREE": "complete",
+              "ART-105_PACKAGE_LIB_GRAPH": "complete",
+              "ART-106_RUNTIME_DEP_MAP": "complete",
+              "ART-107_DATA_FLOW_GRAPH": "complete",
+              "ART-108_DB_SCHEMA_MAP": "complete",
+              "ART-109_DATA_LINEAGE": "complete",
+              "ART-110_API_CATALOG": "complete",
+              "ART-111_EVENT_MAP": "complete",
+              "ART-112_CODE_OWNERSHIP": "complete",
+              "ART-113_DEBUG_CODE_MAP": "complete",
+              "ART-114_ENV_CONFIG_MATRIX": "complete",
+              "ART-115_CONFIG_INVENTORY": "complete",
+              "ART-116_INFRA_TOPOLOGY": "complete",
+              "ART-117_IAM_MATRIX": "complete",
+              "ART-118_OBSERVABILITY": "complete",
+              "ART-119_BUSINESS_PROCESS": "complete",
+              "ART-120_WAVE_PLAN": "complete",
+              "ART-121_CUTOVER": "complete",
+              "ART-122_ROLLBACK": "complete",
+              "ART-123_VALIDATION_RECONCILIATION": "complete",
+              "ART-124_TEST_COVERAGE": "complete",
+              "ART-125_RISK_REGISTER": "complete",
+              "ART-126_DECISION_LOG": "complete",
+              "ART-127_BLAST_RADIUS": "complete",
+              "ART-128_READINESS_SCORECARD": "complete",
+              "ART-129_BUSINESS_CAPABILITY": "complete",
+              "ART-130_SHADOW_TRAFFIC": "complete",
+              "ART-131_GOLDEN_DATASET": "complete",
+              "ART-132_PARITY_DASHBOARD": "complete",
+              "ART-133_DEPRECATION_MAP": "complete",
+              "ART-134_EXCEPTION_INVENTORY": "complete",
+              "ART-135_RACI": "complete",
+              "ART-136_TECH_DEBT_LEDGER": "complete",
+              "REQ-200_FLEXNETOS_TARGET_DESCRIPTOR": "complete",
+              "REQ-201_FLEXNETOS_LIFEOS_COMPARISON": "complete",
+              "REQ-202_FLEXNETOS_ADAPTER_RECIPE": "complete",
+              "VER-300_UNIT_VALIDATION": "complete",
+              "VER-301_SQL_SCHEMA_TEST": "complete",
+              "VER-302_PACKET_SCHEMA_VALIDATION": "complete",
+              "VER-303_GOAL_LOOP_COMPUTE": "complete",
+              "VER-304_FINAL_COMPLETENESS": "pending",
+              "REL-400_PACKAGE_ARCHIVE": "pending",
+              "REL-401_HANDOFF": "pending",
+              "MAINT-500_README_NAV_BACKTRACE": "complete",
+              "MAINT-501_RESTORE_PROOF_TEMPLATE": "complete",
+              "MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC": "complete",
+              "MAINT-503_CODEX_FINAL_PROMPT": "complete"
+            }
+          },
+          "external_blockers": [
+            {
+              "blocker_id": "EXT-DRIVE-WRITE",
+              "status": "documented",
+              "detail": "Authenticated Google Drive file edit/revision API is not available in this environment; upgraded package archive is produced for upload/application to Drive."
+            }
+          ]
+        },
+        "secret_scan": {
+          "paths": [
+            "generated/ver304_final_completeness_report.json",
+            "logs/VER-304_FINAL_COMPLETENESS.log",
+            "state/VER-304_FINAL_COMPLETENESS.heartbeat.json"
+          ],
+          "findings": []
+        },
+        "errors": []
+      },
+      "checksums": {
+        "execution-framework/generated/final_verification_report.json": "a4de4d098f9ccbb71aea4e5a053046c45865c8eb4b5deff39b6e765921cbd6bf",
+        "execution-framework/generated/ver304_final_completeness_report.json": "49962a851666941223f7d0ee24d377e8910bb892393528a3a14c6483a4462203",
+        "execution-framework/state/VER-304_FINAL_COMPLETENESS.heartbeat.json": "7bdd82703496e4469713d346689826fd5af7d29dc542551c2b6188663df02ba0",
+        "execution-framework/logs/VER-304_FINAL_COMPLETENESS.log": "49962a851666941223f7d0ee24d377e8910bb892393528a3a14c6483a4462203",
+        "execution-framework/proof_records/proof_ledger.jsonl": "f2759dfd60eb565840b98361ca331900d73fd08a9b6f0d8e794c97bbd1d1f57f"
+      },
+      "logs_uri": "logs/VER-304_FINAL_COMPLETENESS.log",
+      "rollback_point": "history/pre_execution_framework_manifest.json",
+      "evidence": [
+        "proof_records/VER-303_GOAL_LOOP_COMPUTE.proof.json",
+        "generated/final_verification_report.json",
+        "generated/ver304_final_completeness_report.json"
+      ],
+      "failure_reason": "",
+      "next_action": "run REL-400_PACKAGE_ARCHIVE"
+    },
+    {
+      "proof_schema_version": "1.0",
+      "task_id": "REL-400_PACKAGE_ARCHIVE",
+      "status": "completed",
+      "started_at": "2026-07-05T06:08:16+00:00",
+      "completed_at": "2026-07-05T06:08:16+00:00",
+      "actor": "release-agent",
+      "helper_id": "helper-release-01",
+      "model_tag": "gpt-5.3-spark",
+      "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+      "files_changed": [
+        "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.gz",
+        "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip",
+        "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.list",
+        "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip.list",
+        "execution-framework/generated/release_archives/REL-400_PACKAGE_ARCHIVE.summary.json",
+        "execution-framework/state/REL-400_PACKAGE_ARCHIVE.heartbeat.json",
+        "execution-framework/logs/REL-400_PACKAGE_ARCHIVE.log"
+      ],
+      "commands_run": [
+        "tar --exclude=\"envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/release_archives\" -czf execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.gz envctl-db-nu-plugin-migration-automation-package",
+        "zip -qr execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip envctl-db-nu-plugin-migration-automation-package -x envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/release_archives/*",
+        "tar -tzf execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.gz",
+        "unzip -Z1 execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip"
+      ],
+      "verification_output": {
+        "schema_version": "1.0",
+        "task_id": "REL-400_PACKAGE_ARCHIVE",
+        "generated_at": "2026-07-05T06:08:16+00:00",
+        "package_root": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+        "archive_base": "envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded",
+        "artifacts": {
+          "tar_gz": {
+            "path": "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.gz",
+            "size_bytes": 15745389,
+            "sha256": "0bdf372bae59a7d207cdb93a89ecbb89a2f83b779019c965f16ad157224b0b27",
+            "entry_count": 967
+          },
+          "zip": {
+            "path": "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip",
+            "size_bytes": 16385876,
+            "sha256": "6ad8a4d040c686bb7079b251b7c6064fd54cd283417f678d47004b88dcc55ad4",
+            "entry_count": 967
+          }
+        },
+        "validation": {
+          "entry_counts_match": true,
+          "blocked_hits_tar": [],
+          "blocked_hits_zip": [],
+          "self_archive_hits_tar": [],
+          "self_archive_hits_zip": [],
+          "secret_safe": true,
+          "self_exclusion_ok": true,
+          "sample_entries": [
+            "envctl-db-nu-plugin-migration-automation-package/",
+            "envctl-db-nu-plugin-migration-automation-package/schemas/",
+            "envctl-db-nu-plugin-migration-automation-package/schemas/nu_plugin_command_manifest.schema.json",
+            "envctl-db-nu-plugin-migration-automation-package/schemas/migration_recipe.schema.json",
+            "envctl-db-nu-plugin-migration-automation-package/schemas/operation.schema.json",
+            "envctl-db-nu-plugin-migration-automation-package/schemas/envctl_migration_api.openapi.json",
+            "envctl-db-nu-plugin-migration-automation-package/schemas/artifact_record.schema.json",
+            "envctl-db-nu-plugin-migration-automation-package/schemas/validation_result.schema.json",
+            "envctl-db-nu-plugin-migration-automation-package/schemas/approval_request.schema.json",
+            "envctl-db-nu-plugin-migration-automation-package/schemas/target_descriptor.schema.json",
+            "envctl-db-nu-plugin-migration-automation-package/schemas/run_event.schema.json",
+            "envctl-db-nu-plugin-migration-automation-package/examples/",
+            "envctl-db-nu-plugin-migration-automation-package/examples/recipes/",
+            "envctl-db-nu-plugin-migration-automation-package/examples/recipes/database-migration.yaml",
+            "envctl-db-nu-plugin-migration-automation-package/examples/recipes/full-migration-artifact-run.yaml",
+            "envctl-db-nu-plugin-migration-automation-package/examples/target-descriptors/",
+            "envctl-db-nu-plugin-migration-automation-package/examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+            "envctl-db-nu-plugin-migration-automation-package/examples/target-descriptors/generic-codebase.yaml",
+            "envctl-db-nu-plugin-migration-automation-package/examples/env/",
+            "envctl-db-nu-plugin-migration-automation-package/examples/env/envctl-migration.example.toml"
+          ]
+        },
+        "external_blocker": {
+          "blocker_id": "EXT-DRIVE-WRITE",
+          "detail": "Authenticated Google Drive file edit/revision API is not available in this environment; upgraded package archive is produced for upload/application to Drive."
+        }
+      },
+      "checksums": {
+        "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.gz": "0bdf372bae59a7d207cdb93a89ecbb89a2f83b779019c965f16ad157224b0b27",
+        "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip": "6ad8a4d040c686bb7079b251b7c6064fd54cd283417f678d47004b88dcc55ad4",
+        "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.list": "49c5499b262c004e022cf94f3394ff06f556292a693ea21ae043fb3be93f2ad8",
+        "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip.list": "49c5499b262c004e022cf94f3394ff06f556292a693ea21ae043fb3be93f2ad8",
+        "execution-framework/generated/release_archives/REL-400_PACKAGE_ARCHIVE.summary.json": "e7e2fe6f8185ca1e5c9bbbe48078dcccc60b05243452a5c2137d9f7c79a9e617",
+        "execution-framework/state/REL-400_PACKAGE_ARCHIVE.heartbeat.json": "d6a7be882e3d620903778fbe4e87961e21853f88b23c14fb4d84bc44b4cfeeb1",
+        "execution-framework/logs/REL-400_PACKAGE_ARCHIVE.log": "a03ffea365c547d8c1472575fc619e9a263d64df7088663464aa0f517d77975c"
+      },
+      "logs_uri": "logs/REL-400_PACKAGE_ARCHIVE.log",
+      "rollback_point": "history/pre_execution_framework_manifest.json",
+      "evidence": [
+        "generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.gz",
+        "generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip",
+        "generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.list",
+        "generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip.list",
+        "generated/release_archives/REL-400_PACKAGE_ARCHIVE.summary.json",
+        "logs/REL-400_PACKAGE_ARCHIVE.log"
+      ],
+      "failure_reason": "",
+      "next_action": "run REL-401_HANDOFF and provide archive paths, checksums, and Drive blocker context"
+    },
+    {
+      "proof_schema_version": "1.0",
+      "task_id": "REL-401_HANDOFF",
+      "status": "completed",
+      "started_at": "2026-07-05T06:10:06Z",
+      "completed_at": "2026-07-05T06:10:06Z",
+      "actor": "handoff-agent",
+      "helper_id": "helper-handoff-01",
+      "model_tag": "gpt-5.3-spark",
+      "repo_path": "/mnt/data",
+      "files_changed": [
+        "execution-framework/logs/REL-401_HANDOFF.log",
+        "execution-framework/state/REL-401_HANDOFF.heartbeat.json",
+        "execution-framework/proof_records/REL-401_HANDOFF.proof.json",
+        "execution-framework/proof_records/proof_ledger.jsonl"
+      ],
+      "commands_run": [
+        "sed -n '1,240p' generated/final_verification_report.json",
+        "sed -n '1,260p' docs/FINAL_VERIFICATION.md",
+        "sed -n '1,220p' generated/release_archives/REL-400_PACKAGE_ARCHIVE.summary.json",
+        "sed -n '1,220p' proof_records/REL-400_PACKAGE_ARCHIVE.proof.json",
+        "test -f proof_records/REL-401_HANDOFF.proof.json"
+      ],
+      "verification_output": {
+        "schema_version": "1.0",
+        "task_id": "REL-401_HANDOFF",
+        "generated_at": "2026-07-05T06:10:06Z",
+        "access_status": {
+          "shell_mode": "workspace-write",
+          "filesystem_scope": "chat-output",
+          "readable": [
+            "/root"
+          ],
+          "writable": [
+            "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework",
+            "/tmp"
+          ]
+        },
+        "verification_result": {
+          "status": "pass_with_external_blocker",
+          "local_package_complete": true,
+          "task_count": 80,
+          "packet_count": 80,
+          "proof_count": 87,
+          "missing_outputs": [],
+          "tasks_without_packets": [],
+          "packet_missing_fields": []
+        },
+        "archives": {
+          "tar_gz": {
+            "path": "generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.gz",
+            "sha256": "0bdf372bae59a7d207cdb93a89ecbb89a2f83b779019c965f16ad157224b0b27",
+            "size_bytes": 15745389,
+            "entry_count": 967
+          },
+          "zip": {
+            "path": "generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip",
+            "sha256": "6ad8a4d040c686bb7079b251b7c6064fd54cd283417f678d47004b88dcc55ad4",
+            "size_bytes": 16385876,
+            "entry_count": 967
+          }
+        },
+        "blockers": [
+          {
+            "blocker_id": "EXT-DRIVE-WRITE",
+            "status": "documented",
+            "detail": "Authenticated Google Drive file edit/revision API is not available in this environment; upgraded package archive is produced for upload/application to Drive."
+          }
+        ]
+      },
+      "checksums": {},
+      "logs_uri": "logs/REL-401_HANDOFF.log",
+      "rollback_point": "history/pre_execution_framework_manifest.json",
+      "evidence": [
+        "generated/final_verification_report.json",
+        "docs/FINAL_VERIFICATION.md",
+        "generated/release_archives/REL-400_PACKAGE_ARCHIVE.summary.json",
+        "proof_records/REL-400_PACKAGE_ARCHIVE.proof.json",
+        "generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.gz",
+        "generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip",
+        "logs/REL-401_HANDOFF.log"
+      ],
+      "failure_reason": "",
+      "next_action": "upload or apply the release archive through an authenticated Drive-capable environment if Drive publication is required"
+    },
+    {
+      "proof_schema_version": "1.0",
+      "task_id": "EF-007_GOAL_LOOP",
+      "status": "completed",
+      "started_at": "2026-07-05T06:16:26+00:00",
+      "completed_at": "2026-07-05T06:16:26+00:00",
+      "actor": "local-execution-framework",
+      "helper_id": "helper-goal-01",
+      "model_tag": "gpt-5.3-spark",
+      "repo_path": "execution-framework",
+      "files_changed": [
+        "execution-framework/state/goal_loop_state.json",
+        "execution-framework/generated/status_report.json"
+      ],
+      "commands_run": [
+        "python3 scripts/goal_loop.py generated/task_graph.csv"
+      ],
+      "verification_output": {
+        "dispatch_count": 0,
+        "approval_blocker_count": 0,
+        "blocked_count": 0
+      },
+      "checksums": {
+        "execution-framework/state/goal_loop_state.json": "08d4d5f6a1f54ba7a15cf5c90279ea3ba6407559768c1a4419bceb491f4f7129",
+        "execution-framework/generated/status_report.json": "08d4d5f6a1f54ba7a15cf5c90279ea3ba6407559768c1a4419bceb491f4f7129"
+      },
+      "logs_uri": "logs/EF-007_GOAL_LOOP.log",
+      "rollback_point": "history/pre_execution_framework_manifest.json",
+      "evidence": [
+        "state/goal_loop_state.json",
+        "generated/status_report.json"
+      ],
+      "failure_reason": "",
+      "next_action": "run verify_history_and_completeness.py"
+    },
+    {
+      "proof_schema_version": "1.0",
+      "task_id": "EF-008_VERIFY_HISTORY_COMPLETENESS",
+      "status": "completed",
+      "started_at": "2026-07-05T06:16:26+00:00",
+      "completed_at": "2026-07-05T06:16:26+00:00",
+      "actor": "local-execution-framework",
+      "helper_id": "helper-final-01",
+      "model_tag": "gpt-5.3-spark",
+      "repo_path": "execution-framework",
+      "files_changed": [
+        "execution-framework/generated/final_verification_report.json",
+        "execution-framework/docs/FINAL_VERIFICATION.md"
+      ],
+      "commands_run": [
+        "python3 scripts/verify_history_and_completeness.py"
+      ],
+      "verification_output": {
+        "schema_version": "1.0",
+        "generated_at": "2026-07-05T06:16:26+00:00",
+        "status": "pass_with_external_blocker",
+        "local_package_complete": true,
+        "task_count": 80,
+        "packet_count": 80,
+        "proof_count": 88,
+        "missing_outputs": [],
+        "tasks_without_packets": [],
+        "packet_missing_fields": [],
+        "source_sections": {
+          "README.md": true,
+          "PACKAGE_MANIFEST.json": true,
+          "specs": true,
+          "prompts": true,
+          "codex": true,
+          "schemas": true,
+          "examples": true,
+          "helpers": true,
+          "sql": true,
+          "source": true,
+          "expected-output": true,
+          "history": true
+        },
+        "ignored_sections": [],
+        "completed_without_proof": [],
+        "coverage": {
+          "system_inventory": {
+            "task_id": "ART-100_SYSTEM_INVENTORY",
+            "covered": true
+          },
+          "dependency_graph": {
+            "task_id": "ART-103_SERVICE_DEP_GRAPH",
+            "covered": true
+          },
+          "data_flow_graph": {
+            "task_id": "ART-107_DATA_FLOW_GRAPH",
+            "covered": true
+          },
+          "source_to_target_mapping": {
+            "task_id": "ART-109_DATA_LINEAGE",
+            "covered": true
+          },
+          "environment_matrix": {
+            "task_id": "ART-114_ENV_CONFIG_MATRIX",
+            "covered": true
+          },
+          "toolchain_dependency_tree": {
+            "task_id": "ART-104_TOOLCHAIN_TREE",
+            "covered": true
+          },
+          "api_event_contract_catalog": {
+            "task_id": "ART-110_API_CATALOG",
+            "covered": true
+          },
+          "cutover_checklist": {
+            "task_id": "ART-121_CUTOVER",
+            "covered": true
+          },
+          "rollback_plan": {
+            "task_id": "ART-122_ROLLBACK",
+            "covered": true
+          },
+          "risk_register": {
+            "task_id": "ART-125_RISK_REGISTER",
+            "covered": true
+          },
+          "decision_log": {
+            "task_id": "ART-126_DECISION_LOG",
+            "covered": true
+          },
+          "envctl_database": {
+            "task_id": "REQ-020_ENVCTL_DB_SCHEMA",
+            "covered": true
+          },
+          "nu_plugin": {
+            "task_id": "REQ-030_PLUGIN_PROTOCOL_MANIFEST",
+            "covered": true
+          },
+          "goal_loop": {
+            "task_id": "EF-007_GOAL_LOOP",
+            "covered": true
+          },
+          "proof_ledger": {
+            "task_id": "EF-008_VERIFY_HISTORY_COMPLETENESS",
+            "covered": true
+          },
+          "two_repo": {
+            "task_id": "REQ-041_TWO_REPO_INTEGRATION",
+            "covered": true
+          },
+          "flexnetos": {
+            "task_id": "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+            "covered": true
+          }
+        },
+        "unresolved_gaps": [],
+        "goal_loop_summary": {
+          "schema_version": "1.0",
+          "generated_at": "2026-07-05T06:16:26+00:00",
+          "task_count": 80,
+          "complete_count": 80,
+          "failed_count": 0,
+          "pending_count": 0,
+          "runnable_count": 0,
+          "dispatch_count": 0,
+          "approval_blocker_count": 0,
+          "blocked_count": 0,
+          "runnable_tasks": [],
+          "dispatch_packets": [],
+          "approval_blockers": [],
+          "blocked_tasks": [],
+          "statuses": {
+            "EF-001_SCAN_PACKAGE": "complete",
+            "EF-002_GAP_REPORT": "complete",
+            "EF-003_APPLY_FRAMEWORK": "complete",
+            "EF-004_GENERATE_TASK_GRAPH": "complete",
+            "EF-005_VALIDATE_TASK_GRAPH": "complete",
+            "EF-006_TASK_GRAPH_TO_PACKETS": "complete",
+            "EF-007_GOAL_LOOP": "complete",
+            "EF-008_VERIFY_HISTORY_COMPLETENESS": "complete",
+            "REQ-010_CONTRACT_LOCK": "complete",
+            "REQ-020_ENVCTL_DB_SCHEMA": "complete",
+            "REQ-021_ENVCTL_TARGET_REGISTRY": "complete",
+            "REQ-022_ENVCTL_RUN_LEDGER": "complete",
+            "REQ-023_ENVCTL_OPERATION_STATE": "complete",
+            "REQ-024_ENVCTL_ARTIFACT_REGISTRY": "complete",
+            "REQ-025_ENVCTL_VALIDATION_EVIDENCE": "complete",
+            "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS": "complete",
+            "REQ-027_ENVCTL_REPLAY_ENGINE": "complete",
+            "REQ-028_ENVCTL_AGENT_CONTROL_API": "complete",
+            "REQ-030_PLUGIN_PROTOCOL_MANIFEST": "complete",
+            "REQ-031_PLUGIN_COMMAND_SURFACE": "complete",
+            "REQ-032_PLUGIN_LIVE_VISUALS": "complete",
+            "REQ-033_PLUGIN_HUMAN_APPROVAL": "complete",
+            "REQ-034_PLUGIN_STATUS_STREAMS": "complete",
+            "REQ-040_SHARED_PROTOCOL_SCHEMAS": "complete",
+            "REQ-041_TWO_REPO_INTEGRATION": "complete",
+            "REQ-042_FILESYSTEM_BOUNDS": "complete",
+            "REQ-043_SECURITY_REDACTION": "complete",
+            "REQ-044_INSTALL_BOOTSTRAP": "complete",
+            "REQ-045_RUN_REPLAY": "complete",
+            "ART-100_SYSTEM_INVENTORY": "complete",
+            "ART-101_DIRECTORY_TREE": "complete",
+            "ART-102_REPOSITORY_MAP": "complete",
+            "ART-103_SERVICE_DEP_GRAPH": "complete",
+            "ART-104_TOOLCHAIN_TREE": "complete",
+            "ART-105_PACKAGE_LIB_GRAPH": "complete",
+            "ART-106_RUNTIME_DEP_MAP": "complete",
+            "ART-107_DATA_FLOW_GRAPH": "complete",
+            "ART-108_DB_SCHEMA_MAP": "complete",
+            "ART-109_DATA_LINEAGE": "complete",
+            "ART-110_API_CATALOG": "complete",
+            "ART-111_EVENT_MAP": "complete",
+            "ART-112_CODE_OWNERSHIP": "complete",
+            "ART-113_DEBUG_CODE_MAP": "complete",
+            "ART-114_ENV_CONFIG_MATRIX": "complete",
+            "ART-115_CONFIG_INVENTORY": "complete",
+            "ART-116_INFRA_TOPOLOGY": "complete",
+            "ART-117_IAM_MATRIX": "complete",
+            "ART-118_OBSERVABILITY": "complete",
+            "ART-119_BUSINESS_PROCESS": "complete",
+            "ART-120_WAVE_PLAN": "complete",
+            "ART-121_CUTOVER": "complete",
+            "ART-122_ROLLBACK": "complete",
+            "ART-123_VALIDATION_RECONCILIATION": "complete",
+            "ART-124_TEST_COVERAGE": "complete",
+            "ART-125_RISK_REGISTER": "complete",
+            "ART-126_DECISION_LOG": "complete",
+            "ART-127_BLAST_RADIUS": "complete",
+            "ART-128_READINESS_SCORECARD": "complete",
+            "ART-129_BUSINESS_CAPABILITY": "complete",
+            "ART-130_SHADOW_TRAFFIC": "complete",
+            "ART-131_GOLDEN_DATASET": "complete",
+            "ART-132_PARITY_DASHBOARD": "complete",
+            "ART-133_DEPRECATION_MAP": "complete",
+            "ART-134_EXCEPTION_INVENTORY": "complete",
+            "ART-135_RACI": "complete",
+            "ART-136_TECH_DEBT_LEDGER": "complete",
+            "REQ-200_FLEXNETOS_TARGET_DESCRIPTOR": "complete",
+            "REQ-201_FLEXNETOS_LIFEOS_COMPARISON": "complete",
+            "REQ-202_FLEXNETOS_ADAPTER_RECIPE": "complete",
+            "VER-300_UNIT_VALIDATION": "complete",
+            "VER-301_SQL_SCHEMA_TEST": "complete",
+            "VER-302_PACKET_SCHEMA_VALIDATION": "complete",
+            "VER-303_GOAL_LOOP_COMPUTE": "complete",
+            "VER-304_FINAL_COMPLETENESS": "complete",
+            "REL-400_PACKAGE_ARCHIVE": "complete",
+            "REL-401_HANDOFF": "complete",
+            "MAINT-500_README_NAV_BACKTRACE": "complete",
+            "MAINT-501_RESTORE_PROOF_TEMPLATE": "complete",
+            "MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC": "complete",
+            "MAINT-503_CODEX_FINAL_PROMPT": "complete"
+          }
+        },
+        "external_blockers": [
+          {
+            "blocker_id": "EXT-DRIVE-WRITE",
+            "status": "documented",
+            "detail": "Authenticated Google Drive file edit/revision API is not available in this environment; upgraded package archive is produced for upload/application to Drive."
+          }
+        ]
+      },
+      "checksums": {
+        "execution-framework/generated/final_verification_report.json": "6a7f426076d919798c2f7385fdc629275c72de456a9bc79c80cbacd92d6ff893",
+        "execution-framework/docs/FINAL_VERIFICATION.md": "4349775c03376d11933cc09cbf821b3eba47a69eb80b381da7cbe052d778ad5b"
+      },
+      "logs_uri": "logs/EF-008_VERIFY_HISTORY_COMPLETENESS.log",
+      "rollback_point": "history/pre_execution_framework_manifest.json",
+      "evidence": [
+        "generated/final_verification_report.json",
+        "docs/FINAL_VERIFICATION.md"
+      ],
+      "failure_reason": "",
+      "next_action": "upload/apply upgraded archive to Drive with authenticated Drive access"
     }
   ]
 }

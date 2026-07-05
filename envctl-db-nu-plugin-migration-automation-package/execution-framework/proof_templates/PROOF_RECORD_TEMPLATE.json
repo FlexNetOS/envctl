@@ -14,7 +14,7 @@
   "checksums": {},
   "logs_uri": "",
   "rollback_point": "",
-  "evidence": {},
+  "evidence": [],
   "failure_reason": "",
   "next_action": ""
 }

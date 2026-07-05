@@ -1,28 +1,48 @@
 {
-  "proof_schema_version": "1.0",
-  "task_id": "EF-008_VERIFY_HISTORY_COMPLETENESS",
-  "status": "completed",
-  "started_at": "2026-07-05T06:18:54+00:00",
-  "completed_at": "2026-07-05T06:18:54+00:00",
-  "actor": "local-execution-framework",
-  "helper_id": "helper-final-01",
-  "model_tag": "gpt-5.3-spark",
-  "repo_path": "execution-framework",
-  "files_changed": [
-    "execution-framework/generated/final_verification_report.json",
-    "execution-framework/docs/FINAL_VERIFICATION.md"
-  ],
-  "commands_run": [
-    "python3 scripts/verify_history_and_completeness.py"
-  ],
-  "verification_output": {
+  "schema_version": "1.0",
+  "task_id": "VER-304_FINAL_COMPLETENESS",
+  "generated_at": "2026-07-05T06:04:08+00:00",
+  "status": "pass",
+  "packet_summary": {
+    "goal": "Prove every source requirement is covered by a task or explicit blocker",
+    "repo_target": "filesystem",
+    "repo_path": "..",
+    "filesystem_scope": "package-root",
+    "verification_command": "python3 scripts/verify_ver304_final_completeness.py"
+  },
+  "dependency_proof": {
+    "task_id": "VER-303_GOAL_LOOP_COMPUTE",
+    "path": "proof_records/VER-303_GOAL_LOOP_COMPUTE.proof.json",
+    "status": "completed",
+    "ok": true
+  },
+  "completeness_validator": {
+    "command": "python3 scripts/verify_history_and_completeness.py",
+    "exit_code": 0,
+    "stdout": [
+      "final verification status=pass_with_external_blocker tasks=80 packets=80 proofs=85"
+    ],
+    "stderr": []
+  },
+  "checks": {
+    "dependency_completed": true,
+    "validator_exit_zero": true,
+    "final_status_allowed": true,
+    "local_package_complete": true,
+    "all_source_sections_present": true,
+    "no_unresolved_gaps": true,
+    "no_missing_outputs": true,
+    "no_tasks_without_packets": true,
+    "no_packet_missing_fields": true
+  },
+  "final_verification_report": {
     "schema_version": "1.0",
-    "generated_at": "2026-07-05T06:18:54+00:00",
+    "generated_at": "2026-07-05T06:04:08+00:00",
     "status": "pass_with_external_blocker",
     "local_package_complete": true,
     "task_count": 80,
     "packet_count": 80,
-    "proof_count": 88,
+    "proof_count": 85,
     "missing_outputs": [],
     "tasks_without_packets": [],
     "packet_missing_fields": [],
@@ -115,19 +135,48 @@
     "unresolved_gaps": [],
     "goal_loop_summary": {
       "schema_version": "1.0",
-      "generated_at": "2026-07-05T06:18:54+00:00",
+      "generated_at": "2026-07-05T06:01:54+00:00",
       "task_count": 80,
-      "complete_count": 80,
+      "complete_count": 77,
       "failed_count": 0,
-      "pending_count": 0,
-      "runnable_count": 0,
-      "dispatch_count": 0,
+      "pending_count": 3,
+      "runnable_count": 1,
+      "dispatch_count": 1,
       "approval_blocker_count": 0,
-      "blocked_count": 0,
-      "runnable_tasks": [],
-      "dispatch_packets": [],
+      "blocked_count": 2,
+      "runnable_tasks": [
+        {
+          "task_id": "VER-304_FINAL_COMPLETENESS",
+          "parallel_group": "verification",
+          "max_parallel": 1,
+          "packet_uri": "generated/execution_packets/VER-304_FINAL_COMPLETENESS.json"
+        }
+      ],
+      "dispatch_packets": [
+        {
+          "task_id": "VER-304_FINAL_COMPLETENESS",
+          "parallel_group": "verification",
+          "max_parallel": 1,
+          "packet_uri": "generated/execution_packets/VER-304_FINAL_COMPLETENESS.json"
+        }
+      ],
       "approval_blockers": [],
-      "blocked_tasks": [],
+      "blocked_tasks": [
+        {
+          "task_id": "REL-400_PACKAGE_ARCHIVE",
+          "reason": "unmet dependencies",
+          "dependencies": [
+            "VER-304_FINAL_COMPLETENESS"
+          ]
+        },
+        {
+          "task_id": "REL-401_HANDOFF",
+          "reason": "unmet dependencies",
+          "dependencies": [
+            "REL-400_PACKAGE_ARCHIVE"
+          ]
+        }
+      ],
       "statuses": {
         "EF-001_SCAN_PACKAGE": "complete",
         "EF-002_GAP_REPORT": "complete",
@@ -202,9 +251,9 @@
         "VER-301_SQL_SCHEMA_TEST": "complete",
         "VER-302_PACKET_SCHEMA_VALIDATION": "complete",
         "VER-303_GOAL_LOOP_COMPUTE": "complete",
-        "VER-304_FINAL_COMPLETENESS": "complete",
-        "REL-400_PACKAGE_ARCHIVE": "complete",
-        "REL-401_HANDOFF": "complete",
+        "VER-304_FINAL_COMPLETENESS": "pending",
+        "REL-400_PACKAGE_ARCHIVE": "pending",
+        "REL-401_HANDOFF": "pending",
         "MAINT-500_README_NAV_BACKTRACE": "complete",
         "MAINT-501_RESTORE_PROOF_TEMPLATE": "complete",
         "MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC": "complete",
@@ -219,16 +268,13 @@
       }
     ]
   },
-  "checksums": {
-    "execution-framework/generated/final_verification_report.json": "3c2e52dfb9c5490243dbf23838a31df9862ea8f0d67fc1720bf60c81bb20c5e2",
-    "execution-framework/docs/FINAL_VERIFICATION.md": "4349775c03376d11933cc09cbf821b3eba47a69eb80b381da7cbe052d778ad5b"
+  "secret_scan": {
+    "paths": [
+      "generated/ver304_final_completeness_report.json",
+      "logs/VER-304_FINAL_COMPLETENESS.log",
+      "state/VER-304_FINAL_COMPLETENESS.heartbeat.json"
+    ],
+    "findings": []
   },
-  "logs_uri": "logs/EF-008_VERIFY_HISTORY_COMPLETENESS.log",
-  "rollback_point": "history/pre_execution_framework_manifest.json",
-  "evidence": [
-    "generated/final_verification_report.json",
-    "docs/FINAL_VERIFICATION.md"
-  ],
-  "failure_reason": "",
-  "next_action": "upload/apply upgraded archive to Drive with authenticated Drive access"
+  "errors": []
 }
