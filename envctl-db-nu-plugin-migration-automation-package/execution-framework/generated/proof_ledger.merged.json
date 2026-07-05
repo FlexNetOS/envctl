@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-07-05T00:14:49+00:00",
-  "proof_count": 67,
+  "generated_at": "2026-07-05T04:33:42+00:00",
+  "proof_count": 68,
   "proofs": [
     {
       "proof_schema_version": "1.0",
@@ -13051,10 +13051,118 @@
     },
     {
       "proof_schema_version": "1.0",
+      "task_id": "EF-005_VALIDATE_TASK_GRAPH",
+      "status": "completed",
+      "started_at": "2026-07-05T04:27:57+00:00",
+      "completed_at": "2026-07-05T04:27:57+00:00",
+      "actor": "local-execution-framework",
+      "helper_id": "helper-verify-01",
+      "model_tag": "gpt-5.3-spark",
+      "repo_path": "execution-framework",
+      "files_changed": [
+        "execution-framework/generated/task_graph.validation_report.json"
+      ],
+      "commands_run": [
+        "python3 scripts/validate_task_graph.py generated/task_graph.csv"
+      ],
+      "verification_output": {
+        "schema_version": "1.0",
+        "status": "passed",
+        "task_count": 80,
+        "error_count": 0,
+        "warning_count": 0,
+        "errors": [],
+        "warnings": []
+      },
+      "checksums": {
+        "execution-framework/generated/task_graph.validation_report.json": "97432eb3552db873a67198e11821fd90e7c612bdd60522c712e003029ddbccea"
+      },
+      "logs_uri": "logs/EF-005_VALIDATE_TASK_GRAPH.log",
+      "rollback_point": "history/pre_execution_framework_manifest.json",
+      "evidence": [
+        "generated/task_graph.validation_report.json"
+      ],
+      "failure_reason": "",
+      "next_action": "run task_graph_to_packets.py"
+    },
+    {
+      "proof_schema_version": "1.0",
+      "task_id": "EF-006_TASK_GRAPH_TO_PACKETS",
+      "status": "completed",
+      "started_at": "2026-07-05T04:28:00+00:00",
+      "completed_at": "2026-07-05T04:28:00+00:00",
+      "actor": "local-execution-framework",
+      "helper_id": "helper-packet-01",
+      "model_tag": "gpt-5.3-spark",
+      "repo_path": "execution-framework",
+      "files_changed": [
+        "execution-framework/generated/execution_manifest.json",
+        "execution-framework/generated/execution_packets/EF-001_SCAN_PACKAGE.json",
+        "execution-framework/generated/execution_packets/EF-002_GAP_REPORT.json",
+        "execution-framework/generated/execution_packets/EF-003_APPLY_FRAMEWORK.json",
+        "execution-framework/generated/execution_packets/EF-004_GENERATE_TASK_GRAPH.json",
+        "execution-framework/generated/execution_packets/EF-005_VALIDATE_TASK_GRAPH.json",
+        "execution-framework/generated/execution_packets/EF-006_TASK_GRAPH_TO_PACKETS.json",
+        "execution-framework/generated/execution_packets/EF-007_GOAL_LOOP.json",
+        "execution-framework/generated/execution_packets/EF-008_VERIFY_HISTORY_COMPLETENESS.json",
+        "execution-framework/generated/execution_packets/REQ-010_CONTRACT_LOCK.json",
+        "execution-framework/generated/execution_packets/REQ-020_ENVCTL_DB_SCHEMA.json",
+        "execution-framework/generated/execution_packets/REQ-021_ENVCTL_TARGET_REGISTRY.json",
+        "execution-framework/generated/execution_packets/REQ-022_ENVCTL_RUN_LEDGER.json",
+        "execution-framework/generated/execution_packets/REQ-023_ENVCTL_OPERATION_STATE.json",
+        "execution-framework/generated/execution_packets/REQ-024_ENVCTL_ARTIFACT_REGISTRY.json",
+        "execution-framework/generated/execution_packets/REQ-025_ENVCTL_VALIDATION_EVIDENCE.json",
+        "execution-framework/generated/execution_packets/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.json",
+        "execution-framework/generated/execution_packets/REQ-027_ENVCTL_REPLAY_ENGINE.json",
+        "execution-framework/generated/execution_packets/REQ-028_ENVCTL_AGENT_CONTROL_API.json",
+        "execution-framework/generated/execution_packets/REQ-030_PLUGIN_PROTOCOL_MANIFEST.json",
+        "execution-framework/generated/execution_packets/REQ-031_PLUGIN_COMMAND_SURFACE.json"
+      ],
+      "commands_run": [
+        "python3 scripts/task_graph_to_packets.py generated/task_graph.csv"
+      ],
+      "verification_output": {
+        "packet_count": 80,
+        "manifest": "generated/execution_manifest.json"
+      },
+      "checksums": {
+        "execution-framework/generated/execution_manifest.json": "d079cfac67c63333389a221ae86ed627d16c63b7c83f7a87a79910c06b94def4",
+        "execution-framework/generated/execution_packets/EF-001_SCAN_PACKAGE.json": "f0d7e17620ab84e2fcff1dd2bf4299f69c3c23e8adad8cc1daa8571048f1ffb1",
+        "execution-framework/generated/execution_packets/EF-002_GAP_REPORT.json": "78a6bd5f342844bb8ccc1c5766cdea6662cabff7df65e3f9917bf3a0d25d3d3d",
+        "execution-framework/generated/execution_packets/EF-003_APPLY_FRAMEWORK.json": "988213dbe1396af50f5c9526dbe24a88c426a9c713bc10e9b0c83ea2c769de15",
+        "execution-framework/generated/execution_packets/EF-004_GENERATE_TASK_GRAPH.json": "bc4cd9636dba146cf39e232ac65c55b8c74fabe1c5ecedf90e772aa8c7d2c5b6",
+        "execution-framework/generated/execution_packets/EF-005_VALIDATE_TASK_GRAPH.json": "f3495b62488b8925e5ff385fc103dcf984b7a675d56f7cf17950e04a743bf47b",
+        "execution-framework/generated/execution_packets/EF-006_TASK_GRAPH_TO_PACKETS.json": "74be8d1699d36a1d910a931521d73740449ce1a9379ad876d5511ecac9c43cea",
+        "execution-framework/generated/execution_packets/EF-007_GOAL_LOOP.json": "c6d80e8188f6612cff018ef5c3dbcb6dd5b4e8f1bb464237f2b766a7b8a81259",
+        "execution-framework/generated/execution_packets/EF-008_VERIFY_HISTORY_COMPLETENESS.json": "8bc7c2606957e7ad7e2999aa0ab78dfe76ff55beba8ea638fd4ebf4aaa1daea8",
+        "execution-framework/generated/execution_packets/REQ-010_CONTRACT_LOCK.json": "d576779f2cd98dcd3c5038ad74a904cac923fb771157d2017ed68c7eeb50b944",
+        "execution-framework/generated/execution_packets/REQ-020_ENVCTL_DB_SCHEMA.json": "2b1d5db23d9e1b09659667683666909ec163f61772825106c02752ef42e2f301",
+        "execution-framework/generated/execution_packets/REQ-021_ENVCTL_TARGET_REGISTRY.json": "1c840bafaefb5ff24951e3d54c8d6dac111eec237a7c2b390737e7ab390e55d2",
+        "execution-framework/generated/execution_packets/REQ-022_ENVCTL_RUN_LEDGER.json": "1cf7ccc486ba6d000678333b7ef1d6fcb135909ffea0fd703c1c2153561dae63",
+        "execution-framework/generated/execution_packets/REQ-023_ENVCTL_OPERATION_STATE.json": "bf6154ba2bc82a40a0d6c28b6903c75bc73684f9629dfc758c1e4fff7b989c59",
+        "execution-framework/generated/execution_packets/REQ-024_ENVCTL_ARTIFACT_REGISTRY.json": "6e2dabedb5a70d92e9acd90aecea6ec05e79aadb4c2782aa79252ad2c9b655d4",
+        "execution-framework/generated/execution_packets/REQ-025_ENVCTL_VALIDATION_EVIDENCE.json": "1e640de9965f83a1dd69dbe9746d96d9b67422851908a6e4b404a4cd45dd53db",
+        "execution-framework/generated/execution_packets/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.json": "9daf8bf9ea478dc7a648414fd56b2a686a359370fb067963b777408d6d9e4a52",
+        "execution-framework/generated/execution_packets/REQ-027_ENVCTL_REPLAY_ENGINE.json": "9e545c8ab64682289f1d0ac519467a3f5c2418d3b288bd37ccda3673eae55e75",
+        "execution-framework/generated/execution_packets/REQ-028_ENVCTL_AGENT_CONTROL_API.json": "d15a3526581da89bf6883076c7021950651a126737d6aa73ecb7c0b96c994e78",
+        "execution-framework/generated/execution_packets/REQ-030_PLUGIN_PROTOCOL_MANIFEST.json": "628625322587173b10b280d4aa72001ef7b714f412945d979c1c3a95042b0af7",
+        "execution-framework/generated/execution_packets/REQ-031_PLUGIN_COMMAND_SURFACE.json": "e0537b7094d4cd49407a20e371174b29940a23b608ac8acbdc07b649d4ce8482"
+      },
+      "logs_uri": "logs/EF-006_TASK_GRAPH_TO_PACKETS.log",
+      "rollback_point": "history/pre_execution_framework_manifest.json",
+      "evidence": [
+        "generated/execution_manifest.json",
+        "generated/execution_packets/"
+      ],
+      "failure_reason": "",
+      "next_action": "run goal_loop.py"
+    },
+    {
+      "proof_schema_version": "1.0",
       "task_id": "EF-007_GOAL_LOOP",
       "status": "completed",
-      "started_at": "2026-07-05T00:14:30+00:00",
-      "completed_at": "2026-07-05T00:14:30+00:00",
+      "started_at": "2026-07-05T04:28:09+00:00",
+      "completed_at": "2026-07-05T04:28:09+00:00",
       "actor": "local-execution-framework",
       "helper_id": "helper-goal-01",
       "model_tag": "gpt-5.3-spark",
@@ -13072,8 +13180,8 @@
         "blocked_count": 13
       },
       "checksums": {
-        "execution-framework/state/goal_loop_state.json": "222f6e199f766acca10e7f6437abfcf3d137c5e32bc748aef076bf8461923892",
-        "execution-framework/generated/status_report.json": "222f6e199f766acca10e7f6437abfcf3d137c5e32bc748aef076bf8461923892"
+        "execution-framework/state/goal_loop_state.json": "b6148a1bf4e424c71419a3cd3b6f368f5df05c121796ba554dfff38e2c3bf2cd",
+        "execution-framework/generated/status_report.json": "b6148a1bf4e424c71419a3cd3b6f368f5df05c121796ba554dfff38e2c3bf2cd"
       },
       "logs_uri": "logs/EF-007_GOAL_LOOP.log",
       "rollback_point": "history/pre_execution_framework_manifest.json",
@@ -13088,8 +13196,8 @@
       "proof_schema_version": "1.0",
       "task_id": "EF-008_VERIFY_HISTORY_COMPLETENESS",
       "status": "completed",
-      "started_at": "2026-07-05T00:14:31+00:00",
-      "completed_at": "2026-07-05T00:14:31+00:00",
+      "started_at": "2026-07-05T04:28:11+00:00",
+      "completed_at": "2026-07-05T04:28:11+00:00",
       "actor": "local-execution-framework",
       "helper_id": "helper-final-01",
       "model_tag": "gpt-5.3-spark",
@@ -13103,7 +13211,7 @@
       ],
       "verification_output": {
         "schema_version": "1.0",
-        "generated_at": "2026-07-05T00:14:31+00:00",
+        "generated_at": "2026-07-05T04:28:11+00:00",
         "status": "pass_with_external_blocker",
         "local_package_complete": true,
         "task_count": 80,
@@ -13201,7 +13309,7 @@
         "unresolved_gaps": [],
         "goal_loop_summary": {
           "schema_version": "1.0",
-          "generated_at": "2026-07-05T00:14:31+00:00",
+          "generated_at": "2026-07-05T04:28:09+00:00",
           "task_count": 80,
           "complete_count": 64,
           "failed_count": 0,
@@ -13458,7 +13566,7 @@
         ]
       },
       "checksums": {
-        "execution-framework/generated/final_verification_report.json": "c26c8165aed7d38a46cdbf33ed730bd4414a1095b70ef51bdd4413d75049d7b4",
+        "execution-framework/generated/final_verification_report.json": "e7b366a0c2b199dc498bcde47a199c532a775b14df58ca721334cc5549fde677",
         "execution-framework/docs/FINAL_VERIFICATION.md": "527ff9740f610604fd4fea9ff300032f770213a4be62e1131ada612321fe7bd3"
       },
       "logs_uri": "logs/EF-008_VERIFY_HISTORY_COMPLETENESS.log",
@@ -13472,111 +13580,245 @@
     },
     {
       "proof_schema_version": "1.0",
-      "task_id": "EF-005_VALIDATE_TASK_GRAPH",
+      "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
       "status": "completed",
-      "started_at": "2026-07-05T00:14:49+00:00",
-      "completed_at": "2026-07-05T00:14:49+00:00",
-      "actor": "local-execution-framework",
-      "helper_id": "helper-verify-01",
+      "started_at": "2026-07-05T04:32:27+00:00",
+      "completed_at": "2026-07-05T04:32:27+00:00",
+      "actor": "codex-cli-local",
+      "helper_id": "helper-envctl-rollback-01",
       "model_tag": "gpt-5.3-spark",
-      "repo_path": "execution-framework",
+      "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
       "files_changed": [
-        "execution-framework/generated/task_graph.validation_report.json"
+        "execution-framework/scripts/rollback_checkpoints.py",
+        "execution-framework/scripts/verify_rollback_checkpoints.py",
+        "execution-framework/generated/envctl_rollback_checkpoints_report.json",
+        "execution-framework/docs/ENVCTL_ROLLBACK_CHECKPOINTS.md",
+        "execution-framework/state/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.heartbeat.json",
+        "execution-framework/logs/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.log",
+        "execution-framework/proof_records/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.proof.json",
+        "execution-framework/proof_records/proof_ledger.jsonl"
       ],
       "commands_run": [
-        "python3 scripts/validate_task_graph.py generated/task_graph.csv"
+        "python3 scripts/verify_rollback_checkpoints.py",
+        "python3 -m py_compile scripts/rollback_checkpoints.py scripts/verify_rollback_checkpoints.py"
       ],
       "verification_output": {
         "schema_version": "1.0",
+        "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
         "status": "passed",
-        "task_count": 80,
-        "error_count": 0,
-        "warning_count": 0,
+        "generated_at": "2026-07-05T04:32:27+00:00",
+        "fixture": {
+          "run_id": "run-req026",
+          "safe_operation_id": "op-req026-safe",
+          "risky_operation_id": "op-req026-risky"
+        },
+        "counts": {
+          "checkpoint_rows": 2,
+          "rollback_rows": 2,
+          "approval_rows": 1,
+          "approved_rollback_approvals": 1,
+          "event_rows": 8
+        },
+        "coverage": {
+          "checkpoint_rows": true,
+          "idempotent_repeat": true,
+          "rollback_handles": true,
+          "safe_status_transitions": true,
+          "approval_gated_risky_rollback": true,
+          "event_chain": true,
+          "fail_closed_rejections": true
+        },
+        "safe_checkpoint": {
+          "checkpoint_id": "checkpoint-b7e1748bf5a2468bdddc2b20",
+          "run_id": "run-req026",
+          "operation_id": "op-req026-safe",
+          "checkpoint_kind": "artifact_boundary",
+          "checkpoint_ref": "execution-framework/generated/rollback_checkpoints/safe-artifact.json",
+          "checkpoint_hash": "sha256:51c8dd88807da6208ea982acf8ab4d675662b1ae2078f09d341de34fe8de32a6",
+          "metadata": {
+            "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+            "boundary": "before repeatable artifact regeneration",
+            "repeat_safe": true
+          },
+          "inserted": true
+        },
+        "risky_checkpoint": {
+          "checkpoint_id": "checkpoint-ad12010e257fe10528594b89",
+          "run_id": "run-req026",
+          "operation_id": "op-req026-risky",
+          "checkpoint_kind": "pre_operation",
+          "checkpoint_ref": "history/pre_execution_framework_manifest.json",
+          "checkpoint_hash": "sha256:6bd3e9de4004907c01c8bb45e9e400f537140eadb002f3e068606276a875fb49",
+          "metadata": {
+            "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+            "boundary": "before approval-gated target mutation",
+            "repeat_safe": false
+          },
+          "inserted": true
+        },
+        "safe_rollback": {
+          "rollback_id": "rollback-d57988dc47b0f1064b2c40b5",
+          "run_id": "run-req026",
+          "operation_id": "op-req026-safe",
+          "rollback_type": "rerun_from_checkpoint",
+          "status": "succeeded",
+          "plan": {
+            "approval_required": false,
+            "boundary": {
+              "operation_id": "op-req026-safe",
+              "operation_risk": "R2",
+              "run_id": "run-req026"
+            },
+            "checkpoint": {
+              "hash": "sha256:51c8dd88807da6208ea982acf8ab4d675662b1ae2078f09d341de34fe8de32a6",
+              "id": "checkpoint-b7e1748bf5a2468bdddc2b20",
+              "kind": "artifact_boundary",
+              "metadata": {
+                "boundary": "before repeatable artifact regeneration",
+                "repeat_safe": true,
+                "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
+              },
+              "ref": "execution-framework/generated/rollback_checkpoints/safe-artifact.json"
+            },
+            "instructions": {
+              "mode": "verify-only",
+              "remove_added_files": []
+            },
+            "non_destructive": true,
+            "reason": "prove repeat/revert boundary for generated artifact operation",
+            "requested_by": "envctl-db-agent",
+            "rollback_type": "rerun_from_checkpoint",
+            "schema_version": "1.0"
+          },
+          "result": {
+            "applied": false,
+            "mode": "verify-only",
+            "verified_checkpoint_hash": "sha256:51c8dd88807da6208ea982acf8ab4d675662b1ae2078f09d341de34fe8de32a6"
+          }
+        },
+        "risky_rollback": {
+          "rollback_id": "rollback-fd6d5b735a13d96ffbd7f2cd",
+          "run_id": "run-req026",
+          "operation_id": "op-req026-risky",
+          "rollback_type": "restore_checkpoint",
+          "status": "planned",
+          "plan": {
+            "approval_required": true,
+            "boundary": {
+              "operation_id": "op-req026-risky",
+              "operation_risk": "R4",
+              "run_id": "run-req026"
+            },
+            "checkpoint": {
+              "hash": "sha256:6bd3e9de4004907c01c8bb45e9e400f537140eadb002f3e068606276a875fb49",
+              "id": "checkpoint-ad12010e257fe10528594b89",
+              "kind": "pre_operation",
+              "metadata": {
+                "boundary": "before approval-gated target mutation",
+                "repeat_safe": false,
+                "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
+              },
+              "ref": "history/pre_execution_framework_manifest.json"
+            },
+            "instructions": {
+              "mode": "manual_operator",
+              "restore_ref": "history/pre_execution_framework_manifest.json"
+            },
+            "non_destructive": true,
+            "reason": "approval-gated rollback handle for high-risk operation",
+            "requested_by": "envctl-db-agent",
+            "rollback_type": "restore_checkpoint",
+            "schema_version": "1.0"
+          },
+          "result": null
+        },
+        "checkpoint_rows": [
+          {
+            "id": "checkpoint-ad12010e257fe10528594b89",
+            "run_id": "run-req026",
+            "operation_id": "op-req026-risky",
+            "checkpoint_kind": "pre_operation",
+            "checkpoint_ref": "history/pre_execution_framework_manifest.json",
+            "checkpoint_hash": "sha256:6bd3e9de4004907c01c8bb45e9e400f537140eadb002f3e068606276a875fb49",
+            "metadata_json": "{\"boundary\":\"before approval-gated target mutation\",\"repeat_safe\":false,\"task_id\":\"REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS\"}",
+            "created_at_utc": "2026-07-05T04:32:27.865Z",
+            "metadata": {
+              "boundary": "before approval-gated target mutation",
+              "repeat_safe": false,
+              "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
+            }
+          },
+          {
+            "id": "checkpoint-b7e1748bf5a2468bdddc2b20",
+            "run_id": "run-req026",
+            "operation_id": "op-req026-safe",
+            "checkpoint_kind": "artifact_boundary",
+            "checkpoint_ref": "execution-framework/generated/rollback_checkpoints/safe-artifact.json",
+            "checkpoint_hash": "sha256:51c8dd88807da6208ea982acf8ab4d675662b1ae2078f09d341de34fe8de32a6",
+            "metadata_json": "{\"boundary\":\"before repeatable artifact regeneration\",\"repeat_safe\":true,\"task_id\":\"REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS\"}",
+            "created_at_utc": "2026-07-05T04:32:27.865Z",
+            "metadata": {
+              "boundary": "before repeatable artifact regeneration",
+              "repeat_safe": true,
+              "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
+            }
+          }
+        ],
+        "rejection_cases": [
+          {
+            "case": "blocked-secret-checkpoint-ref",
+            "status": "rejected",
+            "message": "checkpoint_ref points at a blocked secret/private-key path"
+          },
+          {
+            "case": "operation-run-mismatch",
+            "status": "rejected",
+            "message": "unknown operation: missing-operation"
+          },
+          {
+            "case": "illegal-rollback-transition",
+            "status": "rejected",
+            "message": "illegal rollback transition: succeeded -> running"
+          }
+        ],
+        "event_chain": {
+          "run_id": "run-req026",
+          "event_count": 8,
+          "chain_valid": true,
+          "errors": [],
+          "head_event_hash": "sha256:20485f9d87c9a1e03d57f6fe6fd9937b548596104a6439070c243356aa1cb9d0"
+        },
         "errors": [],
-        "warnings": []
+        "evidence": [
+          "scripts/rollback_checkpoints.py",
+          "scripts/verify_rollback_checkpoints.py",
+          "generated/envctl_rollback_checkpoints_report.json",
+          "docs/ENVCTL_ROLLBACK_CHECKPOINTS.md",
+          "docs/ENVCTL_DB_SCHEMA.md",
+          "prompts/SECURITY_REPRODUCIBILITY_MODEL.md"
+        ]
       },
       "checksums": {
-        "execution-framework/generated/task_graph.validation_report.json": "97432eb3552db873a67198e11821fd90e7c612bdd60522c712e003029ddbccea"
+        "execution-framework/scripts/rollback_checkpoints.py": "a8fc1af3f83b0c064c5e3bb0ae8f2428427f93cba67e800d4b2491256afe6a3c",
+        "execution-framework/scripts/verify_rollback_checkpoints.py": "2bc2fb37486cadc1e47777a71350ab2a66ca436c6ae376248cee933a555b6837",
+        "execution-framework/generated/envctl_rollback_checkpoints_report.json": "8ee3ace6c02fc694e1d3acce7d59a13005767f78e49548d2f541bb71694245dc",
+        "execution-framework/docs/ENVCTL_ROLLBACK_CHECKPOINTS.md": "05599a2535f76fa2e02097c101e00d78ba55eaab880c09e36cf7169546292c7e",
+        "execution-framework/state/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.heartbeat.json": "60780bfead70e54dfa3f1beab7578735ed38f3e21987ce7718acf49e9038f4db",
+        "execution-framework/logs/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.log": "8ee3ace6c02fc694e1d3acce7d59a13005767f78e49548d2f541bb71694245dc",
+        "execution-framework/proof_records/proof_ledger.jsonl": "d7f371bc75586320af9fe86269a73e9423b0a076e12a3de5a48eca4496cc18d6"
       },
-      "logs_uri": "logs/EF-005_VALIDATE_TASK_GRAPH.log",
+      "logs_uri": "logs/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.log",
       "rollback_point": "history/pre_execution_framework_manifest.json",
       "evidence": [
-        "generated/task_graph.validation_report.json"
+        "scripts/rollback_checkpoints.py",
+        "scripts/verify_rollback_checkpoints.py",
+        "generated/envctl_rollback_checkpoints_report.json",
+        "docs/ENVCTL_ROLLBACK_CHECKPOINTS.md",
+        "docs/ENVCTL_DB_SCHEMA.md",
+        "prompts/SECURITY_REPRODUCIBILITY_MODEL.md"
       ],
       "failure_reason": "",
-      "next_action": "run task_graph_to_packets.py"
-    },
-    {
-      "proof_schema_version": "1.0",
-      "task_id": "EF-006_TASK_GRAPH_TO_PACKETS",
-      "status": "completed",
-      "started_at": "2026-07-05T00:14:49+00:00",
-      "completed_at": "2026-07-05T00:14:49+00:00",
-      "actor": "local-execution-framework",
-      "helper_id": "helper-packet-01",
-      "model_tag": "gpt-5.3-spark",
-      "repo_path": "execution-framework",
-      "files_changed": [
-        "execution-framework/generated/execution_manifest.json",
-        "execution-framework/generated/execution_packets/EF-001_SCAN_PACKAGE.json",
-        "execution-framework/generated/execution_packets/EF-002_GAP_REPORT.json",
-        "execution-framework/generated/execution_packets/EF-003_APPLY_FRAMEWORK.json",
-        "execution-framework/generated/execution_packets/EF-004_GENERATE_TASK_GRAPH.json",
-        "execution-framework/generated/execution_packets/EF-005_VALIDATE_TASK_GRAPH.json",
-        "execution-framework/generated/execution_packets/EF-006_TASK_GRAPH_TO_PACKETS.json",
-        "execution-framework/generated/execution_packets/EF-007_GOAL_LOOP.json",
-        "execution-framework/generated/execution_packets/EF-008_VERIFY_HISTORY_COMPLETENESS.json",
-        "execution-framework/generated/execution_packets/REQ-010_CONTRACT_LOCK.json",
-        "execution-framework/generated/execution_packets/REQ-020_ENVCTL_DB_SCHEMA.json",
-        "execution-framework/generated/execution_packets/REQ-021_ENVCTL_TARGET_REGISTRY.json",
-        "execution-framework/generated/execution_packets/REQ-022_ENVCTL_RUN_LEDGER.json",
-        "execution-framework/generated/execution_packets/REQ-023_ENVCTL_OPERATION_STATE.json",
-        "execution-framework/generated/execution_packets/REQ-024_ENVCTL_ARTIFACT_REGISTRY.json",
-        "execution-framework/generated/execution_packets/REQ-025_ENVCTL_VALIDATION_EVIDENCE.json",
-        "execution-framework/generated/execution_packets/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.json",
-        "execution-framework/generated/execution_packets/REQ-027_ENVCTL_REPLAY_ENGINE.json",
-        "execution-framework/generated/execution_packets/REQ-028_ENVCTL_AGENT_CONTROL_API.json",
-        "execution-framework/generated/execution_packets/REQ-030_PLUGIN_PROTOCOL_MANIFEST.json",
-        "execution-framework/generated/execution_packets/REQ-031_PLUGIN_COMMAND_SURFACE.json"
-      ],
-      "commands_run": [
-        "python3 scripts/task_graph_to_packets.py generated/task_graph.csv"
-      ],
-      "verification_output": {
-        "packet_count": 80,
-        "manifest": "generated/execution_manifest.json"
-      },
-      "checksums": {
-        "execution-framework/generated/execution_manifest.json": "01f03689c121bd42369f09135101998eb72593e39072c2905f8cb0b0eb9ec8ec",
-        "execution-framework/generated/execution_packets/EF-001_SCAN_PACKAGE.json": "c96821430286227ca31c074aaa00fb6d0c67ac79586fb2605afb926c05d1c67c",
-        "execution-framework/generated/execution_packets/EF-002_GAP_REPORT.json": "541beb509ae13bd71f8ceac6b44395e716dccf971fb77bb69a211fbdfd372bd4",
-        "execution-framework/generated/execution_packets/EF-003_APPLY_FRAMEWORK.json": "27c6c40ce562905af8b17b6524510c0ad3b7ebe6c1a53103a90f5c1a511ba55e",
-        "execution-framework/generated/execution_packets/EF-004_GENERATE_TASK_GRAPH.json": "4ed29e264be020d7c1f39135d65218b51e436aa2e962c46b8b1aec74084f03cd",
-        "execution-framework/generated/execution_packets/EF-005_VALIDATE_TASK_GRAPH.json": "8d373e3013f87236b00d7e29980a0d174b18041000eb6c771dc4a8d76aadac6b",
-        "execution-framework/generated/execution_packets/EF-006_TASK_GRAPH_TO_PACKETS.json": "f816e9284148c780ebab714ec28b2530645c062645601076a50401dd2ffad199",
-        "execution-framework/generated/execution_packets/EF-007_GOAL_LOOP.json": "a9fd9cdc099957aa107ccbfc75bbc7b337215bde6978253c01dd6621746256a3",
-        "execution-framework/generated/execution_packets/EF-008_VERIFY_HISTORY_COMPLETENESS.json": "478365a87e20fa35d4964c41a11a595f4b80697b671e669d4f1110047ffaf0a7",
-        "execution-framework/generated/execution_packets/REQ-010_CONTRACT_LOCK.json": "70d536daa9e4e82e866a065f770042473599328f197006713289fcbac5a5488f",
-        "execution-framework/generated/execution_packets/REQ-020_ENVCTL_DB_SCHEMA.json": "da15a81c052c7b6ce5d593c1abe90357a2c986295b6a9c45c845b35c91d60616",
-        "execution-framework/generated/execution_packets/REQ-021_ENVCTL_TARGET_REGISTRY.json": "5601483411d935ea006168e0a20c55292205fe3727ad715dc48a8d2a5220ad2a",
-        "execution-framework/generated/execution_packets/REQ-022_ENVCTL_RUN_LEDGER.json": "c0762e56282a4fd507e5d64a67bea3c5672f1d539a3131d96de5d63032b7fa8e",
-        "execution-framework/generated/execution_packets/REQ-023_ENVCTL_OPERATION_STATE.json": "09ad11fad47b3967cbb30843ffa6133a8cea152b6faa49d393b41d0e475c4141",
-        "execution-framework/generated/execution_packets/REQ-024_ENVCTL_ARTIFACT_REGISTRY.json": "582a7eb7e6da17a6fc0d3ad21b6dda3e45cb56c6df3e2b6e24e69628696318a9",
-        "execution-framework/generated/execution_packets/REQ-025_ENVCTL_VALIDATION_EVIDENCE.json": "cb476db75832464523024eaae5a6cee9929911a1a343013652294e8e67877d42",
-        "execution-framework/generated/execution_packets/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.json": "b88df3b94b77d899982717016584131a2e960cd095dfcccd0fe46b0ba1f42351",
-        "execution-framework/generated/execution_packets/REQ-027_ENVCTL_REPLAY_ENGINE.json": "50eb84e526f910ccf320c2e194bf3cc3e0be6956c2320247007e90c50548f3fa",
-        "execution-framework/generated/execution_packets/REQ-028_ENVCTL_AGENT_CONTROL_API.json": "d0ab2922e87e238091b3ebb988b38162c51ad9aa39f4722a607c1c1aa06cc5bd",
-        "execution-framework/generated/execution_packets/REQ-030_PLUGIN_PROTOCOL_MANIFEST.json": "d75a37c358c89e5a98d18dd513d4d0ed17e8a963e20af2625cb0b37cc6c06776",
-        "execution-framework/generated/execution_packets/REQ-031_PLUGIN_COMMAND_SURFACE.json": "f3b267c38150b250ba32761071ef1ea6022790c4bf355834927dd30f5c0b8ab1"
-      },
-      "logs_uri": "logs/EF-006_TASK_GRAPH_TO_PACKETS.log",
-      "rollback_point": "history/pre_execution_framework_manifest.json",
-      "evidence": [
-        "generated/execution_manifest.json",
-        "generated/execution_packets/"
-      ],
-      "failure_reason": "",
-      "next_action": "run goal_loop.py"
+      "next_action": "run REQ-027 replay engine against rollback checkpoint handles"
     }
   ]
 }

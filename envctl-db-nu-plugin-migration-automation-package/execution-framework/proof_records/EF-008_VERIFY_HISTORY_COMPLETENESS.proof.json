@@ -2,8 +2,8 @@
   "proof_schema_version": "1.0",
   "task_id": "EF-008_VERIFY_HISTORY_COMPLETENESS",
   "status": "completed",
-  "started_at": "2026-07-05T00:14:49+00:00",
-  "completed_at": "2026-07-05T00:14:49+00:00",
+  "started_at": "2026-07-05T04:33:42+00:00",
+  "completed_at": "2026-07-05T04:33:42+00:00",
   "actor": "local-execution-framework",
   "helper_id": "helper-final-01",
   "model_tag": "gpt-5.3-spark",
@@ -17,12 +17,12 @@
   ],
   "verification_output": {
     "schema_version": "1.0",
-    "generated_at": "2026-07-05T00:14:49+00:00",
+    "generated_at": "2026-07-05T04:33:42+00:00",
     "status": "pass_with_external_blocker",
     "local_package_complete": true,
     "task_count": 80,
     "packet_count": 80,
-    "proof_count": 67,
+    "proof_count": 68,
     "missing_outputs": [],
     "tasks_without_packets": [],
     "packet_missing_fields": [],
@@ -115,25 +115,16 @@
     "unresolved_gaps": [],
     "goal_loop_summary": {
       "schema_version": "1.0",
-      "generated_at": "2026-07-05T00:14:49+00:00",
+      "generated_at": "2026-07-05T04:33:42+00:00",
       "task_count": 80,
-      "complete_count": 64,
+      "complete_count": 65,
       "failed_count": 0,
-      "pending_count": 16,
-      "runnable_count": 3,
-      "dispatch_count": 3,
-      "approval_blocker_count": 0,
-      "blocked_count": 13,
+      "pending_count": 15,
+      "runnable_count": 4,
+      "dispatch_count": 4,
+      "approval_blocker_count": 1,
+      "blocked_count": 10,
       "runnable_tasks": [
-        {
-          "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
-          "parallel_group": "envctl_db_parallel",
-          "max_parallel": 4,
-          "packet_uri": "generated/execution_packets/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.json",
-          "approval_source": "agent_review",
-          "approval_uri": "approvals/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.agent_approval.json",
-          "approval_reviewer": "gpt-5.5"
-        },
         {
           "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API",
           "parallel_group": "envctl_integration",
@@ -151,19 +142,22 @@
           "approval_source": "agent_review",
           "approval_uri": "approvals/REQ-033_PLUGIN_HUMAN_APPROVAL.agent_approval.json",
           "approval_reviewer": "gpt-5.5"
+        },
+        {
+          "task_id": "ART-121_CUTOVER",
+          "parallel_group": "artifact_generation_b",
+          "max_parallel": 6,
+          "packet_uri": "generated/execution_packets/ART-121_CUTOVER.json"
+        },
+        {
+          "task_id": "ART-122_ROLLBACK",
+          "parallel_group": "artifact_generation_b",
+          "max_parallel": 6,
+          "packet_uri": "generated/execution_packets/ART-122_ROLLBACK.json"
         }
       ],
       "dispatch_packets": [
         {
-          "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
-          "parallel_group": "envctl_db_parallel",
-          "max_parallel": 4,
-          "packet_uri": "generated/execution_packets/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.json",
-          "approval_source": "agent_review",
-          "approval_uri": "approvals/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.agent_approval.json",
-          "approval_reviewer": "gpt-5.5"
-        },
-        {
           "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API",
           "parallel_group": "envctl_integration",
           "max_parallel": 2,
@@ -180,17 +174,29 @@
           "approval_source": "agent_review",
           "approval_uri": "approvals/REQ-033_PLUGIN_HUMAN_APPROVAL.agent_approval.json",
           "approval_reviewer": "gpt-5.5"
+        },
+        {
+          "task_id": "ART-121_CUTOVER",
+          "parallel_group": "artifact_generation_b",
+          "max_parallel": 6,
+          "packet_uri": "generated/execution_packets/ART-121_CUTOVER.json"
+        },
+        {
+          "task_id": "ART-122_ROLLBACK",
+          "parallel_group": "artifact_generation_b",
+          "max_parallel": 6,
+          "packet_uri": "generated/execution_packets/ART-122_ROLLBACK.json"
         }
       ],
-      "approval_blockers": [],
-      "blocked_tasks": [
+      "approval_blockers": [
         {
           "task_id": "REQ-027_ENVCTL_REPLAY_ENGINE",
-          "reason": "unmet dependencies",
-          "dependencies": [
-            "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
-          ]
-        },
+          "reason": "agent approval required",
+          "packet_uri": "generated/execution_packets/REQ-027_ENVCTL_REPLAY_ENGINE.json",
+          "agent_approval_uri": "approvals/REQ-027_ENVCTL_REPLAY_ENGINE.agent_approval.json"
+        }
+      ],
+      "blocked_tasks": [
         {
           "task_id": "REQ-041_TWO_REPO_INTEGRATION",
           "reason": "unmet dependencies",
@@ -205,20 +211,6 @@
           "reason": "unmet dependencies",
           "dependencies": [
             "REQ-027_ENVCTL_REPLAY_ENGINE"
-          ]
-        },
-        {
-          "task_id": "ART-121_CUTOVER",
-          "reason": "unmet dependencies",
-          "dependencies": [
-            "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
-          ]
-        },
-        {
-          "task_id": "ART-122_ROLLBACK",
-          "reason": "unmet dependencies",
-          "dependencies": [
-            "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
           ]
         },
         {
@@ -296,7 +288,7 @@
         "REQ-023_ENVCTL_OPERATION_STATE": "complete",
         "REQ-024_ENVCTL_ARTIFACT_REGISTRY": "complete",
         "REQ-025_ENVCTL_VALIDATION_EVIDENCE": "complete",
-        "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS": "pending",
+        "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS": "complete",
         "REQ-027_ENVCTL_REPLAY_ENGINE": "pending",
         "REQ-028_ENVCTL_AGENT_CONTROL_API": "pending",
         "REQ-030_PLUGIN_PROTOCOL_MANIFEST": "complete",
@@ -372,8 +364,8 @@
     ]
   },
   "checksums": {
-    "execution-framework/generated/final_verification_report.json": "d9273ad5e3a08309ddef70e4219be882e67d2145b9fe41fa563ee683d32551a9",
-    "execution-framework/docs/FINAL_VERIFICATION.md": "527ff9740f610604fd4fea9ff300032f770213a4be62e1131ada612321fe7bd3"
+    "execution-framework/generated/final_verification_report.json": "c95b2eae2fe61713a64896cdccb7d496670871d44671b3ea9ea9b4493f5c5352",
+    "execution-framework/docs/FINAL_VERIFICATION.md": "e4dd72b65d1473e88a758280d98c5b225c9c1a67c722b3c58e300dedaaf08dc2"
   },
   "logs_uri": "logs/EF-008_VERIFY_HISTORY_COMPLETENESS.log",
   "rollback_point": "history/pre_execution_framework_manifest.json",
