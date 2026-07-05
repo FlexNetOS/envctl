@@ -1,6 +1,6 @@
 {
   "package": "envctl-db-nu-plugin-migration-automation-package",
-  "file_count": 735,
+  "file_count": 733,
   "files": [
     {
       "path": "CODEX_FINAL_EXECUTION_PROMPT.md",
@@ -214,8 +214,8 @@
     },
     {
       "path": "execution-framework/docs/NEXT_SESSION_PROMPT.md",
-      "bytes": 3282,
-      "sha256": "e808658b21108d5b5ca855a81724b1c4775149f247f748f1444c1e9cb864fbe3"
+      "bytes": 3463,
+      "sha256": "3156f671aa81b2bbcf1dc88c19eb31fe07bd2eff762e75bae4789b8eb254f3c6"
     },
     {
       "path": "execution-framework/docs/OPERATION_STATE_MACHINE.md",
@@ -2521,16 +2521,6 @@
       "path": "execution-framework/schemas/upgrade_report.schema.json",
       "bytes": 392,
       "sha256": "fc5d58a6c441abf2e2fbfd86cb37859350d300924cfe6daeb07a512485e696d9"
-    },
-    {
-      "path": "execution-framework/scripts/__pycache__/_common.cpython-314.pyc",
-      "bytes": 10901,
-      "sha256": "363d52c04f1b1a5b4f7d5ea6bebdf5c8bd3b92a50f81fea5482a653f984c2ce2"
-    },
-    {
-      "path": "execution-framework/scripts/__pycache__/goal_loop.cpython-314.pyc",
-      "bytes": 18400,
-      "sha256": "eb59151fb0430042111efeb2891e3e11228c44d6077176cf821d15e677e3c7f3"
     },
     {
       "path": "execution-framework/scripts/_common.py",

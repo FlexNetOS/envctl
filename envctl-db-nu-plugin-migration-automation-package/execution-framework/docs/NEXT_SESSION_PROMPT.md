@@ -62,10 +62,13 @@ Approval-gate rule:
 
 Current expected state:
 - Completed proofs: 64
+- Agent approval proofs: 3
 - Failed packets: 0
-- Runnable packets before agent approval: 0
-- Approval-gated packets: REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS, REQ-028_ENVCTL_AGENT_CONTROL_API, REQ-033_PLUGIN_HUMAN_APPROVAL
+- Runnable packets after agent approval: 3
+- Approval blockers: 0
+- Runnable packets: REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS, REQ-028_ENVCTL_AGENT_CONTROL_API, REQ-033_PLUGIN_HUMAN_APPROVAL
 - Blocked dependents: 13
+- Final verification status remains pass_with_external_blocker until the three runnable JSON packets execute and write their task proofs.
 
 Continue until the final product is delivered, health is 100% verified, and all live tests have run or exact blockers are recorded with proof.
 ```
