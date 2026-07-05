@@ -1,0 +1,10 @@
+{
+  "task_id": "ART-122_ROLLBACK",
+  "status": "completed",
+  "updated_at": "2026-07-05T05:06:08+00:00",
+  "artifact_paths": [
+    "migration-artifacts/07-cutover/rollback-plan.md",
+    "migration-artifacts/art-122_rollback/rollback-plan.md",
+    "migration-artifacts/art-122_rollback/rollback-plan.json"
+  ]
+}

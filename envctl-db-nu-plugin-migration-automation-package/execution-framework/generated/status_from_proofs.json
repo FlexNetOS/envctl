@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-07-05T04:33:42+00:00",
+  "generated_at": "2026-07-05T05:06:52+00:00",
   "tasks": [
     {
       "task_id": "EF-001_SCAN_PACKAGE",
@@ -118,14 +118,14 @@
       "task_id": "REQ-027_ENVCTL_REPLAY_ENGINE",
       "phase": "02-envctl-db",
       "owner_lane": "lane_b_repo_a",
-      "status": "pending",
+      "status": "completed",
       "proof_uri": "proof_records/REQ-027_ENVCTL_REPLAY_ENGINE.proof.json"
     },
     {
       "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API",
       "phase": "02-envctl-db",
       "owner_lane": "lane_b_repo_a",
-      "status": "pending",
+      "status": "completed",
       "proof_uri": "proof_records/REQ-028_ENVCTL_AGENT_CONTROL_API.proof.json"
     },
     {
@@ -153,7 +153,7 @@
       "task_id": "REQ-033_PLUGIN_HUMAN_APPROVAL",
       "phase": "03-nu-plugin",
       "owner_lane": "lane_c_repo_b",
-      "status": "pending",
+      "status": "completed",
       "proof_uri": "proof_records/REQ-033_PLUGIN_HUMAN_APPROVAL.proof.json"
     },
     {
@@ -356,14 +356,14 @@
       "task_id": "ART-121_CUTOVER",
       "phase": "05-artifacts",
       "owner_lane": "lane_d_filesystem",
-      "status": "pending",
+      "status": "completed",
       "proof_uri": "proof_records/ART-121_CUTOVER.proof.json"
     },
     {
       "task_id": "ART-122_ROLLBACK",
       "phase": "05-artifacts",
       "owner_lane": "lane_d_filesystem",
-      "status": "pending",
+      "status": "completed",
       "proof_uri": "proof_records/ART-122_ROLLBACK.proof.json"
     },
     {

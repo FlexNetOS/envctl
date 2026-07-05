@@ -1,0 +1,523 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-122_ROLLBACK",
+  "status": "passed",
+  "generated_at": "2026-07-05T05:06:08+00:00",
+  "artifact_paths": [
+    "migration-artifacts/07-cutover/rollback-plan.md",
+    "migration-artifacts/art-122_rollback/rollback-plan.md",
+    "migration-artifacts/art-122_rollback/rollback-plan.json"
+  ],
+  "rollback_step_count": 7,
+  "blocked_gate_tasks": [
+    "REQ-041_TWO_REPO_INTEGRATION",
+    "REQ-045_RUN_REPLAY",
+    "VER-300_UNIT_VALIDATION"
+  ],
+  "registry_results": [
+    {
+      "artifact_row_id": "artifact-1bf8d343227efbe0b855b8bc",
+      "artifact_id": "07-cutover-rollback-plan-md",
+      "run_id": "run-art-122-rollback",
+      "path": "migration-artifacts/07-cutover/rollback-plan.md",
+      "content_hash": "sha256:2d24a84dca5143215ce47c5a1587216031fedb79671e735cb0d35cd39185649f",
+      "producer_operation_id": "produce-07-cutover-rollback-plan-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-7035ce3ee37e82c167808771",
+        "evidence-9ee718299beddad92b08cee7",
+        "evidence-099047a486a5368ea630783a",
+        "evidence-63b27dd3753e01dd80ccbbfd",
+        "evidence-901caf5c458194b5312fd1d2",
+        "evidence-83d1108ceb679a3c98462de0",
+        "evidence-9f6a25500b7143cf7789947e",
+        "evidence-f824380a1dc5849ae8ff1286",
+        "evidence-31a6e4bb5c07996ee7cb4d0c",
+        "evidence-fba573d8e4efda009e947b1f",
+        "evidence-f9fa1ade80806bec656ca612",
+        "evidence-18db6294fa06c7fc29a90607",
+        "evidence-c7e18dbdda48d91d17f96aba"
+      ],
+      "graph_edge_ids": [
+        "edge-3b4b6efc2057653a3c3f9ed0",
+        "edge-e816bbf960258e3daa2af05d",
+        "edge-35c7d44b89ff1f923c7a16ab",
+        "edge-2185ed74c7364fd1cf60d869",
+        "edge-4c2d543d808fb2cf7229bdbf",
+        "edge-94d6fc9b8becac201103e03b",
+        "edge-35145576bb09760761293731",
+        "edge-71cb5216c976f5a6bdb57f91",
+        "edge-1e3ead2a3e05034127b3cdd5",
+        "edge-d559a0f362902c284163d17e"
+      ],
+      "validation_ids": [
+        "validation-3122586ba98cf802f0d0fcb2",
+        "validation-514af18f7245f8db23ead928",
+        "validation-0e5c5a3dc21b0cec7234b754"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-9d5bb7b80aede4a481a1264d",
+      "artifact_id": "art-122-rollback-md",
+      "run_id": "run-art-122-rollback",
+      "path": "migration-artifacts/art-122_rollback/rollback-plan.md",
+      "content_hash": "sha256:2d24a84dca5143215ce47c5a1587216031fedb79671e735cb0d35cd39185649f",
+      "producer_operation_id": "produce-07-cutover-rollback-plan-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-91900d0c4975d06b8eae9884",
+        "evidence-f6844c6f3bb4d9800a3d64cb",
+        "evidence-975308e5da3d143f3f4323dc",
+        "evidence-168e83ab3cee04d8d4237c7f",
+        "evidence-26eaf68eb429e5e7cd27e9a0",
+        "evidence-7f5b13de77047d88f348dfe2",
+        "evidence-f3b4a2edb9c1186c45314adc",
+        "evidence-ed064ff820b82c0cfa927194",
+        "evidence-f23d8a4fce8ea1dafc950596",
+        "evidence-7133a85800b2d9f3b7d7b9e3",
+        "evidence-31398129a793192af11315d2",
+        "evidence-0fbfebb9d7e81002d5907231",
+        "evidence-93f37fc5d10a6623e15b2f40"
+      ],
+      "graph_edge_ids": [
+        "edge-8c15e742a993d3e502b845a4",
+        "edge-1224f8b5085e2abb71ae15bd",
+        "edge-366c473c805daeecc41fb424",
+        "edge-586d0db6d1b91fc90de9943e",
+        "edge-e71c91bb91da398201afb173",
+        "edge-7c4396d4ec4b5401d5592035",
+        "edge-9845e6bd97a4197e65189145",
+        "edge-70b99dd01c57bc03d3dbe071",
+        "edge-0f2a8a5d50a69d7f53ae26b2",
+        "edge-a5162a5f125f5614316eb040"
+      ],
+      "validation_ids": [
+        "validation-c320dfd53497ab513b5ec673",
+        "validation-0edfb37bfd8d925802a8b1a2",
+        "validation-e0319b3118cd4b5e09d97395"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-e9df01d8a9e7d1e5e3488d9c",
+      "artifact_id": "art-122-rollback-json",
+      "run_id": "run-art-122-rollback",
+      "path": "migration-artifacts/art-122_rollback/rollback-plan.json",
+      "content_hash": "sha256:51a95f0176f1a984b602282fb74874d41ae7afa1d0ec9f414c7a9a72b0bd478b",
+      "producer_operation_id": "produce-07-cutover-rollback-plan-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-fc8a9cc818dc0d999848b8a4",
+        "evidence-5b3425879354a1fabb9ecb58",
+        "evidence-d464ca7c98f50fdf55a7c456",
+        "evidence-a50edd8b85ff9cc866843c6d",
+        "evidence-734f8237b462ce26a14b8c19",
+        "evidence-1bbed22bea7a029058a8acf2",
+        "evidence-4ffa91167b3ee6e7f07f7c48",
+        "evidence-50934d38ab9b97bec3edd51f",
+        "evidence-14b15352ec611ac3eda483dc",
+        "evidence-64d616a53915c4aa0a1dafe7",
+        "evidence-dff0f19ea59fc850cd89d034",
+        "evidence-5670fb49f3947f8ea4937027",
+        "evidence-d0483d63c2cbecfd8a650bd4"
+      ],
+      "graph_edge_ids": [
+        "edge-90df4c34a0b05786523e4c2e",
+        "edge-9dee00a07e4accd48245bfc1",
+        "edge-4561dfc67c0ab5cb2076e239",
+        "edge-018e25879e574ebb0759a030",
+        "edge-838ad3221d5e68004d478faa",
+        "edge-8118d217fbc661a8472b3555",
+        "edge-70bd52d27ad8f1004860e419",
+        "edge-8e3c4a23743efe1adbd243d0",
+        "edge-4f6e2863fdf14dd8fb12eb60",
+        "edge-58e2272fbca3d73e77437ef4"
+      ],
+      "validation_ids": [
+        "validation-f79b1a5d806666e5f9c74740"
+      ]
+    }
+  ],
+  "artifact_rows": [
+    {
+      "id": "artifact-1bf8d343227efbe0b855b8bc",
+      "run_id": "run-art-122-rollback",
+      "artifact_id": "07-cutover-rollback-plan-md",
+      "title": "Rollback Plan",
+      "artifact_type": "migration_control",
+      "status": "complete",
+      "path": "migration-artifacts/07-cutover/rollback-plan.md",
+      "content_hash": "sha256:2d24a84dca5143215ce47c5a1587216031fedb79671e735cb0d35cd39185649f",
+      "generated_by_operation_id": "produce-07-cutover-rollback-plan-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-7035ce3ee37e82c167808771",
+          "evidence-9ee718299beddad92b08cee7",
+          "evidence-099047a486a5368ea630783a",
+          "evidence-63b27dd3753e01dd80ccbbfd",
+          "evidence-901caf5c458194b5312fd1d2",
+          "evidence-83d1108ceb679a3c98462de0",
+          "evidence-9f6a25500b7143cf7789947e",
+          "evidence-f824380a1dc5849ae8ff1286",
+          "evidence-31a6e4bb5c07996ee7cb4d0c",
+          "evidence-fba573d8e4efda009e947b1f",
+          "evidence-f9fa1ade80806bec656ca612",
+          "evidence-18db6294fa06c7fc29a90607",
+          "evidence-c7e18dbdda48d91d17f96aba"
+        ],
+        "evidence_refs": [
+          "migration-artifacts/07-cutover/rollback-plan.md",
+          "migration-artifacts/art-122_rollback/rollback-plan.md",
+          "migration-artifacts/art-122_rollback/rollback-plan.json",
+          "migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+          "migration-artifacts/art-120_wave_plan/wave-plan.json",
+          "migration-artifacts/art-121_cutover/cutover-checklist.json",
+          "migration-artifacts/art-125_risk_register/risk-register.json",
+          "migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json",
+          "generated/envctl_rollback_checkpoints_report.json",
+          "generated/status_from_proofs.json",
+          "generated/task_graph.csv",
+          "generated/envctl_artifact_registry_report.json",
+          "generated/shared_protocol_validation_report.json"
+        ],
+        "producer_operation_id": "produce-07-cutover-rollback-plan-md",
+        "provenance": {
+          "blocked_gate_tasks": [
+            "REQ-041_TWO_REPO_INTEGRATION",
+            "REQ-045_RUN_REPLAY",
+            "VER-300_UNIT_VALIDATION"
+          ],
+          "contract_row_id": "artifact:07-cutover-rollback-plan-md",
+          "helper_id": "helper-artifact-23",
+          "owner_agent": "artifact-agent",
+          "readiness_band": "conditional",
+          "source_inputs": [
+            "target descriptor",
+            "repo scan",
+            "envctl database"
+          ],
+          "target_root": "/home/flexnetos/FlexNetOS",
+          "task_id": "ART-122_ROLLBACK"
+        },
+        "validation_ids": [
+          "validation-3122586ba98cf802f0d0fcb2",
+          "validation-514af18f7245f8db23ead928",
+          "validation-0e5c5a3dc21b0cec7234b754"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-3b4b6efc2057653a3c3f9ed0",
+          "edge-e816bbf960258e3daa2af05d",
+          "edge-35c7d44b89ff1f923c7a16ab",
+          "edge-2185ed74c7364fd1cf60d869",
+          "edge-4c2d543d808fb2cf7229bdbf",
+          "edge-94d6fc9b8becac201103e03b",
+          "edge-35145576bb09760761293731",
+          "edge-71cb5216c976f5a6bdb57f91",
+          "edge-1e3ead2a3e05034127b3cdd5",
+          "edge-d559a0f362902c284163d17e"
+        ],
+        "links": [
+          {
+            "to": "contract_row:artifact:07-cutover-rollback-plan-md",
+            "type": "satisfies"
+          },
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          },
+          {
+            "to": "artifact:07-cutover-wave-plan-md",
+            "type": "informed_by"
+          },
+          {
+            "to": "artifact:07-cutover-cutover-checklist-md",
+            "type": "paired_with"
+          },
+          {
+            "to": "artifact:09-governance-risk-register-md",
+            "type": "informed_by"
+          },
+          {
+            "to": "artifact:09-governance-migration-readiness-scorecard-md",
+            "type": "informed_by"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-9d5bb7b80aede4a481a1264d",
+      "run_id": "run-art-122-rollback",
+      "artifact_id": "art-122-rollback-md",
+      "title": "ART-122 Rollback Plan Markdown",
+      "artifact_type": "migration_control",
+      "status": "complete",
+      "path": "migration-artifacts/art-122_rollback/rollback-plan.md",
+      "content_hash": "sha256:2d24a84dca5143215ce47c5a1587216031fedb79671e735cb0d35cd39185649f",
+      "generated_by_operation_id": "produce-07-cutover-rollback-plan-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-91900d0c4975d06b8eae9884",
+          "evidence-f6844c6f3bb4d9800a3d64cb",
+          "evidence-975308e5da3d143f3f4323dc",
+          "evidence-168e83ab3cee04d8d4237c7f",
+          "evidence-26eaf68eb429e5e7cd27e9a0",
+          "evidence-7f5b13de77047d88f348dfe2",
+          "evidence-f3b4a2edb9c1186c45314adc",
+          "evidence-ed064ff820b82c0cfa927194",
+          "evidence-f23d8a4fce8ea1dafc950596",
+          "evidence-7133a85800b2d9f3b7d7b9e3",
+          "evidence-31398129a793192af11315d2",
+          "evidence-0fbfebb9d7e81002d5907231",
+          "evidence-93f37fc5d10a6623e15b2f40"
+        ],
+        "evidence_refs": [
+          "migration-artifacts/07-cutover/rollback-plan.md",
+          "migration-artifacts/art-122_rollback/rollback-plan.md",
+          "migration-artifacts/art-122_rollback/rollback-plan.json",
+          "migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+          "migration-artifacts/art-120_wave_plan/wave-plan.json",
+          "migration-artifacts/art-121_cutover/cutover-checklist.json",
+          "migration-artifacts/art-125_risk_register/risk-register.json",
+          "migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json",
+          "generated/envctl_rollback_checkpoints_report.json",
+          "generated/status_from_proofs.json",
+          "generated/task_graph.csv",
+          "generated/envctl_artifact_registry_report.json",
+          "generated/shared_protocol_validation_report.json"
+        ],
+        "producer_operation_id": "produce-07-cutover-rollback-plan-md",
+        "provenance": {
+          "blocked_gate_tasks": [
+            "REQ-041_TWO_REPO_INTEGRATION",
+            "REQ-045_RUN_REPLAY",
+            "VER-300_UNIT_VALIDATION"
+          ],
+          "contract_row_id": "artifact:07-cutover-rollback-plan-md",
+          "helper_id": "helper-artifact-23",
+          "owner_agent": "artifact-agent",
+          "readiness_band": "conditional",
+          "source_inputs": [
+            "target descriptor",
+            "repo scan",
+            "envctl database"
+          ],
+          "target_root": "/home/flexnetos/FlexNetOS",
+          "task_id": "ART-122_ROLLBACK"
+        },
+        "validation_ids": [
+          "validation-c320dfd53497ab513b5ec673",
+          "validation-0edfb37bfd8d925802a8b1a2",
+          "validation-e0319b3118cd4b5e09d97395"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-8c15e742a993d3e502b845a4",
+          "edge-1224f8b5085e2abb71ae15bd",
+          "edge-366c473c805daeecc41fb424",
+          "edge-586d0db6d1b91fc90de9943e",
+          "edge-e71c91bb91da398201afb173",
+          "edge-7c4396d4ec4b5401d5592035",
+          "edge-9845e6bd97a4197e65189145",
+          "edge-70b99dd01c57bc03d3dbe071",
+          "edge-0f2a8a5d50a69d7f53ae26b2",
+          "edge-a5162a5f125f5614316eb040"
+        ],
+        "links": [
+          {
+            "to": "contract_row:artifact:07-cutover-rollback-plan-md",
+            "type": "satisfies"
+          },
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          },
+          {
+            "to": "artifact:07-cutover-wave-plan-md",
+            "type": "informed_by"
+          },
+          {
+            "to": "artifact:07-cutover-cutover-checklist-md",
+            "type": "paired_with"
+          },
+          {
+            "to": "artifact:09-governance-risk-register-md",
+            "type": "informed_by"
+          },
+          {
+            "to": "artifact:09-governance-migration-readiness-scorecard-md",
+            "type": "informed_by"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-e9df01d8a9e7d1e5e3488d9c",
+      "run_id": "run-art-122-rollback",
+      "artifact_id": "art-122-rollback-json",
+      "title": "ART-122 Rollback Plan JSON",
+      "artifact_type": "machine_readable_record",
+      "status": "complete",
+      "path": "migration-artifacts/art-122_rollback/rollback-plan.json",
+      "content_hash": "sha256:51a95f0176f1a984b602282fb74874d41ae7afa1d0ec9f414c7a9a72b0bd478b",
+      "generated_by_operation_id": "produce-07-cutover-rollback-plan-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-fc8a9cc818dc0d999848b8a4",
+          "evidence-5b3425879354a1fabb9ecb58",
+          "evidence-d464ca7c98f50fdf55a7c456",
+          "evidence-a50edd8b85ff9cc866843c6d",
+          "evidence-734f8237b462ce26a14b8c19",
+          "evidence-1bbed22bea7a029058a8acf2",
+          "evidence-4ffa91167b3ee6e7f07f7c48",
+          "evidence-50934d38ab9b97bec3edd51f",
+          "evidence-14b15352ec611ac3eda483dc",
+          "evidence-64d616a53915c4aa0a1dafe7",
+          "evidence-dff0f19ea59fc850cd89d034",
+          "evidence-5670fb49f3947f8ea4937027",
+          "evidence-d0483d63c2cbecfd8a650bd4"
+        ],
+        "evidence_refs": [
+          "migration-artifacts/07-cutover/rollback-plan.md",
+          "migration-artifacts/art-122_rollback/rollback-plan.md",
+          "migration-artifacts/art-122_rollback/rollback-plan.json",
+          "migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+          "migration-artifacts/art-120_wave_plan/wave-plan.json",
+          "migration-artifacts/art-121_cutover/cutover-checklist.json",
+          "migration-artifacts/art-125_risk_register/risk-register.json",
+          "migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json",
+          "generated/envctl_rollback_checkpoints_report.json",
+          "generated/status_from_proofs.json",
+          "generated/task_graph.csv",
+          "generated/envctl_artifact_registry_report.json",
+          "generated/shared_protocol_validation_report.json"
+        ],
+        "producer_operation_id": "produce-07-cutover-rollback-plan-md",
+        "provenance": {
+          "blocked_gate_tasks": [
+            "REQ-041_TWO_REPO_INTEGRATION",
+            "REQ-045_RUN_REPLAY",
+            "VER-300_UNIT_VALIDATION"
+          ],
+          "contract_row_id": "artifact:07-cutover-rollback-plan-md",
+          "helper_id": "helper-artifact-23",
+          "owner_agent": "artifact-agent",
+          "readiness_band": "conditional",
+          "source_inputs": [
+            "target descriptor",
+            "repo scan",
+            "envctl database"
+          ],
+          "target_root": "/home/flexnetos/FlexNetOS",
+          "task_id": "ART-122_ROLLBACK"
+        },
+        "validation_ids": [
+          "validation-f79b1a5d806666e5f9c74740"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-90df4c34a0b05786523e4c2e",
+          "edge-9dee00a07e4accd48245bfc1",
+          "edge-4561dfc67c0ab5cb2076e239",
+          "edge-018e25879e574ebb0759a030",
+          "edge-838ad3221d5e68004d478faa",
+          "edge-8118d217fbc661a8472b3555",
+          "edge-70bd52d27ad8f1004860e419",
+          "edge-8e3c4a23743efe1adbd243d0",
+          "edge-4f6e2863fdf14dd8fb12eb60",
+          "edge-58e2272fbca3d73e77437ef4"
+        ],
+        "links": [
+          {
+            "to": "contract_row:artifact:07-cutover-rollback-plan-md",
+            "type": "satisfies"
+          },
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          },
+          {
+            "to": "artifact:07-cutover-wave-plan-md",
+            "type": "informed_by"
+          },
+          {
+            "to": "artifact:07-cutover-cutover-checklist-md",
+            "type": "paired_with"
+          },
+          {
+            "to": "artifact:09-governance-risk-register-md",
+            "type": "informed_by"
+          },
+          {
+            "to": "artifact:09-governance-migration-readiness-scorecard-md",
+            "type": "informed_by"
+          }
+        ]
+      }
+    }
+  ],
+  "checksums": {
+    "migration-artifacts/07-cutover/rollback-plan.md": "2d24a84dca5143215ce47c5a1587216031fedb79671e735cb0d35cd39185649f",
+    "migration-artifacts/art-122_rollback/rollback-plan.md": "2d24a84dca5143215ce47c5a1587216031fedb79671e735cb0d35cd39185649f",
+    "migration-artifacts/art-122_rollback/rollback-plan.json": "51a95f0176f1a984b602282fb74874d41ae7afa1d0ec9f414c7a9a72b0bd478b"
+  },
+  "validation": {
+    "artifact_file_exists": true,
+    "registry_contains_hash": true,
+    "validation_evidence_linked": true
+  },
+  "evidence": [
+    "migration-artifacts/07-cutover/rollback-plan.md",
+    "migration-artifacts/art-122_rollback/rollback-plan.md",
+    "migration-artifacts/art-122_rollback/rollback-plan.json",
+    "generated/execution_packets/ART-122_ROLLBACK.json",
+    "generated/envctl_artifact_registry_report.json",
+    "generated/envctl_rollback_checkpoints_report.json",
+    "generated/shared_protocol_validation_report.json",
+    "generated/status_from_proofs.json"
+  ]
+}
