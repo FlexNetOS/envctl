@@ -1,0 +1,12 @@
+{
+  "task_id": "ART-136_TECH_DEBT_LEDGER",
+  "status": "completed",
+  "updated_at": "2026-07-04T23:35:23+00:00",
+  "proof_uri": "proof_records/ART-136_TECH_DEBT_LEDGER.proof.json",
+  "logs_uri": "logs/ART-136_TECH_DEBT_LEDGER.log",
+  "artifact_paths": [
+    "migration-artifacts/03-code-analysis/technical-debt-ledger.md",
+    "migration-artifacts/art-136_tech_debt_ledger/technical-debt-ledger.md",
+    "migration-artifacts/art-136_tech_debt_ledger/technical-debt-ledger.json"
+  ]
+}

@@ -1,0 +1,170 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "TaskGraphRow",
+  "type": "object",
+  "required": [
+    "task_id",
+    "parent_id",
+    "phase",
+    "title",
+    "goal",
+    "owner_lane",
+    "owner_agent",
+    "helper_id",
+    "model_tag",
+    "agent_runtime",
+    "shell_mode",
+    "repo_target",
+    "repo_path",
+    "filesystem_scope",
+    "input_files",
+    "target_files",
+    "target_artifacts",
+    "allowed_paths",
+    "blocked_paths",
+    "depends_on",
+    "blocks",
+    "parallel_group",
+    "can_run_parallel",
+    "max_parallel",
+    "start_after",
+    "priority",
+    "status",
+    "execution_cell",
+    "required_tools",
+    "command_template",
+    "verification_command",
+    "completion_gate",
+    "proof_required",
+    "proof_uri",
+    "heartbeat_file",
+    "logs_uri",
+    "rollback_plan",
+    "risk_level",
+    "human_approval_required",
+    "notes"
+  ],
+  "properties": {
+    "task_id": {
+      "type": "string"
+    },
+    "parent_id": {
+      "type": "string"
+    },
+    "phase": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "goal": {
+      "type": "string"
+    },
+    "owner_lane": {
+      "type": "string"
+    },
+    "owner_agent": {
+      "type": "string"
+    },
+    "helper_id": {
+      "type": "string"
+    },
+    "model_tag": {
+      "type": "string"
+    },
+    "agent_runtime": {
+      "type": "string"
+    },
+    "shell_mode": {
+      "type": "string"
+    },
+    "repo_target": {
+      "type": "string"
+    },
+    "repo_path": {
+      "type": "string"
+    },
+    "filesystem_scope": {
+      "type": "string"
+    },
+    "input_files": {
+      "type": "string"
+    },
+    "target_files": {
+      "type": "string"
+    },
+    "target_artifacts": {
+      "type": "string"
+    },
+    "allowed_paths": {
+      "type": "string"
+    },
+    "blocked_paths": {
+      "type": "string"
+    },
+    "depends_on": {
+      "type": "string"
+    },
+    "blocks": {
+      "type": "string"
+    },
+    "parallel_group": {
+      "type": "string"
+    },
+    "can_run_parallel": {
+      "type": "string"
+    },
+    "max_parallel": {
+      "type": "string"
+    },
+    "start_after": {
+      "type": "string"
+    },
+    "priority": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "execution_cell": {
+      "type": "string"
+    },
+    "required_tools": {
+      "type": "string"
+    },
+    "command_template": {
+      "type": "string"
+    },
+    "verification_command": {
+      "type": "string"
+    },
+    "completion_gate": {
+      "type": "string"
+    },
+    "proof_required": {
+      "type": "string"
+    },
+    "proof_uri": {
+      "type": "string"
+    },
+    "heartbeat_file": {
+      "type": "string"
+    },
+    "logs_uri": {
+      "type": "string"
+    },
+    "rollback_plan": {
+      "type": "string"
+    },
+    "risk_level": {
+      "type": "string"
+    },
+    "human_approval_required": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

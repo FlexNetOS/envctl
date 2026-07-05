@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "properties": {
+    "artifact_count": {
+      "type": "integer"
+    },
+    "artifacts": {
+      "items": {
+        "properties": {
+          "bytes": {
+            "type": "integer"
+          },
+          "path": {
+            "type": "string"
+          },
+          "sha256": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "status": {
+            "enum": [
+              "complete",
+              "partial",
+              "unknown",
+              "blocked"
+            ]
+          }
+        },
+        "required": [
+          "path",
+          "bytes",
+          "status"
+        ],
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "generated_at_utc": {
+      "type": "string"
+    },
+    "root": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "generated_at_utc",
+    "root",
+    "artifact_count",
+    "artifacts"
+  ],
+  "type": "object"
+}

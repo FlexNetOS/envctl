@@ -1,0 +1,102 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-200_FLEXNETOS_TARGET_DESCRIPTOR",
+  "status": "completed",
+  "started_at": "2026-07-04T23:18:58+00:00",
+  "completed_at": "2026-07-04T23:18:58+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-flexnetos-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/verify_flexnetos_target_descriptor.py",
+    "execution-framework/migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+    "execution-framework/generated/flexnetos_target_descriptor_validation_report.json",
+    "execution-framework/logs/REQ-200_FLEXNETOS_TARGET_DESCRIPTOR.log",
+    "execution-framework/state/REQ-200_FLEXNETOS_TARGET_DESCRIPTOR.heartbeat.json",
+    "execution-framework/proof_records/REQ-200_FLEXNETOS_TARGET_DESCRIPTOR.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/verify_flexnetos_target_descriptor.py"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "REQ-200_FLEXNETOS_TARGET_DESCRIPTOR",
+    "status": "passed",
+    "generated_at": "2026-07-04T23:18:58+00:00",
+    "source_descriptor": "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+    "artifact_descriptor": "execution-framework/migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+    "descriptor": {
+      "target_id": "flexnetos-vs-lifeos",
+      "target_type": "mixed",
+      "primary_root": "/home/flexnetos/FlexNetOS",
+      "compare_root": "/home/flexnetos/lifeos",
+      "output_root": "migration-artifacts",
+      "safety": {
+        "default_mode": "approval-gated",
+        "max_auto_risk": "R2",
+        "allow_network": false,
+        "allow_destructive": false
+      },
+      "artifact_contract": {
+        "name": "full-migration-artifact-contract",
+        "version": 1
+      },
+      "recipe": {
+        "name": "codex-flexnetos-full-artifact-run",
+        "version": 1
+      }
+    },
+    "descriptor_hash": "sha256:326fcff52bad11582f276a96bcd4cd0a56801e585b572b047c6e32f384e2eb0c",
+    "source_descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384",
+    "artifact_sha256": "a9e3645681fdc278da3809d22227474e02c8f3ec6b74ef03447af3f6ae71702a",
+    "root_checks": {
+      "primary_root_expected": true,
+      "compare_root_expected": true,
+      "primary_root_exists": true,
+      "compare_root_exists": false
+    },
+    "warnings": [
+      "compare_root is described but not present in this runtime"
+    ],
+    "secret_exclude_patterns": [
+      "**/.env",
+      "**/secrets/**",
+      "**/private_keys/**",
+      "**/*.pem",
+      "**/*.key"
+    ],
+    "secret_scan": {
+      "status": "passed",
+      "scanned_files": [
+        "execution-framework/migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml"
+      ],
+      "findings": []
+    },
+    "errors": [],
+    "evidence": [
+      "execution-framework/migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+      "execution-framework/generated/flexnetos_target_descriptor_validation_report.json",
+      "execution-framework/logs/REQ-200_FLEXNETOS_TARGET_DESCRIPTOR.log"
+    ]
+  },
+  "checksums": {
+    "execution-framework/scripts/verify_flexnetos_target_descriptor.py": "34724b557197a2444aefc20ddeadeabbb1c7ce1072d0ab5d08f859f204f1c2b3",
+    "execution-framework/migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml": "a9e3645681fdc278da3809d22227474e02c8f3ec6b74ef03447af3f6ae71702a",
+    "execution-framework/generated/flexnetos_target_descriptor_validation_report.json": "1263b9b2392e72a11f9e3af4edb5fd8eca7b2e529ea351c9dcb46e25fde17139",
+    "execution-framework/logs/REQ-200_FLEXNETOS_TARGET_DESCRIPTOR.log": "1263b9b2392e72a11f9e3af4edb5fd8eca7b2e529ea351c9dcb46e25fde17139",
+    "execution-framework/state/REQ-200_FLEXNETOS_TARGET_DESCRIPTOR.heartbeat.json": "e38b23dd5906b01d80ab9f6f029f4d1c417f66ac3041ab8919890f603840162f",
+    "execution-framework/proof_records/REQ-200_FLEXNETOS_TARGET_DESCRIPTOR.proof.json": "9e3deceb01a5e61e45a0edb6b7c2464acb25d5cc4e758c250b1e98c2973881e3",
+    "execution-framework/proof_records/proof_ledger.jsonl": "5865b3409f99fe29ceb6d681f3dcbaa24a5e87f4aff7b1135de8cd2f6e1c89f0"
+  },
+  "logs_uri": "logs/REQ-200_FLEXNETOS_TARGET_DESCRIPTOR.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "execution-framework/migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+    "execution-framework/generated/flexnetos_target_descriptor_validation_report.json",
+    "execution-framework/logs/REQ-200_FLEXNETOS_TARGET_DESCRIPTOR.log"
+  ],
+  "failure_reason": "",
+  "next_action": "run REQ-201_FLEXNETOS_LIFEOS_COMPARISON using the validated target descriptor"
+}

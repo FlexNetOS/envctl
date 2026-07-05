@@ -1,0 +1,10 @@
+{
+  "task_id": "ART-125_RISK_REGISTER",
+  "status": "completed",
+  "updated_at": "2026-07-04T23:19:47+00:00",
+  "artifact_paths": [
+    "migration-artifacts/09-governance/risk-register.md",
+    "migration-artifacts/art-125_risk_register/risk-register.md",
+    "migration-artifacts/art-125_risk_register/risk-register.json"
+  ]
+}

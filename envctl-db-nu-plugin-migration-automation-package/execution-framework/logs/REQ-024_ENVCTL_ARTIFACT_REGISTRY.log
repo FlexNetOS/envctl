@@ -1,0 +1,135 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+  "status": "passed",
+  "generated_at": "2026-07-04T23:14:10+00:00",
+  "registry_result": {
+    "artifact_row_id": "artifact-dfdcd235057309cce430ae2a",
+    "artifact_id": "req024-artifact-registry-sample",
+    "run_id": "run-req024",
+    "path": "execution-framework/generated/req024_artifact_registry_sample.md",
+    "content_hash": "sha256:d83a779c4f5ba4274c455c016193ad62f58d974033e53f9b11a78369cb94cded",
+    "producer_operation_id": "op-req024-register",
+    "contract_id": "contract-req024",
+    "evidence_ids": [
+      "evidence-0013b40d7bdd9d1fc8b917fb",
+      "evidence-b9f684e41f26dba811f10054",
+      "evidence-f9254d640811e68d645b4de9"
+    ],
+    "graph_edge_ids": [
+      "edge-f5e0848675c0cfb0a485cb70",
+      "edge-838bb3e6c96c8425373b2c25",
+      "edge-4f6fe7692f695408f3178d31",
+      "edge-c78a9adacfd645f30577bf3f"
+    ],
+    "validation_ids": [
+      "validation-357c9902e01c44cf503d8ead",
+      "validation-67d0bd1204909ec64b8c0ab1"
+    ]
+  },
+  "artifact_row": {
+    "id": "artifact-dfdcd235057309cce430ae2a",
+    "run_id": "run-req024",
+    "artifact_id": "req024-artifact-registry-sample",
+    "title": "REQ-024 Artifact Registry Sample",
+    "artifact_type": "artifact_registry_smoke",
+    "status": "complete",
+    "path": "execution-framework/generated/req024_artifact_registry_sample.md",
+    "content_hash": "sha256:d83a779c4f5ba4274c455c016193ad62f58d974033e53f9b11a78369cb94cded",
+    "generated_by_operation_id": "op-req024-register",
+    "evidence": {
+      "contract_id": "contract-req024",
+      "evidence_ids": [
+        "evidence-0013b40d7bdd9d1fc8b917fb",
+        "evidence-b9f684e41f26dba811f10054",
+        "evidence-f9254d640811e68d645b4de9"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/req024_artifact_registry_sample.md",
+        "schemas/artifact_record.schema.json",
+        "expected-output/migration-automation-artifacts.md"
+      ],
+      "producer_operation_id": "op-req024-register",
+      "provenance": {
+        "expected_output": "expected-output/migration-automation-artifacts.md",
+        "owner_agent": "envctl-db-agent",
+        "source_schema": "schemas/artifact_record.schema.json",
+        "task_id": "REQ-024_ENVCTL_ARTIFACT_REGISTRY"
+      },
+      "validation_ids": [
+        "validation-357c9902e01c44cf503d8ead",
+        "validation-67d0bd1204909ec64b8c0ab1"
+      ]
+    },
+    "links": {
+      "contract_id": "contract-req024",
+      "graph_edge_ids": [
+        "edge-f5e0848675c0cfb0a485cb70",
+        "edge-838bb3e6c96c8425373b2c25",
+        "edge-4f6fe7692f695408f3178d31",
+        "edge-c78a9adacfd645f30577bf3f"
+      ],
+      "links": [
+        {
+          "to": "artifact:ART-100_SYSTEM_INVENTORY",
+          "type": "blocks"
+        },
+        {
+          "to": "artifact:Evidence register",
+          "type": "validated_by"
+        },
+        {
+          "to": "artifact:Link graph",
+          "type": "linked_in"
+        }
+      ]
+    }
+  },
+  "summary": {
+    "evidence_count": 3,
+    "graph_edge_count": 4,
+    "validation_count": 2,
+    "rejection_count": 3,
+    "expected_artifact_count": 16,
+    "artifact_index_row": [
+      "req024-artifact-registry-sample",
+      "complete",
+      "execution-framework/generated/req024_artifact_registry_sample.md",
+      "sha256:d83a779c4f5ba4274c455c016193ad62f58d974033e53f9b11a78369cb94cded"
+    ]
+  },
+  "coverage": {
+    "paths": true,
+    "hashes": true,
+    "producers": true,
+    "contract_ids": true,
+    "provenance": true,
+    "validation_links": true,
+    "fail_closed_rejections": true
+  },
+  "rejection_cases": [
+    {
+      "case": "blocked-secret-path",
+      "status": "rejected",
+      "message": "artifact registry path is blocked by policy: execution-framework/secrets/token.txt"
+    },
+    {
+      "case": "content-hash-mismatch",
+      "status": "rejected",
+      "message": "artifact content hash mismatch for execution-framework/generated/req024_artifact_registry_sample.md"
+    },
+    {
+      "case": "foreign-producer-operation",
+      "status": "rejected",
+      "message": "operation does not belong to run: op-does-not-exist"
+    }
+  ],
+  "errors": [],
+  "evidence": [
+    "scripts/artifact_registry.py",
+    "scripts/verify_artifact_registry.py",
+    "generated/envctl_artifact_registry_report.json",
+    "generated/req024_artifact_registry_sample.md",
+    "docs/ENVCTL_ARTIFACT_REGISTRY.md"
+  ]
+}

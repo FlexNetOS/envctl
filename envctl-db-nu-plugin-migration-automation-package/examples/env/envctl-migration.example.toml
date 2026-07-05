@@ -1,0 +1,12 @@
+[migration]
+default_human_mode = "approval-gated"
+max_auto_risk = "R2"
+allow_network = false
+allow_destructive = false
+
+[packages]
+flexnetos_package_path = "./source/codex-flexnetos-migration-prompt-package"
+
+[nu_plugin]
+prefer_json_boundary = true
+stream_events = true

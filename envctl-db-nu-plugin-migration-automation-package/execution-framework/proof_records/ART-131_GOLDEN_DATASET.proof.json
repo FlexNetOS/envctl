@@ -1,0 +1,345 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "ART-131_GOLDEN_DATASET",
+  "status": "completed",
+  "started_at": "2026-07-04T23:28:06+00:00",
+  "completed_at": "2026-07-04T23:28:06+00:00",
+  "actor": "artifact-agent",
+  "helper_id": "helper-artifact-32",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/generate_art131_golden_dataset.py",
+    "execution-framework/migration-artifacts/04-data-migration/golden-dataset.md",
+    "execution-framework/migration-artifacts/art-131_golden_dataset/golden-dataset.md",
+    "execution-framework/migration-artifacts/art-131_golden_dataset/golden-dataset.json",
+    "execution-framework/generated/art131_golden_dataset_registry_report.json",
+    "execution-framework/state/ART-131_GOLDEN_DATASET.heartbeat.json",
+    "execution-framework/logs/ART-131_GOLDEN_DATASET.log",
+    "execution-framework/proof_records/ART-131_GOLDEN_DATASET.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl",
+    "execution-framework/generated/status_from_proofs.json"
+  ],
+  "commands_run": [
+    "python3 scripts/generate_art131_golden_dataset.py",
+    "python3 -m py_compile scripts/generate_art131_golden_dataset.py",
+    "python3 - <<'PY'  # verify ART-131 files, proof, and registry hashes"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "ART-131_GOLDEN_DATASET",
+    "status": "passed",
+    "generated_at": "2026-07-04T23:28:06+00:00",
+    "artifact_paths": [
+      "migration-artifacts/04-data-migration/golden-dataset.md",
+      "migration-artifacts/art-131_golden_dataset/golden-dataset.md",
+      "migration-artifacts/art-131_golden_dataset/golden-dataset.json"
+    ],
+    "record_count": 5,
+    "expected_status": "pass",
+    "registry_results": [
+      {
+        "artifact_row_id": "artifact-1da4d8c330e9d2c592e58e4b",
+        "artifact_id": "04-data-migration-golden-dataset-md",
+        "run_id": "run-art131-golden-dataset",
+        "path": "migration-artifacts/04-data-migration/golden-dataset.md",
+        "content_hash": "sha256:3f8e79481fc113d93929a6be738a76157b163ec91824f8a9460d73db8385e079",
+        "producer_operation_id": "produce-04-data-migration-golden-dataset-md",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-0bd605b481f312659bf9bb8c",
+          "evidence-8ee385c938793ed20307a384",
+          "evidence-d113307ed10d861d7e89847a",
+          "evidence-0a3952b7f760f4e2d12ad404",
+          "evidence-a7e48ded385f1c867fa1f5a0",
+          "evidence-414dedf69f65b75c27213a9b",
+          "evidence-d9545dbde13aa74a00ce63e1",
+          "evidence-daa0b1abb2a9738dc229fee0",
+          "evidence-8ed6d14175565aaa36db5bdc",
+          "evidence-4bc900e3f61820244d13e5b3"
+        ],
+        "graph_edge_ids": [
+          "edge-1295b301a5c1d5ab17ed8803",
+          "edge-6ab6624c30e73b73638faebc",
+          "edge-6de95d0755b2ff968fda9568",
+          "edge-6f27ffae5011285af48862eb",
+          "edge-2c630839ff5f128a03956ec2",
+          "edge-3eb8c85e992d7192f0af4568"
+        ],
+        "validation_ids": [
+          "validation-f385725d9e4c89d7cda0b3aa",
+          "validation-2591a10b46c8ca20b56dd41e",
+          "validation-327345d1fd876c57d17d8ba5"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-85e5de68bf753210fd0a69f0",
+        "artifact_id": "art-131-golden-dataset-md",
+        "run_id": "run-art131-golden-dataset",
+        "path": "migration-artifacts/art-131_golden_dataset/golden-dataset.md",
+        "content_hash": "sha256:3f8e79481fc113d93929a6be738a76157b163ec91824f8a9460d73db8385e079",
+        "producer_operation_id": "produce-04-data-migration-golden-dataset-md",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-cb3d1c85ea9529dad007b8b2",
+          "evidence-a8a5bc720a3bd6f8c7dfcd40",
+          "evidence-1dde33765aa07d7e011e0f18"
+        ],
+        "graph_edge_ids": [
+          "edge-48156245083f39a53470d1a3",
+          "edge-77e35ae15f27191eb14031c2"
+        ],
+        "validation_ids": [
+          "validation-333e210fecfb53cf3d7a536b"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-85e6f6197c5947521203442b",
+        "artifact_id": "art-131-golden-dataset-json",
+        "run_id": "run-art131-golden-dataset",
+        "path": "migration-artifacts/art-131_golden_dataset/golden-dataset.json",
+        "content_hash": "sha256:d0322f84b3dfe3922cf06c1927949be44d73105d5f64b53f63f2fde019e4b720",
+        "producer_operation_id": "produce-04-data-migration-golden-dataset-md",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-6c3535a25d6a9686209ab42a",
+          "evidence-fea53a481d665cbdd8be935a"
+        ],
+        "graph_edge_ids": [
+          "edge-ae6711db39b1db396a99a819",
+          "edge-5f168683ca3ce2a91610e70a"
+        ],
+        "validation_ids": [
+          "validation-3c0bd02cd5a9c705add49b9c",
+          "validation-a9b249477c018a21e9cfd53e"
+        ]
+      }
+    ],
+    "artifact_rows": [
+      {
+        "id": "artifact-1da4d8c330e9d2c592e58e4b",
+        "run_id": "run-art131-golden-dataset",
+        "artifact_id": "04-data-migration-golden-dataset-md",
+        "title": "Golden Dataset",
+        "artifact_type": "migration_artifact",
+        "status": "complete",
+        "path": "migration-artifacts/04-data-migration/golden-dataset.md",
+        "content_hash": "sha256:3f8e79481fc113d93929a6be738a76157b163ec91824f8a9460d73db8385e079",
+        "generated_by_operation_id": "produce-04-data-migration-golden-dataset-md",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-0bd605b481f312659bf9bb8c",
+            "evidence-8ee385c938793ed20307a384",
+            "evidence-d113307ed10d861d7e89847a",
+            "evidence-0a3952b7f760f4e2d12ad404",
+            "evidence-a7e48ded385f1c867fa1f5a0",
+            "evidence-414dedf69f65b75c27213a9b",
+            "evidence-d9545dbde13aa74a00ce63e1",
+            "evidence-daa0b1abb2a9738dc229fee0",
+            "evidence-8ed6d14175565aaa36db5bdc",
+            "evidence-4bc900e3f61820244d13e5b3"
+          ],
+          "evidence_refs": [
+            "migration-artifacts/04-data-migration/golden-dataset.md",
+            "migration-artifacts/art-131_golden_dataset/golden-dataset.md",
+            "migration-artifacts/art-131_golden_dataset/golden-dataset.json",
+            "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+            "execution-framework/generated/package_scan.json",
+            "execution-framework/generated/envctl_migration_db_validation_report.json",
+            "execution-framework/generated/envctl_artifact_registry_report.json",
+            "execution-framework/generated/shared_protocol_validation_report.json",
+            "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+            "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+          ],
+          "producer_operation_id": "produce-04-data-migration-golden-dataset-md",
+          "provenance": {
+            "contract_row_id": "artifact:04-data-migration-golden-dataset-md",
+            "helper_id": "helper-artifact-32",
+            "model_tag": "gpt-5.3-spark",
+            "owner_agent": "artifact-agent",
+            "record_count": 5,
+            "task_id": "ART-131_GOLDEN_DATASET"
+          },
+          "validation_ids": [
+            "validation-f385725d9e4c89d7cda0b3aa",
+            "validation-2591a10b46c8ca20b56dd41e",
+            "validation-327345d1fd876c57d17d8ba5"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-1295b301a5c1d5ab17ed8803",
+            "edge-6ab6624c30e73b73638faebc",
+            "edge-6de95d0755b2ff968fda9568",
+            "edge-6f27ffae5011285af48862eb",
+            "edge-2c630839ff5f128a03956ec2",
+            "edge-3eb8c85e992d7192f0af4568"
+          ],
+          "links": [
+            {
+              "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "artifact:06-testing-validation-parity-dashboard-md",
+              "type": "feeds"
+            },
+            {
+              "to": "artifact:06-testing-validation-shadow-traffic-comparison-report-md",
+              "type": "supports"
+            }
+          ]
+        }
+      },
+      {
+        "id": "artifact-85e5de68bf753210fd0a69f0",
+        "run_id": "run-art131-golden-dataset",
+        "artifact_id": "art-131-golden-dataset-md",
+        "title": "ART-131 Golden Dataset Markdown",
+        "artifact_type": "validation_sample",
+        "status": "complete",
+        "path": "migration-artifacts/art-131_golden_dataset/golden-dataset.md",
+        "content_hash": "sha256:3f8e79481fc113d93929a6be738a76157b163ec91824f8a9460d73db8385e079",
+        "generated_by_operation_id": "produce-04-data-migration-golden-dataset-md",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-cb3d1c85ea9529dad007b8b2",
+            "evidence-a8a5bc720a3bd6f8c7dfcd40",
+            "evidence-1dde33765aa07d7e011e0f18"
+          ],
+          "evidence_refs": [
+            "migration-artifacts/art-131_golden_dataset/golden-dataset.md",
+            "migration-artifacts/art-131_golden_dataset/golden-dataset.json",
+            "migration-artifacts/04-data-migration/golden-dataset.md"
+          ],
+          "producer_operation_id": "produce-04-data-migration-golden-dataset-md",
+          "provenance": {
+            "owner_agent": "artifact-agent",
+            "source_artifact_id": "04-data-migration-golden-dataset-md",
+            "task_id": "ART-131_GOLDEN_DATASET"
+          },
+          "validation_ids": [
+            "validation-333e210fecfb53cf3d7a536b"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-48156245083f39a53470d1a3",
+            "edge-77e35ae15f27191eb14031c2"
+          ],
+          "links": [
+            {
+              "to": "artifact:04-data-migration-golden-dataset-md",
+              "type": "mirrors"
+            }
+          ]
+        }
+      },
+      {
+        "id": "artifact-85e6f6197c5947521203442b",
+        "run_id": "run-art131-golden-dataset",
+        "artifact_id": "art-131-golden-dataset-json",
+        "title": "ART-131 Golden Dataset JSON",
+        "artifact_type": "machine_readable_validation_sample",
+        "status": "complete",
+        "path": "migration-artifacts/art-131_golden_dataset/golden-dataset.json",
+        "content_hash": "sha256:d0322f84b3dfe3922cf06c1927949be44d73105d5f64b53f63f2fde019e4b720",
+        "generated_by_operation_id": "produce-04-data-migration-golden-dataset-md",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-6c3535a25d6a9686209ab42a",
+            "evidence-fea53a481d665cbdd8be935a"
+          ],
+          "evidence_refs": [
+            "migration-artifacts/art-131_golden_dataset/golden-dataset.json",
+            "migration-artifacts/04-data-migration/golden-dataset.md"
+          ],
+          "producer_operation_id": "produce-04-data-migration-golden-dataset-md",
+          "provenance": {
+            "owner_agent": "artifact-agent",
+            "source_artifact_id": "04-data-migration-golden-dataset-md",
+            "task_id": "ART-131_GOLDEN_DATASET"
+          },
+          "validation_ids": [
+            "validation-3c0bd02cd5a9c705add49b9c",
+            "validation-a9b249477c018a21e9cfd53e"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-ae6711db39b1db396a99a819",
+            "edge-5f168683ca3ce2a91610e70a"
+          ],
+          "links": [
+            {
+              "to": "artifact:04-data-migration-golden-dataset-md",
+              "type": "describes"
+            }
+          ]
+        }
+      }
+    ],
+    "checksums": {
+      "migration-artifacts/04-data-migration/golden-dataset.md": "3f8e79481fc113d93929a6be738a76157b163ec91824f8a9460d73db8385e079",
+      "migration-artifacts/art-131_golden_dataset/golden-dataset.md": "3f8e79481fc113d93929a6be738a76157b163ec91824f8a9460d73db8385e079",
+      "migration-artifacts/art-131_golden_dataset/golden-dataset.json": "d0322f84b3dfe3922cf06c1927949be44d73105d5f64b53f63f2fde019e4b720"
+    },
+    "validation": {
+      "artifact_file_exists": true,
+      "registry_contains_hash": true,
+      "validation_evidence_linked": true,
+      "blocked_path_policy_represented": true
+    },
+    "evidence": [
+      "migration-artifacts/04-data-migration/golden-dataset.md",
+      "migration-artifacts/art-131_golden_dataset/golden-dataset.md",
+      "migration-artifacts/art-131_golden_dataset/golden-dataset.json",
+      "generated/contract_manifest.json",
+      "generated/execution_packets/ART-131_GOLDEN_DATASET.json",
+      "generated/envctl_artifact_registry_report.json",
+      "generated/shared_protocol_validation_report.json",
+      "proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+      "proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+    ]
+  },
+  "checksums": {
+    "execution-framework/scripts/generate_art131_golden_dataset.py": "6b69116df9e8f00651cd74f9d95d2cc59bdab93fe0b38594ea02b000e7a2e9a3",
+    "execution-framework/migration-artifacts/04-data-migration/golden-dataset.md": "3f8e79481fc113d93929a6be738a76157b163ec91824f8a9460d73db8385e079",
+    "execution-framework/migration-artifacts/art-131_golden_dataset/golden-dataset.md": "3f8e79481fc113d93929a6be738a76157b163ec91824f8a9460d73db8385e079",
+    "execution-framework/migration-artifacts/art-131_golden_dataset/golden-dataset.json": "d0322f84b3dfe3922cf06c1927949be44d73105d5f64b53f63f2fde019e4b720",
+    "execution-framework/generated/art131_golden_dataset_registry_report.json": "f38716f292048238e3db4a5b06609b236e7840e2f464cdb48e4bf76849ca7c41",
+    "execution-framework/state/ART-131_GOLDEN_DATASET.heartbeat.json": "99d6eb5568a5e24d75ffd5a7ba6b301f8459c19d0850e1a4ba077df8e9ce02aa",
+    "execution-framework/logs/ART-131_GOLDEN_DATASET.log": "f38716f292048238e3db4a5b06609b236e7840e2f464cdb48e4bf76849ca7c41",
+    "execution-framework/proof_records/proof_ledger.jsonl": "4f794148a125e815fe6936fdf87f43b441277ff85bee751a79d206f381368c8b",
+    "execution-framework/generated/status_from_proofs.json": "31b0d1602cfb5473cc0e00c5cece982609f2690d7ee8c137edd0375e8db5e567"
+  },
+  "logs_uri": "logs/ART-131_GOLDEN_DATASET.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "migration-artifacts/04-data-migration/golden-dataset.md",
+    "migration-artifacts/art-131_golden_dataset/golden-dataset.md",
+    "migration-artifacts/art-131_golden_dataset/golden-dataset.json",
+    "generated/contract_manifest.json",
+    "generated/execution_packets/ART-131_GOLDEN_DATASET.json",
+    "generated/envctl_artifact_registry_report.json",
+    "generated/shared_protocol_validation_report.json",
+    "proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+    "proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+  ],
+  "failure_reason": "",
+  "next_action": ""
+}

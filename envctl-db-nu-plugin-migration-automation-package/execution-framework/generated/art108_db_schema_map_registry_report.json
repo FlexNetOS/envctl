@@ -1,0 +1,526 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-108_DB_SCHEMA_MAP",
+  "generated_at": "2026-07-04T23:28:33+00:00",
+  "status": "passed",
+  "run_id": "run-art108-db-schema-map",
+  "operation_id": "op-art108-generate-db-schema-map",
+  "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+  "registry_results": [
+    {
+      "artifact_row_id": "artifact-eb730d8a4f3bd7c43e55a9e3",
+      "artifact_id": "art-108-db-schema-map-json",
+      "run_id": "run-art108-db-schema-map",
+      "path": "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.json",
+      "content_hash": "sha256:497703cf7da96ef31e7a89c04bc8f00ca51dac36d4214918d897e3bdaa1b305e",
+      "producer_operation_id": "op-art108-generate-db-schema-map",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-a29d9a3e2f18dff657cc8110",
+        "evidence-3001e4428b42f41daa90ca22",
+        "evidence-d8fe32c4bec4140c2be30d55",
+        "evidence-4f1935c69319b0fb0a7b6e8c",
+        "evidence-718cb069c51d8b718cd6d624",
+        "evidence-aae2a221a751a40fdb14a110",
+        "evidence-58d12ae3b8a5ef4c40fbac89",
+        "evidence-6a3d3f70114c607e83916f55",
+        "evidence-5e710f73bbfa52c69abcd1c2",
+        "evidence-772b015f7ed56a6df4eb475e"
+      ],
+      "graph_edge_ids": [
+        "edge-2e29828e05bbfff4e25eea39",
+        "edge-62c916645b976702057684b4",
+        "edge-f69e794baf7837a22e99eb5b",
+        "edge-ccc880bdb2c2ef39385ed924",
+        "edge-c63ba63106fbd1af345f105e",
+        "edge-5b3fb8954eea9615791d84a8"
+      ],
+      "validation_ids": [
+        "validation-075b7ef05c9f698a54d562c0",
+        "validation-f9ef9216c9d9c2e1f78de938",
+        "validation-23ddd635332b128fd20780ef"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-9c497d7a2e5529c210cfbed7",
+      "artifact_id": "art-108-db-schema-map-md",
+      "run_id": "run-art108-db-schema-map",
+      "path": "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.md",
+      "content_hash": "sha256:ba561b24c76fd1e10df3c4228393d05034605e726853f5dc7f890233f649d640",
+      "producer_operation_id": "op-art108-generate-db-schema-map",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-ed07d83c71bcdbb3af9f3649",
+        "evidence-0e11c66adda50da4ed0d54f4",
+        "evidence-eb86a2ee0d2efcaa2a21c259",
+        "evidence-da7e1caa7f96204b3f4d6464",
+        "evidence-e9bc3f4d1ae4fc50ea7d2eb1",
+        "evidence-9dd102e59391bf81fe3c958b",
+        "evidence-fc7a4c130c2dfd7c1433e78c",
+        "evidence-48107a1533e873d689c9a4ab",
+        "evidence-add9fd44017291a4acf3bbcd",
+        "evidence-a95f0c04a9c320fcb53b84a8"
+      ],
+      "graph_edge_ids": [
+        "edge-8bb095f55bd3c6c312acdbf5",
+        "edge-d7a5c4c93d00326f0e20304c",
+        "edge-d4436dbbaf9bd34f5def9716",
+        "edge-8dacde1a54db8e16c8aea13d",
+        "edge-e29af579c2525e4a8c0c9e18",
+        "edge-0fd67948dcc289e2ad5ddb55"
+      ],
+      "validation_ids": [
+        "validation-baec23a5ffd6cff4b24eaa86",
+        "validation-c582f777f7b80d421cde149f",
+        "validation-110473fd955579bcaac60826"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-e0762093a9e0f600827f8036",
+      "artifact_id": "04-data-migration-schema-map-md",
+      "run_id": "run-art108-db-schema-map",
+      "path": "execution-framework/migration-artifacts/04-data-migration/schema-map.md",
+      "content_hash": "sha256:ba561b24c76fd1e10df3c4228393d05034605e726853f5dc7f890233f649d640",
+      "producer_operation_id": "op-art108-generate-db-schema-map",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-0a3d5cd55e304192b35dc1b5",
+        "evidence-3ce97d3b1a6ff52ffb3feb40",
+        "evidence-e861f44be9414f52d63d5465",
+        "evidence-659aebaa7ffc603a55d4dad4",
+        "evidence-1d8f604e7f76d0229f9e9c7f",
+        "evidence-31feb69dbd091476b7a278c3",
+        "evidence-9a3c1db7f1421a62d29a71fe",
+        "evidence-eaef9ae917aa9778f2c16a52",
+        "evidence-be3b9caef5c5d22de0138ae1",
+        "evidence-b3d9df2840c0a88096099085"
+      ],
+      "graph_edge_ids": [
+        "edge-4e460b1bd460f08adfd5dc7b",
+        "edge-1c2d0a4c2e96273e10e42940",
+        "edge-cc12efb2fe90268fd882c7bf",
+        "edge-48c2a9e0c85325e40d6a17d3",
+        "edge-2ce07e24cdaa97deab28ca3b"
+      ],
+      "validation_ids": [
+        "validation-2c0979880c9eab13baae688f",
+        "validation-7584d6fc5eb43ad248403c8d",
+        "validation-34bc205e3771a70fa293a924"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-532a67114eae0dcf8b52384d",
+      "artifact_id": "04-data-migration-database-schema-map-md",
+      "run_id": "run-art108-db-schema-map",
+      "path": "execution-framework/migration-artifacts/04-data-migration/database-schema-map.md",
+      "content_hash": "sha256:ba561b24c76fd1e10df3c4228393d05034605e726853f5dc7f890233f649d640",
+      "producer_operation_id": "op-art108-generate-db-schema-map",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-4bb68c02e00b27c60ddf4e09",
+        "evidence-26fcd9bd3e4d45a5ac7ea1c0",
+        "evidence-c8df9302c409cc621d8e18a5",
+        "evidence-0da2abe86e3f1a2b6848f1eb",
+        "evidence-21202939de759212ff7f3207",
+        "evidence-b06a14ee1963df1c799262ba",
+        "evidence-54e0d1d20a8a3854451835d7",
+        "evidence-400f032a1440892327d30f5e",
+        "evidence-bd3b6221fe8552d3d7a26a32",
+        "evidence-e01f114bfdfc0b4141dba094"
+      ],
+      "graph_edge_ids": [
+        "edge-12f3a5f37ae5f692612cd685",
+        "edge-3c127be34473def391092872",
+        "edge-3ed5ffb4c716639e8bd2b9eb",
+        "edge-a5fcc93e3250803c782ea270",
+        "edge-633899715b9b600879b827b3"
+      ],
+      "validation_ids": [
+        "validation-6fd02e386a9f5d0214c243a6",
+        "validation-a7f42e6d4b0eff6d17b07307",
+        "validation-5cf71504cbf813a449203d38"
+      ]
+    }
+  ],
+  "registered_artifacts": [
+    {
+      "id": "artifact-eb730d8a4f3bd7c43e55a9e3",
+      "run_id": "run-art108-db-schema-map",
+      "artifact_id": "art-108-db-schema-map-json",
+      "title": "ART-108 Database Schema Map JSON",
+      "artifact_type": "database_schema_map",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.json",
+      "content_hash": "sha256:497703cf7da96ef31e7a89c04bc8f00ca51dac36d4214918d897e3bdaa1b305e",
+      "generated_by_operation_id": "op-art108-generate-db-schema-map",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-a29d9a3e2f18dff657cc8110",
+          "evidence-3001e4428b42f41daa90ca22",
+          "evidence-d8fe32c4bec4140c2be30d55",
+          "evidence-4f1935c69319b0fb0a7b6e8c",
+          "evidence-718cb069c51d8b718cd6d624",
+          "evidence-aae2a221a751a40fdb14a110",
+          "evidence-58d12ae3b8a5ef4c40fbac89",
+          "evidence-6a3d3f70114c607e83916f55",
+          "evidence-5e710f73bbfa52c69abcd1c2",
+          "evidence-772b015f7ed56a6df4eb475e"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.json",
+          "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.md",
+          "execution-framework/migration-artifacts/04-data-migration/schema-map.md",
+          "execution-framework/migration-artifacts/04-data-migration/database-schema-map.md",
+          "execution-framework/generated/envctl_migration_db_model.json",
+          "execution-framework/docs/ENVCTL_DB_SCHEMA.md",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/generated/shared_protocol_manifest.json",
+          "sql/001_migration_automation_schema.sql",
+          "sql/002_views_and_indexes.sql"
+        ],
+        "producer_operation_id": "op-art108-generate-db-schema-map",
+        "provenance": {
+          "helper_id": "helper-artifact-09",
+          "model_tag": "gpt-5.3-spark",
+          "owner_agent": "artifact-agent",
+          "schema_backend": "sqlite",
+          "source_graph_uri": "generated/task_graph.csv",
+          "source_migrations": [
+            "sql/001_migration_automation_schema.sql",
+            "sql/002_views_and_indexes.sql",
+            "execution-framework/generated/contract_manifest.seed.sql"
+          ],
+          "task_id": "ART-108_DB_SCHEMA_MAP"
+        },
+        "validation_ids": [
+          "validation-075b7ef05c9f698a54d562c0",
+          "validation-f9ef9216c9d9c2e1f78de938",
+          "validation-23ddd635332b128fd20780ef"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-2e29828e05bbfff4e25eea39",
+          "edge-62c916645b976702057684b4",
+          "edge-f69e794baf7837a22e99eb5b",
+          "edge-ccc880bdb2c2ef39385ed924",
+          "edge-c63ba63106fbd1af345f105e",
+          "edge-5b3fb8954eea9615791d84a8"
+        ],
+        "links": [
+          {
+            "to": "artifact:04-data-migration-schema-map-md",
+            "type": "supports_contract_row"
+          },
+          {
+            "to": "artifact:04-data-migration-database-schema-map-md",
+            "type": "supports_contract_row"
+          },
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-9c497d7a2e5529c210cfbed7",
+      "run_id": "run-art108-db-schema-map",
+      "artifact_id": "art-108-db-schema-map-md",
+      "title": "ART-108 Database Schema Map Markdown",
+      "artifact_type": "migration_artifact",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.md",
+      "content_hash": "sha256:ba561b24c76fd1e10df3c4228393d05034605e726853f5dc7f890233f649d640",
+      "generated_by_operation_id": "op-art108-generate-db-schema-map",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-ed07d83c71bcdbb3af9f3649",
+          "evidence-0e11c66adda50da4ed0d54f4",
+          "evidence-eb86a2ee0d2efcaa2a21c259",
+          "evidence-da7e1caa7f96204b3f4d6464",
+          "evidence-e9bc3f4d1ae4fc50ea7d2eb1",
+          "evidence-9dd102e59391bf81fe3c958b",
+          "evidence-fc7a4c130c2dfd7c1433e78c",
+          "evidence-48107a1533e873d689c9a4ab",
+          "evidence-add9fd44017291a4acf3bbcd",
+          "evidence-a95f0c04a9c320fcb53b84a8"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.json",
+          "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.md",
+          "execution-framework/migration-artifacts/04-data-migration/schema-map.md",
+          "execution-framework/migration-artifacts/04-data-migration/database-schema-map.md",
+          "execution-framework/generated/envctl_migration_db_model.json",
+          "execution-framework/docs/ENVCTL_DB_SCHEMA.md",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/generated/shared_protocol_manifest.json",
+          "sql/001_migration_automation_schema.sql",
+          "sql/002_views_and_indexes.sql"
+        ],
+        "producer_operation_id": "op-art108-generate-db-schema-map",
+        "provenance": {
+          "helper_id": "helper-artifact-09",
+          "model_tag": "gpt-5.3-spark",
+          "owner_agent": "artifact-agent",
+          "schema_backend": "sqlite",
+          "source_graph_uri": "generated/task_graph.csv",
+          "source_migrations": [
+            "sql/001_migration_automation_schema.sql",
+            "sql/002_views_and_indexes.sql",
+            "execution-framework/generated/contract_manifest.seed.sql"
+          ],
+          "task_id": "ART-108_DB_SCHEMA_MAP"
+        },
+        "validation_ids": [
+          "validation-baec23a5ffd6cff4b24eaa86",
+          "validation-c582f777f7b80d421cde149f",
+          "validation-110473fd955579bcaac60826"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-8bb095f55bd3c6c312acdbf5",
+          "edge-d7a5c4c93d00326f0e20304c",
+          "edge-d4436dbbaf9bd34f5def9716",
+          "edge-8dacde1a54db8e16c8aea13d",
+          "edge-e29af579c2525e4a8c0c9e18",
+          "edge-0fd67948dcc289e2ad5ddb55"
+        ],
+        "links": [
+          {
+            "to": "artifact:04-data-migration-schema-map-md",
+            "type": "supports_contract_row"
+          },
+          {
+            "to": "artifact:04-data-migration-database-schema-map-md",
+            "type": "supports_contract_row"
+          },
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-e0762093a9e0f600827f8036",
+      "run_id": "run-art108-db-schema-map",
+      "artifact_id": "04-data-migration-schema-map-md",
+      "title": "Schema Map",
+      "artifact_type": "migration_artifact",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/04-data-migration/schema-map.md",
+      "content_hash": "sha256:ba561b24c76fd1e10df3c4228393d05034605e726853f5dc7f890233f649d640",
+      "generated_by_operation_id": "op-art108-generate-db-schema-map",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-0a3d5cd55e304192b35dc1b5",
+          "evidence-3ce97d3b1a6ff52ffb3feb40",
+          "evidence-e861f44be9414f52d63d5465",
+          "evidence-659aebaa7ffc603a55d4dad4",
+          "evidence-1d8f604e7f76d0229f9e9c7f",
+          "evidence-31feb69dbd091476b7a278c3",
+          "evidence-9a3c1db7f1421a62d29a71fe",
+          "evidence-eaef9ae917aa9778f2c16a52",
+          "evidence-be3b9caef5c5d22de0138ae1",
+          "evidence-b3d9df2840c0a88096099085"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.json",
+          "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.md",
+          "execution-framework/migration-artifacts/04-data-migration/schema-map.md",
+          "execution-framework/migration-artifacts/04-data-migration/database-schema-map.md",
+          "execution-framework/generated/envctl_migration_db_model.json",
+          "execution-framework/docs/ENVCTL_DB_SCHEMA.md",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/generated/shared_protocol_manifest.json",
+          "sql/001_migration_automation_schema.sql",
+          "sql/002_views_and_indexes.sql"
+        ],
+        "producer_operation_id": "op-art108-generate-db-schema-map",
+        "provenance": {
+          "helper_id": "helper-artifact-09",
+          "model_tag": "gpt-5.3-spark",
+          "owner_agent": "artifact-agent",
+          "schema_backend": "sqlite",
+          "source_graph_uri": "generated/task_graph.csv",
+          "source_migrations": [
+            "sql/001_migration_automation_schema.sql",
+            "sql/002_views_and_indexes.sql",
+            "execution-framework/generated/contract_manifest.seed.sql"
+          ],
+          "task_id": "ART-108_DB_SCHEMA_MAP"
+        },
+        "validation_ids": [
+          "validation-2c0979880c9eab13baae688f",
+          "validation-7584d6fc5eb43ad248403c8d",
+          "validation-34bc205e3771a70fa293a924"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-4e460b1bd460f08adfd5dc7b",
+          "edge-1c2d0a4c2e96273e10e42940",
+          "edge-cc12efb2fe90268fd882c7bf",
+          "edge-48c2a9e0c85325e40d6a17d3",
+          "edge-2ce07e24cdaa97deab28ca3b"
+        ],
+        "links": [
+          {
+            "to": "artifact:04-data-migration-schema-map-md",
+            "type": "satisfies_contract_row"
+          },
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-532a67114eae0dcf8b52384d",
+      "run_id": "run-art108-db-schema-map",
+      "artifact_id": "04-data-migration-database-schema-map-md",
+      "title": "Database Schema Map",
+      "artifact_type": "migration_artifact",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/04-data-migration/database-schema-map.md",
+      "content_hash": "sha256:ba561b24c76fd1e10df3c4228393d05034605e726853f5dc7f890233f649d640",
+      "generated_by_operation_id": "op-art108-generate-db-schema-map",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-4bb68c02e00b27c60ddf4e09",
+          "evidence-26fcd9bd3e4d45a5ac7ea1c0",
+          "evidence-c8df9302c409cc621d8e18a5",
+          "evidence-0da2abe86e3f1a2b6848f1eb",
+          "evidence-21202939de759212ff7f3207",
+          "evidence-b06a14ee1963df1c799262ba",
+          "evidence-54e0d1d20a8a3854451835d7",
+          "evidence-400f032a1440892327d30f5e",
+          "evidence-bd3b6221fe8552d3d7a26a32",
+          "evidence-e01f114bfdfc0b4141dba094"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.json",
+          "execution-framework/migration-artifacts/art-108_db_schema_map/db_schema_map.md",
+          "execution-framework/migration-artifacts/04-data-migration/schema-map.md",
+          "execution-framework/migration-artifacts/04-data-migration/database-schema-map.md",
+          "execution-framework/generated/envctl_migration_db_model.json",
+          "execution-framework/docs/ENVCTL_DB_SCHEMA.md",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/generated/shared_protocol_manifest.json",
+          "sql/001_migration_automation_schema.sql",
+          "sql/002_views_and_indexes.sql"
+        ],
+        "producer_operation_id": "op-art108-generate-db-schema-map",
+        "provenance": {
+          "helper_id": "helper-artifact-09",
+          "model_tag": "gpt-5.3-spark",
+          "owner_agent": "artifact-agent",
+          "schema_backend": "sqlite",
+          "source_graph_uri": "generated/task_graph.csv",
+          "source_migrations": [
+            "sql/001_migration_automation_schema.sql",
+            "sql/002_views_and_indexes.sql",
+            "execution-framework/generated/contract_manifest.seed.sql"
+          ],
+          "task_id": "ART-108_DB_SCHEMA_MAP"
+        },
+        "validation_ids": [
+          "validation-6fd02e386a9f5d0214c243a6",
+          "validation-a7f42e6d4b0eff6d17b07307",
+          "validation-5cf71504cbf813a449203d38"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-12f3a5f37ae5f692612cd685",
+          "edge-3c127be34473def391092872",
+          "edge-3ed5ffb4c716639e8bd2b9eb",
+          "edge-a5fcc93e3250803c782ea270",
+          "edge-633899715b9b600879b827b3"
+        ],
+        "links": [
+          {
+            "to": "artifact:04-data-migration-database-schema-map-md",
+            "type": "satisfies_contract_row"
+          },
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          }
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "table_count": 16,
+    "column_count": 155,
+    "index_count": 31,
+    "foreign_key_count": 24,
+    "constraint_count": 128,
+    "view_count": 6,
+    "trigger_count": 0,
+    "procedure_count": 0,
+    "registered_artifact_count": 4,
+    "evidence_count": 40,
+    "graph_edge_count": 22,
+    "validation_count": 12
+  },
+  "verification": {
+    "artifact_files_exist": true,
+    "hashes_recorded": true,
+    "validation_evidence_linked": true,
+    "procedures_explicitly_mapped": true,
+    "triggers_explicitly_mapped": true
+  },
+  "evidence": [
+    "migration-artifacts/art-108_db_schema_map/db_schema_map.json",
+    "migration-artifacts/art-108_db_schema_map/db_schema_map.md",
+    "migration-artifacts/04-data-migration/schema-map.md",
+    "migration-artifacts/04-data-migration/database-schema-map.md",
+    "generated/art108_db_schema_map_registry_report.json"
+  ],
+  "errors": []
+}

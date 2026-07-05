@@ -1,0 +1,448 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-123_VALIDATION_RECONCILIATION",
+  "generated_at": "2026-07-04T23:29:16+00:00",
+  "status": "passed",
+  "reconciliation": {
+    "schema_version": "1.0",
+    "task_id": "ART-123_VALIDATION_RECONCILIATION",
+    "title": "Validation reconciliation reports",
+    "generated_at": "2026-07-04T23:29:16+00:00",
+    "source_inputs": {
+      "target_descriptor": "generated/envctl_target_registry.json",
+      "repo_scan": "generated/package_scan.json",
+      "envctl_database": "generated/envctl_migration_db_model.json",
+      "artifact_registry": "generated/envctl_artifact_registry_report.json",
+      "validation_evidence": "generated/envctl_validation_evidence_report.json",
+      "shared_protocols": "generated/shared_protocol_validation_report.json",
+      "task_status": "generated/status_from_proofs.json",
+      "final_verification": "generated/final_verification_report.json",
+      "contract_manifest": "generated/contract_manifest.json"
+    },
+    "parity": {
+      "task_graph_rows": 80,
+      "execution_packet_count": 80,
+      "proof_record_count": 60,
+      "status_report_tasks": 80,
+      "successful_tasks": 56,
+      "missing_execution_packets": [],
+      "packets_without_task_graph_rows": [],
+      "successful_tasks_without_proof": [],
+      "proofs_without_task_graph_rows": [],
+      "passed": true
+    },
+    "counts": {
+      "by_phase": [
+        {
+          "phase": "00-framework",
+          "task_count": 8,
+          "complete_or_passed": 8,
+          "pending": 0,
+          "other": 0
+        },
+        {
+          "phase": "01-contract",
+          "task_count": 1,
+          "complete_or_passed": 1,
+          "pending": 0,
+          "other": 0
+        },
+        {
+          "phase": "02-envctl-db",
+          "task_count": 9,
+          "complete_or_passed": 6,
+          "pending": 3,
+          "other": 0
+        },
+        {
+          "phase": "03-nu-plugin",
+          "task_count": 5,
+          "complete_or_passed": 4,
+          "pending": 1,
+          "other": 0
+        },
+        {
+          "phase": "04-shared",
+          "task_count": 6,
+          "complete_or_passed": 4,
+          "pending": 2,
+          "other": 0
+        },
+        {
+          "phase": "05-artifacts",
+          "task_count": 37,
+          "complete_or_passed": 28,
+          "pending": 9,
+          "other": 0
+        },
+        {
+          "phase": "06-flexnetos",
+          "task_count": 3,
+          "complete_or_passed": 1,
+          "pending": 2,
+          "other": 0
+        },
+        {
+          "phase": "07-verification",
+          "task_count": 5,
+          "complete_or_passed": 0,
+          "pending": 5,
+          "other": 0
+        },
+        {
+          "phase": "08-release",
+          "task_count": 2,
+          "complete_or_passed": 0,
+          "pending": 2,
+          "other": 0
+        },
+        {
+          "phase": "09-drive-maintenance",
+          "task_count": 4,
+          "complete_or_passed": 4,
+          "pending": 0,
+          "other": 0
+        }
+      ],
+      "artifact_registry": {
+        "evidence_rows": 3,
+        "graph_edges": 4,
+        "validation_rows": 2,
+        "rejection_cases": 3
+      },
+      "validation_evidence": {
+        "validation_rows": 3,
+        "evidence_rows": 4,
+        "hashed_evidence_rows": 4,
+        "rejection_cases": 3
+      },
+      "shared_protocol_samples": {
+        "total": 14,
+        "passed": 14
+      },
+      "final_verification": {
+        "task_count": 80,
+        "packet_count": 80,
+        "proof_count": 46,
+        "missing_outputs": 0,
+        "unresolved_gaps": 0
+      }
+    },
+    "checksums": {
+      "inputs": {
+        "execution-framework/generated/envctl_target_registry.json": "e74615f1274f5cbc530b859fa74e774f99f99ef33c7acb7b2a3cc75f0f01e77c",
+        "execution-framework/generated/package_scan.json": "0d851e9f6a67044bfd6b6df77231c518292a385304e1830d579e6520634b9487",
+        "execution-framework/generated/envctl_migration_db_model.json": "7347f6629cc4fb0dbae56105dec65d5937a2a55860e0df4215b309e3ef766cef",
+        "execution-framework/generated/envctl_artifact_registry_report.json": "b3d33175a5ec64d95bb2a2dc0b503ca897c97990bf78fd80fc159780b3df113c",
+        "execution-framework/generated/envctl_validation_evidence_report.json": "0ac5c601eb16c8df54d7f70573aacf950b18a0ecfe56606ebe9a3ab9d092d3bf",
+        "execution-framework/generated/shared_protocol_validation_report.json": "0863b9b28e702c704c96f50a50954181f42b35aaa16e4ecb6643497093c4c4d0",
+        "execution-framework/generated/status_from_proofs.json": "72a97f935a3e589a84abebd22ae2cd78c9947611d5c8d6316a343c4667167ea5",
+        "execution-framework/generated/final_verification_report.json": "fe82ef8932163155bb724ee0093c4a133abf73157b1f365ccd018110cc2c1e52",
+        "execution-framework/generated/contract_manifest.json": "3c2e2a883b6dfc7f135c4dc101484cced9f877191b46bb378f1cc4fcd07e1270",
+        "execution-framework/generated/task_graph.csv": "6388bfe8495f78fb2d89e87d183d258eae9a079bcf67e91ec60cc80a9f36d670"
+      },
+      "upstream_proofs": {
+        "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json": "fb6103ba1e8ca4c520a43fa3a18bdae971af6296f714f96c9aab6eee34d37d64",
+        "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json": "88ecbe9517d4b24401ea1c5bbd072e1472aa0b9938c34e2c210173f521f1bea1",
+        "execution-framework/proof_records/REQ-025_ENVCTL_VALIDATION_EVIDENCE.proof.json": "342166da90b6d986604e6448e7b4c9cd0ede63e78136002a6522f754798ed4d7"
+      }
+    },
+    "dependency_statuses": {
+      "REQ-024_ENVCTL_ARTIFACT_REGISTRY": "completed",
+      "REQ-040_SHARED_PROTOCOL_SCHEMAS": "completed",
+      "REQ-025_ENVCTL_VALIDATION_EVIDENCE": "completed"
+    },
+    "contract_mapping": {
+      "contract_row_id": "artifact:06-testing-validation-validation-reconciliation-reports-md",
+      "contract_required_path": "migration-artifacts/06-testing-validation/validation-reconciliation-reports.md",
+      "task_scoped_paths": [
+        "migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.md",
+        "migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.json"
+      ],
+      "contract_rows": [
+        {
+          "contract_row_id": "artifact:06-testing-validation-validation-reconciliation-reports-md",
+          "artifact_id": "06-testing-validation-validation-reconciliation-reports-md",
+          "title": "Validation Reconciliation Reports",
+          "required_path": "migration-artifacts/06-testing-validation/validation-reconciliation-reports.md",
+          "section": "06-testing-validation",
+          "artifact_type": "validation_evidence",
+          "format": "md",
+          "status": "required",
+          "source_refs": [
+            "source/codex-flexnetos-migration-prompt-package/expected-output/migration-artifacts-tree.md",
+            "source/previous-migration-artifact-context.md"
+          ],
+          "producer_task_id": "ART-123_VALIDATION_RECONCILIATION",
+          "validators": [
+            "path_registered",
+            "evidence_or_status_recorded",
+            "linked_from_index"
+          ]
+        }
+      ]
+    },
+    "output_expectations": {
+      "target_files": [
+        "migration-artifacts/art-123_validation_reconciliation/*.md",
+        "migration-artifacts/art-123_validation_reconciliation/*.json"
+      ],
+      "registered_artifacts": [
+        "art-123-validation-reconciliation-md",
+        "art-123-validation-reconciliation-json",
+        "06-testing-validation-validation-reconciliation-reports-md"
+      ]
+    },
+    "validation_summary": {
+      "artifact_registry_status": "passed",
+      "validation_evidence_status": "passed",
+      "shared_protocol_status": "passed",
+      "final_verification_status": "pass_with_external_blocker",
+      "target_registry_status": "passed",
+      "db_model_status": "passed",
+      "package_scan_status": "available"
+    },
+    "status": "passed",
+    "errors": []
+  },
+  "registry_results": [
+    {
+      "artifact_row_id": "artifact-61a9b4d64ed14c1ee6474f05",
+      "artifact_id": "art-123-validation-reconciliation-md",
+      "run_id": "run-art123-validation-reconciliation",
+      "path": "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.md",
+      "content_hash": "sha256:1e234c8ac0f976d70070906ad4233fe18e9d4c6b8ec6c114f5ea137fd7fe1963",
+      "producer_operation_id": "produce-06-testing-validation-reconciliation-reports-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-5be302ace2861bf6b0de6bb6",
+        "evidence-6f8d8cc269e58855927c091d",
+        "evidence-00f36a16c436762692878171",
+        "evidence-abe6ac108f3f67d6676efd68",
+        "evidence-f8b2030262a7b41cb1c70d74",
+        "evidence-b77dffbdcd9d4183d5e3b785",
+        "evidence-7e23aece9e05b8d44d192e4b",
+        "evidence-c0ed1a908851cad17651eb8d"
+      ],
+      "graph_edge_ids": [
+        "edge-456abd1e63b872f5f24bdd7d",
+        "edge-5c227f736a9d6e8518b11909",
+        "edge-ca9a5cfe340e086f7802b75b",
+        "edge-2c567fbcd5043ae460bc6e28",
+        "edge-7f8330e41193bab5590e5085",
+        "edge-ec4dd1ce7562f73c4710e38d"
+      ],
+      "validation_ids": [
+        "validation-8ea63b02e2a441953285ce06",
+        "validation-bb108f68a7dd6aa9667d942b",
+        "validation-ca35cc018c1660e39c453771",
+        "validation-ef7872fe464a269a2dd1dba5"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-fcf2e3eefc058f8d3ad33d85",
+      "artifact_id": "art-123-validation-reconciliation-json",
+      "run_id": "run-art123-validation-reconciliation",
+      "path": "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.json",
+      "content_hash": "sha256:69f1d60c2d68961868f0b183740090eab97100f8b6ef96556e7241bbfd650ae9",
+      "producer_operation_id": "produce-06-testing-validation-reconciliation-reports-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-c7e879f88b98ac633d8d9aa8",
+        "evidence-7ec095bcb317e2c98e377807",
+        "evidence-5e16bef6d2483aa8e47bb799",
+        "evidence-77fcd69146bca781c4b2607a",
+        "evidence-cd01ae1b9d643cd1f674ea07",
+        "evidence-11167dee5e992e719158d2ad",
+        "evidence-1236611ecd5fc8054c5c7722",
+        "evidence-ce8a73d1e53185384b550d94"
+      ],
+      "graph_edge_ids": [
+        "edge-ff1129382270e30c2b584caa",
+        "edge-cbc72332414937ebaea3770f",
+        "edge-6f6af408a3a37cdb377c9811",
+        "edge-58bd57c38256dcf9cb3d4823",
+        "edge-cc82697a715f65ae2975dd03",
+        "edge-e03bc98b4a23ee9b4cf9b9ab"
+      ],
+      "validation_ids": [
+        "validation-df49b527c3f44f19f7294362",
+        "validation-fbb40263bc72768b16e3a43e",
+        "validation-aa5e964eb1ae94fe41ec93fb",
+        "validation-3e88cfbb68a8d49ded246152"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-8536d29d83a9f65eef3c383f",
+      "artifact_id": "06-testing-validation-validation-reconciliation-reports-md",
+      "run_id": "run-art123-validation-reconciliation",
+      "path": "execution-framework/migration-artifacts/06-testing-validation/validation-reconciliation-reports.md",
+      "content_hash": "sha256:1e234c8ac0f976d70070906ad4233fe18e9d4c6b8ec6c114f5ea137fd7fe1963",
+      "producer_operation_id": "produce-06-testing-validation-reconciliation-reports-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-b1afdc0b65c4a64bd3f7d5ca",
+        "evidence-16cf558945550eb786a00082",
+        "evidence-b0cab663791a73b30230e9ea",
+        "evidence-d013cfa6d290735bf7f421e1",
+        "evidence-6c5c91aee5ccffb1d1f8919a",
+        "evidence-5238772c96e6e83620d2a23c",
+        "evidence-a8c321b88d0bf5511e37a68f",
+        "evidence-2776867863f2460272df9a13"
+      ],
+      "graph_edge_ids": [
+        "edge-2a691666ffc871fc55271567",
+        "edge-37bbfdf96a771f7c63c401b0",
+        "edge-623d8e80b7201effcc4009bf",
+        "edge-6d54b83cab70343c60807dff",
+        "edge-9fdc14ae5967e901e7a1957b",
+        "edge-0707c51858b85b52cbb994f7"
+      ],
+      "validation_ids": [
+        "validation-4af124cdfecf44c1f0d21e6f",
+        "validation-26b0a3d4e68750a0afabe1ba",
+        "validation-8019fe970665efdf2fee0a3b",
+        "validation-d2c70ae2774328d0513f0f0f"
+      ]
+    }
+  ],
+  "validation_results": [
+    {
+      "validation_id": "validation-art123-reconciliation",
+      "run_id": "run-art123-validation-reconciliation",
+      "artifact_id": "art-123-validation-reconciliation-json",
+      "operation_id": "produce-06-testing-validation-reconciliation-reports-md",
+      "validator": "generate_art123_validation_reconciliation.py:reconciliation",
+      "status": "pass",
+      "evidence_ids": [
+        "evidence-5c32b0f747e9f8da91242861",
+        "evidence-961ab8b66ab0b096f0700604"
+      ],
+      "evidence_uris": [
+        "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.json",
+        "execution-framework/generated/envctl_validation_evidence_report.json"
+      ],
+      "schema_shape": {
+        "validation_id": "validation-art123-reconciliation",
+        "run_id": "run-art123-validation-reconciliation",
+        "artifact_id": "art-123-validation-reconciliation-json",
+        "validator": "generate_art123_validation_reconciliation.py:reconciliation",
+        "status": "pass",
+        "details": {
+          "parity_passed": true,
+          "dependency_statuses": {
+            "REQ-024_ENVCTL_ARTIFACT_REGISTRY": "completed",
+            "REQ-040_SHARED_PROTOCOL_SCHEMAS": "completed",
+            "REQ-025_ENVCTL_VALIDATION_EVIDENCE": "completed"
+          },
+          "registered_artifacts": [
+            "art-123-validation-reconciliation-md",
+            "art-123-validation-reconciliation-json",
+            "06-testing-validation-validation-reconciliation-reports-md"
+          ]
+        },
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.json",
+          "execution-framework/generated/envctl_validation_evidence_report.json"
+        ]
+      }
+    },
+    {
+      "validation_id": "validation-art123-parity",
+      "run_id": "run-art123-validation-reconciliation",
+      "artifact_id": "art-123-validation-reconciliation-md",
+      "operation_id": "produce-06-testing-validation-reconciliation-reports-md",
+      "validator": "generate_art123_validation_reconciliation.py:parity",
+      "status": "pass",
+      "evidence_ids": [
+        "evidence-57e0f4f13eca7217669b944d",
+        "evidence-acca2d3c3f2ee3a7e6ad38b6"
+      ],
+      "evidence_uris": [
+        "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.md",
+        "execution-framework/generated/status_from_proofs.json"
+      ],
+      "schema_shape": {
+        "validation_id": "validation-art123-parity",
+        "run_id": "run-art123-validation-reconciliation",
+        "artifact_id": "art-123-validation-reconciliation-md",
+        "validator": "generate_art123_validation_reconciliation.py:parity",
+        "status": "pass",
+        "details": {
+          "task_graph_rows": 80,
+          "execution_packet_count": 80,
+          "proof_record_count": 60,
+          "status_report_tasks": 80,
+          "successful_tasks": 56,
+          "missing_execution_packets": [],
+          "packets_without_task_graph_rows": [],
+          "successful_tasks_without_proof": [],
+          "proofs_without_task_graph_rows": [],
+          "passed": true
+        },
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.md",
+          "execution-framework/generated/status_from_proofs.json"
+        ]
+      }
+    }
+  ],
+  "artifact_index_rows": [
+    {
+      "artifact_id": "06-testing-validation-validation-reconciliation-reports-md",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/06-testing-validation/validation-reconciliation-reports.md",
+      "content_hash": "sha256:1e234c8ac0f976d70070906ad4233fe18e9d4c6b8ec6c114f5ea137fd7fe1963"
+    },
+    {
+      "artifact_id": "art-123-validation-reconciliation-json",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.json",
+      "content_hash": "sha256:69f1d60c2d68961868f0b183740090eab97100f8b6ef96556e7241bbfd650ae9"
+    },
+    {
+      "artifact_id": "art-123-validation-reconciliation-md",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.md",
+      "content_hash": "sha256:1e234c8ac0f976d70070906ad4233fe18e9d4c6b8ec6c114f5ea137fd7fe1963"
+    }
+  ],
+  "validation_scorecard_row": [
+    14,
+    0,
+    0,
+    0,
+    0
+  ],
+  "replay_readiness_row": [
+    1,
+    0,
+    0,
+    0
+  ],
+  "evidence_by_kind": {
+    "artifact_registry_link": 24,
+    "parity": 1,
+    "proof_record": 2,
+    "reconciliation": 1
+  },
+  "registered_output_hashes": {
+    "execution-framework/migration-artifacts/06-testing-validation/validation-reconciliation-reports.md": "sha256:1e234c8ac0f976d70070906ad4233fe18e9d4c6b8ec6c114f5ea137fd7fe1963",
+    "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.json": "sha256:69f1d60c2d68961868f0b183740090eab97100f8b6ef96556e7241bbfd650ae9",
+    "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.md": "sha256:1e234c8ac0f976d70070906ad4233fe18e9d4c6b8ec6c114f5ea137fd7fe1963"
+  },
+  "errors": [],
+  "evidence": [
+    "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.md",
+    "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.json",
+    "execution-framework/migration-artifacts/06-testing-validation/validation-reconciliation-reports.md",
+    "execution-framework/generated/art123_validation_reconciliation_report.json",
+    "execution-framework/generated/envctl_artifact_registry_report.json",
+    "execution-framework/generated/envctl_validation_evidence_report.json",
+    "execution-framework/generated/shared_protocol_validation_report.json",
+    "execution-framework/generated/status_from_proofs.json",
+    "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+    "execution-framework/proof_records/REQ-025_ENVCTL_VALIDATION_EVIDENCE.proof.json",
+    "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+  ]
+}

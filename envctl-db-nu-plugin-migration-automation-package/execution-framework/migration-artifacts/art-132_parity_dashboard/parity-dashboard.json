@@ -1,0 +1,280 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-132_PARITY_DASHBOARD",
+  "title": "Parity dashboard",
+  "generated_at": "2026-07-04T23:29:06+00:00",
+  "status": "complete_with_live_capture_gap",
+  "scope": {
+    "target_id": "flexnetos-vs-lifeos",
+    "primary_root": "/home/flexnetos/FlexNetOS",
+    "compare_root": "/home/flexnetos/lifeos",
+    "dashboard_mode": "real_time_projection_from_envctl_records",
+    "owner_lane": "lane_d_filesystem",
+    "owner_agent": "artifact-agent"
+  },
+  "source_inputs": {
+    "target_descriptor": "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+    "repo_scan": "execution-framework/generated/package_scan.json",
+    "envctl_database": "execution-framework/generated/envctl_migration_db_model.json",
+    "artifact_registry": "execution-framework/generated/envctl_artifact_registry_report.json",
+    "validation_evidence": "execution-framework/generated/envctl_validation_evidence_report.json",
+    "shared_protocol": "execution-framework/generated/shared_protocol_manifest.json",
+    "nu_plugin_command_manifest": "execution-framework/generated/nu_plugin_command_manifest.json",
+    "live_visuals": "execution-framework/generated/live_visuals.json",
+    "shadow_traffic": "execution-framework/migration-artifacts/art-130_shadow_traffic/shadow-traffic-comparison-report.json"
+  },
+  "source_hashes": {
+    "examples/target-descriptors/flexnetos-vs-lifeos.yaml": "sha256:71f4aab77e91d0fa9a414350dee50f23fc3c6492b265c607fe9e4de93c3fe190",
+    "execution-framework/generated/package_scan.json": "sha256:0d851e9f6a67044bfd6b6df77231c518292a385304e1830d579e6520634b9487",
+    "execution-framework/generated/envctl_migration_db_model.json": "sha256:7347f6629cc4fb0dbae56105dec65d5937a2a55860e0df4215b309e3ef766cef",
+    "execution-framework/generated/envctl_artifact_registry_report.json": "sha256:b3d33175a5ec64d95bb2a2dc0b503ca897c97990bf78fd80fc159780b3df113c",
+    "execution-framework/generated/envctl_validation_evidence_report.json": "sha256:0ac5c601eb16c8df54d7f70573aacf950b18a0ecfe56606ebe9a3ab9d092d3bf",
+    "execution-framework/generated/validation_evidence/parity.json": "sha256:8a25eddbe76cae5aad05e65e21baa67041ad41fd798deb7fc60c12bcda8e4d8d",
+    "execution-framework/generated/shared_protocol_manifest.json": "sha256:846beff278ee11a96b7eb9aa45bff6b476ee1fc406fcfb3cea3de92c79d057ca",
+    "execution-framework/generated/shared_protocol_validation_report.json": "sha256:0863b9b28e702c704c96f50a50954181f42b35aaa16e4ecb6643497093c4c4d0",
+    "execution-framework/generated/nu_plugin_command_manifest.json": "sha256:52e307270b2dab6901e4231187e9b7ae09c6eb015e7eef040f8b2f5b1f323c06",
+    "execution-framework/generated/live_visuals.json": "sha256:846814eb7dc0b243f3a68eb52a6dbf5fdc46f26c18047b5c87f9b09d9aa78c9b",
+    "execution-framework/generated/contract_manifest.json": "sha256:3c2e2a883b6dfc7f135c4dc101484cced9f877191b46bb378f1cc4fcd07e1270",
+    "execution-framework/migration-artifacts/art-130_shadow_traffic/shadow-traffic-comparison-report.json": "sha256:e4a25a1513c2b2977dd7a126fb088c9823fca42d6ca6741aa31440b8a5d04c8d"
+  },
+  "summary": {
+    "metric_tile_count": 5,
+    "comparison_stream_count": 4,
+    "db_required_table_count": 16,
+    "db_actual_table_count": 16,
+    "package_scanned_file_count": null,
+    "target_descriptor_status": "passed",
+    "shared_protocol_required_records": 14,
+    "artifact_registry_controls_passed": 7,
+    "artifact_registry_control_count": 7,
+    "validation_scorecard": {
+      "pass": 2,
+      "fail": 0,
+      "warn": 1,
+      "blocked": 0,
+      "unknown": 0
+    },
+    "current_parity_status": "warn",
+    "shadow_traffic_status": "complete_with_capture_gap"
+  },
+  "metric_tiles": [
+    {
+      "metric_id": "artifact_registry_coverage",
+      "label": "Artifact registry coverage",
+      "old_source": "filesystem artifact paths",
+      "new_source": "envctl_migration_artifacts plus envctl_migration_artifact_index",
+      "old_value": "path-only",
+      "new_value": "7/7 registry controls passed",
+      "status": "pass",
+      "evidence_refs": [
+        "execution-framework/generated/envctl_artifact_registry_report.json",
+        "execution-framework/docs/ENVCTL_ARTIFACT_REGISTRY.md"
+      ]
+    },
+    {
+      "metric_id": "validation_scorecard",
+      "label": "Validation evidence",
+      "old_source": "manual reconciliation notes",
+      "new_source": "envctl_migration_validations and evidence rows",
+      "old_value": "warn",
+      "new_value": {
+        "pass": 2,
+        "fail": 0,
+        "warn": 1,
+        "blocked": 0,
+        "unknown": 0
+      },
+      "status": "warn",
+      "evidence_refs": [
+        "execution-framework/generated/envctl_validation_evidence_report.json",
+        "execution-framework/generated/validation_evidence/parity.json"
+      ]
+    },
+    {
+      "metric_id": "protocol_record_coverage",
+      "label": "Shared protocol coverage",
+      "old_source": "direct file and log reads",
+      "new_source": "envctl to nu_plugin shared records",
+      "old_value": "untyped operator reads",
+      "new_value": "14 required record contracts",
+      "status": "pass",
+      "evidence_refs": [
+        "execution-framework/generated/shared_protocol_manifest.json",
+        "execution-framework/generated/shared_protocol_validation_report.json"
+      ]
+    },
+    {
+      "metric_id": "live_status_projection",
+      "label": "Live status projection",
+      "old_source": "background logs and proof files",
+      "new_source": "envctl migration visuals and status stream projections",
+      "old_value": "operator polls files",
+      "new_value": "dashboard_markdown",
+      "status": "pass",
+      "evidence_refs": [
+        "execution-framework/generated/nu_plugin_command_manifest.json",
+        "execution-framework/generated/REQ-034_PLUGIN_STATUS_STREAMS.contract.json",
+        "execution-framework/generated/live_visuals.json"
+      ]
+    },
+    {
+      "metric_id": "task_completion_state",
+      "label": "Task completion state",
+      "old_source": "packet queue",
+      "new_source": "proof status report and live visuals",
+      "old_value": {
+        "completed": 54,
+        "pending": 24,
+        "failed": 0,
+        "blocked": 0,
+        "unknown": 2
+      },
+      "new_value": {
+        "task_count": 80,
+        "complete_count": 16,
+        "failed_count": 0,
+        "blocked_count": 56,
+        "ready_count": 8,
+        "lane_count": 7,
+        "parallel_group_count": 16,
+        "proof_present_count": 12,
+        "proof_missing_count": 68,
+        "source_status_report": {
+          "generated_at": "2026-07-04T23:09:04+00:00",
+          "runnable_count": 8,
+          "dispatch_count": 7,
+          "approval_blocker_count": 2
+        }
+      },
+      "status": "warn",
+      "evidence_refs": [
+        "execution-framework/generated/status_from_proofs.json",
+        "execution-framework/generated/live_visuals.json"
+      ]
+    }
+  ],
+  "comparison_streams": [
+    {
+      "stream_id": "artifact-publication",
+      "refresh_source": "envctl_migration_artifact_index",
+      "old_metric": "artifact file exists",
+      "new_metric": "artifact row path and content_hash match disk",
+      "dashboard_columns": [
+        "artifact_id",
+        "status",
+        "path",
+        "content_hash"
+      ],
+      "threshold": "all published dashboard files have sha256 content_hash",
+      "current_status": "pass"
+    },
+    {
+      "stream_id": "validation-parity",
+      "refresh_source": "envctl_migration_validation_scorecard",
+      "old_metric": "manual parity summary",
+      "new_metric": "pass, warn, fail, blocked, unknown validation counts",
+      "dashboard_columns": [
+        "run_id",
+        "pass",
+        "warn",
+        "fail",
+        "blocked",
+        "unknown"
+      ],
+      "threshold": "fail == 0 and blocked == 0; warn allowed only for missing live captures",
+      "current_status": "warn"
+    },
+    {
+      "stream_id": "protocol-shape",
+      "refresh_source": "shared_protocol_manifest",
+      "old_metric": "implicit file shape",
+      "new_metric": "record contract count and sample validation status",
+      "dashboard_columns": [
+        "record",
+        "source_of_truth",
+        "producer",
+        "consumer",
+        "schema_ref"
+      ],
+      "threshold": "all required records validated",
+      "current_status": "pass"
+    },
+    {
+      "stream_id": "status-stream",
+      "refresh_source": "envctl_status_stream",
+      "old_metric": "log tail and proof directory scan",
+      "new_metric": "event rows joined to proof task status",
+      "dashboard_columns": [
+        "run_id",
+        "event_seq",
+        "phase",
+        "operation",
+        "status",
+        "proof_task_id",
+        "proof_status"
+      ],
+      "threshold": "cursorable read-only projection returns event and proof views",
+      "current_status": "pass"
+    }
+  ],
+  "dashboard_refresh_contract": {
+    "refresh_mode": "read-only polling or status stream subscription",
+    "minimum_refresh_seconds": 5,
+    "mutation_policy": "dashboard is read-only; envctl remains source of truth",
+    "record_contracts": [
+      "ArtifactRecord",
+      "EvidenceRecord",
+      "ValidationResult",
+      "RunEvent",
+      "ProofRecord"
+    ],
+    "nu_plugin_surfaces": [
+      "envctl migration visuals",
+      "codedb envctl status stream",
+      "envctl migration proof",
+      "envctl migration status"
+    ]
+  },
+  "thresholds": [
+    {
+      "gate": "hash_recorded",
+      "status": "pass_after_registry_write",
+      "rule": "All dashboard artifacts must have envctl registry content_hash values."
+    },
+    {
+      "gate": "validation_evidence_linked",
+      "status": "pass_after_registry_write",
+      "rule": "Dashboard artifacts must link artifact registry, validation, protocol, and status evidence."
+    },
+    {
+      "gate": "no_unredacted_secret_paths",
+      "status": "pass",
+      "rule": "Dashboard evidence excludes blocked path patterns from the execution packet."
+    },
+    {
+      "gate": "live_capture_payloads",
+      "status": "warn",
+      "rule": "No mirrored production old/new payload stream is present; dashboard is ready to project envctl rows once captures arrive."
+    }
+  ],
+  "contract_mapping": {
+    "contract_row_id": "artifact:06-testing-validation-parity-dashboard-md",
+    "contract_required_path": "migration-artifacts/06-testing-validation/parity-dashboard.md",
+    "task_scoped_paths": [
+      "migration-artifacts/art-132_parity_dashboard/parity-dashboard.md",
+      "migration-artifacts/art-132_parity_dashboard/parity-dashboard.json"
+    ]
+  },
+  "depends_on_status": {
+    "REQ-024_ENVCTL_ARTIFACT_REGISTRY": "completed",
+    "REQ-040_SHARED_PROTOCOL_SCHEMAS": "completed",
+    "REQ-025_ENVCTL_VALIDATION_EVIDENCE": "completed"
+  },
+  "blocked_paths_enforced": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ]
+}

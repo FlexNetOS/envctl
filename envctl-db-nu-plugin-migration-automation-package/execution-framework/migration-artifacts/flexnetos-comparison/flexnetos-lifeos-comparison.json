@@ -1,0 +1,1280 @@
+{
+  "artifact_evidence": {
+    "debug_hotspots_sample": [
+      {
+        "categories": [
+          "control_flow",
+          "entry_points",
+          "errors",
+          "external_calls",
+          "logs",
+          "metrics_alerts",
+          "runbooks"
+        ],
+        "path": "WORKLOG.md",
+        "score": 10
+      },
+      {
+        "categories": [
+          "control_flow",
+          "entry_points",
+          "errors",
+          "external_calls",
+          "logs",
+          "metrics_alerts",
+          "runbooks"
+        ],
+        "path": "src/teri/.handoff/loop/merge-ledger.md",
+        "score": 10
+      },
+      {
+        "categories": [
+          "control_flow",
+          "entry_points",
+          "errors",
+          "external_calls",
+          "logs",
+          "metrics_alerts",
+          "runbooks"
+        ],
+        "path": "src/teri/.worktrees/issue-86-source-wires/.handoff/loop/merge-ledger.md",
+        "score": 10
+      },
+      {
+        "categories": [
+          "control_flow",
+          "entry_points",
+          "errors",
+          "external_calls",
+          "logs",
+          "metrics_alerts",
+          "runbooks"
+        ],
+        "path": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/crates/cli/src/main.rs",
+        "score": 10
+      },
+      {
+        "categories": [
+          "control_flow",
+          "entry_points",
+          "errors",
+          "external_calls",
+          "logs",
+          "metrics_alerts",
+          "runbooks"
+        ],
+        "path": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/Inference-engine/engines/src/bin/legacy/ignition.rs",
+        "score": 10
+      },
+      {
+        "categories": [
+          "control_flow",
+          "entry_points",
+          "errors",
+          "external_calls",
+          "logs",
+          "metrics_alerts",
+          "runbooks"
+        ],
+        "path": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/cmd/src/main.rs",
+        "score": 10
+      },
+      {
+        "categories": [
+          "control_flow",
+          "entry_points",
+          "errors",
+          "external_calls",
+          "logs",
+          "metrics_alerts",
+          "runbooks"
+        ],
+        "path": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/inferrs/candle-core/src/tensor.rs",
+        "score": 10
+      },
+      {
+        "categories": [
+          "control_flow",
+          "entry_points",
+          "errors",
+          "external_calls",
+          "logs",
+          "metrics_alerts",
+          "runbooks"
+        ],
+        "path": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/inferrs/inferrs-benchmark/src/main.rs",
+        "score": 10
+      },
+      {
+        "categories": [
+          "control_flow",
+          "entry_points",
+          "errors",
+          "external_calls",
+          "logs",
+          "metrics_alerts",
+          "runbooks"
+        ],
+        "path": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/algotune/run_benchmark.py",
+        "score": 10
+      },
+      {
+        "categories": [
+          "control_flow",
+          "entry_points",
+          "errors",
+          "external_calls",
+          "logs",
+          "metrics_alerts",
+          "runbooks"
+        ],
+        "path": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/algotune/task_adapter.py",
+        "score": 10
+      },
+      {
+        "categories": [
+          "control_flow",
+          "entry_points",
+          "errors",
+          "external_calls",
+          "logs",
+          "metrics_alerts",
+          "runbooks"
+        ],
+        "path": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/arc_benchmark/post_evolution_eval.py",
+        "score": 10
+      },
+      {
+        "categories": [
+          "control_flow",
+          "entry_points",
+          "errors",
+          "external_calls",
+          "logs",
+          "metrics_alerts",
+          "runbooks"
+        ],
+        "path": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/attention_optimization/evaluator.py",
+        "score": 10
+      }
+    ],
+    "debug_map_summary": {
+      "control_flow_count": 160,
+      "entry_point_count": 160,
+      "error_path_count": 160,
+      "external_call_count": 160,
+      "hotspot_count": 80,
+      "log_signal_count": 160,
+      "metrics_alert_count": 160,
+      "runbook_signal_count": 160
+    },
+    "lifeos_repo_entry": {
+      "absolute_path": "/home/flexnetos/FlexNetOS/src/lifeos",
+      "activity": {
+        "branch": "codex/lifeos-planning-spine-v0",
+        "commit_count": 9,
+        "dirty_status_count": 6,
+        "head": "6f8905d01701",
+        "last_commit": {
+          "author": "drdave",
+          "date": "2026-07-03T16:47:24-05:00",
+          "hash": "6f8905d01701133d5dca5831a13fd3001dbb98ac",
+          "subject": "Build LifeOS planning spine v0"
+        },
+        "remote_names": [
+          "origin"
+        ]
+      },
+      "contents": {
+        "language_file_counts": {
+          "CSS": 4,
+          "HTML": 25,
+          "JSON": 88,
+          "JavaScript": 44,
+          "Markdown": 97,
+          "Python": 7,
+          "Rust": 18,
+          "SQL": 3,
+          "Shell": 5,
+          "TOML": 9,
+          "TypeScript": 18,
+          "YAML": 6
+        },
+        "top_level_entries": [
+          {
+            "file_count": 105,
+            "name": "planning-spine-v0"
+          },
+          {
+            "file_count": 98,
+            "name": "design-system-reference"
+          },
+          {
+            "file_count": 48,
+            "name": "src"
+          },
+          {
+            "file_count": 35,
+            "name": "tests"
+          },
+          {
+            "file_count": 33,
+            "name": ".claude"
+          },
+          {
+            "file_count": 20,
+            "name": "crates"
+          },
+          {
+            "file_count": 16,
+            "name": "openspec"
+          },
+          {
+            "file_count": 14,
+            "name": "src-tauri"
+          },
+          {
+            "file_count": 12,
+            "name": "public"
+          },
+          {
+            "file_count": 8,
+            "name": ".handoff"
+          },
+          {
+            "file_count": 6,
+            "name": ".omc"
+          },
+          {
+            "file_count": 6,
+            "name": "firmware"
+          },
+          {
+            "file_count": 4,
+            "name": ".playwright-mcp"
+          },
+          {
+            "file_count": 4,
+            "name": "Claude-vite-bundle"
+          },
+          {
+            "file_count": 4,
+            "name": "scripts"
+          },
+          {
+            "file_count": 3,
+            "name": "fonts"
+          },
+          {
+            "file_count": 2,
+            "name": ".github"
+          },
+          {
+            "file_count": 1,
+            "name": ".gitignore"
+          },
+          {
+            "file_count": 1,
+            "name": "AGENTS.md"
+          },
+          {
+            "file_count": 1,
+            "name": "AUDIT.md"
+          }
+        ],
+        "tracked_or_scanned_files": 442
+      },
+      "markers": [
+        "Cargo.toml",
+        "package.json",
+        "README.md",
+        "AGENTS.md"
+      ],
+      "owners": [
+        {
+          "sample": "This file is the durable operating contract for any AI agent (Claude Code, Codex, Gemini, etc.) working in this repo. It overrides generic defaults. Read it bef",
+          "source": "AGENTS.md"
+        }
+      ],
+      "path": "src/lifeos",
+      "scope": "rust-codebase"
+    },
+    "repo_map_summary": {
+      "dirty_repository_count": 24,
+      "language_file_rollup": {
+        "CSS": 832,
+        "HTML": 221971,
+        "JSON": 24568,
+        "JavaScript": 21257,
+        "Markdown": 43986,
+        "Nix": 292,
+        "Nushell": 493,
+        "Python": 6867,
+        "Rust": 38768,
+        "SQL": 321,
+        "Shell": 4422,
+        "TOML": 7549,
+        "TypeScript": 14745,
+        "YAML": 6108
+      },
+      "repository_count": 403,
+      "scope_rollup": {
+        "envctl-control-plane": 7,
+        "meta-control-plane": 18,
+        "nix-packaging": 9,
+        "nu-plugin-surface": 1,
+        "python-codebase": 3,
+        "runner-runtime": 43,
+        "rust-codebase": 22,
+        "supporting-content": 5,
+        "terminal-runtime": 294,
+        "workspace-root": 1
+      }
+    },
+    "service_edges_supporting_flexnetos_role": [
+      {
+        "confidence": "high",
+        "evidence": [
+          "AGENTS.md",
+          "WORKSPACE_LAYOUT.md"
+        ],
+        "from": "workspace:flexnetos",
+        "to": "service:meta-control-plane",
+        "type": "contains_peer"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          "AGENTS.md",
+          "WORKSPACE_LAYOUT.md"
+        ],
+        "from": "workspace:flexnetos",
+        "to": "service:envctl",
+        "type": "contains_peer"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          "AGENTS.md",
+          "WORKSPACE_LAYOUT.md"
+        ],
+        "from": "workspace:flexnetos",
+        "to": "service:flexnetos-runner",
+        "type": "contains_peer"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          "AGENTS.md"
+        ],
+        "from": "workspace:flexnetos",
+        "to": "service:yazelix-runtime",
+        "type": "contains_peer"
+      },
+      {
+        "confidence": "medium",
+        "evidence": [
+          "AGENTS.md"
+        ],
+        "from": "service:meta-control-plane",
+        "to": "service:gitkb-memory",
+        "type": "uses_memory_graph"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          "WORKSPACE_LAYOUT.md"
+        ],
+        "from": "service:envctl",
+        "to": "service:envctl-state",
+        "type": "owns_state_tables"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          "generated/envctl_migration_db_model.json"
+        ],
+        "from": "service:envctl",
+        "to": "service:envctl-db",
+        "type": "owns_database_contract"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          "scripts/artifact_registry.py",
+          "generated/envctl_artifact_registry_report.json"
+        ],
+        "from": "service:envctl-db",
+        "to": "service:artifact-registry",
+        "type": "provides_tables_for"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          "generated/envctl_artifact_registry_report.json"
+        ],
+        "from": "service:artifact-registry",
+        "to": "service:artifact-set",
+        "type": "registers_hashes_for"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          "generated/shared_protocol_validation_report.json"
+        ],
+        "from": "service:shared-protocol",
+        "to": "service:envctl-db",
+        "type": "defines_records_for"
+      },
+      {
+        "confidence": "medium",
+        "evidence": [
+          "generated/task_graph.normalized.json"
+        ],
+        "from": "service:nu-plugin-control",
+        "to": "service:envctl-db",
+        "type": "calls_control_operations"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          "generated/execution_packets/ART-103_SERVICE_DEP_GRAPH.json"
+        ],
+        "from": "service:execution-framework",
+        "to": "service:artifact-registry",
+        "type": "registers_outputs_with"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          "generated/contract_manifest.json"
+        ],
+        "from": "service:execution-framework",
+        "to": "service:artifact-set",
+        "type": "produces"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          "generated/task_graph.normalized.json"
+        ],
+        "from": "service:flexnetos-adapter",
+        "to": "service:execution-framework",
+        "type": "reuses_packets_and_replay"
+      },
+      {
+        "confidence": "medium",
+        "evidence": [
+          "AGENTS.md",
+          "LOCAL_WORKAROUNDS.md"
+        ],
+        "from": "service:yazelix-runtime",
+        "to": "service:envctl",
+        "type": "consumes_environment_contracts"
+      },
+      {
+        "confidence": "medium",
+        "evidence": [
+          "/home/flexnetos/.codex/RTK.md",
+          "/home/flexnetos/.codex/AGENTS.rtk.md"
+        ],
+        "from": "service:rtk",
+        "to": "service:execution-framework",
+        "type": "supports_command_capture"
+      },
+      {
+        "confidence": "medium",
+        "evidence": [
+          "src/release-workspace.meta.yaml"
+        ],
+        "from": "service:upstream-evidence",
+        "to": "service:execution-framework",
+        "type": "feeds_scan_evidence"
+      },
+      {
+        "confidence": "high",
+        "evidence": [
+          "generated/task_graph.normalized.json"
+        ],
+        "from": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "to": "task:ART-103_SERVICE_DEP_GRAPH",
+        "type": "migration_wave_dependency"
+      }
+    ],
+    "service_graph_summary": {
+      "blocked_patterns_count": 5,
+      "code_file_count": 60573,
+      "edge_count": 21,
+      "manifest_count": 10314,
+      "migration_wave_count": 7,
+      "node_count": 16,
+      "selected_docs": [
+        "LOCAL_WORKAROUNDS.md",
+        "WORKSPACE_LAYOUT.md",
+        "WORKLOG.md",
+        "AGENTS.md",
+        "src/OWNERSHIP.md",
+        "src/teri/SPRINT.md",
+        "src/teri/TODO.md",
+        "src/teri/FEATURE-PARITY.md",
+        "src/teri/README.md",
+        "src/teri/README-ZH.md",
+        "src/teri/ARCHITECTURE.md",
+        "src/teri/CLAUDE.md",
+        "src/teri/RUNBOOK.md",
+        "src/teri/AGENTS.md",
+        "src/teri/code-research/references/research-ledger.md",
+        "src/teri/.codex/rusty-idd-adapter.md",
+        "src/teri/.codex/prompts/teri-simulation-truth.md",
+        "src/teri/.codex/prompts/teri-docs-sync.md",
+        "src/teri/.worktrees/issue-86-source-wires/SPRINT.md",
+        "src/teri/.worktrees/issue-86-source-wires/TODO.md",
+        "src/teri/.worktrees/issue-86-source-wires/FEATURE-PARITY.md",
+        "src/teri/.worktrees/issue-86-source-wires/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/README-ZH.md",
+        "src/teri/.worktrees/issue-86-source-wires/ARCHITECTURE.md",
+        "src/teri/.worktrees/issue-86-source-wires/CLAUDE.md",
+        "src/teri/.worktrees/issue-86-source-wires/RUNBOOK.md",
+        "src/teri/.worktrees/issue-86-source-wires/AGENTS.md",
+        "src/teri/.worktrees/issue-86-source-wires/code-research/references/research-ledger.md",
+        "src/teri/.worktrees/issue-86-source-wires/uploads/reports/report_627a237e35ce/full_report.md",
+        "src/teri/.worktrees/issue-86-source-wires/uploads/reports/report_627a237e35ce/section_01.md",
+        "src/teri/.worktrees/issue-86-source-wires/.codex/rusty-idd-adapter.md",
+        "src/teri/.worktrees/issue-86-source-wires/.codex/prompts/teri-simulation-truth.md",
+        "src/teri/.worktrees/issue-86-source-wires/.codex/prompts/teri-docs-sync.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/SKILL.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/CHANGELOG.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/CLAUDE.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/CONTRIBUTING.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/case-studies/01-fabrication-detection.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/case-studies/02-prompt-firewall.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/CLAUDE.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/CONTRIBUTING.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/configs/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/tests/integration/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/circle_packing_with_artifacts/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/symbolic_regression/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/rust_adaptive_sort/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/sldbench/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/tsp_tour_minimization/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/web_scraper_optillm/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/arc_benchmark/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/lm_eval/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/function_minimization/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/mlx_metal_kernel_opt/EVOLUTION_ANALYSIS.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/mlx_metal_kernel_opt/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/signal_processing/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/k_module_problem/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/r_robust_regression/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/attention_optimization/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/online_judge_programming/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/circle_packing/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/algotune/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/.github/instructions/sidebar-node-logic.instructions.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/CHANGELOG.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/CLAUDE.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/AGENTS.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/vscode-splitrail/README.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/vscode-splitrail/CHANGELOG.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.claude/skills/SKILLS.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.claude/skills/types/SKILL.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.claude/skills/performance/SKILL.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.claude/skills/mcp/SKILL.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.claude/skills/new-analyzer/SKILL.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.claude/skills/tui/SKILL.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.claude/skills/pricing/SKILL.md"
+      ],
+      "selected_manifests": [
+        "src/release-workspace.meta.yaml",
+        "src/Cargo.toml",
+        "src/teri/deny.toml",
+        "src/teri/.pre-commit-config.yaml",
+        "src/teri/agent-env.toml",
+        "src/teri/rust-toolchain.toml",
+        "src/teri/.rustfmt.toml",
+        "src/teri/Cargo.toml",
+        "src/teri/frontend/package.json",
+        "src/teri/.worktrees/issue-86-source-wires/deny.toml",
+        "src/teri/.worktrees/issue-86-source-wires/.pre-commit-config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/agent-env.toml",
+        "src/teri/.worktrees/issue-86-source-wires/rust-toolchain.toml",
+        "src/teri/.worktrees/issue-86-source-wires/.rustfmt.toml",
+        "src/teri/.worktrees/issue-86-source-wires/Cargo.toml",
+        "src/teri/.worktrees/issue-86-source-wires/frontend/package.json",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/Cargo.toml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/examples/ellipse-rubric.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/examples/custom-rubric.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/crates/cli/Cargo.toml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/crates/mcp/Cargo.toml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/crates/core/Cargo.toml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/.github/workflows/release.yml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/.github/workflows/ci.yml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/.github/workflows/docker.yml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/.pre-commit-config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/pyproject.toml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/configs/island_config_example.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/configs/early_stopping_example.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/configs/default_config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/configs/island_examples.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/circle_packing_with_artifacts/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/circle_packing_with_artifacts/config_phase_1.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/circle_packing_with_artifacts/config_phase_2.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/first_autocorr_ineq/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/sums_diffs_finite_sets/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/minimizing_max_min_dist/3/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/minimizing_max_min_dist/2/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/kissing_number/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/erdos_min_overlap/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/third_autocorr_ineq/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/heilbronn_triangle/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/matmul/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/circle_packing_rect/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/heilbronn_convex/14/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/heilbronn_convex/13/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/hexagon_packing/11/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/hexagon_packing/12/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/uncertainty_ineq/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/second_autocorr_ineq/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/rust_adaptive_sort/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/rust_adaptive_sort/sort_test/Cargo.toml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/sldbench/configs/vocab_scaling_law.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/sldbench/configs/easy_question_scaling_law.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/sldbench/configs/data_constrained_scaling_law.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/sldbench/configs/lr_bsz_scaling_law.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/sldbench/configs/sft_scaling_law.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/sldbench/configs/domain_mixture_scaling_law.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/sldbench/configs/moe_scaling_law.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/sldbench/configs/parallel_scaling_law.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/tsp_tour_minimization/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/web_scraper_optillm/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/arc_benchmark/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/arc_benchmark/base_config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/lm_eval/config.yml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/function_minimization/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/mlx_metal_kernel_opt/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/signal_processing/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/k_module_problem/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/config_qwen3_evolution.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/ifeval_prompt_dataset.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/gsm8k_prompt_dataset.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/dataset_settings.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/emotion_prompt_dataset.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/initial_prompt_dataset.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/hover_prompt_dataset.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/hotpotqa_prompt_dataset.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/llm_prompt_optimization/config_qwen3_baseline.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/r_robust_regression/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/attention_optimization/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/attention_optimization/configs/failing_config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/online_judge_programming/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/circle_packing/config_phase_1.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/circle_packing/config_phase_2.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/circle_packing/config_phase_2_anthropic.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/circle_packing/config_phase_1_anthropic.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/algotune/fft_convolution/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/algotune/fft_cmplx_scipy_fftpack/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/algotune/eigenvectors_complex/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/algotune/lu_factorization/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/algotune/convolve2d_full_fill/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/algotune/affine_transform_2d/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/algotune/polynomial_real/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/algotune/psd_cone_projection/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/.github/workflows/claude.yml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/.github/workflows/python-test.yml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/.github/workflows/release.yml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/rust-toolchain.toml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/rustfmt.toml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/Cargo.toml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/vscode-splitrail/package.json",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.github/workflows/checks.yml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.github/workflows/release.yml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.cargo/audit.toml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/.cargo/config.toml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/web-rwkv/Cargo.toml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/web-rwkv/crates/web-rwkv-derive/Cargo.toml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/web-rwkv/crates/web-rwkv-wasm/Cargo.toml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/web-rwkv/.github/workflows/wasm-npm.yml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/web-rwkv/.github/workflows/release.yml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/web-rwkv/.github/workflows/rust.yml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/web-rwkv/.cargo/Config.toml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/BettaFish/docker-compose.yml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/BettaFish/.github/FUNDING.yml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/BettaFish/.github/workflows/docker_ci.yml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/package.json",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/Cargo.toml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/interface-engines/utils/Cargo.toml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/interface-engines/neural_core/Cargo.toml"
+      ],
+      "selected_service_definitions": [
+        "src/envctl/home/.config/systemd/user/repowire.service",
+        "src/envctl/home/.config/systemd/user/env-ctl.service",
+        "src/envctl/home/.config/systemd/user/sqld.service",
+        "src/meta-ruvector/crates/ruvector-hailo-cluster/deploy/ruvector-mmwave-bridge.service",
+        "src/meta-ruvector/crates/ruvector-hailo-cluster/deploy/ruvector-hailo-worker.service",
+        "src/meta-ruvector/crates/ruvector-hailo-cluster/deploy/ruview-csi-bridge.service",
+        "src/meta-ruvector/crates/ruvector-hailo-cluster/deploy/ruvllm-pi-worker.service",
+        "src/meta-ruvector/crates/ruos-thermal/deploy/ruos-thermal.timer",
+        "src/meta-ruvector/crates/ruos-thermal/deploy/ruos-thermal.service",
+        "src/hermes-agent/plugins/kanban/systemd/hermes-kanban-dispatcher.service",
+        "src/envctl-nix-components-db/home/.config/systemd/user/repowire.service",
+        "src/envctl-nix-components-db/home/.config/systemd/user/env-ctl.service",
+        "src/envctl-nix-components-db/home/.config/systemd/user/sqld.service",
+        "src/envctl-codedb-config-to-tables/home/.config/systemd/user/repowire.service",
+        "src/envctl-codedb-config-to-tables/home/.config/systemd/user/env-ctl.service",
+        "src/envctl-codedb-config-to-tables/home/.config/systemd/user/sqld.service",
+        "src/envctl-nu-plugin-db-skill/home/.config/systemd/user/repowire.service",
+        "src/envctl-nu-plugin-db-skill/home/.config/systemd/user/env-ctl.service",
+        "src/envctl-nu-plugin-db-skill/home/.config/systemd/user/sqld.service",
+        "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/home/.config/systemd/user/repowire.service",
+        "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/home/.config/systemd/user/env-ctl.service",
+        "src/flexnetos_runner/_work/actions-runner-02-work/envctl/envctl/home/.config/systemd/user/sqld.service",
+        "src/flexnetos_runner/_work/actions-runner-02-work/meta/meta/envctl/home/.config/systemd/user/repowire.service",
+        "src/flexnetos_runner/_work/actions-runner-02-work/meta/meta/envctl/home/.config/systemd/user/env-ctl.service",
+        "src/flexnetos_runner/_work/actions-runner-02-work/meta/meta/envctl/home/.config/systemd/user/sqld.service",
+        "src/flexnetos_runner/_work/actions-runner-02-work/flexnetos_runner/flexnetos_runner/systemd/user/flexnetos-cache-maintenance.timer",
+        "src/flexnetos_runner/_work/actions-runner-02-work/flexnetos_runner/flexnetos_runner/systemd/user/flexnetos-cache-maintenance.service",
+        "src/flexnetos_runner/_work/actions-runner-01-work/envctl/envctl/home/.config/systemd/user/repowire.service",
+        "src/flexnetos_runner/_work/actions-runner-01-work/envctl/envctl/home/.config/systemd/user/env-ctl.service",
+        "src/flexnetos_runner/_work/actions-runner-01-work/envctl/envctl/home/.config/systemd/user/sqld.service",
+        "src/flexnetos_runner/_work/actions-runner-01-work/meta/meta/envctl/home/.config/systemd/user/repowire.service",
+        "src/flexnetos_runner/_work/actions-runner-01-work/meta/meta/envctl/home/.config/systemd/user/env-ctl.service",
+        "src/flexnetos_runner/_work/actions-runner-01-work/meta/meta/envctl/home/.config/systemd/user/sqld.service",
+        "src/flexnetos_runner/_work/actions-runner-01-work/flexnetos_runner/flexnetos_runner/systemd/user/flexnetos-cache-maintenance.timer",
+        "src/flexnetos_runner/_work/actions-runner-01-work/flexnetos_runner/flexnetos_runner/systemd/user/flexnetos-cache-maintenance.service",
+        "src/flexnetos_runner/systemd/user/flexnetos-cache-maintenance.timer",
+        "src/flexnetos_runner/systemd/user/flexnetos-cache-maintenance.service",
+        "src/envctl-hooks-clean-baseline/home/.config/systemd/user/repowire.service",
+        "src/envctl-hooks-clean-baseline/home/.config/systemd/user/env-ctl.service",
+        "src/envctl-hooks-clean-baseline/home/.config/systemd/user/sqld.service",
+        "src/envctl-db-nu-migration-req020/home/.config/systemd/user/repowire.service",
+        "src/envctl-db-nu-migration-req020/home/.config/systemd/user/env-ctl.service",
+        "src/envctl-db-nu-migration-req020/home/.config/systemd/user/sqld.service",
+        "var/tmp/envctl-catalog-render-20260703T1842Z/systemd/user/envctl-catalog-check.service",
+        "var/tmp/envctl-catalog-render-20260703T1844Z/systemd/user/envctl-catalog-check.service",
+        "var/log/raw/envctl-catalog-render-audit-20260702/systemd/user/envctl-catalog-check.service"
+      ],
+      "service_definition_count": 46,
+      "skipped_dirs": [
+        ".cache",
+        ".git",
+        ".kb",
+        ".mypy_cache",
+        ".pytest_cache",
+        "__pycache__",
+        "node_modules",
+        "target"
+      ],
+      "target_root": "/home/flexnetos/FlexNetOS",
+      "task_dependency_edge_count": 143
+    }
+  },
+  "code_and_dependency_evidence": {
+    "lifeos_release_catalog_rows": [
+      {
+        "asset_profile": "lifeos-bundle",
+        "bins": "lifeos",
+        "component": "lifeos",
+        "kind": "bun-tauri",
+        "manifest": "src/lifeos/package.json",
+        "notes": "LifeOS desktop app bundle for the local Ubuntu release lane (defaults to deb).",
+        "source": "src/lifeos"
+      }
+    ],
+    "lifeos_tree_summary": {
+      "blocked_paths_skipped": 3,
+      "dir_count": 118,
+      "exists": true,
+      "file_count": 534,
+      "suffix_counts": {
+        ".css": 5,
+        ".csv": 4,
+        ".html": 26,
+        ".js": 42,
+        ".json": 101,
+        ".jsonl": 3,
+        ".jsx": 7,
+        ".lock": 3,
+        ".md": 101,
+        ".png": 122,
+        ".py": 7,
+        ".rs": 18,
+        ".sh": 5,
+        ".sql": 3,
+        ".svg": 4,
+        ".toml": 9,
+        ".ts": 18,
+        ".vue": 25,
+        ".yml": 4,
+        "[none]": 4
+      },
+      "top_level_entries": [
+        ".agents",
+        ".claude",
+        ".codex",
+        ".github",
+        ".gitignore",
+        ".handoff",
+        ".omc",
+        ".playwright-mcp",
+        "AGENTS.md",
+        "AUDIT.md",
+        "CHANGELOG.md",
+        "CLAUDE.md",
+        "Cargo.lock",
+        "Cargo.toml",
+        "Claude-vite-bundle",
+        "DESIGN.md",
+        "HANDOFF.md",
+        "README.md",
+        "SESSIONS.md",
+        "TODO.md",
+        "bun.lock",
+        "colors_and_type.css",
+        "crates",
+        "data.js",
+        "design-system-reference",
+        "dist",
+        "firmware",
+        "fonts",
+        "index.html",
+        "lifeos_app.css",
+        "openspec",
+        "package.json",
+        "planning-spine-v0",
+        "post-upgrade-mount.png",
+        "public",
+        "scripts",
+        "src",
+        "src-tauri",
+        "styles.css",
+        "tests"
+      ]
+    },
+    "line_evidence": {
+      "flexnetos_agents": [
+        {
+          "line": 3,
+          "text": "This is the first file to read when working under `/home/flexnetos/FlexNetOS`."
+        },
+        {
+          "line": 4,
+          "text": "The workspace root is a hollow orchestration area, not a monorepo. Real"
+        },
+        {
+          "line": 5,
+          "text": "implementation work belongs in independent peer repositories under `src/`."
+        },
+        {
+          "line": 6,
+          "text": ""
+        },
+        {
+          "line": 7,
+          "text": "## Canonical Repositories"
+        },
+        {
+          "line": 8,
+          "text": ""
+        },
+        {
+          "line": 9,
+          "text": "- `/home/flexnetos/FlexNetOS/src/yazelix`: FlexNetOS-owned Yazelix foundation repo."
+        },
+        {
+          "line": 10,
+          "text": "- `/home/flexnetos/FlexNetOS/src/meta`: FlexNetOS-owned meta repo."
+        },
+        {
+          "line": 11,
+          "text": "- `/home/flexnetos/FlexNetOS/src/envctl`: environment authority repo."
+        },
+        {
+          "line": 12,
+          "text": "- `/home/flexnetos/FlexNetOS/src/flexnetos_runner`: release runner/provenance repo."
+        },
+        {
+          "line": 13,
+          "text": "- `/home/flexnetos/FlexNetOS/src/upstream/<owner>/<repo>`: upstream evidence mirrors only."
+        },
+        {
+          "line": 14,
+          "text": ""
+        },
+        {
+          "line": 15,
+          "text": "Yazelix and meta are both organization-owned peer repos in this workspace. Do"
+        },
+        {
+          "line": 16,
+          "text": "not place them under `src/upstream/` unless creating a separate comparison clone."
+        },
+        {
+          "line": 17,
+          "text": ""
+        },
+        {
+          "line": 18,
+          "text": "## Meta Control-Plane Rules"
+        }
+      ],
+      "flexnetos_layout": [
+        {
+          "line": 4,
+          "text": ""
+        },
+        {
+          "line": 5,
+          "text": "This is a hollow workspace for the fresh `flexnetos` user. The workspace root is not a monorepo, vendor directory, or submodule container."
+        },
+        {
+          "line": 6,
+          "text": ""
+        },
+        {
+          "line": 7,
+          "text": "## Canonical Roots"
+        },
+        {
+          "line": 8,
+          "text": ""
+        },
+        {
+          "line": 10,
+          "text": "|---|---|---|"
+        },
+        {
+          "line": 11,
+          "text": "| `FLEXNETOS_WORKSPACE` | `/home/flexnetos/FlexNetOS` | Top-level hollow workspace root. |"
+        },
+        {
+          "line": 12,
+          "text": "| `FLEXNETOS_SRC` | `/home/flexnetos/FlexNetOS/src` | Independent peer repository checkouts. |"
+        },
+        {
+          "line": 13,
+          "text": "| `META_ROOT` | `/home/flexnetos/FlexNetOS/src/meta` | FlexNetOS/meta checkout after T011. |"
+        },
+        {
+          "line": 18,
+          "text": ""
+        },
+        {
+          "line": 19,
+          "text": "Primary FlexNetOS peer repos:"
+        },
+        {
+          "line": 20,
+          "text": ""
+        },
+        {
+          "line": 26,
+          "text": ""
+        },
+        {
+          "line": 27,
+          "text": "External upstream peer repos, when needed for inspection or pinned source evidence:"
+        },
+        {
+          "line": 28,
+          "text": ""
+        },
+        {
+          "line": 51,
+          "text": "| `/home/flexnetos/FlexNetOS/var/lib/gitkb` | GitKB local state target after GitKB install/init. |"
+        }
+      ],
+      "lifeos_cargo": [
+        {
+          "line": 1,
+          "text": "# LifeOS Cargo workspace"
+        },
+        {
+          "line": 2,
+          "text": "#"
+        },
+        {
+          "line": 3,
+          "text": "# Members:"
+        },
+        {
+          "line": 4,
+          "text": "#  - src-tauri/        \u2014 Tauri 2 desktop shell (binary + lifeos_lib staticlib/cdylib/rlib)"
+        },
+        {
+          "line": 5,
+          "text": "#  - crates/lifeos-core \u2014 portable Rust core (types, auth, MCP clients, sync protocols)"
+        },
+        {
+          "line": 6,
+          "text": "#"
+        },
+        {
+          "line": 9,
+          "text": "#                        own rust-toolchain.toml. Lives as a standalone sibling project,"
+        },
+        {
+          "line": 10,
+          "text": "#                        not a workspace member."
+        },
+        {
+          "line": 11,
+          "text": "#"
+        },
+        {
+          "line": 12,
+          "text": "# The workspace exists to share the future `lifeos-daemon` bin crate and `lifeos-core`"
+        },
+        {
+          "line": 13,
+          "text": "# across the desktop shell + headless Pi daemon without duplicating dependencies. The"
+        },
+        {
+          "line": 14,
+          "text": "# Tauri shell continues to be invoked via `cargo tauri dev` / `cargo tauri build` from"
+        },
+        {
+          "line": 15,
+          "text": "# the `src-tauri/` directory; cargo resolves up to this manifest as the workspace root."
+        },
+        {
+          "line": 16,
+          "text": ""
+        },
+        {
+          "line": 17,
+          "text": "[workspace]"
+        },
+        {
+          "line": 18,
+          "text": "resolver = \"2\""
+        }
+      ],
+      "lifeos_package": [
+        {
+          "line": 1,
+          "text": "{"
+        },
+        {
+          "line": 2,
+          "text": "  \"name\": \"lifeos-vue\","
+        },
+        {
+          "line": 3,
+          "text": "  \"private\": true,"
+        },
+        {
+          "line": 5,
+          "text": "  \"type\": \"module\","
+        },
+        {
+          "line": 6,
+          "text": "  \"description\": \"LifeOS \u2014 Vue 3 + Tauri UI kit (Path B). Sibling of ui_kits/lifeos_app/ React canon.\","
+        },
+        {
+          "line": 7,
+          "text": "  \"scripts\": {"
+        },
+        {
+          "line": 8,
+          "text": "    \"dev\": \"vite\","
+        },
+        {
+          "line": 9,
+          "text": "    \"build\": \"vue-tsc --noEmit && vite build\","
+        },
+        {
+          "line": 10,
+          "text": "    \"preview\": \"vite preview\","
+        },
+        {
+          "line": 11,
+          "text": "    \"planning-spine:verify\": \"bun scripts/verify-planning-spine.mjs\","
+        },
+        {
+          "line": 12,
+          "text": "    \"test\": \"vitest run\","
+        },
+        {
+          "line": 13,
+          "text": "    \"test:watch\": \"vitest\","
+        },
+        {
+          "line": 14,
+          "text": "    \"test:coverage\": \"vitest run --coverage\","
+        },
+        {
+          "line": 15,
+          "text": "    \"tauri\": \"tauri\","
+        },
+        {
+          "line": 16,
+          "text": "    \"tauri:dev\": \"tauri dev\","
+        },
+        {
+          "line": 17,
+          "text": "    \"tauri:build\": \"tauri build\","
+        }
+      ],
+      "lifeos_readme": [
+        {
+          "line": 1,
+          "text": "# LifeOS (ubuntu-lifeos)"
+        },
+        {
+          "line": 2,
+          "text": ""
+        },
+        {
+          "line": 3,
+          "text": "> **LifeOS \u2014 the AI agent that runs your home and your life.**"
+        },
+        {
+          "line": 4,
+          "text": "> Work, personal, and home automation in one operating system, with the assistant baked into every surface."
+        },
+        {
+          "line": 5,
+          "text": ""
+        },
+        {
+          "line": 6,
+          "text": "Cross-platform desktop app built on **Vue 3 + Vite + Pinia + vue-router** with a **Tauri 2** native shell. Targets Linux / macOS / Windows desktop, with a web build that runs in Firefox / Chrome / Edge / mobile browsers."
+        },
+        {
+          "line": 7,
+          "text": ""
+        },
+        {
+          "line": 8,
+          "text": "This repo is the **production implementation** of the [LifeOS Design System](./design-system-reference/README.md) handoff bundle. The bundle's authoritative tokens, fonts, brand assets, and component-level CSS are folded into this repo so it is fully self-contained."
+        },
+        {
+          "line": 9,
+          "text": ""
+        },
+        {
+          "line": 20,
+          "text": "| rustc / cargo | 1.95.0 |"
+        },
+        {
+          "line": 21,
+          "text": "| tauri-cli | 2.11.1 |"
+        },
+        {
+          "line": 22,
+          "text": ""
+        },
+        {
+          "line": 26,
+          "text": ""
+        },
+        {
+          "line": 27,
+          "text": "# Web dev (Vite) \u2014 http://localhost:1420"
+        },
+        {
+          "line": 28,
+          "text": "bun run dev"
+        },
+        {
+          "line": 29,
+          "text": ""
+        }
+      ],
+      "release_catalog_lifeos": [
+        {
+          "line": 25,
+          "text": "lifeos\tbun-tauri\tsrc/lifeos\tsrc/lifeos/package.json\tlifeos\tlifeos-bundle\tLifeOS desktop app bundle for the local Ubuntu release lane (defaults to deb)."
+        }
+      ]
+    }
+  },
+  "conclusion": {
+    "answer_to_question": "The artifacts show FlexNetOS was used for the operating/control-plane work that lifeos did not own: repo orchestration, runtime configuration, environment state, releases, local proof capture, and migration artifact generation. lifeos was consumed by that system as an application artifact.",
+    "flexnetos_usage": [
+      "Workspace root and peer-repo coordinator for the source fleet.",
+      "Meta/gitkb control plane and policy surface.",
+      "Envctl environment authority and state/catalog contract.",
+      "Runner/release/provenance lane that packages tools and product bundles.",
+      "Yazelix/Codex/local runtime proof surface and migration evidence sink."
+    ],
+    "lifeos_usage": [
+      "Vue 3/Vite/Tauri desktop and web product app.",
+      "Release catalog entry packaged through the FlexNetOS runner lane as a bun-tauri bundle.",
+      "Planning-spine state/proof work inside its own repo branch.",
+      "Future Rust workspace for lifeos-core, lifeos-daemon, and Tauri shell work."
+    ],
+    "summary": "FlexNetOS was used as the active hollow workspace, control plane, environment authority, runtime/release lane, and migration artifact sink. lifeos was present as a peer Vue/Tauri product app under src/lifeos and as a release catalog bundle, not as the active filesystem root or control-plane service."
+  },
+  "generated_at": "2026-07-04T23:30:59+00:00",
+  "history_and_state_evidence": {
+    "lifeos_git_state": {
+      "lifeos_branch": "codex/lifeos-planning-spine-v0",
+      "lifeos_head": "6f8905d01701",
+      "lifeos_status_short": "## codex/lifeos-planning-spine-v0...origin/codex/lifeos-planning-spine-v0\n?? planning-spine-v0/capability_state/\n?? planning-spine-v0/connector_proof/\n?? planning-spine-v0/connector_state/\n?? planning-spine-v0/proof_records/CAP-001.proof.json\n?? planning-spine-v0/proof_records/WEAVE-001.proof.json\n?? planning-spine-v0/weave_state/"
+    },
+    "memory_context": "Prior roadmap work treated lifeos as a portable release target under the FlexNetOS workspace, while the live scan here verifies the current files before using that context."
+  },
+  "input_packet": {
+    "blocked_path_rule_count": 5,
+    "depends_on": [
+      "REQ-200_FLEXNETOS_TARGET_DESCRIPTOR",
+      "ART-101_DIRECTORY_TREE",
+      "ART-102_REPOSITORY_MAP",
+      "ART-103_SERVICE_DEP_GRAPH",
+      "ART-113_DEBUG_CODE_MAP"
+    ],
+    "goal": "Determine what FlexNetOS was used for instead of lifeos through artifacts, history, code maps, and dependency scans",
+    "task_id": "REQ-201_FLEXNETOS_LIFEOS_COMPARISON"
+  },
+  "root_state": {
+    "declared_compare_root": "/home/flexnetos/lifeos",
+    "declared_compare_root_exists": false,
+    "descriptor": {
+      "compare_root": "/home/flexnetos/lifeos",
+      "primary_root": "/home/flexnetos/FlexNetOS"
+    },
+    "lifeos_peer_root": "/home/flexnetos/FlexNetOS/src/lifeos",
+    "lifeos_peer_root_exists": true,
+    "primary_root_exists": true,
+    "req_200_compare_root_exists": false,
+    "req_200_warnings": [
+      "compare_root is described but not present in this runtime"
+    ]
+  },
+  "schema_version": "1.0",
+  "secret_exposure_control": {
+    "blocked_path_policy": [
+      ".env",
+      ".git",
+      ".venv",
+      "__pycache__",
+      "node_modules",
+      "private_keys",
+      "secrets",
+      "target"
+    ],
+    "blocked_paths_skipped_in_lifeos_tree": 3,
+    "blocked_suffix_policy": [
+      ".key",
+      ".pem"
+    ],
+    "scanned_content_paths": {
+      "flexnetos_agents": "/home/flexnetos/FlexNetOS/AGENTS.md",
+      "flexnetos_layout": "/home/flexnetos/FlexNetOS/WORKSPACE_LAYOUT.md",
+      "lifeos_cargo": "/home/flexnetos/FlexNetOS/src/lifeos/Cargo.toml",
+      "lifeos_package": "/home/flexnetos/FlexNetOS/src/lifeos/package.json",
+      "lifeos_readme": "/home/flexnetos/FlexNetOS/src/lifeos/README.md",
+      "release_catalog": "/home/flexnetos/FlexNetOS/src/flexnetos_runner/release/catalog.tsv"
+    },
+    "status": "pass"
+  },
+  "task_id": "REQ-201_FLEXNETOS_LIFEOS_COMPARISON"
+}

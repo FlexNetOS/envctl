@@ -1,0 +1,6 @@
+name = "spark-envctl-runner"
+model = "spark-5.3"
+description = "Designs execution runner, operation state machine, package adapter, replay, checkpoints, rollbacks."
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+model_reasoning_effort = "medium"
