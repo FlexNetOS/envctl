@@ -1,36 +1,73 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-07-05T00:09:50+00:00",
+  "generated_at": "2026-07-05T00:14:49+00:00",
   "task_count": 80,
   "complete_count": 64,
   "failed_count": 0,
   "pending_count": 16,
-  "runnable_count": 0,
-  "dispatch_count": 0,
-  "approval_blocker_count": 3,
+  "runnable_count": 3,
+  "dispatch_count": 3,
+  "approval_blocker_count": 0,
   "blocked_count": 13,
-  "runnable_tasks": [],
-  "dispatch_packets": [],
-  "approval_blockers": [
+  "runnable_tasks": [
     {
       "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
-      "reason": "agent approval required",
+      "parallel_group": "envctl_db_parallel",
+      "max_parallel": 4,
       "packet_uri": "generated/execution_packets/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.json",
-      "agent_approval_uri": "approvals/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.agent_approval.json"
+      "approval_source": "agent_review",
+      "approval_uri": "approvals/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.agent_approval.json",
+      "approval_reviewer": "gpt-5.5"
     },
     {
       "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API",
-      "reason": "agent approval required",
+      "parallel_group": "envctl_integration",
+      "max_parallel": 2,
       "packet_uri": "generated/execution_packets/REQ-028_ENVCTL_AGENT_CONTROL_API.json",
-      "agent_approval_uri": "approvals/REQ-028_ENVCTL_AGENT_CONTROL_API.agent_approval.json"
+      "approval_source": "agent_review",
+      "approval_uri": "approvals/REQ-028_ENVCTL_AGENT_CONTROL_API.agent_approval.json",
+      "approval_reviewer": "gpt-5.5"
     },
     {
       "task_id": "REQ-033_PLUGIN_HUMAN_APPROVAL",
-      "reason": "agent approval required",
+      "parallel_group": "nu_plugin_parallel",
+      "max_parallel": 4,
       "packet_uri": "generated/execution_packets/REQ-033_PLUGIN_HUMAN_APPROVAL.json",
-      "agent_approval_uri": "approvals/REQ-033_PLUGIN_HUMAN_APPROVAL.agent_approval.json"
+      "approval_source": "agent_review",
+      "approval_uri": "approvals/REQ-033_PLUGIN_HUMAN_APPROVAL.agent_approval.json",
+      "approval_reviewer": "gpt-5.5"
     }
   ],
+  "dispatch_packets": [
+    {
+      "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+      "parallel_group": "envctl_db_parallel",
+      "max_parallel": 4,
+      "packet_uri": "generated/execution_packets/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.json",
+      "approval_source": "agent_review",
+      "approval_uri": "approvals/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.agent_approval.json",
+      "approval_reviewer": "gpt-5.5"
+    },
+    {
+      "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API",
+      "parallel_group": "envctl_integration",
+      "max_parallel": 2,
+      "packet_uri": "generated/execution_packets/REQ-028_ENVCTL_AGENT_CONTROL_API.json",
+      "approval_source": "agent_review",
+      "approval_uri": "approvals/REQ-028_ENVCTL_AGENT_CONTROL_API.agent_approval.json",
+      "approval_reviewer": "gpt-5.5"
+    },
+    {
+      "task_id": "REQ-033_PLUGIN_HUMAN_APPROVAL",
+      "parallel_group": "nu_plugin_parallel",
+      "max_parallel": 4,
+      "packet_uri": "generated/execution_packets/REQ-033_PLUGIN_HUMAN_APPROVAL.json",
+      "approval_source": "agent_review",
+      "approval_uri": "approvals/REQ-033_PLUGIN_HUMAN_APPROVAL.agent_approval.json",
+      "approval_reviewer": "gpt-5.5"
+    }
+  ],
+  "approval_blockers": [],
   "blocked_tasks": [
     {
       "task_id": "REQ-027_ENVCTL_REPLAY_ENGINE",
