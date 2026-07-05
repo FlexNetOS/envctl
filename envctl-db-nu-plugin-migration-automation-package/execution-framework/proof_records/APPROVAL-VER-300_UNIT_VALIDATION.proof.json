@@ -1,0 +1,38 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "APPROVAL-VER-300_UNIT_VALIDATION",
+  "status": "completed",
+  "started_at": "2026-07-05T05:44:32+00:00",
+  "completed_at": "2026-07-05T05:44:32+00:00",
+  "actor": "agent-approval-gate",
+  "helper_id": "helper-agent-approval-01",
+  "model_tag": "gpt-5.5",
+  "repo_path": "execution-framework",
+  "files_changed": [
+    "execution-framework/approvals/VER-300_UNIT_VALIDATION.agent_approval.json",
+    "execution-framework/reviews/GPT55_VER-300_UNIT_VALIDATION_APPROVAL_REVIEW.md"
+  ],
+  "commands_run": [
+    "python3 scripts/agent_approval_gate.py ..."
+  ],
+  "verification_output": {
+    "decision": "approved",
+    "reviewer": "gpt-5.5-fallback",
+    "model": "gpt-5.5",
+    "review_artifact": "reviews/GPT55_VER-300_UNIT_VALIDATION_APPROVAL_REVIEW.md",
+    "approval_artifact": "approvals/VER-300_UNIT_VALIDATION.agent_approval.json",
+    "fallback_reason": "weave reviewer path unavailable in PATH and available local claude frontdoor is Claude Code rather than the requested Claude Opus reviewer route; using GPT-5.5 fallback per package approval protocol."
+  },
+  "checksums": {
+    "execution-framework/approvals/VER-300_UNIT_VALIDATION.agent_approval.json": "05fcb6d281c73019c014b134ad664f9d9ff473ce867b06d5a6c8d20d23ffa267",
+    "execution-framework/reviews/GPT55_VER-300_UNIT_VALIDATION_APPROVAL_REVIEW.md": "f75dcda3a56d790b438d755ab5bad00f211e57547c03fe718ce5c2b6c9e63ce6"
+  },
+  "logs_uri": "logs/APPROVAL-VER-300_UNIT_VALIDATION.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "approvals/VER-300_UNIT_VALIDATION.agent_approval.json",
+    "reviews/GPT55_VER-300_UNIT_VALIDATION_APPROVAL_REVIEW.md"
+  ],
+  "failure_reason": "",
+  "next_action": "run goal_loop.py; VER-300_UNIT_VALIDATION becomes dispatchable only when approved"
+}
