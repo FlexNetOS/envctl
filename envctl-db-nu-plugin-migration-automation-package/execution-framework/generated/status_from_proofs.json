@@ -1,6 +1,6 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-07-05T05:27:46+00:00",
+  "generated_at": "2026-07-05T05:39:53+00:00",
   "tasks": [
     {
       "task_id": "EF-001_SCAN_PACKAGE",
@@ -482,7 +482,7 @@
       "task_id": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
       "phase": "06-flexnetos",
       "owner_lane": "lane_b_repo_a",
-      "status": "pending",
+      "status": "completed",
       "proof_uri": "proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json"
     },
     {
