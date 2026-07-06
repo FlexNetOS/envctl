@@ -211,10 +211,10 @@ fn mcp_sync_is_additive_never_clobbers_existing_servers() {
 }
 
 #[test]
-fn live_agent_skills_mcp_pack_preserves_mesh_servers_for_claude_and_codex() {
+fn live_agent_skills_mcp_pack_preserves_mesh_servers_and_excludes_retired_n8n() {
     let pack = repo_agent_skills_dir();
     let yaml = format!(
-        "agent:\n  - claude-code\n  - codex\nscope: project\nmcps:\n  - source: {pack}\n    mcps:\n      - github\n      - context7\n      - exa\n      - memory\n      - playwright\n      - sequential-thinking\n      - n8n-mcp\n",
+        "agent:\n  - claude-code\n  - codex\nscope: project\nmcps:\n  - source: {pack}\n    mcps:\n      - github\n      - context7\n      - exa\n      - memory\n      - playwright\n      - sequential-thinking\n",
         pack = pack.display()
     );
     let (engine, project, cfg) = project_with_config(&yaml);
@@ -270,7 +270,6 @@ url = "https://weave.local"
         "memory",
         "playwright",
         "sequential-thinking",
-        "n8n-mcp",
     ];
 
     let claude: serde_json::Value =
@@ -285,6 +284,10 @@ url = "https://weave.local"
     assert_eq!(
         claude_servers["broker"]["env"]["TOKEN"], "real-broker-token",
         "Claude merge must not overwrite the existing broker secret"
+    );
+    assert!(
+        !claude_servers.contains_key("n8n-mcp"),
+        "Claude MCP config must not restore retired n8n-mcp"
     );
 
     let codex: toml::Value = std::fs::read_to_string(project.join(".codex/config.toml"))
@@ -302,6 +305,10 @@ url = "https://weave.local"
         codex_servers["broker"]["env"]["TOKEN"].as_str().unwrap(),
         "real-broker-token",
         "Codex merge must not overwrite the existing broker secret"
+    );
+    assert!(
+        !codex_servers.contains_key("n8n-mcp"),
+        "Codex MCP config must not restore retired n8n-mcp"
     );
 }
 
