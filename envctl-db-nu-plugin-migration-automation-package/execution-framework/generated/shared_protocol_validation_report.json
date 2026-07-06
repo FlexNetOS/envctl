@@ -1,0 +1,35 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+  "status": "passed",
+  "generated_at": "2026-07-04T23:09:51+00:00",
+  "summary": {
+    "required_record_count": 14,
+    "manifest_record_count": 14,
+    "source_schema_count": 8,
+    "generated_schema_count": 6,
+    "sample_validation_count": 14
+  },
+  "sample_results": {
+    "TargetDescriptor": "passed",
+    "MigrationRecipe": "passed",
+    "MigrationRun": "passed",
+    "RunEvent": "passed",
+    "Operation": "passed",
+    "ApprovalRequest": "passed",
+    "ApprovalDecision": "passed",
+    "ArtifactRecord": "passed",
+    "EvidenceRecord": "passed",
+    "GraphEdge": "passed",
+    "ValidationResult": "passed",
+    "ReplayRequest": "passed",
+    "ReplayResult": "passed",
+    "ProofRecord": "passed"
+  },
+  "errors": [],
+  "evidence": [
+    "execution-framework/schemas/shared_protocol.schema.json",
+    "execution-framework/generated/shared_protocol_manifest.json",
+    "execution-framework/docs/SHARED_PROTOCOL_SCHEMAS.md"
+  ]
+}

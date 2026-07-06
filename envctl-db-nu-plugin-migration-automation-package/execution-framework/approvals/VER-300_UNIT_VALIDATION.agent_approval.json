@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "task_id": "VER-300_UNIT_VALIDATION",
+  "reviewer": "gpt-5.5-fallback",
+  "model": "gpt-5.5",
+  "decision": "approved",
+  "reviewed_at": "2026-07-05T05:44:32+00:00",
+  "review_artifact": "reviews/GPT55_VER-300_UNIT_VALIDATION_APPROVAL_REVIEW.md",
+  "summary": "Approved dispatch for checksum-bound VER-300 unit/integration validation packet; downstream validation remains required.",
+  "instruction_on_denial": "",
+  "fallback_reason": "weave reviewer path unavailable in PATH and available local claude frontdoor is Claude Code rather than the requested Claude Opus reviewer route; using GPT-5.5 fallback per package approval protocol.",
+  "evidence": [
+    "reviews/GPT55_VER-300_UNIT_VALIDATION_APPROVAL_REVIEW.md"
+  ]
+}

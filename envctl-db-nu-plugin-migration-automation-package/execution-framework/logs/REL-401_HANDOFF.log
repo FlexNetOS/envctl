@@ -1,0 +1,7 @@
+[REL-401] handoff_started=2026-07-05T06:10:06Z
+[REL-401] access_status=read:/root write:/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework,/tmp filesystem_scope=chat-output
+[REL-401] verification_status=pass_with_external_blocker
+[REL-401] blocker=EXT-DRIVE-WRITE authenticated Google Drive file edit/revision API is not available in this environment
+[REL-401] archive_tar=generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.gz sha256=0bdf372bae59a7d207cdb93a89ecbb89a2f83b779019c965f16ad157224b0b27
+[REL-401] archive_zip=generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip sha256=6ad8a4d040c686bb7079b251b7c6064fd54cd283417f678d47004b88dcc55ad4
+[REL-401] handoff_completed=2026-07-05T06:10:06Z

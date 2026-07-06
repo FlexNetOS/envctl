@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "task_id": "VER-301_SQL_SCHEMA_TEST",
+  "status": "pass",
+  "updated_at": "2026-07-05T05:51:29+00:00",
+  "proof_uri": "proof_records/VER-301_SQL_SCHEMA_TEST.proof.json",
+  "validation_report": "generated/ver301_sql_schema_test_report.json"
+}

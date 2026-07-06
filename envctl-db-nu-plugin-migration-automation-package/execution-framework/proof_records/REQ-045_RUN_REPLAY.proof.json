@@ -1,0 +1,71 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-045_RUN_REPLAY",
+  "status": "completed",
+  "started_at": "2026-07-05T05:27:46+00:00",
+  "completed_at": "2026-07-05T05:27:46+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-replay-template-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/README.md",
+    "execution-framework/scripts/verify_run_replay.py",
+    "execution-framework/docs/RUN_REPLAY.md",
+    "execution-framework/generated/run_replay_manifest.json",
+    "execution-framework/state/REQ-045_RUN_REPLAY.heartbeat.json",
+    "execution-framework/logs/REQ-045_RUN_REPLAY.log",
+    "execution-framework/proof_records/REQ-045_RUN_REPLAY.proof.json"
+  ],
+  "commands_run": [
+    "python3 scripts/verify_run_replay.py"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "REQ-045_RUN_REPLAY",
+    "status": "passed",
+    "generated_at": "2026-07-05T05:27:46+00:00",
+    "summary": {
+      "source_file_count": 5,
+      "command_template_count": 6,
+      "convenience_template_count": 2
+    },
+    "command_template_ids": [
+      "compute-initial-plan",
+      "dispatch-approved-run-replay-packet",
+      "replay-dry-run",
+      "replay-apply-blocked-check",
+      "verify-rollback-checkpoints",
+      "verify-replay-validation"
+    ],
+    "convenience_templates_present": [
+      "execution-templates/README.md",
+      "execution-templates/EXECUTION_TEMPLATE_INDEX.json"
+    ],
+    "errors": [],
+    "evidence": [
+      "execution-framework/docs/RUN_REPLAY.md",
+      "execution-framework/generated/run_replay_manifest.json",
+      "execution-framework/state/REQ-045_RUN_REPLAY.heartbeat.json",
+      "execution-framework/logs/REQ-045_RUN_REPLAY.log"
+    ]
+  },
+  "checksums": {
+    "execution-framework/README.md": "d1820c96e40715379cce7707c5a7763d983ee3f8cc46d63392aeff99d80a79de",
+    "execution-framework/scripts/verify_run_replay.py": "4b0846e8e09a15ee97bcb77d510b5e7dacb347e6ca8e8661e2d91ffa0fb99973",
+    "execution-framework/docs/RUN_REPLAY.md": "f3cb2f944938abcf1b8e918ad85f9994f4c4fad9029178bfaeeda327edcee020",
+    "execution-framework/generated/run_replay_manifest.json": "e8f31f43360cc71d212c12d55776644edd1061da5e1c9f21b222326ca2eca16e",
+    "execution-framework/state/REQ-045_RUN_REPLAY.heartbeat.json": "1ab613ae340fcfe52dc3b708cbccf564e7d874c6a5e0ca8afc60e0c06f828408",
+    "execution-framework/logs/REQ-045_RUN_REPLAY.log": "d8a835bb873e0b472024a4a925478dc5898dccda98e3a52c53314ffca52ba326"
+  },
+  "logs_uri": "logs/REQ-045_RUN_REPLAY.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "execution-framework/docs/RUN_REPLAY.md",
+    "execution-framework/generated/run_replay_manifest.json",
+    "execution-framework/state/REQ-045_RUN_REPLAY.heartbeat.json",
+    "execution-framework/logs/REQ-045_RUN_REPLAY.log"
+  ],
+  "failure_reason": "",
+  "next_action": "run goal_loop.py so REQ-045 proof state is reflected in dispatch status"
+}

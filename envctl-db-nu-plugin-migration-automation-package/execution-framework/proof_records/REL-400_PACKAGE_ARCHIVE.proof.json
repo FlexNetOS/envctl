@@ -1,0 +1,103 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REL-400_PACKAGE_ARCHIVE",
+  "status": "completed",
+  "started_at": "2026-07-05T06:08:16+00:00",
+  "completed_at": "2026-07-05T06:08:16+00:00",
+  "actor": "release-agent",
+  "helper_id": "helper-release-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.gz",
+    "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip",
+    "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.list",
+    "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip.list",
+    "execution-framework/generated/release_archives/REL-400_PACKAGE_ARCHIVE.summary.json",
+    "execution-framework/state/REL-400_PACKAGE_ARCHIVE.heartbeat.json",
+    "execution-framework/logs/REL-400_PACKAGE_ARCHIVE.log"
+  ],
+  "commands_run": [
+    "tar --exclude=\"envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/release_archives\" -czf execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.gz envctl-db-nu-plugin-migration-automation-package",
+    "zip -qr execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip envctl-db-nu-plugin-migration-automation-package -x envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/release_archives/*",
+    "tar -tzf execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.gz",
+    "unzip -Z1 execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "REL-400_PACKAGE_ARCHIVE",
+    "generated_at": "2026-07-05T06:08:16+00:00",
+    "package_root": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+    "archive_base": "envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded",
+    "artifacts": {
+      "tar_gz": {
+        "path": "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.gz",
+        "size_bytes": 15745389,
+        "sha256": "0bdf372bae59a7d207cdb93a89ecbb89a2f83b779019c965f16ad157224b0b27",
+        "entry_count": 967
+      },
+      "zip": {
+        "path": "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip",
+        "size_bytes": 16385876,
+        "sha256": "6ad8a4d040c686bb7079b251b7c6064fd54cd283417f678d47004b88dcc55ad4",
+        "entry_count": 967
+      }
+    },
+    "validation": {
+      "entry_counts_match": true,
+      "blocked_hits_tar": [],
+      "blocked_hits_zip": [],
+      "self_archive_hits_tar": [],
+      "self_archive_hits_zip": [],
+      "secret_safe": true,
+      "self_exclusion_ok": true,
+      "sample_entries": [
+        "envctl-db-nu-plugin-migration-automation-package/",
+        "envctl-db-nu-plugin-migration-automation-package/schemas/",
+        "envctl-db-nu-plugin-migration-automation-package/schemas/nu_plugin_command_manifest.schema.json",
+        "envctl-db-nu-plugin-migration-automation-package/schemas/migration_recipe.schema.json",
+        "envctl-db-nu-plugin-migration-automation-package/schemas/operation.schema.json",
+        "envctl-db-nu-plugin-migration-automation-package/schemas/envctl_migration_api.openapi.json",
+        "envctl-db-nu-plugin-migration-automation-package/schemas/artifact_record.schema.json",
+        "envctl-db-nu-plugin-migration-automation-package/schemas/validation_result.schema.json",
+        "envctl-db-nu-plugin-migration-automation-package/schemas/approval_request.schema.json",
+        "envctl-db-nu-plugin-migration-automation-package/schemas/target_descriptor.schema.json",
+        "envctl-db-nu-plugin-migration-automation-package/schemas/run_event.schema.json",
+        "envctl-db-nu-plugin-migration-automation-package/examples/",
+        "envctl-db-nu-plugin-migration-automation-package/examples/recipes/",
+        "envctl-db-nu-plugin-migration-automation-package/examples/recipes/database-migration.yaml",
+        "envctl-db-nu-plugin-migration-automation-package/examples/recipes/full-migration-artifact-run.yaml",
+        "envctl-db-nu-plugin-migration-automation-package/examples/target-descriptors/",
+        "envctl-db-nu-plugin-migration-automation-package/examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+        "envctl-db-nu-plugin-migration-automation-package/examples/target-descriptors/generic-codebase.yaml",
+        "envctl-db-nu-plugin-migration-automation-package/examples/env/",
+        "envctl-db-nu-plugin-migration-automation-package/examples/env/envctl-migration.example.toml"
+      ]
+    },
+    "external_blocker": {
+      "blocker_id": "EXT-DRIVE-WRITE",
+      "detail": "Authenticated Google Drive file edit/revision API is not available in this environment; upgraded package archive is produced for upload/application to Drive."
+    }
+  },
+  "checksums": {
+    "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.gz": "0bdf372bae59a7d207cdb93a89ecbb89a2f83b779019c965f16ad157224b0b27",
+    "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip": "6ad8a4d040c686bb7079b251b7c6064fd54cd283417f678d47004b88dcc55ad4",
+    "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.list": "49c5499b262c004e022cf94f3394ff06f556292a693ea21ae043fb3be93f2ad8",
+    "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip.list": "49c5499b262c004e022cf94f3394ff06f556292a693ea21ae043fb3be93f2ad8",
+    "execution-framework/generated/release_archives/REL-400_PACKAGE_ARCHIVE.summary.json": "e7e2fe6f8185ca1e5c9bbbe48078dcccc60b05243452a5c2137d9f7c79a9e617",
+    "execution-framework/state/REL-400_PACKAGE_ARCHIVE.heartbeat.json": "d6a7be882e3d620903778fbe4e87961e21853f88b23c14fb4d84bc44b4cfeeb1",
+    "execution-framework/logs/REL-400_PACKAGE_ARCHIVE.log": "a03ffea365c547d8c1472575fc619e9a263d64df7088663464aa0f517d77975c"
+  },
+  "logs_uri": "logs/REL-400_PACKAGE_ARCHIVE.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.gz",
+    "generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip",
+    "generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.list",
+    "generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip.list",
+    "generated/release_archives/REL-400_PACKAGE_ARCHIVE.summary.json",
+    "logs/REL-400_PACKAGE_ARCHIVE.log"
+  ],
+  "failure_reason": "",
+  "next_action": "run REL-401_HANDOFF and provide archive paths, checksums, and Drive blocker context"
+}

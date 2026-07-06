@@ -1,0 +1,1048 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-117_IAM_MATRIX",
+  "generated_at": "2026-07-04T23:19:57+00:00",
+  "status": "complete",
+  "target": {
+    "target_id": "flexnetos-vs-lifeos",
+    "target_type": "mixed",
+    "primary_root": "/home/flexnetos/FlexNetOS",
+    "compare_root": "/home/flexnetos/lifeos",
+    "safety_mode": "approval-gated",
+    "max_auto_risk": "R2",
+    "descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384"
+  },
+  "artifact_paths": {
+    "markdown": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.md",
+    "json": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json"
+  },
+  "blocked_path_patterns": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "access_matrix": [
+    {
+      "principal_id": "human:migration-operator",
+      "principal_type": "user",
+      "display_name": "Migration operator / approver",
+      "authority": "approval-gated human control",
+      "permissions": [
+        "review generated plans and artifacts",
+        "approve or deny operations represented in envctl_migration_approvals",
+        "operate nu_plugin approval commands from the operator session template"
+      ],
+      "scope": "R3+ and destructive/high-risk migration steps; no direct secret material recorded",
+      "evidence_refs": [
+        "schemas/approval_request.schema.json",
+        "examples/nu/operator-session-template.nu",
+        "execution-framework/docs/SHARED_PROTOCOL_SCHEMAS.md"
+      ],
+      "risk": "medium"
+    },
+    {
+      "principal_id": "agent:artifact-agent",
+      "principal_type": "agent",
+      "display_name": "ART-117 artifact generator",
+      "authority": "workspace-write artifact generation",
+      "permissions": [
+        "read target descriptors, package scan, and envctl DB model evidence",
+        "write migration-artifacts/art-117_iam_matrix outputs",
+        "register artifacts, evidence links, validations, and graph edges"
+      ],
+      "scope": "allowed_paths from packet; blocked secret paths are excluded",
+      "evidence_refs": [
+        "execution-framework/generated/execution_packets/ART-117_IAM_MATRIX.json",
+        "execution-framework/scripts/artifact_registry.py",
+        "execution-framework/generated/envctl_artifact_registry_report.json"
+      ],
+      "risk": "low"
+    },
+    {
+      "principal_id": "service:envctl-migration-db",
+      "principal_type": "service",
+      "display_name": "envctl migration database runtime",
+      "authority": "persistence for migration control plane",
+      "permissions": [
+        "persist targets, packages, contracts, recipes, runs, operations, evidence, artifacts, graph edges, approvals, validations, checkpoints, rollbacks, agent sessions, and plugin sessions",
+        "store redacted command strings and evidence/artifact hashes"
+      ],
+      "scope": "SQLite-compatible envctl migration schema in this package",
+      "evidence_refs": [
+        "sql/001_migration_automation_schema.sql",
+        "execution-framework/docs/ENVCTL_DB_SCHEMA.md",
+        "execution-framework/generated/envctl_migration_db_model.json"
+      ],
+      "risk": "medium"
+    },
+    {
+      "principal_id": "service:target-filesystem-collector",
+      "principal_type": "service",
+      "display_name": "Target filesystem collector",
+      "authority": "read-only discovery collector",
+      "permissions": [
+        "read included target filesystem paths",
+        "skip excluded and blocked paths",
+        "produce discovery evidence for downstream artifacts"
+      ],
+      "scope": "include **/* minus .git, node_modules, target, virtualenv, __pycache__, .env, secrets, private_keys, pem, and key files",
+      "evidence_refs": [
+        "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+        "execution-framework/generated/envctl_target_registry.json",
+        "execution-framework/generated/package_scan.json"
+      ],
+      "risk": "low"
+    },
+    {
+      "principal_id": "plugin:nu_plugin-operator-surface",
+      "principal_type": "plugin",
+      "display_name": "Nushell migration operator plugin surface",
+      "authority": "human-facing control and status surface",
+      "permissions": [
+        "start plans and runs through envctl migration commands",
+        "list and submit approval decisions",
+        "display status streams, visual tables, graph views, and replay/rollback surfaces"
+      ],
+      "scope": "operator-mediated plugin commands; no credential persistence in plugin session schema",
+      "evidence_refs": [
+        "codex/AGENTS.nu_plugin.md.template",
+        "execution-framework/docs/SHARED_PROTOCOL_SCHEMAS.md",
+        "sql/001_migration_automation_schema.sql"
+      ],
+      "risk": "medium"
+    },
+    {
+      "principal_id": "agent:spark-security-reproducibility",
+      "principal_type": "agent",
+      "display_name": "Security and reproducibility helper lane",
+      "authority": "design/review helper for security controls",
+      "permissions": [
+        "design sandboxing, approvals, redaction, evidence hashing, provenance, and replay safety controls",
+        "produce additive prompts or artifact inputs"
+      ],
+      "scope": "workspace-write, on-request approval policy in helper config",
+      "evidence_refs": [
+        "codex/agents/spark-security-reproducibility.config.toml",
+        "prompts/SECURITY_REPRODUCIBILITY_MODEL.md"
+      ],
+      "risk": "low"
+    },
+    {
+      "principal_id": "external:github-integration",
+      "principal_type": "external_integration",
+      "display_name": "GitHub issue/PR integration",
+      "authority": "external collaboration surface",
+      "permissions": [
+        "prepare GitHub issue text updates and PR sequencing artifacts",
+        "consume GitHub auth outside this artifact package when live publishing is performed"
+      ],
+      "scope": "issue text/spec surfaces only in this package; no token values observed or persisted",
+      "evidence_refs": [
+        "specs/github-issues-index.md",
+        "codex/agents/spark-issue-integrator.config.toml"
+      ],
+      "risk": "medium"
+    }
+  ],
+  "credentials_and_certificates": [
+    {
+      "item_id": "blocked-path-policy",
+      "item_type": "secret_path_policy",
+      "status": "enforced",
+      "description": "Artifact execution packet and registry block .env, secrets, private_keys, pem, and key paths.",
+      "storage_location": "policy only",
+      "evidence_refs": [
+        "execution-framework/generated/execution_packets/ART-117_IAM_MATRIX.json",
+        "execution-framework/scripts/artifact_registry.py"
+      ]
+    },
+    {
+      "item_id": "command-redaction",
+      "item_type": "redaction_control",
+      "status": "modeled",
+      "description": "Operations store command_redacted rather than raw credential-bearing commands.",
+      "storage_location": "envctl_migration_operations.command_redacted",
+      "evidence_refs": [
+        "sql/001_migration_automation_schema.sql",
+        "prompts/SECURITY_REPRODUCIBILITY_MODEL.md"
+      ]
+    },
+    {
+      "item_id": "token-references",
+      "item_type": "token_reference",
+      "status": "references-only",
+      "description": "Safe scan found token/credential terminology but no secret values are copied into this artifact.",
+      "storage_location": "redacted source signal list",
+      "evidence_refs": [
+        "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json"
+      ]
+    },
+    {
+      "item_id": "certificate-key-material",
+      "item_type": "certificate_or_key",
+      "status": "not_collected",
+      "description": "Certificate and key file patterns are blocked from artifact collection.",
+      "storage_location": "not persisted",
+      "evidence_refs": [
+        "execution-framework/generated/execution_packets/ART-117_IAM_MATRIX.json"
+      ]
+    }
+  ],
+  "source_signal_summary": {
+    "approval_control": 34,
+    "external_identity_reference": 7,
+    "iam_reference": 2,
+    "runtime_boundary": 2,
+    "secret_or_credential_reference": 75
+  },
+  "source_signals": [
+    {
+      "source": "CODEX_FINAL_EXECUTION_PROMPT.md",
+      "line": 12,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "PACKAGE_MANIFEST.json",
+      "line": 506,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "PROMPT_PACKAGE_COMBINED.md",
+      "line": 34,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "README.md",
+      "line": 23,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "RUN_WITH_CODEX_ENVCTL.sh",
+      "line": 84,
+      "keyword": "sandbox",
+      "category": "runtime_boundary",
+      "redacted": true
+    },
+    {
+      "source": "codex/agents/spark-envctl-db-architect.config.toml",
+      "line": 4,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "codex/agents/spark-envctl-runner.config.toml",
+      "line": 4,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "codex/agents/spark-flexnetos-adapter.config.toml",
+      "line": 4,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "codex/agents/spark-issue-integrator.config.toml",
+      "line": 3,
+      "keyword": "github",
+      "category": "external_identity_reference",
+      "redacted": true
+    },
+    {
+      "source": "codex/agents/spark-live-visuals.config.toml",
+      "line": 4,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "codex/agents/spark-nu-plugin-protocol.config.toml",
+      "line": 4,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "codex/agents/spark-security-reproducibility.config.toml",
+      "line": 3,
+      "keyword": "sandbox",
+      "category": "runtime_boundary",
+      "redacted": true
+    },
+    {
+      "source": "codex/agents/spark-test-validation.config.toml",
+      "line": 4,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "codex/envctl-nu-plugin-migration.config.toml",
+      "line": 5,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "examples/env/envctl-migration.example.toml",
+      "line": 2,
+      "keyword": "human_mode",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "examples/nu/operator-session-template.nu",
+      "line": 8,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "examples/recipes/database-migration.yaml",
+      "line": 24,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "examples/recipes/full-migration-artifact-run.yaml",
+      "line": 6,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+      "line": 16,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "examples/target-descriptors/generic-codebase.yaml",
+      "line": 16,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/docs/APPLIED_UPGRADES.md",
+      "line": 161,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/docs/CONTRACT_MANIFEST.md",
+      "line": 118,
+      "keyword": "auth",
+      "category": "external_identity_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/docs/ENVCTL_DB_SCHEMA.md",
+      "line": 26,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/docs/FILESYSTEM_BOUNDARIES.md",
+      "line": 28,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/docs/FINAL_VERIFICATION.md",
+      "line": 29,
+      "keyword": "auth",
+      "category": "external_identity_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/docs/GAP_ANALYSIS.md",
+      "line": 68,
+      "keyword": "auth",
+      "category": "external_identity_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/docs/GOAL_LOOP_PROTOCOL.md",
+      "line": 22,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/docs/MULTI_AGENT_COLUMNS.md",
+      "line": 10,
+      "keyword": "identity",
+      "category": "iam_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/docs/SECURITY_REDACTION.md",
+      "line": 13,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/docs/SHARED_PROTOCOL_SCHEMAS.md",
+      "line": 24,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/examples/nu/operator-session-template.nu",
+      "line": 7,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/art128_readiness_scorecard_report.json",
+      "line": 27,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/art_117_iam_matrix_registry_report.json",
+      "line": 109,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/contract_manifest.json",
+      "line": 1771,
+      "keyword": "auth",
+      "category": "external_identity_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/contract_manifest.seed.sql",
+      "line": 11,
+      "keyword": "auth",
+      "category": "external_identity_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/envctl_artifact_registry_report.json",
+      "line": 112,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/envctl_migration_db_model.json",
+      "line": 37,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/envctl_run_ledger_report.json",
+      "line": 37,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/envctl_target_registry.json",
+      "line": 86,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/envctl_validation_evidence_report.json",
+      "line": 238,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_manifest.json",
+      "line": 219,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-100_SYSTEM_INVENTORY.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-101_DIRECTORY_TREE.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-102_REPOSITORY_MAP.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-103_SERVICE_DEP_GRAPH.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-104_TOOLCHAIN_TREE.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-105_PACKAGE_LIB_GRAPH.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-106_RUNTIME_DEP_MAP.json",
+      "line": 7,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-107_DATA_FLOW_GRAPH.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-108_DB_SCHEMA_MAP.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-109_DATA_LINEAGE.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-110_API_CATALOG.json",
+      "line": 7,
+      "keyword": "auth",
+      "category": "external_identity_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-111_EVENT_MAP.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-112_CODE_OWNERSHIP.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-113_DEBUG_CODE_MAP.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-114_ENV_CONFIG_MATRIX.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-115_CONFIG_INVENTORY.json",
+      "line": 7,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-116_INFRA_TOPOLOGY.json",
+      "line": 7,
+      "keyword": "cert",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-117_IAM_MATRIX.json",
+      "line": 7,
+      "keyword": "role",
+      "category": "iam_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-118_OBSERVABILITY.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-119_BUSINESS_PROCESS.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-120_WAVE_PLAN.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-121_CUTOVER.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-122_ROLLBACK.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-123_VALIDATION_RECONCILIATION.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-124_TEST_COVERAGE.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-125_RISK_REGISTER.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-126_DECISION_LOG.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-127_BLAST_RADIUS.json",
+      "line": 7,
+      "keyword": "credential",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-128_READINESS_SCORECARD.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-129_BUSINESS_CAPABILITY.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-130_SHADOW_TRAFFIC.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-131_GOLDEN_DATASET.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-132_PARITY_DASHBOARD.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-133_DEPRECATION_MAP.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-134_EXCEPTION_INVENTORY.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-135_RACI.json",
+      "line": 7,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/ART-136_TECH_DEBT_LEDGER.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/EF-001_SCAN_PACKAGE.json",
+      "line": 42,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/EF-002_GAP_REPORT.json",
+      "line": 32,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/EF-003_APPLY_FRAMEWORK.json",
+      "line": 37,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/EF-004_GENERATE_TASK_GRAPH.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/EF-005_VALIDATE_TASK_GRAPH.json",
+      "line": 32,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/EF-006_TASK_GRAPH_TO_PACKETS.json",
+      "line": 33,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/EF-007_GOAL_LOOP.json",
+      "line": 35,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/EF-008_VERIFY_HISTORY_COMPLETENESS.json",
+      "line": 46,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/MAINT-500_README_NAV_BACKTRACE.json",
+      "line": 35,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/MAINT-501_RESTORE_PROOF_TEMPLATE.json",
+      "line": 35,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC.json",
+      "line": 41,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/MAINT-503_CODEX_FINAL_PROMPT.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REL-400_PACKAGE_ARCHIVE.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REL-401_HANDOFF.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-010_CONTRACT_LOCK.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-020_ENVCTL_DB_SCHEMA.json",
+      "line": 7,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-021_ENVCTL_TARGET_REGISTRY.json",
+      "line": 35,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-022_ENVCTL_RUN_LEDGER.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-023_ENVCTL_OPERATION_STATE.json",
+      "line": 35,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-024_ENVCTL_ARTIFACT_REGISTRY.json",
+      "line": 35,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-025_ENVCTL_VALIDATION_EVIDENCE.json",
+      "line": 34,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.json",
+      "line": 35,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-027_ENVCTL_REPLAY_ENGINE.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-028_ENVCTL_AGENT_CONTROL_API.json",
+      "line": 35,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-030_PLUGIN_PROTOCOL_MANIFEST.json",
+      "line": 35,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-031_PLUGIN_COMMAND_SURFACE.json",
+      "line": 35,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-032_PLUGIN_LIVE_VISUALS.json",
+      "line": 35,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-033_PLUGIN_HUMAN_APPROVAL.json",
+      "line": 3,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-034_PLUGIN_STATUS_STREAMS.json",
+      "line": 35,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-040_SHARED_PROTOCOL_SCHEMAS.json",
+      "line": 7,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-041_TWO_REPO_INTEGRATION.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-042_FILESYSTEM_BOUNDS.json",
+      "line": 35,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-043_SECURITY_REDACTION.json",
+      "line": 6,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-044_INSTALL_BOOTSTRAP.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-045_RUN_REPLAY.json",
+      "line": 35,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-200_FLEXNETOS_TARGET_DESCRIPTOR.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-201_FLEXNETOS_LIFEOS_COMPARISON.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/VER-300_UNIT_VALIDATION.json",
+      "line": 37,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/VER-301_SQL_SCHEMA_TEST.json",
+      "line": 35,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/VER-302_PACKET_SCHEMA_VALIDATION.json",
+      "line": 36,
+      "keyword": "secret",
+      "category": "secret_or_credential_reference",
+      "redacted": true
+    },
+    {
+      "source": "execution-framework/generated/execution_packets/VER-303_GOAL_LOOP_COMPUTE.json",
+      "line": 7,
+      "keyword": "approval",
+      "category": "approval_control",
+      "redacted": true
+    }
+  ],
+  "validation": {
+    "secret_values_persisted": false,
+    "blocked_paths_opened": false,
+    "registry_required": true,
+    "evidence_links_required": true
+  }
+}

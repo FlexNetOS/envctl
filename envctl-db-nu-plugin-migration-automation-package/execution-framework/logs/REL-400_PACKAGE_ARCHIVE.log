@@ -1,0 +1,8 @@
+[REL-400] rebuild_start=2026-07-05T06:06:49+00:00
+[REL-400] framework_root=/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+[REL-400] package_root=/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package
+[REL-400] package_parent=/home/flexnetos/FlexNetOS/src/envctl
+[REL-400] package_name=envctl-db-nu-plugin-migration-automation-package
+[REL-400] out_dir=/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/release_archives
+[REL-400] tar_created=/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.gz
+[REL-400] zip_created=/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip

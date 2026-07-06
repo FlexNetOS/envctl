@@ -1,0 +1,145 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-128_READINESS_SCORECARD",
+  "title": "Migration readiness scorecard",
+  "generated_at": "2026-07-04T23:19:30+00:00",
+  "overall_score": 75.3,
+  "readiness_band": "conditional",
+  "score_scale": {
+    "ready": "85-100",
+    "conditional": "65-84.9",
+    "not_ready": "0-64.9"
+  },
+  "domain_scores": [
+    {
+      "domain": "target_descriptor_scope",
+      "score": 100,
+      "status": "ready",
+      "weight": 0.12,
+      "evidence": [
+        "generated/envctl_target_registry.json"
+      ],
+      "notes": "5/5 target types covered; safety mode is approval-gated."
+    },
+    {
+      "domain": "envctl_database_control_plane",
+      "score": 100,
+      "status": "ready",
+      "weight": 0.16,
+      "evidence": [
+        "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json",
+        "proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json"
+      ],
+      "notes": "Core DB schema, target registry, run ledger, operation state, and artifact registry have completed proofs."
+    },
+    {
+      "domain": "shared_protocol_contracts",
+      "score": 100,
+      "status": "ready",
+      "weight": 0.14,
+      "evidence": [
+        "generated/shared_protocol_validation_report.json"
+      ],
+      "notes": "14/14 shared protocol sample records passed validation."
+    },
+    {
+      "domain": "artifact_registry_and_hashing",
+      "score": 100,
+      "status": "ready",
+      "weight": 0.12,
+      "evidence": [
+        "generated/envctl_artifact_registry_report.json",
+        "docs/ENVCTL_ARTIFACT_REGISTRY.md"
+      ],
+      "notes": "Registry smoke covers paths, hashes, producers, contracts, provenance, links, and fail-closed path policy."
+    },
+    {
+      "domain": "validation_replay_rollback",
+      "score": 25,
+      "status": "blocked",
+      "weight": 0.14,
+      "evidence": [
+        "generated/status_from_proofs.json"
+      ],
+      "notes": "Validation evidence, rollback checkpoints, replay engine, and agent control API remain pending."
+    },
+    {
+      "domain": "plugin_operator_surface",
+      "score": 80,
+      "status": "conditional",
+      "weight": 0.1,
+      "evidence": [
+        "proof_records/REQ-030_PLUGIN_PROTOCOL_MANIFEST.proof.json",
+        "proof_records/REQ-031_PLUGIN_COMMAND_SURFACE.proof.json",
+        "proof_records/REQ-032_PLUGIN_LIVE_VISUALS.proof.json",
+        "proof_records/REQ-034_PLUGIN_STATUS_STREAMS.proof.json"
+      ],
+      "notes": "Human approval remains pending while protocol, command surface, live visuals, and status streams are complete."
+    },
+    {
+      "domain": "filesystem_security_hardening",
+      "score": 40,
+      "status": "blocked",
+      "weight": 0.1,
+      "evidence": [
+        "generated/status_from_proofs.json",
+        "scripts/artifact_registry.py"
+      ],
+      "notes": "Blocked path checks exist in the registry, but filesystem bounds, redaction, and replay hardening are not yet proven."
+    },
+    {
+      "domain": "governance_artifact_readiness",
+      "score": 28,
+      "status": "in_progress",
+      "weight": 0.12,
+      "evidence": [
+        "generated/task_graph.csv",
+        "generated/contract_manifest.json"
+      ],
+      "notes": "Governance artifacts are mostly pending; this task creates the readiness scorecard itself."
+    },
+    {
+      "domain": "package_scan_and_contract_lock",
+      "score": 100,
+      "status": "ready",
+      "weight": 0.1,
+      "evidence": [
+        "generated/package_scan.json",
+        "generated/contract_manifest.json"
+      ],
+      "notes": "Contract rows available: 152."
+    }
+  ],
+  "blocking_gates": [
+    "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+    "REQ-027_ENVCTL_REPLAY_ENGINE",
+    "REQ-028_ENVCTL_AGENT_CONTROL_API",
+    "REQ-041_TWO_REPO_INTEGRATION",
+    "REQ-043_SECURITY_REDACTION",
+    "REQ-045_RUN_REPLAY",
+    "REQ-033_PLUGIN_HUMAN_APPROVAL"
+  ],
+  "required_next_actions": [
+    "Complete validation evidence and replay/rollback gates before final migration validation.",
+    "Complete filesystem bounds and security redaction gates before unattended artifact replay.",
+    "Complete human approval plugin support before operator-facing runs above approval threshold.",
+    "Generate remaining governance artifacts so readiness decisions have owners, risks, and exceptions attached."
+  ],
+  "source_inputs": {
+    "target_registry": "generated/envctl_target_registry.json",
+    "repo_scan": "generated/package_scan.json",
+    "envctl_database": "generated/envctl_migration_db_model.json",
+    "artifact_registry": "generated/envctl_artifact_registry_report.json",
+    "shared_protocols": "generated/shared_protocol_validation_report.json",
+    "task_status": "generated/status_from_proofs.json",
+    "contract_manifest": "generated/contract_manifest.json"
+  },
+  "contract_mapping": {
+    "contract_row_id": "artifact:09-governance-migration-readiness-scorecard-md",
+    "contract_required_path": "migration-artifacts/09-governance/migration-readiness-scorecard.md",
+    "task_scoped_paths": [
+      "migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.md",
+      "migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json"
+    ]
+  }
+}

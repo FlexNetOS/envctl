@@ -1,0 +1,169 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-130_SHADOW_TRAFFIC",
+  "title": "Shadow Traffic Comparison Report",
+  "generated_at": "2026-07-04T23:20:50+00:00",
+  "status": "complete_with_capture_gap",
+  "target": {
+    "target_id": "flexnetos-vs-lifeos",
+    "primary_root": "/home/flexnetos/FlexNetOS",
+    "compare_root": "/home/flexnetos/lifeos",
+    "descriptor_ref": "examples/target-descriptors/flexnetos-vs-lifeos.yaml"
+  },
+  "contract": {
+    "artifact_id": "06-testing-validation-shadow-traffic-comparison-report-md",
+    "required_path": "migration-artifacts/06-testing-validation/shadow-traffic-comparison-report.md",
+    "artifact_type": "validation_evidence",
+    "validators": [
+      "path_registered",
+      "evidence_or_status_recorded",
+      "linked_from_index"
+    ]
+  },
+  "source_counts": {
+    "top_level_entries": 15,
+    "scanned_folder_count": 10,
+    "scanned_file_count": 111,
+    "db_required_table_count": 16,
+    "db_actual_table_count": 16,
+    "registry_validation_count": 2
+  },
+  "source_hashes": {
+    "target_descriptor": "71f4aab77e91d0fa9a414350dee50f23fc3c6492b265c607fe9e4de93c3fe190",
+    "repo_scan": "0d851e9f6a67044bfd6b6df77231c518292a385304e1830d579e6520634b9487",
+    "envctl_db_model": "7347f6629cc4fb0dbae56105dec65d5937a2a55860e0df4215b309e3ef766cef",
+    "envctl_db_validation": "652f839cfd8a46e3d9057588a051c56fc090dce0fbf7ed8c0407c032b4e19d84",
+    "artifact_registry_report": "b3d33175a5ec64d95bb2a2dc0b503ca897c97990bf78fd80fc159780b3df113c",
+    "shared_protocol_schema": "a897b67a1ec37804d74cbc60eb1360667d823b4661016a76a29906f016275007",
+    "contract_manifest": "3c2e2a883b6dfc7f135c4dc101484cced9f877191b46bb378f1cc4fcd07e1270",
+    "req024_proof": "fb6103ba1e8ca4c520a43fa3a18bdae971af6296f714f96c9aab6eee34d37d64",
+    "req040_proof": "88ecbe9517d4b24401ea1c5bbd072e1472aa0b9938c34e2c210173f521f1bea1"
+  },
+  "traffic_capture": {
+    "real_traffic_capture_files_found": 0,
+    "capture_status": "not_present_in_package_inputs",
+    "scope_note": "This artifact compares the available old/new behavior contract and registry proof. It does not certify production runtime parity because no mirrored live traffic payloads were present in the provided inputs."
+  },
+  "comparison_cases": [
+    {
+      "traffic_class": "envctl migration run lifecycle",
+      "old_behavior_source": "prompt/package shell execution without durable run row",
+      "new_behavior_source": "envctl_migration_runs plus envctl_migration_operations",
+      "observable_fields": [
+        "run_id",
+        "operation_id",
+        "status",
+        "phase",
+        "risk",
+        "idempotency_key"
+      ],
+      "available_evidence": [
+        "envctl_migration_db_model",
+        "envctl_db_validation"
+      ],
+      "traffic_capture_status": "not_present_in_package_inputs",
+      "comparison_status": "schema_ready_capture_required",
+      "decision": "Shadow traffic can be evaluated once mirrored run events are captured into the run ledger."
+    },
+    {
+      "traffic_class": "artifact publication",
+      "old_behavior_source": "filesystem artifact path only",
+      "new_behavior_source": "envctl_migration_artifacts row with content_hash and producer operation",
+      "observable_fields": [
+        "artifact_id",
+        "path",
+        "content_hash",
+        "generated_by_operation_id",
+        "evidence_json",
+        "links_json"
+      ],
+      "available_evidence": [
+        "artifact_registry_report",
+        "req024_proof"
+      ],
+      "traffic_capture_status": "fixture_backed_registry_smoke_present",
+      "comparison_status": "registry_path_hash_verified",
+      "decision": "Use content_hash equality and validation links as the minimum old/new comparison gate."
+    },
+    {
+      "traffic_class": "plugin/user status reads",
+      "old_behavior_source": "human reads logs and generated reports directly",
+      "new_behavior_source": "shared protocol records for artifacts, evidence, validations, and proof",
+      "observable_fields": [
+        "ArtifactRecord",
+        "EvidenceRecord",
+        "ValidationResult",
+        "ProofRecord"
+      ],
+      "available_evidence": [
+        "shared_protocol_schema",
+        "req040_proof"
+      ],
+      "traffic_capture_status": "protocol_schema_verified_no_live_subscription_capture",
+      "comparison_status": "protocol_ready_capture_required",
+      "decision": "Replay plugin reads against captured envctl rows before cutover."
+    }
+  ],
+  "parity_gates": [
+    {
+      "gate": "path_registered",
+      "status": "pass",
+      "evidence": [
+        "migration-artifacts/art-130_shadow_traffic/shadow-traffic-comparison-report.md",
+        "migration-artifacts/06-testing-validation/shadow-traffic-comparison-report.md"
+      ]
+    },
+    {
+      "gate": "hash_recorded",
+      "status": "pass_after_registry_write",
+      "evidence": [
+        "envctl_migration_artifacts.content_hash"
+      ]
+    },
+    {
+      "gate": "validation_evidence_linked",
+      "status": "pass_after_registry_write",
+      "evidence": [
+        "envctl_migration_validations",
+        "envctl_migration_evidence"
+      ]
+    },
+    {
+      "gate": "real_traffic_payloads_present",
+      "status": "warn",
+      "evidence": [],
+      "note": "No mirrored request/response payload captures were present in target descriptor, repo scan, or envctl reports."
+    }
+  ],
+  "recommended_next_capture_fields": [
+    "correlation_id",
+    "route_or_command",
+    "request_shape_hash",
+    "old_response_shape_hash",
+    "new_response_shape_hash",
+    "old_status",
+    "new_status",
+    "old_latency_ms",
+    "new_latency_ms",
+    "diff_class",
+    "redaction_profile"
+  ],
+  "blocked_paths_enforced": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "evidence_refs": [
+    "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+    "execution-framework/generated/package_scan.json",
+    "execution-framework/generated/envctl_migration_db_model.json",
+    "execution-framework/generated/envctl_migration_db_validation_report.json",
+    "execution-framework/generated/envctl_artifact_registry_report.json",
+    "execution-framework/schemas/shared_protocol.schema.json",
+    "execution-framework/generated/contract_manifest.json",
+    "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+    "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+  ]
+}

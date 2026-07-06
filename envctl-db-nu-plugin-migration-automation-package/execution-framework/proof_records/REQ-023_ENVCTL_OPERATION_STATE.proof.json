@@ -1,0 +1,66 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-023_ENVCTL_OPERATION_STATE",
+  "status": "completed",
+  "started_at": "2026-07-04T23:09:12+00:00",
+  "completed_at": "2026-07-04T23:09:12+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-envctl-state-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/operation_state_machine.py",
+    "execution-framework/scripts/verify_operation_state_machine.py",
+    "execution-framework/generated/operation_state_machine.json",
+    "execution-framework/generated/operation_state_machine_validation_report.json",
+    "execution-framework/docs/OPERATION_STATE_MACHINE.md",
+    "execution-framework/state/REQ-023_ENVCTL_OPERATION_STATE.heartbeat.json",
+    "execution-framework/logs/REQ-023_ENVCTL_OPERATION_STATE.log",
+    "execution-framework/proof_records/REQ-023_ENVCTL_OPERATION_STATE.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/verify_operation_state_machine.py"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "REQ-023_ENVCTL_OPERATION_STATE",
+    "status": "passed",
+    "generated_at": "2026-07-04T23:09:12+00:00",
+    "summary": {
+      "required_state_count": 8,
+      "canonical_state_count": 8,
+      "transition_event_count": 12,
+      "illegal_transition_rejection_count": 3,
+      "sqlite_inserted_operation_count": 8,
+      "operation_schema_status_count": 9
+    },
+    "errors": [],
+    "evidence": [
+      "scripts/operation_state_machine.py",
+      "generated/operation_state_machine.json",
+      "generated/operation_state_machine_validation_report.json",
+      "docs/OPERATION_STATE_MACHINE.md"
+    ]
+  },
+  "checksums": {
+    "execution-framework/scripts/operation_state_machine.py": "1cd9a034d10c26876aae03342014990958b95fb0706b6cf03046259e0b91540e",
+    "execution-framework/scripts/verify_operation_state_machine.py": "8df38e386d7001c8ba27b0bc3aec58823c441deb4f33ada52c5df6259f3456fb",
+    "execution-framework/generated/operation_state_machine.json": "21383a13cb68084c57fa87391addeaf8b460039f472c1398f1837da89cce5fd6",
+    "execution-framework/generated/operation_state_machine_validation_report.json": "c8feed7d47974a34208758aa2ab40cf7ac59af9b1de14ddd34d965a185a94d20",
+    "execution-framework/docs/OPERATION_STATE_MACHINE.md": "a4947b3adc64219b74b8d04cd6f6409491d547f0e4950c254fae7822e47563e9",
+    "execution-framework/state/REQ-023_ENVCTL_OPERATION_STATE.heartbeat.json": "178c7474967d16f82c988a582d014d030bcc4c1b24a6160d8218069253cc2caa",
+    "execution-framework/logs/REQ-023_ENVCTL_OPERATION_STATE.log": "c8feed7d47974a34208758aa2ab40cf7ac59af9b1de14ddd34d965a185a94d20",
+    "execution-framework/proof_records/proof_ledger.jsonl": "6d82973707eac4cb092838013771ee049bc8f45311059bb8df5ecfe119e59e5b"
+  },
+  "logs_uri": "logs/REQ-023_ENVCTL_OPERATION_STATE.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "scripts/operation_state_machine.py",
+    "generated/operation_state_machine.json",
+    "generated/operation_state_machine_validation_report.json",
+    "docs/OPERATION_STATE_MACHINE.md"
+  ],
+  "failure_reason": "",
+  "next_action": "run REQ-028_ENVCTL_AGENT_CONTROL_API after REQ-025 validation evidence is complete"
+}

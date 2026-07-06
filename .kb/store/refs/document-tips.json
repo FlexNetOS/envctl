@@ -85,6 +85,11 @@
       "document_id": "019f2a52-3abb-79a3-b941-73f974623260",
       "slug": "retire-broken-pre-cleanroom-codex-hook-baseline",
       "tip_commit_id": "019f2a56-e524-74a3-a034-3a3cc2473e3f"
+    },
+    {
+      "document_id": "019f2adb-59da-76c2-9164-1374e35534f9",
+      "slug": "tasks/import-host-artifacts-yazelix-mission-control-20260703",
+      "tip_commit_id": "019f2d99-0ab9-7940-9e86-7aa369ce278b"
     }
   ]
 }

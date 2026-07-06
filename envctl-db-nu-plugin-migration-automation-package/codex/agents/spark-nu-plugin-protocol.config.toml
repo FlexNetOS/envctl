@@ -1,0 +1,6 @@
+name = "spark-nu-plugin-protocol"
+model = "spark-5.3"
+description = "Designs Nushell plugin command surface, serialization protocol, output schemas, and envctl boundary."
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+model_reasoning_effort = "medium"

@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-023_ENVCTL_OPERATION_STATE",
+  "status": "passed",
+  "generated_at": "2026-07-04T23:09:12+00:00",
+  "summary": {
+    "required_state_count": 8,
+    "canonical_state_count": 8,
+    "transition_event_count": 12,
+    "illegal_transition_rejection_count": 3,
+    "sqlite_inserted_operation_count": 8,
+    "operation_schema_status_count": 9
+  },
+  "errors": [],
+  "evidence": [
+    "scripts/operation_state_machine.py",
+    "generated/operation_state_machine.json",
+    "generated/operation_state_machine_validation_report.json",
+    "docs/OPERATION_STATE_MACHINE.md"
+  ]
+}

@@ -1,0 +1,472 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "ART-135_RACI",
+  "status": "completed",
+  "started_at": "2026-07-04T23:28:55+00:00",
+  "completed_at": "2026-07-04T23:28:55+00:00",
+  "actor": "artifact-agent",
+  "helper_id": "helper-artifact-36",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/generate_art135_raci.py",
+    "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.md",
+    "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.json",
+    "execution-framework/migration-artifacts/09-governance/ownership-raci-matrix.md",
+    "execution-framework/generated/art135_raci_registry_report.json",
+    "execution-framework/state/ART-135_RACI.heartbeat.json",
+    "execution-framework/logs/ART-135_RACI.log",
+    "execution-framework/proof_records/ART-135_RACI.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/generate_art135_raci.py",
+    "python3 -m py_compile scripts/generate_art135_raci.py"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "ART-135_RACI",
+    "status": "passed",
+    "generated_at": "2026-07-04T23:28:55+00:00",
+    "artifact_paths": {
+      "markdown": "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.md",
+      "json": "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.json",
+      "canonical_markdown": "execution-framework/migration-artifacts/09-governance/ownership-raci-matrix.md"
+    },
+    "registry_results": [
+      {
+        "artifact_row_id": "artifact-6c49b6b52edf0ff6388e9ea7",
+        "artifact_id": "art-135-raci-md",
+        "run_id": "run-art-135-raci",
+        "path": "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.md",
+        "content_hash": "sha256:26e4a3296b0342a31c7c382b125dfb9d13d96ecd923970b2d4ca6944a63409ab",
+        "producer_operation_id": "op-art-135-generate-raci",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-f4b1c26b050770b1e5a861d7",
+          "evidence-afd08b663b0c6d7bbd5094a0",
+          "evidence-fbe6646fbb571922df98142f",
+          "evidence-63e58ca690d1cb62324574c2",
+          "evidence-7fa8d18b348cbc960105980d",
+          "evidence-f89ca20b5df2734b92b75c6c",
+          "evidence-829ca236f3369ddc2a2b41f4",
+          "evidence-7189212b44b1beed6f940624",
+          "evidence-d48d8fd878b84d187196be95"
+        ],
+        "graph_edge_ids": [
+          "edge-2efb79c1816f30e85172c697",
+          "edge-ba997f8aa0faecdcf6b5b087",
+          "edge-38c8afacfe8f63b36cb44e64",
+          "edge-090daf26467254ed92077dd5",
+          "edge-1f0f7749900e65a702a0d776",
+          "edge-e78b0bb4ef972ae4d7dc4bff",
+          "edge-eb616ef873bdb26298d95f26"
+        ],
+        "validation_ids": [
+          "validation-088d1fd9dc9d3b11551132a9",
+          "validation-a8dbda1dc77c377d51fa9215",
+          "validation-37e82b7844af5d8b1228f1aa"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-fd3ce4613ed409629b5b85b1",
+        "artifact_id": "art-135-raci-json",
+        "run_id": "run-art-135-raci",
+        "path": "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.json",
+        "content_hash": "sha256:3bf01e3f0fb3dd057015e68bdb3a12a658c6c6b8706d8b9f2abf8244fc8d6a80",
+        "producer_operation_id": "op-art-135-generate-raci",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-108c80b38a3a894fd125c010",
+          "evidence-d1723d481978822836a661aa",
+          "evidence-520ad78eb4e90de2998e2c35",
+          "evidence-6c77d8036393ccb210061515",
+          "evidence-305e89589a6cf199ab8d3b6d",
+          "evidence-2a4300317835e870b30d3770",
+          "evidence-9f3b96c51b2e2b1d5d541ddc",
+          "evidence-7ae975b1f2638650b7ed7444",
+          "evidence-06f52235c4e659760d8c199b"
+        ],
+        "graph_edge_ids": [
+          "edge-bafeb05bda4b02718ca9f870",
+          "edge-fc155c82d6981f5ac387bacd",
+          "edge-46017f148ef7ff02f1af2a7f",
+          "edge-e15a2e6cd94f0b24a644d9fb",
+          "edge-5429a976962514bd8e87c30f",
+          "edge-7b874be38dea785dac90fcb4",
+          "edge-3e9c5c188f5e97239668ce7c"
+        ],
+        "validation_ids": [
+          "validation-043a1a375ee1f8642760043e",
+          "validation-f5750a6b1c1275f2ba0a1b9d",
+          "validation-fa1ac7910827a1836173d0a2"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-04e0c00a45652510112ec94d",
+        "artifact_id": "09-governance-ownership-raci-matrix-md",
+        "run_id": "run-art-135-raci",
+        "path": "execution-framework/migration-artifacts/09-governance/ownership-raci-matrix.md",
+        "content_hash": "sha256:26e4a3296b0342a31c7c382b125dfb9d13d96ecd923970b2d4ca6944a63409ab",
+        "producer_operation_id": "op-art-135-generate-raci",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-956775835243b63a0b2199f5",
+          "evidence-a3f8f631493de7f837725069",
+          "evidence-2981e55dafa15a45d8768a2f",
+          "evidence-bd1c53999cf7a14bd94a2696",
+          "evidence-cb1eadd61236e9ab4844526a",
+          "evidence-d8caa8046f70458cc8e7a97b",
+          "evidence-d34cb951b8921465aeafd3b8",
+          "evidence-a783845c42d389aad23c3fe1",
+          "evidence-0283fd66ac1ede151547c75e"
+        ],
+        "graph_edge_ids": [
+          "edge-9120c95885491598fa5c1b73",
+          "edge-9cb90e29f5f4aea84d970850",
+          "edge-40f6cb68399c498f7b784293",
+          "edge-1946171c5cfcbd13e94306e3",
+          "edge-5d96452bce3083a159792cc1",
+          "edge-90edb8b9d68ca26d6223bba0",
+          "edge-7e6d309c05cdd0650b5bd9e9"
+        ],
+        "validation_ids": [
+          "validation-cdff24946f643087c45200f2",
+          "validation-11053a01f0055f0ddbfa332b",
+          "validation-99b73cea00b1ede05e5c8c35"
+        ]
+      }
+    ],
+    "artifact_rows": [
+      {
+        "id": "artifact-6c49b6b52edf0ff6388e9ea7",
+        "run_id": "run-art-135-raci",
+        "artifact_id": "art-135-raci-md",
+        "title": "ART-135 Ownership/RACI Matrix Markdown",
+        "artifact_type": "ownership_raci_matrix",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.md",
+        "content_hash": "sha256:26e4a3296b0342a31c7c382b125dfb9d13d96ecd923970b2d4ca6944a63409ab",
+        "generated_by_operation_id": "op-art-135-generate-raci",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-f4b1c26b050770b1e5a861d7",
+            "evidence-afd08b663b0c6d7bbd5094a0",
+            "evidence-fbe6646fbb571922df98142f",
+            "evidence-63e58ca690d1cb62324574c2",
+            "evidence-7fa8d18b348cbc960105980d",
+            "evidence-f89ca20b5df2734b92b75c6c",
+            "evidence-829ca236f3369ddc2a2b41f4",
+            "evidence-7189212b44b1beed6f940624",
+            "evidence-d48d8fd878b84d187196be95"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.md",
+            "execution-framework/generated/execution_packets/ART-135_RACI.json",
+            "execution-framework/generated/envctl_target_registry.json",
+            "execution-framework/generated/envctl_artifact_registry_report.json",
+            "execution-framework/generated/shared_protocol_manifest.json",
+            "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.json",
+            "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json",
+            "execution-framework/migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json",
+            "execution-framework/migration-artifacts/art-125_risk_register/risk-register.json"
+          ],
+          "producer_operation_id": "op-art-135-generate-raci",
+          "provenance": {
+            "helper_id": "helper-artifact-36",
+            "input_files": [
+              "target descriptor",
+              "repo scan",
+              "envctl database"
+            ],
+            "owner_agent": "artifact-agent",
+            "owner_lane": "lane_d_filesystem",
+            "source_graph_uri": "generated/task_graph.csv",
+            "task_id": "ART-135_RACI"
+          },
+          "validation_ids": [
+            "validation-088d1fd9dc9d3b11551132a9",
+            "validation-a8dbda1dc77c377d51fa9215",
+            "validation-37e82b7844af5d8b1228f1aa"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-2efb79c1816f30e85172c697",
+            "edge-ba997f8aa0faecdcf6b5b087",
+            "edge-38c8afacfe8f63b36cb44e64",
+            "edge-090daf26467254ed92077dd5",
+            "edge-1f0f7749900e65a702a0d776",
+            "edge-e78b0bb4ef972ae4d7dc4bff",
+            "edge-eb616ef873bdb26298d95f26"
+          ],
+          "links": [
+            {
+              "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "contract_row:artifact:09-governance-ownership-raci-matrix-md",
+              "type": "satisfies"
+            },
+            {
+              "to": "artifact:09-governance-ownership-matrix-md",
+              "type": "extends"
+            },
+            {
+              "to": "artifact:09-governance-iam-security-access-matrix-md",
+              "type": "informed_by"
+            }
+          ]
+        }
+      },
+      {
+        "id": "artifact-fd3ce4613ed409629b5b85b1",
+        "run_id": "run-art-135-raci",
+        "artifact_id": "art-135-raci-json",
+        "title": "ART-135 Ownership/RACI Matrix JSON",
+        "artifact_type": "ownership_raci_matrix",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.json",
+        "content_hash": "sha256:3bf01e3f0fb3dd057015e68bdb3a12a658c6c6b8706d8b9f2abf8244fc8d6a80",
+        "generated_by_operation_id": "op-art-135-generate-raci",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-108c80b38a3a894fd125c010",
+            "evidence-d1723d481978822836a661aa",
+            "evidence-520ad78eb4e90de2998e2c35",
+            "evidence-6c77d8036393ccb210061515",
+            "evidence-305e89589a6cf199ab8d3b6d",
+            "evidence-2a4300317835e870b30d3770",
+            "evidence-9f3b96c51b2e2b1d5d541ddc",
+            "evidence-7ae975b1f2638650b7ed7444",
+            "evidence-06f52235c4e659760d8c199b"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.json",
+            "execution-framework/generated/execution_packets/ART-135_RACI.json",
+            "execution-framework/generated/envctl_target_registry.json",
+            "execution-framework/generated/envctl_artifact_registry_report.json",
+            "execution-framework/generated/shared_protocol_manifest.json",
+            "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.json",
+            "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json",
+            "execution-framework/migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json",
+            "execution-framework/migration-artifacts/art-125_risk_register/risk-register.json"
+          ],
+          "producer_operation_id": "op-art-135-generate-raci",
+          "provenance": {
+            "helper_id": "helper-artifact-36",
+            "input_files": [
+              "target descriptor",
+              "repo scan",
+              "envctl database"
+            ],
+            "owner_agent": "artifact-agent",
+            "owner_lane": "lane_d_filesystem",
+            "source_graph_uri": "generated/task_graph.csv",
+            "task_id": "ART-135_RACI"
+          },
+          "validation_ids": [
+            "validation-043a1a375ee1f8642760043e",
+            "validation-f5750a6b1c1275f2ba0a1b9d",
+            "validation-fa1ac7910827a1836173d0a2"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-bafeb05bda4b02718ca9f870",
+            "edge-fc155c82d6981f5ac387bacd",
+            "edge-46017f148ef7ff02f1af2a7f",
+            "edge-e15a2e6cd94f0b24a644d9fb",
+            "edge-5429a976962514bd8e87c30f",
+            "edge-7b874be38dea785dac90fcb4",
+            "edge-3e9c5c188f5e97239668ce7c"
+          ],
+          "links": [
+            {
+              "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "contract_row:artifact:09-governance-ownership-raci-matrix-md",
+              "type": "satisfies"
+            },
+            {
+              "to": "artifact:09-governance-ownership-matrix-md",
+              "type": "extends"
+            },
+            {
+              "to": "artifact:09-governance-iam-security-access-matrix-md",
+              "type": "informed_by"
+            }
+          ]
+        }
+      },
+      {
+        "id": "artifact-04e0c00a45652510112ec94d",
+        "run_id": "run-art-135-raci",
+        "artifact_id": "09-governance-ownership-raci-matrix-md",
+        "title": "Ownership RACI Matrix",
+        "artifact_type": "governance_record",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/09-governance/ownership-raci-matrix.md",
+        "content_hash": "sha256:26e4a3296b0342a31c7c382b125dfb9d13d96ecd923970b2d4ca6944a63409ab",
+        "generated_by_operation_id": "op-art-135-generate-raci",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-956775835243b63a0b2199f5",
+            "evidence-a3f8f631493de7f837725069",
+            "evidence-2981e55dafa15a45d8768a2f",
+            "evidence-bd1c53999cf7a14bd94a2696",
+            "evidence-cb1eadd61236e9ab4844526a",
+            "evidence-d8caa8046f70458cc8e7a97b",
+            "evidence-d34cb951b8921465aeafd3b8",
+            "evidence-a783845c42d389aad23c3fe1",
+            "evidence-0283fd66ac1ede151547c75e"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/09-governance/ownership-raci-matrix.md",
+            "execution-framework/generated/execution_packets/ART-135_RACI.json",
+            "execution-framework/generated/envctl_target_registry.json",
+            "execution-framework/generated/envctl_artifact_registry_report.json",
+            "execution-framework/generated/shared_protocol_manifest.json",
+            "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.json",
+            "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json",
+            "execution-framework/migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json",
+            "execution-framework/migration-artifacts/art-125_risk_register/risk-register.json"
+          ],
+          "producer_operation_id": "op-art-135-generate-raci",
+          "provenance": {
+            "helper_id": "helper-artifact-36",
+            "input_files": [
+              "target descriptor",
+              "repo scan",
+              "envctl database"
+            ],
+            "owner_agent": "artifact-agent",
+            "owner_lane": "lane_d_filesystem",
+            "source_graph_uri": "generated/task_graph.csv",
+            "task_id": "ART-135_RACI"
+          },
+          "validation_ids": [
+            "validation-cdff24946f643087c45200f2",
+            "validation-11053a01f0055f0ddbfa332b",
+            "validation-99b73cea00b1ede05e5c8c35"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-9120c95885491598fa5c1b73",
+            "edge-9cb90e29f5f4aea84d970850",
+            "edge-40f6cb68399c498f7b784293",
+            "edge-1946171c5cfcbd13e94306e3",
+            "edge-5d96452bce3083a159792cc1",
+            "edge-90edb8b9d68ca26d6223bba0",
+            "edge-7e6d309c05cdd0650b5bd9e9"
+          ],
+          "links": [
+            {
+              "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "contract_row:artifact:09-governance-ownership-raci-matrix-md",
+              "type": "satisfies"
+            },
+            {
+              "to": "artifact:09-governance-ownership-matrix-md",
+              "type": "extends"
+            },
+            {
+              "to": "artifact:09-governance-iam-security-access-matrix-md",
+              "type": "informed_by"
+            }
+          ]
+        }
+      }
+    ],
+    "summary": {
+      "domain_count": 8,
+      "unique_owner_count": 10,
+      "approval_owner_count": 6,
+      "build_owner_count": 7,
+      "validate_owner_count": 1,
+      "cutover_owner_count": 1,
+      "support_owner_count": 5,
+      "rows_with_raci": 8,
+      "rows_with_decision_right": 8,
+      "evidence_count": 27,
+      "graph_edge_count": 21,
+      "validation_count": 9,
+      "registered_artifact_count": 3
+    },
+    "checks": {
+      "task_markdown_exists": true,
+      "task_json_exists": true,
+      "canonical_markdown_exists": true,
+      "registry_hash_recorded": true,
+      "validation_evidence_linked": true,
+      "approval_build_validate_cutover_support_assigned": true,
+      "all_rows_have_raci": true
+    },
+    "errors": [],
+    "evidence": [
+      "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.md",
+      "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.json",
+      "execution-framework/migration-artifacts/09-governance/ownership-raci-matrix.md",
+      "execution-framework/generated/art135_raci_registry_report.json",
+      "execution-framework/logs/ART-135_RACI.log"
+    ]
+  },
+  "checksums": {
+    "execution-framework/scripts/generate_art135_raci.py": "1ed524cd8d139d5b76c3c806b9dee8b5494fc70ba71e4c5e7d40f4644994511d",
+    "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.md": "26e4a3296b0342a31c7c382b125dfb9d13d96ecd923970b2d4ca6944a63409ab",
+    "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.json": "3bf01e3f0fb3dd057015e68bdb3a12a658c6c6b8706d8b9f2abf8244fc8d6a80",
+    "execution-framework/migration-artifacts/09-governance/ownership-raci-matrix.md": "26e4a3296b0342a31c7c382b125dfb9d13d96ecd923970b2d4ca6944a63409ab",
+    "execution-framework/generated/art135_raci_registry_report.json": "1b5ac9f6cd03c91b7137945c2f586ad4d75dfcbc8edc1f991cc57328a8a0446b",
+    "execution-framework/state/ART-135_RACI.heartbeat.json": "0ac036928dd7c7a1f73aa2bcd6e4ed6af2e8c36891a6e31669f1e5ece3ef8e12",
+    "execution-framework/logs/ART-135_RACI.log": "1b5ac9f6cd03c91b7137945c2f586ad4d75dfcbc8edc1f991cc57328a8a0446b",
+    "execution-framework/proof_records/proof_ledger.jsonl": "4a8d5512cc2319e81b1dbefea0f1a1f9cac5fa90e8ae09833d4b0748cd2d3dd8"
+  },
+  "logs_uri": "logs/ART-135_RACI.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.md",
+    "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.json",
+    "execution-framework/migration-artifacts/09-governance/ownership-raci-matrix.md",
+    "execution-framework/generated/art135_raci_registry_report.json",
+    "execution-framework/logs/ART-135_RACI.log"
+  ],
+  "failure_reason": "",
+  "next_action": "ready for VER-300_UNIT_VALIDATION"
+}

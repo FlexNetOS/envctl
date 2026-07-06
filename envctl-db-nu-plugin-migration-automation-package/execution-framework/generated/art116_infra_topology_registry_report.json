@@ -1,0 +1,330 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-116_INFRA_TOPOLOGY",
+  "generated_at": "2026-07-04T23:20:52+00:00",
+  "status": "passed",
+  "run_id": "run-art116",
+  "operation_id": "op-art116-generate",
+  "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+  "registered_artifacts": [
+    {
+      "artifact_row_id": "artifact-78b23c50f4663815610ed660",
+      "artifact_id": "art-116-infra-topology-json",
+      "run_id": "run-art116",
+      "path": "execution-framework/migration-artifacts/art-116_infra_topology/topology.json",
+      "content_hash": "sha256:7bf629405a5276ff75ccabc6b18d279b4d0dfb00cf1b2605b3ab754328afa094",
+      "producer_operation_id": "op-art116-generate",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-d5dc79deda9a7478676b95a4",
+        "evidence-6c180dba90a82f35906efa23",
+        "evidence-a9ebfd9308abbb39209a106c",
+        "evidence-48b0b5c2a0f4ea2cbd97e7b0",
+        "evidence-190dfa03dde9b1a27ad8f8ea",
+        "evidence-1ee1b6c200572f5d3772a54d",
+        "evidence-db6a0220237922ed9ac1e03f",
+        "evidence-cc6b206e3d35684b82b05b1c"
+      ],
+      "graph_edge_ids": [
+        "edge-2e401c84175d0095d86e20b8",
+        "edge-2a7037c191e7e0c59c910394",
+        "edge-c270413b575ddabcc51576d9",
+        "edge-89309f643d577210a5776f01",
+        "edge-8f0a8a663ede960125eee0c5"
+      ],
+      "validation_ids": [
+        "validation-1db790bc6ec4238b7e2078f4",
+        "validation-2d264b1b620e2a3c40573f6e"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-8745fddfd065d3f6d528bce8",
+      "artifact_id": "art-116-infra-topology-md",
+      "run_id": "run-art116",
+      "path": "execution-framework/migration-artifacts/art-116_infra_topology/topology.md",
+      "content_hash": "sha256:5e184546b382ca46ddb30216c5dbdf0293242a96324ea0cea1688dfaf843db11",
+      "producer_operation_id": "op-art116-generate",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-044068be7c08689517587524",
+        "evidence-6874f1afe3fe7f0606aa388e",
+        "evidence-b6c21ec97e64eb8b155b16c4",
+        "evidence-e1c6ddb94603fedbe8c3aaf3",
+        "evidence-11bec1ce4945b2616c951b7a",
+        "evidence-f4a0ff67c0d291c7e44a9962",
+        "evidence-5d3aa778a0cd0dc54199ba40",
+        "evidence-5ca3d80c83a7539af140f221"
+      ],
+      "graph_edge_ids": [
+        "edge-eedd78deea6646863563fdcf",
+        "edge-9887310f75504ecf36e6e4ef",
+        "edge-1036c6c83f6cec17e75afc3d",
+        "edge-739cb7514a4682897566f211",
+        "edge-cda69b850ed727d6ab075e86"
+      ],
+      "validation_ids": [
+        "validation-d51e33ad641c5552c959a3ee",
+        "validation-0bb6a9e2fb11781c89db0b86"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-280bf57e7b55cd2081c31b02",
+      "artifact_id": "08-operations-infrastructure-topology-map-md",
+      "run_id": "run-art116",
+      "path": "execution-framework/migration-artifacts/08-operations/infrastructure-topology-map.md",
+      "content_hash": "sha256:5e184546b382ca46ddb30216c5dbdf0293242a96324ea0cea1688dfaf843db11",
+      "producer_operation_id": "op-art116-generate",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-e907c7333b24d1d875de4b70",
+        "evidence-4854fb2e446f7abbe8934608",
+        "evidence-7f7b4f194f315f0dfc13e355",
+        "evidence-65e21d016cf9ac7925059582",
+        "evidence-9f8020212daa162faaf9a4c7",
+        "evidence-8c75e6af9e1eeff13aae1d48",
+        "evidence-7868d0bbb2758cf571e2e067",
+        "evidence-f273a35e20d36e680e2a42e0"
+      ],
+      "graph_edge_ids": [
+        "edge-aeab8566a9a8d08e3cddee37",
+        "edge-00e55eaa8b5bab8c522d7a71",
+        "edge-af0195116ea48ca60a925922",
+        "edge-b41de62555c7bcef92098486",
+        "edge-2d541622aa5fa1de5289f870"
+      ],
+      "validation_ids": [
+        "validation-50de504a40214a3541e01072",
+        "validation-ff58b045f2322ce85e98e58c"
+      ]
+    }
+  ],
+  "fetched_artifacts": [
+    {
+      "id": "artifact-78b23c50f4663815610ed660",
+      "run_id": "run-art116",
+      "artifact_id": "art-116-infra-topology-json",
+      "title": "ART-116 Infrastructure Topology JSON",
+      "artifact_type": "machine_readable_topology",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-116_infra_topology/topology.json",
+      "content_hash": "sha256:7bf629405a5276ff75ccabc6b18d279b4d0dfb00cf1b2605b3ab754328afa094",
+      "generated_by_operation_id": "op-art116-generate",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-d5dc79deda9a7478676b95a4",
+          "evidence-6c180dba90a82f35906efa23",
+          "evidence-a9ebfd9308abbb39209a106c",
+          "evidence-48b0b5c2a0f4ea2cbd97e7b0",
+          "evidence-190dfa03dde9b1a27ad8f8ea",
+          "evidence-1ee1b6c200572f5d3772a54d",
+          "evidence-db6a0220237922ed9ac1e03f",
+          "evidence-cc6b206e3d35684b82b05b1c"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/art-116_infra_topology/topology.json",
+          "execution-framework/migration-artifacts/art-116_infra_topology/topology.md",
+          "execution-framework/migration-artifacts/08-operations/infrastructure-topology-map.md",
+          "execution-framework/generated/envctl_target_registry.json",
+          "execution-framework/generated/package_scan.json",
+          "execution-framework/generated/envctl_migration_db_model.json",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/generated/shared_protocol_manifest.json"
+        ],
+        "producer_operation_id": "op-art116-generate",
+        "provenance": {
+          "helper_id": "helper-artifact-17",
+          "owner_agent": "artifact-agent",
+          "source_graph_uri": "generated/task_graph.csv",
+          "target_descriptor": "../examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+          "task_id": "ART-116_INFRA_TOPOLOGY"
+        },
+        "validation_ids": [
+          "validation-1db790bc6ec4238b7e2078f4",
+          "validation-2d264b1b620e2a3c40573f6e"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-2e401c84175d0095d86e20b8",
+          "edge-2a7037c191e7e0c59c910394",
+          "edge-c270413b575ddabcc51576d9",
+          "edge-89309f643d577210a5776f01",
+          "edge-8f0a8a663ede960125eee0c5"
+        ],
+        "links": [
+          {
+            "to": "artifact:08-operations-infrastructure-topology-map-md",
+            "type": "satisfies"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          },
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-8745fddfd065d3f6d528bce8",
+      "run_id": "run-art116",
+      "artifact_id": "art-116-infra-topology-md",
+      "title": "ART-116 Infrastructure Topology Markdown",
+      "artifact_type": "migration_artifact",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-116_infra_topology/topology.md",
+      "content_hash": "sha256:5e184546b382ca46ddb30216c5dbdf0293242a96324ea0cea1688dfaf843db11",
+      "generated_by_operation_id": "op-art116-generate",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-044068be7c08689517587524",
+          "evidence-6874f1afe3fe7f0606aa388e",
+          "evidence-b6c21ec97e64eb8b155b16c4",
+          "evidence-e1c6ddb94603fedbe8c3aaf3",
+          "evidence-11bec1ce4945b2616c951b7a",
+          "evidence-f4a0ff67c0d291c7e44a9962",
+          "evidence-5d3aa778a0cd0dc54199ba40",
+          "evidence-5ca3d80c83a7539af140f221"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/art-116_infra_topology/topology.json",
+          "execution-framework/migration-artifacts/art-116_infra_topology/topology.md",
+          "execution-framework/migration-artifacts/08-operations/infrastructure-topology-map.md",
+          "execution-framework/generated/envctl_target_registry.json",
+          "execution-framework/generated/package_scan.json",
+          "execution-framework/generated/envctl_migration_db_model.json",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/generated/shared_protocol_manifest.json"
+        ],
+        "producer_operation_id": "op-art116-generate",
+        "provenance": {
+          "helper_id": "helper-artifact-17",
+          "owner_agent": "artifact-agent",
+          "source_graph_uri": "generated/task_graph.csv",
+          "target_descriptor": "../examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+          "task_id": "ART-116_INFRA_TOPOLOGY"
+        },
+        "validation_ids": [
+          "validation-d51e33ad641c5552c959a3ee",
+          "validation-0bb6a9e2fb11781c89db0b86"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-eedd78deea6646863563fdcf",
+          "edge-9887310f75504ecf36e6e4ef",
+          "edge-1036c6c83f6cec17e75afc3d",
+          "edge-739cb7514a4682897566f211",
+          "edge-cda69b850ed727d6ab075e86"
+        ],
+        "links": [
+          {
+            "to": "artifact:08-operations-infrastructure-topology-map-md",
+            "type": "satisfies"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          },
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-280bf57e7b55cd2081c31b02",
+      "run_id": "run-art116",
+      "artifact_id": "08-operations-infrastructure-topology-map-md",
+      "title": "Infrastructure Topology Map",
+      "artifact_type": "migration_artifact",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/08-operations/infrastructure-topology-map.md",
+      "content_hash": "sha256:5e184546b382ca46ddb30216c5dbdf0293242a96324ea0cea1688dfaf843db11",
+      "generated_by_operation_id": "op-art116-generate",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-e907c7333b24d1d875de4b70",
+          "evidence-4854fb2e446f7abbe8934608",
+          "evidence-7f7b4f194f315f0dfc13e355",
+          "evidence-65e21d016cf9ac7925059582",
+          "evidence-9f8020212daa162faaf9a4c7",
+          "evidence-8c75e6af9e1eeff13aae1d48",
+          "evidence-7868d0bbb2758cf571e2e067",
+          "evidence-f273a35e20d36e680e2a42e0"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/art-116_infra_topology/topology.json",
+          "execution-framework/migration-artifacts/art-116_infra_topology/topology.md",
+          "execution-framework/migration-artifacts/08-operations/infrastructure-topology-map.md",
+          "execution-framework/generated/envctl_target_registry.json",
+          "execution-framework/generated/package_scan.json",
+          "execution-framework/generated/envctl_migration_db_model.json",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/generated/shared_protocol_manifest.json"
+        ],
+        "producer_operation_id": "op-art116-generate",
+        "provenance": {
+          "helper_id": "helper-artifact-17",
+          "owner_agent": "artifact-agent",
+          "source_graph_uri": "generated/task_graph.csv",
+          "target_descriptor": "../examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+          "task_id": "ART-116_INFRA_TOPOLOGY"
+        },
+        "validation_ids": [
+          "validation-50de504a40214a3541e01072",
+          "validation-ff58b045f2322ce85e98e58c"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-aeab8566a9a8d08e3cddee37",
+          "edge-00e55eaa8b5bab8c522d7a71",
+          "edge-af0195116ea48ca60a925922",
+          "edge-b41de62555c7bcef92098486",
+          "edge-2d541622aa5fa1de5289f870"
+        ],
+        "links": [
+          {
+            "to": "artifact:08-operations-infrastructure-topology-map-md",
+            "type": "satisfies"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          },
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          }
+        ]
+      }
+    }
+  ],
+  "verification": {
+    "artifact_files_exist": true,
+    "hashes_recorded": true,
+    "validation_evidence_linked": true
+  }
+}

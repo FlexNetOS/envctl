@@ -1,0 +1,256 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "ART-127_BLAST_RADIUS",
+  "status": "completed",
+  "started_at": "2026-07-04T23:19:11+00:00",
+  "completed_at": "2026-07-04T23:19:11+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-artifact-28",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/generate_art_127_blast_radius.py",
+    "execution-framework/migration-artifacts/art-127_blast_radius/blast-radius-map.md",
+    "execution-framework/migration-artifacts/art-127_blast_radius/blast-radius-map.json",
+    "execution-framework/migration-artifacts/01-current-state/blast-radius-map.md",
+    "execution-framework/logs/ART-127_BLAST_RADIUS.log",
+    "execution-framework/state/ART-127_BLAST_RADIUS.heartbeat.json",
+    "execution-framework/proof_records/ART-127_BLAST_RADIUS.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/generate_art_127_blast_radius.py",
+    "python3 -m py_compile scripts/generate_art_127_blast_radius.py"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "ART-127_BLAST_RADIUS",
+    "status": "passed",
+    "generated_at": "2026-07-04T23:19:11+00:00",
+    "artifacts": {
+      "json": "execution-framework/migration-artifacts/art-127_blast_radius/blast-radius-map.json",
+      "md": "execution-framework/migration-artifacts/art-127_blast_radius/blast-radius-map.md",
+      "canonical_md": "execution-framework/migration-artifacts/01-current-state/blast-radius-map.md"
+    },
+    "artifact_hashes": {
+      "json": "sha256:6228b922f1a9724977f169cf29318758e779e7bcb1b303448af5f557c98abdc5",
+      "md": "sha256:c5ba1ad9947825b8e711f0e51edc532eb33e1978bf2247f119af075d5d8a1a08",
+      "canonical_md": "sha256:c5ba1ad9947825b8e711f0e51edc532eb33e1978bf2247f119af075d5d8a1a08"
+    },
+    "registry_results": [
+      {
+        "artifact_row_id": "artifact-e0a69b7c6b65f9e4094d5f52",
+        "artifact_id": "01-current-state-blast-radius-map-md",
+        "run_id": "run-art-127-blast-radius",
+        "path": "execution-framework/migration-artifacts/01-current-state/blast-radius-map.md",
+        "content_hash": "sha256:c5ba1ad9947825b8e711f0e51edc532eb33e1978bf2247f119af075d5d8a1a08",
+        "producer_operation_id": "op-art-127-generate-blast-radius",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-2ad5acf6b31d139ec8f72b80",
+          "evidence-a9491440ef1cf5e96da4b80a",
+          "evidence-daee36b7cd3eac522c1451da",
+          "evidence-14c15fa69cab62f80da6150b",
+          "evidence-7149a15b7f1467ccbceb153a",
+          "evidence-5f067251ba12e6f7d9cb9776",
+          "evidence-447dee12b946cdae9e443ac3"
+        ],
+        "graph_edge_ids": [
+          "edge-c52e8db06d7079d751e30bf8",
+          "edge-794f10ca38e0bd65480389f1",
+          "edge-67bf53dc990ef6ff674b261e",
+          "edge-a0546d54822e7e01d08cc1d1"
+        ],
+        "validation_ids": [
+          "validation-44bb7d647ab8d4fbb526d914",
+          "validation-834ff64107804240c58b80a3"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-f4b3e32820d58ce274603edd",
+        "artifact_id": "art-127-blast-radius-map-json",
+        "run_id": "run-art-127-blast-radius",
+        "path": "execution-framework/migration-artifacts/art-127_blast_radius/blast-radius-map.json",
+        "content_hash": "sha256:6228b922f1a9724977f169cf29318758e779e7bcb1b303448af5f557c98abdc5",
+        "producer_operation_id": "op-art-127-generate-blast-radius",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-f73462f806f10c87a7b916b7",
+          "evidence-5fb329454c7f797fbdf774b3",
+          "evidence-404d86f02d61d9c3e5882289",
+          "evidence-86d960c327ff16e2e2e8dacc",
+          "evidence-d2b88cc265f42cea2f7ea2fe",
+          "evidence-220415b5d7a9cb09643215ce",
+          "evidence-b8ac8b2223a4191b1a1b7c2b"
+        ],
+        "graph_edge_ids": [
+          "edge-542e740db48b56aaaf8cad1c",
+          "edge-6fcf3f51193d86ed547a2f8c"
+        ],
+        "validation_ids": [
+          "validation-864c5ea3fc8df2207c603515"
+        ]
+      }
+    ],
+    "registered_artifacts": [
+      {
+        "id": "artifact-e0a69b7c6b65f9e4094d5f52",
+        "run_id": "run-art-127-blast-radius",
+        "artifact_id": "01-current-state-blast-radius-map-md",
+        "title": "Blast Radius Map",
+        "artifact_type": "migration_artifact",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/01-current-state/blast-radius-map.md",
+        "content_hash": "sha256:c5ba1ad9947825b8e711f0e51edc532eb33e1978bf2247f119af075d5d8a1a08",
+        "generated_by_operation_id": "op-art-127-generate-blast-radius",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-2ad5acf6b31d139ec8f72b80",
+            "evidence-a9491440ef1cf5e96da4b80a",
+            "evidence-daee36b7cd3eac522c1451da",
+            "evidence-14c15fa69cab62f80da6150b",
+            "evidence-7149a15b7f1467ccbceb153a",
+            "evidence-5f067251ba12e6f7d9cb9776",
+            "evidence-447dee12b946cdae9e443ac3"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/art-127_blast_radius/blast-radius-map.md",
+            "execution-framework/migration-artifacts/art-127_blast_radius/blast-radius-map.json",
+            "execution-framework/migration-artifacts/01-current-state/blast-radius-map.md",
+            "execution-framework/generated/envctl_target_registry.json",
+            "execution-framework/generated/envctl_migration_db_model.json",
+            "execution-framework/generated/shared_protocol_manifest.json",
+            "execution-framework/generated/contract_manifest.json"
+          ],
+          "producer_operation_id": "op-art-127-generate-blast-radius",
+          "provenance": {
+            "helper_id": "helper-artifact-28",
+            "owner_agent": "artifact-agent",
+            "source_graph_uri": "execution-framework/generated/task_graph.csv",
+            "task_id": "ART-127_BLAST_RADIUS"
+          },
+          "validation_ids": [
+            "validation-44bb7d647ab8d4fbb526d914",
+            "validation-834ff64107804240c58b80a3"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-c52e8db06d7079d751e30bf8",
+            "edge-794f10ca38e0bd65480389f1",
+            "edge-67bf53dc990ef6ff674b261e",
+            "edge-a0546d54822e7e01d08cc1d1"
+          ],
+          "links": [
+            {
+              "to": "artifact:09-governance-risk-register-md",
+              "type": "informs"
+            },
+            {
+              "to": "artifact:08-operations-incident-response-md",
+              "type": "informs"
+            },
+            {
+              "to": "artifact:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            }
+          ]
+        }
+      },
+      {
+        "id": "artifact-f4b3e32820d58ce274603edd",
+        "run_id": "run-art-127-blast-radius",
+        "artifact_id": "art-127-blast-radius-map-json",
+        "title": "Blast Radius Map JSON",
+        "artifact_type": "machine_readable_record",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/art-127_blast_radius/blast-radius-map.json",
+        "content_hash": "sha256:6228b922f1a9724977f169cf29318758e779e7bcb1b303448af5f557c98abdc5",
+        "generated_by_operation_id": "op-art-127-generate-blast-radius",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-f73462f806f10c87a7b916b7",
+            "evidence-5fb329454c7f797fbdf774b3",
+            "evidence-404d86f02d61d9c3e5882289",
+            "evidence-86d960c327ff16e2e2e8dacc",
+            "evidence-d2b88cc265f42cea2f7ea2fe",
+            "evidence-220415b5d7a9cb09643215ce",
+            "evidence-b8ac8b2223a4191b1a1b7c2b"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/art-127_blast_radius/blast-radius-map.md",
+            "execution-framework/migration-artifacts/art-127_blast_radius/blast-radius-map.json",
+            "execution-framework/migration-artifacts/01-current-state/blast-radius-map.md",
+            "execution-framework/generated/envctl_target_registry.json",
+            "execution-framework/generated/envctl_migration_db_model.json",
+            "execution-framework/generated/shared_protocol_manifest.json",
+            "execution-framework/generated/contract_manifest.json"
+          ],
+          "producer_operation_id": "op-art-127-generate-blast-radius",
+          "provenance": {
+            "helper_id": "helper-artifact-28",
+            "owner_agent": "artifact-agent",
+            "task_id": "ART-127_BLAST_RADIUS"
+          },
+          "validation_ids": [
+            "validation-864c5ea3fc8df2207c603515"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-542e740db48b56aaaf8cad1c",
+            "edge-6fcf3f51193d86ed547a2f8c"
+          ],
+          "links": [
+            {
+              "to": "artifact:01-current-state-blast-radius-map-md",
+              "type": "machine_readable_for"
+            }
+          ]
+        }
+      }
+    ],
+    "registry_summary": {
+      "artifact_index_hash_rows": 2,
+      "validation_count": 3,
+      "evidence_count": 14,
+      "graph_edge_count": 6
+    },
+    "coverage": {
+      "services": 1,
+      "tables": 2,
+      "queues": 2,
+      "apis": 2,
+      "credentials": 2,
+      "failure_modes_total": 9
+    },
+    "errors": []
+  },
+  "checksums": {
+    "execution-framework/scripts/generate_art_127_blast_radius.py": "cf9afb14adaac7662fd6ee06a12f22167aacc02ba42728c802c1ba7e3c11aa0e",
+    "execution-framework/migration-artifacts/art-127_blast_radius/blast-radius-map.md": "c5ba1ad9947825b8e711f0e51edc532eb33e1978bf2247f119af075d5d8a1a08",
+    "execution-framework/migration-artifacts/art-127_blast_radius/blast-radius-map.json": "6228b922f1a9724977f169cf29318758e779e7bcb1b303448af5f557c98abdc5",
+    "execution-framework/migration-artifacts/01-current-state/blast-radius-map.md": "c5ba1ad9947825b8e711f0e51edc532eb33e1978bf2247f119af075d5d8a1a08",
+    "execution-framework/logs/ART-127_BLAST_RADIUS.log": "8391bd65c0ae40a474012a76cd7b52ff93d2bb5628775a4b40dc34f992b0cd55",
+    "execution-framework/state/ART-127_BLAST_RADIUS.heartbeat.json": "9bce8108eb6e1f147384792c69eacebb3c7b667fc436e6af388fc9e661aacd4a",
+    "execution-framework/proof_records/proof_ledger.jsonl": "7c30b1bd6188eacf67cc5d89df1d28016da9fc9a8995f8721ca8a6552a257295"
+  },
+  "logs_uri": "logs/ART-127_BLAST_RADIUS.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "execution-framework/migration-artifacts/art-127_blast_radius/blast-radius-map.md",
+    "execution-framework/migration-artifacts/art-127_blast_radius/blast-radius-map.json",
+    "execution-framework/migration-artifacts/01-current-state/blast-radius-map.md",
+    "execution-framework/logs/ART-127_BLAST_RADIUS.log",
+    "execution-framework/generated/envctl_target_registry.json",
+    "execution-framework/generated/envctl_migration_db_model.json",
+    "execution-framework/generated/shared_protocol_manifest.json",
+    "execution-framework/generated/contract_manifest.json"
+  ],
+  "failure_reason": "",
+  "next_action": "run VER-300_UNIT_VALIDATION"
+}

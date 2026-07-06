@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "envctl Migration Approval Request",
+  "type": "object",
+  "required": [
+    "approval_id",
+    "run_id",
+    "operation_id",
+    "risk",
+    "status"
+  ],
+  "properties": {
+    "approval_id": {
+      "type": "string"
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "operation_id": {
+      "type": "string"
+    },
+    "risk": {
+      "enum": [
+        "R0",
+        "R1",
+        "R2",
+        "R3",
+        "R4",
+        "R5"
+      ]
+    },
+    "status": {
+      "enum": [
+        "open",
+        "approved",
+        "denied",
+        "expired",
+        "cancelled"
+      ]
+    },
+    "requested_by": {
+      "type": "string"
+    },
+    "decided_by": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "reason": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

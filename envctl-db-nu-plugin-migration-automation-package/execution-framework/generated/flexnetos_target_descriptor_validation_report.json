@@ -1,0 +1,61 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-200_FLEXNETOS_TARGET_DESCRIPTOR",
+  "status": "passed",
+  "generated_at": "2026-07-04T23:18:58+00:00",
+  "source_descriptor": "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+  "artifact_descriptor": "execution-framework/migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+  "descriptor": {
+    "target_id": "flexnetos-vs-lifeos",
+    "target_type": "mixed",
+    "primary_root": "/home/flexnetos/FlexNetOS",
+    "compare_root": "/home/flexnetos/lifeos",
+    "output_root": "migration-artifacts",
+    "safety": {
+      "default_mode": "approval-gated",
+      "max_auto_risk": "R2",
+      "allow_network": false,
+      "allow_destructive": false
+    },
+    "artifact_contract": {
+      "name": "full-migration-artifact-contract",
+      "version": 1
+    },
+    "recipe": {
+      "name": "codex-flexnetos-full-artifact-run",
+      "version": 1
+    }
+  },
+  "descriptor_hash": "sha256:326fcff52bad11582f276a96bcd4cd0a56801e585b572b047c6e32f384e2eb0c",
+  "source_descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384",
+  "artifact_sha256": "a9e3645681fdc278da3809d22227474e02c8f3ec6b74ef03447af3f6ae71702a",
+  "root_checks": {
+    "primary_root_expected": true,
+    "compare_root_expected": true,
+    "primary_root_exists": true,
+    "compare_root_exists": false
+  },
+  "warnings": [
+    "compare_root is described but not present in this runtime"
+  ],
+  "secret_exclude_patterns": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "secret_scan": {
+    "status": "passed",
+    "scanned_files": [
+      "execution-framework/migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml"
+    ],
+    "findings": []
+  },
+  "errors": [],
+  "evidence": [
+    "execution-framework/migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+    "execution-framework/generated/flexnetos_target_descriptor_validation_report.json",
+    "execution-framework/logs/REQ-200_FLEXNETOS_TARGET_DESCRIPTOR.log"
+  ]
+}

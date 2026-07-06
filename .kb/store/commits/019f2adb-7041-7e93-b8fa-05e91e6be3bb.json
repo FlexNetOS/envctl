@@ -1,0 +1,5 @@
+{
+  "commit": {"author":"drdave <flexnetos@de-flex.net>","changes":[{"change_type":"created","content_hash":"0f47f74e2906dabaf1ad407bbae2c14ddd6fdfcfd5386a2487d913879aa99654","doc_type":"task","document_id":"019f2adb-59da-76c2-9164-1374e35534f9","new_version":1,"previous_version":null,"slug":"tasks/import-host-artifacts-yazelix-mission-control-20260703","title":"Import host artifacts from 2026-07-03 yazelix mission-control session"}],"created_at":"2026-07-04T02:00:52.011988254Z","id":"019f2adb-7041-7e93-b8fa-05e91e6be3bb","message":"task: import host artifacts from 2026-07-03 yazelix mission-control session"},
+  "content_hash": "664a63ae7e3a7f2f36b22e6e2158c21d1b171a8d41799bdb984c1d15ef0d9900",
+  "hash_version": 3
+}
