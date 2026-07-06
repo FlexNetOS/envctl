@@ -323,7 +323,6 @@ if [ -d "$AG" ]; then
   echo "PASS: Codex-tree parity locked (.agents/skills mirror carries the toolchain law · HF · differential-drive driver)"
 fi
 
-
 # ---- source-of-truth + transport + terminal artifact-gate hardening ----
 PE_SCRIPT_DIR="$PE_DIR/scripts"
 ARTIFACT_GATE="$PE_SCRIPT_DIR/plan-artifact-gate.sh"
@@ -363,5 +362,4 @@ for t in test-plan-artifact-gate.sh test-plan-evals.sh test-plan-weave-dispatch.
   [ -f "$PE_SCRIPT_DIR/tests/$t" ] || fail "new planning regression test missing: $t"
 done
 echo "PASS: source-of-truth + weave transport + terminal artifact-gate contract locked"
-
 echo "PASS: plan contract locked — targets rows, graph artifact names, JSON validity, and the documented examples all conform ($jq_note)"
