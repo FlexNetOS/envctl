@@ -1,0 +1,13 @@
+{
+  "task_id": "ART-118_OBSERVABILITY",
+  "status": "completed",
+  "started_at": "2026-07-04T23:29:20+00:00",
+  "updated_at": "2026-07-04T23:29:39+00:00",
+  "proof_uri": "proof_records/ART-118_OBSERVABILITY.proof.json",
+  "logs_uri": "logs/ART-118_OBSERVABILITY.log",
+  "artifact_paths": {
+    "markdown": "execution-framework/migration-artifacts/art-118_observability/observability-map.md",
+    "json": "execution-framework/migration-artifacts/art-118_observability/observability-map.json",
+    "contract_markdown": "execution-framework/migration-artifacts/08-operations/observability-map.md"
+  }
+}

@@ -1,0 +1,48 @@
+REQ-031_PLUGIN_COMMAND_SURFACE
+started_at: 2026-07-04T23:06:55+00:00
+completed_at: 2026-07-04T23:08:41+00:00
+actor: codex-cli-local
+helper_id: helper-nu-command-01
+
+Scope:
+- Implement the operator command surface for target list, run plan, run start, pause, resume, approve, status, proof, replay.
+- Keep durable state owned by envctl; expose Nushell-native structured command metadata.
+
+Files changed:
+- execution-framework/generated/nu_plugin_command_manifest.json
+- execution-framework/examples/nu/operator-session-template.nu
+- execution-framework/scripts/verify_plugin_command_surface.py
+- execution-framework/state/REQ-031_PLUGIN_COMMAND_SURFACE.heartbeat.json
+- execution-framework/logs/REQ-031_PLUGIN_COMMAND_SURFACE.log
+- execution-framework/proof_records/REQ-031_PLUGIN_COMMAND_SURFACE.proof.json
+- execution-framework/proof_records/proof_ledger.jsonl
+
+Verification command:
+python3 scripts/verify_plugin_command_surface.py
+
+Verification output:
+{
+  "manifest": "generated/nu_plugin_command_manifest.json",
+  "mutating_command_count": 4,
+  "operator_template": "examples/nu/operator-session-template.nu",
+  "read_command_count": 5,
+  "required_command_count": 9,
+  "required_commands": [
+    "envctl migration approve",
+    "envctl migration pause",
+    "envctl migration proof",
+    "envctl migration replay",
+    "envctl migration resume",
+    "envctl migration run plan",
+    "envctl migration run start",
+    "envctl migration status",
+    "envctl migration target list"
+  ],
+  "status": "passed"
+}
+
+JSON validation:
+json ok
+
+Sandbox note:
+NU_PLUGIN_REPO resolved to /home/flexnetos/FlexNetOS/src/nu_plugin, but the active write root for this execution cell is execution-framework. The operator surface was therefore implemented in the package command manifest and package-local Nu template, with a verifier/proof artifact for downstream integration.

@@ -1,0 +1,579 @@
+{
+  "schema_version": "1.0",
+  "created_at": "2026-07-04T00:00:00-05:00",
+  "policy": "upgrade-only/no-downgrade: original files are preserved; execution framework is added as a new layer.",
+  "source_archive": "envctl-db-nu-plugin-migration-automation-package.tar.gz",
+  "file_count": 114,
+  "files": [
+    {
+      "path": "INSTALL_IN_REPOS.sh",
+      "size_bytes": 2038,
+      "sha256": "2ccb956bf29757d3263f807642ad83eef61649799c254cbb970f58405472c3c9"
+    },
+    {
+      "path": "PACKAGE_MANIFEST.json",
+      "size_bytes": 20903,
+      "sha256": "0fcb8e8391a49922e80fdf1afb4429e6c00a4353b10efeccd0bf83589f20c9bd"
+    },
+    {
+      "path": "PROMPT_PACKAGE_COMBINED.md",
+      "size_bytes": 109387,
+      "sha256": "f6c778c45b3754c48ba43da46441cf2cc0d48a6ed0f730cf08b5c78bd58b7daa"
+    },
+    {
+      "path": "README.md",
+      "size_bytes": 5669,
+      "sha256": "bead85fe3dbaaa6bb8e71998f12d7ecbb52c822995d44331e48955025e96a23f"
+    },
+    {
+      "path": "RUN_WITH_CODEX_ENVCTL.sh",
+      "size_bytes": 2764,
+      "sha256": "3baa152ad2d551574930fae960d1b00a1eafb0ed0ff619a5278d24ae608f0a55"
+    },
+    {
+      "path": "codex/AGENTS.envctl.md.template",
+      "size_bytes": 1148,
+      "sha256": "fcae0843ddf4f0b5bf3fe7c068813c374bf120367f88ae78ba52fda84bb5974b"
+    },
+    {
+      "path": "codex/AGENTS.nu_plugin.md.template",
+      "size_bytes": 1005,
+      "sha256": "8154c61343c142b6c700908123aa2540e14cce15e8395fd6e5bf7e55f0be53bb"
+    },
+    {
+      "path": "codex/agents/spark-envctl-db-architect.config.toml",
+      "size_bytes": 255,
+      "sha256": "fa383e593aa22c62a06839bad7d4655ad4e1f4f54598a90cbea030cf472a9be5"
+    },
+    {
+      "path": "codex/agents/spark-envctl-runner.config.toml",
+      "size_bytes": 263,
+      "sha256": "f00d9fe3adfe27fb13ebdc17bc46c23a692d6bc63a622ca3fb536870f34c802a"
+    },
+    {
+      "path": "codex/agents/spark-flexnetos-adapter.config.toml",
+      "size_bytes": 258,
+      "sha256": "6aa36783dd3ac9fe9a5fa359207516266e57428ff2ed048d2e9412de6d670399"
+    },
+    {
+      "path": "codex/agents/spark-issue-integrator.config.toml",
+      "size_bytes": 252,
+      "sha256": "15986993bb92529a260235f322927e1eeeb51bfdf858e13dd78fe101d54c5e2b"
+    },
+    {
+      "path": "codex/agents/spark-live-visuals.config.toml",
+      "size_bytes": 254,
+      "sha256": "513c2e568511eb42c3c053c1f98c4e7e3bb5c3f8a31cc35b7409dc36d49fc008"
+    },
+    {
+      "path": "codex/agents/spark-nu-plugin-protocol.config.toml",
+      "size_bytes": 269,
+      "sha256": "f5ca7c3e572c583f4a451ca8d8b5877da2f10785ffcc41492ef5d1f2547836f4"
+    },
+    {
+      "path": "codex/agents/spark-security-reproducibility.config.toml",
+      "size_bytes": 264,
+      "sha256": "1d24bfc456a80e28b233c4e3b457c893eae459c4d9a8899d5e4c387d01cfddcb"
+    },
+    {
+      "path": "codex/agents/spark-test-validation.config.toml",
+      "size_bytes": 252,
+      "sha256": "b157b8f03339bba325651c4299957e7c2a7d74a12602edac7cac46bb74493043"
+    },
+    {
+      "path": "codex/envctl-nu-plugin-migration.config.toml",
+      "size_bytes": 704,
+      "sha256": "78428a81830c8b92e4690eab437e590c9b1409bd8eff27438559f2752bcf65d0"
+    },
+    {
+      "path": "examples/env/envctl-migration.example.toml",
+      "size_bytes": 270,
+      "sha256": "9fc339c28e9c18d75dd75d3ac395ccd3c0bec524698e654b67bc20b7ef2d701d"
+    },
+    {
+      "path": "examples/nu/operator-session-template.nu",
+      "size_bytes": 704,
+      "sha256": "5ca01317cf7e31677246eac9dc5bd65785b0c8ac61c556e02047dfbfe3e2f81a"
+    },
+    {
+      "path": "examples/recipes/database-migration.yaml",
+      "size_bytes": 877,
+      "sha256": "942aefb043426b179d58c46fde1a3099867178949d8a47c90ead5c5c3c763b61"
+    },
+    {
+      "path": "examples/recipes/full-migration-artifact-run.yaml",
+      "size_bytes": 1188,
+      "sha256": "29a49cf16530f7382084390d0218d624748b6a36b44274798e643be8030ab095"
+    },
+    {
+      "path": "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+      "size_bytes": 787,
+      "sha256": "71f4aab77e91d0fa9a414350dee50f23fc3c6492b265c607fe9e4de93c3fe190"
+    },
+    {
+      "path": "examples/target-descriptors/generic-codebase.yaml",
+      "size_bytes": 662,
+      "sha256": "59a4045f77e30a628be343daa19e828e51b951785fc76854819aa641b4903f88"
+    },
+    {
+      "path": "expected-output/database-capability-matrix.md",
+      "size_bytes": 525,
+      "sha256": "42ef813edd3a3ff73597ec3a42a3b5c4a88f954de9b6c5b0df3ae1692e3ab100"
+    },
+    {
+      "path": "expected-output/envctl-feature-file-map.md",
+      "size_bytes": 418,
+      "sha256": "442ae0651abed16fa614479c68c509918c3bca61de21bf798849ed0946f81e30"
+    },
+    {
+      "path": "expected-output/migration-automation-artifacts.md",
+      "size_bytes": 507,
+      "sha256": "9742609a0ef407f8ed5969481b67357ab080493f602458d4b352edb7f7755fbb"
+    },
+    {
+      "path": "expected-output/nu-plugin-feature-file-map.md",
+      "size_bytes": 447,
+      "sha256": "67d0d7fb30bf7c46a6c3c0b9a603efcd799c7d2d4b41238df0aa13018827862d"
+    },
+    {
+      "path": "helpers/build_combined_prompt.py",
+      "size_bytes": 1331,
+      "sha256": "d3a4a8a1978571b3308a2bcab621c6b95fe342d4129721d3bb6e6c864c9be06c"
+    },
+    {
+      "path": "helpers/copy_to_repos.sh",
+      "size_bytes": 89,
+      "sha256": "1ce586a4ed86c6028075d897d431b404a7b08512050f36759b85ab56f84abcbc"
+    },
+    {
+      "path": "helpers/package_manifest.py",
+      "size_bytes": 586,
+      "sha256": "088ad4bf31a9884c53f4b5e7c47fff68795631823efee46259dc97ace8c44da8"
+    },
+    {
+      "path": "helpers/redaction_patterns.txt",
+      "size_bytes": 216,
+      "sha256": "2c2094acfe9363f553c98ed4f79e719cf36bdc78fe1aafc56d92e33aef50e8e1"
+    },
+    {
+      "path": "helpers/validate_package.py",
+      "size_bytes": 1279,
+      "sha256": "271a751be44701fcc6d03b59404d2e458b030e82991b544ae7b44a18ef11ba66"
+    },
+    {
+      "path": "prompts/ACCEPTANCE_CRITERIA.md",
+      "size_bytes": 2069,
+      "sha256": "540f6e41473c234ebacb64495d75747b1227337faf35cbfc402f63819e113a20"
+    },
+    {
+      "path": "prompts/AGENT_CONTROL_PROTOCOL.md",
+      "size_bytes": 1580,
+      "sha256": "4f22d8e5e4a7ef652d0b3903aeb27180c6a1a5ecfc7c1ff0458d3b4170e278d5"
+    },
+    {
+      "path": "prompts/ANY_TARGET_EXTENSION_SPEC.md",
+      "size_bytes": 1764,
+      "sha256": "9ab743539a8d645ec825bd54fe6183cc3028730e052893575d0eabae4b3d738f"
+    },
+    {
+      "path": "prompts/DATABASE_FEATURE_SPEC.md",
+      "size_bytes": 2746,
+      "sha256": "1bb940e2571cc8f167f6e4e13770c4a008e4e4e5b3dcb78bdc5e5eaa854ea109"
+    },
+    {
+      "path": "prompts/GAP_ANALYSIS.md",
+      "size_bytes": 3711,
+      "sha256": "776d398470b71a4ed5cc3580b8284450c62dc826747eccd907533131886bdc47"
+    },
+    {
+      "path": "prompts/IMPLEMENTATION_PHASES.md",
+      "size_bytes": 1500,
+      "sha256": "cee551fa28a31375820dc5a65ab27f7e800d783e3e21320dcd9beda671fb76d1"
+    },
+    {
+      "path": "prompts/ISSUE_ENVCTL.md",
+      "size_bytes": 1646,
+      "sha256": "e66d80e7810c2004088d58e519a302142e300ecc7582dc7957cbbb800bb1dd06"
+    },
+    {
+      "path": "prompts/ISSUE_NU_PLUGIN.md",
+      "size_bytes": 1491,
+      "sha256": "c5973ffba67e67780528b35b8019b6adfe2e7442081a5719410a3ea0636d9539"
+    },
+    {
+      "path": "prompts/ISSUE_SHARED_PROTOCOL.md",
+      "size_bytes": 1019,
+      "sha256": "c7c8077c53e749768ede0eac7651bb2e7d6f09fc6da3e8621b19c204468e495d"
+    },
+    {
+      "path": "prompts/LIVE_VISUALS_AND_HUMAN_CONTROL.md",
+      "size_bytes": 1430,
+      "sha256": "e1c3f9840eceba2bb06a26ec346675f742f1eae8a9a0d80d14bf9ca7f1e2c26d"
+    },
+    {
+      "path": "prompts/MASTER_PROMPT_ENVCTL_DB_NU_PLUGIN.md",
+      "size_bytes": 9269,
+      "sha256": "ac66a1ffd6f0ae3c7c67d7cde08593da60c3e5a3a0c30a4f5cc79ef2a8299830"
+    },
+    {
+      "path": "prompts/NU_PLUGIN_CONTRACT.md",
+      "size_bytes": 2343,
+      "sha256": "397e6cf0a39aadc2508befcc37c2bc75342f33672c26f76c38ec33f8ae870c01"
+    },
+    {
+      "path": "prompts/SECURITY_REPRODUCIBILITY_MODEL.md",
+      "size_bytes": 1365,
+      "sha256": "2796b3701b7ddf90acee6950c4cd82c118e14da87fff5313748d73609343ca84"
+    },
+    {
+      "path": "prompts/STRATEGY_DECISION.md",
+      "size_bytes": 2321,
+      "sha256": "c1846e51d42216f47e9c346d2301c9769adfb3a00f5595618d077ab9270c03bf"
+    },
+    {
+      "path": "prompts/UTILIZE_FLEXNETOS_PACKAGE.md",
+      "size_bytes": 3180,
+      "sha256": "2a8f66bee3f441a29a789fb5c47a67067f9b07e0c29619518b6793006d653393"
+    },
+    {
+      "path": "prompts/spark_helpers/spark-envctl-db-architect.md",
+      "size_bytes": 839,
+      "sha256": "6876164e51b6891eb3f1b07f8d38f3acc1ca24162c936de63fc18ca1418856b6"
+    },
+    {
+      "path": "prompts/spark_helpers/spark-envctl-runner.md",
+      "size_bytes": 814,
+      "sha256": "c02877fdf36804347deaa0a61470592d467f37c132f2b5b10893dcc53e5f7e1a"
+    },
+    {
+      "path": "prompts/spark_helpers/spark-flexnetos-adapter.md",
+      "size_bytes": 776,
+      "sha256": "a6e6d1d09e86a613a22c8a52cdcd7dff3471988a6d94c89f81898a92d4c680ef"
+    },
+    {
+      "path": "prompts/spark_helpers/spark-issue-integrator.md",
+      "size_bytes": 759,
+      "sha256": "2190ad4dfc552f507b218c7e330c82253c9fd560a4a42f18c9b8729c167b8fce"
+    },
+    {
+      "path": "prompts/spark_helpers/spark-live-visuals.md",
+      "size_bytes": 812,
+      "sha256": "088d87d749aae9d6549dc5e2fcb1872b0c51452e23bf4e22990aa0d26c5d49cd"
+    },
+    {
+      "path": "prompts/spark_helpers/spark-nu-plugin-protocol.md",
+      "size_bytes": 831,
+      "sha256": "ebae9e8f4ec6f35a461a9a9288cf29f628550421ee8660d708c7e7f76a5cfd9b"
+    },
+    {
+      "path": "prompts/spark_helpers/spark-security-reproducibility.md",
+      "size_bytes": 799,
+      "sha256": "200e1d2aa1e3df1f3b77d02e79ca3204f62475f7924ad3d8eff04a1d1b65a40e"
+    },
+    {
+      "path": "prompts/spark_helpers/spark-test-validation.md",
+      "size_bytes": 780,
+      "sha256": "b96024bffc60da1aba336d6dc1749d971d0b4b44df7ef12975e9ac08ad7cbca9"
+    },
+    {
+      "path": "schemas/approval_request.schema.json",
+      "size_bytes": 886,
+      "sha256": "d95f8979a855f4d5670a7d9e17a0ca672f0e8a52e2e079f432af0580bcc5b9c5"
+    },
+    {
+      "path": "schemas/artifact_record.schema.json",
+      "size_bytes": 1135,
+      "sha256": "9813ddd2c93c9ddb571de4a5c793df1e179ac488c0f2807b863032eeb8830ceb"
+    },
+    {
+      "path": "schemas/envctl_migration_api.openapi.json",
+      "size_bytes": 2046,
+      "sha256": "8732cb716e9b6ebd759ef30288192da6349d08beb58d09e92232399ebbc37dd1"
+    },
+    {
+      "path": "schemas/migration_recipe.schema.json",
+      "size_bytes": 2009,
+      "sha256": "756eb3d11f77096575fcd8c0146d3b3028cfce62e0c9661be140287500f55790"
+    },
+    {
+      "path": "schemas/nu_plugin_command_manifest.schema.json",
+      "size_bytes": 926,
+      "sha256": "4c03caa8b00e3caa1272c08dd038454eac81554fe2af1c9191e7885b9ea8405f"
+    },
+    {
+      "path": "schemas/operation.schema.json",
+      "size_bytes": 1111,
+      "sha256": "112dce97ed3709887e52f4bcce30005c51c97632937f54a815c9eefb93e326ed"
+    },
+    {
+      "path": "schemas/run_event.schema.json",
+      "size_bytes": 1183,
+      "sha256": "a33e379dbe4f53bc86353240e0df5f691fd2f46e26f92e9481e41f4e5025a034"
+    },
+    {
+      "path": "schemas/target_descriptor.schema.json",
+      "size_bytes": 2418,
+      "sha256": "2b394af8fea1ab7e88c83b1c50a244a21156d7ba728883e76d343f7aeff9a436"
+    },
+    {
+      "path": "schemas/validation_result.schema.json",
+      "size_bytes": 756,
+      "sha256": "0e56eccbee2a5fb135a5410507c417d22db73784b9ae11b3997c45847f3944a5"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/INSTALL_IN_REPO.sh",
+      "size_bytes": 1322,
+      "sha256": "51f7b675ba92f162e8ead13b9fab1a16110055accd64d3d77f6f3bb9152c2b62"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/PACKAGE_MANIFEST.json",
+      "size_bytes": 6652,
+      "sha256": "de06a830335b5d3ee8bcafdab97897a11f91c82fad63a38618fb9b257acd064c"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/PROMPT_PACKAGE_COMBINED.md",
+      "size_bytes": 38849,
+      "sha256": "c9d1c09765fcf6d2161f6dc125aa8cb54939da5d59eb193f083fe7898fba658e"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/README.md",
+      "size_bytes": 5005,
+      "sha256": "75705c5f5d123d1289858c801f8716b5ce34766e3119629f87e2bec941e740f4"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/RUN_WITH_CODEX.sh",
+      "size_bytes": 1693,
+      "sha256": "bb3df3938817968e066d0691518dc48f5ab3cbf983ec4069a9e6ccfe12edba8b"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/codex/AGENTS.md.template",
+      "size_bytes": 2086,
+      "sha256": "ceb6e341a4a25ef2e923fc65474c5f3c416c4d312239c4781ab555569e7fad09"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/codex/agents/spark-code-runtime-debug.config.toml",
+      "size_bytes": 329,
+      "sha256": "699abd7af37855d3a9bba300d6e22e09481a6391c939aead6393e98143060404"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/codex/agents/spark-data-schema-lineage.config.toml",
+      "size_bytes": 329,
+      "sha256": "699abd7af37855d3a9bba300d6e22e09481a6391c939aead6393e98143060404"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/codex/agents/spark-filesystem-repo.config.toml",
+      "size_bytes": 329,
+      "sha256": "699abd7af37855d3a9bba300d6e22e09481a6391c939aead6393e98143060404"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/codex/agents/spark-flexnetos-investigator.config.toml",
+      "size_bytes": 329,
+      "sha256": "699abd7af37855d3a9bba300d6e22e09481a6391c939aead6393e98143060404"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/codex/agents/spark-infra-security-obs.config.toml",
+      "size_bytes": 329,
+      "sha256": "699abd7af37855d3a9bba300d6e22e09481a6391c939aead6393e98143060404"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/codex/agents/spark-integrations-contracts.config.toml",
+      "size_bytes": 329,
+      "sha256": "699abd7af37855d3a9bba300d6e22e09481a6391c939aead6393e98143060404"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/codex/agents/spark-migration-controls.config.toml",
+      "size_bytes": 329,
+      "sha256": "699abd7af37855d3a9bba300d6e22e09481a6391c939aead6393e98143060404"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/codex/agents/spark-toolchain-deps.config.toml",
+      "size_bytes": 329,
+      "sha256": "699abd7af37855d3a9bba300d6e22e09481a6391c939aead6393e98143060404"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/codex/flexnetos-migration.config.toml",
+      "size_bytes": 2964,
+      "sha256": "abb439b825b6812956ab45891d2d0d44b9ad03e38ff7664554b47389b1a07a43"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/expected-output/migration-artifacts-tree.md",
+      "size_bytes": 5910,
+      "sha256": "927c559ce4c5ac90f4d6f0a709d823fcdf68a676c63c2ea99af2a14df53e94cd"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/helpers/artifact_manifest.py",
+      "size_bytes": 1983,
+      "sha256": "fa2432801e9bec96b948d813e99bc7af0691fbb9917a40333ca74d13a1a4c7c7"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/helpers/background_scan.sh",
+      "size_bytes": 9490,
+      "sha256": "4c09a0ffc6e339b2207469deed7a20036d3c7d4fcf01f7aa1930fb4728f5421c"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/helpers/make_wiki_index.py",
+      "size_bytes": 1237,
+      "sha256": "434b837a89a5e1cbccfa16b5cf35c343b7b4f37cd6e8073435186ba95b1f586a"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/helpers/redaction_patterns.txt",
+      "size_bytes": 267,
+      "sha256": "4d2cb894215c2d7d25da3888eb0ee91f68d6857f3b829a950da775b00f50ec8a"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/prompts/ARTIFACT_CONTRACT_FULL.md",
+      "size_bytes": 24694,
+      "sha256": "900473c3717b5c20cf635b115ab35131ab957e0de0622848f9240ff5e3bb9c88"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/prompts/EXECUTION_STYLE.md",
+      "size_bytes": 2434,
+      "sha256": "3dcb38e094a93525e753d4f189031df434cb248cda7bb3a0f8ddcf4eead18cf3"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/prompts/FLEXNETOS_INVESTIGATION_PROMPT.md",
+      "size_bytes": 3008,
+      "sha256": "345c871932913210249eccdd864ab2add0215842235ef73497127fa4f7c43e06"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/prompts/LINKING_AND_MEMORY_PROMPT.md",
+      "size_bytes": 1675,
+      "sha256": "86f73787ca97453c7e69011dfaad14c81d9b590ed6a2180261a525e649910fe8"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/prompts/MASTER_PROMPT.md",
+      "size_bytes": 6555,
+      "sha256": "469b78c7be371c540dc325dc8879f3b4406fc6beecd0fd81a6ce3bf108b11d01"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/prompts/spark_helpers/spark-code-runtime-debug.md",
+      "size_bytes": 740,
+      "sha256": "8938291d62651ae44d28f18cee7fa5f8e16057c78070303706f05262409fee15"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/prompts/spark_helpers/spark-data-schema-lineage.md",
+      "size_bytes": 749,
+      "sha256": "7e5165ff2ee115729523a4e747cbda46cc8aa55fead103bde62a17c43160625d"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/prompts/spark_helpers/spark-filesystem-repo.md",
+      "size_bytes": 767,
+      "sha256": "91df75c2d2e24f60b045858892e372f57f9770d7388cd4cf376ebc99161bedb3"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/prompts/spark_helpers/spark-flexnetos-investigator.md",
+      "size_bytes": 977,
+      "sha256": "369c38b7bf2a9823fb2a75910eb4c5273057825e39e82aed7c2d11760acce2b9"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/prompts/spark_helpers/spark-infra-security-obs.md",
+      "size_bytes": 856,
+      "sha256": "6615fd41364a6d02a873746dea64bec88915b2ede1b5be7b514c00264a1589c3"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/prompts/spark_helpers/spark-integrations-contracts.md",
+      "size_bytes": 662,
+      "sha256": "997e363863bac399342fa8afbe782adc65a524d8ff08ca6c7083ce44bee5f610"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/prompts/spark_helpers/spark-migration-controls.md",
+      "size_bytes": 802,
+      "sha256": "33af8812b80a0c09d810f8fca02c35af272401b0bb297fd6b53e19633ef91ae6"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/prompts/spark_helpers/spark-toolchain-deps.md",
+      "size_bytes": 695,
+      "sha256": "f45da57bf0f7d4f8150135794015363e6ad33b7fdbc606d6b279c12c2973e741"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/schemas/artifact_manifest.schema.json",
+      "size_bytes": 991,
+      "sha256": "845e6a82ea3f6b7fe7db50c832e60419abc11c428f1ee096ffd12fe4e881ca96"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/schemas/finding.schema.json",
+      "size_bytes": 552,
+      "sha256": "a1a3c91f265bc8f762b98e2c72ae88c245c64beb56ed3d2c3e1bd6c0a8ff4217"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/schemas/scan_run.schema.json",
+      "size_bytes": 429,
+      "sha256": "576d7e5082dd9873349ed914a263eb404ea9b156f418bddf5734540160be99d4"
+    },
+    {
+      "path": "source/codex-flexnetos-migration-prompt-package/source/previous-migration-artifact-context.md",
+      "size_bytes": 24175,
+      "sha256": "8db7e998ad79411c4ef577ff3bbf49ee3fcc357873c54efb372ddbaf7f076e94"
+    },
+    {
+      "path": "source/current-uploaded-context.md",
+      "size_bytes": 24175,
+      "sha256": "8db7e998ad79411c4ef577ff3bbf49ee3fcc357873c54efb372ddbaf7f076e94"
+    },
+    {
+      "path": "source/current-user-request.md",
+      "size_bytes": 1061,
+      "sha256": "9fb2550c37b258bc3dc4c796c839f2f328622d27ad0c26ddc4c57abbdba98a84"
+    },
+    {
+      "path": "source/execution-framework-task-prompt.md",
+      "size_bytes": 13606,
+      "sha256": "43e6b928227d182c483b09d643c942ad263e706e19e065d2050687b5ab186f5a"
+    },
+    {
+      "path": "source/previous-migration-artifact-context.md",
+      "size_bytes": 24175,
+      "sha256": "8db7e998ad79411c4ef577ff3bbf49ee3fcc357873c54efb372ddbaf7f076e94"
+    },
+    {
+      "path": "specs/command-surface.md",
+      "size_bytes": 508,
+      "sha256": "e26d3f0782df44b4fcbc790f46353619f64734d4e4854d7df6183953768c70dc"
+    },
+    {
+      "path": "specs/envctl-db-automation-architecture.md",
+      "size_bytes": 745,
+      "sha256": "47dd33610923400da60b394748c4e6e04630774a94920a32c7e83c11746c7e1b"
+    },
+    {
+      "path": "specs/envctl-nu-plugin-boundary.md",
+      "size_bytes": 674,
+      "sha256": "cac50c40cdb2bb8591fb21430feb60c918e4bb5b77f8e3df9c8805a7b017a422"
+    },
+    {
+      "path": "specs/flexnetos-adapter.md",
+      "size_bytes": 619,
+      "sha256": "ab34f0a7973113ffab5db90e19e515af0f0a045e8130d2505fdc207a627bce40"
+    },
+    {
+      "path": "specs/github-issues-index.md",
+      "size_bytes": 310,
+      "sha256": "2807386bd78de3123483e1bc609de1fe9741136e9261d4b3580a1a9b7d2d1691"
+    },
+    {
+      "path": "specs/replay-and-reproducibility.md",
+      "size_bytes": 494,
+      "sha256": "ad00bd1774bebe1ae4f73627c10a45017439e40c7c03d1480927d1f4f89659c2"
+    },
+    {
+      "path": "sql/001_migration_automation_schema.sql",
+      "size_bytes": 8608,
+      "sha256": "f0a8ad6ce7fba6023d8bfb765843fef07710387f9e720f7fe01305ce2d52bb0e"
+    },
+    {
+      "path": "sql/002_views_and_indexes.sql",
+      "size_bytes": 3819,
+      "sha256": "b9c4fee76504746742695119c84bfbb46dedb1e29da480103f2e6b6c5a83106e"
+    },
+    {
+      "path": "sql/003_seed_artifact_contract.sql",
+      "size_bytes": 491,
+      "sha256": "856caa810f5422921245d78d1d1de1201abf05372ca1f2dbe32ae7450c29a2c1"
+    },
+    {
+      "path": "sql/README.md",
+      "size_bytes": 343,
+      "sha256": "9d3aa610dda48aaeb6cfd8f5b8ef3cf5b8a4f4e7b56f481c79bb3e37a37ca132"
+    }
+  ]
+}

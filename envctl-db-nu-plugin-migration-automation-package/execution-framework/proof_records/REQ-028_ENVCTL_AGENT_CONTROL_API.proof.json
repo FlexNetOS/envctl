@@ -1,0 +1,49 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API",
+  "status": "completed",
+  "started_at": "2026-07-05T04:50:07+00:00",
+  "completed_at": "2026-07-05T04:50:07+00:00",
+  "actor": "envctl-runner-agent",
+  "helper_id": "helper-envctl-agent-api-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "execution-framework",
+  "files_changed": [
+    "execution-framework/scripts/agent_control_api.py",
+    "execution-framework/scripts/verify_agent_control_api.py",
+    "execution-framework/generated/envctl_agent_control_report.json",
+    "execution-framework/docs/ENVCTL_AGENT_CONTROL_API.md",
+    "execution-framework/logs/REQ-028_ENVCTL_AGENT_CONTROL_API.log",
+    "execution-framework/state/REQ-028_ENVCTL_AGENT_CONTROL_API.heartbeat.json"
+  ],
+  "commands_run": [
+    "python3 scripts/verify_agent_control_api.py",
+    "python3 -m py_compile scripts/agent_control_api.py scripts/verify_agent_control_api.py"
+  ],
+  "verification_output": {
+    "agent_control_report": "generated/envctl_agent_control_report.json",
+    "status": "pass",
+    "event_chain_valid": true,
+    "cli_smoke_passed": true,
+    "open_approvals": 0,
+    "operation_count": 4
+  },
+  "checksums": {
+    "execution-framework/scripts/agent_control_api.py": "c6450006ac22e6aa6608d9436a79bf8e8a4962e568d43bb6f1d37b543225fd7e",
+    "execution-framework/scripts/verify_agent_control_api.py": "ed1d259322dfba411a4beadfd1a0a240e338dfabe98be20333740a312f538e0b",
+    "execution-framework/generated/envctl_agent_control_report.json": "791d1fa69aa046a4b7bcd58c510416b3b904d7eb407a244d9673d317198ca2e2",
+    "execution-framework/docs/ENVCTL_AGENT_CONTROL_API.md": "93bd9d0967d9ed4c6dd7817235e72eff97e72980f62ecee31e930dbaf4a664c6",
+    "execution-framework/logs/REQ-028_ENVCTL_AGENT_CONTROL_API.log": "539b53cba3d22a94e73c271189c1d90217a0cc33ef462eb7912fcdb0f3b20296",
+    "execution-framework/state/REQ-028_ENVCTL_AGENT_CONTROL_API.heartbeat.json": "9b2e0eb1cea588d8d3068de03615740f5091c33ae8b7d0b3d5f7bb2d09478868"
+  },
+  "logs_uri": "logs/REQ-028_ENVCTL_AGENT_CONTROL_API.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "generated/envctl_agent_control_report.json",
+    "docs/ENVCTL_AGENT_CONTROL_API.md",
+    "logs/REQ-028_ENVCTL_AGENT_CONTROL_API.log",
+    "state/REQ-028_ENVCTL_AGENT_CONTROL_API.heartbeat.json"
+  ],
+  "failure_reason": "",
+  "next_action": ""
+}

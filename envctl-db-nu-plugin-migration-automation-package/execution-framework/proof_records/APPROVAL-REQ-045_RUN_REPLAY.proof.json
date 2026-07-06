@@ -1,0 +1,38 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "APPROVAL-REQ-045_RUN_REPLAY",
+  "status": "completed",
+  "started_at": "2026-07-05T05:24:34+00:00",
+  "completed_at": "2026-07-05T05:24:34+00:00",
+  "actor": "agent-approval-gate",
+  "helper_id": "helper-agent-approval-01",
+  "model_tag": "gpt-5.5",
+  "repo_path": "execution-framework",
+  "files_changed": [
+    "execution-framework/approvals/REQ-045_RUN_REPLAY.agent_approval.json",
+    "execution-framework/reviews/GPT55_REQ-045_RUN_REPLAY_APPROVAL_REVIEW.md"
+  ],
+  "commands_run": [
+    "python3 scripts/agent_approval_gate.py ..."
+  ],
+  "verification_output": {
+    "decision": "approved",
+    "reviewer": "gpt-5.5-fallback",
+    "model": "gpt-5.5",
+    "review_artifact": "reviews/GPT55_REQ-045_RUN_REPLAY_APPROVAL_REVIEW.md",
+    "approval_artifact": "approvals/REQ-045_RUN_REPLAY.agent_approval.json",
+    "fallback_reason": "weave reviewer path unavailable in PATH and prior Claude local review artifacts were empty; using GPT-5.5 fallback per package approval protocol."
+  },
+  "checksums": {
+    "execution-framework/approvals/REQ-045_RUN_REPLAY.agent_approval.json": "26abbf5e9183c2c710a1a8b9c9ac93967f5e8f29a9b3527b4c7dae0543800df3",
+    "execution-framework/reviews/GPT55_REQ-045_RUN_REPLAY_APPROVAL_REVIEW.md": "32557450d9a74357467a7df254cef34f3a0f32c1b46335be9bd5f5c39011e64a"
+  },
+  "logs_uri": "logs/APPROVAL-REQ-045_RUN_REPLAY.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "approvals/REQ-045_RUN_REPLAY.agent_approval.json",
+    "reviews/GPT55_REQ-045_RUN_REPLAY_APPROVAL_REVIEW.md"
+  ],
+  "failure_reason": "",
+  "next_action": "run goal_loop.py; REQ-045_RUN_REPLAY becomes dispatchable only when approved"
+}

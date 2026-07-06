@@ -1,0 +1,14 @@
+{
+  "all_hashes_recorded": true,
+  "ledger_hit": true,
+  "missing": [],
+  "proof_has_checksums": true,
+  "proof_status": "completed",
+  "registered_artifacts": [
+    "04-data-migration-data-lineage-map-md",
+    "art-109-data-lineage-map-md",
+    "art-109-data-lineage-map-json"
+  ],
+  "registry_contains_hash": true,
+  "report_status": "passed"
+}

@@ -60,6 +60,11 @@ pub enum EngineCommand {
         dry_run: bool,
         force: bool,
     },
+    /// Deterministic catalog projection render to an explicit output directory.
+    CatalogRender {
+        out_dir: PathBuf,
+        target_root: Option<PathBuf>,
+    },
     /// Migration/adoption engine: scan/plan/apply/verify/purge the meta-hosted
     /// install topology. GUI parity uses the identical typed surface as the CLI.
     Migrate {
@@ -276,6 +281,15 @@ pub fn run_event_loop(
                     emit_setup_error(&sink, "dashboard-deploy", &e);
                 }
             }
+            EngineCommand::CatalogRender {
+                out_dir,
+                target_root,
+            } => match engine.catalog_render(&out_dir, target_root.as_deref()) {
+                Ok(report) => sink.emit(Event::CatalogRendered {
+                    report: Box::new(report),
+                }),
+                Err(e) => emit_setup_error(&sink, "catalog-render", &e),
+            },
             EngineCommand::Migrate { spec } => {
                 let result = match spec {
                     MigrationCommandSpec::Scan(spec) => {

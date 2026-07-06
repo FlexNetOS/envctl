@@ -1,0 +1,967 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "ART-110_API_CATALOG",
+  "status": "completed",
+  "started_at": "2026-07-04T23:31:52+00:00",
+  "completed_at": "2026-07-04T23:31:52+00:00",
+  "actor": "artifact-agent",
+  "helper_id": "helper-artifact-11",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/generate_art110_api_catalog.py",
+    "execution-framework/migration-artifacts/art-110_api_catalog/api-catalog.json",
+    "execution-framework/migration-artifacts/art-110_api_catalog/api-catalog.md",
+    "execution-framework/migration-artifacts/art-110_api_catalog/api-contract-catalog.md",
+    "execution-framework/migration-artifacts/art-110_api_catalog/api-contract-map.md",
+    "execution-framework/migration-artifacts/05-integrations/api-catalog.md",
+    "execution-framework/migration-artifacts/05-integrations/api-contract-catalog.md",
+    "execution-framework/migration-artifacts/05-integrations/api-contract-map.md",
+    "execution-framework/generated/art110_api_catalog_registry_report.json",
+    "execution-framework/state/ART-110_API_CATALOG.heartbeat.json",
+    "execution-framework/logs/ART-110_API_CATALOG.log",
+    "execution-framework/proof_records/ART-110_API_CATALOG.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 -m py_compile scripts/generate_art110_api_catalog.py",
+    "python3 scripts/generate_art110_api_catalog.py"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "ART-110_API_CATALOG",
+    "status": "passed",
+    "generated_at": "2026-07-04T23:31:52+00:00",
+    "artifact_paths": [
+      "migration-artifacts/art-110_api_catalog/api-catalog.json",
+      "migration-artifacts/art-110_api_catalog/api-catalog.md",
+      "migration-artifacts/art-110_api_catalog/api-contract-catalog.md",
+      "migration-artifacts/art-110_api_catalog/api-contract-map.md",
+      "migration-artifacts/05-integrations/api-catalog.md",
+      "migration-artifacts/05-integrations/api-contract-catalog.md",
+      "migration-artifacts/05-integrations/api-contract-map.md"
+    ],
+    "registry_results": [
+      {
+        "artifact_row_id": "artifact-f4ad96857e0b79a47339dd0f",
+        "artifact_id": "05-integrations-api-catalog-md",
+        "run_id": "run-art110-api-catalog",
+        "path": "execution-framework/migration-artifacts/05-integrations/api-catalog.md",
+        "content_hash": "sha256:acef52c1cade7e18d6c718be4d1caff28c82b3cee668535186834d32e3070750",
+        "producer_operation_id": "op-art110-generate-register",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-eed6b2051d64734cda396203",
+          "evidence-95920a878cd9eefb3f07e8e9",
+          "evidence-5f89170725f6fc0c1f73c3fa",
+          "evidence-eea26ebf2a50665962f75659",
+          "evidence-297f6dc9960c42964cd86adb",
+          "evidence-ad9b7dfb366a531db3d039bf",
+          "evidence-2a6a6715fb70d61f65d5984f",
+          "evidence-9957f7b367312882091e73b8"
+        ],
+        "graph_edge_ids": [
+          "edge-1f5167208cfa93e61de8b9c4",
+          "edge-17112fff8d60f5cfdbe0c873",
+          "edge-f73abcbc1260288f96ff79eb",
+          "edge-67bcfa35543409baeb266005",
+          "edge-32ba7bd61e64a922a8558f17",
+          "edge-846319b66237dbe9c6c85e70",
+          "edge-ce199de2c2d7fc4f94621335"
+        ],
+        "validation_ids": [
+          "validation-4b82f2b1d09fb4cd496cbb58",
+          "validation-1599476242fc15c374cbbaed",
+          "validation-9238fa4fd8d441a52334a8ee"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-68ca52ea77f8efdddf4e447b",
+        "artifact_id": "05-integrations-api-contract-catalog-md",
+        "run_id": "run-art110-api-catalog",
+        "path": "execution-framework/migration-artifacts/05-integrations/api-contract-catalog.md",
+        "content_hash": "sha256:9691b1807f294124e1bf0fc28e7d9ea47d96d981b1bcca345c7ea6fb0efeadf7",
+        "producer_operation_id": "op-art110-generate-register",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-ca23ea08b7c4da1f2385e9a2",
+          "evidence-5b808575fee8fd248c417317",
+          "evidence-19da916c83e675caf372994c",
+          "evidence-e541392817fa449b210c6377",
+          "evidence-45504c7d21fa9abf06ac193d",
+          "evidence-cefb0c0cfe52a00f7d019bdb",
+          "evidence-7f07bb1593f1830f5a93552c",
+          "evidence-c2077e6df115da8bc7606679"
+        ],
+        "graph_edge_ids": [
+          "edge-c423a6238b67585f7c5c49ba",
+          "edge-6cc149785d9221a624d6bb22",
+          "edge-9ff20c13d61c113a2790dc43",
+          "edge-c9c4750c22ffc9998082e259",
+          "edge-9b30dbe2d7c5f652ee3ba484",
+          "edge-88c7fa7549b0b0f3e486b0a8",
+          "edge-a324a4f55743af5d9a1af85f"
+        ],
+        "validation_ids": [
+          "validation-0730e82ab24232ba15d44d0b",
+          "validation-bd594468fdc62b2f5fefc7f3",
+          "validation-0417516ee784f54613e785d9"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-478875c9193351a4b3a2534f",
+        "artifact_id": "05-integrations-api-contract-map-md",
+        "run_id": "run-art110-api-catalog",
+        "path": "execution-framework/migration-artifacts/05-integrations/api-contract-map.md",
+        "content_hash": "sha256:422dcfbe262cb5988879a77f8db4d5d91fed1e5d8b487a4180a7f475fe4f63d0",
+        "producer_operation_id": "op-art110-generate-register",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-84575d737342867b9b44ce9b",
+          "evidence-35dad3a80160cace0c61a4d4",
+          "evidence-9125db1a25a345bfd4d34b44",
+          "evidence-83c209926abe9ff0c8734523",
+          "evidence-ae092e3f8d569c1b993183a7",
+          "evidence-3e4c8e5907203739928817f8",
+          "evidence-46aee32d35db2b5455014b8a",
+          "evidence-910a9f8c55857a186ca7f8e0"
+        ],
+        "graph_edge_ids": [
+          "edge-a95bf28ecdea1b2f890df5e7",
+          "edge-d49fc998454bfdc26a3cd686",
+          "edge-bc9ce213b777697e91b4eee1",
+          "edge-f25a7f4b7d3c45853ba237d8",
+          "edge-218f2fcf5023c1c28bf2e75f",
+          "edge-8989aff7b78c2d7caf531f7a",
+          "edge-958b72055b0d01fc23190d16"
+        ],
+        "validation_ids": [
+          "validation-b384ab699922f5966414bff7",
+          "validation-b9ac2bf05bf7584aa1a2bead",
+          "validation-b4d3dfda331a6953ffdd3402"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-9022112d0d80384fd5372b0c",
+        "artifact_id": "art-110-api-catalog-json",
+        "run_id": "run-art110-api-catalog",
+        "path": "execution-framework/migration-artifacts/art-110_api_catalog/api-catalog.json",
+        "content_hash": "sha256:c848d869cdf2c4f8ef9d79ca229063a4f6feada70c1656811801e31d8fbd4e0b",
+        "producer_operation_id": "op-art110-generate-register",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-d799875aba5268cd9d0ce394",
+          "evidence-b25ff6995944f7382a47fb6d",
+          "evidence-ffbbb0572d6a6482cbf63a28",
+          "evidence-28eb2de4e9c9401ada3e1ca7",
+          "evidence-127b84d4ba79970b8361c6a5",
+          "evidence-035f7120aafbd12ac581cc1e",
+          "evidence-9a2c6da79a978ac28733b0bd",
+          "evidence-ea090d4e6f9cb49e6602429b"
+        ],
+        "graph_edge_ids": [
+          "edge-f95fc812dec68a5fa3dea831",
+          "edge-c941f4ac271d7864c314bd81",
+          "edge-86b08b4dd718eb22e775cef6",
+          "edge-81905593ed0eab6072910018",
+          "edge-39a9eb62fc862c04111c6477",
+          "edge-c8c6d1a35ad96dfbca9b977e",
+          "edge-2cb1aa343dd23367d063cc45"
+        ],
+        "validation_ids": [
+          "validation-74731284aef03152f02f20b1",
+          "validation-89b9c64ea6601611263fa9f1",
+          "validation-7a835b013b81b27849745146"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-ce0caa12ce95608ff89b54bb",
+        "artifact_id": "art-110-api-catalog-md",
+        "run_id": "run-art110-api-catalog",
+        "path": "execution-framework/migration-artifacts/art-110_api_catalog/api-catalog.md",
+        "content_hash": "sha256:acef52c1cade7e18d6c718be4d1caff28c82b3cee668535186834d32e3070750",
+        "producer_operation_id": "op-art110-generate-register",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-c61ee8d4a1b34f8c891cd2a2",
+          "evidence-5e63e03b828c14ac85fd6929",
+          "evidence-0182f641663838b94bfe8cab",
+          "evidence-b44086dac47babec0dff2a61",
+          "evidence-d50b2a4b2c8a35e2c6c2f9b9",
+          "evidence-dbee120b0c240e76078f143c",
+          "evidence-c91037883378f12a727395c4",
+          "evidence-13a28e146dd58e63503c939b"
+        ],
+        "graph_edge_ids": [
+          "edge-dd5c714796b96f30dcad1eee",
+          "edge-892b66915aa75918ed73539c",
+          "edge-bcc59a9dd1e4103d57c32390",
+          "edge-90535f4b7cee423422fce020",
+          "edge-ad45ad0c0c97b0ac1d1363b2",
+          "edge-9cb47d4f5345749e03ebabfd",
+          "edge-5990bc9cc67757ad36fbd30b"
+        ],
+        "validation_ids": [
+          "validation-21048bd917380add32dffee8",
+          "validation-0a9f87208858dcff679c6678",
+          "validation-9869955a6549fcee7e756546"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-6730f2b2ae047290015e456d",
+        "artifact_id": "art-110-api-contract-catalog-md",
+        "run_id": "run-art110-api-catalog",
+        "path": "execution-framework/migration-artifacts/art-110_api_catalog/api-contract-catalog.md",
+        "content_hash": "sha256:9691b1807f294124e1bf0fc28e7d9ea47d96d981b1bcca345c7ea6fb0efeadf7",
+        "producer_operation_id": "op-art110-generate-register",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-0a5009a1fa0a8cf43d588456",
+          "evidence-218fe5a78f639b52a01dc44a",
+          "evidence-ad2a15c36af321ab0a1f55da",
+          "evidence-91538c71308eb5771199f8c3",
+          "evidence-7723c27c0529f47b2d35da85",
+          "evidence-f73f8d6af1fc4e17c3b06b6b",
+          "evidence-55070389fbffdb5ae6abd7e8",
+          "evidence-e4773fa6038865d1d5f4ea02"
+        ],
+        "graph_edge_ids": [
+          "edge-346c2b1da96cb5abba1d6c78",
+          "edge-7721a1b4c0eda2e8955180ab",
+          "edge-5738b2582e1663d404ca353d",
+          "edge-b8f6afc5a0a3e66f03936af1",
+          "edge-df367b5469e0aed50bf1b2e5",
+          "edge-f02282eff51b7bd5bcc3cc15",
+          "edge-3ca820cce187bde1e75385a3"
+        ],
+        "validation_ids": [
+          "validation-b65e331360e327ac477754d8",
+          "validation-854378bb3dcebd0158b9a4a9",
+          "validation-4e71bde63db8fa09cdf8404f"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-884bfaea269b36b5f734270b",
+        "artifact_id": "art-110-api-contract-map-md",
+        "run_id": "run-art110-api-catalog",
+        "path": "execution-framework/migration-artifacts/art-110_api_catalog/api-contract-map.md",
+        "content_hash": "sha256:422dcfbe262cb5988879a77f8db4d5d91fed1e5d8b487a4180a7f475fe4f63d0",
+        "producer_operation_id": "op-art110-generate-register",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-a23294f694b03594d883bb8b",
+          "evidence-567edcda8d946b700e46fdb3",
+          "evidence-2e7724492dd324971b0dc0d4",
+          "evidence-96f5b7239afec966debee4f6",
+          "evidence-c317513e83526423a9699c39",
+          "evidence-ab23fbe3a1533e6fc2ec88f5",
+          "evidence-7193c2bb378311d4643de1c1",
+          "evidence-46033d7b753d2bd005d61587"
+        ],
+        "graph_edge_ids": [
+          "edge-8c21c0291310f6cf07175c18",
+          "edge-e5f071ffd27ebf88fdb76a8d",
+          "edge-35c7eda9c69b51d32e6c56bc",
+          "edge-67b6b64db1c17782de828cdb",
+          "edge-60cb11dc9e460f51e5dcc50b",
+          "edge-af46d058cbff49d9e89a51b8",
+          "edge-43550dad1653d9448358bda7"
+        ],
+        "validation_ids": [
+          "validation-87d7f2a6862665da646e6361",
+          "validation-43db94bd9d494313ef3c20f5",
+          "validation-2a0fc03ec62926e9239a1ebc"
+        ]
+      }
+    ],
+    "artifact_rows": [
+      {
+        "id": "artifact-f4ad96857e0b79a47339dd0f",
+        "run_id": "run-art110-api-catalog",
+        "artifact_id": "05-integrations-api-catalog-md",
+        "title": "API Catalog",
+        "artifact_type": "migration_artifact",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/05-integrations/api-catalog.md",
+        "content_hash": "sha256:acef52c1cade7e18d6c718be4d1caff28c82b3cee668535186834d32e3070750",
+        "generated_by_operation_id": "op-art110-generate-register",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-eed6b2051d64734cda396203",
+            "evidence-95920a878cd9eefb3f07e8e9",
+            "evidence-5f89170725f6fc0c1f73c3fa",
+            "evidence-eea26ebf2a50665962f75659",
+            "evidence-297f6dc9960c42964cd86adb",
+            "evidence-ad9b7dfb366a531db3d039bf",
+            "evidence-2a6a6715fb70d61f65d5984f",
+            "evidence-9957f7b367312882091e73b8"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/05-integrations/api-catalog.md",
+            "execution-framework/generated/execution_packets/ART-110_API_CATALOG.json",
+            "execution-framework/generated/envctl_target_registry.json",
+            "execution-framework/generated/package_scan.json",
+            "execution-framework/generated/shared_protocol_manifest.json",
+            "execution-framework/generated/contract_manifest.json",
+            "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+            "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+          ],
+          "producer_operation_id": "op-art110-generate-register",
+          "provenance": {
+            "helper_id": "helper-artifact-11",
+            "model_tag": "gpt-5.3-spark",
+            "owner_agent": "artifact-agent",
+            "owner_lane": "lane_d_filesystem",
+            "source_graph_uri": "generated/task_graph.csv",
+            "task_id": "ART-110_API_CATALOG"
+          },
+          "validation_ids": [
+            "validation-4b82f2b1d09fb4cd496cbb58",
+            "validation-1599476242fc15c374cbbaed",
+            "validation-9238fa4fd8d441a52334a8ee"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-1f5167208cfa93e61de8b9c4",
+            "edge-17112fff8d60f5cfdbe0c873",
+            "edge-f73abcbc1260288f96ff79eb",
+            "edge-67bcfa35543409baeb266005",
+            "edge-32ba7bd61e64a922a8558f17",
+            "edge-846319b66237dbe9c6c85e70",
+            "edge-ce199de2c2d7fc4f94621335"
+          ],
+          "links": [
+            {
+              "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "artifact:05-integrations-event-catalog-md",
+              "type": "paired_with"
+            },
+            {
+              "to": "artifact:05-integrations-event-message-contract-map-md",
+              "type": "paired_with"
+            },
+            {
+              "to": "artifact:05-integrations-api-catalog-md",
+              "type": "satisfies_contract_row"
+            }
+          ]
+        }
+      },
+      {
+        "id": "artifact-68ca52ea77f8efdddf4e447b",
+        "run_id": "run-art110-api-catalog",
+        "artifact_id": "05-integrations-api-contract-catalog-md",
+        "title": "API Contract Catalog",
+        "artifact_type": "migration_artifact",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/05-integrations/api-contract-catalog.md",
+        "content_hash": "sha256:9691b1807f294124e1bf0fc28e7d9ea47d96d981b1bcca345c7ea6fb0efeadf7",
+        "generated_by_operation_id": "op-art110-generate-register",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-ca23ea08b7c4da1f2385e9a2",
+            "evidence-5b808575fee8fd248c417317",
+            "evidence-19da916c83e675caf372994c",
+            "evidence-e541392817fa449b210c6377",
+            "evidence-45504c7d21fa9abf06ac193d",
+            "evidence-cefb0c0cfe52a00f7d019bdb",
+            "evidence-7f07bb1593f1830f5a93552c",
+            "evidence-c2077e6df115da8bc7606679"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/05-integrations/api-contract-catalog.md",
+            "execution-framework/generated/execution_packets/ART-110_API_CATALOG.json",
+            "execution-framework/generated/envctl_target_registry.json",
+            "execution-framework/generated/package_scan.json",
+            "execution-framework/generated/shared_protocol_manifest.json",
+            "execution-framework/generated/contract_manifest.json",
+            "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+            "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+          ],
+          "producer_operation_id": "op-art110-generate-register",
+          "provenance": {
+            "helper_id": "helper-artifact-11",
+            "model_tag": "gpt-5.3-spark",
+            "owner_agent": "artifact-agent",
+            "owner_lane": "lane_d_filesystem",
+            "source_graph_uri": "generated/task_graph.csv",
+            "task_id": "ART-110_API_CATALOG"
+          },
+          "validation_ids": [
+            "validation-0730e82ab24232ba15d44d0b",
+            "validation-bd594468fdc62b2f5fefc7f3",
+            "validation-0417516ee784f54613e785d9"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-c423a6238b67585f7c5c49ba",
+            "edge-6cc149785d9221a624d6bb22",
+            "edge-9ff20c13d61c113a2790dc43",
+            "edge-c9c4750c22ffc9998082e259",
+            "edge-9b30dbe2d7c5f652ee3ba484",
+            "edge-88c7fa7549b0b0f3e486b0a8",
+            "edge-a324a4f55743af5d9a1af85f"
+          ],
+          "links": [
+            {
+              "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "artifact:05-integrations-event-catalog-md",
+              "type": "paired_with"
+            },
+            {
+              "to": "artifact:05-integrations-event-message-contract-map-md",
+              "type": "paired_with"
+            },
+            {
+              "to": "artifact:05-integrations-api-contract-catalog-md",
+              "type": "satisfies_contract_row"
+            }
+          ]
+        }
+      },
+      {
+        "id": "artifact-478875c9193351a4b3a2534f",
+        "run_id": "run-art110-api-catalog",
+        "artifact_id": "05-integrations-api-contract-map-md",
+        "title": "API Contract Map",
+        "artifact_type": "migration_artifact",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/05-integrations/api-contract-map.md",
+        "content_hash": "sha256:422dcfbe262cb5988879a77f8db4d5d91fed1e5d8b487a4180a7f475fe4f63d0",
+        "generated_by_operation_id": "op-art110-generate-register",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-84575d737342867b9b44ce9b",
+            "evidence-35dad3a80160cace0c61a4d4",
+            "evidence-9125db1a25a345bfd4d34b44",
+            "evidence-83c209926abe9ff0c8734523",
+            "evidence-ae092e3f8d569c1b993183a7",
+            "evidence-3e4c8e5907203739928817f8",
+            "evidence-46aee32d35db2b5455014b8a",
+            "evidence-910a9f8c55857a186ca7f8e0"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/05-integrations/api-contract-map.md",
+            "execution-framework/generated/execution_packets/ART-110_API_CATALOG.json",
+            "execution-framework/generated/envctl_target_registry.json",
+            "execution-framework/generated/package_scan.json",
+            "execution-framework/generated/shared_protocol_manifest.json",
+            "execution-framework/generated/contract_manifest.json",
+            "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+            "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+          ],
+          "producer_operation_id": "op-art110-generate-register",
+          "provenance": {
+            "helper_id": "helper-artifact-11",
+            "model_tag": "gpt-5.3-spark",
+            "owner_agent": "artifact-agent",
+            "owner_lane": "lane_d_filesystem",
+            "source_graph_uri": "generated/task_graph.csv",
+            "task_id": "ART-110_API_CATALOG"
+          },
+          "validation_ids": [
+            "validation-b384ab699922f5966414bff7",
+            "validation-b9ac2bf05bf7584aa1a2bead",
+            "validation-b4d3dfda331a6953ffdd3402"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-a95bf28ecdea1b2f890df5e7",
+            "edge-d49fc998454bfdc26a3cd686",
+            "edge-bc9ce213b777697e91b4eee1",
+            "edge-f25a7f4b7d3c45853ba237d8",
+            "edge-218f2fcf5023c1c28bf2e75f",
+            "edge-8989aff7b78c2d7caf531f7a",
+            "edge-958b72055b0d01fc23190d16"
+          ],
+          "links": [
+            {
+              "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "artifact:05-integrations-event-catalog-md",
+              "type": "paired_with"
+            },
+            {
+              "to": "artifact:05-integrations-event-message-contract-map-md",
+              "type": "paired_with"
+            },
+            {
+              "to": "artifact:05-integrations-api-contract-map-md",
+              "type": "satisfies_contract_row"
+            }
+          ]
+        }
+      },
+      {
+        "id": "artifact-9022112d0d80384fd5372b0c",
+        "run_id": "run-art110-api-catalog",
+        "artifact_id": "art-110-api-catalog-json",
+        "title": "ART-110 API Catalog JSON",
+        "artifact_type": "machine_readable_record",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/art-110_api_catalog/api-catalog.json",
+        "content_hash": "sha256:c848d869cdf2c4f8ef9d79ca229063a4f6feada70c1656811801e31d8fbd4e0b",
+        "generated_by_operation_id": "op-art110-generate-register",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-d799875aba5268cd9d0ce394",
+            "evidence-b25ff6995944f7382a47fb6d",
+            "evidence-ffbbb0572d6a6482cbf63a28",
+            "evidence-28eb2de4e9c9401ada3e1ca7",
+            "evidence-127b84d4ba79970b8361c6a5",
+            "evidence-035f7120aafbd12ac581cc1e",
+            "evidence-9a2c6da79a978ac28733b0bd",
+            "evidence-ea090d4e6f9cb49e6602429b"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/art-110_api_catalog/api-catalog.json",
+            "execution-framework/generated/execution_packets/ART-110_API_CATALOG.json",
+            "execution-framework/generated/envctl_target_registry.json",
+            "execution-framework/generated/package_scan.json",
+            "execution-framework/generated/shared_protocol_manifest.json",
+            "execution-framework/generated/contract_manifest.json",
+            "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+            "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+          ],
+          "producer_operation_id": "op-art110-generate-register",
+          "provenance": {
+            "helper_id": "helper-artifact-11",
+            "model_tag": "gpt-5.3-spark",
+            "owner_agent": "artifact-agent",
+            "owner_lane": "lane_d_filesystem",
+            "source_graph_uri": "generated/task_graph.csv",
+            "task_id": "ART-110_API_CATALOG"
+          },
+          "validation_ids": [
+            "validation-74731284aef03152f02f20b1",
+            "validation-89b9c64ea6601611263fa9f1",
+            "validation-7a835b013b81b27849745146"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-f95fc812dec68a5fa3dea831",
+            "edge-c941f4ac271d7864c314bd81",
+            "edge-86b08b4dd718eb22e775cef6",
+            "edge-81905593ed0eab6072910018",
+            "edge-39a9eb62fc862c04111c6477",
+            "edge-c8c6d1a35ad96dfbca9b977e",
+            "edge-2cb1aa343dd23367d063cc45"
+          ],
+          "links": [
+            {
+              "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "artifact:05-integrations-event-catalog-md",
+              "type": "paired_with"
+            },
+            {
+              "to": "artifact:05-integrations-event-message-contract-map-md",
+              "type": "paired_with"
+            },
+            {
+              "to": "artifact:05-integrations-api-catalog-md",
+              "type": "supports"
+            }
+          ]
+        }
+      },
+      {
+        "id": "artifact-ce0caa12ce95608ff89b54bb",
+        "run_id": "run-art110-api-catalog",
+        "artifact_id": "art-110-api-catalog-md",
+        "title": "ART-110 API Catalog Markdown",
+        "artifact_type": "task_artifact",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/art-110_api_catalog/api-catalog.md",
+        "content_hash": "sha256:acef52c1cade7e18d6c718be4d1caff28c82b3cee668535186834d32e3070750",
+        "generated_by_operation_id": "op-art110-generate-register",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-c61ee8d4a1b34f8c891cd2a2",
+            "evidence-5e63e03b828c14ac85fd6929",
+            "evidence-0182f641663838b94bfe8cab",
+            "evidence-b44086dac47babec0dff2a61",
+            "evidence-d50b2a4b2c8a35e2c6c2f9b9",
+            "evidence-dbee120b0c240e76078f143c",
+            "evidence-c91037883378f12a727395c4",
+            "evidence-13a28e146dd58e63503c939b"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/art-110_api_catalog/api-catalog.md",
+            "execution-framework/generated/execution_packets/ART-110_API_CATALOG.json",
+            "execution-framework/generated/envctl_target_registry.json",
+            "execution-framework/generated/package_scan.json",
+            "execution-framework/generated/shared_protocol_manifest.json",
+            "execution-framework/generated/contract_manifest.json",
+            "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+            "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+          ],
+          "producer_operation_id": "op-art110-generate-register",
+          "provenance": {
+            "helper_id": "helper-artifact-11",
+            "model_tag": "gpt-5.3-spark",
+            "owner_agent": "artifact-agent",
+            "owner_lane": "lane_d_filesystem",
+            "source_graph_uri": "generated/task_graph.csv",
+            "task_id": "ART-110_API_CATALOG"
+          },
+          "validation_ids": [
+            "validation-21048bd917380add32dffee8",
+            "validation-0a9f87208858dcff679c6678",
+            "validation-9869955a6549fcee7e756546"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-dd5c714796b96f30dcad1eee",
+            "edge-892b66915aa75918ed73539c",
+            "edge-bcc59a9dd1e4103d57c32390",
+            "edge-90535f4b7cee423422fce020",
+            "edge-ad45ad0c0c97b0ac1d1363b2",
+            "edge-9cb47d4f5345749e03ebabfd",
+            "edge-5990bc9cc67757ad36fbd30b"
+          ],
+          "links": [
+            {
+              "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "artifact:05-integrations-event-catalog-md",
+              "type": "paired_with"
+            },
+            {
+              "to": "artifact:05-integrations-event-message-contract-map-md",
+              "type": "paired_with"
+            },
+            {
+              "to": "artifact:05-integrations-api-catalog-md",
+              "type": "supports"
+            }
+          ]
+        }
+      },
+      {
+        "id": "artifact-6730f2b2ae047290015e456d",
+        "run_id": "run-art110-api-catalog",
+        "artifact_id": "art-110-api-contract-catalog-md",
+        "title": "ART-110 API Contract Catalog Markdown",
+        "artifact_type": "task_artifact",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/art-110_api_catalog/api-contract-catalog.md",
+        "content_hash": "sha256:9691b1807f294124e1bf0fc28e7d9ea47d96d981b1bcca345c7ea6fb0efeadf7",
+        "generated_by_operation_id": "op-art110-generate-register",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-0a5009a1fa0a8cf43d588456",
+            "evidence-218fe5a78f639b52a01dc44a",
+            "evidence-ad2a15c36af321ab0a1f55da",
+            "evidence-91538c71308eb5771199f8c3",
+            "evidence-7723c27c0529f47b2d35da85",
+            "evidence-f73f8d6af1fc4e17c3b06b6b",
+            "evidence-55070389fbffdb5ae6abd7e8",
+            "evidence-e4773fa6038865d1d5f4ea02"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/art-110_api_catalog/api-contract-catalog.md",
+            "execution-framework/generated/execution_packets/ART-110_API_CATALOG.json",
+            "execution-framework/generated/envctl_target_registry.json",
+            "execution-framework/generated/package_scan.json",
+            "execution-framework/generated/shared_protocol_manifest.json",
+            "execution-framework/generated/contract_manifest.json",
+            "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+            "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+          ],
+          "producer_operation_id": "op-art110-generate-register",
+          "provenance": {
+            "helper_id": "helper-artifact-11",
+            "model_tag": "gpt-5.3-spark",
+            "owner_agent": "artifact-agent",
+            "owner_lane": "lane_d_filesystem",
+            "source_graph_uri": "generated/task_graph.csv",
+            "task_id": "ART-110_API_CATALOG"
+          },
+          "validation_ids": [
+            "validation-b65e331360e327ac477754d8",
+            "validation-854378bb3dcebd0158b9a4a9",
+            "validation-4e71bde63db8fa09cdf8404f"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-346c2b1da96cb5abba1d6c78",
+            "edge-7721a1b4c0eda2e8955180ab",
+            "edge-5738b2582e1663d404ca353d",
+            "edge-b8f6afc5a0a3e66f03936af1",
+            "edge-df367b5469e0aed50bf1b2e5",
+            "edge-f02282eff51b7bd5bcc3cc15",
+            "edge-3ca820cce187bde1e75385a3"
+          ],
+          "links": [
+            {
+              "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "artifact:05-integrations-event-catalog-md",
+              "type": "paired_with"
+            },
+            {
+              "to": "artifact:05-integrations-event-message-contract-map-md",
+              "type": "paired_with"
+            },
+            {
+              "to": "artifact:05-integrations-api-catalog-md",
+              "type": "supports"
+            }
+          ]
+        }
+      },
+      {
+        "id": "artifact-884bfaea269b36b5f734270b",
+        "run_id": "run-art110-api-catalog",
+        "artifact_id": "art-110-api-contract-map-md",
+        "title": "ART-110 API Contract Map Markdown",
+        "artifact_type": "task_artifact",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/art-110_api_catalog/api-contract-map.md",
+        "content_hash": "sha256:422dcfbe262cb5988879a77f8db4d5d91fed1e5d8b487a4180a7f475fe4f63d0",
+        "generated_by_operation_id": "op-art110-generate-register",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-a23294f694b03594d883bb8b",
+            "evidence-567edcda8d946b700e46fdb3",
+            "evidence-2e7724492dd324971b0dc0d4",
+            "evidence-96f5b7239afec966debee4f6",
+            "evidence-c317513e83526423a9699c39",
+            "evidence-ab23fbe3a1533e6fc2ec88f5",
+            "evidence-7193c2bb378311d4643de1c1",
+            "evidence-46033d7b753d2bd005d61587"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/art-110_api_catalog/api-contract-map.md",
+            "execution-framework/generated/execution_packets/ART-110_API_CATALOG.json",
+            "execution-framework/generated/envctl_target_registry.json",
+            "execution-framework/generated/package_scan.json",
+            "execution-framework/generated/shared_protocol_manifest.json",
+            "execution-framework/generated/contract_manifest.json",
+            "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+            "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+          ],
+          "producer_operation_id": "op-art110-generate-register",
+          "provenance": {
+            "helper_id": "helper-artifact-11",
+            "model_tag": "gpt-5.3-spark",
+            "owner_agent": "artifact-agent",
+            "owner_lane": "lane_d_filesystem",
+            "source_graph_uri": "generated/task_graph.csv",
+            "task_id": "ART-110_API_CATALOG"
+          },
+          "validation_ids": [
+            "validation-87d7f2a6862665da646e6361",
+            "validation-43db94bd9d494313ef3c20f5",
+            "validation-2a0fc03ec62926e9239a1ebc"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-8c21c0291310f6cf07175c18",
+            "edge-e5f071ffd27ebf88fdb76a8d",
+            "edge-35c7eda9c69b51d32e6c56bc",
+            "edge-67b6b64db1c17782de828cdb",
+            "edge-60cb11dc9e460f51e5dcc50b",
+            "edge-af46d058cbff49d9e89a51b8",
+            "edge-43550dad1653d9448358bda7"
+          ],
+          "links": [
+            {
+              "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "artifact:05-integrations-event-catalog-md",
+              "type": "paired_with"
+            },
+            {
+              "to": "artifact:05-integrations-event-message-contract-map-md",
+              "type": "paired_with"
+            },
+            {
+              "to": "artifact:05-integrations-api-catalog-md",
+              "type": "supports"
+            }
+          ]
+        }
+      }
+    ],
+    "summary": {
+      "endpoint_count": 160,
+      "event_count": 160,
+      "schema_count": 14,
+      "auth_mechanism_count": 9,
+      "consumer_count": 6,
+      "contract_count": 320,
+      "services": {
+        "envctl": 98,
+        "envctl-db-nu-migration-req020": 62,
+        "envctl-codedb-config-to-tables": 61,
+        "envctl-hooks-clean-baseline": 49,
+        "envctl-nix-components-db": 24,
+        "beads_rust": 17,
+        "beads_viewer": 9
+      },
+      "methods": {
+        "HEAD": 1,
+        "GET": 60,
+        "POST": 88,
+        "PUT": 5,
+        "PATCH": 3,
+        "DELETE": 3
+      },
+      "versions": {
+        "unversioned": 238,
+        "v1": 81,
+        "1.0.0": 15
+      },
+      "evidence_count": 56,
+      "graph_edge_count": 49,
+      "validation_count": 21
+    },
+    "coverage": {
+      "endpoints_or_openapi": true,
+      "events": true,
+      "schemas": true,
+      "auth": true,
+      "consumers": true,
+      "versions": true,
+      "registry_hashes": true,
+      "validation_evidence_linked": true
+    },
+    "errors": [],
+    "evidence": [
+      "execution-framework/migration-artifacts/art-110_api_catalog/api-catalog.json",
+      "execution-framework/migration-artifacts/art-110_api_catalog/api-catalog.md",
+      "execution-framework/migration-artifacts/art-110_api_catalog/api-contract-catalog.md",
+      "execution-framework/migration-artifacts/art-110_api_catalog/api-contract-map.md",
+      "execution-framework/migration-artifacts/05-integrations/api-catalog.md",
+      "execution-framework/migration-artifacts/05-integrations/api-contract-catalog.md",
+      "execution-framework/migration-artifacts/05-integrations/api-contract-map.md",
+      "execution-framework/generated/art110_api_catalog_registry_report.json",
+      "execution-framework/scripts/generate_art110_api_catalog.py"
+    ]
+  },
+  "checksums": {
+    "execution-framework/scripts/generate_art110_api_catalog.py": "ac8a148dfc6bfbe6a79b911745e79d61083ceaf76aa593748549cf64731aaa91",
+    "execution-framework/migration-artifacts/art-110_api_catalog/api-catalog.json": "c848d869cdf2c4f8ef9d79ca229063a4f6feada70c1656811801e31d8fbd4e0b",
+    "execution-framework/migration-artifacts/art-110_api_catalog/api-catalog.md": "acef52c1cade7e18d6c718be4d1caff28c82b3cee668535186834d32e3070750",
+    "execution-framework/migration-artifacts/art-110_api_catalog/api-contract-catalog.md": "9691b1807f294124e1bf0fc28e7d9ea47d96d981b1bcca345c7ea6fb0efeadf7",
+    "execution-framework/migration-artifacts/art-110_api_catalog/api-contract-map.md": "422dcfbe262cb5988879a77f8db4d5d91fed1e5d8b487a4180a7f475fe4f63d0",
+    "execution-framework/migration-artifacts/05-integrations/api-catalog.md": "acef52c1cade7e18d6c718be4d1caff28c82b3cee668535186834d32e3070750",
+    "execution-framework/migration-artifacts/05-integrations/api-contract-catalog.md": "9691b1807f294124e1bf0fc28e7d9ea47d96d981b1bcca345c7ea6fb0efeadf7",
+    "execution-framework/migration-artifacts/05-integrations/api-contract-map.md": "422dcfbe262cb5988879a77f8db4d5d91fed1e5d8b487a4180a7f475fe4f63d0",
+    "execution-framework/generated/art110_api_catalog_registry_report.json": "e36816ce741a332b9007d3399f009a6baaffde9a8e47bccc784b47189e1253f6",
+    "execution-framework/state/ART-110_API_CATALOG.heartbeat.json": "9f32947d0ed0f2effe3cbd681fd03442296025b1b7fc62eef58cb6a808272a8e",
+    "execution-framework/logs/ART-110_API_CATALOG.log": "e36816ce741a332b9007d3399f009a6baaffde9a8e47bccc784b47189e1253f6",
+    "execution-framework/proof_records/ART-110_API_CATALOG.proof.json": "e4a9ad6e7746b11a1d9a9781be08e83cf850037633d5adaf592bca698803571b",
+    "execution-framework/proof_records/proof_ledger.jsonl": "26bdac461d93201217a40c21e3542c85c0e3b30681daeb35a17059e2a355a476"
+  },
+  "logs_uri": "logs/ART-110_API_CATALOG.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "execution-framework/migration-artifacts/art-110_api_catalog/api-catalog.json",
+    "execution-framework/migration-artifacts/art-110_api_catalog/api-catalog.md",
+    "execution-framework/migration-artifacts/art-110_api_catalog/api-contract-catalog.md",
+    "execution-framework/migration-artifacts/art-110_api_catalog/api-contract-map.md",
+    "execution-framework/migration-artifacts/05-integrations/api-catalog.md",
+    "execution-framework/migration-artifacts/05-integrations/api-contract-catalog.md",
+    "execution-framework/migration-artifacts/05-integrations/api-contract-map.md",
+    "execution-framework/generated/art110_api_catalog_registry_report.json",
+    "execution-framework/scripts/generate_art110_api_catalog.py"
+  ],
+  "failure_reason": "",
+  "next_action": "ready for VER-300_UNIT_VALIDATION"
+}

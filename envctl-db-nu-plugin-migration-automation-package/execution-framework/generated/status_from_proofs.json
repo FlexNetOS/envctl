@@ -1,0 +1,566 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-05T06:18:54+00:00",
+  "tasks": [
+    {
+      "task_id": "EF-001_SCAN_PACKAGE",
+      "phase": "00-framework",
+      "owner_lane": "lane_g_history_scan",
+      "status": "completed",
+      "proof_uri": "proof_records/EF-001_SCAN_PACKAGE.proof.json"
+    },
+    {
+      "task_id": "EF-002_GAP_REPORT",
+      "phase": "00-framework",
+      "owner_lane": "lane_a_planning",
+      "status": "completed",
+      "proof_uri": "proof_records/EF-002_GAP_REPORT.proof.json"
+    },
+    {
+      "task_id": "EF-003_APPLY_FRAMEWORK",
+      "phase": "00-framework",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/EF-003_APPLY_FRAMEWORK.proof.json"
+    },
+    {
+      "task_id": "EF-004_GENERATE_TASK_GRAPH",
+      "phase": "00-framework",
+      "owner_lane": "lane_a_planning",
+      "status": "completed",
+      "proof_uri": "proof_records/EF-004_GENERATE_TASK_GRAPH.proof.json"
+    },
+    {
+      "task_id": "EF-005_VALIDATE_TASK_GRAPH",
+      "phase": "00-framework",
+      "owner_lane": "lane_e_verification",
+      "status": "completed",
+      "proof_uri": "proof_records/EF-005_VALIDATE_TASK_GRAPH.proof.json"
+    },
+    {
+      "task_id": "EF-006_TASK_GRAPH_TO_PACKETS",
+      "phase": "00-framework",
+      "owner_lane": "lane_e_verification",
+      "status": "completed",
+      "proof_uri": "proof_records/EF-006_TASK_GRAPH_TO_PACKETS.proof.json"
+    },
+    {
+      "task_id": "EF-007_GOAL_LOOP",
+      "phase": "00-framework",
+      "owner_lane": "lane_e_verification",
+      "status": "completed",
+      "proof_uri": "proof_records/EF-007_GOAL_LOOP.proof.json"
+    },
+    {
+      "task_id": "EF-008_VERIFY_HISTORY_COMPLETENESS",
+      "phase": "00-framework",
+      "owner_lane": "lane_e_verification",
+      "status": "completed",
+      "proof_uri": "proof_records/EF-008_VERIFY_HISTORY_COMPLETENESS.proof.json"
+    },
+    {
+      "task_id": "REQ-010_CONTRACT_LOCK",
+      "phase": "01-contract",
+      "owner_lane": "lane_a_planning",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-010_CONTRACT_LOCK.proof.json"
+    },
+    {
+      "task_id": "REQ-020_ENVCTL_DB_SCHEMA",
+      "phase": "02-envctl-db",
+      "owner_lane": "lane_b_repo_a",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json"
+    },
+    {
+      "task_id": "REQ-021_ENVCTL_TARGET_REGISTRY",
+      "phase": "02-envctl-db",
+      "owner_lane": "lane_b_repo_a",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-021_ENVCTL_TARGET_REGISTRY.proof.json"
+    },
+    {
+      "task_id": "REQ-022_ENVCTL_RUN_LEDGER",
+      "phase": "02-envctl-db",
+      "owner_lane": "lane_b_repo_a",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-022_ENVCTL_RUN_LEDGER.proof.json"
+    },
+    {
+      "task_id": "REQ-023_ENVCTL_OPERATION_STATE",
+      "phase": "02-envctl-db",
+      "owner_lane": "lane_b_repo_a",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-023_ENVCTL_OPERATION_STATE.proof.json"
+    },
+    {
+      "task_id": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "phase": "02-envctl-db",
+      "owner_lane": "lane_b_repo_a",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json"
+    },
+    {
+      "task_id": "REQ-025_ENVCTL_VALIDATION_EVIDENCE",
+      "phase": "02-envctl-db",
+      "owner_lane": "lane_b_repo_a",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-025_ENVCTL_VALIDATION_EVIDENCE.proof.json"
+    },
+    {
+      "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+      "phase": "02-envctl-db",
+      "owner_lane": "lane_b_repo_a",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.proof.json"
+    },
+    {
+      "task_id": "REQ-027_ENVCTL_REPLAY_ENGINE",
+      "phase": "02-envctl-db",
+      "owner_lane": "lane_b_repo_a",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-027_ENVCTL_REPLAY_ENGINE.proof.json"
+    },
+    {
+      "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API",
+      "phase": "02-envctl-db",
+      "owner_lane": "lane_b_repo_a",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-028_ENVCTL_AGENT_CONTROL_API.proof.json"
+    },
+    {
+      "task_id": "REQ-030_PLUGIN_PROTOCOL_MANIFEST",
+      "phase": "03-nu-plugin",
+      "owner_lane": "lane_c_repo_b",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-030_PLUGIN_PROTOCOL_MANIFEST.proof.json"
+    },
+    {
+      "task_id": "REQ-031_PLUGIN_COMMAND_SURFACE",
+      "phase": "03-nu-plugin",
+      "owner_lane": "lane_c_repo_b",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-031_PLUGIN_COMMAND_SURFACE.proof.json"
+    },
+    {
+      "task_id": "REQ-032_PLUGIN_LIVE_VISUALS",
+      "phase": "03-nu-plugin",
+      "owner_lane": "lane_c_repo_b",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-032_PLUGIN_LIVE_VISUALS.proof.json"
+    },
+    {
+      "task_id": "REQ-033_PLUGIN_HUMAN_APPROVAL",
+      "phase": "03-nu-plugin",
+      "owner_lane": "lane_c_repo_b",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-033_PLUGIN_HUMAN_APPROVAL.proof.json"
+    },
+    {
+      "task_id": "REQ-034_PLUGIN_STATUS_STREAMS",
+      "phase": "03-nu-plugin",
+      "owner_lane": "lane_c_repo_b",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-034_PLUGIN_STATUS_STREAMS.proof.json"
+    },
+    {
+      "task_id": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "phase": "04-shared",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+    },
+    {
+      "task_id": "REQ-041_TWO_REPO_INTEGRATION",
+      "phase": "04-shared",
+      "owner_lane": "lane_e_verification",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-041_TWO_REPO_INTEGRATION.proof.json"
+    },
+    {
+      "task_id": "REQ-042_FILESYSTEM_BOUNDS",
+      "phase": "04-shared",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-042_FILESYSTEM_BOUNDS.proof.json"
+    },
+    {
+      "task_id": "REQ-043_SECURITY_REDACTION",
+      "phase": "04-shared",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-043_SECURITY_REDACTION.proof.json"
+    },
+    {
+      "task_id": "REQ-044_INSTALL_BOOTSTRAP",
+      "phase": "04-shared",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-044_INSTALL_BOOTSTRAP.proof.json"
+    },
+    {
+      "task_id": "REQ-045_RUN_REPLAY",
+      "phase": "04-shared",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-045_RUN_REPLAY.proof.json"
+    },
+    {
+      "task_id": "ART-100_SYSTEM_INVENTORY",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-100_SYSTEM_INVENTORY.proof.json"
+    },
+    {
+      "task_id": "ART-101_DIRECTORY_TREE",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-101_DIRECTORY_TREE.proof.json"
+    },
+    {
+      "task_id": "ART-102_REPOSITORY_MAP",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-102_REPOSITORY_MAP.proof.json"
+    },
+    {
+      "task_id": "ART-103_SERVICE_DEP_GRAPH",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "passed",
+      "proof_uri": "proof_records/ART-103_SERVICE_DEP_GRAPH.proof.json"
+    },
+    {
+      "task_id": "ART-104_TOOLCHAIN_TREE",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-104_TOOLCHAIN_TREE.proof.json"
+    },
+    {
+      "task_id": "ART-105_PACKAGE_LIB_GRAPH",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-105_PACKAGE_LIB_GRAPH.proof.json"
+    },
+    {
+      "task_id": "ART-106_RUNTIME_DEP_MAP",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-106_RUNTIME_DEP_MAP.proof.json"
+    },
+    {
+      "task_id": "ART-107_DATA_FLOW_GRAPH",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-107_DATA_FLOW_GRAPH.proof.json"
+    },
+    {
+      "task_id": "ART-108_DB_SCHEMA_MAP",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-108_DB_SCHEMA_MAP.proof.json"
+    },
+    {
+      "task_id": "ART-109_DATA_LINEAGE",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-109_DATA_LINEAGE.proof.json"
+    },
+    {
+      "task_id": "ART-110_API_CATALOG",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-110_API_CATALOG.proof.json"
+    },
+    {
+      "task_id": "ART-111_EVENT_MAP",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-111_EVENT_MAP.proof.json"
+    },
+    {
+      "task_id": "ART-112_CODE_OWNERSHIP",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-112_CODE_OWNERSHIP.proof.json"
+    },
+    {
+      "task_id": "ART-113_DEBUG_CODE_MAP",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-113_DEBUG_CODE_MAP.proof.json"
+    },
+    {
+      "task_id": "ART-114_ENV_CONFIG_MATRIX",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-114_ENV_CONFIG_MATRIX.proof.json"
+    },
+    {
+      "task_id": "ART-115_CONFIG_INVENTORY",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-115_CONFIG_INVENTORY.proof.json"
+    },
+    {
+      "task_id": "ART-116_INFRA_TOPOLOGY",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "passed",
+      "proof_uri": "proof_records/ART-116_INFRA_TOPOLOGY.proof.json"
+    },
+    {
+      "task_id": "ART-117_IAM_MATRIX",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-117_IAM_MATRIX.proof.json"
+    },
+    {
+      "task_id": "ART-118_OBSERVABILITY",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-118_OBSERVABILITY.proof.json"
+    },
+    {
+      "task_id": "ART-119_BUSINESS_PROCESS",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-119_BUSINESS_PROCESS.proof.json"
+    },
+    {
+      "task_id": "ART-120_WAVE_PLAN",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-120_WAVE_PLAN.proof.json"
+    },
+    {
+      "task_id": "ART-121_CUTOVER",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-121_CUTOVER.proof.json"
+    },
+    {
+      "task_id": "ART-122_ROLLBACK",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-122_ROLLBACK.proof.json"
+    },
+    {
+      "task_id": "ART-123_VALIDATION_RECONCILIATION",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-123_VALIDATION_RECONCILIATION.proof.json"
+    },
+    {
+      "task_id": "ART-124_TEST_COVERAGE",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-124_TEST_COVERAGE.proof.json"
+    },
+    {
+      "task_id": "ART-125_RISK_REGISTER",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-125_RISK_REGISTER.proof.json"
+    },
+    {
+      "task_id": "ART-126_DECISION_LOG",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-126_DECISION_LOG.proof.json"
+    },
+    {
+      "task_id": "ART-127_BLAST_RADIUS",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-127_BLAST_RADIUS.proof.json"
+    },
+    {
+      "task_id": "ART-128_READINESS_SCORECARD",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-128_READINESS_SCORECARD.proof.json"
+    },
+    {
+      "task_id": "ART-129_BUSINESS_CAPABILITY",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-129_BUSINESS_CAPABILITY.proof.json"
+    },
+    {
+      "task_id": "ART-130_SHADOW_TRAFFIC",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-130_SHADOW_TRAFFIC.proof.json"
+    },
+    {
+      "task_id": "ART-131_GOLDEN_DATASET",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-131_GOLDEN_DATASET.proof.json"
+    },
+    {
+      "task_id": "ART-132_PARITY_DASHBOARD",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-132_PARITY_DASHBOARD.proof.json"
+    },
+    {
+      "task_id": "ART-133_DEPRECATION_MAP",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-133_DEPRECATION_MAP.proof.json"
+    },
+    {
+      "task_id": "ART-134_EXCEPTION_INVENTORY",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-134_EXCEPTION_INVENTORY.proof.json"
+    },
+    {
+      "task_id": "ART-135_RACI",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-135_RACI.proof.json"
+    },
+    {
+      "task_id": "ART-136_TECH_DEBT_LEDGER",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-136_TECH_DEBT_LEDGER.proof.json"
+    },
+    {
+      "task_id": "REQ-200_FLEXNETOS_TARGET_DESCRIPTOR",
+      "phase": "06-flexnetos",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-200_FLEXNETOS_TARGET_DESCRIPTOR.proof.json"
+    },
+    {
+      "task_id": "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+      "phase": "06-flexnetos",
+      "owner_lane": "lane_d_filesystem",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-201_FLEXNETOS_LIFEOS_COMPARISON.proof.json"
+    },
+    {
+      "task_id": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+      "phase": "06-flexnetos",
+      "owner_lane": "lane_b_repo_a",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json"
+    },
+    {
+      "task_id": "VER-300_UNIT_VALIDATION",
+      "phase": "07-verification",
+      "owner_lane": "lane_e_verification",
+      "status": "completed",
+      "proof_uri": "proof_records/VER-300_UNIT_VALIDATION.proof.json"
+    },
+    {
+      "task_id": "VER-301_SQL_SCHEMA_TEST",
+      "phase": "07-verification",
+      "owner_lane": "lane_e_verification",
+      "status": "completed",
+      "proof_uri": "proof_records/VER-301_SQL_SCHEMA_TEST.proof.json"
+    },
+    {
+      "task_id": "VER-302_PACKET_SCHEMA_VALIDATION",
+      "phase": "07-verification",
+      "owner_lane": "lane_e_verification",
+      "status": "completed",
+      "proof_uri": "proof_records/VER-302_PACKET_SCHEMA_VALIDATION.proof.json"
+    },
+    {
+      "task_id": "VER-303_GOAL_LOOP_COMPUTE",
+      "phase": "07-verification",
+      "owner_lane": "lane_e_verification",
+      "status": "completed",
+      "proof_uri": "proof_records/VER-303_GOAL_LOOP_COMPUTE.proof.json"
+    },
+    {
+      "task_id": "VER-304_FINAL_COMPLETENESS",
+      "phase": "07-verification",
+      "owner_lane": "lane_e_verification",
+      "status": "completed",
+      "proof_uri": "proof_records/VER-304_FINAL_COMPLETENESS.proof.json"
+    },
+    {
+      "task_id": "REL-400_PACKAGE_ARCHIVE",
+      "phase": "08-release",
+      "owner_lane": "lane_f_release",
+      "status": "completed",
+      "proof_uri": "proof_records/REL-400_PACKAGE_ARCHIVE.proof.json"
+    },
+    {
+      "task_id": "REL-401_HANDOFF",
+      "phase": "08-release",
+      "owner_lane": "lane_f_release",
+      "status": "completed",
+      "proof_uri": "proof_records/REL-401_HANDOFF.proof.json"
+    },
+    {
+      "task_id": "MAINT-500_README_NAV_BACKTRACE",
+      "phase": "09-drive-maintenance",
+      "owner_lane": "lane_e_verification",
+      "status": "completed",
+      "proof_uri": "execution-framework/proof_records/MAINT-500_README_NAV_BACKTRACE.proof.json"
+    },
+    {
+      "task_id": "MAINT-501_RESTORE_PROOF_TEMPLATE",
+      "phase": "09-drive-maintenance",
+      "owner_lane": "lane_e_verification",
+      "status": "completed",
+      "proof_uri": "execution-framework/proof_records/MAINT-501_RESTORE_PROOF_TEMPLATE.proof.json"
+    },
+    {
+      "task_id": "MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC",
+      "phase": "09-drive-maintenance",
+      "owner_lane": "lane_e_verification",
+      "status": "completed",
+      "proof_uri": "execution-framework/proof_records/MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC.proof.json"
+    },
+    {
+      "task_id": "MAINT-503_CODEX_FINAL_PROMPT",
+      "phase": "09-drive-maintenance",
+      "owner_lane": "lane_e_verification",
+      "status": "completed",
+      "proof_uri": "execution-framework/proof_records/MAINT-503_CODEX_FINAL_PROMPT.proof.json"
+    }
+  ]
+}

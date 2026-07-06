@@ -1,0 +1,131 @@
+{
+  "schema_version": "1.0",
+  "control_name": "envctl_nu_plugin_security_redaction",
+  "redaction_token": "<REDACTED:SECRET>",
+  "pattern_source": "helpers/redaction_patterns.txt",
+  "pattern_source_sha256": "2c2094acfe9363f553c98ed4f79e719cf36bdc78fe1aafc56d92e33aef50e8e1",
+  "pattern_count": 11,
+  "patterns": [
+    {
+      "id": "authorization-bearer-header",
+      "source": "execution-framework/scripts/redaction_controls.py",
+      "regex_sha256": "f741b50c602cc9960143217fdfc4060e97f06f0222b6bf0d6244ee8dbdc5a9d8"
+    },
+    {
+      "id": "generic-secret-assignment",
+      "source": "execution-framework/scripts/redaction_controls.py",
+      "regex_sha256": "a9c18788dbf3293ab8084a99cc9de6b059c6bf5c9cc5dbb3f440321759068c43"
+    },
+    {
+      "id": "aws-access-key-id-assignment",
+      "source": "execution-framework/scripts/redaction_controls.py",
+      "regex_sha256": "28341f5dcb1e80a4e3c26f357e86794187d0e2eeeb77bf47625faa2c1b24257b"
+    },
+    {
+      "id": "aws-secret-access-key-assignment",
+      "source": "execution-framework/scripts/redaction_controls.py",
+      "regex_sha256": "4bfe5861acbb30ee2325a2f33cd753ddf4b429f25c1a2e2298d478eec3408271"
+    },
+    {
+      "id": "private-key-pem-block",
+      "source": "execution-framework/scripts/redaction_controls.py",
+      "regex_sha256": "71d6f358a0544e61b365e36054aea1818b435a58e1381f0379c24b22752614b8"
+    },
+    {
+      "id": "openai-style-api-key",
+      "source": "execution-framework/scripts/redaction_controls.py",
+      "regex_sha256": "f506358b71b37751f3df4915d54e5bdb7eb212ce3c7b3c53bea64dabad95d942"
+    },
+    {
+      "id": "github-token",
+      "source": "execution-framework/scripts/redaction_controls.py",
+      "regex_sha256": "908648f9a572b12ad0eef66794dd24e47007faa05588fc395bbc4b00463a4684"
+    },
+    {
+      "id": "source-1",
+      "source": "helpers/redaction_patterns.txt",
+      "regex_sha256": "fd0b446f4e60bde34dcdf40895e25d25bd2f0eaa04b094ef5e8db01fd1b297cb"
+    },
+    {
+      "id": "source-2",
+      "source": "helpers/redaction_patterns.txt",
+      "regex_sha256": "8a8e0155dbb0866feccaaa60f56eba89d24c183a868627a1d7dab77443748d76"
+    },
+    {
+      "id": "source-3",
+      "source": "helpers/redaction_patterns.txt",
+      "regex_sha256": "02474c2fc1514e652995f60e7d383e168f3c74d157b0f75be771507a863ed091"
+    },
+    {
+      "id": "source-4",
+      "source": "helpers/redaction_patterns.txt",
+      "regex_sha256": "072f6da4bc699e013b25f36efe0cd3d9fea67a8de29ee3c751f78b6faca0d90a"
+    }
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "scan_surfaces": [
+    "execution-framework/logs/**/*.log",
+    "execution-framework/proof_records/**/*.json",
+    "execution-framework/generated/execution_packets/**/*.json",
+    "execution-framework/generated/**/*scan*.json",
+    "execution-framework/generated/**/*manifest*.json",
+    "execution-framework/generated/**/*validation*.json",
+    "execution-framework/state/**/*.json"
+  ],
+  "approved_evidence_locations": [
+    "execution-framework/logs/",
+    "execution-framework/proof_records/",
+    "execution-framework/generated/"
+  ],
+  "capture_rules": [
+    "Redact command strings, log lines, proof fields, scan payloads, and packet payloads before persistence.",
+    "Persist raw evidence only under approved evidence locations and only when the evidence record marks redacted=false.",
+    "Mark every evidence record with a redacted boolean and sha256 hash.",
+    "Hash generated artifacts and evidence files used by proof records.",
+    "Require approval for execute-full replay or any R3+ operation.",
+    "Do not scan or persist blocked secret-bearing paths."
+  ],
+  "evidence_record_required_fields": [
+    "evidence_id",
+    "run_id",
+    "uri",
+    "evidence_kind",
+    "sha256",
+    "redacted"
+  ],
+  "reproducibility_identity_fields": [
+    "target_descriptor_hash",
+    "artifact_contract_hash",
+    "recipe_hash",
+    "package_hashes",
+    "collector_versions",
+    "tool_versions",
+    "operation_input_hashes",
+    "evidence_hashes",
+    "artifact_hashes",
+    "approval_decision_hashes"
+  ],
+  "replay_modes": {
+    "verify-only": "Recompute hashes and confirm artifacts/evidence still match.",
+    "dry-run-plan": "Reconstruct operation plan without executing target-affecting commands.",
+    "execute-safe": "Re-run R0-R2 operations.",
+    "execute-full": "Requires explicit approval for R3+."
+  },
+  "chain_integrity": "event_hash = sha256(previous_event_hash + canonical_event_json)",
+  "generated_files": [
+    "execution-framework/docs/SECURITY_REDACTION.md",
+    "execution-framework/generated/security_redaction_controls.json",
+    "execution-framework/generated/security_redaction_validation_report.json",
+    "execution-framework/logs/REQ-043_SECURITY_REDACTION.codex-exec.stdout.log",
+    "execution-framework/logs/REQ-043_SECURITY_REDACTION.log",
+    "execution-framework/scripts/redaction_controls.py",
+    "execution-framework/scripts/verify_security_redaction.py",
+    "execution-framework/state/REQ-043_SECURITY_REDACTION.heartbeat.json"
+  ]
+}

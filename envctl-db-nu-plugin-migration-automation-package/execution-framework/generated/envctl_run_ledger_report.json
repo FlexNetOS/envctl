@@ -1,0 +1,128 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-022_ENVCTL_RUN_LEDGER",
+  "generated_at": "2026-07-04T23:09:30+00:00",
+  "status": "passed",
+  "database_backend": "sqlite",
+  "runtime": "python sqlite3 in-memory",
+  "applied_migrations": [
+    {
+      "path": "sql/001_migration_automation_schema.sql",
+      "sha256": "f0a8ad6ce7fba6023d8bfb765843fef07710387f9e720f7fe01305ce2d52bb0e",
+      "bytes": 8608
+    },
+    {
+      "path": "sql/002_views_and_indexes.sql",
+      "sha256": "b9c4fee76504746742695119c84bfbb46dedb1e29da480103f2e6b6c5a83106e",
+      "bytes": 3819
+    },
+    {
+      "path": "execution-framework/generated/contract_manifest.seed.sql",
+      "sha256": "399c1092118d57f78c7647a2d5c2fbd914c5b2ac97d5e41e4deda44722dc8c06",
+      "bytes": 155594
+    }
+  ],
+  "ledger": {
+    "run": {
+      "run_id": "run-req022",
+      "status": "created",
+      "started_at_utc": "2026-07-04T23:09:30+00:00",
+      "reproducibility_hash": "sha256:74f0ae38060de3bbb994e7a83b16382f3aabb92596c7842555d896e2551c7162"
+    },
+    "snapshot": {
+      "run_id": "run-req022",
+      "status": "completed",
+      "operation_count": 1,
+      "failed_operation_count": 0,
+      "open_approval_count": 0,
+      "artifact_count": 0,
+      "last_event_at_utc": "2026-07-04T23:09:30+00:00",
+      "timeline": [
+        {
+          "event_seq": 1,
+          "event_type": "run_created",
+          "actor_type": "agent",
+          "operation_id": null,
+          "operation_status": null
+        },
+        {
+          "event_seq": 2,
+          "event_type": "operation_started",
+          "actor_type": "agent",
+          "operation_id": "op-req022-run-ledger",
+          "operation_status": "succeeded"
+        },
+        {
+          "event_seq": 3,
+          "event_type": "proof_linked",
+          "actor_type": "system",
+          "operation_id": "op-req022-run-ledger",
+          "operation_status": "succeeded"
+        },
+        {
+          "event_seq": 4,
+          "event_type": "operation_succeeded",
+          "actor_type": "agent",
+          "operation_id": "op-req022-run-ledger",
+          "operation_status": "succeeded"
+        },
+        {
+          "event_seq": 5,
+          "event_type": "run_completed",
+          "actor_type": "system",
+          "operation_id": null,
+          "operation_status": null
+        }
+      ],
+      "operations": [
+        {
+          "operation_id": "op-req022-run-ledger",
+          "operation_type": "persist_run_ledger",
+          "phase": "02-envctl-db",
+          "status": "succeeded",
+          "risk": "R1",
+          "output_ref": "generated/envctl_run_ledger_report.json"
+        }
+      ],
+      "evidence": [
+        {
+          "evidence_id": "evidence-9673d92f06e5ade87c6892ff",
+          "operation_id": "op-req022-run-ledger",
+          "uri": "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json",
+          "evidence_kind": "proof_record",
+          "sha256": "sha256:b3a2108255360c6c2e1316e66c3da76562973ed45581c07132468531f589a8ea"
+        },
+        {
+          "evidence_id": "evidence-8c1d94286c7e5bbfa87d54f1",
+          "operation_id": "op-req022-run-ledger",
+          "uri": "generated/envctl_run_ledger_report.json",
+          "evidence_kind": "run_ledger_report",
+          "sha256": null
+        }
+      ],
+      "event_chain": {
+        "run_id": "run-req022",
+        "event_count": 5,
+        "chain_valid": true,
+        "errors": [],
+        "head_event_hash": "sha256:559e20351ea720c4c2bd2e296cc10547596e7e8fa132d6f7cce409de8907752d"
+      }
+    },
+    "checks": {
+      "run_completed": true,
+      "operation_succeeded": true,
+      "proof_link_recorded": true,
+      "event_chain_valid": true,
+      "event_count": 5,
+      "duplicate_seq_rejected": true,
+      "invalid_status_rejected": true
+    },
+    "errors": []
+  },
+  "evidence": [
+    "generated/envctl_run_ledger_report.json",
+    "docs/ENVCTL_RUN_LEDGER.md",
+    "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json"
+  ],
+  "errors": []
+}

@@ -1,0 +1,331 @@
+diff --git a/crates/nu_plugin_codedb/src/main.rs b/crates/nu_plugin_codedb/src/main.rs
+index 9915e66..73e2f24 100644
+--- a/crates/nu_plugin_codedb/src/main.rs
++++ b/crates/nu_plugin_codedb/src/main.rs
+@@ -56,6 +56,7 @@ impl Plugin for CodeDbPlugin {
+             Box::new(Export),
+             Box::new(AgentHarnessImport),
+             Box::new(EnvctlInventoryImport),
++            Box::new(EnvctlStatusStream),
+             Box::new(NixFlakeImport),
+             Box::new(Tables),
+             Box::new(Gaps),
+@@ -79,6 +80,7 @@ struct BuildScripts;
+ struct Export;
+ struct AgentHarnessImport;
+ struct EnvctlInventoryImport;
++struct EnvctlStatusStream;
+ struct NixFlakeImport;
+ struct Tables;
+ struct Gaps;
+@@ -757,6 +759,171 @@ fn nix_flake_import_rows(
+     Ok(rows)
+ }
+ 
++
++fn envctl_status_stream_rows(
++    events_path: &Path,
++    proof_path: Option<&Path>,
++    span: Span,
++) -> Result<Vec<Row>, LabeledError> {
++    let mut rows = Vec::new();
++    for event in read_json_stream(events_path, span)? {
++        rows.push(envctl_event_status_row(&event, span)?);
++    }
++    if let Some(proof_path) = proof_path {
++        for proof in read_proof_records(proof_path, span)? {
++            rows.push(envctl_proof_status_row(&proof, span)?);
++        }
++    }
++    Ok(rows)
++}
++
++fn read_json_stream(path: &Path, span: Span) -> Result<Vec<JsonValue>, LabeledError> {
++    let raw = fs::read_to_string(path).map_err(|source| {
++        LabeledError::new("failed to read envctl event stream")
++            .with_label(format!("{}: {source}", path.display()), span)
++    })?;
++    let trimmed = raw.trim();
++    if trimmed.is_empty() {
++        return Ok(Vec::new());
++    }
++    if trimmed.starts_with('[') {
++        return serde_json::from_str(trimmed).map_err(|source| {
++            LabeledError::new("failed to parse envctl event stream array")
++                .with_label(format!("{}: {source}", path.display()), span)
++        });
++    }
++    if trimmed.starts_with('{') && serde_json::from_str::<JsonValue>(trimmed).is_ok() {
++        return serde_json::from_str(trimmed).map(|value| vec![value]).map_err(|source| {
++            LabeledError::new("failed to parse envctl event stream object")
++                .with_label(format!("{}: {source}", path.display()), span)
++        });
++    }
++
++    trimmed
++        .lines()
++        .enumerate()
++        .filter(|(_, line)| !line.trim().is_empty())
++        .map(|(index, line)| {
++            serde_json::from_str(line).map_err(|source| {
++                LabeledError::new("failed to parse envctl event stream JSONL")
++                    .with_label(format!("{}:{}: {source}", path.display(), index + 1), span)
++            })
++        })
++        .collect()
++}
++
++fn read_proof_records(path: &Path, span: Span) -> Result<Vec<JsonValue>, LabeledError> {
++    if path.is_file() {
++        let bytes = fs::read(path).map_err(|source| {
++            LabeledError::new("failed to read proof record")
++                .with_label(format!("{}: {source}", path.display()), span)
++        })?;
++        return serde_json::from_slice(&bytes).map(|value| vec![value]).map_err(|source| {
++            LabeledError::new("failed to parse proof record")
++                .with_label(format!("{}: {source}", path.display()), span)
++        });
++    }
++
++    let mut proof_paths = collect_files_recursive(path)?;
++    proof_paths.retain(|path| path.extension().and_then(|ext| ext.to_str()) == Some("json"));
++    proof_paths.sort();
++
++    let mut proofs = Vec::new();
++    for proof_path in proof_paths {
++        let bytes = fs::read(&proof_path).map_err(|source| {
++            LabeledError::new("failed to read proof record")
++                .with_label(format!("{}: {source}", proof_path.display()), span)
++        })?;
++        let proof = serde_json::from_slice(&bytes).map_err(|source| {
++            LabeledError::new("failed to parse proof record")
++                .with_label(format!("{}: {source}", proof_path.display()), span)
++        })?;
++        proofs.push(proof);
++    }
++    Ok(proofs)
++}
++
++fn envctl_event_status_row(event: &JsonValue, span: Span) -> Result<Row, LabeledError> {
++    let payload = event.get("payload").unwrap_or(&JsonValue::Null);
++    let status = json_object_string(payload, "status");
++    let summary = first_non_empty([
++        json_object_string(payload, "summary"),
++        json_object_string(payload, "message"),
++        json_object_string(payload, "title"),
++        json_object_string(event, "event_type"),
++    ]);
++    Ok(vec![
++        ("table", string("envctl_status_stream", span)),
++        ("view", string("event", span)),
++        ("run_id", string(json_object_string(event, "run_id"), span)),
++        ("event_seq", int(json_i64(event, "event_seq").unwrap_or_default(), span)?),
++        ("time", string(json_object_string(event, "timestamp_utc"), span)),
++        ("phase", string(json_object_string(event, "phase"), span)),
++        ("event_type", string(json_object_string(event, "event_type"), span)),
++        ("actor", string(json_object_string(event, "actor_type"), span)),
++        ("actor_id", string(json_object_string(event, "actor_id"), span)),
++        ("operation", string(json_object_string(event, "operation_id"), span)),
++        ("status", string(status.clone(), span)),
++        ("summary", string(summary, span)),
++        (
++            "blocked",
++            bool_value(matches!(status.as_str(), "blocked" | "failed" | "error"), span),
++        ),
++        ("next_action", string(json_object_string(payload, "next_action"), span)),
++        ("proof_task_id", string("", span)),
++        ("proof_status", string("", span)),
++        ("proof_uri", string("", span)),
++        ("evidence_count", int(json_array_len(event, "evidence_refs"), span)?),
++    ])
++}
++
++fn envctl_proof_status_row(proof: &JsonValue, span: Span) -> Result<Row, LabeledError> {
++    let status = json_object_string(proof, "status");
++    Ok(vec![
++        ("table", string("envctl_status_stream", span)),
++        ("view", string("proof", span)),
++        ("run_id", string("", span)),
++        ("event_seq", int(0, span)?),
++        (
++            "time",
++            string(
++                first_non_empty([
++                    json_object_string(proof, "completed_at"),
++                    json_object_string(proof, "started_at"),
++                ]),
++                span,
++            ),
++        ),
++        ("phase", string("", span)),
++        ("event_type", string("proof_status", span)),
++        ("actor", string(json_object_string(proof, "actor"), span)),
++        ("actor_id", string(json_object_string(proof, "helper_id"), span)),
++        ("operation", string(json_object_string(proof, "task_id"), span)),
++        ("status", string(status.clone(), span)),
++        ("summary", string(json_object_string(proof, "failure_reason"), span)),
++        (
++            "blocked",
++            bool_value(!matches!(status.as_str(), "completed" | "passed" | "success"), span),
++        ),
++        ("next_action", string(json_object_string(proof, "next_action"), span)),
++        ("proof_task_id", string(json_object_string(proof, "task_id"), span)),
++        ("proof_status", string(status, span)),
++        ("proof_uri", string(json_object_string(proof, "logs_uri"), span)),
++        ("evidence_count", int(json_array_len(proof, "evidence"), span)?),
++    ])
++}
++
++fn json_array_len(row: &JsonValue, key: &str) -> usize {
++    row.get(key).and_then(JsonValue::as_array).map_or(0, Vec::len)
++}
++
++fn first_non_empty<const N: usize>(values: [String; N]) -> String {
++    values
++        .into_iter()
++        .find(|value| !value.is_empty())
++        .unwrap_or_default()
++}
++
+ fn nix_flake_summary_row(
+     metadata: &JsonValue,
+     metadata_path: &Path,
+@@ -2565,6 +2732,54 @@ impl SimplePluginCommand for EnvctlInventoryImport {
+     }
+ }
+ 
++
++impl SimplePluginCommand for EnvctlStatusStream {
++    type Plugin = CodeDbPlugin;
++
++    fn name(&self) -> &str {
++        "codedb envctl status stream"
++    }
++
++    fn description(&self) -> &str {
++        "Convert envctl run events and proof records into a Nushell status stream table."
++    }
++
++    fn signature(&self) -> Signature {
++        command_signature(PluginCommand::name(self))
++            .required(
++                "events_path",
++                SyntaxShape::Filepath,
++                "Envctl run event JSON array/object or JSONL stream",
++            )
++            .named(
++                "proof",
++                SyntaxShape::Filepath,
++                "Optional proof record JSON file or directory",
++                None,
++            )
++            .named("store", SyntaxShape::Filepath, "CodeDB store path", None)
++            .named("limit", SyntaxShape::Int, "Maximum rows to return", None)
++            .named("cursor", SyntaxShape::Int, "Zero-based row cursor", None)
++    }
++
++    fn run(
++        &self,
++        _plugin: &CodeDbPlugin,
++        _engine: &EngineInterface,
++        call: &EvaluatedCall,
++        _input: &Value,
++    ) -> Result<Value, LabeledError> {
++        let events_path: String = call.req(0)?;
++        let proof_path = call.get_flag::<String>("proof")?;
++        let rows = envctl_status_stream_rows(
++            Path::new(&events_path),
++            proof_path.as_deref().map(Path::new),
++            call.head,
++        )?;
++        Ok(rows_to_value(page_rows(rows, call)?, call.head))
++    }
++}
++
+ impl SimplePluginCommand for NixFlakeImport {
+     type Plugin = CodeDbPlugin;
+ 
+@@ -2826,6 +3041,83 @@ mod tests {
+         }
+         assert!(names.iter().any(|name| name == "codedb scan"));
+         assert!(names.iter().any(|name| name == "codedb export"));
++        assert!(
++            names
++                .iter()
++                .any(|name| name == "codedb envctl status stream")
++        );
++    }
++
++    // Defends: envctl run events and proof records become one native Nushell status table.
++    #[test]
++    fn envctl_status_stream_rows_merge_events_and_proofs() {
++        let root = temp_path("envctl-status-stream");
++        let proof_dir = root.join("proof_records");
++        fs::create_dir_all(&proof_dir).unwrap();
++        let events_path = root.join("events.jsonl");
++        fs::write(
++            &events_path,
++            r#"{"run_id":"run-1","event_seq":1,"event_type":"operation_started","phase":"scan","actor_type":"agent","actor_id":"helper-1","operation_id":"op-1","timestamp_utc":"2026-07-04T23:00:00Z","payload":{"status":"running","summary":"scan started"},"evidence_refs":["logs/scan.log"]}
++{"run_id":"run-1","event_seq":2,"event_type":"approval_required","phase":"apply","actor_type":"system","actor_id":null,"operation_id":"op-2","timestamp_utc":"2026-07-04T23:01:00Z","payload":{"status":"blocked","summary":"approval required","next_action":"approve or deny"},"evidence_refs":[]}
++"#,
++        )
++        .unwrap();
++        fs::write(
++            proof_dir.join("REQ-034_PLUGIN_STATUS_STREAMS.proof.json"),
++            r#"{
++  "task_id": "REQ-034_PLUGIN_STATUS_STREAMS",
++  "status": "completed",
++  "completed_at": "2026-07-04T23:02:00+00:00",
++  "actor": "codex-cli-local",
++  "helper_id": "helper-nu-streams-01",
++  "logs_uri": "logs/REQ-034_PLUGIN_STATUS_STREAMS.log",
++  "evidence": ["generated/patches/REQ-034_PLUGIN_STATUS_STREAMS.nu_plugin.patch"],
++  "failure_reason": ""
++}"#,
++        )
++        .unwrap();
++
++        let rows =
++            envctl_status_stream_rows(&events_path, Some(&proof_dir), Span::unknown()).unwrap();
++
++        assert_eq!(rows.len(), 3);
++        assert!(rows.iter().any(|row| {
++            row_has_string(row, "view", "event")
++                && row_has_string(row, "run_id", "run-1")
++                && row_has_string(row, "operation", "op-1")
++                && row_has_string(row, "status", "running")
++                && row_has_string(row, "summary", "scan started")
++        }));
++        assert!(rows.iter().any(|row| {
++            row_has_string(row, "view", "event")
++                && row_has_string(row, "status", "blocked")
++                && row.iter().any(|(key, value)| {
++                    *key == "blocked" && matches!(value, Value::Bool { val, .. } if *val)
++                })
++                && row_has_string(row, "next_action", "approve or deny")
++        }));
++        assert!(rows.iter().any(|row| {
++            row_has_string(row, "view", "proof")
++                && row_has_string(row, "proof_task_id", "REQ-034_PLUGIN_STATUS_STREAMS")
++                && row_has_string(row, "proof_status", "completed")
++                && row_has_string(row, "proof_uri", "logs/REQ-034_PLUGIN_STATUS_STREAMS.log")
++        }));
++
++        let _ = fs::remove_dir_all(root);
++    }
++
++    // Defends: malformed status streams fail before the plugin claims a partial view.
++    #[test]
++    fn envctl_status_stream_rows_reject_bad_jsonl() {
++        let root = temp_path("envctl-status-stream-bad-jsonl");
++        fs::create_dir_all(&root).unwrap();
++        let events_path = root.join("events.jsonl");
++        fs::write(&events_path, "{\"run_id\":\"run-1\"}\n{not json\n").unwrap();
++
++        let error = envctl_status_stream_rows(&events_path, None, Span::unknown()).unwrap_err();
++
++        assert!(error.to_string().contains("failed to parse"));
++        let _ = fs::remove_dir_all(root);
+     }
+ 
+     // Defends: safe structured inventory targets expose native datatable payload rows.

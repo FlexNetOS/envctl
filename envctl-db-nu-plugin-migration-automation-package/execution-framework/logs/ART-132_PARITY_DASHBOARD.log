@@ -1,0 +1,485 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-132_PARITY_DASHBOARD",
+  "generated_at": "2026-07-04T23:29:06+00:00",
+  "status": "passed",
+  "payload_summary": {
+    "metric_tile_count": 5,
+    "comparison_stream_count": 4,
+    "db_required_table_count": 16,
+    "db_actual_table_count": 16,
+    "package_scanned_file_count": null,
+    "target_descriptor_status": "passed",
+    "shared_protocol_required_records": 14,
+    "artifact_registry_controls_passed": 7,
+    "artifact_registry_control_count": 7,
+    "validation_scorecard": {
+      "pass": 2,
+      "fail": 0,
+      "warn": 1,
+      "blocked": 0,
+      "unknown": 0
+    },
+    "current_parity_status": "warn",
+    "shadow_traffic_status": "complete_with_capture_gap"
+  },
+  "dashboard_status": "complete_with_live_capture_gap",
+  "registry_results": [
+    {
+      "artifact_row_id": "artifact-c0a36b39f4e9cd2fcc50e138",
+      "artifact_id": "art132-parity-dashboard-md",
+      "run_id": "run-art132-parity-dashboard",
+      "path": "execution-framework/migration-artifacts/art-132_parity_dashboard/parity-dashboard.md",
+      "content_hash": "sha256:8860623612ef79c06a1f482985b81863da4f66153274f9db9257396db016be3c",
+      "producer_operation_id": "produce-06-testing-validation-parity-dashboard-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-bee2810e05bf2ce5b37ee87f",
+        "evidence-f1866cdc87e93706e40c4e01",
+        "evidence-d3a7313b663acc6e67249ff2",
+        "evidence-ec26b935ca1481c0c1e5aabd",
+        "evidence-6ffd7c054c320f48e1cc53c3",
+        "evidence-092279dca1cf999f347379f3",
+        "evidence-90d01845f8be347583b10dad",
+        "evidence-627d9d8d1169f8bd324d6431",
+        "evidence-53754f895c83a14448772fac",
+        "evidence-797ab521af4401049a4f7164",
+        "evidence-9fb6834bc7a49bb82fce6e53"
+      ],
+      "graph_edge_ids": [
+        "edge-92ba94b74924df54a8211bac",
+        "edge-77f101f7c99a02160df6da4c",
+        "edge-e463405a13df3361febcfbe1",
+        "edge-2c1e216547119bab77f360b6",
+        "edge-80aebde6c7199172b9d1bde2",
+        "edge-b7b152c729529837bc1ca8fa",
+        "edge-5f802a3447206d69eded7923"
+      ],
+      "validation_ids": [
+        "validation-21f88d6e4a5601e7aae96ffc",
+        "validation-00d25f096e92f342abcfd22d",
+        "validation-13d8689b28b7336eddfc0975",
+        "validation-4589024667c63b559c3c4ca6",
+        "validation-6e63cae96ffcd1cdc93fab40"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-5a319dca0fc4618017f423ca",
+      "artifact_id": "art132-parity-dashboard-json",
+      "run_id": "run-art132-parity-dashboard",
+      "path": "execution-framework/migration-artifacts/art-132_parity_dashboard/parity-dashboard.json",
+      "content_hash": "sha256:3bf360174c452289a273a6919750d6283bf3d66fab25b26d5ea76cb5c9380f91",
+      "producer_operation_id": "produce-06-testing-validation-parity-dashboard-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-6d1c17d481d5ee4bc1ffe589",
+        "evidence-a109a5a946ae5a591d366244",
+        "evidence-f3afb5231f5775f9e659df9f",
+        "evidence-f134d711a979f4afc297a719",
+        "evidence-46807ada907862aeda2b1dc9",
+        "evidence-c112f03abefbabf847d36017",
+        "evidence-f185177cbeff0a3b2a3e5953",
+        "evidence-959f975203d29d0b877906d7",
+        "evidence-384c5b1b6ab33100afa22a34",
+        "evidence-a902f7f005d82579d3878a6c",
+        "evidence-01e212a1698a6c6e0bbc751c"
+      ],
+      "graph_edge_ids": [
+        "edge-bccd25f8eaefdfb62cac693b",
+        "edge-e31ba0f22d5149fd79f56890",
+        "edge-e934463612a56c85d835eef6",
+        "edge-b6f92e8f5671d682e44acb28",
+        "edge-a4e0d9ba61a3e7a83c937213",
+        "edge-49c7f5c07566d3ec4b6bb73d",
+        "edge-2fe5aa723ba639910443ef18"
+      ],
+      "validation_ids": [
+        "validation-ded6c1d64753aa9879d6a542",
+        "validation-adb268dae260a5ef27da23e2",
+        "validation-042b0dd3cd322adcdc767a06",
+        "validation-87ff325aa578c5a50e8f2595",
+        "validation-5faa6f308d311bd6c370721c"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-9aaad52bae6318420d5cffa6",
+      "artifact_id": "06-testing-validation-parity-dashboard-md",
+      "run_id": "run-art132-parity-dashboard",
+      "path": "execution-framework/migration-artifacts/06-testing-validation/parity-dashboard.md",
+      "content_hash": "sha256:8860623612ef79c06a1f482985b81863da4f66153274f9db9257396db016be3c",
+      "producer_operation_id": "produce-06-testing-validation-parity-dashboard-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-a744b127bb7bb92f9e8d3877",
+        "evidence-6e3ac25409ee9d5d6c01a194",
+        "evidence-f23de55af3b81b4a2b7d5dc3",
+        "evidence-272e1c4b0511bc84005c9c6d",
+        "evidence-1e271127721cea2001bca028",
+        "evidence-83318d7221b3f8e2922e4181",
+        "evidence-16d33ff2d114145e7ea05281",
+        "evidence-56dac3200693cd5c753e87a5",
+        "evidence-7a1e36c4eb821644b5d95ee7",
+        "evidence-59f269cd83df3687bbe49288",
+        "evidence-88c9093694cdcecca510c418"
+      ],
+      "graph_edge_ids": [
+        "edge-e68869c9ec247006f06022e5",
+        "edge-5f59f1952e1e85f0671d7b40",
+        "edge-6cf2681bbaab9e74441b59a0",
+        "edge-c40dace75f70425e4c76e83a",
+        "edge-8bcaef651793dfeae1d7eb5f",
+        "edge-9c1d2c6e1d45c8695b63be57",
+        "edge-d5b1ba15f492af20493024c6"
+      ],
+      "validation_ids": [
+        "validation-bf099427bed483d9d94ea1bc",
+        "validation-0df106fd0de83219944d788c",
+        "validation-f3f40727c56ff2d3fc570477",
+        "validation-4b325bd46bb5fad73164595f",
+        "validation-4ecb9e46994040e78f509b9c"
+      ]
+    }
+  ],
+  "artifact_rows": [
+    {
+      "id": "artifact-c0a36b39f4e9cd2fcc50e138",
+      "run_id": "run-art132-parity-dashboard",
+      "artifact_id": "art132-parity-dashboard-md",
+      "title": "ART-132 Parity Dashboard",
+      "artifact_type": "parity_dashboard_markdown",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-132_parity_dashboard/parity-dashboard.md",
+      "content_hash": "sha256:8860623612ef79c06a1f482985b81863da4f66153274f9db9257396db016be3c",
+      "generated_by_operation_id": "produce-06-testing-validation-parity-dashboard-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-bee2810e05bf2ce5b37ee87f",
+          "evidence-f1866cdc87e93706e40c4e01",
+          "evidence-d3a7313b663acc6e67249ff2",
+          "evidence-ec26b935ca1481c0c1e5aabd",
+          "evidence-6ffd7c054c320f48e1cc53c3",
+          "evidence-092279dca1cf999f347379f3",
+          "evidence-90d01845f8be347583b10dad",
+          "evidence-627d9d8d1169f8bd324d6431",
+          "evidence-53754f895c83a14448772fac",
+          "evidence-797ab521af4401049a4f7164",
+          "evidence-9fb6834bc7a49bb82fce6e53"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/art-132_parity_dashboard/parity-dashboard.md",
+          "execution-framework/migration-artifacts/art-132_parity_dashboard/parity-dashboard.json",
+          "execution-framework/migration-artifacts/06-testing-validation/parity-dashboard.md",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/generated/envctl_validation_evidence_report.json",
+          "execution-framework/generated/validation_evidence/parity.json",
+          "execution-framework/generated/shared_protocol_manifest.json",
+          "execution-framework/generated/shared_protocol_validation_report.json",
+          "execution-framework/generated/nu_plugin_command_manifest.json",
+          "execution-framework/generated/live_visuals.json",
+          "execution-framework/migration-artifacts/art-130_shadow_traffic/shadow-traffic-comparison-report.json"
+        ],
+        "producer_operation_id": "produce-06-testing-validation-parity-dashboard-md",
+        "provenance": {
+          "comparison_stream_count": 4,
+          "contract_row_id": "artifact:06-testing-validation-parity-dashboard-md",
+          "dashboard_status": "complete_with_live_capture_gap",
+          "helper_id": "helper-artifact-33",
+          "metric_tile_count": 5,
+          "owner_agent": "artifact-agent",
+          "task_id": "ART-132_PARITY_DASHBOARD"
+        },
+        "validation_ids": [
+          "validation-21f88d6e4a5601e7aae96ffc",
+          "validation-00d25f096e92f342abcfd22d",
+          "validation-13d8689b28b7336eddfc0975",
+          "validation-4589024667c63b559c3c4ca6",
+          "validation-6e63cae96ffcd1cdc93fab40"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-92ba94b74924df54a8211bac",
+          "edge-77f101f7c99a02160df6da4c",
+          "edge-e463405a13df3361febcfbe1",
+          "edge-2c1e216547119bab77f360b6",
+          "edge-80aebde6c7199172b9d1bde2",
+          "edge-b7b152c729529837bc1ca8fa",
+          "edge-5f802a3447206d69eded7923"
+        ],
+        "links": [
+          {
+            "to": "artifact:06-testing-validation-parity-dashboard-md",
+            "type": "satisfies_contract_row"
+          },
+          {
+            "to": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "REQ-025_ENVCTL_VALIDATION_EVIDENCE",
+            "type": "depends_on"
+          },
+          {
+            "to": "ART-130_SHADOW_TRAFFIC",
+            "type": "uses_evidence_from"
+          },
+          {
+            "to": "VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-5a319dca0fc4618017f423ca",
+      "run_id": "run-art132-parity-dashboard",
+      "artifact_id": "art132-parity-dashboard-json",
+      "title": "ART-132 Parity Dashboard Source",
+      "artifact_type": "parity_dashboard_json",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-132_parity_dashboard/parity-dashboard.json",
+      "content_hash": "sha256:3bf360174c452289a273a6919750d6283bf3d66fab25b26d5ea76cb5c9380f91",
+      "generated_by_operation_id": "produce-06-testing-validation-parity-dashboard-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-6d1c17d481d5ee4bc1ffe589",
+          "evidence-a109a5a946ae5a591d366244",
+          "evidence-f3afb5231f5775f9e659df9f",
+          "evidence-f134d711a979f4afc297a719",
+          "evidence-46807ada907862aeda2b1dc9",
+          "evidence-c112f03abefbabf847d36017",
+          "evidence-f185177cbeff0a3b2a3e5953",
+          "evidence-959f975203d29d0b877906d7",
+          "evidence-384c5b1b6ab33100afa22a34",
+          "evidence-a902f7f005d82579d3878a6c",
+          "evidence-01e212a1698a6c6e0bbc751c"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/art-132_parity_dashboard/parity-dashboard.md",
+          "execution-framework/migration-artifacts/art-132_parity_dashboard/parity-dashboard.json",
+          "execution-framework/migration-artifacts/06-testing-validation/parity-dashboard.md",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/generated/envctl_validation_evidence_report.json",
+          "execution-framework/generated/validation_evidence/parity.json",
+          "execution-framework/generated/shared_protocol_manifest.json",
+          "execution-framework/generated/shared_protocol_validation_report.json",
+          "execution-framework/generated/nu_plugin_command_manifest.json",
+          "execution-framework/generated/live_visuals.json",
+          "execution-framework/migration-artifacts/art-130_shadow_traffic/shadow-traffic-comparison-report.json"
+        ],
+        "producer_operation_id": "produce-06-testing-validation-parity-dashboard-md",
+        "provenance": {
+          "comparison_stream_count": 4,
+          "contract_row_id": "artifact:06-testing-validation-parity-dashboard-md",
+          "dashboard_status": "complete_with_live_capture_gap",
+          "helper_id": "helper-artifact-33",
+          "metric_tile_count": 5,
+          "owner_agent": "artifact-agent",
+          "task_id": "ART-132_PARITY_DASHBOARD"
+        },
+        "validation_ids": [
+          "validation-ded6c1d64753aa9879d6a542",
+          "validation-adb268dae260a5ef27da23e2",
+          "validation-042b0dd3cd322adcdc767a06",
+          "validation-87ff325aa578c5a50e8f2595",
+          "validation-5faa6f308d311bd6c370721c"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-bccd25f8eaefdfb62cac693b",
+          "edge-e31ba0f22d5149fd79f56890",
+          "edge-e934463612a56c85d835eef6",
+          "edge-b6f92e8f5671d682e44acb28",
+          "edge-a4e0d9ba61a3e7a83c937213",
+          "edge-49c7f5c07566d3ec4b6bb73d",
+          "edge-2fe5aa723ba639910443ef18"
+        ],
+        "links": [
+          {
+            "to": "artifact:06-testing-validation-parity-dashboard-md",
+            "type": "satisfies_contract_row"
+          },
+          {
+            "to": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "REQ-025_ENVCTL_VALIDATION_EVIDENCE",
+            "type": "depends_on"
+          },
+          {
+            "to": "ART-130_SHADOW_TRAFFIC",
+            "type": "uses_evidence_from"
+          },
+          {
+            "to": "VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-9aaad52bae6318420d5cffa6",
+      "run_id": "run-art132-parity-dashboard",
+      "artifact_id": "06-testing-validation-parity-dashboard-md",
+      "title": "Parity Dashboard",
+      "artifact_type": "validation_evidence",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/06-testing-validation/parity-dashboard.md",
+      "content_hash": "sha256:8860623612ef79c06a1f482985b81863da4f66153274f9db9257396db016be3c",
+      "generated_by_operation_id": "produce-06-testing-validation-parity-dashboard-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-a744b127bb7bb92f9e8d3877",
+          "evidence-6e3ac25409ee9d5d6c01a194",
+          "evidence-f23de55af3b81b4a2b7d5dc3",
+          "evidence-272e1c4b0511bc84005c9c6d",
+          "evidence-1e271127721cea2001bca028",
+          "evidence-83318d7221b3f8e2922e4181",
+          "evidence-16d33ff2d114145e7ea05281",
+          "evidence-56dac3200693cd5c753e87a5",
+          "evidence-7a1e36c4eb821644b5d95ee7",
+          "evidence-59f269cd83df3687bbe49288",
+          "evidence-88c9093694cdcecca510c418"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/art-132_parity_dashboard/parity-dashboard.md",
+          "execution-framework/migration-artifacts/art-132_parity_dashboard/parity-dashboard.json",
+          "execution-framework/migration-artifacts/06-testing-validation/parity-dashboard.md",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/generated/envctl_validation_evidence_report.json",
+          "execution-framework/generated/validation_evidence/parity.json",
+          "execution-framework/generated/shared_protocol_manifest.json",
+          "execution-framework/generated/shared_protocol_validation_report.json",
+          "execution-framework/generated/nu_plugin_command_manifest.json",
+          "execution-framework/generated/live_visuals.json",
+          "execution-framework/migration-artifacts/art-130_shadow_traffic/shadow-traffic-comparison-report.json"
+        ],
+        "producer_operation_id": "produce-06-testing-validation-parity-dashboard-md",
+        "provenance": {
+          "comparison_stream_count": 4,
+          "contract_row_id": "artifact:06-testing-validation-parity-dashboard-md",
+          "dashboard_status": "complete_with_live_capture_gap",
+          "helper_id": "helper-artifact-33",
+          "metric_tile_count": 5,
+          "owner_agent": "artifact-agent",
+          "task_id": "ART-132_PARITY_DASHBOARD"
+        },
+        "validation_ids": [
+          "validation-bf099427bed483d9d94ea1bc",
+          "validation-0df106fd0de83219944d788c",
+          "validation-f3f40727c56ff2d3fc570477",
+          "validation-4b325bd46bb5fad73164595f",
+          "validation-4ecb9e46994040e78f509b9c"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-e68869c9ec247006f06022e5",
+          "edge-5f59f1952e1e85f0671d7b40",
+          "edge-6cf2681bbaab9e74441b59a0",
+          "edge-c40dace75f70425e4c76e83a",
+          "edge-8bcaef651793dfeae1d7eb5f",
+          "edge-9c1d2c6e1d45c8695b63be57",
+          "edge-d5b1ba15f492af20493024c6"
+        ],
+        "links": [
+          {
+            "to": "artifact:06-testing-validation-parity-dashboard-md",
+            "type": "satisfies_contract_row"
+          },
+          {
+            "to": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "REQ-025_ENVCTL_VALIDATION_EVIDENCE",
+            "type": "depends_on"
+          },
+          {
+            "to": "ART-130_SHADOW_TRAFFIC",
+            "type": "uses_evidence_from"
+          },
+          {
+            "to": "VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          }
+        ]
+      }
+    }
+  ],
+  "artifact_index_rows": [
+    {
+      "artifact_id": "06-testing-validation-parity-dashboard-md",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/06-testing-validation/parity-dashboard.md",
+      "content_hash": "sha256:8860623612ef79c06a1f482985b81863da4f66153274f9db9257396db016be3c"
+    },
+    {
+      "artifact_id": "art132-parity-dashboard-json",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-132_parity_dashboard/parity-dashboard.json",
+      "content_hash": "sha256:3bf360174c452289a273a6919750d6283bf3d66fab25b26d5ea76cb5c9380f91"
+    },
+    {
+      "artifact_id": "art132-parity-dashboard-md",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-132_parity_dashboard/parity-dashboard.md",
+      "content_hash": "sha256:8860623612ef79c06a1f482985b81863da4f66153274f9db9257396db016be3c"
+    }
+  ],
+  "validation_scorecard_row": [
+    12,
+    0,
+    3,
+    0,
+    0
+  ],
+  "replay_readiness_row": [
+    1,
+    0,
+    0,
+    0
+  ],
+  "evidence_count": 33,
+  "graph_edge_count": 21,
+  "completion_gate": {
+    "artifact_exists": true,
+    "registry_contains_hash": true,
+    "validation_evidence_linked": true
+  },
+  "errors": [],
+  "evidence": [
+    "execution-framework/migration-artifacts/art-132_parity_dashboard/parity-dashboard.md",
+    "execution-framework/migration-artifacts/art-132_parity_dashboard/parity-dashboard.json",
+    "execution-framework/migration-artifacts/06-testing-validation/parity-dashboard.md",
+    "execution-framework/generated/art132_parity_dashboard_registry_report.json",
+    "execution-framework/generated/envctl_artifact_registry_report.json",
+    "execution-framework/generated/envctl_validation_evidence_report.json",
+    "execution-framework/generated/validation_evidence/parity.json",
+    "execution-framework/generated/shared_protocol_manifest.json",
+    "execution-framework/generated/shared_protocol_validation_report.json",
+    "execution-framework/generated/nu_plugin_command_manifest.json",
+    "execution-framework/generated/live_visuals.json",
+    "execution-framework/migration-artifacts/art-130_shadow_traffic/shadow-traffic-comparison-report.json"
+  ]
+}

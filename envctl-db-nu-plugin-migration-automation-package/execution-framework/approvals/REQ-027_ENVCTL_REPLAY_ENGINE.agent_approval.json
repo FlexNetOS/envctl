@@ -1,0 +1,15 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-027_ENVCTL_REPLAY_ENGINE",
+  "reviewer": "gpt-5.5",
+  "model": "gpt-5.5",
+  "decision": "approved",
+  "reviewed_at": "2026-07-05T04:38:19+00:00",
+  "review_artifact": "reviews/GPT55_REQ027_APPROVAL_REVIEW.md",
+  "summary": "Fallback GPT-5.5 approval for REQ-027 after Claude Opus/weave path was unavailable; REQ-026 rollback proof and fail-closed approval gate evidence satisfy unlock criteria.",
+  "instruction_on_denial": "",
+  "fallback_reason": "Claude Opus local reviewer path was unavailable in this session because weave is not in PATH; GPT-5.5 fallback reviewer was launched with codex exec per AGENT_APPROVAL_GATE and NEXT_SESSION_PROMPT.",
+  "evidence": [
+    "reviews/GPT55_REQ027_APPROVAL_REVIEW.md"
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "UpgradeReport",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "generated_at",
+    "upgrades"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string"
+    },
+    "upgrades": {
+      "type": "array"
+    }
+  },
+  "additionalProperties": true
+}

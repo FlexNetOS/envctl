@@ -1,0 +1,83 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "ART-123_VALIDATION_RECONCILIATION",
+  "status": "completed",
+  "started_at": "2026-07-04T23:29:16+00:00",
+  "completed_at": "2026-07-04T23:29:16+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-artifact-24",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/generate_art123_validation_reconciliation.py",
+    "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.md",
+    "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.json",
+    "execution-framework/migration-artifacts/06-testing-validation/validation-reconciliation-reports.md",
+    "execution-framework/generated/art123_validation_reconciliation_report.json",
+    "execution-framework/logs/ART-123_VALIDATION_RECONCILIATION.log",
+    "execution-framework/state/ART-123_VALIDATION_RECONCILIATION.heartbeat.json",
+    "execution-framework/proof_records/ART-123_VALIDATION_RECONCILIATION.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/generate_art123_validation_reconciliation.py",
+    "python3 -m py_compile scripts/generate_art123_validation_reconciliation.py"
+  ],
+  "verification_output": {
+    "status": "passed",
+    "parity_passed": true,
+    "artifact_index_rows": 3,
+    "validation_scorecard_row": [
+      14,
+      0,
+      0,
+      0,
+      0
+    ],
+    "replay_readiness_row": [
+      1,
+      0,
+      0,
+      0
+    ],
+    "registered_output_hashes": {
+      "execution-framework/migration-artifacts/06-testing-validation/validation-reconciliation-reports.md": "sha256:1e234c8ac0f976d70070906ad4233fe18e9d4c6b8ec6c114f5ea137fd7fe1963",
+      "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.json": "sha256:69f1d60c2d68961868f0b183740090eab97100f8b6ef96556e7241bbfd650ae9",
+      "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.md": "sha256:1e234c8ac0f976d70070906ad4233fe18e9d4c6b8ec6c114f5ea137fd7fe1963"
+    },
+    "evidence_by_kind": {
+      "artifact_registry_link": 24,
+      "parity": 1,
+      "proof_record": 2,
+      "reconciliation": 1
+    }
+  },
+  "checksums": {
+    "execution-framework/scripts/generate_art123_validation_reconciliation.py": "3d9643735787580e001218b30815388fd7f8c30859deb29512c26866fe52b9f9",
+    "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.md": "1e234c8ac0f976d70070906ad4233fe18e9d4c6b8ec6c114f5ea137fd7fe1963",
+    "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.json": "69f1d60c2d68961868f0b183740090eab97100f8b6ef96556e7241bbfd650ae9",
+    "execution-framework/migration-artifacts/06-testing-validation/validation-reconciliation-reports.md": "1e234c8ac0f976d70070906ad4233fe18e9d4c6b8ec6c114f5ea137fd7fe1963",
+    "execution-framework/generated/art123_validation_reconciliation_report.json": "0a105f49dbf425c1026c713c472cf55edf4accd463e587d486f19b2b5420a3d7",
+    "execution-framework/logs/ART-123_VALIDATION_RECONCILIATION.log": "0a105f49dbf425c1026c713c472cf55edf4accd463e587d486f19b2b5420a3d7",
+    "execution-framework/state/ART-123_VALIDATION_RECONCILIATION.heartbeat.json": "ed53e357e836c06dea9bb5be72b7e174ac4a0b68a69daa34334515a72aa30999",
+    "execution-framework/proof_records/ART-123_VALIDATION_RECONCILIATION.proof.json": "649456b8cf0c1b30f723829d29513e8cc3885851f7f2f03c342cdf715eac47fa",
+    "execution-framework/proof_records/proof_ledger.jsonl": "1d4deb5456dc021abe00ef304a9e857319c08f4bfd1fdd615de062cdc40915a8"
+  },
+  "logs_uri": "logs/ART-123_VALIDATION_RECONCILIATION.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.md",
+    "execution-framework/migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.json",
+    "execution-framework/migration-artifacts/06-testing-validation/validation-reconciliation-reports.md",
+    "execution-framework/generated/art123_validation_reconciliation_report.json",
+    "execution-framework/generated/envctl_artifact_registry_report.json",
+    "execution-framework/generated/envctl_validation_evidence_report.json",
+    "execution-framework/generated/shared_protocol_validation_report.json",
+    "execution-framework/generated/status_from_proofs.json",
+    "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+    "execution-framework/proof_records/REQ-025_ENVCTL_VALIDATION_EVIDENCE.proof.json",
+    "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+  ],
+  "failure_reason": "",
+  "next_action": "run VER-300_UNIT_VALIDATION after remaining artifact tasks are generated"
+}

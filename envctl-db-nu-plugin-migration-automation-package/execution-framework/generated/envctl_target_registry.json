@@ -1,0 +1,183 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-021_ENVCTL_TARGET_REGISTRY",
+  "generated_at": "2026-07-04T23:10:14+00:00",
+  "status": "passed",
+  "database_backend": "sqlite",
+  "runtime": "python sqlite3 in-memory",
+  "descriptor_schema": {
+    "path": "schemas/target_descriptor.schema.json",
+    "sha256": "2b394af8fea1ab7e88c83b1c50a244a21156d7ba728883e76d343f7aeff9a436"
+  },
+  "applied_migrations": [
+    {
+      "path": "sql/001_migration_automation_schema.sql",
+      "sha256": "f0a8ad6ce7fba6023d8bfb765843fef07710387f9e720f7fe01305ce2d52bb0e",
+      "bytes": 8608
+    },
+    {
+      "path": "sql/002_views_and_indexes.sql",
+      "sha256": "b9c4fee76504746742695119c84bfbb46dedb1e29da480103f2e6b6c5a83106e",
+      "bytes": 3819
+    },
+    {
+      "path": "execution-framework/generated/contract_manifest.seed.sql",
+      "sha256": "399c1092118d57f78c7647a2d5c2fbd914c5b2ac97d5e41e4deda44722dc8c06",
+      "bytes": 155594
+    }
+  ],
+  "summary": {
+    "input_descriptor_count": 2,
+    "registered_descriptor_count": 5,
+    "target_type_count": 5,
+    "target_type_covered_count": 5,
+    "row_count_after_first_pass": 5,
+    "row_count_after_second_pass": 5,
+    "invalid_descriptor_error_count": 2
+  },
+  "errors": [],
+  "target_type_coverage": {
+    "codebase": true,
+    "data": true,
+    "infrastructure": true,
+    "integration": true,
+    "mixed": true
+  },
+  "descriptor_inputs": [
+    {
+      "source": "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+      "target_id": "flexnetos-vs-lifeos",
+      "target_type": "mixed",
+      "descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384"
+    },
+    {
+      "source": "examples/target-descriptors/generic-codebase.yaml",
+      "target_id": "replace-with-target-id",
+      "target_type": "codebase",
+      "descriptor_hash": "sha256:e79f5c931d50fb8193c678d61ddecc1405c8030ab9528946fcb65a7bde06bff9"
+    },
+    {
+      "source": "generated:synthetic-data-target",
+      "target_id": "synthetic-data-target",
+      "target_type": "data",
+      "descriptor_hash": "sha256:b60cc1a1afc87e27ced7bcd8cd986a858d8bc85fa7509692133faf682e1d6c7d"
+    },
+    {
+      "source": "generated:synthetic-infrastructure-target",
+      "target_id": "synthetic-infrastructure-target",
+      "target_type": "infrastructure",
+      "descriptor_hash": "sha256:0527a67aad464952377710ed804063fb78f929cfb6db7580a33911ca34884f79"
+    },
+    {
+      "source": "generated:synthetic-integration-target",
+      "target_id": "synthetic-integration-target",
+      "target_type": "integration",
+      "descriptor_hash": "sha256:2c0b9fff80948d3964bfb88006d579c33ee3cb26c9dea98478e9085c9ffcb6e6"
+    }
+  ],
+  "registry_rows": [
+    {
+      "id": "target-flexnetos-vs-lifeos",
+      "target_id": "flexnetos-vs-lifeos",
+      "target_type": "mixed",
+      "primary_root": "/home/flexnetos/FlexNetOS",
+      "compare_root": "/home/flexnetos/lifeos",
+      "descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384",
+      "safety_mode": "approval-gated",
+      "max_auto_risk": "R2"
+    },
+    {
+      "id": "target-replace-with-target-id",
+      "target_id": "replace-with-target-id",
+      "target_type": "codebase",
+      "primary_root": "/absolute/path/to/repo",
+      "compare_root": null,
+      "descriptor_hash": "sha256:e79f5c931d50fb8193c678d61ddecc1405c8030ab9528946fcb65a7bde06bff9",
+      "safety_mode": "approval-gated",
+      "max_auto_risk": "R2"
+    },
+    {
+      "id": "target-synthetic-data-target",
+      "target_id": "synthetic-data-target",
+      "target_type": "data",
+      "primary_root": "/virtual/data",
+      "compare_root": null,
+      "descriptor_hash": "sha256:b60cc1a1afc87e27ced7bcd8cd986a858d8bc85fa7509692133faf682e1d6c7d",
+      "safety_mode": "approval-gated",
+      "max_auto_risk": "R2"
+    },
+    {
+      "id": "target-synthetic-infrastructure-target",
+      "target_id": "synthetic-infrastructure-target",
+      "target_type": "infrastructure",
+      "primary_root": "/virtual/infrastructure",
+      "compare_root": null,
+      "descriptor_hash": "sha256:0527a67aad464952377710ed804063fb78f929cfb6db7580a33911ca34884f79",
+      "safety_mode": "approval-gated",
+      "max_auto_risk": "R2"
+    },
+    {
+      "id": "target-synthetic-integration-target",
+      "target_id": "synthetic-integration-target",
+      "target_type": "integration",
+      "primary_root": "/virtual/integration",
+      "compare_root": null,
+      "descriptor_hash": "sha256:2c0b9fff80948d3964bfb88006d579c33ee3cb26c9dea98478e9085c9ffcb6e6",
+      "safety_mode": "approval-gated",
+      "max_auto_risk": "R2"
+    }
+  ],
+  "lookup_checks": [
+    {
+      "target_id": "flexnetos-vs-lifeos",
+      "source": "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+      "found": true,
+      "hash_matches": true,
+      "safety_mode": "approval-gated",
+      "max_auto_risk": "R2"
+    },
+    {
+      "target_id": "replace-with-target-id",
+      "source": "examples/target-descriptors/generic-codebase.yaml",
+      "found": true,
+      "hash_matches": true,
+      "safety_mode": "approval-gated",
+      "max_auto_risk": "R2"
+    },
+    {
+      "target_id": "synthetic-data-target",
+      "source": "generated:synthetic-data-target",
+      "found": true,
+      "hash_matches": true,
+      "safety_mode": "approval-gated",
+      "max_auto_risk": "R2"
+    },
+    {
+      "target_id": "synthetic-infrastructure-target",
+      "source": "generated:synthetic-infrastructure-target",
+      "found": true,
+      "hash_matches": true,
+      "safety_mode": "approval-gated",
+      "max_auto_risk": "R2"
+    },
+    {
+      "target_id": "synthetic-integration-target",
+      "source": "generated:synthetic-integration-target",
+      "found": true,
+      "hash_matches": true,
+      "safety_mode": "approval-gated",
+      "max_auto_risk": "R2"
+    }
+  ],
+  "idempotency_check": {
+    "row_count_stable": true,
+    "descriptor_hashes_stable": true
+  },
+  "invalid_descriptor_check": {
+    "rejected": true,
+    "errors": [
+      "invalid-fixture: target_id must be a non-empty string",
+      "invalid-fixture: target_type must be one of ['codebase', 'data', 'infrastructure', 'integration', 'mixed']"
+    ]
+  }
+}

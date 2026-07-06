@@ -1,0 +1,440 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-129_BUSINESS_CAPABILITY",
+  "title": "Business capability map",
+  "generated_at": "2026-07-04T23:19:56+00:00",
+  "scope": {
+    "target": "flexnetos-vs-lifeos",
+    "purpose": "Map technical migration automation systems to business functions.",
+    "owner_lane": "lane_d_filesystem",
+    "owner_agent": "artifact-agent"
+  },
+  "source_inputs": {
+    "target_descriptor": {
+      "path": "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+      "registry_source": "generated/envctl_target_registry.json",
+      "target_id": "flexnetos-vs-lifeos",
+      "target_type": "mixed",
+      "primary_root": "/home/flexnetos/FlexNetOS",
+      "compare_root": "/home/flexnetos/lifeos",
+      "purpose": "Determine what FlexNetOS was used for compared with lifeos using real evidence.",
+      "descriptor_excerpt": "schema_version: 1\ntarget_id: flexnetos-vs-lifeos\ntarget_type: mixed\nprimary_root: /home/flexnetos/FlexNetOS\ncompare_root: /home/flexnetos/lifeos\noutput_root: migration-artifacts\ninclude:\n  - \"**/*\"\nexclude:\n  - \".git/**\"\n  - \"node_modules/**\"\n  - \"target/**\"\n  - \".venv/**\"\n  - \"__pycache__/**\"\nsafety:\n  default_mode: approval-gated\n  max_auto_risk: R2\n  allow_network: false\n  allow_destructive: false\ncollectors:\n  filesystem: true\n  git: true\n  package_managers: true\n  databases: true\n  infrastructure: true\n  apis: true\n  observability: true\nartifact_contract:\n  name: full-migration-artifact-contract\n  version: 1\nrecipe:\n  name: codex-flexnetos-full-artifact-run\n  version: 1\nmetadata:\n  purpose: \"Determine what FlexNetOS was used for compared with lifeos using real evidence.\"\n"
+    },
+    "repo_scan": {
+      "path": "execution-framework/generated/package_scan.json",
+      "summary": {
+        "top_level_entries": [
+          {
+            "name": "INSTALL_IN_REPOS.sh",
+            "type": "file"
+          },
+          {
+            "name": "PACKAGE_MANIFEST.json",
+            "type": "file"
+          },
+          {
+            "name": "PROMPT_PACKAGE_COMBINED.md",
+            "type": "file"
+          },
+          {
+            "name": "README.md",
+            "type": "file"
+          },
+          {
+            "name": "RUN_WITH_CODEX_ENVCTL.sh",
+            "type": "file"
+          },
+          {
+            "name": "codex",
+            "type": "directory"
+          },
+          {
+            "name": "examples",
+            "type": "directory"
+          },
+          {
+            "name": "expected-output",
+            "type": "directory"
+          },
+          {
+            "name": "helpers",
+            "type": "directory"
+          },
+          {
+            "name": "history",
+            "type": "directory"
+          },
+          {
+            "name": "prompts",
+            "type": "directory"
+          },
+          {
+            "name": "schemas",
+            "type": "directory"
+          },
+          {
+            "name": "source",
+            "type": "directory"
+          },
+          {
+            "name": "specs",
+            "type": "directory"
+          },
+          {
+            "name": "sql",
+            "type": "directory"
+          }
+        ],
+        "scanned_folders": [
+          "codex",
+          "examples",
+          "expected-output",
+          "helpers",
+          "history",
+          "prompts",
+          "schemas",
+          "source",
+          "specs",
+          "sql"
+        ]
+      }
+    },
+    "envctl_database": {
+      "schema_report": "execution-framework/generated/envctl_migration_db_model.json",
+      "artifact_registry_report": "execution-framework/generated/envctl_artifact_registry_report.json",
+      "shared_protocol_manifest": "execution-framework/generated/shared_protocol_manifest.json",
+      "command_manifest": "execution-framework/generated/nu_plugin_command_manifest.json"
+    }
+  },
+  "summary": {
+    "capability_count": 9,
+    "all_capabilities_have_business_function": true,
+    "all_capabilities_have_technical_systems": true,
+    "mapped_envctl_db_object_count": 23,
+    "mapped_nu_plugin_command_count": 13
+  },
+  "capabilities": [
+    {
+      "capability_id": "BUS-CAP-001",
+      "business_function": "Migration target intake and scoping",
+      "business_outcome": "Operators can define the FlexNetOS versus lifeos migration target, preserve safety limits, and select the comparison roots for evidence-based planning.",
+      "technical_systems": [
+        "Target Descriptor Registry",
+        "schemas/target_descriptor.schema.json",
+        "envctl migration target list",
+        "envctl migration target add"
+      ],
+      "envctl_db_objects": [
+        "envctl_migration_targets"
+      ],
+      "nu_plugin_surface": [
+        "envctl migration target list",
+        "envctl migration targets"
+      ],
+      "migration_artifacts": [
+        "Target descriptor",
+        "Run ledger"
+      ],
+      "evidence_refs": [
+        "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+        "execution-framework/generated/envctl_target_registry.json",
+        "execution-framework/docs/ENVCTL_TARGET_REGISTRY.md"
+      ],
+      "controls": [
+        "descriptor hash",
+        "safety mode",
+        "max auto risk"
+      ],
+      "confidence": "high"
+    },
+    {
+      "capability_id": "BUS-CAP-002",
+      "business_function": "Package import and contract governance",
+      "business_outcome": "Prompt packages, artifact contracts, and recipes become versioned business commitments rather than loose files.",
+      "technical_systems": [
+        "Package Import Registry",
+        "Artifact Contract Registry",
+        "Migration Recipe Registry",
+        "contract manifest seed SQL"
+      ],
+      "envctl_db_objects": [
+        "envctl_migration_packages",
+        "envctl_migration_artifact_contracts",
+        "envctl_migration_recipes"
+      ],
+      "nu_plugin_surface": [
+        "envctl migration packages",
+        "envctl migration package inspect",
+        "envctl migration package import"
+      ],
+      "migration_artifacts": [
+        "Artifact contract version",
+        "Migration recipe version"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/contract_manifest.json",
+        "execution-framework/generated/contract_manifest.seed.sql",
+        "expected-output/migration-automation-artifacts.md"
+      ],
+      "controls": [
+        "contract hash",
+        "recipe hash",
+        "source package id"
+      ],
+      "confidence": "high"
+    },
+    {
+      "capability_id": "BUS-CAP-003",
+      "business_function": "Execution planning and run control",
+      "business_outcome": "Migration work can be planned, started, paused, resumed, and inspected as auditable operations.",
+      "technical_systems": [
+        "Run Manager",
+        "Operation Queue",
+        "Operation State Machine",
+        "envctl run ledger"
+      ],
+      "envctl_db_objects": [
+        "envctl_migration_runs",
+        "envctl_migration_operations",
+        "envctl_migration_run_events",
+        "envctl_migration_run_latest_status"
+      ],
+      "nu_plugin_surface": [
+        "envctl migration run plan",
+        "envctl migration run start",
+        "envctl migration pause",
+        "envctl migration resume",
+        "envctl migration status"
+      ],
+      "migration_artifacts": [
+        "Run ledger",
+        "Event timeline",
+        "Operation queue"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/envctl_run_ledger_report.json",
+        "execution-framework/generated/operation_state_machine.json",
+        "execution-framework/docs/OPERATION_STATE_MACHINE.md"
+      ],
+      "controls": [
+        "operation idempotency key",
+        "risk class",
+        "state transition model"
+      ],
+      "confidence": "high"
+    },
+    {
+      "capability_id": "BUS-CAP-004",
+      "business_function": "Human approval and intervention control",
+      "business_outcome": "Risky migration changes are gated by explicit approval records and visible operator state.",
+      "technical_systems": [
+        "Approval Gate",
+        "Human Approval Ledger",
+        "Live Visuals",
+        "Agent Control API"
+      ],
+      "envctl_db_objects": [
+        "envctl_migration_approvals",
+        "envctl_migration_open_approvals"
+      ],
+      "nu_plugin_surface": [
+        "envctl migration approve",
+        "envctl migration status"
+      ],
+      "migration_artifacts": [
+        "Approval ledger",
+        "Human involvement transcript"
+      ],
+      "evidence_refs": [
+        "prompts/LIVE_VISUALS_AND_HUMAN_CONTROL.md",
+        "execution-framework/generated/live_visuals.json",
+        "execution-framework/generated/operation_state_machine.json"
+      ],
+      "controls": [
+        "approval-required-from-risk R3",
+        "approval status",
+        "human mode"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "capability_id": "BUS-CAP-005",
+      "business_function": "Evidence, artifact, and lineage governance",
+      "business_outcome": "Every produced migration deliverable can be tied to content hashes, producers, evidence records, and graph edges.",
+      "technical_systems": [
+        "Artifact Registry",
+        "Evidence Store",
+        "Link Graph",
+        "Proof Record Ledger"
+      ],
+      "envctl_db_objects": [
+        "envctl_migration_artifacts",
+        "envctl_migration_evidence",
+        "envctl_migration_graph_edges",
+        "envctl_migration_artifact_index"
+      ],
+      "nu_plugin_surface": [
+        "envctl migration proof",
+        "envctl migration status"
+      ],
+      "migration_artifacts": [
+        "Evidence register",
+        "Artifact registry",
+        "Link graph"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/envctl_artifact_registry_report.json",
+        "execution-framework/docs/ENVCTL_ARTIFACT_REGISTRY.md",
+        "execution-framework/schemas/proof_record.schema.json"
+      ],
+      "controls": [
+        "SHA-256 content hash",
+        "producer operation id",
+        "contract id",
+        "blocked path rejection"
+      ],
+      "confidence": "high"
+    },
+    {
+      "capability_id": "BUS-CAP-006",
+      "business_function": "Validation and readiness decision support",
+      "business_outcome": "Migration readiness can be scored from validation rows, replay checks, and generated proof evidence before downstream verification starts.",
+      "technical_systems": [
+        "Validation Ledger",
+        "Validation Scorecard View",
+        "Replay Engine",
+        "Readiness Reports"
+      ],
+      "envctl_db_objects": [
+        "envctl_migration_validations",
+        "envctl_migration_validation_scorecard",
+        "envctl_migration_replay_readiness"
+      ],
+      "nu_plugin_surface": [
+        "envctl migration replay",
+        "envctl migration proof",
+        "envctl migration status"
+      ],
+      "migration_artifacts": [
+        "Validation scorecard",
+        "Replay readiness report"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/envctl_migration_db_model.json",
+        "execution-framework/generated/shared_protocol_validation_report.json",
+        "execution-framework/generated/final_verification_report.json"
+      ],
+      "controls": [
+        "validation status",
+        "evidence refs",
+        "replay readiness view"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "capability_id": "BUS-CAP-007",
+      "business_function": "Rollback and checkpoint assurance",
+      "business_outcome": "Operators can identify rollback handles and checkpoints before applying migration changes.",
+      "technical_systems": [
+        "Rollback Registry",
+        "Checkpoint Registry",
+        "pre-execution framework manifest"
+      ],
+      "envctl_db_objects": [
+        "envctl_migration_checkpoints",
+        "envctl_migration_rollbacks"
+      ],
+      "nu_plugin_surface": [
+        "envctl migration status",
+        "envctl migration replay"
+      ],
+      "migration_artifacts": [
+        "Rollback readiness report",
+        "Rollback/checkpoint metadata"
+      ],
+      "evidence_refs": [
+        "history/pre_execution_framework_manifest.json",
+        "execution-framework/generated/envctl_migration_db_model.json",
+        "prompts/SECURITY_REPRODUCIBILITY_MODEL.md"
+      ],
+      "controls": [
+        "rollback plan JSON",
+        "checkpoint hash",
+        "rollback status"
+      ],
+      "confidence": "medium"
+    },
+    {
+      "capability_id": "BUS-CAP-008",
+      "business_function": "Operator presentation through Nushell",
+      "business_outcome": "Operators get table-shaped, command-oriented access while envctl remains the durable source of truth.",
+      "technical_systems": [
+        "nu_plugin_envctl_migration",
+        "Shared Protocol Schemas",
+        "envctl JSON command boundary"
+      ],
+      "envctl_db_objects": [
+        "envctl_migration_plugin_sessions",
+        "envctl_migration_agent_sessions",
+        "execution_framework_proof_records"
+      ],
+      "nu_plugin_surface": [
+        "envctl migration target list",
+        "envctl migration run plan",
+        "envctl migration status",
+        "envctl migration proof"
+      ],
+      "migration_artifacts": [
+        "Plugin session ledger",
+        "Agent session ledger"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/nu_plugin_command_manifest.json",
+        "execution-framework/generated/shared_protocol_manifest.json",
+        "execution-framework/docs/SHARED_PROTOCOL_SCHEMAS.md"
+      ],
+      "controls": [
+        "envctl owns durable state",
+        "mutations emit events",
+        "shared record schemas"
+      ],
+      "confidence": "high"
+    },
+    {
+      "capability_id": "BUS-CAP-009",
+      "business_function": "Operational observability and live status",
+      "business_outcome": "Status, timeline, and stream records let teams monitor artifact production and blockers during the migration.",
+      "technical_systems": [
+        "Append-only Event Log",
+        "Live Timeline View",
+        "Plugin Status Streams",
+        "Live Visuals Renderer"
+      ],
+      "envctl_db_objects": [
+        "envctl_migration_run_events",
+        "envctl_migration_live_timeline",
+        "envctl_migration_run_latest_status"
+      ],
+      "nu_plugin_surface": [
+        "envctl migration status"
+      ],
+      "migration_artifacts": [
+        "Event timeline",
+        "Plugin session ledger",
+        "Agent session ledger"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/REQ-034_PLUGIN_STATUS_STREAMS.contract.json",
+        "execution-framework/generated/live_visuals.md",
+        "execution-framework/docs/ENVCTL_RUN_LEDGER.md"
+      ],
+      "controls": [
+        "event sequence",
+        "actor type",
+        "previous event hash",
+        "stream status contract"
+      ],
+      "confidence": "medium"
+    }
+  ]
+}

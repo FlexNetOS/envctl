@@ -1,0 +1,16 @@
+{
+  "task_id": "ART-110_API_CATALOG",
+  "status": "completed",
+  "updated_at": "2026-07-04T23:31:52+00:00",
+  "proof_uri": "proof_records/ART-110_API_CATALOG.proof.json",
+  "logs_uri": "logs/ART-110_API_CATALOG.log",
+  "artifact_paths": [
+    "migration-artifacts/art-110_api_catalog/api-catalog.json",
+    "migration-artifacts/art-110_api_catalog/api-catalog.md",
+    "migration-artifacts/art-110_api_catalog/api-contract-catalog.md",
+    "migration-artifacts/art-110_api_catalog/api-contract-map.md",
+    "migration-artifacts/05-integrations/api-catalog.md",
+    "migration-artifacts/05-integrations/api-contract-catalog.md",
+    "migration-artifacts/05-integrations/api-contract-map.md"
+  ]
+}

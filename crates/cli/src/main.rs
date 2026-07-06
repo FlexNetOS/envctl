@@ -45,12 +45,13 @@ use envctl_engine::secrets::run_secretctl;
 use envctl_engine::{
     AddRepoMode, AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentDoctorSpec, AgentInitSpec,
     AgentListKind, AgentListSpec, AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentScope,
-    AgentSectionSel, AgentSyncSpec, AiAgent, BuildStrategy, BuildSystem, CatalogDiffReport,
-    CatalogImportReport, CatalogLockReport, CatalogRenderReport, CatalogScanSpec, CatalogSnapshot,
-    CatalogSyncReport, CatalogTableName, DashboardSpec, DriftSummary, Engine, EnvReport, Event,
-    EventSink, HubRegistryReport, HubRegistryStatus, MigrationAction, MigrationReport,
-    MigrationRisk, MigrationScope, MigrationSpec, MigrationStatus, MigrationVerb, OpStatus, Phase,
-    Refactor, RefactorGoal, Registry, RenameRule, ResetGates, RunPlan, SelfUninstallSpec, Severity,
+    AgentSectionSel, AgentSyncSpec, AiAgent, BuildStrategy, BuildSystem, CatalogAnalyzeReport,
+    CatalogDiffReport, CatalogFacetCount, CatalogImportReport, CatalogLockReport,
+    CatalogRenderReport, CatalogScanSpec, CatalogSnapshot, CatalogSyncReport, CatalogTableName,
+    CatalogTableSummaryRow, DashboardSpec, DriftSummary, Engine, EnvReport, Event, EventSink,
+    HubRegistryReport, HubRegistryStatus, MigrationAction, MigrationReport, MigrationRisk,
+    MigrationScope, MigrationSpec, MigrationStatus, MigrationVerb, OpStatus, Phase, Refactor,
+    RefactorGoal, Registry, RenameRule, ResetGates, RunPlan, SelfUninstallSpec, Severity,
 };
 
 #[derive(Parser)]
@@ -587,12 +588,22 @@ enum CatalogCmd {
         )
     )]
     Scan,
+    /// List the catalog tables, row counts, columns, and purpose.
+    #[command(
+        long_about = "Print the normalized ADR-0003 table inventory so you can see what envctl imported, how many rows landed in each table, which columns are present, and what each table is for.",
+        after_help = envctl_examples!(
+            "envctl catalog tables",
+            "envctl catalog tables --json",
+        )
+    )]
+    Tables,
     /// Print one normalized catalog table.
     #[command(
-        long_about = "Print one read-only catalog table. Names accept snake_case or kebab-case: components, component-hooks, paths, settings, env-vars, agent-assets, registries, config-files, migration-evidence, observed-facts.",
+        long_about = "Print one read-only catalog table. Names accept snake_case or kebab-case: components, component-hooks, paths, settings, env-vars, agent-assets, registries, config-files, codedb-file-imports, migration-evidence, observed-facts.",
         after_help = envctl_examples!(
             "envctl catalog table components",
             "envctl catalog table component-hooks",
+            "envctl catalog table codedb-file-imports",
             "envctl catalog table observed-facts --json",
         )
     )]
@@ -609,6 +620,15 @@ enum CatalogCmd {
         )
     )]
     Import,
+    /// Summarize config/env/path/toolchain coverage from the current catalog snapshot.
+    #[command(
+        long_about = "Analyze the current catalog snapshot into higher-level facets: table coverage, config formats and file kinds, env scopes and producers, path artifact and verification status, codedb parser hints, and likely toolchain-related signals. Read-only.",
+        after_help = envctl_examples!(
+            "envctl catalog analyze",
+            "envctl catalog analyze --json",
+        )
+    )]
+    Analyze,
     /// Report file/catalog/lock drift without writing files.
     #[command(
         long_about = "Compare the normalized catalog with source config files, lock state, registry drift, and observed facts. Read-only: no lock writes, no renders, no sync.",
@@ -630,6 +650,9 @@ enum CatalogCmd {
         /// Output directory for generated projections; must be outside the repo root.
         #[arg(long, value_name = "DIR")]
         out: PathBuf,
+        /// Optional root whose layout-derived paths and env exports should be rendered.
+        #[arg(long = "target-root", value_name = "DIR")]
+        target_root: Option<PathBuf>,
     },
     /// Preview bidirectional file/catalog reconciliation without mutating repo files.
     #[command(
@@ -2054,6 +2077,19 @@ fn run_catalog(
                 print_catalog_summary(&snapshot);
             }
         }
+        CatalogCmd::Tables => {
+            let snapshot = if explicit_roots {
+                catalog_engine::scan(spec, registry)?
+            } else {
+                engine.catalog_scan()?
+            };
+            let report = catalog_engine::table_inventory(&snapshot);
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            } else {
+                print_catalog_tables(&report);
+            }
+        }
         CatalogCmd::Table { name } => {
             let snapshot = if explicit_roots {
                 catalog_engine::scan(spec, registry)?
@@ -2082,6 +2118,18 @@ fn run_catalog(
                 print_catalog_import(&report);
             }
         }
+        CatalogCmd::Analyze => {
+            let report = if explicit_roots {
+                catalog_engine::analyze_current(spec, registry)?
+            } else {
+                engine.catalog_analyze()?
+            };
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            } else {
+                print_catalog_analyze(&report);
+            }
+        }
         CatalogCmd::Diff => {
             let report = if explicit_roots {
                 catalog_engine::diff(spec, registry)?
@@ -2094,18 +2142,19 @@ fn run_catalog(
                 print_catalog_diff(&report);
             }
         }
-        CatalogCmd::Render { out } => {
+        CatalogCmd::Render { out, target_root } => {
             let report = if explicit_roots {
                 catalog_engine::render(
                     catalog_engine::CatalogRenderSpec {
                         repo_root: spec.repo_root,
                         manifest_dir: spec.manifest_dir,
                         out_dir: out,
+                        target_root,
                     },
                     registry,
                 )?
             } else {
-                engine.catalog_render(&out)?
+                engine.catalog_render(&out, target_root.as_deref())?
             };
             if json {
                 println!("{}", serde_json::to_string_pretty(&report)?);
@@ -2225,6 +2274,24 @@ fn print_catalog_summary(snapshot: &CatalogSnapshot) {
     }
 }
 
+fn print_catalog_tables(rows: &[CatalogTableSummaryRow]) {
+    println!("envctl catalog tables (read-only)");
+    println!("tables: {}", rows.len());
+    if rows.is_empty() {
+        return;
+    }
+    println!("\ntable\trows\tcolumns\tpurpose");
+    for row in rows {
+        println!(
+            "{}\t{}\t{}\t{}",
+            row.table,
+            row.rows,
+            row.columns.join(","),
+            row.purpose
+        );
+    }
+}
+
 fn print_catalog_table(table: CatalogTableName, value: &serde_json::Value) -> anyhow::Result<()> {
     let rows = value
         .as_array()
@@ -2269,6 +2336,45 @@ fn print_catalog_import(report: &CatalogImportReport) {
     println!("env_vars: {}", report.summary.env_vars);
 }
 
+fn print_catalog_analyze(report: &CatalogAnalyzeReport) {
+    println!("envctl catalog analyze (read-only)");
+    println!("repo_root: {}", report.repo_root);
+    println!("manifest_dir: {}", report.manifest_dir);
+    println!("mutating: {}", yes_no(report.summary.mutating));
+    println!("tables: {}", report.summary.tables);
+    println!("rows: {}", report.summary.rows);
+    println!("config_files: {}", report.summary.config_files);
+    println!("env_vars: {}", report.summary.env_vars);
+    println!("codedb_imports: {}", report.summary.codedb_imports);
+    println!("toolchain_signals: {}", report.summary.toolchain_signals);
+
+    print_catalog_inventory("table inventory", &report.table_inventory);
+    print_catalog_count_facets("config formats", &report.config_formats);
+    print_catalog_count_facets("config file kinds", &report.config_file_kinds);
+    print_catalog_count_facets("env scopes", &report.env_scopes);
+    print_catalog_count_facets("env producers", &report.env_producers);
+    print_catalog_count_facets("env sensitivity", &report.env_sensitive);
+    print_catalog_count_facets("path artifact kinds", &report.path_artifact_kinds);
+    print_catalog_count_facets(
+        "path verification statuses",
+        &report.path_verification_statuses,
+    );
+    print_catalog_count_facets("codedb file kinds", &report.codedb_file_kinds);
+    print_catalog_count_facets("codedb parser hints", &report.codedb_parser_hints);
+
+    println!("\ntoolchain signals:");
+    if report.toolchain_signals.is_empty() {
+        println!("  none");
+    } else {
+        for row in &report.toolchain_signals {
+            println!(
+                "  {:<12} {:<28} {:<18} {:<24} {}",
+                row.signal_kind, row.key, row.source, row.detail, row.value
+            );
+        }
+    }
+}
+
 fn print_catalog_diff(report: &CatalogDiffReport) {
     println!("envctl catalog diff (read-only)");
     println!("repo_root: {}", report.repo_root);
@@ -2295,11 +2401,42 @@ fn print_catalog_diff(report: &CatalogDiffReport) {
     }
 }
 
+fn print_catalog_count_facets(label: &str, rows: &[CatalogFacetCount]) {
+    println!("\n{label}:");
+    if rows.is_empty() {
+        println!("  none");
+        return;
+    }
+    for row in rows {
+        println!("  {:<28} {}", row.key, row.count);
+    }
+}
+
+fn print_catalog_inventory(label: &str, rows: &[CatalogTableSummaryRow]) {
+    println!("\n{label}:");
+    if rows.is_empty() {
+        println!("  none");
+        return;
+    }
+    for row in rows {
+        println!(
+            "  {:<24} {:>6} rows  {:<48} {}",
+            row.table,
+            row.rows,
+            row.columns.join(","),
+            row.purpose
+        );
+    }
+}
+
 fn print_catalog_render(report: &CatalogRenderReport) {
     println!("envctl catalog render (no repo mutation)");
     println!("repo_root: {}", report.repo_root);
     println!("manifest_dir: {}", report.manifest_dir);
     println!("out_dir: {}", report.out_dir);
+    if let Some(target_root) = &report.target_root {
+        println!("target_root: {}", target_root);
+    }
     println!("mutating_repo: {}", yes_no(report.summary.mutating_repo));
     println!("generated_files: {}", report.summary.generated_files);
     println!(
