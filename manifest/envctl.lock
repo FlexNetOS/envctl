@@ -75,7 +75,7 @@ requires = ["codex-cli"]
 resolved = ""
 
 [components.codex-global-baseline]
-content_hash = "e2198857db7884a9"
+content_hash = "da091eb56fa05b79"
 requires = ["codex-cli"]
 resolved = ""
 
@@ -284,7 +284,7 @@ requires = []
 resolved = ""
 
 [components.kache]
-content_hash = "b39c2b1e42a88205"
+content_hash = "03ae9e5f9076f19d"
 requires = []
 resolved = ""
 
