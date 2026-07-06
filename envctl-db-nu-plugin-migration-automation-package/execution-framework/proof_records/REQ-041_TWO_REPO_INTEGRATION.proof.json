@@ -1,0 +1,50 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-041_TWO_REPO_INTEGRATION",
+  "status": "completed",
+  "started_at": "2026-07-05T05:18:43+00:00",
+  "completed_at": "2026-07-05T05:18:43+00:00",
+  "actor": "integration-agent",
+  "helper_id": "helper-integration-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "${ENVCTL_REPO}|${NU_PLUGIN_REPO}",
+  "files_changed": [
+    "execution-framework/generated/req041_two_repo_integration_report.json",
+    "execution-framework/docs/TWO_REPO_INTEGRATION.md",
+    "execution-framework/state/REQ-041_TWO_REPO_INTEGRATION.heartbeat.json",
+    "execution-framework/proof_records/REQ-041_TWO_REPO_INTEGRATION.proof.json"
+  ],
+  "commands_run": [
+    "python3 scripts/verify_two_repo_integration.py",
+    "python3 scripts/status_from_proofs.py"
+  ],
+  "verification_output": {
+    "report": "generated/req041_two_repo_integration_report.json",
+    "status_rows": 6,
+    "approval_rows": 1,
+    "required_commands_present": [
+      "envctl migration approve",
+      "envctl migration replay",
+      "envctl migration status"
+    ]
+  },
+  "checksums": {
+    "execution-framework/generated/req041_two_repo_integration_report.json": "74ab82fdc8d05e20361af55fe4db259b04888eeb665ef0fd4de4ccc97a38228d",
+    "execution-framework/docs/TWO_REPO_INTEGRATION.md": "94714a8d3be6b7fdfa78851442d8b68730138a48205c66782d1cf5f14c7ae1df",
+    "execution-framework/state/REQ-041_TWO_REPO_INTEGRATION.heartbeat.json": "90a275b1f950152dc6e7b47d8dddb25c7b90a2b7c05a3e7406d270a204be0412",
+    "execution-framework/proof_records/REQ-041_TWO_REPO_INTEGRATION.proof.json": "a59aa88e23095630b52fde6477b8d1ce87c8c6027cfa9b10272fd315d8035ae7"
+  },
+  "logs_uri": "logs/REQ-041_TWO_REPO_INTEGRATION.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json",
+    "proof_records/REQ-031_PLUGIN_COMMAND_SURFACE.proof.json",
+    "proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json",
+    "generated/REQ-033_PLUGIN_HUMAN_APPROVAL.contract.json",
+    "generated/REQ-034_PLUGIN_STATUS_STREAMS.contract.json",
+    "generated/req041_two_repo_integration_report.json",
+    "docs/TWO_REPO_INTEGRATION.md"
+  ],
+  "failure_reason": "",
+  "next_action": ""
+}

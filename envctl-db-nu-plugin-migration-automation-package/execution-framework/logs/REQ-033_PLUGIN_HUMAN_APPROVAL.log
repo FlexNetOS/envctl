@@ -1,0 +1,36 @@
+REQ-033_PLUGIN_HUMAN_APPROVAL verification log
+timestamp_utc=2026-07-05T04:57:38Z
+cwd=/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+NU_PLUGIN_REPO=/home/flexnetos/FlexNetOS/src/nu_plugin
+
+[patch apply check]
+patch_apply_check_exit=0
+
+[patch whitespace check]
+patch_whitespace_check_exit=0
+
+[temp copy apply]
+git_apply_temp_exit=0
+patched_file_differs_from_original_exit=1
+
+[toolchain availability]
+cargo not found
+rustc not found
+
+[patched-source structural gate]
+command_registered=True
+command_name=True
+required_approvals_path=True
+optional_ops_flag=True
+mode_flag=True
+mode_view_rows=True
+approval_view_rows=True
+operation_view_rows=True
+allowed_actions_column=True
+delegate_target_column=True
+projection_test=True
+bad_jsonl_test=True
+structural_gate_exit=0
+
+[temp tree changed files]
+crates/nu_plugin_codedb/src/main.rs

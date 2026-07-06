@@ -1,0 +1,371 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ExecutionPacket",
+  "type": "object",
+  "required": [
+    "task_id",
+    "parent_id",
+    "phase",
+    "title",
+    "goal",
+    "owner_lane",
+    "owner_agent",
+    "helper_id",
+    "model_tag",
+    "agent_runtime",
+    "shell_mode",
+    "repo_target",
+    "repo_path",
+    "filesystem_scope",
+    "input_files",
+    "target_files",
+    "target_artifacts",
+    "allowed_paths",
+    "blocked_paths",
+    "depends_on",
+    "blocks",
+    "parallel_group",
+    "can_run_parallel",
+    "max_parallel",
+    "start_after",
+    "priority",
+    "execution_cell",
+    "required_tools",
+    "command_template",
+    "verification_command",
+    "completion_gate",
+    "proof_uri",
+    "heartbeat_file",
+    "logs_uri",
+    "rollback_plan",
+    "risk_level",
+    "human_approval_required",
+    "packet_schema_version",
+    "source_graph_uri",
+    "generated_at"
+  ],
+  "properties": {
+    "packet_schema_version": {
+      "type": "string"
+    },
+    "task_id": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "parent_id": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "phase": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "title": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "goal": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "owner_lane": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "owner_agent": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "helper_id": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "model_tag": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "agent_runtime": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "shell_mode": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "repo_target": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "repo_path": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "filesystem_scope": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "input_files": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "target_files": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "target_artifacts": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "allowed_paths": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "blocked_paths": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "depends_on": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "blocks": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "parallel_group": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "can_run_parallel": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "max_parallel": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "start_after": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "priority": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "execution_cell": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "required_tools": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "command_template": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "verification_command": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "completion_gate": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "proof_required": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "proof_uri": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "heartbeat_file": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "logs_uri": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "rollback_plan": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "risk_level": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "human_approval_required": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "notes": {
+      "type": [
+        "string",
+        "array",
+        "boolean",
+        "integer"
+      ]
+    },
+    "source_graph_uri": {
+      "type": "string"
+    },
+    "generated_at": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

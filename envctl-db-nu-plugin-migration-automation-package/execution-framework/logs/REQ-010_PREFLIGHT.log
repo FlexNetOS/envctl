@@ -1,0 +1,8 @@
+$ python3 scripts/validate_task_graph.py generated/task_graph.csv
+validation status=passed tasks=80 errors=0 warnings=0
+$ python3 scripts/task_graph_to_packets.py generated/task_graph.csv
+generated 80 execution packets
+$ python3 scripts/goal_loop.py generated/task_graph.csv
+goal loop status: complete=12 runnable=1 approvals=0 blocked=67
+$ python3 scripts/verify_history_and_completeness.py
+final verification status=pass_with_external_blocker tasks=80 packets=80 proofs=12

@@ -1,0 +1,344 @@
+OpenAI Codex v0.143.0-alpha.35
+--------
+workdir: /home/flexnetos/FlexNetOS/src/envctl
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: medium
+reasoning summaries: auto
+session id: 019f30c3-d924-7140-9216-a8df0ed0d46b
+--------
+user
+You are the fallback approval reviewer for the envctl DB / nu_plugin migration execution package.
+
+Do not edit files. This is an approval review only. Use shell commands only to read/verify evidence.
+
+Review the corrected execution packet:
+/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json
+
+Packet checksum to bind approval to:
+e31688041f1317e3cb2c117534b6ce32617d74d01f9dac67725ca4a79e308dc6
+
+Context:
+- Previous REQ-202 packet checksum 23720ddd1a0b9482455b8d4d16ab6cf9906854df8cca8855d3300c5ed9f7700c was denied because its writable allowed_paths were broad repo/workspace globs.
+- A first review attempt for checksum e3168804 was denied only because the nested read-only sandbox could not execute even pwd/ls/sha256sum, so it could not verify packet bytes.
+- The corrected packet should narrow allowed_paths to these task-owned package outputs only:
+  - docs/FLEXNETOS_ADAPTER_RECIPE.md
+  - generated/flexnetos_adapter_recipe.json
+  - generated/flexnetos_adapter_recipe_validation_report.json
+  - scripts/verify_flexnetos_adapter_recipe.py
+  - proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json
+  - state/REQ-202_FLEXNETOS_ADAPTER_RECIPE.heartbeat.json
+  - logs/REQ-202_FLEXNETOS_ADAPTER_RECIPE.log
+- envctl, nu_plugin, and migration target roots should be read-only inputs for this packet unless a future task-specific approval expands scope.
+- Blocked paths should include secret/key patterns.
+- PR tracking: https://github.com/FlexNetOS/envctl/pull/421
+- weave is not available in PATH and prior Claude local review artifacts were empty, so this is the GPT-5.5 fallback review per package protocol.
+
+Please verify the checksum and packet contents directly, then produce a concise approval review artifact with:
+- DECISION: approved or denied
+- checksum reviewed
+- scope assessment
+- remaining required downstream proof/validation gates
+- any conditions if approved
+
+warning: Skill descriptions were shortened to fit the 2% skills context budget. Codex can still see every skill, but some descriptions are shorter. Disable unused skills or plugins to leave more room for the rest.
+codex
+I’ll verify this as a read-only approval review: first bind the packet bytes to the requested checksum, then inspect the sandbox scope and gating fields against the package constraints.
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -lc 'rg -n "REQ-202|envctl DB|nu_plugin|migration|allowed_paths|proof" /home/flexnetos/.codex/memories/MEMORY.md' in /home/flexnetos/FlexNetOS/src/envctl
+ exited 1 in 0ms:
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -lc 'sha256sum envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json' in /home/flexnetos/FlexNetOS/src/envctl
+ exited 1 in 0ms:
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -lc "jq 'keys' envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json" in /home/flexnetos/FlexNetOS/src/envctl
+ exited 1 in 0ms:
+codex
+The first read pass came back with empty failures, so I’m narrowing to basic path checks and then I’ll inspect the packet with simpler tooling. That mirrors the prior failure mode without assuming it is the same one.
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -lc pwd in /home/flexnetos/FlexNetOS/src/envctl
+ exited 1 in 0ms:
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -lc 'ls -l envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json' in /home/flexnetos/FlexNetOS/src/envctl
+ exited 1 in 0ms:
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -lc 'command -v sha256sum' in /home/flexnetos/FlexNetOS/src/envctl
+ exited 1 in 0ms:
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -lc 'command -v jq' in /home/flexnetos/FlexNetOS/src/envctl
+ exited 1 in 0ms:
+codex
+Even `pwd` is failing silently through the default shell path, which is useful evidence but not enough for an approval. I’m switching to an explicit non-login shell invocation to rule out shell startup/config as the cause.
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "/bin/sh -c 'pwd; ls -l envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json; sha256sum envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json'" in /home/flexnetos/FlexNetOS/src/envctl
+ succeeded in 0ms:
+/home/flexnetos/FlexNetOS/src/envctl
+-rw-rw-r-- 1 flexnetos flexnetos 3023 Jul  5 00:31 envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json
+e31688041f1317e3cb2c117534b6ce32617d74d01f9dac67725ca4a79e308dc6  envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json
+
+codex
+Checksum now matches exactly, so the approval can be bound to the requested packet bytes. Next I’m reading the JSON structure and the sandbox entries directly, still without touching files.
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "/bin/sh -c 'jq . envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json'" in /home/flexnetos/FlexNetOS/src/envctl
+ succeeded in 0ms:
+{
+  "packet_schema_version": "1.0",
+  "task_id": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+  "parent_id": "",
+  "phase": "06-flexnetos",
+  "title": "Build FlexNetOS adapter recipe",
+  "goal": "Make the prior Codex FlexNetOS package executable as a reusable envctl migration target adapter",
+  "owner_lane": "lane_b_repo_a",
+  "owner_agent": "flexnetos-adapter-agent",
+  "helper_id": "helper-flexnetos-adapter-01",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "codex-cli-background-shell",
+  "shell_mode": "workspace-write",
+  "repo_target": "repo_a",
+  "repo_path": "${ENVCTL_REPO}",
+  "filesystem_scope": "repo",
+  "input_files": [
+    "source/codex-flexnetos-migration-prompt-package/**",
+    "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+    "${ENVCTL_REPO}/docs/**",
+    "${NU_PLUGIN_REPO}/docs/**",
+    "${MIGRATION_TARGET_ROOT}/docs/**"
+  ],
+  "target_files": [
+    "docs/FLEXNETOS_ADAPTER_RECIPE.md",
+    "generated/flexnetos_adapter_recipe.json",
+    "generated/flexnetos_adapter_recipe_validation_report.json",
+    "scripts/verify_flexnetos_adapter_recipe.py"
+  ],
+  "target_artifacts": [
+    "FlexNetOS adapter"
+  ],
+  "allowed_paths": [
+    "docs/FLEXNETOS_ADAPTER_RECIPE.md",
+    "generated/flexnetos_adapter_recipe.json",
+    "generated/flexnetos_adapter_recipe_validation_report.json",
+    "scripts/verify_flexnetos_adapter_recipe.py",
+    "proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json",
+    "state/REQ-202_FLEXNETOS_ADAPTER_RECIPE.heartbeat.json",
+    "logs/REQ-202_FLEXNETOS_ADAPTER_RECIPE.log"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "depends_on": [
+    "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+    "REQ-027_ENVCTL_REPLAY_ENGINE"
+  ],
+  "blocks": [
+    "VER-300_UNIT_VALIDATION"
+  ],
+  "parallel_group": "flexnetos",
+  "can_run_parallel": false,
+  "max_parallel": 1,
+  "start_after": "",
+  "priority": 520,
+  "execution_cell": "06-flexnetos",
+  "required_tools": [
+    "codex",
+    "python3",
+    "shell"
+  ],
+  "command_template": "codex exec < generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json",
+  "verification_command": "task-specific verification command and proof file exists",
+  "completion_gate": "proof exists, validation passes, no secret exposure",
+  "proof_required": true,
+  "proof_uri": "proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json",
+  "heartbeat_file": "state/REQ-202_FLEXNETOS_ADAPTER_RECIPE.heartbeat.json",
+  "logs_uri": "logs/REQ-202_FLEXNETOS_ADAPTER_RECIPE.log",
+  "rollback_plan": "Use history/pre_execution_framework_manifest.json and remove only files added by this task unless a task-specific rollback is listed.",
+  "risk_level": "critical",
+  "human_approval_required": true,
+  "notes": "Generated by execution framework; envctl, nu_plugin, and migration target roots are read-only inputs for this packet unless a future task-specific approval expands scope.",
+  "source_graph_uri": "generated/task_graph.csv",
+  "generated_at": "2026-07-05T05:31:25+00:00"
+}
+
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "/bin/sh -c 'jq -r \"paths(scalars) as \\"'$p | ['"\\"'$p|join('"\\\".\\\"), getpath(\\"'$p)|tostring] | @tsv" envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json | rg -n "allowed|blocked|path|sandbox|read|write|secret|key|envctl|nu_plugin|migration|proof|validation|gate|pr|checksum"'"'" in /home/flexnetos/FlexNetOS/src/envctl
+ exited 1 in 0ms:
+jq: error (at envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json:80): Cannot index array with string "packet_schema_version"
+
+**Verifying jq settings**
+
+I need to address the second jq error due to a getpath bug. It's important to verify that no broad globs are allowed, so I should ensure I'm using jq correctly. I might also compare against the exact allowed list of parameters. Additionally, I might need to inspect the parent directories and find the command for extraction to ensure everything works smoothly. Let's keep checking all the relevant details!
+codex
+The packet content matches the expected shape: the broad globs are only in `input_files`, while `allowed_paths` is file-specific. I’m doing one last exact-list comparison and a quick blocked-path check so the decision is not eyeballed.
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "/bin/sh -c 'jq -r \".allowed_paths[]\" envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json'" in /home/flexnetos/FlexNetOS/src/envctl
+ succeeded in 0ms:
+docs/FLEXNETOS_ADAPTER_RECIPE.md
+generated/flexnetos_adapter_recipe.json
+generated/flexnetos_adapter_recipe_validation_report.json
+scripts/verify_flexnetos_adapter_recipe.py
+proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json
+state/REQ-202_FLEXNETOS_ADAPTER_RECIPE.heartbeat.json
+logs/REQ-202_FLEXNETOS_ADAPTER_RECIPE.log
+
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "/bin/sh -c 'jq -r \".blocked_paths[]\" envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json'" in /home/flexnetos/FlexNetOS/src/envctl
+ succeeded in 0ms:
+**/.env
+**/secrets/**
+**/private_keys/**
+**/*.pem
+**/*.key
+
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "/bin/sh -c 'jq -r \".input_files[]\" envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json'" in /home/flexnetos/FlexNetOS/src/envctl
+ succeeded in 0ms:
+source/codex-flexnetos-migration-prompt-package/**
+REQ-201_FLEXNETOS_LIFEOS_COMPARISON
+${ENVCTL_REPO}/docs/**
+${NU_PLUGIN_REPO}/docs/**
+${MIGRATION_TARGET_ROOT}/docs/**
+
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "/bin/sh -c 'jq -r \".target_files[]\" envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json'" in /home/flexnetos/FlexNetOS/src/envctl
+ succeeded in 0ms:
+docs/FLEXNETOS_ADAPTER_RECIPE.md
+generated/flexnetos_adapter_recipe.json
+generated/flexnetos_adapter_recipe_validation_report.json
+scripts/verify_flexnetos_adapter_recipe.py
+
+codex
+One nuance I’m checking explicitly: target files are a subset of allowed writable paths, and the wider envctl/nu/migration roots remain as read-only doc inputs rather than write scope. That is the core correction from the denied packet.
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "/bin/sh -c '
+packet=envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json
+printf \"allowed_globs_or_envvars=\"; jq -r \".allowed_paths[]\" \""'$packet" | rg "'"\\*|\\"'$'"\\{|"'^/|'"\\.\\.|ENVCTL_REPO|NU_PLUGIN_REPO|MIGRATION_TARGET_ROOT\" || true
+printf \"target_not_allowed=\"; comm -23 <(jq -r \".target_files[]\" \""'$packet" | sort) <(jq -r ".allowed_paths[]" "$packet" | sort) || true
+printf "write_scope_fields="; jq -r "to_entries[] | select((.key|test('"\\\"allow|target|proof|heartbeat|logs|rollback|scope|repo_path|input|blocked\\\"; \\\"i\\\"))) | [.key, (.value|tostring)] | @tsv\" \""'$packet"
+'"'" in /home/flexnetos/FlexNetOS/src/envctl
+ exited 2 in 0ms:
+allowed_globs_or_envvars=/bin/sh: 4: Syntax error: "(" unexpected
+
+**Using Bash for Substitution**
+
+I’m considering that I should use Bash instead of `sh` for the substitution process. It feels like Bash provides more features and flexibility, which could be beneficial in this case. I wonder if this change could create any unexpected issues, but overall, it seems like a better choice. I'm curious about how this approach might streamline the process or make it more efficient. It’s essential to ensure everything runs smoothly, so I’ll keep that in mind!
+codex
+That last check used shell syntax `/bin/sh` does not support; harmless, but I’ll rerun it under `bash` so the evidence is clean.
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "/bin/bash -lc '
+packet=envctl-db-nu-plugin-migration-automation-package/execution-framework/generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json
+printf \"allowed_globs_or_envvars=\"; jq -r \".allowed_paths[]\" \""'$packet" | rg "'"\\*|\\"'$'"\\{|"'^/|'"\\.\\.|ENVCTL_REPO|NU_PLUGIN_REPO|MIGRATION_TARGET_ROOT\" || true
+printf \"target_not_allowed=\"; comm -23 <(jq -r \".target_files[]\" \""'$packet" | sort) <(jq -r ".allowed_paths[]" "$packet" | sort) || true
+printf "write_scope_fields='"\\n\"; jq -r \"to_entries[] | select((.key|test(\\\"allow|target|proof|heartbeat|logs|rollback|scope|repo_path|input|blocked\\\"; \\\"i\\\"))) | [.key, (.value|tostring)] | @tsv\" \""'$packet"
+'"'" in /home/flexnetos/FlexNetOS/src/envctl
+ succeeded in 0ms:
+allowed_globs_or_envvars=target_not_allowed=write_scope_fields=
+repo_target	repo_a
+repo_path	${ENVCTL_REPO}
+filesystem_scope	repo
+input_files	["source/codex-flexnetos-migration-prompt-package/**","REQ-201_FLEXNETOS_LIFEOS_COMPARISON","${ENVCTL_REPO}/docs/**","${NU_PLUGIN_REPO}/docs/**","${MIGRATION_TARGET_ROOT}/docs/**"]
+target_files	["docs/FLEXNETOS_ADAPTER_RECIPE.md","generated/flexnetos_adapter_recipe.json","generated/flexnetos_adapter_recipe_validation_report.json","scripts/verify_flexnetos_adapter_recipe.py"]
+target_artifacts	["FlexNetOS adapter"]
+allowed_paths	["docs/FLEXNETOS_ADAPTER_RECIPE.md","generated/flexnetos_adapter_recipe.json","generated/flexnetos_adapter_recipe_validation_report.json","scripts/verify_flexnetos_adapter_recipe.py","proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json","state/REQ-202_FLEXNETOS_ADAPTER_RECIPE.heartbeat.json","logs/REQ-202_FLEXNETOS_ADAPTER_RECIPE.log"]
+blocked_paths	["**/.env","**/secrets/**","**/private_keys/**","**/*.pem","**/*.key"]
+proof_required	true
+proof_uri	proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json
+heartbeat_file	state/REQ-202_FLEXNETOS_ADAPTER_RECIPE.heartbeat.json
+logs_uri	logs/REQ-202_FLEXNETOS_ADAPTER_RECIPE.log
+rollback_plan	Use history/pre_execution_framework_manifest.json and remove only files added by this task unless a task-specific rollback is listed.
+
+codex
+DECISION: approved
+
+Checksum reviewed: `e31688041f1317e3cb2c117534b6ce32617d74d01f9dac67725ca4a79e308dc6`
+
+I verified the packet bytes directly with `sha256sum`; the checksum matches the requested approval binding exactly.
+
+Scope assessment: approved scope is narrow and task-owned. `allowed_paths` contains only the seven expected package output files:
+
+```text
+docs/FLEXNETOS_ADAPTER_RECIPE.md
+generated/flexnetos_adapter_recipe.json
+generated/flexnetos_adapter_recipe_validation_report.json
+scripts/verify_flexnetos_adapter_recipe.py
+proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json
+state/REQ-202_FLEXNETOS_ADAPTER_RECIPE.heartbeat.json
+logs/REQ-202_FLEXNETOS_ADAPTER_RECIPE.log
+```
+
+I found no broad writable repo/workspace globs, no env-var-expanded write roots, no absolute writable paths, and no `..` traversal in `allowed_paths`. `target_files` are a subset of the allowed writable files. The broader envctl, `nu_plugin`, and migration target references appear only under `input_files` as read-only documentation/source inputs, consistent with the corrected packet intent.
+
+Blocked paths include secret/key patterns:
+
+```text
+**/.env
+**/secrets/**
+**/private_keys/**
+**/*.pem
+**/*.key
+```
+
+Remaining required downstream proof/validation gates:
+
+- Produce `proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json`.
+- Produce and pass `generated/flexnetos_adapter_recipe_validation_report.json`.
+- Run the task-specific verifier, expected at `scripts/verify_flexnetos_adapter_recipe.py`.
+- Confirm completion gate: proof exists, validation passes, and no secret exposure.
+- Keep PR tracking tied to https://github.com/FlexNetOS/envctl/pull/421.
+
+Conditions if approved:
+
+- Approval is bound only to checksum `e31688041f1317e3cb2c117534b6ce32617d74d01f9dac67725ca4a79e308dc6`.
+- Execution may write only the listed `allowed_paths`.
+- envctl, `nu_plugin`, and migration target roots remain read-only inputs unless a future task-specific approval expands scope.
+- Any packet byte change, writable path expansion, or secret/key-path access requires re-review.
+tokens used
+79,594
+DECISION: approved
+
+Checksum reviewed: `e31688041f1317e3cb2c117534b6ce32617d74d01f9dac67725ca4a79e308dc6`
+
+I verified the packet bytes directly with `sha256sum`; the checksum matches the requested approval binding exactly.
+
+Scope assessment: approved scope is narrow and task-owned. `allowed_paths` contains only the seven expected package output files:
+
+```text
+docs/FLEXNETOS_ADAPTER_RECIPE.md
+generated/flexnetos_adapter_recipe.json
+generated/flexnetos_adapter_recipe_validation_report.json
+scripts/verify_flexnetos_adapter_recipe.py
+proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json
+state/REQ-202_FLEXNETOS_ADAPTER_RECIPE.heartbeat.json
+logs/REQ-202_FLEXNETOS_ADAPTER_RECIPE.log
+```
+
+I found no broad writable repo/workspace globs, no env-var-expanded write roots, no absolute writable paths, and no `..` traversal in `allowed_paths`. `target_files` are a subset of the allowed writable files. The broader envctl, `nu_plugin`, and migration target references appear only under `input_files` as read-only documentation/source inputs, consistent with the corrected packet intent.
+
+Blocked paths include secret/key patterns:
+
+```text
+**/.env
+**/secrets/**
+**/private_keys/**
+**/*.pem
+**/*.key
+```
+
+Remaining required downstream proof/validation gates:
+
+- Produce `proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json`.
+- Produce and pass `generated/flexnetos_adapter_recipe_validation_report.json`.
+- Run the task-specific verifier, expected at `scripts/verify_flexnetos_adapter_recipe.py`.
+- Confirm completion gate: proof exists, validation passes, and no secret exposure.
+- Keep PR tracking tied to https://github.com/FlexNetOS/envctl/pull/421.
+
+Conditions if approved:
+
+- Approval is bound only to checksum `e31688041f1317e3cb2c117534b6ce32617d74d01f9dac67725ca4a79e308dc6`.
+- Execution may write only the listed `allowed_paths`.
+- envctl, `nu_plugin`, and migration target roots remain read-only inputs unless a future task-specific approval expands scope.
+- Any packet byte change, writable path expansion, or secret/key-path access requires re-review.

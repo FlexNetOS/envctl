@@ -16,7 +16,7 @@ on:
     branches: [develop]
 
 # Keep protected develop runs complete, but cancel stale PR/head runs before
-# they waste either the FlexNetOS org runner or GitHub-hosted minutes.
+# they waste GitHub-hosted minutes.
 concurrency:
   group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/develop' }}
@@ -29,10 +29,8 @@ env:
   LOOP_LIB_REF: refs/heads/codex/envctl-runner-command-builder
 
 jobs:
-  # Hybrid runner routing policy (required context names below are branch-protection contracts):
-  # - fan-out/static checks run on GitHub-hosted runners so they execute in parallel;
-  # - the single trusted heavy test job uses the FlexNetOS org self-hosted runner;
-  # - fork PRs never execute on self-hosted infrastructure.
+  # Required CI contexts run on GitHub-hosted runners so PR proof comes from a
+  # clean environment and never depends on local FlexNetOS runner availability.
   rustfmt:
     name: rustfmt
     runs-on: ubuntu-latest
@@ -105,9 +103,7 @@ jobs:
 
   test:
     name: test
-    # Trusted internal refs run the cache-heavy workspace tests on the org runner;
-    # fork PRs stay on GitHub-hosted runners so untrusted code cannot reach the local host.
-    runs-on: ${{ (github.event_name == 'pull_request' && github.event.pull_request.head.repo.fork) && 'ubuntu-latest' || fromJSON('["self-hosted","linux","x64","local","flexnetos"]') }}
+    runs-on: ubuntu-latest
     # Generous but bounded: the cold build dominates and the parallel test run is now substantial
     # (secrets-engine alone ~5 min — the argon2 memory-hard KDF + daemon e2e tests). A real hang
     # (e.g. an await-forever in an e2e stream drain) still fails the check well before the 6h default.

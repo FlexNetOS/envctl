@@ -1,0 +1,196 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+  "status": "passed",
+  "generated_at": "2026-07-05T04:32:27+00:00",
+  "fixture": {
+    "run_id": "run-req026",
+    "safe_operation_id": "op-req026-safe",
+    "risky_operation_id": "op-req026-risky"
+  },
+  "counts": {
+    "checkpoint_rows": 2,
+    "rollback_rows": 2,
+    "approval_rows": 1,
+    "approved_rollback_approvals": 1,
+    "event_rows": 8
+  },
+  "coverage": {
+    "checkpoint_rows": true,
+    "idempotent_repeat": true,
+    "rollback_handles": true,
+    "safe_status_transitions": true,
+    "approval_gated_risky_rollback": true,
+    "event_chain": true,
+    "fail_closed_rejections": true
+  },
+  "safe_checkpoint": {
+    "checkpoint_id": "checkpoint-b7e1748bf5a2468bdddc2b20",
+    "run_id": "run-req026",
+    "operation_id": "op-req026-safe",
+    "checkpoint_kind": "artifact_boundary",
+    "checkpoint_ref": "execution-framework/generated/rollback_checkpoints/safe-artifact.json",
+    "checkpoint_hash": "sha256:51c8dd88807da6208ea982acf8ab4d675662b1ae2078f09d341de34fe8de32a6",
+    "metadata": {
+      "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+      "boundary": "before repeatable artifact regeneration",
+      "repeat_safe": true
+    },
+    "inserted": true
+  },
+  "risky_checkpoint": {
+    "checkpoint_id": "checkpoint-ad12010e257fe10528594b89",
+    "run_id": "run-req026",
+    "operation_id": "op-req026-risky",
+    "checkpoint_kind": "pre_operation",
+    "checkpoint_ref": "history/pre_execution_framework_manifest.json",
+    "checkpoint_hash": "sha256:6bd3e9de4004907c01c8bb45e9e400f537140eadb002f3e068606276a875fb49",
+    "metadata": {
+      "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+      "boundary": "before approval-gated target mutation",
+      "repeat_safe": false
+    },
+    "inserted": true
+  },
+  "safe_rollback": {
+    "rollback_id": "rollback-d57988dc47b0f1064b2c40b5",
+    "run_id": "run-req026",
+    "operation_id": "op-req026-safe",
+    "rollback_type": "rerun_from_checkpoint",
+    "status": "succeeded",
+    "plan": {
+      "approval_required": false,
+      "boundary": {
+        "operation_id": "op-req026-safe",
+        "operation_risk": "R2",
+        "run_id": "run-req026"
+      },
+      "checkpoint": {
+        "hash": "sha256:51c8dd88807da6208ea982acf8ab4d675662b1ae2078f09d341de34fe8de32a6",
+        "id": "checkpoint-b7e1748bf5a2468bdddc2b20",
+        "kind": "artifact_boundary",
+        "metadata": {
+          "boundary": "before repeatable artifact regeneration",
+          "repeat_safe": true,
+          "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
+        },
+        "ref": "execution-framework/generated/rollback_checkpoints/safe-artifact.json"
+      },
+      "instructions": {
+        "mode": "verify-only",
+        "remove_added_files": []
+      },
+      "non_destructive": true,
+      "reason": "prove repeat/revert boundary for generated artifact operation",
+      "requested_by": "envctl-db-agent",
+      "rollback_type": "rerun_from_checkpoint",
+      "schema_version": "1.0"
+    },
+    "result": {
+      "applied": false,
+      "mode": "verify-only",
+      "verified_checkpoint_hash": "sha256:51c8dd88807da6208ea982acf8ab4d675662b1ae2078f09d341de34fe8de32a6"
+    }
+  },
+  "risky_rollback": {
+    "rollback_id": "rollback-fd6d5b735a13d96ffbd7f2cd",
+    "run_id": "run-req026",
+    "operation_id": "op-req026-risky",
+    "rollback_type": "restore_checkpoint",
+    "status": "planned",
+    "plan": {
+      "approval_required": true,
+      "boundary": {
+        "operation_id": "op-req026-risky",
+        "operation_risk": "R4",
+        "run_id": "run-req026"
+      },
+      "checkpoint": {
+        "hash": "sha256:6bd3e9de4004907c01c8bb45e9e400f537140eadb002f3e068606276a875fb49",
+        "id": "checkpoint-ad12010e257fe10528594b89",
+        "kind": "pre_operation",
+        "metadata": {
+          "boundary": "before approval-gated target mutation",
+          "repeat_safe": false,
+          "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
+        },
+        "ref": "history/pre_execution_framework_manifest.json"
+      },
+      "instructions": {
+        "mode": "manual_operator",
+        "restore_ref": "history/pre_execution_framework_manifest.json"
+      },
+      "non_destructive": true,
+      "reason": "approval-gated rollback handle for high-risk operation",
+      "requested_by": "envctl-db-agent",
+      "rollback_type": "restore_checkpoint",
+      "schema_version": "1.0"
+    },
+    "result": null
+  },
+  "checkpoint_rows": [
+    {
+      "id": "checkpoint-ad12010e257fe10528594b89",
+      "run_id": "run-req026",
+      "operation_id": "op-req026-risky",
+      "checkpoint_kind": "pre_operation",
+      "checkpoint_ref": "history/pre_execution_framework_manifest.json",
+      "checkpoint_hash": "sha256:6bd3e9de4004907c01c8bb45e9e400f537140eadb002f3e068606276a875fb49",
+      "metadata_json": "{\"boundary\":\"before approval-gated target mutation\",\"repeat_safe\":false,\"task_id\":\"REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS\"}",
+      "created_at_utc": "2026-07-05T04:32:27.865Z",
+      "metadata": {
+        "boundary": "before approval-gated target mutation",
+        "repeat_safe": false,
+        "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
+      }
+    },
+    {
+      "id": "checkpoint-b7e1748bf5a2468bdddc2b20",
+      "run_id": "run-req026",
+      "operation_id": "op-req026-safe",
+      "checkpoint_kind": "artifact_boundary",
+      "checkpoint_ref": "execution-framework/generated/rollback_checkpoints/safe-artifact.json",
+      "checkpoint_hash": "sha256:51c8dd88807da6208ea982acf8ab4d675662b1ae2078f09d341de34fe8de32a6",
+      "metadata_json": "{\"boundary\":\"before repeatable artifact regeneration\",\"repeat_safe\":true,\"task_id\":\"REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS\"}",
+      "created_at_utc": "2026-07-05T04:32:27.865Z",
+      "metadata": {
+        "boundary": "before repeatable artifact regeneration",
+        "repeat_safe": true,
+        "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
+      }
+    }
+  ],
+  "rejection_cases": [
+    {
+      "case": "blocked-secret-checkpoint-ref",
+      "status": "rejected",
+      "message": "checkpoint_ref points at a blocked secret/private-key path"
+    },
+    {
+      "case": "operation-run-mismatch",
+      "status": "rejected",
+      "message": "unknown operation: missing-operation"
+    },
+    {
+      "case": "illegal-rollback-transition",
+      "status": "rejected",
+      "message": "illegal rollback transition: succeeded -> running"
+    }
+  ],
+  "event_chain": {
+    "run_id": "run-req026",
+    "event_count": 8,
+    "chain_valid": true,
+    "errors": [],
+    "head_event_hash": "sha256:20485f9d87c9a1e03d57f6fe6fd9937b548596104a6439070c243356aa1cb9d0"
+  },
+  "errors": [],
+  "evidence": [
+    "scripts/rollback_checkpoints.py",
+    "scripts/verify_rollback_checkpoints.py",
+    "generated/envctl_rollback_checkpoints_report.json",
+    "docs/ENVCTL_ROLLBACK_CHECKPOINTS.md",
+    "docs/ENVCTL_DB_SCHEMA.md",
+    "prompts/SECURITY_REPRODUCIBILITY_MODEL.md"
+  ]
+}

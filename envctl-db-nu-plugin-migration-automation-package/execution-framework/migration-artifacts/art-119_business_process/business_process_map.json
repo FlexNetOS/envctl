@@ -1,0 +1,548 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-119_BUSINESS_PROCESS",
+  "title": "Business process map",
+  "generated_at": "2026-07-04T23:28:24+00:00",
+  "scope": {
+    "target": "flexnetos-vs-lifeos",
+    "purpose": "Map business workflows to the technical systems they depend on.",
+    "owner_lane": "lane_d_filesystem",
+    "owner_agent": "artifact-agent"
+  },
+  "source_inputs": {
+    "target_descriptor": {
+      "path": "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+      "registry_source": "generated/envctl_target_registry.json",
+      "target_id": "flexnetos-vs-lifeos",
+      "target_type": "mixed",
+      "primary_root": "/home/flexnetos/FlexNetOS",
+      "compare_root": "/home/flexnetos/lifeos",
+      "descriptor_excerpt": "schema_version: 1\ntarget_id: flexnetos-vs-lifeos\ntarget_type: mixed\nprimary_root: /home/flexnetos/FlexNetOS\ncompare_root: /home/flexnetos/lifeos\noutput_root: migration-artifacts\ninclude:\n  - \"**/*\"\nexclude:\n  - \".git/**\"\n  - \"node_modules/**\"\n  - \"target/**\"\n  - \".venv/**\"\n  - \"__pycache__/**\"\nsafety:\n  default_mode: approval-gated\n  max_auto_risk: R2\n  allow_network: false\n  allow_destructive: false\ncollectors:\n  filesystem: true\n  git: true\n  package_managers: true\n  databases: true\n  infrastructure: true\n  apis: true\n  observability: true\nartifact_contract:\n  name: full-migration-artifact-contract\n  version: 1\nrecipe:\n  name: codex-flexnetos-full-artifact-run\n  version: 1\nmetadata:\n  purpose: \"Determine what FlexNetOS was used for compared with lifeos using real evidence.\"\n"
+    },
+    "repo_scan": {
+      "path": "execution-framework/generated/package_scan.json",
+      "top_level_entries": [
+        {
+          "name": "INSTALL_IN_REPOS.sh",
+          "type": "file"
+        },
+        {
+          "name": "PACKAGE_MANIFEST.json",
+          "type": "file"
+        },
+        {
+          "name": "PROMPT_PACKAGE_COMBINED.md",
+          "type": "file"
+        },
+        {
+          "name": "README.md",
+          "type": "file"
+        },
+        {
+          "name": "RUN_WITH_CODEX_ENVCTL.sh",
+          "type": "file"
+        },
+        {
+          "name": "codex",
+          "type": "directory"
+        },
+        {
+          "name": "examples",
+          "type": "directory"
+        },
+        {
+          "name": "expected-output",
+          "type": "directory"
+        },
+        {
+          "name": "helpers",
+          "type": "directory"
+        },
+        {
+          "name": "history",
+          "type": "directory"
+        },
+        {
+          "name": "prompts",
+          "type": "directory"
+        },
+        {
+          "name": "schemas",
+          "type": "directory"
+        },
+        {
+          "name": "source",
+          "type": "directory"
+        },
+        {
+          "name": "specs",
+          "type": "directory"
+        },
+        {
+          "name": "sql",
+          "type": "directory"
+        }
+      ],
+      "scanned_folders": [
+        "codex",
+        "examples",
+        "expected-output",
+        "helpers",
+        "history",
+        "prompts",
+        "schemas",
+        "source",
+        "specs",
+        "sql"
+      ]
+    },
+    "envctl_database": {
+      "path": "execution-framework/generated/envctl_migration_db_model.json",
+      "required_tables": [
+        "envctl_migration_agent_sessions",
+        "envctl_migration_approvals",
+        "envctl_migration_artifact_contracts",
+        "envctl_migration_artifacts",
+        "envctl_migration_checkpoints",
+        "envctl_migration_evidence",
+        "envctl_migration_graph_edges",
+        "envctl_migration_operations",
+        "envctl_migration_packages",
+        "envctl_migration_plugin_sessions",
+        "envctl_migration_recipes",
+        "envctl_migration_rollbacks",
+        "envctl_migration_run_events",
+        "envctl_migration_runs",
+        "envctl_migration_targets",
+        "envctl_migration_validations"
+      ],
+      "required_views": [
+        "envctl_migration_artifact_index",
+        "envctl_migration_live_timeline",
+        "envctl_migration_open_approvals",
+        "envctl_migration_replay_readiness",
+        "envctl_migration_run_latest_status",
+        "envctl_migration_validation_scorecard"
+      ],
+      "capability_coverage": [
+        "agent sessions",
+        "append-only event log",
+        "approval gate",
+        "artifact contract registry",
+        "artifact registry",
+        "checkpoint registry",
+        "evidence store",
+        "link graph",
+        "live status views",
+        "migration recipe registry",
+        "operation queue",
+        "package import registry",
+        "plugin sessions",
+        "replay readiness",
+        "rollback handles",
+        "run ledger",
+        "target descriptor registry",
+        "timeline views",
+        "validation ledger"
+      ]
+    },
+    "shared_protocol": {
+      "path": "execution-framework/generated/shared_protocol_manifest.json",
+      "source_of_truth_rule": "envctl migration database owns durable state; nu_plugin renders records and submits auditable commands.",
+      "required_records": [
+        "TargetDescriptor",
+        "MigrationRecipe",
+        "MigrationRun",
+        "RunEvent",
+        "Operation",
+        "ApprovalRequest",
+        "ApprovalDecision",
+        "ArtifactRecord",
+        "EvidenceRecord",
+        "GraphEdge",
+        "ValidationResult",
+        "ReplayRequest",
+        "ReplayResult",
+        "ProofRecord"
+      ]
+    },
+    "nu_plugin_surface": {
+      "path": "execution-framework/generated/nu_plugin_command_manifest.json",
+      "required_commands": [
+        "envctl migration target list",
+        "envctl migration run plan",
+        "envctl migration run start",
+        "envctl migration pause",
+        "envctl migration resume",
+        "envctl migration approve",
+        "envctl migration status",
+        "envctl migration proof",
+        "envctl migration replay"
+      ]
+    }
+  },
+  "summary": {
+    "workflow_count": 8,
+    "depending_system_count": 32,
+    "high_risk_workflow_count": 2,
+    "high_risk_workflows": [
+      "BUS-PROC-004",
+      "BUS-PROC-008"
+    ],
+    "all_workflows_have_system_dependencies": true,
+    "all_workflows_have_evidence": true
+  },
+  "depending_systems": [
+    "Artifact Contract Registry",
+    "Artifact Registry",
+    "Checkpoint Registry",
+    "Evidence Store",
+    "Human Approval Ledger",
+    "Link Graph",
+    "Migration Recipe Registry",
+    "Operation Queue",
+    "Package Import Registry",
+    "Proof Record Ledger",
+    "Replay Engine",
+    "Rollback Registry",
+    "Target Descriptor Registry",
+    "Task Graph",
+    "Validation Ledger",
+    "envctl migration approve",
+    "envctl migration replay",
+    "envctl migration run plan",
+    "envctl migration status",
+    "envctl migration target list",
+    "envctl_migration_approvals",
+    "envctl_migration_artifact_contracts",
+    "envctl_migration_artifacts",
+    "envctl_migration_live_timeline",
+    "envctl_migration_open_approvals",
+    "envctl_migration_operations",
+    "envctl_migration_run_latest_status",
+    "envctl_migration_targets",
+    "envctl_migration_validation_scorecard",
+    "envctl_migration_validations",
+    "nu_plugin_envctl_migration",
+    "schemas/target_descriptor.schema.json"
+  ],
+  "workflows": [
+    {
+      "workflow_id": "BUS-PROC-001",
+      "workflow": "Target intake and safety scoping",
+      "business_trigger": "An operator needs to evaluate a FlexNetOS to lifeos migration target.",
+      "business_outcome": "The migration target is described, bounded, and approval posture is known before any artifact run starts.",
+      "process_steps": [
+        "select target descriptor",
+        "register or refresh target row",
+        "record descriptor hash and safety mode",
+        "expose target rows to the operator surface"
+      ],
+      "depending_systems": [
+        "Target Descriptor Registry",
+        "envctl_migration_targets",
+        "schemas/target_descriptor.schema.json",
+        "envctl migration target list"
+      ],
+      "upstream_inputs": [
+        "target descriptor",
+        "repo scan"
+      ],
+      "downstream_artifacts": [
+        "system inventory",
+        "repository map",
+        "dependency graph"
+      ],
+      "evidence_refs": [
+        "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+        "execution-framework/generated/envctl_target_registry.json",
+        "execution-framework/docs/ENVCTL_TARGET_REGISTRY.md"
+      ],
+      "controls": [
+        "descriptor hash",
+        "approval-gated safety mode",
+        "max auto risk R2"
+      ],
+      "handoff": "registered target id feeds run planning and every downstream artifact proof",
+      "risk": "medium"
+    },
+    {
+      "workflow_id": "BUS-PROC-002",
+      "workflow": "Package intake and artifact contract selection",
+      "business_trigger": "The migration team needs a repeatable artifact package rather than ad hoc prompts.",
+      "business_outcome": "The package, artifact contract, and recipe become durable commitments for the run.",
+      "process_steps": [
+        "scan package layout",
+        "seed contract manifest",
+        "select recipe",
+        "bind run to artifact contract"
+      ],
+      "depending_systems": [
+        "Package Import Registry",
+        "Artifact Contract Registry",
+        "Migration Recipe Registry",
+        "envctl_migration_artifact_contracts"
+      ],
+      "upstream_inputs": [
+        "repo scan",
+        "contract manifest"
+      ],
+      "downstream_artifacts": [
+        "artifact registry",
+        "run ledger",
+        "proof ledger"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/package_scan.json",
+        "execution-framework/generated/contract_manifest.json",
+        "execution-framework/generated/contract_manifest.seed.sql"
+      ],
+      "controls": [
+        "package hash",
+        "contract hash",
+        "recipe hash"
+      ],
+      "handoff": "contract rows define required paths including the canonical business process map",
+      "risk": "low"
+    },
+    {
+      "workflow_id": "BUS-PROC-003",
+      "workflow": "Run planning and operation sequencing",
+      "business_trigger": "Operators need a visible order of work before generation begins.",
+      "business_outcome": "Each artifact task is represented as a planned operation with dependency and blocker context.",
+      "process_steps": [
+        "load task graph",
+        "build execution packets",
+        "identify dependency gates",
+        "queue artifact generation operations"
+      ],
+      "depending_systems": [
+        "Task Graph",
+        "Operation Queue",
+        "envctl_migration_operations",
+        "envctl migration run plan"
+      ],
+      "upstream_inputs": [
+        "generated/task_graph.csv",
+        "generated/execution_packets"
+      ],
+      "downstream_artifacts": [
+        "live visuals",
+        "operation state machine",
+        "readiness scorecard"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/task_graph.normalized.json",
+        "execution-framework/generated/execution_packets/ART-119_BUSINESS_PROCESS.json",
+        "execution-framework/docs/OPERATION_STATE_MACHINE.md"
+      ],
+      "controls": [
+        "idempotency key",
+        "phase",
+        "risk class",
+        "state transition guard"
+      ],
+      "handoff": "planned operations feed status views and proof records",
+      "risk": "medium"
+    },
+    {
+      "workflow_id": "BUS-PROC-004",
+      "workflow": "Approval-gated execution control",
+      "business_trigger": "A workflow step exceeds the automatic risk threshold or requires operator intervention.",
+      "business_outcome": "The human decision is recorded without letting plugin commands mutate durable state directly.",
+      "process_steps": [
+        "surface approval request",
+        "capture approval decision",
+        "emit event from envctl",
+        "resume or block operation"
+      ],
+      "depending_systems": [
+        "Human Approval Ledger",
+        "envctl_migration_approvals",
+        "envctl_migration_open_approvals",
+        "envctl migration approve"
+      ],
+      "upstream_inputs": [
+        "operation risk",
+        "approval request schema"
+      ],
+      "downstream_artifacts": [
+        "run ledger",
+        "risk register",
+        "decision log"
+      ],
+      "evidence_refs": [
+        "schemas/approval_request.schema.json",
+        "execution-framework/generated/shared_protocol_manifest.json",
+        "prompts/LIVE_VISUALS_AND_HUMAN_CONTROL.md"
+      ],
+      "controls": [
+        "approval status",
+        "human mode",
+        "event emission rule"
+      ],
+      "handoff": "approval outcomes are visible in live status and downstream governance artifacts",
+      "risk": "high"
+    },
+    {
+      "workflow_id": "BUS-PROC-005",
+      "workflow": "Artifact production and registration",
+      "business_trigger": "A required migration deliverable must be generated and made auditable.",
+      "business_outcome": "The artifact exists at the contract path and has content hash, producer, evidence, and graph links.",
+      "process_steps": [
+        "read allowed inputs",
+        "write task-scoped Markdown and JSON",
+        "write canonical contract Markdown",
+        "register artifacts through envctl artifact registry"
+      ],
+      "depending_systems": [
+        "Artifact Registry",
+        "Evidence Store",
+        "Link Graph",
+        "envctl_migration_artifacts"
+      ],
+      "upstream_inputs": [
+        "target descriptor",
+        "repo scan",
+        "envctl database"
+      ],
+      "downstream_artifacts": [
+        "artifact index",
+        "validation evidence",
+        "unit validation"
+      ],
+      "evidence_refs": [
+        "execution-framework/scripts/artifact_registry.py",
+        "execution-framework/docs/ENVCTL_ARTIFACT_REGISTRY.md",
+        "execution-framework/generated/envctl_artifact_registry_report.json"
+      ],
+      "controls": [
+        "sha256 content hash",
+        "blocked path policy",
+        "producer operation id"
+      ],
+      "handoff": "registered rows satisfy REQ-024 and feed VER-300",
+      "risk": "medium"
+    },
+    {
+      "workflow_id": "BUS-PROC-006",
+      "workflow": "Validation evidence and readiness scoring",
+      "business_trigger": "The team needs proof that generated outputs satisfy completion gates.",
+      "business_outcome": "Validation rows, evidence refs, and scorecards give a reviewable path to unit validation.",
+      "process_steps": [
+        "run artifact-specific checks",
+        "record validation rows",
+        "link proof records",
+        "feed readiness scorecard"
+      ],
+      "depending_systems": [
+        "Validation Ledger",
+        "envctl_migration_validations",
+        "envctl_migration_validation_scorecard",
+        "Proof Record Ledger"
+      ],
+      "upstream_inputs": [
+        "registered artifact rows",
+        "proof records"
+      ],
+      "downstream_artifacts": [
+        "readiness scorecard",
+        "final verification",
+        "validation reconciliation"
+      ],
+      "evidence_refs": [
+        "execution-framework/docs/ENVCTL_VALIDATION_EVIDENCE.md",
+        "execution-framework/generated/envctl_validation_evidence_report.json",
+        "execution-framework/proof_records/REQ-025_ENVCTL_VALIDATION_EVIDENCE.proof.json"
+      ],
+      "controls": [
+        "validation status",
+        "evidence hash",
+        "proof schema"
+      ],
+      "handoff": "completion gate links artifact hashes to validation evidence",
+      "risk": "medium"
+    },
+    {
+      "workflow_id": "BUS-PROC-007",
+      "workflow": "Operator status, timeline, and plugin presentation",
+      "business_trigger": "Operators need to see current progress, blockers, and handoffs while work is running.",
+      "business_outcome": "Nushell displays envctl-owned records as tables and status streams without becoming the state owner.",
+      "process_steps": [
+        "read run latest status",
+        "render operation timeline",
+        "display proof and artifact summaries",
+        "stream plugin status rows"
+      ],
+      "depending_systems": [
+        "nu_plugin_envctl_migration",
+        "envctl_migration_run_latest_status",
+        "envctl_migration_live_timeline",
+        "envctl migration status"
+      ],
+      "upstream_inputs": [
+        "run events",
+        "artifact records",
+        "validation records"
+      ],
+      "downstream_artifacts": [
+        "live visuals",
+        "operator handoff",
+        "final verification"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/nu_plugin_command_manifest.json",
+        "execution-framework/generated/REQ-034_PLUGIN_STATUS_STREAMS.contract.json",
+        "execution-framework/generated/live_visuals.md"
+      ],
+      "controls": [
+        "state owner rule",
+        "append-only event sequence",
+        "plugin read/mutate modes"
+      ],
+      "handoff": "operator views consume shared protocol records generated by envctl",
+      "risk": "low"
+    },
+    {
+      "workflow_id": "BUS-PROC-008",
+      "workflow": "Replay, rollback, and exception handling",
+      "business_trigger": "A run must be replayed, audited, rolled back, or marked with an exception before cutover.",
+      "business_outcome": "The team has checkpoint and rollback context tied to artifacts and evidence.",
+      "process_steps": [
+        "verify hashes for replay",
+        "inspect checkpoint and rollback handles",
+        "record exceptions",
+        "feed cutover and wave planning"
+      ],
+      "depending_systems": [
+        "Replay Engine",
+        "Checkpoint Registry",
+        "Rollback Registry",
+        "envctl migration replay"
+      ],
+      "upstream_inputs": [
+        "artifact hashes",
+        "event chain",
+        "rollback plan"
+      ],
+      "downstream_artifacts": [
+        "wave plan",
+        "cutover plan",
+        "rollback plan",
+        "exception inventory"
+      ],
+      "evidence_refs": [
+        "history/pre_execution_framework_manifest.json",
+        "execution-framework/generated/envctl_migration_db_model.json",
+        "prompts/SECURITY_REPRODUCIBILITY_MODEL.md"
+      ],
+      "controls": [
+        "replay hash verification",
+        "checkpoint hash",
+        "rollback status"
+      ],
+      "handoff": "replay and rollback readiness gate final migration execution",
+      "risk": "high"
+    }
+  ]
+}

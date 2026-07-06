@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AgentLane",
+  "type": "object",
+  "required": [
+    "lane_id",
+    "helper_id",
+    "model_tag",
+    "agent_runtime",
+    "shell_mode",
+    "allowed_paths",
+    "blocked_paths",
+    "heartbeat_file",
+    "logs_uri",
+    "proof_uri",
+    "current_task",
+    "status"
+  ],
+  "properties": {
+    "lane_id": {
+      "type": "string"
+    },
+    "helper_id": {
+      "type": "string"
+    },
+    "model_tag": {
+      "type": "string"
+    },
+    "agent_runtime": {
+      "type": "string"
+    },
+    "shell_mode": {
+      "type": "string"
+    },
+    "allowed_paths": {
+      "type": "array"
+    },
+    "blocked_paths": {
+      "type": "array"
+    },
+    "heartbeat_file": {
+      "type": "string"
+    },
+    "logs_uri": {
+      "type": "string"
+    },
+    "proof_uri": {
+      "type": "string"
+    },
+    "current_task": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,12 @@
+{
+  "launched_at": "2026-07-04T23:32:41Z",
+  "launched": [
+    {
+      "task_id": "ART-136_TECH_DEBT_LEDGER",
+      "pid": 503795,
+      "packet": "generated/execution_packets/ART-136_TECH_DEBT_LEDGER.json",
+      "stdout": "logs/ART-136_TECH_DEBT_LEDGER.codex-exec.stdout.log",
+      "parallel_group": "artifact_generation_c"
+    }
+  ]
+}

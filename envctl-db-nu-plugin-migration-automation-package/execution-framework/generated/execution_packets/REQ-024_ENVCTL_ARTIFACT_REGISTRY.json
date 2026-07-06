@@ -1,0 +1,70 @@
+{
+  "packet_schema_version": "1.0",
+  "task_id": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+  "parent_id": "REQ-010_CONTRACT_LOCK",
+  "phase": "02-envctl-db",
+  "title": "Implement artifact registry",
+  "goal": "Persist paths, hashes, producers, contract IDs, provenance, and validation links",
+  "owner_lane": "lane_b_repo_a",
+  "owner_agent": "envctl-db-agent",
+  "helper_id": "helper-envctl-artifacts-01",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "codex-cli-background-shell",
+  "shell_mode": "workspace-write",
+  "repo_target": "repo_a",
+  "repo_path": "${ENVCTL_REPO}",
+  "filesystem_scope": "repo",
+  "input_files": [
+    "schemas/artifact_record.schema.json",
+    "expected-output/migration-automation-artifacts.md"
+  ],
+  "target_files": [
+    "envctl artifact registry code"
+  ],
+  "target_artifacts": [
+    "artifact registry"
+  ],
+  "allowed_paths": [
+    "${ENVCTL_REPO}/**",
+    "${NU_PLUGIN_REPO}/**",
+    "execution-framework/**",
+    "execution-templates/**"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "depends_on": [
+    "REQ-020_ENVCTL_DB_SCHEMA"
+  ],
+  "blocks": [
+    "ART-100_SYSTEM_INVENTORY"
+  ],
+  "parallel_group": "envctl_db_parallel",
+  "can_run_parallel": true,
+  "max_parallel": 4,
+  "start_after": "",
+  "priority": 150,
+  "execution_cell": "02-envctl-db",
+  "required_tools": [
+    "codex",
+    "python3",
+    "shell"
+  ],
+  "command_template": "codex exec < generated/execution_packets/REQ-024_ENVCTL_ARTIFACT_REGISTRY.json",
+  "verification_command": "task-specific tests plus proof file exists",
+  "completion_gate": "proof exists and verification output passes",
+  "proof_required": true,
+  "proof_uri": "proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+  "heartbeat_file": "state/REQ-024_ENVCTL_ARTIFACT_REGISTRY.heartbeat.json",
+  "logs_uri": "logs/REQ-024_ENVCTL_ARTIFACT_REGISTRY.log",
+  "rollback_plan": "Use history/pre_execution_framework_manifest.json and remove only files added by this task unless a task-specific rollback is listed.",
+  "risk_level": "high",
+  "human_approval_required": false,
+  "notes": "Additive feature work; no downgrades.",
+  "source_graph_uri": "generated/task_graph.csv",
+  "generated_at": "2026-07-05T05:39:53+00:00"
+}

@@ -1,0 +1,85 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ProofRecord",
+  "type": "object",
+  "required": [
+    "proof_schema_version",
+    "task_id",
+    "status",
+    "started_at",
+    "completed_at",
+    "actor",
+    "helper_id",
+    "model_tag",
+    "repo_path",
+    "files_changed",
+    "commands_run",
+    "verification_output",
+    "checksums",
+    "logs_uri",
+    "rollback_point",
+    "evidence",
+    "failure_reason",
+    "next_action"
+  ],
+  "properties": {
+    "proof_schema_version": {
+      "type": "string"
+    },
+    "task_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string"
+    },
+    "started_at": {
+      "type": "string"
+    },
+    "completed_at": {
+      "type": "string"
+    },
+    "actor": {
+      "type": "string"
+    },
+    "helper_id": {
+      "type": "string"
+    },
+    "model_tag": {
+      "type": "string"
+    },
+    "repo_path": {
+      "type": "string"
+    },
+    "files_changed": {
+      "type": "array"
+    },
+    "commands_run": {
+      "type": "array"
+    },
+    "verification_output": {
+      "type": [
+        "string",
+        "object"
+      ]
+    },
+    "checksums": {
+      "type": "object"
+    },
+    "logs_uri": {
+      "type": "string"
+    },
+    "rollback_point": {
+      "type": "string"
+    },
+    "evidence": {
+      "type": "array"
+    },
+    "failure_reason": {
+      "type": "string"
+    },
+    "next_action": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

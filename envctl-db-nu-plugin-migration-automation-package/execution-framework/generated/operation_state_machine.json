@@ -1,0 +1,546 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-023_ENVCTL_OPERATION_STATE",
+  "model": {
+    "canonical_states": [
+      "planned",
+      "runnable",
+      "approved",
+      "running",
+      "blocked",
+      "failed",
+      "completed",
+      "rolled_back"
+    ],
+    "terminal_states": [
+      "completed",
+      "rolled_back"
+    ],
+    "risk_classes": [
+      "R0",
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5"
+    ],
+    "approval_required_from_risk": "R3",
+    "db_status_by_state": {
+      "planned": "queued",
+      "runnable": "ready",
+      "approved": "ready",
+      "running": "running",
+      "blocked": "blocked",
+      "failed": "failed",
+      "completed": "succeeded",
+      "rolled_back": "cancelled"
+    },
+    "state_by_db_status": {
+      "queued": "planned",
+      "ready": "runnable",
+      "awaiting_approval": "blocked",
+      "running": "running",
+      "succeeded": "completed",
+      "failed": "failed",
+      "blocked": "blocked",
+      "denied": "blocked",
+      "cancelled": "rolled_back"
+    },
+    "transitions": {
+      "planned": [
+        "approved",
+        "blocked",
+        "failed",
+        "runnable"
+      ],
+      "runnable": [
+        "approved",
+        "blocked",
+        "failed",
+        "running"
+      ],
+      "approved": [
+        "blocked",
+        "failed",
+        "running"
+      ],
+      "running": [
+        "blocked",
+        "completed",
+        "failed",
+        "rolled_back"
+      ],
+      "blocked": [
+        "approved",
+        "failed",
+        "rolled_back",
+        "runnable"
+      ],
+      "failed": [
+        "rolled_back"
+      ],
+      "completed": [
+        "rolled_back"
+      ],
+      "rolled_back": []
+    },
+    "triggers": {
+      "mark_runnable": "runnable",
+      "approve": "approved",
+      "start": "running",
+      "block": "blocked",
+      "fail": "failed",
+      "complete": "completed",
+      "rollback": "rolled_back"
+    }
+  },
+  "operation_schema_statuses": [
+    "awaiting_approval",
+    "blocked",
+    "cancelled",
+    "denied",
+    "failed",
+    "queued",
+    "ready",
+    "running",
+    "succeeded"
+  ],
+  "transition_paths": {
+    "happy_path": [
+      {
+        "operation_id": "op-state-happy",
+        "run_id": "run-req020",
+        "operation_type": "scan",
+        "previous_state": "planned",
+        "state": "runnable",
+        "trigger": "mark_runnable",
+        "risk": "R1",
+        "db_status": "ready",
+        "event_type": "operation_runnable",
+        "terminal": false,
+        "reason": null,
+        "operation_update": {
+          "status": "ready"
+        },
+        "event_payload": {
+          "operation_id": "op-state-happy",
+          "operation_type": "scan",
+          "previous_state": "planned",
+          "state": "runnable",
+          "trigger": "mark_runnable",
+          "risk": "R1",
+          "db_status": "ready",
+          "reason": null,
+          "terminal": false
+        }
+      },
+      {
+        "operation_id": "op-state-happy",
+        "run_id": "run-req020",
+        "operation_type": "scan",
+        "previous_state": "runnable",
+        "state": "running",
+        "trigger": "start",
+        "risk": "R1",
+        "db_status": "running",
+        "event_type": "operation_running",
+        "terminal": false,
+        "reason": null,
+        "operation_update": {
+          "status": "running",
+          "started_at_utc": "now"
+        },
+        "event_payload": {
+          "operation_id": "op-state-happy",
+          "operation_type": "scan",
+          "previous_state": "runnable",
+          "state": "running",
+          "trigger": "start",
+          "risk": "R1",
+          "db_status": "running",
+          "reason": null,
+          "terminal": false
+        }
+      },
+      {
+        "operation_id": "op-state-happy",
+        "run_id": "run-req020",
+        "operation_type": "scan",
+        "previous_state": "running",
+        "state": "completed",
+        "trigger": "complete",
+        "risk": "R1",
+        "db_status": "succeeded",
+        "event_type": "operation_completed",
+        "terminal": true,
+        "reason": null,
+        "operation_update": {
+          "status": "succeeded",
+          "completed_at_utc": "now"
+        },
+        "event_payload": {
+          "operation_id": "op-state-happy",
+          "operation_type": "scan",
+          "previous_state": "running",
+          "state": "completed",
+          "trigger": "complete",
+          "risk": "R1",
+          "db_status": "succeeded",
+          "reason": null,
+          "terminal": true
+        }
+      }
+    ],
+    "risky_approval_and_rollback_path": [
+      {
+        "operation_id": "op-state-risky",
+        "run_id": "run-req020",
+        "operation_type": "apply_patch",
+        "previous_state": "planned",
+        "state": "runnable",
+        "trigger": "mark_runnable",
+        "risk": "R3",
+        "db_status": "ready",
+        "event_type": "operation_runnable",
+        "terminal": false,
+        "reason": null,
+        "operation_update": {
+          "status": "ready"
+        },
+        "event_payload": {
+          "operation_id": "op-state-risky",
+          "operation_type": "apply_patch",
+          "previous_state": "planned",
+          "state": "runnable",
+          "trigger": "mark_runnable",
+          "risk": "R3",
+          "db_status": "ready",
+          "reason": null,
+          "terminal": false
+        }
+      },
+      {
+        "operation_id": "op-state-risky",
+        "run_id": "run-req020",
+        "operation_type": "apply_patch",
+        "previous_state": "runnable",
+        "state": "approved",
+        "trigger": "approve",
+        "risk": "R3",
+        "db_status": "ready",
+        "event_type": "operation_approved",
+        "terminal": false,
+        "reason": null,
+        "operation_update": {
+          "status": "ready"
+        },
+        "event_payload": {
+          "operation_id": "op-state-risky",
+          "operation_type": "apply_patch",
+          "previous_state": "runnable",
+          "state": "approved",
+          "trigger": "approve",
+          "risk": "R3",
+          "db_status": "ready",
+          "reason": null,
+          "terminal": false
+        }
+      },
+      {
+        "operation_id": "op-state-risky",
+        "run_id": "run-req020",
+        "operation_type": "apply_patch",
+        "previous_state": "approved",
+        "state": "running",
+        "trigger": "start",
+        "risk": "R3",
+        "db_status": "running",
+        "event_type": "operation_running",
+        "terminal": false,
+        "reason": null,
+        "operation_update": {
+          "status": "running",
+          "started_at_utc": "now"
+        },
+        "event_payload": {
+          "operation_id": "op-state-risky",
+          "operation_type": "apply_patch",
+          "previous_state": "approved",
+          "state": "running",
+          "trigger": "start",
+          "risk": "R3",
+          "db_status": "running",
+          "reason": null,
+          "terminal": false
+        }
+      },
+      {
+        "operation_id": "op-state-risky",
+        "run_id": "run-req020",
+        "operation_type": "apply_patch",
+        "previous_state": "running",
+        "state": "failed",
+        "trigger": "fail",
+        "risk": "R3",
+        "db_status": "failed",
+        "event_type": "operation_failed",
+        "terminal": false,
+        "reason": "verification fixture",
+        "operation_update": {
+          "status": "failed",
+          "error_json": {
+            "reason": "verification fixture"
+          }
+        },
+        "event_payload": {
+          "operation_id": "op-state-risky",
+          "operation_type": "apply_patch",
+          "previous_state": "running",
+          "state": "failed",
+          "trigger": "fail",
+          "risk": "R3",
+          "db_status": "failed",
+          "reason": "verification fixture",
+          "terminal": false
+        }
+      },
+      {
+        "operation_id": "op-state-risky",
+        "run_id": "run-req020",
+        "operation_type": "apply_patch",
+        "previous_state": "failed",
+        "state": "rolled_back",
+        "trigger": "rollback",
+        "risk": "R3",
+        "db_status": "cancelled",
+        "event_type": "operation_rolled_back",
+        "terminal": true,
+        "reason": "verification fixture",
+        "operation_update": {
+          "status": "cancelled",
+          "completed_at_utc": "now"
+        },
+        "event_payload": {
+          "operation_id": "op-state-risky",
+          "operation_type": "apply_patch",
+          "previous_state": "failed",
+          "state": "rolled_back",
+          "trigger": "rollback",
+          "risk": "R3",
+          "db_status": "cancelled",
+          "reason": "verification fixture",
+          "terminal": true
+        }
+      }
+    ],
+    "blocked_then_runnable_path": [
+      {
+        "operation_id": "op-state-blocked",
+        "run_id": "run-req020",
+        "operation_type": "wait_for_lock",
+        "previous_state": "planned",
+        "state": "blocked",
+        "trigger": "block",
+        "risk": "R0",
+        "db_status": "blocked",
+        "event_type": "operation_blocked",
+        "terminal": false,
+        "reason": "dependency not complete",
+        "operation_update": {
+          "status": "blocked",
+          "error_json": {
+            "reason": "dependency not complete"
+          }
+        },
+        "event_payload": {
+          "operation_id": "op-state-blocked",
+          "operation_type": "wait_for_lock",
+          "previous_state": "planned",
+          "state": "blocked",
+          "trigger": "block",
+          "risk": "R0",
+          "db_status": "blocked",
+          "reason": "dependency not complete",
+          "terminal": false
+        }
+      },
+      {
+        "operation_id": "op-state-blocked",
+        "run_id": "run-req020",
+        "operation_type": "wait_for_lock",
+        "previous_state": "blocked",
+        "state": "runnable",
+        "trigger": "mark_runnable",
+        "risk": "R0",
+        "db_status": "ready",
+        "event_type": "operation_runnable",
+        "terminal": false,
+        "reason": null,
+        "operation_update": {
+          "status": "ready"
+        },
+        "event_payload": {
+          "operation_id": "op-state-blocked",
+          "operation_type": "wait_for_lock",
+          "previous_state": "blocked",
+          "state": "runnable",
+          "trigger": "mark_runnable",
+          "risk": "R0",
+          "db_status": "ready",
+          "reason": null,
+          "terminal": false
+        }
+      },
+      {
+        "operation_id": "op-state-blocked",
+        "run_id": "run-req020",
+        "operation_type": "wait_for_lock",
+        "previous_state": "runnable",
+        "state": "running",
+        "trigger": "start",
+        "risk": "R0",
+        "db_status": "running",
+        "event_type": "operation_running",
+        "terminal": false,
+        "reason": null,
+        "operation_update": {
+          "status": "running",
+          "started_at_utc": "now"
+        },
+        "event_payload": {
+          "operation_id": "op-state-blocked",
+          "operation_type": "wait_for_lock",
+          "previous_state": "runnable",
+          "state": "running",
+          "trigger": "start",
+          "risk": "R0",
+          "db_status": "running",
+          "reason": null,
+          "terminal": false
+        }
+      },
+      {
+        "operation_id": "op-state-blocked",
+        "run_id": "run-req020",
+        "operation_type": "wait_for_lock",
+        "previous_state": "running",
+        "state": "completed",
+        "trigger": "complete",
+        "risk": "R0",
+        "db_status": "succeeded",
+        "event_type": "operation_completed",
+        "terminal": true,
+        "reason": null,
+        "operation_update": {
+          "status": "succeeded",
+          "completed_at_utc": "now"
+        },
+        "event_payload": {
+          "operation_id": "op-state-blocked",
+          "operation_type": "wait_for_lock",
+          "previous_state": "running",
+          "state": "completed",
+          "trigger": "complete",
+          "risk": "R0",
+          "db_status": "succeeded",
+          "reason": null,
+          "terminal": true
+        }
+      }
+    ],
+    "illegal_transition_checks": {
+      "completed_to_running": "illegal operation transition: completed -> running",
+      "rolled_back_to_runnable": "illegal operation transition: rolled_back -> runnable",
+      "r3_start_without_approval": "risk R3 operation requires approved state before running"
+    }
+  },
+  "sqlite_bridge": {
+    "inserted_operation_count": 8,
+    "inserted_states": [
+      {
+        "state": "planned",
+        "db_status": "queued"
+      },
+      {
+        "state": "runnable",
+        "db_status": "ready"
+      },
+      {
+        "state": "approved",
+        "db_status": "ready"
+      },
+      {
+        "state": "running",
+        "db_status": "running"
+      },
+      {
+        "state": "blocked",
+        "db_status": "blocked"
+      },
+      {
+        "state": "failed",
+        "db_status": "failed"
+      },
+      {
+        "state": "completed",
+        "db_status": "succeeded"
+      },
+      {
+        "state": "rolled_back",
+        "db_status": "cancelled"
+      }
+    ],
+    "status_counts": [
+      {
+        "status": "blocked",
+        "count": 1
+      },
+      {
+        "status": "cancelled",
+        "count": 1
+      },
+      {
+        "status": "failed",
+        "count": 1
+      },
+      {
+        "status": "queued",
+        "count": 1
+      },
+      {
+        "status": "ready",
+        "count": 2
+      },
+      {
+        "status": "running",
+        "count": 1
+      },
+      {
+        "status": "succeeded",
+        "count": 1
+      }
+    ],
+    "foreign_key_errors": []
+  },
+  "report": {
+    "schema_version": "1.0",
+    "task_id": "REQ-023_ENVCTL_OPERATION_STATE",
+    "status": "passed",
+    "generated_at": "2026-07-04T23:09:12+00:00",
+    "summary": {
+      "required_state_count": 8,
+      "canonical_state_count": 8,
+      "transition_event_count": 12,
+      "illegal_transition_rejection_count": 3,
+      "sqlite_inserted_operation_count": 8,
+      "operation_schema_status_count": 9
+    },
+    "errors": [],
+    "evidence": [
+      "scripts/operation_state_machine.py",
+      "generated/operation_state_machine.json",
+      "generated/operation_state_machine_validation_report.json",
+      "docs/OPERATION_STATE_MACHINE.md"
+    ]
+  }
+}

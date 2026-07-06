@@ -1,0 +1,7 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-025_ENVCTL_VALIDATION_EVIDENCE",
+  "summary": "source and target validation rows reconciled",
+  "matched": 12,
+  "missing": 0
+}

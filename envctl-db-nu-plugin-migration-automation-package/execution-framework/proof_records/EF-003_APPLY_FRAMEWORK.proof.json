@@ -1,0 +1,42 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "EF-003_APPLY_FRAMEWORK",
+  "status": "completed",
+  "started_at": "2026-07-04T00:00:00-05:00",
+  "completed_at": "2026-07-04T00:00:00-05:00",
+  "actor": "local-package-builder",
+  "helper_id": "helper-files-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "execution-framework",
+  "files_changed": [
+    "execution-framework/README.md",
+    "execution-framework/docs/EXECUTION_FRAMEWORK_INSTALL.md",
+    "execution-framework/docs/GOAL_LOOP_PROTOCOL.md",
+    "execution-framework/docs/MULTI_AGENT_COLUMNS.md",
+    "execution-framework/templates/TASK_GRAPH_TEMPLATE.csv",
+    "execution-framework/templates/AGENT_LANE_TEMPLATE.json"
+  ],
+  "commands_run": [
+    "create additive execution-framework files"
+  ],
+  "verification_output": {
+    "status": "completed"
+  },
+  "checksums": {
+    "execution-framework/README.md": "040cdd8b710e242b31814d4c9729ff1950f38ed65279ed4715bc3027d70e9355",
+    "execution-framework/docs/EXECUTION_FRAMEWORK_INSTALL.md": "64d13952bf890966681f1424d7b2d549273124706615746e0d008367c701fe52",
+    "execution-framework/docs/GOAL_LOOP_PROTOCOL.md": "c228d3d63617424676cf152a5131510ab22485d1d6ffc356c969d1d9b6ac774d",
+    "execution-framework/docs/MULTI_AGENT_COLUMNS.md": "23877878f15fa77ae194b2300d04a3101bcec51d5ebd69f5a5dd332f361c2e04",
+    "execution-framework/templates/TASK_GRAPH_TEMPLATE.csv": "516dbead6806c0acd621622c98dbd2ef6c79e134caeba0aa13a1e1514ffeaf03",
+    "execution-framework/templates/AGENT_LANE_TEMPLATE.json": "fbac2f99486fe699114ab11b61da98e21c9be8a1e1ec4c3759f0f33b51d9164a"
+  },
+  "logs_uri": "logs/EF-003_APPLY_FRAMEWORK.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "execution-framework/README.md",
+    "execution-framework/scripts/",
+    "execution-framework/schemas/"
+  ],
+  "failure_reason": "",
+  "next_action": "continue required execution command sequence"
+}

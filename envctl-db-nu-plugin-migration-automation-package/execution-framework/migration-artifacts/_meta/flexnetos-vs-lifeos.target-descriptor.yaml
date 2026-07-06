@@ -1,0 +1,43 @@
+schema_version: 1
+target_id: flexnetos-vs-lifeos
+target_type: mixed
+primary_root: /home/flexnetos/FlexNetOS
+compare_root: /home/flexnetos/lifeos
+output_root: migration-artifacts
+include:
+  - "**/*"
+exclude:
+  - "**/*.key"
+  - "**/*.pem"
+  - "**/.env"
+  - "**/private_keys/**"
+  - "**/secrets/**"
+  - .git/**
+  - .venv/**
+  - __pycache__/**
+  - node_modules/**
+  - target/**
+safety:
+  default_mode: approval-gated
+  max_auto_risk: R2
+  allow_network: false
+  allow_destructive: false
+collectors:
+  filesystem: true
+  git: true
+  package_managers: true
+  databases: true
+  infrastructure: true
+  apis: true
+  observability: true
+artifact_contract:
+  name: full-migration-artifact-contract
+  version: 1
+recipe:
+  name: codex-flexnetos-full-artifact-run
+  version: 1
+metadata:
+  purpose: Describe FlexNetOS and lifeos as evidence-only migration comparison targets.
+  source_descriptor: examples/target-descriptors/flexnetos-vs-lifeos.yaml
+  comparison_role: primary_root is the FlexNetOS workspace; compare_root is the lifeos workspace.
+  verification: REQ-200 validates descriptor fields, expected roots, path existence, and secret redaction guards.

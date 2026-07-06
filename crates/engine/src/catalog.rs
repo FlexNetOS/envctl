@@ -4590,6 +4590,55 @@ name = "nix-portable"
     }
 
     #[test]
+    fn render_can_retarget_layout_paths_and_env_exports() {
+        let root = fixture_root();
+        write_fixture(&root);
+        let manifest_dir = root.join("manifest");
+        let registry = Registry::load(&manifest_dir).unwrap();
+        let out = fixture_root();
+        let target_root = fixture_root().join("meta-root");
+        std::fs::create_dir_all(&target_root).unwrap();
+
+        let report = render(
+            CatalogRenderSpec {
+                repo_root: root,
+                manifest_dir,
+                out_dir: out.clone(),
+                target_root: Some(target_root.clone()),
+            },
+            &registry,
+        )
+        .unwrap();
+
+        assert_eq!(report.target_root, Some(target_root.display().to_string()));
+
+        let paths: Vec<PathRow> =
+            serde_json::from_slice(&std::fs::read(out.join("catalog/tables/paths.json")).unwrap())
+                .unwrap();
+        let env_vars: Vec<EnvVarRow> = serde_json::from_slice(
+            &std::fs::read(out.join("catalog/tables/env_vars.json")).unwrap(),
+        )
+        .unwrap();
+
+        let usr = paths
+            .iter()
+            .find(|row| row.path_id == "usr")
+            .expect("usr path row");
+        assert_eq!(usr.path, target_root.join("usr").display().to_string());
+
+        let expected_usr = target_root.join("usr").display().to_string();
+        let envctl_usr = env_vars
+            .iter()
+            .find(|row| row.var_name == "ENVCTL_USR" && row.producer == "layout")
+            .expect("layout env var row");
+        assert_eq!(envctl_usr.value.as_deref(), Some(expected_usr.as_str()));
+        assert_eq!(
+            envctl_usr.effective_value.as_deref(),
+            Some(expected_usr.as_str())
+        );
+    }
+
+    #[test]
     fn ingest_nix_profile_adds_frontdoor_and_store_provenance_rows() {
         let home = fixture_root();
         let profile_root = home.join(".nix-profile");

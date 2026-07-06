@@ -1,0 +1,12 @@
+{
+  "task_id": "ART-116_INFRA_TOPOLOGY",
+  "status": "complete",
+  "started_at": "2026-07-04T23:20:13+00:00",
+  "updated_at": "2026-07-04T23:20:52+00:00",
+  "artifact_paths": [
+    "migration-artifacts/art-116_infra_topology/topology.md",
+    "migration-artifacts/art-116_infra_topology/topology.json",
+    "migration-artifacts/08-operations/infrastructure-topology-map.md"
+  ],
+  "proof_uri": "proof_records/ART-116_INFRA_TOPOLOGY.proof.json"
+}

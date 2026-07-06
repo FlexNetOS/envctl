@@ -1,0 +1,281 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-135_RACI",
+  "generated_at": "2026-07-04T23:28:55+00:00",
+  "status": "complete",
+  "target": {
+    "target_id": "flexnetos-vs-lifeos",
+    "target_type": "mixed",
+    "primary_root": "/home/flexnetos/FlexNetOS",
+    "compare_root": "/home/flexnetos/lifeos",
+    "safety_mode": "approval-gated",
+    "max_auto_risk": "R2",
+    "descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384"
+  },
+  "artifact_paths": {
+    "markdown": "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.md",
+    "json": "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.json",
+    "canonical_markdown": "execution-framework/migration-artifacts/09-governance/ownership-raci-matrix.md"
+  },
+  "source_inputs": {
+    "ownership_owner_count": 10,
+    "ownership_domain_count": 8,
+    "iam_principal_count": 7,
+    "readiness_status": null,
+    "risk_count": 7,
+    "source_paths": [
+      "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.json",
+      "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json",
+      "execution-framework/migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json",
+      "execution-framework/migration-artifacts/art-125_risk_register/risk-register.json",
+      "execution-framework/generated/envctl_target_registry.json",
+      "execution-framework/generated/envctl_artifact_registry_report.json",
+      "execution-framework/generated/shared_protocol_manifest.json"
+    ]
+  },
+  "raci_legend": {
+    "responsible": "Performs the work or drives the artifact/control activity.",
+    "accountable": "Final decision owner for the domain.",
+    "consulted": "Two-way input required before material changes.",
+    "informed": "One-way notification after decisions, validation, or cutover changes."
+  },
+  "coverage": {
+    "domain_count": 8,
+    "unique_owner_count": 10,
+    "approval_owner_count": 6,
+    "build_owner_count": 7,
+    "validate_owner_count": 1,
+    "cutover_owner_count": 1,
+    "support_owner_count": 5,
+    "rows_with_raci": 8,
+    "rows_with_decision_right": 8
+  },
+  "owner_index": [
+    "artifact-agent",
+    "envctl-db-agent",
+    "envctl-runner-agent",
+    "flexnetos-adapter-agent",
+    "migration-operator",
+    "nu-plugin-agent",
+    "nu-plugin-visuals-agent",
+    "security-reproducibility-agent",
+    "shared-protocol-agent",
+    "validation-agent"
+  ],
+  "raci_matrix": [
+    {
+      "domain_id": "migration-governance",
+      "domain": "Migration governance and scope control",
+      "responsible": "artifact-agent",
+      "accountable": "migration-operator",
+      "consulted": [
+        "envctl-db-agent",
+        "shared-protocol-agent",
+        "validation-agent"
+      ],
+      "informed": [
+        "nu-plugin-agent",
+        "flexnetos-adapter-agent"
+      ],
+      "approval_owner": "migration-operator",
+      "build_owner": "artifact-agent",
+      "validate_owner": "validation-agent",
+      "cutover_owner": "migration-operator",
+      "support_owner": "validation-agent",
+      "decision_right": "Approve contract completion, scope changes, and R3+ migration actions.",
+      "evidence_refs": [
+        "execution-framework/docs/CONTRACT_MANIFEST.md",
+        "execution-framework/generated/task_graph.csv",
+        "execution-framework/migration-artifacts/09-governance/decision-log.md"
+      ]
+    },
+    {
+      "domain_id": "envctl-database",
+      "domain": "envctl migration database and artifact registry",
+      "responsible": "envctl-db-agent",
+      "accountable": "envctl-db-agent",
+      "consulted": [
+        "artifact-agent",
+        "shared-protocol-agent",
+        "validation-agent"
+      ],
+      "informed": [
+        "nu-plugin-agent",
+        "migration-operator"
+      ],
+      "approval_owner": "envctl-db-agent",
+      "build_owner": "envctl-db-agent",
+      "validate_owner": "validation-agent",
+      "cutover_owner": "migration-operator",
+      "support_owner": "envctl-runner-agent",
+      "decision_right": "Own database schema, artifact registration, producer operation linkage, and registry fail-closed behavior.",
+      "evidence_refs": [
+        "execution-framework/docs/ENVCTL_ARTIFACT_REGISTRY.md",
+        "execution-framework/generated/envctl_artifact_registry_report.json",
+        "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json"
+      ]
+    },
+    {
+      "domain_id": "shared-protocol",
+      "domain": "Shared protocol schemas and compatibility",
+      "responsible": "shared-protocol-agent",
+      "accountable": "shared-protocol-agent",
+      "consulted": [
+        "envctl-db-agent",
+        "nu-plugin-agent",
+        "validation-agent"
+      ],
+      "informed": [
+        "artifact-agent",
+        "migration-operator"
+      ],
+      "approval_owner": "shared-protocol-agent",
+      "build_owner": "shared-protocol-agent",
+      "validate_owner": "validation-agent",
+      "cutover_owner": "migration-operator",
+      "support_owner": "envctl-db-agent",
+      "decision_right": "Approve protocol record compatibility and schema changes consumed by envctl and nu_plugin.",
+      "evidence_refs": [
+        "execution-framework/docs/SHARED_PROTOCOL_SCHEMAS.md",
+        "execution-framework/generated/shared_protocol_manifest.json",
+        "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+      ]
+    },
+    {
+      "domain_id": "nu-plugin-control-surface",
+      "domain": "nu_plugin operator control surface",
+      "responsible": "nu-plugin-agent",
+      "accountable": "nu-plugin-agent",
+      "consulted": [
+        "shared-protocol-agent",
+        "envctl-db-agent",
+        "validation-agent"
+      ],
+      "informed": [
+        "artifact-agent",
+        "migration-operator"
+      ],
+      "approval_owner": "migration-operator",
+      "build_owner": "nu-plugin-agent",
+      "validate_owner": "validation-agent",
+      "cutover_owner": "migration-operator",
+      "support_owner": "nu-plugin-visuals-agent",
+      "decision_right": "Own operator command shape, approval views, replay views, and human-facing migration status display.",
+      "evidence_refs": [
+        "execution-framework/docs/SHARED_PROTOCOL_SCHEMAS.md",
+        "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json"
+      ]
+    },
+    {
+      "domain_id": "artifact-generation",
+      "domain": "Artifact generation and package outputs",
+      "responsible": "artifact-agent",
+      "accountable": "artifact-agent",
+      "consulted": [
+        "envctl-db-agent",
+        "validation-agent",
+        "security-reproducibility-agent"
+      ],
+      "informed": [
+        "migration-operator",
+        "nu-plugin-agent"
+      ],
+      "approval_owner": "artifact-agent",
+      "build_owner": "artifact-agent",
+      "validate_owner": "validation-agent",
+      "cutover_owner": "migration-operator",
+      "support_owner": "artifact-agent",
+      "decision_right": "Generate required migration artifacts, register hashes, preserve provenance, and link evidence.",
+      "evidence_refs": [
+        "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.json",
+        "execution-framework/generated/contract_manifest.json",
+        "execution-framework/generated/execution_packets/ART-135_RACI.json"
+      ]
+    },
+    {
+      "domain_id": "validation-evidence",
+      "domain": "Validation evidence, proof records, and gates",
+      "responsible": "validation-agent",
+      "accountable": "validation-agent",
+      "consulted": [
+        "artifact-agent",
+        "envctl-db-agent",
+        "shared-protocol-agent"
+      ],
+      "informed": [
+        "migration-operator"
+      ],
+      "approval_owner": "validation-agent",
+      "build_owner": "validation-agent",
+      "validate_owner": "validation-agent",
+      "cutover_owner": "migration-operator",
+      "support_owner": "validation-agent",
+      "decision_right": "Accept or reject validation evidence for unit validation, proof ledgers, and replay-ready gates.",
+      "evidence_refs": [
+        "execution-framework/schemas/proof_record.schema.json",
+        "execution-framework/proof_records/proof_ledger.jsonl",
+        "execution-framework/docs/ENVCTL_VALIDATION_EVIDENCE.md"
+      ]
+    },
+    {
+      "domain_id": "cutover-support",
+      "domain": "Cutover, rollback, and post-cutover support",
+      "responsible": "migration-operator",
+      "accountable": "migration-operator",
+      "consulted": [
+        "envctl-runner-agent",
+        "validation-agent",
+        "flexnetos-adapter-agent"
+      ],
+      "informed": [
+        "artifact-agent",
+        "nu-plugin-agent",
+        "shared-protocol-agent"
+      ],
+      "approval_owner": "migration-operator",
+      "build_owner": "envctl-runner-agent",
+      "validate_owner": "validation-agent",
+      "cutover_owner": "migration-operator",
+      "support_owner": "envctl-runner-agent",
+      "decision_right": "Own final go/no-go, rollback checkpoints, and operational support handoff.",
+      "evidence_refs": [
+        "execution-framework/generated/task_graph.csv",
+        "execution-framework/migration-artifacts/09-governance/risk-register.md",
+        "execution-framework/migration-artifacts/09-governance/migration-readiness-scorecard.md"
+      ]
+    },
+    {
+      "domain_id": "security-reproducibility",
+      "domain": "Security, redaction, and reproducibility controls",
+      "responsible": "security-reproducibility-agent",
+      "accountable": "security-reproducibility-agent",
+      "consulted": [
+        "envctl-db-agent",
+        "artifact-agent",
+        "validation-agent"
+      ],
+      "informed": [
+        "migration-operator",
+        "nu-plugin-agent"
+      ],
+      "approval_owner": "security-reproducibility-agent",
+      "build_owner": "security-reproducibility-agent",
+      "validate_owner": "validation-agent",
+      "cutover_owner": "migration-operator",
+      "support_owner": "envctl-db-agent",
+      "decision_right": "Approve blocked-path policy, redaction posture, evidence hashing, and reproducibility-safe artifact capture.",
+      "evidence_refs": [
+        "execution-framework/docs/SECURITY_REDACTION.md",
+        "execution-framework/generated/security_redaction_validation_report.json",
+        "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json"
+      ]
+    }
+  ],
+  "validation": {
+    "all_rows_have_responsible": true,
+    "all_rows_have_accountable": true,
+    "all_rows_have_consulted": true,
+    "all_rows_have_informed": true,
+    "approval_build_validate_cutover_support_assigned": true
+  }
+}

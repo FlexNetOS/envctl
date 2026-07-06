@@ -1,0 +1,204 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "ART-114_ENV_CONFIG_MATRIX",
+  "status": "completed",
+  "started_at": "2026-07-04T23:21:06+00:00",
+  "completed_at": "2026-07-04T23:21:06+00:00",
+  "actor": "artifact-agent",
+  "helper_id": "helper-artifact-15",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/generate_env_config_matrix.py",
+    "execution-framework/migration-artifacts/01-current-state/environment-matrix.md",
+    "execution-framework/migration-artifacts/art-114_env_config_matrix/environment-matrix.md",
+    "execution-framework/migration-artifacts/art-114_env_config_matrix/environment-matrix.json",
+    "execution-framework/generated/art114_env_config_matrix_registry_report.json",
+    "execution-framework/logs/ART-114_ENV_CONFIG_MATRIX.log",
+    "execution-framework/state/ART-114_ENV_CONFIG_MATRIX.heartbeat.json",
+    "execution-framework/proof_records/ART-114_ENV_CONFIG_MATRIX.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/generate_env_config_matrix.py",
+    "python3 -m py_compile scripts/generate_env_config_matrix.py"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "ART-114_ENV_CONFIG_MATRIX",
+    "status": "passed",
+    "generated_at": "2026-07-04T23:21:06+00:00",
+    "started_at": "2026-07-04T23:21:06+00:00",
+    "completed_at": "2026-07-04T23:21:06+00:00",
+    "artifacts": [
+      "migration-artifacts/01-current-state/environment-matrix.md",
+      "migration-artifacts/art-114_env_config_matrix/environment-matrix.md",
+      "migration-artifacts/art-114_env_config_matrix/environment-matrix.json"
+    ],
+    "applied_migrations": [
+      {
+        "path": "sql/001_migration_automation_schema.sql",
+        "sha256": "f0a8ad6ce7fba6023d8bfb765843fef07710387f9e720f7fe01305ce2d52bb0e",
+        "bytes": 8608
+      },
+      {
+        "path": "sql/002_views_and_indexes.sql",
+        "sha256": "b9c4fee76504746742695119c84bfbb46dedb1e29da480103f2e6b6c5a83106e",
+        "bytes": 3819
+      },
+      {
+        "path": "execution-framework/generated/contract_manifest.seed.sql",
+        "sha256": "399c1092118d57f78c7647a2d5c2fbd914c5b2ac97d5e41e4deda44722dc8c06",
+        "bytes": 155594
+      }
+    ],
+    "registry_results": [
+      {
+        "artifact_row_id": "artifact-b3f8226e1b8bdb0383d383d0",
+        "artifact_id": "01-current-state-environment-matrix-md",
+        "run_id": "run-art114-env-config-matrix",
+        "path": "migration-artifacts/01-current-state/environment-matrix.md",
+        "content_hash": "sha256:fb889381c225327af2089118dee9d917aac205d46aa15c516e600743b29ae6bc",
+        "producer_operation_id": "produce-01-current-state-environment-matrix-md",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-094b79f155b96d33320aee49",
+          "evidence-2ba5cbf31c5db00a06c42c03",
+          "evidence-3c306425c1b1e7a93201881f",
+          "evidence-b683edbe83e98932072ed1cd",
+          "evidence-bf796c3b54353807a25a8f71",
+          "evidence-2893246be417757c7edd100a"
+        ],
+        "graph_edge_ids": [
+          "edge-baac5bae4b4fa3939153b8be",
+          "edge-158e72242058bf071f32f991",
+          "edge-f2cb4ecd96730db4de675a8b"
+        ],
+        "validation_ids": [
+          "validation-6c60820f8e353833a28762b3",
+          "validation-f8586c0a57367783e16bc03d",
+          "validation-5780ec25fcb44e262e45248b"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-d5eee32326f7b2ada4301398",
+        "artifact_id": "art-114-env-config-matrix-md",
+        "run_id": "run-art114-env-config-matrix",
+        "path": "migration-artifacts/art-114_env_config_matrix/environment-matrix.md",
+        "content_hash": "sha256:fb889381c225327af2089118dee9d917aac205d46aa15c516e600743b29ae6bc",
+        "producer_operation_id": "produce-01-current-state-environment-matrix-md",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-16845338de741f251e740533",
+          "evidence-595d0d656d233730578fceff",
+          "evidence-c5a26bf4d4821f591435fc1b",
+          "evidence-cd080d0e7c0f221f19dcbcfe",
+          "evidence-f3277c3e8674ad31f66d3fc2",
+          "evidence-7b593053183843fe20607f90"
+        ],
+        "graph_edge_ids": [
+          "edge-6430c4b323b15f1438b505cb",
+          "edge-75667f59d80b50a05b7fae43"
+        ],
+        "validation_ids": [
+          "validation-47e5584d073dbf3217c7b411",
+          "validation-f72455bc3ae63230b193fe97",
+          "validation-a17270598b5fffb25d44785b"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-53285b592c14a053e74eb73b",
+        "artifact_id": "art-114-env-config-matrix-json",
+        "run_id": "run-art114-env-config-matrix",
+        "path": "migration-artifacts/art-114_env_config_matrix/environment-matrix.json",
+        "content_hash": "sha256:ffee79058bc2e9f80f124809d734d89220151a48ea82b286cb2d047fb24ac8a7",
+        "producer_operation_id": "produce-01-current-state-environment-matrix-md",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-e9c9191c53b5dd80341ee8c4",
+          "evidence-3d98fa9216f9bf6f5adc2fc8",
+          "evidence-b723337c92a15a6186d2559b",
+          "evidence-667d114f85fd4b69c1a80330",
+          "evidence-08ad0d51e5161e9fd99549ea",
+          "evidence-60fdda977e752c1913edff49"
+        ],
+        "graph_edge_ids": [
+          "edge-1ab1d8fb196422eb6cc1f18d",
+          "edge-369a2a92f8de3e5dff56a4c7"
+        ],
+        "validation_ids": [
+          "validation-b4186840cf1139a3d9df59b4",
+          "validation-74485e4228fecb80c02c0bdf",
+          "validation-547349dc607e22216202f9c5"
+        ]
+      }
+    ],
+    "verification": {
+      "artifact_count": 3,
+      "registry_rows": [
+        {
+          "artifact_id": "01-current-state-environment-matrix-md",
+          "path": "migration-artifacts/01-current-state/environment-matrix.md",
+          "content_hash": "sha256:fb889381c225327af2089118dee9d917aac205d46aa15c516e600743b29ae6bc",
+          "hash_matches": true,
+          "status": "complete"
+        },
+        {
+          "artifact_id": "art-114-env-config-matrix-md",
+          "path": "migration-artifacts/art-114_env_config_matrix/environment-matrix.md",
+          "content_hash": "sha256:fb889381c225327af2089118dee9d917aac205d46aa15c516e600743b29ae6bc",
+          "hash_matches": true,
+          "status": "complete"
+        },
+        {
+          "artifact_id": "art-114-env-config-matrix-json",
+          "path": "migration-artifacts/art-114_env_config_matrix/environment-matrix.json",
+          "content_hash": "sha256:ffee79058bc2e9f80f124809d734d89220151a48ea82b286cb2d047fb24ac8a7",
+          "hash_matches": true,
+          "status": "complete"
+        }
+      ],
+      "json_environment_count": 3,
+      "json_environments": [
+        "dev",
+        "prod",
+        "stage"
+      ],
+      "all_hashes_match": true,
+      "errors": []
+    },
+    "evidence": [
+      "migration-artifacts/01-current-state/environment-matrix.md",
+      "migration-artifacts/art-114_env_config_matrix/environment-matrix.md",
+      "migration-artifacts/art-114_env_config_matrix/environment-matrix.json",
+      "execution-framework/generated/envctl_target_registry.json",
+      "execution-framework/generated/contract_manifest.json",
+      "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+      "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+    ]
+  },
+  "checksums": {
+    "execution-framework/scripts/generate_env_config_matrix.py": "f94af4085a71f478deb7501895744cb1cc936e81f250fb51d6f8af653526e79f",
+    "execution-framework/migration-artifacts/01-current-state/environment-matrix.md": "fb889381c225327af2089118dee9d917aac205d46aa15c516e600743b29ae6bc",
+    "execution-framework/migration-artifacts/art-114_env_config_matrix/environment-matrix.md": "fb889381c225327af2089118dee9d917aac205d46aa15c516e600743b29ae6bc",
+    "execution-framework/migration-artifacts/art-114_env_config_matrix/environment-matrix.json": "ffee79058bc2e9f80f124809d734d89220151a48ea82b286cb2d047fb24ac8a7",
+    "execution-framework/generated/art114_env_config_matrix_registry_report.json": "b30e83c436b08775f97c9a05652df0f485448d1707a54dbda0f2b1037af43f32",
+    "execution-framework/logs/ART-114_ENV_CONFIG_MATRIX.log": "b30e83c436b08775f97c9a05652df0f485448d1707a54dbda0f2b1037af43f32",
+    "execution-framework/state/ART-114_ENV_CONFIG_MATRIX.heartbeat.json": "86cbb9cd282307b24f994d2876ef2fe1dd479bbc549cc9f822c384c6149e5f7e",
+    "execution-framework/proof_records/ART-114_ENV_CONFIG_MATRIX.proof.json": "b3e7d7c2839be4bd1f29c174c7e18383d2cef57ff4e1e2193952d619c620837a",
+    "execution-framework/proof_records/proof_ledger.jsonl": "74c8a47f93db2086af7ed6c4a0db1f5468c91686cf8f2e0f33cc9ffec71a1d47"
+  },
+  "logs_uri": "logs/ART-114_ENV_CONFIG_MATRIX.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "migration-artifacts/01-current-state/environment-matrix.md",
+    "migration-artifacts/art-114_env_config_matrix/environment-matrix.md",
+    "migration-artifacts/art-114_env_config_matrix/environment-matrix.json",
+    "execution-framework/generated/envctl_target_registry.json",
+    "execution-framework/generated/contract_manifest.json",
+    "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+    "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+  ],
+  "failure_reason": "",
+  "next_action": "run VER-300_UNIT_VALIDATION"
+}

@@ -1,0 +1,202 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-123_VALIDATION_RECONCILIATION",
+  "title": "Validation reconciliation reports",
+  "generated_at": "2026-07-04T23:29:16+00:00",
+  "source_inputs": {
+    "target_descriptor": "generated/envctl_target_registry.json",
+    "repo_scan": "generated/package_scan.json",
+    "envctl_database": "generated/envctl_migration_db_model.json",
+    "artifact_registry": "generated/envctl_artifact_registry_report.json",
+    "validation_evidence": "generated/envctl_validation_evidence_report.json",
+    "shared_protocols": "generated/shared_protocol_validation_report.json",
+    "task_status": "generated/status_from_proofs.json",
+    "final_verification": "generated/final_verification_report.json",
+    "contract_manifest": "generated/contract_manifest.json"
+  },
+  "parity": {
+    "task_graph_rows": 80,
+    "execution_packet_count": 80,
+    "proof_record_count": 60,
+    "status_report_tasks": 80,
+    "successful_tasks": 56,
+    "missing_execution_packets": [],
+    "packets_without_task_graph_rows": [],
+    "successful_tasks_without_proof": [],
+    "proofs_without_task_graph_rows": [],
+    "passed": true
+  },
+  "counts": {
+    "by_phase": [
+      {
+        "phase": "00-framework",
+        "task_count": 8,
+        "complete_or_passed": 8,
+        "pending": 0,
+        "other": 0
+      },
+      {
+        "phase": "01-contract",
+        "task_count": 1,
+        "complete_or_passed": 1,
+        "pending": 0,
+        "other": 0
+      },
+      {
+        "phase": "02-envctl-db",
+        "task_count": 9,
+        "complete_or_passed": 6,
+        "pending": 3,
+        "other": 0
+      },
+      {
+        "phase": "03-nu-plugin",
+        "task_count": 5,
+        "complete_or_passed": 4,
+        "pending": 1,
+        "other": 0
+      },
+      {
+        "phase": "04-shared",
+        "task_count": 6,
+        "complete_or_passed": 4,
+        "pending": 2,
+        "other": 0
+      },
+      {
+        "phase": "05-artifacts",
+        "task_count": 37,
+        "complete_or_passed": 28,
+        "pending": 9,
+        "other": 0
+      },
+      {
+        "phase": "06-flexnetos",
+        "task_count": 3,
+        "complete_or_passed": 1,
+        "pending": 2,
+        "other": 0
+      },
+      {
+        "phase": "07-verification",
+        "task_count": 5,
+        "complete_or_passed": 0,
+        "pending": 5,
+        "other": 0
+      },
+      {
+        "phase": "08-release",
+        "task_count": 2,
+        "complete_or_passed": 0,
+        "pending": 2,
+        "other": 0
+      },
+      {
+        "phase": "09-drive-maintenance",
+        "task_count": 4,
+        "complete_or_passed": 4,
+        "pending": 0,
+        "other": 0
+      }
+    ],
+    "artifact_registry": {
+      "evidence_rows": 3,
+      "graph_edges": 4,
+      "validation_rows": 2,
+      "rejection_cases": 3
+    },
+    "validation_evidence": {
+      "validation_rows": 3,
+      "evidence_rows": 4,
+      "hashed_evidence_rows": 4,
+      "rejection_cases": 3
+    },
+    "shared_protocol_samples": {
+      "total": 14,
+      "passed": 14
+    },
+    "final_verification": {
+      "task_count": 80,
+      "packet_count": 80,
+      "proof_count": 46,
+      "missing_outputs": 0,
+      "unresolved_gaps": 0
+    }
+  },
+  "checksums": {
+    "inputs": {
+      "execution-framework/generated/envctl_target_registry.json": "e74615f1274f5cbc530b859fa74e774f99f99ef33c7acb7b2a3cc75f0f01e77c",
+      "execution-framework/generated/package_scan.json": "0d851e9f6a67044bfd6b6df77231c518292a385304e1830d579e6520634b9487",
+      "execution-framework/generated/envctl_migration_db_model.json": "7347f6629cc4fb0dbae56105dec65d5937a2a55860e0df4215b309e3ef766cef",
+      "execution-framework/generated/envctl_artifact_registry_report.json": "b3d33175a5ec64d95bb2a2dc0b503ca897c97990bf78fd80fc159780b3df113c",
+      "execution-framework/generated/envctl_validation_evidence_report.json": "0ac5c601eb16c8df54d7f70573aacf950b18a0ecfe56606ebe9a3ab9d092d3bf",
+      "execution-framework/generated/shared_protocol_validation_report.json": "0863b9b28e702c704c96f50a50954181f42b35aaa16e4ecb6643497093c4c4d0",
+      "execution-framework/generated/status_from_proofs.json": "72a97f935a3e589a84abebd22ae2cd78c9947611d5c8d6316a343c4667167ea5",
+      "execution-framework/generated/final_verification_report.json": "fe82ef8932163155bb724ee0093c4a133abf73157b1f365ccd018110cc2c1e52",
+      "execution-framework/generated/contract_manifest.json": "3c2e2a883b6dfc7f135c4dc101484cced9f877191b46bb378f1cc4fcd07e1270",
+      "execution-framework/generated/task_graph.csv": "6388bfe8495f78fb2d89e87d183d258eae9a079bcf67e91ec60cc80a9f36d670"
+    },
+    "upstream_proofs": {
+      "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json": "fb6103ba1e8ca4c520a43fa3a18bdae971af6296f714f96c9aab6eee34d37d64",
+      "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json": "88ecbe9517d4b24401ea1c5bbd072e1472aa0b9938c34e2c210173f521f1bea1",
+      "execution-framework/proof_records/REQ-025_ENVCTL_VALIDATION_EVIDENCE.proof.json": "342166da90b6d986604e6448e7b4c9cd0ede63e78136002a6522f754798ed4d7"
+    }
+  },
+  "dependency_statuses": {
+    "REQ-024_ENVCTL_ARTIFACT_REGISTRY": "completed",
+    "REQ-040_SHARED_PROTOCOL_SCHEMAS": "completed",
+    "REQ-025_ENVCTL_VALIDATION_EVIDENCE": "completed"
+  },
+  "contract_mapping": {
+    "contract_row_id": "artifact:06-testing-validation-validation-reconciliation-reports-md",
+    "contract_required_path": "migration-artifacts/06-testing-validation/validation-reconciliation-reports.md",
+    "task_scoped_paths": [
+      "migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.md",
+      "migration-artifacts/art-123_validation_reconciliation/validation-reconciliation-reports.json"
+    ],
+    "contract_rows": [
+      {
+        "contract_row_id": "artifact:06-testing-validation-validation-reconciliation-reports-md",
+        "artifact_id": "06-testing-validation-validation-reconciliation-reports-md",
+        "title": "Validation Reconciliation Reports",
+        "required_path": "migration-artifacts/06-testing-validation/validation-reconciliation-reports.md",
+        "section": "06-testing-validation",
+        "artifact_type": "validation_evidence",
+        "format": "md",
+        "status": "required",
+        "source_refs": [
+          "source/codex-flexnetos-migration-prompt-package/expected-output/migration-artifacts-tree.md",
+          "source/previous-migration-artifact-context.md"
+        ],
+        "producer_task_id": "ART-123_VALIDATION_RECONCILIATION",
+        "validators": [
+          "path_registered",
+          "evidence_or_status_recorded",
+          "linked_from_index"
+        ]
+      }
+    ]
+  },
+  "output_expectations": {
+    "target_files": [
+      "migration-artifacts/art-123_validation_reconciliation/*.md",
+      "migration-artifacts/art-123_validation_reconciliation/*.json"
+    ],
+    "registered_artifacts": [
+      "art-123-validation-reconciliation-md",
+      "art-123-validation-reconciliation-json",
+      "06-testing-validation-validation-reconciliation-reports-md"
+    ]
+  },
+  "validation_summary": {
+    "artifact_registry_status": "passed",
+    "validation_evidence_status": "passed",
+    "shared_protocol_status": "passed",
+    "final_verification_status": "pass_with_external_blocker",
+    "target_registry_status": "passed",
+    "db_model_status": "passed",
+    "package_scan_status": "available"
+  },
+  "status": "passed",
+  "errors": []
+}

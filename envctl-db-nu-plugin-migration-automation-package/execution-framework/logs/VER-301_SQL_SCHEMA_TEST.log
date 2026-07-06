@@ -1,0 +1,132 @@
+{
+  "schema_version": "1.0",
+  "task_id": "VER-301_SQL_SCHEMA_TEST",
+  "status": "pass",
+  "generated_at": "2026-07-05T05:51:29+00:00",
+  "packet_summary": {
+    "goal": "Apply schema migrations to test DB and validate views/indexes/seed data",
+    "repo_target": "repo_a",
+    "repo_path": "${ENVCTL_REPO}",
+    "filesystem_scope": "repo",
+    "verification_command": "python3 scripts/verify_ver301_sql_schema_test.py"
+  },
+  "dependency_proof": {
+    "path": "proof_records/VER-300_UNIT_VALIDATION.proof.json",
+    "status": "completed",
+    "ok": true
+  },
+  "schema_execution": {
+    "command": "python3 scripts/verify_envctl_db_schema.py",
+    "exit_code": 0,
+    "stdout": [
+      "envctl db schema status=passed tables=16 views=6 indexes=31 fks=24"
+    ],
+    "stderr": []
+  },
+  "req020_artifacts": {
+    "report_path": "generated/envctl_migration_db_validation_report.json",
+    "proof_path": "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json",
+    "model_path": "generated/envctl_migration_db_model.json",
+    "doc_path": "docs/ENVCTL_DB_SCHEMA.md",
+    "status": "passed",
+    "proof_status": "completed"
+  },
+  "checks": {
+    "dependency_ver300_completed": true,
+    "schema_verifier_exit_zero": true,
+    "req020_report_passed": true,
+    "req020_proof_completed": true,
+    "table_count_matches_required": true,
+    "view_count_matches_required": true,
+    "constraint_check_rejected_invalid_risk": true,
+    "foreign_key_check_clean": true,
+    "required_view_queries_passed": true
+  },
+  "schema_summary": {
+    "required_table_count": 16,
+    "actual_table_count": 16,
+    "required_view_count": 6,
+    "actual_view_count": 6,
+    "capability_count": 19,
+    "index_count": 31,
+    "foreign_key_count": 24
+  },
+  "required_views": [
+    "envctl_migration_artifact_index",
+    "envctl_migration_live_timeline",
+    "envctl_migration_open_approvals",
+    "envctl_migration_replay_readiness",
+    "envctl_migration_run_latest_status",
+    "envctl_migration_validation_scorecard"
+  ],
+  "view_runtime_queries": {
+    "envctl_migration_artifact_index": {
+      "query_ok": true,
+      "sample_row_count": 1
+    },
+    "envctl_migration_live_timeline": {
+      "query_ok": true,
+      "sample_row_count": 1
+    },
+    "envctl_migration_open_approvals": {
+      "query_ok": true,
+      "sample_row_count": 0
+    },
+    "envctl_migration_replay_readiness": {
+      "query_ok": true,
+      "sample_row_count": 1
+    },
+    "envctl_migration_run_latest_status": {
+      "query_ok": true,
+      "sample_row_count": 1
+    },
+    "envctl_migration_validation_scorecard": {
+      "query_ok": true,
+      "sample_row_count": 1
+    }
+  },
+  "constraint_check": {
+    "invalid_operation_risk_rejected": true,
+    "error": "CHECK constraint failed: risk IN ('R0','R1','R2','R3','R4','R5')"
+  },
+  "foreign_key_check": [],
+  "applied_migrations": [
+    {
+      "path": "sql/001_migration_automation_schema.sql",
+      "sha256": "f0a8ad6ce7fba6023d8bfb765843fef07710387f9e720f7fe01305ce2d52bb0e",
+      "bytes": 8608
+    },
+    {
+      "path": "sql/002_views_and_indexes.sql",
+      "sha256": "b9c4fee76504746742695119c84bfbb46dedb1e29da480103f2e6b6c5a83106e",
+      "bytes": 3819
+    },
+    {
+      "path": "execution-framework/generated/contract_manifest.seed.sql",
+      "sha256": "399c1092118d57f78c7647a2d5c2fbd914c5b2ac97d5e41e4deda44722dc8c06",
+      "bytes": 155594
+    }
+  ],
+  "errors": [],
+  "allowed_paths": [
+    "${ENVCTL_REPO}/**",
+    "${NU_PLUGIN_REPO}/**",
+    "${MIGRATION_TARGET_ROOT}/**",
+    "execution-framework/**",
+    "migration-artifacts/**"
+  ],
+  "output_paths": [
+    "execution-framework/scripts/verify_ver301_sql_schema_test.py",
+    "execution-framework/generated/ver301_sql_schema_test_report.json",
+    "execution-framework/state/VER-301_SQL_SCHEMA_TEST.heartbeat.json",
+    "execution-framework/logs/VER-301_SQL_SCHEMA_TEST.log",
+    "execution-framework/proof_records/VER-301_SQL_SCHEMA_TEST.proof.json"
+  ],
+  "sha256": {
+    "proof_records/VER-300_UNIT_VALIDATION.proof.json": "sha256:9809ca14ae7af78e4d6229ad2cf71825739242eb42b62cd862c47cb3bad64054",
+    "generated/envctl_migration_db_validation_report.json": "sha256:1a4c94b25e7a951cfcc17316adb6ab59bf5c8571be8f5b4abb777b0a45e90e01",
+    "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json": "sha256:511472c8fcb71cf31e489e98f99062bc2169e87790c9e028db111c4bf543e2d6",
+    "generated/envctl_migration_db_model.json": "sha256:428bdb55eb14f34f5d0e5ddc360ea1deb4d441b2713c2a91335f09e358abd456",
+    "docs/ENVCTL_DB_SCHEMA.md": "sha256:5688a8b9d3f3a2955b15a92d362ca8f74dd9e0a65a370008fd19d2b746e9b112"
+  }
+}

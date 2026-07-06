@@ -1,0 +1,119 @@
+# Test Coverage Matrix
+
+- Task: `ART-124_TEST_COVERAGE`
+- Target: `flexnetos-vs-lifeos`
+- Generated: `2026-07-04T23:29:11+00:00`
+- VER-300 entry status: `ready_with_open_runtime_gates`
+- Covered classes: `6` / `6`
+
+## Dependency Status
+
+| dependency | status |
+| --- | --- |
+| `REQ-024_ENVCTL_ARTIFACT_REGISTRY` | `completed` |
+| `REQ-040_SHARED_PROTOCOL_SCHEMAS` | `completed` |
+| `REQ-025_ENVCTL_VALIDATION_EVIDENCE` | `completed` |
+| `REQ-033_PLUGIN_HUMAN_APPROVAL` | `pending` |
+| `REQ-041_TWO_REPO_INTEGRATION` | `pending` |
+| `REQ-045_RUN_REPLAY` | `pending` |
+
+## Coverage Rows
+
+| class | scope | automation | readiness | owner |
+| --- | --- | --- | --- | --- |
+| `unit` | envctl database schema, views, validators, artifact registry, validation evidence, operation state, and shared protocol sample records | `ready` | `covered_for_ver300_entry` | `validation-agent` |
+| `integration` | envctl database to nu_plugin shared protocol boundary for targets, runs, operations, status streams, artifacts, approvals, graph, and validation rows | `partial` | `protocol_ready_runtime_pairing_required` | `validation-agent` |
+| `regression` | artifact contract paths, proof ledger, task graph packets, registry hashes, and reusable generated reports across repeated package runs | `ready` | `covered_for_artifact_replay_checks` | `validation-agent` |
+| `performance` | SQLite migration application, artifact registration throughput, proof/status rebuild, and plugin status stream responsiveness | `planned` | `baseline_required` | `validation-agent` |
+| `security` | blocked path policy, redaction controls, approval gates, command redaction, hash coverage, sandbox boundaries, and reproducibility identity | `partial` | `controls_ready_approval_and_replay_pending` | `security-reproducibility-agent` |
+| `UAT` | operator-facing migration workflow for target intake, package import, run planning, approvals, live status, artifact review, proof review, replay, and handoff | `planned` | `uat_script_ready_human_run_required` | `artifact-agent` |
+
+## Required Checks
+
+### unit
+- apply SQL migrations to an isolated SQLite database
+- validate target, recipe, run event, operation, artifact, evidence, validation, replay, and proof record schemas
+- exercise artifact registry path, hash, producer, contract, provenance, validation link, and fail-closed cases
+- exercise validation evidence rows for reconciliation, parity, test results, and proof evidence
+
+Open gaps:
+- Replay and rollback unit checks remain pending until REQ-026, REQ-027, and REQ-045 complete.
+
+### integration
+- create a run in envctl and read it through the plugin-shaped shared protocol records
+- append operation events and confirm timeline/status rows are visible to the operator surface
+- list artifact records with hashes, evidence IDs, and graph links through the shared protocol shape
+- verify approval and replay status are represented as structured records when backing gates exist
+
+Open gaps:
+- REQ-041_TWO_REPO_INTEGRATION is pending, so this matrix does not certify a live envctl-to-nu_plugin run.
+
+### regression
+- re-run generation for completed artifact tasks and verify path/hash stability or intentional proof updates
+- validate execution packets against task graph and schema contracts
+- rebuild status from proof ledger and confirm completed tasks remain queryable
+- detect stale or missing canonical contract paths in migration-artifacts
+
+Open gaps:
+- Full replay identity remains pending until REQ-045_RUN_REPLAY is complete.
+
+### performance
+- time migration application and registry insertion for representative artifact batches
+- time status/proof rebuild against the proof ledger and generated task graph
+- set a baseline for plugin status and live visual reads over fixture data
+- record acceptable thresholds before release validation begins
+
+Open gaps:
+- No timing baseline artifact exists yet for migration DB, registry, or plugin status commands.
+
+### security
+- reject blocked evidence paths including .env, secrets, private_keys, pem, and key files
+- verify redaction controls and filesystem boundaries before any target write
+- confirm risky operations require approval and mutating plugin commands remain auditable
+- ensure generated artifacts and evidence rows carry SHA-256 hashes
+
+Open gaps:
+- REQ-033_PLUGIN_HUMAN_APPROVAL and REQ-045_RUN_REPLAY are pending, so end-to-end approval/replay security is not certified here.
+
+### UAT
+- walk the operator session template using fixture target and recipe records
+- confirm live visual/status screens expose blockers, approvals, artifacts, validations, and proof URIs
+- review generated migration-artifacts index paths and canonical testing-validation artifacts
+- capture human signoff criteria and unresolved blockers before release handoff
+
+Open gaps:
+- Human approval support is pending; replay support is pending.
+
+## Evidence Inputs
+
+| input | sha256 |
+| --- | --- |
+| `examples/target-descriptors/flexnetos-vs-lifeos.yaml` | `71f4aab77e91d0fa9a414350dee50f23fc3c6492b265c607fe9e4de93c3fe190` |
+| `execution-framework/generated/package_scan.json` | `0d851e9f6a67044bfd6b6df77231c518292a385304e1830d579e6520634b9487` |
+| `execution-framework/generated/envctl_migration_db_model.json` | `7347f6629cc4fb0dbae56105dec65d5937a2a55860e0df4215b309e3ef766cef` |
+| `execution-framework/generated/envctl_artifact_registry_report.json` | `b3d33175a5ec64d95bb2a2dc0b503ca897c97990bf78fd80fc159780b3df113c` |
+| `execution-framework/generated/envctl_validation_evidence_report.json` | `0ac5c601eb16c8df54d7f70573aacf950b18a0ecfe56606ebe9a3ab9d092d3bf` |
+| `execution-framework/generated/shared_protocol_validation_report.json` | `0863b9b28e702c704c96f50a50954181f42b35aaa16e4ecb6643497093c4c4d0` |
+| `execution-framework/generated/status_from_proofs.json` | `72a97f935a3e589a84abebd22ae2cd78c9947611d5c8d6316a343c4667167ea5` |
+| `execution-framework/generated/contract_manifest.json` | `3c2e2a883b6dfc7f135c4dc101484cced9f877191b46bb378f1cc4fcd07e1270` |
+
+## Verification Entrypoints
+
+- `python3 scripts/verify_envctl_db_schema.py`
+- `python3 scripts/verify_artifact_registry.py`
+- `python3 scripts/verify_validation_evidence.py`
+- `python3 scripts/verify_shared_protocol_schemas.py`
+- `python3 scripts/verify_security_redaction.py`
+- `python3 scripts/verify_filesystem_boundaries.py`
+- `VER-300_UNIT_VALIDATION`
+
+## Contract Mapping
+
+- Contract row: `artifact:06-testing-validation-test-coverage-matrix-md`
+- Canonical path: `migration-artifacts/06-testing-validation/test-coverage-matrix.md`
+- Task-scoped MD: `migration-artifacts/art-124_test_coverage/test-coverage-matrix.md`
+- Task-scoped JSON: `migration-artifacts/art-124_test_coverage/test-coverage-matrix.json`
+
+## Interpretation
+
+The matrix covers unit, integration, regression, performance, security, and UAT. Unit, regression, and core control-plane security have concrete package evidence; integration, performance, end-to-end security, replay, and UAT remain explicit VER-300 or later execution gates where live runtime evidence is still pending.

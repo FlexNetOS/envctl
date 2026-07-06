@@ -1,0 +1,383 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-111_EVENT_MAP",
+  "status": "passed",
+  "generated_at": "2026-07-04T23:29:32+00:00",
+  "artifact_summary": {
+    "contract_count": 5,
+    "topic_signal_count": 180,
+    "queue_signal_count": 180,
+    "payload_signal_count": 180,
+    "producer_signal_count": 180,
+    "consumer_signal_count": 180,
+    "retry_signal_count": 180,
+    "dlq_signal_count": 180,
+    "hotspot_count": 100
+  },
+  "completed_at": "2026-07-04T23:29:32+00:00",
+  "registry_results": [
+    {
+      "artifact_row_id": "artifact-3cf75ecca8b9bb7732277c72",
+      "artifact_id": "05-integrations-event-catalog-md",
+      "run_id": "run-art111-event-map",
+      "path": "execution-framework/migration-artifacts/05-integrations/event-catalog.md",
+      "content_hash": "sha256:a4e77e1b14a083b80c609ecaaaf9b7269eba4be147e3fc994351649b0c71d2ad",
+      "producer_operation_id": "produce-05-integrations-event-message-contract-map-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-a45f8b71f39fbdcbc4ffade9",
+        "evidence-fc6f00ee008aecfed65cc71b",
+        "evidence-bf150401b59a61f5d4f189db",
+        "evidence-742cb913f1acf90d8b715327"
+      ],
+      "graph_edge_ids": [
+        "edge-15cf4683c6495c008f5842c1",
+        "edge-d61e64716f8d31b28c1e6b65",
+        "edge-21f42244dbf1fc96632844d8",
+        "edge-73a5fdf6cb542cbdc16a30d4"
+      ],
+      "validation_ids": [
+        "validation-d04db3d841b9585b61c92879",
+        "validation-11160ef47d8b5037fc3e701d",
+        "validation-1f70afc0c310c825c0c6fa3f"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-3a4ee7340c1fd345fd8bc577",
+      "artifact_id": "05-integrations-event-message-contract-map-md",
+      "run_id": "run-art111-event-map",
+      "path": "execution-framework/migration-artifacts/05-integrations/event-message-contract-map.md",
+      "content_hash": "sha256:a4e77e1b14a083b80c609ecaaaf9b7269eba4be147e3fc994351649b0c71d2ad",
+      "producer_operation_id": "produce-05-integrations-event-message-contract-map-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-85ac0724c9588a1724f93c31",
+        "evidence-b06d384a83f72073089eb819",
+        "evidence-619ca76dd341419f0f67e906",
+        "evidence-6a69b05e41226501f358a02d"
+      ],
+      "graph_edge_ids": [
+        "edge-0b628ab817d45d9b7f82dcee",
+        "edge-b55521b519a2be0edba8c21e",
+        "edge-126733b72a4131e748c9f465",
+        "edge-539c11cebfe0b557f94f6c7a"
+      ],
+      "validation_ids": [
+        "validation-5e3058a83314f6f77df56d8a",
+        "validation-b4f520908ccdebc43cb4b49d",
+        "validation-06f480f8c89449d0ecfd9541"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-4b3ed6c5519ee8fda1265984",
+      "artifact_id": "art-111-event-map-md",
+      "run_id": "run-art111-event-map",
+      "path": "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.md",
+      "content_hash": "sha256:a4e77e1b14a083b80c609ecaaaf9b7269eba4be147e3fc994351649b0c71d2ad",
+      "producer_operation_id": "produce-05-integrations-event-message-contract-map-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-af114f415081e143f35ee69c",
+        "evidence-60610670ac64d28f8d1fc59c",
+        "evidence-e513e1f4ca93a46391d2d4fd",
+        "evidence-b2f7c9de3506c6db2a918eb5"
+      ],
+      "graph_edge_ids": [
+        "edge-a43cdbb833a87abfaca88df1",
+        "edge-ed35c729d8e1b8a905c986ee",
+        "edge-fb451fd14ce56366c626071d",
+        "edge-2dbdda846e95b5be4d9e44b9"
+      ],
+      "validation_ids": [
+        "validation-c1de9faa90239c407a9ab035",
+        "validation-633a97d385c7d54d224de246",
+        "validation-162d15655e8fda9468504839"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-69b312d25a06d97e5dab28eb",
+      "artifact_id": "art-111-event-map-json",
+      "run_id": "run-art111-event-map",
+      "path": "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.json",
+      "content_hash": "sha256:0a5ff7b27f35cfcc1e2a162b645b81371db8b0172562672c9325435cdf332ec7",
+      "producer_operation_id": "produce-05-integrations-event-message-contract-map-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-7153bbdb296c5166090e58fa",
+        "evidence-f3e1ed0b8f704c3f7d5f736d",
+        "evidence-dbfcb9afdd7c96a7ced5428d",
+        "evidence-4e8abad540dc43f903422d5a"
+      ],
+      "graph_edge_ids": [
+        "edge-002996edf06d008f63c679eb",
+        "edge-4fa89b7905b1b6a756f67108",
+        "edge-19ec125aed76503b3466cbd4",
+        "edge-0701fcbc2600c8935b6d3107"
+      ],
+      "validation_ids": [
+        "validation-fea59fd99482b4a9d0a282a9",
+        "validation-80750dbd4056cf1e4d43206f",
+        "validation-a0d844b192a4f61131d2bd10"
+      ]
+    }
+  ],
+  "artifact_index_rows": [
+    {
+      "id": "artifact-3cf75ecca8b9bb7732277c72",
+      "run_id": "run-art111-event-map",
+      "artifact_id": "05-integrations-event-catalog-md",
+      "title": "Event Catalog",
+      "artifact_type": "event_message_contract_map",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/05-integrations/event-catalog.md",
+      "content_hash": "sha256:a4e77e1b14a083b80c609ecaaaf9b7269eba4be147e3fc994351649b0c71d2ad",
+      "generated_by_operation_id": "produce-05-integrations-event-message-contract-map-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-a45f8b71f39fbdcbc4ffade9",
+          "evidence-fc6f00ee008aecfed65cc71b",
+          "evidence-bf150401b59a61f5d4f189db",
+          "evidence-742cb913f1acf90d8b715327"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/05-integrations/event-catalog.md",
+          "execution-framework/migration-artifacts/05-integrations/event-message-contract-map.md",
+          "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.md",
+          "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.json"
+        ],
+        "producer_operation_id": "produce-05-integrations-event-message-contract-map-md",
+        "provenance": {
+          "helper_id": "helper-artifact-12",
+          "model_tag": "gpt-5.3-spark",
+          "owner_agent": "artifact-agent",
+          "source_graph_uri": "generated/task_graph.csv",
+          "task_id": "ART-111_EVENT_MAP"
+        },
+        "validation_ids": [
+          "validation-d04db3d841b9585b61c92879",
+          "validation-11160ef47d8b5037fc3e701d",
+          "validation-1f70afc0c310c825c0c6fa3f"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-15cf4683c6495c008f5842c1",
+          "edge-d61e64716f8d31b28c1e6b65",
+          "edge-21f42244dbf1fc96632844d8",
+          "edge-73a5fdf6cb542cbdc16a30d4"
+        ],
+        "links": [
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-3a4ee7340c1fd345fd8bc577",
+      "run_id": "run-art111-event-map",
+      "artifact_id": "05-integrations-event-message-contract-map-md",
+      "title": "Event Message Contract Map",
+      "artifact_type": "event_message_contract_map",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/05-integrations/event-message-contract-map.md",
+      "content_hash": "sha256:a4e77e1b14a083b80c609ecaaaf9b7269eba4be147e3fc994351649b0c71d2ad",
+      "generated_by_operation_id": "produce-05-integrations-event-message-contract-map-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-85ac0724c9588a1724f93c31",
+          "evidence-b06d384a83f72073089eb819",
+          "evidence-619ca76dd341419f0f67e906",
+          "evidence-6a69b05e41226501f358a02d"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/05-integrations/event-catalog.md",
+          "execution-framework/migration-artifacts/05-integrations/event-message-contract-map.md",
+          "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.md",
+          "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.json"
+        ],
+        "producer_operation_id": "produce-05-integrations-event-message-contract-map-md",
+        "provenance": {
+          "helper_id": "helper-artifact-12",
+          "model_tag": "gpt-5.3-spark",
+          "owner_agent": "artifact-agent",
+          "source_graph_uri": "generated/task_graph.csv",
+          "task_id": "ART-111_EVENT_MAP"
+        },
+        "validation_ids": [
+          "validation-5e3058a83314f6f77df56d8a",
+          "validation-b4f520908ccdebc43cb4b49d",
+          "validation-06f480f8c89449d0ecfd9541"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-0b628ab817d45d9b7f82dcee",
+          "edge-b55521b519a2be0edba8c21e",
+          "edge-126733b72a4131e748c9f465",
+          "edge-539c11cebfe0b557f94f6c7a"
+        ],
+        "links": [
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-4b3ed6c5519ee8fda1265984",
+      "run_id": "run-art111-event-map",
+      "artifact_id": "art-111-event-map-md",
+      "title": "ART-111 Event Map Markdown",
+      "artifact_type": "event_message_contract_map",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.md",
+      "content_hash": "sha256:a4e77e1b14a083b80c609ecaaaf9b7269eba4be147e3fc994351649b0c71d2ad",
+      "generated_by_operation_id": "produce-05-integrations-event-message-contract-map-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-af114f415081e143f35ee69c",
+          "evidence-60610670ac64d28f8d1fc59c",
+          "evidence-e513e1f4ca93a46391d2d4fd",
+          "evidence-b2f7c9de3506c6db2a918eb5"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/05-integrations/event-catalog.md",
+          "execution-framework/migration-artifacts/05-integrations/event-message-contract-map.md",
+          "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.md",
+          "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.json"
+        ],
+        "producer_operation_id": "produce-05-integrations-event-message-contract-map-md",
+        "provenance": {
+          "helper_id": "helper-artifact-12",
+          "model_tag": "gpt-5.3-spark",
+          "owner_agent": "artifact-agent",
+          "source_graph_uri": "generated/task_graph.csv",
+          "task_id": "ART-111_EVENT_MAP"
+        },
+        "validation_ids": [
+          "validation-c1de9faa90239c407a9ab035",
+          "validation-633a97d385c7d54d224de246",
+          "validation-162d15655e8fda9468504839"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-a43cdbb833a87abfaca88df1",
+          "edge-ed35c729d8e1b8a905c986ee",
+          "edge-fb451fd14ce56366c626071d",
+          "edge-2dbdda846e95b5be4d9e44b9"
+        ],
+        "links": [
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-69b312d25a06d97e5dab28eb",
+      "run_id": "run-art111-event-map",
+      "artifact_id": "art-111-event-map-json",
+      "title": "ART-111 Event Map JSON",
+      "artifact_type": "event_message_contract_map",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.json",
+      "content_hash": "sha256:0a5ff7b27f35cfcc1e2a162b645b81371db8b0172562672c9325435cdf332ec7",
+      "generated_by_operation_id": "produce-05-integrations-event-message-contract-map-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-7153bbdb296c5166090e58fa",
+          "evidence-f3e1ed0b8f704c3f7d5f736d",
+          "evidence-dbfcb9afdd7c96a7ced5428d",
+          "evidence-4e8abad540dc43f903422d5a"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/05-integrations/event-catalog.md",
+          "execution-framework/migration-artifacts/05-integrations/event-message-contract-map.md",
+          "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.md",
+          "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.json"
+        ],
+        "producer_operation_id": "produce-05-integrations-event-message-contract-map-md",
+        "provenance": {
+          "helper_id": "helper-artifact-12",
+          "model_tag": "gpt-5.3-spark",
+          "owner_agent": "artifact-agent",
+          "source_graph_uri": "generated/task_graph.csv",
+          "task_id": "ART-111_EVENT_MAP"
+        },
+        "validation_ids": [
+          "validation-fea59fd99482b4a9d0a282a9",
+          "validation-80750dbd4056cf1e4d43206f",
+          "validation-a0d844b192a4f61131d2bd10"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-002996edf06d008f63c679eb",
+          "edge-4fa89b7905b1b6a756f67108",
+          "edge-19ec125aed76503b3466cbd4",
+          "edge-0701fcbc2600c8935b6d3107"
+        ],
+        "links": [
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          }
+        ]
+      }
+    }
+  ],
+  "registry_contains_hash": true,
+  "validation_evidence_linked": true,
+  "artifacts": [
+    "execution-framework/migration-artifacts/05-integrations/event-catalog.md",
+    "execution-framework/migration-artifacts/05-integrations/event-message-contract-map.md",
+    "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.md",
+    "execution-framework/migration-artifacts/art-111_event_map/event-message-contract-map.json"
+  ],
+  "proof_uri": "execution-framework/proof_records/ART-111_EVENT_MAP.proof.json"
+}
