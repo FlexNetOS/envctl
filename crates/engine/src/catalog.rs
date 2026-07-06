@@ -34,6 +34,7 @@ pub struct CatalogScanSpec {
 #[serde(rename_all = "snake_case")]
 pub enum CatalogTableName {
     Components,
+    NixComponents,
     ComponentHooks,
     Paths,
     Settings,
@@ -50,6 +51,7 @@ impl CatalogTableName {
     pub const fn canonical_name(self) -> &'static str {
         match self {
             CatalogTableName::Components => "components",
+            CatalogTableName::NixComponents => "nix_components",
             CatalogTableName::ComponentHooks => "component_hooks",
             CatalogTableName::Paths => "paths",
             CatalogTableName::Settings => "settings",
@@ -66,6 +68,7 @@ impl CatalogTableName {
     pub const fn all() -> &'static [CatalogTableName] {
         &[
             CatalogTableName::Components,
+            CatalogTableName::NixComponents,
             CatalogTableName::ComponentHooks,
             CatalogTableName::Paths,
             CatalogTableName::Settings,
@@ -93,6 +96,7 @@ impl FromStr for CatalogTableName {
         let normalized = raw.trim().replace('-', "_");
         match normalized.as_str() {
             "components" => Ok(CatalogTableName::Components),
+            "nix_components" => Ok(CatalogTableName::NixComponents),
             "component_hooks" => Ok(CatalogTableName::ComponentHooks),
             "paths" => Ok(CatalogTableName::Paths),
             "settings" => Ok(CatalogTableName::Settings),
@@ -126,6 +130,7 @@ pub struct CatalogSnapshot {
     pub manifest_dir: String,
     pub generated_by: String,
     pub components: Vec<ComponentRow>,
+    pub nix_components: Vec<NixComponentRow>,
     pub component_hooks: Vec<ComponentHookRow>,
     pub paths: Vec<PathRow>,
     pub settings: Vec<SettingRow>,
@@ -143,6 +148,7 @@ impl CatalogSnapshot {
     pub fn table_value(&self, table: CatalogTableName) -> serde_json::Value {
         match table {
             CatalogTableName::Components => serde_json::to_value(&self.components),
+            CatalogTableName::NixComponents => serde_json::to_value(&self.nix_components),
             CatalogTableName::ComponentHooks => serde_json::to_value(&self.component_hooks),
             CatalogTableName::Paths => serde_json::to_value(&self.paths),
             CatalogTableName::Settings => serde_json::to_value(&self.settings),
@@ -160,6 +166,7 @@ impl CatalogSnapshot {
     pub fn table_count(&self, table: CatalogTableName) -> usize {
         match table {
             CatalogTableName::Components => self.components.len(),
+            CatalogTableName::NixComponents => self.nix_components.len(),
             CatalogTableName::ComponentHooks => self.component_hooks.len(),
             CatalogTableName::Paths => self.paths.len(),
             CatalogTableName::Settings => self.settings.len(),
@@ -527,6 +534,24 @@ pub struct ComponentRow {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct NixComponentRow {
+    pub component_id: String,
+    pub name: String,
+    pub source_file: String,
+    pub nix_surface: String,
+    pub owner_component: Option<String>,
+    pub profile_entry: Option<String>,
+    pub original_url: Option<String>,
+    pub profile_url: Option<String>,
+    pub store_paths: Vec<String>,
+    pub frontdoor_paths: Vec<String>,
+    pub requires: Vec<String>,
+    pub status: String,
+    pub lock_hash: String,
+    pub resolved_order: usize,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct ComponentHookRow {
     pub component_id: String,
     pub phase: String,
@@ -547,7 +572,10 @@ pub struct PathRow {
     pub path: String,
     pub path_kind: String,
     pub owner_component: Option<String>,
+    pub owner_record_id: Option<String>,
     pub artifact_kind: String,
+    pub resolved_path: Option<String>,
+    pub link_target_id: Option<String>,
     pub canonical: bool,
     pub legacy: bool,
     pub bridge: bool,
@@ -766,9 +794,16 @@ pub fn scan(spec: CatalogScanSpec, registry: &Registry) -> anyhow::Result<Catalo
         &component_sources,
         &lock,
         &mut snapshot.components,
+        &mut snapshot.nix_components,
         &mut snapshot.component_hooks,
         &mut snapshot.env_vars,
     );
+    ingest_live_nix_profile(
+        &repo_root,
+        &mut snapshot.nix_components,
+        &mut snapshot.paths,
+    );
+    ingest_envctl_home_frontdoors(&repo_root, &mut snapshot.paths);
     ingest_layout_paths(&repo_root, &mut snapshot.paths, &mut snapshot.env_vars);
     ingest_env_schema_vars(&repo_root, &mut snapshot.env_vars);
     ingest_agent_files(&repo_root, &mut snapshot.agent_assets);
@@ -802,6 +837,9 @@ pub fn scan(spec: CatalogScanSpec, registry: &Registry) -> anyhow::Result<Catalo
     }
 
     snapshot.components.sort_by_key(|row| row.resolved_order);
+    snapshot
+        .nix_components
+        .sort_by_key(|row| row.resolved_order);
     snapshot.component_hooks.sort_by(|a, b| {
         a.component_id
             .cmp(&b.component_id)
@@ -1205,6 +1243,7 @@ fn table_columns(snapshot: &CatalogSnapshot, table: CatalogTableName) -> Vec<Str
 fn table_purpose(table: CatalogTableName) -> &'static str {
     match table {
         CatalogTableName::Components => "component registry rows and lifecycle intent",
+        CatalogTableName::NixComponents => "nix-native inventory rows and frontdoor ownership",
         CatalogTableName::ComponentHooks => "detect/install/fix/reset hook wiring",
         CatalogTableName::Paths => "canonical, legacy, and bridged filesystem targets",
         CatalogTableName::Settings => "normalized config/settings key-value rows",
@@ -1779,98 +1818,6 @@ fn render_projections(snapshot: &CatalogSnapshot) -> anyhow::Result<Vec<RenderPr
             render_systemd_unit(snapshot).into_bytes(),
             "Generated by envctl catalog render. Source table: observed_facts. Manual edits allowed: no.",
         ),
-        RenderProjection::new(
-            "docs/generated/current-database-file-inventory.md",
-            "config_files+codedb_file_imports",
-            snapshot.config_files.len() + snapshot.codedb_file_imports.len(),
-            false,
-            render_current_database_file_inventory(snapshot).into_bytes(),
-            "Generated by envctl catalog render. Source tables: config_files, codedb_file_imports. Manual edits allowed: no.",
-        ),
-        RenderProjection::new(
-            "docs/generated/catalog-table-inventory.md",
-            "catalog_tables",
-            CatalogTableName::all().len(),
-            false,
-            render_catalog_table_inventory(snapshot).into_bytes(),
-            "Generated by envctl catalog render. Source tables: all catalog tables. Manual edits allowed: no.",
-        ),
-        RenderProjection::new(
-            "docs/generated/env-var-inventory.md",
-            "env_vars",
-            snapshot.env_vars.len(),
-            false,
-            render_env_var_inventory(snapshot).into_bytes(),
-            "Generated by envctl catalog render. Source table: env_vars. Manual edits allowed: no.",
-        ),
-        RenderProjection::new(
-            "docs/generated/toolchain-signal-inventory.md",
-            "env_vars+settings+paths+codedb_file_imports",
-            toolchain_signals(snapshot).len(),
-            false,
-            render_toolchain_signal_inventory(snapshot).into_bytes(),
-            "Generated by envctl catalog render. Source tables: env_vars, settings, paths, codedb_file_imports. Manual edits allowed: no.",
-        ),
-        RenderProjection::new(
-            "docs/generated/codedb-import-targets.txt",
-            "codedb_file_imports",
-            snapshot.codedb_file_imports.len(),
-            false,
-            render_codedb_target_list(snapshot.codedb_file_imports.iter()).into_bytes(),
-            "Generated by envctl catalog render. Source table: codedb_file_imports. Manual edits allowed: no.",
-        ),
-        RenderProjection::new(
-            "docs/generated/codedb-content-blob-targets.txt",
-            "codedb_file_imports",
-            snapshot
-                .codedb_file_imports
-                .iter()
-                .filter(|row| row.import_mode == "content_blob")
-                .count(),
-            false,
-            render_codedb_target_list(
-                snapshot
-                    .codedb_file_imports
-                    .iter()
-                    .filter(|row| row.import_mode == "content_blob"),
-            )
-            .into_bytes(),
-            "Generated by envctl catalog render. Source table: codedb_file_imports filtered to content_blob rows. Manual edits allowed: no.",
-        ),
-        RenderProjection::new(
-            "docs/generated/codedb-metadata-only-targets.txt",
-            "codedb_file_imports",
-            snapshot
-                .codedb_file_imports
-                .iter()
-                .filter(|row| row.import_mode == "metadata_only")
-                .count(),
-            false,
-            render_codedb_target_list(
-                snapshot
-                    .codedb_file_imports
-                    .iter()
-                    .filter(|row| row.import_mode == "metadata_only"),
-            )
-            .into_bytes(),
-            "Generated by envctl catalog render. Source table: codedb_file_imports filtered to metadata_only rows. Manual edits allowed: no.",
-        ),
-        RenderProjection::new(
-            "docs/generated/codedb-upload-inventory.md",
-            "codedb_file_imports",
-            snapshot.codedb_file_imports.len(),
-            false,
-            render_codedb_upload_inventory(snapshot).into_bytes(),
-            "Generated by envctl catalog render. Source table: codedb_file_imports. Manual edits allowed: no.",
-        ),
-        RenderProjection::new(
-            "docs/generated/codedb-semantic-coverage.md",
-            "codedb_file_imports",
-            snapshot.codedb_file_imports.len(),
-            false,
-            render_codedb_semantic_coverage(snapshot).into_bytes(),
-            "Generated by envctl catalog render. Source table: codedb_file_imports. Manual edits allowed: no.",
-        ),
     ];
 
     for table in CatalogTableName::all() {
@@ -1899,454 +1846,6 @@ fn render_projections(snapshot: &CatalogSnapshot) -> anyhow::Result<Vec<RenderPr
         ));
     }
     Ok(projections)
-}
-
-fn render_current_database_file_inventory(snapshot: &CatalogSnapshot) -> String {
-    let mut out = String::new();
-    let _ = writeln!(out, "# Current envctl Database-Bound File Inventory");
-    let _ = writeln!(out);
-    let _ = writeln!(
-        out,
-        "This inventory is generated from the live `envctl catalog render` snapshot."
-    );
-    let _ = writeln!(out, "Repo root: `{}`", snapshot.repo_root);
-    let _ = writeln!(out, "Manifest dir: `{}`", snapshot.manifest_dir);
-    let _ = writeln!(out);
-    let _ = writeln!(out, "## Summary");
-    let _ = writeln!(out);
-    let _ = writeln!(
-        out,
-        "- `codedb_file_imports`: `{}` current target files",
-        snapshot.codedb_file_imports.len()
-    );
-    let _ = writeln!(
-        out,
-        "- direct catalog scan set from `discover_control_plane_files()`: `{}` current files",
-        snapshot.config_files.len()
-    );
-    let _ = writeln!(
-        out,
-        "- `env_vars`: `{}` current rows in the catalog",
-        snapshot.env_vars.len()
-    );
-    let _ = writeln!(out);
-    let _ = writeln!(out, "## `codedb_file_imports`");
-    let _ = writeln!(out);
-    if snapshot.codedb_file_imports.is_empty() {
-        let _ = writeln!(out, "Current imported target files:");
-        let _ = writeln!(out);
-        let _ = writeln!(out, "```text");
-        let _ = writeln!(out, "none");
-        let _ = writeln!(out, "```");
-    } else {
-        let provenances = snapshot
-            .codedb_file_imports
-            .iter()
-            .map(|row| row.provenance.as_str())
-            .collect::<BTreeSet<_>>();
-        let _ = writeln!(out, "Source inventory manifests:");
-        let _ = writeln!(out);
-        let _ = writeln!(out, "```text");
-        for provenance in provenances {
-            let _ = writeln!(out, "{provenance}");
-        }
-        let _ = writeln!(out, "```");
-        let _ = writeln!(out);
-        let _ = writeln!(out, "Current imported target files:");
-        let _ = writeln!(out);
-        let _ = writeln!(out, "```text");
-        for line in snapshot
-            .codedb_file_imports
-            .iter()
-            .map(|row| row.absolute_path.as_str())
-            .collect::<BTreeSet<_>>()
-        {
-            let _ = writeln!(out, "{line}");
-        }
-        let _ = writeln!(out, "```");
-    }
-    let _ = writeln!(out);
-    let _ = writeln!(out, "## Direct Catalog Scan Files");
-    let _ = writeln!(out);
-    let _ = writeln!(
-        out,
-        "These files are database-bound through the direct catalog scan path."
-    );
-    let _ = writeln!(out);
-    let _ = writeln!(out, "```text");
-    for line in snapshot
-        .config_files
-        .iter()
-        .map(|row| row.path.as_str())
-        .collect::<BTreeSet<_>>()
-    {
-        let _ = writeln!(out, "{line}");
-    }
-    let _ = writeln!(out, "```");
-    out
-}
-
-fn render_catalog_table_inventory(snapshot: &CatalogSnapshot) -> String {
-    let inventory = table_inventory(snapshot);
-    let mut out = String::new();
-    let _ = writeln!(out, "# envctl Catalog Table Inventory");
-    let _ = writeln!(out);
-    let _ = writeln!(
-        out,
-        "This report summarizes every normalized table currently present in the live catalog snapshot."
-    );
-    let _ = writeln!(out);
-    let _ = writeln!(out, "- repo root: `{}`", snapshot.repo_root);
-    let _ = writeln!(out, "- manifest dir: `{}`", snapshot.manifest_dir);
-    let _ = writeln!(out, "- tables: `{}`", inventory.len());
-    let _ = writeln!(out, "- total rows: `{}`", catalog_total_rows(snapshot));
-    let _ = writeln!(out);
-    let _ = writeln!(out, "| table | rows | columns | purpose |");
-    let _ = writeln!(out, "| --- | ---: | --- | --- |");
-    for row in inventory {
-        let _ = writeln!(
-            out,
-            "| `{}` | `{}` | `{}` | {} |",
-            row.table,
-            row.rows,
-            row.columns.join(", "),
-            row.purpose
-        );
-    }
-    out
-}
-
-fn render_env_var_inventory(snapshot: &CatalogSnapshot) -> String {
-    let report = analyze_snapshot(snapshot);
-    let mut out = String::new();
-    let _ = writeln!(out, "# envctl Environment Variable Inventory");
-    let _ = writeln!(out);
-    let _ = writeln!(
-        out,
-        "This report lists the environment-variable rows envctl currently stores in the catalog, along with producer, scope, sensitivity, and resolved value shape."
-    );
-    let _ = writeln!(out);
-    let _ = writeln!(out, "## Summary");
-    let _ = writeln!(out);
-    let _ = writeln!(out, "- total env vars: `{}`", snapshot.env_vars.len());
-    let _ = writeln!(out, "- repo root: `{}`", snapshot.repo_root);
-    let _ = writeln!(out, "- manifest dir: `{}`", snapshot.manifest_dir);
-    let _ = writeln!(out);
-    let _ = writeln!(out, "## Facets");
-    let _ = writeln!(out);
-    write_facet_section(&mut out, "Scopes", &report.env_scopes);
-    write_facet_section(&mut out, "Producers", &report.env_producers);
-    write_facet_section(&mut out, "Sensitivity", &report.env_sensitive);
-    let _ = writeln!(out, "## Rows");
-    let _ = writeln!(out);
-    let _ = writeln!(
-        out,
-        "| var | producer | scope | source | sensitive | value source | current value |"
-    );
-    let _ = writeln!(out, "| --- | --- | --- | --- | --- | --- | --- |");
-    for row in &snapshot.env_vars {
-        let (value_source, value) = env_value_source_and_value(row);
-        let _ = writeln!(
-            out,
-            "| `{}` | `{}` | `{}` | `{}` | `{}` | `{}` | `{}` |",
-            row.var_name,
-            row.producer,
-            row.scope,
-            row.source,
-            yes_no(row.sensitive),
-            value_source,
-            markdown_inline_code(&value),
-        );
-    }
-    out
-}
-
-fn render_toolchain_signal_inventory(snapshot: &CatalogSnapshot) -> String {
-    let signals = toolchain_signals(snapshot);
-    let mut out = String::new();
-    let _ = writeln!(out, "# envctl Toolchain Signal Inventory");
-    let _ = writeln!(out);
-    let _ = writeln!(
-        out,
-        "This report highlights catalog rows that appear relevant to Rust and adjacent toolchain wiring, including Cargo, rustup, nix, Felix, Wild, and kache signals."
-    );
-    let _ = writeln!(out);
-    let _ = writeln!(out, "## Summary");
-    let _ = writeln!(out);
-    let _ = writeln!(out, "- toolchain signals: `{}`", signals.len());
-    let _ = writeln!(out, "- env var rows scanned: `{}`", snapshot.env_vars.len());
-    let _ = writeln!(
-        out,
-        "- settings rows scanned: `{}`",
-        snapshot.settings.len()
-    );
-    let _ = writeln!(out, "- path rows scanned: `{}`", snapshot.paths.len());
-    let _ = writeln!(
-        out,
-        "- codedb import rows scanned: `{}`",
-        snapshot.codedb_file_imports.len()
-    );
-    let _ = writeln!(out);
-    let _ = writeln!(out, "## Signal Kinds");
-    let _ = writeln!(out);
-    write_facet_section(
-        &mut out,
-        "Kinds",
-        &facet_counts(signals.iter().map(|row| row.signal_kind.as_str())),
-    );
-    let _ = writeln!(out, "## Rows");
-    let _ = writeln!(out);
-    let _ = writeln!(out, "| kind | key | source | detail | value |");
-    let _ = writeln!(out, "| --- | --- | --- | --- | --- |");
-    for row in signals {
-        let _ = writeln!(
-            out,
-            "| `{}` | `{}` | `{}` | `{}` | `{}` |",
-            row.signal_kind,
-            row.key,
-            row.source,
-            row.detail,
-            markdown_inline_code(&row.value),
-        );
-    }
-    out
-}
-
-fn render_codedb_target_list<'a>(rows: impl Iterator<Item = &'a CodedbFileImportRow>) -> String {
-    let mut out = String::new();
-    for line in rows
-        .map(|row| row.absolute_path.as_str())
-        .collect::<BTreeSet<_>>()
-    {
-        let _ = writeln!(out, "{line}");
-    }
-    out
-}
-
-fn render_codedb_upload_inventory(snapshot: &CatalogSnapshot) -> String {
-    let content_blob = snapshot
-        .codedb_file_imports
-        .iter()
-        .filter(|row| row.import_mode == "content_blob")
-        .count();
-    let metadata_only = snapshot
-        .codedb_file_imports
-        .iter()
-        .filter(|row| row.import_mode == "metadata_only")
-        .count();
-    let blob_metadata_ready = snapshot
-        .codedb_file_imports
-        .iter()
-        .filter(|row| row.import_status == "blob_metadata_ready")
-        .count();
-    let structured_rows_ready = snapshot
-        .codedb_file_imports
-        .iter()
-        .filter(|row| row.structured_status == "structured_rows_ready")
-        .count();
-    let metadata_structured = snapshot
-        .codedb_file_imports
-        .iter()
-        .filter(|row| row.structured_status == "metadata_only")
-        .count();
-
-    let mut out = String::new();
-    let _ = writeln!(out, "# CodeDB Upload Inventory");
-    let _ = writeln!(out);
-    let _ = writeln!(
-        out,
-        "This report is generated from the live `codedb_file_imports` catalog rows."
-    );
-    let _ = writeln!(out);
-    let _ = writeln!(out, "## Summary");
-    let _ = writeln!(out);
-    let _ = writeln!(
-        out,
-        "- total targets: `{}`",
-        snapshot.codedb_file_imports.len()
-    );
-    let _ = writeln!(out, "- `content_blob` targets: `{content_blob}`");
-    let _ = writeln!(out, "- `metadata_only` targets: `{metadata_only}`");
-    let _ = writeln!(out, "- `blob_metadata_ready` rows: `{blob_metadata_ready}`");
-    let _ = writeln!(
-        out,
-        "- `structured_rows_ready` rows: `{structured_rows_ready}`"
-    );
-    let _ = writeln!(
-        out,
-        "- `structured_status = metadata_only` rows: `{metadata_structured}`"
-    );
-    let _ = writeln!(out);
-    let _ = writeln!(out, "## Import Modes");
-    let _ = writeln!(out);
-    for facet in facet_counts(
-        snapshot
-            .codedb_file_imports
-            .iter()
-            .map(|row| row.import_mode.as_str()),
-    ) {
-        let _ = writeln!(out, "- `{}`: `{}`", facet.key, facet.count);
-    }
-    let _ = writeln!(out);
-    let _ = writeln!(out, "## Parser Hints");
-    let _ = writeln!(out);
-    for facet in facet_counts(
-        snapshot
-            .codedb_file_imports
-            .iter()
-            .map(|row| row.parser_hint.as_str()),
-    ) {
-        let _ = writeln!(out, "- `{}`: `{}`", facet.key, facet.count);
-    }
-    let _ = writeln!(out);
-    let _ = writeln!(out, "## Import Safety Policies");
-    let _ = writeln!(out);
-    for facet in facet_counts(
-        snapshot
-            .codedb_file_imports
-            .iter()
-            .map(|row| row.import_safety_policy.as_str()),
-    ) {
-        let _ = writeln!(out, "- `{}`: `{}`", facet.key, facet.count);
-    }
-    out
-}
-
-fn render_codedb_semantic_coverage(snapshot: &CatalogSnapshot) -> String {
-    let structured_rows_total = snapshot
-        .codedb_file_imports
-        .iter()
-        .map(|row| row.structured_row_count)
-        .sum::<usize>();
-    let blob_ready = snapshot
-        .codedb_file_imports
-        .iter()
-        .filter(|row| row.import_status == "blob_metadata_ready")
-        .count();
-    let metadata_only = snapshot
-        .codedb_file_imports
-        .iter()
-        .filter(|row| row.import_status == "metadata_only")
-        .count();
-
-    let mut out = String::new();
-    let _ = writeln!(out, "# CodeDB Semantic Coverage");
-    let _ = writeln!(out);
-    let _ = writeln!(
-        out,
-        "This document summarizes the semantic surface envctl currently imports into `codedb_file_imports`."
-    );
-    let _ = writeln!(out);
-    let _ = writeln!(out, "## Summary");
-    let _ = writeln!(out);
-    let _ = writeln!(
-        out,
-        "- import rows: `{}`",
-        snapshot.codedb_file_imports.len()
-    );
-    let _ = writeln!(out, "- blob-backed rows: `{blob_ready}`");
-    let _ = writeln!(out, "- metadata-only rows: `{metadata_only}`");
-    let _ = writeln!(
-        out,
-        "- flattened structured rows: `{structured_rows_total}`"
-    );
-    let _ = writeln!(out);
-    let _ = writeln!(out, "## Semantic Columns");
-    let _ = writeln!(out);
-    for column in [
-        "logical_owner",
-        "normalized_path",
-        "source_of_truth_class",
-        "file_kind",
-        "parser_hint",
-        "content_hash",
-        "blob_ref",
-        "import_safety_policy",
-        "reproduction_policy",
-        "import_mode",
-        "import_status",
-        "skip_reason",
-        "structured_table",
-        "structured_status",
-        "structured_row_count",
-        "structured_rows",
-        "last_observed",
-        "provenance",
-    ] {
-        let _ = writeln!(out, "- `{column}`");
-    }
-    let _ = writeln!(out);
-    let _ = writeln!(out, "## Structured Statuses");
-    let _ = writeln!(out);
-    for facet in facet_counts(
-        snapshot
-            .codedb_file_imports
-            .iter()
-            .map(|row| row.structured_status.as_str()),
-    ) {
-        let _ = writeln!(out, "- `{}`: `{}`", facet.key, facet.count);
-    }
-    let _ = writeln!(out);
-    let _ = writeln!(out, "## Source-of-Truth Classes");
-    let _ = writeln!(out);
-    for facet in facet_counts(
-        snapshot
-            .codedb_file_imports
-            .iter()
-            .map(|row| row.source_of_truth_class.as_str()),
-    ) {
-        let _ = writeln!(out, "- `{}`: `{}`", facet.key, facet.count);
-    }
-    let _ = writeln!(out);
-    let _ = writeln!(out, "## Structured Parser Hints");
-    let _ = writeln!(out);
-    for facet in facet_counts(
-        snapshot
-            .codedb_file_imports
-            .iter()
-            .filter(|row| row.structured_row_count > 0)
-            .map(|row| row.parser_hint.as_str()),
-    ) {
-        let _ = writeln!(out, "- `{}`: `{}`", facet.key, facet.count);
-    }
-    out
-}
-
-fn write_facet_section(out: &mut String, label: &str, rows: &[CatalogFacetCount]) {
-    let _ = writeln!(out, "### {label}");
-    let _ = writeln!(out);
-    if rows.is_empty() {
-        let _ = writeln!(out, "- none");
-    } else {
-        for row in rows {
-            let _ = writeln!(out, "- `{}`: `{}`", row.key, row.count);
-        }
-    }
-    let _ = writeln!(out);
-}
-
-fn env_value_source_and_value(row: &EnvVarRow) -> (&'static str, String) {
-    if let Some(value) = row.effective_value.as_deref() {
-        ("effective_value", value.to_string())
-    } else if let Some(value) = row.value.as_deref() {
-        ("value", value.to_string())
-    } else if let Some(value) = row.default_value.as_deref() {
-        ("default_value", value.to_string())
-    } else {
-        ("missing", "unset".to_string())
-    }
-}
-
-fn yes_no(value: bool) -> &'static str {
-    if value {
-        "yes"
-    } else {
-        "no"
-    }
-}
-
-fn markdown_inline_code(value: &str) -> String {
-    value.replace('`', "\\`")
 }
 
 fn stable_snapshot_for_render(
@@ -2937,6 +2436,7 @@ fn ingest_components(
     component_sources: &BTreeMap<String, String>,
     lock: &LockFile,
     components: &mut Vec<ComponentRow>,
+    nix_components: &mut Vec<NixComponentRow>,
     hooks: &mut Vec<ComponentHookRow>,
     env_vars: &mut Vec<EnvVarRow>,
 ) {
@@ -2951,7 +2451,7 @@ fn ingest_components(
             .map(|entry| entry.content_hash.clone())
             .filter(|hash| !hash.is_empty())
             .unwrap_or_else(|| lock::component_hash(component));
-        components.push(ComponentRow {
+        let component_row = ComponentRow {
             component_id: component.id.clone(),
             name: component.name.clone(),
             source_file: source_file.clone(),
@@ -2967,7 +2467,26 @@ fn ingest_components(
             status: "declared".to_string(),
             lock_hash,
             resolved_order: idx + 1,
-        });
+        };
+        if let Some(nix_surface) = nix_component_surface(&component_row) {
+            nix_components.push(NixComponentRow {
+                component_id: component_row.component_id.clone(),
+                name: component_row.name.clone(),
+                source_file: component_row.source_file.clone(),
+                nix_surface: nix_surface.to_string(),
+                owner_component: None,
+                profile_entry: None,
+                original_url: None,
+                profile_url: None,
+                store_paths: Vec::new(),
+                frontdoor_paths: Vec::new(),
+                requires: component_row.requires.clone(),
+                status: component_row.status.clone(),
+                lock_hash: component_row.lock_hash.clone(),
+                resolved_order: component_row.resolved_order,
+            });
+        }
+        components.push(component_row);
         for phase in [
             Phase::Detect,
             Phase::Install,
@@ -3000,6 +2519,323 @@ fn ingest_components(
                 hooks.push(row);
             }
         }
+    }
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+struct NixProfileList {
+    #[serde(default)]
+    elements: BTreeMap<String, NixProfileElement>,
+}
+
+#[derive(Clone, Debug, Default, Deserialize)]
+struct NixProfileElement {
+    #[serde(default)]
+    active: bool,
+    #[serde(rename = "attrPath", default)]
+    attr_path: Option<String>,
+    #[serde(rename = "originalUrl", default)]
+    original_url: Option<String>,
+    #[serde(rename = "storePaths", default)]
+    store_paths: Vec<String>,
+    #[serde(default)]
+    url: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+struct NixProfileFrontdoor {
+    path: String,
+    resolved_path: String,
+    store_path: String,
+    path_kind: String,
+    artifact_kind: String,
+}
+
+fn ingest_live_nix_profile(
+    repo_root: &Path,
+    nix_components: &mut Vec<NixComponentRow>,
+    paths: &mut Vec<PathRow>,
+) {
+    let Some(home_dir) = catalog_home_dir() else {
+        return;
+    };
+    if !repo_root.starts_with(&home_dir) {
+        return;
+    }
+    let Some(profile) = load_nix_profile(&home_dir) else {
+        return;
+    };
+    let base_order = nix_components.len();
+    ingest_nix_profile_snapshot(&home_dir, &profile, nix_components, paths, base_order);
+}
+
+fn catalog_home_dir() -> Option<PathBuf> {
+    std::env::var_os("HOME").map(PathBuf::from)
+}
+
+fn load_nix_profile(home_dir: &Path) -> Option<NixProfileList> {
+    let profile_root = home_dir.join(".nix-profile");
+    if !profile_root.exists() {
+        return None;
+    }
+    let output = std::process::Command::new("nix")
+        .args(["profile", "list", "--json"])
+        .output()
+        .ok()?;
+    if !output.status.success() {
+        return None;
+    }
+    serde_json::from_slice(&output.stdout).ok()
+}
+
+fn ingest_nix_profile_snapshot(
+    home_dir: &Path,
+    profile: &NixProfileList,
+    nix_components: &mut Vec<NixComponentRow>,
+    paths: &mut Vec<PathRow>,
+    base_order: usize,
+) {
+    let profile_root = home_dir.join(".nix-profile");
+    let entries = profile
+        .elements
+        .iter()
+        .map(|(name, element)| (name.as_str(), element))
+        .collect::<Vec<_>>();
+    let frontdoors_by_entry = collect_nix_profile_frontdoors(&profile_root, &entries);
+    for (idx, (entry_name, element)) in entries.into_iter().enumerate() {
+        let owner_component = nix_profile_owner_component(entry_name, element);
+        let row_id = format!("profile:{entry_name}");
+        let mut store_paths = element.store_paths.clone();
+        store_paths.sort();
+        let mut frontdoor_paths = frontdoors_by_entry
+            .get(entry_name)
+            .cloned()
+            .unwrap_or_default();
+        frontdoor_paths.sort_by(|a, b| {
+            a.path
+                .cmp(&b.path)
+                .then(a.resolved_path.cmp(&b.resolved_path))
+        });
+        let lock_hash = nix_profile_lock_hash(entry_name, element, &store_paths, &frontdoor_paths);
+        nix_components.push(NixComponentRow {
+            component_id: row_id.clone(),
+            name: entry_name.to_string(),
+            source_file: "nix profile list --json".to_string(),
+            nix_surface: "nix_profile".to_string(),
+            owner_component: owner_component.clone(),
+            profile_entry: Some(entry_name.to_string()),
+            original_url: element.original_url.clone(),
+            profile_url: element.url.clone(),
+            store_paths: store_paths.clone(),
+            frontdoor_paths: frontdoor_paths.iter().map(|fd| fd.path.clone()).collect(),
+            requires: Vec::new(),
+            status: if element.active {
+                "active".to_string()
+            } else {
+                "inactive".to_string()
+            },
+            lock_hash,
+            resolved_order: base_order + idx + 1,
+        });
+        for store_path in &store_paths {
+            let store_id = nix_store_path_id(entry_name, store_path);
+            paths.push(PathRow {
+                path_id: store_id.clone(),
+                path: store_path.clone(),
+                path_kind: "nix_store_path".to_string(),
+                owner_component: owner_component.clone(),
+                owner_record_id: Some(row_id.clone()),
+                artifact_kind: "nix_store_object".to_string(),
+                resolved_path: None,
+                link_target_id: None,
+                canonical: true,
+                legacy: false,
+                bridge: false,
+                protected: true,
+                source: "nix profile list --json".to_string(),
+                verification_status: if element.active {
+                    "listed_active".to_string()
+                } else {
+                    "listed_inactive".to_string()
+                },
+            });
+        }
+        for frontdoor in &frontdoor_paths {
+            let target_id = nix_store_path_id(entry_name, &frontdoor.store_path);
+            paths.push(PathRow {
+                path_id: nix_frontdoor_path_id(entry_name, &frontdoor.path),
+                path: frontdoor.path.clone(),
+                path_kind: frontdoor.path_kind.clone(),
+                owner_component: owner_component.clone(),
+                owner_record_id: Some(row_id.clone()),
+                artifact_kind: frontdoor.artifact_kind.clone(),
+                resolved_path: Some(frontdoor.resolved_path.clone()),
+                link_target_id: Some(target_id),
+                canonical: false,
+                legacy: false,
+                bridge: true,
+                protected: false,
+                source: "nix profile list --json".to_string(),
+                verification_status: "resolved".to_string(),
+            });
+        }
+    }
+}
+
+fn collect_nix_profile_frontdoors(
+    profile_root: &Path,
+    entries: &[(&str, &NixProfileElement)],
+) -> BTreeMap<String, Vec<NixProfileFrontdoor>> {
+    let mut by_entry: BTreeMap<String, Vec<NixProfileFrontdoor>> = BTreeMap::new();
+    let mut store_index = Vec::new();
+    for (entry_name, element) in entries {
+        for store_path in &element.store_paths {
+            store_index.push((store_path.clone(), (*entry_name).to_string()));
+        }
+    }
+    store_index.sort_by(|a, b| b.0.len().cmp(&a.0.len()).then(a.0.cmp(&b.0)));
+
+    for (relative_dir, path_kind, artifact_kind) in [
+        (
+            "bin",
+            "nix_profile_frontdoor_bin",
+            "nix_profile_frontdoor_symlink",
+        ),
+        (
+            "share/applications",
+            "nix_profile_frontdoor_desktop",
+            "nix_profile_frontdoor_desktop_entry",
+        ),
+    ] {
+        let dir = profile_root.join(relative_dir);
+        let Ok(read_dir) = std::fs::read_dir(&dir) else {
+            continue;
+        };
+        for entry in read_dir.flatten() {
+            let path = entry.path();
+            let Ok(metadata) = std::fs::symlink_metadata(&path) else {
+                continue;
+            };
+            if !metadata.file_type().is_symlink() {
+                continue;
+            }
+            let Ok(resolved_path) = path.canonicalize() else {
+                continue;
+            };
+            let resolved = resolved_path.display().to_string();
+            let Some((store_path, owner_entry)) = store_index
+                .iter()
+                .find(|(store_path, _)| resolved.starts_with(store_path))
+                .cloned()
+            else {
+                continue;
+            };
+            by_entry
+                .entry(owner_entry)
+                .or_default()
+                .push(NixProfileFrontdoor {
+                    path: path.display().to_string(),
+                    resolved_path: resolved,
+                    store_path,
+                    path_kind: path_kind.to_string(),
+                    artifact_kind: artifact_kind.to_string(),
+                });
+        }
+    }
+    by_entry
+}
+
+fn nix_profile_owner_component(entry_name: &str, element: &NixProfileElement) -> Option<String> {
+    let mut candidates = Vec::new();
+    candidates.push(entry_name.to_string());
+    if let Some(attr_path) = &element.attr_path {
+        candidates.push(attr_path.clone());
+    }
+    if let Some(original_url) = &element.original_url {
+        candidates.push(original_url.clone());
+    }
+    if let Some(url) = &element.url {
+        candidates.push(url.clone());
+    }
+    if candidates
+        .iter()
+        .any(|candidate| candidate.contains("yazelix"))
+    {
+        Some("yazelix".to_string())
+    } else {
+        None
+    }
+}
+
+fn nix_profile_lock_hash(
+    entry_name: &str,
+    element: &NixProfileElement,
+    store_paths: &[String],
+    frontdoors: &[NixProfileFrontdoor],
+) -> String {
+    let mut out = String::new();
+    out.push_str(entry_name);
+    out.push('\n');
+    if let Some(attr_path) = &element.attr_path {
+        out.push_str(attr_path);
+    }
+    out.push('\n');
+    if let Some(original_url) = &element.original_url {
+        out.push_str(original_url);
+    }
+    out.push('\n');
+    if let Some(url) = &element.url {
+        out.push_str(url);
+    }
+    out.push('\n');
+    for store_path in store_paths {
+        out.push_str(store_path);
+        out.push('\n');
+    }
+    for frontdoor in frontdoors {
+        out.push_str(&frontdoor.path);
+        out.push('\n');
+        out.push_str(&frontdoor.resolved_path);
+        out.push('\n');
+    }
+    sha256_hex(out.as_bytes())
+}
+
+fn nix_store_path_id(entry_name: &str, store_path: &str) -> String {
+    format!(
+        "nix_store:{}:{}",
+        sanitize_catalog_id(entry_name),
+        sha256_hex(store_path.as_bytes())
+    )
+}
+
+fn nix_frontdoor_path_id(entry_name: &str, frontdoor_path: &str) -> String {
+    format!(
+        "nix_frontdoor:{}:{}",
+        sanitize_catalog_id(entry_name),
+        sha256_hex(frontdoor_path.as_bytes())
+    )
+}
+
+fn sanitize_catalog_id(raw: &str) -> String {
+    raw.chars()
+        .map(|ch| {
+            if ch.is_ascii_alphanumeric() || ch == '_' || ch == '-' {
+                ch
+            } else {
+                '_'
+            }
+        })
+        .collect()
+}
+
+fn nix_component_surface(row: &ComponentRow) -> Option<&'static str> {
+    if row.source_file.starts_with("manifest/nix") {
+        Some("nix_manifest")
+    } else if row.component_id == "nix-portable" {
+        Some("nix_portable_toolchain")
+    } else {
+        None
     }
 }
 
@@ -3072,6 +2908,59 @@ fn hook_row(
     }
 }
 
+fn ingest_envctl_home_frontdoors(repo_root: &Path, paths: &mut Vec<PathRow>) {
+    if !repo_root.join("home").is_dir() {
+        return;
+    }
+
+    let meta_root = catalog_meta_root(repo_root);
+    for source_rel in collect_envctl_home_managed_relpaths(repo_root) {
+        let Some(runtime_rel) = envctl_home_runtime_relative_path(&source_rel) else {
+            continue;
+        };
+        let Some(owner_component) = envctl_home_owner_component(&source_rel) else {
+            continue;
+        };
+        let source_abs = repo_root.join(&source_rel);
+        let source_id = envctl_home_source_path_id(&source_rel);
+        let source_display = source_abs.display().to_string();
+        paths.push(PathRow {
+            path_id: source_id.clone(),
+            path: source_display.clone(),
+            path_kind: "envctl_home_source".to_string(),
+            owner_component: Some(owner_component.to_string()),
+            owner_record_id: Some(owner_component.to_string()),
+            artifact_kind: "envctl_home_source_file".to_string(),
+            resolved_path: None,
+            link_target_id: None,
+            canonical: true,
+            legacy: false,
+            bridge: false,
+            protected: true,
+            source: source_rel.clone(),
+            verification_status: "tracked".to_string(),
+        });
+
+        let runtime_abs = meta_root.join(&runtime_rel);
+        paths.push(PathRow {
+            path_id: envctl_home_frontdoor_path_id(&runtime_rel),
+            path: runtime_abs.display().to_string(),
+            path_kind: envctl_home_frontdoor_kind(&source_rel).to_string(),
+            owner_component: Some(owner_component.to_string()),
+            owner_record_id: Some(owner_component.to_string()),
+            artifact_kind: envctl_home_frontdoor_artifact(&source_rel).to_string(),
+            resolved_path: Some(source_display),
+            link_target_id: Some(source_id),
+            canonical: true,
+            legacy: false,
+            bridge: true,
+            protected: true,
+            source: "manifest/components.d/portability-links.toml".to_string(),
+            verification_status: "declared".to_string(),
+        });
+    }
+}
+
 fn ingest_layout_paths(repo_root: &Path, paths: &mut Vec<PathRow>, env_vars: &mut Vec<EnvVarRow>) {
     let layout = MetaLayout::from_meta_root(repo_root);
     for entry in layout.entries() {
@@ -3082,7 +2971,10 @@ fn ingest_layout_paths(repo_root: &Path, paths: &mut Vec<PathRow>, env_vars: &mu
             path: entry.path.display().to_string(),
             path_kind: layout_path_kind(entry.key, entry.purpose).to_string(),
             owner_component: None,
+            owner_record_id: None,
             artifact_kind: entry.purpose.to_string(),
+            resolved_path: None,
+            link_target_id: None,
             canonical,
             legacy,
             bridge: legacy || entry.key.contains("bridge") || entry.key.contains("legacy"),
@@ -3300,9 +3192,10 @@ fn ingest_codedb_file_imports(
     observed_at: &str,
     rows: &mut Vec<CodedbFileImportRow>,
 ) -> anyhow::Result<()> {
-    let Some(inventory_path) = resolve_yazelix_inventory_path(repo_root) else {
+    let inventory_path = repo_root.join("docs/generated/yazelix_file_target_inventory.json");
+    if !inventory_path.is_file() {
         return Ok(());
-    };
+    }
 
     let bytes = std::fs::read(&inventory_path).with_context(|| {
         format!(
@@ -3395,15 +3288,6 @@ fn ingest_codedb_file_imports(
     }
 
     Ok(())
-}
-
-fn resolve_yazelix_inventory_path(repo_root: &Path) -> Option<PathBuf> {
-    let relative = Path::new("docs/generated/yazelix_file_target_inventory.json");
-    let mut candidates = vec![repo_root.join(relative)];
-    if let Some(parent) = repo_root.parent() {
-        candidates.push(parent.join("yazelix").join(relative));
-    }
-    candidates.into_iter().find(|candidate| candidate.is_file())
 }
 
 fn structured_file_rows(path: &Path, parser_hint: &str) -> Vec<CodedbStructuredFileRow> {
@@ -3727,9 +3611,16 @@ fn discover_control_plane_files(repo_root: &Path, manifest_dir: &Path) -> Vec<Pa
     collect_matching_files(&repo_root.join(".handoff"), &["jsonl"], &mut paths);
     collect_matching_files(&repo_root.join(".handoff/loop"), &["md"], &mut paths);
     collect_matching_files(&repo_root.join(".handoff/decisions"), &["md"], &mut paths);
+    collect_envctl_home_files(repo_root, &mut paths);
     collect_yazelix_config_files(repo_root, &mut paths);
     paths.sort();
     paths
+}
+
+fn collect_envctl_home_files(repo_root: &Path, out: &mut Vec<PathBuf>) {
+    for rel in collect_envctl_home_managed_relpaths(repo_root) {
+        push_if_present(out, repo_root.join(rel));
+    }
 }
 
 fn collect_yazelix_config_files(repo_root: &Path, out: &mut Vec<PathBuf>) {
@@ -4347,6 +4238,24 @@ fn infer_format(rel: &str) -> &'static str {
 fn infer_file_kind(manifest_dir: &Path, path: &Path, rel: &str) -> &'static str {
     if path.starts_with(manifest_dir) && rel.ends_with(".toml") {
         "manifest"
+    } else if rel.starts_with("home/.claude/") {
+        "envctl_home_claude_config"
+    } else if rel == "home/.gitconfig" {
+        "envctl_home_git_config"
+    } else if rel.starts_with("home/.config/ghostty/") {
+        "envctl_home_ghostty_config"
+    } else if rel.starts_with("home/.config/kasetto/") {
+        "envctl_home_kasetto_config"
+    } else if rel == "home/.config/nushell/meta-usr-path.nu" {
+        "envctl_home_nushell_path"
+    } else if rel.starts_with("home/.config/nushell/") {
+        "envctl_home_nushell_config"
+    } else if rel.starts_with("home/.config/rtk/") {
+        "envctl_home_rtk_config"
+    } else if rel.starts_with("home/.config/systemd/user/") {
+        "envctl_home_systemd_user_unit"
+    } else if rel.starts_with("home/.config/yazelix/") {
+        "envctl_home_yazelix_config"
     } else if rel == "settings_default.jsonc" {
         "yazelix_settings_default"
     } else if rel.starts_with("config_metadata/") {
@@ -4405,6 +4314,8 @@ fn owner_component_from_path(rel: &str) -> Option<String> {
     if rel.starts_with("manifest/components.d/") && rel.ends_with(".toml") {
         rel.rsplit_once('/')
             .map(|(_, name)| name.trim_end_matches(".toml").to_string())
+    } else if let Some(owner) = envctl_home_owner_component(rel) {
+        Some(owner.to_string())
     } else if rel.starts_with("manifest/")
         && rel.ends_with(".toml")
         && rel != "manifest/envctl.lock"
@@ -4436,6 +4347,14 @@ fn setting_scope(file_kind: &str) -> &'static str {
         "envctl_lock" | "agent_env_lock" => "lock",
         "agent_env" => "agent_env",
         "codex_config" | "mcp_config" => "agent_runtime",
+        "envctl_home_claude_config" => "agent_runtime",
+        "envctl_home_git_config" => "git",
+        "envctl_home_ghostty_config" => "terminal",
+        "envctl_home_kasetto_config" => "agent_env",
+        "envctl_home_nushell_config" | "envctl_home_nushell_path" => "shell",
+        "envctl_home_rtk_config" => "tooling",
+        "envctl_home_systemd_user_unit" => "systemd",
+        "envctl_home_yazelix_config" => "yazelix",
         "secretd_config" | "secrets_env_schema" | "secrets_proto" => "secrets",
         "yazelix_settings_default"
         | "yazelix_config_metadata"
@@ -4455,6 +4374,15 @@ fn setting_precedence(file_kind: &str) -> u32 {
         "codex_config" | "mcp_config" => 80,
         "agent_env" => 70,
         "manifest" => 60,
+        "envctl_home_claude_config" => 88,
+        "envctl_home_git_config" => 86,
+        "envctl_home_ghostty_config" => 84,
+        "envctl_home_kasetto_config" => 83,
+        "envctl_home_nushell_config" => 83,
+        "envctl_home_rtk_config" => 84,
+        "envctl_home_systemd_user_unit" => 81,
+        "envctl_home_yazelix_config" => 88,
+        "envctl_home_nushell_path" => 82,
         "secretd_config" => 55,
         "secrets_env_schema" | "secrets_proto" => 45,
         "yazelix_settings_default" | "yazelix_config_metadata" => 90,
@@ -4474,6 +4402,98 @@ fn config_id(rel: &str) -> String {
         .collect::<String>()
         .trim_matches('_')
         .to_string()
+}
+
+fn collect_envctl_home_managed_relpaths(repo_root: &Path) -> Vec<String> {
+    let mut paths = Vec::new();
+    walk_files(&repo_root.join("home"), &mut paths, &mut |path| {
+        let rel = repo_relative(repo_root, path);
+        envctl_home_runtime_relative_path(&rel).is_some()
+    });
+    paths
+        .into_iter()
+        .map(|path| repo_relative(repo_root, &path))
+        .collect()
+}
+
+fn envctl_home_runtime_relative_path(rel: &str) -> Option<String> {
+    envctl_home_owner_component(rel)
+        .and_then(|_| rel.strip_prefix("home/").map(ToString::to_string))
+}
+
+fn envctl_home_owner_component(rel: &str) -> Option<&'static str> {
+    if rel == "home/.gitconfig"
+        || rel.starts_with("home/.config/ghostty/")
+        || rel.starts_with("home/.config/kasetto/")
+        || rel.starts_with("home/.config/nushell/")
+        || rel.starts_with("home/.config/systemd/user/")
+        || rel.starts_with("home/.config/yazelix/")
+    {
+        Some("home-config-links")
+    } else if rel.starts_with("home/.config/rtk/") {
+        Some("rtk-config-links")
+    } else if rel.starts_with("home/.claude/") {
+        Some("claude-global-links")
+    } else {
+        None
+    }
+}
+
+fn envctl_home_frontdoor_kind(rel: &str) -> &'static str {
+    if rel.starts_with("home/.config/yazelix/") {
+        "envctl_home_yazelix_frontdoor"
+    } else if rel == "home/.config/nushell/meta-usr-path.nu" {
+        "envctl_home_nushell_frontdoor"
+    } else if rel.starts_with("home/.config/rtk/") {
+        "envctl_home_rtk_frontdoor"
+    } else if rel.starts_with("home/.claude/") {
+        "envctl_home_claude_frontdoor"
+    } else {
+        "envctl_home_frontdoor"
+    }
+}
+
+fn envctl_home_frontdoor_artifact(rel: &str) -> &'static str {
+    if rel.starts_with("home/.config/yazelix/configs/zellij/layouts/") {
+        "envctl_managed_runtime_layout"
+    } else if rel == "home/.config/nushell/meta-usr-path.nu" {
+        "envctl_managed_shell_overlay"
+    } else if rel.starts_with("home/.config/systemd/user/") {
+        "envctl_managed_systemd_user_unit"
+    } else if rel.starts_with("home/.claude/") {
+        "envctl_managed_agent_config"
+    } else if rel == "home/.gitconfig" {
+        "envctl_managed_git_config"
+    } else {
+        "envctl_managed_runtime_config"
+    }
+}
+
+fn catalog_meta_root(repo_root: &Path) -> PathBuf {
+    if let Some(root) = std::env::var_os("META_ROOT").filter(|value| !value.is_empty()) {
+        return PathBuf::from(root);
+    }
+    if repo_root
+        .parent()
+        .and_then(|parent| parent.file_name())
+        .and_then(|name| name.to_str())
+        == Some("src")
+    {
+        return repo_root
+            .parent()
+            .and_then(|parent| parent.parent())
+            .map(Path::to_path_buf)
+            .unwrap_or_else(|| repo_root.to_path_buf());
+    }
+    repo_root.to_path_buf()
+}
+
+fn envctl_home_source_path_id(source_rel: &str) -> String {
+    format!("envctl_home_source:{}", config_id(source_rel))
+}
+
+fn envctl_home_frontdoor_path_id(runtime_rel: &str) -> String {
+    format!("envctl_home_frontdoor:{}", config_id(runtime_rel))
 }
 
 fn phase_name(phase: Phase) -> &'static str {
@@ -4587,6 +4607,10 @@ mod tests {
     #[test]
     fn table_name_aliases_accept_kebab_case() {
         assert_eq!(
+            "nix-components".parse::<CatalogTableName>().unwrap(),
+            CatalogTableName::NixComponents
+        );
+        assert_eq!(
             "component-hooks".parse::<CatalogTableName>().unwrap(),
             CatalogTableName::ComponentHooks
         );
@@ -4641,6 +4665,7 @@ mod tests {
             .components
             .iter()
             .any(|row| row.component_id == "base" && row.has_detect));
+        assert!(snapshot.nix_components.is_empty());
         assert!(snapshot
             .component_hooks
             .iter()
@@ -4812,80 +4837,6 @@ mod tests {
     }
 
     #[test]
-    fn table_inventory_covers_all_catalog_tables() {
-        let root = fixture_root();
-        write_fixture(&root);
-        let manifest_dir = root.join("manifest");
-        let registry = Registry::load(&manifest_dir).unwrap();
-
-        let snapshot = scan(
-            CatalogScanSpec {
-                repo_root: root,
-                manifest_dir,
-            },
-            &registry,
-        )
-        .unwrap();
-
-        let inventory = table_inventory(&snapshot);
-        assert_eq!(inventory.len(), CatalogTableName::all().len());
-        assert!(inventory.iter().any(|row| {
-            row.table == "env_vars"
-                && row.rows == snapshot.env_vars.len()
-                && row.columns.iter().any(|column| column == "var_name")
-        }));
-        assert!(inventory
-            .iter()
-            .any(|row| row.table == "codedb_file_imports" && !row.purpose.is_empty()));
-    }
-
-    #[test]
-    fn analyze_snapshot_surfaces_env_and_toolchain_facets() {
-        let root = fixture_root();
-        write_fixture(&root);
-        let manifest_dir = root.join("manifest");
-        let registry = Registry::load(&manifest_dir).unwrap();
-
-        let snapshot = scan(
-            CatalogScanSpec {
-                repo_root: root,
-                manifest_dir,
-            },
-            &registry,
-        )
-        .unwrap();
-
-        let report = analyze_snapshot(&snapshot);
-        assert_eq!(report.summary.tables, CatalogTableName::all().len());
-        assert_eq!(report.summary.env_vars, snapshot.env_vars.len());
-        assert_eq!(report.summary.config_files, snapshot.config_files.len());
-        assert!(report
-            .config_file_kinds
-            .iter()
-            .any(|row| row.key == "agent_env" && row.count >= 1));
-        assert!(report
-            .env_producers
-            .iter()
-            .any(|row| row.key == "secrets_env_schema" && row.count >= 1));
-        assert!(report
-            .env_sensitive
-            .iter()
-            .any(|row| row.key == "sensitive" && row.count >= 1));
-        assert!(report
-            .path_verification_statuses
-            .iter()
-            .any(|row| row.key == "dir_exists" && row.count >= 1));
-        assert!(report
-            .path_verification_statuses
-            .iter()
-            .any(|row| row.key == "missing" && row.count >= 1));
-        assert!(report
-            .toolchain_signals
-            .iter()
-            .any(|row| row.signal_kind == "path" && row.source == "crates/engine/src/layout.rs"));
-    }
-
-    #[test]
     fn render_imports_yazelix_config_files_without_manifest() {
         let root = fixture_root();
         write_yazelix_fixture(&root);
@@ -4913,31 +4864,6 @@ mod tests {
         assert!(out
             .join("catalog/tables/codedb_file_imports.json")
             .is_file());
-    }
-
-    #[test]
-    fn scan_imports_yazelix_inventory_from_workspace_sibling_repo() {
-        let workspace_root = fixture_root();
-        let envctl_root = workspace_root.join("envctl");
-        let yazelix_root = workspace_root.join("yazelix");
-        write_fixture(&envctl_root);
-        write_yazelix_fixture(&yazelix_root);
-        let registry = Registry::empty();
-
-        let snapshot = scan(
-            CatalogScanSpec {
-                repo_root: envctl_root,
-                manifest_dir: workspace_root.join("missing-manifest"),
-            },
-            &registry,
-        )
-        .unwrap();
-
-        assert!(snapshot.codedb_file_imports.iter().any(|row| row.target_id
-            == "repo_settings_default"
-            && row
-                .provenance
-                .ends_with("yazelix/docs/generated/yazelix_file_target_inventory.json")));
     }
 
     #[test]
@@ -5018,15 +4944,6 @@ mod tests {
             "shell/env.catalog.sh",
             "dashboard/mission-control.catalog.kdl",
             "systemd/user/envctl-catalog-check.service",
-            "docs/generated/current-database-file-inventory.md",
-            "docs/generated/catalog-table-inventory.md",
-            "docs/generated/env-var-inventory.md",
-            "docs/generated/toolchain-signal-inventory.md",
-            "docs/generated/codedb-import-targets.txt",
-            "docs/generated/codedb-content-blob-targets.txt",
-            "docs/generated/codedb-metadata-only-targets.txt",
-            "docs/generated/codedb-upload-inventory.md",
-            "docs/generated/codedb-semantic-coverage.md",
             "catalog/rendered-config-files.json",
         ] {
             assert!(out_a.join(rel).is_file(), "missing rendered file {rel}");
@@ -5044,24 +4961,6 @@ mod tests {
             render_tree_hashes(&out_b),
             "catalog render must be deterministic across output dirs"
         );
-
-        let env_inventory =
-            std::fs::read_to_string(out_a.join("docs/generated/env-var-inventory.md")).unwrap();
-        assert!(env_inventory.contains("# envctl Environment Variable Inventory"));
-        assert!(env_inventory.contains("ENVCTL_META_ROOT"));
-        assert!(env_inventory.contains("secrets_env_schema"));
-
-        let codex_config = std::fs::read_to_string(out_a.join(".codex/config.toml")).unwrap();
-        assert!(codex_config.contains("[mcp_servers.\"memory\"]"));
-        assert!(codex_config.contains("envctl-mcp-memory-server"));
-        assert!(codex_config.contains("[mcp_servers.\"memory\".env]"));
-        assert!(codex_config.contains("META_ROOT"));
-
-        let toolchain_inventory =
-            std::fs::read_to_string(out_a.join("docs/generated/toolchain-signal-inventory.md"))
-                .unwrap();
-        assert!(toolchain_inventory.contains("# envctl Toolchain Signal Inventory"));
-        assert!(toolchain_inventory.contains("crates/engine/src/layout.rs"));
     }
 
     #[test]
@@ -5115,6 +5014,75 @@ mod tests {
     }
 
     #[test]
+    fn scan_projects_nix_components_into_dedicated_table() {
+        let root = fixture_root();
+        let manifest_dir = root.join("manifest");
+        std::fs::create_dir_all(&manifest_dir).unwrap();
+        std::fs::create_dir_all(manifest_dir.join("components.d")).unwrap();
+
+        std::fs::write(
+            manifest_dir.join("nix-yazelix.toml"),
+            r#"
+[[component]]
+id = "nix"
+name = "Nix"
+
+[[component]]
+id = "home-manager"
+name = "home-manager"
+requires = ["nix"]
+"#,
+        )
+        .unwrap();
+        std::fs::write(
+            manifest_dir.join("components.d/epic-h-toolchains.toml"),
+            r#"
+[[component]]
+id = "nix-portable"
+name = "nix-portable"
+"#,
+        )
+        .unwrap();
+        std::fs::write(manifest_dir.join("envctl.lock"), "").unwrap();
+
+        let registry = Registry::load(&manifest_dir).unwrap();
+        let snapshot = scan(
+            CatalogScanSpec {
+                repo_root: root,
+                manifest_dir,
+            },
+            &registry,
+        )
+        .unwrap();
+
+        assert_eq!(
+            snapshot.nix_components.len(),
+            3,
+            "{:#?}",
+            snapshot.nix_components
+        );
+        assert!(snapshot.nix_components.iter().any(|row| {
+            row.component_id == "nix"
+                && row.source_file == "manifest/nix-yazelix.toml"
+                && row.nix_surface == "nix_manifest"
+        }));
+        assert!(snapshot.nix_components.iter().any(|row| {
+            row.component_id == "home-manager" && row.nix_surface == "nix_manifest"
+        }));
+        assert!(snapshot.nix_components.iter().any(|row| {
+            row.component_id == "nix-portable"
+                && row.source_file == "manifest/components.d/epic-h-toolchains.toml"
+                && row.nix_surface == "nix_portable_toolchain"
+        }));
+        let table_value = snapshot.table_value(CatalogTableName::NixComponents);
+        assert_eq!(table_value.as_array().unwrap().len(), 3);
+        assert!(snapshot
+            .observed_facts
+            .iter()
+            .any(|row| row.fact_id == "catalog.table_count.nix_components"));
+    }
+
+    #[test]
     fn render_can_retarget_layout_paths_and_env_exports() {
         let root = fixture_root();
         write_fixture(&root);
@@ -5161,6 +5129,206 @@ mod tests {
             envctl_usr.effective_value.as_deref(),
             Some(expected_usr.as_str())
         );
+    }
+
+    #[test]
+    fn ingest_nix_profile_adds_frontdoor_and_store_provenance_rows() {
+        let home = fixture_root();
+        let profile_root = home.join(".nix-profile");
+        std::fs::create_dir_all(profile_root.join("bin")).unwrap();
+        std::fs::create_dir_all(profile_root.join("share/applications")).unwrap();
+
+        let store_root = home.join("fake-store/yazelix-flexnetos-foundation");
+        std::fs::create_dir_all(store_root.join("bin")).unwrap();
+        std::fs::create_dir_all(store_root.join("share/applications")).unwrap();
+        std::fs::write(store_root.join("bin/yzx"), "#!/bin/sh\n").unwrap();
+        std::fs::write(
+            store_root.join("share/applications/com.yazelix.Yazelix.Mars.desktop"),
+            "[Desktop Entry]\nName=Yazelix\n",
+        )
+        .unwrap();
+
+        std::os::unix::fs::symlink(store_root.join("bin/yzx"), profile_root.join("bin/yzx"))
+            .unwrap();
+        std::os::unix::fs::symlink(
+            store_root.join("share/applications/com.yazelix.Yazelix.Mars.desktop"),
+            profile_root.join("share/applications/com.yazelix.Yazelix.Mars.desktop"),
+        )
+        .unwrap();
+
+        let mut profile = NixProfileList::default();
+        profile.elements.insert(
+            "yazelix_flexnetos_foundation".to_string(),
+            NixProfileElement {
+                active: true,
+                attr_path: Some("packages.x86_64-linux.yazelix_flexnetos_foundation".to_string()),
+                original_url: Some("path:/home/flexnetos/FlexNetOS/src/yazelix".to_string()),
+                store_paths: vec![store_root.display().to_string()],
+                url: Some("path:/home/flexnetos/FlexNetOS/src/yazelix".to_string()),
+            },
+        );
+
+        let mut nix_components = Vec::new();
+        let mut paths = Vec::new();
+        ingest_nix_profile_snapshot(&home, &profile, &mut nix_components, &mut paths, 0);
+
+        assert!(nix_components.iter().any(|row| {
+            row.component_id == "profile:yazelix_flexnetos_foundation"
+                && row.nix_surface == "nix_profile"
+                && row.owner_component.as_deref() == Some("yazelix")
+                && row.frontdoor_paths
+                    == vec![
+                        profile_root.join("bin/yzx").display().to_string(),
+                        profile_root
+                            .join("share/applications/com.yazelix.Yazelix.Mars.desktop")
+                            .display()
+                            .to_string(),
+                    ]
+                && row.store_paths == vec![store_root.display().to_string()]
+        }));
+
+        let store_path_id = nix_store_path_id(
+            "yazelix_flexnetos_foundation",
+            &store_root.display().to_string(),
+        );
+        assert!(paths.iter().any(|row| {
+            row.path_id == store_path_id
+                && row.path_kind == "nix_store_path"
+                && row.owner_component.as_deref() == Some("yazelix")
+                && row.owner_record_id.as_deref() == Some("profile:yazelix_flexnetos_foundation")
+                && row.artifact_kind == "nix_store_object"
+                && row.canonical
+                && row.protected
+        }));
+        assert!(paths.iter().any(|row| {
+            row.path == profile_root.join("bin/yzx").display().to_string()
+                && row.path_kind == "nix_profile_frontdoor_bin"
+                && row.resolved_path.as_deref()
+                    == Some(&store_root.join("bin/yzx").display().to_string())
+                && row.link_target_id.as_deref() == Some(store_path_id.as_str())
+                && row.owner_component.as_deref() == Some("yazelix")
+                && row.verification_status == "resolved"
+        }));
+        assert!(paths.iter().any(|row| {
+            row.path
+                == profile_root
+                    .join("share/applications/com.yazelix.Yazelix.Mars.desktop")
+                    .display()
+                    .to_string()
+                && row.path_kind == "nix_profile_frontdoor_desktop"
+                && row.resolved_path.as_deref()
+                    == Some(
+                        &store_root
+                            .join("share/applications/com.yazelix.Yazelix.Mars.desktop")
+                            .display()
+                            .to_string(),
+                    )
+                && row.link_target_id.as_deref() == Some(store_path_id.as_str())
+                && row.owner_component.as_deref() == Some("yazelix")
+        }));
+    }
+
+    #[test]
+    fn scan_catalogs_envctl_home_managed_sources_and_frontdoors() {
+        let root = fixture_root();
+        std::fs::create_dir_all(root.join("manifest/components.d")).unwrap();
+        std::fs::write(
+            root.join("manifest/components.d/portability-links.toml"),
+            "[[component]]\nid = \"home-config-links\"\nname = \"home-config-links\"\n\n[[component]]\nid = \"rtk-config-links\"\nname = \"rtk-config-links\"\n\n[[component]]\nid = \"claude-global-links\"\nname = \"claude-global-links\"\n",
+        )
+        .unwrap();
+        write_envctl_home_fixture(&root);
+
+        let snapshot = scan(
+            CatalogScanSpec {
+                repo_root: root.clone(),
+                manifest_dir: root.join("manifest"),
+            },
+            &Registry::empty(),
+        )
+        .unwrap();
+
+        let source_rel = "home/.config/yazelix/settings.jsonc";
+        let source_abs = root.join(source_rel).display().to_string();
+        let runtime_abs = root
+            .join(".config/yazelix/settings.jsonc")
+            .display()
+            .to_string();
+        let source_id = envctl_home_source_path_id(source_rel);
+
+        assert!(snapshot.config_files.iter().any(|row| {
+            row.path == source_rel
+                && row.file_kind == "envctl_home_yazelix_config"
+                && row.owner_component.as_deref() == Some("home-config-links")
+                && row.parse_status == "ok"
+        }));
+        assert!(snapshot.config_files.iter().any(|row| {
+            row.path == "home/.config/nushell/meta-usr-path.nu"
+                && row.file_kind == "envctl_home_nushell_path"
+                && row.owner_component.as_deref() == Some("home-config-links")
+        }));
+        assert!(snapshot.config_files.iter().any(|row| {
+            row.path == "home/.claude/settings.json"
+                && row.file_kind == "envctl_home_claude_config"
+                && row.owner_component.as_deref() == Some("claude-global-links")
+        }));
+        assert!(snapshot.config_files.iter().any(|row| {
+            row.path == "home/.config/rtk/config.toml"
+                && row.file_kind == "envctl_home_rtk_config"
+                && row.owner_component.as_deref() == Some("rtk-config-links")
+        }));
+        assert!(snapshot.settings.iter().any(|row| {
+            row.source_file == source_rel
+                && row.scope == "yazelix"
+                && row.precedence == 88
+                && row.setting_key == "default_shell"
+                && row.value == "nu"
+        }));
+        assert!(snapshot.settings.iter().any(|row| {
+            row.source_file == "home/.config/nushell/meta-usr-path.nu"
+                && row.scope == "shell"
+                && row.setting_key == "source_lines"
+                && row.value.contains("meta-usr-path")
+        }));
+        assert!(snapshot.paths.iter().any(|row| {
+            row.path_id == source_id
+                && row.path == source_abs
+                && row.path_kind == "envctl_home_source"
+                && row.owner_component.as_deref() == Some("home-config-links")
+                && row.verification_status == "tracked"
+        }));
+        assert!(snapshot.paths.iter().any(|row| {
+            row.path == runtime_abs
+                && row.path_kind == "envctl_home_yazelix_frontdoor"
+                && row.owner_component.as_deref() == Some("home-config-links")
+                && row.resolved_path.as_deref() == Some(source_abs.as_str())
+                && row.link_target_id.as_deref() == Some(source_id.as_str())
+                && row.bridge
+                && row.protected
+                && row.verification_status == "declared"
+        }));
+        assert!(snapshot.paths.iter().any(|row| {
+            row.path == root.join(".claude/settings.json").display().to_string()
+                && row.path_kind == "envctl_home_claude_frontdoor"
+                && row.owner_component.as_deref() == Some("claude-global-links")
+                && row.artifact_kind == "envctl_managed_agent_config"
+        }));
+        assert!(snapshot.paths.iter().any(|row| {
+            row.path == root.join(".config/rtk/config.toml").display().to_string()
+                && row.path_kind == "envctl_home_rtk_frontdoor"
+                && row.owner_component.as_deref() == Some("rtk-config-links")
+                && row.artifact_kind == "envctl_managed_runtime_config"
+        }));
+        assert!(snapshot.paths.iter().any(|row| {
+            row.path
+                == root
+                    .join(".config/systemd/user/env-ctl.service")
+                    .display()
+                    .to_string()
+                && row.path_kind == "envctl_home_frontdoor"
+                && row.owner_component.as_deref() == Some("home-config-links")
+                && row.artifact_kind == "envctl_managed_systemd_user_unit"
+        }));
     }
 
     #[test]
@@ -5337,7 +5505,6 @@ mod tests {
         std::fs::create_dir_all(root.join(".handoff/loop")).unwrap();
         std::fs::create_dir_all(root.join("crates/engine/src")).unwrap();
         std::fs::create_dir_all(root.join("crates/secrets-engine/src")).unwrap();
-        std::fs::create_dir_all(root.join("usr/bin")).unwrap();
 
         std::fs::write(
             root.join("manifest/base.toml"),
@@ -5433,6 +5600,94 @@ command = "context7"
 const ENVCTL_SEED_TOKEN: &str = "ENVCTL_SEED_TOKEN";
 const ENVCTL_SEED_TOKEN_FILE: &str = "ENVCTL_SEED_TOKEN_FILE";
 "#,
+        )
+        .unwrap();
+    }
+
+    fn write_envctl_home_fixture(root: &Path) {
+        std::fs::create_dir_all(root.join("home/.claude/commands")).unwrap();
+        std::fs::create_dir_all(root.join("home/.config/yazelix/configs/zellij/layouts")).unwrap();
+        std::fs::create_dir_all(root.join("home/.config/yazelix/helix/steel_plugins")).unwrap();
+        std::fs::create_dir_all(root.join("home/.config/ghostty")).unwrap();
+        std::fs::create_dir_all(root.join("home/.config/kasetto")).unwrap();
+        std::fs::create_dir_all(root.join("home/.config/nushell")).unwrap();
+        std::fs::create_dir_all(root.join("home/.config/rtk")).unwrap();
+        std::fs::create_dir_all(root.join("home/.config/systemd/user")).unwrap();
+        std::fs::write(root.join("home/.gitconfig"), "[user]\nname = Envctl\n").unwrap();
+        std::fs::write(
+            root.join("home/.claude/settings.json"),
+            "{\n  \"model\": \"opus\"\n}\n",
+        )
+        .unwrap();
+        std::fs::write(root.join("home/.claude/CLAUDE.md"), "# claude\n").unwrap();
+        std::fs::write(
+            root.join("home/.claude/commands/remember.md"),
+            "# remember\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/ghostty/config.ghostty"),
+            "theme = dusk\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/kasetto/kasetto.yaml"),
+            "agent: codex\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/yazelix/settings.jsonc"),
+            "{\n  \"default_shell\": \"nu\"\n}\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/yazelix/shell_bash.sh"),
+            "export YAZELIX_ACTIVE=1\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/yazelix/shell_nu.nu"),
+            "source ./meta-usr-path.nu\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/yazelix/terminal_ghostty.conf"),
+            "theme = dawn\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/yazelix/tombi.toml"),
+            "[ui]\nlayout = \"stack\"\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/yazelix/helix/steel_plugins/README.md"),
+            "# steel plugins\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/yazelix/configs/zellij/layouts/mission-control.kdl"),
+            "layout {\n    pane\n}\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/nushell/meta-usr-path.nu"),
+            "source ./meta-usr-path.nu\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/nushell/config.nu"),
+            "source ./meta-usr-path.nu\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/rtk/config.toml"),
+            "[display]\nmode = \"compact\"\n",
+        )
+        .unwrap();
+        std::fs::write(
+            root.join("home/.config/systemd/user/env-ctl.service"),
+            "[Unit]\nDescription=envctl\n",
         )
         .unwrap();
     }
