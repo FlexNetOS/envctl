@@ -1,0 +1,5 @@
+{
+  "commit": {"author":"drdave <flexnetos@de-flex.net>","changes":[{"change_type":"created","content_hash":"26871620d5a9bd6ff36fef6102be60f02b7a771ebbe1c515dbbdda99f39475a7","doc_type":"incident","document_id":"019f2a52-3abb-79a3-b941-73f974623260","new_version":1,"previous_version":null,"slug":"retire-broken-pre-cleanroom-codex-hook-baseline","title":"Retire broken pre-cleanroom Codex hook baseline"}],"created_at":"2026-07-03T23:35:38.633830232Z","id":"019f2a56-7b8d-7970-927f-3b75a951d8b1","message":"Track pre-cleanroom Codex hook baseline retirement"},
+  "content_hash": "deb765fc9769916fb1611049de7ada1b44e9e51e3d0991ba8d4e6a8b026aa534",
+  "hash_version": 3
+}

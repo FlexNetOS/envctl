@@ -21,7 +21,7 @@ requires = []
 resolved = ""
 
 [components.bun]
-content_hash = "cb45d8cadd47d5fd"
+content_hash = "3d99fd6a69e799b9"
 requires = []
 resolved = ""
 
@@ -75,7 +75,7 @@ requires = ["codex-cli"]
 resolved = ""
 
 [components.codex-global-baseline]
-content_hash = "e72e01906300c104"
+content_hash = "e2198857db7884a9"
 requires = ["codex-cli"]
 resolved = ""
 
@@ -284,7 +284,7 @@ requires = []
 resolved = ""
 
 [components.kache]
-content_hash = "03ae9e5f9076f19d"
+content_hash = "b39c2b1e42a88205"
 requires = []
 resolved = ""
 
@@ -383,7 +383,7 @@ requires = ["nix"]
 resolved = ""
 
 [components.node-real]
-content_hash = "17c5e470990a81ed"
+content_hash = "1df06cd047593fb7"
 requires = []
 resolved = ""
 
