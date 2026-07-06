@@ -206,14 +206,16 @@ CLEANUP="${ENVCTL_CLAUDE_CLEANUP:-$M/envctl/assets/scripts/envctl-claude-cleanup
 """
 [[component]]
 id = "codex-cli"
-name = "Codex CLI (meta toolchain; pinned upstream release rust-v0.142.3, meta-owned CODEX_HOME wrapper)"
+name = "Codex CLI (meta toolchain; pinned upstream release rust-v0.142.3, no real-home shadow)"
 requires = ["rustup", "bun", "wild-linker"]
 # Pinned, VERSIONED install into $META_ROOT/.toolchains/openai-codex/<version>/ with a stable
-# `current -> <version>` indirection. The canonical user-facing executable is an envctl-managed
-# wrapper at $META_ROOT/usr/bin/codex, not a direct symlink to the release binary. The wrapper
-# discovers META_ROOT from its own location, exports CODEX_HOME/CODEX_SQLITE_HOME under meta by
-# default, and prepends meta-owned tool paths. Legacy ~/.codex content is copied into the new
-# meta-owned CODEX_HOME only when missing; legacy data is never deleted by this component.
+# `current -> <version>` indirection. The envctl-managed wrapper at
+# $META_ROOT/usr/bin/codex is meta-internal only; it must not create a real-home
+# user-bin control path. Active FlexNetOS runtime frontdoors must
+# mirror Yazelix's profile-owned model, and real-home shadows are archived.
+# The wrapper discovers META_ROOT from its own location, exports
+# CODEX_HOME/CODEX_SQLITE_HOME under meta by default, and prepends meta-owned
+# tool paths. Legacy ~/.codex content is not copied into meta-owned runtime.
 #
 # Stable default follows the latest non-prerelease OpenAI Rust release. If npm/node lags or a
 # prerelease is needed, override explicitly with CODEX_VERSION=<version>; this still pulls the
@@ -221,7 +223,7 @@ requires = ["rustup", "bun", "wild-linker"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; VER="${CODEX_VERSION:-0.142.3}"; vdir="$M/.toolchains/openai-codex/${VER}"; dest="$vdir/bin/codex"; cur="$M/.toolchains/openai-codex/current/bin/codex"; link="$M/usr/bin/codex"; meta_compat="$M/.local/bin/codex"; real_compat="${ENVCTL_REAL_HOME:-}/.local/bin/codex"; config="$M/.local/share/codex/config.toml"; [ -x "$dest" ] && [ "$(readlink -f "$cur" 2>/dev/null)" = "$(readlink -f "$dest" 2>/dev/null)" ] && [ -x "$link" ] && grep -q "envctl codex wrapper" "$link" && [ "$(readlink -f "$meta_compat" 2>/dev/null)" = "$(readlink -f "$link" 2>/dev/null)" ] && { [ -z "${ENVCTL_REAL_HOME:-}" ] || [ "$(readlink -f "$real_compat" 2>/dev/null)" = "$(readlink -f "$link" 2>/dev/null)" ]; } && CODEX_HOME= CODEX_SQLITE_HOME= "$link" --version >/dev/null && CODEX_HOME= CODEX_SQLITE_HOME= "$link" mcp list >/dev/null && grep -q 'CODEX_BIN_PATH=.*openai-codex/current/bin/codex' "$link" && [ ! -e "$M/.toolchains/bun/bin/codex" ] && [ ! -L "$M/.toolchains/bun/bin/codex" ] && [ ! -e "$M/.toolchains/.bun/bin/codex" ] && [ ! -L "$M/.toolchains/.bun/bin/codex" ] && [ ! -e "$M/.toolchains/bun/install/global/node_modules/.bin/codex" ] && [ ! -L "$M/.toolchains/bun/install/global/node_modules/.bin/codex" ] && [ ! -e "$M/.toolchains/.bun/install/global/node_modules/.bin/codex" ] && [ ! -L "$M/.toolchains/.bun/install/global/node_modules/.bin/codex" ] && ! grep -Rqs '"@openai/codex"' "$M/.toolchains/bun/install/global/package.json" "$M/.toolchains/bun/install/global/bun.lock" "$M/.toolchains/.bun/install/global/package.json" "$M/.toolchains/.bun/install/global/bun.lock" 2>/dev/null && ! find "$M/.toolchains/bun" "$M/.toolchains/.bun" -path '*/@openai/codex*' -print -quit 2>/dev/null | grep -q . && { [ ! -f "$config" ] || ! awk 'BEGIN{s=0;bad=0} /^\[/{s=($0=="[hooks.state]")} s && /^[[:space:]]*enabled[[:space:]]*=/{bad=1} END{exit bad?0:1}' "$config"; } && ! grep -RqsE '/home/[^[:space:]]+/(\.local/bin/icm|\.cargo/bin/weave)|/usr/local/bin/vox' "$M/.local/share/codex/config.toml" "$M/.local/share/codex/hooks.json" 2>/dev/null && "$M/envctl/assets/scripts/envctl-codex-cleanup.sh" verify''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; VER="${CODEX_VERSION:-0.142.3}"; vdir="$M/.toolchains/openai-codex/${VER}"; dest="$vdir/bin/codex"; cur="$M/.toolchains/openai-codex/current/bin/codex"; link="$M/usr/bin/codex"; meta_compat="$M/.local/bin/codex"; config="$M/.local/share/codex/config.toml"; [ -x "$dest" ] && [ "$(readlink -f "$cur" 2>/dev/null)" = "$(readlink -f "$dest" 2>/dev/null)" ] && [ -x "$link" ] && grep -q "envctl codex wrapper" "$link" && [ "$(readlink -f "$meta_compat" 2>/dev/null)" = "$(readlink -f "$link" 2>/dev/null)" ] && { [ -z "${ENVCTL_REAL_HOME:-}" ] || { [ ! -e "$ENVCTL_REAL_HOME/.local/bin/codex" ] && [ ! -L "$ENVCTL_REAL_HOME/.local/bin/codex" ]; }; } && CODEX_HOME= CODEX_SQLITE_HOME= "$link" --version >/dev/null && CODEX_HOME= CODEX_SQLITE_HOME= "$link" mcp list >/dev/null && grep -q 'CODEX_BIN_PATH=.*openai-codex/current/bin/codex' "$link" && [ ! -e "$M/.toolchains/bun/bin/codex" ] && [ ! -L "$M/.toolchains/bun/bin/codex" ] && [ ! -e "$M/.toolchains/.bun/bin/codex" ] && [ ! -L "$M/.toolchains/.bun/bin/codex" ] && [ ! -e "$M/.toolchains/bun/install/global/node_modules/.bin/codex" ] && [ ! -L "$M/.toolchains/bun/install/global/node_modules/.bin/codex" ] && [ ! -e "$M/.toolchains/.bun/install/global/node_modules/.bin/codex" ] && [ ! -L "$M/.toolchains/.bun/install/global/node_modules/.bin/codex" ] && ! grep -Rqs '"@openai/codex"' "$M/.toolchains/bun/install/global/package.json" "$M/.toolchains/bun/install/global/bun.lock" "$M/.toolchains/.bun/install/global/package.json" "$M/.toolchains/.bun/install/global/bun.lock" 2>/dev/null && ! find "$M/.toolchains/bun" "$M/.toolchains/.bun" -path '*/@openai/codex*' -print -quit 2>/dev/null | grep -q . && { [ ! -f "$config" ] || ! awk 'BEGIN{s=0;bad=0} /^\[/{s=($0=="[hooks.state]")} s && /^[[:space:]]*enabled[[:space:]]*=/{bad=1} END{exit bad?0:1}' "$config"; } && ! grep -RqsE '/home/[^[:space:]]+/(\.local/bin/icm|\.cargo/bin/weave)|/usr/local/bin/vox' "$M/.local/share/codex/config.toml" "$M/.local/share/codex/hooks.json" 2>/dev/null && "$M/envctl/assets/scripts/envctl-codex-cleanup.sh" verify''']
 [component.install]
 kind = "script"
 script = '''
@@ -295,19 +297,14 @@ install -d -m 755 "$M/.local/bin"
 ln -sfn "$LINK" "$M/.local/bin/codex"
 if [ -n "${ENVCTL_REAL_HOME:-}" ]; then
   real_link="$ENVCTL_REAL_HOME/.local/bin/codex"
-  install -d -m 755 "$(dirname "$real_link")"
-  if [ -e "$real_link" ] && [ ! -L "$real_link" ]; then
+  if [ -e "$real_link" ] || [ -L "$real_link" ]; then
     ARCH="$M/var/lib/envctl/legacy-archives/real-home-bin-$(date -u +%Y-%m-%d)/.local/bin"
     install -d -m 755 "$ARCH"
     mv "$real_link" "$ARCH/codex"
-    echo "archived previous real-home codex front door: $ARCH/codex"
+    echo "archived stale real-home codex shadow: $ARCH/codex"
   fi
-  ln -sfn "$LINK" "$real_link"
 fi
 install -d -m 700 "$M/.local/share/codex" "$M/.local/state/codex"
-if [ -n "${ENVCTL_REAL_HOME:-}" ] && [ -d "$ENVCTL_REAL_HOME/.codex" ]; then
-  tar -C "$ENVCTL_REAL_HOME/.codex" -cf - . | tar -C "$M/.local/share/codex" --keep-old-files -xf - 2>/dev/null || true
-fi
 python3 - <<PYCONF
 from pathlib import Path
 import json, re
@@ -365,7 +362,7 @@ fi
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export PATH="$M/usr/bin:$M/.local/bin:$M/.toolchains/node/bin:$PATH"; link="$M/usr/bin/codex"; cur="$M/.toolchains/openai-codex/current/bin/codex"; [ -x "$cur" ] && [ -x "$link" ] && grep -q "envctl codex wrapper" "$link" && [ "$(readlink -f "$M/.local/bin/codex" 2>/dev/null)" = "$(readlink -f "$link" 2>/dev/null)" ] && CODEX_HOME= CODEX_SQLITE_HOME= codex --version >/dev/null && CODEX_HOME= CODEX_SQLITE_HOME= codex mcp list >/dev/null && grep -q 'CODEX_BIN_PATH=.*openai-codex/current/bin/codex' "$link" && [ ! -e "$M/.toolchains/bun/bin/codex" ] && [ ! -L "$M/.toolchains/bun/bin/codex" ] && [ ! -e "$M/.toolchains/.bun/bin/codex" ] && [ ! -L "$M/.toolchains/.bun/bin/codex" ] && [ ! -e "$M/.toolchains/bun/install/global/node_modules/.bin/codex" ] && [ ! -L "$M/.toolchains/bun/install/global/node_modules/.bin/codex" ] && [ ! -e "$M/.toolchains/.bun/install/global/node_modules/.bin/codex" ] && [ ! -L "$M/.toolchains/.bun/install/global/node_modules/.bin/codex" ] && ! grep -Rqs '"@openai/codex"' "$M/.toolchains/bun/install/global/package.json" "$M/.toolchains/bun/install/global/bun.lock" "$M/.toolchains/.bun/install/global/package.json" "$M/.toolchains/.bun/install/global/bun.lock" 2>/dev/null && ! find "$M/.toolchains/bun" "$M/.toolchains/.bun" -path '*/@openai/codex*' -print -quit 2>/dev/null | grep -q . && "$M/envctl/assets/scripts/envctl-codex-cleanup.sh" verify''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; export PATH="$M/usr/bin:$M/.local/bin:$M/.toolchains/node/bin:$PATH"; link="$M/usr/bin/codex"; cur="$M/.toolchains/openai-codex/current/bin/codex"; [ -x "$cur" ] && [ -x "$link" ] && grep -q "envctl codex wrapper" "$link" && [ "$(readlink -f "$M/.local/bin/codex" 2>/dev/null)" = "$(readlink -f "$link" 2>/dev/null)" ] && { [ -z "${ENVCTL_REAL_HOME:-}" ] || { [ ! -e "$ENVCTL_REAL_HOME/.local/bin/codex" ] && [ ! -L "$ENVCTL_REAL_HOME/.local/bin/codex" ]; }; } && CODEX_HOME= CODEX_SQLITE_HOME= codex --version >/dev/null && CODEX_HOME= CODEX_SQLITE_HOME= codex mcp list >/dev/null && grep -q 'CODEX_BIN_PATH=.*openai-codex/current/bin/codex' "$link" && [ ! -e "$M/.toolchains/bun/bin/codex" ] && [ ! -L "$M/.toolchains/bun/bin/codex" ] && [ ! -e "$M/.toolchains/.bun/bin/codex" ] && [ ! -L "$M/.toolchains/.bun/bin/codex" ] && [ ! -e "$M/.toolchains/bun/install/global/node_modules/.bin/codex" ] && [ ! -L "$M/.toolchains/bun/install/global/node_modules/.bin/codex" ] && [ ! -e "$M/.toolchains/.bun/install/global/node_modules/.bin/codex" ] && [ ! -L "$M/.toolchains/.bun/install/global/node_modules/.bin/codex" ] && ! grep -Rqs '"@openai/codex"' "$M/.toolchains/bun/install/global/package.json" "$M/.toolchains/bun/install/global/bun.lock" "$M/.toolchains/.bun/install/global/package.json" "$M/.toolchains/.bun/install/global/bun.lock" 2>/dev/null && ! find "$M/.toolchains/bun" "$M/.toolchains/.bun" -path '*/@openai/codex*' -print -quit 2>/dev/null | grep -q . && "$M/envctl/assets/scripts/envctl-codex-cleanup.sh" verify''']
 [component.fix]
 kind = "script"
 script = '''
@@ -423,19 +420,14 @@ install -d -m 755 "$M/.local/bin"
 ln -sfn "$LINK" "$M/.local/bin/codex"
 if [ -n "${ENVCTL_REAL_HOME:-}" ]; then
   real_link="$ENVCTL_REAL_HOME/.local/bin/codex"
-  install -d -m 755 "$(dirname "$real_link")"
-  if [ -e "$real_link" ] && [ ! -L "$real_link" ]; then
+  if [ -e "$real_link" ] || [ -L "$real_link" ]; then
     ARCH="$M/var/lib/envctl/legacy-archives/real-home-bin-$(date -u +%Y-%m-%d)/.local/bin"
     install -d -m 755 "$ARCH"
     mv "$real_link" "$ARCH/codex"
-    echo "archived previous real-home codex front door: $ARCH/codex"
+    echo "archived stale real-home codex shadow: $ARCH/codex"
   fi
-  ln -sfn "$LINK" "$real_link"
 fi
 install -d -m 700 "$M/.local/share/codex" "$M/.local/state/codex"
-if [ -n "${ENVCTL_REAL_HOME:-}" ] && [ -d "$ENVCTL_REAL_HOME/.codex" ]; then
-  tar -C "$ENVCTL_REAL_HOME/.codex" -cf - . | tar -C "$M/.local/share/codex" --keep-old-files -xf - 2>/dev/null || true
-fi
 python3 - <<PYCONF
 from pathlib import Path
 import json, re
@@ -478,7 +470,7 @@ CODEX_HOME= CODEX_SQLITE_HOME= "$LINK" mcp list >/dev/null
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; for BUN_INSTALL in "$M/.toolchains/.bun" "$M/.toolchains/bun"; do [ -x "$BUN_INSTALL/bin/bun" ] && PATH="$BUN_INSTALL/bin:$PATH" timeout --kill-after=2s 20s bun remove -g @openai/codex >/dev/null 2>&1 || true; rm -f "$BUN_INSTALL/bin/codex" "$BUN_INSTALL/install/global/node_modules/.bin/codex"; rm -rf "$BUN_INSTALL/install/cache/@openai/codex" "$BUN_INSTALL/install/cache/@openai/codex"* "$BUN_INSTALL/install/global/node_modules/@openai/codex" "$BUN_INSTALL/install/global/node_modules/@openai/codex"*; done; for t in "$M/usr/bin/codex" "$M/.local/bin/codex"; do if { [ -L "$t" ] || grep -q "envctl codex wrapper" "$t" 2>/dev/null; }; then rm -f "$t"; fi; done; if [ -n "${ENVCTL_REAL_HOME:-}" ]; then t="$ENVCTL_REAL_HOME/.local/bin/codex"; if { [ -L "$t" ] || grep -q "envctl codex wrapper" "$t" 2>/dev/null; }; then rm -f "$t"; fi; fi; rm -rf "$M/.toolchains/openai-codex"''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; for BUN_INSTALL in "$M/.toolchains/.bun" "$M/.toolchains/bun"; do [ -x "$BUN_INSTALL/bin/bun" ] && PATH="$BUN_INSTALL/bin:$PATH" timeout --kill-after=2s 20s bun remove -g @openai/codex >/dev/null 2>&1 || true; rm -f "$BUN_INSTALL/bin/codex" "$BUN_INSTALL/install/global/node_modules/.bin/codex"; rm -rf "$BUN_INSTALL/install/cache/@openai/codex" "$BUN_INSTALL/install/cache/@openai/codex"* "$BUN_INSTALL/install/global/node_modules/@openai/codex" "$BUN_INSTALL/install/global/node_modules/@openai/codex"*; done; for t in "$M/usr/bin/codex" "$M/.local/bin/codex"; do if { [ -L "$t" ] || grep -q "envctl codex wrapper" "$t" 2>/dev/null; }; then rm -f "$t"; fi; done; if [ -n "${ENVCTL_REAL_HOME:-}" ]; then t="$ENVCTL_REAL_HOME/.local/bin/codex"; if [ -e "$t" ] || [ -L "$t" ]; then ARCH="$M/var/lib/envctl/legacy-archives/real-home-bin-$(date -u +%Y-%m-%d)/.local/bin"; install -d -m 755 "$ARCH"; mv "$t" "$ARCH/codex"; echo "archived stale real-home codex shadow: $ARCH/codex"; fi; fi; rm -rf "$M/.toolchains/openai-codex"''']
 
 [[component]]
 id = "codex-cli-alpha"
@@ -490,7 +482,7 @@ requires = ["codex-cli"]
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; VER="${CODEX_ALPHA_VERSION:-0.143.0-alpha.29}"; dest="$M/.toolchains/openai-codex/${VER}/bin/codex"; link="$M/usr/bin/codex-alpha"; meta_compat="$M/.local/bin/codex-alpha"; [ -x "$dest" ] && [ -x "$link" ] && grep -q "envctl codex alpha wrapper" "$link" && [ "$(readlink -f "$meta_compat" 2>/dev/null)" = "$(readlink -f "$link" 2>/dev/null)" ] && "$link" --version | grep -Fq "$VER"''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; VER="${CODEX_ALPHA_VERSION:-0.143.0-alpha.29}"; dest="$M/.toolchains/openai-codex/${VER}/bin/codex"; link="$M/usr/bin/codex-alpha"; meta_compat="$M/.local/bin/codex-alpha"; [ -x "$dest" ] && [ -x "$link" ] && grep -q "envctl codex alpha wrapper" "$link" && [ "$(readlink -f "$meta_compat" 2>/dev/null)" = "$(readlink -f "$link" 2>/dev/null)" ] && { [ -z "${ENVCTL_REAL_HOME:-}" ] || { [ ! -e "$ENVCTL_REAL_HOME/.local/bin/codex-alpha" ] && [ ! -L "$ENVCTL_REAL_HOME/.local/bin/codex-alpha" ]; }; } && "$link" --version | grep -Fq "$VER"''']
 [component.install]
 kind = "script"
 script = '''
@@ -549,14 +541,12 @@ install -d -m 755 "$M/.local/bin"
 ln -sfn "$LINK" "$M/.local/bin/codex-alpha"
 if [ -n "${ENVCTL_REAL_HOME:-}" ]; then
   real_link="$ENVCTL_REAL_HOME/.local/bin/codex-alpha"
-  install -d -m 755 "$(dirname "$real_link")"
-  if [ -e "$real_link" ] && [ ! -L "$real_link" ]; then
+  if [ -e "$real_link" ] || [ -L "$real_link" ]; then
     ARCH="$M/var/lib/envctl/legacy-archives/real-home-bin-$(date -u +%Y-%m-%d)/.local/bin"
     install -d -m 755 "$ARCH"
     mv "$real_link" "$ARCH/codex-alpha"
-    echo "archived previous real-home codex-alpha front door: $ARCH/codex-alpha"
+    echo "archived stale real-home codex-alpha shadow: $ARCH/codex-alpha"
   fi
-  ln -sfn "$LINK" "$real_link"
 fi
 "$LINK" --version | grep -Fq "$VER"
 CODEX_HOME= CODEX_SQLITE_HOME= "$LINK" mcp list >/dev/null
@@ -564,7 +554,7 @@ CODEX_HOME= CODEX_SQLITE_HOME= "$LINK" mcp list >/dev/null
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; VER="${CODEX_ALPHA_VERSION:-0.143.0-alpha.29}"; link="$M/usr/bin/codex-alpha"; dest="$M/.toolchains/openai-codex/${VER}/bin/codex"; [ -x "$dest" ] && [ -x "$link" ] && grep -q "envctl codex alpha wrapper" "$link" && [ "$(readlink -f "$M/.local/bin/codex-alpha" 2>/dev/null)" = "$(readlink -f "$link" 2>/dev/null)" ] && "$link" --version | grep -Fq "$VER" && CODEX_HOME= CODEX_SQLITE_HOME= "$link" mcp list >/dev/null''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; VER="${CODEX_ALPHA_VERSION:-0.143.0-alpha.29}"; link="$M/usr/bin/codex-alpha"; dest="$M/.toolchains/openai-codex/${VER}/bin/codex"; [ -x "$dest" ] && [ -x "$link" ] && grep -q "envctl codex alpha wrapper" "$link" && [ "$(readlink -f "$M/.local/bin/codex-alpha" 2>/dev/null)" = "$(readlink -f "$link" 2>/dev/null)" ] && { [ -z "${ENVCTL_REAL_HOME:-}" ] || { [ ! -e "$ENVCTL_REAL_HOME/.local/bin/codex-alpha" ] && [ ! -L "$ENVCTL_REAL_HOME/.local/bin/codex-alpha" ]; }; } && "$link" --version | grep -Fq "$VER" && CODEX_HOME= CODEX_SQLITE_HOME= "$link" mcp list >/dev/null''']
 [component.fix]
 kind = "script"
 script = '''
@@ -612,13 +602,22 @@ WRAPPER
 chmod 755 "$LINK"
 install -d -m 755 "$M/.local/bin"
 ln -sfn "$LINK" "$M/.local/bin/codex-alpha"
+if [ -n "${ENVCTL_REAL_HOME:-}" ]; then
+  real_link="$ENVCTL_REAL_HOME/.local/bin/codex-alpha"
+  if [ -e "$real_link" ] || [ -L "$real_link" ]; then
+    ARCH="$M/var/lib/envctl/legacy-archives/real-home-bin-$(date -u +%Y-%m-%d)/.local/bin"
+    install -d -m 755 "$ARCH"
+    mv "$real_link" "$ARCH/codex-alpha"
+    echo "archived stale real-home codex-alpha shadow: $ARCH/codex-alpha"
+  fi
+fi
 "$LINK" --version | grep -Fq "$VER"
 CODEX_HOME= CODEX_SQLITE_HOME= "$LINK" mcp list >/dev/null
 '''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; for t in "$M/usr/bin/codex-alpha" "$M/.local/bin/codex-alpha"; do if { [ -L "$t" ] || grep -q "envctl codex alpha wrapper" "$t" 2>/dev/null; }; then rm -f "$t"; fi; done; if [ -n "${ENVCTL_REAL_HOME:-}" ]; then t="$ENVCTL_REAL_HOME/.local/bin/codex-alpha"; if { [ -L "$t" ] || grep -q "envctl codex alpha wrapper" "$t" 2>/dev/null; }; then rm -f "$t"; fi; fi''']
+args = ["-lc", '''M="${META_ROOT:?META_ROOT required}"; for t in "$M/usr/bin/codex-alpha" "$M/.local/bin/codex-alpha"; do if { [ -L "$t" ] || grep -q "envctl codex alpha wrapper" "$t" 2>/dev/null; }; then rm -f "$t"; fi; done; if [ -n "${ENVCTL_REAL_HOME:-}" ]; then t="$ENVCTL_REAL_HOME/.local/bin/codex-alpha"; if [ -e "$t" ] || [ -L "$t" ]; then ARCH="$M/var/lib/envctl/legacy-archives/real-home-bin-$(date -u +%Y-%m-%d)/.local/bin"; install -d -m 755 "$ARCH"; mv "$t" "$ARCH/codex-alpha"; echo "archived stale real-home codex-alpha shadow: $ARCH/codex-alpha"; fi; fi''']
 
 [[component]]
 id = "gemini-cli"
