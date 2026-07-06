@@ -163,6 +163,13 @@ JS imports) — those are **wrong for this repo**.
   violation to its owning input/generator/package/profile path, and then prove
   the repaired state mirrors Yazelix. Preserve this explicit mapping and its
   source-backed proof:
+  - Codex and every toolchain/runtime binary must use the same profile-owned
+    binary and profile-owned runtime-config location model as Yazelix. This is
+    not limited to `codex`: it includes `rtk`, `git-kb`, terminal helpers,
+    package-manager shims, MCP/plugin launchers, and any other command exposed
+    to the active runtime. User-bin shadows, repo-cache materializations, temp
+    plugin bundles, marketplace caches, and generated-output files are never
+    alternate active locations. No exceptions.
   - The user config tree is the main editable input surface, including
     `settings.jsonc` and managed overrides, per the Yazelix customization and
     POSIX XDG docs.
