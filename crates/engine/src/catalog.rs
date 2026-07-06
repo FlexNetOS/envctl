@@ -4847,6 +4847,7 @@ mod tests {
                 repo_root: root,
                 manifest_dir: out.join("missing-manifest"),
                 out_dir: out.clone(),
+                target_root: None,
             },
             &Registry::empty(),
         )
@@ -4912,6 +4913,7 @@ mod tests {
                 repo_root: root.clone(),
                 manifest_dir: manifest_dir.clone(),
                 out_dir: out_a.clone(),
+                target_root: None,
             },
             &registry,
         )
@@ -4921,6 +4923,7 @@ mod tests {
                 repo_root: root.clone(),
                 manifest_dir,
                 out_dir: out_b.clone(),
+                target_root: None,
             },
             &registry,
         )
@@ -4972,6 +4975,7 @@ mod tests {
                 repo_root: root.clone(),
                 manifest_dir,
                 out_dir: root.join("rendered"),
+                target_root: None,
             },
             &registry,
         )
