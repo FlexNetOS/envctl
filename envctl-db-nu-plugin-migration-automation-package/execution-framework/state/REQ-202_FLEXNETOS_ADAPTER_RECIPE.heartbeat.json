@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+  "status": "pass",
+  "updated_at": "2026-07-05T05:39:53+00:00",
+  "proof_uri": "proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json",
+  "validation_report": "generated/flexnetos_adapter_recipe_validation_report.json"
+}

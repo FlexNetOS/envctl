@@ -1,0 +1,11 @@
+{
+  "artifact_uri": "generated/patches/REQ-033_PLUGIN_HUMAN_APPROVAL.nu_plugin.patch",
+  "logs_uri": "logs/REQ-033_PLUGIN_HUMAN_APPROVAL.log",
+  "notes": "Nu plugin target checkout is read-only from this shell; implementation delivered as a verified git-apply patch artifact.",
+  "proof_uri": "proof_records/REQ-033_PLUGIN_HUMAN_APPROVAL.proof.json",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/nu_plugin",
+  "repo_target": "repo_b",
+  "status": "completed",
+  "task_id": "REQ-033_PLUGIN_HUMAN_APPROVAL",
+  "updated_at": "2026-07-05T04:57:38+00:00"
+}

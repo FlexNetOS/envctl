@@ -1,0 +1,247 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-131_GOLDEN_DATASET",
+  "title": "Golden Dataset",
+  "status": "complete",
+  "generated_at": "2026-07-04T23:28:06+00:00",
+  "contract_row": {
+    "contract_row_id": "artifact:04-data-migration-golden-dataset-md",
+    "artifact_id": "04-data-migration-golden-dataset-md",
+    "title": "Golden Dataset",
+    "required_path": "migration-artifacts/04-data-migration/golden-dataset.md",
+    "section": "04-data-migration",
+    "artifact_type": "migration_artifact",
+    "format": "md",
+    "status": "required",
+    "source_refs": [
+      "source/codex-flexnetos-migration-prompt-package/expected-output/migration-artifacts-tree.md",
+      "source/previous-migration-artifact-context.md"
+    ],
+    "producer_task_id": "ART-131_GOLDEN_DATASET",
+    "validators": [
+      "path_registered",
+      "evidence_or_status_recorded",
+      "linked_from_index"
+    ]
+  },
+  "inputs": [
+    "target descriptor",
+    "repo scan",
+    "envctl database"
+  ],
+  "source_context": {
+    "target_descriptor": {
+      "path": "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+      "registered_descriptor": "migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+      "target_registry": "generated/envctl_target_registry.json",
+      "descriptor_excerpt": "schema_version: 1\ntarget_id: flexnetos-vs-lifeos\ntarget_type: mixed\nprimary_root: /home/flexnetos/FlexNetOS\ncompare_root: /home/flexnetos/lifeos\noutput_root: migration-artifacts\ninclude:\n  - \"**/*\"\nexclude:\n  - \".git/**\"\n  - \"node_modules/**\"\n  - \"target/**\"\n  - \".venv/**\"\n  - \"__pycache__/**\"\nsafety:\n  default_mode: approval-gated\n  max_auto_risk: R2\n  allow_network: false\n  allow_destructive: false\ncollectors:\n  filesystem: true\n  git: true\n  package_managers: true\n  databases: true\n  infrastructure: true\n  apis: true\n  observability: true\nartifact_contract:\n  name: full-migration-artifact-contract\n  version: 1\nrecipe:\n  name: codex-flexnetos-full-artifact-run\n  version: 1\nmetadata:\n  purpose: \"Determine what FlexNetOS was used for compared with lifeos using real evidence.\"\n",
+      "registered_targets": 0
+    },
+    "repo_scan": {
+      "path": "generated/package_scan.json",
+      "top_level_entries": [
+        {
+          "name": "INSTALL_IN_REPOS.sh",
+          "type": "file"
+        },
+        {
+          "name": "PACKAGE_MANIFEST.json",
+          "type": "file"
+        },
+        {
+          "name": "PROMPT_PACKAGE_COMBINED.md",
+          "type": "file"
+        },
+        {
+          "name": "README.md",
+          "type": "file"
+        },
+        {
+          "name": "RUN_WITH_CODEX_ENVCTL.sh",
+          "type": "file"
+        },
+        {
+          "name": "codex",
+          "type": "directory"
+        },
+        {
+          "name": "examples",
+          "type": "directory"
+        },
+        {
+          "name": "expected-output",
+          "type": "directory"
+        },
+        {
+          "name": "helpers",
+          "type": "directory"
+        },
+        {
+          "name": "history",
+          "type": "directory"
+        },
+        {
+          "name": "prompts",
+          "type": "directory"
+        },
+        {
+          "name": "schemas",
+          "type": "directory"
+        },
+        {
+          "name": "source",
+          "type": "directory"
+        },
+        {
+          "name": "specs",
+          "type": "directory"
+        },
+        {
+          "name": "sql",
+          "type": "directory"
+        }
+      ],
+      "scanned_folder_count": 10
+    },
+    "envctl_database": {
+      "schema_model": "generated/envctl_migration_db_model.json",
+      "artifact_registry_status": "passed",
+      "shared_protocol_status": "passed",
+      "artifact_registry_coverage": {
+        "paths": true,
+        "hashes": true,
+        "producers": true,
+        "contract_ids": true,
+        "provenance": true,
+        "validation_links": true,
+        "fail_closed_rejections": true
+      }
+    }
+  },
+  "dataset": {
+    "dataset_id": "golden-art131-known-good-validation-sample",
+    "purpose": "Known-good validation sample for VER-300 unit validation.",
+    "record_count": 5,
+    "expected_status": "pass",
+    "records": [
+      {
+        "case_id": "GOLDEN-ART131-001",
+        "domain": "target_descriptor",
+        "input_record": {
+          "target_id": "flexnetos-vs-lifeos",
+          "target_type": "mixed",
+          "primary_root": "/home/flexnetos/FlexNetOS",
+          "compare_root": "/home/flexnetos/lifeos",
+          "safety_mode": "approval-gated",
+          "max_auto_risk": "R2"
+        },
+        "expected_result": {
+          "status": "pass",
+          "validator": "target_descriptor_registered",
+          "required_evidence": [
+            "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+            "generated/envctl_target_registry.json"
+          ]
+        },
+        "reason": "The target descriptor is the stable input for FlexNetOS versus lifeos migration validation."
+      },
+      {
+        "case_id": "GOLDEN-ART131-002",
+        "domain": "artifact_registry",
+        "input_record": {
+          "artifact_id": "04-data-migration-golden-dataset-md",
+          "path": "migration-artifacts/04-data-migration/golden-dataset.md",
+          "producer_operation_id": "produce-04-data-migration-golden-dataset-md",
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0"
+        },
+        "expected_result": {
+          "status": "pass",
+          "validator": "artifact_registry_hash_recorded",
+          "required_fields": [
+            "path",
+            "content_hash",
+            "producer_operation_id",
+            "contract_id"
+          ]
+        },
+        "reason": "Downstream unit validation must have a known-good artifact row with a content hash and producer link."
+      },
+      {
+        "case_id": "GOLDEN-ART131-003",
+        "domain": "shared_protocol",
+        "input_record": {
+          "protocol_name": "envctl_nu_plugin_migration_protocol",
+          "protocol_version": "1.0.0",
+          "record_type": "ArtifactRecord",
+          "source_of_truth": "envctl_migration_artifacts"
+        },
+        "expected_result": {
+          "status": "pass",
+          "validator": "shared_protocol_artifact_record_shape",
+          "required_records": [
+            "ArtifactRecord",
+            "EvidenceRecord",
+            "ValidationResult",
+            "ProofRecord"
+          ]
+        },
+        "reason": "The Golden dataset should prove the database-to-plugin artifact contract on a stable record family."
+      },
+      {
+        "case_id": "GOLDEN-ART131-004",
+        "domain": "validation_evidence",
+        "input_record": {
+          "parity": "warn",
+          "reconciliation_missing": 0,
+          "test_command_status": "pass"
+        },
+        "expected_result": {
+          "status": "pass",
+          "validator": "validation_evidence_linked",
+          "allowed_warning": "nu_plugin command coverage pending ART-132"
+        },
+        "reason": "The known-good sample preserves the current warning boundary while still requiring reconciled rows and passing command evidence."
+      },
+      {
+        "case_id": "GOLDEN-ART131-005",
+        "domain": "blocked_path_policy",
+        "input_record": {
+          "blocked_patterns": [
+            "**/.env",
+            "**/secrets/**",
+            "**/private_keys/**",
+            "**/*.pem",
+            "**/*.key"
+          ],
+          "sample_safe_path": "migration-artifacts/art-131_golden_dataset/golden-dataset.json"
+        },
+        "expected_result": {
+          "status": "pass",
+          "validator": "blocked_path_policy_respected",
+          "registry_rejection_cases": [
+            "blocked-secret-path",
+            "content-hash-mismatch",
+            "foreign-producer-operation"
+          ]
+        },
+        "reason": "Golden validation needs a positive sample and explicit proof that sensitive path classes stay out of registry evidence."
+      }
+    ]
+  },
+  "validation_contract": {
+    "must_exist": [
+      "migration-artifacts/04-data-migration/golden-dataset.md",
+      "migration-artifacts/art-131_golden_dataset/golden-dataset.md",
+      "migration-artifacts/art-131_golden_dataset/golden-dataset.json"
+    ],
+    "must_register_hash": true,
+    "must_link_evidence": true,
+    "blocked_path_policy": [
+      "**/.env",
+      "**/secrets/**",
+      "**/private_keys/**",
+      "**/*.pem",
+      "**/*.key"
+    ]
+  }
+}

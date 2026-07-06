@@ -1,0 +1,1100 @@
+{
+  "schema_version": "1.0",
+  "task_id": "VER-302_PACKET_SCHEMA_VALIDATION",
+  "status": "pass",
+  "generated_at": "2026-07-05T05:57:45+00:00",
+  "packet_summary": {
+    "goal": "Validate every execution packet and JSON schema contract",
+    "repo_target": "filesystem",
+    "repo_path": "..",
+    "filesystem_scope": "package-root",
+    "verification_command": "python3 scripts/verify_ver302_packet_schema_validation.py"
+  },
+  "dependencies": [
+    {
+      "path": "proof_records/VER-301_SQL_SCHEMA_TEST.proof.json",
+      "status": "completed",
+      "ok": true
+    },
+    {
+      "path": "proof_records/REQ-042_FILESYSTEM_BOUNDS.proof.json",
+      "status": "completed",
+      "ok": true
+    },
+    {
+      "path": "proof_records/REQ-043_SECURITY_REDACTION.proof.json",
+      "status": "completed",
+      "ok": true
+    },
+    {
+      "path": "proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json",
+      "status": "completed",
+      "ok": true
+    }
+  ],
+  "counts": {
+    "execution_packets": 80,
+    "task_graph_rows": 80,
+    "schemas": 8,
+    "proof_records": 84
+  },
+  "packet_set_parity": {
+    "missing_packets": [],
+    "unexpected_packets": [],
+    "expected_task_count": 80,
+    "packet_task_count": 80
+  },
+  "packet_validations": [
+    {
+      "packet_path": "generated/execution_packets/ART-100_SYSTEM_INVENTORY.json",
+      "task_id": "ART-100_SYSTEM_INVENTORY",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-101_DIRECTORY_TREE.json",
+      "task_id": "ART-101_DIRECTORY_TREE",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-102_REPOSITORY_MAP.json",
+      "task_id": "ART-102_REPOSITORY_MAP",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-103_SERVICE_DEP_GRAPH.json",
+      "task_id": "ART-103_SERVICE_DEP_GRAPH",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-104_TOOLCHAIN_TREE.json",
+      "task_id": "ART-104_TOOLCHAIN_TREE",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-105_PACKAGE_LIB_GRAPH.json",
+      "task_id": "ART-105_PACKAGE_LIB_GRAPH",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-106_RUNTIME_DEP_MAP.json",
+      "task_id": "ART-106_RUNTIME_DEP_MAP",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-107_DATA_FLOW_GRAPH.json",
+      "task_id": "ART-107_DATA_FLOW_GRAPH",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-108_DB_SCHEMA_MAP.json",
+      "task_id": "ART-108_DB_SCHEMA_MAP",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-109_DATA_LINEAGE.json",
+      "task_id": "ART-109_DATA_LINEAGE",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-110_API_CATALOG.json",
+      "task_id": "ART-110_API_CATALOG",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-111_EVENT_MAP.json",
+      "task_id": "ART-111_EVENT_MAP",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-112_CODE_OWNERSHIP.json",
+      "task_id": "ART-112_CODE_OWNERSHIP",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-113_DEBUG_CODE_MAP.json",
+      "task_id": "ART-113_DEBUG_CODE_MAP",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-114_ENV_CONFIG_MATRIX.json",
+      "task_id": "ART-114_ENV_CONFIG_MATRIX",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-115_CONFIG_INVENTORY.json",
+      "task_id": "ART-115_CONFIG_INVENTORY",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-116_INFRA_TOPOLOGY.json",
+      "task_id": "ART-116_INFRA_TOPOLOGY",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-117_IAM_MATRIX.json",
+      "task_id": "ART-117_IAM_MATRIX",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-118_OBSERVABILITY.json",
+      "task_id": "ART-118_OBSERVABILITY",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-119_BUSINESS_PROCESS.json",
+      "task_id": "ART-119_BUSINESS_PROCESS",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-120_WAVE_PLAN.json",
+      "task_id": "ART-120_WAVE_PLAN",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-121_CUTOVER.json",
+      "task_id": "ART-121_CUTOVER",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-122_ROLLBACK.json",
+      "task_id": "ART-122_ROLLBACK",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-123_VALIDATION_RECONCILIATION.json",
+      "task_id": "ART-123_VALIDATION_RECONCILIATION",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-124_TEST_COVERAGE.json",
+      "task_id": "ART-124_TEST_COVERAGE",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-125_RISK_REGISTER.json",
+      "task_id": "ART-125_RISK_REGISTER",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-126_DECISION_LOG.json",
+      "task_id": "ART-126_DECISION_LOG",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-127_BLAST_RADIUS.json",
+      "task_id": "ART-127_BLAST_RADIUS",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-128_READINESS_SCORECARD.json",
+      "task_id": "ART-128_READINESS_SCORECARD",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-129_BUSINESS_CAPABILITY.json",
+      "task_id": "ART-129_BUSINESS_CAPABILITY",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-130_SHADOW_TRAFFIC.json",
+      "task_id": "ART-130_SHADOW_TRAFFIC",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-131_GOLDEN_DATASET.json",
+      "task_id": "ART-131_GOLDEN_DATASET",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-132_PARITY_DASHBOARD.json",
+      "task_id": "ART-132_PARITY_DASHBOARD",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-133_DEPRECATION_MAP.json",
+      "task_id": "ART-133_DEPRECATION_MAP",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-134_EXCEPTION_INVENTORY.json",
+      "task_id": "ART-134_EXCEPTION_INVENTORY",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-135_RACI.json",
+      "task_id": "ART-135_RACI",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/ART-136_TECH_DEBT_LEDGER.json",
+      "task_id": "ART-136_TECH_DEBT_LEDGER",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/EF-001_SCAN_PACKAGE.json",
+      "task_id": "EF-001_SCAN_PACKAGE",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/EF-002_GAP_REPORT.json",
+      "task_id": "EF-002_GAP_REPORT",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/EF-003_APPLY_FRAMEWORK.json",
+      "task_id": "EF-003_APPLY_FRAMEWORK",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/EF-004_GENERATE_TASK_GRAPH.json",
+      "task_id": "EF-004_GENERATE_TASK_GRAPH",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/EF-005_VALIDATE_TASK_GRAPH.json",
+      "task_id": "EF-005_VALIDATE_TASK_GRAPH",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/EF-006_TASK_GRAPH_TO_PACKETS.json",
+      "task_id": "EF-006_TASK_GRAPH_TO_PACKETS",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/EF-007_GOAL_LOOP.json",
+      "task_id": "EF-007_GOAL_LOOP",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/EF-008_VERIFY_HISTORY_COMPLETENESS.json",
+      "task_id": "EF-008_VERIFY_HISTORY_COMPLETENESS",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/MAINT-500_README_NAV_BACKTRACE.json",
+      "task_id": "MAINT-500_README_NAV_BACKTRACE",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/MAINT-501_RESTORE_PROOF_TEMPLATE.json",
+      "task_id": "MAINT-501_RESTORE_PROOF_TEMPLATE",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC.json",
+      "task_id": "MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/MAINT-503_CODEX_FINAL_PROMPT.json",
+      "task_id": "MAINT-503_CODEX_FINAL_PROMPT",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REL-400_PACKAGE_ARCHIVE.json",
+      "task_id": "REL-400_PACKAGE_ARCHIVE",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REL-401_HANDOFF.json",
+      "task_id": "REL-401_HANDOFF",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-010_CONTRACT_LOCK.json",
+      "task_id": "REQ-010_CONTRACT_LOCK",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-020_ENVCTL_DB_SCHEMA.json",
+      "task_id": "REQ-020_ENVCTL_DB_SCHEMA",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-021_ENVCTL_TARGET_REGISTRY.json",
+      "task_id": "REQ-021_ENVCTL_TARGET_REGISTRY",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-022_ENVCTL_RUN_LEDGER.json",
+      "task_id": "REQ-022_ENVCTL_RUN_LEDGER",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-023_ENVCTL_OPERATION_STATE.json",
+      "task_id": "REQ-023_ENVCTL_OPERATION_STATE",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-024_ENVCTL_ARTIFACT_REGISTRY.json",
+      "task_id": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-025_ENVCTL_VALIDATION_EVIDENCE.json",
+      "task_id": "REQ-025_ENVCTL_VALIDATION_EVIDENCE",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.json",
+      "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-027_ENVCTL_REPLAY_ENGINE.json",
+      "task_id": "REQ-027_ENVCTL_REPLAY_ENGINE",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-028_ENVCTL_AGENT_CONTROL_API.json",
+      "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-030_PLUGIN_PROTOCOL_MANIFEST.json",
+      "task_id": "REQ-030_PLUGIN_PROTOCOL_MANIFEST",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-031_PLUGIN_COMMAND_SURFACE.json",
+      "task_id": "REQ-031_PLUGIN_COMMAND_SURFACE",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-032_PLUGIN_LIVE_VISUALS.json",
+      "task_id": "REQ-032_PLUGIN_LIVE_VISUALS",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-033_PLUGIN_HUMAN_APPROVAL.json",
+      "task_id": "REQ-033_PLUGIN_HUMAN_APPROVAL",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-034_PLUGIN_STATUS_STREAMS.json",
+      "task_id": "REQ-034_PLUGIN_STATUS_STREAMS",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-040_SHARED_PROTOCOL_SCHEMAS.json",
+      "task_id": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-041_TWO_REPO_INTEGRATION.json",
+      "task_id": "REQ-041_TWO_REPO_INTEGRATION",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-042_FILESYSTEM_BOUNDS.json",
+      "task_id": "REQ-042_FILESYSTEM_BOUNDS",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-043_SECURITY_REDACTION.json",
+      "task_id": "REQ-043_SECURITY_REDACTION",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-044_INSTALL_BOOTSTRAP.json",
+      "task_id": "REQ-044_INSTALL_BOOTSTRAP",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-045_RUN_REPLAY.json",
+      "task_id": "REQ-045_RUN_REPLAY",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-200_FLEXNETOS_TARGET_DESCRIPTOR.json",
+      "task_id": "REQ-200_FLEXNETOS_TARGET_DESCRIPTOR",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-201_FLEXNETOS_LIFEOS_COMPARISON.json",
+      "task_id": "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json",
+      "task_id": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/VER-300_UNIT_VALIDATION.json",
+      "task_id": "VER-300_UNIT_VALIDATION",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/VER-301_SQL_SCHEMA_TEST.json",
+      "task_id": "VER-301_SQL_SCHEMA_TEST",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/VER-302_PACKET_SCHEMA_VALIDATION.json",
+      "task_id": "VER-302_PACKET_SCHEMA_VALIDATION",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/VER-303_GOAL_LOOP_COMPUTE.json",
+      "task_id": "VER-303_GOAL_LOOP_COMPUTE",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    },
+    {
+      "packet_path": "generated/execution_packets/VER-304_FINAL_COMPLETENESS.json",
+      "task_id": "VER-304_FINAL_COMPLETENESS",
+      "status": "pass",
+      "filename_matches_task_id": true,
+      "task_id_present_in_graph": true,
+      "schema_error_count": 0,
+      "schema_errors": [],
+      "graph_mismatch_fields": [],
+      "blocked_field_refs": []
+    }
+  ],
+  "schema_validations": [
+    {
+      "schema_path": "schemas/agent_lane.schema.json",
+      "draft": "http://json-schema.org/draft-07/schema#",
+      "self_valid": true,
+      "schema_title": "AgentLane",
+      "fixture_checks": [
+        {
+          "artifact": "templates/AGENT_LANE_TEMPLATE.json",
+          "status": "pass",
+          "error_count": 0,
+          "errors": []
+        }
+      ],
+      "validator": "Draft7Validator"
+    },
+    {
+      "schema_path": "schemas/execution_packet.schema.json",
+      "draft": "http://json-schema.org/draft-07/schema#",
+      "self_valid": true,
+      "schema_title": "ExecutionPacket",
+      "fixture_checks": [],
+      "validator": "Draft7Validator"
+    },
+    {
+      "schema_path": "schemas/filesystem_boundaries.schema.json",
+      "draft": "https://json-schema.org/draft/2020-12/schema",
+      "self_valid": true,
+      "schema_title": "envctl Background Helper Filesystem Boundaries",
+      "fixture_checks": [
+        {
+          "artifact": "generated/filesystem_boundaries.json",
+          "status": "pass",
+          "error_count": 0,
+          "errors": []
+        }
+      ],
+      "validator": "Draft202012Validator"
+    },
+    {
+      "schema_path": "schemas/gap_report.schema.json",
+      "draft": "http://json-schema.org/draft-07/schema#",
+      "self_valid": true,
+      "schema_title": "GapReport",
+      "fixture_checks": [
+        {
+          "artifact": "generated/gap_report.json",
+          "status": "pass",
+          "error_count": 0,
+          "errors": []
+        }
+      ],
+      "validator": "Draft7Validator"
+    },
+    {
+      "schema_path": "schemas/proof_record.schema.json",
+      "draft": "http://json-schema.org/draft-07/schema#",
+      "self_valid": true,
+      "schema_title": "ProofRecord",
+      "fixture_checks": [
+        {
+          "artifact": "proof_templates/PROOF_RECORD_TEMPLATE.json",
+          "status": "pass",
+          "error_count": 0,
+          "errors": []
+        },
+        {
+          "artifact": "proof_records/REQ-031_PLUGIN_COMMAND_SURFACE.proof.json",
+          "status": "pass",
+          "error_count": 0,
+          "errors": []
+        }
+      ],
+      "validator": "Draft7Validator"
+    },
+    {
+      "schema_path": "schemas/shared_protocol.schema.json",
+      "draft": "https://json-schema.org/draft/2020-12/schema",
+      "self_valid": true,
+      "schema_title": "envctl / nu_plugin Shared Migration Protocol",
+      "fixture_checks": [
+        {
+          "artifact": "generated/shared_protocol_manifest.json",
+          "status": "pass",
+          "checks": {
+            "required_record_count_matches_manifest": true,
+            "shared_protocol_validation_report_passed": true
+          }
+        },
+        {
+          "artifact": "proof_records/VER-301_SQL_SCHEMA_TEST.proof.json",
+          "status": "pass",
+          "error_count": 0,
+          "errors": []
+        }
+      ],
+      "validator": "Draft202012Validator"
+    },
+    {
+      "schema_path": "schemas/task_graph.schema.json",
+      "draft": "http://json-schema.org/draft-07/schema#",
+      "self_valid": true,
+      "schema_title": "TaskGraphRow",
+      "fixture_checks": [
+        {
+          "artifact": "generated/task_graph.normalized.json",
+          "checked_count": 80,
+          "status": "pass",
+          "invalid_task_ids": []
+        }
+      ],
+      "validator": "Draft7Validator"
+    },
+    {
+      "schema_path": "schemas/upgrade_report.schema.json",
+      "draft": "http://json-schema.org/draft-07/schema#",
+      "self_valid": true,
+      "schema_title": "UpgradeReport",
+      "fixture_checks": [
+        {
+          "artifact": "generated/upgrade_report.json",
+          "status": "pass",
+          "error_count": 0,
+          "errors": []
+        }
+      ],
+      "validator": "Draft7Validator"
+    }
+  ],
+  "warnings": [],
+  "errors": [],
+  "allowed_paths": [
+    "${ENVCTL_REPO}/**",
+    "${NU_PLUGIN_REPO}/**",
+    "${MIGRATION_TARGET_ROOT}/**",
+    "execution-framework/**",
+    "migration-artifacts/**"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "output_paths": [
+    "execution-framework/scripts/verify_ver302_packet_schema_validation.py",
+    "execution-framework/generated/ver302_packet_schema_validation_report.json",
+    "execution-framework/state/VER-302_PACKET_SCHEMA_VALIDATION.heartbeat.json",
+    "execution-framework/logs/VER-302_PACKET_SCHEMA_VALIDATION.log",
+    "execution-framework/proof_records/VER-302_PACKET_SCHEMA_VALIDATION.proof.json"
+  ],
+  "sha256": {
+    "execution-framework/generated/task_graph.csv": "b752be4c4cf53cb3db3daf5daaef180ec291269ce67a7bb7f0dbb2e835168009",
+    "execution-framework/generated/task_graph.normalized.json": "0a628b5d30eb631e141547100095abd6632d15b1e8903b5589ec37ec9d52786e",
+    "execution-framework/generated/filesystem_boundaries.json": "2afc23d8f58bc096388b56cba0742b1ae46bec95d36b065e890acc5c1fda0eba",
+    "execution-framework/generated/gap_report.json": "3c5bf7490846f4eae56b1d1c1c97dbf44ebc00368393b9e176687f07ee9d1677",
+    "execution-framework/generated/upgrade_report.json": "5703caa3d0f99c38bfae6219f6cc4c11ad8089767f90f2dbb4f95670576f966e",
+    "execution-framework/generated/shared_protocol_manifest.json": "846beff278ee11a96b7eb9aa45bff6b476ee1fc406fcfb3cea3de92c79d057ca",
+    "execution-framework/generated/shared_protocol_validation_report.json": "0863b9b28e702c704c96f50a50954181f42b35aaa16e4ecb6643497093c4c4d0",
+    "execution-framework/templates/AGENT_LANE_TEMPLATE.json": "fbac2f99486fe699114ab11b61da98e21c9be8a1e1ec4c3759f0f33b51d9164a",
+    "execution-framework/proof_templates/PROOF_RECORD_TEMPLATE.json": "aec4889373e824e1ed9b4bce48744129747aebe8e7147782d6f2c5e98a0de426",
+    "execution-framework/schemas/execution_packet.schema.json": "a4305a40557ebea88f5699b6000000750563df9228916c21116b498e2e74a7e0",
+    "execution-framework/schemas/proof_record.schema.json": "76c64fdf3f5943c8041610ee303b0e4cdcc1ba4321d9ade8e0f907a88a15f862",
+    "execution-framework/schemas/task_graph.schema.json": "2f3c8c1dec72a3317f0cfb8e419f0e5711bd61444cb65cdb89c8d3a9d6c111ea",
+    "execution-framework/schemas/agent_lane.schema.json": "e54c8c0ffade0a37babd9660053069145390957d566718e293cc8ede2b2b9d9f",
+    "execution-framework/schemas/gap_report.schema.json": "8889b598049ddf02f8f9fcd38a5504d3d20949d6975de1b7bc45fa1d16c6e647",
+    "execution-framework/schemas/upgrade_report.schema.json": "fc5d58a6c441abf2e2fbfd86cb37859350d300924cfe6daeb07a512485e696d9",
+    "execution-framework/schemas/filesystem_boundaries.schema.json": "75901030b7fee3fba0aed8447dc8d78520be803627c13959efe1532c96b0a555",
+    "execution-framework/schemas/shared_protocol.schema.json": "a897b67a1ec37804d74cbc60eb1360667d823b4661016a76a29906f016275007"
+  }
+}

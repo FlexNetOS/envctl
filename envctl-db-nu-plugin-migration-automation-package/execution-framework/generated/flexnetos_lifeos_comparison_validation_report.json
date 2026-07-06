@@ -1,0 +1,27 @@
+{
+  "blocked_evidence_hits": [],
+  "checks": {
+    "artifact_json_exists": true,
+    "artifact_md_exists": true,
+    "declared_compare_root_absence_recorded": true,
+    "heartbeat_exists": true,
+    "lifeos_peer_root_exists": true,
+    "line_evidence_present": true,
+    "log_exists": true,
+    "no_blocked_secret_paths_in_generated_evidence": true,
+    "primary_root_exists": true,
+    "proof_exists": true,
+    "secret_exposure_status_pass": true
+  },
+  "generated_at": "2026-07-04T23:31:01+00:00",
+  "required_files": [
+    "migration-artifacts/flexnetos-comparison/flexnetos-lifeos-comparison.json",
+    "migration-artifacts/flexnetos-comparison/flexnetos-lifeos-comparison.md",
+    "proof_records/REQ-201_FLEXNETOS_LIFEOS_COMPARISON.proof.json",
+    "state/REQ-201_FLEXNETOS_LIFEOS_COMPARISON.heartbeat.json",
+    "logs/REQ-201_FLEXNETOS_LIFEOS_COMPARISON.log"
+  ],
+  "schema_version": "1.0",
+  "status": "pass",
+  "task_id": "REQ-201_FLEXNETOS_LIFEOS_COMPARISON"
+}

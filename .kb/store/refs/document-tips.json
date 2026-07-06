@@ -45,6 +45,46 @@
       "document_id": "019f007d-bed9-7373-86e7-34a622a7849d",
       "slug": "reference/meta-org-policy",
       "tip_commit_id": "019f007d-bf0e-75a0-9b05-de909bdc9694"
+    },
+    {
+      "document_id": "019f246e-3f8c-74d1-bd1e-fac84abd949b",
+      "slug": "expand-codedb-nu-plugin-coverage-beyond-file-impor",
+      "tip_commit_id": "019f2473-dbdb-7a31-9df3-65c88942adfa"
+    },
+    {
+      "document_id": "019f2470-b002-7dc1-aa15-a5d016a3adf5",
+      "slug": "tasks/codedb-import-target-inventory",
+      "tip_commit_id": "019f2473-dbdb-7a31-9df3-65c88942adfa"
+    },
+    {
+      "document_id": "019f2470-c9ac-7b72-961d-b36d19f602fc",
+      "slug": "tasks/codedb-content-blob-inventory",
+      "tip_commit_id": "019f2473-dbdb-7a31-9df3-65c88942adfa"
+    },
+    {
+      "document_id": "019f2470-c9bd-7e00-bcdd-2340ba863a03",
+      "slug": "tasks/codedb-metadata-only-inventory",
+      "tip_commit_id": "019f2473-dbdb-7a31-9df3-65c88942adfa"
+    },
+    {
+      "document_id": "019f2470-c9c7-7f11-b645-3a98b40aee32",
+      "slug": "tasks/codedb-nu-plugin-semantic-coverage",
+      "tip_commit_id": "019f2473-dbdb-7a31-9df3-65c88942adfa"
+    },
+    {
+      "document_id": "019f24bb-6871-72d1-ad69-921ebc284482",
+      "slug": "tasks/envctl-codex-mcp-runtime-import",
+      "tip_commit_id": "019f24bb-82cb-7462-9bb1-ed51988c969e"
+    },
+    {
+      "document_id": "019f2588-5a5e-7420-b390-22040e0af7fd",
+      "slug": "tasks/catalog-runtime-closure-and-toolchain-proof",
+      "tip_commit_id": "019f25be-1090-7090-a9dc-8b5c6bb10b64"
+    },
+    {
+      "document_id": "019f2adb-59da-76c2-9164-1374e35534f9",
+      "slug": "tasks/import-host-artifacts-yazelix-mission-control-20260703",
+      "tip_commit_id": "019f2d99-0ab9-7940-9e86-7aa369ce278b"
     }
   ]
 }

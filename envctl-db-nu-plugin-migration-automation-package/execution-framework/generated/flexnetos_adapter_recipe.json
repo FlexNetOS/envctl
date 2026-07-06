@@ -1,0 +1,260 @@
+{
+  "schema_version": 1,
+  "recipe_id": "flexnetos-codex-package-target-adapter",
+  "version": "1.0.0",
+  "metadata": {
+    "task_id": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+    "adapter_name": "FlexNetOS adapter",
+    "purpose": "Turn the prior Codex FlexNetOS migration package into an approval-gated envctl target adapter recipe.",
+    "target_descriptor_id": "flexnetos-vs-lifeos",
+    "target_type": "mixed",
+    "repo_target": "repo_a",
+    "repo_path_ref": "${ENVCTL_REPO}",
+    "filesystem_scope": "repo",
+    "source_package_glob": "source/codex-flexnetos-migration-prompt-package/**",
+    "reusable_adapter_contract": {
+      "read_only_inputs": [
+        "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+        "proof_records/REQ-027_ENVCTL_REPLAY_ENGINE.proof.json",
+        "${ENVCTL_REPO}/docs/**",
+        "${NU_PLUGIN_REPO}/docs/**",
+        "${MIGRATION_TARGET_ROOT}/docs/**"
+      ],
+      "write_scope": [
+        "envctl run ledger",
+        "envctl recipe registry",
+        "task-owned generated artifacts"
+      ],
+      "blocked_paths": [
+        "**/.env",
+        "**/secrets/**",
+        "**/private_keys/**",
+        "**/*.pem",
+        "**/*.key"
+      ]
+    },
+    "depends_on_tasks": [
+      "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+      "REQ-027_ENVCTL_REPLAY_ENGINE"
+    ],
+    "execution_model": {
+      "human_approval_required": true,
+      "replay_prerequisite": "REQ-027_ENVCTL_REPLAY_ENGINE",
+      "comparison_prerequisite": "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+      "approval_mode": "approval-gated"
+    },
+    "validation_contract": {
+      "verifier": "scripts/verify_flexnetos_adapter_recipe.py",
+      "report_path": "generated/flexnetos_adapter_recipe_validation_report.json",
+      "proof_path": "proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json"
+    }
+  },
+  "phases": [
+    {
+      "phase_id": "01-ingest-evidence",
+      "depends_on": [],
+      "approval_gate": false,
+      "operations": [
+        {
+          "operation_id": "link-prior-package-inputs",
+          "operation_type": "evidence.link",
+          "risk": "R1",
+          "inputs": {
+            "required_inputs": [
+              "source/codex-flexnetos-migration-prompt-package/**",
+              "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+              "${ENVCTL_REPO}/docs/**",
+              "${NU_PLUGIN_REPO}/docs/**",
+              "${MIGRATION_TARGET_ROOT}/docs/**"
+            ]
+          },
+          "expected_artifacts": [
+            "input-evidence-links"
+          ],
+          "validators": [
+            "dependency_proof_present",
+            "blocked_paths_preserved"
+          ],
+          "rollback": {
+            "mode": "remove_generated_artifact_only",
+            "requires_human_approval": false
+          }
+        },
+        {
+          "operation_id": "capture-flexnetos-comparison-findings",
+          "operation_type": "comparison.import",
+          "risk": "R1",
+          "inputs": {
+            "comparison_task_id": "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+            "comparison_report_path": "generated/flexnetos_lifeos_comparison_validation_report.json"
+          },
+          "expected_artifacts": [
+            "flexnetos-comparison-context"
+          ],
+          "validators": [
+            "comparison_validation_passed",
+            "line_evidence_linked"
+          ],
+          "rollback": {
+            "mode": "remove_generated_artifact_only",
+            "requires_human_approval": false
+          }
+        }
+      ]
+    },
+    {
+      "phase_id": "02-render-adapter",
+      "depends_on": [
+        "01-ingest-evidence"
+      ],
+      "approval_gate": false,
+      "operations": [
+        {
+          "operation_id": "render-adapter-recipe",
+          "operation_type": "recipe.render",
+          "risk": "R1",
+          "inputs": {
+            "recipe_path": "generated/flexnetos_adapter_recipe.json",
+            "documentation_path": "docs/FLEXNETOS_ADAPTER_RECIPE.md"
+          },
+          "expected_artifacts": [
+            "flexnetos-adapter-recipe-json",
+            "flexnetos-adapter-doc"
+          ],
+          "validators": [
+            "shared_protocol_shape_valid",
+            "allowed_paths_only"
+          ],
+          "rollback": {
+            "mode": "remove_generated_artifact_only",
+            "requires_human_approval": false
+          }
+        },
+        {
+          "operation_id": "register-adapter-for-envctl",
+          "operation_type": "recipe.catalog.register",
+          "risk": "R2",
+          "inputs": {
+            "target_descriptor_id": "flexnetos-vs-lifeos",
+            "recipe_id": "flexnetos-codex-package-target-adapter"
+          },
+          "expected_artifacts": [
+            "recipe-registry-row"
+          ],
+          "validators": [
+            "stable_recipe_id",
+            "target_descriptor_reference_present"
+          ],
+          "rollback": {
+            "mode": "remove_generated_artifact_only",
+            "requires_human_approval": false
+          }
+        }
+      ]
+    },
+    {
+      "phase_id": "03-verify-replay-readiness",
+      "depends_on": [
+        "02-render-adapter"
+      ],
+      "approval_gate": false,
+      "operations": [
+        {
+          "operation_id": "validate-adapter-contract",
+          "operation_type": "recipe.validate",
+          "risk": "R2",
+          "inputs": {
+            "verification_command": "python3 scripts/verify_flexnetos_adapter_recipe.py"
+          },
+          "expected_artifacts": [
+            "flexnetos-adapter-validation-report"
+          ],
+          "validators": [
+            "validation_report_passed",
+            "no_secret_exposure"
+          ],
+          "rollback": {
+            "mode": "remove_generated_artifact_only",
+            "requires_human_approval": false
+          }
+        },
+        {
+          "operation_id": "prove-replay-compatibility",
+          "operation_type": "replay.verify",
+          "risk": "R2",
+          "inputs": {
+            "depends_on_proof": "REQ-027_ENVCTL_REPLAY_ENGINE",
+            "compatibility_mode": "dry_run"
+          },
+          "expected_artifacts": [
+            "replay-ready-adapter-evidence"
+          ],
+          "validators": [
+            "replay_dependency_present",
+            "human_gate_retained_for_apply"
+          ],
+          "rollback": {
+            "mode": "remove_generated_artifact_only",
+            "requires_human_approval": false
+          }
+        }
+      ]
+    },
+    {
+      "phase_id": "04-approved-apply",
+      "depends_on": [
+        "03-verify-replay-readiness"
+      ],
+      "approval_gate": true,
+      "operations": [
+        {
+          "operation_id": "operator-review-target-docs",
+          "operation_type": "manual_operator",
+          "risk": "R4",
+          "inputs": {
+            "human_approval_required": true,
+            "review_surfaces": [
+              "${ENVCTL_REPO}/docs/**",
+              "${NU_PLUGIN_REPO}/docs/**",
+              "${MIGRATION_TARGET_ROOT}/docs/**"
+            ]
+          },
+          "expected_artifacts": [
+            "human-approval-decision"
+          ],
+          "validators": [
+            "approval_recorded",
+            "scope_still_repo_bound"
+          ],
+          "rollback": {
+            "mode": "manual_rollback_required",
+            "requires_human_approval": true
+          }
+        },
+        {
+          "operation_id": "apply-flexnetos-target-adapter",
+          "operation_type": "target.mutate",
+          "risk": "R5",
+          "inputs": {
+            "adapter_mode": "approval-gated",
+            "repo_target": "repo_a",
+            "repo_path_ref": "${ENVCTL_REPO}"
+          },
+          "expected_artifacts": [
+            "envctl-run-record",
+            "artifact-links"
+          ],
+          "validators": [
+            "approved_before_apply",
+            "write_scope_repo_only",
+            "rollback_checkpoint_available"
+          ],
+          "rollback": {
+            "mode": "history_manifest_revert",
+            "requires_human_approval": true
+          }
+        }
+      ]
+    }
+  ]
+}

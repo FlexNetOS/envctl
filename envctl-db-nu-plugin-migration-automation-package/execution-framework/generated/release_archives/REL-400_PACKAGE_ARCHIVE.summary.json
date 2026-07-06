@@ -1,0 +1,56 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REL-400_PACKAGE_ARCHIVE",
+  "generated_at": "2026-07-05T06:08:16+00:00",
+  "package_root": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "archive_base": "envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded",
+  "artifacts": {
+    "tar_gz": {
+      "path": "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.gz",
+      "size_bytes": 15745389,
+      "sha256": "0bdf372bae59a7d207cdb93a89ecbb89a2f83b779019c965f16ad157224b0b27",
+      "entry_count": 967
+    },
+    "zip": {
+      "path": "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip",
+      "size_bytes": 16385876,
+      "sha256": "6ad8a4d040c686bb7079b251b7c6064fd54cd283417f678d47004b88dcc55ad4",
+      "entry_count": 967
+    }
+  },
+  "validation": {
+    "entry_counts_match": true,
+    "blocked_hits_tar": [],
+    "blocked_hits_zip": [],
+    "self_archive_hits_tar": [],
+    "self_archive_hits_zip": [],
+    "secret_safe": true,
+    "self_exclusion_ok": true,
+    "sample_entries": [
+      "envctl-db-nu-plugin-migration-automation-package/",
+      "envctl-db-nu-plugin-migration-automation-package/schemas/",
+      "envctl-db-nu-plugin-migration-automation-package/schemas/nu_plugin_command_manifest.schema.json",
+      "envctl-db-nu-plugin-migration-automation-package/schemas/migration_recipe.schema.json",
+      "envctl-db-nu-plugin-migration-automation-package/schemas/operation.schema.json",
+      "envctl-db-nu-plugin-migration-automation-package/schemas/envctl_migration_api.openapi.json",
+      "envctl-db-nu-plugin-migration-automation-package/schemas/artifact_record.schema.json",
+      "envctl-db-nu-plugin-migration-automation-package/schemas/validation_result.schema.json",
+      "envctl-db-nu-plugin-migration-automation-package/schemas/approval_request.schema.json",
+      "envctl-db-nu-plugin-migration-automation-package/schemas/target_descriptor.schema.json",
+      "envctl-db-nu-plugin-migration-automation-package/schemas/run_event.schema.json",
+      "envctl-db-nu-plugin-migration-automation-package/examples/",
+      "envctl-db-nu-plugin-migration-automation-package/examples/recipes/",
+      "envctl-db-nu-plugin-migration-automation-package/examples/recipes/database-migration.yaml",
+      "envctl-db-nu-plugin-migration-automation-package/examples/recipes/full-migration-artifact-run.yaml",
+      "envctl-db-nu-plugin-migration-automation-package/examples/target-descriptors/",
+      "envctl-db-nu-plugin-migration-automation-package/examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+      "envctl-db-nu-plugin-migration-automation-package/examples/target-descriptors/generic-codebase.yaml",
+      "envctl-db-nu-plugin-migration-automation-package/examples/env/",
+      "envctl-db-nu-plugin-migration-automation-package/examples/env/envctl-migration.example.toml"
+    ]
+  },
+  "external_blocker": {
+    "blocker_id": "EXT-DRIVE-WRITE",
+    "detail": "Authenticated Google Drive file edit/revision API is not available in this environment; upgraded package archive is produced for upload/application to Drive."
+  }
+}

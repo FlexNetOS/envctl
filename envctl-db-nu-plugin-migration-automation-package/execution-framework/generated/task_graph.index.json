@@ -1,0 +1,256 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-04T22:20:00-05:00",
+  "task_count": 80,
+  "phase_counts": {
+    "00-framework": 8,
+    "01-contract": 1,
+    "02-envctl-db": 9,
+    "03-nu-plugin": 5,
+    "04-shared": 6,
+    "05-artifacts": 37,
+    "06-flexnetos": 3,
+    "07-verification": 5,
+    "08-release": 2,
+    "09-drive-maintenance": 4
+  },
+  "lane_counts": {
+    "lane_g_history_scan": 1,
+    "lane_a_planning": 3,
+    "lane_d_filesystem": 45,
+    "lane_e_verification": 14,
+    "lane_b_repo_a": 10,
+    "lane_c_repo_b": 5,
+    "lane_f_release": 2
+  },
+  "parallel_groups": {
+    "framework_bootstrap": [
+      "EF-001_SCAN_PACKAGE",
+      "EF-002_GAP_REPORT",
+      "EF-003_APPLY_FRAMEWORK",
+      "EF-004_GENERATE_TASK_GRAPH"
+    ],
+    "framework_verification": [
+      "EF-005_VALIDATE_TASK_GRAPH",
+      "EF-006_TASK_GRAPH_TO_PACKETS",
+      "EF-007_GOAL_LOOP",
+      "EF-008_VERIFY_HISTORY_COMPLETENESS"
+    ],
+    "contract": [
+      "REQ-010_CONTRACT_LOCK"
+    ],
+    "shared_protocol": [
+      "REQ-020_ENVCTL_DB_SCHEMA",
+      "REQ-030_PLUGIN_PROTOCOL_MANIFEST",
+      "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+    ],
+    "envctl_db_parallel": [
+      "REQ-021_ENVCTL_TARGET_REGISTRY",
+      "REQ-022_ENVCTL_RUN_LEDGER",
+      "REQ-023_ENVCTL_OPERATION_STATE",
+      "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "REQ-025_ENVCTL_VALIDATION_EVIDENCE",
+      "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
+    ],
+    "envctl_integration": [
+      "REQ-027_ENVCTL_REPLAY_ENGINE",
+      "REQ-028_ENVCTL_AGENT_CONTROL_API"
+    ],
+    "nu_plugin_parallel": [
+      "REQ-031_PLUGIN_COMMAND_SURFACE",
+      "REQ-032_PLUGIN_LIVE_VISUALS",
+      "REQ-033_PLUGIN_HUMAN_APPROVAL",
+      "REQ-034_PLUGIN_STATUS_STREAMS"
+    ],
+    "integration": [
+      "REQ-041_TWO_REPO_INTEGRATION"
+    ],
+    "filesystem_parallel": [
+      "REQ-042_FILESYSTEM_BOUNDS",
+      "REQ-043_SECURITY_REDACTION",
+      "REQ-044_INSTALL_BOOTSTRAP",
+      "REQ-045_RUN_REPLAY"
+    ],
+    "artifact_generation_a": [
+      "ART-100_SYSTEM_INVENTORY",
+      "ART-101_DIRECTORY_TREE",
+      "ART-102_REPOSITORY_MAP",
+      "ART-103_SERVICE_DEP_GRAPH",
+      "ART-104_TOOLCHAIN_TREE",
+      "ART-105_PACKAGE_LIB_GRAPH",
+      "ART-106_RUNTIME_DEP_MAP",
+      "ART-107_DATA_FLOW_GRAPH",
+      "ART-108_DB_SCHEMA_MAP",
+      "ART-109_DATA_LINEAGE",
+      "ART-110_API_CATALOG",
+      "ART-111_EVENT_MAP"
+    ],
+    "artifact_generation_b": [
+      "ART-112_CODE_OWNERSHIP",
+      "ART-113_DEBUG_CODE_MAP",
+      "ART-114_ENV_CONFIG_MATRIX",
+      "ART-115_CONFIG_INVENTORY",
+      "ART-116_INFRA_TOPOLOGY",
+      "ART-117_IAM_MATRIX",
+      "ART-118_OBSERVABILITY",
+      "ART-119_BUSINESS_PROCESS",
+      "ART-120_WAVE_PLAN",
+      "ART-121_CUTOVER",
+      "ART-122_ROLLBACK",
+      "ART-123_VALIDATION_RECONCILIATION"
+    ],
+    "artifact_generation_c": [
+      "ART-124_TEST_COVERAGE",
+      "ART-125_RISK_REGISTER",
+      "ART-126_DECISION_LOG",
+      "ART-127_BLAST_RADIUS",
+      "ART-128_READINESS_SCORECARD",
+      "ART-129_BUSINESS_CAPABILITY",
+      "ART-130_SHADOW_TRAFFIC",
+      "ART-131_GOLDEN_DATASET",
+      "ART-132_PARITY_DASHBOARD",
+      "ART-133_DEPRECATION_MAP",
+      "ART-134_EXCEPTION_INVENTORY",
+      "ART-135_RACI",
+      "ART-136_TECH_DEBT_LEDGER"
+    ],
+    "flexnetos": [
+      "REQ-200_FLEXNETOS_TARGET_DESCRIPTOR",
+      "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+      "REQ-202_FLEXNETOS_ADAPTER_RECIPE"
+    ],
+    "verification": [
+      "VER-300_UNIT_VALIDATION",
+      "VER-301_SQL_SCHEMA_TEST",
+      "VER-302_PACKET_SCHEMA_VALIDATION",
+      "VER-303_GOAL_LOOP_COMPUTE",
+      "VER-304_FINAL_COMPLETENESS"
+    ],
+    "release": [
+      "REL-400_PACKAGE_ARCHIVE",
+      "REL-401_HANDOFF"
+    ],
+    "drive_live_maintenance": [
+      "MAINT-500_README_NAV_BACKTRACE",
+      "MAINT-501_RESTORE_PROOF_TEMPLATE",
+      "MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC",
+      "MAINT-503_CODEX_FINAL_PROMPT"
+    ]
+  },
+  "requirement_coverage": {
+    "migration_artifacts": [
+      "ART-100_SYSTEM_INVENTORY",
+      "ART-101_DIRECTORY_TREE",
+      "ART-102_REPOSITORY_MAP",
+      "ART-103_SERVICE_DEP_GRAPH",
+      "ART-104_TOOLCHAIN_TREE",
+      "ART-105_PACKAGE_LIB_GRAPH",
+      "ART-106_RUNTIME_DEP_MAP",
+      "ART-107_DATA_FLOW_GRAPH",
+      "ART-108_DB_SCHEMA_MAP",
+      "ART-109_DATA_LINEAGE",
+      "ART-110_API_CATALOG",
+      "ART-111_EVENT_MAP",
+      "ART-112_CODE_OWNERSHIP",
+      "ART-113_DEBUG_CODE_MAP",
+      "ART-114_ENV_CONFIG_MATRIX",
+      "ART-115_CONFIG_INVENTORY",
+      "ART-116_INFRA_TOPOLOGY",
+      "ART-117_IAM_MATRIX",
+      "ART-118_OBSERVABILITY",
+      "ART-119_BUSINESS_PROCESS",
+      "ART-120_WAVE_PLAN",
+      "ART-121_CUTOVER",
+      "ART-122_ROLLBACK",
+      "ART-123_VALIDATION_RECONCILIATION",
+      "ART-124_TEST_COVERAGE",
+      "ART-125_RISK_REGISTER",
+      "ART-126_DECISION_LOG",
+      "ART-127_BLAST_RADIUS",
+      "ART-128_READINESS_SCORECARD",
+      "ART-129_BUSINESS_CAPABILITY",
+      "ART-130_SHADOW_TRAFFIC",
+      "ART-131_GOLDEN_DATASET",
+      "ART-132_PARITY_DASHBOARD",
+      "ART-133_DEPRECATION_MAP",
+      "ART-134_EXCEPTION_INVENTORY",
+      "ART-135_RACI",
+      "ART-136_TECH_DEBT_LEDGER"
+    ],
+    "envctl_database": [
+      "REQ-020_ENVCTL_DB_SCHEMA",
+      "REQ-021_ENVCTL_TARGET_REGISTRY",
+      "REQ-022_ENVCTL_RUN_LEDGER",
+      "REQ-023_ENVCTL_OPERATION_STATE",
+      "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "REQ-025_ENVCTL_VALIDATION_EVIDENCE",
+      "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+      "REQ-027_ENVCTL_REPLAY_ENGINE",
+      "REQ-028_ENVCTL_AGENT_CONTROL_API"
+    ],
+    "nu_plugin": [
+      "REQ-030_PLUGIN_PROTOCOL_MANIFEST",
+      "REQ-031_PLUGIN_COMMAND_SURFACE",
+      "REQ-032_PLUGIN_LIVE_VISUALS",
+      "REQ-033_PLUGIN_HUMAN_APPROVAL",
+      "REQ-034_PLUGIN_STATUS_STREAMS"
+    ],
+    "shared_protocol": [
+      "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "REQ-041_TWO_REPO_INTEGRATION",
+      "REQ-042_FILESYSTEM_BOUNDS",
+      "REQ-043_SECURITY_REDACTION",
+      "REQ-044_INSTALL_BOOTSTRAP",
+      "REQ-045_RUN_REPLAY"
+    ],
+    "flexnetos": [
+      "REQ-200_FLEXNETOS_TARGET_DESCRIPTOR",
+      "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+      "REQ-202_FLEXNETOS_ADAPTER_RECIPE"
+    ],
+    "framework": [
+      "EF-001_SCAN_PACKAGE",
+      "EF-002_GAP_REPORT",
+      "EF-003_APPLY_FRAMEWORK",
+      "EF-004_GENERATE_TASK_GRAPH",
+      "EF-005_VALIDATE_TASK_GRAPH",
+      "EF-006_TASK_GRAPH_TO_PACKETS",
+      "EF-007_GOAL_LOOP",
+      "EF-008_VERIFY_HISTORY_COMPLETENESS"
+    ],
+    "verification_release": [
+      "VER-300_UNIT_VALIDATION",
+      "VER-301_SQL_SCHEMA_TEST",
+      "VER-302_PACKET_SCHEMA_VALIDATION",
+      "VER-303_GOAL_LOOP_COMPUTE",
+      "VER-304_FINAL_COMPLETENESS",
+      "REL-400_PACKAGE_ARCHIVE",
+      "REL-401_HANDOFF"
+    ],
+    "drive_live_gap_closure": [
+      "MAINT-500_README_NAV_BACKTRACE",
+      "MAINT-501_RESTORE_PROOF_TEMPLATE",
+      "MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC",
+      "MAINT-503_CODEX_FINAL_PROMPT"
+    ]
+  },
+  "contract_lock": {
+    "task_id": "REQ-010_CONTRACT_LOCK",
+    "status": "passed",
+    "contract_name": "full-migration-artifact-contract",
+    "contract_version": "1.0.0",
+    "contract_hash": "9016f9a579812c51a10f1852279392b48521c31e958cddb8bf92361090ca9d07",
+    "manifest_uri": "generated/contract_manifest.json",
+    "validation_uri": "generated/contract_manifest.validation_report.json",
+    "docs_uri": "docs/CONTRACT_MANIFEST.md",
+    "seed_sql_uri": "generated/contract_manifest.seed.sql",
+    "artifact_row_count": 136,
+    "automation_row_count": 16,
+    "unblocks": [
+      "REQ-020_ENVCTL_DB_SCHEMA",
+      "REQ-030_PLUGIN_PROTOCOL_MANIFEST",
+      "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "ART-100_SYSTEM_INVENTORY"
+    ]
+  }
+}

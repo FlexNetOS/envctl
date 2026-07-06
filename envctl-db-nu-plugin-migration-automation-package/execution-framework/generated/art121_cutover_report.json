@@ -1,0 +1,518 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-121_CUTOVER",
+  "status": "passed",
+  "generated_at": "2026-07-05T05:02:33+00:00",
+  "artifact_paths": [
+    "migration-artifacts/07-cutover/cutover-checklist.md",
+    "migration-artifacts/art-121_cutover/cutover-checklist.md",
+    "migration-artifacts/art-121_cutover/cutover-checklist.json"
+  ],
+  "checklist_step_count": 8,
+  "blocked_gate_tasks": [
+    "REQ-041_TWO_REPO_INTEGRATION",
+    "REQ-045_RUN_REPLAY",
+    "ART-122_ROLLBACK",
+    "VER-300_UNIT_VALIDATION"
+  ],
+  "registry_results": [
+    {
+      "artifact_row_id": "artifact-008ff0dcdf0d6e77484e6bba",
+      "artifact_id": "07-cutover-cutover-checklist-md",
+      "run_id": "run-art-121-cutover",
+      "path": "migration-artifacts/07-cutover/cutover-checklist.md",
+      "content_hash": "sha256:2f3ae9eafc32b8125275e34ebaad230436dc9a8fc8a77af3a80086cae23fa247",
+      "producer_operation_id": "produce-07-cutover-cutover-checklist-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-bafe0f796725640cb8f9c98e",
+        "evidence-09cf957d44bd15866ffa6164",
+        "evidence-488c1929cb73bb8e4d312975",
+        "evidence-fe7eadace35a6334362dae00",
+        "evidence-334d6f310d015a1fc8efb888",
+        "evidence-bc30538eefd552b0b79a000c",
+        "evidence-bc2bd42f36f5c16560aa714d",
+        "evidence-73ce99d1ed8ba2ac15de52ea",
+        "evidence-50f13ae3f9ccabad1b5c2b60",
+        "evidence-a5191e40f0873475984cb96d",
+        "evidence-abf5ceec5b699c1cd4b14e1d",
+        "evidence-659a8684655c049abf77d732"
+      ],
+      "graph_edge_ids": [
+        "edge-ddaafc1bafac851c7e18ef98",
+        "edge-4da646d2148aa7f62967778f",
+        "edge-8e80ad03b38920432f1f5397",
+        "edge-2cf84948ea33c57d00a6300c",
+        "edge-a0dc2a392235c934f2e2891e",
+        "edge-decf82247adda7012ab4fb7a",
+        "edge-22fa38fc882071b95b9f1651",
+        "edge-78474ee9f5a8cd922546bd6a",
+        "edge-a6c225bf4bf92dbf5198473c",
+        "edge-38cf6b425a40da381276cdbd"
+      ],
+      "validation_ids": [
+        "validation-90b015a8992ca5765a1ca9b6",
+        "validation-d8d76183d436a87322c47796",
+        "validation-0a9d6140bb1cf4324283ea50"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-85b67426567d52971e14166b",
+      "artifact_id": "art-121-cutover-md",
+      "run_id": "run-art-121-cutover",
+      "path": "migration-artifacts/art-121_cutover/cutover-checklist.md",
+      "content_hash": "sha256:2f3ae9eafc32b8125275e34ebaad230436dc9a8fc8a77af3a80086cae23fa247",
+      "producer_operation_id": "produce-07-cutover-cutover-checklist-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-5d0f9ef84dc65fb83eb5cc6b",
+        "evidence-f705aad3289684cc6c90f2bd",
+        "evidence-6d19f2fe20d0118d78f043fc",
+        "evidence-bf71de16a200a8d0aca257de",
+        "evidence-6dbf8525a6e34b00929cd390",
+        "evidence-e059a2e449a379014dd918df",
+        "evidence-b210b1eb62e8fc7eee1058b9",
+        "evidence-797482e2e08ee5ee6ad04e6f",
+        "evidence-bf197dc74810b213163bc0a9",
+        "evidence-79bb50088c304c1e1c0f16e3",
+        "evidence-9424720378c0a933bcb0f72a",
+        "evidence-3b7f6af3c1a2668977f2309c"
+      ],
+      "graph_edge_ids": [
+        "edge-846e8a87a74e62213cef8886",
+        "edge-e29d3d464718948772f2280f",
+        "edge-f09c04100a424105508973d8",
+        "edge-922141f05e3326a844355010",
+        "edge-bb1305a48c1b6e6d20ea683c",
+        "edge-bfaf0b990c8973102b218036",
+        "edge-8314f5658820187f47cc3c33",
+        "edge-dbbd2af13f7b402e656e6e97",
+        "edge-627f026d09dda32341a9348e",
+        "edge-37d81f1f208a0c9472005136"
+      ],
+      "validation_ids": [
+        "validation-54223ad39a9b6b4c789fa37f",
+        "validation-b3455e96efa6cd078298e4d6",
+        "validation-8bf1f4acf8a4e30c579a4767"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-34af3ce7c10cb47c4be3f425",
+      "artifact_id": "art-121-cutover-json",
+      "run_id": "run-art-121-cutover",
+      "path": "migration-artifacts/art-121_cutover/cutover-checklist.json",
+      "content_hash": "sha256:b2c5539f5f4db975d83f17887958a24eba7a3a52e37a32679f4e2775d002473b",
+      "producer_operation_id": "produce-07-cutover-cutover-checklist-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-124d0a51b1e2b04a4985c9c5",
+        "evidence-37150ec09e3796b687b04f71",
+        "evidence-c54d0a1cc987914d8d4b78e8",
+        "evidence-20f227555928db291f11c3ca",
+        "evidence-312d096c95bd0843479e9821",
+        "evidence-ef158f70d197d77725ee0341",
+        "evidence-96d94347e2d8b54ac664d8af",
+        "evidence-228db12433f773887fe8d0a9",
+        "evidence-19f4ea1e3ab2743ef2e62dd4",
+        "evidence-1c25d4b586b3cf6ef6b2f5b0",
+        "evidence-a2f06f2da2811a2cd1cd45db",
+        "evidence-217a4aefa73df8b69928802d"
+      ],
+      "graph_edge_ids": [
+        "edge-4e0c2b096abacde7895c93ce",
+        "edge-3cc4164e3827ddde1a1bb1d0",
+        "edge-0d83b82811f50ee6ef0eb988",
+        "edge-d1a0cd0128d2f359f8b8b04a",
+        "edge-8c707ed81dc079ff3b24c3ed",
+        "edge-c733182800d9a7d6949497b7",
+        "edge-69ce870d04cb0646cc1f2427",
+        "edge-019f1e5005f8da88b392b968",
+        "edge-0c8884b382a62ea2e896fed6",
+        "edge-7a7c8b147ce3f3debf08111f"
+      ],
+      "validation_ids": [
+        "validation-c0e53cd34bc51d438fcd7cff"
+      ]
+    }
+  ],
+  "artifact_rows": [
+    {
+      "id": "artifact-008ff0dcdf0d6e77484e6bba",
+      "run_id": "run-art-121-cutover",
+      "artifact_id": "07-cutover-cutover-checklist-md",
+      "title": "Cutover Checklist",
+      "artifact_type": "migration_control",
+      "status": "complete",
+      "path": "migration-artifacts/07-cutover/cutover-checklist.md",
+      "content_hash": "sha256:2f3ae9eafc32b8125275e34ebaad230436dc9a8fc8a77af3a80086cae23fa247",
+      "generated_by_operation_id": "produce-07-cutover-cutover-checklist-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-bafe0f796725640cb8f9c98e",
+          "evidence-09cf957d44bd15866ffa6164",
+          "evidence-488c1929cb73bb8e4d312975",
+          "evidence-fe7eadace35a6334362dae00",
+          "evidence-334d6f310d015a1fc8efb888",
+          "evidence-bc30538eefd552b0b79a000c",
+          "evidence-bc2bd42f36f5c16560aa714d",
+          "evidence-73ce99d1ed8ba2ac15de52ea",
+          "evidence-50f13ae3f9ccabad1b5c2b60",
+          "evidence-a5191e40f0873475984cb96d",
+          "evidence-abf5ceec5b699c1cd4b14e1d",
+          "evidence-659a8684655c049abf77d732"
+        ],
+        "evidence_refs": [
+          "migration-artifacts/07-cutover/cutover-checklist.md",
+          "migration-artifacts/art-121_cutover/cutover-checklist.md",
+          "migration-artifacts/art-121_cutover/cutover-checklist.json",
+          "migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+          "migration-artifacts/art-120_wave_plan/wave-plan.json",
+          "migration-artifacts/art-125_risk_register/risk-register.json",
+          "migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json",
+          "generated/envctl_rollback_checkpoints_report.json",
+          "generated/status_from_proofs.json",
+          "generated/task_graph.csv",
+          "generated/envctl_artifact_registry_report.json",
+          "generated/shared_protocol_validation_report.json"
+        ],
+        "producer_operation_id": "produce-07-cutover-cutover-checklist-md",
+        "provenance": {
+          "blocked_gate_tasks": [
+            "REQ-041_TWO_REPO_INTEGRATION",
+            "REQ-045_RUN_REPLAY",
+            "ART-122_ROLLBACK",
+            "VER-300_UNIT_VALIDATION"
+          ],
+          "contract_row_id": "artifact:07-cutover-cutover-checklist-md",
+          "helper_id": "helper-artifact-22",
+          "owner_agent": "artifact-agent",
+          "readiness_band": "conditional",
+          "source_inputs": [
+            "target descriptor",
+            "repo scan",
+            "envctl database"
+          ],
+          "target_root": "/home/flexnetos/FlexNetOS",
+          "task_id": "ART-121_CUTOVER"
+        },
+        "validation_ids": [
+          "validation-90b015a8992ca5765a1ca9b6",
+          "validation-d8d76183d436a87322c47796",
+          "validation-0a9d6140bb1cf4324283ea50"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-ddaafc1bafac851c7e18ef98",
+          "edge-4da646d2148aa7f62967778f",
+          "edge-8e80ad03b38920432f1f5397",
+          "edge-2cf84948ea33c57d00a6300c",
+          "edge-a0dc2a392235c934f2e2891e",
+          "edge-decf82247adda7012ab4fb7a",
+          "edge-22fa38fc882071b95b9f1651",
+          "edge-78474ee9f5a8cd922546bd6a",
+          "edge-a6c225bf4bf92dbf5198473c",
+          "edge-38cf6b425a40da381276cdbd"
+        ],
+        "links": [
+          {
+            "to": "contract_row:artifact:07-cutover-cutover-checklist-md",
+            "type": "satisfies"
+          },
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          },
+          {
+            "to": "artifact:07-cutover-wave-plan-md",
+            "type": "informed_by"
+          },
+          {
+            "to": "artifact:09-governance-risk-register-md",
+            "type": "informed_by"
+          },
+          {
+            "to": "artifact:09-governance-migration-readiness-scorecard-md",
+            "type": "informed_by"
+          },
+          {
+            "to": "artifact:07-cutover-rollback-plan-md",
+            "type": "paired_with"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-85b67426567d52971e14166b",
+      "run_id": "run-art-121-cutover",
+      "artifact_id": "art-121-cutover-md",
+      "title": "ART-121 Cutover Checklist Markdown",
+      "artifact_type": "migration_control",
+      "status": "complete",
+      "path": "migration-artifacts/art-121_cutover/cutover-checklist.md",
+      "content_hash": "sha256:2f3ae9eafc32b8125275e34ebaad230436dc9a8fc8a77af3a80086cae23fa247",
+      "generated_by_operation_id": "produce-07-cutover-cutover-checklist-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-5d0f9ef84dc65fb83eb5cc6b",
+          "evidence-f705aad3289684cc6c90f2bd",
+          "evidence-6d19f2fe20d0118d78f043fc",
+          "evidence-bf71de16a200a8d0aca257de",
+          "evidence-6dbf8525a6e34b00929cd390",
+          "evidence-e059a2e449a379014dd918df",
+          "evidence-b210b1eb62e8fc7eee1058b9",
+          "evidence-797482e2e08ee5ee6ad04e6f",
+          "evidence-bf197dc74810b213163bc0a9",
+          "evidence-79bb50088c304c1e1c0f16e3",
+          "evidence-9424720378c0a933bcb0f72a",
+          "evidence-3b7f6af3c1a2668977f2309c"
+        ],
+        "evidence_refs": [
+          "migration-artifacts/07-cutover/cutover-checklist.md",
+          "migration-artifacts/art-121_cutover/cutover-checklist.md",
+          "migration-artifacts/art-121_cutover/cutover-checklist.json",
+          "migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+          "migration-artifacts/art-120_wave_plan/wave-plan.json",
+          "migration-artifacts/art-125_risk_register/risk-register.json",
+          "migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json",
+          "generated/envctl_rollback_checkpoints_report.json",
+          "generated/status_from_proofs.json",
+          "generated/task_graph.csv",
+          "generated/envctl_artifact_registry_report.json",
+          "generated/shared_protocol_validation_report.json"
+        ],
+        "producer_operation_id": "produce-07-cutover-cutover-checklist-md",
+        "provenance": {
+          "blocked_gate_tasks": [
+            "REQ-041_TWO_REPO_INTEGRATION",
+            "REQ-045_RUN_REPLAY",
+            "ART-122_ROLLBACK",
+            "VER-300_UNIT_VALIDATION"
+          ],
+          "contract_row_id": "artifact:07-cutover-cutover-checklist-md",
+          "helper_id": "helper-artifact-22",
+          "owner_agent": "artifact-agent",
+          "readiness_band": "conditional",
+          "source_inputs": [
+            "target descriptor",
+            "repo scan",
+            "envctl database"
+          ],
+          "target_root": "/home/flexnetos/FlexNetOS",
+          "task_id": "ART-121_CUTOVER"
+        },
+        "validation_ids": [
+          "validation-54223ad39a9b6b4c789fa37f",
+          "validation-b3455e96efa6cd078298e4d6",
+          "validation-8bf1f4acf8a4e30c579a4767"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-846e8a87a74e62213cef8886",
+          "edge-e29d3d464718948772f2280f",
+          "edge-f09c04100a424105508973d8",
+          "edge-922141f05e3326a844355010",
+          "edge-bb1305a48c1b6e6d20ea683c",
+          "edge-bfaf0b990c8973102b218036",
+          "edge-8314f5658820187f47cc3c33",
+          "edge-dbbd2af13f7b402e656e6e97",
+          "edge-627f026d09dda32341a9348e",
+          "edge-37d81f1f208a0c9472005136"
+        ],
+        "links": [
+          {
+            "to": "contract_row:artifact:07-cutover-cutover-checklist-md",
+            "type": "satisfies"
+          },
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          },
+          {
+            "to": "artifact:07-cutover-wave-plan-md",
+            "type": "informed_by"
+          },
+          {
+            "to": "artifact:09-governance-risk-register-md",
+            "type": "informed_by"
+          },
+          {
+            "to": "artifact:09-governance-migration-readiness-scorecard-md",
+            "type": "informed_by"
+          },
+          {
+            "to": "artifact:07-cutover-rollback-plan-md",
+            "type": "paired_with"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-34af3ce7c10cb47c4be3f425",
+      "run_id": "run-art-121-cutover",
+      "artifact_id": "art-121-cutover-json",
+      "title": "ART-121 Cutover Checklist JSON",
+      "artifact_type": "machine_readable_record",
+      "status": "complete",
+      "path": "migration-artifacts/art-121_cutover/cutover-checklist.json",
+      "content_hash": "sha256:b2c5539f5f4db975d83f17887958a24eba7a3a52e37a32679f4e2775d002473b",
+      "generated_by_operation_id": "produce-07-cutover-cutover-checklist-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-124d0a51b1e2b04a4985c9c5",
+          "evidence-37150ec09e3796b687b04f71",
+          "evidence-c54d0a1cc987914d8d4b78e8",
+          "evidence-20f227555928db291f11c3ca",
+          "evidence-312d096c95bd0843479e9821",
+          "evidence-ef158f70d197d77725ee0341",
+          "evidence-96d94347e2d8b54ac664d8af",
+          "evidence-228db12433f773887fe8d0a9",
+          "evidence-19f4ea1e3ab2743ef2e62dd4",
+          "evidence-1c25d4b586b3cf6ef6b2f5b0",
+          "evidence-a2f06f2da2811a2cd1cd45db",
+          "evidence-217a4aefa73df8b69928802d"
+        ],
+        "evidence_refs": [
+          "migration-artifacts/07-cutover/cutover-checklist.md",
+          "migration-artifacts/art-121_cutover/cutover-checklist.md",
+          "migration-artifacts/art-121_cutover/cutover-checklist.json",
+          "migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+          "migration-artifacts/art-120_wave_plan/wave-plan.json",
+          "migration-artifacts/art-125_risk_register/risk-register.json",
+          "migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json",
+          "generated/envctl_rollback_checkpoints_report.json",
+          "generated/status_from_proofs.json",
+          "generated/task_graph.csv",
+          "generated/envctl_artifact_registry_report.json",
+          "generated/shared_protocol_validation_report.json"
+        ],
+        "producer_operation_id": "produce-07-cutover-cutover-checklist-md",
+        "provenance": {
+          "blocked_gate_tasks": [
+            "REQ-041_TWO_REPO_INTEGRATION",
+            "REQ-045_RUN_REPLAY",
+            "ART-122_ROLLBACK",
+            "VER-300_UNIT_VALIDATION"
+          ],
+          "contract_row_id": "artifact:07-cutover-cutover-checklist-md",
+          "helper_id": "helper-artifact-22",
+          "owner_agent": "artifact-agent",
+          "readiness_band": "conditional",
+          "source_inputs": [
+            "target descriptor",
+            "repo scan",
+            "envctl database"
+          ],
+          "target_root": "/home/flexnetos/FlexNetOS",
+          "task_id": "ART-121_CUTOVER"
+        },
+        "validation_ids": [
+          "validation-c0e53cd34bc51d438fcd7cff"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-4e0c2b096abacde7895c93ce",
+          "edge-3cc4164e3827ddde1a1bb1d0",
+          "edge-0d83b82811f50ee6ef0eb988",
+          "edge-d1a0cd0128d2f359f8b8b04a",
+          "edge-8c707ed81dc079ff3b24c3ed",
+          "edge-c733182800d9a7d6949497b7",
+          "edge-69ce870d04cb0646cc1f2427",
+          "edge-019f1e5005f8da88b392b968",
+          "edge-0c8884b382a62ea2e896fed6",
+          "edge-7a7c8b147ce3f3debf08111f"
+        ],
+        "links": [
+          {
+            "to": "contract_row:artifact:07-cutover-cutover-checklist-md",
+            "type": "satisfies"
+          },
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          },
+          {
+            "to": "artifact:07-cutover-wave-plan-md",
+            "type": "informed_by"
+          },
+          {
+            "to": "artifact:09-governance-risk-register-md",
+            "type": "informed_by"
+          },
+          {
+            "to": "artifact:09-governance-migration-readiness-scorecard-md",
+            "type": "informed_by"
+          },
+          {
+            "to": "artifact:07-cutover-rollback-plan-md",
+            "type": "paired_with"
+          }
+        ]
+      }
+    }
+  ],
+  "checksums": {
+    "migration-artifacts/07-cutover/cutover-checklist.md": "2f3ae9eafc32b8125275e34ebaad230436dc9a8fc8a77af3a80086cae23fa247",
+    "migration-artifacts/art-121_cutover/cutover-checklist.md": "2f3ae9eafc32b8125275e34ebaad230436dc9a8fc8a77af3a80086cae23fa247",
+    "migration-artifacts/art-121_cutover/cutover-checklist.json": "b2c5539f5f4db975d83f17887958a24eba7a3a52e37a32679f4e2775d002473b"
+  },
+  "validation": {
+    "artifact_file_exists": true,
+    "registry_contains_hash": true,
+    "validation_evidence_linked": true
+  },
+  "evidence": [
+    "migration-artifacts/07-cutover/cutover-checklist.md",
+    "migration-artifacts/art-121_cutover/cutover-checklist.md",
+    "migration-artifacts/art-121_cutover/cutover-checklist.json",
+    "generated/execution_packets/ART-121_CUTOVER.json",
+    "generated/envctl_artifact_registry_report.json",
+    "generated/envctl_rollback_checkpoints_report.json",
+    "generated/shared_protocol_validation_report.json",
+    "generated/status_from_proofs.json"
+  ]
+}

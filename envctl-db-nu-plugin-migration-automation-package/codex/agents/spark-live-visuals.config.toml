@@ -1,0 +1,6 @@
+name = "spark-live-visuals"
+model = "spark-5.3"
+description = "Designs live visual tables, graphs, timelines, progress views, and human involvement modes."
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+model_reasoning_effort = "medium"

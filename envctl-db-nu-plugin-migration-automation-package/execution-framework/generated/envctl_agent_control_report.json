@@ -1,0 +1,1352 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API",
+  "status": "pass",
+  "started_at": "2026-07-05T04:50:07+00:00",
+  "completed_at": "2026-07-05T04:50:07+00:00",
+  "fixture": {
+    "catalog": {
+      "target_id": "target-req022",
+      "package_id": "pkg-req022",
+      "contract_id": "contract-req022",
+      "recipe_id": "recipe-req022"
+    },
+    "run": {
+      "run_id": "run-req028-agent-control",
+      "status": "created",
+      "started_at_utc": "2026-07-05T04:50:07+00:00",
+      "reproducibility_hash": "sha256:79bece927e7920199057f925c6344dee789e78f0e7b024969c813baa7d397249"
+    }
+  },
+  "library": {
+    "safe_operation": {
+      "status": "created",
+      "operation_id": "op-5aac2ace5c7df46991ce5aef",
+      "operation_status": "ready",
+      "approval_id": null,
+      "idempotency_key": "sha256:44fb93d7674de548e62dae942d25b1a342bc60bf93f1c785490788128030e5fa",
+      "event_seq": 2,
+      "event_hash": "sha256:77d9e8e78c5815c0f15ea92bcabd9351206006abe76d6ea738df3acd176366fa"
+    },
+    "duplicate_operation": {
+      "status": "existing",
+      "operation_id": "op-5aac2ace5c7df46991ce5aef",
+      "operation_status": "ready",
+      "risk": "R1",
+      "operation_type": "collect_status",
+      "idempotency_key": "sha256:44fb93d7674de548e62dae942d25b1a342bc60bf93f1c785490788128030e5fa"
+    },
+    "gated_operation": {
+      "status": "created",
+      "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+      "operation_status": "awaiting_approval",
+      "approval_id": "approval-7009de60d9242388cd4351b9",
+      "idempotency_key": "sha256:7c7aea9d0339e6578566d41f699471cea0dbe63fc9178e5a511f2eaa417222b9",
+      "event_seq": 3,
+      "event_hash": "sha256:dac514bff2d18a9d8c89343afbbb3a08284a171545321100863a40e2b8b5acc8"
+    },
+    "preapproval_refusal": "illegal operation transition: blocked -> running",
+    "approval_result": {
+      "status": "decided",
+      "approval_id": "approval-7009de60d9242388cd4351b9",
+      "decision": "approved",
+      "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+      "operation_status": "ready",
+      "event_seq": 5,
+      "event_hash": "sha256:770b9db7165abcd001fb7e1b6969359dfed18ada6ecd5f77fa3d949d0a7f7d8c"
+    },
+    "start_result": {
+      "status": "transitioned",
+      "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+      "trigger": "start",
+      "operation_status": "running",
+      "event_seq": 6,
+      "event_hash": "sha256:3dd82328558800eedd91910a0bc1d12f3369da83683e8fd321157f6c63a8a2d4"
+    },
+    "complete_result": {
+      "status": "transitioned",
+      "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+      "trigger": "complete",
+      "operation_status": "succeeded",
+      "event_seq": 7,
+      "event_hash": "sha256:a8062b64a9a2814f6dc81b22db36e8492f40ca101c505cdcd7b8275fd6ff8971"
+    },
+    "denied_operation": {
+      "status": "decided",
+      "approval_id": "approval-e55ee771ce6c5ddabceebcb8",
+      "decision": "denied",
+      "operation_id": "op-c8eceedeb8160f1dfede8c51",
+      "operation_status": "denied",
+      "event_seq": 9,
+      "event_hash": "sha256:012341cfd90598d7c0877154ab127d6ea179d927d1e0ce3255455bc4b12de690"
+    },
+    "lease": {
+      "status": "acquired",
+      "lease_id": "lease-0c0faeeef53ec38531974330",
+      "target_scope": "envctl/sql",
+      "event_seq": 10,
+      "event_hash": "sha256:4d109eea4fba31290b4cf1738b86b3650e39269278be67f24d40110ec9bc975c"
+    },
+    "blocked_lease": {
+      "status": "blocked",
+      "target_scope": "envctl/sql",
+      "blocking_lease_id": "lease-0c0faeeef53ec38531974330",
+      "event_seq": 11
+    },
+    "released_lease": {
+      "status": "released",
+      "lease_id": "lease-0c0faeeef53ec38531974330",
+      "target_scope": "envctl/sql",
+      "event_seq": 12,
+      "event_hash": "sha256:76ddc99658799e92a8c886f36b7bee69af36058c45f57c8416ec57ebdc1b12ab"
+    },
+    "status_with_lock": {
+      "run_id": "run-req028-agent-control",
+      "status": "blocked",
+      "operation_count": 3,
+      "failed_operation_count": 0,
+      "open_approval_count": 0,
+      "artifact_count": 0,
+      "last_event_at_utc": "2026-07-05T04:50:07+00:00",
+      "timeline": [
+        {
+          "event_seq": 1,
+          "event_type": "agent_control_fixture_ready",
+          "actor_type": "system",
+          "operation_id": null,
+          "operation_status": null
+        },
+        {
+          "event_seq": 2,
+          "event_type": "agent_control_operation_enqueued",
+          "actor_type": "agent",
+          "operation_id": "op-5aac2ace5c7df46991ce5aef",
+          "operation_status": "ready"
+        },
+        {
+          "event_seq": 3,
+          "event_type": "agent_control_operation_enqueued",
+          "actor_type": "agent",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "operation_status": "succeeded"
+        },
+        {
+          "event_seq": 4,
+          "event_type": "agent_control_operation_transition_refused",
+          "actor_type": "agent",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "operation_status": "succeeded"
+        },
+        {
+          "event_seq": 5,
+          "event_type": "agent_control_approval_approved",
+          "actor_type": "human",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "operation_status": "succeeded"
+        },
+        {
+          "event_seq": 6,
+          "event_type": "agent_control_operation_running",
+          "actor_type": "agent",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "operation_status": "succeeded"
+        },
+        {
+          "event_seq": 7,
+          "event_type": "agent_control_operation_completed",
+          "actor_type": "agent",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "operation_status": "succeeded"
+        },
+        {
+          "event_seq": 8,
+          "event_type": "agent_control_operation_enqueued",
+          "actor_type": "agent",
+          "operation_id": "op-c8eceedeb8160f1dfede8c51",
+          "operation_status": "denied"
+        },
+        {
+          "event_seq": 9,
+          "event_type": "agent_control_approval_denied",
+          "actor_type": "human",
+          "operation_id": "op-c8eceedeb8160f1dfede8c51",
+          "operation_status": "denied"
+        },
+        {
+          "event_seq": 10,
+          "event_type": "agent_control_lease_acquired",
+          "actor_type": "agent",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "operation_status": "succeeded"
+        },
+        {
+          "event_seq": 11,
+          "event_type": "agent_control_lease_blocked",
+          "actor_type": "agent",
+          "operation_id": null,
+          "operation_status": null
+        }
+      ],
+      "operations": [
+        {
+          "operation_id": "op-5aac2ace5c7df46991ce5aef",
+          "operation_type": "collect_status",
+          "phase": "02-envctl-db",
+          "status": "ready",
+          "risk": "R1",
+          "output_ref": null
+        },
+        {
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "operation_type": "apply_schema_patch",
+          "phase": "02-envctl-db",
+          "status": "succeeded",
+          "risk": "R3",
+          "output_ref": null
+        },
+        {
+          "operation_id": "op-c8eceedeb8160f1dfede8c51",
+          "operation_type": "destructive_cutover_attempt",
+          "phase": "02-envctl-db",
+          "status": "denied",
+          "risk": "R4",
+          "output_ref": null
+        }
+      ],
+      "evidence": [],
+      "event_chain": {
+        "run_id": "run-req028-agent-control",
+        "event_count": 11,
+        "chain_valid": true,
+        "errors": [],
+        "head_event_hash": "sha256:90623ccec32f4781f52549d3a34af1cd0e5faf248c690634d7456c8a9b053317"
+      },
+      "approvals": {
+        "counts": {
+          "approved": 1,
+          "denied": 1
+        },
+        "items": [
+          {
+            "id": "approval-7009de60d9242388cd4351b9",
+            "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+            "risk": "R3",
+            "status": "approved",
+            "requested_by": "helper-envctl-agent-api-01",
+            "decided_by": "operator-req028",
+            "reason": "operator approves controlled additive smoke operation",
+            "requested_at_utc": "2026-07-05T04:50:07.609Z",
+            "decided_at_utc": "2026-07-05T04:50:07+00:00"
+          },
+          {
+            "id": "approval-e55ee771ce6c5ddabceebcb8",
+            "operation_id": "op-c8eceedeb8160f1dfede8c51",
+            "risk": "R4",
+            "status": "denied",
+            "requested_by": "helper-envctl-agent-api-01",
+            "decided_by": "operator-req028",
+            "reason": "R4 destructive operation is not approved in verification",
+            "requested_at_utc": "2026-07-05T04:50:07.611Z",
+            "decided_at_utc": "2026-07-05T04:50:07+00:00"
+          }
+        ]
+      },
+      "operation_status_counts": {
+        "denied": 1,
+        "ready": 1,
+        "succeeded": 1
+      },
+      "visible_locks": [
+        {
+          "lease_id": "lease-0c0faeeef53ec38531974330",
+          "target_scope": "envctl/sql",
+          "status": "held",
+          "actor_type": "agent",
+          "actor_id": "helper-envctl-agent-api-01",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "acquired_event_seq": 10,
+          "acquired_at_utc": "2026-07-05T04:50:07+00:00"
+        }
+      ],
+      "recent_events": [
+        {
+          "event_seq": 1,
+          "event_type": "agent_control_fixture_ready",
+          "phase": "02-envctl-db",
+          "actor_type": "system",
+          "actor_id": "verify-agent-control-api",
+          "operation_id": null,
+          "payload": {
+            "run": {
+              "reproducibility_hash": "sha256:79bece927e7920199057f925c6344dee789e78f0e7b024969c813baa7d397249",
+              "run_id": "run-req028-agent-control",
+              "started_at_utc": "2026-07-05T04:50:07+00:00",
+              "status": "created"
+            },
+            "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API"
+          },
+          "evidence_refs": [],
+          "previous_event_hash": null,
+          "event_hash": "sha256:6e0e8d1bb3e5a2ee9c59e633a3cb91bb5f9cb97d614240b05f73af3fb438fe51",
+          "created_at_utc": "2026-07-05T04:50:07+00:00"
+        },
+        {
+          "event_seq": 2,
+          "event_type": "agent_control_operation_enqueued",
+          "phase": "02-envctl-db",
+          "actor_type": "agent",
+          "actor_id": "helper-envctl-agent-api-01",
+          "operation_id": "op-5aac2ace5c7df46991ce5aef",
+          "payload": {
+            "approval_id": null,
+            "authority": "safe_execute",
+            "idempotency_key": "sha256:44fb93d7674de548e62dae942d25b1a342bc60bf93f1c785490788128030e5fa",
+            "operation_id": "op-5aac2ace5c7df46991ce5aef",
+            "operation_status": "ready",
+            "operation_type": "collect_status",
+            "recipe_step_id": "status-r1",
+            "risk": "R1",
+            "target_scope": "execution-framework/status"
+          },
+          "evidence_refs": [],
+          "previous_event_hash": "sha256:6e0e8d1bb3e5a2ee9c59e633a3cb91bb5f9cb97d614240b05f73af3fb438fe51",
+          "event_hash": "sha256:77d9e8e78c5815c0f15ea92bcabd9351206006abe76d6ea738df3acd176366fa",
+          "created_at_utc": "2026-07-05T04:50:07+00:00"
+        },
+        {
+          "event_seq": 3,
+          "event_type": "agent_control_operation_enqueued",
+          "phase": "02-envctl-db",
+          "actor_type": "agent",
+          "actor_id": "helper-envctl-agent-api-01",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "payload": {
+            "approval_id": "approval-7009de60d9242388cd4351b9",
+            "authority": "approval_request",
+            "idempotency_key": "sha256:7c7aea9d0339e6578566d41f699471cea0dbe63fc9178e5a511f2eaa417222b9",
+            "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+            "operation_status": "awaiting_approval",
+            "operation_type": "apply_schema_patch",
+            "recipe_step_id": "schema-r3",
+            "risk": "R3",
+            "target_scope": "envctl/sql"
+          },
+          "evidence_refs": [],
+          "previous_event_hash": "sha256:77d9e8e78c5815c0f15ea92bcabd9351206006abe76d6ea738df3acd176366fa",
+          "event_hash": "sha256:dac514bff2d18a9d8c89343afbbb3a08284a171545321100863a40e2b8b5acc8",
+          "created_at_utc": "2026-07-05T04:50:07+00:00"
+        },
+        {
+          "event_seq": 4,
+          "event_type": "agent_control_operation_transition_refused",
+          "phase": "02-envctl-db",
+          "actor_type": "agent",
+          "actor_id": "helper-envctl-agent-api-01",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "payload": {
+            "authority": "safe_execute",
+            "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+            "reason": "illegal operation transition: blocked -> running",
+            "trigger": "start"
+          },
+          "evidence_refs": [],
+          "previous_event_hash": "sha256:dac514bff2d18a9d8c89343afbbb3a08284a171545321100863a40e2b8b5acc8",
+          "event_hash": "sha256:b97bff96f5be2572caa9e1cec27b6fbcc0abd9ea83d5e86467b17ff3b48ef946",
+          "created_at_utc": "2026-07-05T04:50:07+00:00"
+        },
+        {
+          "event_seq": 5,
+          "event_type": "agent_control_approval_approved",
+          "phase": null,
+          "actor_type": "human",
+          "actor_id": "operator-req028",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "payload": {
+            "approval_id": "approval-7009de60d9242388cd4351b9",
+            "authority": "operator",
+            "decision": "approved",
+            "idempotency_key": null,
+            "reason": "operator approves controlled additive smoke operation"
+          },
+          "evidence_refs": [],
+          "previous_event_hash": "sha256:b97bff96f5be2572caa9e1cec27b6fbcc0abd9ea83d5e86467b17ff3b48ef946",
+          "event_hash": "sha256:770b9db7165abcd001fb7e1b6969359dfed18ada6ecd5f77fa3d949d0a7f7d8c",
+          "created_at_utc": "2026-07-05T04:50:07+00:00"
+        },
+        {
+          "event_seq": 6,
+          "event_type": "agent_control_operation_running",
+          "phase": "02-envctl-db",
+          "actor_type": "agent",
+          "actor_id": "helper-envctl-agent-api-01",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "payload": {
+            "authority": "safe_execute",
+            "db_status": "running",
+            "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+            "operation_type": "apply_schema_patch",
+            "previous_state": "approved",
+            "reason": "run approved smoke operation",
+            "risk": "R3",
+            "state": "running",
+            "terminal": false,
+            "trigger": "start"
+          },
+          "evidence_refs": [],
+          "previous_event_hash": "sha256:770b9db7165abcd001fb7e1b6969359dfed18ada6ecd5f77fa3d949d0a7f7d8c",
+          "event_hash": "sha256:3dd82328558800eedd91910a0bc1d12f3369da83683e8fd321157f6c63a8a2d4",
+          "created_at_utc": "2026-07-05T04:50:07+00:00"
+        },
+        {
+          "event_seq": 7,
+          "event_type": "agent_control_operation_completed",
+          "phase": "02-envctl-db",
+          "actor_type": "agent",
+          "actor_id": "helper-envctl-agent-api-01",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "payload": {
+            "authority": "safe_execute",
+            "db_status": "succeeded",
+            "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+            "operation_type": "apply_schema_patch",
+            "previous_state": "running",
+            "reason": "smoke operation completed",
+            "risk": "R3",
+            "state": "completed",
+            "terminal": true,
+            "trigger": "complete"
+          },
+          "evidence_refs": [],
+          "previous_event_hash": "sha256:3dd82328558800eedd91910a0bc1d12f3369da83683e8fd321157f6c63a8a2d4",
+          "event_hash": "sha256:a8062b64a9a2814f6dc81b22db36e8492f40ca101c505cdcd7b8275fd6ff8971",
+          "created_at_utc": "2026-07-05T04:50:07+00:00"
+        },
+        {
+          "event_seq": 8,
+          "event_type": "agent_control_operation_enqueued",
+          "phase": "02-envctl-db",
+          "actor_type": "agent",
+          "actor_id": "helper-envctl-agent-api-01",
+          "operation_id": "op-c8eceedeb8160f1dfede8c51",
+          "payload": {
+            "approval_id": "approval-e55ee771ce6c5ddabceebcb8",
+            "authority": "approval_request",
+            "idempotency_key": "sha256:a7988c2b9d962aee77a0cefa3c000fccf38fc10fcd7611698ed0eb7d7b91dfa2",
+            "operation_id": "op-c8eceedeb8160f1dfede8c51",
+            "operation_status": "awaiting_approval",
+            "operation_type": "destructive_cutover_attempt",
+            "recipe_step_id": "cutover-r4",
+            "risk": "R4",
+            "target_scope": "envctl/cutover"
+          },
+          "evidence_refs": [],
+          "previous_event_hash": "sha256:a8062b64a9a2814f6dc81b22db36e8492f40ca101c505cdcd7b8275fd6ff8971",
+          "event_hash": "sha256:1598fd22a5ce7790dc7516a9349f303297cc35d4247dddecf9eeedeb75f7c484",
+          "created_at_utc": "2026-07-05T04:50:07+00:00"
+        },
+        {
+          "event_seq": 9,
+          "event_type": "agent_control_approval_denied",
+          "phase": null,
+          "actor_type": "human",
+          "actor_id": "operator-req028",
+          "operation_id": "op-c8eceedeb8160f1dfede8c51",
+          "payload": {
+            "approval_id": "approval-e55ee771ce6c5ddabceebcb8",
+            "authority": "operator",
+            "decision": "denied",
+            "idempotency_key": null,
+            "reason": "R4 destructive operation is not approved in verification"
+          },
+          "evidence_refs": [],
+          "previous_event_hash": "sha256:1598fd22a5ce7790dc7516a9349f303297cc35d4247dddecf9eeedeb75f7c484",
+          "event_hash": "sha256:012341cfd90598d7c0877154ab127d6ea179d927d1e0ce3255455bc4b12de690",
+          "created_at_utc": "2026-07-05T04:50:07+00:00"
+        },
+        {
+          "event_seq": 10,
+          "event_type": "agent_control_lease_acquired",
+          "phase": null,
+          "actor_type": "agent",
+          "actor_id": "helper-envctl-agent-api-01",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "payload": {
+            "authority": "safe_execute",
+            "lease_id": "lease-0c0faeeef53ec38531974330",
+            "reason": "serialize sql target",
+            "target_scope": "envctl/sql"
+          },
+          "evidence_refs": [],
+          "previous_event_hash": "sha256:012341cfd90598d7c0877154ab127d6ea179d927d1e0ce3255455bc4b12de690",
+          "event_hash": "sha256:4d109eea4fba31290b4cf1738b86b3650e39269278be67f24d40110ec9bc975c",
+          "created_at_utc": "2026-07-05T04:50:07+00:00"
+        }
+      ]
+    },
+    "status_after_release": {
+      "run_id": "run-req028-agent-control",
+      "status": "blocked",
+      "operation_count": 3,
+      "failed_operation_count": 0,
+      "open_approval_count": 0,
+      "artifact_count": 0,
+      "last_event_at_utc": "2026-07-05T04:50:07+00:00",
+      "timeline": [
+        {
+          "event_seq": 1,
+          "event_type": "agent_control_fixture_ready",
+          "actor_type": "system",
+          "operation_id": null,
+          "operation_status": null
+        },
+        {
+          "event_seq": 2,
+          "event_type": "agent_control_operation_enqueued",
+          "actor_type": "agent",
+          "operation_id": "op-5aac2ace5c7df46991ce5aef",
+          "operation_status": "ready"
+        },
+        {
+          "event_seq": 3,
+          "event_type": "agent_control_operation_enqueued",
+          "actor_type": "agent",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "operation_status": "succeeded"
+        },
+        {
+          "event_seq": 4,
+          "event_type": "agent_control_operation_transition_refused",
+          "actor_type": "agent",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "operation_status": "succeeded"
+        },
+        {
+          "event_seq": 5,
+          "event_type": "agent_control_approval_approved",
+          "actor_type": "human",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "operation_status": "succeeded"
+        },
+        {
+          "event_seq": 6,
+          "event_type": "agent_control_operation_running",
+          "actor_type": "agent",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "operation_status": "succeeded"
+        },
+        {
+          "event_seq": 7,
+          "event_type": "agent_control_operation_completed",
+          "actor_type": "agent",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "operation_status": "succeeded"
+        },
+        {
+          "event_seq": 8,
+          "event_type": "agent_control_operation_enqueued",
+          "actor_type": "agent",
+          "operation_id": "op-c8eceedeb8160f1dfede8c51",
+          "operation_status": "denied"
+        },
+        {
+          "event_seq": 9,
+          "event_type": "agent_control_approval_denied",
+          "actor_type": "human",
+          "operation_id": "op-c8eceedeb8160f1dfede8c51",
+          "operation_status": "denied"
+        },
+        {
+          "event_seq": 10,
+          "event_type": "agent_control_lease_acquired",
+          "actor_type": "agent",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "operation_status": "succeeded"
+        },
+        {
+          "event_seq": 11,
+          "event_type": "agent_control_lease_blocked",
+          "actor_type": "agent",
+          "operation_id": null,
+          "operation_status": null
+        },
+        {
+          "event_seq": 12,
+          "event_type": "agent_control_lease_released",
+          "actor_type": "agent",
+          "operation_id": null,
+          "operation_status": null
+        }
+      ],
+      "operations": [
+        {
+          "operation_id": "op-5aac2ace5c7df46991ce5aef",
+          "operation_type": "collect_status",
+          "phase": "02-envctl-db",
+          "status": "ready",
+          "risk": "R1",
+          "output_ref": null
+        },
+        {
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "operation_type": "apply_schema_patch",
+          "phase": "02-envctl-db",
+          "status": "succeeded",
+          "risk": "R3",
+          "output_ref": null
+        },
+        {
+          "operation_id": "op-c8eceedeb8160f1dfede8c51",
+          "operation_type": "destructive_cutover_attempt",
+          "phase": "02-envctl-db",
+          "status": "denied",
+          "risk": "R4",
+          "output_ref": null
+        }
+      ],
+      "evidence": [],
+      "event_chain": {
+        "run_id": "run-req028-agent-control",
+        "event_count": 12,
+        "chain_valid": true,
+        "errors": [],
+        "head_event_hash": "sha256:76ddc99658799e92a8c886f36b7bee69af36058c45f57c8416ec57ebdc1b12ab"
+      },
+      "approvals": {
+        "counts": {
+          "approved": 1,
+          "denied": 1
+        },
+        "items": [
+          {
+            "id": "approval-7009de60d9242388cd4351b9",
+            "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+            "risk": "R3",
+            "status": "approved",
+            "requested_by": "helper-envctl-agent-api-01",
+            "decided_by": "operator-req028",
+            "reason": "operator approves controlled additive smoke operation",
+            "requested_at_utc": "2026-07-05T04:50:07.609Z",
+            "decided_at_utc": "2026-07-05T04:50:07+00:00"
+          },
+          {
+            "id": "approval-e55ee771ce6c5ddabceebcb8",
+            "operation_id": "op-c8eceedeb8160f1dfede8c51",
+            "risk": "R4",
+            "status": "denied",
+            "requested_by": "helper-envctl-agent-api-01",
+            "decided_by": "operator-req028",
+            "reason": "R4 destructive operation is not approved in verification",
+            "requested_at_utc": "2026-07-05T04:50:07.611Z",
+            "decided_at_utc": "2026-07-05T04:50:07+00:00"
+          }
+        ]
+      },
+      "operation_status_counts": {
+        "denied": 1,
+        "ready": 1,
+        "succeeded": 1
+      },
+      "visible_locks": [],
+      "recent_events": [
+        {
+          "event_seq": 1,
+          "event_type": "agent_control_fixture_ready",
+          "phase": "02-envctl-db",
+          "actor_type": "system",
+          "actor_id": "verify-agent-control-api",
+          "operation_id": null,
+          "payload": {
+            "run": {
+              "reproducibility_hash": "sha256:79bece927e7920199057f925c6344dee789e78f0e7b024969c813baa7d397249",
+              "run_id": "run-req028-agent-control",
+              "started_at_utc": "2026-07-05T04:50:07+00:00",
+              "status": "created"
+            },
+            "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API"
+          },
+          "evidence_refs": [],
+          "previous_event_hash": null,
+          "event_hash": "sha256:6e0e8d1bb3e5a2ee9c59e633a3cb91bb5f9cb97d614240b05f73af3fb438fe51",
+          "created_at_utc": "2026-07-05T04:50:07+00:00"
+        },
+        {
+          "event_seq": 2,
+          "event_type": "agent_control_operation_enqueued",
+          "phase": "02-envctl-db",
+          "actor_type": "agent",
+          "actor_id": "helper-envctl-agent-api-01",
+          "operation_id": "op-5aac2ace5c7df46991ce5aef",
+          "payload": {
+            "approval_id": null,
+            "authority": "safe_execute",
+            "idempotency_key": "sha256:44fb93d7674de548e62dae942d25b1a342bc60bf93f1c785490788128030e5fa",
+            "operation_id": "op-5aac2ace5c7df46991ce5aef",
+            "operation_status": "ready",
+            "operation_type": "collect_status",
+            "recipe_step_id": "status-r1",
+            "risk": "R1",
+            "target_scope": "execution-framework/status"
+          },
+          "evidence_refs": [],
+          "previous_event_hash": "sha256:6e0e8d1bb3e5a2ee9c59e633a3cb91bb5f9cb97d614240b05f73af3fb438fe51",
+          "event_hash": "sha256:77d9e8e78c5815c0f15ea92bcabd9351206006abe76d6ea738df3acd176366fa",
+          "created_at_utc": "2026-07-05T04:50:07+00:00"
+        },
+        {
+          "event_seq": 3,
+          "event_type": "agent_control_operation_enqueued",
+          "phase": "02-envctl-db",
+          "actor_type": "agent",
+          "actor_id": "helper-envctl-agent-api-01",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "payload": {
+            "approval_id": "approval-7009de60d9242388cd4351b9",
+            "authority": "approval_request",
+            "idempotency_key": "sha256:7c7aea9d0339e6578566d41f699471cea0dbe63fc9178e5a511f2eaa417222b9",
+            "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+            "operation_status": "awaiting_approval",
+            "operation_type": "apply_schema_patch",
+            "recipe_step_id": "schema-r3",
+            "risk": "R3",
+            "target_scope": "envctl/sql"
+          },
+          "evidence_refs": [],
+          "previous_event_hash": "sha256:77d9e8e78c5815c0f15ea92bcabd9351206006abe76d6ea738df3acd176366fa",
+          "event_hash": "sha256:dac514bff2d18a9d8c89343afbbb3a08284a171545321100863a40e2b8b5acc8",
+          "created_at_utc": "2026-07-05T04:50:07+00:00"
+        },
+        {
+          "event_seq": 4,
+          "event_type": "agent_control_operation_transition_refused",
+          "phase": "02-envctl-db",
+          "actor_type": "agent",
+          "actor_id": "helper-envctl-agent-api-01",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "payload": {
+            "authority": "safe_execute",
+            "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+            "reason": "illegal operation transition: blocked -> running",
+            "trigger": "start"
+          },
+          "evidence_refs": [],
+          "previous_event_hash": "sha256:dac514bff2d18a9d8c89343afbbb3a08284a171545321100863a40e2b8b5acc8",
+          "event_hash": "sha256:b97bff96f5be2572caa9e1cec27b6fbcc0abd9ea83d5e86467b17ff3b48ef946",
+          "created_at_utc": "2026-07-05T04:50:07+00:00"
+        },
+        {
+          "event_seq": 5,
+          "event_type": "agent_control_approval_approved",
+          "phase": null,
+          "actor_type": "human",
+          "actor_id": "operator-req028",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "payload": {
+            "approval_id": "approval-7009de60d9242388cd4351b9",
+            "authority": "operator",
+            "decision": "approved",
+            "idempotency_key": null,
+            "reason": "operator approves controlled additive smoke operation"
+          },
+          "evidence_refs": [],
+          "previous_event_hash": "sha256:b97bff96f5be2572caa9e1cec27b6fbcc0abd9ea83d5e86467b17ff3b48ef946",
+          "event_hash": "sha256:770b9db7165abcd001fb7e1b6969359dfed18ada6ecd5f77fa3d949d0a7f7d8c",
+          "created_at_utc": "2026-07-05T04:50:07+00:00"
+        },
+        {
+          "event_seq": 6,
+          "event_type": "agent_control_operation_running",
+          "phase": "02-envctl-db",
+          "actor_type": "agent",
+          "actor_id": "helper-envctl-agent-api-01",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "payload": {
+            "authority": "safe_execute",
+            "db_status": "running",
+            "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+            "operation_type": "apply_schema_patch",
+            "previous_state": "approved",
+            "reason": "run approved smoke operation",
+            "risk": "R3",
+            "state": "running",
+            "terminal": false,
+            "trigger": "start"
+          },
+          "evidence_refs": [],
+          "previous_event_hash": "sha256:770b9db7165abcd001fb7e1b6969359dfed18ada6ecd5f77fa3d949d0a7f7d8c",
+          "event_hash": "sha256:3dd82328558800eedd91910a0bc1d12f3369da83683e8fd321157f6c63a8a2d4",
+          "created_at_utc": "2026-07-05T04:50:07+00:00"
+        },
+        {
+          "event_seq": 7,
+          "event_type": "agent_control_operation_completed",
+          "phase": "02-envctl-db",
+          "actor_type": "agent",
+          "actor_id": "helper-envctl-agent-api-01",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "payload": {
+            "authority": "safe_execute",
+            "db_status": "succeeded",
+            "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+            "operation_type": "apply_schema_patch",
+            "previous_state": "running",
+            "reason": "smoke operation completed",
+            "risk": "R3",
+            "state": "completed",
+            "terminal": true,
+            "trigger": "complete"
+          },
+          "evidence_refs": [],
+          "previous_event_hash": "sha256:3dd82328558800eedd91910a0bc1d12f3369da83683e8fd321157f6c63a8a2d4",
+          "event_hash": "sha256:a8062b64a9a2814f6dc81b22db36e8492f40ca101c505cdcd7b8275fd6ff8971",
+          "created_at_utc": "2026-07-05T04:50:07+00:00"
+        },
+        {
+          "event_seq": 8,
+          "event_type": "agent_control_operation_enqueued",
+          "phase": "02-envctl-db",
+          "actor_type": "agent",
+          "actor_id": "helper-envctl-agent-api-01",
+          "operation_id": "op-c8eceedeb8160f1dfede8c51",
+          "payload": {
+            "approval_id": "approval-e55ee771ce6c5ddabceebcb8",
+            "authority": "approval_request",
+            "idempotency_key": "sha256:a7988c2b9d962aee77a0cefa3c000fccf38fc10fcd7611698ed0eb7d7b91dfa2",
+            "operation_id": "op-c8eceedeb8160f1dfede8c51",
+            "operation_status": "awaiting_approval",
+            "operation_type": "destructive_cutover_attempt",
+            "recipe_step_id": "cutover-r4",
+            "risk": "R4",
+            "target_scope": "envctl/cutover"
+          },
+          "evidence_refs": [],
+          "previous_event_hash": "sha256:a8062b64a9a2814f6dc81b22db36e8492f40ca101c505cdcd7b8275fd6ff8971",
+          "event_hash": "sha256:1598fd22a5ce7790dc7516a9349f303297cc35d4247dddecf9eeedeb75f7c484",
+          "created_at_utc": "2026-07-05T04:50:07+00:00"
+        },
+        {
+          "event_seq": 9,
+          "event_type": "agent_control_approval_denied",
+          "phase": null,
+          "actor_type": "human",
+          "actor_id": "operator-req028",
+          "operation_id": "op-c8eceedeb8160f1dfede8c51",
+          "payload": {
+            "approval_id": "approval-e55ee771ce6c5ddabceebcb8",
+            "authority": "operator",
+            "decision": "denied",
+            "idempotency_key": null,
+            "reason": "R4 destructive operation is not approved in verification"
+          },
+          "evidence_refs": [],
+          "previous_event_hash": "sha256:1598fd22a5ce7790dc7516a9349f303297cc35d4247dddecf9eeedeb75f7c484",
+          "event_hash": "sha256:012341cfd90598d7c0877154ab127d6ea179d927d1e0ce3255455bc4b12de690",
+          "created_at_utc": "2026-07-05T04:50:07+00:00"
+        },
+        {
+          "event_seq": 10,
+          "event_type": "agent_control_lease_acquired",
+          "phase": null,
+          "actor_type": "agent",
+          "actor_id": "helper-envctl-agent-api-01",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "payload": {
+            "authority": "safe_execute",
+            "lease_id": "lease-0c0faeeef53ec38531974330",
+            "reason": "serialize sql target",
+            "target_scope": "envctl/sql"
+          },
+          "evidence_refs": [],
+          "previous_event_hash": "sha256:012341cfd90598d7c0877154ab127d6ea179d927d1e0ce3255455bc4b12de690",
+          "event_hash": "sha256:4d109eea4fba31290b4cf1738b86b3650e39269278be67f24d40110ec9bc975c",
+          "created_at_utc": "2026-07-05T04:50:07+00:00"
+        }
+      ]
+    }
+  },
+  "cli": {
+    "status": {
+      "run_id": "run-req028-agent-control",
+      "event_count": 12,
+      "chain_valid": true,
+      "visible_locks": []
+    },
+    "events": {
+      "returned": 3,
+      "chain_valid": true
+    },
+    "enqueue": {
+      "approval_id": null,
+      "event_hash": "sha256:9020d4fe2c4c0418528cbfbfac3094ce930846c332e024877dcf963725f423bd",
+      "event_seq": 13,
+      "idempotency_key": "sha256:ed0b03e85672ae2da2318057870394f1c84f5db9af0c80ddbd20992926ea1f27",
+      "operation_id": "op-c0a4bf391f700534ac2e2057",
+      "operation_status": "ready",
+      "status": "created"
+    }
+  },
+  "final_status": {
+    "run_id": "run-req028-agent-control",
+    "status": "blocked",
+    "operation_count": 4,
+    "failed_operation_count": 0,
+    "open_approval_count": 0,
+    "artifact_count": 0,
+    "last_event_at_utc": "2026-07-05T04:50:07+00:00",
+    "timeline": [
+      {
+        "event_seq": 1,
+        "event_type": "agent_control_fixture_ready",
+        "actor_type": "system",
+        "operation_id": null,
+        "operation_status": null
+      },
+      {
+        "event_seq": 2,
+        "event_type": "agent_control_operation_enqueued",
+        "actor_type": "agent",
+        "operation_id": "op-5aac2ace5c7df46991ce5aef",
+        "operation_status": "ready"
+      },
+      {
+        "event_seq": 3,
+        "event_type": "agent_control_operation_enqueued",
+        "actor_type": "agent",
+        "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+        "operation_status": "succeeded"
+      },
+      {
+        "event_seq": 4,
+        "event_type": "agent_control_operation_transition_refused",
+        "actor_type": "agent",
+        "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+        "operation_status": "succeeded"
+      },
+      {
+        "event_seq": 5,
+        "event_type": "agent_control_approval_approved",
+        "actor_type": "human",
+        "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+        "operation_status": "succeeded"
+      },
+      {
+        "event_seq": 6,
+        "event_type": "agent_control_operation_running",
+        "actor_type": "agent",
+        "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+        "operation_status": "succeeded"
+      },
+      {
+        "event_seq": 7,
+        "event_type": "agent_control_operation_completed",
+        "actor_type": "agent",
+        "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+        "operation_status": "succeeded"
+      },
+      {
+        "event_seq": 8,
+        "event_type": "agent_control_operation_enqueued",
+        "actor_type": "agent",
+        "operation_id": "op-c8eceedeb8160f1dfede8c51",
+        "operation_status": "denied"
+      },
+      {
+        "event_seq": 9,
+        "event_type": "agent_control_approval_denied",
+        "actor_type": "human",
+        "operation_id": "op-c8eceedeb8160f1dfede8c51",
+        "operation_status": "denied"
+      },
+      {
+        "event_seq": 10,
+        "event_type": "agent_control_lease_acquired",
+        "actor_type": "agent",
+        "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+        "operation_status": "succeeded"
+      },
+      {
+        "event_seq": 11,
+        "event_type": "agent_control_lease_blocked",
+        "actor_type": "agent",
+        "operation_id": null,
+        "operation_status": null
+      },
+      {
+        "event_seq": 12,
+        "event_type": "agent_control_lease_released",
+        "actor_type": "agent",
+        "operation_id": null,
+        "operation_status": null
+      },
+      {
+        "event_seq": 13,
+        "event_type": "agent_control_operation_enqueued",
+        "actor_type": "plugin",
+        "operation_id": "op-c0a4bf391f700534ac2e2057",
+        "operation_status": "ready"
+      }
+    ],
+    "operations": [
+      {
+        "operation_id": "op-5aac2ace5c7df46991ce5aef",
+        "operation_type": "collect_status",
+        "phase": "02-envctl-db",
+        "status": "ready",
+        "risk": "R1",
+        "output_ref": null
+      },
+      {
+        "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+        "operation_type": "apply_schema_patch",
+        "phase": "02-envctl-db",
+        "status": "succeeded",
+        "risk": "R3",
+        "output_ref": null
+      },
+      {
+        "operation_id": "op-c8eceedeb8160f1dfede8c51",
+        "operation_type": "destructive_cutover_attempt",
+        "phase": "02-envctl-db",
+        "status": "denied",
+        "risk": "R4",
+        "output_ref": null
+      },
+      {
+        "operation_id": "op-c0a4bf391f700534ac2e2057",
+        "operation_type": "cli_collect_evidence",
+        "phase": "02-envctl-db",
+        "status": "ready",
+        "risk": "R2",
+        "output_ref": null
+      }
+    ],
+    "evidence": [],
+    "event_chain": {
+      "run_id": "run-req028-agent-control",
+      "event_count": 13,
+      "chain_valid": true,
+      "errors": [],
+      "head_event_hash": "sha256:9020d4fe2c4c0418528cbfbfac3094ce930846c332e024877dcf963725f423bd"
+    },
+    "approvals": {
+      "counts": {
+        "approved": 1,
+        "denied": 1
+      },
+      "items": [
+        {
+          "id": "approval-7009de60d9242388cd4351b9",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "risk": "R3",
+          "status": "approved",
+          "requested_by": "helper-envctl-agent-api-01",
+          "decided_by": "operator-req028",
+          "reason": "operator approves controlled additive smoke operation",
+          "requested_at_utc": "2026-07-05T04:50:07.609Z",
+          "decided_at_utc": "2026-07-05T04:50:07+00:00"
+        },
+        {
+          "id": "approval-e55ee771ce6c5ddabceebcb8",
+          "operation_id": "op-c8eceedeb8160f1dfede8c51",
+          "risk": "R4",
+          "status": "denied",
+          "requested_by": "helper-envctl-agent-api-01",
+          "decided_by": "operator-req028",
+          "reason": "R4 destructive operation is not approved in verification",
+          "requested_at_utc": "2026-07-05T04:50:07.611Z",
+          "decided_at_utc": "2026-07-05T04:50:07+00:00"
+        }
+      ]
+    },
+    "operation_status_counts": {
+      "denied": 1,
+      "ready": 2,
+      "succeeded": 1
+    },
+    "visible_locks": [],
+    "recent_events": [
+      {
+        "event_seq": 1,
+        "event_type": "agent_control_fixture_ready",
+        "phase": "02-envctl-db",
+        "actor_type": "system",
+        "actor_id": "verify-agent-control-api",
+        "operation_id": null,
+        "payload": {
+          "run": {
+            "reproducibility_hash": "sha256:79bece927e7920199057f925c6344dee789e78f0e7b024969c813baa7d397249",
+            "run_id": "run-req028-agent-control",
+            "started_at_utc": "2026-07-05T04:50:07+00:00",
+            "status": "created"
+          },
+          "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API"
+        },
+        "evidence_refs": [],
+        "previous_event_hash": null,
+        "event_hash": "sha256:6e0e8d1bb3e5a2ee9c59e633a3cb91bb5f9cb97d614240b05f73af3fb438fe51",
+        "created_at_utc": "2026-07-05T04:50:07+00:00"
+      },
+      {
+        "event_seq": 2,
+        "event_type": "agent_control_operation_enqueued",
+        "phase": "02-envctl-db",
+        "actor_type": "agent",
+        "actor_id": "helper-envctl-agent-api-01",
+        "operation_id": "op-5aac2ace5c7df46991ce5aef",
+        "payload": {
+          "approval_id": null,
+          "authority": "safe_execute",
+          "idempotency_key": "sha256:44fb93d7674de548e62dae942d25b1a342bc60bf93f1c785490788128030e5fa",
+          "operation_id": "op-5aac2ace5c7df46991ce5aef",
+          "operation_status": "ready",
+          "operation_type": "collect_status",
+          "recipe_step_id": "status-r1",
+          "risk": "R1",
+          "target_scope": "execution-framework/status"
+        },
+        "evidence_refs": [],
+        "previous_event_hash": "sha256:6e0e8d1bb3e5a2ee9c59e633a3cb91bb5f9cb97d614240b05f73af3fb438fe51",
+        "event_hash": "sha256:77d9e8e78c5815c0f15ea92bcabd9351206006abe76d6ea738df3acd176366fa",
+        "created_at_utc": "2026-07-05T04:50:07+00:00"
+      },
+      {
+        "event_seq": 3,
+        "event_type": "agent_control_operation_enqueued",
+        "phase": "02-envctl-db",
+        "actor_type": "agent",
+        "actor_id": "helper-envctl-agent-api-01",
+        "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+        "payload": {
+          "approval_id": "approval-7009de60d9242388cd4351b9",
+          "authority": "approval_request",
+          "idempotency_key": "sha256:7c7aea9d0339e6578566d41f699471cea0dbe63fc9178e5a511f2eaa417222b9",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "operation_status": "awaiting_approval",
+          "operation_type": "apply_schema_patch",
+          "recipe_step_id": "schema-r3",
+          "risk": "R3",
+          "target_scope": "envctl/sql"
+        },
+        "evidence_refs": [],
+        "previous_event_hash": "sha256:77d9e8e78c5815c0f15ea92bcabd9351206006abe76d6ea738df3acd176366fa",
+        "event_hash": "sha256:dac514bff2d18a9d8c89343afbbb3a08284a171545321100863a40e2b8b5acc8",
+        "created_at_utc": "2026-07-05T04:50:07+00:00"
+      },
+      {
+        "event_seq": 4,
+        "event_type": "agent_control_operation_transition_refused",
+        "phase": "02-envctl-db",
+        "actor_type": "agent",
+        "actor_id": "helper-envctl-agent-api-01",
+        "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+        "payload": {
+          "authority": "safe_execute",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "reason": "illegal operation transition: blocked -> running",
+          "trigger": "start"
+        },
+        "evidence_refs": [],
+        "previous_event_hash": "sha256:dac514bff2d18a9d8c89343afbbb3a08284a171545321100863a40e2b8b5acc8",
+        "event_hash": "sha256:b97bff96f5be2572caa9e1cec27b6fbcc0abd9ea83d5e86467b17ff3b48ef946",
+        "created_at_utc": "2026-07-05T04:50:07+00:00"
+      },
+      {
+        "event_seq": 5,
+        "event_type": "agent_control_approval_approved",
+        "phase": null,
+        "actor_type": "human",
+        "actor_id": "operator-req028",
+        "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+        "payload": {
+          "approval_id": "approval-7009de60d9242388cd4351b9",
+          "authority": "operator",
+          "decision": "approved",
+          "idempotency_key": null,
+          "reason": "operator approves controlled additive smoke operation"
+        },
+        "evidence_refs": [],
+        "previous_event_hash": "sha256:b97bff96f5be2572caa9e1cec27b6fbcc0abd9ea83d5e86467b17ff3b48ef946",
+        "event_hash": "sha256:770b9db7165abcd001fb7e1b6969359dfed18ada6ecd5f77fa3d949d0a7f7d8c",
+        "created_at_utc": "2026-07-05T04:50:07+00:00"
+      },
+      {
+        "event_seq": 6,
+        "event_type": "agent_control_operation_running",
+        "phase": "02-envctl-db",
+        "actor_type": "agent",
+        "actor_id": "helper-envctl-agent-api-01",
+        "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+        "payload": {
+          "authority": "safe_execute",
+          "db_status": "running",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "operation_type": "apply_schema_patch",
+          "previous_state": "approved",
+          "reason": "run approved smoke operation",
+          "risk": "R3",
+          "state": "running",
+          "terminal": false,
+          "trigger": "start"
+        },
+        "evidence_refs": [],
+        "previous_event_hash": "sha256:770b9db7165abcd001fb7e1b6969359dfed18ada6ecd5f77fa3d949d0a7f7d8c",
+        "event_hash": "sha256:3dd82328558800eedd91910a0bc1d12f3369da83683e8fd321157f6c63a8a2d4",
+        "created_at_utc": "2026-07-05T04:50:07+00:00"
+      },
+      {
+        "event_seq": 7,
+        "event_type": "agent_control_operation_completed",
+        "phase": "02-envctl-db",
+        "actor_type": "agent",
+        "actor_id": "helper-envctl-agent-api-01",
+        "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+        "payload": {
+          "authority": "safe_execute",
+          "db_status": "succeeded",
+          "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+          "operation_type": "apply_schema_patch",
+          "previous_state": "running",
+          "reason": "smoke operation completed",
+          "risk": "R3",
+          "state": "completed",
+          "terminal": true,
+          "trigger": "complete"
+        },
+        "evidence_refs": [],
+        "previous_event_hash": "sha256:3dd82328558800eedd91910a0bc1d12f3369da83683e8fd321157f6c63a8a2d4",
+        "event_hash": "sha256:a8062b64a9a2814f6dc81b22db36e8492f40ca101c505cdcd7b8275fd6ff8971",
+        "created_at_utc": "2026-07-05T04:50:07+00:00"
+      },
+      {
+        "event_seq": 8,
+        "event_type": "agent_control_operation_enqueued",
+        "phase": "02-envctl-db",
+        "actor_type": "agent",
+        "actor_id": "helper-envctl-agent-api-01",
+        "operation_id": "op-c8eceedeb8160f1dfede8c51",
+        "payload": {
+          "approval_id": "approval-e55ee771ce6c5ddabceebcb8",
+          "authority": "approval_request",
+          "idempotency_key": "sha256:a7988c2b9d962aee77a0cefa3c000fccf38fc10fcd7611698ed0eb7d7b91dfa2",
+          "operation_id": "op-c8eceedeb8160f1dfede8c51",
+          "operation_status": "awaiting_approval",
+          "operation_type": "destructive_cutover_attempt",
+          "recipe_step_id": "cutover-r4",
+          "risk": "R4",
+          "target_scope": "envctl/cutover"
+        },
+        "evidence_refs": [],
+        "previous_event_hash": "sha256:a8062b64a9a2814f6dc81b22db36e8492f40ca101c505cdcd7b8275fd6ff8971",
+        "event_hash": "sha256:1598fd22a5ce7790dc7516a9349f303297cc35d4247dddecf9eeedeb75f7c484",
+        "created_at_utc": "2026-07-05T04:50:07+00:00"
+      },
+      {
+        "event_seq": 9,
+        "event_type": "agent_control_approval_denied",
+        "phase": null,
+        "actor_type": "human",
+        "actor_id": "operator-req028",
+        "operation_id": "op-c8eceedeb8160f1dfede8c51",
+        "payload": {
+          "approval_id": "approval-e55ee771ce6c5ddabceebcb8",
+          "authority": "operator",
+          "decision": "denied",
+          "idempotency_key": null,
+          "reason": "R4 destructive operation is not approved in verification"
+        },
+        "evidence_refs": [],
+        "previous_event_hash": "sha256:1598fd22a5ce7790dc7516a9349f303297cc35d4247dddecf9eeedeb75f7c484",
+        "event_hash": "sha256:012341cfd90598d7c0877154ab127d6ea179d927d1e0ce3255455bc4b12de690",
+        "created_at_utc": "2026-07-05T04:50:07+00:00"
+      },
+      {
+        "event_seq": 10,
+        "event_type": "agent_control_lease_acquired",
+        "phase": null,
+        "actor_type": "agent",
+        "actor_id": "helper-envctl-agent-api-01",
+        "operation_id": "op-6f9be8d95cd8148a8bb3618f",
+        "payload": {
+          "authority": "safe_execute",
+          "lease_id": "lease-0c0faeeef53ec38531974330",
+          "reason": "serialize sql target",
+          "target_scope": "envctl/sql"
+        },
+        "evidence_refs": [],
+        "previous_event_hash": "sha256:012341cfd90598d7c0877154ab127d6ea179d927d1e0ce3255455bc4b12de690",
+        "event_hash": "sha256:4d109eea4fba31290b4cf1738b86b3650e39269278be67f24d40110ec9bc975c",
+        "created_at_utc": "2026-07-05T04:50:07+00:00"
+      },
+      {
+        "event_seq": 11,
+        "event_type": "agent_control_lease_blocked",
+        "phase": null,
+        "actor_type": "agent",
+        "actor_id": "helper-conflict",
+        "operation_id": null,
+        "payload": {
+          "authority": "safe_execute",
+          "blocking_lease_id": "lease-0c0faeeef53ec38531974330",
+          "reason": "prove conflicting lock is visible",
+          "target_scope": "envctl/sql"
+        },
+        "evidence_refs": [],
+        "previous_event_hash": "sha256:4d109eea4fba31290b4cf1738b86b3650e39269278be67f24d40110ec9bc975c",
+        "event_hash": "sha256:90623ccec32f4781f52549d3a34af1cd0e5faf248c690634d7456c8a9b053317",
+        "created_at_utc": "2026-07-05T04:50:07+00:00"
+      },
+      {
+        "event_seq": 12,
+        "event_type": "agent_control_lease_released",
+        "phase": null,
+        "actor_type": "agent",
+        "actor_id": "helper-envctl-agent-api-01",
+        "operation_id": null,
+        "payload": {
+          "authority": "safe_execute",
+          "lease_id": "lease-0c0faeeef53ec38531974330",
+          "reason": "release sql target",
+          "target_scope": "envctl/sql"
+        },
+        "evidence_refs": [],
+        "previous_event_hash": "sha256:90623ccec32f4781f52549d3a34af1cd0e5faf248c690634d7456c8a9b053317",
+        "event_hash": "sha256:76ddc99658799e92a8c886f36b7bee69af36058c45f57c8416ec57ebdc1b12ab",
+        "created_at_utc": "2026-07-05T04:50:07+00:00"
+      },
+      {
+        "event_seq": 13,
+        "event_type": "agent_control_operation_enqueued",
+        "phase": "02-envctl-db",
+        "actor_type": "plugin",
+        "actor_id": "nu-plugin-envctl",
+        "operation_id": "op-c0a4bf391f700534ac2e2057",
+        "payload": {
+          "approval_id": null,
+          "authority": "safe_execute",
+          "idempotency_key": "sha256:ed0b03e85672ae2da2318057870394f1c84f5db9af0c80ddbd20992926ea1f27",
+          "operation_id": "op-c0a4bf391f700534ac2e2057",
+          "operation_status": "ready",
+          "operation_type": "cli_collect_evidence",
+          "recipe_step_id": null,
+          "risk": "R2",
+          "target_scope": "execution-framework/proof_records"
+        },
+        "evidence_refs": [],
+        "previous_event_hash": "sha256:76ddc99658799e92a8c886f36b7bee69af36058c45f57c8416ec57ebdc1b12ab",
+        "event_hash": "sha256:9020d4fe2c4c0418528cbfbfac3094ce930846c332e024877dcf963725f423bd",
+        "created_at_utc": "2026-07-05T04:50:07+00:00"
+      }
+    ]
+  },
+  "api_contract": {
+    "status_endpoint": "GET /migration/runs/{run_id}/status",
+    "events_endpoint": "GET /migration/runs/{run_id}/events",
+    "approval_endpoint": "POST /migration/approvals/{approval_id}/decision",
+    "authority_levels": [
+      "read_only",
+      "safe_execute",
+      "approval_request",
+      "operator",
+      "admin"
+    ]
+  }
+}

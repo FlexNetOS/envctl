@@ -1,0 +1,11 @@
+{
+  "task_id": "ART-102_REPOSITORY_MAP",
+  "status": "completed",
+  "started_at": "2026-07-04T23:20:15+00:00",
+  "updated_at": "2026-07-04T23:20:34+00:00",
+  "artifact_paths": [
+    "migration-artifacts/art-102_repository_map/repository-map.json",
+    "migration-artifacts/art-102_repository_map/repository-map.md"
+  ],
+  "proof_uri": "proof_records/ART-102_REPOSITORY_MAP.proof.json"
+}

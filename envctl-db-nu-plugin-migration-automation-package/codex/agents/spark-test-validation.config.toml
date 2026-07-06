@@ -1,0 +1,6 @@
+name = "spark-test-validation"
+model = "spark-5.3"
+description = "Designs unit/integration/contract tests for envctl and nu_plugin migration automation."
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+model_reasoning_effort = "medium"

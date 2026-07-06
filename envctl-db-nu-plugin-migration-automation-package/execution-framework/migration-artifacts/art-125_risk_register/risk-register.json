@@ -1,0 +1,120 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-125_RISK_REGISTER",
+  "title": "Risk Register",
+  "generated_at": "2026-07-04T23:19:47+00:00",
+  "status": "complete",
+  "contract_row": {
+    "contract_row_id": "artifact:09-governance-risk-register-md",
+    "artifact_id": "09-governance-risk-register-md",
+    "title": "Risk Register",
+    "required_path": "migration-artifacts/09-governance/risk-register.md",
+    "section": "09-governance",
+    "artifact_type": "governance_record",
+    "format": "md",
+    "status": "required",
+    "source_refs": [
+      "source/codex-flexnetos-migration-prompt-package/expected-output/migration-artifacts-tree.md",
+      "source/previous-migration-artifact-context.md"
+    ],
+    "producer_task_id": "ART-125_RISK_REGISTER",
+    "validators": [
+      "path_registered",
+      "evidence_or_status_recorded",
+      "linked_from_index"
+    ]
+  },
+  "inputs": [
+    "target descriptor",
+    "repo scan",
+    "envctl database"
+  ],
+  "risks": [
+    {
+      "risk_id": "RISK-ART125-001",
+      "risk": "Artifact path ambiguity between packet-local targets and shared contract paths could leave downstream validators looking at different files.",
+      "owner": "artifact-agent",
+      "severity": "medium",
+      "status": "mitigating",
+      "mitigation": "Generate the canonical contract path and the task-local MD/JSON companion, then link all three as registry evidence.",
+      "evidence_refs": [
+        "migration-artifacts/09-governance/risk-register.md",
+        "migration-artifacts/art-125_risk_register/risk-register.md",
+        "migration-artifacts/art-125_risk_register/risk-register.json",
+        "generated/contract_manifest.json"
+      ]
+    },
+    {
+      "risk_id": "RISK-ART125-002",
+      "risk": "The envctl artifact registry currently proves behavior through an in-memory SQLite run, so durable deployment wiring may drift from package-local proof.",
+      "owner": "envctl-db-agent",
+      "severity": "high",
+      "status": "open",
+      "mitigation": "Keep the artifact row, content hash, validation links, and proof record together; require the unit validation lane to replay registry checks before release.",
+      "evidence_refs": [
+        "generated/envctl_artifact_registry_report.json",
+        "proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json"
+      ]
+    },
+    {
+      "risk_id": "RISK-ART125-003",
+      "risk": "Proof ledger and generated status projections can lag new artifact work, making ART-125 look pending after the register is produced.",
+      "owner": "validation-agent",
+      "severity": "medium",
+      "status": "mitigating",
+      "mitigation": "Append a task proof record and include this report in evidence so status rebuilds can consume a concrete completed task.",
+      "evidence_refs": [
+        "proof_records/ART-125_RISK_REGISTER.proof.json",
+        "generated/art125_risk_register_report.json"
+      ]
+    },
+    {
+      "risk_id": "RISK-ART125-004",
+      "risk": "Parallel artifact generation can create stale links if governance artifacts are produced before ownership, RACI, and readiness artifacts finish.",
+      "owner": "lane_d_filesystem",
+      "severity": "medium",
+      "status": "monitoring",
+      "mitigation": "Record explicit graph links to adjacent governance artifacts and keep unresolved ownership references visible for later reconciliation.",
+      "evidence_refs": [
+        "generated/execution_manifest.json",
+        "generated/task_graph.csv"
+      ]
+    },
+    {
+      "risk_id": "RISK-ART125-005",
+      "risk": "Security-sensitive source paths are intentionally blocked from registry evidence, which can hide context for IAM, secrets, and certificate risks.",
+      "owner": "security-reproducibility-agent",
+      "severity": "high",
+      "status": "mitigating",
+      "mitigation": "Use redacted summaries and policy-safe artifact paths only; keep blocked path classes in the risk register instead of copying sensitive material.",
+      "evidence_refs": [
+        "scripts/artifact_registry.py",
+        "generated/envctl_artifact_registry_report.json"
+      ]
+    },
+    {
+      "risk_id": "RISK-ART125-006",
+      "risk": "Nu plugin, shared protocol, and database schema surfaces can diverge if protocol validation is not rerun after artifact registry additions.",
+      "owner": "shared-protocol-agent",
+      "severity": "medium",
+      "status": "monitoring",
+      "mitigation": "Retain dependency links to REQ-040 and block final unit validation until shared protocol schemas still pass.",
+      "evidence_refs": [
+        "generated/shared_protocol_validation_report.json",
+        "docs/SHARED_PROTOCOL_SCHEMAS.md"
+      ]
+    },
+    {
+      "risk_id": "RISK-ART125-007",
+      "risk": "Rollback may remove only generated files while leaving registry proof or ledger references behind.",
+      "owner": "artifact-agent",
+      "severity": "medium",
+      "status": "open",
+      "mitigation": "Use the packet rollback plan and remove proof, log, heartbeat, report, and generated artifact rows as one task-specific rollback set.",
+      "evidence_refs": [
+        "generated/execution_packets/ART-125_RISK_REGISTER.json",
+        "history/pre_execution_framework_manifest.json"
+      ]
+    }
+  ]
+}

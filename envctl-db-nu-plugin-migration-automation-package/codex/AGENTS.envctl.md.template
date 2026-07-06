@@ -1,0 +1,17 @@
+# envctl migration automation additive guidance
+
+This repository is being upgraded so the envctl database becomes the durable source of truth for reproducible migration automation.
+
+Required behavior:
+
+- Inspect the actual repository before editing.
+- Preserve existing architecture and style unless a migration issue explicitly requires change.
+- Add database migrations/schema in the repo-native way.
+- Make migration automation event-sourced, append-only for evidence, replayable, and auditable.
+- Store target descriptors, artifact contracts, recipes, operations, approvals, event logs, checkpoints, rollback metadata, evidence hashes, validation results, and artifact links.
+- Provide agent-controllable CLI/API commands without giving agents unrestricted destructive authority.
+- Expose safe operations to the Nushell plugin through a shared protocol, not direct ad-hoc DB mutation.
+- Redact secrets at collection and persistence boundaries.
+- Add tests for run creation, event append, artifact registration, approval gating, replay, and validation.
+
+Do not simulate repository structure. If something is unknown, inspect or mark it unknown.

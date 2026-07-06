@@ -1,0 +1,952 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-04T22:20:00-05:00",
+  "new_file_count": 50,
+  "upgrades": [
+    {
+      "upgrade_id": "UPG-001",
+      "gap_id": "GAP-001",
+      "files_added": [
+        "execution-framework/README.md",
+        "execution-framework/docs/**",
+        "execution-framework/scripts/**",
+        "execution-framework/schemas/**",
+        "execution-framework/templates/**",
+        "execution-framework/generated/**",
+        "execution-framework/proof_records/**",
+        "execution-framework/state/**"
+      ],
+      "files_modified": "",
+      "reason": "Create full execution framework layer.",
+      "downstream_consumer": "Codex, background helpers, envctl database automation, nu_plugin control surface.",
+      "commands_run": [
+        "python3 scripts/validate_task_graph.py generated/task_graph.csv",
+        "python3 scripts/task_graph_to_packets.py generated/task_graph.csv",
+        "python3 scripts/goal_loop.py generated/task_graph.csv",
+        "python3 scripts/verify_history_and_completeness.py"
+      ],
+      "validation_result": "created; command validation follows in proof ledger",
+      "evidence_uri": "execution-framework/generated/upgrade_report.json",
+      "checksum": {
+        "execution-framework/README.md": "040cdd8b710e242b31814d4c9729ff1950f38ed65279ed4715bc3027d70e9355"
+      },
+      "rollback_plan": "Remove added files or restore from history/pre_execution_framework_manifest.json; no source package files were overwritten.",
+      "verification_method": "python3 scripts/verify_history_and_completeness.py"
+    },
+    {
+      "upgrade_id": "UPG-002",
+      "gap_id": "GAP-002",
+      "files_added": [
+        "execution-framework/generated/task_graph.csv",
+        "execution-framework/generated/task_graph.normalized.json",
+        "execution-framework/generated/task_graph.index.json"
+      ],
+      "files_modified": "",
+      "reason": "Create task graph with required columns and task coverage.",
+      "downstream_consumer": "/goal loop and packet generator.",
+      "commands_run": [
+        "python3 scripts/validate_task_graph.py generated/task_graph.csv",
+        "python3 scripts/task_graph_to_packets.py generated/task_graph.csv",
+        "python3 scripts/goal_loop.py generated/task_graph.csv",
+        "python3 scripts/verify_history_and_completeness.py"
+      ],
+      "validation_result": "created; command validation follows in proof ledger",
+      "evidence_uri": "execution-framework/generated/upgrade_report.json",
+      "checksum": {
+        "execution-framework/generated/task_graph.csv": "409bc353bdc5dfe986ba444e81d338138c97213d11f8776275e0c570e2ababc8",
+        "execution-framework/generated/task_graph.normalized.json": "69a790b3054c3e0865afcf9bd9c109b471d12a0f51255deb9bcf46fe3298c968",
+        "execution-framework/generated/task_graph.index.json": "b1bd28d2b5596fe9555af86954f7c056999d42ff6c24259e3fd5237a7def7146"
+      },
+      "rollback_plan": "Remove added files or restore from history/pre_execution_framework_manifest.json; no source package files were overwritten.",
+      "verification_method": "python3 scripts/validate_task_graph.py generated/task_graph.csv"
+    },
+    {
+      "upgrade_id": "UPG-003",
+      "gap_id": "GAP-003",
+      "files_added": [
+        "execution-framework/generated/execution_manifest.json",
+        "execution-framework/generated/execution_packets/*.json"
+      ],
+      "files_modified": "",
+      "reason": "Create executable JSON packet pipeline.",
+      "downstream_consumer": "Background helpers and Codex CLI.",
+      "commands_run": [
+        "python3 scripts/validate_task_graph.py generated/task_graph.csv",
+        "python3 scripts/task_graph_to_packets.py generated/task_graph.csv",
+        "python3 scripts/goal_loop.py generated/task_graph.csv",
+        "python3 scripts/verify_history_and_completeness.py"
+      ],
+      "validation_result": "created; command validation follows in proof ledger",
+      "evidence_uri": "execution-framework/generated/upgrade_report.json",
+      "checksum": {},
+      "rollback_plan": "Remove added files or restore from history/pre_execution_framework_manifest.json; no source package files were overwritten.",
+      "verification_method": "python3 scripts/task_graph_to_packets.py generated/task_graph.csv"
+    },
+    {
+      "upgrade_id": "UPG-004",
+      "gap_id": "GAP-004",
+      "files_added": [
+        "execution-framework/proof_records/proof_ledger.jsonl",
+        "execution-framework/proof_records/*.proof.json",
+        "execution-framework/schemas/proof_record.schema.json"
+      ],
+      "files_modified": "",
+      "reason": "Create proof substrate.",
+      "downstream_consumer": "Verification and repeatable execution ledger.",
+      "commands_run": [
+        "python3 scripts/validate_task_graph.py generated/task_graph.csv",
+        "python3 scripts/task_graph_to_packets.py generated/task_graph.csv",
+        "python3 scripts/goal_loop.py generated/task_graph.csv",
+        "python3 scripts/verify_history_and_completeness.py"
+      ],
+      "validation_result": "created; command validation follows in proof ledger",
+      "evidence_uri": "execution-framework/generated/upgrade_report.json",
+      "checksum": {
+        "execution-framework/proof_records/proof_ledger.jsonl": "6d96b53471bd5cbd62245aab0e52d808a4236c8190bdf07b118e4435e6deec89",
+        "execution-framework/schemas/proof_record.schema.json": "76c64fdf3f5943c8041610ee303b0e4cdcc1ba4321d9ade8e0f907a88a15f862"
+      },
+      "rollback_plan": "Remove added files or restore from history/pre_execution_framework_manifest.json; no source package files were overwritten.",
+      "verification_method": "python3 scripts/verify_history_and_completeness.py"
+    },
+    {
+      "upgrade_id": "UPG-005",
+      "gap_id": "GAP-005",
+      "files_added": [
+        "execution-framework/docs/MULTI_AGENT_COLUMNS.md",
+        "execution-framework/templates/AGENT_LANE_TEMPLATE.json",
+        "execution-framework/schemas/agent_lane.schema.json"
+      ],
+      "files_modified": "",
+      "reason": "Create multi-agent lane control contract.",
+      "downstream_consumer": "Spark helpers, Codex background shells, nu_plugin status UI.",
+      "commands_run": [
+        "python3 scripts/validate_task_graph.py generated/task_graph.csv",
+        "python3 scripts/task_graph_to_packets.py generated/task_graph.csv",
+        "python3 scripts/goal_loop.py generated/task_graph.csv",
+        "python3 scripts/verify_history_and_completeness.py"
+      ],
+      "validation_result": "created; command validation follows in proof ledger",
+      "evidence_uri": "execution-framework/generated/upgrade_report.json",
+      "checksum": {
+        "execution-framework/docs/MULTI_AGENT_COLUMNS.md": "23877878f15fa77ae194b2300d04a3101bcec51d5ebd69f5a5dd332f361c2e04",
+        "execution-framework/templates/AGENT_LANE_TEMPLATE.json": "fbac2f99486fe699114ab11b61da98e21c9be8a1e1ec4c3759f0f33b51d9164a",
+        "execution-framework/schemas/agent_lane.schema.json": "e54c8c0ffade0a37babd9660053069145390957d566718e293cc8ede2b2b9d9f"
+      },
+      "rollback_plan": "Remove added files or restore from history/pre_execution_framework_manifest.json; no source package files were overwritten.",
+      "verification_method": "schema parse + final verification"
+    },
+    {
+      "upgrade_id": "UPG-006",
+      "gap_id": "GAP-006",
+      "files_added": [
+        "execution-framework/scripts/goal_loop.py",
+        "execution-framework/state/goal_loop_state.json",
+        "execution-framework/generated/status_report.json"
+      ],
+      "files_modified": "",
+      "reason": "Create /goal loop execution control.",
+      "downstream_consumer": "envctl database automation and agent orchestrators.",
+      "commands_run": [
+        "python3 scripts/validate_task_graph.py generated/task_graph.csv",
+        "python3 scripts/task_graph_to_packets.py generated/task_graph.csv",
+        "python3 scripts/goal_loop.py generated/task_graph.csv",
+        "python3 scripts/verify_history_and_completeness.py"
+      ],
+      "validation_result": "created; command validation follows in proof ledger",
+      "evidence_uri": "execution-framework/generated/upgrade_report.json",
+      "checksum": {
+        "execution-framework/scripts/goal_loop.py": "7e99833ea0a385c736886c6807d4be94a93256f997faa82d788c9b348f39c1ea"
+      },
+      "rollback_plan": "Remove added files or restore from history/pre_execution_framework_manifest.json; no source package files were overwritten.",
+      "verification_method": "python3 scripts/goal_loop.py generated/task_graph.csv"
+    },
+    {
+      "upgrade_id": "UPG-007",
+      "gap_id": "GAP-007",
+      "files_added": [
+        "history/pre_execution_framework_manifest.json",
+        "history/README.md"
+      ],
+      "files_modified": "",
+      "reason": "Record prior source package state.",
+      "downstream_consumer": "Rollback and history verification.",
+      "commands_run": [
+        "python3 scripts/validate_task_graph.py generated/task_graph.csv",
+        "python3 scripts/task_graph_to_packets.py generated/task_graph.csv",
+        "python3 scripts/goal_loop.py generated/task_graph.csv",
+        "python3 scripts/verify_history_and_completeness.py"
+      ],
+      "validation_result": "created; command validation follows in proof ledger",
+      "evidence_uri": "execution-framework/generated/upgrade_report.json",
+      "checksum": {
+        "history/pre_execution_framework_manifest.json": "7f53ec278361330dbc4f5d5946398d4e36d16b3c6ba66af409656f5c3aaafcca",
+        "history/README.md": "4b82ddbae4ca50179c92eebeddef11e9f4b041aafea3ea8717224539e093550d"
+      },
+      "rollback_plan": "Remove added files or restore from history/pre_execution_framework_manifest.json; no source package files were overwritten.",
+      "verification_method": "python3 scripts/verify_history_and_completeness.py"
+    },
+    {
+      "upgrade_id": "UPG-008",
+      "gap_id": "GAP-008",
+      "files_added": [
+        "execution-templates/README.md",
+        "execution-templates/TASK_GRAPH_TEMPLATE.csv",
+        "execution-templates/AGENT_LANE_TEMPLATE.json",
+        "execution-templates/two_repo_parallel_goal.yaml"
+      ],
+      "files_modified": "",
+      "reason": "Add top-level execution templates for operator file organization.",
+      "downstream_consumer": "Google Drive folder organization and Codex handoff.",
+      "commands_run": [
+        "python3 scripts/validate_task_graph.py generated/task_graph.csv",
+        "python3 scripts/task_graph_to_packets.py generated/task_graph.csv",
+        "python3 scripts/goal_loop.py generated/task_graph.csv",
+        "python3 scripts/verify_history_and_completeness.py"
+      ],
+      "validation_result": "created; command validation follows in proof ledger",
+      "evidence_uri": "execution-framework/generated/upgrade_report.json",
+      "checksum": {},
+      "rollback_plan": "Remove added files or restore from history/pre_execution_framework_manifest.json; no source package files were overwritten.",
+      "verification_method": "test -d execution-templates"
+    },
+    {
+      "upgrade_id": "UPG-009",
+      "gap_id": "GAP-009",
+      "files_added": [
+        "execution-framework/generated/final_verification_report.json",
+        "execution-framework/docs/FINAL_VERIFICATION.md"
+      ],
+      "files_modified": "",
+      "reason": "Document Drive write/history external blocker while producing uploadable upgraded archive.",
+      "downstream_consumer": "Human operator / Drive upload workflow.",
+      "commands_run": [
+        "python3 scripts/validate_task_graph.py generated/task_graph.csv",
+        "python3 scripts/task_graph_to_packets.py generated/task_graph.csv",
+        "python3 scripts/goal_loop.py generated/task_graph.csv",
+        "python3 scripts/verify_history_and_completeness.py"
+      ],
+      "validation_result": "created; command validation follows in proof ledger",
+      "evidence_uri": "execution-framework/generated/upgrade_report.json",
+      "checksum": {},
+      "rollback_plan": "Remove added files or restore from history/pre_execution_framework_manifest.json; no source package files were overwritten.",
+      "verification_method": "final report external_blockers"
+    },
+    {
+      "upgrade_id": "UPG-010",
+      "gap_id": "GAP-LIVE-001..005",
+      "files_added": [
+        "CODEX_FINAL_EXECUTION_PROMPT.md",
+        "prompts/CODEX_FINAL_EXECUTION_PROMPT.md",
+        "execution-framework/generated/live_drive_gap_closure_report.json",
+        "execution-framework/generated/package_manifest_live_addendum_20260704.json",
+        "execution-framework/generated/execution_packets/MAINT-500_README_NAV_BACKTRACE.json",
+        "execution-framework/generated/execution_packets/MAINT-501_RESTORE_PROOF_TEMPLATE.json",
+        "execution-framework/generated/execution_packets/MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC.json",
+        "execution-framework/generated/execution_packets/MAINT-503_CODEX_FINAL_PROMPT.json",
+        "execution-framework/proof_records/MAINT-500_README_NAV_BACKTRACE.proof.json",
+        "execution-framework/proof_records/MAINT-501_RESTORE_PROOF_TEMPLATE.proof.json",
+        "execution-framework/proof_records/MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC.proof.json",
+        "execution-framework/proof_records/MAINT-503_CODEX_FINAL_PROMPT.proof.json",
+        "execution-framework/proof_templates/PROOF_RECORD_TEMPLATE.json"
+      ],
+      "files_modified": [
+        "README.md",
+        "PACKAGE_MANIFEST.json",
+        "execution-framework/generated/execution_manifest.json",
+        "execution-framework/generated/final_verification_report.json",
+        "execution-framework/generated/status_report.json",
+        "execution-framework/generated/task_graph.normalized.json",
+        "execution-framework/generated/task_graph.index.json",
+        "execution-framework/proof_records/proof_ledger.jsonl",
+        "execution-framework/generated/task_graph Google Sheet"
+      ],
+      "reason": "Close live Drive bookkeeping gaps and provide one final Codex handoff prompt.",
+      "downstream_consumer": "Codex local execution from extracted package directory.",
+      "commands_run": [
+        "Google_Drive scans and surgical writes",
+        "append maintenance rows to task_graph sheet",
+        "upload maintenance packets/proofs",
+        "update manifest/status/final verification/proof ledger"
+      ],
+      "validation_result": "pass_no_gaps_drive_live_synchronized",
+      "evidence_uri": "execution-framework/generated/live_drive_gap_closure_report.json",
+      "checksum": {},
+      "rollback_plan": "Use Drive revision history or history/v0-v5; all live changes are additive or metadata sync.",
+      "verification_method": "readback of updated files and root prompt."
+    }
+  ],
+  "all_additive_file_count": 147,
+  "all_additive_files": [
+    {
+      "path": "execution-framework/README.md",
+      "size_bytes": 1157,
+      "sha256": "040cdd8b710e242b31814d4c9729ff1950f38ed65279ed4715bc3027d70e9355"
+    },
+    {
+      "path": "execution-framework/docs/APPLIED_UPGRADES.md",
+      "size_bytes": 5079,
+      "sha256": "631a7ef645588e21422f1d0054f3eb3bf2d0fe948e2b6fe6ad74798336ad46d5"
+    },
+    {
+      "path": "execution-framework/docs/EXECUTION_FRAMEWORK_INSTALL.md",
+      "size_bytes": 815,
+      "sha256": "64d13952bf890966681f1424d7b2d549273124706615746e0d008367c701fe52"
+    },
+    {
+      "path": "execution-framework/docs/FINAL_VERIFICATION.md",
+      "size_bytes": 1393,
+      "sha256": "829535c2b2d7bf9bc0bb01ddfcf4243375a1419ea2303f01ae42044a80267bdd"
+    },
+    {
+      "path": "execution-framework/docs/GAP_ANALYSIS.md",
+      "size_bytes": 4239,
+      "sha256": "a92e49ab23b14e3991707132676549b1de583f84294576a83ce14b1369eae829"
+    },
+    {
+      "path": "execution-framework/docs/GOAL_LOOP_PROTOCOL.md",
+      "size_bytes": 820,
+      "sha256": "c228d3d63617424676cf152a5131510ab22485d1d6ffc356c969d1d9b6ac774d"
+    },
+    {
+      "path": "execution-framework/docs/MULTI_AGENT_COLUMNS.md",
+      "size_bytes": 1123,
+      "sha256": "23877878f15fa77ae194b2300d04a3101bcec51d5ebd69f5a5dd332f361c2e04"
+    },
+    {
+      "path": "execution-framework/examples/two_repo_parallel_goal.yaml",
+      "size_bytes": 889,
+      "sha256": "286b45dd7eee83deb37a6d3a164d87eb3e5872beee46584be4de4fc2e2803234"
+    },
+    {
+      "path": "execution-framework/generated/execution_manifest.json",
+      "size_bytes": 27668,
+      "sha256": "fec37aba5dc59614841cd47b7dd0314d3ecbbcada18fbe2ddcd14251203c31d5"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-100_SYSTEM_INVENTORY.json",
+      "size_bytes": 2426,
+      "sha256": "62f37b977229dfc7fa52727037ac6f56a701d46b61906a877ac1c5fa4f00d3e9"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-101_DIRECTORY_TREE.json",
+      "size_bytes": 2431,
+      "sha256": "511d7aa890683d42248049c8f073956a91b03949e2cb4f2964f3bfa4699bed71"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-102_REPOSITORY_MAP.json",
+      "size_bytes": 2365,
+      "sha256": "f77399cf3350989edcab2a0e7b9efdb1ba3e7b7d7d14165c9325f1e975ed6d95"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-103_SERVICE_DEP_GRAPH.json",
+      "size_bytes": 2435,
+      "sha256": "e06c2d62462ef3f3f5b4eadf990266aec2ecf7405957fb33c91a5f655238deb2"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-104_TOOLCHAIN_TREE.json",
+      "size_bytes": 2411,
+      "sha256": "189fd6cbb7458e7122380cb96c85e6856024303e39253d80f3a444d01d7158fe"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-105_PACKAGE_LIB_GRAPH.json",
+      "size_bytes": 2452,
+      "sha256": "aea984cfa883b55b5a3bedb06a999682edf878a8a305b6a298850d9ff5ffc29c"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-106_RUNTIME_DEP_MAP.json",
+      "size_bytes": 2403,
+      "sha256": "a9dc7a5b2b1139c02c6003bd9271f92f16715f6a44a9cfcca5a01f400c94412a"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-107_DATA_FLOW_GRAPH.json",
+      "size_bytes": 2389,
+      "sha256": "e28613407ae51063fcab3456e6e1006797e6f5a366935c899644c903f013b747"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-108_DB_SCHEMA_MAP.json",
+      "size_bytes": 2394,
+      "sha256": "638372ce6367555f699806b618e5f1192275af904207ae4dde84f8a4bc49dda1"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-109_DATA_LINEAGE.json",
+      "size_bytes": 2373,
+      "sha256": "bec79ea22783b482e35b7a6a0be530885134287370190866d86c14eba16e1c77"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-110_API_CATALOG.json",
+      "size_bytes": 2368,
+      "sha256": "86651486ec0228d9bdb0b9c1c340efc436a39b01b4f4724b2aec96e416b58c9f"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-111_EVENT_MAP.json",
+      "size_bytes": 2375,
+      "sha256": "905f4b67767c894a76dee84ae37901e0f80cbe6f9bcff953e609334a6cf5d55e"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-112_CODE_OWNERSHIP.json",
+      "size_bytes": 2371,
+      "sha256": "a648f8057b7e5f19bee6b12359ca7d437e3233184c3c73edc8bb7ce09e2a1e26"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-113_DEBUG_CODE_MAP.json",
+      "size_bytes": 2424,
+      "sha256": "e86b211833bb25e220a9b3bee253fc3c43b5fafecec55a6961133666eb538bd0"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-114_ENV_CONFIG_MATRIX.json",
+      "size_bytes": 2380,
+      "sha256": "134d879fb8e79392e6f9a3f64fac6560abbd28294c444a4fc30a107a82e7e0e0"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-115_CONFIG_INVENTORY.json",
+      "size_bytes": 2413,
+      "sha256": "2fa423b871370bf886824694dfd0264316ba51dd8753c213d34c34d74dd65c28"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-116_INFRA_TOPOLOGY.json",
+      "size_bytes": 2425,
+      "sha256": "56bcec3f0c84c09c80af460c08f3098a6b1bf89b4dca64dd6a1915485440a256"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-117_IAM_MATRIX.json",
+      "size_bytes": 2378,
+      "sha256": "21dfab2ae919eabfc8e5fda34ae8427c2597d9a9960b9e33290e94ff07f5a855"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-118_OBSERVABILITY.json",
+      "size_bytes": 2381,
+      "sha256": "a002205247b4902156ee3e7f31579494c60aa0a3f9b76d5a9b4e192105906c41"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-119_BUSINESS_PROCESS.json",
+      "size_bytes": 2390,
+      "sha256": "ef2c95d7a9d303387a0e742c98ba060d69ec7a98ebdcfc145d5a5349d4dee4e6"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-120_WAVE_PLAN.json",
+      "size_bytes": 2332,
+      "sha256": "4ef3340f574341eb779ebcee2c8a1a6e097f690a08966d01baf06dcb0e54847c"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-121_CUTOVER.json",
+      "size_bytes": 2338,
+      "sha256": "4d42be8fcfe39094f63e4fb734078cbe3c0e959575db2e82c36041d3c05fbf9a"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-122_ROLLBACK.json",
+      "size_bytes": 2343,
+      "sha256": "8b5e6c26dfc33ed16433946beb23b712967aad185aedb5df1526664ad5e1b2c5"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-123_VALIDATION_RECONCILIATION.json",
+      "size_bytes": 2524,
+      "sha256": "ea0724df016bfad5fd158daed790a78cb25286f7279f0a4b3cb0469d0510707f"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-124_TEST_COVERAGE.json",
+      "size_bytes": 2429,
+      "sha256": "96dd9d49d096c5eb520f5489aa9896f36002c12f26fefb5de77cde03fabd73eb"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-125_RISK_REGISTER.json",
+      "size_bytes": 2360,
+      "sha256": "738247430b0689f1f89d66d3ebbd30bc1de17f676070d1c52d8f9f99fbc5a15f"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-126_DECISION_LOG.json",
+      "size_bytes": 2349,
+      "sha256": "97f3499018385e90fc4564864a8594c396618e521f1fc80b82366e8c69a84825"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-127_BLAST_RADIUS.json",
+      "size_bytes": 2370,
+      "sha256": "72e7c0d95ac8426e42456c43c1d43b732c988c26e74825059d4d09e0b9b39855"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-128_READINESS_SCORECARD.json",
+      "size_bytes": 2414,
+      "sha256": "a08daad6f6dd1de52f9ffc0aa9eb43a772a9180e9f2b2237c4646cec2f6e5a08"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-129_BUSINESS_CAPABILITY.json",
+      "size_bytes": 2417,
+      "sha256": "496cbb2aca8e7746844b53e329dff294b9deda6392b4b44d79c7b1e745514014"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-130_SHADOW_TRAFFIC.json",
+      "size_bytes": 2396,
+      "sha256": "fda3d9a6e2b3d59b8d441228db802dbd0e375b5d111521b82251e7f56afc0e97"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-131_GOLDEN_DATASET.json",
+      "size_bytes": 2353,
+      "sha256": "74649bea863657f36760ce840033599844ef1367fa3ae0a1a4133a9b0f6abc2b"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-132_PARITY_DASHBOARD.json",
+      "size_bytes": 2424,
+      "sha256": "d6a5033d8c4fd2cbd311d6cc3188c1feb90ca5021eed9c75a52230fe903d642e"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-133_DEPRECATION_MAP.json",
+      "size_bytes": 2379,
+      "sha256": "6323c258c26a3dfd57442ddddca1772743a107055591681e08189fc959c322a0"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-134_EXCEPTION_INVENTORY.json",
+      "size_bytes": 2418,
+      "sha256": "cc3b8975aafc0f53127ce6a16c8977f85a6c639dedb1184b40250abfa9626734"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-135_RACI.json",
+      "size_bytes": 2318,
+      "sha256": "132514b197d3273d7948320bd620c2b994cfc57da5d112237137a141c75a6837"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/ART-136_TECH_DEBT_LEDGER.json",
+      "size_bytes": 2385,
+      "sha256": "e19c7dbd664dd575a6d2e182b608f8360fe0dd1c3dbb4f59af8a3ee01964e4c6"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/EF-001_SCAN_PACKAGE.json",
+      "size_bytes": 2019,
+      "sha256": "9f4aa76b04090b7d2d3ccef4402fc3adb4003b1aedec29dcda85e30adfcd1733"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/EF-002_GAP_REPORT.json",
+      "size_bytes": 1932,
+      "sha256": "00235c947d9f11aadbf0aa00ffbd7a056014a26add6028bc5722e6701bd7548d"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/EF-003_APPLY_FRAMEWORK.json",
+      "size_bytes": 2196,
+      "sha256": "676b7b85a65d8cfd051c4909fd75a12177a565e3a89c4cdf99cffe708a14bdfc"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/EF-004_GENERATE_TASK_GRAPH.json",
+      "size_bytes": 2178,
+      "sha256": "690798f4223c042823c8943ff042f818c07f33d864306ea88cc5440ca9d61e6c"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/EF-005_VALIDATE_TASK_GRAPH.json",
+      "size_bytes": 2067,
+      "sha256": "d1eeb92a0cf69598324c3e44f54a943a025f115561b461e751e21a9e3160440d"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/EF-006_TASK_GRAPH_TO_PACKETS.json",
+      "size_bytes": 2127,
+      "sha256": "3b0718b134bf529440dd68dddb425801c8f12a291366662debbfce7363038c32"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/EF-007_GOAL_LOOP.json",
+      "size_bytes": 2139,
+      "sha256": "eccd2335f50f72d6ddfb3da78d5e322ba3a403cb1bbf1c0e09e9665d8048dee1"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/EF-008_VERIFY_HISTORY_COMPLETENESS.json",
+      "size_bytes": 2412,
+      "sha256": "8291ef633fb67a22555690005c3355b184f81605aad4fcbb8243fa034d61e415"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REL-400_PACKAGE_ARCHIVE.json",
+      "size_bytes": 2184,
+      "sha256": "b489737cb0f89f5e5c4df46f82f47d0579031a1da57f50abb15effb5026bbd2e"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REL-401_HANDOFF.json",
+      "size_bytes": 2204,
+      "sha256": "7b5ad6ac0054473a56ff2c857910980a88b941a9cd212dd0e7686b64bd73c4d9"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-010_CONTRACT_LOCK.json",
+      "size_bytes": 2267,
+      "sha256": "7bf2b265dbf19ca5ecd40e04f618bb2d33cd7ab9bbe9ac7318973deac9e40add"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-020_ENVCTL_DB_SCHEMA.json",
+      "size_bytes": 2339,
+      "sha256": "94b14b9475b327ee68d3ab1d9314c177469a3a2ead7263f47f2f4a47b423ed36"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-021_ENVCTL_TARGET_REGISTRY.json",
+      "size_bytes": 2257,
+      "sha256": "2c818f5b0703fdf0042405a68a8f7749ba507367c000a476ddafc7a65aec04f7"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-022_ENVCTL_RUN_LEDGER.json",
+      "size_bytes": 2218,
+      "sha256": "7160c68aef71df586737737c865bbe0ddb0912179985ef310ac27c89dd4a353b"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-023_ENVCTL_OPERATION_STATE.json",
+      "size_bytes": 2284,
+      "sha256": "a0b83889ed24e43d75bee9d2314a6e9fed5fc0c92a02ff4139b19aec7b4b4e02"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-024_ENVCTL_ARTIFACT_REGISTRY.json",
+      "size_bytes": 2288,
+      "sha256": "43f044b4546f0d85259ea0914c739ad38ef855d7b8a94aca932e8e4c7f7a6192"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-025_ENVCTL_VALIDATION_EVIDENCE.json",
+      "size_bytes": 2253,
+      "sha256": "d11c1e83bca2427522d59016d629096f883a7d91d3b7cee13528851db1ddec2d"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.json",
+      "size_bytes": 2267,
+      "sha256": "bbc5e9d6b69d23a326b5f906f9454adcf3155d384661bdcb881d0531b58328dd"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-027_ENVCTL_REPLAY_ENGINE.json",
+      "size_bytes": 2384,
+      "sha256": "cb481605a002b066f8805e685477c29f297dbca59a76324544271f8c0d147876"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-028_ENVCTL_AGENT_CONTROL_API.json",
+      "size_bytes": 2334,
+      "sha256": "21f7e006037950242590c26ee8cbc54f5cfd3148d7e21ade6111f94908f897ad"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-030_PLUGIN_PROTOCOL_MANIFEST.json",
+      "size_bytes": 2281,
+      "sha256": "85098886972ce0930636706d15c9c9fbdca58d1a49db02585b62e004f73457c5"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-031_PLUGIN_COMMAND_SURFACE.json",
+      "size_bytes": 2290,
+      "sha256": "4ef4bba7ee73f1969fc2d8782fa39bd53b97f6582b2d3aa4e1b0feedd1b9efc5"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-032_PLUGIN_LIVE_VISUALS.json",
+      "size_bytes": 2253,
+      "sha256": "3449a8e69cf0040fee1490b97e891df79805469ec005bc0ed2e85fb200fd8b3d"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-033_PLUGIN_HUMAN_APPROVAL.json",
+      "size_bytes": 2275,
+      "sha256": "5d5d5112e311ba4e92989553a8df0cac8269411c38159347e5a541a354105db1"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-034_PLUGIN_STATUS_STREAMS.json",
+      "size_bytes": 2253,
+      "sha256": "6816b1d9b53bf9ebeca861705267d830717190de2c6068248fb37603f1871823"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-040_SHARED_PROTOCOL_SCHEMAS.json",
+      "size_bytes": 2289,
+      "sha256": "9fa633ef8a441f87a182eaa5b32fccaa761d129362388b06d440c8150defdd69"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-041_TWO_REPO_INTEGRATION.json",
+      "size_bytes": 2554,
+      "sha256": "9d7ccf217e95771e2e162d21d8911e0a4227b8562d61cb86198b0d3f2799948d"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-042_FILESYSTEM_BOUNDS.json",
+      "size_bytes": 2259,
+      "sha256": "60e5c63a2a73958ca028be9fccfeacf29a1d487056dab32b99d295174d7e9f2b"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-043_SECURITY_REDACTION.json",
+      "size_bytes": 2266,
+      "sha256": "1bfe9fe2cfcf6136d91432002cea128132b2b1330b0e5833e990c484df17198f"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-044_INSTALL_BOOTSTRAP.json",
+      "size_bytes": 2247,
+      "sha256": "ab23eb4422028a2b144ffeecefdf78d2d38560ee90303b1a1e0cd10ea78d89a4"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-045_RUN_REPLAY.json",
+      "size_bytes": 2246,
+      "sha256": "da77169223d2767602c138729386c6d7cfdca687a62fec16993bf4a9cb8aae04"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-200_FLEXNETOS_TARGET_DESCRIPTOR.json",
+      "size_bytes": 2407,
+      "sha256": "27770552a124fb44fb17ddf4b4ddc1505be422fa9689368e6ab0ae5ad382e5a7"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-201_FLEXNETOS_LIFEOS_COMPARISON.json",
+      "size_bytes": 2531,
+      "sha256": "39c72cdafd177a5c0f920d88c6b3e22358698694323af0f1ae3de1e0204ed3ef"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json",
+      "size_bytes": 2390,
+      "sha256": "f95cf386d5ec617d3fa7f897fb195f1421e1477457869486e08ed49d493d28b6"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/VER-300_UNIT_VALIDATION.json",
+      "size_bytes": 2390,
+      "sha256": "caed4c7063f36a5e1b8e730edb022f2201c3cd8fa254f042202463b82491d38f"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/VER-301_SQL_SCHEMA_TEST.json",
+      "size_bytes": 2168,
+      "sha256": "4166f35c6961c268626ccc818a1858fb5cc37d4ac9f134ced58ae4920cbe4b9c"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/VER-302_PACKET_SCHEMA_VALIDATION.json",
+      "size_bytes": 2376,
+      "sha256": "be1c0332b71aec9c6e0d455fd7fabb49d7eed4666af59564dff14ce5cd0cc013"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/VER-303_GOAL_LOOP_COMPUTE.json",
+      "size_bytes": 2367,
+      "sha256": "af597c2d1be3a3a3dccb75e42159a3f5b96622e5fb307f1413c8c647720a0128"
+    },
+    {
+      "path": "execution-framework/generated/execution_packets/VER-304_FINAL_COMPLETENESS.json",
+      "size_bytes": 2293,
+      "sha256": "77c150b929c7c422bfb49b8d3c05000630229a3b282d6b0d8d388a5f0a6cb4fd"
+    },
+    {
+      "path": "execution-framework/generated/final_verification_report.json",
+      "size_bytes": 22032,
+      "sha256": "9968dff1fa7dcdb584c81ac30a239a766c3b128ceb222cf12225dfeab0f13cc1"
+    },
+    {
+      "path": "execution-framework/generated/gap_report.json",
+      "size_bytes": 5774,
+      "sha256": "3c5bf7490846f4eae56b1d1c1c97dbf44ebc00368393b9e176687f07ee9d1677"
+    },
+    {
+      "path": "execution-framework/generated/package_manifest_addendum.json",
+      "size_bytes": 364,
+      "sha256": "9e1dd1fc158e672ff70759bbe843ca6b6f70e2b36a522f748209a916c66ab0ad"
+    },
+    {
+      "path": "execution-framework/generated/package_scan.json",
+      "size_bytes": 25864,
+      "sha256": "0d851e9f6a67044bfd6b6df77231c518292a385304e1830d579e6520634b9487"
+    },
+    {
+      "path": "execution-framework/generated/proof_ledger.merged.json",
+      "size_bytes": 43130,
+      "sha256": "7b39bf2b404268a57c7e7e17b818440a630cf02d03755896022dc013a9f0140c"
+    },
+    {
+      "path": "execution-framework/generated/status_from_proofs.json",
+      "size_bytes": 17452,
+      "sha256": "49c079c20e5f9b556b5a45abd0a326636f1f525da4b03b775d15c89eeac04ab2"
+    },
+    {
+      "path": "execution-framework/generated/status_report.json",
+      "size_bytes": 18066,
+      "sha256": "3862d5fe659ff46a3a7fe327ac58e2aaded001e45c50f37aa8ffa6d241b63d7e"
+    },
+    {
+      "path": "execution-framework/generated/task_graph.csv",
+      "size_bytes": 96251,
+      "sha256": "409bc353bdc5dfe986ba444e81d338138c97213d11f8776275e0c570e2ababc8"
+    },
+    {
+      "path": "execution-framework/generated/task_graph.index.json",
+      "size_bytes": 6494,
+      "sha256": "b1bd28d2b5596fe9555af86954f7c056999d42ff6c24259e3fd5237a7def7146"
+    },
+    {
+      "path": "execution-framework/generated/task_graph.normalized.json",
+      "size_bytes": 171125,
+      "sha256": "69a790b3054c3e0865afcf9bd9c109b471d12a0f51255deb9bcf46fe3298c968"
+    },
+    {
+      "path": "execution-framework/generated/task_graph.validation_report.json",
+      "size_bytes": 148,
+      "sha256": "2756e88e9e302ee9ee2b4519ce2799ce27eaf84a4d830d939aa608107b3e024c"
+    },
+    {
+      "path": "execution-framework/generated/upgrade_report.json",
+      "size_bytes": 12248,
+      "sha256": "499f8bde020af5e895efc85da9c3170a0d1c64e4f1f5c131adea1cfb2a15d41c"
+    },
+    {
+      "path": "execution-framework/proof_records/EF-001_SCAN_PACKAGE.proof.json",
+      "size_bytes": 1152,
+      "sha256": "ca3f56df9f2bc1a2642e756383946ef9f4064d32eea125ff461f156bed147e0c"
+    },
+    {
+      "path": "execution-framework/proof_records/EF-002_GAP_REPORT.proof.json",
+      "size_bytes": 1146,
+      "sha256": "543834b6d54f3f45c5c4887e6fd9c6d90ac0f86fd8c0c3446d45f3791e55fae9"
+    },
+    {
+      "path": "execution-framework/proof_records/EF-003_APPLY_FRAMEWORK.proof.json",
+      "size_bytes": 1917,
+      "sha256": "19370ede9f7220349b8b2baa534a19b72b6790b36da71ef8b36a5bd0d3ea1847"
+    },
+    {
+      "path": "execution-framework/proof_records/EF-004_GENERATE_TASK_GRAPH.proof.json",
+      "size_bytes": 1434,
+      "sha256": "769ac572030fe834a7d092a4ea2b341df99b2a63c949ba829ff027d00423e428"
+    },
+    {
+      "path": "execution-framework/proof_records/EF-005_VALIDATE_TASK_GRAPH.proof.json",
+      "size_bytes": 1148,
+      "sha256": "f7bdf419b6a42d1e260eb57c376a287f4bb2eaa32ab7c568af1d8fef1f7ffd2d"
+    },
+    {
+      "path": "execution-framework/proof_records/EF-006_TASK_GRAPH_TO_PACKETS.proof.json",
+      "size_bytes": 5948,
+      "sha256": "dbf9394edfb8feb5481f550bd85275205f57f825db127ff0351ab82650d8c216"
+    },
+    {
+      "path": "execution-framework/proof_records/EF-007_GOAL_LOOP.proof.json",
+      "size_bytes": 1215,
+      "sha256": "664991d4df2bdcf4622cd86f88f9d264973b84190c561a15dce9ff9cf16725b1"
+    },
+    {
+      "path": "execution-framework/proof_records/EF-008_VERIFY_HISTORY_COMPLETENESS.proof.json",
+      "size_bytes": 24751,
+      "sha256": "d908d6d949e1bcd27a00b457be6921183bf32c39600826be4f821e1d7ee54f1c"
+    },
+    {
+      "path": "execution-framework/proof_records/proof_ledger.jsonl",
+      "size_bytes": 30579,
+      "sha256": "e2e883176d1fed2280cd37a5650f92108afe972582f00bccaa2e546a0bb2a558"
+    },
+    {
+      "path": "execution-framework/schemas/agent_lane.schema.json",
+      "size_bytes": 997,
+      "sha256": "e54c8c0ffade0a37babd9660053069145390957d566718e293cc8ede2b2b9d9f"
+    },
+    {
+      "path": "execution-framework/schemas/execution_packet.schema.json",
+      "size_bytes": 5999,
+      "sha256": "a4305a40557ebea88f5699b6000000750563df9228916c21116b498e2e74a7e0"
+    },
+    {
+      "path": "execution-framework/schemas/gap_report.schema.json",
+      "size_bytes": 380,
+      "sha256": "8889b598049ddf02f8f9fcd38a5504d3d20949d6975de1b7bc45fa1d16c6e647"
+    },
+    {
+      "path": "execution-framework/schemas/proof_record.schema.json",
+      "size_bytes": 1466,
+      "sha256": "76c64fdf3f5943c8041610ee303b0e4cdcc1ba4321d9ade8e0f907a88a15f862"
+    },
+    {
+      "path": "execution-framework/schemas/task_graph.schema.json",
+      "size_bytes": 3002,
+      "sha256": "2f3c8c1dec72a3317f0cfb8e419f0e5711bd61444cb65cdb89c8d3a9d6c111ea"
+    },
+    {
+      "path": "execution-framework/schemas/upgrade_report.schema.json",
+      "size_bytes": 392,
+      "sha256": "fc5d58a6c441abf2e2fbfd86cb37859350d300924cfe6daeb07a512485e696d9"
+    },
+    {
+      "path": "execution-framework/scripts/__pycache__/_common.cpython-313.pyc",
+      "size_bytes": 8611,
+      "sha256": "b0fedad35058452aea81e7effc9e0f37ded60db854142faca843e4db67a4fa4c"
+    },
+    {
+      "path": "execution-framework/scripts/_common.py",
+      "size_bytes": 4884,
+      "sha256": "d2db3d2bccd23995cbbf1fe477c4b66847e9986b1f32b28da0dbe6238c757375"
+    },
+    {
+      "path": "execution-framework/scripts/goal_loop.py",
+      "size_bytes": 3984,
+      "sha256": "7e99833ea0a385c736886c6807d4be94a93256f997faa82d788c9b348f39c1ea"
+    },
+    {
+      "path": "execution-framework/scripts/goal_to_task_graph.py",
+      "size_bytes": 904,
+      "sha256": "a4696dd136f795b5ad3790fa2f786d13f4dbebdcae0466e68dd076d552413ce6"
+    },
+    {
+      "path": "execution-framework/scripts/merge_proofs.py",
+      "size_bytes": 446,
+      "sha256": "c6bd47f3e1595afcfeacd10e0a640dacd9276e64be15dcad06c3d0de2fc751f2"
+    },
+    {
+      "path": "execution-framework/scripts/scan_package.py",
+      "size_bytes": 2052,
+      "sha256": "b0404d9ba3a1fbc55204e926c442b9185b7da109c47da19b2b9e4b16aa926e8e"
+    },
+    {
+      "path": "execution-framework/scripts/status_from_proofs.py",
+      "size_bytes": 681,
+      "sha256": "c11a5f03b2b3ce9b7838806fefef2846ed2347daa7f060268193f355b15f1330"
+    },
+    {
+      "path": "execution-framework/scripts/task_graph_to_packets.py",
+      "size_bytes": 2545,
+      "sha256": "694e05731417dfa941ac2fcdf33bb64c46d718104a259626585d3288266be55f"
+    },
+    {
+      "path": "execution-framework/scripts/validate_task_graph.py",
+      "size_bytes": 4990,
+      "sha256": "f09715ed1aaf59573ca7457052b2d75964511e220ab7e5c251870cb7e38e7223"
+    },
+    {
+      "path": "execution-framework/scripts/verify_history_and_completeness.py",
+      "size_bytes": 6788,
+      "sha256": "a14d7b009018e16fcf90b5f27743e31e8ebb617e84525833eb4d29c724fd2766"
+    },
+    {
+      "path": "execution-framework/state/goal_loop_state.json",
+      "size_bytes": 18066,
+      "sha256": "3862d5fe659ff46a3a7fe327ac58e2aaded001e45c50f37aa8ffa6d241b63d7e"
+    },
+    {
+      "path": "execution-framework/templates/AGENT_LANE_TEMPLATE.json",
+      "size_bytes": 624,
+      "sha256": "fbac2f99486fe699114ab11b61da98e21c9be8a1e1ec4c3759f0f33b51d9164a"
+    },
+    {
+      "path": "execution-framework/templates/TASK_GRAPH_TEMPLATE.csv",
+      "size_bytes": 491,
+      "sha256": "516dbead6806c0acd621622c98dbd2ef6c79e134caeba0aa13a1e1514ffeaf03"
+    },
+    {
+      "path": "execution-framework/templates/TASK_GRAPH_TEMPLATE.md",
+      "size_bytes": 738,
+      "sha256": "f4afcbacebb1fb7f07737779fbbf351a0b21b5397848f85a82444921c9644e74"
+    },
+    {
+      "path": "execution-templates/AGENT_LANE_TEMPLATE.json",
+      "size_bytes": 624,
+      "sha256": "fbac2f99486fe699114ab11b61da98e21c9be8a1e1ec4c3759f0f33b51d9164a"
+    },
+    {
+      "path": "execution-templates/EXECUTION_TEMPLATE_INDEX.json",
+      "size_bytes": 284,
+      "sha256": "29ffeb26278c6e48a7954b7acb8e9570ece2a76e8aae89a77bb3efe4dc3e00c7"
+    },
+    {
+      "path": "execution-templates/README.md",
+      "size_bytes": 294,
+      "sha256": "2cdd7c8549ffe0a49054909ba73f893dbc9c2dfa3a7bd28e42866582b5a4cab9"
+    },
+    {
+      "path": "execution-templates/TASK_GRAPH_TEMPLATE.csv",
+      "size_bytes": 491,
+      "sha256": "516dbead6806c0acd621622c98dbd2ef6c79e134caeba0aa13a1e1514ffeaf03"
+    },
+    {
+      "path": "execution-templates/two_repo_parallel_goal.yaml",
+      "size_bytes": 889,
+      "sha256": "286b45dd7eee83deb37a6d3a164d87eb3e5872beee46584be4de4fc2e2803234"
+    },
+    {
+      "path": "history/README.md",
+      "size_bytes": 296,
+      "sha256": "4b82ddbae4ca50179c92eebeddef11e9f4b041aafea3ea8717224539e093550d"
+    },
+    {
+      "path": "history/pre_execution_framework_manifest.json",
+      "size_bytes": 22214,
+      "sha256": "7f53ec278361330dbc4f5d5946398d4e36d16b3c6ba66af409656f5c3aaafcca"
+    },
+    {
+      "path": "source/execution-framework-task-prompt.md",
+      "size_bytes": 13606,
+      "sha256": "43e6b928227d182c483b09d643c942ad263e706e19e065d2050687b5ab186f5a"
+    }
+  ],
+  "upgrade_policy_status": "upgrade-only/no-downgrade: pass_no_gaps_drive_live_synchronized"
+}

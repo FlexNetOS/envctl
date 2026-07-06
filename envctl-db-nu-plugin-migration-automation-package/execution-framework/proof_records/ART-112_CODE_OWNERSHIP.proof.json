@@ -1,0 +1,246 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "ART-112_CODE_OWNERSHIP",
+  "status": "completed",
+  "started_at": "2026-07-04T23:19:29+00:00",
+  "completed_at": "2026-07-04T23:19:29+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-artifact-13",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/generate_art112_code_ownership.py",
+    "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.json",
+    "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.md",
+    "execution-framework/logs/ART-112_CODE_OWNERSHIP.log",
+    "execution-framework/state/ART-112_CODE_OWNERSHIP.heartbeat.json",
+    "execution-framework/proof_records/ART-112_CODE_OWNERSHIP.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/generate_art112_code_ownership.py",
+    "python3 -m py_compile scripts/generate_art112_code_ownership.py"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "ART-112_CODE_OWNERSHIP",
+    "status": "passed",
+    "generated_at": "2026-07-04T23:19:29+00:00",
+    "artifact_paths": [
+      "migration-artifacts/art-112_code_ownership/code_ownership_map.json",
+      "migration-artifacts/art-112_code_ownership/code_ownership_map.md"
+    ],
+    "registry_result": {
+      "json": {
+        "artifact_row_id": "artifact-88c0fb6dcda8ec0284fd7434",
+        "artifact_id": "art112-code-ownership-json",
+        "run_id": "run-art112",
+        "path": "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.json",
+        "content_hash": "sha256:0ae931ef1e57f4771b314a4e31c86064b6c1ac8de6845153799ebe4eaa40fd48",
+        "producer_operation_id": "op-art112-generate",
+        "contract_id": "contract-art112",
+        "evidence_ids": [
+          "evidence-97bf1dbec1b94fd8346f13b3",
+          "evidence-eade09bd14d9abc279979545",
+          "evidence-30fd453e226ece88eb2d25d9",
+          "evidence-107b9619c9dc0573f74924a6",
+          "evidence-23cecceca5a87abe7cded784"
+        ],
+        "graph_edge_ids": [
+          "edge-39cc9259371e6a5870e95175",
+          "edge-fbc6fdc6a104446c145da7f8",
+          "edge-442437fb3579861467633952",
+          "edge-2ba9259d6d7f2f3e85d13c3f"
+        ],
+        "validation_ids": [
+          "validation-00ac79a4eb467460ebe4b950",
+          "validation-a50c95df386dce0f5ae79040"
+        ]
+      },
+      "markdown": {
+        "artifact_row_id": "artifact-e52edcb48798cb0d73db86b0",
+        "artifact_id": "art112-code-ownership-markdown",
+        "run_id": "run-art112",
+        "path": "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.md",
+        "content_hash": "sha256:f64eaeaa991b6b597138b1b27d74f0a2c255490a01ba3c77b011358bd45f32fb",
+        "producer_operation_id": "op-art112-generate",
+        "contract_id": "contract-art112",
+        "evidence_ids": [
+          "evidence-c8604a01c886bb799454010f",
+          "evidence-2a8129cc1cc8e002a085386c",
+          "evidence-636833c0c3b606d732ee60f8",
+          "evidence-b5e2338cb0636d4d68e36ba8",
+          "evidence-f333d279c91d5b38f74443c5"
+        ],
+        "graph_edge_ids": [
+          "edge-5b5c45c6e14d2badb9b67e80",
+          "edge-9dfbcbf3501ae61f9cff6623",
+          "edge-aaac89032c2c120ae05979ef",
+          "edge-e0cda83086f353958e75cec3"
+        ],
+        "validation_ids": [
+          "validation-e5df44751c05e0c1812a7a50",
+          "validation-4da3331ed6555650810d7f90"
+        ]
+      },
+      "json_row": {
+        "id": "artifact-88c0fb6dcda8ec0284fd7434",
+        "run_id": "run-art112",
+        "artifact_id": "art112-code-ownership-json",
+        "title": "ART-112 Code Ownership Map JSON",
+        "artifact_type": "code_ownership_map_json",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.json",
+        "content_hash": "sha256:0ae931ef1e57f4771b314a4e31c86064b6c1ac8de6845153799ebe4eaa40fd48",
+        "generated_by_operation_id": "op-art112-generate",
+        "evidence": {
+          "contract_id": "contract-art112",
+          "evidence_ids": [
+            "evidence-97bf1dbec1b94fd8346f13b3",
+            "evidence-eade09bd14d9abc279979545",
+            "evidence-30fd453e226ece88eb2d25d9",
+            "evidence-107b9619c9dc0573f74924a6",
+            "evidence-23cecceca5a87abe7cded784"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.json",
+            "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.md",
+            "execution-framework/generated/envctl_target_registry.json",
+            "execution-framework/generated/shared_protocol_manifest.json",
+            "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json"
+          ],
+          "producer_operation_id": "op-art112-generate",
+          "provenance": {
+            "helper_id": "helper-artifact-13",
+            "owner_agent": "artifact-agent",
+            "source_graph": "generated/task_graph.csv",
+            "task_id": "ART-112_CODE_OWNERSHIP"
+          },
+          "validation_ids": [
+            "validation-00ac79a4eb467460ebe4b950",
+            "validation-a50c95df386dce0f5ae79040"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-art112",
+          "graph_edge_ids": [
+            "edge-39cc9259371e6a5870e95175",
+            "edge-fbc6fdc6a104446c145da7f8",
+            "edge-442437fb3579861467633952",
+            "edge-2ba9259d6d7f2f3e85d13c3f"
+          ],
+          "links": [
+            {
+              "to": "artifact:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "artifact:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "artifact:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            }
+          ]
+        }
+      },
+      "markdown_row": {
+        "id": "artifact-e52edcb48798cb0d73db86b0",
+        "run_id": "run-art112",
+        "artifact_id": "art112-code-ownership-markdown",
+        "title": "ART-112 Code Ownership Map Markdown",
+        "artifact_type": "code_ownership_map_markdown",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.md",
+        "content_hash": "sha256:f64eaeaa991b6b597138b1b27d74f0a2c255490a01ba3c77b011358bd45f32fb",
+        "generated_by_operation_id": "op-art112-generate",
+        "evidence": {
+          "contract_id": "contract-art112",
+          "evidence_ids": [
+            "evidence-c8604a01c886bb799454010f",
+            "evidence-2a8129cc1cc8e002a085386c",
+            "evidence-636833c0c3b606d732ee60f8",
+            "evidence-b5e2338cb0636d4d68e36ba8",
+            "evidence-f333d279c91d5b38f74443c5"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.json",
+            "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.md",
+            "execution-framework/generated/envctl_target_registry.json",
+            "execution-framework/generated/shared_protocol_manifest.json",
+            "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json"
+          ],
+          "producer_operation_id": "op-art112-generate",
+          "provenance": {
+            "helper_id": "helper-artifact-13",
+            "owner_agent": "artifact-agent",
+            "source_graph": "generated/task_graph.csv",
+            "task_id": "ART-112_CODE_OWNERSHIP"
+          },
+          "validation_ids": [
+            "validation-e5df44751c05e0c1812a7a50",
+            "validation-4da3331ed6555650810d7f90"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-art112",
+          "graph_edge_ids": [
+            "edge-5b5c45c6e14d2badb9b67e80",
+            "edge-9dfbcbf3501ae61f9cff6623",
+            "edge-aaac89032c2c120ae05979ef",
+            "edge-e0cda83086f353958e75cec3"
+          ],
+          "links": [
+            {
+              "to": "artifact:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "artifact:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "artifact:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            }
+          ]
+        }
+      }
+    },
+    "coverage": {
+      "module_count": 3,
+      "service_count": 3,
+      "data_pipeline_count": 2,
+      "owners_with_primary_assignment": 7,
+      "path_entries": 26,
+      "ownership_gaps": 0
+    },
+    "checks": {
+      "json_artifact_exists": true,
+      "markdown_artifact_exists": true,
+      "json_hash_recorded": true,
+      "markdown_hash_recorded": true,
+      "validation_evidence_linked": true,
+      "ownership_gaps_zero": true
+    },
+    "errors": []
+  },
+  "checksums": {
+    "execution-framework/scripts/generate_art112_code_ownership.py": "04d646c8261cb5acf5ab79deac0360df96bde2b1dd4477872fcd28fa2f6c57f4",
+    "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.json": "0ae931ef1e57f4771b314a4e31c86064b6c1ac8de6845153799ebe4eaa40fd48",
+    "execution-framework/migration-artifacts/art-112_code_ownership/code_ownership_map.md": "f64eaeaa991b6b597138b1b27d74f0a2c255490a01ba3c77b011358bd45f32fb",
+    "execution-framework/logs/ART-112_CODE_OWNERSHIP.log": "76cf21a6cfd695982cf1618b9e53f05ecf294aacaf21127d7d20c7dd888c824c",
+    "execution-framework/state/ART-112_CODE_OWNERSHIP.heartbeat.json": "e1c1a7f8182a5eab3740b73931e838e032c858b19dcec8561f591ffb9e3cb0ed",
+    "execution-framework/proof_records/proof_ledger.jsonl": "f65d6ea2d3c8cebdc10ca628e3dc3f6bfc644837a7adec80a6022574857fff82"
+  },
+  "logs_uri": "logs/ART-112_CODE_OWNERSHIP.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "migration-artifacts/art-112_code_ownership/code_ownership_map.json",
+    "migration-artifacts/art-112_code_ownership/code_ownership_map.md",
+    "logs/ART-112_CODE_OWNERSHIP.log"
+  ],
+  "failure_reason": "",
+  "next_action": "run VER-300_UNIT_VALIDATION"
+}

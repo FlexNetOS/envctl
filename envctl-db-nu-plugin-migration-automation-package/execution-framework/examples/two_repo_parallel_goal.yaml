@@ -1,0 +1,29 @@
+
+goal: Build envctl database automation and nu_plugin command/control features in parallel.
+lanes:
+  - lane_b_repo_a: envctl database feature work
+  - lane_c_repo_b: nu_plugin command/control feature work
+  - lane_d_filesystem: shared artifact and template generation
+  - lane_e_verification: integration and proof validation
+parallel_groups:
+  shared_protocol:
+    max_parallel: 2
+    tasks:
+      - REQ-020_ENVCTL_DB_SCHEMA
+      - REQ-030_PLUGIN_PROTOCOL_MANIFEST
+  artifact_generation:
+    max_parallel: 6
+    tasks:
+      - ART-100_SYSTEM_INVENTORY
+      - ART-101_DIRECTORY_TREE
+      - ART-103_SERVICE_DEP_GRAPH
+      - ART-107_DATA_FLOW_GRAPH
+integration:
+  depends_on:
+    - REQ-020_ENVCTL_DB_SCHEMA
+    - REQ-030_PLUGIN_PROTOCOL_MANIFEST
+    - REQ-040_SHARED_PROTOCOL_SCHEMAS
+verification:
+  depends_on:
+    - REQ-041_TWO_REPO_INTEGRATION
+    - ART-123_VALIDATION_RECONCILIATION

@@ -32,28 +32,14 @@ def job_block(job_id: str) -> str:
         return ""
     return match.group("body")
 
-# Preserve the branch-protection contexts while preventing the single local runner
-# from serializing every required check. These jobs must remain GitHub-hosted fan-out.
-for job_id in ["rustfmt", "clippy", "msrv", "cargo-audit", "gates"]:
+# Preserve the branch-protection contexts while keeping required CI proof on
+# GitHub-hosted clean runners. These jobs must remain GitHub-hosted fan-out.
+for job_id in ["rustfmt", "clippy", "msrv", "cargo-audit", "test", "gates"]:
     body = job_block(job_id)
     require(
         re.search(r"(?m)^    runs-on:\s*ubuntu-latest\s*$", body) is not None,
         f"{job_id} must run on ubuntu-latest for parallel fan-out",
     )
-
-# The workspace test job is the only CI required context that should use the org
-# self-hosted runner on trusted refs, and it must keep the fork guard.
-test_body = job_block("test")
-for needle in [
-    "github.event.pull_request.head.repo.fork",
-    "ubuntu-latest",
-    "self-hosted",
-    "linux",
-    "x64",
-    "local",
-    "flexnetos",
-]:
-    require(needle in test_body, f"test runner routing missing {needle!r}")
 
 # Stale PR runs should not keep either queue busy, but protected develop pushes must
 # be allowed to finish because sync-master depends on their completed status.

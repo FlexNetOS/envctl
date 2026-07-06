@@ -209,7 +209,13 @@ M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/kache"
 cargo install kache --root "$DEST"
 install -d -m 755 "$META_ROOT/usr/bin"
-envctl_frontdoor "$DEST/bin/kache" "$META_ROOT/usr/bin/kache"
+cat >"$META_ROOT/usr/bin/kache" <<EOF
+#!/bin/sh
+# envctl kache wrapper
+export XDG_CACHE_HOME="\${XDG_CACHE_HOME:-$M/.cache}"
+exec "$DEST/bin/kache" "\$@"
+EOF
+chmod 755 "$META_ROOT/usr/bin/kache"
 # Wire kache as RUSTC_WRAPPER via the meta-root .cargo/config.toml [build] section. Same
 # CO-MANAGED file as the wild-linker component (TASK-0054): each owns a delimited block,
 # written by a non-clobbering upsert so the two never overwrite each other and foreign
@@ -221,7 +227,7 @@ touch "$CFG"
 BEG="# >>> envctl kache (Epic H TASK-0055) >>>"
 END="# <<< envctl kache (Epic H TASK-0055) <<<"
 awk -v b="$BEG" -v e="$END" '$0==b{s=1} s&&$0==e{s=0;next} !s{print}' "$CFG" > "$CFG.tmp" && mv "$CFG.tmp" "$CFG"
-printf '%s\n[build]\nrustc-wrapper = "kache"\n%s\n' "$BEG" "$END" >> "$CFG"
+printf '%s\n[build]\nrustc-wrapper = "%s/usr/bin/kache"\n%s\n' "$BEG" "$M" "$END" >> "$CFG"
 
 
 '''

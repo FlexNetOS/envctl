@@ -1,0 +1,34 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "EF-002_GAP_REPORT",
+  "status": "completed",
+  "started_at": "2026-07-04T00:00:00-05:00",
+  "completed_at": "2026-07-04T00:00:00-05:00",
+  "actor": "local-package-builder",
+  "helper_id": "helper-gap-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "execution-framework",
+  "files_changed": [
+    "execution-framework/generated/gap_report.json",
+    "execution-framework/docs/GAP_ANALYSIS.md"
+  ],
+  "commands_run": [
+    "generate gap report and docs/GAP_ANALYSIS.md"
+  ],
+  "verification_output": {
+    "status": "completed",
+    "gap_count": 9
+  },
+  "checksums": {
+    "execution-framework/generated/gap_report.json": "3c5bf7490846f4eae56b1d1c1c97dbf44ebc00368393b9e176687f07ee9d1677",
+    "execution-framework/docs/GAP_ANALYSIS.md": "a92e49ab23b14e3991707132676549b1de583f84294576a83ce14b1369eae829"
+  },
+  "logs_uri": "logs/EF-002_GAP_REPORT.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "generated/gap_report.json",
+    "docs/GAP_ANALYSIS.md"
+  ],
+  "failure_reason": "",
+  "next_action": "continue required execution command sequence"
+}

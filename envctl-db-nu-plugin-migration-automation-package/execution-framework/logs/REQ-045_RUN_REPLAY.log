@@ -1,0 +1,30 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-045_RUN_REPLAY",
+  "status": "passed",
+  "generated_at": "2026-07-05T05:27:46+00:00",
+  "summary": {
+    "source_file_count": 5,
+    "command_template_count": 6,
+    "convenience_template_count": 2
+  },
+  "command_template_ids": [
+    "compute-initial-plan",
+    "dispatch-approved-run-replay-packet",
+    "replay-dry-run",
+    "replay-apply-blocked-check",
+    "verify-rollback-checkpoints",
+    "verify-replay-validation"
+  ],
+  "convenience_templates_present": [
+    "execution-templates/README.md",
+    "execution-templates/EXECUTION_TEMPLATE_INDEX.json"
+  ],
+  "errors": [],
+  "evidence": [
+    "execution-framework/docs/RUN_REPLAY.md",
+    "execution-framework/generated/run_replay_manifest.json",
+    "execution-framework/state/REQ-045_RUN_REPLAY.heartbeat.json",
+    "execution-framework/logs/REQ-045_RUN_REPLAY.log"
+  ]
+}
