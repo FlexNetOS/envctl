@@ -1,0 +1,347 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-112_CODE_OWNERSHIP",
+  "title": "Code ownership map",
+  "generated_at": "2026-07-04T23:19:29+00:00",
+  "target_root": "/home/flexnetos/FlexNetOS",
+  "source_inputs": {
+    "target_descriptor": "generated/envctl_target_registry.json",
+    "repo_scan": "generated/package_scan.json plus bounded target filesystem path checks",
+    "envctl_database": [
+      "generated/envctl_artifact_registry_report.json",
+      "generated/shared_protocol_manifest.json",
+      "proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+      "proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+    ]
+  },
+  "target_summary": {
+    "registry_status": "passed",
+    "primary_target": {
+      "id": "target-flexnetos-vs-lifeos",
+      "target_id": "flexnetos-vs-lifeos",
+      "target_type": "mixed",
+      "primary_root": "/home/flexnetos/FlexNetOS",
+      "compare_root": "/home/flexnetos/lifeos",
+      "descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384",
+      "safety_mode": "approval-gated",
+      "max_auto_risk": "R2"
+    },
+    "protocol_records": [
+      "TargetDescriptor",
+      "MigrationRecipe",
+      "MigrationRun",
+      "RunEvent",
+      "Operation",
+      "ApprovalRequest",
+      "ApprovalDecision",
+      "ArtifactRecord",
+      "EvidenceRecord",
+      "GraphEdge",
+      "ValidationResult",
+      "ReplayRequest",
+      "ReplayResult",
+      "ProofRecord"
+    ],
+    "packet_phase": "05-artifacts",
+    "packet_owner_lane": "lane_d_filesystem"
+  },
+  "owners": [
+    {
+      "id": "envctl-engine",
+      "kind": "module",
+      "name": "envctl engine",
+      "paths": [
+        "src/envctl/crates/engine/src",
+        "src/envctl/Cargo.toml",
+        "src/envctl/agent-env.yaml"
+      ],
+      "primary_owner": "envctl-db-agent",
+      "support_owner": "envctl-runner-agent",
+      "migration_lane": "lane_b_repo_a",
+      "responsibility": "Owns envctl repository state, component catalog, agent environment sync, migration operations, and database-facing command behavior.",
+      "evidence": [
+        "generated/envctl_target_registry.json",
+        "generated/shared_protocol_manifest.json",
+        "src/envctl/crates/engine/src"
+      ],
+      "path_status": [
+        {
+          "path": "src/envctl/crates/engine/src",
+          "exists": true
+        },
+        {
+          "path": "src/envctl/Cargo.toml",
+          "exists": true
+        },
+        {
+          "path": "src/envctl/agent-env.yaml",
+          "exists": true
+        }
+      ],
+      "observed_file_count": 39
+    },
+    {
+      "id": "envctl-artifact-registry",
+      "kind": "module",
+      "name": "envctl artifact registry",
+      "paths": [
+        "src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework/scripts/artifact_registry.py",
+        "src/envctl/envctl-db-nu-plugin-migration-automation-package/sql",
+        "src/envctl/envctl-db-nu-plugin-migration-automation-package/schemas"
+      ],
+      "primary_owner": "envctl-db-agent",
+      "support_owner": "validation-agent",
+      "migration_lane": "lane_b_repo_a",
+      "responsibility": "Persists artifact paths, hashes, producers, contract IDs, provenance, graph edges, evidence, and validation links.",
+      "evidence": [
+        "proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+        "generated/envctl_artifact_registry_report.json"
+      ],
+      "path_status": [
+        {
+          "path": "src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework/scripts/artifact_registry.py",
+          "exists": true
+        },
+        {
+          "path": "src/envctl/envctl-db-nu-plugin-migration-automation-package/sql",
+          "exists": true
+        },
+        {
+          "path": "src/envctl/envctl-db-nu-plugin-migration-automation-package/schemas",
+          "exists": true
+        }
+      ],
+      "observed_file_count": 13
+    },
+    {
+      "id": "nu-plugin-control-surface",
+      "kind": "service",
+      "name": "nu_plugin control surface",
+      "paths": [
+        "src/nu_plugin/crates/codedb",
+        "src/nu_plugin/crates/codedb_mcp",
+        "src/nu_plugin/docs",
+        "src/nu_plugin/tests"
+      ],
+      "primary_owner": "nu-plugin-agent",
+      "support_owner": "nu-plugin-visuals-agent",
+      "migration_lane": "lane_c_repo_b",
+      "responsibility": "Renders envctl migration targets, runs, events, operations, artifacts, approvals, validations, graph views, and replay controls.",
+      "evidence": [
+        "generated/nu_plugin_command_manifest.json",
+        "generated/shared_protocol_manifest.json",
+        "src/nu_plugin/docs/COMMANDS.md"
+      ],
+      "path_status": [
+        {
+          "path": "src/nu_plugin/crates/codedb",
+          "exists": true
+        },
+        {
+          "path": "src/nu_plugin/crates/codedb_mcp",
+          "exists": true
+        },
+        {
+          "path": "src/nu_plugin/docs",
+          "exists": true
+        },
+        {
+          "path": "src/nu_plugin/tests",
+          "exists": true
+        }
+      ],
+      "observed_file_count": 56
+    },
+    {
+      "id": "shared-protocol",
+      "kind": "module",
+      "name": "shared protocol schemas",
+      "paths": [
+        "schemas",
+        "execution-framework/schemas",
+        "execution-framework/generated/shared_protocol_manifest.json"
+      ],
+      "primary_owner": "shared-protocol-agent",
+      "support_owner": "envctl-db-agent",
+      "migration_lane": "shared_protocol",
+      "responsibility": "Defines records consumed by envctl and nu_plugin: target descriptors, runs, events, operations, artifacts, evidence, graph edges, validations, replay, and proofs.",
+      "evidence": [
+        "proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json",
+        "generated/shared_protocol_manifest.json"
+      ],
+      "path_status": [
+        {
+          "path": "schemas",
+          "exists": true
+        },
+        {
+          "path": "execution-framework/schemas",
+          "exists": true
+        },
+        {
+          "path": "execution-framework/generated/shared_protocol_manifest.json",
+          "exists": true
+        }
+      ],
+      "observed_file_count": 0
+    },
+    {
+      "id": "artifact-generation",
+      "kind": "data_pipeline",
+      "name": "migration artifact generation",
+      "paths": [
+        "execution-framework/generated/execution_packets/ART-*.json",
+        "execution-framework/migration-artifacts",
+        "execution-framework/proof_records"
+      ],
+      "primary_owner": "artifact-agent",
+      "support_owner": "validation-agent",
+      "migration_lane": "lane_d_filesystem",
+      "responsibility": "Synthesizes contract artifacts and registers each artifact with hash, validation evidence, and graph links.",
+      "evidence": [
+        "generated/task_graph.csv",
+        "generated/execution_packets/ART-112_CODE_OWNERSHIP.json"
+      ],
+      "path_status": [
+        {
+          "path": "execution-framework/generated/execution_packets/ART-*.json",
+          "exists": false
+        },
+        {
+          "path": "execution-framework/migration-artifacts",
+          "exists": true
+        },
+        {
+          "path": "execution-framework/proof_records",
+          "exists": true
+        }
+      ],
+      "observed_file_count": 0
+    },
+    {
+      "id": "validation-evidence",
+      "kind": "data_pipeline",
+      "name": "validation evidence and proof ledger",
+      "paths": [
+        "execution-framework/proof_records",
+        "execution-framework/logs",
+        "execution-framework/state"
+      ],
+      "primary_owner": "validation-agent",
+      "support_owner": "artifact-agent",
+      "migration_lane": "lane_e_verification",
+      "responsibility": "Owns proof records, logs, validation scorecards, heartbeat state, and replay-ready command evidence.",
+      "evidence": [
+        "proof_records/proof_ledger.jsonl",
+        "schemas/proof_record.schema.json"
+      ],
+      "path_status": [
+        {
+          "path": "execution-framework/proof_records",
+          "exists": true
+        },
+        {
+          "path": "execution-framework/logs",
+          "exists": true
+        },
+        {
+          "path": "execution-framework/state",
+          "exists": true
+        }
+      ],
+      "observed_file_count": 0
+    },
+    {
+      "id": "flexnetos-adapter",
+      "kind": "service",
+      "name": "FlexNetOS adapter recipe",
+      "paths": [
+        "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+        "specs/flexnetos-adapter.md",
+        "execution-framework/generated/envctl_target_registry.json"
+      ],
+      "primary_owner": "flexnetos-adapter-agent",
+      "support_owner": "flexnetos-agent",
+      "migration_lane": "lane_b_repo_a",
+      "responsibility": "Adapts the FlexNetOS filesystem target into envctl migration target descriptors, recipes, imports, artifact records, and replay checks.",
+      "evidence": [
+        "generated/envctl_target_registry.json",
+        "specs/flexnetos-adapter.md"
+      ],
+      "path_status": [
+        {
+          "path": "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+          "exists": true
+        },
+        {
+          "path": "specs/flexnetos-adapter.md",
+          "exists": true
+        },
+        {
+          "path": "execution-framework/generated/envctl_target_registry.json",
+          "exists": true
+        }
+      ],
+      "observed_file_count": 0
+    },
+    {
+      "id": "runtime-secrets-safety",
+      "kind": "service",
+      "name": "runtime secrets and redaction safety",
+      "paths": [
+        "src/envctl/crates/secretctl",
+        "src/envctl/crates/secrets-*",
+        "src/envctl/scripts/classify-secrets.nu",
+        "src/nu_plugin/docs/SECURITY_AND_SECRET_POLICY.md"
+      ],
+      "primary_owner": "security-reproducibility-agent",
+      "support_owner": "envctl-db-agent",
+      "migration_lane": "lane_d_filesystem",
+      "responsibility": "Keeps secret-bearing paths out of artifact capture, enforces redaction, and records reproducibility-safe evidence only.",
+      "evidence": [
+        "prompts/SECURITY_REPRODUCIBILITY_MODEL.md",
+        "generated/execution_packets/REQ-043_SECURITY_REDACTION.json"
+      ],
+      "path_status": [
+        {
+          "path": "src/envctl/crates/secretctl",
+          "exists": true
+        },
+        {
+          "path": "src/envctl/crates/secrets-*",
+          "exists": false
+        },
+        {
+          "path": "src/envctl/scripts/classify-secrets.nu",
+          "exists": true
+        },
+        {
+          "path": "src/nu_plugin/docs/SECURITY_AND_SECRET_POLICY.md",
+          "exists": true
+        }
+      ],
+      "observed_file_count": 5
+    }
+  ],
+  "owner_index": [
+    "artifact-agent",
+    "envctl-db-agent",
+    "envctl-runner-agent",
+    "flexnetos-adapter-agent",
+    "flexnetos-agent",
+    "nu-plugin-agent",
+    "nu-plugin-visuals-agent",
+    "security-reproducibility-agent",
+    "shared-protocol-agent",
+    "validation-agent"
+  ],
+  "coverage": {
+    "module_count": 3,
+    "service_count": 3,
+    "data_pipeline_count": 2,
+    "owners_with_primary_assignment": 7,
+    "path_entries": 26,
+    "ownership_gaps": 0
+  },
+  "gaps": []
+}

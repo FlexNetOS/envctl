@@ -1,0 +1,562 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-116_INFRA_TOPOLOGY",
+  "generated_at": "2026-07-04T23:20:52+00:00",
+  "status": "complete",
+  "scope": {
+    "source": "target descriptor, repo scan, envctl database reports, safe filename scan",
+    "runtime_live_state_confirmed": false,
+    "secret_material_read": false,
+    "blocked_patterns": [
+      "**/.env",
+      "**/secrets/**",
+      "**/private_keys/**",
+      "**/*.pem",
+      "**/*.key"
+    ]
+  },
+  "target_context": {
+    "target_registry_status": "passed",
+    "target": {
+      "id": "target-flexnetos-vs-lifeos",
+      "target_id": "flexnetos-vs-lifeos",
+      "target_type": "mixed",
+      "primary_root": "/home/flexnetos/FlexNetOS",
+      "compare_root": "/home/flexnetos/lifeos",
+      "descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384",
+      "safety_mode": "approval-gated",
+      "max_auto_risk": "R2"
+    },
+    "primary_root": "/home/flexnetos/FlexNetOS",
+    "compare_root": "/home/flexnetos/lifeos",
+    "descriptor_inputs": [
+      {
+        "source": "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+        "target_id": "flexnetos-vs-lifeos",
+        "target_type": "mixed",
+        "descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384"
+      },
+      {
+        "source": "examples/target-descriptors/generic-codebase.yaml",
+        "target_id": "replace-with-target-id",
+        "target_type": "codebase",
+        "descriptor_hash": "sha256:e79f5c931d50fb8193c678d61ddecc1405c8030ab9528946fcb65a7bde06bff9"
+      },
+      {
+        "source": "generated:synthetic-data-target",
+        "target_id": "synthetic-data-target",
+        "target_type": "data",
+        "descriptor_hash": "sha256:b60cc1a1afc87e27ced7bcd8cd986a858d8bc85fa7509692133faf682e1d6c7d"
+      },
+      {
+        "source": "generated:synthetic-infrastructure-target",
+        "target_id": "synthetic-infrastructure-target",
+        "target_type": "infrastructure",
+        "descriptor_hash": "sha256:0527a67aad464952377710ed804063fb78f929cfb6db7580a33911ca34884f79"
+      },
+      {
+        "source": "generated:synthetic-integration-target",
+        "target_id": "synthetic-integration-target",
+        "target_type": "integration",
+        "descriptor_hash": "sha256:2c0b9fff80948d3964bfb88006d579c33ee3cb26c9dea98478e9085c9ffcb6e6"
+      }
+    ]
+  },
+  "package_context": {
+    "package_scan_generated_at": "2026-07-04T00:00:00-05:00",
+    "top_level_entries": [
+      {
+        "name": "INSTALL_IN_REPOS.sh",
+        "type": "file"
+      },
+      {
+        "name": "PACKAGE_MANIFEST.json",
+        "type": "file"
+      },
+      {
+        "name": "PROMPT_PACKAGE_COMBINED.md",
+        "type": "file"
+      },
+      {
+        "name": "README.md",
+        "type": "file"
+      },
+      {
+        "name": "RUN_WITH_CODEX_ENVCTL.sh",
+        "type": "file"
+      },
+      {
+        "name": "codex",
+        "type": "directory"
+      },
+      {
+        "name": "examples",
+        "type": "directory"
+      },
+      {
+        "name": "expected-output",
+        "type": "directory"
+      },
+      {
+        "name": "helpers",
+        "type": "directory"
+      },
+      {
+        "name": "history",
+        "type": "directory"
+      },
+      {
+        "name": "prompts",
+        "type": "directory"
+      },
+      {
+        "name": "schemas",
+        "type": "directory"
+      },
+      {
+        "name": "source",
+        "type": "directory"
+      },
+      {
+        "name": "specs",
+        "type": "directory"
+      },
+      {
+        "name": "sql",
+        "type": "directory"
+      }
+    ],
+    "scanned_folders": {
+      "specs": {
+        "exists": true,
+        "file_count": 6
+      },
+      "prompts": {
+        "exists": true,
+        "file_count": 23
+      },
+      "codex": {
+        "exists": true,
+        "file_count": 11
+      },
+      "schemas": {
+        "exists": true,
+        "file_count": 9
+      },
+      "examples": {
+        "exists": true,
+        "file_count": 6
+      },
+      "helpers": {
+        "exists": true,
+        "file_count": 5
+      },
+      "sql": {
+        "exists": true,
+        "file_count": 4
+      },
+      "source": {
+        "exists": true,
+        "file_count": 41
+      },
+      "expected-output": {
+        "exists": true,
+        "file_count": 4
+      },
+      "history": {
+        "exists": true,
+        "file_count": 2
+      }
+    }
+  },
+  "envctl_database_context": {
+    "db_status": "passed",
+    "db_backend": "sqlite",
+    "runtime": "python sqlite3 in-memory",
+    "required_tables": [
+      "envctl_migration_agent_sessions",
+      "envctl_migration_approvals",
+      "envctl_migration_artifact_contracts",
+      "envctl_migration_artifacts",
+      "envctl_migration_checkpoints",
+      "envctl_migration_evidence",
+      "envctl_migration_graph_edges",
+      "envctl_migration_operations",
+      "envctl_migration_packages",
+      "envctl_migration_plugin_sessions",
+      "envctl_migration_recipes",
+      "envctl_migration_rollbacks",
+      "envctl_migration_run_events",
+      "envctl_migration_runs",
+      "envctl_migration_targets",
+      "envctl_migration_validations"
+    ],
+    "required_views": [
+      "envctl_migration_artifact_index",
+      "envctl_migration_live_timeline",
+      "envctl_migration_open_approvals",
+      "envctl_migration_replay_readiness",
+      "envctl_migration_run_latest_status",
+      "envctl_migration_validation_scorecard"
+    ],
+    "artifact_registry_smoke_status": "passed",
+    "artifact_registry_sample_hash": "sha256:d83a779c4f5ba4274c455c016193ad62f58d974033e53f9b11a78369cb94cded",
+    "protocol_records": [
+      "TargetDescriptor",
+      "MigrationRecipe",
+      "MigrationRun",
+      "RunEvent",
+      "Operation",
+      "ApprovalRequest",
+      "ApprovalDecision",
+      "ArtifactRecord",
+      "EvidenceRecord",
+      "GraphEdge",
+      "ValidationResult",
+      "ReplayRequest",
+      "ReplayResult",
+      "ProofRecord"
+    ]
+  },
+  "safe_scan": {
+    "target_root": "/home/flexnetos/FlexNetOS",
+    "exists": true,
+    "visited_file_count": 469467
+  },
+  "coverage": {
+    "compute": {
+      "evidence_count": 40,
+      "status": "repo_evidence_found",
+      "sample_paths": [
+        "src/Cargo.toml",
+        "src/teri/Cargo.toml",
+        "src/teri/src/services/zep_tools.rs",
+        "src/teri/src/services/graph_backend.rs",
+        "src/teri/src/services/graph_memory.rs",
+        "src/teri/src/services/simulation_manager.rs",
+        "src/teri/src/services/mod.rs",
+        "src/teri/src/services/entity_reader.rs",
+        "src/teri/src/services/simulation_runner.rs",
+        "src/teri/src/services/simulation_config.rs",
+        "src/teri/src/services/ontology.rs",
+        "src/teri/src/services/agent_memory.rs"
+      ]
+    },
+    "networking": {
+      "evidence_count": 40,
+      "status": "repo_evidence_found",
+      "sample_paths": [
+        "src/teri/src/report/mod.rs",
+        "src/teri/src/report/sink.rs",
+        "src/teri/src/report/manager.rs",
+        "src/teri/src/report/console_logger.rs",
+        "src/teri/src/report/logger.rs",
+        "src/teri/src/api/report.rs",
+        "src/teri/src/services/oasis_profile_export.rs",
+        "src/teri/templates/report_gen.jinja",
+        "src/teri/frontend/src/components/Step4Report.vue",
+        "src/teri/frontend/src/api/report.js",
+        "src/teri/frontend/src/views/ReportView.vue",
+        "src/teri/.worktrees/issue-86-source-wires/src/report/mod.rs"
+      ]
+    },
+    "storage": {
+      "evidence_count": 40,
+      "status": "repo_evidence_found",
+      "sample_paths": [
+        "COMMAND_LEDGER.csv",
+        "src/teri/code-research/references/research-ledger.md",
+        "src/teri/uploads/simulations/sim_2d08edb915b4/state.json",
+        "src/teri/uploads/simulations/sim_e01869db64aa/state.json",
+        "src/teri/frontend/src/components/HistoryDatabase.vue",
+        "src/teri/.sqlx/query-ae4b5479dae11bb7cd954d25a4bff2f415180056d7bac6db2b3a5cc982668fa8.json",
+        "src/teri/.sqlx/query-55d963cbcf18ec8e63e62ce9c1b4a00c58342561643d3465cddba460d73cb62a.json",
+        "src/teri/.sqlx/query-140f9202393c5ebfdd4b248bdc619acf4ce063f22b82d0d8ac2d2da93db2e601.json",
+        "src/teri/.sqlx/query-e0266364eb6571e3e56884dd40016382451c4be1ccf8db6d0482af64be78c93e.json",
+        "src/teri/.sqlx/query-e31f14d818b47b8ecc7789bbcfb526597238e092326db5562724ea139678ce10.json",
+        "src/teri/.sqlx/query-9265b9756a5016a30c537d7affd287b58c385e60dbe2f94e94e94d277d6bea6b.json",
+        "src/teri/.sqlx/query-5c1213186659cb129a1b56ad5a0a24f699ec338cc178e6ae9c858d38ddbce719.json"
+      ]
+    },
+    "dns": {
+      "evidence_count": 40,
+      "status": "repo_evidence_found",
+      "sample_paths": [
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/data/cross-domain-clinical.json",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/data/cross-domain-policy.json",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/data/cross-domain-tender.json",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/sldbench/configs/domain_mixture_scaling_law.yaml",
+        "src/meta-ruvector/examples/data/discoveries/cross_domain_correlations.json",
+        "src/meta-ruvector/examples/data/framework/examples/multi_domain_discovery.rs",
+        "src/meta-ruvector/examples/data/framework/examples/cross_domain_discovery.rs",
+        "src/meta-ruvector/examples/prime-radiant/docs/ddd/domain-model.md",
+        "src/meta-ruvector/examples/vibecast-7sense/crates/sevensense-vector/src/domain/error.rs",
+        "src/meta-ruvector/examples/vibecast-7sense/crates/sevensense-vector/src/domain/mod.rs",
+        "src/meta-ruvector/examples/vibecast-7sense/crates/sevensense-vector/src/domain/repository.rs",
+        "src/meta-ruvector/examples/vibecast-7sense/crates/sevensense-vector/src/domain/entities.rs"
+      ]
+    },
+    "load_balancers": {
+      "evidence_count": 40,
+      "status": "repo_evidence_found",
+      "sample_paths": [
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/Inference-engine/engines/src/neural_foundry/runtime/mcp_gateway.rs",
+        "src/meta-ruvector/examples/vwm-viewer/nginx.conf",
+        "src/meta-ruvector/examples/edge-net/dashboard/nginx.conf",
+        "src/meta-ruvector/.codex/mirror/.claude/agents/optimization/load-balancer.md",
+        "src/meta-ruvector/.codex/agents/claude/claude-optimization-load-balancer.toml",
+        "src/meta-ruvector/npm/packages/cloud-run/load-balancer.js.map",
+        "src/meta-ruvector/npm/packages/cloud-run/load-balancer.d.ts",
+        "src/meta-ruvector/npm/packages/cloud-run/load-balancer.js",
+        "src/meta-ruvector/npm/packages/cloud-run/load-balancer.ts",
+        "src/meta-ruvector/npm/packages/cloud-run/load-balancer.d.ts.map",
+        "src/meta-ruvector/docs/research/claude-code-rvsource/versions/v2.1.x/tree/react_memo_cache_sentinel/react_memo_cache_sentinel/registerLoadBalancerType.js",
+        "src/meta-ruvector/.claude/agents/optimization/load-balancer.md"
+      ]
+    },
+    "firewalls": {
+      "evidence_count": 40,
+      "status": "repo_evidence_found",
+      "sample_paths": [
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/case-studies/02-prompt-firewall.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/crates/core/src/firewall.rs",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/Inference-engine/engines/src/runtime/execution/sandbox.rs",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/Inference-engine/engines/src/neural_foundry/executor/sandbox.rs",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/inference-cel/src/execution/wasm_sandbox.rs",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/inference-cel/src/execution/native_sandbox.rs",
+        "src/envctl/.codex/tmp/arg0/codex-arg0kYEWiv/codex-linux-sandbox",
+        "src/meta-ruvector/tests/sandbox_security_tests.rs",
+        "src/meta-ruvector/crates/rvAgent/rvagent-backends/src/sandbox.rs",
+        "src/meta-ruvector/.codex/mirror/.claude/agents/flow-nexus/sandbox.md",
+        "src/meta-ruvector/.codex/agents/claude/claude-flow-nexus-sandbox.toml",
+        "src/meta-ruvector/docs/research/claude-code-rvsource/versions/v2.1.x/tree/react_memo_cache_sentinel/react_memo_cache_sentinel/wrapWithSandbox.js"
+      ]
+    },
+    "certificates": {
+      "evidence_count": 40,
+      "status": "repo_evidence_found",
+      "sample_paths": [
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/uncertainty_ineq/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/uncertainty_ineq/initial_program.py",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/uncertainty_ineq/requirements.txt",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/uncertainty_ineq/evaluator.py",
+        "src/envctl/crates/secretd/src/edge/tls.rs",
+        "src/meta-ruvector/examples/rvf/dashboard/src/components/WitnessLog.ts",
+        "src/meta-ruvector/vendor/cognitum-one/src/seed/tls_pin.rs",
+        "src/meta-ruvector/crates/ruvector-hailo-cluster/tests/mmwave_bridge_tls.rs",
+        "src/meta-ruvector/crates/ruvector-hailo-cluster/tests/mtls_roundtrip.rs",
+        "src/meta-ruvector/crates/ruvector-hailo-cluster/tests/tls_roundtrip.rs",
+        "src/meta-ruvector/crates/ruvector-hailo-cluster/src/tls.rs",
+        "src/meta-ruvector/crates/ruvector-tiny-dancer-core/src/uncertainty.rs"
+      ]
+    }
+  },
+  "nodes": [
+    {
+      "id": "target:flexnetos-vs-lifeos",
+      "kind": "migration_target",
+      "label": "FlexNetOS versus lifeos target",
+      "evidence": [
+        "generated/envctl_target_registry.json",
+        "../examples/target-descriptors/flexnetos-vs-lifeos.yaml"
+      ]
+    },
+    {
+      "id": "compute:workspace-repos",
+      "kind": "compute",
+      "label": "Workspace source repositories and local build/runtime surfaces",
+      "evidence": [
+        "src/Cargo.toml",
+        "src/teri/Cargo.toml",
+        "src/teri/src/services/zep_tools.rs",
+        "src/teri/src/services/graph_backend.rs",
+        "src/teri/src/services/graph_memory.rs",
+        "src/teri/src/services/simulation_manager.rs",
+        "src/teri/src/services/mod.rs",
+        "src/teri/src/services/entity_reader.rs",
+        "src/teri/src/services/simulation_runner.rs",
+        "src/teri/src/services/simulation_config.rs",
+        "src/teri/src/services/ontology.rs",
+        "src/teri/src/services/agent_memory.rs"
+      ]
+    },
+    {
+      "id": "network:local-services",
+      "kind": "networking",
+      "label": "Local service, socket, relay, and container networking evidence",
+      "evidence": [
+        "src/teri/src/report/mod.rs",
+        "src/teri/src/report/sink.rs",
+        "src/teri/src/report/manager.rs",
+        "src/teri/src/report/console_logger.rs",
+        "src/teri/src/report/logger.rs",
+        "src/teri/src/api/report.rs",
+        "src/teri/src/services/oasis_profile_export.rs",
+        "src/teri/templates/report_gen.jinja",
+        "src/teri/frontend/src/components/Step4Report.vue",
+        "src/teri/frontend/src/api/report.js",
+        "src/teri/frontend/src/views/ReportView.vue",
+        "src/teri/.worktrees/issue-86-source-wires/src/report/mod.rs"
+      ]
+    },
+    {
+      "id": "storage:migration-db",
+      "kind": "storage",
+      "label": "envctl migration database and repository storage surfaces",
+      "evidence": [
+        "generated/envctl_migration_db_model.json",
+        "COMMAND_LEDGER.csv",
+        "src/teri/code-research/references/research-ledger.md",
+        "src/teri/uploads/simulations/sim_2d08edb915b4/state.json",
+        "src/teri/uploads/simulations/sim_e01869db64aa/state.json",
+        "src/teri/frontend/src/components/HistoryDatabase.vue",
+        "src/teri/.sqlx/query-ae4b5479dae11bb7cd954d25a4bff2f415180056d7bac6db2b3a5cc982668fa8.json",
+        "src/teri/.sqlx/query-55d963cbcf18ec8e63e62ce9c1b4a00c58342561643d3465cddba460d73cb62a.json",
+        "src/teri/.sqlx/query-140f9202393c5ebfdd4b248bdc619acf4ce063f22b82d0d8ac2d2da93db2e601.json",
+        "src/teri/.sqlx/query-e0266364eb6571e3e56884dd40016382451c4be1ccf8db6d0482af64be78c93e.json",
+        "src/teri/.sqlx/query-e31f14d818b47b8ecc7789bbcfb526597238e092326db5562724ea139678ce10.json"
+      ]
+    },
+    {
+      "id": "dns:repo-config",
+      "kind": "dns",
+      "label": "DNS/domain configuration evidence in target filesystem",
+      "evidence": [
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/data/cross-domain-clinical.json",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/data/cross-domain-policy.json",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/data/cross-domain-tender.json",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/sldbench/configs/domain_mixture_scaling_law.yaml",
+        "src/meta-ruvector/examples/data/discoveries/cross_domain_correlations.json",
+        "src/meta-ruvector/examples/data/framework/examples/multi_domain_discovery.rs",
+        "src/meta-ruvector/examples/data/framework/examples/cross_domain_discovery.rs",
+        "src/meta-ruvector/examples/prime-radiant/docs/ddd/domain-model.md",
+        "src/meta-ruvector/examples/vibecast-7sense/crates/sevensense-vector/src/domain/error.rs",
+        "src/meta-ruvector/examples/vibecast-7sense/crates/sevensense-vector/src/domain/mod.rs",
+        "src/meta-ruvector/examples/vibecast-7sense/crates/sevensense-vector/src/domain/repository.rs",
+        "src/meta-ruvector/examples/vibecast-7sense/crates/sevensense-vector/src/domain/entities.rs"
+      ]
+    },
+    {
+      "id": "load_balancer:repo-config",
+      "kind": "load_balancer",
+      "label": "Reverse proxy/load-balancer evidence in target filesystem",
+      "evidence": [
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/Inference-engine/engines/src/neural_foundry/runtime/mcp_gateway.rs",
+        "src/meta-ruvector/examples/vwm-viewer/nginx.conf",
+        "src/meta-ruvector/examples/edge-net/dashboard/nginx.conf",
+        "src/meta-ruvector/.codex/mirror/.claude/agents/optimization/load-balancer.md",
+        "src/meta-ruvector/.codex/agents/claude/claude-optimization-load-balancer.toml",
+        "src/meta-ruvector/npm/packages/cloud-run/load-balancer.js.map",
+        "src/meta-ruvector/npm/packages/cloud-run/load-balancer.d.ts",
+        "src/meta-ruvector/npm/packages/cloud-run/load-balancer.js",
+        "src/meta-ruvector/npm/packages/cloud-run/load-balancer.ts",
+        "src/meta-ruvector/npm/packages/cloud-run/load-balancer.d.ts.map",
+        "src/meta-ruvector/docs/research/claude-code-rvsource/versions/v2.1.x/tree/react_memo_cache_sentinel/react_memo_cache_sentinel/registerLoadBalancerType.js",
+        "src/meta-ruvector/.claude/agents/optimization/load-balancer.md"
+      ]
+    },
+    {
+      "id": "firewall:policy",
+      "kind": "firewall",
+      "label": "Network policy, sandbox, and firewall-adjacent controls",
+      "evidence": [
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/case-studies/02-prompt-firewall.md",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/brain-in-the-fish/crates/core/src/firewall.rs",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/Inference-engine/engines/src/runtime/execution/sandbox.rs",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/Inference-engine/engines/src/neural_foundry/executor/sandbox.rs",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/inference-cel/src/execution/wasm_sandbox.rs",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/inference-cel/src/execution/native_sandbox.rs",
+        "src/envctl/.codex/tmp/arg0/codex-arg0kYEWiv/codex-linux-sandbox",
+        "src/meta-ruvector/tests/sandbox_security_tests.rs",
+        "src/meta-ruvector/crates/rvAgent/rvagent-backends/src/sandbox.rs",
+        "src/meta-ruvector/.codex/mirror/.claude/agents/flow-nexus/sandbox.md",
+        "src/meta-ruvector/.codex/agents/claude/claude-flow-nexus-sandbox.toml",
+        "src/meta-ruvector/docs/research/claude-code-rvsource/versions/v2.1.x/tree/react_memo_cache_sentinel/react_memo_cache_sentinel/wrapWithSandbox.js"
+      ]
+    },
+    {
+      "id": "certificates:tls",
+      "kind": "certificates",
+      "label": "TLS/certificate dependency and configuration evidence",
+      "evidence": [
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/uncertainty_ineq/config.yaml",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/uncertainty_ineq/initial_program.py",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/uncertainty_ineq/requirements.txt",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/examples/alphaevolve_math_problems/uncertainty_ineq/evaluator.py",
+        "src/envctl/crates/secretd/src/edge/tls.rs",
+        "src/meta-ruvector/examples/rvf/dashboard/src/components/WitnessLog.ts",
+        "src/meta-ruvector/vendor/cognitum-one/src/seed/tls_pin.rs",
+        "src/meta-ruvector/crates/ruvector-hailo-cluster/tests/mmwave_bridge_tls.rs",
+        "src/meta-ruvector/crates/ruvector-hailo-cluster/tests/mtls_roundtrip.rs",
+        "src/meta-ruvector/crates/ruvector-hailo-cluster/tests/tls_roundtrip.rs",
+        "src/meta-ruvector/crates/ruvector-hailo-cluster/src/tls.rs",
+        "src/meta-ruvector/crates/ruvector-tiny-dancer-core/src/uncertainty.rs"
+      ]
+    },
+    {
+      "id": "registry:artifact-registry",
+      "kind": "control_plane",
+      "label": "envctl artifact registry",
+      "evidence": [
+        "generated/envctl_artifact_registry_report.json",
+        "scripts/artifact_registry.py"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "target:flexnetos-vs-lifeos",
+      "to": "compute:workspace-repos",
+      "type": "contains"
+    },
+    {
+      "from": "target:flexnetos-vs-lifeos",
+      "to": "network:local-services",
+      "type": "contains"
+    },
+    {
+      "from": "target:flexnetos-vs-lifeos",
+      "to": "storage:migration-db",
+      "type": "contains"
+    },
+    {
+      "from": "compute:workspace-repos",
+      "to": "network:local-services",
+      "type": "exposes_or_runs"
+    },
+    {
+      "from": "network:local-services",
+      "to": "dns:repo-config",
+      "type": "may_resolve_through"
+    },
+    {
+      "from": "network:local-services",
+      "to": "load_balancer:repo-config",
+      "type": "may_front"
+    },
+    {
+      "from": "firewall:policy",
+      "to": "network:local-services",
+      "type": "constrains"
+    },
+    {
+      "from": "certificates:tls",
+      "to": "network:local-services",
+      "type": "secures"
+    },
+    {
+      "from": "registry:artifact-registry",
+      "to": "storage:migration-db",
+      "type": "persists_to"
+    }
+  ],
+  "gaps": [],
+  "source_artifacts": [
+    "generated/envctl_target_registry.json",
+    "generated/package_scan.json",
+    "generated/envctl_migration_db_model.json",
+    "generated/envctl_artifact_registry_report.json",
+    "generated/shared_protocol_manifest.json",
+    "../examples/target-descriptors/flexnetos-vs-lifeos.yaml"
+  ]
+}

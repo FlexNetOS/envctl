@@ -1,0 +1,288 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-133_DEPRECATION_MAP",
+  "status": "passed",
+  "generated_at": "2026-07-04T23:28:24+00:00",
+  "summary": {
+    "retired": 1,
+    "replaced": 2,
+    "wrapped": 2,
+    "preserved": 3
+  },
+  "component_count": 8,
+  "artifact_paths": [
+    "migration-artifacts/02-target-state/deprecation-map.md",
+    "migration-artifacts/art-133_deprecation_map/deprecation-map.md",
+    "migration-artifacts/art-133_deprecation_map/deprecation-map.json"
+  ],
+  "registry_results": [
+    {
+      "artifact_row_id": "artifact-eb0182f087f9e501fe7e61f1",
+      "artifact_id": "02-target-state-deprecation-map-md",
+      "run_id": "run-art-133-deprecation-map",
+      "path": "migration-artifacts/02-target-state/deprecation-map.md",
+      "content_hash": "sha256:dda585ac65722ff68ba40803c885efaf5c8cee64f7e2e72501d1f18157d91e79",
+      "producer_operation_id": "produce-02-target-state-deprecation-map-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-ebfa4e186521cf14df8eee8d",
+        "evidence-e9aa40ac18cb967e9fbe09be",
+        "evidence-f7276341a58595f7d04c879d",
+        "evidence-fd7641ffeb2a1746982b18a9",
+        "evidence-b3ba80ed591cb44b181ca74c",
+        "evidence-9a545fbbe00b3429d41345e7",
+        "evidence-3472ab11b16ed31f44108ac0"
+      ],
+      "graph_edge_ids": [
+        "edge-a3dde2b49eef55fcf2de6c9c",
+        "edge-afe409f6a84a5ec8df22c40c",
+        "edge-7c1a9d2bfc2fbb77f726e16b",
+        "edge-93dbe349d0f28c3c4d3db11a",
+        "edge-92bb034b445745832f4c53cf",
+        "edge-133453bbf5863ea1ee5f80c4"
+      ],
+      "validation_ids": [
+        "validation-2eaef8943c2f2ae959edf657",
+        "validation-3eab379315f04a9f3a851760",
+        "validation-dfed1b7fda6519e50d7a7cbe"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-52c2f750bf1adcb3ee59c259",
+      "artifact_id": "art-133-deprecation-map-md",
+      "run_id": "run-art-133-deprecation-map",
+      "path": "migration-artifacts/art-133_deprecation_map/deprecation-map.md",
+      "content_hash": "sha256:dda585ac65722ff68ba40803c885efaf5c8cee64f7e2e72501d1f18157d91e79",
+      "producer_operation_id": "produce-02-target-state-deprecation-map-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-4dbcca00851a6e9aec10eb8f",
+        "evidence-e9169a479d61c0bf231bd776",
+        "evidence-762501cb44000415322d1e19"
+      ],
+      "graph_edge_ids": [
+        "edge-7279f641af9257850d8473af",
+        "edge-a4a9872a405034ab072eb530"
+      ],
+      "validation_ids": [
+        "validation-31733a6d5243bcd25ead837a"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-a1e1c787d74eb85edb8587b9",
+      "artifact_id": "art-133-deprecation-map-json",
+      "run_id": "run-art-133-deprecation-map",
+      "path": "migration-artifacts/art-133_deprecation_map/deprecation-map.json",
+      "content_hash": "sha256:a675a7d7066d3895787b07e8682bd78e285c924c10bfeeff39ece716a100e0fa",
+      "producer_operation_id": "produce-02-target-state-deprecation-map-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-bbed7685afca24c672257b8e",
+        "evidence-89462478ec746e8959f7c41e"
+      ],
+      "graph_edge_ids": [
+        "edge-cbfd9a9717ef159018029378",
+        "edge-f826c4cfbaf687c150b8c3b2"
+      ],
+      "validation_ids": [
+        "validation-0f021f7241d95f33f66de5c9"
+      ]
+    }
+  ],
+  "artifact_rows": [
+    {
+      "id": "artifact-eb0182f087f9e501fe7e61f1",
+      "run_id": "run-art-133-deprecation-map",
+      "artifact_id": "02-target-state-deprecation-map-md",
+      "title": "Deprecation Map",
+      "artifact_type": "migration_artifact",
+      "status": "complete",
+      "path": "migration-artifacts/02-target-state/deprecation-map.md",
+      "content_hash": "sha256:dda585ac65722ff68ba40803c885efaf5c8cee64f7e2e72501d1f18157d91e79",
+      "generated_by_operation_id": "produce-02-target-state-deprecation-map-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-ebfa4e186521cf14df8eee8d",
+          "evidence-e9aa40ac18cb967e9fbe09be",
+          "evidence-f7276341a58595f7d04c879d",
+          "evidence-fd7641ffeb2a1746982b18a9",
+          "evidence-b3ba80ed591cb44b181ca74c",
+          "evidence-9a545fbbe00b3429d41345e7",
+          "evidence-3472ab11b16ed31f44108ac0"
+        ],
+        "evidence_refs": [
+          "migration-artifacts/02-target-state/deprecation-map.md",
+          "migration-artifacts/art-133_deprecation_map/deprecation-map.md",
+          "migration-artifacts/art-133_deprecation_map/deprecation-map.json",
+          "generated/contract_manifest.json",
+          "generated/envctl_artifact_registry_report.json",
+          "generated/shared_protocol_validation_report.json",
+          "migration-artifacts/art-105_package_lib_graph/package_lib_graph.json"
+        ],
+        "producer_operation_id": "produce-02-target-state-deprecation-map-md",
+        "provenance": {
+          "contract_row_id": "artifact:02-target-state-deprecation-map-md",
+          "helper_id": "helper-artifact-34",
+          "owner_agent": "artifact-agent",
+          "summary": {
+            "preserved": 3,
+            "replaced": 2,
+            "retired": 1,
+            "wrapped": 2
+          },
+          "task_id": "ART-133_DEPRECATION_MAP"
+        },
+        "validation_ids": [
+          "validation-2eaef8943c2f2ae959edf657",
+          "validation-3eab379315f04a9f3a851760",
+          "validation-dfed1b7fda6519e50d7a7cbe"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-a3dde2b49eef55fcf2de6c9c",
+          "edge-afe409f6a84a5ec8df22c40c",
+          "edge-7c1a9d2bfc2fbb77f726e16b",
+          "edge-93dbe349d0f28c3c4d3db11a",
+          "edge-92bb034b445745832f4c53cf",
+          "edge-133453bbf5863ea1ee5f80c4"
+        ],
+        "links": [
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          },
+          {
+            "to": "artifact:03-code-analysis-package-library-dependency-graph-md",
+            "type": "uses_deprecation_signal"
+          },
+          {
+            "to": "artifact:09-governance-risk-register-md",
+            "type": "informs"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-52c2f750bf1adcb3ee59c259",
+      "run_id": "run-art-133-deprecation-map",
+      "artifact_id": "art-133-deprecation-map-md",
+      "title": "ART-133 Deprecation Map Markdown",
+      "artifact_type": "task_local_markdown_artifact",
+      "status": "complete",
+      "path": "migration-artifacts/art-133_deprecation_map/deprecation-map.md",
+      "content_hash": "sha256:dda585ac65722ff68ba40803c885efaf5c8cee64f7e2e72501d1f18157d91e79",
+      "generated_by_operation_id": "produce-02-target-state-deprecation-map-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-4dbcca00851a6e9aec10eb8f",
+          "evidence-e9169a479d61c0bf231bd776",
+          "evidence-762501cb44000415322d1e19"
+        ],
+        "evidence_refs": [
+          "migration-artifacts/art-133_deprecation_map/deprecation-map.md",
+          "migration-artifacts/02-target-state/deprecation-map.md",
+          "migration-artifacts/art-133_deprecation_map/deprecation-map.json"
+        ],
+        "producer_operation_id": "produce-02-target-state-deprecation-map-md",
+        "provenance": {
+          "owner_agent": "artifact-agent",
+          "source_artifact_id": "02-target-state-deprecation-map-md",
+          "task_id": "ART-133_DEPRECATION_MAP"
+        },
+        "validation_ids": [
+          "validation-31733a6d5243bcd25ead837a"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-7279f641af9257850d8473af",
+          "edge-a4a9872a405034ab072eb530"
+        ],
+        "links": [
+          {
+            "to": "artifact:02-target-state-deprecation-map-md",
+            "type": "mirrors"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-a1e1c787d74eb85edb8587b9",
+      "run_id": "run-art-133-deprecation-map",
+      "artifact_id": "art-133-deprecation-map-json",
+      "title": "ART-133 Deprecation Map JSON",
+      "artifact_type": "machine_readable_record",
+      "status": "complete",
+      "path": "migration-artifacts/art-133_deprecation_map/deprecation-map.json",
+      "content_hash": "sha256:a675a7d7066d3895787b07e8682bd78e285c924c10bfeeff39ece716a100e0fa",
+      "generated_by_operation_id": "produce-02-target-state-deprecation-map-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-bbed7685afca24c672257b8e",
+          "evidence-89462478ec746e8959f7c41e"
+        ],
+        "evidence_refs": [
+          "migration-artifacts/art-133_deprecation_map/deprecation-map.json",
+          "migration-artifacts/02-target-state/deprecation-map.md"
+        ],
+        "producer_operation_id": "produce-02-target-state-deprecation-map-md",
+        "provenance": {
+          "owner_agent": "artifact-agent",
+          "source_artifact_id": "02-target-state-deprecation-map-md",
+          "task_id": "ART-133_DEPRECATION_MAP"
+        },
+        "validation_ids": [
+          "validation-0f021f7241d95f33f66de5c9"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-cbfd9a9717ef159018029378",
+          "edge-f826c4cfbaf687c150b8c3b2"
+        ],
+        "links": [
+          {
+            "to": "artifact:02-target-state-deprecation-map-md",
+            "type": "describes"
+          }
+        ]
+      }
+    }
+  ],
+  "checksums": {
+    "migration-artifacts/02-target-state/deprecation-map.md": "dda585ac65722ff68ba40803c885efaf5c8cee64f7e2e72501d1f18157d91e79",
+    "migration-artifacts/art-133_deprecation_map/deprecation-map.md": "dda585ac65722ff68ba40803c885efaf5c8cee64f7e2e72501d1f18157d91e79",
+    "migration-artifacts/art-133_deprecation_map/deprecation-map.json": "a675a7d7066d3895787b07e8682bd78e285c924c10bfeeff39ece716a100e0fa"
+  },
+  "validation": {
+    "artifact_file_exists": true,
+    "registry_contains_hash": true,
+    "validation_evidence_linked": true,
+    "all_required_classes_present": true
+  },
+  "evidence": [
+    "migration-artifacts/02-target-state/deprecation-map.md",
+    "migration-artifacts/art-133_deprecation_map/deprecation-map.md",
+    "migration-artifacts/art-133_deprecation_map/deprecation-map.json",
+    "generated/contract_manifest.json",
+    "generated/execution_packets/ART-133_DEPRECATION_MAP.json",
+    "generated/envctl_artifact_registry_report.json",
+    "generated/shared_protocol_validation_report.json",
+    "migration-artifacts/art-105_package_lib_graph/package_lib_graph.json"
+  ]
+}

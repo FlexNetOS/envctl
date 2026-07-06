@@ -1,0 +1,29 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-032_PLUGIN_LIVE_VISUALS",
+  "status": "completed",
+  "generated_at": "2026-07-04T23:09:09+00:00",
+  "manifest_changed": false,
+  "overview": {
+    "task_count": 80,
+    "complete_count": 16,
+    "failed_count": 0,
+    "blocked_count": 56,
+    "ready_count": 8,
+    "lane_count": 7,
+    "parallel_group_count": 16,
+    "proof_present_count": 12,
+    "proof_missing_count": 68,
+    "source_status_report": {
+      "generated_at": "2026-07-04T23:09:04+00:00",
+      "runnable_count": 8,
+      "dispatch_count": 7,
+      "approval_blocker_count": 2
+    }
+  },
+  "output_files": [
+    "generated/live_visuals.json",
+    "generated/live_visuals.md",
+    "generated/nu_plugin_command_manifest.json"
+  ]
+}

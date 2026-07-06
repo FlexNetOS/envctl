@@ -1,0 +1,4 @@
+(?i)(api[_-]?key|secret|token|password|passwd|private[_-]?key|authorization|bearer)\s*[:=]\s*[^\s]+ 
+(?i)-----BEGIN [A-Z ]*PRIVATE KEY-----
+(?i)aws_access_key_id\s*=\s*[^\s]+ 
+(?i)aws_secret_access_key\s*=\s*[^\s]+ 

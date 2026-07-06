@@ -1,0 +1,12 @@
+# Spark 5.3 helper config. Model label must resolve locally or the orchestrator must stop.
+model = "spark-5.3"
+model_reasoning_effort = "high"
+model_verbosity = "high"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+allow_login_shell = false
+
+[features]
+multi_agent = false
+memories = false
+network_proxy = false

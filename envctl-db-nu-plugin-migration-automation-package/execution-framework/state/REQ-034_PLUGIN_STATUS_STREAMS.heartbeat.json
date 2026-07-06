@@ -1,0 +1,11 @@
+{
+  "artifact_uri": "generated/patches/REQ-034_PLUGIN_STATUS_STREAMS.nu_plugin.patch",
+  "logs_uri": "logs/REQ-034_PLUGIN_STATUS_STREAMS.log",
+  "notes": "Nu plugin target checkout is read-only from this shell; implementation delivered as verified git-apply patch artifact.",
+  "proof_uri": "proof_records/REQ-034_PLUGIN_STATUS_STREAMS.proof.json",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/nu_plugin",
+  "repo_target": "repo_b",
+  "status": "completed",
+  "task_id": "REQ-034_PLUGIN_STATUS_STREAMS",
+  "updated_at": "2026-07-04T23:13:30+00:00"
+}

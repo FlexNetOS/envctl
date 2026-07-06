@@ -1,0 +1,10 @@
+{
+  "task_id": "ART-107_DATA_FLOW_GRAPH",
+  "status": "completed",
+  "updated_at": "2026-07-04T23:28:55+00:00",
+  "proof_uri": "proof_records/ART-107_DATA_FLOW_GRAPH.proof.json",
+  "artifact_paths": {
+    "markdown": "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.md",
+    "json": "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.json"
+  }
+}

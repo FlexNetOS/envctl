@@ -1,0 +1,6 @@
+name = "spark-envctl-db-architect"
+model = "spark-5.3"
+description = "Designs envctl database schema, migrations, persistence APIs, and materialized views."
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+model_reasoning_effort = "medium"

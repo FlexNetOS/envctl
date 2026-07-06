@@ -21,7 +21,7 @@ requires = []
 resolved = ""
 
 [components.bun]
-content_hash = "3d99fd6a69e799b9"
+content_hash = "cb45d8cadd47d5fd"
 requires = []
 resolved = ""
 
@@ -383,7 +383,7 @@ requires = ["nix"]
 resolved = ""
 
 [components.node-real]
-content_hash = "1df06cd047593fb7"
+content_hash = "17c5e470990a81ed"
 requires = []
 resolved = ""
 

@@ -1,0 +1,64 @@
+{
+  "actor": "codex-cli-local",
+  "artifacts": [
+    "generated/patches/REQ-034_PLUGIN_STATUS_STREAMS.nu_plugin.patch",
+    "generated/REQ-034_PLUGIN_STATUS_STREAMS.contract.json",
+    "state/REQ-034_PLUGIN_STATUS_STREAMS.heartbeat.json",
+    "logs/REQ-034_PLUGIN_STATUS_STREAMS.log"
+  ],
+  "checksums": {
+    "contract_sha256": "88507fd10ae8f4ad22ea6c5ddaff21ce3b302595d3b2555f0368aac11ba84d13",
+    "heartbeat_sha256": "8e54446b11e9d2b4e28c3b09babbdddb12980bfbae69c3da6e594f04a3f01e52",
+    "log_sha256": "cf02d5f2ee2b1791c9949ae1320b75bcc3fa3380f5f3e6057f1268bf79fb4396",
+    "patch_sha256": "f3adb725b4c60e607614ef7b415b34b2d8a850003feb2070cb6918d96992e760"
+  },
+  "completed_at": "2026-07-04T23:13:30+00:00",
+  "failure_reason": "",
+  "helper_id": "helper-nu-streams-01",
+  "implementation": {
+    "command_name": "codedb envctl status stream",
+    "input_formats": [
+      "run_event_json_array",
+      "run_event_json_object",
+      "run_event_jsonl",
+      "proof_json_file",
+      "proof_json_directory"
+    ],
+    "mutation_policy": "read_only_status_projection",
+    "output_table": "envctl_status_stream",
+    "target_file": "crates/nu_plugin_codedb/src/main.rs",
+    "unit_tests_added": [
+      "envctl_status_stream_rows_merge_events_and_proofs",
+      "envctl_status_stream_rows_reject_bad_jsonl"
+    ],
+    "views": [
+      "event",
+      "proof"
+    ]
+  },
+  "next_action": "Apply generated/patches/REQ-034_PLUGIN_STATUS_STREAMS.nu_plugin.patch in the Nu plugin repo and run cargo test -p nu_plugin_codedb envctl_status_stream_rows once a Rust toolchain is available.",
+  "owner_agent": "nu-plugin-agent",
+  "owner_lane": "lane_c_repo_b",
+  "parent_id": "REQ-010_CONTRACT_LOCK",
+  "phase": "03-nu-plugin",
+  "proof_schema_version": "1.0",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/nu_plugin",
+  "repo_target": "repo_b",
+  "rollback_plan": "Remove generated/patches/REQ-034_PLUGIN_STATUS_STREAMS.nu_plugin.patch, generated/REQ-034_PLUGIN_STATUS_STREAMS.contract.json, state/REQ-034_PLUGIN_STATUS_STREAMS.heartbeat.json, and this proof file. If the patch has been applied to repo_b, reverse only the hunks in the patch.",
+  "sandbox_note": "Direct writes to NU_PLUGIN_REPO were denied by this shell permission profile, so the implementation is delivered as a patch artifact under execution-framework.",
+  "started_at": "2026-07-04T23:01:36+00:00",
+  "status": "completed",
+  "summary": "Implemented a read-only Nushell status stream command as a Nu plugin patch artifact. The command projects envctl run events and proof records into a single envctl_status_stream table with event/proof views, blocked status, next action, proof links, and evidence counts.",
+  "task_id": "REQ-034_PLUGIN_STATUS_STREAMS",
+  "title": "Implement status streams",
+  "verification": {
+    "log_uri": "logs/REQ-034_PLUGIN_STATUS_STREAMS.log",
+    "patch_apply_check": "passed",
+    "patch_whitespace_check": "passed",
+    "patched_source_structural_gate": "passed",
+    "targeted_cargo_test": "not_run_toolchain_unavailable",
+    "temp_copy_git_apply": "passed",
+    "temp_tree_git_diff_check": "passed",
+    "toolchain_note": "cargo and rustc were not present on PATH in this execution shell; the patch includes task-specific Rust unit tests and was verified by git apply checks plus structural source gates."
+  }
+}

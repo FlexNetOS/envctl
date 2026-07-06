@@ -1,0 +1,122 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-115_CONFIG_INVENTORY",
+  "status": "passed",
+  "generated_at": "2026-07-04T23:23:26+00:00",
+  "summary": {
+    "scanned_files": 60000,
+    "scanned_text_files": 37344,
+    "config_file_count": 8052,
+    "env_var_reference_count": 16332,
+    "feature_flag_reference_count": 5188,
+    "secret_reference_count": 1409,
+    "blocked_path_count": 7
+  },
+  "outputs": {
+    "task_json": "execution-framework/migration-artifacts/art-115_config_inventory/config_inventory.json",
+    "task_md": "execution-framework/migration-artifacts/art-115_config_inventory/config_inventory.md",
+    "canonical_md": "execution-framework/migration-artifacts/01-current-state/configuration-inventory.md"
+  },
+  "checks": {
+    "task_json_exists": true,
+    "task_md_exists": true,
+    "canonical_md_exists": true,
+    "registry_hash_recorded": true,
+    "secret_values_captured": false
+  },
+  "registry_result": {
+    "artifact_row_id": "artifact-3d82812743f198c8311c9c2b",
+    "artifact_id": "01-current-state-configuration-inventory-md",
+    "run_id": "run-art-115-config-inventory",
+    "path": "execution-framework/migration-artifacts/01-current-state/configuration-inventory.md",
+    "content_hash": "sha256:fa80fa1358b3a84d458b6cad1a4489263a0edd527a3e9582d6cbbfac9acef81c",
+    "producer_operation_id": "produce-01-current-state-configuration-inventory-md",
+    "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+    "evidence_ids": [
+      "evidence-17c3d782605b4c81ecd24957",
+      "evidence-72a17fe750d10fd31d35646b",
+      "evidence-040bb389fffca9e077a6a4d1",
+      "evidence-5e944d639a65ab6643753e07",
+      "evidence-1464983d315e27a61a8f6ba9"
+    ],
+    "graph_edge_ids": [
+      "edge-6042dfb9a5ef085932e1388c",
+      "edge-2d1436f7dbf6f00215e5a656",
+      "edge-4098b6b1ad2fa3e43f170860",
+      "edge-947bd7013a5d7c86fd42c773"
+    ],
+    "validation_ids": [
+      "validation-67f8bfbdf4a5d0d7c78706f3",
+      "validation-9f99152a2a4098b91147b640",
+      "validation-c048258325b383ce9d80234a"
+    ]
+  },
+  "artifact_row": {
+    "id": "artifact-3d82812743f198c8311c9c2b",
+    "run_id": "run-art-115-config-inventory",
+    "artifact_id": "01-current-state-configuration-inventory-md",
+    "title": "Configuration Inventory",
+    "artifact_type": "migration_artifact",
+    "status": "complete",
+    "path": "execution-framework/migration-artifacts/01-current-state/configuration-inventory.md",
+    "content_hash": "sha256:fa80fa1358b3a84d458b6cad1a4489263a0edd527a3e9582d6cbbfac9acef81c",
+    "generated_by_operation_id": "produce-01-current-state-configuration-inventory-md",
+    "evidence": {
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-17c3d782605b4c81ecd24957",
+        "evidence-72a17fe750d10fd31d35646b",
+        "evidence-040bb389fffca9e077a6a4d1",
+        "evidence-5e944d639a65ab6643753e07",
+        "evidence-1464983d315e27a61a8f6ba9"
+      ],
+      "evidence_refs": [
+        "execution-framework/migration-artifacts/01-current-state/configuration-inventory.md",
+        "execution-framework/migration-artifacts/art-115_config_inventory/config_inventory.md",
+        "execution-framework/migration-artifacts/art-115_config_inventory/config_inventory.json",
+        "execution-framework/generated/envctl_target_registry.json",
+        "execution-framework/generated/contract_manifest.json"
+      ],
+      "producer_operation_id": "produce-01-current-state-configuration-inventory-md",
+      "provenance": {
+        "helper_id": "helper-artifact-16",
+        "owner_agent": "artifact-agent",
+        "source_inputs": [
+          "target descriptor",
+          "repo scan",
+          "envctl database"
+        ],
+        "target_root": "/home/flexnetos/FlexNetOS",
+        "task_id": "ART-115_CONFIG_INVENTORY"
+      },
+      "validation_ids": [
+        "validation-67f8bfbdf4a5d0d7c78706f3",
+        "validation-9f99152a2a4098b91147b640",
+        "validation-c048258325b383ce9d80234a"
+      ]
+    },
+    "links": {
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "graph_edge_ids": [
+        "edge-6042dfb9a5ef085932e1388c",
+        "edge-2d1436f7dbf6f00215e5a656",
+        "edge-4098b6b1ad2fa3e43f170860",
+        "edge-947bd7013a5d7c86fd42c773"
+      ],
+      "links": [
+        {
+          "to": "contract_row:artifact:01-current-state-configuration-inventory-md",
+          "type": "satisfies"
+        },
+        {
+          "to": "task:ART-115_CONFIG_INVENTORY",
+          "type": "produced_by"
+        },
+        {
+          "to": "task:VER-300_UNIT_VALIDATION",
+          "type": "blocks"
+        }
+      ]
+    }
+  }
+}

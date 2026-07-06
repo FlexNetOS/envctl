@@ -1,0 +1,183 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+  "status": "completed",
+  "started_at": "2026-07-04T23:14:10+00:00",
+  "completed_at": "2026-07-04T23:14:10+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-envctl-artifacts-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/artifact_registry.py",
+    "execution-framework/scripts/verify_artifact_registry.py",
+    "execution-framework/generated/envctl_artifact_registry_report.json",
+    "execution-framework/generated/req024_artifact_registry_sample.md",
+    "execution-framework/docs/ENVCTL_ARTIFACT_REGISTRY.md",
+    "execution-framework/state/REQ-024_ENVCTL_ARTIFACT_REGISTRY.heartbeat.json",
+    "execution-framework/logs/REQ-024_ENVCTL_ARTIFACT_REGISTRY.log",
+    "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/verify_artifact_registry.py",
+    "python3 -m py_compile scripts/artifact_registry.py scripts/verify_artifact_registry.py"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+    "status": "passed",
+    "generated_at": "2026-07-04T23:14:10+00:00",
+    "registry_result": {
+      "artifact_row_id": "artifact-dfdcd235057309cce430ae2a",
+      "artifact_id": "req024-artifact-registry-sample",
+      "run_id": "run-req024",
+      "path": "execution-framework/generated/req024_artifact_registry_sample.md",
+      "content_hash": "sha256:d83a779c4f5ba4274c455c016193ad62f58d974033e53f9b11a78369cb94cded",
+      "producer_operation_id": "op-req024-register",
+      "contract_id": "contract-req024",
+      "evidence_ids": [
+        "evidence-0013b40d7bdd9d1fc8b917fb",
+        "evidence-b9f684e41f26dba811f10054",
+        "evidence-f9254d640811e68d645b4de9"
+      ],
+      "graph_edge_ids": [
+        "edge-f5e0848675c0cfb0a485cb70",
+        "edge-838bb3e6c96c8425373b2c25",
+        "edge-4f6fe7692f695408f3178d31",
+        "edge-c78a9adacfd645f30577bf3f"
+      ],
+      "validation_ids": [
+        "validation-357c9902e01c44cf503d8ead",
+        "validation-67d0bd1204909ec64b8c0ab1"
+      ]
+    },
+    "artifact_row": {
+      "id": "artifact-dfdcd235057309cce430ae2a",
+      "run_id": "run-req024",
+      "artifact_id": "req024-artifact-registry-sample",
+      "title": "REQ-024 Artifact Registry Sample",
+      "artifact_type": "artifact_registry_smoke",
+      "status": "complete",
+      "path": "execution-framework/generated/req024_artifact_registry_sample.md",
+      "content_hash": "sha256:d83a779c4f5ba4274c455c016193ad62f58d974033e53f9b11a78369cb94cded",
+      "generated_by_operation_id": "op-req024-register",
+      "evidence": {
+        "contract_id": "contract-req024",
+        "evidence_ids": [
+          "evidence-0013b40d7bdd9d1fc8b917fb",
+          "evidence-b9f684e41f26dba811f10054",
+          "evidence-f9254d640811e68d645b4de9"
+        ],
+        "evidence_refs": [
+          "execution-framework/generated/req024_artifact_registry_sample.md",
+          "schemas/artifact_record.schema.json",
+          "expected-output/migration-automation-artifacts.md"
+        ],
+        "producer_operation_id": "op-req024-register",
+        "provenance": {
+          "expected_output": "expected-output/migration-automation-artifacts.md",
+          "owner_agent": "envctl-db-agent",
+          "source_schema": "schemas/artifact_record.schema.json",
+          "task_id": "REQ-024_ENVCTL_ARTIFACT_REGISTRY"
+        },
+        "validation_ids": [
+          "validation-357c9902e01c44cf503d8ead",
+          "validation-67d0bd1204909ec64b8c0ab1"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-req024",
+        "graph_edge_ids": [
+          "edge-f5e0848675c0cfb0a485cb70",
+          "edge-838bb3e6c96c8425373b2c25",
+          "edge-4f6fe7692f695408f3178d31",
+          "edge-c78a9adacfd645f30577bf3f"
+        ],
+        "links": [
+          {
+            "to": "artifact:ART-100_SYSTEM_INVENTORY",
+            "type": "blocks"
+          },
+          {
+            "to": "artifact:Evidence register",
+            "type": "validated_by"
+          },
+          {
+            "to": "artifact:Link graph",
+            "type": "linked_in"
+          }
+        ]
+      }
+    },
+    "summary": {
+      "evidence_count": 3,
+      "graph_edge_count": 4,
+      "validation_count": 2,
+      "rejection_count": 3,
+      "expected_artifact_count": 16,
+      "artifact_index_row": [
+        "req024-artifact-registry-sample",
+        "complete",
+        "execution-framework/generated/req024_artifact_registry_sample.md",
+        "sha256:d83a779c4f5ba4274c455c016193ad62f58d974033e53f9b11a78369cb94cded"
+      ]
+    },
+    "coverage": {
+      "paths": true,
+      "hashes": true,
+      "producers": true,
+      "contract_ids": true,
+      "provenance": true,
+      "validation_links": true,
+      "fail_closed_rejections": true
+    },
+    "rejection_cases": [
+      {
+        "case": "blocked-secret-path",
+        "status": "rejected",
+        "message": "artifact registry path is blocked by policy: execution-framework/secrets/token.txt"
+      },
+      {
+        "case": "content-hash-mismatch",
+        "status": "rejected",
+        "message": "artifact content hash mismatch for execution-framework/generated/req024_artifact_registry_sample.md"
+      },
+      {
+        "case": "foreign-producer-operation",
+        "status": "rejected",
+        "message": "operation does not belong to run: op-does-not-exist"
+      }
+    ],
+    "errors": [],
+    "evidence": [
+      "scripts/artifact_registry.py",
+      "scripts/verify_artifact_registry.py",
+      "generated/envctl_artifact_registry_report.json",
+      "generated/req024_artifact_registry_sample.md",
+      "docs/ENVCTL_ARTIFACT_REGISTRY.md"
+    ]
+  },
+  "checksums": {
+    "execution-framework/scripts/artifact_registry.py": "275ac5bb7d70daff9060936f5d4d7ffcccba9d8a4123cf13df3a52980d603be0",
+    "execution-framework/scripts/verify_artifact_registry.py": "59faeb415bc932c0868bf8f2ab8ce34e5da3a69907581c07e79409be3cb5a00f",
+    "execution-framework/generated/envctl_artifact_registry_report.json": "b3d33175a5ec64d95bb2a2dc0b503ca897c97990bf78fd80fc159780b3df113c",
+    "execution-framework/generated/req024_artifact_registry_sample.md": "d83a779c4f5ba4274c455c016193ad62f58d974033e53f9b11a78369cb94cded",
+    "execution-framework/docs/ENVCTL_ARTIFACT_REGISTRY.md": "707c3c06651e87047ba5f3433a8b1b8d87bb63f13c31dbc488d3fc3a85724478",
+    "execution-framework/state/REQ-024_ENVCTL_ARTIFACT_REGISTRY.heartbeat.json": "da4f5ca87fed586d869eb4f489fce660fc2923a45a08d832d27ee972e0ea2b0b",
+    "execution-framework/logs/REQ-024_ENVCTL_ARTIFACT_REGISTRY.log": "b3d33175a5ec64d95bb2a2dc0b503ca897c97990bf78fd80fc159780b3df113c",
+    "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json": "1dedcc6c2d648fd06d3b44b11e5d184412a002e2c9098623c8ba34b7f9f2639d",
+    "execution-framework/proof_records/proof_ledger.jsonl": "38941e9db0012d8dff055c3a769a811f50e66ae784f7ecf066c039b8c38894a1"
+  },
+  "logs_uri": "logs/REQ-024_ENVCTL_ARTIFACT_REGISTRY.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "scripts/artifact_registry.py",
+    "scripts/verify_artifact_registry.py",
+    "generated/envctl_artifact_registry_report.json",
+    "generated/req024_artifact_registry_sample.md",
+    "docs/ENVCTL_ARTIFACT_REGISTRY.md"
+  ],
+  "failure_reason": "",
+  "next_action": "run ART-100_SYSTEM_INVENTORY with artifact registry writes"
+}

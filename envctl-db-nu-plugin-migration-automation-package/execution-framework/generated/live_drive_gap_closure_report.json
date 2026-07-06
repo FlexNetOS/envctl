@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-04T22:20:00-05:00",
+  "status": "pass_no_gaps_drive_live_synchronized",
+  "closed_gaps": [
+    {
+      "gap_id": "GAP-LIVE-001",
+      "status": "closed",
+      "closure": "final_verification_report.json status superseded to pass_no_gaps_drive_live_synchronized; external blockers cleared."
+    },
+    {
+      "gap_id": "GAP-LIVE-002",
+      "status": "closed",
+      "closure": "maintenance task, packet and proof record added for README navigation/backtrace update."
+    },
+    {
+      "gap_id": "GAP-LIVE-003",
+      "status": "closed",
+      "closure": "history/v0 restoration included in README, final verification and manifest addendum."
+    },
+    {
+      "gap_id": "GAP-LIVE-004",
+      "status": "closed",
+      "closure": "proof_templates/PROOF_RECORD_TEMPLATE.json restored to final execution-framework and proofed."
+    },
+    {
+      "gap_id": "GAP-LIVE-005",
+      "status": "closed",
+      "closure": "PACKAGE_MANIFEST.json and upgrade_report.json updated with live Drive maintenance addendum."
+    },
+    {
+      "gap_id": "GAP-LIVE-006",
+      "status": "not_a_gap",
+      "closure": "envctl/nu_plugin implementation tasks are intentionally pending for Codex execution."
+    }
+  ],
+  "maintenance_tasks": [
+    "MAINT-500_README_NAV_BACKTRACE",
+    "MAINT-501_RESTORE_PROOF_TEMPLATE",
+    "MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC",
+    "MAINT-503_CODEX_FINAL_PROMPT"
+  ],
+  "codex_entry": "~/envctl-db-nu-plugin-migration-automation-package/CODEX_FINAL_EXECUTION_PROMPT.md",
+  "result": "Ready for Codex to execute from extracted package directory."
+}

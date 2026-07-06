@@ -1,0 +1,38 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "APPROVAL-REQ-033_PLUGIN_HUMAN_APPROVAL",
+  "status": "completed",
+  "started_at": "2026-07-05T00:14:17+00:00",
+  "completed_at": "2026-07-05T00:14:17+00:00",
+  "actor": "agent-approval-gate",
+  "helper_id": "helper-agent-approval-01",
+  "model_tag": "gpt-5.5",
+  "repo_path": "execution-framework",
+  "files_changed": [
+    "execution-framework/approvals/REQ-033_PLUGIN_HUMAN_APPROVAL.agent_approval.json",
+    "execution-framework/reviews/GPT55_APPROVAL_REVIEW_V2.md"
+  ],
+  "commands_run": [
+    "python3 scripts/agent_approval_gate.py ..."
+  ],
+  "verification_output": {
+    "decision": "approved",
+    "reviewer": "gpt-5.5",
+    "model": "gpt-5.5",
+    "review_artifact": "reviews/GPT55_APPROVAL_REVIEW_V2.md",
+    "approval_artifact": "approvals/REQ-033_PLUGIN_HUMAN_APPROVAL.agent_approval.json",
+    "fallback_reason": "Claude Opus local reviewer path was attempted first and produced empty review/stderr artifacts, so GPT-5.5 was launched as the fallback reviewer per owner instruction."
+  },
+  "checksums": {
+    "execution-framework/approvals/REQ-033_PLUGIN_HUMAN_APPROVAL.agent_approval.json": "ca643cb1adb4f1c8f361f93f1c04c23f220ad173d6c7ae2aa7add80ef375c4c2",
+    "execution-framework/reviews/GPT55_APPROVAL_REVIEW_V2.md": "7420fdafbf7f16f43aff77185ecb26acdc9b388f56428a2a41e964f349ed424d"
+  },
+  "logs_uri": "logs/APPROVAL-REQ-033_PLUGIN_HUMAN_APPROVAL.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "approvals/REQ-033_PLUGIN_HUMAN_APPROVAL.agent_approval.json",
+    "reviews/GPT55_APPROVAL_REVIEW_V2.md"
+  ],
+  "failure_reason": "",
+  "next_action": "run goal_loop.py; REQ-033_PLUGIN_HUMAN_APPROVAL becomes dispatchable only when approved"
+}

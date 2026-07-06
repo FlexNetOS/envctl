@@ -1,0 +1,11 @@
+{
+  "task_id": "ART-119_BUSINESS_PROCESS",
+  "status": "completed",
+  "updated_at": "2026-07-04T23:28:24+00:00",
+  "proof_uri": "proof_records/ART-119_BUSINESS_PROCESS.proof.json",
+  "artifact_paths": {
+    "markdown": "execution-framework/migration-artifacts/art-119_business_process/business_process_map.md",
+    "json": "execution-framework/migration-artifacts/art-119_business_process/business_process_map.json",
+    "canonical_markdown": "execution-framework/migration-artifacts/01-current-state/business-process-map.md"
+  }
+}

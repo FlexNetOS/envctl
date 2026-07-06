@@ -1,0 +1,112 @@
+{
+  "schema_version": "1.0",
+  "task_id": "VER-303_GOAL_LOOP_COMPUTE",
+  "status": "pass",
+  "generated_at": "2026-07-05T06:01:26+00:00",
+  "packet_summary": {
+    "goal": "Ensure the /goal loop can compute a complete run path or stop at explicit approval blockers",
+    "repo_target": "filesystem",
+    "repo_path": "..",
+    "filesystem_scope": "package-root",
+    "verification_command": "python3 scripts/verify_ver303_goal_loop_compute.py"
+  },
+  "dependency_proofs": {
+    "VER-302_PACKET_SCHEMA_VALIDATION": {
+      "proof_path": "proof_records/VER-302_PACKET_SCHEMA_VALIDATION.proof.json",
+      "status": "completed",
+      "ok": true
+    },
+    "REQ-045_RUN_REPLAY": {
+      "proof_path": "proof_records/REQ-045_RUN_REPLAY.proof.json",
+      "status": "completed",
+      "ok": true
+    }
+  },
+  "current_state": {
+    "generated_at": "2026-07-05T06:01:26+00:00",
+    "dispatch_packets": [
+      {
+        "task_id": "VER-303_GOAL_LOOP_COMPUTE",
+        "parallel_group": "verification",
+        "max_parallel": 1,
+        "packet_uri": "generated/execution_packets/VER-303_GOAL_LOOP_COMPUTE.json"
+      }
+    ],
+    "runnable_tasks": [
+      {
+        "task_id": "VER-303_GOAL_LOOP_COMPUTE",
+        "parallel_group": "verification",
+        "max_parallel": 1,
+        "packet_uri": "generated/execution_packets/VER-303_GOAL_LOOP_COMPUTE.json"
+      }
+    ],
+    "approval_blockers": [],
+    "blocked_tasks": [
+      {
+        "task_id": "VER-304_FINAL_COMPLETENESS",
+        "reason": "unmet dependencies",
+        "dependencies": [
+          "VER-303_GOAL_LOOP_COMPUTE"
+        ]
+      },
+      {
+        "task_id": "REL-400_PACKAGE_ARCHIVE",
+        "reason": "unmet dependencies",
+        "dependencies": [
+          "VER-304_FINAL_COMPLETENESS"
+        ]
+      },
+      {
+        "task_id": "REL-401_HANDOFF",
+        "reason": "unmet dependencies",
+        "dependencies": [
+          "REL-400_PACKAGE_ARCHIVE"
+        ]
+      }
+    ],
+    "status_ver303": "pending",
+    "status_ver304": "pending"
+  },
+  "projected_run_path": [
+    "VER-303_GOAL_LOOP_COMPUTE",
+    "VER-304_FINAL_COMPLETENESS",
+    "REL-400_PACKAGE_ARCHIVE",
+    "REL-401_HANDOFF"
+  ],
+  "projected_stop_reason": "complete",
+  "projected_terminal_state": {
+    "complete_count": 80,
+    "failed_count": 0,
+    "pending_count": 0,
+    "approval_blocker_count": 0,
+    "blocked_count": 0,
+    "dispatch_count": 0
+  },
+  "checks": {
+    "dependencies_completed": true,
+    "current_dispatch_targets_ver303": true,
+    "current_runnable_contains_only_ver303": true,
+    "current_has_no_approval_blockers": true,
+    "current_status_marks_ver303_pending": true,
+    "current_status_surface_matches_compute": true,
+    "projected_path_begins_with_ver303": true,
+    "projected_advances_to_ver304": true,
+    "projected_reaches_release_tasks": true,
+    "projected_stops_as_complete": true,
+    "projected_has_no_approval_blockers": true,
+    "projected_has_no_failed_tasks": true,
+    "projected_finishes_all_tasks": true,
+    "ver304_is_currently_blocked_only_by_ver303": true,
+    "packet_proof_required": true,
+    "packet_single_threaded": true
+  },
+  "warnings": [],
+  "errors": [],
+  "sha256": {
+    "generated/execution_packets/VER-303_GOAL_LOOP_COMPUTE.json": "sha256:50751f2c157ff264c985651496826947c71c6c3de92b6bef04d367f257a3ffe4",
+    "generated/status_report.json": "sha256:899311abcd5bdf0f98b4022ed5eb878c604abf4f66212fdce77b123f4807822f",
+    "proof_records/proof_ledger.jsonl": "sha256:6df857f3f04fd97be4efe7905b66848d88a4e40ad8e3f11af80c5078256d69bf",
+    "proof_records/VER-302_PACKET_SCHEMA_VALIDATION.proof.json": "sha256:8eee6aa74eeadac471eb09043156d92ed4a9d8b2886e68a59adfc041cb95b899",
+    "proof_records/REQ-045_RUN_REPLAY.proof.json": "sha256:4193576929a715a017d7d0d699b5ed7d0b0ce3da28a50d4f03c629ffa2fca896"
+  }
+}

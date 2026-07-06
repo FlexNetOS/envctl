@@ -1,0 +1,33 @@
+schema_version: 1
+target_id: replace-with-target-id
+target_type: codebase
+primary_root: /absolute/path/to/repo
+compare_root: null
+output_root: migration-artifacts
+include:
+  - "**/*"
+exclude:
+  - ".git/**"
+  - "node_modules/**"
+  - "target/**"
+  - "dist/**"
+  - "build/**"
+safety:
+  default_mode: approval-gated
+  max_auto_risk: R2
+  allow_network: false
+  allow_destructive: false
+collectors:
+  filesystem: true
+  git: true
+  package_managers: true
+  databases: false
+  infrastructure: true
+  apis: true
+artifact_contract:
+  name: full-migration-artifact-contract
+  version: 1
+recipe:
+  name: full-migration-discovery-and-artifact-run
+  version: 1
+metadata: {}

@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "envctl Migration Run Event",
+  "type": "object",
+  "required": [
+    "run_id",
+    "event_seq",
+    "event_type",
+    "actor_type",
+    "timestamp_utc",
+    "payload"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string"
+    },
+    "event_seq": {
+      "type": "integer"
+    },
+    "event_type": {
+      "type": "string"
+    },
+    "phase": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "actor_type": {
+      "enum": [
+        "system",
+        "agent",
+        "human",
+        "plugin",
+        "external"
+      ]
+    },
+    "actor_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "operation_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "timestamp_utc": {
+      "type": "string"
+    },
+    "payload": {
+      "type": "object"
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "previous_event_hash": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "event_hash": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  }
+}

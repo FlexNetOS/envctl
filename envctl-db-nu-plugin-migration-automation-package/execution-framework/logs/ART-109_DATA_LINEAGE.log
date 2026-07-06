@@ -1,0 +1,276 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-109_DATA_LINEAGE",
+  "status": "passed",
+  "generated_at": "2026-07-04T23:29:00+00:00",
+  "artifact_summary": {
+    "field_count": 183,
+    "critical_field_count": 27,
+    "sql_table_count": 16,
+    "schema_source_count": 37,
+    "target_files_scanned": 2500,
+    "fields_with_target_references": 14,
+    "protocol_record_count": 14
+  },
+  "completed_at": "2026-07-04T23:29:00+00:00",
+  "registry_results": [
+    {
+      "artifact_row_id": "artifact-9c84a78ea4dfa74c2cdcf126",
+      "artifact_id": "04-data-migration-data-lineage-map-md",
+      "run_id": "run-art109-data-lineage",
+      "path": "execution-framework/migration-artifacts/04-data-migration/data-lineage-map.md",
+      "content_hash": "sha256:d3969dd1d557e7ae8d111d163ee4e0859120e2b34da5d380f2157d3e86dd4bf0",
+      "producer_operation_id": "produce-04-data-migration-data-lineage-map-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-a75b88969ea1735569333332",
+        "evidence-ab57a97a12f37165c5e6bb28",
+        "evidence-2b30b859f93f784809c418d9"
+      ],
+      "graph_edge_ids": [
+        "edge-0b2a53f9bae48ec75ed1b99f",
+        "edge-ef9ab96f36b204ad49c748a3",
+        "edge-e4d2253cf9decac6a855a982",
+        "edge-13df3ed53a046629ccced62a"
+      ],
+      "validation_ids": [
+        "validation-197efcd78f74e77803326641",
+        "validation-81fef997647d1ec9bf85fefa"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-36f86bf50dc39048acbcacc0",
+      "artifact_id": "art-109-data-lineage-map-md",
+      "run_id": "run-art109-data-lineage",
+      "path": "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.md",
+      "content_hash": "sha256:d3969dd1d557e7ae8d111d163ee4e0859120e2b34da5d380f2157d3e86dd4bf0",
+      "producer_operation_id": "produce-04-data-migration-data-lineage-map-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-4da7f7ad2e4ef29afcc6c411",
+        "evidence-34ae12bcf2c65a6cd27459b5",
+        "evidence-0402d0da2535318615a2dc45"
+      ],
+      "graph_edge_ids": [
+        "edge-80c8874bc62d2d459a9dc4fe",
+        "edge-d508adc7339a9cba039358d4",
+        "edge-7e5762ba4561515538f3dcd8",
+        "edge-1101a47f2788c834b5bc88aa"
+      ],
+      "validation_ids": [
+        "validation-07de956ee937025cb858a73a",
+        "validation-aeb1b860f2415138c4a90d82"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-0c35be1864edc30757b28531",
+      "artifact_id": "art-109-data-lineage-map-json",
+      "run_id": "run-art109-data-lineage",
+      "path": "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.json",
+      "content_hash": "sha256:51308527dde4f55529621810e13b45b4c0cf45d9b7e039068b658b4a6d355ebc",
+      "producer_operation_id": "produce-04-data-migration-data-lineage-map-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-47dacf23332e3feae9077da3",
+        "evidence-a808784448b0e1c6ffa41d14",
+        "evidence-a3721b76114c5b94af60c5b9"
+      ],
+      "graph_edge_ids": [
+        "edge-c3d4c1c47df37c4e5fc4375d",
+        "edge-683aead0f0569b4e2d38c5d2",
+        "edge-dc8f2ae6b59d2e66e9021361",
+        "edge-d76a05564e3103e3d34a3079"
+      ],
+      "validation_ids": [
+        "validation-0b6cd0ed303a044731b57ee0",
+        "validation-32da8182610155c48310cf78"
+      ]
+    }
+  ],
+  "artifact_index_rows": [
+    {
+      "id": "artifact-9c84a78ea4dfa74c2cdcf126",
+      "run_id": "run-art109-data-lineage",
+      "artifact_id": "04-data-migration-data-lineage-map-md",
+      "title": "Data Lineage Map",
+      "artifact_type": "data_lineage_map",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/04-data-migration/data-lineage-map.md",
+      "content_hash": "sha256:d3969dd1d557e7ae8d111d163ee4e0859120e2b34da5d380f2157d3e86dd4bf0",
+      "generated_by_operation_id": "produce-04-data-migration-data-lineage-map-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-a75b88969ea1735569333332",
+          "evidence-ab57a97a12f37165c5e6bb28",
+          "evidence-2b30b859f93f784809c418d9"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/04-data-migration/data-lineage-map.md",
+          "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.md",
+          "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.json"
+        ],
+        "producer_operation_id": "produce-04-data-migration-data-lineage-map-md",
+        "provenance": {
+          "helper_id": "helper-artifact-10",
+          "model_tag": "gpt-5.3-spark",
+          "owner_agent": "artifact-agent",
+          "source_graph_uri": "generated/task_graph.csv",
+          "task_id": "ART-109_DATA_LINEAGE"
+        },
+        "validation_ids": [
+          "validation-197efcd78f74e77803326641",
+          "validation-81fef997647d1ec9bf85fefa"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-0b2a53f9bae48ec75ed1b99f",
+          "edge-ef9ab96f36b204ad49c748a3",
+          "edge-e4d2253cf9decac6a855a982",
+          "edge-13df3ed53a046629ccced62a"
+        ],
+        "links": [
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-36f86bf50dc39048acbcacc0",
+      "run_id": "run-art109-data-lineage",
+      "artifact_id": "art-109-data-lineage-map-md",
+      "title": "ART-109 Data Lineage Map Markdown",
+      "artifact_type": "data_lineage_map",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.md",
+      "content_hash": "sha256:d3969dd1d557e7ae8d111d163ee4e0859120e2b34da5d380f2157d3e86dd4bf0",
+      "generated_by_operation_id": "produce-04-data-migration-data-lineage-map-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-4da7f7ad2e4ef29afcc6c411",
+          "evidence-34ae12bcf2c65a6cd27459b5",
+          "evidence-0402d0da2535318615a2dc45"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/04-data-migration/data-lineage-map.md",
+          "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.md",
+          "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.json"
+        ],
+        "producer_operation_id": "produce-04-data-migration-data-lineage-map-md",
+        "provenance": {
+          "helper_id": "helper-artifact-10",
+          "model_tag": "gpt-5.3-spark",
+          "owner_agent": "artifact-agent",
+          "source_graph_uri": "generated/task_graph.csv",
+          "task_id": "ART-109_DATA_LINEAGE"
+        },
+        "validation_ids": [
+          "validation-07de956ee937025cb858a73a",
+          "validation-aeb1b860f2415138c4a90d82"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-80c8874bc62d2d459a9dc4fe",
+          "edge-d508adc7339a9cba039358d4",
+          "edge-7e5762ba4561515538f3dcd8",
+          "edge-1101a47f2788c834b5bc88aa"
+        ],
+        "links": [
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-0c35be1864edc30757b28531",
+      "run_id": "run-art109-data-lineage",
+      "artifact_id": "art-109-data-lineage-map-json",
+      "title": "ART-109 Data Lineage Map JSON",
+      "artifact_type": "data_lineage_map",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.json",
+      "content_hash": "sha256:51308527dde4f55529621810e13b45b4c0cf45d9b7e039068b658b4a6d355ebc",
+      "generated_by_operation_id": "produce-04-data-migration-data-lineage-map-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-47dacf23332e3feae9077da3",
+          "evidence-a808784448b0e1c6ffa41d14",
+          "evidence-a3721b76114c5b94af60c5b9"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/04-data-migration/data-lineage-map.md",
+          "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.md",
+          "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.json"
+        ],
+        "producer_operation_id": "produce-04-data-migration-data-lineage-map-md",
+        "provenance": {
+          "helper_id": "helper-artifact-10",
+          "model_tag": "gpt-5.3-spark",
+          "owner_agent": "artifact-agent",
+          "source_graph_uri": "generated/task_graph.csv",
+          "task_id": "ART-109_DATA_LINEAGE"
+        },
+        "validation_ids": [
+          "validation-0b6cd0ed303a044731b57ee0",
+          "validation-32da8182610155c48310cf78"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-c3d4c1c47df37c4e5fc4375d",
+          "edge-683aead0f0569b4e2d38c5d2",
+          "edge-dc8f2ae6b59d2e66e9021361",
+          "edge-d76a05564e3103e3d34a3079"
+        ],
+        "links": [
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          }
+        ]
+      }
+    }
+  ],
+  "registry_contains_hash": true,
+  "artifacts": [
+    "execution-framework/migration-artifacts/04-data-migration/data-lineage-map.md",
+    "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.md",
+    "execution-framework/migration-artifacts/art-109_data_lineage/data-lineage-map.json"
+  ],
+  "proof_uri": "execution-framework/proof_records/ART-109_DATA_LINEAGE.proof.json"
+}

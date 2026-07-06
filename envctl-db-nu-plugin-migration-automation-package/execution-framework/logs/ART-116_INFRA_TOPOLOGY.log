@@ -1,0 +1,6 @@
+2026-07-04T23:20:13+00:00 start ART-116_INFRA_TOPOLOGY
+2026-07-04T23:20:52+00:00 wrote migration-artifacts/art-116_infra_topology/topology.json
+2026-07-04T23:20:52+00:00 wrote migration-artifacts/art-116_infra_topology/topology.md
+2026-07-04T23:20:52+00:00 wrote migration-artifacts/08-operations/infrastructure-topology-map.md
+2026-07-04T23:20:52+00:00 registry hashes recorded: True
+2026-07-04T23:20:52+00:00 validation evidence linked: True

@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-020_ENVCTL_DB_SCHEMA",
+  "status": "passed",
+  "generated_at": "2026-07-05T05:51:29+00:00",
+  "summary": {
+    "required_table_count": 16,
+    "actual_table_count": 16,
+    "required_view_count": 6,
+    "actual_view_count": 6,
+    "capability_count": 19,
+    "index_count": 31,
+    "foreign_key_count": 24
+  },
+  "errors": [],
+  "evidence": [
+    "generated/envctl_migration_db_model.json",
+    "generated/envctl_migration_db_validation_report.json",
+    "docs/ENVCTL_DB_SCHEMA.md"
+  ]
+}

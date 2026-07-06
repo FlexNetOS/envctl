@@ -1,0 +1,28 @@
+schema_version: 1
+recipe_id: database-migration-discovery-and-validation
+version: 1
+phases:
+  - phase_id: schema-discovery
+    operations:
+      - operation_id: inspect-source-schema
+        operation_type: collector.database_schema
+        risk: R0
+      - operation_id: inspect-target-schema
+        operation_type: collector.database_schema
+        risk: R0
+  - phase_id: mapping
+    operations:
+      - operation_id: build-source-target-map
+        operation_type: artifact.synthesize.source_target_mapping
+        risk: R1
+  - phase_id: reconciliation
+    operations:
+      - operation_id: run-reconciliation
+        operation_type: validation.reconciliation
+        risk: R2
+  - phase_id: cutover-planning
+    approval_gate: true
+    operations:
+      - operation_id: produce-cutover-rollback
+        operation_type: artifact.synthesize.cutover_rollback
+        risk: R1
