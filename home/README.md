@@ -11,7 +11,7 @@ $HOME/.claude/settings.json         -> envctl/home/.claude/settings.json     (cl
 $HOME/.config/rtk                   -> envctl/home/.config/rtk               (rtk-config-links)
 $HOME/.config/yazelix/settings.jsonc-> envctl/home/.config/yazelix/...       (home-config-links)
 $HOME/.config/systemd/user/*.service-> envctl/home/.config/systemd/user/...  (home-config-links)
-$ENVCTL_REAL_HOME/.local            -> $META_ROOT/.local                    (only real-home bridge)
+$ENVCTL_REAL_HOME/.nix-profile      -> real-home Nix profile state          (Yazelix-owned)
 $META_ROOT/usr/bin/<tool>        -> $META_ROOT/.toolchains/... or meta/<repo>/target/release/<tool>
 ```
 
@@ -20,10 +20,11 @@ $META_ROOT/usr/bin/<tool>        -> $META_ROOT/.toolchains/... or meta/<repo>/ta
 1. **No secrets, ever.** Credentials delegate outward (`.gitconfig` uses `gh auth git-credential`;
    `~/.claude/.credentials.json`, `~/.config/gh/hosts.yml`, keyrings are NEVER added). The envctl
    secrets stack / relay is the sanctioned channel for secret material.
-2. **No host-home state.** Histories, caches, sessions, `vox.db`, piper voices, and envctl-owned
+2. **No envctl-owned host-home state.** Histories, caches, sessions, `vox.db`, piper voices, and envctl-owned
    share/state/cache data live under canonical `$META_ROOT` roots (`var/lib`, `var/cache`,
    `var/log`, `var/tmp`, or meta-home XDG roots such as `.local/share` when a desktop/XDG
-   contract requires it). The only real-home `.local` object is the single bridge back to meta.
+   contract requires it). Yazelix-owned real-home Nix profile state is preserved; per-tool
+   real-home user-bin shadows are not install targets.
 3. **Archive-first.** The wiring components move any pre-existing real file to
    `~/Desktop/_archives/home-links-<date>/` before linking — originals are never deleted.
 4. **Every file is reviewed individually** before it lands here (no bulk `cp -r` of live dirs).
@@ -74,4 +75,5 @@ must be reviewed/materialized before any named `--migrate-cache-child NAME` appl
 - `repowire.service` is carried for the record but disabled on the box (binary missing — see header).
 - RTK config is tracked here; RTK command history and tee logs remain machine-local state under
   `$META_ROOT/.local/share/rtk/` only when RTK requires XDG data semantics; otherwise use
-  `$META_ROOT/var/lib/rtk/`. The single real-home `.local` bridge remains compatibility-only.
+  `$META_ROOT/var/lib/rtk/`. The Yazelix profile is the real-home runtime owner; per-tool
+  real-home user-bin shadows remain compatibility debt.

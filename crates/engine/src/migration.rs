@@ -529,7 +529,7 @@ fn classify_line(line: &str) -> Vec<LineHit> {
             action: MigrationAction::AdoptIntoMetaLocal,
             risk: MigrationRisk::Medium,
             subject: "user-global .local reference",
-            detail: "the real-home .local surface is a single bridge only; envctl-owned payloads belong under META_ROOT usr/var/opt or XDG roots",
+            detail: "the real-home .local tree carries Yazelix-owned Nix profile state; envctl-owned payloads belong under META_ROOT usr/var/opt or XDG roots",
         });
     }
     if trimmed.contains("/usr/local") || trimmed.contains("/opt/") {
@@ -836,8 +836,8 @@ name = "Stub"
         }
 
         assert!(
-            classify_line("$ENVCTL_REAL_HOME/.local -> $META_ROOT/.local").is_empty(),
-            "the one explicit host bridge policy must not be classified as a per-tool install"
+            classify_line("$ENVCTL_REAL_HOME/.nix-profile -> $ENVCTL_REAL_HOME/.local/state/nix/profiles/profile").is_empty(),
+            "the Yazelix Nix profile policy must not be classified as a per-tool install"
         );
     }
 
