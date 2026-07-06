@@ -1,8 +1,9 @@
 [toolchain]
-# Pinned (was floating "stable") so rustfmt/clippy are reproducible: a floating
-# stable silently surfaced new lints/format changes as the host stable advanced,
-# producing phantom workspace-wide fmt/clippy drift. 1.96.0 is the resolved stable
-# this was reconciled against. MSRV stays 1.88 (Cargo.toml rust-version); this is
-# the dev toolchain, not the minimum supported. Bump deliberately + reconcile.
-channel = "1.96.0"
+# Meta workstation policy tracks the latest Rust nightly as the default dev
+# toolchain (the rustup component installs/updates `nightly` into
+# $META_ROOT/.toolchains/rustup and makes it default). Keep this file aligned
+# with that policy so local envctl builds do not silently pin an old stable
+# while the rest of meta is testing nightly. MSRV stays 1.88 (Cargo.toml
+# rust-version); this is the developer toolchain, not the support floor.
+channel = "nightly"
 components = ["rustfmt", "clippy"]

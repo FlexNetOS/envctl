@@ -1,0 +1,53 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-030_PLUGIN_PROTOCOL_MANIFEST",
+  "status": "completed",
+  "started_at": "2026-07-04T23:04:49+00:00",
+  "completed_at": "2026-07-04T23:04:49+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-nu-manifest-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/generated/nu_plugin_command_manifest.json",
+    "execution-framework/state/REQ-030_PLUGIN_PROTOCOL_MANIFEST.heartbeat.json",
+    "execution-framework/logs/REQ-030_PLUGIN_PROTOCOL_MANIFEST.log"
+  ],
+  "commands_run": [
+    "read ../prompts/NU_PLUGIN_CONTRACT.md",
+    "read ../schemas/nu_plugin_command_manifest.schema.json",
+    "read generated/execution_packets/REQ-030_PLUGIN_PROTOCOL_MANIFEST.json",
+    "create generated/nu_plugin_command_manifest.json",
+    "python3 inline schema/contract validation for generated/nu_plugin_command_manifest.json"
+  ],
+  "verification_output": {
+    "status": "passed",
+    "manifest": "generated/nu_plugin_command_manifest.json",
+    "schema": "../schemas/nu_plugin_command_manifest.schema.json",
+    "command_count": 23,
+    "mutating_command_count": 7,
+    "read_command_count": 16,
+    "contract_source": "../prompts/NU_PLUGIN_CONTRACT.md",
+    "notes": [
+      "All required NU_PLUGIN_CONTRACT command names are present.",
+      "Mutating commands are marked mode=mutate and use --emit-event endpoints.",
+      "Output shapes provide Nushell-native record/table column metadata."
+    ],
+    "sandbox_note": "Artifact produced inside execution-framework; NU_PLUGIN_REPO was read-only in this shell permission profile."
+  },
+  "checksums": {
+    "execution-framework/generated/nu_plugin_command_manifest.json": "e17e08f5d00fa48e35bfb2a90f31c80b9f48cc350f5e9ac8ae3409f69b5ba951",
+    "execution-framework/state/REQ-030_PLUGIN_PROTOCOL_MANIFEST.heartbeat.json": "f08e0ab369e2c538eae19ceba7cbe5e80f0eda232eaea13dba6ab25f159ff9bd",
+    "execution-framework/logs/REQ-030_PLUGIN_PROTOCOL_MANIFEST.log": "49b5dbdf1312e66c54e1ee6ecdeafa218b66c339425d6b19b4961cc52bafd710"
+  },
+  "logs_uri": "logs/REQ-030_PLUGIN_PROTOCOL_MANIFEST.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "generated/nu_plugin_command_manifest.json",
+    "../schemas/nu_plugin_command_manifest.schema.json",
+    "../prompts/NU_PLUGIN_CONTRACT.md",
+    "logs/REQ-030_PLUGIN_PROTOCOL_MANIFEST.log"
+  ],
+  "failure_reason": "",
+  "next_action": "run REQ-031_PLUGIN_COMMAND_SURFACE and REQ-041_TWO_REPO_INTEGRATION after shared protocol artifacts are ready"
+}

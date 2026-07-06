@@ -1,0 +1,65 @@
+{
+  "packet_schema_version": "1.0",
+  "task_id": "EF-002_GAP_REPORT",
+  "parent_id": "",
+  "phase": "00-framework",
+  "title": "Generate execution gap report",
+  "goal": "Identify missing framework and verification pieces",
+  "owner_lane": "lane_a_planning",
+  "owner_agent": "framework-gap-agent",
+  "helper_id": "helper-gap-01",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "python3",
+  "shell_mode": "workspace-write",
+  "repo_target": "filesystem",
+  "repo_path": "..",
+  "filesystem_scope": "package-root",
+  "input_files": [
+    "generated/package_scan.json"
+  ],
+  "target_files": [
+    "generated/gap_report.json",
+    "docs/GAP_ANALYSIS.md"
+  ],
+  "target_artifacts": [
+    "gap report"
+  ],
+  "allowed_paths": [
+    "../**"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "depends_on": [
+    "EF-001_SCAN_PACKAGE"
+  ],
+  "blocks": [
+    "EF-003_APPLY_FRAMEWORK"
+  ],
+  "parallel_group": "framework_bootstrap",
+  "can_run_parallel": false,
+  "max_parallel": 1,
+  "start_after": "",
+  "priority": 20,
+  "execution_cell": "gap-analysis",
+  "required_tools": [
+    "python3"
+  ],
+  "command_template": "python3 scripts/scan_package.py --gaps",
+  "verification_command": "test -f generated/gap_report.json && test -f docs/GAP_ANALYSIS.md",
+  "completion_gate": "gap report and markdown exist",
+  "proof_required": true,
+  "proof_uri": "proof_records/EF-002_GAP_REPORT.proof.json",
+  "heartbeat_file": "state/EF-002_GAP_REPORT.heartbeat.json",
+  "logs_uri": "logs/EF-002_GAP_REPORT.log",
+  "rollback_plan": "Use history/pre_execution_framework_manifest.json and remove only files added by this task unless a task-specific rollback is listed.",
+  "risk_level": "low",
+  "human_approval_required": false,
+  "notes": "Documents gaps before fixes.",
+  "source_graph_uri": "generated/task_graph.csv",
+  "generated_at": "2026-07-05T05:39:53+00:00"
+}

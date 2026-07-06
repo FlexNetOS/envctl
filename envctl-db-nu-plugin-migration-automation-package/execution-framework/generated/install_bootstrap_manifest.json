@@ -1,0 +1,148 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-044_INSTALL_BOOTSTRAP",
+  "generated_at": "2026-07-04T23:18:33+00:00",
+  "source_files": [
+    "INSTALL_IN_REPOS.sh",
+    "RUN_WITH_CODEX_ENVCTL.sh",
+    "execution-framework/README.md"
+  ],
+  "install_targets": [
+    {
+      "target_id": "envctl",
+      "repo_env": "ENVCTL_REPO",
+      "installed_paths": [
+        "AGENTS.envctl-migration-automation.md",
+        ".codex/prompts/envctl-migration-automation",
+        ".codex/prompts/envctl-migration-automation-schemas",
+        ".codex/prompts/envctl-migration-automation-sql",
+        ".codex/agents/envctl-migration-automation"
+      ]
+    },
+    {
+      "target_id": "nu_plugin",
+      "repo_env": "NU_PLUGIN_REPO",
+      "installed_paths": [
+        "AGENTS.nu-plugin-migration-automation.md",
+        ".codex/prompts/envctl-migration-automation",
+        ".codex/prompts/envctl-migration-automation-schemas",
+        ".codex/agents/envctl-migration-automation"
+      ]
+    }
+  ],
+  "command_templates": [
+    {
+      "command_id": "install-into-repos",
+      "title": "Install additive prompt assets into envctl and nu_plugin",
+      "cwd": "${PROMPT_PACKAGE_DIR:-/path/to/envctl-db-nu-plugin-migration-automation-package}",
+      "argv": [
+        "bash",
+        "INSTALL_IN_REPOS.sh",
+        "--envctl-repo",
+        "${ENVCTL_REPO:?set ENVCTL_REPO}",
+        "--nu-plugin-repo",
+        "${NU_PLUGIN_REPO:?set NU_PLUGIN_REPO}"
+      ],
+      "shell": "bash",
+      "purpose": "Copy namespaced Codex prompts, schemas, SQL, and helper configs into both local repositories.",
+      "requires": [
+        "codex",
+        "python3",
+        "bash"
+      ],
+      "blocked_inputs": [
+        "**/.env",
+        "**/secrets/**",
+        "**/private_keys/**",
+        "**/*.pem",
+        "**/*.key"
+      ]
+    },
+    {
+      "command_id": "run-codex-master-prompt",
+      "title": "Run Codex with the package master prompt",
+      "cwd": "${PROMPT_PACKAGE_DIR:-/path/to/envctl-db-nu-plugin-migration-automation-package}",
+      "argv": [
+        "bash",
+        "RUN_WITH_CODEX_ENVCTL.sh",
+        "--envctl-repo",
+        "${ENVCTL_REPO:?set ENVCTL_REPO}",
+        "--nu-plugin-repo",
+        "${NU_PLUGIN_REPO:?set NU_PLUGIN_REPO}",
+        "--flexnetos-package",
+        "${FLEXNETOS_PACKAGE:-$PROMPT_PACKAGE_DIR/source/codex-flexnetos-migration-prompt-package}"
+      ],
+      "shell": "bash",
+      "purpose": "Start Codex from the envctl repo with the combined migration automation package prompt.",
+      "requires": [
+        "codex",
+        "python3",
+        "bash"
+      ],
+      "blocked_inputs": [
+        "**/.env",
+        "**/secrets/**",
+        "**/private_keys/**",
+        "**/*.pem",
+        "**/*.key"
+      ]
+    },
+    {
+      "command_id": "run-single-execution-packet",
+      "title": "Run one bounded execution packet",
+      "cwd": "${PROMPT_PACKAGE_DIR:-/path/to/envctl-db-nu-plugin-migration-automation-package}/execution-framework",
+      "argv": [
+        "codex",
+        "exec",
+        "<",
+        "generated/execution_packets/REQ-044_INSTALL_BOOTSTRAP.json"
+      ],
+      "shell": "bash",
+      "purpose": "Execute a single generated packet and require its proof record before advancing dependent tasks.",
+      "requires": [
+        "codex",
+        "python3",
+        "bash"
+      ],
+      "blocked_inputs": [
+        "**/.env",
+        "**/secrets/**",
+        "**/private_keys/**",
+        "**/*.pem",
+        "**/*.key"
+      ]
+    },
+    {
+      "command_id": "run-background-helper",
+      "title": "Run one packet as a background helper",
+      "cwd": "${PROMPT_PACKAGE_DIR:-/path/to/envctl-db-nu-plugin-migration-automation-package}/execution-framework",
+      "argv": [
+        "bash",
+        "-lc",
+        "mkdir -p logs state proof_records && nohup codex exec < generated/execution_packets/REQ-044_INSTALL_BOOTSTRAP.json > logs/REQ-044_INSTALL_BOOTSTRAP.codex-exec.stdout.log 2>&1 & echo $!"
+      ],
+      "shell": "bash",
+      "purpose": "Launch a bounded packet in a background shell while preserving stdout/stderr evidence under logs/.",
+      "requires": [
+        "codex",
+        "python3",
+        "bash"
+      ],
+      "blocked_inputs": [
+        "**/.env",
+        "**/secrets/**",
+        "**/private_keys/**",
+        "**/*.pem",
+        "**/*.key"
+      ]
+    }
+  ],
+  "proof_contract": {
+    "proof_required": true,
+    "proof_uri": "execution-framework/proof_records/REQ-044_INSTALL_BOOTSTRAP.proof.json",
+    "heartbeat_file": "execution-framework/state/REQ-044_INSTALL_BOOTSTRAP.heartbeat.json",
+    "logs_uri": "execution-framework/logs/REQ-044_INSTALL_BOOTSTRAP.log",
+    "completion_gate": "proof exists and verification output passes"
+  },
+  "rollback_point": "history/pre_execution_framework_manifest.json"
+}

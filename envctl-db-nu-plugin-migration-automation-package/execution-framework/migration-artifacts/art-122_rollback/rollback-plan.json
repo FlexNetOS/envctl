@@ -1,0 +1,496 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-122_ROLLBACK",
+  "title": "Rollback Plan",
+  "generated_at": "2026-07-05T05:06:08+00:00",
+  "target": {
+    "target_id": "flexnetos-vs-lifeos",
+    "primary_root": "/home/flexnetos/FlexNetOS",
+    "compare_root": "/home/flexnetos/lifeos",
+    "safety_mode": "approval-gated",
+    "max_auto_risk": "R2"
+  },
+  "contract_rows": [
+    {
+      "contract_row_id": "artifact:07-cutover-rollback-plan-md",
+      "artifact_id": "07-cutover-rollback-plan-md",
+      "title": "Rollback Plan",
+      "required_path": "migration-artifacts/07-cutover/rollback-plan.md",
+      "section": "07-cutover",
+      "artifact_type": "migration_control",
+      "format": "md",
+      "status": "required",
+      "source_refs": [
+        "source/codex-flexnetos-migration-prompt-package/expected-output/migration-artifacts-tree.md",
+        "source/previous-migration-artifact-context.md"
+      ],
+      "producer_task_id": "ART-122_ROLLBACK",
+      "validators": [
+        "path_registered",
+        "evidence_or_status_recorded",
+        "linked_from_index"
+      ]
+    }
+  ],
+  "source_inputs": [
+    "migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+    "migration-artifacts/art-120_wave_plan/wave-plan.json",
+    "migration-artifacts/art-121_cutover/cutover-checklist.json",
+    "migration-artifacts/art-125_risk_register/risk-register.json",
+    "migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json",
+    "generated/envctl_rollback_checkpoints_report.json",
+    "generated/status_from_proofs.json",
+    "generated/task_graph.csv",
+    "generated/envctl_artifact_registry_report.json",
+    "generated/shared_protocol_validation_report.json"
+  ],
+  "gate_tasks": [
+    {
+      "task_id": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "title": "Implement artifact registry",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json"
+    },
+    {
+      "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+      "title": "Implement checkpoints and rollback handles",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.proof.json"
+    },
+    {
+      "task_id": "REQ-027_ENVCTL_REPLAY_ENGINE",
+      "title": "Implement replay/reproduce engine",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-027_ENVCTL_REPLAY_ENGINE.proof.json"
+    },
+    {
+      "task_id": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "title": "Implement shared protocol schemas",
+      "status": "completed",
+      "proof_uri": "proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+    },
+    {
+      "task_id": "REQ-041_TWO_REPO_INTEGRATION",
+      "title": "Implement two-repo integration",
+      "status": "pending",
+      "proof_uri": "proof_records/REQ-041_TWO_REPO_INTEGRATION.proof.json"
+    },
+    {
+      "task_id": "REQ-045_RUN_REPLAY",
+      "title": "Implement run/replay templates",
+      "status": "pending",
+      "proof_uri": "proof_records/REQ-045_RUN_REPLAY.proof.json"
+    },
+    {
+      "task_id": "ART-120_WAVE_PLAN",
+      "title": "Build Migration wave plan",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-120_WAVE_PLAN.proof.json"
+    },
+    {
+      "task_id": "ART-121_CUTOVER",
+      "title": "Build Cutover checklist",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-121_CUTOVER.proof.json"
+    },
+    {
+      "task_id": "ART-125_RISK_REGISTER",
+      "title": "Build Risk register",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-125_RISK_REGISTER.proof.json"
+    },
+    {
+      "task_id": "ART-128_READINESS_SCORECARD",
+      "title": "Build Migration readiness scorecard",
+      "status": "completed",
+      "proof_uri": "proof_records/ART-128_READINESS_SCORECARD.proof.json"
+    },
+    {
+      "task_id": "VER-300_UNIT_VALIDATION",
+      "title": "Run unit/integration validation",
+      "status": "pending",
+      "proof_uri": "proof_records/VER-300_UNIT_VALIDATION.proof.json"
+    }
+  ],
+  "blocked_gate_tasks": [
+    "REQ-041_TWO_REPO_INTEGRATION",
+    "REQ-045_RUN_REPLAY",
+    "VER-300_UNIT_VALIDATION"
+  ],
+  "readiness_band": "conditional",
+  "overall_readiness_score": 75.3,
+  "wave_reference": {
+    "wave_id": "W6",
+    "name": "Cutover, rollback, and decommission controls",
+    "sequence": [
+      "W0",
+      "W1",
+      "W2",
+      "W3",
+      "W4",
+      "W5",
+      "W6"
+    ]
+  },
+  "rollback_references": {
+    "safe_checkpoint": {
+      "checkpoint_id": "checkpoint-b7e1748bf5a2468bdddc2b20",
+      "run_id": "run-req026",
+      "operation_id": "op-req026-safe",
+      "checkpoint_kind": "artifact_boundary",
+      "checkpoint_ref": "execution-framework/generated/rollback_checkpoints/safe-artifact.json",
+      "checkpoint_hash": "sha256:51c8dd88807da6208ea982acf8ab4d675662b1ae2078f09d341de34fe8de32a6",
+      "metadata": {
+        "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+        "boundary": "before repeatable artifact regeneration",
+        "repeat_safe": true
+      },
+      "inserted": true
+    },
+    "risky_checkpoint": {
+      "checkpoint_id": "checkpoint-ad12010e257fe10528594b89",
+      "run_id": "run-req026",
+      "operation_id": "op-req026-risky",
+      "checkpoint_kind": "pre_operation",
+      "checkpoint_ref": "history/pre_execution_framework_manifest.json",
+      "checkpoint_hash": "sha256:6bd3e9de4004907c01c8bb45e9e400f537140eadb002f3e068606276a875fb49",
+      "metadata": {
+        "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+        "boundary": "before approval-gated target mutation",
+        "repeat_safe": false
+      },
+      "inserted": true
+    },
+    "safe_rollback": {
+      "rollback_id": "rollback-d57988dc47b0f1064b2c40b5",
+      "run_id": "run-req026",
+      "operation_id": "op-req026-safe",
+      "rollback_type": "rerun_from_checkpoint",
+      "status": "succeeded",
+      "plan": {
+        "approval_required": false,
+        "boundary": {
+          "operation_id": "op-req026-safe",
+          "operation_risk": "R2",
+          "run_id": "run-req026"
+        },
+        "checkpoint": {
+          "hash": "sha256:51c8dd88807da6208ea982acf8ab4d675662b1ae2078f09d341de34fe8de32a6",
+          "id": "checkpoint-b7e1748bf5a2468bdddc2b20",
+          "kind": "artifact_boundary",
+          "metadata": {
+            "boundary": "before repeatable artifact regeneration",
+            "repeat_safe": true,
+            "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
+          },
+          "ref": "execution-framework/generated/rollback_checkpoints/safe-artifact.json"
+        },
+        "instructions": {
+          "mode": "verify-only",
+          "remove_added_files": []
+        },
+        "non_destructive": true,
+        "reason": "prove repeat/revert boundary for generated artifact operation",
+        "requested_by": "envctl-db-agent",
+        "rollback_type": "rerun_from_checkpoint",
+        "schema_version": "1.0"
+      },
+      "result": {
+        "applied": false,
+        "mode": "verify-only",
+        "verified_checkpoint_hash": "sha256:51c8dd88807da6208ea982acf8ab4d675662b1ae2078f09d341de34fe8de32a6"
+      }
+    },
+    "risky_rollback": {
+      "rollback_id": "rollback-fd6d5b735a13d96ffbd7f2cd",
+      "run_id": "run-req026",
+      "operation_id": "op-req026-risky",
+      "rollback_type": "restore_checkpoint",
+      "status": "planned",
+      "plan": {
+        "approval_required": true,
+        "boundary": {
+          "operation_id": "op-req026-risky",
+          "operation_risk": "R4",
+          "run_id": "run-req026"
+        },
+        "checkpoint": {
+          "hash": "sha256:6bd3e9de4004907c01c8bb45e9e400f537140eadb002f3e068606276a875fb49",
+          "id": "checkpoint-ad12010e257fe10528594b89",
+          "kind": "pre_operation",
+          "metadata": {
+            "boundary": "before approval-gated target mutation",
+            "repeat_safe": false,
+            "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
+          },
+          "ref": "history/pre_execution_framework_manifest.json"
+        },
+        "instructions": {
+          "mode": "manual_operator",
+          "restore_ref": "history/pre_execution_framework_manifest.json"
+        },
+        "non_destructive": true,
+        "reason": "approval-gated rollback handle for high-risk operation",
+        "requested_by": "envctl-db-agent",
+        "rollback_type": "restore_checkpoint",
+        "schema_version": "1.0"
+      },
+      "result": null
+    }
+  },
+  "rollback_modes": [
+    {
+      "mode": "verification_only",
+      "use_when": "Need to prove rollback safety before acting.",
+      "approval_required": false,
+      "checkpoint_ref": "execution-framework/generated/rollback_checkpoints/safe-artifact.json"
+    },
+    {
+      "mode": "rerun_from_checkpoint",
+      "use_when": "Artifact-only drift can be recovered without target restore.",
+      "approval_required": false,
+      "checkpoint_ref": "execution-framework/generated/rollback_checkpoints/safe-artifact.json"
+    },
+    {
+      "mode": "task_scoped_cleanup",
+      "use_when": "Only ART-122 outputs need to be removed and regenerated.",
+      "approval_required": false,
+      "checkpoint_ref": "task-output-set"
+    },
+    {
+      "mode": "restore_checkpoint",
+      "use_when": "Approval-gated target mutation needs pre-operation restore.",
+      "approval_required": true,
+      "checkpoint_ref": "history/pre_execution_framework_manifest.json"
+    }
+  ],
+  "risk_summary": {
+    "risk_count": 7,
+    "rollback_relevant_risks": [
+      {
+        "risk_id": "RISK-ART125-002",
+        "severity": "high",
+        "status": "open",
+        "owner": "envctl-db-agent"
+      },
+      {
+        "risk_id": "RISK-ART125-005",
+        "severity": "high",
+        "status": "mitigating",
+        "owner": "security-reproducibility-agent"
+      },
+      {
+        "risk_id": "RISK-ART125-006",
+        "severity": "medium",
+        "status": "monitoring",
+        "owner": "shared-protocol-agent"
+      },
+      {
+        "risk_id": "RISK-ART125-007",
+        "severity": "medium",
+        "status": "open",
+        "owner": "artifact-agent"
+      }
+    ]
+  },
+  "task_cleanup_set": [
+    "execution-framework/scripts/generate_art122_rollback.py",
+    "execution-framework/migration-artifacts/07-cutover/rollback-plan.md",
+    "execution-framework/migration-artifacts/art-122_rollback/rollback-plan.md",
+    "execution-framework/migration-artifacts/art-122_rollback/rollback-plan.json",
+    "execution-framework/generated/art122_rollback_report.json",
+    "execution-framework/generated/status_from_proofs.json",
+    "execution-framework/state/ART-122_ROLLBACK.heartbeat.json",
+    "execution-framework/logs/ART-122_ROLLBACK.log",
+    "execution-framework/proof_records/ART-122_ROLLBACK.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "rollback_steps": [
+    {
+      "step_id": "RBK-001",
+      "phase": "preflight",
+      "title": "Confirm rollback preconditions before any failback action",
+      "intent": "Do not start rollback from assumptions; prove the checkpoint, registry, and validation state first.",
+      "owner": "artifact-agent",
+      "rollback_mode": "verification_only",
+      "approval_required": false,
+      "status": "ready",
+      "trigger": "Any operator asks whether rollback is safe to begin.",
+      "evidence_refs": [
+        "proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+        "proof_records/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.proof.json",
+        "generated/status_from_proofs.json"
+      ],
+      "success_criteria": [
+        "Safe and risky checkpoint references are readable and hash-stable.",
+        "Current task/proof status is captured before any file removal or restore action.",
+        "The rollback mode is chosen explicitly from this plan."
+      ],
+      "notes": [
+        "Safe checkpoint hash: sha256:51c8dd88807da6208ea982acf8ab4d675662b1ae2078f09d341de34fe8de32a6.",
+        "Risky checkpoint hash: sha256:6bd3e9de4004907c01c8bb45e9e400f537140eadb002f3e068606276a875fb49."
+      ]
+    },
+    {
+      "step_id": "RBK-002",
+      "phase": "safe_failback",
+      "title": "Use the repeat-safe checkpoint for artifact-only regeneration drift",
+      "intent": "If the rollback need is limited to generated artifact drift, prefer the non-destructive rerun boundary.",
+      "owner": "artifact-agent",
+      "rollback_mode": "rerun_from_checkpoint",
+      "approval_required": false,
+      "status": "ready",
+      "trigger": "Artifact content, registry linkage, or proof packaging drift is detected before target mutation.",
+      "evidence_refs": [
+        "generated/envctl_rollback_checkpoints_report.json",
+        "migration-artifacts/art-121_cutover/cutover-checklist.json"
+      ],
+      "success_criteria": [
+        "Rollback is limited to package-generated outputs and registry/proof alignment.",
+        "Operator can verify from the safe checkpoint without restoring target filesystem state.",
+        "Evidence shows no approval-gated target mutation has started."
+      ],
+      "notes": [
+        "Safe checkpoint ref: execution-framework/generated/rollback_checkpoints/safe-artifact.json.",
+        "Cutover execution-ready flag is currently False."
+      ]
+    },
+    {
+      "step_id": "RBK-003",
+      "phase": "task_cleanup",
+      "title": "Remove only ART-122 outputs when rolling back this task itself",
+      "intent": "Address the open governance risk that rollback can leave proof or registry references behind when task-local artifacts are removed piecemeal.",
+      "owner": "artifact-agent",
+      "rollback_mode": "task_scoped_cleanup",
+      "approval_required": false,
+      "status": "ready",
+      "trigger": "This rollback plan was generated incorrectly or must be replaced without broader failback.",
+      "evidence_refs": [
+        "migration-artifacts/art-125_risk_register/risk-register.json",
+        "generated/execution_packets/ART-122_ROLLBACK.json"
+      ],
+      "success_criteria": [
+        "All ART-122 task outputs are removed as one set.",
+        "Proof ledger no longer advertises ART-122 as complete after regeneration or cleanup.",
+        "No unrelated artifact files are touched."
+      ],
+      "notes": [
+        "Task-scoped cleanup set has 10 paths."
+      ],
+      "cleanup_paths": [
+        "execution-framework/scripts/generate_art122_rollback.py",
+        "execution-framework/migration-artifacts/07-cutover/rollback-plan.md",
+        "execution-framework/migration-artifacts/art-122_rollback/rollback-plan.md",
+        "execution-framework/migration-artifacts/art-122_rollback/rollback-plan.json",
+        "execution-framework/generated/art122_rollback_report.json",
+        "execution-framework/generated/status_from_proofs.json",
+        "execution-framework/state/ART-122_ROLLBACK.heartbeat.json",
+        "execution-framework/logs/ART-122_ROLLBACK.log",
+        "execution-framework/proof_records/ART-122_ROLLBACK.proof.json",
+        "execution-framework/proof_records/proof_ledger.jsonl"
+      ]
+    },
+    {
+      "step_id": "RBK-004",
+      "phase": "execution_abort",
+      "title": "Abort the cutover if validation or registry integrity fails mid-window",
+      "intent": "Fail closed before post-cutover evidence diverges from what the release decision was based on.",
+      "owner": "release-operator",
+      "rollback_mode": "abort_and_escalate",
+      "approval_required": false,
+      "status": "ready",
+      "trigger": "Registry hash mismatch, missing validation evidence linkage, or unexpected exception during go-live.",
+      "evidence_refs": [
+        "generated/envctl_artifact_registry_report.json",
+        "migration-artifacts/art-121_cutover/cutover-checklist.md",
+        "migration-artifacts/art-125_risk_register/risk-register.md"
+      ],
+      "success_criteria": [
+        "No additional execution steps proceed after the trigger is detected.",
+        "The current event/proof state is captured for operator review.",
+        "The next rollback branch is chosen based on whether the safe or risky boundary applies."
+      ],
+      "notes": [
+        "This is the operational handoff from cutover checklist abort criteria into rollback handling."
+      ]
+    },
+    {
+      "step_id": "RBK-005",
+      "phase": "approval_gate",
+      "title": "Escalate to the approval-gated restore checkpoint for risky rollback",
+      "intent": "Require a deliberate human decision before restoring the pre-operation manifest boundary.",
+      "owner": "envctl-db-agent",
+      "rollback_mode": "restore_checkpoint",
+      "approval_required": true,
+      "status": "ready",
+      "trigger": "An approval-gated target mutation has already started or safe regeneration cannot recover the package state.",
+      "evidence_refs": [
+        "generated/envctl_rollback_checkpoints_report.json",
+        "proof_records/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.proof.json"
+      ],
+      "success_criteria": [
+        "Approval row exists before restore begins.",
+        "Restore uses the exact checkpoint reference and hash from REQ-026.",
+        "Operator records why the safe boundary was insufficient."
+      ],
+      "notes": [
+        "Risky checkpoint ref: history/pre_execution_framework_manifest.json.",
+        "Risky rollback status from REQ-026 smoke: planned."
+      ]
+    },
+    {
+      "step_id": "RBK-006",
+      "phase": "replay_alignment",
+      "title": "Reconcile rollback with replay and validation prerequisites before reattempt",
+      "intent": "Do not leave rollback as a dead end; connect it back to the unfinished validation and replay gates.",
+      "owner": "validation-agent",
+      "rollback_mode": "post_rollback_validation",
+      "approval_required": false,
+      "status": "blocked",
+      "trigger": "Rollback has completed and the team is deciding whether a rerun is safe.",
+      "evidence_refs": [
+        "generated/status_from_proofs.json",
+        "migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json"
+      ],
+      "success_criteria": [
+        "REQ-041_TWO_REPO_INTEGRATION is completed before unattended rerun.",
+        "REQ-045_RUN_REPLAY is completed before replaying operator steps from this package.",
+        "VER-300_UNIT_VALIDATION is completed before declaring rollback recovery releasable."
+      ],
+      "notes": [
+        "Current statuses: REQ-041=pending, REQ-045=pending, VER-300=pending.",
+        "Readiness band remains conditional."
+      ]
+    },
+    {
+      "step_id": "RBK-007",
+      "phase": "closeout",
+      "title": "Record rollback outcome and residual risk after the chosen branch",
+      "intent": "Preserve enough evidence that a future operator can tell what was rolled back, what was only verified, and what still blocks release.",
+      "owner": "artifact-agent",
+      "rollback_mode": "evidence_capture",
+      "approval_required": false,
+      "status": "ready",
+      "trigger": "Any rollback branch completes or is abandoned.",
+      "evidence_refs": [
+        "generated/status_from_proofs.json",
+        "migration-artifacts/art-125_risk_register/risk-register.json",
+        "migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json"
+      ],
+      "success_criteria": [
+        "Outcome states whether rollback was verify-only, task cleanup, or checkpoint restore.",
+        "Residual blockers and risks are linked back to the readiness and risk artifacts.",
+        "Follow-up action names the next validation or replay gate to clear."
+      ]
+    }
+  ],
+  "completion_gate": {
+    "artifact_files_exist": true,
+    "registry_contains_hash": true,
+    "validation_evidence_linked": true,
+    "blocks": [
+      "VER-300_UNIT_VALIDATION"
+    ],
+    "execution_ready_now": false
+  }
+}

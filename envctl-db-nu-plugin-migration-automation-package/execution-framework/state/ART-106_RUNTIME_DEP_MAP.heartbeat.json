@@ -1,0 +1,12 @@
+{
+  "task_id": "ART-106_RUNTIME_DEP_MAP",
+  "status": "complete",
+  "started_at": "2026-07-04T23:29:15+00:00",
+  "updated_at": "2026-07-04T23:29:22+00:00",
+  "artifact_paths": [
+    "migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.md",
+    "migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.json",
+    "migration-artifacts/01-current-state/runtime-dependency-map.md"
+  ],
+  "proof_uri": "proof_records/ART-106_RUNTIME_DEP_MAP.proof.json"
+}

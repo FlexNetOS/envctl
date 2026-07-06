@@ -1,0 +1,8 @@
+{
+  "task_id": "ART-103_SERVICE_DEP_GRAPH",
+  "status": "complete",
+  "updated_at": "2026-07-04T23:22:52+00:00",
+  "artifact": "execution-framework/migration-artifacts/art-103_service_dep_graph/service-dependency-graph.json",
+  "proof_uri": "proof_records/ART-103_SERVICE_DEP_GRAPH.proof.json",
+  "registered_artifact_count": 6
+}

@@ -1,0 +1,71 @@
+{
+  "packet_schema_version": "1.0",
+  "task_id": "EF-003_APPLY_FRAMEWORK",
+  "parent_id": "",
+  "phase": "00-framework",
+  "title": "Apply execution framework files",
+  "goal": "Add scripts, schemas, templates, generated folders, proof ledger, and examples",
+  "owner_lane": "lane_d_filesystem",
+  "owner_agent": "framework-apply-agent",
+  "helper_id": "helper-files-01",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "shell+python",
+  "shell_mode": "workspace-write",
+  "repo_target": "filesystem",
+  "repo_path": "..",
+  "filesystem_scope": "execution-framework|execution-templates",
+  "input_files": [
+    "source/execution-framework-task-prompt.md"
+  ],
+  "target_files": [
+    "scripts/**",
+    "schemas/**",
+    "templates/**",
+    "examples/**",
+    "execution-templates/**"
+  ],
+  "target_artifacts": [
+    "execution framework files"
+  ],
+  "allowed_paths": [
+    "execution-framework/**",
+    "execution-templates/**",
+    "history/**"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "depends_on": [
+    "EF-002_GAP_REPORT"
+  ],
+  "blocks": [
+    "EF-004_GENERATE_TASK_GRAPH"
+  ],
+  "parallel_group": "framework_bootstrap",
+  "can_run_parallel": false,
+  "max_parallel": 1,
+  "start_after": "",
+  "priority": 30,
+  "execution_cell": "apply-framework",
+  "required_tools": [
+    "python3",
+    "shell"
+  ],
+  "command_template": "python3 scripts/goal_to_task_graph.py --bootstrap-only",
+  "verification_command": "test -d scripts && test -d schemas && test -d templates",
+  "completion_gate": "required framework directories exist",
+  "proof_required": true,
+  "proof_uri": "proof_records/EF-003_APPLY_FRAMEWORK.proof.json",
+  "heartbeat_file": "state/EF-003_APPLY_FRAMEWORK.heartbeat.json",
+  "logs_uri": "logs/EF-003_APPLY_FRAMEWORK.log",
+  "rollback_plan": "Use history/pre_execution_framework_manifest.json and remove only files added by this task unless a task-specific rollback is listed.",
+  "risk_level": "medium",
+  "human_approval_required": false,
+  "notes": "Upgrade-only additive framework.",
+  "source_graph_uri": "generated/task_graph.csv",
+  "generated_at": "2026-07-05T05:39:53+00:00"
+}

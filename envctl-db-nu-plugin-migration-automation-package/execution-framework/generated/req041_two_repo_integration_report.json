@@ -1,0 +1,233 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-041_TWO_REPO_INTEGRATION",
+  "generated_at": "2026-07-05T05:18:43+00:00",
+  "packet": {
+    "title": "Implement two-repo integration",
+    "goal": "Wire envctl database commands and nu_plugin commands through shared protocol and executable task packets",
+    "depends_on": [
+      "REQ-027_ENVCTL_REPLAY_ENGINE",
+      "REQ-028_ENVCTL_AGENT_CONTROL_API",
+      "REQ-031_PLUGIN_COMMAND_SURFACE",
+      "REQ-032_PLUGIN_LIVE_VISUALS",
+      "REQ-033_PLUGIN_HUMAN_APPROVAL",
+      "REQ-034_PLUGIN_STATUS_STREAMS",
+      "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+    ],
+    "proof_uri": "proof_records/REQ-041_TWO_REPO_INTEGRATION.proof.json"
+  },
+  "inputs": {
+    "approval_contract": "generated/REQ-033_PLUGIN_HUMAN_APPROVAL.contract.json",
+    "status_contract": "generated/REQ-034_PLUGIN_STATUS_STREAMS.contract.json",
+    "command_manifest": "generated/nu_plugin_command_manifest.json"
+  },
+  "applied_migrations": [
+    {
+      "path": "sql/001_migration_automation_schema.sql",
+      "sha256": "f0a8ad6ce7fba6023d8bfb765843fef07710387f9e720f7fe01305ce2d52bb0e",
+      "bytes": 8608
+    },
+    {
+      "path": "sql/002_views_and_indexes.sql",
+      "sha256": "b9c4fee76504746742695119c84bfbb46dedb1e29da480103f2e6b6c5a83106e",
+      "bytes": 3819
+    },
+    {
+      "path": "execution-framework/generated/contract_manifest.seed.sql",
+      "sha256": "399c1092118d57f78c7647a2d5c2fbd914c5b2ac97d5e41e4deda44722dc8c06",
+      "bytes": 155594
+    }
+  ],
+  "protocol_record_counts": {
+    "TargetDescriptor": 1,
+    "MigrationRecipe": 1,
+    "MigrationRun": 1,
+    "Operation": 2,
+    "RunEvent": 5,
+    "ApprovalRequest": 1,
+    "ApprovalDecision": 1,
+    "ArtifactRecord": 1,
+    "EvidenceRecord": 3,
+    "GraphEdge": 1,
+    "ValidationResult": 1,
+    "ReplayRequest": 1,
+    "ReplayResult": 1,
+    "ProofRecord": 1
+  },
+  "plugin_projection": {
+    "status_rows": [
+      {
+        "table": "envctl_status_stream",
+        "view": "event",
+        "run_id": "run-req041-two-repo",
+        "event_seq": 1,
+        "time": "2026-07-05T05:18:43+00:00",
+        "phase": "04-shared",
+        "event_type": "integration_run_started",
+        "actor": "agent",
+        "actor_id": "integration-agent",
+        "operation": null,
+        "status": "running",
+        "summary": "running",
+        "blocked": false,
+        "next_action": "",
+        "proof_task_id": "",
+        "proof_status": "",
+        "proof_uri": "",
+        "evidence_count": 0
+      },
+      {
+        "table": "envctl_status_stream",
+        "view": "event",
+        "run_id": "run-req041-two-repo",
+        "event_seq": 2,
+        "time": "2026-07-05T05:18:43+00:00",
+        "phase": "04-shared",
+        "event_type": "agent_control_operation_enqueued",
+        "actor": "agent",
+        "actor_id": "helper-integration-01",
+        "operation": "op-d49781b00be43cba23a96752",
+        "status": "n/a",
+        "summary": "agent_control_operation_enqueued",
+        "blocked": false,
+        "next_action": "",
+        "proof_task_id": "",
+        "proof_status": "",
+        "proof_uri": "",
+        "evidence_count": 0
+      },
+      {
+        "table": "envctl_status_stream",
+        "view": "event",
+        "run_id": "run-req041-two-repo",
+        "event_seq": 3,
+        "time": "2026-07-05T05:18:43+00:00",
+        "phase": "04-shared",
+        "event_type": "agent_control_operation_enqueued",
+        "actor": "agent",
+        "actor_id": "helper-integration-01",
+        "operation": "op-d58d31a4a1239324874c37dc",
+        "status": "n/a",
+        "summary": "agent_control_operation_enqueued",
+        "blocked": false,
+        "next_action": "",
+        "proof_task_id": "",
+        "proof_status": "",
+        "proof_uri": "",
+        "evidence_count": 0
+      },
+      {
+        "table": "envctl_status_stream",
+        "view": "event",
+        "run_id": "run-req041-two-repo",
+        "event_seq": 4,
+        "time": "2026-07-05T05:18:43+00:00",
+        "phase": null,
+        "event_type": "agent_control_approval_approved",
+        "actor": "human",
+        "actor_id": "operator-req041",
+        "operation": "op-d58d31a4a1239324874c37dc",
+        "status": "n/a",
+        "summary": "integration verifier may project the approved plugin surface",
+        "blocked": false,
+        "next_action": "",
+        "proof_task_id": "",
+        "proof_status": "",
+        "proof_uri": "",
+        "evidence_count": 0
+      },
+      {
+        "table": "envctl_status_stream",
+        "view": "event",
+        "run_id": "run-req041-two-repo",
+        "event_seq": 5,
+        "time": "2026-07-05T05:18:43+00:00",
+        "phase": "04-shared",
+        "event_type": "plugin_projection_ready",
+        "actor": "plugin",
+        "actor_id": "codedb",
+        "operation": "op-d58d31a4a1239324874c37dc",
+        "status": "ready",
+        "summary": "stream records through plugin command tables",
+        "blocked": false,
+        "next_action": "stream records through plugin command tables",
+        "proof_task_id": "",
+        "proof_status": "",
+        "proof_uri": "",
+        "evidence_count": 2
+      },
+      {
+        "table": "envctl_status_stream",
+        "view": "proof",
+        "run_id": "",
+        "event_seq": 0,
+        "time": "2026-07-05T05:18:43+00:00",
+        "phase": "04-shared",
+        "event_type": "proof_record",
+        "actor": "integration-agent",
+        "actor_id": "helper-integration-01",
+        "operation": "",
+        "status": "completed",
+        "summary": "REQ-041 integration proof recorded",
+        "blocked": false,
+        "next_action": "",
+        "proof_task_id": "REQ-041_TWO_REPO_INTEGRATION",
+        "proof_status": "completed",
+        "proof_uri": "proof_records/REQ-041_TWO_REPO_INTEGRATION.proof.json",
+        "evidence_count": 5
+      }
+    ],
+    "approval_rows": [
+      {
+        "table": "envctl_human_approval_surface",
+        "view": "approval",
+        "mode": "approval-gated",
+        "run_id": "run-req041-two-repo",
+        "operation_id": "op-d58d31a4a1239324874c37dc",
+        "approval_id": "approval-4e5ff2df4d248bdcc4778a15",
+        "risk": "R4",
+        "status": "approved",
+        "requested_by": "helper-integration-01",
+        "decided_by": "operator-req041",
+        "reason": "integration verifier may project the approved plugin surface",
+        "blocked": false,
+        "requires_human": true,
+        "allowed_actions": [
+          "approve",
+          "deny"
+        ],
+        "next_safe_action": "run plugin-facing status stream projection",
+        "delegate_target": "operator",
+        "summary": "nu_plugin.status.surface.refresh approved for plugin projection"
+      }
+    ]
+  },
+  "verification": {
+    "status": "passed",
+    "required_commands_present": [
+      "envctl migration approve",
+      "envctl migration replay",
+      "envctl migration status"
+    ],
+    "contract_commands_present": [
+      "codedb envctl human approvals",
+      "codedb envctl status stream"
+    ],
+    "event_chain_valid": {
+      "run_id": "run-req041-two-repo",
+      "event_count": 5,
+      "chain_valid": true,
+      "errors": [],
+      "head_event_hash": "sha256:4dcd0e4f617b5d169dec30bbc4461f0285462354bd82dc29061821c44e89f351"
+    },
+    "approval_decision": {
+      "status": "decided",
+      "approval_id": "approval-4e5ff2df4d248bdcc4778a15",
+      "decision": "approved",
+      "operation_id": "op-d58d31a4a1239324874c37dc",
+      "operation_status": "ready",
+      "event_seq": 4,
+      "event_hash": "sha256:f3661294883547fc036427f3150622ff7d5e40b262f686c31124857087d0111a"
+    }
+  }
+}

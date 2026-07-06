@@ -1,0 +1,13 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-04T22:55:06+00:00",
+  "status": "passed",
+  "errors": [],
+  "checks": {
+    "source_file_count": 8,
+    "artifact_row_count": 136,
+    "automation_row_count": 16,
+    "key_path_count": 21,
+    "recipe_phase_count": 14
+  }
+}

@@ -181,10 +181,7 @@ pub fn discover_profile(cwd: &Path, trusted_roots: &[PathBuf]) -> Option<PathBuf
                 return None;
             }
         }
-        match dir.parent() {
-            Some(parent) => dir = parent,
-            None => return None,
-        }
+        dir = dir.parent()?;
     }
 }
 

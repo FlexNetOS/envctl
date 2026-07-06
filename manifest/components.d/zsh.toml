@@ -1,6 +1,6 @@
 # ── zsh (shell, meta-owned) ─────────────────────────────────────────────────
 # Builds the LATEST stable zsh from source into $META_ROOT/.toolchains/zsh and
-# symlinks $META_ROOT/usr/bin/zsh. Replaces the /nix/store zsh (yazelix bundle + the
+# frontdoor wrappers $META_ROOT/usr/bin/zsh. Replaces the /nix/store zsh (yazelix bundle + the
 # standalone nix zsh) so a meta-owned shell exists OUTSIDE /nix — it survives the
 # system-nix→nix-portable teardown and is the terminal that drives that migration.
 #
@@ -18,12 +18,13 @@ description = "Latest stable zsh built from source (zsh-users/zsh) into .toolcha
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/zsh/bin/zsh\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/zsh\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/zsh/bin/zsh\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/zsh/bin/zsh\" ] && [ -x \"$META_ROOT/usr/bin/zsh\" ] && [ ! -L \"$META_ROOT/usr/bin/zsh\" ] && grep -Fqx \"exec \\\"$M/.toolchains/zsh/bin/zsh\\\" \\\"\\$@\\\"\" \"$META_ROOT/usr/bin/zsh\""]
 
 [component.install]
 kind = "script"
 login_shell = true
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
@@ -63,9 +64,10 @@ src="$tmp/zsh-${VER}"
 
 # 4. Wire into $META_ROOT/usr/bin (already on PATH via run_env()).
 install -d -m 755 "$META_ROOT/usr/bin"
-ln -sfn "$DEST/bin/zsh" "$META_ROOT/usr/bin/zsh"
-'''
+envctl_frontdoor "$DEST/bin/zsh" "$META_ROOT/usr/bin/zsh"
 
+
+'''
 [component.verify]
 kind = "command"
 command = "bash"

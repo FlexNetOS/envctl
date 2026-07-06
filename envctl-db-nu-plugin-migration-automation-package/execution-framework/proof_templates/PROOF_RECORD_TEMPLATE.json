@@ -1,0 +1,20 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "<TASK_ID>",
+  "status": "completed|failed|blocked",
+  "started_at": "<ISO8601>",
+  "completed_at": "<ISO8601>",
+  "actor": "<agent/helper>",
+  "helper_id": "<helper_id>",
+  "model_tag": "<model_tag>",
+  "repo_path": "<repo_path>",
+  "files_changed": [],
+  "commands_run": [],
+  "verification_output": "",
+  "checksums": {},
+  "logs_uri": "",
+  "rollback_point": "",
+  "evidence": [],
+  "failure_reason": "",
+  "next_action": ""
+}

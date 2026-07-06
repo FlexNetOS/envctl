@@ -1,0 +1,61 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "ART-101_DIRECTORY_TREE",
+  "status": "completed",
+  "started_at": "2026-07-04T23:20:52+00:00",
+  "completed_at": "2026-07-04T23:21:04+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-artifact-02",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS",
+  "files_changed": [
+    "execution-framework/scripts/generate_directory_tree_artifact.py",
+    "execution-framework/migration-artifacts/art-101_directory_tree/directory-tree.md",
+    "execution-framework/migration-artifacts/art-101_directory_tree/directory-tree.json",
+    "execution-framework/state/ART-101_DIRECTORY_TREE.heartbeat.json",
+    "execution-framework/logs/ART-101_DIRECTORY_TREE.log",
+    "execution-framework/proof_records/ART-101_DIRECTORY_TREE.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/generate_directory_tree_artifact.py",
+    "python3 -m py_compile scripts/generate_directory_tree_artifact.py"
+  ],
+  "verification_output": {
+    "artifact_files_exist": true,
+    "registry_hashes_recorded": true,
+    "registered_artifact_count": 2,
+    "directory_count": 72280,
+    "blocked_files_skipped": 140,
+    "registered_hashes": {
+      "art101-directory-tree-md": "sha256:36f9e2fd8de21ab7159357711cf584544a582665d646ca97ff76a70c540f9ce3",
+      "art101-directory-tree-json": "sha256:7bd00e1a2af6bf9df9c6f63bbeb478662b11fbc463eb512a59f0d000d1d99341"
+    },
+    "validation_scorecard": [
+      4,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "checksums": {
+    "execution-framework/scripts/generate_directory_tree_artifact.py": "5410da69db2abd175fa3fd6c73e4e523da505d8ecc00ad0f2e1d2efde28fc94a",
+    "execution-framework/migration-artifacts/art-101_directory_tree/directory-tree.md": "36f9e2fd8de21ab7159357711cf584544a582665d646ca97ff76a70c540f9ce3",
+    "execution-framework/migration-artifacts/art-101_directory_tree/directory-tree.json": "7bd00e1a2af6bf9df9c6f63bbeb478662b11fbc463eb512a59f0d000d1d99341",
+    "execution-framework/state/ART-101_DIRECTORY_TREE.heartbeat.json": "535c79eb2c9a3f0ec4fbc16c6d9584743dffb9fc0ec7073344644c4f54ab472c",
+    "execution-framework/logs/ART-101_DIRECTORY_TREE.log": "0c2d33428592430001b9fa216bdd8a64d1421483a220b7fee6e5f1afc154bd23",
+    "execution-framework/proof_records/ART-101_DIRECTORY_TREE.proof.json": "479d296c75fcd31c915a856d879a6dc8d87426af56b52c4951b0a516114ae2de",
+    "execution-framework/proof_records/proof_ledger.jsonl": "09c4883cf292a26010f67f2d709c715e2fcca5f286c7a75bc997cdb0c720e4a5"
+  },
+  "logs_uri": "logs/ART-101_DIRECTORY_TREE.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "migration-artifacts/art-101_directory_tree/directory-tree.md",
+    "migration-artifacts/art-101_directory_tree/directory-tree.json",
+    "logs/ART-101_DIRECTORY_TREE.log",
+    "state/ART-101_DIRECTORY_TREE.heartbeat.json"
+  ],
+  "failure_reason": "",
+  "next_action": "ready for VER-300_UNIT_VALIDATION"
+}

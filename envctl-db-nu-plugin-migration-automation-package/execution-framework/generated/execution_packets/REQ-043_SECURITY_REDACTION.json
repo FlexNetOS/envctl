@@ -1,0 +1,70 @@
+{
+  "packet_schema_version": "1.0",
+  "task_id": "REQ-043_SECURITY_REDACTION",
+  "parent_id": "REQ-010_CONTRACT_LOCK",
+  "phase": "04-shared",
+  "title": "Implement redaction and secret safety",
+  "goal": "Apply no-secret capture rules for logs, proofs, scans, and packets",
+  "owner_lane": "lane_d_filesystem",
+  "owner_agent": "security-agent",
+  "helper_id": "helper-security-01",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "codex-cli-background-shell",
+  "shell_mode": "workspace-write",
+  "repo_target": "filesystem",
+  "repo_path": "..",
+  "filesystem_scope": "package-root",
+  "input_files": [
+    "helpers/redaction_patterns.txt",
+    "prompts/SECURITY_REPRODUCIBILITY_MODEL.md"
+  ],
+  "target_files": [
+    "redaction and safety controls"
+  ],
+  "target_artifacts": [
+    "security/reproducibility controls"
+  ],
+  "allowed_paths": [
+    "${ENVCTL_REPO}/**",
+    "${NU_PLUGIN_REPO}/**",
+    "execution-framework/**",
+    "execution-templates/**"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "depends_on": [
+    "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+  ],
+  "blocks": [
+    "VER-302_PACKET_SCHEMA_VALIDATION"
+  ],
+  "parallel_group": "filesystem_parallel",
+  "can_run_parallel": true,
+  "max_parallel": 3,
+  "start_after": "",
+  "priority": 270,
+  "execution_cell": "04-shared",
+  "required_tools": [
+    "codex",
+    "python3",
+    "shell"
+  ],
+  "command_template": "codex exec < generated/execution_packets/REQ-043_SECURITY_REDACTION.json",
+  "verification_command": "task-specific tests plus proof file exists",
+  "completion_gate": "proof exists and verification output passes",
+  "proof_required": true,
+  "proof_uri": "proof_records/REQ-043_SECURITY_REDACTION.proof.json",
+  "heartbeat_file": "state/REQ-043_SECURITY_REDACTION.heartbeat.json",
+  "logs_uri": "logs/REQ-043_SECURITY_REDACTION.log",
+  "rollback_plan": "Use history/pre_execution_framework_manifest.json and remove only files added by this task unless a task-specific rollback is listed.",
+  "risk_level": "critical",
+  "human_approval_required": false,
+  "notes": "Additive feature work; no downgrades.",
+  "source_graph_uri": "generated/task_graph.csv",
+  "generated_at": "2026-07-05T05:39:53+00:00"
+}

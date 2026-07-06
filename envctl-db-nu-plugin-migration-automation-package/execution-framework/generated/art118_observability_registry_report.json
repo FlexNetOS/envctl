@@ -1,0 +1,432 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-118_OBSERVABILITY",
+  "generated_at": "2026-07-04T23:29:39+00:00",
+  "status": "passed",
+  "run_id": "run-art-118-observability",
+  "operation_id": "op-art-118-generate-observability-map",
+  "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+  "artifact_paths": {
+    "markdown": "execution-framework/migration-artifacts/art-118_observability/observability-map.md",
+    "json": "execution-framework/migration-artifacts/art-118_observability/observability-map.json",
+    "contract_markdown": "execution-framework/migration-artifacts/08-operations/observability-map.md"
+  },
+  "registered_artifacts": [
+    {
+      "artifact_row_id": "artifact-be64a8391da97d506c89d5e6",
+      "artifact_id": "art-118-observability-map-md",
+      "run_id": "run-art-118-observability",
+      "path": "execution-framework/migration-artifacts/art-118_observability/observability-map.md",
+      "content_hash": "sha256:373106face0db24cd3509e76e31fba0a3cf2d3bddfd207865f686089dccc8ecf",
+      "producer_operation_id": "op-art-118-generate-observability-map",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-edd76ac2e17d1d9b21c66f0e",
+        "evidence-edd76ac2e17d1d9b21c66f0e",
+        "evidence-e51aae8becd8816fcd6395d1",
+        "evidence-2f43749b2eb55ae72ce1f3d2",
+        "evidence-28eb5ecf18804606ec057d89",
+        "evidence-0500d8261112377ca87fe987",
+        "evidence-1bfef7aad94333ef3d5dca75",
+        "evidence-b3574f303c8314f80b38fc5a",
+        "evidence-1f681a98592ad46d4bee2f64",
+        "evidence-1aee65b3907ef0e58b2963ad",
+        "evidence-901323fb152d0daa76846908",
+        "evidence-d28d91354f985fe05ab6ab1a"
+      ],
+      "graph_edge_ids": [
+        "edge-4dd2b51339efac3fc690c23f",
+        "edge-30005d1511853a7772396b7b",
+        "edge-0a7a726679e34895db70836a",
+        "edge-a477698ec1004289d5012094",
+        "edge-70992096058a1aad8c427957",
+        "edge-e8b004f8590f04bebf793073",
+        "edge-e5923c5d5f8c380cff2915ba"
+      ],
+      "validation_ids": [
+        "validation-4c1c0b8200094c5ecaf18e41",
+        "validation-f0311da226d9a8ed84b7597c",
+        "validation-36515b2904a154e306f6e8c0"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-ee44a135f030f37aca288fbc",
+      "artifact_id": "art-118-observability-map-json",
+      "run_id": "run-art-118-observability",
+      "path": "execution-framework/migration-artifacts/art-118_observability/observability-map.json",
+      "content_hash": "sha256:a923513af4aa63f621f5262d46632932bfb80828b70a68fbfd8178b7e21d8e6a",
+      "producer_operation_id": "op-art-118-generate-observability-map",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-4f397bc61bb2b9886c942cf4",
+        "evidence-4ac785ada77cc152c1f20f5d",
+        "evidence-4f397bc61bb2b9886c942cf4",
+        "evidence-584ec58ac06052064502c542",
+        "evidence-72ed8238942f55e10f827c10",
+        "evidence-df1ae5643b2fd394b5880f32",
+        "evidence-b084daf4b502e5750e070947",
+        "evidence-5a3a29fa92893a74c51a2f29",
+        "evidence-ce76423b17909bb9dd85a681",
+        "evidence-d8e96e67c655e040d1bd311c",
+        "evidence-89d6451f46be311bfa363eb4",
+        "evidence-11e2eecc5c954956a6f50a00"
+      ],
+      "graph_edge_ids": [
+        "edge-5c17a9260d082f825ccb091d",
+        "edge-385f892c0d2c03106bcad918",
+        "edge-0df292d824c47c962dd46639",
+        "edge-ef95d7e51d06f6d3e45e1877",
+        "edge-23227384a15b8bbe3f777c40",
+        "edge-bae236bae9d79c2ca8161ca0",
+        "edge-b6234765c727fe2f04eac97f"
+      ],
+      "validation_ids": [
+        "validation-d81dc9a2cc7093f69c619bf1",
+        "validation-45cd8b3dcf65d0d6061d24b2",
+        "validation-ece24194925df8170ef6996b"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-cb1b4f7651a99b7ec772d827",
+      "artifact_id": "08-operations-observability-map-md",
+      "run_id": "run-art-118-observability",
+      "path": "execution-framework/migration-artifacts/08-operations/observability-map.md",
+      "content_hash": "sha256:373106face0db24cd3509e76e31fba0a3cf2d3bddfd207865f686089dccc8ecf",
+      "producer_operation_id": "op-art-118-generate-observability-map",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-eda8301f32d86643727217e2",
+        "evidence-c3769ae0aa8633a5bc4bfcce",
+        "evidence-0b2b9c0b529ff5c695b58fef",
+        "evidence-eda8301f32d86643727217e2",
+        "evidence-e406d0ca32414452b0544e59",
+        "evidence-bcc95fa512fb24c21519585d",
+        "evidence-86ff1c872950323988aba38f",
+        "evidence-927952ebc1e195d8730d1c9b",
+        "evidence-15b68b9a2166dcaa895c25df",
+        "evidence-67a8954d4c6b2ce4064dbdb9",
+        "evidence-bd0a5dfc0834a30dafe4f6ca",
+        "evidence-3321817496fabe71aaf787bc"
+      ],
+      "graph_edge_ids": [
+        "edge-297daf325436160595990bf4",
+        "edge-93e86dcaa274ea784d18c4ac",
+        "edge-fc142cc20104b9010e2edb09",
+        "edge-c072ecdfcef363f71cc9771c",
+        "edge-4ea23eba47476fd6d611f073",
+        "edge-d038715f174e7bf0afca5ef0",
+        "edge-1d39430aeba09dc9545fa9c7"
+      ],
+      "validation_ids": [
+        "validation-64f2958a69b0dabb8851761a",
+        "validation-2cafa6b5f2b2d9ba424abb64",
+        "validation-b4a8b40c42ea3c173526a7a5"
+      ]
+    }
+  ],
+  "artifact_rows": [
+    {
+      "id": "artifact-be64a8391da97d506c89d5e6",
+      "run_id": "run-art-118-observability",
+      "artifact_id": "art-118-observability-map-md",
+      "title": "ART-118 Observability Map Markdown",
+      "artifact_type": "observability_map",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-118_observability/observability-map.md",
+      "content_hash": "sha256:373106face0db24cd3509e76e31fba0a3cf2d3bddfd207865f686089dccc8ecf",
+      "generated_by_operation_id": "op-art-118-generate-observability-map",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-edd76ac2e17d1d9b21c66f0e",
+          "evidence-edd76ac2e17d1d9b21c66f0e",
+          "evidence-e51aae8becd8816fcd6395d1",
+          "evidence-2f43749b2eb55ae72ce1f3d2",
+          "evidence-28eb5ecf18804606ec057d89",
+          "evidence-0500d8261112377ca87fe987",
+          "evidence-1bfef7aad94333ef3d5dca75",
+          "evidence-b3574f303c8314f80b38fc5a",
+          "evidence-1f681a98592ad46d4bee2f64",
+          "evidence-1aee65b3907ef0e58b2963ad",
+          "evidence-901323fb152d0daa76846908",
+          "evidence-d28d91354f985fe05ab6ab1a"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/art-118_observability/observability-map.md",
+          "execution-framework/migration-artifacts/art-118_observability/observability-map.md",
+          "execution-framework/migration-artifacts/art-118_observability/observability-map.json",
+          "execution-framework/migration-artifacts/08-operations/observability-map.md",
+          "execution-framework/generated/execution_packets/ART-118_OBSERVABILITY.json",
+          "execution-framework/generated/envctl_target_registry.json",
+          "execution-framework/generated/package_scan.json",
+          "execution-framework/generated/envctl_migration_db_model.json",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/generated/shared_protocol_manifest.json",
+          "execution-framework/generated/envctl_validation_evidence_report.json",
+          "execution-framework/generated/contract_manifest.json"
+        ],
+        "producer_operation_id": "op-art-118-generate-observability-map",
+        "provenance": {
+          "helper_id": "helper-artifact-19",
+          "owner_agent": "artifact-agent",
+          "owner_lane": "lane_d_filesystem",
+          "source_graph_uri": "generated/task_graph.csv",
+          "task_id": "ART-118_OBSERVABILITY"
+        },
+        "validation_ids": [
+          "validation-4c1c0b8200094c5ecaf18e41",
+          "validation-f0311da226d9a8ed84b7597c",
+          "validation-36515b2904a154e306f6e8c0"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-4dd2b51339efac3fc690c23f",
+          "edge-30005d1511853a7772396b7b",
+          "edge-0a7a726679e34895db70836a",
+          "edge-a477698ec1004289d5012094",
+          "edge-70992096058a1aad8c427957",
+          "edge-e8b004f8590f04bebf793073",
+          "edge-e5923c5d5f8c380cff2915ba"
+        ],
+        "links": [
+          {
+            "to": "artifact:08-operations-observability-map-md",
+            "type": "satisfies_contract_row"
+          },
+          {
+            "to": "artifact:08-operations-runbooks-md",
+            "type": "summarizes_runbook_inputs"
+          },
+          {
+            "to": "artifact:08-operations-alerting-md",
+            "type": "summarizes_alerting_inputs"
+          },
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-ee44a135f030f37aca288fbc",
+      "run_id": "run-art-118-observability",
+      "artifact_id": "art-118-observability-map-json",
+      "title": "ART-118 Observability Map JSON",
+      "artifact_type": "observability_map",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-118_observability/observability-map.json",
+      "content_hash": "sha256:a923513af4aa63f621f5262d46632932bfb80828b70a68fbfd8178b7e21d8e6a",
+      "generated_by_operation_id": "op-art-118-generate-observability-map",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-4f397bc61bb2b9886c942cf4",
+          "evidence-4ac785ada77cc152c1f20f5d",
+          "evidence-4f397bc61bb2b9886c942cf4",
+          "evidence-584ec58ac06052064502c542",
+          "evidence-72ed8238942f55e10f827c10",
+          "evidence-df1ae5643b2fd394b5880f32",
+          "evidence-b084daf4b502e5750e070947",
+          "evidence-5a3a29fa92893a74c51a2f29",
+          "evidence-ce76423b17909bb9dd85a681",
+          "evidence-d8e96e67c655e040d1bd311c",
+          "evidence-89d6451f46be311bfa363eb4",
+          "evidence-11e2eecc5c954956a6f50a00"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/art-118_observability/observability-map.json",
+          "execution-framework/migration-artifacts/art-118_observability/observability-map.md",
+          "execution-framework/migration-artifacts/art-118_observability/observability-map.json",
+          "execution-framework/migration-artifacts/08-operations/observability-map.md",
+          "execution-framework/generated/execution_packets/ART-118_OBSERVABILITY.json",
+          "execution-framework/generated/envctl_target_registry.json",
+          "execution-framework/generated/package_scan.json",
+          "execution-framework/generated/envctl_migration_db_model.json",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/generated/shared_protocol_manifest.json",
+          "execution-framework/generated/envctl_validation_evidence_report.json",
+          "execution-framework/generated/contract_manifest.json"
+        ],
+        "producer_operation_id": "op-art-118-generate-observability-map",
+        "provenance": {
+          "helper_id": "helper-artifact-19",
+          "owner_agent": "artifact-agent",
+          "owner_lane": "lane_d_filesystem",
+          "source_graph_uri": "generated/task_graph.csv",
+          "task_id": "ART-118_OBSERVABILITY"
+        },
+        "validation_ids": [
+          "validation-d81dc9a2cc7093f69c619bf1",
+          "validation-45cd8b3dcf65d0d6061d24b2",
+          "validation-ece24194925df8170ef6996b"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-5c17a9260d082f825ccb091d",
+          "edge-385f892c0d2c03106bcad918",
+          "edge-0df292d824c47c962dd46639",
+          "edge-ef95d7e51d06f6d3e45e1877",
+          "edge-23227384a15b8bbe3f777c40",
+          "edge-bae236bae9d79c2ca8161ca0",
+          "edge-b6234765c727fe2f04eac97f"
+        ],
+        "links": [
+          {
+            "to": "artifact:08-operations-observability-map-md",
+            "type": "satisfies_contract_row"
+          },
+          {
+            "to": "artifact:08-operations-runbooks-md",
+            "type": "summarizes_runbook_inputs"
+          },
+          {
+            "to": "artifact:08-operations-alerting-md",
+            "type": "summarizes_alerting_inputs"
+          },
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-cb1b4f7651a99b7ec772d827",
+      "run_id": "run-art-118-observability",
+      "artifact_id": "08-operations-observability-map-md",
+      "title": "Observability Map",
+      "artifact_type": "migration_artifact",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/08-operations/observability-map.md",
+      "content_hash": "sha256:373106face0db24cd3509e76e31fba0a3cf2d3bddfd207865f686089dccc8ecf",
+      "generated_by_operation_id": "op-art-118-generate-observability-map",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-eda8301f32d86643727217e2",
+          "evidence-c3769ae0aa8633a5bc4bfcce",
+          "evidence-0b2b9c0b529ff5c695b58fef",
+          "evidence-eda8301f32d86643727217e2",
+          "evidence-e406d0ca32414452b0544e59",
+          "evidence-bcc95fa512fb24c21519585d",
+          "evidence-86ff1c872950323988aba38f",
+          "evidence-927952ebc1e195d8730d1c9b",
+          "evidence-15b68b9a2166dcaa895c25df",
+          "evidence-67a8954d4c6b2ce4064dbdb9",
+          "evidence-bd0a5dfc0834a30dafe4f6ca",
+          "evidence-3321817496fabe71aaf787bc"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/08-operations/observability-map.md",
+          "execution-framework/migration-artifacts/art-118_observability/observability-map.md",
+          "execution-framework/migration-artifacts/art-118_observability/observability-map.json",
+          "execution-framework/migration-artifacts/08-operations/observability-map.md",
+          "execution-framework/generated/execution_packets/ART-118_OBSERVABILITY.json",
+          "execution-framework/generated/envctl_target_registry.json",
+          "execution-framework/generated/package_scan.json",
+          "execution-framework/generated/envctl_migration_db_model.json",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/generated/shared_protocol_manifest.json",
+          "execution-framework/generated/envctl_validation_evidence_report.json",
+          "execution-framework/generated/contract_manifest.json"
+        ],
+        "producer_operation_id": "op-art-118-generate-observability-map",
+        "provenance": {
+          "helper_id": "helper-artifact-19",
+          "owner_agent": "artifact-agent",
+          "owner_lane": "lane_d_filesystem",
+          "source_graph_uri": "generated/task_graph.csv",
+          "task_id": "ART-118_OBSERVABILITY"
+        },
+        "validation_ids": [
+          "validation-64f2958a69b0dabb8851761a",
+          "validation-2cafa6b5f2b2d9ba424abb64",
+          "validation-b4a8b40c42ea3c173526a7a5"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-297daf325436160595990bf4",
+          "edge-93e86dcaa274ea784d18c4ac",
+          "edge-fc142cc20104b9010e2edb09",
+          "edge-c072ecdfcef363f71cc9771c",
+          "edge-4ea23eba47476fd6d611f073",
+          "edge-d038715f174e7bf0afca5ef0",
+          "edge-1d39430aeba09dc9545fa9c7"
+        ],
+        "links": [
+          {
+            "to": "artifact:08-operations-observability-map-md",
+            "type": "satisfies_contract_row"
+          },
+          {
+            "to": "artifact:08-operations-runbooks-md",
+            "type": "summarizes_runbook_inputs"
+          },
+          {
+            "to": "artifact:08-operations-alerting-md",
+            "type": "summarizes_alerting_inputs"
+          },
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          }
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "observability_category_count": 7,
+    "covered_category_count": 7,
+    "control_count": 7,
+    "evidence_count": 33,
+    "graph_edge_count": 21,
+    "validation_count": 9
+  },
+  "verification": {
+    "artifact_files_exist": true,
+    "hashes_recorded": true,
+    "validation_evidence_linked": true,
+    "registry_contains_hash": true,
+    "secret_material_read": false
+  },
+  "errors": [],
+  "evidence": [
+    "execution-framework/migration-artifacts/art-118_observability/observability-map.md",
+    "execution-framework/migration-artifacts/art-118_observability/observability-map.json",
+    "execution-framework/migration-artifacts/08-operations/observability-map.md",
+    "execution-framework/generated/art118_observability_registry_report.json",
+    "execution-framework/logs/ART-118_OBSERVABILITY.log",
+    "execution-framework/scripts/generate_art118_observability.py"
+  ]
+}

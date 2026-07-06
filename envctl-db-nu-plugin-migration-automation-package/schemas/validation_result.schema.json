@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "envctl Migration Validation Result",
+  "type": "object",
+  "required": [
+    "validation_id",
+    "run_id",
+    "validator",
+    "status"
+  ],
+  "properties": {
+    "validation_id": {
+      "type": "string"
+    },
+    "run_id": {
+      "type": "string"
+    },
+    "artifact_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "validator": {
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "pass",
+        "fail",
+        "warn",
+        "blocked",
+        "unknown"
+      ]
+    },
+    "details": {
+      "type": "object"
+    },
+    "evidence_refs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

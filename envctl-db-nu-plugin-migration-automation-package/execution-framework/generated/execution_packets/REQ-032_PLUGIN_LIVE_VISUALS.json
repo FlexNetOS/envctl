@@ -1,0 +1,70 @@
+{
+  "packet_schema_version": "1.0",
+  "task_id": "REQ-032_PLUGIN_LIVE_VISUALS",
+  "parent_id": "REQ-010_CONTRACT_LOCK",
+  "phase": "03-nu-plugin",
+  "title": "Implement live visuals",
+  "goal": "Render task graph, status, parallel lanes, proof state, and blockers for human users",
+  "owner_lane": "lane_c_repo_b",
+  "owner_agent": "nu-plugin-visuals-agent",
+  "helper_id": "helper-nu-visuals-01",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "codex-cli-background-shell",
+  "shell_mode": "workspace-write",
+  "repo_target": "repo_b",
+  "repo_path": "${NU_PLUGIN_REPO}",
+  "filesystem_scope": "repo",
+  "input_files": [
+    "prompts/LIVE_VISUALS_AND_HUMAN_CONTROL.md",
+    "generated/status_report.json"
+  ],
+  "target_files": [
+    "nu_plugin visual output"
+  ],
+  "target_artifacts": [
+    "live visuals"
+  ],
+  "allowed_paths": [
+    "${ENVCTL_REPO}/**",
+    "${NU_PLUGIN_REPO}/**",
+    "execution-framework/**",
+    "execution-templates/**"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "depends_on": [
+    "REQ-030_PLUGIN_PROTOCOL_MANIFEST"
+  ],
+  "blocks": [
+    "REQ-041_TWO_REPO_INTEGRATION"
+  ],
+  "parallel_group": "nu_plugin_parallel",
+  "can_run_parallel": true,
+  "max_parallel": 4,
+  "start_after": "",
+  "priority": 220,
+  "execution_cell": "03-nu-plugin",
+  "required_tools": [
+    "codex",
+    "python3",
+    "shell"
+  ],
+  "command_template": "codex exec < generated/execution_packets/REQ-032_PLUGIN_LIVE_VISUALS.json",
+  "verification_command": "task-specific tests plus proof file exists",
+  "completion_gate": "proof exists and verification output passes",
+  "proof_required": true,
+  "proof_uri": "proof_records/REQ-032_PLUGIN_LIVE_VISUALS.proof.json",
+  "heartbeat_file": "state/REQ-032_PLUGIN_LIVE_VISUALS.heartbeat.json",
+  "logs_uri": "logs/REQ-032_PLUGIN_LIVE_VISUALS.log",
+  "rollback_plan": "Use history/pre_execution_framework_manifest.json and remove only files added by this task unless a task-specific rollback is listed.",
+  "risk_level": "high",
+  "human_approval_required": false,
+  "notes": "Additive feature work; no downgrades.",
+  "source_graph_uri": "generated/task_graph.csv",
+  "generated_at": "2026-07-05T05:39:53+00:00"
+}

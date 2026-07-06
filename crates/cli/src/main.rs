@@ -5,7 +5,9 @@ mod self_update;
 
 use clap::{Args, CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::Shell;
+use std::collections::BTreeSet;
 use std::io::IsTerminal;
+use std::path::PathBuf;
 use std::time::Duration;
 
 /// Clap help styling (ported from kasetto `colors::clap_styles`): amber `#e8a94d`
@@ -38,15 +40,18 @@ macro_rules! envctl_examples {
     };
 }
 
+use envctl_engine::catalog as catalog_engine;
 use envctl_engine::secrets::run_secretctl;
 use envctl_engine::{
     AddRepoMode, AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentDoctorSpec, AgentInitSpec,
     AgentListKind, AgentListSpec, AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentScope,
-    AgentSectionSel, AgentSyncSpec, AiAgent, BuildStrategy, BuildSystem, DashboardSpec,
-    DriftSummary, Engine, EnvReport, Event, EventSink, HubRegistryReport, HubRegistryStatus,
-    MigrationAction, MigrationReport, MigrationRisk, MigrationScope, MigrationSpec,
-    MigrationStatus, MigrationVerb, OpStatus, Phase, Refactor, RefactorGoal, RenameRule,
-    ResetGates, RunPlan, SelfUninstallSpec, Severity,
+    AgentSectionSel, AgentSyncSpec, AiAgent, BuildStrategy, BuildSystem, CatalogAnalyzeReport,
+    CatalogDiffReport, CatalogFacetCount, CatalogImportReport, CatalogLockReport,
+    CatalogRenderReport, CatalogScanSpec, CatalogSnapshot, CatalogSyncReport, CatalogTableName,
+    CatalogTableSummaryRow, DashboardSpec, DriftSummary, Engine, EnvReport, Event, EventSink,
+    HubRegistryReport, HubRegistryStatus, MigrationAction, MigrationReport, MigrationRisk,
+    MigrationScope, MigrationSpec, MigrationStatus, MigrationVerb, OpStatus, Phase, Refactor,
+    RefactorGoal, Registry, RenameRule, ResetGates, RunPlan, SelfUninstallSpec, Severity,
 };
 
 #[derive(Parser)]
@@ -62,6 +67,13 @@ use envctl_engine::{
         "envctl doctor",
         "envctl install --dry-run",
         "envctl migrate scan",
+        "envctl catalog scan --json",
+        "envctl catalog import --json",
+        "envctl catalog diff",
+        "envctl catalog render --out /tmp/envctl-catalog",
+        "envctl catalog sync --render-out /tmp/envctl-catalog-sync",
+        "envctl catalog lock --check",
+        "envctl catalog lock --apply",
         "envctl agent sync --apply",
         "envctl graph --impact secretd",
     )
@@ -236,6 +248,21 @@ enum Cmd {
         /// Exit 1 when any hub entry binds to a missing envctl component.
         #[arg(long)]
         check: bool,
+    },
+    /// Read-only ADR-0003 catalog tables over envctl control-plane files.
+    #[command(
+        long_about = "Read the current envctl repo files into normalized, queryable catalog rows without mutating anything. This is the ADR-0003 bridge from existing TOML/YAML/JSON/Rust/handoff sources to table-first control-plane behavior. Use the global --json flag for machine-readable snapshots or tables.",
+        after_help = envctl_examples!(
+            "envctl catalog scan --json",
+            "envctl catalog table components",
+            "envctl catalog table env-vars --json",
+        )
+    )]
+    Catalog {
+        #[command(flatten)]
+        roots: CatalogRootArgs,
+        #[command(subcommand)]
+        cmd: CatalogCmd,
     },
     /// Write/verify envctl.lock — a content hash of every component for reproducible
     /// installs + a CI gate. No flags = (re)write the lock; --check = verify (exit 1 on drift).
@@ -547,6 +574,130 @@ enum Cmd {
         #[command(subcommand)]
         cmd: SecretCmd,
     },
+}
+
+/// Catalog control-plane subcommands. ADR-0003 keeps file import/diff/render/sync read-only until verifier-gated apply slices; lock writes require explicit opt-in.
+#[derive(Subcommand)]
+enum CatalogCmd {
+    /// Import current files into an in-memory catalog snapshot.
+    #[command(
+        long_about = "Read manifest, lock, agent-env, Codex/MCP, hub registry, layout, secrets, and handoff surfaces into normalized in-memory tables. Read-only: no lock writes, no renders, no sync.",
+        after_help = envctl_examples!(
+            "envctl catalog scan",
+            "envctl catalog scan --json",
+        )
+    )]
+    Scan,
+    /// List the catalog tables, row counts, columns, and purpose.
+    #[command(
+        long_about = "Print the normalized ADR-0003 table inventory so you can see what envctl imported, how many rows landed in each table, which columns are present, and what each table is for.",
+        after_help = envctl_examples!(
+            "envctl catalog tables",
+            "envctl catalog tables --json",
+        )
+    )]
+    Tables,
+    /// Print one normalized catalog table.
+    #[command(
+        long_about = "Print one read-only catalog table. Names accept snake_case or kebab-case: components, component-hooks, paths, settings, env-vars, agent-assets, registries, config-files, codedb-file-imports, migration-evidence, observed-facts.",
+        after_help = envctl_examples!(
+            "envctl catalog table components",
+            "envctl catalog table component-hooks",
+            "envctl catalog table codedb-file-imports",
+            "envctl catalog table observed-facts --json",
+        )
+    )]
+    Table {
+        /// Table name, e.g. components or env-vars.
+        name: String,
+    },
+    /// Import current files into normalized catalog rows with an explicit report.
+    #[command(
+        long_about = "Read manifest, lock, agent-env, Codex/MCP, hub registry, layout, secrets, and handoff surfaces into normalized catalog rows. Read-only: no lock writes, no renders, no sync.",
+        after_help = envctl_examples!(
+            "envctl catalog import",
+            "envctl catalog import --json",
+        )
+    )]
+    Import,
+    /// Summarize config/env/path/toolchain coverage from the current catalog snapshot.
+    #[command(
+        long_about = "Analyze the current catalog snapshot into higher-level facets: table coverage, config formats and file kinds, env scopes and producers, path artifact and verification status, codedb parser hints, and likely toolchain-related signals. Read-only.",
+        after_help = envctl_examples!(
+            "envctl catalog analyze",
+            "envctl catalog analyze --json",
+        )
+    )]
+    Analyze,
+    /// Report file/catalog/lock drift without writing files.
+    #[command(
+        long_about = "Compare the normalized catalog with source config files, lock state, registry drift, and observed facts. Read-only: no lock writes, no renders, no sync.",
+        after_help = envctl_examples!(
+            "envctl catalog diff",
+            "envctl catalog diff --json",
+        )
+    )]
+    Diff,
+    /// Render deterministic catalog projections into an explicit output directory.
+    #[command(
+        long_about = "Render ADR-0003 generated-file projections into an explicit output directory for review. The output directory must be outside the repo root; current repo files are never mutated.",
+        after_help = envctl_examples!(
+            "envctl catalog render --out /tmp/envctl-catalog",
+            "envctl catalog render --out /tmp/envctl-catalog --json",
+        )
+    )]
+    Render {
+        /// Output directory for generated projections; must be outside the repo root.
+        #[arg(long, value_name = "DIR")]
+        out: PathBuf,
+        /// Optional root whose layout-derived paths and env exports should be rendered.
+        #[arg(long = "target-root", value_name = "DIR")]
+        target_root: Option<PathBuf>,
+    },
+    /// Preview bidirectional file/catalog reconciliation without mutating repo files.
+    #[command(
+        long_about = "Preview ADR-0003 bidirectional reconciliation. The command imports current files, reports drift, and can render projections into an out-of-repo directory. --apply is fail-closed until verifier-gated row edits land.",
+        after_help = envctl_examples!(
+            "envctl catalog sync",
+            "envctl catalog sync --json",
+            "envctl catalog sync --render-out /tmp/envctl-catalog-sync",
+        )
+    )]
+    Sync {
+        /// Optional output directory for generated projections; must be outside the repo root.
+        #[arg(long = "render-out", value_name = "DIR")]
+        render_out: Option<PathBuf>,
+        /// Attempt apply. Currently fail-closed until verifier-gated row edit/apply support lands.
+        #[arg(long)]
+        apply: bool,
+    },
+    /// Check or accept the catalog lock projection.
+    #[command(
+        long_about = "Check or update ADR-0003's lock projection at manifest/envctl.lock. Default and --check are read-only; --apply writes only envctl.lock from the current manifest registry.",
+        after_help = envctl_examples!(
+            "envctl catalog lock",
+            "envctl catalog lock --check --json",
+            "envctl catalog lock --apply",
+        )
+    )]
+    Lock {
+        /// Exit non-zero when catalog/lock drift exists; never writes files.
+        #[arg(long)]
+        check: bool,
+        /// Accept current manifest registry into manifest/envctl.lock.
+        #[arg(long)]
+        apply: bool,
+    },
+}
+
+#[derive(Args, Clone, Debug, Default)]
+struct CatalogRootArgs {
+    /// Repository root to import into catalog tables. Defaults to the parent of the envctl manifest dir.
+    #[arg(long = "repo-root", value_name = "DIR", global = true)]
+    repo_root: Option<PathBuf>,
+    /// Manifest directory for component rows. If omitted with --repo-root and no manifest exists under that root, catalog uses an empty registry.
+    #[arg(long = "manifest-dir", value_name = "DIR", global = true)]
+    manifest_dir: Option<PathBuf>,
 }
 
 /// The migration/adoption subcommands. All variants share optional scope and
@@ -1502,7 +1653,27 @@ fn main() -> anyhow::Result<()> {
         envctl_engine::update_notifier::wait_for_check(update_handle, Duration::from_millis(800));
     }
 
-    let engine = if matches!(cli.cmd, Cmd::Dashboard { .. } | Cmd::Env { .. }) {
+    let engine = if matches!(cli.cmd, Cmd::Dashboard { .. } | Cmd::Env { .. })
+        || matches!(
+            cli.cmd,
+            Cmd::Catalog {
+                roots: CatalogRootArgs {
+                    repo_root: Some(_),
+                    ..
+                },
+                ..
+            }
+        )
+        || matches!(
+            cli.cmd,
+            Cmd::Catalog {
+                roots: CatalogRootArgs {
+                    manifest_dir: Some(_),
+                    ..
+                },
+                ..
+            }
+        ) {
         Engine::detached()
     } else {
         Engine::load_default()?
@@ -1571,6 +1742,7 @@ fn main() -> anyhow::Result<()> {
             }
             Ok(())
         }
+        Cmd::Catalog { roots, cmd } => run_catalog(&engine, roots, cmd, json),
         Cmd::Lock { check } => {
             use envctl_engine::lock;
             let reg = engine.registry();
@@ -1867,6 +2039,497 @@ fn migration_marker(status: MigrationStatus, protected: bool) -> &'static str {
     }
 }
 
+fn run_catalog(
+    engine: &Engine,
+    roots: CatalogRootArgs,
+    cmd: CatalogCmd,
+    json: bool,
+) -> anyhow::Result<()> {
+    let explicit_roots = roots.repo_root.is_some() || roots.manifest_dir.is_some();
+    let (spec, registry) = if explicit_roots {
+        resolve_catalog_scan_spec(roots)?
+    } else {
+        (
+            CatalogScanSpec {
+                repo_root: engine
+                    .manifest_dir()
+                    .parent()
+                    .map(PathBuf::from)
+                    .unwrap_or_else(|| {
+                        std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."))
+                    }),
+                manifest_dir: engine.manifest_dir().to_path_buf(),
+            },
+            None,
+        )
+    };
+    let registry = registry.as_ref().unwrap_or_else(|| engine.registry());
+    match cmd {
+        CatalogCmd::Scan => {
+            let snapshot = if explicit_roots {
+                catalog_engine::scan(spec, registry)?
+            } else {
+                engine.catalog_scan()?
+            };
+            if json {
+                println!("{}", serde_json::to_string_pretty(&snapshot)?);
+            } else {
+                print_catalog_summary(&snapshot);
+            }
+        }
+        CatalogCmd::Tables => {
+            let snapshot = if explicit_roots {
+                catalog_engine::scan(spec, registry)?
+            } else {
+                engine.catalog_scan()?
+            };
+            let report = catalog_engine::table_inventory(&snapshot);
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            } else {
+                print_catalog_tables(&report);
+            }
+        }
+        CatalogCmd::Table { name } => {
+            let snapshot = if explicit_roots {
+                catalog_engine::scan(spec, registry)?
+            } else {
+                engine.catalog_scan()?
+            };
+            let table = name
+                .parse::<CatalogTableName>()
+                .map_err(|err| anyhow::anyhow!(err))?;
+            let table_value = snapshot.table_value(table);
+            if json {
+                println!("{}", serde_json::to_string_pretty(&table_value)?);
+            } else {
+                print_catalog_table(table, &table_value)?;
+            }
+        }
+        CatalogCmd::Import => {
+            let report = if explicit_roots {
+                catalog_engine::import_current(spec, registry)?
+            } else {
+                engine.catalog_import()?
+            };
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            } else {
+                print_catalog_import(&report);
+            }
+        }
+        CatalogCmd::Analyze => {
+            let report = if explicit_roots {
+                catalog_engine::analyze_current(spec, registry)?
+            } else {
+                engine.catalog_analyze()?
+            };
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            } else {
+                print_catalog_analyze(&report);
+            }
+        }
+        CatalogCmd::Diff => {
+            let report = if explicit_roots {
+                catalog_engine::diff(spec, registry)?
+            } else {
+                engine.catalog_diff()?
+            };
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            } else {
+                print_catalog_diff(&report);
+            }
+        }
+        CatalogCmd::Render { out, target_root } => {
+            let report = if explicit_roots {
+                catalog_engine::render(
+                    catalog_engine::CatalogRenderSpec {
+                        repo_root: spec.repo_root,
+                        manifest_dir: spec.manifest_dir,
+                        out_dir: out,
+                        target_root,
+                    },
+                    registry,
+                )?
+            } else {
+                engine.catalog_render(&out, target_root.as_deref())?
+            };
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            } else {
+                print_catalog_render(&report);
+            }
+        }
+        CatalogCmd::Sync { render_out, apply } => {
+            let report = if explicit_roots {
+                catalog_engine::sync(
+                    catalog_engine::CatalogSyncSpec {
+                        repo_root: spec.repo_root,
+                        manifest_dir: spec.manifest_dir,
+                        render_out_dir: render_out,
+                        apply,
+                    },
+                    registry,
+                )?
+            } else {
+                engine.catalog_sync(render_out.as_deref(), apply)?
+            };
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            } else {
+                print_catalog_sync(&report);
+            }
+        }
+        CatalogCmd::Lock { check, apply } => {
+            if check && apply {
+                anyhow::bail!("catalog lock accepts either --check or --apply, not both");
+            }
+            let report = if explicit_roots {
+                catalog_engine::lock(
+                    catalog_engine::CatalogLockSpec {
+                        repo_root: spec.repo_root,
+                        manifest_dir: spec.manifest_dir,
+                        apply,
+                    },
+                    registry,
+                )?
+            } else {
+                engine.catalog_lock(apply)?
+            };
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            } else {
+                print_catalog_lock(&report);
+            }
+            if check && report.summary.before_drifts > 0 {
+                std::process::exit(1);
+            }
+        }
+    }
+    Ok(())
+}
+
+fn resolve_catalog_scan_spec(
+    roots: CatalogRootArgs,
+) -> anyhow::Result<(CatalogScanSpec, Option<Registry>)> {
+    let repo_root_arg = roots.repo_root;
+    let manifest_dir_arg = roots.manifest_dir;
+    let repo_root_was_explicit = repo_root_arg.is_some();
+    let cwd = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    let repo_root = repo_root_arg.unwrap_or_else(|| {
+        manifest_dir_arg
+            .as_ref()
+            .map(|manifest_dir| {
+                let manifest_dir = if manifest_dir.is_absolute() {
+                    manifest_dir.clone()
+                } else {
+                    cwd.join(manifest_dir)
+                };
+                manifest_dir
+                    .parent()
+                    .map(PathBuf::from)
+                    .unwrap_or_else(|| cwd.clone())
+            })
+            .unwrap_or_else(|| cwd.clone())
+    });
+    let repo_root = std::fs::canonicalize(&repo_root).map_err(|err| {
+        anyhow::anyhow!(
+            "catalog repo root not found or unreadable: {}: {err}",
+            repo_root.display()
+        )
+    })?;
+    let manifest_dir = match manifest_dir_arg {
+        Some(manifest_dir) if manifest_dir.is_absolute() => manifest_dir,
+        Some(manifest_dir) if repo_root_was_explicit => repo_root.join(manifest_dir),
+        Some(manifest_dir) => cwd.join(manifest_dir),
+        None => repo_root.join("manifest"),
+    };
+    let registry = if manifest_dir.is_dir() {
+        Some(Registry::load(&manifest_dir)?)
+    } else {
+        None
+    };
+    Ok((
+        CatalogScanSpec {
+            repo_root,
+            manifest_dir,
+        },
+        registry,
+    ))
+}
+
+fn print_catalog_summary(snapshot: &CatalogSnapshot) {
+    println!("envctl catalog scan (read-only)");
+    println!("repo_root: {}", snapshot.repo_root);
+    println!("manifest_dir: {}", snapshot.manifest_dir);
+    println!("tables:");
+    for table in CatalogTableName::all() {
+        println!(
+            "  {:<20} {}",
+            table.canonical_name(),
+            snapshot.table_count(*table)
+        );
+    }
+}
+
+fn print_catalog_tables(rows: &[CatalogTableSummaryRow]) {
+    println!("envctl catalog tables (read-only)");
+    println!("tables: {}", rows.len());
+    if rows.is_empty() {
+        return;
+    }
+    println!("\ntable\trows\tcolumns\tpurpose");
+    for row in rows {
+        println!(
+            "{}\t{}\t{}\t{}",
+            row.table,
+            row.rows,
+            row.columns.join(","),
+            row.purpose
+        );
+    }
+}
+
+fn print_catalog_table(table: CatalogTableName, value: &serde_json::Value) -> anyhow::Result<()> {
+    let rows = value
+        .as_array()
+        .ok_or_else(|| anyhow::anyhow!("catalog table {table} did not serialize as an array"))?;
+    println!("catalog table: {table}");
+    println!("rows: {}", rows.len());
+    if rows.is_empty() {
+        return Ok(());
+    }
+
+    let mut columns = BTreeSet::new();
+    for row in rows {
+        if let Some(object) = row.as_object() {
+            columns.extend(object.keys().cloned());
+        }
+    }
+    let columns: Vec<_> = columns.into_iter().collect();
+    println!("{}", columns.join("\t"));
+    for row in rows {
+        let object = row
+            .as_object()
+            .ok_or_else(|| anyhow::anyhow!("catalog table {table} contained a non-object row"))?;
+        let cells = columns
+            .iter()
+            .map(|column| object.get(column).map(catalog_cell).unwrap_or_default())
+            .collect::<Vec<_>>();
+        println!("{}", cells.join("\t"));
+    }
+    Ok(())
+}
+
+fn print_catalog_import(report: &CatalogImportReport) {
+    println!("envctl catalog import (read-only)");
+    println!("repo_root: {}", report.repo_root);
+    println!("manifest_dir: {}", report.manifest_dir);
+    println!("mutating: {}", yes_no(report.summary.mutating));
+    println!("tables: {}", report.summary.tables);
+    println!("rows: {}", report.summary.rows);
+    println!("components: {}", report.summary.components);
+    println!("config_files: {}", report.summary.config_files);
+    println!("settings: {}", report.summary.settings);
+    println!("env_vars: {}", report.summary.env_vars);
+}
+
+fn print_catalog_analyze(report: &CatalogAnalyzeReport) {
+    println!("envctl catalog analyze (read-only)");
+    println!("repo_root: {}", report.repo_root);
+    println!("manifest_dir: {}", report.manifest_dir);
+    println!("mutating: {}", yes_no(report.summary.mutating));
+    println!("tables: {}", report.summary.tables);
+    println!("rows: {}", report.summary.rows);
+    println!("config_files: {}", report.summary.config_files);
+    println!("env_vars: {}", report.summary.env_vars);
+    println!("codedb_imports: {}", report.summary.codedb_imports);
+    println!("toolchain_signals: {}", report.summary.toolchain_signals);
+
+    print_catalog_inventory("table inventory", &report.table_inventory);
+    print_catalog_count_facets("config formats", &report.config_formats);
+    print_catalog_count_facets("config file kinds", &report.config_file_kinds);
+    print_catalog_count_facets("env scopes", &report.env_scopes);
+    print_catalog_count_facets("env producers", &report.env_producers);
+    print_catalog_count_facets("env sensitivity", &report.env_sensitive);
+    print_catalog_count_facets("path artifact kinds", &report.path_artifact_kinds);
+    print_catalog_count_facets(
+        "path verification statuses",
+        &report.path_verification_statuses,
+    );
+    print_catalog_count_facets("codedb file kinds", &report.codedb_file_kinds);
+    print_catalog_count_facets("codedb parser hints", &report.codedb_parser_hints);
+
+    println!("\ntoolchain signals:");
+    if report.toolchain_signals.is_empty() {
+        println!("  none");
+    } else {
+        for row in &report.toolchain_signals {
+            println!(
+                "  {:<12} {:<28} {:<18} {:<24} {}",
+                row.signal_kind, row.key, row.source, row.detail, row.value
+            );
+        }
+    }
+}
+
+fn print_catalog_diff(report: &CatalogDiffReport) {
+    println!("envctl catalog diff (read-only)");
+    println!("repo_root: {}", report.repo_root);
+    println!("manifest_dir: {}", report.manifest_dir);
+    println!("mutating: {}", yes_no(report.summary.mutating));
+    println!("config_files: {}", report.summary.config_files);
+    println!("components: {}", report.summary.components);
+    println!("drift_count: {}", report.summary.drift_count);
+    println!("lock_drifts: {}", report.summary.lock_drifts);
+    println!("parse_errors: {}", report.summary.parse_errors);
+    println!("read_errors: {}", report.summary.read_errors);
+    println!("missing_files: {}", report.summary.missing_files);
+    if report.drift.is_empty() {
+        println!("\nno catalog drift found");
+        return;
+    }
+
+    println!("\ndrift:");
+    for row in &report.drift {
+        println!(
+            "  {:<18} {:<14} {:<32} {}",
+            row.severity, row.drift_kind, row.subject_id, row.details
+        );
+    }
+}
+
+fn print_catalog_count_facets(label: &str, rows: &[CatalogFacetCount]) {
+    println!("\n{label}:");
+    if rows.is_empty() {
+        println!("  none");
+        return;
+    }
+    for row in rows {
+        println!("  {:<28} {}", row.key, row.count);
+    }
+}
+
+fn print_catalog_inventory(label: &str, rows: &[CatalogTableSummaryRow]) {
+    println!("\n{label}:");
+    if rows.is_empty() {
+        println!("  none");
+        return;
+    }
+    for row in rows {
+        println!(
+            "  {:<24} {:>6} rows  {:<48} {}",
+            row.table,
+            row.rows,
+            row.columns.join(","),
+            row.purpose
+        );
+    }
+}
+
+fn print_catalog_render(report: &CatalogRenderReport) {
+    println!("envctl catalog render (no repo mutation)");
+    println!("repo_root: {}", report.repo_root);
+    println!("manifest_dir: {}", report.manifest_dir);
+    println!("out_dir: {}", report.out_dir);
+    if let Some(target_root) = &report.target_root {
+        println!("target_root: {}", target_root);
+    }
+    println!("mutating_repo: {}", yes_no(report.summary.mutating_repo));
+    println!("generated_files: {}", report.summary.generated_files);
+    println!(
+        "generated_config_rows: {}",
+        report.summary.generated_config_rows
+    );
+    println!("bytes: {}", report.summary.bytes);
+    println!("\nfiles:");
+    for file in &report.files {
+        println!(
+            "  {:<52} {:>8} bytes  {}",
+            file.path, file.bytes, file.sha256
+        );
+    }
+}
+
+fn print_catalog_sync(report: &CatalogSyncReport) {
+    println!("envctl catalog sync (preview)");
+    println!("repo_root: {}", report.repo_root);
+    println!("manifest_dir: {}", report.manifest_dir);
+    println!("mutating: {}", yes_no(report.summary.mutating));
+    println!("applied: {}", yes_no(report.summary.applied));
+    println!("verifier_status: {}", report.summary.verifier_status);
+    println!("drift_count: {}", report.summary.drift_count);
+    println!("planned_actions: {}", report.summary.planned_actions);
+    println!("rendered_files: {}", report.summary.rendered_files);
+    if report.planned_actions.is_empty() {
+        println!("\nno sync actions planned");
+    } else {
+        println!("\nactions:");
+        for action in &report.planned_actions {
+            println!(
+                "  {:<12} {:<24} {:<18} {}",
+                action.action_id, action.action_kind, action.subject_id, action.reason
+            );
+        }
+    }
+    if let Some(render) = &report.render {
+        println!("\nrendered_projection: {}", render.out_dir);
+        println!("rendered_files: {}", render.summary.generated_files);
+    }
+}
+
+fn print_catalog_lock(report: &CatalogLockReport) {
+    println!("envctl catalog lock");
+    println!("lock_path: {}", report.lock_path);
+    println!("mutating: {}", yes_no(report.summary.mutating));
+    println!("components: {}", report.summary.components);
+    println!("before_drifts: {}", report.summary.before_drifts);
+    println!("after_drifts: {}", report.summary.after_drifts);
+    println!("lock_written: {}", yes_no(report.summary.lock_written));
+    if report.drift.is_empty() {
+        println!("\nlock projection is current");
+    } else {
+        println!("\nlock drift:");
+        for row in &report.drift {
+            println!(
+                "  {:<14} {:<32} {}",
+                row.drift_kind, row.subject_id, row.details
+            );
+        }
+    }
+}
+
+fn yes_no(value: bool) -> &'static str {
+    if value {
+        "yes"
+    } else {
+        "no"
+    }
+}
+
+fn catalog_cell(value: &serde_json::Value) -> String {
+    match value {
+        serde_json::Value::Null => String::new(),
+        serde_json::Value::Bool(value) => value.to_string(),
+        serde_json::Value::Number(value) => value.to_string(),
+        serde_json::Value::String(value) => value.clone(),
+        serde_json::Value::Array(values) => {
+            if values.iter().all(|value| value.is_string()) {
+                values
+                    .iter()
+                    .filter_map(|value| value.as_str())
+                    .collect::<Vec<_>>()
+                    .join(",")
+            } else {
+                serde_json::to_string(values).unwrap_or_default()
+            }
+        }
+        serde_json::Value::Object(_) => serde_json::to_string(value).unwrap_or_default(),
+    }
+}
+
 fn print_hub_registry(report: &HubRegistryReport) {
     if report.sources.is_empty() {
         println!("hub registry: no *_hub/registry.json files found");
@@ -1919,7 +2582,8 @@ fn should_suppress_notice(cmd: &Cmd, json: bool, quiet: u8) -> bool {
         | Cmd::Manage { .. }
         | Cmd::Env { .. }
         | Cmd::Migrate { .. }
-        | Cmd::Registry { .. } => true,
+        | Cmd::Registry { .. }
+        | Cmd::Catalog { .. } => true,
         // `auto-detect`/`graph`/`lock`/`agent ... --json` are gated by the global `json` above;
         // their human forms may still show the notice. Everything else: don't suppress.
         _ => false,
@@ -2071,6 +2735,7 @@ fn run_env(
             map["MISE_DATA_DIR"] = format!("{tc}/mise").into();
             map["CARGO_HOME"] = format!("{tc}/cargo").into();
             map["RUSTUP_HOME"] = format!("{tc}/rustup").into();
+            map["XDG_CACHE_HOME"] = layout.xdg_cache_home().to_string_lossy().to_string().into();
             map["UV_TOOL_DIR"] = format!("{tc}/uv/tools").into();
             map["UV_PYTHON_INSTALL_DIR"] = format!("{tc}/uv/python").into();
             map["OLLAMA_LIBRARY_PATH"] = format!("{tc}/ollama/lib/ollama").into();
@@ -2117,6 +2782,13 @@ fn run_env(
         println!(
             "export RUSTUP_HOME={}",
             sh_single_quote(&format!("{tc}/rustup"))
+        );
+        // Cache-heavy toolchain frontdoors (notably kache as Cargo's rustc-wrapper)
+        // must default to meta-owned XDG cache instead of leaking active state into
+        // ~/.cache when a shell has only sourced `envctl env --toolchains`.
+        println!(
+            "export XDG_CACHE_HOME={}",
+            sh_single_quote(&layout.xdg_cache_home().to_string_lossy())
         );
         println!(
             "export UV_TOOL_DIR={}",
@@ -2386,6 +3058,7 @@ fn run_action(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
             | Cmd::Agent { .. }
             | Cmd::Secret { .. }
             | Cmd::Registry { .. }
+            | Cmd::Catalog { .. }
             | Cmd::Completions { .. }
             | Cmd::Manage { .. } => {
                 unreachable!("handled in main")

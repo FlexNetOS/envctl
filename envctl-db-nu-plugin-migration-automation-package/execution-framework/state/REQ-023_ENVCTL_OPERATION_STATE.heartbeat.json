@@ -1,0 +1,11 @@
+{
+  "task_id": "REQ-023_ENVCTL_OPERATION_STATE",
+  "status": "passed",
+  "updated_at": "2026-07-04T23:09:12+00:00",
+  "evidence": [
+    "scripts/operation_state_machine.py",
+    "generated/operation_state_machine.json",
+    "generated/operation_state_machine_validation_report.json",
+    "docs/OPERATION_STATE_MACHINE.md"
+  ]
+}

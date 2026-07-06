@@ -1,0 +1,10 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-04T00:00:00-05:00",
+  "templates": [
+    "TASK_GRAPH_TEMPLATE.csv",
+    "AGENT_LANE_TEMPLATE.json",
+    "two_repo_parallel_goal.yaml"
+  ],
+  "canonical_source": "execution-framework/templates and execution-framework/examples"
+}
