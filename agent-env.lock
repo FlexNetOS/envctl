@@ -2,7 +2,7 @@ version: 2
 skills:
   ./agent-skills::agent-env-config:
     destination: .claude/skills/agent-env-config
-    hash: fad0e12b3c7f26705bd082e5a37a03086515c3af17349d08a1f3e35eff983f4f
+    hash: e7a804d87bf16744122967f2946d8d84825ebecff7efc001470c3f5f494b2d0f
     skill: agent-env-config
     description: '"The CORRECT conventions and agent-environment configuration for the envctl Rust workspace — supersedes the broken ECC-auto-generated skill/instincts that assert JavaScript conventions. Use whenever writing or reviewing envctl code, naming files/types, writing tests, composing commits, or configuring the .claude/.codex agent setup (skills, MCP servers, multi-agent roles). Triggers: ''what conventions'', ''how do I name this'', ''write a test'', ''commit message'', ''configure the agents'', ''MCP setup'', ''is camelCase right''."'
     source: ./agent-skills
@@ -33,45 +33,10 @@ skills:
     source_revision: local
     scope: project
 assets:
-  mcp::./agent-skills::context7.json:
-    kind: mcp
-    name: context7.json
-    hash: a3cdf7e77961edef6d2304211f3a576dae9f7dc218995cd2605b2c085d64a0dd
-    source: ./agent-skills
-    destination: context7
-    source_revision: local
   mcp::./agent-skills::exa.json:
     kind: mcp
     name: exa.json
     hash: c56e84148f520efd573a149bb29badbada5671e3e8777896216060622776301a
     source: ./agent-skills
     destination: exa
-    source_revision: local
-  mcp::./agent-skills::github.json:
-    kind: mcp
-    name: github.json
-    hash: 5c49d8844d7b3bbb926f66658ddff6de43871fa6664806f248276f75e185fb11
-    source: ./agent-skills
-    destination: github
-    source_revision: local
-  mcp::./agent-skills::memory.json:
-    kind: mcp
-    name: memory.json
-    hash: 9218ee13d2dbeca15eb4190ed579b2ed362c941689d223599a4f30504b8e9763
-    source: ./agent-skills
-    destination: memory
-    source_revision: local
-  mcp::./agent-skills::playwright.json:
-    kind: mcp
-    name: playwright.json
-    hash: a3b095bd70cb408d5379f0a0e2f48c1ae02a5cf9f689786a9e1e4ec3d86676a2
-    source: ./agent-skills
-    destination: playwright
-    source_revision: local
-  mcp::./agent-skills::sequential-thinking.json:
-    kind: mcp
-    name: sequential-thinking.json
-    hash: b31bb1add7487573d11c7b8da684a25ba3710a3ea613ffc3d6910487f12143bb
-    source: ./agent-skills
-    destination: sequential-thinking
     source_revision: local

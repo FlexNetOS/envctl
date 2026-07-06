@@ -20,13 +20,9 @@ skills:
     skills: "*"
 
 mcps:
-  # Standard tool surface for envctl work; kept identical across Claude (.mcp.json)
-  # and Codex (.codex/config.toml [mcp_servers.*]).
+  # Yazelix is the normative runtime model. Only MCP entries that do not launch
+  # non-profile local binaries may be generated here; local MCPs return only
+  # after they have profile-owned frontdoors that mirror Yazelix ownership.
   - source: ./agent-skills
     mcps:
-      - github
-      - context7
       - exa
-      - memory
-      - playwright
-      - sequential-thinking

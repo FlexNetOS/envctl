@@ -1,42 +1,7 @@
 {
   "mcpServers": {
-    "context7": {
-      "args": [
-        "-lc",
-        "ROOT=\"${META_ROOT:-/home/flexnetos/FlexNetOS}\"; export META_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @upstash/context7-mcp@latest"
-      ],
-      "command": "bash"
-    },
     "exa": {
       "url": "https://mcp.exa.ai/mcp"
-    },
-    "github": {
-      "args": [
-        "-lc",
-        "ROOT=\"${META_ROOT:-/home/flexnetos/FlexNetOS}\"; export META_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @modelcontextprotocol/server-github"
-      ],
-      "command": "bash"
-    },
-    "memory": {
-      "args": [
-        "-lc",
-        "ROOT=\"${META_ROOT:-/home/flexnetos/FlexNetOS}\"; exec \"$ROOT/src/envctl/assets/scripts/envctl-mcp-memory-server\""
-      ],
-      "command": "bash"
-    },
-    "playwright": {
-      "args": [
-        "-lc",
-        "ROOT=\"${META_ROOT:-/home/flexnetos/FlexNetOS}\"; export META_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @playwright/mcp@latest --extension"
-      ],
-      "command": "bash"
-    },
-    "sequential-thinking": {
-      "args": [
-        "-lc",
-        "ROOT=\"${META_ROOT:-/home/flexnetos/FlexNetOS}\"; export META_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @modelcontextprotocol/server-sequential-thinking"
-      ],
-      "command": "bash"
     }
   }
 }
