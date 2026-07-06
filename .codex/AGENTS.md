@@ -11,7 +11,7 @@ This supplements the root `AGENTS.md` with the repo-local Codex baseline. The ro
 ## MCP Baseline
 
 Treat `.codex/config.toml` as the default ECC-safe baseline for work in this repository.
-The project baseline enables GitHub, Context7, Exa, Memory, Playwright, Sequential Thinking, and n8n-mcp. Keep MCP definitions synchronized through `agent-env.yaml`/`agent-skills`, not ad-hoc edits.
+The project baseline enables GitHub, Context7, Exa, Memory, Playwright, and Sequential Thinking. Keep MCP definitions synchronized through `agent-env.yaml`/`agent-skills`, not ad-hoc edits.
 This repo-local baseline is not authority to expand the active home Codex
 runtime with extra plugin marketplaces, duplicate command inventories, or
 cached/not-installed plugin families. Do not infer that `superhuman`,

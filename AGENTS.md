@@ -74,6 +74,7 @@ bash ci/gates/p7.sh             # .handoff Tier-A p7-conformance: schema tags + 
 bash ci/gates/kdf-feature-off.sh # test-speed Argon2 floor must be off by default (TASK-0032)
 bash ci/gates/agent-env.sh      # agent-env.yaml ↔ agent-env.lock no-drift (TASK-0040)
 bash ci/gates/meta-local-policy.sh # active install sources target $META_ROOT FHS/XDG only; Yazelix real-home Nix profile preserved
+bash ci/gates/yazelix-codex-runtime.sh # Yazelix/Codex runtime ownership: no retired MCPs, stale roots, or user-bin Codex shadows
 bash ci/gates/cargo-audit.sh    # RustSec advisories; fails vulnerable tonic/hyper regressions
 bash ci/gates/loop-state.sh     # forge-loop counter integrity: ints, cadence>=1, cycles_total monotonic & >= last_wrapup (TASK-0041)
 bash ci/gates/harness-scripts.sh # Feature-Forge harness tooling safety (merge-driver + reaper + loop-state-gate invariants)
@@ -167,9 +168,7 @@ JS imports) — those are **wrong for this repo**.
     binary and profile-owned runtime-config location model as Yazelix. This is
     not limited to `codex`: it includes `rtk`, `git-kb`, terminal helpers,
     package-manager shims, MCP/plugin launchers, and any other command exposed
-    to the active runtime. User-bin shadows, repo-cache materializations, temp
-    plugin bundles, marketplace caches, and generated-output files are never
-    alternate active locations. No exceptions.
+    to the active runtime. User-bin shadows, repo-cache materializations, temp plugin bundles, marketplace caches, and generated-output files are never alternate active locations. No exceptions.
   - The user config tree is the main editable input surface, including
     `settings.jsonc` and managed overrides, per the Yazelix customization and
     POSIX XDG docs.
