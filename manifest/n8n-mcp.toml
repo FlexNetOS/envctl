@@ -2,7 +2,8 @@
 #
 # This is an EXTERNAL Node tool, intentionally kept OUT of envctl's trust boundary
 # (no Cargo dependency — it enters nothing into the resolved Cargo graph, exactly
-# like the AI CLIs and podman). It is installed/verified via npm under node-via-bun.
+# like the AI CLIs and podman). It is launched through the meta-owned bunx wrapper,
+# with node-real still present for V8-heavy tools that need Node semantics.
 #
 # Two tiers:
 #   1. docs-only (key-less): 7 core documentation tools work with NO N8N_API_* env.
@@ -16,19 +17,21 @@
 id = "n8n-mcp"
 name = "n8n MCP server (docs-only key-less)"
 description = "External Node MCP server (npm n8n-mcp) giving agents n8n workflow docs/tools. Docs-only tier is key-less; live management tier needs a running n8n + the n8n-api-key secret (human gate)."
-requires = ["node-via-bun"]
+requires = ["bun", "node-real"]
 
-# Present iff the bin resolves (global install) OR is otherwise on PATH.
+# Present iff the meta-owned bunx launcher exists. The package itself is resolved
+# at launch time via bunx, avoiding user-global npm state and bare npx.
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$META_ROOT/.toolchains/.bun/bin:$META_ROOT/.local/bin:$PATH\"; npm ls -g n8n-mcp >/dev/null 2>&1 || command -v n8n-mcp >/dev/null"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$M/usr/bin:$M/.toolchains/.bun/bin:$M/.toolchains/node/bin:$PATH\"; [ -x \"$M/usr/bin/bunx\" ]"]
 
-# Idempotent global install via npm (node provided by node-via-bun).
+# Idempotent install: bun owns package resolution at launch, so only the launcher
+# needs to be present.
 [component.install]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$META_ROOT/.toolchains/.bun/bin:$META_ROOT/.local/bin:$PATH\"; npm i -g n8n-mcp"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$M/usr/bin:$M/.toolchains/.bun/bin:$M/.toolchains/node/bin:$PATH\"; [ -x \"$M/usr/bin/bunx\" ]"]
 
 # KEY-LESS, fail-closed verify: prove the bin resolves AND speaks MCP in docs-only
 # mode WITHOUT the human key. `--version` is NOT a real flag (it boots the stdio
@@ -40,16 +43,16 @@ args = ["-lc", "export PATH=\"$META_ROOT/.toolchains/.bun/bin:$META_ROOT/.local/
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$META_ROOT/.toolchains/.bun/bin:$META_ROOT/.local/bin:$PATH\"; printf '%s\\n' '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2024-11-05\",\"capabilities\":{},\"clientInfo\":{\"name\":\"envctl-verify\",\"version\":\"0\"}}}' | timeout 60 npx -y n8n-mcp 2>/dev/null | grep -q 'n8n-documentation-mcp'"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$M/usr/bin:$M/.toolchains/.bun/bin:$M/.toolchains/node/bin:$PATH\"; printf '%s\\n' '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"initialize\",\"params\":{\"protocolVersion\":\"2024-11-05\",\"capabilities\":{},\"clientInfo\":{\"name\":\"envctl-verify\",\"version\":\"0\"}}}' | timeout 60 \"$M/usr/bin/bunx\" n8n-mcp 2>/dev/null | grep -q 'n8n-documentation-mcp'"]
 
-# Idempotent repair: reinstall.
+# Idempotent repair: ensure bunx exists; package resolution remains launch-time.
 [component.fix]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$META_ROOT/.toolchains/.bun/bin:$META_ROOT/.local/bin:$PATH\"; npm i -g n8n-mcp"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export PATH=\"$M/usr/bin:$M/.toolchains/.bun/bin:$M/.toolchains/node/bin:$PATH\"; [ -x \"$M/usr/bin/bunx\" ]"]
 
-# Remove the global install.
+# Nothing user-global is installed by this component.
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "export PATH=\"$META_ROOT/.toolchains/.bun/bin:$META_ROOT/.local/bin:$PATH\"; npm rm -g n8n-mcp"]
+args = ["-lc", "true"]

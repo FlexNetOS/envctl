@@ -22,7 +22,7 @@ export HOME="$META_ROOT"
 META_BASHRC="$META_ROOT/.bashrc"
 touch "$META_BASHRC" 2>/dev/null || true
 
-LOG="$META_ROOT/.local/state/envctl/yazelix-setup.log"
+LOG="$META_ROOT/var/lib/envctl/yazelix-setup.log"
 mkdir -p "$(dirname "$LOG")"
 AUTOSTART="$META_ROOT/.config/autostart/yazelix-setup.desktop"
 exec > >(tee -a "$LOG") 2>&1
@@ -48,7 +48,7 @@ cat <<'BANNER'
   └────────────────────────────────────────────────────────┘
 
   Downloads a lot of tooling; needs the internet (~15–30 min).
-  Safe to re-run. Full log: $META_ROOT/.local/state/envctl/yazelix-setup.log
+  Safe to re-run. Full log: $META_ROOT/var/lib/envctl/yazelix-setup.log
 
 BANNER
 read -rp "  Press Enter to begin (Ctrl-C to cancel)… " _ || true
@@ -78,13 +78,14 @@ run "Nerd Fonts (JetBrainsMono, FiraCode)" bash -c '
 # "node via Bun": Bun is the JS runtime AND package manager. We install Bun
 # first, then expose `node` as a symlink to Bun — Bun runs in Node-compat mode
 # when invoked as `node`, so `#!/usr/bin/env node` shebangs resolve to Bun and
-# no separate Node.js install is needed. Codex/Gemini are installed with
-# `bun install -g` (their bins run via Bun). Claude/Kimi/Devin use their own
-# native installers (independent of Node).
+# no separate Node.js install is needed. Gemini is installed with Bun. Codex is
+# the envctl-managed Rust release/toolchain path; npm/napi.rs compatibility is
+# deliberately deferred unless upstream needs it later. Claude/Kimi/Devin use
+# their own native installers (independent of Node).
 run "Bun (JS runtime + package manager)" bash -c 'export BUN_INSTALL="$META_ROOT/.toolchains/.bun"; curl -fsSL https://bun.sh/install | bash'
-export BUN_INSTALL="$META_ROOT/.toolchains/.bun"; export PATH="$BUN_INSTALL/bin:$META_ROOT/.local/bin:$PATH"
+export BUN_INSTALL="$META_ROOT/.toolchains/.bun"; export PATH="$BUN_INSTALL/bin:$META_ROOT/usr/bin:$PATH"
 grep -q '.bun/bin' "$META_BASHRC" 2>/dev/null || \
-  echo 'export PATH="$META_ROOT/.toolchains/.bun/bin:$META_ROOT/.local/bin:$PATH"' >> "$META_BASHRC"
+  echo 'export PATH="$META_ROOT/.toolchains/.bun/bin:$META_ROOT/usr/bin:$PATH"' >> "$META_BASHRC"
 # Provide `node` via Bun (Bun detects argv0=node and runs in Node-compat mode).
 if command -v bun >/dev/null; then
   ln -sf "$(command -v bun)" "$BUN_INSTALL/bin/node"
@@ -93,9 +94,21 @@ if command -v bun >/dev/null; then
 fi
 
 run "Claude Code CLI"          bash -c 'curl -fsSL https://claude.ai/install.sh | bash'
-run "Codex + Gemini (via bun)" bash -c '
+run "Gemini CLI (via bun)" bash -c '
   export BUN_INSTALL="$META_ROOT/.toolchains/.bun"; export PATH="$BUN_INSTALL/bin:$PATH"
-  bun install -g @openai/codex @google/gemini-cli'
+  bun install -g @google/gemini-cli'
+run "Codex CLI (Rust via envctl)" bash -c '
+  set -e
+  export PATH="$META_ROOT/usr/bin:$META_ROOT/.local/bin:$PATH"
+  if command -v envctl >/dev/null 2>&1; then
+    envctl install codex-cli
+  elif [ -x "$META_ROOT/envctl/target/release/envctl" ]; then
+    "$META_ROOT/envctl/target/release/envctl" install codex-cli
+  elif [ -x "$META_ROOT/envctl/target/debug/envctl" ]; then
+    "$META_ROOT/envctl/target/debug/envctl" install codex-cli
+  else
+    echo "envctl binary not found; skip Codex here and run: envctl install codex-cli" >&2
+  fi'
 run "Kimi CLI"                 bash -c 'curl -LsSf https://code.kimi.com/install.sh | bash'
 run "Devin CLI"                bash -c 'curl -fsSL https://cli.devin.ai/install.sh | bash'
 
@@ -187,8 +200,11 @@ EOF
     "$META_ROOT/.venvs/torch/bin/pip" install --upgrade pip
     "$META_ROOT/.venvs/torch/bin/pip" install torch torchvision --index-url https://download.pytorch.org/whl/cu132'
 
-  if command -v nvidia-smi >/dev/null && nvidia-smi -L >/dev/null 2>&1; then
-    c_ok "$(nvidia-smi -L 2>/dev/null | head -n2 | tr '\n' ';')"
+  if [ -r /proc/driver/nvidia/version ]; then
+    c_ok "NVIDIA driver active (/proc/driver/nvidia/version)"
+    if command -v nvidia-smi >/dev/null; then
+      nvidia-smi -L 2>/dev/null | head -n2 | tr '\n' ';' | sed 's/^/  /'
+    fi
   else
     c_warn "NVIDIA driver not active yet — REBOOT for it to load, then test cuda-oxide"
   fi
@@ -232,9 +248,9 @@ run "uv (Python toolchain)" bash -c 'curl -LsSf https://astral.sh/uv/install.sh 
 # also installed as a one-shot autostart that re-runs on the next login and
 # self-disables once the driver is live and the checks pass.
 if lspci 2>/dev/null | grep -qiE 'nvidia'; then
-  mkdir -p "$META_ROOT/.local/bin" "$META_ROOT/.config/autostart"
+  mkdir -p "$META_ROOT/usr/bin" "$META_ROOT/.config/autostart"
 
-  cat > "$META_ROOT/.local/bin/yazelix-gpu-verify.sh" <<'YZXGPU'
+  cat > "$META_ROOT/usr/bin/yazelix-gpu-verify.sh" <<'YZXGPU'
 #!/usr/bin/env bash
 # GPU stack smoke test: NVIDIA driver, PyTorch CUDA (+ sm_120 kernel), cuda-oxide,
 # and Podman CDI. Auto-runs once after the post-install reboot, then self-disables.
@@ -249,9 +265,12 @@ warn(){ printf '\033[1;33m  ! %s\033[0m\n' "$*"; }
 echo; echo "================  GPU stack verification  ================"; echo
 
 DRIVER_OK=0
-if command -v nvidia-smi >/dev/null && nvidia-smi -L >/dev/null 2>&1; then
-  nvidia-smi -L | sed 's/^/  /'; ok "NVIDIA driver active"; DRIVER_OK=1
-  nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader 2>/dev/null | sed 's/^/  /'
+if [ -r /proc/driver/nvidia/version ]; then
+  ok "NVIDIA driver active (/proc/driver/nvidia/version)"; DRIVER_OK=1
+  if command -v nvidia-smi >/dev/null; then
+    nvidia-smi -L 2>/dev/null | sed 's/^/  /'
+    nvidia-smi --query-gpu=name,driver_version,memory.total --format=csv,noheader 2>/dev/null | sed 's/^/  /'
+  fi
 else
   no "NVIDIA driver not active yet — REBOOT, then this re-runs automatically at login"
 fi
@@ -294,20 +313,20 @@ echo
 if [ "$DRIVER_OK" = 1 ]; then
   rm -f "$AUTOSTART" 2>/dev/null && ok "Verification complete — disabled the post-reboot auto-run."
 else
-  warn "Re-run after reboot:  $META_ROOT/.local/bin/yazelix-gpu-verify.sh"
+  warn "Re-run after reboot:  $META_ROOT/usr/bin/yazelix-gpu-verify.sh"
 fi
 echo "=========================================================="
 read -rp "  Press Enter to close… " _ 2>/dev/null || true
 YZXGPU
-  chmod +x "$META_ROOT/.local/bin/yazelix-gpu-verify.sh"
+  chmod +x "$META_ROOT/usr/bin/yazelix-gpu-verify.sh"
 
   # Terminal launcher for the post-reboot autostart (same fallback chain as the wizard).
-  cat > "$META_ROOT/.local/bin/yazelix-gpu-verify-launch.sh" <<'YZXGPUL'
+  cat > "$META_ROOT/usr/bin/yazelix-gpu-verify-launch.sh" <<'YZXGPUL'
 #!/usr/bin/env bash
 META_ROOT="${META_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"
 export META_ROOT
 export HOME="$META_ROOT"
-V="$META_ROOT/.local/bin/yazelix-gpu-verify.sh"
+V="$META_ROOT/usr/bin/yazelix-gpu-verify.sh"
 [ -x "$V" ] || exit 0
 if   command -v ghostty        >/dev/null; then exec ghostty -e bash -lc "$V"
 elif command -v kgx            >/dev/null; then exec kgx -- bash -lc "$V"
@@ -315,7 +334,7 @@ elif command -v gnome-terminal >/dev/null; then exec gnome-terminal -- bash -lc 
 elif command -v xterm          >/dev/null; then exec xterm -e bash -lc "$V"
 else bash -lc "$V"; fi
 YZXGPUL
-  chmod +x "$META_ROOT/.local/bin/yazelix-gpu-verify-launch.sh"
+  chmod +x "$META_ROOT/usr/bin/yazelix-gpu-verify-launch.sh"
 
   # One-shot autostart: re-runs the smoke test on next login (post-reboot).
   cat > "$META_ROOT/.config/autostart/yazelix-gpu-verify.desktop" <<EOF
@@ -323,7 +342,7 @@ YZXGPUL
 Type=Application
 Name=GPU Stack Verification
 Comment=Verifies NVIDIA driver, PyTorch CUDA, cuda-oxide, Podman GPU after reboot
-Exec=$META_ROOT/.local/bin/yazelix-gpu-verify-launch.sh
+Exec=$META_ROOT/usr/bin/yazelix-gpu-verify-launch.sh
 Terminal=false
 X-GNOME-Autostart-enabled=true
 X-GNOME-Autostart-Delay=12
@@ -331,7 +350,7 @@ EOF
 
   # Run it once now (pre-reboot: confirms installs; driver shows as not-yet-active).
   c_step "GPU stack smoke test (initial run)"
-  bash "$META_ROOT/.local/bin/yazelix-gpu-verify.sh" </dev/null || true
+  bash "$META_ROOT/usr/bin/yazelix-gpu-verify.sh" </dev/null || true
 fi
 
 # --- 4. Nix (Determinate Systems installer, flakes enabled) ------------------
@@ -381,7 +400,7 @@ if command -v nix >/dev/null; then
   load_nix
   # NOTE: settings.jsonc is intentionally NOT pre-written here. yazelix seeds its
   # own full default (all options) on first launch — letting it do so avoids any
-  # conflict with how yazelix installs. The optional helper under $META_ROOT/.local/bin/
+  # conflict with how yazelix installs. The optional helper under $META_ROOT/usr/bin/
   # yazelix-config.sh can restore that default later if it ever goes missing.
   # Desktop launcher entry + health check (per yazelix docs).
   command -v yzx >/dev/null && run "yzx desktop install" bash -c 'yzx desktop install' || c_warn "yzx not on PATH yet (open a new shell)"
@@ -454,7 +473,7 @@ cat <<'NEXT'
     • Devin:         cd <project> && devin
     • rtk:           rtk gain ; rtk init -g
     • GPU verify:    runs automatically after you REBOOT (auto-disables once OK);
-                     or manually: $META_ROOT/.local/bin/yazelix-gpu-verify.sh
+                     or manually: $META_ROOT/usr/bin/yazelix-gpu-verify.sh
     • cuda-oxide:    cargo oxide run <example>   (reboot first if driver just installed)
     • GPU check:     nvidia-smi
     • PyTorch:       source $META_ROOT/.venvs/torch/bin/activate ; python -c 'import torch;print(torch.cuda.is_available())'
@@ -467,6 +486,6 @@ cat <<'NEXT'
     • yazelix help:  yzx help ; yzx doctor
     • home-manager:  home-manager init --switch   (optional, to go declarative)
 
-  Full log: $META_ROOT/.local/state/envctl/yazelix-setup.log
+  Full log: $META_ROOT/var/lib/envctl/yazelix-setup.log
 NEXT
 read -rp "  Press Enter to close… " _ || true

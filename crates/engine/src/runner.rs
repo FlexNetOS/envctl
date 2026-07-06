@@ -4,8 +4,8 @@
 //!
 //! Phase 2: action phases (Install/Fix/Remove) now LINE-STREAM stdout/stderr as
 //! `Event::Log` (so the CLI/GUI show progress live during a long apt/nix/CUDA run)
-//! AND tee every line to `$META_ROOT/.local/state/envctl/envctl.log` (the analogue of
-//! `$META_ROOT/.local/state/envctl/yazelix-setup.log`, survives a crash). Read-only phases (Detect/Verify)
+//! AND tee every line to `$META_ROOT/var/lib/envctl/envctl.log` (the analogue of
+//! `$META_ROOT/var/lib/envctl/yazelix-setup.log`, survives a crash). Read-only phases (Detect/Verify)
 //! capture quietly — only the exit code matters, and leaking their output would
 //! corrupt the CLI table / `--json`. Every hook is bounded by a per-phase timeout
 //! (the process is killed on expiry) so a stuck installer can't wedge the worker.
@@ -255,14 +255,17 @@ fn wait_timeout(child: &mut Child, dur: Duration, pid: u32) -> (Option<i32>, boo
 /// Kill the child's whole process group (it is the group leader via setsid).
 fn kill_group(pid: u32) {
     if let Some(p) = rustix::process::Pid::from_raw(pid as i32) {
-        let _ = rustix::process::kill_process_group(p, rustix::process::Signal::Kill);
+        // If the child never became a group leader (for example, if pre_exec
+        // failed before setsid() took effect), fall back to killing the child
+        // PID directly so a wedged probe cannot linger.
+        if rustix::process::kill_process_group(p, rustix::process::Signal::Kill).is_err() {
+            let _ = rustix::process::kill_process(p, rustix::process::Signal::Kill);
+        }
     }
 }
 
 fn open_run_log() -> Option<File> {
-    let dir = crate::layout::MetaLayout::from_env_or_default()
-        .state()
-        .join("envctl");
+    let dir = crate::layout::MetaLayout::from_env_or_default().state();
     std::fs::create_dir_all(&dir).ok()?;
     OpenOptions::new()
         .create(true)
@@ -364,10 +367,11 @@ fn build_command(hook: &Hook) -> Command {
 ///
 /// A large amount of legacy shell still spells exposure paths as
 /// a user-local prefix; envctl's contract is stricter than that: installs belong
-/// under `$META_ROOT/.local/...`, never the operator's user-global
-/// real user-home local tree. Legacy scripts that use HOME land in `$META_ROOT/.local`
-/// immediately while preserving the real home as an
-/// explicit escape hatch for non-install host integration.
+/// under `$META_ROOT`'s FHS/XDG layout (`usr`, `etc`, `var`, `opt`, and meta-XDG
+/// roots), never the operator's user-global real user-home local tree. Legacy
+/// scripts that use HOME land in `$META_ROOT`, with `$META_ROOT/.local` reserved
+/// for XDG compatibility and the real home exposed only as an explicit escape hatch
+/// for non-install host integration.
 fn enforced_meta_env(mut hook_env: Vec<(String, String)>) -> Vec<(String, String)> {
     let layout = MetaLayout::from_env_or_default();
     let real_home = std::env::var("HOME").unwrap_or_default();
@@ -389,22 +393,23 @@ fn enforced_meta_env(mut hook_env: Vec<(String, String)>) -> Vec<(String, String
     }
     env.push((
         "XDG_CONFIG_HOME".to_string(),
-        layout.meta_root().join(".config").display().to_string(),
+        layout.xdg_config_home().display().to_string(),
     ));
     env.push((
         "XDG_DATA_HOME".to_string(),
-        layout.share().display().to_string(),
+        layout.xdg_data_home().display().to_string(),
     ));
     env.push((
         "XDG_STATE_HOME".to_string(),
-        layout.state().display().to_string(),
+        layout.xdg_state_home().display().to_string(),
     ));
     env.push((
         "XDG_CACHE_HOME".to_string(),
-        layout.cache().display().to_string(),
+        layout.xdg_cache_home().display().to_string(),
     ));
 
     let meta_bin = layout.bin().display().to_string();
+    let compat_local_bin = layout.local_bin().display().to_string();
     let legacy_cargo = layout
         .legacy_toolchains()
         .join("cargo/bin")
@@ -426,10 +431,34 @@ fn enforced_meta_env(mut hook_env: Vec<(String, String)>) -> Vec<(String, String
         })
         .map(str::to_string)
         .collect::<Vec<_>>();
-    let mut path = vec![meta_bin, legacy_cargo];
+    let mut path = vec![meta_bin, compat_local_bin, legacy_cargo];
     path.extend(filtered);
     env.push(("PATH".to_string(), path.join(":")));
     env
+}
+
+/// Resolve `(program, leading-args)` for an optional non-interactive `sudo -n`
+/// prefix. Without sudo the program is the command itself and there are no leading
+/// args; with sudo the program is `sudo` and the command becomes its first arg.
+fn sudo_wrap(command: String, needs_sudo: bool) -> (String, Vec<String>) {
+    if needs_sudo {
+        ("sudo".to_string(), vec!["-n".to_string(), command])
+    } else {
+        (command, Vec::new())
+    }
+}
+
+fn env_pairs(env: &BTreeMap<String, String>) -> Vec<(String, String)> {
+    env.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
+}
+
+/// Never executes; reports every hook as `DryRun`. Used by tests + previews.
+pub struct DryRunRunner;
+
+impl HookRunner for DryRunRunner {
+    fn run(&self, comp: &str, phase: Phase, _h: &Hook, _d: bool, _sink: &EventSink) -> OpResult {
+        mk(comp, phase, OpStatus::DryRun, None, "dry-run")
+    }
 }
 
 #[cfg(test)]
@@ -476,35 +505,25 @@ mod tests {
         assert_eq!(env_value(&env, "HOME"), "/workspace/meta");
         let path = env_value(&env, "PATH");
         let entries = path.split(':').collect::<Vec<_>>();
-        assert_eq!(entries[0], "/workspace/meta/.local/bin");
-        assert_eq!(entries[1], "/workspace/meta/.toolchains/cargo/bin");
+        assert_eq!(entries[0], "/workspace/meta/usr/bin");
+        assert_eq!(entries[1], "/workspace/meta/.local/bin");
+        assert_eq!(entries[2], "/workspace/meta/.toolchains/cargo/bin");
+        assert_eq!(
+            env_value(&env, "XDG_CONFIG_HOME"),
+            "/workspace/meta/.config"
+        );
+        assert_eq!(
+            env_value(&env, "XDG_DATA_HOME"),
+            "/workspace/meta/.local/share"
+        );
+        assert_eq!(
+            env_value(&env, "XDG_STATE_HOME"),
+            "/workspace/meta/.local/state"
+        );
+        assert_eq!(env_value(&env, "XDG_CACHE_HOME"), "/workspace/meta/.cache");
         assert!(entries.contains(&"/usr/bin"));
         assert!(!entries.contains(&"/home/alice/.local/bin"));
         assert!(!entries.contains(&"/home/alice/.cargo/bin"));
         assert!(!entries.contains(&"/home/alice/.nix-profile/bin"));
-    }
-}
-
-/// Resolve `(program, leading-args)` for an optional non-interactive `sudo -n`
-/// prefix. Without sudo the program is the command itself and there are no leading
-/// args; with sudo the program is `sudo` and the command becomes its first arg.
-fn sudo_wrap(command: String, needs_sudo: bool) -> (String, Vec<String>) {
-    if needs_sudo {
-        ("sudo".to_string(), vec!["-n".to_string(), command])
-    } else {
-        (command, Vec::new())
-    }
-}
-
-fn env_pairs(env: &BTreeMap<String, String>) -> Vec<(String, String)> {
-    env.iter().map(|(k, v)| (k.clone(), v.clone())).collect()
-}
-
-/// Never executes; reports every hook as `DryRun`. Used by tests + previews.
-pub struct DryRunRunner;
-
-impl HookRunner for DryRunRunner {
-    fn run(&self, comp: &str, phase: Phase, _h: &Hook, _d: bool, _sink: &EventSink) -> OpResult {
-        mk(comp, phase, OpStatus::DryRun, None, "dry-run")
     }
 }

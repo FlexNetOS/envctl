@@ -1,0 +1,202 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-045_RUN_REPLAY",
+  "generated_at": "2026-07-05T05:27:46+00:00",
+  "depends_on": [
+    "REQ-044_INSTALL_BOOTSTRAP",
+    "REQ-027_ENVCTL_REPLAY_ENGINE",
+    "APPROVAL-REQ-045_RUN_REPLAY"
+  ],
+  "source_files": [
+    "execution-framework/generated/execution_manifest.json",
+    "execution-framework/generated/execution_packets/REQ-045_RUN_REPLAY.json",
+    "execution-framework/docs/ENVCTL_REPLAY_ENGINE.md",
+    "execution-framework/docs/ENVCTL_ROLLBACK_CHECKPOINTS.md",
+    "execution-framework/docs/INSTALL_BOOTSTRAP.md"
+  ],
+  "convenience_templates": [
+    {
+      "path": "execution-templates/README.md",
+      "writable_in_this_runtime": false,
+      "role": "read-only top-level convenience copy index"
+    },
+    {
+      "path": "execution-templates/EXECUTION_TEMPLATE_INDEX.json",
+      "writable_in_this_runtime": false,
+      "role": "read-only top-level convenience template list"
+    }
+  ],
+  "command_templates": [
+    {
+      "command_id": "compute-initial-plan",
+      "title": "Compute the current runnable plan from the task graph",
+      "cwd": "${PROMPT_PACKAGE_DIR:-/path/to/envctl-db-nu-plugin-migration-automation-package}/execution-framework",
+      "argv": [
+        "python3",
+        "scripts/goal_loop.py",
+        "generated/task_graph.csv"
+      ],
+      "shell": "bash",
+      "purpose": "Regenerate runnable and approval-blocked packet state before dispatching replay-related work.",
+      "requires": [
+        "codex",
+        "python3",
+        "bash"
+      ],
+      "blocked_inputs": [
+        "**/.env",
+        "**/secrets/**",
+        "**/private_keys/**",
+        "**/*.pem",
+        "**/*.key"
+      ]
+    },
+    {
+      "command_id": "dispatch-approved-run-replay-packet",
+      "title": "Dispatch the approved REQ-045 execution packet",
+      "cwd": "${PROMPT_PACKAGE_DIR:-/path/to/envctl-db-nu-plugin-migration-automation-package}/execution-framework",
+      "argv": [
+        "bash",
+        "-lc",
+        "codex exec < generated/execution_packets/REQ-045_RUN_REPLAY.json"
+      ],
+      "shell": "bash",
+      "purpose": "Run the bounded REQ-045 packet after its approval artifact has been recorded.",
+      "requires": [
+        "codex",
+        "python3",
+        "bash"
+      ],
+      "blocked_inputs": [
+        "**/.env",
+        "**/secrets/**",
+        "**/private_keys/**",
+        "**/*.pem",
+        "**/*.key"
+      ]
+    },
+    {
+      "command_id": "replay-dry-run",
+      "title": "Run deterministic envctl replay dry-run",
+      "cwd": "${PROMPT_PACKAGE_DIR:-/path/to/envctl-db-nu-plugin-migration-automation-package}/execution-framework",
+      "argv": [
+        "envctl",
+        "replay",
+        "dry-run",
+        "--run-id",
+        "run-req027-replay",
+        "--replay-id",
+        "replay-req045-dry-run",
+        "--requested-by",
+        "helper-replay-template-01",
+        "--operation-ids",
+        "op-req027-replay-hash",
+        "--reason",
+        "verify deterministic replay inputs before integration validation"
+      ],
+      "shell": "bash",
+      "purpose": "Replay the deterministic operation from REQ-027 without mutating targets.",
+      "requires": [
+        "codex",
+        "python3",
+        "bash"
+      ],
+      "blocked_inputs": [
+        "**/.env",
+        "**/secrets/**",
+        "**/private_keys/**",
+        "**/*.pem",
+        "**/*.key"
+      ]
+    },
+    {
+      "command_id": "replay-apply-blocked-check",
+      "title": "Prove apply replay stays approval-gated",
+      "cwd": "${PROMPT_PACKAGE_DIR:-/path/to/envctl-db-nu-plugin-migration-automation-package}/execution-framework",
+      "argv": [
+        "envctl",
+        "replay",
+        "apply",
+        "--run-id",
+        "run-req027-replay",
+        "--replay-id",
+        "replay-req045-apply-blocked",
+        "--requested-by",
+        "helper-replay-template-01",
+        "--operation-ids",
+        "op-req027-manual-cutover",
+        "--reason",
+        "prove approval-gated apply replay remains blocked without operator release"
+      ],
+      "shell": "bash",
+      "purpose": "Exercise the high-risk replay path in a way that must remain blocked until an operator approval exists.",
+      "requires": [
+        "codex",
+        "python3",
+        "bash"
+      ],
+      "blocked_inputs": [
+        "**/.env",
+        "**/secrets/**",
+        "**/private_keys/**",
+        "**/*.pem",
+        "**/*.key"
+      ]
+    },
+    {
+      "command_id": "verify-rollback-checkpoints",
+      "title": "Validate rollback checkpoint safety checks",
+      "cwd": "${PROMPT_PACKAGE_DIR:-/path/to/envctl-db-nu-plugin-migration-automation-package}/execution-framework",
+      "argv": [
+        "python3",
+        "scripts/verify_rollback_checkpoints.py"
+      ],
+      "shell": "bash",
+      "purpose": "Confirm rollback handles and checkpoint protections remain valid before replay execution advances.",
+      "requires": [
+        "codex",
+        "python3",
+        "bash"
+      ],
+      "blocked_inputs": [
+        "**/.env",
+        "**/secrets/**",
+        "**/private_keys/**",
+        "**/*.pem",
+        "**/*.key"
+      ]
+    },
+    {
+      "command_id": "verify-replay-validation",
+      "title": "Validate replay engine and task readiness",
+      "cwd": "${PROMPT_PACKAGE_DIR:-/path/to/envctl-db-nu-plugin-migration-automation-package}/execution-framework",
+      "argv": [
+        "bash",
+        "-lc",
+        "python3 scripts/verify_replay_engine.py && python3 scripts/verify_history_and_completeness.py"
+      ],
+      "shell": "bash",
+      "purpose": "Re-run replay verification plus completeness checks after command-template generation.",
+      "requires": [
+        "codex",
+        "python3",
+        "bash"
+      ],
+      "blocked_inputs": [
+        "**/.env",
+        "**/secrets/**",
+        "**/private_keys/**",
+        "**/*.pem",
+        "**/*.key"
+      ]
+    }
+  ],
+  "proof_contract": {
+    "proof_required": true,
+    "proof_uri": "execution-framework/proof_records/REQ-045_RUN_REPLAY.proof.json",
+    "heartbeat_file": "execution-framework/state/REQ-045_RUN_REPLAY.heartbeat.json",
+    "logs_uri": "execution-framework/logs/REQ-045_RUN_REPLAY.log",
+    "completion_gate": "proof exists and verification output passes"
+  },
+  "rollback_point": "history/pre_execution_framework_manifest.json"
+}

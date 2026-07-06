@@ -1,0 +1,66 @@
+{
+  "packet_schema_version": "1.0",
+  "task_id": "EF-006_TASK_GRAPH_TO_PACKETS",
+  "parent_id": "",
+  "phase": "00-framework",
+  "title": "Generate JSON execution packets",
+  "goal": "Run required packetizer command",
+  "owner_lane": "lane_e_verification",
+  "owner_agent": "packetizer-agent",
+  "helper_id": "helper-packet-01",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "python3",
+  "shell_mode": "workspace-write",
+  "repo_target": "filesystem",
+  "repo_path": "..",
+  "filesystem_scope": "execution-framework/generated",
+  "input_files": [
+    "generated/task_graph.csv"
+  ],
+  "target_files": [
+    "generated/execution_manifest.json",
+    "generated/execution_packets/*.json"
+  ],
+  "target_artifacts": [
+    "execution packets"
+  ],
+  "allowed_paths": [
+    "execution-framework/generated/**",
+    "execution-framework/proof_records/**"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "depends_on": [
+    "EF-005_VALIDATE_TASK_GRAPH"
+  ],
+  "blocks": [
+    "EF-007_GOAL_LOOP"
+  ],
+  "parallel_group": "framework_verification",
+  "can_run_parallel": false,
+  "max_parallel": 1,
+  "start_after": "",
+  "priority": 60,
+  "execution_cell": "packetize",
+  "required_tools": [
+    "python3"
+  ],
+  "command_template": "python3 scripts/task_graph_to_packets.py generated/task_graph.csv",
+  "verification_command": "test -f generated/execution_manifest.json && test -d generated/execution_packets",
+  "completion_gate": "manifest and packets exist",
+  "proof_required": true,
+  "proof_uri": "proof_records/EF-006_TASK_GRAPH_TO_PACKETS.proof.json",
+  "heartbeat_file": "state/EF-006_TASK_GRAPH_TO_PACKETS.heartbeat.json",
+  "logs_uri": "logs/EF-006_TASK_GRAPH_TO_PACKETS.log",
+  "rollback_plan": "Use history/pre_execution_framework_manifest.json and remove only files added by this task unless a task-specific rollback is listed.",
+  "risk_level": "medium",
+  "human_approval_required": false,
+  "notes": "Required missing-execution command.",
+  "source_graph_uri": "generated/task_graph.csv",
+  "generated_at": "2026-07-05T05:39:53+00:00"
+}

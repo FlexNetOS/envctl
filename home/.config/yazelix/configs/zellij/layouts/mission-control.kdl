@@ -6,7 +6,149 @@ layout {
             args "overview"
         }
     }
-    tab name="meta-core (1)" {
+    tab name="ops" {
+        pane name="flexnetos_runner" cwd="/home/drdave/Desktop/meta/flexnetos_runner" command="envctl-dashboard-pane" {
+            args "flexnetos_runner"
+        }
+        pane name="flexnetos_github_app" cwd="/home/drdave/Desktop/meta/flexnetos_github_app" command="envctl-dashboard-pane" {
+            args "flexnetos_github_app"
+        }
+    }
+    tab name="ai (1)" {
+        pane name="agent" cwd="/home/drdave/Desktop/meta/agent" command="envctl-dashboard-pane" {
+            args "agent"
+        }
+        pane name="atc" cwd="/home/drdave/Desktop/meta/atc" command="envctl-dashboard-pane" {
+            args "atc"
+        }
+        pane name="claude-plugins" cwd="/home/drdave/Desktop/meta/claude-plugins" command="envctl-dashboard-pane" {
+            args "claude-plugins"
+        }
+        pane name="claude-plugin" cwd="/home/drdave/Desktop/meta/claude-plugin" command="envctl-dashboard-pane" {
+            args "claude-plugin"
+        }
+        pane name="copilot-plugin" cwd="/home/drdave/Desktop/meta/copilot-plugin" command="envctl-dashboard-pane" {
+            args "copilot-plugin"
+        }
+        pane name="claude-code" cwd="/home/drdave/Desktop/meta/claude-code" command="envctl-dashboard-pane" {
+            args "claude-code"
+        }
+    }
+    tab name="ai (2)" {
+        pane name="codex" cwd="/home/drdave/Desktop/meta/codex" command="envctl-dashboard-pane" {
+            args "codex"
+        }
+        pane name="oh-my-claudecode" cwd="/home/drdave/Desktop/meta/oh-my-claudecode" command="envctl-dashboard-pane" {
+            args "oh-my-claudecode"
+        }
+        pane name="oh-my-pi" cwd="/home/drdave/Desktop/meta/oh-my-pi" command="envctl-dashboard-pane" {
+            args "oh-my-pi"
+        }
+        pane name="ECC" cwd="/home/drdave/Desktop/meta/ECC" command="envctl-dashboard-pane" {
+            args "ECC"
+        }
+        pane name="prompt_hub" cwd="/home/drdave/Desktop/meta/prompt_hub" command="envctl-dashboard-pane" {
+            args "prompt_hub"
+        }
+        pane name="hermes-agent" cwd="/home/drdave/Desktop/meta/hermes-agent" command="envctl-dashboard-pane" {
+            args "hermes-agent"
+        }
+    }
+    tab name="ai (3)" {
+        pane name="rtk-tokenkill" cwd="/home/drdave/Desktop/meta/rtk-tokenkill" command="envctl-dashboard-pane" {
+            args "rtk-tokenkill"
+        }
+        pane name="icm" cwd="/home/drdave/Desktop/meta/icm" command="envctl-dashboard-pane" {
+            args "icm"
+        }
+        pane name="grit" cwd="/home/drdave/Desktop/meta/grit" command="envctl-dashboard-pane" {
+            args "grit"
+        }
+        pane name="obscura" cwd="/home/drdave/Desktop/meta/obscura" command="envctl-dashboard-pane" {
+            args "obscura"
+        }
+        pane name="lifeos" cwd="/home/drdave/Desktop/meta/lifeos" command="envctl-dashboard-pane" {
+            args "lifeos"
+        }
+        pane name="harness-agent-rs" cwd="/home/drdave/Desktop/meta/harness-agent-rs" command="envctl-dashboard-pane" {
+            args "harness-agent-rs"
+        }
+    }
+    tab name="ai (4)" {
+        pane name="teri" cwd="/home/drdave/Desktop/meta/teri" command="envctl-dashboard-pane" {
+            args "teri"
+        }
+        pane name="shimmy" cwd="/home/drdave/Desktop/meta/shimmy" command="envctl-dashboard-pane" {
+            args "shimmy"
+        }
+        pane name="cellm" cwd="/home/drdave/Desktop/meta/cellm" command="envctl-dashboard-pane" {
+            args "cellm"
+        }
+        pane name="inferrs" cwd="/home/drdave/Desktop/meta/inferrs" command="envctl-dashboard-pane" {
+            args "inferrs"
+        }
+        pane name="ruvector" cwd="/home/drdave/Desktop/meta/ruvector" command="envctl-dashboard-pane" {
+            args "ruvector"
+        }
+        pane name="ruflo" cwd="/home/drdave/Desktop/meta/ruflo" command="envctl-dashboard-pane" {
+            args "ruflo"
+        }
+    }
+    tab name="ai (5)" {
+        pane name="agent-skills" cwd="/home/drdave/Desktop/meta/agent-skills" command="envctl-dashboard-pane" {
+            args "agent-skills"
+        }
+    }
+    tab name="docs" {
+        pane name="obsidian-mind" cwd="/home/drdave/Desktop/meta/obsidian-mind" command="envctl-dashboard-pane" {
+            args "obsidian-mind"
+        }
+    }
+    tab name="mcp" {
+        pane name="meta_mcp" cwd="/home/drdave/Desktop/meta/meta_mcp" command="envctl-dashboard-pane" {
+            args "meta_mcp"
+        }
+        pane name="weave" cwd="/home/drdave/Desktop/meta/weave" command="envctl-dashboard-pane" {
+            args "weave"
+        }
+        pane name="mcp_hub" cwd="/home/drdave/Desktop/meta/mcp_hub" command="envctl-dashboard-pane" {
+            args "mcp_hub"
+        }
+    }
+    tab name="tools (1)" {
+        pane name="network-control" cwd="/home/drdave/Desktop/meta/network-control" command="envctl-dashboard-pane" {
+            args "network-control"
+        }
+        pane name="meta_dashboard_cli" cwd="/home/drdave/Desktop/meta/meta_dashboard_cli" command="envctl-dashboard-pane" {
+            args "meta_dashboard_cli"
+        }
+        pane name="envctl" cwd="/home/drdave/Desktop/meta/envctl" command="envctl-dashboard-pane" {
+            args "envctl"
+        }
+        pane name="meta-plugins" cwd="/home/drdave/Desktop/meta/meta-plugins" command="envctl-dashboard-pane" {
+            args "meta-plugins"
+        }
+        pane name="lane" cwd="/home/drdave/Desktop/meta/lane" command="envctl-dashboard-pane" {
+            args "lane"
+        }
+        pane name="kasetto" cwd="/home/drdave/Desktop/meta/kasetto" command="envctl-dashboard-pane" {
+            args "kasetto"
+        }
+    }
+    tab name="tools (2)" {
+        pane name="vox" cwd="/home/drdave/Desktop/meta/vox" command="envctl-dashboard-pane" {
+            args "vox"
+        }
+        pane name="rusty-idd" cwd="/home/drdave/Desktop/meta/rusty-idd" command="envctl-dashboard-pane" {
+            args "rusty-idd"
+        }
+    }
+    tab name="orchestration" {
+        pane name="handoff" cwd="/home/drdave/Desktop/meta/handoff" command="envctl-dashboard-pane" {
+            args "handoff"
+        }
+    }
+    tab name="canon (1)" {
         pane name="loop_lib" cwd="/home/drdave/Desktop/meta/loop_lib" command="envctl-dashboard-pane" {
             args "loop_lib"
         }
@@ -26,7 +168,7 @@ layout {
             args "loop_cli"
         }
     }
-    tab name="meta-core (2)" {
+    tab name="canon (2)" {
         pane name="meta_cli" cwd="/home/drdave/Desktop/meta/meta_cli" command="envctl-dashboard-pane" {
             args "meta_cli"
         }
@@ -39,111 +181,15 @@ layout {
         pane name="meta_rust_cli" cwd="/home/drdave/Desktop/meta/meta_rust_cli" command="envctl-dashboard-pane" {
             args "meta_rust_cli"
         }
-        pane name="meta_mcp" cwd="/home/drdave/Desktop/meta/meta_mcp" command="envctl-dashboard-pane" {
-            args "meta_mcp"
-        }
-        pane name="meta_dashboard_cli" cwd="/home/drdave/Desktop/meta/meta_dashboard_cli" command="envctl-dashboard-pane" {
-            args "meta_dashboard_cli"
-        }
-    }
-    tab name="ops" {
-        pane name="flexnetos_secrets" cwd="/home/drdave/Desktop/meta/flexnetos_secrets" command="envctl-dashboard-pane" {
-            args "flexnetos_secrets"
-        }
-        pane name="flexnetos_runner" cwd="/home/drdave/Desktop/meta/flexnetos_runner" command="envctl-dashboard-pane" {
-            args "flexnetos_runner"
-        }
-        pane name="flexnetos_github_app" cwd="/home/drdave/Desktop/meta/flexnetos_github_app" command="envctl-dashboard-pane" {
-            args "flexnetos_github_app"
-        }
-    }
-    tab name="ai (1)" {
-        pane name="agent" cwd="/home/drdave/Desktop/meta/agent" command="envctl-dashboard-pane" {
-            args "agent"
-        }
-        pane name="claude-plugins" cwd="/home/drdave/Desktop/meta/claude-plugins" command="envctl-dashboard-pane" {
-            args "claude-plugins"
-        }
-        pane name="claude-code" cwd="/home/drdave/Desktop/meta/claude-code" command="envctl-dashboard-pane" {
-            args "claude-code"
-        }
-        pane name="codex" cwd="/home/drdave/Desktop/meta/codex" command="envctl-dashboard-pane" {
-            args "codex"
-        }
-        pane name="oh-my-claudecode" cwd="/home/drdave/Desktop/meta/oh-my-claudecode" command="envctl-dashboard-pane" {
-            args "oh-my-claudecode"
-        }
-        pane name="oh-my-pi" cwd="/home/drdave/Desktop/meta/oh-my-pi" command="envctl-dashboard-pane" {
-            args "oh-my-pi"
-        }
-    }
-    tab name="ai (2)" {
-        pane name="ECC" cwd="/home/drdave/Desktop/meta/ECC" command="envctl-dashboard-pane" {
-            args "ECC"
-        }
-        pane name="Archon" cwd="/home/drdave/Desktop/meta/Archon" command="envctl-dashboard-pane" {
-            args "Archon"
-        }
-        pane name="prompt_hub" cwd="/home/drdave/Desktop/meta/prompt_hub" command="envctl-dashboard-pane" {
-            args "prompt_hub"
-        }
-        pane name="hermes-agent" cwd="/home/drdave/Desktop/meta/hermes-agent" command="envctl-dashboard-pane" {
-            args "hermes-agent"
-        }
-    }
-    tab name="docs" {
-        pane name="flexnetos_wiki" cwd="/home/drdave/Desktop/meta/flexnetos_wiki" command="envctl-dashboard-pane" {
-            args "flexnetos_wiki"
-        }
-        pane name="flexnetos_brain" cwd="/home/drdave/Desktop/meta/flexnetos_brain" command="envctl-dashboard-pane" {
-            args "flexnetos_brain"
-        }
-        pane name="obsidian-mind" cwd="/home/drdave/Desktop/meta/obsidian-mind" command="envctl-dashboard-pane" {
-            args "obsidian-mind"
-        }
-        pane name="my-wiki" cwd="/home/drdave/Desktop/meta/my-wiki" command="envctl-dashboard-pane" {
-            args "my-wiki"
-        }
-    }
-    tab name="mcp" {
-        pane name="weave" cwd="/home/drdave/Desktop/meta/weave" command="envctl-dashboard-pane" {
-            args "weave"
-        }
-        pane name="mcp_hub" cwd="/home/drdave/Desktop/meta/mcp_hub" command="envctl-dashboard-pane" {
-            args "mcp_hub"
-        }
-    }
-    tab name="untriaged" {
-        pane name="lane" cwd="/home/drdave/Desktop/meta/lane" command="envctl-dashboard-pane" {
-            args "lane"
-        }
-        pane name="icm" cwd="/home/drdave/Desktop/meta/icm" command="envctl-dashboard-pane" {
-            args "icm"
-        }
-        pane name="grit" cwd="/home/drdave/Desktop/meta/grit" command="envctl-dashboard-pane" {
-            args "grit"
-        }
-        pane name="obscura" cwd="/home/drdave/Desktop/meta/obscura" command="envctl-dashboard-pane" {
-            args "obscura"
-        }
-        pane name="lifeos" cwd="/home/drdave/Desktop/meta/lifeos" command="envctl-dashboard-pane" {
-            args "lifeos"
-        }
-    }
-    tab name="tools" {
-        pane name="envctl" cwd="/home/drdave/Desktop/meta/envctl" command="envctl-dashboard-pane" {
-            args "envctl"
-        }
-        pane name="meta-plugins" cwd="/home/drdave/Desktop/meta/meta-plugins" command="envctl-dashboard-pane" {
-            args "meta-plugins"
-        }
-        pane name="rtk-tokenkill" cwd="/home/drdave/Desktop/meta/rtk-tokenkill" command="envctl-dashboard-pane" {
-            args "rtk-tokenkill"
-        }
     }
     tab name="org" {
         pane name="github_org" cwd="/home/drdave/Desktop/meta/github_org" command="envctl-dashboard-pane" {
             args "github_org"
+        }
+    }
+    tab name="yard" {
+        pane name="meta-yard" cwd="/home/drdave/Desktop/meta/meta-yard" command="envctl-dashboard-pane" {
+            args "meta-yard"
         }
     }
     tab name="automation" {
@@ -185,9 +231,22 @@ layout {
             args "vault_hub"
         }
     }
-    tab name="assets" {
-        pane name="assets" cwd="/home/drdave/Desktop/meta/assets" command="envctl-dashboard-pane" {
-            args "assets"
+    tab name="gpu" {
+        pane name="cuda-oxide" cwd="/home/drdave/Desktop/meta/cuda-oxide" command="envctl-dashboard-pane" {
+            args "cuda-oxide"
+        }
+    }
+    tab name="hardware" {
+        pane name="meta_hardware" cwd="/home/drdave/Desktop/meta/meta_hardware" command="envctl-dashboard-pane" {
+            args "meta_hardware"
+        }
+    }
+    tab name="env" {
+        pane name="yazelix" cwd="/home/drdave/Desktop/meta/yazelix" command="envctl-dashboard-pane" {
+            args "yazelix"
+        }
+        pane name="ohmyzsh" cwd="/home/drdave/Desktop/meta/ohmyzsh" command="envctl-dashboard-pane" {
+            args "ohmyzsh"
         }
     }
 }

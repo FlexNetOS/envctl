@@ -11,6 +11,7 @@ root="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 bash "$root/scripts/tests/test-merge-driver.sh"
 bash "$root/scripts/tests/test-reaper.sh"
 bash "$root/scripts/tests/test-loop-state-gate.sh"
+bash "$root/scripts/tests/test-meta-local-path-audit.sh"
 bash "$root/scripts/tests/test-skill-contract.sh"
 bash "$root/scripts/tests/test-plan-eject.sh"
 bash "$root/scripts/tests/test-plan-contract.sh"
@@ -18,6 +19,8 @@ bash "$root/scripts/tests/test-plan-loop-state.sh"
 bash "$root/scripts/tests/test-plan-weave-dispatch.sh"
 bash "$root/scripts/tests/test-plan-artifact-gate.sh"
 bash "$root/scripts/tests/test-plan-evals.sh"
+bash "$root/scripts/tests/test-codex-cli-release-lanes.sh"
+bash "$root/scripts/tests/test-flexnetos-codex-runtime-gate.sh"
 
 # Guard the owner-critical publish contract. The harness must never regress to
 # committed-but-unpushed local work; every committed chunk is pushed, PR-backed,

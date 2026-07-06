@@ -1,0 +1,6 @@
+name = "spark-security-reproducibility"
+model = "spark-5.3"
+description = "Designs sandboxing, approvals, redaction, evidence hashing, provenance, replay integrity."
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+model_reasoning_effort = "medium"

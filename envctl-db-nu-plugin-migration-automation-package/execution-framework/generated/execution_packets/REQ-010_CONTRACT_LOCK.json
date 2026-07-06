@@ -1,0 +1,73 @@
+{
+  "packet_schema_version": "1.0",
+  "task_id": "REQ-010_CONTRACT_LOCK",
+  "parent_id": "",
+  "phase": "01-contract",
+  "title": "Lock migration artifact contract",
+  "goal": "Convert prior artifact research into executable contract rows",
+  "owner_lane": "lane_a_planning",
+  "owner_agent": "planning-agent",
+  "helper_id": "helper-plan-01",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "codex-cli-background-shell",
+  "shell_mode": "workspace-write",
+  "repo_target": "filesystem",
+  "repo_path": "..",
+  "filesystem_scope": "package-root",
+  "input_files": [
+    "source/previous-migration-artifact-context.md",
+    "prompts/**"
+  ],
+  "target_files": [
+    "generated/task_graph.index.json",
+    "expected contract manifest"
+  ],
+  "target_artifacts": [
+    "contract manifest"
+  ],
+  "allowed_paths": [
+    "${ENVCTL_REPO}/**",
+    "${NU_PLUGIN_REPO}/**",
+    "execution-framework/**",
+    "execution-templates/**"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "depends_on": [
+    "EF-008_VERIFY_HISTORY_COMPLETENESS"
+  ],
+  "blocks": [
+    "REQ-020_ENVCTL_DB_SCHEMA",
+    "REQ-030_PLUGIN_PROTOCOL_MANIFEST",
+    "ART-100_SYSTEM_INVENTORY"
+  ],
+  "parallel_group": "contract",
+  "can_run_parallel": false,
+  "max_parallel": 1,
+  "start_after": "",
+  "priority": 100,
+  "execution_cell": "01-contract",
+  "required_tools": [
+    "codex",
+    "python3",
+    "shell"
+  ],
+  "command_template": "codex exec < generated/execution_packets/REQ-010_CONTRACT_LOCK.json",
+  "verification_command": "task-specific tests plus proof file exists",
+  "completion_gate": "proof exists and verification output passes",
+  "proof_required": true,
+  "proof_uri": "proof_records/REQ-010_CONTRACT_LOCK.proof.json",
+  "heartbeat_file": "state/REQ-010_CONTRACT_LOCK.heartbeat.json",
+  "logs_uri": "logs/REQ-010_CONTRACT_LOCK.log",
+  "rollback_plan": "Use history/pre_execution_framework_manifest.json and remove only files added by this task unless a task-specific rollback is listed.",
+  "risk_level": "medium",
+  "human_approval_required": false,
+  "notes": "Additive feature work; no downgrades.",
+  "source_graph_uri": "generated/task_graph.csv",
+  "generated_at": "2026-07-05T05:39:53+00:00"
+}

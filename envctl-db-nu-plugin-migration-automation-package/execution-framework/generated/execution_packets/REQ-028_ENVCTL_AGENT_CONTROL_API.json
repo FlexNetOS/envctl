@@ -1,0 +1,71 @@
+{
+  "packet_schema_version": "1.0",
+  "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API",
+  "parent_id": "REQ-010_CONTRACT_LOCK",
+  "phase": "02-envctl-db",
+  "title": "Implement agent control API",
+  "goal": "Expose database-controlled CLI operations for agents/helpers and human control",
+  "owner_lane": "lane_b_repo_a",
+  "owner_agent": "envctl-runner-agent",
+  "helper_id": "helper-envctl-agent-api-01",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "codex-cli-background-shell",
+  "shell_mode": "workspace-write",
+  "repo_target": "repo_a",
+  "repo_path": "${ENVCTL_REPO}",
+  "filesystem_scope": "repo",
+  "input_files": [
+    "schemas/envctl_migration_api.openapi.json",
+    "prompts/AGENT_CONTROL_PROTOCOL.md"
+  ],
+  "target_files": [
+    "envctl agent control API/CLI"
+  ],
+  "target_artifacts": [
+    "agent control API"
+  ],
+  "allowed_paths": [
+    "${ENVCTL_REPO}/**",
+    "${NU_PLUGIN_REPO}/**",
+    "execution-framework/**",
+    "execution-templates/**"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "depends_on": [
+    "REQ-023_ENVCTL_OPERATION_STATE",
+    "REQ-025_ENVCTL_VALIDATION_EVIDENCE"
+  ],
+  "blocks": [
+    "REQ-041_TWO_REPO_INTEGRATION"
+  ],
+  "parallel_group": "envctl_integration",
+  "can_run_parallel": true,
+  "max_parallel": 2,
+  "start_after": "",
+  "priority": 190,
+  "execution_cell": "02-envctl-db",
+  "required_tools": [
+    "codex",
+    "python3",
+    "shell"
+  ],
+  "command_template": "codex exec < generated/execution_packets/REQ-028_ENVCTL_AGENT_CONTROL_API.json",
+  "verification_command": "task-specific tests plus proof file exists",
+  "completion_gate": "proof exists and verification output passes",
+  "proof_required": true,
+  "proof_uri": "proof_records/REQ-028_ENVCTL_AGENT_CONTROL_API.proof.json",
+  "heartbeat_file": "state/REQ-028_ENVCTL_AGENT_CONTROL_API.heartbeat.json",
+  "logs_uri": "logs/REQ-028_ENVCTL_AGENT_CONTROL_API.log",
+  "rollback_plan": "Use history/pre_execution_framework_manifest.json and remove only files added by this task unless a task-specific rollback is listed.",
+  "risk_level": "critical",
+  "human_approval_required": true,
+  "notes": "Additive feature work; no downgrades.",
+  "source_graph_uri": "generated/task_graph.csv",
+  "generated_at": "2026-07-05T05:39:53+00:00"
+}

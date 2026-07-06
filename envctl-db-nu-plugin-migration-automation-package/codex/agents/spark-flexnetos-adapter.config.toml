@@ -1,0 +1,6 @@
+name = "spark-flexnetos-adapter"
+model = "spark-5.3"
+description = "Maps the prior FlexNetOS migration package into a generic envctl artifact contract bundle."
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+model_reasoning_effort = "medium"

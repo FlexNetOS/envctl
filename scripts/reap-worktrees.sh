@@ -20,26 +20,97 @@
 #   * PROTECTS master, develop, the current branch, the current worktree, and the main checkout
 #     from REAPING (they are never deleted; they are kept in sync via FF instead).
 #
-# A branch is REAPABLE only when it is safely resolved:
-#   (a) its upstream is gone — `[gone]` — i.e. origin deleted the head after the PR closed
-#       (squash-merge robust: squash tips are never ancestors of master), OR
-#   (b) it is an ancestor of origin/master — a true/FF merge.
-# A branch with unpushed local commits (no upstream, not an ancestor) is NEVER reaped.
+# A branch is REAPABLE only when its content is safely resolved into origin/master:
+#   (a) it is an ancestor of origin/master — a true/FF merge, OR
+#   (b) every local commit is patch-equivalent to origin/master — the normal squash-merge case
+#       where the PR head SHA is not an ancestor, but `git cherry` proves no unique patch remains.
 #
-# CAVEAT — `[gone]` is NOT proof of MERGE. origin deletes the head on close whether the PR was
-#   merged OR closed-unmerged, so `[gone]` is a "PR is resolved AND its tip is pushed" signal, not
-#   a "merged" signal. That is safe HERE because a `[gone]` local branch has no unpushed work to
-#   lose (its commits are on origin). But for any IRREVERSIBLE action against the REMOTE
-#   (deleting an origin branch), `[gone]`/ancestor are NOT sufficient — confirm the PR actually
-#   MERGED via the GitHub oracle (`gh pr view <ref> --json state` == MERGED) before deleting.
-#   A closed-unmerged head (e.g. PR #99 this session) reads identically to a merged one locally.
+# "upstream gone" is NOT a repo failure and NOT proof of merge. It only means the local branch was
+# tracking a temporary remote branch that origin no longer has (usually because GitHub deleted the
+# PR head after merge, but it can also happen after close/delete). A `[gone]` branch with local-only
+# commits is NEVER reaped; it is preserved and surfaced for human review.
 #
-# Usage:  scripts/reap-worktrees.sh            # preview (dry-run)
-#         scripts/reap-worktrees.sh --apply    # actually reap
+# For IRREVERSIBLE actions against a REMOTE, `[gone]`/ancestor/patch-equivalence are still not
+# sufficient — confirm the PR actually MERGED via the GitHub oracle before deleting remote state.
+#
+# Usage:  scripts/reap-worktrees.sh                               # preview (dry-run)
+#         scripts/reap-worktrees.sh --apply                       # actually reap
+#         scripts/reap-worktrees.sh --managed-worktree-slug [path] [repo]
+#                                                                 # read-only: print slug only
+#         scripts/reap-worktrees.sh --meta-worktree-status [path] [repo]
+#                                                                 # read-only: call meta status
+#
+# IMPORTANT: `meta git worktree status <slug>` takes a meta-managed worktree-set slug,
+# not a repo/project name. The main checkout (`.../meta/envctl`) has no managed slug.
+# Only paths shaped `.../meta/.worktrees/<slug>/<repo>` may produce `<slug>`.
 set -euo pipefail
 
+realpath_portable() {
+  if command -v realpath >/dev/null 2>&1; then
+    realpath "$1"
+  else
+    python3 -c 'import os,sys; print(os.path.realpath(sys.argv[1]))' "$1"
+  fi
+}
+
+checkout_root_for_path() {
+  local path="${1:-.}"
+  if git -C "$path" rev-parse --show-toplevel >/dev/null 2>&1; then
+    git -C "$path" rev-parse --show-toplevel
+  else
+    realpath_portable "$path"
+  fi
+}
+
+managed_worktree_slug_for_path() {
+  local path="${1:-.}" repo="${2:-}" root leaf parent slug grand
+  root="$(checkout_root_for_path "$path")" || return 1
+  root="$(realpath_portable "$root")" || return 1
+  if [ -z "$repo" ]; then
+    repo="$(basename "$root")"
+  fi
+  leaf="$(basename "$root")"
+  [ "$leaf" = "$repo" ] || return 1
+  parent="$(dirname "$root")"
+  slug="$(basename "$parent")"
+  grand="$(dirname "$parent")"
+  [ "$(basename "$grand")" = ".worktrees" ] || return 1
+  [ -n "$slug" ] || return 1
+  printf '%s\n' "$slug"
+}
+
+meta_worktree_status_for_path() {
+  local path="${1:-.}" repo="${2:-}" slug
+  if ! slug="$(managed_worktree_slug_for_path "$path" "$repo")"; then
+    echo "main/unmanaged checkout; skipping meta git worktree status (path is not .worktrees/<slug>/<repo>)" >&2
+    return 2
+  fi
+  meta git worktree status "$slug"
+}
+
 APPLY=0
-[ "${1:-}" = "--apply" ] && APPLY=1
+case "${1:-}" in
+  --apply)
+    APPLY=1
+    shift
+    ;;
+  --managed-worktree-slug)
+    shift
+    managed_worktree_slug_for_path "${1:-.}" "${2:-}"
+    exit $?
+    ;;
+  --meta-worktree-status)
+    shift
+    meta_worktree_status_for_path "${1:-.}" "${2:-}"
+    exit $?
+    ;;
+  "")
+    ;;
+  *)
+    echo "usage: $0 [--apply|--managed-worktree-slug [path] [repo]|--meta-worktree-status [path] [repo]]" >&2
+    exit 64
+    ;;
+esac
 run() { if [ "$APPLY" = 1 ]; then "$@"; else printf '    DRY-RUN: %s\n' "$*"; fi; }
 
 CUR_WT="$(git rev-parse --show-toplevel)"
@@ -48,25 +119,65 @@ CUR_BR="$(git symbolic-ref --quiet --short HEAD || echo '')"
 PROTECT=" master develop ${CUR_BR} "
 is_protected() { case "$PROTECT" in *" $1 "*) return 0 ;; esac; return 1; }
 
-# Branch is reapable iff upstream is gone OR it is already in origin/master OR its PR is MERGED.
+upstream_track() { git for-each-ref --format='%(upstream:track)' "refs/heads/$1"; }
+
+has_unique_patch() {
+  local b="$1"
+  # `git cherry origin/master branch` prints `+` for patches not present upstream and `-` for
+  # patch-equivalent commits. Any `+` means local-only work remains, so fail closed.
+  git cherry origin/master "refs/heads/$b" 2>/dev/null | awk '$1 == "+" { found=1 } END { exit found ? 0 : 1 }'
+}
+
+is_patch_equivalent_to_master() {
+  local b="$1"
+  git show-ref --verify --quiet "refs/heads/$b" || return 1
+  # Fast path: every commit is individually patch-present upstream (normal/rebase/cherry-pick
+  # merges, and SINGLE-commit squashes — one commit's patch-id == the squash's patch-id).
+  has_unique_patch "$b" || return 0
+  # Squash path (the >1-commit case `git cherry` MISSES): a multi-commit branch collapses to ONE
+  # commit on master, so per-commit patch-id matching sees every branch commit as unique (`+`) and
+  # would refuse to reap it forever (the husk-pileup the owner flagged). Detect it by the branch's
+  # COMBINED patch-id (merge-base..branch) matching some master commit's patch-id since that
+  # merge-base — i.e. the squash commit. Robust to master advancing past the squash (unrelated
+  # commits simply don't match) and fail-closed (no match => not reapable).
+  local mb bpid c
+  mb="$(git merge-base "refs/heads/$b" origin/master 2>/dev/null)" || return 1
+  [ -n "$mb" ] || return 1
+  bpid="$(git diff "$mb" "refs/heads/$b" | git patch-id --stable 2>/dev/null | awk '{print $1}')"
+  [ -n "$bpid" ] || return 1
+  for c in $(git rev-list "$mb"..origin/master 2>/dev/null); do
+    [ "$(git diff "$c^" "$c" 2>/dev/null | git patch-id --stable 2>/dev/null | awk '{print $1}')" = "$bpid" ] && return 0
+  done
+  return 1
+}
+
+# Branch is reapable iff it is already in origin/master OR all remaining commits are
+# patch-equivalent to origin/master (squash-merge safe). `[gone]` alone is only a diagnostic.
 is_reapable() {
   local b="$1"
-  [ "$(git for-each-ref --format='%(upstream:track)' "refs/heads/$b")" = '[gone]' ] && return 0
   git merge-base --is-ancestor "refs/heads/$b" origin/master 2>/dev/null && return 0
-  # Squash-merge oracle (the structural gap that let 16 husks + 7 branches pile up): a
-  # squash-merged branch is NEVER an ancestor of master, and until `fetch --prune` lands its
-  # upstream may not yet read [gone] — but its PR is MERGED on GitHub. The merged-PR head-ref is
-  # the squash-robust authority (CAVEAT above: [gone] alone can't tell merged from closed-unmerged;
-  # `state==MERGED` can). Fail-CLOSED: only a positive MERGED answer reaps; gh absent/unauthed/empty
-  # falls through to `return 1` — never reap on an unanswered oracle.
-  if command -v gh >/dev/null 2>&1; then
-    [ -n "$(gh pr list --head "$b" --state merged --json number -q '.[0].number' 2>/dev/null)" ] && return 0
-  fi
+  is_patch_equivalent_to_master "$b" && return 0
   return 1
+}
+
+explain_gone_branch() {
+  local b="$1" role="$2"
+  [ "$(upstream_track "$b")" = '[gone]' ] || return 0
+  echo "  NOTE: $role branch '$b' tracks an upstream that is gone."
+  echo "        That means the temporary remote branch was deleted; the repo/origin is not gone."
+  if is_reapable "$b"; then
+    echo "        Its patches are already represented on origin/master. Switch to master and rerun this reaper to remove the local husk."
+  else
+    echo "        It still has local-only patches; preserving it for review instead of reaping."
+  fi
 }
 
 # 1. Mirror origin's merge-time branch deletions into local tracking refs (non-destructive).
 git fetch --prune origin >/dev/null 2>&1 || true
+
+# 1a. If the *current* checkout is on a gone upstream, explain it. The current branch is protected
+#     from deletion, so the operator fix is to switch to master/develop, then rerun this script.
+[ -n "$CUR_BR" ] && explain_gone_branch "$CUR_BR" "current"
 
 # 1b. Fast-forward the protected trunk branches to origin (FF-only, clean-only). Keeps the main
 #     checkout's `master` mirror and `develop` in lockstep with origin without a manual merge.
@@ -157,6 +268,8 @@ for b in $(git for-each-ref --format='%(refname:short)' refs/heads/); do
     echo "  reap branch: $b"
     run git branch -D "$b"
     reaped_br=$((reaped_br + 1))
+  elif [ "$(upstream_track "$b")" = '[gone]' ]; then
+    explain_gone_branch "$b" "local"
   fi
 done
 echo "  branches reaped: $reaped_br"

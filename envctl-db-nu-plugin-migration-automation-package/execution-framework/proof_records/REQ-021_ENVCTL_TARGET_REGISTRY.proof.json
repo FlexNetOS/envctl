@@ -1,0 +1,64 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-021_ENVCTL_TARGET_REGISTRY",
+  "status": "completed",
+  "started_at": "2026-07-04T23:10:14+00:00",
+  "completed_at": "2026-07-04T23:10:14+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-envctl-target-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/verify_target_registry.py",
+    "execution-framework/generated/envctl_target_registry.json",
+    "execution-framework/generated/envctl_target_registry_validation_report.json",
+    "execution-framework/docs/ENVCTL_TARGET_REGISTRY.md",
+    "execution-framework/logs/REQ-021_ENVCTL_TARGET_REGISTRY.log",
+    "execution-framework/state/REQ-021_ENVCTL_TARGET_REGISTRY.heartbeat.json",
+    "execution-framework/proof_records/REQ-021_ENVCTL_TARGET_REGISTRY.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/verify_target_registry.py"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "REQ-021_ENVCTL_TARGET_REGISTRY",
+    "status": "passed",
+    "generated_at": "2026-07-04T23:10:14+00:00",
+    "summary": {
+      "input_descriptor_count": 2,
+      "registered_descriptor_count": 5,
+      "target_type_count": 5,
+      "target_type_covered_count": 5,
+      "row_count_after_first_pass": 5,
+      "row_count_after_second_pass": 5,
+      "invalid_descriptor_error_count": 2
+    },
+    "errors": [],
+    "evidence": [
+      "generated/envctl_target_registry.json",
+      "generated/envctl_target_registry_validation_report.json",
+      "docs/ENVCTL_TARGET_REGISTRY.md"
+    ]
+  },
+  "checksums": {
+    "execution-framework/scripts/verify_target_registry.py": "e83458854f3b647df12181d96431937b7c487af5f0799ac228acbb10e4505745",
+    "execution-framework/generated/envctl_target_registry.json": "e74615f1274f5cbc530b859fa74e774f99f99ef33c7acb7b2a3cc75f0f01e77c",
+    "execution-framework/generated/envctl_target_registry_validation_report.json": "ab31850508d985ce1121df3509a8a2936e480b8a1107ac4e04dc71f2d05f8b1a",
+    "execution-framework/docs/ENVCTL_TARGET_REGISTRY.md": "29e2fddeaa3af68c26919c7af6646fb29f65960d713d168e5189d174c50441eb",
+    "execution-framework/logs/REQ-021_ENVCTL_TARGET_REGISTRY.log": "ab31850508d985ce1121df3509a8a2936e480b8a1107ac4e04dc71f2d05f8b1a",
+    "execution-framework/state/REQ-021_ENVCTL_TARGET_REGISTRY.heartbeat.json": "1ee7ae067e122824904dd67cb77171094333e59eaa7f8aced0458ff7c5c017ac",
+    "execution-framework/proof_records/REQ-021_ENVCTL_TARGET_REGISTRY.proof.json": "bb1e5005dacda52ac5cfc34253e053186255031cff020d474e4d8c3058289c3b",
+    "execution-framework/proof_records/proof_ledger.jsonl": "7f09f8ef345f45fba917b6d81e7344ff9395331db70259e7c777e4b303ddc293"
+  },
+  "logs_uri": "logs/REQ-021_ENVCTL_TARGET_REGISTRY.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "generated/envctl_target_registry.json",
+    "generated/envctl_target_registry_validation_report.json",
+    "docs/ENVCTL_TARGET_REGISTRY.md"
+  ],
+  "failure_reason": "",
+  "next_action": "run REQ-027 replay engine once ledger/artifact registry tasks are complete"
+}

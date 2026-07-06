@@ -1,0 +1,92 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "envctl Migration Automation API Boundary",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/migration/runs/{run_id}/status": {
+      "get": {
+        "summary": "Get migration run status",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "status"
+          }
+        }
+      }
+    },
+    "/migration/runs/{run_id}/events": {
+      "get": {
+        "summary": "Stream or list run events",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "events"
+          }
+        }
+      }
+    },
+    "/migration/approvals/{approval_id}/decision": {
+      "post": {
+        "summary": "Approve or deny operation",
+        "parameters": [
+          {
+            "name": "approval_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "decision"
+                ],
+                "properties": {
+                  "decision": {
+                    "enum": [
+                      "approved",
+                      "denied"
+                    ]
+                  },
+                  "reason": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "decision recorded"
+          }
+        }
+      }
+    }
+  }
+}

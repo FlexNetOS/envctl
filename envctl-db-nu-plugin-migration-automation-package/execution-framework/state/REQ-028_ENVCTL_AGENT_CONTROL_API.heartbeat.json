@@ -1,0 +1,8 @@
+{
+  "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API",
+  "status": "completed",
+  "updated_at": "2026-07-05T04:50:07+00:00",
+  "helper_id": "helper-envctl-agent-api-01",
+  "proof_uri": "proof_records/REQ-028_ENVCTL_AGENT_CONTROL_API.proof.json",
+  "logs_uri": "logs/REQ-028_ENVCTL_AGENT_CONTROL_API.log"
+}

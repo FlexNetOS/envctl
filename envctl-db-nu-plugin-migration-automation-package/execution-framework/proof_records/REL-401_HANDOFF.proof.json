@@ -1,0 +1,88 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REL-401_HANDOFF",
+  "status": "completed",
+  "started_at": "2026-07-05T06:10:06Z",
+  "completed_at": "2026-07-05T06:10:06Z",
+  "actor": "handoff-agent",
+  "helper_id": "helper-handoff-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/mnt/data",
+  "files_changed": [
+    "execution-framework/logs/REL-401_HANDOFF.log",
+    "execution-framework/state/REL-401_HANDOFF.heartbeat.json",
+    "execution-framework/proof_records/REL-401_HANDOFF.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "sed -n '1,240p' generated/final_verification_report.json",
+    "sed -n '1,260p' docs/FINAL_VERIFICATION.md",
+    "sed -n '1,220p' generated/release_archives/REL-400_PACKAGE_ARCHIVE.summary.json",
+    "sed -n '1,220p' proof_records/REL-400_PACKAGE_ARCHIVE.proof.json",
+    "test -f proof_records/REL-401_HANDOFF.proof.json"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "REL-401_HANDOFF",
+    "generated_at": "2026-07-05T06:10:06Z",
+    "access_status": {
+      "shell_mode": "workspace-write",
+      "filesystem_scope": "chat-output",
+      "readable": [
+        "/root"
+      ],
+      "writable": [
+        "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework",
+        "/tmp"
+      ]
+    },
+    "verification_result": {
+      "status": "pass_with_external_blocker",
+      "local_package_complete": true,
+      "task_count": 80,
+      "packet_count": 80,
+      "proof_count": 87,
+      "missing_outputs": [],
+      "tasks_without_packets": [],
+      "packet_missing_fields": []
+    },
+    "archives": {
+      "tar_gz": {
+        "path": "generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.gz",
+        "sha256": "0bdf372bae59a7d207cdb93a89ecbb89a2f83b779019c965f16ad157224b0b27",
+        "size_bytes": 15745389,
+        "entry_count": 967
+      },
+      "zip": {
+        "path": "generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip",
+        "sha256": "6ad8a4d040c686bb7079b251b7c6064fd54cd283417f678d47004b88dcc55ad4",
+        "size_bytes": 16385876,
+        "entry_count": 967
+      }
+    },
+    "blockers": [
+      {
+        "blocker_id": "EXT-DRIVE-WRITE",
+        "status": "documented",
+        "detail": "Authenticated Google Drive file edit/revision API is not available in this environment; upgraded package archive is produced for upload/application to Drive."
+      }
+    ]
+  },
+  "checksums": {
+    "execution-framework/logs/REL-401_HANDOFF.log": "08a7e085f335c34839a0e9da28a57406cd273d1da4ee38df74413638d0f1e369",
+    "execution-framework/state/REL-401_HANDOFF.heartbeat.json": "35271c8edaa240852b96b8227949d9c6e278f6ef21e14fadb7110b373b0c826f"
+  },
+  "logs_uri": "logs/REL-401_HANDOFF.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "generated/final_verification_report.json",
+    "docs/FINAL_VERIFICATION.md",
+    "generated/release_archives/REL-400_PACKAGE_ARCHIVE.summary.json",
+    "proof_records/REL-400_PACKAGE_ARCHIVE.proof.json",
+    "generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.gz",
+    "generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip",
+    "logs/REL-401_HANDOFF.log"
+  ],
+  "failure_reason": "",
+  "next_action": "upload or apply the release archive through an authenticated Drive-capable environment if Drive publication is required"
+}

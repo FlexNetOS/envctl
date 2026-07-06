@@ -1,0 +1,197 @@
+Traceback (most recent call last):
+  File "<stdin>", line 337, in <module>
+  File "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework/scripts/artifact_registry.py", line 128, in register
+    content_hash = self._validated_content_hash(item)
+  File "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework/scripts/artifact_registry.py", line 196, in _validated_content_hash
+    self._require_contract_for_run(item.run_id, item.contract_id)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework/scripts/artifact_registry.py", line 247, in _require_contract_for_run
+    raise ValueError(f"unknown artifact contract: {contract_id}")
+ValueError: unknown artifact contract: contract-art103
+Traceback (most recent call last):
+  File "<stdin>", line 177, in <module>
+  File "<stdin>", line 42, in seed_fixture
+  File "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework/scripts/verify_envctl_db_schema.py", line 204, in apply_migrations
+    sql = read_sql(base, relpath)
+  File "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework/scripts/verify_envctl_db_schema.py", line 195, in read_sql
+    path = base / relpath
+           ~~~~~^~~~~~~~~
+TypeError: unsupported operand type(s) for /: 'sqlite3.Connection' and 'str'
+{
+  "status": "pass",
+  "verification": {
+    "status": "pass",
+    "task_id": "ART-103_SERVICE_DEP_GRAPH",
+    "target_root": "/home/flexnetos/FlexNetOS",
+    "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+    "run_id": "run-art103-service-dep-graph",
+    "operation_id": "op-art103-generate-register",
+    "graph_summary": {
+      "nodes": 16,
+      "edges": 21,
+      "migration_waves": 7
+    },
+    "artifact_file_exists": true,
+    "envctl_artifact_registry_contains_hash": true,
+    "registered_artifact_count": 6,
+    "registry_checks": [
+      {
+        "artifact_id": "art-103-service-dep-graph-json",
+        "path": "execution-framework/migration-artifacts/art-103_service_dep_graph/service-dependency-graph.json",
+        "content_hash": "sha256:4fd93beaf33fb1f0d33b7640c3a9d231e3111030f4895843276a8227be4b5c2a",
+        "hash_recorded": true,
+        "validation_ids": [
+          "validation-f1bbe19b894e3a14ed895d5b",
+          "validation-bd00bbc2d34cd2ce176a534b"
+        ],
+        "graph_edge_ids": [
+          "edge-a54ee2fadcedf314cbf1bae6",
+          "edge-9cefd9c139a08eaacae95063",
+          "edge-daa05f615e916d631f66903e",
+          "edge-76ae5575beadade9ec8ed652",
+          "edge-c37b8dca6965594fcbc25375"
+        ],
+        "evidence_ids": [
+          "evidence-09d16fcb357221a86b8424e5",
+          "evidence-b60197d4baadba5b5f949933",
+          "evidence-942beb07e0ad7ff6772dd72b",
+          "evidence-d1686de3f1df748b7c37e7b4",
+          "evidence-17ffc5d61e70b18741084867",
+          "evidence-8efe4587484e3465fa5e155c",
+          "evidence-b694f1e155526810a39dbb98"
+        ]
+      },
+      {
+        "artifact_id": "art-103-service-dep-graph-md",
+        "path": "execution-framework/migration-artifacts/art-103_service_dep_graph/service-dependency-graph.md",
+        "content_hash": "sha256:caf6f94664cd4d6fb167b779561b8f74c55c40f650b4a2af281bc6527ae3c396",
+        "hash_recorded": true,
+        "validation_ids": [
+          "validation-e3b6698da61d21c2487d7fd7",
+          "validation-9c7c6c390116fc7862d2c947"
+        ],
+        "graph_edge_ids": [
+          "edge-6cc67dd89799aa7281990d91",
+          "edge-539095aaa34754912a015881",
+          "edge-91abbd7443bfd54939ef60c0",
+          "edge-68673fe030a5903e7ba2785f",
+          "edge-c5c327af27b4f7d4dbf6fd4b"
+        ],
+        "evidence_ids": [
+          "evidence-3fce38a8fbabac3efc9b1202",
+          "evidence-e3dbca6bbdfe82ab9f6bb57e",
+          "evidence-9aa820e222aaf8ce4ddfc1dc",
+          "evidence-ad2765e159dd133f28f1874a",
+          "evidence-9e6ad6b332a47d13bcb14cd1",
+          "evidence-f17accc883ff01b9c63e992d",
+          "evidence-feaf9e925debfe6aed8ff662"
+        ]
+      },
+      {
+        "artifact_id": "01-current-state-dependency-graph-md",
+        "path": "execution-framework/migration-artifacts/01-current-state/dependency-graph.md",
+        "content_hash": "sha256:caf6f94664cd4d6fb167b779561b8f74c55c40f650b4a2af281bc6527ae3c396",
+        "hash_recorded": true,
+        "validation_ids": [
+          "validation-527a85580627f6d4ea12438b",
+          "validation-eb4927ea394b5c4f9378c2cc"
+        ],
+        "graph_edge_ids": [
+          "edge-9aa818222761fb31a0c40813",
+          "edge-4ff71acf888365ccf2057081",
+          "edge-c4c72b472778a4ce59b680c9",
+          "edge-1a916353c844473ca5a114ac",
+          "edge-4e7f48fe0b537287951916de"
+        ],
+        "evidence_ids": [
+          "evidence-fa0c7718ce63e0614e1158bc",
+          "evidence-087a0b265aabf3ae21871641",
+          "evidence-5581f6afa7d30c3ebaee02e6",
+          "evidence-0bf3a3568a39153a71182863",
+          "evidence-902d19a5d2621560a1a31d30",
+          "evidence-29f25c7e0c108eefcd934683",
+          "evidence-34304afd1df523a0ab2f827a"
+        ]
+      },
+      {
+        "artifact_id": "01-current-state-application-service-dependency-graph-md",
+        "path": "execution-framework/migration-artifacts/01-current-state/application-service-dependency-graph.md",
+        "content_hash": "sha256:caf6f94664cd4d6fb167b779561b8f74c55c40f650b4a2af281bc6527ae3c396",
+        "hash_recorded": true,
+        "validation_ids": [
+          "validation-019689f599da1597e29b6661",
+          "validation-f1228092a1b53669c0c0a04c"
+        ],
+        "graph_edge_ids": [
+          "edge-a22afb8c02b2da5c98ddcd90",
+          "edge-a60e97484a68ead2d3a19a4a",
+          "edge-1682215853dcb4018bb4c868",
+          "edge-968434636665d4f80d239c3b",
+          "edge-63199c61d70abf989935874c"
+        ],
+        "evidence_ids": [
+          "evidence-634857795fc046c273f22b48",
+          "evidence-c88fb68933f54a3793e64ba3",
+          "evidence-4d3483574c79d81abbd2069c",
+          "evidence-b5a031e8b909a5fe34ad40ef",
+          "evidence-ff212745daa811f70487dd35",
+          "evidence-97e115f4f5aa20eecf750ee4",
+          "evidence-95ef4a6651f87e062364b107"
+        ]
+      },
+      {
+        "artifact_id": "03-code-analysis-import-dependency-graph-md",
+        "path": "execution-framework/migration-artifacts/03-code-analysis/import-dependency-graph.md",
+        "content_hash": "sha256:f7c98e81cd0a27c21564fb58aa8abce1003ad86b74a27987e4450ff022623d45",
+        "hash_recorded": true,
+        "validation_ids": [
+          "validation-375b7d023865cb808599734d",
+          "validation-56cad822ac44fe7e23a0f62b"
+        ],
+        "graph_edge_ids": [
+          "edge-54252393bdf3147e36512dd2",
+          "edge-57df15ab0d140033ef7ad9b3",
+          "edge-44a201ffb6c97bfb7713a929",
+          "edge-0401d4ea41d4bd41e3fb632c",
+          "edge-78f927958daf6f2e231805d5"
+        ],
+        "evidence_ids": [
+          "evidence-a59b432839b6c3bc92d1dd59",
+          "evidence-1723ea1e93dfcebb77df2d42",
+          "evidence-f28441d2e5bd5394bb962c08",
+          "evidence-94c19f62ef7de213305f1e43",
+          "evidence-3929a98a0fb5d2ee9dad7aef",
+          "evidence-34f28fd5bf2c90e1786946f9",
+          "evidence-0a30ab34496f4e28b615c3c5"
+        ]
+      },
+      {
+        "artifact_id": "03-code-analysis-package-library-dependency-graph-md",
+        "path": "execution-framework/migration-artifacts/03-code-analysis/package-library-dependency-graph.md",
+        "content_hash": "sha256:82d12f8c33d3763e2a4ab2095f0caee1d1925bb9a9782f3648fcfd43f22d53f1",
+        "hash_recorded": true,
+        "validation_ids": [
+          "validation-4804ced7c06ae67a89c5de80",
+          "validation-f04ff942647ab00b36052817"
+        ],
+        "graph_edge_ids": [
+          "edge-394174ed1160147bb3beabd1",
+          "edge-54f63edfa51a1e6997a5b82f",
+          "edge-db924f57f5a9d8855c838091",
+          "edge-6bee131042be3816bee76adb",
+          "edge-a457bb8e7980bd286eb76bf9"
+        ],
+        "evidence_ids": [
+          "evidence-c8dffa38f71bebb52d65f83c",
+          "evidence-cf3944747b0b1910e6bcd3cd",
+          "evidence-397088f0f07c38cd6e88238d",
+          "evidence-2e09c18d9e6b4c79d01e06c2",
+          "evidence-fee3e2a1496217d8b0162902",
+          "evidence-37067af6d9d6f6bbd5a61267",
+          "evidence-e283a03f8e14f83e47f3fe76"
+        ]
+      }
+    ]
+  },
+  "proof_uri": "proof_records/ART-103_SERVICE_DEP_GRAPH.proof.json"
+}

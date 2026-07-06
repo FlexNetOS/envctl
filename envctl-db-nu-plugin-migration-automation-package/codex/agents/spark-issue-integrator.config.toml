@@ -1,0 +1,6 @@
+name = "spark-issue-integrator"
+model = "spark-5.3"
+description = "Produces additive GitHub issue prompts and PR sequencing across envctl and nu_plugin."
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+model_reasoning_effort = "medium"

@@ -1,0 +1,288 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-128_READINESS_SCORECARD",
+  "generated_at": "2026-07-04T23:19:30+00:00",
+  "status": "passed",
+  "scorecard": {
+    "schema_version": "1.0",
+    "task_id": "ART-128_READINESS_SCORECARD",
+    "title": "Migration readiness scorecard",
+    "generated_at": "2026-07-04T23:19:30+00:00",
+    "overall_score": 75.3,
+    "readiness_band": "conditional",
+    "score_scale": {
+      "ready": "85-100",
+      "conditional": "65-84.9",
+      "not_ready": "0-64.9"
+    },
+    "domain_scores": [
+      {
+        "domain": "target_descriptor_scope",
+        "score": 100,
+        "status": "ready",
+        "weight": 0.12,
+        "evidence": [
+          "generated/envctl_target_registry.json"
+        ],
+        "notes": "5/5 target types covered; safety mode is approval-gated."
+      },
+      {
+        "domain": "envctl_database_control_plane",
+        "score": 100,
+        "status": "ready",
+        "weight": 0.16,
+        "evidence": [
+          "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json",
+          "proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json"
+        ],
+        "notes": "Core DB schema, target registry, run ledger, operation state, and artifact registry have completed proofs."
+      },
+      {
+        "domain": "shared_protocol_contracts",
+        "score": 100,
+        "status": "ready",
+        "weight": 0.14,
+        "evidence": [
+          "generated/shared_protocol_validation_report.json"
+        ],
+        "notes": "14/14 shared protocol sample records passed validation."
+      },
+      {
+        "domain": "artifact_registry_and_hashing",
+        "score": 100,
+        "status": "ready",
+        "weight": 0.12,
+        "evidence": [
+          "generated/envctl_artifact_registry_report.json",
+          "docs/ENVCTL_ARTIFACT_REGISTRY.md"
+        ],
+        "notes": "Registry smoke covers paths, hashes, producers, contracts, provenance, links, and fail-closed path policy."
+      },
+      {
+        "domain": "validation_replay_rollback",
+        "score": 25,
+        "status": "blocked",
+        "weight": 0.14,
+        "evidence": [
+          "generated/status_from_proofs.json"
+        ],
+        "notes": "Validation evidence, rollback checkpoints, replay engine, and agent control API remain pending."
+      },
+      {
+        "domain": "plugin_operator_surface",
+        "score": 80,
+        "status": "conditional",
+        "weight": 0.1,
+        "evidence": [
+          "proof_records/REQ-030_PLUGIN_PROTOCOL_MANIFEST.proof.json",
+          "proof_records/REQ-031_PLUGIN_COMMAND_SURFACE.proof.json",
+          "proof_records/REQ-032_PLUGIN_LIVE_VISUALS.proof.json",
+          "proof_records/REQ-034_PLUGIN_STATUS_STREAMS.proof.json"
+        ],
+        "notes": "Human approval remains pending while protocol, command surface, live visuals, and status streams are complete."
+      },
+      {
+        "domain": "filesystem_security_hardening",
+        "score": 40,
+        "status": "blocked",
+        "weight": 0.1,
+        "evidence": [
+          "generated/status_from_proofs.json",
+          "scripts/artifact_registry.py"
+        ],
+        "notes": "Blocked path checks exist in the registry, but filesystem bounds, redaction, and replay hardening are not yet proven."
+      },
+      {
+        "domain": "governance_artifact_readiness",
+        "score": 28,
+        "status": "in_progress",
+        "weight": 0.12,
+        "evidence": [
+          "generated/task_graph.csv",
+          "generated/contract_manifest.json"
+        ],
+        "notes": "Governance artifacts are mostly pending; this task creates the readiness scorecard itself."
+      },
+      {
+        "domain": "package_scan_and_contract_lock",
+        "score": 100,
+        "status": "ready",
+        "weight": 0.1,
+        "evidence": [
+          "generated/package_scan.json",
+          "generated/contract_manifest.json"
+        ],
+        "notes": "Contract rows available: 152."
+      }
+    ],
+    "blocking_gates": [
+      "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+      "REQ-027_ENVCTL_REPLAY_ENGINE",
+      "REQ-028_ENVCTL_AGENT_CONTROL_API",
+      "REQ-041_TWO_REPO_INTEGRATION",
+      "REQ-043_SECURITY_REDACTION",
+      "REQ-045_RUN_REPLAY",
+      "REQ-033_PLUGIN_HUMAN_APPROVAL"
+    ],
+    "required_next_actions": [
+      "Complete validation evidence and replay/rollback gates before final migration validation.",
+      "Complete filesystem bounds and security redaction gates before unattended artifact replay.",
+      "Complete human approval plugin support before operator-facing runs above approval threshold.",
+      "Generate remaining governance artifacts so readiness decisions have owners, risks, and exceptions attached."
+    ],
+    "source_inputs": {
+      "target_registry": "generated/envctl_target_registry.json",
+      "repo_scan": "generated/package_scan.json",
+      "envctl_database": "generated/envctl_migration_db_model.json",
+      "artifact_registry": "generated/envctl_artifact_registry_report.json",
+      "shared_protocols": "generated/shared_protocol_validation_report.json",
+      "task_status": "generated/status_from_proofs.json",
+      "contract_manifest": "generated/contract_manifest.json"
+    },
+    "contract_mapping": {
+      "contract_row_id": "artifact:09-governance-migration-readiness-scorecard-md",
+      "contract_required_path": "migration-artifacts/09-governance/migration-readiness-scorecard.md",
+      "task_scoped_paths": [
+        "migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.md",
+        "migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json"
+      ]
+    }
+  },
+  "registry_results": [
+    {
+      "artifact_row_id": "artifact-e068d6228ce995b10aac26e8",
+      "artifact_id": "art-128-readiness-scorecard-md",
+      "run_id": "run-art128-readiness-scorecard",
+      "path": "execution-framework/migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.md",
+      "content_hash": "sha256:3b3db7ddaafee244423116885c288e64ce7e7a1b62709c7ef9b954d9e20562d5",
+      "producer_operation_id": "produce-09-governance-migration-readiness-scorecard-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-ce8b4ed0ebbd6c72dfcbfa08",
+        "evidence-52f64904aea9a796322d182f",
+        "evidence-d3de872f34f464c7e6699a8c",
+        "evidence-041d9d354280fc981a8c094d",
+        "evidence-a86a42455f87254b2d168a12",
+        "evidence-0e00177bd2379e31c3a9d6a1"
+      ],
+      "graph_edge_ids": [
+        "edge-e757b92512ba0e34122fd609",
+        "edge-4818031c3c82d4a162af5611",
+        "edge-14b3401f347bcf8c5be3556c",
+        "edge-2ef0bdae8920de5122f46571",
+        "edge-2cc3f32fd1b3d3bb7f58bf30"
+      ],
+      "validation_ids": [
+        "validation-8fac029fe2b4ddbf0ede2c16",
+        "validation-75286890acd1d57995d6e059",
+        "validation-c10cd8be78a98196798e9a16",
+        "validation-cab1305725ed6311dba302ee"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-b94995cefc10e707e149f4ef",
+      "artifact_id": "art-128-readiness-scorecard-json",
+      "run_id": "run-art128-readiness-scorecard",
+      "path": "execution-framework/migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json",
+      "content_hash": "sha256:6a3edf44602b59a37f343044cce019aeec8cb893f9451f5284255b445e9d1dca",
+      "producer_operation_id": "produce-09-governance-migration-readiness-scorecard-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-eca86b48773fa71ad402d467",
+        "evidence-ae336642038c823177be3e63",
+        "evidence-1acfee190cc108ab5208439d",
+        "evidence-b70b91d954fcedbdf0fc484f",
+        "evidence-5d0834944253265d4d7e6541",
+        "evidence-0a04131acf392bbb14c734a9"
+      ],
+      "graph_edge_ids": [
+        "edge-5576249e0f25c8000ab6f554",
+        "edge-f703f039a0d337168c57f23a",
+        "edge-8659587168b749e380195086",
+        "edge-c84bcb084f1f896f39128442",
+        "edge-d5affe72ba551f9301cec17b"
+      ],
+      "validation_ids": [
+        "validation-375730415ad3a79b1153ceac",
+        "validation-c61695ae278edb7e98135f11",
+        "validation-995c740393d461640d308b7c",
+        "validation-0610a35b8c340289c58df44a"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-50cfd2b48419cc838003e6f8",
+      "artifact_id": "09-governance-migration-readiness-scorecard-md",
+      "run_id": "run-art128-readiness-scorecard",
+      "path": "execution-framework/migration-artifacts/09-governance/migration-readiness-scorecard.md",
+      "content_hash": "sha256:3b3db7ddaafee244423116885c288e64ce7e7a1b62709c7ef9b954d9e20562d5",
+      "producer_operation_id": "produce-09-governance-migration-readiness-scorecard-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-71b5713fa61637db4f86a9fe",
+        "evidence-93ce11ee177d30eeb33223c4",
+        "evidence-5eda34ca1bea5d492a1069dd",
+        "evidence-0fad749b60951eec0f0d56f4",
+        "evidence-183f7a97432be19e6a2867d9",
+        "evidence-3791c36ef49bc499923b97a0"
+      ],
+      "graph_edge_ids": [
+        "edge-a605d15d5b9f83c4cef3f84e",
+        "edge-50ea7b0b9fbec9bc4622abdd",
+        "edge-8cd755044d078c39453c0824",
+        "edge-84d6e4a3bf2596ba529e7073",
+        "edge-28635f0766d5460e417c8662"
+      ],
+      "validation_ids": [
+        "validation-11f08e7d1644dc7df2ff9769",
+        "validation-a9cd438bd8bde4a85782da0f",
+        "validation-43435c99c2450fc82a2412ff",
+        "validation-6285dee5c13796736fe8952f"
+      ]
+    }
+  ],
+  "artifact_index_rows": [
+    {
+      "artifact_id": "09-governance-migration-readiness-scorecard-md",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/09-governance/migration-readiness-scorecard.md",
+      "content_hash": "sha256:3b3db7ddaafee244423116885c288e64ce7e7a1b62709c7ef9b954d9e20562d5"
+    },
+    {
+      "artifact_id": "art-128-readiness-scorecard-json",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json",
+      "content_hash": "sha256:6a3edf44602b59a37f343044cce019aeec8cb893f9451f5284255b445e9d1dca"
+    },
+    {
+      "artifact_id": "art-128-readiness-scorecard-md",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.md",
+      "content_hash": "sha256:3b3db7ddaafee244423116885c288e64ce7e7a1b62709c7ef9b954d9e20562d5"
+    }
+  ],
+  "validation_scorecard_row": [
+    12,
+    0,
+    0,
+    0,
+    0
+  ],
+  "replay_readiness_row": [
+    1,
+    0,
+    0,
+    0
+  ],
+  "errors": [],
+  "evidence": [
+    "execution-framework/migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.md",
+    "execution-framework/migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json",
+    "execution-framework/migration-artifacts/09-governance/migration-readiness-scorecard.md",
+    "execution-framework/generated/art128_readiness_scorecard_report.json",
+    "execution-framework/generated/envctl_target_registry.json",
+    "execution-framework/generated/envctl_artifact_registry_report.json",
+    "execution-framework/generated/shared_protocol_validation_report.json",
+    "execution-framework/generated/status_from_proofs.json",
+    "execution-framework/generated/contract_manifest.json"
+  ]
+}

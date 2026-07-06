@@ -1,0 +1,236 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-102_REPOSITORY_MAP",
+  "status": "passed",
+  "generated_at": "2026-07-04T23:20:34+00:00",
+  "target": {
+    "target_id": "flexnetos-vs-lifeos",
+    "target_type": "mixed",
+    "primary_root": "/home/flexnetos/FlexNetOS",
+    "compare_root": "/home/flexnetos/lifeos",
+    "descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384",
+    "source": "generated/envctl_target_registry.json"
+  },
+  "summary": {
+    "repository_count": 403,
+    "dirty_repository_count": 24,
+    "scope_rollup": {
+      "envctl-control-plane": 7,
+      "meta-control-plane": 18,
+      "nix-packaging": 9,
+      "nu-plugin-surface": 1,
+      "python-codebase": 3,
+      "runner-runtime": 43,
+      "rust-codebase": 22,
+      "supporting-content": 5,
+      "terminal-runtime": 294,
+      "workspace-root": 1
+    },
+    "language_file_rollup": {
+      "CSS": 832,
+      "HTML": 221971,
+      "JSON": 24568,
+      "JavaScript": 21257,
+      "Markdown": 43986,
+      "Nix": 292,
+      "Nushell": 493,
+      "Python": 6867,
+      "Rust": 38768,
+      "SQL": 321,
+      "Shell": 4422,
+      "TOML": 7549,
+      "TypeScript": 14745,
+      "YAML": 6108
+    }
+  },
+  "registry_results": {
+    "json": {
+      "artifact_row_id": "artifact-fad31476222b40f033f132a6",
+      "artifact_id": "art-102-repository-map-json",
+      "run_id": "run-art102-repository-map",
+      "path": "execution-framework/migration-artifacts/art-102_repository_map/repository-map.json",
+      "content_hash": "sha256:dca6e312fab259213071be9e34ac3404bd72d6faad190879e6983639eadfdcca",
+      "producer_operation_id": "op-art102-register-repository-map",
+      "contract_id": "contract-art102-repository-map",
+      "evidence_ids": [
+        "evidence-a0d0b2d6bb9900533f915aa7",
+        "evidence-cc360b6fbd1be8b35bd8cf45",
+        "evidence-ffa0cc091e84d61c7d9ab296",
+        "evidence-67570d4abd3a1c82b5080983"
+      ],
+      "graph_edge_ids": [
+        "edge-24fcc0af7d94aa2968728145",
+        "edge-cd95de98ddd5c954c2103ca8",
+        "edge-4b46c712633c00fdba23e6a8",
+        "edge-b3d05af08506b7d930436cb6"
+      ],
+      "validation_ids": [
+        "validation-265672d6b544974032178ffc",
+        "validation-911ce39aa52ad06e7e04dd3a"
+      ]
+    },
+    "markdown": {
+      "artifact_row_id": "artifact-4de8373ba6e82de51cc85861",
+      "artifact_id": "art-102-repository-map-md",
+      "run_id": "run-art102-repository-map",
+      "path": "execution-framework/migration-artifacts/art-102_repository_map/repository-map.md",
+      "content_hash": "sha256:cc0a9ded2f48d9a8185ecab8c65fcdf30afb31610d724a52a618b1f2e16e1f31",
+      "producer_operation_id": "op-art102-register-repository-map",
+      "contract_id": "contract-art102-repository-map",
+      "evidence_ids": [
+        "evidence-293394ca5e133fb3cbc3df31",
+        "evidence-38bc62785e09ee750c925375",
+        "evidence-f29cc46e6d70bc4bc36f02da",
+        "evidence-9e1e185179512947fe689eff"
+      ],
+      "graph_edge_ids": [
+        "edge-34c1e3aca1adb3058142aa3a",
+        "edge-ca151db785e51524dc213869",
+        "edge-c5208a2b2b7c462387a095ae",
+        "edge-9c1fb354c4b9eb5989926267"
+      ],
+      "validation_ids": [
+        "validation-125d367c8857012c9ed81825",
+        "validation-10c105ee87f0816826b11269"
+      ]
+    }
+  },
+  "artifact_rows": {
+    "art-102-repository-map-json": {
+      "id": "artifact-fad31476222b40f033f132a6",
+      "run_id": "run-art102-repository-map",
+      "artifact_id": "art-102-repository-map-json",
+      "title": "ART-102 Repository Map JSON",
+      "artifact_type": "repository_map",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-102_repository_map/repository-map.json",
+      "content_hash": "sha256:dca6e312fab259213071be9e34ac3404bd72d6faad190879e6983639eadfdcca",
+      "generated_by_operation_id": "op-art102-register-repository-map",
+      "evidence": {
+        "contract_id": "contract-art102-repository-map",
+        "evidence_ids": [
+          "evidence-a0d0b2d6bb9900533f915aa7",
+          "evidence-cc360b6fbd1be8b35bd8cf45",
+          "evidence-ffa0cc091e84d61c7d9ab296",
+          "evidence-67570d4abd3a1c82b5080983"
+        ],
+        "evidence_refs": [
+          "execution-framework/generated/envctl_target_registry.json",
+          "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+          "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json",
+          "execution-framework/migration-artifacts/art-102_repository_map/repository-map.json"
+        ],
+        "producer_operation_id": "op-art102-register-repository-map",
+        "provenance": {
+          "envctl_database": "sqlite in-memory via sql/001_migration_automation_schema.sql",
+          "helper_id": "helper-artifact-03",
+          "owner_agent": "artifact-agent",
+          "target_descriptor": "execution-framework/generated/envctl_target_registry.json",
+          "task_id": "ART-102_REPOSITORY_MAP"
+        },
+        "validation_ids": [
+          "validation-265672d6b544974032178ffc",
+          "validation-911ce39aa52ad06e7e04dd3a"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-art102-repository-map",
+        "graph_edge_ids": [
+          "edge-24fcc0af7d94aa2968728145",
+          "edge-cd95de98ddd5c954c2103ca8",
+          "edge-4b46c712633c00fdba23e6a8",
+          "edge-b3d05af08506b7d930436cb6"
+        ],
+        "links": [
+          {
+            "to": "artifact:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          },
+          {
+            "to": "artifact:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "artifact:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          }
+        ]
+      }
+    },
+    "art-102-repository-map-md": {
+      "id": "artifact-4de8373ba6e82de51cc85861",
+      "run_id": "run-art102-repository-map",
+      "artifact_id": "art-102-repository-map-md",
+      "title": "ART-102 Repository Map Markdown",
+      "artifact_type": "repository_map",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-102_repository_map/repository-map.md",
+      "content_hash": "sha256:cc0a9ded2f48d9a8185ecab8c65fcdf30afb31610d724a52a618b1f2e16e1f31",
+      "generated_by_operation_id": "op-art102-register-repository-map",
+      "evidence": {
+        "contract_id": "contract-art102-repository-map",
+        "evidence_ids": [
+          "evidence-293394ca5e133fb3cbc3df31",
+          "evidence-38bc62785e09ee750c925375",
+          "evidence-f29cc46e6d70bc4bc36f02da",
+          "evidence-9e1e185179512947fe689eff"
+        ],
+        "evidence_refs": [
+          "execution-framework/generated/envctl_target_registry.json",
+          "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+          "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json",
+          "execution-framework/migration-artifacts/art-102_repository_map/repository-map.md"
+        ],
+        "producer_operation_id": "op-art102-register-repository-map",
+        "provenance": {
+          "envctl_database": "sqlite in-memory via sql/001_migration_automation_schema.sql",
+          "helper_id": "helper-artifact-03",
+          "owner_agent": "artifact-agent",
+          "target_descriptor": "execution-framework/generated/envctl_target_registry.json",
+          "task_id": "ART-102_REPOSITORY_MAP"
+        },
+        "validation_ids": [
+          "validation-125d367c8857012c9ed81825",
+          "validation-10c105ee87f0816826b11269"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-art102-repository-map",
+        "graph_edge_ids": [
+          "edge-34c1e3aca1adb3058142aa3a",
+          "edge-ca151db785e51524dc213869",
+          "edge-c5208a2b2b7c462387a095ae",
+          "edge-9c1fb354c4b9eb5989926267"
+        ],
+        "links": [
+          {
+            "to": "artifact:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          },
+          {
+            "to": "artifact:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "artifact:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          }
+        ]
+      }
+    }
+  },
+  "validation_count": 4,
+  "evidence_count": 8,
+  "artifact_hashes": {
+    "repository-map.json": "sha256:dca6e312fab259213071be9e34ac3404bd72d6faad190879e6983639eadfdcca",
+    "repository-map.md": "sha256:cc0a9ded2f48d9a8185ecab8c65fcdf30afb31610d724a52a618b1f2e16e1f31"
+  },
+  "errors": [],
+  "evidence": [
+    "execution-framework/migration-artifacts/art-102_repository_map/repository-map.json",
+    "execution-framework/migration-artifacts/art-102_repository_map/repository-map.md",
+    "execution-framework/generated/envctl_target_registry.json",
+    "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+    "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+  ]
+}

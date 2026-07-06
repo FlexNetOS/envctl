@@ -62,7 +62,7 @@ echo
 if [ "$DRIVER_OK" = 1 ]; then
   rm -f "$AUTOSTART" 2>/dev/null && ok "Verification complete — disabled the post-reboot auto-run."
 else
-  warn "Re-run after reboot:  $META_ROOT/.local/bin/yazelix-gpu-verify.sh"
+  warn "Re-run after reboot:  $META_ROOT/usr/bin/yazelix-gpu-verify.sh"
 fi
 echo "=========================================================="
 read -rp "  Press Enter to close… " _ 2>/dev/null || true

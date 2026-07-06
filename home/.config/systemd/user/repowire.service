@@ -9,8 +9,8 @@ After=network.target
 Type=simple
 Environment=META_ROOT=%h/Desktop/meta
 ExecStartPre=/usr/bin/install -d -m 700 %h/Desktop/meta/.local/state/repowire
-ExecStart=%h/Desktop/meta/.local/bin/repowire serve
-Environment=PATH=%h/Desktop/meta/.local/bin:%h/Desktop/meta/.toolchains/cargo/bin:%h/Desktop/meta/.toolchains/.bun/bin:/usr/bin:/bin
+ExecStart=%h/Desktop/meta/usr/bin/repowire serve
+Environment=PATH=%h/Desktop/meta/usr/bin:%h/Desktop/meta/.toolchains/cargo/bin:%h/Desktop/meta/.toolchains/.bun/bin:/usr/bin:/bin
 Restart=always
 RestartSec=5
 StandardOutput=append:%h/Desktop/meta/.local/state/repowire/daemon.log

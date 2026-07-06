@@ -1,0 +1,68 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-027_ENVCTL_REPLAY_ENGINE",
+  "status": "completed",
+  "started_at": "2026-07-05T04:43:15+00:00",
+  "completed_at": "2026-07-05T04:43:15+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-envctl-replay-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/replay_engine.py",
+    "execution-framework/scripts/verify_replay_engine.py",
+    "execution-framework/generated/envctl_replay_report.json",
+    "execution-framework/docs/ENVCTL_REPLAY_ENGINE.md",
+    "execution-framework/state/REQ-027_ENVCTL_REPLAY_ENGINE.heartbeat.json",
+    "execution-framework/logs/REQ-027_ENVCTL_REPLAY_ENGINE.log",
+    "execution-framework/proof_records/REQ-027_ENVCTL_REPLAY_ENGINE.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/verify_replay_engine.py",
+    "python3 -m py_compile scripts/replay_engine.py scripts/verify_replay_engine.py"
+  ],
+  "verification_output": {
+    "status": "passed",
+    "checks": {
+      "dry_run_passes": true,
+      "event_chain_valid": true,
+      "reproducibility_hash_matches": true,
+      "evidence_hashes_match": true,
+      "artifact_hashes_match": true,
+      "apply_replay_blocked_by_approval": true,
+      "non_deterministic_operation_detected": true,
+      "mismatch_detected": true,
+      "safe_next_action_present": true
+    },
+    "dry_run_status": "pass",
+    "apply_status": "blocked",
+    "mismatch_status": "fail",
+    "errors": []
+  },
+  "checksums": {
+    "execution-framework/scripts/replay_engine.py": "48e73e95f9de75a000317bb7b4843de57f427d60eae604c095dec474919e170c",
+    "execution-framework/scripts/verify_replay_engine.py": "2dd134b0cd50d3b9aba0ac4c720b4292ef1c5e0db5d720f396b91250ab09343d",
+    "execution-framework/generated/envctl_replay_report.json": "de46be667e813d73f491e6796fc5e838a9f6ff3efa9937eab67deb319ad74d5d",
+    "execution-framework/docs/ENVCTL_REPLAY_ENGINE.md": "3bffa8b4bcbfc77c352115bdcdbeb611bfa7b74a3499a86523e47c84682091ae",
+    "execution-framework/state/REQ-027_ENVCTL_REPLAY_ENGINE.heartbeat.json": "0496e0cf283c739423e1bdfb8e57a15b3dfef7306ef592d0a86742aca0e969f4",
+    "execution-framework/logs/REQ-027_ENVCTL_REPLAY_ENGINE.log": "de46be667e813d73f491e6796fc5e838a9f6ff3efa9937eab67deb319ad74d5d",
+    "execution-framework/proof_records/REQ-027_ENVCTL_REPLAY_ENGINE.proof.json": "39cc1c2fb013dfd803d740135d92272ef7fcb25af34dda049c33a012c4fe7d2a",
+    "execution-framework/proof_records/proof_ledger.jsonl": "3a62f01e70b9d40c09b0a001386ad60eba9bf5371b74872bc08d2b1158aa4311"
+  },
+  "logs_uri": "logs/REQ-027_ENVCTL_REPLAY_ENGINE.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "scripts/replay_engine.py",
+    "scripts/verify_replay_engine.py",
+    "generated/envctl_replay_report.json",
+    "docs/ENVCTL_REPLAY_ENGINE.md",
+    "specs/replay-and-reproducibility.md",
+    "examples/recipes/full-migration-artifact-run.yaml",
+    "generated/execution_manifest.json",
+    "proof_records/REQ-022_ENVCTL_RUN_LEDGER.proof.json",
+    "proof_records/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.proof.json"
+  ],
+  "failure_reason": "",
+  "next_action": "REQ-041 two-repo integration can consume replay report and command summary"
+}

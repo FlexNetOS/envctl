@@ -1,0 +1,13 @@
+{
+  "task_id": "ART-108_DB_SCHEMA_MAP",
+  "status": "completed",
+  "started_at": "2026-07-04T23:28:33+00:00",
+  "updated_at": "2026-07-04T23:28:33+00:00",
+  "proof_uri": "proof_records/ART-108_DB_SCHEMA_MAP.proof.json",
+  "artifacts": [
+    "migration-artifacts/art-108_db_schema_map/db_schema_map.json",
+    "migration-artifacts/art-108_db_schema_map/db_schema_map.md",
+    "migration-artifacts/04-data-migration/schema-map.md",
+    "migration-artifacts/04-data-migration/database-schema-map.md"
+  ]
+}

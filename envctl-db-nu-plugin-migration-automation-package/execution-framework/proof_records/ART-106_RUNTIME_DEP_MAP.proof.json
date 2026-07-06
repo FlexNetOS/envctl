@@ -1,0 +1,104 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "ART-106_RUNTIME_DEP_MAP",
+  "status": "completed",
+  "started_at": "2026-07-04T23:29:22+00:00",
+  "completed_at": "2026-07-04T23:29:22+00:00",
+  "actor": "artifact-agent",
+  "helper_id": "helper-artifact-07",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "${MIGRATION_TARGET_ROOT}",
+  "files_changed": [
+    "execution-framework/scripts/generate_art106_runtime_dep_map.py",
+    "execution-framework/migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.md",
+    "execution-framework/migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.json",
+    "execution-framework/migration-artifacts/01-current-state/runtime-dependency-map.md",
+    "execution-framework/generated/art106_runtime_dep_map_registry_report.json",
+    "execution-framework/state/ART-106_RUNTIME_DEP_MAP.heartbeat.json",
+    "execution-framework/logs/ART-106_RUNTIME_DEP_MAP.log"
+  ],
+  "commands_run": [
+    "python3 scripts/generate_art106_runtime_dep_map.py",
+    "python3 -m py_compile scripts/generate_art106_runtime_dep_map.py",
+    "python3 -m json.tool migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.json",
+    "python3 -m json.tool generated/art106_runtime_dep_map_registry_report.json"
+  ],
+  "verification_output": {
+    "artifact_files_exist": true,
+    "hashes_recorded": true,
+    "registry_contains_hash": true,
+    "validation_evidence_linked": true,
+    "runtime_categories": [
+      "databases",
+      "env_vars",
+      "secret_refs",
+      "queues",
+      "apis",
+      "caches"
+    ],
+    "covered_categories": [
+      "databases",
+      "env_vars",
+      "secret_refs",
+      "queues",
+      "apis",
+      "caches"
+    ],
+    "gap_categories": [],
+    "rows": [
+      {
+        "artifact_id": "01-current-state-runtime-dependency-map-md",
+        "path": "execution-framework/migration-artifacts/01-current-state/runtime-dependency-map.md",
+        "content_hash": "sha256:bcadc1d28586c31cba7d82fe3a4729a9b03cda6e4444a3a92d3f8151c78e0cb6",
+        "hash_matches": true,
+        "validation_ids": [
+          "validation-50127372db746f3abf836960",
+          "validation-739cca56848f926d8698aa37",
+          "validation-65e95832848dbeac2e33c7b2"
+        ]
+      },
+      {
+        "artifact_id": "art-106-runtime-dep-map-md",
+        "path": "execution-framework/migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.md",
+        "content_hash": "sha256:bcadc1d28586c31cba7d82fe3a4729a9b03cda6e4444a3a92d3f8151c78e0cb6",
+        "hash_matches": true,
+        "validation_ids": [
+          "validation-de3130ddf5331379c04567fc",
+          "validation-3b289cf15cea1e4cb2447713",
+          "validation-95be4770a8ded978ec9438e8"
+        ]
+      },
+      {
+        "artifact_id": "art-106-runtime-dep-map-json",
+        "path": "execution-framework/migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.json",
+        "content_hash": "sha256:b141d6fcacaea1bf1d1e339a90765e993fed95a8d14e3bc05643f9d2bec54c69",
+        "hash_matches": true,
+        "validation_ids": [
+          "validation-5a2048edef47616db8cc8856",
+          "validation-6739cecc36a9571223cb3cad",
+          "validation-5f105ce23cf1322dd791bdc1"
+        ]
+      }
+    ]
+  },
+  "checksums": {
+    "execution-framework/scripts/generate_art106_runtime_dep_map.py": "97449fa6c36baf3bb727bb86f848554514e375b570e80b5f84e3cb0eaff25625",
+    "execution-framework/migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.md": "bcadc1d28586c31cba7d82fe3a4729a9b03cda6e4444a3a92d3f8151c78e0cb6",
+    "execution-framework/migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.json": "b141d6fcacaea1bf1d1e339a90765e993fed95a8d14e3bc05643f9d2bec54c69",
+    "execution-framework/migration-artifacts/01-current-state/runtime-dependency-map.md": "bcadc1d28586c31cba7d82fe3a4729a9b03cda6e4444a3a92d3f8151c78e0cb6",
+    "execution-framework/generated/art106_runtime_dep_map_registry_report.json": "601afc887388f271482a1e5448ec68fbf78df20c2033fbf799388ccd60fa6c52",
+    "execution-framework/state/ART-106_RUNTIME_DEP_MAP.heartbeat.json": "2b3ed34195f80c7386d7955f65a0b8cb1052c31a74e97396a5ed7b907451040b",
+    "execution-framework/logs/ART-106_RUNTIME_DEP_MAP.log": "a554ec6cf45a031e253da193e9f7ee9ac23178691830068e2b554d747283aca5"
+  },
+  "logs_uri": "logs/ART-106_RUNTIME_DEP_MAP.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.md",
+    "migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.json",
+    "migration-artifacts/01-current-state/runtime-dependency-map.md",
+    "generated/art106_runtime_dep_map_registry_report.json",
+    "logs/ART-106_RUNTIME_DEP_MAP.log"
+  ],
+  "failure_reason": "",
+  "next_action": "run VER-300_UNIT_VALIDATION"
+}

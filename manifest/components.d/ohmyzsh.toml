@@ -14,7 +14,7 @@
 #   command-not-found copypath copyfile dirhistory history.
 #
 # NON-DESTRUCTIVE: does NOT touch ~/.zshrc / ~/.zshenv (owner's ForgeCode setup).
-# Launch: ZDOTDIR="$META_ROOT/.toolchains/zsh-config" $META_ROOT/.local/bin/zsh
+# Launch: ZDOTDIR="$META_ROOT/.toolchains/zsh-config" $META_ROOT/usr/bin/zsh
 [[component]]
 id = "ohmyzsh"
 name = "oh-my-zsh config (meta-owned, full features)"
@@ -87,7 +87,7 @@ EOF
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; o=$(POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true ZDOTDIR=\"$M/.toolchains/zsh-config\" \"$META_ROOT/.local/bin/zsh\" -ic 'print -r -- \"OMZ=$ZSH P10K=${+functions[p10k]} AS=${+functions[_zsh_autosuggest_start]} HL=${+ZSH_HIGHLIGHT_VERSION}\"' 2>/dev/null); echo \"$o\"; echo \"$o\" | grep -q \"OMZ=$M/ohmyzsh\" && echo \"$o\" | grep -q 'P10K=1' && echo \"$o\" | grep -q 'AS=1' && echo \"$o\" | grep -q 'HL=1'"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; o=$(POWERLEVEL9K_DISABLE_CONFIGURATION_WIZARD=true ZDOTDIR=\"$M/.toolchains/zsh-config\" \"$META_ROOT/usr/bin/zsh\" -ic 'print -r -- \"OMZ=$ZSH P10K=${+functions[p10k]} AS=${+functions[_zsh_autosuggest_start]} HL=${+ZSH_HIGHLIGHT_VERSION}\"' 2>/dev/null); echo \"$o\"; echo \"$o\" | grep -q \"OMZ=$M/ohmyzsh\" && echo \"$o\" | grep -q 'P10K=1' && echo \"$o\" | grep -q 'AS=1' && echo \"$o\" | grep -q 'HL=1'"]
 
 [component.remove]
 kind = "script"

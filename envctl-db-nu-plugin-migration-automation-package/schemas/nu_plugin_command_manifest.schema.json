@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "nu_plugin envctl Migration Command Manifest",
+  "type": "object",
+  "required": [
+    "plugin_name",
+    "commands"
+  ],
+  "properties": {
+    "plugin_name": {
+      "type": "string",
+      "pattern": "^nu_plugin_"
+    },
+    "nu_plugin_version": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "commands": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "name",
+          "mode",
+          "output"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "mode": {
+            "enum": [
+              "read",
+              "mutate"
+            ]
+          },
+          "envctl_endpoint": {
+            "type": "string"
+          },
+          "output": {
+            "type": "object"
+          }
+        }
+      }
+    }
+  }
+}

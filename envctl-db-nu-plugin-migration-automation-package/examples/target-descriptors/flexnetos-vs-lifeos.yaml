@@ -1,0 +1,35 @@
+schema_version: 1
+target_id: flexnetos-vs-lifeos
+target_type: mixed
+primary_root: /home/flexnetos/FlexNetOS
+compare_root: /home/flexnetos/lifeos
+output_root: migration-artifacts
+include:
+  - "**/*"
+exclude:
+  - ".git/**"
+  - "node_modules/**"
+  - "target/**"
+  - ".venv/**"
+  - "__pycache__/**"
+safety:
+  default_mode: approval-gated
+  max_auto_risk: R2
+  allow_network: false
+  allow_destructive: false
+collectors:
+  filesystem: true
+  git: true
+  package_managers: true
+  databases: true
+  infrastructure: true
+  apis: true
+  observability: true
+artifact_contract:
+  name: full-migration-artifact-contract
+  version: 1
+recipe:
+  name: codex-flexnetos-full-artifact-run
+  version: 1
+metadata:
+  purpose: "Determine what FlexNetOS was used for compared with lifeos using real evidence."

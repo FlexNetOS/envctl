@@ -1,0 +1,11 @@
+{
+  "task_id": "ART-117_IAM_MATRIX",
+  "status": "completed",
+  "updated_at": "2026-07-04T23:19:57+00:00",
+  "proof_uri": "proof_records/ART-117_IAM_MATRIX.proof.json",
+  "logs_uri": "logs/ART-117_IAM_MATRIX.log",
+  "artifact_paths": {
+    "markdown": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.md",
+    "json": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json"
+  }
+}

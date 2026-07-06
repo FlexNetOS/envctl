@@ -6,8 +6,8 @@
 # hook that calls the installed binary: `exec rusty-idd next --base "$root"`. That hook only works if
 # `rusty-idd` is ON PATH in every box — this component is what guarantees that, the same way
 # grit.toml/env-ctl.toml own their tool binaries: a declarative detect/install/verify/fix/remove
-# component, installed under $META_ROOT/.toolchains/rusty-idd and symlinked onto
-# $META_ROOT/.local/bin for PATH exposure.
+# component, installed under $META_ROOT/.toolchains/rusty-idd and exposed through
+# a regular executable wrapper under $META_ROOT/usr/bin for PATH exposure.
 #
 # TRUST-BOUNDARY NOTE: rusty-idd is pure-Rust, no-C (no openssl-sys / libgit2-sys in its lock), so —
 # like grit — it is an EXTERNAL TOOL BINARY managed as *data* (this TOML), never added to any envctl
@@ -18,7 +18,7 @@
 [[component]]
 id = "rusty-idd"
 name = "rusty-idd — harness control-plane front door"
-description = "Single-binary IDD engine + fleet-deploy control plane (ADR-0015). The thin-adapter SessionStart hooks deployed across the fleet call `rusty-idd next`, so the binary must be on PATH box-wide. External tool binary installed under $META_ROOT/.toolchains/rusty-idd and symlinked onto $META_ROOT/.local/bin; NOT linked into any envctl crate."
+description = "Single-binary IDD engine + fleet-deploy control plane (ADR-0015). The thin-adapter SessionStart hooks deployed across the fleet call `rusty-idd next`, so the binary must be on PATH box-wide. External tool binary installed under $META_ROOT/.toolchains/rusty-idd and exposed through a regular $META_ROOT/usr/bin frontdoor wrapper; NOT linked into any envctl crate."
 requires = ["rustup"]   # cargo + a toolchain >= MSRV 1.88 (base.toml). Pure-Rust: no libssl-dev.
 destructive = false
 
@@ -26,7 +26,7 @@ destructive = false
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; B=\"${ENVCTL_BIN_DIR:-$M/.local/bin}\"; [ -x \"$M/.toolchains/rusty-idd/bin/rusty-idd\" ] && [ \"$(readlink -f \"$B/rusty-idd\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/rusty-idd/bin/rusty-idd\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; B=\"${ENVCTL_BIN_DIR:-$M/usr/bin}\"; [ -x \"$M/.toolchains/rusty-idd/bin/rusty-idd\" ] && [ -x \"$B/rusty-idd\" ] && [ ! -L \"$B/rusty-idd\" ] && grep -Fqx \"exec \\\"$M/.toolchains/rusty-idd/bin/rusty-idd\\\" \\\"\\$@\\\"\" \"$B/rusty-idd\""]
 
 # INSTALL: MSRV-gate (fail-closed, never silently upgrade), then build+place the `rusty-idd` bin from
 # the meta-cloned checkout. The bin lives in the `rusty-idd-cli` package (crates/cli); `--locked`
@@ -34,11 +34,12 @@ args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; B=\"${ENVCTL_BIN_DIR:-$M
 [component.install]
 kind = "script"
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 export CARGO_HOME="$M/.toolchains/cargo"
 export RUSTUP_HOME="$M/.toolchains/rustup"
-BIN="${ENVCTL_BIN_DIR:-$M/.local/bin}"
+BIN="${ENVCTL_BIN_DIR:-$M/usr/bin}"
 export PATH="$CARGO_HOME/bin:$BIN:$PATH"
 
 # MSRV gate: pass iff cargo >= 1.88.0. MSRV line FIRST so `sort -V -C` succeeds only when the pair is
@@ -51,46 +52,49 @@ repo="${RUSTY_IDD_REPO:-$M/rusty-idd}"
 test -d "$repo" || { echo "FATAL: rusty-idd checkout not found at $repo (set RUSTY_IDD_REPO)"; exit 1; }
 
 # Install only the front-door binary's package (crates/cli = rusty-idd-cli, bin name `rusty-idd`)
-# into a meta-owned root, then expose a compatibility symlink on $META_ROOT/.local/bin.
+# into a meta-owned root, then expose a regular frontdoor wrapper on $META_ROOT/usr/bin.
 ROOT="$M/.toolchains/rusty-idd"
 cargo install --path "$repo/crates/cli" --locked --root "$ROOT"
 mkdir -p "$BIN"
-ln -sfn "$ROOT/bin/rusty-idd" "$BIN/rusty-idd"
-'''
+envctl_frontdoor "$ROOT/bin/rusty-idd" "$BIN/rusty-idd"
+
 
 # VERIFY: the installed binary answers. Read-only; a missing/broken rusty-idd reports verify=false
 # (drift visible) WITHOUT triggering a destructive fix — detect, not verify, is the install gate.
+'''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; B=\"${ENVCTL_BIN_DIR:-$M/.local/bin}\"; export PATH=\"$B:$PATH\"; [ \"$(readlink -f \"$(command -v rusty-idd)\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/rusty-idd/bin/rusty-idd\")\" ] && rusty-idd --version >/dev/null"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; B=\"${ENVCTL_BIN_DIR:-$M/usr/bin}\"; export PATH=\"$B:$PATH\"; [ -x \"$B/rusty-idd\" ] && [ ! -L \"$B/rusty-idd\" ] && grep -Fqx \"exec \\\"$M/.toolchains/rusty-idd/bin/rusty-idd\\\" \\\"\\$@\\\"\" \"$B/rusty-idd\" && rusty-idd --version >/dev/null"]
 
 # FIX: idempotent rebuild+reinstall (force-overwrite). The dev-tools `cargo install --force` idiom.
 [component.fix]
 kind = "script"
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 export CARGO_HOME="$M/.toolchains/cargo"
 export RUSTUP_HOME="$M/.toolchains/rustup"
-BIN="${ENVCTL_BIN_DIR:-$M/.local/bin}"
+BIN="${ENVCTL_BIN_DIR:-$M/usr/bin}"
 export PATH="$CARGO_HOME/bin:$BIN:$PATH"
 repo="${RUSTY_IDD_REPO:-$M/rusty-idd}"
 test -d "$repo" || { echo "FATAL: rusty-idd checkout not found at $repo (set RUSTY_IDD_REPO)"; exit 1; }
 ROOT="$M/.toolchains/rusty-idd"
 cargo install --path "$repo/crates/cli" --force --locked --root "$ROOT"
 mkdir -p "$BIN"
-ln -sfn "$ROOT/bin/rusty-idd" "$BIN/rusty-idd"
-'''
+envctl_frontdoor "$ROOT/bin/rusty-idd" "$BIN/rusty-idd"
+
 
 # REMOVE: uninstall the binary by PACKAGE name (rusty-idd-cli), not bin name. `|| true` keeps reset
 # idempotent if rusty-idd was never installed.
+'''
 [component.remove]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; B=\"${ENVCTL_BIN_DIR:-$M/.local/bin}\"; t=\"$B/rusty-idd\"; [ -L \"$t\" ] && readlink \"$t\" | grep -q \"$M/.toolchains/rusty-idd\" && rm -f \"$t\"; rm -rf \"$M/.toolchains/rusty-idd\""]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; B=\"${ENVCTL_BIN_DIR:-$M/usr/bin}\"; t=\"$B/rusty-idd\"; src=\"$M/.toolchains/rusty-idd/bin/rusty-idd\"; if { [ -L \"$t\" ] && [ \"$(readlink -f \"$t\" 2>/dev/null || true)\" = \"$(readlink -f \"$src\" 2>/dev/null || true)\" ]; } || { [ -f \"$t\" ] && grep -Fqx \"exec \\\"$src\\\" \\\"\\$@\\\"\" \"$t\"; }; then rm -f \"$t\"; fi; rm -rf \"$M/.toolchains/rusty-idd\""]
 
-# ---- WIRING: $META_ROOT/.local/bin is already on PATH via other components; declared so reset can reason
+# ---- WIRING: $META_ROOT/usr/bin is already on PATH via other components; declared so reset can reason
 # ---- about it reversibly. No shell_rc / systemd / data_paths — rusty-idd is a plain binary.
 [component.wiring]
-path_entries = ["$META_ROOT/.local/bin"]
+path_entries = ["$META_ROOT/usr/bin"]

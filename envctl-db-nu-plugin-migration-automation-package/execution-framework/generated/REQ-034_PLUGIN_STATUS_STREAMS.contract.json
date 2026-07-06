@@ -1,0 +1,41 @@
+{
+  "artifact_schema_version": "1.0",
+  "task_id": "REQ-034_PLUGIN_STATUS_STREAMS",
+  "command": "codedb envctl status stream",
+  "source_patch": "generated/patches/REQ-034_PLUGIN_STATUS_STREAMS.nu_plugin.patch",
+  "inputs": {
+    "events_path": {
+      "required": true,
+      "formats": ["json_array", "json_object", "jsonl"],
+      "schema": "schemas/run_event.schema.json"
+    },
+    "proof": {
+      "required": false,
+      "formats": ["proof_json_file", "proof_json_directory"]
+    }
+  },
+  "output_table": "envctl_status_stream",
+  "views": ["event", "proof"],
+  "columns": [
+    "table",
+    "view",
+    "run_id",
+    "event_seq",
+    "time",
+    "phase",
+    "event_type",
+    "actor",
+    "actor_id",
+    "operation",
+    "status",
+    "summary",
+    "blocked",
+    "next_action",
+    "proof_task_id",
+    "proof_status",
+    "proof_uri",
+    "evidence_count"
+  ],
+  "pagination_flags": ["limit", "cursor"],
+  "mutation_policy": "read_only_status_projection"
+}

@@ -1,0 +1,69 @@
+{
+  "packet_schema_version": "1.0",
+  "task_id": "MAINT-501_RESTORE_PROOF_TEMPLATE",
+  "parent_id": "",
+  "phase": "09-drive-maintenance",
+  "title": "Restore proof template carried from v4",
+  "goal": "Close downgrade-style artifact gap by restoring proof_templates/PROOF_RECORD_TEMPLATE.json from v4.",
+  "owner_lane": "lane_e_verification",
+  "owner_agent": "drive-live-maintenance-agent",
+  "helper_id": "helper-drive-live-01",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "google-drive-connector",
+  "shell_mode": "workspace-write",
+  "repo_target": "filesystem",
+  "repo_path": "~/envctl-db-nu-plugin-migration-automation-package",
+  "filesystem_scope": "package-root",
+  "input_files": [
+    "history/**",
+    "execution-framework/generated/**",
+    "execution-framework/proof_records/**",
+    "README.md"
+  ],
+  "target_files": [
+    "execution-framework/proof_templates/PROOF_RECORD_TEMPLATE.json",
+    "execution-framework/proof_records/MAINT-501_RESTORE_PROOF_TEMPLATE.proof.json"
+  ],
+  "target_artifacts": [
+    "drive-live-gap-closure"
+  ],
+  "allowed_paths": [
+    "~/envctl-db-nu-plugin-migration-automation-package/**"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "depends_on": [
+    "EF-008_VERIFY_HISTORY_COMPLETENESS"
+  ],
+  "blocks": [
+    "MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC"
+  ],
+  "parallel_group": "drive_live_maintenance",
+  "can_run_parallel": true,
+  "max_parallel": 2,
+  "start_after": "",
+  "priority": 900,
+  "execution_cell": "drive-live-maintenance",
+  "required_tools": [
+    "Google_Drive",
+    "python3"
+  ],
+  "command_template": "Apply surgical Drive/package metadata update; no destructive rewrites.",
+  "verification_command": "Verify target file exists and proof record is present in proof ledger.",
+  "completion_gate": "target exists; proof exists; no stale gap remains for this maintenance item",
+  "proof_required": true,
+  "proof_uri": "execution-framework/proof_records/MAINT-501_RESTORE_PROOF_TEMPLATE.proof.json",
+  "heartbeat_file": "execution-framework/state/MAINT-501_RESTORE_PROOF_TEMPLATE.heartbeat.json",
+  "logs_uri": "execution-framework/logs/MAINT-501_RESTORE_PROOF_TEMPLATE.log",
+  "rollback_plan": "Revert only this maintenance addendum or restore prior Drive revision; do not remove source package history.",
+  "risk_level": "low",
+  "human_approval_required": false,
+  "notes": "Current final execution-framework now includes proof_templates with proof record template.",
+  "source_graph_uri": "generated/task_graph.csv",
+  "generated_at": "2026-07-05T05:39:53+00:00"
+}

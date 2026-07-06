@@ -1,0 +1,86 @@
+  [1;32m✓[0m boot-repair-dev  Boot repair: dev disk (ubuntu26dev) [healthy] wired
+  [1;32m✓[0m boot-repair-finalize Boot repair: finalize NVRAM entries [healthy] wired
+  [1;32m✓[0m boot-repair-rename-pro Boot repair: rename live → ubuntu26pro [healthy] wired
+  [1;32m✓[0m bun              Bun JS runtime [healthy] wired
+  [1;32m✓[0m cognitum-seed-net Cognitum Seed USB link-local addressing [healthy] wired
+  [1;32m✓[0m devin-cli        Devin CLI [healthy] wired
+  [1;32m✓[0m gh               GitHub CLI (official apt repo) [healthy] wired
+  [1;32m✓[0m ghostty          Ghostty terminal [healthy] wired
+  [1;32m✓[0m home-local-single-link single real-home .local link to META_ROOT [healthy] wired
+  [1;32m✓[0m kasetto          agent-env toolkit (envctl agent — kasetto v3.2.0 absorbed) [healthy] wired
+  [1;32m✓[0m kimi-cli         Kimi CLI [healthy] wired
+  [1;32m✓[0m libgccjit        libgccjit (meta-owned) [healthy] wired
+  [1;32m✓[0m libssl-dev       OpenSSL dev headers (libssl-dev) [healthy] wired
+  [1;32m✓[0m nerd-fonts       Nerd Fonts (JetBrainsMono, FiraCode) [healthy] wired
+  [1;32m✓[0m nvidia-cuda-repo NVIDIA CUDA apt repo [healthy] wired
+  [1;32m✓[0m rustup           rustup toolchain [healthy] wired
+  [1;32m✓[0m usrlocal-script-links retired system-depth helper script links [healthy] wired
+  [1;32m✓[0m virt-stack       QEMU/KVM + libvirt [healthy] wired
+  [1;32m✓[0m wild-linker      wild linker (meta-owned, wired + verified) [healthy] wired
+  [1;32m✓[0m node-via-bun     node → bun symlink [healthy] wired
+  [1;32m✓[0m ghostty-default-terminal Ghostty as default terminal [healthy] wired
+  [1;32m✓[0m home-bin-links   retired per-tool home bin links [healthy] wired
+  [1;32m✓[0m meta-tool-links  retired per-tool meta binary links [healthy] wired
+  [1;32m✓[0m nix-yazelix-cache yazelix Cachix cache + eval-cores [healthy] wired
+  [1;32m✓[0m nvidia-open      nvidia-open driver (rolling latest) [healthy] wired
+  [1;32m✓[0m cuda-toolkit     CUDA toolkit 13.3 (meta-owned) [1;33m[unhealthy][0m
+  [1;32m✓[0m grit             grit — parallel-agent AST git-lock coordinator [healthy] wired
+  [1;32m✓[0m meta-env-plugin  meta env plugin (envctl as a meta subprocess plugin) [1;33m[unhealthy][0m wired
+  [1;32m✓[0m mlua             mlua (Lua-in-Rust, vendored Lua 5.4) [healthy] wired
+  [1;32m✓[0m rtk              rtk (Rust Token Killer) [healthy] wired
+  [1;32m✓[0m rust-nightly-cuda-oxide Rust nightly + components (cuda-oxide) [healthy] wired
+  [1;32m✓[0m codex-cli        Codex CLI (meta toolchain; pinned upstream release rust-v0.142.0, meta-owned CODEX_HOME wrapper) [healthy] wired
+  [1;32m✓[0m ohmyzsh          oh-my-zsh config (meta-owned, full features) [1;33m[unhealthy][0m wired
+  [1;32m✓[0m n8n-mcp          n8n MCP server (docs-only key-less) [1;33m[unhealthy][0m wired
+  [1;32m✓[0m yazelix          yazelix (Ghostty variant) [healthy] wired
+  [1;32m✓[0m nvidia-container-toolkit NVIDIA Container Toolkit + CDI [healthy] wired
+  [1;32m✓[0m zsh-migration-launcher Meta zsh migration terminal (desktop launcher) [healthy] wired
+  [1;32m✓[0m yazelix-desktop  yazelix desktop launcher [healthy] wired
+  [[1;31mhigh[0m] cuda-toolkit           Unhealthy: installed but verify failed
+  [[1;31mhigh[0m] meta-env-plugin        Unhealthy: installed but verify failed
+  [[1;31mhigh[0m] ohmyzsh                Unhealthy: installed but verify failed
+  [[1;31mhigh[0m] n8n-mcp                Unhealthy: installed but verify failed
+  [[1;33mmed [0m] claude-code-cli        Missing: declared but not installed
+  [[1;33mmed [0m] cognitum-seed-autounlock Missing: declared but not installed
+  [[1;33mmed [0m] cognitum-seed-trust    Missing: declared but not installed
+  [[1;33mmed [0m] curl                   Missing: declared but not installed
+  [[1;33mmed [0m] gh-cli                 Missing: declared but not installed
+  [[1;33mmed [0m] git                    Missing: declared but not installed
+  [[1;33mmed [0m] helix                  Missing: declared but not installed
+  [[1;33mmed [0m] home-config-links      Missing: declared but not installed
+  [[1;33mmed [0m] huggingface-cli        Missing: declared but not installed
+  [[1;33mmed [0m] just                   Missing: declared but not installed
+  [[1;33mmed [0m] kache                  Missing: declared but not installed
+  [[1;33mmed [0m] llvm-clang             Missing: declared but not installed
+  [[1;33mmed [0m] mise                   Missing: declared but not installed
+  [[1;33mmed [0m] nix                    Missing: declared but not installed
+  [[1;33mmed [0m] nix-portable           Missing: declared but not installed
+  [[1;33mmed [0m] node-real              Missing: declared but not installed
+  [[1;33mmed [0m] nushell                Missing: declared but not installed
+  [[1;33mmed [0m] ollama                 Missing: declared but not installed
+  [[1;33mmed [0m] podman                 Missing: declared but not installed
+  [[1;33mmed [0m] pytorch-venv           Missing: declared but not installed
+  [[1;33mmed [0m] sqld                   Missing: declared but not installed
+  [[1;33mmed [0m] uv                     Missing: declared but not installed
+  [[1;33mmed [0m] wasmer                 Missing: declared but not installed
+  [[1;33mmed [0m] yazi                   Missing: declared but not installed
+  [[1;33mmed [0m] zellij                 Missing: declared but not installed
+  [[1;33mmed [0m] zsh                    Missing: declared but not installed
+  [[1;33mmed [0m] gemini-cli             Missing: declared but not installed
+  [[1;33mmed [0m] vite                   Missing: declared but not installed
+  [[1;33mmed [0m] claude-global-links    Missing: declared but not installed
+  [[1;33mmed [0m] rtk-config-links       Missing: declared but not installed
+  [[1;33mmed [0m] home-manager           Missing: declared but not installed
+  [[1;33mmed [0m] odysseus               Missing: declared but not installed
+  [[1;33mmed [0m] cargo-nextest          Missing: declared but not installed
+  [[1;33mmed [0m] desktop-app            Missing: declared but not installed
+  [[1;33mmed [0m] prompt_hub             Missing: declared but not installed
+  [[1;33mmed [0m] rusty-idd              Missing: declared but not installed
+  [[1;33mmed [0m] env-ctl                Missing: declared but not installed
+  [[1;33mmed [0m] cuda-oxide             Missing: declared but not installed
+  [[1;33mmed [0m] secretd                Missing: declared but not installed
+  [[1;33mmed [0m] dashboard              Missing: declared but not installed
+  [[1;33mmed [0m] yazelix-config         Missing: declared but not installed
+  [[1;33mmed [0m] yazelix-shell          Missing: declared but not installed
+  [[1;33mmed [0m] gpu-verify-scripts     Missing: declared but not installed
+  [[1;90mlow [0m] cuda-toolkit           WiringMissing: detected, but envctl's shell-rc wiring block is absent

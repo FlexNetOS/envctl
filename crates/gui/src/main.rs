@@ -13,14 +13,16 @@ mod theme;
 use eframe::egui::{self, Color32, RichText};
 use egui_extras::{Column, TableBuilder};
 use envctl_engine::{
-    run_event_loop, AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentCommandSpec, AgentDoctorReport,
-    AgentDoctorSpec, AgentEditOutcome, AgentList, AgentListKind, AgentListSpec, AgentLockDriftItem,
-    AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentReport, AgentScope, AgentSectionSel,
-    AgentSyncSpec, BuildStrategy, ComponentState, DashboardPlan, DashboardSpec, DriftItem,
-    DriftKind, Engine, EngineCommand, EngineEvent, Event, OpStatus, Refactor, RefactorGoal,
-    RenameRule, Severity, Stream, Telemetry, TelemetryControl, Zeroizing,
+    run_event_loop, AddRepoMode, AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentCommandSpec,
+    AgentDoctorReport, AgentDoctorSpec, AgentEditOutcome, AgentList, AgentListKind, AgentListSpec,
+    AgentLockDriftItem, AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentReport, AgentScope,
+    AgentSectionSel, AgentSyncSpec, BuildStrategy, CatalogRenderReport, ComponentState,
+    DashboardPlan, DashboardSpec, DriftItem, DriftKind, Engine, EngineCommand, EngineEvent, Event,
+    OpStatus, Refactor, RefactorGoal, RenameRule, Severity, Stream, Telemetry, TelemetryControl,
+    Zeroizing,
 };
 use std::collections::{HashMap, HashSet, VecDeque};
+use std::path::PathBuf;
 use std::sync::mpsc::{channel, Receiver, Sender};
 
 fn main() -> eframe::Result<()> {
@@ -215,6 +217,11 @@ struct EnvctlApp {
     add_url: String,
     add_id: String,
     add_build: String,
+    // registration mode: auto | peer | component
+    add_mode: String,
+    // peer mode: comma-separated provides/tags for the .meta.yaml entry
+    add_provides: String,
+    add_tags: String,
     add_strategy: String,
     add_ref: String,
     add_bins: String,
@@ -227,6 +234,10 @@ struct EnvctlApp {
     dash_plan: Option<DashboardPlan>,
     dash_panes_per_tab: usize,
     dash_status: String,
+    catalog_out_dir: String,
+    catalog_target_root: String,
+    catalog_status: String,
+    catalog_last_render: Option<CatalogRenderReport>,
     // agent-env panel — the active verb sub-tab + shared form inputs
     agent_verb: AgentVerbTab,
     agent_config: String,
@@ -278,7 +289,7 @@ struct EnvctlApp {
     sec_mint_expires: Option<i64>,
     sec_mint_has_token: bool,
     // token to copy ONCE: held only between a mint SecretsResult landing and the next copy-affordance
-    // render that consumes it via ui.output().copied_text, then immediately cleared. Never persisted,
+    // render that emits a clipboard command, then immediately cleared. Never persisted,
     // never to push_log / self.log.
     sec_mint_copy_once: Option<String>,
     sec_relay_result: Option<RelayMintMeta>,
@@ -286,6 +297,13 @@ struct EnvctlApp {
 }
 
 impl EnvctlApp {
+    fn default_catalog_out_dir() -> String {
+        std::env::temp_dir()
+            .join("envctl-catalog-export")
+            .display()
+            .to_string()
+    }
+
     fn new(cc: &eframe::CreationContext<'_>) -> Self {
         theme::apply(&cc.egui_ctx);
 
@@ -329,6 +347,9 @@ impl EnvctlApp {
             add_url: String::new(),
             add_id: String::new(),
             add_build: String::new(),
+            add_mode: "auto".into(),
+            add_provides: String::new(),
+            add_tags: String::new(),
             add_strategy: "as-is".into(),
             add_ref: String::new(),
             add_bins: String::new(),
@@ -340,9 +361,13 @@ impl EnvctlApp {
             dash_plan: None,
             dash_panes_per_tab: 6,
             dash_status: String::new(),
+            catalog_out_dir: Self::default_catalog_out_dir(),
+            catalog_target_root: String::new(),
+            catalog_status: String::new(),
+            catalog_last_render: None,
             agent_verb: AgentVerbTab::Sync,
             agent_config: String::new(),
-            agent_scope: AgentScopeSel::Default,
+            agent_scope: AgentScopeSel::Project,
             agent_source: String::new(),
             agent_skills: String::new(),
             agent_mcps: String::new(),
@@ -475,6 +500,18 @@ impl EnvctlApp {
                     for note in &outcome.notes {
                         self.push_log(Stream::Stdout, format!("[dashboard] {note}"));
                     }
+                }
+                Event::CatalogRendered { report } => {
+                    self.busy.remove("catalog-render");
+                    self.catalog_status = format!(
+                        "rendered {} file(s), {} config row(s) -> {}",
+                        report.summary.generated_files,
+                        report.summary.generated_config_rows,
+                        report.out_dir
+                    );
+                    self.catalog_out_dir = report.out_dir.clone();
+                    self.catalog_target_root = report.target_root.clone().unwrap_or_default();
+                    self.catalog_last_render = Some(*report);
                 }
                 Event::AgentRunFinished { report } => {
                     let s = &report.summary;
@@ -681,10 +718,10 @@ impl eframe::App for EnvctlApp {
 
         egui::TopBottomPanel::top("nav")
             .frame(
-                egui::Frame::none()
+                egui::Frame::NONE
                     .fill(theme::PANEL)
-                    .inner_margin(egui::Margin::symmetric(14.0, 10.0))
-                    .stroke(egui::Stroke::new(1.0, theme::BORDER)),
+                    .inner_margin(egui::Margin::symmetric(14, 10))
+                    .stroke(egui::Stroke::new(1.0_f32, theme::BORDER)),
             )
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
@@ -728,9 +765,9 @@ impl eframe::App for EnvctlApp {
 
         egui::CentralPanel::default()
             .frame(
-                egui::Frame::none()
+                egui::Frame::NONE
                     .fill(theme::BG)
-                    .inner_margin(egui::Margin::same(16.0)),
+                    .inner_margin(egui::Margin::same(16)),
             )
             .show(ctx, |ui| match self.screen {
                 Screen::Dashboard => self.dashboard(ui),
@@ -778,7 +815,7 @@ impl EnvctlApp {
                 Color32::TRANSPARENT
             })
             .stroke(egui::Stroke::NONE)
-            .rounding(egui::Rounding::same(7.0));
+            .corner_radius(egui::CornerRadius::same(7));
         if ui.add(btn).clicked() {
             self.screen = s;
         }
@@ -826,7 +863,7 @@ impl EnvctlApp {
                                             egui::ProgressBar::new(frac)
                                                 .fill(theme::load_color(frac))
                                                 .desired_height(10.0)
-                                                .rounding(egui::Rounding::same(5.0)),
+                                                .corner_radius(egui::CornerRadius::same(5)),
                                         );
                                     } else {
                                         ui.colored_label(theme::TEXT_FAINT, "memory: n/a");
@@ -918,7 +955,7 @@ impl EnvctlApp {
                         .text(RichText::new(format!("{}%", g.util_pct)).color(theme::TEXT))
                         .fill(theme::load_color(util))
                         .desired_height(14.0)
-                        .rounding(egui::Rounding::same(6.0)),
+                        .corner_radius(egui::CornerRadius::same(6)),
                 );
             });
             ui.add_space(4.0);
@@ -935,7 +972,7 @@ impl EnvctlApp {
                         )
                         .fill(theme::load_color(vram))
                         .desired_height(14.0)
-                        .rounding(egui::Rounding::same(6.0)),
+                        .corner_radius(egui::CornerRadius::same(6)),
                 );
             });
             ui.add_space(8.0);
@@ -956,7 +993,7 @@ impl EnvctlApp {
     fn sparkline(&self, ui: &mut egui::Ui, hist: &VecDeque<f32>) {
         let (rect, _resp) = ui.allocate_exact_size(egui::vec2(120.0, 28.0), egui::Sense::hover());
         let painter = ui.painter_at(rect);
-        painter.rect_filled(rect, egui::Rounding::same(5.0), theme::BG);
+        painter.rect_filled(rect, egui::CornerRadius::same(5), theme::BG);
 
         if hist.len() < 2 {
             return;
@@ -976,7 +1013,10 @@ impl EnvctlApp {
             .collect();
         let last = hist.back().copied().unwrap_or(0.0) / 100.0;
         let col = theme::load_color(last);
-        painter.add(egui::Shape::line(pts.clone(), egui::Stroke::new(1.6, col)));
+        painter.add(egui::Shape::line(
+            pts.clone(),
+            egui::Stroke::new(1.6_f32, col),
+        ));
         if let Some(p) = pts.last() {
             painter.circle_filled(*p, 2.2, col);
         }
@@ -1266,7 +1306,7 @@ impl EnvctlApp {
 
     // ── Add Repo ──────────────────────────────────────────────────────────────
     fn add_repo_screen(&mut self, ui: &mut egui::Ui) {
-        ui.label(RichText::new("Add a repo as a managed component").heading());
+        ui.label(RichText::new("Add a repo to the workspace").heading());
         ui.add_space(10.0);
 
         theme::inset().show(ui, |ui| {
@@ -1299,74 +1339,171 @@ impl EnvctlApp {
                     ui.add(egui::TextEdit::singleline(&mut self.add_build).hint_text("(blank = auto-detect)").desired_width(380.0));
                     ui.end_row();
 
-                    ui.label(RichText::new("Strategy").color(theme::TEXT_MUTED));
-                    egui::ComboBox::from_id_salt("strategy")
-                        .selected_text(&self.add_strategy)
+                    ui.label(RichText::new("Register as").color(theme::TEXT_MUTED));
+                    egui::ComboBox::from_id_salt("mode")
+                        .selected_text(&self.add_mode)
                         .show_ui(ui, |ui| {
-                            for s in ["as-is", "cherry-pick", "rename", "refactor"] {
-                                ui.selectable_value(&mut self.add_strategy, s.to_string(), s);
+                            for m in ["auto", "peer", "component"] {
+                                ui.selectable_value(&mut self.add_mode, m.to_string(), m);
                             }
                         });
                     ui.end_row();
                 });
 
-            // strategy-specific fields
+            // Resolve the effective registration mode for the live form (mirrors the
+            // engine's router): `auto` → peer when the remote is owned (FlexNetOS).
+            let as_peer = match self.add_mode.as_str() {
+                "peer" => true,
+                "component" => false,
+                _ => envctl_engine::peer::is_owned_remote(self.add_url.trim()),
+            };
+
             ui.add_space(8.0);
-            match self.add_strategy.as_str() {
-                "cherry-pick" => {
-                    ui.label(RichText::new("Bins (comma-separated file-stems)").color(theme::TEXT_MUTED));
-                    ui.add(egui::TextEdit::singleline(&mut self.add_bins).hint_text("rg, foo").desired_width(420.0));
-                }
-                "rename" => {
-                    ui.label(RichText::new("Renames (old=new, comma-separated)").color(theme::TEXT_MUTED));
-                    ui.add(egui::TextEdit::singleline(&mut self.add_renames).hint_text("rg=rgx").desired_width(420.0));
-                }
-                "refactor" => {
-                    ui.label(RichText::new("Patch cmd (leave blank for AI refactor)").color(theme::TEXT_MUTED));
-                    ui.add(egui::TextEdit::singleline(&mut self.add_patch).desired_width(420.0));
-                    if self.add_patch.trim().is_empty() {
-                        ui.horizontal(|ui| {
-                            ui.label(RichText::new("AI goal").color(theme::TEXT_MUTED));
-                            egui::ComboBox::from_id_salt("ai_goal")
-                                .selected_text(&self.add_ai_goal)
-                                .show_ui(ui, |ui| {
-                                    for g in ["port-to-rust", "cherry-pick-to-crate", "rename-for-synergy", "custom"] {
-                                        ui.selectable_value(&mut self.add_ai_goal, g.to_string(), g);
-                                    }
-                                });
-                        });
-                        ui.add(egui::TextEdit::singleline(&mut self.add_ai_instruction).hint_text("extra instruction (optional)").desired_width(420.0));
-                        ui.colored_label(theme::WARN, "envctl invokes the agent NON-INTERACTIVELY in the clone; it never auto-commits or pushes.");
-                    }
-                }
-                _ => {}
+            if as_peer {
+                // PEER mode: meta-native .meta.yaml registration. Strategy/build-from-
+                // source do not apply — the cargo workspace + `meta git update` build it.
+                ui.colored_label(
+                    theme::ACCENT_TEXT,
+                    "Peer: registers in .meta.yaml + .gitignore and clones as a meta sibling (reachable by meta exec/git/worktree).",
+                );
+                egui::Grid::new("addrepo_peer")
+                    .num_columns(2)
+                    .spacing([14.0, 12.0])
+                    .show(ui, |ui| {
+                        ui.label(RichText::new("provides").color(theme::TEXT_MUTED));
+                        ui.add(egui::TextEdit::singleline(&mut self.add_provides).hint_text("comma-separated capabilities (optional)").desired_width(380.0));
+                        ui.end_row();
+                        ui.label(RichText::new("tags").color(theme::TEXT_MUTED));
+                        ui.add(egui::TextEdit::singleline(&mut self.add_tags).hint_text("e.g. tools, env (optional)").desired_width(380.0));
+                        ui.end_row();
+                    });
+            } else {
+                self.add_repo_component_fields(ui);
             }
 
             ui.add_space(10.0);
-            ui.checkbox(&mut self.add_build_flag, "Build now (run the upstream build / AI agent + install) — off = preview only");
-
-            ui.add_space(12.0);
-            let ready = !self.add_url.trim().is_empty() && !self.add_id.trim().is_empty();
-            ui.horizontal(|ui| {
-                if ui.add_enabled(ready, egui::Button::new("Validate (dry-run)")).clicked() {
-                    self.dispatch(self.add_repo_cmd(true), None);
-                    self.screen = Screen::Logs;
-                }
-                let label = if self.add_build_flag { "Build + Register" } else { "Register (preview)" };
-                let reg = egui::Button::new(RichText::new(label).color(if ready { theme::ACCENT_TEXT } else { theme::TEXT_FAINT }))
-                    .fill(if ready { theme::ACCENT } else { theme::SURFACE });
-                if ui.add_enabled(ready, reg).clicked() {
-                    self.dispatch(self.add_repo_cmd(false), None);
-                    self.screen = Screen::Logs;
-                }
-            });
+            self.add_repo_actions(ui, as_peer);
         });
 
         ui.add_space(10.0);
-        ui.colored_label(
-            theme::TEXT_FAINT,
-            "Acquire + detect + preview by default. 'Build now' clones, builds from source, installs into $META_ROOT/.local/bin, and registers a managed drop-in.",
-        );
+        let footer = match self.add_mode.as_str() {
+            "peer" => "Peer registration: grep-guarded .meta.yaml + .gitignore edit and a sibling clone — dry-run by default; 'Build now' applies the edits and clones (or run `meta git update`).",
+            "component" => "Component: acquire + detect + preview by default. 'Build now' clones, builds from source, installs into $META_ROOT/usr/bin, and registers a managed drop-in.",
+            _ => "Auto: owned/FlexNetOS remotes register as a .meta.yaml PEER; others as a managed component. Preview by default; 'Build now' applies.",
+        };
+        ui.colored_label(theme::TEXT_FAINT, footer);
+    }
+
+    /// Component-mode strategy picker + strategy-specific fields.
+    fn add_repo_component_fields(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            ui.label(RichText::new("Strategy").color(theme::TEXT_MUTED));
+            egui::ComboBox::from_id_salt("strategy")
+                .selected_text(&self.add_strategy)
+                .show_ui(ui, |ui| {
+                    for s in ["as-is", "cherry-pick", "rename", "refactor"] {
+                        ui.selectable_value(&mut self.add_strategy, s.to_string(), s);
+                    }
+                });
+        });
+        ui.add_space(8.0);
+        match self.add_strategy.as_str() {
+            "cherry-pick" => {
+                ui.label(
+                    RichText::new("Bins (comma-separated file-stems)").color(theme::TEXT_MUTED),
+                );
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.add_bins)
+                        .hint_text("rg, foo")
+                        .desired_width(420.0),
+                );
+            }
+            "rename" => {
+                ui.label(
+                    RichText::new("Renames (old=new, comma-separated)").color(theme::TEXT_MUTED),
+                );
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.add_renames)
+                        .hint_text("rg=rgx")
+                        .desired_width(420.0),
+                );
+            }
+            "refactor" => {
+                ui.label(
+                    RichText::new("Patch cmd (leave blank for AI refactor)")
+                        .color(theme::TEXT_MUTED),
+                );
+                ui.add(egui::TextEdit::singleline(&mut self.add_patch).desired_width(420.0));
+                if self.add_patch.trim().is_empty() {
+                    ui.horizontal(|ui| {
+                        ui.label(RichText::new("AI goal").color(theme::TEXT_MUTED));
+                        egui::ComboBox::from_id_salt("ai_goal")
+                            .selected_text(&self.add_ai_goal)
+                            .show_ui(ui, |ui| {
+                                for g in [
+                                    "port-to-rust",
+                                    "cherry-pick-to-crate",
+                                    "rename-for-synergy",
+                                    "custom",
+                                ] {
+                                    ui.selectable_value(&mut self.add_ai_goal, g.to_string(), g);
+                                }
+                            });
+                    });
+                    ui.add(
+                        egui::TextEdit::singleline(&mut self.add_ai_instruction)
+                            .hint_text("extra instruction (optional)")
+                            .desired_width(420.0),
+                    );
+                    ui.colored_label(theme::WARN, "envctl invokes the agent NON-INTERACTIVELY in the clone; it never auto-commits or pushes.");
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// The build-now toggle + Validate/Register buttons, shared by both modes.
+    /// `as_peer` adjusts the labels: peer "Build now" applies the meta-file edits +
+    /// clone, component "Build now" builds-from-source + installs.
+    fn add_repo_actions(&mut self, ui: &mut egui::Ui, as_peer: bool) {
+        let toggle = if as_peer {
+            "Build now (apply the .meta.yaml/.gitignore edits + clone the peer) — off = preview only"
+        } else {
+            "Build now (run the upstream build / AI agent + install) — off = preview only"
+        };
+        ui.checkbox(&mut self.add_build_flag, toggle);
+
+        ui.add_space(12.0);
+        let ready = !self.add_url.trim().is_empty() && !self.add_id.trim().is_empty();
+        ui.horizontal(|ui| {
+            if ui
+                .add_enabled(ready, egui::Button::new("Validate (dry-run)"))
+                .clicked()
+            {
+                self.dispatch(self.add_repo_cmd(true), None);
+                self.screen = Screen::Logs;
+            }
+            let verb = if as_peer {
+                "Register peer"
+            } else {
+                "Build + Register"
+            };
+            let label = if self.add_build_flag {
+                verb
+            } else {
+                "Register (preview)"
+            };
+            let reg = egui::Button::new(RichText::new(label).color(if ready {
+                theme::ACCENT_TEXT
+            } else {
+                theme::TEXT_FAINT
+            }))
+            .fill(if ready { theme::ACCENT } else { theme::SURFACE });
+            if ui.add_enabled(ready, reg).clicked() {
+                self.dispatch(self.add_repo_cmd(false), None);
+                self.screen = Screen::Logs;
+            }
+        });
     }
 
     fn add_repo_cmd(&self, dry_run: bool) -> EngineCommand {
@@ -1411,6 +1548,11 @@ impl EnvctlApp {
             },
             _ => BuildStrategy::AsIs,
         };
+        let mode = match self.add_mode.as_str() {
+            "peer" => AddRepoMode::Peer,
+            "component" => AddRepoMode::Component,
+            _ => AddRepoMode::Auto,
+        };
         EngineCommand::AddRepo {
             spec: AddRepoSpec {
                 id: self.add_id.trim().to_string(),
@@ -1419,6 +1561,9 @@ impl EnvctlApp {
                 build_cmd: self.add_build.trim().to_string(),
                 strategy,
                 allow_build: self.add_build_flag,
+                mode,
+                provides: split_csv(&self.add_provides),
+                tags: split_csv(&self.add_tags),
                 ..Default::default()
             },
             dry_run,
@@ -1563,7 +1708,7 @@ impl EnvctlApp {
                     } else {
                         Color32::TRANSPARENT
                     })
-                    .rounding(egui::Rounding::same(7.0));
+                    .corner_radius(egui::CornerRadius::same(7));
                 if ui.add(btn).clicked() {
                     self.agent_verb = v;
                 }
@@ -1674,9 +1819,9 @@ impl EnvctlApp {
                 .selected_text(self.agent_scope.label())
                 .show_ui(ui, |ui| {
                     for s in [
+                        AgentScopeSel::Project,
                         AgentScopeSel::Default,
                         AgentScopeSel::Global,
-                        AgentScopeSel::Project,
                     ] {
                         ui.selectable_value(&mut self.agent_scope, s, s.label());
                     }
@@ -2164,7 +2309,7 @@ impl EnvctlApp {
                     } else {
                         Color32::TRANSPARENT
                     })
-                    .rounding(egui::Rounding::same(7.0));
+                    .corner_radius(egui::CornerRadius::same(7));
                 if ui.add(btn).clicked() {
                     self.secrets_verb = v;
                 }
@@ -2383,7 +2528,7 @@ impl EnvctlApp {
                     if ui.button("Copy token (once)").clicked() {
                         // take() so the token is moved out and dropped after this frame — copy once.
                         if let Some(tok) = self.sec_mint_copy_once.take() {
-                            ui.output_mut(|o| o.copied_text = tok);
+                            ui.output_mut(|o| o.commands.push(egui::OutputCommand::CopyText(tok)));
                             self.sec_status =
                                 "token copied to clipboard (cleared from memory)".into();
                         }
@@ -2453,11 +2598,11 @@ impl EnvctlApp {
         });
         ui.add_space(6.0);
 
-        egui::Frame::none()
+        egui::Frame::NONE
             .fill(theme::BG)
-            .stroke(egui::Stroke::new(1.0, theme::BORDER))
-            .rounding(egui::Rounding::same(8.0))
-            .inner_margin(egui::Margin::same(10.0))
+            .stroke(egui::Stroke::new(1.0_f32, theme::BORDER))
+            .corner_radius(egui::CornerRadius::same(8))
+            .inner_margin(egui::Margin::same(10))
             .show(ui, |ui| {
                 ui.set_width(ui.available_width());
                 egui::ScrollArea::vertical()
@@ -2581,6 +2726,84 @@ impl EnvctlApp {
             ui.add_space(14.0);
             ui.separator();
             ui.add_space(14.0);
+            ui.label(RichText::new("Catalog export").color(theme::ACCENT_TEXT).strong());
+            ui.colored_label(
+                theme::TEXT_FAINT,
+                "Render the database-backed catalog projection into an explicit directory outside the repo.",
+            );
+            ui.add_space(8.0);
+            ui.horizontal(|ui| {
+                ui.label(RichText::new("Out dir").color(theme::TEXT_MUTED));
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.catalog_out_dir)
+                        .desired_width(360.0)
+                        .hint_text("/tmp/envctl-catalog-export"),
+                );
+            });
+            ui.horizontal(|ui| {
+                ui.label(RichText::new("Target root").color(theme::TEXT_MUTED));
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.catalog_target_root)
+                        .desired_width(360.0)
+                        .hint_text("/home/flexnetos/FlexNetOS"),
+                );
+            });
+            let render_btn = egui::Button::new(
+                RichText::new("Render catalog export").color(theme::ACCENT_TEXT),
+            )
+            .fill(theme::ACCENT);
+            if ui.add(render_btn).clicked() {
+                let out_dir = self.catalog_out_dir.trim();
+                let target_root = self.catalog_target_root.trim();
+                if out_dir.is_empty() {
+                    self.catalog_status = "choose an output directory first".into();
+                } else {
+                    self.catalog_status = if target_root.is_empty() {
+                        format!("rendering -> {out_dir}")
+                    } else {
+                        format!("rendering -> {out_dir} (target root {target_root})")
+                    };
+                    self.dispatch(
+                        EngineCommand::CatalogRender {
+                            out_dir: PathBuf::from(out_dir),
+                            target_root: (!target_root.is_empty())
+                                .then(|| PathBuf::from(target_root)),
+                        },
+                        None,
+                    );
+                }
+            }
+            if !self.catalog_status.is_empty() {
+                ui.add_space(8.0);
+                ui.colored_label(theme::TEXT_FAINT, &self.catalog_status);
+            }
+            if let Some(report) = &self.catalog_last_render {
+                ui.add_space(8.0);
+                ui.colored_label(
+                    theme::TEXT_FAINT,
+                    format!(
+                        "{} files · {} rows · {} bytes",
+                        report.summary.generated_files,
+                        report.summary.generated_config_rows,
+                        report.summary.bytes
+                    ),
+                );
+                for file in report.files.iter().take(6) {
+                    ui.colored_label(
+                        theme::TEXT_MUTED,
+                        format!("{} ({})", file.path, file.format),
+                    );
+                }
+                if report.files.len() > 6 {
+                    ui.colored_label(
+                        theme::TEXT_MUTED,
+                        format!("… and {} more file(s)", report.files.len() - 6),
+                    );
+                }
+            }
+            ui.add_space(14.0);
+            ui.separator();
+            ui.add_space(14.0);
             if ui
                 .add(
                     egui::Button::new(RichText::new("Re-detect").color(theme::ACCENT_TEXT))
@@ -2602,10 +2825,10 @@ impl EnvctlApp {
 
 /// A compact "LABEL value" stat chip on a faint surface.
 fn stat_chip(ui: &mut egui::Ui, label: &str, value: &str, value_col: Color32) {
-    egui::Frame::none()
+    egui::Frame::NONE
         .fill(theme::BG)
-        .rounding(egui::Rounding::same(6.0))
-        .inner_margin(egui::Margin::symmetric(10.0, 5.0))
+        .corner_radius(egui::CornerRadius::same(6))
+        .inner_margin(egui::Margin::symmetric(10, 5))
         .show(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.label(RichText::new(label).size(10.0).color(theme::TEXT_FAINT));
@@ -2829,6 +3052,9 @@ mod agent_spec_tests {
             add_url: String::new(),
             add_id: String::new(),
             add_build: String::new(),
+            add_mode: "auto".into(),
+            add_provides: String::new(),
+            add_tags: String::new(),
             add_strategy: "as-is".into(),
             add_ref: String::new(),
             add_bins: String::new(),
@@ -2840,9 +3066,13 @@ mod agent_spec_tests {
             dash_plan: None,
             dash_panes_per_tab: 6,
             dash_status: String::new(),
+            catalog_out_dir: EnvctlApp::default_catalog_out_dir(),
+            catalog_target_root: String::new(),
+            catalog_status: String::new(),
+            catalog_last_render: None,
             agent_verb: AgentVerbTab::Sync,
             agent_config: String::new(),
-            agent_scope: AgentScopeSel::Default,
+            agent_scope: AgentScopeSel::Project,
             agent_source: String::new(),
             agent_skills: String::new(),
             agent_mcps: String::new(),
@@ -2894,7 +3124,11 @@ mod agent_spec_tests {
         let app = test_app();
         let spec = app.agent_sync_spec();
         assert_eq!(spec.config_path, None, "blank config → None");
-        assert_eq!(spec.scope_override, None, "default scope → no override");
+        assert_eq!(
+            spec.scope_override,
+            Some(AgentScope::Project),
+            "GUI defaults to project scope"
+        );
         assert!(!spec.apply, "apply defaults false (fail-closed)");
         assert!(matches!(spec.lock_mode, AgentLockMode::Plain));
     }
@@ -3005,7 +3239,7 @@ mod agent_spec_tests {
         let app = test_app();
         let spec = app.agent_clean_spec();
         assert!(!spec.apply, "clean apply defaults false (fail-closed)");
-        assert_eq!(spec.scope_override, None);
+        assert_eq!(spec.scope_override, Some(AgentScope::Project));
     }
 
     #[test]

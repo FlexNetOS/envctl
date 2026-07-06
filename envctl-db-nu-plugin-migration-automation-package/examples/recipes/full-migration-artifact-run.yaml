@@ -1,0 +1,35 @@
+schema_version: 1
+recipe_id: full-migration-discovery-and-artifact-run
+version: 1
+phases:
+  - phase_id: discovery
+    approval_gate: false
+    operations:
+      - operation_id: scan-filesystem
+        operation_type: collector.filesystem
+        risk: R0
+        expected_artifacts: [directory-tree, repository-map]
+      - operation_id: scan-toolchain
+        operation_type: collector.toolchain
+        risk: R0
+        expected_artifacts: [toolchain-dependency-tree, package-library-dependency-graph]
+  - phase_id: artifact-synthesis
+    approval_gate: false
+    operations:
+      - operation_id: synthesize-current-state
+        operation_type: artifact.synthesize
+        risk: R1
+        expected_artifacts: [system-inventory, dependency-graph, data-flow-graph]
+  - phase_id: validation
+    approval_gate: false
+    operations:
+      - operation_id: validate-artifacts
+        operation_type: validation.artifact-contract
+        risk: R1
+        validators: [manifest-complete, links-valid, evidence-present]
+  - phase_id: replay-ready
+    approval_gate: false
+    operations:
+      - operation_id: compute-reproducibility-hash
+        operation_type: replay.hash
+        risk: R1
