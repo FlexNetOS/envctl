@@ -35,8 +35,10 @@ The environment targets two agent runtimes; keep them consistent (kasetto manage
 - **Claude Code** → `.claude/` : skills under `.claude/skills/<name>/SKILL.md`, plus `.claude/settings*.json`. Do NOT hand-maintain `.claude/homunculus/instincts/...` ECC files — they're superseded by these curated skills.
 - **Codex** → `.codex/` : `config.toml` (MCP servers + multi-agent), `AGENTS.md`, role configs under `.codex/agents/`. Codex-facing skill mirror under `.agents/skills/`.
 
-### MCP baseline (keep identical across both runtimes)
-`github`, `context7`, `exa`, `memory`, `playwright`, `sequential-thinking`. This pack is the standard tool surface for envctl work; provision it through kasetto so Claude (`.mcp.json`/settings) and Codex (`config.toml` `[mcp_servers.*]`) stay in lockstep rather than drifting.
+### MCP baseline (Yazelix mirror only)
+The generated agent environment may only install MCP entries that honor the Yazelix ownership model: editable input under the user config tree, generated runtime as proof only, and profile-owned frontdoors for local binaries. Today the only MCP entry in this repo baseline that satisfies that rule is `exa`, because it is remote URL configuration and does not launch a local Meta/toolchain binary.
+
+Do not restore `github`, `context7`, `memory`, `playwright`, or `sequential-thinking` from `agent-skills/mcps`, workspace mirrors, marketplace caches, or old locks. Those entries used Meta `bunx` or repo-source scripts as active launchers. They can return only after their owning package/profile path exposes a Yazelix-mirrored frontdoor and `agent-env.yaml` plus `agent-env.lock` are regenerated from that source.
 
 ### Multi-agent roles (Codex)
 Three read-only roles are the baseline: **explorer** (gather evidence before changes), **reviewer** (correctness/security/tests), **docs-researcher** (verify APIs against primary sources). Keep them read-only; mutation happens in the main thread.
