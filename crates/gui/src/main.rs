@@ -16,11 +16,13 @@ use envctl_engine::{
     run_event_loop, AddRepoMode, AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentCommandSpec,
     AgentDoctorReport, AgentDoctorSpec, AgentEditOutcome, AgentList, AgentListKind, AgentListSpec,
     AgentLockDriftItem, AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentReport, AgentScope,
-    AgentSectionSel, AgentSyncSpec, BuildStrategy, ComponentState, DashboardPlan, DashboardSpec,
-    DriftItem, DriftKind, Engine, EngineCommand, EngineEvent, Event, OpStatus, Refactor,
-    RefactorGoal, RenameRule, Severity, Stream, Telemetry, TelemetryControl, Zeroizing,
+    AgentSectionSel, AgentSyncSpec, BuildStrategy, CatalogRenderReport, ComponentState,
+    DashboardPlan, DashboardSpec, DriftItem, DriftKind, Engine, EngineCommand, EngineEvent, Event,
+    OpStatus, Refactor, RefactorGoal, RenameRule, Severity, Stream, Telemetry, TelemetryControl,
+    Zeroizing,
 };
 use std::collections::{HashMap, HashSet, VecDeque};
+use std::path::PathBuf;
 use std::sync::mpsc::{channel, Receiver, Sender};
 
 fn main() -> eframe::Result<()> {
@@ -232,6 +234,10 @@ struct EnvctlApp {
     dash_plan: Option<DashboardPlan>,
     dash_panes_per_tab: usize,
     dash_status: String,
+    catalog_out_dir: String,
+    catalog_target_root: String,
+    catalog_status: String,
+    catalog_last_render: Option<CatalogRenderReport>,
     // agent-env panel — the active verb sub-tab + shared form inputs
     agent_verb: AgentVerbTab,
     agent_config: String,
@@ -291,6 +297,13 @@ struct EnvctlApp {
 }
 
 impl EnvctlApp {
+    fn default_catalog_out_dir() -> String {
+        std::env::temp_dir()
+            .join("envctl-catalog-export")
+            .display()
+            .to_string()
+    }
+
     fn new(cc: &eframe::CreationContext<'_>) -> Self {
         theme::apply(&cc.egui_ctx);
 
@@ -348,9 +361,13 @@ impl EnvctlApp {
             dash_plan: None,
             dash_panes_per_tab: 6,
             dash_status: String::new(),
+            catalog_out_dir: Self::default_catalog_out_dir(),
+            catalog_target_root: String::new(),
+            catalog_status: String::new(),
+            catalog_last_render: None,
             agent_verb: AgentVerbTab::Sync,
             agent_config: String::new(),
-            agent_scope: AgentScopeSel::Default,
+            agent_scope: AgentScopeSel::Project,
             agent_source: String::new(),
             agent_skills: String::new(),
             agent_mcps: String::new(),
@@ -483,6 +500,18 @@ impl EnvctlApp {
                     for note in &outcome.notes {
                         self.push_log(Stream::Stdout, format!("[dashboard] {note}"));
                     }
+                }
+                Event::CatalogRendered { report } => {
+                    self.busy.remove("catalog-render");
+                    self.catalog_status = format!(
+                        "rendered {} file(s), {} config row(s) -> {}",
+                        report.summary.generated_files,
+                        report.summary.generated_config_rows,
+                        report.out_dir
+                    );
+                    self.catalog_out_dir = report.out_dir.clone();
+                    self.catalog_target_root = report.target_root.clone().unwrap_or_default();
+                    self.catalog_last_render = Some(*report);
                 }
                 Event::AgentRunFinished { report } => {
                     let s = &report.summary;
@@ -1790,9 +1819,9 @@ impl EnvctlApp {
                 .selected_text(self.agent_scope.label())
                 .show_ui(ui, |ui| {
                     for s in [
+                        AgentScopeSel::Project,
                         AgentScopeSel::Default,
                         AgentScopeSel::Global,
-                        AgentScopeSel::Project,
                     ] {
                         ui.selectable_value(&mut self.agent_scope, s, s.label());
                     }
@@ -2697,6 +2726,84 @@ impl EnvctlApp {
             ui.add_space(14.0);
             ui.separator();
             ui.add_space(14.0);
+            ui.label(RichText::new("Catalog export").color(theme::ACCENT_TEXT).strong());
+            ui.colored_label(
+                theme::TEXT_FAINT,
+                "Render the database-backed catalog projection into an explicit directory outside the repo.",
+            );
+            ui.add_space(8.0);
+            ui.horizontal(|ui| {
+                ui.label(RichText::new("Out dir").color(theme::TEXT_MUTED));
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.catalog_out_dir)
+                        .desired_width(360.0)
+                        .hint_text("/tmp/envctl-catalog-export"),
+                );
+            });
+            ui.horizontal(|ui| {
+                ui.label(RichText::new("Target root").color(theme::TEXT_MUTED));
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.catalog_target_root)
+                        .desired_width(360.0)
+                        .hint_text("/home/flexnetos/FlexNetOS"),
+                );
+            });
+            let render_btn = egui::Button::new(
+                RichText::new("Render catalog export").color(theme::ACCENT_TEXT),
+            )
+            .fill(theme::ACCENT);
+            if ui.add(render_btn).clicked() {
+                let out_dir = self.catalog_out_dir.trim();
+                let target_root = self.catalog_target_root.trim();
+                if out_dir.is_empty() {
+                    self.catalog_status = "choose an output directory first".into();
+                } else {
+                    self.catalog_status = if target_root.is_empty() {
+                        format!("rendering -> {out_dir}")
+                    } else {
+                        format!("rendering -> {out_dir} (target root {target_root})")
+                    };
+                    self.dispatch(
+                        EngineCommand::CatalogRender {
+                            out_dir: PathBuf::from(out_dir),
+                            target_root: (!target_root.is_empty())
+                                .then(|| PathBuf::from(target_root)),
+                        },
+                        None,
+                    );
+                }
+            }
+            if !self.catalog_status.is_empty() {
+                ui.add_space(8.0);
+                ui.colored_label(theme::TEXT_FAINT, &self.catalog_status);
+            }
+            if let Some(report) = &self.catalog_last_render {
+                ui.add_space(8.0);
+                ui.colored_label(
+                    theme::TEXT_FAINT,
+                    format!(
+                        "{} files · {} rows · {} bytes",
+                        report.summary.generated_files,
+                        report.summary.generated_config_rows,
+                        report.summary.bytes
+                    ),
+                );
+                for file in report.files.iter().take(6) {
+                    ui.colored_label(
+                        theme::TEXT_MUTED,
+                        format!("{} ({})", file.path, file.format),
+                    );
+                }
+                if report.files.len() > 6 {
+                    ui.colored_label(
+                        theme::TEXT_MUTED,
+                        format!("… and {} more file(s)", report.files.len() - 6),
+                    );
+                }
+            }
+            ui.add_space(14.0);
+            ui.separator();
+            ui.add_space(14.0);
             if ui
                 .add(
                     egui::Button::new(RichText::new("Re-detect").color(theme::ACCENT_TEXT))
@@ -2959,9 +3066,13 @@ mod agent_spec_tests {
             dash_plan: None,
             dash_panes_per_tab: 6,
             dash_status: String::new(),
+            catalog_out_dir: EnvctlApp::default_catalog_out_dir(),
+            catalog_target_root: String::new(),
+            catalog_status: String::new(),
+            catalog_last_render: None,
             agent_verb: AgentVerbTab::Sync,
             agent_config: String::new(),
-            agent_scope: AgentScopeSel::Default,
+            agent_scope: AgentScopeSel::Project,
             agent_source: String::new(),
             agent_skills: String::new(),
             agent_mcps: String::new(),
@@ -3013,7 +3124,11 @@ mod agent_spec_tests {
         let app = test_app();
         let spec = app.agent_sync_spec();
         assert_eq!(spec.config_path, None, "blank config → None");
-        assert_eq!(spec.scope_override, None, "default scope → no override");
+        assert_eq!(
+            spec.scope_override,
+            Some(AgentScope::Project),
+            "GUI defaults to project scope"
+        );
         assert!(!spec.apply, "apply defaults false (fail-closed)");
         assert!(matches!(spec.lock_mode, AgentLockMode::Plain));
     }
@@ -3124,7 +3239,7 @@ mod agent_spec_tests {
         let app = test_app();
         let spec = app.agent_clean_spec();
         assert!(!spec.apply, "clean apply defaults false (fail-closed)");
-        assert_eq!(spec.scope_override, None);
+        assert_eq!(spec.scope_override, Some(AgentScope::Project));
     }
 
     #[test]

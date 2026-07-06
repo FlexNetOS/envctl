@@ -1,0 +1,12 @@
+{
+  "task_id": "ART-135_RACI",
+  "status": "completed",
+  "updated_at": "2026-07-04T23:28:55+00:00",
+  "proof_uri": "proof_records/ART-135_RACI.proof.json",
+  "logs_uri": "logs/ART-135_RACI.log",
+  "artifact_paths": {
+    "markdown": "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.md",
+    "json": "execution-framework/migration-artifacts/art-135_raci/ownership-raci-matrix.json",
+    "canonical_markdown": "execution-framework/migration-artifacts/09-governance/ownership-raci-matrix.md"
+  }
+}

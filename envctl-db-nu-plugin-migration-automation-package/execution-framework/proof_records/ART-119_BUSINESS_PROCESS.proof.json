@@ -1,0 +1,454 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "ART-119_BUSINESS_PROCESS",
+  "status": "completed",
+  "started_at": "2026-07-04T23:28:24+00:00",
+  "completed_at": "2026-07-04T23:28:24+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-artifact-20",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/generate_art_119_business_process.py",
+    "execution-framework/migration-artifacts/art-119_business_process/business_process_map.md",
+    "execution-framework/migration-artifacts/art-119_business_process/business_process_map.json",
+    "execution-framework/migration-artifacts/01-current-state/business-process-map.md",
+    "execution-framework/generated/art_119_business_process_registry_report.json",
+    "execution-framework/state/ART-119_BUSINESS_PROCESS.heartbeat.json",
+    "execution-framework/logs/ART-119_BUSINESS_PROCESS.log",
+    "execution-framework/proof_records/ART-119_BUSINESS_PROCESS.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/generate_art_119_business_process.py",
+    "python3 -m py_compile scripts/generate_art_119_business_process.py"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "ART-119_BUSINESS_PROCESS",
+    "status": "passed",
+    "generated_at": "2026-07-04T23:28:24+00:00",
+    "artifact_paths": {
+      "markdown": "execution-framework/migration-artifacts/art-119_business_process/business_process_map.md",
+      "json": "execution-framework/migration-artifacts/art-119_business_process/business_process_map.json",
+      "canonical_markdown": "execution-framework/migration-artifacts/01-current-state/business-process-map.md"
+    },
+    "registry_results": [
+      {
+        "artifact_row_id": "artifact-9378591f15a4c53af1a8ad3d",
+        "artifact_id": "art119-business-process-map-md",
+        "run_id": "run-art119-business-process",
+        "path": "execution-framework/migration-artifacts/art-119_business_process/business_process_map.md",
+        "content_hash": "sha256:e4afc35cbdaaeac463de16c2eb555e964b0fa109569b10c48ebe2b9e47ff6f58",
+        "producer_operation_id": "op-art119-generate-business-process",
+        "contract_id": "contract-art119-full-migration-artifacts",
+        "evidence_ids": [
+          "evidence-d82bb500d15ae40aa0c83b42",
+          "evidence-771aabc32d5d707d47f73078",
+          "evidence-e9f40b5366b688f3fe02ba8c",
+          "evidence-286073f1eeb5275d51438f4b",
+          "evidence-cfdc632c98cacf856f384414",
+          "evidence-f401e8a9184cbdd2153df428",
+          "evidence-51d17f01ff37994fc9189d1f"
+        ],
+        "graph_edge_ids": [
+          "edge-52fad5d359d6fa08cfae03db",
+          "edge-6ba33470a49891530329c3aa",
+          "edge-9ee4281d19951034adfef37f",
+          "edge-7f9e7fa0eefd7a7e54fe8bca",
+          "edge-b634248c93f7ff59e0eec8e3",
+          "edge-89dd99d612e034aed683bbb6"
+        ],
+        "validation_ids": [
+          "validation-79357e51c5ee6e04b90b5a99",
+          "validation-a88b4d9dcc93e0b9e513ab05"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-bd555dc4df4e60cfcda02981",
+        "artifact_id": "art119-business-process-map-json",
+        "run_id": "run-art119-business-process",
+        "path": "execution-framework/migration-artifacts/art-119_business_process/business_process_map.json",
+        "content_hash": "sha256:dd46e2f2dbf653ae2d39b3e8dd9016659dc7f9607d020bedef0d8ed709956405",
+        "producer_operation_id": "op-art119-generate-business-process",
+        "contract_id": "contract-art119-full-migration-artifacts",
+        "evidence_ids": [
+          "evidence-586385d9b93462a1c2f50949",
+          "evidence-1d6eac86a3c13d2dab959635",
+          "evidence-7c303a63c495e16cf6965a7a",
+          "evidence-1ea20e1647bea0731172923b",
+          "evidence-98b636467da77d62b7811d08",
+          "evidence-db0eb56b3ebaaaf981789bd1",
+          "evidence-46f4fbc3482124b16354b122"
+        ],
+        "graph_edge_ids": [
+          "edge-6a8d22cd9ac217113f45f8e7",
+          "edge-9b1f0420f34cdf595bbb413e",
+          "edge-debe7b5ebdace4b2e080d36f",
+          "edge-239d776cb0cbb11cd4cb39f3",
+          "edge-8e3cc49b2887849ed17c6084",
+          "edge-4eba0e9ab22afb9496cb6e34"
+        ],
+        "validation_ids": [
+          "validation-96e3197f5e4a4673485e37a9",
+          "validation-48e6230fb2333eefe44caebe"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-d12a0695e39a97793d97eada",
+        "artifact_id": "01-current-state-business-process-map-md",
+        "run_id": "run-art119-business-process",
+        "path": "execution-framework/migration-artifacts/01-current-state/business-process-map.md",
+        "content_hash": "sha256:e4afc35cbdaaeac463de16c2eb555e964b0fa109569b10c48ebe2b9e47ff6f58",
+        "producer_operation_id": "op-art119-generate-business-process",
+        "contract_id": "contract-art119-full-migration-artifacts",
+        "evidence_ids": [
+          "evidence-a8a0a42bf3eaf796ca164143",
+          "evidence-b479315d7b56773e22ac48a5",
+          "evidence-93b0a882710a94218135d223",
+          "evidence-b4ca9a4ce0b52a1019d862a7",
+          "evidence-aff0cb20a799e651764c8b39",
+          "evidence-824b95273ac21bd070b4f24d",
+          "evidence-f2ebffa94067d690897254fb"
+        ],
+        "graph_edge_ids": [
+          "edge-fc9516630576787f5028ed62",
+          "edge-b9f6bf1bc689640e307ea265",
+          "edge-11f68252b5947a6d870087c4",
+          "edge-e69ee789ec0721a841bd6fdb",
+          "edge-139a849b8f0e44d588cadda0",
+          "edge-bfb10d6fb5b666d236f441da"
+        ],
+        "validation_ids": [
+          "validation-943d53fe4b1edbf920c04211",
+          "validation-44f47dfc75e23f7fc252e7ee"
+        ]
+      }
+    ],
+    "registered_artifacts": [
+      {
+        "id": "artifact-9378591f15a4c53af1a8ad3d",
+        "run_id": "run-art119-business-process",
+        "artifact_id": "art119-business-process-map-md",
+        "title": "ART-119 Business Process Map",
+        "artifact_type": "business_process_map_markdown",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/art-119_business_process/business_process_map.md",
+        "content_hash": "sha256:e4afc35cbdaaeac463de16c2eb555e964b0fa109569b10c48ebe2b9e47ff6f58",
+        "generated_by_operation_id": "op-art119-generate-business-process",
+        "evidence": {
+          "contract_id": "contract-art119-full-migration-artifacts",
+          "evidence_ids": [
+            "evidence-d82bb500d15ae40aa0c83b42",
+            "evidence-771aabc32d5d707d47f73078",
+            "evidence-e9f40b5366b688f3fe02ba8c",
+            "evidence-286073f1eeb5275d51438f4b",
+            "evidence-cfdc632c98cacf856f384414",
+            "evidence-f401e8a9184cbdd2153df428",
+            "evidence-51d17f01ff37994fc9189d1f"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/art-119_business_process/business_process_map.md",
+            "execution-framework/migration-artifacts/art-119_business_process/business_process_map.json",
+            "execution-framework/migration-artifacts/01-current-state/business-process-map.md",
+            "execution-framework/generated/envctl_migration_db_model.json",
+            "execution-framework/generated/envctl_artifact_registry_report.json",
+            "execution-framework/generated/shared_protocol_manifest.json",
+            "execution-framework/generated/nu_plugin_command_manifest.json"
+          ],
+          "producer_operation_id": "op-art119-generate-business-process",
+          "provenance": {
+            "helper_id": "helper-artifact-20",
+            "owner_agent": "artifact-agent",
+            "source_inputs": [
+              "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+              "execution-framework/generated/package_scan.json",
+              "execution-framework/generated/envctl_migration_db_model.json",
+              "execution-framework/generated/envctl_artifact_registry_report.json",
+              "execution-framework/generated/shared_protocol_manifest.json",
+              "execution-framework/generated/nu_plugin_command_manifest.json"
+            ],
+            "task_id": "ART-119_BUSINESS_PROCESS"
+          },
+          "validation_ids": [
+            "validation-79357e51c5ee6e04b90b5a99",
+            "validation-a88b4d9dcc93e0b9e513ab05"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-art119-full-migration-artifacts",
+          "graph_edge_ids": [
+            "edge-52fad5d359d6fa08cfae03db",
+            "edge-6ba33470a49891530329c3aa",
+            "edge-9ee4281d19951034adfef37f",
+            "edge-7f9e7fa0eefd7a7e54fe8bca",
+            "edge-b634248c93f7ff59e0eec8e3",
+            "edge-89dd99d612e034aed683bbb6"
+          ],
+          "links": [
+            {
+              "to": "artifact:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "artifact:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "artifact:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "business-workflow:migration-governance",
+              "type": "maps_to"
+            },
+            {
+              "to": "business-workflow:operator-control",
+              "type": "maps_to"
+            }
+          ]
+        }
+      },
+      {
+        "id": "artifact-bd555dc4df4e60cfcda02981",
+        "run_id": "run-art119-business-process",
+        "artifact_id": "art119-business-process-map-json",
+        "title": "ART-119 Business Process Map Source",
+        "artifact_type": "business_process_map_json",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/art-119_business_process/business_process_map.json",
+        "content_hash": "sha256:dd46e2f2dbf653ae2d39b3e8dd9016659dc7f9607d020bedef0d8ed709956405",
+        "generated_by_operation_id": "op-art119-generate-business-process",
+        "evidence": {
+          "contract_id": "contract-art119-full-migration-artifacts",
+          "evidence_ids": [
+            "evidence-586385d9b93462a1c2f50949",
+            "evidence-1d6eac86a3c13d2dab959635",
+            "evidence-7c303a63c495e16cf6965a7a",
+            "evidence-1ea20e1647bea0731172923b",
+            "evidence-98b636467da77d62b7811d08",
+            "evidence-db0eb56b3ebaaaf981789bd1",
+            "evidence-46f4fbc3482124b16354b122"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/art-119_business_process/business_process_map.md",
+            "execution-framework/migration-artifacts/art-119_business_process/business_process_map.json",
+            "execution-framework/migration-artifacts/01-current-state/business-process-map.md",
+            "execution-framework/generated/envctl_migration_db_model.json",
+            "execution-framework/generated/envctl_artifact_registry_report.json",
+            "execution-framework/generated/shared_protocol_manifest.json",
+            "execution-framework/generated/nu_plugin_command_manifest.json"
+          ],
+          "producer_operation_id": "op-art119-generate-business-process",
+          "provenance": {
+            "helper_id": "helper-artifact-20",
+            "owner_agent": "artifact-agent",
+            "source_inputs": [
+              "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+              "execution-framework/generated/package_scan.json",
+              "execution-framework/generated/envctl_migration_db_model.json",
+              "execution-framework/generated/envctl_artifact_registry_report.json",
+              "execution-framework/generated/shared_protocol_manifest.json",
+              "execution-framework/generated/nu_plugin_command_manifest.json"
+            ],
+            "task_id": "ART-119_BUSINESS_PROCESS"
+          },
+          "validation_ids": [
+            "validation-96e3197f5e4a4673485e37a9",
+            "validation-48e6230fb2333eefe44caebe"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-art119-full-migration-artifacts",
+          "graph_edge_ids": [
+            "edge-6a8d22cd9ac217113f45f8e7",
+            "edge-9b1f0420f34cdf595bbb413e",
+            "edge-debe7b5ebdace4b2e080d36f",
+            "edge-239d776cb0cbb11cd4cb39f3",
+            "edge-8e3cc49b2887849ed17c6084",
+            "edge-4eba0e9ab22afb9496cb6e34"
+          ],
+          "links": [
+            {
+              "to": "artifact:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "artifact:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "artifact:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "business-workflow:migration-governance",
+              "type": "maps_to"
+            },
+            {
+              "to": "business-workflow:operator-control",
+              "type": "maps_to"
+            }
+          ]
+        }
+      },
+      {
+        "id": "artifact-d12a0695e39a97793d97eada",
+        "run_id": "run-art119-business-process",
+        "artifact_id": "01-current-state-business-process-map-md",
+        "title": "Business Process Map",
+        "artifact_type": "migration_artifact_markdown",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/01-current-state/business-process-map.md",
+        "content_hash": "sha256:e4afc35cbdaaeac463de16c2eb555e964b0fa109569b10c48ebe2b9e47ff6f58",
+        "generated_by_operation_id": "op-art119-generate-business-process",
+        "evidence": {
+          "contract_id": "contract-art119-full-migration-artifacts",
+          "evidence_ids": [
+            "evidence-a8a0a42bf3eaf796ca164143",
+            "evidence-b479315d7b56773e22ac48a5",
+            "evidence-93b0a882710a94218135d223",
+            "evidence-b4ca9a4ce0b52a1019d862a7",
+            "evidence-aff0cb20a799e651764c8b39",
+            "evidence-824b95273ac21bd070b4f24d",
+            "evidence-f2ebffa94067d690897254fb"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/art-119_business_process/business_process_map.md",
+            "execution-framework/migration-artifacts/art-119_business_process/business_process_map.json",
+            "execution-framework/migration-artifacts/01-current-state/business-process-map.md",
+            "execution-framework/generated/envctl_migration_db_model.json",
+            "execution-framework/generated/envctl_artifact_registry_report.json",
+            "execution-framework/generated/shared_protocol_manifest.json",
+            "execution-framework/generated/nu_plugin_command_manifest.json"
+          ],
+          "producer_operation_id": "op-art119-generate-business-process",
+          "provenance": {
+            "helper_id": "helper-artifact-20",
+            "owner_agent": "artifact-agent",
+            "source_inputs": [
+              "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+              "execution-framework/generated/package_scan.json",
+              "execution-framework/generated/envctl_migration_db_model.json",
+              "execution-framework/generated/envctl_artifact_registry_report.json",
+              "execution-framework/generated/shared_protocol_manifest.json",
+              "execution-framework/generated/nu_plugin_command_manifest.json"
+            ],
+            "task_id": "ART-119_BUSINESS_PROCESS"
+          },
+          "validation_ids": [
+            "validation-943d53fe4b1edbf920c04211",
+            "validation-44f47dfc75e23f7fc252e7ee"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-art119-full-migration-artifacts",
+          "graph_edge_ids": [
+            "edge-fc9516630576787f5028ed62",
+            "edge-b9f6bf1bc689640e307ea265",
+            "edge-11f68252b5947a6d870087c4",
+            "edge-e69ee789ec0721a841bd6fdb",
+            "edge-139a849b8f0e44d588cadda0",
+            "edge-bfb10d6fb5b666d236f441da"
+          ],
+          "links": [
+            {
+              "to": "artifact:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "artifact:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "artifact:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "business-workflow:migration-governance",
+              "type": "maps_to"
+            },
+            {
+              "to": "business-workflow:operator-control",
+              "type": "maps_to"
+            }
+          ]
+        }
+      }
+    ],
+    "summary": {
+      "workflow_count": 8,
+      "depending_system_count": 32,
+      "high_risk_workflow_count": 2,
+      "high_risk_workflows": [
+        "BUS-PROC-004",
+        "BUS-PROC-008"
+      ],
+      "all_workflows_have_system_dependencies": true,
+      "all_workflows_have_evidence": true,
+      "evidence_count": 21,
+      "graph_edge_count": 18,
+      "validation_count": 6,
+      "artifact_index_rows": [
+        [
+          "01-current-state-business-process-map-md",
+          "complete",
+          "execution-framework/migration-artifacts/01-current-state/business-process-map.md",
+          "sha256:e4afc35cbdaaeac463de16c2eb555e964b0fa109569b10c48ebe2b9e47ff6f58"
+        ],
+        [
+          "art119-business-process-map-json",
+          "complete",
+          "execution-framework/migration-artifacts/art-119_business_process/business_process_map.json",
+          "sha256:dd46e2f2dbf653ae2d39b3e8dd9016659dc7f9607d020bedef0d8ed709956405"
+        ],
+        [
+          "art119-business-process-map-md",
+          "complete",
+          "execution-framework/migration-artifacts/art-119_business_process/business_process_map.md",
+          "sha256:e4afc35cbdaaeac463de16c2eb555e964b0fa109569b10c48ebe2b9e47ff6f58"
+        ]
+      ]
+    },
+    "completion_gate": {
+      "artifact_exists": true,
+      "hash_recorded": true,
+      "validation_evidence_linked": true
+    },
+    "errors": [],
+    "evidence": [
+      "execution-framework/migration-artifacts/art-119_business_process/business_process_map.md",
+      "execution-framework/migration-artifacts/art-119_business_process/business_process_map.json",
+      "execution-framework/migration-artifacts/01-current-state/business-process-map.md",
+      "execution-framework/generated/art_119_business_process_registry_report.json",
+      "execution-framework/generated/envctl_migration_db_model.json",
+      "execution-framework/generated/envctl_artifact_registry_report.json",
+      "execution-framework/generated/shared_protocol_manifest.json",
+      "execution-framework/generated/nu_plugin_command_manifest.json"
+    ]
+  },
+  "checksums": {
+    "execution-framework/scripts/generate_art_119_business_process.py": "7e189d1ba8d1e85898e1709120687aeaf2eec126332d5ff13e362704bdd94437",
+    "execution-framework/migration-artifacts/art-119_business_process/business_process_map.md": "e4afc35cbdaaeac463de16c2eb555e964b0fa109569b10c48ebe2b9e47ff6f58",
+    "execution-framework/migration-artifacts/art-119_business_process/business_process_map.json": "dd46e2f2dbf653ae2d39b3e8dd9016659dc7f9607d020bedef0d8ed709956405",
+    "execution-framework/migration-artifacts/01-current-state/business-process-map.md": "e4afc35cbdaaeac463de16c2eb555e964b0fa109569b10c48ebe2b9e47ff6f58",
+    "execution-framework/generated/art_119_business_process_registry_report.json": "1db40a6efbfd387ee906eb238120f4935dc86be22132915dace7cb52e90c7eab",
+    "execution-framework/state/ART-119_BUSINESS_PROCESS.heartbeat.json": "0f726de6c74604b15d4cb79ca9f8b7253313b2cbce6951f2d5bae662d1c277dd",
+    "execution-framework/logs/ART-119_BUSINESS_PROCESS.log": "1db40a6efbfd387ee906eb238120f4935dc86be22132915dace7cb52e90c7eab",
+    "execution-framework/proof_records/proof_ledger.jsonl": "ecd9a91e20218469d60b6c3b0b5dd71d78024726750472b80718a2467f351cc1"
+  },
+  "logs_uri": "logs/ART-119_BUSINESS_PROCESS.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "execution-framework/migration-artifacts/art-119_business_process/business_process_map.md",
+    "execution-framework/migration-artifacts/art-119_business_process/business_process_map.json",
+    "execution-framework/migration-artifacts/01-current-state/business-process-map.md",
+    "execution-framework/generated/art_119_business_process_registry_report.json",
+    "execution-framework/generated/envctl_migration_db_model.json",
+    "execution-framework/generated/envctl_artifact_registry_report.json",
+    "execution-framework/generated/shared_protocol_manifest.json",
+    "execution-framework/generated/nu_plugin_command_manifest.json"
+  ],
+  "failure_reason": "",
+  "next_action": "run VER-300_UNIT_VALIDATION"
+}

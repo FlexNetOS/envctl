@@ -1,0 +1,175 @@
+{
+  "schema_version": "1.0",
+  "protocol_name": "envctl_nu_plugin_migration_protocol",
+  "protocol_version": "1.0.0",
+  "generated_at": "2026-07-04T23:09:51+00:00",
+  "source_of_truth_rule": "envctl migration database owns durable state; nu_plugin renders records and submits auditable commands.",
+  "compatibility_rule": "Minor versions may add optional fields; removals, type narrowing, and enum removal require a new major protocol version.",
+  "consumers": [
+    "envctl",
+    "nu_plugin"
+  ],
+  "required_records": [
+    "TargetDescriptor",
+    "MigrationRecipe",
+    "MigrationRun",
+    "RunEvent",
+    "Operation",
+    "ApprovalRequest",
+    "ApprovalDecision",
+    "ArtifactRecord",
+    "EvidenceRecord",
+    "GraphEdge",
+    "ValidationResult",
+    "ReplayRequest",
+    "ReplayResult",
+    "ProofRecord"
+  ],
+  "records": [
+    {
+      "name": "TargetDescriptor",
+      "schema_ref": "schemas/shared_protocol.schema.json#/$defs/TargetDescriptor",
+      "source_schema": "schemas/target_descriptor.schema.json",
+      "source_of_truth": "envctl_migration_targets",
+      "producer": "envctl",
+      "consumer": "nu_plugin",
+      "plugin_shape": "Nushell target descriptor record",
+      "required": true
+    },
+    {
+      "name": "MigrationRecipe",
+      "schema_ref": "schemas/shared_protocol.schema.json#/$defs/MigrationRecipe",
+      "source_schema": "schemas/migration_recipe.schema.json",
+      "source_of_truth": "envctl_migration_recipes",
+      "producer": "envctl",
+      "consumer": "nu_plugin",
+      "plugin_shape": "Nushell recipe record",
+      "required": true
+    },
+    {
+      "name": "MigrationRun",
+      "schema_ref": "schemas/shared_protocol.schema.json#/$defs/MigrationRun",
+      "source_schema": "generated",
+      "source_of_truth": "envctl_migration_runs",
+      "producer": "envctl",
+      "consumer": "nu_plugin",
+      "plugin_shape": "Nushell run status record",
+      "required": true
+    },
+    {
+      "name": "RunEvent",
+      "schema_ref": "schemas/shared_protocol.schema.json#/$defs/RunEvent",
+      "source_schema": "schemas/run_event.schema.json",
+      "source_of_truth": "envctl_migration_run_events",
+      "producer": "envctl",
+      "consumer": "nu_plugin",
+      "plugin_shape": "Nushell table row stream",
+      "required": true
+    },
+    {
+      "name": "Operation",
+      "schema_ref": "schemas/shared_protocol.schema.json#/$defs/Operation",
+      "source_schema": "schemas/operation.schema.json",
+      "source_of_truth": "envctl_migration_operations",
+      "producer": "envctl",
+      "consumer": "nu_plugin",
+      "plugin_shape": "Nushell operation table row and detail record",
+      "required": true
+    },
+    {
+      "name": "ApprovalRequest",
+      "schema_ref": "schemas/shared_protocol.schema.json#/$defs/ApprovalRequest",
+      "source_schema": "schemas/approval_request.schema.json",
+      "source_of_truth": "envctl_migration_approvals",
+      "producer": "envctl",
+      "consumer": "nu_plugin",
+      "plugin_shape": "Nushell approval table row",
+      "required": true
+    },
+    {
+      "name": "ApprovalDecision",
+      "schema_ref": "schemas/shared_protocol.schema.json#/$defs/ApprovalDecision",
+      "source_schema": "generated",
+      "source_of_truth": "envctl_migration_approvals",
+      "producer": "envctl",
+      "consumer": "nu_plugin",
+      "plugin_shape": "Nushell decision record",
+      "required": true
+    },
+    {
+      "name": "ArtifactRecord",
+      "schema_ref": "schemas/shared_protocol.schema.json#/$defs/ArtifactRecord",
+      "source_schema": "schemas/artifact_record.schema.json",
+      "source_of_truth": "envctl_migration_artifacts",
+      "producer": "envctl",
+      "consumer": "nu_plugin",
+      "plugin_shape": "Nushell artifact table row and detail record",
+      "required": true
+    },
+    {
+      "name": "EvidenceRecord",
+      "schema_ref": "schemas/shared_protocol.schema.json#/$defs/EvidenceRecord",
+      "source_schema": "generated",
+      "source_of_truth": "envctl_migration_evidence",
+      "producer": "envctl",
+      "consumer": "nu_plugin",
+      "plugin_shape": "Nushell evidence table row",
+      "required": true
+    },
+    {
+      "name": "GraphEdge",
+      "schema_ref": "schemas/shared_protocol.schema.json#/$defs/GraphEdge",
+      "source_schema": "generated",
+      "source_of_truth": "envctl_migration_graph_edges",
+      "producer": "envctl",
+      "consumer": "nu_plugin",
+      "plugin_shape": "Nushell graph edge table row",
+      "required": true
+    },
+    {
+      "name": "ValidationResult",
+      "schema_ref": "schemas/shared_protocol.schema.json#/$defs/ValidationResult",
+      "source_schema": "schemas/validation_result.schema.json",
+      "source_of_truth": "envctl_migration_validations",
+      "producer": "envctl",
+      "consumer": "nu_plugin",
+      "plugin_shape": "Nushell validation table row",
+      "required": true
+    },
+    {
+      "name": "ReplayRequest",
+      "schema_ref": "schemas/shared_protocol.schema.json#/$defs/ReplayRequest",
+      "source_schema": "generated",
+      "source_of_truth": "envctl_migration_runs",
+      "producer": "envctl",
+      "consumer": "nu_plugin",
+      "plugin_shape": "Nushell replay command input record",
+      "required": true
+    },
+    {
+      "name": "ReplayResult",
+      "schema_ref": "schemas/shared_protocol.schema.json#/$defs/ReplayResult",
+      "source_schema": "generated",
+      "source_of_truth": "envctl_migration_run_events",
+      "producer": "envctl",
+      "consumer": "nu_plugin",
+      "plugin_shape": "Nushell replay result record",
+      "required": true
+    },
+    {
+      "name": "ProofRecord",
+      "schema_ref": "schemas/shared_protocol.schema.json#/$defs/ProofRecord",
+      "source_schema": "execution-framework/schemas/proof_record.schema.json",
+      "source_of_truth": "execution_framework_proof_records",
+      "producer": "envctl",
+      "consumer": "nu_plugin",
+      "plugin_shape": "Execution proof file record",
+      "required": true
+    }
+  ],
+  "generated_files": [
+    "execution-framework/schemas/shared_protocol.schema.json",
+    "execution-framework/generated/shared_protocol_manifest.json",
+    "execution-framework/docs/SHARED_PROTOCOL_SCHEMAS.md"
+  ]
+}

@@ -41,11 +41,12 @@ pub use agent::{
     AgentVerb,
 };
 pub use catalog::{
-    CatalogDiffReport, CatalogDiffSummary, CatalogDriftRow, CatalogImportReport,
-    CatalogImportSummary, CatalogLockReport, CatalogLockSpec, CatalogLockSummary,
-    CatalogRenderReport, CatalogRenderSpec, CatalogRenderSummary, CatalogRenderedFile,
-    CatalogScanSpec, CatalogSnapshot, CatalogSyncAction, CatalogSyncReport, CatalogSyncSpec,
-    CatalogSyncSummary, CatalogTableName,
+    CatalogAnalyzeReport, CatalogAnalyzeSummary, CatalogDiffReport, CatalogDiffSummary,
+    CatalogDriftRow, CatalogFacetCount, CatalogImportReport, CatalogImportSummary,
+    CatalogLockReport, CatalogLockSpec, CatalogLockSummary, CatalogRenderReport, CatalogRenderSpec,
+    CatalogRenderSummary, CatalogRenderedFile, CatalogScanSpec, CatalogSnapshot, CatalogSyncAction,
+    CatalogSyncReport, CatalogSyncSpec, CatalogSyncSummary, CatalogTableName,
+    CatalogTableSummaryRow, CatalogToolchainSignalRow,
 };
 pub use command::{
     run_event_loop, AgentCommandSpec, EngineCommand, EngineEvent, MigrationCommandSpec,
@@ -192,6 +193,18 @@ impl Engine {
         )
     }
 
+    /// Read-only ADR-0003 catalog analysis: summarize table coverage and higher-level facets.
+    pub fn catalog_analyze(&self) -> anyhow::Result<CatalogAnalyzeReport> {
+        let root = workspace_root_for_manifest_dir(&self.inner.manifest_dir);
+        catalog::analyze_current(
+            catalog::CatalogScanSpec {
+                repo_root: root,
+                manifest_dir: self.inner.manifest_dir.clone(),
+            },
+            &self.inner.registry,
+        )
+    }
+
     /// Read-only ADR-0003 catalog diff: file/catalog/lock drift without mutation.
     pub fn catalog_diff(&self) -> anyhow::Result<CatalogDiffReport> {
         let root = workspace_root_for_manifest_dir(&self.inner.manifest_dir);
@@ -236,13 +249,18 @@ impl Engine {
     }
 
     /// Render deterministic ADR-0003 catalog projections into an explicit output dir.
-    pub fn catalog_render(&self, out_dir: impl AsRef<Path>) -> anyhow::Result<CatalogRenderReport> {
+    pub fn catalog_render(
+        &self,
+        out_dir: impl AsRef<Path>,
+        target_root: Option<&Path>,
+    ) -> anyhow::Result<CatalogRenderReport> {
         let root = workspace_root_for_manifest_dir(&self.inner.manifest_dir);
         catalog::render(
             catalog::CatalogRenderSpec {
                 repo_root: root,
                 manifest_dir: self.inner.manifest_dir.clone(),
                 out_dir: out_dir.as_ref().to_path_buf(),
+                target_root: target_root.map(Path::to_path_buf),
             },
             &self.inner.registry,
         )

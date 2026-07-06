@@ -1,0 +1,46 @@
+{
+  "artifact_schema_version": "1.0",
+  "task_id": "REQ-033_PLUGIN_HUMAN_APPROVAL",
+  "command": "codedb envctl human approvals",
+  "source_patch": "generated/patches/REQ-033_PLUGIN_HUMAN_APPROVAL.nu_plugin.patch",
+  "inputs": {
+    "approvals_path": {
+      "required": true,
+      "formats": ["json_array", "json_object", "jsonl"],
+      "schema": "schemas/approval_request.schema.json"
+    },
+    "ops": {
+      "required": false,
+      "formats": ["json_array", "json_object", "jsonl"],
+      "schema": "schemas/operation.schema.json"
+    },
+    "mode": {
+      "required": false,
+      "enum": ["observer", "approval-gated", "operator", "agent-only"],
+      "default": "approval-gated"
+    }
+  },
+  "output_table": "envctl_human_approval_surface",
+  "views": ["mode", "approval", "operation"],
+  "columns": [
+    "table",
+    "view",
+    "mode",
+    "run_id",
+    "operation_id",
+    "approval_id",
+    "risk",
+    "status",
+    "requested_by",
+    "decided_by",
+    "reason",
+    "blocked",
+    "requires_human",
+    "allowed_actions",
+    "next_safe_action",
+    "delegate_target",
+    "summary"
+  ],
+  "pagination_flags": ["limit", "cursor"],
+  "mutation_policy": "read_only_human_approval_projection"
+}

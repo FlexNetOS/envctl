@@ -1,0 +1,65 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-044_INSTALL_BOOTSTRAP",
+  "status": "completed",
+  "started_at": "2026-07-04T23:18:33+00:00",
+  "completed_at": "2026-07-04T23:18:33+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-bootstrap-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/README.md",
+    "execution-framework/scripts/verify_install_bootstrap.py",
+    "execution-framework/docs/INSTALL_BOOTSTRAP.md",
+    "execution-framework/generated/install_bootstrap_manifest.json",
+    "execution-framework/state/REQ-044_INSTALL_BOOTSTRAP.heartbeat.json",
+    "execution-framework/logs/REQ-044_INSTALL_BOOTSTRAP.log",
+    "execution-framework/proof_records/REQ-044_INSTALL_BOOTSTRAP.proof.json"
+  ],
+  "commands_run": [
+    "python3 scripts/verify_install_bootstrap.py"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "REQ-044_INSTALL_BOOTSTRAP",
+    "status": "passed",
+    "generated_at": "2026-07-04T23:18:33+00:00",
+    "summary": {
+      "source_file_count": 3,
+      "install_target_count": 2,
+      "command_template_count": 4
+    },
+    "command_template_ids": [
+      "install-into-repos",
+      "run-codex-master-prompt",
+      "run-single-execution-packet",
+      "run-background-helper"
+    ],
+    "errors": [],
+    "evidence": [
+      "execution-framework/docs/INSTALL_BOOTSTRAP.md",
+      "execution-framework/generated/install_bootstrap_manifest.json",
+      "execution-framework/state/REQ-044_INSTALL_BOOTSTRAP.heartbeat.json",
+      "execution-framework/logs/REQ-044_INSTALL_BOOTSTRAP.log"
+    ]
+  },
+  "checksums": {
+    "execution-framework/README.md": "02dab669eb99aca4ed7643fc4c443efd2f12209ee686cbad63ed92a8dc2ae800",
+    "execution-framework/scripts/verify_install_bootstrap.py": "975526eb275c9ce82b8a1e491b3d9d4f21f6d0d37d87e4a0872007f571839b14",
+    "execution-framework/docs/INSTALL_BOOTSTRAP.md": "ff956152555f945088b37dc92686408a5114d4a3e72ccb56bb8ccd6bdcceb92b",
+    "execution-framework/generated/install_bootstrap_manifest.json": "759dcb7e0485fdf5d3b7eb095fb8a5cd7ef99612bd25aa20fc8ed6cb30491b6b",
+    "execution-framework/state/REQ-044_INSTALL_BOOTSTRAP.heartbeat.json": "bc793e96001a4b0b66407307cb2df3e2537dbd153ab776ce25c71188e5e39738",
+    "execution-framework/logs/REQ-044_INSTALL_BOOTSTRAP.log": "acedab0e842783da2b4e94f0e5715b34e6f7f2db3db3f1dab7000f7a2a69f797"
+  },
+  "logs_uri": "logs/REQ-044_INSTALL_BOOTSTRAP.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "execution-framework/docs/INSTALL_BOOTSTRAP.md",
+    "execution-framework/generated/install_bootstrap_manifest.json",
+    "execution-framework/state/REQ-044_INSTALL_BOOTSTRAP.heartbeat.json",
+    "execution-framework/logs/REQ-044_INSTALL_BOOTSTRAP.log"
+  ],
+  "failure_reason": "",
+  "next_action": "run REQ-045_RUN_REPLAY with generated install/bootstrap command templates"
+}

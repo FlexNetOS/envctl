@@ -1,0 +1,227 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-042_FILESYSTEM_BOUNDS",
+  "status": "passed",
+  "generated_at": "2026-07-04T23:19:35+00:00",
+  "summary": {
+    "allowed_path_count": 4,
+    "blocked_path_count": 5,
+    "safe_workspace_count": 4,
+    "redaction_pattern_count": 4,
+    "path_sample_count": 13,
+    "dependency_status": "completed"
+  },
+  "sample_results": [
+    {
+      "path": "execution-framework/generated/task_graph.csv",
+      "normalized_path": "execution-framework/generated/task_graph.csv",
+      "decision": "allowed",
+      "reason": "allowed_pattern",
+      "allowed_by": [
+        "execution-framework/**"
+      ],
+      "blocked_by": [],
+      "expected": "allowed",
+      "passed": true
+    },
+    {
+      "path": "execution-framework/logs/REQ-042_FILESYSTEM_BOUNDS.log",
+      "normalized_path": "execution-framework/logs/REQ-042_FILESYSTEM_BOUNDS.log",
+      "decision": "allowed",
+      "reason": "allowed_pattern",
+      "allowed_by": [
+        "execution-framework/**"
+      ],
+      "blocked_by": [],
+      "expected": "allowed",
+      "passed": true
+    },
+    {
+      "path": "execution-templates/TASK_GRAPH_TEMPLATE.csv",
+      "normalized_path": "execution-templates/TASK_GRAPH_TEMPLATE.csv",
+      "decision": "allowed",
+      "reason": "allowed_pattern",
+      "allowed_by": [
+        "execution-templates/**"
+      ],
+      "blocked_by": [],
+      "expected": "allowed",
+      "passed": true
+    },
+    {
+      "path": "${ENVCTL_REPO}/src/lib.rs",
+      "normalized_path": "${ENVCTL_REPO}/src/lib.rs",
+      "decision": "allowed",
+      "reason": "allowed_pattern",
+      "allowed_by": [
+        "${ENVCTL_REPO}/**"
+      ],
+      "blocked_by": [],
+      "expected": "allowed",
+      "passed": true
+    },
+    {
+      "path": "${NU_PLUGIN_REPO}/src/lib.rs",
+      "normalized_path": "${NU_PLUGIN_REPO}/src/lib.rs",
+      "decision": "allowed",
+      "reason": "allowed_pattern",
+      "allowed_by": [
+        "${NU_PLUGIN_REPO}/**"
+      ],
+      "blocked_by": [],
+      "expected": "allowed",
+      "passed": true
+    },
+    {
+      "path": "execution-framework/.env",
+      "normalized_path": "execution-framework/.env",
+      "decision": "blocked",
+      "reason": "blocked_pattern",
+      "allowed_by": [
+        "execution-framework/**"
+      ],
+      "blocked_by": [
+        "**/.env"
+      ],
+      "expected": "blocked",
+      "passed": true
+    },
+    {
+      "path": "execution-framework/secrets/token.txt",
+      "normalized_path": "execution-framework/secrets/token.txt",
+      "decision": "blocked",
+      "reason": "blocked_pattern",
+      "allowed_by": [
+        "execution-framework/**"
+      ],
+      "blocked_by": [
+        "**/secrets/**"
+      ],
+      "expected": "blocked",
+      "passed": true
+    },
+    {
+      "path": "${ENVCTL_REPO}/private_keys/id_rsa",
+      "normalized_path": "${ENVCTL_REPO}/private_keys/id_rsa",
+      "decision": "blocked",
+      "reason": "blocked_pattern",
+      "allowed_by": [
+        "${ENVCTL_REPO}/**"
+      ],
+      "blocked_by": [
+        "**/private_keys/**"
+      ],
+      "expected": "blocked",
+      "passed": true
+    },
+    {
+      "path": "${NU_PLUGIN_REPO}/certs/local.pem",
+      "normalized_path": "${NU_PLUGIN_REPO}/certs/local.pem",
+      "decision": "blocked",
+      "reason": "blocked_pattern",
+      "allowed_by": [
+        "${NU_PLUGIN_REPO}/**"
+      ],
+      "blocked_by": [
+        "**/*.pem"
+      ],
+      "expected": "blocked",
+      "passed": true
+    },
+    {
+      "path": "${ENVCTL_REPO}/config/local.key",
+      "normalized_path": "${ENVCTL_REPO}/config/local.key",
+      "decision": "blocked",
+      "reason": "blocked_pattern",
+      "allowed_by": [
+        "${ENVCTL_REPO}/**"
+      ],
+      "blocked_by": [
+        "**/*.key"
+      ],
+      "expected": "blocked",
+      "passed": true
+    },
+    {
+      "path": "history/pre_execution_framework_manifest.json",
+      "normalized_path": "history/pre_execution_framework_manifest.json",
+      "decision": "blocked",
+      "reason": "outside_allowed_paths",
+      "allowed_by": [],
+      "blocked_by": [],
+      "expected": "blocked",
+      "passed": true
+    },
+    {
+      "path": "../outside-package.txt",
+      "normalized_path": "../outside-package.txt",
+      "decision": "blocked",
+      "reason": "outside_allowed_paths",
+      "allowed_by": [],
+      "blocked_by": [],
+      "expected": "blocked",
+      "passed": true
+    },
+    {
+      "path": "../execution-framework/generated/task_graph.csv",
+      "normalized_path": "../execution-framework/generated/task_graph.csv",
+      "decision": "blocked",
+      "reason": "outside_allowed_paths",
+      "allowed_by": [],
+      "blocked_by": [],
+      "expected": "blocked",
+      "passed": true
+    }
+  ],
+  "safe_workspace_results": [
+    {
+      "path": "execution-framework/state/helpers/helper-fs-boundary-01/",
+      "normalized_path": "execution-framework/state/helpers/helper-fs-boundary-01",
+      "decision": "allowed",
+      "reason": "allowed_pattern",
+      "allowed_by": [
+        "execution-framework/**"
+      ],
+      "blocked_by": []
+    },
+    {
+      "path": "execution-framework/generated/",
+      "normalized_path": "execution-framework/generated",
+      "decision": "allowed",
+      "reason": "allowed_pattern",
+      "allowed_by": [
+        "execution-framework/**"
+      ],
+      "blocked_by": []
+    },
+    {
+      "path": "execution-framework/logs/",
+      "normalized_path": "execution-framework/logs",
+      "decision": "allowed",
+      "reason": "allowed_pattern",
+      "allowed_by": [
+        "execution-framework/**"
+      ],
+      "blocked_by": []
+    },
+    {
+      "path": "execution-framework/proof_records/",
+      "normalized_path": "execution-framework/proof_records",
+      "decision": "allowed",
+      "reason": "allowed_pattern",
+      "allowed_by": [
+        "execution-framework/**"
+      ],
+      "blocked_by": []
+    }
+  ],
+  "errors": [],
+  "evidence": [
+    "execution-framework/schemas/filesystem_boundaries.schema.json",
+    "execution-framework/generated/filesystem_boundaries.json",
+    "execution-framework/generated/filesystem_boundary_validation_report.json",
+    "execution-framework/docs/FILESYSTEM_BOUNDARIES.md",
+    "helpers/redaction_patterns.txt",
+    "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+  ]
+}

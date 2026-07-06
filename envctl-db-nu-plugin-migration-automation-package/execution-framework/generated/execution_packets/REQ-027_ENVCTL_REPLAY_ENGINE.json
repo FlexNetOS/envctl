@@ -1,0 +1,73 @@
+{
+  "packet_schema_version": "1.0",
+  "task_id": "REQ-027_ENVCTL_REPLAY_ENGINE",
+  "parent_id": "REQ-010_CONTRACT_LOCK",
+  "phase": "02-envctl-db",
+  "title": "Implement replay/reproduce engine",
+  "goal": "Re-run a migration from descriptors, recipes, packets, proofs, hashes, and state",
+  "owner_lane": "lane_b_repo_a",
+  "owner_agent": "envctl-runner-agent",
+  "helper_id": "helper-envctl-replay-01",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "codex-cli-background-shell",
+  "shell_mode": "workspace-write",
+  "repo_target": "repo_a",
+  "repo_path": "${ENVCTL_REPO}",
+  "filesystem_scope": "repo",
+  "input_files": [
+    "specs/replay-and-reproducibility.md",
+    "examples/recipes/**",
+    "execution-framework/generated/execution_manifest.json"
+  ],
+  "target_files": [
+    "envctl replay commands"
+  ],
+  "target_artifacts": [
+    "replay engine"
+  ],
+  "allowed_paths": [
+    "${ENVCTL_REPO}/**",
+    "${NU_PLUGIN_REPO}/**",
+    "execution-framework/**",
+    "execution-templates/**"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "depends_on": [
+    "REQ-021_ENVCTL_TARGET_REGISTRY",
+    "REQ-022_ENVCTL_RUN_LEDGER",
+    "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
+  ],
+  "blocks": [
+    "REQ-041_TWO_REPO_INTEGRATION"
+  ],
+  "parallel_group": "envctl_integration",
+  "can_run_parallel": true,
+  "max_parallel": 2,
+  "start_after": "",
+  "priority": 180,
+  "execution_cell": "02-envctl-db",
+  "required_tools": [
+    "codex",
+    "python3",
+    "shell"
+  ],
+  "command_template": "codex exec < generated/execution_packets/REQ-027_ENVCTL_REPLAY_ENGINE.json",
+  "verification_command": "task-specific tests plus proof file exists",
+  "completion_gate": "proof exists and verification output passes",
+  "proof_required": true,
+  "proof_uri": "proof_records/REQ-027_ENVCTL_REPLAY_ENGINE.proof.json",
+  "heartbeat_file": "state/REQ-027_ENVCTL_REPLAY_ENGINE.heartbeat.json",
+  "logs_uri": "logs/REQ-027_ENVCTL_REPLAY_ENGINE.log",
+  "rollback_plan": "Use history/pre_execution_framework_manifest.json and remove only files added by this task unless a task-specific rollback is listed.",
+  "risk_level": "critical",
+  "human_approval_required": true,
+  "notes": "Additive feature work; no downgrades.",
+  "source_graph_uri": "generated/task_graph.csv",
+  "generated_at": "2026-07-05T05:39:53+00:00"
+}

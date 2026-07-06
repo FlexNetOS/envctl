@@ -1,0 +1,6 @@
+ART-132 verification passed
+artifacts 3
+artifact_index_rows 3
+validation_scorecard_row [12, 0, 3, 0, 0]
+completion_gate {"artifact_exists": true, "registry_contains_hash": true, "validation_evidence_linked": true}
+proof_status completed

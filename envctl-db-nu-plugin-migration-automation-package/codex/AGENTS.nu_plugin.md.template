@@ -1,0 +1,15 @@
+# nu_plugin migration automation additive guidance
+
+This repository is being upgraded so a Nushell plugin can control and visualize envctl migration automation.
+
+Required behavior:
+
+- The envctl database remains the source of truth.
+- The plugin exposes commands, typed records/tables, visual summaries, approval prompts, run status, artifact browsing, graph summaries, replay controls, and pause/resume/rollback commands.
+- The plugin must not own migration state independently.
+- Every mutating command must call/envoke envctl through a shared protocol or CLI/API boundary and append an auditable event.
+- Live visuals come from envctl event streams/materialized views.
+- Plugin protocol/version compatibility must be checked against the Nushell/nu_plugin crate versions actually present in the repository.
+- Add tests for command signatures, output schema, error handling, approval flows, and envctl boundary failures.
+
+Do not invent plugin crate versions or command names without inspecting the repo.

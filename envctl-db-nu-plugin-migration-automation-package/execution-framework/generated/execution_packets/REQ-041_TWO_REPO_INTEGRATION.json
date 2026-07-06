@@ -1,0 +1,77 @@
+{
+  "packet_schema_version": "1.0",
+  "task_id": "REQ-041_TWO_REPO_INTEGRATION",
+  "parent_id": "REQ-010_CONTRACT_LOCK",
+  "phase": "04-shared",
+  "title": "Implement two-repo integration",
+  "goal": "Wire envctl database commands and nu_plugin commands through shared protocol and executable task packets",
+  "owner_lane": "lane_e_verification",
+  "owner_agent": "integration-agent",
+  "helper_id": "helper-integration-01",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "codex-cli-background-shell",
+  "shell_mode": "workspace-write",
+  "repo_target": "multi_repo",
+  "repo_path": "${ENVCTL_REPO}|${NU_PLUGIN_REPO}",
+  "filesystem_scope": "repo-pair",
+  "input_files": [
+    "REQ-020_ENVCTL_DB_SCHEMA",
+    "REQ-031_PLUGIN_COMMAND_SURFACE",
+    "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+  ],
+  "target_files": [
+    "integration tests and docs"
+  ],
+  "target_artifacts": [
+    "two-repo integration"
+  ],
+  "allowed_paths": [
+    "${ENVCTL_REPO}/**",
+    "${NU_PLUGIN_REPO}/**",
+    "execution-framework/**",
+    "execution-templates/**"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "depends_on": [
+    "REQ-027_ENVCTL_REPLAY_ENGINE",
+    "REQ-028_ENVCTL_AGENT_CONTROL_API",
+    "REQ-031_PLUGIN_COMMAND_SURFACE",
+    "REQ-032_PLUGIN_LIVE_VISUALS",
+    "REQ-033_PLUGIN_HUMAN_APPROVAL",
+    "REQ-034_PLUGIN_STATUS_STREAMS",
+    "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+  ],
+  "blocks": [
+    "VER-300_UNIT_VALIDATION"
+  ],
+  "parallel_group": "integration",
+  "can_run_parallel": false,
+  "max_parallel": 1,
+  "start_after": "",
+  "priority": 300,
+  "execution_cell": "04-shared",
+  "required_tools": [
+    "codex",
+    "python3",
+    "shell"
+  ],
+  "command_template": "codex exec < generated/execution_packets/REQ-041_TWO_REPO_INTEGRATION.json",
+  "verification_command": "task-specific tests plus proof file exists",
+  "completion_gate": "proof exists and verification output passes",
+  "proof_required": true,
+  "proof_uri": "proof_records/REQ-041_TWO_REPO_INTEGRATION.proof.json",
+  "heartbeat_file": "state/REQ-041_TWO_REPO_INTEGRATION.heartbeat.json",
+  "logs_uri": "logs/REQ-041_TWO_REPO_INTEGRATION.log",
+  "rollback_plan": "Use history/pre_execution_framework_manifest.json and remove only files added by this task unless a task-specific rollback is listed.",
+  "risk_level": "critical",
+  "human_approval_required": true,
+  "notes": "Additive feature work; no downgrades.",
+  "source_graph_uri": "generated/task_graph.csv",
+  "generated_at": "2026-07-05T05:39:53+00:00"
+}

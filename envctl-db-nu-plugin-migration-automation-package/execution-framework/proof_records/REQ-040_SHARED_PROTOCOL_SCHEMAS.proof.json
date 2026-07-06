@@ -1,0 +1,79 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+  "status": "completed",
+  "started_at": "2026-07-04T23:09:51+00:00",
+  "completed_at": "2026-07-04T23:09:51+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-shared-schema-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/verify_shared_protocol_schemas.py",
+    "execution-framework/schemas/shared_protocol.schema.json",
+    "execution-framework/generated/shared_protocol_manifest.json",
+    "execution-framework/generated/shared_protocol_validation_report.json",
+    "execution-framework/docs/SHARED_PROTOCOL_SCHEMAS.md",
+    "execution-framework/state/REQ-040_SHARED_PROTOCOL_SCHEMAS.heartbeat.json",
+    "execution-framework/logs/REQ-040_SHARED_PROTOCOL_SCHEMAS.log",
+    "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/verify_shared_protocol_schemas.py"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+    "status": "passed",
+    "generated_at": "2026-07-04T23:09:51+00:00",
+    "summary": {
+      "required_record_count": 14,
+      "manifest_record_count": 14,
+      "source_schema_count": 8,
+      "generated_schema_count": 6,
+      "sample_validation_count": 14
+    },
+    "sample_results": {
+      "TargetDescriptor": "passed",
+      "MigrationRecipe": "passed",
+      "MigrationRun": "passed",
+      "RunEvent": "passed",
+      "Operation": "passed",
+      "ApprovalRequest": "passed",
+      "ApprovalDecision": "passed",
+      "ArtifactRecord": "passed",
+      "EvidenceRecord": "passed",
+      "GraphEdge": "passed",
+      "ValidationResult": "passed",
+      "ReplayRequest": "passed",
+      "ReplayResult": "passed",
+      "ProofRecord": "passed"
+    },
+    "errors": [],
+    "evidence": [
+      "execution-framework/schemas/shared_protocol.schema.json",
+      "execution-framework/generated/shared_protocol_manifest.json",
+      "execution-framework/docs/SHARED_PROTOCOL_SCHEMAS.md"
+    ]
+  },
+  "checksums": {
+    "execution-framework/scripts/verify_shared_protocol_schemas.py": "fae2b125e4fa9ba4be8475fd96701d2c283da7ab3bbbfcf1ee4217ce0689b3ef",
+    "execution-framework/schemas/shared_protocol.schema.json": "a897b67a1ec37804d74cbc60eb1360667d823b4661016a76a29906f016275007",
+    "execution-framework/generated/shared_protocol_manifest.json": "846beff278ee11a96b7eb9aa45bff6b476ee1fc406fcfb3cea3de92c79d057ca",
+    "execution-framework/generated/shared_protocol_validation_report.json": "0863b9b28e702c704c96f50a50954181f42b35aaa16e4ecb6643497093c4c4d0",
+    "execution-framework/docs/SHARED_PROTOCOL_SCHEMAS.md": "f2d3b53ca551ee7d22ff0469849aaf2c97d8d56c65af55cd3374e2c63bc4eb57",
+    "execution-framework/state/REQ-040_SHARED_PROTOCOL_SCHEMAS.heartbeat.json": "5a4da79c9448a87e9dc5ed36f9aa5425aed181014e7bf7d748ddcce639748b38",
+    "execution-framework/logs/REQ-040_SHARED_PROTOCOL_SCHEMAS.log": "0863b9b28e702c704c96f50a50954181f42b35aaa16e4ecb6643497093c4c4d0"
+  },
+  "logs_uri": "logs/REQ-040_SHARED_PROTOCOL_SCHEMAS.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "execution-framework/schemas/shared_protocol.schema.json",
+    "execution-framework/generated/shared_protocol_manifest.json",
+    "execution-framework/docs/SHARED_PROTOCOL_SCHEMAS.md",
+    "logs/REQ-040_SHARED_PROTOCOL_SCHEMAS.log"
+  ],
+  "failure_reason": "",
+  "next_action": "run REQ-041_TWO_REPO_INTEGRATION against schemas/shared_protocol.schema.json"
+}

@@ -687,6 +687,7 @@ impl MetaLayout {
     /// Stable environment variables exported by `envctl env --toolchains`.
     pub fn env_exports(&self) -> Vec<(&'static str, PathBuf)> {
         vec![
+            ("ENVCTL_META_ROOT", self.meta_root.clone()),
             ("ENVCTL_LOCAL", self.local()),
             ("ENVCTL_LOCAL_BIN", self.local_bin()),
             ("ENVCTL_USR", self.usr()),
@@ -848,6 +849,9 @@ mod tests {
     fn exports_registry_path_variables() {
         let l = MetaLayout::from_meta_root("/meta");
         let exports = l.env_exports();
+        assert!(exports
+            .iter()
+            .any(|(k, v)| *k == "ENVCTL_META_ROOT" && v == Path::new("/meta")));
         assert!(exports
             .iter()
             .any(|(k, v)| *k == "ENVCTL_BIN_DIR" && v == Path::new("/meta/usr/bin")));

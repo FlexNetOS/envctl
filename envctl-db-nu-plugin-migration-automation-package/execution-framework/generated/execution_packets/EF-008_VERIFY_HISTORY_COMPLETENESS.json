@@ -1,0 +1,79 @@
+{
+  "packet_schema_version": "1.0",
+  "task_id": "EF-008_VERIFY_HISTORY_COMPLETENESS",
+  "parent_id": "",
+  "phase": "00-framework",
+  "title": "Final history and completeness verification",
+  "goal": "Run required final verification command",
+  "owner_lane": "lane_e_verification",
+  "owner_agent": "final-verifier-agent",
+  "helper_id": "helper-final-01",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "python3",
+  "shell_mode": "workspace-write",
+  "repo_target": "filesystem",
+  "repo_path": "..",
+  "filesystem_scope": "package-root",
+  "input_files": [
+    "generated/**",
+    "proof_records/**",
+    "history/**",
+    "../README.md",
+    "../PACKAGE_MANIFEST.json",
+    "../specs/**",
+    "../prompts/**",
+    "../codex/**",
+    "../schemas/**",
+    "../examples/**",
+    "../helpers/**",
+    "../sql/**",
+    "../source/**",
+    "../expected-output/**"
+  ],
+  "target_files": [
+    "generated/final_verification_report.json",
+    "docs/FINAL_VERIFICATION.md"
+  ],
+  "target_artifacts": [
+    "final verification"
+  ],
+  "allowed_paths": [
+    "execution-framework/**",
+    "history/**"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "depends_on": [
+    "EF-007_GOAL_LOOP"
+  ],
+  "blocks": [
+    "REL-401_HANDOFF"
+  ],
+  "parallel_group": "framework_verification",
+  "can_run_parallel": false,
+  "max_parallel": 1,
+  "start_after": "",
+  "priority": 80,
+  "execution_cell": "final-verify",
+  "required_tools": [
+    "python3"
+  ],
+  "command_template": "python3 scripts/verify_history_and_completeness.py",
+  "verification_command": "test -f generated/final_verification_report.json && test -f docs/FINAL_VERIFICATION.md",
+  "completion_gate": "final_verification status is pass or pass_with_external_blocker",
+  "proof_required": true,
+  "proof_uri": "proof_records/EF-008_VERIFY_HISTORY_COMPLETENESS.proof.json",
+  "heartbeat_file": "state/EF-008_VERIFY_HISTORY_COMPLETENESS.heartbeat.json",
+  "logs_uri": "logs/EF-008_VERIFY_HISTORY_COMPLETENESS.log",
+  "rollback_plan": "Use history/pre_execution_framework_manifest.json and remove only files added by this task unless a task-specific rollback is listed.",
+  "risk_level": "medium",
+  "human_approval_required": false,
+  "notes": "Required missing-execution command.",
+  "source_graph_uri": "generated/task_graph.csv",
+  "generated_at": "2026-07-05T05:39:53+00:00"
+}

@@ -1,0 +1,306 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "ART-129_BUSINESS_CAPABILITY",
+  "status": "completed",
+  "started_at": "2026-07-04T23:19:56+00:00",
+  "completed_at": "2026-07-04T23:19:56+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-artifact-30",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/generate_art_129_business_capability.py",
+    "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md",
+    "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.json",
+    "execution-framework/generated/art_129_business_capability_registry_report.json",
+    "execution-framework/state/ART-129_BUSINESS_CAPABILITY.heartbeat.json",
+    "execution-framework/logs/ART-129_BUSINESS_CAPABILITY.log",
+    "execution-framework/proof_records/ART-129_BUSINESS_CAPABILITY.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/generate_art_129_business_capability.py",
+    "python3 -m py_compile scripts/generate_art_129_business_capability.py"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "ART-129_BUSINESS_CAPABILITY",
+    "status": "passed",
+    "generated_at": "2026-07-04T23:19:56+00:00",
+    "artifact_paths": {
+      "markdown": "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md",
+      "json": "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.json"
+    },
+    "registry_results": [
+      {
+        "artifact_row_id": "artifact-b7c88d69f0fbc76f1f753120",
+        "artifact_id": "art129-business-capability-map-md",
+        "run_id": "run-art129-business-capability",
+        "path": "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md",
+        "content_hash": "sha256:1adcf75a9e84d6d6b1204dfe13ac15238bc1af7e98e422f881bff9468d227f1e",
+        "producer_operation_id": "op-art129-generate-business-capability",
+        "contract_id": "contract-art129-full-migration-artifacts",
+        "evidence_ids": [
+          "evidence-8d45029b176e557eb12f20a8",
+          "evidence-b540d97a8b7930543e575a49",
+          "evidence-44a287bf47d0fbb6013170c3",
+          "evidence-4351306af94f656b9b4f8e11",
+          "evidence-9f9e9d9449e49a29e45b337e",
+          "evidence-1b179972007a45382dd98de5"
+        ],
+        "graph_edge_ids": [
+          "edge-009bb12e0d6143604250e75c",
+          "edge-c351325dd499237f96d7ff3d",
+          "edge-be1afcf499abcf524d4f2f08",
+          "edge-9749b7c32ef9f408d08bce4e",
+          "edge-98ca4b4db5ed659232caf004"
+        ],
+        "validation_ids": [
+          "validation-e2586c26ec5905282e861409",
+          "validation-ac330b0c2d03a8679dc52e6e"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-07c53af4b56ea35472c808ae",
+        "artifact_id": "art129-business-capability-map-json",
+        "run_id": "run-art129-business-capability",
+        "path": "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.json",
+        "content_hash": "sha256:5f676653d43f01b2ba82d91c4f287131a65aea8e1c78a84967785e03a733dfad",
+        "producer_operation_id": "op-art129-generate-business-capability",
+        "contract_id": "contract-art129-full-migration-artifacts",
+        "evidence_ids": [
+          "evidence-2b782c54632805dc23a06701",
+          "evidence-60d91dc9ee5fcb58d939d9ee",
+          "evidence-72675280b8f054cc28b3901b",
+          "evidence-0e303e14f0f0ba55ea046ee0",
+          "evidence-1d2dcc394bbf340155757242",
+          "evidence-7eee63c2cf93d9ebbbc51599"
+        ],
+        "graph_edge_ids": [
+          "edge-77b705315c394d6cf3a19f3b",
+          "edge-078a062b8685915920fc051f",
+          "edge-781048b99cfcbe467720fa0c",
+          "edge-e15b6a69f12063c7f4dbedd8",
+          "edge-5ac0dd46902073f9ae22803c"
+        ],
+        "validation_ids": [
+          "validation-2fe9365af9f257b3c4a95bbf",
+          "validation-f3f950e71d68443367489a5a"
+        ]
+      }
+    ],
+    "registered_artifacts": [
+      {
+        "id": "artifact-b7c88d69f0fbc76f1f753120",
+        "run_id": "run-art129-business-capability",
+        "artifact_id": "art129-business-capability-map-md",
+        "title": "ART-129 Business Capability Map",
+        "artifact_type": "business_capability_map_markdown",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md",
+        "content_hash": "sha256:1adcf75a9e84d6d6b1204dfe13ac15238bc1af7e98e422f881bff9468d227f1e",
+        "generated_by_operation_id": "op-art129-generate-business-capability",
+        "evidence": {
+          "contract_id": "contract-art129-full-migration-artifacts",
+          "evidence_ids": [
+            "evidence-8d45029b176e557eb12f20a8",
+            "evidence-b540d97a8b7930543e575a49",
+            "evidence-44a287bf47d0fbb6013170c3",
+            "evidence-4351306af94f656b9b4f8e11",
+            "evidence-9f9e9d9449e49a29e45b337e",
+            "evidence-1b179972007a45382dd98de5"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md",
+            "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.json",
+            "execution-framework/generated/envctl_migration_db_model.json",
+            "execution-framework/generated/envctl_artifact_registry_report.json",
+            "execution-framework/generated/shared_protocol_manifest.json",
+            "execution-framework/generated/nu_plugin_command_manifest.json"
+          ],
+          "producer_operation_id": "op-art129-generate-business-capability",
+          "provenance": {
+            "helper_id": "helper-artifact-30",
+            "owner_agent": "artifact-agent",
+            "source_inputs": [
+              "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+              "execution-framework/generated/package_scan.json",
+              "execution-framework/generated/envctl_migration_db_model.json",
+              "execution-framework/generated/envctl_artifact_registry_report.json",
+              "execution-framework/generated/shared_protocol_manifest.json"
+            ],
+            "task_id": "ART-129_BUSINESS_CAPABILITY"
+          },
+          "validation_ids": [
+            "validation-e2586c26ec5905282e861409",
+            "validation-ac330b0c2d03a8679dc52e6e"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-art129-full-migration-artifacts",
+          "graph_edge_ids": [
+            "edge-009bb12e0d6143604250e75c",
+            "edge-c351325dd499237f96d7ff3d",
+            "edge-be1afcf499abcf524d4f2f08",
+            "edge-9749b7c32ef9f408d08bce4e",
+            "edge-98ca4b4db5ed659232caf004"
+          ],
+          "links": [
+            {
+              "to": "artifact:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "artifact:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "artifact:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "business-function:migration-governance",
+              "type": "maps_to"
+            }
+          ]
+        }
+      },
+      {
+        "id": "artifact-07c53af4b56ea35472c808ae",
+        "run_id": "run-art129-business-capability",
+        "artifact_id": "art129-business-capability-map-json",
+        "title": "ART-129 Business Capability Map Source",
+        "artifact_type": "business_capability_map_json",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.json",
+        "content_hash": "sha256:5f676653d43f01b2ba82d91c4f287131a65aea8e1c78a84967785e03a733dfad",
+        "generated_by_operation_id": "op-art129-generate-business-capability",
+        "evidence": {
+          "contract_id": "contract-art129-full-migration-artifacts",
+          "evidence_ids": [
+            "evidence-2b782c54632805dc23a06701",
+            "evidence-60d91dc9ee5fcb58d939d9ee",
+            "evidence-72675280b8f054cc28b3901b",
+            "evidence-0e303e14f0f0ba55ea046ee0",
+            "evidence-1d2dcc394bbf340155757242",
+            "evidence-7eee63c2cf93d9ebbbc51599"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md",
+            "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.json",
+            "execution-framework/generated/envctl_migration_db_model.json",
+            "execution-framework/generated/envctl_artifact_registry_report.json",
+            "execution-framework/generated/shared_protocol_manifest.json",
+            "execution-framework/generated/nu_plugin_command_manifest.json"
+          ],
+          "producer_operation_id": "op-art129-generate-business-capability",
+          "provenance": {
+            "helper_id": "helper-artifact-30",
+            "owner_agent": "artifact-agent",
+            "source_inputs": [
+              "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+              "execution-framework/generated/package_scan.json",
+              "execution-framework/generated/envctl_migration_db_model.json",
+              "execution-framework/generated/envctl_artifact_registry_report.json",
+              "execution-framework/generated/shared_protocol_manifest.json"
+            ],
+            "task_id": "ART-129_BUSINESS_CAPABILITY"
+          },
+          "validation_ids": [
+            "validation-2fe9365af9f257b3c4a95bbf",
+            "validation-f3f950e71d68443367489a5a"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-art129-full-migration-artifacts",
+          "graph_edge_ids": [
+            "edge-77b705315c394d6cf3a19f3b",
+            "edge-078a062b8685915920fc051f",
+            "edge-781048b99cfcbe467720fa0c",
+            "edge-e15b6a69f12063c7f4dbedd8",
+            "edge-5ac0dd46902073f9ae22803c"
+          ],
+          "links": [
+            {
+              "to": "artifact:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "artifact:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "artifact:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "business-function:migration-governance",
+              "type": "maps_to"
+            }
+          ]
+        }
+      }
+    ],
+    "summary": {
+      "capability_count": 9,
+      "all_capabilities_have_business_function": true,
+      "all_capabilities_have_technical_systems": true,
+      "mapped_envctl_db_object_count": 23,
+      "mapped_nu_plugin_command_count": 13,
+      "evidence_count": 12,
+      "graph_edge_count": 10,
+      "validation_count": 4,
+      "artifact_index_rows": [
+        [
+          "art129-business-capability-map-json",
+          "complete",
+          "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.json",
+          "sha256:5f676653d43f01b2ba82d91c4f287131a65aea8e1c78a84967785e03a733dfad"
+        ],
+        [
+          "art129-business-capability-map-md",
+          "complete",
+          "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md",
+          "sha256:1adcf75a9e84d6d6b1204dfe13ac15238bc1af7e98e422f881bff9468d227f1e"
+        ]
+      ]
+    },
+    "completion_gate": {
+      "artifact_exists": true,
+      "hash_recorded": true,
+      "validation_evidence_linked": true
+    },
+    "errors": [],
+    "evidence": [
+      "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md",
+      "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.json",
+      "execution-framework/generated/art_129_business_capability_registry_report.json",
+      "execution-framework/generated/envctl_migration_db_model.json",
+      "execution-framework/generated/envctl_artifact_registry_report.json",
+      "execution-framework/generated/shared_protocol_manifest.json",
+      "execution-framework/generated/nu_plugin_command_manifest.json"
+    ]
+  },
+  "checksums": {
+    "execution-framework/scripts/generate_art_129_business_capability.py": "45c1d0ca367d0d5bb60cf92faf091edc90ce9e7b88369e74496a2415ef3cba28",
+    "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md": "1adcf75a9e84d6d6b1204dfe13ac15238bc1af7e98e422f881bff9468d227f1e",
+    "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.json": "5f676653d43f01b2ba82d91c4f287131a65aea8e1c78a84967785e03a733dfad",
+    "execution-framework/generated/art_129_business_capability_registry_report.json": "ed0231974a034ad7172989973287b134b8cf4370d93eacdf272924384c48db90",
+    "execution-framework/state/ART-129_BUSINESS_CAPABILITY.heartbeat.json": "ea24defef92411dbfa6fbeb7c30dfd719e93cf1afb182caf09171bf3c7940c12",
+    "execution-framework/logs/ART-129_BUSINESS_CAPABILITY.log": "ed0231974a034ad7172989973287b134b8cf4370d93eacdf272924384c48db90",
+    "execution-framework/proof_records/proof_ledger.jsonl": "d3190453b1fa65e8ebe875e99cc2abf7043770e2b40bcfa4728f204fa42b19e4"
+  },
+  "logs_uri": "logs/ART-129_BUSINESS_CAPABILITY.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.md",
+    "execution-framework/migration-artifacts/art-129_business_capability/business_capability_map.json",
+    "execution-framework/generated/art_129_business_capability_registry_report.json",
+    "execution-framework/generated/envctl_migration_db_model.json",
+    "execution-framework/generated/envctl_artifact_registry_report.json",
+    "execution-framework/generated/shared_protocol_manifest.json",
+    "execution-framework/generated/nu_plugin_command_manifest.json"
+  ],
+  "failure_reason": "",
+  "next_action": "run VER-300_UNIT_VALIDATION"
+}

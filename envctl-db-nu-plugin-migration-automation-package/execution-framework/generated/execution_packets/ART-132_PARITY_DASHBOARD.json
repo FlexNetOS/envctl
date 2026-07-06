@@ -1,0 +1,73 @@
+{
+  "packet_schema_version": "1.0",
+  "task_id": "ART-132_PARITY_DASHBOARD",
+  "parent_id": "ARTIFACTS",
+  "phase": "05-artifacts",
+  "title": "Build Parity dashboard",
+  "goal": "Generate and register Parity dashboard: real-time comparison of old/new metrics.",
+  "owner_lane": "lane_d_filesystem",
+  "owner_agent": "artifact-agent",
+  "helper_id": "helper-artifact-33",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "codex-cli-background-shell",
+  "shell_mode": "workspace-write",
+  "repo_target": "filesystem",
+  "repo_path": "${MIGRATION_TARGET_ROOT}",
+  "filesystem_scope": "target-filesystem",
+  "input_files": [
+    "target descriptor",
+    "repo scan",
+    "envctl database"
+  ],
+  "target_files": [
+    "migration-artifacts/**"
+  ],
+  "target_artifacts": [
+    "migration-artifacts/art-132_parity_dashboard/*.md",
+    "migration-artifacts/art-132_parity_dashboard/*.json"
+  ],
+  "allowed_paths": [
+    "${MIGRATION_TARGET_ROOT}/**",
+    "migration-artifacts/**",
+    "execution-framework/**"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "depends_on": [
+    "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+    "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+    "REQ-025_ENVCTL_VALIDATION_EVIDENCE"
+  ],
+  "blocks": [
+    "VER-300_UNIT_VALIDATION"
+  ],
+  "parallel_group": "artifact_generation_c",
+  "can_run_parallel": true,
+  "max_parallel": 6,
+  "start_after": "",
+  "priority": 432,
+  "execution_cell": "artifact-generation",
+  "required_tools": [
+    "codex",
+    "python3",
+    "shell"
+  ],
+  "command_template": "codex exec < generated/execution_packets/ART-132_PARITY_DASHBOARD.json",
+  "verification_command": "artifact file exists and envctl artifact registry contains hash",
+  "completion_gate": "artifact exists, hash recorded, validation evidence linked",
+  "proof_required": true,
+  "proof_uri": "proof_records/ART-132_PARITY_DASHBOARD.proof.json",
+  "heartbeat_file": "state/ART-132_PARITY_DASHBOARD.heartbeat.json",
+  "logs_uri": "logs/ART-132_PARITY_DASHBOARD.log",
+  "rollback_plan": "Use history/pre_execution_framework_manifest.json and remove only files added by this task unless a task-specific rollback is listed.",
+  "risk_level": "medium",
+  "human_approval_required": false,
+  "notes": "Part of full migration artifact contract.",
+  "source_graph_uri": "generated/task_graph.csv",
+  "generated_at": "2026-07-05T05:39:53+00:00"
+}

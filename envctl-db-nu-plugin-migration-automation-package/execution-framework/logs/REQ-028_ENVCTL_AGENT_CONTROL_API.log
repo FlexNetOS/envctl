@@ -1,0 +1,5 @@
+REQ-028_ENVCTL_AGENT_CONTROL_API verification status=pass
+event_chain_valid=True
+operations=4
+open_approvals=0
+cli_event_count=12

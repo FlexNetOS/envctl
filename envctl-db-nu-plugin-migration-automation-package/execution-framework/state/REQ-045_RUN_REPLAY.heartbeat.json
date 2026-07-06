@@ -1,0 +1,12 @@
+{
+  "task_id": "REQ-045_RUN_REPLAY",
+  "status": "passed",
+  "updated_at": "2026-07-05T05:27:46+00:00",
+  "helper_id": "helper-replay-template-01",
+  "evidence": [
+    "execution-framework/docs/RUN_REPLAY.md",
+    "execution-framework/generated/run_replay_manifest.json",
+    "execution-framework/state/REQ-045_RUN_REPLAY.heartbeat.json",
+    "execution-framework/logs/REQ-045_RUN_REPLAY.log"
+  ]
+}

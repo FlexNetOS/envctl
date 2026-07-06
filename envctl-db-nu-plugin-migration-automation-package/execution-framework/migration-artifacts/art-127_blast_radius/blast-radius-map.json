@@ -1,0 +1,302 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-127_BLAST_RADIUS",
+  "title": "Blast-radius map",
+  "generated_at": "2026-07-04T23:19:11+00:00",
+  "contract_row": {
+    "contract_row_id": "artifact:01-current-state-blast-radius-map-md",
+    "artifact_id": "01-current-state-blast-radius-map-md",
+    "title": "Blast Radius Map",
+    "required_path": "migration-artifacts/01-current-state/blast-radius-map.md",
+    "section": "01-current-state",
+    "artifact_type": "migration_artifact",
+    "format": "md",
+    "status": "required",
+    "source_refs": [
+      "source/codex-flexnetos-migration-prompt-package/expected-output/migration-artifacts-tree.md",
+      "source/previous-migration-artifact-context.md"
+    ],
+    "producer_task_id": "ART-127_BLAST_RADIUS",
+    "validators": [
+      "path_registered",
+      "evidence_or_status_recorded",
+      "linked_from_index"
+    ]
+  },
+  "source_summary": {
+    "target_registry_status": "passed",
+    "target_ids": [
+      "flexnetos-vs-lifeos",
+      "replace-with-target-id",
+      "synthetic-data-target",
+      "synthetic-infrastructure-target",
+      "synthetic-integration-target"
+    ],
+    "db_required_tables": [
+      "envctl_migration_agent_sessions",
+      "envctl_migration_approvals",
+      "envctl_migration_artifact_contracts",
+      "envctl_migration_artifacts",
+      "envctl_migration_checkpoints",
+      "envctl_migration_evidence",
+      "envctl_migration_graph_edges",
+      "envctl_migration_operations",
+      "envctl_migration_packages",
+      "envctl_migration_plugin_sessions",
+      "envctl_migration_recipes",
+      "envctl_migration_rollbacks",
+      "envctl_migration_run_events",
+      "envctl_migration_runs",
+      "envctl_migration_targets",
+      "envctl_migration_validations"
+    ],
+    "db_required_views": [
+      "envctl_migration_artifact_index",
+      "envctl_migration_live_timeline",
+      "envctl_migration_open_approvals",
+      "envctl_migration_replay_readiness",
+      "envctl_migration_run_latest_status",
+      "envctl_migration_validation_scorecard"
+    ],
+    "protocol_records": [
+      "TargetDescriptor",
+      "MigrationRecipe",
+      "MigrationRun",
+      "RunEvent",
+      "Operation",
+      "ApprovalRequest",
+      "ApprovalDecision",
+      "ArtifactRecord",
+      "EvidenceRecord",
+      "GraphEdge",
+      "ValidationResult",
+      "ReplayRequest",
+      "ReplayResult",
+      "ProofRecord"
+    ]
+  },
+  "coverage": {
+    "services": 1,
+    "tables": 2,
+    "queues": 2,
+    "apis": 2,
+    "credentials": 2,
+    "failure_modes_total": 9
+  },
+  "blast_radius": [
+    {
+      "id": "service-envctl-migration-db",
+      "kind": "service",
+      "name": "envctl migration database",
+      "failure_mode": "SQLite schema, seed, or artifact registry persistence is unavailable.",
+      "breaks": [
+        "target descriptor lookup",
+        "artifact hash registration",
+        "run ledger status",
+        "validation scorecard",
+        "replay readiness"
+      ],
+      "blocked_tasks": [
+        "VER-300_UNIT_VALIDATION",
+        "VER-301_SQL_SCHEMA_TEST",
+        "VER-304_FINAL_COMPLETENESS"
+      ],
+      "detect_with": [
+        "python3 scripts/verify_envctl_db_schema.py",
+        "python3 scripts/verify_artifact_registry.py"
+      ],
+      "containment": "Stop artifact completion claims, preserve logs, restore schema/seed from package sources, then rerun registry verification.",
+      "risk": "critical"
+    },
+    {
+      "id": "table-envctl-migration-artifacts",
+      "kind": "table",
+      "name": "envctl_migration_artifacts",
+      "failure_mode": "Artifact rows cannot be inserted, updated, indexed, or hash-verified.",
+      "breaks": [
+        "migration-artifacts hash provenance",
+        "contract row satisfaction",
+        "artifact index view",
+        "downstream verification gates"
+      ],
+      "blocked_tasks": [
+        "VER-300_UNIT_VALIDATION",
+        "VER-304_FINAL_COMPLETENESS"
+      ],
+      "detect_with": [
+        "SELECT artifact_id, path, content_hash FROM envctl_migration_artifact_index"
+      ],
+      "containment": "Keep generated files on disk but mark the task failed until the registry row and content hash are present.",
+      "risk": "critical"
+    },
+    {
+      "id": "table-envctl-migration-evidence",
+      "kind": "table",
+      "name": "envctl_migration_evidence",
+      "failure_mode": "Proof files, generated artifacts, and validation inputs cannot be linked to operations.",
+      "breaks": [
+        "auditability",
+        "proof-to-artifact trace",
+        "rollback confidence",
+        "human review of generated outputs"
+      ],
+      "blocked_tasks": [
+        "VER-300_UNIT_VALIDATION"
+      ],
+      "detect_with": [
+        "registry evidence_ids are empty",
+        "proof record evidence list misses generated artifact paths"
+      ],
+      "containment": "Regenerate evidence rows from existing files and hashes before marking completion.",
+      "risk": "high"
+    },
+    {
+      "id": "queue-envctl-migration-operations",
+      "kind": "queue",
+      "name": "envctl_migration_operations",
+      "failure_mode": "Operation state cannot identify the producer command or lifecycle state.",
+      "breaks": [
+        "idempotency tracking",
+        "producer operation foreign keys",
+        "status stream rendering",
+        "replay command selection"
+      ],
+      "blocked_tasks": [
+        "REQ-045_RUN_REPLAY",
+        "VER-303_GOAL_LOOP_COMPUTE"
+      ],
+      "detect_with": [
+        "python3 scripts/verify_operation_state_machine.py"
+      ],
+      "containment": "Do not enqueue follow-on validations until the producer operation is restored or replayed.",
+      "risk": "high"
+    },
+    {
+      "id": "queue-envctl-migration-run-events",
+      "kind": "queue",
+      "name": "envctl_migration_run_events",
+      "failure_mode": "Append-only event chain is missing, duplicated, or reordered.",
+      "breaks": [
+        "live timeline",
+        "goal-loop status",
+        "audit ordering",
+        "replay determinism"
+      ],
+      "blocked_tasks": [
+        "REQ-045_RUN_REPLAY",
+        "VER-303_GOAL_LOOP_COMPUTE"
+      ],
+      "detect_with": [
+        "python3 scripts/verify_envctl_run_ledger.py"
+      ],
+      "containment": "Freeze replay claims and rebuild from operation/proof records with hash-chain validation.",
+      "risk": "high"
+    },
+    {
+      "id": "api-artifact-registry-python",
+      "kind": "api",
+      "name": "scripts/artifact_registry.py",
+      "failure_mode": "Registration API rejects valid package-relative paths or accepts unsafe paths.",
+      "breaks": [
+        "artifact registration",
+        "blocked-path enforcement",
+        "content-hash verification",
+        "graph and validation links"
+      ],
+      "blocked_tasks": [
+        "ARTIFACTS",
+        "VER-300_UNIT_VALIDATION"
+      ],
+      "detect_with": [
+        "python3 scripts/verify_artifact_registry.py"
+      ],
+      "containment": "Run fail-closed rejection cases before trusting any newly generated artifact rows.",
+      "risk": "critical"
+    },
+    {
+      "id": "api-nu-plugin-protocol",
+      "kind": "api",
+      "name": "shared protocol and nu_plugin command surface",
+      "failure_mode": "Protocol records drift from the database-owned shapes.",
+      "breaks": [
+        "operator command rendering",
+        "status streams",
+        "approval decisions",
+        "artifact and validation display"
+      ],
+      "blocked_tasks": [
+        "REQ-031_PLUGIN_COMMAND_SURFACE",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ],
+      "detect_with": [
+        "python3 scripts/verify_shared_protocol_schemas.py",
+        "python3 scripts/verify_plugin_command_surface.py"
+      ],
+      "containment": "Treat envctl database rows as source of truth and regenerate plugin-facing schemas/manifests.",
+      "risk": "high"
+    },
+    {
+      "id": "credential-codex-provider",
+      "kind": "credential",
+      "name": "Codex CLI provider credential",
+      "failure_mode": "Background codex execution cannot start or complete artifact-generation packets.",
+      "breaks": [
+        "parallel artifact generation",
+        "codex exec packet workflow",
+        "proof log capture"
+      ],
+      "blocked_tasks": [
+        "ARTIFACTS",
+        "REL-401_HANDOFF"
+      ],
+      "detect_with": [
+        "codex exec < generated/execution_packets/ART-127_BLAST_RADIUS.json"
+      ],
+      "containment": "Do not expose or inspect secret values; verify only command availability and preserve stdout logs.",
+      "risk": "medium"
+    },
+    {
+      "id": "credential-filesystem-write-scope",
+      "kind": "credential",
+      "name": "workspace filesystem write authority",
+      "failure_mode": "Agent cannot write migration-artifacts, state, logs, or proof records.",
+      "breaks": [
+        "artifact materialization",
+        "heartbeat updates",
+        "proof ledger append",
+        "rollback manifest usefulness"
+      ],
+      "blocked_tasks": [
+        "VER-300_UNIT_VALIDATION",
+        "VER-304_FINAL_COMPLETENESS"
+      ],
+      "detect_with": [
+        "test writes under migration-artifacts/, execution-framework/state/, execution-framework/proof_records/"
+      ],
+      "containment": "Fail closed with no completion proof until the write scope matches the packet allowed paths.",
+      "risk": "high"
+    }
+  ],
+  "critical_paths": [
+    {
+      "path": "artifact generation to registry to validation",
+      "depends_on": [
+        "credential-filesystem-write-scope",
+        "api-artifact-registry-python",
+        "service-envctl-migration-db",
+        "table-envctl-migration-artifacts",
+        "table-envctl-migration-evidence"
+      ],
+      "break_effect": "Generated files may exist without durable hash/evidence registration, so the artifact cannot gate validation."
+    },
+    {
+      "path": "run replay and status stream",
+      "depends_on": [
+        "queue-envctl-migration-operations",
+        "queue-envctl-migration-run-events",
+        "api-nu-plugin-protocol"
+      ],
+      "break_effect": "Operators lose reliable ordering, replayability, and UI/API status for migration operations."
+    }
+  ]
+}

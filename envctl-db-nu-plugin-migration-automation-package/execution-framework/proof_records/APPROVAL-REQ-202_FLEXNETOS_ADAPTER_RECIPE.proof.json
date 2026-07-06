@@ -1,0 +1,38 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "APPROVAL-REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+  "status": "completed",
+  "started_at": "2026-07-05T05:33:57+00:00",
+  "completed_at": "2026-07-05T05:33:57+00:00",
+  "actor": "agent-approval-gate",
+  "helper_id": "helper-agent-approval-01",
+  "model_tag": "gpt-5.5",
+  "repo_path": "execution-framework",
+  "files_changed": [
+    "execution-framework/approvals/REQ-202_FLEXNETOS_ADAPTER_RECIPE.agent_approval.json",
+    "execution-framework/reviews/GPT55_REQ-202_FLEXNETOS_ADAPTER_RECIPE_APPROVAL_REVIEW.md"
+  ],
+  "commands_run": [
+    "python3 scripts/agent_approval_gate.py ..."
+  ],
+  "verification_output": {
+    "decision": "approved",
+    "reviewer": "gpt-5.5-fallback",
+    "model": "gpt-5.5",
+    "review_artifact": "reviews/GPT55_REQ-202_FLEXNETOS_ADAPTER_RECIPE_APPROVAL_REVIEW.md",
+    "approval_artifact": "approvals/REQ-202_FLEXNETOS_ADAPTER_RECIPE.agent_approval.json",
+    "fallback_reason": "weave reviewer path unavailable in PATH and prior Claude local review artifacts were empty; using GPT-5.5 fallback per package approval protocol."
+  },
+  "checksums": {
+    "execution-framework/approvals/REQ-202_FLEXNETOS_ADAPTER_RECIPE.agent_approval.json": "61a09e995c468d9f981e87b1ce343d04cf3ee0eb242b7fa7c7a5a4f26393a08c",
+    "execution-framework/reviews/GPT55_REQ-202_FLEXNETOS_ADAPTER_RECIPE_APPROVAL_REVIEW.md": "3fc653f5510ea5971d993ece2947acadfadda5bf5e716c5c67c158f9ab9fb0de"
+  },
+  "logs_uri": "logs/APPROVAL-REQ-202_FLEXNETOS_ADAPTER_RECIPE.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "approvals/REQ-202_FLEXNETOS_ADAPTER_RECIPE.agent_approval.json",
+    "reviews/GPT55_REQ-202_FLEXNETOS_ADAPTER_RECIPE_APPROVAL_REVIEW.md"
+  ],
+  "failure_reason": "",
+  "next_action": "run goal_loop.py; REQ-202_FLEXNETOS_ADAPTER_RECIPE becomes dispatchable only when approved"
+}
