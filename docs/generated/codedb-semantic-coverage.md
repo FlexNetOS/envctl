@@ -1,22 +1,36 @@
 # CodeDB Semantic Coverage
 
-This document summarizes the semantic surface envctl currently imports into `codedb_file_imports`.
+Date: 2026-07-02
+Scope: `envctl` CodeDB catalog ingestion plus `nu_plugin_codedb` table surfaces
 
-## Summary
+## Why this exists
 
-- import rows: `3549`
-- blob-backed rows: `1866`
-- metadata-only rows: `1683`
-- flattened structured rows: `324281`
+The three generated inventory lists are useful, but they only answer one narrow
+question: which file targets become `envctl_yazelix_file_import` rows, and which
+of those rows upload bytes as blobs. The CodeDB Nu plugin contract is broader
+than that.
 
-## Semantic Columns
+This document captures the semantic/table layer that sits on top of those file
+lists so we do not mistake "inventory exported" for "plugin surface covered."
 
+## Inventory rows are semantic rows, not just path lists
+
+The Yazelix inventory path is ingested by envctl through
+`ingest_codedb_file_imports()` in `crates/engine/src/catalog.rs`. The engine
+maps this data into `envctl_yazelix_file_import` rows and records the companion
+structured-row table name `envctl_yazelix_file_structured_rows`.
+
+Each import row carries more than a path:
+
+- `target_id`
 - `logical_owner`
+- `absolute_path`
 - `normalized_path`
 - `source_of_truth_class`
 - `file_kind`
 - `parser_hint`
 - `content_hash`
+- `byte_length`
 - `blob_ref`
 - `import_safety_policy`
 - `reproduction_policy`
@@ -30,29 +44,79 @@ This document summarizes the semantic surface envctl currently imports into `cod
 - `last_observed`
 - `provenance`
 
-## Structured Statuses
+That means the import lists are only one projection of a richer table contract.
 
-- `metadata_only`: `1640`
-- `structured_rows_ready`: `1397`
-- `unstructured_blob`: `512`
+## Blob and metadata discipline
 
-## Source-of-Truth Classes
+The Nu plugin follows the same semantics the engine uses:
 
-- `envctl_control_surface`: `1039`
-- `nix_store_package_output`: `366`
-- `real_home_desktop_entry`: `2`
-- `real_home_runtime_state`: `1335`
-- `real_home_user_config`: `5`
-- `repo_source`: `802`
+1. `content_blob` plus a readable regular file:
+   - hashes bytes
+   - emits `content_hash`
+   - emits `blob_ref`
+   - marks `import_status = "blob_metadata_ready"`
+2. `content_blob` plus a non-regular or unreadable target:
+   - falls back to `import_status = "metadata_only"`
+   - preserves an explicit `skip_reason`
+3. `metadata_only` import mode:
+   - does not upload file bytes
+   - preserves policy as `skip_reason`
+   - keeps blob fields empty
 
-## Structured Parser Hints
+This distinction is covered in both the engine and the plugin tests.
 
-- `json`: `253`
-- `jsonc`: `2`
-- `kdl`: `15`
-- `lua`: `12`
-- `markdown`: `799`
-- `nix`: `30`
-- `shell`: `102`
-- `toml`: `132`
-- `yaml`: `52`
+## Structured rows are a separate layer
+
+When bytes are present and the parser can decode the content, the plugin and the
+engine expose `structured_rows` and mark
+`structured_status = "structured_rows_ready"`.
+
+When bytes exist but no decoder produces rows, the state is
+`structured_status = "unstructured_blob"`.
+
+When the target is policy-limited metadata only, the state is
+`structured_status = "metadata_only"`.
+
+So "blob uploaded" and "semantic rows extracted" are related but distinct.
+
+## The Nu plugin exposes broader table families
+
+The plugin command surface includes:
+
+- `codedb rust items`
+- `codedb rust macros`
+- `codedb rust cfg`
+- `codedb build scripts`
+- `codedb tables`
+- `codedb gaps`
+- `codedb validation errors`
+- `codedb schema`
+- `codedb doctor`
+
+That matters because the user request explicitly called out "all config,
+settings, environments, and files" and noted that the plugin is "way more than
+blobs, metadata, and files." The plugin itself agrees: it exposes compiler-like
+facts, table inventory, validation failures, and capture gaps, not just import
+rows.
+
+## Gap and validation surfaces
+
+Two explicit incompleteness/reporting commands are part of the real contract:
+
+- `codedb gaps`
+- `codedb validation errors`
+
+Any future claim that the repo has fully covered a CodeDB capture needs to check
+these surfaces, not just confirm that a file list exists.
+
+## Practical interpretation for this repo
+
+- `docs/generated/codedb-import-targets.txt`
+  - answers: which targets become import rows
+- `docs/generated/codedb-content-blob-targets.txt`
+  - answers: which targets upload bytes as blobs
+- `docs/generated/codedb-metadata-only-targets.txt`
+  - answers: which targets remain metadata-only rows
+- this document
+  - answers: what semantic/table contract those rows participate in, and which
+    broader CodeDB surfaces still matter for truthful coverage

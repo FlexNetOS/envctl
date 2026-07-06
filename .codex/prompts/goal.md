@@ -6,7 +6,7 @@ argument-hint: "[GOAL_OR_RECOVERY_REQUEST]"
 You are executing the envctl `/goal` recovery orchestrator.
 
 Authoritative repo rules:
-- Read `AGENTS.md`, `.codex/AGENTS.md`, and `/home/drdave/Desktop/meta/.kb/AGENTS.md` before changing code.
+- Read `AGENTS.md`, `.codex/AGENTS.md`, and `/home/flexnetos/FlexNetOS/.kb/AGENTS.md` before changing code.
 - Use repo-local skills as applicable: `.agents/skills/feature-forge/SKILL.md`, `.agents/skills/icm-memory/SKILL.md`, `.agents/skills/agent-env-config/SKILL.md`, `.agents/skills/cross-repo-health/SKILL.md`.
 - Use `rtk`-prefixed shell commands.
 - Use ICM recall before work and ICM store immediately for durable preferences, decisions, resolved errors, and significant completions.
@@ -17,7 +17,7 @@ Arguments supplied to this prompt: $ARGUMENTS
 
 Recover and harden the `meta` workspace by making `envctl` compliant with:
 1. current `meta` CLI commands and plugin behavior,
-2. `/home/drdave/Desktop/meta/.kb/AGENTS.md`,
+2. `/home/flexnetos/FlexNetOS/.kb/AGENTS.md`,
 3. envctl `AGENTS.md` invariants,
 4. meta-local toolchain/dependency install policy,
 5. GitHub workflows, runner assumptions, GitHub App/token surfaces, policy files, and loop workflows.
@@ -43,7 +43,7 @@ This is a recovery and compliance goal, not a destructive reset. The output must
 2. Run the reaper preview and apply commands above.
 3. Verify base state with `rtk git fetch --all --prune` and `rtk git status --short --branch`.
 4. Create or move into a fresh isolated worktree/branch before mutation; do not edit a dirty main checkout.
-5. If the work touches meta KB-governed work, obey `/home/drdave/Desktop/meta/.kb/AGENTS.md`:
+5. If the work touches meta KB-governed work, obey `/home/flexnetos/FlexNetOS/.kb/AGENTS.md`:
    - detect KB state with `rtk git kb list --path context/`,
    - for bug/feature/fix requests, create the appropriate KB incident/task before code changes,
    - load required context; current CLI may use `rtk git kb checkout context/` rather than the older documented `--path` checkout form,
@@ -59,7 +59,7 @@ Spawn the following background agents with maximum effort. In Claude Code, use `
    - Return a command matrix: command, flags, intended use, envctl compliance requirement, verification command, and no-downgrade risks.
 
 2. `KB-CONTEXT-RESEARCHER` — read-only
-   - Read `/home/drdave/Desktop/meta/.kb/AGENTS.md`.
+   - Read `/home/flexnetos/FlexNetOS/.kb/AGENTS.md`.
    - Verify current `git kb` command syntax from help/output.
    - Return the exact KB compliance checklist envctl prompts/agents must follow.
 
