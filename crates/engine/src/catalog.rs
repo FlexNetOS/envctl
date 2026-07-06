@@ -13,7 +13,7 @@ use crate::component::{Component, Hook, Phase};
 use crate::layout::{LayoutKind, MetaLayout};
 use crate::lock::{self, LockFile};
 use crate::model::Registry;
-use anyhow::{Context, bail};
+use anyhow::{bail, Context};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
@@ -181,6 +181,59 @@ impl CatalogSnapshot {
     }
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CatalogTableSummaryRow {
+    pub table: String,
+    pub rows: usize,
+    pub columns: Vec<String>,
+    pub purpose: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CatalogFacetCount {
+    pub key: String,
+    pub count: usize,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CatalogToolchainSignalRow {
+    pub signal_kind: String,
+    pub key: String,
+    pub value: String,
+    pub source: String,
+    pub detail: String,
+}
+
+#[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CatalogAnalyzeSummary {
+    pub tables: usize,
+    pub rows: usize,
+    pub config_files: usize,
+    pub env_vars: usize,
+    pub toolchain_signals: usize,
+    pub codedb_imports: usize,
+    pub mutating: bool,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct CatalogAnalyzeReport {
+    pub repo_root: String,
+    pub manifest_dir: String,
+    pub generated_by: String,
+    pub summary: CatalogAnalyzeSummary,
+    pub table_inventory: Vec<CatalogTableSummaryRow>,
+    pub config_formats: Vec<CatalogFacetCount>,
+    pub config_file_kinds: Vec<CatalogFacetCount>,
+    pub env_scopes: Vec<CatalogFacetCount>,
+    pub env_producers: Vec<CatalogFacetCount>,
+    pub env_sensitive: Vec<CatalogFacetCount>,
+    pub path_artifact_kinds: Vec<CatalogFacetCount>,
+    pub path_verification_statuses: Vec<CatalogFacetCount>,
+    pub codedb_file_kinds: Vec<CatalogFacetCount>,
+    pub codedb_parser_hints: Vec<CatalogFacetCount>,
+    pub toolchain_signals: Vec<CatalogToolchainSignalRow>,
+}
+
 /// Read-only drift report over the current catalog import.
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
 pub struct CatalogDiffReport {
@@ -226,6 +279,7 @@ pub struct CatalogRenderSpec {
     pub repo_root: PathBuf,
     pub manifest_dir: PathBuf,
     pub out_dir: PathBuf,
+    pub target_root: Option<PathBuf>,
 }
 
 /// Report for deterministic render projections written outside the repo.
@@ -234,6 +288,7 @@ pub struct CatalogRenderReport {
     pub repo_root: String,
     pub manifest_dir: String,
     pub out_dir: String,
+    pub target_root: Option<String>,
     pub generated_by: String,
     pub summary: CatalogRenderSummary,
     pub files: Vec<CatalogRenderedFile>,
@@ -271,6 +326,101 @@ pub struct CatalogImportReport {
     pub generated_by: String,
     pub summary: CatalogImportSummary,
     pub snapshot: CatalogSnapshot,
+}
+
+pub fn table_inventory(snapshot: &CatalogSnapshot) -> Vec<CatalogTableSummaryRow> {
+    CatalogTableName::all()
+        .iter()
+        .map(|table| CatalogTableSummaryRow {
+            table: table.canonical_name().to_string(),
+            rows: snapshot.table_count(*table),
+            columns: table_columns(snapshot, *table),
+            purpose: table_purpose(*table).to_string(),
+        })
+        .collect()
+}
+
+pub fn analyze_snapshot(snapshot: &CatalogSnapshot) -> CatalogAnalyzeReport {
+    let table_inventory = table_inventory(snapshot);
+    let config_formats = facet_counts(snapshot.config_files.iter().map(|row| row.format.as_str()));
+    let config_file_kinds = facet_counts(
+        snapshot
+            .config_files
+            .iter()
+            .map(|row| row.file_kind.as_str()),
+    );
+    let env_scopes = facet_counts(snapshot.env_vars.iter().map(|row| row.scope.as_str()));
+    let env_producers = facet_counts(snapshot.env_vars.iter().map(|row| row.producer.as_str()));
+    let env_sensitive = vec![
+        CatalogFacetCount {
+            key: "sensitive".to_string(),
+            count: snapshot.env_vars.iter().filter(|row| row.sensitive).count(),
+        },
+        CatalogFacetCount {
+            key: "non_sensitive".to_string(),
+            count: snapshot
+                .env_vars
+                .iter()
+                .filter(|row| !row.sensitive)
+                .count(),
+        },
+    ];
+    let path_artifact_kinds =
+        facet_counts(snapshot.paths.iter().map(|row| row.artifact_kind.as_str()));
+    let path_verification_statuses = facet_counts(
+        snapshot
+            .paths
+            .iter()
+            .map(|row| row.verification_status.as_str()),
+    );
+    let codedb_file_kinds = facet_counts(
+        snapshot
+            .codedb_file_imports
+            .iter()
+            .map(|row| row.file_kind.as_str()),
+    );
+    let codedb_parser_hints = facet_counts(
+        snapshot
+            .codedb_file_imports
+            .iter()
+            .map(|row| row.parser_hint.as_str()),
+    );
+    let toolchain_signals = toolchain_signals(snapshot);
+    let summary = CatalogAnalyzeSummary {
+        tables: table_inventory.len(),
+        rows: catalog_total_rows(snapshot),
+        config_files: snapshot.config_files.len(),
+        env_vars: snapshot.env_vars.len(),
+        toolchain_signals: toolchain_signals.len(),
+        codedb_imports: snapshot.codedb_file_imports.len(),
+        mutating: false,
+    };
+
+    CatalogAnalyzeReport {
+        repo_root: snapshot.repo_root.clone(),
+        manifest_dir: snapshot.manifest_dir.clone(),
+        generated_by: "envctl catalog analyze".to_string(),
+        summary,
+        table_inventory,
+        config_formats,
+        config_file_kinds,
+        env_scopes,
+        env_producers,
+        env_sensitive,
+        path_artifact_kinds,
+        path_verification_statuses,
+        codedb_file_kinds,
+        codedb_parser_hints,
+        toolchain_signals,
+    }
+}
+
+pub fn analyze_current(
+    spec: CatalogScanSpec,
+    registry: &Registry,
+) -> anyhow::Result<CatalogAnalyzeReport> {
+    let snapshot = scan(spec, registry)?;
+    Ok(analyze_snapshot(&snapshot))
 }
 
 #[derive(Clone, Debug, Default, Serialize, Deserialize, PartialEq, Eq)]
@@ -941,6 +1091,11 @@ pub fn render(spec: CatalogRenderSpec, registry: &Registry) -> anyhow::Result<Ca
     let repo_root = absolute_existing_path(&spec.repo_root)?;
     let manifest_dir = absolute_optional_path(&spec.manifest_dir)?;
     let planned_out_dir = absolute_target_path(&spec.out_dir)?;
+    let target_root = spec
+        .target_root
+        .as_ref()
+        .map(|path| absolute_target_path(path.as_path()))
+        .transpose()?;
     if planned_out_dir == repo_root || planned_out_dir.starts_with(&repo_root) {
         bail!(
             "catalog render output must be outside repo root (out={}, repo={})",
@@ -962,13 +1117,16 @@ pub fn render(spec: CatalogRenderSpec, registry: &Registry) -> anyhow::Result<Ca
         )
     })?;
 
-    let snapshot = stable_snapshot_for_render(scan(
-        CatalogScanSpec {
-            repo_root: repo_root.clone(),
-            manifest_dir: manifest_dir.clone(),
-        },
-        registry,
-    )?);
+    let snapshot = stable_snapshot_for_render(
+        scan(
+            CatalogScanSpec {
+                repo_root: repo_root.clone(),
+                manifest_dir: manifest_dir.clone(),
+            },
+            registry,
+        )?,
+        target_root.as_deref(),
+    );
 
     let mut projections = render_projections(&snapshot)?;
     let mut generated_config_rows = projections
@@ -1036,6 +1194,7 @@ pub fn render(spec: CatalogRenderSpec, registry: &Registry) -> anyhow::Result<Ca
         repo_root: repo_root.display().to_string(),
         manifest_dir: manifest_dir.display().to_string(),
         out_dir: out_dir.display().to_string(),
+        target_root: target_root.map(|path| path.display().to_string()),
         generated_by: "envctl catalog render".to_string(),
         summary,
         files: rendered_files,
@@ -1066,6 +1225,168 @@ pub fn import_current(
         summary,
         snapshot,
     })
+}
+
+fn table_columns(snapshot: &CatalogSnapshot, table: CatalogTableName) -> Vec<String> {
+    let value = snapshot.table_value(table);
+    let mut columns = BTreeSet::new();
+    if let Some(rows) = value.as_array() {
+        for row in rows {
+            if let Some(object) = row.as_object() {
+                columns.extend(object.keys().cloned());
+            }
+        }
+    }
+    columns.into_iter().collect()
+}
+
+fn table_purpose(table: CatalogTableName) -> &'static str {
+    match table {
+        CatalogTableName::Components => "component registry rows and lifecycle intent",
+        CatalogTableName::NixComponents => "nix-native inventory rows and frontdoor ownership",
+        CatalogTableName::ComponentHooks => "detect/install/fix/reset hook wiring",
+        CatalogTableName::Paths => "canonical, legacy, and bridged filesystem targets",
+        CatalogTableName::Settings => "normalized config/settings key-value rows",
+        CatalogTableName::EnvVars => "environment variables with producer and scope metadata",
+        CatalogTableName::AgentAssets => "skills, agents, hooks, and lock-tracked assets",
+        CatalogTableName::Registries => "hub and MCP registry entries",
+        CatalogTableName::ConfigFiles => "source and generated config file inventory",
+        CatalogTableName::CodedbFileImports => {
+            "blob/structured import rows for file-backed code DB coverage"
+        }
+        CatalogTableName::MigrationEvidence => "adoption and purge-safety evidence",
+        CatalogTableName::ObservedFacts => "runtime observations and verifier-produced facts",
+    }
+}
+
+fn facet_counts<'a>(values: impl Iterator<Item = &'a str>) -> Vec<CatalogFacetCount> {
+    let mut counts = BTreeMap::<String, usize>::new();
+    for value in values {
+        let key = if value.trim().is_empty() {
+            "unknown".to_string()
+        } else {
+            value.to_string()
+        };
+        *counts.entry(key).or_default() += 1;
+    }
+    counts
+        .into_iter()
+        .map(|(key, count)| CatalogFacetCount { key, count })
+        .collect()
+}
+
+fn toolchain_signals(snapshot: &CatalogSnapshot) -> Vec<CatalogToolchainSignalRow> {
+    let mut rows = Vec::new();
+
+    for row in &snapshot.env_vars {
+        if let Some(value) = row
+            .effective_value
+            .as_deref()
+            .or(row.value.as_deref())
+            .or(row.default_value.as_deref())
+        {
+            if is_toolchain_token(&row.var_name) || is_toolchain_token(value) {
+                rows.push(CatalogToolchainSignalRow {
+                    signal_kind: "env_var".to_string(),
+                    key: row.var_name.clone(),
+                    value: value.to_string(),
+                    source: row.source.clone(),
+                    detail: format!(
+                        "producer={} scope={} sensitive={}",
+                        row.producer, row.scope, row.sensitive
+                    ),
+                });
+            }
+        }
+    }
+
+    for row in &snapshot.settings {
+        if is_toolchain_token(&row.setting_key) || is_toolchain_token(&row.value) {
+            rows.push(CatalogToolchainSignalRow {
+                signal_kind: "setting".to_string(),
+                key: row.setting_key.clone(),
+                value: row.value.clone(),
+                source: row.source_file.clone(),
+                detail: format!("scope={} source_kind={}", row.scope, row.source_kind),
+            });
+        }
+    }
+
+    for row in &snapshot.paths {
+        if is_toolchain_token(&row.path)
+            || is_toolchain_token(&row.path_kind)
+            || is_toolchain_token(&row.artifact_kind)
+            || is_toolchain_token(&row.source)
+        {
+            rows.push(CatalogToolchainSignalRow {
+                signal_kind: "path".to_string(),
+                key: row.path_kind.clone(),
+                value: row.path.clone(),
+                source: row.source.clone(),
+                detail: format!(
+                    "artifact_kind={} canonical={} legacy={} bridge={} verification={}",
+                    row.artifact_kind,
+                    row.canonical,
+                    row.legacy,
+                    row.bridge,
+                    row.verification_status
+                ),
+            });
+        }
+    }
+
+    for row in &snapshot.codedb_file_imports {
+        if is_toolchain_token(&row.normalized_path)
+            || is_toolchain_token(&row.file_kind)
+            || is_toolchain_token(&row.parser_hint)
+        {
+            rows.push(CatalogToolchainSignalRow {
+                signal_kind: "codedb_import".to_string(),
+                key: row.target_id.clone(),
+                value: row.normalized_path.clone(),
+                source: row.provenance.clone(),
+                detail: format!(
+                    "file_kind={} parser_hint={} structured_rows={}",
+                    row.file_kind, row.parser_hint, row.structured_row_count
+                ),
+            });
+        }
+    }
+
+    rows.sort_by(|a, b| {
+        (&a.signal_kind, &a.key, &a.source, &a.value).cmp(&(
+            &b.signal_kind,
+            &b.key,
+            &b.source,
+            &b.value,
+        ))
+    });
+    rows.dedup_by(|a, b| {
+        a.signal_kind == b.signal_kind
+            && a.key == b.key
+            && a.value == b.value
+            && a.source == b.source
+            && a.detail == b.detail
+    });
+    rows
+}
+
+fn is_toolchain_token(value: &str) -> bool {
+    let lower = value.to_ascii_lowercase();
+    [
+        "cargo",
+        "rust",
+        "rustup",
+        "toolchain",
+        "linker",
+        "wild",
+        "kache",
+        "sccache",
+        "nix",
+        "felix",
+    ]
+    .iter()
+    .any(|needle| lower.contains(needle))
 }
 
 /// Plan a bidirectional catalog sync without applying repository mutations.
@@ -1099,6 +1420,7 @@ pub fn sync(spec: CatalogSyncSpec, registry: &Registry) -> anyhow::Result<Catalo
                 repo_root,
                 manifest_dir,
                 out_dir,
+                target_root: None,
             },
             registry,
         )?;
@@ -1526,12 +1848,52 @@ fn render_projections(snapshot: &CatalogSnapshot) -> anyhow::Result<Vec<RenderPr
     Ok(projections)
 }
 
-fn stable_snapshot_for_render(mut snapshot: CatalogSnapshot) -> CatalogSnapshot {
+fn stable_snapshot_for_render(
+    mut snapshot: CatalogSnapshot,
+    target_root: Option<&Path>,
+) -> CatalogSnapshot {
     snapshot.generated_by = "envctl catalog render".to_string();
     for row in &mut snapshot.observed_facts {
         row.observed_at = "catalog_render".to_string();
     }
+    if let Some(target_root) = target_root {
+        retarget_layout_rows(target_root, &mut snapshot.paths, &mut snapshot.env_vars);
+    }
     snapshot
+}
+
+fn retarget_layout_rows(target_root: &Path, paths: &mut [PathRow], env_vars: &mut [EnvVarRow]) {
+    let layout = MetaLayout::from_meta_root(target_root);
+    let path_map = layout
+        .entries()
+        .into_iter()
+        .map(|entry| (entry.key.to_string(), entry.path.display().to_string()))
+        .collect::<BTreeMap<_, _>>();
+    for row in paths
+        .iter_mut()
+        .filter(|row| row.source == "crates/engine/src/layout.rs")
+    {
+        if let Some(path) = path_map.get(&row.path_id) {
+            row.path = path.clone();
+            row.verification_status = layout_path_verification_status(Path::new(path));
+        }
+    }
+
+    let env_map = layout
+        .env_exports()
+        .into_iter()
+        .map(|(var, value)| (var.to_string(), value.display().to_string()))
+        .collect::<BTreeMap<_, _>>();
+    for row in env_vars.iter_mut().filter(|row| {
+        row.source == "crates/engine/src/layout.rs"
+            && row.producer == "layout"
+            && row.scope == "layout"
+    }) {
+        if let Some(value) = env_map.get(&row.var_name) {
+            row.value = Some(value.clone());
+            row.effective_value = Some(value.clone());
+        }
+    }
 }
 
 fn catalog_total_rows(snapshot: &CatalogSnapshot) -> usize {
@@ -1794,19 +2156,151 @@ fn render_codex_config_toml(snapshot: &CatalogSnapshot) -> String {
         ],
     );
     out.push_str("manual_edits_allowed = false\n\n");
+    for server in rendered_mcp_servers(snapshot) {
+        let table_key =
+            serde_json::to_string(&server.name).unwrap_or_else(|_| "\"unknown\"".to_string());
+        let _ = writeln!(out, "[mcp_servers.{table_key}]");
+        if let Some(command) = server.command.as_deref() {
+            write_toml_string(&mut out, "command", command);
+        }
+        if !server.args.is_empty() {
+            write_toml_string_array(&mut out, "args", &server.args);
+        }
+        if let Some(url) = server.url.as_deref() {
+            write_toml_string(&mut out, "url", url);
+        }
+        if !server.env.is_empty() {
+            out.push_str("[mcp_servers.");
+            out.push_str(&table_key);
+            out.push_str(".env]\n");
+            for (key, value) in &server.env {
+                write_toml_string(&mut out, key, value);
+            }
+        }
+        out.push('\n');
+    }
+    out
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+struct RenderedMcpServer {
+    name: String,
+    command: Option<String>,
+    args: Vec<String>,
+    url: Option<String>,
+    env: BTreeMap<String, String>,
+}
+
+fn rendered_mcp_servers(snapshot: &CatalogSnapshot) -> Vec<RenderedMcpServer> {
+    let mut servers = BTreeMap::<String, RenderedMcpServer>::new();
+    ingest_mcp_json_servers(snapshot, &mut servers);
+    ingest_codex_toml_servers(snapshot, &mut servers);
+
     for registry in snapshot
         .registries
         .iter()
         .filter(|row| row.registry_kind == "mcp")
     {
-        out.push_str("[[mcp_server]]\n");
-        write_toml_string(&mut out, "name", &registry.name);
-        write_toml_string(&mut out, "entry_id", &registry.entry_id);
-        write_toml_string(&mut out, "source_file", &registry.source_file);
-        write_toml_string(&mut out, "status", &registry.status);
-        out.push('\n');
+        servers
+            .entry(registry.name.clone())
+            .or_insert_with(|| RenderedMcpServer {
+                name: registry.name.clone(),
+                ..RenderedMcpServer::default()
+            });
     }
-    out
+
+    servers.into_values().collect()
+}
+
+fn ingest_mcp_json_servers(
+    snapshot: &CatalogSnapshot,
+    servers: &mut BTreeMap<String, RenderedMcpServer>,
+) {
+    let path = Path::new(&snapshot.repo_root).join(".mcp.json");
+    let Ok(Some(value)) = parse_config_to_json(&path, "json") else {
+        return;
+    };
+    let Some(entries) = value.get("mcpServers").and_then(|value| value.as_object()) else {
+        return;
+    };
+
+    for (name, value) in entries {
+        let mut server = RenderedMcpServer {
+            name: name.clone(),
+            ..RenderedMcpServer::default()
+        };
+        if let Some(command) = value.get("command").and_then(|value| value.as_str()) {
+            server.command = Some(command.to_string());
+        }
+        if let Some(args) = value.get("args").and_then(|value| value.as_array()) {
+            server.args = args
+                .iter()
+                .filter_map(|value| value.as_str().map(str::to_string))
+                .collect();
+        }
+        if let Some(url) = value.get("url").and_then(|value| value.as_str()) {
+            server.url = Some(url.to_string());
+        }
+        if let Some(env) = value.get("env").and_then(|value| value.as_object()) {
+            server.env = env
+                .iter()
+                .filter_map(|(key, value)| {
+                    value.as_str().map(|value| (key.clone(), value.to_string()))
+                })
+                .collect();
+        }
+        servers.insert(name.clone(), server);
+    }
+}
+
+fn ingest_codex_toml_servers(
+    snapshot: &CatalogSnapshot,
+    servers: &mut BTreeMap<String, RenderedMcpServer>,
+) {
+    let path = Path::new(&snapshot.repo_root).join(".codex/config.toml");
+    let Ok(Some(value)) = parse_config_to_json(&path, "toml") else {
+        return;
+    };
+    let Some(entries) = value.get("mcp_servers").and_then(|value| value.as_object()) else {
+        return;
+    };
+
+    for (name, value) in entries {
+        let server = servers
+            .entry(name.clone())
+            .or_insert_with(|| RenderedMcpServer {
+                name: name.clone(),
+                ..RenderedMcpServer::default()
+            });
+        if server.command.is_none() {
+            if let Some(command) = value.get("command").and_then(|value| value.as_str()) {
+                server.command = Some(command.to_string());
+            }
+        }
+        if server.args.is_empty() {
+            if let Some(args) = value.get("args").and_then(|value| value.as_array()) {
+                server.args = args
+                    .iter()
+                    .filter_map(|value| value.as_str().map(str::to_string))
+                    .collect();
+            }
+        }
+        if server.url.is_none() {
+            if let Some(url) = value.get("url").and_then(|value| value.as_str()) {
+                server.url = Some(url.to_string());
+            }
+        }
+        if server.env.is_empty() {
+            if let Some(env) = value.get("env").and_then(|value| value.as_object()) {
+                server.env = env
+                    .iter()
+                    .filter_map(|(key, value)| {
+                        value.as_str().map(|value| (key.clone(), value.to_string()))
+                    })
+                    .collect();
+            }
+        }
+    }
 }
 
 fn render_mcp_json(snapshot: &CatalogSnapshot) -> anyhow::Result<Vec<u8>> {
@@ -2486,7 +2980,7 @@ fn ingest_layout_paths(repo_root: &Path, paths: &mut Vec<PathRow>, env_vars: &mu
             bridge: legacy || entry.key.contains("bridge") || entry.key.contains("legacy"),
             protected: is_protected_layout_key(entry.key),
             source: "crates/engine/src/layout.rs".to_string(),
-            verification_status: "not_checked".to_string(),
+            verification_status: layout_path_verification_status(&entry.path),
         });
     }
 
@@ -2503,6 +2997,26 @@ fn ingest_layout_paths(repo_root: &Path, paths: &mut Vec<PathRow>, env_vars: &mu
             source: "crates/engine/src/layout.rs".to_string(),
             generated_by: Some("envctl env".to_string()),
         });
+    }
+}
+
+fn layout_path_verification_status(path: &Path) -> String {
+    match std::fs::symlink_metadata(path) {
+        Ok(metadata) => {
+            let file_type = metadata.file_type();
+            if file_type.is_symlink() {
+                "symlink_exists".to_string()
+            } else if file_type.is_dir() {
+                "dir_exists".to_string()
+            } else if file_type.is_file() {
+                "file_exists".to_string()
+            } else {
+                "special_exists".to_string()
+            }
+        }
+        Err(err) if err.kind() == ErrorKind::NotFound => "missing".to_string(),
+        Err(err) if err.kind() == ErrorKind::PermissionDenied => "inaccessible".to_string(),
+        Err(_) => "error".to_string(),
     }
 }
 
@@ -4147,39 +4661,29 @@ mod tests {
         .unwrap();
 
         assert_eq!(snapshot.components.len(), 2, "{:#?}", snapshot.components);
-        assert!(
-            snapshot
-                .components
-                .iter()
-                .any(|row| row.component_id == "base" && row.has_detect)
-        );
+        assert!(snapshot
+            .components
+            .iter()
+            .any(|row| row.component_id == "base" && row.has_detect));
         assert!(snapshot.nix_components.is_empty());
-        assert!(
-            snapshot
-                .component_hooks
-                .iter()
-                .any(|row| row.component_id == "extra" && row.phase == "install")
-        );
+        assert!(snapshot
+            .component_hooks
+            .iter()
+            .any(|row| row.component_id == "extra" && row.phase == "install"));
         assert!(snapshot.paths.iter().any(|row| row.path_id == "bin"));
-        assert!(
-            snapshot
-                .config_files
-                .iter()
-                .any(|row| row.path == "agent-env.yaml" && row.file_kind == "agent_env")
-        );
-        assert!(
-            snapshot
-                .config_files
-                .iter()
-                .any(|row| row.path == "mcp_hub/registry.json" && row.file_kind == "hub_registry")
-        );
-        assert!(
-            snapshot
-                .config_files
-                .iter()
-                .any(|row| row.path == "crates/secrets-engine/src/seam.rs"
-                    && row.file_kind == "secrets_env_schema")
-        );
+        assert!(snapshot
+            .config_files
+            .iter()
+            .any(|row| row.path == "agent-env.yaml" && row.file_kind == "agent_env"));
+        assert!(snapshot
+            .config_files
+            .iter()
+            .any(|row| row.path == "mcp_hub/registry.json" && row.file_kind == "hub_registry"));
+        assert!(snapshot
+            .config_files
+            .iter()
+            .any(|row| row.path == "crates/secrets-engine/src/seam.rs"
+                && row.file_kind == "secrets_env_schema"));
         assert!(snapshot.settings.iter().any(
             |row| row.setting_key == "components[0].source" || row.setting_key == "sources[0]"
         ));
@@ -4195,33 +4699,25 @@ mod tests {
                 && row.scope == "schema"
                 && row.sensitive
         }));
-        assert!(
-            snapshot
-                .agent_assets
-                .iter()
-                .any(|row| row.asset_kind == "skill" && row.name == "demo")
-        );
-        assert!(
-            snapshot
-                .registries
-                .iter()
-                .any(|row| row.registry_kind == "hub" && row.entry_id == "demo-tool")
-        );
-        assert!(
-            snapshot
-                .observed_facts
-                .iter()
-                .any(|row| row.fact_id == "catalog.table_count.components")
-        );
+        assert!(snapshot
+            .agent_assets
+            .iter()
+            .any(|row| row.asset_kind == "skill" && row.name == "demo"));
+        assert!(snapshot
+            .registries
+            .iter()
+            .any(|row| row.registry_kind == "hub" && row.entry_id == "demo-tool"));
+        assert!(snapshot
+            .observed_facts
+            .iter()
+            .any(|row| row.fact_id == "catalog.table_count.components"));
 
         let env_vars = snapshot.table_value(CatalogTableName::EnvVars);
-        assert!(
-            env_vars
-                .as_array()
-                .unwrap()
-                .iter()
-                .any(|row| { row.get("var_name").and_then(|v| v.as_str()) == Some("API_TOKEN") })
-        );
+        assert!(env_vars
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|row| { row.get("var_name").and_then(|v| v.as_str()) == Some("API_TOKEN") }));
     }
 
     #[test]
@@ -4266,14 +4762,12 @@ mod tests {
                 && row.format == "nushell"
                 && row.parse_status == "ok"
         }));
-        assert!(
-            snapshot
-                .settings
-                .iter()
-                .any(|row| row.source_file == "settings_default.jsonc"
-                    && row.scope == "yazelix"
-                    && row.precedence == 90)
-        );
+        assert!(snapshot
+            .settings
+            .iter()
+            .any(|row| row.source_file == "settings_default.jsonc"
+                && row.scope == "yazelix"
+                && row.precedence == 90));
         assert!(snapshot.settings.iter().any(|row| {
             row.source_file == "nushell/config/config.nu"
                 && row.setting_key == "source_lines"
@@ -4366,10 +4860,9 @@ mod tests {
             serde_json::from_slice(&std::fs::read(config_files_path).unwrap()).unwrap();
         assert!(rows.iter().any(|row| row.path == "settings_default.jsonc"
             && row.file_kind == "yazelix_settings_default"));
-        assert!(
-            out.join("catalog/tables/codedb_file_imports.json")
-                .is_file()
-        );
+        assert!(out
+            .join("catalog/tables/codedb_file_imports.json")
+            .is_file());
     }
 
     #[test]
@@ -4399,12 +4892,10 @@ mod tests {
             row.drift_kind == "parse_error" && row.subject_id == ".mcp.json" && !row.mutating
         }));
         assert!(report.summary.lock_drifts > 0, "{report:#?}");
-        assert!(
-            report
-                .drift
-                .iter()
-                .any(|row| row.drift_kind.starts_with("lock_"))
-        );
+        assert!(report
+            .drift
+            .iter()
+            .any(|row| row.drift_kind.starts_with("lock_")));
     }
 
     #[test]
@@ -4581,12 +5072,10 @@ name = "nix-portable"
         }));
         let table_value = snapshot.table_value(CatalogTableName::NixComponents);
         assert_eq!(table_value.as_array().unwrap().len(), 3);
-        assert!(
-            snapshot
-                .observed_facts
-                .iter()
-                .any(|row| row.fact_id == "catalog.table_count.nix_components")
-        );
+        assert!(snapshot
+            .observed_facts
+            .iter()
+            .any(|row| row.fact_id == "catalog.table_count.nix_components"));
     }
 
     #[test]
@@ -4827,10 +5316,11 @@ name = "nix-portable"
                 && row.artifact_kind == "envctl_managed_runtime_config"
         }));
         assert!(snapshot.paths.iter().any(|row| {
-            row.path == root
-                .join(".config/systemd/user/env-ctl.service")
-                .display()
-                .to_string()
+            row.path
+                == root
+                    .join(".config/systemd/user/env-ctl.service")
+                    .display()
+                    .to_string()
                 && row.path_kind == "envctl_home_frontdoor"
                 && row.owner_component.as_deref() == Some("home-config-links")
                 && row.artifact_kind == "envctl_managed_systemd_user_unit"
@@ -4863,24 +5353,18 @@ name = "nix-portable"
         assert!(!report.summary.applied);
         assert_eq!(report.summary.verifier_status, "preview_only");
         assert!(report.summary.planned_actions > 0, "{report:#?}");
-        assert!(
-            report
-                .planned_actions
-                .iter()
-                .any(|row| row.action_kind == "catalog_lock_apply")
-        );
-        assert!(
-            report
-                .planned_actions
-                .iter()
-                .any(|row| row.action_kind == "review_render_projection")
-        );
-        assert!(
-            report
-                .render
-                .as_ref()
-                .is_some_and(|render| render.summary.generated_files > 0)
-        );
+        assert!(report
+            .planned_actions
+            .iter()
+            .any(|row| row.action_kind == "catalog_lock_apply"));
+        assert!(report
+            .planned_actions
+            .iter()
+            .any(|row| row.action_kind == "review_render_projection"));
+        assert!(report
+            .render
+            .as_ref()
+            .is_some_and(|render| render.summary.generated_files > 0));
         assert!(out.join("catalog/scan.json").is_file());
     }
 
@@ -5084,7 +5568,7 @@ command = "context7"
         .unwrap();
         std::fs::write(
             root.join(".mcp.json"),
-            r#"{"mcpServers":{"github":{"command":"github"}}}"#,
+            r#"{"mcpServers":{"github":{"command":"github"},"memory":{"command":"bash","args":["-lc","ROOT=\"${META_ROOT:-/fixture}\"; exec \"$ROOT/envctl/assets/scripts/envctl-mcp-memory-server\""],"env":{"META_ROOT":"/fixture"}}}}"#,
         )
         .unwrap();
         std::fs::write(
