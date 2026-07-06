@@ -4,7 +4,7 @@
       "command": "bash",
       "args": [
         "-lc",
-        "ROOT=\"${META_ROOT:-/home/flexnetos/FlexNetOS}\"; export META_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @modelcontextprotocol/server-github"
+        "ROOT=\"${META_ROOT:-/home/flexnetos/FlexNetOS}\"; export META_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @modelcontextprotocol/server-github"
       ]
     }
   }

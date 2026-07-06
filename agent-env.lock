@@ -36,7 +36,7 @@ assets:
   mcp::./agent-skills::context7.json:
     kind: mcp
     name: context7.json
-    hash: 85396c05768f5d69b627b542f086d873c8a33bf2946b45aa3241aa8f524c036a
+    hash: a3cdf7e77961edef6d2304211f3a576dae9f7dc218995cd2605b2c085d64a0dd
     source: ./agent-skills
     destination: context7
     source_revision: local
@@ -50,7 +50,7 @@ assets:
   mcp::./agent-skills::github.json:
     kind: mcp
     name: github.json
-    hash: 8c181ad375a222b9af7cca70dfcb981bb3cd54d84b57788e142e8017977a8f41
+    hash: 5c49d8844d7b3bbb926f66658ddff6de43871fa6664806f248276f75e185fb11
     source: ./agent-skills
     destination: github
     source_revision: local
@@ -64,14 +64,14 @@ assets:
   mcp::./agent-skills::playwright.json:
     kind: mcp
     name: playwright.json
-    hash: 1a111d6ff1aeaa0ade0800f18c8f91a3c0103559a9603e2e441bfd2c1dca7d1a
+    hash: a3b095bd70cb408d5379f0a0e2f48c1ae02a5cf9f689786a9e1e4ec3d86676a2
     source: ./agent-skills
     destination: playwright
     source_revision: local
   mcp::./agent-skills::sequential-thinking.json:
     kind: mcp
     name: sequential-thinking.json
-    hash: 851b939ab5b4f90184034de2b952f69acd6129423b0be04071c4787b9d8fa08a
+    hash: b31bb1add7487573d11c7b8da684a25ba3710a3ea613ffc3d6910487f12143bb
     source: ./agent-skills
     destination: sequential-thinking
     source_revision: local
