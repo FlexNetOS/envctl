@@ -211,10 +211,10 @@ fn mcp_sync_is_additive_never_clobbers_existing_servers() {
 }
 
 #[test]
-fn live_agent_skills_mcp_pack_preserves_mesh_servers_and_excludes_retired_n8n() {
+fn live_agent_skills_mcp_pack_preserves_mesh_servers_and_enforces_yazelix_mirror() {
     let pack = repo_agent_skills_dir();
     let yaml = format!(
-        "agent:\n  - claude-code\n  - codex\nscope: project\nmcps:\n  - source: {pack}\n    mcps:\n      - github\n      - context7\n      - exa\n      - memory\n      - playwright\n      - sequential-thinking\n",
+        "agent:\n  - claude-code\n  - codex\nscope: project\nmcps:\n  - source: {pack}\n    mcps:\n      - exa\n",
         pack = pack.display()
     );
     let (engine, project, cfg) = project_with_config(&yaml);
@@ -260,16 +260,14 @@ url = "https://weave.local"
         .expect("apply sync");
     assert_eq!(report.summary.failed, 0);
 
-    let expected = [
-        "broker",
-        "repowire",
-        "weave",
+    let expected = ["broker", "repowire", "weave", "exa"];
+    let retired = [
         "github",
         "context7",
-        "exa",
         "memory",
         "playwright",
         "sequential-thinking",
+        "n8n-mcp",
     ];
 
     let claude: serde_json::Value =
@@ -281,13 +279,23 @@ url = "https://weave.local"
             "Claude MCP config must contain {name}"
         );
     }
+    for name in retired {
+        assert!(
+            !claude_servers.contains_key(name),
+            "Claude MCP config must not restore retired MCP {name}"
+        );
+    }
+    assert!(
+        claude_servers["exa"].get("url").is_some(),
+        "Claude exa MCP must remain URL-only"
+    );
+    assert!(
+        claude_servers["exa"].get("command").is_none(),
+        "Claude exa MCP must not use a local launcher"
+    );
     assert_eq!(
         claude_servers["broker"]["env"]["TOKEN"], "real-broker-token",
         "Claude merge must not overwrite the existing broker secret"
-    );
-    assert!(
-        !claude_servers.contains_key("n8n-mcp"),
-        "Claude MCP config must not restore retired n8n-mcp"
     );
 
     let codex: toml::Value = std::fs::read_to_string(project.join(".codex/config.toml"))
@@ -301,14 +309,24 @@ url = "https://weave.local"
             "Codex MCP config must contain {name}"
         );
     }
+    for name in retired {
+        assert!(
+            !codex_servers.contains_key(name),
+            "Codex MCP config must not restore retired MCP {name}"
+        );
+    }
+    assert!(
+        codex_servers["exa"].get("url").is_some(),
+        "Codex exa MCP must remain URL-only"
+    );
+    assert!(
+        codex_servers["exa"].get("command").is_none(),
+        "Codex exa MCP must not use a local launcher"
+    );
     assert_eq!(
         codex_servers["broker"]["env"]["TOKEN"].as_str().unwrap(),
         "real-broker-token",
         "Codex merge must not overwrite the existing broker secret"
-    );
-    assert!(
-        !codex_servers.contains_key("n8n-mcp"),
-        "Codex MCP config must not restore retired n8n-mcp"
     );
 }
 
