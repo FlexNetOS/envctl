@@ -139,6 +139,42 @@ JS imports) — those are **wrong for this repo**.
   drift — `ci/gates/agent-env.sh`, TASK-0040).
 - Keep the MCP baseline identical across Codex (`.mcp.json`) and Codex (`.codex/config.toml`):
   `github`, `context7`, `exa`, `memory`, `playwright`, `sequential-thinking`.
+- Treat that envctl baseline as a repo-local MCP floor, not as authority to
+  widen the active home/runtime plugin marketplace surface. Do not rehydrate
+  removed plugin catalogs, temp marketplace caches, or not-installed plugin
+  families such as `superhuman` or `digitalocean` into the active runtime just
+  because they appear in cached bundles, old renders, or inventory output.
+- Envctl catalog render is an audit/projection surface for repo outputs. It is
+  not proof that the active home Codex runtime should preserve or restore every
+  observed `mcp_servers` or plugin listing from an older `.codex/config.toml`.
+- When envctl work touches Yazelix-integrated runtime behavior, follow the
+  Yazelix ownership contract exactly: the user config tree is the editable
+  input surface, the real-home data tree is generated runtime output, and the
+  active launch frontdoor is the profile-owned `yzx`. Do not hand-edit
+  generated runtime files or preserve stale user-bin wrappers or per-user
+  desktop-entry shadows as parallel control paths.
+- Codex binary/runtime ownership must mirror the Yazelix binary/runtime model
+  with no drift. Yazelix is the normative model, not a comparison target or one
+  possible runtime shape among several. Current Codex, binary, toolchain,
+  launcher, plugin, MCP, or generated-output state that breaks the Yazelix
+  input/output/frontdoor/shadow contract is proof of failed alignment and is
+  required repair work, not neutral inventory and not a valid parallel
+  ownership layer. Inventory current state only to locate violations, map each
+  violation to its owning input/generator/package/profile path, and then prove
+  the repaired state mirrors Yazelix. Preserve this explicit mapping and its
+  source-backed proof:
+  - The user config tree is the main editable input surface, including
+    `settings.jsonc` and managed overrides, per the Yazelix customization and
+    POSIX XDG docs.
+  - The real-home data tree is generated runtime output; edit config inputs,
+    not generated runtime files, per the Yazelix customization docs and README.
+  - The profile-owned `yzx` binary is the active install-owner frontdoor, per
+    the Yazelix Home Manager docs.
+  - Legacy user-bin `yzx` wrappers are stale shadows when they shadow the
+    profile path, per the Yazelix Home Manager docs.
+  - Per-user desktop entries are stale shadows when they shadow the active
+    profile desktop entry, per the Yazelix Home Manager and troubleshooting
+    docs.
 
 ## Pointers
 

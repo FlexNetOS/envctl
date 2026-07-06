@@ -12,6 +12,11 @@ This supplements the root `AGENTS.md` with the repo-local Codex baseline. The ro
 
 Treat `.codex/config.toml` as the default ECC-safe baseline for work in this repository.
 The project baseline enables GitHub, Context7, Exa, Memory, Playwright, Sequential Thinking, and n8n-mcp. Keep MCP definitions synchronized through `agent-env.yaml`/`agent-skills`, not ad-hoc edits.
+This repo-local baseline is not authority to expand the active home Codex
+runtime with extra plugin marketplaces, duplicate command inventories, or
+cached/not-installed plugin families. Do not infer that `superhuman`,
+`digitalocean`, `openai-curated`, or temp plugin cache content should be
+restored just because they appear in catalog output or marketplace listings.
 
 ## Multi-Agent Support
 
@@ -42,12 +47,16 @@ Use these workflow files as thin shims only; the authoritative workflow bodies r
 ## Runtime Gates
 
 - Legacy repo-local Codex lifecycle hook sources from the pre-clean-room
-  baseline are purged and archived evidence only. Do not restore or regenerate
-  them from this repo.
+  baseline are purged, retired, and archived evidence only. Do not restore
+  `.codex/hooks.json`, `.codex/hooks/`, hook install scripts, or regenerated
+  hook sources from this repo as active root policy.
 - Hooks remain mandatory for the control plane, but the replacement must be a
   clean-room design owned by the root lifecycle contract. Until that rebuild
   lands, envctl-derived Codex config must keep hook features disabled and purge
   stale generated hook state.
+- Root lifecycle policy is owned by `/home/flexnetos/FlexNetOS/AGENTS.md` and
+  the active home/runtime config, where hook features are currently disabled
+  for the retired root hook family until a clean-room design exists.
 - Runtime copies under `/home/flexnetos/workspace/.codex` and
-  `/home/flexnetos/FlexNetOS/.codex` must not carry independent lifecycle hook
-  policy.
+  `/home/flexnetos/FlexNetOS/.codex` must not carry or grow independent hook,
+  plugin, or marketplace policy.
