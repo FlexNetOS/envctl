@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0",
+  "task_id": "VER-300_UNIT_VALIDATION",
+  "status": "pass",
+  "updated_at": "2026-07-05T05:48:28+00:00",
+  "proof_uri": "proof_records/VER-300_UNIT_VALIDATION.proof.json",
+  "validation_report": "generated/ver300_unit_validation_report.json"
+}

@@ -1,0 +1,1029 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://flexnetos.local/envctl/shared-protocol.schema.json",
+  "title": "envctl / nu_plugin Shared Migration Protocol",
+  "description": "Versioned record contracts shared by envctl's migration database and the nu_plugin presentation/control surface.",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/TargetDescriptor"
+    },
+    {
+      "$ref": "#/$defs/MigrationRecipe"
+    },
+    {
+      "$ref": "#/$defs/MigrationRun"
+    },
+    {
+      "$ref": "#/$defs/RunEvent"
+    },
+    {
+      "$ref": "#/$defs/Operation"
+    },
+    {
+      "$ref": "#/$defs/ApprovalRequest"
+    },
+    {
+      "$ref": "#/$defs/ApprovalDecision"
+    },
+    {
+      "$ref": "#/$defs/ArtifactRecord"
+    },
+    {
+      "$ref": "#/$defs/EvidenceRecord"
+    },
+    {
+      "$ref": "#/$defs/GraphEdge"
+    },
+    {
+      "$ref": "#/$defs/ValidationResult"
+    },
+    {
+      "$ref": "#/$defs/ReplayRequest"
+    },
+    {
+      "$ref": "#/$defs/ReplayResult"
+    },
+    {
+      "$ref": "#/$defs/ProofRecord"
+    }
+  ],
+  "$defs": {
+    "Operation": {
+      "title": "envctl Migration Operation",
+      "type": "object",
+      "required": [
+        "operation_id",
+        "run_id",
+        "operation_type",
+        "status",
+        "risk"
+      ],
+      "properties": {
+        "operation_id": {
+          "type": "string"
+        },
+        "run_id": {
+          "type": "string"
+        },
+        "parent_operation_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "operation_type": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "queued",
+            "ready",
+            "awaiting_approval",
+            "running",
+            "succeeded",
+            "failed",
+            "blocked",
+            "denied",
+            "cancelled"
+          ]
+        },
+        "risk": {
+          "enum": [
+            "R0",
+            "R1",
+            "R2",
+            "R3",
+            "R4",
+            "R5"
+          ]
+        },
+        "idempotency_key": {
+          "type": "string"
+        },
+        "input": {
+          "type": "object"
+        },
+        "output_ref": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "error": {
+          "type": [
+            "object",
+            "null"
+          ]
+        }
+      },
+      "x-shared-protocol-source": "schemas/operation.schema.json"
+    },
+    "RunEvent": {
+      "title": "envctl Migration Run Event",
+      "type": "object",
+      "required": [
+        "run_id",
+        "event_seq",
+        "event_type",
+        "actor_type",
+        "timestamp_utc",
+        "payload"
+      ],
+      "properties": {
+        "run_id": {
+          "type": "string"
+        },
+        "event_seq": {
+          "type": "integer"
+        },
+        "event_type": {
+          "type": "string"
+        },
+        "phase": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "actor_type": {
+          "enum": [
+            "system",
+            "agent",
+            "human",
+            "plugin",
+            "external"
+          ]
+        },
+        "actor_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "operation_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "timestamp_utc": {
+          "type": "string"
+        },
+        "payload": {
+          "type": "object"
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "previous_event_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "event_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "x-shared-protocol-source": "schemas/run_event.schema.json"
+    },
+    "ProofRecord": {
+      "title": "ProofRecord",
+      "type": "object",
+      "required": [
+        "proof_schema_version",
+        "task_id",
+        "status",
+        "started_at",
+        "completed_at",
+        "actor",
+        "helper_id",
+        "model_tag",
+        "repo_path",
+        "files_changed",
+        "commands_run",
+        "verification_output",
+        "checksums",
+        "logs_uri",
+        "rollback_point",
+        "evidence",
+        "failure_reason",
+        "next_action"
+      ],
+      "properties": {
+        "proof_schema_version": {
+          "type": "string"
+        },
+        "task_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "started_at": {
+          "type": "string"
+        },
+        "completed_at": {
+          "type": "string"
+        },
+        "actor": {
+          "type": "string"
+        },
+        "helper_id": {
+          "type": "string"
+        },
+        "model_tag": {
+          "type": "string"
+        },
+        "repo_path": {
+          "type": "string"
+        },
+        "files_changed": {
+          "type": "array"
+        },
+        "commands_run": {
+          "type": "array"
+        },
+        "verification_output": {
+          "type": [
+            "string",
+            "object"
+          ]
+        },
+        "checksums": {
+          "type": "object"
+        },
+        "logs_uri": {
+          "type": "string"
+        },
+        "rollback_point": {
+          "type": "string"
+        },
+        "evidence": {
+          "type": "array"
+        },
+        "failure_reason": {
+          "type": "string"
+        },
+        "next_action": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true,
+      "x-shared-protocol-source": "execution-framework/schemas/proof_record.schema.json"
+    },
+    "ArtifactRecord": {
+      "title": "envctl Migration Artifact Record",
+      "type": "object",
+      "required": [
+        "artifact_id",
+        "run_id",
+        "title",
+        "status"
+      ],
+      "properties": {
+        "artifact_id": {
+          "type": "string"
+        },
+        "run_id": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "complete",
+            "partial",
+            "unknown",
+            "blocked"
+          ]
+        },
+        "artifact_type": {
+          "type": "string"
+        },
+        "path": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "content_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "to",
+              "type"
+            ],
+            "properties": {
+              "to": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "x-shared-protocol-source": "schemas/artifact_record.schema.json"
+    },
+    "ApprovalRequest": {
+      "title": "envctl Migration Approval Request",
+      "type": "object",
+      "required": [
+        "approval_id",
+        "run_id",
+        "operation_id",
+        "risk",
+        "status"
+      ],
+      "properties": {
+        "approval_id": {
+          "type": "string"
+        },
+        "run_id": {
+          "type": "string"
+        },
+        "operation_id": {
+          "type": "string"
+        },
+        "risk": {
+          "enum": [
+            "R0",
+            "R1",
+            "R2",
+            "R3",
+            "R4",
+            "R5"
+          ]
+        },
+        "status": {
+          "enum": [
+            "open",
+            "approved",
+            "denied",
+            "expired",
+            "cancelled"
+          ]
+        },
+        "requested_by": {
+          "type": "string"
+        },
+        "decided_by": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "x-shared-protocol-source": "schemas/approval_request.schema.json"
+    },
+    "TargetDescriptor": {
+      "title": "envctl Migration Target Descriptor",
+      "type": "object",
+      "required": [
+        "schema_version",
+        "target_id",
+        "target_type",
+        "primary_root",
+        "safety",
+        "artifact_contract",
+        "recipe"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "target_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_type": {
+          "enum": [
+            "codebase",
+            "data",
+            "infrastructure",
+            "integration",
+            "mixed"
+          ]
+        },
+        "primary_root": {
+          "type": "string",
+          "minLength": 1
+        },
+        "compare_root": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "output_root": {
+          "type": "string",
+          "default": "migration-artifacts"
+        },
+        "include": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "safety": {
+          "$ref": "#/$defs/TargetDescriptor/$defs/safety"
+        },
+        "collectors": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "boolean"
+          }
+        },
+        "artifact_contract": {
+          "$ref": "#/$defs/TargetDescriptor/$defs/namedVersion"
+        },
+        "recipe": {
+          "$ref": "#/$defs/TargetDescriptor/$defs/namedVersion"
+        },
+        "metadata": {
+          "type": "object"
+        }
+      },
+      "$defs": {
+        "namedVersion": {
+          "type": "object",
+          "required": [
+            "name",
+            "version"
+          ],
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "version": {
+              "type": [
+                "integer",
+                "string"
+              ]
+            }
+          }
+        },
+        "safety": {
+          "type": "object",
+          "required": [
+            "default_mode",
+            "max_auto_risk",
+            "allow_network",
+            "allow_destructive"
+          ],
+          "properties": {
+            "default_mode": {
+              "enum": [
+                "observer",
+                "approval-gated",
+                "operator",
+                "agent-only"
+              ]
+            },
+            "max_auto_risk": {
+              "enum": [
+                "R0",
+                "R1",
+                "R2",
+                "R3",
+                "R4",
+                "R5"
+              ]
+            },
+            "allow_network": {
+              "type": "boolean"
+            },
+            "allow_destructive": {
+              "type": "boolean"
+            }
+          }
+        }
+      },
+      "x-shared-protocol-source": "schemas/target_descriptor.schema.json"
+    },
+    "MigrationRecipe": {
+      "title": "envctl Migration Recipe",
+      "type": "object",
+      "required": [
+        "schema_version",
+        "recipe_id",
+        "version",
+        "phases"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "integer"
+        },
+        "recipe_id": {
+          "type": "string"
+        },
+        "version": {
+          "type": [
+            "integer",
+            "string"
+          ]
+        },
+        "phases": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/MigrationRecipe/$defs/phase"
+          }
+        },
+        "metadata": {
+          "type": "object"
+        }
+      },
+      "$defs": {
+        "phase": {
+          "type": "object",
+          "required": [
+            "phase_id",
+            "operations"
+          ],
+          "properties": {
+            "phase_id": {
+              "type": "string"
+            },
+            "depends_on": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "approval_gate": {
+              "type": "boolean"
+            },
+            "operations": {
+              "type": "array",
+              "items": {
+                "$ref": "#/$defs/MigrationRecipe/$defs/operation"
+              }
+            }
+          }
+        },
+        "operation": {
+          "type": "object",
+          "required": [
+            "operation_id",
+            "operation_type",
+            "risk"
+          ],
+          "properties": {
+            "operation_id": {
+              "type": "string"
+            },
+            "operation_type": {
+              "type": "string"
+            },
+            "risk": {
+              "enum": [
+                "R0",
+                "R1",
+                "R2",
+                "R3",
+                "R4",
+                "R5"
+              ]
+            },
+            "inputs": {
+              "type": "object"
+            },
+            "expected_artifacts": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "validators": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "rollback": {
+              "type": [
+                "object",
+                "null"
+              ]
+            }
+          }
+        }
+      },
+      "x-shared-protocol-source": "schemas/migration_recipe.schema.json"
+    },
+    "ValidationResult": {
+      "title": "envctl Migration Validation Result",
+      "type": "object",
+      "required": [
+        "validation_id",
+        "run_id",
+        "validator",
+        "status"
+      ],
+      "properties": {
+        "validation_id": {
+          "type": "string"
+        },
+        "run_id": {
+          "type": "string"
+        },
+        "artifact_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "validator": {
+          "type": "string"
+        },
+        "status": {
+          "enum": [
+            "pass",
+            "fail",
+            "warn",
+            "blocked",
+            "unknown"
+          ]
+        },
+        "details": {
+          "type": "object"
+        },
+        "evidence_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "x-shared-protocol-source": "schemas/validation_result.schema.json"
+    },
+    "MigrationRun": {
+      "title": "envctl Migration Run",
+      "type": "object",
+      "required": [
+        "run_id",
+        "target_id",
+        "recipe_id",
+        "artifact_contract_id",
+        "status",
+        "created_at_utc"
+      ],
+      "properties": {
+        "schema_version": {
+          "type": "integer",
+          "minimum": 1,
+          "default": 1
+        },
+        "run_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "recipe_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "artifact_contract_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "queued",
+            "running",
+            "succeeded",
+            "failed",
+            "blocked",
+            "cancelled"
+          ]
+        },
+        "human_mode": {
+          "enum": [
+            "unattended",
+            "supervised",
+            "manual"
+          ],
+          "default": "supervised"
+        },
+        "max_auto_risk": {
+          "enum": [
+            "R0",
+            "R1",
+            "R2",
+            "R3",
+            "R4",
+            "R5"
+          ]
+        },
+        "reproducibility_hash": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "created_at_utc": {
+          "type": "string"
+        },
+        "updated_at_utc": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "metadata": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "ApprovalDecision": {
+      "title": "envctl Migration Approval Decision",
+      "type": "object",
+      "required": [
+        "approval_id",
+        "decision",
+        "decided_by",
+        "decided_at_utc"
+      ],
+      "properties": {
+        "approval_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision": {
+          "enum": [
+            "approved",
+            "denied",
+            "cancelled"
+          ]
+        },
+        "decided_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decided_at_utc": {
+          "type": "string"
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "event_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "EvidenceRecord": {
+      "title": "envctl Migration Evidence Record",
+      "type": "object",
+      "required": [
+        "evidence_id",
+        "run_id",
+        "uri",
+        "evidence_kind",
+        "sha256"
+      ],
+      "properties": {
+        "evidence_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "run_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "operation_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "uri": {
+          "type": "string",
+          "minLength": 1
+        },
+        "evidence_kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "redacted": {
+          "type": "boolean",
+          "default": true
+        },
+        "metadata": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    },
+    "GraphEdge": {
+      "title": "envctl Migration Graph Edge",
+      "type": "object",
+      "required": [
+        "edge_id",
+        "run_id",
+        "from_node",
+        "to_node",
+        "edge_type"
+      ],
+      "properties": {
+        "edge_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "run_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "from_node": {
+          "type": "string",
+          "minLength": 1
+        },
+        "to_node": {
+          "type": "string",
+          "minLength": 1
+        },
+        "edge_type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_artifact_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "ReplayRequest": {
+      "title": "envctl Migration Replay Request",
+      "type": "object",
+      "required": [
+        "replay_id",
+        "run_id",
+        "mode",
+        "requested_by"
+      ],
+      "properties": {
+        "replay_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "run_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "mode": {
+          "enum": [
+            "dry_run",
+            "apply"
+          ]
+        },
+        "requested_by": {
+          "type": "string",
+          "minLength": 1
+        },
+        "operation_ids": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "target_descriptor_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reason": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": true
+    },
+    "ReplayResult": {
+      "title": "envctl Migration Replay Result",
+      "type": "object",
+      "required": [
+        "replay_id",
+        "run_id",
+        "status",
+        "completed_at_utc"
+      ],
+      "properties": {
+        "replay_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "run_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "status": {
+          "enum": [
+            "pass",
+            "fail",
+            "blocked",
+            "partial"
+          ]
+        },
+        "completed_at_utc": {
+          "type": "string"
+        },
+        "event_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "artifact_refs": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "error": {
+          "$ref": "#/$defs/StructuredError"
+        }
+      },
+      "additionalProperties": true
+    },
+    "StructuredError": {
+      "title": "envctl Migration Structured Error",
+      "type": "object",
+      "required": [
+        "code",
+        "message"
+      ],
+      "properties": {
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1
+        },
+        "retryable": {
+          "type": "boolean"
+        },
+        "details": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": true
+    }
+  }
+}

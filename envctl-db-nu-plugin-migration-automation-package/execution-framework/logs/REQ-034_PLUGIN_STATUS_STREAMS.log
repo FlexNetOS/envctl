@@ -1,0 +1,65 @@
+REQ-034_PLUGIN_STATUS_STREAMS verification log
+timestamp_utc=2026-07-04T23:11:40Z
+cwd=/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+NU_PLUGIN_REPO=/home/flexnetos/FlexNetOS/src/nu_plugin
+
+[patch apply check]
+patch_apply_check_exit=0
+
+[temp copy apply + targeted tests]
+git_apply_temp_exit=0
+cargo_test_exit=1
+
+[toolchain availability]
+cargo not found
+rustc not found
+
+[patch whitespace check]
+patch_whitespace_check_exit=0
+
+[patched-source structural gate]
+command_registered=True
+command_name=True
+required_events_path=True
+optional_proof_flag=True
+jsonl_reader=True
+event_view_rows=True
+proof_view_rows=True
+blocked_column=False
+proof_status_column=True
+evidence_count_column=True
+command_surface_test=True
+merge_test=True
+bad_jsonl_test=True
+missing structural checks: blocked_column
+structural_gate_shell_exit=1
+
+[patched-source structural gate rerun]
+command_registered=True
+command_name=True
+required_events_path=True
+optional_proof_flag=True
+jsonl_reader=True
+event_view_rows=True
+proof_view_rows=True
+blocked_column=True
+proof_status_column=True
+evidence_count_column=True
+command_surface_test=True
+merge_test=True
+bad_jsonl_test=True
+structural_gate_exit=0
+structural_gate_rerun_shell_exit=0
+
+[temp tree diff check]
+git_diff_check_exit=0
+
+[temp tree changed files]
+crates/nu_plugin_codedb/src/main.rs
+
+[final absolute patch apply check]
+## codex/agent-harness-import-export...origin/codex/agent-harness-import-export
+final_absolute_patch_apply_check_exit=0
+
+[artifact json validation]
+artifact_json_validation_exit=0

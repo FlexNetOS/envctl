@@ -1,0 +1,21 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-021_ENVCTL_TARGET_REGISTRY",
+  "status": "passed",
+  "generated_at": "2026-07-04T23:10:14+00:00",
+  "summary": {
+    "input_descriptor_count": 2,
+    "registered_descriptor_count": 5,
+    "target_type_count": 5,
+    "target_type_covered_count": 5,
+    "row_count_after_first_pass": 5,
+    "row_count_after_second_pass": 5,
+    "invalid_descriptor_error_count": 2
+  },
+  "errors": [],
+  "evidence": [
+    "generated/envctl_target_registry.json",
+    "generated/envctl_target_registry_validation_report.json",
+    "docs/ENVCTL_TARGET_REGISTRY.md"
+  ]
+}

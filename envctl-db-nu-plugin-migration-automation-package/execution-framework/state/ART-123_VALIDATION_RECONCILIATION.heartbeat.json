@@ -1,0 +1,8 @@
+{
+  "task_id": "ART-123_VALIDATION_RECONCILIATION",
+  "status": "completed",
+  "updated_at": "2026-07-04T23:29:16+00:00",
+  "proof_uri": "proof_records/ART-123_VALIDATION_RECONCILIATION.proof.json",
+  "artifact_count": 3,
+  "parity_passed": true
+}

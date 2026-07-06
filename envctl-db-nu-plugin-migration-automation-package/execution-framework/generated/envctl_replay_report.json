@@ -1,0 +1,617 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-027_ENVCTL_REPLAY_ENGINE",
+  "status": "passed",
+  "generated_at": "2026-07-05T04:43:15+00:00",
+  "database_backend": "sqlite",
+  "runtime": "python sqlite3 in-memory",
+  "applied_migrations": [
+    {
+      "path": "sql/001_migration_automation_schema.sql",
+      "sha256": "f0a8ad6ce7fba6023d8bfb765843fef07710387f9e720f7fe01305ce2d52bb0e",
+      "bytes": 8608
+    },
+    {
+      "path": "sql/002_views_and_indexes.sql",
+      "sha256": "b9c4fee76504746742695119c84bfbb46dedb1e29da480103f2e6b6c5a83106e",
+      "bytes": 3819
+    },
+    {
+      "path": "execution-framework/generated/contract_manifest.seed.sql",
+      "sha256": "399c1092118d57f78c7647a2d5c2fbd914c5b2ac97d5e41e4deda44722dc8c06",
+      "bytes": 155594
+    }
+  ],
+  "fixture": {
+    "run": {
+      "run_id": "run-req027-replay",
+      "status": "created",
+      "started_at_utc": "2026-07-05T04:43:15+00:00",
+      "reproducibility_hash": "sha256:c04ea8bffd85bb5368b08bfffc338a6b949b8f76a1083b3566f33184e0ceb0b2"
+    },
+    "catalog": {
+      "target_id": "target-req027-flexnetos-vs-lifeos",
+      "package_id": "pkg-req027-replay-fixture",
+      "contract_id": "contract-req027-replay-fixture",
+      "recipe_id": "recipe-req027-full-migration-artifact-run"
+    },
+    "checkpoint": {
+      "checkpoint_id": "checkpoint-6968533bfd8a8fc66bd8c3db",
+      "run_id": "run-req027-replay",
+      "operation_id": "op-req027-replay-hash",
+      "checkpoint_kind": "artifact_boundary",
+      "checkpoint_ref": "execution-framework/generated/execution_manifest.json",
+      "checkpoint_hash": "sha256:c527d6825bfd44640f0ba5d2f8cd267988c25711945e4e0ba6b764e0a3f279c6",
+      "metadata": {
+        "task_id": "REQ-027_ENVCTL_REPLAY_ENGINE",
+        "replay_safe": true
+      },
+      "inserted": true
+    }
+  },
+  "replay": {
+    "dry_run": {
+      "schema_version": "1.0",
+      "replay_id": "replay-req027-dry-run",
+      "run_id": "run-req027-replay",
+      "mode": "dry_run",
+      "requested_by": "helper-envctl-replay-01",
+      "completed_at_utc": "2026-07-05T04:43:15+00:00",
+      "status": "pass",
+      "replay_input_hash": "sha256:e22b20575f2f7c38175ffd7621531e9fe6666695ba6111df61ebce34d2a54dc7",
+      "replay_input": {
+        "target_descriptor": {
+          "id": "target-req027-flexnetos-vs-lifeos",
+          "target_id": "flexnetos-vs-lifeos",
+          "descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384",
+          "safety_mode": "approval-gated",
+          "max_auto_risk": "R2"
+        },
+        "artifact_contract": {
+          "id": "contract-req027-replay-fixture",
+          "contract_hash": "sha256:f44bd31a128471fb31d49b61a274c437d568a4910b33bc3f07b183a0324284dd"
+        },
+        "recipe": {
+          "id": "recipe-req027-full-migration-artifact-run",
+          "recipe_hash": "sha256:29a49cf16530f7382084390d0218d624748b6a36b44274798e643be8030ab095",
+          "operation_count": 5
+        },
+        "run": {
+          "id": "run-req027-replay",
+          "status": "created",
+          "human_mode": "approval-gated",
+          "sandbox_policy": "workspace-write",
+          "approval_policy": "never",
+          "tool_versions": {
+            "envctl_replay": "1.0",
+            "python": "stdlib",
+            "sqlite": "3.46.1"
+          },
+          "reproducibility_hash": "sha256:c04ea8bffd85bb5368b08bfffc338a6b949b8f76a1083b3566f33184e0ceb0b2"
+        },
+        "operation_ids": [
+          "op-req027-replay-hash"
+        ],
+        "event_chain_head": "sha256:a91f67f27aa1d2f755c2a4b8c6ad6e2d0c0d4478aa7b61439e63aa85d7d37e1e"
+      },
+      "readiness": {
+        "run_id": "run-req027-replay",
+        "status": "created",
+        "reproducibility_hash": "sha256:c04ea8bffd85bb5368b08bfffc338a6b949b8f76a1083b3566f33184e0ceb0b2",
+        "has_reproducibility_hash": 1,
+        "evidence_missing_hashes": 0,
+        "artifacts_missing_hashes": 0,
+        "open_approvals": 1
+      },
+      "event_chain": {
+        "run_id": "run-req027-replay",
+        "event_count": 3,
+        "chain_valid": true,
+        "errors": [],
+        "head_event_hash": "sha256:a91f67f27aa1d2f755c2a4b8c6ad6e2d0c0d4478aa7b61439e63aa85d7d37e1e"
+      },
+      "recipe_operations": [
+        {
+          "phase_id": "discovery",
+          "approval_gate": false,
+          "operation_id": "scan-filesystem",
+          "operation_type": "collector.filesystem",
+          "risk": "R0",
+          "expected_artifacts": [
+            "directory-tree",
+            "repository-map"
+          ],
+          "validators": []
+        },
+        {
+          "phase_id": "discovery",
+          "approval_gate": false,
+          "operation_id": "scan-toolchain",
+          "operation_type": "collector.toolchain",
+          "risk": "R0",
+          "expected_artifacts": [
+            "toolchain-dependency-tree",
+            "package-library-dependency-graph"
+          ],
+          "validators": []
+        },
+        {
+          "phase_id": "artifact-synthesis",
+          "approval_gate": false,
+          "operation_id": "synthesize-current-state",
+          "operation_type": "artifact.synthesize",
+          "risk": "R1",
+          "expected_artifacts": [
+            "system-inventory",
+            "dependency-graph",
+            "data-flow-graph"
+          ],
+          "validators": []
+        },
+        {
+          "phase_id": "validation",
+          "approval_gate": false,
+          "operation_id": "validate-artifacts",
+          "operation_type": "validation.artifact-contract",
+          "risk": "R1",
+          "expected_artifacts": [],
+          "validators": [
+            "manifest-complete",
+            "links-valid",
+            "evidence-present"
+          ]
+        },
+        {
+          "phase_id": "replay-ready",
+          "approval_gate": false,
+          "operation_id": "compute-reproducibility-hash",
+          "operation_type": "replay.hash",
+          "risk": "R1",
+          "expected_artifacts": [],
+          "validators": []
+        }
+      ],
+      "operation_replay_plan": [
+        {
+          "operation_id": "op-req027-replay-hash",
+          "operation_type": "replay.hash",
+          "phase": "replay-ready",
+          "status": "succeeded",
+          "risk": "R1",
+          "idempotency_key": "REQ-027/replay-hash",
+          "command_hash": "sha256:5147442e504529c0b7d11cd880d1501a0ca9ecf1026ac5e82067cce629dd2446",
+          "output_ref": "execution-framework/generated/envctl_replay_report.json",
+          "recipe_phase": "replay-ready",
+          "approval_gate": false,
+          "checkpoint_refs": [
+            {
+              "checkpoint_id": "checkpoint-6968533bfd8a8fc66bd8c3db",
+              "operation_id": "op-req027-replay-hash",
+              "checkpoint_kind": "artifact_boundary",
+              "checkpoint_ref": "execution-framework/generated/execution_manifest.json",
+              "checkpoint_hash": "sha256:c527d6825bfd44640f0ba5d2f8cd267988c25711945e4e0ba6b764e0a3f279c6",
+              "metadata": {
+                "replay_safe": true,
+                "task_id": "REQ-027_ENVCTL_REPLAY_ENGINE"
+              }
+            }
+          ],
+          "replay_action": "verify_only"
+        }
+      ],
+      "hash_status": {
+        "reproducibility_hash_matches": true,
+        "stored_reproducibility_hash": "sha256:c04ea8bffd85bb5368b08bfffc338a6b949b8f76a1083b3566f33184e0ceb0b2",
+        "recomputed_reproducibility_hash": "sha256:c04ea8bffd85bb5368b08bfffc338a6b949b8f76a1083b3566f33184e0ceb0b2",
+        "evidence_matches": 4,
+        "evidence_mismatches": [],
+        "evidence_missing": [],
+        "artifact_matches": 1,
+        "artifact_mismatches": [],
+        "artifact_missing": [],
+        "blocked_refs": []
+      },
+      "missing_evidence": [],
+      "non_deterministic_operations": [],
+      "required_approvals": [],
+      "safe_next_action": "safe to produce replay command plan; apply remains approval-gated",
+      "errors": []
+    },
+    "apply_blocked": {
+      "schema_version": "1.0",
+      "replay_id": "replay-req027-apply-blocked",
+      "run_id": "run-req027-replay",
+      "mode": "apply",
+      "requested_by": "helper-envctl-replay-01",
+      "completed_at_utc": "2026-07-05T04:43:15+00:00",
+      "status": "blocked",
+      "replay_input_hash": "sha256:7ac1ae20687974e7604f244d5bf4b21010f9a039797c1d78a890e9b3c832df3b",
+      "replay_input": {
+        "target_descriptor": {
+          "id": "target-req027-flexnetos-vs-lifeos",
+          "target_id": "flexnetos-vs-lifeos",
+          "descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384",
+          "safety_mode": "approval-gated",
+          "max_auto_risk": "R2"
+        },
+        "artifact_contract": {
+          "id": "contract-req027-replay-fixture",
+          "contract_hash": "sha256:f44bd31a128471fb31d49b61a274c437d568a4910b33bc3f07b183a0324284dd"
+        },
+        "recipe": {
+          "id": "recipe-req027-full-migration-artifact-run",
+          "recipe_hash": "sha256:29a49cf16530f7382084390d0218d624748b6a36b44274798e643be8030ab095",
+          "operation_count": 5
+        },
+        "run": {
+          "id": "run-req027-replay",
+          "status": "created",
+          "human_mode": "approval-gated",
+          "sandbox_policy": "workspace-write",
+          "approval_policy": "never",
+          "tool_versions": {
+            "envctl_replay": "1.0",
+            "python": "stdlib",
+            "sqlite": "3.46.1"
+          },
+          "reproducibility_hash": "sha256:c04ea8bffd85bb5368b08bfffc338a6b949b8f76a1083b3566f33184e0ceb0b2"
+        },
+        "operation_ids": [
+          "op-req027-manual-cutover"
+        ],
+        "event_chain_head": "sha256:a91f67f27aa1d2f755c2a4b8c6ad6e2d0c0d4478aa7b61439e63aa85d7d37e1e"
+      },
+      "readiness": {
+        "run_id": "run-req027-replay",
+        "status": "created",
+        "reproducibility_hash": "sha256:c04ea8bffd85bb5368b08bfffc338a6b949b8f76a1083b3566f33184e0ceb0b2",
+        "has_reproducibility_hash": 1,
+        "evidence_missing_hashes": 0,
+        "artifacts_missing_hashes": 0,
+        "open_approvals": 1
+      },
+      "event_chain": {
+        "run_id": "run-req027-replay",
+        "event_count": 3,
+        "chain_valid": true,
+        "errors": [],
+        "head_event_hash": "sha256:a91f67f27aa1d2f755c2a4b8c6ad6e2d0c0d4478aa7b61439e63aa85d7d37e1e"
+      },
+      "recipe_operations": [
+        {
+          "phase_id": "discovery",
+          "approval_gate": false,
+          "operation_id": "scan-filesystem",
+          "operation_type": "collector.filesystem",
+          "risk": "R0",
+          "expected_artifacts": [
+            "directory-tree",
+            "repository-map"
+          ],
+          "validators": []
+        },
+        {
+          "phase_id": "discovery",
+          "approval_gate": false,
+          "operation_id": "scan-toolchain",
+          "operation_type": "collector.toolchain",
+          "risk": "R0",
+          "expected_artifacts": [
+            "toolchain-dependency-tree",
+            "package-library-dependency-graph"
+          ],
+          "validators": []
+        },
+        {
+          "phase_id": "artifact-synthesis",
+          "approval_gate": false,
+          "operation_id": "synthesize-current-state",
+          "operation_type": "artifact.synthesize",
+          "risk": "R1",
+          "expected_artifacts": [
+            "system-inventory",
+            "dependency-graph",
+            "data-flow-graph"
+          ],
+          "validators": []
+        },
+        {
+          "phase_id": "validation",
+          "approval_gate": false,
+          "operation_id": "validate-artifacts",
+          "operation_type": "validation.artifact-contract",
+          "risk": "R1",
+          "expected_artifacts": [],
+          "validators": [
+            "manifest-complete",
+            "links-valid",
+            "evidence-present"
+          ]
+        },
+        {
+          "phase_id": "replay-ready",
+          "approval_gate": false,
+          "operation_id": "compute-reproducibility-hash",
+          "operation_type": "replay.hash",
+          "risk": "R1",
+          "expected_artifacts": [],
+          "validators": []
+        }
+      ],
+      "operation_replay_plan": [
+        {
+          "operation_id": "op-req027-manual-cutover",
+          "operation_type": "manual_operator",
+          "phase": "cutover-planning",
+          "status": "ready",
+          "risk": "R4",
+          "idempotency_key": "REQ-027/manual-cutover",
+          "command_hash": "sha256:a163d524321b86bc445df4be0f660802b0ab4db33ed646b8356bea2e6f125f64",
+          "output_ref": null,
+          "recipe_phase": null,
+          "approval_gate": false,
+          "checkpoint_refs": [],
+          "replay_action": "resume_from_checkpoint"
+        }
+      ],
+      "hash_status": {
+        "reproducibility_hash_matches": true,
+        "stored_reproducibility_hash": "sha256:c04ea8bffd85bb5368b08bfffc338a6b949b8f76a1083b3566f33184e0ceb0b2",
+        "recomputed_reproducibility_hash": "sha256:c04ea8bffd85bb5368b08bfffc338a6b949b8f76a1083b3566f33184e0ceb0b2",
+        "evidence_matches": 0,
+        "evidence_mismatches": [],
+        "evidence_missing": [],
+        "artifact_matches": 0,
+        "artifact_mismatches": [],
+        "artifact_missing": [],
+        "blocked_refs": []
+      },
+      "missing_evidence": [],
+      "non_deterministic_operations": [
+        {
+          "operation_id": "op-req027-manual-cutover",
+          "operation_type": "manual_operator",
+          "risk": "R4",
+          "reason": "cutover operation needs an operator-approved window"
+        }
+      ],
+      "required_approvals": [
+        {
+          "approval_id": "approval-req027-manual-cutover",
+          "operation_id": "op-req027-manual-cutover",
+          "risk": "R4",
+          "reason": "apply replay for R4 manual cutover operation"
+        }
+      ],
+      "safe_next_action": "request human approval before apply replay",
+      "errors": [
+        "apply replay requires closed approvals",
+        "apply replay requires manual handling for non-deterministic operations"
+      ]
+    },
+    "mismatch": {
+      "schema_version": "1.0",
+      "replay_id": "replay-req027-mismatch",
+      "run_id": "run-req027-replay",
+      "mode": "dry_run",
+      "requested_by": "helper-envctl-replay-01",
+      "completed_at_utc": "2026-07-05T04:43:15+00:00",
+      "status": "fail",
+      "replay_input_hash": "sha256:e22b20575f2f7c38175ffd7621531e9fe6666695ba6111df61ebce34d2a54dc7",
+      "replay_input": {
+        "target_descriptor": {
+          "id": "target-req027-flexnetos-vs-lifeos",
+          "target_id": "flexnetos-vs-lifeos",
+          "descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384",
+          "safety_mode": "approval-gated",
+          "max_auto_risk": "R2"
+        },
+        "artifact_contract": {
+          "id": "contract-req027-replay-fixture",
+          "contract_hash": "sha256:f44bd31a128471fb31d49b61a274c437d568a4910b33bc3f07b183a0324284dd"
+        },
+        "recipe": {
+          "id": "recipe-req027-full-migration-artifact-run",
+          "recipe_hash": "sha256:29a49cf16530f7382084390d0218d624748b6a36b44274798e643be8030ab095",
+          "operation_count": 5
+        },
+        "run": {
+          "id": "run-req027-replay",
+          "status": "created",
+          "human_mode": "approval-gated",
+          "sandbox_policy": "workspace-write",
+          "approval_policy": "never",
+          "tool_versions": {
+            "envctl_replay": "1.0",
+            "python": "stdlib",
+            "sqlite": "3.46.1"
+          },
+          "reproducibility_hash": "sha256:c04ea8bffd85bb5368b08bfffc338a6b949b8f76a1083b3566f33184e0ceb0b2"
+        },
+        "operation_ids": [
+          "op-req027-replay-hash"
+        ],
+        "event_chain_head": "sha256:a91f67f27aa1d2f755c2a4b8c6ad6e2d0c0d4478aa7b61439e63aa85d7d37e1e"
+      },
+      "readiness": {
+        "run_id": "run-req027-replay",
+        "status": "created",
+        "reproducibility_hash": "sha256:c04ea8bffd85bb5368b08bfffc338a6b949b8f76a1083b3566f33184e0ceb0b2",
+        "has_reproducibility_hash": 1,
+        "evidence_missing_hashes": 0,
+        "artifacts_missing_hashes": 0,
+        "open_approvals": 1
+      },
+      "event_chain": {
+        "run_id": "run-req027-replay",
+        "event_count": 3,
+        "chain_valid": true,
+        "errors": [],
+        "head_event_hash": "sha256:a91f67f27aa1d2f755c2a4b8c6ad6e2d0c0d4478aa7b61439e63aa85d7d37e1e"
+      },
+      "recipe_operations": [
+        {
+          "phase_id": "discovery",
+          "approval_gate": false,
+          "operation_id": "scan-filesystem",
+          "operation_type": "collector.filesystem",
+          "risk": "R0",
+          "expected_artifacts": [
+            "directory-tree",
+            "repository-map"
+          ],
+          "validators": []
+        },
+        {
+          "phase_id": "discovery",
+          "approval_gate": false,
+          "operation_id": "scan-toolchain",
+          "operation_type": "collector.toolchain",
+          "risk": "R0",
+          "expected_artifacts": [
+            "toolchain-dependency-tree",
+            "package-library-dependency-graph"
+          ],
+          "validators": []
+        },
+        {
+          "phase_id": "artifact-synthesis",
+          "approval_gate": false,
+          "operation_id": "synthesize-current-state",
+          "operation_type": "artifact.synthesize",
+          "risk": "R1",
+          "expected_artifacts": [
+            "system-inventory",
+            "dependency-graph",
+            "data-flow-graph"
+          ],
+          "validators": []
+        },
+        {
+          "phase_id": "validation",
+          "approval_gate": false,
+          "operation_id": "validate-artifacts",
+          "operation_type": "validation.artifact-contract",
+          "risk": "R1",
+          "expected_artifacts": [],
+          "validators": [
+            "manifest-complete",
+            "links-valid",
+            "evidence-present"
+          ]
+        },
+        {
+          "phase_id": "replay-ready",
+          "approval_gate": false,
+          "operation_id": "compute-reproducibility-hash",
+          "operation_type": "replay.hash",
+          "risk": "R1",
+          "expected_artifacts": [],
+          "validators": []
+        }
+      ],
+      "operation_replay_plan": [
+        {
+          "operation_id": "op-req027-replay-hash",
+          "operation_type": "replay.hash",
+          "phase": "replay-ready",
+          "status": "succeeded",
+          "risk": "R1",
+          "idempotency_key": "REQ-027/replay-hash",
+          "command_hash": "sha256:5147442e504529c0b7d11cd880d1501a0ca9ecf1026ac5e82067cce629dd2446",
+          "output_ref": "execution-framework/generated/envctl_replay_report.json",
+          "recipe_phase": "replay-ready",
+          "approval_gate": false,
+          "checkpoint_refs": [
+            {
+              "checkpoint_id": "checkpoint-6968533bfd8a8fc66bd8c3db",
+              "operation_id": "op-req027-replay-hash",
+              "checkpoint_kind": "artifact_boundary",
+              "checkpoint_ref": "execution-framework/generated/execution_manifest.json",
+              "checkpoint_hash": "sha256:c527d6825bfd44640f0ba5d2f8cd267988c25711945e4e0ba6b764e0a3f279c6",
+              "metadata": {
+                "replay_safe": true,
+                "task_id": "REQ-027_ENVCTL_REPLAY_ENGINE"
+              }
+            }
+          ],
+          "replay_action": "verify_only"
+        }
+      ],
+      "hash_status": {
+        "reproducibility_hash_matches": true,
+        "stored_reproducibility_hash": "sha256:c04ea8bffd85bb5368b08bfffc338a6b949b8f76a1083b3566f33184e0ceb0b2",
+        "recomputed_reproducibility_hash": "sha256:c04ea8bffd85bb5368b08bfffc338a6b949b8f76a1083b3566f33184e0ceb0b2",
+        "evidence_matches": 3,
+        "evidence_mismatches": [
+          {
+            "uri": "examples/recipes/full-migration-artifact-run.yaml",
+            "expected_sha256": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            "actual_sha256": "sha256:29a49cf16530f7382084390d0218d624748b6a36b44274798e643be8030ab095",
+            "status": "mismatch",
+            "blocked": false,
+            "kind": "recipe",
+            "operation_id": "op-req027-replay-hash"
+          }
+        ],
+        "evidence_missing": [],
+        "artifact_matches": 1,
+        "artifact_mismatches": [],
+        "artifact_missing": [],
+        "blocked_refs": []
+      },
+      "missing_evidence": [],
+      "non_deterministic_operations": [],
+      "required_approvals": [],
+      "safe_next_action": "stop: inspect hash mismatches before replay",
+      "errors": [
+        "evidence hash mismatch"
+      ]
+    },
+    "command_summary": {
+      "dry_run": [
+        "envctl replay dry-run --run-id run-req027-replay --replay-id replay-req027-dry-run --requested-by helper-envctl-replay-01 --operation-ids op-req027-replay-hash --reason verify deterministic replay inputs before integration",
+        "python3 scripts/verify_replay_engine.py"
+      ],
+      "apply_blocked": [
+        "envctl replay apply --run-id run-req027-replay --replay-id replay-req027-apply-blocked --requested-by helper-envctl-replay-01 --operation-ids op-req027-manual-cutover --reason prove approvals block R4 apply replay",
+        "python3 scripts/verify_replay_engine.py"
+      ]
+    },
+    "checks": {
+      "dry_run_passes": true,
+      "event_chain_valid": true,
+      "reproducibility_hash_matches": true,
+      "evidence_hashes_match": true,
+      "artifact_hashes_match": true,
+      "apply_replay_blocked_by_approval": true,
+      "non_deterministic_operation_detected": true,
+      "mismatch_detected": true,
+      "safe_next_action_present": true
+    },
+    "errors": []
+  },
+  "coverage": {
+    "target_descriptor": true,
+    "recipe": true,
+    "packet_manifest": true,
+    "proof_hashes": true,
+    "artifact_hashes": true,
+    "state_hash_chain": true,
+    "approval_gate": true,
+    "non_determinism_detection": true,
+    "mismatch_detection": true
+  },
+  "errors": [],
+  "evidence": [
+    "scripts/replay_engine.py",
+    "scripts/verify_replay_engine.py",
+    "generated/envctl_replay_report.json",
+    "docs/ENVCTL_REPLAY_ENGINE.md",
+    "specs/replay-and-reproducibility.md",
+    "examples/recipes/full-migration-artifact-run.yaml",
+    "generated/execution_manifest.json",
+    "proof_records/REQ-022_ENVCTL_RUN_LEDGER.proof.json",
+    "proof_records/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.proof.json"
+  ]
+}

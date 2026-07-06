@@ -1,0 +1,694 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-107_DATA_FLOW_GRAPH",
+  "title": "Data flow graph",
+  "generated_at": "2026-07-04T23:28:55+00:00",
+  "scope": {
+    "target": "flexnetos-vs-lifeos",
+    "goal": "Map data entry, movement, transformation, persistence, and exit for the envctl migration automation package.",
+    "owner_lane": "lane_d_filesystem",
+    "owner_agent": "artifact-agent"
+  },
+  "source_inputs": {
+    "target_descriptor": {
+      "path": "execution-framework/migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+      "target_id": "flexnetos-vs-lifeos",
+      "primary_root": "/home/flexnetos/FlexNetOS",
+      "compare_root": "/home/flexnetos/lifeos",
+      "descriptor_excerpt": "schema_version: 1\ntarget_id: flexnetos-vs-lifeos\ntarget_type: mixed\nprimary_root: /home/flexnetos/FlexNetOS\ncompare_root: /home/flexnetos/lifeos\noutput_root: migration-artifacts\ninclude:\n  - \"**/*\"\nexclude:\n  - \"**/*.key\"\n  - \"**/*.pem\"\n  - \"**/.env\"\n  - \"**/private_keys/**\"\n  - \"**/secrets/**\"\n  - .git/**\n  - .venv/**\n  - __pycache__/**\n  - node_modules/**\n  - target/**\nsafety:\n  default_mode: approval-gated\n  max_auto_risk: R2\n  allow_network: false\n  allow_destructive: false\ncollectors:\n  filesystem: true\n  git: true\n  package_managers: true\n  databases: true\n  infrastructure: true\n  apis: true\n  observability: true\nartifact_contract:\n  name: full-migration-artifact-contract\n  version: 1\nrecipe:\n  name: codex-flexnetos-full-artifact-run\n  version: 1\nmetadata:\n  purpose: Describe FlexNetOS and lifeos as evidence-only migration comparison targets.\n  source_descriptor: examples/target-descriptors/flexnetos-vs-lifeos.yaml\n  comparison_role: primary_root is the FlexNetOS workspace; compare_root is the lifeos workspace.\n  verification: REQ-200 validates descriptor fields, expected roots, path existence, and secret redaction guards.\n",
+      "registry_status": "passed",
+      "registry_rows": 5
+    },
+    "repo_scan": {
+      "path": "execution-framework/generated/package_scan.json",
+      "top_level_entries": [
+        {
+          "name": "INSTALL_IN_REPOS.sh",
+          "type": "file"
+        },
+        {
+          "name": "PACKAGE_MANIFEST.json",
+          "type": "file"
+        },
+        {
+          "name": "PROMPT_PACKAGE_COMBINED.md",
+          "type": "file"
+        },
+        {
+          "name": "README.md",
+          "type": "file"
+        },
+        {
+          "name": "RUN_WITH_CODEX_ENVCTL.sh",
+          "type": "file"
+        },
+        {
+          "name": "codex",
+          "type": "directory"
+        },
+        {
+          "name": "examples",
+          "type": "directory"
+        },
+        {
+          "name": "expected-output",
+          "type": "directory"
+        },
+        {
+          "name": "helpers",
+          "type": "directory"
+        },
+        {
+          "name": "history",
+          "type": "directory"
+        },
+        {
+          "name": "prompts",
+          "type": "directory"
+        },
+        {
+          "name": "schemas",
+          "type": "directory"
+        },
+        {
+          "name": "source",
+          "type": "directory"
+        },
+        {
+          "name": "specs",
+          "type": "directory"
+        },
+        {
+          "name": "sql",
+          "type": "directory"
+        }
+      ],
+      "scanned_folders": [
+        "codex",
+        "examples",
+        "expected-output",
+        "helpers",
+        "history",
+        "prompts",
+        "schemas",
+        "source",
+        "specs",
+        "sql"
+      ]
+    },
+    "envctl_database": {
+      "path": "execution-framework/generated/envctl_migration_db_model.json",
+      "status": "passed",
+      "required_table_count": 16,
+      "required_view_count": 6,
+      "required_tables": [
+        "envctl_migration_agent_sessions",
+        "envctl_migration_approvals",
+        "envctl_migration_artifact_contracts",
+        "envctl_migration_artifacts",
+        "envctl_migration_checkpoints",
+        "envctl_migration_evidence",
+        "envctl_migration_graph_edges",
+        "envctl_migration_operations",
+        "envctl_migration_packages",
+        "envctl_migration_plugin_sessions",
+        "envctl_migration_recipes",
+        "envctl_migration_rollbacks",
+        "envctl_migration_run_events",
+        "envctl_migration_runs",
+        "envctl_migration_targets",
+        "envctl_migration_validations"
+      ],
+      "required_views": [
+        "envctl_migration_artifact_index",
+        "envctl_migration_live_timeline",
+        "envctl_migration_open_approvals",
+        "envctl_migration_replay_readiness",
+        "envctl_migration_run_latest_status",
+        "envctl_migration_validation_scorecard"
+      ]
+    },
+    "shared_protocol": {
+      "path": "execution-framework/generated/shared_protocol_manifest.json",
+      "source_of_truth_rule": "envctl migration database owns durable state; nu_plugin renders records and submits auditable commands.",
+      "required_records": [
+        "TargetDescriptor",
+        "MigrationRecipe",
+        "MigrationRun",
+        "RunEvent",
+        "Operation",
+        "ApprovalRequest",
+        "ApprovalDecision",
+        "ArtifactRecord",
+        "EvidenceRecord",
+        "GraphEdge",
+        "ValidationResult",
+        "ReplayRequest",
+        "ReplayResult",
+        "ProofRecord"
+      ]
+    }
+  },
+  "summary": {
+    "node_count": 12,
+    "edge_count": 13,
+    "flow_path_count": 3,
+    "stage_counts": {
+      "data_entry": 3,
+      "movement": 2,
+      "transformation": 3,
+      "persistence": 2,
+      "exit": 2
+    },
+    "entry_stage_count": 3,
+    "movement_stage_count": 2,
+    "transformation_stage_count": 3,
+    "persistence_stage_count": 2,
+    "exit_stage_count": 2,
+    "all_required_stages_present": true
+  },
+  "nodes": [
+    {
+      "id": "entry:target-descriptor",
+      "stage": "data_entry",
+      "label": "Target descriptor intake",
+      "kind": "configuration_input",
+      "description": "Defines target roots, output root, collector classes, safety posture, and artifact contract metadata.",
+      "data_subjects": [
+        "target_id",
+        "primary_root",
+        "compare_root",
+        "include/exclude globs",
+        "safety policy"
+      ],
+      "evidence_refs": [
+        "execution-framework/migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+        "execution-framework/generated/envctl_target_registry.json"
+      ],
+      "redaction": "blocked paths exclude .env, secrets, private_keys, pem, and key files before graph materialization"
+    },
+    {
+      "id": "entry:repo-scan",
+      "stage": "data_entry",
+      "label": "Repository and filesystem scan",
+      "kind": "collector_input",
+      "description": "Scans bounded package and target filesystem surfaces for manifests, source, docs, services, and generated evidence.",
+      "data_subjects": [
+        "file paths",
+        "manifest metadata",
+        "service definitions",
+        "source inventory"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/package_scan.json",
+        "execution-framework/migration-artifacts/art-101_directory_tree/directory-tree.json",
+        "execution-framework/migration-artifacts/art-102_repository_map/repository-map.json"
+      ],
+      "redaction": "secret-like paths are skipped by descriptor policy and artifact registry path policy"
+    },
+    {
+      "id": "entry:operator-command",
+      "stage": "data_entry",
+      "label": "Operator command surface",
+      "kind": "human_or_plugin_input",
+      "description": "Nushell plugin commands submit target, run, approval, replay, and proof requests to envctl-owned endpoints.",
+      "data_subjects": [
+        "command arguments",
+        "approval decisions",
+        "replay requests",
+        "proof lookups"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/nu_plugin_command_manifest.json",
+        "execution-framework/generated/shared_protocol_manifest.json"
+      ],
+      "redaction": "commands are represented as redacted command strings in operations and events"
+    },
+    {
+      "id": "move:package-import",
+      "stage": "movement",
+      "label": "Package import and contract bind",
+      "kind": "control_plane_transfer",
+      "description": "Package files, contract rows, and recipe metadata move into envctl migration package, contract, and recipe records.",
+      "data_subjects": [
+        "package hash",
+        "contract hash",
+        "recipe hash",
+        "artifact requirements"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/contract_manifest.json",
+        "execution-framework/generated/contract_manifest.seed.sql",
+        "execution-framework/docs/CONTRACT_MANIFEST.md"
+      ]
+    },
+    {
+      "id": "move:run-operation-events",
+      "stage": "movement",
+      "label": "Run, operation, and event stream",
+      "kind": "runtime_transfer",
+      "description": "A migration run owns operation rows and append-only event records; plugins observe the latest status and timeline views.",
+      "data_subjects": [
+        "run status",
+        "operation state",
+        "risk",
+        "idempotency key",
+        "event hash"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/envctl_run_ledger_report.json",
+        "execution-framework/generated/operation_state_machine.json",
+        "execution-framework/docs/ENVCTL_RUN_LEDGER.md"
+      ]
+    },
+    {
+      "id": "transform:redaction-policy",
+      "stage": "transformation",
+      "label": "Security redaction and path policy",
+      "kind": "guard_transform",
+      "description": "Blocked paths and sensitive command details are filtered or represented by hashes before becoming graph evidence.",
+      "data_subjects": [
+        "path policy",
+        "redacted command",
+        "safe evidence URI"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/security_redaction_validation_report.json",
+        "execution-framework/docs/SECURITY_REDACTION.md",
+        "execution-framework/scripts/artifact_registry.py"
+      ]
+    },
+    {
+      "id": "transform:protocol-shaping",
+      "stage": "transformation",
+      "label": "Shared protocol shaping",
+      "kind": "schema_transform",
+      "description": "Envctl DB rows are shaped into shared records consumed by envctl and nu_plugin without moving durable ownership to the plugin.",
+      "data_subjects": [
+        "TargetDescriptor",
+        "Operation",
+        "ArtifactRecord",
+        "EvidenceRecord",
+        "GraphEdge",
+        "ValidationResult"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/shared_protocol_manifest.json",
+        "execution-framework/schemas/shared_protocol.schema.json",
+        "execution-framework/docs/SHARED_PROTOCOL_SCHEMAS.md"
+      ]
+    },
+    {
+      "id": "transform:artifact-generation",
+      "stage": "transformation",
+      "label": "Artifact generation and hash calculation",
+      "kind": "artifact_transform",
+      "description": "Generated Markdown and JSON artifacts are converted into registry records with content hashes, evidence refs, validations, and graph edges.",
+      "data_subjects": [
+        "artifact body",
+        "sha256 content hash",
+        "validation details",
+        "graph links"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/envctl_artifact_registry_report.json",
+        "execution-framework/docs/ENVCTL_ARTIFACT_REGISTRY.md",
+        "execution-framework/schemas/proof_record.schema.json"
+      ]
+    },
+    {
+      "id": "persist:envctl-db",
+      "stage": "persistence",
+      "label": "Envctl migration database",
+      "kind": "sqlite_persistence",
+      "description": "Durable migration control-plane state is persisted in targets, packages, contracts, recipes, runs, operations, evidence, artifacts, graph edges, approvals, validations, checkpoints, rollbacks, agent sessions, and plugin sessions.",
+      "data_subjects": [
+        "all envctl_migration_* rows and views"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/envctl_migration_db_model.json",
+        "execution-framework/docs/ENVCTL_DB_SCHEMA.md",
+        "sql/001_migration_automation_schema.sql",
+        "sql/002_views_and_indexes.sql"
+      ]
+    },
+    {
+      "id": "persist:proof-ledger",
+      "stage": "persistence",
+      "label": "Proof records and proof ledger",
+      "kind": "file_persistence",
+      "description": "Task completion evidence is written as a proof JSON file and deduplicated proof ledger row.",
+      "data_subjects": [
+        "files changed",
+        "commands run",
+        "verification output",
+        "checksums"
+      ],
+      "evidence_refs": [
+        "execution-framework/proof_records/proof_ledger.jsonl",
+        "execution-framework/schemas/proof_record.schema.json",
+        "execution-framework/proof_templates/PROOF_RECORD_TEMPLATE.json"
+      ]
+    },
+    {
+      "id": "exit:migration-artifacts",
+      "stage": "exit",
+      "label": "Migration artifact outputs",
+      "kind": "operator_artifact",
+      "description": "Markdown and JSON deliverables leave the generator as migration-artifacts files, with registry hashes proving the emitted content.",
+      "data_subjects": [
+        "data_flow_graph.md",
+        "data_flow_graph.json",
+        "registry report"
+      ],
+      "evidence_refs": [
+        "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.md",
+        "execution-framework/migration-artifacts/art-107_data_flow_graph/data_flow_graph.json",
+        "execution-framework/generated/art_107_data_flow_graph_registry_report.json"
+      ]
+    },
+    {
+      "id": "exit:operator-views",
+      "stage": "exit",
+      "label": "Operator and downstream validation views",
+      "kind": "consumer_output",
+      "description": "Artifact index, validation scorecard, status streams, and VER-300 consume hashes, validation rows, and graph edges.",
+      "data_subjects": [
+        "artifact index rows",
+        "validation scorecard rows",
+        "status table rows"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/live_visuals.json",
+        "execution-framework/generated/final_verification_report.json",
+        "execution-framework/generated/task_graph.normalized.json"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge-data-entry-target-to-db",
+      "from": "entry:target-descriptor",
+      "to": "persist:envctl-db",
+      "type": "enters_as",
+      "data": [
+        "target descriptor fields",
+        "descriptor hash",
+        "safety mode"
+      ],
+      "via": [
+        "envctl_migration_targets"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/envctl_target_registry.json"
+      ]
+    },
+    {
+      "id": "edge-repo-scan-to-package-import",
+      "from": "entry:repo-scan",
+      "to": "move:package-import",
+      "type": "moves_into",
+      "data": [
+        "package inventory",
+        "contract manifest",
+        "source refs"
+      ],
+      "via": [
+        "envctl_migration_packages",
+        "envctl_migration_artifact_contracts"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/package_scan.json",
+        "execution-framework/generated/contract_manifest.json"
+      ]
+    },
+    {
+      "id": "edge-operator-command-to-run",
+      "from": "entry:operator-command",
+      "to": "move:run-operation-events",
+      "type": "submits",
+      "data": [
+        "run plan requests",
+        "approval decisions",
+        "proof queries"
+      ],
+      "via": [
+        "envctl endpoints with --emit-event"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/nu_plugin_command_manifest.json"
+      ]
+    },
+    {
+      "id": "edge-package-import-to-run",
+      "from": "move:package-import",
+      "to": "move:run-operation-events",
+      "type": "binds_recipe_to_run",
+      "data": [
+        "recipe id",
+        "artifact contract id",
+        "run id"
+      ],
+      "via": [
+        "envctl_migration_runs",
+        "envctl_migration_operations"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/envctl_run_ledger_report.json"
+      ]
+    },
+    {
+      "id": "edge-run-to-redaction",
+      "from": "move:run-operation-events",
+      "to": "transform:redaction-policy",
+      "type": "normalizes",
+      "data": [
+        "command_redacted",
+        "evidence URI",
+        "blocked path checks"
+      ],
+      "via": [
+        "security controls",
+        "artifact registry path policy"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/security_redaction_validation_report.json"
+      ]
+    },
+    {
+      "id": "edge-db-to-protocol",
+      "from": "persist:envctl-db",
+      "to": "transform:protocol-shaping",
+      "type": "projects",
+      "data": [
+        "source-of-truth rows",
+        "record schemas",
+        "plugin table shapes"
+      ],
+      "via": [
+        "shared protocol manifest"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/shared_protocol_manifest.json"
+      ]
+    },
+    {
+      "id": "edge-redaction-to-artifact-generation",
+      "from": "transform:redaction-policy",
+      "to": "transform:artifact-generation",
+      "type": "permits_safe_evidence",
+      "data": [
+        "safe evidence refs",
+        "redaction status",
+        "hashable artifact paths"
+      ],
+      "via": [
+        "ArtifactRegistry._validate_path_policy"
+      ],
+      "evidence_refs": [
+        "execution-framework/scripts/artifact_registry.py"
+      ]
+    },
+    {
+      "id": "edge-protocol-to-artifact-generation",
+      "from": "transform:protocol-shaping",
+      "to": "transform:artifact-generation",
+      "type": "schemas",
+      "data": [
+        "ArtifactRecord",
+        "EvidenceRecord",
+        "GraphEdge",
+        "ValidationResult",
+        "ProofRecord"
+      ],
+      "via": [
+        "schemas/shared_protocol.schema.json"
+      ],
+      "evidence_refs": [
+        "execution-framework/schemas/shared_protocol.schema.json"
+      ]
+    },
+    {
+      "id": "edge-artifact-generation-to-db",
+      "from": "transform:artifact-generation",
+      "to": "persist:envctl-db",
+      "type": "persists_registry_rows",
+      "data": [
+        "artifact rows",
+        "evidence rows",
+        "graph edges",
+        "validation rows"
+      ],
+      "via": [
+        "envctl_migration_artifacts",
+        "envctl_migration_evidence",
+        "envctl_migration_graph_edges",
+        "envctl_migration_validations"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/envctl_artifact_registry_report.json"
+      ]
+    },
+    {
+      "id": "edge-artifact-generation-to-proof-ledger",
+      "from": "transform:artifact-generation",
+      "to": "persist:proof-ledger",
+      "type": "records_proof",
+      "data": [
+        "verification output",
+        "checksums",
+        "evidence list"
+      ],
+      "via": [
+        "proof_records/ART-107_DATA_FLOW_GRAPH.proof.json",
+        "proof_records/proof_ledger.jsonl"
+      ],
+      "evidence_refs": [
+        "execution-framework/schemas/proof_record.schema.json"
+      ]
+    },
+    {
+      "id": "edge-proof-ledger-to-artifact-exit",
+      "from": "persist:proof-ledger",
+      "to": "exit:migration-artifacts",
+      "type": "attests",
+      "data": [
+        "file checksums",
+        "commands run",
+        "registry result"
+      ],
+      "via": [
+        "proof record"
+      ],
+      "evidence_refs": [
+        "execution-framework/proof_records/ART-107_DATA_FLOW_GRAPH.proof.json"
+      ]
+    },
+    {
+      "id": "edge-db-to-operator-views",
+      "from": "persist:envctl-db",
+      "to": "exit:operator-views",
+      "type": "renders_as",
+      "data": [
+        "artifact index",
+        "validation scorecard",
+        "timeline",
+        "latest status"
+      ],
+      "via": [
+        "envctl_migration_artifact_index",
+        "envctl_migration_validation_scorecard"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/live_visuals.json"
+      ]
+    },
+    {
+      "id": "edge-artifact-exit-to-validation",
+      "from": "exit:migration-artifacts",
+      "to": "exit:operator-views",
+      "type": "blocks",
+      "data": [
+        "VER-300_UNIT_VALIDATION input"
+      ],
+      "via": [
+        "task graph block edge"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/task_graph.normalized.json"
+      ]
+    }
+  ],
+  "flow_paths": [
+    {
+      "path_id": "flow-target-descriptor-to-status",
+      "entry": "entry:target-descriptor",
+      "movement": [
+        "move:package-import",
+        "move:run-operation-events"
+      ],
+      "transformation": [
+        "transform:protocol-shaping"
+      ],
+      "persistence": [
+        "persist:envctl-db"
+      ],
+      "exit": [
+        "exit:operator-views"
+      ],
+      "data_classes": [
+        "target config",
+        "safety policy",
+        "status rows"
+      ]
+    },
+    {
+      "path_id": "flow-repo-scan-to-artifacts",
+      "entry": "entry:repo-scan",
+      "movement": [
+        "move:package-import"
+      ],
+      "transformation": [
+        "transform:redaction-policy",
+        "transform:artifact-generation"
+      ],
+      "persistence": [
+        "persist:envctl-db",
+        "persist:proof-ledger"
+      ],
+      "exit": [
+        "exit:migration-artifacts",
+        "exit:operator-views"
+      ],
+      "data_classes": [
+        "file inventory",
+        "artifact body",
+        "content hash",
+        "validation evidence"
+      ]
+    },
+    {
+      "path_id": "flow-operator-command-to-proof",
+      "entry": "entry:operator-command",
+      "movement": [
+        "move:run-operation-events"
+      ],
+      "transformation": [
+        "transform:protocol-shaping",
+        "transform:artifact-generation"
+      ],
+      "persistence": [
+        "persist:envctl-db",
+        "persist:proof-ledger"
+      ],
+      "exit": [
+        "exit:operator-views"
+      ],
+      "data_classes": [
+        "command input",
+        "operation event",
+        "artifact/proof lookup"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,380 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "ART-100_SYSTEM_INVENTORY",
+  "status": "completed",
+  "started_at": "2026-07-04T23:21:18+00:00",
+  "completed_at": "2026-07-04T23:21:18+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-artifact-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS",
+  "files_changed": [
+    "execution-framework/scripts/generate_system_inventory.py",
+    "execution-framework/migration-artifacts/art-100_system_inventory/system_inventory.md",
+    "execution-framework/migration-artifacts/art-100_system_inventory/system_inventory.json",
+    "execution-framework/migration-artifacts/01-current-state/system-inventory.md",
+    "execution-framework/generated/art_100_system_inventory_registry_report.json",
+    "execution-framework/state/ART-100_SYSTEM_INVENTORY.heartbeat.json",
+    "execution-framework/logs/ART-100_SYSTEM_INVENTORY.log",
+    "execution-framework/proof_records/ART-100_SYSTEM_INVENTORY.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/generate_system_inventory.py",
+    "python3 -m py_compile scripts/generate_system_inventory.py"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "ART-100_SYSTEM_INVENTORY",
+    "status": "passed",
+    "generated_at": "2026-07-04T23:21:18+00:00",
+    "target": {
+      "target_id": "flexnetos-vs-lifeos",
+      "target_type": "mixed",
+      "primary_root": "/home/flexnetos/FlexNetOS",
+      "compare_root": "/home/flexnetos/lifeos",
+      "descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384"
+    },
+    "scan_summary": {
+      "scanned_files": 106597,
+      "skipped_blocked_paths": 247,
+      "skipped_directories": 408,
+      "counts": {
+        "apis": 116,
+        "applications": 2159,
+        "databases": 201,
+        "jobs": 976,
+        "queues": 17251,
+        "reports": 491,
+        "schedulers": 111,
+        "scripts": 6480,
+        "services": 45
+      }
+    },
+    "registry": {
+      "registry_results": [
+        {
+          "artifact_row_id": "artifact-f0e533ce1def84f3bd022156",
+          "artifact_id": "art-100-system-inventory-md",
+          "run_id": "run-art-100-system-inventory",
+          "path": "execution-framework/migration-artifacts/art-100_system_inventory/system_inventory.md",
+          "content_hash": "sha256:6e00018e4d7f3f6d33fc697eb55391b98d01a9877275ccef8ec6fb2c9af454a7",
+          "producer_operation_id": "op-art-100-system-inventory",
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-6af9e8e98bcc6bc002d444b7",
+            "evidence-5ffba9eccf710cfced7753f1",
+            "evidence-2945884b60cec723dcabb4e1",
+            "evidence-575ec8a4c452ce9782eccce3",
+            "evidence-e28cd5d709d706fc0663e12d"
+          ],
+          "graph_edge_ids": [
+            "edge-ad8551d895f574f66eaa311e",
+            "edge-92294e124071884629fd1574",
+            "edge-3441ef7b65740fc5b338b9b9",
+            "edge-9d0d5a703c824fca7046322c"
+          ],
+          "validation_ids": [
+            "validation-68c109f8b108cafe70986dbc",
+            "validation-d392b4cfc8f2c8c1469f721a",
+            "validation-6b1bcb5d755dde78e5d2b333"
+          ]
+        },
+        {
+          "artifact_row_id": "artifact-3059aecd166dc8fceaa1f24b",
+          "artifact_id": "art-100-system-inventory-json",
+          "run_id": "run-art-100-system-inventory",
+          "path": "execution-framework/migration-artifacts/art-100_system_inventory/system_inventory.json",
+          "content_hash": "sha256:707e4e7b780076297d317c30bde8bbaebd141e7bc22c06b6da0967db7a609d53",
+          "producer_operation_id": "op-art-100-system-inventory",
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-07e4b8f3f90da3820f9567c3",
+            "evidence-3a2c3184b90a1261beaa68ad",
+            "evidence-3f78fc4a6771de371e428bc8",
+            "evidence-2363f672a7588043a602473c",
+            "evidence-8bbb7bcc3ac5cb93948847fd"
+          ],
+          "graph_edge_ids": [
+            "edge-f042734f4442ca80ea327348",
+            "edge-5d2c363d2a8195d90039377d",
+            "edge-9f4ea5c9befe3054447eac6a",
+            "edge-95f5850062b952340fd1a08c"
+          ],
+          "validation_ids": [
+            "validation-098814f7dc730b51c1776961",
+            "validation-6de211260a3cf680d4f8d794",
+            "validation-2232ecc9f99d2b9180d54314"
+          ]
+        },
+        {
+          "artifact_row_id": "artifact-0732ca86416d6e12b286897a",
+          "artifact_id": "01-current-state-system-inventory-md",
+          "run_id": "run-art-100-system-inventory",
+          "path": "execution-framework/migration-artifacts/01-current-state/system-inventory.md",
+          "content_hash": "sha256:6e00018e4d7f3f6d33fc697eb55391b98d01a9877275ccef8ec6fb2c9af454a7",
+          "producer_operation_id": "op-art-100-system-inventory",
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-6892522ef8836e6be8abf3d1",
+            "evidence-dd57a6f6613e4518c14b7e15",
+            "evidence-c10fdff0e0d59d1139896d87",
+            "evidence-af4241596a77ec334bffffee",
+            "evidence-0f80c0e4bce2bee4002a4797"
+          ],
+          "graph_edge_ids": [
+            "edge-f2378c35178809a4e3ac313a",
+            "edge-0f5a0727f4d0debfca385a5a",
+            "edge-8b0a8aca497b78fcbac0b6f1",
+            "edge-c3b1b0b73a3321c9a4414610"
+          ],
+          "validation_ids": [
+            "validation-7fd4d0b998d220a8643ad89d",
+            "validation-52e529982d6b396305e02022",
+            "validation-b5343a296542b4060ca9d459"
+          ]
+        }
+      ],
+      "artifact_rows": [
+        {
+          "id": "artifact-f0e533ce1def84f3bd022156",
+          "run_id": "run-art-100-system-inventory",
+          "artifact_id": "art-100-system-inventory-md",
+          "title": "ART-100 System Inventory Markdown",
+          "artifact_type": "migration_artifact",
+          "status": "complete",
+          "path": "execution-framework/migration-artifacts/art-100_system_inventory/system_inventory.md",
+          "content_hash": "sha256:6e00018e4d7f3f6d33fc697eb55391b98d01a9877275ccef8ec6fb2c9af454a7",
+          "generated_by_operation_id": "op-art-100-system-inventory",
+          "evidence": {
+            "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+            "evidence_ids": [
+              "evidence-6af9e8e98bcc6bc002d444b7",
+              "evidence-5ffba9eccf710cfced7753f1",
+              "evidence-2945884b60cec723dcabb4e1",
+              "evidence-575ec8a4c452ce9782eccce3",
+              "evidence-e28cd5d709d706fc0663e12d"
+            ],
+            "evidence_refs": [
+              "execution-framework/generated/envctl_target_registry.json",
+              "execution-framework/generated/package_scan.json",
+              "execution-framework/generated/shared_protocol_manifest.json",
+              "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+              "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+            ],
+            "producer_operation_id": "op-art-100-system-inventory",
+            "provenance": {
+              "helper_id": "helper-artifact-01",
+              "owner_agent": "artifact-agent",
+              "target_descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384",
+              "target_id": "flexnetos-vs-lifeos",
+              "target_root": "/home/flexnetos/FlexNetOS",
+              "task_id": "ART-100_SYSTEM_INVENTORY"
+            },
+            "validation_ids": [
+              "validation-68c109f8b108cafe70986dbc",
+              "validation-d392b4cfc8f2c8c1469f721a",
+              "validation-6b1bcb5d755dde78e5d2b333"
+            ]
+          },
+          "links": {
+            "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+            "graph_edge_ids": [
+              "edge-ad8551d895f574f66eaa311e",
+              "edge-92294e124071884629fd1574",
+              "edge-3441ef7b65740fc5b338b9b9",
+              "edge-9d0d5a703c824fca7046322c"
+            ],
+            "links": [
+              {
+                "to": "task:VER-300_UNIT_VALIDATION",
+                "type": "blocks"
+              },
+              {
+                "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+                "type": "depends_on"
+              },
+              {
+                "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+                "type": "depends_on"
+              }
+            ]
+          }
+        },
+        {
+          "id": "artifact-3059aecd166dc8fceaa1f24b",
+          "run_id": "run-art-100-system-inventory",
+          "artifact_id": "art-100-system-inventory-json",
+          "title": "ART-100 System Inventory JSON",
+          "artifact_type": "machine_readable_record",
+          "status": "complete",
+          "path": "execution-framework/migration-artifacts/art-100_system_inventory/system_inventory.json",
+          "content_hash": "sha256:707e4e7b780076297d317c30bde8bbaebd141e7bc22c06b6da0967db7a609d53",
+          "generated_by_operation_id": "op-art-100-system-inventory",
+          "evidence": {
+            "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+            "evidence_ids": [
+              "evidence-07e4b8f3f90da3820f9567c3",
+              "evidence-3a2c3184b90a1261beaa68ad",
+              "evidence-3f78fc4a6771de371e428bc8",
+              "evidence-2363f672a7588043a602473c",
+              "evidence-8bbb7bcc3ac5cb93948847fd"
+            ],
+            "evidence_refs": [
+              "execution-framework/generated/envctl_target_registry.json",
+              "execution-framework/generated/package_scan.json",
+              "execution-framework/generated/shared_protocol_manifest.json",
+              "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+              "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+            ],
+            "producer_operation_id": "op-art-100-system-inventory",
+            "provenance": {
+              "helper_id": "helper-artifact-01",
+              "owner_agent": "artifact-agent",
+              "target_descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384",
+              "target_id": "flexnetos-vs-lifeos",
+              "target_root": "/home/flexnetos/FlexNetOS",
+              "task_id": "ART-100_SYSTEM_INVENTORY"
+            },
+            "validation_ids": [
+              "validation-098814f7dc730b51c1776961",
+              "validation-6de211260a3cf680d4f8d794",
+              "validation-2232ecc9f99d2b9180d54314"
+            ]
+          },
+          "links": {
+            "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+            "graph_edge_ids": [
+              "edge-f042734f4442ca80ea327348",
+              "edge-5d2c363d2a8195d90039377d",
+              "edge-9f4ea5c9befe3054447eac6a",
+              "edge-95f5850062b952340fd1a08c"
+            ],
+            "links": [
+              {
+                "to": "task:VER-300_UNIT_VALIDATION",
+                "type": "blocks"
+              },
+              {
+                "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+                "type": "depends_on"
+              },
+              {
+                "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+                "type": "depends_on"
+              }
+            ]
+          }
+        },
+        {
+          "id": "artifact-0732ca86416d6e12b286897a",
+          "run_id": "run-art-100-system-inventory",
+          "artifact_id": "01-current-state-system-inventory-md",
+          "title": "System Inventory",
+          "artifact_type": "migration_artifact",
+          "status": "complete",
+          "path": "execution-framework/migration-artifacts/01-current-state/system-inventory.md",
+          "content_hash": "sha256:6e00018e4d7f3f6d33fc697eb55391b98d01a9877275ccef8ec6fb2c9af454a7",
+          "generated_by_operation_id": "op-art-100-system-inventory",
+          "evidence": {
+            "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+            "evidence_ids": [
+              "evidence-6892522ef8836e6be8abf3d1",
+              "evidence-dd57a6f6613e4518c14b7e15",
+              "evidence-c10fdff0e0d59d1139896d87",
+              "evidence-af4241596a77ec334bffffee",
+              "evidence-0f80c0e4bce2bee4002a4797"
+            ],
+            "evidence_refs": [
+              "execution-framework/generated/envctl_target_registry.json",
+              "execution-framework/generated/package_scan.json",
+              "execution-framework/generated/shared_protocol_manifest.json",
+              "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+              "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+            ],
+            "producer_operation_id": "op-art-100-system-inventory",
+            "provenance": {
+              "helper_id": "helper-artifact-01",
+              "owner_agent": "artifact-agent",
+              "target_descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384",
+              "target_id": "flexnetos-vs-lifeos",
+              "target_root": "/home/flexnetos/FlexNetOS",
+              "task_id": "ART-100_SYSTEM_INVENTORY"
+            },
+            "validation_ids": [
+              "validation-7fd4d0b998d220a8643ad89d",
+              "validation-52e529982d6b396305e02022",
+              "validation-b5343a296542b4060ca9d459"
+            ]
+          },
+          "links": {
+            "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+            "graph_edge_ids": [
+              "edge-f2378c35178809a4e3ac313a",
+              "edge-0f5a0727f4d0debfca385a5a",
+              "edge-8b0a8aca497b78fcbac0b6f1",
+              "edge-c3b1b0b73a3321c9a4414610"
+            ],
+            "links": [
+              {
+                "to": "task:VER-300_UNIT_VALIDATION",
+                "type": "blocks"
+              },
+              {
+                "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+                "type": "depends_on"
+              },
+              {
+                "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+                "type": "depends_on"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "artifact_index_rows": [
+      {
+        "artifact_id": "01-current-state-system-inventory-md",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/01-current-state/system-inventory.md",
+        "content_hash": "sha256:6e00018e4d7f3f6d33fc697eb55391b98d01a9877275ccef8ec6fb2c9af454a7"
+      },
+      {
+        "artifact_id": "art-100-system-inventory-json",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/art-100_system_inventory/system_inventory.json",
+        "content_hash": "sha256:707e4e7b780076297d317c30bde8bbaebd141e7bc22c06b6da0967db7a609d53"
+      },
+      {
+        "artifact_id": "art-100-system-inventory-md",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/art-100_system_inventory/system_inventory.md",
+        "content_hash": "sha256:6e00018e4d7f3f6d33fc697eb55391b98d01a9877275ccef8ec6fb2c9af454a7"
+      }
+    ],
+    "errors": []
+  },
+  "checksums": {
+    "execution-framework/scripts/generate_system_inventory.py": "af62d1cb95d765e3c3bebfcc430156cb9e43ca3e3dee6b243a4e16ec37d24fc6",
+    "execution-framework/migration-artifacts/art-100_system_inventory/system_inventory.md": "6e00018e4d7f3f6d33fc697eb55391b98d01a9877275ccef8ec6fb2c9af454a7",
+    "execution-framework/migration-artifacts/art-100_system_inventory/system_inventory.json": "707e4e7b780076297d317c30bde8bbaebd141e7bc22c06b6da0967db7a609d53",
+    "execution-framework/migration-artifacts/01-current-state/system-inventory.md": "6e00018e4d7f3f6d33fc697eb55391b98d01a9877275ccef8ec6fb2c9af454a7",
+    "execution-framework/generated/art_100_system_inventory_registry_report.json": "58d5955172646ad160a18c4bd8b5e441248c2d55abbcf5e4b04e0eb49d42ed36",
+    "execution-framework/state/ART-100_SYSTEM_INVENTORY.heartbeat.json": "33ae0ae030f23640c44f7046126610c98fb8bb953eec1878c7fc969ea45d3232",
+    "execution-framework/logs/ART-100_SYSTEM_INVENTORY.log": "58d5955172646ad160a18c4bd8b5e441248c2d55abbcf5e4b04e0eb49d42ed36",
+    "execution-framework/proof_records/ART-100_SYSTEM_INVENTORY.proof.json": "7e98aa28b1584f50a3cbf2a998a35f801c29b583d675ad901bc2a5d2c85cdda4",
+    "execution-framework/proof_records/proof_ledger.jsonl": "313188d65d48a4df898547efd4325ac75cfba01414a0dba2d55d0996f9a8f312"
+  },
+  "logs_uri": "logs/ART-100_SYSTEM_INVENTORY.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "migration-artifacts/art-100_system_inventory/system_inventory.md",
+    "migration-artifacts/art-100_system_inventory/system_inventory.json",
+    "migration-artifacts/01-current-state/system-inventory.md",
+    "generated/art_100_system_inventory_registry_report.json",
+    "logs/ART-100_SYSTEM_INVENTORY.log"
+  ],
+  "failure_reason": "",
+  "next_action": "run VER-300_UNIT_VALIDATION"
+}

@@ -1,0 +1,1534 @@
+OpenAI Codex v0.143.0-alpha.35
+--------
+workdir: /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+model: gpt-5.5
+provider: openai
+approval: never
+sandbox: workspace-write [workdir, /tmp, $TMPDIR] (network access enabled)
+reasoning effort: medium
+reasoning summaries: auto
+session id: 019f30cc-e6e2-76a3-9806-86a44cc5388f
+--------
+user
+You are the GPT-5.5 fallback reviewer for an envctl migration automation package approval gate.
+
+Do not edit files. Do not stage, commit, push, or create artifacts yourself except for the final response file written by the outer codex -o option. Review only.
+
+Use concise commands. If shell commands fail under the default login shell, invoke /bin/sh -lc explicitly. Do not dump huge JSON files; use jq summaries.
+
+Task gate: VER-300_UNIT_VALIDATION
+Packet path: generated/execution_packets/VER-300_UNIT_VALIDATION.json
+Expected packet SHA256: b56b018635373d5f2ff6d59430b6d41e12d55854821461b64103cacbe6cfd41b
+Open PR containing current package state: https://github.com/FlexNetOS/envctl/pull/422
+Fallback reason: weave is unavailable in PATH, and the available local claude frontdoor is Claude Code rather than the requested Claude Opus reviewer route.
+
+Review scope:
+1. Verify the packet exists and its SHA256 matches the expected checksum.
+2. Inspect generated/status_report.json and confirm VER-300_UNIT_VALIDATION is blocked only by agent approval.
+3. Inspect generated/task_graph.csv and the VER-300 packet enough to assess whether dispatch is appropriately scoped for unit/integration validation.
+4. Confirm the previous completed state includes REQ-202_FLEXNETOS_ADAPTER_RECIPE proof and no failed packet evidence in the current status/proof ledger.
+5. Decide whether to approve dispatch of VER-300_UNIT_VALIDATION. Downstream validation may still fail; this approval is only permission to run the packet.
+
+Write a concise markdown review with:
+- Decision: approved or denied
+- Packet checksum observed
+- Evidence checked
+- Risks / notes
+- If denied, exact required changes before retry
+
+warning: Skill descriptions were shortened to fit the 2% skills context budget. Codex can still see every skill, but some descriptions are shorter. Disable unused skills or plugins to leave more room for the rest.
+**Reviewing instructions**
+
+Okay, it sounds like I only need to do a final review without making any edits. I’ll stick to what the user provided. Do I need to use memory for this? I think so, maybe by accessing relevant environmental controls and reading the agent instructions. The user mentioned no artifacts, so I’ll keep everything concise. I just need to verify that I’m on the right track!
+codex
+I’ll keep this in review-only mode and first load the repo instructions that apply under FlexNetOS, then I’ll verify the packet, status, graph, and proof ledger with small summaries rather than dumping raw files.
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -lc "pwd && sed -n '1,220p' /home/flexnetos/FlexNetOS/AGENTS.md" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ exited 1 in 0ms:
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -lc "sed -n '1,220p' /home/flexnetos/.codex/RTK.md && sed -n '1,220p' /home/flexnetos/.codex/AGENTS.rtk.md" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ exited 1 in 0ms:
+codex
+The default shell returned a bare failure for those reads, so I’m switching to `/bin/sh -lc` as requested and keeping the command surface small.
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -lc "/bin/sh -lc 'pwd; sed -n \"1,220p\" /home/flexnetos/FlexNetOS/AGENTS.md'" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ exited 1 in 0ms:
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -lc "/bin/sh -lc 'sed -n \"1,220p\" /home/flexnetos/.codex/RTK.md; sed -n \"1,220p\" /home/flexnetos/.codex/AGENTS.rtk.md'" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ exited 1 in 0ms:
+codex
+Even `/bin/sh` is failing without stderr, which points to the sandbox command runner rather than the repo. I’m going to probe with one minimal command so I can distinguish “shell unavailable” from “path/read denied.”
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -lc "/bin/sh -lc 'echo ok'" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ exited 1 in 0ms:
+codex
+A plain `echo` through `/bin/sh` also fails silently, so I’m checking whether the PTY/login wrapper is the part that’s unhappy. After that I’ll either use direct file-reading alternatives available here or report the command-runner blocker plainly.
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c 'echo ok' in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 0ms:
+ok
+
+codex
+Found it: non-login commands work. I’ll run the rest with `login:false`, which keeps the review moving without changing anything.
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "pwd; sed -n '1,220p' /home/flexnetos/FlexNetOS/AGENTS.md" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 0ms:
+/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+# FlexNetOS Workspace Agent Contract
+
+This is the first file to read when working under `/home/flexnetos/FlexNetOS`.
+The workspace root is a hollow orchestration area, not a monorepo. Real
+implementation work belongs in independent peer repositories under `src/`.
+
+## Canonical Repositories
+
+- `/home/flexnetos/FlexNetOS/src/yazelix`: FlexNetOS-owned Yazelix foundation repo.
+- `/home/flexnetos/FlexNetOS/src/meta`: FlexNetOS-owned meta repo.
+- `/home/flexnetos/FlexNetOS/src/envctl`: environment authority repo.
+- `/home/flexnetos/FlexNetOS/src/flexnetos_runner`: release runner/provenance repo.
+- `/home/flexnetos/FlexNetOS/src/upstream/<owner>/<repo>`: upstream evidence mirrors only.
+
+Yazelix and meta are both organization-owned peer repos in this workspace. Do
+not place them under `src/upstream/` unless creating a separate comparison clone.
+
+## Meta Control-Plane Rules
+
+`/home/flexnetos/FlexNetOS/src/meta` is the control plane for the FlexNetOS
+peer-repo fleet. Treat the Meta KB, GitKB metadata, and the original FlexNetOS
+Meta project set as additive-only upgrade targets. Do not downgrade, reset,
+delete, remove, overwrite, or replace Meta control-plane state unless the
+affected state is archived first and the archive is compressed under a reviewed
+workspace evidence path such as `var/lib/codex-runtime-gate/archives`,
+`artifacts`, `snapshots`, or `var/log/raw`.
+
+The original Meta project set includes `loop_lib`, `meta_plugin_protocol`,
+`meta_core`, `meta_git_lib`, `loop_cli`, `meta_cli`, `meta_git_cli`,
+`meta_project_cli`, `meta_rust_cli`, and `meta_mcp`. Add-on repos such as
+`agent`, `claude-plugins`, `codex-plugins`, and `meta-plugins` are still
+FlexNetOS Meta org repos and follow the same archive-first rule for destructive
+or downgrade-like work.
+
+## Codex and Yazelix Runtime Invariants
+
+These host/runtime surfaces are active control paths, not incidental local
+files. Do not change, regenerate, prune, or "clean up" them until their owner
+and current generated state have been identified from live proof.
+
+- Yazelix/Nix profile binary ownership: `yzx`, `rtk`, `codex`, `claude`, and
+  `git-kb` are intended to resolve through `/home/flexnetos/.nix-profile` or
+  documented local compatibility links into Nix store-owned binaries. Verify
+  profile/local frontdoors with `readlink -f` before claiming installed runtime
+  state, and keep Codex app-server checks such as `codex app-server daemon
+  version` and `codex doctor --all` with that profile-owned binary context.
+- Codex config layers are distinct. `/home/flexnetos/.codex/config.toml` is
+  active runtime state, `/home/flexnetos/FlexNetOS/.codex/config.toml` is the
+  workspace control-plane mirror/source, and `src/envctl/agent-env.yaml` is the
+  envctl generation input. Keep plugin/MCP ownership single-path; do not create
+  overlapping Codex plugin or MCP inventories.
+- Plugin marketplace caches and temp bundles are not authority. Do not rebuild,
+  re-enable, or infer active runtime plugin state from
+  `~/.codex/.tmp/plugins/`, cached marketplace bundles, `openai-curated`
+  listings, or repo-local plugin caches. If the active runtime should stay
+  narrow, preserve removals of noisy marketplace/plugin surfaces such as
+  `superhuman`, `digitalocean`, and duplicate command/skill inventories unless
+  the owner explicitly asks to restore them.
+- Root Codex lifecycle hooks from the pre-clean-room state are retired. Keep
+  `features.hooks = false` for that retired root hook family until a new
+  clean-room lifecycle-hook design is deliberately introduced. Do not restore
+  `.codex/hooks.json`, `.codex/hooks/`, raw `.old` files, or archived
+  lifecycle-hook sources from `_quarantine/` as a workaround.
+- `_quarantine/` and archived packs are evidence only. They may explain prior
+  state, but they are not active sources of truth and must not be copied back
+  into live control paths without a fresh archive-first review and explicit
+  owner decision.
+- Yazelix profile/runtime ownership is the launch authority. The visible
+  FlexNetOS Agent launcher should execute `/home/flexnetos/.nix-profile/bin/yzx`
+  and set `YAZELIX_LAYOUT_OVERRIDE` to
+  `/home/flexnetos/.nix-profile/configs/zellij/layouts/flexnetos_agent_workspace.kdl`
+  unless the owner deliberately changes the install route. That layout path
+  should resolve through the Nix profile into the Yazelix package source/runtime.
+- Repo source under `src/yazelix/...` is the product-development input for repo
+  fixes, not the active launcher path. Consume source changes through the
+  Yazelix/Nix profile owner before claiming installed behavior changed.
+  Generated layouts under `~/.local/share/yazelix` are runtime proof only.
+- The FlexNetOS Agent launcher is additive. The stock Yazelix Mars desktop entry
+  remains generator-owned and should not carry FlexNetOS custom layout state;
+  the visible FlexNetOS Agent entry is the custom-layout consumer.
+- Claude and Codex status widgets are separate runtime signals. Do not treat
+  Claude as purged merely because legacy `.claude/commands` wrappers changed;
+  verify `claude --version`, `.claude/skills`, and the Yazelix `widget_tray`
+  before removing or declaring missing Claude status behavior.
+- Historical `WORKLOG.md` and `LOCAL_WORKAROUNDS.md` entries may describe stale
+  intermediate states. Prefer the latest dated entry plus live proof when they
+  conflict, especially for hooks, Codex versions, desktop entries, and generated
+  Yazelix layouts.
+
+## Mandatory Start Procedure
+
+Before editing any peer repo:
+
+1. Read this file, `WORKSPACE_LAYOUT.md`, `WORKLOG.md`, and
+   `LOCAL_WORKAROUNDS.md`.
+2. Read the target repo's `AGENTS.md`, `README.md`, and relevant subsystem docs.
+3. Snapshot branch, HEAD SHA, remote URL, and dirty status.
+4. Use Beads when the repo has `.beads/`; create or claim a focused issue for
+   new defects before changing code.
+5. Keep execution packs as guidance only. Do not implement inside pack
+   directories, and do not let pack artifacts satisfy task gates by themselves.
+6. Do not mark work complete without live proof from repo state, installed tool
+   state, envctl tables, generated artifacts, runner/provenance output, GitKB,
+   meta, Beads, or command logs.
+7. Do not run Nix validation probes in parallel.
+
+## Yazelix Foundation Rules
+
+Yazelix is the first foundation dependency for this workspace. For Yazelix
+product work, use `/home/flexnetos/FlexNetOS/src/yazelix` as the source of truth.
+Use its repo-owned tools, including `nix develop`, `yzx dev test`,
+`yzx dev test --sweep`, and `yzx_repo_validator`.
+
+This product-source rule does not make repo source an installed launcher,
+layout, or binary frontdoor. Installed FlexNetOS Agent behavior must still be
+proven through `/home/flexnetos/.nix-profile/bin/yzx`, the profile-owned
+`YAZELIX_LAYOUT_OVERRIDE`, and generated runtime state.
+
+Installed `yzx` proves installed-runtime behavior only. It does not prove a repo
+fix unless the repo source changed and repo validators passed.
+
+Read `LOCAL_WORKAROUNDS.md` before running `yzx desktop install`, editing
+`~/.local/share/yazelix`, or changing desktop launcher state. The current host
+has a documented local launcher workaround that generated installs can overwrite.
+
+Do not run `nix profile add`, `nix profile upgrade`, `home-manager switch`,
+`yzx desktop install`, or any command that mutates an installed launcher/profile
+as a build proof. Profiles, Home Manager generations, and desktop entries are
+consumers. First build and validate the source package outputs in isolation,
+then deliberately choose the single install owner that will consume them.
+
+## Local State vs Product Fixes
+
+Files under `~/.config`, `~/.local/share`, Nix profiles, and generated runtime
+directories are evidence or host-local workarounds unless a repo generator owns
+them. A real product fix must land in the owning repo source, include Beads
+state when applicable, and pass the owning validation lane.
+
+When local state is touched, update `LOCAL_WORKAROUNDS.md`, `WORKLOG.md`, or
+`COMMAND_LEDGER.csv` with the command, proof, and remaining product gap.
+
+## Forbidden Shortcuts
+
+- Do not infer missing runtime packages from ambient `PATH`; Yazelix packages
+  tools inside its runtime/dev environment.
+- Do not overwrite generated configs without first identifying the generator.
+- Do not call a workaround a fix.
+- Do not advance task IDs based on files created only in recovery or execution
+  packs.
+
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "sed -n '1,220p' /home/flexnetos/.codex/RTK.md; sed -n '1,220p' /home/flexnetos/.codex/AGENTS.rtk.md" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 0ms:
+# RTK - Rust Token Killer (Codex CLI)
+
+**Usage**: Token-optimized CLI proxy for shell commands.
+
+## Rule
+
+Always prefix shell commands with `rtk`.
+
+Examples:
+
+```bash
+rtk git status
+rtk cargo test
+rtk npm run build
+rtk pytest -q
+```
+
+## Meta Commands
+
+```bash
+rtk gain            # Token savings analytics
+rtk gain --history  # Recent command savings history
+rtk proxy <cmd>     # Run raw command without filtering
+```
+
+## Verification
+
+```bash
+rtk --version
+rtk gain
+which rtk
+```
+# FlexNetOS RTK Policy
+
+RTK is cost control. It is not the source of truth for failure evidence.
+
+Use `rtk` for routine discovery commands when summarized output is acceptable.
+
+Run these commands raw when capturing gate evidence or root-cause diagnostics:
+
+- `envctl ...`
+- `fxrun ...`
+- `cargo test`, `cargo build`, `cargo check`, `cargo clippy`, and `cargo nextest`
+- `nix build`, `nix flake check`, `nix develop`, and `nix log`
+- `gh run view`, `gh run download`, and `gh pr checks`
+- `journalctl`, `dmesg`, and `systemctl status`
+- `yzx doctor` and `yzx inspect` when the log is validation evidence
+
+If a command would normally be routed through RTK but raw output is required, run it raw with a tee log. Use `rtk proxy <cmd>` only when tracking is useful and the raw output is still preserved.
+
+Preserve raw failure logs under the execution pack `logs/` directory or `/home/flexnetos/FlexNetOS/var/log/raw`. Do not replace root-cause evidence with RTK summaries.
+
+codex
+The workspace contract is loaded; since this is review-only inside an execution package, I’m treating the packet artifacts as evidence and avoiding any mutation commands. Next I’m checking the local repo guidance plus the exact files named by the gate.
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "rg --files -g 'AGENTS.md' -g 'README.md' -g 'WORKSPACE_LAYOUT.md' -g 'WORKLOG.md' -g 'LOCAL_WORKAROUNDS.md' /home/flexnetos/FlexNetOS/src/envctl /home/flexnetos/FlexNetOS 2>/dev/null | sed -n '1,80p'" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 0ms:
+/home/flexnetos/FlexNetOS/AGENTS.md
+/home/flexnetos/FlexNetOS/LOCAL_WORKAROUNDS.md
+/home/flexnetos/FlexNetOS/WORKLOG.md
+/home/flexnetos/FlexNetOS/WORKSPACE_LAYOUT.md
+/home/flexnetos/FlexNetOS/_quarantine/20260630T234500Z/README.md
+/home/flexnetos/FlexNetOS/recovery/corrected_execution_pack/README.md
+/home/flexnetos/FlexNetOS/recovery/flexnetos_recovery_pack/README.md
+/home/flexnetos/FlexNetOS/oh-my-codex-main/templates/AGENTS.md
+/home/flexnetos/FlexNetOS/oh-my-codex-main/docs/readme/README.md
+/home/flexnetos/FlexNetOS/oh-my-codex-main/docs/pipeline/templates/README.md
+/home/flexnetos/FlexNetOS/oh-my-codex-main/plugins/oh-my-codex/skills/prometheus-strict/README.md
+/home/flexnetos/FlexNetOS/oh-my-codex-main/AGENTS.md
+/home/flexnetos/FlexNetOS/oh-my-codex-main/docs/audit/skills-agents-bloat-audit/README.md
+/home/flexnetos/FlexNetOS/oh-my-codex-main/missions/README.md
+/home/flexnetos/FlexNetOS/src/nu_plugin/docs/polyglot-import/README.md
+/home/flexnetos/FlexNetOS/src/nu_plugin/AGENTS.md
+/home/flexnetos/FlexNetOS/src/nu_plugin/execution/WORKLOG.md
+/home/flexnetos/FlexNetOS/src/envctl/docs/secrets/README.md
+/home/flexnetos/FlexNetOS/oh-my-codex-main/skills/prometheus-strict/README.md
+/home/flexnetos/FlexNetOS/src/envctl/docs/runbook/README.md
+/home/flexnetos/FlexNetOS/src/envctl/AGENTS.md
+/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-templates/README.md
+/home/flexnetos/FlexNetOS/oh-my-codex-main/README.md
+/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/history/v3/README.md
+/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/history/v4/README.md
+/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/history/README.md
+/home/flexnetos/FlexNetOS/oh-my-codex-main/packages/vscode-extension/README.md
+/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/history/v2/README.md
+/home/flexnetos/FlexNetOS/src/harness-agent-rs/README.md
+/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/history/v1/README.md
+/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/history/v5/README.md
+/home/flexnetos/FlexNetOS/src/nu_plugin/fixtures/symlink/README.md
+/home/flexnetos/FlexNetOS/oh-my-codex-main/playground/README.md
+/home/flexnetos/FlexNetOS/src/cuda-oxide/cuda-oxide-book/README.md
+/home/flexnetos/FlexNetOS/src/nu_plugin/fixtures/README.md
+/home/flexnetos/FlexNetOS/src/nu_plugin/fixtures/dirty_repo/README.md
+/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework/README.md
+/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/source/codex-flexnetos-migration-prompt-package/README.md
+/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/sql/README.md
+/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/README.md
+/home/flexnetos/FlexNetOS/src/cuda-oxide/README.md
+/home/flexnetos/FlexNetOS/src/hermes-agent/AGENTS.md
+/home/flexnetos/FlexNetOS/src/cuda-oxide/crates/mir-lower/README.md
+/home/flexnetos/FlexNetOS/src/cuda-oxide/crates/reserved-oxide-symbols/README.md
+/home/flexnetos/FlexNetOS/src/cuda-oxide/crates/cuda-async/README.md
+/home/flexnetos/FlexNetOS/src/hermes-agent/providers/README.md
+/home/flexnetos/FlexNetOS/src/hermes-agent/README.md
+/home/flexnetos/FlexNetOS/src/beads_rust/docs/agent/AGENTS.md
+/home/flexnetos/FlexNetOS/src/hermes-agent/skills/research/research-paper-writing/templates/colm2025/README.md
+/home/flexnetos/FlexNetOS/src/hermes-agent/skills/research/research-paper-writing/templates/README.md
+/home/flexnetos/FlexNetOS/src/hermes-agent/web/README.md
+/home/flexnetos/FlexNetOS/src/beads_rust/AGENTS.md
+/home/flexnetos/FlexNetOS/src/hermes-agent/skills/research/research-paper-writing/templates/acl/README.md
+/home/flexnetos/FlexNetOS/src/envctl/assets/scripts/README.md
+/home/flexnetos/FlexNetOS/src/hermes-agent/skills/research/research-paper-writing/templates/aaai2026/README.md
+/home/flexnetos/FlexNetOS/src/envctl/README.md
+/home/flexnetos/FlexNetOS/src/cuda-oxide/crates/fuzzer/rustlantis/README.md
+/home/flexnetos/FlexNetOS/src/envctl/home/README.md
+/home/flexnetos/FlexNetOS/src/teri/docs/source-wires/README.md
+/home/flexnetos/FlexNetOS/src/hermes-agent/skills/creative/comfyui/workflows/README.md
+/home/flexnetos/FlexNetOS/src/teri/README.md
+/home/flexnetos/FlexNetOS/src/teri/pebesen/README.md
+/home/flexnetos/FlexNetOS/src/hermes-agent/skills/creative/comfyui/tests/README.md
+/home/flexnetos/FlexNetOS/src/cuda-oxide/crates/fuzzer/README.md
+/home/flexnetos/FlexNetOS/src/cuda-oxide/crates/oxide-artifacts/README.md
+/home/flexnetos/FlexNetOS/src/envctl/crates/secrets-store-libsql/README.md
+/home/flexnetos/FlexNetOS/src/teri/pebesen/frontend/README.md
+/home/flexnetos/FlexNetOS/src/cuda-oxide/crates/cargo-oxide/README.md
+/home/flexnetos/FlexNetOS/src/cuda-oxide/crates/mir-importer/README.md
+/home/flexnetos/FlexNetOS/src/cuda-oxide/crates/cuda-macros/README.md
+/home/flexnetos/FlexNetOS/src/cuda-oxide/crates/llvm-export/README.md
+/home/flexnetos/FlexNetOS/src/cuda-oxide/crates/nvjitlink-sys/README.md
+/home/flexnetos/FlexNetOS/src/cuda-oxide/crates/cuda-bindings/README.md
+/home/flexnetos/FlexNetOS/src/hermes-agent/skills/creative/p5js/README.md
+/home/flexnetos/FlexNetOS/src/cuda-oxide/crates/cuda-core/README.md
+/home/flexnetos/FlexNetOS/src/cuda-oxide/crates/rustc-codegen-cuda/README.md
+/home/flexnetos/FlexNetOS/src/cuda-oxide/crates/dialect-mir/README.md
+/home/flexnetos/FlexNetOS/src/cuda-oxide/crates/cuda-device/README.md
+/home/flexnetos/FlexNetOS/src/cuda-oxide/crates/libnvvm-sys/README.md
+/home/flexnetos/FlexNetOS/src/cuda-oxide/crates/cuda-host/README.md
+
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c 'ls -l generated/execution_packets/VER-300_UNIT_VALIDATION.json generated/status_report.json generated/task_graph.csv 2>&1; sha256sum generated/execution_packets/VER-300_UNIT_VALIDATION.json 2>&1' in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 0ms:
+-rw-rw-r-- 1 flexnetos flexnetos   2390 Jul  5 00:39 generated/execution_packets/VER-300_UNIT_VALIDATION.json
+-rw-rw-r-- 1 flexnetos flexnetos   5221 Jul  5 00:39 generated/status_report.json
+-rw-rw-r-- 1 flexnetos flexnetos 103452 Jul  5 00:31 generated/task_graph.csv
+b56b018635373d5f2ff6d59430b6d41e12d55854821461b64103cacbe6cfd41b  generated/execution_packets/VER-300_UNIT_VALIDATION.json
+
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "git status --short; git rev-parse --show-toplevel; git rev-parse HEAD; git remote -v | sed -n '1,4p'" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 0ms:
+ M ../../.codex/AGENTS.md
+ M ../../AGENTS.md
+?? logs/VER-300_UNIT_VALIDATION_GPT55_REVIEW.codex-exec.stdout.log
+/home/flexnetos/FlexNetOS/src/envctl
+340a176151c698c1a6da4eb0cdee5d14f62360af
+origin	https://github.com/FlexNetOS/envctl.git (fetch)
+origin	https://github.com/FlexNetOS/envctl.git (push)
+
+**Reviewing logs and artifacts**
+
+I noticed there are untracked logs, which might be from an external codex and not created by us. It seems we shouldn’t interact with them, so we’ll leave those alone. Instead, I’ll read through the envctl AGENTS and possibly check the package README for more information. I want to make sure I fully understand our environment and what’s happening without getting tangled up in unneeded artifacts!
+codex
+The checksum matches the expected value exactly. I also see pre-existing dirty state and an untracked review stdout log in the repo; I’m not touching those, just noting them as ambient state while I inspect the gate artifacts.
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "sed -n '1,220p' /home/flexnetos/FlexNetOS/src/envctl/AGENTS.md; sed -n '1,180p' README.md" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 0ms:
+# AGENTS.md
+
+This file provides guidance to Codex (Codex.ai/code) when working with code in this repository.
+
+## What this is
+
+`envctl` is a first-class **meta** peer member — the **agentic environment manager for the
+whole meta workspace**. It is a **pure-Rust Cargo workspace** (8 crates) that declaratively
+brings every tool, dependency, provider, vendor, CLI, and config to a declared state and
+installs it **into meta** (`$META_ROOT/{usr/bin,usr/lib,usr/share,etc,var/lib,var/cache,var/log,var/tmp,opt} plus XDG meta-home roots`,
+legacy `meta/.toolchains/`, `$META_ROOT`), with **no system-depth or user-global installs** —
+anything meta uses lives in meta. Its deployment target today is a dual-RTX-5090 Ubuntu 26.04
+workstation. Two halves share one engine:
+
+- **env-manager** — `engine` + `cli` (`envctl`) + `gui` (`envctl-gui`). Brings the box to
+  a declared state via TOML *components* whose lifecycle hooks wrap the proven bash in
+  `assets/scripts/`. Verbs: `auto-detect`, `install`, `auto-fix`, `reset`, `add-repo`,
+  `graph`, `lock`, `doctor` (see `README.md`).
+- **secrets stack** — `secrets-engine` (pure-Rust crypto vault), `secrets-proto` (tonic/prost
+  gRPC), `secretd` (async tokio daemon), `secretctl` (client), `secrets-store-libsql`
+  (libSQL **remote** backend). Design corpus in `docs/secrets/`.
+
+## Session start: work in a fresh git worktree (mandatory)
+
+This repo lives inside the `meta` workspace. **Begin every session by creating an isolated
+worktree** rather than editing the checked-out tree directly. After verifying sync
+(`git fetch && git status` — confirm clean and even with `origin/master`):
+
+```bash
+meta git worktree create <task-slug>     # preferred: meta-managed, multi-repo aware
+# or, single-repo: git worktree add ../envctl-<task-slug> -b <task-slug>
+```
+
+After entering a checkout, prove whether it is a main checkout or a meta-managed
+worktree before using worktree-set commands:
+
+```bash
+bash scripts/reap-worktrees.sh --managed-worktree-slug "$(git rev-parse --show-toplevel)" envctl
+```
+
+This prints a slug only for `meta/.worktrees/<slug>/envctl`. The main checkout
+(`/home/drdave/Desktop/meta/envctl`) has no managed slug. Never pass the repo
+name `envctl` to `meta git worktree status` unless this helper derived it from
+path shape (for example, the valid but uncommon `.worktrees/envctl/envctl`).
+
+Do all work in the worktree; never start coding on a stale or dirty `master`.
+
+## Build / test / lint
+
+```bash
+cargo build -p envctl-engine -p envctl       # engine + CLI, zero system deps
+cargo run  -p envctl -- auto-detect          # read-only, safe anytime (add --json for EnvReport)
+cargo run  -p envctl-gui                      # needs system dev libs — see README "Native GUI"
+cargo test --workspace                        # all crates
+cargo test -p envctl-secrets-engine vault     # single crate / filter by test name
+cargo test -p envctl-secretd --test e2e       # one integration test file (daemon e2e)
+cargo +1.88.0 check --workspace --locked      # MSRV floor, default feature graph
+cargo fmt --all && cargo clippy --workspace -- -D warnings   # must be clean before commit
+```
+
+Tests are inline `#[cfg(test)] mod tests` beside the code, or `crates/<crate>/tests/*.rs`
+integration tests (`#[tokio::test]` for the async daemon path). MSRV 1.88, stable toolchain
+(`rust-toolchain.toml`).
+
+## CI gates — run before pushing anything that touches deps or the trust boundary
+
+```bash
+bash ci/gates/runner-routing.sh # GitHub Actions hybrid hosted/local runner policy
+bash ci/gates/no-c.sh           # supply-chain: forbids C in the trust boundary (see below)
+bash ci/gates/meta-substrates.sh # meta shared-substrate wiring: loop_lib + meta_plugin_protocol path deps
+bash ci/gates/shape.sh          # code-shape invariants (native-roots, edge module)
+bash ci/gates/enable.sh         # secretd systemd-unit enable invariant
+bash ci/gates/p7.sh             # .handoff Tier-A p7-conformance: schema tags + ledger residency (ADR-0004 §3)
+bash ci/gates/kdf-feature-off.sh # test-speed Argon2 floor must be off by default (TASK-0032)
+bash ci/gates/agent-env.sh      # agent-env.yaml ↔ agent-env.lock no-drift (TASK-0040)
+bash ci/gates/meta-local-policy.sh # active install sources target $META_ROOT FHS/XDG only; single real-home .local bridge
+bash ci/gates/cargo-audit.sh    # RustSec advisories; fails vulnerable tonic/hyper regressions
+bash ci/gates/loop-state.sh     # forge-loop counter integrity: ints, cadence>=1, cycles_total monotonic & >= last_wrapup (TASK-0041)
+bash ci/gates/harness-scripts.sh # Feature-Forge harness tooling safety (merge-driver + reaper + loop-state-gate invariants)
+```
+
+## NON-NEGOTIABLE invariants (a change that breaks these is a regression)
+
+- **No C library in the trust boundary.** No SQLite/OpenSSL/aws-lc may be *linked*. The store
+  uses libSQL `remote` only (`default-features = false`); crypto is pure-Rust (ring, blake3,
+  chacha20poly1305, argon2). `ci/gates/no-c.sh` proves this fail-closed from the resolved
+  `cargo metadata` graph — **never add a dependency that pulls one of the banned crates in.**
+- **Exactly one rustls, ring-only** (not aws-lc-rs). All TLS/CA crates pin `features = ["ring"]`.
+- **envctl is wired into meta, not special/excluded.** Keep sibling path dependencies on
+  `loop_lib` and `meta_plugin_protocol`. `ProcessRunner` may own envctl-specific supervision
+  (setsid, timeout, streaming, tee), but `runner.rs` must delegate `std::process::Command`
+  construction to `loop_lib::build_command`. If the shared substrate lacks a needed API, upgrade
+  that substrate first and consume it here; **never downgrade envctl by removing or bypassing it**.
+  `ci/gates/meta-substrates.sh` proves this fail-closed in CI.
+- **The engine is the single shared library** (`crates/engine/src/lib.rs`): sync, pure-Rust,
+  **non-printing** (emits `Event`s, never `println!`), no UI, no clap. CLI and GUI both drive
+  the *identical* `Engine` API so the front-ends can't diverge. Put logic in the engine, not in
+  `main.rs` or the GUI.
+- **Destructive ops are fail-closed and dry-run by default.** Guards (`UuidResolves`,
+  `NotLiveDevice`, `NotMounted`) *refuse* when they can't prove safety (unit-test enforced).
+  `auto-fix`/`reset`/`add-repo` default to preview; mutation needs `--apply`/`--build`.
+
+## CRITICAL: keep everything rust-native — detect and reverse language drift
+
+This is a **pure-Rust** workspace by design. Watch for and immediately correct any drift toward
+another language or toolchain:
+
+- **No new non-Rust source/package files** should appear in the workspace. If an external tool
+  emits one — e.g. a stray `.omc` file, or **ECC auto-pushing a JS/Node package** — treat it as
+  drift, not as intended state.
+- **When drift is found:** (1) verify it (don't act on a false positive — confirm the file/dep
+  is actually language drift and not an accepted build-time artifact like the libSQL parser's
+  `lemon.c` codegen, which emits Rust and links nothing); (2) **transform it to a rust-native
+  equivalent** (a workspace crate, a TOML component, a pure-Rust dependency); (3) **sync it
+  properly** into the codebase — add the crate to `Cargo.toml` `members`, wire it through the
+  `Engine` API, and update `agent-env.lock`/`envctl.lock` so the reproducible state reflects it.
+- The `add-repo --refactor=ai --goal port-to-rust` verb is the sanctioned path for porting an
+  external repo into the workspace as a Rust crate. Use it (or its design as a template) rather
+  than carrying foreign-language code as-is.
+
+## Agent environment is agent-env-managed (absorbed kasetto) — do NOT hand-edit ECC files
+
+The `.Codex/` and `.codex/` agent config (skills + MCP baseline) is **provisioned and locked
+by the built-in agent-env engine** (`agent-env.yaml` → `agent-env.lock`, driven by `envctl agent`),
+sourced from `./agent-skills`. (kasetto v3.2.0 was absorbed into `crates/agent-env` and the external
+`kasetto` binary retired — TASK-0018/#98; the config/lock were renamed `kasetto.yaml`/`kasetto.lock`
+→ `agent-env.yaml`/`agent-env.lock` — TASK-0040.) It supersedes the **ECC-auto-generated** files,
+which were derived from a misread and assert **JavaScript** conventions (camelCase, `*.test.ts`,
+JS imports) — those are **wrong for this repo**.
+
+- **Source of truth for conventions:** the `agent-env-config` skill. Rust idiom: snake_case
+  files/modules/functions, PascalCase types, SCREAMING_SNAKE_CASE consts, `#[cfg(test)]` tests,
+  area-prefixed commit subjects (`engine:`, `secretd:`, `docs:`). Ignore any ECC instinct/skill
+  that says otherwise.
+- **To change the agent env:** edit `agent-skills/` + `agent-env.yaml`, then `envctl agent sync --apply`
+  (the built-in agent-env engine; the external `kasetto` binary is retired — TASK-0018).
+  Do **not** hand-maintain `.Codex/skills/*` or `.Codex/homunculus/instincts/*` — they're
+  generated. CI enforces with `envctl agent lock --check` (read-only, zero-network, exits 1 on
+  drift — `ci/gates/agent-env.sh`, TASK-0040).
+- Keep the MCP baseline identical across Codex (`.mcp.json`) and Codex (`.codex/config.toml`):
+  `github`, `context7`, `exa`, `memory`, `playwright`, `sequential-thinking`.
+- Treat that envctl baseline as a repo-local MCP floor, not as authority to
+  widen the active home/runtime plugin marketplace surface. Do not rehydrate
+  removed plugin catalogs, temp marketplace caches, or not-installed plugin
+  families such as `superhuman` or `digitalocean` into the active runtime just
+  because they appear in cached bundles, old renders, or inventory output.
+- Envctl catalog render is an audit/projection surface for repo outputs. It is
+  not proof that the active home Codex runtime should preserve or restore every
+  observed `mcp_servers` or plugin listing from an older `.codex/config.toml`.
+
+## Pointers
+
+- `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/DESIGN-NOTES.md` — env-manager design.
+- `docs/secrets/SERVER-MODE.md`, `THREAT-MODEL.md`, `DESIGN-NOTES.md` — secrets-stack design;
+  feature IDs (F12/F14/F15, OI-*, CF-*) referenced in commits and gate comments live here.
+- `manifest/*.toml` — declarative components; drop-ins land in `manifest/components.d/`.
+- The manifest dir defaults to `./manifest` (override with `ENVCTL_MANIFEST_DIR`).
+- Logging: `RUST_LOG` (e.g. `RUST_LOG=envctl_engine=debug`).
+
+## meta mission-control dashboard (zellij layout)
+
+The `dashboard` component (`manifest/dashboard.toml`) installs two launchers on `$META_ROOT/usr/bin`:
+- `envctl-dashboard-pane <repo>` — called by every pane in the generated zellij
+  `mission-control.kdl` layout.
+- `envctl-open-Codex` — run by a human inside a pane when they actually want a
+  Codex session.
+
+**Default behavior:** dashboard panes open a plain shell, not an idle Codex session.
+`envctl-dashboard-pane` only starts `Codex` when `ENVCTL_DASHBOARD_AUTO_CLAUDE=1`
+is set. This prevents accidental background Codex sessions and auto-spawn loops.
+To start Codex in a pane, run `envctl-open-Codex` (which sets the opt-in env var
+and preserves the pane's mesh identity: `META_REPO`, `MESH_IDENTITY`, `WEAVE_*`,
+`REPOWIRE_*`).
+
+## Harness: Feature Forge (the construction crew)
+
+**Goal:** turn a feature / upgrade / design request into invariant-verified working Rust, fast —
+a design → implement → verify crew. The crew *builds* the feature; it is not the building.
+
+**Trigger:** for any request to add / build / implement / design / upgrade / extend / refactor an
+envctl feature, Engine method, CLI/GUI surface, secrets-stack capability, or manifest component
+(and follow-ups like "re-run", "fix the guardian's findings", "revise the design"), use the
+**`feature-forge`** skill. It drives `feature-architect` → `rust-implementer` →
+`invariant-guardian`. For **continuous/autonomous** runs over a backlog ("keep building", "loop on
+the roadmap", "run unattended") use **`forge-loop`**; for **cross-session handoff/resume** ("transfer
+the session", "resume from handoff") use **`session-relay`** (checkpoints via `continuity-steward`,
+coordinates over **weave**, schedules a best-effort successor cron at a per-session cycle budget).
+To **provision the whole box / install all toolchains, PATH, and env vars in a loop until
+`doctor` is green** ("install everything", "set up the box", "loop until installed"), use
+**`env-install-loop`** (the same loop+relay continuity, driving envctl's `doctor`/`install`/
+`auto-fix` verbs + `env-toolchain-install`). For **fully unattended, self-restarting** provisioning
+with a fresh context every cycle ("run it overnight / set-and-forget", "auto-provision", "cycle
+install and reset until done") use **`auto-provision`** — the external Ralph runner that spawns a
+fresh `Codex -p` per cycle (the `/new` effect) wrapping `env-install-loop`. To **build/install the
+`hf` continuity kernel and bring `.handoff` to Tier-A** ("build hf", "sync the handoff layer",
+"make .handoff tier-A", "resume handoff full-sync") use **`handoff-sync`** (Epic A; distinct from
+`session-relay`, which is the per-loop checkpoint). Simple questions and
+trivial edits may be answered/done directly. (A SINGLE component install → `env-toolchain-install`;
+drift/lock/doctor → `env-stabilize`; conventions → `agent-env-config`.)
+
+**Placement:** the harness is **hand-authored and git-tracked**, intentionally *outside* the
+kasetto/agent-env pipeline. Agent definitions live in `.Codex/agents/*.md` and the harness skills
+(`feature-forge`, `rust-feature-impl`, `forge-loop`, `session-relay`, `env-install-loop`,
+`auto-provision`, `handoff-sync`) live directly in `.Codex/skills/` — edit those files in place and commit them. They are **not** sourced from `agent-skills/`, not in `agent-env.yaml` /
+`agent-env.lock`, and not produced by `envctl agent sync`. (Note: this is a deliberate exception to the
+general "`.Codex/skills/*` are kasetto-generated" rule above — the kasetto-managed skills remain
+`agent-env-config`, `env-stabilize`, `env-toolchain-install`.)
+
+> **Packaged upstream (TASK-0052, owner-locked 2026-06-18):** the generic construction-crew core —
+> `feature-forge` + `forge-loop` + `rust-feature-impl` + the architect/implementer/guardian/
+> kernel-engineer specialists — is now ALSO a **registered, ejectable packaged harness in
+> `harness_hub`** (`/harness:feature-forge`, `harness_hub/harness/skills/feature-forge/` + prefixed
+> `harness/agents/feature-forge-*`, `registry.json`/`entries/feature-forge.md`; harness_hub PR #38).
+> This **supersedes the "hand-authored, never packaged" stance for that core**: the hub package is the
+> reusable source-of-truth (the envctl `.Codex/` copies are an ejected instance that may be
+> re-synced via the package's `eject.sh`). The **envctl-specific loops** (`env-install-loop`,
+> `auto-provision`, `handoff-sync`) are NOT generically reusable and remain hand-authored in envctl
+> only — they are deliberately out of the hub package's scope.
+
+> **Packaged planning upstream (2026-06-26):** the recovered **planning-engineer** harness is now a
+
+# envctl Execution Framework Layer
+
+This layer turns the envctl database + nu_plugin migration automation package into an executable, verifiable, multi-agent work system.
+
+It is additive by design: it does not downgrade or replace the source package. It adds a task graph, JSON execution packets, proof records, state reports, validation scripts, and operator templates.
+
+## Required local execution
+
+Run from this directory:
+
+```bash
+python3 scripts/validate_task_graph.py generated/task_graph.csv
+python3 scripts/task_graph_to_packets.py generated/task_graph.csv
+python3 scripts/goal_loop.py generated/task_graph.csv
+python3 scripts/verify_install_bootstrap.py
+python3 scripts/verify_run_replay.py
+python3 scripts/verify_history_and_completeness.py
+```
+
+These commands validate the task graph, generate bounded task packets, compute runnable work, merge proof state, and prove package completeness.
+
+## Install And Bootstrap
+
+The repo install and Codex/background helper command templates are generated and verified by:
+
+```bash
+python3 scripts/verify_install_bootstrap.py
+```
+
+The generated operator entrypoint is `docs/INSTALL_BOOTSTRAP.md`; the machine-readable command template manifest is `generated/install_bootstrap_manifest.json`. The verifier checks the package-level `INSTALL_IN_REPOS.sh` and `RUN_WITH_CODEX_ENVCTL.sh` inputs, writes `state/REQ-044_INSTALL_BOOTSTRAP.heartbeat.json`, and records proof at `proof_records/REQ-044_INSTALL_BOOTSTRAP.proof.json`.
+
+## Run And Replay
+
+The run/replay operator command templates are generated and verified by:
+
+```bash
+python3 scripts/verify_run_replay.py
+```
+
+The generated operator entrypoint is `docs/RUN_REPLAY.md`; the machine-readable command template manifest is `generated/run_replay_manifest.json`. The verifier checks replay, rollback, approval, and convenience-template prerequisites, writes `state/REQ-045_RUN_REPLAY.heartbeat.json`, and records proof at `proof_records/REQ-045_RUN_REPLAY.proof.json`.
+
+## Source intent preserved
+
+The framework implements the attached execution prompt requirements and the migration artifact contract: inventory, dependency maps, data flow graphs, database/schema lineage, API/event contracts, debugging maps, validation/reconciliation evidence, cutover, rollback, governance, and decommission controls.
+
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "jq '{generated_at, summary, blocked_tasks, completed_tasks_count: (.completed_tasks|length), failed_tasks_count: (.failed_tasks|length), failed_tasks, agent_approval_required}' generated/status_report.json" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 0ms:
+{
+  "generated_at": "2026-07-05T05:39:53+00:00",
+  "summary": null,
+  "blocked_tasks": [
+    {
+      "task_id": "VER-301_SQL_SCHEMA_TEST",
+      "reason": "unmet dependencies",
+      "dependencies": [
+        "VER-300_UNIT_VALIDATION"
+      ]
+    },
+    {
+      "task_id": "VER-302_PACKET_SCHEMA_VALIDATION",
+      "reason": "unmet dependencies",
+      "dependencies": [
+        "VER-301_SQL_SCHEMA_TEST"
+      ]
+    },
+    {
+      "task_id": "VER-303_GOAL_LOOP_COMPUTE",
+      "reason": "unmet dependencies",
+      "dependencies": [
+        "VER-302_PACKET_SCHEMA_VALIDATION"
+      ]
+    },
+    {
+      "task_id": "VER-304_FINAL_COMPLETENESS",
+      "reason": "unmet dependencies",
+      "dependencies": [
+        "VER-303_GOAL_LOOP_COMPUTE"
+      ]
+    },
+    {
+      "task_id": "REL-400_PACKAGE_ARCHIVE",
+      "reason": "unmet dependencies",
+      "dependencies": [
+        "VER-304_FINAL_COMPLETENESS"
+      ]
+    },
+    {
+      "task_id": "REL-401_HANDOFF",
+      "reason": "unmet dependencies",
+      "dependencies": [
+        "REL-400_PACKAGE_ARCHIVE"
+      ]
+    }
+  ],
+  "completed_tasks_count": 0,
+  "failed_tasks_count": 0,
+  "failed_tasks": null,
+  "agent_approval_required": null
+}
+
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "jq '{task_id, title, status, objective, blocked_by, depends_on, dispatch, commands, validation, proof_requirements}' generated/execution_packets/VER-300_UNIT_VALIDATION.json" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 0ms:
+{
+  "task_id": "VER-300_UNIT_VALIDATION",
+  "title": "Run unit/integration validation",
+  "status": null,
+  "objective": null,
+  "blocked_by": null,
+  "depends_on": [
+    "REQ-041_TWO_REPO_INTEGRATION",
+    "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+    "ART-123_VALIDATION_RECONCILIATION"
+  ],
+  "dispatch": null,
+  "commands": null,
+  "validation": null,
+  "proof_requirements": null
+}
+
+**Revising jq structure**
+
+I need to adjust the jq structure to inspect the keys more thoroughly. It looks like the status report needs to be enhanced, and I should ensure that the packet isn’t too large, around 2390 might be okay. I should remember to use jq effectively for this. Additionally, I need to focus on the task_graph row and find proof of the ledger. I'll also look for the necessary files to support this.
+codex
+The first status summary didn’t expose a direct approval field, so I’m looking at the actual keys and the VER-300 graph row. The packet is small, but I’ll still summarize it through `jq`/CSV filters rather than printing everything blindly.
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "jq 'keys' generated/status_report.json; jq 'keys' generated/execution_packets/VER-300_UNIT_VALIDATION.json" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 0ms:
+[
+  "approval_blocker_count",
+  "approval_blockers",
+  "blocked_count",
+  "blocked_tasks",
+  "complete_count",
+  "dispatch_count",
+  "dispatch_packets",
+  "failed_count",
+  "generated_at",
+  "pending_count",
+  "runnable_count",
+  "runnable_tasks",
+  "schema_version",
+  "statuses",
+  "task_count"
+]
+[
+  "agent_runtime",
+  "allowed_paths",
+  "blocked_paths",
+  "blocks",
+  "can_run_parallel",
+  "command_template",
+  "completion_gate",
+  "depends_on",
+  "execution_cell",
+  "filesystem_scope",
+  "generated_at",
+  "goal",
+  "heartbeat_file",
+  "helper_id",
+  "human_approval_required",
+  "input_files",
+  "logs_uri",
+  "max_parallel",
+  "model_tag",
+  "notes",
+  "owner_agent",
+  "owner_lane",
+  "packet_schema_version",
+  "parallel_group",
+  "parent_id",
+  "phase",
+  "priority",
+  "proof_required",
+  "proof_uri",
+  "repo_path",
+  "repo_target",
+  "required_tools",
+  "risk_level",
+  "rollback_plan",
+  "shell_mode",
+  "source_graph_uri",
+  "start_after",
+  "target_artifacts",
+  "target_files",
+  "task_id",
+  "title",
+  "verification_command"
+]
+
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "find generated proof_records state -maxdepth 2 -type f | sort | sed -n '1,160p'" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 0ms:
+generated/REQ-033_PLUGIN_HUMAN_APPROVAL.contract.json
+generated/REQ-034_PLUGIN_STATUS_STREAMS.contract.json
+generated/art-105_package_lib_graph.registry_report.json
+generated/art104_toolchain_tree_registry_report.json
+generated/art106_runtime_dep_map_registry_report.json
+generated/art108_db_schema_map_registry_report.json
+generated/art109_data_lineage_report.json
+generated/art110_api_catalog_registry_report.json
+generated/art111_event_map_registry_report.json
+generated/art113_debug_code_map_report.json
+generated/art114_env_config_matrix_registry_report.json
+generated/art115_config_inventory_report.json
+generated/art116_infra_topology_registry_report.json
+generated/art118_observability_registry_report.json
+generated/art120_wave_plan_report.json
+generated/art121_cutover_report.json
+generated/art122_rollback_report.json
+generated/art123_validation_reconciliation_report.json
+generated/art124_test_coverage_report.json
+generated/art125_risk_register_report.json
+generated/art128_readiness_scorecard_report.json
+generated/art131_golden_dataset_registry_report.json
+generated/art132_parity_dashboard_registry_report.json
+generated/art133_deprecation_map_report.json
+generated/art134_exception_inventory_report.json
+generated/art135_raci_registry_report.json
+generated/art136_tech_debt_ledger_report.json
+generated/art_100_system_inventory_registry_report.json
+generated/art_107_data_flow_graph_registry_report.json
+generated/art_117_iam_matrix_registry_report.json
+generated/art_119_business_process_registry_report.json
+generated/art_129_business_capability_registry_report.json
+generated/contract_manifest.json
+generated/contract_manifest.seed.sql
+generated/contract_manifest.validation_report.json
+generated/envctl_agent_control_report.json
+generated/envctl_artifact_registry_report.json
+generated/envctl_migration_db_model.json
+generated/envctl_migration_db_validation_report.json
+generated/envctl_replay_report.json
+generated/envctl_rollback_checkpoints_report.json
+generated/envctl_run_ledger_report.json
+generated/envctl_target_registry.json
+generated/envctl_target_registry_validation_report.json
+generated/envctl_validation_evidence_report.json
+generated/execution_manifest.json
+generated/execution_packets/ART-100_SYSTEM_INVENTORY.json
+generated/execution_packets/ART-101_DIRECTORY_TREE.json
+generated/execution_packets/ART-102_REPOSITORY_MAP.json
+generated/execution_packets/ART-103_SERVICE_DEP_GRAPH.json
+generated/execution_packets/ART-104_TOOLCHAIN_TREE.json
+generated/execution_packets/ART-105_PACKAGE_LIB_GRAPH.json
+generated/execution_packets/ART-106_RUNTIME_DEP_MAP.json
+generated/execution_packets/ART-107_DATA_FLOW_GRAPH.json
+generated/execution_packets/ART-108_DB_SCHEMA_MAP.json
+generated/execution_packets/ART-109_DATA_LINEAGE.json
+generated/execution_packets/ART-110_API_CATALOG.json
+generated/execution_packets/ART-111_EVENT_MAP.json
+generated/execution_packets/ART-112_CODE_OWNERSHIP.json
+generated/execution_packets/ART-113_DEBUG_CODE_MAP.json
+generated/execution_packets/ART-114_ENV_CONFIG_MATRIX.json
+generated/execution_packets/ART-115_CONFIG_INVENTORY.json
+generated/execution_packets/ART-116_INFRA_TOPOLOGY.json
+generated/execution_packets/ART-117_IAM_MATRIX.json
+generated/execution_packets/ART-118_OBSERVABILITY.json
+generated/execution_packets/ART-119_BUSINESS_PROCESS.json
+generated/execution_packets/ART-120_WAVE_PLAN.json
+generated/execution_packets/ART-121_CUTOVER.json
+generated/execution_packets/ART-122_ROLLBACK.json
+generated/execution_packets/ART-123_VALIDATION_RECONCILIATION.json
+generated/execution_packets/ART-124_TEST_COVERAGE.json
+generated/execution_packets/ART-125_RISK_REGISTER.json
+generated/execution_packets/ART-126_DECISION_LOG.json
+generated/execution_packets/ART-127_BLAST_RADIUS.json
+generated/execution_packets/ART-128_READINESS_SCORECARD.json
+generated/execution_packets/ART-129_BUSINESS_CAPABILITY.json
+generated/execution_packets/ART-130_SHADOW_TRAFFIC.json
+generated/execution_packets/ART-131_GOLDEN_DATASET.json
+generated/execution_packets/ART-132_PARITY_DASHBOARD.json
+generated/execution_packets/ART-133_DEPRECATION_MAP.json
+generated/execution_packets/ART-134_EXCEPTION_INVENTORY.json
+generated/execution_packets/ART-135_RACI.json
+generated/execution_packets/ART-136_TECH_DEBT_LEDGER.json
+generated/execution_packets/EF-001_SCAN_PACKAGE.json
+generated/execution_packets/EF-002_GAP_REPORT.json
+generated/execution_packets/EF-003_APPLY_FRAMEWORK.json
+generated/execution_packets/EF-004_GENERATE_TASK_GRAPH.json
+generated/execution_packets/EF-005_VALIDATE_TASK_GRAPH.json
+generated/execution_packets/EF-006_TASK_GRAPH_TO_PACKETS.json
+generated/execution_packets/EF-007_GOAL_LOOP.json
+generated/execution_packets/EF-008_VERIFY_HISTORY_COMPLETENESS.json
+generated/execution_packets/MAINT-500_README_NAV_BACKTRACE.json
+generated/execution_packets/MAINT-501_RESTORE_PROOF_TEMPLATE.json
+generated/execution_packets/MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC.json
+generated/execution_packets/MAINT-503_CODEX_FINAL_PROMPT.json
+generated/execution_packets/REL-400_PACKAGE_ARCHIVE.json
+generated/execution_packets/REL-401_HANDOFF.json
+generated/execution_packets/REQ-010_CONTRACT_LOCK.json
+generated/execution_packets/REQ-020_ENVCTL_DB_SCHEMA.json
+generated/execution_packets/REQ-021_ENVCTL_TARGET_REGISTRY.json
+generated/execution_packets/REQ-022_ENVCTL_RUN_LEDGER.json
+generated/execution_packets/REQ-023_ENVCTL_OPERATION_STATE.json
+generated/execution_packets/REQ-024_ENVCTL_ARTIFACT_REGISTRY.json
+generated/execution_packets/REQ-025_ENVCTL_VALIDATION_EVIDENCE.json
+generated/execution_packets/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.json
+generated/execution_packets/REQ-027_ENVCTL_REPLAY_ENGINE.json
+generated/execution_packets/REQ-028_ENVCTL_AGENT_CONTROL_API.json
+generated/execution_packets/REQ-030_PLUGIN_PROTOCOL_MANIFEST.json
+generated/execution_packets/REQ-031_PLUGIN_COMMAND_SURFACE.json
+generated/execution_packets/REQ-032_PLUGIN_LIVE_VISUALS.json
+generated/execution_packets/REQ-033_PLUGIN_HUMAN_APPROVAL.json
+generated/execution_packets/REQ-034_PLUGIN_STATUS_STREAMS.json
+generated/execution_packets/REQ-040_SHARED_PROTOCOL_SCHEMAS.json
+generated/execution_packets/REQ-041_TWO_REPO_INTEGRATION.json
+generated/execution_packets/REQ-042_FILESYSTEM_BOUNDS.json
+generated/execution_packets/REQ-043_SECURITY_REDACTION.json
+generated/execution_packets/REQ-044_INSTALL_BOOTSTRAP.json
+generated/execution_packets/REQ-045_RUN_REPLAY.json
+generated/execution_packets/REQ-200_FLEXNETOS_TARGET_DESCRIPTOR.json
+generated/execution_packets/REQ-201_FLEXNETOS_LIFEOS_COMPARISON.json
+generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json
+generated/execution_packets/VER-300_UNIT_VALIDATION.json
+generated/execution_packets/VER-301_SQL_SCHEMA_TEST.json
+generated/execution_packets/VER-302_PACKET_SCHEMA_VALIDATION.json
+generated/execution_packets/VER-303_GOAL_LOOP_COMPUTE.json
+generated/execution_packets/VER-304_FINAL_COMPLETENESS.json
+generated/filesystem_boundaries.json
+generated/filesystem_boundary_validation_report.json
+generated/final_verification_report.json
+generated/flexnetos_adapter_recipe.json
+generated/flexnetos_adapter_recipe_validation_report.json
+generated/flexnetos_lifeos_comparison_validation_report.json
+generated/flexnetos_target_descriptor_validation_report.json
+generated/gap_report.json
+generated/install_bootstrap_manifest.json
+generated/live_drive_gap_closure_report.json
+generated/live_visuals.json
+generated/live_visuals.md
+generated/nu_plugin_command_manifest.json
+generated/operation_state_machine.json
+generated/operation_state_machine_validation_report.json
+generated/package_manifest_addendum.json
+generated/package_manifest_live_addendum_20260704.json
+generated/package_scan.json
+generated/patches/REQ-033_PLUGIN_HUMAN_APPROVAL.nu_plugin.patch
+generated/patches/REQ-034_PLUGIN_STATUS_STREAMS.nu_plugin.patch
+generated/proof_ledger.merged.json
+generated/req024_artifact_registry_sample.md
+generated/req041_two_repo_integration_report.json
+generated/run_replay_manifest.json
+generated/security_redaction_controls.json
+generated/security_redaction_validation_report.json
+generated/shared_protocol_manifest.json
+generated/shared_protocol_validation_report.json
+generated/status_from_proofs.json
+generated/status_report.json
+generated/task_graph.csv
+generated/task_graph.index.json
+generated/task_graph.normalized.json
+generated/task_graph.validation_report.json
+
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "python3 - <<'PY'
+import csv,json
+for path in ['generated/task_graph.csv']:
+    with open(path,newline='') as f:
+        r=csv.DictReader(f)
+        print('headers=', r.fieldnames)
+        for row in r:
+            if row.get('task_id')=='VER-300_UNIT_VALIDATION' or 'VER-300_UNIT_VALIDATION' in row.get('depends_on','') or 'VER-300_UNIT_VALIDATION' in row.get('blocked_by',''):
+                print(json.dumps(row, indent=2))
+PY" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 0ms:
+headers= ['task_id', 'parent_id', 'phase', 'title', 'goal', 'owner_lane', 'owner_agent', 'helper_id', 'model_tag', 'agent_runtime', 'shell_mode', 'repo_target', 'repo_path', 'filesystem_scope', 'input_files', 'target_files', 'target_artifacts', 'allowed_paths', 'blocked_paths', 'depends_on', 'blocks', 'parallel_group', 'can_run_parallel', 'max_parallel', 'start_after', 'priority', 'status', 'execution_cell', 'required_tools', 'command_template', 'verification_command', 'completion_gate', 'proof_required', 'proof_uri', 'heartbeat_file', 'logs_uri', 'rollback_plan', 'risk_level', 'human_approval_required', 'notes']
+{
+  "task_id": "VER-300_UNIT_VALIDATION",
+  "parent_id": "",
+  "phase": "07-verification",
+  "title": "Run unit/integration validation",
+  "goal": "Validate envctl DB, nu_plugin, shared protocol, artifacts, and FlexNetOS adapter",
+  "owner_lane": "lane_e_verification",
+  "owner_agent": "validation-agent",
+  "helper_id": "helper-validate-01",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "codex-cli-background-shell",
+  "shell_mode": "workspace-write",
+  "repo_target": "multi_repo",
+  "repo_path": "${ENVCTL_REPO}|${NU_PLUGIN_REPO}",
+  "filesystem_scope": "repo-pair",
+  "input_files": "REQ-041_TWO_REPO_INTEGRATION|ART-*|REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+  "target_files": "test reports and validation evidence",
+  "target_artifacts": "validation results",
+  "allowed_paths": "${ENVCTL_REPO}/**|${NU_PLUGIN_REPO}/**|${MIGRATION_TARGET_ROOT}/**|execution-framework/**|migration-artifacts/**",
+  "blocked_paths": "**/.env|**/secrets/**|**/private_keys/**|**/*.pem|**/*.key",
+  "depends_on": "REQ-041_TWO_REPO_INTEGRATION|REQ-202_FLEXNETOS_ADAPTER_RECIPE|ART-123_VALIDATION_RECONCILIATION",
+  "blocks": "VER-301_SQL_SCHEMA_TEST",
+  "parallel_group": "verification",
+  "can_run_parallel": "false",
+  "max_parallel": "1",
+  "start_after": "",
+  "priority": "600",
+  "status": "pending",
+  "execution_cell": "07-verification",
+  "required_tools": "codex|python3|shell",
+  "command_template": "codex exec < generated/execution_packets/VER-300_UNIT_VALIDATION.json",
+  "verification_command": "task-specific verification command and proof file exists",
+  "completion_gate": "proof exists, validation passes, no secret exposure",
+  "proof_required": "true",
+  "proof_uri": "proof_records/VER-300_UNIT_VALIDATION.proof.json",
+  "heartbeat_file": "state/VER-300_UNIT_VALIDATION.heartbeat.json",
+  "logs_uri": "logs/VER-300_UNIT_VALIDATION.log",
+  "rollback_plan": "Use history/pre_execution_framework_manifest.json and remove only files added by this task unless a task-specific rollback is listed.",
+  "risk_level": "critical",
+  "human_approval_required": "true",
+  "notes": "Generated by execution framework."
+}
+{
+  "task_id": "VER-301_SQL_SCHEMA_TEST",
+  "parent_id": "",
+  "phase": "07-verification",
+  "title": "Run SQL schema tests",
+  "goal": "Apply schema migrations to test DB and validate views/indexes/seed data",
+  "owner_lane": "lane_e_verification",
+  "owner_agent": "sql-test-agent",
+  "helper_id": "helper-sql-test-01",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "codex-cli-background-shell",
+  "shell_mode": "workspace-write",
+  "repo_target": "repo_a",
+  "repo_path": "${ENVCTL_REPO}",
+  "filesystem_scope": "repo",
+  "input_files": "sql/**",
+  "target_files": "SQL test output",
+  "target_artifacts": "schema validation",
+  "allowed_paths": "${ENVCTL_REPO}/**|${NU_PLUGIN_REPO}/**|${MIGRATION_TARGET_ROOT}/**|execution-framework/**|migration-artifacts/**",
+  "blocked_paths": "**/.env|**/secrets/**|**/private_keys/**|**/*.pem|**/*.key",
+  "depends_on": "VER-300_UNIT_VALIDATION",
+  "blocks": "VER-302_PACKET_SCHEMA_VALIDATION",
+  "parallel_group": "verification",
+  "can_run_parallel": "false",
+  "max_parallel": "1",
+  "start_after": "",
+  "priority": "610",
+  "status": "pending",
+  "execution_cell": "07-verification",
+  "required_tools": "codex|python3|shell",
+  "command_template": "codex exec < generated/execution_packets/VER-301_SQL_SCHEMA_TEST.json",
+  "verification_command": "task-specific verification command and proof file exists",
+  "completion_gate": "proof exists, validation passes, no secret exposure",
+  "proof_required": "true",
+  "proof_uri": "proof_records/VER-301_SQL_SCHEMA_TEST.proof.json",
+  "heartbeat_file": "state/VER-301_SQL_SCHEMA_TEST.heartbeat.json",
+  "logs_uri": "logs/VER-301_SQL_SCHEMA_TEST.log",
+  "rollback_plan": "Use history/pre_execution_framework_manifest.json and remove only files added by this task unless a task-specific rollback is listed.",
+  "risk_level": "critical",
+  "human_approval_required": "false",
+  "notes": "Generated by execution framework."
+}
+
+**Checking status and proofing ledger**
+
+I need to inspect the status fields regarding approval. It seems important to ensure everything is in order before proceeding. Additionally, I should take a closer look at the ledger to verify accuracy. Getting these details right is crucial; I want to ensure that nothing is overlooked. It's a bit of a task, but let's make sure everything is thorough! I'll get started on that.
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "jq '{task_count, complete_count, pending_count, runnable_count, blocked_count, failed_count, approval_blocker_count, approval_blockers, runnable_tasks, dispatch_count, dispatch_packets}' generated/status_report.json" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 0ms:
+{
+  "task_count": 80,
+  "complete_count": 73,
+  "pending_count": 7,
+  "runnable_count": 0,
+  "blocked_count": 6,
+  "failed_count": 0,
+  "approval_blocker_count": 1,
+  "approval_blockers": [
+    {
+      "task_id": "VER-300_UNIT_VALIDATION",
+      "reason": "agent approval required",
+      "packet_uri": "generated/execution_packets/VER-300_UNIT_VALIDATION.json",
+      "agent_approval_uri": "approvals/VER-300_UNIT_VALIDATION.agent_approval.json"
+    }
+  ],
+  "runnable_tasks": [],
+  "dispatch_count": 0,
+  "dispatch_packets": []
+}
+
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "jq 'if type==\"array\" then {type:\"array\", length:length, first:(.[0]|keys)} else {type:type, keys:keys} end' generated/proof_ledger.merged.json generated/status_from_proofs.json" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 0ms:
+{
+  "type": "object",
+  "keys": [
+    "generated_at",
+    "proof_count",
+    "proofs",
+    "schema_version"
+  ]
+}
+{
+  "type": "object",
+  "keys": [
+    "generated_at",
+    "schema_version",
+    "tasks"
+  ]
+}
+
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "jq '{task_id,title,goal,depends_on,blocks,repo_target,repo_path,filesystem_scope,input_files,target_files,target_artifacts,allowed_paths,blocked_paths,required_tools,command_template,verification_command,completion_gate,proof_required,proof_uri,heartbeat_file,logs_uri,risk_level,human_approval_required,notes}' generated/execution_packets/VER-300_UNIT_VALIDATION.json" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 0ms:
+{
+  "task_id": "VER-300_UNIT_VALIDATION",
+  "title": "Run unit/integration validation",
+  "goal": "Validate envctl DB, nu_plugin, shared protocol, artifacts, and FlexNetOS adapter",
+  "depends_on": [
+    "REQ-041_TWO_REPO_INTEGRATION",
+    "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+    "ART-123_VALIDATION_RECONCILIATION"
+  ],
+  "blocks": [
+    "VER-301_SQL_SCHEMA_TEST"
+  ],
+  "repo_target": "multi_repo",
+  "repo_path": "${ENVCTL_REPO}|${NU_PLUGIN_REPO}",
+  "filesystem_scope": "repo-pair",
+  "input_files": [
+    "REQ-041_TWO_REPO_INTEGRATION",
+    "ART-*",
+    "REQ-202_FLEXNETOS_ADAPTER_RECIPE"
+  ],
+  "target_files": [
+    "test reports and validation evidence"
+  ],
+  "target_artifacts": [
+    "validation results"
+  ],
+  "allowed_paths": [
+    "${ENVCTL_REPO}/**",
+    "${NU_PLUGIN_REPO}/**",
+    "${MIGRATION_TARGET_ROOT}/**",
+    "execution-framework/**",
+    "migration-artifacts/**"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "required_tools": [
+    "codex",
+    "python3",
+    "shell"
+  ],
+  "command_template": "codex exec < generated/execution_packets/VER-300_UNIT_VALIDATION.json",
+  "verification_command": "task-specific verification command and proof file exists",
+  "completion_gate": "proof exists, validation passes, no secret exposure",
+  "proof_required": true,
+  "proof_uri": "proof_records/VER-300_UNIT_VALIDATION.proof.json",
+  "heartbeat_file": "state/VER-300_UNIT_VALIDATION.heartbeat.json",
+  "logs_uri": "logs/VER-300_UNIT_VALIDATION.log",
+  "risk_level": "critical",
+  "human_approval_required": true,
+  "notes": "Generated by execution framework."
+}
+
+codex
+The status report now shows the core gate condition cleanly: 73 complete, 7 pending/blocked, 0 failed, and exactly one approval blocker for VER-300. I’m verifying that against the merged proof ledger, especially REQ-202 and any failure markers.
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "jq '{proof_count, req202: [.proofs[] | select(.task_id==\"REQ-202_FLEXNETOS_ADAPTER_RECIPE\")], failed: [.proofs[] | select((.status? // \"\")|ascii_downcase==\"failed\" or (.result? // \"\")|ascii_downcase==\"failed\" or (.success? == false))] | {count:length, items:.[0:10]}}' generated/proof_ledger.merged.json" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ exited 5 in 0ms:
+jq: error (at generated/proof_ledger.merged.json:15450): explode input must be a string
+
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "jq '{req202: .tasks[\"REQ-202_FLEXNETOS_ADAPTER_RECIPE\"], ver300: .tasks[\"VER-300_UNIT_VALIDATION\"], failed: (.tasks | to_entries | map(select((.value.status? // \"\")|ascii_downcase==\"failed\")))}' generated/status_from_proofs.json" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ exited 5 in 0ms:
+jq: error (at generated/status_from_proofs.json:566): Cannot index array with string
+
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "test -f proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json && jq '{task_id,status,generated_at,summary,artifacts,validation,checks}' proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json || echo 'missing proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json'" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 0ms:
+{
+  "task_id": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+  "status": "completed",
+  "generated_at": null,
+  "summary": null,
+  "artifacts": null,
+  "validation": null,
+  "checks": null
+}
+
+codex
+Two of my `jq` predicates assumed string fields where the ledger has mixed/null shapes, so those filters failed without changing state. I’ve confirmed the REQ-202 proof file exists and is completed; now I’m rerunning safer typed summaries for the ledger.
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "jq '.proofs[0] | keys, .proofs[0]' generated/proof_ledger.merged.json" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "jq '.tasks | type, (if type==\"array\" then .[0] else keys end)' generated/status_from_proofs.json" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 0ms:
+[
+  "actor",
+  "checksums",
+  "commands_run",
+  "completed_at",
+  "evidence",
+  "failure_reason",
+  "files_changed",
+  "helper_id",
+  "logs_uri",
+  "model_tag",
+  "next_action",
+  "proof_schema_version",
+  "repo_path",
+  "rollback_point",
+  "started_at",
+  "status",
+  "task_id",
+  "verification_output"
+]
+null
+
+ succeeded in 0ms:
+"array"
+{
+  "task_id": "EF-001_SCAN_PACKAGE",
+  "phase": "00-framework",
+  "owner_lane": "lane_g_history_scan",
+  "status": "completed",
+  "proof_uri": "proof_records/EF-001_SCAN_PACKAGE.proof.json"
+}
+
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "jq '. | keys' proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json; jq '.' proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 0ms:
+[
+  "actor",
+  "checksums",
+  "commands_run",
+  "completed_at",
+  "evidence",
+  "failure_reason",
+  "files_changed",
+  "helper_id",
+  "logs_uri",
+  "model_tag",
+  "next_action",
+  "proof_schema_version",
+  "repo_path",
+  "rollback_point",
+  "started_at",
+  "status",
+  "task_id",
+  "verification_output"
+]
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+  "status": "completed",
+  "started_at": "2026-07-05T05:39:53+00:00",
+  "completed_at": "2026-07-05T05:39:53+00:00",
+  "actor": "flexnetos-adapter-agent",
+  "helper_id": "helper-flexnetos-adapter-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "${ENVCTL_REPO}",
+  "files_changed": [
+    "execution-framework/scripts/verify_flexnetos_adapter_recipe.py",
+    "execution-framework/docs/FLEXNETOS_ADAPTER_RECIPE.md",
+    "execution-framework/generated/flexnetos_adapter_recipe.json",
+    "execution-framework/generated/flexnetos_adapter_recipe_validation_report.json",
+    "execution-framework/state/REQ-202_FLEXNETOS_ADAPTER_RECIPE.heartbeat.json",
+    "execution-framework/logs/REQ-202_FLEXNETOS_ADAPTER_RECIPE.log",
+    "execution-framework/proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/verify_flexnetos_adapter_recipe.py"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+    "status": "pass",
+    "generated_at": "2026-07-05T05:39:53+00:00",
+    "recipe_summary": {
+      "recipe_id": "flexnetos-codex-package-target-adapter",
+      "version": "1.0.0",
+      "phase_count": 4,
+      "operation_count": 8,
+      "approval_gate_phases": [
+        "04-approved-apply"
+      ],
+      "target_descriptor_id": "flexnetos-vs-lifeos"
+    },
+    "checks": {
+      "packet_present": true,
+      "approval_present": true,
+      "approval_review_present": true,
+      "req201_dependency_proof_present": true,
+      "req027_dependency_proof_present": true,
+      "recipe_json_exists": true,
+      "recipe_doc_exists": true,
+      "allowed_paths_only": true,
+      "recipe_shape_valid": true,
+      "documentation_checks_passed": true,
+      "approval_gate_present": true,
+      "high_risk_apply_present": true,
+      "secret_exposure_status_pass": true
+    },
+    "documentation_checks": {
+      "doc_mentions_recipe_id": true,
+      "doc_mentions_verification_command": true,
+      "doc_mentions_replay_dependency": true,
+      "doc_mentions_comparison_dependency": true
+    },
+    "dependency_evidence": {
+      "req201_proof_path": "proof_records/REQ-201_FLEXNETOS_LIFEOS_COMPARISON.proof.json",
+      "req027_proof_path": "proof_records/REQ-027_ENVCTL_REPLAY_ENGINE.proof.json",
+      "approval_path": "approvals/REQ-202_FLEXNETOS_ADAPTER_RECIPE.agent_approval.json"
+    },
+    "warnings": [],
+    "errors": [],
+    "secret_scan": {
+      "paths": [
+        "docs/FLEXNETOS_ADAPTER_RECIPE.md",
+        "generated/flexnetos_adapter_recipe.json",
+        "scripts/verify_flexnetos_adapter_recipe.py"
+      ],
+      "findings": []
+    },
+    "allowed_paths": [
+      "docs/FLEXNETOS_ADAPTER_RECIPE.md",
+      "generated/flexnetos_adapter_recipe.json",
+      "generated/flexnetos_adapter_recipe_validation_report.json",
+      "scripts/verify_flexnetos_adapter_recipe.py",
+      "proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json",
+      "state/REQ-202_FLEXNETOS_ADAPTER_RECIPE.heartbeat.json",
+      "logs/REQ-202_FLEXNETOS_ADAPTER_RECIPE.log"
+    ],
+    "output_paths": [
+      "docs/FLEXNETOS_ADAPTER_RECIPE.md",
+      "generated/flexnetos_adapter_recipe.json",
+      "generated/flexnetos_adapter_recipe_validation_report.json",
+      "scripts/verify_flexnetos_adapter_recipe.py",
+      "proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json",
+      "state/REQ-202_FLEXNETOS_ADAPTER_RECIPE.heartbeat.json",
+      "logs/REQ-202_FLEXNETOS_ADAPTER_RECIPE.log"
+    ],
+    "evidence": [
+      "docs/FLEXNETOS_ADAPTER_RECIPE.md",
+      "generated/flexnetos_adapter_recipe.json",
+      "generated/flexnetos_adapter_recipe_validation_report.json",
+      "approvals/REQ-202_FLEXNETOS_ADAPTER_RECIPE.agent_approval.json",
+      "proof_records/REQ-201_FLEXNETOS_LIFEOS_COMPARISON.proof.json",
+      "proof_records/REQ-027_ENVCTL_REPLAY_ENGINE.proof.json",
+      "schemas/shared_protocol.schema.json"
+    ],
+    "sha256": {
+      "docs/FLEXNETOS_ADAPTER_RECIPE.md": "sha256:13e1e4e4b5df0f0c5d840e3c8bf3daecda0c65401a175c2d58925a39dd8c32d8",
+      "generated/flexnetos_adapter_recipe.json": "sha256:4732e80f5243bd4270b5442d9358d805d1dee167a34da8e4d43c0b5222659cd7",
+      "scripts/verify_flexnetos_adapter_recipe.py": "sha256:3a59b31f3490f51f3f8f276717ea21ab835954bd63666d4000a82b973363a75f"
+    }
+  },
+  "checksums": {
+    "execution-framework/scripts/verify_flexnetos_adapter_recipe.py": "3a59b31f3490f51f3f8f276717ea21ab835954bd63666d4000a82b973363a75f",
+    "execution-framework/docs/FLEXNETOS_ADAPTER_RECIPE.md": "13e1e4e4b5df0f0c5d840e3c8bf3daecda0c65401a175c2d58925a39dd8c32d8",
+    "execution-framework/generated/flexnetos_adapter_recipe.json": "4732e80f5243bd4270b5442d9358d805d1dee167a34da8e4d43c0b5222659cd7",
+    "execution-framework/generated/flexnetos_adapter_recipe_validation_report.json": "8db3e9b4b6003419f30f187d34bf7945ca49cc152a4ad87e39953bd0980a8636",
+    "execution-framework/state/REQ-202_FLEXNETOS_ADAPTER_RECIPE.heartbeat.json": "4a1ae9f3d75c3dda9d87aaec1a2f19404ba7e5643533e44d399cf98ffa89f44f",
+    "execution-framework/logs/REQ-202_FLEXNETOS_ADAPTER_RECIPE.log": "8db3e9b4b6003419f30f187d34bf7945ca49cc152a4ad87e39953bd0980a8636",
+    "execution-framework/proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json": "61e2c28f50f70e607110e24f0aa7e4445053e28851e1f97effb102e10d0966d5",
+    "execution-framework/proof_records/proof_ledger.jsonl": "19b5f9e45b59f2618c78745d3460fe8e311c91d8fd12d54ac735de6f224aff12"
+  },
+  "logs_uri": "logs/REQ-202_FLEXNETOS_ADAPTER_RECIPE.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "docs/FLEXNETOS_ADAPTER_RECIPE.md",
+    "generated/flexnetos_adapter_recipe.json",
+    "generated/flexnetos_adapter_recipe_validation_report.json",
+    "approvals/REQ-202_FLEXNETOS_ADAPTER_RECIPE.agent_approval.json",
+    "proof_records/REQ-201_FLEXNETOS_LIFEOS_COMPARISON.proof.json",
+    "proof_records/REQ-027_ENVCTL_REPLAY_ENGINE.proof.json",
+    "schemas/shared_protocol.schema.json"
+  ],
+  "failure_reason": "",
+  "next_action": "unblock VER-300_UNIT_VALIDATION"
+}
+
+codex
+REQ-202 is solid: completed proof, validation pass, allowed-path and secret checks passing, and its next action is to unblock VER-300. I’m doing one last broad failed-evidence scan over status/proof summaries before deciding.
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "jq '{proof_count, req202: [.proofs[] | select(.task_id==\"REQ-202_FLEXNETOS_ADAPTER_RECIPE\") | {task_id,status,completed_at,next_action,failure_reason}], failed_status: [.proofs[] | select(.status "'!= "completed") | {task_id,status,failure_reason}], failure_reason_nonempty: [.proofs[] | select((.failure_reason|type)=="string" and (.failure_reason|length)>0) | {task_id,status,failure_reason}]}'"' generated/proof_ledger.merged.json" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 0ms:
+{
+  "proof_count": 80,
+  "req202": [
+    {
+      "task_id": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+      "status": "completed",
+      "completed_at": "2026-07-05T05:39:53+00:00",
+      "next_action": "unblock VER-300_UNIT_VALIDATION",
+      "failure_reason": ""
+    }
+  ],
+  "failed_status": [
+    {
+      "task_id": "ART-116_INFRA_TOPOLOGY",
+      "status": "passed",
+      "failure_reason": ""
+    },
+    {
+      "task_id": "ART-103_SERVICE_DEP_GRAPH",
+      "status": "passed",
+      "failure_reason": ""
+    }
+  ],
+  "failure_reason_nonempty": []
+}
+
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "jq '{total:(.tasks|length), req202: (.tasks[] | select(.task_id==\"REQ-202_FLEXNETOS_ADAPTER_RECIPE\")), ver300: (.tasks[] | select(.task_id==\"VER-300_UNIT_VALIDATION\")), failed: [.tasks[] | select(.status==\"failed\")]}' generated/status_from_proofs.json" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 0ms:
+{
+  "total": 80,
+  "req202": {
+    "task_id": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+    "phase": "06-flexnetos",
+    "owner_lane": "lane_b_repo_a",
+    "status": "completed",
+    "proof_uri": "proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json"
+  },
+  "ver300": {
+    "task_id": "VER-300_UNIT_VALIDATION",
+    "phase": "07-verification",
+    "owner_lane": "lane_e_verification",
+    "status": "pending",
+    "proof_uri": "proof_records/VER-300_UNIT_VALIDATION.proof.json"
+  },
+  "failed": []
+}
+
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "jq '{status:.status, task_id:.task_id, checks:.verification_output.checks, warnings:.verification_output.warnings, errors:.verification_output.errors, secret_findings:.verification_output.secret_scan.findings, next_action}' proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 0ms:
+{
+  "status": "completed",
+  "task_id": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+  "checks": {
+    "packet_present": true,
+    "approval_present": true,
+    "approval_review_present": true,
+    "req201_dependency_proof_present": true,
+    "req027_dependency_proof_present": true,
+    "recipe_json_exists": true,
+    "recipe_doc_exists": true,
+    "allowed_paths_only": true,
+    "recipe_shape_valid": true,
+    "documentation_checks_passed": true,
+    "approval_gate_present": true,
+    "high_risk_apply_present": true,
+    "secret_exposure_status_pass": true
+  },
+  "warnings": [],
+  "errors": [],
+  "secret_findings": [],
+  "next_action": "unblock VER-300_UNIT_VALIDATION"
+}
+
+**Reviewing PR status**
+
+I need to note that the status I’m looking for is passed, not failed. It might be good to check the PR that the user provided. I could browse it to confirm the open PR, which contains the current package state, possibly through GitHub. My network is enabled, so for the review scope, I don’t explicitly need the PR, but I should mention that I haven't checked it yet.
+codex
+The proof ledger has no nonempty failure reasons and `status_from_proofs` has no failed tasks; two ledger entries use `passed` rather than `completed`, but they are not failed evidence. I’m checking the PR pointer briefly, then I’ll give the approval decision.
+exec
+/nix/store/gh9ccwvjxnv0lhi8h6xc1ganabadrpqi-codex-cli-0.143.0-alpha.35/codex-resources/zsh/bin/zsh -c "gh pr view 422 --repo FlexNetOS/envctl --json number,state,headRefName,headRepositoryOwner,headRepository,mergeStateStatus,isDraft,title,url 2>&1 | jq '{number,state,isDraft,mergeStateStatus,headRefName,title,url}'" in /home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework
+ succeeded in 310ms:
+{
+  "number": 422,
+  "state": "MERGED",
+  "isDraft": false,
+  "mergeStateStatus": "UNKNOWN",
+  "headRefName": "codex/envctl-package-req202-ver300",
+  "title": "envctl-package: execute flexnetos adapter recipe",
+  "url": "https://github.com/FlexNetOS/envctl/pull/422"
+}
+
+codex
+- **Decision:** approved
+
+- **Packet checksum observed:** `b56b018635373d5f2ff6d59430b6d41e12d55854821461b64103cacbe6cfd41b`
+
+- **Evidence checked:**
+  - `generated/execution_packets/VER-300_UNIT_VALIDATION.json` exists and SHA256 matches the expected checksum.
+  - `generated/status_report.json` reports `failed_count: 0`, `runnable_count: 0`, `dispatch_count: 0`, and exactly one approval blocker: `VER-300_UNIT_VALIDATION` with reason `agent approval required`.
+  - `generated/task_graph.csv` and the packet scope VER-300 to unit/integration validation across `${ENVCTL_REPO}|${NU_PLUGIN_REPO}`, with dependencies on `REQ-041_TWO_REPO_INTEGRATION`, `REQ-202_FLEXNETOS_ADAPTER_RECIPE`, and `ART-123_VALIDATION_RECONCILIATION`.
+  - VER-300 is single-threaded validation work: `can_run_parallel: false`, `max_parallel: 1`, proof required at `proof_records/VER-300_UNIT_VALIDATION.proof.json`, and blocked secret paths include `.env`, `secrets`, private keys, PEMs, and key files.
+  - `proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json` is `completed`; its verification output is `pass`, with allowed-path, approval, dependency-proof, documentation, and secret-exposure checks passing.
+  - `generated/status_from_proofs.json` shows `REQ-202_FLEXNETOS_ADAPTER_RECIPE` completed, `VER-300_UNIT_VALIDATION` pending, and no failed tasks.
+  - `generated/proof_ledger.merged.json` has `proof_count: 80`, no nonempty `failure_reason`, and no failed status evidence. Two entries use status `passed`, but they are not failures.
+
+- **Risks / notes:**
+  - Approval is only permission to dispatch VER-300; downstream unit/integration validation may still fail.
+  - The GitHub PR pointer `https://github.com/FlexNetOS/envctl/pull/422` currently reports `MERGED`, not open, via `gh pr view`.
+  - Ambient worktree state is dirty/untracked before this review; I did not edit, stage, commit, push, or create artifacts.
+
+- **Required changes before retry:** none.
+tokens used
+53,274
+- **Decision:** approved
+
+- **Packet checksum observed:** `b56b018635373d5f2ff6d59430b6d41e12d55854821461b64103cacbe6cfd41b`
+
+- **Evidence checked:**
+  - `generated/execution_packets/VER-300_UNIT_VALIDATION.json` exists and SHA256 matches the expected checksum.
+  - `generated/status_report.json` reports `failed_count: 0`, `runnable_count: 0`, `dispatch_count: 0`, and exactly one approval blocker: `VER-300_UNIT_VALIDATION` with reason `agent approval required`.
+  - `generated/task_graph.csv` and the packet scope VER-300 to unit/integration validation across `${ENVCTL_REPO}|${NU_PLUGIN_REPO}`, with dependencies on `REQ-041_TWO_REPO_INTEGRATION`, `REQ-202_FLEXNETOS_ADAPTER_RECIPE`, and `ART-123_VALIDATION_RECONCILIATION`.
+  - VER-300 is single-threaded validation work: `can_run_parallel: false`, `max_parallel: 1`, proof required at `proof_records/VER-300_UNIT_VALIDATION.proof.json`, and blocked secret paths include `.env`, `secrets`, private keys, PEMs, and key files.
+  - `proof_records/REQ-202_FLEXNETOS_ADAPTER_RECIPE.proof.json` is `completed`; its verification output is `pass`, with allowed-path, approval, dependency-proof, documentation, and secret-exposure checks passing.
+  - `generated/status_from_proofs.json` shows `REQ-202_FLEXNETOS_ADAPTER_RECIPE` completed, `VER-300_UNIT_VALIDATION` pending, and no failed tasks.
+  - `generated/proof_ledger.merged.json` has `proof_count: 80`, no nonempty `failure_reason`, and no failed status evidence. Two entries use status `passed`, but they are not failures.
+
+- **Risks / notes:**
+  - Approval is only permission to dispatch VER-300; downstream unit/integration validation may still fail.
+  - The GitHub PR pointer `https://github.com/FlexNetOS/envctl/pull/422` currently reports `MERGED`, not open, via `gh pr view`.
+  - Ambient worktree state is dirty/untracked before this review; I did not edit, stage, commit, push, or create artifacts.
+
+- **Required changes before retry:** none.

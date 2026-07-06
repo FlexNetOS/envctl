@@ -1,0 +1,21 @@
+{
+  "lane_id": "lane_b_repo_a",
+  "helper_id": "spark-repo-a-helper-01",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "codex-cli-background-shell",
+  "shell_mode": "workspace-write-after-approval",
+  "allowed_paths": [
+    "${REPO_A}/**",
+    "execution-framework/**"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**"
+  ],
+  "heartbeat_file": "execution-framework/state/lane_b_repo_a.heartbeat.json",
+  "logs_uri": "execution-framework/logs/lane_b_repo_a.log",
+  "proof_uri": "execution-framework/proof_records/lane_b_repo_a.proof.json",
+  "current_task": "",
+  "status": "idle"
+}

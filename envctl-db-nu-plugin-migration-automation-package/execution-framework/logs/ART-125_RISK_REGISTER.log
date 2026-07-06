@@ -1,0 +1,205 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-125_RISK_REGISTER",
+  "status": "passed",
+  "generated_at": "2026-07-04T23:19:47+00:00",
+  "risk_count": 7,
+  "artifact_paths": [
+    "migration-artifacts/09-governance/risk-register.md",
+    "migration-artifacts/art-125_risk_register/risk-register.md",
+    "migration-artifacts/art-125_risk_register/risk-register.json"
+  ],
+  "registry_results": [
+    {
+      "artifact_row_id": "artifact-e474276be8ff51f6debe703d",
+      "artifact_id": "09-governance-risk-register-md",
+      "run_id": "run-art-125-risk-register",
+      "path": "migration-artifacts/09-governance/risk-register.md",
+      "content_hash": "sha256:d31e9f16ca8ab39b8084bd68793478a3c207691e57e66741796d6ab89546184c",
+      "producer_operation_id": "produce-09-governance-risk-register-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-d494c01aba384f2b961b9881",
+        "evidence-b54efa0134f1d3b0105c9f8f",
+        "evidence-ab2ab54704afcb92aaedc42f",
+        "evidence-208200c91d60b367ec7e944d",
+        "evidence-f49e6f8638b134ff8ed3a163",
+        "evidence-c674f1dd572209e7dfbeb7db"
+      ],
+      "graph_edge_ids": [
+        "edge-e6397c9f4bea89d1a50cefb9",
+        "edge-4c94a8801e8787737633fead",
+        "edge-663780fd8e92fb828df12eb8",
+        "edge-5d4ccb19cd42f869a0d28dd0",
+        "edge-b6e70d94f026ebaab8cb30b1",
+        "edge-7f8139e13058779b5c19f54f"
+      ],
+      "validation_ids": [
+        "validation-6a4f905cc0892622d4e1475c",
+        "validation-e258fc549d7a5af7ec794788",
+        "validation-3acef0d5e1d46ba12d7aa2aa"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-9ac0e7cbba8e47e928d8ff06",
+      "artifact_id": "art-125-risk-register-json",
+      "run_id": "run-art-125-risk-register",
+      "path": "migration-artifacts/art-125_risk_register/risk-register.json",
+      "content_hash": "sha256:5961ffa20fe2e86e0dbd6bbd0f1456f9c544db8c8c415565202f26ec84907274",
+      "producer_operation_id": "produce-09-governance-risk-register-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-3d7f6ff4956f4c4780fa8a0d",
+        "evidence-4900d72710249229ad51e1a2"
+      ],
+      "graph_edge_ids": [
+        "edge-077a224543c1e149c1a3e14e",
+        "edge-7d9c7220ea8455ff446a9207"
+      ],
+      "validation_ids": [
+        "validation-ac012ec96df5439dbc601fa6"
+      ]
+    }
+  ],
+  "artifact_rows": [
+    {
+      "id": "artifact-e474276be8ff51f6debe703d",
+      "run_id": "run-art-125-risk-register",
+      "artifact_id": "09-governance-risk-register-md",
+      "title": "Risk Register",
+      "artifact_type": "governance_record",
+      "status": "complete",
+      "path": "migration-artifacts/09-governance/risk-register.md",
+      "content_hash": "sha256:d31e9f16ca8ab39b8084bd68793478a3c207691e57e66741796d6ab89546184c",
+      "generated_by_operation_id": "produce-09-governance-risk-register-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-d494c01aba384f2b961b9881",
+          "evidence-b54efa0134f1d3b0105c9f8f",
+          "evidence-ab2ab54704afcb92aaedc42f",
+          "evidence-208200c91d60b367ec7e944d",
+          "evidence-f49e6f8638b134ff8ed3a163",
+          "evidence-c674f1dd572209e7dfbeb7db"
+        ],
+        "evidence_refs": [
+          "migration-artifacts/09-governance/risk-register.md",
+          "migration-artifacts/art-125_risk_register/risk-register.md",
+          "migration-artifacts/art-125_risk_register/risk-register.json",
+          "generated/contract_manifest.json",
+          "generated/envctl_artifact_registry_report.json",
+          "generated/shared_protocol_validation_report.json"
+        ],
+        "producer_operation_id": "produce-09-governance-risk-register-md",
+        "provenance": {
+          "contract_row_id": "artifact:09-governance-risk-register-md",
+          "helper_id": "helper-artifact-26",
+          "owner_agent": "artifact-agent",
+          "risk_count": 7,
+          "task_id": "ART-125_RISK_REGISTER"
+        },
+        "validation_ids": [
+          "validation-6a4f905cc0892622d4e1475c",
+          "validation-e258fc549d7a5af7ec794788",
+          "validation-3acef0d5e1d46ba12d7aa2aa"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-e6397c9f4bea89d1a50cefb9",
+          "edge-4c94a8801e8787737633fead",
+          "edge-663780fd8e92fb828df12eb8",
+          "edge-5d4ccb19cd42f869a0d28dd0",
+          "edge-b6e70d94f026ebaab8cb30b1",
+          "edge-7f8139e13058779b5c19f54f"
+        ],
+        "links": [
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          },
+          {
+            "to": "artifact:09-governance-decision-log-md",
+            "type": "related_governance"
+          },
+          {
+            "to": "artifact:09-governance-migration-readiness-scorecard-md",
+            "type": "feeds"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-9ac0e7cbba8e47e928d8ff06",
+      "run_id": "run-art-125-risk-register",
+      "artifact_id": "art-125-risk-register-json",
+      "title": "ART-125 Risk Register JSON",
+      "artifact_type": "machine_readable_record",
+      "status": "complete",
+      "path": "migration-artifacts/art-125_risk_register/risk-register.json",
+      "content_hash": "sha256:5961ffa20fe2e86e0dbd6bbd0f1456f9c544db8c8c415565202f26ec84907274",
+      "generated_by_operation_id": "produce-09-governance-risk-register-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-3d7f6ff4956f4c4780fa8a0d",
+          "evidence-4900d72710249229ad51e1a2"
+        ],
+        "evidence_refs": [
+          "migration-artifacts/art-125_risk_register/risk-register.json",
+          "migration-artifacts/09-governance/risk-register.md"
+        ],
+        "producer_operation_id": "produce-09-governance-risk-register-md",
+        "provenance": {
+          "owner_agent": "artifact-agent",
+          "source_artifact_id": "09-governance-risk-register-md",
+          "task_id": "ART-125_RISK_REGISTER"
+        },
+        "validation_ids": [
+          "validation-ac012ec96df5439dbc601fa6"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-077a224543c1e149c1a3e14e",
+          "edge-7d9c7220ea8455ff446a9207"
+        ],
+        "links": [
+          {
+            "to": "artifact:09-governance-risk-register-md",
+            "type": "describes"
+          }
+        ]
+      }
+    }
+  ],
+  "checksums": {
+    "migration-artifacts/09-governance/risk-register.md": "d31e9f16ca8ab39b8084bd68793478a3c207691e57e66741796d6ab89546184c",
+    "migration-artifacts/art-125_risk_register/risk-register.md": "d31e9f16ca8ab39b8084bd68793478a3c207691e57e66741796d6ab89546184c",
+    "migration-artifacts/art-125_risk_register/risk-register.json": "5961ffa20fe2e86e0dbd6bbd0f1456f9c544db8c8c415565202f26ec84907274"
+  },
+  "validation": {
+    "artifact_file_exists": true,
+    "registry_contains_hash": true,
+    "validation_evidence_linked": true
+  },
+  "evidence": [
+    "migration-artifacts/09-governance/risk-register.md",
+    "migration-artifacts/art-125_risk_register/risk-register.md",
+    "migration-artifacts/art-125_risk_register/risk-register.json",
+    "generated/contract_manifest.json",
+    "generated/execution_packets/ART-125_RISK_REGISTER.json",
+    "generated/envctl_artifact_registry_report.json",
+    "generated/shared_protocol_validation_report.json"
+  ]
+}

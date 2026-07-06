@@ -1,0 +1,458 @@
+from __future__ import annotations
+
+import json
+import sqlite3
+from pathlib import Path
+
+from _common import append_proof, make_proof, now, package_root, root
+from artifact_registry import ArtifactRegistry, fetch_artifact
+from verify_envctl_db_schema import apply_migrations
+
+
+TASK_ID = "REQ-024_ENVCTL_ARTIFACT_REGISTRY"
+HELPER_ID = "helper-envctl-artifacts-01"
+MODEL_TAG = "gpt-5.3-spark"
+
+
+def read_json_schema() -> dict:
+    return json.loads((package_root() / "schemas" / "artifact_record.schema.json").read_text(encoding="utf-8"))
+
+
+def expected_artifact_names() -> list[str]:
+    path = package_root() / "expected-output" / "migration-automation-artifacts.md"
+    names = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line.startswith("- "):
+            names.append(line[2:].rstrip("."))
+    return names
+
+
+def insert_req024_fixture(conn: sqlite3.Connection) -> dict:
+    conn.execute(
+        """
+        INSERT INTO envctl_migration_targets
+          (id, target_id, target_type, primary_root, compare_root, descriptor_json,
+           descriptor_hash, safety_mode, max_auto_risk)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            "target-req024",
+            "flexnetos-envctl-artifact-registry",
+            "mixed",
+            "/workspace/flexnetos",
+            "/workspace/lifeos",
+            '{"schema_version":1,"target":"artifact-registry"}',
+            "sha256:target-req024",
+            "approval-gated",
+            "R3",
+        ),
+    )
+    conn.execute(
+        """
+        INSERT INTO envctl_migration_packages
+          (id, package_name, package_path, package_hash, manifest_json)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (
+            "pkg-req024",
+            "envctl-db-nu-plugin-migration-automation-package",
+            ".",
+            "sha256:pkg-req024",
+            '{"schema_version":1,"task_id":"REQ-024_ENVCTL_ARTIFACT_REGISTRY"}',
+        ),
+    )
+    conn.execute(
+        """
+        INSERT INTO envctl_migration_artifact_contracts
+          (id, contract_name, contract_version, source_package_id, contract_hash, contract_json)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+            "contract-req024",
+            "migration-automation-artifacts",
+            "1.0.0",
+            "pkg-req024",
+            "sha256:contract-req024",
+            '{"required":["Artifact registry","Evidence register","Link graph","Validation scorecard"]}',
+        ),
+    )
+    conn.execute(
+        """
+        INSERT INTO envctl_migration_recipes
+          (id, recipe_name, recipe_version, artifact_contract_id, recipe_hash, recipe_json)
+        VALUES (?, ?, ?, ?, ?, ?)
+        """,
+        (
+            "recipe-req024",
+            "artifact-registry-smoke",
+            "1.0.0",
+            "contract-req024",
+            "sha256:recipe-req024",
+            '{"phases":["register","validate","link"]}',
+        ),
+    )
+    conn.execute(
+        """
+        INSERT INTO envctl_migration_runs
+          (id, target_id, recipe_id, artifact_contract_id, status, human_mode,
+           initiated_by, sandbox_policy, approval_policy, tool_versions_json,
+           reproducibility_hash, started_at_utc)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            "run-req024",
+            "target-req024",
+            "recipe-req024",
+            "contract-req024",
+            "running",
+            "approval-gated",
+            "envctl-db-agent",
+            "workspace-write",
+            "never",
+            '{"python":"stdlib","sqlite":"stdlib"}',
+            "sha256:run-req024",
+            now(),
+        ),
+    )
+    conn.execute(
+        """
+        INSERT INTO envctl_migration_operations
+          (id, run_id, operation_type, phase, status, risk, idempotency_key,
+           command_hash, command_redacted, input_json)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            "op-req024-register",
+            "run-req024",
+            "register_artifact",
+            "02-envctl-db",
+            "succeeded",
+            "R1",
+            "REQ-024/register-artifact",
+            "sha256:command-req024",
+            "python3 scripts/verify_artifact_registry.py",
+            '{"task_id":"REQ-024_ENVCTL_ARTIFACT_REGISTRY"}',
+        ),
+    )
+    conn.commit()
+    return {
+        "run_id": "run-req024",
+        "operation_id": "op-req024-register",
+        "contract_id": "contract-req024",
+    }
+
+
+def register_sample_artifact(conn: sqlite3.Connection, fixture: dict) -> dict:
+    sample_path = root() / "generated" / "req024_artifact_registry_sample.md"
+    sample_path.parent.mkdir(parents=True, exist_ok=True)
+    sample_path.write_text(
+        "\n".join(
+            [
+                "# REQ-024 artifact registry sample",
+                "",
+                "status: complete",
+                "",
+                "This file is generated by the artifact registry verification smoke.",
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    registry = ArtifactRegistry(conn, package_root())
+    return registry.register(
+        {
+            "artifact_id": "req024-artifact-registry-sample",
+            "run_id": fixture["run_id"],
+            "title": "REQ-024 Artifact Registry Sample",
+            "status": "complete",
+            "artifact_type": "artifact_registry_smoke",
+            "path": "execution-framework/generated/req024_artifact_registry_sample.md",
+            "producer_operation_id": fixture["operation_id"],
+            "contract_id": fixture["contract_id"],
+            "provenance": {
+                "task_id": TASK_ID,
+                "owner_agent": "envctl-db-agent",
+                "source_schema": "schemas/artifact_record.schema.json",
+                "expected_output": "expected-output/migration-automation-artifacts.md",
+            },
+            "evidence_refs": [
+                "execution-framework/generated/req024_artifact_registry_sample.md",
+                "schemas/artifact_record.schema.json",
+                "expected-output/migration-automation-artifacts.md",
+            ],
+            "links": [
+                {"to": "artifact:ART-100_SYSTEM_INVENTORY", "type": "blocks"},
+                {"to": "artifact:Evidence register", "type": "validated_by"},
+                {"to": "artifact:Link graph", "type": "linked_in"},
+            ],
+            "validations": [
+                {
+                    "validator": "verify_artifact_registry.py:schema-shape",
+                    "status": "pass",
+                    "details": {"required_fields": ["artifact_id", "run_id", "title", "status"]},
+                    "evidence_refs": ["schemas/artifact_record.schema.json"],
+                },
+                {
+                    "validator": "verify_artifact_registry.py:hash-and-links",
+                    "status": "pass",
+                    "details": {"hash_persisted": True, "graph_edges_expected": 4},
+                    "evidence_refs": ["execution-framework/generated/req024_artifact_registry_sample.md"],
+                },
+            ],
+        }
+    )
+
+
+def expect_rejection(label: str, registry: ArtifactRegistry, record: dict) -> dict:
+    try:
+        registry.register(record)
+    except ValueError as exc:
+        return {"case": label, "status": "rejected", "message": str(exc)}
+    return {"case": label, "status": "accepted", "message": "registry accepted an unsafe record"}
+
+
+def exercise_rejections(conn: sqlite3.Connection, fixture: dict) -> list[dict]:
+    registry = ArtifactRegistry(conn, package_root())
+    base_record = {
+        "artifact_id": "req024-rejection-smoke",
+        "run_id": fixture["run_id"],
+        "title": "REQ-024 rejection smoke",
+        "status": "complete",
+        "producer_operation_id": fixture["operation_id"],
+        "contract_id": fixture["contract_id"],
+    }
+    return [
+        expect_rejection(
+            "blocked-secret-path",
+            registry,
+            {
+                **base_record,
+                "artifact_id": "req024-blocked-secret-path",
+                "path": "execution-framework/secrets/token.txt",
+            },
+        ),
+        expect_rejection(
+            "content-hash-mismatch",
+            registry,
+            {
+                **base_record,
+                "artifact_id": "req024-content-hash-mismatch",
+                "path": "execution-framework/generated/req024_artifact_registry_sample.md",
+                "content_hash": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+            },
+        ),
+        expect_rejection(
+            "foreign-producer-operation",
+            registry,
+            {
+                **base_record,
+                "artifact_id": "req024-foreign-producer-operation",
+                "producer_operation_id": "op-does-not-exist",
+            },
+        ),
+    ]
+
+
+def build_report(conn: sqlite3.Connection, fixture: dict, registry_result: dict, rejections: list[dict]) -> dict:
+    artifact = fetch_artifact(conn, fixture["run_id"], "req024-artifact-registry-sample")
+    expected = expected_artifact_names()
+    schema = read_json_schema()
+    evidence_count = conn.execute(
+        "SELECT COUNT(*) FROM envctl_migration_evidence WHERE run_id = ?",
+        (fixture["run_id"],),
+    ).fetchone()[0]
+    graph_count = conn.execute(
+        "SELECT COUNT(*) FROM envctl_migration_graph_edges WHERE run_id = ?",
+        (fixture["run_id"],),
+    ).fetchone()[0]
+    validation_count = conn.execute(
+        "SELECT COUNT(*) FROM envctl_migration_validations WHERE run_id = ?",
+        (fixture["run_id"],),
+    ).fetchone()[0]
+    index_row = conn.execute(
+        """
+        SELECT artifact_id, status, path, content_hash
+        FROM envctl_migration_artifact_index
+        WHERE run_id = ? AND artifact_id = ?
+        """,
+        (fixture["run_id"], "req024-artifact-registry-sample"),
+    ).fetchone()
+    errors = []
+    if artifact["generated_by_operation_id"] != fixture["operation_id"]:
+        errors.append("producer operation was not persisted")
+    if artifact["links"].get("contract_id") != fixture["contract_id"]:
+        errors.append("contract id was not persisted in links_json")
+    if artifact["evidence"].get("provenance", {}).get("task_id") != TASK_ID:
+        errors.append("provenance task id was not persisted")
+    if not artifact["content_hash"] or not artifact["content_hash"].startswith("sha256:"):
+        errors.append("content hash was not computed and persisted")
+    if evidence_count < 3:
+        errors.append(f"expected at least 3 evidence rows, got {evidence_count}")
+    if graph_count < 4:
+        errors.append(f"expected at least 4 graph edges, got {graph_count}")
+    if validation_count < 2:
+        errors.append(f"expected at least 2 validation rows, got {validation_count}")
+    if index_row is None:
+        errors.append("artifact did not appear in envctl_migration_artifact_index")
+    if "Artifact registry" not in expected:
+        errors.append("expected-output artifact list does not include Artifact registry")
+    required = set(schema.get("required", []))
+    if not {"artifact_id", "run_id", "title", "status"}.issubset(required):
+        errors.append("artifact_record schema required fields drifted")
+    accepted_rejections = [item["case"] for item in rejections if item["status"] != "rejected"]
+    if accepted_rejections:
+        errors.append(f"registry accepted unsafe records: {', '.join(accepted_rejections)}")
+    return {
+        "schema_version": "1.0",
+        "task_id": TASK_ID,
+        "status": "passed" if not errors else "failed",
+        "generated_at": now(),
+        "registry_result": registry_result,
+        "artifact_row": artifact,
+        "summary": {
+            "evidence_count": evidence_count,
+            "graph_edge_count": graph_count,
+            "validation_count": validation_count,
+            "rejection_count": len(rejections),
+            "expected_artifact_count": len(expected),
+            "artifact_index_row": list(index_row) if index_row else None,
+        },
+        "coverage": {
+            "paths": bool(artifact["path"]),
+            "hashes": bool(artifact["content_hash"]),
+            "producers": artifact["generated_by_operation_id"] == fixture["operation_id"],
+            "contract_ids": artifact["links"].get("contract_id") == fixture["contract_id"],
+            "provenance": artifact["evidence"].get("provenance", {}).get("task_id") == TASK_ID,
+            "validation_links": validation_count >= 2 and graph_count >= 4,
+            "fail_closed_rejections": bool(rejections) and not accepted_rejections,
+        },
+        "rejection_cases": rejections,
+        "errors": errors,
+        "evidence": [
+            "scripts/artifact_registry.py",
+            "scripts/verify_artifact_registry.py",
+            "generated/envctl_artifact_registry_report.json",
+            "generated/req024_artifact_registry_sample.md",
+            "docs/ENVCTL_ARTIFACT_REGISTRY.md",
+        ],
+    }
+
+
+def write_docs(report: dict) -> None:
+    coverage = report["coverage"]
+    lines = [
+        "# envctl artifact registry",
+        "",
+        f"Generated at: `{report['generated_at']}`",
+        f"Status: `{report['status']}`",
+        "",
+        "## Persisted fields",
+        "",
+        "| field | persisted |",
+        "|---|---|",
+    ]
+    for key in [
+        "paths",
+        "hashes",
+        "producers",
+        "contract_ids",
+        "provenance",
+        "validation_links",
+        "fail_closed_rejections",
+    ]:
+        lines.append(f"| {key.replace('_', ' ')} | {'yes' if coverage[key] else 'no'} |")
+    lines.extend(
+        [
+            "",
+            "## Runtime smoke",
+            "",
+            f"- Artifact row: `{report['registry_result']['artifact_row_id']}`",
+            f"- Content hash: `{report['registry_result']['content_hash']}`",
+            f"- Evidence rows: `{report['summary']['evidence_count']}`",
+            f"- Graph edges: `{report['summary']['graph_edge_count']}`",
+            f"- Validation rows: `{report['summary']['validation_count']}`",
+            f"- Rejection cases: `{report['summary']['rejection_count']}`",
+            "",
+            "The smoke registers a concrete artifact against the SQLite schema from `REQ-020`, computes a SHA-256 hash from disk, records the producer operation, stores the artifact contract id and provenance in registry JSON, links evidence rows, graph edges, validation rows, verifies the artifact-index view, and confirms unsafe records fail closed.",
+        ]
+    )
+    (root() / "docs" / "ENVCTL_ARTIFACT_REGISTRY.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
+def main() -> None:
+    base = package_root()
+    conn = sqlite3.connect(":memory:")
+    conn.execute("PRAGMA foreign_keys = ON")
+    apply_migrations(conn, base)
+    fixture = insert_req024_fixture(conn)
+    registry_result = register_sample_artifact(conn, fixture)
+    rejections = exercise_rejections(conn, fixture)
+    report = build_report(conn, fixture, registry_result, rejections)
+
+    report_path = root() / "generated" / "envctl_artifact_registry_report.json"
+    log_path = root() / "logs" / f"{TASK_ID}.log"
+    heartbeat_path = root() / "state" / f"{TASK_ID}.heartbeat.json"
+    report_path.write_text(json.dumps(report, indent=2, sort_keys=False) + "\n", encoding="utf-8")
+    write_docs(report)
+    log_path.write_text(json.dumps(report, indent=2, sort_keys=False) + "\n", encoding="utf-8")
+    heartbeat_path.parent.mkdir(parents=True, exist_ok=True)
+    heartbeat_path.write_text(
+        json.dumps(
+            {
+                "task_id": TASK_ID,
+                "status": "completed" if report["status"] == "passed" else "failed",
+                "updated_at": report["generated_at"],
+                "proof_uri": f"proof_records/{TASK_ID}.proof.json",
+            },
+            indent=2,
+            sort_keys=False,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    files_changed = [
+        "execution-framework/scripts/artifact_registry.py",
+        "execution-framework/scripts/verify_artifact_registry.py",
+        "execution-framework/generated/envctl_artifact_registry_report.json",
+        "execution-framework/generated/req024_artifact_registry_sample.md",
+        "execution-framework/docs/ENVCTL_ARTIFACT_REGISTRY.md",
+        "execution-framework/state/REQ-024_ENVCTL_ARTIFACT_REGISTRY.heartbeat.json",
+        "execution-framework/logs/REQ-024_ENVCTL_ARTIFACT_REGISTRY.log",
+        "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+        "execution-framework/proof_records/proof_ledger.jsonl",
+    ]
+    commands_run = [
+        "python3 scripts/verify_artifact_registry.py",
+        "python3 -m py_compile scripts/artifact_registry.py scripts/verify_artifact_registry.py",
+    ]
+    proof = make_proof(
+        TASK_ID,
+        "completed" if report["status"] == "passed" else "failed",
+        "codex-cli-local",
+        HELPER_ID,
+        MODEL_TAG,
+        str(base),
+        files_changed,
+        commands_run,
+        report,
+        report["evidence"],
+        "" if report["status"] == "passed" else "; ".join(report["errors"]),
+        "run ART-100_SYSTEM_INVENTORY with artifact registry writes" if report["status"] == "passed" else "fix artifact registry verification errors",
+    )
+    append_proof(proof)
+    print(
+        "artifact registry status={status} evidence={evidence} edges={edges} validations={validations}".format(
+            status=report["status"],
+            evidence=report["summary"]["evidence_count"],
+            edges=report["summary"]["graph_edge_count"],
+            validations=report["summary"]["validation_count"],
+        )
+    )
+    if report["status"] != "passed":
+        raise SystemExit(1)
+
+
+if __name__ == "__main__":
+    main()

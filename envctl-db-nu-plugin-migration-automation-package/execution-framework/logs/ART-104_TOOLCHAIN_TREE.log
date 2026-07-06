@@ -1,0 +1,1851 @@
+{
+  "tree": {
+    "schema_version": "1.0",
+    "task_id": "ART-104_TOOLCHAIN_TREE",
+    "title": "Toolchain dependency tree",
+    "status": "complete",
+    "generated_at": "2026-07-04T23:22:31+00:00",
+    "target_root": "/home/flexnetos/FlexNetOS",
+    "scope_note": "MIGRATION_TARGET_ROOT was not exported when absent; the FlexNetOS primary_root from generated/envctl_target_registry.json is used as the read-only target.",
+    "coverage_note": "Tree is generated from target descriptor, package scan, envctl registry evidence, selected manifests, and capped filesystem discovery; node-level statuses identify weaker evidence surfaces.",
+    "categories": [
+      "compilers",
+      "runtimes",
+      "package_managers",
+      "sdks",
+      "ci_cd",
+      "deploy_tools",
+      "containers"
+    ],
+    "nodes": [
+      {
+        "id": "root:flexnetos-toolchain",
+        "kind": "root",
+        "label": "FlexNetOS toolchain dependency tree",
+        "status": "partial",
+        "evidence": [
+          "generated/envctl_target_registry.json",
+          "generated/package_scan.json"
+        ],
+        "depends_on": [
+          "provisioning:envctl-manifest",
+          "compiler:rust",
+          "runtime:bun",
+          "runtime:nix",
+          "ci:github-actions",
+          "deploy:frontdoors"
+        ]
+      },
+      {
+        "id": "provisioning:envctl-manifest",
+        "kind": "toolchain-provisioner",
+        "label": "envctl component manifests",
+        "status": "evidenced",
+        "evidence": [
+          "src/envctl/manifest/base.toml",
+          "src/envctl/manifest/components.d/epic-h-toolchains.toml",
+          "src/envctl/manifest/apt-base.toml",
+          "src/envctl/manifest/ai-clis.toml"
+        ],
+        "depends_on": [
+          "runtime:nix",
+          "package-manager:cargo",
+          "package-manager:bun"
+        ]
+      },
+      {
+        "id": "compiler:rust",
+        "kind": "compiler",
+        "label": "Rust toolchain",
+        "version_constraint": "rust-version 1.88",
+        "status": "evidenced",
+        "evidence": [
+          "src/envctl/Cargo.toml",
+          "src/envctl/.github/workflows/ci.yml"
+        ],
+        "depends_on": [
+          "package-manager:cargo",
+          "linker:clang-wild",
+          "cache:kache"
+        ]
+      },
+      {
+        "id": "package-manager:cargo",
+        "kind": "package-manager",
+        "label": "Cargo",
+        "status": "evidenced",
+        "evidence": [
+          "src/Cargo.toml",
+          "src/envctl/Cargo.lock"
+        ],
+        "depends_on": [
+          "compiler:rust"
+        ]
+      },
+      {
+        "id": "linker:clang-wild",
+        "kind": "linker",
+        "label": "clang with wild linker",
+        "status": "evidenced",
+        "evidence": [
+          "src/envctl/manifest/components.d/epic-h-toolchains.toml"
+        ],
+        "depends_on": [
+          "compiler:rust"
+        ]
+      },
+      {
+        "id": "cache:kache",
+        "kind": "compiler-cache",
+        "label": "kache RUSTC_WRAPPER",
+        "status": "evidenced",
+        "evidence": [
+          "src/envctl/manifest/components.d/epic-h-toolchains.toml",
+          "usr/bin/kache-rustc-wrapper"
+        ],
+        "depends_on": [
+          "compiler:rust"
+        ]
+      },
+      {
+        "id": "runtime:bun",
+        "kind": "runtime-package-manager",
+        "label": "Bun runtime and package-manager frontdoors",
+        "status": "evidenced",
+        "evidence": [
+          "src/envctl/manifest/base.toml",
+          "usr/bin/bun",
+          "usr/bin/bunx"
+        ],
+        "depends_on": []
+      },
+      {
+        "id": "runtime:node-via-bun",
+        "kind": "runtime",
+        "label": "Node compatibility via Bun",
+        "status": "evidenced",
+        "evidence": [
+          "src/envctl/manifest/base.toml"
+        ],
+        "depends_on": [
+          "runtime:bun"
+        ]
+      },
+      {
+        "id": "package-manager:js-frontdoors",
+        "kind": "package-manager",
+        "label": "npm/pnpm/yarn wrappers through Bun",
+        "status": "evidenced",
+        "evidence": [
+          "src/envctl/manifest/base.toml"
+        ],
+        "depends_on": [
+          "runtime:bun"
+        ]
+      },
+      {
+        "id": "runtime:nix",
+        "kind": "runtime",
+        "label": "Nix flake development shells",
+        "status": "evidenced",
+        "evidence": [
+          "src/yazelix/flake.nix",
+          "src/nu_plugin/flake.nix",
+          "src/envctl/.github/workflows/ci.yml"
+        ],
+        "depends_on": []
+      },
+      {
+        "id": "container:podman-docker",
+        "kind": "container",
+        "label": "Podman/Docker container build surfaces",
+        "status": "partial",
+        "evidence": [
+          "src/envctl/manifest/apt-base.toml"
+        ],
+        "depends_on": [
+          "deploy:frontdoors"
+        ]
+      },
+      {
+        "id": "ci:github-actions",
+        "kind": "ci-cd",
+        "label": "GitHub Actions CI",
+        "status": "evidenced",
+        "evidence": [
+          "src/envctl/.github/workflows/ci.yml",
+          "src/envctl/.github/workflows/sync-master.yml"
+        ],
+        "depends_on": [
+          "compiler:rust",
+          "package-manager:cargo",
+          "sdk:github-cli"
+        ]
+      },
+      {
+        "id": "sdk:github-cli",
+        "kind": "sdk-cli",
+        "label": "GitHub CLI",
+        "status": "evidenced",
+        "evidence": [
+          "src/envctl/manifest/components.d/epic-h-toolchains.toml"
+        ],
+        "depends_on": [
+          "deploy:frontdoors"
+        ]
+      },
+      {
+        "id": "deploy:frontdoors",
+        "kind": "deploy-runtime",
+        "label": "$META_ROOT/usr/bin frontdoor wrappers",
+        "status": "evidenced",
+        "evidence": [
+          "usr/bin/envctl",
+          "usr/bin/meta",
+          "usr/bin/git-kb"
+        ],
+        "depends_on": []
+      },
+      {
+        "id": "runtime:python",
+        "kind": "runtime",
+        "label": "Python tools and validation scripts",
+        "status": "evidenced",
+        "evidence": [
+          "execution-framework/scripts/verify_envctl_db_schema.py",
+          "pyproject.toml"
+        ],
+        "depends_on": [
+          "package-manager:pip-pep517"
+        ]
+      },
+      {
+        "id": "package-manager:pip-pep517",
+        "kind": "package-manager",
+        "label": "pip/PEP 517 Python package surfaces",
+        "status": "partial",
+        "evidence": [
+          "pyproject.toml",
+          "requirements.txt"
+        ],
+        "depends_on": [
+          "runtime:python"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "root:flexnetos-toolchain",
+        "to": "provisioning:envctl-manifest",
+        "type": "requires"
+      },
+      {
+        "from": "root:flexnetos-toolchain",
+        "to": "compiler:rust",
+        "type": "requires"
+      },
+      {
+        "from": "root:flexnetos-toolchain",
+        "to": "runtime:bun",
+        "type": "requires"
+      },
+      {
+        "from": "root:flexnetos-toolchain",
+        "to": "runtime:nix",
+        "type": "requires"
+      },
+      {
+        "from": "root:flexnetos-toolchain",
+        "to": "ci:github-actions",
+        "type": "requires"
+      },
+      {
+        "from": "root:flexnetos-toolchain",
+        "to": "deploy:frontdoors",
+        "type": "requires"
+      },
+      {
+        "from": "provisioning:envctl-manifest",
+        "to": "runtime:nix",
+        "type": "requires"
+      },
+      {
+        "from": "provisioning:envctl-manifest",
+        "to": "package-manager:cargo",
+        "type": "requires"
+      },
+      {
+        "from": "provisioning:envctl-manifest",
+        "to": "package-manager:bun",
+        "type": "requires"
+      },
+      {
+        "from": "compiler:rust",
+        "to": "package-manager:cargo",
+        "type": "requires"
+      },
+      {
+        "from": "compiler:rust",
+        "to": "linker:clang-wild",
+        "type": "requires"
+      },
+      {
+        "from": "compiler:rust",
+        "to": "cache:kache",
+        "type": "requires"
+      },
+      {
+        "from": "package-manager:cargo",
+        "to": "compiler:rust",
+        "type": "requires"
+      },
+      {
+        "from": "linker:clang-wild",
+        "to": "compiler:rust",
+        "type": "requires"
+      },
+      {
+        "from": "cache:kache",
+        "to": "compiler:rust",
+        "type": "requires"
+      },
+      {
+        "from": "runtime:node-via-bun",
+        "to": "runtime:bun",
+        "type": "requires"
+      },
+      {
+        "from": "package-manager:js-frontdoors",
+        "to": "runtime:bun",
+        "type": "requires"
+      },
+      {
+        "from": "container:podman-docker",
+        "to": "deploy:frontdoors",
+        "type": "requires"
+      },
+      {
+        "from": "ci:github-actions",
+        "to": "compiler:rust",
+        "type": "requires"
+      },
+      {
+        "from": "ci:github-actions",
+        "to": "package-manager:cargo",
+        "type": "requires"
+      },
+      {
+        "from": "ci:github-actions",
+        "to": "sdk:github-cli",
+        "type": "requires"
+      },
+      {
+        "from": "sdk:github-cli",
+        "to": "deploy:frontdoors",
+        "type": "requires"
+      },
+      {
+        "from": "runtime:python",
+        "to": "package-manager:pip-pep517",
+        "type": "requires"
+      },
+      {
+        "from": "package-manager:pip-pep517",
+        "to": "runtime:python",
+        "type": "requires"
+      }
+    ],
+    "scan_summary": {
+      "scan_root": "/home/flexnetos/FlexNetOS",
+      "visited_file_limit": 20000,
+      "visited_files": 20001,
+      "manifest_count": 1229,
+      "manifest_counts": {
+        ".gitlab-ci.yml": 1,
+        "Cargo.lock": 199,
+        "Cargo.toml": 608,
+        "Dockerfile": 26,
+        "Dockerfile.benchmark": 1,
+        "Dockerfile.build": 1,
+        "Dockerfile.cloudrun": 1,
+        "Dockerfile.contributor": 1,
+        "Dockerfile.deobfuscator": 1,
+        "Dockerfile.gpu": 1,
+        "Dockerfile.integration-test": 1,
+        "Dockerfile.minimal": 1,
+        "Dockerfile.npx-test": 1,
+        "Dockerfile.prebuilt": 1,
+        "Dockerfile.shim": 1,
+        "Dockerfile.simple": 1,
+        "Dockerfile.sse": 1,
+        "Dockerfile.test": 4,
+        "Dockerfile.test-runner": 1,
+        "Dockerfile.trainer": 1,
+        "Dockerfile.worker": 1,
+        "Justfile": 1,
+        "Makefile": 10,
+        "agentic-synth-ci.yml": 1,
+        "artifact-policy.yml": 1,
+        "audit.yml": 2,
+        "auto-format.yml": 1,
+        "benchmark.yml": 1,
+        "benchmarks.yml": 1,
+        "book.yml": 1,
+        "build-attention.yml": 1,
+        "build-diskann.yml": 1,
+        "build-docs.yml": 1,
+        "build-gnn.yml": 1,
+        "build-graph-node.yml": 1,
+        "build-graph-transformer.yml": 1,
+        "build-image.yml": 1,
+        "build-native.yml": 1,
+        "build-pr-docs.yml": 1,
+        "build-router.yml": 1,
+        "build-rvf-node.yml": 1,
+        "build-tiny-dancer.yml": 1,
+        "build-verified.yml": 1,
+        "build.yml": 1,
+        "bun.lock": 4,
+        "cargo-deny.yml": 1,
+        "checks.yml": 1,
+        "ci.yml": 13,
+        "claude.yml": 1,
+        "clippy-fmt.yml": 1,
+        "clippy.yml": 1,
+        "cluaize-cmd.yml": 1,
+        "cluaize-engine.yml": 1,
+        "cluaize-kernel-llama.yml": 1,
+        "cluaize-kernel-onnx.yml": 1,
+        "cluaize-llama-driver.yml": 1,
+        "cluaize-onnx-driver.yml": 1,
+        "copilot-setup-steps.yml": 1,
+        "cuda-bindings-guard.yml": 1,
+        "deploy-dev.yml": 1,
+        "deploy-prod.yml": 1,
+        "devcontainer-ghcr.yml": 1,
+        "differential-drive.yml": 4,
+        "docker-compose.integration.yml": 1,
+        "docker-compose.test.yml": 1,
+        "docker-compose.windows.yml": 1,
+        "docker-compose.yml": 10,
+        "docker-publish.yml": 1,
+        "docker.yml": 1,
+        "docker_ci.yml": 1,
+        "docs.yml": 2,
+        "edge-net-models.yml": 1,
+        "emergent-time-ci.yml": 1,
+        "examples-compile.yml": 1,
+        "flake.lock": 3,
+        "flake.nix": 3,
+        "fmt.yml": 1,
+        "hailo-backend-audit.yml": 1,
+        "hailo-release-artifacts.yml": 1,
+        "hooks-ci.yml": 1,
+        "lint-and-test.yml": 1,
+        "mirror-rulake.yml": 1,
+        "naming-guard.yml": 1,
+        "notify-downstream.yml": 1,
+        "package-lock.json": 4,
+        "package.json": 176,
+        "pebesen-ci.yml": 2,
+        "performance.yml": 1,
+        "postgres-extension-ci.yml": 1,
+        "promote.yml": 2,
+        "publish-all.yml": 1,
+        "publish-registry.yml": 1,
+        "publish-rvagent-wasm.yml": 1,
+        "pyproject.toml": 4,
+        "python-test.yml": 1,
+        "regression-guard.yml": 1,
+        "release-binaries.yml": 1,
+        "release-drafter.yml": 1,
+        "release-rvf-cli.yml": 1,
+        "release.yml": 8,
+        "requirements.txt": 38,
+        "rust.yml": 1,
+        "ruvector-npm-ci.yml": 1,
+        "ruvector-postgres-ci.yml": 1,
+        "ruvector-publish.yml": 1,
+        "ruvllm-benchmarks.yml": 1,
+        "ruvllm-build.yml": 1,
+        "ruvllm-esp32-firmware.yml": 1,
+        "ruvllm-native.yml": 1,
+        "ruvltra-tests.yml": 1,
+        "security.yml": 1,
+        "self-learning.yml": 1,
+        "slugify.yaml": 1,
+        "sona-drift.yml": 1,
+        "sona-napi.yml": 1,
+        "status-guard.yml": 1,
+        "supply-chain.yml": 1,
+        "sync-master.yml": 1,
+        "sync-rvf-examples.yml": 1,
+        "thermorust-ci.yml": 1,
+        "trufflehog.yml": 1,
+        "ui-ci.yml": 1,
+        "unit-tests.yml": 1,
+        "upload-pr-documentation.yml": 1,
+        "validate-lockfile.yml": 1,
+        "wasm-dedup-check.yml": 1,
+        "wasm-npm.yml": 1
+      },
+      "language_signal_counts": {
+        "javascript-typescript": 176,
+        "python": 42,
+        "rust": 608
+      },
+      "package_manager_signal_counts": {
+        "bun": 6,
+        "cargo": 608,
+        "container": 59,
+        "nix": 3,
+        "npm": 5,
+        "pep517": 4,
+        "pip": 38
+      },
+      "lockfile_counts": {
+        "bun": 4,
+        "nix": 3,
+        "npm": 4
+      },
+      "rust_versions": {
+        "1.70": 4,
+        "1.75": 21,
+        "1.75.0": 1,
+        "1.77": 35,
+        "1.80": 1,
+        "1.83.0": 1,
+        "1.85": 2,
+        "1.87": 19,
+        "1.88": 1,
+        "1.93.1": 1,
+        "{'workspace': True}": 105
+      },
+      "nix_inputs_top": {
+        "nixpkgs": 3,
+        "root": 3,
+        "crane": 1,
+        "flake-utils": 1,
+        "rust-overlay": 1,
+        "systems": 1,
+        "flake-parts": 1,
+        "npm-lockfile-fix": 1,
+        "pyproject-build-systems": 1,
+        "pyproject-nix": 1,
+        "pyproject-nix_2": 1,
+        "pyproject-nix_3": 1,
+        "uv2nix": 1,
+        "uv2nix_2": 1
+      },
+      "workflow_files": [
+        "src/cuda-oxide/.github/workflows/book.yml",
+        "src/cuda-oxide/.github/workflows/cargo-deny.yml",
+        "src/cuda-oxide/.github/workflows/ci.yml",
+        "src/cuda-oxide/.github/workflows/clippy.yml",
+        "src/cuda-oxide/.github/workflows/cuda-bindings-guard.yml",
+        "src/cuda-oxide/.github/workflows/differential-drive.yml",
+        "src/cuda-oxide/.github/workflows/docs.yml",
+        "src/cuda-oxide/.github/workflows/examples-compile.yml",
+        "src/cuda-oxide/.github/workflows/fmt.yml",
+        "src/cuda-oxide/.github/workflows/naming-guard.yml",
+        "src/cuda-oxide/.github/workflows/status-guard.yml",
+        "src/cuda-oxide/.github/workflows/unit-tests.yml",
+        "src/envctl/.github/workflows/ci.yml",
+        "src/envctl/.github/workflows/sync-master.yml",
+        "src/loop_lib/.github/workflows/auto-format.yml",
+        "src/loop_lib/.github/workflows/ci.yml",
+        "src/loop_lib/.github/workflows/notify-downstream.yml",
+        "src/meta-ruvector/.github/workflows/agentic-synth-ci.yml",
+        "src/meta-ruvector/.github/workflows/artifact-policy.yml",
+        "src/meta-ruvector/.github/workflows/benchmarks.yml",
+        "src/meta-ruvector/.github/workflows/build-attention.yml",
+        "src/meta-ruvector/.github/workflows/build-diskann.yml",
+        "src/meta-ruvector/.github/workflows/build-gnn.yml",
+        "src/meta-ruvector/.github/workflows/build-graph-node.yml",
+        "src/meta-ruvector/.github/workflows/build-graph-transformer.yml",
+        "src/meta-ruvector/.github/workflows/build-native.yml",
+        "src/meta-ruvector/.github/workflows/build-router.yml",
+        "src/meta-ruvector/.github/workflows/build-rvf-node.yml",
+        "src/meta-ruvector/.github/workflows/build-tiny-dancer.yml",
+        "src/meta-ruvector/.github/workflows/build-verified.yml",
+        "src/meta-ruvector/.github/workflows/ci.yml",
+        "src/meta-ruvector/.github/workflows/clippy-fmt.yml",
+        "src/meta-ruvector/.github/workflows/copilot-setup-steps.yml",
+        "src/meta-ruvector/.github/workflows/devcontainer-ghcr.yml",
+        "src/meta-ruvector/.github/workflows/docker-publish.yml",
+        "src/meta-ruvector/.github/workflows/edge-net-models.yml",
+        "src/meta-ruvector/.github/workflows/emergent-time-ci.yml",
+        "src/meta-ruvector/.github/workflows/hailo-backend-audit.yml",
+        "src/meta-ruvector/.github/workflows/hailo-release-artifacts.yml",
+        "src/meta-ruvector/.github/workflows/hooks-ci.yml",
+        "src/meta-ruvector/.github/workflows/mirror-rulake.yml",
+        "src/meta-ruvector/.github/workflows/postgres-extension-ci.yml",
+        "src/meta-ruvector/.github/workflows/publish-all.yml",
+        "src/meta-ruvector/.github/workflows/publish-rvagent-wasm.yml",
+        "src/meta-ruvector/.github/workflows/regression-guard.yml",
+        "src/meta-ruvector/.github/workflows/release-rvf-cli.yml",
+        "src/meta-ruvector/.github/workflows/release.yml",
+        "src/meta-ruvector/.github/workflows/ruvector-npm-ci.yml",
+        "src/meta-ruvector/.github/workflows/ruvector-postgres-ci.yml",
+        "src/meta-ruvector/.github/workflows/ruvector-publish.yml"
+      ],
+      "docker_files": [
+        "src/cuda-oxide/.devcontainer/Dockerfile",
+        "src/hermes-agent/Dockerfile",
+        "src/hermes-agent/docker-compose.windows.yml",
+        "src/hermes-agent/docker-compose.yml",
+        "src/meta-ruvector/.devcontainer/Dockerfile",
+        "src/meta-ruvector/benchmarks/Dockerfile",
+        "src/meta-ruvector/crates/mcp-brain-server/Dockerfile",
+        "src/meta-ruvector/crates/mcp-brain-server/Dockerfile.minimal",
+        "src/meta-ruvector/crates/mcp-brain-server/Dockerfile.sse",
+        "src/meta-ruvector/crates/mcp-brain-server/Dockerfile.trainer",
+        "src/meta-ruvector/crates/mcp-brain-server/Dockerfile.worker",
+        "src/meta-ruvector/crates/neural-trader-wasm/Dockerfile.test",
+        "src/meta-ruvector/crates/ruvector-postgres/Dockerfile",
+        "src/meta-ruvector/crates/ruvector-postgres/Dockerfile.prebuilt",
+        "src/meta-ruvector/crates/ruvector-postgres/docker/Dockerfile",
+        "src/meta-ruvector/crates/ruvector-postgres/docker/Dockerfile.integration-test",
+        "src/meta-ruvector/crates/ruvector-postgres/docker/Dockerfile.test",
+        "src/meta-ruvector/crates/ruvector-postgres/docker/benchmark/Dockerfile",
+        "src/meta-ruvector/crates/ruvector-postgres/docker/docker-compose.integration.yml",
+        "src/meta-ruvector/crates/ruvector-postgres/docker/docker-compose.yml",
+        "src/meta-ruvector/crates/ruvector-postgres/docker/test-runner/Dockerfile",
+        "src/meta-ruvector/examples/dragnes/Dockerfile",
+        "src/meta-ruvector/examples/edge-net/dashboard/Dockerfile",
+        "src/meta-ruvector/examples/edge-net/dashboard/docker-compose.yml",
+        "src/meta-ruvector/examples/edge-net/pkg/Dockerfile",
+        "src/meta-ruvector/examples/edge-net/relay/Dockerfile",
+        "src/meta-ruvector/examples/edge-net/tests/Dockerfile.contributor",
+        "src/meta-ruvector/examples/edge-net/tests/Dockerfile.test-runner",
+        "src/meta-ruvector/examples/edge-net/tests/docker-compose.test.yml",
+        "src/meta-ruvector/examples/google-cloud/Dockerfile.build",
+        "src/meta-ruvector/examples/google-cloud/Dockerfile.cloudrun",
+        "src/meta-ruvector/examples/google-cloud/Dockerfile.gpu",
+        "src/meta-ruvector/examples/google-cloud/Dockerfile.simple",
+        "src/meta-ruvector/examples/ruvLLM/esp32-flash/Dockerfile",
+        "src/meta-ruvector/examples/vwm-viewer/Dockerfile",
+        "src/meta-ruvector/npm/packages/cloud-run/Dockerfile",
+        "src/meta-ruvector/npm/packages/postgres-cli/tests/Dockerfile.npx-test",
+        "src/meta-ruvector/npm/packages/ruvbot/Dockerfile",
+        "src/meta-ruvector/npm/packages/ruvbot/docker-compose.yml",
+        "src/meta-ruvector/npm/packages/ruvllm/Dockerfile.benchmark",
+        "src/meta-ruvector/npm/packages/ruvllm/Dockerfile.test",
+        "src/meta-ruvector/scripts/n8n/Dockerfile.shim",
+        "src/meta-ruvector/scripts/n8n/docker-compose.yml",
+        "src/meta-ruvector/scripts/training/Dockerfile",
+        "src/meta-ruvector/scripts/training/Dockerfile.deobfuscator",
+        "src/meta-ruvector/tests/docker-integration/Dockerfile",
+        "src/meta-ruvector/tests/integration/distributed/Dockerfile",
+        "src/meta-ruvector/tests/integration/distributed/Dockerfile.test",
+        "src/meta-ruvector/tests/integration/distributed/docker-compose.yml",
+        "src/meta-ruvector/ui/ruvocal/.devcontainer/Dockerfile"
+      ],
+      "make_task_files": [
+        "src/cuda-oxide/Justfile",
+        "src/cuda-oxide/cuda-oxide-book/Makefile",
+        "src/meta-ruvector/crates/ruvector-postgres/Makefile",
+        "src/meta-ruvector/crates/ruvix/aarch64-boot/Makefile",
+        "src/meta-ruvector/crates/rvm/Makefile",
+        "src/meta-ruvector/examples/ruvLLM/esp32-flash/Makefile",
+        "src/meta-ruvector/examples/scipix/Makefile",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/inferrs/Makefile",
+        "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/openevolve/Makefile",
+        "src/teri/.worktrees/issue-86-source-wires/pebesen/Makefile",
+        "src/teri/pebesen/Makefile"
+      ],
+      "representative_manifests": [
+        "src/Cargo.lock",
+        "src/Cargo.toml",
+        "src/cuda-oxide/.devcontainer/Dockerfile",
+        "src/cuda-oxide/.github/workflows/book.yml",
+        "src/cuda-oxide/.github/workflows/cargo-deny.yml",
+        "src/cuda-oxide/.github/workflows/ci.yml",
+        "src/cuda-oxide/.github/workflows/clippy.yml",
+        "src/cuda-oxide/.github/workflows/cuda-bindings-guard.yml",
+        "src/cuda-oxide/.github/workflows/differential-drive.yml",
+        "src/cuda-oxide/.github/workflows/docs.yml",
+        "src/cuda-oxide/.github/workflows/examples-compile.yml",
+        "src/cuda-oxide/.github/workflows/fmt.yml",
+        "src/cuda-oxide/.github/workflows/naming-guard.yml",
+        "src/cuda-oxide/.github/workflows/status-guard.yml",
+        "src/cuda-oxide/.github/workflows/unit-tests.yml",
+        "src/cuda-oxide/Cargo.lock",
+        "src/cuda-oxide/Cargo.toml",
+        "src/cuda-oxide/Justfile",
+        "src/cuda-oxide/crates/cargo-oxide/Cargo.toml",
+        "src/cuda-oxide/crates/cuda-async/Cargo.toml",
+        "src/cuda-oxide/crates/cuda-bindings/Cargo.toml",
+        "src/cuda-oxide/crates/cuda-core/Cargo.toml",
+        "src/cuda-oxide/crates/cuda-device/Cargo.toml",
+        "src/cuda-oxide/crates/cuda-host/Cargo.toml",
+        "src/cuda-oxide/crates/cuda-macros/Cargo.toml",
+        "src/cuda-oxide/crates/dialect-mir/Cargo.toml",
+        "src/cuda-oxide/crates/dialect-nvvm/Cargo.toml",
+        "src/cuda-oxide/crates/fuzzer/Cargo.toml",
+        "src/cuda-oxide/crates/fuzzer/rustlantis/.gitlab-ci.yml",
+        "src/cuda-oxide/crates/fuzzer/rustlantis/Cargo.lock",
+        "src/cuda-oxide/crates/fuzzer/rustlantis/Cargo.toml",
+        "src/cuda-oxide/crates/fuzzer/rustlantis/abi/Cargo.toml",
+        "src/cuda-oxide/crates/fuzzer/rustlantis/config/Cargo.toml",
+        "src/cuda-oxide/crates/fuzzer/rustlantis/difftest/Cargo.toml",
+        "src/cuda-oxide/crates/fuzzer/rustlantis/generate/Cargo.toml",
+        "src/cuda-oxide/crates/fuzzer/rustlantis/mir/Cargo.toml",
+        "src/cuda-oxide/crates/fuzzer/rustlantis/rangemap/Cargo.toml",
+        "src/cuda-oxide/crates/libnvvm-sys/Cargo.toml",
+        "src/cuda-oxide/crates/llvm-export/Cargo.toml",
+        "src/cuda-oxide/crates/mir-importer/Cargo.toml",
+        "src/cuda-oxide/crates/mir-lower/Cargo.toml",
+        "src/cuda-oxide/crates/mir-transforms/Cargo.toml",
+        "src/cuda-oxide/crates/nvjitlink-sys/Cargo.toml",
+        "src/cuda-oxide/crates/nvvm-transforms/Cargo.toml",
+        "src/cuda-oxide/crates/oxide-artifacts/Cargo.toml",
+        "src/cuda-oxide/crates/reserved-oxide-symbols/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/abi_hmm/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/abi_hmm/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/addressof_sharedarray/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/addressof_sharedarray/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/array_constants/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/array_constants/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/array_for_loop/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/array_for_loop/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/array_index/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/array_index/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/array_init/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/array_init/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/asin_acos_smoke/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/asin_acos_smoke/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/async_mlp/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/async_mlp/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/async_vecadd/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/async_vecadd/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/atomic_f16/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/atomic_f16/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/atomics/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/atomics/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/barrier/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/barrier/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/bf16x2_arith/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/bf16x2_arith/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/bf16x2_fma/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/bf16x2_fma/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/bool_phi_cmp/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/bool_phi_cmp/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/carrying_mul_add/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/carrying_mul_add/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/cast_tests/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/cast_tests/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/cbrt_smoke/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/cbrt_smoke/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/checked_arith/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/checked_arith/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/clc/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/clc/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/cluster/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/cluster/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/compiler_features/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/compiler_features/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/complex_mul/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/complex_mul/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/const_aggregate/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/const_aggregate/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/const_generic/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/const_generic/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/constant_memory/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/constant_memory/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/constant_memory_coeffs/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/constant_memory_coeffs/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/constant_memory_simple/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/constant_memory_simple/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/coop_groups_demo/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/coop_groups_demo/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/copy_nonoverlapping/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/copy_nonoverlapping/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/cp_async_small/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/cp_async_small/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/cp_async_zfill/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/cp_async_zfill/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/cpp_consumes_rust_device/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/cpp_consumes_rust_device/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/cross_crate_embedded/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/cross_crate_embedded/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/cross_crate_embedded/kernel-lib/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/cross_crate_kernel/Cargo.lock",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/cross_crate_kernel/Cargo.toml",
+        "src/cuda-oxide/crates/rustc-codegen-cuda/examples/cross_crate_kernel/kernel-lib/Cargo.toml"
+      ],
+      "top_repositories_by_toolchain_signals": [
+        {
+          "repo": "meta-ruvector",
+          "signals": {
+            "package.json": 168,
+            "Cargo.lock": 50,
+            "Cargo.toml": 327,
+            "Dockerfile": 21,
+            "Dockerfile.test": 4,
+            "docker-compose.yml": 6,
+            "Makefile": 5,
+            "github-workflow": 66,
+            "Dockerfile.gpu": 1,
+            "Dockerfile.simple": 1,
+            "Dockerfile.cloudrun": 1,
+            "Dockerfile.build": 1,
+            "Dockerfile.test-runner": 1,
+            "Dockerfile.contributor": 1,
+            "docker-compose.test.yml": 1,
+            "Dockerfile.prebuilt": 1,
+            "Dockerfile.integration-test": 1,
+            "docker-compose.integration.yml": 1,
+            "Dockerfile.sse": 1,
+            "Dockerfile.worker": 1,
+            "Dockerfile.minimal": 1,
+            "Dockerfile.trainer": 1,
+            "package-lock.json": 1,
+            "Dockerfile.benchmark": 1,
+            "Dockerfile.npx-test": 1,
+            "Dockerfile.shim": 1,
+            "Dockerfile.deobfuscator": 1
+          },
+          "total": 666
+        },
+        {
+          "repo": "cuda-oxide",
+          "signals": {
+            "Justfile": 1,
+            "flake.nix": 1,
+            "flake.lock": 1,
+            "Cargo.lock": 136,
+            "Cargo.toml": 165,
+            ".gitlab-ci.yml": 1,
+            "github-workflow": 12,
+            "Dockerfile": 1,
+            "Makefile": 1,
+            "requirements.txt": 1
+          },
+          "total": 320
+        },
+        {
+          "repo": "teri",
+          "signals": {
+            "Cargo.lock": 10,
+            "Cargo.toml": 77,
+            "bun.lock": 4,
+            "package.json": 6,
+            "Dockerfile": 3,
+            "github-workflow": 35,
+            "Makefile": 4,
+            "pyproject.toml": 3,
+            "requirements.txt": 37,
+            "package-lock.json": 1,
+            "docker-compose.yml": 3
+          },
+          "total": 183
+        },
+        {
+          "repo": "nu_plugin",
+          "signals": {
+            "flake.nix": 1,
+            "flake.lock": 1,
+            "Cargo.lock": 1,
+            "Cargo.toml": 27,
+            "github-workflow": 1
+          },
+          "total": 31
+        },
+        {
+          "repo": "envctl",
+          "signals": {
+            "Cargo.lock": 1,
+            "Cargo.toml": 10,
+            "package.json": 1,
+            "package-lock.json": 1,
+            "github-workflow": 2
+          },
+          "total": 15
+        },
+        {
+          "repo": "hermes-agent",
+          "signals": {
+            "flake.nix": 1,
+            "pyproject.toml": 1,
+            "package.json": 1,
+            "docker-compose.windows.yml": 1,
+            "Dockerfile": 1,
+            "flake.lock": 1,
+            "docker-compose.yml": 1,
+            "package-lock.json": 1
+          },
+          "total": 8
+        },
+        {
+          "repo": "loop_lib",
+          "signals": {
+            "Cargo.toml": 1,
+            "github-workflow": 3
+          },
+          "total": 4
+        },
+        {
+          "repo": "Cargo.lock",
+          "signals": {
+            "Cargo.lock": 1
+          },
+          "total": 1
+        },
+        {
+          "repo": "Cargo.toml",
+          "signals": {
+            "Cargo.toml": 1
+          },
+          "total": 1
+        }
+      ],
+      "package_scripts_sample": [
+        {
+          "path": "src/teri/frontend/package.json",
+          "name": "frontend",
+          "package_manager": null,
+          "scripts": [
+            "build",
+            "dev",
+            "preview"
+          ]
+        },
+        {
+          "path": "src/teri/.worktrees/issue-86-source-wires/frontend/package.json",
+          "name": "frontend",
+          "package_manager": null,
+          "scripts": [
+            "build",
+            "dev",
+            "preview"
+          ]
+        },
+        {
+          "path": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/splitrail/vscode-splitrail/package.json",
+          "name": "splitrail-vscode",
+          "package_manager": null,
+          "scripts": [
+            "compile",
+            "lint",
+            "test",
+            "vscode:prepublish",
+            "watch"
+          ]
+        },
+        {
+          "path": "src/teri/.worktrees/issue-86-source-wires/.worktrees/external-sources/cluaiz/package.json",
+          "name": "cluaiz-package-manager",
+          "package_manager": null,
+          "scripts": []
+        },
+        {
+          "path": "src/teri/.worktrees/issue-86-source-wires/pebesen/frontend/package.json",
+          "name": "frontend",
+          "package_manager": "bun@1.3.14",
+          "scripts": [
+            "build",
+            "check",
+            "check:watch",
+            "dev",
+            "format",
+            "format:check",
+            "lint",
+            "lint:check",
+            "prepare",
+            "preview",
+            "test"
+          ]
+        },
+        {
+          "path": "src/teri/pebesen/frontend/package.json",
+          "name": "frontend",
+          "package_manager": "bun@1.3.14",
+          "scripts": [
+            "build",
+            "check",
+            "check:watch",
+            "dev",
+            "format",
+            "format:check",
+            "lint",
+            "lint:check",
+            "prepare",
+            "preview",
+            "test"
+          ]
+        },
+        {
+          "path": "src/envctl/.codex/plugins/cache/meta-plugins-codex/superhuman/0.1.2/package.json",
+          "name": "@superhuman/mcp-mail",
+          "package_manager": null,
+          "scripts": []
+        },
+        {
+          "path": "src/meta-ruvector/package.json",
+          "name": "ruvector",
+          "package_manager": null,
+          "scripts": [
+            "bench",
+            "bench:graph",
+            "build",
+            "build:all",
+            "build:graph",
+            "build:graph-node",
+            "build:graph-wasm",
+            "build:node",
+            "build:wasm",
+            "check",
+            "check:graph",
+            "cli"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/tests/docker-integration/package.json",
+          "name": "ruvector-attention-integration-test",
+          "package_manager": null,
+          "scripts": [
+            "test",
+            "test:napi",
+            "test:wasm"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/tests/agentic-jujutsu/package.json",
+          "name": "agentic-jujutsu-tests",
+          "package_manager": null,
+          "scripts": [
+            "test",
+            "test:all",
+            "test:coverage",
+            "test:integration",
+            "test:performance",
+            "test:validation",
+            "test:verbose",
+            "test:watch"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/examples/dragnes/package.json",
+          "name": "dragnes",
+          "package_manager": null,
+          "scripts": [
+            "build",
+            "check",
+            "deploy",
+            "dev",
+            "preview",
+            "test"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/examples/ruvLLM/package.json",
+          "name": "ruvllm-native",
+          "package_manager": null,
+          "scripts": []
+        },
+        {
+          "path": "src/meta-ruvector/examples/ruvLLM/esp32-flash/npm/package.json",
+          "name": "ruvllm-esp32",
+          "package_manager": null,
+          "scripts": [
+            "postinstall"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/examples/neural-trader/package.json",
+          "name": "ruvector-neural-trader-examples",
+          "package_manager": null,
+          "scripts": [
+            "accounting:cost-basis",
+            "accounting:crypto-tax",
+            "advanced:broker",
+            "advanced:conformal",
+            "advanced:microstructure",
+            "core:basic",
+            "core:features",
+            "core:hnsw",
+            "exotic:arbitrage",
+            "exotic:attention",
+            "exotic:gnn",
+            "exotic:hyperbolic"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/examples/decompiler-dashboard/package.json",
+          "name": "decompiler-dashboard",
+          "package_manager": null,
+          "scripts": [
+            "build",
+            "dev",
+            "prebuild:data",
+            "preview"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/examples/scipix/web/package.json",
+          "name": "ruvector-mathpix-wasm",
+          "package_manager": null,
+          "scripts": [
+            "build",
+            "build:dev",
+            "dev",
+            "serve",
+            "test"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/examples/meta-cognition-spiking-neural-network/package.json",
+          "name": "vibecast",
+          "package_manager": null,
+          "scripts": [
+            "test"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/examples/meta-cognition-spiking-neural-network/demos/snn/package.json",
+          "name": "snn-simd",
+          "package_manager": null,
+          "scripts": [
+            "benchmark",
+            "build",
+            "clean",
+            "install",
+            "test"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/examples/meta-cognition-spiking-neural-network/demos/exploration/package.json",
+          "name": "@agentdb/autonomous-discovery",
+          "package_manager": null,
+          "scripts": [
+            "discover",
+            "explore",
+            "test"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/examples/meta-cognition-spiking-neural-network/demos/optimization/package.json",
+          "name": "@agentdb/simd-ops",
+          "package_manager": null,
+          "scripts": [
+            "benchmark",
+            "test"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/examples/edge/pkg/package.json",
+          "name": "@ruvector/edge",
+          "package_manager": null,
+          "scripts": []
+        },
+        {
+          "path": "src/meta-ruvector/examples/delta-behavior/wasm/package.json",
+          "name": "@ruvector/delta-behavior",
+          "package_manager": null,
+          "scripts": [
+            "build",
+            "build:all",
+            "build:wasm",
+            "build:wasm:dev",
+            "build:wasm:nodejs",
+            "clean",
+            "dev",
+            "example:node",
+            "format",
+            "lint",
+            "prepublishOnly",
+            "test"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/examples/wasm-react/package.json",
+          "name": "ruvector-wasm-react-example",
+          "package_manager": null,
+          "scripts": [
+            "build",
+            "dev",
+            "preview"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/examples/edge-full/pkg/package.json",
+          "name": "@ruvector/edge-full",
+          "package_manager": null,
+          "scripts": []
+        },
+        {
+          "path": "src/meta-ruvector/examples/agentdb-rag/package.json",
+          "name": "agentdb-rag-example",
+          "package_manager": null,
+          "scripts": [
+            "bench",
+            "init",
+            "mcp",
+            "query",
+            "seed",
+            "stats"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/examples/wasm/ios/types/package.json",
+          "name": "@ruvector/ios-wasm-types",
+          "package_manager": null,
+          "scripts": []
+        },
+        {
+          "path": "src/meta-ruvector/examples/edge-net/tests/package.json",
+          "name": "@ruvector/edge-net-tests",
+          "package_manager": null,
+          "scripts": [
+            "test",
+            "test:all",
+            "test:credits",
+            "test:credits-manual",
+            "test:security",
+            "test:watch"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/examples/edge-net/sim/package.json",
+          "name": "edge-net-lifecycle-simulation",
+          "package_manager": null,
+          "scripts": [
+            "build",
+            "clean",
+            "simulate",
+            "simulate:fast",
+            "simulate:verbose"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/examples/edge-net/relay/package.json",
+          "name": "@ruvector/edge-net-relay",
+          "package_manager": null,
+          "scripts": [
+            "deploy",
+            "start",
+            "test"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/examples/edge-net/dashboard/package.json",
+          "name": "@ruvector/edge-net-dashboard",
+          "package_manager": null,
+          "scripts": [
+            "build",
+            "dev",
+            "docker:build",
+            "docker:dev",
+            "docker:run",
+            "lint",
+            "preview",
+            "test",
+            "test:coverage",
+            "test:watch"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/examples/edge-net/pkg/package.json",
+          "name": "@ruvector/edge-net",
+          "package_manager": null,
+          "scripts": [
+            "benchmark",
+            "history",
+            "info",
+            "join",
+            "join:generate",
+            "join:multi",
+            "network",
+            "peers",
+            "start"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/examples/rvf/dashboard/package.json",
+          "name": "rvf-causal-atlas-dashboard",
+          "package_manager": null,
+          "scripts": [
+            "build",
+            "dev",
+            "preview"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/crates/ruvector-graph-transformer-wasm/pkg/package.json",
+          "name": "ruvector-graph-transformer-wasm",
+          "package_manager": null,
+          "scripts": []
+        },
+        {
+          "path": "src/meta-ruvector/crates/ruvector-cluster/package.json",
+          "name": "@ruvector/cluster",
+          "package_manager": null,
+          "scripts": [
+            "build",
+            "test"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/crates/ruvector-gnn-node/package.json",
+          "name": "@ruvector/gnn",
+          "package_manager": null,
+          "scripts": [
+            "artifacts",
+            "build",
+            "build:debug",
+            "prepublishOnly",
+            "test",
+            "version"
+          ]
+        },
+        {
+          "path": "src/meta-ruvector/crates/ruvector-gnn-node/npm/darwin-arm64/package.json",
+          "name": "@ruvector/gnn-darwin-arm64",
+          "package_manager": null,
+          "scripts": []
+        },
+        {
+          "path": "src/meta-ruvector/crates/ruvector-gnn-node/npm/linux-arm64-musl/package.json",
+          "name": "@ruvector/gnn-linux-arm64-musl",
+          "package_manager": null,
+          "scripts": []
+        },
+        {
+          "path": "src/meta-ruvector/crates/ruvector-gnn-node/npm/linux-x64-gnu/package.json",
+          "name": "@ruvector/gnn-linux-x64-gnu",
+          "package_manager": null,
+          "scripts": []
+        },
+        {
+          "path": "src/meta-ruvector/crates/ruvector-gnn-node/npm/win32-x64-msvc/package.json",
+          "name": "@ruvector/gnn-win32-x64-msvc",
+          "package_manager": null,
+          "scripts": []
+        },
+        {
+          "path": "src/meta-ruvector/crates/ruvector-gnn-node/npm/linux-arm64-gnu/package.json",
+          "name": "@ruvector/gnn-linux-arm64-gnu",
+          "package_manager": null,
+          "scripts": []
+        }
+      ]
+    },
+    "frontdoors": [
+      {
+        "name": "envctl",
+        "path": "src/envctl/target/release/envctl",
+        "exists": true,
+        "kind": "symlink",
+        "target": "/home/flexnetos/FlexNetOS/src/envctl/target/release/envctl",
+        "version_probe": "envctl 0.1.0"
+      },
+      {
+        "name": "meta",
+        "path": "usr/bin/meta",
+        "exists": true,
+        "kind": "file",
+        "wrapper": "#!/usr/bin/env bash",
+        "version_probe": "meta 0.2.22"
+      },
+      {
+        "name": "git-kb",
+        "path": "release/staging/flexnetos-ubuntu-26.04-x86_64-20260702T121553Z/bin/git-kb",
+        "exists": true,
+        "kind": "symlink",
+        "target": "/home/flexnetos/FlexNetOS/release/staging/flexnetos-ubuntu-26.04-x86_64-20260702T121553Z/bin/git-kb",
+        "version_probe": "git-kb 0.2.12"
+      },
+      {
+        "name": "bun",
+        "path": "usr/bin/bun",
+        "exists": true,
+        "kind": "file",
+        "wrapper": "#!/bin/sh",
+        "version_probe": "1.3.14"
+      },
+      {
+        "name": "bunx",
+        "path": "usr/bin/bunx",
+        "exists": true,
+        "kind": "file",
+        "wrapper": "envctl bunx wrapper",
+        "version_probe": "1.3.14"
+      },
+      {
+        "name": "node",
+        "path": "usr/bin/node",
+        "exists": false,
+        "kind": "missing"
+      },
+      {
+        "name": "corepack",
+        "path": "usr/bin/corepack",
+        "exists": false,
+        "kind": "missing"
+      },
+      {
+        "name": "npm",
+        "path": "usr/bin/npm",
+        "exists": false,
+        "kind": "missing"
+      },
+      {
+        "name": "pnpm",
+        "path": "usr/bin/pnpm",
+        "exists": false,
+        "kind": "missing"
+      },
+      {
+        "name": "yarn",
+        "path": "usr/bin/yarn",
+        "exists": false,
+        "kind": "missing"
+      },
+      {
+        "name": "yarnpkg",
+        "path": "usr/bin/yarnpkg",
+        "exists": false,
+        "kind": "missing"
+      },
+      {
+        "name": "cargo",
+        "path": "usr/bin/cargo",
+        "exists": false,
+        "kind": "missing"
+      },
+      {
+        "name": "rustc",
+        "path": "usr/bin/rustc",
+        "exists": false,
+        "kind": "missing"
+      },
+      {
+        "name": "kache",
+        "path": "usr/bin/kache",
+        "exists": false,
+        "kind": "missing"
+      },
+      {
+        "name": "kache-rustc-wrapper",
+        "path": "usr/bin/kache-rustc-wrapper",
+        "exists": true,
+        "kind": "file",
+        "wrapper": "#!/usr/bin/env bash",
+        "version_probe": "kache 0.8.0"
+      },
+      {
+        "name": "wild",
+        "path": "usr/bin/wild",
+        "exists": false,
+        "kind": "missing"
+      },
+      {
+        "name": "clang",
+        "path": "usr/bin/clang",
+        "exists": false,
+        "kind": "missing"
+      },
+      {
+        "name": "gh",
+        "path": "usr/bin/gh",
+        "exists": false,
+        "kind": "missing"
+      },
+      {
+        "name": "podman",
+        "path": "usr/bin/podman",
+        "exists": false,
+        "kind": "missing"
+      },
+      {
+        "name": "just",
+        "path": "usr/bin/just",
+        "exists": false,
+        "kind": "missing"
+      },
+      {
+        "name": "codex",
+        "path": "usr/bin/codex",
+        "exists": false,
+        "kind": "missing"
+      }
+    ],
+    "envctl_components": {
+      "component_count": 12,
+      "components": [
+        {
+          "id": "bun",
+          "name": "Bun JS runtime",
+          "description": "JS runtime + package manager; exposes bun/bunx and package-manager frontdoors through regular $META_ROOT/usr/bin wrappers. npx/pnpx dispatch to bunx; npm/pnpm/yarn dispatch to bun so Node package-manager commands do not fall back to host npm/pnpm.",
+          "requires": [],
+          "manifest": "src/envctl/manifest/base.toml",
+          "path_entries": [
+            "$META_ROOT/.toolchains/.bun/bin",
+            "$META_ROOT/usr/bin"
+          ]
+        },
+        {
+          "id": "node-via-bun",
+          "name": "node \u2192 bun symlink",
+          "description": "Exposes `node` as a symlink to bun (node-compat mode).",
+          "requires": [
+            "bun"
+          ],
+          "manifest": "src/envctl/manifest/base.toml",
+          "path_entries": []
+        },
+        {
+          "id": "node-real",
+          "name": "Real Node.js (n8n V8 runtime)",
+          "description": "Real Node 20-24 for tools that need V8 (n8n's isolated-vm), installed into $META_ROOT/.toolchains/node with only node/corepack frontdoor wrappers. Bun (JSC) cannot satisfy V8; this is the narrow non-bun carve-out. Bun owns npm/npx/pnpm/yarn package-manager frontdoors.",
+          "requires": [],
+          "manifest": "src/envctl/manifest/base.toml",
+          "path_entries": [
+            "$META_ROOT/usr/bin"
+          ]
+        },
+        {
+          "id": "rustup",
+          "name": "rustup toolchain",
+          "description": "Rust toolchain manager (cargo/rustc). Foundation for rtk + cuda-oxide.",
+          "requires": [],
+          "manifest": "src/envctl/manifest/base.toml",
+          "path_entries": []
+        },
+        {
+          "id": "rtk",
+          "name": "rtk (Rust Token Killer)",
+          "description": "cargo-installed CLI; first run: rtk gain ; rtk init -g.",
+          "requires": [
+            "rustup"
+          ],
+          "manifest": "src/envctl/manifest/base.toml",
+          "path_entries": []
+        },
+        {
+          "id": "gh-cli",
+          "name": "GitHub CLI (meta-owned)",
+          "description": "gh from upstream release tarball into .toolchains/gh + a regular $META_ROOT/usr/bin frontdoor wrapper. Replaces the apt `gh`. Repo: cli/cli.",
+          "requires": [],
+          "manifest": "src/envctl/manifest/components.d/epic-h-toolchains.toml",
+          "path_entries": [
+            "$META_ROOT/usr/bin"
+          ]
+        },
+        {
+          "id": "wild-linker",
+          "name": "wild linker (meta-owned, wired + verified)",
+          "description": "Fast Rust linker (davidlattimore/wild) via `cargo install --locked wild-linker` into .toolchains/wild, wired as the local cargo linker via a delimited block in the meta-root .cargo/config.toml (clang + --ld-path=wild). Owner-preferred over mold. Wiring is verified \u2014 a full cargo build links through wild before it lands; the config is co-managed with kache (block-upsert) and remove strips only the wild block.",
+          "requires": [],
+          "manifest": "src/envctl/manifest/components.d/epic-h-toolchains.toml",
+          "path_entries": [
+            "$META_ROOT/usr/bin"
+          ]
+        },
+        {
+          "id": "kache",
+          "name": "kache compiler cache (meta-owned, wired + verified)",
+          "description": "Content-addressed Rust compiler cache (kunobi-ninja/kache) via `cargo install kache` into .toolchains/kache, exposed through a $META_ROOT/usr/bin/kache XDG wrapper, and wired as RUSTC_WRAPPER via an absolute delimited [build] block in the meta-root .cargo/config.toml (co-managed with wild via block-upsert). Wiring is verified by a throwaway cargo build that must write $META_ROOT/.cache/kache, not ~/.cache/kache. sccache only as last-resort fallback.",
+          "requires": [],
+          "manifest": "src/envctl/manifest/components.d/epic-h-toolchains.toml",
+          "path_entries": [
+            "$META_ROOT/usr/bin"
+          ]
+        },
+        {
+          "id": "ghostty",
+          "name": "Ghostty terminal",
+          "description": "Default terminal emulator; yazelix's batteries-included variant.",
+          "requires": [],
+          "manifest": "src/envctl/manifest/apt-base.toml",
+          "path_entries": []
+        },
+        {
+          "id": "podman",
+          "name": "Podman (rootless containers)",
+          "description": "Rootless container stack from the static podman release, installed under $META_ROOT/.toolchains/podman. $META_ROOT/usr/bin/podman is a regular executable frontdoor wrapper for the meta-hosted podman binary; helper binaries and containers config are also meta-hosted.",
+          "requires": [],
+          "manifest": "src/envctl/manifest/apt-base.toml",
+          "path_entries": [
+            "$META_ROOT/usr/bin"
+          ]
+        },
+        {
+          "id": "codex-cli",
+          "name": "Codex CLI (meta toolchain; pinned upstream release rust-v0.142.3, meta-owned CODEX_HOME wrapper)",
+          "description": null,
+          "requires": [
+            "rustup",
+            "bun",
+            "wild-linker"
+          ],
+          "manifest": "src/envctl/manifest/ai-clis.toml",
+          "path_entries": []
+        },
+        {
+          "id": "codex-cli-alpha",
+          "name": "Codex CLI alpha candidate (parallel Rust release lane; does not repoint codex/current)",
+          "description": null,
+          "requires": [
+            "codex-cli"
+          ],
+          "manifest": "src/envctl/manifest/ai-clis.toml",
+          "path_entries": []
+        }
+      ]
+    },
+    "version_constraints": {
+      "envctl_workspace_rust_version": "1.88",
+      "ci_msrv": "1.88.0",
+      "ci_cargo_audit_version": "0.22.1",
+      "known_linker_contract": "clang plus -Clink-arg=--ld-path=wild",
+      "known_rustc_wrapper": "kache-rustc-wrapper"
+    },
+    "compatibility_risks": [
+      {
+        "risk": "Rust MSRV drift",
+        "evidence": "src/envctl/Cargo.toml and CI enforce rust-version/MSRV 1.88",
+        "mitigation": "Keep cargo check on +1.88.0 and avoid dependency upgrades that raise rust-version."
+      },
+      {
+        "risk": "Host package-manager fallback",
+        "evidence": "src/envctl/manifest/base.toml wraps npm/pnpm/yarn through Bun",
+        "mitigation": "Resolve package-manager commands through $META_ROOT/usr/bin frontdoors."
+      },
+      {
+        "risk": "Linker/cache wiring differs between local and clean CI",
+        "evidence": "wild and kache wiring live in envctl manifests; GitHub CI uses clean hosted runners.",
+        "mitigation": "Record local linker/cache as migration prerequisites, while treating CI as the clean acceptance surface."
+      },
+      {
+        "risk": "Container engine path drift",
+        "evidence": "Podman is installed via envctl apt-base component; Dockerfiles and compose files exist across target root.",
+        "mitigation": "Use meta-owned podman frontdoor when container build/deploy artifacts are exercised."
+      }
+    ],
+    "evidence_files": [
+      "docs/CONTRACT_MANIFEST.md",
+      "generated/envctl_migration_db_model.json",
+      "generated/envctl_target_registry.json",
+      "generated/package_scan.json",
+      "src/envctl/.github/workflows/ci.yml",
+      "src/envctl/.github/workflows/sync-master.yml",
+      "src/envctl/Cargo.toml",
+      "src/envctl/manifest/ai-clis.toml",
+      "src/envctl/manifest/apt-base.toml",
+      "src/envctl/manifest/base.toml",
+      "src/envctl/manifest/components.d/epic-h-toolchains.toml"
+    ]
+  },
+  "registry": {
+    "schema_version": "1.0",
+    "task_id": "ART-104_TOOLCHAIN_TREE",
+    "status": "passed",
+    "generated_at": "2026-07-04T23:22:31+00:00",
+    "run_id": "run-art104-toolchain-tree",
+    "operation_id": "op-art104-generate-register",
+    "contract_id": "contract-art104-toolchain-tree",
+    "registered_artifacts": [
+      {
+        "result": {
+          "artifact_row_id": "artifact-fa9ea1bbf4056743c16fa30e",
+          "artifact_id": "art104-toolchain-tree-md",
+          "run_id": "run-art104-toolchain-tree",
+          "path": "execution-framework/migration-artifacts/art-104_toolchain_tree/toolchain-dependency-tree.md",
+          "content_hash": "sha256:c8313d75a8f13bd241cf9334483d730da18475762adb9d6dc4e5670ab409fe3b",
+          "producer_operation_id": "op-art104-generate-register",
+          "contract_id": "contract-art104-toolchain-tree",
+          "evidence_ids": [
+            "evidence-be26425e322adb18aea6d7ae",
+            "evidence-4be1b4a6e7d0148035cd42dd",
+            "evidence-8c2c4b71ff06f18661679d72",
+            "evidence-933dc57f2107ba3acd0faddf",
+            "evidence-e7cf767b0e7903e6daecbe06"
+          ],
+          "graph_edge_ids": [
+            "edge-c194c2309829c1e50ae81439",
+            "edge-915d39efed5772ddb9a637be",
+            "edge-b633ff7e471a63005c3d4e2d",
+            "edge-72982bd802e84a93bb71ca00"
+          ],
+          "validation_ids": [
+            "validation-bc76bff21adeffd9e27db3bf",
+            "validation-132980a4786ba86065749f59"
+          ]
+        },
+        "row": {
+          "id": "artifact-fa9ea1bbf4056743c16fa30e",
+          "run_id": "run-art104-toolchain-tree",
+          "artifact_id": "art104-toolchain-tree-md",
+          "title": "ART-104 Toolchain Dependency Tree Markdown",
+          "artifact_type": "toolchain_dependency_tree_markdown",
+          "status": "complete",
+          "path": "execution-framework/migration-artifacts/art-104_toolchain_tree/toolchain-dependency-tree.md",
+          "content_hash": "sha256:c8313d75a8f13bd241cf9334483d730da18475762adb9d6dc4e5670ab409fe3b",
+          "generated_by_operation_id": "op-art104-generate-register",
+          "evidence": {
+            "contract_id": "contract-art104-toolchain-tree",
+            "evidence_ids": [
+              "evidence-be26425e322adb18aea6d7ae",
+              "evidence-4be1b4a6e7d0148035cd42dd",
+              "evidence-8c2c4b71ff06f18661679d72",
+              "evidence-933dc57f2107ba3acd0faddf",
+              "evidence-e7cf767b0e7903e6daecbe06"
+            ],
+            "evidence_refs": [
+              "execution-framework/migration-artifacts/art-104_toolchain_tree/toolchain-dependency-tree.md",
+              "execution-framework/migration-artifacts/art-104_toolchain_tree/toolchain-dependency-tree.json",
+              "execution-framework/generated/envctl_target_registry.json",
+              "execution-framework/generated/package_scan.json",
+              "execution-framework/docs/CONTRACT_MANIFEST.md"
+            ],
+            "producer_operation_id": "op-art104-generate-register",
+            "provenance": {
+              "helper_id": "helper-artifact-05",
+              "owner_agent": "artifact-agent",
+              "source_inputs": [
+                "target descriptor",
+                "repo scan",
+                "envctl database"
+              ],
+              "target_root": "/home/flexnetos/FlexNetOS",
+              "task_id": "ART-104_TOOLCHAIN_TREE"
+            },
+            "validation_ids": [
+              "validation-bc76bff21adeffd9e27db3bf",
+              "validation-132980a4786ba86065749f59"
+            ]
+          },
+          "links": {
+            "contract_id": "contract-art104-toolchain-tree",
+            "graph_edge_ids": [
+              "edge-c194c2309829c1e50ae81439",
+              "edge-915d39efed5772ddb9a637be",
+              "edge-b633ff7e471a63005c3d4e2d",
+              "edge-72982bd802e84a93bb71ca00"
+            ],
+            "links": [
+              {
+                "to": "artifact:03-code-analysis-toolchain-dependency-tree-md",
+                "type": "satisfies"
+              },
+              {
+                "to": "artifact:spark-spark-toolchain-deps-md",
+                "type": "relates_to"
+              },
+              {
+                "to": "task:VER-300_UNIT_VALIDATION",
+                "type": "blocks"
+              }
+            ]
+          }
+        }
+      },
+      {
+        "result": {
+          "artifact_row_id": "artifact-b319b4106dac19c1c08ad930",
+          "artifact_id": "art104-toolchain-tree-json",
+          "run_id": "run-art104-toolchain-tree",
+          "path": "execution-framework/migration-artifacts/art-104_toolchain_tree/toolchain-dependency-tree.json",
+          "content_hash": "sha256:c73a7ece8c79775c80da22fb230e31743005d6616fdc3e746a27390ca1fd7d9c",
+          "producer_operation_id": "op-art104-generate-register",
+          "contract_id": "contract-art104-toolchain-tree",
+          "evidence_ids": [
+            "evidence-57c4904fad4f189778c9416c",
+            "evidence-778d36dd3124fd46d1bfac01",
+            "evidence-53909f029a672146a2b42675",
+            "evidence-441dcf5cb1270b69b0945697",
+            "evidence-cdf5858e5204793d3c98994c"
+          ],
+          "graph_edge_ids": [
+            "edge-7525cba2d63d4cb12a3cb560",
+            "edge-e155338442b97e047df5b956",
+            "edge-f1f583850058f4fadeff4a76",
+            "edge-c6ec3fee8804d6d246a6b3ca"
+          ],
+          "validation_ids": [
+            "validation-c6557f67aea4ed415b0e1588",
+            "validation-221ef61812351ece68faf20d"
+          ]
+        },
+        "row": {
+          "id": "artifact-b319b4106dac19c1c08ad930",
+          "run_id": "run-art104-toolchain-tree",
+          "artifact_id": "art104-toolchain-tree-json",
+          "title": "ART-104 Toolchain Dependency Tree JSON",
+          "artifact_type": "toolchain_dependency_tree_json",
+          "status": "complete",
+          "path": "execution-framework/migration-artifacts/art-104_toolchain_tree/toolchain-dependency-tree.json",
+          "content_hash": "sha256:c73a7ece8c79775c80da22fb230e31743005d6616fdc3e746a27390ca1fd7d9c",
+          "generated_by_operation_id": "op-art104-generate-register",
+          "evidence": {
+            "contract_id": "contract-art104-toolchain-tree",
+            "evidence_ids": [
+              "evidence-57c4904fad4f189778c9416c",
+              "evidence-778d36dd3124fd46d1bfac01",
+              "evidence-53909f029a672146a2b42675",
+              "evidence-441dcf5cb1270b69b0945697",
+              "evidence-cdf5858e5204793d3c98994c"
+            ],
+            "evidence_refs": [
+              "execution-framework/migration-artifacts/art-104_toolchain_tree/toolchain-dependency-tree.md",
+              "execution-framework/migration-artifacts/art-104_toolchain_tree/toolchain-dependency-tree.json",
+              "execution-framework/generated/envctl_target_registry.json",
+              "execution-framework/generated/package_scan.json",
+              "execution-framework/docs/CONTRACT_MANIFEST.md"
+            ],
+            "producer_operation_id": "op-art104-generate-register",
+            "provenance": {
+              "helper_id": "helper-artifact-05",
+              "owner_agent": "artifact-agent",
+              "source_inputs": [
+                "target descriptor",
+                "repo scan",
+                "envctl database"
+              ],
+              "target_root": "/home/flexnetos/FlexNetOS",
+              "task_id": "ART-104_TOOLCHAIN_TREE"
+            },
+            "validation_ids": [
+              "validation-c6557f67aea4ed415b0e1588",
+              "validation-221ef61812351ece68faf20d"
+            ]
+          },
+          "links": {
+            "contract_id": "contract-art104-toolchain-tree",
+            "graph_edge_ids": [
+              "edge-7525cba2d63d4cb12a3cb560",
+              "edge-e155338442b97e047df5b956",
+              "edge-f1f583850058f4fadeff4a76",
+              "edge-c6ec3fee8804d6d246a6b3ca"
+            ],
+            "links": [
+              {
+                "to": "artifact:03-code-analysis-toolchain-dependency-tree-md",
+                "type": "satisfies"
+              },
+              {
+                "to": "artifact:spark-spark-toolchain-deps-md",
+                "type": "relates_to"
+              },
+              {
+                "to": "task:VER-300_UNIT_VALIDATION",
+                "type": "blocks"
+              }
+            ]
+          }
+        }
+      }
+    ],
+    "counts": {
+      "artifact_rows": 2,
+      "evidence_rows": 10,
+      "graph_edges": 8,
+      "validation_rows": 4
+    },
+    "errors": []
+  }
+}

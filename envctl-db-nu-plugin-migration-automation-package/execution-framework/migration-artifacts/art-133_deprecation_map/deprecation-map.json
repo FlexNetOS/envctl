@@ -1,0 +1,232 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-133_DEPRECATION_MAP",
+  "title": "Deprecation Map",
+  "generated_at": "2026-07-04T23:28:24+00:00",
+  "status": "complete",
+  "contract_row": {
+    "contract_row_id": "artifact:02-target-state-deprecation-map-md",
+    "artifact_id": "02-target-state-deprecation-map-md",
+    "title": "Deprecation Map",
+    "required_path": "migration-artifacts/02-target-state/deprecation-map.md",
+    "section": "02-target-state",
+    "artifact_type": "migration_artifact",
+    "format": "md",
+    "status": "required",
+    "source_refs": [
+      "source/codex-flexnetos-migration-prompt-package/expected-output/migration-artifacts-tree.md",
+      "source/previous-migration-artifact-context.md"
+    ],
+    "producer_task_id": "ART-133_DEPRECATION_MAP",
+    "validators": [
+      "path_registered",
+      "evidence_or_status_recorded",
+      "linked_from_index"
+    ]
+  },
+  "inputs": [
+    "target descriptor",
+    "repo scan",
+    "envctl database"
+  ],
+  "source_signals": {
+    "package_graph_summary": {
+      "node_count": 8,
+      "edge_count": 6,
+      "python_file_count": 49,
+      "third_party_python_import_count": 2,
+      "shell_script_count": 6,
+      "issue_count": 4,
+      "vulnerability_count": 1,
+      "deprecation_count": 1,
+      "incompatibility_count": 2
+    },
+    "package_graph_issues": [
+      {
+        "id": "ART105-VULN-001",
+        "category": "vulnerability",
+        "severity": "unknown",
+        "component": "all",
+        "status": "no_external_lockfile_detected",
+        "finding": "The package contains no third-party package lockfile or version-pinned library manifest for CVE correlation; observed external Python imports are recorded without versions, so CVE status is unknown rather than clean.",
+        "evidence": [
+          "PACKAGE_MANIFEST.json",
+          "execution-framework/generated/package_scan.json"
+        ]
+      },
+      {
+        "id": "ART105-DEP-001",
+        "category": "deprecation",
+        "severity": "medium",
+        "component": "source/codex-flexnetos-migration-prompt-package/helpers/__pycache__",
+        "status": "present_in_source_manifest",
+        "finding": "The source package manifest includes CPython 3.13 bytecode cache files; treat them as generated compatibility artifacts, not authoritative migration source.",
+        "evidence": [
+          "source/codex-flexnetos-migration-prompt-package/PACKAGE_MANIFEST.json"
+        ]
+      },
+      {
+        "id": "ART105-INCOMPAT-001",
+        "category": "incompatibility",
+        "severity": "medium",
+        "component": "sqlite schema",
+        "status": "requires_sqlite_features",
+        "finding": "Artifact registry verification depends on SQLite foreign keys, views, unique constraints, and upsert semantics; alternate DB backends need compatible migrations before replay.",
+        "evidence": [
+          "sql/001_migration_automation_schema.sql",
+          "sql/002_views_and_indexes.sql",
+          "sql/003_seed_artifact_contract.sql",
+          "execution-framework/generated/contract_manifest.seed.sql"
+        ]
+      },
+      {
+        "id": "ART105-INCOMPAT-002",
+        "category": "incompatibility",
+        "severity": "medium",
+        "component": "codex execution runtime",
+        "status": "tool_required",
+        "finding": "Execution packets require codex, python3, and shell tools. The package does not vendor these tools, so target hosts must provide them through the envctl runtime.",
+        "evidence": [
+          "generated/execution_packets/ART-105_PACKAGE_LIB_GRAPH.json",
+          "RUN_WITH_CODEX_ENVCTL.sh"
+        ]
+      }
+    ],
+    "target_descriptor_path": "migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+    "target_descriptor_exists": true,
+    "adapter_spec_path": "specs/flexnetos-adapter.md",
+    "strategy_decision_path": "prompts/STRATEGY_DECISION.md",
+    "shared_protocol_status": "passed",
+    "db_model_status": "passed",
+    "db_artifact_registry_covered": true
+  },
+  "summary": {
+    "retired": 1,
+    "replaced": 2,
+    "wrapped": 2,
+    "preserved": 3
+  },
+  "entries": [
+    {
+      "component_id": "deprecated-generated-bytecode-cache",
+      "component": "source/codex-flexnetos-migration-prompt-package/helpers/__pycache__",
+      "classification": "retired",
+      "disposition": "Exclude from authoritative migration source and regenerated package outputs.",
+      "rationale": "The source package manifest includes CPython 3.13 bytecode cache files; treat them as generated compatibility artifacts, not authoritative migration source.",
+      "replacement": "Source helper scripts and package manifest entries without CPython cache files.",
+      "owner": "artifact-agent",
+      "risk": "medium",
+      "validation": "Package graph deprecation issue is captured and linked to this map.",
+      "evidence_refs": [
+        "migration-artifacts/art-105_package_lib_graph/package_lib_graph.json"
+      ]
+    },
+    {
+      "component_id": "prompt-only-artifact-state",
+      "component": "Markdown-only migration artifact status",
+      "classification": "replaced",
+      "disposition": "Replace with envctl artifact rows, content hashes, validation records, and graph links.",
+      "rationale": "The envctl DB model covers artifact registry, evidence, graph edges, and validations so artifact state is queryable and replayable.",
+      "replacement": "envctl_migration_artifacts plus envctl_migration_evidence, envctl_migration_graph_edges, and envctl_migration_validations.",
+      "owner": "envctl-db-agent",
+      "risk": "medium",
+      "validation": "REQ-024 registry proof and generated DB model report are linked.",
+      "evidence_refs": [
+        "generated/envctl_migration_db_model.json",
+        "proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json"
+      ]
+    },
+    {
+      "component_id": "hardcoded-flexnetos-lifeos-paths",
+      "component": "Hardcoded FlexNetOS/lifeos comparison paths in prior prompts",
+      "classification": "replaced",
+      "disposition": "Replace with target descriptor driven roots and safety policy.",
+      "rationale": "The target descriptor records primary_root, compare_root, include/exclude rules, safety mode, collectors, contract, and recipe metadata.",
+      "replacement": "migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml and envctl target registry rows.",
+      "owner": "target-registry-agent",
+      "risk": "medium",
+      "validation": "REQ-200 target descriptor proof validates descriptor fields and path policy.",
+      "evidence_refs": [
+        "migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+        "generated/flexnetos_target_descriptor_validation_report.json"
+      ]
+    },
+    {
+      "component_id": "external-background-scan-helper",
+      "component": "source/codex-flexnetos-migration-prompt-package/helpers/background_scan.sh",
+      "classification": "wrapped",
+      "disposition": "Keep as an external collector operation during adapter MVP, then replace gradually where native collectors are practical.",
+      "rationale": "The strategy decision preserves immediate continuity through the adapter while Phase G replaces shell helper behavior with native collectors.",
+      "replacement": "envctl operation records that execute/import helper output, followed by native collector implementations.",
+      "owner": "flexnetos-adapter-agent",
+      "risk": "medium",
+      "validation": "Adapter duties require importing package outputs as operations, evidence, artifacts, and graph links.",
+      "evidence_refs": [
+        "prompts/STRATEGY_DECISION.md",
+        "prompts/UTILIZE_FLEXNETOS_PACKAGE.md",
+        "prompts/IMPLEMENTATION_PHASES.md"
+      ]
+    },
+    {
+      "component_id": "codex-exec-runtime",
+      "component": "codex CLI background shell execution",
+      "classification": "wrapped",
+      "disposition": "Run through execution packets and envctl operation metadata instead of treating raw stdout as the state boundary.",
+      "rationale": "Execution packets require codex, python3, and shell tools. The package does not vendor these tools, so target hosts must provide them through the envctl runtime.",
+      "replacement": "envctl run ledger, operation records, event/evidence hashes, and proof records.",
+      "owner": "envctl-runner-agent",
+      "risk": "medium",
+      "validation": "Packet, run ledger, and proof records link the runtime to replayable state.",
+      "evidence_refs": [
+        "generated/execution_packets/ART-133_DEPRECATION_MAP.json",
+        "generated/envctl_run_ledger_report.json",
+        "proof_records/REQ-022_ENVCTL_RUN_LEDGER.proof.json"
+      ]
+    },
+    {
+      "component_id": "prior-flexnetos-package-contract",
+      "component": "codex-flexnetos-migration-prompt-package artifact contract",
+      "classification": "preserved",
+      "disposition": "Preserve as the first external package fixture and acceptance contract.",
+      "rationale": "The strategy decision locks the prior artifact contract first and uses the bundled package as the concrete truth test.",
+      "replacement": "No replacement; import into envctl contracts and recipes.",
+      "owner": "artifact-agent",
+      "risk": "low",
+      "validation": "Contract manifest row for this deprecation map is registered and linked.",
+      "evidence_refs": [
+        "generated/contract_manifest.json",
+        "source/codex-flexnetos-migration-prompt-package/PACKAGE_MANIFEST.json"
+      ]
+    },
+    {
+      "component_id": "sqlite-registry-fixture",
+      "component": "SQLite migration automation schema and in-memory proof fixture",
+      "classification": "preserved",
+      "disposition": "Preserve for package-local validation while keeping backend portability risk visible.",
+      "rationale": "Artifact registry verification depends on SQLite foreign keys, views, unique constraints, and upsert semantics; alternate DB backends need compatible migrations before replay.",
+      "replacement": "Compatible envctl migrations for any future durable backend.",
+      "owner": "envctl-db-agent",
+      "risk": "medium",
+      "validation": "REQ-020 schema proof and ART-133 registry replay exercise the tables and views.",
+      "evidence_refs": [
+        "generated/envctl_migration_db_model.json",
+        "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json"
+      ]
+    },
+    {
+      "component_id": "shared-protocol-schemas",
+      "component": "Shared envctl/nu_plugin protocol schemas",
+      "classification": "preserved",
+      "disposition": "Preserve as the structured boundary for plugin reads and operator decisions.",
+      "rationale": "REQ-040 validation passes all required shared protocol sample records.",
+      "replacement": "No replacement; downstream plugin commands consume this boundary.",
+      "owner": "shared-protocol-agent",
+      "risk": "low",
+      "validation": "Shared protocol validation status is pass and linked as dependency evidence.",
+      "evidence_refs": [
+        "generated/shared_protocol_validation_report.json",
+        "schemas/shared_protocol.schema.json"
+      ]
+    }
+  ]
+}

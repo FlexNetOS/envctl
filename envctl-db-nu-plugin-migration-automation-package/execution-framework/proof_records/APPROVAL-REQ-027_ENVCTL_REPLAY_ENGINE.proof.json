@@ -1,0 +1,38 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "APPROVAL-REQ-027_ENVCTL_REPLAY_ENGINE",
+  "status": "completed",
+  "started_at": "2026-07-05T04:38:19+00:00",
+  "completed_at": "2026-07-05T04:38:19+00:00",
+  "actor": "agent-approval-gate",
+  "helper_id": "helper-agent-approval-01",
+  "model_tag": "gpt-5.5",
+  "repo_path": "execution-framework",
+  "files_changed": [
+    "execution-framework/approvals/REQ-027_ENVCTL_REPLAY_ENGINE.agent_approval.json",
+    "execution-framework/reviews/GPT55_REQ027_APPROVAL_REVIEW.md"
+  ],
+  "commands_run": [
+    "python3 scripts/agent_approval_gate.py ..."
+  ],
+  "verification_output": {
+    "decision": "approved",
+    "reviewer": "gpt-5.5",
+    "model": "gpt-5.5",
+    "review_artifact": "reviews/GPT55_REQ027_APPROVAL_REVIEW.md",
+    "approval_artifact": "approvals/REQ-027_ENVCTL_REPLAY_ENGINE.agent_approval.json",
+    "fallback_reason": "Claude Opus local reviewer path was unavailable in this session because weave is not in PATH; GPT-5.5 fallback reviewer was launched with codex exec per AGENT_APPROVAL_GATE and NEXT_SESSION_PROMPT."
+  },
+  "checksums": {
+    "execution-framework/approvals/REQ-027_ENVCTL_REPLAY_ENGINE.agent_approval.json": "30aac8ab18548714b23a0a0972047a10161dbd006625e97bfb5109f1e00d3169",
+    "execution-framework/reviews/GPT55_REQ027_APPROVAL_REVIEW.md": "10c71010314e677648bb8d74624320bd965a8b5510e34717cb7c49dca9ed022c"
+  },
+  "logs_uri": "logs/APPROVAL-REQ-027_ENVCTL_REPLAY_ENGINE.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "approvals/REQ-027_ENVCTL_REPLAY_ENGINE.agent_approval.json",
+    "reviews/GPT55_REQ027_APPROVAL_REVIEW.md"
+  ],
+  "failure_reason": "",
+  "next_action": "run goal_loop.py; REQ-027_ENVCTL_REPLAY_ENGINE becomes dispatchable only when approved"
+}

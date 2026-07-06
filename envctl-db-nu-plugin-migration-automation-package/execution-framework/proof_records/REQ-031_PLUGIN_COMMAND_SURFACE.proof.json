@@ -1,0 +1,76 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-031_PLUGIN_COMMAND_SURFACE",
+  "status": "completed",
+  "started_at": "2026-07-04T23:06:55+00:00",
+  "completed_at": "2026-07-04T23:08:41+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-nu-command-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/generated/nu_plugin_command_manifest.json",
+    "execution-framework/examples/nu/operator-session-template.nu",
+    "execution-framework/scripts/verify_plugin_command_surface.py",
+    "execution-framework/state/REQ-031_PLUGIN_COMMAND_SURFACE.heartbeat.json",
+    "execution-framework/logs/REQ-031_PLUGIN_COMMAND_SURFACE.log",
+    "execution-framework/proof_records/REQ-031_PLUGIN_COMMAND_SURFACE.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "read ../specs/command-surface.md",
+    "read ../examples/nu/operator-session-template.nu",
+    "read ../prompts/NU_PLUGIN_CONTRACT.md",
+    "read ../schemas/nu_plugin_command_manifest.schema.json",
+    "read generated/nu_plugin_command_manifest.json",
+    "inspect /home/flexnetos/FlexNetOS/src/nu_plugin command conventions read-only",
+    "python3 scripts/verify_plugin_command_surface.py",
+    "python3 -m json.tool generated/nu_plugin_command_manifest.json",
+    "python3 -m json.tool generated/execution_packets/REQ-031_PLUGIN_COMMAND_SURFACE.json",
+    "sha256sum generated/nu_plugin_command_manifest.json examples/nu/operator-session-template.nu scripts/verify_plugin_command_surface.py state/REQ-031_PLUGIN_COMMAND_SURFACE.heartbeat.json logs/REQ-031_PLUGIN_COMMAND_SURFACE.log"
+  ],
+  "verification_output": {
+    "status": "passed",
+    "manifest": "generated/nu_plugin_command_manifest.json",
+    "operator_template": "examples/nu/operator-session-template.nu",
+    "required_command_count": 9,
+    "mutating_command_count": 4,
+    "read_command_count": 5,
+    "required_commands": [
+      "envctl migration approve",
+      "envctl migration pause",
+      "envctl migration proof",
+      "envctl migration replay",
+      "envctl migration resume",
+      "envctl migration run plan",
+      "envctl migration run start",
+      "envctl migration status",
+      "envctl migration target list"
+    ],
+    "json_validation": "generated/nu_plugin_command_manifest.json and generated/execution_packets/REQ-031_PLUGIN_COMMAND_SURFACE.json parse as JSON",
+    "notes": [
+      "Exact REQ-031 operator commands are present in the command manifest.",
+      "Mutating operator commands are marked mode=mutate and route through envctl endpoints with --emit-event.",
+      "Read commands expose Nushell-native record/table output metadata.",
+      "The package-local operator session template exercises the exact operator command names."
+    ],
+    "sandbox_note": "NU_PLUGIN_REPO was readable at /home/flexnetos/FlexNetOS/src/nu_plugin, but this execution cell only permits writes inside execution-framework."
+  },
+  "checksums": {
+    "execution-framework/generated/nu_plugin_command_manifest.json": "52e307270b2dab6901e4231187e9b7ae09c6eb015e7eef040f8b2f5b1f323c06",
+    "execution-framework/examples/nu/operator-session-template.nu": "99ace8eac895308df88bcc83e343cc14d1b7bce66d1b60eb8f117c0f26a70c2b",
+    "execution-framework/scripts/verify_plugin_command_surface.py": "f786cbe12029190c86af775574e1f621ebd3d39d34e355100f1b18d10e6d7f5a",
+    "execution-framework/state/REQ-031_PLUGIN_COMMAND_SURFACE.heartbeat.json": "005235caa8b45c078a9f8190d7f574bcf542427aafff27b16526c18ed6e2fdb5",
+    "execution-framework/logs/REQ-031_PLUGIN_COMMAND_SURFACE.log": "d80e24408dadec9d13052bcd90461dd2e56abbb8aee053d15b6acf0794687a6e"
+  },
+  "logs_uri": "logs/REQ-031_PLUGIN_COMMAND_SURFACE.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "generated/nu_plugin_command_manifest.json",
+    "examples/nu/operator-session-template.nu",
+    "scripts/verify_plugin_command_surface.py",
+    "logs/REQ-031_PLUGIN_COMMAND_SURFACE.log"
+  ],
+  "failure_reason": "",
+  "next_action": "run REQ-032_PLUGIN_LIVE_VISUALS, REQ-034_PLUGIN_STATUS_STREAMS, and REQ-041_TWO_REPO_INTEGRATION after shared protocol schemas are ready"
+}

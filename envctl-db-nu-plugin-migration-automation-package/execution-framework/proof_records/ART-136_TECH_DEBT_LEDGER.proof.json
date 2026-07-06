@@ -1,0 +1,560 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "ART-136_TECH_DEBT_LEDGER",
+  "status": "completed",
+  "started_at": "2026-07-04T23:35:23+00:00",
+  "completed_at": "2026-07-04T23:35:23+00:00",
+  "actor": "artifact-agent",
+  "helper_id": "helper-artifact-37",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/generate_art136_tech_debt_ledger.py",
+    "execution-framework/migration-artifacts/03-code-analysis/technical-debt-ledger.md",
+    "execution-framework/migration-artifacts/art-136_tech_debt_ledger/technical-debt-ledger.md",
+    "execution-framework/migration-artifacts/art-136_tech_debt_ledger/technical-debt-ledger.json",
+    "execution-framework/generated/art136_tech_debt_ledger_report.json",
+    "execution-framework/generated/status_from_proofs.json",
+    "execution-framework/state/ART-136_TECH_DEBT_LEDGER.heartbeat.json",
+    "execution-framework/logs/ART-136_TECH_DEBT_LEDGER.log",
+    "execution-framework/proof_records/ART-136_TECH_DEBT_LEDGER.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/generate_art136_tech_debt_ledger.py",
+    "python3 scripts/status_from_proofs.py",
+    "python3 -m py_compile scripts/generate_art136_tech_debt_ledger.py"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "ART-136_TECH_DEBT_LEDGER",
+    "status": "passed",
+    "generated_at": "2026-07-04T23:35:23+00:00",
+    "artifact_paths": [
+      "migration-artifacts/03-code-analysis/technical-debt-ledger.md",
+      "migration-artifacts/art-136_tech_debt_ledger/technical-debt-ledger.md",
+      "migration-artifacts/art-136_tech_debt_ledger/technical-debt-ledger.json"
+    ],
+    "summary": {
+      "debt_count": 11,
+      "classification_counts": {
+        "must_fix": 4,
+        "carry": 4,
+        "delete": 3
+      },
+      "priority_counts": {
+        "P0": 4,
+        "P1": 6,
+        "P2": 1
+      },
+      "owners": [
+        "artifact-agent",
+        "envctl-db-agent",
+        "envctl-runner-agent",
+        "flexnetos-adapter-agent",
+        "security-reproducibility-agent",
+        "shared-protocol-agent",
+        "target-registry-agent",
+        "validation-agent"
+      ],
+      "all_rows_have_evidence": true,
+      "all_rows_have_exit_gate": true
+    },
+    "registry_results": [
+      {
+        "artifact_row_id": "artifact-a3d5b9ae7d3aeece4d85ba8d",
+        "artifact_id": "03-code-analysis-technical-debt-ledger-md",
+        "run_id": "run-art136-tech-debt-ledger",
+        "path": "migration-artifacts/03-code-analysis/technical-debt-ledger.md",
+        "content_hash": "sha256:f53681ee5dd87413609eb087475b2fca7d304050238921789f64af833c82306a",
+        "producer_operation_id": "op-art136-generate-tech-debt-ledger",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-6cb76ae868378e3505b1e768",
+          "evidence-dac8109563eeeba7d4969afd",
+          "evidence-406c96f57d7015eb9b354e26",
+          "evidence-ae1a437b1ec9e1e532503557",
+          "evidence-4378f2697fad11eb17150a82",
+          "evidence-b5d250741a02e68c7d5a839b",
+          "evidence-4ca2dcfb2d51100d96fa3af7",
+          "evidence-5acb3ed5bfdd5f738bb36740",
+          "evidence-bd2d1515887f7f311f40d013",
+          "evidence-771ac94775f2b6fde2fc7297",
+          "evidence-48242affd25f9100d04ffbf7",
+          "evidence-9957a043ef14b9309ed69146",
+          "evidence-662b0ea6515677b72fac0335"
+        ],
+        "graph_edge_ids": [
+          "edge-ad004bc753ca6b422b689d77",
+          "edge-314fb51a95231203b55bdd2b",
+          "edge-a3bb63dc41239fa5463797b1",
+          "edge-86ee45339105589a886305cb",
+          "edge-4e4191fd9aba72bffd279446",
+          "edge-527956777cb117ef564c94e2",
+          "edge-60b9c87ad6d3181f1773bdd3",
+          "edge-cbdf02ad1149ad5c2bdd3c13"
+        ],
+        "validation_ids": [
+          "validation-46930e6716210db26ac869a1",
+          "validation-4a23c60cc306c87154bd7ce5",
+          "validation-afc54bc791b6d962f7dcf78d"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-d68140ae65350d7baa23cbb9",
+        "artifact_id": "art-136-tech-debt-ledger-md",
+        "run_id": "run-art136-tech-debt-ledger",
+        "path": "migration-artifacts/art-136_tech_debt_ledger/technical-debt-ledger.md",
+        "content_hash": "sha256:f53681ee5dd87413609eb087475b2fca7d304050238921789f64af833c82306a",
+        "producer_operation_id": "op-art136-generate-tech-debt-ledger",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-a53e0e3414485122ec4749f5",
+          "evidence-94e02970c59f2fc300839017",
+          "evidence-97f2ec8a277421a1da67fd0b",
+          "evidence-11ae795de4534b004e84a4cc",
+          "evidence-41c39237d23ad026bf96857f",
+          "evidence-7a177f4dfbe9586c77aaf128",
+          "evidence-e1420c45e50e1cf8f323efc1",
+          "evidence-1e909638b643a9173302fe13",
+          "evidence-dd913b9e5af65dcbcee0bc1b",
+          "evidence-29c123155eb41e54b9a298c4",
+          "evidence-87f239ee779f2f14fa72ae14",
+          "evidence-c84fdf017159d43aacc4fbdc",
+          "evidence-9be11e0c79feafe56ca8ba5f"
+        ],
+        "graph_edge_ids": [
+          "edge-297ca285a54c6669c9517eeb",
+          "edge-ba942cdf793bb46f0bb7796e",
+          "edge-05dd90dcd18a96e17fe1684a",
+          "edge-4cd483df8f132d9edfdf2caf",
+          "edge-e8a6cf4097413716add17b0f",
+          "edge-62f15412229dde595c823fa9",
+          "edge-f05072a073a469f01209da99",
+          "edge-73720f6df5161d81986ceb2f"
+        ],
+        "validation_ids": [
+          "validation-6527098c46ab2e6154e06a55",
+          "validation-78373d73721f2d1fd1d9591f",
+          "validation-8b1457f6b8ab295c973da04b"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-aa289fe51e045ceba42c3ec6",
+        "artifact_id": "art-136-tech-debt-ledger-json",
+        "run_id": "run-art136-tech-debt-ledger",
+        "path": "migration-artifacts/art-136_tech_debt_ledger/technical-debt-ledger.json",
+        "content_hash": "sha256:fe89741da46edca02b677ea30bb341ddb36433f11de04890341932e219db0d28",
+        "producer_operation_id": "op-art136-generate-tech-debt-ledger",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-aff5bc7ca141d143200a1fca",
+          "evidence-42c8a37c6504363413956346",
+          "evidence-7aa9369d8c009a3966b9e29c",
+          "evidence-cca80b187f485df17d07d022",
+          "evidence-5d9503bd474f6f373e1deea8",
+          "evidence-f5a9c13a8539738b1c4f4f75",
+          "evidence-67af2e6da87651b64533761f",
+          "evidence-11136018e149e152ff9bf2fa",
+          "evidence-e57a047d4b508619477bec25",
+          "evidence-255aa0392c42f0c178c06af6",
+          "evidence-94eafb3be7665caae22915f1",
+          "evidence-da9c8a8aa815ea80dc508fb6",
+          "evidence-e1e53424a73be85c037d718d"
+        ],
+        "graph_edge_ids": [
+          "edge-75e7ee333a46cc815e5281be",
+          "edge-f7b4212199a201760e838205",
+          "edge-f96e431d80907733b5b36b35",
+          "edge-240ceef4dac18856b10ce64f",
+          "edge-0c8f14398a491c4401200b22",
+          "edge-b412b9e755d1c7c6f6d631ba",
+          "edge-cfa15dbe416f0c54951bb5a9",
+          "edge-3eefa3ad38a1abaa8b0edf8f"
+        ],
+        "validation_ids": [
+          "validation-bdfbcc384499ce91307eec95",
+          "validation-b212f7b002d4e98caf554c9f",
+          "validation-5d5da2961a11f10c7392562c"
+        ]
+      }
+    ],
+    "artifact_rows": [
+      {
+        "id": "artifact-a3d5b9ae7d3aeece4d85ba8d",
+        "run_id": "run-art136-tech-debt-ledger",
+        "artifact_id": "03-code-analysis-technical-debt-ledger-md",
+        "title": "Technical Debt Ledger",
+        "artifact_type": "migration_artifact",
+        "status": "complete",
+        "path": "migration-artifacts/03-code-analysis/technical-debt-ledger.md",
+        "content_hash": "sha256:f53681ee5dd87413609eb087475b2fca7d304050238921789f64af833c82306a",
+        "generated_by_operation_id": "op-art136-generate-tech-debt-ledger",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-6cb76ae868378e3505b1e768",
+            "evidence-dac8109563eeeba7d4969afd",
+            "evidence-406c96f57d7015eb9b354e26",
+            "evidence-ae1a437b1ec9e1e532503557",
+            "evidence-4378f2697fad11eb17150a82",
+            "evidence-b5d250741a02e68c7d5a839b",
+            "evidence-4ca2dcfb2d51100d96fa3af7",
+            "evidence-5acb3ed5bfdd5f738bb36740",
+            "evidence-bd2d1515887f7f311f40d013",
+            "evidence-771ac94775f2b6fde2fc7297",
+            "evidence-48242affd25f9100d04ffbf7",
+            "evidence-9957a043ef14b9309ed69146",
+            "evidence-662b0ea6515677b72fac0335"
+          ],
+          "evidence_refs": [
+            "migration-artifacts/03-code-analysis/technical-debt-ledger.md",
+            "generated/execution_packets/ART-136_TECH_DEBT_LEDGER.json",
+            "generated/contract_manifest.json",
+            "generated/envctl_target_registry.json",
+            "generated/package_scan.json",
+            "generated/envctl_migration_db_model.json",
+            "generated/envctl_artifact_registry_report.json",
+            "generated/shared_protocol_validation_report.json",
+            "migration-artifacts/art-133_deprecation_map/deprecation-map.json",
+            "migration-artifacts/art-125_risk_register/risk-register.json",
+            "migration-artifacts/art-134_exception_inventory/exception-inventory.json",
+            "migration-artifacts/art-124_test_coverage/test-coverage-matrix.json",
+            "generated/art123_validation_reconciliation_report.json"
+          ],
+          "producer_operation_id": "op-art136-generate-tech-debt-ledger",
+          "provenance": {
+            "contract_row_id": "artifact:03-code-analysis-technical-debt-ledger-md",
+            "helper_id": "helper-artifact-37",
+            "input_files": [
+              "target descriptor",
+              "repo scan",
+              "envctl database"
+            ],
+            "owner_agent": "artifact-agent",
+            "owner_lane": "lane_d_filesystem",
+            "source_graph_uri": "generated/task_graph.csv",
+            "task_id": "ART-136_TECH_DEBT_LEDGER"
+          },
+          "validation_ids": [
+            "validation-46930e6716210db26ac869a1",
+            "validation-4a23c60cc306c87154bd7ce5",
+            "validation-afc54bc791b6d962f7dcf78d"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-ad004bc753ca6b422b689d77",
+            "edge-314fb51a95231203b55bdd2b",
+            "edge-a3bb63dc41239fa5463797b1",
+            "edge-86ee45339105589a886305cb",
+            "edge-4e4191fd9aba72bffd279446",
+            "edge-527956777cb117ef564c94e2",
+            "edge-60b9c87ad6d3181f1773bdd3",
+            "edge-cbdf02ad1149ad5c2bdd3c13"
+          ],
+          "links": [
+            {
+              "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "contract_row:artifact:03-code-analysis-technical-debt-ledger-md",
+              "type": "satisfies"
+            },
+            {
+              "to": "artifact:02-target-state-deprecation-map-md",
+              "type": "informed_by"
+            },
+            {
+              "to": "artifact:09-governance-risk-register-md",
+              "type": "informs"
+            },
+            {
+              "to": "artifact:06-testing-validation-test-coverage-matrix-md",
+              "type": "informed_by"
+            }
+          ]
+        }
+      },
+      {
+        "id": "artifact-d68140ae65350d7baa23cbb9",
+        "run_id": "run-art136-tech-debt-ledger",
+        "artifact_id": "art-136-tech-debt-ledger-md",
+        "title": "ART-136 Technical Debt Ledger Markdown",
+        "artifact_type": "task_markdown_companion",
+        "status": "complete",
+        "path": "migration-artifacts/art-136_tech_debt_ledger/technical-debt-ledger.md",
+        "content_hash": "sha256:f53681ee5dd87413609eb087475b2fca7d304050238921789f64af833c82306a",
+        "generated_by_operation_id": "op-art136-generate-tech-debt-ledger",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-a53e0e3414485122ec4749f5",
+            "evidence-94e02970c59f2fc300839017",
+            "evidence-97f2ec8a277421a1da67fd0b",
+            "evidence-11ae795de4534b004e84a4cc",
+            "evidence-41c39237d23ad026bf96857f",
+            "evidence-7a177f4dfbe9586c77aaf128",
+            "evidence-e1420c45e50e1cf8f323efc1",
+            "evidence-1e909638b643a9173302fe13",
+            "evidence-dd913b9e5af65dcbcee0bc1b",
+            "evidence-29c123155eb41e54b9a298c4",
+            "evidence-87f239ee779f2f14fa72ae14",
+            "evidence-c84fdf017159d43aacc4fbdc",
+            "evidence-9be11e0c79feafe56ca8ba5f"
+          ],
+          "evidence_refs": [
+            "migration-artifacts/art-136_tech_debt_ledger/technical-debt-ledger.md",
+            "generated/execution_packets/ART-136_TECH_DEBT_LEDGER.json",
+            "generated/contract_manifest.json",
+            "generated/envctl_target_registry.json",
+            "generated/package_scan.json",
+            "generated/envctl_migration_db_model.json",
+            "generated/envctl_artifact_registry_report.json",
+            "generated/shared_protocol_validation_report.json",
+            "migration-artifacts/art-133_deprecation_map/deprecation-map.json",
+            "migration-artifacts/art-125_risk_register/risk-register.json",
+            "migration-artifacts/art-134_exception_inventory/exception-inventory.json",
+            "migration-artifacts/art-124_test_coverage/test-coverage-matrix.json",
+            "generated/art123_validation_reconciliation_report.json"
+          ],
+          "producer_operation_id": "op-art136-generate-tech-debt-ledger",
+          "provenance": {
+            "contract_row_id": "artifact:03-code-analysis-technical-debt-ledger-md",
+            "helper_id": "helper-artifact-37",
+            "input_files": [
+              "target descriptor",
+              "repo scan",
+              "envctl database"
+            ],
+            "owner_agent": "artifact-agent",
+            "owner_lane": "lane_d_filesystem",
+            "source_graph_uri": "generated/task_graph.csv",
+            "task_id": "ART-136_TECH_DEBT_LEDGER"
+          },
+          "validation_ids": [
+            "validation-6527098c46ab2e6154e06a55",
+            "validation-78373d73721f2d1fd1d9591f",
+            "validation-8b1457f6b8ab295c973da04b"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-297ca285a54c6669c9517eeb",
+            "edge-ba942cdf793bb46f0bb7796e",
+            "edge-05dd90dcd18a96e17fe1684a",
+            "edge-4cd483df8f132d9edfdf2caf",
+            "edge-e8a6cf4097413716add17b0f",
+            "edge-62f15412229dde595c823fa9",
+            "edge-f05072a073a469f01209da99",
+            "edge-73720f6df5161d81986ceb2f"
+          ],
+          "links": [
+            {
+              "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "contract_row:artifact:03-code-analysis-technical-debt-ledger-md",
+              "type": "satisfies"
+            },
+            {
+              "to": "artifact:02-target-state-deprecation-map-md",
+              "type": "informed_by"
+            },
+            {
+              "to": "artifact:09-governance-risk-register-md",
+              "type": "informs"
+            },
+            {
+              "to": "artifact:06-testing-validation-test-coverage-matrix-md",
+              "type": "informed_by"
+            }
+          ]
+        }
+      },
+      {
+        "id": "artifact-aa289fe51e045ceba42c3ec6",
+        "run_id": "run-art136-tech-debt-ledger",
+        "artifact_id": "art-136-tech-debt-ledger-json",
+        "title": "ART-136 Technical Debt Ledger JSON",
+        "artifact_type": "machine_readable_record",
+        "status": "complete",
+        "path": "migration-artifacts/art-136_tech_debt_ledger/technical-debt-ledger.json",
+        "content_hash": "sha256:fe89741da46edca02b677ea30bb341ddb36433f11de04890341932e219db0d28",
+        "generated_by_operation_id": "op-art136-generate-tech-debt-ledger",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-aff5bc7ca141d143200a1fca",
+            "evidence-42c8a37c6504363413956346",
+            "evidence-7aa9369d8c009a3966b9e29c",
+            "evidence-cca80b187f485df17d07d022",
+            "evidence-5d9503bd474f6f373e1deea8",
+            "evidence-f5a9c13a8539738b1c4f4f75",
+            "evidence-67af2e6da87651b64533761f",
+            "evidence-11136018e149e152ff9bf2fa",
+            "evidence-e57a047d4b508619477bec25",
+            "evidence-255aa0392c42f0c178c06af6",
+            "evidence-94eafb3be7665caae22915f1",
+            "evidence-da9c8a8aa815ea80dc508fb6",
+            "evidence-e1e53424a73be85c037d718d"
+          ],
+          "evidence_refs": [
+            "migration-artifacts/art-136_tech_debt_ledger/technical-debt-ledger.json",
+            "generated/execution_packets/ART-136_TECH_DEBT_LEDGER.json",
+            "generated/contract_manifest.json",
+            "generated/envctl_target_registry.json",
+            "generated/package_scan.json",
+            "generated/envctl_migration_db_model.json",
+            "generated/envctl_artifact_registry_report.json",
+            "generated/shared_protocol_validation_report.json",
+            "migration-artifacts/art-133_deprecation_map/deprecation-map.json",
+            "migration-artifacts/art-125_risk_register/risk-register.json",
+            "migration-artifacts/art-134_exception_inventory/exception-inventory.json",
+            "migration-artifacts/art-124_test_coverage/test-coverage-matrix.json",
+            "generated/art123_validation_reconciliation_report.json"
+          ],
+          "producer_operation_id": "op-art136-generate-tech-debt-ledger",
+          "provenance": {
+            "contract_row_id": "artifact:03-code-analysis-technical-debt-ledger-md",
+            "helper_id": "helper-artifact-37",
+            "input_files": [
+              "target descriptor",
+              "repo scan",
+              "envctl database"
+            ],
+            "owner_agent": "artifact-agent",
+            "owner_lane": "lane_d_filesystem",
+            "source_graph_uri": "generated/task_graph.csv",
+            "task_id": "ART-136_TECH_DEBT_LEDGER"
+          },
+          "validation_ids": [
+            "validation-bdfbcc384499ce91307eec95",
+            "validation-b212f7b002d4e98caf554c9f",
+            "validation-5d5da2961a11f10c7392562c"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-75e7ee333a46cc815e5281be",
+            "edge-f7b4212199a201760e838205",
+            "edge-f96e431d80907733b5b36b35",
+            "edge-240ceef4dac18856b10ce64f",
+            "edge-0c8f14398a491c4401200b22",
+            "edge-b412b9e755d1c7c6f6d631ba",
+            "edge-cfa15dbe416f0c54951bb5a9",
+            "edge-3eefa3ad38a1abaa8b0edf8f"
+          ],
+          "links": [
+            {
+              "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "contract_row:artifact:03-code-analysis-technical-debt-ledger-md",
+              "type": "satisfies"
+            },
+            {
+              "to": "artifact:02-target-state-deprecation-map-md",
+              "type": "informed_by"
+            },
+            {
+              "to": "artifact:09-governance-risk-register-md",
+              "type": "informs"
+            },
+            {
+              "to": "artifact:06-testing-validation-test-coverage-matrix-md",
+              "type": "informed_by"
+            }
+          ]
+        }
+      }
+    ],
+    "checksums": {
+      "migration-artifacts/03-code-analysis/technical-debt-ledger.md": "f53681ee5dd87413609eb087475b2fca7d304050238921789f64af833c82306a",
+      "migration-artifacts/art-136_tech_debt_ledger/technical-debt-ledger.md": "f53681ee5dd87413609eb087475b2fca7d304050238921789f64af833c82306a",
+      "migration-artifacts/art-136_tech_debt_ledger/technical-debt-ledger.json": "fe89741da46edca02b677ea30bb341ddb36433f11de04890341932e219db0d28"
+    },
+    "validation": {
+      "artifact_file_exists": true,
+      "registry_contains_hash": true,
+      "validation_evidence_linked": true,
+      "must_fix_carry_delete_present": true,
+      "all_debt_rows_have_owner": true,
+      "all_debt_rows_have_exit_gate": true
+    },
+    "errors": [],
+    "evidence": [
+      "migration-artifacts/03-code-analysis/technical-debt-ledger.md",
+      "migration-artifacts/art-136_tech_debt_ledger/technical-debt-ledger.md",
+      "migration-artifacts/art-136_tech_debt_ledger/technical-debt-ledger.json",
+      "generated/execution_packets/ART-136_TECH_DEBT_LEDGER.json",
+      "generated/contract_manifest.json",
+      "generated/envctl_artifact_registry_report.json",
+      "generated/shared_protocol_validation_report.json",
+      "migration-artifacts/art-133_deprecation_map/deprecation-map.json",
+      "migration-artifacts/art-125_risk_register/risk-register.json",
+      "migration-artifacts/art-134_exception_inventory/exception-inventory.json",
+      "migration-artifacts/art-124_test_coverage/test-coverage-matrix.json",
+      "generated/art123_validation_reconciliation_report.json"
+    ]
+  },
+  "checksums": {
+    "execution-framework/scripts/generate_art136_tech_debt_ledger.py": "7f56c921ce40de4d2341215d74092125e098739b1cbcf137965f1785ba44ce7f",
+    "execution-framework/migration-artifacts/03-code-analysis/technical-debt-ledger.md": "f53681ee5dd87413609eb087475b2fca7d304050238921789f64af833c82306a",
+    "execution-framework/migration-artifacts/art-136_tech_debt_ledger/technical-debt-ledger.md": "f53681ee5dd87413609eb087475b2fca7d304050238921789f64af833c82306a",
+    "execution-framework/migration-artifacts/art-136_tech_debt_ledger/technical-debt-ledger.json": "fe89741da46edca02b677ea30bb341ddb36433f11de04890341932e219db0d28",
+    "execution-framework/generated/art136_tech_debt_ledger_report.json": "8a7b55de6770efe7e46726584c93c5612a782728e718ca0a74c740fe65664fcf",
+    "execution-framework/generated/status_from_proofs.json": "5d964b7ca8815b9467ea1bc053088aeae72a827b6070a28e1bfb69cd46273beb",
+    "execution-framework/state/ART-136_TECH_DEBT_LEDGER.heartbeat.json": "87591b0a4fb4654761ca3e01606d39e65e1916298eb1533ef29a11dfe46cc9e1",
+    "execution-framework/logs/ART-136_TECH_DEBT_LEDGER.log": "8a7b55de6770efe7e46726584c93c5612a782728e718ca0a74c740fe65664fcf",
+    "execution-framework/proof_records/proof_ledger.jsonl": "f236fca276cc42a7ba17361bb81acb2c37c1e5f7714876707414afd55d5a5848"
+  },
+  "logs_uri": "logs/ART-136_TECH_DEBT_LEDGER.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "migration-artifacts/03-code-analysis/technical-debt-ledger.md",
+    "migration-artifacts/art-136_tech_debt_ledger/technical-debt-ledger.md",
+    "migration-artifacts/art-136_tech_debt_ledger/technical-debt-ledger.json",
+    "generated/execution_packets/ART-136_TECH_DEBT_LEDGER.json",
+    "generated/contract_manifest.json",
+    "generated/envctl_artifact_registry_report.json",
+    "generated/shared_protocol_validation_report.json",
+    "migration-artifacts/art-133_deprecation_map/deprecation-map.json",
+    "migration-artifacts/art-125_risk_register/risk-register.json",
+    "migration-artifacts/art-134_exception_inventory/exception-inventory.json",
+    "migration-artifacts/art-124_test_coverage/test-coverage-matrix.json",
+    "generated/art123_validation_reconciliation_report.json"
+  ],
+  "failure_reason": "",
+  "next_action": "ready for VER-300_UNIT_VALIDATION"
+}

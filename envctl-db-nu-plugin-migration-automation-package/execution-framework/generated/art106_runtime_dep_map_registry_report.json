@@ -1,0 +1,427 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-106_RUNTIME_DEP_MAP",
+  "generated_at": "2026-07-04T23:29:22+00:00",
+  "status": "passed",
+  "run_id": "run-art106-runtime-dep-map",
+  "operation_id": "produce-01-current-state-runtime-dependency-map-md",
+  "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+  "applied_migrations": [
+    {
+      "path": "sql/001_migration_automation_schema.sql",
+      "sha256": "f0a8ad6ce7fba6023d8bfb765843fef07710387f9e720f7fe01305ce2d52bb0e",
+      "bytes": 8608
+    },
+    {
+      "path": "sql/002_views_and_indexes.sql",
+      "sha256": "b9c4fee76504746742695119c84bfbb46dedb1e29da480103f2e6b6c5a83106e",
+      "bytes": 3819
+    },
+    {
+      "path": "execution-framework/generated/contract_manifest.seed.sql",
+      "sha256": "399c1092118d57f78c7647a2d5c2fbd914c5b2ac97d5e41e4deda44722dc8c06",
+      "bytes": 155594
+    }
+  ],
+  "registered_artifacts": [
+    {
+      "artifact_row_id": "artifact-e32ab624519a70328f135b47",
+      "artifact_id": "01-current-state-runtime-dependency-map-md",
+      "run_id": "run-art106-runtime-dep-map",
+      "path": "execution-framework/migration-artifacts/01-current-state/runtime-dependency-map.md",
+      "content_hash": "sha256:bcadc1d28586c31cba7d82fe3a4729a9b03cda6e4444a3a92d3f8151c78e0cb6",
+      "producer_operation_id": "produce-01-current-state-runtime-dependency-map-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-ad92b1104b742e51996db4e3",
+        "evidence-110560a00d4229f1b2034f3e",
+        "evidence-cbfac5da73dae4011d5901a1",
+        "evidence-ed85c18db46a9cd329842152",
+        "evidence-5991f6b74d911d63e98b7f7f",
+        "evidence-83e354cce71908fc1f1d968f",
+        "evidence-a49fd5a100353129c7e22f41",
+        "evidence-c904d0972858019a9eca18cc",
+        "evidence-5ef08aa20d60a9ce16ffa1ae",
+        "evidence-4d59010486ec8898aa412c84"
+      ],
+      "graph_edge_ids": [
+        "edge-5be79978835150f45cb0f806",
+        "edge-2f4d9255fba3e1429535fbc5",
+        "edge-ff0afba38b79d93aa656cb75",
+        "edge-0d2cd7ac9dea92651c067258",
+        "edge-c6ecd0a0cf273bab01801aaa"
+      ],
+      "validation_ids": [
+        "validation-50127372db746f3abf836960",
+        "validation-739cca56848f926d8698aa37",
+        "validation-65e95832848dbeac2e33c7b2"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-c60e42e62950f16572ef50a6",
+      "artifact_id": "art-106-runtime-dep-map-md",
+      "run_id": "run-art106-runtime-dep-map",
+      "path": "execution-framework/migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.md",
+      "content_hash": "sha256:bcadc1d28586c31cba7d82fe3a4729a9b03cda6e4444a3a92d3f8151c78e0cb6",
+      "producer_operation_id": "produce-01-current-state-runtime-dependency-map-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-e1f61e551da4831de0db4e11",
+        "evidence-020e70e582c31c6e9ff16338",
+        "evidence-c91cab2252607fd2afd21af5",
+        "evidence-7c81266ef777372bb5dca2e5",
+        "evidence-7e53ce361151d79b9136708e",
+        "evidence-66ca8b17bddc1f9f49514f8e",
+        "evidence-d9381a32522a56f07c3a40e7",
+        "evidence-913b04c5646022115ef3bd27",
+        "evidence-ca893df747cd7ea5d871c380",
+        "evidence-e708fec6ccc5abe30dff2d33"
+      ],
+      "graph_edge_ids": [
+        "edge-7ba801e3f43851695cfb313c",
+        "edge-d640b6dab818cb6a359abdc5",
+        "edge-5fc58fa8b5af11c0fa08742d",
+        "edge-61c4c3baffc69fa7542d4933",
+        "edge-6e8e9983ca724ba08c62878f"
+      ],
+      "validation_ids": [
+        "validation-de3130ddf5331379c04567fc",
+        "validation-3b289cf15cea1e4cb2447713",
+        "validation-95be4770a8ded978ec9438e8"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-35747b06531dfe6884e821a0",
+      "artifact_id": "art-106-runtime-dep-map-json",
+      "run_id": "run-art106-runtime-dep-map",
+      "path": "execution-framework/migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.json",
+      "content_hash": "sha256:b141d6fcacaea1bf1d1e339a90765e993fed95a8d14e3bc05643f9d2bec54c69",
+      "producer_operation_id": "produce-01-current-state-runtime-dependency-map-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-a3eb1eb844bc2a8d13064058",
+        "evidence-2ae3de4ee9194a6d05409727",
+        "evidence-0e9347503ed230df4ef84b1b",
+        "evidence-b1741c88b8950e0432478822",
+        "evidence-303e3dceb442a44d49a73ac8",
+        "evidence-51a41a2e1c2da0d945217854",
+        "evidence-7487a999c0e069c2597dd795",
+        "evidence-518a5df0aa051e104caa1c04",
+        "evidence-13673bec2b6eae9febacf147",
+        "evidence-4711173b42a9a4b2e0ec247b"
+      ],
+      "graph_edge_ids": [
+        "edge-4ed1035dd19dcc7d0890dbea",
+        "edge-aa0f3f74017273537926c2d6",
+        "edge-c768c0f61fca683029eb86ae",
+        "edge-bfa06ec58c8b8c1d0c23759a",
+        "edge-110e155e25f2e9feb77aa708"
+      ],
+      "validation_ids": [
+        "validation-5a2048edef47616db8cc8856",
+        "validation-6739cecc36a9571223cb3cad",
+        "validation-5f105ce23cf1322dd791bdc1"
+      ]
+    }
+  ],
+  "fetched_artifacts": [
+    {
+      "id": "artifact-e32ab624519a70328f135b47",
+      "run_id": "run-art106-runtime-dep-map",
+      "artifact_id": "01-current-state-runtime-dependency-map-md",
+      "title": "Runtime Dependency Map",
+      "artifact_type": "migration_artifact",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/01-current-state/runtime-dependency-map.md",
+      "content_hash": "sha256:bcadc1d28586c31cba7d82fe3a4729a9b03cda6e4444a3a92d3f8151c78e0cb6",
+      "generated_by_operation_id": "produce-01-current-state-runtime-dependency-map-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-ad92b1104b742e51996db4e3",
+          "evidence-110560a00d4229f1b2034f3e",
+          "evidence-cbfac5da73dae4011d5901a1",
+          "evidence-ed85c18db46a9cd329842152",
+          "evidence-5991f6b74d911d63e98b7f7f",
+          "evidence-83e354cce71908fc1f1d968f",
+          "evidence-a49fd5a100353129c7e22f41",
+          "evidence-c904d0972858019a9eca18cc",
+          "evidence-5ef08aa20d60a9ce16ffa1ae",
+          "evidence-4d59010486ec8898aa412c84"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.md",
+          "execution-framework/migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.json",
+          "execution-framework/migration-artifacts/01-current-state/runtime-dependency-map.md",
+          "execution-framework/generated/envctl_target_registry.json",
+          "execution-framework/generated/package_scan.json",
+          "execution-framework/generated/envctl_migration_db_model.json",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/generated/shared_protocol_manifest.json",
+          "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+          "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+        ],
+        "producer_operation_id": "produce-01-current-state-runtime-dependency-map-md",
+        "provenance": {
+          "helper_id": "helper-artifact-07",
+          "owner_agent": "artifact-agent",
+          "source_graph_uri": "generated/task_graph.csv",
+          "source_packet": "execution-framework/generated/execution_packets/ART-106_RUNTIME_DEP_MAP.json",
+          "target_descriptor": "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+          "task_id": "ART-106_RUNTIME_DEP_MAP"
+        },
+        "validation_ids": [
+          "validation-50127372db746f3abf836960",
+          "validation-739cca56848f926d8698aa37",
+          "validation-65e95832848dbeac2e33c7b2"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-5be79978835150f45cb0f806",
+          "edge-2f4d9255fba3e1429535fbc5",
+          "edge-ff0afba38b79d93aa656cb75",
+          "edge-0d2cd7ac9dea92651c067258",
+          "edge-c6ecd0a0cf273bab01801aaa"
+        ],
+        "links": [
+          {
+            "to": "artifact:art-106-runtime-dep-map-json",
+            "type": "described_by"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          },
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-c60e42e62950f16572ef50a6",
+      "run_id": "run-art106-runtime-dep-map",
+      "artifact_id": "art-106-runtime-dep-map-md",
+      "title": "ART-106 Runtime Dependency Map Markdown",
+      "artifact_type": "task_artifact",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.md",
+      "content_hash": "sha256:bcadc1d28586c31cba7d82fe3a4729a9b03cda6e4444a3a92d3f8151c78e0cb6",
+      "generated_by_operation_id": "produce-01-current-state-runtime-dependency-map-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-e1f61e551da4831de0db4e11",
+          "evidence-020e70e582c31c6e9ff16338",
+          "evidence-c91cab2252607fd2afd21af5",
+          "evidence-7c81266ef777372bb5dca2e5",
+          "evidence-7e53ce361151d79b9136708e",
+          "evidence-66ca8b17bddc1f9f49514f8e",
+          "evidence-d9381a32522a56f07c3a40e7",
+          "evidence-913b04c5646022115ef3bd27",
+          "evidence-ca893df747cd7ea5d871c380",
+          "evidence-e708fec6ccc5abe30dff2d33"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.md",
+          "execution-framework/migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.json",
+          "execution-framework/migration-artifacts/01-current-state/runtime-dependency-map.md",
+          "execution-framework/generated/envctl_target_registry.json",
+          "execution-framework/generated/package_scan.json",
+          "execution-framework/generated/envctl_migration_db_model.json",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/generated/shared_protocol_manifest.json",
+          "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+          "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+        ],
+        "producer_operation_id": "produce-01-current-state-runtime-dependency-map-md",
+        "provenance": {
+          "helper_id": "helper-artifact-07",
+          "owner_agent": "artifact-agent",
+          "source_graph_uri": "generated/task_graph.csv",
+          "source_packet": "execution-framework/generated/execution_packets/ART-106_RUNTIME_DEP_MAP.json",
+          "target_descriptor": "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+          "task_id": "ART-106_RUNTIME_DEP_MAP"
+        },
+        "validation_ids": [
+          "validation-de3130ddf5331379c04567fc",
+          "validation-3b289cf15cea1e4cb2447713",
+          "validation-95be4770a8ded978ec9438e8"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-7ba801e3f43851695cfb313c",
+          "edge-d640b6dab818cb6a359abdc5",
+          "edge-5fc58fa8b5af11c0fa08742d",
+          "edge-61c4c3baffc69fa7542d4933",
+          "edge-6e8e9983ca724ba08c62878f"
+        ],
+        "links": [
+          {
+            "to": "artifact:01-current-state-runtime-dependency-map-md",
+            "type": "mirrors"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          },
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-35747b06531dfe6884e821a0",
+      "run_id": "run-art106-runtime-dep-map",
+      "artifact_id": "art-106-runtime-dep-map-json",
+      "title": "ART-106 Runtime Dependency Map JSON",
+      "artifact_type": "machine_readable_dependency_map",
+      "status": "complete",
+      "path": "execution-framework/migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.json",
+      "content_hash": "sha256:b141d6fcacaea1bf1d1e339a90765e993fed95a8d14e3bc05643f9d2bec54c69",
+      "generated_by_operation_id": "produce-01-current-state-runtime-dependency-map-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-a3eb1eb844bc2a8d13064058",
+          "evidence-2ae3de4ee9194a6d05409727",
+          "evidence-0e9347503ed230df4ef84b1b",
+          "evidence-b1741c88b8950e0432478822",
+          "evidence-303e3dceb442a44d49a73ac8",
+          "evidence-51a41a2e1c2da0d945217854",
+          "evidence-7487a999c0e069c2597dd795",
+          "evidence-518a5df0aa051e104caa1c04",
+          "evidence-13673bec2b6eae9febacf147",
+          "evidence-4711173b42a9a4b2e0ec247b"
+        ],
+        "evidence_refs": [
+          "execution-framework/migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.md",
+          "execution-framework/migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.json",
+          "execution-framework/migration-artifacts/01-current-state/runtime-dependency-map.md",
+          "execution-framework/generated/envctl_target_registry.json",
+          "execution-framework/generated/package_scan.json",
+          "execution-framework/generated/envctl_migration_db_model.json",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/generated/shared_protocol_manifest.json",
+          "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+          "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+        ],
+        "producer_operation_id": "produce-01-current-state-runtime-dependency-map-md",
+        "provenance": {
+          "helper_id": "helper-artifact-07",
+          "owner_agent": "artifact-agent",
+          "source_graph_uri": "generated/task_graph.csv",
+          "source_packet": "execution-framework/generated/execution_packets/ART-106_RUNTIME_DEP_MAP.json",
+          "target_descriptor": "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+          "task_id": "ART-106_RUNTIME_DEP_MAP"
+        },
+        "validation_ids": [
+          "validation-5a2048edef47616db8cc8856",
+          "validation-6739cecc36a9571223cb3cad",
+          "validation-5f105ce23cf1322dd791bdc1"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-4ed1035dd19dcc7d0890dbea",
+          "edge-aa0f3f74017273537926c2d6",
+          "edge-c768c0f61fca683029eb86ae",
+          "edge-bfa06ec58c8b8c1d0c23759a",
+          "edge-110e155e25f2e9feb77aa708"
+        ],
+        "links": [
+          {
+            "to": "artifact:01-current-state-runtime-dependency-map-md",
+            "type": "describes"
+          },
+          {
+            "to": "task:VER-300_UNIT_VALIDATION",
+            "type": "blocks"
+          },
+          {
+            "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "depends_on"
+          },
+          {
+            "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "depends_on"
+          }
+        ]
+      }
+    }
+  ],
+  "verification": {
+    "artifact_files_exist": true,
+    "hashes_recorded": true,
+    "registry_contains_hash": true,
+    "validation_evidence_linked": true,
+    "runtime_categories": [
+      "databases",
+      "env_vars",
+      "secret_refs",
+      "queues",
+      "apis",
+      "caches"
+    ],
+    "covered_categories": [
+      "databases",
+      "env_vars",
+      "secret_refs",
+      "queues",
+      "apis",
+      "caches"
+    ],
+    "gap_categories": [],
+    "rows": [
+      {
+        "artifact_id": "01-current-state-runtime-dependency-map-md",
+        "path": "execution-framework/migration-artifacts/01-current-state/runtime-dependency-map.md",
+        "content_hash": "sha256:bcadc1d28586c31cba7d82fe3a4729a9b03cda6e4444a3a92d3f8151c78e0cb6",
+        "hash_matches": true,
+        "validation_ids": [
+          "validation-50127372db746f3abf836960",
+          "validation-739cca56848f926d8698aa37",
+          "validation-65e95832848dbeac2e33c7b2"
+        ]
+      },
+      {
+        "artifact_id": "art-106-runtime-dep-map-md",
+        "path": "execution-framework/migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.md",
+        "content_hash": "sha256:bcadc1d28586c31cba7d82fe3a4729a9b03cda6e4444a3a92d3f8151c78e0cb6",
+        "hash_matches": true,
+        "validation_ids": [
+          "validation-de3130ddf5331379c04567fc",
+          "validation-3b289cf15cea1e4cb2447713",
+          "validation-95be4770a8ded978ec9438e8"
+        ]
+      },
+      {
+        "artifact_id": "art-106-runtime-dep-map-json",
+        "path": "execution-framework/migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.json",
+        "content_hash": "sha256:b141d6fcacaea1bf1d1e339a90765e993fed95a8d14e3bc05643f9d2bec54c69",
+        "hash_matches": true,
+        "validation_ids": [
+          "validation-5a2048edef47616db8cc8856",
+          "validation-6739cecc36a9571223cb3cad",
+          "validation-5f105ce23cf1322dd791bdc1"
+        ]
+      }
+    ]
+  }
+}

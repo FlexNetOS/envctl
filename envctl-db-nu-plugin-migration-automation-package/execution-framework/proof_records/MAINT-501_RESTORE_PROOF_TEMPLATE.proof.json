@@ -1,0 +1,29 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "MAINT-501_RESTORE_PROOF_TEMPLATE",
+  "status": "completed",
+  "started_at": "2026-07-04T22:20:00-05:00",
+  "completed_at": "2026-07-04T22:20:00-05:00",
+  "actor": "chatgpt-google-drive-maintenance",
+  "helper_id": "helper-drive-live-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "~/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/proof_templates/PROOF_RECORD_TEMPLATE.json",
+    "execution-framework/proof_records/MAINT-501_RESTORE_PROOF_TEMPLATE.proof.json"
+  ],
+  "commands_run": [
+    "Google_Drive list_folder/get_document_text/batch_update_document/upload_file/update_file as applicable"
+  ],
+  "verification_output": "completed and verified in Drive; see target files and live gap closure report",
+  "checksums": {},
+  "logs_uri": "execution-framework/logs/MAINT-501_RESTORE_PROOF_TEMPLATE.log",
+  "rollback_point": "Google Drive revision history and package history/v0-v5",
+  "evidence": {
+    "task_graph_row": "execution-framework/generated/task_graph.csv#MAINT-501_RESTORE_PROOF_TEMPLATE",
+    "packet": "execution-framework/generated/execution_packets/MAINT-501_RESTORE_PROOF_TEMPLATE.json",
+    "proof": "execution-framework/proof_records/MAINT-501_RESTORE_PROOF_TEMPLATE.proof.json"
+  },
+  "failure_reason": "",
+  "next_action": "none"
+}

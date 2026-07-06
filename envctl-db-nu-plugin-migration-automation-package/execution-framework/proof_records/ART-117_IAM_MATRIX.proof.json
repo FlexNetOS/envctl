@@ -1,0 +1,319 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "ART-117_IAM_MATRIX",
+  "status": "completed",
+  "started_at": "2026-07-04T23:19:57+00:00",
+  "completed_at": "2026-07-04T23:19:57+00:00",
+  "actor": "artifact-agent",
+  "helper_id": "helper-artifact-18",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/generate_art_117_iam_matrix.py",
+    "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.md",
+    "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json",
+    "execution-framework/generated/art_117_iam_matrix_registry_report.json",
+    "execution-framework/state/ART-117_IAM_MATRIX.heartbeat.json",
+    "execution-framework/logs/ART-117_IAM_MATRIX.log",
+    "execution-framework/proof_records/ART-117_IAM_MATRIX.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/generate_art_117_iam_matrix.py",
+    "python3 -m py_compile scripts/generate_art_117_iam_matrix.py"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "ART-117_IAM_MATRIX",
+    "status": "passed",
+    "generated_at": "2026-07-04T23:19:57+00:00",
+    "artifact_paths": {
+      "markdown": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.md",
+      "json": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json"
+    },
+    "registry_results": [
+      {
+        "artifact_row_id": "artifact-aeef42eb8c840e3d7fb222bb",
+        "artifact_id": "art-117-iam-security-access-matrix-md",
+        "run_id": "run-art-117-iam-matrix",
+        "path": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.md",
+        "content_hash": "sha256:c336c34ce4f9aef038b86f2aeb215aad204d15061b126f9626e26e2ed074d496",
+        "producer_operation_id": "op-art-117-generate-iam-matrix",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-6a0f36b114adf71c74deb552",
+          "evidence-9ab77008c9d89b34ce1d27bc",
+          "evidence-910a122d1fbc3306c49707c1",
+          "evidence-1fdb14a09f4e5c81759379c3",
+          "evidence-aacdcfd4dc6cffa15266c426",
+          "evidence-51ca8ac8b02573f8231e9cd8",
+          "evidence-c30fef2f3a50231364e8af5a",
+          "evidence-66bfbd901d4cc772fb69e3fd",
+          "evidence-fc5b8df540062a21042ab47c"
+        ],
+        "graph_edge_ids": [
+          "edge-c60bbcd5966184222cc5dd75",
+          "edge-d739f6786c6895b991ae3b07",
+          "edge-b0bb980005c6a23a9d80f77c",
+          "edge-eb597a1787d79faa3c3a2d5d",
+          "edge-b53b83abd3f0ef46ac23b70e",
+          "edge-138f1fe8aef22661afaddab5"
+        ],
+        "validation_ids": [
+          "validation-5a7f309bc20bceadebc94410",
+          "validation-10e234fe9207aec48cccd0d6",
+          "validation-357cc11f8a713f8311dfbd90"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-9ce4bb5fe8a63c80b7b0e270",
+        "artifact_id": "art-117-iam-security-access-matrix-json",
+        "run_id": "run-art-117-iam-matrix",
+        "path": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json",
+        "content_hash": "sha256:3f0666fb99a3fb4bb9416072f94bbcab816af08599ab68f53c55a15e3bef49be",
+        "producer_operation_id": "op-art-117-generate-iam-matrix",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-e63ea5687c86308f92ae55cc",
+          "evidence-6ec4bf5dd66ad110972d269b",
+          "evidence-04c6b653338ca9aebf3b3a85",
+          "evidence-b84162759a5c2513ad28a1c8",
+          "evidence-7ae7a9a6f4ace3249c71b105",
+          "evidence-c91169b2d2320748f91f864a",
+          "evidence-103050f952633c5fd08dafd3",
+          "evidence-6d04ca7a889c92b987e4d459",
+          "evidence-bde40dd63c94c987215681ad"
+        ],
+        "graph_edge_ids": [
+          "edge-c3431868805844a0c1868e08",
+          "edge-20aa372dc7e68d0ff936a0c7",
+          "edge-101f0ca5a5f468dc157ae7fb",
+          "edge-ead81552074e4d7384405367",
+          "edge-7f3a6cfc08ea557b867fb16a",
+          "edge-edf1f665f5ea9e5693878044"
+        ],
+        "validation_ids": [
+          "validation-040256bfd8094e03e49a0d9d",
+          "validation-5df9c63b4dd900404102d90a",
+          "validation-4c50a632ff60ca01a055844e"
+        ]
+      }
+    ],
+    "artifact_rows": [
+      {
+        "id": "artifact-aeef42eb8c840e3d7fb222bb",
+        "run_id": "run-art-117-iam-matrix",
+        "artifact_id": "art-117-iam-security-access-matrix-md",
+        "title": "ART-117 IAM Security Access Matrix Markdown",
+        "artifact_type": "iam_security_access_matrix",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.md",
+        "content_hash": "sha256:c336c34ce4f9aef038b86f2aeb215aad204d15061b126f9626e26e2ed074d496",
+        "generated_by_operation_id": "op-art-117-generate-iam-matrix",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-6a0f36b114adf71c74deb552",
+            "evidence-9ab77008c9d89b34ce1d27bc",
+            "evidence-910a122d1fbc3306c49707c1",
+            "evidence-1fdb14a09f4e5c81759379c3",
+            "evidence-aacdcfd4dc6cffa15266c426",
+            "evidence-51ca8ac8b02573f8231e9cd8",
+            "evidence-c30fef2f3a50231364e8af5a",
+            "evidence-66bfbd901d4cc772fb69e3fd",
+            "evidence-fc5b8df540062a21042ab47c"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.md",
+            "execution-framework/generated/execution_packets/ART-117_IAM_MATRIX.json",
+            "execution-framework/generated/envctl_target_registry.json",
+            "execution-framework/generated/package_scan.json",
+            "execution-framework/generated/envctl_migration_db_model.json",
+            "execution-framework/generated/envctl_artifact_registry_report.json",
+            "schemas/approval_request.schema.json",
+            "schemas/target_descriptor.schema.json",
+            "prompts/SECURITY_REPRODUCIBILITY_MODEL.md"
+          ],
+          "producer_operation_id": "op-art-117-generate-iam-matrix",
+          "provenance": {
+            "helper_id": "helper-artifact-18",
+            "owner_agent": "artifact-agent",
+            "owner_lane": "lane_d_filesystem",
+            "source_graph_uri": "generated/task_graph.csv",
+            "task_id": "ART-117_IAM_MATRIX"
+          },
+          "validation_ids": [
+            "validation-5a7f309bc20bceadebc94410",
+            "validation-10e234fe9207aec48cccd0d6",
+            "validation-357cc11f8a713f8311dfbd90"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-c60bbcd5966184222cc5dd75",
+            "edge-d739f6786c6895b991ae3b07",
+            "edge-b0bb980005c6a23a9d80f77c",
+            "edge-eb597a1787d79faa3c3a2d5d",
+            "edge-b53b83abd3f0ef46ac23b70e",
+            "edge-138f1fe8aef22661afaddab5"
+          ],
+          "links": [
+            {
+              "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "artifact:09-governance-iam-security-access-matrix-md",
+              "type": "satisfies_contract_row"
+            },
+            {
+              "to": "artifact:08-operations-secrets-certificates-inventory-md",
+              "type": "related_security_inventory"
+            }
+          ]
+        }
+      },
+      {
+        "id": "artifact-9ce4bb5fe8a63c80b7b0e270",
+        "run_id": "run-art-117-iam-matrix",
+        "artifact_id": "art-117-iam-security-access-matrix-json",
+        "title": "ART-117 IAM Security Access Matrix JSON",
+        "artifact_type": "iam_security_access_matrix",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json",
+        "content_hash": "sha256:3f0666fb99a3fb4bb9416072f94bbcab816af08599ab68f53c55a15e3bef49be",
+        "generated_by_operation_id": "op-art-117-generate-iam-matrix",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-e63ea5687c86308f92ae55cc",
+            "evidence-6ec4bf5dd66ad110972d269b",
+            "evidence-04c6b653338ca9aebf3b3a85",
+            "evidence-b84162759a5c2513ad28a1c8",
+            "evidence-7ae7a9a6f4ace3249c71b105",
+            "evidence-c91169b2d2320748f91f864a",
+            "evidence-103050f952633c5fd08dafd3",
+            "evidence-6d04ca7a889c92b987e4d459",
+            "evidence-bde40dd63c94c987215681ad"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json",
+            "execution-framework/generated/execution_packets/ART-117_IAM_MATRIX.json",
+            "execution-framework/generated/envctl_target_registry.json",
+            "execution-framework/generated/package_scan.json",
+            "execution-framework/generated/envctl_migration_db_model.json",
+            "execution-framework/generated/envctl_artifact_registry_report.json",
+            "schemas/approval_request.schema.json",
+            "schemas/target_descriptor.schema.json",
+            "prompts/SECURITY_REPRODUCIBILITY_MODEL.md"
+          ],
+          "producer_operation_id": "op-art-117-generate-iam-matrix",
+          "provenance": {
+            "helper_id": "helper-artifact-18",
+            "owner_agent": "artifact-agent",
+            "owner_lane": "lane_d_filesystem",
+            "source_graph_uri": "generated/task_graph.csv",
+            "task_id": "ART-117_IAM_MATRIX"
+          },
+          "validation_ids": [
+            "validation-040256bfd8094e03e49a0d9d",
+            "validation-5df9c63b4dd900404102d90a",
+            "validation-4c50a632ff60ca01a055844e"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-c3431868805844a0c1868e08",
+            "edge-20aa372dc7e68d0ff936a0c7",
+            "edge-101f0ca5a5f468dc157ae7fb",
+            "edge-ead81552074e4d7384405367",
+            "edge-7f3a6cfc08ea557b867fb16a",
+            "edge-edf1f665f5ea9e5693878044"
+          ],
+          "links": [
+            {
+              "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "artifact:09-governance-iam-security-access-matrix-md",
+              "type": "satisfies_contract_row"
+            },
+            {
+              "to": "artifact:08-operations-secrets-certificates-inventory-md",
+              "type": "related_security_inventory"
+            }
+          ]
+        }
+      }
+    ],
+    "summary": {
+      "principal_count": 7,
+      "credential_inventory_count": 4,
+      "source_signal_count": 120,
+      "evidence_count": 18,
+      "graph_edge_count": 12,
+      "validation_count": 6
+    },
+    "coverage": {
+      "users": true,
+      "roles": true,
+      "service_accounts": true,
+      "permissions": true,
+      "certs_tokens": true,
+      "registry_hashes": true,
+      "validation_evidence_linked": true
+    },
+    "errors": [],
+    "evidence": [
+      "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.md",
+      "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json",
+      "execution-framework/generated/art_117_iam_matrix_registry_report.json",
+      "execution-framework/generated/envctl_target_registry.json",
+      "execution-framework/generated/package_scan.json",
+      "execution-framework/generated/envctl_artifact_registry_report.json",
+      "execution-framework/scripts/generate_art_117_iam_matrix.py"
+    ]
+  },
+  "checksums": {
+    "execution-framework/scripts/generate_art_117_iam_matrix.py": "d404e42c48275f01dd280f88c3ddc8ee94f863824c5b23a57bed410fa8269b68",
+    "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.md": "c336c34ce4f9aef038b86f2aeb215aad204d15061b126f9626e26e2ed074d496",
+    "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json": "3f0666fb99a3fb4bb9416072f94bbcab816af08599ab68f53c55a15e3bef49be",
+    "execution-framework/generated/art_117_iam_matrix_registry_report.json": "8294137c6c373540fc3428af5752c17487ca2afc2d5a9dec3bca0f86806a0948",
+    "execution-framework/state/ART-117_IAM_MATRIX.heartbeat.json": "d2d7768445531f3af77fac13c1cf95803f19df3ad1b3606bd26040f88fcf0ed3",
+    "execution-framework/logs/ART-117_IAM_MATRIX.log": "8294137c6c373540fc3428af5752c17487ca2afc2d5a9dec3bca0f86806a0948",
+    "execution-framework/proof_records/ART-117_IAM_MATRIX.proof.json": "b3119bd34f6a41a74db3315f3712ada0aaf24ace7b2dc12660432e6b8ad4f451",
+    "execution-framework/proof_records/proof_ledger.jsonl": "2daadd76c430640e51536e98b77a994019dd37ce7011ad39df161fd24a629e38"
+  },
+  "logs_uri": "logs/ART-117_IAM_MATRIX.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.md",
+    "execution-framework/migration-artifacts/art-117_iam_matrix/iam-security-access-matrix.json",
+    "execution-framework/generated/art_117_iam_matrix_registry_report.json",
+    "execution-framework/generated/envctl_target_registry.json",
+    "execution-framework/generated/package_scan.json",
+    "execution-framework/generated/envctl_artifact_registry_report.json",
+    "execution-framework/scripts/generate_art_117_iam_matrix.py"
+  ],
+  "failure_reason": "",
+  "next_action": "ready for VER-300_UNIT_VALIDATION"
+}

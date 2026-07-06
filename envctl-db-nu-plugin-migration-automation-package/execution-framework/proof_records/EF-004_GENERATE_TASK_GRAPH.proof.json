@@ -1,0 +1,37 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "EF-004_GENERATE_TASK_GRAPH",
+  "status": "completed",
+  "started_at": "2026-07-04T00:00:00-05:00",
+  "completed_at": "2026-07-04T00:00:00-05:00",
+  "actor": "local-package-builder",
+  "helper_id": "helper-graph-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "execution-framework",
+  "files_changed": [
+    "execution-framework/generated/task_graph.csv",
+    "execution-framework/generated/task_graph.normalized.json",
+    "execution-framework/generated/task_graph.index.json"
+  ],
+  "commands_run": [
+    "generate task graph CSV and JSON indexes"
+  ],
+  "verification_output": {
+    "status": "completed",
+    "task_count": 76
+  },
+  "checksums": {
+    "execution-framework/generated/task_graph.csv": "409bc353bdc5dfe986ba444e81d338138c97213d11f8776275e0c570e2ababc8",
+    "execution-framework/generated/task_graph.normalized.json": "69a790b3054c3e0865afcf9bd9c109b471d12a0f51255deb9bcf46fe3298c968",
+    "execution-framework/generated/task_graph.index.json": "b1bd28d2b5596fe9555af86954f7c056999d42ff6c24259e3fd5237a7def7146"
+  },
+  "logs_uri": "logs/EF-004_GENERATE_TASK_GRAPH.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "generated/task_graph.csv",
+    "generated/task_graph.normalized.json",
+    "generated/task_graph.index.json"
+  ],
+  "failure_reason": "",
+  "next_action": "continue required execution command sequence"
+}

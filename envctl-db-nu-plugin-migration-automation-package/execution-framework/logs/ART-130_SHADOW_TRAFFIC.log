@@ -1,0 +1,343 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-130_SHADOW_TRAFFIC",
+  "status": "passed",
+  "generated_at": "2026-07-04T23:20:50+00:00",
+  "registry_results": [
+    {
+      "artifact_row_id": "artifact-99cc089cf031e672067912fb",
+      "artifact_id": "art-130-shadow-traffic-report-md",
+      "run_id": "run-art130-shadow-traffic",
+      "path": "migration-artifacts/art-130_shadow_traffic/shadow-traffic-comparison-report.md",
+      "content_hash": "sha256:945986e239e6345e72fba608902d45420cbfee53932c0733106715e2583ce2da",
+      "producer_operation_id": "produce-06-testing-validation-shadow-traffic-comparison-report-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-d724b673263327841f4839e9",
+        "evidence-ca1ad5f3a47d95cdb12f3202",
+        "evidence-d995ea76f0b5a6b0fda3412d",
+        "evidence-17a949695fba3fb0f3ce0765",
+        "evidence-0d8919f0e7937f9f38d54f3c",
+        "evidence-4aefcc1f32ea16b667f5be5c",
+        "evidence-3040ef18061600363f31a9be"
+      ],
+      "graph_edge_ids": [
+        "edge-29f1822b55d78ac74972c4c2",
+        "edge-fd4bcb3f4532a612fc225d03",
+        "edge-52ecf8c236f40a29b039c87f",
+        "edge-b279936efd429a2ce5f27dce",
+        "edge-9fc9b2cec713e989a9a36ad4"
+      ],
+      "validation_ids": [
+        "validation-d4312ddbfd12107cd60f3438",
+        "validation-63b1e4f019206b654f18d213",
+        "validation-e49a7947135c84f500f2b409"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-33d97ceebbf374bec47f54cb",
+      "artifact_id": "art-130-shadow-traffic-report-json",
+      "run_id": "run-art130-shadow-traffic",
+      "path": "migration-artifacts/art-130_shadow_traffic/shadow-traffic-comparison-report.json",
+      "content_hash": "sha256:e4a25a1513c2b2977dd7a126fb088c9823fca42d6ca6741aa31440b8a5d04c8d",
+      "producer_operation_id": "produce-06-testing-validation-shadow-traffic-comparison-report-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-665e9d5bd8287d27ed67413c",
+        "evidence-a8b508d2c2e99ece1026ab5b",
+        "evidence-f8fb6881f7996181e731f0f8",
+        "evidence-00ee493954c4fb476d5a5fa3",
+        "evidence-c866c4953127b84fd3d2fd54",
+        "evidence-3937afdf8262b8a23e9c1844",
+        "evidence-3a572d8b69ffc918c81279e0"
+      ],
+      "graph_edge_ids": [
+        "edge-630ae4efc7245c6bf5f61172",
+        "edge-da3a96d7b70e206d750a2171",
+        "edge-8dfc2e740a1b61f611d45405",
+        "edge-3de217a9c6b7a03e4a23bd84",
+        "edge-0bf203f6a477f72cc2d77003"
+      ],
+      "validation_ids": [
+        "validation-9c62f93083792f9e6f0053e0",
+        "validation-7ff75e99ca714ca85b279397",
+        "validation-0f315c34d924173e18199d63"
+      ]
+    },
+    {
+      "artifact_row_id": "artifact-58530b97cf4160d7ffb45bdc",
+      "artifact_id": "06-testing-validation-shadow-traffic-comparison-report-md",
+      "run_id": "run-art130-shadow-traffic",
+      "path": "migration-artifacts/06-testing-validation/shadow-traffic-comparison-report.md",
+      "content_hash": "sha256:945986e239e6345e72fba608902d45420cbfee53932c0733106715e2583ce2da",
+      "producer_operation_id": "produce-06-testing-validation-shadow-traffic-comparison-report-md",
+      "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+      "evidence_ids": [
+        "evidence-d2bd06b805144e1488dad2b5",
+        "evidence-d5392c0432aa39861d4167d0",
+        "evidence-595ff3faef0fa9545194eea1",
+        "evidence-3ed749ba476769efad810956",
+        "evidence-58495005e8d7e636c513cb8e",
+        "evidence-7b664ed2e157e86a11f67b8d",
+        "evidence-7b20044bd13e7ad14c029103"
+      ],
+      "graph_edge_ids": [
+        "edge-129a25944e6641215550b74a",
+        "edge-2dca738f712328ebfc8f4f94",
+        "edge-e5e52b1dec506e98de71d122",
+        "edge-6de46eac6c839f78a03adb2a",
+        "edge-fac3d584392dc59a21fad6b4"
+      ],
+      "validation_ids": [
+        "validation-892b21196e4c4f7314b36a64",
+        "validation-3ea5b940d61e91f910edb694",
+        "validation-5343d7804d7fa3e20679c4f4"
+      ]
+    }
+  ],
+  "artifact_rows": [
+    {
+      "id": "artifact-99cc089cf031e672067912fb",
+      "run_id": "run-art130-shadow-traffic",
+      "artifact_id": "art-130-shadow-traffic-report-md",
+      "title": "ART-130 Shadow Traffic Comparison Report",
+      "artifact_type": "validation_evidence",
+      "status": "complete",
+      "path": "migration-artifacts/art-130_shadow_traffic/shadow-traffic-comparison-report.md",
+      "content_hash": "sha256:945986e239e6345e72fba608902d45420cbfee53932c0733106715e2583ce2da",
+      "generated_by_operation_id": "produce-06-testing-validation-shadow-traffic-comparison-report-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-d724b673263327841f4839e9",
+          "evidence-ca1ad5f3a47d95cdb12f3202",
+          "evidence-d995ea76f0b5a6b0fda3412d",
+          "evidence-17a949695fba3fb0f3ce0765",
+          "evidence-0d8919f0e7937f9f38d54f3c",
+          "evidence-4aefcc1f32ea16b667f5be5c",
+          "evidence-3040ef18061600363f31a9be"
+        ],
+        "evidence_refs": [
+          "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+          "execution-framework/generated/package_scan.json",
+          "execution-framework/generated/envctl_migration_db_validation_report.json",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/schemas/shared_protocol.schema.json",
+          "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+          "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+        ],
+        "producer_operation_id": "produce-06-testing-validation-shadow-traffic-comparison-report-md",
+        "provenance": {
+          "capture_status": "not_present_in_package_inputs",
+          "contract_row_id": "artifact:06-testing-validation-shadow-traffic-comparison-report-md",
+          "helper_id": "helper-artifact-31",
+          "model_tag": "gpt-5.3-spark",
+          "owner_agent": "artifact-agent",
+          "task_id": "ART-130_SHADOW_TRAFFIC"
+        },
+        "validation_ids": [
+          "validation-d4312ddbfd12107cd60f3438",
+          "validation-63b1e4f019206b654f18d213",
+          "validation-e49a7947135c84f500f2b409"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-29f1822b55d78ac74972c4c2",
+          "edge-fd4bcb3f4532a612fc225d03",
+          "edge-52ecf8c236f40a29b039c87f",
+          "edge-b279936efd429a2ce5f27dce",
+          "edge-9fc9b2cec713e989a9a36ad4"
+        ],
+        "links": [
+          {
+            "to": "artifact:06-testing-validation-parity-dashboard-md",
+            "type": "feeds"
+          },
+          {
+            "to": "artifact:04-data-migration-golden-dataset-md",
+            "type": "requires_input_from"
+          },
+          {
+            "to": "proof:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "validated_by"
+          },
+          {
+            "to": "proof:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "validated_by"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-33d97ceebbf374bec47f54cb",
+      "run_id": "run-art130-shadow-traffic",
+      "artifact_id": "art-130-shadow-traffic-report-json",
+      "title": "ART-130 Shadow Traffic Comparison Machine Report",
+      "artifact_type": "validation_evidence",
+      "status": "complete",
+      "path": "migration-artifacts/art-130_shadow_traffic/shadow-traffic-comparison-report.json",
+      "content_hash": "sha256:e4a25a1513c2b2977dd7a126fb088c9823fca42d6ca6741aa31440b8a5d04c8d",
+      "generated_by_operation_id": "produce-06-testing-validation-shadow-traffic-comparison-report-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-665e9d5bd8287d27ed67413c",
+          "evidence-a8b508d2c2e99ece1026ab5b",
+          "evidence-f8fb6881f7996181e731f0f8",
+          "evidence-00ee493954c4fb476d5a5fa3",
+          "evidence-c866c4953127b84fd3d2fd54",
+          "evidence-3937afdf8262b8a23e9c1844",
+          "evidence-3a572d8b69ffc918c81279e0"
+        ],
+        "evidence_refs": [
+          "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+          "execution-framework/generated/package_scan.json",
+          "execution-framework/generated/envctl_migration_db_validation_report.json",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/schemas/shared_protocol.schema.json",
+          "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+          "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+        ],
+        "producer_operation_id": "produce-06-testing-validation-shadow-traffic-comparison-report-md",
+        "provenance": {
+          "capture_status": "not_present_in_package_inputs",
+          "contract_row_id": "artifact:06-testing-validation-shadow-traffic-comparison-report-md",
+          "helper_id": "helper-artifact-31",
+          "model_tag": "gpt-5.3-spark",
+          "owner_agent": "artifact-agent",
+          "task_id": "ART-130_SHADOW_TRAFFIC"
+        },
+        "validation_ids": [
+          "validation-9c62f93083792f9e6f0053e0",
+          "validation-7ff75e99ca714ca85b279397",
+          "validation-0f315c34d924173e18199d63"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-630ae4efc7245c6bf5f61172",
+          "edge-da3a96d7b70e206d750a2171",
+          "edge-8dfc2e740a1b61f611d45405",
+          "edge-3de217a9c6b7a03e4a23bd84",
+          "edge-0bf203f6a477f72cc2d77003"
+        ],
+        "links": [
+          {
+            "to": "artifact:06-testing-validation-parity-dashboard-md",
+            "type": "feeds"
+          },
+          {
+            "to": "artifact:04-data-migration-golden-dataset-md",
+            "type": "requires_input_from"
+          },
+          {
+            "to": "proof:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "validated_by"
+          },
+          {
+            "to": "proof:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "validated_by"
+          }
+        ]
+      }
+    },
+    {
+      "id": "artifact-58530b97cf4160d7ffb45bdc",
+      "run_id": "run-art130-shadow-traffic",
+      "artifact_id": "06-testing-validation-shadow-traffic-comparison-report-md",
+      "title": "Shadow Traffic Comparison Report",
+      "artifact_type": "validation_evidence",
+      "status": "complete",
+      "path": "migration-artifacts/06-testing-validation/shadow-traffic-comparison-report.md",
+      "content_hash": "sha256:945986e239e6345e72fba608902d45420cbfee53932c0733106715e2583ce2da",
+      "generated_by_operation_id": "produce-06-testing-validation-shadow-traffic-comparison-report-md",
+      "evidence": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-d2bd06b805144e1488dad2b5",
+          "evidence-d5392c0432aa39861d4167d0",
+          "evidence-595ff3faef0fa9545194eea1",
+          "evidence-3ed749ba476769efad810956",
+          "evidence-58495005e8d7e636c513cb8e",
+          "evidence-7b664ed2e157e86a11f67b8d",
+          "evidence-7b20044bd13e7ad14c029103"
+        ],
+        "evidence_refs": [
+          "examples/target-descriptors/flexnetos-vs-lifeos.yaml",
+          "execution-framework/generated/package_scan.json",
+          "execution-framework/generated/envctl_migration_db_validation_report.json",
+          "execution-framework/generated/envctl_artifact_registry_report.json",
+          "execution-framework/schemas/shared_protocol.schema.json",
+          "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+          "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+        ],
+        "producer_operation_id": "produce-06-testing-validation-shadow-traffic-comparison-report-md",
+        "provenance": {
+          "capture_status": "not_present_in_package_inputs",
+          "contract_row_id": "artifact:06-testing-validation-shadow-traffic-comparison-report-md",
+          "helper_id": "helper-artifact-31",
+          "model_tag": "gpt-5.3-spark",
+          "owner_agent": "artifact-agent",
+          "task_id": "ART-130_SHADOW_TRAFFIC"
+        },
+        "validation_ids": [
+          "validation-892b21196e4c4f7314b36a64",
+          "validation-3ea5b940d61e91f910edb694",
+          "validation-5343d7804d7fa3e20679c4f4"
+        ]
+      },
+      "links": {
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "graph_edge_ids": [
+          "edge-129a25944e6641215550b74a",
+          "edge-2dca738f712328ebfc8f4f94",
+          "edge-e5e52b1dec506e98de71d122",
+          "edge-6de46eac6c839f78a03adb2a",
+          "edge-fac3d584392dc59a21fad6b4"
+        ],
+        "links": [
+          {
+            "to": "artifact:06-testing-validation-parity-dashboard-md",
+            "type": "feeds"
+          },
+          {
+            "to": "artifact:04-data-migration-golden-dataset-md",
+            "type": "requires_input_from"
+          },
+          {
+            "to": "proof:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+            "type": "validated_by"
+          },
+          {
+            "to": "proof:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+            "type": "validated_by"
+          }
+        ]
+      }
+    }
+  ],
+  "summary": {
+    "artifact_count": 3,
+    "evidence_count": 21,
+    "validation_count": 9,
+    "graph_edge_count": 15,
+    "hash_recorded": true,
+    "validation_evidence_linked": true,
+    "real_traffic_capture_files_found": 0,
+    "runtime_parity_certified": false
+  },
+  "warnings": [
+    "No mirrored live traffic payload captures were present in package inputs; report records comparison contract and capture gap."
+  ],
+  "evidence": [
+    "migration-artifacts/art-130_shadow_traffic/shadow-traffic-comparison-report.md",
+    "migration-artifacts/art-130_shadow_traffic/shadow-traffic-comparison-report.json",
+    "migration-artifacts/06-testing-validation/shadow-traffic-comparison-report.md",
+    "execution-framework/generated/envctl_artifact_registry_report.json",
+    "execution-framework/generated/envctl_migration_db_validation_report.json",
+    "execution-framework/schemas/shared_protocol.schema.json"
+  ]
+}
