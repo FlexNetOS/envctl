@@ -3,7 +3,7 @@
     "context7": {
       "args": [
         "-lc",
-        "ROOT=\"${META_ROOT:-/home/flexnetos/FlexNetOS}\"; export META_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @upstash/context7-mcp@latest"
+        "ROOT=\"${META_ROOT:-/home/flexnetos/FlexNetOS}\"; export META_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @upstash/context7-mcp@latest"
       ],
       "command": "bash"
     },
@@ -13,7 +13,7 @@
     "github": {
       "args": [
         "-lc",
-        "ROOT=\"${META_ROOT:-/home/flexnetos/FlexNetOS}\"; export META_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @modelcontextprotocol/server-github"
+        "ROOT=\"${META_ROOT:-/home/flexnetos/FlexNetOS}\"; export META_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @modelcontextprotocol/server-github"
       ],
       "command": "bash"
     },
@@ -27,14 +27,14 @@
     "playwright": {
       "args": [
         "-lc",
-        "ROOT=\"${META_ROOT:-/home/flexnetos/FlexNetOS}\"; export META_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @playwright/mcp@latest --extension"
+        "ROOT=\"${META_ROOT:-/home/flexnetos/FlexNetOS}\"; export META_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @playwright/mcp@latest --extension"
       ],
       "command": "bash"
     },
     "sequential-thinking": {
       "args": [
         "-lc",
-        "ROOT=\"${META_ROOT:-/home/flexnetos/FlexNetOS}\"; export META_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @modelcontextprotocol/server-sequential-thinking"
+        "ROOT=\"${META_ROOT:-/home/flexnetos/FlexNetOS}\"; export META_ROOT=\"$ROOT\"; export PATH=\"$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$PATH\"; exec \"$ROOT/usr/bin/bunx\" @modelcontextprotocol/server-sequential-thinking"
       ],
       "command": "bash"
     }
