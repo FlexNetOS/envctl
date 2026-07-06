@@ -15,15 +15,15 @@ $META_ROOT/.toolchains/        # legacy compatibility prefix while older manifes
 $META_ROOT/.config/            # tracked/configured dot roots that are intentionally meta-hosted
 ```
 
-The only sanctioned object at the real user-home `.local` path is the bridge:
+Yazelix owns the active Nix profile under the real user-home `.local` state tree:
 
 ```text
-$ENVCTL_REAL_HOME/.local -> $META_ROOT/.local
+$ENVCTL_REAL_HOME/.nix-profile -> $ENVCTL_REAL_HOME/.local/state/nix/profiles/profile
 ```
 
-That bridge exists for host integrations and interactive shells that still ask XDG for the user's
-home-local prefix. It is **not** a place for per-tool links, regular binaries, caches, or state.
-No component may install into any real-home/user-home/systemd-home local-bin spelling, or any
+Envctl must not replace that whole `.local` tree. It may archive known per-tool user-bin shadows
+after the replacement frontdoor exists in the Yazelix profile or a META_ROOT-owned prefix. No
+component may install into any real-home/user-home/systemd-home local-bin spelling, or any
 leading-tilde local path. Managed hooks run with `HOME=$META_ROOT`; hook bodies that truly need
 the real user home must use `ENVCTL_REAL_HOME` and must document why.
 
@@ -36,7 +36,7 @@ these paths through the layout registry rather than re-deriving strings by hand.
 
 | surface | canonical location | rule |
 |---|---|---|
-| CLI/application frontdoors | `$META_ROOT/usr/bin` | Exposed on PATH by the envctl PATH block. Links inside this tree may point to other `$META_ROOT` paths; the host-home `.local` tree is only the single directory bridge. |
+| CLI/application frontdoors | `$META_ROOT/usr/bin` or the Yazelix profile | Exposed on PATH by the envctl/Yazelix PATH blocks. Links inside `$META_ROOT/usr/bin` may point to other `$META_ROOT` paths; real-home user-bin shadows are archived. |
 | Libraries/support files | `$META_ROOT/usr/lib` | Component-owned libraries and support payloads. |
 | Private executables | `$META_ROOT/usr/libexec` | Non-PATH helper binaries, including private envctl/secrets executables. |
 | Config/trust pins | `$META_ROOT/etc/envctl` | Envctl-owned config fragments and trust pins that are not reviewed dotfiles. |
@@ -74,7 +74,8 @@ allowlisted target. The current canonical map is:
 
 | real-home source | canonical target | mutation rule |
 |---|---|---|
-| `$ENVCTL_REAL_HOME/.local` | `$META_ROOT/.local` | The only sanctioned real-home `.local` object is the single directory bridge. |
+| `$ENVCTL_REAL_HOME/.local/state/nix/profiles` | Yazelix/Nix profile state | Preserved in place because `$ENVCTL_REAL_HOME/.nix-profile` resolves through it. |
+| Known per-tool real-home user-bin shadows | Yazelix profile or `$META_ROOT/usr/bin` | Archive after the replacement frontdoor exists; never replace the whole real-home `.local` tree. |
 | Safe duplicate shell dotfiles (`.bash_logout`, `.profile`, `.zshenv`, `.zshrc`) | `$META_ROOT/<dot-entry>` | `--apply-shell-dotfiles` moves only duplicate/safe sources; differing files stay owner-supervised. |
 | History/backup dot entries | `$META_ROOT/var/lib/envctl/real-home-dotfile-migration/history-or-backup/<dot-entry>` | `--apply-history-archives` is required in addition to `--apply`; stale backup-only archive mode is intentionally absent. |
 | `.ideavimrc` | `$META_ROOT/.ideavimrc` | Named `--migrate-dot .ideavimrc` only; refuses non-regular-file sources. |
@@ -130,7 +131,7 @@ component's explicit guarded reset flow.
 | Component registry | `manifest/*.toml` plus `manifest/components.d/*.toml`, loaded by `Registry::load`; pinned by `manifest/envctl.lock` | `envctl lock --check` gates manifest drift. |
 | Hub/tool registry | each `<name>_hub/registry.json` under the envctl workspace root; today `mcp_hub/registry.json` is discovered by `envctl registry --json` | Read-only federation; `envctl registry --check` fails when a hub entry binds to a missing component. |
 | Runtime/last-run state | `$META_ROOT/var/cache/envctl/<hash-of-manifest-dir>/state.json` when envctl owns it; otherwise explicit component state under `$META_ROOT/var/lib/<component>` or a declared meta-XDG state root | Machine-local and intentionally uncommitted. |
-| CLI exposure | `$META_ROOT/usr/bin` | Recreated by `envctl install`; host `$ENVCTL_REAL_HOME/.local` is only the directory bridge. |
+| CLI exposure | `$META_ROOT/usr/bin` or the Yazelix profile | Recreated by `envctl install` or the profile owner; host per-tool user-bin shadows are archive-only migration debt. |
 | Secrets daemon binaries | `$META_ROOT/usr/libexec/envctl/secrets/bin/{secretd,secretctl}` with frontdoors in `$META_ROOT/usr/bin` | Legacy compatibility paths are retained only until migrated and parity-proven. |
 | Secrets config | `$META_ROOT/.config/env-ctl/secretd.toml` | Preserved unless the owning reset flow explicitly removes it; auth tokens are never stored here. |
 | Secrets data/audit | `$META_ROOT/.local/share/env-ctl` and `$META_ROOT/.local/state/env-ctl` | Data paths are deleted only by the guarded `envctl reset env-ctl --purge --confirm --apply` flow. |

@@ -73,7 +73,7 @@ bash ci/gates/enable.sh         # secretd systemd-unit enable invariant
 bash ci/gates/p7.sh             # .handoff Tier-A p7-conformance: schema tags + ledger residency (ADR-0004 §3)
 bash ci/gates/kdf-feature-off.sh # test-speed Argon2 floor must be off by default (TASK-0032)
 bash ci/gates/agent-env.sh      # agent-env.yaml ↔ agent-env.lock no-drift (TASK-0040)
-bash ci/gates/meta-local-policy.sh # active install sources target $META_ROOT FHS/XDG only; single real-home .local bridge
+bash ci/gates/meta-local-policy.sh # active install sources target $META_ROOT FHS/XDG only; Yazelix real-home Nix profile preserved
 bash ci/gates/cargo-audit.sh    # RustSec advisories; fails vulnerable tonic/hyper regressions
 bash ci/gates/loop-state.sh     # forge-loop counter integrity: ints, cadence>=1, cycles_total monotonic & >= last_wrapup (TASK-0041)
 bash ci/gates/harness-scripts.sh # Feature-Forge harness tooling safety (merge-driver + reaper + loop-state-gate invariants)

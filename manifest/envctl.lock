@@ -21,7 +21,7 @@ requires = []
 resolved = ""
 
 [components.bun]
-content_hash = "3d99fd6a69e799b9"
+content_hash = "cb45d8cadd47d5fd"
 requires = []
 resolved = ""
 
@@ -61,7 +61,7 @@ requires = ["home-config-links"]
 resolved = ""
 
 [components.codex-cli]
-content_hash = "2e477e80b6e7a5b4"
+content_hash = "b4c469717d32ab3e"
 requires = [
     "bun",
     "rustup",
@@ -70,12 +70,12 @@ requires = [
 resolved = ""
 
 [components.codex-cli-alpha]
-content_hash = "0e35a49db1ad3ab5"
+content_hash = "ad0aa6128883abca"
 requires = ["codex-cli"]
 resolved = ""
 
 [components.codex-global-baseline]
-content_hash = "e2198857db7884a9"
+content_hash = "cedef643ee137256"
 requires = ["codex-cli"]
 resolved = ""
 
@@ -234,7 +234,7 @@ requires = [
 resolved = ""
 
 [components.group-portability]
-content_hash = "5076f5719b293809"
+content_hash = "c8ad788da11ae81a"
 requires = [
     "claude-global-links",
     "home-config-links",
@@ -254,7 +254,7 @@ requires = []
 resolved = ""
 
 [components.home-bin-links]
-content_hash = "15c5798d461a027a"
+content_hash = "9a61727b60502063"
 requires = ["home-local-single-link"]
 resolved = ""
 
@@ -264,7 +264,7 @@ requires = []
 resolved = ""
 
 [components.home-local-single-link]
-content_hash = "12fa780f4dfe4078"
+content_hash = "b070b949dc022d1d"
 requires = []
 resolved = ""
 
@@ -284,7 +284,7 @@ requires = []
 resolved = ""
 
 [components.kache]
-content_hash = "b39c2b1e42a88205"
+content_hash = "03ae9e5f9076f19d"
 requires = []
 resolved = ""
 
@@ -383,7 +383,7 @@ requires = ["nix"]
 resolved = ""
 
 [components.node-real]
-content_hash = "1df06cd047593fb7"
+content_hash = "17c5e470990a81ed"
 requires = []
 resolved = ""
 

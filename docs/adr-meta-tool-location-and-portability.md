@@ -27,9 +27,9 @@ Two hard facts shape the design:
 ## Decision
 
 **envctl owns the portability seam.** It discovers meta-root, exports it, sets toolchain install
-prefixes into meta, materializes configs that cannot self-expand, and maintains the
-`$META_ROOT/usr/bin` frontdoor tree plus the single real-home local bridge — idempotently,
-never-downgrade, archive-first.
+prefixes into meta, materializes configs that cannot self-expand, preserves the Yazelix-owned
+real-home Nix profile state, and maintains the `$META_ROOT/usr/bin` frontdoor tree without
+per-tool real-home bin shadows — idempotently, never-downgrade, archive-first.
 
 1. **`META_ROOT` from the marker, exported by `envctl env`** (SHIPPED, `feat/envctl-env`):
    `envctl env` walks to `.meta.yaml` and emits `export META_ROOT=…`/`META_FILE=…`
@@ -60,7 +60,8 @@ never-downgrade, archive-first.
 4. **envctl responsibilities (the env-ownership build-out):** export `META_ROOT` + the toolchain
    prefixes + meta tool-dir PATH into the session env (the shell/nushell env envctl owns);
    materialize the home-tree `settings.json` literal paths from `META_ROOT`; idempotently
-   maintain `$META_ROOT/usr/bin` and the single real-home bridge; **refuse** (doctor/boundary)
+   maintain `$META_ROOT/usr/bin` and preserve the Yazelix-owned real-home Nix profile; **refuse**
+   (doctor/boundary)
    when a real FlexNetOS install is found outside meta. All idempotent, never-delete (archive),
    never-downgrade.
 

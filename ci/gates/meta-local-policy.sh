@@ -176,8 +176,10 @@ check_present manifest/prompt_hub.toml 'export CARGO_HOME="$META_ROOT/.toolchain
 check_absent home/.gitconfig '\.local/bin/gh|/home/drdave/Desktop/meta/\.local/bin/gh' \
   "managed git credential helper must use the canonical META_ROOT usr/bin gh front door"
 
-if ! grep -q 'home-local-single-link' manifest/components.d/portability-links.toml; then
-  echo "meta-local-policy: missing single real-home .local bridge component" >&2
+if ! grep -q 'Yazelix real-home Nix profile guard' manifest/components.d/portability-links.toml || \
+   ! grep -q 'Never replace the whole real-home .local tree' manifest/components.d/portability-links.toml || \
+   ! grep -q 'stale real-home user-bin shadow' manifest/components.d/portability-links.toml; then
+  echo "meta-local-policy: missing Yazelix real-home Nix profile guard and user-bin shadow cleanup" >&2
   exit 1
 fi
 
@@ -204,8 +206,9 @@ if ! grep -Fq 'layout.local_bin()' crates/engine/src/runner.rs || \
   exit 1
 fi
 
-if ! grep -Eq '\$ENVCTL_REAL_HOME/\.local -> \$META_ROOT/\.local' docs/adr-install-locations-and-local-state.md home/README.md; then
-  echo "meta-local-policy: bridge policy is not documented in the canonical ADR/home README" >&2
+if ! grep -Fq '$ENVCTL_REAL_HOME/.nix-profile -> $ENVCTL_REAL_HOME/.local/state/nix/profiles/profile' docs/adr-install-locations-and-local-state.md || \
+   ! grep -Fq '$ENVCTL_REAL_HOME/.nix-profile      -> real-home Nix profile state' home/README.md; then
+  echo "meta-local-policy: Yazelix Nix profile preservation policy is not documented in the canonical ADR/home README" >&2
   exit 1
 fi
 
@@ -216,7 +219,7 @@ for agent_doc in AGENTS.md CLAUDE.md; do
     exit 1
   fi
 
-  check_present "$agent_doc" 'active install sources target $META_ROOT FHS/XDG only; single real-home .local bridge' \
+  check_present "$agent_doc" 'active install sources target $META_ROOT FHS/XDG only; Yazelix real-home Nix profile preserved' \
     "$agent_doc must document the FHS/XDG meta-local policy in the gate list"
   check_present "$agent_doc" 'installs two launchers on `$META_ROOT/usr/bin`' \
     "$agent_doc dashboard docs must name the canonical usr/bin launcher location"
@@ -335,4 +338,4 @@ done
 
 bash scripts/tests/test-odysseus-install-idempotence.sh
 
-echo "meta-local-policy: active install sources target META_ROOT FHS/XDG; only the single real-home .local bridge is allowed"
+echo "meta-local-policy: active install sources target META_ROOT FHS/XDG; Yazelix real-home Nix profile state is preserved"

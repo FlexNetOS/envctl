@@ -2,15 +2,15 @@
 #
 # Current policy (2026-06-26): envctl lifecycle hooks execute with HOME=$META_ROOT
 # and META_ROOT exported by the runner. Host-user/global installs are not a target.
-# The only sanctioned real-home bridge is one archive-first link:
-#   $ENVCTL_REAL_HOME/.local -> $META_ROOT/.local
-# Per-tool real-home local-bin/cargo-bin and system-bin link farms
-# are retired/no-op compatibility component ids so older groups do not recreate them.
+# Yazelix owns the active Nix profile under the real home:
+#   $ENVCTL_REAL_HOME/.nix-profile -> $ENVCTL_REAL_HOME/.local/state/nix/profiles/profile
+# Never replace the whole real-home .local tree. Envctl may only archive known
+# per-tool user-bin shadows after their profile/META_ROOT frontdoors are present.
 
 [[component]]
 id = "home-local-single-link"
-name = "single real-home .local link to META_ROOT"
-description = "The only sanctioned real-home bridge: $ENVCTL_REAL_HOME/.local points at $META_ROOT/.local. Existing real-home .local content is archived under $META_ROOT/var/lib/envctl before the link is created."
+name = "Yazelix real-home Nix profile guard"
+description = "Compatibility id retained. Preserves the Yazelix-owned real-home Nix profile state and archives known per-tool user-bin shadows instead of replacing the whole real-home .local tree."
 [component.detect]
 kind = "command"
 command = "bash"
@@ -19,7 +19,17 @@ set -e
 M="${META_ROOT:?META_ROOT required}"
 R="${ENVCTL_REAL_HOME:-}"
 [ -n "$R" ] && [ "$R" != "$M" ] || exit 0
-[ "$(readlink -f "$R/.local" 2>/dev/null)" = "$(readlink -f "$M/.local" 2>/dev/null)" ]
+if [ -L "$R/.nix-profile" ]; then
+  target="$(readlink "$R/.nix-profile" 2>/dev/null || true)"
+  case "$target" in
+    "$R/.local/state/nix/profiles/profile"|"$R/.local/state/nix/profiles/"*) ;;
+    *) echo "unexpected .nix-profile target: $target" >&2; exit 1 ;;
+  esac
+fi
+for name in agent bun bunx codex codex-alpha git-kb kache-rustc-wrapper loop meta meta-git meta-mcp meta-project meta-release meta-rust rtk; do
+  t="$R/.local/bin/$name"
+  [ ! -e "$t" ] && [ ! -L "$t" ] || { echo "stale real-home user-bin shadow: $t" >&2; exit 1; }
+done
 ''']
 [component.install]
 kind = "script"
@@ -28,21 +38,34 @@ set -e
 M="${META_ROOT:?META_ROOT required}"
 R="${ENVCTL_REAL_HOME:-}"
 [ -n "$R" ] && [ "$R" != "$M" ] || { echo "SKIP home-local-single-link: real home unavailable or already META_ROOT"; exit 0; }
-TARGET="$M/.local"
-LINK="$R/.local"
-ARCH="$M/var/lib/envctl/archives/home-local-$(date +%Y%m%d-%H%M%S)"
-mkdir -p "$TARGET" "$(dirname "$ARCH")"
-if [ "$(readlink -f "$LINK" 2>/dev/null)" = "$(readlink -f "$TARGET" 2>/dev/null)" ]; then
-  echo "home .local already linked to META_ROOT"
-  exit 0
+if [ -L "$R/.nix-profile" ]; then
+  target="$(readlink "$R/.nix-profile" 2>/dev/null || true)"
+  case "$target" in
+    "$R/.local/state/nix/profiles/profile"|"$R/.local/state/nix/profiles/"*) ;;
+    *) echo "REFUSE home-local-single-link: unexpected .nix-profile target: $target" >&2; exit 1 ;;
+  esac
 fi
-if [ -e "$LINK" ] || [ -L "$LINK" ]; then
-  mkdir -p "$ARCH"
-  mv "$LINK" "$ARCH/.local"
-  echo "archived prior real-home .local at $ARCH/.local"
-fi
-ln -s "$TARGET" "$LINK"
-echo "linked $LINK -> $TARGET"
+ARCH="$M/var/lib/envctl/legacy-archives/real-home-bin-$(date -u +%Y-%m-%d)/.local/bin"
+changed=0
+for name in agent bun bunx codex codex-alpha git-kb kache-rustc-wrapper loop meta meta-git meta-mcp meta-project meta-release meta-rust rtk; do
+  t="$R/.local/bin/$name"
+  if [ -e "$t" ] || [ -L "$t" ]; then
+    if [ ! -e "$R/.nix-profile/bin/$name" ] && [ ! -L "$R/.nix-profile/bin/$name" ] && \
+       [ ! -e "$M/usr/bin/$name" ] && [ ! -L "$M/usr/bin/$name" ]; then
+      echo "REFUSE home-local-single-link: no replacement frontdoor for stale real-home user-bin shadow: $t" >&2
+      exit 1
+    fi
+    install -d -m 755 "$ARCH"
+    dest="$ARCH/$name"
+    if [ -e "$dest" ] || [ -L "$dest" ]; then
+      dest="$ARCH/$name.$(date -u +%H%M%S).$$"
+    fi
+    mv "$t" "$dest"
+    echo "archived stale real-home user-bin shadow: $dest"
+    changed=1
+  fi
+done
+[ "$changed" = 1 ] || echo "no stale real-home user-bin shadows found"
 '''
 [component.verify]
 kind = "command"
@@ -52,7 +75,17 @@ set -e
 M="${META_ROOT:?META_ROOT required}"
 R="${ENVCTL_REAL_HOME:-}"
 [ -n "$R" ] && [ "$R" != "$M" ] || exit 0
-[ "$(readlink -f "$R/.local" 2>/dev/null)" = "$(readlink -f "$M/.local" 2>/dev/null)" ]
+if [ -L "$R/.nix-profile" ]; then
+  target="$(readlink "$R/.nix-profile" 2>/dev/null || true)"
+  case "$target" in
+    "$R/.local/state/nix/profiles/profile"|"$R/.local/state/nix/profiles/"*) ;;
+    *) echo "unexpected .nix-profile target: $target" >&2; exit 1 ;;
+  esac
+fi
+for name in agent bun bunx codex codex-alpha git-kb kache-rustc-wrapper loop meta meta-git meta-mcp meta-project meta-release meta-rust rtk; do
+  t="$R/.local/bin/$name"
+  [ ! -e "$t" ] && [ ! -L "$t" ] || { echo "stale real-home user-bin shadow: $t" >&2; exit 1; }
+done
 ''']
 
 [[component]]
@@ -133,7 +166,7 @@ systemctl --user daemon-reload 2>/dev/null || true
 [[component]]
 id = "home-bin-links"
 name = "retired per-tool home bin links"
-description = "Compatibility id only. Per-tool real-home bin links are retired; tools must install under $META_ROOT/usr/bin and be exposed through the single real-home .local link."
+description = "Compatibility id only. Per-tool real-home bin links are retired; tools must install under the Yazelix profile or META_ROOT-owned prefixes."
 requires = ["home-local-single-link"]
 [component.detect]
 kind = "command"
@@ -142,7 +175,7 @@ args = ["-lc", "true"]
 [component.install]
 kind = "script"
 script = '''
-echo "home-bin-links retired: use META_ROOT/usr/bin plus home-local-single-link"
+echo "home-bin-links retired: use the Yazelix profile or META_ROOT/usr/bin"
 '''
 [component.verify]
 kind = "command"
@@ -304,5 +337,11 @@ args = ["-lc", '''
 M="${META_ROOT:?META_ROOT required}"
 R="${ENVCTL_REAL_HOME:-}"
 [ -L "$M/.gitconfig" ] && [ -L "$M/.config/rtk" ] && [ -L "$M/.claude/settings.json" ] || exit 1
-[ -z "$R" ] || [ "$R" = "$M" ] || [ "$(readlink -f "$R/.local" 2>/dev/null)" = "$(readlink -f "$M/.local" 2>/dev/null)" ]
+if [ -n "$R" ] && [ "$R" != "$M" ] && [ -L "$R/.nix-profile" ]; then
+  target="$(readlink "$R/.nix-profile" 2>/dev/null || true)"
+  case "$target" in
+    "$R/.local/state/nix/profiles/profile"|"$R/.local/state/nix/profiles/"*) ;;
+    *) exit 1 ;;
+  esac
+fi
 ''']
