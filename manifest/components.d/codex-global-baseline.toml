@@ -1,7 +1,7 @@
 [[component]]
 id = "codex-global-baseline"
-name = "Codex global baseline (LIFEOS_ROOT-owned settings, plugin, MCP, features)"
-description = "Owns the Codex global surface for LifeOS: ~/.codex symlink, Rust CLI env vars, supported feature flags, MCP baseline, FlexNetOS Codex marketplace/plugin, and trust entries for every repo."
+name = "Codex meta baseline and real-home shadow cleanup"
+description = "Owns the meta-local Codex baseline only. Real-home Codex config and user-bin entries are not generated control paths; stale shadows are archived so active runtime ownership can mirror Yazelix."
 requires = ["codex-cli"]
 [component.detect]
 kind = "command"
@@ -11,8 +11,14 @@ M="${LIFEOS_ROOT:-${META_ROOT:?LIFEOS_ROOT or META_ROOT required}}"
 E="${ENVCTL_ROOT:-$M/src/envctl}"
 R="${ENVCTL_REAL_HOME:-$HOME}"
 C="$M/.local/share/codex/config.toml"
-[ "$(readlink -f "$R/.codex" 2>/dev/null)" = "$(readlink -f "$M/.local/share/codex" 2>/dev/null)" ] || exit 1
-[ "$(readlink -f "$R/.local/bin/codex" 2>/dev/null)" = "$(readlink -f "$M/usr/bin/codex" 2>/dev/null)" ] || exit 1
+if [ -L "$R/.codex" ] && [ "$(readlink -f "$R/.codex" 2>/dev/null)" = "$(readlink -f "$M/.local/share/codex" 2>/dev/null)" ]; then
+  echo "real-home .codex is a stale generated-runtime shadow" >&2
+  exit 1
+fi
+if [ -e "$R/.local/bin/codex" ] || [ -L "$R/.local/bin/codex" ]; then
+  echo "real-home codex user-bin shadow is present" >&2
+  exit 1
+fi
 [ -f "$C" ] || exit 1
 grep -q '^model = "gpt-5.5"' "$C" || exit 1
 grep -q '^service_tier = "fast"' "$C" || exit 1
@@ -51,21 +57,18 @@ R="${ENVCTL_REAL_HOME:-$HOME}"
 CODEX_HOME_DIR="$M/.local/share/codex"
 CODEX_STATE_DIR="$M/.local/state/codex"
 install -d -m 700 "$CODEX_HOME_DIR" "$CODEX_STATE_DIR" "$CODEX_HOME_DIR/agents"
-install -d -m 755 "$R/.local/bin"
-if [ -e "$R/.codex" ] && [ "$(readlink -f "$R/.codex" 2>/dev/null)" != "$(readlink -f "$CODEX_HOME_DIR" 2>/dev/null)" ]; then
-  ARCH="$M/var/lib/envctl/legacy-archives/codex-home-$(date -u +%Y%m%d-%H%M%S)"
+if [ -L "$R/.codex" ] && [ "$(readlink -f "$R/.codex" 2>/dev/null)" = "$(readlink -f "$CODEX_HOME_DIR" 2>/dev/null)" ]; then
+  ARCH="$M/var/lib/envctl/legacy-archives/codex-home-shadow-$(date -u +%Y%m%d-%H%M%S)"
   install -d -m 700 "$ARCH"
   mv "$R/.codex" "$ARCH/.codex"
-  echo "archived previous real-home .codex: $ARCH/.codex"
+  echo "archived stale real-home .codex generated-runtime shadow: $ARCH/.codex"
 fi
-[ -L "$R/.codex" ] || ln -s "$CODEX_HOME_DIR" "$R/.codex"
-if [ -e "$R/.local/bin/codex" ] && [ "$(readlink -f "$R/.local/bin/codex" 2>/dev/null)" != "$(readlink -f "$M/usr/bin/codex" 2>/dev/null)" ]; then
+if [ -e "$R/.local/bin/codex" ] || [ -L "$R/.local/bin/codex" ]; then
   ARCH="$M/var/lib/envctl/legacy-archives/codex-bin-$(date -u +%Y%m%d-%H%M%S)/.local/bin"
   install -d -m 755 "$ARCH"
   mv "$R/.local/bin/codex" "$ARCH/codex"
-  echo "archived previous real-home codex: $ARCH/codex"
+  echo "archived stale real-home codex user-bin shadow: $ARCH/codex"
 fi
-ln -sfn "$M/usr/bin/codex" "$R/.local/bin/codex"
 python3 - <<'PY'
 import json, subprocess
 from pathlib import Path
@@ -301,8 +304,14 @@ M="${LIFEOS_ROOT:-${META_ROOT:?LIFEOS_ROOT or META_ROOT required}}"
 E="${ENVCTL_ROOT:-$M/src/envctl}"
 R="${ENVCTL_REAL_HOME:-$HOME}"
 C="$M/.local/share/codex/config.toml"
-[ "$(readlink -f "$R/.codex" 2>/dev/null)" = "$(readlink -f "$M/.local/share/codex" 2>/dev/null)" ]
-[ "$(readlink -f "$R/.local/bin/codex" 2>/dev/null)" = "$(readlink -f "$M/usr/bin/codex" 2>/dev/null)" ]
+if [ -L "$R/.codex" ] && [ "$(readlink -f "$R/.codex" 2>/dev/null)" = "$(readlink -f "$M/.local/share/codex" 2>/dev/null)" ]; then
+  echo "real-home .codex is a stale generated-runtime shadow" >&2
+  exit 1
+fi
+if [ -e "$R/.local/bin/codex" ] || [ -L "$R/.local/bin/codex" ]; then
+  echo "real-home codex user-bin shadow is present" >&2
+  exit 1
+fi
 [ -f "$C" ]
 grep -q '^background_terminal_max_timeout = 300000' "$C"
 grep -q '^tool_output_token_limit = 12000' "$C"
