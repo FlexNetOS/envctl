@@ -1,0 +1,157 @@
+{
+  "target": "rusty-idd",
+  "git_sha": "5a55284",
+  "branch": "plan/lifeos-meta-front-door",
+  "source": "git-kb code (AST call-graph). Crate-level edges from Cargo manifests; symbol in-degree from query hotspots; symbol callers from code impact.",
+  "resolved_call_edge_count_repo": 35647,
+  "unresolved_call_count_repo": 94967,
+  "crate_dependency_edges": [
+    {
+      "from": "cli",
+      "to": "core"
+    },
+    {
+      "from": "cli",
+      "to": "knowledge"
+    },
+    {
+      "from": "cli",
+      "to": "merge-tools"
+    },
+    {
+      "from": "cli",
+      "to": "spec"
+    },
+    {
+      "from": "cli",
+      "to": "runner"
+    },
+    {
+      "from": "cli",
+      "to": "tui"
+    },
+    {
+      "from": "tui",
+      "to": "runner"
+    },
+    {
+      "from": "knowledge",
+      "to": "external/codegraph-core"
+    },
+    {
+      "from": "knowledge",
+      "to": "external/codegraph-parser"
+    },
+    {
+      "from": "knowledge",
+      "to": "core"
+    },
+    {
+      "from": "external/codegraph-parser",
+      "to": "external/codegraph-core"
+    }
+  ],
+  "symbol_in_degree_top": [
+    {
+      "callee": "crates/spec/src/model/spec.rs::method::SpecDoc.contains",
+      "caller_count": 842
+    },
+    {
+      "callee": "crates/tui/src/app.rs::method::App.new",
+      "caller_count": 355
+    },
+    {
+      "callee": "crates/runner/src/config.rs::method::TuiConfig.default",
+      "caller_count": 343
+    },
+    {
+      "callee": "crates/runner/src/runner.rs::method::BatchImplState.new",
+      "caller_count": 221
+    },
+    {
+      "callee": "crates/external/codegraph-core/src/node.rs::method::CodeNode.new",
+      "caller_count": 159
+    },
+    {
+      "callee": "crates/core/src/model.rs::method::RepoInventory.new",
+      "caller_count": 137
+    },
+    {
+      "callee": "crates/tui/src/app.rs::method::App.handle_config_input",
+      "caller_count": 126
+    },
+    {
+      "callee": "crates/knowledge/src/lib.rs::method::ArchitectureDiagramOptions.new",
+      "caller_count": 98
+    },
+    {
+      "callee": "crates/external/codegraph-core/src/watch/mod.rs::method::IntelligentFileWatcher.new",
+      "caller_count": 80
+    },
+    {
+      "callee": "crates/external/codegraph-parser/src/semantic.rs::method::ChangeImpactAnalysis.new",
+      "caller_count": 69
+    },
+    {
+      "callee": "crates/core/tests/smoke.rs::function::temp_dir",
+      "caller_count": 69
+    },
+    {
+      "callee": "crates/external/codegraph-core/src/node.rs::method::CodeNode.with_content",
+      "caller_count": 62
+    },
+    {
+      "callee": "crates/external/codegraph-core/src/memory/compact_map.rs::function::remove",
+      "caller_count": 51
+    },
+    {
+      "callee": "crates/cli/tests/codex_cli.rs::function::write",
+      "caller_count": 47
+    },
+    {
+      "callee": "crates/external/codegraph-core/src/incremental/updater.rs::method::IncrementalCache.insert",
+      "caller_count": 46
+    },
+    {
+      "callee": "crates/work-order/src/lib.rs::method::WorkOrder.compute_intent_lock",
+      "caller_count": 44
+    },
+    {
+      "callee": "crates/spec/src/model/delta.rs::method::Delta.new",
+      "caller_count": 42
+    },
+    {
+      "callee": "crates/external/codegraph-core/src/incremental/updater.rs::method::IncrementalCache.new",
+      "caller_count": 41
+    },
+    {
+      "callee": "crates/external/codegraph-core/src/performance_monitor.rs::method::MovingAverage.count",
+      "caller_count": 39
+    },
+    {
+      "callee": "crates/tui/src/app.rs::method::App.push_config_screen",
+      "caller_count": 38
+    },
+    {
+      "callee": "crates/external/codegraph-parser/src/parser.rs::method::TreeSitterParser.new",
+      "caller_count": 34
+    },
+    {
+      "callee": "crates/core/src/validation.rs::function::require_file",
+      "caller_count": 34
+    },
+    {
+      "callee": "crates/tui/src/app.rs::function::make_config_app",
+      "caller_count": 34
+    },
+    {
+      "callee": "crates/core/src/planner.rs::function::contains_key",
+      "caller_count": 33
+    },
+    {
+      "callee": "crates/external/codegraph-parser/src/watcher.rs::method::FileSystemWatcher.new",
+      "caller_count": 32
+    }
+  ],
+  "note": "git-kb code exposes no full per-edge symbol dump; symbol-level edges represented as in-degree (hotspots) + per-file transitive callers (blast_radius in metrics). Crate-level edge list is authoritative for SCC."
+}

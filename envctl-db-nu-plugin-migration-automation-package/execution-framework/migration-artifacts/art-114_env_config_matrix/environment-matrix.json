@@ -1,0 +1,134 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-114_ENV_CONFIG_MATRIX",
+  "generated_at": "2026-07-04T23:21:06+00:00",
+  "title": "Environment Matrix",
+  "status": "complete",
+  "target": {
+    "target_id": "flexnetos-vs-lifeos",
+    "target_type": "mixed",
+    "primary_root": "/home/flexnetos/FlexNetOS",
+    "compare_root": "/home/flexnetos/lifeos",
+    "output_root": "migration-artifacts",
+    "descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384"
+  },
+  "contract": {
+    "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+    "contract_row_id": "artifact:01-current-state-environment-matrix-md",
+    "canonical_path": "migration-artifacts/01-current-state/environment-matrix.md",
+    "packet_artifact_dir": "migration-artifacts/art-114_env_config_matrix"
+  },
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "environments": [
+    {
+      "environment": "dev",
+      "purpose": "Local agent execution, discovery, artifact generation, and deterministic smoke validation.",
+      "root": "/home/flexnetos/FlexNetOS",
+      "network_policy": "disabled by descriptor unless a later approved task explicitly enables it",
+      "write_policy": "workspace-write for execution-framework and generated migration-artifacts only",
+      "risk_ceiling": "R2",
+      "approval_mode": "approval-gated",
+      "data_policy": "No blocked secret paths are read or emitted; credential material is excluded by packet policy.",
+      "validation": [
+        "artifact file existence",
+        "JSON parse",
+        "registry content_hash equality",
+        "proof ledger append"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/execution_packets/ART-114_ENV_CONFIG_MATRIX.json",
+        "execution-framework/generated/envctl_target_registry.json"
+      ]
+    },
+    {
+      "environment": "stage",
+      "purpose": "Replay, reconciliation, and validation lane before any production-impacting change.",
+      "root": "/home/flexnetos/FlexNetOS",
+      "network_policy": "kept disabled in descriptor for this package; external staging integrations require explicit approval",
+      "write_policy": "artifact/proof writes plus registry rows in the envctl database model",
+      "risk_ceiling": "R2 by descriptor, R3 only when a later approval-gated cutover task declares it",
+      "approval_mode": "approval-gated",
+      "data_policy": "Use redacted evidence links and hashes, not raw secrets or private keys.",
+      "validation": [
+        "shared protocol schema evidence",
+        "registry validation links",
+        "hash-backed proof record",
+        "later VER-300 unit validation"
+      ],
+      "evidence_refs": [
+        "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+        "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+      ]
+    },
+    {
+      "environment": "prod",
+      "purpose": "Production reference and cutover target; this artifact generation task performs no production mutation.",
+      "root": "external production targets, not written by this task",
+      "network_policy": "no production network writes from ART-114",
+      "write_policy": "blocked for production systems in this phase",
+      "risk_ceiling": "R5 operations require human approval and are outside this artifact task",
+      "approval_mode": "human approval required for destructive or production-impacting operations",
+      "data_policy": "Secrets, private keys, .env files, pem/key material, and private_keys paths are blocked from artifact output.",
+      "validation": [
+        "production differences are recorded as policy constraints",
+        "cutover/rollback tasks must add separate approval evidence",
+        "artifact registry stores only file hashes and metadata"
+      ],
+      "evidence_refs": [
+        "execution-framework/generated/execution_packets/ART-114_ENV_CONFIG_MATRIX.json",
+        "execution-framework/docs/ENVCTL_ARTIFACT_REGISTRY.md"
+      ]
+    }
+  ],
+  "matrix": [
+    {
+      "dimension": "Root and source of truth",
+      "dev": "FlexNetOS workspace primary_root with local execution-framework writes",
+      "stage": "Same primary_root plus envctl SQLite model for replayable validation state",
+      "prod": "Production targets are referenced only; mutation is blocked in this phase"
+    },
+    {
+      "dimension": "Configuration inputs",
+      "dev": "target descriptor, generated task packet, repo/package scan, contract manifest",
+      "stage": "same inputs plus proof records from registry and shared schema tasks",
+      "prod": "approved cutover configuration only; not generated or applied by ART-114"
+    },
+    {
+      "dimension": "Secrets and credentials",
+      "dev": "blocked path patterns are excluded from reads and artifact content",
+      "stage": "evidence is linked by hash and metadata; raw secrets remain out of scope",
+      "prod": "secret material must stay external to artifacts and requires separate controls"
+    },
+    {
+      "dimension": "Risk and approval",
+      "dev": "R2 maximum automatic risk, approval-gated descriptor",
+      "stage": "R2 validation lane; higher-risk cutover work belongs to later tasks",
+      "prod": "production-impacting or destructive work requires human approval"
+    },
+    {
+      "dimension": "Outputs",
+      "dev": "matrix markdown and JSON under migration-artifacts plus proof/log files",
+      "stage": "registry rows, validation rows, graph links, and proof ledger evidence",
+      "prod": "no output is written into production by this task"
+    }
+  ],
+  "drift_controls": [
+    "Capture dev/stage/prod differences as artifact data before VER-300 validation.",
+    "Register content hashes in envctl_migration_artifacts.",
+    "Link registry evidence to target descriptor, packet, and prerequisite proof records.",
+    "Keep production mutations out of artifact generation."
+  ],
+  "evidence_refs": [
+    "execution-framework/generated/envctl_target_registry.json",
+    "execution-framework/generated/package_scan.json",
+    "execution-framework/generated/contract_manifest.json",
+    "execution-framework/proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+    "execution-framework/proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+  ]
+}

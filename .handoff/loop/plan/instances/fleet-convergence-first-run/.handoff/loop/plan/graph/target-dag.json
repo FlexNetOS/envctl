@@ -1,0 +1,1159 @@
+{
+  "schema_version": 1,
+  "nodes": [
+    {
+      "id": "rusty-idd",
+      "spec": "Intent-driven control plane (why/what); the path into the Forge/IDD loop",
+      "status": "in-flight",
+      "deps": [
+        "weave",
+        "handoff",
+        "icm",
+        "prompt_hub"
+      ],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/rusty-idd.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "weave",
+      "spec": "Communication layer - A2A/background transport; the fabric's nervous system",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/weave.graph.md"
+      ],
+      "downstream": [
+        "rusty-idd",
+        "envctl",
+        "atc",
+        "agent",
+        "hermes-agent",
+        "harness-agent-rs"
+      ]
+    },
+    {
+      "id": "harness_hub",
+      "spec": "Canonical harness catalog (internal vs shareable marketplace question)",
+      "status": "todo",
+      "deps": [
+        "handoff"
+      ],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/harness_hub.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "envctl",
+      "spec": "Fleet environment manager + this convergence loop's run-from",
+      "status": "todo",
+      "deps": [
+        "handoff",
+        "weave"
+      ],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/envctl.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "prompt_hub",
+      "spec": "Prompt / north-star intent store (upstream intent source)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/prompt_hub.graph.md"
+      ],
+      "downstream": [
+        "rusty-idd"
+      ]
+    },
+    {
+      "id": "icm",
+      "spec": "Persistent memory substrate (memory-vector-intelligence axis)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/icm.graph.md"
+      ],
+      "downstream": [
+        "rusty-idd",
+        "ruvector"
+      ]
+    },
+    {
+      "id": "grit",
+      "spec": "Symbol-level merge/lock substrate",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/grit.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "handoff",
+      "spec": "Continuity kernel (hf) - witnessed ledger + rendered handoff packets",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/handoff.graph.md"
+      ],
+      "downstream": [
+        "rusty-idd",
+        "harness_hub",
+        "envctl",
+        "harness-agent-rs"
+      ]
+    },
+    {
+      "id": "lane",
+      "spec": "Distributed-compute lane substrate (the spine)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/lane.graph.md"
+      ],
+      "downstream": [
+        "network-control"
+      ]
+    },
+    {
+      "id": "shimmy",
+      "spec": "Local LLM serving (ollama replacement track)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/shimmy.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "ruvector",
+      "spec": "Vector intelligence (ollama replacement track)",
+      "status": "todo",
+      "deps": [
+        "icm"
+      ],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/ruvector.graph.md"
+      ],
+      "downstream": [
+        "network-control"
+      ]
+    },
+    {
+      "id": "meta_cli",
+      "spec": "Host meta CLI; orchestrates plugins + loop_lib",
+      "status": "todo",
+      "deps": [
+        "meta_core",
+        "meta_plugin_protocol",
+        "loop_lib"
+      ],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/meta_cli.graph.md"
+      ],
+      "downstream": [
+        "meta_git_cli",
+        "meta_project_cli",
+        "meta_rust_cli",
+        "meta_mcp"
+      ]
+    },
+    {
+      "id": "meta_core",
+      "spec": "Core meta library (provides meta-core)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/meta_core.graph.md"
+      ],
+      "downstream": [
+        "meta_cli"
+      ]
+    },
+    {
+      "id": "meta_git_lib",
+      "spec": "Git library backing the git plugin (provides meta-git-lib)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/meta_git_lib.graph.md"
+      ],
+      "downstream": [
+        "meta_git_cli",
+        "meta_project_cli"
+      ]
+    },
+    {
+      "id": "meta_git_cli",
+      "spec": "Git plugin (subprocess) over the plugin protocol",
+      "status": "todo",
+      "deps": [
+        "meta_plugin_protocol",
+        "meta_git_lib",
+        "meta_cli",
+        "loop_lib"
+      ],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/meta_git_cli.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "meta_project_cli",
+      "spec": "Project plugin (subprocess) over the plugin protocol",
+      "status": "todo",
+      "deps": [
+        "meta_plugin_protocol",
+        "meta_cli",
+        "meta_git_lib"
+      ],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/meta_project_cli.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "meta_rust_cli",
+      "spec": "Rust plugin (subprocess) over the plugin protocol",
+      "status": "todo",
+      "deps": [
+        "meta_plugin_protocol",
+        "meta_cli"
+      ],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/meta_rust_cli.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "meta_mcp",
+      "spec": "MCP server exposing meta (depends on meta-cli)",
+      "status": "todo",
+      "deps": [
+        "meta_cli"
+      ],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/meta_mcp.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "meta_dashboard_cli",
+      "spec": "Dashboard plugin (subprocess) over the plugin protocol",
+      "status": "todo",
+      "deps": [
+        "meta_plugin_protocol"
+      ],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/meta_dashboard_cli.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "meta_plugin_protocol",
+      "spec": "Shared host<->plugin protocol contract (canon root)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/meta_plugin_protocol.graph.md"
+      ],
+      "downstream": [
+        "meta_cli",
+        "meta_git_cli",
+        "meta_project_cli",
+        "meta_rust_cli",
+        "meta_dashboard_cli"
+      ]
+    },
+    {
+      "id": "meta_plugin_api",
+      "spec": "Plugin API built on the protocol contract (canon)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/meta_plugin_api.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "loop_lib",
+      "spec": "Command-execution library used by the host CLI (provides loop-lib)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/loop_lib.graph.md"
+      ],
+      "downstream": [
+        "meta_cli",
+        "meta_git_cli",
+        "loop_cli"
+      ]
+    },
+    {
+      "id": "loop_cli",
+      "spec": "CLI front-end over loop_lib (depends on loop-lib)",
+      "status": "todo",
+      "deps": [
+        "loop_lib"
+      ],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/loop_cli.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "network-control",
+      "spec": "Pure-Rust net control suite; composes lane (spine) + ruvector crates",
+      "status": "todo",
+      "deps": [
+        "lane",
+        "ruvector"
+      ],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/network-control.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "network_hub",
+      "spec": "Network resource catalog (hub family)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/network_hub.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "atc",
+      "spec": "Mission-control agent orchestrator (A2A over weave)",
+      "status": "todo",
+      "deps": [
+        "weave"
+      ],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/atc.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "agent",
+      "spec": "Generic agent runtime / framework (A2A over weave)",
+      "status": "todo",
+      "deps": [
+        "weave"
+      ],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/agent.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "hermes-agent",
+      "spec": "Hermes messaging agent (A2A over weave)",
+      "status": "todo",
+      "deps": [
+        "weave"
+      ],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/hermes-agent.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "harness-agent-rs",
+      "spec": "Rust harness agent (A2A over weave + continuity kernel)",
+      "status": "todo",
+      "deps": [
+        "weave",
+        "handoff"
+      ],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/harness-agent-rs.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "tool_hub",
+      "spec": "Tool catalog (FlexNetOS hub family)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/tool_hub.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "database_hub",
+      "spec": "Database catalog (hub family)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/database_hub.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "mcp_hub",
+      "spec": "MCP server catalog (hub family)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/mcp_hub.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "plugin_hub",
+      "spec": "Plugin catalog (hub family)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/plugin_hub.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "hooks_hub",
+      "spec": "Hooks catalog (hub family)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/hooks_hub.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "vault_hub",
+      "spec": "Secrets/vault catalog (hub family)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/vault_hub.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "flow_hub",
+      "spec": "Flow/workflow catalog (hub family)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/flow_hub.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "template_hub",
+      "spec": "Template catalog (hub family)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/template_hub.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "flexnetos_runner",
+      "spec": "FlexNetOS task runner",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/flexnetos_runner.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "flexnetos_github_app",
+      "spec": "FlexNetOS GitHub App integration",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/flexnetos_github_app.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "flexnetos_wiki",
+      "spec": "FlexNetOS wiki/docs surface",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/flexnetos_wiki.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "flexnetos_brain",
+      "spec": "FlexNetOS brain/knowledge service",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/flexnetos_brain.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "github_org",
+      "spec": "GitHub org configuration/automation",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/github_org.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "claude-plugins",
+      "spec": "Claude Code plugin collection",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/claude-plugins.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "claude-plugin",
+      "spec": "Single Claude plugin (in-repo path)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/claude-plugin.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "copilot-plugin",
+      "spec": "Copilot plugin integration",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/copilot-plugin.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "meta-plugins",
+      "spec": "Meta plugin collection",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/meta-plugins.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "claude-code",
+      "spec": "Claude Code integration assets",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/claude-code.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "codex",
+      "spec": "Codex integration assets",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/codex.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "oh-my-claudecode",
+      "spec": "Claude Code config/dotfiles bundle",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/oh-my-claudecode.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "oh-my-pi",
+      "spec": "Raspberry Pi config bundle",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/oh-my-pi.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "rtk-tokenkill",
+      "spec": "RTK token-optimizing CLI proxy (provides rtk)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/rtk-tokenkill.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "vox",
+      "spec": "Spoken-feedback TTS tool (provides vox)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/vox.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "n8n",
+      "spec": "n8n workflow automation integration",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/n8n.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "obscura",
+      "spec": "Governed web-egress engine for AI agents (lane<->obscura seam)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/obscura.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "obsidian-mind",
+      "spec": "Obsidian knowledge integration",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/obsidian-mind.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "lifeos",
+      "spec": "LifeOS personal-OS surface (provides lifeos)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/lifeos.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "kasetto",
+      "spec": "Kasetto app (provides kasetto)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/kasetto.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "my-wiki",
+      "spec": "Personal wiki surface",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/my-wiki.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "ECC",
+      "spec": "ECC component",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/ECC.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "meta-yard",
+      "spec": "Meta-yard workspace surface",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/meta-yard.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "teri",
+      "spec": "Teri app (provides teri)",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/teri.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "assets",
+      "spec": "Shared assets repository",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/assets.graph.md"
+      ],
+      "downstream": []
+    },
+    {
+      "id": "commands",
+      "spec": "Shared commands repository",
+      "status": "todo",
+      "deps": [],
+      "artifact_prefix": ".handoff/loop/plan",
+      "context_paths": [
+        ".handoff/loop/plan/targets.md",
+        ".handoff/loop/plan/loop_state.md",
+        ".handoff/loop/plan/graph/commands.graph.md"
+      ],
+      "downstream": []
+    }
+  ],
+  "edges": [
+    {
+      "from": "weave",
+      "to": "rusty-idd"
+    },
+    {
+      "from": "handoff",
+      "to": "rusty-idd"
+    },
+    {
+      "from": "icm",
+      "to": "rusty-idd"
+    },
+    {
+      "from": "prompt_hub",
+      "to": "rusty-idd"
+    },
+    {
+      "from": "handoff",
+      "to": "harness_hub"
+    },
+    {
+      "from": "handoff",
+      "to": "envctl"
+    },
+    {
+      "from": "weave",
+      "to": "envctl"
+    },
+    {
+      "from": "icm",
+      "to": "ruvector"
+    },
+    {
+      "from": "meta_core",
+      "to": "meta_cli"
+    },
+    {
+      "from": "meta_plugin_protocol",
+      "to": "meta_cli"
+    },
+    {
+      "from": "loop_lib",
+      "to": "meta_cli"
+    },
+    {
+      "from": "meta_plugin_protocol",
+      "to": "meta_git_cli"
+    },
+    {
+      "from": "meta_git_lib",
+      "to": "meta_git_cli"
+    },
+    {
+      "from": "meta_cli",
+      "to": "meta_git_cli"
+    },
+    {
+      "from": "loop_lib",
+      "to": "meta_git_cli"
+    },
+    {
+      "from": "meta_plugin_protocol",
+      "to": "meta_project_cli"
+    },
+    {
+      "from": "meta_cli",
+      "to": "meta_project_cli"
+    },
+    {
+      "from": "meta_git_lib",
+      "to": "meta_project_cli"
+    },
+    {
+      "from": "meta_plugin_protocol",
+      "to": "meta_rust_cli"
+    },
+    {
+      "from": "meta_cli",
+      "to": "meta_rust_cli"
+    },
+    {
+      "from": "meta_cli",
+      "to": "meta_mcp"
+    },
+    {
+      "from": "meta_plugin_protocol",
+      "to": "meta_dashboard_cli"
+    },
+    {
+      "from": "loop_lib",
+      "to": "loop_cli"
+    },
+    {
+      "from": "lane",
+      "to": "network-control"
+    },
+    {
+      "from": "ruvector",
+      "to": "network-control"
+    },
+    {
+      "from": "weave",
+      "to": "atc"
+    },
+    {
+      "from": "weave",
+      "to": "agent"
+    },
+    {
+      "from": "weave",
+      "to": "hermes-agent"
+    },
+    {
+      "from": "weave",
+      "to": "harness-agent-rs"
+    },
+    {
+      "from": "handoff",
+      "to": "harness-agent-rs"
+    }
+  ],
+  "ready_set": [
+    "weave",
+    "prompt_hub",
+    "icm",
+    "grit",
+    "handoff",
+    "lane",
+    "shimmy",
+    "meta_core",
+    "meta_git_lib",
+    "meta_plugin_protocol",
+    "meta_plugin_api",
+    "loop_lib",
+    "network_hub",
+    "tool_hub",
+    "database_hub",
+    "mcp_hub",
+    "plugin_hub",
+    "hooks_hub",
+    "vault_hub",
+    "flow_hub",
+    "template_hub",
+    "flexnetos_runner",
+    "flexnetos_github_app",
+    "flexnetos_wiki",
+    "flexnetos_brain",
+    "github_org",
+    "claude-plugins",
+    "claude-plugin",
+    "copilot-plugin",
+    "meta-plugins",
+    "claude-code",
+    "codex",
+    "oh-my-claudecode",
+    "oh-my-pi",
+    "rtk-tokenkill",
+    "vox",
+    "n8n",
+    "obscura",
+    "obsidian-mind",
+    "lifeos",
+    "kasetto",
+    "my-wiki",
+    "ECC",
+    "meta-yard",
+    "teri",
+    "assets",
+    "commands"
+  ],
+  "topological_order": [
+    "weave",
+    "prompt_hub",
+    "icm",
+    "grit",
+    "handoff",
+    "rusty-idd",
+    "harness_hub",
+    "envctl",
+    "lane",
+    "shimmy",
+    "ruvector",
+    "meta_core",
+    "meta_git_lib",
+    "meta_plugin_protocol",
+    "meta_dashboard_cli",
+    "meta_plugin_api",
+    "loop_lib",
+    "meta_cli",
+    "meta_git_cli",
+    "meta_project_cli",
+    "meta_rust_cli",
+    "meta_mcp",
+    "loop_cli",
+    "network-control",
+    "network_hub",
+    "atc",
+    "agent",
+    "hermes-agent",
+    "harness-agent-rs",
+    "tool_hub",
+    "database_hub",
+    "mcp_hub",
+    "plugin_hub",
+    "hooks_hub",
+    "vault_hub",
+    "flow_hub",
+    "template_hub",
+    "flexnetos_runner",
+    "flexnetos_github_app",
+    "flexnetos_wiki",
+    "flexnetos_brain",
+    "github_org",
+    "claude-plugins",
+    "claude-plugin",
+    "copilot-plugin",
+    "meta-plugins",
+    "claude-code",
+    "codex",
+    "oh-my-claudecode",
+    "oh-my-pi",
+    "rtk-tokenkill",
+    "vox",
+    "n8n",
+    "obscura",
+    "obsidian-mind",
+    "lifeos",
+    "kasetto",
+    "my-wiki",
+    "ECC",
+    "meta-yard",
+    "teri",
+    "assets",
+    "commands"
+  ],
+  "self_revision": [
+    {
+      "id": "sr-001",
+      "trigger": "cycle-1 rusty-idd finding (loop_state.md OPEN: no fleet-level NORTH-STAR.md every repo reads)",
+      "affected": [
+        "prompt_hub",
+        "envctl",
+        "harness_hub"
+      ],
+      "action": "revise only these downstream specs to bind to the shared north-star artifact as data; do not reset unrelated nodes"
+    }
+  ]
+}

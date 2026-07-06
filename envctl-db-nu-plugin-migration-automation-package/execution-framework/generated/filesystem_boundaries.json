@@ -1,0 +1,129 @@
+{
+  "schema_version": "1.0",
+  "task_id": "REQ-042_FILESYSTEM_BOUNDS",
+  "generated_at": "2026-07-04T23:19:35+00:00",
+  "scope": "package-root",
+  "repo_path": "..",
+  "evaluation_order": [
+    "normalize logical path",
+    "apply blocked_paths first",
+    "apply allowed_paths second",
+    "deny paths that match neither list"
+  ],
+  "allowed_paths": [
+    {
+      "id": "envctl_repo",
+      "pattern": "${ENVCTL_REPO}/**",
+      "mode": "allow",
+      "env_var": "ENVCTL_REPO",
+      "description": "envctl repository root selected by the operator."
+    },
+    {
+      "id": "nu_plugin_repo",
+      "pattern": "${NU_PLUGIN_REPO}/**",
+      "mode": "allow",
+      "env_var": "NU_PLUGIN_REPO",
+      "description": "nu_plugin repository root selected by the operator."
+    },
+    {
+      "id": "execution_framework",
+      "pattern": "execution-framework/**",
+      "mode": "allow",
+      "env_var": null,
+      "description": "package-local execution framework state, generated artifacts, logs, and proofs."
+    },
+    {
+      "id": "execution_templates",
+      "pattern": "execution-templates/**",
+      "mode": "allow",
+      "env_var": null,
+      "description": "package-local reusable execution templates."
+    }
+  ],
+  "blocked_paths": [
+    {
+      "id": "dot_env_files",
+      "pattern": "**/.env",
+      "mode": "block",
+      "env_var": null,
+      "description": "environment files are never read into logs, prompts, proofs, or generated artifacts."
+    },
+    {
+      "id": "secrets_directories",
+      "pattern": "**/secrets/**",
+      "mode": "block",
+      "env_var": null,
+      "description": "secret directories are outside helper read and write scope."
+    },
+    {
+      "id": "private_key_directories",
+      "pattern": "**/private_keys/**",
+      "mode": "block",
+      "env_var": null,
+      "description": "private key directories are outside helper read and write scope."
+    },
+    {
+      "id": "pem_files",
+      "pattern": "**/*.pem",
+      "mode": "block",
+      "env_var": null,
+      "description": "PEM material is excluded even inside otherwise allowed roots."
+    },
+    {
+      "id": "key_files",
+      "pattern": "**/*.key",
+      "mode": "block",
+      "env_var": null,
+      "description": "key material is excluded even inside otherwise allowed roots."
+    }
+  ],
+  "safe_workspaces": [
+    {
+      "id": "helper_state",
+      "path": "execution-framework/state/helpers/${HELPER_ID}/",
+      "purpose": "helper-local scratch state and resumable progress markers",
+      "write_policy": "append-or-replace files owned by the active helper_id only",
+      "retention": "task lifetime unless retained as evidence"
+    },
+    {
+      "id": "generated_artifacts",
+      "path": "execution-framework/generated/",
+      "purpose": "machine-readable task artifacts and validation reports",
+      "write_policy": "additive task-specific files; do not overwrite unrelated task output",
+      "retention": "package artifact"
+    },
+    {
+      "id": "logs",
+      "path": "execution-framework/logs/",
+      "purpose": "redacted command and verification logs",
+      "write_policy": "task-specific log files named by task_id",
+      "retention": "package artifact"
+    },
+    {
+      "id": "proof_records",
+      "path": "execution-framework/proof_records/",
+      "purpose": "task proof JSON and proof ledger entries",
+      "write_policy": "task-specific proof file plus proof_ledger.jsonl append/update",
+      "retention": "package artifact"
+    }
+  ],
+  "rules": [
+    "Blocked patterns take precedence over allowed paths.",
+    "Background helpers must not read or write paths that match blocked_paths.",
+    "Background helpers may read and write only paths that match allowed_paths and do not match blocked_paths.",
+    "ENVCTL_REPO and NU_PLUGIN_REPO are operator-provided roots; if unset, helpers must treat those lanes as unavailable.",
+    "Helper scratch writes must use execution-framework/state/helpers/${HELPER_ID}/ unless the task packet names a narrower output path.",
+    "Logs and proof evidence must be redacted using helpers/redaction_patterns.txt before capture.",
+    "Symlink traversal must be evaluated against the final resolved path and denied when it escapes the matched allowed root."
+  ],
+  "redaction": {
+    "source": "helpers/redaction_patterns.txt",
+    "pattern_count": 4,
+    "capture_policy": "logs, proof evidence, and generated reports must not contain matched secret values"
+  },
+  "metadata": {
+    "source_packet": "execution-framework/generated/execution_packets/REQ-042_FILESYSTEM_BOUNDS.json",
+    "source_graph": "generated/task_graph.csv",
+    "dependency": "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+  }
+}

@@ -1,0 +1,241 @@
+approval_policy = "on-request"
+background_terminal_max_timeout = 300000
+developer_instructions = """
+FlexNetOS root is the active Codex control plane. Start sessions at
+/home/flexnetos/FlexNetOS and treat peer repos under src/ as independent repos,
+not as subdirectories of a monorepo.
+
+Use src/meta/.codex, src/meta/.kb, src/meta/docs, and src/meta/.context as
+additive source material for policy, KB, workflow, MCP, and marketplace state.
+Those files are not automatically active when Codex is launched from the
+FlexNetOS root.
+
+Meta KB and the FlexNetOS original meta project set are upgrade-only targets.
+Do not revert, reset, downgrade, remove, or overwrite those repos by default.
+Any deletion, removal, destructive rewrite, or downgrade-like operation must
+first create a compressed archive under var/lib/codex-runtime-gate/archives,
+artifacts, snapshots, or var/log/raw and must preserve evidence in the worklog
+or audit trail.
+
+Full filesystem access remains enabled for recovery and upgrade work. The
+guardrail is archive-first/additive-only policy, not reducing sandbox access.
+
+Root lifecycle hooks are owned by /home/flexnetos/FlexNetOS/.codex/hooks.json.
+Plugin and peer-repo hooks may provide source guidance, skills, and MCP
+metadata, but they must not duplicate PreToolUse/Stop lifecycle enforcement
+unless the root gate is deliberately redesigned.
+"""
+model = "gpt-5.5"
+model_auto_compact_token_limit = 64000
+model_context_window = 128000
+model_reasoning_effort = "high"
+model_reasoning_summary = "auto"
+model_verbosity = "medium"
+plan_mode_reasoning_effort = "xhigh"
+project_doc_fallback_filenames = [
+    ".agents.md",
+    "CLAUDE.md",
+]
+project_doc_max_bytes = 65536
+sandbox_mode = "danger-full-access"
+tool_output_token_limit = 12000
+web_search = "live"
+
+[agents]
+job_max_runtime_seconds = 3600
+max_depth = 1
+max_threads = 12
+
+[agents.docs_researcher]
+config_file = "agents/docs-researcher.toml"
+description = "Documentation specialist that verifies APIs, framework behavior, and release notes."
+
+[agents.explorer]
+config_file = "agents/explorer.toml"
+description = "Read-only codebase explorer for gathering evidence before changes are proposed."
+
+[agents.reviewer]
+config_file = "agents/reviewer.toml"
+description = "PR reviewer focused on correctness, security, and missing tests."
+
+[features]
+apply_patch_streaming_events = true
+artifact = true
+auth_elicitation = true
+child_agents_md = true
+chronicle = true
+code_mode = true
+code_mode_only = true
+current_time_reminder = true
+default_mode_request_user_input = true
+deferred_executor = true
+enable_fanout = true
+enable_mcp_apps = true
+exec_permission_approvals = true
+fast_mode = true
+hooks = true
+imagegenext = true
+item_ids = true
+local_thread_store_compression = true
+memories = true
+multi_agent = true
+multi_agent_v2 = true
+network_proxy = true
+non_prefixed_mcp_tool_names = true
+plugins = true
+prevent_idle_sleep = true
+realtime_conversation = true
+remote_plugin = true
+request_permissions_tool = true
+respect_system_proxy = true
+runtime_metrics = true
+secret_auth_storage = true
+shell_snapshot = true
+shell_tool = true
+shell_zsh_fork = true
+sleep_tool = true
+standalone_web_search = true
+terminal_visualization_instructions = true
+token_budget = true
+unified_exec = true
+unified_exec_zsh_fork = true
+use_agent_identity = true
+
+[features.rollout_budget]
+enabled = true
+limit_tokens = 1000000
+reminder_at_remaining_tokens = [
+    100000,
+]
+
+[history]
+max_bytes = 104857600
+persistence = "save-all"
+
+[marketplaces.gitkb]
+source_type = "local"
+source = "/home/flexnetos/FlexNetOS/src/meta/codex-plugins"
+
+[marketplaces.meta-plugins-codex]
+source_type = "local"
+source = "/home/flexnetos/FlexNetOS/src/meta-plugins"
+
+[plugins."gitkb@gitkb"]
+enabled = true
+
+[plugins."gitkb@gitkb".mcp_servers.gitkb]
+command = "/home/flexnetos/FlexNetOS/usr/libexec/gitkb-mcp-meta"
+
+[plugins."codex-security@meta-plugins-codex"]
+enabled = true
+
+[plugins."github@meta-plugins-codex"]
+enabled = true
+
+[plugins."openai-developers@meta-plugins-codex"]
+enabled = true
+
+[plugins."google-drive@meta-plugins-codex"]
+enabled = true
+
+[plugins."gmail@meta-plugins-codex"]
+enabled = true
+
+[plugins."google-calendar@meta-plugins-codex"]
+enabled = true
+
+[plugins."figma@meta-plugins-codex"]
+enabled = true
+
+[plugins."digitalocean@meta-plugins-codex"]
+enabled = true
+
+[plugins."hugging-face@meta-plugins-codex"]
+enabled = true
+
+[plugins."neon-postgres@meta-plugins-codex"]
+enabled = true
+
+[plugins."supabase@meta-plugins-codex"]
+enabled = true
+
+[plugins."notion@meta-plugins-codex"]
+enabled = true
+
+[plugins."superhuman@meta-plugins-codex"]
+enabled = true
+
+[plugins."slack@meta-plugins-codex"]
+enabled = true
+
+[mcp_servers.context7]
+args = [
+    "-lc",
+    'ROOT="${META_ROOT:-/home/flexnetos/FlexNetOS}"; export META_ROOT="$ROOT"; export PATH="$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH"; exec "$ROOT/usr/bin/bunx" @upstash/context7-mcp@latest',
+]
+command = "bash"
+
+[mcp_servers.exa]
+url = "https://mcp.exa.ai/mcp"
+
+[mcp_servers.github]
+args = [
+    "-lc",
+    'ROOT="${META_ROOT:-/home/flexnetos/FlexNetOS}"; export META_ROOT="$ROOT"; export PATH="$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH"; exec "$ROOT/usr/bin/bunx" @modelcontextprotocol/server-github',
+]
+command = "bash"
+
+[mcp_servers.memory]
+args = [
+    "-lc",
+    'ROOT="${META_ROOT:-/home/flexnetos/FlexNetOS}"; exec "$ROOT/src/envctl/assets/scripts/envctl-mcp-memory-server"',
+]
+command = "bash"
+
+[mcp_servers.n8n-mcp]
+args = [
+    "-lc",
+    'ROOT="${META_ROOT:-/home/flexnetos/FlexNetOS}"; export META_ROOT="$ROOT"; export PATH="$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH"; export N8N_API_URL="${N8N_API_URL:-http://localhost:5678}"; if [ -z "${N8N_API_KEY:-}" ] && [ -x "$ROOT/usr/bin/secretctl" ]; then N8N_API_KEY="$("$ROOT/usr/bin/secretctl" secret get n8n-api-key --reveal --apply 2>/dev/null || true)"; export N8N_API_KEY; fi; exec "$ROOT/usr/bin/bunx" n8n-mcp',
+]
+command = "bash"
+
+[mcp_servers.playwright]
+args = [
+    "-lc",
+    'ROOT="${META_ROOT:-/home/flexnetos/FlexNetOS}"; export META_ROOT="$ROOT"; export PATH="$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH"; exec "$ROOT/usr/bin/bunx" @playwright/mcp@latest --extension',
+]
+command = "bash"
+
+[mcp_servers.sequential-thinking]
+args = [
+    "-lc",
+    'ROOT="${META_ROOT:-/home/flexnetos/FlexNetOS}"; export META_ROOT="$ROOT"; export PATH="$ROOT/usr/bin:$ROOT/.toolchains/.bun/bin:$ROOT/.toolchains/node/bin:$ROOT/.local/bin:$PATH"; exec "$ROOT/usr/bin/bunx" @modelcontextprotocol/server-sequential-thinking',
+]
+command = "bash"
+
+[memories]
+disable_on_external_context = false
+generate_memories = true
+min_rate_limit_remaining_percent = 15
+use_memories = true
+
+[sandbox_workspace_write]
+exclude_slash_tmp = false
+exclude_tmpdir_env_var = false
+network_access = true
+
+[tui]
+notifications = [
+    "agent-turn-complete",
+    "approval-requested",
+]
+status_line = [
+    "model-with-reasoning",
+    "context-remaining",
+    "git-branch",
+]
+terminal_title = [
+    "spinner",
+    "project",
+    "git-branch",
+]

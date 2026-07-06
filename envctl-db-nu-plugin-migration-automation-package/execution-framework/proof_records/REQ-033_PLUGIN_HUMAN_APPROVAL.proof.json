@@ -1,0 +1,73 @@
+{
+  "actor": "codex-cli-local",
+  "artifacts": [
+    "generated/patches/REQ-033_PLUGIN_HUMAN_APPROVAL.nu_plugin.patch",
+    "generated/REQ-033_PLUGIN_HUMAN_APPROVAL.contract.json",
+    "state/REQ-033_PLUGIN_HUMAN_APPROVAL.heartbeat.json",
+    "logs/REQ-033_PLUGIN_HUMAN_APPROVAL.log"
+  ],
+  "checksums": {
+    "contract_sha256": "4b25c9e9dc5a98da42955ef3a83a41d67b017b9b1602428dacce30df8989d564",
+    "heartbeat_sha256": "1f049da5023c06d027fe947cf8b07e9fed6f70a4d80151a66b688757c3a8b207",
+    "log_sha256": "1add19b71bef6ba089daef6f1d1fa59b70d9d473277758f1197fafce5ad49004",
+    "patch_sha256": "abb68ac1c9c8986d6eab23005b2840fcb7b5736627604b8def4ee46f902026d3"
+  },
+  "completed_at": "2026-07-05T04:58:03+00:00",
+  "failure_reason": "",
+  "helper_id": "helper-nu-approval-01",
+  "implementation": {
+    "command_name": "codedb envctl human approvals",
+    "input_formats": [
+      "approval_request_json_array",
+      "approval_request_json_object",
+      "approval_request_jsonl",
+      "operation_queue_json_array",
+      "operation_queue_json_object",
+      "operation_queue_jsonl"
+    ],
+    "human_modes": [
+      "observer",
+      "approval-gated",
+      "operator",
+      "agent-only"
+    ],
+    "mutation_policy": "read_only_human_approval_projection",
+    "output_table": "envctl_human_approval_surface",
+    "target_file": "crates/nu_plugin_codedb/src/main.rs",
+    "unit_tests_added": [
+      "envctl_human_approval_rows_project_mode_and_actions",
+      "envctl_human_approval_rows_reject_bad_jsonl"
+    ],
+    "views": [
+      "mode",
+      "approval",
+      "operation"
+    ]
+  },
+  "next_action": "Apply generated/patches/REQ-033_PLUGIN_HUMAN_APPROVAL.nu_plugin.patch in the Nu plugin repo and run cargo test -p nu_plugin_codedb envctl_human_approval_rows once a Rust toolchain is available.",
+  "owner_agent": "nu-plugin-agent",
+  "owner_lane": "lane_c_repo_b",
+  "parent_id": "REQ-010_CONTRACT_LOCK",
+  "phase": "03-nu-plugin",
+  "proof_schema_version": "1.0",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/nu_plugin",
+  "repo_target": "repo_b",
+  "rollback_plan": "Remove generated/patches/REQ-033_PLUGIN_HUMAN_APPROVAL.nu_plugin.patch, generated/REQ-033_PLUGIN_HUMAN_APPROVAL.contract.json, state/REQ-033_PLUGIN_HUMAN_APPROVAL.heartbeat.json, and this proof file. If the patch has been applied to repo_b, reverse only the hunks in the patch.",
+  "sandbox_note": "Direct writes to NU_PLUGIN_REPO were denied by this shell permission profile, so the implementation is delivered as a patch artifact under execution-framework.",
+  "source_commit": "37e6d2a22994308f440da1ff3cb3fda9901c9e40",
+  "started_at": "2026-07-05T04:53:39+00:00",
+  "status": "completed",
+  "summary": "Implemented a read-only Nushell human approval surface as a Nu plugin patch artifact. The command projects approval requests and optional operation queue rows into a single envctl_human_approval_surface table with mode, approval, and operation views plus allowed actions for opt-in, approve, deny, pause, and delegate flows.",
+  "task_id": "REQ-033_PLUGIN_HUMAN_APPROVAL",
+  "title": "Implement human approval commands",
+  "verification": {
+    "log_uri": "logs/REQ-033_PLUGIN_HUMAN_APPROVAL.log",
+    "patch_apply_check": "passed",
+    "patch_whitespace_check": "passed",
+    "patched_source_structural_gate": "passed",
+    "targeted_cargo_test": "not_run_toolchain_unavailable",
+    "temp_copy_git_apply": "passed",
+    "temp_tree_changed_file_check": "passed",
+    "toolchain_note": "cargo and rustc were not present on PATH in this execution shell; the patch includes task-specific Rust unit tests and was verified by git apply checks plus structural source gates."
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "REQ-022_ENVCTL_RUN_LEDGER",
+  "status": "completed",
+  "started_at": "2026-07-04T23:09:30+00:00",
+  "completed_at": "2026-07-04T23:09:30+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-envctl-ledger-01",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/envctl_run_ledger.py",
+    "execution-framework/scripts/verify_envctl_run_ledger.py",
+    "execution-framework/generated/envctl_run_ledger_report.json",
+    "execution-framework/docs/ENVCTL_RUN_LEDGER.md",
+    "execution-framework/logs/REQ-022_ENVCTL_RUN_LEDGER.log",
+    "execution-framework/proof_records/REQ-022_ENVCTL_RUN_LEDGER.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/verify_envctl_run_ledger.py"
+  ],
+  "verification_output": {
+    "status": "passed",
+    "event_count": 5,
+    "event_chain_valid": true,
+    "proof_link_recorded": true,
+    "duplicate_seq_rejected": true,
+    "invalid_status_rejected": true,
+    "errors": []
+  },
+  "checksums": {
+    "execution-framework/scripts/envctl_run_ledger.py": "29cf20fa0d0acc7d6148faf9e4c7c98f882ad0c3e02a80b78366e13fd04c6107",
+    "execution-framework/scripts/verify_envctl_run_ledger.py": "b6d4551a7e82a047a0bf8f754de965a1530b1f38765788ff5b6ca9a2fa64d6a9",
+    "execution-framework/generated/envctl_run_ledger_report.json": "162e5da83a04f2e0d18fd3598fbea5f6dc67b9085ac245022439b839fd81c571",
+    "execution-framework/docs/ENVCTL_RUN_LEDGER.md": "c8d6e701f0822f4f212307a62ba4126a7190f4579aa538a6eca2c6753b813183",
+    "execution-framework/logs/REQ-022_ENVCTL_RUN_LEDGER.log": "162e5da83a04f2e0d18fd3598fbea5f6dc67b9085ac245022439b839fd81c571",
+    "execution-framework/proof_records/REQ-022_ENVCTL_RUN_LEDGER.proof.json": "300224a58be633b10f81f034086dad0e00955e816d9d65dcafcca6f0dd430710",
+    "execution-framework/proof_records/proof_ledger.jsonl": "d40077342c93862b2f26b13f3e43f1c908ae88db65ec9c2cd3083e2407d4aee5"
+  },
+  "logs_uri": "logs/REQ-022_ENVCTL_RUN_LEDGER.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "generated/envctl_run_ledger_report.json",
+    "docs/ENVCTL_RUN_LEDGER.md",
+    "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json"
+  ],
+  "failure_reason": "",
+  "next_action": "run REQ-027 replay engine against the hash-chained run ledger"
+}

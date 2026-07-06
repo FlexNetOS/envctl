@@ -19,12 +19,13 @@ artifacts=$META_ROOT/usr/bin/just
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/src/just/target/release/just\" ] && [ \"$(readlink -f \"$M/usr/bin/just\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/src/just/target/release/just\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/src/just/target/release/just\" ] && [ -x \"$M/usr/bin/just\" ] && [ ! -L \"$M/usr/bin/just\" ] && grep -Fqx \"exec \\\"$M/.toolchains/src/just/target/release/just\\\" \\\"\\$@\\\"\" \"$M/usr/bin/just\""]
 
 [component.install]
 kind = "script"
 login_shell = true
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 install -d -m 700 "$M/.toolchains/src"
@@ -34,9 +35,10 @@ git -C "$SRC" fetch --depth 1 origin 5097d64c8b765f8f6bf0f19d13be199bb1d1769c &&
 cd "$SRC"
 cargo build --release --locked || cargo build --release
 install -d -m 755 "$M/usr/bin"
-ln -sfn "$SRC/target/release/just" "$M/usr/bin/just"
-'''
+envctl_frontdoor "$SRC/target/release/just" "$M/usr/bin/just"
 
+
+'''
 [component.verify]
 kind = "command"
 command = "bash"

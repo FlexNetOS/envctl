@@ -223,7 +223,7 @@ fn read_seed(path: &Path) -> anyhow::Result<Zeroizing<[u8; 32]>> {
     let txt = String::from_utf8_lossy(&raw);
     let txt = txt.trim();
     if txt.len() == 64 {
-        for (i, chunk) in txt.as_bytes().chunks_exact(2).enumerate() {
+        for (i, chunk) in txt.as_bytes().as_chunks::<2>().0.iter().enumerate() {
             let hi = (chunk[0] as char)
                 .to_digit(16)
                 .ok_or_else(|| anyhow!("seed file is not valid hex"))?;
@@ -321,7 +321,7 @@ fn parse_fp_hex(s: &str) -> Option<[u8; 32]> {
         return None;
     }
     let mut out = [0u8; 32];
-    for (i, chunk) in s.as_bytes().chunks_exact(2).enumerate() {
+    for (i, chunk) in s.as_bytes().as_chunks::<2>().0.iter().enumerate() {
         let hi = (chunk[0] as char).to_digit(16)?;
         let lo = (chunk[1] as char).to_digit(16)?;
         out[i] = ((hi << 4) | lo) as u8;

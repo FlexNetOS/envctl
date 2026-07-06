@@ -1,5 +1,5 @@
 # Epic H — meta-owned toolchain convergence (eliminate system-depth installs).
-# Each tool installs into $META_ROOT/.toolchains/<x> and symlinks into $META_ROOT/usr/bin,
+# Each tool installs into $META_ROOT/.toolchains/<x> and exposes regular frontdoor wrappers in $META_ROOT/usr/bin,
 # replacing an apt/system install. See docs/adr-install-locations-and-local-state.md
 # (§System-depth convergence plan) and .handoff/loop/backlog.md Epic H.
 #
@@ -9,23 +9,25 @@
 # wild (the linker) is now FULLY WIRED + verified (Epic H TASK-0054): its install
 # writes the meta-root $META_ROOT/.cargo/config.toml linker section and a full
 # `cargo build` was confirmed to link via `clang --ld-path=wild` before it landed.
-# kache (RUSTC_WRAPPER) remains install-only — its wiring is a separate step.
+# kache (RUSTC_WRAPPER) is wired and verified: absolute wrapper, meta XDG cache,
+# and a user-systemd bridge whose real unit file lives under $META_ROOT/etc.
 
 # ── gh (GitHub CLI) ── replaces apt `gh` (/usr/bin/gh). Pure tarball, additive.
 [[component]]
 id = "gh-cli"
 name = "GitHub CLI (meta-owned)"
-description = "gh from upstream release tarball into .toolchains/gh + $META_ROOT/usr/bin symlink. Replaces the apt `gh`. Repo: cli/cli."
+description = "gh from upstream release tarball into .toolchains/gh + a regular $META_ROOT/usr/bin frontdoor wrapper. Replaces the apt `gh`. Repo: cli/cli."
 
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/gh/bin/gh\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/gh\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/gh/bin/gh\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/gh/bin/gh\" ] && [ -x \"$META_ROOT/usr/bin/gh\" ] && [ ! -L \"$META_ROOT/usr/bin/gh\" ] && grep -Fqx \"exec \\\"$M/.toolchains/gh/bin/gh\\\" \\\"\\$@\\\"\" \"$META_ROOT/usr/bin/gh\""]
 
 [component.install]
 kind = "script"
 login_shell = true
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
@@ -41,9 +43,10 @@ envctl_gh_curl "$URL" -o "$tmp/gh.tgz"
 install -d -m 755 "$DEST"
 tar -xzf "$tmp/gh.tgz" -C "$DEST" --strip-components=1
 install -d -m 755 "$META_ROOT/usr/bin"
-ln -sfn "$DEST/bin/gh" "$META_ROOT/usr/bin/gh"
-'''
+envctl_frontdoor "$DEST/bin/gh" "$META_ROOT/usr/bin/gh"
 
+
+'''
 [component.verify]
 kind = "command"
 command = "bash"
@@ -77,18 +80,19 @@ description = "Fast Rust linker (davidlattimore/wild) via `cargo install --locke
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/wild/bin/wild\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/wild\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/wild/bin/wild\")\" ] && [ -f \"$M/.cargo/config.toml\" ] && grep -q -- '--ld-path=wild' \"$M/.cargo/config.toml\""]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/wild/bin/wild\" ] && [ -x \"$META_ROOT/usr/bin/wild\" ] && [ ! -L \"$META_ROOT/usr/bin/wild\" ] && grep -Fqx \"exec \\\"$M/.toolchains/wild/bin/wild\\\" \\\"\\$@\\\"\" \"$META_ROOT/usr/bin/wild\" && [ -f \"$M/.cargo/config.toml\" ] && grep -q -- '--ld-path=wild' \"$M/.cargo/config.toml\""]
 
 [component.install]
 kind = "script"
 login_shell = true
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/wild"
 cargo install --locked wild-linker --root "$DEST"
 install -d -m 755 "$META_ROOT/usr/bin"
-ln -sfn "$DEST/bin/wild" "$META_ROOT/usr/bin/wild"
+envctl_frontdoor "$DEST/bin/wild" "$META_ROOT/usr/bin/wild"
 # Wire wild as the local cargo linker via the meta-root .cargo/config.toml. This file
 # lives OUTSIDE the envctl repo (a runtime artifact at $META_ROOT, like .toolchains/); only
 # this component def is committed. CI clones each repo standalone so it never sees it. The
@@ -110,8 +114,9 @@ BEG="# >>> envctl wild-linker (Epic H TASK-0054) >>>"
 END="# <<< envctl wild-linker (Epic H TASK-0054) <<<"
 awk -v b="$BEG" -v e="$END" '$0==b{s=1} s&&$0==e{s=0;next} !s{print}' "$CFG" > "$CFG.tmp" && mv "$CFG.tmp" "$CFG"
 printf '%s\n[target.x86_64-unknown-linux-gnu]\nlinker = "clang"\nrustflags = ["-Clink-arg=--ld-path=wild"]\n%s\n' "$BEG" "$END" >> "$CFG"
-'''
 
+
+'''
 [component.verify]
 kind = "script"
 login_shell = true
@@ -179,63 +184,76 @@ path_entries = ["$META_ROOT/usr/bin"]
 # FULLY WIRED (Epic H TASK-0055): install ALSO writes a delimited `[build] rustc-wrapper`
 # block into the meta-root $META_ROOT/.cargo/config.toml (CO-MANAGED with the wild-linker
 # component via non-clobbering block-upsert), so local cargo builds are cache-wrapped by
-# kache. The env-seam (`envctl env`) was NOT used: it is not sourced into the interactive
-# shell, so an env-var wiring would be inert — the cargo config is the only automatic path.
-# Verify proves a real throwaway build is actually intercepted by kache (index.db written).
+# the canonical `$META_ROOT/usr/bin/kache` frontdoor. The frontdoor is a wrapper (not a
+# symlink) so kache always uses meta-owned XDG state/cache, even from shells that have not
+# sourced `envctl env --toolchains`.
+# Verify proves a real throwaway build is actually intercepted by kache and writes the
+# active cache under `$META_ROOT/.cache/kache`, never `~/.cache/kache`.
 [[component]]
 id = "kache"
 name = "kache compiler cache (meta-owned, wired + verified)"
-description = "Content-addressed Rust compiler cache (kunobi-ninja/kache) via `cargo install kache` into .toolchains/kache, wired as RUSTC_WRAPPER via a delimited [build] block in the meta-root .cargo/config.toml (co-managed with wild via block-upsert). Wiring is verified — a throwaway cargo build is confirmed to be kache-intercepted before it lands. sccache only as last-resort fallback."
+description = "Content-addressed Rust compiler cache (kunobi-ninja/kache) via `cargo install kache` into .toolchains/kache, exposed through a $META_ROOT/usr/bin/kache XDG wrapper, and wired as RUSTC_WRAPPER via an absolute delimited [build] block in the meta-root .cargo/config.toml (co-managed with wild via block-upsert). Wiring is verified by a throwaway cargo build that must write $META_ROOT/.cache/kache, not ~/.cache/kache. sccache only as last-resort fallback."
 
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/kache/bin/kache\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/kache\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/kache/bin/kache\")\" ] && [ -f \"$M/.cargo/config.toml\" ] && grep -q 'rustc-wrapper' \"$M/.cargo/config.toml\""]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/kache/bin/kache\" ] && [ -x \"$META_ROOT/usr/bin/kache\" ] && [ ! -L \"$META_ROOT/usr/bin/kache\" ] && grep -Fqx \"exec \\\"$M/.toolchains/kache/bin/kache\\\" \\\"\\$@\\\"\" \"$META_ROOT/usr/bin/kache\" && [ -f \"$M/.cargo/config.toml\" ] && grep -q 'rustc-wrapper' \"$M/.cargo/config.toml\""]
 
 [component.install]
 kind = "script"
 login_shell = true
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/kache"
 cargo install kache --root "$DEST"
 install -d -m 755 "$META_ROOT/usr/bin"
-ln -sfn "$DEST/bin/kache" "$META_ROOT/usr/bin/kache"
+cat >"$META_ROOT/usr/bin/kache" <<EOF
+#!/bin/sh
+# envctl kache wrapper
+export XDG_CACHE_HOME="\${XDG_CACHE_HOME:-$M/.cache}"
+exec "$DEST/bin/kache" "\$@"
+EOF
+chmod 755 "$META_ROOT/usr/bin/kache"
 # Wire kache as RUSTC_WRAPPER via the meta-root .cargo/config.toml [build] section. Same
 # CO-MANAGED file as the wild-linker component (TASK-0054): each owns a delimited block,
 # written by a non-clobbering upsert so the two never overwrite each other and foreign
-# content is preserved. The file is a $META_ROOT runtime artifact (like .toolchains/),
-# outside the repo; CI clones repos standalone so it never sees it. `kache` is PATH-resolved
-# ($META_ROOT/usr/bin), matching kache's own `doctor` recommendation and wild's bare `clang`/`wild`.
+# content is preserved. Use an ABSOLUTE wrapper path so Cargo never falls through to an
+# older host-local kache or any PATH-shadowed binary.
 install -d -m 755 "$M/.cargo"
 CFG="$M/.cargo/config.toml"
 touch "$CFG"
 BEG="# >>> envctl kache (Epic H TASK-0055) >>>"
 END="# <<< envctl kache (Epic H TASK-0055) <<<"
 awk -v b="$BEG" -v e="$END" '$0==b{s=1} s&&$0==e{s=0;next} !s{print}' "$CFG" > "$CFG.tmp" && mv "$CFG.tmp" "$CFG"
-printf '%s\n[build]\nrustc-wrapper = "kache"\n%s\n' "$BEG" "$END" >> "$CFG"
-'''
+printf '%s\n[build]\nrustc-wrapper = "%s/usr/bin/kache"\n%s\n' "$BEG" "$M" "$END" >> "$CFG"
 
+
+'''
 [component.verify]
 kind = "script"
 login_shell = true
 script = '''
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-export PATH="$META_ROOT/usr/bin:$PATH"
+export PATH="$M/usr/bin:$PATH"
 # Bypass any interactive `grep` shell-function wrapper (rtk/ugrep hook in login shells).
 g() { command grep "$@"; }
-# 1) tool resolves
+# 1) tools resolve to the meta wrapper + real binary exists.
+[ "$(command -v kache)" = "$M/usr/bin/kache" ]
+[ -x "$M/usr/bin/kache" ] && g -q 'envctl kache wrapper' "$M/usr/bin/kache"
+[ -x "$M/.toolchains/kache/bin/kache" ]
 kache --version
-# 2) the co-managed config carries the rustc-wrapper wiring
+# 2) the co-managed config carries the absolute rustc-wrapper wiring (not bare PATH lookup).
 CFG="$M/.cargo/config.toml"
-[ -f "$CFG" ] && g -q 'rustc-wrapper' "$CFG"
-# 3) prove kache actually wraps a real build. Build a throwaway crate in /tmp (outside the
-#    meta tree) with the meta-root config applied, against an ISOLATED kache cache via
-#    XDG_CACHE_HOME, then confirm kache recorded the wrapped build (index.db written).
+[ -f "$CFG" ] && g -q "rustc-wrapper = \"$M/usr/bin/kache\"" "$CFG"
+! awk '/^# >>> envctl kache /{s=1} s&&/^# <<< envctl kache /{s=0} s&&/rustc-wrapper = "kache"/{bad=1} END{exit bad?0:1}' "$CFG"
+# 3) prove kache actually wraps a real build and that the active cache lands in meta.
+#    The throwaway HOME catches regressions where kache falls back to ~/.cache/kache.
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-export XDG_CACHE_HOME="$tmp/xdg"; mkdir -p "$XDG_CACHE_HOME"
+mkdir -p "$tmp/home" "$M/.cache"
+rm -f "$tmp/home/.cache/kache/index.db"
 mkdir -p "$tmp/proj/src"
 cat > "$tmp/proj/Cargo.toml" <<EOF
 [package]
@@ -247,8 +265,18 @@ name = "kache-wire-probe"
 path = "src/main.rs"
 EOF
 echo 'fn main() {}' > "$tmp/proj/src/main.rs"
-( cd "$tmp/proj" && cargo build --config "$CFG" --target-dir "$tmp/td" 2>&1 )
-[ -s "$XDG_CACHE_HOME/kache/index.db" ] || { echo "kache did not record the wrapped build"; exit 1; }
+( cd "$tmp/proj" && env -u XDG_CACHE_HOME HOME="$tmp/home" PATH="$M/usr/bin:$PATH" cargo build --config "$CFG" --target-dir "$tmp/td" 2>&1 )
+[ -s "$M/.cache/kache/index.db" ] || { echo "kache did not record the wrapped build under $M/.cache/kache"; exit 1; }
+[ ! -e "$tmp/home/.cache/kache/index.db" ] || { echo "kache leaked cache state to HOME/.cache/kache"; exit 1; }
+# 4) daemon service restarts must also stay meta-owned.
+if command -v systemctl >/dev/null 2>&1; then
+  UNIT_BRIDGE="$HOME/.config/systemd/user/kache.service"
+  UNIT_SRC="$M/etc/systemd/user/kache.service"
+  [ -L "$UNIT_BRIDGE" ] && [ "$(readlink "$UNIT_BRIDGE")" = "$UNIT_SRC" ]
+  g -q "ExecStart=$M/.toolchains/kache/bin/kache daemon run" "$UNIT_SRC"
+  g -q "Environment=XDG_CACHE_HOME=$M/.cache" "$UNIT_SRC"
+fi
+kache doctor
 '''
 
 [component.remove]
@@ -257,7 +285,12 @@ login_shell = true
 script = '''
 set -u
 M="${META_ROOT:?META_ROOT required}"
-t="$META_ROOT/usr/bin/kache"; [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/kache" && rm -f "$t"
+t="$M/usr/bin/kache"
+if [ -e "$t" ] || [ -L "$t" ]; then
+  if { [ -f "$t" ] && grep -q 'envctl kache wrapper' "$t"; } || { [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/kache"; }; then
+    rm -f "$t"
+  fi
+fi
 rm -rf "$M/.toolchains/kache"
 # Strip ONLY the kache block from the co-managed config (leaves wild's block + foreign
 # content intact). Self-guarded by OUR delimiters. Remove the file if nothing remains.
@@ -268,6 +301,14 @@ if [ -f "$CFG" ]; then
   awk -v b="$BEG" -v e="$END" '$0==b{s=1} s&&$0==e{s=0;next} !s{print}' "$CFG" > "$CFG.tmp" && mv "$CFG.tmp" "$CFG"
   grep -q '[^[:space:]]' "$CFG" || rm -f "$CFG"
 fi
+if command -v systemctl >/dev/null 2>&1; then
+  systemctl --user disable --now kache.service >/dev/null 2>&1 || true
+  systemctl --user daemon-reload >/dev/null 2>&1 || true
+fi
+UNIT_BRIDGE="$HOME/.config/systemd/user/kache.service"
+UNIT_SRC="$M/etc/systemd/user/kache.service"
+[ -L "$UNIT_BRIDGE" ] && [ "$(readlink "$UNIT_BRIDGE")" = "$UNIT_SRC" ] && rm -f "$UNIT_BRIDGE"
+rm -f "$UNIT_SRC"
 '''
 
 [component.wiring]
@@ -283,12 +324,13 @@ description = "nu from upstream musl release tarball into .toolchains/nushell + 
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/nushell/nu\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/nu\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/nushell/nu\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/nushell/nu\" ] && [ -x \"$META_ROOT/usr/bin/nu\" ] && [ ! -L \"$META_ROOT/usr/bin/nu\" ] && grep -Fqx \"exec \\\"$M/.toolchains/nushell/nu\\\" \\\"\\$@\\\"\" \"$META_ROOT/usr/bin/nu\""]
 
 [component.install]
 kind = "script"
 login_shell = true
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
@@ -300,9 +342,10 @@ envctl_gh_curl "$URL" -o "$tmp/nu.tgz"
 install -d -m 755 "$DEST"
 tar -xzf "$tmp/nu.tgz" -C "$DEST" --strip-components=1
 install -d -m 755 "$META_ROOT/usr/bin"
-ln -sfn "$DEST/nu" "$META_ROOT/usr/bin/nu"
-'''
+envctl_frontdoor "$DEST/nu" "$META_ROOT/usr/bin/nu"
 
+
+'''
 [component.verify]
 kind = "command"
 command = "bash"
@@ -331,12 +374,13 @@ description = "zellij from upstream musl release tarball into .toolchains/zellij
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/zellij/zellij\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/zellij\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/zellij/zellij\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/zellij/zellij\" ] && [ -x \"$META_ROOT/usr/bin/zellij\" ] && [ ! -L \"$META_ROOT/usr/bin/zellij\" ] && grep -Fqx \"exec \\\"$M/.toolchains/zellij/zellij\\\" \\\"\\$@\\\"\" \"$META_ROOT/usr/bin/zellij\""]
 
 [component.install]
 kind = "script"
 login_shell = true
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
@@ -348,9 +392,10 @@ envctl_gh_curl "$URL" -o "$tmp/zellij.tgz"
 install -d -m 755 "$DEST"
 tar -xzf "$tmp/zellij.tgz" -C "$DEST"
 install -d -m 755 "$META_ROOT/usr/bin"
-ln -sfn "$DEST/zellij" "$META_ROOT/usr/bin/zellij"
-'''
+envctl_frontdoor "$DEST/zellij" "$META_ROOT/usr/bin/zellij"
 
+
+'''
 [component.verify]
 kind = "command"
 command = "bash"
@@ -379,12 +424,13 @@ description = "mise static binary into .toolchains/mise/bin + $META_ROOT/usr/bin
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/mise/bin/mise\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/mise\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/mise/bin/mise\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/mise/bin/mise\" ] && [ -x \"$META_ROOT/usr/bin/mise\" ] && [ ! -L \"$META_ROOT/usr/bin/mise\" ] && grep -Fqx \"exec \\\"$M/.toolchains/mise/bin/mise\\\" \\\"\\$@\\\"\" \"$META_ROOT/usr/bin/mise\""]
 
 [component.install]
 kind = "script"
 login_shell = true
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
@@ -395,9 +441,10 @@ install -d -m 755 "$DEST/bin"
 envctl_gh_curl "$URL" -o "$DEST/bin/mise"
 chmod +x "$DEST/bin/mise"
 install -d -m 755 "$META_ROOT/usr/bin"
-ln -sfn "$DEST/bin/mise" "$META_ROOT/usr/bin/mise"
-'''
+envctl_frontdoor "$DEST/bin/mise" "$META_ROOT/usr/bin/mise"
 
+
+'''
 [component.verify]
 kind = "command"
 command = "bash"
@@ -527,25 +574,26 @@ echo "ollama: preserved model blobs at $M/var/lib/ollama/models" >&2
 path_entries = ["$META_ROOT/usr/bin"]
 
 # ── llvm-clang ── meta-owned LLVM/clang toolchain, replaces the apt clang/llvm
-# system-depth install. Pure prebuilt tarball into .toolchains/llvm + $META_ROOT/usr/bin
-# symlinks for the clang/lld driver set. The `/releases/latest` redirect now points at
+# system-depth install. Pure prebuilt tarball into .toolchains/llvm + regular
+# $META_ROOT/usr/bin frontdoor wrappers for the clang/lld driver set. The `/releases/latest` redirect now points at
 # 22.x, so the install pins the latest 21.x tag via the releases API. `envctl env
 # --toolchains` also exports LIBCLANG_PATH=.toolchains/llvm/lib so bindgen-style
 # consumers find libclang.so (Epic H TASK-0061). Repo: llvm/llvm-project.
 [[component]]
 id = "llvm-clang"
 name = "LLVM/clang (meta-owned)"
-description = "LLVM/clang-21 from upstream prebuilt release tarball into .toolchains/llvm + $META_ROOT/usr/bin symlinks for the binaries whose runtime libs resolve on this host (clang/clang++/llc/llvm-* always; lld/ld.lld only where libxml2.so.2 exists). Replaces the apt clang/llvm. Pins latest 21.x (the /latest redirect now points at 22.x). Repo: llvm/llvm-project."
+description = "LLVM/clang-21 from upstream prebuilt release tarball into .toolchains/llvm + regular $META_ROOT/usr/bin frontdoor wrappers for the binaries whose runtime libs resolve on this host (clang/clang++/llc/llvm-* always; lld/ld.lld only where libxml2.so.2 exists). Replaces the apt clang/llvm. Pins latest 21.x (the /latest redirect now points at 22.x). Repo: llvm/llvm-project."
 
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/llvm/bin/clang\" ] && [ -L \"$META_ROOT/usr/bin/clang\" ] && case \"$(readlink -f \"$META_ROOT/usr/bin/clang\" 2>/dev/null)\" in \"$M/.toolchains/llvm\"/*) true;; *) false;; esac"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/llvm/bin/clang\" ] && [ -x \"$M/usr/bin/clang\" ] && [ ! -L \"$M/usr/bin/clang\" ] && grep -Fqx \"exec \\\"$M/.toolchains/llvm/bin/clang\\\" \\\"\\$@\\\"\" \"$M/usr/bin/clang\""]
 
 [component.install]
 kind = "script"
 login_shell = true
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
@@ -572,23 +620,26 @@ envctl_gh_curl "$URL" -o "$tmp/llvm.tar.xz"
 rm -rf "$DEST"; install -d -m 755 "$DEST"
 tar -xJf "$tmp/llvm.tar.xz" -C "$DEST" --strip-components=1
 install -d -m 755 "$META_ROOT/usr/bin"
-# only symlink binaries whose runtime libs resolve on this host (the prebuilt lld links
-# libxml2.so.2, absent on libxml2.so.16 boxes); the box's strategic linker is wild
+# only expose regular frontdoor wrappers for binaries whose runtime libs resolve on this host
+# (the prebuilt lld links libxml2.so.2, absent on libxml2.so.16 boxes); the box's strategic linker is wild
 # (TASK-0054), and apt lld remains as fallback until apt removal. The `--version` probe
 # self-prunes any tarball tool with an unsatisfied shared lib, not just lld.
 for b in clang clang++ clang-cpp clang-21 llvm-config llc llvm-ar llvm-nm llvm-objcopy llvm-objdump lld ld.lld; do
   src="$DEST/bin/$b"; dst="$META_ROOT/usr/bin/$b"
   if [ -e "$src" ] && "$src" --version >/dev/null 2>&1; then
-    ln -sfn "$src" "$dst"
+    envctl_frontdoor "$src" "$dst"
   else
-    # prune a stale symlink into our DEST for a now-unexposed binary (e.g. a prior
-    # install that linked lld before libxml2.so.2 went away, or a re-install). Only
-    # touch symlinks we own (resolving into $DEST); never remove a foreign/apt binary.
-    [ -L "$dst" ] && readlink "$dst" | grep -q "$DEST" && rm -f "$dst"
+    # prune only our prior exposure for a now-unexposed binary (e.g. a prior install that
+    # exposed lld before libxml2.so.2 went away, or a re-install). Accept both the new
+    # regular wrapper and the legacy managed symlink; never remove a foreign/apt binary.
+    if { [ -L "$dst" ] && readlink "$dst" | grep -q "$DEST"; } || { [ -f "$dst" ] && grep -Fqx "exec \"$src\" \"\$@\"" "$dst"; }; then
+      rm -f "$dst"
+    fi
   fi
 done
-'''
 
+
+'''
 [component.verify]
 kind = "command"
 command = "bash"
@@ -600,8 +651,9 @@ login_shell = true
 script = '''
 set -u
 M="${META_ROOT:?META_ROOT required}"
+managed_frontdoor(){ front="$1"; private="$2"; if [ -L "$front" ] && [ "$(readlink -f "$front" 2>/dev/null || true)" = "$(readlink -f "$private" 2>/dev/null || true)" ]; then return 0; fi; [ -f "$front" ] && grep -Fqx "exec \"$private\" \"\$@\"" "$front"; }
 for b in clang clang++ clang-cpp clang-21 llvm-config llc llvm-ar llvm-nm llvm-objcopy llvm-objdump lld ld.lld; do
-  t="$META_ROOT/usr/bin/$b"; [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/llvm" && rm -f "$t"
+  t="$META_ROOT/usr/bin/$b"; src="$M/.toolchains/llvm/bin/$b"; if managed_frontdoor "$t" "$src"; then rm -f "$t"; fi
 done
 rm -rf "$M/.toolchains/llvm"
 '''
@@ -615,13 +667,13 @@ path_entries = ["$META_ROOT/usr/bin"]
 # `libgccjit.version` (so the .so matches the backend exactly, not floating-latest)
 # into .toolchains/libgccjit/lib. The payload is a runtime shared object consumed by
 # the external rustc_codegen_gcc backend, NOT a CLI binary, so there is NO
-# $META_ROOT/usr/bin symlink and NO `path_entries`. `envctl env --toolchains` exports
+# $META_ROOT/usr/bin frontdoor and NO `path_entries`. `envctl env --toolchains` exports
 # GCC_PATH=.toolchains/libgccjit/lib so the backend (config.toml `gcc-path` /
 # LIBRARY_PATH+LD_LIBRARY_PATH) finds it (Epic H TASK-0062). Repo: rust-lang/gcc.
 [[component]]
 id = "libgccjit"
 name = "libgccjit (meta-owned)"
-description = "Prebuilt libgccjit.so for the rustc_codegen_gcc backend, from the rust-lang/gcc release pinned by rustc_codegen_gcc's libgccjit.version, into .toolchains/libgccjit/lib. Runtime .so (no CLI binary, no $META_ROOT/usr/bin symlink); exposed via the GCC_PATH env seam. Replaces a system GCC/libgccjit build. Repo: rust-lang/gcc."
+description = "Prebuilt libgccjit.so for the rustc_codegen_gcc backend, from the rust-lang/gcc release pinned by rustc_codegen_gcc's libgccjit.version, into .toolchains/libgccjit/lib. Runtime .so (no CLI binary, no $META_ROOT/usr/bin frontdoor); exposed via the GCC_PATH env seam. Replaces a system GCC/libgccjit build. Repo: rust-lang/gcc."
 
 [component.detect]
 kind = "command"
@@ -677,12 +729,13 @@ description = "Bwrap-backed isolated nix: the DavHau/nix-portable static binary 
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/nix-portable/bin/nix-portable\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/nix-portable\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/nix-portable/bin/nix-portable\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/nix-portable/bin/nix-portable\" ] && [ -x \"$META_ROOT/usr/bin/nix-portable\" ] && [ ! -L \"$META_ROOT/usr/bin/nix-portable\" ] && grep -Fqx \"exec \\\"$M/.toolchains/nix-portable/bin/nix-portable\\\" \\\"\\$@\\\"\" \"$META_ROOT/usr/bin/nix-portable\""]
 
 [component.install]
 kind = "script"
 login_shell = true
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
@@ -701,8 +754,8 @@ else
 fi
 chmod +x "$DEST/bin/nix-portable"
 install -d -m 755 "$META_ROOT/usr/bin"
-ln -sfn "$DEST/bin/nix-portable" "$META_ROOT/usr/bin/nix-portable"
-'''
+envctl_frontdoor "$DEST/bin/nix-portable" "$META_ROOT/usr/bin/nix-portable"
+
 
 # NO mutation/network: the binary forwards all args to nix and has no native --version
 # (first real run bwrap-bootstraps a store). nix-portable is a self-extracting POLYGLOT —
@@ -710,6 +763,7 @@ ln -sfn "$DEST/bin/nix-portable" "$META_ROOT/usr/bin/nix-portable"
 # shell script, ASCII text executable", NOT "ELF". Verify therefore checks file-exists +
 # executable + `file | grep -qi 'executable'` (matches both the "ASCII text executable"
 # polyglot today and a plain "ELF ... executable" if upstream ever repackages — future-proof).
+'''
 [component.verify]
 kind = "command"
 command = "bash"
@@ -740,12 +794,13 @@ description = "yazi terminal file manager (yazi + ya) from the upstream musl rel
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/yazi/yazi\" ] && [ -x \"$M/.toolchains/yazi/ya\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/yazi\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/yazi/yazi\")\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/ya\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/yazi/ya\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/yazi/yazi\" ] && [ -x \"$M/.toolchains/yazi/ya\" ] && [ -x \"$META_ROOT/usr/bin/yazi\" ] && [ ! -L \"$META_ROOT/usr/bin/yazi\" ] && grep -Fqx \"exec \\\"$M/.toolchains/yazi/yazi\\\" \\\"\\$@\\\"\" \"$META_ROOT/usr/bin/yazi\" && [ -x \"$META_ROOT/usr/bin/ya\" ] && [ ! -L \"$META_ROOT/usr/bin/ya\" ] && grep -Fqx \"exec \\\"$M/.toolchains/yazi/ya\\\" \\\"\\$@\\\"\" \"$META_ROOT/usr/bin/ya\""]
 
 [component.install]
 kind = "script"
 login_shell = true
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
@@ -770,10 +825,11 @@ install -d -m 755 "$DEST"
 install -m 755 "$SRC/yazi" "$DEST/yazi"
 install -m 755 "$SRC/ya" "$DEST/ya"
 install -d -m 755 "$META_ROOT/usr/bin"
-ln -sfn "$DEST/yazi" "$META_ROOT/usr/bin/yazi"
-ln -sfn "$DEST/ya" "$META_ROOT/usr/bin/ya"
-'''
+envctl_frontdoor "$DEST/yazi" "$META_ROOT/usr/bin/yazi"
+envctl_frontdoor "$DEST/ya" "$META_ROOT/usr/bin/ya"
 
+
+'''
 [component.verify]
 kind = "command"
 command = "bash"
@@ -807,12 +863,13 @@ description = "helix modal editor (hx) + bundled tree-sitter runtime from the up
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/helix/hx\" ] && [ -d \"$M/.toolchains/helix/runtime\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/hx\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/helix/hx\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/helix/hx\" ] && [ -d \"$M/.toolchains/helix/runtime\" ] && [ -x \"$META_ROOT/usr/bin/hx\" ] && [ ! -L \"$META_ROOT/usr/bin/hx\" ] && grep -Fqx \"exec \\\"$M/.toolchains/helix/hx\\\" \\\"\\$@\\\"\" \"$META_ROOT/usr/bin/hx\""]
 
 [component.install]
 kind = "script"
 login_shell = true
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
@@ -834,9 +891,10 @@ rm -rf "$DEST"; install -d -m 755 "$DEST"
 install -m 755 "$SRC/hx" "$DEST/hx"
 cp -a "$SRC/runtime" "$DEST/runtime"
 install -d -m 755 "$META_ROOT/usr/bin"
-ln -sfn "$DEST/hx" "$META_ROOT/usr/bin/hx"
-'''
+envctl_frontdoor "$DEST/hx" "$META_ROOT/usr/bin/hx"
 
+
+'''
 [component.verify]
 kind = "command"
 command = "bash"
@@ -865,17 +923,18 @@ path_entries = ["$META_ROOT/usr/bin"]
 [[component]]
 id = "huggingface-cli"
 name = "HuggingFace CLI (meta-owned venv)"
-description = "huggingface_hub CLI in an isolated venv at .toolchains/huggingface, exposed as $META_ROOT/usr/bin/huggingface-cli (symlinked to the WORKING `hf` entry point; never `hf`, which collides with the handoff kernel). Repo: huggingface/huggingface_hub."
+description = "huggingface_hub CLI in an isolated venv at .toolchains/huggingface, exposed as $META_ROOT/usr/bin/huggingface-cli (wrapped to the WORKING `hf` entry point; never `hf`, which collides with the handoff kernel). Repo: huggingface/huggingface_hub."
 
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/huggingface/bin/hf\" ] && [ \"$(readlink -f \"$META_ROOT/usr/bin/huggingface-cli\" 2>/dev/null)\" = \"$(readlink -f \"$M/.toolchains/huggingface/bin/hf\")\" ]"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/huggingface/bin/hf\" ] && [ -x \"$META_ROOT/usr/bin/huggingface-cli\" ] && [ ! -L \"$META_ROOT/usr/bin/huggingface-cli\" ] && grep -Fqx \"exec \\\"$M/.toolchains/huggingface/bin/hf\\\" \\\"\\$@\\\"\" \"$META_ROOT/usr/bin/huggingface-cli\""]
 
 [component.install]
 kind = "script"
 login_shell = true
 script = '''
+envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/huggingface"
@@ -886,9 +945,10 @@ install -d -m 755 "$META_ROOT/usr/bin"
 # Expose the WORKING `hf` entry point under the classic, non-colliding name. The classic
 # `huggingface-cli` binary is a dead deprecation stub in huggingface_hub 1.x; `hf` itself is
 # NEVER symlinked (it collides with $META_ROOT/usr/bin/hf, the handoff kernel).
-ln -sfn "$DEST/bin/hf" "$META_ROOT/usr/bin/huggingface-cli"
-'''
+envctl_frontdoor "$DEST/bin/hf" "$META_ROOT/usr/bin/huggingface-cli"
 
+
+'''
 [component.verify]
 kind = "command"
 command = "bash"

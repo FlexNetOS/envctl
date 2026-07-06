@@ -1,0 +1,266 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-136_TECH_DEBT_LEDGER",
+  "title": "Technical Debt Ledger",
+  "generated_at": "2026-07-04T23:35:23+00:00",
+  "status": "complete",
+  "target": {
+    "target_id": "flexnetos-vs-lifeos",
+    "target_type": "mixed",
+    "primary_root": "/home/flexnetos/FlexNetOS",
+    "compare_root": "/home/flexnetos/lifeos",
+    "safety_mode": "approval-gated",
+    "max_auto_risk": "R2",
+    "descriptor_hash": "sha256:b3f653f9e9cda7991821687f041cb540ce3e4342bde03ef333aa0e72a6b42384"
+  },
+  "contract_row": {
+    "contract_row_id": "artifact:03-code-analysis-technical-debt-ledger-md",
+    "artifact_id": "03-code-analysis-technical-debt-ledger-md",
+    "title": "Technical Debt Ledger",
+    "required_path": "migration-artifacts/03-code-analysis/technical-debt-ledger.md",
+    "section": "03-code-analysis",
+    "artifact_type": "migration_artifact",
+    "format": "md",
+    "status": "required",
+    "source_refs": [
+      "source/codex-flexnetos-migration-prompt-package/expected-output/migration-artifacts-tree.md",
+      "source/previous-migration-artifact-context.md"
+    ],
+    "producer_task_id": "ART-136_TECH_DEBT_LEDGER",
+    "validators": [
+      "path_registered",
+      "evidence_or_status_recorded",
+      "linked_from_index"
+    ]
+  },
+  "inputs": {
+    "target_descriptor": "generated/envctl_target_registry.json",
+    "repo_scan": "generated/package_scan.json",
+    "envctl_database": "generated/envctl_migration_db_model.json",
+    "source_paths": [
+      "migration-artifacts/art-133_deprecation_map/deprecation-map.json",
+      "migration-artifacts/art-125_risk_register/risk-register.json",
+      "migration-artifacts/art-134_exception_inventory/exception-inventory.json",
+      "migration-artifacts/art-128_readiness_scorecard/readiness-scorecard.json",
+      "migration-artifacts/art-124_test_coverage/test-coverage-matrix.json",
+      "generated/art123_validation_reconciliation_report.json",
+      "generated/envctl_artifact_registry_report.json",
+      "generated/shared_protocol_validation_report.json"
+    ],
+    "source_counts": {
+      "deprecation_entries": 8,
+      "risk_rows": 7,
+      "exception_rows": 10,
+      "readiness_rows": 0,
+      "coverage_rows": 6,
+      "validation_phase_rows": 10
+    }
+  },
+  "classification_policy": {
+    "must_fix": "Blocks unit validation, release, cutover, security posture, or live operator correctness.",
+    "carry": "Known and owned debt that can safely move forward with evidence, owner, and exit gate.",
+    "delete": "Legacy or generated state that should not remain authoritative."
+  },
+  "summary": {
+    "debt_count": 11,
+    "classification_counts": {
+      "must_fix": 4,
+      "carry": 4,
+      "delete": 3
+    },
+    "priority_counts": {
+      "P0": 4,
+      "P1": 6,
+      "P2": 1
+    },
+    "owners": [
+      "artifact-agent",
+      "envctl-db-agent",
+      "envctl-runner-agent",
+      "flexnetos-adapter-agent",
+      "security-reproducibility-agent",
+      "shared-protocol-agent",
+      "target-registry-agent",
+      "validation-agent"
+    ],
+    "all_rows_have_evidence": true,
+    "all_rows_have_exit_gate": true
+  },
+  "debt": [
+    {
+      "debt_id": "DEBT-ART136-MUST-001",
+      "classification": "must_fix",
+      "area": "durable artifact registry replay",
+      "finding": "Artifact registry behavior is proven through package-local in-memory SQLite fixtures; durable deployment wiring could drift from the proof surface.",
+      "impact": "Final validation could accept generated files whose runtime registry path has not been replayed against the deployed envctl backing store.",
+      "owner": "envctl-db-agent",
+      "priority": "P0",
+      "decision": "Replay registry insertion, content hash, validation rows, and graph edge checks in the unit validation lane before release.",
+      "exit_gate": "VER-300_UNIT_VALIDATION",
+      "evidence_refs": [
+        "generated/envctl_artifact_registry_report.json",
+        "proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json",
+        "migration-artifacts/art-125_risk_register/risk-register.json"
+      ]
+    },
+    {
+      "debt_id": "DEBT-ART136-MUST-002",
+      "classification": "must_fix",
+      "area": "envctl to nu_plugin integration",
+      "finding": "Shared protocol records are validated, but the live envctl-to-nu_plugin run remains pending.",
+      "impact": "Operator views could diverge from envctl database state at the exact boundary used for approvals, replay, and artifact status.",
+      "owner": "shared-protocol-agent",
+      "priority": "P0",
+      "decision": "Complete the two-repo integration gate and keep protocol validation linked to final unit validation.",
+      "exit_gate": "REQ-041_TWO_REPO_INTEGRATION",
+      "evidence_refs": [
+        "migration-artifacts/art-124_test_coverage/test-coverage-matrix.json",
+        "generated/shared_protocol_validation_report.json",
+        "generated/nu_plugin_command_manifest.json"
+      ]
+    },
+    {
+      "debt_id": "DEBT-ART136-MUST-003",
+      "classification": "must_fix",
+      "area": "replay and rollback checks",
+      "finding": "Replay and rollback unit checks remain open while packet rollback plans already depend on file-scoped proof, heartbeat, log, and ledger cleanup.",
+      "impact": "Rollback could remove generated files while leaving proof or registry references behind.",
+      "owner": "validation-agent",
+      "priority": "P0",
+      "decision": "Finish rollback checkpoint, replay engine, and replay-run tasks before final completeness validation.",
+      "exit_gate": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS / REQ-027_ENVCTL_REPLAY_ENGINE / REQ-045_RUN_REPLAY",
+      "evidence_refs": [
+        "migration-artifacts/art-124_test_coverage/test-coverage-matrix.json",
+        "migration-artifacts/art-125_risk_register/risk-register.json",
+        "generated/execution_packets/ART-136_TECH_DEBT_LEDGER.json"
+      ]
+    },
+    {
+      "debt_id": "DEBT-ART136-MUST-004",
+      "classification": "must_fix",
+      "area": "security and evidence redaction",
+      "finding": "Blocked secret-bearing paths are correctly rejected by registry policy, so source context must stay summarized rather than copied into artifacts.",
+      "impact": "A future artifact generator could accidentally weaken the evidence boundary by registering sensitive path classes.",
+      "owner": "security-reproducibility-agent",
+      "priority": "P0",
+      "decision": "Keep blocked path checks in validation and require redacted summaries for IAM, secret, certificate, and key material evidence.",
+      "exit_gate": "VER-300_UNIT_VALIDATION",
+      "evidence_refs": [
+        "scripts/artifact_registry.py",
+        "docs/SECURITY_REDACTION.md",
+        "generated/security_redaction_validation_report.json"
+      ]
+    },
+    {
+      "debt_id": "DEBT-ART136-CARRY-001",
+      "classification": "carry",
+      "area": "external collector helper",
+      "finding": "The prior background scan helper is intentionally wrapped for adapter MVP continuity.",
+      "impact": "Native collectors will need later replacement work, but preserving the helper avoids blocking current artifact import.",
+      "owner": "flexnetos-adapter-agent",
+      "priority": "P1",
+      "decision": "Carry as adapter debt with operation/evidence wrapping until native collectors are implemented.",
+      "exit_gate": "post-MVP native collector replacement",
+      "evidence_refs": [
+        "migration-artifacts/art-133_deprecation_map/deprecation-map.json",
+        "prompts/STRATEGY_DECISION.md",
+        "prompts/IMPLEMENTATION_PHASES.md"
+      ]
+    },
+    {
+      "debt_id": "DEBT-ART136-CARRY-002",
+      "classification": "carry",
+      "area": "Codex background shell execution",
+      "finding": "Execution packets still use codex CLI background shell mode, wrapped by envctl run ledger and proof records.",
+      "impact": "Runtime tool availability and stdout log handling remain operational dependencies.",
+      "owner": "envctl-runner-agent",
+      "priority": "P1",
+      "decision": "Carry while preserving command hashes, redacted commands, logs, and proof evidence through envctl operation records.",
+      "exit_gate": "runner-native execution lane",
+      "evidence_refs": [
+        "generated/execution_packets/ART-136_TECH_DEBT_LEDGER.json",
+        "generated/envctl_run_ledger_report.json",
+        "proof_records/REQ-022_ENVCTL_RUN_LEDGER.proof.json"
+      ]
+    },
+    {
+      "debt_id": "DEBT-ART136-CARRY-003",
+      "classification": "carry",
+      "area": "SQLite portability",
+      "finding": "SQLite is preserved as the package-local proof fixture while alternate durable backends still need compatible migrations.",
+      "impact": "Portability work remains visible but should not block package-local validation.",
+      "owner": "envctl-db-agent",
+      "priority": "P1",
+      "decision": "Carry as backend portability debt and keep migrations, views, unique constraints, and upsert semantics covered by schema tests.",
+      "exit_gate": "durable backend compatibility proof",
+      "evidence_refs": [
+        "generated/envctl_migration_db_model.json",
+        "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json",
+        "migration-artifacts/art-133_deprecation_map/deprecation-map.json"
+      ]
+    },
+    {
+      "debt_id": "DEBT-ART136-CARRY-004",
+      "classification": "carry",
+      "area": "performance baseline",
+      "finding": "Performance thresholds for migration application, registry insertion, proof/status rebuild, and plugin status reads are planned but not baselined.",
+      "impact": "Release validation can prove correctness before it proves timing envelopes.",
+      "owner": "validation-agent",
+      "priority": "P2",
+      "decision": "Carry as validation hardening debt unless release gates require timing thresholds.",
+      "exit_gate": "performance validation baseline artifact",
+      "evidence_refs": [
+        "migration-artifacts/art-124_test_coverage/test-coverage-matrix.json",
+        "generated/status_from_proofs.json",
+        "generated/live_visuals.json"
+      ]
+    },
+    {
+      "debt_id": "DEBT-ART136-DELETE-001",
+      "classification": "delete",
+      "area": "generated bytecode cache",
+      "finding": "The prior source package manifest carries CPython bytecode cache files under helper paths.",
+      "impact": "Generated cache files can masquerade as migration source and produce noisy diffs or stale compatibility assumptions.",
+      "owner": "artifact-agent",
+      "priority": "P1",
+      "decision": "Delete from authoritative migration source and regenerate from helper scripts when needed.",
+      "exit_gate": "package cleanup pass",
+      "evidence_refs": [
+        "migration-artifacts/art-133_deprecation_map/deprecation-map.json",
+        "source/codex-flexnetos-migration-prompt-package/PACKAGE_MANIFEST.json"
+      ]
+    },
+    {
+      "debt_id": "DEBT-ART136-DELETE-002",
+      "classification": "delete",
+      "area": "prompt-only artifact state",
+      "finding": "Markdown-only artifact status has been replaced by envctl artifact rows, hashes, validation records, and graph links.",
+      "impact": "Keeping prompt-only status as a source of truth would split completion semantics from registry/proof evidence.",
+      "owner": "envctl-db-agent",
+      "priority": "P1",
+      "decision": "Delete as authoritative state; keep only as historical source material when referenced by provenance.",
+      "exit_gate": "contract manifest and registry proof remain authoritative",
+      "evidence_refs": [
+        "migration-artifacts/art-133_deprecation_map/deprecation-map.json",
+        "generated/envctl_migration_db_model.json",
+        "proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json"
+      ]
+    },
+    {
+      "debt_id": "DEBT-ART136-DELETE-003",
+      "classification": "delete",
+      "area": "hardcoded comparison roots",
+      "finding": "Prior prompts carried hardcoded FlexNetOS/lifeos comparison path assumptions.",
+      "impact": "Hardcoded roots bypass descriptor-driven safety and can write or scan outside the intended target policy.",
+      "owner": "target-registry-agent",
+      "priority": "P1",
+      "decision": "Delete as active configuration and use target descriptor roots plus filesystem boundary checks.",
+      "exit_gate": "REQ-200 target descriptor and REQ-042 filesystem bounds stay linked",
+      "evidence_refs": [
+        "migration-artifacts/art-133_deprecation_map/deprecation-map.json",
+        "migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+        "generated/filesystem_boundary_validation_report.json"
+      ]
+    }
+  ]
+}

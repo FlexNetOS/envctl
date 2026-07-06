@@ -4,7 +4,7 @@
 //! semantic status colors, and the egui `Style`/`Visuals` tuning. Screens pull
 //! the semantic constants from here so color usage stays consistent.
 use eframe::egui::{
-    self, Color32, FontFamily, FontId, Margin, Rounding, Shadow, Stroke, TextStyle,
+    self, Color32, CornerRadius, FontFamily, FontId, Margin, Shadow, Stroke, TextStyle,
 };
 
 // ── Surfaces ────────────────────────────────────────────────────────────────
@@ -73,8 +73,8 @@ pub fn apply(ctx: &egui::Context) {
     let s = &mut style.spacing;
     s.item_spacing = egui::vec2(8.0, 8.0);
     s.button_padding = egui::vec2(12.0, 6.0);
-    s.menu_margin = Margin::same(8.0);
-    s.window_margin = Margin::same(12.0);
+    s.menu_margin = Margin::same(8);
+    s.window_margin = Margin::same(12);
     s.indent = 18.0;
     s.interact_size.y = 26.0;
     s.scroll.bar_width = 10.0;
@@ -92,55 +92,55 @@ pub fn apply(ctx: &egui::Context) {
     v.error_fg_color = DANGER;
     v.hyperlink_color = ACCENT;
 
-    let round = Rounding::same(8.0);
-    v.window_rounding = round;
-    v.menu_rounding = round;
-    v.window_stroke = Stroke::new(1.0, BORDER);
+    let round = CornerRadius::same(8);
+    v.window_corner_radius = round;
+    v.menu_corner_radius = round;
+    v.window_stroke = Stroke::new(1.0_f32, BORDER);
     v.window_shadow = Shadow {
-        offset: egui::vec2(0.0, 6.0),
-        blur: 18.0,
-        spread: 0.0,
+        offset: [0, 6],
+        blur: 18,
+        spread: 0,
         color: Color32::from_black_alpha(120),
     };
     v.popup_shadow = v.window_shadow;
 
     // Selection (used by selectable_value / text selection).
     v.selection.bg_fill = ACCENT_DIM;
-    v.selection.stroke = Stroke::new(1.0, ACCENT);
+    v.selection.stroke = Stroke::new(1.0_f32, ACCENT);
 
     // Widget states.
     let w = &mut v.widgets;
     w.noninteractive.bg_fill = SURFACE;
     w.noninteractive.weak_bg_fill = SURFACE;
-    w.noninteractive.bg_stroke = Stroke::new(1.0, BORDER);
-    w.noninteractive.fg_stroke = Stroke::new(1.0, TEXT_MUTED);
-    w.noninteractive.rounding = round;
+    w.noninteractive.bg_stroke = Stroke::new(1.0_f32, BORDER);
+    w.noninteractive.fg_stroke = Stroke::new(1.0_f32, TEXT_MUTED);
+    w.noninteractive.corner_radius = round;
 
     w.inactive.bg_fill = SURFACE;
     w.inactive.weak_bg_fill = SURFACE;
-    w.inactive.bg_stroke = Stroke::new(1.0, BORDER);
-    w.inactive.fg_stroke = Stroke::new(1.0, TEXT);
-    w.inactive.rounding = round;
+    w.inactive.bg_stroke = Stroke::new(1.0_f32, BORDER);
+    w.inactive.fg_stroke = Stroke::new(1.0_f32, TEXT);
+    w.inactive.corner_radius = round;
 
     w.hovered.bg_fill = SURFACE_HOVER;
     w.hovered.weak_bg_fill = SURFACE_HOVER;
-    w.hovered.bg_stroke = Stroke::new(1.0, ACCENT);
-    w.hovered.fg_stroke = Stroke::new(1.5, TEXT);
-    w.hovered.rounding = round;
+    w.hovered.bg_stroke = Stroke::new(1.0_f32, ACCENT);
+    w.hovered.fg_stroke = Stroke::new(1.5_f32, TEXT);
+    w.hovered.corner_radius = round;
     w.hovered.expansion = 1.0;
 
     w.active.bg_fill = ACCENT_DIM;
     w.active.weak_bg_fill = ACCENT_DIM;
-    w.active.bg_stroke = Stroke::new(1.0, ACCENT);
-    w.active.fg_stroke = Stroke::new(1.5, TEXT);
-    w.active.rounding = round;
+    w.active.bg_stroke = Stroke::new(1.0_f32, ACCENT);
+    w.active.fg_stroke = Stroke::new(1.5_f32, TEXT);
+    w.active.corner_radius = round;
     w.active.expansion = 1.0;
 
     w.open.bg_fill = SURFACE;
     w.open.weak_bg_fill = SURFACE;
-    w.open.bg_stroke = Stroke::new(1.0, BORDER);
-    w.open.fg_stroke = Stroke::new(1.0, TEXT);
-    w.open.rounding = round;
+    w.open.bg_stroke = Stroke::new(1.0_f32, BORDER);
+    w.open.fg_stroke = Stroke::new(1.0_f32, TEXT);
+    w.open.corner_radius = round;
 
     v.slider_trailing_fill = true;
     style.visuals = v;
@@ -150,21 +150,21 @@ pub fn apply(ctx: &egui::Context) {
 
 /// A framed "card" surface for grouped content (GPU cards, forms).
 pub fn card() -> egui::Frame {
-    egui::Frame::none()
+    egui::Frame::NONE
         .fill(SURFACE)
-        .stroke(Stroke::new(1.0, BORDER))
-        .rounding(Rounding::same(10.0))
-        .inner_margin(Margin::same(14.0))
-        .outer_margin(Margin::symmetric(0.0, 4.0))
+        .stroke(Stroke::new(1.0_f32, BORDER))
+        .corner_radius(CornerRadius::same(10))
+        .inner_margin(Margin::same(14))
+        .outer_margin(Margin::symmetric(0, 4))
 }
 
 /// A subtle inset panel (used for the form / settings).
 pub fn inset() -> egui::Frame {
-    egui::Frame::none()
+    egui::Frame::NONE
         .fill(PANEL)
-        .stroke(Stroke::new(1.0, BORDER))
-        .rounding(Rounding::same(10.0))
-        .inner_margin(Margin::same(16.0))
+        .stroke(Stroke::new(1.0_f32, BORDER))
+        .corner_radius(CornerRadius::same(10))
+        .inner_margin(Margin::same(16))
 }
 
 /// Section heading text style helper.

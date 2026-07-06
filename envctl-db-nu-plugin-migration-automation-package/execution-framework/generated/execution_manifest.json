@@ -1,0 +1,870 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-05T05:39:53+00:00",
+  "task_count": 80,
+  "packet_count": 80,
+  "packets": [
+    {
+      "task_id": "EF-001_SCAN_PACKAGE",
+      "packet_uri": "generated/execution_packets/EF-001_SCAN_PACKAGE.json",
+      "phase": "00-framework",
+      "owner_lane": "lane_g_history_scan",
+      "parallel_group": "framework_bootstrap",
+      "depends_on": []
+    },
+    {
+      "task_id": "EF-002_GAP_REPORT",
+      "packet_uri": "generated/execution_packets/EF-002_GAP_REPORT.json",
+      "phase": "00-framework",
+      "owner_lane": "lane_a_planning",
+      "parallel_group": "framework_bootstrap",
+      "depends_on": [
+        "EF-001_SCAN_PACKAGE"
+      ]
+    },
+    {
+      "task_id": "EF-003_APPLY_FRAMEWORK",
+      "packet_uri": "generated/execution_packets/EF-003_APPLY_FRAMEWORK.json",
+      "phase": "00-framework",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "framework_bootstrap",
+      "depends_on": [
+        "EF-002_GAP_REPORT"
+      ]
+    },
+    {
+      "task_id": "EF-004_GENERATE_TASK_GRAPH",
+      "packet_uri": "generated/execution_packets/EF-004_GENERATE_TASK_GRAPH.json",
+      "phase": "00-framework",
+      "owner_lane": "lane_a_planning",
+      "parallel_group": "framework_bootstrap",
+      "depends_on": [
+        "EF-003_APPLY_FRAMEWORK"
+      ]
+    },
+    {
+      "task_id": "EF-005_VALIDATE_TASK_GRAPH",
+      "packet_uri": "generated/execution_packets/EF-005_VALIDATE_TASK_GRAPH.json",
+      "phase": "00-framework",
+      "owner_lane": "lane_e_verification",
+      "parallel_group": "framework_verification",
+      "depends_on": [
+        "EF-004_GENERATE_TASK_GRAPH"
+      ]
+    },
+    {
+      "task_id": "EF-006_TASK_GRAPH_TO_PACKETS",
+      "packet_uri": "generated/execution_packets/EF-006_TASK_GRAPH_TO_PACKETS.json",
+      "phase": "00-framework",
+      "owner_lane": "lane_e_verification",
+      "parallel_group": "framework_verification",
+      "depends_on": [
+        "EF-005_VALIDATE_TASK_GRAPH"
+      ]
+    },
+    {
+      "task_id": "EF-007_GOAL_LOOP",
+      "packet_uri": "generated/execution_packets/EF-007_GOAL_LOOP.json",
+      "phase": "00-framework",
+      "owner_lane": "lane_e_verification",
+      "parallel_group": "framework_verification",
+      "depends_on": [
+        "EF-006_TASK_GRAPH_TO_PACKETS"
+      ]
+    },
+    {
+      "task_id": "EF-008_VERIFY_HISTORY_COMPLETENESS",
+      "packet_uri": "generated/execution_packets/EF-008_VERIFY_HISTORY_COMPLETENESS.json",
+      "phase": "00-framework",
+      "owner_lane": "lane_e_verification",
+      "parallel_group": "framework_verification",
+      "depends_on": [
+        "EF-007_GOAL_LOOP"
+      ]
+    },
+    {
+      "task_id": "REQ-010_CONTRACT_LOCK",
+      "packet_uri": "generated/execution_packets/REQ-010_CONTRACT_LOCK.json",
+      "phase": "01-contract",
+      "owner_lane": "lane_a_planning",
+      "parallel_group": "contract",
+      "depends_on": [
+        "EF-008_VERIFY_HISTORY_COMPLETENESS"
+      ]
+    },
+    {
+      "task_id": "REQ-020_ENVCTL_DB_SCHEMA",
+      "packet_uri": "generated/execution_packets/REQ-020_ENVCTL_DB_SCHEMA.json",
+      "phase": "02-envctl-db",
+      "owner_lane": "lane_b_repo_a",
+      "parallel_group": "shared_protocol",
+      "depends_on": [
+        "REQ-010_CONTRACT_LOCK"
+      ]
+    },
+    {
+      "task_id": "REQ-021_ENVCTL_TARGET_REGISTRY",
+      "packet_uri": "generated/execution_packets/REQ-021_ENVCTL_TARGET_REGISTRY.json",
+      "phase": "02-envctl-db",
+      "owner_lane": "lane_b_repo_a",
+      "parallel_group": "envctl_db_parallel",
+      "depends_on": [
+        "REQ-020_ENVCTL_DB_SCHEMA"
+      ]
+    },
+    {
+      "task_id": "REQ-022_ENVCTL_RUN_LEDGER",
+      "packet_uri": "generated/execution_packets/REQ-022_ENVCTL_RUN_LEDGER.json",
+      "phase": "02-envctl-db",
+      "owner_lane": "lane_b_repo_a",
+      "parallel_group": "envctl_db_parallel",
+      "depends_on": [
+        "REQ-020_ENVCTL_DB_SCHEMA"
+      ]
+    },
+    {
+      "task_id": "REQ-023_ENVCTL_OPERATION_STATE",
+      "packet_uri": "generated/execution_packets/REQ-023_ENVCTL_OPERATION_STATE.json",
+      "phase": "02-envctl-db",
+      "owner_lane": "lane_b_repo_a",
+      "parallel_group": "envctl_db_parallel",
+      "depends_on": [
+        "REQ-020_ENVCTL_DB_SCHEMA"
+      ]
+    },
+    {
+      "task_id": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+      "packet_uri": "generated/execution_packets/REQ-024_ENVCTL_ARTIFACT_REGISTRY.json",
+      "phase": "02-envctl-db",
+      "owner_lane": "lane_b_repo_a",
+      "parallel_group": "envctl_db_parallel",
+      "depends_on": [
+        "REQ-020_ENVCTL_DB_SCHEMA"
+      ]
+    },
+    {
+      "task_id": "REQ-025_ENVCTL_VALIDATION_EVIDENCE",
+      "packet_uri": "generated/execution_packets/REQ-025_ENVCTL_VALIDATION_EVIDENCE.json",
+      "phase": "02-envctl-db",
+      "owner_lane": "lane_b_repo_a",
+      "parallel_group": "envctl_db_parallel",
+      "depends_on": [
+        "REQ-020_ENVCTL_DB_SCHEMA"
+      ]
+    },
+    {
+      "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+      "packet_uri": "generated/execution_packets/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.json",
+      "phase": "02-envctl-db",
+      "owner_lane": "lane_b_repo_a",
+      "parallel_group": "envctl_db_parallel",
+      "depends_on": [
+        "REQ-020_ENVCTL_DB_SCHEMA"
+      ]
+    },
+    {
+      "task_id": "REQ-027_ENVCTL_REPLAY_ENGINE",
+      "packet_uri": "generated/execution_packets/REQ-027_ENVCTL_REPLAY_ENGINE.json",
+      "phase": "02-envctl-db",
+      "owner_lane": "lane_b_repo_a",
+      "parallel_group": "envctl_integration",
+      "depends_on": [
+        "REQ-021_ENVCTL_TARGET_REGISTRY",
+        "REQ-022_ENVCTL_RUN_LEDGER",
+        "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
+      ]
+    },
+    {
+      "task_id": "REQ-028_ENVCTL_AGENT_CONTROL_API",
+      "packet_uri": "generated/execution_packets/REQ-028_ENVCTL_AGENT_CONTROL_API.json",
+      "phase": "02-envctl-db",
+      "owner_lane": "lane_b_repo_a",
+      "parallel_group": "envctl_integration",
+      "depends_on": [
+        "REQ-023_ENVCTL_OPERATION_STATE",
+        "REQ-025_ENVCTL_VALIDATION_EVIDENCE"
+      ]
+    },
+    {
+      "task_id": "REQ-030_PLUGIN_PROTOCOL_MANIFEST",
+      "packet_uri": "generated/execution_packets/REQ-030_PLUGIN_PROTOCOL_MANIFEST.json",
+      "phase": "03-nu-plugin",
+      "owner_lane": "lane_c_repo_b",
+      "parallel_group": "shared_protocol",
+      "depends_on": [
+        "REQ-010_CONTRACT_LOCK"
+      ]
+    },
+    {
+      "task_id": "REQ-031_PLUGIN_COMMAND_SURFACE",
+      "packet_uri": "generated/execution_packets/REQ-031_PLUGIN_COMMAND_SURFACE.json",
+      "phase": "03-nu-plugin",
+      "owner_lane": "lane_c_repo_b",
+      "parallel_group": "nu_plugin_parallel",
+      "depends_on": [
+        "REQ-030_PLUGIN_PROTOCOL_MANIFEST"
+      ]
+    },
+    {
+      "task_id": "REQ-032_PLUGIN_LIVE_VISUALS",
+      "packet_uri": "generated/execution_packets/REQ-032_PLUGIN_LIVE_VISUALS.json",
+      "phase": "03-nu-plugin",
+      "owner_lane": "lane_c_repo_b",
+      "parallel_group": "nu_plugin_parallel",
+      "depends_on": [
+        "REQ-030_PLUGIN_PROTOCOL_MANIFEST"
+      ]
+    },
+    {
+      "task_id": "REQ-033_PLUGIN_HUMAN_APPROVAL",
+      "packet_uri": "generated/execution_packets/REQ-033_PLUGIN_HUMAN_APPROVAL.json",
+      "phase": "03-nu-plugin",
+      "owner_lane": "lane_c_repo_b",
+      "parallel_group": "nu_plugin_parallel",
+      "depends_on": [
+        "REQ-030_PLUGIN_PROTOCOL_MANIFEST"
+      ]
+    },
+    {
+      "task_id": "REQ-034_PLUGIN_STATUS_STREAMS",
+      "packet_uri": "generated/execution_packets/REQ-034_PLUGIN_STATUS_STREAMS.json",
+      "phase": "03-nu-plugin",
+      "owner_lane": "lane_c_repo_b",
+      "parallel_group": "nu_plugin_parallel",
+      "depends_on": [
+        "REQ-030_PLUGIN_PROTOCOL_MANIFEST"
+      ]
+    },
+    {
+      "task_id": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+      "packet_uri": "generated/execution_packets/REQ-040_SHARED_PROTOCOL_SCHEMAS.json",
+      "phase": "04-shared",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "shared_protocol",
+      "depends_on": [
+        "REQ-010_CONTRACT_LOCK"
+      ]
+    },
+    {
+      "task_id": "REQ-041_TWO_REPO_INTEGRATION",
+      "packet_uri": "generated/execution_packets/REQ-041_TWO_REPO_INTEGRATION.json",
+      "phase": "04-shared",
+      "owner_lane": "lane_e_verification",
+      "parallel_group": "integration",
+      "depends_on": [
+        "REQ-027_ENVCTL_REPLAY_ENGINE",
+        "REQ-028_ENVCTL_AGENT_CONTROL_API",
+        "REQ-031_PLUGIN_COMMAND_SURFACE",
+        "REQ-032_PLUGIN_LIVE_VISUALS",
+        "REQ-033_PLUGIN_HUMAN_APPROVAL",
+        "REQ-034_PLUGIN_STATUS_STREAMS",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "REQ-042_FILESYSTEM_BOUNDS",
+      "packet_uri": "generated/execution_packets/REQ-042_FILESYSTEM_BOUNDS.json",
+      "phase": "04-shared",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "filesystem_parallel",
+      "depends_on": [
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "REQ-043_SECURITY_REDACTION",
+      "packet_uri": "generated/execution_packets/REQ-043_SECURITY_REDACTION.json",
+      "phase": "04-shared",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "filesystem_parallel",
+      "depends_on": [
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "REQ-044_INSTALL_BOOTSTRAP",
+      "packet_uri": "generated/execution_packets/REQ-044_INSTALL_BOOTSTRAP.json",
+      "phase": "04-shared",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "filesystem_parallel",
+      "depends_on": [
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "REQ-045_RUN_REPLAY",
+      "packet_uri": "generated/execution_packets/REQ-045_RUN_REPLAY.json",
+      "phase": "04-shared",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "filesystem_parallel",
+      "depends_on": [
+        "REQ-044_INSTALL_BOOTSTRAP",
+        "REQ-027_ENVCTL_REPLAY_ENGINE"
+      ]
+    },
+    {
+      "task_id": "ART-100_SYSTEM_INVENTORY",
+      "packet_uri": "generated/execution_packets/ART-100_SYSTEM_INVENTORY.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_a",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-101_DIRECTORY_TREE",
+      "packet_uri": "generated/execution_packets/ART-101_DIRECTORY_TREE.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_a",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-102_REPOSITORY_MAP",
+      "packet_uri": "generated/execution_packets/ART-102_REPOSITORY_MAP.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_a",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-103_SERVICE_DEP_GRAPH",
+      "packet_uri": "generated/execution_packets/ART-103_SERVICE_DEP_GRAPH.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_a",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-104_TOOLCHAIN_TREE",
+      "packet_uri": "generated/execution_packets/ART-104_TOOLCHAIN_TREE.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_a",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-105_PACKAGE_LIB_GRAPH",
+      "packet_uri": "generated/execution_packets/ART-105_PACKAGE_LIB_GRAPH.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_a",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-106_RUNTIME_DEP_MAP",
+      "packet_uri": "generated/execution_packets/ART-106_RUNTIME_DEP_MAP.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_a",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-107_DATA_FLOW_GRAPH",
+      "packet_uri": "generated/execution_packets/ART-107_DATA_FLOW_GRAPH.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_a",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-108_DB_SCHEMA_MAP",
+      "packet_uri": "generated/execution_packets/ART-108_DB_SCHEMA_MAP.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_a",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-109_DATA_LINEAGE",
+      "packet_uri": "generated/execution_packets/ART-109_DATA_LINEAGE.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_a",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-110_API_CATALOG",
+      "packet_uri": "generated/execution_packets/ART-110_API_CATALOG.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_a",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-111_EVENT_MAP",
+      "packet_uri": "generated/execution_packets/ART-111_EVENT_MAP.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_a",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-112_CODE_OWNERSHIP",
+      "packet_uri": "generated/execution_packets/ART-112_CODE_OWNERSHIP.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_b",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-113_DEBUG_CODE_MAP",
+      "packet_uri": "generated/execution_packets/ART-113_DEBUG_CODE_MAP.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_b",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-114_ENV_CONFIG_MATRIX",
+      "packet_uri": "generated/execution_packets/ART-114_ENV_CONFIG_MATRIX.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_b",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-115_CONFIG_INVENTORY",
+      "packet_uri": "generated/execution_packets/ART-115_CONFIG_INVENTORY.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_b",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-116_INFRA_TOPOLOGY",
+      "packet_uri": "generated/execution_packets/ART-116_INFRA_TOPOLOGY.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_b",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-117_IAM_MATRIX",
+      "packet_uri": "generated/execution_packets/ART-117_IAM_MATRIX.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_b",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-118_OBSERVABILITY",
+      "packet_uri": "generated/execution_packets/ART-118_OBSERVABILITY.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_b",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-119_BUSINESS_PROCESS",
+      "packet_uri": "generated/execution_packets/ART-119_BUSINESS_PROCESS.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_b",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-120_WAVE_PLAN",
+      "packet_uri": "generated/execution_packets/ART-120_WAVE_PLAN.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_b",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-121_CUTOVER",
+      "packet_uri": "generated/execution_packets/ART-121_CUTOVER.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_b",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+        "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
+      ]
+    },
+    {
+      "task_id": "ART-122_ROLLBACK",
+      "packet_uri": "generated/execution_packets/ART-122_ROLLBACK.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_b",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+        "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS"
+      ]
+    },
+    {
+      "task_id": "ART-123_VALIDATION_RECONCILIATION",
+      "packet_uri": "generated/execution_packets/ART-123_VALIDATION_RECONCILIATION.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_b",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+        "REQ-025_ENVCTL_VALIDATION_EVIDENCE"
+      ]
+    },
+    {
+      "task_id": "ART-124_TEST_COVERAGE",
+      "packet_uri": "generated/execution_packets/ART-124_TEST_COVERAGE.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_c",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+        "REQ-025_ENVCTL_VALIDATION_EVIDENCE"
+      ]
+    },
+    {
+      "task_id": "ART-125_RISK_REGISTER",
+      "packet_uri": "generated/execution_packets/ART-125_RISK_REGISTER.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_c",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-126_DECISION_LOG",
+      "packet_uri": "generated/execution_packets/ART-126_DECISION_LOG.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_c",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-127_BLAST_RADIUS",
+      "packet_uri": "generated/execution_packets/ART-127_BLAST_RADIUS.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_c",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-128_READINESS_SCORECARD",
+      "packet_uri": "generated/execution_packets/ART-128_READINESS_SCORECARD.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_c",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-129_BUSINESS_CAPABILITY",
+      "packet_uri": "generated/execution_packets/ART-129_BUSINESS_CAPABILITY.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_c",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-130_SHADOW_TRAFFIC",
+      "packet_uri": "generated/execution_packets/ART-130_SHADOW_TRAFFIC.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_c",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-131_GOLDEN_DATASET",
+      "packet_uri": "generated/execution_packets/ART-131_GOLDEN_DATASET.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_c",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-132_PARITY_DASHBOARD",
+      "packet_uri": "generated/execution_packets/ART-132_PARITY_DASHBOARD.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_c",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+        "REQ-025_ENVCTL_VALIDATION_EVIDENCE"
+      ]
+    },
+    {
+      "task_id": "ART-133_DEPRECATION_MAP",
+      "packet_uri": "generated/execution_packets/ART-133_DEPRECATION_MAP.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_c",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-134_EXCEPTION_INVENTORY",
+      "packet_uri": "generated/execution_packets/ART-134_EXCEPTION_INVENTORY.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_c",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-135_RACI",
+      "packet_uri": "generated/execution_packets/ART-135_RACI.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_c",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "ART-136_TECH_DEBT_LEDGER",
+      "packet_uri": "generated/execution_packets/ART-136_TECH_DEBT_LEDGER.json",
+      "phase": "05-artifacts",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "artifact_generation_c",
+      "depends_on": [
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "REQ-200_FLEXNETOS_TARGET_DESCRIPTOR",
+      "packet_uri": "generated/execution_packets/REQ-200_FLEXNETOS_TARGET_DESCRIPTOR.json",
+      "phase": "06-flexnetos",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "flexnetos",
+      "depends_on": [
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS"
+      ]
+    },
+    {
+      "task_id": "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+      "packet_uri": "generated/execution_packets/REQ-201_FLEXNETOS_LIFEOS_COMPARISON.json",
+      "phase": "06-flexnetos",
+      "owner_lane": "lane_d_filesystem",
+      "parallel_group": "flexnetos",
+      "depends_on": [
+        "REQ-200_FLEXNETOS_TARGET_DESCRIPTOR",
+        "ART-101_DIRECTORY_TREE",
+        "ART-102_REPOSITORY_MAP",
+        "ART-103_SERVICE_DEP_GRAPH",
+        "ART-113_DEBUG_CODE_MAP"
+      ]
+    },
+    {
+      "task_id": "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+      "packet_uri": "generated/execution_packets/REQ-202_FLEXNETOS_ADAPTER_RECIPE.json",
+      "phase": "06-flexnetos",
+      "owner_lane": "lane_b_repo_a",
+      "parallel_group": "flexnetos",
+      "depends_on": [
+        "REQ-201_FLEXNETOS_LIFEOS_COMPARISON",
+        "REQ-027_ENVCTL_REPLAY_ENGINE"
+      ]
+    },
+    {
+      "task_id": "VER-300_UNIT_VALIDATION",
+      "packet_uri": "generated/execution_packets/VER-300_UNIT_VALIDATION.json",
+      "phase": "07-verification",
+      "owner_lane": "lane_e_verification",
+      "parallel_group": "verification",
+      "depends_on": [
+        "REQ-041_TWO_REPO_INTEGRATION",
+        "REQ-202_FLEXNETOS_ADAPTER_RECIPE",
+        "ART-123_VALIDATION_RECONCILIATION"
+      ]
+    },
+    {
+      "task_id": "VER-301_SQL_SCHEMA_TEST",
+      "packet_uri": "generated/execution_packets/VER-301_SQL_SCHEMA_TEST.json",
+      "phase": "07-verification",
+      "owner_lane": "lane_e_verification",
+      "parallel_group": "verification",
+      "depends_on": [
+        "VER-300_UNIT_VALIDATION"
+      ]
+    },
+    {
+      "task_id": "VER-302_PACKET_SCHEMA_VALIDATION",
+      "packet_uri": "generated/execution_packets/VER-302_PACKET_SCHEMA_VALIDATION.json",
+      "phase": "07-verification",
+      "owner_lane": "lane_e_verification",
+      "parallel_group": "verification",
+      "depends_on": [
+        "VER-301_SQL_SCHEMA_TEST",
+        "REQ-042_FILESYSTEM_BOUNDS",
+        "REQ-043_SECURITY_REDACTION"
+      ]
+    },
+    {
+      "task_id": "VER-303_GOAL_LOOP_COMPUTE",
+      "packet_uri": "generated/execution_packets/VER-303_GOAL_LOOP_COMPUTE.json",
+      "phase": "07-verification",
+      "owner_lane": "lane_e_verification",
+      "parallel_group": "verification",
+      "depends_on": [
+        "VER-302_PACKET_SCHEMA_VALIDATION",
+        "REQ-045_RUN_REPLAY"
+      ]
+    },
+    {
+      "task_id": "VER-304_FINAL_COMPLETENESS",
+      "packet_uri": "generated/execution_packets/VER-304_FINAL_COMPLETENESS.json",
+      "phase": "07-verification",
+      "owner_lane": "lane_e_verification",
+      "parallel_group": "verification",
+      "depends_on": [
+        "VER-303_GOAL_LOOP_COMPUTE"
+      ]
+    },
+    {
+      "task_id": "REL-400_PACKAGE_ARCHIVE",
+      "packet_uri": "generated/execution_packets/REL-400_PACKAGE_ARCHIVE.json",
+      "phase": "08-release",
+      "owner_lane": "lane_f_release",
+      "parallel_group": "release",
+      "depends_on": [
+        "VER-304_FINAL_COMPLETENESS"
+      ]
+    },
+    {
+      "task_id": "REL-401_HANDOFF",
+      "packet_uri": "generated/execution_packets/REL-401_HANDOFF.json",
+      "phase": "08-release",
+      "owner_lane": "lane_f_release",
+      "parallel_group": "release",
+      "depends_on": [
+        "EF-008_VERIFY_HISTORY_COMPLETENESS",
+        "REL-400_PACKAGE_ARCHIVE"
+      ]
+    },
+    {
+      "task_id": "MAINT-500_README_NAV_BACKTRACE",
+      "packet_uri": "generated/execution_packets/MAINT-500_README_NAV_BACKTRACE.json",
+      "phase": "09-drive-maintenance",
+      "owner_lane": "lane_e_verification",
+      "parallel_group": "drive_live_maintenance",
+      "depends_on": [
+        "EF-008_VERIFY_HISTORY_COMPLETENESS"
+      ]
+    },
+    {
+      "task_id": "MAINT-501_RESTORE_PROOF_TEMPLATE",
+      "packet_uri": "generated/execution_packets/MAINT-501_RESTORE_PROOF_TEMPLATE.json",
+      "phase": "09-drive-maintenance",
+      "owner_lane": "lane_e_verification",
+      "parallel_group": "drive_live_maintenance",
+      "depends_on": [
+        "EF-008_VERIFY_HISTORY_COMPLETENESS"
+      ]
+    },
+    {
+      "task_id": "MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC",
+      "packet_uri": "generated/execution_packets/MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC.json",
+      "phase": "09-drive-maintenance",
+      "owner_lane": "lane_e_verification",
+      "parallel_group": "drive_live_maintenance",
+      "depends_on": [
+        "MAINT-500_README_NAV_BACKTRACE",
+        "MAINT-501_RESTORE_PROOF_TEMPLATE"
+      ]
+    },
+    {
+      "task_id": "MAINT-503_CODEX_FINAL_PROMPT",
+      "packet_uri": "generated/execution_packets/MAINT-503_CODEX_FINAL_PROMPT.json",
+      "phase": "09-drive-maintenance",
+      "owner_lane": "lane_e_verification",
+      "parallel_group": "drive_live_maintenance",
+      "depends_on": [
+        "MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC"
+      ]
+    }
+  ]
+}

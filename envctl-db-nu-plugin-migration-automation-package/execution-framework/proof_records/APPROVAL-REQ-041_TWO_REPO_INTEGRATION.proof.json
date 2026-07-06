@@ -1,0 +1,38 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "APPROVAL-REQ-041_TWO_REPO_INTEGRATION",
+  "status": "completed",
+  "started_at": "2026-07-05T05:09:58+00:00",
+  "completed_at": "2026-07-05T05:09:58+00:00",
+  "actor": "agent-approval-gate",
+  "helper_id": "helper-agent-approval-01",
+  "model_tag": "gpt-5.5",
+  "repo_path": "execution-framework",
+  "files_changed": [
+    "execution-framework/approvals/REQ-041_TWO_REPO_INTEGRATION.agent_approval.json",
+    "execution-framework/reviews/GPT55_REQ-041_TWO_REPO_INTEGRATION_APPROVAL_REVIEW.md"
+  ],
+  "commands_run": [
+    "python3 scripts/agent_approval_gate.py ..."
+  ],
+  "verification_output": {
+    "decision": "approved",
+    "reviewer": "gpt-5.5-fallback",
+    "model": "gpt-5.5",
+    "review_artifact": "reviews/GPT55_REQ-041_TWO_REPO_INTEGRATION_APPROVAL_REVIEW.md",
+    "approval_artifact": "approvals/REQ-041_TWO_REPO_INTEGRATION.agent_approval.json",
+    "fallback_reason": "weave reviewer path unavailable in PATH and prior Claude local review artifacts were empty; using GPT-5.5 fallback per package approval protocol."
+  },
+  "checksums": {
+    "execution-framework/approvals/REQ-041_TWO_REPO_INTEGRATION.agent_approval.json": "11af5e9ea8e4044ef964937cac2d3bd467bb75ca9298534ac35bc6a1d07a2d87",
+    "execution-framework/reviews/GPT55_REQ-041_TWO_REPO_INTEGRATION_APPROVAL_REVIEW.md": "568071ab590b6c5f6d4fcb777e6f8193de0a304e0f3dbfecc8783781aacc8ab0"
+  },
+  "logs_uri": "logs/APPROVAL-REQ-041_TWO_REPO_INTEGRATION.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "approvals/REQ-041_TWO_REPO_INTEGRATION.agent_approval.json",
+    "reviews/GPT55_REQ-041_TWO_REPO_INTEGRATION_APPROVAL_REVIEW.md"
+  ],
+  "failure_reason": "",
+  "next_action": "run goal_loop.py; REQ-041_TWO_REPO_INTEGRATION becomes dispatchable only when approved"
+}

@@ -103,6 +103,10 @@ fn toolchains_shell_exports_meta_root_layout_and_rustup_home() {
         "RUSTUP_HOME must travel with CARGO_HOME (meta-owned rustup store):\n{out}"
     );
     assert!(
+        out.contains(&format!("export XDG_CACHE_HOME='{r}/.cache'")),
+        "XDG_CACHE_HOME must make kache and other cache-heavy toolchains meta-owned:\n{out}"
+    );
+    assert!(
         out.contains(&format!(
             "export OLLAMA_LIBRARY_PATH='{r}/.toolchains/ollama/lib/ollama'"
         )),
@@ -235,6 +239,11 @@ fn toolchains_json_carries_meta_root_layout_and_rustup_home() {
         v["RUSTUP_HOME"].as_str(),
         Some(format!("{r}/.toolchains/rustup").as_str()),
         "json RUSTUP_HOME must be present and meta-located"
+    );
+    assert_eq!(
+        v["XDG_CACHE_HOME"].as_str(),
+        Some(format!("{r}/.cache").as_str()),
+        "json XDG_CACHE_HOME must be present and meta-located for kache"
     );
     assert_eq!(
         v["OLLAMA_LIBRARY_PATH"].as_str(),

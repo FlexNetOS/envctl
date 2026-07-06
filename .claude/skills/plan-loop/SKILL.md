@@ -18,8 +18,11 @@ description: >-
 
 You run the `planning-engineer` crew as a **self-perpetuating loop** over a durable backlog of
 planning targets, instead of one target at a time. The owner intent is captured upstream in
-`/home/drdave/Desktop/meta/prompt_hub/prompts/planning-engineer-loop.prompt.yml`; this runnable loop
-must preserve that prompt's fleet-wide, self-evolving, background-agent, graph-first contract. The *Ralph* pattern: durable state on disk, each
+`/home/drdave/Desktop/meta/prompt_hub/prompts/planning-engineer-loop.prompt.yml`; the reusable
+packaged source-of-truth lives in `harness_hub` (`/harness:plan-loop` +
+`/harness:planning-engineer`), and the envctl `.claude/`/`.agents/` trees are ejected runnable
+mirrors. This runnable loop must preserve that prompt's fleet-wide, self-evolving, background-agent,
+graph-first contract. The *Ralph* pattern: durable state on disk, each
 iteration reads it, plans the next undone target, writes the result back, and re-fires. The loop's
 intelligence lives in the **backlog + checkpoints**, not in conversation memory — that is exactly
 what lets a fresh session pick it up with zero loss (see `session-relay-resume`).

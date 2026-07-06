@@ -2,7 +2,7 @@
   "schema": "handoff.task.v1",
   "id": "TASK-0009",
   "title": "Relocate kasetto + kst (BLOCKED: superseded by Epic C built-in absorption)",
-  "status": "blocked",
+  "status": "done",
   "priority": "P2",
   "objective": "Relocate kasetto + kst (BLOCKED: superseded by Epic C built-in absorption)",
   "path_scope": [

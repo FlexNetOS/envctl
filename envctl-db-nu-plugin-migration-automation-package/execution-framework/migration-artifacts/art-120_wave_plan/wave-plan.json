@@ -1,0 +1,653 @@
+{
+  "schema_version": "1.0",
+  "task_id": "ART-120_WAVE_PLAN",
+  "generated_at": "2026-07-04T23:28:32+00:00",
+  "target": {
+    "target_id": "flexnetos-vs-lifeos",
+    "primary_root": "/home/flexnetos/FlexNetOS",
+    "compare_root": "/home/flexnetos/lifeos",
+    "compare_root_exists": false,
+    "safety_mode": "approval-gated"
+  },
+  "source_inputs": [
+    "migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+    "generated/flexnetos_target_descriptor_validation_report.json",
+    "generated/package_scan.json",
+    "generated/envctl_migration_db_model.json",
+    "generated/task_graph.csv",
+    "generated/envctl_artifact_registry_report.json",
+    "generated/shared_protocol_validation_report.json",
+    "generated/status_from_proofs.json"
+  ],
+  "repo_scan_summary": {
+    "package_root": "/mnt/data/envctl-upgrade-build/envctl-db-nu-plugin-migration-automation-package",
+    "top_level_entry_count": 15,
+    "scanned_folder_count": 10,
+    "pre_upgrade_file_count": 114
+  },
+  "envctl_database_summary": {
+    "status": "passed",
+    "database_backend": "sqlite",
+    "required_table_count": 16,
+    "required_view_count": 6
+  },
+  "contract_rows": [
+    {
+      "contract_row_id": "artifact:07-cutover-wave-plan-md",
+      "artifact_id": "07-cutover-wave-plan-md",
+      "title": "Wave Plan",
+      "required_path": "migration-artifacts/07-cutover/wave-plan.md",
+      "section": "07-cutover",
+      "artifact_type": "migration_control",
+      "format": "md",
+      "status": "required",
+      "source_refs": [
+        "source/codex-flexnetos-migration-prompt-package/expected-output/migration-artifacts-tree.md",
+        "source/previous-migration-artifact-context.md"
+      ],
+      "producer_task_id": "ART-120_WAVE_PLAN",
+      "validators": [
+        "path_registered",
+        "evidence_or_status_recorded",
+        "linked_from_index"
+      ]
+    },
+    {
+      "contract_row_id": "artifact:07-cutover-migration-wave-plan-md",
+      "artifact_id": "07-cutover-migration-wave-plan-md",
+      "title": "Migration Wave Plan",
+      "required_path": "migration-artifacts/07-cutover/migration-wave-plan.md",
+      "section": "07-cutover",
+      "artifact_type": "migration_control",
+      "format": "md",
+      "status": "required",
+      "source_refs": [
+        "source/codex-flexnetos-migration-prompt-package/expected-output/migration-artifacts-tree.md",
+        "source/previous-migration-artifact-context.md"
+      ],
+      "producer_task_id": "ART-120_WAVE_PLAN",
+      "validators": [
+        "path_registered",
+        "evidence_or_status_recorded",
+        "linked_from_index"
+      ]
+    }
+  ],
+  "move_groups": [
+    {
+      "wave_id": "W0",
+      "name": "Control-plane contract lock",
+      "move_group": "envctl database, artifact registry, shared schemas, target descriptor, security and filesystem guardrails",
+      "sequence": 0,
+      "entry_gate": "Execution framework package is present and task graph packets have been generated.",
+      "exit_gate": "REQ-020 through REQ-025, REQ-040, REQ-042 through REQ-044, and REQ-200 have completed proof records.",
+      "rationale": "Cutover artifacts need durable schema, registry hash capture, redaction policy, and a target descriptor before any migration batch can be trusted.",
+      "tasks": [
+        "REQ-020_ENVCTL_DB_SCHEMA",
+        "REQ-021_ENVCTL_TARGET_REGISTRY",
+        "REQ-022_ENVCTL_RUN_LEDGER",
+        "REQ-023_ENVCTL_OPERATION_STATE",
+        "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+        "REQ-025_ENVCTL_VALIDATION_EVIDENCE",
+        "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+        "REQ-042_FILESYSTEM_BOUNDS",
+        "REQ-043_SECURITY_REDACTION",
+        "REQ-044_INSTALL_BOOTSTRAP",
+        "REQ-200_FLEXNETOS_TARGET_DESCRIPTOR"
+      ],
+      "rollback_anchor": "history/pre_execution_framework_manifest.json",
+      "task_records": [
+        {
+          "task_id": "REQ-020_ENVCTL_DB_SCHEMA",
+          "title": "Implement envctl database migration tables",
+          "phase": "02-envctl-db",
+          "status": "completed",
+          "proof_uri": "proof_records/REQ-020_ENVCTL_DB_SCHEMA.proof.json"
+        },
+        {
+          "task_id": "REQ-021_ENVCTL_TARGET_REGISTRY",
+          "title": "Implement target registry",
+          "phase": "02-envctl-db",
+          "status": "completed",
+          "proof_uri": "proof_records/REQ-021_ENVCTL_TARGET_REGISTRY.proof.json"
+        },
+        {
+          "task_id": "REQ-022_ENVCTL_RUN_LEDGER",
+          "title": "Implement run ledger",
+          "phase": "02-envctl-db",
+          "status": "completed",
+          "proof_uri": "proof_records/REQ-022_ENVCTL_RUN_LEDGER.proof.json"
+        },
+        {
+          "task_id": "REQ-023_ENVCTL_OPERATION_STATE",
+          "title": "Implement operation state machine",
+          "phase": "02-envctl-db",
+          "status": "completed",
+          "proof_uri": "proof_records/REQ-023_ENVCTL_OPERATION_STATE.proof.json"
+        },
+        {
+          "task_id": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+          "title": "Implement artifact registry",
+          "phase": "02-envctl-db",
+          "status": "completed",
+          "proof_uri": "proof_records/REQ-024_ENVCTL_ARTIFACT_REGISTRY.proof.json"
+        },
+        {
+          "task_id": "REQ-025_ENVCTL_VALIDATION_EVIDENCE",
+          "title": "Implement validation evidence store",
+          "phase": "02-envctl-db",
+          "status": "completed",
+          "proof_uri": "proof_records/REQ-025_ENVCTL_VALIDATION_EVIDENCE.proof.json"
+        },
+        {
+          "task_id": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+          "title": "Implement shared protocol schemas",
+          "phase": "04-shared",
+          "status": "completed",
+          "proof_uri": "proof_records/REQ-040_SHARED_PROTOCOL_SCHEMAS.proof.json"
+        },
+        {
+          "task_id": "REQ-042_FILESYSTEM_BOUNDS",
+          "title": "Implement filesystem work boundaries",
+          "phase": "04-shared",
+          "status": "completed",
+          "proof_uri": "proof_records/REQ-042_FILESYSTEM_BOUNDS.proof.json"
+        },
+        {
+          "task_id": "REQ-043_SECURITY_REDACTION",
+          "title": "Implement redaction and secret safety",
+          "phase": "04-shared",
+          "status": "completed",
+          "proof_uri": "proof_records/REQ-043_SECURITY_REDACTION.proof.json"
+        },
+        {
+          "task_id": "REQ-044_INSTALL_BOOTSTRAP",
+          "title": "Implement install/bootstrap wiring",
+          "phase": "04-shared",
+          "status": "completed",
+          "proof_uri": "proof_records/REQ-044_INSTALL_BOOTSTRAP.proof.json"
+        },
+        {
+          "task_id": "REQ-200_FLEXNETOS_TARGET_DESCRIPTOR",
+          "title": "Create FlexNetOS target descriptor",
+          "phase": "06-flexnetos",
+          "status": "completed",
+          "proof_uri": "proof_records/REQ-200_FLEXNETOS_TARGET_DESCRIPTOR.proof.json"
+        }
+      ],
+      "completed_task_count": 11,
+      "pending_task_count": 0
+    },
+    {
+      "wave_id": "W1",
+      "name": "Inventory and ownership baseline",
+      "move_group": "system inventory, repository map, directory tree, dependency maps, toolchain map, ownership map, debug entrypoint map",
+      "sequence": 1,
+      "entry_gate": "W0 proof records exist and registry rows can store generated hashes.",
+      "exit_gate": "Current-state and code-analysis artifacts have canonical markdown plus task-local JSON where applicable.",
+      "rationale": "The migration must know what exists, who owns it, and how modules call each other before runtime or data movement is sequenced.",
+      "tasks": [
+        "ART-100_SYSTEM_INVENTORY",
+        "ART-101_DIRECTORY_TREE",
+        "ART-102_REPOSITORY_MAP",
+        "ART-103_SERVICE_DEP_GRAPH",
+        "ART-104_TOOLCHAIN_TREE",
+        "ART-105_PACKAGE_LIB_GRAPH",
+        "ART-112_CODE_OWNERSHIP",
+        "ART-113_DEBUG_CODE_MAP"
+      ],
+      "rollback_anchor": "Remove W1-generated artifact files and proof rows only.",
+      "task_records": [
+        {
+          "task_id": "ART-100_SYSTEM_INVENTORY",
+          "title": "Build System inventory",
+          "phase": "05-artifacts",
+          "status": "completed",
+          "proof_uri": "proof_records/ART-100_SYSTEM_INVENTORY.proof.json"
+        },
+        {
+          "task_id": "ART-101_DIRECTORY_TREE",
+          "title": "Build Directory and subdirectory hierarchy tree",
+          "phase": "05-artifacts",
+          "status": "completed",
+          "proof_uri": "proof_records/ART-101_DIRECTORY_TREE.proof.json"
+        },
+        {
+          "task_id": "ART-102_REPOSITORY_MAP",
+          "title": "Build Repository map",
+          "phase": "05-artifacts",
+          "status": "completed",
+          "proof_uri": "proof_records/ART-102_REPOSITORY_MAP.proof.json"
+        },
+        {
+          "task_id": "ART-103_SERVICE_DEP_GRAPH",
+          "title": "Build Application/service dependency graph",
+          "phase": "05-artifacts",
+          "status": "passed",
+          "proof_uri": "proof_records/ART-103_SERVICE_DEP_GRAPH.proof.json"
+        },
+        {
+          "task_id": "ART-104_TOOLCHAIN_TREE",
+          "title": "Build Toolchain dependency tree",
+          "phase": "05-artifacts",
+          "status": "completed",
+          "proof_uri": "proof_records/ART-104_TOOLCHAIN_TREE.proof.json"
+        },
+        {
+          "task_id": "ART-105_PACKAGE_LIB_GRAPH",
+          "title": "Build Package/library dependency graph",
+          "phase": "05-artifacts",
+          "status": "completed",
+          "proof_uri": "proof_records/ART-105_PACKAGE_LIB_GRAPH.proof.json"
+        },
+        {
+          "task_id": "ART-112_CODE_OWNERSHIP",
+          "title": "Build Code ownership map",
+          "phase": "05-artifacts",
+          "status": "completed",
+          "proof_uri": "proof_records/ART-112_CODE_OWNERSHIP.proof.json"
+        },
+        {
+          "task_id": "ART-113_DEBUG_CODE_MAP",
+          "title": "Build Code map for debugging",
+          "phase": "05-artifacts",
+          "status": "completed",
+          "proof_uri": "proof_records/ART-113_DEBUG_CODE_MAP.proof.json"
+        }
+      ],
+      "completed_task_count": 8,
+      "pending_task_count": 0
+    },
+    {
+      "wave_id": "W2",
+      "name": "Configuration, infrastructure, and access baseline",
+      "move_group": "environment matrix, configuration inventory, infrastructure topology, IAM/security matrix, observability map",
+      "sequence": 2,
+      "entry_gate": "W1 dependency and ownership artifacts are complete.",
+      "exit_gate": "Configuration and access surfaces have redacted, registry-linked evidence.",
+      "rationale": "Config, IAM, infrastructure, and telemetry define the safety envelope for any service or data move.",
+      "tasks": [
+        "ART-114_ENV_CONFIG_MATRIX",
+        "ART-115_CONFIG_INVENTORY",
+        "ART-116_INFRA_TOPOLOGY",
+        "ART-117_IAM_MATRIX",
+        "ART-118_OBSERVABILITY"
+      ],
+      "rollback_anchor": "Revert generated W2 artifacts and keep blocked secret paths excluded.",
+      "task_records": [
+        {
+          "task_id": "ART-114_ENV_CONFIG_MATRIX",
+          "title": "Build Environment matrix",
+          "phase": "05-artifacts",
+          "status": "completed",
+          "proof_uri": "proof_records/ART-114_ENV_CONFIG_MATRIX.proof.json"
+        },
+        {
+          "task_id": "ART-115_CONFIG_INVENTORY",
+          "title": "Build Configuration inventory",
+          "phase": "05-artifacts",
+          "status": "completed",
+          "proof_uri": "proof_records/ART-115_CONFIG_INVENTORY.proof.json"
+        },
+        {
+          "task_id": "ART-116_INFRA_TOPOLOGY",
+          "title": "Build Infrastructure topology map",
+          "phase": "05-artifacts",
+          "status": "passed",
+          "proof_uri": "proof_records/ART-116_INFRA_TOPOLOGY.proof.json"
+        },
+        {
+          "task_id": "ART-117_IAM_MATRIX",
+          "title": "Build IAM/security access matrix",
+          "phase": "05-artifacts",
+          "status": "completed",
+          "proof_uri": "proof_records/ART-117_IAM_MATRIX.proof.json"
+        },
+        {
+          "task_id": "ART-118_OBSERVABILITY",
+          "title": "Build Observability map",
+          "phase": "05-artifacts",
+          "status": "pending",
+          "proof_uri": "proof_records/ART-118_OBSERVABILITY.proof.json"
+        }
+      ],
+      "completed_task_count": 4,
+      "pending_task_count": 1
+    },
+    {
+      "wave_id": "W3",
+      "name": "Runtime, interface, and data contract mapping",
+      "move_group": "runtime dependencies, data flow, schema map, lineage, API catalog, event/message map",
+      "sequence": 3,
+      "entry_gate": "W2 safety and observability baselines are available.",
+      "exit_gate": "Runtime, API, event, and data artifacts are registered and reconciliation candidates are known.",
+      "rationale": "Runtime dependencies and contracts should move before business cutover planning, because they expose ordering constraints and parity checks.",
+      "tasks": [
+        "ART-106_RUNTIME_DEP_MAP",
+        "ART-107_DATA_FLOW_GRAPH",
+        "ART-108_DB_SCHEMA_MAP",
+        "ART-109_DATA_LINEAGE",
+        "ART-110_API_CATALOG",
+        "ART-111_EVENT_MAP"
+      ],
+      "rollback_anchor": "Use task proofs to remove only W3 artifacts and replayable operation records.",
+      "task_records": [
+        {
+          "task_id": "ART-106_RUNTIME_DEP_MAP",
+          "title": "Build Runtime dependency map",
+          "phase": "05-artifacts",
+          "status": "pending",
+          "proof_uri": "proof_records/ART-106_RUNTIME_DEP_MAP.proof.json"
+        },
+        {
+          "task_id": "ART-107_DATA_FLOW_GRAPH",
+          "title": "Build Data flow graph",
+          "phase": "05-artifacts",
+          "status": "pending",
+          "proof_uri": "proof_records/ART-107_DATA_FLOW_GRAPH.proof.json"
+        },
+        {
+          "task_id": "ART-108_DB_SCHEMA_MAP",
+          "title": "Build Database schema map",
+          "phase": "05-artifacts",
+          "status": "pending",
+          "proof_uri": "proof_records/ART-108_DB_SCHEMA_MAP.proof.json"
+        },
+        {
+          "task_id": "ART-109_DATA_LINEAGE",
+          "title": "Build Data lineage map",
+          "phase": "05-artifacts",
+          "status": "pending",
+          "proof_uri": "proof_records/ART-109_DATA_LINEAGE.proof.json"
+        },
+        {
+          "task_id": "ART-110_API_CATALOG",
+          "title": "Build API contract catalog",
+          "phase": "05-artifacts",
+          "status": "pending",
+          "proof_uri": "proof_records/ART-110_API_CATALOG.proof.json"
+        },
+        {
+          "task_id": "ART-111_EVENT_MAP",
+          "title": "Build Event/message contract map",
+          "phase": "05-artifacts",
+          "status": "pending",
+          "proof_uri": "proof_records/ART-111_EVENT_MAP.proof.json"
+        }
+      ],
+      "completed_task_count": 0,
+      "pending_task_count": 6
+    },
+    {
+      "wave_id": "W4",
+      "name": "Governance and business readiness",
+      "move_group": "business process map, wave plan, risk register, decision log, readiness scorecard, business capability map, RACI",
+      "sequence": 4,
+      "entry_gate": "W1 through W3 describe system, runtime, and data surfaces well enough to plan moves.",
+      "exit_gate": "Governance artifacts expose risks, decisions, owners, and readiness gaps for validation.",
+      "rationale": "Governance should freeze the sequence and ownership after the technical dependency map is visible, not before.",
+      "tasks": [
+        "ART-119_BUSINESS_PROCESS",
+        "ART-120_WAVE_PLAN",
+        "ART-125_RISK_REGISTER",
+        "ART-126_DECISION_LOG",
+        "ART-127_BLAST_RADIUS",
+        "ART-128_READINESS_SCORECARD",
+        "ART-129_BUSINESS_CAPABILITY",
+        "ART-135_RACI"
+      ],
+      "rollback_anchor": "Remove W4 generated records together with their proof and ledger entries.",
+      "task_records": [
+        {
+          "task_id": "ART-119_BUSINESS_PROCESS",
+          "title": "Build Business process map",
+          "phase": "05-artifacts",
+          "status": "pending",
+          "proof_uri": "proof_records/ART-119_BUSINESS_PROCESS.proof.json"
+        },
+        {
+          "task_id": "ART-120_WAVE_PLAN",
+          "title": "Build Migration wave plan",
+          "phase": "05-artifacts",
+          "status": "pending",
+          "proof_uri": "proof_records/ART-120_WAVE_PLAN.proof.json"
+        },
+        {
+          "task_id": "ART-125_RISK_REGISTER",
+          "title": "Build Risk register",
+          "phase": "05-artifacts",
+          "status": "completed",
+          "proof_uri": "proof_records/ART-125_RISK_REGISTER.proof.json"
+        },
+        {
+          "task_id": "ART-126_DECISION_LOG",
+          "title": "Build Decision log / ADRs",
+          "phase": "05-artifacts",
+          "status": "completed",
+          "proof_uri": "proof_records/ART-126_DECISION_LOG.proof.json"
+        },
+        {
+          "task_id": "ART-127_BLAST_RADIUS",
+          "title": "Build Blast-radius map",
+          "phase": "05-artifacts",
+          "status": "completed",
+          "proof_uri": "proof_records/ART-127_BLAST_RADIUS.proof.json"
+        },
+        {
+          "task_id": "ART-128_READINESS_SCORECARD",
+          "title": "Build Migration readiness scorecard",
+          "phase": "05-artifacts",
+          "status": "completed",
+          "proof_uri": "proof_records/ART-128_READINESS_SCORECARD.proof.json"
+        },
+        {
+          "task_id": "ART-129_BUSINESS_CAPABILITY",
+          "title": "Build Business capability map",
+          "phase": "05-artifacts",
+          "status": "completed",
+          "proof_uri": "proof_records/ART-129_BUSINESS_CAPABILITY.proof.json"
+        },
+        {
+          "task_id": "ART-135_RACI",
+          "title": "Build Ownership/RACI matrix",
+          "phase": "05-artifacts",
+          "status": "pending",
+          "proof_uri": "proof_records/ART-135_RACI.proof.json"
+        }
+      ],
+      "completed_task_count": 5,
+      "pending_task_count": 3
+    },
+    {
+      "wave_id": "W5",
+      "name": "Validation, parity, and release evidence",
+      "move_group": "validation reconciliation, test coverage, golden dataset, parity dashboard, shadow traffic, unit validation",
+      "sequence": 5,
+      "entry_gate": "Governance plan, risk, and readiness artifacts are registered.",
+      "exit_gate": "VER-300 and follow-on verification lanes can consume registered artifact hashes and evidence links.",
+      "rationale": "Validation runs last among planning waves so it checks the planned move sequence against actual artifacts and parity evidence.",
+      "tasks": [
+        "ART-123_VALIDATION_RECONCILIATION",
+        "ART-124_TEST_COVERAGE",
+        "ART-130_SHADOW_TRAFFIC",
+        "ART-131_GOLDEN_DATASET",
+        "ART-132_PARITY_DASHBOARD",
+        "VER-300_UNIT_VALIDATION"
+      ],
+      "rollback_anchor": "Preserve raw failure logs, then remove only generated validation artifacts for this package.",
+      "task_records": [
+        {
+          "task_id": "ART-123_VALIDATION_RECONCILIATION",
+          "title": "Build Validation and reconciliation reports",
+          "phase": "05-artifacts",
+          "status": "pending",
+          "proof_uri": "proof_records/ART-123_VALIDATION_RECONCILIATION.proof.json"
+        },
+        {
+          "task_id": "ART-124_TEST_COVERAGE",
+          "title": "Build Test coverage matrix",
+          "phase": "05-artifacts",
+          "status": "pending",
+          "proof_uri": "proof_records/ART-124_TEST_COVERAGE.proof.json"
+        },
+        {
+          "task_id": "ART-130_SHADOW_TRAFFIC",
+          "title": "Build Shadow traffic comparison report",
+          "phase": "05-artifacts",
+          "status": "completed",
+          "proof_uri": "proof_records/ART-130_SHADOW_TRAFFIC.proof.json"
+        },
+        {
+          "task_id": "ART-131_GOLDEN_DATASET",
+          "title": "Build Golden dataset",
+          "phase": "05-artifacts",
+          "status": "completed",
+          "proof_uri": "proof_records/ART-131_GOLDEN_DATASET.proof.json"
+        },
+        {
+          "task_id": "ART-132_PARITY_DASHBOARD",
+          "title": "Build Parity dashboard",
+          "phase": "05-artifacts",
+          "status": "pending",
+          "proof_uri": "proof_records/ART-132_PARITY_DASHBOARD.proof.json"
+        },
+        {
+          "task_id": "VER-300_UNIT_VALIDATION",
+          "title": "Run unit/integration validation",
+          "phase": "07-verification",
+          "status": "pending",
+          "proof_uri": "proof_records/VER-300_UNIT_VALIDATION.proof.json"
+        }
+      ],
+      "completed_task_count": 2,
+      "pending_task_count": 4
+    },
+    {
+      "wave_id": "W6",
+      "name": "Cutover, rollback, and decommission controls",
+      "move_group": "rollback checkpoints, replay engine, cutover checklist, rollback plan, deprecation map, exception inventory, technical debt ledger, release handoff",
+      "sequence": 6,
+      "entry_gate": "W5 validation has passed or has explicit human-approved exceptions.",
+      "exit_gate": "Release packaging and handoff can proceed with documented rollback and decommission evidence.",
+      "rationale": "Irreversible or release-facing steps wait for validation, rollback checkpoints, and exception handling to be explicit.",
+      "tasks": [
+        "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+        "REQ-027_ENVCTL_REPLAY_ENGINE",
+        "REQ-041_TWO_REPO_INTEGRATION",
+        "REQ-045_RUN_REPLAY",
+        "ART-121_CUTOVER",
+        "ART-122_ROLLBACK",
+        "ART-133_DEPRECATION_MAP",
+        "ART-134_EXCEPTION_INVENTORY",
+        "ART-136_TECH_DEBT_LEDGER",
+        "REL-400_PACKAGE_ARCHIVE",
+        "REL-401_HANDOFF"
+      ],
+      "rollback_anchor": "Follow task-specific rollback plans and require human approval for gated control-plane operations.",
+      "task_records": [
+        {
+          "task_id": "REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS",
+          "title": "Implement checkpoints and rollback handles",
+          "phase": "02-envctl-db",
+          "status": "pending",
+          "proof_uri": "proof_records/REQ-026_ENVCTL_ROLLBACK_CHECKPOINTS.proof.json"
+        },
+        {
+          "task_id": "REQ-027_ENVCTL_REPLAY_ENGINE",
+          "title": "Implement replay/reproduce engine",
+          "phase": "02-envctl-db",
+          "status": "pending",
+          "proof_uri": "proof_records/REQ-027_ENVCTL_REPLAY_ENGINE.proof.json"
+        },
+        {
+          "task_id": "REQ-041_TWO_REPO_INTEGRATION",
+          "title": "Implement two-repo integration",
+          "phase": "04-shared",
+          "status": "pending",
+          "proof_uri": "proof_records/REQ-041_TWO_REPO_INTEGRATION.proof.json"
+        },
+        {
+          "task_id": "REQ-045_RUN_REPLAY",
+          "title": "Implement run/replay templates",
+          "phase": "04-shared",
+          "status": "pending",
+          "proof_uri": "proof_records/REQ-045_RUN_REPLAY.proof.json"
+        },
+        {
+          "task_id": "ART-121_CUTOVER",
+          "title": "Build Cutover checklist",
+          "phase": "05-artifacts",
+          "status": "pending",
+          "proof_uri": "proof_records/ART-121_CUTOVER.proof.json"
+        },
+        {
+          "task_id": "ART-122_ROLLBACK",
+          "title": "Build Rollback plan",
+          "phase": "05-artifacts",
+          "status": "pending",
+          "proof_uri": "proof_records/ART-122_ROLLBACK.proof.json"
+        },
+        {
+          "task_id": "ART-133_DEPRECATION_MAP",
+          "title": "Build Deprecation map",
+          "phase": "05-artifacts",
+          "status": "completed",
+          "proof_uri": "proof_records/ART-133_DEPRECATION_MAP.proof.json"
+        },
+        {
+          "task_id": "ART-134_EXCEPTION_INVENTORY",
+          "title": "Build Exception inventory",
+          "phase": "05-artifacts",
+          "status": "pending",
+          "proof_uri": "proof_records/ART-134_EXCEPTION_INVENTORY.proof.json"
+        },
+        {
+          "task_id": "ART-136_TECH_DEBT_LEDGER",
+          "title": "Build Technical debt ledger",
+          "phase": "05-artifacts",
+          "status": "pending",
+          "proof_uri": "proof_records/ART-136_TECH_DEBT_LEDGER.proof.json"
+        },
+        {
+          "task_id": "REL-400_PACKAGE_ARCHIVE",
+          "title": "Create upgraded package archive",
+          "phase": "08-release",
+          "status": "pending",
+          "proof_uri": "proof_records/REL-400_PACKAGE_ARCHIVE.proof.json"
+        },
+        {
+          "task_id": "REL-401_HANDOFF",
+          "title": "Prepare final handoff",
+          "phase": "08-release",
+          "status": "pending",
+          "proof_uri": "proof_records/REL-401_HANDOFF.proof.json"
+        }
+      ],
+      "completed_task_count": 1,
+      "pending_task_count": 10
+    }
+  ],
+  "sequence": [
+    "W0",
+    "W1",
+    "W2",
+    "W3",
+    "W4",
+    "W5",
+    "W6"
+  ],
+  "rationale": [
+    "Fail-closed registry, schema, and redaction gates precede artifact movement.",
+    "Inventory and ownership precede runtime/data movement to keep dependencies visible.",
+    "Validation and parity follow the wave plan so VER-300 consumes registered, hashed evidence.",
+    "Cutover and decommission remain gated by rollback checkpoint and replay controls."
+  ],
+  "completion_gate": {
+    "artifact_files_exist": true,
+    "registry_contains_hash": true,
+    "validation_evidence_linked": true,
+    "blocks": [
+      "VER-300_UNIT_VALIDATION"
+    ]
+  }
+}

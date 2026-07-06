@@ -1,0 +1,7 @@
+2026-07-04T23:29:15+00:00 start ART-106_RUNTIME_DEP_MAP
+2026-07-04T23:29:22+00:00 wrote migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.md
+2026-07-04T23:29:22+00:00 wrote migration-artifacts/art-106_runtime_dep_map/runtime-dependency-map.json
+2026-07-04T23:29:22+00:00 wrote migration-artifacts/01-current-state/runtime-dependency-map.md
+2026-07-04T23:29:22+00:00 registry hashes recorded: True
+2026-07-04T23:29:22+00:00 registry contains hash: True
+2026-07-04T23:29:22+00:00 validation evidence linked: True

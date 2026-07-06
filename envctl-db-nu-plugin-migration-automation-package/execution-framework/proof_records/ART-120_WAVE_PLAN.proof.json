@@ -1,0 +1,661 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "ART-120_WAVE_PLAN",
+  "status": "completed",
+  "started_at": "2026-07-04T23:28:32+00:00",
+  "completed_at": "2026-07-04T23:28:32+00:00",
+  "actor": "artifact-agent",
+  "helper_id": "helper-artifact-21",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/generate_art120_wave_plan.py",
+    "execution-framework/migration-artifacts/07-cutover/wave-plan.md",
+    "execution-framework/migration-artifacts/07-cutover/migration-wave-plan.md",
+    "execution-framework/migration-artifacts/art-120_wave_plan/wave-plan.md",
+    "execution-framework/migration-artifacts/art-120_wave_plan/wave-plan.json",
+    "execution-framework/generated/art120_wave_plan_report.json",
+    "execution-framework/state/ART-120_WAVE_PLAN.heartbeat.json",
+    "execution-framework/logs/ART-120_WAVE_PLAN.log",
+    "execution-framework/proof_records/ART-120_WAVE_PLAN.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/generate_art120_wave_plan.py",
+    "python3 scripts/status_from_proofs.py",
+    "python3 -m py_compile scripts/generate_art120_wave_plan.py"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "ART-120_WAVE_PLAN",
+    "status": "passed",
+    "generated_at": "2026-07-04T23:28:32+00:00",
+    "artifact_paths": [
+      "migration-artifacts/07-cutover/wave-plan.md",
+      "migration-artifacts/07-cutover/migration-wave-plan.md",
+      "migration-artifacts/art-120_wave_plan/wave-plan.md",
+      "migration-artifacts/art-120_wave_plan/wave-plan.json"
+    ],
+    "summary": {
+      "wave_count": 7,
+      "registered_artifact_count": 4,
+      "registry_contains_hash": true,
+      "validation_evidence_linked": true
+    },
+    "registry_results": [
+      {
+        "artifact_row_id": "artifact-0ebd5070a38223076ce7e030",
+        "artifact_id": "07-cutover-wave-plan-md",
+        "run_id": "run-art-120-wave-plan",
+        "path": "migration-artifacts/07-cutover/wave-plan.md",
+        "content_hash": "sha256:78e9a6acfbb99615b694d4777b397ede65de560992742c99676fe56de460c966",
+        "producer_operation_id": "produce-07-cutover-wave-plan-md",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-f553c3a43d2affd3d0561405",
+          "evidence-d3dfbcd19c5c6bb8c1a9c45d",
+          "evidence-785bbfbecf4e9666f4980def",
+          "evidence-2617ac409112c51817d277d9",
+          "evidence-7032ebe139545b5ba2917429",
+          "evidence-75e33a19deafd07acc233930",
+          "evidence-d70c494b7c5efe3e6718b430",
+          "evidence-06b1184ffe705fc85564473c",
+          "evidence-f6fb11ff99e58a6a121a44f5",
+          "evidence-b01bbab4f74c7e37e2b046cf",
+          "evidence-2f3a4935834adde6032cb8ca",
+          "evidence-f6787f94c627d80e01583f75"
+        ],
+        "graph_edge_ids": [
+          "edge-520200d976daacd3202c6133",
+          "edge-646754b33170f3cf9ace392c",
+          "edge-c48f8d5b9663118e1dfeb89a",
+          "edge-56fcc5391568325b927c24b1",
+          "edge-448107b4b186ebb83b02b93c",
+          "edge-b73062fbc6fcd869a69e9260",
+          "edge-2edd97d138ac5d2fad4f3287",
+          "edge-ca0c3fb9f062b74b814e8a69"
+        ],
+        "validation_ids": [
+          "validation-1f50279366df2d1a23d41f62",
+          "validation-c04961d0e1df2d1ae090871f",
+          "validation-b18b2c24502ad303c6a19635"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-040e2370270a8906ec22c52d",
+        "artifact_id": "07-cutover-migration-wave-plan-md",
+        "run_id": "run-art-120-wave-plan",
+        "path": "migration-artifacts/07-cutover/migration-wave-plan.md",
+        "content_hash": "sha256:78e9a6acfbb99615b694d4777b397ede65de560992742c99676fe56de460c966",
+        "producer_operation_id": "produce-07-cutover-wave-plan-md",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-353b00d4701d4ee73288c95c",
+          "evidence-51cfaf3ececadff33e41ef64",
+          "evidence-4f7b5f5d14c133e6420413d0",
+          "evidence-fbf7a5c59f34ddea84db13fd",
+          "evidence-affc8363468366323bb836aa",
+          "evidence-695cd1e7c581f2264bd8bdc3",
+          "evidence-45feb7fcfd95ef470d8b71c3",
+          "evidence-ff41f6b38d5048f3ac0a2f15",
+          "evidence-2167300c50bbb2e8e8800cc1",
+          "evidence-2c58376df2c71edb3bb5267e",
+          "evidence-1c3e8724f8814baa706cfb25",
+          "evidence-51cd90b6bb8e5a6a20cc35d4"
+        ],
+        "graph_edge_ids": [
+          "edge-f5365e9baa152e3b6e149a47",
+          "edge-179a6c7300d04781367cff0a",
+          "edge-e7dfe910c87e9822380a90ac",
+          "edge-27cc93797a2c43bdeb470078",
+          "edge-721b9c094cde7a7f27d65923",
+          "edge-7bafa9a25949cd0d97525976",
+          "edge-12fcb431f93d0ce2b744450a",
+          "edge-f1a46fbb77262b967c3a4736"
+        ],
+        "validation_ids": [
+          "validation-d93b59487ff1daa6017b4e07",
+          "validation-101d95e021f0314eadaf788d",
+          "validation-ba1a9aa7c3850b7f70086a9a"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-8788dbb4d6a87acd9aa2a3b5",
+        "artifact_id": "art-120-wave-plan-md",
+        "run_id": "run-art-120-wave-plan",
+        "path": "migration-artifacts/art-120_wave_plan/wave-plan.md",
+        "content_hash": "sha256:78e9a6acfbb99615b694d4777b397ede65de560992742c99676fe56de460c966",
+        "producer_operation_id": "produce-07-cutover-wave-plan-md",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-35ed2df018784dfeb7576d95",
+          "evidence-24ef4045f8fd7db86e059b14",
+          "evidence-ef0d2aa8a181efabb02b4127",
+          "evidence-8904df90f8f1c9608d494dba",
+          "evidence-cf0754fe32673a96b3506eb1",
+          "evidence-15dc77a4692ea53ab0958d61",
+          "evidence-5073ab4a9c191ece2c67bbc3",
+          "evidence-c82326ef8832ee0053753652",
+          "evidence-cb5c0ee53085c6bf5ef957d1",
+          "evidence-291419f9102d435a23d6ed29",
+          "evidence-3715cbf258384bca037240ab",
+          "evidence-ab7d35426050b9c41ca11c99"
+        ],
+        "graph_edge_ids": [
+          "edge-eb07ee320f1264e793846d5d",
+          "edge-ff3491f8365b38bdf876be5e",
+          "edge-3863ce479ebe62c1abd90ab8",
+          "edge-14f00a77b5f2d12b334c4d5e",
+          "edge-0137522be61a8f9dcd365cf0",
+          "edge-0b8fd9c95ada857c9b26769a",
+          "edge-3ed6732b4b18aeae6a0fb551",
+          "edge-419f7dd71d423350af6b3bf2"
+        ],
+        "validation_ids": [
+          "validation-d4e3ca65373c6f9897c03531",
+          "validation-35d8e95490bd35b3f4431bd0",
+          "validation-011c1f62ab1cb745d7b055fb"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-fcf2780f35280951b9af2fb8",
+        "artifact_id": "art-120-wave-plan-json",
+        "run_id": "run-art-120-wave-plan",
+        "path": "migration-artifacts/art-120_wave_plan/wave-plan.json",
+        "content_hash": "sha256:f0380305d3d3862c21861c02a8fe6cff0428c164b2e036010dddf1f6d9ad2099",
+        "producer_operation_id": "produce-07-cutover-wave-plan-md",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-e06f077bd7853b1b7f9f256f",
+          "evidence-bfcc3c95fa7905bba1f2462d",
+          "evidence-a02eaa46210d214fbfb2c024",
+          "evidence-f009645e13dce5dbdced5a7e",
+          "evidence-29450e9ef28970df5503a687",
+          "evidence-2ccb76f9a36842415cfbdcff",
+          "evidence-3130700c213180b8c47da248",
+          "evidence-4c8f6e12494a866ffe719279",
+          "evidence-842d05119077a72b7f3c15fa",
+          "evidence-68771227e7ef1ae5baf00c7f",
+          "evidence-6ad3c761fb86d7fe4b88dd7d",
+          "evidence-ab6c5b2f2cbe3688c26a1d5f"
+        ],
+        "graph_edge_ids": [
+          "edge-8bc1098f05a876b323f46eb6",
+          "edge-0431a95643e504e8eb1305bc",
+          "edge-c5feea69e907d41b521a5a51",
+          "edge-ff79cb77c7bc25067770721c",
+          "edge-fbaac852364fada27a775bff",
+          "edge-c8c636bad6b75f65eb56961d",
+          "edge-1bc7f4878e276305d2321bcf",
+          "edge-c31f51800bc2e752ee07fd4a"
+        ],
+        "validation_ids": [
+          "validation-5e7dbdd5fc3f34678ee9f1b8",
+          "validation-36fe8492b59b2e8c76f653c4",
+          "validation-69e18cfa1ce7c2bb9c083bed"
+        ]
+      }
+    ],
+    "artifact_rows": [
+      {
+        "id": "artifact-0ebd5070a38223076ce7e030",
+        "run_id": "run-art-120-wave-plan",
+        "artifact_id": "07-cutover-wave-plan-md",
+        "title": "Wave Plan",
+        "artifact_type": "migration_control",
+        "status": "complete",
+        "path": "migration-artifacts/07-cutover/wave-plan.md",
+        "content_hash": "sha256:78e9a6acfbb99615b694d4777b397ede65de560992742c99676fe56de460c966",
+        "generated_by_operation_id": "produce-07-cutover-wave-plan-md",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-f553c3a43d2affd3d0561405",
+            "evidence-d3dfbcd19c5c6bb8c1a9c45d",
+            "evidence-785bbfbecf4e9666f4980def",
+            "evidence-2617ac409112c51817d277d9",
+            "evidence-7032ebe139545b5ba2917429",
+            "evidence-75e33a19deafd07acc233930",
+            "evidence-d70c494b7c5efe3e6718b430",
+            "evidence-06b1184ffe705fc85564473c",
+            "evidence-f6fb11ff99e58a6a121a44f5",
+            "evidence-b01bbab4f74c7e37e2b046cf",
+            "evidence-2f3a4935834adde6032cb8ca",
+            "evidence-f6787f94c627d80e01583f75"
+          ],
+          "evidence_refs": [
+            "migration-artifacts/07-cutover/wave-plan.md",
+            "migration-artifacts/07-cutover/migration-wave-plan.md",
+            "migration-artifacts/art-120_wave_plan/wave-plan.md",
+            "migration-artifacts/art-120_wave_plan/wave-plan.json",
+            "migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+            "generated/flexnetos_target_descriptor_validation_report.json",
+            "generated/package_scan.json",
+            "generated/envctl_migration_db_model.json",
+            "generated/task_graph.csv",
+            "generated/envctl_artifact_registry_report.json",
+            "generated/shared_protocol_validation_report.json",
+            "generated/status_from_proofs.json"
+          ],
+          "producer_operation_id": "produce-07-cutover-wave-plan-md",
+          "provenance": {
+            "contract_row_id": "artifact:07-cutover-wave-plan-md",
+            "helper_id": "helper-artifact-21",
+            "owner_agent": "artifact-agent",
+            "source_inputs": [
+              "target descriptor",
+              "repo scan",
+              "envctl database"
+            ],
+            "target_root": "/home/flexnetos/FlexNetOS",
+            "task_id": "ART-120_WAVE_PLAN",
+            "wave_count": 7
+          },
+          "validation_ids": [
+            "validation-1f50279366df2d1a23d41f62",
+            "validation-c04961d0e1df2d1ae090871f",
+            "validation-b18b2c24502ad303c6a19635"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-520200d976daacd3202c6133",
+            "edge-646754b33170f3cf9ace392c",
+            "edge-c48f8d5b9663118e1dfeb89a",
+            "edge-56fcc5391568325b927c24b1",
+            "edge-448107b4b186ebb83b02b93c",
+            "edge-b73062fbc6fcd869a69e9260",
+            "edge-2edd97d138ac5d2fad4f3287",
+            "edge-ca0c3fb9f062b74b814e8a69"
+          ],
+          "links": [
+            {
+              "to": "contract_row:artifact:07-cutover-wave-plan-md",
+              "type": "satisfies"
+            },
+            {
+              "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "artifact:09-governance-risk-register-md",
+              "type": "informed_by"
+            },
+            {
+              "to": "artifact:09-governance-migration-readiness-scorecard-md",
+              "type": "informed_by"
+            },
+            {
+              "to": "artifact:06-testing-validation-shadow-traffic-comparison-report-md",
+              "type": "feeds"
+            }
+          ]
+        }
+      },
+      {
+        "id": "artifact-040e2370270a8906ec22c52d",
+        "run_id": "run-art-120-wave-plan",
+        "artifact_id": "07-cutover-migration-wave-plan-md",
+        "title": "Migration Wave Plan",
+        "artifact_type": "migration_control",
+        "status": "complete",
+        "path": "migration-artifacts/07-cutover/migration-wave-plan.md",
+        "content_hash": "sha256:78e9a6acfbb99615b694d4777b397ede65de560992742c99676fe56de460c966",
+        "generated_by_operation_id": "produce-07-cutover-wave-plan-md",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-353b00d4701d4ee73288c95c",
+            "evidence-51cfaf3ececadff33e41ef64",
+            "evidence-4f7b5f5d14c133e6420413d0",
+            "evidence-fbf7a5c59f34ddea84db13fd",
+            "evidence-affc8363468366323bb836aa",
+            "evidence-695cd1e7c581f2264bd8bdc3",
+            "evidence-45feb7fcfd95ef470d8b71c3",
+            "evidence-ff41f6b38d5048f3ac0a2f15",
+            "evidence-2167300c50bbb2e8e8800cc1",
+            "evidence-2c58376df2c71edb3bb5267e",
+            "evidence-1c3e8724f8814baa706cfb25",
+            "evidence-51cd90b6bb8e5a6a20cc35d4"
+          ],
+          "evidence_refs": [
+            "migration-artifacts/07-cutover/wave-plan.md",
+            "migration-artifacts/07-cutover/migration-wave-plan.md",
+            "migration-artifacts/art-120_wave_plan/wave-plan.md",
+            "migration-artifacts/art-120_wave_plan/wave-plan.json",
+            "migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+            "generated/flexnetos_target_descriptor_validation_report.json",
+            "generated/package_scan.json",
+            "generated/envctl_migration_db_model.json",
+            "generated/task_graph.csv",
+            "generated/envctl_artifact_registry_report.json",
+            "generated/shared_protocol_validation_report.json",
+            "generated/status_from_proofs.json"
+          ],
+          "producer_operation_id": "produce-07-cutover-wave-plan-md",
+          "provenance": {
+            "contract_row_id": "artifact:07-cutover-migration-wave-plan-md",
+            "helper_id": "helper-artifact-21",
+            "owner_agent": "artifact-agent",
+            "source_inputs": [
+              "target descriptor",
+              "repo scan",
+              "envctl database"
+            ],
+            "target_root": "/home/flexnetos/FlexNetOS",
+            "task_id": "ART-120_WAVE_PLAN",
+            "wave_count": 7
+          },
+          "validation_ids": [
+            "validation-d93b59487ff1daa6017b4e07",
+            "validation-101d95e021f0314eadaf788d",
+            "validation-ba1a9aa7c3850b7f70086a9a"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-f5365e9baa152e3b6e149a47",
+            "edge-179a6c7300d04781367cff0a",
+            "edge-e7dfe910c87e9822380a90ac",
+            "edge-27cc93797a2c43bdeb470078",
+            "edge-721b9c094cde7a7f27d65923",
+            "edge-7bafa9a25949cd0d97525976",
+            "edge-12fcb431f93d0ce2b744450a",
+            "edge-f1a46fbb77262b967c3a4736"
+          ],
+          "links": [
+            {
+              "to": "contract_row:artifact:07-cutover-migration-wave-plan-md",
+              "type": "satisfies"
+            },
+            {
+              "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "artifact:09-governance-risk-register-md",
+              "type": "informed_by"
+            },
+            {
+              "to": "artifact:09-governance-migration-readiness-scorecard-md",
+              "type": "informed_by"
+            },
+            {
+              "to": "artifact:06-testing-validation-shadow-traffic-comparison-report-md",
+              "type": "feeds"
+            }
+          ]
+        }
+      },
+      {
+        "id": "artifact-8788dbb4d6a87acd9aa2a3b5",
+        "run_id": "run-art-120-wave-plan",
+        "artifact_id": "art-120-wave-plan-md",
+        "title": "ART-120 Wave Plan Markdown",
+        "artifact_type": "migration_control",
+        "status": "complete",
+        "path": "migration-artifacts/art-120_wave_plan/wave-plan.md",
+        "content_hash": "sha256:78e9a6acfbb99615b694d4777b397ede65de560992742c99676fe56de460c966",
+        "generated_by_operation_id": "produce-07-cutover-wave-plan-md",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-35ed2df018784dfeb7576d95",
+            "evidence-24ef4045f8fd7db86e059b14",
+            "evidence-ef0d2aa8a181efabb02b4127",
+            "evidence-8904df90f8f1c9608d494dba",
+            "evidence-cf0754fe32673a96b3506eb1",
+            "evidence-15dc77a4692ea53ab0958d61",
+            "evidence-5073ab4a9c191ece2c67bbc3",
+            "evidence-c82326ef8832ee0053753652",
+            "evidence-cb5c0ee53085c6bf5ef957d1",
+            "evidence-291419f9102d435a23d6ed29",
+            "evidence-3715cbf258384bca037240ab",
+            "evidence-ab7d35426050b9c41ca11c99"
+          ],
+          "evidence_refs": [
+            "migration-artifacts/07-cutover/wave-plan.md",
+            "migration-artifacts/07-cutover/migration-wave-plan.md",
+            "migration-artifacts/art-120_wave_plan/wave-plan.md",
+            "migration-artifacts/art-120_wave_plan/wave-plan.json",
+            "migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+            "generated/flexnetos_target_descriptor_validation_report.json",
+            "generated/package_scan.json",
+            "generated/envctl_migration_db_model.json",
+            "generated/task_graph.csv",
+            "generated/envctl_artifact_registry_report.json",
+            "generated/shared_protocol_validation_report.json",
+            "generated/status_from_proofs.json"
+          ],
+          "producer_operation_id": "produce-07-cutover-wave-plan-md",
+          "provenance": {
+            "contract_row_id": "artifact:07-cutover-wave-plan-md",
+            "helper_id": "helper-artifact-21",
+            "owner_agent": "artifact-agent",
+            "source_inputs": [
+              "target descriptor",
+              "repo scan",
+              "envctl database"
+            ],
+            "target_root": "/home/flexnetos/FlexNetOS",
+            "task_id": "ART-120_WAVE_PLAN",
+            "wave_count": 7
+          },
+          "validation_ids": [
+            "validation-d4e3ca65373c6f9897c03531",
+            "validation-35d8e95490bd35b3f4431bd0",
+            "validation-011c1f62ab1cb745d7b055fb"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-eb07ee320f1264e793846d5d",
+            "edge-ff3491f8365b38bdf876be5e",
+            "edge-3863ce479ebe62c1abd90ab8",
+            "edge-14f00a77b5f2d12b334c4d5e",
+            "edge-0137522be61a8f9dcd365cf0",
+            "edge-0b8fd9c95ada857c9b26769a",
+            "edge-3ed6732b4b18aeae6a0fb551",
+            "edge-419f7dd71d423350af6b3bf2"
+          ],
+          "links": [
+            {
+              "to": "contract_row:artifact:07-cutover-wave-plan-md",
+              "type": "satisfies"
+            },
+            {
+              "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "artifact:09-governance-risk-register-md",
+              "type": "informed_by"
+            },
+            {
+              "to": "artifact:09-governance-migration-readiness-scorecard-md",
+              "type": "informed_by"
+            },
+            {
+              "to": "artifact:06-testing-validation-shadow-traffic-comparison-report-md",
+              "type": "feeds"
+            }
+          ]
+        }
+      },
+      {
+        "id": "artifact-fcf2780f35280951b9af2fb8",
+        "run_id": "run-art-120-wave-plan",
+        "artifact_id": "art-120-wave-plan-json",
+        "title": "ART-120 Wave Plan JSON",
+        "artifact_type": "machine_readable_record",
+        "status": "complete",
+        "path": "migration-artifacts/art-120_wave_plan/wave-plan.json",
+        "content_hash": "sha256:f0380305d3d3862c21861c02a8fe6cff0428c164b2e036010dddf1f6d9ad2099",
+        "generated_by_operation_id": "produce-07-cutover-wave-plan-md",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-e06f077bd7853b1b7f9f256f",
+            "evidence-bfcc3c95fa7905bba1f2462d",
+            "evidence-a02eaa46210d214fbfb2c024",
+            "evidence-f009645e13dce5dbdced5a7e",
+            "evidence-29450e9ef28970df5503a687",
+            "evidence-2ccb76f9a36842415cfbdcff",
+            "evidence-3130700c213180b8c47da248",
+            "evidence-4c8f6e12494a866ffe719279",
+            "evidence-842d05119077a72b7f3c15fa",
+            "evidence-68771227e7ef1ae5baf00c7f",
+            "evidence-6ad3c761fb86d7fe4b88dd7d",
+            "evidence-ab6c5b2f2cbe3688c26a1d5f"
+          ],
+          "evidence_refs": [
+            "migration-artifacts/07-cutover/wave-plan.md",
+            "migration-artifacts/07-cutover/migration-wave-plan.md",
+            "migration-artifacts/art-120_wave_plan/wave-plan.md",
+            "migration-artifacts/art-120_wave_plan/wave-plan.json",
+            "migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+            "generated/flexnetos_target_descriptor_validation_report.json",
+            "generated/package_scan.json",
+            "generated/envctl_migration_db_model.json",
+            "generated/task_graph.csv",
+            "generated/envctl_artifact_registry_report.json",
+            "generated/shared_protocol_validation_report.json",
+            "generated/status_from_proofs.json"
+          ],
+          "producer_operation_id": "produce-07-cutover-wave-plan-md",
+          "provenance": {
+            "contract_row_id": "artifact:07-cutover-wave-plan-md",
+            "helper_id": "helper-artifact-21",
+            "owner_agent": "artifact-agent",
+            "source_inputs": [
+              "target descriptor",
+              "repo scan",
+              "envctl database"
+            ],
+            "target_root": "/home/flexnetos/FlexNetOS",
+            "task_id": "ART-120_WAVE_PLAN",
+            "wave_count": 7
+          },
+          "validation_ids": [
+            "validation-5e7dbdd5fc3f34678ee9f1b8",
+            "validation-36fe8492b59b2e8c76f653c4",
+            "validation-69e18cfa1ce7c2bb9c083bed"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-8bc1098f05a876b323f46eb6",
+            "edge-0431a95643e504e8eb1305bc",
+            "edge-c5feea69e907d41b521a5a51",
+            "edge-ff79cb77c7bc25067770721c",
+            "edge-fbaac852364fada27a775bff",
+            "edge-c8c636bad6b75f65eb56961d",
+            "edge-1bc7f4878e276305d2321bcf",
+            "edge-c31f51800bc2e752ee07fd4a"
+          ],
+          "links": [
+            {
+              "to": "contract_row:artifact:07-cutover-wave-plan-md",
+              "type": "satisfies"
+            },
+            {
+              "to": "task:REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            },
+            {
+              "to": "task:VER-300_UNIT_VALIDATION",
+              "type": "blocks"
+            },
+            {
+              "to": "artifact:09-governance-risk-register-md",
+              "type": "informed_by"
+            },
+            {
+              "to": "artifact:09-governance-migration-readiness-scorecard-md",
+              "type": "informed_by"
+            },
+            {
+              "to": "artifact:06-testing-validation-shadow-traffic-comparison-report-md",
+              "type": "feeds"
+            }
+          ]
+        }
+      }
+    ],
+    "checks": {
+      "artifact_file_exists": true,
+      "envctl_artifact_registry_contains_hash": true,
+      "validation_evidence_linked": true
+    },
+    "evidence": [
+      "migration-artifacts/07-cutover/wave-plan.md",
+      "migration-artifacts/07-cutover/migration-wave-plan.md",
+      "migration-artifacts/art-120_wave_plan/wave-plan.md",
+      "migration-artifacts/art-120_wave_plan/wave-plan.json",
+      "migration-artifacts/_meta/flexnetos-vs-lifeos.target-descriptor.yaml",
+      "generated/flexnetos_target_descriptor_validation_report.json",
+      "generated/package_scan.json",
+      "generated/envctl_migration_db_model.json",
+      "generated/task_graph.csv",
+      "generated/envctl_artifact_registry_report.json",
+      "generated/shared_protocol_validation_report.json",
+      "generated/status_from_proofs.json"
+    ],
+    "errors": []
+  },
+  "checksums": {
+    "execution-framework/scripts/generate_art120_wave_plan.py": "aa05920bd6eaebd6b237e6cdbfee2ea68901b4d5e99f605dead40c8b0c494d1e",
+    "execution-framework/migration-artifacts/07-cutover/wave-plan.md": "78e9a6acfbb99615b694d4777b397ede65de560992742c99676fe56de460c966",
+    "execution-framework/migration-artifacts/07-cutover/migration-wave-plan.md": "78e9a6acfbb99615b694d4777b397ede65de560992742c99676fe56de460c966",
+    "execution-framework/migration-artifacts/art-120_wave_plan/wave-plan.md": "78e9a6acfbb99615b694d4777b397ede65de560992742c99676fe56de460c966",
+    "execution-framework/migration-artifacts/art-120_wave_plan/wave-plan.json": "f0380305d3d3862c21861c02a8fe6cff0428c164b2e036010dddf1f6d9ad2099",
+    "execution-framework/generated/art120_wave_plan_report.json": "3efafbe4cfed2e1b2a0b9e5cd8090c01d3e8b5134753f37a837f6b03eff90585",
+    "execution-framework/state/ART-120_WAVE_PLAN.heartbeat.json": "fa8276873285bb8eef72fba3916d9dc4e42fc80ab59591d7f20e30a4ad5a4c1e",
+    "execution-framework/logs/ART-120_WAVE_PLAN.log": "3efafbe4cfed2e1b2a0b9e5cd8090c01d3e8b5134753f37a837f6b03eff90585",
+    "execution-framework/proof_records/proof_ledger.jsonl": "26fa70fb8b924c636f9840e691d0044a5a3b9432f6395e399a6944b9026a1604"
+  },
+  "logs_uri": "logs/ART-120_WAVE_PLAN.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "migration-artifacts/07-cutover/wave-plan.md",
+    "migration-artifacts/07-cutover/migration-wave-plan.md",
+    "migration-artifacts/art-120_wave_plan/wave-plan.md",
+    "migration-artifacts/art-120_wave_plan/wave-plan.json",
+    "generated/art120_wave_plan_report.json",
+    "logs/ART-120_WAVE_PLAN.log"
+  ],
+  "failure_reason": "",
+  "next_action": "run VER-300_UNIT_VALIDATION after ART-123_VALIDATION_RECONCILIATION and remaining required dependencies complete"
+}

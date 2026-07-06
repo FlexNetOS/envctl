@@ -1,0 +1,61 @@
+# Copy or install this file to ~/.codex/flexnetos-migration.config.toml
+# Use with: codex --profile flexnetos-migration
+# Model labels are user-requested local labels. The run must verify they resolve locally.
+
+model = "codex-5.4"
+model_reasoning_effort = "xhigh"
+model_verbosity = "high"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+allow_login_shell = false
+
+[features]
+multi_agent = true
+memories = true
+hooks = false
+network_proxy = false
+
+[agents]
+max_threads = 8
+max_depth = 1
+job_max_runtime_seconds = 3600
+
+[agents.spark-filesystem-repo]
+description = "Spark 5.3 helper: filesystem hierarchy, repository map, ownership signals, dead/generated code candidates. Must use evidence only."
+config_file = "agents/spark-filesystem-repo.config.toml"
+nickname_candidates = ["spark-fs", "spark-repo", "spark-tree"]
+
+[agents.spark-toolchain-deps]
+description = "Spark 5.3 helper: toolchain dependency tree, package/library dependency graph, build graph, compatibility matrix."
+config_file = "agents/spark-toolchain-deps.config.toml"
+nickname_candidates = ["spark-deps", "spark-build", "spark-toolchain"]
+
+[agents.spark-code-runtime-debug]
+description = "Spark 5.3 helper: code map, runtime entry points, call graph candidates, failure paths, logging/tracing points."
+config_file = "agents/spark-code-runtime-debug.config.toml"
+nickname_candidates = ["spark-code", "spark-debug", "spark-runtime"]
+
+[agents.spark-data-schema-lineage]
+description = "Spark 5.3 helper: database schemas, source-target mapping, data flow, data lineage, data quality, reconciliation."
+config_file = "agents/spark-data-schema-lineage.config.toml"
+nickname_candidates = ["spark-data", "spark-schema", "spark-lineage"]
+
+[agents.spark-infra-security-obs]
+description = "Spark 5.3 helper: infrastructure topology, network dependencies, IAM/security, secrets/certs inventory, observability, DR/capacity/cost."
+config_file = "agents/spark-infra-security-obs.config.toml"
+nickname_candidates = ["spark-infra", "spark-sec", "spark-ops"]
+
+[agents.spark-integrations-contracts]
+description = "Spark 5.3 helper: APIs, events, webhooks, consumers, third-party dependencies, auth flows, backward compatibility."
+config_file = "agents/spark-integrations-contracts.config.toml"
+nickname_candidates = ["spark-api", "spark-events", "spark-contracts"]
+
+[agents.spark-migration-controls]
+description = "Spark 5.3 helper: validation, test matrix, risk register, migration waves, cutover, rollback, readiness, debt, decommission."
+config_file = "agents/spark-migration-controls.config.toml"
+nickname_candidates = ["spark-controls", "spark-risk", "spark-cutover"]
+
+[agents.spark-flexnetos-investigator]
+description = "Spark 5.3 helper: answer what FlexNetOS was used for instead of lifeos using path, git, config, services, docs, and reference evidence."
+config_file = "agents/spark-flexnetos-investigator.config.toml"
+nickname_candidates = ["spark-flexnetos", "spark-lifeos", "spark-purpose"]

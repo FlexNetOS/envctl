@@ -7,10 +7,13 @@ Cargo.lock.bak
 # Test/playwright ephemeral artifacts
 .meta-snapshots/
 # .playwright-mcp/
+scripts/__pycache__/
 
 # Agent harness output (generated, not committed)
 # .agent/
 .archive/
+.codex/plugins/
+.codex/tmp/
 
 # envctl.lock IS committed — it is the content-hashed manifest-of-record and the
 # baseline for `envctl lock --check` (the CI drift gate). Do not ignore it.
@@ -46,3 +49,4 @@ Cargo.lock.bak
 .handoff/**/*.redb.tmp
 /.handoff/workspaces/
 /.handoff/locks/
+/.handoff/maps/

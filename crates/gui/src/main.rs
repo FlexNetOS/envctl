@@ -16,11 +16,13 @@ use envctl_engine::{
     run_event_loop, AddRepoMode, AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentCommandSpec,
     AgentDoctorReport, AgentDoctorSpec, AgentEditOutcome, AgentList, AgentListKind, AgentListSpec,
     AgentLockDriftItem, AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentReport, AgentScope,
-    AgentSectionSel, AgentSyncSpec, BuildStrategy, ComponentState, DashboardPlan, DashboardSpec,
-    DriftItem, DriftKind, Engine, EngineCommand, EngineEvent, Event, OpStatus, Refactor,
-    RefactorGoal, RenameRule, Severity, Stream, Telemetry, TelemetryControl, Zeroizing,
+    AgentSectionSel, AgentSyncSpec, BuildStrategy, CatalogRenderReport, ComponentState,
+    DashboardPlan, DashboardSpec, DriftItem, DriftKind, Engine, EngineCommand, EngineEvent, Event,
+    OpStatus, Refactor, RefactorGoal, RenameRule, Severity, Stream, Telemetry, TelemetryControl,
+    Zeroizing,
 };
 use std::collections::{HashMap, HashSet, VecDeque};
+use std::path::PathBuf;
 use std::sync::mpsc::{channel, Receiver, Sender};
 
 fn main() -> eframe::Result<()> {
@@ -232,6 +234,10 @@ struct EnvctlApp {
     dash_plan: Option<DashboardPlan>,
     dash_panes_per_tab: usize,
     dash_status: String,
+    catalog_out_dir: String,
+    catalog_target_root: String,
+    catalog_status: String,
+    catalog_last_render: Option<CatalogRenderReport>,
     // agent-env panel — the active verb sub-tab + shared form inputs
     agent_verb: AgentVerbTab,
     agent_config: String,
@@ -283,7 +289,7 @@ struct EnvctlApp {
     sec_mint_expires: Option<i64>,
     sec_mint_has_token: bool,
     // token to copy ONCE: held only between a mint SecretsResult landing and the next copy-affordance
-    // render that consumes it via ui.output().copied_text, then immediately cleared. Never persisted,
+    // render that emits a clipboard command, then immediately cleared. Never persisted,
     // never to push_log / self.log.
     sec_mint_copy_once: Option<String>,
     sec_relay_result: Option<RelayMintMeta>,
@@ -291,6 +297,13 @@ struct EnvctlApp {
 }
 
 impl EnvctlApp {
+    fn default_catalog_out_dir() -> String {
+        std::env::temp_dir()
+            .join("envctl-catalog-export")
+            .display()
+            .to_string()
+    }
+
     fn new(cc: &eframe::CreationContext<'_>) -> Self {
         theme::apply(&cc.egui_ctx);
 
@@ -348,9 +361,13 @@ impl EnvctlApp {
             dash_plan: None,
             dash_panes_per_tab: 6,
             dash_status: String::new(),
+            catalog_out_dir: Self::default_catalog_out_dir(),
+            catalog_target_root: String::new(),
+            catalog_status: String::new(),
+            catalog_last_render: None,
             agent_verb: AgentVerbTab::Sync,
             agent_config: String::new(),
-            agent_scope: AgentScopeSel::Default,
+            agent_scope: AgentScopeSel::Project,
             agent_source: String::new(),
             agent_skills: String::new(),
             agent_mcps: String::new(),
@@ -483,6 +500,18 @@ impl EnvctlApp {
                     for note in &outcome.notes {
                         self.push_log(Stream::Stdout, format!("[dashboard] {note}"));
                     }
+                }
+                Event::CatalogRendered { report } => {
+                    self.busy.remove("catalog-render");
+                    self.catalog_status = format!(
+                        "rendered {} file(s), {} config row(s) -> {}",
+                        report.summary.generated_files,
+                        report.summary.generated_config_rows,
+                        report.out_dir
+                    );
+                    self.catalog_out_dir = report.out_dir.clone();
+                    self.catalog_target_root = report.target_root.clone().unwrap_or_default();
+                    self.catalog_last_render = Some(*report);
                 }
                 Event::AgentRunFinished { report } => {
                     let s = &report.summary;
@@ -689,10 +718,10 @@ impl eframe::App for EnvctlApp {
 
         egui::TopBottomPanel::top("nav")
             .frame(
-                egui::Frame::none()
+                egui::Frame::NONE
                     .fill(theme::PANEL)
-                    .inner_margin(egui::Margin::symmetric(14.0, 10.0))
-                    .stroke(egui::Stroke::new(1.0, theme::BORDER)),
+                    .inner_margin(egui::Margin::symmetric(14, 10))
+                    .stroke(egui::Stroke::new(1.0_f32, theme::BORDER)),
             )
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
@@ -736,9 +765,9 @@ impl eframe::App for EnvctlApp {
 
         egui::CentralPanel::default()
             .frame(
-                egui::Frame::none()
+                egui::Frame::NONE
                     .fill(theme::BG)
-                    .inner_margin(egui::Margin::same(16.0)),
+                    .inner_margin(egui::Margin::same(16)),
             )
             .show(ctx, |ui| match self.screen {
                 Screen::Dashboard => self.dashboard(ui),
@@ -786,7 +815,7 @@ impl EnvctlApp {
                 Color32::TRANSPARENT
             })
             .stroke(egui::Stroke::NONE)
-            .rounding(egui::Rounding::same(7.0));
+            .corner_radius(egui::CornerRadius::same(7));
         if ui.add(btn).clicked() {
             self.screen = s;
         }
@@ -834,7 +863,7 @@ impl EnvctlApp {
                                             egui::ProgressBar::new(frac)
                                                 .fill(theme::load_color(frac))
                                                 .desired_height(10.0)
-                                                .rounding(egui::Rounding::same(5.0)),
+                                                .corner_radius(egui::CornerRadius::same(5)),
                                         );
                                     } else {
                                         ui.colored_label(theme::TEXT_FAINT, "memory: n/a");
@@ -926,7 +955,7 @@ impl EnvctlApp {
                         .text(RichText::new(format!("{}%", g.util_pct)).color(theme::TEXT))
                         .fill(theme::load_color(util))
                         .desired_height(14.0)
-                        .rounding(egui::Rounding::same(6.0)),
+                        .corner_radius(egui::CornerRadius::same(6)),
                 );
             });
             ui.add_space(4.0);
@@ -943,7 +972,7 @@ impl EnvctlApp {
                         )
                         .fill(theme::load_color(vram))
                         .desired_height(14.0)
-                        .rounding(egui::Rounding::same(6.0)),
+                        .corner_radius(egui::CornerRadius::same(6)),
                 );
             });
             ui.add_space(8.0);
@@ -964,7 +993,7 @@ impl EnvctlApp {
     fn sparkline(&self, ui: &mut egui::Ui, hist: &VecDeque<f32>) {
         let (rect, _resp) = ui.allocate_exact_size(egui::vec2(120.0, 28.0), egui::Sense::hover());
         let painter = ui.painter_at(rect);
-        painter.rect_filled(rect, egui::Rounding::same(5.0), theme::BG);
+        painter.rect_filled(rect, egui::CornerRadius::same(5), theme::BG);
 
         if hist.len() < 2 {
             return;
@@ -984,7 +1013,10 @@ impl EnvctlApp {
             .collect();
         let last = hist.back().copied().unwrap_or(0.0) / 100.0;
         let col = theme::load_color(last);
-        painter.add(egui::Shape::line(pts.clone(), egui::Stroke::new(1.6, col)));
+        painter.add(egui::Shape::line(
+            pts.clone(),
+            egui::Stroke::new(1.6_f32, col),
+        ));
         if let Some(p) = pts.last() {
             painter.circle_filled(*p, 2.2, col);
         }
@@ -1676,7 +1708,7 @@ impl EnvctlApp {
                     } else {
                         Color32::TRANSPARENT
                     })
-                    .rounding(egui::Rounding::same(7.0));
+                    .corner_radius(egui::CornerRadius::same(7));
                 if ui.add(btn).clicked() {
                     self.agent_verb = v;
                 }
@@ -1787,9 +1819,9 @@ impl EnvctlApp {
                 .selected_text(self.agent_scope.label())
                 .show_ui(ui, |ui| {
                     for s in [
+                        AgentScopeSel::Project,
                         AgentScopeSel::Default,
                         AgentScopeSel::Global,
-                        AgentScopeSel::Project,
                     ] {
                         ui.selectable_value(&mut self.agent_scope, s, s.label());
                     }
@@ -2277,7 +2309,7 @@ impl EnvctlApp {
                     } else {
                         Color32::TRANSPARENT
                     })
-                    .rounding(egui::Rounding::same(7.0));
+                    .corner_radius(egui::CornerRadius::same(7));
                 if ui.add(btn).clicked() {
                     self.secrets_verb = v;
                 }
@@ -2496,7 +2528,7 @@ impl EnvctlApp {
                     if ui.button("Copy token (once)").clicked() {
                         // take() so the token is moved out and dropped after this frame — copy once.
                         if let Some(tok) = self.sec_mint_copy_once.take() {
-                            ui.output_mut(|o| o.copied_text = tok);
+                            ui.output_mut(|o| o.commands.push(egui::OutputCommand::CopyText(tok)));
                             self.sec_status =
                                 "token copied to clipboard (cleared from memory)".into();
                         }
@@ -2566,11 +2598,11 @@ impl EnvctlApp {
         });
         ui.add_space(6.0);
 
-        egui::Frame::none()
+        egui::Frame::NONE
             .fill(theme::BG)
-            .stroke(egui::Stroke::new(1.0, theme::BORDER))
-            .rounding(egui::Rounding::same(8.0))
-            .inner_margin(egui::Margin::same(10.0))
+            .stroke(egui::Stroke::new(1.0_f32, theme::BORDER))
+            .corner_radius(egui::CornerRadius::same(8))
+            .inner_margin(egui::Margin::same(10))
             .show(ui, |ui| {
                 ui.set_width(ui.available_width());
                 egui::ScrollArea::vertical()
@@ -2694,6 +2726,84 @@ impl EnvctlApp {
             ui.add_space(14.0);
             ui.separator();
             ui.add_space(14.0);
+            ui.label(RichText::new("Catalog export").color(theme::ACCENT_TEXT).strong());
+            ui.colored_label(
+                theme::TEXT_FAINT,
+                "Render the database-backed catalog projection into an explicit directory outside the repo.",
+            );
+            ui.add_space(8.0);
+            ui.horizontal(|ui| {
+                ui.label(RichText::new("Out dir").color(theme::TEXT_MUTED));
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.catalog_out_dir)
+                        .desired_width(360.0)
+                        .hint_text("/tmp/envctl-catalog-export"),
+                );
+            });
+            ui.horizontal(|ui| {
+                ui.label(RichText::new("Target root").color(theme::TEXT_MUTED));
+                ui.add(
+                    egui::TextEdit::singleline(&mut self.catalog_target_root)
+                        .desired_width(360.0)
+                        .hint_text("/home/flexnetos/FlexNetOS"),
+                );
+            });
+            let render_btn = egui::Button::new(
+                RichText::new("Render catalog export").color(theme::ACCENT_TEXT),
+            )
+            .fill(theme::ACCENT);
+            if ui.add(render_btn).clicked() {
+                let out_dir = self.catalog_out_dir.trim();
+                let target_root = self.catalog_target_root.trim();
+                if out_dir.is_empty() {
+                    self.catalog_status = "choose an output directory first".into();
+                } else {
+                    self.catalog_status = if target_root.is_empty() {
+                        format!("rendering -> {out_dir}")
+                    } else {
+                        format!("rendering -> {out_dir} (target root {target_root})")
+                    };
+                    self.dispatch(
+                        EngineCommand::CatalogRender {
+                            out_dir: PathBuf::from(out_dir),
+                            target_root: (!target_root.is_empty())
+                                .then(|| PathBuf::from(target_root)),
+                        },
+                        None,
+                    );
+                }
+            }
+            if !self.catalog_status.is_empty() {
+                ui.add_space(8.0);
+                ui.colored_label(theme::TEXT_FAINT, &self.catalog_status);
+            }
+            if let Some(report) = &self.catalog_last_render {
+                ui.add_space(8.0);
+                ui.colored_label(
+                    theme::TEXT_FAINT,
+                    format!(
+                        "{} files · {} rows · {} bytes",
+                        report.summary.generated_files,
+                        report.summary.generated_config_rows,
+                        report.summary.bytes
+                    ),
+                );
+                for file in report.files.iter().take(6) {
+                    ui.colored_label(
+                        theme::TEXT_MUTED,
+                        format!("{} ({})", file.path, file.format),
+                    );
+                }
+                if report.files.len() > 6 {
+                    ui.colored_label(
+                        theme::TEXT_MUTED,
+                        format!("… and {} more file(s)", report.files.len() - 6),
+                    );
+                }
+            }
+            ui.add_space(14.0);
+            ui.separator();
+            ui.add_space(14.0);
             if ui
                 .add(
                     egui::Button::new(RichText::new("Re-detect").color(theme::ACCENT_TEXT))
@@ -2715,10 +2825,10 @@ impl EnvctlApp {
 
 /// A compact "LABEL value" stat chip on a faint surface.
 fn stat_chip(ui: &mut egui::Ui, label: &str, value: &str, value_col: Color32) {
-    egui::Frame::none()
+    egui::Frame::NONE
         .fill(theme::BG)
-        .rounding(egui::Rounding::same(6.0))
-        .inner_margin(egui::Margin::symmetric(10.0, 5.0))
+        .corner_radius(egui::CornerRadius::same(6))
+        .inner_margin(egui::Margin::symmetric(10, 5))
         .show(ui, |ui| {
             ui.horizontal(|ui| {
                 ui.label(RichText::new(label).size(10.0).color(theme::TEXT_FAINT));
@@ -2956,9 +3066,13 @@ mod agent_spec_tests {
             dash_plan: None,
             dash_panes_per_tab: 6,
             dash_status: String::new(),
+            catalog_out_dir: EnvctlApp::default_catalog_out_dir(),
+            catalog_target_root: String::new(),
+            catalog_status: String::new(),
+            catalog_last_render: None,
             agent_verb: AgentVerbTab::Sync,
             agent_config: String::new(),
-            agent_scope: AgentScopeSel::Default,
+            agent_scope: AgentScopeSel::Project,
             agent_source: String::new(),
             agent_skills: String::new(),
             agent_mcps: String::new(),
@@ -3010,7 +3124,11 @@ mod agent_spec_tests {
         let app = test_app();
         let spec = app.agent_sync_spec();
         assert_eq!(spec.config_path, None, "blank config → None");
-        assert_eq!(spec.scope_override, None, "default scope → no override");
+        assert_eq!(
+            spec.scope_override,
+            Some(AgentScope::Project),
+            "GUI defaults to project scope"
+        );
         assert!(!spec.apply, "apply defaults false (fail-closed)");
         assert!(matches!(spec.lock_mode, AgentLockMode::Plain));
     }
@@ -3121,7 +3239,7 @@ mod agent_spec_tests {
         let app = test_app();
         let spec = app.agent_clean_spec();
         assert!(!spec.apply, "clean apply defaults false (fail-closed)");
-        assert_eq!(spec.scope_override, None);
+        assert_eq!(spec.scope_override, Some(AgentScope::Project));
     }
 
     #[test]

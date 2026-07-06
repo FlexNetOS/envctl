@@ -1,0 +1,76 @@
+{
+  "packet_schema_version": "1.0",
+  "task_id": "MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC",
+  "parent_id": "",
+  "phase": "09-drive-maintenance",
+  "title": "Synchronize live verification and manifest records",
+  "goal": "Close stale generated verification/package manifest gaps after live Drive edits.",
+  "owner_lane": "lane_e_verification",
+  "owner_agent": "drive-live-maintenance-agent",
+  "helper_id": "helper-drive-live-01",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "google-drive-connector",
+  "shell_mode": "workspace-write",
+  "repo_target": "filesystem",
+  "repo_path": "~/envctl-db-nu-plugin-migration-automation-package",
+  "filesystem_scope": "package-root",
+  "input_files": [
+    "history/**",
+    "execution-framework/generated/**",
+    "execution-framework/proof_records/**",
+    "README.md"
+  ],
+  "target_files": [
+    "PACKAGE_MANIFEST.json",
+    "execution-framework/generated/final_verification_report.json",
+    "execution-framework/generated/status_report.json",
+    "execution-framework/generated/execution_manifest.json",
+    "execution-framework/generated/task_graph.normalized.json",
+    "execution-framework/generated/task_graph.index.json",
+    "execution-framework/generated/live_drive_gap_closure_report.json",
+    "execution-framework/proof_records/MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC.proof.json"
+  ],
+  "target_artifacts": [
+    "drive-live-gap-closure"
+  ],
+  "allowed_paths": [
+    "~/envctl-db-nu-plugin-migration-automation-package/**"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "depends_on": [
+    "MAINT-500_README_NAV_BACKTRACE",
+    "MAINT-501_RESTORE_PROOF_TEMPLATE"
+  ],
+  "blocks": [
+    "MAINT-503_CODEX_FINAL_PROMPT"
+  ],
+  "parallel_group": "drive_live_maintenance",
+  "can_run_parallel": false,
+  "max_parallel": 2,
+  "start_after": "",
+  "priority": 900,
+  "execution_cell": "drive-live-maintenance",
+  "required_tools": [
+    "Google_Drive",
+    "python3"
+  ],
+  "command_template": "Apply surgical Drive/package metadata update; no destructive rewrites.",
+  "verification_command": "Verify target file exists and proof record is present in proof ledger.",
+  "completion_gate": "target exists; proof exists; no stale gap remains for this maintenance item",
+  "proof_required": true,
+  "proof_uri": "execution-framework/proof_records/MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC.proof.json",
+  "heartbeat_file": "execution-framework/state/MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC.heartbeat.json",
+  "logs_uri": "execution-framework/logs/MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC.log",
+  "rollback_plan": "Revert only this maintenance addendum or restore prior Drive revision; do not remove source package history.",
+  "risk_level": "low",
+  "human_approval_required": false,
+  "notes": "Generated records now include drive-live maintenance tasks and clear stale external blocker.",
+  "source_graph_uri": "generated/task_graph.csv",
+  "generated_at": "2026-07-05T05:39:53+00:00"
+}

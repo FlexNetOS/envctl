@@ -58,16 +58,22 @@ ensure_repo() {
   local repo="$1"
   local target="$meta_root/$repo"
   local url
+  local ref="HEAD"
   url="$(repo_url "$repo")"
+  if [ "$repo" = "loop_lib" ]; then
+    ref="${LOOP_LIB_REF:-HEAD}"
+  fi
 
   if [ -d "$target/.git" ]; then
     echo "meta-dep: updating $repo at $target"
-    git -C "$target" fetch --depth=1 origin HEAD
+    git -C "$target" fetch --depth=1 origin "$ref"
     git -C "$target" checkout --detach FETCH_HEAD
   else
     echo "meta-dep: cloning $repo to $target"
     rm -rf "$target"
     GIT_TERMINAL_PROMPT=0 git clone --depth=1 "$url" "$target"
+    git -C "$target" fetch --depth=1 origin "$ref"
+    git -C "$target" checkout --detach FETCH_HEAD
   fi
 
   test -f "$target/Cargo.toml" || { echo "FAIL: $repo missing Cargo.toml at $target" >&2; exit 1; }

@@ -1,0 +1,10 @@
+{
+  "task_id": "REL-400_PACKAGE_ARCHIVE",
+  "status": "completed",
+  "updated_at": "2026-07-05T06:08:16+00:00",
+  "artifacts": [
+    "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.tar.gz",
+    "execution-framework/generated/release_archives/envctl-db-nu-plugin-migration-automation-package-2026-07-05-upgraded.zip"
+  ],
+  "proof_uri": "proof_records/REL-400_PACKAGE_ARCHIVE.proof.json"
+}

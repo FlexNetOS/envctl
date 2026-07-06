@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-04T22:20:00-05:00",
+  "status": "no_gaps_live_drive_sync",
+  "maintenance_tasks": [
+    "MAINT-500_README_NAV_BACKTRACE",
+    "MAINT-501_RESTORE_PROOF_TEMPLATE",
+    "MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC",
+    "MAINT-503_CODEX_FINAL_PROMPT"
+  ],
+  "new_or_modified_paths": [
+    "CODEX_FINAL_EXECUTION_PROMPT.md",
+    "prompts/CODEX_FINAL_EXECUTION_PROMPT.md",
+    "README.md",
+    "PACKAGE_MANIFEST.json",
+    "execution-framework/proof_templates/PROOF_RECORD_TEMPLATE.json",
+    "execution-framework/generated/live_drive_gap_closure_report.json",
+    "execution-framework/generated/execution_manifest.json",
+    "execution-framework/generated/final_verification_report.json",
+    "execution-framework/generated/status_report.json",
+    "execution-framework/generated/task_graph.normalized.json",
+    "execution-framework/generated/task_graph.index.json",
+    "execution-framework/proof_records/proof_ledger.jsonl",
+    "execution-framework/generated/execution_packets/MAINT-500_README_NAV_BACKTRACE.json",
+    "execution-framework/generated/execution_packets/MAINT-501_RESTORE_PROOF_TEMPLATE.json",
+    "execution-framework/generated/execution_packets/MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC.json",
+    "execution-framework/generated/execution_packets/MAINT-503_CODEX_FINAL_PROMPT.json",
+    "execution-framework/proof_records/MAINT-500_README_NAV_BACKTRACE.proof.json",
+    "execution-framework/proof_records/MAINT-501_RESTORE_PROOF_TEMPLATE.proof.json",
+    "execution-framework/proof_records/MAINT-502_LIVE_MANIFEST_VERIFICATION_SYNC.proof.json",
+    "execution-framework/proof_records/MAINT-503_CODEX_FINAL_PROMPT.proof.json"
+  ]
+}

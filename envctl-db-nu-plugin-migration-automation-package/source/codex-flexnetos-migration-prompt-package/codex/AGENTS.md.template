@@ -1,0 +1,49 @@
+# AGENTS.md — FlexNetOS Migration Artifact Memory Contract
+
+This repository is being analyzed for a migration follow-up task.
+
+## Mission
+
+Build and maintain a complete migration-artifact memory for this repository. The immediate investigation is:
+
+> Determine what `FlexNetOS` was used for at `~/home/flexnetos/FlexNetOS` instead of `~/home/flexnetos/lifeos`.
+
+## Truth standard
+
+- Use only real local evidence from files, manifests, commands, git history, tests, generated scan outputs, and explicit user-provided context.
+- Never simulate, invent, extrapolate as fact, or create demo findings.
+- If a required fact cannot be proven, write `UNKNOWN` with the exact evidence gap and the command/file that failed to prove it.
+- Redact secrets and private tokens. Do not paste secret values into artifacts.
+- Do not perform destructive actions: no deletes, no force pushes, no credential changes, no production writes, no database mutations.
+
+## Artifact conventions
+
+All migration artifacts live under `migration-artifacts/` and must be linked from `migration-artifacts/index.md`.
+
+Every artifact must include:
+
+1. Verified findings
+2. Evidence ledger with file paths and commands
+3. Unknowns / gaps
+4. Commands run
+5. Downstream links
+6. Next actions
+
+## Required persistent memory files
+
+- `migration-artifacts/MIGRATION_MEMORY.md`
+- `migration-artifacts/index.md`
+- `migration-artifacts/artifact-manifest.json`
+- `migration-artifacts/evidence-register.md`
+- `migration-artifacts/00-executive-summary/flexnetos-purpose-summary.md`
+- `migration-artifacts/01-current-state/flexnetos-vs-lifeos-evidence.md`
+
+## FlexNetOS-specific guardrail
+
+The final answer must distinguish:
+
+- Proven purpose of FlexNetOS
+- Evidence that FlexNetOS replaced, preceded, wrapped, forked, or diverged from `lifeos`
+- References to `FlexNetOS`, `lifeos`, `LifeOS`, `flexnetos`, `FLEXNETOS`, and related package/service/app names
+- Path-level facts: realpath, symlinks, mountpoints, repo root, remotes, branch history, tags, manifests, service definitions, scripts, config, docs
+- Confidence level and why

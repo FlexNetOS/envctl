@@ -1,49 +1,61 @@
-# TASK-0078 guardian report
+# Guardian Report — ADR-0003 Catalog Phase 1
 
-Date: 2026-06-27
+## Verdict
 
-## Verification commands
+PASS-WITH-NOTES
 
-```bash
-bash scripts/tests/test-meta-local-path-audit.sh
-bash ci/gates/meta-local-policy.sh
-bash -n scripts/audit-meta-local-paths.sh scripts/tests/test-meta-local-path-audit.sh ci/gates/meta-local-policy.sh
-bash ci/gates/harness-scripts.sh
+This slice safely establishes the ADR-0003 read-only catalog/table foundation and CLI inspection surface. It does not claim ADR completion.
+
+## Invariants checked
+
+- Existing TOML/YAML/JSON/Rust/handoff inputs remain accepted; no source format was removed or replaced.
+- Catalog scan and table commands are read-only inspection paths.
+- No generated file writes, lock updates, or sync mutations were added.
+- Engine owns the catalog logic; CLI only invokes the shared engine surface and formats output.
+- Row contracts include first-class ownership/source/provenance fields and explicit manual override metadata.
+- `config_files` rows represent scanned source/control-plane files.
+- `observed_facts` rows capture read-only verifier-style observations from current repo files.
+
+## Validation evidence
+
+Passed:
+
+- `cargo fmt --all`
+- `cargo test -p envctl-engine catalog`
+- `cargo test -p envctl-engine`
+- `cargo test -p envctl`
+- `cargo clippy --workspace -- -D warnings`
+- `bash ci/gates/shape.sh`
+- `bash ci/gates/agent-env.sh`
+- `bash ci/gates/p7.sh`
+- `bash ci/gates/loop-state.sh`
+- `bash ci/gates/harness-scripts.sh`
+- `bash ci/gates/meta-local-policy.sh`
+
+Runtime smoke passed:
+
+- `cargo run -q -p envctl --bin envctl -- catalog scan --json`
+- `cargo run -q -p envctl --bin envctl -- catalog table components`
+- `cargo run -q -p envctl --bin envctl -- catalog table observed-facts`
+- `cargo run -q -p envctl --bin envctl -- catalog table env-vars --json`
+
+Observed normalized row counts from the current repo:
+
+```text
+components: 96
+component_hooks: 376
+paths: 49
+settings: 2928
+env_vars: 105
+agent_assets: 51
+registries: 16
+config_files: 342
+migration_evidence: 0
+observed_facts: 694
 ```
 
-All commands passed.
+## Notes / remaining ADR risk
 
-## Live runtime verification
-
-Read-only live audit command:
-
-```bash
-./scripts/audit-meta-local-paths.sh \
-  --inventory /tmp/.../inventory.tsv \
-  --inventory-summary /tmp/.../summary.tsv \
-  --deep-link-inventory /tmp/.../deep.tsv \
-  --deep-link-summary /tmp/.../deep-summary.tsv \
-  --shell-dotfile-conflict-report /tmp/.../shell-conflicts.tsv \
-  --meta-root /home/drdave/Desktop/meta \
-  --real-home /home/drdave \
-  --envctl-home-source /home/drdave/Desktop/meta/envctl/home
-```
-
-Observed:
-
-- exit code: 0
-- `changed=0`
-- inventory summary:
-  - `already-meta=34`
-  - `app-config-state=35`
-  - `bridge=1`
-  - `cache=1`
-  - `managed-dotfile=2`
-  - `sensitive=5`
-- shell conflict report: header only
-- deep-link summary: `inside-meta=5060`, `external-system=1119`, `missing-target=329`, no `real-home-leak` rows
-- backup/history sample rows (`.bash_history`, `.zsh_history`, `.bashrc.bak.*`, `.claude.json.bak.*`, `.n8n.bak.*`, `.zshrc.bak.*`) all resolve inside `$META_ROOT/var/lib/envctl/real-home-dotfile-migration/history-or-backup` as `already-meta`.
-
-## Result
-
-PASS. The slice adds test-proven migration affordances without weakening the default non-mutating owner-supervised policy.
+- `migration_evidence` has a row contract but no current evidence rows because this slice does not perform migrations or adoption actions.
+- ADR-0003 still requires diff/render/import/sync/lock/config-edit/widget behavior and final code-research-verify coverage.
+- The next safe slice should add read-only `catalog diff` and/or `catalog render --out <tempdir>` without applying mutations.

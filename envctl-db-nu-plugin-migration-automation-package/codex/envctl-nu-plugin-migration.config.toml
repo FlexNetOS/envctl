@@ -1,0 +1,22 @@
+# Codex local configuration for envctl database + nu_plugin migration automation.
+# The model labels below are user-requested local labels. Codex must stop rather than silently downgrade if unavailable.
+model = "codex-5.4"
+model_reasoning_effort = "high"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+web_search = "disabled"
+project_doc_max_bytes = 131072
+
+[sandbox_workspace_write]
+network_access = false
+
+[profiles.envctl_migration_automation]
+model = "codex-5.4"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+model_reasoning_effort = "high"
+
+# Spark helper/subagent labels requested by user.
+[models.spark_5_3]
+model = "spark-5.3"
+model_reasoning_effort = "medium"

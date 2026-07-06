@@ -1,0 +1,391 @@
+{
+  "proof_schema_version": "1.0",
+  "task_id": "ART-105_PACKAGE_LIB_GRAPH",
+  "status": "completed",
+  "started_at": "2026-07-04T23:20:41+00:00",
+  "completed_at": "2026-07-04T23:20:41+00:00",
+  "actor": "codex-cli-local",
+  "helper_id": "helper-artifact-06",
+  "model_tag": "gpt-5.3-spark",
+  "repo_path": "/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package",
+  "files_changed": [
+    "execution-framework/scripts/generate_package_lib_graph.py",
+    "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.json",
+    "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.md",
+    "execution-framework/generated/art-105_package_lib_graph.registry_report.json",
+    "execution-framework/state/ART-105_PACKAGE_LIB_GRAPH.heartbeat.json",
+    "execution-framework/logs/ART-105_PACKAGE_LIB_GRAPH.log",
+    "execution-framework/proof_records/ART-105_PACKAGE_LIB_GRAPH.proof.json",
+    "execution-framework/proof_records/proof_ledger.jsonl"
+  ],
+  "commands_run": [
+    "python3 scripts/generate_package_lib_graph.py",
+    "python3 -m py_compile scripts/generate_package_lib_graph.py"
+  ],
+  "verification_output": {
+    "schema_version": "1.0",
+    "task_id": "ART-105_PACKAGE_LIB_GRAPH",
+    "generated_at": "2026-07-04T23:20:41+00:00",
+    "status": "passed",
+    "errors": [],
+    "summary": {
+      "node_count": 8,
+      "edge_count": 6,
+      "python_file_count": 49,
+      "third_party_python_import_count": 2,
+      "shell_script_count": 6,
+      "issue_count": 4,
+      "vulnerability_count": 1,
+      "deprecation_count": 1,
+      "incompatibility_count": 2,
+      "registered_artifact_count": 2,
+      "evidence_count": 12,
+      "graph_edge_count": 10,
+      "validation_count": 6
+    },
+    "registry_results": [
+      {
+        "artifact_row_id": "artifact-b4eb63fb9d1bc3c282fe71da",
+        "artifact_id": "art-105-package-lib-graph-json",
+        "run_id": "run-art105-package-lib-graph",
+        "path": "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.json",
+        "content_hash": "sha256:f74269dbb0982feb7685ff7fda769f8242af26cebf1770cd2e62e8d49222020b",
+        "producer_operation_id": "op-art105-generate-package-lib-graph",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-c48af8cb9ab36ca8163aac15",
+          "evidence-376dff2d65282de7f326365c",
+          "evidence-47d1aea82ca694e58c247a3e",
+          "evidence-95c2f52d579370556ae63912",
+          "evidence-3fa4b5dda6c0ff3f9d3c72f7",
+          "evidence-f73a142fca835052fd909826"
+        ],
+        "graph_edge_ids": [
+          "edge-a0a3cab2c5630918e1829e7a",
+          "edge-cc6f98eb1b8902d7e8e6f8bb",
+          "edge-0a80525eb40adf339da6f937",
+          "edge-a0c05a6b60aaedf0b11cd3e5",
+          "edge-42c2c32641db2a95217a4c78"
+        ],
+        "validation_ids": [
+          "validation-dfdf897e8a7405fb1410c4a4",
+          "validation-de711cb53862fc4e053159eb",
+          "validation-d40c059caef01feca3fad5ed"
+        ]
+      },
+      {
+        "artifact_row_id": "artifact-c7deb90c57d70b8139aadee2",
+        "artifact_id": "art-105-package-lib-graph-md",
+        "run_id": "run-art105-package-lib-graph",
+        "path": "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.md",
+        "content_hash": "sha256:2931064991fe7f9b9eed92c2d65169136c2cd9bda1e58471afa0dd90bad3ed67",
+        "producer_operation_id": "op-art105-generate-package-lib-graph",
+        "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+        "evidence_ids": [
+          "evidence-d1d0d6c6147f731bde573f2a",
+          "evidence-c5a65a5b74f12e3e550142a8",
+          "evidence-73f4ced894eacf2eb853768f",
+          "evidence-5ce6fbf281fe14a468f88d37",
+          "evidence-472540b2235bedacb5385bf8",
+          "evidence-236228462eba902da34c950c"
+        ],
+        "graph_edge_ids": [
+          "edge-43fd188cb9050980bce88ad3",
+          "edge-3c43b83b78c17413e91a879a",
+          "edge-ccf77d34c9b17abb754b5624",
+          "edge-e22150a5e8b1eef4d1bd32bd",
+          "edge-abb2b0efe88711db0617326d"
+        ],
+        "validation_ids": [
+          "validation-d702a84eb5181cbd0f281198",
+          "validation-5a1e77f240a04b6ed4dba1c0",
+          "validation-7310fc3ceebe74dd1909258d"
+        ]
+      }
+    ],
+    "registered_artifacts": [
+      {
+        "id": "artifact-b4eb63fb9d1bc3c282fe71da",
+        "run_id": "run-art105-package-lib-graph",
+        "artifact_id": "art-105-package-lib-graph-json",
+        "title": "ART-105 Package/library Dependency Graph JSON",
+        "artifact_type": "package_library_dependency_graph",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.json",
+        "content_hash": "sha256:f74269dbb0982feb7685ff7fda769f8242af26cebf1770cd2e62e8d49222020b",
+        "generated_by_operation_id": "op-art105-generate-package-lib-graph",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-c48af8cb9ab36ca8163aac15",
+            "evidence-376dff2d65282de7f326365c",
+            "evidence-47d1aea82ca694e58c247a3e",
+            "evidence-95c2f52d579370556ae63912",
+            "evidence-3fa4b5dda6c0ff3f9d3c72f7",
+            "evidence-f73a142fca835052fd909826"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.json",
+            "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.md",
+            "execution-framework/generated/package_scan.json",
+            "execution-framework/generated/envctl_target_registry.json",
+            "execution-framework/generated/shared_protocol_manifest.json",
+            "execution-framework/generated/contract_manifest.json"
+          ],
+          "producer_operation_id": "op-art105-generate-package-lib-graph",
+          "provenance": {
+            "helper_id": "helper-artifact-06",
+            "model_tag": "gpt-5.3-spark",
+            "source_files": {
+              "contract_rows": [
+                {
+                  "artifact_id": "03-code-analysis-package-dependencies-md",
+                  "artifact_type": "migration_artifact",
+                  "contract_row_id": "artifact:03-code-analysis-package-dependencies-md",
+                  "format": "md",
+                  "producer_task_id": "ART-105_PACKAGE_LIB_GRAPH",
+                  "required_path": "migration-artifacts/03-code-analysis/package-dependencies.md",
+                  "section": "03-code-analysis",
+                  "source_refs": [
+                    "source/codex-flexnetos-migration-prompt-package/expected-output/migration-artifacts-tree.md",
+                    "source/previous-migration-artifact-context.md"
+                  ],
+                  "status": "required",
+                  "title": "Package Dependencies",
+                  "validators": [
+                    "path_registered",
+                    "evidence_or_status_recorded",
+                    "linked_from_index"
+                  ]
+                },
+                {
+                  "artifact_id": "03-code-analysis-package-library-dependency-graph-md",
+                  "artifact_type": "migration_artifact",
+                  "contract_row_id": "artifact:03-code-analysis-package-library-dependency-graph-md",
+                  "format": "md",
+                  "producer_task_id": "ART-103_SERVICE_DEP_GRAPH",
+                  "required_path": "migration-artifacts/03-code-analysis/package-library-dependency-graph.md",
+                  "section": "03-code-analysis",
+                  "source_refs": [
+                    "source/codex-flexnetos-migration-prompt-package/expected-output/migration-artifacts-tree.md",
+                    "source/previous-migration-artifact-context.md"
+                  ],
+                  "status": "required",
+                  "title": "Package Library Dependency Graph",
+                  "validators": [
+                    "path_registered",
+                    "evidence_or_status_recorded",
+                    "linked_from_index"
+                  ]
+                }
+              ],
+              "package_manifest_file_count": 281,
+              "package_scan_folders": [
+                "codex",
+                "examples",
+                "expected-output",
+                "helpers",
+                "history",
+                "prompts",
+                "schemas",
+                "source",
+                "specs",
+                "sql"
+              ],
+              "shared_protocol_status": null,
+              "source_manifest_file_count": 38,
+              "target_registry_status": "passed"
+            },
+            "task_id": "ART-105_PACKAGE_LIB_GRAPH"
+          },
+          "validation_ids": [
+            "validation-dfdf897e8a7405fb1410c4a4",
+            "validation-de711cb53862fc4e053159eb",
+            "validation-d40c059caef01feca3fad5ed"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-a0a3cab2c5630918e1829e7a",
+            "edge-cc6f98eb1b8902d7e8e6f8bb",
+            "edge-0a80525eb40adf339da6f937",
+            "edge-a0c05a6b60aaedf0b11cd3e5",
+            "edge-42c2c32641db2a95217a4c78"
+          ],
+          "links": [
+            {
+              "to": "artifact:03-code-analysis-package-dependencies-md",
+              "type": "satisfies_contract_row"
+            },
+            {
+              "to": "artifact:03-code-analysis-package-library-dependency-graph-md",
+              "type": "satisfies_contract_row"
+            },
+            {
+              "to": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            }
+          ]
+        }
+      },
+      {
+        "id": "artifact-c7deb90c57d70b8139aadee2",
+        "run_id": "run-art105-package-lib-graph",
+        "artifact_id": "art-105-package-lib-graph-md",
+        "title": "ART-105 Package/library Dependency Graph",
+        "artifact_type": "package_library_dependency_graph",
+        "status": "complete",
+        "path": "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.md",
+        "content_hash": "sha256:2931064991fe7f9b9eed92c2d65169136c2cd9bda1e58471afa0dd90bad3ed67",
+        "generated_by_operation_id": "op-art105-generate-package-lib-graph",
+        "evidence": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "evidence_ids": [
+            "evidence-d1d0d6c6147f731bde573f2a",
+            "evidence-c5a65a5b74f12e3e550142a8",
+            "evidence-73f4ced894eacf2eb853768f",
+            "evidence-5ce6fbf281fe14a468f88d37",
+            "evidence-472540b2235bedacb5385bf8",
+            "evidence-236228462eba902da34c950c"
+          ],
+          "evidence_refs": [
+            "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.json",
+            "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.md",
+            "execution-framework/generated/package_scan.json",
+            "execution-framework/generated/envctl_target_registry.json",
+            "execution-framework/generated/shared_protocol_manifest.json",
+            "execution-framework/generated/contract_manifest.json"
+          ],
+          "producer_operation_id": "op-art105-generate-package-lib-graph",
+          "provenance": {
+            "helper_id": "helper-artifact-06",
+            "model_tag": "gpt-5.3-spark",
+            "source_files": {
+              "contract_rows": [
+                {
+                  "artifact_id": "03-code-analysis-package-dependencies-md",
+                  "artifact_type": "migration_artifact",
+                  "contract_row_id": "artifact:03-code-analysis-package-dependencies-md",
+                  "format": "md",
+                  "producer_task_id": "ART-105_PACKAGE_LIB_GRAPH",
+                  "required_path": "migration-artifacts/03-code-analysis/package-dependencies.md",
+                  "section": "03-code-analysis",
+                  "source_refs": [
+                    "source/codex-flexnetos-migration-prompt-package/expected-output/migration-artifacts-tree.md",
+                    "source/previous-migration-artifact-context.md"
+                  ],
+                  "status": "required",
+                  "title": "Package Dependencies",
+                  "validators": [
+                    "path_registered",
+                    "evidence_or_status_recorded",
+                    "linked_from_index"
+                  ]
+                },
+                {
+                  "artifact_id": "03-code-analysis-package-library-dependency-graph-md",
+                  "artifact_type": "migration_artifact",
+                  "contract_row_id": "artifact:03-code-analysis-package-library-dependency-graph-md",
+                  "format": "md",
+                  "producer_task_id": "ART-103_SERVICE_DEP_GRAPH",
+                  "required_path": "migration-artifacts/03-code-analysis/package-library-dependency-graph.md",
+                  "section": "03-code-analysis",
+                  "source_refs": [
+                    "source/codex-flexnetos-migration-prompt-package/expected-output/migration-artifacts-tree.md",
+                    "source/previous-migration-artifact-context.md"
+                  ],
+                  "status": "required",
+                  "title": "Package Library Dependency Graph",
+                  "validators": [
+                    "path_registered",
+                    "evidence_or_status_recorded",
+                    "linked_from_index"
+                  ]
+                }
+              ],
+              "package_manifest_file_count": 281,
+              "package_scan_folders": [
+                "codex",
+                "examples",
+                "expected-output",
+                "helpers",
+                "history",
+                "prompts",
+                "schemas",
+                "source",
+                "specs",
+                "sql"
+              ],
+              "shared_protocol_status": null,
+              "source_manifest_file_count": 38,
+              "target_registry_status": "passed"
+            },
+            "task_id": "ART-105_PACKAGE_LIB_GRAPH"
+          },
+          "validation_ids": [
+            "validation-d702a84eb5181cbd0f281198",
+            "validation-5a1e77f240a04b6ed4dba1c0",
+            "validation-7310fc3ceebe74dd1909258d"
+          ]
+        },
+        "links": {
+          "contract_id": "contract-full-migration-artifact-contract-1.0.0",
+          "graph_edge_ids": [
+            "edge-43fd188cb9050980bce88ad3",
+            "edge-3c43b83b78c17413e91a879a",
+            "edge-ccf77d34c9b17abb754b5624",
+            "edge-e22150a5e8b1eef4d1bd32bd",
+            "edge-abb2b0efe88711db0617326d"
+          ],
+          "links": [
+            {
+              "to": "artifact:03-code-analysis-package-dependencies-md",
+              "type": "satisfies_contract_row"
+            },
+            {
+              "to": "artifact:03-code-analysis-package-library-dependency-graph-md",
+              "type": "satisfies_contract_row"
+            },
+            {
+              "to": "REQ-024_ENVCTL_ARTIFACT_REGISTRY",
+              "type": "depends_on"
+            },
+            {
+              "to": "REQ-040_SHARED_PROTOCOL_SCHEMAS",
+              "type": "depends_on"
+            }
+          ]
+        }
+      }
+    ],
+    "evidence": [
+      "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.json",
+      "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.md",
+      "execution-framework/generated/art-105_package_lib_graph.registry_report.json"
+    ]
+  },
+  "checksums": {
+    "execution-framework/scripts/generate_package_lib_graph.py": "82b9bf117d2cd2febf5a3ffcadfecf3b4f1df2cc1190e9b9aa7d1f30d831d90b",
+    "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.json": "f74269dbb0982feb7685ff7fda769f8242af26cebf1770cd2e62e8d49222020b",
+    "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.md": "2931064991fe7f9b9eed92c2d65169136c2cd9bda1e58471afa0dd90bad3ed67",
+    "execution-framework/generated/art-105_package_lib_graph.registry_report.json": "98633c22d19ff5f0b124bc07dbef29f677d9be7ceff9a50f024eba81b983ab6f",
+    "execution-framework/state/ART-105_PACKAGE_LIB_GRAPH.heartbeat.json": "918194634de81826b12b0fe748bb5256a94cd715208bfdb832a53a59215c355a",
+    "execution-framework/logs/ART-105_PACKAGE_LIB_GRAPH.log": "98633c22d19ff5f0b124bc07dbef29f677d9be7ceff9a50f024eba81b983ab6f",
+    "execution-framework/proof_records/ART-105_PACKAGE_LIB_GRAPH.proof.json": "01ec673ad63a986aaa693fc8a38d9a8aad54d72bdda25f5554b51576f18fe224",
+    "execution-framework/proof_records/proof_ledger.jsonl": "594837060f22570c361a9e2a1f37e674995bddf0e8de31c4e2d7939b990e5af7"
+  },
+  "logs_uri": "logs/ART-105_PACKAGE_LIB_GRAPH.log",
+  "rollback_point": "history/pre_execution_framework_manifest.json",
+  "evidence": [
+    "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.json",
+    "execution-framework/migration-artifacts/art-105_package_lib_graph/package_lib_graph.md",
+    "execution-framework/generated/art-105_package_lib_graph.registry_report.json"
+  ],
+  "failure_reason": "",
+  "next_action": "none"
+}
