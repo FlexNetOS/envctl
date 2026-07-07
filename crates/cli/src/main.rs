@@ -2927,39 +2927,28 @@ mod env_cmd_tests {
         let live =
             std::fs::read_to_string(format!("{base}settings.json")).expect("read settings.json");
 
-        // Derive this machine's META_ROOT from the rendered env block so the test is
-        // host-independent (CI vs dev box have different absolute roots) AND
-        // statusline-shape-independent — the old statusline-command.sh anchor broke
-        // silently when the Fable-5 harness moved the statusline to
-        // ~/.claude/hooks/statusline.sh (masked on master: push CI runs only on develop).
-        const KEY: &str = "\"META_ROOT\": \"";
-        let anchor = live
-            .lines()
-            .find(|l| l.contains(KEY))
-            .expect("settings.json has a META_ROOT env line (TASK-0004)");
-        let root = anchor
-            .split_once(KEY)
-            .map(|(_, rest)| rest.trim_end_matches([',', '"']))
-            .expect("META_ROOT env value shape: \"META_ROOT\": \"<root>\",");
+        // Owner ruling 2026-07-07: neither META_ROOT nor LIFEOS_ROOT may be used or
+        // linger in session wiring — lifeos does not come into play until the first
+        // real release compiles, and META_ROOT was inaccurate meta-centric doctrine
+        // (the old statusline-command.sh anchor of this test had already broken
+        // silently when the harness moved the statusline; masked because push CI
+        // runs only on develop). This gate now ENFORCES the ban.
+        for (name, text) in [("settings.json", &live), ("settings.json.tmpl", &tmpl)] {
+            for banned in ["META_ROOT", "META_FILE", "LIFEOS_ROOT", "${"] {
+                assert!(
+                    !text.contains(banned),
+                    "{name} contains banned root-var wiring `{banned}` — owner ruling: \
+                     no META_ROOT/LIFEOS_ROOT in session wiring; use explicit real paths"
+                );
+            }
+        }
 
+        // With no root-var placeholders left, the tmpl renders as identity: the live
+        // settings MUST equal the template byte-for-byte (still a real drift gate).
         assert_eq!(
-            super::render_meta_root(&tmpl, root),
-            live,
-            "settings.json drifted from settings.json.tmpl — re-render it \
-             (sed 's|${{META_ROOT}}|<root>|g' settings.json.tmpl > settings.json)"
-        );
-        assert!(
-            !live.contains("${META_ROOT}") && !live.contains("$META_ROOT"),
-            "settings.json still has an unrendered META_ROOT token"
-        );
-        // TASK-0004: env block wires META_ROOT (+ META_FILE) into the env Claude inherits.
-        assert!(
-            tmpl.contains("\"META_ROOT\": \"${META_ROOT}\""),
-            "settings.json.tmpl must export META_ROOT via the env block (TASK-0004)"
-        );
-        assert!(
-            live.contains(&format!("\"META_ROOT\": \"{root}\"")),
-            "rendered settings.json must carry the absolute META_ROOT in its env block"
+            tmpl, live,
+            "settings.json drifted from settings.json.tmpl — copy the tmpl over it \
+             (the template has no placeholders since the root-var ban)"
         );
     }
 }

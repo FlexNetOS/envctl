@@ -18,7 +18,7 @@ $HOME/.config/rtk                   -> envctl/home/.config/rtk               (rt
 $HOME/.config/yazelix/settings.jsonc-> envctl/home/.config/yazelix/...       (home-config-links)
 $HOME/.config/systemd/user/*.service-> envctl/home/.config/systemd/user/...  (home-config-links)
 $ENVCTL_REAL_HOME/.nix-profile      -> real-home Nix profile state          (Yazelix-owned)
-$META_ROOT/usr/bin/<tool>        -> $META_ROOT/.toolchains/... or meta/<repo>/target/release/<tool>
+workspace usr/bin/<tool>            -> LEGACY pack residue (runtime ownership = Nix profile)
 ```
 
 ## Rules (review gates — this repo is PUBLIC)
@@ -27,7 +27,7 @@ $META_ROOT/usr/bin/<tool>        -> $META_ROOT/.toolchains/... or meta/<repo>/ta
    `~/.claude/.credentials.json`, `~/.config/gh/hosts.yml`, keyrings are NEVER added). The envctl
    secrets stack / relay is the sanctioned channel for secret material.
 2. **No envctl-owned host-home state.** Histories, caches, sessions, `vox.db`, piper voices, and envctl-owned
-   share/state/cache data live under canonical `$META_ROOT` roots (`var/lib`, `var/cache`,
+   share/state/cache data live under the workspace root's `var/` trees (`var/lib`, `var/cache`,
    `var/log`, `var/tmp`, or meta-home XDG roots such as `.local/share` when a desktop/XDG
    contract requires it). Yazelix-owned real-home Nix profile state is preserved; per-tool
    real-home user-bin shadows are not install targets.
@@ -80,6 +80,6 @@ must be reviewed/materialized before any named `--migrate-cache-child NAME` appl
   treat it as a reviewed residual, not an install target.
 - `repowire.service` is carried for the record but disabled on the box (binary missing — see header).
 - RTK config is tracked here; RTK command history and tee logs remain machine-local state under
-  `$META_ROOT/.local/share/rtk/` only when RTK requires XDG data semantics; otherwise use
-  `$META_ROOT/var/lib/rtk/`. The Yazelix profile is the real-home runtime owner; per-tool
+  the workspace `.local/share/rtk/` only when RTK requires XDG data semantics; otherwise use
+  the workspace `var/lib/rtk/`. The Yazelix profile is the real-home runtime owner; per-tool
   real-home user-bin shadows remain compatibility debt.

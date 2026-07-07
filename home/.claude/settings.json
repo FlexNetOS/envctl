@@ -8,8 +8,6 @@
   "autoMemoryDirectory": "/home/flexnetos/lifeos/var/lib/claude-harness/memory",
   "cleanupPeriodDays": 30,
   "env": {
-    "META_ROOT": "/home/flexnetos/lifeos/src/meta",
-    "META_FILE": "/home/flexnetos/lifeos/src/meta/.meta.yaml",
     "HARNESS_VAR": "/home/flexnetos/lifeos/var",
     "ENABLE_TOOL_SEARCH": "auto",
     "MAX_MCP_OUTPUT_TOKENS": "25000"

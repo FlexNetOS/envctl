@@ -21,18 +21,16 @@ fi
 # === rtk monitor pane (live coverage + savings) ===========================
 # `rtk-mon` opens it on demand; it also auto-opens ONCE per zellij session.
 # Opt out: export RTK_MONITOR_AUTOSTART=0 before bash starts.
-if [ -z "${META_ROOT:-}" ]; then
-  case "${HOME:-}" in
-    */Desktop/meta) export META_ROOT="$HOME" ;;
-    *) export META_ROOT="${HOME:-/home/drdave}/Desktop/meta" ;;
-  esac
-fi
-alias rtk-mon='zellij run --name rtk --direction down -- "$META_ROOT/usr/bin/rtk-monitor"'
-if [ -n "${ZELLIJ_SESSION_NAME:-}" ] && [ "${RTK_MONITOR_AUTOSTART:-1}" != "0" ]; then
+# Owner ruling 2026-07-07: no META_ROOT/LIFEOS_ROOT wiring (the old block here
+# exported a /home/drdave/Desktop/meta fallback — pre-clean-room debris). The
+# tool resolves from PATH (the Nix profile owns runtime); absent tool = no-op.
+alias rtk-mon='command -v rtk-monitor >/dev/null 2>&1 && zellij run --name rtk --direction down -- rtk-monitor'
+if [ -n "${ZELLIJ_SESSION_NAME:-}" ] && [ "${RTK_MONITOR_AUTOSTART:-1}" != "0" ] \
+   && command -v rtk-monitor >/dev/null 2>&1; then
   _rtk_marker="/tmp/rtk-monitor-${ZELLIJ_SESSION_NAME}.lock"
   if [ ! -e "$_rtk_marker" ]; then
     : > "$_rtk_marker"
-    zellij run --name rtk --direction down -- "$META_ROOT/usr/bin/rtk-monitor" >/dev/null 2>&1 || true
+    zellij run --name rtk --direction down -- rtk-monitor >/dev/null 2>&1 || true
   fi
   unset _rtk_marker
 fi
