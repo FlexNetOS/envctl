@@ -15,6 +15,9 @@ clap = { workspace = true }
 # Pure-Rust shell-completion generation for the CLI-only `completions <shell>` verb (TASK-0019).
 clap_complete = { workspace = true }
 anyhow = { workspace = true }
+# serde: the `migration` verb's generic structured-output printer (Serialize bound).
+# Already a workspace dep everywhere else in the trust boundary — no new C.
+serde = { workspace = true }
 serde_json = { workspace = true }
 # self-update CLI half (TASK-0019): download/extract/atomic-replace of the running binary.
 # Reuses the agent-env blocking HTTP client; tar + flate2(rust_backend) + sha2 are pure-Rust

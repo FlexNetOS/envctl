@@ -1,6 +1,7 @@
 //! `envctl` — thin CLI over the shared engine. Subcommands map 1:1 to the five
 //! verbs. Destructive verbs (reset/auto-fix) are DRY-RUN by default; pass
 //! `--apply` to act. `auto-detect` is read-only and prints a real EnvReport.
+mod migration_cmd;
 mod self_update;
 
 use clap::{Args, CommandFactory, Parser, Subcommand, ValueEnum};
@@ -512,6 +513,25 @@ enum Cmd {
     Migrate {
         #[command(subcommand)]
         cmd: MigrateCmd,
+    },
+    /// Migration automation database (event-sourced, replayable): targets, artifact
+    /// contracts, recipes, runs, operations, hash-chained events, evidence, artifacts,
+    /// approvals (R3+ gate), validations, checkpoints, rollbacks, replay verification.
+    #[command(
+        long_about = "The database-backed migration automation engine (the envctl-db-nu-plugin package contract, repo-native on pure-Rust redb): register target descriptors, import packages/artifact contracts, create recipes, run event-sourced migration runs with hash-chained ledgers, gate R3+ operations behind approvals, record evidence/artifacts/validations/checkpoints/rollbacks, and verify replay. Agent-first: non-interactive, structured output, real exit codes. Store: --db, else $ENVCTL_MIGRATION_DB, else $META_ROOT/var/envctl/migration.redb.",
+        after_help = envctl_examples!(
+            "envctl migration target add four-system --primary-root /work --descriptor target.json",
+            "envctl migration run create --target four-system --recipe recipe-000001",
+            "envctl migration approval list",
+            "envctl migration run replay run-000001 --mode verify-only --verify-files",
+        )
+    )]
+    Migration {
+        /// Migration store path override.
+        #[arg(long)]
+        db: Option<PathBuf>,
+        #[command(subcommand)]
+        cmd: migration_cmd::MigrationCmd,
     },
     /// Manage agent assets (skills / MCP servers / commands) declaratively over the
     /// shared `Engine::agent_*` API. Mutating verbs (sync/add/remove/clean) are
@@ -1655,27 +1675,28 @@ fn main() -> anyhow::Result<()> {
         envctl_engine::update_notifier::wait_for_check(update_handle, Duration::from_millis(800));
     }
 
-    let engine = if matches!(cli.cmd, Cmd::Dashboard { .. } | Cmd::Env { .. })
-        || matches!(
-            cli.cmd,
-            Cmd::Catalog {
-                roots: CatalogRootArgs {
-                    repo_root: Some(_),
-                    ..
-                },
+    let engine = if matches!(
+        cli.cmd,
+        Cmd::Dashboard { .. } | Cmd::Env { .. } | Cmd::Migration { .. }
+    ) || matches!(
+        cli.cmd,
+        Cmd::Catalog {
+            roots: CatalogRootArgs {
+                repo_root: Some(_),
                 ..
-            }
-        )
-        || matches!(
-            cli.cmd,
-            Cmd::Catalog {
-                roots: CatalogRootArgs {
-                    manifest_dir: Some(_),
-                    ..
-                },
+            },
+            ..
+        }
+    ) || matches!(
+        cli.cmd,
+        Cmd::Catalog {
+            roots: CatalogRootArgs {
+                manifest_dir: Some(_),
                 ..
-            }
-        ) {
+            },
+            ..
+        }
+    ) {
         Engine::detached()
     } else {
         Engine::load_default()?
@@ -1818,6 +1839,7 @@ fn main() -> anyhow::Result<()> {
             materialize,
         } => run_env(meta_file, toolchains, materialize, json),
         Cmd::Migrate { cmd } => run_migrate(&engine, cmd, json),
+        Cmd::Migration { db, cmd } => migration_cmd::run_migration(db, cmd, json),
         Cmd::Agent { cmd } => run_agent(engine, cmd, json),
         Cmd::Secret { cmd } => run_secret(cmd, json),
         Cmd::Completions { shell } => run_completions(shell),
@@ -3057,6 +3079,7 @@ fn run_action(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
             | Cmd::Dashboard { .. }
             | Cmd::Env { .. }
             | Cmd::Migrate { .. }
+            | Cmd::Migration { .. }
             | Cmd::Agent { .. }
             | Cmd::Secret { .. }
             | Cmd::Registry { .. }
