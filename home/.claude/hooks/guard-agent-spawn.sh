@@ -40,17 +40,15 @@ if [ "$ACTIVE" -ge "$MAX_ACTIVE_AGENTS" ]; then
   deny "Runaway containment: $ACTIVE agents already active machine-wide (cap $MAX_ACTIVE_AGENTS). Wait for completions or run the kill switch (harness-halt.sh)."
 fi
 
-# --- budget gate: block at ${RATE_BLOCK_PCT}% of either rate-limit window.
-if [ -f "$BLOCK_FLAG" ]; then
-  ledger "guard.deny" "\"rule\":\"budget-flag\""
-  deny "Budget sentinel: rate-limit ceiling reached (flag set). Operator must clear $BLOCK_FLAG after deciding how to proceed."
-fi
+# --- budget gate: block at ${RATE_BLOCK_PCT}% of either rate-limit window,
+# evaluated LIVE from THIS session's cache (rate limits are account-wide; no
+# persistent shared flag, which would let one session/stale drill block all).
+# When the 5h window resets, the live reading naturally unblocks.
 PCT=$(rate_pct_max)
 if [ -n "$PCT" ] && [ "$PCT" -ge "$RATE_BLOCK_PCT" ] 2>/dev/null; then
-  touch "$BLOCK_FLAG"
   command -v notify-send >/dev/null 2>&1 && notify-send -u critical "Claude harness" "Rate limit ${PCT}% ≥ ${RATE_BLOCK_PCT}% — agent spawns blocked" 2>/dev/null
   ledger "guard.deny" "\"rule\":\"budget-rate\",\"pct\":\"$PCT\""
-  deny "Budget sentinel: usage at ${PCT}% of a rate-limit window (ceiling ${RATE_BLOCK_PCT}%). Spawn blocked; ask the operator."
+  deny "Budget sentinel: usage at ${PCT}% of a rate-limit window (ceiling ${RATE_BLOCK_PCT}%). Spawn blocked; ask the operator (routing is an operator decision)."
 fi
 
 ledger "guard.pass" "\"tool\":\"Agent\",\"active\":\"$ACTIVE\""

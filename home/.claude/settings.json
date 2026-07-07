@@ -10,10 +10,16 @@
   "env": {
     "HARNESS_VAR": "/home/flexnetos/lifeos/var",
     "ENABLE_TOOL_SEARCH": "auto",
-    "MAX_MCP_OUTPUT_TOKENS": "25000"
+    "MAX_MCP_OUTPUT_TOKENS": "25000",
+    "SECURITY_WARNINGS_STATE_DIR": "/home/flexnetos/FlexNetOS/var/lib/claude-harness/security",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
   "sandbox": {
     "enabled": false
+  },
+  "enabledPlugins": {
+    "security-guidance@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": true
   },
   "permissions": {
     "deny": [
