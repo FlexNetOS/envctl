@@ -44,20 +44,24 @@ first_words() {
     done
   done
 }
+# Strip quoted spans first: content inside "..." or '...' can never be a command,
+# and its separators (| ; &) must not be read as pipeline breaks. This kills the
+# grep -E "a|claude|b" false-positive class.
+CMDQ=$(printf '%s' "$CMD" | sed "s/\"[^\"]*\"/ /g; s/'[^']*'/ /g")
 NESTED=""
 while IFS= read -r w; do
   case "$w" in
     claude|*/claude|rtk) NESTED="$w" ;;
   esac
 done <<EOF_FW
-$(first_words "$CMD")
+$(first_words "$CMDQ")
 EOF_FW
 # rtk is only nested-relevant when invoking the CC binary through it
 if [ "$NESTED" = "rtk" ]; then
-  printf '%s' "$CMD" | grep -Eq 'rtk[[:space:]]+claude([[:space:]]|$)' || NESTED=""
+  printf '%s' "$CMDQ" | grep -Eq 'rtk[[:space:]]+claude([[:space:]]|$)' || NESTED=""
 fi
 if [ -n "$NESTED" ]; then
-  if ! printf '%s' "$CMD" | grep -Eq '^[[:space:]]*(rtk[[:space:]]+)?claude[[:space:]]+(--version|update|doctor)[[:space:]]*$'; then
+  if ! printf '%s' "$CMDQ" | grep -Eq '^[[:space:]]*(rtk[[:space:]]+)?claude[[:space:]]+(--version|update|doctor)[[:space:]]*$'; then
     ledger "guard.deny" "\"rule\":\"nested-claude\",\"cmd\":\"$(json_escape "$CMD")\""
     deny "Nested Claude sessions are denied (recursion containment; weave is not built yet, so there is no sanctioned wrapper). Allowed: 'claude --version', 'claude update', 'claude doctor'. Use teams/subagents/background bash instead."
   fi
