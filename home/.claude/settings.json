@@ -12,10 +12,15 @@
     "META_FILE": "/home/flexnetos/FlexNetOS/src/meta/.meta.yaml",
     "HARNESS_VAR": "/home/flexnetos/FlexNetOS/var",
     "ENABLE_TOOL_SEARCH": "auto",
-    "MAX_MCP_OUTPUT_TOKENS": "25000"
+    "MAX_MCP_OUTPUT_TOKENS": "25000",
+    "SECURITY_WARNINGS_STATE_DIR": "/home/flexnetos/FlexNetOS/var/lib/claude-harness/security"
   },
   "sandbox": {
     "enabled": false
+  },
+  "enabledPlugins": {
+    "security-guidance@claude-plugins-official": true,
+    "rust-analyzer-lsp@claude-plugins-official": true
   },
   "permissions": {
     "deny": [
