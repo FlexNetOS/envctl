@@ -12,7 +12,17 @@
     "ENABLE_TOOL_SEARCH": "auto",
     "MAX_MCP_OUTPUT_TOKENS": "25000",
     "SECURITY_WARNINGS_STATE_DIR": "/home/flexnetos/FlexNetOS/var/lib/claude-harness/security",
-    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
+    "AGENTDB_PATH": "/home/flexnetos/lifeos/var/lib/agentdb/reasoningbank.db",
+    "AGENTDB_RUNTIME": "/home/flexnetos/lifeos/var/lib/agentdb/runtime",
+    "AGENTDB_ENABLED": "true",
+    "AGENTDB_LEARNING": "true",
+    "AGENTDB_REASONING": "true",
+    "AGENTDB_QUANTIZATION": "scalar",
+    "AGENTDB_CACHE_SIZE": "2000",
+    "AGENTDB_HNSW_M": "16",
+    "AGENTDB_HNSW_EF": "100",
+    "RUVECTOR_INTEL_ROOT": "/home/flexnetos/lifeos/src/meta-ruvector"
   },
   "sandbox": {
     "enabled": false
@@ -61,7 +71,8 @@
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/guard-bash.sh", "timeout": 10 }
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/guard-bash.sh", "timeout": 10 },
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/block-cherry-pick.sh", "timeout": 10 }
         ]
       },
       {
@@ -73,7 +84,8 @@
       {
         "matcher": "Edit|Write|NotebookEdit",
         "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/guard-write-paths.sh", "timeout": 10 }
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/guard-write-paths.sh", "timeout": 10 },
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/grit-advise.sh", "timeout": 10 }
         ]
       }
     ],
@@ -81,13 +93,34 @@
       {
         "matcher": "Edit|Write",
         "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/rust-postedit.sh", "async": true }
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/rust-postedit.sh", "async": true },
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/ruvector-intel-bridge.sh post-edit", "async": true }
         ]
       },
       {
         "matcher": "Agent|Bash",
         "hooks": [
           { "type": "command", "command": "\"$HOME\"/.claude/hooks/budget-sentinel.sh", "async": true }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/ruvector-intel-bridge.sh post-bash", "async": true }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/ruvector-intel-bridge.sh route", "timeout": 15 }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/ruvector-intel-bridge.sh session-end", "timeout": 15 }
         ]
       }
     ],

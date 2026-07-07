@@ -20,6 +20,24 @@ Print a cost line (statusline cost + rate %) at every team spawn and every 25% s
 3. Plan-approval required for any teammate that writes. TeammateIdle gate blocks idling with in_progress tasks.
 4. Teammates cannot spawn agents (hook + platform). One team per session.
 
+## Parallel code coordination (grit)
+`grit` (installed via nix-profile: `nix profile install path:/home/flexnetos/lifeos/src/grit`) locks
+AST `file::symbol` scopes so parallel agents/sessions don't clobber the same CODE in a shared
+checkout. It does NOT lock config files (`settings.json`, TOML, …) — those are coordinated by
+**worktree isolation**, not grit. Opt-in per repo (a `.grit/` dir); the default single-agent path is
+untouched.
+```bash
+grit-claim.sh claim "<intent>" src/foo.rs::bar   # claim before editing shared code (auto-inits grit)
+grit-claim.sh status                             # who holds what
+grit-claim.sh heartbeat                          # refresh TTL during long edits (locks expire ~600s)
+grit-claim.sh done                               # release all this agent's locks (+ merge grit worktree)
+```
+Wiring: the `grit-advise.sh` PreToolUse[Edit|Write] hook is **fail-open** — in a `.grit/`-enabled
+repo it surfaces (`ask`) when another agent holds a lock overlapping the file you're editing;
+everywhere else it allows silently. Agent identity = the Claude session id. This is the code-side
+complement to the worktree-per-session policy that prevents shared-checkout collisions (grit missing
+here was the root cause behind the 2026-07-07 settings-churn collision investigation).
+
 ## Team cleanup / verification
 ```bash
 tmux ls                                    # team panes gone?
