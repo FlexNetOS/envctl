@@ -1,34 +1,13 @@
 @RTK.md
 
-<!-- icm:start -->
-## Persistent memory (ICM) — MANDATORY
+# FlexNetOS user-global operating contract (lean pointers, no prose)
 
-This project uses [ICM](https://github.com/rtk-ai/icm) for persistent memory across sessions.
-You MUST use it actively. Not optional.
+- **Laws:** `~/.claude/rules/laws.md` — the 8 operating laws, hook-enforced. Read once, obey always.
+- **Git topology:** `~/.claude/rules/git-topology.md` — main/develop only, superset merges, worktree ritual.
+- **Workspace boundaries:** `~/.claude/rules/flexnetos-boundaries.md` (FlexNetOS paths), `~/.claude/rules/rust-conventions.md` (prompt_hub paths).
+- **Harness operations** (team spawn/cleanup, kill switch, budget, recovery): invoke the `harness-ops` skill.
+- **Source of truth for this file and everything in ~/.claude:** `FlexNetOS/src/envctl/home/.claude/` (ADR-0006: real file in meta, symlink outside). Edit via envctl worktree on develop, never in place.
+- **Runtime state:** ledger `$HARNESS_VAR/log/claude-harness/ledger.jsonl` (append-only), decisions `$HARNESS_VAR/lib/claude-harness/decisions/`, kill switch `harness-halt.sh`.
+- Report in the terminal only. Show raw output for every completion claim.
 
-### Recall (before starting work)
-```bash
-icm recall "query"                        # search memories
-icm recall "query" -t "topic-name"        # filter by topic
-icm recall-context "query" --limit 5      # formatted for prompt injection
-```
-
-### Store — MANDATORY triggers
-You MUST call `icm store` when ANY of the following happens:
-1. **Error resolved** → `icm store -t errors-resolved -c "description" -i high -k "keyword1,keyword2"`
-2. **Architecture/design decision** → `icm store -t decisions-{project} -c "description" -i high`
-3. **User preference discovered** → `icm store -t preferences -c "description" -i critical`
-4. **Significant task completed** → `icm store -t context-{project} -c "summary of work done" -i high`
-5. **Conversation exceeds ~20 tool calls without a store** → store a progress summary
-
-Do this BEFORE responding to the user. Not after. Not later. Immediately.
-
-Do NOT store: trivial details, info already in CLAUDE.md, ephemeral state (build logs, git status).
-
-### Other commands
-```bash
-icm update <id> -c "updated content"     # edit memory in-place
-icm health                                # topic hygiene audit
-icm topics                                # list all topics
-```
-<!-- icm:end -->
+(The former ICM-mandate block was removed 2026-07-07: `icm` is not installed on this workstation — a mandate on a missing binary breaks every session. Archived at ~/.claude/archive/20260707T111730Z/envctl-home-claude/CLAUDE.md; restore when icm ships via the foundation profile.)

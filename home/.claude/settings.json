@@ -1,48 +1,55 @@
 {
+  "model": "claude-fable-5[1m]",
+  "effort": "high",
+  "tui": "fullscreen",
+  "theme": "dark",
+  "skipWorkflowUsageWarning": true,
+  "teammateMode": "tmux",
+  "autoMemoryDirectory": "/home/flexnetos/FlexNetOS/var/lib/claude-harness/memory",
+  "cleanupPeriodDays": 30,
   "env": {
-    "META_ROOT": "/home/drdave/Desktop/meta",
-    "META_FILE": "/home/drdave/Desktop/meta/.meta.yaml"
+    "META_ROOT": "/home/flexnetos/FlexNetOS/src/meta",
+    "META_FILE": "/home/flexnetos/FlexNetOS/src/meta/.meta.yaml",
+    "HARNESS_VAR": "/home/flexnetos/FlexNetOS/var",
+    "ENABLE_TOOL_SEARCH": "auto",
+    "MAX_MCP_OUTPUT_TOKENS": "25000"
   },
-  "skillListingBudgetFraction": 0.05,
+  "sandbox": {
+    "enabled": false
+  },
   "permissions": {
-    "git worktree add": "alwaysAllow",
-    "git branch -D": "alwaysAllow",
-    "git push": "alwaysAllow",
-    "gh pr create": "alwaysAllow",
-    "gh pr merge": "alwaysAllow",
-    "skipDangerousModePermissionPrompt": true,
-    "skipWorkflowUsageWarning": true,
-    "theme": "dark"
+    "deny": [
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/.credentials.json)",
+      "Read(~/.ssh/**)",
+      "Read(**/secrets/**)",
+      "Edit(//home/flexnetos/FlexNetOS/var/log/claude-harness/**)",
+      "Write(//home/flexnetos/FlexNetOS/var/log/claude-harness/**)",
+      "Edit(~/.claude/archive/**)",
+      "Write(~/.claude/archive/**)",
+      "Bash(claude -p:*)",
+      "Bash(claude --bg:*)",
+      "Bash(claude agents:*)"
+    ],
+    "ask": [
+      "Agent(model:opus)",
+      "Agent(model:sonnet)",
+      "Agent(model:haiku)",
+      "Bash(git push:*)"
+    ],
+    "disableBypassPermissionsMode": "disable"
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/hooks/statusline.sh",
+    "refreshInterval": 5
   },
   "hooks": {
-    "Notification": [
-      {
-        "matcher": "idle_prompt",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "true"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
+    "SessionStart": [
       {
         "hooks": [
-          {
-            "type": "command",
-            "command": "icm hook post"
-          }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "icm hook compact"
-          }
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/session-start.sh", "timeout": 10 }
         ]
       }
     ],
@@ -50,181 +57,106 @@
       {
         "matcher": "Bash",
         "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/.claude/hooks/block-cherry-pick.sh"
-          }
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/guard-bash.sh", "timeout": 10 }
         ]
       },
       {
-        "matcher": "Bash",
+        "matcher": "Agent",
         "hooks": [
-          {
-            "type": "command",
-            "command": "rtk hook claude"
-          }
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/guard-agent-spawn.sh", "timeout": 10 }
         ]
       },
       {
-        "matcher": "Bash",
+        "matcher": "Edit|Write|NotebookEdit",
         "hooks": [
-          {
-            "type": "command",
-            "command": "icm hook pre"
-          }
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/guard-write-paths.sh", "timeout": 10 }
         ]
       }
     ],
-    "SessionEnd": [
+    "PostToolUse": [
       {
+        "matcher": "Edit|Write",
         "hooks": [
-          {
-            "type": "command",
-            "command": "true"
-          }
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/rust-postedit.sh", "async": true }
         ]
       },
       {
+        "matcher": "Agent|Bash",
         "hooks": [
-          {
-            "type": "command",
-            "command": "icm hook end"
-          }
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/budget-sentinel.sh", "async": true }
         ]
       }
     ],
-    "SessionStart": [
+    "SubagentStart": [
       {
         "hooks": [
-          {
-            "type": "command",
-            "command": "true"
-          }
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/spawn-ledger.sh", "timeout": 10 }
         ]
-      },
+      }
+    ],
+    "SubagentStop": [
       {
-        "matcher": "",
         "hooks": [
-          {
-            "type": "command",
-            "command": "weave hook session"
-          }
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/spawn-ledger.sh", "timeout": 10 }
         ]
-      },
+      }
+    ],
+    "TaskCreated": [
       {
         "hooks": [
-          {
-            "type": "command",
-            "command": "icm hook start"
-          }
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/spawn-ledger.sh", "timeout": 10 }
+        ]
+      }
+    ],
+    "TaskCompleted": [
+      {
+        "hooks": [
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/spawn-ledger.sh", "timeout": 10 }
+        ]
+      }
+    ],
+    "TeammateIdle": [
+      {
+        "hooks": [
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/spawn-ledger.sh", "timeout": 10 }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          {
-            "type": "command",
-            "command": "true"
-          }
-        ]
-      },
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "weave hook wake"
-          }
-        ]
-      },
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "vox \"Done.\""
-          }
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/stop-decision-gate.sh", "timeout": 10 }
         ]
       }
     ],
-    "StopFailure": [
+    "PreCompact": [
       {
         "hooks": [
-          {
-            "type": "command",
-            "command": "true"
-          }
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/compact-reinject.sh", "timeout": 10 }
         ]
       }
     ],
-    "UserPromptSubmit": [
+    "PostCompact": [
       {
         "hooks": [
-          {
-            "type": "command",
-            "command": "true"
-          }
-        ]
-      },
-      {
-        "matcher": "",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "weave hook prompt"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "icm hook prompt"
-          }
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/compact-reinject.sh", "timeout": 10 }
         ]
       }
     ],
-    "SubagentStop": [
+    "ConfigChange": [
       {
-        "matcher": "",
         "hooks": [
-          {
-            "type": "command",
-            "command": "weave hook wake"
-          }
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/config-audit.sh", "timeout": 10 }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "matcher": "agent_needs_input|agent_completed|permission_prompt|idle_prompt",
+        "hooks": [
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/notify-cosmic.sh", "timeout": 10 }
         ]
       }
     ]
-  },
-  "statusLine": {
-    "type": "command",
-    "command": "bash /home/drdave/Desktop/meta/.claude/statusline-command.sh"
-  },
-  "enabledPlugins": {
-    "gitkb@gitkb": true,
-    "harness@harness-marketplace": true,
-    "meta@gitkb": true,
-    "rust-analyzer-lsp@claude-plugins-official": true
-  },
-  "extraKnownMarketplaces": {
-    "gitkb": {
-      "source": {
-        "source": "directory",
-        "path": "/home/drdave/Desktop/meta/claude-plugins"
-      }
-    },
-    "harness-marketplace": {
-      "source": {
-        "source": "directory",
-        "path": "/home/drdave/Desktop/meta/harness_hub/harness"
-      }
-    }
-  },
-  "effortLevel": "high",
-  "skipDangerousModePermissionPrompt": true,
-  "skipWorkflowUsageWarning": true,
-  "theme": "dark",
-  "inputNeededNotifEnabled": true,
-  "agentPushNotifEnabled": true
+  }
 }

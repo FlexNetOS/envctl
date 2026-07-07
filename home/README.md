@@ -8,6 +8,12 @@ outside, never the reverse* — `$HOME` paths are symlinks into this tree, wired
 ```
 $HOME/.gitconfig                    -> envctl/home/.gitconfig
 $HOME/.claude/settings.json         -> envctl/home/.claude/settings.json     (claude-global-links)
+$HOME/.claude/CLAUDE.md             -> envctl/home/.claude/CLAUDE.md         (harness 2026-07-07, owner-supervised)
+$HOME/.claude/rules                 -> envctl/home/.claude/rules             (harness 2026-07-07, owner-supervised)
+$HOME/.claude/hooks                 -> envctl/home/.claude/hooks             (harness 2026-07-07, owner-supervised)
+$HOME/.claude/agents                -> envctl/home/.claude/agents            (harness 2026-07-07, owner-supervised)
+$HOME/.claude/skills                -> envctl/home/.claude/skills            (harness 2026-07-07, owner-supervised)
+$HOME/.claude/commands              -> envctl/home/.claude/commands          (harness 2026-07-07, owner-supervised)
 $HOME/.config/rtk                   -> envctl/home/.config/rtk               (rtk-config-links)
 $HOME/.config/yazelix/settings.jsonc-> envctl/home/.config/yazelix/...       (home-config-links)
 $HOME/.config/systemd/user/*.service-> envctl/home/.config/systemd/user/...  (home-config-links)
