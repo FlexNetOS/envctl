@@ -31,8 +31,12 @@ TM=0
 BG=0
 command -v tmux >/dev/null 2>&1 && BG=$(tmux ls 2>/dev/null | wc -l)
 
-# reroute alarm (one-shot per session)
-FLAG="$STATE_DIR/reroute-alerted"
+# reroute alarm (one-shot per session). SESSION-SCOPED like the rate cache
+# above: a global flag let a Fable-context render (rm below) clear the latch
+# that an Opus-context render set, so notify-send re-fired on every repaint
+# across parallel sessions. Per-session flag = at most one alert per genuinely
+# rerouted session, no cross-session churn.
+if [ -n "$SESSION_ID" ]; then FLAG="$STATE_DIR/reroute-alerted-$SESSION_ID"; else FLAG="$STATE_DIR/reroute-alerted"; fi
 case "$MODEL_ID" in
   claude-fable-5*) rm -f "$FLAG" 2>/dev/null; BADGE="" ;;
   *)
