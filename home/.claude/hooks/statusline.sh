@@ -10,6 +10,7 @@ mkdir -p "$STATE_DIR" 2>/dev/null || true
 INPUT=$(cat)
 command -v jq >/dev/null 2>&1 || { echo "harness"; exit 0; }
 
+SESSION_ID=$(printf '%s' "$INPUT" | jq -r '.session_id // empty')
 MODEL_ID=$(printf '%s' "$INPUT" | jq -r '.model.id // "?"')
 MODEL=$(printf '%s' "$INPUT" | jq -r '.model.display_name // .model.id // "?"')
 EFFORT=$(printf '%s' "$INPUT" | jq -r '.effort.level // "-"')
@@ -18,8 +19,10 @@ COST=$(printf '%s' "$INPUT" | jq -r '.cost.total_cost_usd // empty')
 R5=$(printf '%s' "$INPUT" | jq -r '.rate_limits.five_hour.used_percentage // empty' | cut -d. -f1)
 R7=$(printf '%s' "$INPUT" | jq -r '.rate_limits.seven_day.used_percentage // empty' | cut -d. -f1)
 
-# cache rate limits for the sentinel/guards
-printf '%s' "$INPUT" | jq -c '.rate_limits // {}' >"$STATE_DIR/rate-limits.json" 2>/dev/null || true
+# cache rate limits for the sentinel/guards — SESSION-SCOPED so parallel
+# sessions never read each other's (or a stale) rate value.
+if [ -n "$SESSION_ID" ]; then RCACHE="$STATE_DIR/rate-limits-$SESSION_ID.json"; else RCACHE="$STATE_DIR/rate-limits.json"; fi
+printf '%s' "$INPUT" | jq -c '.rate_limits // {}' >"$RCACHE" 2>/dev/null || true
 
 # counts
 AG=$(cat "$STATE_DIR/active-agents.count" 2>/dev/null | tr -dc '0-9'); AG=${AG:-0}

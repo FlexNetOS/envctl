@@ -8,10 +8,19 @@ LEDGER_DIR="$HARNESS_VAR/log/claude-harness"
 LEDGER="$LEDGER_DIR/ledger.jsonl"
 STATE_DIR="$HARNESS_VAR/lib/claude-harness"
 DECISIONS_DIR="$STATE_DIR/decisions"
-RATE_CACHE="$STATE_DIR/rate-limits.json"
 COUNTER="$STATE_DIR/active-agents.count"
-BLOCK_FLAG="$STATE_DIR/budget-block.flag"
 ARCHIVE_ROOT="$HOME/.claude/archive"
+
+# Rate-limit cache is SESSION-SCOPED: rate limits are account-wide and every
+# session caches them from its own statusline, but a machine-global cache file
+# lets one session's (or a stale drill's) value block every other session.
+# Keyed on session id; falls back to a generic file only if no session id.
+rate_cache_path() {
+  local sid="${CLAUDE_SESSION_ID:-}"
+  if [ -n "$sid" ]; then printf '%s/rate-limits-%s.json' "$STATE_DIR" "$sid"
+  else printf '%s/rate-limits.json' "$STATE_DIR"; fi
+}
+RATE_CACHE="$(rate_cache_path)"
 
 MAX_ACTIVE_AGENTS="${HARNESS_MAX_ACTIVE_AGENTS:-6}"
 RATE_BLOCK_PCT="${HARNESS_RATE_BLOCK_PCT:-80}"

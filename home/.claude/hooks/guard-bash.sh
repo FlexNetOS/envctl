@@ -95,7 +95,12 @@ if printf '%s' "$CMD" | grep -Eq '(^|[[:space:];&|])rm([[:space:]]|$)'; then
         case "$tok" in rm) seen_rm=1 ;; esac
         continue
       fi
-      case "$tok" in -*|sudo) continue ;; esac
+      # skip flags, sudo, and redirections (2>/dev/null, >f, <f, 2>&1, &>f)
+      case "$tok" in
+        -*|sudo) continue ;;
+        *'>'*|*'<'*|'&'*) continue ;;
+        [0-9]) continue ;;                 # bare fd number preceding a redirect
+      esac
       case "$tok" in
         /*|~*|"$HOME"*|./*|../*|[A-Za-z0-9_.]*)
           p="$tok"
