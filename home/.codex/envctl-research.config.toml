@@ -1,0 +1,22 @@
+model = "gpt-5.5"
+model_reasoning_effort = "xhigh"
+model_reasoning_summary = "auto"
+model_verbosity = "medium"
+default_permissions = "harness-research"
+project_doc_max_bytes = 65536
+tool_output_token_limit = 12000
+
+[features]
+fast_mode = false
+hooks = true
+plugins = false
+remote_plugin = false
+network_proxy = false
+unified_exec = true
+shell_snapshot = true
+multi_agent = true
+
+[agents]
+max_threads = 6
+max_depth = 1
+job_max_runtime_seconds = 1800

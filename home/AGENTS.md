@@ -1,33 +1,45 @@
-# envctl home Codex harness
+# FlexNetOS home navigation
 
-Harness root: `/home/flexnetos/lifeos/src/envctl/home/agent-env`.
-Durable Rust harness source: `agent-env/codex-harness`.
+Read this first for sessions that start in `/home/flexnetos`.
 
-Non-negotiable rules for this subtree:
+## Active control paths
 
-- Never delete user data. Archive first under `agent-env/archive/<UTC>/`.
-- Codex must resolve through the Nix profile and `/nix/store`.
-- Use `codex-harness-runner` for background, parallel, child Codex, Claude, Ollama, or LM Studio work.
-- Do not start write-capable parallel work. One foreground writer only.
-- Do not use Codex subagents until containment tests pass.
-- Do not read `auth.json`, private keys, `.env` values, tokens, or credential helper output.
-- Do not hand-edit generated Yazelix runtime or envctl agent-env generated surfaces.
-- Preserve symlinks and archive before replacing any existing path.
-- Rust harness work must pass `rustfmt --check`, clippy-equivalent check, and tests.
-- No unsafe Rust unless explicitly justified and reviewed.
-- Terminal output and JSON ledgers are required proof. Prose alone is not acceptance.
+- Codex runtime config: `/home/flexnetos/.codex/config.toml`.
+- Codex operating rules: `/home/flexnetos/.codex/RULES.md`.
+- RTK policy: `/home/flexnetos/.codex/AGENTS.rtk.md` and
+  `/home/flexnetos/AGENTS.rtk.md`.
+- envctl source of truth: `/home/flexnetos/lifeos/src/envctl`.
+- envctl home projection: `/home/flexnetos/lifeos/src/envctl/home`.
 
-New-session navigation:
+## New envctl session procedure
 
-- Start from a fresh envctl worktree at latest `origin/master`/`origin/develop`.
-- Update agent config through envctl `agent-env.yaml`, `agent-env.lock`, and
-  `agent-skills/`; preview with `envctl agent sync --json --color never` and
-  only use `--apply` after review.
-- Keep `/home/flexnetos/.codex/config.toml` as the active runtime config.
-- Do not use retired mirrors `/home/flexnetos/lifeos/.codex` or
-  `/home/flexnetos/FlexNetOS/.codex`.
-- Toolchains resolve through the Nix/Yazelix foundation: nightly cargo/rustc
-  from the profile, kache as the Rust cache wrapper, wild via clang as linker,
-  and bun/bunx for Node.js package execution.
+```bash
+cd /home/flexnetos/lifeos/src/envctl
+git fetch origin --prune
+git worktree add ../envctl-<task-slug> -b <task-branch> origin/master
+cd ../envctl-<task-slug>
+envctl agent lock --check --color never
+envctl agent sync --json --color never
+```
 
-The root envctl `AGENTS.md` and runbook still apply. This file is a lean pointer and invariant layer only.
+Use `envctl agent sync --apply` only after review. Do not update agent config
+by editing generated runtime output directly.
+
+## Retired paths
+
+Do not use these paths as active Codex config, hook, plugin, MCP, marketplace,
+or instruction sources:
+
+- `/home/flexnetos/lifeos/.codex`
+- `/home/flexnetos/FlexNetOS/.codex`
+
+They were the same symlinked workspace mirror and have been retired to avoid
+new-session navigation confusion. If either reappears, archive it and route the
+change through `/home/flexnetos/.codex` or envctl `agent-env.yaml`.
+
+## Toolchain/runtime policy
+
+Use the Nix/Yazelix foundation frontdoors: profile-owned nightly cargo/rustc,
+kache/kache-rustc-wrapper for Rust caching, wild via clang linker flags,
+bun/bunx for Node.js package execution, and profile-owned `codex`, `yzx`, and
+`rtk`. Do not install global npm/cargo/curl binaries to fix navigation.
