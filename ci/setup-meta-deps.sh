@@ -66,14 +66,23 @@ ensure_repo() {
 
   if [ -d "$target/.git" ]; then
     echo "meta-dep: updating $repo at $target"
-    git -C "$target" fetch --depth=1 origin "$ref"
-    git -C "$target" checkout --detach FETCH_HEAD
   else
     echo "meta-dep: cloning $repo to $target"
     rm -rf "$target"
     GIT_TERMINAL_PROMPT=0 git clone --depth=1 "$url" "$target"
-    git -C "$target" fetch --depth=1 origin "$ref"
+  fi
+  # A pinned upgrade-branch ref can vanish once its PR merges and origin reaps the
+  # branch (delete_branch_on_merge) — that must degrade to the default branch, not
+  # hard-fail every CI job in the repo. The pin still wins whenever it exists.
+  if git -C "$target" fetch --depth=1 origin "$ref"; then
     git -C "$target" checkout --detach FETCH_HEAD
+  elif [ "$ref" != "HEAD" ]; then
+    echo "WARN: pinned ref $ref for $repo not found on origin (merged + reaped?); falling back to HEAD" >&2
+    git -C "$target" fetch --depth=1 origin HEAD
+    git -C "$target" checkout --detach FETCH_HEAD
+  else
+    echo "FAIL: unable to fetch $repo from origin" >&2
+    exit 1
   fi
 
   test -f "$target/Cargo.toml" || { echo "FAIL: $repo missing Cargo.toml at $target" >&2; exit 1; }

@@ -3,7 +3,7 @@
 # background sessions (supervisor jobs), background bash tasks, and prunes
 # stale .claude/worktrees. Idempotent; prints what it did; ledgers the halt.
 set -u
-HARNESS_VAR="${HARNESS_VAR:-/home/flexnetos/FlexNetOS/var}"
+HARNESS_VAR="${HARNESS_VAR:-/home/flexnetos/lifeos/var}"
 LEDGER="$HARNESS_VAR/log/claude-harness/ledger.jsonl"
 TS=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 echo "== harness-halt $TS =="
@@ -71,7 +71,7 @@ else
 fi
 
 # 5. Worktree hygiene: prune stale .claude/worktrees in known repos.
-for repo in /home/flexnetos/FlexNetOS/src/*/; do
+for repo in /home/flexnetos/lifeos/src/*/; do
   [ -d "$repo/.claude/worktrees" ] || continue
   git -C "$repo" worktree prune 2>/dev/null && echo "pruned worktrees in $repo"
 done
