@@ -10,6 +10,8 @@ INPUT=$(cat)
 EV=""
 if have_jq; then
   EV=$(printf '%s' "$INPUT" | jq -r '.hook_event_name // empty' 2>/dev/null)
+  SESS=$(printf '%s' "$INPUT" | jq -r '.session_id // empty' 2>/dev/null)
+  export CLAUDE_SESSION_ID="${SESS:-${CLAUDE_SESSION_ID:-}}"
 fi
 [ -n "$EV" ] || EV="${1:-unknown}"
 

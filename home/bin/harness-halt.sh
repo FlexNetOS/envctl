@@ -49,13 +49,18 @@ else
   echo "no dispatched-session jobs dir"
 fi
 
-# 4. Background bash tasks spawned by Claude (children of claude processes).
-pgrep -f 'claude' 2>/dev/null | while read -r cp; do
-  # only kill *descendant shells* of claude processes, never the sessions themselves
-  for child in $(pgrep -P "$cp" -f 'bash|sh|cargo|npm' 2>/dev/null); do
-    kill "$child" 2>/dev/null && echo "killed background task pid $child (parent claude $cp)"
+# 4. Background bash tasks (descendant shells of CC sessions). SCOPED: multiple
+#    sanctioned parallel sessions run on this box (observed 2026-07-07), so
+#    cross-session process kills require the explicit --all flag.
+if [ "${1:-}" = "--all" ]; then
+  pgrep -f 'claude' 2>/dev/null | while read -r cp; do
+    for child in $(pgrep -P "$cp" -f 'bash|sh|cargo|npm' 2>/dev/null); do
+      kill "$child" 2>/dev/null && echo "killed background task pid $child (parent CC $cp)"
+    done
   done
-done
+else
+  echo "process sweep skipped (pass --all to kill background tasks of EVERY CC session on this box)"
+fi
 
 # 5. Worktree hygiene: prune stale .claude/worktrees in known repos.
 for repo in /home/flexnetos/FlexNetOS/src/*/; do

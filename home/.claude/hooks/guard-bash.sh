@@ -7,10 +7,13 @@ set -u
 INPUT=$(cat)
 if have_jq; then
   CMD=$(printf '%s' "$INPUT" | jq -r '.tool_input.command // empty' 2>/dev/null)
+  SESS=$(printf '%s' "$INPUT" | jq -r '.session_id // empty' 2>/dev/null)
 else
   CMD=$(printf '%s' "$INPUT" | sed -n 's/.*"command"[[:space:]]*:[[:space:]]*"\(.*\)".*/\1/p' | head -1)
+  SESS=""
 fi
 [ -n "${CMD:-}" ] || exit 0
+export CLAUDE_SESSION_ID="${SESS:-${CLAUDE_SESSION_ID:-}}"
 
 lc() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
 LCMD=$(lc "$CMD")
@@ -22,10 +25,39 @@ case "$LCMD" in
     deny "LAW: --dangerously-skip-permissions is forbidden on this machine, no exceptions." ;;
 esac
 
-# ---- 2. anti-recursion: no nested Claude sessions -------------------------
-# Allowed read-only exceptions only: claude --version | claude update | claude doctor
-if printf '%s' "$CMD" | grep -Eq '(^|[/;&|[:space:]])claude([[:space:]"'"'"']|$)'; then
-  if ! printf '%s' "$CMD" | grep -Eq '^[[:space:]]*claude[[:space:]]+(--version|update|doctor)[[:space:]]*$'; then
+# ---- 2. anti-recursion: no nested Claude sessions --------------------------
+# Command-position match only: the claude binary as the first word of any
+# pipeline segment (after stripping wrappers/env assignments). String args
+# that merely contain the word do not trip it.
+first_words() {
+  printf '%s\n' "$1" | tr ';|&' '\n\n\n' | while read -r seg; do
+    set -f; # shellcheck disable=SC2086
+    set -- $seg; set +f
+    while [ $# -gt 0 ]; do
+      case "$1" in
+        sudo|env|exec|command|nohup|setsid|nice|time|timeout|xargs) shift ;;
+        [A-Za-z_][A-Za-z_0-9]*=*) shift ;;         # env assignments
+        -*) shift ;;                                # wrapper flags (e.g. timeout 5)
+        [0-9]*) shift ;;                            # timeout durations
+        *) printf '%s\n' "$1"; break ;;
+      esac
+    done
+  done
+}
+NESTED=""
+while IFS= read -r w; do
+  case "$w" in
+    claude|*/claude|rtk) NESTED="$w" ;;
+  esac
+done <<EOF_FW
+$(first_words "$CMD")
+EOF_FW
+# rtk is only nested-relevant when invoking the CC binary through it
+if [ "$NESTED" = "rtk" ]; then
+  printf '%s' "$CMD" | grep -Eq 'rtk[[:space:]]+claude([[:space:]]|$)' || NESTED=""
+fi
+if [ -n "$NESTED" ]; then
+  if ! printf '%s' "$CMD" | grep -Eq '^[[:space:]]*(rtk[[:space:]]+)?claude[[:space:]]+(--version|update|doctor)[[:space:]]*$'; then
     ledger "guard.deny" "\"rule\":\"nested-claude\",\"cmd\":\"$(json_escape "$CMD")\""
     deny "Nested Claude sessions are denied (recursion containment; weave is not built yet, so there is no sanctioned wrapper). Allowed: 'claude --version', 'claude update', 'claude doctor'. Use teams/subagents/background bash instead."
   fi
