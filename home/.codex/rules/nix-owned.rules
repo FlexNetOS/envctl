@@ -1,0 +1,33 @@
+# Codex install/update paths must stay Nix-profile owned.
+
+prefix_rule(
+    pattern = ["npm", "install", "-g"],
+    decision = "forbidden",
+    justification = "Global npm Codex install would violate Nix ownership.",
+    match = ["npm install -g @openai/codex"],
+    not_match = ["npm view @openai/codex version"],
+)
+
+prefix_rule(
+    pattern = ["pip", "install", "openai-codex"],
+    decision = "forbidden",
+    justification = "Python Codex package is not the production Rust harness runtime.",
+    match = ["pip install openai-codex"],
+    not_match = ["python -m pip --version"],
+)
+
+prefix_rule(
+    pattern = ["curl"],
+    decision = "prompt",
+    justification = "Network fetches require approval and curl-pipe-shell remains hook-denied.",
+    match = ["curl https://developers.openai.com/codex/rules"],
+    not_match = ["rg curl"],
+)
+
+prefix_rule(
+    pattern = ["nix", "build"],
+    decision = "prompt",
+    justification = "Nix builds require explicit approval and rollback plan.",
+    match = ["nix build .#codex"],
+    not_match = ["nix --version"],
+)
