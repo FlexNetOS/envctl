@@ -13,7 +13,8 @@
     "HARNESS_VAR": "/home/flexnetos/FlexNetOS/var",
     "ENABLE_TOOL_SEARCH": "auto",
     "MAX_MCP_OUTPUT_TOKENS": "25000",
-    "SECURITY_WARNINGS_STATE_DIR": "/home/flexnetos/FlexNetOS/var/lib/claude-harness/security"
+    "SECURITY_WARNINGS_STATE_DIR": "/home/flexnetos/FlexNetOS/var/lib/claude-harness/security",
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
   "sandbox": {
     "enabled": false
