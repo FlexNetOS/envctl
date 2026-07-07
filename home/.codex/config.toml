@@ -1,55 +1,295 @@
-# envctl home Codex harness project layer.
-# Provider/auth/profile/telemetry settings stay in /home/flexnetos/.codex.
-
+approvals_reviewer = "user"
+approval_policy = "never"
 model = "gpt-5.5"
+model_catalog_json = "/home/flexnetos/.codex/model-catalog.json"
+model_reasoning_effort = "xhigh"
+model_reasoning_summary = "auto"
+model_verbosity = "medium"
+plan_mode_reasoning_effort = "xhigh"
+project_doc_fallback_filenames = [
+    ".agents.md",
+    "CLAUDE.md",
+]
 project_doc_max_bytes = 65536
-project_doc_fallback_filenames = ["AGENTS.override.md", "AGENTS.md", ".agents.md", "CLAUDE.md"]
+default_permissions = "harness-read-only"
+# Legacy danger-full-access sandbox and fast service-tier settings were
+# archived before the 2026-07-07 migration to named harness permission profiles.
+personality = "friendly"
+suppress_unstable_features_warning = true
+background_terminal_max_timeout = 300000
 tool_output_token_limit = 12000
+web_search = "live"
+[projects."/home/flexnetos"]
+trust_level = "trusted"
 
-[features]
-hooks = true
-plugins = false
-remote_plugin = false
-network_proxy = false
-fast_mode = false
-unified_exec = true
-shell_snapshot = true
-multi_agent = true
-multi_agent_v2 = false
+[projects."/home/flexnetos/workspace"]
+trust_level = "trusted"
+
+[projects."/home/flexnetos/FlexNetOS"]
+trust_level = "trusted"
+
+[projects."/home/flexnetos/FlexNetOS/src/yazelix"]
+trust_level = "trusted"
+
+[projects."/home/flexnetos/FlexNetOS/src/flexnetos_runner"]
+trust_level = "trusted"
+
+[projects."/home/flexnetos/FlexNetOS/src/meta"]
+trust_level = "trusted"
+
+[projects."/home/flexnetos/FlexNetOS/src/envctl"]
+trust_level = "trusted"
+
+[projects."/home/flexnetos/FlexNetOS/src/nu_plugin"]
+trust_level = "trusted"
+
+[projects."/home/flexnetos/FlexNetOS/src/teri"]
+trust_level = "trusted"
+
+[projects."/home/flexnetos/FlexNetOS/src/flexnetos_runner/_work/actions-runner-01-work/flexnetos_runner/flexnetos_runner"]
+trust_level = "trusted"
+
+[projects."/home/flexnetos/Desktop"]
+trust_level = "trusted"
+
+[projects."/home/flexnetos/FlexNetOS/src/lifeos"]
+trust_level = "trusted"
+
+[projects."/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework"]
+trust_level = "trusted"
+
+[projects."/home/flexnetos/lifeos/src/flexnetos_runner/_work/actions-runner-01-work/flexnetos_runner/flexnetos_runner"]
+trust_level = "trusted"
+
+[projects."/home/flexnetos/lifeos/src/vault_hub"]
+trust_level = "trusted"
+
+[projects."/home/flexnetos/lifeos/src/flexnetos_runner/_work/actions-runner-02-work/flexnetos_runner/flexnetos_runner"]
+trust_level = "trusted"
+
+[projects."/home/flexnetos/lifeos"]
+trust_level = "trusted"
+
+[projects."/home/flexnetos/lifeos/src/envctl"]
+trust_level = "trusted"
+
+[projects."/home/flexnetos/lifeos/src/envctl/home"]
+trust_level = "trusted"
+
+[projects."/home/flexnetos/lifeos/src/flexnetos_runner"]
+trust_level = "trusted"
+
+[tui.model_availability_nux]
+"gpt-5.5" = 4
+
+[notice]
+hide_full_access_warning = true
 
 [agents]
-max_threads = 6
+job_max_runtime_seconds = 3600
 max_depth = 1
-job_max_runtime_seconds = 1800
 
-[agents.researcher]
-config_file = "agents/researcher.toml"
-description = "Read-only official-docs and codebase researcher."
+[agents.docs_researcher]
+config_file = "agents/docs-researcher.toml"
+description = "Documentation specialist that verifies APIs, framework behavior, and release notes."
 
-[agents.verifier]
-config_file = "agents/verifier.toml"
-description = "Read-only verifier for command output, tests, and ledgers."
+[agents.explorer]
+config_file = "agents/explorer.toml"
+description = "Read-only codebase explorer for gathering evidence before changes are proposed."
 
-[agents.implementer]
-config_file = "agents/implementer.toml"
-description = "Single foreground archive-first implementer."
+[agents.reviewer]
+config_file = "agents/reviewer.toml"
+description = "PR reviewer focused on correctness, security, and missing tests."
 
-[agents.security-reviewer]
-config_file = "agents/security-reviewer.toml"
-description = "Read-only security reviewer for hooks, rules, permissions, MCP, plugins, and process escape."
+[features]
+apply_patch_streaming_events = true
+artifact = true
+auth_elicitation = true
+child_agents_md = true
+chronicle = true
+code_mode = false
+code_mode_only = false
+current_time_reminder = true
+default_mode_request_user_input = false
+deferred_executor = true
+enable_fanout = true
+enable_mcp_apps = true
+exec_permission_approvals = true
+fast_mode = false
+hooks = true
+imagegenext = true
+item_ids = true
+local_thread_store_compression = true
+memories = true
+multi_agent = true
+multi_agent_v2 = false
+network_proxy = false
+non_prefixed_mcp_tool_names = true
+plugins = false
+prevent_idle_sleep = true
+realtime_conversation = true
+remote_plugin = false
+request_permissions_tool = true
+respect_system_proxy = false
+runtime_metrics = true
+secret_auth_storage = true
+shell_snapshot = true
+shell_tool = true
+shell_zsh_fork = true
+sleep_tool = true
+standalone_web_search = true
+terminal_visualization_instructions = true
+unified_exec = true
+unified_exec_zsh_fork = true
+use_agent_identity = true
 
-[agents.nix-curator]
-config_file = "agents/nix-curator.toml"
-description = "Read-only Nix/profile ownership auditor."
+[history]
+max_bytes = 104857600
+persistence = "save-all"
 
-[agents.rust-harness-engineer]
-config_file = "agents/rust-harness-engineer.toml"
-description = "Rust harness engineer scoped to HARNESS_ROOT."
+[mcp_servers.exa]
+url = "https://mcp.exa.ai/mcp"
 
-[agents.git-topologist]
-config_file = "agents/git-topologist.toml"
-description = "Read-only branch, worktree, and topology auditor."
+[memories]
+disable_on_external_context = false
+generate_memories = true
+min_rate_limit_remaining_percent = 15
+use_memories = true
 
-[agents.local-model-runner]
-config_file = "agents/local-model-runner.toml"
-description = "Local-model inventory and localhost-only runner."
+# Archived 2026-07-07 before permission-profile migration. Permission
+# profiles below replace the legacy sandbox_workspace_write profile for the
+# envctl harness.
+# [sandbox_workspace_write]
+# exclude_slash_tmp = false
+# exclude_tmpdir_env_var = false
+# network_access = true
+
+[tui]
+notifications = [
+    "agent-turn-complete",
+    "approval-requested",
+]
+status_line = [
+    "model-with-reasoning",
+    "context-remaining",
+    "git-branch",
+]
+terminal_title = [
+    "spinner",
+    "project",
+    "git-branch",
+]
+
+[notice.model_migrations]
+"gpt-5.4" = "gpt-5.5"
+
+[apps.connector_5f3c8c41a1e54ad7a76272c89e2554fa.tools."google_drive.bulk_update_file_comments"]
+approval_mode = "approve"
+
+[apps.connector_76869538009648d5b282a4bb21c3d157.tools."github.create_pull_request"]
+approval_mode = "approve"
+
+[apps.connector_76869538009648d5b282a4bb21c3d157.tools."github.create_tree"]
+approval_mode = "approve"
+
+[apps.connector_76869538009648d5b282a4bb21c3d157.tools."github.merge_pull_request"]
+approval_mode = "approve"
+
+[apps.connector_76869538009648d5b282a4bb21c3d157.tools."github.create_commit"]
+approval_mode = "approve"
+
+[apps.connector_76869538009648d5b282a4bb21c3d157.tools."github.create_branch"]
+approval_mode = "approve"
+
+[apps.connector_76869538009648d5b282a4bb21c3d157.tools."github.update_ref"]
+approval_mode = "approve"
+
+# FlexNetOS policy:
+# - /home/flexnetos/FlexNetOS is the Codex session root.
+# - src/meta and its FlexNetOS original project set are additive-only upgrade
+#   targets. Downgrade/reset/delete/remove/overwrite operations must archive
+#   affected state first and write a compressed artifact before continuing.
+# - Full filesystem access is not the harness default. Named permission
+#   profiles restrict reads/writes, and project hooks enforce archive-first
+#   and additive-only gates.
+
+[permissions.harness-read-only]
+description = "Read-only envctl harness profile with no network table, so sandboxed network is disabled."
+
+[permissions.harness-read-only.filesystem]
+glob_scan_max_depth = 4
+":minimal" = "read"
+"/home/flexnetos/lifeos/src/envctl" = "read"
+"/home/flexnetos/lifeos/src/envctl/home" = "read"
+"/home/flexnetos/lifeos/src/envctl/home/agent-env" = "read"
+"/home/flexnetos/.codex/auth.json" = "deny"
+"/home/flexnetos/.ssh" = "deny"
+"/home/flexnetos/.gnupg" = "deny"
+
+[permissions.harness-read-only.filesystem.":workspace_roots"]
+"**/.env" = "deny"
+"**/*token*" = "deny"
+"**/*secret*" = "deny"
+
+[permissions.harness-workspace]
+description = "Write-limited envctl harness profile with no network table, so sandboxed network is disabled."
+
+[permissions.harness-workspace.filesystem]
+glob_scan_max_depth = 4
+":minimal" = "read"
+"/home/flexnetos/lifeos/src/envctl" = "read"
+"/home/flexnetos/lifeos/src/envctl/home/.codex" = "write"
+"/home/flexnetos/lifeos/src/envctl/home/AGENTS.md" = "write"
+"/home/flexnetos/lifeos/src/envctl/home/agent-env" = "write"
+"/home/flexnetos/lifeos/src/envctl/home/agent-env/worktrees" = "write"
+"/home/flexnetos/.codex/auth.json" = "deny"
+"/home/flexnetos/.ssh" = "deny"
+"/home/flexnetos/.gnupg" = "deny"
+
+[permissions.harness-workspace.filesystem.":workspace_roots"]
+"**/.env" = "deny"
+"**/*token*" = "deny"
+"**/*secret*" = "deny"
+
+[permissions.harness-local-models]
+description = "Envctl harness local-model profile with localhost-only Ollama access."
+
+[permissions.harness-local-models.filesystem]
+glob_scan_max_depth = 4
+":minimal" = "read"
+"/home/flexnetos/lifeos/src/envctl" = "read"
+"/home/flexnetos/lifeos/src/envctl/home/agent-env" = "write"
+"/home/flexnetos/.codex/auth.json" = "deny"
+"/home/flexnetos/.ssh" = "deny"
+"/home/flexnetos/.gnupg" = "deny"
+
+[permissions.harness-local-models.filesystem.":workspace_roots"]
+"**/.env" = "deny"
+"**/*token*" = "deny"
+"**/*secret*" = "deny"
+
+[permissions.harness-local-models.network]
+enabled = true
+allow_local_binding = true
+
+[permissions.harness-local-models.network.domains]
+"127.0.0.1" = "allow"
+"localhost" = "allow"
+"::1" = "allow"
+
+[permissions.harness-research]
+description = "Read-only research profile. Network remains disabled unless a narrower docs network profile is approved."
+
+[permissions.harness-research.filesystem]
+glob_scan_max_depth = 4
+":minimal" = "read"
+"/home/flexnetos/lifeos/src/envctl" = "read"
+"/home/flexnetos/lifeos/src/envctl/home/agent-env" = "read"
+"/home/flexnetos/.codex/auth.json" = "deny"
+"/home/flexnetos/.ssh" = "deny"
+"/home/flexnetos/.gnupg" = "deny"
+
+[permissions.harness-research.filesystem.":workspace_roots"]
+"**/.env" = "deny"
+"**/*token*" = "deny"
+"**/*secret*" = "deny"
