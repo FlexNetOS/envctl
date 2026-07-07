@@ -4,7 +4,7 @@
 //! every legal key, which makes prefix scans a simple range.
 
 use super::{MigrationDb, MigrationDbError, Result};
-use redb::{ReadableDatabase, ReadableTable, TableDefinition};
+use redb::{ReadableTable, TableDefinition};
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 

@@ -95,8 +95,10 @@ hkdf = "0.12"
 sha2 = { version = "0.10", features = ["oid"] }
 blake3 = "1.5"
 # migration-db store (engine): pure-Rust embedded B-tree store — the same store family as the
-# fleet's handoff ledger (ADR-0017) and CodeDB. Links NO C (no-c.sh unaffected); NOT SQLite.
-redb = "4"
+# fleet's handoff ledger (ADR-0017) and CodeDB (which pins the same 2.6 major). Links NO C
+# (no-c.sh unaffected); NOT SQLite. Pinned to 2.6: every redb >= 3.0 declares rust_version 1.89,
+# above this workspace's MSRV 1.88 (CI MSRV gate is the enforcer).
+redb = "2.6"
 zeroize = { version = "1.8", features = ["derive"] }
 subtle = "2.6"
 rand = "0.8"
