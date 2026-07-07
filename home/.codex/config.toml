@@ -1,0 +1,55 @@
+# envctl home Codex harness project layer.
+# Provider/auth/profile/telemetry settings stay in /home/flexnetos/.codex.
+
+model = "gpt-5.5"
+project_doc_max_bytes = 65536
+project_doc_fallback_filenames = ["AGENTS.override.md", "AGENTS.md", ".agents.md", "CLAUDE.md"]
+tool_output_token_limit = 12000
+
+[features]
+hooks = true
+plugins = false
+remote_plugin = false
+network_proxy = false
+fast_mode = false
+unified_exec = true
+shell_snapshot = true
+multi_agent = true
+multi_agent_v2 = false
+
+[agents]
+max_threads = 6
+max_depth = 1
+job_max_runtime_seconds = 1800
+
+[agents.researcher]
+config_file = "agents/researcher.toml"
+description = "Read-only official-docs and codebase researcher."
+
+[agents.verifier]
+config_file = "agents/verifier.toml"
+description = "Read-only verifier for command output, tests, and ledgers."
+
+[agents.implementer]
+config_file = "agents/implementer.toml"
+description = "Single foreground archive-first implementer."
+
+[agents.security-reviewer]
+config_file = "agents/security-reviewer.toml"
+description = "Read-only security reviewer for hooks, rules, permissions, MCP, plugins, and process escape."
+
+[agents.nix-curator]
+config_file = "agents/nix-curator.toml"
+description = "Read-only Nix/profile ownership auditor."
+
+[agents.rust-harness-engineer]
+config_file = "agents/rust-harness-engineer.toml"
+description = "Rust harness engineer scoped to HARNESS_ROOT."
+
+[agents.git-topologist]
+config_file = "agents/git-topologist.toml"
+description = "Read-only branch, worktree, and topology auditor."
+
+[agents.local-model-runner]
+config_file = "agents/local-model-runner.toml"
+description = "Local-model inventory and localhost-only runner."

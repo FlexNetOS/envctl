@@ -1,0 +1,58 @@
+[package]
+name = "codex-harness"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.88"
+
+[workspace]
+
+[lib]
+name = "codex_harness"
+path = "src/lib.rs"
+
+[[bin]]
+name = "codex-harness-hook"
+path = "src/bin/codex-harness-hook.rs"
+
+[[bin]]
+name = "codex-harness-runner"
+path = "src/bin/codex-harness-runner.rs"
+
+[[bin]]
+name = "codex-harness-status"
+path = "src/bin/codex-harness-status.rs"
+
+[[bin]]
+name = "codex-harness-halt"
+path = "src/bin/codex-harness-halt.rs"
+
+[[bin]]
+name = "codex-harness-audit"
+path = "src/bin/codex-harness-audit.rs"
+
+[[bin]]
+name = "codex-harness-nix-verify"
+path = "src/bin/codex-harness-nix-verify.rs"
+
+[[bin]]
+name = "codex-harness-jsonl"
+path = "src/bin/codex-harness-jsonl.rs"
+
+[[bin]]
+name = "codex-harness-cargo-fmt"
+path = "src/bin/codex-harness-cargo-fmt.rs"
+
+[[bin]]
+name = "codex-harness-cargo-clippy"
+path = "src/bin/codex-harness-cargo-clippy.rs"
+
+[dependencies]
+anyhow = "1.0.103"
+hex = "0.4.3"
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.150"
+sha2 = "0.10.9"
+toml = "0.8.23"
+
+[dev-dependencies]
+tempfile = "3.27.0"

@@ -1,0 +1,33 @@
+# Parallel/background work must go through the Rust harness runner.
+
+prefix_rule(
+    pattern = [["tmux", "screen", "nohup", "setsid"]],
+    decision = "forbidden",
+    justification = "Background sessions must be supervised by codex-harness-runner.",
+    match = ["tmux new -d sleep 99", "nohup sleep 99", "setsid sleep 99"],
+    not_match = ["codex-harness-runner spawn -- sleep 1"],
+)
+
+prefix_rule(
+    pattern = [["bash", "sh", "zsh"], ["-lc", "-c"]],
+    decision = "prompt",
+    justification = "Shell wrapper commands can hide compound behavior; hooks and runner policy must inspect them.",
+    match = ["bash -lc pwd", "sh -c 'git status --short'"],
+    not_match = ["pwd"],
+)
+
+prefix_rule(
+    pattern = [["codex", "claude", "ollama"]],
+    decision = "forbidden",
+    justification = "Nested Codex, Claude, and Ollama lanes must be supervised by codex-harness-runner.",
+    match = ["codex exec hello", "claude --version", "ollama run llama3"],
+    not_match = ["codex-harness-runner policy-check -- codex exec hello"],
+)
+
+prefix_rule(
+    pattern = ["/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/bin/codex-harness-runner"],
+    decision = "allow",
+    justification = "The Rust harness runner is the supervised background execution path.",
+    match = ["/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/bin/codex-harness-runner policy-check -- pwd"],
+    not_match = ["codex exec hello"],
+)
