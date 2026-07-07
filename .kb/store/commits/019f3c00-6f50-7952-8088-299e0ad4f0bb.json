@@ -1,0 +1,5 @@
+{
+  "commit": {"author":"drdave <flexnetos@de-flex.net>","changes":[{"change_type":"created","content_hash":"e54887eef64361da214a6bb4efaf71b9890a65623f59fcf04875a29f99153e85","doc_type":"task","document_id":"019f3c00-6edc-7381-94ed-7ed27e8970d8","new_version":1,"previous_version":null,"slug":"tasks/migration-db","title":"Migration automation database (envctl-db-nu-plugin package, repo-native)"}],"created_at":"2026-07-07T09:54:49.294032532Z","id":"019f3c00-6f50-7952-8088-299e0ad4f0bb","message":"Add migration-db task"},
+  "content_hash": "2e4e9e49d0ec685ec303898c6eede6e00877e749c1c62a9c96a6757d27adca0b",
+  "hash_version": 3
+}

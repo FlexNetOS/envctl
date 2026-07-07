@@ -15,36 +15,114 @@ use envctl_engine::migration_db::{
 };
 use std::path::PathBuf;
 
+/// after_help Examples block for the migration verbs (local sibling of main.rs's
+/// crate-root `envctl_examples!`, which is textually out of scope for this module;
+/// emits the same `Examples:` contract the help-gap test enforces).
+macro_rules! mig_examples {
+    ($($line:literal),+ $(,)?) => {
+        concat!("Examples:\n", $("  ", $line, "\n",)+)
+    };
+}
+
 #[derive(Subcommand)]
 pub enum MigrationCmd {
     /// Inspect or import external prompt packages (versioned, content-hashed).
-    #[command(subcommand)]
+    #[command(
+        subcommand,
+        long_about = "External prompt packages as versioned, content-hashed imports: every file is sha256'd in a sorted walk, so a package's identity is stable and replay can verify it. Read-only on the package directory.",
+        after_help = mig_examples!(
+            "envctl migration package inspect ./my-package",
+            "envctl migration package import my-package ./my-package",
+        )
+    )]
     Package(PackageCmd),
     /// Versioned artifact contracts (changes create new versions, never edits).
-    #[command(subcommand)]
+    #[command(
+        subcommand,
+        long_about = "The artifact contract registry. Contracts are versioned and content-hashed; a run references exactly one contract version, and contract changes create NEW versions — silent edits are refused by the UNIQUE(name, version) constraint.",
+        after_help = mig_examples!(
+            "envctl migration contract import full-migration-artifact-contract 1.0.0 --file contract.json",
+            "envctl migration contract show full-migration-artifact-contract@1.0.0",
+        )
+    )]
     Contract(ContractCmd),
     /// Migration recipes bound to a contract version.
-    #[command(subcommand)]
+    #[command(
+        subcommand,
+        long_about = "Migration recipes: versioned, content-hashed step lists (a steps array with step_id/operation_type/risk) bound to an artifact contract version. The recipe hash is part of every run's replay identity.",
+        after_help = mig_examples!(
+            "envctl migration recipe create four-system-unify 1.0.0 --contract contract-000001 --file recipe.json",
+            "envctl migration recipe list",
+        )
+    )]
     Recipe(RecipeCmd),
     /// Target descriptors (the systems a run imports/exports).
-    #[command(subcommand)]
+    #[command(
+        subcommand,
+        long_about = "Target descriptors: the systems a migration run reads from and writes to. Descriptors are JSON objects, validated and content-hashed at registration; target_id is unique; max_auto_risk caps what may start without an approval.",
+        after_help = mig_examples!(
+            "envctl migration target add four-system --primary-root /work --descriptor target.json",
+            "envctl migration target validate target.json",
+        )
+    )]
     Target(TargetCmd),
     /// Runs: create/start/status/events/ops/artifacts/validations/replay/export.
-    #[command(subcommand)]
+    #[command(
+        subcommand,
+        long_about = "Migration runs: the event-sourced execution unit. Every status transition walks the fail-closed state machine (created -> planning -> running -> validating -> completed) and appends to the run's hash-chained ledger; completion stamps a reproducibility hash; replay verifies every recorded hash.",
+        after_help = mig_examples!(
+            "envctl migration run create --target four-system --recipe recipe-000001",
+            "envctl migration run replay run-000001 --mode verify-only --verify-files",
+        )
+    )]
     Run(RunCmd),
     /// Operations: queue, request-start (approval-gated at R3+), complete.
-    #[command(subcommand)]
+    #[command(
+        subcommand,
+        long_about = "Operations inside a run: queued with an idempotency key (duplicates return the recorded row), started through the approval gate (R3+ or anything above the target's max_auto_risk parks in awaiting_approval), completed with terminal status — every transition an event.",
+        after_help = mig_examples!(
+            "envctl migration op add run-000001 --operation-type capture --risk R1",
+            "envctl migration op start op-000001",
+        )
+    )]
     Op(OpCmd),
     /// Approval queue: list open, approve, deny — decisions append events.
-    #[command(subcommand)]
+    #[command(
+        subcommand,
+        long_about = "The approval gate's queue. Agents and humans use the SAME surface (authority, not state, is the difference): decisions record decider, rationale, and evidence refs as ledger events, then move the gated operation to ready or denied.",
+        after_help = mig_examples!(
+            "envctl migration approval list",
+            "envctl migration approval approve approval-000001 --by agent-reviewer --reason \"evidence checked\"",
+        )
+    )]
     Approval(ApprovalCmd),
     /// Run control: pause / resume / cancel.
-    #[command(subcommand)]
+    #[command(
+        subcommand,
+        long_about = "Run control verbs: pause a running run, resume a paused one, cancel a run that must stop. Each is a state-machine transition appended to the ledger — no hidden side effects.",
+        after_help = mig_examples!(
+            "envctl migration control pause run-000001",
+            "envctl migration control resume run-000001",
+        )
+    )]
     Control(ControlCmd),
     /// Rollback metadata: plan and record execution.
-    #[command(subcommand)]
+    #[command(
+        subcommand,
+        long_about = "Rollback metadata for operations that need it. Plans are recorded as JSON (the never-delete doctrine: exports write NEW trees, so rollback is point-back-at-originals); execution is the pipeline's job and lands here as status + events.",
+        after_help = mig_examples!(
+            "envctl migration rollback plan run-000001 --plan '{\"originals\":\"untouched\"}'",
+            "envctl migration rollback list run-000001",
+        )
+    )]
     Rollback(RollbackCmd),
     /// Record evidence for a run (uri + kind + sha256).
+    #[command(
+        long_about = "Record an evidence row for a run: uri + kind + sha256 (pass --hash-file to hash the uri path now). Recording appends an evidence.recorded event; replay --verify-files re-hashes on-disk evidence.",
+        after_help = mig_examples!(
+            "envctl migration evidence run-000001 --uri ./baseline.sha256 --kind parity_baseline --hash-file",
+        )
+    )]
     Evidence {
         run: String,
         #[arg(long)]
@@ -64,6 +142,12 @@ pub enum MigrationCmd {
         actor: ActorArgs,
     },
     /// Record/refresh an artifact row (upsert by artifact id).
+    #[command(
+        long_about = "Record or refresh an artifact row (upsert on artifact id within the run): title, type, status, path, content hash (--hash-file hashes the path now), evidence and link JSON. Updates refresh — history lives in the event ledger.",
+        after_help = mig_examples!(
+            "envctl migration artifact run-000001 --artifact-id unified-idd-tree --title \"Unified .idd export\" --status complete --path ./out --hash-file",
+        )
+    )]
     Artifact {
         run: String,
         #[arg(long)]
@@ -86,6 +170,12 @@ pub enum MigrationCmd {
         actor: ActorArgs,
     },
     /// Record a validation result.
+    #[command(
+        long_about = "Record a validation result (pass/fail/warn/blocked/unknown) from a named validator, optionally linked to an artifact and operation. Rows feed the scorecard view; recording appends a validation.recorded event.",
+        after_help = mig_examples!(
+            "envctl migration validation run-000001 --validator byte-parity --status pass --details '{\"mismatched\":0}'",
+        )
+    )]
     Validation {
         run: String,
         #[arg(long)]
@@ -102,6 +192,12 @@ pub enum MigrationCmd {
         actor: ActorArgs,
     },
     /// Record a dependency/data-flow graph edge.
+    #[command(
+        long_about = "Record a dependency or data-flow graph edge (from_node -> to_node, typed) for a run — the substrate for wikilink graphs, cross-system task twins, and blast-radius queries.",
+        after_help = mig_examples!(
+            "envctl migration edge run-000001 --from kb:tasks/alpha --to handoff:TASK-0001 --edge-type same_logical_task",
+        )
+    )]
     Edge {
         run: String,
         #[arg(long)]
@@ -114,6 +210,12 @@ pub enum MigrationCmd {
         artifact: Option<String>,
     },
     /// Record a checkpoint (snapshot/rollback anchor).
+    #[command(
+        long_about = "Record a checkpoint: a named snapshot/rollback anchor (kind + ref + optional hash) for a run or operation. Recording appends a checkpoint.recorded event.",
+        after_help = mig_examples!(
+            "envctl migration checkpoint run-000001 --kind baseline --ref baselines/kb.sha256",
+        )
+    )]
     Checkpoint {
         run: String,
         #[arg(long)]
@@ -126,9 +228,21 @@ pub enum MigrationCmd {
         actor: ActorArgs,
     },
     /// Record an agent or plugin session.
-    #[command(subcommand)]
+    #[command(
+        subcommand,
+        long_about = "Record agent and plugin sessions: who (or what) drove a run, with model label, authority level, and session JSON — the _agent_sessions/_plugin_sessions provenance the agent-review protocol requires.",
+        after_help = mig_examples!(
+            "envctl migration session agent --run run-000001 --name agent-reviewer --authority operator",
+        )
+    )]
     Session(SessionCmd),
     /// Append a custom event to a run's hash-chained ledger.
+    #[command(
+        long_about = "Append a custom event to a run's hash-chained, append-only ledger (event_hash covers the previous hash + the whole envelope, so history cannot be silently rewritten). All actions append events; no hidden side effects.",
+        after_help = mig_examples!(
+            "envctl migration event run-000001 --event-type phase.completed --payload '{\"phase\":\"import\"}'",
+        )
+    )]
     Event {
         run: String,
         #[arg(long)]
@@ -169,20 +283,34 @@ impl ActorArgs {
 #[derive(Subcommand)]
 pub enum PackageCmd {
     /// Content-hash a package directory without recording it.
-    Inspect {
-        path: PathBuf,
-    },
+    #[command(
+        long_about = "Content-hash a package directory (sorted sha256 walk) and print its identity WITHOUT recording anything — the read-only preview of `package import`.",
+        after_help = mig_examples!("envctl migration package inspect ./my-package")
+    )]
+    Inspect { path: PathBuf },
     /// Import (record) a package: name + path + content hash + manifest.
-    Import {
-        name: String,
-        path: PathBuf,
-    },
+    #[command(
+        long_about = "Record a package: name, path, stable content hash over every file, and a small manifest (file count + bytes). UNIQUE(name, hash) — reimporting identical content conflicts instead of duplicating.",
+        after_help = mig_examples!("envctl migration package import my-package ./my-package")
+    )]
+    Import { name: String, path: PathBuf },
+    /// All recorded packages.
+    #[command(
+        long_about = "List every recorded package with its content hash and import time.",
+        after_help = mig_examples!("envctl --json migration package list")
+    )]
     List,
 }
 
 #[derive(Subcommand)]
 pub enum ContractCmd {
     /// Import a contract version from a JSON file.
+    #[command(
+        long_about = "Import an artifact contract version from a JSON file (optionally linked to a source package). Content-hashed; UNIQUE(name, version) — changes create new versions, never edits.",
+        after_help = mig_examples!(
+            "envctl migration contract import full-migration-artifact-contract 1.0.0 --file contract.json"
+        )
+    )]
     Import {
         name: String,
         version: String,
@@ -191,15 +319,29 @@ pub enum ContractCmd {
         #[arg(long)]
         package: Option<String>,
     },
+    /// All contract versions.
+    #[command(
+        long_about = "List every contract version with its content hash.",
+        after_help = mig_examples!("envctl --json migration contract list")
+    )]
     List,
-    Show {
-        id: String,
-    },
+    /// One contract by row id or name@version.
+    #[command(
+        long_about = "Show one contract by row id or name@version, including its full contract JSON and hash.",
+        after_help = mig_examples!("envctl migration contract show full-migration-artifact-contract@1.0.0")
+    )]
+    Show { id: String },
 }
 
 #[derive(Subcommand)]
 pub enum RecipeCmd {
     /// Create a recipe version from a JSON file (must contain a steps array).
+    #[command(
+        long_about = "Create a recipe version from a JSON file bound to an artifact contract id. The JSON must contain a steps array (step_id/operation_type/risk per step); the recipe hash joins the run's replay identity.",
+        after_help = mig_examples!(
+            "envctl migration recipe create four-system-unify 1.0.0 --contract contract-000001 --file recipe.json"
+        )
+    )]
     Create {
         name: String,
         version: String,
@@ -208,15 +350,29 @@ pub enum RecipeCmd {
         #[arg(long)]
         file: PathBuf,
     },
+    /// All recipe versions.
+    #[command(
+        long_about = "List every recipe version with its contract binding and hash.",
+        after_help = mig_examples!("envctl --json migration recipe list")
+    )]
     List,
-    Show {
-        id: String,
-    },
+    /// One recipe by row id or name@version.
+    #[command(
+        long_about = "Show one recipe by row id or name@version, including its steps JSON and hash.",
+        after_help = mig_examples!("envctl migration recipe show four-system-unify@1.0.0")
+    )]
+    Show { id: String },
 }
 
 #[derive(Subcommand)]
 pub enum TargetCmd {
     /// Register a target descriptor (JSON file), validated + content-hashed.
+    #[command(
+        long_about = "Register a target: unique target_id, type (codebase|data|infrastructure|integration|mixed), primary root, optional compare root, a JSON descriptor (validated + content-hashed), safety mode, and max_auto_risk — the cap above which operations require approval.",
+        after_help = mig_examples!(
+            "envctl migration target add four-system --primary-root /work --descriptor target.json --max-auto-risk R2"
+        )
+    )]
     Add {
         target_id: String,
         #[arg(long, default_value = "mixed")]
@@ -232,19 +388,33 @@ pub enum TargetCmd {
         #[arg(long, default_value = "R2")]
         max_auto_risk: String,
     },
+    /// All registered targets.
+    #[command(
+        long_about = "List every registered target with its descriptor hash and risk cap.",
+        after_help = mig_examples!("envctl --json migration target list")
+    )]
     List,
-    Show {
-        target_id: String,
-    },
+    /// One target by natural target_id or row id.
+    #[command(
+        long_about = "Show one target by natural target_id or row id, including its full descriptor JSON.",
+        after_help = mig_examples!("envctl migration target show four-system")
+    )]
+    Show { target_id: String },
     /// Parse + validate a descriptor file without registering it.
-    Validate {
-        descriptor: PathBuf,
-    },
+    #[command(
+        long_about = "Parse and validate a descriptor JSON file and print the descriptor hash it WOULD get — nothing is recorded. The read-only preview of `target add`.",
+        after_help = mig_examples!("envctl migration target validate target.json")
+    )]
+    Validate { descriptor: PathBuf },
 }
 
 #[derive(Subcommand)]
 pub enum RunCmd {
     /// Create a run (target row-id or natural id + recipe id).
+    #[command(
+        long_about = "Create a run in status `created` against a target (row id or natural target_id) and a recipe id; the run binds the recipe's contract version and appends run.created with the target/recipe hashes.",
+        after_help = mig_examples!("envctl migration run create --target four-system --recipe recipe-000001")
+    )]
     Create {
         #[arg(long)]
         target: String,
@@ -260,47 +430,78 @@ pub enum RunCmd {
         actor: ActorArgs,
     },
     /// created -> planning -> running (the happy-path start).
+    #[command(
+        long_about = "Walk the happy-path start: created -> planning -> running, each transition an event; started_at is stamped on entering running.",
+        after_help = mig_examples!("envctl migration run start run-000001")
+    )]
     Start {
         run: String,
         #[command(flatten)]
         actor: ActorArgs,
     },
     /// running -> validating.
+    #[command(
+        long_about = "Transition a running run into validating — the phase where parity/behavior validators record their results before completion.",
+        after_help = mig_examples!("envctl migration run validate run-000001")
+    )]
     Validate {
         run: String,
         #[command(flatten)]
         actor: ActorArgs,
     },
     /// validating -> completed; stamps the reproducibility hash.
+    #[command(
+        long_about = "Complete a validating run. The completion event lands first, then the reproducibility hash is stamped over target + recipe + contract + tool versions + the final event hash — the value replay must land on.",
+        after_help = mig_examples!("envctl migration run complete run-000001")
+    )]
     Complete {
         run: String,
         #[command(flatten)]
         actor: ActorArgs,
     },
     /// Latest-status view (one run, or --all).
+    #[command(
+        long_about = "The run_latest_status view: status, counts (operations, failures, open approvals, artifacts), and last event time — one run or --all.",
+        after_help = mig_examples!("envctl --json migration run status run-000001")
+    )]
     Status {
         run: Option<String>,
         #[arg(long, default_value_t = false)]
         all: bool,
     },
     /// The live timeline (hash-chained events joined to operations).
-    Events {
-        run: String,
-    },
+    #[command(
+        long_about = "The live_timeline view: every ledger event in sequence, joined to its operation's type and status.",
+        after_help = mig_examples!("envctl --json migration run events run-000001")
+    )]
+    Events { run: String },
     /// Operations for a run (--queue for the live queue only).
+    #[command(
+        long_about = "Operations for a run — all of them, or with --queue only the live ones (queued/ready/awaiting_approval/running/blocked).",
+        after_help = mig_examples!("envctl migration run ops run-000001 --queue")
+    )]
     Ops {
         run: String,
         #[arg(long, default_value_t = false)]
         queue: bool,
     },
-    Artifacts {
-        run: String,
-    },
+    /// The artifact index for a run.
+    #[command(
+        long_about = "The artifact_index view: every artifact row for the run with status, path, and content hash.",
+        after_help = mig_examples!("envctl --json migration run artifacts run-000001")
+    )]
+    Artifacts { run: String },
     /// Validation rows + scorecard.
-    Validations {
-        run: String,
-    },
+    #[command(
+        long_about = "Validation rows plus the validation_scorecard rollup (pass/fail/warn/blocked/unknown counts) for a run.",
+        after_help = mig_examples!("envctl --json migration run validations run-000001")
+    )]
+    Validations { run: String },
     /// Replay: verify-only | dry-run-plan (execute-again refuses at the engine).
+    #[command(
+        long_about = "Replay a run: verify-only recomputes every recorded hash (target/recipe/contract, full event chain, command hashes, evidence/artifacts — with --verify-files re-hashing files on disk, approvals, reproducibility hash) and exits non-zero on any mismatch; dry-run-plan additionally prints the recipe steps; execute-again refuses at the engine (destructive replay needs an approved R3+ operation).",
+        after_help = mig_examples!("envctl migration run replay run-000001 --mode verify-only --verify-files")
+    )]
     Replay {
         run: String,
         #[arg(long, default_value = "verify-only")]
@@ -310,19 +511,34 @@ pub enum RunCmd {
         verify_files: bool,
     },
     /// Replay readiness view (hash coverage + open approvals).
-    Readiness {
-        run: String,
-    },
+    #[command(
+        long_about = "The replay_readiness view: reproducibility hash presence, evidence/artifact rows missing hashes, and open approvals — what stands between this run and a verifiable replay.",
+        after_help = mig_examples!("envctl --json migration run readiness run-000001")
+    )]
+    Readiness { run: String },
     /// Export the whole run as one bundle (the plugin read surface).
-    Export {
-        run: String,
-    },
+    #[command(
+        long_about = "Export the whole run as one JSON bundle — run, target, recipe, contract, operations, events, evidence, artifacts, approvals, validations, graph edges, checkpoints, rollbacks. The nu_plugin/agent read surface.",
+        after_help = mig_examples!("envctl --json migration run export run-000001 > run-bundle.json")
+    )]
+    Export { run: String },
+    /// All runs.
+    #[command(
+        long_about = "List every run row (status, bindings, timestamps).",
+        after_help = mig_examples!("envctl --json migration run list")
+    )]
     List,
 }
 
 #[derive(Subcommand)]
 pub enum OpCmd {
     /// Queue an operation (idempotent on the derived idempotency key).
+    #[command(
+        long_about = "Queue an operation on a run: type, phase, risk (R0-R5), optional recipe step, redacted command (hashed), and input JSON. The idempotency key derives from run + type + target hash + step + input hash — re-adding returns the recorded operation instead of duplicating.",
+        after_help = mig_examples!(
+            "envctl migration op add run-000001 --operation-type capture --risk R1 --step import-kb --input '{\"system\":\"kb\"}'"
+        )
+    )]
     Add {
         run: String,
         #[arg(long)]
@@ -342,12 +558,20 @@ pub enum OpCmd {
     },
     /// Request start: R3+ (or above the target's max auto risk) parks in
     /// awaiting_approval with an open approval; safe risks start running.
+    #[command(
+        long_about = "Request that an operation start. The approval gate applies here: R3+ risk (or anything above the target's max_auto_risk) parks the operation in awaiting_approval with an OPEN approval row; already-approved or safe operations transition to running. Every path appends events.",
+        after_help = mig_examples!("envctl migration op start op-000001")
+    )]
     Start {
         op: String,
         #[command(flatten)]
         actor: ActorArgs,
     },
     /// Terminal transition: succeeded (default) or --failed with detail.
+    #[command(
+        long_about = "Complete a running operation: succeeded by default, or --failed with a JSON detail recorded as the operation's error and in the transition event.",
+        after_help = mig_examples!("envctl migration op complete op-000001")
+    )]
     Complete {
         op: String,
         #[arg(long, default_value_t = false)]
@@ -357,18 +581,32 @@ pub enum OpCmd {
         #[command(flatten)]
         actor: ActorArgs,
     },
-    Show {
-        op: String,
-    },
+    /// One operation row.
+    #[command(
+        long_about = "Show one operation row: status, risk, idempotency key, command hash, timestamps.",
+        after_help = mig_examples!("envctl --json migration op show op-000001")
+    )]
+    Show { op: String },
 }
 
 #[derive(Subcommand)]
 pub enum ApprovalCmd {
     /// Open approvals (all runs, or --run).
+    #[command(
+        long_about = "The open_approvals view: every OPEN approval with its operation type, risk, requester, and request time — the queue an agent reviewer (or human) services.",
+        after_help = mig_examples!("envctl --json migration approval list")
+    )]
     List {
         #[arg(long)]
         run: Option<String>,
     },
+    /// Approve: decision + rationale + evidence, appended as events.
+    #[command(
+        long_about = "Approve an open approval. The decider, rationale, and evidence refs are appended to the ledger as approval.decided, and the gated operation moves to ready. Agent reviewers run the SAME documented process a human would — deny by default when evidence is missing.",
+        after_help = mig_examples!(
+            "envctl migration approval approve approval-000001 --by agent-reviewer --reason \"parity baselines verified\" --evidence '[\"evidence-000001\"]'"
+        )
+    )]
     Approve {
         approval: String,
         #[arg(long)]
@@ -380,6 +618,13 @@ pub enum ApprovalCmd {
         #[command(flatten)]
         actor: ActorArgs,
     },
+    /// Deny: terminal for the gated operation, recorded as events.
+    #[command(
+        long_about = "Deny an open approval. The decision + rationale land in the ledger and the gated operation transitions to denied (terminal). Deny-by-default is the reviewer posture when evidence is missing.",
+        after_help = mig_examples!(
+            "envctl migration approval deny approval-000001 --by agent-reviewer --reason \"no evidence attached\""
+        )
+    )]
     Deny {
         approval: String,
         #[arg(long)]
@@ -395,16 +640,31 @@ pub enum ApprovalCmd {
 
 #[derive(Subcommand)]
 pub enum ControlCmd {
+    /// running -> paused.
+    #[command(
+        long_about = "Pause a running run (running -> paused), appended as a status-change event.",
+        after_help = mig_examples!("envctl migration control pause run-000001")
+    )]
     Pause {
         run: String,
         #[command(flatten)]
         actor: ActorArgs,
     },
+    /// paused -> running.
+    #[command(
+        long_about = "Resume a paused run (paused -> running), appended as a status-change event.",
+        after_help = mig_examples!("envctl migration control resume run-000001")
+    )]
     Resume {
         run: String,
         #[command(flatten)]
         actor: ActorArgs,
     },
+    /// Terminal cancel from any live status.
+    #[command(
+        long_about = "Cancel a run (terminal; legal from created/planning/awaiting_approval/running/paused/blocked), appended as a status-change event with completed_at stamped.",
+        after_help = mig_examples!("envctl migration control cancel run-000001")
+    )]
     Cancel {
         run: String,
         #[command(flatten)]
@@ -415,6 +675,12 @@ pub enum ControlCmd {
 #[derive(Subcommand)]
 pub enum RollbackCmd {
     /// Record a rollback plan (JSON) for a run/operation.
+    #[command(
+        long_about = "Record a rollback plan (JSON) for a run or operation, status `planned`, appended as rollback.planned. Under the never-delete doctrine the default type is point-back-at-originals: exports write NEW trees, so rollback never destroys anything.",
+        after_help = mig_examples!(
+            "envctl migration rollback plan run-000001 --plan '{\"originals\":\"untouched\"}'"
+        )
+    )]
     Plan {
         run: String,
         #[arg(long, default_value = "point-back-at-originals")]
@@ -426,13 +692,23 @@ pub enum RollbackCmd {
         #[command(flatten)]
         actor: ActorArgs,
     },
-    List {
-        run: String,
-    },
+    /// All rollback rows for a run.
+    #[command(
+        long_about = "List every rollback row for a run with status and plan JSON.",
+        after_help = mig_examples!("envctl --json migration rollback list run-000001")
+    )]
+    List { run: String },
 }
 
 #[derive(Subcommand)]
 pub enum SessionCmd {
+    /// Record an agent session (name, model, authority level).
+    #[command(
+        long_about = "Record an agent session: agent name, model label, authority level (read_only|safe_execute|approval_request|operator|admin), and session JSON — the _agent_sessions provenance behind agent-serviced approvals.",
+        after_help = mig_examples!(
+            "envctl migration session agent --run run-000001 --name agent-reviewer --authority operator"
+        )
+    )]
     Agent {
         #[arg(long)]
         run: Option<String>,
@@ -445,6 +721,13 @@ pub enum SessionCmd {
         #[arg(long)]
         session: Option<String>,
     },
+    /// Record a nu_plugin session (name, version, nu version).
+    #[command(
+        long_about = "Record a nu_plugin session: plugin name, plugin version, and the Nushell version it registered against — the _plugin_sessions provenance for plugin-driven actions.",
+        after_help = mig_examples!(
+            "envctl migration session plugin --name nu_plugin_codedb --version 0.1.0 --nu-version 0.112.2"
+        )
+    )]
     Plugin {
         #[arg(long)]
         run: Option<String>,

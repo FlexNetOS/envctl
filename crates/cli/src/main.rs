@@ -1679,25 +1679,24 @@ fn main() -> anyhow::Result<()> {
         cli.cmd,
         Cmd::Dashboard { .. } | Cmd::Env { .. } | Cmd::Migration { .. }
     ) || matches!(
-            cli.cmd,
-            Cmd::Catalog {
-                roots: CatalogRootArgs {
-                    repo_root: Some(_),
-                    ..
-                },
+        cli.cmd,
+        Cmd::Catalog {
+            roots: CatalogRootArgs {
+                repo_root: Some(_),
                 ..
-            }
-        )
-        || matches!(
-            cli.cmd,
-            Cmd::Catalog {
-                roots: CatalogRootArgs {
-                    manifest_dir: Some(_),
-                    ..
-                },
+            },
+            ..
+        }
+    ) || matches!(
+        cli.cmd,
+        Cmd::Catalog {
+            roots: CatalogRootArgs {
+                manifest_dir: Some(_),
                 ..
-            }
-        ) {
+            },
+            ..
+        }
+    ) {
         Engine::detached()
     } else {
         Engine::load_default()?
