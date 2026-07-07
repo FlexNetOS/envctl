@@ -47,7 +47,7 @@ Orphans: `tmux kill-session -t <name>`; archive stray team/task state (never rm)
 
 ## Kill switch
 ```bash
-~/FlexNetOS/src/envctl/home/bin/harness-halt.sh
+/home/flexnetos/lifeos/src/envctl/home/bin/harness-halt.sh
 ```
 Stops team tmux sessions, dispatched supervisor jobs (~/.claude/jobs), background bash children, prunes worktrees, ledgers the halt.
 
@@ -58,7 +58,7 @@ echo "<the one question>" > $HARNESS_VAR/lib/claude-harness/decisions/<slug>.pen
 Stop hook blocks completion until it is renamed `.answered`. Ask via AskUserQuestion; never loop.
 
 ## Recovery after a crash / runaway
-1. `harness-halt.sh` 2. Check ledger tail: `tail -50 $HARNESS_VAR/log/claude-harness/ledger.jsonl`
+1. `/home/flexnetos/lifeos/src/envctl/home/bin/harness-halt.sh` 2. Check ledger tail: `tail -50 $HARNESS_VAR/log/claude-harness/ledger.jsonl`
 3. Reset counter if stale: `printf '0' > $HARNESS_VAR/lib/claude-harness/active-agents.count`
 4. Clear budget flag ONLY on operator instruction: `rm $HARNESS_VAR/lib/claude-harness/budget-block.flag`
 
