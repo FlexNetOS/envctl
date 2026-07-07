@@ -510,7 +510,7 @@ requires = []
 resolved = ""
 
 [components.wild-linker]
-content_hash = "66c7178ad03c5ab8"
+content_hash = "f48fe4c689bfcd96"
 requires = []
 resolved = ""
 
