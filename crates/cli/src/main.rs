@@ -2927,17 +2927,20 @@ mod env_cmd_tests {
         let live =
             std::fs::read_to_string(format!("{base}settings.json")).expect("read settings.json");
 
-        // Derive this machine's META_ROOT from the rendered statusline anchor so the
-        // test is host-independent (CI vs dev box have different absolute roots).
-        const SUFFIX: &str = "/.claude/statusline-command.sh\"";
+        // Derive this machine's META_ROOT from the rendered env block so the test is
+        // host-independent (CI vs dev box have different absolute roots) AND
+        // statusline-shape-independent — the old statusline-command.sh anchor broke
+        // silently when the Fable-5 harness moved the statusline to
+        // ~/.claude/hooks/statusline.sh (masked on master: push CI runs only on develop).
+        const KEY: &str = "\"META_ROOT\": \"";
         let anchor = live
             .lines()
-            .find(|l| l.contains(SUFFIX))
-            .expect("settings.json has a statusline command line");
+            .find(|l| l.contains(KEY))
+            .expect("settings.json has a META_ROOT env line (TASK-0004)");
         let root = anchor
-            .rsplit_once("bash ")
-            .and_then(|(_, rest)| rest.strip_suffix(SUFFIX))
-            .expect("statusline anchor shape: \"bash <META_ROOT>/.claude/statusline-command.sh\"");
+            .split_once(KEY)
+            .map(|(_, rest)| rest.trim_end_matches([',', '"']))
+            .expect("META_ROOT env value shape: \"META_ROOT\": \"<root>\",");
 
         assert_eq!(
             super::render_meta_root(&tmpl, root),
