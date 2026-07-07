@@ -65,3 +65,9 @@ scripts/__pycache__/
 /home/agent-env/codex-harness/target/
 /home/agent-env/codex-harness/state/
 /home/agent-env/codex-harness/ledger/*.jsonl
+
+# Portable Codex private runtime state copied from live ~/.codex for local
+# all-in-one bundle assembly. This directory may contain auth/session-adjacent
+# databases and must remain local; tracked manifests/plans live next to it.
+/home/agent-env/private-codex-state/data/
+/home/agent-env/portable-logs/
