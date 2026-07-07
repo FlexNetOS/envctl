@@ -76,23 +76,33 @@ is_scratch() {
     *) return 1 ;;
   esac
 }
-if printf '%s' "$CMD" | grep -Eq '(^|[;&|][[:space:]]*|[[:space:]]sudo[[:space:]]+)rm[[:space:]]'; then
+if printf '%s' "$CMD" | grep -Eq '(^|[[:space:];&|])rm([[:space:]]|$)'; then
   bad=""
-  # shellcheck disable=SC2086
-  set -f
-  for tok in $CMD; do
-    case "$tok" in
-      -*|rm|sudo|"&&"|"||"|";") continue ;;
-    esac
-    case "$tok" in
-      /*|~*|"$HOME"*|./*|../*|[A-Za-z0-9_.]*)
-        p="$tok"
-        case "$p" in "~"*) p="$HOME${p#\~}";; esac
-        case "$p" in /*) :;; *) p="$PWD/$p";; esac
-        is_scratch "$p" || bad="$p" ;;
-    esac
-  done
-  set +f
+  # Scan ONLY the segment(s) that actually start with rm — split on separators
+  # first so an unrelated segment (e.g. an echo string) can't be mis-parsed.
+  while IFS= read -r seg; do
+    # is this segment an rm invocation (optionally sudo-prefixed)?
+    printf '%s' "$seg" | grep -Eq '^[[:space:]]*(sudo[[:space:]]+)?rm([[:space:]]|$)' || continue
+    seen_rm=0
+    # shellcheck disable=SC2086
+    set -f; set -- $seg; set +f
+    for tok in "$@"; do
+      if [ "$seen_rm" = 0 ]; then
+        case "$tok" in rm) seen_rm=1 ;; esac
+        continue
+      fi
+      case "$tok" in -*|sudo) continue ;; esac
+      case "$tok" in
+        /*|~*|"$HOME"*|./*|../*|[A-Za-z0-9_.]*)
+          p="$tok"
+          case "$p" in "~"*) p="$HOME${p#\~}";; esac
+          case "$p" in /*) :;; *) p="$PWD/$p";; esac
+          is_scratch "$p" || bad="$p" ;;
+      esac
+    done
+  done <<EOF_RM
+$(printf '%s' "$CMD" | tr ';|&' '\n\n\n')
+EOF_RM
   if [ -n "$bad" ]; then
     ledger "guard.deny" "\"rule\":\"rm-user-data\",\"path\":\"$(json_escape "$bad")\",\"cmd\":\"$(json_escape "$CMD")\""
     deny "LAW 1: never delete, always archive. '$bad' is not a scratch path. Use: $HOME/.claude/hooks/harness-archive.sh <path> (moves it to ~/.claude/archive/<UTC>/rm-redirect/). rm stays allowed for /tmp, target/, node_modules/, .claude/worktrees, caches."
