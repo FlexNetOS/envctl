@@ -105,13 +105,6 @@
         ]
       }
     ],
-    "TaskCreated": [
-      {
-        "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/spawn-ledger.sh", "timeout": 10 }
-        ]
-      }
-    ],
     "TaskCompleted": [
       {
         "hooks": [
@@ -130,20 +123,6 @@
       {
         "hooks": [
           { "type": "command", "command": "\"$HOME\"/.claude/hooks/stop-decision-gate.sh", "timeout": 10 }
-        ]
-      }
-    ],
-    "PreCompact": [
-      {
-        "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/compact-reinject.sh", "timeout": 10 }
-        ]
-      }
-    ],
-    "PostCompact": [
-      {
-        "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/compact-reinject.sh", "timeout": 10 }
         ]
       }
     ],
