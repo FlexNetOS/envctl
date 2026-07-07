@@ -21,20 +21,28 @@ else
   echo "no tmux server running"
 fi
 
-# 2. Team/task state left behind (configs are auto-removed on clean exit —
-#    anything remaining is orphaned). LAW 1: archived, never deleted.
+# 2. Orphaned TEAM state only. LAW 3: never touch per-session task lists —
+#    ~/.claude/tasks/<uuid> are live sessions' task lists (destroying them harms
+#    parallel sessions). Only sweep ~/.claude/teams/<name> and the matching
+#    ~/.claude/tasks/<name> (a team name is NOT a session UUID).
 HTS=$(date -u +%Y%m%dT%H%M%SZ)
-for d in "$HOME/.claude/teams"/* "$HOME/.claude/tasks"/*; do
+is_uuid() { printf '%s' "$1" | grep -Eq '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'; }
+sweep() {
+  local d="$1"
+  local dest="$HOME/.claude/archive/$HTS/halt-sweep/$(basename "$d")"
+  mkdir -p "$(dirname "$dest")"
+  mv "$d" "$dest" 2>/dev/null && echo "archived orphaned team state: $d -> $dest"
+}
+for d in "$HOME/.claude/teams"/*; do
   [ -e "$d" ] || continue
-  case "$d" in
-    # this session's own task list dir stays; only team-named dirs are swept
-    */tasks/default|*/tasks/main) echo "kept: $d" ;;
-    *)
-      dest="$HOME/.claude/archive/$HTS/halt-sweep/$(basename "$d")"
-      mkdir -p "$(dirname "$dest")"
-      mv "$d" "$dest" 2>/dev/null && echo "archived team/task state: $d -> $dest" ;;
-  esac
+  name=$(basename "$d")
+  sweep "$d"
+  # archive the team's task list too, but ONLY if its name is a team name (not a session uuid)
+  if [ -e "$HOME/.claude/tasks/$name" ] && ! is_uuid "$name"; then
+    sweep "$HOME/.claude/tasks/$name"
+  fi
 done
+[ -n "$(ls -A "$HOME/.claude/teams" 2>/dev/null)" ] || echo "no team state to sweep (session task lists left untouched)"
 
 # 3. Dispatched background sessions (claude agents supervisor jobs).
 if [ -d "$HOME/.claude/jobs" ]; then
