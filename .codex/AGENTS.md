@@ -54,9 +54,12 @@ Use these workflow files as thin shims only; the authoritative workflow bodies r
   clean-room design owned by the root lifecycle contract. Until that rebuild
   lands, envctl-derived Codex config must keep hook features disabled and purge
   stale generated hook state.
-- Root lifecycle policy is owned by `/home/flexnetos/FlexNetOS/AGENTS.md` and
-  the active home/runtime config, where hook features are currently disabled
-  for the retired root hook family until a clean-room design exists.
-- Runtime copies under `/home/flexnetos/workspace/.codex` and
-  `/home/flexnetos/FlexNetOS/.codex` must not carry or grow independent hook,
-  plugin, or marketplace policy.
+- Root lifecycle policy is owned by `/home/flexnetos/AGENTS.md`,
+  `/home/flexnetos/.codex/RULES.md`, and the active home/runtime config
+  `/home/flexnetos/.codex/config.toml`.
+- Runtime copies under `/home/flexnetos/workspace/.codex`,
+  `/home/flexnetos/lifeos/.codex`, and `/home/flexnetos/FlexNetOS/.codex`
+  are retired. They must not carry or grow independent hook, plugin, MCP,
+  marketplace, or instruction policy. If one reappears, archive it and route
+  the update through envctl `agent-env.yaml`/`agent-skills` or the active
+  `/home/flexnetos/.codex` runtime config.
