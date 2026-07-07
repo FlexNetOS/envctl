@@ -51,6 +51,9 @@ scripts/__pycache__/
 /.handoff/locks/
 /.handoff/maps/
 
+# grit local index (parallel code coordination)
+.grit
+
 # envctl home Codex harness volatile runtime proof/state.
 # Keep source/config/hook binaries visible to git; ignore regenerable build
 # output, process state, scratch worktrees, ledgers, and archives. Archives and
