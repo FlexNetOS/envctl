@@ -71,11 +71,12 @@ counter_bump() { # counter_bump +1|-1
   ) 8>>"$COUNTER.lock" 2>/dev/null || true
 }
 
-rate_pct_max() { # highest of five_hour/seven_day used_percentage from cache; empty if none
-  [ -f "$RATE_CACHE" ] || { echo ""; return; }
+rate_pct_max() { # highest of five_hour/seven_day used_percentage from THIS session's cache
+  local cache; cache="$(rate_cache_path)"   # resolve now: session id may be set after sourcing
+  [ -f "$cache" ] || { echo ""; return; }
   if have_jq; then
-    jq -r '[.five_hour.used_percentage // 0, .seven_day.used_percentage // 0] | max | floor' "$RATE_CACHE" 2>/dev/null
+    jq -r '[.five_hour.used_percentage // 0, .seven_day.used_percentage // 0] | max | floor' "$cache" 2>/dev/null
   else
-    grep -o '"used_percentage":[0-9.]*' "$RATE_CACHE" | cut -d: -f2 | sort -n | tail -1 | cut -d. -f1
+    grep -o '"used_percentage":[0-9.]*' "$cache" | cut -d: -f2 | sort -n | tail -1 | cut -d. -f1
   fi
 }
