@@ -14,6 +14,10 @@
 #
 # Navigation invariant:
 #   /home/flexnetos/.codex/config.toml is the active runtime config.
+#   /home/flexnetos/.codex/RULES.md, /home/flexnetos/.codex/RTK.md,
+#   /home/flexnetos/.codex/AGENTS.rtk.md, /home/flexnetos/AGENTS.md, and
+#   /home/flexnetos/AGENTS.rtk.md are the active home instruction surfaces;
+#   their envctl-owned source copies live under home/.codex/ and home/.
 #   /home/flexnetos/lifeos/.codex and /home/flexnetos/FlexNetOS/.codex are
 #   retired mirrors; do not use them as inputs or fallback outputs.
 

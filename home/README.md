@@ -45,7 +45,10 @@ workspace usr/bin/<tool>            -> LEGACY pack residue (runtime ownership = 
   `home/.config/kasetto/kasetto.yaml` file is retained only as a reviewed source artifact from the
   absorbed kasetto lineage; it is not the generated output authority.
 - **Codex runtime** = `/home/flexnetos/.codex/config.toml` plus the reviewed
-  home projection here. The old workspace mirror paths
+  home projection here. Keep `$HOME/.codex/RULES.md`, `$HOME/.codex/RTK.md`,
+  `$HOME/.codex/AGENTS.rtk.md`, `$HOME/AGENTS.md`, and
+  `$HOME/AGENTS.rtk.md` aligned from the tracked `home/.codex/` and `home/`
+  copies before applying home/runtime sync. The old workspace mirror paths
   `/home/flexnetos/lifeos/.codex` and `/home/flexnetos/FlexNetOS/.codex` are
   retired because they were the same symlinked directory and caused repeated
   ownership confusion. Do not regenerate or consult them; archive if they
