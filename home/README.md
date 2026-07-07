@@ -17,6 +17,8 @@ $HOME/.claude/commands              -> envctl/home/.claude/commands          (ha
 $HOME/.config/rtk                   -> envctl/home/.config/rtk               (rtk-config-links)
 $HOME/.config/yazelix/settings.jsonc-> envctl/home/.config/yazelix/...       (home-config-links)
 $HOME/.config/systemd/user/*.service-> envctl/home/.config/systemd/user/...  (home-config-links)
+$HOME/.codex/config.toml            -> active runtime config (not generated from mirrors)
+envctl/home/.codex                  -> reviewed project/home Codex layer
 $ENVCTL_REAL_HOME/.nix-profile      -> real-home Nix profile state          (Yazelix-owned)
 workspace usr/bin/<tool>            -> LEGACY pack residue (runtime ownership = Nix profile)
 ```
@@ -42,6 +44,15 @@ workspace usr/bin/<tool>            -> LEGACY pack residue (runtime ownership = 
   `agent-env.yaml` + `agent-env.lock`, driven by `envctl agent`. The historical
   `home/.config/kasetto/kasetto.yaml` file is retained only as a reviewed source artifact from the
   absorbed kasetto lineage; it is not the generated output authority.
+- **Codex runtime** = `/home/flexnetos/.codex/config.toml` plus the reviewed
+  home projection here. The old workspace mirror paths
+  `/home/flexnetos/lifeos/.codex` and `/home/flexnetos/FlexNetOS/.codex` are
+  retired because they were the same symlinked directory and caused repeated
+  ownership confusion. Do not regenerate or consult them; archive if they
+  reappear.
+- **Toolchains** = Nix/Yazelix foundation profile: nightly cargo/rustc via the
+  profile toolchain, kache for compiler caching, wild via clang linker flags,
+  and bun/bunx for Node.js package execution. Avoid npm/npx global installs.
 - **meta** = repo/workspace layer — `meta/scripts/bootstrap.sh` sequences rustup → clone → build →
   `envctl install` → `envctl agent sync --locked` → `envctl doctor && envctl lock --check`.
 

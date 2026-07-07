@@ -182,6 +182,41 @@ JS imports) — those are **wrong for this repo**.
     profile desktop entry, per the Yazelix Home Manager and troubleshooting
     docs.
 
+## Agent navigation and retired mirror paths (2026-07-07)
+
+New sessions must enter this repo through a fresh worktree at the latest
+`origin/master`/`origin/develop`, then change agent configuration through the
+owning envctl surfaces:
+
+```bash
+git fetch origin --prune
+git worktree add ../envctl-<task-slug> -b <task-branch> origin/master
+cd ../envctl-<task-slug>
+envctl agent lock --check --color never
+envctl agent sync --json --color never       # preview only
+# after review/approval only:
+envctl agent sync --apply --color never
+```
+
+Use these locations only:
+
+| Purpose | Active location |
+| --- | --- |
+| Global Codex runtime config | `/home/flexnetos/.codex/config.toml` |
+| Global Codex operating rules | `/home/flexnetos/.codex/RULES.md` |
+| Home-level navigation entry | `/home/flexnetos/AGENTS.md` |
+| RTK policy include | `/home/flexnetos/.codex/AGENTS.rtk.md` and `/home/flexnetos/AGENTS.rtk.md` |
+| Repo-managed agent inputs | `agent-env.yaml`, `agent-env.lock`, `agent-skills/` |
+| Repo home projection | `home/.codex/`, `home/.claude/`, `home/AGENTS.md` |
+| Codex harness source | `home/agent-env/codex-harness/` |
+
+Do **not** use `/home/flexnetos/lifeos/.codex` or
+`/home/flexnetos/FlexNetOS/.codex` as active config, mirror, source, or
+fallback. They were retired because `/home/flexnetos/FlexNetOS` is a symlink to
+`/home/flexnetos/lifeos`, so those two paths were the same confusing control
+surface. If either path reappears, archive it and route the change through
+`/home/flexnetos/.codex` or envctl `agent-env.yaml` as appropriate.
+
 ## Pointers
 
 - `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/DESIGN-NOTES.md` — env-manager design.
