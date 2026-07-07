@@ -1,0 +1,49 @@
+# Destructive commands are forbidden. Use codex-harness archive flow instead.
+
+prefix_rule(
+    pattern = [["rm", "unlink", "rmdir"]],
+    decision = "forbidden",
+    justification = "Deletion is forbidden; use archive-first harness flow.",
+    match = ["rm file", "rm -rf /tmp/x", "unlink file", "rmdir empty"],
+    not_match = ["rg rm"],
+)
+
+prefix_rule(
+    pattern = ["git", ["clean"]],
+    decision = "forbidden",
+    justification = "git clean deletes untracked data and is forbidden.",
+    match = ["git clean -fdx"],
+    not_match = ["git status --short"],
+)
+
+prefix_rule(
+    pattern = ["git", "reset", "--hard"],
+    decision = "forbidden",
+    justification = "Hard resets are destructive and forbidden.",
+    match = ["git reset --hard HEAD"],
+    not_match = ["git reset --soft HEAD~1"],
+)
+
+prefix_rule(
+    pattern = ["git", "branch", "-D"],
+    decision = "forbidden",
+    justification = "Force branch deletion is forbidden without archive and topology proof.",
+    match = ["git branch -D feature"],
+    not_match = ["git branch --show-current"],
+)
+
+prefix_rule(
+    pattern = ["git", "push", "--force"],
+    decision = "forbidden",
+    justification = "Force push is forbidden on protected topology.",
+    match = ["git push --force origin master"],
+    not_match = ["git push origin HEAD"],
+)
+
+prefix_rule(
+    pattern = [["chmod", "chown"], "-R"],
+    decision = "forbidden",
+    justification = "Broad recursive ownership or mode rewrites are forbidden.",
+    match = ["chmod -R 777 /home/flexnetos", "chown -R root /home/flexnetos"],
+    not_match = ["chmod 600 file"],
+)
