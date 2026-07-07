@@ -37,7 +37,7 @@ fi
 ACTIVE=$(counter_get); ACTIVE=${ACTIVE:-0}
 if [ "$ACTIVE" -ge "$MAX_ACTIVE_AGENTS" ]; then
   ledger "guard.deny" "\"rule\":\"agent-cap\",\"active\":\"$ACTIVE\""
-  deny "Runaway containment: $ACTIVE agents already active machine-wide (cap $MAX_ACTIVE_AGENTS). Wait for completions or run the kill switch (harness-halt.sh)."
+  deny "Runaway containment: $ACTIVE agents already active machine-wide (cap $MAX_ACTIVE_AGENTS). Wait for completions or run the kill switch (/home/flexnetos/lifeos/src/envctl/home/bin/harness-halt.sh)."
 fi
 
 # --- budget gate: block at ${RATE_BLOCK_PCT}% of either rate-limit window,

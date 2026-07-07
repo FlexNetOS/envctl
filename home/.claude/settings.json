@@ -11,7 +11,7 @@
     "HARNESS_VAR": "/home/flexnetos/lifeos/var",
     "ENABLE_TOOL_SEARCH": "auto",
     "MAX_MCP_OUTPUT_TOKENS": "25000",
-    "SECURITY_WARNINGS_STATE_DIR": "/home/flexnetos/FlexNetOS/var/lib/claude-harness/security",
+    "SECURITY_WARNINGS_STATE_DIR": "/home/flexnetos/lifeos/var/lib/claude-harness/security",
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
     "AGENTDB_PATH": "/home/flexnetos/lifeos/var/lib/agentdb/reasoningbank.db",
     "AGENTDB_RUNTIME": "/home/flexnetos/lifeos/var/lib/agentdb/runtime",
