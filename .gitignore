@@ -65,4 +65,3 @@ scripts/__pycache__/
 /home/agent-env/codex-harness/target/
 /home/agent-env/codex-harness/state/
 /home/agent-env/codex-harness/ledger/*.jsonl
->>>>>>> origin/develop
