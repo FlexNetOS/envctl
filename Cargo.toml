@@ -94,6 +94,9 @@ hkdf = "0.12"
 # (the RS256 App-JWT path in secrets-engine `mint_github`). Pure-Rust; links no C.
 sha2 = { version = "0.10", features = ["oid"] }
 blake3 = "1.5"
+# migration-db store (engine): pure-Rust embedded B-tree store — the same store family as the
+# fleet's handoff ledger (ADR-0017) and CodeDB. Links NO C (no-c.sh unaffected); NOT SQLite.
+redb = "4"
 zeroize = { version = "1.8", features = ["derive"] }
 subtle = "2.6"
 rand = "0.8"

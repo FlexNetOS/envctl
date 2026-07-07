@@ -35,6 +35,10 @@ sha2 = { workspace = true }
 # TASK-0028: zeroize the secret stdin buffer (revoke token) the engine pipes to `secretctl`.
 # Pure-Rust, already a workspace dep used by the secrets crates — links NO C (no-c.sh unaffected).
 zeroize = { workspace = true }
+# migration_db: event-sourced migration automation store (targets/recipes/runs/operations/events/
+# evidence/artifacts/approvals/validations/checkpoints/rollbacks/sessions). Pure-Rust redb — the
+# fleet ledger store family (handoff ADR-0017, CodeDB) — NOT SQLite; no-c.sh boundary holds.
+redb = { workspace = true }
 # Meta wiring: loop_lib is meta's shared command-construction substrate. The engine's hook
 # runner delegates std::process::Command *construction* to `loop_lib::build_command` while
 # keeping its own supervision (setsid/timeout/streaming/tee). If loop_lib lacks a needed API,
