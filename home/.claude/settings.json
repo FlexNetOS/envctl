@@ -73,7 +73,8 @@
       {
         "matcher": "Edit|Write|NotebookEdit",
         "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/guard-write-paths.sh", "timeout": 10 }
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/guard-write-paths.sh", "timeout": 10 },
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/grit-advise.sh", "timeout": 10 }
         ]
       }
     ],

@@ -50,3 +50,5 @@ scripts/__pycache__/
 /.handoff/workspaces/
 /.handoff/locks/
 /.handoff/maps/
+
+.grit
