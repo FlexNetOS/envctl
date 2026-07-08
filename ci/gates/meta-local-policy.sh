@@ -53,11 +53,23 @@ if grep -RIn -- '--archive-backup-dotfiles\|ARCHIVE_BACKUP_DOTFILES\|apply_backu
   exit 1
 fi
 
+# Documentation and codex detector-rule inputs are excluded on the same
+# rationale as migration.rs above: they intentionally contain the forbidden
+# spellings as reference/detector content, not as install directives.
+#   - home/.codex/AGENTS{,.rtk}.md   describe yazelix ~/.local runtime output and
+#                                    stale shadows agents must clean up.
+#   - .../mined-live/rules/default.rules  lists ~/.local paths as detector patterns.
+#   - home/agent-env/PORTABLE_CODEX_LOGS.md  cites the standard XDG default
+#                                    ${XDG_STATE_HOME:-$HOME/.local/state} log path.
 if [ -s "$SOURCE_LIST" ] && xargs -0 grep -HEnI "$PATTERN" <"$SOURCE_LIST" |
   grep -v '^ci/gates/meta-local-policy.sh:' |
   grep -v '^crates/engine/src/migration.rs:' |
   grep -v '^scripts/audit-meta-local-paths.sh:' |
-  grep -v '^scripts/tests/test-meta-local-path-audit.sh:' >"$TMP"; then
+  grep -v '^scripts/tests/test-meta-local-path-audit.sh:' |
+  grep -v '^home/.codex/AGENTS.md:' |
+  grep -v '^home/.codex/AGENTS.rtk.md:' |
+  grep -v '^home/.codex/mined-live/rules/default.rules:' |
+  grep -v '^home/agent-env/PORTABLE_CODEX_LOGS.md:' >"$TMP"; then
   echo "meta-local-policy: real-home .local/symlink-farm references remain in active install sources:" >&2
   cat "$TMP" >&2
   exit 1
