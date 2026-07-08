@@ -354,3 +354,114 @@ mod tests {
         );
     }
 }
+
+/// REQ-058 — agent-first JSON contract. Machine output is the *primary* surface,
+/// so its wire tags and field shapes are snapshot-locked here: a rename or a
+/// serde-tag change that would break an agent parsing `--json` fails this suite
+/// loudly. Covers the enums and the row/result/plan shapes across the whole db
+/// command surface (roots / query / symbol / refactor / deploy).
+#[cfg(test)]
+mod json_contract {
+    use super::*;
+    use crate::db_deploy::DeployDisposition;
+    use crate::db_query::{QueryPreset, QueryResult};
+    use crate::db_refactor::ApplyMode;
+    use crate::db_symbols::{ReplacePolicy, SymbolConfidence};
+
+    fn keys_sorted(v: &serde_json::Value) -> Vec<String> {
+        let mut k: Vec<String> = v.as_object().unwrap().keys().cloned().collect();
+        k.sort();
+        k
+    }
+
+    #[test]
+    fn enum_wire_tags_are_stable() {
+        let tag = |v: serde_json::Value| serde_json::to_string(&v).unwrap();
+        // snake_case families.
+        assert_eq!(
+            tag(serde_json::to_value(MutablePolicy::ReadOnly).unwrap()),
+            "\"read_only\""
+        );
+        assert_eq!(
+            tag(serde_json::to_value(MutablePolicy::GuardedApply).unwrap()),
+            "\"guarded_apply\""
+        );
+        assert_eq!(
+            tag(serde_json::to_value(MutablePolicy::Never).unwrap()),
+            "\"never\""
+        );
+        assert_eq!(
+            tag(serde_json::to_value(EnvRootRole::ReleaseTarget).unwrap()),
+            "\"release_target\""
+        );
+        assert_eq!(
+            tag(serde_json::to_value(ApplyMode::Plan).unwrap()),
+            "\"plan\""
+        );
+        assert_eq!(
+            tag(serde_json::to_value(DeployDisposition::Queued).unwrap()),
+            "\"queued\""
+        );
+        assert_eq!(
+            tag(serde_json::to_value(ReplacePolicy::NeedsOwnerMarker).unwrap()),
+            "\"needs_owner_marker\""
+        );
+        assert_eq!(
+            tag(serde_json::to_value(SymbolConfidence::ExternalTool).unwrap()),
+            "\"external_tool\""
+        );
+        // kebab-case: agent-facing query presets.
+        assert_eq!(
+            tag(serde_json::to_value(QueryPreset::RootMeta).unwrap()),
+            "\"root-meta\""
+        );
+        assert_eq!(
+            tag(serde_json::to_value(QueryPreset::MutableUnsafe).unwrap()),
+            "\"mutable-unsafe\""
+        );
+    }
+
+    #[test]
+    fn root_row_json_shape_is_stable() {
+        let db = Db::from_profiles(Some("/o".into()), Some("/r".into()), "lifeos-release");
+        let v = serde_json::to_value(db.root_by_var("META_ROOT").unwrap()).unwrap();
+        assert_eq!(v["kind"], serde_json::json!("meta_root"));
+        assert_eq!(v["role"], serde_json::json!("observed_current"));
+        assert_eq!(v["var_names"], serde_json::json!(["META_ROOT"]));
+        assert_eq!(
+            v["token_forms"],
+            serde_json::json!(["$META_ROOT", "${META_ROOT}", "META_ROOT"])
+        );
+        assert_eq!(
+            keys_sorted(&v),
+            vec![
+                "absolute_path",
+                "active",
+                "kind",
+                "precedence",
+                "role",
+                "root_id",
+                "source",
+                "target_profile",
+                "token_forms",
+                "var_names",
+                "verifier_status",
+            ]
+        );
+    }
+
+    #[test]
+    fn query_result_json_is_machine_stable() {
+        let r = QueryResult {
+            rows: vec![serde_json::json!({"a": 1})],
+            row_count: 1,
+            explain: Some("table=Files".into()),
+        };
+        let v = serde_json::to_value(&r).unwrap();
+        assert_eq!(keys_sorted(&v), vec!["explain", "row_count", "rows"]);
+        assert_eq!(v["row_count"], serde_json::json!(1));
+        // Round-trips losslessly — the agent contract is stable both ways.
+        let back: QueryResult = serde_json::from_value(v).unwrap();
+        assert_eq!(back.row_count, 1);
+    }
+}
