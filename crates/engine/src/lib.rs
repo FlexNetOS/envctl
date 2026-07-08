@@ -11,6 +11,7 @@ pub mod dashboard; // meta mission-control: read .meta.yaml -> render zellij KDL
 pub mod db; // GH#414: agent-first db façade + multi-root model + shared DbError
 pub mod db_deploy; // GH#414: safe hook/deploy automation (plan/apply)  [REQ-056]
 pub mod db_index; // GH#414: scalable file index (DbFileRow)             [REQ-052]
+pub mod db_ops; // GH#414: shared DbSnapshot entry point (CLI+GUI)       [REQ-059]
 pub mod db_query; // GH#414: deterministic query surface + presets       [REQ-054]
 pub mod db_refactor; // GH#414: root-alias refactor planner (plan/apply) [REQ-055]
 pub mod db_symbols; // GH#414: symbol + occurrence index                 [REQ-053]
@@ -68,6 +69,7 @@ pub use dashboard::{
 pub use db::{Db, DbError, EnvRootKind, EnvRootRole, EnvRootRow, MutablePolicy};
 pub use db_deploy::{DeployDisposition, DeployPlan, DeploySpec, DeployStep};
 pub use db_index::{DbFileRow, FileIndex, ScanScope};
+pub use db_ops::{roots as db_roots, DbSnapshot};
 pub use db_query::{QueryFilter, QueryPreset, QueryResult, QuerySpec, QueryTable};
 pub use db_refactor::{ApplyMode, RefactorChange, RefactorPlan, RootAliasSpec};
 pub use db_symbols::{
