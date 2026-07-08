@@ -266,6 +266,22 @@ enum Cmd {
         #[command(subcommand)]
         cmd: CatalogCmd,
     },
+    /// GH#414 code-graph db: query/roots/refactor over a repo scope (agent-first --json).
+    #[command(
+        long_about = "Agent-first code-graph surface (GH#414). Scans a repo root into a file + symbol index in the engine, then serves deterministic queries, the multi-root model (META_ROOT + LIFE_OS_ROOT held simultaneously), and a fail-closed root-alias refactor plan. All logic lives in envctl-engine (DbSnapshot); the CLI and GUI call the identical entry points. Mutating surfaces only ever emit plans here — apply requires confirm + approval.",
+        after_help = envctl_examples!(
+            "envctl db roots --json",
+            "envctl db query --preset root-meta --json",
+            "envctl db refactor --from META_ROOT --to LIFE_OS_ROOT --json",
+        )
+    )]
+    Db {
+        /// Repository root to index. Defaults to the current directory.
+        #[arg(long = "repo-root", value_name = "DIR")]
+        repo_root: Option<PathBuf>,
+        #[command(subcommand)]
+        cmd: DbCmd,
+    },
     /// Write/verify envctl.lock — a content hash of every component for reproducible
     /// installs + a CI gate. No flags = (re)write the lock; --check = verify (exit 1 on drift).
     #[command(
@@ -720,6 +736,80 @@ struct CatalogRootArgs {
     /// Manifest directory for component rows. If omitted with --repo-root and no manifest exists under that root, catalog uses an empty registry.
     #[arg(long = "manifest-dir", value_name = "DIR", global = true)]
     manifest_dir: Option<PathBuf>,
+}
+
+/// GH#414 code-graph db subcommands. Read/plan only in the CLI; every variant
+/// routes through the shared `envctl_engine::DbSnapshot` / `db_roots` entry points.
+#[derive(Subcommand)]
+enum DbCmd {
+    /// Print the multi-root model (observed META_ROOT + release-target LIFE_OS_ROOT).
+    #[command(
+        long_about = "Print the multi-root target model: envctl keeps operating the observed current root (META_ROOT) while holding a release-target root (LIFE_OS_ROOT) at the same time. The LIFEOS_ROOT spelling is normalized to LIFE_OS_ROOT. Agent-first: use --json for the stable machine contract.",
+        after_help = envctl_examples!(
+            "envctl db roots --json",
+            "envctl db roots --observed /home/u/meta --release /home/u/lifeos --json",
+        )
+    )]
+    Roots {
+        /// Observed current root absolute path (optional).
+        #[arg(long)]
+        observed: Option<String>,
+        /// Release-target root absolute path (optional).
+        #[arg(long)]
+        release: Option<String>,
+        /// Release profile label.
+        #[arg(long, default_value = "lifeos-release")]
+        profile: String,
+    },
+    /// Run a deterministic agent preset query against the indexed scope.
+    #[command(
+        long_about = "Scan the repo root into a file + symbol index and run a named agent preset query against it. Presets are the stable agent-facing contract: root-meta, root-lifeos, hooks-codex, wrappers-broken, mutable-unsafe, symbols-rust-cli, paths-legacy. Add --explain to see the resolved table/filters. Use --json for machine output.",
+        after_help = envctl_examples!(
+            "envctl db query --preset root-meta --json",
+            "envctl db query --preset mutable-unsafe --explain",
+            "envctl db --repo-root /path/to/repo query --preset symbols-rust-cli --json",
+        )
+    )]
+    Query {
+        /// Preset name, e.g. root-meta, root-lifeos, mutable-unsafe, symbols-rust-cli.
+        #[arg(long)]
+        preset: String,
+        /// Include the --explain trace of the resolved table/filters.
+        #[arg(long)]
+        explain: bool,
+    },
+    /// Root-alias refactor: PLAN by default, render to a new tree, or gated in-place apply.
+    #[command(
+        long_about = "Normalization-aware root-alias refactor (e.g. META_ROOT -> LIFE_OS_ROOT) across the indexed scope. Three modes, fail-closed by default:\n  (plan)         no flags: emit per-file unified diffs; refuse protected/.env; never touch the filesystem.\n  --render-out   write the rewritten files into a NEW tree; originals are never modified.\n  --apply        mutate files IN PLACE. Gated (R3): requires --confirm AND --approve <who>. Without both, apply refuses and nothing is written. No .envctl-bak is kept — run on a clean, committed tree so git is your backstop.\nAll logic lives in the engine (DbSnapshot); the CLI and GUI drive identical code. Use --json for the machine contract.",
+        after_help = envctl_examples!(
+            "envctl db refactor --from META_ROOT --to LIFE_OS_ROOT --json",
+            "envctl db --repo-root /path/to/repo refactor --from META_ROOT --to LIFE_OS_ROOT --render-out /tmp/rendered",
+            "envctl db --repo-root /path/to/repo refactor --from META_ROOT --to LIFE_OS_ROOT --apply --confirm --approve drdave --note 'REQ-055 migration'",
+        )
+    )]
+    Refactor {
+        /// Source root var, e.g. META_ROOT.
+        #[arg(long)]
+        from: String,
+        /// Target root var, e.g. LIFE_OS_ROOT.
+        #[arg(long)]
+        to: String,
+        /// Render the rewritten files into this NEW tree (originals untouched).
+        #[arg(long = "render-out", value_name = "DIR")]
+        render_out: Option<String>,
+        /// Mutate files IN PLACE. Requires --confirm and --approve (R3 gate).
+        #[arg(long)]
+        apply: bool,
+        /// Acknowledge the in-place rewrite (half of the R3 gate).
+        #[arg(long)]
+        confirm: bool,
+        /// Human approver id — the other half of the R3 gate (e.g. --approve drdave).
+        #[arg(long, value_name = "WHO")]
+        approve: Option<String>,
+        /// Optional note recorded on the approval.
+        #[arg(long, value_name = "TEXT")]
+        note: Option<String>,
+    },
 }
 
 /// The migration/adoption subcommands. All variants share optional scope and
@@ -1677,7 +1767,7 @@ fn main() -> anyhow::Result<()> {
 
     let engine = if matches!(
         cli.cmd,
-        Cmd::Dashboard { .. } | Cmd::Env { .. } | Cmd::Migration { .. }
+        Cmd::Dashboard { .. } | Cmd::Env { .. } | Cmd::Migration { .. } | Cmd::Db { .. }
     ) || matches!(
         cli.cmd,
         Cmd::Catalog {
@@ -1766,6 +1856,7 @@ fn main() -> anyhow::Result<()> {
             Ok(())
         }
         Cmd::Catalog { roots, cmd } => run_catalog(&engine, roots, cmd, json),
+        Cmd::Db { repo_root, cmd } => run_db(repo_root, cmd, json),
         Cmd::Lock { check } => {
             use envctl_engine::lock;
             let reg = engine.registry();
@@ -2061,6 +2152,141 @@ fn migration_marker(status: MigrationStatus, protected: bool) -> &'static str {
             MigrationStatus::Refused => "⛔",
         }
     }
+}
+
+/// GH#414 db command — drives the SHARED engine entry points
+/// ([`envctl_engine::DbSnapshot`] / [`envctl_engine::db_roots`]) so the CLI owns
+/// no db logic of its own (REQ-059). Agent-first: prints JSON under `--json`,
+/// a compact human summary otherwise. Needs no manifest/Engine — pure repo scope.
+fn run_db(repo_root: Option<PathBuf>, cmd: DbCmd, json: bool) -> anyhow::Result<()> {
+    use envctl_engine::db_query::{QueryPreset, QuerySpec};
+    use envctl_engine::db_refactor::{Approval, RootAliasSpec};
+    use envctl_engine::{db_roots, DbSnapshot, ScanScope};
+
+    let root = repo_root
+        .map(|p| p.display().to_string())
+        .unwrap_or_else(|| ".".to_string());
+
+    match cmd {
+        DbCmd::Roots {
+            observed,
+            release,
+            profile,
+        } => {
+            let rows = db_roots(observed, release, &profile);
+            if json {
+                println!("{}", serde_json::to_string_pretty(&rows)?);
+            } else {
+                for r in &rows {
+                    println!(
+                        "{:<14} {:?} {}",
+                        r.var_names.join(","),
+                        r.role,
+                        r.absolute_path.as_deref().unwrap_or("-")
+                    );
+                }
+            }
+        }
+        DbCmd::Query { preset, explain } => {
+            let parsed: QueryPreset =
+                serde_json::from_value(serde_json::Value::String(preset.clone()))
+                    .map_err(|_| anyhow::anyhow!("unknown preset: {preset}"))?;
+            let snap = DbSnapshot::open(ScanScope {
+                root,
+                ..Default::default()
+            })?;
+            let spec = QuerySpec {
+                table: None,
+                filters: vec![],
+                preset: Some(parsed),
+                target_profile: None,
+                explain,
+            };
+            let res = snap.query(&spec)?;
+            if json {
+                println!("{}", serde_json::to_string_pretty(&res)?);
+            } else {
+                println!("{} rows", res.row_count);
+                if let Some(x) = &res.explain {
+                    println!("{x}");
+                }
+            }
+        }
+        DbCmd::Refactor {
+            from,
+            to,
+            render_out,
+            apply,
+            confirm,
+            approve,
+            note,
+        } => {
+            let snap = DbSnapshot::open(ScanScope {
+                root,
+                ..Default::default()
+            })?;
+            let spec = RootAliasSpec {
+                from,
+                to,
+                target_profile: None,
+                scope: None,
+                render_out: render_out.clone(),
+            };
+            let plan = snap.refactor_plan(&spec)?;
+
+            // Optional: render the rewritten files into a NEW tree (originals safe).
+            let rendered = if render_out.is_some() {
+                Some(snap.refactor_render(&plan, &spec)?)
+            } else {
+                None
+            };
+
+            // Optional: mutate IN PLACE. Fail-closed — the engine refuses unless
+            // confirm && an approved Approval are both supplied. `--approve <who>`
+            // is the human approval; absence => None => refusal.
+            let mutated = if apply {
+                let approval = approve.clone().map(|who| Approval {
+                    approver: who,
+                    approved: true,
+                    note: note.clone(),
+                });
+                Some(snap.refactor_apply(&plan, &spec, confirm, approval.as_ref())?)
+            } else {
+                None
+            };
+
+            if json {
+                let out = serde_json::json!({
+                    "plan": plan,
+                    "rendered": rendered,
+                    "mutated": mutated,
+                });
+                println!("{}", serde_json::to_string_pretty(&out)?);
+            } else {
+                println!(
+                    "mode={:?} files_touched={} occurrences={} refused={} approved={}",
+                    plan.mode,
+                    plan.files_touched,
+                    plan.occurrences_total,
+                    plan.refused,
+                    plan.approved
+                );
+                if let Some(paths) = &rendered {
+                    println!("rendered {} file(s) to new tree:", paths.len());
+                    for p in paths {
+                        println!("  {p}");
+                    }
+                }
+                if let Some(paths) = &mutated {
+                    println!("APPLIED in place to {} file(s):", paths.len());
+                    for p in paths {
+                        println!("  {p}");
+                    }
+                }
+            }
+        }
+    }
+    Ok(())
 }
 
 fn run_catalog(
@@ -3076,6 +3302,7 @@ fn run_action(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
             | Cmd::Secret { .. }
             | Cmd::Registry { .. }
             | Cmd::Catalog { .. }
+            | Cmd::Db { .. }
             | Cmd::Completions { .. }
             | Cmd::Manage { .. } => {
                 unreachable!("handled in main")

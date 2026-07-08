@@ -1050,6 +1050,9 @@ mod tests {
 
     #[test]
     fn wiring_present_probes_meta_root_bashrc_not_os_home() {
+        // Mutates the process-global META_ROOT/HOME; serialize against every other
+        // test that reads or writes env (e.g. catalog's scan()) — see test_env_lock.
+        let _env = crate::test_env_lock();
         let root = temp_root("executor-wiring-meta-root");
         let meta = root.join("meta");
         let home = root.join("home");
