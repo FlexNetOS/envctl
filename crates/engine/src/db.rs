@@ -75,6 +75,67 @@ pub enum EnvRootKind {
     Custom(String),
 }
 
+impl EnvRootKind {
+    /// The canonical environment-variable spelling generated artifacts should
+    /// use for this kind. `LIFEOS_ROOT` is accepted on input but normalizes to
+    /// the canonical `LIFE_OS_ROOT` here (REQ-051 rule).
+    pub fn canonical_var(&self) -> &str {
+        match self {
+            EnvRootKind::MetaRoot => "META_ROOT",
+            EnvRootKind::LifeOsRoot => "LIFE_OS_ROOT",
+            EnvRootKind::RepoRoot => "REPO_ROOT",
+            EnvRootKind::ToolchainRoot => "TOOLCHAIN_ROOT",
+            EnvRootKind::XdgDataRoot => "XDG_DATA_HOME",
+            EnvRootKind::XdgStateRoot => "XDG_STATE_HOME",
+            EnvRootKind::XdgCacheRoot => "XDG_CACHE_HOME",
+            EnvRootKind::LegacyRoot => "TOOLCHAINS_LEGACY",
+            EnvRootKind::Custom(name) => name,
+        }
+    }
+
+    /// Classify a root variable name (any accepted spelling) into a kind.
+    /// Accepts the `LIFEOS_ROOT` alias for `LifeOsRoot`.
+    pub fn from_var(name: &str) -> EnvRootKind {
+        match name
+            .trim()
+            .trim_start_matches('$')
+            .trim_matches(|c| c == '{' || c == '}')
+        {
+            "META_ROOT" => EnvRootKind::MetaRoot,
+            "LIFE_OS_ROOT" | "LIFEOS_ROOT" => EnvRootKind::LifeOsRoot,
+            "REPO_ROOT" => EnvRootKind::RepoRoot,
+            "TOOLCHAIN_ROOT" => EnvRootKind::ToolchainRoot,
+            "XDG_DATA_HOME" => EnvRootKind::XdgDataRoot,
+            "XDG_STATE_HOME" => EnvRootKind::XdgStateRoot,
+            "XDG_CACHE_HOME" => EnvRootKind::XdgCacheRoot,
+            other => EnvRootKind::Custom(other.to_string()),
+        }
+    }
+}
+
+/// Normalize a root variable spelling to its canonical form. `LIFEOS_ROOT`
+/// becomes `LIFE_OS_ROOT`; unknown names pass through unchanged. This is the
+/// single normalization seam refactor/deploy planners resolve token forms
+/// against (REQ-051 rule; no blind `$META_ROOT` string rewrite).
+pub fn normalize_root_var(name: &str) -> String {
+    let kind = EnvRootKind::from_var(name);
+    match kind {
+        EnvRootKind::Custom(_) => name
+            .trim()
+            .trim_start_matches('$')
+            .trim_matches(|c| c == '{' || c == '}')
+            .to_string(),
+        other => other.canonical_var().to_string(),
+    }
+}
+
+/// The token forms an env root can appear as in files: `$VAR`, `${VAR}`, and
+/// the bare name. Used by the refactor planner to find occurrences.
+pub fn token_forms(var: &str) -> Vec<String> {
+    let v = normalize_root_var(var);
+    vec![format!("${v}"), format!("${{{v}}}"), v]
+}
+
 /// The role a root plays in a migration — the model holds current, declared,
 /// and release-target roots simultaneously (no blind `$META_ROOT` rewrite).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -133,6 +194,56 @@ impl Db {
     /// scan + declared/release-target profiles.
     pub fn push_root(&mut self, row: EnvRootRow) {
         self.roots.push(row);
+    }
+
+    /// Build the multi-root model holding the current observed root and a
+    /// release-target root at the same time — the core #414 requirement:
+    /// envctl keeps operating `$META_ROOT` while generating/validating a
+    /// different `$LIFE_OS_ROOT` release layout. `observed`/`release` are the
+    /// resolved absolute paths (if known).
+    ///
+    /// `META_ROOT` is recorded as [`EnvRootRole::ObservedCurrent`] and
+    /// `LIFE_OS_ROOT` as [`EnvRootRole::ReleaseTarget`] under the given profile
+    /// (e.g. `lifeos-release`). Any `LIFEOS_ROOT` spelling is normalized.
+    pub fn from_profiles(
+        observed: Option<String>,
+        release: Option<String>,
+        release_profile: &str,
+    ) -> Self {
+        let mut db = Self::new();
+        db.push_root(EnvRootRow {
+            root_id: "root-meta".into(),
+            kind: EnvRootKind::MetaRoot,
+            role: EnvRootRole::ObservedCurrent,
+            var_names: vec![EnvRootKind::MetaRoot.canonical_var().to_string()],
+            absolute_path: observed,
+            token_forms: token_forms("META_ROOT"),
+            source: "observed-env".into(),
+            precedence: 100,
+            active: true,
+            target_profile: Some("current".into()),
+            verifier_status: "observed".into(),
+        });
+        db.push_root(EnvRootRow {
+            root_id: "root-lifeos".into(),
+            kind: EnvRootKind::LifeOsRoot,
+            role: EnvRootRole::ReleaseTarget,
+            var_names: vec![EnvRootKind::LifeOsRoot.canonical_var().to_string()],
+            absolute_path: release,
+            token_forms: token_forms("LIFE_OS_ROOT"),
+            source: "release-profile".into(),
+            precedence: 90,
+            active: true,
+            target_profile: Some(release_profile.to_string()),
+            verifier_status: "declared".into(),
+        });
+        db
+    }
+
+    /// Look up a root row by any of its variable spellings (alias-aware).
+    pub fn root_by_var(&self, var: &str) -> Option<&EnvRootRow> {
+        let kind = EnvRootKind::from_var(var);
+        self.roots.iter().find(|r| r.kind == kind)
     }
 }
 
@@ -205,5 +316,41 @@ mod tests {
         )
         .unwrap();
         assert!(!dplan.approved);
+    }
+
+    #[test]
+    fn multi_root_model_holds_observed_and_release_simultaneously() {
+        let db = Db::from_profiles(
+            Some("/home/u/meta".into()),
+            Some("/home/u/lifeos".into()),
+            "lifeos-release",
+        );
+        assert_eq!(db.roots().len(), 2);
+
+        let meta = db.root_by_var("META_ROOT").expect("meta root");
+        assert_eq!(meta.role, EnvRootRole::ObservedCurrent);
+        assert_eq!(meta.absolute_path.as_deref(), Some("/home/u/meta"));
+
+        let lifeos = db.root_by_var("LIFE_OS_ROOT").expect("lifeos root");
+        assert_eq!(lifeos.role, EnvRootRole::ReleaseTarget);
+        assert_eq!(lifeos.target_profile.as_deref(), Some("lifeos-release"));
+
+        // Alias-aware: LIFEOS_ROOT resolves to the same LifeOsRoot row.
+        assert_eq!(
+            db.root_by_var("LIFEOS_ROOT").map(|r| &r.root_id),
+            Some(&"root-lifeos".to_string())
+        );
+    }
+
+    #[test]
+    fn root_var_normalization_and_token_forms() {
+        assert_eq!(normalize_root_var("LIFEOS_ROOT"), "LIFE_OS_ROOT");
+        assert_eq!(normalize_root_var("${LIFEOS_ROOT}"), "LIFE_OS_ROOT");
+        assert_eq!(normalize_root_var("$META_ROOT"), "META_ROOT");
+        assert_eq!(normalize_root_var("MY_CUSTOM"), "MY_CUSTOM");
+        assert_eq!(
+            token_forms("LIFEOS_ROOT"),
+            vec!["$LIFE_OS_ROOT", "${LIFE_OS_ROOT}", "LIFE_OS_ROOT"]
+        );
     }
 }
