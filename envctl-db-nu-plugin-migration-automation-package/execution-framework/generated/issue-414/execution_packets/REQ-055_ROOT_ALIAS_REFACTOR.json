@@ -1,0 +1,76 @@
+{
+  "packet_schema_version": "1.0",
+  "parent_id": "GH-414",
+  "phase": "05-envctl-db-upgrade",
+  "owner_lane": "lane_b_repo_a",
+  "owner_agent": "envctl-db-upgrade-agent",
+  "helper_id": "helper-req-055_root_alias_refactor",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "codex-cli-background-shell",
+  "shell_mode": "workspace-write",
+  "repo_target": "repo_a",
+  "repo_path": "${ENVCTL_REPO}",
+  "filesystem_scope": "repo",
+  "input_files": [
+    "prompts/ISSUE_ENVCTL.md",
+    "specs/envctl-nu-plugin-boundary.md",
+    "GH-issue-414",
+    "crates/engine/src/db_query.rs"
+  ],
+  "target_files": [
+    "crates/engine/src/db_refactor.rs",
+    "crates/cli/src/main.rs"
+  ],
+  "target_artifacts": [
+    "envctl db refactor root-alias command"
+  ],
+  "allowed_paths": [
+    "${ENVCTL_REPO}/**",
+    "${NU_PLUGIN_REPO}/**",
+    "execution-framework/**"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "depends_on": [
+    "REQ-054_QUERY_SURFACE",
+    "REQ-051_MULTI_ROOT_MODEL"
+  ],
+  "blocks": [
+    "REQ-056_DEPLOY_AUTOMATION",
+    "REQ-059_CLI_GUI_SHARED_ENGINE",
+    "REQ-061_NU_PLUGIN_DB_SURFACE"
+  ],
+  "parallel_group": "db_upgrade_refactor",
+  "can_run_parallel": true,
+  "max_parallel": 1,
+  "start_after": "",
+  "priority": 170,
+  "execution_cell": "05-envctl-db-upgrade",
+  "required_tools": [
+    "codex",
+    "python3",
+    "shell",
+    "cargo"
+  ],
+  "command_template": "codex exec < generated/issue-414/execution_packets/REQ-055_ROOT_ALIAS_REFACTOR.json",
+  "verification_command": "cargo test -p envctl-engine db_refactor",
+  "completion_gate": "refactor --plan emits diff; --render-out writes NEW tree; --apply refuses without --confirm+approval",
+  "proof_required": true,
+  "proof_uri": "execution-framework/proof_records/REQ-055_ROOT_ALIAS_REFACTOR.proof.json",
+  "heartbeat_file": "execution-framework/heartbeats/REQ-055_ROOT_ALIAS_REFACTOR.heartbeat",
+  "logs_uri": "execution-framework/logs/REQ-055_ROOT_ALIAS_REFACTOR.log",
+  "rollback_plan": "git restore + envctl catalog sync --dry-run (fail-closed; exports write new trees)",
+  "risk_level": "R3",
+  "human_approval_required": true,
+  "notes": "R3: default dry-run; backup-before-clobber; atomic temp+rename; marker-block ownership only.",
+  "task_id": "REQ-055_ROOT_ALIAS_REFACTOR",
+  "title": "Root-alias refactor planner (plan/render/apply)",
+  "goal": "envctl db map-root/refactor root-alias --from META_ROOT --to LIFE_OS_ROOT: build indexed snapshot, resolve token forms, emit similar-diff preview, --render-out new tree (never in place), --apply requires --confirm + approval",
+  "source_graph_uri": "generated/issue-414/task_graph.csv",
+  "generated_at": "2026-07-08T02:18:54+00:00"
+}

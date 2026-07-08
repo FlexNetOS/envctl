@@ -1,0 +1,157 @@
+{
+  "schema_version": "1.0",
+  "source_issue": "FlexNetOS/envctl#414 + prompts/ISSUE_NU_PLUGIN.md",
+  "generated_at": "2026-07-08T02:18:54+00:00",
+  "task_count": 12,
+  "packet_count": 12,
+  "packets": [
+    {
+      "task_id": "REQ-050_DB_MODULE_SCAFFOLD",
+      "packet_uri": "generated/issue-414/execution_packets/REQ-050_DB_MODULE_SCAFFOLD.json",
+      "phase": "05-envctl-db-upgrade",
+      "owner_lane": "lane_b_repo_a",
+      "parallel_group": "db_upgrade_foundation",
+      "depends_on": [],
+      "risk_level": "R1",
+      "human_approval_required": false
+    },
+    {
+      "task_id": "REQ-051_MULTI_ROOT_MODEL",
+      "packet_uri": "generated/issue-414/execution_packets/REQ-051_MULTI_ROOT_MODEL.json",
+      "phase": "05-envctl-db-upgrade",
+      "owner_lane": "lane_b_repo_a",
+      "parallel_group": "db_upgrade_model",
+      "depends_on": [
+        "REQ-050_DB_MODULE_SCAFFOLD"
+      ],
+      "risk_level": "R2",
+      "human_approval_required": false
+    },
+    {
+      "task_id": "REQ-052_FILE_INDEX",
+      "packet_uri": "generated/issue-414/execution_packets/REQ-052_FILE_INDEX.json",
+      "phase": "05-envctl-db-upgrade",
+      "owner_lane": "lane_b_repo_a",
+      "parallel_group": "db_upgrade_index",
+      "depends_on": [
+        "REQ-050_DB_MODULE_SCAFFOLD"
+      ],
+      "risk_level": "R1",
+      "human_approval_required": false
+    },
+    {
+      "task_id": "REQ-053_SYMBOL_INDEX",
+      "packet_uri": "generated/issue-414/execution_packets/REQ-053_SYMBOL_INDEX.json",
+      "phase": "05-envctl-db-upgrade",
+      "owner_lane": "lane_b_repo_a",
+      "parallel_group": "db_upgrade_index",
+      "depends_on": [
+        "REQ-052_FILE_INDEX"
+      ],
+      "risk_level": "R1",
+      "human_approval_required": false
+    },
+    {
+      "task_id": "REQ-054_QUERY_SURFACE",
+      "packet_uri": "generated/issue-414/execution_packets/REQ-054_QUERY_SURFACE.json",
+      "phase": "05-envctl-db-upgrade",
+      "owner_lane": "lane_b_repo_a",
+      "parallel_group": "db_upgrade_query",
+      "depends_on": [
+        "REQ-053_SYMBOL_INDEX",
+        "REQ-051_MULTI_ROOT_MODEL"
+      ],
+      "risk_level": "R1",
+      "human_approval_required": false
+    },
+    {
+      "task_id": "REQ-055_ROOT_ALIAS_REFACTOR",
+      "packet_uri": "generated/issue-414/execution_packets/REQ-055_ROOT_ALIAS_REFACTOR.json",
+      "phase": "05-envctl-db-upgrade",
+      "owner_lane": "lane_b_repo_a",
+      "parallel_group": "db_upgrade_refactor",
+      "depends_on": [
+        "REQ-054_QUERY_SURFACE",
+        "REQ-051_MULTI_ROOT_MODEL"
+      ],
+      "risk_level": "R3",
+      "human_approval_required": true
+    },
+    {
+      "task_id": "REQ-056_DEPLOY_AUTOMATION",
+      "packet_uri": "generated/issue-414/execution_packets/REQ-056_DEPLOY_AUTOMATION.json",
+      "phase": "05-envctl-db-upgrade",
+      "owner_lane": "lane_b_repo_a",
+      "parallel_group": "db_upgrade_deploy",
+      "depends_on": [
+        "REQ-055_ROOT_ALIAS_REFACTOR"
+      ],
+      "risk_level": "R3",
+      "human_approval_required": true
+    },
+    {
+      "task_id": "REQ-057_WATCH_INCREMENTAL",
+      "packet_uri": "generated/issue-414/execution_packets/REQ-057_WATCH_INCREMENTAL.json",
+      "phase": "05-envctl-db-upgrade",
+      "owner_lane": "lane_b_repo_a",
+      "parallel_group": "db_upgrade_watch",
+      "depends_on": [
+        "REQ-052_FILE_INDEX"
+      ],
+      "risk_level": "R2",
+      "human_approval_required": false
+    },
+    {
+      "task_id": "REQ-058_AGENT_JSON_CONTRACT",
+      "packet_uri": "generated/issue-414/execution_packets/REQ-058_AGENT_JSON_CONTRACT.json",
+      "phase": "05-envctl-db-upgrade",
+      "owner_lane": "lane_b_repo_a",
+      "parallel_group": "db_upgrade_contract",
+      "depends_on": [
+        "REQ-054_QUERY_SURFACE"
+      ],
+      "risk_level": "R1",
+      "human_approval_required": false
+    },
+    {
+      "task_id": "REQ-059_CLI_GUI_SHARED_ENGINE",
+      "packet_uri": "generated/issue-414/execution_packets/REQ-059_CLI_GUI_SHARED_ENGINE.json",
+      "phase": "05-envctl-db-upgrade",
+      "owner_lane": "lane_b_repo_a",
+      "parallel_group": "db_upgrade_contract",
+      "depends_on": [
+        "REQ-054_QUERY_SURFACE",
+        "REQ-055_ROOT_ALIAS_REFACTOR"
+      ],
+      "risk_level": "R2",
+      "human_approval_required": false
+    },
+    {
+      "task_id": "REQ-060_NOC_GATES_TESTS",
+      "packet_uri": "generated/issue-414/execution_packets/REQ-060_NOC_GATES_TESTS.json",
+      "phase": "05-envctl-db-upgrade",
+      "owner_lane": "lane_e_verification",
+      "parallel_group": "db_upgrade_verify",
+      "depends_on": [
+        "REQ-055_ROOT_ALIAS_REFACTOR",
+        "REQ-056_DEPLOY_AUTOMATION",
+        "REQ-057_WATCH_INCREMENTAL"
+      ],
+      "risk_level": "R2",
+      "human_approval_required": false
+    },
+    {
+      "task_id": "REQ-061_NU_PLUGIN_DB_SURFACE",
+      "packet_uri": "generated/issue-414/execution_packets/REQ-061_NU_PLUGIN_DB_SURFACE.json",
+      "phase": "05-envctl-db-upgrade",
+      "owner_lane": "lane_c_repo_b",
+      "parallel_group": "db_upgrade_plugin",
+      "depends_on": [
+        "REQ-054_QUERY_SURFACE",
+        "REQ-055_ROOT_ALIAS_REFACTOR"
+      ],
+      "risk_level": "R2",
+      "human_approval_required": false
+    }
+  ]
+}

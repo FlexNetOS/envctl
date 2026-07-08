@@ -1,0 +1,77 @@
+{
+  "packet_schema_version": "1.0",
+  "parent_id": "GH-414",
+  "phase": "05-envctl-db-upgrade",
+  "owner_lane": "lane_b_repo_a",
+  "owner_agent": "envctl-db-upgrade-agent",
+  "helper_id": "helper-req-051_multi_root_model",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "codex-cli-background-shell",
+  "shell_mode": "workspace-write",
+  "repo_target": "repo_a",
+  "repo_path": "${ENVCTL_REPO}",
+  "filesystem_scope": "repo",
+  "input_files": [
+    "prompts/ISSUE_ENVCTL.md",
+    "specs/envctl-nu-plugin-boundary.md",
+    "GH-issue-414",
+    "crates/engine/src/catalog.rs",
+    "README.md",
+    "crates/cli/src/main.rs"
+  ],
+  "target_files": [
+    "crates/engine/src/db.rs",
+    "crates/cli/src/main.rs"
+  ],
+  "target_artifacts": [
+    "EnvRootRow catalog rows",
+    "updated CLI help"
+  ],
+  "allowed_paths": [
+    "${ENVCTL_REPO}/**",
+    "${NU_PLUGIN_REPO}/**",
+    "execution-framework/**"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "depends_on": [
+    "REQ-050_DB_MODULE_SCAFFOLD"
+  ],
+  "blocks": [
+    "REQ-054_QUERY_SURFACE",
+    "REQ-055_ROOT_ALIAS_REFACTOR"
+  ],
+  "parallel_group": "db_upgrade_model",
+  "can_run_parallel": true,
+  "max_parallel": 2,
+  "start_after": "",
+  "priority": 190,
+  "execution_cell": "05-envctl-db-upgrade",
+  "required_tools": [
+    "codex",
+    "python3",
+    "shell",
+    "cargo"
+  ],
+  "command_template": "codex exec < generated/issue-414/execution_packets/REQ-051_MULTI_ROOT_MODEL.json",
+  "verification_command": "cargo test -p envctl-engine roots",
+  "completion_gate": "envctl db roots --json lists META_ROOT(observed) + LIFE_OS_ROOT(release-target) with aliases",
+  "proof_required": true,
+  "proof_uri": "execution-framework/proof_records/REQ-051_MULTI_ROOT_MODEL.proof.json",
+  "heartbeat_file": "execution-framework/heartbeats/REQ-051_MULTI_ROOT_MODEL.heartbeat",
+  "logs_uri": "execution-framework/logs/REQ-051_MULTI_ROOT_MODEL.log",
+  "rollback_plan": "git restore + envctl catalog sync --dry-run (fail-closed; exports write new trees)",
+  "risk_level": "R2",
+  "human_approval_required": false,
+  "notes": "No blind $META_ROOT rewrite: target-root indirection + alias resolution.",
+  "task_id": "REQ-051_MULTI_ROOT_MODEL",
+  "title": "Multi-root target model (META_ROOT + LIFE_OS_ROOT)",
+  "goal": "Implement EnvRootKind/EnvRootRole/EnvRootRow, hold observed/declared/release-target roots + aliases simultaneously, normalize LIFEOS_ROOT->LIFE_OS_ROOT, add catalog root rows, update CLI help to Meta/LifeOS release-target manager",
+  "source_graph_uri": "generated/issue-414/task_graph.csv",
+  "generated_at": "2026-07-08T02:18:54+00:00"
+}

@@ -1,0 +1,69 @@
+{
+  "packet_schema_version": "1.0",
+  "parent_id": "GH-414",
+  "phase": "05-envctl-db-upgrade",
+  "owner_lane": "lane_c_repo_b",
+  "owner_agent": "nu-plugin-agent",
+  "helper_id": "helper-req-061_nu_plugin_db_surface",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "codex-cli-background-shell",
+  "shell_mode": "workspace-write",
+  "repo_target": "repo_b",
+  "repo_path": "${NU_PLUGIN_REPO}",
+  "filesystem_scope": "repo",
+  "input_files": [
+    "prompts/ISSUE_NU_PLUGIN.md",
+    "specs/envctl-nu-plugin-boundary.md"
+  ],
+  "target_files": [
+    "crates/nu_plugin_codedb/src/main.rs"
+  ],
+  "target_artifacts": [
+    "nu_plugin db view/control commands"
+  ],
+  "allowed_paths": [
+    "${ENVCTL_REPO}/**",
+    "${NU_PLUGIN_REPO}/**",
+    "execution-framework/**"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "depends_on": [
+    "REQ-054_QUERY_SURFACE",
+    "REQ-055_ROOT_ALIAS_REFACTOR"
+  ],
+  "blocks": [],
+  "parallel_group": "db_upgrade_plugin",
+  "can_run_parallel": true,
+  "max_parallel": 2,
+  "start_after": "",
+  "priority": 135,
+  "execution_cell": "05-envctl-db-upgrade",
+  "required_tools": [
+    "codex",
+    "python3",
+    "shell",
+    "cargo"
+  ],
+  "command_template": "codex exec < generated/issue-414/execution_packets/REQ-061_NU_PLUGIN_DB_SURFACE.json",
+  "verification_command": "cargo test -p nu_plugin_codedb",
+  "completion_gate": "plugin renders db query/roots tables and routes refactor/deploy approvals through envctl boundary (no plugin-owned state)",
+  "proof_required": true,
+  "proof_uri": "execution-framework/proof_records/REQ-061_NU_PLUGIN_DB_SURFACE.proof.json",
+  "heartbeat_file": "execution-framework/heartbeats/REQ-061_NU_PLUGIN_DB_SURFACE.heartbeat",
+  "logs_uri": "execution-framework/logs/REQ-061_NU_PLUGIN_DB_SURFACE.log",
+  "rollback_plan": "git restore + envctl catalog sync --dry-run (fail-closed; exports write new trees)",
+  "risk_level": "R2",
+  "human_approval_required": false,
+  "notes": "Boundary rule: plugin calls envctl JSON CLI/API; every mutating command appends an envctl event.",
+  "task_id": "REQ-061_NU_PLUGIN_DB_SURFACE",
+  "title": "nu_plugin visuals for db query/refactor/deploy",
+  "goal": "Add Nushell plugin commands to render envctl db query/roots/symbols results and drive refactor/deploy plan+approval as Nushell-native tables; plugin stays a control/visual surface, envctl DB remains source of truth",
+  "source_graph_uri": "generated/issue-414/task_graph.csv",
+  "generated_at": "2026-07-08T02:18:54+00:00"
+}

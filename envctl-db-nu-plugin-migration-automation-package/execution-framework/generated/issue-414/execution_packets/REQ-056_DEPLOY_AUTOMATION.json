@@ -1,0 +1,71 @@
+{
+  "packet_schema_version": "1.0",
+  "parent_id": "GH-414",
+  "phase": "05-envctl-db-upgrade",
+  "owner_lane": "lane_b_repo_a",
+  "owner_agent": "envctl-db-upgrade-agent",
+  "helper_id": "helper-req-056_deploy_automation",
+  "model_tag": "gpt-5.3-spark",
+  "agent_runtime": "codex-cli-background-shell",
+  "shell_mode": "workspace-write",
+  "repo_target": "repo_a",
+  "repo_path": "${ENVCTL_REPO}",
+  "filesystem_scope": "repo",
+  "input_files": [
+    "prompts/ISSUE_ENVCTL.md",
+    "specs/envctl-nu-plugin-boundary.md",
+    "GH-issue-414",
+    "crates/engine/src/db_refactor.rs"
+  ],
+  "target_files": [
+    "crates/engine/src/db_deploy.rs",
+    "crates/cli/src/main.rs"
+  ],
+  "target_artifacts": [
+    "envctl db deploy command"
+  ],
+  "allowed_paths": [
+    "${ENVCTL_REPO}/**",
+    "${NU_PLUGIN_REPO}/**",
+    "execution-framework/**"
+  ],
+  "blocked_paths": [
+    "**/.env",
+    "**/secrets/**",
+    "**/private_keys/**",
+    "**/*.pem",
+    "**/*.key"
+  ],
+  "depends_on": [
+    "REQ-055_ROOT_ALIAS_REFACTOR"
+  ],
+  "blocks": [],
+  "parallel_group": "db_upgrade_deploy",
+  "can_run_parallel": true,
+  "max_parallel": 1,
+  "start_after": "",
+  "priority": 160,
+  "execution_cell": "05-envctl-db-upgrade",
+  "required_tools": [
+    "codex",
+    "python3",
+    "shell",
+    "cargo"
+  ],
+  "command_template": "codex exec < generated/issue-414/execution_packets/REQ-056_DEPLOY_AUTOMATION.json",
+  "verification_command": "cargo test -p envctl-engine db_deploy",
+  "completion_gate": "deploy --plan previews; --apply never overwrites an executing script without staged atomic promotion",
+  "proof_required": true,
+  "proof_uri": "execution-framework/proof_records/REQ-056_DEPLOY_AUTOMATION.proof.json",
+  "heartbeat_file": "execution-framework/heartbeats/REQ-056_DEPLOY_AUTOMATION.heartbeat",
+  "logs_uri": "execution-framework/logs/REQ-056_DEPLOY_AUTOMATION.log",
+  "rollback_plan": "git restore + envctl catalog sync --dry-run (fail-closed; exports write new trees)",
+  "risk_level": "R3",
+  "human_approval_required": true,
+  "notes": "No process disturbance; no user-global installs; fail-closed.",
+  "task_id": "REQ-056_DEPLOY_AUTOMATION",
+  "title": "Safe hook/deploy automation (plan/apply)",
+  "goal": "envctl db deploy hooks --target $LIFE_OS_ROOT --plan/--apply: install through envctl managed component system, detect running wrappers/hooks and queue/refuse unsafe overwrites, atomic promotion + rollback",
+  "source_graph_uri": "generated/issue-414/task_graph.csv",
+  "generated_at": "2026-07-08T02:18:54+00:00"
+}

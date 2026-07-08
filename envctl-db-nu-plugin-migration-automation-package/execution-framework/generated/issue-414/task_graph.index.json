@@ -1,0 +1,42 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-07-08T02:18:54+00:00",
+  "phases": [
+    "05-envctl-db-upgrade"
+  ],
+  "parallel_groups": [
+    "db_upgrade_contract",
+    "db_upgrade_deploy",
+    "db_upgrade_foundation",
+    "db_upgrade_index",
+    "db_upgrade_model",
+    "db_upgrade_plugin",
+    "db_upgrade_query",
+    "db_upgrade_refactor",
+    "db_upgrade_verify",
+    "db_upgrade_watch"
+  ],
+  "lanes": [
+    "lane_b_repo_a",
+    "lane_c_repo_b",
+    "lane_e_verification"
+  ],
+  "task_ids": [
+    "REQ-050_DB_MODULE_SCAFFOLD",
+    "REQ-051_MULTI_ROOT_MODEL",
+    "REQ-052_FILE_INDEX",
+    "REQ-053_SYMBOL_INDEX",
+    "REQ-054_QUERY_SURFACE",
+    "REQ-055_ROOT_ALIAS_REFACTOR",
+    "REQ-056_DEPLOY_AUTOMATION",
+    "REQ-057_WATCH_INCREMENTAL",
+    "REQ-058_AGENT_JSON_CONTRACT",
+    "REQ-059_CLI_GUI_SHARED_ENGINE",
+    "REQ-060_NOC_GATES_TESTS",
+    "REQ-061_NU_PLUGIN_DB_SURFACE"
+  ],
+  "approval_gated": [
+    "REQ-055_ROOT_ALIAS_REFACTOR",
+    "REQ-056_DEPLOY_AUTOMATION"
+  ]
+}
