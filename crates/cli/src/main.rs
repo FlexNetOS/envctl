@@ -778,12 +778,13 @@ enum DbCmd {
         #[arg(long)]
         explain: bool,
     },
-    /// Build a fail-closed root-alias refactor PLAN (never mutates). Apply is gated.
+    /// Root-alias refactor: PLAN by default, render to a new tree, or gated in-place apply.
     #[command(
-        long_about = "Build a normalization-aware root-alias refactor PLAN (e.g. META_ROOT -> LIFE_OS_ROOT) across the indexed scope. This is plan-only in the CLI: it emits per-file unified diffs, refuses protected/.env occurrences, and never mutates the filesystem. Rendering a new tree or applying in place is gated behind confirm + approval in the engine (R3). Use --json for the machine contract.",
+        long_about = "Normalization-aware root-alias refactor (e.g. META_ROOT -> LIFE_OS_ROOT) across the indexed scope. Three modes, fail-closed by default:\n  (plan)         no flags: emit per-file unified diffs; refuse protected/.env; never touch the filesystem.\n  --render-out   write the rewritten files into a NEW tree; originals are never modified.\n  --apply        mutate files IN PLACE. Gated (R3): requires --confirm AND --approve <who>. Without both, apply refuses and nothing is written. No .envctl-bak is kept — run on a clean, committed tree so git is your backstop.\nAll logic lives in the engine (DbSnapshot); the CLI and GUI drive identical code. Use --json for the machine contract.",
         after_help = envctl_examples!(
             "envctl db refactor --from META_ROOT --to LIFE_OS_ROOT --json",
             "envctl db --repo-root /path/to/repo refactor --from META_ROOT --to LIFE_OS_ROOT --render-out /tmp/rendered",
+            "envctl db --repo-root /path/to/repo refactor --from META_ROOT --to LIFE_OS_ROOT --apply --confirm --approve drdave --note 'REQ-055 migration'",
         )
     )]
     Refactor {
@@ -793,9 +794,21 @@ enum DbCmd {
         /// Target root var, e.g. LIFE_OS_ROOT.
         #[arg(long)]
         to: String,
-        /// If set, the plan records a render-out target tree (still plan-only here).
+        /// Render the rewritten files into this NEW tree (originals untouched).
         #[arg(long = "render-out", value_name = "DIR")]
         render_out: Option<String>,
+        /// Mutate files IN PLACE. Requires --confirm and --approve (R3 gate).
+        #[arg(long)]
+        apply: bool,
+        /// Acknowledge the in-place rewrite (half of the R3 gate).
+        #[arg(long)]
+        confirm: bool,
+        /// Human approver id — the other half of the R3 gate (e.g. --approve drdave).
+        #[arg(long, value_name = "WHO")]
+        approve: Option<String>,
+        /// Optional note recorded on the approval.
+        #[arg(long, value_name = "TEXT")]
+        note: Option<String>,
     },
 }
 
@@ -2147,7 +2160,7 @@ fn migration_marker(status: MigrationStatus, protected: bool) -> &'static str {
 /// a compact human summary otherwise. Needs no manifest/Engine — pure repo scope.
 fn run_db(repo_root: Option<PathBuf>, cmd: DbCmd, json: bool) -> anyhow::Result<()> {
     use envctl_engine::db_query::{QueryPreset, QuerySpec};
-    use envctl_engine::db_refactor::RootAliasSpec;
+    use envctl_engine::db_refactor::{Approval, RootAliasSpec};
     use envctl_engine::{db_roots, DbSnapshot, ScanScope};
 
     let root = repo_root
@@ -2203,6 +2216,10 @@ fn run_db(repo_root: Option<PathBuf>, cmd: DbCmd, json: bool) -> anyhow::Result<
             from,
             to,
             render_out,
+            apply,
+            confirm,
+            approve,
+            note,
         } => {
             let snap = DbSnapshot::open(ScanScope {
                 root,
@@ -2213,11 +2230,38 @@ fn run_db(repo_root: Option<PathBuf>, cmd: DbCmd, json: bool) -> anyhow::Result<
                 to,
                 target_profile: None,
                 scope: None,
-                render_out,
+                render_out: render_out.clone(),
             };
             let plan = snap.refactor_plan(&spec)?;
+
+            // Optional: render the rewritten files into a NEW tree (originals safe).
+            let rendered = if render_out.is_some() {
+                Some(snap.refactor_render(&plan, &spec)?)
+            } else {
+                None
+            };
+
+            // Optional: mutate IN PLACE. Fail-closed — the engine refuses unless
+            // confirm && an approved Approval are both supplied. `--approve <who>`
+            // is the human approval; absence => None => refusal.
+            let mutated = if apply {
+                let approval = approve.clone().map(|who| Approval {
+                    approver: who,
+                    approved: true,
+                    note: note.clone(),
+                });
+                Some(snap.refactor_apply(&plan, &spec, confirm, approval.as_ref())?)
+            } else {
+                None
+            };
+
             if json {
-                println!("{}", serde_json::to_string_pretty(&plan)?);
+                let out = serde_json::json!({
+                    "plan": plan,
+                    "rendered": rendered,
+                    "mutated": mutated,
+                });
+                println!("{}", serde_json::to_string_pretty(&out)?);
             } else {
                 println!(
                     "mode={:?} files_touched={} occurrences={} refused={} approved={}",
@@ -2227,6 +2271,18 @@ fn run_db(repo_root: Option<PathBuf>, cmd: DbCmd, json: bool) -> anyhow::Result<
                     plan.refused,
                     plan.approved
                 );
+                if let Some(paths) = &rendered {
+                    println!("rendered {} file(s) to new tree:", paths.len());
+                    for p in paths {
+                        println!("  {p}");
+                    }
+                }
+                if let Some(paths) = &mutated {
+                    println!("APPLIED in place to {} file(s):", paths.len());
+                    for p in paths {
+                        println!("  {p}");
+                    }
+                }
             }
         }
     }

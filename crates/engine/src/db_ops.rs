@@ -16,7 +16,7 @@ use crate::db::{Db, EnvRootRow, Result};
 use crate::db_deploy::{self, DeployPlan, DeploySpec};
 use crate::db_index::{FileIndex, ScanScope};
 use crate::db_query::{self, QueryResult, QuerySpec};
-use crate::db_refactor::{self, RefactorPlan, RootAliasSpec};
+use crate::db_refactor::{self, Approval, RefactorPlan, RootAliasSpec};
 use crate::db_symbols::SymbolIndex;
 
 /// An immutable, indexed snapshot of a scope. Built once, queried many times.
@@ -63,6 +63,30 @@ impl DbSnapshot {
     /// Build a fail-closed root-alias refactor plan (never mutates).
     pub fn refactor_plan(&self, spec: &RootAliasSpec) -> Result<RefactorPlan> {
         db_refactor::plan(spec, &self.files, &self.symbols)
+    }
+
+    /// Render `plan`'s safe changes into the NEW tree at `spec.render_out`.
+    /// Originals are never touched (the safe half of the mutating surface).
+    /// Requires `spec.render_out` to be set. Returns the paths written.
+    pub fn refactor_render(
+        &self,
+        plan: &RefactorPlan,
+        spec: &RootAliasSpec,
+    ) -> Result<Vec<String>> {
+        db_refactor::render(plan, spec, &self.files)
+    }
+
+    /// Apply `plan`'s safe changes IN PLACE — the destructive path. Fail-closed:
+    /// the engine refuses unless `confirm == true` AND `approval` is approved
+    /// (R3 / human_approval_required). Returns the paths mutated.
+    pub fn refactor_apply(
+        &self,
+        plan: &RefactorPlan,
+        spec: &RootAliasSpec,
+        confirm: bool,
+        approval: Option<&Approval>,
+    ) -> Result<Vec<String>> {
+        db_refactor::apply(plan, spec, &self.files, confirm, approval)
     }
 
     /// Build a fail-closed deploy plan (never mutates).
