@@ -71,3 +71,6 @@ scripts/__pycache__/
 # databases and must remain local; tracked manifests/plans live next to it.
 /home/agent-env/private-codex-state/data/
 /home/agent-env/portable-logs/
+
+# GitNexus auto-regenerates these repo-root helper skills on every analyze — untracked.
+/.claude/skills/gitnexus/
