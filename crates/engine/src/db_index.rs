@@ -85,6 +85,40 @@ impl FileIndex {
         files.dedup_by(|a, b| a.absolute_path == b.absolute_path);
         Ok(Self { files })
     }
+
+    /// Compare this index against a `previous` one by `absolute_path` +
+    /// `content_hash`, returning `(added, changed, removed)` absolute paths
+    /// (each sorted). This is the basis for incremental invalidation (REQ-057):
+    /// only `changed`/`added` rows need their symbols re-derived, and `removed`
+    /// rows are evicted — a full re-scan of symbols is avoided. Deterministic.
+    pub fn diff_paths(&self, previous: &FileIndex) -> (Vec<String>, Vec<String>, Vec<String>) {
+        use std::collections::BTreeMap;
+        let old: BTreeMap<&str, &str> = previous
+            .files
+            .iter()
+            .map(|f| (f.absolute_path.as_str(), f.content_hash.as_str()))
+            .collect();
+        let new: BTreeMap<&str, &str> = self
+            .files
+            .iter()
+            .map(|f| (f.absolute_path.as_str(), f.content_hash.as_str()))
+            .collect();
+        let mut added = Vec::new();
+        let mut changed = Vec::new();
+        for (path, hash) in &new {
+            match old.get(path) {
+                None => added.push((*path).to_string()),
+                Some(prev) if prev != hash => changed.push((*path).to_string()),
+                Some(_) => {}
+            }
+        }
+        let removed: Vec<String> = old
+            .keys()
+            .filter(|p| !new.contains_key(*p))
+            .map(|p| (*p).to_string())
+            .collect();
+        (added, changed, removed)
+    }
 }
 
 /// Recurse `dir`, appending a [`DbFileRow`] per regular file. `base` is the

@@ -14,6 +14,7 @@ pub mod db_index; // GH#414: scalable file index (DbFileRow)             [REQ-05
 pub mod db_query; // GH#414: deterministic query surface + presets       [REQ-054]
 pub mod db_refactor; // GH#414: root-alias refactor planner (plan/apply) [REQ-055]
 pub mod db_symbols; // GH#414: symbol + occurrence index                 [REQ-053]
+pub mod db_watch; // GH#414: incremental index invalidation              [REQ-057]
 pub mod detect; // EnvReport assembly: PCI floor / proc-backed driver state / nvidia-smi / sysinfo / which probes
 pub mod detect_build; // Phase 4: build-system detector table -> BuildPlan
 pub mod drift; // pure diff(EnvReport, Registry) -> Vec<DriftItem>
@@ -60,6 +61,10 @@ pub use command::{
     TelemetryControl,
 };
 pub use component::{Component, Guard, Hook, HookRunner, Phase};
+pub use dashboard::{
+    DashboardPane, DashboardPlan, DashboardSpec, DashboardTab, DeployOutcome, MetaRepo,
+    MetaWorkspace,
+};
 pub use db::{Db, DbError, EnvRootKind, EnvRootRole, EnvRootRow, MutablePolicy};
 pub use db_deploy::{DeployDisposition, DeployPlan, DeploySpec, DeployStep};
 pub use db_index::{DbFileRow, FileIndex, ScanScope};
@@ -68,10 +73,7 @@ pub use db_refactor::{ApplyMode, RefactorChange, RefactorPlan, RootAliasSpec};
 pub use db_symbols::{
     DbOccurrenceRow, DbSymbolKind, DbSymbolRow, ReplacePolicy, SymbolConfidence, SymbolIndex,
 };
-pub use dashboard::{
-    DashboardPane, DashboardPlan, DashboardSpec, DashboardTab, DeployOutcome, MetaRepo,
-    MetaWorkspace,
-};
+pub use db_watch::{IndexDelta, WatchState};
 pub use drift::DriftSummary;
 pub use error::{EngineError, RunContext};
 pub use event::{Event, EventSink, GpuSample, Stream, Telemetry};
