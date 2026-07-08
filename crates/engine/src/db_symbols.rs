@@ -257,8 +257,9 @@ fn is_var_char(b: u8) -> bool {
     b.is_ascii_alphanumeric() || b == b'_'
 }
 
-/// A plausible env-var name: UPPER_SNAKE with at least one letter.
-fn is_var_name(s: &str) -> bool {
+/// A plausible env-var name: UPPER_SNAKE with at least one letter. Shared with
+/// the refactor planner (REQ-055) so rewrite token-boundaries match the scanner.
+pub(crate) fn is_var_name(s: &str) -> bool {
     !s.is_empty()
         && s.bytes()
             .all(|b| b.is_ascii_uppercase() || b.is_ascii_digit() || b == b'_')
