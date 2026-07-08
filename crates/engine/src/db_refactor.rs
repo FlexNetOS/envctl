@@ -7,13 +7,13 @@
 //! ordinary identifiers like `$META_ROOT_FALLBACK` are not.
 //!
 //! Discipline (R3 / `human_approval_required`):
-//!   - [`plan`]   builds a fail-closed [`ApplyMode::Plan`] plan with a per-line
-//!                unified-diff preview; it never touches the filesystem.
-//!   - [`render`] writes the rewritten tree to `spec.render_out` (atomic
-//!                temp+rename); originals are never modified.
-//!   - [`apply`]  mutates in place *only* when `confirm == true` AND an approved
-//!                [`Approval`] is supplied — otherwise it returns
-//!                [`DbError::RefactorBlocked`].
+//! - [`plan`] builds a fail-closed [`ApplyMode::Plan`] plan with a per-line
+//!   unified-diff preview; it never touches the filesystem.
+//! - [`render`] writes the rewritten tree to `spec.render_out` (atomic
+//!   temp+rename); originals are never modified.
+//! - [`apply`] mutates in place *only* when `confirm == true` AND an approved
+//!   [`Approval`] is supplied — otherwise it returns [`DbError::RefactorBlocked`].
+//!
 //! Occurrences in refuse-policy files (`.env`, secrets, …) are counted in
 //! [`RefactorPlan::refused`] and never rewritten.
 
