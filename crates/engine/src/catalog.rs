@@ -5230,6 +5230,11 @@ name = "nix-portable"
 
     #[test]
     fn scan_catalogs_envctl_home_managed_sources_and_frontdoors() {
+        // scan() reads the process-global META_ROOT (via catalog_meta_root) and
+        // HOME; hold test_env_lock so a concurrent env-mutating test cannot make
+        // the frontdoor rows resolve against a foreign root. Fixes the parallel
+        // flake at the runtime_abs assertion below.
+        let _env = crate::test_env_lock();
         let root = fixture_root();
         std::fs::create_dir_all(root.join("manifest/components.d")).unwrap();
         std::fs::write(
