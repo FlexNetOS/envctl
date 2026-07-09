@@ -72,7 +72,8 @@
         "matcher": "Bash",
         "hooks": [
           { "type": "command", "command": "\"$HOME\"/.claude/hooks/guard-bash.sh", "timeout": 10 },
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/block-cherry-pick.sh", "timeout": 10 }
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/block-cherry-pick.sh", "timeout": 10 },
+          { "type": "command", "command": "\"$HOME\"/.claude/hooks/bun-rewrite.sh", "timeout": 10 }
         ]
       },
       {
