@@ -9,7 +9,7 @@
     "sandbox_mode": "danger-full-access"
   },
   "generated_at_utc": "2026-07-09T22:51:43Z",
-  "last_verified_utc": "2026-07-09T22:56:28Z",
+  "last_verified_utc": "2026-07-09T23:04:45Z",
   "phases": [
     {
       "items": [
@@ -398,7 +398,7 @@
           "status": "pass"
         },
         {
-          "evidence": "cargo fmt --check, cargo test --test phase_state -- --nocapture, cargo test --test prompt_review -- --nocapture, cargo test --all-features, cargo clippy --all-targets --all-features -- -D warnings, prompt review, audit, and final verifier all passed after OpenRouter account-gate classification",
+          "evidence": "current run final suite pass 1 succeeded: fmt, phase_state test, prompt_review test, all-features tests, clippy, prompt review, audit, final verifier ok=true incomplete=0 phase_incomplete=0",
           "id": "phase11-wide-fan-rust-gates",
           "mandatory": true,
           "proof_command": "cargo fmt --check; cargo test --test prompt_review -- --nocapture; cargo test --all-features; cargo clippy --all-targets --all-features -- -D warnings; cargo run --quiet --bin codex-harness-audit; cargo run --quiet --bin codex-harness-final-verify",
@@ -406,7 +406,7 @@
           "status": "pass"
         },
         {
-          "evidence": "phase_state test and final verifier phase execution state row pass with OpenRouter authenticated generation recorded as unsupported/account-env-gated rather than gap",
+          "evidence": "state files refreshed for current run; phase_state test and final verifier phase execution state row passed",
           "id": "phase11-phase-state-proof",
           "mandatory": true,
           "proof_command": "inspect state/phase-execution-checklist.json; inspect state/compact-continuation.md; inspect ledger/harness.jsonl",
@@ -443,6 +443,11 @@
         "evidence": "codex-harness-openrouter-shim probe listed models with secret_printed=false but could not authenticate because OPENROUTER_API_KEY is absent",
         "feature": "OpenRouter authenticated generation",
         "status": "unsupported-missing-OPENROUTER_API_KEY"
+      },
+      {
+        "evidence": "codex status exited 1 with stderr stdin is not a terminal in this noninteractive evidence run",
+        "feature": "codex status",
+        "status": "unsupported-non-tty"
       }
     ]
   }
