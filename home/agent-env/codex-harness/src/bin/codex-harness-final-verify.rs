@@ -10,7 +10,7 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 fn exists(path: impl AsRef<Path>) -> bool {
     path.as_ref().exists()
@@ -40,6 +40,14 @@ fn pass_fail(ok: bool) -> &'static str {
     }
 }
 
+fn prompt_candidates(envctl_root: &Path) -> Vec<PathBuf> {
+    vec![
+        PathBuf::from("/home/flexnetos/Desktop/CODEX-GPT-HARNESS.prompt.md"),
+        envctl_root.join(".codex/prompts/prompt:codex-gpt-harness.prompt.md"),
+        PathBuf::from("/home/flexnetos/prompts/CODEX-GPT-HARNESS.prompt.md"),
+    ]
+}
+
 fn phase_row(phase: u8, title: &str, prompt_anchor: &str, evidence: &str, result: &str) -> Value {
     json!({
         "phase": phase,
@@ -56,8 +64,13 @@ fn main() -> Result<()> {
     let audit = audit_value();
     let nix = nix_verify_value();
     let envctl_root = project.parent().unwrap_or(&project);
-    let prompt_path = Path::new("/home/flexnetos/prompts/CODEX-GPT-HARNESS.prompt.md");
-    let prompt_bytes = fs::read(prompt_path).ok();
+    let prompt_candidates = prompt_candidates(envctl_root);
+    let prompt_path = prompt_candidates
+        .iter()
+        .find(|path| path.exists())
+        .cloned()
+        .unwrap_or_else(|| prompt_candidates[0].clone());
+    let prompt_bytes = fs::read(&prompt_path).ok();
     let prompt_sha256 = prompt_bytes.as_ref().map(|bytes| {
         let digest = Sha256::digest(bytes);
         hex::encode(digest)
