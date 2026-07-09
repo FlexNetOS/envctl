@@ -1,4 +1,4 @@
-model = "openai/gpt-5.2"
+model = "tencent/hy3:free"
 model_provider = "openrouter"
 model_catalog_json = "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/model-catalog/model-catalog.json"
 approval_policy = "never"

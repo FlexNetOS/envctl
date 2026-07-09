@@ -1,5 +1,5 @@
 [task.openrouter]
-model = "openai/gpt-5.2"
+model = "tencent/hy3:free"
 provider = "openrouter"
 profile = "envctl-openrouter-gpt"
 network_required = true

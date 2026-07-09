@@ -1698,9 +1698,9 @@ pub fn model_route_for_task(task: &str) -> Value {
         (
             "provider-openrouter",
             "envctl-openrouter-gpt",
-            "openai/gpt-5.2",
+            "tencent/hy3:free",
             "openrouter",
-            "OpenRouter route explicitly enabled by user grant; proof still depends on OPENROUTER_API_KEY for authenticated Responses calls",
+            "OpenRouter route explicitly enabled by user grant; default model set by operator and proof depends on OPENROUTER_API_KEY",
         )
     } else if lower.contains("claude") {
         (
@@ -1963,7 +1963,7 @@ fn command_output_text(mut command: Command) -> Result<(i32, String, String)> {
 }
 
 pub fn openrouter_probe_value(model: Option<&str>, prompt: Option<&str>) -> Result<Value> {
-    let model = model.unwrap_or("openai/gpt-5.2");
+    let model = model.unwrap_or("tencent/hy3:free");
     let prompt = prompt.unwrap_or("Return the single word pong.");
     let has_key = env::var_os("OPENROUTER_API_KEY")
         .map(|v| !v.is_empty())
@@ -2005,8 +2005,74 @@ pub fn openrouter_probe_value(model: Option<&str>, prompt: Option<&str>) -> Resu
         })
         .unwrap_or(false);
 
+    let key_probe = if has_key {
+        let mut curl = Command::new("curl");
+        curl.args([
+            "-sS",
+            "-o",
+            "-",
+            "-w",
+            "\nHTTP_CODE:%{http_code}\n",
+            "--config",
+            "-",
+            "https://openrouter.ai/api/v1/key",
+        ]);
+        remove_secret_env(&mut curl);
+        let mut child = curl
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()?;
+        {
+            let mut stdin = child.stdin.take().ok_or_else(|| anyhow!("curl stdin"))?;
+            let key = env::var("OPENROUTER_API_KEY").unwrap_or_default();
+            writeln!(stdin, "header = \"Authorization: Bearer {key}\"")?;
+        }
+        let output = child.wait_with_output()?;
+        let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+        let stderr = String::from_utf8_lossy(&output.stderr).to_string();
+        let http_code = stdout
+            .lines()
+            .find_map(|line| line.strip_prefix("HTTP_CODE:"))
+            .unwrap_or("unknown")
+            .to_string();
+        let body = stdout
+            .lines()
+            .filter(|line| !line.starts_with("HTTP_CODE:"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let parsed: Value = serde_json::from_str(&body).unwrap_or(Value::Null);
+        let data = parsed.get("data").unwrap_or(&Value::Null);
+        json!({
+            "attempted": true,
+            "http_code": http_code,
+            "exit_code": output.status.code().unwrap_or(1),
+            "valid": http_code == "200",
+            "safe_account_fields": {
+                "limit": data.get("limit").cloned().unwrap_or(Value::Null),
+                "limit_reset": data.get("limit_reset").cloned().unwrap_or(Value::Null),
+                "limit_remaining": data.get("limit_remaining").cloned().unwrap_or(Value::Null),
+                "usage": data.get("usage").cloned().unwrap_or(Value::Null),
+                "usage_monthly": data.get("usage_monthly").cloned().unwrap_or(Value::Null),
+                "is_free_tier": data.get("is_free_tier").cloned().unwrap_or(Value::Null),
+                "is_management_key": data.get("is_management_key").cloned().unwrap_or(Value::Null),
+                "is_provisioning_key": data.get("is_provisioning_key").cloned().unwrap_or(Value::Null),
+                "expires_at": data.get("expires_at").cloned().unwrap_or(Value::Null)
+            },
+            "stderr_redacted": redact(&stderr),
+            "secret_printed": false
+        })
+    } else {
+        json!({
+            "attempted": false,
+            "valid": false,
+            "missing_env": "OPENROUTER_API_KEY",
+            "secret_printed": false
+        })
+    };
+
     let responses_probe = if has_key {
-        let body = json!({"model": model, "input": prompt, "max_output_tokens": 16}).to_string();
+        let body = json!({"model": model, "input": prompt, "max_output_tokens": 64}).to_string();
         let mut curl = Command::new("curl");
         curl.args([
             "-sS",
@@ -2080,6 +2146,22 @@ pub fn openrouter_probe_value(model: Option<&str>, prompt: Option<&str>) -> Resu
         })
     };
 
+    let response_http = responses_probe
+        .get("http_code")
+        .and_then(Value::as_str)
+        .unwrap_or("unknown");
+    let response_preview = responses_probe
+        .get("response_redacted_preview")
+        .and_then(Value::as_str)
+        .unwrap_or("");
+    let key_valid = key_probe
+        .get("valid")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let generation_ok = response_http.starts_with('2');
+    let account_policy_blocked = response_http == "404"
+        && (response_preview.contains("guardrail restrictions")
+            || response_preview.contains("settings/privacy"));
     let ok = models_exit == 0 && model_count > 0 && has_openai && has_anthropic;
     let out = json!({
         "ok": ok,
@@ -2093,9 +2175,18 @@ pub fn openrouter_probe_value(model: Option<&str>, prompt: Option<&str>) -> Resu
         "has_openai_models": has_openai,
         "has_anthropic_models": has_anthropic,
         "target_model": model,
+        "key_probe": key_probe,
         "responses_probe": responses_probe,
+        "authenticated_generation_ok": generation_ok,
+        "authenticated_key_valid": key_valid,
+        "account_policy_blocked": account_policy_blocked,
         "secret_printed": false
     });
+    fs::create_dir_all(state_dir())?;
+    fs::write(
+        state_dir().join("openrouter-proof.json"),
+        serde_json::to_vec_pretty(&out)?,
+    )?;
     append_ledger(
         "network.jsonl",
         json!({"event":"openrouter_probe","decision": if ok {"allow"} else {"deny"},"result":out}),

@@ -8,6 +8,7 @@ use codex_harness::{
 };
 use serde_json::{json, Value};
 use std::env;
+use std::fs;
 use std::path::Path;
 
 fn exists(path: impl AsRef<Path>) -> bool {
@@ -46,6 +47,38 @@ fn main() -> Result<()> {
     let has_openrouter_key = env::var_os("OPENROUTER_API_KEY")
         .map(|v| !v.is_empty())
         .unwrap_or(false);
+    let openrouter_proof_path = state_dir().join("openrouter-proof.json");
+    let openrouter_proof: Value = fs::read_to_string(&openrouter_proof_path)
+        .ok()
+        .and_then(|text| serde_json::from_str(&text).ok())
+        .unwrap_or(Value::Null);
+    let openrouter_key_valid = openrouter_proof
+        .get("authenticated_key_valid")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let openrouter_generation_ok = openrouter_proof
+        .get("authenticated_generation_ok")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let openrouter_model_ok = openrouter_proof
+        .get("target_model")
+        .and_then(Value::as_str)
+        .map(|model| model == "tencent/hy3:free")
+        .unwrap_or(false);
+    let openrouter_policy_blocked = openrouter_proof
+        .get("account_policy_blocked")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let openrouter_result =
+        if openrouter_key_valid && openrouter_generation_ok && openrouter_model_ok {
+            "pass"
+        } else if openrouter_key_valid && openrouter_policy_blocked {
+            "partial-auth-valid-account-policy-blocked"
+        } else if has_openrouter_key {
+            "partial-auth-env-present-no-successful-proof"
+        } else {
+            "partial-missing-OPENROUTER_API_KEY"
+        };
     let has_claude_cli = which("claude").is_some();
     let has_gh = which("gh").is_some();
 
@@ -170,14 +203,10 @@ fn main() -> Result<()> {
         ),
         row(
             "OpenRouter compatibility",
-            "OpenRouter shim/catalog/probe",
+            "OpenRouter shim/catalog/probe default tencent/hy3:free",
             "/home/flexnetos/.codex/envctl-openrouter-gpt.config.toml".to_string(),
             "codex-harness-openrouter-shim probe",
-            if has_openrouter_key {
-                "pass-with-auth-env-present"
-            } else {
-                "partial-missing-OPENROUTER_API_KEY"
-            },
+            openrouter_result,
         ),
         row(
             "Claude bridge policy",
