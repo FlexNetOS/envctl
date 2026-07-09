@@ -1,0 +1,3 @@
+# Keep Codex/ripgrep workspace scans out of local Postgres data.
+# This directory is host-local state and may be unreadable to sandboxed agents.
+var/lib/ruvector/pgdata/

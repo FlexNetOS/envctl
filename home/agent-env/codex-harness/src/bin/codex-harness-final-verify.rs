@@ -46,6 +46,38 @@ fn result_is_acceptance(result: &str) -> bool {
     result == "pass" || result.starts_with("pass-") || result.starts_with("unsupported-")
 }
 
+fn prompt_file_probe(path: &Path, minimum_lines: usize) -> Value {
+    match fs::read(path) {
+        Ok(bytes) => {
+            let digest = Sha256::digest(&bytes);
+            let line_count = String::from_utf8_lossy(&bytes).lines().count();
+            json!({
+                "path": path.display().to_string(),
+                "sha256": hex::encode(digest),
+                "line_count": line_count,
+                "loaded": true,
+                "minimum_lines": minimum_lines,
+                "accepted": line_count >= minimum_lines,
+            })
+        }
+        Err(_) => json!({
+            "path": path.display().to_string(),
+            "sha256": Value::Null,
+            "line_count": 0,
+            "loaded": false,
+            "minimum_lines": minimum_lines,
+            "accepted": false,
+        }),
+    }
+}
+
+fn probe_accepted(probe: &Value) -> bool {
+    probe
+        .get("accepted")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+}
+
 fn prompt_candidates(envctl_root: &Path) -> Vec<PathBuf> {
     vec![
         envctl_root
@@ -229,6 +261,10 @@ fn main() -> Result<()> {
         .as_ref()
         .map(|report| report.ok)
         .unwrap_or(false);
+    let recovery_prompt_path =
+        envctl_root.join(".codex/prompts/prompt:codex-gpt-harness-v3-autonomous.prompt.md");
+    let recovery_prompt = prompt_file_probe(&recovery_prompt_path, 80);
+    let recovery_wrapper_loaded = probe_accepted(&recovery_prompt);
     let has_openrouter_key = env::var_os("OPENROUTER_API_KEY")
         .map(|v| !v.is_empty())
         .unwrap_or(false);
@@ -293,6 +329,13 @@ fn main() -> Result<()> {
     let has_gh = which("gh").is_some();
 
     let matrix = vec![
+        row(
+            "Phase -1 deadlock breaker",
+            "v3 autonomous recovery wrapper can take control when shell/sandbox or approval gates deadlock",
+            recovery_prompt_path.display().to_string(),
+            "load .codex/prompts/prompt:codex-gpt-harness-v3-autonomous.prompt.md; codex-harness-final-verify",
+            pass_fail(recovery_wrapper_loaded),
+        ),
         row(
             "Phase 0 research audit",
             "original prompt reloaded plus read-only research ledger and Phase 1 plan draft",
@@ -599,8 +642,8 @@ fn main() -> Result<()> {
             0,
             "Deep research + read-only audit gate",
             prompt_phase_anchor(prompt_text.as_deref(), 0, "PHASE 0"),
-            "prompt sha256, research ledger, PHASE1 plan draft",
-            pass_fail(row_pass("Phase 0 research audit")),
+            "prompt sha256, recovery wrapper, research ledger, PHASE1 plan draft",
+            pass_fail(row_pass("Phase -1 deadlock breaker") && row_pass("Phase 0 research audit")),
         ),
         phase_row(
             1,
@@ -756,6 +799,7 @@ fn main() -> Result<()> {
             "reloaded": prompt_reloaded,
             "full_access_review_ok": prompt_review_ok,
             "full_access_review": prompt_review,
+            "recovery_wrapper": recovery_prompt,
         },
         "phase_matrix": phase_matrix,
         "matrix": matrix,
