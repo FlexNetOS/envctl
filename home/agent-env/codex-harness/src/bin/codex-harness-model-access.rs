@@ -34,28 +34,46 @@ const REQUIRED_CATALOG_MODELS: &[&str] = &[
 
 const DEFAULT_PROBE_MODELS: &[&str] = &[
     "gpt-5.5",
-    "gpt-5.4",
-    "gpt-5.4-mini",
-    "gpt-5.3-codex-spark",
+    "gpt-5.5-pro",
+    "gpt-5.5-pro-extended",
     "gpt-5.6-sol",
     "gpt-5.6-terra",
     "gpt-5.6-luna",
+    "gpt-5.4",
+    "gpt-5.4-mini",
     "gpt-5.4-nano",
     "gpt-5.3-codex",
+    "gpt-5.3-codex-spark",
     "o3",
+    "o3-pro",
+    "o3-mini",
     "o4-mini",
+    "gpt-4.1",
+    "gpt-4.1-mini",
+    "gpt-4.1-nano",
+    "gpt-4o",
+    "gpt-4o-mini",
 ];
 
 const MUST_PASS_MODELS: &[&str] = &["gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-5.3-codex-spark"];
 
 const ACCOUNT_GATED_MODELS: &[&str] = &[
+    "gpt-5.5-pro",
+    "gpt-5.5-pro-extended",
     "gpt-5.6-sol",
     "gpt-5.6-terra",
     "gpt-5.6-luna",
     "gpt-5.4-nano",
     "gpt-5.3-codex",
     "o3",
+    "o3-pro",
+    "o3-mini",
     "o4-mini",
+    "gpt-4.1",
+    "gpt-4.1-mini",
+    "gpt-4.1-nano",
+    "gpt-4o",
+    "gpt-4o-mini",
 ];
 
 fn read_catalog(path: &Path) -> Result<BTreeSet<String>> {
