@@ -85,8 +85,11 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       # `check`, not `build`: the floor is compiler acceptance for the locked shipping graph.
       # No `--all-features`: crates/secrets-store-libsql has mutually-exclusive store features.
-      - name: cargo +1.88.0 check --workspace --locked
-        run: cargo +1.88.0 check --workspace --locked
+      # Plain `cargo check`: dtolnay/rust-toolchain@1.88.0 already pins this job's toolchain
+      # (prepends the real 1.88 cargo). The old `+1.88.0` directive required the rustup shim
+      # to be first on PATH, which is true on hosted images but not on the self-hosted fleet.
+      - name: cargo check --workspace --locked (MSRV 1.88 toolchain)
+        run: cargo check --workspace --locked
 
   cargo-audit:
     name: cargo audit
