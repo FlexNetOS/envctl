@@ -47,6 +47,10 @@ name = "codex-harness-final-verify"
 path = "src/bin/codex-harness-final-verify.rs"
 
 [[bin]]
+name = "codex-harness-prompt-review"
+path = "src/bin/codex-harness-prompt-review.rs"
+
+[[bin]]
 name = "codex-harness-cargo-fmt"
 path = "src/bin/codex-harness-cargo-fmt.rs"
 

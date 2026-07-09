@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 use anyhow::Result;
+use codex_harness::prompt_review::review_full_access_prompt_path;
 use codex_harness::{
     append_ledger, audit_value, codex_harness_dir, full_access_granted, full_access_marker_path,
     model_router_ready, nix_verify_value, project_root, state_dir, which,
@@ -42,6 +43,8 @@ fn pass_fail(ok: bool) -> &'static str {
 
 fn prompt_candidates(envctl_root: &Path) -> Vec<PathBuf> {
     vec![
+        envctl_root
+            .join(".codex/prompts/prompt:codex-gpt-harness-v3-full-access-no-sandbox.prompt.md"),
         PathBuf::from("/home/flexnetos/Desktop/CODEX-GPT-HARNESS.prompt.md"),
         envctl_root.join(".codex/prompts/prompt:codex-gpt-harness.prompt.md"),
         PathBuf::from("/home/flexnetos/prompts/CODEX-GPT-HARNESS.prompt.md"),
@@ -79,7 +82,12 @@ fn main() -> Result<()> {
         .as_ref()
         .map(|bytes| String::from_utf8_lossy(bytes).lines().count())
         .unwrap_or(0);
-    let prompt_reloaded = prompt_sha256.is_some() && prompt_line_count >= 2200;
+    let prompt_reloaded = prompt_sha256.is_some() && prompt_line_count >= 2400;
+    let prompt_review = review_full_access_prompt_path(&prompt_path).ok();
+    let prompt_review_ok = prompt_review
+        .as_ref()
+        .map(|report| report.ok)
+        .unwrap_or(false);
     let has_openrouter_key = env::var_os("OPENROUTER_API_KEY")
         .map(|v| !v.is_empty())
         .unwrap_or(false);
@@ -139,9 +147,17 @@ fn main() -> Result<()> {
             "sha256sum CODEX-GPT-HARNESS.prompt.md; inspect ledger/research.jsonl; PHASE1_PLAN_DRAFT.md",
             pass_fail(
                 prompt_reloaded
+                    && prompt_review_ok
                     && exists(harness.join("ledger/research.jsonl"))
                     && exists(harness.join("PHASE1_PLAN_DRAFT.md")),
             ),
+        ),
+        row(
+            "full-access prompt truth review",
+            "strict no-blocker prompt review binary plus TDD tests",
+            prompt_path.display().to_string(),
+            "codex-harness-prompt-review <prompt>; cargo test --test prompt_review",
+            pass_fail(prompt_reloaded && prompt_review_ok),
         ),
         row(
             "archive-first",
@@ -575,6 +591,8 @@ fn main() -> Result<()> {
             "sha256": prompt_sha256,
             "line_count": prompt_line_count,
             "reloaded": prompt_reloaded,
+            "full_access_review_ok": prompt_review_ok,
+            "full_access_review": prompt_review,
         },
         "phase_matrix": phase_matrix,
         "matrix": matrix,
