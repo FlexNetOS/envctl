@@ -6,3 +6,11 @@ secrets = "deny"
 uncontrolled_background = "deny"
 nested_agents_outside_runner = "deny"
 ledger_db_direct_write = "deny"
+
+[permission_grants]
+operator_grants_are_execution_context = true
+expanded_access_is_not_a_blocker = true
+block_only_concrete_forbidden_actions = true
+secret_denies_remain_authoritative = true
+non_nix_codex_install_remains_forbidden = true
+destructive_user_data_commands_remain_forbidden = true
