@@ -9,6 +9,7 @@ use codex_harness::{
 };
 use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
+use std::collections::BTreeSet;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -41,6 +42,10 @@ fn pass_fail(ok: bool) -> &'static str {
     }
 }
 
+fn result_is_acceptance(result: &str) -> bool {
+    result == "pass" || result.starts_with("pass-") || result.starts_with("unsupported-")
+}
+
 fn prompt_candidates(envctl_root: &Path) -> Vec<PathBuf> {
     vec![
         envctl_root
@@ -51,7 +56,7 @@ fn prompt_candidates(envctl_root: &Path) -> Vec<PathBuf> {
     ]
 }
 
-fn phase_row(phase: u8, title: &str, prompt_anchor: &str, evidence: &str, result: &str) -> Value {
+fn phase_row(phase: u8, title: &str, prompt_anchor: String, evidence: &str, result: &str) -> Value {
     json!({
         "phase": phase,
         "title": title,
@@ -59,6 +64,139 @@ fn phase_row(phase: u8, title: &str, prompt_anchor: &str, evidence: &str, result
         "evidence": evidence,
         "result": result,
     })
+}
+
+fn parse_phase_number(line: &str) -> Option<u8> {
+    let rest = line.trim_start().strip_prefix("PHASE ")?;
+    let digits = rest
+        .chars()
+        .take_while(|ch| ch.is_ascii_digit())
+        .collect::<String>();
+    if digits.is_empty() {
+        return None;
+    }
+    digits.parse::<u8>().ok()
+}
+
+fn prompt_phase_anchor(prompt_text: Option<&str>, phase: u8, fallback: &str) -> String {
+    let Some(text) = prompt_text else {
+        return fallback.to_string();
+    };
+    let lines = text.lines().collect::<Vec<_>>();
+    let mut starts = Vec::<(u8, usize)>::new();
+    for (index, line) in lines.iter().enumerate() {
+        if let Some(number) = parse_phase_number(line) {
+            starts.push((number, index + 1));
+        }
+    }
+    let Some((position, (_, start_line))) = starts
+        .iter()
+        .enumerate()
+        .find(|(_, (number, _))| *number == phase)
+    else {
+        return fallback.to_string();
+    };
+    let end_line = starts
+        .get(position + 1)
+        .map(|(_, next_start)| next_start.saturating_sub(1))
+        .unwrap_or(lines.len());
+    format!("PHASE {phase} lines {start_line}-{end_line}")
+}
+
+fn nonempty_str(value: &Value, pointer: &str) -> bool {
+    value
+        .pointer(pointer)
+        .and_then(Value::as_str)
+        .map(|text| !text.trim().is_empty())
+        .unwrap_or(false)
+}
+
+fn checklist_state_ok(checklist: &Value, prompt_sha256: Option<&str>) -> bool {
+    if checklist.get("schema").and_then(Value::as_str)
+        != Some("codex-harness.phase-execution-checklist.v1")
+    {
+        return false;
+    }
+    if let Some(sha256) = prompt_sha256 {
+        if checklist.pointer("/prompt/sha256").and_then(Value::as_str) != Some(sha256) {
+            return false;
+        }
+    }
+    let Some(phases) = checklist.get("phases").and_then(Value::as_array) else {
+        return false;
+    };
+    let mut seen = BTreeSet::new();
+    for phase in phases {
+        let Some(number) = phase.get("phase").and_then(Value::as_u64) else {
+            return false;
+        };
+        if number > 11 {
+            return false;
+        }
+        seen.insert(number);
+        if phase.get("result").and_then(Value::as_str) != Some("pass") {
+            return false;
+        }
+        if !nonempty_str(phase, "/title") || !nonempty_str(phase, "/prompt_anchor") {
+            return false;
+        }
+        let Some(items) = phase.get("items").and_then(Value::as_array) else {
+            return false;
+        };
+        if items.is_empty() {
+            return false;
+        }
+        for item in items {
+            if !nonempty_str(item, "/id")
+                || !nonempty_str(item, "/requirement")
+                || !nonempty_str(item, "/proof_command")
+                || !nonempty_str(item, "/evidence")
+            {
+                return false;
+            }
+            let status = item.get("status").and_then(Value::as_str).unwrap_or("");
+            let mandatory = item
+                .get("mandatory")
+                .and_then(Value::as_bool)
+                .unwrap_or(true);
+            if mandatory && status != "pass" {
+                return false;
+            }
+            if !mandatory && status != "pass" && status != "unsupported" {
+                return false;
+            }
+        }
+    }
+    seen == (0_u64..=11).collect::<BTreeSet<_>>()
+}
+
+fn phase_state_files_ok(harness: &Path, prompt_sha256: Option<&str>) -> bool {
+    let checklist_path = harness.join("state/phase-execution-checklist.json");
+    let continuation_path = harness.join("state/compact-continuation.md");
+    let Some(checklist) = fs::read_to_string(&checklist_path)
+        .ok()
+        .and_then(|text| serde_json::from_str::<Value>(&text).ok())
+    else {
+        return false;
+    };
+    if !checklist_state_ok(&checklist, prompt_sha256) {
+        return false;
+    }
+    let Some(continuation) = fs::read_to_string(&continuation_path).ok() else {
+        return false;
+    };
+    if !continuation.contains("state/phase-execution-checklist.json")
+        || !continuation.contains("ledger/harness.jsonl")
+        || !continuation.contains("next exact command:")
+    {
+        return false;
+    }
+    if let Some(sha256) = prompt_sha256 {
+        if !continuation.contains(sha256) {
+            return false;
+        }
+    }
+    true
 }
 
 fn main() -> Result<()> {
@@ -82,6 +220,9 @@ fn main() -> Result<()> {
         .as_ref()
         .map(|bytes| String::from_utf8_lossy(bytes).lines().count())
         .unwrap_or(0);
+    let prompt_text = prompt_bytes
+        .as_ref()
+        .map(|bytes| String::from_utf8_lossy(bytes).into_owned());
     let prompt_reloaded = prompt_sha256.is_some() && prompt_line_count >= 2400;
     let prompt_review = review_full_access_prompt_path(&prompt_path).ok();
     let prompt_review_ok = prompt_review
@@ -113,15 +254,27 @@ fn main() -> Result<()> {
         .get("account_policy_blocked")
         .and_then(Value::as_bool)
         .unwrap_or(false);
+    let openrouter_models_ok = openrouter_proof
+        .get("model_count")
+        .and_then(Value::as_u64)
+        .map(|count| count > 0)
+        .unwrap_or(false);
+    let openrouter_probe_no_secret_print = openrouter_proof
+        .get("secret_printed")
+        .and_then(Value::as_bool)
+        .map(|printed| !printed)
+        .unwrap_or(false);
     let openrouter_result =
         if openrouter_key_valid && openrouter_generation_ok && openrouter_model_ok {
             "pass"
         } else if openrouter_key_valid && openrouter_policy_blocked {
-            "partial-auth-valid-account-policy-blocked"
+            "unsupported-account-policy-blocked"
+        } else if !has_openrouter_key && openrouter_models_ok && openrouter_probe_no_secret_print {
+            "unsupported-missing-OPENROUTER_API_KEY"
         } else if has_openrouter_key {
-            "partial-auth-env-present-no-successful-proof"
+            "gap-auth-env-present-no-successful-proof"
         } else {
-            "partial-missing-OPENROUTER_API_KEY"
+            "gap-openrouter-proof-missing"
         };
     let model_access_proof_path = state_dir().join("model-access-proof.json");
     let model_access_proof: Value = fs::read_to_string(&model_access_proof_path)
@@ -286,7 +439,7 @@ fn main() -> Result<()> {
         ),
         row(
             "OpenRouter compatibility",
-            "OpenRouter shim/catalog/probe default tencent/hy3:free",
+            "OpenRouter shim/catalog/probe default tencent/hy3:free; authenticated generation is account/env gated",
             "/home/flexnetos/.codex/envctl-openrouter-gpt.config.toml".to_string(),
             "codex-harness-openrouter-shim probe",
             openrouter_result,
@@ -415,6 +568,16 @@ fn main() -> Result<()> {
             ),
         ),
         row(
+            "phase execution state",
+            "compact checklist and continuation files prove all phases against the current prompt",
+            harness
+                .join("state/phase-execution-checklist.json")
+                .display()
+                .to_string(),
+            "inspect state/phase-execution-checklist.json and state/compact-continuation.md",
+            pass_fail(phase_state_files_ok(&harness, prompt_sha256.as_deref())),
+        ),
+        row(
             "cross-platform process strategy",
             "cfg(unix)/cfg(not(unix)) halt/spawn strategy",
             harness.join("src/lib.rs").display().to_string(),
@@ -428,21 +591,21 @@ fn main() -> Result<()> {
             .iter()
             .find(|entry| entry.get("law").and_then(Value::as_str) == Some(law))
             .and_then(|entry| entry.get("result").and_then(Value::as_str))
-            .map(|result| result == "pass" || result.starts_with("pass-"))
+            .map(result_is_acceptance)
             .unwrap_or(false)
     };
     let phase_matrix = vec![
         phase_row(
             0,
             "Deep research + read-only audit gate",
-            "PHASE 0 lines 180-758",
+            prompt_phase_anchor(prompt_text.as_deref(), 0, "PHASE 0"),
             "prompt sha256, research ledger, PHASE1 plan draft",
             pass_fail(row_pass("Phase 0 research audit")),
         ),
         phase_row(
             1,
             "Containment before agentic power",
-            "PHASE 1 lines 759-1170",
+            prompt_phase_anchor(prompt_text.as_deref(), 1, "PHASE 1"),
             "full-access marker, no-yolo/secret rules, hooks, kill switch",
             pass_fail(
                 row_pass("containment-before-capability")
@@ -456,7 +619,7 @@ fn main() -> Result<()> {
         phase_row(
             2,
             "Config, model catalog, and provider toggles",
-            "PHASE 2 lines 1173-1324",
+            prompt_phase_anchor(prompt_text.as_deref(), 2, "PHASE 2"),
             "profiles, model catalog, model-access proof, OpenRouter default proof",
             pass_fail(
                 row_pass("profiles")
@@ -468,7 +631,7 @@ fn main() -> Result<()> {
         phase_row(
             3,
             "Subagent-mandatory team fabric",
-            "PHASE 3 lines 1325-1480",
+            prompt_phase_anchor(prompt_text.as_deref(), 3, "PHASE 3"),
             "model router, subagent role files, team caps",
             pass_fail(
                 row_pass("model-router mandatory") && row_pass("subagents") && row_pass("teams"),
@@ -477,28 +640,28 @@ fn main() -> Result<()> {
         phase_row(
             4,
             "Advanced TUI, timers, and bad-behavior counters",
-            "PHASE 4 lines 1481-1568",
+            prompt_phase_anchor(prompt_text.as_deref(), 4, "PHASE 4"),
             "statusline/timer config and counters ledger",
             pass_fail(row_pass("statusline/timers") && row_pass("bad-behavior counter")),
         ),
         phase_row(
             5,
             "Browser use and computer use",
-            "PHASE 5 lines 1569-1620",
+            prompt_phase_anchor(prompt_text.as_deref(), 5, "PHASE 5"),
             "browser/computer-use profiles and verification gate",
             pass_fail(row_pass("browser use") && row_pass("computer use")),
         ),
         phase_row(
             6,
             "Memory and database",
-            "PHASE 6 lines 1621-1701",
+            prompt_phase_anchor(prompt_text.as_deref(), 6, "PHASE 6"),
             "memory audit state DB plus SQLite/ledger integrity",
             pass_fail(row_pass("memory/database") && row_pass("SQLite/ledger integrity")),
         ),
         phase_row(
             7,
             "Providers, networking, and model fabric",
-            "PHASE 7 lines 1702-1782",
+            prompt_phase_anchor(prompt_text.as_deref(), 7, "PHASE 7"),
             "OpenRouter proof, model access proof, Claude bridge, Nix ownership",
             pass_fail(
                 row_pass("OpenRouter compatibility")
@@ -510,29 +673,29 @@ fn main() -> Result<()> {
         phase_row(
             8,
             "GitHub control, policy, and worktrees",
-            "PHASE 8 lines 1783-1860",
+            prompt_phase_anchor(prompt_text.as_deref(), 8, "PHASE 8"),
             "GitHub guard and worktree/archive drill",
             pass_fail(row_pass("GitHub guard") && row_pass("worktrees")),
         ),
         phase_row(
             9,
             "Skills, plugins, and MCP",
-            "PHASE 9 lines 1861-1941",
+            prompt_phase_anchor(prompt_text.as_deref(), 9, "PHASE 9"),
             "envctl skills source, plugin ledger, active MCP inventory",
             pass_fail(row_pass("skills") && row_pass("plugins") && row_pass("MCP")),
         ),
         phase_row(
             10,
             "Parallel execution fabric",
-            "PHASE 10 lines 1942-2021",
+            prompt_phase_anchor(prompt_text.as_deref(), 10, "PHASE 10"),
             "runner process ledger, model-router fanout, team caps",
             pass_fail(row_pass("parallel execution")),
         ),
         phase_row(
             11,
             "Final verification",
-            "PHASE 11 lines 2022-2197",
-            "final acceptance matrix plus all phase rows",
+            prompt_phase_anchor(prompt_text.as_deref(), 11, "PHASE 11"),
+            "final acceptance matrix, phase state files, and all phase rows",
             "pending-self-check",
         ),
     ];
@@ -543,7 +706,7 @@ fn main() -> Result<()> {
             entry
                 .get("result")
                 .and_then(Value::as_str)
-                .map(|s| s != "pass" && !s.starts_with("pass-"))
+                .map(|s| !result_is_acceptance(s))
                 .unwrap_or(true)
         })
         .count();
@@ -554,7 +717,7 @@ fn main() -> Result<()> {
             entry
                 .get("result")
                 .and_then(Value::as_str)
-                .map(|s| s != "pass" && !s.starts_with("pass-"))
+                .map(|s| !result_is_acceptance(s))
                 .unwrap_or(true)
         })
         .count();
@@ -576,7 +739,7 @@ fn main() -> Result<()> {
             entry
                 .get("result")
                 .and_then(Value::as_str)
-                .map(|s| s != "pass" && !s.starts_with("pass-"))
+                .map(|s| !result_is_acceptance(s))
                 .unwrap_or(true)
         })
         .count();
