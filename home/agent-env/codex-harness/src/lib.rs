@@ -43,6 +43,8 @@ pub const LEDGER_NAMES: &[&str] = &[
 
 pub const USER_FULL_ACCESS_DECISION_ID: &str = "USER-FULL-ACCESS-20260709";
 
+pub mod prompt_review;
+
 const REDACTED_INDEX_TABLE: redb::TableDefinition<&str, &str> =
     redb::TableDefinition::new("redacted_entries");
 
