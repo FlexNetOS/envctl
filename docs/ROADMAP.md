@@ -148,3 +148,10 @@ The secrets stack has its own phased roadmap spanning **Phases 0–8** with the 
 | `docs/secrets/ROADMAP.md` | ✅ exists | Full 8-phase secrets roadmap — source of truth for phases 0-8 |
 | `THREAT-MODEL.md` | ⏳ DEFERRED | Part of Phase 7 merge deliverable (secrets → envctl docs). Referenced from `docs/ops/02-envctl-component.md`, `docs/secrets/audits/AUDIT-server-mode.md`, and secrets roadmap §7 acceptance criteria. |
 | `SCAFFOLD-SPEC.md` | ⏳ DEFERRED | Part of Phase 7 merge deliverable. Referenced from ops component docs as a planning artifact. |
+
+## Planning index (plan-loop promotions)
+
+| Date | Target | Recommendation | Confidence | Upgrades (by axis) | Plan |
+|------|--------|----------------|------------|--------------------|------|
+| 2026-07-09 | agentic-os-blueprint | Converging (57/100 verified): finish 6 in-flight convergences — fix swarm-immune wrapper, calibrate RuvLTRA tier pre-merge, redeploy stale envctl, wire MiniLM flush, merge pgstore+bun-rewrite branches, declare Postgres as envctl state; route ATAS to Feature Forge | Medium-High | quality:5 accuracy:3 governance+settings+config:2 | [plan](../.handoff/loop/plan/reports/agentic-os-blueprint-plan.md) |
+| 2026-07-09 | agentic-os-blueprint | test-build: 6 cases closing 6 coverage gaps (bun-integration/smoke/sql-golden/router-golden/Rust-differential/CI-gate) | accuracy:3 quality:3 | → Feature Forge | [test plan](../.handoff/loop/plan/reports/agentic-os-blueprint-plan.md#13-test-strategy--coverage) |
