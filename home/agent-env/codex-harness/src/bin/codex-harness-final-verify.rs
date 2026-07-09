@@ -7,6 +7,7 @@ use codex_harness::{
     USER_FULL_ACCESS_DECISION_ID,
 };
 use serde_json::{json, Value};
+use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;
 use std::path::Path;
@@ -39,11 +40,33 @@ fn pass_fail(ok: bool) -> &'static str {
     }
 }
 
+fn phase_row(phase: u8, title: &str, prompt_anchor: &str, evidence: &str, result: &str) -> Value {
+    json!({
+        "phase": phase,
+        "title": title,
+        "prompt_anchor": prompt_anchor,
+        "evidence": evidence,
+        "result": result,
+    })
+}
+
 fn main() -> Result<()> {
     let harness = codex_harness_dir();
     let project = project_root();
     let audit = audit_value();
     let nix = nix_verify_value();
+    let envctl_root = project.parent().unwrap_or(&project);
+    let prompt_path = Path::new("/home/flexnetos/prompts/CODEX-GPT-HARNESS.prompt.md");
+    let prompt_bytes = fs::read(prompt_path).ok();
+    let prompt_sha256 = prompt_bytes.as_ref().map(|bytes| {
+        let digest = Sha256::digest(bytes);
+        hex::encode(digest)
+    });
+    let prompt_line_count = prompt_bytes
+        .as_ref()
+        .map(|bytes| String::from_utf8_lossy(bytes).lines().count())
+        .unwrap_or(0);
+    let prompt_reloaded = prompt_sha256.is_some() && prompt_line_count >= 2200;
     let has_openrouter_key = env::var_os("OPENROUTER_API_KEY")
         .map(|v| !v.is_empty())
         .unwrap_or(false);
@@ -79,10 +102,34 @@ fn main() -> Result<()> {
         } else {
             "partial-missing-OPENROUTER_API_KEY"
         };
+    let model_access_proof_path = state_dir().join("model-access-proof.json");
+    let model_access_proof: Value = fs::read_to_string(&model_access_proof_path)
+        .ok()
+        .and_then(|text| serde_json::from_str(&text).ok())
+        .unwrap_or(Value::Null);
+    let model_access_ok = model_access_proof
+        .pointer("/evaluation/ok")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+        && model_access_proof
+            .pointer("/catalog/ok")
+            .and_then(Value::as_bool)
+            .unwrap_or(false);
     let has_claude_cli = which("claude").is_some();
     let has_gh = which("gh").is_some();
 
     let matrix = vec![
+        row(
+            "Phase 0 research audit",
+            "original prompt reloaded plus read-only research ledger and Phase 1 plan draft",
+            prompt_path.display().to_string(),
+            "sha256sum CODEX-GPT-HARNESS.prompt.md; inspect ledger/research.jsonl; PHASE1_PLAN_DRAFT.md",
+            pass_fail(
+                prompt_reloaded
+                    && exists(harness.join("ledger/research.jsonl"))
+                    && exists(harness.join("PHASE1_PLAN_DRAFT.md")),
+            ),
+        ),
         row(
             "archive-first",
             "codex-harness-runner archive and archive ledger",
@@ -202,6 +249,13 @@ fn main() -> Result<()> {
             pass_fail(exists(harness.join("model-catalog/model-catalog.json"))),
         ),
         row(
+            "model access proof",
+            "catalog coverage plus live Codex account probes for GPT-5.5/GPT-5.4/Spark and account-gated preview/o-series denials",
+            model_access_proof_path.display().to_string(),
+            "codex-harness-model-access probe",
+            pass_fail(model_access_ok),
+        ),
+        row(
             "OpenRouter compatibility",
             "OpenRouter shim/catalog/probe default tencent/hy3:free",
             "/home/flexnetos/.codex/envctl-openrouter-gpt.config.toml".to_string(),
@@ -287,6 +341,13 @@ fn main() -> Result<()> {
             pass_fail(exists("/home/flexnetos/.codex/config.toml")),
         ),
         row(
+            "skills",
+            "envctl-owned agent-skills source plus agent sync gate",
+            envctl_root.join("agent-skills").display().to_string(),
+            "envctl agent sync --json --color never",
+            pass_fail(exists(envctl_root.join("agent-skills"))),
+        ),
+        row(
             "plugins",
             "plugin inventory ledger",
             harness.join("ledger/plugins.jsonl").display().to_string(),
@@ -302,6 +363,17 @@ fn main() -> Result<()> {
                 .to_string(),
             "codex-harness-halt",
             pass_fail(exists(harness.join("src/bin/codex-harness-halt.rs"))),
+        ),
+        row(
+            "parallel execution",
+            "runner process supervisor ledger and model-router controlled fanout",
+            harness.join("ledger/processes.jsonl").display().to_string(),
+            "codex-harness-runner spawn/status; cargo test process_supervisor",
+            pass_fail(
+                exists(harness.join("ledger/processes.jsonl"))
+                    && model_router_ready()
+                    && exists(harness.join("teams/research-team.toml")),
+            ),
         ),
         row(
             "SQLite/ledger integrity",
@@ -322,6 +394,120 @@ fn main() -> Result<()> {
         ),
     ];
 
+    let row_pass = |law: &str| {
+        matrix
+            .iter()
+            .find(|entry| entry.get("law").and_then(Value::as_str) == Some(law))
+            .and_then(|entry| entry.get("result").and_then(Value::as_str))
+            .map(|result| result == "pass" || result.starts_with("pass-"))
+            .unwrap_or(false)
+    };
+    let phase_matrix = vec![
+        phase_row(
+            0,
+            "Deep research + read-only audit gate",
+            "PHASE 0 lines 180-758",
+            "prompt sha256, research ledger, PHASE1 plan draft",
+            pass_fail(row_pass("Phase 0 research audit")),
+        ),
+        phase_row(
+            1,
+            "Containment before agentic power",
+            "PHASE 1 lines 759-1170",
+            "full-access marker, no-yolo/secret rules, hooks, kill switch",
+            pass_fail(
+                row_pass("containment-before-capability")
+                    && row_pass("secrets redaction")
+                    && row_pass("yolo break-glass disabled")
+                    && row_pass("hooks")
+                    && row_pass("rules")
+                    && row_pass("kill switch"),
+            ),
+        ),
+        phase_row(
+            2,
+            "Config, model catalog, and provider toggles",
+            "PHASE 2 lines 1173-1324",
+            "profiles, model catalog, model-access proof, OpenRouter default proof",
+            pass_fail(
+                row_pass("profiles")
+                    && row_pass("model catalog")
+                    && row_pass("model access proof")
+                    && row_pass("OpenRouter compatibility"),
+            ),
+        ),
+        phase_row(
+            3,
+            "Subagent-mandatory team fabric",
+            "PHASE 3 lines 1325-1480",
+            "model router, subagent role files, team caps",
+            pass_fail(
+                row_pass("model-router mandatory") && row_pass("subagents") && row_pass("teams"),
+            ),
+        ),
+        phase_row(
+            4,
+            "Advanced TUI, timers, and bad-behavior counters",
+            "PHASE 4 lines 1481-1568",
+            "statusline/timer config and counters ledger",
+            pass_fail(row_pass("statusline/timers") && row_pass("bad-behavior counter")),
+        ),
+        phase_row(
+            5,
+            "Browser use and computer use",
+            "PHASE 5 lines 1569-1620",
+            "browser/computer-use profiles and verification gate",
+            pass_fail(row_pass("browser use") && row_pass("computer use")),
+        ),
+        phase_row(
+            6,
+            "Memory and database",
+            "PHASE 6 lines 1621-1701",
+            "memory audit state DB plus SQLite/ledger integrity",
+            pass_fail(row_pass("memory/database") && row_pass("SQLite/ledger integrity")),
+        ),
+        phase_row(
+            7,
+            "Providers, networking, and model fabric",
+            "PHASE 7 lines 1702-1782",
+            "OpenRouter proof, model access proof, Claude bridge, Nix ownership",
+            pass_fail(
+                row_pass("OpenRouter compatibility")
+                    && row_pass("model access proof")
+                    && row_pass("Claude bridge policy")
+                    && row_pass("Nix ownership"),
+            ),
+        ),
+        phase_row(
+            8,
+            "GitHub control, policy, and worktrees",
+            "PHASE 8 lines 1783-1860",
+            "GitHub guard and worktree/archive drill",
+            pass_fail(row_pass("GitHub guard") && row_pass("worktrees")),
+        ),
+        phase_row(
+            9,
+            "Skills, plugins, and MCP",
+            "PHASE 9 lines 1861-1941",
+            "envctl skills source, plugin ledger, active MCP inventory",
+            pass_fail(row_pass("skills") && row_pass("plugins") && row_pass("MCP")),
+        ),
+        phase_row(
+            10,
+            "Parallel execution fabric",
+            "PHASE 10 lines 1942-2021",
+            "runner process ledger, model-router fanout, team caps",
+            pass_fail(row_pass("parallel execution")),
+        ),
+        phase_row(
+            11,
+            "Final verification",
+            "PHASE 11 lines 2022-2197",
+            "final acceptance matrix plus all phase rows",
+            "pending-self-check",
+        ),
+    ];
+
     let incomplete = matrix
         .iter()
         .filter(|entry| {
@@ -332,11 +518,52 @@ fn main() -> Result<()> {
                 .unwrap_or(true)
         })
         .count();
-    let ok = incomplete == 0;
+    let phase_incomplete_without_final = phase_matrix
+        .iter()
+        .filter(|entry| entry.get("phase").and_then(Value::as_u64) != Some(11))
+        .filter(|entry| {
+            entry
+                .get("result")
+                .and_then(Value::as_str)
+                .map(|s| s != "pass" && !s.starts_with("pass-"))
+                .unwrap_or(true)
+        })
+        .count();
+    let final_phase_result = pass_fail(incomplete == 0 && phase_incomplete_without_final == 0);
+    let phase_matrix = phase_matrix
+        .into_iter()
+        .map(|mut entry| {
+            if entry.get("phase").and_then(Value::as_u64) == Some(11) {
+                if let Some(object) = entry.as_object_mut() {
+                    object.insert("result".to_string(), json!(final_phase_result));
+                }
+            }
+            entry
+        })
+        .collect::<Vec<_>>();
+    let phase_incomplete = phase_matrix
+        .iter()
+        .filter(|entry| {
+            entry
+                .get("result")
+                .and_then(Value::as_str)
+                .map(|s| s != "pass" && !s.starts_with("pass-"))
+                .unwrap_or(true)
+        })
+        .count();
+    let ok = incomplete == 0 && phase_incomplete == 0;
     let out = json!({
         "ok": ok,
         "decision_id": if full_access_granted() { USER_FULL_ACCESS_DECISION_ID } else { "none" },
         "incomplete": incomplete,
+        "phase_incomplete": phase_incomplete,
+        "prompt": {
+            "path": prompt_path,
+            "sha256": prompt_sha256,
+            "line_count": prompt_line_count,
+            "reloaded": prompt_reloaded,
+        },
+        "phase_matrix": phase_matrix,
         "matrix": matrix,
     });
     append_ledger(

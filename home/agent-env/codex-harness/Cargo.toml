@@ -88,6 +88,10 @@ name = "codex-harness-openrouter-shim"
 path = "src/bin/codex-harness-openrouter-shim.rs"
 
 [[bin]]
+name = "codex-harness-model-access"
+path = "src/bin/codex-harness-model-access.rs"
+
+[[bin]]
 name = "codex-harness-claude-bridge"
 path = "src/bin/codex-harness-claude-bridge.rs"
 

@@ -6,20 +6,40 @@
       "description": "OpenAI GPT-5.5 frontier model for complex coding, research, and professional work.",
       "default_reasoning_level": "medium",
       "supported_reasoning_levels": [
-        {"effort": "low", "description": "Fast responses with lighter reasoning"},
-        {"effort": "medium", "description": "Balances speed and reasoning depth for everyday tasks"},
-        {"effort": "high", "description": "Greater reasoning depth for complex problems"},
-        {"effort": "xhigh", "description": "Extra high reasoning depth for complex problems"}
+        {
+          "effort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        }
       ],
       "shell_type": "shell_command",
       "visibility": "list",
       "supported_in_api": true,
       "priority": 0,
-      "additional_speed_tiers": ["fast"],
-      "service_tiers": [
-        {"id": "priority", "name": "Fast", "description": "1.5x speed, increased usage"}
+      "additional_speed_tiers": [
+        "fast"
       ],
-      "availability_nux": {"message": "GPT-5.5 is configured by the FlexNetOS Codex model catalog."},
+      "service_tiers": [
+        {
+          "id": "priority",
+          "name": "Fast",
+          "description": "1.5x speed, increased usage"
+        }
+      ],
+      "availability_nux": {
+        "message": "GPT-5.5 is configured by the FlexNetOS Codex model catalog."
+      },
       "upgrade": null,
       "base_instructions": "",
       "supports_reasoning_summaries": true,
@@ -28,14 +48,20 @@
       "default_verbosity": "medium",
       "apply_patch_tool_type": "freeform",
       "web_search_tool_type": "text_and_image",
-      "truncation_policy": {"mode": "tokens", "limit": 10000},
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
       "supports_parallel_tool_calls": true,
       "supports_image_detail_original": true,
       "context_window": 1050000,
       "max_context_window": 1050000,
       "effective_context_window_percent": 95,
       "experimental_supported_tools": [],
-      "input_modalities": ["text", "image"],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
       "supports_search_tool": true,
       "use_responses_lite": false
     },
@@ -45,17 +71,32 @@
       "description": "OpenAI GPT-5.5 Pro route for harder professional work; public docs list medium, high, and xhigh reasoning and slower, higher-compute responses.",
       "default_reasoning_level": "high",
       "supported_reasoning_levels": [
-        {"effort": "medium", "description": "Balances speed and reasoning depth for everyday tasks"},
-        {"effort": "high", "description": "Greater reasoning depth for complex problems"},
-        {"effort": "xhigh", "description": "Extra high reasoning depth for complex problems"}
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        }
       ],
       "shell_type": "shell_command",
       "visibility": "hide",
       "supported_in_api": true,
       "priority": 1,
-      "additional_speed_tiers": ["fast"],
+      "additional_speed_tiers": [
+        "fast"
+      ],
       "service_tiers": [
-        {"id": "priority", "name": "Fast", "description": "1.5x speed, increased usage"}
+        {
+          "id": "priority",
+          "name": "Fast",
+          "description": "1.5x speed, increased usage"
+        }
       ],
       "availability_nux": null,
       "upgrade": null,
@@ -66,14 +107,20 @@
       "default_verbosity": "medium",
       "apply_patch_tool_type": "freeform",
       "web_search_tool_type": "text_and_image",
-      "truncation_policy": {"mode": "tokens", "limit": 10000},
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
       "supports_parallel_tool_calls": true,
       "supports_image_detail_original": true,
       "context_window": 1050000,
       "max_context_window": 1050000,
       "effective_context_window_percent": 95,
       "experimental_supported_tools": [],
-      "input_modalities": ["text", "image"],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
       "supports_search_tool": true,
       "use_responses_lite": false
     },
@@ -83,18 +130,36 @@
       "description": "Private/account-rollout extended-context GPT-5.5 Pro route configured from user-reported access; no public OpenAI docs page was found for this exact slug.",
       "default_reasoning_level": "high",
       "supported_reasoning_levels": [
-        {"effort": "low", "description": "Fast responses with lighter reasoning"},
-        {"effort": "medium", "description": "Balances speed and reasoning depth for everyday tasks"},
-        {"effort": "high", "description": "Greater reasoning depth for complex problems"},
-        {"effort": "xhigh", "description": "Extra high reasoning depth for complex problems"}
+        {
+          "effort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        }
       ],
       "shell_type": "shell_command",
       "visibility": "hide",
       "supported_in_api": false,
       "priority": 2,
-      "additional_speed_tiers": ["fast"],
+      "additional_speed_tiers": [
+        "fast"
+      ],
       "service_tiers": [
-        {"id": "priority", "name": "Fast", "description": "1.5x speed, increased usage"}
+        {
+          "id": "priority",
+          "name": "Fast",
+          "description": "1.5x speed, increased usage"
+        }
       ],
       "availability_nux": null,
       "upgrade": null,
@@ -105,36 +170,59 @@
       "default_verbosity": "medium",
       "apply_patch_tool_type": "freeform",
       "web_search_tool_type": "text_and_image",
-      "truncation_policy": {"mode": "tokens", "limit": 10000},
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
       "supports_parallel_tool_calls": true,
       "supports_image_detail_original": true,
       "context_window": 4000000,
       "max_context_window": 4000000,
       "effective_context_window_percent": 95,
       "experimental_supported_tools": [],
-      "input_modalities": ["text", "image"],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
       "supports_search_tool": true,
       "use_responses_lite": false
     },
     {
       "slug": "gpt-5.6-sol",
       "display_name": "GPT-5.6 Sol",
-      "description": "Private/account-rollout GPT-5.6 Sol route configured from user-reported access; no public OpenAI docs page was found for this exact slug.",
+      "description": "Limited-preview flagship GPT-5.6 model. Official OpenAI Help says Sol/Terra/Luna are available through API and Codex only for approved trusted partners/organizations; local proof currently records ChatGPT-account Codex denial unless access is provisioned.",
       "default_reasoning_level": "high",
       "supported_reasoning_levels": [
-        {"effort": "low", "description": "Fast responses with lighter reasoning"},
-        {"effort": "medium", "description": "Balances speed and reasoning depth for everyday tasks"},
-        {"effort": "high", "description": "Greater reasoning depth for complex problems"},
-        {"effort": "xhigh", "description": "Extra high reasoning depth for complex problems"},
-        {"effort": "max", "description": "Maximum reasoning depth for GPT-5.6 Sol preview workloads"}
+        {
+          "effort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        }
       ],
       "shell_type": "shell_command",
-      "visibility": "hide",
-      "supported_in_api": false,
+      "visibility": "list",
+      "supported_in_api": true,
       "priority": 3,
-      "additional_speed_tiers": ["fast"],
+      "additional_speed_tiers": [
+        "fast"
+      ],
       "service_tiers": [
-        {"id": "priority", "name": "Fast", "description": "1.5x speed, increased usage"}
+        {
+          "id": "priority",
+          "name": "Fast",
+          "description": "Priority/fast processing where the account and Codex surface support it"
+        }
       ],
       "availability_nux": null,
       "upgrade": null,
@@ -145,14 +233,146 @@
       "default_verbosity": "medium",
       "apply_patch_tool_type": "freeform",
       "web_search_tool_type": "text_and_image",
-      "truncation_policy": {"mode": "tokens", "limit": 10000},
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
       "supports_parallel_tool_calls": true,
       "supports_image_detail_original": true,
-      "context_window": 4000000,
+      "context_window": 1050000,
       "max_context_window": 4000000,
       "effective_context_window_percent": 95,
       "experimental_supported_tools": [],
-      "input_modalities": ["text", "image"],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "supports_search_tool": true,
+      "use_responses_lite": false
+    },
+    {
+      "slug": "gpt-5.6-terra",
+      "display_name": "GPT-5.6 Terra",
+      "description": "Limited-preview lower-cost GPT-5.6 model. Track in catalog for approved-org Codex/API access; local proof currently records ChatGPT-account Codex denial unless access is provisioned.",
+      "default_reasoning_level": "high",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        }
+      ],
+      "shell_type": "shell_command",
+      "visibility": "list",
+      "supported_in_api": true,
+      "priority": 4,
+      "additional_speed_tiers": [
+        "fast"
+      ],
+      "service_tiers": [
+        {
+          "id": "priority",
+          "name": "Fast",
+          "description": "Priority/fast processing where the account and Codex surface support it"
+        }
+      ],
+      "availability_nux": null,
+      "upgrade": null,
+      "base_instructions": "",
+      "supports_reasoning_summaries": true,
+      "default_reasoning_summary": "none",
+      "support_verbosity": true,
+      "default_verbosity": "medium",
+      "apply_patch_tool_type": "freeform",
+      "web_search_tool_type": "text_and_image",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
+      "supports_parallel_tool_calls": true,
+      "supports_image_detail_original": true,
+      "context_window": 1050000,
+      "max_context_window": 4000000,
+      "effective_context_window_percent": 95,
+      "experimental_supported_tools": [],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "supports_search_tool": true,
+      "use_responses_lite": false
+    },
+    {
+      "slug": "gpt-5.6-luna",
+      "display_name": "GPT-5.6 Luna",
+      "description": "Limited-preview fastest/cost-efficient GPT-5.6 model. Track in catalog for approved-org Codex/API access; local proof currently records ChatGPT-account Codex denial unless access is provisioned.",
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        }
+      ],
+      "shell_type": "shell_command",
+      "visibility": "list",
+      "supported_in_api": true,
+      "priority": 5,
+      "additional_speed_tiers": [
+        "fast"
+      ],
+      "service_tiers": [
+        {
+          "id": "priority",
+          "name": "Fast",
+          "description": "Priority/fast processing where the account and Codex surface support it"
+        }
+      ],
+      "availability_nux": null,
+      "upgrade": null,
+      "base_instructions": "",
+      "supports_reasoning_summaries": true,
+      "default_reasoning_summary": "none",
+      "support_verbosity": true,
+      "default_verbosity": "medium",
+      "apply_patch_tool_type": "freeform",
+      "web_search_tool_type": "text_and_image",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
+      "supports_parallel_tool_calls": true,
+      "supports_image_detail_original": true,
+      "context_window": 1050000,
+      "max_context_window": 4000000,
+      "effective_context_window_percent": 95,
+      "experimental_supported_tools": [],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
       "supports_search_tool": true,
       "use_responses_lite": false
     },
@@ -162,10 +382,22 @@
       "description": "OpenAI GPT-5 family model retained for compatibility and explicit routing.",
       "default_reasoning_level": "medium",
       "supported_reasoning_levels": [
-        {"effort": "low", "description": "Fast responses with lighter reasoning"},
-        {"effort": "medium", "description": "Balances speed and reasoning depth for everyday tasks"},
-        {"effort": "high", "description": "Greater reasoning depth for complex problems"},
-        {"effort": "xhigh", "description": "Extra high reasoning depth for complex problems"}
+        {
+          "effort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        }
       ],
       "shell_type": "shell_command",
       "visibility": "list",
@@ -174,7 +406,10 @@
       "additional_speed_tiers": [],
       "service_tiers": [],
       "availability_nux": null,
-      "upgrade": {"model": "gpt-5.5", "migration_markdown": "GPT-5.5 is available in Codex and is the preferred default route."},
+      "upgrade": {
+        "model": "gpt-5.5",
+        "migration_markdown": "GPT-5.5 is available in Codex and is the preferred default route."
+      },
       "base_instructions": "",
       "supports_reasoning_summaries": true,
       "default_reasoning_summary": "none",
@@ -182,14 +417,20 @@
       "default_verbosity": "medium",
       "apply_patch_tool_type": "freeform",
       "web_search_tool_type": "text_and_image",
-      "truncation_policy": {"mode": "tokens", "limit": 10000},
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
       "supports_parallel_tool_calls": true,
       "supports_image_detail_original": true,
       "context_window": 1050000,
       "max_context_window": 1050000,
       "effective_context_window_percent": 95,
       "experimental_supported_tools": [],
-      "input_modalities": ["text", "image"],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
       "supports_search_tool": true,
       "use_responses_lite": false
     },
@@ -199,10 +440,22 @@
       "description": "Small, fast, and cost-efficient model for simpler coding tasks.",
       "default_reasoning_level": "medium",
       "supported_reasoning_levels": [
-        {"effort": "low", "description": "Fast responses with lighter reasoning"},
-        {"effort": "medium", "description": "Balances speed and reasoning depth for everyday tasks"},
-        {"effort": "high", "description": "Greater reasoning depth for complex problems"},
-        {"effort": "xhigh", "description": "Extra high reasoning depth for complex problems"}
+        {
+          "effort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        }
       ],
       "shell_type": "shell_command",
       "visibility": "list",
@@ -219,14 +472,144 @@
       "default_verbosity": "medium",
       "apply_patch_tool_type": "freeform",
       "web_search_tool_type": "text_and_image",
-      "truncation_policy": {"mode": "tokens", "limit": 10000},
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
       "supports_parallel_tool_calls": true,
       "supports_image_detail_original": true,
       "context_window": 400000,
       "max_context_window": 400000,
       "effective_context_window_percent": 95,
       "experimental_supported_tools": [],
-      "input_modalities": ["text", "image"],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "supports_search_tool": true,
+      "use_responses_lite": false
+    },
+    {
+      "slug": "gpt-5.4-nano",
+      "display_name": "GPT-5.4 Nano",
+      "description": "Lowest-latency/cost GPT-5.4 nano variant mentioned by current OpenAI model docs. Local proof currently records ChatGPT-account Codex denial unless access is provisioned.",
+      "default_reasoning_level": "low",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        }
+      ],
+      "shell_type": "shell_command",
+      "visibility": "list",
+      "supported_in_api": true,
+      "priority": 24,
+      "additional_speed_tiers": [],
+      "service_tiers": [
+        {
+          "id": "priority",
+          "name": "Fast",
+          "description": "Priority/fast processing where the account and Codex surface support it"
+        }
+      ],
+      "availability_nux": null,
+      "upgrade": null,
+      "base_instructions": "",
+      "supports_reasoning_summaries": true,
+      "default_reasoning_summary": "none",
+      "support_verbosity": true,
+      "default_verbosity": "medium",
+      "apply_patch_tool_type": "freeform",
+      "web_search_tool_type": "text_and_image",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
+      "supports_parallel_tool_calls": true,
+      "supports_image_detail_original": true,
+      "context_window": 200000,
+      "max_context_window": 200000,
+      "effective_context_window_percent": 95,
+      "experimental_supported_tools": [],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "supports_search_tool": true,
+      "use_responses_lite": false
+    },
+    {
+      "slug": "gpt-5.3-codex",
+      "display_name": "GPT-5.3 Codex",
+      "description": "Bundled legacy Codex model slug retained for explicit audit/proof. Local proof currently records ChatGPT-account Codex denial; use gpt-5.3-codex-spark when available.",
+      "default_reasoning_level": "high",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        }
+      ],
+      "shell_type": "shell_command",
+      "visibility": "hide",
+      "supported_in_api": false,
+      "priority": 25,
+      "additional_speed_tiers": [
+        "fast"
+      ],
+      "service_tiers": [
+        {
+          "id": "priority",
+          "name": "Fast",
+          "description": "Priority/fast processing where the account and Codex surface support it"
+        }
+      ],
+      "availability_nux": null,
+      "upgrade": null,
+      "base_instructions": "",
+      "supports_reasoning_summaries": true,
+      "default_reasoning_summary": "none",
+      "support_verbosity": true,
+      "default_verbosity": "medium",
+      "apply_patch_tool_type": "freeform",
+      "web_search_tool_type": "text_and_image",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
+      "supports_parallel_tool_calls": true,
+      "supports_image_detail_original": true,
+      "context_window": 128000,
+      "max_context_window": 128000,
+      "effective_context_window_percent": 95,
+      "experimental_supported_tools": [],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
       "supports_search_tool": true,
       "use_responses_lite": false
     },
@@ -236,10 +619,22 @@
       "description": "Research-preview Codex model optimized for near-instant coding iteration when the account has access.",
       "default_reasoning_level": "high",
       "supported_reasoning_levels": [
-        {"effort": "low", "description": "Fast responses with lighter reasoning"},
-        {"effort": "medium", "description": "Balances speed and reasoning depth for everyday tasks"},
-        {"effort": "high", "description": "Greater reasoning depth for complex problems"},
-        {"effort": "xhigh", "description": "Extra high reasoning depth for complex problems"}
+        {
+          "effort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        }
       ],
       "shell_type": "shell_command",
       "visibility": "list",
@@ -256,14 +651,185 @@
       "default_verbosity": "medium",
       "apply_patch_tool_type": "freeform",
       "web_search_tool_type": "text_and_image",
-      "truncation_policy": {"mode": "tokens", "limit": 10000},
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
       "supports_parallel_tool_calls": true,
       "supports_image_detail_original": true,
       "context_window": 128000,
       "max_context_window": 128000,
       "effective_context_window_percent": 95,
       "experimental_supported_tools": [],
-      "input_modalities": ["text", "image"],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "supports_search_tool": true,
+      "use_responses_lite": false
+    },
+    {
+      "slug": "o3",
+      "display_name": "o3",
+      "description": "OpenAI o-series reasoning model listed in OpenAI model/API references. Local proof currently records ChatGPT-account Codex denial.",
+      "default_reasoning_level": "high",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        }
+      ],
+      "shell_type": "shell_command",
+      "visibility": "hide",
+      "supported_in_api": true,
+      "priority": 40,
+      "additional_speed_tiers": [],
+      "service_tiers": [],
+      "availability_nux": null,
+      "upgrade": null,
+      "base_instructions": "",
+      "supports_reasoning_summaries": true,
+      "default_reasoning_summary": "none",
+      "support_verbosity": true,
+      "default_verbosity": "medium",
+      "apply_patch_tool_type": "freeform",
+      "web_search_tool_type": "text_and_image",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
+      "supports_parallel_tool_calls": true,
+      "supports_image_detail_original": true,
+      "context_window": 200000,
+      "max_context_window": 200000,
+      "effective_context_window_percent": 95,
+      "experimental_supported_tools": [],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "supports_search_tool": true,
+      "use_responses_lite": false
+    },
+    {
+      "slug": "o3-pro",
+      "display_name": "o3 Pro",
+      "description": "Higher-compute o3 variant listed in OpenAI model/API references. Local proof not available through current ChatGPT-account Codex unless provisioned.",
+      "default_reasoning_level": "high",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        }
+      ],
+      "shell_type": "shell_command",
+      "visibility": "hide",
+      "supported_in_api": true,
+      "priority": 41,
+      "additional_speed_tiers": [],
+      "service_tiers": [],
+      "availability_nux": null,
+      "upgrade": null,
+      "base_instructions": "",
+      "supports_reasoning_summaries": true,
+      "default_reasoning_summary": "none",
+      "support_verbosity": true,
+      "default_verbosity": "medium",
+      "apply_patch_tool_type": "freeform",
+      "web_search_tool_type": "text_and_image",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
+      "supports_parallel_tool_calls": true,
+      "supports_image_detail_original": true,
+      "context_window": 200000,
+      "max_context_window": 200000,
+      "effective_context_window_percent": 95,
+      "experimental_supported_tools": [],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "supports_search_tool": true,
+      "use_responses_lite": false
+    },
+    {
+      "slug": "o3-mini",
+      "display_name": "o3 Mini",
+      "description": "Small o-series reasoning model retained for API/Codex availability audits.",
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        }
+      ],
+      "shell_type": "shell_command",
+      "visibility": "hide",
+      "supported_in_api": true,
+      "priority": 42,
+      "additional_speed_tiers": [],
+      "service_tiers": [],
+      "availability_nux": null,
+      "upgrade": null,
+      "base_instructions": "",
+      "supports_reasoning_summaries": true,
+      "default_reasoning_summary": "none",
+      "support_verbosity": true,
+      "default_verbosity": "medium",
+      "apply_patch_tool_type": "freeform",
+      "web_search_tool_type": "text_and_image",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
+      "supports_parallel_tool_calls": true,
+      "supports_image_detail_original": true,
+      "context_window": 200000,
+      "max_context_window": 200000,
+      "effective_context_window_percent": 95,
+      "experimental_supported_tools": [],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
       "supports_search_tool": true,
       "use_responses_lite": false
     },
@@ -273,10 +839,22 @@
       "description": "Automatic approval review model for Codex.",
       "default_reasoning_level": "medium",
       "supported_reasoning_levels": [
-        {"effort": "low", "description": "Fast responses with lighter reasoning"},
-        {"effort": "medium", "description": "Balances speed and reasoning depth for everyday tasks"},
-        {"effort": "high", "description": "Greater reasoning depth for complex problems"},
-        {"effort": "xhigh", "description": "Extra high reasoning depth for complex problems"}
+        {
+          "effort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        }
       ],
       "shell_type": "shell_command",
       "visibility": "hide",
@@ -293,14 +871,350 @@
       "default_verbosity": "medium",
       "apply_patch_tool_type": "freeform",
       "web_search_tool_type": "text_and_image",
-      "truncation_policy": {"mode": "tokens", "limit": 10000},
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
       "supports_parallel_tool_calls": true,
       "supports_image_detail_original": true,
       "context_window": 272000,
       "max_context_window": 1000000,
       "effective_context_window_percent": 95,
       "experimental_supported_tools": [],
-      "input_modalities": ["text", "image"],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "supports_search_tool": true,
+      "use_responses_lite": false
+    },
+    {
+      "slug": "o4-mini",
+      "display_name": "o4 Mini",
+      "description": "Fast cost-efficient reasoning model listed in OpenAI model/API references. Local proof currently records ChatGPT-account Codex denial.",
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        }
+      ],
+      "shell_type": "shell_command",
+      "visibility": "hide",
+      "supported_in_api": true,
+      "priority": 43,
+      "additional_speed_tiers": [],
+      "service_tiers": [],
+      "availability_nux": null,
+      "upgrade": null,
+      "base_instructions": "",
+      "supports_reasoning_summaries": true,
+      "default_reasoning_summary": "none",
+      "support_verbosity": true,
+      "default_verbosity": "medium",
+      "apply_patch_tool_type": "freeform",
+      "web_search_tool_type": "text_and_image",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
+      "supports_parallel_tool_calls": true,
+      "supports_image_detail_original": true,
+      "context_window": 200000,
+      "max_context_window": 200000,
+      "effective_context_window_percent": 95,
+      "experimental_supported_tools": [],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "supports_search_tool": true,
+      "use_responses_lite": false
+    },
+    {
+      "slug": "gpt-4.1",
+      "display_name": "GPT-4.1",
+      "description": "Legacy non-reasoning GPT model listed in OpenAI API model references; not a primary Codex route for this harness.",
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        }
+      ],
+      "shell_type": "shell_command",
+      "visibility": "hide",
+      "supported_in_api": true,
+      "priority": 60,
+      "additional_speed_tiers": [],
+      "service_tiers": [],
+      "availability_nux": null,
+      "upgrade": null,
+      "base_instructions": "",
+      "supports_reasoning_summaries": true,
+      "default_reasoning_summary": "none",
+      "support_verbosity": true,
+      "default_verbosity": "medium",
+      "apply_patch_tool_type": "freeform",
+      "web_search_tool_type": "text_and_image",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
+      "supports_parallel_tool_calls": true,
+      "supports_image_detail_original": true,
+      "context_window": 1000000,
+      "max_context_window": 1000000,
+      "effective_context_window_percent": 95,
+      "experimental_supported_tools": [],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "supports_search_tool": true,
+      "use_responses_lite": false
+    },
+    {
+      "slug": "gpt-4.1-mini",
+      "display_name": "GPT-4.1 Mini",
+      "description": "Smaller GPT-4.1 variant listed in OpenAI API model references; not a primary Codex route for this harness.",
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        }
+      ],
+      "shell_type": "shell_command",
+      "visibility": "hide",
+      "supported_in_api": true,
+      "priority": 61,
+      "additional_speed_tiers": [],
+      "service_tiers": [],
+      "availability_nux": null,
+      "upgrade": null,
+      "base_instructions": "",
+      "supports_reasoning_summaries": true,
+      "default_reasoning_summary": "none",
+      "support_verbosity": true,
+      "default_verbosity": "medium",
+      "apply_patch_tool_type": "freeform",
+      "web_search_tool_type": "text_and_image",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
+      "supports_parallel_tool_calls": true,
+      "supports_image_detail_original": true,
+      "context_window": 1000000,
+      "max_context_window": 1000000,
+      "effective_context_window_percent": 95,
+      "experimental_supported_tools": [],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "supports_search_tool": true,
+      "use_responses_lite": false
+    },
+    {
+      "slug": "gpt-4.1-nano",
+      "display_name": "GPT-4.1 Nano",
+      "description": "Lowest-cost GPT-4.1 variant listed in OpenAI API model references; not a primary Codex route for this harness.",
+      "default_reasoning_level": "low",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        }
+      ],
+      "shell_type": "shell_command",
+      "visibility": "hide",
+      "supported_in_api": true,
+      "priority": 62,
+      "additional_speed_tiers": [],
+      "service_tiers": [],
+      "availability_nux": null,
+      "upgrade": null,
+      "base_instructions": "",
+      "supports_reasoning_summaries": true,
+      "default_reasoning_summary": "none",
+      "support_verbosity": true,
+      "default_verbosity": "medium",
+      "apply_patch_tool_type": "freeform",
+      "web_search_tool_type": "text_and_image",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
+      "supports_parallel_tool_calls": true,
+      "supports_image_detail_original": true,
+      "context_window": 1000000,
+      "max_context_window": 1000000,
+      "effective_context_window_percent": 95,
+      "experimental_supported_tools": [],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "supports_search_tool": true,
+      "use_responses_lite": false
+    },
+    {
+      "slug": "gpt-4o",
+      "display_name": "GPT-4o",
+      "description": "Legacy GPT-4o model listed in API references but Help Center notes GPT-4o is not available in Codex ChatGPT-plan routing; tracked for audit only.",
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        }
+      ],
+      "shell_type": "shell_command",
+      "visibility": "hide",
+      "supported_in_api": true,
+      "priority": 70,
+      "additional_speed_tiers": [],
+      "service_tiers": [],
+      "availability_nux": null,
+      "upgrade": null,
+      "base_instructions": "",
+      "supports_reasoning_summaries": true,
+      "default_reasoning_summary": "none",
+      "support_verbosity": true,
+      "default_verbosity": "medium",
+      "apply_patch_tool_type": "freeform",
+      "web_search_tool_type": "text_and_image",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
+      "supports_parallel_tool_calls": true,
+      "supports_image_detail_original": true,
+      "context_window": 128000,
+      "max_context_window": 128000,
+      "effective_context_window_percent": 95,
+      "experimental_supported_tools": [],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
+      "supports_search_tool": true,
+      "use_responses_lite": false
+    },
+    {
+      "slug": "gpt-4o-mini",
+      "display_name": "GPT-4o Mini",
+      "description": "Legacy small GPT-4o model listed in API references; tracked for audit only, not primary Codex routing.",
+      "default_reasoning_level": "low",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low",
+          "description": "Fast responses with lighter reasoning"
+        },
+        {
+          "effort": "medium",
+          "description": "Balances speed and reasoning depth for everyday tasks"
+        },
+        {
+          "effort": "high",
+          "description": "Greater reasoning depth for complex problems"
+        },
+        {
+          "effort": "xhigh",
+          "description": "Extra high reasoning depth for complex problems"
+        }
+      ],
+      "shell_type": "shell_command",
+      "visibility": "hide",
+      "supported_in_api": true,
+      "priority": 71,
+      "additional_speed_tiers": [],
+      "service_tiers": [],
+      "availability_nux": null,
+      "upgrade": null,
+      "base_instructions": "",
+      "supports_reasoning_summaries": true,
+      "default_reasoning_summary": "none",
+      "support_verbosity": true,
+      "default_verbosity": "medium",
+      "apply_patch_tool_type": "freeform",
+      "web_search_tool_type": "text_and_image",
+      "truncation_policy": {
+        "mode": "tokens",
+        "limit": 10000
+      },
+      "supports_parallel_tool_calls": true,
+      "supports_image_detail_original": true,
+      "context_window": 128000,
+      "max_context_window": 128000,
+      "effective_context_window_percent": 95,
+      "experimental_supported_tools": [],
+      "input_modalities": [
+        "text",
+        "image"
+      ],
       "supports_search_tool": true,
       "use_responses_lite": false
     }

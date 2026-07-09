@@ -1,0 +1,8 @@
+model = "gpt-5.6-sol"
+model_provider = "openai"
+model_reasoning_effort = "high"
+model_catalog_json = "/home/flexnetos/.codex/model-catalog.json"
+approval_policy = "never"
+sandbox_mode = "workspace-write"
+default_permissions = "harness-workspace"
+# Preview-gated: requires approved GPT-5.6 Codex/API organization access.

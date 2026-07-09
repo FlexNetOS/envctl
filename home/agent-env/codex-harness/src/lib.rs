@@ -1694,7 +1694,43 @@ pub fn require_model_router_ready() -> Result<()> {
 pub fn model_route_for_task(task: &str) -> Value {
     let lower = task.to_ascii_lowercase();
     let full = full_access_granted();
-    let (class, profile, model, provider, reason) = if lower.contains("openrouter") {
+    let (class, profile, model, provider, reason) = if lower.contains("gpt-5.6")
+        || lower.contains("sol")
+        || lower.contains("terra")
+        || lower.contains("luna")
+    {
+        (
+            "model-access-preview",
+            "envctl-gpt56-sol",
+            "gpt-5.6-sol",
+            "openai",
+            "GPT-5.6 Sol/Terra/Luna are preview-gated; route only after codex-harness-model-access proves account access",
+        )
+    } else if lower.contains("spark") {
+        (
+            "model-access-spark",
+            "envctl-spark",
+            "gpt-5.3-codex-spark",
+            "openai",
+            "Spark route is explicitly tracked and must be proved by codex-harness-model-access",
+        )
+    } else if lower.contains("o3") || lower.contains("o4-mini") {
+        (
+            "model-access-reasoning",
+            "envctl-o3",
+            "o3",
+            "openai",
+            "o-series routing is account-gated for Codex ChatGPT sessions; require live model-access proof before use",
+        )
+    } else if lower.contains("model catalog") || lower.contains("model access") {
+        (
+            "model-access-audit",
+            "envctl-gpt55-standard",
+            "gpt-5.5",
+            "openai",
+            "model catalog/access audits use primary GPT-5.5 plus codex-harness-model-access probes",
+        )
+    } else if lower.contains("openrouter") {
         (
             "provider-openrouter",
             "envctl-openrouter-gpt",
@@ -1809,6 +1845,9 @@ pub fn sample_model_tasks() -> Vec<String> {
         "redacted index integrity".to_string(),
         "memory audit disable plan".to_string(),
         "OpenRouter Responses proof".to_string(),
+        "model catalog and model access proof".to_string(),
+        "GPT-5.6 Sol Terra Luna access proof".to_string(),
+        "Spark and o3 access proof".to_string(),
         "Claude bridge proof".to_string(),
         "Browser Computer Use proof".to_string(),
         "GitHub full access proof".to_string(),

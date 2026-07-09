@@ -1,7 +1,8 @@
-model = "gpt-5.4-mini"
+model = "o4-mini"
 model_provider = "openai"
 model_reasoning_effort = "medium"
 model_catalog_json = "/home/flexnetos/.codex/model-catalog.json"
 approval_policy = "never"
 sandbox_mode = "read-only"
 default_permissions = "harness-read-only"
+# Account-gated: current proof records ChatGPT-account Codex denial.
