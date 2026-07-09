@@ -6,34 +6,64 @@ models = ["gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-5.3-codex-spark"]
 proof = "codex exec --ephemeral --json --color never -m <model> exact-marker prompt"
 
 [groups.codex_chatgpt_denied]
-models = ["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna", "gpt-5.4-nano", "gpt-5.3-codex", "o3", "o4-mini"]
+models = [
+  "gpt-5.5-pro",
+  "gpt-5.5-pro-extended",
+  "gpt-5.6-sol",
+  "gpt-5.6-terra",
+  "gpt-5.6-luna",
+  "gpt-5.4-nano",
+  "gpt-5.3-codex",
+  "o3",
+  "o3-pro",
+  "o3-mini",
+  "o4-mini",
+  "gpt-4.1",
+  "gpt-4.1-mini",
+  "gpt-4.1-nano",
+  "gpt-4o",
+  "gpt-4o-mini",
+]
 error_contains = "model is not supported when using Codex with a ChatGPT account"
 
-[groups.tracked_needs_probe]
-models = ["o3-pro", "o3-mini", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "gpt-4o", "gpt-4o-mini"]
-reason = "API/legacy catalog entries tracked for routing audits; do not use for work until codex-harness-model-access proves access."
+[models."gpt-5.5"]
+provider = "openai"
+profile = "envctl-gpt55-xhigh"
+account_access = "proved"
+
+[models."gpt-5.5-pro"]
+provider = "openai"
+profile = "envctl-gpt55-xhigh"
+account_access = "denied_by_live_codex_chatgpt_probe"
+source = "Catalog route tracked for future approved-account use; live Codex ChatGPT probe denied this slug."
+
+[models."gpt-5.5-pro-extended"]
+provider = "openai"
+profile = "envctl-gpt55-xhigh"
+account_access = "denied_by_live_codex_chatgpt_probe"
+source = "Private/account-rollout catalog route; live Codex ChatGPT probe denied this slug."
 
 [models."gpt-5.6-sol"]
 provider = "openai"
 profile = "envctl-gpt56-sol"
 account_access = "denied_by_live_codex_chatgpt_probe"
-source = "OpenAI Help GPT-5.6 preview: limited trusted partners/orgs; ChatGPT not included during preview"
+source = "OpenAI Help GPT-5.6 preview: limited trusted partners/orgs; ChatGPT not included during preview."
 
 [models."gpt-5.6-terra"]
 provider = "openai"
 profile = "envctl-gpt56-terra"
 account_access = "denied_by_live_codex_chatgpt_probe"
-source = "OpenAI Help GPT-5.6 preview: limited trusted partners/orgs; ChatGPT not included during preview"
+source = "OpenAI Help GPT-5.6 preview: limited trusted partners/orgs; ChatGPT not included during preview."
 
 [models."gpt-5.6-luna"]
 provider = "openai"
 profile = "envctl-gpt56-luna"
 account_access = "denied_by_live_codex_chatgpt_probe"
-source = "OpenAI Help GPT-5.6 preview: limited trusted partners/orgs; ChatGPT not included during preview"
+source = "OpenAI Help GPT-5.6 preview: limited trusted partners/orgs; ChatGPT not included during preview."
 
-[models."gpt-5.3-codex-spark"]
+[models."gpt-5.4"]
 provider = "openai"
-profile = "envctl-spark"
+profile = "envctl-gpt55-xhigh"
 account_access = "proved"
 
 [models."gpt-5.4-mini"]
@@ -41,14 +71,66 @@ provider = "openai"
 profile = "envctl-gpt54-mini"
 account_access = "proved"
 
+[models."gpt-5.4-nano"]
+provider = "openai"
+profile = "envctl-gpt54-nano"
+account_access = "denied_by_live_codex_chatgpt_probe"
+
+[models."gpt-5.3-codex"]
+provider = "openai"
+profile = "envctl-spark"
+account_access = "denied_by_live_codex_chatgpt_probe"
+
+[models."gpt-5.3-codex-spark"]
+provider = "openai"
+profile = "envctl-spark"
+account_access = "proved"
+
 [models."o3"]
 provider = "openai"
 profile = "envctl-o3"
 account_access = "denied_by_live_codex_chatgpt_probe"
-source = "OpenAI API model references list o3/o4-mini for API endpoints; Codex ChatGPT account proof denied o3."
+source = "OpenAI API model references list o3/o-series for API endpoints; Codex ChatGPT account proof denied this slug."
+
+[models."o3-pro"]
+provider = "openai"
+profile = "envctl-o3-pro"
+account_access = "denied_by_live_codex_chatgpt_probe"
+source = "OpenAI API model references list o3/o-series for API endpoints; Codex ChatGPT account proof denied this slug."
+
+[models."o3-mini"]
+provider = "openai"
+profile = "envctl-o3"
+account_access = "denied_by_live_codex_chatgpt_probe"
+source = "OpenAI API model references list o3/o-series for API endpoints; Codex ChatGPT account proof denied this slug."
 
 [models."o4-mini"]
 provider = "openai"
 profile = "envctl-o4-mini"
 account_access = "denied_by_live_codex_chatgpt_probe"
-source = "OpenAI API model references list o3/o4-mini for API endpoints; Codex ChatGPT account proof denied o4-mini."
+source = "OpenAI API model references list o3/o4-mini for API endpoints; Codex ChatGPT account proof denied this slug."
+
+[models."gpt-4.1"]
+provider = "openai"
+profile = "envctl-gpt54-mini"
+account_access = "denied_by_live_codex_chatgpt_probe"
+
+[models."gpt-4.1-mini"]
+provider = "openai"
+profile = "envctl-gpt54-mini"
+account_access = "denied_by_live_codex_chatgpt_probe"
+
+[models."gpt-4.1-nano"]
+provider = "openai"
+profile = "envctl-gpt54-nano"
+account_access = "denied_by_live_codex_chatgpt_probe"
+
+[models."gpt-4o"]
+provider = "openai"
+profile = "envctl-gpt54-mini"
+account_access = "denied_by_live_codex_chatgpt_probe"
+
+[models."gpt-4o-mini"]
+provider = "openai"
+profile = "envctl-gpt54-mini"
+account_access = "denied_by_live_codex_chatgpt_probe"
