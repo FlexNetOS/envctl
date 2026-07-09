@@ -57,7 +57,13 @@ ruvector-postgres = { workspace = true, optional = true }
 
 [features]
 default = []
-# Client-side RuVector stack (pure-Rust default features; no-c.sh proven).
+# Full RuVector client stack (all Linux-viable features per operator directive 2026-07-09:
+# "we want ALL features so we need all dependents") — candle inference, onnx embeddings,
+# attention/gnn/graph, rvf ed25519+qr. Build-time cc (simsimd/onig) is gate-accepted;
+# nothing on the no-c ban list.
 ruvector = ["dep:ruvector-core", "dep:ruvllm", "dep:rvf-runtime", "dep:rvf-types"]
 # Server-side extension crate on top (pgrx; requires pg headers at build time).
 ruvector-pg = ["ruvector", "dep:ruvector-postgres"]
+# CUDA acceleration (RTX 5090 workstation): needs nvcc on PATH at build
+# (PATH=/usr/local/cuda/bin). Separate feature because CI runners have no CUDA toolkit.
+ruvector-cuda = ["ruvector", "ruvllm/fused-act", "ruvllm/inference-cuda"]
