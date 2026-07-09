@@ -1,0 +1,7 @@
+enabled = true
+decision_id = "USER-FULL-ACCESS-20260709"
+secret_entry = "forbidden"
+auth_flows = "explicit_task_scope_only"
+screenshots = "redact_or_review_before_ledger"
+max_computer_agents = 1
+linux_support = "codex_feature_present_but_app_os_support_must_be_verified_per_task"

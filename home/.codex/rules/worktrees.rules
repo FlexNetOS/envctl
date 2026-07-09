@@ -1,0 +1,17 @@
+# Worktree topology is controlled by git-topologist/harness policy.
+
+prefix_rule(
+    pattern = ["git", "worktree", ["remove", "prune"]],
+    decision = "prompt",
+    justification = "Worktree removal/prune requires archive and topology proof.",
+    match = ["git worktree remove path", "git worktree prune"],
+    not_match = ["git worktree list"],
+)
+
+prefix_rule(
+    pattern = ["git", "checkout", ["-f", "--force"]],
+    decision = "forbidden",
+    justification = "Forced checkout can discard worktree state.",
+    match = ["git checkout -f main"],
+    not_match = ["git checkout main"],
+)

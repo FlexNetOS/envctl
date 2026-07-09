@@ -1,0 +1,7 @@
+version = 1
+mandatory_rules_in_memory_only = false
+secrets = "deny"
+raw_prompts = "deny-by-default"
+audit_binary = "codex-harness-memory-audit"
+export_binary = "codex-harness-memory-export-redacted"
+disable_plan_binary = "codex-harness-memory-disable-plan"

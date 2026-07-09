@@ -1,0 +1,8 @@
+name = "openrouter-runner"
+description = "OpenRouter after compatibility/shim approval; no repo writes by default"
+default_profile = "envctl-openrouter-gpt"
+write_capable = false
+requires_model_router_decision = true
+max_depth = 1
+secrets = "deny"
+ledger_required = true

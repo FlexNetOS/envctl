@@ -1,0 +1,11 @@
+version = 1
+router_binary = "codex-harness-model-router"
+require_route_before_subagent = true
+max_depth = 1
+max_total_subagents = 6
+max_write_capable_agents = 1
+openrouter_profile = "envctl-openrouter-gpt"
+claude_bridge_profile = "envctl-claude-bridge"
+browser_profile = "envctl-browser"
+computer_use_profile = "envctl-computer-use"
+github_mutating_profile = "envctl-github-mutating-approved"

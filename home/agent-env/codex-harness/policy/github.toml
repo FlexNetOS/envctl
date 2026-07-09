@@ -1,0 +1,6 @@
+version = 1
+default = "read-only"
+full_access_decision_id = "USER-FULL-ACCESS-20260709"
+read_only = ["gh repo view", "gh pr view", "gh pr diff", "gh pr list", "gh issue view", "gh workflow list", "gh run view"]
+mutating_requires_guard = true
+forbidden_without_decision_id = ["force push", "branch protection changes", "secret changes", "deploy key changes", "repo visibility changes", "delete branch", "delete release", "delete tag"]

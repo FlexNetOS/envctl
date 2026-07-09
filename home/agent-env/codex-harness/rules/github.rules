@@ -1,0 +1,41 @@
+# GitHub mutations require the github guard and full-access decision id.
+
+prefix_rule(
+    pattern = ["gh", "pr", ["comment", "review", "merge", "close", "reopen", "edit"]],
+    decision = "forbidden",
+    justification = "GitHub PR mutations require codex-harness-github-guard.",
+    match = ["gh pr comment 1 --body hi", "gh pr merge 1"],
+    not_match = ["gh pr list"],
+)
+
+prefix_rule(
+    pattern = ["gh", "issue", ["comment", "close", "reopen", "edit"]],
+    decision = "forbidden",
+    justification = "GitHub issue mutations require codex-harness-github-guard.",
+    match = ["gh issue comment 1 --body hi", "gh issue close 1"],
+    not_match = ["gh issue view 1"],
+)
+
+prefix_rule(
+    pattern = ["gh", "secret"],
+    decision = "forbidden",
+    justification = "GitHub secret surfaces must not be inspected or mutated by agent commands.",
+    match = ["gh secret list"],
+    not_match = ["gh auth status"],
+)
+
+prefix_rule(
+    pattern = ["gh", "auth", "token"],
+    decision = "forbidden",
+    justification = "GitHub token values must not be printed.",
+    match = ["gh auth token"],
+    not_match = ["gh auth status"],
+)
+
+prefix_rule(
+    pattern = [["codex-harness-github-guard", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-github-guard"]],
+    decision = "allow",
+    justification = "GitHub guard is the sanctioned mutation/read proof wrapper.",
+    match = ["codex-harness-github-guard check -- gh pr list", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-github-guard check -- gh pr list"],
+    not_match = ["gh pr comment 1 --body hi"],
+)

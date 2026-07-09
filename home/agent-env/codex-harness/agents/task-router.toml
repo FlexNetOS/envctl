@@ -1,0 +1,8 @@
+name = "task-router"
+description = "classifies work and creates task records; no writes"
+default_profile = "envctl-read-only"
+write_capable = false
+requires_model_router_decision = true
+max_depth = 1
+secrets = "deny"
+ledger_required = true

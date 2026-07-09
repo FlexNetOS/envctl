@@ -1,0 +1,12 @@
+model = "tencent/hy3:free"
+model_provider = "openrouter"
+model_catalog_json = "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/model-catalog/model-catalog.json"
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+default_permissions = ":danger-full-access"
+
+[model_providers.openrouter]
+name = "OpenRouter Responses Beta"
+base_url = "https://openrouter.ai/api/v1"
+env_key = "OPENROUTER_API_KEY"
+wire_api = "responses"

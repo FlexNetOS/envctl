@@ -1,0 +1,8 @@
+name = "verifier"
+description = "cargo/nix/test runner; no edits"
+default_profile = "envctl-verifier"
+write_capable = false
+requires_model_router_decision = true
+max_depth = 1
+secrets = "deny"
+ledger_required = true

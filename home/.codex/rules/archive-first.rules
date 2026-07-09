@@ -1,0 +1,25 @@
+# Existing paths must be archived before modification.
+
+prefix_rule(
+    pattern = [["cp", "mv"]],
+    decision = "prompt",
+    justification = "File replacement requires archive-first proof unless performed by sanctioned harness flow.",
+    match = ["cp new existing", "mv new existing"],
+    not_match = ["codex-harness-runner archive -- existing"],
+)
+
+prefix_rule(
+    pattern = [["truncate", "install"]],
+    decision = "forbidden",
+    justification = "Direct truncation/install replacement bypasses archive-first policy.",
+    match = ["truncate -s 0 file", "install new existing"],
+    not_match = ["cat file"],
+)
+
+prefix_rule(
+    pattern = [["codex-harness-runner", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-runner"], "archive"],
+    decision = "allow",
+    justification = "Sanctioned archive command records archive ledger proof.",
+    match = ["codex-harness-runner archive -- file", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-runner archive -- file"],
+    not_match = ["rm file"],
+)

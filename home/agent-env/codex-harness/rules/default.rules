@@ -1,0 +1,57 @@
+# envctl harness default allow/prompt rules.
+
+prefix_rule(
+    pattern = ["pwd"],
+    decision = "allow",
+    justification = "Read-only current-directory inspection is safe.",
+    match = ["pwd"],
+    not_match = ["pwdx"],
+)
+
+prefix_rule(
+    pattern = [["ls", "cat", "sed", "rg", "find", "jq"]],
+    decision = "allow",
+    justification = "Read-only inspection commands are allowed; hooks still deny secret paths.",
+    match = ["ls -la", "rg harness", "find . -maxdepth 1 -type f", "jq . file.json"],
+    not_match = ["rm file"],
+)
+
+prefix_rule(
+    pattern = ["git", ["status", "log", "diff", "show", "branch", "worktree"]],
+    decision = "allow",
+    justification = "Read-only git inspection is allowed.",
+    match = ["git status --short", "git diff --stat", "git worktree list --porcelain"],
+    not_match = ["git clean -fdx"],
+)
+
+prefix_rule(
+    pattern = ["nix", ["--version", "profile"]],
+    decision = "allow",
+    justification = "Nix version and profile inventory are allowed.",
+    match = ["nix --version", "nix profile list"],
+    not_match = ["nix build .#pkg"],
+)
+
+prefix_rule(
+    pattern = ["codex", ["--version", "features", "execpolicy", "mcp"]],
+    decision = "allow",
+    justification = "Codex read-only diagnostics are allowed.",
+    match = ["codex --version", "codex features list", "codex execpolicy check --pretty -- pwd", "codex mcp list"],
+    not_match = ["codex exec hi"],
+)
+
+prefix_rule(
+    pattern = ["cargo", ["test", "check"]],
+    decision = "allow",
+    justification = "Cargo test/check is allowed inside the approved harness workspace.",
+    match = ["cargo test --all-features", "cargo check --all-targets"],
+    not_match = ["cargo build --release"],
+)
+
+prefix_rule(
+    pattern = ["cargo", "build"],
+    decision = "prompt",
+    justification = "Builds can execute build scripts and require explicit approval.",
+    match = ["cargo build --release"],
+    not_match = ["cargo test"],
+)

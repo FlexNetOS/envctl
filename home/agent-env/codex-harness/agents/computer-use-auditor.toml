@@ -1,0 +1,8 @@
+name = "computer-use-auditor"
+description = "Computer Use feature gate auditor"
+default_profile = "envctl-computer-use"
+write_capable = false
+requires_model_router_decision = true
+max_depth = 1
+secrets = "deny"
+ledger_required = true

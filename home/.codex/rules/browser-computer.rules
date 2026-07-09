@@ -1,0 +1,17 @@
+# Browser and Computer Use require approved profiles and privacy policy.
+
+prefix_rule(
+    pattern = [["codex-harness-browser-computer", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-browser-computer"]],
+    decision = "allow",
+    justification = "Browser/Computer support verification is sanctioned through the harness gate.",
+    match = ["codex-harness-browser-computer verify", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-browser-computer verify"],
+    not_match = ["xdotool click 1"],
+)
+
+prefix_rule(
+    pattern = [["xdotool", "wmctrl", "gnome-screenshot", "grim", "import"]],
+    decision = "prompt",
+    justification = "GUI/screenshot operations require browser/computer-use route and privacy ledger.",
+    match = ["xdotool click 1", "gnome-screenshot -f shot.png"],
+    not_match = ["codex-harness-browser-computer verify"],
+)

@@ -1,0 +1,25 @@
+# Yolo/bypass/full-access flags are disabled unless the harness decision id path is used.
+
+prefix_rule(
+    pattern = ["codex", "--dangerously-bypass-approvals-and-sandbox"],
+    decision = "forbidden",
+    justification = "Codex yolo bypass is forbidden outside approved harness full-access decision flow.",
+    match = ["codex --dangerously-bypass-approvals-and-sandbox"],
+    not_match = ["codex --version"],
+)
+
+prefix_rule(
+    pattern = ["codex", "exec", "--dangerously-bypass-approvals-and-sandbox"],
+    decision = "forbidden",
+    justification = "Nested yolo exec is forbidden.",
+    match = ["codex exec --dangerously-bypass-approvals-and-sandbox hi"],
+    not_match = ["codex exec hi"],
+)
+
+prefix_rule(
+    pattern = ["codex", "-s", "danger-full-access"],
+    decision = "prompt",
+    justification = "danger-full-access requires an explicit harness decision id and status proof.",
+    match = ["codex -s danger-full-access"],
+    not_match = ["codex -s read-only"],
+)

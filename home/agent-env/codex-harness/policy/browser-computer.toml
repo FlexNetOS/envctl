@@ -1,0 +1,9 @@
+version = 1
+browser_use = "enabled-by-user-full-access-grant"
+computer_use = "enabled-by-user-full-access-grant"
+max_browser_computer_agents = 1
+auth_flows = "deny-unless-explicit-task"
+credential_entry = "deny"
+screenshots = "redact-before-ledger"
+downloads = "approved-scratch-only"
+linux_computer_use_caveat = true

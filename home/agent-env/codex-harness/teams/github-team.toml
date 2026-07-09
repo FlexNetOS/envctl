@@ -1,0 +1,6 @@
+allowed_agents = ["git-topologist", "github-controller", "verifier"]
+max_concurrent_agents = 3
+max_write_capable_agents = 0
+max_github_mutating_agents = 1
+default_model_route = "envctl-github-readonly"
+required_proof = ["gh-auth-status", "pr-list", "guard-check"]
