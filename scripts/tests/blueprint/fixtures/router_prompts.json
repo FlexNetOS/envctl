@@ -1,0 +1,16 @@
+{
+  "field": "modelTier",
+  "stability_runs": 3,
+  "cases": [
+    { "prompt": "fix a typo in the README", "expect_tier": "haiku" },
+    { "prompt": "rename the local variable foo to bar", "expect_tier": "haiku" },
+    { "prompt": "add a trailing newline at the end of the file", "expect_tier": "haiku" },
+    { "prompt": "update the copyright year in the license header", "expect_tier": "haiku" },
+    { "prompt": "bump the patch version in Cargo.toml", "expect_tier": "haiku" },
+    { "prompt": "design a Byzantine fault-tolerant consensus protocol for the agent mesh", "expect_tier": "opus" },
+    { "prompt": "prove the min-cut isolation boundary is correct under dynamic edge updates", "expect_tier": "opus" },
+    { "prompt": "architect a two-plane model-routing system with a calibration merge gate", "expect_tier": "opus" },
+    { "prompt": "refactor the async daemon to remove the block_on/spawn_blocking deadlock across the tonic service boundary", "expect_tier": "opus" },
+    { "prompt": "derive the memory-safety invariants for the lock-free trajectory ring buffer", "expect_tier": "opus" }
+  ]
+}
