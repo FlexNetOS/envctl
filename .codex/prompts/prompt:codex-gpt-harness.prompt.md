@@ -90,6 +90,48 @@ Report only actual work:
 
 Do not end with a plan instead of a fix.
 
+ANTI-BLUFF VERIFICATION RULE
+
+The harness verifier must not claim a phase is complete merely because files,
+directories, ledgers, or marker JSON exist.
+
+For each prompt bullet that names a command or drill, record one of these
+states:
+
+- `pass`: the exact command or an explicitly documented equivalent ran and
+  produced successful output.
+- `unsupported`: the current Codex build or platform does not expose that
+  command/feature; include the exact command and error.
+- `not_run`: the command was not run; do not count it as pass.
+- `gap`: the command ran but proved only a placeholder, such as `0 tests`.
+
+`unsupported`, `not_run`, and `gap` are honest evidence states. They are not
+permission failures and must not trigger a return to read-only mode, permission
+requests, PR polling, or new policy-denial loops.
+
+If a verification command exposes a stale config warning, unsupported
+project-local key, missing binary, zero-test filter, or invalid command spelling,
+fix the owning prompt/config/tooling surface archive-first. Do not patch the
+policy engine just to force the old verifier to stay green.
+
+FULL-ACCESS GRANT RECONCILIATION
+
+The operator's full-access grant is execution context for this incident. Do not
+convert it into a failure named `danger_without_decision_id`, `too much access`,
+or `blocked by full access`.
+
+Differentiate:
+
+- `operator_full_access_context`: allowed current execution context for local
+  repair and verification.
+- `agent_bypass_request`: an agent trying to ignore archive-first, secret-deny,
+  GitHub guard, or controlled-runner rules.
+- `dangerous_concrete_action`: a specific secret read, destructive delete,
+  force-push, credential print, or uncontrolled child-agent/background process.
+
+Block or route only the concrete dangerous action. Do not block the whole run
+because the session has full filesystem/network access.
+
 ## ENVCTL / AGENT-ENV / RUST-ONLY / NIX-OWNED / SUBAGENT-MANDATORY
 
 ROLE
@@ -2228,6 +2270,22 @@ Print terminal table:
 
 LAW | Mechanism | File/Config | Command proving it | Result
 
+The `Result` column must be one of:
+
+- `pass`
+- `unsupported`
+- `not_run`
+- `gap`
+- `fail`
+
+Do not collapse `unsupported`, `not_run`, `gap`, or `fail` into `pass`.
+For Rust filter commands, `0 tests` is `gap`, not `pass`.
+For Codex CLI command spelling, use the exact command if supported; otherwise
+run the current-build equivalent and record the original unsupported command
+with its error.
+For full-access permission context, do not create new denial rules or tests that
+reclassify the operator grant itself as a bypass attempt.
+
 Include:
 
 - archive-first.
@@ -2267,6 +2325,9 @@ Include:
 - cross-platform process strategy.
 
 Do not claim complete if any command failed.
+Do not claim complete if any required command is `unsupported`, `not_run`, or
+`gap` unless the final answer explicitly says which bullets remain unsupported
+or unimplemented and why.
 
 ──────────────────────────────────────────────────────────────────────────────
 FINAL OPERATIONAL STYLE
