@@ -10,7 +10,7 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 fn exists(path: impl AsRef<Path>) -> bool {
     path.as_ref().exists()
@@ -50,23 +50,99 @@ fn phase_row(phase: u8, title: &str, prompt_anchor: &str, evidence: &str, result
     })
 }
 
+fn prompt_sha_and_lines(path: &Path) -> Option<(String, usize)> {
+    let bytes = fs::read(path).ok()?;
+    let digest = Sha256::digest(&bytes);
+    let line_count = String::from_utf8_lossy(&bytes).lines().count();
+    Some((hex::encode(digest), line_count))
+}
+
+fn prompt_probe(path: &Path, minimum_lines: usize) -> Value {
+    match prompt_sha_and_lines(path) {
+        Some((sha256, line_count)) => json!({
+            "path": path.display().to_string(),
+            "sha256": sha256,
+            "line_count": line_count,
+            "loaded": true,
+            "minimum_lines": minimum_lines,
+            "accepted": line_count >= minimum_lines,
+        }),
+        None => json!({
+            "path": path.display().to_string(),
+            "sha256": Value::Null,
+            "line_count": 0,
+            "loaded": false,
+            "minimum_lines": minimum_lines,
+            "accepted": false,
+        }),
+    }
+}
+
+fn probe_accepted(probe: &Value) -> bool {
+    probe
+        .get("accepted")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+}
+
+fn probe_loaded(probe: &Value) -> bool {
+    probe
+        .get("loaded")
+        .and_then(Value::as_bool)
+        .unwrap_or(false)
+}
+
+fn probe_line_count(probe: &Value) -> usize {
+    probe
+        .get("line_count")
+        .and_then(Value::as_u64)
+        .unwrap_or(0) as usize
+}
+
+fn probe_sha(probe: &Value) -> Option<String> {
+    probe
+        .get("sha256")
+        .and_then(Value::as_str)
+        .map(ToOwned::to_owned)
+}
+
 fn main() -> Result<()> {
     let harness = codex_harness_dir();
     let project = project_root();
     let audit = audit_value();
     let nix = nix_verify_value();
     let envctl_root = project.parent().unwrap_or(&project);
-    let prompt_path = Path::new("/home/flexnetos/prompts/CODEX-GPT-HARNESS.prompt.md");
-    let prompt_bytes = fs::read(prompt_path).ok();
-    let prompt_sha256 = prompt_bytes.as_ref().map(|bytes| {
-        let digest = Sha256::digest(bytes);
-        hex::encode(digest)
-    });
-    let prompt_line_count = prompt_bytes
-        .as_ref()
-        .map(|bytes| String::from_utf8_lossy(bytes).lines().count())
-        .unwrap_or(0);
-    let prompt_reloaded = prompt_sha256.is_some() && prompt_line_count >= 2200;
+
+    let legacy_prompt_path = PathBuf::from("/home/flexnetos/prompts/CODEX-GPT-HARNESS.prompt.md");
+    let repo_prompt_path = envctl_root.join(".codex/prompts/prompt:codex-gpt-harness.prompt.md");
+    let recovery_prompt_path = envctl_root.join(".codex/prompts/prompt:codex-gpt-harness-v3-autonomous.prompt.md");
+
+    let legacy_prompt = prompt_probe(&legacy_prompt_path, 2200);
+    let repo_prompt = prompt_probe(&repo_prompt_path, 1000);
+    let recovery_prompt = prompt_probe(&recovery_prompt_path, 80);
+    let recovery_wrapper_loaded = probe_loaded(&recovery_prompt);
+    let prompt_control_ready =
+        probe_accepted(&legacy_prompt) || probe_accepted(&repo_prompt) || probe_accepted(&recovery_prompt);
+    let selected_prompt_path = if probe_accepted(&legacy_prompt) {
+        legacy_prompt_path.clone()
+    } else if probe_accepted(&repo_prompt) {
+        repo_prompt_path.clone()
+    } else if probe_accepted(&recovery_prompt) {
+        recovery_prompt_path.clone()
+    } else {
+        legacy_prompt_path.clone()
+    };
+    let selected_prompt_probe = if selected_prompt_path == legacy_prompt_path {
+        legacy_prompt.clone()
+    } else if selected_prompt_path == repo_prompt_path {
+        repo_prompt.clone()
+    } else {
+        recovery_prompt.clone()
+    };
+    let prompt_sha256 = probe_sha(&selected_prompt_probe);
+    let prompt_line_count = probe_line_count(&selected_prompt_probe);
+    let prompt_reloaded = prompt_control_ready;
+
     let has_openrouter_key = env::var_os("OPENROUTER_API_KEY")
         .map(|v| !v.is_empty())
         .unwrap_or(false);
@@ -92,16 +168,15 @@ fn main() -> Result<()> {
         .get("account_policy_blocked")
         .and_then(Value::as_bool)
         .unwrap_or(false);
-    let openrouter_result =
-        if openrouter_key_valid && openrouter_generation_ok && openrouter_model_ok {
-            "pass"
-        } else if openrouter_key_valid && openrouter_policy_blocked {
-            "partial-auth-valid-account-policy-blocked"
-        } else if has_openrouter_key {
-            "partial-auth-env-present-no-successful-proof"
-        } else {
-            "partial-missing-OPENROUTER_API_KEY"
-        };
+    let openrouter_result = if openrouter_key_valid && openrouter_generation_ok && openrouter_model_ok {
+        "pass"
+    } else if openrouter_key_valid && openrouter_policy_blocked {
+        "partial-auth-valid-account-policy-blocked"
+    } else if has_openrouter_key {
+        "partial-auth-env-present-no-successful-proof"
+    } else {
+        "partial-missing-OPENROUTER_API_KEY"
+    };
     let model_access_proof_path = state_dir().join("model-access-proof.json");
     let model_access_proof: Value = fs::read_to_string(&model_access_proof_path)
         .ok()
@@ -120,12 +195,19 @@ fn main() -> Result<()> {
 
     let matrix = vec![
         row(
+            "Phase -1 deadlock breaker",
+            "v3 autonomous recovery wrapper can take control when shell/sandbox or approval gates deadlock",
+            recovery_prompt_path.display().to_string(),
+            "fetch .codex/prompts/prompt:codex-gpt-harness-v3-autonomous.prompt.md; codex-harness-final-verify",
+            pass_fail(recovery_wrapper_loaded),
+        ),
+        row(
             "Phase 0 research audit",
-            "original prompt reloaded plus read-only research ledger and Phase 1 plan draft",
-            prompt_path.display().to_string(),
-            "sha256sum CODEX-GPT-HARNESS.prompt.md; inspect ledger/research.jsonl; PHASE1_PLAN_DRAFT.md",
+            "original prompt or v3 wrapper loaded plus read-only research ledger and Phase 1 plan draft",
+            selected_prompt_path.display().to_string(),
+            "sha256 selected prompt; inspect ledger/research.jsonl; PHASE1_PLAN_DRAFT.md",
             pass_fail(
-                prompt_reloaded
+                prompt_control_ready
                     && exists(harness.join("ledger/research.jsonl"))
                     && exists(harness.join("PHASE1_PLAN_DRAFT.md")),
             ),
@@ -406,9 +488,9 @@ fn main() -> Result<()> {
         phase_row(
             0,
             "Deep research + read-only audit gate",
-            "PHASE 0 lines 180-758",
-            "prompt sha256, research ledger, PHASE1 plan draft",
-            pass_fail(row_pass("Phase 0 research audit")),
+            "PHASE -1/0 control wrapper plus PHASE 0 lines 180-758",
+            "selected prompt sha256, recovery wrapper, research ledger, PHASE1 plan draft",
+            pass_fail(row_pass("Phase -1 deadlock breaker") && row_pass("Phase 0 research audit")),
         ),
         phase_row(
             1,
@@ -558,10 +640,13 @@ fn main() -> Result<()> {
         "incomplete": incomplete,
         "phase_incomplete": phase_incomplete,
         "prompt": {
-            "path": prompt_path,
+            "selected_path": selected_prompt_path.display().to_string(),
             "sha256": prompt_sha256,
             "line_count": prompt_line_count,
             "reloaded": prompt_reloaded,
+            "legacy": legacy_prompt,
+            "repo": repo_prompt,
+            "recovery_wrapper": recovery_prompt,
         },
         "phase_matrix": phase_matrix,
         "matrix": matrix,
