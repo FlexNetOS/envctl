@@ -62,6 +62,39 @@ Default autonomous decision ids:
 - `AUTO-NO-SECRETS`: deny secret reads, prints, hashes, or summaries;
 - `AUTO-NO-YOLO`: deny yolo/danger/full-access.
 
+## Operator permission grant reconciliation
+
+Operator-granted filesystem, network, or sandbox permissions are not a failure
+condition by themselves.
+
+Do not report "blocked because too much access was granted." Treat an expanded
+permission profile as execution context and continue with the narrowest safe
+operation available.
+
+Differentiate these cases:
+
+1. `operator_grant`: the host or operator made more paths, network, or write
+   roots available. This is allowed execution context. Use it to make progress.
+2. `agent_bypass_request`: the agent asks to bypass approvals, sandboxing,
+   hooks, policy, or secret controls. This remains forbidden unless a specific
+   break-glass decision id covers that action.
+3. `dangerous_command`: a concrete command would destroy data, read secrets,
+   force-push, install Codex outside Nix ownership, or run uncontrolled
+   background/model-provider sessions. Block or route it through the harness.
+
+When broad access is available, the conductor must:
+
+- keep secret-deny rules active;
+- archive before modifying existing files;
+- prefer additive new files over rewrites;
+- run the requested work instead of stopping at a safety lecture;
+- record any residual risk as a ledger row or final note, not as a reason to
+  abandon the task.
+
+A permission grant only becomes a block if the next required action is itself
+forbidden, such as reading a denied secret path, deleting user data, or
+installing Codex through a non-Nix owner.
+
 ## Bootstrap fallback
 
 Subagent-mandatory execution starts after containment and the model-router gate
