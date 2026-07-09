@@ -2,6 +2,9 @@
 # guard-write-paths.sh — PreToolUse[Edit|Write|NotebookEdit]. Protected-path gate.
 # Protects: ledger + harness runtime state, ~/.claude/archive, and the LIVE harness
 # source (envctl main checkout). Sanctioned edit flow = the envctl WORKTREE.
+# Exemption (operator decision 2026-07-09): $STATE_DIR/memory/*.md is the harness
+# file-based memory contract — Write/Edit allowed there so durable operator
+# directives can be saved. Ledger and the rest of STATE_DIR stay protected.
 set -u
 . "$(dirname "$0")/lib.sh"
 
@@ -16,6 +19,9 @@ fi
 RES=$(readlink -f "$FP" 2>/dev/null || printf '%s' "$FP")
 
 case "$RES" in
+  "$STATE_DIR"/memory/*.md)
+    # Memory contract carve-out: one fact per markdown file, index in MEMORY.md.
+    exit 0 ;;
   "$LEDGER_DIR"/*|"$STATE_DIR"/*)
     ledger "guard.deny" "\"rule\":\"protected-runtime\",\"path\":\"$(json_escape "$RES")\""
     deny "Protected harness runtime state ($RES). The ledger is append-only via hooks; never edited." ;;

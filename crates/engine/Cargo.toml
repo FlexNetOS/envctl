@@ -44,3 +44,20 @@ redb = { workspace = true }
 # keeping its own supervision (setsid/timeout/streaming/tee). If loop_lib lacks a needed API,
 # upgrade loop_lib first — never bypass or remove it from envctl.
 loop_lib = { path = "../../../loop_lib" }
+# RuVector system (slice 0): optional, feature-gated — default builds unchanged. The semantic
+# store client layer for the Database-Hosted Codebase (Gemini-session architecture): vectors +
+# HNSW (ruvector-core), edge LLM runtime (ruvllm), AgentDB .rvf store (rvf-runtime/-types).
+# Registry pins only (see workspace table). Enable with `--features ruvector`.
+ruvector-core = { workspace = true, optional = true }
+ruvllm = { workspace = true, optional = true }
+rvf-runtime = { workspace = true, optional = true }
+rvf-types = { workspace = true, optional = true }
+# pgrx-based Postgres extension crate — heaviest, needs pg headers; its own feature.
+ruvector-postgres = { workspace = true, optional = true }
+
+[features]
+default = []
+# Client-side RuVector stack (pure-Rust default features; no-c.sh proven).
+ruvector = ["dep:ruvector-core", "dep:ruvllm", "dep:rvf-runtime", "dep:rvf-types"]
+# Server-side extension crate on top (pgrx; requires pg headers at build time).
+ruvector-pg = ["ruvector", "dep:ruvector-postgres"]
