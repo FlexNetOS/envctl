@@ -12,11 +12,20 @@
 #   npm install / npm ci / pnpm install / yarn        -> bun install
 #   npm install X / npm i X / npm add X / pnpm add X / yarn add X -> bun add X
 #   npm run S / pnpm run S / pnpm S / yarn S           -> bun run S   (NOT bunx: proven
-#                                                        `bunx S` fails on scripts)
-#   npx X / npm exec X / pnpm dlx X / pnpm exec X / yarn dlx X -> bunx X  (package binary)
-# Any OTHER npm/pnpm/yarn subcommand (ls, view, publish, why, ...) has no clean bun
-# rewrite and is DENIED with guidance (pure bun-only; no runtime escape hatch —
-# disable this hook for a genuine npm-only op).
+#                                                        `bunx S` fetches+runs an UNRELATED
+#                                                        registry package named S)
+#   npm test/t/start/stop/restart (lifecycle)          -> bun run <script>  (NOT `bun test`,
+#                                                        which is bun's own jest-like runner)
+#   npx X / npm exec X / pnpm dlx X / pnpm exec X / yarn dlx X / yarn exec X -> bunx X
+#   npm ci                                             -> bun install --frozen-lockfile
+#   uninstall/remove -> bun remove ; update/up/upgrade -> bun update ; outdated -> bun outdated
+#   audit -> bun audit ; why/explain -> bun why ; view/info/show -> bun info ; ls -> bun pm ls
+#   link/unlink -> bun link/unlink ; create/init -> bun create / bun init
+#   yarn global add/remove X -> bun add/remove -g X
+# `npm publish` is NEVER auto-rewritten (registry publish must be an explicit, humanly
+# approved `bun publish`). Any remaining pm subcommand has no clean bun rewrite and is
+# DENIED with guidance (pure bun-only; no runtime escape hatch — disable this hook for
+# a genuine npm-only op).
 #
 # MODE below is set ONCE at install time from the updatedInput smoke test:
 #   rewrite -> transparently swap the command (hookSpecificOutput.updatedInput)
@@ -105,19 +114,21 @@ def map_pm(toks):
 
     if pm == "npx":
         if not rest: return ("deny", "bare `npx` with no package")
-        return ("rewrite", ["bunx"] + rest)
+        # bunx always auto-installs; npx's -y/--yes has no bunx flag and would error
+        rest = [t for t in rest if t not in ("-y", "--yes")]
+        return ("rewrite", ["bunx"] + rest) if rest else ("deny", "bare `npx` with no package")
 
     sub = rest[0] if rest else ""
     args = rest[1:]
 
     # package-binary execution (npx-style) -> bunx  (bunx runs an installed/fetched
     # binary; this is the ONE place bunx is correct — NOT for package.json scripts).
-    if pm in ("pnpm",) and sub in ("dlx", "exec"):
-        return ("rewrite", ["bunx"] + args) if args else ("deny", f"pnpm {sub} with no package")
-    if pm == "yarn" and sub == "dlx":
-        return ("rewrite", ["bunx"] + args) if args else ("deny", "yarn dlx with no package")
-    if pm == "npm" and sub == "exec":
-        return ("rewrite", ["bunx"] + args) if args else ("deny", "npm exec with no package")
+    if (pm == "pnpm" and sub in ("dlx", "exec")) or \
+       (pm == "yarn" and sub in ("dlx", "exec")) or \
+       (pm == "npm" and sub == "exec"):
+        if args and args[0] == "--":   # `npm exec -- foo` separator has no bunx meaning
+            args = args[1:]
+        return ("rewrite", ["bunx"] + args) if args else ("deny", f"{pm} {sub} with no package")
 
     # bare `pnpm` / `yarn` (no sub) -> install
     if pm in ("pnpm", "yarn") and not rest:
@@ -125,9 +136,60 @@ def map_pm(toks):
 
     if sub in ("install", "i", "add", "ci"):
         pkgs = nonflags(args)
-        if sub == "ci" or (sub in ("install", "i") and not pkgs):
+        if sub == "ci":
+            # npm ci = clean install strictly from the lockfile (bun --help: install
+            # --frozen-lockfile "Disallow changes to lockfile"; `bun ci` is its alias)
+            return ("rewrite", ["bun", "install", "--frozen-lockfile"] + mapflags(args))
+        if sub in ("install", "i") and not pkgs:
             return ("rewrite", ["bun", "install"] + mapflags(args))
         return ("rewrite", ["bun", "add"] + mapflags(args))
+
+    # npm lifecycle shortcuts run package.json SCRIPTS -> `bun run <script>`.
+    # NEVER `bun test`: that is bun's own jest-like test runner, not the script.
+    if sub in ("test", "t", "tst"):
+        return ("rewrite", ["bun", "run", "test"] + args)
+    if sub in ("start", "stop", "restart"):
+        return ("rewrite", ["bun", "run", sub] + args)
+
+    # dependency management verbs with native bun equivalents (bun --help 1.3.13)
+    if sub in ("uninstall", "remove", "rm", "un"):
+        return ("rewrite", ["bun", "remove"] + mapflags(args)) if nonflags(args) else ("deny", f"{pm} {sub} with no package")
+    if sub in ("update", "up", "upgrade"):
+        return ("rewrite", ["bun", "update"] + mapflags(args))
+    if sub == "outdated":
+        return ("rewrite", ["bun", "outdated"] + args)
+    if sub == "audit":
+        # bare audit maps cleanly; `npm audit fix` has no bun form (bun audit only reports)
+        if nonflags(args):
+            return ("deny", f"`{pm} audit {' '.join(args)}` — bun audit only reports; use `bun audit` then `bun update`")
+        return ("rewrite", ["bun", "audit"] + args)
+    if sub in ("why", "explain"):
+        return ("rewrite", ["bun", "why"] + args) if nonflags(args) else ("deny", f"{pm} {sub} needs a package")
+    if sub in ("view", "info", "show", "v"):
+        return ("rewrite", ["bun", "info"] + args) if nonflags(args) else ("deny", f"{pm} {sub} needs a package")
+    if sub in ("ls", "list", "la", "ll"):
+        # bare tree listing only; filtered/flagged forms have no clean bun mapping
+        if args:
+            return ("deny", f"`{pm} {sub} {' '.join(args)}` — use `bun pm ls` (full tree) or `bun why <pkg>` (one package)")
+        return ("rewrite", ["bun", "pm", "ls"])
+    if sub in ("link", "unlink"):
+        return ("rewrite", ["bun", sub] + args)
+    if sub == "create":
+        return ("rewrite", ["bun", "create"] + args) if args else ("deny", f"{pm} create needs a template")
+    if sub == "init":
+        # bare `npm init [-y]` scaffolds -> bun init; `npm init <tmpl>` == npm create
+        return ("rewrite", ["bun", "create"] + args) if nonflags(args) else ("rewrite", ["bun", "init"] + args)
+    if pm == "yarn" and sub == "global" and args:
+        gsub, gargs = args[0], args[1:]
+        if gsub == "add" and nonflags(gargs):
+            return ("rewrite", ["bun", "add", "-g"] + mapflags(gargs))
+        if gsub in ("remove", "rm") and nonflags(gargs):
+            return ("rewrite", ["bun", "remove", "-g"] + gargs)
+        return ("deny", f"`yarn global {gsub}`")
+    if sub == "publish":
+        # bun publish EXISTS, but a registry publish must never be transparently
+        # auto-allowed — require an explicit, humanly approved `bun publish`.
+        return ("deny", f"`{pm} publish` — run `bun publish` explicitly (never auto-rewritten)")
 
     # package.json SCRIPT execution -> `bun run <script>`. `bunx <script>` is WRONG
     # here (proven: it tries to fetch a package named <script> and fails), so scripts
@@ -215,7 +277,7 @@ case "$KIND" in
     exit 0 ;;
   DENY)
     ledger "bun.deny" "\"sub\":\"$(json_escape "$PAYLOAD")\",\"cmd\":\"$(json_escape "$INPUT")\""
-    deny "bun-only toolchain (owner directive): $PAYLOAD has no transparent bun rewrite. Use the bun/bunx equivalent, or if this is a genuine npm-only operation (native node-gyp build) disable this hook for the one command." ;;
+    deny "bun-only toolchain (owner directive): $PAYLOAD. No transparent rewrite applied — use the bun/bunx equivalent, or if this is a genuine npm-only operation (native node-gyp build) disable this hook for the one command." ;;
   ALLOW)
     # Single-segment pm command: safe to transparently rewrite + auto-allow.
     if [ "$MODE" = "rewrite" ]; then
