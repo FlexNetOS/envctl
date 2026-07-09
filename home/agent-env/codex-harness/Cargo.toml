@@ -39,6 +39,14 @@ name = "codex-harness-jsonl"
 path = "src/bin/codex-harness-jsonl.rs"
 
 [[bin]]
+name = "codex-harness-db"
+path = "src/bin/codex-harness-db.rs"
+
+[[bin]]
+name = "codex-harness-final-verify"
+path = "src/bin/codex-harness-final-verify.rs"
+
+[[bin]]
 name = "codex-harness-cargo-fmt"
 path = "src/bin/codex-harness-cargo-fmt.rs"
 
@@ -46,11 +54,54 @@ path = "src/bin/codex-harness-cargo-fmt.rs"
 name = "codex-harness-cargo-clippy"
 path = "src/bin/codex-harness-cargo-clippy.rs"
 
+
+[[bin]]
+name = "codex-harness-model-router"
+path = "src/bin/codex-harness-model-router.rs"
+
+[[bin]]
+name = "codex-harness-policy"
+path = "src/bin/codex-harness-policy.rs"
+
+[[bin]]
+name = "codex-harness-index"
+path = "src/bin/codex-harness-index.rs"
+
+[[bin]]
+name = "codex-harness-github-guard"
+path = "src/bin/codex-harness-github-guard.rs"
+
+[[bin]]
+name = "codex-harness-memory-audit"
+path = "src/bin/codex-harness-memory-audit.rs"
+
+[[bin]]
+name = "codex-harness-memory-export-redacted"
+path = "src/bin/codex-harness-memory-export-redacted.rs"
+
+[[bin]]
+name = "codex-harness-memory-disable-plan"
+path = "src/bin/codex-harness-memory-disable-plan.rs"
+
+[[bin]]
+name = "codex-harness-openrouter-shim"
+path = "src/bin/codex-harness-openrouter-shim.rs"
+
+[[bin]]
+name = "codex-harness-claude-bridge"
+path = "src/bin/codex-harness-claude-bridge.rs"
+
+[[bin]]
+name = "codex-harness-browser-computer"
+path = "src/bin/codex-harness-browser-computer.rs"
+
 [dependencies]
 anyhow = "1.0.103"
 hex = "0.4.3"
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.150"
+redb = "2.6.3"
+rusqlite = { version = "0.32.1", features = ["bundled"] }
 sha2 = "0.10.9"
 toml = "0.8.23"
 

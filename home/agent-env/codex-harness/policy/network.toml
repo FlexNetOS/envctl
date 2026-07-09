@@ -1,0 +1,11 @@
+version = 1
+default = "disabled"
+[profiles.research]
+domains = ["platform.openai.com", "developers.openai.com", "docs.anthropic.com", "openrouter.ai", "docs.github.com"]
+[profiles.openrouter]
+domains = ["openrouter.ai"]
+requires_env = "OPENROUTER_API_KEY"
+[profiles.github]
+domains = ["github.com", "api.github.com"]
+[profiles.local_models]
+domains = ["localhost", "127.0.0.1", "::1"]

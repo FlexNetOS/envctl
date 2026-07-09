@@ -1,0 +1,8 @@
+name = "implementer"
+description = "workspace edits; one foreground writer only"
+default_profile = "envctl-implementer"
+write_capable = true
+requires_model_router_decision = true
+max_depth = 1
+secrets = "deny"
+ledger_required = true

@@ -2,8 +2,9 @@
 
 use anyhow::{anyhow, Result};
 use codex_harness::{
-    append_ledger, archive_path, policy_decision, restore_archive, run_codex_exec, run_foreground,
-    run_ollama, spawn_codex_exec, spawn_ollama_run, spawn_supervised,
+    append_ledger, archive_path, browser_computer_value, claude_bridge_value_with_auth,
+    grant_full_access, openrouter_probe_value, policy_decision, restore_archive, run_codex_exec,
+    run_foreground, run_ollama, spawn_codex_exec, spawn_ollama_run, spawn_supervised,
 };
 use serde_json::json;
 use std::env;
@@ -20,10 +21,77 @@ fn split_after_double_dash(args: &[String]) -> Result<(Vec<String>, Vec<String>)
 fn main() -> Result<()> {
     let args = env::args().skip(1).collect::<Vec<_>>();
     let Some(cmd) = args.first().map(String::as_str) else {
-        eprintln!("usage: codex-harness-runner <policy-check|run|spawn|archive|restore|ledger-append|codex-exec|spawn-codex-exec|ollama-run|spawn-ollama-run> [opts] -- <argv...>");
+        eprintln!("usage: codex-harness-runner <policy-check|run|spawn|archive|restore|ledger-append|grant-full-access|openrouter-probe|claude-bridge|browser-computer|codex-exec|spawn-codex-exec|ollama-run|spawn-ollama-run> [opts] -- <argv...>");
         std::process::exit(2);
     };
     match cmd {
+        "grant-full-access" => {
+            let reason = if args.len() > 1 {
+                args[1..].join(" ")
+            } else {
+                "operator requested full access for all phases".to_string()
+            };
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&grant_full_access(&reason)?)?
+            );
+        }
+        "openrouter-probe" => {
+            let mut model = None::<String>;
+            let mut prompt = None::<String>;
+            let mut i = 1usize;
+            while i < args.len() {
+                match args[i].as_str() {
+                    "--model" => {
+                        i += 1;
+                        model = Some(
+                            args.get(i)
+                                .ok_or_else(|| anyhow!("--model missing value"))?
+                                .clone(),
+                        );
+                    }
+                    "--prompt" => {
+                        i += 1;
+                        prompt = Some(
+                            args.get(i)
+                                .ok_or_else(|| anyhow!("--prompt missing value"))?
+                                .clone(),
+                        );
+                    }
+                    _ => {}
+                }
+                i += 1;
+            }
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&openrouter_probe_value(
+                    model.as_deref(),
+                    prompt.as_deref()
+                )?)?
+            );
+        }
+        "claude-bridge" => {
+            let execute = args.iter().any(|a| a == "--execute");
+            let allow_default_auth = args.iter().any(|a| a == "--allow-default-auth");
+            let prompt = args
+                .windows(2)
+                .find(|pair| pair[0] == "--prompt")
+                .map(|pair| pair[1].clone());
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&claude_bridge_value_with_auth(
+                    prompt.as_deref(),
+                    execute,
+                    allow_default_auth
+                )?)?
+            );
+        }
+        "browser-computer" => {
+            println!(
+                "{}",
+                serde_json::to_string_pretty(&browser_computer_value()?)?
+            );
+        }
         "policy-check" => {
             let (_, argv) = split_after_double_dash(&args[1..])?;
             println!("{}", serde_json::to_string_pretty(&policy_decision(&argv))?);
@@ -130,6 +198,21 @@ fn main() -> Result<()> {
                 "budget.jsonl",
                 "decisions.jsonl",
                 "research.jsonl",
+                "rules.jsonl",
+                "policy.jsonl",
+                "soul.jsonl",
+                "subagents.jsonl",
+                "counters.jsonl",
+                "model_router.jsonl",
+                "model-routing.jsonl",
+                "network.jsonl",
+                "browser-computer.jsonl",
+                "plugins.jsonl",
+                "mcp.jsonl",
+                "bad-behavior.jsonl",
+                "index.jsonl",
+                "github.jsonl",
+                "memory.jsonl",
             ];
             if !allowed.contains(&ledger.as_str()) {
                 return Err(anyhow!("unsupported ledger name"));

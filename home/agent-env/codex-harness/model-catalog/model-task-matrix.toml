@@ -1,0 +1,27 @@
+[task.openrouter]
+model = "openai/gpt-5.2"
+provider = "openrouter"
+profile = "envctl-openrouter-gpt"
+network_required = true
+privacy_class = "external-provider"
+
+[task.claude_bridge]
+model = "claude-sonnet-5"
+provider = "claude-bridge"
+profile = "envctl-claude-bridge"
+network_required = true
+privacy_class = "external-provider"
+
+[task.browser_computer]
+model = "gpt-5.5"
+provider = "openai"
+profile = "envctl-browser-computer"
+network_required = true
+privacy_class = "screenshot-risk"
+
+[task.github]
+model = "gpt-5.5"
+provider = "openai"
+profile = "envctl-github-full-access"
+network_required = true
+privacy_class = "repo-mutation"

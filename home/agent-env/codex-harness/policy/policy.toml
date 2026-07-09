@@ -1,0 +1,8 @@
+version = 1
+default_decision = "deny"
+archive_first = true
+full_access_decision_id = "USER-FULL-ACCESS-20260709"
+secrets = "deny"
+uncontrolled_background = "deny"
+nested_agents_outside_runner = "deny"
+ledger_db_direct_write = "deny"

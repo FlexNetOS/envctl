@@ -1,0 +1,5 @@
+allowed_agents = ["security-reviewer", "policy-engineer", "soul-curator"]
+max_concurrent_agents = 3
+max_write_capable_agents = 1
+default_model_route = "envctl-verifier"
+required_proof = ["policy", "ledger", "denial-test"]

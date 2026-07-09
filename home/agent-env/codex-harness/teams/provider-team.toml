@@ -1,0 +1,7 @@
+allowed_agents = ["provider-researcher", "openrouter-runner", "claude-bridge-runner", "local-model-runner"]
+max_concurrent_agents = 4
+max_write_capable_agents = 0
+max_openrouter_agents = 2
+max_claude_bridge_agents = 1
+default_model_route = "envctl-openrouter-gpt"
+required_proof = ["model-router", "network-ledger", "no-secret-output"]

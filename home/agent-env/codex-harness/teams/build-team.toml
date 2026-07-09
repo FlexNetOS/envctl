@@ -1,0 +1,5 @@
+allowed_agents = ["implementer", "rust-harness-engineer", "verifier"]
+max_concurrent_agents = 3
+max_write_capable_agents = 1
+default_model_route = "envctl-implementer"
+required_proof = ["archive", "fmt", "clippy", "tests"]

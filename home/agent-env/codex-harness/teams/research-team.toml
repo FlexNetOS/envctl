@@ -1,0 +1,5 @@
+allowed_agents = ["docs-researcher", "provider-researcher", "browser-use-auditor", "computer-use-auditor"]
+max_concurrent_agents = 4
+max_write_capable_agents = 0
+default_model_route = "envctl-research"
+required_proof = ["source", "command", "ledger"]

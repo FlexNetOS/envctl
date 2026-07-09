@@ -1,0 +1,28 @@
+[openai]
+enabled = true
+provider_id = "openai"
+wire_api = "responses"
+primary_model = "gpt-5.5"
+
+[openrouter]
+enabled = true
+provider_id = "openrouter"
+base_url = "https://openrouter.ai/api/v1"
+responses_url = "https://openrouter.ai/api/v1/responses"
+models_url = "https://openrouter.ai/api/v1/models"
+env_key = "OPENROUTER_API_KEY"
+wire_api = "responses"
+direct_responses_provider = "enabled_by_user_grant_but_auth_proof_requires_env_key"
+shim = "codex-harness-openrouter-shim"
+
+[claude_bridge]
+enabled = true
+mode = "external_cli_bridge"
+command = "claude --bare --print --output-format json --permission-mode plan --no-session-persistence"
+max_concurrent = 1
+secret_values_in_logs = false
+
+[local_ollama]
+enabled = true
+host = "127.0.0.1"
+port = 11434

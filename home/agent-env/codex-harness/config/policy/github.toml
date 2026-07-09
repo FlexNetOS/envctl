@@ -1,0 +1,6 @@
+default = "full-access"
+decision_id = "USER-FULL-ACCESS-20260709"
+full_access = true
+forbid_token_printing = true
+wrapper = "codex-harness-github-guard"
+allowed_mutations = ["pr", "issue", "workflow", "run", "release", "branch", "ref", "merge"]

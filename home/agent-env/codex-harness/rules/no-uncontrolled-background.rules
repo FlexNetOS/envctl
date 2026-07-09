@@ -1,0 +1,17 @@
+# Uncontrolled background/process managers are forbidden outside the harness runner.
+
+prefix_rule(
+    pattern = [["tmux", "screen", "zellij", "nohup", "disown", "setsid"]],
+    decision = "forbidden",
+    justification = "Uncontrolled background/session tools must go through codex-harness-runner.",
+    match = ["tmux new -d sleep 1", "screen -dmS x sleep 1", "zellij --session x", "nohup sleep 1", "setsid sleep 1"],
+    not_match = ["codex-harness-runner spawn -- sleep 1"],
+)
+
+prefix_rule(
+    pattern = ["systemctl", ["start", "restart", "stop", "enable", "disable"]],
+    decision = "prompt",
+    justification = "Service lifecycle changes require explicit foreground approval and owner proof.",
+    match = ["systemctl restart foo", "systemctl enable foo"],
+    not_match = ["systemctl status foo"],
+)

@@ -1,0 +1,25 @@
+# Provider calls must go through model-router and provider wrappers.
+
+prefix_rule(
+    pattern = [["codex-harness-model-router", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-model-router"]],
+    decision = "allow",
+    justification = "Model-router is the sanctioned provider routing path.",
+    match = ["codex-harness-model-router sample tasks", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-model-router sample tasks"],
+    not_match = ["curl https://openrouter.ai/api/v1/responses"],
+)
+
+prefix_rule(
+    pattern = [["codex-harness-openrouter-shim", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-openrouter-shim"]],
+    decision = "allow",
+    justification = "OpenRouter probes run through the redacting harness shim.",
+    match = ["codex-harness-openrouter-shim probe", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-openrouter-shim probe"],
+    not_match = ["curl https://openrouter.ai/api/v1/responses"],
+)
+
+prefix_rule(
+    pattern = [["codex-harness-claude-bridge", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-claude-bridge"]],
+    decision = "allow",
+    justification = "Claude execution runs through the supervised bridge wrapper.",
+    match = ["codex-harness-claude-bridge inventory", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-claude-bridge inventory"],
+    not_match = ["claude --print hi"],
+)
