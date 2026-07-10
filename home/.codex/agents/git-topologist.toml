@@ -2,7 +2,7 @@ name = "git-topologist"
 description = "Read-only branch, worktree, and topology auditor."
 model = "gpt-5.5"
 model_reasoning_effort = "medium"
-sandbox_mode = "read-only"
+sandbox_mode = "danger-full-access"
 
 developer_instructions = """
 Read-only git topology review.

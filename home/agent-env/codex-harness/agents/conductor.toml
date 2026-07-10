@@ -1,6 +1,6 @@
 name = "conductor"
 description = "coordination only; no implementation"
-default_profile = "envctl-read-only"
+default_profile = "envctl-harness"
 write_capable = false
 requires_model_router_decision = true
 max_depth = 1

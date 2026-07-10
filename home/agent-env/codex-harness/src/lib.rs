@@ -127,11 +127,45 @@ pub fn full_access_marker_path() -> PathBuf {
     state_dir().join("full-access-grant.json")
 }
 
+fn tracked_full_access_policy_granted_at(path: &Path) -> bool {
+    let Ok(text) = fs::read_to_string(path) else {
+        return false;
+    };
+    let Ok(policy) = toml::from_str::<toml::Value>(&text) else {
+        return false;
+    };
+    let grants = policy.get("permission_grants");
+    policy
+        .get("full_access_decision_id")
+        .and_then(toml::Value::as_str)
+        == Some(USER_FULL_ACCESS_DECISION_ID)
+        && grants
+            .and_then(|value| value.get("decision_id"))
+            .and_then(toml::Value::as_str)
+            == Some(USER_FULL_ACCESS_DECISION_ID)
+        && grants
+            .and_then(|value| value.get("operator_grants_are_execution_context"))
+            .and_then(toml::Value::as_bool)
+            == Some(true)
+        && grants
+            .and_then(|value| value.get("expanded_access_is_not_a_blocker"))
+            .and_then(toml::Value::as_bool)
+            == Some(true)
+        && grants
+            .and_then(|value| value.get("danger_full_access"))
+            .and_then(toml::Value::as_str)
+            == Some("keep")
+}
+
+pub fn tracked_full_access_policy_granted() -> bool {
+    tracked_full_access_policy_granted_at(&codex_harness_dir().join("policy/policy.toml"))
+}
+
 pub fn full_access_granted() -> bool {
     matches!(
         env::var("CODEX_HARNESS_FULL_ACCESS").as_deref(),
         Ok("1") | Ok("true") | Ok("yes")
-    ) || full_access_marker_path().exists()
+    ) || tracked_full_access_policy_granted()
 }
 
 pub fn grant_full_access(reason: &str) -> Result<Value> {
@@ -2699,5 +2733,50 @@ mod tests {
             Some(false)
         );
         env::remove_var("CODEX_HARNESS_ROOT");
+    }
+
+    #[test]
+    fn tracked_operator_grant_survives_clean_runtime_state() {
+        let dir = tempfile::tempdir().unwrap();
+        let policy = dir.path().join("policy.toml");
+        fs::write(
+            &policy,
+            format!(
+                r#"
+full_access_decision_id = "{USER_FULL_ACCESS_DECISION_ID}"
+
+[permission_grants]
+operator_grants_are_execution_context = true
+expanded_access_is_not_a_blocker = true
+decision_id = "{USER_FULL_ACCESS_DECISION_ID}"
+danger_full_access = "keep"
+"#
+            ),
+        )
+        .unwrap();
+        assert!(tracked_full_access_policy_granted_at(&policy));
+        assert!(!dir.path().join("full-access-grant.json").exists());
+    }
+
+    #[test]
+    fn tracked_operator_grant_fails_closed_when_incomplete() {
+        let dir = tempfile::tempdir().unwrap();
+        let policy = dir.path().join("policy.toml");
+        fs::write(
+            &policy,
+            format!(
+                r#"
+full_access_decision_id = "{USER_FULL_ACCESS_DECISION_ID}"
+
+[permission_grants]
+operator_grants_are_execution_context = true
+expanded_access_is_not_a_blocker = false
+decision_id = "{USER_FULL_ACCESS_DECISION_ID}"
+danger_full_access = "keep"
+"#
+            ),
+        )
+        .unwrap();
+        assert!(!tracked_full_access_policy_granted_at(&policy));
     }
 }

@@ -5,21 +5,44 @@ use codex_harness::prompt_review::{
 };
 use std::path::PathBuf;
 
-fn repo_prompt_path() -> PathBuf {
+fn envctl_root() -> PathBuf {
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     manifest
         .ancestors()
         .nth(3)
         .expect("harness crate path has envctl ancestor")
+        .to_path_buf()
+}
+
+fn original_prompt_path() -> PathBuf {
+    envctl_root().join(".codex/prompts/prompt:codex-gpt-harness.prompt.md")
+}
+
+fn full_access_prompt_path() -> PathBuf {
+    envctl_root()
         .join(".codex/prompts/prompt:codex-gpt-harness-v3-full-access-no-sandbox.prompt.md")
 }
 
 #[test]
-fn current_repo_full_access_prompt_has_no_blockers() {
-    let report = review_full_access_prompt_path(repo_prompt_path()).unwrap();
-    assert_prompt_review_ok(&report).unwrap();
-    assert!(report.line_count > 2_400, "line_count={}", report.line_count);
-    assert!(report.launch_flag_count >= 3);
+fn both_repo_prompt_entrypoints_are_identical_and_have_no_blockers() {
+    let original = std::fs::read(original_prompt_path()).unwrap();
+    let full_access = std::fs::read(full_access_prompt_path()).unwrap();
+    assert_eq!(
+        original, full_access,
+        "the original prompt entrypoint must remain byte-identical to the full-access prompt"
+    );
+
+    for prompt in [original_prompt_path(), full_access_prompt_path()] {
+        let report = review_full_access_prompt_path(&prompt).unwrap();
+        assert_prompt_review_ok(&report)
+            .unwrap_or_else(|error| panic!("{}: {error}", prompt.display()));
+        assert!(
+            report.line_count > 2_400,
+            "line_count={}",
+            report.line_count
+        );
+        assert!(report.launch_flag_count >= 3);
+    }
 }
 
 #[test]

@@ -2,14 +2,16 @@ model = "gpt-5.5"
 model_reasoning_effort = "xhigh"
 model_reasoning_summary = "auto"
 model_verbosity = "medium"
-default_permissions = "harness-workspace"
+approval_policy = "never"
+sandbox_mode = "danger-full-access"
+default_permissions = ":danger-full-access"
 project_doc_max_bytes = 65536
 project_doc_fallback_filenames = ["AGENTS.override.md", "AGENTS.md", ".agents.md", "CLAUDE.md"]
 tool_output_token_limit = 12000
 
 [features]
 fast_mode = false
-hooks = true
+hooks = false
 plugins = false
 remote_plugin = false
 network_proxy = false

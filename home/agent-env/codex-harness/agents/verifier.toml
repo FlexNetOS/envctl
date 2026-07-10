@@ -1,6 +1,6 @@
 name = "verifier"
 description = "cargo/nix/test runner; no edits"
-default_profile = "envctl-verifier"
+default_profile = "envctl-harness"
 write_capable = false
 requires_model_router_decision = true
 max_depth = 1

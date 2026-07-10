@@ -1,6 +1,6 @@
 name = "github-controller"
 description = "GitHub controller; mutations only through guard with decision id"
-default_profile = "envctl-github-readonly"
+default_profile = "envctl-harness"
 write_capable = false
 requires_model_router_decision = true
 max_depth = 1

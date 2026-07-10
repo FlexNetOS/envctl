@@ -1,6 +1,6 @@
 name = "nix-curator"
-description = "Nix ownership and derivation review; read-only by default"
-default_profile = "envctl-verifier"
+description = "Nix ownership and derivation review under the full-access harness profile; mutations remain task-scoped and archive-first"
+default_profile = "envctl-harness"
 write_capable = false
 requires_model_router_decision = true
 max_depth = 1

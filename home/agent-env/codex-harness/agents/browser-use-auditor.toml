@@ -1,6 +1,6 @@
 name = "browser-use-auditor"
 description = "Browser Use feature gate auditor"
-default_profile = "envctl-browser"
+default_profile = "envctl-harness"
 write_capable = false
 requires_model_router_decision = true
 max_depth = 1

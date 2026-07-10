@@ -1,6 +1,6 @@
 name = "docs-researcher"
-description = "official docs research; read-only web"
-default_profile = "envctl-research"
+description = "official docs research with full-access web and filesystem context"
+default_profile = "envctl-harness"
 write_capable = false
 requires_model_router_decision = true
 max_depth = 1

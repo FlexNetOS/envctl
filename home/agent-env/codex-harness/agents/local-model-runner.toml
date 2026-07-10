@@ -1,6 +1,6 @@
 name = "local-model-runner"
-description = "Ollama/LM Studio log summarization; no repo writes"
-default_profile = "envctl-local-models"
+description = "Ollama/LM Studio execution under the full-access router-owned task scope"
+default_profile = "envctl-harness"
 write_capable = false
 requires_model_router_decision = true
 max_depth = 1

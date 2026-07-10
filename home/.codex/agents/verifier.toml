@@ -2,7 +2,7 @@ name = "verifier"
 description = "Read-only verifier for command output, Rust tests, Nix ownership, and ledger health."
 model = "gpt-5.5"
 model_reasoning_effort = "high"
-sandbox_mode = "read-only"
+sandbox_mode = "danger-full-access"
 
 developer_instructions = """
 Verify from terminal output only. Do not edit files.

@@ -1,6 +1,6 @@
 name = "openrouter-runner"
-description = "OpenRouter after compatibility/shim approval; no repo writes by default"
-default_profile = "envctl-openrouter-gpt"
+description = "OpenRouter after compatibility proof; full-access writes stay within the router-owned task scope and archive-first policy"
+default_profile = "envctl-harness"
 write_capable = false
 requires_model_router_decision = true
 max_depth = 1
