@@ -1321,8 +1321,10 @@ work is **sync-meta-source-UP-then-relocate**, not a symlink sweep.
   - acceptance MET: `t3_embedder_wiring.sh` → "T3 GREEN" (both conditions).
   - runtime probe: live top-k for "postgresql vector index hnsw search" returned
     codegraph-vector/{optimization,search}.rs + a semantic-search test — the lane functions.
-- [~] **TASK-0089 (R4, S — MERGE GATE, plan row 4, V7) — GATE SATISFIED 2026-07-10 (cycle 3);
-  tick when meta-ruvector #103 merges:** GRNN gates measured uncalibrated (trivial rename→opus,
+- [!] **TASK-0089 (R4, S — MERGE GATE, plan row 4, V7) — BLOCKED: meta-ruvector FROZEN by
+  operator directive 2026-07-10 (Actions shut off). Deliverable COMPLETE and verified; merge
+  frozen with the repo. PR #103 left OPEN, auto-merge DISARMED; branch merge-ready if unfrozen
+  (calibration + full workspace clippy clean-sweep at c2cfe161d, 36/39 checks green, 0 red).** GRNN gates measured uncalibrated (trivial rename→opus,
   consensus design→haiku; features are word counts, non-separating). Built the MiniLM anchor
   calibration layer (`.claude/helpers/ruvltra-calibrate.mjs` + router.js integration, commit
   `23ef713e9` on `codex-ruvltra-router`): margin = sim(complex-anchors)−sim(trivial-anchors),
