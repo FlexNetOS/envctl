@@ -103,7 +103,7 @@ jobs:
           import sys
 
           version = subprocess.check_output(["rustc", "--version"], text=True)
-          match = re.search(r"rustc (\\d+)\\.(\\d+)\\.", version)
+          match = re.search(r"rustc (\d+)\.(\d+)\.", version)
           if not match:
               print(f"could not parse rustc version: {version}", file=sys.stderr)
               sys.exit(1)
