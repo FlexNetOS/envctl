@@ -1,0 +1,80 @@
+# postgres-ruvector.toml — declare the ruvector "global brain" PostgreSQL cluster
+# (blueprint R7 / TASK-0091, plan PR #460 §3 row 7, verdict V21).
+#
+# The cluster was a hand-started process with no unit/component — violating
+# envctl's own declarative ethos. This component brings it into the managed
+# plane exactly as it runs today: nix-store PostgreSQL 17.10, socket-only
+# (listen_addresses='' — never TCP), pgdata + socket under lifeos/var, with the
+# ruvector extension and the codebase (5157 MiniLM-embedded rows) + episodes
+# tables. install/fix start the cluster idempotently; remove STOPS it and
+# leaves all data untouched (reversibility contract from the plan row).
+
+[[component]]
+id = "postgres-ruvector"
+name = "postgres-ruvector — global-brain vector store"
+description = "Socket-only PostgreSQL 17 cluster with the ruvector extension (codebase + episodes lanes) under lifeos/var/lib/postgresql."
+
+# Present = the engine binary, the pgdata dir, and the ruvector runtime dir all
+# exist. Health (socket answers, extension live) is verify's job, so a stopped
+# cluster reads as present-but-unhealthy, not absent.
+[component.detect]
+kind = "command"
+command = "bash"
+args = [
+  "-lc",
+  '''PG=/home/flexnetos/lifeos/var/lib/postgresql; test -x "$PG/pg17-rw/bin/postgres" && test -d "$PG/17" && test -d /home/flexnetos/lifeos/var/lib/ruvector''',
+]
+
+# Healthy = socket answers, ruvector extension installed, both brain lanes
+# (codebase + episodes) exist, and the R3 MiniLM lane is fully embedded.
+[component.verify]
+kind = "command"
+command = "bash"
+args = [
+  "-lc",
+  '''PG=/home/flexnetos/lifeos/var/lib/postgresql; Q() { "$PG/pg17-rw/bin/psql" -h "$PG" -p 5432 -d ruvector -tAc "$1"; }; ext="$(Q "SELECT extversion FROM pg_extension WHERE extname='ruvector'")" && test -n "$ext" && Q "SELECT count(*) FROM codebase" >/dev/null && Q "SELECT count(*) FROM episodes" >/dev/null && miss="$(Q "SELECT count(*) FROM codebase WHERE embedding_minilm IS NULL")" && test "$miss" = "0" && echo "postgres-ruvector healthy: ext=$ext, minilm lane fully embedded"''',
+]
+
+# Start the cluster exactly as it runs today (socket-only, no TCP listener).
+# Idempotent: an answering socket short-circuits; pg_ctl -w waits for readiness.
+[component.install]
+kind = "script"
+script = '''
+set -e
+PG=/home/flexnetos/lifeos/var/lib/postgresql
+if "$PG/pg17-rw/bin/psql" -h "$PG" -p 5432 -d ruvector -tAc 'SELECT 1' >/dev/null 2>&1; then
+  echo "postgres-ruvector already answering on $PG/.s.PGSQL.5432"
+  exit 0
+fi
+"$PG/pg17-rw/bin/pg_ctl" -D "$PG/17" -w -t 30 \
+  -o "-p 5432 -k $PG -c listen_addresses=" \
+  -l "$PG/pg_ctl.log" start
+echo "postgres-ruvector started (socket-only at $PG)"
+'''
+
+[component.fix]
+kind = "script"
+script = '''
+set -e
+PG=/home/flexnetos/lifeos/var/lib/postgresql
+"$PG/pg17-rw/bin/psql" -h "$PG" -p 5432 -d ruvector -tAc 'SELECT 1' >/dev/null 2>&1 && exit 0
+"$PG/pg17-rw/bin/pg_ctl" -D "$PG/17" -w -t 30 \
+  -o "-p 5432 -k $PG -c listen_addresses=" \
+  -l "$PG/pg_ctl.log" start
+'''
+
+# Removal STOPS the service and deletes nothing — the pgdata, the ruvector
+# extension, and every stored vector survive (plan row: "component removal
+# leaves cluster untouched").
+[component.remove]
+kind = "script"
+script = '''
+set -e
+PG=/home/flexnetos/lifeos/var/lib/postgresql
+if "$PG/pg17-rw/bin/pg_ctl" -D "$PG/17" status >/dev/null 2>&1; then
+  "$PG/pg17-rw/bin/pg_ctl" -D "$PG/17" -w -t 30 -m fast stop
+  echo "postgres-ruvector stopped (data untouched)"
+else
+  echo "postgres-ruvector already stopped (data untouched)"
+fi
+'''
