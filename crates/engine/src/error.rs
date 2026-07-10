@@ -23,6 +23,11 @@ pub enum EngineError {
     UnknownDependency { by: String, dep: String },
     #[error("manifest dir not found or unreadable: {0}")]
     ManifestDir(String),
+    /// Semantic-index failures (blueprint R10). Feature-gated with the module
+    /// so default builds carry an unchanged enum.
+    #[cfg(feature = "ruvector")]
+    #[error("semantic index: {0}")]
+    Semantic(String),
 }
 
 /// Identities resolved ONCE at run start (resolve-once-then-re-verify, per
