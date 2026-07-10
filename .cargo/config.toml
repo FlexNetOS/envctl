@@ -1,0 +1,16 @@
+# musl static lane (blueprint R9 / TASK-0093, plan #460 §3 row 9, V10/V11).
+#
+# `cargo build --release --target x86_64-unknown-linux-musl -p envctl` produces
+# a fully-static binary — envctl is uniquely musl-ready because the no-C gate
+# (ci/gates/no-c.sh) already bans every C library from the trust boundary.
+# Scoped to the musl target only: the default gnu lane and every existing
+# workflow are untouched. rust-lld avoids requiring a musl-gcc cross wrapper
+# (the fenix rust-std ships its own musl libc; +crt-static makes intent
+# explicit even though musl targets default to it).
+#
+# Toolchain contract: the musl rust-std comes from the nix foundation profile
+# (yazelix PR #34) — no rustup, no ad-hoc target installs.
+
+[target.x86_64-unknown-linux-musl]
+linker = "rust-lld"
+rustflags = ["-C", "target-feature=+crt-static"]
