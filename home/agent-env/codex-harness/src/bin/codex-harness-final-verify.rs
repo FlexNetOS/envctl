@@ -300,12 +300,20 @@ fn main() -> Result<()> {
         .and_then(Value::as_bool)
         .map(|printed| !printed)
         .unwrap_or(false);
+    let openrouter_wire_ok = openrouter_proof
+        .pointer("/wire_compatibility/direct_responses_wire_compatible")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
     let openrouter_result =
         if openrouter_key_valid && openrouter_generation_ok && openrouter_model_ok {
             "pass"
         } else if openrouter_key_valid && openrouter_policy_blocked {
             "unsupported-account-policy-blocked"
-        } else if !has_openrouter_key && openrouter_models_ok && openrouter_probe_no_secret_print {
+        } else if !has_openrouter_key
+            && openrouter_models_ok
+            && openrouter_wire_ok
+            && openrouter_probe_no_secret_print
+        {
             "unsupported-missing-OPENROUTER_API_KEY"
         } else if has_openrouter_key {
             "gap-auth-env-present-no-successful-proof"
@@ -482,7 +490,7 @@ fn main() -> Result<()> {
         ),
         row(
             "OpenRouter compatibility",
-            "OpenRouter shim/catalog/probe default tencent/hy3:free; authenticated generation is account/env gated",
+            "OpenRouter Responses OpenAPI proof plus shim/catalog/probe default tencent/hy3:free; authenticated generation is account/env gated",
             "/home/flexnetos/.codex/envctl-openrouter-gpt.config.toml".to_string(),
             "codex-harness-openrouter-shim probe",
             openrouter_result,
