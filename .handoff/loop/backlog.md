@@ -1281,3 +1281,54 @@ policy change" — both are available and declarable here.
 Most meta-built tools' installed binaries are NEWER than their committed meta sources
 (kasetto 3.1.0>3.0.0, rtk 0.42.2>0.42.0) → meta is OUT OF SYNC with what's deployed. The real
 work is **sync-meta-source-UP-then-relocate**, not a symlink sweep.
+
+## Epic I — Agentic-OS blueprint roadmap R2–R10 (plan PR #460; seeded 2026-07-09)
+
+> Source: `.handoff/loop/plan/reports/agentic-os-blueprint-plan.md` §3 — verdict-gated rows only
+> (V-refs in the plan). R1 (swarm-immune wrapper fix) DONE in PR #464 (T1 RED→GREEN, live file
+> fixed + canonical copy in `scripts/tests/blueprint/runtime/`). R5 (codedb_store_pg merge) DONE
+> upstream: nu_plugin PR #16 MERGED + T5 parity regression-lock nu_plugin PR #18 MERGED.
+> Acceptance tests: `scripts/tests/blueprint/` (T1–T6, PR #464) — each row's acceptance is 1:1
+> with its T-test. **T4 is the ADR-0004 merge gate: `codex-ruvltra-router` (meta-ruvector) must
+> NOT merge until TASK-0089's fixture passes ×3.** This box: FlexNetOS≡lifeos, hf ABSENT
+> (markdown picking), fleet CI local-first since PR #463.
+
+- [~] **TASK-0087 (R2, XS, REGENERATE — plan row 2, V9) — EXECUTED 2026-07-09, tick on this PR's
+  merge:** rebuilt (`cargo build --release -p envctl`, 27.58s, binary 19:09:04) + deployed via the
+  existing `/home/flexnetos/lifeos/usr/bin/envctl` symlink → main-checkout `target/release/envctl`;
+  prior 2026-07-07 binary archived at `~/.claude/archive/20260710T000826Z/envctl-target-release/`.
+  - acceptance MET: `t2_envctl_db_fresh.sh` → "T2 GREEN" (`db --help` exit 0, surface
+    roots/query/refactor). RED captured first (exit 2, unrecognized subcommand).
+  - also: fixed T2's surface grep — POSIX ERE `[^\n]` bug made `usage[^\n]*db` unmatchable
+    ("envctl" contains an `n`) and the RED-authored `blob|capture|store` guess never matched the
+    real verb set; pinned to the shipped surface instead (exit-0 assertion unchanged).
+- [ ] **TASK-0088 (R3, S, PROPOSE — plan row 3, V8/V2/V3):** wire MiniLM 384-d as the
+  flush/backfill embedder; populate `codebase.embedding_minilm` = 5157/5157, manifest model ≠
+  "fallback". Dimension doctrine (384 vs 1536) decided in PR review.
+  - acceptance: `bash scripts/tests/blueprint/t3_embedder_wiring.sh` GREEN
+- [ ] **TASK-0089 (R4, S, PROPOSE — MERGE GATE, plan row 4, V7 QUALIFIED):** calibrate the
+  RuvLTRA FastGRNN complexity tier. `codex-ruvltra-router` merges ONLY after the discrimination
+  fixture passes — trivial→haiku ∧ complex→opus, reproducible ×3 (ADR-0004 two-plane routing).
+  - acceptance: `node scripts/tests/blueprint/t4_router_discrimination.mjs` GREEN ×3 consecutive
+- [ ] **TASK-0090 (R6, S, PROPOSE — plan row 6, V16):** bun-rewrite hook enforcement — VERIFY AT
+  PICK-TIME (memory + this session's hook banners suggest it may already be live); if live, record
+  raw evidence + tick; if not, land `feat/bun-rewrite-hook` (or amend MEMORY if declined).
+  - acceptance: `~/.claude/hooks/bun-rewrite.sh` present + wired in settings AND an `npm install`
+    observed rewritten to bun; else MEMORY corrected
+- [ ] **TASK-0091 (R7, S, PROPOSE — plan row 7, V21/V1):** author the `postgres-ruvector`
+  manifest component (detect/install/verify/fix) declaring the hand-started global-brain cluster
+  (PostgreSQL 17.10 socket-only + ruvector ext) in envctl's declarative plane.
+  - acceptance: `envctl auto-detect` lists `postgres-ruvector`; verify hook green
+- [ ] **TASK-0092 (R8, M, PROPOSE — plan row 8, V20):** reconcile ruvector extension 0.3.0 ↔
+  client crate 2.0.5 two-major skew: upgrade ext to a client-supported version OR pin the pairing
+  in an ADR note (an ext-shipped `2.0.0--0.3.0` downgrade script says this bit someone before).
+  - acceptance: `extversion` == client-supported version, or ADR note pins the pairing
+- [ ] **TASK-0093 (R9, M, PROPOSE — plan row 9, V10/V11 QUALIFIED):** musl static lane for
+  `envctl-engine`+`envctl` — fenix musl std + `.cargo/config.toml` target block; gnu lane untouched.
+  - acceptance: `bash scripts/tests/blueprint/t6_musl_static.sh` GREEN (statically linked) AND
+    `ci/gates/no-c.sh` green
+- [ ] **TASK-0094 (R10, M, PROPOSE — plan row 10, V12/V23/V22):** first envctl ruvector consumer —
+  HNSW top-k over `codedb export` rows behind the default-OFF `ruvector` feature (turns the
+  feature-gated pins into the contract-sanctioned semantic layer; default builds bit-identical).
+  - acceptance: feature-gated test answers top-k over exported rows; default `cargo build`
+    behavior identical; `ci/gates/no-c.sh` green
