@@ -38,6 +38,8 @@ pub mod runtime; // machine-local last-run state (XDG cache), out of the lock
 pub mod secrets; // TASK-0028: engine-owned `secretctl` subprocess seam for the GUI secrets verbs
 pub mod self_uninstall; // `self uninstall` — destructive, fail-closed, dry-run-by-default removal
 pub mod self_update; // `self update` CORE: fetch_latest_release / is_newer / verify_checksum
+#[cfg(feature = "ruvector")]
+pub mod semantic; // R10: HNSW top-k over exported codedb rows (default-OFF `ruvector`)
 pub mod telemetry; // sample() -> Telemetry (hard-timeout nvidia-smi CSV + sysinfo)
 pub mod update_notifier; // end-of-run "new version available" cache + check (CLI renders)
 pub mod wiring; // apply()/revert() for Wiring (shell_rc backup-then-excise) // EngineCommand / EngineEvent + run_event_loop (GUI worker API)
