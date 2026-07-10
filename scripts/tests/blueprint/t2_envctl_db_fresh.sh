@@ -32,7 +32,11 @@ if [ "$rc" -ne 0 ]; then
   exit 1
 fi
 
-if ! printf '%s' "$out" | grep -qiE 'usage[^\n]*db|blob|capture|store'; then
+# Pin to the REAL shipped db surface (R2 landed: roots/query/refactor verbs).
+# The original RED-authored pattern guessed 'blob|capture|store' and used
+# 'usage[^\n]*db', where POSIX ERE reads [^\n] as "any char except \ or n" —
+# "Usage: envctl db" contains an 'n', so it could never match the live output.
+if ! printf '%s' "$out" | grep -qiE 'usage: envctl db|db (roots|query|refactor)'; then
   echo "FAIL: 'envctl db --help' exited 0 but printed no db surface text"
   echo "T2 RED"
   exit 1
