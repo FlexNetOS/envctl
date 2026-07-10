@@ -15,7 +15,7 @@ members = [
 [workspace.package]
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.88"
+rust-version = "1.89"
 license = "MIT OR Apache-2.0"
 
 [workspace.dependencies]
@@ -62,7 +62,7 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 # tiny std-only UDS writer (proven by ci/gates/no-c.sh). Closes the secretd crash-loop (no READY=1 =>
 # Type=notify 90s timeout => restart storm).
 # Keep the systemd notify helper on the MSRV-compatible line. 0.5.x raises
-# rust-version above the workspace floor (1.88) without changing envctl's use
+# rust-version above the workspace floor (1.89) without changing envctl's use
 # of READY=1 / STOPPING=1 datagrams.
 sd-notify = "0.4.5"
 tokio = { version = "1.43", features = ["rt-multi-thread", "macros", "net", "sync", "fs", "process", "signal", "time", "io-util"] }
@@ -95,10 +95,11 @@ hkdf = "0.12"
 sha2 = { version = "0.10", features = ["oid"] }
 blake3 = "1.5"
 # migration-db store (engine): pure-Rust embedded B-tree store — the same store family as the
-# fleet's handoff ledger (ADR-0017) and CodeDB (which pins the same 2.6 major). Links NO C
-# (no-c.sh unaffected); NOT SQLite. Pinned to 2.6: every redb >= 3.0 declares rust_version 1.89,
-# above this workspace's MSRV 1.88 (CI MSRV gate is the enforcer).
-redb = "2.6"
+# fleet's handoff ledger (ADR-0017) and CodeDB (which tracks the same major). Links NO C
+# (no-c.sh unaffected); NOT SQLite. 4.x uses file format v3 exclusively: databases written by
+# redb <= 2.x (format v2) must be migrated via redb 2.6's Database::upgrade() BEFORE a 4.x
+# binary touches them. Requires rust_version 1.89 (workspace MSRV raised in step).
+redb = "4.1"
 zeroize = { version = "1.8", features = ["derive"] }
 subtle = "2.6"
 rand = "0.8"
