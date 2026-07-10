@@ -29,11 +29,15 @@ env:
   LOOP_LIB_REF: refs/heads/codex/envctl-runner-command-builder
 
 jobs:
-  # Required CI contexts run on GitHub-hosted runners so PR proof comes from a
-  # clean environment and never depends on local FlexNetOS runner availability.
+  # Operator directive 2026-07-09: LOCAL-FIRST CI IS MANDATORY. Every required context
+  # (compile + test + gates) runs on the FlexNetOS self-hosted runners (flexnetos_runner
+  # fleet) for all trusted refs — pushes and same-repo PRs. GitHub-hosted ubuntu-latest is
+  # FALLBACK ONLY: fork PRs (untrusted code never executes on local runners — these repos
+  # are PUBLIC) and the CI_FORCE_HOSTED=1 repo-variable escape hatch for local-runner
+  # outages. Enforced fail-closed by ci/gates/runner-routing.sh.
   rustfmt:
     name: rustfmt
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_FORCE_HOSTED == '1' && 'ubuntu-latest' || ((github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","local","flexnetos"]') || 'ubuntu-latest') }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
@@ -50,7 +54,7 @@ jobs:
 
   clippy:
     name: clippy
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_FORCE_HOSTED == '1' && 'ubuntu-latest' || ((github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","local","flexnetos"]') || 'ubuntu-latest') }}
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
@@ -69,7 +73,7 @@ jobs:
 
   msrv:
     name: MSRV (Rust 1.89)
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_FORCE_HOSTED == '1' && 'ubuntu-latest' || ((github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","local","flexnetos"]') || 'ubuntu-latest') }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
@@ -81,12 +85,15 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       # `check`, not `build`: the floor is compiler acceptance for the locked shipping graph.
       # No `--all-features`: crates/secrets-store-libsql has mutually-exclusive store features.
-      - name: cargo +1.89.0 check --workspace --locked
-        run: cargo +1.89.0 check --workspace --locked
+      # Plain `cargo check`: dtolnay/rust-toolchain@1.89.0 already pins this job's toolchain
+      # (prepends the real 1.89 cargo). The old `+1.89.0` directive requires the rustup shim
+      # to be first on PATH, which is true on hosted images but not on the self-hosted fleet.
+      - name: cargo check --workspace --locked (MSRV 1.89 toolchain)
+        run: cargo check --workspace --locked
 
   cargo-audit:
     name: cargo audit
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_FORCE_HOSTED == '1' && 'ubuntu-latest' || ((github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","local","flexnetos"]') || 'ubuntu-latest') }}
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
@@ -103,7 +110,7 @@ jobs:
 
   test:
     name: test
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_FORCE_HOSTED == '1' && 'ubuntu-latest' || ((github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","local","flexnetos"]') || 'ubuntu-latest') }}
     # Generous but bounded: the cold build dominates and the parallel test run is now substantial
     # (secrets-engine alone ~5 min — the argon2 memory-hard KDF + daemon e2e tests). A real hang
     # (e.g. an await-forever in an e2e stream drain) still fails the check well before the 6h default.
@@ -135,7 +142,7 @@ jobs:
 
   gates:
     name: gates
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_FORCE_HOSTED == '1' && 'ubuntu-latest' || ((github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && fromJSON('["self-hosted","linux","x64","local","flexnetos"]') || 'ubuntu-latest') }}
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4

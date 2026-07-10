@@ -32,13 +32,37 @@ def job_block(job_id: str) -> str:
         return ""
     return match.group("body")
 
-# Preserve the branch-protection contexts while keeping required CI proof on
-# GitHub-hosted clean runners. These jobs must remain GitHub-hosted fan-out.
+# Operator directive 2026-07-09: LOCAL-FIRST CI IS MANDATORY. Required contexts
+# (compile + test + gates) run on the FlexNetOS self-hosted runner fleet for every
+# trusted ref (pushes and same-repo PRs). GitHub-hosted ubuntu-latest is FALLBACK
+# ONLY: fork PRs (these repos are PUBLIC — untrusted code never executes on the
+# local runners) and the CI_FORCE_HOSTED=1 repo-variable outage escape hatch.
+LOCAL_LABELS = "fromJSON('[\"self-hosted\",\"linux\",\"x64\",\"local\",\"flexnetos\"]')"
+FORK_GUARD = "github.event.pull_request.head.repo.full_name == github.repository"
+ESCAPE_HATCH = "vars.CI_FORCE_HOSTED"
+
 for job_id in ["rustfmt", "clippy", "msrv", "cargo-audit", "test", "gates"]:
     body = job_block(job_id)
+    runs_on = re.search(r"(?m)^    runs-on:\s*(?P<expr>.+)$", body)
+    require(runs_on is not None, f"{job_id}: missing runs-on")
+    if not runs_on:
+        continue
+    expr = runs_on.group("expr")
     require(
-        re.search(r"(?m)^    runs-on:\s*ubuntu-latest\s*$", body) is not None,
-        f"{job_id} must run on ubuntu-latest for parallel fan-out",
+        LOCAL_LABELS in expr,
+        f"{job_id} must target the local FlexNetOS runner labels first (local-first is mandatory)",
+    )
+    require(
+        ESCAPE_HATCH in expr,
+        f"{job_id} must keep the CI_FORCE_HOSTED hosted-fallback escape hatch",
+    )
+    require(
+        FORK_GUARD in expr,
+        f"{job_id} must route fork PRs to hosted runners (untrusted code never runs locally)",
+    )
+    require(
+        "'ubuntu-latest'" in expr,
+        f"{job_id} must declare the GitHub-hosted fallback lane",
     )
 
 # Stale PR runs should not keep either queue busy, but protected develop pushes must
