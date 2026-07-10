@@ -1271,6 +1271,16 @@ policy change" — both are available and declarable here.
   preflight that verifies the claimed worktree exists and is the intended target before running, and
   detects stray ancestor workspace manifests that would make build tooling escape into a sibling
   workspace.
+- [?] **TASK-0095 (harness, MEDIUM/P1 — drained from proposed-upgrades 2026-07-10 boundary 66):**
+  queue-aware merge shepherd for the limited-runner fleet: forge-loop updates ONE armed PR at a
+  time (update → wait green → merged → advance) instead of parallel re-queues that re-BEHIND
+  every armed sibling under strict up-to-date protection. Orthogonal owner call: raise runner
+  slots >2. Evidence: Epic I R2–R10 BEHIND treadmill on the 2-runner fleet (LESSONS row 5).
+- [?] **TASK-0096 (harness, MEDIUM/P2 — drained from proposed-upgrades 2026-07-10 boundary 66):**
+  mechanical post-arm worktree-edit guard: fail-closed pre-edit check refusing edits in a
+  worktree whose branch has an armed OPEN PR (redirect to a fresh worktree off develop).
+  Evidence: 2nd occurrence of the post-arm class — R10 near-miss in the armed R8 worktree
+  (LESSONS row 6; 1st = TASK-0060/#172).
 - [?] **TASK-0086 (harness, MEDIUM/P2) — Oblique sentinel-token rule:** generalize the existing
   forbidden-token gate so auditors discuss placeholder/unsupported-claim sentinel categories
   obliquely rather than spelling literal banned words or obfuscated variants that trip the gate on
@@ -1293,8 +1303,7 @@ work is **sync-meta-source-UP-then-relocate**, not a symlink sweep.
 > NOT merge until TASK-0089's fixture passes ×3.** This box: FlexNetOS≡lifeos, hf ABSENT
 > (markdown picking), fleet CI local-first since PR #463.
 
-- [~] **TASK-0087 (R2, XS, REGENERATE — plan row 2, V9) — EXECUTED 2026-07-09, tick on this PR's
-  merge:** rebuilt (`cargo build --release -p envctl`, 27.58s, binary 19:09:04) + deployed via the
+- [x] **TASK-0087 (R2, XS, REGENERATE — plan row 2, V9) — DONE: PR #469 MERGED 2026-07-10T00:52Z.** rebuilt (`cargo build --release -p envctl`, 27.58s, binary 19:09:04) + deployed via the
   existing `/home/flexnetos/lifeos/usr/bin/envctl` symlink → main-checkout `target/release/envctl`;
   prior 2026-07-07 binary archived at `~/.claude/archive/20260710T000826Z/envctl-target-release/`.
   - acceptance MET: `t2_envctl_db_fresh.sh` → "T2 GREEN" (`db --help` exit 0, surface
@@ -1302,33 +1311,56 @@ work is **sync-meta-source-UP-then-relocate**, not a symlink sweep.
   - also: fixed T2's surface grep — POSIX ERE `[^\n]` bug made `usage[^\n]*db` unmatchable
     ("envctl" contains an `n`) and the RED-authored `blob|capture|store` guess never matched the
     real verb set; pinned to the shipped surface instead (exit-0 assertion unchanged).
-- [ ] **TASK-0088 (R3, S, PROPOSE — plan row 3, V8/V2/V3):** wire MiniLM 384-d as the
-  flush/backfill embedder; populate `codebase.embedding_minilm` = 5157/5157, manifest model ≠
-  "fallback". Dimension doctrine (384 vs 1536) decided in PR review.
-  - acceptance: `bash scripts/tests/blueprint/t3_embedder_wiring.sh` GREEN
-- [ ] **TASK-0089 (R4, S, PROPOSE — MERGE GATE, plan row 4, V7 QUALIFIED):** calibrate the
-  RuvLTRA FastGRNN complexity tier. `codex-ruvltra-router` merges ONLY after the discrimination
-  fixture passes — trivial→haiku ∧ complex→opus, reproducible ×3 (ADR-0004 two-plane routing).
-  - acceptance: `node scripts/tests/blueprint/t4_router_discrimination.mjs` GREEN ×3 consecutive
-- [ ] **TASK-0090 (R6, S, PROPOSE — plan row 6, V16):** bun-rewrite hook enforcement — VERIFY AT
-  PICK-TIME (memory + this session's hook banners suggest it may already be live); if live, record
-  raw evidence + tick; if not, land `feat/bun-rewrite-hook` (or amend MEMORY if declined).
-  - acceptance: `~/.claude/hooks/bun-rewrite.sh` present + wired in settings AND an `npm install`
-    observed rewritten to bun; else MEMORY corrected
-- [ ] **TASK-0091 (R7, S, PROPOSE — plan row 7, V21/V1):** author the `postgres-ruvector`
+- [x] **TASK-0088 (R3, S — plan row 3, V8/V2/V3) — DONE on-box 2026-07-09 (cycle 2):** backfill
+  was already real MiniLM (provenance verified: `runtime/tools/reembed*.mjs` → `embed-minilm.mjs`,
+  column typed `ruvector(384)`, 5157/5157); the stale manifest claim ("no local model wired yet")
+  was the remaining defect — updated truthfully to name the wired model with an explicit
+  dual-lane note (codebase=384 MiniLM done; episodes stay agentdb-internal 1536 until the
+  ADR-0005 trigger). Prior manifest archived (`20260710T002113Z`). Dimension doctrine: dual-lane,
+  pinned in ADR-0005.
+  - acceptance MET: `t3_embedder_wiring.sh` → "T3 GREEN" (both conditions).
+  - runtime probe: live top-k for "postgresql vector index hnsw search" returned
+    codegraph-vector/{optimization,search}.rs + a semantic-search test — the lane functions.
+- [~] **TASK-0089 (R4, S — MERGE GATE, plan row 4, V7) — GATE SATISFIED 2026-07-10 (cycle 3);
+  tick when meta-ruvector #103 merges:** GRNN gates measured uncalibrated (trivial rename→opus,
+  consensus design→haiku; features are word counts, non-separating). Built the MiniLM anchor
+  calibration layer (`.claude/helpers/ruvltra-calibrate.mjs` + router.js integration, commit
+  `23ef713e9` on `codex-ruvltra-router`): margin = sim(complex-anchors)−sim(trivial-anchors),
+  |margin|≥0.04 overrides, mid-band defers to GRNN; anchors held-out from the fixture; fail-open
+  chain intact (probe: mid-band prompt → calibrated with "grnn said sonnet" trail).
+  - acceptance MET: **T4 GREEN 10/10 cases × 3 stability runs** (margins −0.43..−0.17 trivial,
+    +0.34..+0.60 complex); evidence on PR #103; auto-merge armed behind its CI matrix.
+- [x] **TASK-0090 (R6, S — plan row 6, V16) — VERIFIED LIVE at pick-time 2026-07-09 (cycle 4),
+  no change needed:** hook present (`~/.claude/hooks/bun-rewrite.sh`, 14K, exec) + wired
+  (settings.json PreToolUse[Bash] chain), and the standalone payload proof rewrites
+  `npm install` → `{"permissionDecision":"allow","updatedInput":{"command":"bun install"}}`.
+  Nuance recorded: THIS session predates the 16:21 wiring (hook snapshots bind at session
+  start), so in-session Bash ran real npm — new sessions are enforced. MEMORY claim stands.
+- [~] **TASK-0091 (R7, S — plan row 7, V21/V1) — BUILT (cycle 5), PR #470 armed; tick on merge:** author the `postgres-ruvector`
   manifest component (detect/install/verify/fix) declaring the hand-started global-brain cluster
   (PostgreSQL 17.10 socket-only + ruvector ext) in envctl's declarative plane.
-  - acceptance: `envctl auto-detect` lists `postgres-ruvector`; verify hook green
-- [ ] **TASK-0092 (R8, M, PROPOSE — plan row 8, V20):** reconcile ruvector extension 0.3.0 ↔
+  - acceptance MET (raw): `auto-detect --json` → `{"id":"postgres-ruvector","detected":true,
+    "healthy":true}`; verify hook prints "healthy: ext=0.3.0, minilm lane fully embedded";
+    install short-circuits on the answering socket. Remove = stop-only (data untouched).
+- [~] **TASK-0092 (R8, M — plan row 8, V20) — ADR-0005 authored (cycle 6), PR #471 armed; tick on merge:** reconcile ruvector extension 0.3.0 ↔
   client crate 2.0.5 two-major skew: upgrade ext to a client-supported version OR pin the pairing
   in an ADR note (an ext-shipped `2.0.0--0.3.0` downgrade script says this bit someone before).
-  - acceptance: `extversion` == client-supported version, or ADR note pins the pairing
-- [ ] **TASK-0093 (R9, M, PROPOSE — plan row 9, V10/V11 QUALIFIED):** musl static lane for
+  - acceptance MET via the ADR fork: measured NO 0.3.0→2.0.0 upgrade path exists (only the
+    downgrade), DROP CASCADE would destroy the vector lanes → ADR-0005 pins server 0.3.0 ↔
+    client 2.0.5, safe-by-construction (feature default-OFF), reconcile trigger named.
+- [~] **TASK-0093 (R9, M — plan row 9, V10/V11) — UNBLOCKED UPSTREAM (cycle 8 in flight):** musl static lane for
   `envctl-engine`+`envctl` — fenix musl std + `.cargo/config.toml` target block; gnu lane untouched.
+  - blocker cleared: musl rust-std was absent from the foundation toolchain (no rustup by
+    contract; flakes rate-limited anonymously) → **yazelix PR #34 MERGED** adds
+    `targets.x86_64-unknown-linux-musl.latest.rust-std` to the combine; foundation rebuilt
+    (`/nix/store/3lz6...-lifeos-foundation-yzx`). envctl lane (config block + static build +
+    T6) building; envctl PR follows.
   - acceptance: `bash scripts/tests/blueprint/t6_musl_static.sh` GREEN (statically linked) AND
     `ci/gates/no-c.sh` green
-- [ ] **TASK-0094 (R10, M, PROPOSE — plan row 10, V12/V23/V22):** first envctl ruvector consumer —
+- [~] **TASK-0094 (R10, M — plan row 10, V12/V23/V22) — BUILT (cycle 7), PR #472 armed; tick on merge:** first envctl ruvector consumer —
   HNSW top-k over `codedb export` rows behind the default-OFF `ruvector` feature (turns the
   feature-gated pins into the contract-sanctioned semantic layer; default builds bit-identical).
-  - acceptance: feature-gated test answers top-k over exported rows; default `cargo build`
-    behavior identical; `ci/gates/no-c.sh` green
+  - acceptance MET: `cargo test -p envctl-engine --features ruvector --lib semantic` → 2 passed
+    (top-k over exported JSONL rows; dim mismatches error not panic); default `cargo check
+    --workspace` clean; NO-C GATE PASS raw. Upstream HNSW duplicate-node quirk documented +
+    absorbed (over-fetch + dedup).
