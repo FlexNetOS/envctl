@@ -150,7 +150,15 @@ jobs:
         env:
           META_DEPS_TOKEN: ${{ secrets.PARENT_REPO_PAT || github.token }}
         run: bash ci/setup-meta-deps.sh
-      - uses: dtolnay/rust-toolchain@stable
+      # The gates job runs shell/policy gates, not a compilation gate. On the
+      # self-hosted fleet, dtolnay/rust-toolchain@stable may try to reinstall
+      # stable under the isolated runner HOME and can fail on transient
+      # static.rust-lang.org connectivity before any gate executes. Use the
+      # runner-provisioned toolchain and prove it is present instead.
+      - name: use runner-provisioned Rust toolchain for shell gates
+        run: |
+          rustc --version
+          cargo --version
       - uses: Swatinem/rust-cache@v2
       # Fail-closed supply-chain / shape / enable / p7-conformance gates (ci/gates/*.sh).
       - name: runner-routing gate (hybrid hosted/local policy)
