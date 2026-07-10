@@ -25,7 +25,12 @@ fi
 
 info="$(file "$BIN")"
 echo "file: $info"
-if printf '%s' "$info" | grep -qE 'statically linked'; then
+# file(1) prints "statically linked" for classic static ELF and
+# "static-pie linked" for position-independent static executables (what
+# +crt-static + rust-lld emit). Both mean NO dynamic loader / no libc.so —
+# static-pie additionally keeps ASLR. The original RED-authored pattern
+# only guessed the first phrasing (same class as the T2 grep pin).
+if printf '%s' "$info" | grep -qE 'statically linked|static-pie linked'; then
   echo "PASS: binary is statically linked (no dynamic loader / no libc.so dependency)"
   echo "T6 GREEN"
   exit 0
