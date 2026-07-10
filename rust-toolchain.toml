@@ -3,7 +3,7 @@
 # toolchain (the rustup component installs/updates `nightly` into
 # $META_ROOT/.toolchains/rustup and makes it default). Keep this file aligned
 # with that policy so local envctl builds do not silently pin an old stable
-# while the rest of meta is testing nightly. MSRV stays 1.88 (Cargo.toml
+# while the rest of meta is testing nightly. MSRV stays 1.89 (Cargo.toml
 # rust-version); this is the developer toolchain, not the support floor.
 channel = "nightly"
 components = ["rustfmt", "clippy"]

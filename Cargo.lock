@@ -218,7 +218,7 @@ dependencies = [
  "objc2-foundation 0.3.2",
  "parking_lot",
  "percent-encoding",
- "windows-sys 0.59.0",
+ "windows-sys 0.60.2",
  "x11rb",
 ]
 
@@ -1427,7 +1427,7 @@ dependencies = [
  "libc",
  "option-ext",
  "redox_users 0.5.2",
- "windows-sys 0.59.0",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -1810,7 +1810,7 @@ dependencies = [
  "flate2",
  "glob",
  "loop_lib",
- "redb",
+ "redb 4.1.0",
  "reqwest",
  "rustix 0.38.44",
  "ruvector-core",
@@ -5156,7 +5156,7 @@ dependencies = [
  "once_cell",
  "socket2 0.6.4",
  "tracing",
- "windows-sys 0.59.0",
+ "windows-sys 0.60.2",
 ]
 
 [[package]]
@@ -5350,6 +5350,15 @@ name = "redb"
 version = "2.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8eca1e9d98d5a7e9002d0013e18d5a9b000aee942eb134883a82f06ebffb6c01"
+dependencies = [
+ "libc",
+]
+
+[[package]]
+name = "redb"
+version = "4.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8e925444704b5f17d32bf42f5b6e2df050bceebc3dcd6e71cc73dafe8092e839"
 dependencies = [
  "libc",
 ]
@@ -5713,7 +5722,7 @@ dependencies = [
  "rand 0.8.6",
  "rand_distr 0.4.3",
  "rayon",
- "redb",
+ "redb 2.6.3",
  "reqwest",
  "rkyv",
  "serde",
