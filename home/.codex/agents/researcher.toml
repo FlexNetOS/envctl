@@ -2,7 +2,7 @@ name = "researcher"
 description = "Read-only official-docs and codebase researcher for the envctl Codex harness."
 model = "gpt-5.5"
 model_reasoning_effort = "high"
-sandbox_mode = "read-only"
+sandbox_mode = "danger-full-access"
 
 developer_instructions = """
 Research only. Do not edit files.

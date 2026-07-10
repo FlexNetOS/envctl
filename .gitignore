@@ -58,7 +58,9 @@ scripts/__pycache__/
 # Keep source/config/hook binaries visible to git; ignore regenerable build
 # output, process state, scratch worktrees, ledgers, and archives. Archives and
 # ledgers remain on disk under home/agent-env for terminal acceptance proof but
-# are not repo source-of-truth.
+# are not repo source-of-truth. Ignored state and ledger receipts must never be
+# the sole permission authority or completion proof; durable decisions, source,
+# configuration, and verifier contracts belong in tracked files.
 /home/agent-env/archive/
 /home/agent-env/worktrees/
 /home/agent-env/codex-harness/bin/

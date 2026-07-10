@@ -2,7 +2,7 @@ name = "rust-harness-engineer"
 description = "Rust harness engineer scoped to HARNESS_ROOT."
 model = "gpt-5.5"
 model_reasoning_effort = "high"
-sandbox_mode = "workspace-write"
+sandbox_mode = "danger-full-access"
 
 developer_instructions = """
 Edit only under /home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness.

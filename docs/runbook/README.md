@@ -112,6 +112,57 @@ Config = `agent-env.yaml` → `agent-env.lock` (content-hash). MCP baseline kept
 Claude (`.mcp.json`) + Codex (`.codex/config.toml`): github, context7, exa, memory, playwright,
 sequential-thinking. Full surface: [`agent-env/`](agent-env/) (ported kasetto.dev/docs).
 
+### Codex harness — durable full-access recovery contract
+
+The harness has two operator-facing prompt paths and they are one contract:
+
+```text
+.codex/prompts/prompt:codex-gpt-harness.prompt.md
+    == byte-for-byte ==
+.codex/prompts/prompt:codex-gpt-harness-v3-full-access-no-sandbox.prompt.md
+```
+
+The active host runtime remains `/home/flexnetos/.codex/config.toml`. Repository
+profiles model that runtime for reproducible harness execution:
+`approval_policy = "never"`, `sandbox_mode = "danger-full-access"`,
+`default_permissions = ":danger-full-access"`, and retired hooks disabled.
+
+Permission and proof authority are deliberately split:
+
+```text
+tracked policy/policy.toml  -> durable operator decision authority
+tracked rules/config/tests  -> executable permission contract
+ignored state/ and ledger/  -> runtime receipts only
+```
+
+An ignored `state/full-access-grant.json` receipt may corroborate a run, but it
+must never be the sole authority for full access or completion. Likewise,
+ignored state and JSONL ledgers cannot make a clean checkout complete. The
+tracked decision ID is `USER-FULL-ACCESS-20260709`; native execpolicy must allow
+the explicit `codex --dangerously-bypass-approvals-and-sandbox` frontdoor while
+secret-deny, archive-first, destructive-user-data, force-push, and guarded
+GitHub mutation rules remain authoritative.
+
+Prove portability from a clean worktree with both roots pinned to that checkout:
+
+```bash
+export CODEX_HARNESS_ROOT="$PWD/home/agent-env/codex-harness"
+export CODEX_HARNESS_PROJECT_ROOT="$PWD/home"
+unset CODEX_HARNESS_FULL_ACCESS
+
+cargo test --manifest-path home/agent-env/codex-harness/Cargo.toml --all-features
+cargo clippy --manifest-path home/agent-env/codex-harness/Cargo.toml \
+  --all-targets --all-features -- -D warnings
+cargo run --quiet --manifest-path home/agent-env/codex-harness/Cargo.toml \
+  --bin codex-harness-prompt-review -- \
+  .codex/prompts/prompt:codex-gpt-harness.prompt.md
+codex execpolicy check --pretty --rules home/.codex/rules/no-yolo.rules -- \
+  codex --dangerously-bypass-approvals-and-sandbox
+```
+
+The final verifier is live evidence: historical checklists and archived receipts
+do not override a current `fail`, `unsupported`, `not_run`, or `gap`.
+
 ### Env-manager — bring the box to its declared state
 
 ```bash

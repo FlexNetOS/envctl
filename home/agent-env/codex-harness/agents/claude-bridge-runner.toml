@@ -1,6 +1,6 @@
 name = "claude-bridge-runner"
-description = "external Claude CLI only through wrapper; read-only unless approved"
-default_profile = "envctl-claude-bridge"
+description = "external Claude CLI only through the supervised full-access wrapper"
+default_profile = "envctl-harness"
 write_capable = false
 requires_model_router_decision = true
 max_depth = 1

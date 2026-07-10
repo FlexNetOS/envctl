@@ -3,8 +3,8 @@
 use anyhow::Result;
 use codex_harness::prompt_review::review_full_access_prompt_path;
 use codex_harness::{
-    append_ledger, audit_value, codex_harness_dir, full_access_granted, full_access_marker_path,
-    model_router_ready, nix_verify_value, project_root, state_dir, which,
+    append_ledger, audit_value, codex_harness_dir, full_access_granted, model_router_ready,
+    nix_verify_value, project_root, state_dir, tracked_full_access_policy_granted, which,
     USER_FULL_ACCESS_DECISION_ID,
 };
 use serde_json::{json, Value};
@@ -13,6 +13,7 @@ use std::collections::BTreeSet;
 use std::env;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 fn exists(path: impl AsRef<Path>) -> bool {
     path.as_ref().exists()
@@ -76,6 +77,39 @@ fn probe_accepted(probe: &Value) -> bool {
         .get("accepted")
         .and_then(Value::as_bool)
         .unwrap_or(false)
+}
+
+fn execpolicy_allows_full_access(rules_path: &Path) -> bool {
+    let Some(codex) = which("codex") else {
+        return false;
+    };
+    let rules = rules_path.display().to_string();
+    let output = Command::new(codex)
+        .args([
+            "execpolicy",
+            "check",
+            "--pretty",
+            "--rules",
+            &rules,
+            "--",
+            "codex",
+            "--dangerously-bypass-approvals-and-sandbox",
+        ])
+        .output();
+    let Ok(output) = output else {
+        return false;
+    };
+    output.status.success()
+        && serde_json::from_slice::<Value>(&output.stdout)
+            .ok()
+            .and_then(|value| {
+                value
+                    .get("decision")
+                    .and_then(Value::as_str)
+                    .map(str::to_owned)
+            })
+            .as_deref()
+            == Some("allow")
 }
 
 fn prompt_candidates(envctl_root: &Path) -> Vec<PathBuf> {
@@ -234,6 +268,8 @@ fn phase_state_files_ok(harness: &Path, prompt_sha256: Option<&str>) -> bool {
 fn main() -> Result<()> {
     let harness = codex_harness_dir();
     let project = project_root();
+    let full_access_rule_path = project.join(".codex/rules/no-yolo.rules");
+    let full_access_execpolicy_ok = execpolicy_allows_full_access(&full_access_rule_path);
     let audit = audit_value();
     let nix = nix_verify_value();
     let envctl_root = project.parent().unwrap_or(&project);
@@ -379,10 +415,10 @@ fn main() -> Result<()> {
         ),
         row(
             "containment-before-capability",
-            "full-access marker plus native execpolicy containment matrix",
-            full_access_marker_path().display().to_string(),
-            "codex execpolicy check --pretty --rules ...",
-            pass_fail(full_access_granted()),
+            "tracked operator decision plus native execpolicy containment matrix",
+            harness.join("policy/policy.toml").display().to_string(),
+            "validate tracked policy; codex execpolicy check --pretty --rules ...",
+            pass_fail(tracked_full_access_policy_granted()),
         ),
         row(
             "Nix ownership",
@@ -412,14 +448,11 @@ fn main() -> Result<()> {
             pass_fail(exists(project.join(".codex/rules/secrets-deny.rules"))),
         ),
         row(
-            "yolo break-glass disabled",
-            "no-yolo native rule and bad-behavior counter",
-            project
-                .join(".codex/rules/no-yolo.rules")
-                .display()
-                .to_string(),
-            "codex execpolicy check -- codex --dangerously-bypass-approvals-and-sandbox",
-            pass_fail(exists(project.join(".codex/rules/no-yolo.rules"))),
+            "operator full-access launch",
+            "tracked operator grant and native execpolicy allow the required full-access prompt frontdoor",
+            full_access_rule_path.display().to_string(),
+            "codex execpolicy check --pretty --rules ... -- codex --dangerously-bypass-approvals-and-sandbox",
+            pass_fail(full_access_granted() && full_access_execpolicy_ok),
         ),
         row(
             "RULES/POLICY/SOUL",
@@ -657,11 +690,11 @@ fn main() -> Result<()> {
             1,
             "Containment before agentic power",
             prompt_phase_anchor(prompt_text.as_deref(), 1, "PHASE 1"),
-            "full-access marker, no-yolo/secret rules, hooks, kill switch",
+            "tracked full-access decision, native full-access execpolicy, secret rules, hooks, kill switch",
             pass_fail(
                 row_pass("containment-before-capability")
                     && row_pass("secrets redaction")
-                    && row_pass("yolo break-glass disabled")
+                    && row_pass("operator full-access launch")
                     && row_pass("hooks")
                     && row_pass("rules")
                     && row_pass("kill switch"),

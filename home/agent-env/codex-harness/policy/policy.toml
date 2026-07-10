@@ -14,3 +14,5 @@ block_only_concrete_forbidden_actions = true
 secret_denies_remain_authoritative = true
 non_nix_codex_install_remains_forbidden = true
 destructive_user_data_commands_remain_forbidden = true
+decision_id = "USER-FULL-ACCESS-20260709"
+danger_full_access = "keep"

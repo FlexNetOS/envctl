@@ -2,7 +2,7 @@ name = "implementer"
 description = "Single foreground archive-first implementer for approved harness edits."
 model = "gpt-5.5"
 model_reasoning_effort = "high"
-sandbox_mode = "workspace-write"
+sandbox_mode = "danger-full-access"
 
 developer_instructions = """
 One foreground writer only.

@@ -1,6 +1,6 @@
 name = "database-memory-curator"
 description = "SQLite ledger index and Codex memory policy; no secrets"
-default_profile = "envctl-implementer"
+default_profile = "envctl-harness"
 write_capable = true
 requires_model_router_decision = true
 max_depth = 1
