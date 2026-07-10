@@ -1336,28 +1336,27 @@ work is **sync-meta-source-UP-then-relocate**, not a symlink sweep.
   `npm install` → `{"permissionDecision":"allow","updatedInput":{"command":"bun install"}}`.
   Nuance recorded: THIS session predates the 16:21 wiring (hook snapshots bind at session
   start), so in-session Bash ran real npm — new sessions are enforced. MEMORY claim stands.
-- [~] **TASK-0091 (R7, S — plan row 7, V21/V1) — BUILT (cycle 5), PR #470 armed; tick on merge:** author the `postgres-ruvector`
+- [x] **TASK-0091 (R7, S — plan row 7, V21/V1) — DONE: PR #470 MERGED 2026-07-10T01:12Z (cycle 5).** author the `postgres-ruvector`
   manifest component (detect/install/verify/fix) declaring the hand-started global-brain cluster
   (PostgreSQL 17.10 socket-only + ruvector ext) in envctl's declarative plane.
   - acceptance MET (raw): `auto-detect --json` → `{"id":"postgres-ruvector","detected":true,
     "healthy":true}`; verify hook prints "healthy: ext=0.3.0, minilm lane fully embedded";
     install short-circuits on the answering socket. Remove = stop-only (data untouched).
-- [~] **TASK-0092 (R8, M — plan row 8, V20) — ADR-0005 authored (cycle 6), PR #471 armed; tick on merge:** reconcile ruvector extension 0.3.0 ↔
+- [x] **TASK-0092 (R8, M — plan row 8, V20) — DONE: ADR-0005 merged via PR #471 2026-07-10T00:59Z (cycle 6).** reconcile ruvector extension 0.3.0 ↔
   client crate 2.0.5 two-major skew: upgrade ext to a client-supported version OR pin the pairing
   in an ADR note (an ext-shipped `2.0.0--0.3.0` downgrade script says this bit someone before).
   - acceptance MET via the ADR fork: measured NO 0.3.0→2.0.0 upgrade path exists (only the
     downgrade), DROP CASCADE would destroy the vector lanes → ADR-0005 pins server 0.3.0 ↔
     client 2.0.5, safe-by-construction (feature default-OFF), reconcile trigger named.
-- [~] **TASK-0093 (R9, M — plan row 9, V10/V11) — UNBLOCKED UPSTREAM (cycle 8 in flight):** musl static lane for
+- [x] **TASK-0093 (R9, M — plan row 9, V10/V11) — DONE: PR #473 MERGED 2026-07-10T01:29Z (cycle 8; yazelix #34 MERGED upstream).** musl static lane for
   `envctl-engine`+`envctl` — fenix musl std + `.cargo/config.toml` target block; gnu lane untouched.
-  - blocker cleared: musl rust-std was absent from the foundation toolchain (no rustup by
-    contract; flakes rate-limited anonymously) → **yazelix PR #34 MERGED** adds
-    `targets.x86_64-unknown-linux-musl.latest.rust-std` to the combine; foundation rebuilt
-    (`/nix/store/3lz6...-lifeos-foundation-yzx`). envctl lane (config block + static build +
-    T6) building; envctl PR follows.
+  - blocker cleared at the source: yazelix PR #34 MERGED (musl rust-std in the foundation
+    combine), foundation rebuilt (`/nix/store/3lz6...-lifeos-foundation-yzx`); lane shipped in
+    PR #473 (.cargo musl target block + T6 static-pie pin). Build evidence: static-pie linked,
+    binary runs, NO-C PASS; ring cross-cc = clang 21 + store musl 1.2.6 headers.
   - acceptance: `bash scripts/tests/blueprint/t6_musl_static.sh` GREEN (statically linked) AND
     `ci/gates/no-c.sh` green
-- [~] **TASK-0094 (R10, M — plan row 10, V12/V23/V22) — BUILT (cycle 7), PR #472 armed; tick on merge:** first envctl ruvector consumer —
+- [x] **TASK-0094 (R10, M — plan row 10, V12/V23/V22) — DONE: PR #472 MERGED 2026-07-10T01:23Z (cycle 7).** first envctl ruvector consumer —
   HNSW top-k over `codedb export` rows behind the default-OFF `ruvector` feature (turns the
   feature-gated pins into the contract-sanctioned semantic layer; default builds bit-identical).
   - acceptance MET: `cargo test -p envctl-engine --features ruvector --lib semantic` → 2 passed
