@@ -2003,6 +2003,62 @@ fn command_output_text(mut command: Command) -> Result<(i32, String, String)> {
     ))
 }
 
+pub fn openrouter_model_catalog_summary(models_json: &Value, target_model: &str) -> Value {
+    let models = models_json
+        .get("data")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let model_count = models.len();
+    let has_openai = models.iter().any(|m| {
+        m.get("id")
+            .and_then(Value::as_str)
+            .map(|id| id.starts_with("openai/"))
+            .unwrap_or(false)
+    });
+    let has_anthropic = models.iter().any(|m| {
+        m.get("id")
+            .and_then(Value::as_str)
+            .map(|id| id.starts_with("anthropic/"))
+            .unwrap_or(false)
+    });
+    let has_target_model = models.iter().any(|m| {
+        m.get("id")
+            .and_then(Value::as_str)
+            .map(|id| id == target_model)
+            .unwrap_or(false)
+    });
+
+    json!({
+        "model_count": model_count,
+        "has_openai_models": has_openai,
+        "has_anthropic_models": has_anthropic,
+        "target_model": target_model,
+        "has_target_model": has_target_model,
+    })
+}
+
+pub fn openrouter_wire_compatibility_summary(openapi_json: &Value) -> Value {
+    fn has_post_path(openapi_json: &Value, path: &str) -> bool {
+        openapi_json
+            .get("paths")
+            .and_then(|paths| paths.get(path))
+            .and_then(|path_item| path_item.get("post"))
+            .is_some()
+    }
+
+    let responses_api_documented = has_post_path(openapi_json, "/responses");
+    let chat_completions_documented = has_post_path(openapi_json, "/chat/completions");
+
+    json!({
+        "source": "https://openrouter.ai/openapi.json",
+        "responses_api_documented": responses_api_documented,
+        "chat_completions_documented": chat_completions_documented,
+        "direct_responses_wire_compatible": responses_api_documented,
+        "chat_completion_fallback_available": chat_completions_documented,
+    })
+}
+
 pub fn openrouter_probe_value(model: Option<&str>, prompt: Option<&str>) -> Result<Value> {
     let model = model.unwrap_or("tencent/hy3:free");
     let prompt = prompt.unwrap_or("Return the single word pong.");
@@ -2016,34 +2072,38 @@ pub fn openrouter_probe_value(model: Option<&str>, prompt: Option<&str>) -> Resu
     let models_json: Value = serde_json::from_str(&models_stdout).unwrap_or_else(
         |_| json!({"parse_error": redact(&models_stderr), "raw_len": models_stdout.len()}),
     );
-    let model_count = models_json
-        .get("data")
-        .and_then(Value::as_array)
-        .map(Vec::len)
+    let catalog_summary = openrouter_model_catalog_summary(&models_json, model);
+    let model_count = catalog_summary
+        .get("model_count")
+        .and_then(Value::as_u64)
         .unwrap_or(0);
-    let has_openai = models_json
-        .get("data")
-        .and_then(Value::as_array)
-        .map(|items| {
-            items.iter().any(|m| {
-                m.get("id")
-                    .and_then(Value::as_str)
-                    .map(|id| id.starts_with("openai/"))
-                    .unwrap_or(false)
-            })
-        })
+    let has_openai = catalog_summary
+        .get("has_openai_models")
+        .and_then(Value::as_bool)
         .unwrap_or(false);
-    let has_anthropic = models_json
-        .get("data")
-        .and_then(Value::as_array)
-        .map(|items| {
-            items.iter().any(|m| {
-                m.get("id")
-                    .and_then(Value::as_str)
-                    .map(|id| id.starts_with("anthropic/"))
-                    .unwrap_or(false)
-            })
-        })
+    let has_anthropic = catalog_summary
+        .get("has_anthropic_models")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+
+    let mut openapi_cmd = Command::new("curl");
+    openapi_cmd.args([
+        "-sS",
+        "-L",
+        "-A",
+        "codex-harness-openrouter-proof/1.0",
+        "https://openrouter.ai/openapi.json",
+    ]);
+    let (openapi_exit, openapi_stdout, openapi_stderr) = command_output_text(openapi_cmd)?;
+    let openapi_json: Value = serde_json::from_str(&openapi_stdout).unwrap_or_else(
+        |_| json!({"parse_error": redact(&openapi_stderr), "raw_len": openapi_stdout.len()}),
+    );
+    let mut wire_compatibility = openrouter_wire_compatibility_summary(&openapi_json);
+    wire_compatibility["openapi_exit_code"] = json!(openapi_exit);
+    wire_compatibility["openapi_parse_ok"] = json!(openapi_json.get("paths").is_some());
+    let direct_responses_wire_compatible = wire_compatibility
+        .get("direct_responses_wire_compatible")
+        .and_then(Value::as_bool)
         .unwrap_or(false);
 
     let key_probe = if has_key {
@@ -2203,7 +2263,11 @@ pub fn openrouter_probe_value(model: Option<&str>, prompt: Option<&str>) -> Resu
     let account_policy_blocked = response_http == "404"
         && (response_preview.contains("guardrail restrictions")
             || response_preview.contains("settings/privacy"));
-    let ok = models_exit == 0 && model_count > 0 && has_openai && has_anthropic;
+    let ok = models_exit == 0
+        && model_count > 0
+        && has_openai
+        && has_anthropic
+        && direct_responses_wire_compatible;
     let out = json!({
         "ok": ok,
         "enabled": full_access_granted(),
@@ -2216,6 +2280,8 @@ pub fn openrouter_probe_value(model: Option<&str>, prompt: Option<&str>) -> Resu
         "has_openai_models": has_openai,
         "has_anthropic_models": has_anthropic,
         "target_model": model,
+        "catalog_summary": catalog_summary,
+        "wire_compatibility": wire_compatibility,
         "key_probe": key_probe,
         "responses_probe": responses_probe,
         "authenticated_generation_ok": generation_ok,
