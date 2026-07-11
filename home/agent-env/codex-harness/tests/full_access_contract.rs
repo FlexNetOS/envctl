@@ -326,10 +326,18 @@ fn persistent_runner_jobs_have_isolated_cargo_targets() {
     let root = envctl_root();
     let workflow = fs::read_to_string(root.join(".github/workflows/ci.yml")).unwrap();
     assert!(workflow.contains("CARGO_TARGET_DIR"));
-    assert!(workflow.contains("runner.temp"));
-    assert!(workflow.contains("github.run_id"));
-    assert!(workflow.contains("github.run_attempt"));
-    assert!(workflow.contains("github.job"));
+    assert!(workflow.contains("RUNNER_TEMP"));
+    assert!(workflow.contains("GITHUB_RUN_ID"));
+    assert!(workflow.contains("GITHUB_RUN_ATTEMPT"));
+    assert!(workflow.contains("GITHUB_JOB"));
+    assert!(workflow.contains("GITHUB_ENV"));
+    assert_eq!(
+        workflow
+            .matches("isolate Cargo target for this persistent-runner job")
+            .count(),
+        6,
+        "every Cargo-using job must isolate its target directory"
+    );
 }
 
 #[test]
