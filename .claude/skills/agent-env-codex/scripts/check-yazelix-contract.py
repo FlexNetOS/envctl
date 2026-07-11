@@ -12,24 +12,49 @@ import sys
 
 PROFILE_YZX = Path("/home/flexnetos/.nix-profile/bin/yzx")
 REQUIRED_COMMANDS = {
+    "yzx",
     "yzx agent",
     "yzx config",
+    "yzx config set",
+    "yzx config ui",
+    "yzx config unset",
     "yzx cursors",
+    "yzx cursors ghostty setup",
     "yzx desktop",
+    "yzx desktop install",
+    "yzx desktop launch",
+    "yzx desktop macos_preview install",
+    "yzx desktop macos_preview uninstall",
+    "yzx desktop uninstall",
     "yzx dev",
+    "yzx dev inspect_session",
+    "yzx dev perf",
+    "yzx dev profile",
     "yzx doctor",
     "yzx edit",
+    "yzx edit config",
     "yzx enter",
     "yzx env",
     "yzx home_manager",
+    "yzx home_manager prepare",
     "yzx import",
+    "yzx import helix",
+    "yzx import yazi",
+    "yzx import zellij",
     "yzx inspect",
     "yzx keys",
+    "yzx keys helix",
+    "yzx keys hx",
+    "yzx keys nu",
+    "yzx keys nushell",
+    "yzx keys yazi",
+    "yzx keys yzx",
     "yzx launch",
     "yzx menu",
     "yzx onboard",
     "yzx popup",
     "yzx reset",
+    "yzx reset config",
     "yzx restart",
     "yzx reveal",
     "yzx run",
@@ -39,6 +64,17 @@ REQUIRED_COMMANDS = {
     "yzx sponsor",
     "yzx status",
     "yzx tutor",
+    "yzx tutor begin",
+    "yzx tutor discovery",
+    "yzx tutor helix",
+    "yzx tutor hx",
+    "yzx tutor list",
+    "yzx tutor nu",
+    "yzx tutor nushell",
+    "yzx tutor tool_tutors",
+    "yzx tutor troubleshooting",
+    "yzx tutor workspace",
+    "yzx update",
     "yzx update home_manager",
     "yzx update local_source",
     "yzx update nix",
@@ -123,6 +159,19 @@ def check_static(root: Path, skill_root: Path) -> None:
             "zjstatus.wasm",
         ],
     )
+    reference = (
+        skill_root / "references/yazelix-cli-plugin-policy.md"
+    ).read_text()
+    missing_documented_commands = []
+    for command in sorted(REQUIRED_COMMANDS):
+        display = command if command == "yzx" else command.removeprefix("yzx ")
+        if f"`{display}`" not in reference:
+            missing_documented_commands.append(command)
+    if missing_documented_commands:
+        fail(
+            "Yazelix policy does not document command snapshot entries: "
+            + ", ".join(missing_documented_commands)
+        )
     require_text(
         root
         / ".codex/prompts/prompt:codex-gpt-harness-v3-full-access-no-sandbox.prompt.md",
@@ -133,7 +182,10 @@ def check_static(root: Path, skill_root: Path) -> None:
             "plugin and add-on source/package/manifest authority",
         ],
     )
-    print("Yazelix durable policy: PASS")
+    print(
+        f"Yazelix durable policy: PASS "
+        f"({len(REQUIRED_COMMANDS)} documented commands)"
+    )
 
 
 def check_live(yzx: Path) -> None:

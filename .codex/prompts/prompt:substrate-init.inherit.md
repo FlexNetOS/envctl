@@ -8,7 +8,7 @@ Sanctioned one-shot (five substrates): `yzx agent init` → preview; `yzx agent 
 mutate. Fail-closed pre-check requires `git-kb grit icm meta rtk git` all on PATH; steps in
 order — GitKB (`git-kb verify --full --json` / `git-kb init --no-verify` + codex scaffold), Grit
 (`grit -r <repo> init`), ICM (`icm init --mode cli --force`), Meta
-(`meta --dry-run exec -- git status --short --branch`), RTK (`rtk init --global --codex`); a
+(`rtk meta exec --include <repo> -- git status --short --branch`), RTK (`rtk init --global --codex`); a
 failing step aborts the remainder; never enables hooks/plugins or rewrites git commands;
 `--meta-root` defaults `$META_ROOT` else `/home/flexnetos/meta`. Weave is NOT covered; wire it
 per the row below. Independent per-row verification is still required:
@@ -16,7 +16,7 @@ per the row below. Independent per-row verification is still required:
 | Substrate | Floor | Verify (raw output required) | Command substitution it enforces |
 |---|---|---|---|
 | rtk | 0.43.0 | `rtk --version && rtk gain` | `git/cargo/gh/docker/… X` → `rtk X`; cross-repo `rtk meta git …`; raw: `rtk proxy` |
-| meta | 0.2.22 | `meta project list` | `cd <repo> && cmd` → `meta --include <repo> exec -- cmd`; workspace-wide git → `meta git status` |
+| meta | 0.2.22 | `rtk meta project list` | `cd <repo> && cmd` → `rtk meta exec --include <repo> -- cmd`; workspace-wide git → `rtk meta git status` |
 | git-kb | 0.2.12 | `git-kb code doctor --json` | grep-for-callers/defs → `git-kb code callers/symbols --json` (AST, not text) |
 | grit | 0.6.4 | `grit status` in-repo | "I'll be careful" parallel edits → `grit init/claim/release` file::symbol locks |
 | icm | 0.10.57 | `icm --version` + store/recall smoke | remember/recall → `icm store` / `icm recall` |

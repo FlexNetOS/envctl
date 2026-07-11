@@ -427,7 +427,10 @@ fn agent_env_codex_requires_latest_yazelix_convergence_and_plugin_ownership() {
         "yazelix-yazi-assets",
         "Never leave completed or idle subagents running.",
     ] {
-        assert!(skill.contains(required), "missing skill contract: {required}");
+        assert!(
+            skill.contains(required),
+            "missing skill contract: {required}"
+        );
     }
 
     let policy = fs::read_to_string(
@@ -447,13 +450,14 @@ fn agent_env_codex_requires_latest_yazelix_convergence_and_plugin_ownership() {
         "yzpp.wasm",
         "zjstatus.wasm",
     ] {
-        assert!(policy.contains(required), "missing Yazelix policy: {required}");
+        assert!(
+            policy.contains(required),
+            "missing Yazelix policy: {required}"
+        );
     }
 
     let prompt = fs::read_to_string(
-        root.join(
-            ".codex/prompts/prompt:codex-gpt-harness-v3-full-access-no-sandbox.prompt.md",
-        ),
+        root.join(".codex/prompts/prompt:codex-gpt-harness-v3-full-access-no-sandbox.prompt.md"),
     )
     .unwrap();
     for required in [
@@ -462,9 +466,20 @@ fn agent_env_codex_requires_latest_yazelix_convergence_and_plugin_ownership() {
         "latest available profile-owned toolchain",
         "plugin and add-on source/package/manifest authority",
         "empty harness-owned roster",
+        "references/bunx-and-github-ssh.md",
+        "references/github-execution-policy.md",
+        "references/github-org-and-ccboard.md",
+        "references/yazelix-cli-plugin-policy.md",
+        "scripts/check-bun-command-policy.py",
+        "scripts/check-yazelix-contract.py",
     ] {
-        assert!(prompt.contains(required), "missing prompt contract: {required}");
+        assert!(
+            prompt.contains(required),
+            "missing prompt contract: {required}"
+        );
     }
+    assert!(!prompt.contains("`rtk git ...`"));
+    assert!(!prompt.contains("/bin/rtk git status"));
 
     let claude_prompt = fs::read_to_string(
         root.join(".claude/prompts/prompt:claude-code-agent-env-ultraplan.prompt.md"),
@@ -473,9 +488,7 @@ fn agent_env_codex_requires_latest_yazelix_convergence_and_plugin_ownership() {
     let claude_skill =
         fs::read_to_string(root.join(".claude/skills/agent-env-claude/SKILL.md")).unwrap();
     assert_eq!(
-        claude_prompt
-            .matches("## YAZELIX (yzx) SURFACE")
-            .count(),
+        claude_prompt.matches("## YAZELIX (yzx) SURFACE").count(),
         1,
         "Claude prompt must contain one Yazelix policy block"
     );

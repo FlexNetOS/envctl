@@ -172,10 +172,11 @@ Ownership facts (verified 2026-07-11; re-verify at Phase 0):
   `"shell": {"default_shell": "nu"}`; parallel per-shell user hooks
   `~/.config/yazelix/shell_nu.nu` / `shell_bash.sh` / `shell_zsh.zsh` give every shell the same
   environment, chiefly rtk auto-routing.
-- rtk wrapper source of truth: `~/.config/nushell/rtk-wrappers.nu`
-  (`def --wrapped git [...rest] { ^rtk git ...$rest }`, ~33 tools) sourced by yazelix + login nu;
-  bash panes get equivalent aliases from `shell_bash.sh`. Known coverage gaps to close: `meta`
-  wrapped in no shell; zsh/fish hooks are empty stubs.
+- rtk wrapper source of truth: `~/.config/nushell/rtk-wrappers.nu` is sourced by Yazelix and
+  login Nushell; its legacy direct-Git wrapper is discovery evidence, not an allowed harness
+  route. Harness Git always uses `rtk meta git` or scoped `rtk meta exec`; bash panes get
+  equivalent RTK aliases from `shell_bash.sh`. Known coverage gaps to close: `meta` wrapped in
+  no shell; zsh/fish hooks are empty stubs.
 - Terminal chain: kitty is the packaged terminal (`runtime_variant` file = `kitty`), host
   ghostty is the backup, mars is removed from `SUPPORTED_TERMINALS` and the flake outputs. An
   installed runtime still reporting mars = runtime lag → rebuild, not doctrine change.
@@ -211,7 +212,7 @@ COMMAND IDIOM (for every command this harness writes):
 | POSIX one-liner | non-login `bash -c '…'` (toolbin is on non-login PATH) |
 | genuinely needs login profile | `bash -lc '…'` (rare; costs a full profile re-source) |
 | token-optimized output in scripts | explicit `rtk <cmd>` (never assume aliases in a child) |
-| substrate CLIs | rtk-routed: `rtk git-kb …`, `rtk grit …`, `rtk icm …`, `rtk meta git …`; unlisted fleet git: `rtk meta exec -- git <cmd>` |
+| substrate CLIs | rtk-routed: `rtk git-kb …`, `rtk grit …`, `rtk icm …`, `rtk meta git …`; unlisted fleet git: `rtk meta exec --include <repo> -- git <cmd>` |
 | bash/zsh under the yazelix runtime env | `yzx run bash -lc "<cmd>"` / `yzx run zsh -lc "<cmd>"` (profile frontdoor) |
 | raw bypass | `^git` (nu) / `\git` (bash) / `rtk proxy <cmd>` |
 
@@ -241,10 +242,11 @@ until the profile adds the shims.
   gate, no permission change (adding an Allow rule, widening settings) to get past a blocked
   action (`agent_bypass_request`). Strict upgrade only — fix the cause or surface the blocker.
 - WORKTREE RITUAL (meta policy, always): work happens in a fresh worktree off freshly-fetched
-  `develop` (`rtk meta git worktree create <slug>` / `rtk git worktree add … origin/develop`),
+  `develop` (`rtk meta git worktree create <slug> origin/develop --repo <repo>`),
   never on a shared checkout.
-- FLEET GIT ROUTES THROUGH `rtk meta git …` — never bare `git` for cross-repo operations;
-  unlisted verbs via `rtk meta exec -- git <cmd>`; raw `git` only under the RAW-COMMAND RULE.
+- ALL REPOSITORY GIT ROUTES THROUGH `rtk meta git …`; unlisted verbs use
+  `rtk meta exec --include <repo> -- git <cmd>`. Never invoke raw `git`; capture unsummarized
+  evidence with the RTK proxy around the same Meta route.
 - LAND EVERYTHING: commit ALL changes (no partial "I'll commit the rest later"), push, open the
   PR against `develop` with auto-merge armed. DONE = `gh pr view` returns `MERGED`
   (tick-on-merged); armed-but-unmerged stays in-flight.
@@ -272,8 +274,9 @@ until the profile adds the shims.
   reveal secret values, deploy-key private material, or GitHub App credentials. A denied endpoint
   remains an exact scope/plan blocker; never change permissions or add an `Allow` to hide it.
 - BUN-FIRST GITHUB TOOLING: executable skill recipes use profile-owned `bun` instead of `npm` and
-  `bunx` instead of `npx`; the gate scans every Markdown skill owner rather than relying only on a
-  runtime rewrite hook. Examples: `bunx ruv-swarm/claude-flow@alpha`, `bunx ruv-swarm …`, and
+  `bunx` instead of `npx`; the gate scans Markdown, shell/Nushell, code launchers, and
+  command-bearing skill config rather than relying only on a runtime rewrite hook. Examples:
+  `bunx ruv-swarm/claude-flow@alpha`, `bunx ruv-swarm …`, and
   `bunx claude-flow@alpha …`.
 - GITHUB SKILLS (loaded, fleet-wide): the governing `github` skill plus the toolbox
   `github-{multi-repo,workflow-automation,release-management,code-review,project-management}` live
@@ -315,7 +318,7 @@ Sanctioned one-shot (five substrates): `yzx agent init` → preview; `yzx agent 
 mutate. Spec: fail-closed pre-check requires `git-kb grit icm meta rtk git` all on PATH; steps in
 order — GitKB (`git-kb verify --full --json` / `git-kb init --no-verify` + codex scaffold), Grit
 (`grit -r <repo> init`), ICM (`icm init --mode cli --force`), Meta
-(`meta --dry-run exec -- git status --short --branch`), RTK (`rtk init --global --codex`); a
+(`rtk meta exec --include <repo> -- git status --short --branch`), RTK (`rtk init --global --codex`); a
 failing step aborts the remainder; never enables hooks/plugins or rewrites git commands;
 `--meta-root` defaults `$META_ROOT` else `/home/flexnetos/meta` — export `META_ROOT` for
 portability. Weave is NOT covered; wire it per the row below. Independent per-row verification is
@@ -324,7 +327,7 @@ still required (the verb is convenience, not evidence):
 | Substrate | Floor | Verify (raw output required) | Command substitution it enforces |
 |---|---|---|---|
 | rtk | 0.43.0 | `rtk --version && rtk gain` | `git/cargo/gh/docker/… X` → `rtk X` (hook-auto); cross-repo `rtk meta git …`; raw: `rtk proxy` |
-| meta | 0.2.22 | `meta project list` | `cd <repo> && cmd` → `meta --include <repo> exec -- cmd`; workspace-wide git → `meta git status` |
+| meta | 0.2.22 | `rtk meta project list` | `cd <repo> && cmd` → `rtk meta exec --include <repo> -- cmd`; workspace-wide git → `rtk meta git status` |
 | git-kb | 0.2.12 | `git-kb code doctor --json` | grep-for-callers/defs → `kb_callers`/`kb_symbols`/`kb_impact` (AST, not text) |
 | grit | 0.6.4 | `grit status` in-repo | "I'll be careful" parallel edits → `grit init/claim/release` file::symbol locks |
 | icm | 0.10.57 | `icm --version` + store/recall smoke | remember/recall → `icm`; mandate restore: Phase 2 |
@@ -444,7 +447,7 @@ ccbrain capture + the pipefail regression; syntax floors).
 ## PHASES — run in order; each ends with a proof ledger; blocked rows are recorded and skipped
 
 ### Phase 0 — Bootstrap facts (read-only, minutes)
-Commands: `date -u`; `pwd`; `rtk git status` in the target repo;
+Commands: `date -u`; `pwd`; `rtk meta exec --include <repo> -- git status --short --branch`;
 `command -v nu bash zsh rtk meta grit icm git-kb bun claude weave rtk-monitor ccboard` (every hit
 must resolve under `/nix/store/` or `~/.nix-profile`; misses = `gap` rows);
 `readlink -f $(command -v claude)`; `ls -ld ~/.claude` (ADR-0006 chain); symlink-contract check;

@@ -23,7 +23,7 @@ Examples include `bunx ruv-swarm/claude-flow@alpha`, `bunx ruv-swarm ...`, and `
 
 Terms such as “npm registry,” `.npmrc`, `NPM_TOKEN`, and an upstream package's `npm/` source directory may remain when they name an external protocol, file, secret name, or source path. They are not permission to execute `npm` or `npx`.
 
-Run `scripts/check-bun-command-policy.py <envctl-root>` before delivery. Fix every executable `npm`/`npx` finding in every Markdown skill owner; do not rely only on a runtime rewrite hook.
+Run `scripts/check-bun-command-policy.py <envctl-root>` before delivery. Fix every executable `npm`/`npx` finding across Markdown, shell/Nushell scripts, code launchers, and command-bearing skill config; do not rely only on a runtime rewrite hook.
 
 ## Personal and FlexNetOS organization SSH proof
 
