@@ -92,6 +92,14 @@ it were law is drift. On discovery: record it as a finding, archive, fix or queu
 mode this rule kills: an execution-surface gate hard-coded as an absolute law, making a
 fully-authorized session unable to authorize its own work.
 
+OPTIONAL-MEANS-MANDATORY (binding): in this environment a *task* or *requirement* is never
+optional — "optional" reads as MANDATORY. The ONLY legitimately-optional dimension is a Tier-B
+session TOGGLE (permission mode, apply/dry-run, fan-out size, worktree vs direct, network on/off —
+those flip freely per the matrix above). Never skip, defer, or record `not_run` on a required task
+by calling it optional; never block or downgrade a capability or requirement to avoid doing it
+(blocking is reserved for `dangerous_concrete_action` below). A requirement you genuinely cannot
+complete is a `fail`/`gap`/`unsupported` with the blocker surfaced — never an "optional, skipped".
+
 ACTION TAXONOMY — classify before blocking anything:
 
 - `operator_full_access_context` — the operator granted broad access. Valid execution context.
@@ -144,7 +152,14 @@ ACTION TAXONOMY — classify before blocking anything:
    `yzx update local_source` rebuilds). Non-nix duplicates earlier in PATH are blocking findings.
    Forbidden install paths: rustup-in-place, `npm -g`/`npx -g`, `pip install --user`,
    curl-to-bash, `cargo install` to `~/.cargo`. JS runs bun-first (`bun`/`bunx`, never bare
-   npm/npx where bun works). Rust = fenix toolchain from the profile.
+   npm/npx where bun works). Rust = fenix toolchain from the profile. VERSION FLOORS ARE MINIMA, NOT TARGETS:
+    always resolve and use the LATEST available nix-owned toolchain/binaries — `yzx update
+    local_source` rebuilds the profile from the latest local yazelix; fenix supplies the latest
+    Rust; a newer available version is an upgrade to take (Law 2), never a reason to pin old. A
+    stale toolchain that shadows the nix one earlier in PATH (a rustup / `~/.cargo` / `~/.rustup`
+    install) is a BLOCKING finding — it is the E0514 "crate compiled by an incompatible version of
+    rustc" class (a real CI break): the fix is to remove the shadow, never to downgrade the nix
+    toolchain to match it.
 10. SOURCE OF TRUTH FOR THE AGENT ENV IS ADR-0006. Real files live in
     `meta/src/envctl/home/.claude/`; `~/.claude` is a symlink surface. Durable agent-env changes
     are edited in the envctl repo (worktree on develop), never in place through the symlink.
