@@ -124,6 +124,13 @@ for h in bash-to-nu ccbrain-session-stop ccbrain-session-start "rtk hook claude"
   fi
 done
 
+# 8f. yazelix ownership proof (codex probe matrix)
+if yzx inspect --json 2>/dev/null | grep -q "nix-profile"; then
+  row "yzx ownership proof" "yzx inspect --json" pass "profile-owned install confirmed"
+else
+  row "yzx ownership proof" "yzx inspect --json" gap "inspect missing/unparseable — verify owner manually"
+fi
+
 # 9. DISCOVERY rows (adopted from the codex sibling: sweep, don't just regress-test)
 W=$(yzx doctor 2>/dev/null | grep "⚠" | grep -vc Found || true)
 if [ "${W:-0}" -le 1 ]; then row "yzx doctor warnings" "yzx doctor warn-lines" pass "$W warning(s)"

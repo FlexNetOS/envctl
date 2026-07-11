@@ -114,6 +114,10 @@ ACTION TAXONOMY — classify before blocking anything:
    resolved; `HARNESS_VAR=/home/flexnetos/meta/var`). Never loop on a waiting state. Never leak
    scaffold markers into output. Session ledger (append-only):
    `$HARNESS_VAR/log/claude-harness/ledger.jsonl`.
+7b. THE FIVE HUMAN WALLS (never automate around): reboot; live `/nix` migration; secret
+   reveal or passphrase unlock; owner-sudo cleanup; approval verdicts. Continuity sentinels
+   (`STOP`, `NEEDS-HUMAN`, `WRAP-UP-OWED`, `DONE`) are loop-state contracts, not chat prose —
+   preserve their exact semantics in every loop surface.
 8. MODEL ROUTING IS AN OPERATOR DECISION. Everything runs on Fable unless the operator says
    otherwise. A safety-classifier reroute must be flagged (statusline badge + one-shot notify)
    and surfaced before continuing; `/model fable` returns.
@@ -196,6 +200,14 @@ COMMAND IDIOM (for every command this harness writes):
 | bash/zsh under the yazelix runtime env | `yzx run bash -lc "<cmd>"` / `yzx run zsh -lc "<cmd>"` (profile frontdoor) |
 | raw bypass | `^git` (nu) / `\git` (bash) / `rtk proxy <cmd>` |
 
+RAW-COMMAND RULE: raw `git`/`meta`/`git-kb`/`grit`/`icm` (rtk-bypassed) is allowed only when
+unsummarized output is required for proof — tee the raw output and state why rtk was bypassed.
+DIRTY-STATE RULE: a probe that reveals unrelated dirty state in another checkout records it in
+the proof ledger; it is never permission to mutate outside the requested owner surface.
+HARDWARE GATE: GPU-aware decisions require `envctl auto-detect --json` evidence (dual RTX 5090
+target: driver/toolkit/CDI/cuda-oxide/PyTorch/kache/wild are envctl-component-owned — never
+ad-hoc host installs).
+
 Known profile gaps (verify, queue if still present): `cargo-fmt`/`cargo-clippy` are not exported
 (only `rustfmt`/`clippy-driver`) — use `rustfmt --edition 2024 <files>` locally and CI clippy
 until the profile adds the shims.
@@ -252,11 +264,18 @@ both halves: the six-substrate init table, session-toggle doctrine (`/permission
 authority, never hard-coded lockouts), nix/yazelix profile frontdoors, and `rtk meta git`
 fleet routing. A change to a shared contract lands in BOTH skills or not at all.
 
-ENVCTL VERB SURFACE (probe, read-only): `auto-detect --json`, `doctor`, `graph`, `lock
---check`, `migrate scan` (legacy-install adoption inventory into `$META_ROOT` — fail-closed,
-`--apply` materializes), `agent sync|lock`, `dashboard`. `migrate scan` belongs in every
-discovery pass; stale host shadows (`~/.local/bin` wrappers, `~/.local/share/applications`
-launchers for removed variants) are drift the sweep must catch.
+ENVCTL VERB SURFACE: `auto-detect · install · auto-fix · reset · add-repo · graph · lock ·
+doctor · migrate · dashboard · agent · secret` (destructive verbs preview-by-default). The
+`envctl agent` family is `init · add · remove · sync · lock · list · doctor · clean` — preserve
+the whole family; sync removes only lock-tracked assets, never adopts unrelated ones. Read-only
+discovery probes: `auto-detect --json` (hardware gate), `doctor`, `graph`, `lock --check`,
+`migrate scan` (fail-closed; `--apply` materializes), `agent lock --check`, `agent doctor`,
+plus yazelix ownership proof via `yzx inspect --json` / `yzx status --versions` and non-UI exec
+via `yzx env [--no-shell]` / `yzx run <argv…>`. `migrate scan` belongs in every discovery pass;
+stale host shadows (`~/.local/bin` wrappers, `~/.local/share/applications` launchers for removed
+variants) are drift the sweep must catch. Depth reference (probe matrix, substrate command
+families, YAZELIX_* root-var contract, decision/receipt authority split):
+`.claude/skills/agent-env-claude/references/codex-discovery.md`.
 
 ## STATUS SURFACES — four layers, superset-only, prove renders live
 
