@@ -38,6 +38,16 @@ Do this BEFORE responding to the user. Not after. Not later. Immediately.
 
 Do NOT store: trivial details, info already in CLAUDE.md, ephemeral state (build logs, git status).
 
+### Division of labor: icm vs ccbrain (2026-07-11)
+Two memory layers, complementary — never double-store:
+- **icm** = semantic store/recall ON DEMAND (the mandate above: errors-resolved, decisions,
+  preferences, task summaries — you call it).
+- **ccbrain** (ccboard Brain) = AUTOMATIC per-session insight capture + next-session context
+  injection (hooks `ccbrain-session-stop.sh` / `ccbrain-session-start.sh` →
+  `~/.ccboard/insights.db`). You never call it; it captures typed insights
+  (progress/decision/blocked/pattern/fix/context) at session stop. Manual entries:
+  `/ccboard-remember`. If a fact is already icm-stored, do not restate it just to feed ccbrain.
+
 ### Other commands
 ```bash
 icm update <id> -c "updated content"     # edit memory in-place

@@ -69,6 +69,15 @@
             "timeout": 10
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/ccbrain-session-start.sh",
+            "timeout": 30
+          }
+        ]
       }
     ],
     "PreToolUse": [
@@ -247,6 +256,15 @@
             "type": "command",
             "command": "\"$HOME\"/.claude/hooks/stop-decision-gate.sh",
             "timeout": 10
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/ccbrain-session-stop.sh",
+            "timeout": 30
           }
         ]
       }
