@@ -202,14 +202,18 @@ Rules:
 - Managed shell hook filenames are `shell_bash.sh`, `shell_zsh.zsh`,
   `shell_fish.fish`, `shell_nu.nu`, and host-owned `shell_xonsh.xsh`; do not
   replace these with ad-hoc dotfile edits.
-- Nushell is the default Yazelix shell and the remaining shell/UI core. Bash and
-  Zsh are compatibility shells with generated initializer support, not the
-  primary ownership model.
-- For shell-compatible agent work, prefer the profile-owned surfaces:
-  `yzx env`, `yzx env --no-shell`, `yzx run <argv...>`, and
-  `yzx run bash -lc "<cmd>"` or `yzx run zsh -lc "<cmd>"` when shell parsing is
-  required. For direct Nushell commands use profile `nu -c`, not ambient
-  assumptions about Bash/Zsh.
+- Nushell is the default Yazelix shell and the remaining shell/UI core. Its
+  configured owner surfaces are `/home/flexnetos/meta/src/yazelix/nushell/config`
+  and `/home/flexnetos/meta/src/yazelix/nushell/scripts` (operator shorthand:
+  `~yazelix/nushell/config` and `~yazelix/nushell/scripts`). Bash is configured
+  through that Nushell/Yazelix shell environment; do not add separate bash
+  wrappers, separate shell launchers, or ad-hoc shell-specific control paths to
+  make agent commands work.
+- For shell-compatible agent work, prefer the profile-owned Nushell/Yazelix
+  surfaces: `yzx env`, `yzx env --no-shell`, `yzx run <argv...>`, and profile
+  `nu -c "<cmd>"` / `nu -l -c "<cmd>"` when a loaded Yazelix Nushell config is
+  required. Treat Bash/Zsh as commands executed inside the configured Nushell
+  runtime, not as separate harness owners.
 - `yzx agent` launches host Codex as `rtk codex` when Codex and RTK are
   available. `yzx agent init` previews bounded harness setup; `--apply` may
   create missing Meta GitKB, initialize Grit and ICM, and apply RTK setup, but
@@ -306,7 +310,7 @@ Command routing:
 | Grit coordination | `rtk grit ...` |
 | ICM memory | `rtk icm ...` |
 | Codex launch inside Yazelix agent pane | `yzx agent` -> `rtk codex` |
-| Shell parsing under Yazelix | `yzx run bash -lc "<cmd>"`, `yzx run zsh -lc "<cmd>"`, or `nu -c "<cmd>"` |
+| Shell parsing under Yazelix | profile `nu -c "<cmd>"` or `nu -l -c "<cmd>"` with `~yazelix/nushell/config` + `~yazelix/nushell/scripts`; Bash is already configured there, so do not add separate bash wrappers/launchers |
 
 Raw `git`, `meta`, `git-kb`, `grit`, `icm`, or shell commands are allowed only
 when raw output is required for proof; tee the raw output and explain why RTK
