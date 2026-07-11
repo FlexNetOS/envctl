@@ -243,6 +243,26 @@ until the profile adds the shims.
   matrix entries). A workflow carrying `macos-*`/`windows-*` is a blocking finding.
 - FORKS SYNC AS SUPERSETS: a fork must be configured to pull upstream changes WITHOUT removing
   local updates — upstream merge into the fork, never a force-reset of the fork to upstream.
+- PERSONAL + ORG SSH PROOF (META DEMAND): verify the GitHub SSH principal and `gh api user` are
+  `drdave-flexnetos`, `gh config git_protocol` is `ssh`, FlexNetOS organization membership is
+  active, and an SSH `ls-remote` against a FlexNetOS repository succeeds. A personal SSH greeting
+  alone is not organization authorization. Git fetch/push uses
+  `git@github.com:FlexNetOS/<repo>.git` through `rtk meta git`; organization settings use the
+  authenticated `gh`/REST/GraphQL control plane because SSH does not configure settings.
+- ORG ADMINISTRATION MANDATE (META DEMAND): bring the FlexNetOS organization to a declared,
+  policy-conformant state across ALL admin surfaces — SETTINGS, ACTIONS, WORKFLOWS, RULES /
+  RULESETS, POLICY, SECRETS, SANDBOXES, PAGES, PACKAGES, DISCUSSIONS, WEBHOOKS, DEPLOY KEYS,
+  GITHUB APPS, CODE QUALITY, CODESPACES, PROJECTS, ISSUES, and CUSTOM PROPERTIES. Use
+  audit → declare → converge fail-closed → verify. Inventory secret names/visibility only; never
+  reveal secret values, deploy-key private material, or GitHub App credentials. A denied endpoint
+  remains an exact scope/plan blocker; never change permissions or add an `Allow` to hide it.
+- BUN-FIRST GITHUB TOOLING: executable skill recipes use profile-owned `bun` instead of `npm` and
+  `bunx` instead of `npx`; the gate scans every Markdown skill owner rather than relying only on a
+  runtime rewrite hook. Examples: `bunx ruv-swarm/claude-flow@alpha`, `bunx ruv-swarm …`, and
+  `bunx claude-flow@alpha …`.
+- GITHUB SKILLS (loaded, fleet-wide): the governing `github` skill plus the toolbox
+  `github-{multi-repo,workflow-automation,release-management,code-review,project-management}` live
+  under `home/.claude/skills`. The governing policy wins over any imported toolbox recipe.
 
 ## SUBSTRATE INIT CONTRACT — six substrates, all rows mandatory
 

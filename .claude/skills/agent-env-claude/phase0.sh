@@ -7,6 +7,12 @@ set -u
 REPO=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
 FAILS=0
 row() { printf '| %s | %s | %s | %s |\n' "$1" "$2" "$3" "$4"; [ "$3" = fail ] && FAILS=$((FAILS+1)); }
+meta_git_json() {
+  (cd /home/flexnetos/meta && rtk meta --json exec --include envctl -- git -C "$@")
+}
+meta_git_stdout() {
+  meta_git_json "$@" 2>/dev/null | jq -r '.results[0].stdout // ""'
+}
 
 echo "| item | command | state | evidence |"
 echo "|---|---|---|---|"
@@ -143,17 +149,64 @@ REAPABLE=0; INFLIGHT=0
 while IFS= read -r wt; do
   [ -z "$wt" ] && continue
   [ "$wt" = "$REPO" ] && continue
+  [ "$wt" = "/home/flexnetos/meta/src/envctl" ] && continue
   case "$wt" in "$PWD") continue ;; esac
-  if [ -n "$(git -C "$wt" status --porcelain 2>/dev/null)" ]; then
+  if [ -n "$(meta_git_stdout "$wt" status --porcelain)" ]; then
     INFLIGHT=$((INFLIGHT+1))
-  elif git -C "$wt" merge-base --is-ancestor HEAD origin/develop 2>/dev/null; then
+  elif meta_git_json "$wt" merge-base --is-ancestor HEAD origin/develop 2>/dev/null | jq -e '.success' >/dev/null; then
     REAPABLE=$((REAPABLE+1))
   fi
-done < <(git -C "$REPO" worktree list --porcelain 2>/dev/null | sed -n 's/^worktree //p')
+done < <(meta_git_stdout "$REPO" worktree list --porcelain | sed -n 's/^worktree //p')
 if [ "$REAPABLE" -gt 0 ]; then
   row "worktree/branch sync" "git worktree list + merge-base audit" gap "$REAPABLE merged-clean worktree(s) awaiting reap; $INFLIGHT dirty (in-flight, recorded)"
 else
   row "worktree/branch sync" "git worktree list + merge-base audit" pass "0 reapable; $INFLIGHT dirty (in-flight, recorded)"
+fi
+
+# 8i. GitHub organization surface audit (read-only metadata; never secret values)
+ORG=FlexNetOS
+num() { gh api "$1" -q "$2" 2>/dev/null | grep -Em1 '^[0-9]+$' || echo 'n/a'; }
+if gh api "orgs/$ORG" >/dev/null 2>&1; then
+  act=$(gh api "orgs/$ORG/actions/permissions" -q '.enabled_repositories' 2>/dev/null | grep -Em1 '^[a-z_]+' || echo 'n/a')
+  sec=$(num "orgs/$ORG/actions/secrets" '.total_count')
+  run=$(num "orgs/$ORG/actions/runners" '.total_count')
+  rs=$(num "orgs/$ORG/rulesets" 'length')
+  hk=$(num "orgs/$ORG/hooks" 'length')
+  app=$(num "orgs/$ORG/installations" 'length')
+  cp=$(num "orgs/$ORG/properties/schema" 'length')
+  row "org config surface audit" "gh api org metadata endpoints" gap "actions=$act secrets=$sec runners=$run rulesets=$rs webhooks=$hk apps=$app custom_props=$cp — declare+converge per surface; denied endpoints stay explicit"
+else
+  row "org config surface audit" "gh api orgs/$ORG" gap "org API unreachable (network/auth); do not change permissions to bypass"
+fi
+
+# 8j. Personal identity + FlexNetOS organization SSH authorization
+PROTO=$(gh config get git_protocol --host github.com 2>/dev/null || echo '?')
+LOGIN=$(gh api user -q '.login' 2>/dev/null || echo '?')
+MEMBER_STATE=$(gh api "user/memberships/orgs/$ORG" -q '.state' 2>/dev/null || echo '?')
+MEMBER_ROLE=$(gh api "user/memberships/orgs/$ORG" -q '.role' 2>/dev/null || echo '?')
+MEMBER="$MEMBER_STATE:$MEMBER_ROLE"
+if (cd /home/flexnetos/meta && rtk meta exec --include envctl -- git ls-remote "git@github.com:$ORG/envctl.git" HEAD >/dev/null 2>&1); then
+  ORG_SSH=pass
+else
+  ORG_SSH=fail
+fi
+if [ "$PROTO" = ssh ] && [ "$LOGIN" = drdave-flexnetos ] && [ "$MEMBER_STATE" = active ] && [ "$ORG_SSH" = pass ]; then
+  row "personal + org SSH proof" "gh identity/membership + RTK Meta SSH ls-remote" pass "login=$LOGIN protocol=$PROTO membership=$MEMBER org_repo_ssh=$ORG_SSH"
+else
+  row "personal + org SSH proof" "gh identity/membership + RTK Meta SSH ls-remote" fail "login=$LOGIN protocol=$PROTO membership=$MEMBER org_repo_ssh=$ORG_SSH"
+fi
+
+# 8k. Loaded GitHub skills and deterministic Bun/Bunx command policy
+GHS=$(find "$REPO/home/.claude/skills" -maxdepth 1 -mindepth 1 -type d -name 'github*' 2>/dev/null | wc -l | tr -d ' ')
+if python3 "$REPO/agent-skills/agent-env-codex/scripts/check-bun-command-policy.py" "$REPO" >/dev/null 2>&1; then
+  BUN_POLICY=pass
+else
+  BUN_POLICY=fail
+fi
+if [ "${GHS:-0}" -ge 6 ] && [ "$BUN_POLICY" = pass ]; then
+  row "github skills + Bun policy" "github skill count + check-bun-command-policy.py" pass "$GHS github skills; executable npm/npx findings=0"
+else
+  row "github skills + Bun policy" "github skill count + check-bun-command-policy.py" fail "$GHS github skills; bun_policy=$BUN_POLICY"
 fi
 
 # 9. DISCOVERY rows (adopted from the codex sibling: sweep, don't just regress-test)
