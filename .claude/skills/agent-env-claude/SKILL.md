@@ -30,7 +30,7 @@ Exit 0 = no `fail` rows (`gap` rows are queued work items, not blockers); exit 1
 `fail` — fix or record before any mutating phase. Ledger now also covers: skill-prompt
 byte-identity, unfinished-marker sweep, codex-inherit block, live-settings hook parity
 (bash-to-nu / ccbrain / rtk / weave), yzx doctor warning sweep, stale-shadow scan, and
-`envctl migrate scan`. Last run 2026-07-11: 36 pass / 6 gap / 0 fail. The hook machinery is
+`envctl migrate scan`. The driver output IS the live ledger — never trust a pinned count in prose. The hook machinery is
 regression-protected by `scripts/tests/test-agent-env-hooks.sh` (CI:
 `ci/gates/harness-scripts.sh`); declared team shapes live in
 `.claude/skills/agent-env-claude/teams/`.
