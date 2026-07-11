@@ -2,7 +2,7 @@ version: 2
 skills:
   ./agent-skills::agent-env-config:
     destination: .claude/skills/agent-env-config
-    hash: e7a804d87bf16744122967f2946d8d84825ebecff7efc001470c3f5f494b2d0f
+    hash: e2207dbc97c8964e765d8687b7af8a1b8dbad31b8f66106a2c7f4bb8f878b662
     skill: agent-env-config
     description: '"The CORRECT conventions and agent-environment configuration for the envctl Rust workspace — supersedes the broken ECC-auto-generated skill/instincts that assert JavaScript conventions. Use whenever writing or reviewing envctl code, naming files/types, writing tests, composing commits, or configuring the .claude/.codex agent setup (skills, MCP servers, multi-agent roles). Triggers: ''what conventions'', ''how do I name this'', ''write a test'', ''commit message'', ''configure the agents'', ''MCP setup'', ''is camelCase right''."'
     source: ./agent-skills
@@ -18,17 +18,17 @@ skills:
     scope: project
   ./agent-skills::env-stabilize:
     destination: .claude/skills/env-stabilize
-    hash: 51f1e9fc9cd4e22a6c875498678a9861a42cc7787a6ae1f4d9d7e236ae548885
+    hash: ca74f4950e58100c9c8a5678e00ff5eeffb1c195692ddfe0d0c1d6e7718cbd69
     skill: env-stabilize
-    description: '"How to keep the environment reproducible and drift-free — the detect/drift, doctor-diagnostic, and content-hashed lock discipline envctl uses, plus how kasetto provisions and locks the agent config. Use when checking environment health, diagnosing drift, regenerating or verifying a lock, or making the agent environment reproducible. Triggers: ''is the environment stable'', ''check for drift'', ''run doctor'', ''the lock is stale'', ''make this reproducible'', ''env is inconsistent'', ''sync the agents''."'
+    description: '"How to keep the environment reproducible and drift-free — the detect/drift, doctor-diagnostic, and content-hashed lock discipline envctl uses, plus how the built-in agent-env engine (envctl agent) provisions and locks the agent config. Use when checking environment health, diagnosing drift, regenerating or verifying a lock, or making the agent environment reproducible. Triggers: ''is the environment stable'', ''check for drift'', ''run doctor'', ''the lock is stale'', ''make this reproducible'', ''env is inconsistent'', ''sync the agents''."'
     source: ./agent-skills
     source_revision: local
     scope: project
   ./agent-skills::env-toolchain-install:
     destination: .claude/skills/env-toolchain-install
-    hash: 6fb44c38b51c3f0f4f4c134ac4f33470e69f3efb8be5ee20a59859c42f081a97
+    hash: 1be4e99177765aca63c8a356b5985c79f24ee0b1cc0bb0081080af1c71e7fd1c
     skill: env-toolchain-install
-    description: '"How to install and configure the developer toolchain the way envctl does it — declaratively, idempotently, with detect→install→verify→fix→remove lifecycle hooks per component. Use whenever installing, repairing, or configuring environment tooling (Rust, bun/node, CUDA/GPU stack, ai-clis, nix-yazelix, boot-repair, the secretd daemon) or authoring a new component. Triggers: ''install the toolchain'', ''set up the environment'', ''add a component'', ''why is X not on PATH'', ''repair the environment'', ''the install isn''t idempotent''."'
+    description: '"How to install and configure environment tooling the way this box does it — the nix profile owns every toolchain binary; envctl''s declarative components (detect→install→verify→fix→remove lifecycle per manifest/*.toml) own the meta-local install/wiring layer. Use whenever installing, repairing, or configuring environment tooling or authoring a new component. Triggers: ''install the toolchain'', ''set up the environment'', ''add a component'', ''why is X not on PATH'', ''repair the environment'', ''the install isn''t idempotent''."'
     source: ./agent-skills
     source_revision: local
     scope: project

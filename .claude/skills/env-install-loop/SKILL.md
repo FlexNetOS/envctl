@@ -15,6 +15,19 @@ component and auto-appends upgrade/hardening items to the backlog (see *Research
 still does **not** build features itself: genuine feature work it discovers is *routed* to
 `feature-forge`/`forge-loop`, not implemented here.
 
+## Toolchain ownership + shell notes (additive, 2026-07-11)
+
+- **The nix profile `lifeos-foundation-yzx` owns every toolchain binary** (yazelix flakes;
+  rebuild with `yzx update local_source`). The loop never ad-hoc-installs a toolchain; a missing
+  binary routes to the flake, and only meta-local wiring goes through envctl components
+  (see `env-toolchain-install`).
+- **Fresh-shell PATH verification covers all live shells:** `bash -c 'command -v <tool>'`
+  (non-login carries toolbin on this box), `bash -lc`, and `nu -l -c 'which <tool>'` --
+  nushell is the default shell; rtk-wrapped tools report type `custom`.
+- **rtk-proxy the loop's own commands** (`rtk cargo ...`, `rtk git ...`, `rtk proxy <cmd>` for
+  raw output) -- but never pipe fmt/clippy diagnostics through rtk filters when exact spans
+  matter.
+
 ## Why this shape
 envctl exists to bring the box to a *declared* state idempotently. A long single session that
 installs everything rots and gets expensive; a loop that keeps its truth in durable files
