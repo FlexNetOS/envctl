@@ -9,11 +9,27 @@ prefix_rule(
 )
 
 prefix_rule(
+    pattern = ["rtk", "codex", ["exec", "review", "cloud"]],
+    decision = "forbidden",
+    justification = "RTK-routed nested Codex execution still requires the harness runner and model-router.",
+    match = ["rtk codex exec hi", "rtk codex review"],
+    not_match = ["rtk codex --version"],
+)
+
+prefix_rule(
     pattern = ["claude", ["--print", "-p", "--background", "--bg"]],
     decision = "forbidden",
     justification = "Direct Claude execution requires codex-harness-claude-bridge.",
     match = ["claude --print hi", "claude --background"],
     not_match = ["claude --version"],
+)
+
+prefix_rule(
+    pattern = ["rtk", "claude", ["--print", "-p", "--background", "--bg"]],
+    decision = "forbidden",
+    justification = "RTK-routed Claude execution still requires the supervised bridge.",
+    match = ["rtk claude --print hi", "rtk claude --background"],
+    not_match = ["rtk claude --version"],
 )
 
 prefix_rule(

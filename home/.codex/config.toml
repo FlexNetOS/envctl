@@ -169,9 +169,6 @@ terminal_title = [
     "git-branch",
 ]
 
-[notice.model_migrations]
-"gpt-5.5" = "gpt-5.6-terra"
-
 [apps.connector_5f3c8c41a1e54ad7a76272c89e2554fa.tools."google_drive.bulk_update_file_comments"]
 approval_mode = "approve"
 

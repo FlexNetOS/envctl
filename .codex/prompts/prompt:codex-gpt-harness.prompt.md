@@ -2533,3 +2533,29 @@ the operator from narrowing and restoring access in the same chat session.
   nested-agent tools.
 - Provider proof must use the latest successful receipt, require a short
   freshness window, and match the current provider source/config fingerprint.
+
+## Read-Only Session Tool Bootstrap - 2026-07-11
+
+Session bootstrap initializes instructions and context, not tool state.
+
+- Invoke the envctl-synced `$harness-init` skill when repository context is
+  needed.
+- Prove `meta`, `git-kb`, `grit`, `icm`, `rtk`, `git`, `codex`, `claude`, and
+  `nu` through the Yazelix/Nix profile.
+- GitKB begins with `rtk git-kb list --path context/ --json`; MCP is primary
+  when registered and the CLI is the fallback.
+- ICM context begins with
+  `rtk icm --read-only wake-up --max-tokens 200`.
+- Grit is inactive for read-only/single-agent work. If `.grit/` already
+  exists, `rtk grit status` is the readiness probe.
+- Meta Git plugin commands use `rtk meta git`. Unlisted fleet Git commands use
+  `rtk meta exec -- git`; add `--include <repo>` for one-repository scope.
+- `rtk init --show` verifies current RTK integration. RTK controls output
+  compression, not permissions, repository scope, or mutation authority.
+- Never run `git-kb init`, `grit init`, `icm init`, `meta init`, or mutating
+  `rtk init` merely because a session started. Do not enable retired hooks to
+  simulate startup.
+- Tool initialization is not a session capability. `$harness-full`,
+  `$harness-restricted`, and `$harness-toggle` may not create or mutate GitKB,
+  Grit, ICM, Meta, or RTK state.
+- `/permissions` remains the sole live sandbox and approval authority.

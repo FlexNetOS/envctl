@@ -1,193 +1,6 @@
 {
   "models": [
     {
-      "slug": "gpt-5.5",
-      "display_name": "GPT-5.5",
-      "description": "OpenAI GPT-5.5 frontier model for complex coding, research, and professional work.",
-      "default_reasoning_level": "medium",
-      "supported_reasoning_levels": [
-        {
-          "effort": "low",
-          "description": "Fast responses with lighter reasoning"
-        },
-        {
-          "effort": "medium",
-          "description": "Balances speed and reasoning depth for everyday tasks"
-        },
-        {
-          "effort": "high",
-          "description": "Greater reasoning depth for complex problems"
-        },
-        {
-          "effort": "xhigh",
-          "description": "Extra high reasoning depth for complex problems"
-        }
-      ],
-      "shell_type": "shell_command",
-      "visibility": "list",
-      "supported_in_api": true,
-      "priority": 0,
-      "additional_speed_tiers": [
-        "fast"
-      ],
-      "service_tiers": [
-        {
-          "id": "priority",
-          "name": "Fast",
-          "description": "1.5x speed, increased usage"
-        }
-      ],
-      "availability_nux": {
-        "message": "GPT-5.5 is configured by the FlexNetOS Codex model catalog."
-      },
-      "upgrade": null,
-      "base_instructions": "",
-      "supports_reasoning_summaries": true,
-      "default_reasoning_summary": "none",
-      "support_verbosity": true,
-      "default_verbosity": "medium",
-      "apply_patch_tool_type": "freeform",
-      "web_search_tool_type": "text_and_image",
-      "truncation_policy": {
-        "mode": "tokens",
-        "limit": 10000
-      },
-      "supports_parallel_tool_calls": true,
-      "supports_image_detail_original": true,
-      "context_window": 1050000,
-      "max_context_window": 1050000,
-      "effective_context_window_percent": 95,
-      "experimental_supported_tools": [],
-      "input_modalities": [
-        "text",
-        "image"
-      ],
-      "supports_search_tool": true,
-      "use_responses_lite": false
-    },
-    {
-      "slug": "gpt-5.5-pro",
-      "display_name": "GPT-5.5 Pro",
-      "description": "OpenAI GPT-5.5 Pro route for harder professional work; public docs list medium, high, and xhigh reasoning and slower, higher-compute responses.",
-      "default_reasoning_level": "high",
-      "supported_reasoning_levels": [
-        {
-          "effort": "medium",
-          "description": "Balances speed and reasoning depth for everyday tasks"
-        },
-        {
-          "effort": "high",
-          "description": "Greater reasoning depth for complex problems"
-        },
-        {
-          "effort": "xhigh",
-          "description": "Extra high reasoning depth for complex problems"
-        }
-      ],
-      "shell_type": "shell_command",
-      "visibility": "hide",
-      "supported_in_api": true,
-      "priority": 1,
-      "additional_speed_tiers": [
-        "fast"
-      ],
-      "service_tiers": [
-        {
-          "id": "priority",
-          "name": "Fast",
-          "description": "1.5x speed, increased usage"
-        }
-      ],
-      "availability_nux": null,
-      "upgrade": null,
-      "base_instructions": "",
-      "supports_reasoning_summaries": true,
-      "default_reasoning_summary": "none",
-      "support_verbosity": true,
-      "default_verbosity": "medium",
-      "apply_patch_tool_type": "freeform",
-      "web_search_tool_type": "text_and_image",
-      "truncation_policy": {
-        "mode": "tokens",
-        "limit": 10000
-      },
-      "supports_parallel_tool_calls": true,
-      "supports_image_detail_original": true,
-      "context_window": 1050000,
-      "max_context_window": 1050000,
-      "effective_context_window_percent": 95,
-      "experimental_supported_tools": [],
-      "input_modalities": [
-        "text",
-        "image"
-      ],
-      "supports_search_tool": true,
-      "use_responses_lite": false
-    },
-    {
-      "slug": "gpt-5.5-pro-extended",
-      "display_name": "GPT-5.5 Pro Extended",
-      "description": "Private/account-rollout extended-context GPT-5.5 Pro route configured from user-reported access; no public OpenAI docs page was found for this exact slug.",
-      "default_reasoning_level": "high",
-      "supported_reasoning_levels": [
-        {
-          "effort": "low",
-          "description": "Fast responses with lighter reasoning"
-        },
-        {
-          "effort": "medium",
-          "description": "Balances speed and reasoning depth for everyday tasks"
-        },
-        {
-          "effort": "high",
-          "description": "Greater reasoning depth for complex problems"
-        },
-        {
-          "effort": "xhigh",
-          "description": "Extra high reasoning depth for complex problems"
-        }
-      ],
-      "shell_type": "shell_command",
-      "visibility": "hide",
-      "supported_in_api": false,
-      "priority": 2,
-      "additional_speed_tiers": [
-        "fast"
-      ],
-      "service_tiers": [
-        {
-          "id": "priority",
-          "name": "Fast",
-          "description": "1.5x speed, increased usage"
-        }
-      ],
-      "availability_nux": null,
-      "upgrade": null,
-      "base_instructions": "",
-      "supports_reasoning_summaries": true,
-      "default_reasoning_summary": "none",
-      "support_verbosity": true,
-      "default_verbosity": "medium",
-      "apply_patch_tool_type": "freeform",
-      "web_search_tool_type": "text_and_image",
-      "truncation_policy": {
-        "mode": "tokens",
-        "limit": 10000
-      },
-      "supports_parallel_tool_calls": true,
-      "supports_image_detail_original": true,
-      "context_window": 4000000,
-      "max_context_window": 4000000,
-      "effective_context_window_percent": 95,
-      "experimental_supported_tools": [],
-      "input_modalities": [
-        "text",
-        "image"
-      ],
-      "supports_search_tool": true,
-      "use_responses_lite": false
-    },
-    {
       "slug": "gpt-5.6-sol",
       "display_name": "GPT-5.6 Sol",
       "description": "Limited-preview flagship GPT-5.6 model. Official OpenAI Help says Sol/Terra/Luna are available through API and Codex only for approved trusted partners/organizations; local proof currently records ChatGPT-account Codex denial unless access is provisioned.",
@@ -213,7 +26,7 @@
       "shell_type": "shell_command",
       "visibility": "list",
       "supported_in_api": true,
-      "priority": 3,
+      "priority": 0,
       "additional_speed_tiers": [
         "fast"
       ],
@@ -276,7 +89,7 @@
       "shell_type": "shell_command",
       "visibility": "list",
       "supported_in_api": true,
-      "priority": 4,
+      "priority": 1,
       "additional_speed_tiers": [
         "fast"
       ],
@@ -339,7 +152,7 @@
       "shell_type": "shell_command",
       "visibility": "list",
       "supported_in_api": true,
-      "priority": 5,
+      "priority": 2,
       "additional_speed_tiers": [
         "fast"
       ],

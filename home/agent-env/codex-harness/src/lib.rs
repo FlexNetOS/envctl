@@ -7,7 +7,7 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::env;
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 use std::fs::{self, OpenOptions};
 use std::io::{self, BufRead, Read, Write};
 use std::path::{Path, PathBuf};
@@ -17,6 +17,7 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 pub const DEFAULT_PROJECT_ROOT: &str = "/home/flexnetos/meta/src/envctl/home";
 pub const DEFAULT_HARNESS_ROOT: &str = "/home/flexnetos/meta/src/envctl/home/agent-env";
 pub const PROVIDER_RECEIPT_MAX_AGE: Duration = Duration::from_secs(15 * 60);
+pub const YAZELIX_PROFILE_ROOT: &str = "/home/flexnetos/.nix-profile";
 
 const COMPILED_PROVIDER_SOURCE: &[u8] = include_bytes!("lib.rs");
 const COMPILED_PROVIDER_CONFIG: &[u8] = include_bytes!("../config/policy/providers.toml");
@@ -889,7 +890,7 @@ pub fn policy_decision(argv: &[String]) -> PolicyDecision {
         return allow("the explicit Codex full-access frontdoor is delegated to live /permissions");
     }
 
-    if nested_model_provider(&first, &lower) {
+    if nested_model_provider(argv, &first, &lower) {
         return deny(
             "nested Codex/Claude/model provider launch must go through codex-harness-runner and model-router",
             "nested_model_provider_without_runner",
@@ -912,7 +913,7 @@ pub fn policy_decision(argv: &[String]) -> PolicyDecision {
         );
     }
 
-    if first == "git" {
+    if routes_git(argv) {
         if git_mutation(argv) {
             return deny(
                 "GitHub/git mutation requires codex-harness-github-guard",
@@ -1075,7 +1076,7 @@ fn uncontrolled_background_requested(first: &str, lower: &str) -> bool {
         || lower.contains("systemd-run")
 }
 
-fn nested_model_provider(first: &str, lower: &str) -> bool {
+fn nested_model_provider(argv: &[String], first: &str, lower: &str) -> bool {
     [
         "codex",
         "claude",
@@ -1087,6 +1088,20 @@ fn nested_model_provider(first: &str, lower: &str) -> bool {
         "openrouter",
     ]
     .contains(&first)
+        || (first == "rtk"
+            && argv.get(1).is_some_and(|tool| {
+                matches!(
+                    basename(tool).as_str(),
+                    "codex"
+                        | "claude"
+                        | "ollama"
+                        | "lms"
+                        | "lmstudio"
+                        | "openai"
+                        | "anthropic"
+                        | "openrouter"
+                )
+            }))
         || lower.contains("openrouter")
         || lower.contains("claude-code")
         || lower.contains("computer-use-preview")
@@ -1126,7 +1141,7 @@ fn git_mutation(argv: &[String]) -> bool {
 }
 
 fn force_push_requested(argv: &[String]) -> bool {
-    basename(argv.first().map(String::as_str).unwrap_or_default()) == "git"
+    routes_git(argv)
         && has_arg(argv, &["push"])
         && argv.iter().any(|arg| {
             matches!(
@@ -1136,6 +1151,35 @@ fn force_push_requested(argv: &[String]) -> bool {
                 || arg.starts_with("--force-with-lease=")
                 || arg.starts_with('+')
         })
+}
+
+fn routes_git(argv: &[String]) -> bool {
+    let names = argv
+        .iter()
+        .map(|argument| basename(argument))
+        .collect::<Vec<_>>();
+    matches!(names.first().map(String::as_str), Some("git"))
+        || matches!(
+            names.as_slice(),
+            [first, second, ..] if first == "rtk" && second == "git"
+        )
+        || matches!(
+            names.as_slice(),
+            [first, second, third, ..]
+                if first == "rtk" && second == "meta" && third == "git"
+        )
+        || names
+            .iter()
+            .position(|name| name == "meta")
+            .is_some_and(|meta| {
+                names[meta + 1..].first().map(String::as_str) == Some("git")
+                    || names[meta + 1..]
+                        .iter()
+                        .position(|name| name == "exec")
+                        .is_some_and(|exec| {
+                            names[meta + exec + 2..].iter().any(|name| name == "git")
+                        })
+            })
 }
 
 fn git_network(argv: &[String]) -> bool {
@@ -1148,6 +1192,13 @@ fn git_network(argv: &[String]) -> bool {
 }
 
 fn gh_mutation(argv: &[String]) -> bool {
+    let argv = if argv.first().is_some_and(|arg| basename(arg) == "rtk")
+        && argv.get(1).is_some_and(|arg| basename(arg) == "gh")
+    {
+        &argv[1..]
+    } else {
+        argv
+    };
     let readonly = matches!(
         (
             argv.get(1).map(String::as_str),
@@ -1661,6 +1712,71 @@ pub fn which(bin: &str) -> Option<PathBuf> {
     None
 }
 
+pub fn profile_frontdoor(tool: &str) -> Result<PathBuf> {
+    if tool.contains('/') || tool.contains('\\') || tool.trim().is_empty() {
+        return Err(anyhow!("profile tool name must be a basename"));
+    }
+    let root = Path::new(YAZELIX_PROFILE_ROOT);
+    let frontdoor = [root.join("bin").join(tool), root.join("toolbin").join(tool)]
+        .into_iter()
+        .find(|candidate| candidate.exists())
+        .ok_or_else(|| anyhow!("missing Yazelix profile frontdoor for {tool}"))?;
+    let realpath = fs::canonicalize(&frontdoor)
+        .with_context(|| format!("resolve profile frontdoor {}", frontdoor.display()))?;
+    if !realpath.starts_with("/nix/store") {
+        return Err(anyhow!(
+            "profile frontdoor for {tool} is not Nix-store-owned: {}",
+            realpath.display()
+        ));
+    }
+    Ok(frontdoor)
+}
+
+fn profile_runtime_path() -> Result<OsString> {
+    let root = Path::new(YAZELIX_PROFILE_ROOT);
+    let mut entries = vec![root.join("toolbin"), root.join("bin")];
+    if let Some(path) = env::var_os("PATH") {
+        for entry in env::split_paths(&path) {
+            if !entries.contains(&entry) {
+                entries.push(entry);
+            }
+        }
+    }
+    env::join_paths(entries).map_err(|error| anyhow!("join Yazelix profile PATH: {error}"))
+}
+
+pub fn profile_rtk_argv(tool: &str, args: &[&str]) -> Result<Vec<String>> {
+    let rtk = profile_frontdoor("rtk")?;
+    profile_frontdoor(tool)?;
+    let mut argv = vec![rtk.display().to_string(), tool.to_string()];
+    argv.extend(args.iter().map(|argument| (*argument).to_string()));
+    Ok(argv)
+}
+
+pub fn profile_rtk_command(tool: &str, args: &[&str]) -> Result<Command> {
+    let argv = profile_rtk_argv(tool, args)?;
+    let mut command = Command::new(&argv[0]);
+    command
+        .args(&argv[1..])
+        .env("PATH", profile_runtime_path()?);
+    remove_secret_env(&mut command);
+    Ok(command)
+}
+
+pub fn routed_tool_basename(argv: &[String]) -> String {
+    let first = argv
+        .first()
+        .map(|argument| basename(argument))
+        .unwrap_or_default();
+    if first == "rtk" {
+        return argv
+            .get(1)
+            .map(|argument| basename(argument))
+            .unwrap_or(first);
+    }
+    first
+}
+
 pub fn active_job_records() -> Result<Vec<JobRecord>> {
     let dir = state_dir().join("jobs");
     if !dir.exists() {
@@ -1724,12 +1840,7 @@ pub fn spawn_supervised(cwd: &Path, argv: &[String]) -> Result<JobRecord> {
 }
 
 fn job_kind(argv: &[String]) -> &'static str {
-    match argv
-        .first()
-        .map(|s| basename(s))
-        .unwrap_or_default()
-        .as_str()
-    {
+    match routed_tool_basename(argv).as_str() {
         "codex" => "codex",
         "claude" => "claude",
         "ollama" | "lms" | "lmstudio" => "local-model",
@@ -1761,9 +1872,9 @@ pub fn spawn_supervised_unchecked(cwd: &Path, argv: &[String]) -> Result<JobReco
             "background jobs are disabled by the optional session routing switch"
         ));
     }
-    let provider = match argv.first().map(|value| basename(value)).as_deref() {
-        Some("claude") => Some("claude_bridge"),
-        Some("ollama") => Some("ollama"),
+    let provider = match routed_tool_basename(argv).as_str() {
+        "claude" => Some("claude_bridge"),
+        "ollama" => Some("ollama"),
         _ => None,
     };
     let provider_contract_fingerprint = provider.map(provider_contract_fingerprint).transpose()?;
@@ -1789,6 +1900,7 @@ pub fn spawn_supervised_unchecked(cwd: &Path, argv: &[String]) -> Result<JobReco
     }
     let child = command
         .current_dir(cwd)
+        .env("PATH", profile_runtime_path()?)
         .env_remove("OPENAI_API_KEY")
         .env_remove("CODEX_API_KEY")
         .env_remove("OPENROUTER_API_KEY")
@@ -1826,14 +1938,7 @@ pub fn spawn_codex_exec(cwd: &Path, profile: &str, prompt: &str) -> Result<JobRe
             "Codex children require the optional network and subagents routing switches"
         ));
     }
-    let argv = vec![
-        "codex".to_string(),
-        "exec".to_string(),
-        "--json".to_string(),
-        "--profile".to_string(),
-        profile.to_string(),
-        prompt.to_string(),
-    ];
+    let argv = profile_rtk_argv("codex", &["exec", "--json", "--profile", profile, prompt])?;
     spawn_supervised_unchecked(cwd, &argv)
 }
 
@@ -1853,12 +1958,12 @@ pub fn spawn_ollama_run(cwd: &Path, model: &str, prompt: &str) -> Result<JobReco
     spawn_supervised_unchecked(cwd, &argv)
 }
 
-fn claude_run_argv(prompt: &str, allow_default_auth: bool) -> Vec<String> {
-    let mut argv = vec!["claude".to_string()];
+fn claude_run_argv(prompt: &str, allow_default_auth: bool) -> Result<Vec<String>> {
+    let mut args = Vec::new();
     if !allow_default_auth {
-        argv.push("--bare".to_string());
+        args.push("--bare".to_string());
     }
-    argv.extend([
+    args.extend([
         "--safe-mode".to_string(),
         "--tools".to_string(),
         String::new(),
@@ -1873,15 +1978,18 @@ fn claude_run_argv(prompt: &str, allow_default_auth: bool) -> Vec<String> {
         "--no-session-persistence".to_string(),
         prompt.to_string(),
     ]);
-    argv
+    let argument_refs = args.iter().map(String::as_str).collect::<Vec<_>>();
+    profile_rtk_argv("claude", &argument_refs)
 }
 
-fn claude_run_command(prompt: &str, allow_default_auth: bool) -> Command {
-    let argv = claude_run_argv(prompt, allow_default_auth);
+fn claude_run_command(prompt: &str, allow_default_auth: bool) -> Result<Command> {
+    let argv = claude_run_argv(prompt, allow_default_auth)?;
     let mut command = Command::new(&argv[0]);
-    command.args(&argv[1..]);
-    remove_secret_env(&mut command);
     command
+        .args(&argv[1..])
+        .env("PATH", profile_runtime_path()?);
+    remove_secret_env(&mut command);
+    Ok(command)
 }
 
 pub fn spawn_claude_run(cwd: &Path, prompt: &str, allow_default_auth: bool) -> Result<JobRecord> {
@@ -1891,7 +1999,7 @@ pub fn spawn_claude_run(cwd: &Path, prompt: &str, allow_default_auth: bool) -> R
             "Claude is disabled by optional external-provider or network routing switches"
         ));
     }
-    spawn_supervised_unchecked(cwd, &claude_run_argv(prompt, allow_default_auth))
+    spawn_supervised_unchecked(cwd, &claude_run_argv(prompt, allow_default_auth)?)
 }
 
 pub fn run_codex_exec(cwd: &Path, profile: &str, prompt: &str) -> Result<i32> {
@@ -1905,11 +2013,9 @@ pub fn run_codex_exec(cwd: &Path, profile: &str, prompt: &str) -> Result<i32> {
         "codex exec --json --profile {profile} [prompt_sha:{}]",
         sha256_bytes(prompt.as_bytes())
     );
-    let mut command = Command::new("codex");
-    command
-        .args(["exec", "--json", "--profile", profile, prompt])
-        .current_dir(cwd);
-    remove_secret_env(&mut command);
+    let mut command =
+        profile_rtk_command("codex", &["exec", "--json", "--profile", profile, prompt])?;
+    command.current_dir(cwd);
     let output = command.output()?;
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
@@ -2475,11 +2581,13 @@ pub fn github_guard_check(
     if argv.is_empty() {
         return Err(anyhow!("github-guard requires a command after --"));
     }
-    let first = basename(&argv[0]);
-    if first != "gh" && first != "git" {
+    let first = routed_tool_basename(argv);
+    let git_route = routes_git(argv);
+    let gh_route = first == "gh";
+    if !gh_route && !git_route {
         return Err(anyhow!("github-guard only accepts gh or git commands"));
     }
-    let mutation = (first == "gh" && gh_mutation(argv)) || (first == "git" && git_mutation(argv));
+    let mutation = (gh_route && gh_mutation(argv)) || (git_route && git_mutation(argv));
     if force_push_requested(argv) {
         return Ok(json!({
             "ok": false,
@@ -2876,12 +2984,11 @@ pub fn claude_bridge_value_with_auth(
     allow_default_auth: bool,
 ) -> Result<Value> {
     let provider_contract_fingerprint = provider_contract_fingerprint("claude_bridge")?;
-    let claude = which("claude");
+    let claude = profile_frontdoor("claude").ok();
     let enabled =
         session_capability_enabled("external_providers") && session_capability_enabled("network");
     let version = claude.as_ref().and_then(|_| {
-        let mut cmd = Command::new("claude");
-        cmd.arg("--version");
+        let cmd = profile_rtk_command("claude", &["--version"]).ok()?;
         command_output_text(cmd)
             .ok()
             .map(|(_, stdout, stderr)| redact(&(stdout + &stderr)).trim().to_string())
@@ -2911,7 +3018,7 @@ pub fn claude_bridge_value_with_auth(
         }
         let prompt = prompt.unwrap_or("Return compact JSON: {\"bridge\":\"ok\"}.");
         let prompt_hash = sha256_bytes(prompt.as_bytes());
-        let cmd = claude_run_command(prompt, allow_default_auth);
+        let cmd = claude_run_command(prompt, allow_default_auth)?;
         let (code, stdout, stderr) = command_output_text(cmd)?;
         result["executed"] = json!(true);
         result["exit_code"] = json!(code);
@@ -2938,8 +3045,7 @@ pub fn browser_computer_value() -> Result<Value> {
             "browser/computer use is disabled by the optional session routing switch"
         ));
     }
-    let mut cmd = Command::new("codex");
-    cmd.args(["features", "list"]);
+    let cmd = profile_rtk_command("codex", &["features", "list"])?;
     let (features_exit_code, text, features_stderr) =
         command_output_text(cmd).unwrap_or_else(|err| (1, String::new(), err.to_string()));
     let has_browser = text
@@ -3149,6 +3255,42 @@ danger_full_access = "keep"
     fn policy_denies_nested_codex() {
         let d = policy_decision(&["codex".into(), "exec".into(), "hi".into()]);
         assert_eq!(d.decision, DecisionKind::Deny);
+    }
+
+    #[test]
+    fn rtk_routes_preserve_nested_agent_and_git_safety() {
+        let nested = policy_decision(&["rtk".into(), "codex".into(), "exec".into(), "hi".into()]);
+        assert_eq!(nested.decision, DecisionKind::Deny);
+
+        let read_only =
+            policy_decision(&["rtk".into(), "meta".into(), "git".into(), "status".into()]);
+        assert_eq!(read_only.decision, DecisionKind::Allow);
+
+        let mutation = policy_decision(&[
+            "rtk".into(),
+            "meta".into(),
+            "exec".into(),
+            "--".into(),
+            "git".into(),
+            "commit".into(),
+        ]);
+        assert_eq!(mutation.decision, DecisionKind::Deny);
+
+        let force = github_guard_check(
+            &[
+                "rtk".into(),
+                "meta".into(),
+                "exec".into(),
+                "--".into(),
+                "git".into(),
+                "push".into(),
+                "--force".into(),
+            ],
+            None,
+            false,
+        )
+        .unwrap();
+        assert_eq!(force.get("ok").and_then(Value::as_bool), Some(false));
     }
 
     #[test]
@@ -3709,8 +3851,12 @@ danger_full_access = "keep"
 
     #[test]
     fn claude_child_has_no_tools_or_customization_escape_hatches() {
-        let bare = claude_run_argv("test prompt", false);
-        assert_eq!(bare.first().map(String::as_str), Some("claude"));
+        let bare = claude_run_argv("test prompt", false).unwrap();
+        assert_eq!(
+            bare.first().map(String::as_str),
+            Some("/home/flexnetos/.nix-profile/bin/rtk")
+        );
+        assert_eq!(bare.get(1).map(String::as_str), Some("claude"));
         assert!(bare.iter().any(|arg| arg == "--bare"));
         assert!(bare.iter().any(|arg| arg == "--safe-mode"));
         assert!(bare.windows(2).any(|pair| pair == ["--tools", ""]));
@@ -3731,11 +3877,11 @@ danger_full_access = "keep"
             assert!(!bare.iter().any(|arg| arg == forbidden_tool));
         }
 
-        let default_auth = claude_run_argv("test prompt", true);
+        let default_auth = claude_run_argv("test prompt", true).unwrap();
         assert!(!default_auth.iter().any(|arg| arg == "--bare"));
         assert!(default_auth.windows(2).any(|pair| pair == ["--tools", ""]));
 
-        let command = claude_run_command("test prompt", true);
+        let command = claude_run_command("test prompt", true).unwrap();
         for secret in [
             "OPENAI_API_KEY",
             "CODEX_API_KEY",

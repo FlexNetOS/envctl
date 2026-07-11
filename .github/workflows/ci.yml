@@ -24,6 +24,12 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: "1"        # debuggable backtraces when a CI test panics
+  # Self-hosted slots persist repository workspaces. A shared target directory
+  # lets concurrent jobs with different provisioned rustc versions reuse
+  # incompatible rmeta files (E0514). Keep each job/run attempt isolated under
+  # the runner-owned temporary root; Swatinem/rust-cache still restores into
+  # the declared Cargo target.
+  CARGO_TARGET_DIR: ${{ runner.temp }}/envctl-target-${{ github.run_id }}-${{ github.run_attempt }}-${{ github.job }}
   # envctl currently consumes loop_lib::build_command / SpawnSpec from this upgrade branch;
   # setup-meta-deps.sh intentionally defaults to HEAD for callers that do not need it.
   LOOP_LIB_REF: refs/heads/codex/envctl-runner-command-builder

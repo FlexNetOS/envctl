@@ -43,3 +43,26 @@ Use the Nix/Yazelix foundation frontdoors: profile-owned nightly cargo/rustc,
 kache/kache-rustc-wrapper for Rust caching, wild via clang linker flags,
 bun/bunx for Node.js package execution, and profile-owned `codex`, `yzx`, and
 `rtk`. Do not install global npm/cargo/curl binaries to fix navigation.
+
+## Session tool bootstrap
+
+Session bootstrap initializes instructions and context, not filesystem state.
+Run `$harness-init` at the start of a chat that needs repository context.
+
+- Prove profile-owned `meta`, `git-kb`, `grit`, `icm`, `rtk`, `git`, `codex`,
+  `claude`, and the profile `toolbin/nu`.
+- GitKB starts with `git-kb list --path context/ --json`; MCP is primary when
+  registered and the CLI is the fallback.
+- ICM context starts with `icm --read-only wake-up --max-tokens 200`.
+- Grit is inactive for read-only/single-agent work; if `.grit/` already exists,
+  `grit status` is the readiness probe.
+- Route Meta Git plugin commands through `rtk meta git`. Route unlisted fleet
+  Git commands through `rtk meta exec -- git`, with `--include <repo>` for
+  one-repository scope. Use `rtk git` only for a single checkout.
+- `rtk init --show` verifies RTK integration. RTK compresses output; it does
+  not grant permissions or choose repository scope.
+
+Never run `git-kb init`, `grit init`, `icm init`, `meta init`, or a mutating
+`rtk init` merely because a session started. Do not enable retired Codex hooks
+to simulate startup. `/permissions` remains the only live sandbox/approval
+authority, and harness capability presets must not initialize these tools.

@@ -192,6 +192,7 @@ commands. Envctl syncs these global skills from
 
 ```text
 $harness-status
+$harness-init
 $harness-full
 $harness-restricted
 $harness-toggle CAPABILITY=<name> STATE=on|off
@@ -205,6 +206,35 @@ the current `CODEX_THREAD_ID`; it does not modify or bypass `/permissions`.
 Secret reads/output, destructive user-data deletion, force-push, and
 direct ledger/archive mutation remain hard safety rules rather than optional
 capabilities.
+
+`$harness-init` is a read-only instruction/context workflow rather than a
+`SessionStart` hook. Retired Codex hooks remain disabled, and starting a chat
+must not silently rewrite tool state.
+
+```text
+GitKB  -> rtk git-kb list --path context/ --json
+Grit   -> rtk grit status, only when .grit already exists
+ICM    -> rtk icm --read-only wake-up --max-tokens 200
+Meta   -> rtk meta git status
+RTK    -> rtk init --show
+Nu     -> profile toolbin/nu --version
+```
+
+`git-kb init`, `grit init`, `icm init`, `meta init`, and mutating `rtk init`
+are never automatic bootstrap actions. They may create KB/index/integration,
+hook, worktree, or instruction state and therefore require an explicit writable
+task plus archive-first handling for existing targets. They are not session
+capabilities and `$harness-full` never invokes them.
+
+Meta Git routing is scoped rather than a blind text replacement:
+
+```text
+plugin-owned fleet Git command  -> rtk meta git <command>
+unlisted fleet Git command      -> rtk meta exec -- git <command>
+single-repository fleet intent  -> add --include <repo>
+single checkout                 -> rtk git <command>
+raw validation/root cause       -> raw command per AGENTS.rtk.md
+```
 
 Model routing is explicit and excludes GPT-5.5 from active role/profile routes:
 

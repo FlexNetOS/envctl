@@ -3,13 +3,13 @@
 use anyhow::Result;
 use codex_harness::{
     active_job_records, audit_value, bad_behavior_counts, count_lines, last_deny_summary,
-    ledger_dir, model_router_ready, nix_verify_value, project_root, session_capability_status,
-    state_dir, tracked_full_access_policy_granted, USER_FULL_ACCESS_DECISION_ID,
+    ledger_dir, model_router_ready, nix_verify_value, project_root, routed_tool_basename,
+    session_capability_status, state_dir, tracked_full_access_policy_granted,
+    USER_FULL_ACCESS_DECISION_ID,
 };
 use serde_json::Value;
 use std::env;
 use std::fs;
-use std::path::Path;
 use std::process::Command;
 
 fn capability_enabled(status: &Value, capability: &str) -> bool {
@@ -48,12 +48,7 @@ fn main() -> Result<()> {
     let mut claude_jobs = 0usize;
     let mut local_model_jobs = 0usize;
     for job in &jobs {
-        let first = job.argv.first().map(String::as_str).unwrap_or_default();
-        let bin = Path::new(first)
-            .file_name()
-            .and_then(|s| s.to_str())
-            .unwrap_or(first);
-        match bin {
+        match routed_tool_basename(&job.argv).as_str() {
             "codex" => codex_jobs += 1,
             "claude" => claude_jobs += 1,
             "ollama" | "lms" | "lmstudio" => local_model_jobs += 1,

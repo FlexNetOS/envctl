@@ -11,6 +11,8 @@ HARNESS_MANIFEST=/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/Ca
 ```
 
 - Status: `cargo run --quiet --manifest-path "$HARNESS_MANIFEST" --bin codex-harness-status`
+- Session context bootstrap: invoke `$harness-init`; it performs only
+  profile-owned read-only GitKB/Grit/ICM/Meta/RTK probes.
 - Nix verification: `cargo run --quiet --manifest-path "$HARNESS_MANIFEST" --bin codex-harness-nix-verify`
 - Audit: `cargo run --quiet --manifest-path "$HARNESS_MANIFEST" --bin codex-harness-audit`
 - Policy check: `cargo run --quiet --manifest-path "$HARNESS_MANIFEST" --bin codex-harness-runner -- policy-check -- <command...>`
@@ -29,4 +31,8 @@ Operational rules:
 - Use localhost-only local model lanes.
 - Never pull local models without approval.
 - Do not install plugins or MCP mutation tools without approval.
+- Do not run `git-kb init`, `grit init`, `icm init`, `meta init`, or mutating
+  `rtk init` as automatic session startup.
+- Use `rtk meta git` for Meta Git plugin commands and
+  `rtk meta exec -- git` for unlisted fleet Git operations.
 - If hooks misfire, restore from `agent-env/archive` and disable only through an approved archive-first change.

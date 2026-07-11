@@ -1,6 +1,7 @@
 #![forbid(unsafe_code)]
 
 use anyhow::{anyhow, Result};
+use codex_harness::profile_rtk_command;
 use codex_harness::{append_ledger, codex_harness_dir, redact, state_dir, utc_now};
 use serde_json::{json, Value};
 use std::collections::{BTreeMap, BTreeSet};
@@ -146,17 +147,19 @@ fn marker_for(model: &str) -> String {
 fn probe_model(model: &str) -> Result<Value> {
     let marker = marker_for(model);
     let prompt = format!("Do not use tools. Reply exactly: {marker}");
-    let mut command = Command::new("codex");
-    command.args([
-        "exec",
-        "--ephemeral",
-        "--json",
-        "--color",
-        "never",
-        "-m",
-        model,
-        &prompt,
-    ]);
+    let mut command = profile_rtk_command(
+        "codex",
+        &[
+            "exec",
+            "--ephemeral",
+            "--json",
+            "--color",
+            "never",
+            "-m",
+            model,
+            &prompt,
+        ],
+    )?;
     remove_secret_env(&mut command);
     let output = command.output()?;
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();

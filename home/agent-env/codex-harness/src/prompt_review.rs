@@ -196,6 +196,15 @@ fn is_allowed_exception(line: &str, pattern: &str) -> bool {
     if line.contains("--ask-for-approval never") {
         return true;
     }
+    // Session context probes may use a tool's explicit non-mutating flag or
+    // describe a non-mutating single-agent Grit state. These are not sandbox
+    // downgrades or stop conditions.
+    if pattern == "read-only"
+        && (line.contains("icm --read-only")
+            || line.contains("Grit is inactive for read-only/single-agent"))
+    {
+        return true;
+    }
     // Quoting legacy blockers as invalid can be useful; the durable prompt now
     // rewrites exact dangerous strings, so keep this exemption narrow.
     pattern == "read-only" && line.contains("not sandbox gates")
@@ -207,7 +216,7 @@ mod tests {
 
     fn valid_fixture() -> String {
         r#"
-# CODEX GPT-5.5 FIRST-RUN - ADVANCED AGENTIC VIBE CODING HARNESS v3 FULL ACCESS NO SANDBOX
+# CODEX GPT-5.6 FIRST-RUN - ADVANCED AGENTIC VIBE CODING HARNESS v3 FULL ACCESS NO SANDBOX
 ## FULL-ACCESS NO-SANDBOX VARIANT
 codex --dangerously-bypass-approvals-and-sandbox
 - full local filesystem access is the baseline;

@@ -2,13 +2,11 @@
 # account_access values are evidence, not wishful availability.
 
 [groups.codex_chatgpt_proved]
-models = ["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna", "gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-5.3-codex-spark"]
+models = ["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna", "gpt-5.4", "gpt-5.4-mini", "gpt-5.3-codex-spark"]
 proof = "codex exec --ephemeral --json --color never -m <model> exact-marker prompt"
 
 [groups.codex_chatgpt_denied]
 models = [
-  "gpt-5.5-pro",
-  "gpt-5.5-pro-extended",
   "gpt-5.4-nano",
   "gpt-5.3-codex",
   "o3",
@@ -22,23 +20,6 @@ models = [
   "gpt-4o-mini",
 ]
 error_contains = "model is not supported when using Codex with a ChatGPT account"
-
-[models."gpt-5.5"]
-provider = "openai"
-profile = "envctl-gpt56-terra"
-account_access = "proved_legacy_not_preferred"
-
-[models."gpt-5.5-pro"]
-provider = "openai"
-profile = "envctl-gpt56-sol"
-account_access = "denied_by_live_codex_chatgpt_probe"
-source = "Catalog route tracked for future approved-account use; live Codex ChatGPT probe denied this slug."
-
-[models."gpt-5.5-pro-extended"]
-provider = "openai"
-profile = "envctl-gpt56-sol"
-account_access = "denied_by_live_codex_chatgpt_probe"
-source = "Private/account-rollout catalog route; live Codex ChatGPT probe denied this slug."
 
 [models."gpt-5.6-sol"]
 provider = "openai"

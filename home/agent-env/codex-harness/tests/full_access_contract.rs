@@ -206,16 +206,31 @@ fn routeable_surfaces_use_sol_terra_luna_instead_of_gpt55() {
             );
         }
     }
-    for entry in fs::read_dir(config_root.join("agents")).unwrap() {
+    for agents_root in [config_root.join("agents")] {
+        for entry in fs::read_dir(agents_root).unwrap() {
+            let path = entry.unwrap().path();
+            if path.extension().and_then(|value| value.to_str()) != Some("toml") {
+                continue;
+            }
+            let agent = parse_toml(&path);
+            let model = string_at(&agent, "model").expect("agent model");
+            assert!(
+                matches!(model, "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-5.6-luna"),
+                "{} routes to {model}",
+                path.display()
+            );
+        }
+    }
+    for entry in fs::read_dir(root.join(".codex/agents")).unwrap() {
         let path = entry.unwrap().path();
         if path.extension().and_then(|value| value.to_str()) != Some("toml") {
             continue;
         }
         let agent = parse_toml(&path);
-        let model = string_at(&agent, "model").expect("agent model");
-        assert!(
-            matches!(model, "gpt-5.6-sol" | "gpt-5.6-terra" | "gpt-5.6-luna"),
-            "{} routes to {model}",
+        assert_ne!(
+            string_at(&agent, "model"),
+            Some("gpt-5.5"),
+            "{} must not route to GPT-5.5",
             path.display()
         );
     }
@@ -229,6 +244,106 @@ fn routeable_surfaces_use_sol_terra_luna_instead_of_gpt55() {
     .unwrap();
     assert!(!task_matrix.contains("model = \"gpt-5.5\""));
     assert!(!task_matrix.contains("profile = \"envctl-gpt55"));
+
+    let top_level = parse_toml(&root.join("home/.codex/config.toml"));
+    assert!(
+        top_level
+            .get("notice")
+            .and_then(|value| value.get("model_migrations"))
+            .and_then(|value| value.get("gpt-5.5"))
+            .is_none(),
+        "top-level config must not retain a GPT-5.5 migration route"
+    );
+    for relative in [
+        "home/.codex/model-catalog.json",
+        "home/agent-env/codex-harness/model-catalog/model-catalog.json",
+    ] {
+        let catalog: serde_json::Value =
+            serde_json::from_str(&fs::read_to_string(root.join(relative)).unwrap()).unwrap();
+        let slugs = catalog
+            .get("models")
+            .and_then(serde_json::Value::as_array)
+            .expect("model catalog array")
+            .iter()
+            .filter_map(|model| model.get("slug").and_then(serde_json::Value::as_str))
+            .collect::<Vec<_>>();
+        for forbidden in ["gpt-5.5", "gpt-5.5-pro", "gpt-5.5-pro-extended"] {
+            assert!(!slugs.contains(&forbidden), "{relative} routes {forbidden}");
+        }
+    }
+    assert!(
+        !root.join("home/.codex/models_cache.json").exists(),
+        "tracked API model cache must not remain as a second route authority"
+    );
+    let access_matrix = fs::read_to_string(
+        root.join("home/agent-env/codex-harness/model-catalog/model-access-matrix.toml"),
+    )
+    .unwrap();
+    for forbidden in ["gpt-5.5", "gpt-5.5-pro", "gpt-5.5-pro-extended"] {
+        assert!(
+            !access_matrix.contains(forbidden),
+            "model access matrix routes {forbidden}"
+        );
+    }
+}
+
+#[test]
+fn session_bootstrap_is_read_only_and_not_a_capability() {
+    let root = envctl_root();
+    let skill =
+        fs::read_to_string(root.join("agent-harness-skills/skills/harness-init/SKILL.md")).unwrap();
+    let runbook = fs::read_to_string(root.join("docs/runbook/README.md")).unwrap();
+    let home_agents = fs::read_to_string(root.join("home/AGENTS.md")).unwrap();
+    for required in [
+        "git-kb list --path context/ --json",
+        "icm --read-only wake-up --max-tokens 200",
+        "rtk meta git",
+        "rtk meta exec -- git",
+        "--include <repo>",
+        "rtk init --show",
+    ] {
+        assert!(
+            skill.contains(required),
+            "bootstrap skill missing {required}"
+        );
+    }
+    for forbidden_auto_init in [
+        "Never run `git-kb init`",
+        "`grit init`",
+        "`icm init`",
+        "`meta init`",
+        "mutating `rtk init`",
+    ] {
+        assert!(
+            skill.contains(forbidden_auto_init),
+            "bootstrap skill must forbid automatic {forbidden_auto_init}"
+        );
+    }
+    assert!(runbook.contains("$harness-init"));
+    assert!(home_agents.contains("Session tool bootstrap"));
+    for forbidden_capability in [
+        "gitkb_init",
+        "grit_init",
+        "icm_init",
+        "meta_init",
+        "rtk_init",
+    ] {
+        assert!(
+            !codex_harness::SESSION_CAPABILITIES.contains(&forbidden_capability),
+            "{forbidden_capability} must not become a hidden mutation toggle"
+        );
+    }
+}
+
+#[test]
+fn supervised_native_provider_routes_use_profile_rtk() {
+    let root = envctl_root();
+    let library = fs::read_to_string(root.join("home/agent-env/codex-harness/src/lib.rs")).unwrap();
+    assert!(library.contains("profile_rtk_argv(\"codex\""));
+    assert!(library.contains("profile_rtk_command(\"codex\""));
+    assert!(library.contains("profile_rtk_argv(\"claude\""));
+    assert!(library.contains("profile_rtk_command(\"claude\""));
+    assert!(library.contains("YAZELIX_PROFILE_ROOT"));
 }
 
 #[test]
