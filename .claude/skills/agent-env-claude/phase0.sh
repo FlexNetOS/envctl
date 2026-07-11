@@ -205,6 +205,29 @@ else
   row "toolchain currency (no shadow)" "command -v rustc cargo …" fail "stale shadow earlier in PATH:$SHADOW — remove shadow, never downgrade nix toolchain (E0514)"
 fi
 
+# 8m. yazelix runtime state current (yzx update local_source after changes)
+if yzx doctor 2>/dev/null | grep -q "Generated runtime state is current"; then
+  row "yazelix runtime current" "yzx doctor" pass "generated state current (no yzx update local_source owed)"
+else
+  row "yazelix runtime current" "yzx doctor" gap "generated state not current — run yzx update local_source + yzx doctor --fix"
+fi
+# 8n. yazelix plugins installed + connected (doctor is the oracle; presence != connected)
+HXOK=$(yzx doctor 2>/dev/null | grep -c "Helix runtime healthy\|Managed Helix Steel command surface is healthy")
+YZOK=$(yzx doctor 2>/dev/null | grep -c "Managed sidebar pane detected\|Yazelix Kitty passthrough bridge is active")
+DFAIL=$(yzx doctor 2>/dev/null | grep -c "❌")
+if [ "${DFAIL:-0}" -eq 0 ] && [ "${HXOK:-0}" -ge 1 ] && [ "${YZOK:-0}" -ge 1 ]; then
+  row "yazelix plugins connected" "yzx doctor (helix-steel + yazi + zellij)" pass "helix-steel healthy ($HXOK), yazi sidebar/kitty ($YZOK), 0 failed checks"
+else
+  row "yazelix plugins connected" "yzx doctor" gap "helix=$HXOK yazi=$YZOK failed=$DFAIL — inspect yzx doctor --json"
+fi
+# 8o. yazelix plugin consolidation owner present + org-SSH (all plugins belong here)
+PO=/home/flexnetos/meta/src/yazelix-yazi-assets
+if [ -d "$PO/.git" ] && git -C "$PO" remote get-url origin 2>/dev/null | grep -q '^git@github.com:FlexNetOS/'; then
+  row "yazelix plugin owner" "ls yazelix-yazi-assets + remote" pass "consolidation owner present, FlexNetOS org SSH"
+else
+  row "yazelix plugin owner" "ls yazelix-yazi-assets" gap "plugin consolidation owner missing or not org-SSH"
+fi
+
 # 9. DISCOVERY rows (adopted from the codex sibling: sweep, don't just regress-test)
 W=$(yzx doctor 2>/dev/null | grep "⚠" | grep -vc Found || true)
 if [ "${W:-0}" -le 1 ]; then row "yzx doctor warnings" "yzx doctor warn-lines" pass "$W warning(s)"
