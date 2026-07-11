@@ -465,6 +465,30 @@ fn agent_env_codex_requires_latest_yazelix_convergence_and_plugin_ownership() {
     ] {
         assert!(prompt.contains(required), "missing prompt contract: {required}");
     }
+
+    let claude_prompt = fs::read_to_string(
+        root.join(".claude/prompts/prompt:claude-code-agent-env-ultraplan.prompt.md"),
+    )
+    .unwrap();
+    let claude_skill =
+        fs::read_to_string(root.join(".claude/skills/agent-env-claude/SKILL.md")).unwrap();
+    assert_eq!(
+        claude_prompt
+            .matches("## YAZELIX (yzx) SURFACE")
+            .count(),
+        1,
+        "Claude prompt must contain one Yazelix policy block"
+    );
+    assert_eq!(
+        claude_skill.matches("## YAZELIX (yzx) SURFACE").count(),
+        1,
+        "Claude skill must contain one Yazelix policy block"
+    );
+
+    let phase0 =
+        fs::read_to_string(root.join(".claude/skills/agent-env-claude/phase0.sh")).unwrap();
+    assert!(phase0.contains("rtk meta --json exec --include yazelix-yazi-assets"));
+    assert!(!phase0.contains("&& git -C \"$PO\" remote get-url origin"));
 }
 
 #[test]
