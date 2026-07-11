@@ -33,14 +33,13 @@ Shared learning layers wired under this contract (2026-07-07):
   `"shell": {"default_shell": "nu"}`; bash/zsh/nu all come from the same
   `lifeos-foundation-yzx` runtime (toolbin symlinks -> libexec -> real
   packages). Compatibility is by construction; nu does NOT parse bash syntax.
-- **rtk routing**: `~/.config/nushell/rtk-wrappers.nu` (nu), aliases in
-  `~/.config/yazelix/shell_bash.sh` (bash), `rtk hook claude` +
-  `hooks/bash-to-nu.py` (Claude Bash tool). Escape hatches: `^git` (nu),
-  `\git` (bash), `rtk proxy <cmd>`.
-- **Bash-tool routing**: Claude Code's Bash tool is bash/zsh/sh-only; the
-  PreToolUse hook `~/.claude/hooks/bash-to-nu.py` routes every Bash-tool
-  command through nu supervision (`nu -l -c "^bash <scratch-file>"`), with
-  rtk composed internally. Disable per-session with `BASH_NU_ROUTE=0`.
+- **rtk routing**: `~/.config/nushell/rtk-wrappers.nu` is the Nushell route and
+  `rtk hook claude` remains the Claude Bash-tool route. Escape hatches: `^git`
+  (nu), `\git` (bash), `rtk proxy <cmd>`.
+- **No shell wrapper**: do not resurrect Python Bash-to-Nu hook routing,
+  POSIX Nu launcher routing, scratch-file bash dispatchers, or any parallel shell launcher.
+  Yazelix is Nushell-owned, Bash is already available inside that configured
+  runtime, and RTK is Rust-native.
 - **Symlink contract**: `~/.config/nushell/{config.nu,rtk-wrappers.nu,meta-usr-path.nu}`
   and `~/.config/yazelix/{shell_nu.nu,shell_bash.sh}` are symlinks into
   `meta/src/envctl/home/.config/` — never copies (a partial copy hard-broke
