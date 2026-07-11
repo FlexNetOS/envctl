@@ -85,7 +85,7 @@ fi
 
 # 8. ICM mandate present in the agent-env contract (Phase 2 acceptance)
 if grep -qi "icm" /home/flexnetos/meta/src/envctl/home/.claude/CLAUDE.md 2>/dev/null \
-   && ! grep -q "icm is not installed" /home/flexnetos/meta/src/envctl/home/.claude/CLAUDE.md 2>/dev/null; then
+   && ! grep -q "is not installed on this workstation" /home/flexnetos/meta/src/envctl/home/.claude/CLAUDE.md 2>/dev/null; then
   row "ICM mandate restored" "grep -i icm envctl/home/.claude/CLAUDE.md" pass "mandate text present, removal note gone"
 else
   row "ICM mandate restored" "grep -i icm envctl/home/.claude/CLAUDE.md" gap "removal note still present — Phase 2 work item"

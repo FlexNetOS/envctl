@@ -63,7 +63,11 @@
     "SessionStart": [
       {
         "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/session-start.sh", "timeout": 10 }
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/session-start.sh",
+            "timeout": 10
+          }
         ]
       }
     ],
@@ -71,28 +75,65 @@
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/guard-bash.sh", "timeout": 10 },
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/block-cherry-pick.sh", "timeout": 10 },
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/bun-rewrite.sh", "timeout": 10 }
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/guard-bash.sh",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/block-cherry-pick.sh",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/bun-rewrite.sh",
+            "timeout": 10
+          }
         ]
       },
       {
         "matcher": "Agent",
         "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/guard-agent-spawn.sh", "timeout": 10 }
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/guard-agent-spawn.sh",
+            "timeout": 10
+          }
         ]
       },
       {
         "matcher": "Edit|Write|NotebookEdit",
         "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/guard-write-paths.sh", "timeout": 10 },
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/grit-advise.sh", "timeout": 10 }
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/guard-write-paths.sh",
+            "timeout": 10
+          },
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/grit-advise.sh",
+            "timeout": 10
+          }
         ]
       },
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "rtk hook claude" }
+          {
+            "type": "command",
+            "command": "rtk hook claude"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/bash-to-nu.py",
+            "timeout": 15
+          }
         ]
       }
     ],
@@ -100,76 +141,124 @@
       {
         "matcher": "Edit|Write",
         "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/rust-postedit.sh", "async": true },
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/ruvector-intel-bridge.sh post-edit", "async": true }
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/rust-postedit.sh",
+            "async": true
+          },
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/ruvector-intel-bridge.sh post-edit",
+            "async": true
+          }
         ]
       },
       {
         "matcher": "Agent|Bash",
         "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/budget-sentinel.sh", "async": true }
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/budget-sentinel.sh",
+            "async": true
+          }
         ]
       },
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/ruvector-intel-bridge.sh post-bash", "async": true }
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/ruvector-intel-bridge.sh post-bash",
+            "async": true
+          }
         ]
       }
     ],
     "UserPromptSubmit": [
       {
         "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/ruvector-intel-bridge.sh route", "timeout": 15 }
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/ruvector-intel-bridge.sh route",
+            "timeout": 15
+          }
         ]
       }
     ],
     "SessionEnd": [
       {
         "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/ruvector-intel-bridge.sh session-end", "timeout": 15 }
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/ruvector-intel-bridge.sh session-end",
+            "timeout": 15
+          }
         ]
       }
     ],
     "SubagentStart": [
       {
         "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/spawn-ledger.sh", "timeout": 10 }
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/spawn-ledger.sh",
+            "timeout": 10
+          }
         ]
       }
     ],
     "SubagentStop": [
       {
         "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/spawn-ledger.sh", "timeout": 10 }
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/spawn-ledger.sh",
+            "timeout": 10
+          }
         ]
       }
     ],
     "TaskCompleted": [
       {
         "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/spawn-ledger.sh", "timeout": 10 }
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/spawn-ledger.sh",
+            "timeout": 10
+          }
         ]
       }
     ],
     "TeammateIdle": [
       {
         "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/spawn-ledger.sh", "timeout": 10 }
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/spawn-ledger.sh",
+            "timeout": 10
+          }
         ]
       }
     ],
     "Stop": [
       {
         "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/stop-decision-gate.sh", "timeout": 10 }
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/stop-decision-gate.sh",
+            "timeout": 10
+          }
         ]
       }
     ],
     "ConfigChange": [
       {
         "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/config-audit.sh", "timeout": 10 }
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/config-audit.sh",
+            "timeout": 10
+          }
         ]
       }
     ],
@@ -177,7 +266,11 @@
       {
         "matcher": "agent_needs_input|agent_completed|permission_prompt|idle_prompt",
         "hooks": [
-          { "type": "command", "command": "\"$HOME\"/.claude/hooks/notify-cosmic.sh", "timeout": 10 }
+          {
+            "type": "command",
+            "command": "\"$HOME\"/.claude/hooks/notify-cosmic.sh",
+            "timeout": 10
+          }
         ]
       }
     ]
