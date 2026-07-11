@@ -109,6 +109,24 @@ else
   row "ICM mandate restored" "grep -i icm envctl/home/.claude/CLAUDE.md" gap "removal note still present — Phase 2 work item"
 fi
 
+# 9. DISCOVERY rows (adopted from the codex sibling: sweep, don't just regress-test)
+W=$(yzx doctor 2>/dev/null | grep "⚠" | grep -vc Found || true)
+if [ "${W:-0}" -le 1 ]; then row "yzx doctor warnings" "yzx doctor warn-lines" pass "$W warning(s)"
+else row "yzx doctor warnings" "yzx doctor warn-lines" gap "$W warnings — read them, queue or fix each"; fi
+SH=$(ls "$HOME/.local/bin" 2>/dev/null | grep -c "^yzx$" || true)
+ML=$(ls "$HOME/.local/share/applications" 2>/dev/null | grep -ci "mars" || true)
+if [ "${SH:-0}" -eq 0 ] && [ "${ML:-0}" -eq 0 ]; then row "no stale yzx/mars shadows" "ls ~/.local/{bin,share/applications}" pass "clean"
+else row "no stale yzx/mars shadows" "ls ~/.local/{bin,share/applications}" gap "shadow(s) present: bin=$SH mars-launchers=$ML — archive them"; fi
+if [ -x "$REPO/target/debug/envctl" ]; then
+  if "$REPO/target/debug/envctl" migrate scan >/dev/null 2>&1; then
+    row "envctl migrate scan" "envctl migrate scan" pass "read-only inventory ran"
+  else
+    row "envctl migrate scan" "envctl migrate scan" gap "exit nonzero — run interactively"
+  fi
+else
+  row "envctl migrate scan" "envctl migrate scan" gap "envctl not built (cargo build -p envctl)"
+fi
+
 echo
 if [ "$FAILS" -eq 0 ]; then echo "PHASE0: PASS (0 fail rows; gaps are queued work items, not blockers)"; exit 0
 else echo "PHASE0: FAIL ($FAILS fail rows above)"; exit 1; fi

@@ -204,6 +204,8 @@ COMMAND IDIOM (for every command this harness writes):
 | POSIX one-liner | non-login `bash -c '…'` (toolbin is on non-login PATH) |
 | genuinely needs login profile | `bash -lc '…'` (rare; costs a full profile re-source) |
 | token-optimized output in scripts | explicit `rtk <cmd>` (never assume aliases in a child) |
+| substrate CLIs | rtk-routed: `rtk git-kb …`, `rtk grit …`, `rtk icm …`, `rtk meta git …`; unlisted fleet git: `rtk meta exec -- git <cmd>` |
+| bash/zsh under the yazelix runtime env | `yzx run bash -lc "<cmd>"` / `yzx run zsh -lc "<cmd>"` (profile frontdoor) |
 | raw bypass | `^git` (nu) / `\git` (bash) / `rtk proxy <cmd>` |
 
 Known profile gaps (verify, queue if still present): `cargo-fmt`/`cargo-clippy` are not exported
@@ -231,6 +233,12 @@ still required (the verb is convenience, not evidence):
 | icm | 0.10.57 | `icm --version` + store/recall smoke | remember/recall → `icm`; mandate restore: Phase 2 |
 | weave | build from `meta/src/weave` if absent | `weave scan --json` | ad-hoc cross-session files/polling → `weave send/notify/ask` |
 
+Probe discipline (aligned with the codex sibling): session-start probes are READ-ONLY —
+`ICM_READONLY=1 rtk icm wake-up --max-tokens 200`, `rtk grit status`,
+`rtk git-kb list --path context/ --json`, `command -v weave || true`. A missing `.grit`, absent
+ICM DB, or missing weave executable is a recorded gap, never permission to initialize
+implicitly; mutation happens only in the explicitly granted init phase.
+
 WEAVE WIRING (WL-084): `weave setup --provider claude` registers the weave MCP server and merges
 four hooks (SessionStart→`session`, UserPromptSubmit→`prompt`, Stop/SubagentStop→`wake`) —
 idempotent, additive (never clobbers foreign entries), atomic (temp+rename, one-time
@@ -255,6 +263,12 @@ codex half is owned by the `agent-env-codex` skill (managed via `agent-skills/ag
 both halves: the six-substrate init table, session-toggle doctrine (`/permissions` is the live
 authority, never hard-coded lockouts), nix/yazelix profile frontdoors, and `rtk meta git`
 fleet routing. A change to a shared contract lands in BOTH skills or not at all.
+
+ENVCTL VERB SURFACE (probe, read-only): `auto-detect --json`, `doctor`, `graph`, `lock
+--check`, `migrate scan` (legacy-install adoption inventory into `$META_ROOT` — fail-closed,
+`--apply` materializes), `agent sync|lock`, `dashboard`. `migrate scan` belongs in every
+discovery pass; stale host shadows (`~/.local/bin` wrappers, `~/.local/share/applications`
+launchers for removed variants) are drift the sweep must catch.
 
 ## STATUS SURFACES — four layers, superset-only, prove renders live
 
