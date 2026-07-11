@@ -25,11 +25,12 @@
 | Phase 5 browser/computer use | Complete snapshot; policies/rules/binaries owner rows. |
 | Phase 6 memory/database | Complete snapshot; policies/rules/binaries owner rows. |
 | Phase 7 providers/network/model fabric | Complete snapshot; model/policy owner rows. |
-| Phase 8 GitHub/worktrees | Complete snapshot; `github-execution-policy.md`; finish proof and repo hygiene. |
+| Phase 8 GitHub/worktrees | Complete snapshot; `github-execution-policy.md`; `github-org-and-ccboard.md`; SSH Git transport, FlexNetOS org governance, Linux-only CI, fork sync, auto-merge, and branch/worktree convergence. |
 | Phase 9 skills/plugins/MCP | Complete snapshot; agent-env convergence. |
 | Phase 10 parallel execution | Complete snapshot; agents/teams/rules owner rows. |
 | Phase 11 final verification | `validate.sh` prompt reviews plus complete Cargo test suite. |
 | Secret/Vault/envctl additive rules | Complete snapshot; secret-deny constraint and owner map. |
 | Full-access provenance | Complete snapshot and prompt checksum identity. |
+| ccboard/Codex/Claude observability | `github-org-and-ccboard.md`; preserve existing Codex startup indexing, trace Claude hooks/bridge, complete watcher/live/content/API paths in ccboard, and deliver through Yazelix profile ownership. |
 
 No row may be removed because it seems irrelevant to one change. `/agent-env-codex` maps the requested edit across all rows, then modifies only affected owners while preserving every unaffected contract.

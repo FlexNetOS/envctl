@@ -292,8 +292,11 @@ fn one_skill_owns_session_controls_and_github_execution_policy() {
 
     let skill = fs::read_to_string(root.join("agent-skills/agent-env-codex/SKILL.md")).unwrap();
     assert!(skill.contains("references/github-execution-policy.md"));
+    assert!(skill.contains("references/github-org-and-ccboard.md"));
     assert!(skill.contains("never cherry-pick"));
     assert!(skill.contains("Never change `/permissions`"));
+    assert!(skill.contains("Never invoke raw `git`"));
+    assert!(skill.contains("Never add macOS or Windows GitHub Actions jobs"));
 
     let github_policy = fs::read_to_string(
         root.join("agent-skills/agent-env-codex/references/github-execution-policy.md"),
@@ -305,8 +308,55 @@ fn one_skill_owns_session_controls_and_github_execution_policy() {
         "No stranded commits",
         "Unfinished-work closure",
         "Permission integrity",
+        "Meta worktree authority",
+        "SSH Git transport",
+        "Linux-only automation",
+        "Protected trunks and disposable task state",
+        "Non-destructive fork sync",
+        "Branch/origin/worktree convergence",
     ] {
         assert!(github_policy.contains(required), "missing {required}");
+    }
+    assert!(github_policy.contains("rtk meta git"));
+    assert!(github_policy.contains("main`, `master`, or `develop"));
+    assert!(github_policy.contains("enable auto-merge"));
+
+    let org_ccboard = fs::read_to_string(
+        root.join("agent-skills/agent-env-codex/references/github-org-and-ccboard.md"),
+    )
+    .unwrap();
+    for required in [
+        "FlexNetOS organization surface matrix",
+        "Secrets, variables, environments",
+        "Webhooks and deploy keys",
+        "GitHub Apps",
+        "Code security and quality",
+        "Custom properties",
+        "ccboard and Claude/Codex implementation path",
+        "Codex is partially wired, not absent",
+        "DataStore::scan_third_party_sessions",
+        "ccbrain-session-stop.sh",
+        "codex-harness-claude-bridge",
+        "Yazelix already owns the installed ccboard pane",
+    ] {
+        assert!(org_ccboard.contains(required), "missing {required}");
+    }
+
+    let workflows = root.join(".github/workflows");
+    for entry in fs::read_dir(workflows).unwrap().flatten() {
+        let path = entry.path();
+        if !matches!(
+            path.extension().and_then(|value| value.to_str()),
+            Some("yml" | "yaml")
+        ) {
+            continue;
+        }
+        let workflow = fs::read_to_string(&path).unwrap().to_ascii_lowercase();
+        assert!(
+            !workflow.contains("macos-") && !workflow.contains("windows-"),
+            "{} must remain Linux-only",
+            path.display()
+        );
     }
 
     let library = fs::read_to_string(root.join("home/agent-env/codex-harness/src/lib.rs")).unwrap();
