@@ -646,8 +646,8 @@ jobs:
 - name: Cache Swarm Dependencies
   uses: actions/cache@v3
   with:
-    path: ~/.npm
-    key: ${{ runner.os }}-swarm-${{ hashFiles('**/package-lock.json') }}
+    path: ~/.bun/install/cache
+    key: ${{ runner.os }}-swarm-${{ hashFiles('**/bun.lock') }}
 ```
 
 #### 3. Set Appropriate Timeouts
@@ -734,9 +734,9 @@ permissions:
 - uses: actions/cache@v3
   with:
     path: |
-      ~/.npm
+      ~/.bun/install/cache
       node_modules
-    key: ${{ runner.os }}-swarm-${{ hashFiles('**/package-lock.json') }}
+    key: ${{ runner.os }}-swarm-${{ hashFiles('**/bun.lock') }}
 ```
 
 #### 2. Use Appropriate Runner Sizes
@@ -1031,8 +1031,8 @@ bunx ruv-swarm actions analytics [options]
 #!/bin/bash
 # setup-github-automation.sh
 
-# Install dependencies
-npm install -g claude-flow@alpha
+# Execute the package through the profile-owned ephemeral Bun frontdoor
+bunx claude-flow@alpha --version
 
 # Verify GitHub CLI
 gh auth status || gh auth login

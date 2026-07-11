@@ -139,9 +139,9 @@ ACTION TAXONOMY — classify before blocking anything:
     local_source` rebuilds the profile from the latest local yazelix; fenix supplies the latest
     Rust; a newer available version is an upgrade to take (Law 2), never a reason to pin old. A
     stale toolchain that shadows the nix one earlier in PATH (a rustup / `~/.cargo` / `~/.rustup`
-    install) is a BLOCKING finding — it is the E0514 "crate compiled by an incompatible version of
-    rustc" class (a real CI break): the fix is to remove the shadow, never to downgrade the nix
-    toolchain to match it.
+    install) fails the affected toolchain proof — it is the E0514 "crate compiled by an incompatible
+    version of rustc" class (a real CI break): archive/remove the shadow, never downgrade the nix
+    toolchain to match it, and continue every unrelated requirement while repairing that owner.
 10. SOURCE OF TRUTH FOR THE AGENT ENV IS ADR-0006. Real files live in
     `meta/src/envctl/home/.claude/`; `~/.claude` is a symlink surface. Durable agent-env changes
     are edited in the envctl repo (worktree on develop), never in place through the symlink.
@@ -258,27 +258,26 @@ until the profile adds the shims.
   matrix entries). A workflow carrying `macos-*`/`windows-*` is a blocking finding.
 - FORKS SYNC AS SUPERSETS: a fork must be configured to pull upstream changes WITHOUT removing
   local updates — upstream merge into the fork, never a force-reset of the fork to upstream.
-- ORG SSH IDENTITY (META DEMAND): all GitHub management — git AND `gh` org administration — runs
-  as the authenticated FlexNetOS org account `drdave-flexnetos` (`admin:org` scope) over SSH;
-  `gh config git_protocol` = `ssh`; every remote is `git@github.com:FlexNetOS/<repo>.git`. Never a
-  personal-token HTTPS path for fleet management. (Operator spelling "dr-dave-flexnetos"; the live
-  `gh auth`/`gh api user` login is `drdave-flexnetos` — verify, don't assume the hyphenation.)
-- ORG ADMINISTRATION MANDATE (META DEMAND): the FlexNetOS org must be brought to a declared,
-  policy-conformant state across ALL admin surfaces — org SETTINGS, ACTIONS, WORKFLOWS, RULES /
-  RULESETS, POLICY, SECRETS, SANDBOXES, PAGES, PACKAGES, DISCUSSIONS, WEBHOOKS, DEPLOY KEYS, GITHUB
-  APPS, CODE QUALITY (code-scanning/CodeQL), CODESPACES, PROJECTS, ISSUES, and CUSTOM PROPERTIES.
-  Method mirrors envctl's own convergence discipline (AGENTIC-STORY): AUDIT (read-only inventory via
-  `gh api orgs/FlexNetOS/…` — names/counts only) → declare target → converge fail-closed → verify.
-  HUMAN-WALL surfaces (never auto-reveal, auto-create, or auto-delete): secret VALUES, deploy-key
-  private material, GitHub-App credentials, and destructive ruleset/policy changes. The driver ships
-  the read-only surface audit; every mutation is operator-gated per surface.
-- BUN-FIRST GITHUB TOOLING: `npm` = `bun`, `npx` = `bunx` for every skill/tool this harness invokes
-  (`bun-rewrite.sh` enforces it live; the loaded github skills are bunx-normalized). e.g.
-  `bunx ruv-swarm …`, `bunx claude-flow@alpha …`.
-- GITHUB SKILLS (loaded, fleet-wide): the governing `github` skill (this policy as law + runnable
-  `rtk meta git` flows) plus the toolbox `github-{multi-repo,workflow-automation,release-management,
-  code-review,project-management}` live in `~/.claude/skills` (ADR-0006 → envctl/home/.claude/skills).
-  The policy binds the toolbox; where a swarm recipe conflicts with the policy, the policy wins.
+- PERSONAL + ORG SSH PROOF (META DEMAND): verify the GitHub SSH principal and `gh api user` are
+  `drdave-flexnetos`, `gh config git_protocol` is `ssh`, FlexNetOS organization membership is
+  active, and an SSH `ls-remote` against a FlexNetOS repository succeeds. A personal SSH greeting
+  alone is not organization authorization. Git fetch/push uses
+  `git@github.com:FlexNetOS/<repo>.git` through `rtk meta git`; organization settings use the
+  authenticated `gh`/REST/GraphQL control plane because SSH does not configure settings.
+- ORG ADMINISTRATION MANDATE (META DEMAND): bring the FlexNetOS organization to a declared,
+  policy-conformant state across ALL admin surfaces — SETTINGS, ACTIONS, WORKFLOWS, RULES /
+  RULESETS, POLICY, SECRETS, SANDBOXES, PAGES, PACKAGES, DISCUSSIONS, WEBHOOKS, DEPLOY KEYS,
+  GITHUB APPS, CODE QUALITY, CODESPACES, PROJECTS, ISSUES, and CUSTOM PROPERTIES. Use
+  audit → declare → converge fail-closed → verify. Inventory secret names/visibility only; never
+  reveal secret values, deploy-key private material, or GitHub App credentials. A denied endpoint
+  remains an exact scope/plan blocker; never change permissions or add an `Allow` to hide it.
+- BUN-FIRST GITHUB TOOLING: executable skill recipes use profile-owned `bun` instead of `npm` and
+  `bunx` instead of `npx`; the gate scans every Markdown skill owner rather than relying only on a
+  runtime rewrite hook. Examples: `bunx ruv-swarm/claude-flow@alpha`, `bunx ruv-swarm …`, and
+  `bunx claude-flow@alpha …`.
+- GITHUB SKILLS (loaded, fleet-wide): the governing `github` skill plus the toolbox
+  `github-{multi-repo,workflow-automation,release-management,code-review,project-management}` live
+  under `home/.claude/skills`. The governing policy wins over any imported toolbox recipe.
 
 ## YAZELIX (yzx) SURFACE — the profile owner's CLI, update transaction, and plugin policy
 

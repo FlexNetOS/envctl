@@ -2,6 +2,7 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 fn envctl_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -293,6 +294,7 @@ fn one_skill_owns_session_controls_and_github_execution_policy() {
     let skill = fs::read_to_string(root.join("agent-skills/agent-env-codex/SKILL.md")).unwrap();
     assert!(skill.contains("references/github-execution-policy.md"));
     assert!(skill.contains("references/github-org-and-ccboard.md"));
+    assert!(skill.contains("references/bunx-and-github-ssh.md"));
     assert!(skill.contains("never cherry-pick"));
     assert!(skill.contains("Never change `/permissions`"));
     assert!(skill.contains("Never invoke raw `git`"));
@@ -309,7 +311,7 @@ fn one_skill_owns_session_controls_and_github_execution_policy() {
         "Unfinished-work closure",
         "Permission integrity",
         "Meta worktree authority",
-        "SSH Git transport",
+        "Personal and organization SSH proof",
         "Linux-only automation",
         "Protected trunks and disposable task state",
         "Non-destructive fork sync",
@@ -320,6 +322,29 @@ fn one_skill_owns_session_controls_and_github_execution_policy() {
     assert!(github_policy.contains("rtk meta git"));
     assert!(github_policy.contains("main`, `master`, or `develop"));
     assert!(github_policy.contains("enable auto-merge"));
+
+    let bunx_ssh = fs::read_to_string(
+        root.join("agent-skills/agent-env-codex/references/bunx-and-github-ssh.md"),
+    )
+    .unwrap();
+    for required in [
+        "npm install",
+        "bun install",
+        "npx <package>",
+        "bunx <package>",
+        "bunx ruv-swarm/claude-flow@alpha",
+        "drdave-flexnetos",
+        "user/memberships/orgs/FlexNetOS",
+        "git ls-remote git@github.com:FlexNetOS/envctl.git HEAD",
+    ] {
+        assert!(bunx_ssh.contains(required), "missing {required}");
+    }
+    let bun_policy = Command::new("python3")
+        .arg(root.join("agent-skills/agent-env-codex/scripts/check-bun-command-policy.py"))
+        .arg(&root)
+        .status()
+        .expect("run Bun/Bunx skill command policy");
+    assert!(bun_policy.success(), "skill command policy must pass");
 
     let org_ccboard = fs::read_to_string(
         root.join("agent-skills/agent-env-codex/references/github-org-and-ccboard.md"),
@@ -388,6 +413,82 @@ fn persistent_runner_jobs_have_isolated_cargo_targets() {
         6,
         "every Cargo-using job must isolate its target directory"
     );
+}
+
+#[test]
+fn agent_env_codex_requires_latest_yazelix_convergence_and_plugin_ownership() {
+    let root = envctl_root();
+    let skill = fs::read_to_string(root.join("agent-skills/agent-env-codex/SKILL.md")).unwrap();
+    for required in [
+        "references/yazelix-cli-plugin-policy.md",
+        "A toggle may be off",
+        "latest available Nix/Yazelix/fenix/Bun-owned binaries",
+        "yzx update",
+        "yazelix-yazi-assets",
+        "Never leave completed or idle subagents running.",
+    ] {
+        assert!(skill.contains(required), "missing skill contract: {required}");
+    }
+
+    let policy = fs::read_to_string(
+        root.join("agent-skills/agent-env-codex/references/yazelix-cli-plugin-policy.md"),
+    )
+    .unwrap();
+    for required in [
+        "Do not invent a `yzx sync` command",
+        "yzx update local_source",
+        "yzx update upstream",
+        "yzx update home_manager",
+        "yzx doctor --fix-plan --json",
+        "/home/flexnetos/meta/src/yazelix-yazi-assets",
+        "yazelix_helix_cogs_noop_wt",
+        "yazelix-helix",
+        "yazelix_pane_orchestrator.wasm",
+        "yzpp.wasm",
+        "zjstatus.wasm",
+    ] {
+        assert!(policy.contains(required), "missing Yazelix policy: {required}");
+    }
+
+    let prompt = fs::read_to_string(
+        root.join(
+            ".codex/prompts/prompt:codex-gpt-harness-v3-full-access-no-sandbox.prompt.md",
+        ),
+    )
+    .unwrap();
+    for required in [
+        "Mandatory-task, latest-toolchain, and Yazelix convergence controller",
+        "The word `optional` means mandatory when attached to work",
+        "latest available profile-owned toolchain",
+        "plugin and add-on source/package/manifest authority",
+        "empty harness-owned roster",
+    ] {
+        assert!(prompt.contains(required), "missing prompt contract: {required}");
+    }
+
+    let claude_prompt = fs::read_to_string(
+        root.join(".claude/prompts/prompt:claude-code-agent-env-ultraplan.prompt.md"),
+    )
+    .unwrap();
+    let claude_skill =
+        fs::read_to_string(root.join(".claude/skills/agent-env-claude/SKILL.md")).unwrap();
+    assert_eq!(
+        claude_prompt
+            .matches("## YAZELIX (yzx) SURFACE")
+            .count(),
+        1,
+        "Claude prompt must contain one Yazelix policy block"
+    );
+    assert_eq!(
+        claude_skill.matches("## YAZELIX (yzx) SURFACE").count(),
+        1,
+        "Claude skill must contain one Yazelix policy block"
+    );
+
+    let phase0 =
+        fs::read_to_string(root.join(".claude/skills/agent-env-claude/phase0.sh")).unwrap();
+    assert!(phase0.contains("rtk meta --json exec --include yazelix-yazi-assets"));
+    assert!(!phase0.contains("&& git -C \"$PO\" remote get-url origin"));
 }
 
 #[test]

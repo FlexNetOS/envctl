@@ -131,8 +131,8 @@ mcp__claude-flow__swarm_init({
     cd /tmp/$repo
 
     # Apply changes
-    npm update
-    npm test
+    bun update
+    bun run test
 
     # Create PR if successful
     if [ $? -eq 0 ]; then
@@ -318,7 +318,7 @@ mcp__claude-flow__swarm_init({
           version: "1.0",
           mcp_servers: {
             "ruv-swarm": {
-              command: "npx",
+              command: "bunx",
               args: ["ruv-swarm", "mcp", "start"]
             }
           }
@@ -361,7 +361,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
         with: { node-version: '20' }
-      - run: npm install && npm test`,
+      - run: bun install && bun run test`,
       message: "ci: Standardize integration workflow",
       branch: "structure/standardization"
     })
@@ -395,11 +395,11 @@ jobs:
     gh repo clone org/$repo /tmp/$repo -- --depth=1
     cd /tmp/$repo
 
-    npm install --save-dev typescript@5.0.0
+    bun add --dev typescript@5.0.0
 
-    if npm test; then
+    if bun run test; then
       git checkout -b update-typescript-5
-      git add package.json package-lock.json
+      git add package.json bun.lock
       git commit -m "chore: Update TypeScript to 5.0.0
 
 Part of #$TRACKING_ISSUE"
@@ -447,16 +447,17 @@ Part of #$TRACKING_ISSUE"
     while read -r repo; do
       gh repo clone org/$repo /tmp/$repo -- --depth=1
       cd /tmp/$repo
-      npm audit --json > /tmp/audit-$repo.json
+      bun audit --json > /tmp/audit-$repo.json
     done`)
 
   // Apply patches
   Bash(`for repo in /tmp/audit-*.json; do
     if [ $(jq '.vulnerabilities | length' $repo) -gt 0 ]; then
       cd /tmp/$(basename $repo .json | sed 's/audit-//')
-      npm audit fix
+      bun update
+      bun audit --json
 
-      if npm test; then
+      if bun run test; then
         git checkout -b security/patch-$(date +%Y%m%d)
         git add -A
         git commit -m "security: Apply security patches"

@@ -18,6 +18,7 @@ Use this map before rebuilding or editing the Codex harness.
 | `home/agent-env/codex-harness/tests/` | Harness contracts | Add/update tests with behavior. |
 | Git branches, commits, worktrees, PRs, and CI runs | Delivery state and proof | Follow `github-execution-policy.md`; no cherry-pick, no stranded task state, and no local-only completion. |
 | FlexNetOS GitHub organization settings | Organization governance | Follow `github-org-and-ccboard.md`; SSH for Git transport, `gh`/REST/GraphQL/UI for administration, metadata-only secret inspection, no permission bypass. |
+| Markdown skills under `agent-skills/`, `.codex/skills/`, `.claude/skills/`, and `home/*/skills/` | Executable recipes loaded by agents | Follow `bunx-and-github-ssh.md`; no executable `npm`/`npx`, no global package install, and validate with `check-bun-command-policy.py`. |
 | `/home/flexnetos/meta/src/ccboard/` | Claude/Codex session ingestion, analytics, TUI, and web/API | Preserve existing Codex parser/store path; complete content/watcher/live integration in a separate Meta-managed ccboard worktree/PR. |
 | `/home/flexnetos/meta/src/yazelix/configs/zellij/layouts/flexnetos_agent_workspace.kdl` and `packaging/runtime_release_contracts.nix` | Source owner for installed ccboard pane/runtime packaging | Change only when package/layout delivery changes; rebuild profile and use generated runtime as proof. |
 | `agent-skills/`, `agent-env.yaml`, `agent-env.lock` | envctl-managed agent inputs and lock | Edit inputs, preview sync, apply only when requested, check lock. |
@@ -27,5 +28,8 @@ Use this map before rebuilding or editing the Codex harness.
 | `/home/flexnetos/.config/yazelix/` | Editable Yazelix inputs | Edit owning inputs. |
 | `/home/flexnetos/.local/share/yazelix/` | Generated Yazelix runtime | Never hand-edit; proof only. |
 | `/home/flexnetos/.nix-profile/bin/yzx` | Active runtime frontdoor | Use for installed behavior proof. |
+| `/home/flexnetos/meta/src/yazelix-yazi-assets/` | Required Yazelix plugin/add-on consolidation owner | Own all plugin/add-on source, package, and manifest authority after no-downgrade migration. |
+| `/home/flexnetos/meta/src/yazelix_helix_cogs_noop_wt/` | Main Yazelix task worktree and migration evidence | Inventory only; not a durable plugin owner. Finish/merge legitimate work and migrate plugin/add-on authority. |
+| `/home/flexnetos/meta/src/yazelix-helix/` | Helix fork and current Steel-default source | Preserve the editor fork; migrate plugin/add-on assets and manifests to `yazelix-yazi-assets` without capability loss. |
 
 The harness source is one coherent product. A change may require multiple rows, but it remains one `/agent-env-codex` workflow and one skill.

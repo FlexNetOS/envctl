@@ -28,7 +28,9 @@ Missing `.grit`, an absent ICM DB, or a missing Weave executable is a recorded g
 
 | Intent | Route |
 | --- | --- |
-| Profile/runtime proof | `yzx status --versions`; `yzx inspect --json` |
+| Yazelix command discovery | profile `yzx --help`; `yzx inspect --json` command metadata |
+| Profile/runtime proof | `yzx status --versions`; `yzx status --json`; `yzx inspect --json`; `yzx doctor --json` |
+| Yazelix owner update | exactly one of `yzx update local_source`, `yzx update upstream`, or `yzx update home_manager` |
 | Nushell | profile `nu -c` or `nu -l -c` when login config is required |
 | Bash/Zsh compatibility | `yzx run bash -lc "<cmd>"`; `yzx run zsh -lc "<cmd>"` |
 | Single checkout git | `rtk git ...` |
@@ -37,6 +39,10 @@ Missing `.grit`, an absent ICM DB, or a missing Weave executable is a recorded g
 | GitKB | `rtk git-kb ...` |
 | Grit | `rtk grit ...` |
 | ICM | `rtk icm ...` |
+
+The full researched command inventory, update/convergence transaction, latest
+toolchain rules, and plugin/add-on ownership contract live in
+`yazelix-cli-plugin-policy.md`.
 
 ## Professional harness probes
 

@@ -797,9 +797,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - run: npm install
-      - run: npm test
-      - run: npm run build
+      - run: bun install
+      - run: bun run test
+      - run: bun run build
 
   swarm-review:
     needs: build-and-test
@@ -1053,9 +1053,9 @@ fi
   Bash("gh pr review 54 --approve --body 'LGTM after automated review'")
 
   // Execute tests and validation
-  Bash("npm test")
-  Bash("npm run lint")
-  Bash("npm run build")
+  Bash("bun run test")
+  Bash("bun run lint")
+  Bash("bun run build")
 
   // Track progress
   TodoWrite { todos: [
