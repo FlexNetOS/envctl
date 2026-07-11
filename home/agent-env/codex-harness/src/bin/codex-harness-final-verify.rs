@@ -3,11 +3,11 @@
 use anyhow::Result;
 use codex_harness::prompt_review::review_full_access_prompt_path;
 use codex_harness::{
-    append_ledger, audit_value, codex_harness_dir, full_access_granted, model_router_ready,
-    nix_verify_value, project_root, state_dir, tracked_full_access_policy_granted, which,
-    USER_FULL_ACCESS_DECISION_ID,
+    USER_FULL_ACCESS_DECISION_ID, append_ledger, audit_value, codex_harness_dir,
+    full_access_granted, model_router_ready, nix_verify_value, project_root, state_dir,
+    tracked_full_access_policy_granted, which,
 };
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
 use std::env;
@@ -36,11 +36,7 @@ fn row(
 }
 
 fn pass_fail(ok: bool) -> &'static str {
-    if ok {
-        "pass"
-    } else {
-        "missing"
-    }
+    if ok { "pass" } else { "missing" }
 }
 
 fn result_is_acceptance(result: &str) -> bool {
@@ -263,6 +259,79 @@ fn phase_state_files_ok(harness: &Path, prompt_sha256: Option<&str>) -> bool {
         }
     }
     true
+}
+
+fn write_phase_state_files(
+    harness: &Path,
+    prompt_path: &Path,
+    prompt_sha256: Option<&str>,
+    phase_matrix: &[Value],
+) -> Result<()> {
+    let all_prior_pass = phase_matrix
+        .iter()
+        .filter(|phase| phase.get("phase").and_then(Value::as_u64) != Some(11))
+        .all(|phase| phase.get("result").and_then(Value::as_str) == Some("pass"));
+    let phases = phase_matrix
+        .iter()
+        .map(|phase| {
+            let number = phase.get("phase").and_then(Value::as_u64).unwrap_or(0);
+            let title = phase
+                .get("title")
+                .and_then(Value::as_str)
+                .unwrap_or("unknown phase");
+            let anchor = phase
+                .get("prompt_anchor")
+                .and_then(Value::as_str)
+                .unwrap_or("unknown prompt anchor");
+            let evidence = phase
+                .get("evidence")
+                .and_then(Value::as_str)
+                .unwrap_or("no evidence");
+            let result = if number == 11 {
+                if all_prior_pass { "pass" } else { "missing" }
+            } else {
+                phase
+                    .get("result")
+                    .and_then(Value::as_str)
+                    .unwrap_or("missing")
+            };
+            json!({
+                "phase": number,
+                "title": title,
+                "prompt_anchor": anchor,
+                "result": result,
+                "items": [{
+                    "id": format!("phase-{number}-acceptance"),
+                    "requirement": title,
+                    "proof_command": "codex-harness-final-verify",
+                    "evidence": evidence,
+                    "status": result,
+                    "mandatory": true
+                }]
+            })
+        })
+        .collect::<Vec<_>>();
+    let checklist = json!({
+        "schema": "codex-harness.phase-execution-checklist.v1",
+        "prompt": {
+            "path": prompt_path,
+            "sha256": prompt_sha256
+        },
+        "phases": phases
+    });
+    fs::create_dir_all(harness.join("state"))?;
+    fs::write(
+        harness.join("state/phase-execution-checklist.json"),
+        serde_json::to_vec_pretty(&checklist)?,
+    )?;
+    fs::write(
+        harness.join("state/compact-continuation.md"),
+        format!(
+            "# Codex Harness Continuation\n\nstate: state/phase-execution-checklist.json\nledger: ledger/harness.jsonl\nprompt_sha256: {}\nnext exact command: codex-harness-final-verify\n",
+            prompt_sha256.unwrap_or("missing")
+        ),
+    )?;
+    Ok(())
 }
 
 fn main() -> Result<()> {
@@ -516,7 +585,7 @@ fn main() -> Result<()> {
         ),
         row(
             "model access proof",
-            "catalog coverage plus live Codex account probes for GPT-5.5/GPT-5.4/Spark and account-gated preview/o-series denials",
+            "catalog coverage plus live Codex account probes for Sol/Terra/Luna, the GPT-5.4/Spark fallback floor, and documented account-gated denials",
             model_access_proof_path.display().to_string(),
             "codex-harness-model-access probe",
             pass_fail(model_access_ok),
@@ -783,6 +852,12 @@ fn main() -> Result<()> {
             "pending-self-check",
         ),
     ];
+    write_phase_state_files(
+        &harness,
+        &prompt_path,
+        prompt_sha256.as_deref(),
+        &phase_matrix,
+    )?;
 
     let incomplete = matrix
         .iter()

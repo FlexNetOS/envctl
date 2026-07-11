@@ -2,9 +2,9 @@
 
 use anyhow::Result;
 use codex_harness::{
-    active_job_records, audit_value, bad_behavior_counts, count_lines, full_access_granted,
-    last_deny_summary, ledger_dir, model_router_ready, nix_verify_value, project_root, state_dir,
-    USER_FULL_ACCESS_DECISION_ID,
+    USER_FULL_ACCESS_DECISION_ID, active_job_records, audit_value, bad_behavior_counts,
+    count_lines, full_access_granted, last_deny_summary, ledger_dir, model_route_for_task,
+    model_router_ready, nix_verify_value, project_root, state_dir,
 };
 use std::path::Path;
 use std::process::Command;
@@ -59,14 +59,24 @@ fn main() -> Result<()> {
         .and_then(|v| v.as_str())
         .unwrap_or("unknown");
     let unresolved = state_dir().join("unresolved-decision").exists();
+    let default_route = model_route_for_task("professional implementation");
+    let default_model = default_route
+        .get("model")
+        .and_then(|value| value.as_str())
+        .unwrap_or("gpt-5.6-terra");
     println!(
-        "codex-harness status model=gpt-5.5 permission_profile=danger-full-access project={} branch={} codex_path={} nix_owned={} full_access_granted={} full_access_decision_id={} openrouter=enabled claude_bridge=enabled browser_computer=enabled github_full_access=enabled active_subagents=0 active_background_jobs={} active_codex_child_sessions={} active_claude_child_sessions={} active_local_model_jobs={} budget_events={} ledger_ok={} model_router_ready={} open_decisions={} bad_behavior_total={} bad_behavior_counters={} last_deny={}",
+        "codex-harness status model={} permission_profile=danger-full-access project={} branch={} codex_path={} nix_owned={} full_access_granted={} full_access_decision_id={} openrouter=enabled claude_bridge=enabled browser_computer=enabled github_full_access=enabled active_subagents=0 active_background_jobs={} active_codex_child_sessions={} active_claude_child_sessions={} active_local_model_jobs={} budget_events={} ledger_ok={} model_router_ready={} open_decisions={} bad_behavior_total={} bad_behavior_counters={} last_deny={}",
+        default_model,
         project_root().display(),
         branch,
         codex_path,
         nix.get("ok").and_then(|v| v.as_bool()).unwrap_or(false),
         full_access_granted(),
-        if full_access_granted() { USER_FULL_ACCESS_DECISION_ID } else { "none" },
+        if full_access_granted() {
+            USER_FULL_ACCESS_DECISION_ID
+        } else {
+            "none"
+        },
         jobs.len(),
         codex_jobs,
         claude_jobs,

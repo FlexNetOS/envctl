@@ -13,24 +13,24 @@ network_required = true
 privacy_class = "external-provider"
 
 [task.browser_computer]
-model = "gpt-5.5"
+model = "gpt-5.6-sol"
 provider = "openai"
 profile = "envctl-browser-computer"
 network_required = true
 privacy_class = "screenshot-risk"
 
 [task.github]
-model = "gpt-5.5"
+model = "gpt-5.6-sol"
 provider = "openai"
 profile = "envctl-github-full-access"
 network_required = true
 privacy_class = "repo-mutation"
 
 [task.model_access_proof]
-model = "gpt-5.5"
+model = "gpt-5.6-terra"
 provider = "openai"
-profile = "envctl-gpt55-standard"
+profile = "envctl-gpt56-terra"
 proof_tool = "codex-harness-model-access probe"
-required_models = ["gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-5.3-codex-spark", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna", "o3", "o4-mini"]
+required_models = ["gpt-5.4", "gpt-5.4-mini", "gpt-5.3-codex-spark", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna", "o3", "o4-mini"]
 network_required = true
 privacy_class = "codex-account"

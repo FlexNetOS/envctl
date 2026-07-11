@@ -2,7 +2,7 @@
 enabled = true
 provider_id = "openai"
 wire_api = "responses"
-primary_model = "gpt-5.5"
+primary_model = "gpt-5.6-terra"
 
 [openrouter]
 enabled = true

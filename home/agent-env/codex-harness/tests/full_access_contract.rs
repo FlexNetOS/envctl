@@ -163,3 +163,93 @@ fn native_rule_mirrors_allow_the_operator_frontdoor() {
         previous = Some(text);
     }
 }
+
+#[test]
+fn routeable_models_are_sol_terra_luna_or_explicit_fallbacks() {
+    let root = envctl_root();
+    let config_dir = root.join("home/.codex");
+    for entry in fs::read_dir(config_dir).unwrap() {
+        let path = entry.unwrap().path();
+        let Some(name) = path.file_name().and_then(|value| value.to_str()) else {
+            continue;
+        };
+        if !name.starts_with("envctl-") || !name.ends_with(".config.toml") {
+            continue;
+        }
+        let config = parse_toml(&path);
+        assert_ne!(
+            string_at(&config, "model"),
+            Some("gpt-5.5"),
+            "{name} retains a routeable GPT-5.5 assignment"
+        );
+    }
+
+    let main_config = parse_toml(&root.join("home/.codex/config.toml"));
+    assert_eq!(
+        string_at(&main_config, "model"),
+        Some("gpt-5.6-terra"),
+        "Terra must be the balanced default lane"
+    );
+
+    let agents = [
+        ("rust-harness-engineer.toml", "gpt-5.6-sol"),
+        ("security-reviewer.toml", "gpt-5.6-sol"),
+        ("verifier.toml", "gpt-5.6-sol"),
+        ("researcher.toml", "gpt-5.6-terra"),
+        ("explorer.toml", "gpt-5.6-luna"),
+    ];
+    for (name, expected) in agents {
+        let agent = parse_toml(&root.join("home/.codex/agents").join(name));
+        assert_eq!(string_at(&agent, "model"), Some(expected), "{name}");
+    }
+}
+
+#[test]
+fn retired_roots_and_tracked_model_cache_are_absent() {
+    let root = envctl_root();
+    assert!(
+        !root.join("home/.codex/models_cache.json").exists(),
+        "tracked models_cache.json must not be a secondary authority"
+    );
+
+    let library = fs::read_to_string(root.join("home/agent-env/codex-harness/src/lib.rs")).unwrap();
+    assert!(!library.contains("/home/flexnetos/lifeos/src/envctl"));
+    assert!(library.contains("/home/flexnetos/meta/src/envctl/home"));
+
+    let config = fs::read_to_string(root.join("home/.codex/config.toml")).unwrap();
+    assert!(!config.contains("[projects.\"/home/flexnetos/lifeos"));
+    assert!(!config.contains("[projects.\"/home/flexnetos/FlexNetOS"));
+    assert!(!config.contains("\"/home/flexnetos/lifeos/src/envctl\""));
+    assert!(config.contains("[projects.\"/home/flexnetos/meta/src/envctl\"]"));
+    assert!(config.contains("image_generation = true"));
+    assert!(!config.contains("imagegenext"));
+
+    let baseline =
+        fs::read_to_string(root.join("manifest/components.d/codex-global-baseline.toml")).unwrap();
+    assert!(
+        !baseline.contains("'model = \"gpt-5.5\"'"),
+        "meta-local generated runtime must not route GPT-5.5"
+    );
+    assert!(baseline.contains("'model = \"gpt-5.6-terra\"'"));
+    assert!(!baseline.contains("LIFEOS_ROOT"));
+    assert!(baseline.contains("home/.codex/agents"));
+
+    let access = parse_toml(
+        &root.join("home/agent-env/codex-harness/model-catalog/model-access-matrix.toml"),
+    );
+    let models = access
+        .get("models")
+        .and_then(toml::Value::as_table)
+        .expect("model access table");
+    for model in ["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"] {
+        assert_eq!(
+            models
+                .get(model)
+                .and_then(toml::Value::as_table)
+                .and_then(|entry| entry.get("account_access"))
+                .and_then(toml::Value::as_str),
+            Some("proved"),
+            "{model} must reflect the live 2026-07-11 proof"
+        );
+    }
+}

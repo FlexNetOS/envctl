@@ -1,8 +1,8 @@
 #![forbid(unsafe_code)]
 
-use anyhow::{anyhow, Result};
+use anyhow::{Result, anyhow};
 use codex_harness::{append_ledger, codex_harness_dir, redact, state_dir, utc_now};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fs;
@@ -12,7 +12,6 @@ use std::process::Command;
 const ACTIVE_CATALOG: &str = "/home/flexnetos/.codex/model-catalog.json";
 
 const REQUIRED_CATALOG_MODELS: &[&str] = &[
-    "gpt-5.5",
     "gpt-5.4",
     "gpt-5.4-mini",
     "gpt-5.4-nano",
@@ -33,9 +32,6 @@ const REQUIRED_CATALOG_MODELS: &[&str] = &[
 ];
 
 const DEFAULT_PROBE_MODELS: &[&str] = &[
-    "gpt-5.5",
-    "gpt-5.5-pro",
-    "gpt-5.5-pro-extended",
     "gpt-5.6-sol",
     "gpt-5.6-terra",
     "gpt-5.6-luna",
@@ -55,11 +51,9 @@ const DEFAULT_PROBE_MODELS: &[&str] = &[
     "gpt-4o-mini",
 ];
 
-const MUST_PASS_MODELS: &[&str] = &["gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-5.3-codex-spark"];
+const MUST_PASS_MODELS: &[&str] = &["gpt-5.4", "gpt-5.4-mini", "gpt-5.3-codex-spark"];
 
 const ACCOUNT_GATED_MODELS: &[&str] = &[
-    "gpt-5.5-pro",
-    "gpt-5.5-pro-extended",
     "gpt-5.6-sol",
     "gpt-5.6-terra",
     "gpt-5.6-luna",
@@ -386,18 +380,24 @@ mod tests {
             )
             .collect::<Vec<_>>();
         let evaluation = evaluate_proof(&probes);
-        assert!(evaluation
-            .get("must_pass_ok")
-            .and_then(Value::as_bool)
-            .unwrap_or(false));
-        assert!(evaluation
-            .get("account_gated_documented")
-            .and_then(Value::as_bool)
-            .unwrap_or(false));
-        assert!(evaluation
-            .get("ok")
-            .and_then(Value::as_bool)
-            .unwrap_or(false));
+        assert!(
+            evaluation
+                .get("must_pass_ok")
+                .and_then(Value::as_bool)
+                .unwrap_or(false)
+        );
+        assert!(
+            evaluation
+                .get("account_gated_documented")
+                .and_then(Value::as_bool)
+                .unwrap_or(false)
+        );
+        assert!(
+            evaluation
+                .get("ok")
+                .and_then(Value::as_bool)
+                .unwrap_or(false)
+        );
     }
 
     #[test]
@@ -414,13 +414,17 @@ mod tests {
             }))
             .collect::<Vec<_>>();
         let evaluation = evaluate_proof(&probes);
-        assert!(!evaluation
-            .get("account_gated_documented")
-            .and_then(Value::as_bool)
-            .unwrap_or(true));
-        assert!(!evaluation
-            .get("ok")
-            .and_then(Value::as_bool)
-            .unwrap_or(true));
+        assert!(
+            !evaluation
+                .get("account_gated_documented")
+                .and_then(Value::as_bool)
+                .unwrap_or(true)
+        );
+        assert!(
+            !evaluation
+                .get("ok")
+                .and_then(Value::as_bool)
+                .unwrap_or(true)
+        );
     }
 }

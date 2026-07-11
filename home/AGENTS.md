@@ -8,13 +8,13 @@ Read this first for sessions that start in `/home/flexnetos`.
 - Codex operating rules: `/home/flexnetos/.codex/RULES.md`.
 - RTK policy: `/home/flexnetos/.codex/AGENTS.rtk.md` and
   `/home/flexnetos/AGENTS.rtk.md`.
-- envctl source of truth: `/home/flexnetos/lifeos/src/envctl`.
-- envctl home projection: `/home/flexnetos/lifeos/src/envctl/home`.
+- envctl source of truth: `/home/flexnetos/meta/src/envctl`.
+- envctl home projection: `/home/flexnetos/meta/src/envctl/home`.
 
 ## New envctl session procedure
 
 ```bash
-cd /home/flexnetos/lifeos/src/envctl
+cd /home/flexnetos/meta/src/envctl
 git fetch origin --prune
 git worktree add ../envctl-<task-slug> -b <task-branch> origin/master
 cd ../envctl-<task-slug>

@@ -7,7 +7,7 @@ requires = ["codex-cli"]
 kind = "command"
 command = "bash"
 args = ["-lc", '''
-M="${LIFEOS_ROOT:-${META_ROOT:?LIFEOS_ROOT or META_ROOT required}}"
+M="${META_ROOT:?META_ROOT required}"
 E="${ENVCTL_ROOT:-$M/src/envctl}"
 R="${ENVCTL_REAL_HOME:-$HOME}"
 C="$M/.local/share/codex/config.toml"
@@ -20,7 +20,7 @@ if [ -e "$R/.local/bin/codex" ] || [ -L "$R/.local/bin/codex" ]; then
   exit 1
 fi
 [ -f "$C" ] || exit 1
-grep -q '^model = "gpt-5.5"' "$C" || exit 1
+grep -q '^model = "gpt-5.6-terra"' "$C" || exit 1
 grep -q '^service_tier = "fast"' "$C" || exit 1
 grep -q '^model_auto_compact_token_limit = 3000000' "$C" || exit 1
 grep -q '^web_search = "live"' "$C" || exit 1
@@ -51,7 +51,7 @@ CODEX_HOME="$M/.local/share/codex" CODEX_SQLITE_HOME="$M/.local/state/codex" "$M
 kind = "script"
 script = '''
 set -euo pipefail
-M="${LIFEOS_ROOT:-${META_ROOT:?LIFEOS_ROOT or META_ROOT required}}"
+M="${META_ROOT:?META_ROOT required}"
 E="${ENVCTL_ROOT:-$M/src/envctl}"
 R="${ENVCTL_REAL_HOME:-$HOME}"
 CODEX_HOME_DIR="$M/.local/share/codex"
@@ -73,9 +73,9 @@ python3 - <<'PY'
 import json, subprocess
 from pathlib import Path
 import os
-root = os.environ.get('LIFEOS_ROOT') or os.environ.get('META_ROOT')
+root = os.environ.get('META_ROOT')
 if not root:
-    raise SystemExit('LIFEOS_ROOT or META_ROOT required')
+    raise SystemExit('META_ROOT required')
 M = Path(root)
 home = M / '.local/share/codex'
 config = home / 'config.toml'
@@ -97,7 +97,7 @@ features = [
     'memories', 'network_proxy'
 ]
 lines = [
-    'model = "gpt-5.5"',
+    'model = "gpt-5.6-terra"',
     'model_reasoning_effort = "medium"',
     'approvals_reviewer = "user"',
     'personality = "friendly"',
@@ -268,18 +268,18 @@ def model_entry(slug, display_name, description, context_window=4000000, priorit
         'web_search_tool_type': 'text_and_image',
     }
 (home / 'model-catalog.json').write_text(json.dumps({'models': [
-    model_entry('gpt-5.5', 'GPT-5.5', 'Current recommended OpenAI Codex/API model for complex coding, research, and tool-heavy workflows.', priority=0, fast=True),
+    model_entry('gpt-5.5', 'GPT-5.5', 'Compatibility-only inventory; not a routeable envctl harness lane.', priority=20, fast=True, visibility='hide'),
     model_entry('gpt-5.4-mini', 'GPT-5.4 mini', 'Fast OpenAI model for lighter coding tasks and subagents.', context_window=400000, priority=1, reasoning=('low','medium','high','xhigh')),
     model_entry('gpt-5.4-nano', 'GPT-5.4 nano', 'Smallest GPT-5.4 frontier variant for the lowest-latency, lowest-cost text/image tasks when available.', context_window=400000, priority=2, reasoning=('low','medium','high')),
     model_entry('gpt-5.4', 'GPT-5.4', 'OpenAI GPT-5 family model retained for compatibility and explicit routing.', priority=3),
     model_entry('gpt-5.3-codex-spark', 'GPT-5.3 Codex Spark', 'Research-preview Codex model optimized for near-instant coding iteration when the account has access.', context_window=1000000, priority=4, reasoning=('low','medium','high')),
-    model_entry('gpt-5.6-sol', 'GPT-5.6 Sol', 'Official OpenAI GPT-5.6 Sol limited-preview routing name; available through API and Codex only for accounts/organizations with preview access.', priority=10, reasoning=('low','medium','high','xhigh','max')),
-    model_entry('gpt-5.6-terra', 'GPT-5.6 Terra', 'Official OpenAI GPT-5.6 Terra limited-preview routing name; available through API and Codex only for accounts/organizations with preview access.', priority=11),
-    model_entry('gpt-5.6-luna', 'GPT-5.6 Luna', 'Official OpenAI GPT-5.6 Luna limited-preview routing name; available through API and Codex only for accounts/organizations with preview access.', priority=12),
+    model_entry('gpt-5.6-sol', 'GPT-5.6 Sol', 'Limited-preview high-stakes reasoning and coding lane; live Codex account proof passed on 2026-07-11.', priority=10, reasoning=('low','medium','high','xhigh','max')),
+    model_entry('gpt-5.6-terra', 'GPT-5.6 Terra', 'Limited-preview balanced professional workhorse lane; live Codex account proof passed on 2026-07-11.', priority=0),
+    model_entry('gpt-5.6-luna', 'GPT-5.6 Luna', 'Limited-preview high-throughput lane for simple, high-volume work; live Codex account proof passed on 2026-07-11.', priority=12),
 ]}, indent=2) + '\n')
 agent_dir = home / 'agents'
 agent_dir.mkdir(parents=True, exist_ok=True)
-agent_src = M / '.codex/agents'
+agent_src = Path(os.environ.get('ENVCTL_ROOT', str(M / 'src/envctl'))) / 'home/.codex/agents'
 if agent_src.exists():
     for src in agent_src.glob('*.toml'):
         (agent_dir / src.name).write_text(src.read_text())
@@ -300,7 +300,7 @@ export CODEX_HOME="$CODEX_HOME_DIR" CODEX_SQLITE_HOME="$CODEX_STATE_DIR"
 kind = "command"
 command = "bash"
 args = ["-lc", '''
-M="${LIFEOS_ROOT:-${META_ROOT:?LIFEOS_ROOT or META_ROOT required}}"
+M="${META_ROOT:?META_ROOT required}"
 E="${ENVCTL_ROOT:-$M/src/envctl}"
 R="${ENVCTL_REAL_HOME:-$HOME}"
 C="$M/.local/share/codex/config.toml"

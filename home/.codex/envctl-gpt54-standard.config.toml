@@ -1,7 +1,8 @@
-model = "gpt-5.5"
+model = "gpt-5.4"
 model_provider = "openai"
 model_reasoning_effort = "high"
-model_catalog_json = "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/model-catalog/model-catalog.json"
+model_catalog_json = "/home/flexnetos/.codex/model-catalog.json"
 approval_policy = "never"
 sandbox_mode = "danger-full-access"
 default_permissions = ":danger-full-access"
+# Stable approved fallback when a Sol/Terra/Luna preview lane is account-denied.

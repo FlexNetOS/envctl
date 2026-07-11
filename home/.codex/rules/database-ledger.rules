@@ -17,9 +17,9 @@ prefix_rule(
 )
 
 prefix_rule(
-    pattern = [["codex-harness-db", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-db"]],
+    pattern = [["codex-harness-db", "/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-db"]],
     decision = "allow",
     justification = "Harness DB binary is the sanctioned SQLite path.",
-    match = ["codex-harness-db integrity", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-db integrity"],
+    match = ["codex-harness-db integrity", "/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-db integrity"],
     not_match = ["sqlite3 state/harness.sqlite3"],
 )

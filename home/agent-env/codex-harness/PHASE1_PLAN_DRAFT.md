@@ -6,9 +6,9 @@ Saved from host shell because attached Codex tool sandbox failed with:
 
 ## Scope
 
-PROJECT_ROOT=/home/flexnetos/lifeos/src/envctl/home
-HARNESS_ROOT=/home/flexnetos/lifeos/src/envctl/home/agent-env
-HARNESS_WORKSPACE=/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness
+PROJECT_ROOT=/home/flexnetos/meta/src/envctl/home
+HARNESS_ROOT=/home/flexnetos/meta/src/envctl/home/agent-env
+HARNESS_WORKSPACE=/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness
 
 ## Approval
 

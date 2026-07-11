@@ -1,9 +1,9 @@
 #![forbid(unsafe_code)]
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use redb::ReadableTable;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::env;
@@ -14,8 +14,8 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-pub const DEFAULT_PROJECT_ROOT: &str = "/home/flexnetos/lifeos/src/envctl/home";
-pub const DEFAULT_HARNESS_ROOT: &str = "/home/flexnetos/lifeos/src/envctl/home/agent-env";
+pub const DEFAULT_PROJECT_ROOT: &str = "/home/flexnetos/meta/src/envctl/home";
+pub const DEFAULT_HARNESS_ROOT: &str = "/home/flexnetos/meta/src/envctl/home/agent-env";
 
 pub const LEDGER_NAMES: &[&str] = &[
     "harness.jsonl",
@@ -98,6 +98,7 @@ pub fn monotonic_id(prefix: &str) -> String {
 pub fn harness_root() -> PathBuf {
     let raw = env::var_os("CODEX_HARNESS_ROOT")
         .map(PathBuf::from)
+        .or_else(compiled_harness_root)
         .unwrap_or_else(|| PathBuf::from(DEFAULT_HARNESS_ROOT));
     if raw.file_name() == Some(OsStr::new("codex-harness")) {
         return raw.parent().map(Path::to_path_buf).unwrap_or(raw);
@@ -112,7 +113,21 @@ pub fn codex_harness_dir() -> PathBuf {
 pub fn project_root() -> PathBuf {
     env::var_os("CODEX_HARNESS_PROJECT_ROOT")
         .map(PathBuf::from)
+        .or_else(compiled_project_root)
         .unwrap_or_else(|| PathBuf::from(DEFAULT_PROJECT_ROOT))
+}
+
+fn compiled_project_root() -> Option<PathBuf> {
+    let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let project = manifest.parent()?.parent()?.to_path_buf();
+    project
+        .join("agent-env/codex-harness/Cargo.toml")
+        .exists()
+        .then_some(project)
+}
+
+fn compiled_harness_root() -> Option<PathBuf> {
+    compiled_project_root().map(|project| project.join("agent-env"))
 }
 
 pub fn ledger_dir() -> PathBuf {
@@ -1246,6 +1261,23 @@ pub fn last_deny_summary() -> Result<String> {
 pub fn nix_verify_value() -> Value {
     let codex_path = which("codex");
     let realpath = codex_path.as_ref().and_then(|p| fs::canonicalize(p).ok());
+    let profile_frontdoors = [
+        PathBuf::from("/home/flexnetos/.nix-profile/bin/codex"),
+        PathBuf::from("/home/flexnetos/.nix-profile/toolbin/codex"),
+    ];
+    let matching_profile_frontdoors = profile_frontdoors
+        .iter()
+        .filter(|path| {
+            path.exists()
+                && fs::canonicalize(path)
+                    .ok()
+                    .as_ref()
+                    .zip(realpath.as_ref())
+                    .map(|(profile, active)| profile == active)
+                    .unwrap_or(false)
+        })
+        .map(|path| path.display().to_string())
+        .collect::<Vec<_>>();
     let path_entries = env::var_os("PATH")
         .map(|p| env::split_paths(&p).collect::<Vec<_>>())
         .unwrap_or_default();
@@ -1260,28 +1292,23 @@ pub fn nix_verify_value() -> Value {
             }
         })
         .collect();
-    let profile_owned = codex_path
-        .as_ref()
-        .map(|p| {
-            p.starts_with("/home/flexnetos/.nix-profile")
-                || p.to_string_lossy().contains("/.nix-profile/")
-        })
-        .unwrap_or(false);
+    let profile_owned = !matching_profile_frontdoors.is_empty();
     let store_owned = realpath
         .as_ref()
         .map(|p| p.starts_with("/nix/store"))
         .unwrap_or(false);
     let first_shadow_ok = shadows
         .first()
-        .map(|p| {
-            p == "/home/flexnetos/.nix-profile/bin/codex"
-                || p.starts_with("/home/flexnetos/.nix-profile/")
-        })
+        .and_then(|path| fs::canonicalize(path).ok())
+        .as_ref()
+        .zip(realpath.as_ref())
+        .map(|(first, active)| first == active)
         .unwrap_or(false);
     json!({
         "codex_path": codex_path.map(|p| p.display().to_string()),
         "realpath": realpath.map(|p| p.display().to_string()),
         "shadows": shadows,
+        "matching_profile_frontdoors": matching_profile_frontdoors,
         "profile_owned": profile_owned,
         "store_owned": store_owned,
         "first_shadow_ok": first_shadow_ok,
@@ -1730,17 +1757,29 @@ pub fn require_model_router_ready() -> Result<()> {
 pub fn model_route_for_task(task: &str) -> Value {
     let lower = task.to_ascii_lowercase();
     let full = full_access_granted();
-    let (class, profile, model, provider, reason) = if lower.contains("gpt-5.6")
-        || lower.contains("sol")
-        || lower.contains("terra")
-        || lower.contains("luna")
-    {
+    let (class, profile, model, provider, reason) = if lower.contains("sol") {
         (
-            "model-access-preview",
+            "sol-high-stakes",
             "envctl-gpt56-sol",
             "gpt-5.6-sol",
             "openai",
-            "GPT-5.6 Sol/Terra/Luna are preview-gated; route only after codex-harness-model-access proves account access",
+            "Sol handles high-stakes reasoning, security, architecture, and complex coding; account denial must be recorded before fallback",
+        )
+    } else if lower.contains("luna") {
+        (
+            "luna-throughput",
+            "envctl-gpt56-luna",
+            "gpt-5.6-luna",
+            "openai",
+            "Luna handles simple high-volume inventory and repetitive checks; account denial must be recorded before fallback",
+        )
+    } else if lower.contains("terra") || lower.contains("gpt-5.6") {
+        (
+            "terra-workhorse",
+            "envctl-gpt56-terra",
+            "gpt-5.6-terra",
+            "openai",
+            "Terra is the balanced professional workhorse; account denial must be recorded before fallback",
         )
     } else if lower.contains("spark") {
         (
@@ -1761,10 +1800,10 @@ pub fn model_route_for_task(task: &str) -> Value {
     } else if lower.contains("model catalog") || lower.contains("model access") {
         (
             "model-access-audit",
-            "envctl-gpt55-standard",
-            "gpt-5.5",
+            "envctl-gpt56-terra",
+            "gpt-5.6-terra",
             "openai",
-            "model catalog/access audits use primary GPT-5.5 plus codex-harness-model-access probes",
+            "model catalog/access audits use Terra and record account-gated denial explicitly",
         )
     } else if lower.contains("openrouter") {
         (
@@ -1786,17 +1825,17 @@ pub fn model_route_for_task(task: &str) -> Value {
         (
             "browser-computer",
             "envctl-browser-computer",
-            "gpt-5.5",
+            "gpt-5.6-sol",
             "openai",
-            "Browser/Computer Use route enabled by user grant and gated through browser-computer policy",
+            "Browser/Computer Use is high-risk and routes through Sol plus browser-computer policy",
         )
     } else if lower.contains("github") || lower.contains("gh ") {
         (
             "github-full-access",
             "envctl-github-full-access",
-            "gpt-5.5",
+            "gpt-5.6-sol",
             "openai",
-            "GitHub route uses codex-harness-github-guard with full-access decision id",
+            "GitHub mutation is high-stakes and uses Sol plus codex-harness-github-guard",
         )
     } else if lower.contains("security")
         || lower.contains("containment")
@@ -1804,26 +1843,26 @@ pub fn model_route_for_task(task: &str) -> Value {
     {
         (
             "containment",
-            "envctl-harness",
-            "active-codex-default",
-            "codex-profile-frontdoor",
-            "security/containment work stays on active Codex profile",
+            "envctl-gpt56-sol",
+            "gpt-5.6-sol",
+            "openai",
+            "security and containment work routes through Sol",
         )
     } else if lower.contains("index") || lower.contains("memory") || lower.contains("ledger") {
         (
             "local-proof",
-            "envctl-harness",
-            "active-codex-default",
-            "codex-profile-frontdoor",
-            "ledger/index/memory work uses local Rust proof; JSONL remains canonical",
+            "envctl-gpt56-luna",
+            "gpt-5.6-luna",
+            "openai",
+            "ledger/index/memory inventory uses Luna while local Rust and JSONL remain proof authorities",
         )
     } else {
         (
             "implementation",
-            "envctl-harness",
-            "active-codex-default",
-            "codex-profile-frontdoor",
-            "default implementation route",
+            "envctl-gpt56-terra",
+            "gpt-5.6-terra",
+            "openai",
+            "Terra is the default professional implementation workhorse",
         )
     };
     json!({
@@ -2580,10 +2619,34 @@ mod tests {
     fn policy_denies_ledger_write() {
         let d = policy_decision(&[
             "tee".into(),
-            "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/ledger/harness.jsonl"
+            "/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/ledger/harness.jsonl"
                 .into(),
         ]);
         assert_eq!(d.decision, DecisionKind::Deny);
+    }
+
+    #[test]
+    fn model_router_uses_sol_terra_luna_without_gpt55() {
+        let cases = [
+            ("security policy", "gpt-5.6-sol"),
+            ("professional implementation", "gpt-5.6-terra"),
+            ("memory inventory", "gpt-5.6-luna"),
+            ("github mutation", "gpt-5.6-sol"),
+            ("model catalog audit", "gpt-5.6-terra"),
+        ];
+        for (task, expected) in cases {
+            let route = model_route_for_task(task);
+            assert_eq!(
+                route.get("model").and_then(Value::as_str),
+                Some(expected),
+                "{task}"
+            );
+            assert_ne!(
+                route.get("model").and_then(Value::as_str),
+                Some("gpt-5.5"),
+                "{task}"
+            );
+        }
     }
 
     #[test]
