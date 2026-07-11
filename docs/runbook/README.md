@@ -126,20 +126,25 @@ The active host runtime remains `/home/flexnetos/.codex/config.toml`. Repository
 profiles model that runtime for reproducible harness execution:
 `approval_policy = "never"`, `sandbox_mode = "danger-full-access"`,
 `default_permissions = ":danger-full-access"`, and retired hooks disabled.
+Keep `features.shell_zsh_fork` and `features.unified_exec_zsh_fork` disabled:
+the standard unified-exec path is the live-verified profile route, while the
+fork paths have produced silent shell failures on the installed Codex build.
 
-Permission and proof authority are deliberately split:
+Permission authority and durable intent records are deliberately distinct:
 
 ```text
-tracked policy/policy.toml  -> durable operator decision authority
-tracked rules/config/tests  -> executable permission contract
+live /permissions           -> sole sandbox/approval/network authority
+tracked policy/policy.toml  -> durable operator-intent record, not a live grant
+tracked rules/config/tests  -> hard-safety and optional-routing contract
 ignored state/ and ledger/  -> runtime receipts only
 ```
 
 An ignored `state/full-access-grant.json` receipt may corroborate a run, but it
-must never be the sole authority for full access or completion. Likewise,
+must never claim effective live permissions or completion. Likewise,
 ignored state and JSONL ledgers cannot make a clean checkout complete. The
-tracked decision ID is `USER-FULL-ACCESS-20260709`; native execpolicy must allow
-the explicit `codex --dangerously-bypass-approvals-and-sandbox` frontdoor while
+tracked intent ID is `USER-FULL-ACCESS-20260709`; native execpolicy must not
+create a second approval gate around the explicit
+`codex --dangerously-bypass-approvals-and-sandbox` frontdoor while
 secret-deny, archive-first, destructive-user-data, force-push, and guarded
 GitHub mutation rules remain authoritative.
 
@@ -162,6 +167,67 @@ codex execpolicy check --pretty --rules home/.codex/rules/no-yolo.rules -- \
 
 The final verifier is live evidence: historical checklists and archived receipts
 do not override a current `fail`, `unsupported`, `not_run`, or `gap`.
+
+#### One-skill session controls and read-only bootstrap
+
+`/agent-env-codex` is the only top-level harness skill. Init, sync, status,
+full, restricted, and toggle are internal capabilities, not competing skills.
+Codex's built-in `/permissions` remains the live sandbox/approval/network
+authority. Harness session state only narrows optional routing for
+`external_providers`, `local_models`, `network`, `github_mutation`,
+`browser_computer`, `subagents`, and `background_jobs` under the current
+`CODEX_THREAD_ID`.
+
+Use the Rust controller for exact session state:
+
+```bash
+cargo run --quiet --manifest-path home/agent-env/codex-harness/Cargo.toml \
+  --bin codex-harness-policy -- session status
+cargo run --quiet --manifest-path home/agent-env/codex-harness/Cargo.toml \
+  --bin codex-harness-policy -- session preset restricted
+cargo run --quiet --manifest-path home/agent-env/codex-harness/Cargo.toml \
+  --bin codex-harness-policy -- session set network on
+cargo run --quiet --manifest-path home/agent-env/codex-harness/Cargo.toml \
+  --bin codex-harness-policy -- session preset full
+```
+
+Session bootstrap initializes instructions and context, never tool state:
+
+```text
+GitKB  -> rtk git-kb list --path context/ --json
+Grit   -> rtk grit status, only when .grit already exists
+ICM    -> ICM_READONLY=1 rtk icm wake-up --max-tokens 200
+Meta   -> rtk meta git status
+RTK    -> rtk init --show
+Nu     -> profile toolbin/nu --version
+```
+
+Never run `git-kb init`, `grit init`, `icm init`, `meta init`, or mutating
+`rtk init` merely because a session started. Route plugin-owned fleet Git
+commands through `rtk meta git`; route unlisted fleet Git commands through
+`rtk meta exec -- git`, adding `--include <repo>` for one-repository scope.
+Use `rtk git` for one checkout. Raw gate/root-cause evidence follows
+`AGENTS.rtk.md`.
+
+Model routing excludes GPT-5.5 from active assignments:
+
+```text
+Sol    -> high-stakes reasoning, security, architecture, and complex coding
+Terra  -> balanced professional workflows and routine implementation
+Luna   -> simple, mechanical, high-volume inventory and research
+```
+
+Provider proof is execution-based. Claude runs through the supervised,
+tool-free bridge (`--safe-mode`, empty `--tools`, strict empty MCP config,
+disabled slash commands, no Chrome, no session persistence). Ollama uses the
+local-model capability. OpenRouter remains unsupported until authenticated
+generation succeeds. Final verification accepts only fresh successful receipts
+bound to the current provider source/config fingerprint.
+
+Hardware-aware optimization begins with `envctl auto-detect --json`; record CPU,
+RAM, dual-GPU, driver, open-kernel-module, CUDA/container-toolkit, and CDI proof
+before changing worker limits, model lanes, GPU scheduling, cache behavior, or
+CI concurrency.
 
 ### Env-manager — bring the box to its declared state
 

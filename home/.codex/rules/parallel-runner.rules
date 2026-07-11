@@ -25,11 +25,27 @@ prefix_rule(
 )
 
 prefix_rule(
+    pattern = ["rtk", "codex", ["exec", "review", "resume", "fork", "cloud"]],
+    decision = "forbidden",
+    justification = "RTK does not bypass the requirement that nested Codex lanes use codex-harness-runner.",
+    match = ["rtk codex exec hello", "rtk codex review"],
+    not_match = ["rtk codex --version"],
+)
+
+prefix_rule(
     pattern = ["claude", ["--print", "-p", "--background", "--bg", "agents"]],
     decision = "forbidden",
     justification = "Claude agent lanes must be supervised by codex-harness-claude-bridge.",
     match = ["claude --print hello", "claude --background", "claude agents list"],
     not_match = ["claude --version"],
+)
+
+prefix_rule(
+    pattern = ["rtk", "claude", ["--print", "-p", "--background", "--bg", "agents"]],
+    decision = "forbidden",
+    justification = "RTK-routed Claude agent lanes must still use the supervised harness bridge.",
+    match = ["rtk claude --print hello", "rtk claude --background"],
+    not_match = ["rtk claude --version"],
 )
 
 prefix_rule(
@@ -41,9 +57,9 @@ prefix_rule(
 )
 
 prefix_rule(
-    pattern = [["codex-harness-runner", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-runner"]],
+    pattern = [["codex-harness-runner", "/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-runner"]],
     decision = "allow",
     justification = "The Rust harness runner is the supervised background execution path.",
-    match = ["codex-harness-runner policy-check -- pwd", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-runner policy-check -- pwd"],
+    match = ["codex-harness-runner policy-check -- pwd", "/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-runner policy-check -- pwd"],
     not_match = ["codex exec hello"],
 )

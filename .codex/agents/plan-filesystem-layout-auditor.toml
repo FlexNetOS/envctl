@@ -1,6 +1,6 @@
 name = "plan-filesystem-layout-auditor"
 description = "Maps and gates file/folder organization for a planning target against FHS/XDG, repo-native Cargo layout, and envctl/meta placement invariants. Produces filesystem-layout findings and upgrade rows. Read-only except additive RED test handoff."
-model = "gpt-5.5"
+model = "gpt-5.6-luna"
 model_reasoning_effort = "xhigh"
 
 developer_instructions = """

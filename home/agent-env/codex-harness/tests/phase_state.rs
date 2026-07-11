@@ -24,7 +24,7 @@ fn ignored_runtime_receipts_are_not_checkout_completion_authority() {
         root.join("home/agent-env/codex-harness/src/bin/codex-harness-final-verify.rs"),
     )
     .expect("tracked final verifier exists");
-    assert!(verifier.contains("tracked operator grant"));
+    assert!(verifier.contains("tracked operator-intent record"));
     assert!(verifier.contains("execpolicy_allows_full_access"));
     assert!(verifier.contains("operator full-access launch"));
 }

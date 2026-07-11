@@ -2460,9 +2460,9 @@ PHASE 9 — SKILLS, PLUGINS, AND MCP
 
 9.1 Skills
 
-Create one operational skill if supported:
-
-harness-ops
+Keep one operational capability inside `/agent-env-codex`; do not create a
+separate top-level `harness-ops` skill or split the one-skill product:
+this is an internal capability label, not another installed skill.
 
 Contains:
 - spawn subagent team.

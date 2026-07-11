@@ -14,7 +14,7 @@ fn default_prompt_path() -> PathBuf {
             return candidate;
         }
     }
-    Path::new("/home/flexnetos/lifeos/src/envctl/.codex/prompts/prompt:codex-gpt-harness-v3-full-access-no-sandbox.prompt.md").to_path_buf()
+    Path::new("/home/flexnetos/meta/src/envctl/.codex/prompts/prompt:codex-gpt-harness-v3-full-access-no-sandbox.prompt.md").to_path_buf()
 }
 
 fn main() -> Result<()> {

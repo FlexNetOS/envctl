@@ -1,6 +1,6 @@
 name = "local-model-runner"
 description = "Local-model inventory and localhost-only summarization runner."
-model = "gpt-5.5"
+model = "gpt-5.6-luna"
 model_reasoning_effort = "medium"
 sandbox_mode = "danger-full-access"
 
@@ -9,5 +9,5 @@ Use local providers only for low-risk triage after containment passes.
 Do not pull models without approval.
 Use localhost-only network.
 Never process secrets and never write repo files.
-Never silently replace an operator-directed GPT-5.5 task with a local model.
+Never silently replace an operator-directed Sol/Terra/Luna task with a local model.
 """

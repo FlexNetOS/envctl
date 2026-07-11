@@ -2,7 +2,7 @@
 enabled = true
 provider_id = "openai"
 wire_api = "responses"
-primary_model = "gpt-5.5"
+primary_model = "gpt-5.6-terra"
 
 [openrouter]
 enabled = true
@@ -18,7 +18,7 @@ shim = "codex-harness-openrouter-shim"
 [claude_bridge]
 enabled = true
 mode = "external_cli_bridge"
-command = "claude --bare --print --output-format json --permission-mode plan --no-session-persistence"
+command = "claude --safe-mode --tools \"\" --mcp-config '{\"mcpServers\":{}}' --strict-mcp-config --disable-slash-commands --no-chrome --print --output-format json --no-session-persistence"
 max_concurrent = 1
 secret_values_in_logs = false
 

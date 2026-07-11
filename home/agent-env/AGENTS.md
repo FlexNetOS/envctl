@@ -1,6 +1,6 @@
 # envctl home Codex harness
 
-Harness root: `/home/flexnetos/lifeos/src/envctl/home/agent-env`.
+Harness root: `/home/flexnetos/meta/src/envctl/home/agent-env`.
 Durable Rust harness source: `agent-env/codex-harness`.
 
 Non-negotiable rules for this subtree:

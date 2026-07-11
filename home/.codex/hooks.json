@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/bin/codex-harness-hook",
+            "command": "/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/bin/codex-harness-hook",
             "timeout": 30,
             "statusMessage": "envctl Codex harness: session start"
           }
@@ -18,7 +18,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/bin/codex-harness-hook",
+            "command": "/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/bin/codex-harness-hook",
             "timeout": 30,
             "statusMessage": "envctl Codex harness: prompt policy"
           }
@@ -31,7 +31,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/bin/codex-harness-hook",
+            "command": "/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/bin/codex-harness-hook",
             "timeout": 30,
             "statusMessage": "envctl Codex harness: permission policy"
           }
@@ -44,7 +44,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/bin/codex-harness-hook",
+            "command": "/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/bin/codex-harness-hook",
             "timeout": 30,
             "statusMessage": "envctl Codex harness: pre tool"
           }
@@ -57,7 +57,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/bin/codex-harness-hook",
+            "command": "/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/bin/codex-harness-hook",
             "timeout": 30,
             "statusMessage": "envctl Codex harness: post tool"
           }
@@ -70,7 +70,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/bin/codex-harness-hook",
+            "command": "/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/bin/codex-harness-hook",
             "timeout": 30,
             "statusMessage": "envctl Codex harness: pre compact"
           }
@@ -83,7 +83,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/bin/codex-harness-hook",
+            "command": "/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/bin/codex-harness-hook",
             "timeout": 30,
             "statusMessage": "envctl Codex harness: post compact"
           }
@@ -96,7 +96,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/bin/codex-harness-hook",
+            "command": "/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/bin/codex-harness-hook",
             "timeout": 30,
             "statusMessage": "envctl Codex harness: subagent start"
           }
@@ -109,7 +109,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/bin/codex-harness-hook",
+            "command": "/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/bin/codex-harness-hook",
             "timeout": 30,
             "statusMessage": "envctl Codex harness: subagent stop"
           }
@@ -121,7 +121,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/bin/codex-harness-hook",
+            "command": "/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/bin/codex-harness-hook",
             "timeout": 30,
             "statusMessage": "envctl Codex harness: stop"
           }

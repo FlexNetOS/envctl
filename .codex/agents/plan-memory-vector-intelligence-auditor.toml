@@ -1,6 +1,6 @@
 name = "plan-memory-vector-intelligence-auditor"
 description = "Audits persistent memory and vector/code intelligence surfaces for a planning target."
-model = "gpt-5.5"
+model = "gpt-5.6-terra"
 model_reasoning_effort = "xhigh"
 
 developer_instructions = """

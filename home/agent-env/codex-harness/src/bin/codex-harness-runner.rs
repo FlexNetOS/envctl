@@ -3,8 +3,9 @@
 use anyhow::{anyhow, Result};
 use codex_harness::{
     append_ledger, archive_path, browser_computer_value, claude_bridge_value_with_auth,
-    grant_full_access, openrouter_probe_value, policy_decision, restore_archive, run_codex_exec,
-    run_foreground, run_ollama, spawn_codex_exec, spawn_ollama_run, spawn_supervised,
+    openrouter_probe_value, policy_decision, record_full_access_receipt, restore_archive,
+    run_codex_exec, run_foreground, run_ollama, spawn_claude_run, spawn_codex_exec,
+    spawn_ollama_run, spawn_supervised,
 };
 use serde_json::json;
 use std::env;
@@ -21,20 +22,25 @@ fn split_after_double_dash(args: &[String]) -> Result<(Vec<String>, Vec<String>)
 fn main() -> Result<()> {
     let args = env::args().skip(1).collect::<Vec<_>>();
     let Some(cmd) = args.first().map(String::as_str) else {
-        eprintln!("usage: codex-harness-runner <policy-check|run|spawn|archive|restore|ledger-append|grant-full-access|openrouter-probe|claude-bridge|browser-computer|codex-exec|spawn-codex-exec|ollama-run|spawn-ollama-run> [opts] -- <argv...>");
+        eprintln!("usage: codex-harness-runner <policy-check|run|spawn|archive|restore|ledger-append|record-full-access-receipt|openrouter-probe|claude-bridge|browser-computer|codex-exec|spawn-codex-exec|spawn-claude-run|ollama-run|spawn-ollama-run> [opts] -- <argv...>");
         std::process::exit(2);
     };
     match cmd {
-        "grant-full-access" => {
+        "record-full-access-receipt" => {
             let reason = if args.len() > 1 {
                 args[1..].join(" ")
             } else {
-                "operator requested full access for all phases".to_string()
+                "operator recorded current full-access selection".to_string()
             };
             println!(
                 "{}",
-                serde_json::to_string_pretty(&grant_full_access(&reason)?)?
+                serde_json::to_string_pretty(&record_full_access_receipt(&reason)?)?
             );
+        }
+        "grant-full-access" => {
+            return Err(anyhow!(
+                "grant-full-access was retired: use the built-in /permissions command"
+            ));
         }
         "openrouter-probe" => {
             let mut model = None::<String>;
@@ -62,13 +68,11 @@ fn main() -> Result<()> {
                 }
                 i += 1;
             }
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&openrouter_probe_value(
-                    model.as_deref(),
-                    prompt.as_deref()
-                )?)?
-            );
+            let result = openrouter_probe_value(model.as_deref(), prompt.as_deref())?;
+            println!("{}", serde_json::to_string_pretty(&result)?);
+            if result.get("ok").and_then(serde_json::Value::as_bool) != Some(true) {
+                std::process::exit(1);
+            }
         }
         "claude-bridge" => {
             let execute = args.iter().any(|a| a == "--execute");
@@ -77,14 +81,12 @@ fn main() -> Result<()> {
                 .windows(2)
                 .find(|pair| pair[0] == "--prompt")
                 .map(|pair| pair[1].clone());
-            println!(
-                "{}",
-                serde_json::to_string_pretty(&claude_bridge_value_with_auth(
-                    prompt.as_deref(),
-                    execute,
-                    allow_default_auth
-                )?)?
-            );
+            let result =
+                claude_bridge_value_with_auth(prompt.as_deref(), execute, allow_default_auth)?;
+            println!("{}", serde_json::to_string_pretty(&result)?);
+            if execute && result.get("ok").and_then(serde_json::Value::as_bool) != Some(true) {
+                std::process::exit(1);
+            }
         }
         "browser-computer" => {
             println!(
@@ -222,7 +224,8 @@ fn main() -> Result<()> {
             append_ledger(&ledger, value)?;
             println!("{}", serde_json::json!({"ledger":ledger,"appended":true}));
         }
-        "codex-exec" | "spawn-codex-exec" | "ollama-run" | "spawn-ollama-run" => {
+        "codex-exec" | "spawn-codex-exec" | "spawn-claude-run" | "ollama-run"
+        | "spawn-ollama-run" => {
             let (opts, prompt_args) = split_after_double_dash(&args[1..])?;
             let prompt = prompt_args.join(" ");
             if prompt.trim().is_empty() {
@@ -231,6 +234,7 @@ fn main() -> Result<()> {
             let mut cwd = env::current_dir()?;
             let mut profile = "envctl-harness".to_string();
             let mut model = "gemma4:latest".to_string();
+            let mut allow_default_auth = false;
             let mut i = 0usize;
             while i < opts.len() {
                 match opts[i].as_str() {
@@ -254,6 +258,9 @@ fn main() -> Result<()> {
                             .ok_or_else(|| anyhow!("--model missing value"))?
                             .clone();
                     }
+                    "--allow-default-auth" => {
+                        allow_default_auth = true;
+                    }
                     _ => {}
                 }
                 i += 1;
@@ -265,6 +272,10 @@ fn main() -> Result<()> {
                 }
                 "spawn-codex-exec" => {
                     let job = spawn_codex_exec(&cwd, &profile, &prompt)?;
+                    println!("{}", serde_json::to_string_pretty(&job)?);
+                }
+                "spawn-claude-run" => {
+                    let job = spawn_claude_run(&cwd, &prompt, allow_default_auth)?;
                     println!("{}", serde_json::to_string_pretty(&job)?);
                 }
                 "ollama-run" => {
