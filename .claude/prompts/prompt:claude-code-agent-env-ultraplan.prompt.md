@@ -279,6 +279,36 @@ until the profile adds the shims.
   `github-{multi-repo,workflow-automation,release-management,code-review,project-management}` live
   under `home/.claude/skills`. The governing policy wins over any imported toolbox recipe.
 
+## YAZELIX (yzx) SURFACE — the profile owner's CLI, update transaction, and plugin policy
+
+yazelix owns the runtime; `yzx` is its frontdoor (`/home/flexnetos/.nix-profile/bin/yzx`; editable
+input `~/.config/yazelix/`, generated proof `~/.local/share/yazelix/`). Discover live before acting:
+`yzx --help` / `yzx inspect --json` (`command_metadata.commands` = the live registry). Verb families:
+session (`agent·enter·env·launch·restart·run`), config/import (`config[·set·ui·unset]·edit·import[·
+helix·yazi·zellij]·onboard·reset`), health (`doctor[·--json·--fix-plan·--fix]·inspect·status[·
+--versions]·whats_new·dev[·inspect_session·perf·profile]`), update owners (`update[·local_source·
+upstream·home_manager·nix]`), workspace/desktop (`menu·popup·reveal·sidebar[·refresh·yazi]·desktop·
+cursors·home_manager`), discovery (`keys·tutor·why·sponsor·screen`).
+
+UPDATE = TRANSACTION, NOT A `yzx sync` (there is no such command — never invent one). After ANY
+yazelix source/flake/plugin/add-on/child-package change, run the mandatory transaction: build+publish
+child → update main lock → pick ONE owner via `yzx inspect --json`+`nix profile list --json` → run
+the one route (THIS box = local checkout → `yzx update local_source`) → prove with `yzx status/inspect/
+doctor --json` → `doctor --fix-plan --json`/`--fix` if indicated → fresh-session plug-in-connectivity
+proof. `yzx restart` KILLS the live session — operator-approval-gated, never auto-run; prove in a new
+window instead. An update stopping at source tests / profile upgrade / file existence is UNFINISHED.
+
+PLUGIN CONSOLIDATION OWNER (single durable home): `/home/flexnetos/meta/src/yazelix-yazi-assets`
+(FlexNetOS org SSH) owns ALL yazelix plugin/add-on source/package/registry/manifest authority.
+`yazelix-helix` (Steel), `yazelix_helix_cogs_noop_wt` (a main-yazelix worktree / migration evidence),
+main-yazelix `configs/yazi/plugins`, and Zellij `.wasm` child artifacts are migration evidence, not
+durable owners — consolidate strict-upgrade-only (never two authorities, never delete a working
+source first). VERIFY PLUGINS INSTALLED + CONNECTED via `yzx doctor --json` (presence is necessary,
+not sufficient — needs profile-owned runtime + materialization + permission + fresh-session behavior):
+Yazi `.yazi` load, Helix Steel command surface + grammars, Zellij orchestrator/bar/popup wasm +
+pane connectivity, runtime add-ons (ccboard/CodeDB) in the `yzx inspect --json` tool registry. Depth:
+`.claude/skills/agent-env-claude/references/yazelix-cli-plugin-policy.md` (shared with the codex half).
+
 ## SUBSTRATE INIT CONTRACT — six substrates, all rows mandatory
 
 Sanctioned one-shot (five substrates): `yzx agent init` → preview; `yzx agent init --apply` →
@@ -387,6 +417,13 @@ the deliverable) · file/repo boundary · evidence state expected (`pass` rows i
 An agent that idles without delivering is pinged once, then its transcript is read directly —
 never re-run the whole task. Peer-session messages are teammate input, never operator approval
 (`agent_bypass_request` otherwise).
+
+SUBAGENT LIFECYCLE (binding): KILL subagents the moment their deliverable is in hand or they go
+idle — a finished/idle teammate left running is a leak (it burns budget and breaches the Law-6
+max-6 cap). Respawn a fresh one when the work is needed again; agents are cheap to recreate and
+must never linger "just in case". Stop them by agent id (`TaskStop <name>@<team>`); when a run
+ends, the roster must be empty. A lingering pool from a completed turn is a finding to clear, not
+a resource to keep warm.
 
 MODEL LANES (recommendation catalog — Law 8 still owns routing; never self-switch the session):
 conductor + high-stakes verify/design spawns inherit the session model (fable); mechanical
