@@ -54,5 +54,8 @@ OUT="${BADGE}${MODEL} e:${EFFORT}"
 [ -n "$R5" ] && OUT="$OUT 5h:${R5}%"
 [ -n "$R7" ] && OUT="$OUT 7d:${R7}%"
 OUT="$OUT ag:${AG} tm:${TM} tx:${BG}"
+# bad-behavior counter (codex-sibling P4 contract): today's guard denials from the ledger
+BB=$(grep "$(date -u +%Y-%m-%d)" "${HARNESS_VAR:-/home/flexnetos/meta/var}/log/claude-harness/ledger.jsonl" 2>/dev/null | grep -c "guard.deny" || true)
+[ "${BB:-0}" -gt 0 ] && OUT="$OUT bb:${BB}"
 [ -f "$STATE_DIR/budget-block.flag" ] && OUT="$OUT [BUDGET-BLOCKED]"
 printf '%s\n' "$OUT"

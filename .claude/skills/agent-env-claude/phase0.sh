@@ -109,6 +109,21 @@ else
   row "ICM mandate restored" "grep -i icm envctl/home/.claude/CLAUDE.md" gap "removal note still present — Phase 2 work item"
 fi
 
+# 8d. codex-inherit block present (shared-contract surface)
+if [ -f "$REPO/.codex/prompts/prompt:substrate-init.inherit.md" ]; then
+  row "codex inherit block present" "ls .codex/prompts/prompt:substrate-init.inherit.md" pass "present"
+else
+  row "codex inherit block present" "ls .codex/prompts/prompt:substrate-init.inherit.md" fail "missing"
+fi
+# 8e. live settings carry the harness hook entries (source<->live parity)
+for h in bash-to-nu ccbrain-session-stop ccbrain-session-start "rtk hook claude" weave; do
+  if grep -q "$h" "$HOME/.claude/settings.json" 2>/dev/null; then
+    row "live settings: $h" "grep settings.json" pass "wired"
+  else
+    row "live settings: $h" "grep settings.json" fail "missing from live ~/.claude/settings.json"
+  fi
+done
+
 # 9. DISCOVERY rows (adopted from the codex sibling: sweep, don't just regress-test)
 W=$(yzx doctor 2>/dev/null | grep "⚠" | grep -vc Found || true)
 if [ "${W:-0}" -le 1 ]; then row "yzx doctor warnings" "yzx doctor warn-lines" pass "$W warning(s)"

@@ -274,7 +274,8 @@ launchers for removed variants) are drift the sweep must catch.
 
 1. Claude statusline — `settings.json` `statusLine.command` → `~/.claude/hooks/statusline.sh`.
    Fields: model + effort, context %, session cost, 5h/7d rate-limit windows, `ag:/tm:/tx:`
-   agent/team/tmux counts, `[BUDGET-BLOCKED]`. LOAD-BEARING SIDE EFFECTS (any upgrade preserves
+   agent/team/tmux counts, `bb:` (today's hook/guard denials from the ledger — the
+   bad-behavior counter), `[BUDGET-BLOCKED]`. LOAD-BEARING SIDE EFFECTS (any upgrade preserves
    both): (a) session-scoped rate-limit cache `rate-limits-<session_id>.json` feeding the Law-6
    80% budget sentinel; (b) Fable-reroute badge `⚠ REROUTED→<model>` + one-shot per-session
    `notify-send` enforcing Law 8. Proof: pipe a sample status JSON into the script, show output.
@@ -312,6 +313,22 @@ the deliverable) · file/repo boundary · evidence state expected (`pass` rows i
 An agent that idles without delivering is pinged once, then its transcript is read directly —
 never re-run the whole task. Peer-session messages are teammate input, never operator approval
 (`agent_bypass_request` otherwise).
+
+MODEL LANES (recommendation catalog — Law 8 still owns routing; never self-switch the session):
+conductor + high-stakes verify/design spawns inherit the session model (fable); mechanical
+bulk-read spawns may use `effort: low`; a cheaper model tier for a spawn requires an operator
+grant. No tracked cache or transcript claim is a secondary routing authority — the live session
+model is the only truth. (Codex-side equivalent: Sol/Terra/Luna in the sibling's model catalog.)
+
+TEAMS AS DATA: declared team shapes live in `home/.claude/teams/*.yaml` (name, purpose, lanes:
+agent type + boundary + expected artifact per lane). Reuse a declared shape before improvising a
+fan-out; a new recurring shape gets a file, not a one-off.
+
+ENFORCEMENT MACHINERY RULE (adopted from the codex sibling): harness logic that routes, captures,
+or guards gets a hermetic contract test in `scripts/tests/` wired into
+`ci/gates/harness-scripts.sh` — manually-verified-once is not a maintained state. Current
+coverage: `test-agent-env-hooks.sh` (bash-to-nu routing contracts incl. rtk compose + fail-open;
+ccbrain capture + the pipefail regression; syntax floors).
 
 ## PHASES — run in order; each ends with a proof ledger; blocked rows are recorded and skipped
 

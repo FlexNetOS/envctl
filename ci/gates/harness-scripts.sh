@@ -10,6 +10,7 @@ root="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
 
 bash "$root/scripts/tests/test-merge-driver.sh"
 bash "$root/scripts/tests/test-reaper.sh"
+bash "$root/scripts/tests/test-agent-env-hooks.sh"
 bash "$root/scripts/tests/test-loop-state-gate.sh"
 bash "$root/scripts/tests/test-meta-local-path-audit.sh"
 bash "$root/scripts/tests/test-skill-contract.sh"
