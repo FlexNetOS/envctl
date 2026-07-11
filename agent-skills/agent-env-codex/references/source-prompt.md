@@ -129,8 +129,8 @@ Required runbook facts to carry into the skill:
   components, never ad-hoc host installs.
 - Meta git routing is mandatory, not optional prose: fleet-aware git work goes
   through `rtk meta git`; unlisted fleet git commands go through
-  `rtk meta exec -- git <command>`; raw `git` is only for local proof where the
-  unsummarized output is required.
+  `rtk meta exec -- git <command>`. Raw `git` is never an exception; capture
+  unsummarized proof through the RTK/Meta route and tee that routed output.
 
 ### Research proof ledger captured for skill build
 
@@ -213,6 +213,62 @@ Rules:
   available. `yzx agent init` previews bounded harness setup; `--apply` may
   create missing Meta GitKB, initialize Grit and ICM, and apply RTK setup, but
   never as an implicit session-start side effect.
+
+### Mandatory-task, latest-toolchain, and Yazelix convergence controller
+
+This controller is additive and overrides weaker uses of `optional`, stale
+toolchain targets, raw-Git exceptions, and disconnected plugin ownership later
+in this historical prompt.
+
+- A task, requirement, validation, integration, or surfaced unfinished item is
+  mandatory. The word `optional` means mandatory when attached to work. Only a
+  live session setting may be toggled off; the capability and its tests must
+  remain implemented and ready to enable.
+- Never remove, disable, defer, comment out, permission-bypass, or downgrade a
+  capability or requirement to escape a failure. A failed dependency is an
+  exact gap for that path, not permission to block unrelated work. Continue all
+  executable work and close the gap through its owner.
+- Resolve the latest available profile-owned toolchain and binaries at
+  execution time. Version floors and pinned compatibility lanes are additional
+  tests, never the primary target and never a reason to downgrade the active
+  Nix/fenix/Bun toolchain. Remove or archive earlier PATH shadows; do not make
+  the profile match stale `~/.cargo`, rustup, npm, npx, or user-bin installs.
+- Discover the current Yazelix command surface from
+  `/home/flexnetos/.nix-profile/bin/yzx --help` and
+  `yzx inspect --json` (`command_metadata.commands`) before use. The v17.9
+  research snapshot includes agent, config, cursors, desktop, dev, doctor,
+  edit, enter, env, home_manager, import, inspect, keys, launch, menu, onboard,
+  popup, reset, restart, reveal, run, screen, sidebar, sponsor, status, tutor,
+  update, whats_new, and why families. Live metadata is newer authority.
+- After any Yazelix source, flake, child-package, plugin, or add-on update,
+  publish/lock the owning source, then run exactly one install-owner update:
+  `yzx update local_source` for local-checkout profile entries,
+  `yzx update upstream` for upstream profile entries, or
+  `yzx update home_manager` plus its printed `home-manager switch` for a
+  Home Manager install. Never mix owners.
+- A Yazelix update is incomplete until the upgraded profile `yzx` has repaired
+  or proved generated-state convergence and the run records
+  `yzx status --json`, `yzx inspect --json`, and `yzx doctor --json`.
+  Run `yzx doctor --fix-plan --json` when any repair is indicated and
+  `yzx doctor --fix` for owned safe repairs. Prove plugin permissions and
+  runtime connectivity in a newly launched session; `yzx restart` is a
+  destructive live-session toggle and requires operator approval, not task
+  deletion.
+- `/home/flexnetos/meta/src/yazelix-yazi-assets` is the required consolidation
+  owner for all Yazelix plugin and add-on source/package/manifest authority.
+  Existing sources such as
+  `/home/flexnetos/meta/src/yazelix_helix_cogs_noop_wt`,
+  `/home/flexnetos/meta/src/yazelix-helix`, main-repo Yazi integration plugins,
+  Helix Steel defaults, and Zellij plugin child artifacts are migration inputs,
+  not permission for permanent competing ownership. Preserve every working
+  behavior and standalone package contract until it is represented and tested
+  from `yazelix-yazi-assets`; then remove the superseded source through its own
+  PR rather than carrying duplicate owners.
+- Verify installed and connected plugin classes through the profile and
+  generated proof: Yazi `.yazi` directories, Helix `steel_plugins`, Zellij
+  `yazelix_pane_orchestrator.wasm`, `yzpp.wasm`, and `zjstatus.wasm`,
+  `yzx doctor` plugin-permission health, and fresh-session behavior. A file
+  existing in a checkout or Nix store is not connection proof.
 
 ### Non-mutating harness init and command-routing controller
 
@@ -793,8 +849,10 @@ The conductor may run only the bootstrap commands required to verify:
 - whether subagents are available.
 - whether web search/docs access is available.
 
-Subagents are optional after local bootstrap repair is complete. Lack of
-subagents is not a reason to stop local prompt/config/hook repair.
+Subagents are mandatory for broad research and independent verification after
+local bootstrap repair is complete. An unavailable scheduler is an exact gap,
+not a reason to stop local prompt/config/hook repair; continue the local work
+and retry bounded fan-out when capacity returns.
 
 0.1 Bootstrap facts
 

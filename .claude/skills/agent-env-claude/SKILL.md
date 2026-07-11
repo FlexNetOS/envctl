@@ -157,9 +157,9 @@ ACTION TAXONOMY — classify before blocking anything:
     local_source` rebuilds the profile from the latest local yazelix; fenix supplies the latest
     Rust; a newer available version is an upgrade to take (Law 2), never a reason to pin old. A
     stale toolchain that shadows the nix one earlier in PATH (a rustup / `~/.cargo` / `~/.rustup`
-    install) is a BLOCKING finding — it is the E0514 "crate compiled by an incompatible version of
-    rustc" class (a real CI break): the fix is to remove the shadow, never to downgrade the nix
-    toolchain to match it.
+    install) fails the affected toolchain proof — it is the E0514 "crate compiled by an incompatible
+    version of rustc" class (a real CI break): archive/remove the shadow, never downgrade the nix
+    toolchain to match it, and continue every unrelated requirement while repairing that owner.
 10. SOURCE OF TRUTH FOR THE AGENT ENV IS ADR-0006. Real files live in
     `meta/src/envctl/home/.claude/`; `~/.claude` is a symlink surface. Durable agent-env changes
     are edited in the envctl repo (worktree on develop), never in place through the symlink.

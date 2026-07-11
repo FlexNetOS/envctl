@@ -28,5 +28,8 @@ Use this map before rebuilding or editing the Codex harness.
 | `/home/flexnetos/.config/yazelix/` | Editable Yazelix inputs | Edit owning inputs. |
 | `/home/flexnetos/.local/share/yazelix/` | Generated Yazelix runtime | Never hand-edit; proof only. |
 | `/home/flexnetos/.nix-profile/bin/yzx` | Active runtime frontdoor | Use for installed behavior proof. |
+| `/home/flexnetos/meta/src/yazelix-yazi-assets/` | Required Yazelix plugin/add-on consolidation owner | Own all plugin/add-on source, package, and manifest authority after no-downgrade migration. |
+| `/home/flexnetos/meta/src/yazelix_helix_cogs_noop_wt/` | Main Yazelix task worktree and migration evidence | Inventory only; not a durable plugin owner. Finish/merge legitimate work and migrate plugin/add-on authority. |
+| `/home/flexnetos/meta/src/yazelix-helix/` | Helix fork and current Steel-default source | Preserve the editor fork; migrate plugin/add-on assets and manifests to `yazelix-yazi-assets` without capability loss. |
 
 The harness source is one coherent product. A change may require multiple rows, but it remains one `/agent-env-codex` workflow and one skill.

@@ -416,6 +416,56 @@ fn persistent_runner_jobs_have_isolated_cargo_targets() {
 }
 
 #[test]
+fn agent_env_codex_requires_latest_yazelix_convergence_and_plugin_ownership() {
+    let root = envctl_root();
+    let skill = fs::read_to_string(root.join("agent-skills/agent-env-codex/SKILL.md")).unwrap();
+    for required in [
+        "references/yazelix-cli-plugin-policy.md",
+        "A toggle may be off",
+        "latest available Nix/Yazelix/fenix/Bun-owned binaries",
+        "yzx update",
+        "yazelix-yazi-assets",
+    ] {
+        assert!(skill.contains(required), "missing skill contract: {required}");
+    }
+
+    let policy = fs::read_to_string(
+        root.join("agent-skills/agent-env-codex/references/yazelix-cli-plugin-policy.md"),
+    )
+    .unwrap();
+    for required in [
+        "Do not invent a `yzx sync` command",
+        "yzx update local_source",
+        "yzx update upstream",
+        "yzx update home_manager",
+        "yzx doctor --fix-plan --json",
+        "/home/flexnetos/meta/src/yazelix-yazi-assets",
+        "yazelix_helix_cogs_noop_wt",
+        "yazelix-helix",
+        "yazelix_pane_orchestrator.wasm",
+        "yzpp.wasm",
+        "zjstatus.wasm",
+    ] {
+        assert!(policy.contains(required), "missing Yazelix policy: {required}");
+    }
+
+    let prompt = fs::read_to_string(
+        root.join(
+            ".codex/prompts/prompt:codex-gpt-harness-v3-full-access-no-sandbox.prompt.md",
+        ),
+    )
+    .unwrap();
+    for required in [
+        "Mandatory-task, latest-toolchain, and Yazelix convergence controller",
+        "The word `optional` means mandatory when attached to work",
+        "latest available profile-owned toolchain",
+        "plugin and add-on source/package/manifest authority",
+    ] {
+        assert!(prompt.contains(required), "missing prompt contract: {required}");
+    }
+}
+
+#[test]
 fn provider_and_rtk_routes_preserve_supervised_execution() {
     let root = envctl_root();
     let providers =

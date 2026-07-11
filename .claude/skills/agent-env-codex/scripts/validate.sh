@@ -20,7 +20,9 @@ for path in "$ORIG" "$FULL" "$SNAPSHOT" "$HARNESS" "$SKILL_ROOT/SKILL.md" \
   "$SKILL_ROOT/references/github-org-and-ccboard.md" \
   "$SKILL_ROOT/references/ownership-map.md" \
   "$SKILL_ROOT/references/runbook-cli-contract.md" \
+  "$SKILL_ROOT/references/yazelix-cli-plugin-policy.md" \
   "$SKILL_ROOT/scripts/check-bun-command-policy.py" \
+  "$SKILL_ROOT/scripts/check-yazelix-contract.py" \
   "$SKILL_ROOT/agents/openai.yaml" "$DURABLE" "$ACTIVE" "$PROJECT_CODEX" "$PROJECT_CLAUDE"; do
   [[ -e "$path" ]] || { echo "missing required path: $path" >&2; exit 2; }
 done
@@ -50,9 +52,25 @@ grep -Fq 'Codex is partially wired, not absent' "$SKILL_ROOT/references/github-o
 grep -Fq 'Do not claim SSH can configure organization settings.' "$SKILL_ROOT/references/github-org-and-ccboard.md"
 grep -Fq 'bunx ruv-swarm/claude-flow@alpha' "$SKILL_ROOT/references/bunx-and-github-ssh.md"
 grep -Fq 'drdave-flexnetos' "$SKILL_ROOT/references/bunx-and-github-ssh.md"
+grep -Fq 'Do not invent a `yzx sync` command' "$SKILL_ROOT/references/yazelix-cli-plugin-policy.md"
+grep -Fq '/home/flexnetos/meta/src/yazelix-yazi-assets' "$SKILL_ROOT/references/yazelix-cli-plugin-policy.md"
+grep -Fq 'yzx update local_source' "$SKILL_ROOT/references/yazelix-cli-plugin-policy.md"
+grep -Fq 'yzx update upstream' "$SKILL_ROOT/references/yazelix-cli-plugin-policy.md"
+grep -Fq 'yzx update home_manager' "$SKILL_ROOT/references/yazelix-cli-plugin-policy.md"
+if grep -Fq 'raw `git` is only' "$FULL"; then
+  echo 'legacy raw-git exception remains in prompt' >&2
+  exit 6
+fi
+if grep -Fq 'Subagents are optional' "$FULL"; then
+  echo 'legacy optional-subagent downgrade remains in prompt' >&2
+  exit 6
+fi
 
 printf '\n== Bun/Bunx skill command policy ==\n'
 python3 "$SKILL_ROOT/scripts/check-bun-command-policy.py" "$ROOT"
+
+printf '\n== Yazelix durable policy ==\n'
+python3 "$SKILL_ROOT/scripts/check-yazelix-contract.py" --root "$ROOT"
 
 printf '\n== skill source/projection identity ==\n'
 diff -qr "$DURABLE" "$PROJECT_CODEX"
@@ -93,6 +111,7 @@ anchors = [
     'Runbook capture requirement',
     'Research proof ledger captured for skill build',
     'Yazelix/Nix/Nushell ownership controller',
+    'Mandatory-task, latest-toolchain, and Yazelix convergence controller',
     'Non-mutating harness init and command-routing controller',
     'Professional CLI probe matrix for prompt and skill validation',
     'Automations and hardware optimization contracts',

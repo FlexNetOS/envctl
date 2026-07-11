@@ -8,6 +8,7 @@
 | Current source anchors and canonical prompt identity | `SKILL.md` Source of truth; `ownership-map.md`; `validate.sh`. |
 | Every envctl runbook file and research proof ledger | `SKILL.md` step 3; `runbook-cli-contract.md`. |
 | Yazelix/Nix/Nushell ownership | `ownership-map.md`; `runbook-cli-contract.md`. |
+| Mandatory tasks, latest toolchain, Yazelix CLI/update convergence, and plugin/add-on consolidation | `SKILL.md` steps 7, 8, and 12; `yazelix-cli-plugin-policy.md`; `check-yazelix-contract.py`. |
 | Non-mutating init and RTK/Meta/GitKB/Grit/ICM/Weave routing | `runbook-cli-contract.md`; internal Initialize capability. |
 | Bun/Bunx-only skill execution and GitHub SSH proof | `bunx-and-github-ssh.md`; deterministic skill-recipe scan; personal `drdave-flexnetos` identity plus separate FlexNetOS membership and SSH repository proof. |
 | Professional CLI probe matrix | `runbook-cli-contract.md`; rebuild validation step. |
