@@ -27,7 +27,13 @@ nix-owned binary resolution, version floors, nu login + rtk-wrapper load, the sh
 symlink contract, ADR-0006 chain, `runtime_variant`, `yzx agent init` preview, ICM-mandate
 presence, and the known-gap binaries (`weave`, `rtk-monitor`, `cargo-fmt`, `cargo-clippy`).
 Exit 0 = no `fail` rows (`gap` rows are queued work items, not blockers); exit 1 = at least one
-`fail` — fix or record before any mutating phase. Last run 2026-07-11: 26 pass / 5 gap / 0 fail.
+`fail` — fix or record before any mutating phase. Ledger now also covers: skill-prompt
+byte-identity, unfinished-marker sweep, codex-inherit block, live-settings hook parity
+(bash-to-nu / ccbrain / rtk / weave), yzx doctor warning sweep, stale-shadow scan, and
+`envctl migrate scan`. Last run 2026-07-11: 36 pass / 6 gap / 0 fail. The hook machinery is
+regression-protected by `scripts/tests/test-agent-env-hooks.sh` (CI:
+`ci/gates/harness-scripts.sh`); declared team shapes live in
+`.claude/skills/agent-env-claude/teams/`.
 Run this BEFORE Phase 1 and again as the backbone of Phase 6's acceptance matrix. Mutating
 phases (1–6) are executed per the contracts below — they are operator-granted work, not
 scripted; the driver is the evidence layer, not the mutation layer.
