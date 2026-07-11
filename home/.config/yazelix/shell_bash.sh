@@ -11,7 +11,7 @@
 if command -v rtk >/dev/null 2>&1; then
   for _rtk_cmd in git gh glab gt cargo go pnpm npm npx tsc prettier jest \
     vitest playwright prisma pip pytest ruff mypy rake rubocop rspec dotnet \
-    gradlew golangci-lint docker kubectl aws psql curl wget; do
+    gradlew golangci-lint docker kubectl aws psql curl wget meta; do
     alias "$_rtk_cmd"="rtk $_rtk_cmd"
   done
   unset _rtk_cmd

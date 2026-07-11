@@ -50,5 +50,6 @@ def --wrapped aws           [...rest] { ^rtk aws ...$rest }
 def --wrapped psql          [...rest] { ^rtk psql ...$rest }
 def --wrapped curl          [...rest] { ^rtk curl ...$rest }
 def --wrapped wget          [...rest] { ^rtk wget ...$rest }
+def --wrapped meta          [...rest] { ^rtk meta ...$rest }
 def --wrapped kimi          [...rest] { ^rtk kimi ...$rest }
 def --wrapped ollama        [...rest] { ^rtk ollama ...$rest }
