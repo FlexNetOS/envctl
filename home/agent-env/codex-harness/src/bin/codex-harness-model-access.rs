@@ -12,7 +12,6 @@ use std::process::Command;
 const ACTIVE_CATALOG: &str = "/home/flexnetos/.codex/model-catalog.json";
 
 const REQUIRED_CATALOG_MODELS: &[&str] = &[
-    "gpt-5.5",
     "gpt-5.4",
     "gpt-5.4-mini",
     "gpt-5.4-nano",
@@ -33,9 +32,6 @@ const REQUIRED_CATALOG_MODELS: &[&str] = &[
 ];
 
 const DEFAULT_PROBE_MODELS: &[&str] = &[
-    "gpt-5.5",
-    "gpt-5.5-pro",
-    "gpt-5.5-pro-extended",
     "gpt-5.6-sol",
     "gpt-5.6-terra",
     "gpt-5.6-luna",
@@ -55,14 +51,9 @@ const DEFAULT_PROBE_MODELS: &[&str] = &[
     "gpt-4o-mini",
 ];
 
-const MUST_PASS_MODELS: &[&str] = &["gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-5.3-codex-spark"];
+const MUST_PASS_MODELS: &[&str] = &["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"];
 
 const ACCOUNT_GATED_MODELS: &[&str] = &[
-    "gpt-5.5-pro",
-    "gpt-5.5-pro-extended",
-    "gpt-5.6-sol",
-    "gpt-5.6-terra",
-    "gpt-5.6-luna",
     "gpt-5.4-nano",
     "gpt-5.3-codex",
     "o3",
@@ -263,18 +254,14 @@ fn evaluate_proof(probes: &[Value]) -> Value {
         .collect::<Vec<_>>();
     let account_gated = ACCOUNT_GATED_MODELS
         .iter()
-        .map(|model| {
-            let gated = by_model
-                .get(*model)
-                .and_then(|probe| probe.get("account_gated"))
+        .filter_map(|model| {
+            let probe = by_model.get(*model)?;
+            let gated = probe
+                .get("account_gated")
                 .and_then(Value::as_bool)
                 .unwrap_or(false);
-            let ok = by_model
-                .get(*model)
-                .and_then(|probe| probe.get("ok"))
-                .and_then(Value::as_bool)
-                .unwrap_or(false);
-            json!({"model": model, "ok": ok, "account_gated": gated})
+            let ok = probe.get("ok").and_then(Value::as_bool).unwrap_or(false);
+            Some(json!({"model": model, "ok": ok, "account_gated": gated}))
         })
         .collect::<Vec<_>>();
     let must_pass_ok = must_pass
@@ -422,5 +409,25 @@ mod tests {
             .get("ok")
             .and_then(Value::as_bool)
             .unwrap_or(true));
+    }
+
+    #[test]
+    fn explicit_mandatory_only_probe_does_not_invent_optional_failures() {
+        let probes = MUST_PASS_MODELS
+            .iter()
+            .map(|model| probe(model, true, false))
+            .collect::<Vec<_>>();
+        let evaluation = evaluate_proof(&probes);
+        assert!(evaluation
+            .get("ok")
+            .and_then(Value::as_bool)
+            .unwrap_or(false));
+        assert_eq!(
+            evaluation
+                .get("account_gated")
+                .and_then(Value::as_array)
+                .map(Vec::len),
+            Some(0)
+        );
     }
 }

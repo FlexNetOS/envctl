@@ -33,9 +33,9 @@ prefix_rule(
 )
 
 prefix_rule(
-    pattern = [["codex-harness-github-guard", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-github-guard"]],
+    pattern = ["codex-harness-github-guard"],
     decision = "allow",
     justification = "GitHub guard is the sanctioned mutation/read proof wrapper.",
-    match = ["codex-harness-github-guard check -- gh pr list", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-github-guard check -- gh pr list"],
+    match = ["codex-harness-github-guard check -- gh pr list"],
     not_match = ["gh pr comment 1 --body hi"],
 )

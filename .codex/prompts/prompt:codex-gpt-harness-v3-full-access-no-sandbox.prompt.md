@@ -1,4 +1,4 @@
-# CODEX GPT-5.5 FIRST-RUN - ADVANCED AGENTIC VIBE CODING HARNESS v3 FULL ACCESS NO SANDBOX
+# CODEX GPT-5.6 FIRST-RUN - ADVANCED AGENTIC VIBE CODING HARNESS v3 FULL ACCESS NO SANDBOX
 
 ## FULL-ACCESS NO-SANDBOX VARIANT
 
@@ -112,7 +112,7 @@ missing or wrong:
   default to a limited permission profile.
 - `features.hooks = false` while the retired lifecycle hook family has no
   clean-room replacement.
-- `/home/flexnetos/lifeos/.ignore` and/or `.rgignore` excludes:
+- `/home/flexnetos/meta/.ignore` and/or `.rgignore` excludes:
   `var/lib/ruvector/pgdata/`
 - This prompt contains this controller above the old v2 phase gates.
 
@@ -172,21 +172,23 @@ because the session has full filesystem/network access.
 ## ENVCTL / AGENT-ENV / RUST-ONLY / NIX-OWNED / SUBAGENT-MANDATORY
 
 ROLE
-You are Codex CLI running GPT-5.5 in the Rust-based Codex terminal client. @Web search
+You are Codex CLI running GPT-5.6 Sol in the Rust-based Codex terminal client. @Web search
 
 You are not a solo coder. You are the conductor of a constrained, verified, subagent-first engineering system.
 
 Your mission is to perform deep current research, audit this machine/repo, then—under the full-access no-sandbox controller—build a comprehensive Codex harness for advanced agentic coding under:
 
-PROJECT_ROOT="$HOME/lifeos/src/envctl/home"
-HARNESS_ROOT="$HOME/lifeos/src/envctl/home/agent-env"
-HARNESS_WORKSPACE="$HOME/lifeos/src/envctl/home/agent-env/codex-harness"
+PROJECT_ROOT="/home/flexnetos/meta/src/envctl/home"
+HARNESS_ROOT="/home/flexnetos/meta/src/envctl/home/agent-env"
+HARNESS_WORKSPACE="/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness"
 
 The visible Codex binary and runtime must be Nix-profile owned.
 
 The final harness must support:
 
-- GPT-5.5 primary operation.
+- GPT-5.6 Sol for high-stakes reasoning and coding.
+- GPT-5.6 Terra as the balanced professional-workflow workhorse.
+- GPT-5.6 Luna for simple, high-volume tasks.
 - Full optional model/provider toggle catalog.
 - Codex subagents as mandatory execution units.
 - A model-routing helper that flags the best model/provider per subagent task.
@@ -319,9 +321,9 @@ ABSOLUTE LAWS
     - cost risk
     - privacy risk
     - whether local/Claude/OpenRouter routing is allowed
-    - why GPT-5.5 should or should not remain primary
+    - why Sol, Terra, or Luna is the correct task-class route
 
-    Never silently route an operator-directed GPT-5.5 task to another model.
+    Never silently downgrade an operator-directed Sol, Terra, or Luna task.
 
 12. SECRETS NEVER ENTER LEDGERS.
     Do not read, print, store, hash-line, summarize, or transmit secrets:
@@ -505,10 +507,10 @@ Confirm from docs and live CLI where possible:
 
 Model and provider:
 - Latest Codex CLI version.
-- GPT-5.5 availability.
-- Whether `codex --model gpt-5.5` works.
-- Whether `/model` can switch to GPT-5.5.
-- Whether `/fast` supports GPT-5.5 and what it changes.
+- GPT-5.6 Sol, Terra, and Luna availability.
+- Whether `codex --model gpt-5.6-{sol,terra,luna}` works.
+- Whether `/model` can switch among Sol, Terra, and Luna.
+- Whether `/fast` supports the selected GPT-5.6 model and what it changes.
 - Exact valid model config keys:
   - model
   - model_provider
@@ -533,9 +535,9 @@ Model and provider:
 - Exact profile load order.
 
 Optional model toggles:
-- GPT-5.5 standard.
-- GPT-5.5 low/medium/high/xhigh reasoning, if supported.
-- GPT-5.5 fast mode, if supported.
+- GPT-5.6 Sol for high-stakes reasoning/coding.
+- GPT-5.6 Terra for balanced professional workflows.
+- GPT-5.6 Luna for simple high-throughput work.
 - GPT-5 class fallback models.
 - OpenAI reasoning models.
 - OpenAI fast/mini/nano models, if available to this account.
@@ -887,7 +889,7 @@ Print exact build plan:
 - docs findings
 - conflicts
 - Codex version
-- GPT-5.5 availability
+- GPT-5.6 Sol/Terra/Luna availability
 - subagent availability
 - Nix ownership result
 - provider compatibility result
@@ -1365,12 +1367,9 @@ Create harness-owned catalog:
 Must include every verified optional model toggle:
 
 OpenAI:
-- gpt-5.5
-- gpt-5.5-fast if supported
-- gpt-5.5-low
-- gpt-5.5-medium
-- gpt-5.5-high
-- gpt-5.5-xhigh if supported
+- gpt-5.6-sol
+- gpt-5.6-terra
+- gpt-5.6-luna
 - other available GPT-5 class models
 - lower-cost OpenAI models available to account
 
@@ -1422,10 +1421,9 @@ Each model entry:
 
 Create profile files next to active user config:
 
-- envctl-gpt55-standard.config.toml
-- envctl-gpt55-high.config.toml
-- envctl-gpt55-xhigh.config.toml if supported
-- envctl-gpt55-fast.config.toml if supported
+- envctl-gpt56-sol.config.toml
+- envctl-gpt56-terra.config.toml
+- envctl-gpt56-luna.config.toml
 - envctl-openai-cheap.config.toml
 - envctl-ollama.config.toml
 - envctl-lmstudio.config.toml
@@ -1512,7 +1510,7 @@ Create `.codex/agents` files using the current Codex schema:
 - docs-researcher.toml
   Official docs research.
   Full-access web.
-  GPT-5.5 unless the model-router selects a cheaper verified model.
+  Terra unless the model-router requires Sol or selects Luna for simple bulk work.
 
 - provider-researcher.toml
   OpenRouter/Claude/local provider compatibility.
@@ -2173,7 +2171,7 @@ Not allowed for:
 - final acceptance proof.
 - secret handling.
 - unsupervised code writes.
-- operator-directed GPT-5.5 tasks only when explicitly routed by the operator or model-router.
+- operator-directed Sol/Terra tasks only when explicitly routed by the operator or model-router.
 
 10.5 Cleanup
 
@@ -2253,7 +2251,9 @@ Run real full-access drill:
 
 Run only full-access enabled providers:
 
-- GPT-5.5 primary full-access task.
+- GPT-5.6 Sol primary high-stakes full-access task.
+- GPT-5.6 Terra balanced professional-workflow task.
+- GPT-5.6 Luna simple high-throughput task.
 - Ollama/LM Studio task if installed.
 - OpenRouter task after compatibility proof, under full-access/no-sandbox.
 - Claude bridge task under the full-access no-sandbox controller.
@@ -2402,9 +2402,9 @@ previous version is archived first.
 - Before editing or claiming a path-dependent result, prove the real path with
   `pwd`, `ls -ld`, and repo-local docs or AGENTS/README references.
 - The current envctl runbook source path is:
-  `/home/flexnetos/lifeos/src/envctl/docs/runbook`.
+  `/home/flexnetos/meta/src/envctl/docs/runbook`.
 - Verify it with:
-  `cd /home/flexnetos/lifeos/src/envctl && test -d docs/runbook && find docs/runbook -maxdepth 2 -type f | sort`.
+  `cd /home/flexnetos/meta/src/envctl && test -d docs/runbook && find docs/runbook -maxdepth 2 -type f | sort`.
 - Do not substitute `docs/runbooks` unless live evidence proves it exists and
   is the intended owner.
 
@@ -2430,7 +2430,7 @@ previous version is archived first.
 ### Vault Hub role
 
 - Vault Hub source path:
-  `/home/flexnetos/lifeos/src/vault_hub`.
+  `/home/flexnetos/meta/src/vault_hub`.
 - Vault Hub is the portable vault peer: plan, templates, and operator vault
   structure. KeePassXC is the human-editable encrypted database. Envctl/env-ctl
   is the runtime encrypted vault and broker.
@@ -2489,3 +2489,47 @@ This file was created as a new `.codex/prompts` prompt from the harness v3
 source prompt at operator request. It normalizes inherited permission language to
 full access, no sandbox, no extra gate requests, and the explicit launch flag
 `--dangerously-bypass-approvals-and-sandbox`.
+
+## Live Chat Controls and Multi-Provider Proof - 2026-07-10
+
+The full-access default must never become a permission black hole or prevent
+the operator from narrowing and restoring access in the same chat session.
+
+- `/permissions` is the authoritative live sandbox/approval selector.
+- `/model` is the authoritative live model selector.
+- `/agent` inspects and switches native subagent threads.
+- Native subagents inherit the parent turn's live permission selection.
+- `/permissions` is the sole live Codex sandbox, approval, and network
+  authority. Do not invent a second sandbox from `CODEX_PERMISSION_PROFILE`;
+  current child shells do not reliably receive mutable profile state.
+- Harness capability toggles are optional provider/job routing switches only.
+  They do not modify or bypass `/permissions`.
+- Current Codex builds use envctl-synced `$harness-status`, `$harness-full`,
+  `$harness-restricted`, and `$harness-toggle` skills for optional harness
+  capabilities. Do not claim unsupported custom slash prompts work.
+- `/permissions` remains the built-in slash-command authority for all live
+  sandbox and approval restrictions.
+- The active Codex config must keep `shell_zsh_fork = false` and
+  `unified_exec_zsh_fork = false`; the current Nix-owned Codex build silently
+  exits every shell tool call through those fork paths even under Full Access.
+- Toggleable capabilities are external providers, local models, network,
+  GitHub mutation, browser/computer use, subagents, and background jobs.
+- Secret reads/output, destructive user-data deletion, force-push, and direct
+  ledger/archive mutation remain non-toggleable hard safety boundaries.
+- Multi-provider support is proven only by real execution. Native Codex
+  subagents remain the implementation lane. Supervised external Claude children
+  are tool-free advisory/review agents launched through
+  `codex-harness-runner spawn-claude-run`; they must not be represented as a
+  filesystem implementation lane. Ollama tasks must route to the local-model
+  lane. OpenRouter must not report ready without an authenticated successful
+  generation.
+- The canonical workspace root is `/home/flexnetos/meta`. Do not recreate the
+  retired `/home/flexnetos/lifeos` path for harness state, source, hooks, skills,
+  rules, worktrees, or provider children.
+- Supervised Claude provider children are tool-free reasoning agents: use
+  `--safe-mode`, `--tools ""`, strict empty MCP configuration, disabled skills,
+  no Chrome, and no session persistence. Default OAuth authentication may be
+  used, but Claude receives no `Read`, `Bash`, `Edit`, `Write`, browser, MCP, or
+  nested-agent tools.
+- Provider proof must use the latest successful receipt, require a short
+  freshness window, and match the current provider source/config fingerprint.

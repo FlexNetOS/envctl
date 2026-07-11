@@ -1,16 +1,26 @@
 # harness-ops
 
-Use when operating the envctl Codex harness under `/home/flexnetos/lifeos/src/envctl/home/agent-env`.
+Use when operating the envctl Codex harness under `/home/flexnetos/meta/src/envctl/home/agent-env`.
 
 Commands:
 
-- Status: `agent-env/codex-harness/bin/codex-harness-status`
-- Nix verification: `agent-env/codex-harness/bin/codex-harness-nix-verify`
-- Audit: `agent-env/codex-harness/bin/codex-harness-audit`
-- Policy check: `agent-env/codex-harness/bin/codex-harness-runner policy-check -- <command...>`
-- Foreground supervised run: `agent-env/codex-harness/bin/codex-harness-runner run --cwd <dir> -- <command...>`
-- Background supervised spawn: `agent-env/codex-harness/bin/codex-harness-runner spawn --cwd <dir> -- <command...>`
-- Halt harness-owned jobs: `agent-env/codex-harness/bin/codex-harness-halt`
+Use the canonical source manifest from any current directory:
+
+```bash
+HARNESS_MANIFEST=/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/Cargo.toml
+```
+
+- Status: `cargo run --quiet --manifest-path "$HARNESS_MANIFEST" --bin codex-harness-status`
+- Nix verification: `cargo run --quiet --manifest-path "$HARNESS_MANIFEST" --bin codex-harness-nix-verify`
+- Audit: `cargo run --quiet --manifest-path "$HARNESS_MANIFEST" --bin codex-harness-audit`
+- Policy check: `cargo run --quiet --manifest-path "$HARNESS_MANIFEST" --bin codex-harness-runner -- policy-check -- <command...>`
+- Foreground supervised run: `cargo run --quiet --manifest-path "$HARNESS_MANIFEST" --bin codex-harness-runner -- run --cwd <dir> -- <command...>`
+- Background supervised spawn: `cargo run --quiet --manifest-path "$HARNESS_MANIFEST" --bin codex-harness-runner -- spawn --cwd <dir> -- <command...>`
+- Halt harness-owned jobs: `cargo run --quiet --manifest-path "$HARNESS_MANIFEST" --bin codex-harness-halt`
+
+Do not invoke stale copied binaries under `codex-harness/bin/`; source and the
+Nix-profile-owned Cargo toolchain are the operational owner until the harness
+binaries are packaged into the profile.
 
 Operational rules:
 

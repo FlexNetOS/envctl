@@ -41,9 +41,9 @@ prefix_rule(
 )
 
 prefix_rule(
-    pattern = [["codex-harness-runner", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-runner"]],
+    pattern = ["codex-harness-runner"],
     decision = "allow",
     justification = "The Rust harness runner is the supervised background execution path.",
-    match = ["codex-harness-runner policy-check -- pwd", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-runner policy-check -- pwd"],
+    match = ["codex-harness-runner policy-check -- pwd"],
     not_match = ["codex exec hello"],
 )

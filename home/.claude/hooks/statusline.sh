@@ -3,7 +3,7 @@
 # rate-limit windows / active agent counts. Side effects: caches rate_limits for
 # the budget sentinel; one-shot desktop alert if the model was rerouted off Fable.
 set -u
-HARNESS_VAR="${HARNESS_VAR:-/home/flexnetos/lifeos/var}"
+HARNESS_VAR="${HARNESS_VAR:-/home/flexnetos/meta/var}"
 STATE_DIR="$HARNESS_VAR/lib/claude-harness"
 mkdir -p "$STATE_DIR" 2>/dev/null || true
 

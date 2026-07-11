@@ -1,7 +1,7 @@
 approvals_reviewer = "user"
 approval_policy = "never"
 sandbox_mode = "danger-full-access"
-model = "gpt-5.5"
+model = "gpt-5.6-sol"
 model_catalog_json = "/home/flexnetos/.codex/model-catalog.json"
 model_reasoning_effort = "xhigh"
 model_reasoning_summary = "auto"
@@ -13,10 +13,12 @@ project_doc_fallback_filenames = [
 ]
 project_doc_max_bytes = 65536
 default_permissions = ":danger-full-access"
-# 2026-07-09 full-access incident controller:
-# keep projected envctl Codex config aligned with the active home runtime.
-# Do not fall back to harness-read-only, permission requests, or retired hooks
-# during local harness repair.
+# 2026-07-09 emergency harness unwind:
+# the operator explicitly granted local full access for this repair lane.
+# Do not route the active session through harness-read-only or treat broad
+# filesystem access as a blocker. Secret-deny and archive-first rules remain
+# behavioral obligations, but the executable sandbox/default profile is full
+# access.
 personality = "friendly"
 suppress_unstable_features_warning = true
 background_terminal_max_timeout = 300000
@@ -28,62 +30,46 @@ trust_level = "trusted"
 [projects."/home/flexnetos/workspace"]
 trust_level = "trusted"
 
-[projects."/home/flexnetos/FlexNetOS"]
+[projects."/home/flexnetos/meta"]
 trust_level = "trusted"
 
-[projects."/home/flexnetos/FlexNetOS/src/yazelix"]
+[projects."/home/flexnetos/meta/src/yazelix"]
 trust_level = "trusted"
 
-[projects."/home/flexnetos/FlexNetOS/src/flexnetos_runner"]
+[projects."/home/flexnetos/meta/src/flexnetos_runner"]
 trust_level = "trusted"
 
-[projects."/home/flexnetos/FlexNetOS/src/meta"]
+[projects."/home/flexnetos/meta/src/envctl"]
 trust_level = "trusted"
 
-[projects."/home/flexnetos/FlexNetOS/src/envctl"]
+[projects."/home/flexnetos/meta/src/nu_plugin"]
 trust_level = "trusted"
 
-[projects."/home/flexnetos/FlexNetOS/src/nu_plugin"]
+[projects."/home/flexnetos/meta/src/teri"]
 trust_level = "trusted"
 
-[projects."/home/flexnetos/FlexNetOS/src/teri"]
-trust_level = "trusted"
-
-[projects."/home/flexnetos/FlexNetOS/src/flexnetos_runner/_work/actions-runner-01-work/flexnetos_runner/flexnetos_runner"]
+[projects."/home/flexnetos/meta/src/flexnetos_runner/_work/actions-runner-01-work/flexnetos_runner/flexnetos_runner"]
 trust_level = "trusted"
 
 [projects."/home/flexnetos/Desktop"]
 trust_level = "trusted"
 
-[projects."/home/flexnetos/FlexNetOS/src/lifeos"]
+[projects."/home/flexnetos/meta/lifeos"]
 trust_level = "trusted"
 
-[projects."/home/flexnetos/FlexNetOS/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework"]
+[projects."/home/flexnetos/meta/src/envctl/envctl-db-nu-plugin-migration-automation-package/execution-framework"]
 trust_level = "trusted"
 
-[projects."/home/flexnetos/lifeos/src/flexnetos_runner/_work/actions-runner-01-work/flexnetos_runner/flexnetos_runner"]
+[projects."/home/flexnetos/meta/src/vault_hub"]
 trust_level = "trusted"
 
-[projects."/home/flexnetos/lifeos/src/vault_hub"]
-trust_level = "trusted"
-
-[projects."/home/flexnetos/lifeos/src/flexnetos_runner/_work/actions-runner-02-work/flexnetos_runner/flexnetos_runner"]
-trust_level = "trusted"
-
-[projects."/home/flexnetos/lifeos"]
-trust_level = "trusted"
-
-[projects."/home/flexnetos/lifeos/src/envctl"]
-trust_level = "trusted"
-
-[projects."/home/flexnetos/lifeos/src/envctl/home"]
-trust_level = "trusted"
-
-[projects."/home/flexnetos/lifeos/src/flexnetos_runner"]
+[projects."/home/flexnetos/meta/src/flexnetos_runner/_work/actions-runner-02-work/flexnetos_runner/flexnetos_runner"]
 trust_level = "trusted"
 
 [tui.model_availability_nux]
-"gpt-5.5" = 4
+"gpt-5.6-luna" = 4
+"gpt-5.6-sol" = 4
+"gpt-5.6-terra" = 4
 
 [notice]
 hide_full_access_warning = true
@@ -120,7 +106,7 @@ enable_mcp_apps = true
 exec_permission_approvals = false
 fast_mode = false
 hooks = false
-imagegenext = true
+image_generation = true
 item_ids = true
 local_thread_store_compression = true
 memories = true
@@ -133,16 +119,17 @@ prevent_idle_sleep = true
 realtime_conversation = true
 remote_plugin = false
 request_permissions_tool = false
+respect_system_proxy = false
 runtime_metrics = true
 secret_auth_storage = true
 shell_snapshot = true
 shell_tool = true
-shell_zsh_fork = true
+shell_zsh_fork = false
 sleep_tool = true
 standalone_web_search = true
 terminal_visualization_instructions = true
 unified_exec = true
-unified_exec_zsh_fork = true
+unified_exec_zsh_fork = false
 use_agent_identity = true
 
 [history]
@@ -183,7 +170,7 @@ terminal_title = [
 ]
 
 [notice.model_migrations]
-"gpt-5.4" = "gpt-5.5"
+"gpt-5.5" = "gpt-5.6-terra"
 
 [apps.connector_5f3c8c41a1e54ad7a76272c89e2554fa.tools."google_drive.bulk_update_file_comments"]
 approval_mode = "approve"
@@ -206,14 +193,26 @@ approval_mode = "approve"
 [apps.connector_76869538009648d5b282a4bb21c3d157.tools."github.update_ref"]
 approval_mode = "approve"
 
+[apps.connector_76869538009648d5b282a4bb21c3d157.tools."github.create_file"]
+approval_mode = "approve"
+
+[apps.connector_76869538009648d5b282a4bb21c3d157.tools."github.enable_auto_merge"]
+approval_mode = "approve"
+
+[apps.connector_76869538009648d5b282a4bb21c3d157.tools."github.update_file"]
+approval_mode = "approve"
+
 # FlexNetOS policy:
-# - /home/flexnetos/FlexNetOS is the Codex session root.
-# - src/meta and its FlexNetOS original project set are additive-only upgrade
-#   targets. Downgrade/reset/delete/remove/overwrite operations must archive
-#   affected state first and write a compressed artifact before continuing.
-# - Full filesystem access is not the harness default. Named permission
-#   profiles restrict reads/writes, and project hooks enforce archive-first
-#   and additive-only gates.
+# - /home/flexnetos/.codex/config.toml is the active Codex runtime config.
+# - /home/flexnetos/meta/src/envctl is the envctl source of truth.
+# - /home/flexnetos/meta and its original project set are additive-only upgrade targets.
+#   Downgrade/reset/delete/remove/overwrite operations must archive affected
+#   state first and write evidence before continuing.
+# - Retired clean-room lifecycle hooks stay disabled until deliberately rebuilt.
+# - The active emergency repair lane is full-access local execution. Historical
+#   named read-only/workspace profiles below are retained only for explicit,
+#   future opt-in runs; they are not the default and must not be used as a
+#   refusal/blocking excuse.
 
 [permissions.harness-read-only]
 description = "Read-only envctl harness profile with no network table, so sandboxed network is disabled."
@@ -221,9 +220,9 @@ description = "Read-only envctl harness profile with no network table, so sandbo
 [permissions.harness-read-only.filesystem]
 glob_scan_max_depth = 4
 ":minimal" = "read"
-"/home/flexnetos/lifeos/src/envctl" = "read"
-"/home/flexnetos/lifeos/src/envctl/home" = "read"
-"/home/flexnetos/lifeos/src/envctl/home/agent-env" = "read"
+"/home/flexnetos/meta/src/envctl" = "read"
+"/home/flexnetos/meta/src/envctl/home" = "read"
+"/home/flexnetos/meta/src/envctl/home/agent-env" = "read"
 "/home/flexnetos/.codex/auth.json" = "deny"
 "/home/flexnetos/.ssh" = "deny"
 "/home/flexnetos/.gnupg" = "deny"
@@ -239,11 +238,11 @@ description = "Write-limited envctl harness profile with no network table, so sa
 [permissions.harness-workspace.filesystem]
 glob_scan_max_depth = 4
 ":minimal" = "read"
-"/home/flexnetos/lifeos/src/envctl" = "read"
-"/home/flexnetos/lifeos/src/envctl/home/.codex" = "write"
-"/home/flexnetos/lifeos/src/envctl/home/AGENTS.md" = "write"
-"/home/flexnetos/lifeos/src/envctl/home/agent-env" = "write"
-"/home/flexnetos/lifeos/src/envctl/home/agent-env/worktrees" = "write"
+"/home/flexnetos/meta/src/envctl" = "read"
+"/home/flexnetos/meta/src/envctl/home/.codex" = "write"
+"/home/flexnetos/meta/src/envctl/home/AGENTS.md" = "write"
+"/home/flexnetos/meta/src/envctl/home/agent-env" = "write"
+"/home/flexnetos/meta/src/envctl/home/agent-env/worktrees" = "write"
 "/home/flexnetos/.codex/auth.json" = "deny"
 "/home/flexnetos/.ssh" = "deny"
 "/home/flexnetos/.gnupg" = "deny"
@@ -259,8 +258,8 @@ description = "Envctl harness local-model profile with localhost-only Ollama acc
 [permissions.harness-local-models.filesystem]
 glob_scan_max_depth = 4
 ":minimal" = "read"
-"/home/flexnetos/lifeos/src/envctl" = "read"
-"/home/flexnetos/lifeos/src/envctl/home/agent-env" = "write"
+"/home/flexnetos/meta/src/envctl" = "read"
+"/home/flexnetos/meta/src/envctl/home/agent-env" = "write"
 "/home/flexnetos/.codex/auth.json" = "deny"
 "/home/flexnetos/.ssh" = "deny"
 "/home/flexnetos/.gnupg" = "deny"
@@ -285,8 +284,8 @@ description = "Read-only research profile. Network remains disabled unless a nar
 [permissions.harness-research.filesystem]
 glob_scan_max_depth = 4
 ":minimal" = "read"
-"/home/flexnetos/lifeos/src/envctl" = "read"
-"/home/flexnetos/lifeos/src/envctl/home/agent-env" = "read"
+"/home/flexnetos/meta/src/envctl" = "read"
+"/home/flexnetos/meta/src/envctl/home/agent-env" = "read"
 "/home/flexnetos/.codex/auth.json" = "deny"
 "/home/flexnetos/.ssh" = "deny"
 "/home/flexnetos/.gnupg" = "deny"

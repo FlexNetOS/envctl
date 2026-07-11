@@ -126,20 +126,26 @@ The active host runtime remains `/home/flexnetos/.codex/config.toml`. Repository
 profiles model that runtime for reproducible harness execution:
 `approval_policy = "never"`, `sandbox_mode = "danger-full-access"`,
 `default_permissions = ":danger-full-access"`, and retired hooks disabled.
+Keep `features.shell_zsh_fork` and `features.unified_exec_zsh_fork` disabled:
+with the current profile-owned Codex build those fork paths make every shell
+tool call exit `1` with no output even in Full Access. The standard unified-exec
+path is the live-verified implementation route.
 
-Permission and proof authority are deliberately split:
+Permission authority and durable intent records are deliberately distinct:
 
 ```text
-tracked policy/policy.toml  -> durable operator decision authority
-tracked rules/config/tests  -> executable permission contract
+live /permissions           -> sole sandbox/approval/network authority
+tracked policy/policy.toml  -> durable operator-intent record, not a live grant
+tracked rules/config/tests  -> hard-safety and optional-routing contract
 ignored state/ and ledger/  -> runtime receipts only
 ```
 
 An ignored `state/full-access-grant.json` receipt may corroborate a run, but it
-must never be the sole authority for full access or completion. Likewise,
+must never claim effective live permissions or completion. Likewise,
 ignored state and JSONL ledgers cannot make a clean checkout complete. The
-tracked decision ID is `USER-FULL-ACCESS-20260709`; native execpolicy must allow
-the explicit `codex --dangerously-bypass-approvals-and-sandbox` frontdoor while
+tracked intent ID is `USER-FULL-ACCESS-20260709`; native execpolicy must not
+create a second approval gate around the explicit
+`codex --dangerously-bypass-approvals-and-sandbox` frontdoor while
 secret-deny, archive-first, destructive-user-data, force-push, and guarded
 GitHub mutation rules remain authoritative.
 
@@ -162,6 +168,80 @@ codex execpolicy check --pretty --rules home/.codex/rules/no-yolo.rules -- \
 
 The final verifier is live evidence: historical checklists and archived receipts
 do not override a current `fail`, `unsupported`, `not_run`, or `gap`.
+
+#### Chat-session permission and capability controls
+
+Codex's built-in slash commands are the authoritative live controls:
+
+```text
+/permissions  -> sandbox and approval profile for this parent turn
+/model        -> active model and reasoning effort
+/agent        -> inspect or switch spawned subagent threads
+```
+
+Subagents and shell children inherit the parent turn's live `/permissions`
+selection. Current Codex builds do not export mutable permission-profile state
+reliably into child shell environments, so the harness does not invent a
+second sandbox from `CODEX_PERMISSION_PROFILE`. The built-in `/permissions`
+state is the OS boundary; harness capability switches are narrower routing
+preferences only.
+
+Current Codex builds invoke custom workflows as skills rather than custom slash
+commands. Envctl syncs these global skills from
+`agent-harness-controls/agent-env.yaml`:
+
+```text
+$harness-status
+$harness-full
+$harness-restricted
+$harness-toggle CAPABILITY=<name> STATE=on|off
+```
+
+The built-in `/permissions` command remains the slash-command authority for all
+sandbox and approval restrictions. `harness-toggle` controls optional routing for
+`external_providers`, `local_models`, `network`,
+`github_mutation`, `browser_computer`, `subagents`, and `background_jobs` for
+the current `CODEX_THREAD_ID`; it does not modify or bypass `/permissions`.
+Secret reads/output, destructive user-data deletion, force-push, and
+direct ledger/archive mutation remain hard safety rules rather than optional
+capabilities.
+
+Model routing is explicit and excludes GPT-5.5 from active role/profile routes:
+
+```text
+Sol    -> high-stakes reasoning, security review, and complex coding
+Terra  -> balanced professional workflows and routine repository work
+Luna   -> simple, mechanical, high-volume tasks
+```
+
+`/model` remains the live selector. Status binaries report the configured
+default only and label the live model and native-agent count unknown when Codex
+does not export those values; `/model` and `/agent` are the truthful live
+inspection surfaces.
+
+Provider truth is execution-based:
+
+- native Codex subagents use the current parent model/permission context;
+- Claude bridge execution is a tool-free reasoning lane: `--safe-mode`,
+  `--tools ""`, strict empty MCP configuration, disabled skills, no Chrome,
+  and no session persistence. This keeps default OAuth usable without granting
+  Claude `Read`, `Bash`, `Edit`, `Write`, browser, MCP, or nested-agent tools.
+  `bypassPermissions` therefore cannot bypass a filesystem or mutation boundary
+  because the child receives no tools;
+- Claude execution is allowed only when live Codex permissions and the optional
+  external-provider/network routing switches permit it, and
+  `codex-harness-runner spawn-claude-run` provides a supervised background
+  child lane;
+- Ollama tasks route to `envctl-local-models` and require the local-model
+  capability;
+- OpenRouter is not execution-ready until an authenticated generation succeeds;
+- final provider proof accepts only the latest successful receipt when it is
+  fresh and matches the current provider source/config fingerprint.
+
+The canonical workspace root is `/home/flexnetos/meta`. The retired
+`/home/flexnetos/lifeos` alias must not be recreated as a runtime-state
+directory. Envctl harness, Claude hook, skill, rule, and kill-switch defaults
+must resolve through `/home/flexnetos/meta`.
 
 ### Env-manager — bring the box to its declared state
 

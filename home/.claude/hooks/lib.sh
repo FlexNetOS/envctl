@@ -3,7 +3,7 @@
 # Contract: fast, idempotent, fail-closed for guards / fail-open for observers.
 # Every hook appends exactly one JSON line to the append-only ledger.
 
-HARNESS_VAR="${HARNESS_VAR:-/home/flexnetos/lifeos/var}"
+HARNESS_VAR="${HARNESS_VAR:-/home/flexnetos/meta/var}"
 LEDGER_DIR="$HARNESS_VAR/log/claude-harness"
 LEDGER="$LEDGER_DIR/ledger.jsonl"
 STATE_DIR="$HARNESS_VAR/lib/claude-harness"

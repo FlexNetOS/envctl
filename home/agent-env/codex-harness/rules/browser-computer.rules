@@ -1,10 +1,10 @@
 # Browser and Computer Use require approved profiles and privacy policy.
 
 prefix_rule(
-    pattern = [["codex-harness-browser-computer", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-browser-computer"]],
+    pattern = ["codex-harness-browser-computer"],
     decision = "allow",
     justification = "Browser/Computer support verification is sanctioned through the harness gate.",
-    match = ["codex-harness-browser-computer verify", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-browser-computer verify"],
+    match = ["codex-harness-browser-computer verify"],
     not_match = ["xdotool click 1"],
 )
 

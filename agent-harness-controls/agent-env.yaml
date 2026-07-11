@@ -1,0 +1,18 @@
+# Global chat-session controls for the parent envctl Codex harness session.
+#
+# Preview:
+#   target/release/envctl agent sync --config agent-harness-controls/agent-env.yaml --scope global --json --color never
+# Apply:
+#   target/release/envctl agent sync --config agent-harness-controls/agent-env.yaml --scope global --apply --color never
+scope: global
+agent: codex
+
+commands:
+  - source: ../agent-commands
+    commands:
+      - nu_plugin-export
+      - nu_plugin-import
+
+skills:
+  - source: ../agent-harness-skills
+    skills: "*"

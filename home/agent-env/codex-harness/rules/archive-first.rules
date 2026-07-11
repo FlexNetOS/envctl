@@ -17,9 +17,9 @@ prefix_rule(
 )
 
 prefix_rule(
-    pattern = [["codex-harness-runner", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-runner"], "archive"],
+    pattern = ["codex-harness-runner", "archive"],
     decision = "allow",
     justification = "Sanctioned archive command records archive ledger proof.",
-    match = ["codex-harness-runner archive -- file", "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/target/debug/codex-harness-runner archive -- file"],
+    match = ["codex-harness-runner archive -- file"],
     not_match = ["rm file"],
 )

@@ -3,8 +3,9 @@
 use anyhow::Result;
 use codex_harness::prompt_review::review_full_access_prompt_path;
 use codex_harness::{
-    append_ledger, audit_value, codex_harness_dir, full_access_granted, model_router_ready,
-    nix_verify_value, project_root, state_dir, tracked_full_access_policy_granted, which,
+    append_ledger, audit_value, codex_harness_dir, latest_provider_receipt_valid,
+    model_router_ready, nix_verify_value, project_root, provider_receipt_current,
+    session_capability_status, state_dir, tracked_full_access_policy_granted, which,
     USER_FULL_ACCESS_DECISION_ID,
 };
 use serde_json::{json, Value};
@@ -45,6 +46,78 @@ fn pass_fail(ok: bool) -> &'static str {
 
 fn result_is_acceptance(result: &str) -> bool {
     result == "pass" || result.starts_with("pass-") || result.starts_with("unsupported-")
+}
+
+fn session_capability_map_valid(status: &Value) -> bool {
+    status.get("state_valid").and_then(Value::as_bool) == Some(true)
+        && [
+            "external_providers",
+            "local_models",
+            "network",
+            "github_mutation",
+            "browser_computer",
+            "subagents",
+            "background_jobs",
+        ]
+        .iter()
+        .all(|capability| {
+            status
+                .pointer(&format!("/capabilities/{capability}/enabled"))
+                .and_then(Value::as_bool)
+                .is_some()
+        })
+}
+
+fn files_equal(left: &Path, right: &Path) -> bool {
+    fs::read(left)
+        .ok()
+        .zip(fs::read(right).ok())
+        .map(|(left, right)| left == right)
+        .unwrap_or(false)
+}
+
+fn session_control_commands_execute() -> bool {
+    let manifest =
+        Path::new("/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/Cargo.toml");
+    if !manifest.exists() {
+        return false;
+    }
+    let manifest_text = manifest.display().to_string();
+    let thread_id = format!("final-verify-session-controls-{}", std::process::id());
+    [
+        vec!["session", "status"],
+        vec!["session", "preset", "restricted"],
+        vec!["session", "set", "network", "on"],
+        vec!["session", "preset", "full"],
+    ]
+    .into_iter()
+    .all(|arguments| {
+        let output = Command::new("cargo")
+            .args([
+                "run",
+                "--quiet",
+                "--manifest-path",
+                &manifest_text,
+                "--bin",
+                "codex-harness-policy",
+                "--",
+            ])
+            .args(arguments)
+            .env("CODEX_THREAD_ID", &thread_id)
+            .output();
+        output
+            .ok()
+            .filter(|output| output.status.success())
+            .and_then(|output| serde_json::from_slice::<Value>(&output.stdout).ok())
+            .and_then(|value| {
+                value
+                    .get("state_valid")
+                    .and_then(Value::as_bool)
+                    .map(|ok| (value, ok))
+            })
+            .map(|(_, state_valid)| state_valid)
+            .unwrap_or(false)
+    })
 }
 
 fn prompt_file_probe(path: &Path, minimum_lines: usize) -> Value {
@@ -340,22 +413,27 @@ fn main() -> Result<()> {
         .pointer("/wire_compatibility/direct_responses_wire_compatible")
         .and_then(Value::as_bool)
         .unwrap_or(false);
-    let openrouter_result =
-        if openrouter_key_valid && openrouter_generation_ok && openrouter_model_ok {
-            "pass"
-        } else if openrouter_key_valid && openrouter_policy_blocked {
-            "unsupported-account-policy-blocked"
-        } else if !has_openrouter_key
-            && openrouter_models_ok
-            && openrouter_wire_ok
-            && openrouter_probe_no_secret_print
-        {
-            "unsupported-missing-OPENROUTER_API_KEY"
-        } else if has_openrouter_key {
-            "gap-auth-env-present-no-successful-proof"
-        } else {
-            "gap-openrouter-proof-missing"
-        };
+    let openrouter_receipt_current = provider_receipt_current(&openrouter_proof, "openrouter");
+    let openrouter_result = if openrouter_receipt_current
+        && openrouter_key_valid
+        && openrouter_generation_ok
+        && openrouter_model_ok
+    {
+        "pass"
+    } else if openrouter_receipt_current && openrouter_key_valid && openrouter_policy_blocked {
+        "unsupported-account-policy-blocked"
+    } else if openrouter_receipt_current
+        && !has_openrouter_key
+        && openrouter_models_ok
+        && openrouter_wire_ok
+        && openrouter_probe_no_secret_print
+    {
+        "unsupported-missing-OPENROUTER_API_KEY"
+    } else if has_openrouter_key {
+        "gap-auth-env-present-no-successful-proof"
+    } else {
+        "gap-openrouter-proof-missing"
+    };
     let model_access_proof_path = state_dir().join("model-access-proof.json");
     let model_access_proof: Value = fs::read_to_string(&model_access_proof_path)
         .ok()
@@ -371,6 +449,42 @@ fn main() -> Result<()> {
             .unwrap_or(false);
     let has_claude_cli = which("claude").is_some();
     let has_gh = which("gh").is_some();
+    let session_status = session_capability_status();
+    let active_skill_root = Path::new("/home/flexnetos/.codex/skills");
+    let source_skill_root = envctl_root.join("agent-harness-skills/skills");
+    let installed_skills_match = [
+        "harness-status",
+        "harness-full",
+        "harness-restricted",
+        "harness-toggle",
+    ]
+    .iter()
+    .all(|skill| {
+        files_equal(
+            &source_skill_root.join(skill).join("SKILL.md"),
+            &active_skill_root.join(skill).join("SKILL.md"),
+        )
+    });
+    let session_controls_ok = session_capability_map_valid(&session_status)
+        && exists(envctl_root.join("agent-harness-controls/agent-env.yaml"))
+        && exists(envctl_root.join("agent-harness-skills/skills/harness-status/SKILL.md"))
+        && exists(envctl_root.join("agent-harness-skills/skills/harness-full/SKILL.md"))
+        && exists(envctl_root.join("agent-harness-skills/skills/harness-restricted/SKILL.md"))
+        && exists(envctl_root.join("agent-harness-skills/skills/harness-toggle/SKILL.md"))
+        && installed_skills_match
+        && session_control_commands_execute();
+    let claude_execution_ok = latest_provider_receipt_valid(
+        &harness.join("ledger/network.jsonl"),
+        "claude_bridge",
+        "claude_bridge",
+        true,
+    );
+    let ollama_execution_ok = latest_provider_receipt_valid(
+        &harness.join("ledger/processes.jsonl"),
+        "ollama_run_complete",
+        "ollama",
+        false,
+    );
 
     let matrix = vec![
         row(
@@ -415,7 +529,7 @@ fn main() -> Result<()> {
         ),
         row(
             "containment-before-capability",
-            "tracked operator decision plus native execpolicy containment matrix",
+            "tracked operator-intent record plus native execpolicy containment matrix; live permissions remain authoritative",
             harness.join("policy/policy.toml").display().to_string(),
             "validate tracked policy; codex execpolicy check --pretty --rules ...",
             pass_fail(tracked_full_access_policy_granted()),
@@ -449,10 +563,20 @@ fn main() -> Result<()> {
         ),
         row(
             "operator full-access launch",
-            "tracked operator grant and native execpolicy allow the required full-access prompt frontdoor",
+            "tracked operator-intent record and native execpolicy avoid adding a second gate around the live /permissions frontdoor",
             full_access_rule_path.display().to_string(),
             "codex execpolicy check --pretty --rules ... -- codex --dangerously-bypass-approvals-and-sandbox",
-            pass_fail(full_access_granted() && full_access_execpolicy_ok),
+            pass_fail(tracked_full_access_policy_granted() && full_access_execpolicy_ok),
+        ),
+        row(
+            "chat-session controls",
+            "built-in /permissions authority plus installed thread-scoped harness status, full, restricted, and capability-toggle skills",
+            envctl_root
+                .join("agent-harness-controls/agent-env.yaml")
+                .display()
+                .to_string(),
+            "/permissions; $harness-status; $harness-toggle CAPABILITY=<name> STATE=on|off",
+            pass_fail(session_controls_ok),
         ),
         row(
             "RULES/POLICY/SOUL",
@@ -516,7 +640,7 @@ fn main() -> Result<()> {
         ),
         row(
             "model access proof",
-            "catalog coverage plus live Codex account probes for GPT-5.5/GPT-5.4/Spark and account-gated preview/o-series denials",
+            "catalog coverage plus mandatory live Sol, Terra, and Luna probes; optional legacy/account-gated models remain inventory only",
             model_access_proof_path.display().to_string(),
             "codex-harness-model-access probe",
             pass_fail(model_access_ok),
@@ -535,8 +659,15 @@ fn main() -> Result<()> {
                 .join("src/bin/codex-harness-claude-bridge.rs")
                 .display()
                 .to_string(),
-            "codex-harness-claude-bridge inventory --allow-default-auth",
-            pass_fail(has_claude_cli),
+            "codex-harness-claude-bridge run --allow-default-auth --prompt CLAUDE_VERIFY_OK",
+            pass_fail(has_claude_cli && claude_execution_ok),
+        ),
+        row(
+            "multi-provider execution",
+            "successful executed Claude and Ollama provider receipts; native subagent execution is a separate proof surface",
+            harness.join("ledger").display().to_string(),
+            "codex-harness-claude-bridge run --allow-default-auth --prompt CLAUDE_VERIFY_OK; codex-harness-runner ollama-run --model gemma4:latest -- OLLAMA_VERIFY_OK",
+            pass_fail(model_router_ready() && claude_execution_ok && ollama_execution_ok),
         ),
         row(
             "browser use",
@@ -695,6 +826,7 @@ fn main() -> Result<()> {
                 row_pass("containment-before-capability")
                     && row_pass("secrets redaction")
                     && row_pass("operator full-access launch")
+                    && row_pass("chat-session controls")
                     && row_pass("hooks")
                     && row_pass("rules")
                     && row_pass("kill switch"),
@@ -751,6 +883,7 @@ fn main() -> Result<()> {
                 row_pass("OpenRouter compatibility")
                     && row_pass("model access proof")
                     && row_pass("Claude bridge policy")
+                    && row_pass("multi-provider execution")
                     && row_pass("Nix ownership"),
             ),
         ),
@@ -830,7 +963,7 @@ fn main() -> Result<()> {
     let ok = incomplete == 0 && phase_incomplete == 0;
     let out = json!({
         "ok": ok,
-        "decision_id": if full_access_granted() { USER_FULL_ACCESS_DECISION_ID } else { "none" },
+        "decision_id": if tracked_full_access_policy_granted() { USER_FULL_ACCESS_DECISION_ID } else { "none" },
         "incomplete": incomplete,
         "phase_incomplete": phase_incomplete,
         "prompt": {
@@ -854,4 +987,32 @@ fn main() -> Result<()> {
         std::process::exit(1);
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn session_capability_map_requires_valid_state() {
+        let capabilities = [
+            "external_providers",
+            "local_models",
+            "network",
+            "github_mutation",
+            "browser_computer",
+            "subagents",
+            "background_jobs",
+        ]
+        .into_iter()
+        .map(|name| (name.to_string(), json!({"enabled": true})))
+        .collect::<serde_json::Map<String, Value>>();
+        let mut status = json!({
+            "state_valid": true,
+            "capabilities": capabilities,
+        });
+        assert!(session_capability_map_valid(&status));
+        status["state_valid"] = json!(false);
+        assert!(!session_capability_map_valid(&status));
+    }
 }
