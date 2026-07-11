@@ -9,6 +9,7 @@
 | Every envctl runbook file and research proof ledger | `SKILL.md` step 3; `runbook-cli-contract.md`. |
 | Yazelix/Nix/Nushell ownership | `ownership-map.md`; `runbook-cli-contract.md`. |
 | Non-mutating init and RTK/Meta/GitKB/Grit/ICM/Weave routing | `runbook-cli-contract.md`; internal Initialize capability. |
+| Bun/Bunx-only skill execution and GitHub SSH proof | `bunx-and-github-ssh.md`; deterministic skill-recipe scan; personal `drdave-flexnetos` identity plus separate FlexNetOS membership and SSH repository proof. |
 | Professional CLI probe matrix | `runbook-cli-contract.md`; rebuild validation step. |
 | Automation, dashboard, and hardware/GPU optimization | `runbook-cli-contract.md`. |
 | Session permission/capability toggles | `SKILL.md` steps 7 and Internal capabilities. |

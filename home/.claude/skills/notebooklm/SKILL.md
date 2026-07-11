@@ -45,7 +45,7 @@ pip install "notebooklm-py[browser] @ git+https://github.com/teng-lin/notebooklm
 **Skill install methods:**
 
 - `notebooklm skill install` installs this skill into the supported local agent directories managed by the CLI.
-- `npx skills add teng-lin/notebooklm-py` installs this skill from the GitHub repository into compatible agent skill directories.
+- `bunx skills add teng-lin/notebooklm-py` installs this skill from the GitHub repository into compatible agent skill directories.
 - If you are already reading this file inside an agent skill directory, the skill is already installed. You only need the Python package and authentication below.
 
 **CLI-managed install:**

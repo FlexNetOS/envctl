@@ -15,10 +15,12 @@ VALIDATOR=/home/flexnetos/.codex/skills/.system/skill-creator/scripts/quick_vali
 
 for path in "$ORIG" "$FULL" "$SNAPSHOT" "$HARNESS" "$SKILL_ROOT/SKILL.md" \
   "$SKILL_ROOT/references/coverage-map.md" \
+  "$SKILL_ROOT/references/bunx-and-github-ssh.md" \
   "$SKILL_ROOT/references/github-execution-policy.md" \
   "$SKILL_ROOT/references/github-org-and-ccboard.md" \
   "$SKILL_ROOT/references/ownership-map.md" \
   "$SKILL_ROOT/references/runbook-cli-contract.md" \
+  "$SKILL_ROOT/scripts/check-bun-command-policy.py" \
   "$SKILL_ROOT/agents/openai.yaml" "$DURABLE" "$ACTIVE" "$PROJECT_CODEX" "$PROJECT_CLAUDE"; do
   [[ -e "$path" ]] || { echo "missing required path: $path" >&2; exit 2; }
 done
@@ -35,6 +37,7 @@ grep -Fq '/agent-env-codex' "$SKILL_ROOT/SKILL.md"
 grep -Fq 'references/source-prompt.md' "$SKILL_ROOT/SKILL.md"
 grep -Fq 'references/github-execution-policy.md' "$SKILL_ROOT/SKILL.md"
 grep -Fq 'references/github-org-and-ccboard.md' "$SKILL_ROOT/SKILL.md"
+grep -Fq 'references/bunx-and-github-ssh.md' "$SKILL_ROOT/SKILL.md"
 grep -Fq 'Use $agent-env-codex' "$SKILL_ROOT/agents/openai.yaml"
 grep -Fq 'Never cherry-pick.' "$SKILL_ROOT/references/github-execution-policy.md"
 grep -Fq 'Permission integrity' "$SKILL_ROOT/references/github-execution-policy.md"
@@ -42,9 +45,14 @@ grep -Fq 'Unfinished-work closure' "$SKILL_ROOT/references/github-execution-poli
 grep -Fq 'Meta worktree authority' "$SKILL_ROOT/references/github-execution-policy.md"
 grep -Fq 'Linux-only automation' "$SKILL_ROOT/references/github-execution-policy.md"
 grep -Fq 'Non-destructive fork sync' "$SKILL_ROOT/references/github-execution-policy.md"
-grep -Fq 'SSH Git transport' "$SKILL_ROOT/references/github-execution-policy.md"
+grep -Fq 'Personal and organization SSH proof' "$SKILL_ROOT/references/github-execution-policy.md"
 grep -Fq 'Codex is partially wired, not absent' "$SKILL_ROOT/references/github-org-and-ccboard.md"
 grep -Fq 'Do not claim SSH can configure organization settings.' "$SKILL_ROOT/references/github-org-and-ccboard.md"
+grep -Fq 'bunx ruv-swarm/claude-flow@alpha' "$SKILL_ROOT/references/bunx-and-github-ssh.md"
+grep -Fq 'drdave-flexnetos' "$SKILL_ROOT/references/bunx-and-github-ssh.md"
+
+printf '\n== Bun/Bunx skill command policy ==\n'
+python3 "$SKILL_ROOT/scripts/check-bun-command-policy.py" "$ROOT"
 
 printf '\n== skill source/projection identity ==\n'
 diff -qr "$DURABLE" "$PROJECT_CODEX"

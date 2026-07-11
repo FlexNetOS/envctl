@@ -12,8 +12,7 @@ requires:
   - mcp-github (optional for MCP integration)
 dependencies:
   - git
-  - npm or yarn
-  - node >= 20.0.0
+  - bun >= 1.3.14
 related_skills:
   - github-pr-management
   - github-issue-tracking
@@ -120,7 +119,7 @@ gh release create v2.0.0 \
 #### Basic Version Bump
 ```bash
 # Update package.json version
-npm version patch  # or minor, major
+bun pm version patch  # or minor, major
 
 # Push version tag
 git push --follow-tags
@@ -128,12 +127,12 @@ git push --follow-tags
 
 #### Simple Deployment
 ```bash
-# Build and publish npm package
-npm run build
-npm publish
+# Build and publish the registry package
+bun run build
+bun publish
 
 # Create GitHub release
-gh release create $(npm pkg get version) \
+gh release create $(bun pm pkg get version) \
   --generate-notes
 ```
 
@@ -200,7 +199,7 @@ gh release create $(npm pkg get version) \
   Write("RELEASE_NOTES.md", "[detailed notes]")
 
   // Run comprehensive validation
-  Bash("npm install && npm test && npm run lint && npm run build")
+  Bash("bun install && bun run test && bun run lint && bun run build")
 
   // Create release PR
   Bash(`gh pr create \
@@ -338,9 +337,9 @@ bunx claude-flow github release-deploy \
   Write("CHANGELOG.md", "[consolidated changelog]")
 
   // Run cross-package validation
-  Bash("cd packages/claude-flow && npm install && npm test")
-  Bash("cd packages/ruv-swarm && npm install && npm test")
-  Bash("npm run test:integration")
+  Bash("cd packages/claude-flow && bun install && bun run test")
+  Bash("cd packages/ruv-swarm && bun install && bun run test")
+  Bash("bun run test:integration")
 
   // Create unified release PR
   Bash(`gh pr create \
@@ -447,11 +446,11 @@ bunx claude-flow github emergency-release \
   // Create hotfix branch from last stable release
   Bash("git checkout -b hotfix/v1.2.4 v1.2.3")
 
-  // Cherry-pick critical fixes
-  Bash("git cherry-pick abc123def")
+  // Re-implement the critical fix on this branch after inspecting its source diff.
+  // Never cherry-pick; preserve the complete upgrade and its tests.
 
   // Fast validation
-  Bash("npm run test:critical && npm run build")
+  Bash("bun run test:critical && bun run build")
 
   // Create emergency release
   Bash(`gh release create v1.2.4 \
@@ -460,7 +459,7 @@ bunx claude-flow github emergency-release \
     --prerelease=false`)
 
   // Immediate deployment
-  Bash("npm publish --tag hotfix")
+  Bash("bun publish --tag hotfix")
 
   // Notify stakeholders
   Bash(`gh issue create \
@@ -506,15 +505,15 @@ release:
         priority: critical
 
   artifacts:
-    - name: npm-package
-      build: npm run build
-      test: npm run test:all
-      publish: npm publish
+    - name: registry-package
+      build: bun run build
+      test: bun run test:all
+      publish: bun publish
       registry: https://registry.npmjs.org
 
     - name: docker-image
       build: docker build -t app:$VERSION .
-      test: docker run app:$VERSION npm test
+      test: docker run app:$VERSION bun run test
       publish: docker push app:$VERSION
       platforms: [linux/amd64, linux/arm64]
 
@@ -527,23 +526,23 @@ release:
 
   validation:
     pre-release:
-      - lint: npm run lint
-      - typecheck: npm run typecheck
-      - unit-tests: npm run test:unit
-      - integration-tests: npm run test:integration
-      - security-scan: npm audit
-      - license-check: npm run license-check
+      - lint: bun run lint
+      - typecheck: bun run typecheck
+      - unit-tests: bun run test:unit
+      - integration-tests: bun run test:integration
+      - security-scan: bun audit
+      - license-check: bun run license-check
 
     post-release:
-      - smoke-tests: npm run test:smoke
+      - smoke-tests: bun run test:smoke
       - deployment-validation: ./scripts/validate-deployment.sh
-      - performance-baseline: npm run benchmark
+      - performance-baseline: bun run benchmark
 
   deployment:
     environments:
       - name: staging
         auto-deploy: true
-        validation: npm run test:e2e
+        validation: bun run test:e2e
         approval: false
 
       - name: production
@@ -721,11 +720,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: '20'
-          cache: 'npm'
+          bun-version: '1.3.14'
 
       - name: Authenticate GitHub CLI
         run: echo "${{ secrets.GITHUB_TOKEN }}" | gh auth login --with-token
@@ -768,13 +766,13 @@ jobs:
       - name: Build Release Artifacts
         run: |
           # Install dependencies
-          npm ci
+          bun install --frozen-lockfile
 
           # Run comprehensive validation
-          npm run lint
-          npm run typecheck
-          npm run test:all
-          npm run build
+          bun run lint
+          bun run typecheck
+          bun run test:all
+          bun run build
 
           # Build platform-specific binaries
           bunx claude-flow@alpha github release-build \
@@ -785,7 +783,7 @@ jobs:
       - name: Security Scan
         run: |
           # Run security validation
-          npm audit --audit-level=moderate
+          bun audit --audit-level=moderate
 
           bunx claude-flow@alpha github release-security \
             --scan-dependencies \
@@ -806,9 +804,9 @@ jobs:
 
       - name: Deploy to Package Registries
         run: |
-          # Publish to npm
+          # Publish to the npm registry through Bun
           echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > .npmrc
-          npm publish
+          bun publish
 
           # Build and push Docker images
           docker build -t ${{ github.repository }}:${{ github.ref_name }} .
@@ -817,7 +815,7 @@ jobs:
       - name: Post-Release Validation
         run: |
           # Run smoke tests
-          npm run test:smoke
+          bun run test:smoke
 
           # Validate deployment
           bunx claude-flow@alpha github release-validate \
@@ -872,9 +870,9 @@ jobs:
 
       - name: Fast-Track Testing
         run: |
-          npm ci
-          npm run test:critical
-          npm run build
+          bun install --frozen-lockfile
+          bun run test:critical
+          bun run build
 
       - name: Emergency Release
         run: |
@@ -961,17 +959,17 @@ bunx claude-flow@alpha diagnostic-run \
   --verbose
 
 # Retry with isolated environment
-docker run --rm -v $(pwd):/app node:20 \
-  bash -c "cd /app && npm ci && npm run build"
+docker run --rm -v $(pwd):/app oven/bun:1.3.14 \
+  bash -c "cd /app && bun install --frozen-lockfile && bun run build"
 ```
 
 ### Issue: Test Failures in CI
 ```bash
 # Run tests with detailed output
-npm run test -- --verbose --coverage
+bun run test -- --verbose --coverage
 
 # Check for environment-specific issues
-npm run test:ci
+bun run test:ci
 
 # Compare local vs CI environment
 bunx claude-flow@alpha github compat-test \

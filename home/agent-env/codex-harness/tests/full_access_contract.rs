@@ -2,6 +2,7 @@
 
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 
 fn envctl_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -293,6 +294,7 @@ fn one_skill_owns_session_controls_and_github_execution_policy() {
     let skill = fs::read_to_string(root.join("agent-skills/agent-env-codex/SKILL.md")).unwrap();
     assert!(skill.contains("references/github-execution-policy.md"));
     assert!(skill.contains("references/github-org-and-ccboard.md"));
+    assert!(skill.contains("references/bunx-and-github-ssh.md"));
     assert!(skill.contains("never cherry-pick"));
     assert!(skill.contains("Never change `/permissions`"));
     assert!(skill.contains("Never invoke raw `git`"));
@@ -309,7 +311,7 @@ fn one_skill_owns_session_controls_and_github_execution_policy() {
         "Unfinished-work closure",
         "Permission integrity",
         "Meta worktree authority",
-        "SSH Git transport",
+        "Personal and organization SSH proof",
         "Linux-only automation",
         "Protected trunks and disposable task state",
         "Non-destructive fork sync",
@@ -320,6 +322,29 @@ fn one_skill_owns_session_controls_and_github_execution_policy() {
     assert!(github_policy.contains("rtk meta git"));
     assert!(github_policy.contains("main`, `master`, or `develop"));
     assert!(github_policy.contains("enable auto-merge"));
+
+    let bunx_ssh = fs::read_to_string(
+        root.join("agent-skills/agent-env-codex/references/bunx-and-github-ssh.md"),
+    )
+    .unwrap();
+    for required in [
+        "npm install",
+        "bun install",
+        "npx <package>",
+        "bunx <package>",
+        "bunx ruv-swarm/claude-flow@alpha",
+        "drdave-flexnetos",
+        "user/memberships/orgs/FlexNetOS",
+        "git ls-remote git@github.com:FlexNetOS/envctl.git HEAD",
+    ] {
+        assert!(bunx_ssh.contains(required), "missing {required}");
+    }
+    let bun_policy = Command::new("python3")
+        .arg(root.join("agent-skills/agent-env-codex/scripts/check-bun-command-policy.py"))
+        .arg(&root)
+        .status()
+        .expect("run Bun/Bunx skill command policy");
+    assert!(bun_policy.success(), "skill command policy must pass");
 
     let org_ccboard = fs::read_to_string(
         root.join("agent-skills/agent-env-codex/references/github-org-and-ccboard.md"),
