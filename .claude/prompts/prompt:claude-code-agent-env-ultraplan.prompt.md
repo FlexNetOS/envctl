@@ -243,6 +243,27 @@ until the profile adds the shims.
   matrix entries). A workflow carrying `macos-*`/`windows-*` is a blocking finding.
 - FORKS SYNC AS SUPERSETS: a fork must be configured to pull upstream changes WITHOUT removing
   local updates — upstream merge into the fork, never a force-reset of the fork to upstream.
+- ORG SSH IDENTITY (META DEMAND): all GitHub management — git AND `gh` org administration — runs
+  as the authenticated FlexNetOS org account `drdave-flexnetos` (`admin:org` scope) over SSH;
+  `gh config git_protocol` = `ssh`; every remote is `git@github.com:FlexNetOS/<repo>.git`. Never a
+  personal-token HTTPS path for fleet management. (Operator spelling "dr-dave-flexnetos"; the live
+  `gh auth`/`gh api user` login is `drdave-flexnetos` — verify, don't assume the hyphenation.)
+- ORG ADMINISTRATION MANDATE (META DEMAND): the FlexNetOS org must be brought to a declared,
+  policy-conformant state across ALL admin surfaces — org SETTINGS, ACTIONS, WORKFLOWS, RULES /
+  RULESETS, POLICY, SECRETS, SANDBOXES, PAGES, PACKAGES, DISCUSSIONS, WEBHOOKS, DEPLOY KEYS, GITHUB
+  APPS, CODE QUALITY (code-scanning/CodeQL), CODESPACES, PROJECTS, ISSUES, and CUSTOM PROPERTIES.
+  Method mirrors envctl's own convergence discipline (AGENTIC-STORY): AUDIT (read-only inventory via
+  `gh api orgs/FlexNetOS/…` — names/counts only) → declare target → converge fail-closed → verify.
+  HUMAN-WALL surfaces (never auto-reveal, auto-create, or auto-delete): secret VALUES, deploy-key
+  private material, GitHub-App credentials, and destructive ruleset/policy changes. The driver ships
+  the read-only surface audit; every mutation is operator-gated per surface.
+- BUN-FIRST GITHUB TOOLING: `npm` = `bun`, `npx` = `bunx` for every skill/tool this harness invokes
+  (`bun-rewrite.sh` enforces it live; the loaded github skills are bunx-normalized). e.g.
+  `bunx ruv-swarm …`, `bunx claude-flow@alpha …`.
+- GITHUB SKILLS (loaded, fleet-wide): the governing `github` skill (this policy as law + runnable
+  `rtk meta git` flows) plus the toolbox `github-{multi-repo,workflow-automation,release-management,
+  code-review,project-management}` live in `~/.claude/skills` (ADR-0006 → envctl/home/.claude/skills).
+  The policy binds the toolbox; where a swarm recipe conflicts with the policy, the policy wins.
 
 ## SUBSTRATE INIT CONTRACT — six substrates, all rows mandatory
 
