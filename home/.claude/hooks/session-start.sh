@@ -24,6 +24,6 @@ FlexNetOS operating LAWS (harness-enforced, non-negotiable):
 6. Git topology: only main/master and develop are long-lived; PRs target develop.
 7. CONTAINMENT: no nested Claude sessions; subagents never spawn agents; max 6 active agents; budget ceiling 80% rate-limit.
 8. STOP MEANS STOP — decisions go through AskUserQuestion and block until answered.
-Harness state: ledger /home/flexnetos/lifeos/var/log/claude-harness/ledger.jsonl (append-only), kill switch: /home/flexnetos/lifeos/src/envctl/home/bin/harness-halt.sh (full path; not on PATH).
+Harness state: ledger /home/flexnetos/meta/var/log/claude-harness/ledger.jsonl (append-only), kill switch: /home/flexnetos/meta/src/envctl/home/bin/harness-halt.sh (full path; not on PATH).
 EOF
 exit 0

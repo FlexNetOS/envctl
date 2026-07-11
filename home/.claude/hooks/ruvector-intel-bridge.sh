@@ -25,7 +25,7 @@ set -u
 EVENT="${1:-}"
 [ -n "$EVENT" ] || exit 0
 
-RUVECTOR_ROOT="${RUVECTOR_INTEL_ROOT:-/home/flexnetos/lifeos/src/meta-ruvector}"
+RUVECTOR_ROOT="${RUVECTOR_INTEL_ROOT:-/home/flexnetos/meta/src/meta-ruvector}"
 HANDLER="$RUVECTOR_ROOT/.claude/helpers/hook-handler.cjs"
 CLI="$RUVECTOR_ROOT/.claude/intelligence/cli.js"
 [ -f "$HANDLER" ] || exit 0
