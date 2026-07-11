@@ -1,14 +1,18 @@
 #!/usr/bin/env python3
 """PreToolUse(Bash) hook: route Bash-tool commands through nushell supervision.
 
-Contract (agent-env prompt, BASH-TOOL ROUTING CONTRACT): nu is the supervising
-outer process; bash stays the inner POSIX executor (nu does not parse bash
-syntax). The command is written to a scratch file for byte-perfect fidelity (no
-quoting layer) and run via `nu -c "^bash <file>"` — the `-c` body is only the
-fixed `^bash <file>` dispatcher, never the user's program, so there is no inline
-shell-program seam. NO `-l` login: no per-call login-profile re-source (that
-coupled every command to nu-login-startup health); PATH is inherited from the
-launched session. External exit code and stdout/stderr pass through faithfully.
+Contract (agent-env prompt, BASH-TOOL ROUTING CONTRACT): the command runs under
+yazelix's OWN configured-nushell launcher `shells/posix/yazelix_nu.sh`, so a
+Bash-tool command sees the SAME environment as an interactive yazelix nu pane —
+config.nu + the user shell_nu.nu + generated initializers + the yzx extern
+bridge, with PATH re-derived from the LIVE profile by runtime_env.sh (no stale
+store-hash). The launcher execs `nu --login --config <generated> -c "^bash
+<file>"`; bash stays the inner POSIX executor (nu does not parse bash syntax).
+The command is written to a scratch file for byte-perfect fidelity (no quoting
+layer); the `-c` body is only the fixed `^bash <file>` dispatcher, never the
+user's program. External exit code and stdout/stderr pass through faithfully.
+(Earlier revisions ran a BARE `nu` — `-l -c` or `-c` — which loaded none of the
+yazelix config; running the configured launcher is the fix.)
 
 Composition: rtk's rewrite is applied INTERNALLY (this hook invokes
 `rtk hook claude` on the same input and wraps its updated command). Whatever
@@ -79,7 +83,19 @@ def main():
     f = tempfile.NamedTemporaryFile("w", dir=scratch, suffix=".sh", delete=False)
     f.write(new_cmd)
     f.close()
-    allow(f'nu -c "^bash {f.name}"')
+
+    # Route through yazelix's own configured-nushell launcher so the command runs
+    # in the SAME environment as an interactive yazelix nu pane: config.nu + the
+    # user shell_nu.nu + generated initializers + the yzx extern bridge, with PATH
+    # re-derived from the LIVE profile by runtime_env.sh (so no stale store-hash).
+    # It execs `nu --login --config <generated> -c "^bash <file>"`; the scratch
+    # file keeps the payload byte-exact. Fall back to bare nu only if the launcher
+    # is absent (fail-open still catches anything else).
+    nush = os.path.expanduser("~/.nix-profile/shells/posix/yazelix_nu.sh")
+    if os.path.isfile(nush):
+        allow(f'sh {nush} -c "^bash {f.name}"')
+    else:
+        allow(f'nu -c "^bash {f.name}"')
 
 
 if __name__ == "__main__":
