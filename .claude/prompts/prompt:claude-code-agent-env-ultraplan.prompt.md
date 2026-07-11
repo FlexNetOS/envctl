@@ -235,9 +235,14 @@ profile). Restore the archived block from
 `~/.claude/archive/20260707T111730Z/envctl-home-claude/CLAUDE.md` as a superset edit via the
 envctl repo. Acceptance: the mandate text present at HEAD + `icm --version` `pass` row.
 
-CODEX INHERITANCE: author the six-row init block as a self-contained section so
-`.codex/prompts/` can inherit it verbatim (the codex v3 prompt has zero substrate wiring — no
-rtk, git-kb, grit, icm, meta, or weave anywhere in its 2,491 lines).
+CODEX INHERITANCE: the six-row init block ships as
+`.codex/prompts/prompt:substrate-init.inherit.md` for verbatim inclusion. SIBLING HARNESS: the
+codex half is owned by the `agent-env-codex` skill (managed via `agent-skills/agent-env-codex/`
++ agent-env.lock; its polished codex prompt carries substrate wiring natively — branch
+`codex/harness-prompt-polish` until merged). Shared contracts that MUST stay aligned across
+both halves: the six-substrate init table, session-toggle doctrine (`/permissions` is the live
+authority, never hard-coded lockouts), nix/yazelix profile frontdoors, and `rtk meta git`
+fleet routing. A change to a shared contract lands in BOTH skills or not at all.
 
 ## STATUS SURFACES — four layers, superset-only, prove renders live
 

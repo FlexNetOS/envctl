@@ -83,6 +83,24 @@ else
   row "yzx agent init preview" "yzx agent init --repo $REPO" fail "exit $? — run interactively for the failing step"
 fi
 
+# 8b. skill body byte-identical to the source prompt (regeneration contract)
+PROMPT="$REPO/.claude/prompts/prompt:claude-code-agent-env-ultraplan.prompt.md"
+SKILL="$REPO/.claude/skills/agent-env-claude/SKILL.md"
+if python3 - "$PROMPT" "$SKILL" <<'PYCHK'
+import sys
+p = open(sys.argv[1]).read(); s = open(sys.argv[2]).read()
+sys.exit(0 if p[p.index("## ROLE"):] in s else 1)
+PYCHK
+then row "skill == prompt (from ROLE)" "python3 substring check" pass "byte-identical"
+else row "skill == prompt (from ROLE)" "python3 substring check" fail "skill stale — regenerate from the prompt"; fi
+
+# 8c. no unfinished markers in the skill dir (validate.sh discipline)
+if grep -RInE "TODO|PLACEHOLDER" "$REPO/.claude/skills/agent-env-claude" --exclude=phase0.sh -q 2>/dev/null; then
+  row "no unfinished markers" "grep -RInE TODO|PLACEHOLDER" fail "marker found"
+else
+  row "no unfinished markers" "grep -RInE TODO|PLACEHOLDER" pass "clean"
+fi
+
 # 8. ICM mandate present in the agent-env contract (Phase 2 acceptance)
 if grep -qi "icm" /home/flexnetos/meta/src/envctl/home/.claude/CLAUDE.md 2>/dev/null \
    && ! grep -q "is not installed on this workstation" /home/flexnetos/meta/src/envctl/home/.claude/CLAUDE.md 2>/dev/null; then
