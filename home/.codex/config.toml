@@ -152,6 +152,11 @@ persistence = "save-all"
 [mcp_servers.exa]
 url = "https://mcp.exa.ai/mcp"
 
+[mcp_servers.gitkb]
+command = "/home/flexnetos/.nix-profile/bin/git-kb"
+args = ["mcp", "--force"]
+env = { GITKB_ROOT = "/home/flexnetos/meta" }
+
 [memories]
 disable_on_external_context = false
 generate_memories = true
