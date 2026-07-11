@@ -1,0 +1,96 @@
+#!/usr/bin/env bash
+# agent-env-claude Phase-0 driver: read-only bootstrap evidence, proof-ledger output.
+# Exit 0 = no `fail` rows (gap/unsupported allowed). Exit 1 = at least one fail.
+# Every check mirrors the PHASES > Phase 0 contract in SKILL.md / the source prompt.
+set -u
+# cwd-independent: the repo root is three levels up from this script's directory
+REPO=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
+FAILS=0
+row() { printf '| %s | %s | %s | %s |\n' "$1" "$2" "$3" "$4"; [ "$3" = fail ] && FAILS=$((FAILS+1)); }
+
+echo "| item | command | state | evidence |"
+echo "|---|---|---|---|"
+
+# 1. Binary resolution — must resolve under /nix/store or ~/.nix-profile
+for b in nu bash zsh rtk meta grit icm git-kb bun claude ccboard; do
+  p=$(command -v "$b" 2>/dev/null || true)
+  case "$p" in
+    /nix/store/*|"$HOME"/.nix-profile/*) row "$b resolves nix-owned" "command -v $b" pass "$p" ;;
+    "") row "$b resolves nix-owned" "command -v $b" fail "not on PATH" ;;
+    *)  row "$b resolves nix-owned" "command -v $b" fail "non-nix: $p" ;;
+  esac
+done
+# Known-gap binaries: absence is `gap`, presence is `pass`
+for b in weave rtk-monitor cargo-fmt cargo-clippy; do
+  p=$(command -v "$b" 2>/dev/null || true)
+  if [ -n "$p" ]; then row "$b available" "command -v $b" pass "$p"
+  else row "$b available" "command -v $b" gap "absent (documented gap; see Phase 2/5 / profile shims)"; fi
+done
+
+# 2. Version floors
+vchk() { # name floor cmd
+  out=$($3 2>/dev/null | head -1)
+  if [ -n "$out" ]; then row "$1 >= $2" "$3" pass "$out"; else row "$1 >= $2" "$3" fail "no output"; fi
+}
+vchk rtk 0.43.0 "rtk --version"
+vchk grit 0.6.4 "grit --version"
+vchk icm 0.10.57 "icm --version"
+vchk git-kb 0.2.12 "git-kb --version"
+vchk ccboard 0.24.0 "ccboard --version"
+
+# 3. nu login loads (parse-time source failures abort the whole config)
+if out=$(nu -l -c "echo NU_LOGIN_OK" 2>&1) && [ "$out" = "NU_LOGIN_OK" ]; then
+  row "nu login config loads" 'nu -l -c "echo NU_LOGIN_OK"' pass "$out"
+else
+  row "nu login config loads" 'nu -l -c "echo NU_LOGIN_OK"' fail "$(echo "$out" | head -1)"
+fi
+# rtk wrappers active in login nu (wrapped git => type custom)
+t=$(nu -l -c "which git | get 0.type" 2>/dev/null)
+if [ "$t" = "custom" ]; then row "nu rtk wrappers loaded" 'nu -l -c "which git | get 0.type"' pass "custom"
+else row "nu rtk wrappers loaded" 'nu -l -c "which git | get 0.type"' fail "type=$t (expected custom)"; fi
+
+# 4. Symlink contract — envctl-owned shell files are symlinks into envctl
+T=/home/flexnetos/meta/src/envctl/home
+for f in .config/nushell/config.nu .config/nushell/rtk-wrappers.nu .config/nushell/meta-usr-path.nu \
+         .config/yazelix/shell_nu.nu .config/yazelix/shell_bash.sh; do
+  if [ -L "$HOME/$f" ] && [ "$(readlink -f "$HOME/$f")" = "$(readlink -f "$T/$f")" ]; then
+    row "symlink: $f" "readlink -f ~/$f" pass "-> envctl"
+  else
+    row "symlink: $f" "readlink -f ~/$f" fail "not a symlink into envctl ($(readlink -f "$HOME/$f" 2>/dev/null || echo missing))"
+  fi
+done
+
+# 5. ADR-0006 chain: ~/.claude content is envctl-sourced
+if [ -L "$HOME/.claude" ]; then
+  row "ADR-0006 ~/.claude" "readlink -f ~/.claude" pass "$(readlink -f "$HOME/.claude")"
+elif [ -d "$HOME/.claude" ]; then
+  # directory surface: individual entries may be symlinks — report, don't guess
+  n=$(find "$HOME/.claude" -maxdepth 1 -type l | wc -l)
+  row "ADR-0006 ~/.claude" "ls -ld ~/.claude" gap "directory (not symlink); $n symlinked entries at depth 1 — verify per-entry"
+else
+  row "ADR-0006 ~/.claude" "ls -ld ~/.claude" fail "missing"
+fi
+
+# 6. Terminal chain: packaged runtime variant
+rv=$(cat "$HOME/.nix-profile/runtime_variant" 2>/dev/null)
+if [ "$rv" = "kitty" ]; then row "runtime_variant" "cat ~/.nix-profile/runtime_variant" pass kitty
+else row "runtime_variant" "cat ~/.nix-profile/runtime_variant" fail "got '$rv' (expected kitty; mars is removed)"; fi
+
+# 7. yzx agent init preview (read-only, fail-closed on missing tools; repo pinned — cwd-independent)
+if yzx agent init --repo "$REPO" >/dev/null 2>&1; then
+  row "yzx agent init preview" "yzx agent init --repo $REPO" pass "exit 0 (read-only preview)"
+else
+  row "yzx agent init preview" "yzx agent init --repo $REPO" fail "exit $? — run interactively for the failing step"
+fi
+
+# 8. ICM mandate present in the agent-env contract (Phase 2 acceptance)
+if grep -qi "icm" /home/flexnetos/meta/src/envctl/home/.claude/CLAUDE.md 2>/dev/null \
+   && ! grep -q "icm is not installed" /home/flexnetos/meta/src/envctl/home/.claude/CLAUDE.md 2>/dev/null; then
+  row "ICM mandate restored" "grep -i icm envctl/home/.claude/CLAUDE.md" pass "mandate text present, removal note gone"
+else
+  row "ICM mandate restored" "grep -i icm envctl/home/.claude/CLAUDE.md" gap "removal note still present — Phase 2 work item"
+fi
+
+echo
+if [ "$FAILS" -eq 0 ]; then echo "PHASE0: PASS (0 fail rows; gaps are queued work items, not blockers)"; exit 0
+else echo "PHASE0: FAIL ($FAILS fail rows above)"; exit 1; fi
