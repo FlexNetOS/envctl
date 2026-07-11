@@ -15,6 +15,7 @@ VALIDATOR=/home/flexnetos/.codex/skills/.system/skill-creator/scripts/quick_vali
 
 for path in "$ORIG" "$FULL" "$SNAPSHOT" "$HARNESS" "$SKILL_ROOT/SKILL.md" \
   "$SKILL_ROOT/references/coverage-map.md" \
+  "$SKILL_ROOT/references/github-execution-policy.md" \
   "$SKILL_ROOT/references/ownership-map.md" \
   "$SKILL_ROOT/references/runbook-cli-contract.md" \
   "$SKILL_ROOT/agents/openai.yaml" "$DURABLE" "$ACTIVE" "$PROJECT_CODEX" "$PROJECT_CLAUDE"; do
@@ -31,7 +32,11 @@ fi
 grep -Fq 'name: agent-env-codex' "$SKILL_ROOT/SKILL.md"
 grep -Fq '/agent-env-codex' "$SKILL_ROOT/SKILL.md"
 grep -Fq 'references/source-prompt.md' "$SKILL_ROOT/SKILL.md"
+grep -Fq 'references/github-execution-policy.md' "$SKILL_ROOT/SKILL.md"
 grep -Fq 'Use $agent-env-codex' "$SKILL_ROOT/agents/openai.yaml"
+grep -Fq 'Never cherry-pick.' "$SKILL_ROOT/references/github-execution-policy.md"
+grep -Fq 'Permission integrity' "$SKILL_ROOT/references/github-execution-policy.md"
+grep -Fq 'Unfinished-work closure' "$SKILL_ROOT/references/github-execution-policy.md"
 
 printf '\n== skill source/projection identity ==\n'
 diff -qr "$DURABLE" "$PROJECT_CODEX"

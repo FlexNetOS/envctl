@@ -202,6 +202,28 @@ fn routeable_models_are_sol_terra_luna_or_explicit_fallbacks() {
         let agent = parse_toml(&root.join("home/.codex/agents").join(name));
         assert_eq!(string_at(&agent, "model"), Some(expected), "{name}");
     }
+
+    for entry in fs::read_dir(root.join(".codex/agents")).unwrap() {
+        let path = entry.unwrap().path();
+        if path.extension().and_then(|value| value.to_str()) != Some("toml") {
+            continue;
+        }
+        let agent = parse_toml(&path);
+        assert_ne!(
+            string_at(&agent, "model"),
+            Some("gpt-5.5"),
+            "{} retains a routeable GPT-5.5 planning assignment",
+            path.display()
+        );
+    }
+    for (name, expected) in [
+        ("plan-architect.toml", "gpt-5.6-sol"),
+        ("plan-analyst.toml", "gpt-5.6-terra"),
+        ("plan-autoresearch-loop-auditor.toml", "gpt-5.6-luna"),
+    ] {
+        let agent = parse_toml(&root.join(".codex/agents").join(name));
+        assert_eq!(string_at(&agent, "model"), Some(expected), "{name}");
+    }
 }
 
 #[test]
@@ -223,6 +245,8 @@ fn retired_roots_and_tracked_model_cache_are_absent() {
     assert!(config.contains("[projects.\"/home/flexnetos/meta/src/envctl\"]"));
     assert!(config.contains("image_generation = true"));
     assert!(!config.contains("imagegenext"));
+    assert!(config.contains("shell_zsh_fork = false"));
+    assert!(config.contains("unified_exec_zsh_fork = false"));
 
     let baseline =
         fs::read_to_string(root.join("manifest/components.d/codex-global-baseline.toml")).unwrap();
@@ -251,5 +275,87 @@ fn retired_roots_and_tracked_model_cache_are_absent() {
             Some("proved"),
             "{model} must reflect the live 2026-07-11 proof"
         );
+    }
+}
+
+#[test]
+fn one_skill_owns_session_controls_and_github_execution_policy() {
+    let root = envctl_root();
+    assert!(
+        !root.join("home/.codex/skills/harness-ops").exists(),
+        "a second top-level harness skill must not compete with /agent-env-codex"
+    );
+    assert!(
+        !root.join("agent-harness-skills").exists(),
+        "split status/full/restricted/toggle skill products must not return"
+    );
+
+    let skill = fs::read_to_string(root.join("agent-skills/agent-env-codex/SKILL.md")).unwrap();
+    assert!(skill.contains("references/github-execution-policy.md"));
+    assert!(skill.contains("never cherry-pick"));
+    assert!(skill.contains("Never change `/permissions`"));
+
+    let github_policy = fs::read_to_string(
+        root.join("agent-skills/agent-env-codex/references/github-execution-policy.md"),
+    )
+    .unwrap();
+    for required in [
+        "Strict upgrade only",
+        "Never cherry-pick",
+        "No stranded commits",
+        "Unfinished-work closure",
+        "Permission integrity",
+    ] {
+        assert!(github_policy.contains(required), "missing {required}");
+    }
+
+    let library = fs::read_to_string(root.join("home/agent-env/codex-harness/src/lib.rs")).unwrap();
+    for required in [
+        "SESSION_CAPABILITIES",
+        "session_capability_status",
+        "set_session_capability",
+        "set_session_capability_preset",
+        "CODEX_THREAD_ID",
+    ] {
+        assert!(library.contains(required), "missing {required}");
+    }
+}
+
+#[test]
+fn persistent_runner_jobs_have_isolated_cargo_targets() {
+    let root = envctl_root();
+    let workflow = fs::read_to_string(root.join(".github/workflows/ci.yml")).unwrap();
+    assert!(workflow.contains("CARGO_TARGET_DIR"));
+    assert!(workflow.contains("runner.temp"));
+    assert!(workflow.contains("github.run_id"));
+    assert!(workflow.contains("github.run_attempt"));
+    assert!(workflow.contains("github.job"));
+}
+
+#[test]
+fn provider_and_rtk_routes_preserve_supervised_execution() {
+    let root = envctl_root();
+    let providers =
+        fs::read_to_string(root.join("home/agent-env/codex-harness/config/policy/providers.toml"))
+            .unwrap();
+    for required in [
+        "--safe-mode",
+        "--tools \\\"\\\"",
+        "--strict-mcp-config",
+        "--disable-slash-commands",
+        "--no-chrome",
+        "--no-session-persistence",
+    ] {
+        assert!(providers.contains(required), "missing {required}");
+    }
+    assert!(!providers.contains("--permission-mode plan"));
+
+    for name in ["no-nested-agents.rules", "parallel-runner.rules"] {
+        let harness =
+            fs::read_to_string(root.join("home/agent-env/codex-harness/rules").join(name)).unwrap();
+        let projection = fs::read_to_string(root.join("home/.codex/rules").join(name)).unwrap();
+        assert_eq!(harness, projection, "{name} mirrors diverged");
+        assert!(harness.contains("pattern = [\"rtk\", \"codex\""));
+        assert!(harness.contains("pattern = [\"rtk\", \"claude\""));
     }
 }

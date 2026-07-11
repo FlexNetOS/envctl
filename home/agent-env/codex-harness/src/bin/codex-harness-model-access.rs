@@ -1,8 +1,9 @@
 #![forbid(unsafe_code)]
 
-use anyhow::{Result, anyhow};
+use anyhow::{anyhow, Result};
+use codex_harness::profile_rtk_command;
 use codex_harness::{append_ledger, codex_harness_dir, redact, state_dir, utc_now};
-use serde_json::{Value, json};
+use serde_json::{json, Value};
 use std::collections::{BTreeMap, BTreeSet};
 use std::env;
 use std::fs;
@@ -51,12 +52,9 @@ const DEFAULT_PROBE_MODELS: &[&str] = &[
     "gpt-4o-mini",
 ];
 
-const MUST_PASS_MODELS: &[&str] = &["gpt-5.4", "gpt-5.4-mini", "gpt-5.3-codex-spark"];
+const MUST_PASS_MODELS: &[&str] = &["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"];
 
 const ACCOUNT_GATED_MODELS: &[&str] = &[
-    "gpt-5.6-sol",
-    "gpt-5.6-terra",
-    "gpt-5.6-luna",
     "gpt-5.4-nano",
     "gpt-5.3-codex",
     "o3",
@@ -149,17 +147,19 @@ fn marker_for(model: &str) -> String {
 fn probe_model(model: &str) -> Result<Value> {
     let marker = marker_for(model);
     let prompt = format!("Do not use tools. Reply exactly: {marker}");
-    let mut command = Command::new("codex");
-    command.args([
-        "exec",
-        "--ephemeral",
-        "--json",
-        "--color",
-        "never",
-        "-m",
-        model,
-        &prompt,
-    ]);
+    let mut command = profile_rtk_command(
+        "codex",
+        &[
+            "exec",
+            "--ephemeral",
+            "--json",
+            "--color",
+            "never",
+            "-m",
+            model,
+            &prompt,
+        ],
+    )?;
     remove_secret_env(&mut command);
     let output = command.output()?;
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
@@ -257,18 +257,14 @@ fn evaluate_proof(probes: &[Value]) -> Value {
         .collect::<Vec<_>>();
     let account_gated = ACCOUNT_GATED_MODELS
         .iter()
-        .map(|model| {
-            let gated = by_model
-                .get(*model)
-                .and_then(|probe| probe.get("account_gated"))
+        .filter_map(|model| {
+            let probe = by_model.get(*model)?;
+            let gated = probe
+                .get("account_gated")
                 .and_then(Value::as_bool)
                 .unwrap_or(false);
-            let ok = by_model
-                .get(*model)
-                .and_then(|probe| probe.get("ok"))
-                .and_then(Value::as_bool)
-                .unwrap_or(false);
-            json!({"model": model, "ok": ok, "account_gated": gated})
+            let ok = probe.get("ok").and_then(Value::as_bool).unwrap_or(false);
+            Some(json!({"model": model, "ok": ok, "account_gated": gated}))
         })
         .collect::<Vec<_>>();
     let must_pass_ok = must_pass
@@ -380,24 +376,18 @@ mod tests {
             )
             .collect::<Vec<_>>();
         let evaluation = evaluate_proof(&probes);
-        assert!(
-            evaluation
-                .get("must_pass_ok")
-                .and_then(Value::as_bool)
-                .unwrap_or(false)
-        );
-        assert!(
-            evaluation
-                .get("account_gated_documented")
-                .and_then(Value::as_bool)
-                .unwrap_or(false)
-        );
-        assert!(
-            evaluation
-                .get("ok")
-                .and_then(Value::as_bool)
-                .unwrap_or(false)
-        );
+        assert!(evaluation
+            .get("must_pass_ok")
+            .and_then(Value::as_bool)
+            .unwrap_or(false));
+        assert!(evaluation
+            .get("account_gated_documented")
+            .and_then(Value::as_bool)
+            .unwrap_or(false));
+        assert!(evaluation
+            .get("ok")
+            .and_then(Value::as_bool)
+            .unwrap_or(false));
     }
 
     #[test]
@@ -414,17 +404,33 @@ mod tests {
             }))
             .collect::<Vec<_>>();
         let evaluation = evaluate_proof(&probes);
-        assert!(
-            !evaluation
-                .get("account_gated_documented")
-                .and_then(Value::as_bool)
-                .unwrap_or(true)
-        );
-        assert!(
-            !evaluation
-                .get("ok")
-                .and_then(Value::as_bool)
-                .unwrap_or(true)
+        assert!(!evaluation
+            .get("account_gated_documented")
+            .and_then(Value::as_bool)
+            .unwrap_or(true));
+        assert!(!evaluation
+            .get("ok")
+            .and_then(Value::as_bool)
+            .unwrap_or(true));
+    }
+
+    #[test]
+    fn explicit_mandatory_only_probe_does_not_invent_optional_failures() {
+        let probes = MUST_PASS_MODELS
+            .iter()
+            .map(|model| probe(model, true, false))
+            .collect::<Vec<_>>();
+        let evaluation = evaluate_proof(&probes);
+        assert!(evaluation
+            .get("ok")
+            .and_then(Value::as_bool)
+            .unwrap_or(false));
+        assert_eq!(
+            evaluation
+                .get("account_gated")
+                .and_then(Value::as_array)
+                .map(Vec::len),
+            Some(0)
         );
     }
 }

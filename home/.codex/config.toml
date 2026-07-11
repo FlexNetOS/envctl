@@ -104,12 +104,12 @@ runtime_metrics = true
 secret_auth_storage = true
 shell_snapshot = true
 shell_tool = true
-shell_zsh_fork = true
+shell_zsh_fork = false
 sleep_tool = true
 standalone_web_search = true
 terminal_visualization_instructions = true
 unified_exec = true
-unified_exec_zsh_fork = true
+unified_exec_zsh_fork = false
 use_agent_identity = true
 
 [history]

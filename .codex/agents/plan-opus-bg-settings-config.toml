@@ -1,6 +1,6 @@
 name = "plan-opus-bg-settings-config"
 description = "Fleet settings/config hygiene lane for Planning Engineer. Opus 4.8 max-effort background lane; keeps the foreground orchestrator interactive."
-model = "gpt-5.5"
+model = "gpt-5.6-terra"
 model_reasoning_effort = "xhigh"
 
 # Codex custom subagent layer for the PromptHub-aligned planning loop. This is a dispatcher shim:

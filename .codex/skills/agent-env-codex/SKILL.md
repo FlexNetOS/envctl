@@ -30,7 +30,7 @@ The prompt is the specification. This skill is the compact execution controller.
 
 Project projections are `.codex/skills/agent-env-codex/` and `.claude/skills/agent-env-codex/`. The active materialization is `${CODEX_HOME:-/home/flexnetos/.codex}/skills/agent-env-codex/`. All must remain byte-identical to the durable source.
 
-Read `references/coverage-map.md` to navigate every controller and Phase 0-11 contract, `references/ownership-map.md` before editing, and `references/runbook-cli-contract.md` when changing initialization, routing, automation, shell behavior, or hardware-aware validation. The coverage map never replaces the complete snapshot.
+Read `references/coverage-map.md` to navigate every controller and Phase 0-11 contract, `references/ownership-map.md` before editing, `references/runbook-cli-contract.md` when changing initialization, routing, automation, shell behavior, or hardware-aware validation, and `references/github-execution-policy.md` before any branch, commit, worktree, PR, CI, merge, or cleanup operation. The coverage map never replaces the complete snapshot.
 
 ## Execute the rebuild or edit
 
@@ -43,7 +43,8 @@ Read `references/coverage-map.md` to navigate every controller and Phase 0-11 co
 7. **Preserve session toggles.** `/permissions` is the live Codex sandbox/approval/network authority. Harness capability states and model lanes are session-scoped, never hard-coded as permanent lockouts.
 8. **Use the profile frontdoors.** Yazelix/Nix owns binaries and runtime delivery. Route fleet git through `rtk meta git`; use `rtk meta exec -- git <command>` for unlisted fleet git operations.
 9. **Validate the real implementation.** Run `scripts/validate.sh <envctl-root>`. Add focused tests for changed behavior and run live CLI probes for any frontdoor or automation claim.
-10. **Finish with proof.** Report archives, exact changed owners, tests, prompt hashes, skill validation, git status, and PR state. A runtime receipt alone is not completion.
+10. **Execute GitHub work to completion.** Follow `references/github-execution-policy.md`. Reconcile commits by inspecting and re-implementing their changes in the current branch; never cherry-pick. Treat every surfaced stale branch, orphaned worktree, unpushed commit, open superseded PR, failed check, or unmerged change as unfinished work that remains in scope until integrated or conclusively proven unrelated.
+11. **Finish with proof.** Report archives, exact changed owners, tests, prompt hashes, skill validation, pushed commits, merged PR state, branch/worktree cleanup, open PR inventory, and final git status. A runtime receipt, local commit, pushed branch, or auto-merge request alone is not completion.
 
 ## Internal harness capabilities
 
@@ -62,5 +63,8 @@ Keep these capabilities inside this one skill and its references/scripts:
 - Never read, print, paste, or commit secrets.
 - Never silently initialize GitKB, Grit, ICM, Meta, RTK, or Weave because a session started.
 - Never create a weaker replacement prompt, split this one-skill product into competing top-level skills, or create a second harness owner.
+- Never cherry-pick, force-push, discard, comment out, or remove an existing capability to make reconciliation easier. Preserve the stronger behavior and manually integrate every required delta into the current source.
+- Never change `/permissions`, approval policy, sandbox mode, network policy, or an `Allow`/approval setting to bypass a failing test, policy, warning, or integration problem. Fix the owning source or report the exact external blocker.
+- Never leave a task commit only local or only pushed. Commit all intended changes, push them, merge the PR after required checks pass, and remove merged task branches/worktrees only after archiving and proving their work is represented.
 - Never restore GPT-5.5 planning routes or tracked model-cache authority. Use Sol for high-stakes work, Terra for professional workhorse tasks, and Luna for simple high-volume tasks.
 - Never claim success without running the relevant tests and live frontdoor probes.

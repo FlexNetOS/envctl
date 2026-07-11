@@ -25,7 +25,7 @@
 | Phase 5 browser/computer use | Complete snapshot; policies/rules/binaries owner rows. |
 | Phase 6 memory/database | Complete snapshot; policies/rules/binaries owner rows. |
 | Phase 7 providers/network/model fabric | Complete snapshot; model/policy owner rows. |
-| Phase 8 GitHub/worktrees | Complete snapshot; finish proof and repo hygiene. |
+| Phase 8 GitHub/worktrees | Complete snapshot; `github-execution-policy.md`; finish proof and repo hygiene. |
 | Phase 9 skills/plugins/MCP | Complete snapshot; agent-env convergence. |
 | Phase 10 parallel execution | Complete snapshot; agents/teams/rules owner rows. |
 | Phase 11 final verification | `validate.sh` prompt reviews plus complete Cargo test suite. |

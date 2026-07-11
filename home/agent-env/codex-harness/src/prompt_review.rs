@@ -1,6 +1,6 @@
 #![forbid(unsafe_code)]
 
-use anyhow::{Context, Result, anyhow};
+use anyhow::{anyhow, Context, Result};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -242,12 +242,10 @@ Do not claim complete if any command failed; record fail/unsupported/gap and con
         let text = format!("{}\nStay read-only\n", valid_fixture());
         let report = review_full_access_prompt_text(&text);
         assert!(!report.ok);
-        assert!(
-            report
-                .forbidden_findings
-                .iter()
-                .any(|finding| finding.category == "read_only_mode")
-        );
+        assert!(report
+            .forbidden_findings
+            .iter()
+            .any(|finding| finding.category == "read_only_mode"));
     }
 
     #[test]
@@ -278,10 +276,8 @@ Do not claim complete if any command failed; record fail/unsupported/gap and con
         );
         let report = review_full_access_prompt_text(&text);
         assert!(!report.ok);
-        assert!(
-            report
-                .missing_phase11_anchors
-                .contains(&"failure_truth_mode".to_string())
-        );
+        assert!(report
+            .missing_phase11_anchors
+            .contains(&"failure_truth_mode".to_string()));
     }
 }

@@ -1,6 +1,6 @@
 name = "plan-prompt-architecture-auditor"
 description = "Reviews prompt/tool/model/instruction surfaces as architecture and emits prompt-architecture findings with ADR candidates/no-ADR rationale."
-model = "gpt-5.5"
+model = "gpt-5.6-sol"
 model_reasoning_effort = "xhigh"
 
 developer_instructions = """
