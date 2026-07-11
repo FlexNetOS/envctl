@@ -75,6 +75,7 @@ Keep these capabilities inside this one skill and its references/scripts:
 - Never target an older toolchain because it is easier. Use the latest available Nix/Yazelix/fenix/Bun-owned binaries as the primary lane and run MSRV or pinned versions only as additional compatibility gates.
 - Never call a Yazelix change complete before running the correct owner-specific `yzx update` route and proving `status`, `inspect`, `doctor`, generated-state convergence, and plugin connectivity.
 - Never establish a second durable plugin/add-on owner. Consolidate Yazelix plugin and add-on authority in `/home/flexnetos/meta/src/yazelix-yazi-assets`, preserving every existing behavior until migration proof permits owner cleanup.
+- Never leave completed or idle subagents running. Capture the deliverable, close the worker, and finish with an empty harness-owned roster; respawn a fresh bounded worker when later work needs one.
 - Never claim FlexNetOS organization SSH access from a personal greeting alone. Prove the `drdave-flexnetos` SSH identity, active organization membership, and an SSH read against a FlexNetOS repository without reading private keys.
 - Never add macOS or Windows GitHub Actions jobs. Use Ubuntu/Linux hosted or FlexNetOS Linux self-hosted runners.
 - Never remove a working capability. Required post-merge branch/worktree cleanup is lifecycle cleanup, not capability removal.

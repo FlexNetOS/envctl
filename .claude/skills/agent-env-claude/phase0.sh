@@ -242,7 +242,8 @@ else
 fi
 # 8o. yazelix plugin consolidation owner present + org-SSH (all plugins belong here)
 PO=/home/flexnetos/meta/src/yazelix-yazi-assets
-if [ -d "$PO/.git" ] && git -C "$PO" remote get-url origin 2>/dev/null | grep -q '^git@github.com:FlexNetOS/'; then
+ORIGIN=$(cd /home/flexnetos/meta && rtk meta --json exec --include yazelix-yazi-assets -- git -C "$PO" remote get-url origin 2>/dev/null | jq -r '.results[0].stdout // ""')
+if [ -d "$PO/.git" ] && printf '%s\n' "$ORIGIN" | grep -q '^git@github.com:FlexNetOS/'; then
   row "yazelix plugin owner" "ls yazelix-yazi-assets + remote" pass "consolidation owner present, FlexNetOS org SSH"
 else
   row "yazelix plugin owner" "ls yazelix-yazi-assets" gap "plugin consolidation owner missing or not org-SSH"

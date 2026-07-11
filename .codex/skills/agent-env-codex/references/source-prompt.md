@@ -456,6 +456,11 @@ subagents become an unbounded token/time sink.
   expected JSON or file artifact, and a source-evidence requirement.
 - If a subagent pool hangs or returns no artifacts, stop that pool, record the
   blocker, and continue with bounded local worker slices. Do not wait for hours.
+- Close or terminate every subagent as soon as its deliverable is captured or
+  it becomes idle. A completed/idle agent left running is a budget and
+  concurrency leak; do not keep pools warm "just in case". End each run with an
+  empty harness-owned roster and spawn a fresh bounded worker if later work
+  needs one.
 - Preserve context in a compact source ledger:
   `source_path | type | authority_level | relevant_finding | proof`.
 - Completion requires the prompt diff plus verification output, not a narrative
@@ -879,10 +884,10 @@ Run and capture exact output:
 - nix profile list
 - nix profile history, if available
 - nix-store -q --roots "$(readlink -f "$(command -v codex)")", if path is in /nix/store
-- git -C "$PROJECT_ROOT" status --short --branch
-- git -C "$PROJECT_ROOT" rev-parse --show-toplevel
-- git -C "$PROJECT_ROOT" branch --show-current
-- git -C "$PROJECT_ROOT" remote -v
+- rtk meta exec --include <repo> -- git -C "$PROJECT_ROOT" status --short --branch
+- rtk meta exec --include <repo> -- git -C "$PROJECT_ROOT" rev-parse --show-toplevel
+- rtk meta exec --include <repo> -- git -C "$PROJECT_ROOT" branch --show-current
+- rtk meta exec --include <repo> -- git -C "$PROJECT_ROOT" remote -v
 
 Record missing commands as facts, not failures, unless they block the harness.
 

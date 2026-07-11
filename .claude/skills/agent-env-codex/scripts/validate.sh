@@ -61,10 +61,16 @@ if grep -Fq 'raw `git` is only' "$FULL"; then
   echo 'legacy raw-git exception remains in prompt' >&2
   exit 6
 fi
+if grep -Eq '^- git -C ' "$FULL"; then
+  echo 'legacy executable raw-git probe remains in prompt' >&2
+  exit 6
+fi
 if grep -Fq 'Subagents are optional' "$FULL"; then
   echo 'legacy optional-subagent downgrade remains in prompt' >&2
   exit 6
 fi
+grep -Fq 'empty harness-owned roster' "$FULL"
+grep -Fq 'Never leave completed or idle subagents running.' "$SKILL_ROOT/SKILL.md"
 
 printf '\n== Bun/Bunx skill command policy ==\n'
 python3 "$SKILL_ROOT/scripts/check-bun-command-policy.py" "$ROOT"

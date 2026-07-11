@@ -425,6 +425,7 @@ fn agent_env_codex_requires_latest_yazelix_convergence_and_plugin_ownership() {
         "latest available Nix/Yazelix/fenix/Bun-owned binaries",
         "yzx update",
         "yazelix-yazi-assets",
+        "Never leave completed or idle subagents running.",
     ] {
         assert!(skill.contains(required), "missing skill contract: {required}");
     }
@@ -460,6 +461,7 @@ fn agent_env_codex_requires_latest_yazelix_convergence_and_plugin_ownership() {
         "The word `optional` means mandatory when attached to work",
         "latest available profile-owned toolchain",
         "plugin and add-on source/package/manifest authority",
+        "empty harness-owned roster",
     ] {
         assert!(prompt.contains(required), "missing prompt contract: {required}");
     }
