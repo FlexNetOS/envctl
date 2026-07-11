@@ -156,6 +156,39 @@ else
   row "worktree/branch sync" "git worktree list + merge-base audit" pass "0 reapable; $INFLIGHT dirty (in-flight, recorded)"
 fi
 
+# 8i. GitHub org configuration surface audit (META DEMAND — read-only inventory, never secret VALUES)
+ORG=FlexNetOS
+num() { gh api "$1" -q "$2" 2>/dev/null | grep -Em1 '^[0-9]+$' || echo 'n/a'; }
+if gh api "orgs/$ORG" >/dev/null 2>&1; then
+  act=$(gh api "orgs/$ORG/actions/permissions" -q '.enabled_repositories' 2>/dev/null | grep -Em1 '^[a-z_]+$' || echo 'n/a')
+  sec=$(num "orgs/$ORG/actions/secrets" '.total_count')
+  rs=$(num "orgs/$ORG/rulesets" 'length')
+  hk=$(num "orgs/$ORG/hooks" 'length')
+  app=$(num "orgs/$ORG/installations" '.total_count')
+  cp=$(num "orgs/$ORG/properties/schema" 'length')
+  cs=$(num "orgs/$ORG/codespaces" '.total_count')
+  row "org config surface audit" "gh api orgs/$ORG/{actions,secrets,rulesets,hooks,installations,properties,codespaces}" gap "actions_perm=$act secrets=$sec rulesets=$rs webhooks=$hk apps=$app custom_props=$cp codespaces=$cs — declare+converge per surface (operator-gated)"
+else
+  row "org config surface audit" "gh api orgs/$ORG" gap "org API unreachable (network/auth) — verify org SSH (drdave-flexnetos, admin:org)"
+fi
+# 8j. org SSH posture (META DEMAND: org SSH for all github management)
+PROTO=$(gh config get git_protocol 2>/dev/null || echo '?')
+LOGIN=$(gh api user -q '.login' 2>/dev/null || echo '?')
+if git -C "$REPO" remote get-url origin 2>/dev/null | grep -q '^git@github.com:'; then SCHEME=ssh; else SCHEME=non-ssh; fi
+if [ "$PROTO" = ssh ] && [ "$SCHEME" = ssh ]; then
+  row "org SSH posture" "gh config git_protocol + remote scheme + gh api user" pass "protocol=ssh remote=ssh login=$LOGIN"
+else
+  row "org SSH posture" "gh config git_protocol + remote scheme" fail "protocol=$PROTO remote=$SCHEME login=$LOGIN (org demands ssh)"
+fi
+# 8k. github skills loaded (governing + toolbox, bunx-normalized)
+GHS=$(ls "$REPO/home/.claude/skills" 2>/dev/null | grep -c '^github')
+NPXLEFT=$(grep -rl 'npx ' "$REPO"/home/.claude/skills/github* 2>/dev/null | wc -l | tr -d ' ')
+if [ "${GHS:-0}" -ge 6 ] && [ "${NPXLEFT:-1}" -eq 0 ]; then
+  row "github skills loaded" "ls home/.claude/skills/github*; grep npx" pass "$GHS skills, 0 bare npx (bunx-normalized)"
+else
+  row "github skills loaded" "ls home/.claude/skills/github*; grep npx" gap "$GHS github skills, $NPXLEFT with bare npx"
+fi
+
 # 9. DISCOVERY rows (adopted from the codex sibling: sweep, don't just regress-test)
 W=$(yzx doctor 2>/dev/null | grep "⚠" | grep -vc Found || true)
 if [ "${W:-0}" -le 1 ]; then row "yzx doctor warnings" "yzx doctor warn-lines" pass "$W warning(s)"
