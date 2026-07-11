@@ -1,0 +1,26 @@
+# Declared team shape: multi-dimension repo deep review (proven: yazelix review 2026-07-11).
+# Contract: lanes run in parallel, read-only, max 6 (Law 6), depth 1; each lane's final
+# message IS its deliverable (structured report, path:line evidence, FIX CANDIDATES ranked).
+name: review-crew
+purpose: deep code research and review of one repo + its worktrees/config/docs
+lanes:
+  - name: core
+    agent: Explore
+    boundary: main repo architecture, build system, packaging
+    artifact: sectioned report, path:line cited, fix candidates ranked by impact
+  - name: config
+    agent: Explore
+    boundary: live config vs source templates (drift audit)
+    artifact: drift table + raw command outputs for runtime claims
+  - name: assets
+    agent: Explore
+    boundary: sibling/dependency repos consumed by the target
+    artifact: consumption/lock-lag audit + branch verdicts
+  - name: worktrees
+    agent: Explore
+    boundary: all worktrees + branch topology
+    artifact: per-worktree verdict (MERGED-REAPABLE / PENDING / NEEDS-DECISION) with raw git output
+  - name: docs
+    agent: Explore
+    boundary: docs vs live runtime (claim -> verified/stale/wrong)
+    artifact: per-doc claim table + doc-fixes ranked by mislead risk

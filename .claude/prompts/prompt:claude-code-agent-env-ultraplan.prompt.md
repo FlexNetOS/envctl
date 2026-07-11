@@ -308,7 +308,7 @@ bulk-read spawns may use `effort: low`; a cheaper model tier for a spawn require
 grant. No tracked cache or transcript claim is a secondary routing authority — the live session
 model is the only truth. (Codex-side equivalent: Sol/Terra/Luna in the sibling's model catalog.)
 
-TEAMS AS DATA: declared team shapes live in `home/.claude/teams/*.yaml` (name, purpose, lanes:
+TEAMS AS DATA: declared team shapes live in `.claude/skills/agent-env-claude/teams/*.yaml` (hand-authored harness data; ~/.claude/teams/ is runtime-owned ephemeral state, gitignored by design) (name, purpose, lanes:
 agent type + boundary + expected artifact per lane). Reuse a declared shape before improvising a
 fan-out; a new recurring shape gets a file, not a one-off.
 
