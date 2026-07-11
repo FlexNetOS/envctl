@@ -209,6 +209,22 @@ else
   row "github skills + Bun policy" "github skill count + check-bun-command-policy.py" fail "$GHS github skills; bun_policy=$BUN_POLICY"
 fi
 
+# 8l. toolchain currency — LATEST nix-owned, no stale rustup/cargo shadow (E0514 class)
+SHADOW=""
+for b in rustc cargo cargo-clippy cargo-fmt rustfmt; do
+  bp=$(command -v "$b" 2>/dev/null || true)
+  case "$bp" in
+    "$HOME"/.nix-profile/*|/nix/store/*) : ;;
+    "") : ;;
+    *) SHADOW="$SHADOW $b=$bp" ;;
+  esac
+done
+if [ -z "$SHADOW" ]; then
+  row "toolchain currency (no shadow)" "command -v rustc cargo cargo-clippy cargo-fmt rustfmt" pass "all nix-owned (latest via profile); no rustup/cargo shadow — E0514 class clear"
+else
+  row "toolchain currency (no shadow)" "command -v rustc cargo …" fail "stale shadow earlier in PATH:$SHADOW — remove shadow, never downgrade nix toolchain (E0514)"
+fi
+
 # 9. DISCOVERY rows (adopted from the codex sibling: sweep, don't just regress-test)
 W=$(yzx doctor 2>/dev/null | grep "⚠" | grep -vc Found || true)
 if [ "${W:-0}" -le 1 ]; then row "yzx doctor warnings" "yzx doctor warn-lines" pass "$W warning(s)"
