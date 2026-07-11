@@ -66,7 +66,7 @@ if [ -f "$GUARD" ]; then
     # Extract the LAST assistant text message from the JSONL
     RESPONSE="$(tail -100 "$JSONL_FILE" 2>/dev/null \
         | jq -r 'select(.type == "assistant") | .message.content[]? | select(.type == "text") | .text' 2>/dev/null \
-        | tail -1)"
+        | tail -40)"
 
     echo "[$(date)] Claude response: $RESPONSE" >> "$LOG"
 
@@ -76,9 +76,9 @@ if [ -f "$GUARD" ]; then
     fi
 
     # Parse PROGRESS / DECISION / BLOCKED lines
-    PROGRESS="$(echo "$RESPONSE" | grep -i '^PROGRESS:' | sed 's/^PROGRESS:[[:space:]]*//' | head -1)"
-    DECISION="$(echo "$RESPONSE" | grep -i '^DECISION:' | sed 's/^DECISION:[[:space:]]*//' | head -1)"
-    BLOCKED="$(echo "$RESPONSE"  | grep -i '^BLOCKED:'  | sed 's/^BLOCKED:[[:space:]]*//'  | head -1)"
+    PROGRESS="$( (echo "$RESPONSE" | grep -i '^PROGRESS:' || true) | sed 's/^[Pp][Rr][Oo][Gg][Rr][Ee][Ss][Ss]:[[:space:]]*//' | head -1)"
+    DECISION="$( (echo "$RESPONSE" | grep -i '^DECISION:' || true) | sed 's/^[Dd][Ee][Cc][Ii][Ss][Ii][Oo][Nn]:[[:space:]]*//' | head -1)"
+    BLOCKED="$( (echo "$RESPONSE"  | grep -i '^BLOCKED:'  || true) | sed 's/^[Bb][Ll][Oo][Cc][Kk][Ee][Dd]:[[:space:]]*//'  | head -1)"
 
     insert_insight() {
         local type="$1"
