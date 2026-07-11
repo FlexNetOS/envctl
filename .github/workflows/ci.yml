@@ -24,6 +24,10 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: "1"        # debuggable backtraces when a CI test panics
+  # Persistent self-hosted runner workspaces are reused across jobs. Isolate
+  # Cargo artifacts by job/run/attempt so nightly, stable, and MSRV metadata
+  # cannot contaminate one another and trigger rustc E0514 failures.
+  CARGO_TARGET_DIR: ${{ runner.temp }}/envctl-${{ github.job }}-${{ github.run_id }}-${{ github.run_attempt }}
   # envctl currently consumes loop_lib::build_command / SpawnSpec from this upgrade branch;
   # setup-meta-deps.sh intentionally defaults to HEAD for callers that do not need it.
   LOOP_LIB_REF: refs/heads/codex/envctl-runner-command-builder
