@@ -30,20 +30,22 @@ The prompt is the specification. This skill is the compact execution controller.
 
 Project projections are `.codex/skills/agent-env-codex/` and `.claude/skills/agent-env-codex/`. The active materialization is `${CODEX_HOME:-/home/flexnetos/.codex}/skills/agent-env-codex/`. All must remain byte-identical to the durable source.
 
-Read `references/coverage-map.md` to navigate every controller and Phase 0-11 contract, `references/ownership-map.md` before editing, and `references/runbook-cli-contract.md` when changing initialization, routing, automation, shell behavior, or hardware-aware validation. The coverage map never replaces the complete snapshot.
+Read `references/coverage-map.md` to navigate every controller and Phase 0-11 contract, `references/ownership-map.md` before editing, `references/runbook-cli-contract.md` when changing initialization, routing, automation, shell behavior, or hardware-aware validation, and `references/github-execution-policy.md` before any branch, commit, worktree, PR, CI, merge, or cleanup operation. Read `references/github-org-and-ccboard.md` before GitHub organization administration or ccboard/Codex/Claude integration. The coverage map never replaces the complete snapshot.
 
 ## Execute the rebuild or edit
 
-1. **Re-anchor.** Read the active `AGENTS.md` chain and `/home/flexnetos/.codex/RULES.md`. Work from a clean current envctl worktree.
+1. **Re-anchor.** Read the active `AGENTS.md` chain and `/home/flexnetos/.codex/RULES.md`. Fetch through RTK/Meta, verify the SSH remote, and work from a clean current Meta-managed envctl worktree based on current `origin/develop` or the repository's protected trunk.
 2. **Archive.** Archive every existing target before modifying or replacing it. Never treat git history alone as the requested archive.
 3. **Load the whole specification.** Read `references/source-prompt.md` completely, then verify it against both repo prompt entrypoints. Read every file under `docs/runbook`, the relevant Yazelix docs, and the current `home/agent-env/codex-harness` tree. Build a compact source ledger.
 4. **Map the requested change across the whole harness.** Check Rust code, binaries, agents, teams, policies, rules, model catalog, prompt review, tests, agent-env inputs, repo projections, and profile/runtime frontdoors. Do not patch only the first visible file.
 5. **Edit owning source surfaces.** Durable harness implementation belongs in the envctl repo. Do not hand-edit generated Yazelix runtime under `/home/flexnetos/.local/share/yazelix` or treat active home projection as the durable owner.
 6. **Route the skill and managed assets through agent-env.** Keep `agent-skills/agent-env-codex/` byte-identical to the active skill, edit `agent-env.yaml` and other owning inputs when needed, run `envctl agent lock` to refresh the lock, then run `envctl agent sync --json --color never` for preview. Use `--apply` only when the user requested materialization, then verify `agent-env.lock`.
 7. **Preserve session toggles.** `/permissions` is the live Codex sandbox/approval/network authority. Harness capability states and model lanes are session-scoped, never hard-coded as permanent lockouts.
-8. **Use the profile frontdoors.** Yazelix/Nix owns binaries and runtime delivery. Route fleet git through `rtk meta git`; use `rtk meta exec -- git <command>` for unlisted fleet git operations.
-9. **Validate the real implementation.** Run `scripts/validate.sh <envctl-root>`. Add focused tests for changed behavior and run live CLI probes for any frontdoor or automation claim.
-10. **Finish with proof.** Report archives, exact changed owners, tests, prompt hashes, skill validation, git status, and PR state. A runtime receipt alone is not completion.
+8. **Use the profile frontdoors.** Yazelix/Nix owns binaries and runtime delivery. Use `rtk meta git <adapted-command>` for fleet Git and `rtk meta exec --include <repo> -- git <unlisted-command>` only when Meta has no adapted command. Never invoke raw `git`, never cherry-pick, and never bypass Meta worktree ownership.
+9. **Execute GitHub work to completion.** Follow `references/github-execution-policy.md`. Preserve all capabilities, reconcile every surfaced stale/orphaned commit or worktree, use Linux-only workflows, commit and push every intended change, open/update a PR, enable auto-merge, wait for merge, and remove merged task branches/worktrees. Protect only `main`, `master`, and `develop` from lifecycle cleanup.
+10. **Administer GitHub deliberately.** When the task touches FlexNetOS organization governance, inventory every surface in `references/github-org-and-ccboard.md`, compare it with declared policy, apply only requested drift through `gh`/REST/GraphQL, and verify without reading secret values. SSH is mandatory for Git transport; organization settings are API/web administration and must not be misrepresented as SSH operations.
+11. **Trace ccboard before wiring.** Preserve ccboard's existing Claude and Codex ingestion. Extend the ccboard source owner, not generated Yazelix runtime. Follow the Claude hook/data endpoints and the Codex parser/store/watcher/live-session path in `references/github-org-and-ccboard.md`, then prove startup indexing, incremental updates, TUI/API visibility, and installed profile delivery.
+12. **Validate and finish with proof.** Run `scripts/validate.sh <envctl-root>`, focused tests, complete relevant gates, and live frontdoor probes. Report archives, changed owners, tests, prompt hashes, skill identity, merged PR state, protected-trunk sync, and task branch/worktree cleanup. A runtime receipt, auto-merge request, or green-but-unmerged PR is not completion.
 
 ## Internal harness capabilities
 
@@ -62,5 +64,11 @@ Keep these capabilities inside this one skill and its references/scripts:
 - Never read, print, paste, or commit secrets.
 - Never silently initialize GitKB, Grit, ICM, Meta, RTK, or Weave because a session started.
 - Never create a weaker replacement prompt, split this one-skill product into competing top-level skills, or create a second harness owner.
+- Never cherry-pick, force-push, discard, comment out, or remove an existing capability to make reconciliation easier. Preserve the stronger behavior and manually integrate every required delta into the current source.
+- Never change `/permissions`, approval policy, sandbox mode, network policy, or an `Allow`/approval setting to bypass a failing test, policy, warning, or integration problem. Fix the owning source or report the exact external blocker.
+- Never leave a task commit only local or only pushed. Commit all intended changes, push them, merge the PR after required checks pass, and remove merged task branches/worktrees only after archiving and proving their work is represented.
+- Never invoke raw `git` or bypass the Meta worktree policy. Use RTK/Meta Git routing for every repository operation.
+- Never add macOS or Windows GitHub Actions jobs. Use Ubuntu/Linux hosted or FlexNetOS Linux self-hosted runners.
+- Never remove a working capability. Required post-merge branch/worktree cleanup is lifecycle cleanup, not capability removal.
 - Never restore GPT-5.5 planning routes or tracked model-cache authority. Use Sol for high-stakes work, Terra for professional workhorse tasks, and Luna for simple high-volume tasks.
 - Never claim success without running the relevant tests and live frontdoor probes.

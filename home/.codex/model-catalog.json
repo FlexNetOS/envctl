@@ -3,7 +3,7 @@
     {
       "slug": "gpt-5.5",
       "display_name": "GPT-5.5",
-      "description": "OpenAI GPT-5.5 frontier model for complex coding, research, and professional work.",
+      "description": "Compatibility-only inventory; not a routeable envctl harness lane. OpenAI GPT-5.5 frontier model for complex coding, research, and professional work.",
       "default_reasoning_level": "medium",
       "supported_reasoning_levels": [
         {
@@ -68,7 +68,7 @@
     {
       "slug": "gpt-5.5-pro",
       "display_name": "GPT-5.5 Pro",
-      "description": "OpenAI GPT-5.5 Pro route for harder professional work; public docs list medium, high, and xhigh reasoning and slower, higher-compute responses.",
+      "description": "Compatibility-only inventory; not a routeable envctl harness lane. OpenAI GPT-5.5 Pro route for harder professional work; public docs list medium, high, and xhigh reasoning and slower, higher-compute responses.",
       "default_reasoning_level": "high",
       "supported_reasoning_levels": [
         {
@@ -127,7 +127,7 @@
     {
       "slug": "gpt-5.5-pro-extended",
       "display_name": "GPT-5.5 Pro Extended",
-      "description": "Private/account-rollout extended-context GPT-5.5 Pro route configured from user-reported access; no public OpenAI docs page was found for this exact slug.",
+      "description": "Compatibility-only inventory; not a routeable envctl harness lane. Private/account-rollout extended-context GPT-5.5 Pro route configured from user-reported access; no public OpenAI docs page was found for this exact slug.",
       "default_reasoning_level": "high",
       "supported_reasoning_levels": [
         {
@@ -190,7 +190,7 @@
     {
       "slug": "gpt-5.6-sol",
       "display_name": "GPT-5.6 Sol",
-      "description": "Limited-preview flagship GPT-5.6 model. Official OpenAI Help says Sol/Terra/Luna are available through API and Codex only for approved trusted partners/organizations; local proof currently records ChatGPT-account Codex denial unless access is provisioned.",
+      "description": "Limited-preview flagship GPT-5.6 model for high-stakes reasoning and coding. Live Codex account proof passed on 2026-07-11.",
       "default_reasoning_level": "high",
       "supported_reasoning_levels": [
         {
@@ -253,7 +253,7 @@
     {
       "slug": "gpt-5.6-terra",
       "display_name": "GPT-5.6 Terra",
-      "description": "Limited-preview lower-cost GPT-5.6 model. Track in catalog for approved-org Codex/API access; local proof currently records ChatGPT-account Codex denial unless access is provisioned.",
+      "description": "Limited-preview balanced professional workhorse model. Live Codex account proof passed on 2026-07-11.",
       "default_reasoning_level": "high",
       "supported_reasoning_levels": [
         {
@@ -316,7 +316,7 @@
     {
       "slug": "gpt-5.6-luna",
       "display_name": "GPT-5.6 Luna",
-      "description": "Limited-preview fastest/cost-efficient GPT-5.6 model. Track in catalog for approved-org Codex/API access; local proof currently records ChatGPT-account Codex denial unless access is provisioned.",
+      "description": "Limited-preview high-throughput model for simple, high-volume tasks. Live Codex account proof passed on 2026-07-11.",
       "default_reasoning_level": "medium",
       "supported_reasoning_levels": [
         {
@@ -407,8 +407,8 @@
       "service_tiers": [],
       "availability_nux": null,
       "upgrade": {
-        "model": "gpt-5.5",
-        "migration_markdown": "GPT-5.5 is available in Codex and is the preferred default route."
+        "model": "gpt-5.6-terra",
+        "migration_markdown": "Terra is the balanced default harness lane; Sol and Luna are selected by task class."
       },
       "base_instructions": "",
       "supports_reasoning_summaries": true,

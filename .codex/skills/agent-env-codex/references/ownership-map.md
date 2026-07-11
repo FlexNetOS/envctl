@@ -16,6 +16,10 @@ Use this map before rebuilding or editing the Codex harness.
 | `home/agent-env/codex-harness/policy/`, `rules/` | Safety and routing policy | Keep concrete safety; avoid hard-coded session lockouts. |
 | `home/agent-env/codex-harness/model-catalog/` | Model access and task routing | Sol/Terra/Luna authority; no tracked cache as secondary authority. |
 | `home/agent-env/codex-harness/tests/` | Harness contracts | Add/update tests with behavior. |
+| Git branches, commits, worktrees, PRs, and CI runs | Delivery state and proof | Follow `github-execution-policy.md`; no cherry-pick, no stranded task state, and no local-only completion. |
+| FlexNetOS GitHub organization settings | Organization governance | Follow `github-org-and-ccboard.md`; SSH for Git transport, `gh`/REST/GraphQL/UI for administration, metadata-only secret inspection, no permission bypass. |
+| `/home/flexnetos/meta/src/ccboard/` | Claude/Codex session ingestion, analytics, TUI, and web/API | Preserve existing Codex parser/store path; complete content/watcher/live integration in a separate Meta-managed ccboard worktree/PR. |
+| `/home/flexnetos/meta/src/yazelix/configs/zellij/layouts/flexnetos_agent_workspace.kdl` and `packaging/runtime_release_contracts.nix` | Source owner for installed ccboard pane/runtime packaging | Change only when package/layout delivery changes; rebuild profile and use generated runtime as proof. |
 | `agent-skills/`, `agent-env.yaml`, `agent-env.lock` | envctl-managed agent inputs and lock | Edit inputs, preview sync, apply only when requested, check lock. |
 | `home/.codex/` | Repo projection | Treat as owner-produced projection according to agent-env/runbook rules. |
 | `/home/flexnetos/.codex/skills/agent-env-codex/` | Active skill materialization | Must match `agent-skills/agent-env-codex/`; runtime activation is not the durable owner. |

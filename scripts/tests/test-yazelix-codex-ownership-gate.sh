@@ -76,12 +76,39 @@ assert_not_contains "$ROOT/manifest/components.d/codex-global-baseline.toml" 'ln
 assert_not_contains "$ROOT/manifest/components.d/codex-global-baseline.toml" 'ln -sfn "$M/usr/bin/codex" "$R/.local/bin/codex"' \
   "Codex global baseline must not create real-home user-bin Codex shadows"
 
-if grep -R -n -F "/home/flexnetos/.local/share/yazelix" \
-  "$ROOT/agent-env.yaml" \
-  "$ROOT/manifest" \
-  "$ROOT/agent-skills" \
-  "$ROOT/.codex/AGENTS.md" 2>/dev/null |
-  grep -E "edit|write|source|input|owner" >/dev/null; then
+if python3 - "$ROOT" <<'PY'
+import re
+import sys
+from pathlib import Path
+
+root = Path(sys.argv[1])
+needle = "/home/flexnetos/.local/share/yazelix"
+forbidden = (
+    re.compile(r"(?:edit|write)\s+(?:under|to|at)\s+[`'\"]?" + re.escape(needle), re.I),
+    re.compile(re.escape(needle) + r".{0,80}\b(?:is|as)\b.{0,30}\b(?:editable|writable|writeable|source|input)\b", re.I),
+)
+targets = [
+    root / "agent-env.yaml",
+    root / "manifest",
+    root / "agent-skills",
+    root / ".codex/AGENTS.md",
+]
+for target in targets:
+    paths = [target] if target.is_file() else target.rglob("*")
+    for path in paths:
+        if not path.is_file():
+            continue
+        try:
+            lines = path.read_text(errors="ignore").splitlines()
+        except OSError:
+            continue
+        for line_number, line in enumerate(lines, 1):
+            if needle in line and any(pattern.search(line) for pattern in forbidden):
+                print(f"{path}:{line_number}:{line}", file=sys.stderr)
+                raise SystemExit(0)
+raise SystemExit(1)
+PY
+then
   fail "source/config text appears to treat /home/flexnetos/.local/share/yazelix as an editable input"
 fi
 

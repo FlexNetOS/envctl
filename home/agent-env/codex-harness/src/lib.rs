@@ -7,15 +7,20 @@ use serde_json::{json, Value};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::env;
-use std::ffi::OsStr;
+use std::ffi::{OsStr, OsString};
 use std::fs::{self, OpenOptions};
 use std::io::{self, BufRead, Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
 
-pub const DEFAULT_PROJECT_ROOT: &str = "/home/flexnetos/lifeos/src/envctl/home";
-pub const DEFAULT_HARNESS_ROOT: &str = "/home/flexnetos/lifeos/src/envctl/home/agent-env";
+pub const DEFAULT_PROJECT_ROOT: &str = "/home/flexnetos/meta/src/envctl/home";
+pub const DEFAULT_HARNESS_ROOT: &str = "/home/flexnetos/meta/src/envctl/home/agent-env";
+pub const PROVIDER_RECEIPT_MAX_AGE: Duration = Duration::from_secs(15 * 60);
+pub const YAZELIX_PROFILE_ROOT: &str = "/home/flexnetos/.nix-profile";
+
+const COMPILED_PROVIDER_SOURCE: &[u8] = include_bytes!("lib.rs");
+const COMPILED_PROVIDER_CONFIG: &[u8] = include_bytes!("../config/policy/providers.toml");
 
 pub const LEDGER_NAMES: &[&str] = &[
     "harness.jsonl",
@@ -42,6 +47,15 @@ pub const LEDGER_NAMES: &[&str] = &[
 ];
 
 pub const USER_FULL_ACCESS_DECISION_ID: &str = "USER-FULL-ACCESS-20260709";
+pub const SESSION_CAPABILITIES: &[&str] = &[
+    "external_providers",
+    "local_models",
+    "network",
+    "github_mutation",
+    "browser_computer",
+    "subagents",
+    "background_jobs",
+];
 
 pub mod prompt_review;
 
@@ -98,6 +112,7 @@ pub fn monotonic_id(prefix: &str) -> String {
 pub fn harness_root() -> PathBuf {
     let raw = env::var_os("CODEX_HARNESS_ROOT")
         .map(PathBuf::from)
+        .or_else(compiled_harness_root)
         .unwrap_or_else(|| PathBuf::from(DEFAULT_HARNESS_ROOT));
     if raw.file_name() == Some(OsStr::new("codex-harness")) {
         return raw.parent().map(Path::to_path_buf).unwrap_or(raw);
@@ -112,7 +127,21 @@ pub fn codex_harness_dir() -> PathBuf {
 pub fn project_root() -> PathBuf {
     env::var_os("CODEX_HARNESS_PROJECT_ROOT")
         .map(PathBuf::from)
+        .or_else(compiled_project_root)
         .unwrap_or_else(|| PathBuf::from(DEFAULT_PROJECT_ROOT))
+}
+
+fn compiled_project_root() -> Option<PathBuf> {
+    let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    let project = manifest.parent()?.parent()?.to_path_buf();
+    project
+        .join("agent-env/codex-harness/Cargo.toml")
+        .exists()
+        .then_some(project)
+}
+
+fn compiled_harness_root() -> Option<PathBuf> {
+    compiled_project_root().map(|project| project.join("agent-env"))
 }
 
 pub fn ledger_dir() -> PathBuf {
@@ -161,20 +190,191 @@ pub fn tracked_full_access_policy_granted() -> bool {
     tracked_full_access_policy_granted_at(&codex_harness_dir().join("policy/policy.toml"))
 }
 
-pub fn full_access_granted() -> bool {
-    matches!(
-        env::var("CODEX_HARNESS_FULL_ACCESS").as_deref(),
-        Ok("1") | Ok("true") | Ok("yes")
-    ) || tracked_full_access_policy_granted()
+pub fn live_permission_profile() -> Option<String> {
+    env::var("CODEX_PERMISSION_PROFILE")
+        .ok()
+        .map(|value| value.trim().to_ascii_lowercase())
+        .filter(|value| !value.is_empty())
 }
 
-pub fn grant_full_access(reason: &str) -> Result<Value> {
+fn session_key() -> String {
+    env::var("CODEX_THREAD_ID")
+        .unwrap_or_else(|_| "standalone".to_string())
+        .chars()
+        .map(|ch| {
+            if ch.is_ascii_alphanumeric() || matches!(ch, '-' | '_') {
+                ch
+            } else {
+                '_'
+            }
+        })
+        .collect()
+}
+
+fn session_capability_path() -> PathBuf {
+    state_dir()
+        .join("sessions")
+        .join(session_key())
+        .join("capabilities.json")
+}
+
+fn read_session_capability_overrides() -> Result<BTreeMap<String, bool>> {
+    let path = session_capability_path();
+    if !path.exists() {
+        return Ok(BTreeMap::new());
+    }
+    let text = fs::read_to_string(&path)
+        .with_context(|| format!("read session capability state {}", path.display()))?;
+    let value: Value = serde_json::from_str(&text)
+        .with_context(|| format!("parse session capability state {}", path.display()))?;
+    let entries = value
+        .get("overrides")
+        .and_then(Value::as_object)
+        .ok_or_else(|| anyhow!("session capability state has no overrides object"))?;
+    entries
+        .iter()
+        .map(|(name, value)| {
+            value
+                .as_bool()
+                .map(|enabled| (name.clone(), enabled))
+                .ok_or_else(|| anyhow!("session capability override {name} is not boolean"))
+        })
+        .collect()
+}
+
+pub fn session_capability_enabled(capability: &str) -> bool {
+    SESSION_CAPABILITIES.contains(&capability)
+        && read_session_capability_overrides()
+            .map(|overrides| overrides.get(capability).copied().unwrap_or(true))
+            .unwrap_or(false)
+}
+
+pub fn session_capability_status() -> Value {
+    let overrides_result = read_session_capability_overrides();
+    let state_error = overrides_result
+        .as_ref()
+        .err()
+        .map(|error| redact(&error.to_string()));
+    let overrides = overrides_result.unwrap_or_default();
+    let capabilities = SESSION_CAPABILITIES
+        .iter()
+        .map(|capability| {
+            (
+                (*capability).to_string(),
+                json!({
+                    "enabled": session_capability_enabled(capability),
+                    "session_override": overrides.get(*capability),
+                }),
+            )
+        })
+        .collect::<serde_json::Map<String, Value>>();
+    json!({
+        "ok": true,
+        "schema": "codex-harness.session-capabilities.v1",
+        "thread_id": session_key(),
+        "permission_profile_signal": live_permission_profile(),
+        "codex_os_permissions_are_authoritative": true,
+        "capabilities_are_optional_routing_switches": true,
+        "state_valid": state_error.is_none(),
+        "state_error": state_error,
+        "tracked_operator_policy": tracked_full_access_policy_granted(),
+        "operator_full_access_intent_recorded": tracked_full_access_policy_granted(),
+        "live_permission_effective": "unknown-to-child-process; use /permissions",
+        "capabilities": capabilities,
+        "hard_safety_not_toggleable": [
+            "secret reads or secret output",
+            "destructive user-data deletion",
+            "force-push",
+            "direct ledger or archive mutation"
+        ]
+    })
+}
+
+pub fn set_session_capability(capability: &str, enabled: bool) -> Result<Value> {
+    if !SESSION_CAPABILITIES.contains(&capability) {
+        return Err(anyhow!(
+            "unknown capability {capability}; expected one of {}",
+            SESSION_CAPABILITIES.join(", ")
+        ));
+    }
+    let mut overrides = read_session_capability_overrides()?;
+    overrides.insert(capability.to_string(), enabled);
+    let path = session_capability_path();
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    fs::write(
+        &path,
+        serde_json::to_vec_pretty(&json!({
+            "schema": "codex-harness.session-capabilities.v1",
+            "thread_id": session_key(),
+            "updated_utc": utc_now(),
+            "overrides": overrides,
+        }))?,
+    )?;
+    append_ledger(
+        "decisions.jsonl",
+        json!({
+            "event": "session_capability_toggle",
+            "decision": if enabled {"enable"} else {"disable"},
+            "capability": capability,
+            "thread_id": session_key(),
+            "effective": session_capability_enabled(capability),
+        }),
+    )?;
+    Ok(session_capability_status())
+}
+
+pub fn set_session_capability_preset(preset: &str) -> Result<Value> {
+    let enabled = match preset {
+        "full" => true,
+        "restricted" => false,
+        _ => {
+            return Err(anyhow!(
+                "unknown preset {preset}; expected full or restricted"
+            ))
+        }
+    };
+    let mut overrides = BTreeMap::new();
+    for capability in SESSION_CAPABILITIES {
+        overrides.insert((*capability).to_string(), enabled);
+    }
+    let path = session_capability_path();
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    fs::write(
+        &path,
+        serde_json::to_vec_pretty(&json!({
+            "schema": "codex-harness.session-capabilities.v1",
+            "thread_id": session_key(),
+            "updated_utc": utc_now(),
+            "preset": preset,
+            "overrides": overrides,
+        }))?,
+    )?;
+    append_ledger(
+        "decisions.jsonl",
+        json!({
+            "event": "session_capability_preset",
+            "decision": preset,
+            "thread_id": session_key(),
+        }),
+    )?;
+    Ok(session_capability_status())
+}
+
+pub fn record_full_access_receipt(reason: &str) -> Result<Value> {
     fs::create_dir_all(state_dir())?;
     let value = json!({
         "ok": true,
+        "authority": "receipt-only; live /permissions controls access",
         "decision_id": USER_FULL_ACCESS_DECISION_ID,
         "ts_utc": utc_now(),
         "reason": redact(reason),
+        "permission_profile": live_permission_profile(),
+        "operator_full_access_intent_recorded": tracked_full_access_policy_granted(),
+        "live_permission_effective": "unknown-to-child-process",
         "scope": [
             "danger-full-access",
             "browser-computer-use",
@@ -190,7 +390,7 @@ pub fn grant_full_access(reason: &str) -> Result<Value> {
     )?;
     append_ledger(
         "decisions.jsonl",
-        json!({"event":"full_access_grant","decision":"allow","decision_id":USER_FULL_ACCESS_DECISION_ID,"reason":redact(reason)}),
+        json!({"event":"full_access_receipt","decision":"record","decision_id":USER_FULL_ACCESS_DECISION_ID,"reason":redact(reason),"operator_intent_recorded":tracked_full_access_policy_granted()}),
     )?;
     Ok(value)
 }
@@ -405,6 +605,181 @@ pub fn sha256_file(path: &Path) -> Result<String> {
     Ok(sha256_bytes(&bytes))
 }
 
+pub fn provider_contract_fingerprint(provider: &str) -> Result<String> {
+    let source_path = codex_harness_dir().join("src/lib.rs");
+    let config_path = codex_harness_dir().join("config/policy/providers.toml");
+    let source = fs::read(&source_path)
+        .with_context(|| format!("read provider source {}", source_path.display()))?;
+    let config = fs::read(&config_path)
+        .with_context(|| format!("read provider config {}", config_path.display()))?;
+    if source != COMPILED_PROVIDER_SOURCE {
+        return Err(anyhow!(
+            "provider source differs from the source embedded in this binary"
+        ));
+    }
+    if config != COMPILED_PROVIDER_CONFIG {
+        return Err(anyhow!(
+            "provider config differs from the config embedded in this binary"
+        ));
+    }
+    let mut hasher = Sha256::new();
+    hasher.update(b"codex-harness.provider-contract.v1\0");
+    hasher.update(provider.as_bytes());
+    hasher.update(b"\0");
+    hasher.update(&source);
+    hasher.update(b"\0");
+    hasher.update(&config);
+    Ok(hex::encode(hasher.finalize()))
+}
+
+fn parse_utc_timestamp(timestamp: &str) -> Option<i64> {
+    if timestamp.len() != 20
+        || timestamp.as_bytes().get(4) != Some(&b'-')
+        || timestamp.as_bytes().get(7) != Some(&b'-')
+        || timestamp.as_bytes().get(10) != Some(&b'T')
+        || timestamp.as_bytes().get(13) != Some(&b':')
+        || timestamp.as_bytes().get(16) != Some(&b':')
+        || timestamp.as_bytes().get(19) != Some(&b'Z')
+    {
+        return None;
+    }
+    let parse = |start: usize, end: usize| timestamp.get(start..end)?.parse::<i64>().ok();
+    let year = parse(0, 4)?;
+    let month = parse(5, 7)?;
+    let day = parse(8, 10)?;
+    let hour = parse(11, 13)?;
+    let minute = parse(14, 16)?;
+    let second = parse(17, 19)?;
+    if !(1..=12).contains(&month)
+        || !(0..=23).contains(&hour)
+        || !(0..=59).contains(&minute)
+        || !(0..=59).contains(&second)
+    {
+        return None;
+    }
+    let leap = year % 4 == 0 && (year % 100 != 0 || year % 400 == 0);
+    let days_in_month = match month {
+        2 if leap => 29,
+        2 => 28,
+        4 | 6 | 9 | 11 => 30,
+        _ => 31,
+    };
+    if !(1..=days_in_month).contains(&day) {
+        return None;
+    }
+
+    let adjusted_year = year - i64::from(month <= 2);
+    let era = if adjusted_year >= 0 {
+        adjusted_year
+    } else {
+        adjusted_year - 399
+    } / 400;
+    let year_of_era = adjusted_year - era * 400;
+    let month_prime = month + if month > 2 { -3 } else { 9 };
+    let day_of_year = (153 * month_prime + 2) / 5 + day - 1;
+    let day_of_era = year_of_era * 365 + year_of_era / 4 - year_of_era / 100 + day_of_year;
+    let days_since_epoch = era * 146_097 + day_of_era - 719_468;
+    Some(days_since_epoch * 86_400 + hour * 3_600 + minute * 60 + second)
+}
+
+fn provider_receipt_valid_at(
+    entries: &[Value],
+    event: &str,
+    provider: &str,
+    require_executed: bool,
+    expected_fingerprint: &str,
+    now_unix: i64,
+    max_age: Duration,
+) -> bool {
+    let latest = entries.iter().rev().find(|entry| {
+        entry.get("event").and_then(Value::as_str) == Some(event)
+            && (!require_executed
+                || entry.pointer("/result/executed").and_then(Value::as_bool) == Some(true))
+    });
+    let Some(entry) = latest else {
+        return false;
+    };
+    let succeeded = entry.get("decision").and_then(Value::as_str) == Some("allow")
+        && (entry.get("exit_code").and_then(Value::as_i64) == Some(0)
+            || entry.pointer("/result/exit_code").and_then(Value::as_i64) == Some(0))
+        && entry
+            .pointer("/result/ok")
+            .and_then(Value::as_bool)
+            .unwrap_or(true)
+        && (!require_executed
+            || entry.pointer("/result/executed").and_then(Value::as_bool) == Some(true));
+    let identity_matches = entry.get("provider").and_then(Value::as_str) == Some(provider)
+        && entry
+            .get("provider_contract_fingerprint")
+            .and_then(Value::as_str)
+            == Some(expected_fingerprint);
+    let timestamp = entry
+        .get("provider_receipt_ts_utc")
+        .and_then(Value::as_str)
+        .and_then(parse_utc_timestamp);
+    let fresh = timestamp
+        .and_then(|timestamp| now_unix.checked_sub(timestamp))
+        .map(|age| age >= 0 && age <= max_age.as_secs() as i64)
+        .unwrap_or(false);
+    succeeded && identity_matches && fresh
+}
+
+pub fn provider_receipt_current(entry: &Value, provider: &str) -> bool {
+    let Ok(expected_fingerprint) = provider_contract_fingerprint(provider) else {
+        return false;
+    };
+    let now_unix = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .ok()
+        .and_then(|duration| i64::try_from(duration.as_secs()).ok());
+    let Some(now_unix) = now_unix else {
+        return false;
+    };
+    let identity_matches = entry.get("provider").and_then(Value::as_str) == Some(provider)
+        && entry
+            .get("provider_contract_fingerprint")
+            .and_then(Value::as_str)
+            == Some(expected_fingerprint.as_str());
+    let fresh = entry
+        .get("provider_receipt_ts_utc")
+        .and_then(Value::as_str)
+        .and_then(parse_utc_timestamp)
+        .and_then(|timestamp| now_unix.checked_sub(timestamp))
+        .map(|age| age >= 0 && age <= PROVIDER_RECEIPT_MAX_AGE.as_secs() as i64)
+        .unwrap_or(false);
+    identity_matches && fresh
+}
+
+pub fn latest_provider_receipt_valid(
+    path: &Path,
+    event: &str,
+    provider: &str,
+    require_executed: bool,
+) -> bool {
+    let Ok(expected_fingerprint) = provider_contract_fingerprint(provider) else {
+        return false;
+    };
+    let Ok(text) = fs::read_to_string(path) else {
+        return false;
+    };
+    let entries = text
+        .lines()
+        .filter_map(|line| serde_json::from_str::<Value>(line).ok())
+        .collect::<Vec<_>>();
+    let Ok(now) = SystemTime::now().duration_since(UNIX_EPOCH) else {
+        return false;
+    };
+    provider_receipt_valid_at(
+        &entries,
+        event,
+        provider,
+        require_executed,
+        &expected_fingerprint,
+        now.as_secs() as i64,
+        PROVIDER_RECEIPT_MAX_AGE,
+    )
+}
+
 pub fn redact(input: &str) -> String {
     let mut out = input.to_string();
     let lower = input.to_ascii_lowercase();
@@ -508,25 +883,6 @@ pub fn policy_decision(argv: &[String]) -> PolicyDecision {
         );
     }
 
-    if danger_or_bypass_requested(&lower) {
-        if full_access_granted() {
-            return allow("danger/full-access request allowed by explicit user full-access grant");
-        }
-        if contains_decision_id(argv)
-            || lower.contains("decision_id")
-            || lower.contains("decision-id")
-        {
-            return prompt(
-                "danger/yolo/full-access request has a decision id but still requires explicit human approval",
-                Some("danger_requires_human_approval"),
-            );
-        }
-        return deny(
-            "yolo/danger/full-access/bypass request is forbidden without decision id",
-            "danger_without_decision_id",
-        );
-    }
-
     if ["rm", "unlink", "rmdir"].contains(&first.as_str()) {
         return deny(
             "delete command forbidden; use archive flow",
@@ -541,7 +897,15 @@ pub fn policy_decision(argv: &[String]) -> PolicyDecision {
         );
     }
 
-    if nested_model_provider(&first, &lower) {
+    if first == "codex"
+        && argv
+            .iter()
+            .any(|argument| argument == "--dangerously-bypass-approvals-and-sandbox")
+    {
+        return allow("the explicit Codex full-access frontdoor is delegated to live /permissions");
+    }
+
+    if nested_model_provider(argv, &first, &lower) {
         return deny(
             "nested Codex/Claude/model provider launch must go through codex-harness-runner and model-router",
             "nested_model_provider_without_runner",
@@ -549,8 +913,8 @@ pub fn policy_decision(argv: &[String]) -> PolicyDecision {
     }
 
     if browser_or_computer_use(&first, &lower) {
-        if full_access_granted() {
-            return allow("browser/computer-use allowed by explicit user full-access grant");
+        if session_capability_enabled("browser_computer") {
+            return allow("browser/computer-use allowed by the optional session routing switch");
         }
         if browser_profile_approved(argv) {
             return prompt(
@@ -564,7 +928,7 @@ pub fn policy_decision(argv: &[String]) -> PolicyDecision {
         );
     }
 
-    if first == "git" {
+    if routes_git(argv) {
         if git_mutation(argv) {
             return deny(
                 "GitHub/git mutation requires codex-harness-github-guard",
@@ -572,6 +936,9 @@ pub fn policy_decision(argv: &[String]) -> PolicyDecision {
             );
         }
         if git_network(argv) {
+            if session_capability_enabled("network") {
+                return allow("git network command allowed by live session capability");
+            }
             return deny(
                 "unmanaged git network command is forbidden by containment",
                 "unmanaged_network",
@@ -581,14 +948,14 @@ pub fn policy_decision(argv: &[String]) -> PolicyDecision {
     }
 
     if first == "gh" {
-        if full_access_granted() {
-            return allow("GitHub full-access command allowed by explicit user grant");
-        }
         if gh_mutation(argv) {
             return deny(
                 "GitHub mutation requires codex-harness-github-guard",
                 "github_mutation_without_guard",
             );
+        }
+        if session_capability_enabled("network") {
+            return allow("GitHub read allowed by live network capability");
         }
         return prompt(
             "GitHub read command uses network; run only as explicit foreground proof",
@@ -597,6 +964,9 @@ pub fn policy_decision(argv: &[String]) -> PolicyDecision {
     }
 
     if unmanaged_network_requested(&first, &lower) {
+        if session_capability_enabled("network") {
+            return allow("network command allowed by live session capability");
+        }
         return deny(
             "unmanaged network command is forbidden by containment",
             "unmanaged_network",
@@ -680,27 +1050,6 @@ fn has_arg(argv: &[String], names: &[&str]) -> bool {
     argv.iter().any(|arg| names.iter().any(|name| arg == name))
 }
 
-fn contains_decision_id(argv: &[String]) -> bool {
-    for (idx, arg) in argv.iter().enumerate() {
-        if arg == "--decision-id" {
-            return argv
-                .get(idx + 1)
-                .map(|v| !v.trim().is_empty())
-                .unwrap_or(false);
-        }
-        if arg.starts_with("--decision-id=")
-            || arg.starts_with("decision_id=")
-            || arg.starts_with("decision-id=")
-        {
-            return arg
-                .split_once('=')
-                .map(|(_, v)| !v.trim().is_empty())
-                .unwrap_or(false);
-        }
-    }
-    false
-}
-
 fn secret_path_violation(lower: &str) -> bool {
     let denied = [
         "/home/flexnetos/.codex/auth.json",
@@ -734,16 +1083,6 @@ fn direct_state_mutation_violation(lower: &str) -> bool {
         || lower.contains(".redb")
 }
 
-fn danger_or_bypass_requested(lower: &str) -> bool {
-    lower.contains("danger-full-access")
-        || lower.contains("full-access")
-        || lower.contains("dangerously-bypass")
-        || lower.contains("--yolo")
-        || lower.contains(" yolo")
-        || lower.contains("bypass")
-        || lower.contains("ignore-rules")
-}
-
 fn uncontrolled_background_requested(first: &str, lower: &str) -> bool {
     ["tmux", "screen", "nohup", "disown", "setsid"].contains(&first)
         || lower.contains(" &")
@@ -752,7 +1091,7 @@ fn uncontrolled_background_requested(first: &str, lower: &str) -> bool {
         || lower.contains("systemd-run")
 }
 
-fn nested_model_provider(first: &str, lower: &str) -> bool {
+fn nested_model_provider(argv: &[String], first: &str, lower: &str) -> bool {
     [
         "codex",
         "claude",
@@ -764,6 +1103,20 @@ fn nested_model_provider(first: &str, lower: &str) -> bool {
         "openrouter",
     ]
     .contains(&first)
+        || (first == "rtk"
+            && argv.get(1).is_some_and(|tool| {
+                matches!(
+                    basename(tool).as_str(),
+                    "codex"
+                        | "claude"
+                        | "ollama"
+                        | "lms"
+                        | "lmstudio"
+                        | "openai"
+                        | "anthropic"
+                        | "openrouter"
+                )
+            }))
         || lower.contains("openrouter")
         || lower.contains("claude-code")
         || lower.contains("computer-use-preview")
@@ -802,11 +1155,65 @@ fn git_mutation(argv: &[String]) -> bool {
         || has_arg(argv, &["merge", "rebase", "cherry-pick", "commit"])
 }
 
+fn force_push_requested(argv: &[String]) -> bool {
+    routes_git(argv)
+        && has_arg(argv, &["push"])
+        && argv.iter().any(|arg| {
+            matches!(
+                arg.as_str(),
+                "--force" | "-f" | "--force-with-lease" | "--force-if-includes" | "--mirror"
+            ) || arg.starts_with("--force=")
+                || arg.starts_with("--force-with-lease=")
+                || arg.starts_with('+')
+        })
+}
+
+fn routes_git(argv: &[String]) -> bool {
+    let names = argv
+        .iter()
+        .map(|argument| basename(argument))
+        .collect::<Vec<_>>();
+    matches!(names.first().map(String::as_str), Some("git"))
+        || matches!(
+            names.as_slice(),
+            [first, second, ..] if first == "rtk" && second == "git"
+        )
+        || matches!(
+            names.as_slice(),
+            [first, second, third, ..]
+                if first == "rtk" && second == "meta" && third == "git"
+        )
+        || names
+            .iter()
+            .position(|name| name == "meta")
+            .is_some_and(|meta| {
+                names[meta + 1..].first().map(String::as_str) == Some("git")
+                    || names[meta + 1..]
+                        .iter()
+                        .position(|name| name == "exec")
+                        .is_some_and(|exec| {
+                            names[meta + exec + 2..].iter().any(|name| name == "git")
+                        })
+            })
+}
+
 fn git_network(argv: &[String]) -> bool {
-    has_arg(argv, &["fetch", "pull", "clone", "submodule"])
+    has_arg(argv, &["push", "fetch", "pull", "clone", "ls-remote"])
+        || (has_arg(argv, &["submodule"]) && has_arg(argv, &["update", "sync"]))
+        || (has_arg(argv, &["remote"]) && has_arg(argv, &["update", "prune"]))
+        || argv
+            .iter()
+            .any(|arg| arg == "--upload-pack" || arg.starts_with("--upload-pack="))
 }
 
 fn gh_mutation(argv: &[String]) -> bool {
+    let argv = if argv.first().is_some_and(|arg| basename(arg) == "rtk")
+        && argv.get(1).is_some_and(|arg| basename(arg) == "gh")
+    {
+        &argv[1..]
+    } else {
+        argv
+    };
     let readonly = matches!(
         (
             argv.get(1).map(String::as_str),
@@ -1002,6 +1409,26 @@ pub fn hook_response(input: &Value) -> Result<Value> {
         );
     }
     if matches!(event, "SubagentStart") {
+        if !session_capability_enabled("subagents") {
+            record_bad_behavior(
+                "subagent_session_disabled",
+                "subagents disabled for this chat session",
+                &redact(&input.to_string()),
+            )?;
+            return Ok(
+                json!({"hookSpecificOutput":{"permissionDecision":"deny","permissionDecisionReason":"codex-harness session capability disables subagents"},"systemMessage":"codex-harness denied subagent spawn because the session toggle is off"}),
+            );
+        }
+        if !session_capability_enabled("network") {
+            record_bad_behavior(
+                "subagent_network_disabled",
+                "network disabled for this chat session",
+                &redact(&input.to_string()),
+            )?;
+            return Ok(
+                json!({"hookSpecificOutput":{"permissionDecision":"deny","permissionDecisionReason":"codex-harness session capability disables network for subagents"},"systemMessage":"codex-harness denied subagent spawn because the current network toggle is off"}),
+            );
+        }
         let depth = input
             .get("depth")
             .or_else(|| input.pointer("/subagent/depth"))
@@ -1049,13 +1476,7 @@ pub fn hook_response(input: &Value) -> Result<Value> {
     let text = input.to_string();
     if matches!(event, "UserPromptSubmit") {
         let lower = text.to_ascii_lowercase();
-        if !full_access_granted()
-            && (lower.contains("disable hooks")
-                || lower.contains("danger-full-access")
-                || lower.contains("bypass")
-                || lower.contains("leak secrets")
-                || lower.contains("without archive"))
-        {
+        if lower.contains("leak secrets") || lower.contains("without archive") {
             record_bad_behavior(
                 "unsafe_user_prompt",
                 "prompt requests bypass or secret unsafe action",
@@ -1072,9 +1493,7 @@ pub fn hook_response(input: &Value) -> Result<Value> {
     }
     if matches!(event, "PermissionRequest") {
         let lower = text.to_ascii_lowercase();
-        if !full_access_granted()
-            && (lower.contains("danger") || lower.contains("bypass") || lower.contains("auth.json"))
-        {
+        if lower.contains("auth.json") {
             record_bad_behavior(
                 "unsafe_permission_request",
                 "danger/bypass/secret permission request",
@@ -1246,6 +1665,8 @@ pub fn last_deny_summary() -> Result<String> {
 pub fn nix_verify_value() -> Value {
     let codex_path = which("codex");
     let realpath = codex_path.as_ref().and_then(|p| fs::canonicalize(p).ok());
+    let profile_frontdoor = Path::new("/home/flexnetos/.nix-profile/bin/codex");
+    let profile_realpath = fs::canonicalize(profile_frontdoor).ok();
     let path_entries = env::var_os("PATH")
         .map(|p| env::split_paths(&p).collect::<Vec<_>>())
         .unwrap_or_default();
@@ -1260,33 +1681,39 @@ pub fn nix_verify_value() -> Value {
             }
         })
         .collect();
-    let profile_owned = codex_path
+    let approved_frontdoor = codex_path
         .as_ref()
-        .map(|p| {
-            p.starts_with("/home/flexnetos/.nix-profile")
-                || p.to_string_lossy().contains("/.nix-profile/")
-        })
+        .map(|path| approved_codex_frontdoor_path(path))
         .unwrap_or(false);
+    let profile_owned = approved_frontdoor && realpath.is_some() && realpath == profile_realpath;
     let store_owned = realpath
         .as_ref()
         .map(|p| p.starts_with("/nix/store"))
         .unwrap_or(false);
     let first_shadow_ok = shadows
         .first()
-        .map(|p| {
-            p == "/home/flexnetos/.nix-profile/bin/codex"
-                || p.starts_with("/home/flexnetos/.nix-profile/")
-        })
+        .map(PathBuf::from)
+        .filter(|path| approved_codex_frontdoor_path(path))
+        .and_then(|path| fs::canonicalize(path).ok())
+        .zip(profile_realpath.as_ref())
+        .map(|(candidate, profile)| &candidate == profile)
         .unwrap_or(false);
     json!({
         "codex_path": codex_path.map(|p| p.display().to_string()),
         "realpath": realpath.map(|p| p.display().to_string()),
+        "profile_frontdoor": profile_frontdoor.display().to_string(),
+        "profile_realpath": profile_realpath.map(|p| p.display().to_string()),
         "shadows": shadows,
         "profile_owned": profile_owned,
+        "approved_frontdoor": approved_frontdoor,
         "store_owned": store_owned,
         "first_shadow_ok": first_shadow_ok,
         "ok": profile_owned && store_owned && first_shadow_ok
     })
+}
+
+fn approved_codex_frontdoor_path(path: &Path) -> bool {
+    path.starts_with("/nix/store") || path.starts_with("/home/flexnetos/.nix-profile")
 }
 
 pub fn which(bin: &str) -> Option<PathBuf> {
@@ -1298,6 +1725,71 @@ pub fn which(bin: &str) -> Option<PathBuf> {
         }
     }
     None
+}
+
+pub fn profile_frontdoor(tool: &str) -> Result<PathBuf> {
+    if tool.contains('/') || tool.contains('\\') || tool.trim().is_empty() {
+        return Err(anyhow!("profile tool name must be a basename"));
+    }
+    let root = Path::new(YAZELIX_PROFILE_ROOT);
+    let frontdoor = [root.join("bin").join(tool), root.join("toolbin").join(tool)]
+        .into_iter()
+        .find(|candidate| candidate.exists())
+        .ok_or_else(|| anyhow!("missing Yazelix profile frontdoor for {tool}"))?;
+    let realpath = fs::canonicalize(&frontdoor)
+        .with_context(|| format!("resolve profile frontdoor {}", frontdoor.display()))?;
+    if !realpath.starts_with("/nix/store") {
+        return Err(anyhow!(
+            "profile frontdoor for {tool} is not Nix-store-owned: {}",
+            realpath.display()
+        ));
+    }
+    Ok(frontdoor)
+}
+
+fn profile_runtime_path() -> Result<OsString> {
+    let root = Path::new(YAZELIX_PROFILE_ROOT);
+    let mut entries = vec![root.join("toolbin"), root.join("bin")];
+    if let Some(path) = env::var_os("PATH") {
+        for entry in env::split_paths(&path) {
+            if !entries.contains(&entry) {
+                entries.push(entry);
+            }
+        }
+    }
+    env::join_paths(entries).map_err(|error| anyhow!("join Yazelix profile PATH: {error}"))
+}
+
+pub fn profile_rtk_argv(tool: &str, args: &[&str]) -> Result<Vec<String>> {
+    let rtk = profile_frontdoor("rtk")?;
+    profile_frontdoor(tool)?;
+    let mut argv = vec![rtk.display().to_string(), tool.to_string()];
+    argv.extend(args.iter().map(|argument| (*argument).to_string()));
+    Ok(argv)
+}
+
+pub fn profile_rtk_command(tool: &str, args: &[&str]) -> Result<Command> {
+    let argv = profile_rtk_argv(tool, args)?;
+    let mut command = Command::new(&argv[0]);
+    command
+        .args(&argv[1..])
+        .env("PATH", profile_runtime_path()?);
+    remove_secret_env(&mut command);
+    Ok(command)
+}
+
+pub fn routed_tool_basename(argv: &[String]) -> String {
+    let first = argv
+        .first()
+        .map(|argument| basename(argument))
+        .unwrap_or_default();
+    if first == "rtk" {
+        return argv
+            .get(1)
+            .map(|argument| basename(argument))
+            .unwrap_or(first);
+    }
+    first
 }
 
 pub fn active_job_records() -> Result<Vec<JobRecord>> {
@@ -1363,12 +1855,7 @@ pub fn spawn_supervised(cwd: &Path, argv: &[String]) -> Result<JobRecord> {
 }
 
 fn job_kind(argv: &[String]) -> &'static str {
-    match argv
-        .first()
-        .map(|s| basename(s))
-        .unwrap_or_default()
-        .as_str()
-    {
+    match routed_tool_basename(argv).as_str() {
         "codex" => "codex",
         "claude" => "claude",
         "ollama" | "lms" | "lmstudio" => "local-model",
@@ -1395,6 +1882,17 @@ fn enforce_job_caps(argv: &[String]) -> Result<()> {
 }
 
 pub fn spawn_supervised_unchecked(cwd: &Path, argv: &[String]) -> Result<JobRecord> {
+    if !session_capability_enabled("background_jobs") {
+        return Err(anyhow!(
+            "background jobs are disabled by the optional session routing switch"
+        ));
+    }
+    let provider = match routed_tool_basename(argv).as_str() {
+        "claude" => Some("claude_bridge"),
+        "ollama" => Some("ollama"),
+        _ => None,
+    };
+    let provider_contract_fingerprint = provider.map(provider_contract_fingerprint).transpose()?;
     enforce_job_caps(argv)?;
     let job_id = monotonic_id("job");
     let logs = state_dir().join("logs");
@@ -1417,6 +1915,7 @@ pub fn spawn_supervised_unchecked(cwd: &Path, argv: &[String]) -> Result<JobReco
     }
     let child = command
         .current_dir(cwd)
+        .env("PATH", profile_runtime_path()?)
         .env_remove("OPENAI_API_KEY")
         .env_remove("CODEX_API_KEY")
         .env_remove("OPENROUTER_API_KEY")
@@ -1442,25 +1941,29 @@ pub fn spawn_supervised_unchecked(cwd: &Path, argv: &[String]) -> Result<JobReco
     write_job_record(&job)?;
     append_ledger(
         "processes.jsonl",
-        json!({"event":"spawn","decision":"allow","job_id":job.job_id,"pid":pid,"kind":job_kind(argv),"command_hash":sha256_bytes(command_preview(argv).as_bytes()),"command_preview":command_preview(argv)}),
+        json!({"event":"spawn","decision":"allow","job_id":job.job_id,"pid":pid,"kind":job_kind(argv),"provider":provider,"provider_contract_fingerprint":provider_contract_fingerprint,"provider_receipt_ts_utc":provider.map(|_| utc_now()),"command_hash":sha256_bytes(command_preview(argv).as_bytes()),"command_preview":command_preview(argv)}),
     )?;
     Ok(job)
 }
 
 pub fn spawn_codex_exec(cwd: &Path, profile: &str, prompt: &str) -> Result<JobRecord> {
     require_model_router_ready()?;
-    let argv = vec![
-        "codex".to_string(),
-        "exec".to_string(),
-        "--json".to_string(),
-        "--profile".to_string(),
-        profile.to_string(),
-        prompt.to_string(),
-    ];
+    if !session_capability_enabled("network") || !session_capability_enabled("subagents") {
+        return Err(anyhow!(
+            "Codex children require the optional network and subagents routing switches"
+        ));
+    }
+    let argv = profile_rtk_argv("codex", &["exec", "--json", "--profile", profile, prompt])?;
     spawn_supervised_unchecked(cwd, &argv)
 }
 
 pub fn spawn_ollama_run(cwd: &Path, model: &str, prompt: &str) -> Result<JobRecord> {
+    require_model_router_ready()?;
+    if !session_capability_enabled("local_models") {
+        return Err(anyhow!(
+            "local models are disabled by the optional session routing switch"
+        ));
+    }
     let argv = vec![
         "ollama".to_string(),
         "run".to_string(),
@@ -1470,17 +1973,64 @@ pub fn spawn_ollama_run(cwd: &Path, model: &str, prompt: &str) -> Result<JobReco
     spawn_supervised_unchecked(cwd, &argv)
 }
 
+fn claude_run_argv(prompt: &str, allow_default_auth: bool) -> Result<Vec<String>> {
+    let mut args = Vec::new();
+    if !allow_default_auth {
+        args.push("--bare".to_string());
+    }
+    args.extend([
+        "--safe-mode".to_string(),
+        "--tools".to_string(),
+        String::new(),
+        "--mcp-config".to_string(),
+        r#"{"mcpServers":{}}"#.to_string(),
+        "--strict-mcp-config".to_string(),
+        "--disable-slash-commands".to_string(),
+        "--no-chrome".to_string(),
+        "--print".to_string(),
+        "--output-format".to_string(),
+        "json".to_string(),
+        "--no-session-persistence".to_string(),
+        prompt.to_string(),
+    ]);
+    let argument_refs = args.iter().map(String::as_str).collect::<Vec<_>>();
+    profile_rtk_argv("claude", &argument_refs)
+}
+
+fn claude_run_command(prompt: &str, allow_default_auth: bool) -> Result<Command> {
+    let argv = claude_run_argv(prompt, allow_default_auth)?;
+    let mut command = Command::new(&argv[0]);
+    command
+        .args(&argv[1..])
+        .env("PATH", profile_runtime_path()?);
+    remove_secret_env(&mut command);
+    Ok(command)
+}
+
+pub fn spawn_claude_run(cwd: &Path, prompt: &str, allow_default_auth: bool) -> Result<JobRecord> {
+    require_model_router_ready()?;
+    if !session_capability_enabled("external_providers") || !session_capability_enabled("network") {
+        return Err(anyhow!(
+            "Claude is disabled by optional external-provider or network routing switches"
+        ));
+    }
+    spawn_supervised_unchecked(cwd, &claude_run_argv(prompt, allow_default_auth)?)
+}
+
 pub fn run_codex_exec(cwd: &Path, profile: &str, prompt: &str) -> Result<i32> {
     require_model_router_ready()?;
+    if !session_capability_enabled("network") || !session_capability_enabled("subagents") {
+        return Err(anyhow!(
+            "Codex children require the optional network and subagents routing switches"
+        ));
+    }
     let preview = format!(
         "codex exec --json --profile {profile} [prompt_sha:{}]",
         sha256_bytes(prompt.as_bytes())
     );
-    let mut command = Command::new("codex");
-    command
-        .args(["exec", "--json", "--profile", profile, prompt])
-        .current_dir(cwd);
-    remove_secret_env(&mut command);
+    let mut command =
+        profile_rtk_command("codex", &["exec", "--json", "--profile", profile, prompt])?;
+    command.current_dir(cwd);
     let output = command.output()?;
     let stdout = String::from_utf8_lossy(&output.stdout);
     let stderr = String::from_utf8_lossy(&output.stderr);
@@ -1509,7 +2059,14 @@ pub fn run_codex_exec(cwd: &Path, profile: &str, prompt: &str) -> Result<i32> {
 }
 
 pub fn run_ollama(cwd: &Path, model: &str, prompt: &str) -> Result<i32> {
+    require_model_router_ready()?;
+    if !session_capability_enabled("local_models") {
+        return Err(anyhow!(
+            "local models are disabled by the optional session routing switch"
+        ));
+    }
     let prompt_hash = sha256_bytes(prompt.as_bytes());
+    let provider_contract_fingerprint = provider_contract_fingerprint("ollama")?;
     let mut command = Command::new("ollama");
     command.args(["run", model, prompt]).current_dir(cwd);
     remove_secret_env(&mut command);
@@ -1517,9 +2074,10 @@ pub fn run_ollama(cwd: &Path, model: &str, prompt: &str) -> Result<i32> {
     print!("{}", String::from_utf8_lossy(&output.stdout));
     eprint!("{}", redact(&String::from_utf8_lossy(&output.stderr)));
     let code = output.status.code().unwrap_or(1);
+    let provider_receipt_ts_utc = utc_now();
     append_ledger(
         "processes.jsonl",
-        json!({"event":"ollama_run_complete","decision": if code == 0 {"allow"} else {"deny"},"exit_code":code,"model":model,"prompt_hash":prompt_hash}),
+        json!({"event":"ollama_run_complete","decision": if code == 0 {"allow"} else {"deny"},"exit_code":code,"executed":true,"provider":"ollama","provider_contract_fingerprint":provider_contract_fingerprint,"provider_receipt_ts_utc":provider_receipt_ts_utc,"model":model,"prompt_hash":prompt_hash}),
     )?;
     Ok(code)
 }
@@ -1729,18 +2287,71 @@ pub fn require_model_router_ready() -> Result<()> {
 
 pub fn model_route_for_task(task: &str) -> Value {
     let lower = task.to_ascii_lowercase();
-    let full = full_access_granted();
-    let (class, profile, model, provider, reason) = if lower.contains("gpt-5.6")
-        || lower.contains("sol")
-        || lower.contains("terra")
-        || lower.contains("luna")
+    let (class, profile, model, provider, reason) = if lower.contains("openrouter") {
+        (
+            "provider-openrouter",
+            "envctl-openrouter-gpt",
+            "tencent/hy3:free",
+            "openrouter",
+            "OpenRouter route explicitly enabled by the external-provider and network switches; authenticated proof depends on OPENROUTER_API_KEY",
+        )
+    } else if lower.contains("claude") {
+        (
+            "provider-claude-bridge",
+            "envctl-claude-bridge",
+            "claude-sonnet-5",
+            "claude-bridge",
+            "Claude direct use is routed through the supervised tool-free external CLI bridge",
+        )
+    } else if lower.contains("ollama")
+        || lower.contains("local model")
+        || lower.contains("local-model")
+        || lower.contains("gemma")
+        || lower.contains("qwen")
     {
         (
-            "model-access-preview",
+            "provider-local-ollama",
+            "envctl-local-models",
+            "gemma4:latest",
+            "ollama",
+            "Local model work is routed through the supervised Ollama lane",
+        )
+    } else if lower.contains("sol")
+        || lower.contains("high-stakes")
+        || lower.contains("security review")
+        || lower.contains("complex coding")
+    {
+        (
+            "openai-high-stakes",
             "envctl-gpt56-sol",
             "gpt-5.6-sol",
             "openai",
-            "GPT-5.6 Sol/Terra/Luna are preview-gated; route only after codex-harness-model-access proves account access",
+            "Sol handles high-stakes reasoning, security review, and complex coding",
+        )
+    } else if lower.contains("luna")
+        || lower.contains("high-throughput")
+        || lower.contains("mechanical")
+        || lower.contains("simple")
+        || lower.contains("bulk")
+    {
+        (
+            "openai-high-throughput",
+            "envctl-gpt56-luna",
+            "gpt-5.6-luna",
+            "openai",
+            "Luna handles simple, mechanical, and high-volume tasks",
+        )
+    } else if lower.contains("terra")
+        || lower.contains("gpt-5.6")
+        || lower.contains("professional workflow")
+        || lower.contains("workhorse")
+    {
+        (
+            "openai-professional-workhorse",
+            "envctl-gpt56-terra",
+            "gpt-5.6-terra",
+            "openai",
+            "Terra is the balanced workhorse for professional workflows",
         )
     } else if lower.contains("spark") {
         (
@@ -1761,42 +2372,26 @@ pub fn model_route_for_task(task: &str) -> Value {
     } else if lower.contains("model catalog") || lower.contains("model access") {
         (
             "model-access-audit",
-            "envctl-gpt55-standard",
-            "gpt-5.5",
+            "envctl-gpt56-terra",
+            "gpt-5.6-terra",
             "openai",
-            "model catalog/access audits use primary GPT-5.5 plus codex-harness-model-access probes",
-        )
-    } else if lower.contains("openrouter") {
-        (
-            "provider-openrouter",
-            "envctl-openrouter-gpt",
-            "tencent/hy3:free",
-            "openrouter",
-            "OpenRouter route explicitly enabled by user grant; default model set by operator and proof depends on OPENROUTER_API_KEY",
-        )
-    } else if lower.contains("claude") {
-        (
-            "provider-claude-bridge",
-            "envctl-claude-bridge",
-            "claude-sonnet-5",
-            "claude-bridge",
-            "Claude direct use is routed through supervised external claude CLI bridge",
+            "model catalog/access audits use Terra plus explicit live model-access probes",
         )
     } else if lower.contains("browser") || lower.contains("computer") || lower.contains("gui") {
         (
             "browser-computer",
             "envctl-browser-computer",
-            "gpt-5.5",
+            "gpt-5.6-sol",
             "openai",
-            "Browser/Computer Use route enabled by user grant and gated through browser-computer policy",
+            "Browser/Computer Use is high-risk and uses Sol through browser-computer policy",
         )
     } else if lower.contains("github") || lower.contains("gh ") {
         (
             "github-full-access",
             "envctl-github-full-access",
-            "gpt-5.5",
+            "gpt-5.6-sol",
             "openai",
-            "GitHub route uses codex-harness-github-guard with full-access decision id",
+            "GitHub mutation uses Sol and codex-harness-github-guard with the full-access decision id",
         )
     } else if lower.contains("security")
         || lower.contains("containment")
@@ -1804,27 +2399,39 @@ pub fn model_route_for_task(task: &str) -> Value {
     {
         (
             "containment",
-            "envctl-harness",
-            "active-codex-default",
-            "codex-profile-frontdoor",
-            "security/containment work stays on active Codex profile",
+            "envctl-gpt56-sol",
+            "gpt-5.6-sol",
+            "openai",
+            "security and containment work use the Sol high-stakes lane",
         )
     } else if lower.contains("index") || lower.contains("memory") || lower.contains("ledger") {
         (
             "local-proof",
-            "envctl-harness",
-            "active-codex-default",
-            "codex-profile-frontdoor",
-            "ledger/index/memory work uses local Rust proof; JSONL remains canonical",
+            "envctl-gpt56-luna",
+            "gpt-5.6-luna",
+            "openai",
+            "ledger/index/memory inventory uses Luna while local Rust and JSONL remain canonical",
         )
     } else {
         (
             "implementation",
-            "envctl-harness",
-            "active-codex-default",
-            "codex-profile-frontdoor",
-            "default implementation route",
+            "envctl-gpt56-terra",
+            "gpt-5.6-terra",
+            "openai",
+            "Terra is the default professional implementation workhorse",
         )
+    };
+    let route_enabled = match provider {
+        "openrouter" | "claude-bridge" => {
+            session_capability_enabled("external_providers")
+                && session_capability_enabled("network")
+        }
+        "ollama" => session_capability_enabled("local_models"),
+        _ if class == "browser-computer" => session_capability_enabled("browser_computer"),
+        _ if class == "github-full-access" => {
+            session_capability_enabled("github_mutation") && session_capability_enabled("network")
+        }
+        _ => session_capability_enabled("network") && session_capability_enabled("subagents"),
     };
     json!({
         "task": task,
@@ -1832,12 +2439,13 @@ pub fn model_route_for_task(task: &str) -> Value {
         "provider": provider,
         "profile": profile,
         "model": model,
-        "approved_capability_expansion": full,
-        "full_access_decision_id": if full {Value::String(USER_FULL_ACCESS_DECISION_ID.to_string())} else {Value::Null},
-        "openrouter_enabled": full,
-        "claude_bridge_enabled": full,
-        "browser_computer_enabled": full,
-        "github_full_access_enabled": full,
+        "approved_capability_expansion": route_enabled,
+        "operator_intent_decision_id": if route_enabled {Value::String(USER_FULL_ACCESS_DECISION_ID.to_string())} else {Value::Null},
+        "openrouter_enabled": session_capability_enabled("external_providers") && session_capability_enabled("network"),
+        "claude_bridge_enabled": session_capability_enabled("external_providers") && session_capability_enabled("network"),
+        "local_models_enabled": session_capability_enabled("local_models"),
+        "browser_computer_enabled": session_capability_enabled("browser_computer"),
+        "github_full_access_enabled": session_capability_enabled("github_mutation") && session_capability_enabled("network"),
         "reason": reason,
     })
 }
@@ -1850,27 +2458,36 @@ pub fn route_model_tasks(tasks: &[String]) -> Result<Value> {
         .iter()
         .map(|task| model_route_for_task(task))
         .collect::<Vec<_>>();
+    let all_routes_enabled = routes.iter().all(|route| {
+        route
+            .get("approved_capability_expansion")
+            .and_then(Value::as_bool)
+            .unwrap_or(false)
+    });
     let value = json!({
-        "ok": true,
+        "ok": all_routes_enabled,
         "route_id": monotonic_id("route"),
         "ts_utc": utc_now(),
         "requires_runner": true,
         "routes": routes,
         "containment": {
             "subagent_spawn_requires_this_marker": true,
-            "provider_expansion_allowed": full_access_granted(),
-            "full_access_decision_id": if full_access_granted() {Value::String(USER_FULL_ACCESS_DECISION_ID.to_string())} else {Value::Null},
-            "openrouter_shim": if full_access_granted() {"enabled"} else {"disabled_pending_approval"},
-            "claude_bridge": if full_access_granted() {"enabled"} else {"disabled_pending_approval"},
-            "browser_computer_use": if full_access_granted() {"enabled"} else {"disabled_pending_approved_profile"},
-            "github_full_access": if full_access_granted() {"enabled"} else {"disabled_pending_decision"}
+            "permission_profile": live_permission_profile(),
+            "session_capabilities": session_capability_status(),
+            "provider_expansion_allowed": session_capability_enabled("external_providers"),
+            "operator_intent_decision_id": if tracked_full_access_policy_granted() {Value::String(USER_FULL_ACCESS_DECISION_ID.to_string())} else {Value::Null},
+            "openrouter_shim": if session_capability_enabled("external_providers") && session_capability_enabled("network") {"enabled"} else {"disabled_by_session"},
+            "claude_bridge": if session_capability_enabled("external_providers") && session_capability_enabled("network") {"enabled"} else {"disabled_by_session"},
+            "local_models": if session_capability_enabled("local_models") {"enabled"} else {"disabled_by_session"},
+            "browser_computer_use": if session_capability_enabled("browser_computer") {"enabled"} else {"disabled_by_session"},
+            "github_full_access": if session_capability_enabled("github_mutation") && session_capability_enabled("network") {"enabled"} else {"disabled_by_session"}
         }
     });
     fs::create_dir_all(model_router_dir())?;
     fs::write(model_router_marker(), serde_json::to_vec_pretty(&value)?)?;
     append_ledger(
         "model_router.jsonl",
-        json!({"event":"route","decision":"allow","route":value}),
+        json!({"event":"route","decision":if all_routes_enabled {"allow"} else {"deny"},"route":value}),
     )?;
     Ok(value)
 }
@@ -1979,27 +2596,36 @@ pub fn github_guard_check(
     if argv.is_empty() {
         return Err(anyhow!("github-guard requires a command after --"));
     }
-    let first = basename(&argv[0]);
-    if first != "gh" && first != "git" {
+    let first = routed_tool_basename(argv);
+    let git_route = routes_git(argv);
+    let gh_route = first == "gh";
+    if !gh_route && !git_route {
         return Err(anyhow!("github-guard only accepts gh or git commands"));
     }
-    let mutation = (first == "gh" && gh_mutation(argv)) || (first == "git" && git_mutation(argv));
-    if mutation
-        && decision_id
-            .map(str::trim)
-            .filter(|s| !s.is_empty())
-            .is_none()
-        && !full_access_granted()
-    {
-        record_bad_behavior(
-            "github_mutation_without_guard_decision",
-            "GitHub mutation requested without decision id",
-            &command_preview(argv),
-        )?;
+    let mutation = (gh_route && gh_mutation(argv)) || (git_route && git_mutation(argv));
+    if force_push_requested(argv) {
         return Ok(json!({
             "ok": false,
             "decision": "deny",
-            "reason": "GitHub mutation requires --decision-id",
+            "reason": "force-push is a non-toggleable hard safety boundary",
+            "mutation": true,
+            "redacted_preview": command_preview(argv),
+        }));
+    }
+    if mutation && !session_capability_enabled("github_mutation") {
+        return Ok(json!({
+            "ok": false,
+            "decision": "deny",
+            "reason": "GitHub mutation is disabled by the optional session routing switch",
+            "mutation": true,
+            "redacted_preview": command_preview(argv),
+        }));
+    }
+    if (first == "gh" || git_network(argv)) && !session_capability_enabled("network") {
+        return Ok(json!({
+            "ok": false,
+            "decision": "deny",
+            "reason": "network is disabled by the optional session routing switch",
             "mutation": mutation,
             "redacted_preview": command_preview(argv),
         }));
@@ -2009,7 +2635,7 @@ pub fn github_guard_check(
         "decision": if mutation {"guarded"} else {"read_only"},
         "mutation": mutation,
         "executed": false,
-        "decision_id": decision_id.or_else(|| full_access_granted().then_some(USER_FULL_ACCESS_DECISION_ID)),
+        "decision_id": decision_id.or_else(|| mutation.then_some(USER_FULL_ACCESS_DECISION_ID)),
         "redacted_preview": command_preview(argv),
     });
     if execute {
@@ -2019,6 +2645,10 @@ pub fn github_guard_check(
         let status = command.status()?;
         result["executed"] = json!(true);
         result["exit_code"] = json!(status.code().unwrap_or(1));
+        result["ok"] = json!(status.success());
+        if !status.success() {
+            result["decision"] = json!("command_failed");
+        }
     }
     append_ledger(
         "github.jsonl",
@@ -2094,6 +2724,11 @@ pub fn openrouter_wire_compatibility_summary(openapi_json: &Value) -> Value {
 }
 
 pub fn openrouter_probe_value(model: Option<&str>, prompt: Option<&str>) -> Result<Value> {
+    if !session_capability_enabled("external_providers") || !session_capability_enabled("network") {
+        return Err(anyhow!(
+            "OpenRouter is disabled by optional external-provider or network routing switches"
+        ));
+    }
     let model = model.unwrap_or("tencent/hy3:free");
     let prompt = prompt.unwrap_or("Return the single word pong.");
     let has_key = env::var_os("OPENROUTER_API_KEY")
@@ -2297,16 +2932,23 @@ pub fn openrouter_probe_value(model: Option<&str>, prompt: Option<&str>) -> Resu
     let account_policy_blocked = response_http == "404"
         && (response_preview.contains("guardrail restrictions")
             || response_preview.contains("settings/privacy"));
-    let ok = models_exit == 0
+    let catalog_ok = models_exit == 0
         && model_count > 0
         && has_openai
         && has_anthropic
         && direct_responses_wire_compatible;
+    let execution_ready = catalog_ok && key_valid && generation_ok;
+    let provider_contract_fingerprint = provider_contract_fingerprint("openrouter")?;
+    let provider_receipt_ts_utc = utc_now();
     let out = json!({
-        "ok": ok,
-        "enabled": full_access_granted(),
-        "decision_id": if full_access_granted() {Value::String(USER_FULL_ACCESS_DECISION_ID.to_string())} else {Value::Null},
+        "ok": execution_ready,
+        "catalog_ok": catalog_ok,
+        "execution_ready": execution_ready,
+        "enabled": true,
+        "decision_id": USER_FULL_ACCESS_DECISION_ID,
         "provider": "openrouter",
+        "provider_contract_fingerprint": provider_contract_fingerprint,
+        "provider_receipt_ts_utc": provider_receipt_ts_utc,
         "base_url": "https://openrouter.ai/api/v1",
         "responses_url": "https://openrouter.ai/api/v1/responses",
         "models_exit_code": models_exit,
@@ -2330,7 +2972,19 @@ pub fn openrouter_probe_value(model: Option<&str>, prompt: Option<&str>) -> Resu
     )?;
     append_ledger(
         "network.jsonl",
-        json!({"event":"openrouter_probe","decision": if ok {"allow"} else {"deny"},"result":out}),
+        json!({
+            "event": "openrouter_probe",
+            "decision": if execution_ready {"allow"} else {"deny"},
+            "provider": "openrouter",
+            "provider_contract_fingerprint": out.get("provider_contract_fingerprint"),
+            "provider_receipt_ts_utc": out.get("provider_receipt_ts_utc"),
+            "result": {
+                "ok": execution_ready,
+                "executed": has_key,
+                "exit_code": if execution_ready {0} else {1},
+                "proof": out,
+            }
+        }),
     )?;
     Ok(out)
 }
@@ -2344,41 +2998,42 @@ pub fn claude_bridge_value_with_auth(
     execute: bool,
     allow_default_auth: bool,
 ) -> Result<Value> {
-    let claude = which("claude");
+    let provider_contract_fingerprint = provider_contract_fingerprint("claude_bridge")?;
+    let claude = profile_frontdoor("claude").ok();
+    let enabled =
+        session_capability_enabled("external_providers") && session_capability_enabled("network");
     let version = claude.as_ref().and_then(|_| {
-        let mut cmd = Command::new("claude");
-        cmd.arg("--version");
+        let cmd = profile_rtk_command("claude", &["--version"]).ok()?;
         command_output_text(cmd)
             .ok()
             .map(|(_, stdout, stderr)| redact(&(stdout + &stderr)).trim().to_string())
     });
     let mut result = json!({
-        "ok": claude.is_some(),
-        "enabled": full_access_granted(),
-        "decision_id": if full_access_granted() {Value::String(USER_FULL_ACCESS_DECISION_ID.to_string())} else {Value::Null},
+        "ok": claude.is_some() && enabled,
+        "enabled": enabled,
+        "decision_id": if enabled {Value::String(USER_FULL_ACCESS_DECISION_ID.to_string())} else {Value::Null},
         "claude_path": claude.map(|p| p.display().to_string()),
         "version": version,
         "mode": "supervised-external-cli-bridge",
+        "safety_mode": "safe-mode-no-tools-strict-empty-mcp",
+        "tools": [],
+        "mcp_servers": [],
+        "slash_commands": false,
+        "chrome": false,
+        "session_persistence": false,
         "auth_mode": if allow_default_auth {"claude-default-auth-no-env-secrets"} else {"bare-env-only"},
         "secret_printed": false,
         "executed": false
     });
     if execute {
+        if !enabled {
+            return Err(anyhow!(
+                "Claude bridge is disabled by optional external-provider or network routing switches"
+            ));
+        }
         let prompt = prompt.unwrap_or("Return compact JSON: {\"bridge\":\"ok\"}.");
         let prompt_hash = sha256_bytes(prompt.as_bytes());
-        let mut cmd = Command::new("claude");
-        if !allow_default_auth {
-            cmd.arg("--bare");
-        }
-        cmd.args([
-            "--print",
-            "--output-format",
-            "json",
-            "--permission-mode",
-            "plan",
-            "--no-session-persistence",
-            prompt,
-        ]);
+        let cmd = claude_run_command(prompt, allow_default_auth)?;
         let (code, stdout, stderr) = command_output_text(cmd)?;
         result["executed"] = json!(true);
         result["exit_code"] = json!(code);
@@ -2391,16 +3046,21 @@ pub fn claude_bridge_value_with_auth(
         ));
         result["ok"] = json!(code == 0);
     }
+    let provider_receipt_ts_utc = utc_now();
     append_ledger(
         "network.jsonl",
-        json!({"event":"claude_bridge","decision": if result.get("ok").and_then(Value::as_bool).unwrap_or(false) {"allow"} else {"deny"},"result":result}),
+        json!({"event":"claude_bridge","decision": if result.get("ok").and_then(Value::as_bool).unwrap_or(false) {"allow"} else {"deny"},"provider":"claude_bridge","provider_contract_fingerprint":provider_contract_fingerprint,"provider_receipt_ts_utc":provider_receipt_ts_utc,"result":result}),
     )?;
     Ok(result)
 }
 
 pub fn browser_computer_value() -> Result<Value> {
-    let mut cmd = Command::new("codex");
-    cmd.args(["features", "list"]);
+    if !session_capability_enabled("browser_computer") {
+        return Err(anyhow!(
+            "browser/computer use is disabled by the optional session routing switch"
+        ));
+    }
+    let cmd = profile_rtk_command("codex", &["features", "list"])?;
     let (features_exit_code, text, features_stderr) =
         command_output_text(cmd).unwrap_or_else(|err| (1, String::new(), err.to_string()));
     let has_browser = text
@@ -2416,8 +3076,8 @@ pub fn browser_computer_value() -> Result<Value> {
     let linux_computer_caveat = os == "linux";
     let out = json!({
         "ok": has_browser && has_computer,
-        "enabled": full_access_granted(),
-        "decision_id": if full_access_granted() {Value::String(USER_FULL_ACCESS_DECISION_ID.to_string())} else {Value::Null},
+        "enabled": true,
+        "decision_id": USER_FULL_ACCESS_DECISION_ID,
         "codex_features": {
             "browser_use": has_browser,
             "browser_use_external": has_browser_external,
@@ -2570,6 +3230,26 @@ mod tests {
 
     static ENV_LOCK: Mutex<()> = Mutex::new(());
 
+    fn write_full_policy(root: &Path) {
+        let policy = root.join("codex-harness/policy/policy.toml");
+        fs::create_dir_all(policy.parent().unwrap()).unwrap();
+        fs::write(
+            policy,
+            format!(
+                r#"
+full_access_decision_id = "{USER_FULL_ACCESS_DECISION_ID}"
+
+[permission_grants]
+operator_grants_are_execution_context = true
+expanded_access_is_not_a_blocker = true
+decision_id = "{USER_FULL_ACCESS_DECISION_ID}"
+danger_full_access = "keep"
+"#
+            ),
+        )
+        .unwrap();
+    }
+
     #[test]
     fn policy_denies_rm() {
         let d = policy_decision(&["rm".into(), "-rf".into(), "/tmp/x".into()]);
@@ -2580,7 +3260,7 @@ mod tests {
     fn policy_denies_ledger_write() {
         let d = policy_decision(&[
             "tee".into(),
-            "/home/flexnetos/lifeos/src/envctl/home/agent-env/codex-harness/ledger/harness.jsonl"
+            "/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/ledger/harness.jsonl"
                 .into(),
         ]);
         assert_eq!(d.decision, DecisionKind::Deny);
@@ -2590,6 +3270,42 @@ mod tests {
     fn policy_denies_nested_codex() {
         let d = policy_decision(&["codex".into(), "exec".into(), "hi".into()]);
         assert_eq!(d.decision, DecisionKind::Deny);
+    }
+
+    #[test]
+    fn rtk_routes_preserve_nested_agent_and_git_safety() {
+        let nested = policy_decision(&["rtk".into(), "codex".into(), "exec".into(), "hi".into()]);
+        assert_eq!(nested.decision, DecisionKind::Deny);
+
+        let read_only =
+            policy_decision(&["rtk".into(), "meta".into(), "git".into(), "status".into()]);
+        assert_eq!(read_only.decision, DecisionKind::Allow);
+
+        let mutation = policy_decision(&[
+            "rtk".into(),
+            "meta".into(),
+            "exec".into(),
+            "--".into(),
+            "git".into(),
+            "commit".into(),
+        ]);
+        assert_eq!(mutation.decision, DecisionKind::Deny);
+
+        let force = github_guard_check(
+            &[
+                "rtk".into(),
+                "meta".into(),
+                "exec".into(),
+                "--".into(),
+                "git".into(),
+                "push".into(),
+                "--force".into(),
+            ],
+            None,
+            false,
+        )
+        .unwrap();
+        assert_eq!(force.get("ok").and_then(Value::as_bool), Some(false));
     }
 
     #[test]
@@ -2675,14 +3391,24 @@ mod tests {
     }
 
     #[test]
-    fn policy_denies_danger_without_decision_id() {
-        let d = policy_decision(&["codex".into(), "--danger-full-access".into()]);
-        assert_eq!(d.decision, DecisionKind::Deny);
-        assert_eq!(d.violation.as_deref(), Some("danger_without_decision_id"));
+    fn policy_delegates_exact_codex_full_access_frontdoor_to_live_permissions() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        env::set_var("CODEX_HARNESS_ROOT", dir.path());
+        let d = policy_decision(&[
+            "codex".into(),
+            "--dangerously-bypass-approvals-and-sandbox".into(),
+        ]);
+        assert_eq!(d.decision, DecisionKind::Allow);
+        assert!(d.reason.contains("/permissions"));
+        env::remove_var("CODEX_HARNESS_ROOT");
     }
 
     #[test]
-    fn policy_prompts_danger_with_decision_id() {
+    fn arbitrary_danger_text_does_not_bypass_normal_policy() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        env::set_var("CODEX_HARNESS_ROOT", dir.path());
         let d = policy_decision(&[
             "tool".into(),
             "--danger-full-access".into(),
@@ -2690,16 +3416,54 @@ mod tests {
             "DEC-1".into(),
         ]);
         assert_eq!(d.decision, DecisionKind::Prompt);
+        env::remove_var("CODEX_HARNESS_ROOT");
     }
 
     #[test]
     fn policy_denies_github_mutation_without_guard() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        env::set_var("CODEX_HARNESS_ROOT", dir.path());
         let d = policy_decision(&["gh".into(), "pr".into(), "merge".into(), "1".into()]);
         assert_eq!(d.decision, DecisionKind::Deny);
         assert_eq!(
             d.violation.as_deref(),
             Some("github_mutation_without_guard")
         );
+        env::remove_var("CODEX_HARNESS_ROOT");
+    }
+
+    #[test]
+    fn danger_text_cannot_bypass_delete_or_force_push_safety() {
+        let delete = policy_decision(&[
+            "bash".into(),
+            "-c".into(),
+            "rm -rf /tmp/definitely-not-executed".into(),
+            "--danger-full-access".into(),
+        ]);
+        assert_ne!(delete.decision, DecisionKind::Allow);
+
+        let force = policy_decision(&[
+            "bash".into(),
+            "-c".into(),
+            "git push --force origin main".into(),
+            "bypass".into(),
+        ]);
+        assert_ne!(force.decision, DecisionKind::Allow);
+    }
+
+    #[test]
+    fn codex_frontdoor_path_rejects_user_local_and_temporary_shadows() {
+        assert!(approved_codex_frontdoor_path(Path::new(
+            "/home/flexnetos/.nix-profile/bin/codex"
+        )));
+        assert!(approved_codex_frontdoor_path(Path::new(
+            "/nix/store/example/toolbin/codex"
+        )));
+        assert!(!approved_codex_frontdoor_path(Path::new(
+            "/home/flexnetos/.local/bin/codex"
+        )));
+        assert!(!approved_codex_frontdoor_path(Path::new("/tmp/codex")));
     }
 
     #[test]
@@ -2707,12 +3471,15 @@ mod tests {
         let _guard = ENV_LOCK.lock().unwrap();
         let dir = tempfile::tempdir().unwrap();
         env::set_var("CODEX_HARNESS_ROOT", dir.path());
+        env::set_var("CODEX_PERMISSION_PROFILE", ":danger-full-access");
+        write_full_policy(dir.path());
         fs::create_dir_all(dir.path().join("codex-harness/ledger")).unwrap();
         route_model_tasks(&["containment policy tests".to_string()]).unwrap();
         let input = json!({"hook_event_name":"SubagentStart","depth":1});
         let resp = hook_response(&input).unwrap();
         assert!(resp.as_object().map(|o| o.is_empty()).unwrap_or(false));
         env::remove_var("CODEX_HARNESS_ROOT");
+        env::remove_var("CODEX_PERMISSION_PROFILE");
     }
 
     #[test]
@@ -2778,5 +3545,493 @@ danger_full_access = "keep"
         )
         .unwrap();
         assert!(!tracked_full_access_policy_granted_at(&policy));
+    }
+
+    #[test]
+    fn codex_permission_profile_is_informational_not_a_duplicate_gate() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        env::set_var("CODEX_HARNESS_ROOT", dir.path());
+        write_full_policy(dir.path());
+
+        env::set_var("CODEX_PERMISSION_PROFILE", ":danger-full-access");
+        assert!(tracked_full_access_policy_granted());
+        assert!(session_capability_enabled("external_providers"));
+
+        env::set_var("CODEX_PERMISSION_PROFILE", "harness-read-only");
+        assert!(tracked_full_access_policy_granted());
+        assert!(session_capability_enabled("external_providers"));
+        assert!(session_capability_enabled("subagents"));
+
+        env::set_var("CODEX_PERMISSION_PROFILE", "harness-local-models");
+        assert!(tracked_full_access_policy_granted());
+        assert!(session_capability_enabled("local_models"));
+        assert!(session_capability_enabled("external_providers"));
+
+        env::remove_var("CODEX_HARNESS_ROOT");
+        env::remove_var("CODEX_PERMISSION_PROFILE");
+    }
+
+    #[test]
+    fn missing_permission_profile_does_not_recreate_full_access_deadlock() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        env::set_var("CODEX_HARNESS_ROOT", dir.path());
+        env::remove_var("CODEX_PERMISSION_PROFILE");
+        write_full_policy(dir.path());
+
+        assert!(tracked_full_access_policy_granted());
+        assert!(session_capability_enabled("external_providers"));
+        assert!(session_capability_enabled("local_models"));
+        assert!(session_capability_enabled("network"));
+        assert!(session_capability_enabled("github_mutation"));
+        assert!(session_capability_enabled("browser_computer"));
+        assert!(session_capability_enabled("background_jobs"));
+        assert!(session_capability_enabled("subagents"));
+
+        env::remove_var("CODEX_HARNESS_ROOT");
+    }
+
+    #[test]
+    fn corrupt_session_capability_state_fails_closed() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        env::set_var("CODEX_HARNESS_ROOT", dir.path());
+        env::set_var("CODEX_THREAD_ID", "corrupt-session-state");
+        write_full_policy(dir.path());
+        let path = session_capability_path();
+        fs::create_dir_all(path.parent().unwrap()).unwrap();
+        fs::write(&path, "{broken").unwrap();
+
+        for capability in SESSION_CAPABILITIES {
+            assert!(!session_capability_enabled(capability), "{capability}");
+        }
+        let status = session_capability_status();
+        assert_eq!(
+            status.get("state_valid").and_then(Value::as_bool),
+            Some(false)
+        );
+        assert!(set_session_capability("network", false).is_err());
+
+        env::remove_var("CODEX_HARNESS_ROOT");
+        env::remove_var("CODEX_THREAD_ID");
+    }
+
+    #[test]
+    fn session_toggle_narrows_optional_routing_without_claiming_os_authority() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        env::set_var("CODEX_HARNESS_ROOT", dir.path());
+        env::set_var("CODEX_THREAD_ID", "test-session-toggle");
+        write_full_policy(dir.path());
+
+        env::set_var("CODEX_PERMISSION_PROFILE", ":danger-full-access");
+        assert!(session_capability_enabled("github_mutation"));
+        set_session_capability("github_mutation", false).unwrap();
+        assert!(!session_capability_enabled("github_mutation"));
+        set_session_capability("github_mutation", true).unwrap();
+        assert!(session_capability_enabled("github_mutation"));
+
+        env::remove_var("CODEX_HARNESS_ROOT");
+        env::remove_var("CODEX_PERMISSION_PROFILE");
+        env::remove_var("CODEX_THREAD_ID");
+    }
+
+    #[test]
+    fn local_model_tasks_route_to_ollama() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        env::set_var("CODEX_HARNESS_ROOT", dir.path());
+        env::set_var("CODEX_PERMISSION_PROFILE", "harness-local-models");
+        write_full_policy(dir.path());
+
+        let route = model_route_for_task("summarize with local Ollama");
+        assert_eq!(
+            route.get("provider").and_then(Value::as_str),
+            Some("ollama")
+        );
+        assert_eq!(
+            route.get("profile").and_then(Value::as_str),
+            Some("envctl-local-models")
+        );
+        assert_eq!(
+            route
+                .get("approved_capability_expansion")
+                .and_then(Value::as_bool),
+            Some(true)
+        );
+
+        env::remove_var("CODEX_HARNESS_ROOT");
+        env::remove_var("CODEX_PERMISSION_PROFILE");
+    }
+
+    #[test]
+    fn openai_task_classes_route_to_sol_terra_and_luna() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        env::set_var("CODEX_HARNESS_ROOT", dir.path());
+        write_full_policy(dir.path());
+
+        for (task, expected) in [
+            ("high-stakes security review", "gpt-5.6-sol"),
+            ("balanced Terra professional workflow", "gpt-5.6-terra"),
+            (
+                "simple high-throughput mechanical inventory",
+                "gpt-5.6-luna",
+            ),
+        ] {
+            let route = model_route_for_task(task);
+            assert_eq!(
+                route.get("model").and_then(Value::as_str),
+                Some(expected),
+                "{task}"
+            );
+        }
+
+        env::remove_var("CODEX_HARNESS_ROOT");
+    }
+
+    #[test]
+    fn explicit_provider_routing_precedes_sol_terra_luna_task_classes() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        env::set_var("CODEX_HARNESS_ROOT", dir.path());
+
+        for (task, provider) in [
+            ("simple local Ollama inventory", "ollama"),
+            ("high-stakes Claude security review", "claude-bridge"),
+            ("simple OpenRouter summary", "openrouter"),
+        ] {
+            let route = model_route_for_task(task);
+            assert_eq!(
+                route.get("provider").and_then(Value::as_str),
+                Some(provider),
+                "{task}"
+            );
+            assert_eq!(
+                route
+                    .get("approved_capability_expansion")
+                    .and_then(Value::as_bool),
+                Some(true),
+                "{task}"
+            );
+        }
+
+        env::remove_var("CODEX_HARNESS_ROOT");
+    }
+
+    #[test]
+    fn network_toggle_blocks_native_codex_routes_and_children() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        env::set_var("CODEX_HARNESS_ROOT", dir.path());
+        env::set_var("CODEX_THREAD_ID", "network-off-native-codex");
+        write_full_policy(dir.path());
+        route_model_tasks(&["native Codex implementation".to_string()]).unwrap();
+        set_session_capability("network", false).unwrap();
+
+        let route = model_route_for_task("native Codex implementation");
+        assert_eq!(
+            route
+                .get("approved_capability_expansion")
+                .and_then(Value::as_bool),
+            Some(false)
+        );
+        assert!(spawn_codex_exec(dir.path(), "envctl-harness", "test").is_err());
+        assert!(run_codex_exec(dir.path(), "envctl-harness", "test").is_err());
+
+        env::remove_var("CODEX_HARNESS_ROOT");
+        env::remove_var("CODEX_THREAD_ID");
+    }
+
+    #[test]
+    fn network_toggle_blocks_remote_git_operations_and_push() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        env::set_var("CODEX_HARNESS_ROOT", dir.path());
+        env::set_var("CODEX_THREAD_ID", "network-off-git");
+        write_full_policy(dir.path());
+        set_session_capability("network", false).unwrap();
+
+        for argv in [
+            vec!["git".into(), "push".into(), "origin".into(), "main".into()],
+            vec!["git".into(), "fetch".into(), "origin".into()],
+            vec!["git".into(), "pull".into(), "--ff-only".into()],
+            vec![
+                "git".into(),
+                "clone".into(),
+                "https://example.invalid/x".into(),
+            ],
+            vec!["git".into(), "ls-remote".into(), "origin".into()],
+            vec!["git".into(), "remote".into(), "update".into()],
+            vec!["git".into(), "submodule".into(), "update".into()],
+        ] {
+            let result = github_guard_check(&argv, Some("operator"), false).unwrap();
+            assert_eq!(result.get("ok").and_then(Value::as_bool), Some(false));
+            assert_eq!(
+                result.get("reason").and_then(Value::as_str),
+                Some("network is disabled by the optional session routing switch")
+            );
+        }
+
+        env::remove_var("CODEX_HARNESS_ROOT");
+        env::remove_var("CODEX_THREAD_ID");
+    }
+
+    #[test]
+    fn subagent_start_rechecks_current_network_toggle() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        env::set_var("CODEX_HARNESS_ROOT", dir.path());
+        env::set_var("CODEX_THREAD_ID", "subagent-network-recheck");
+        write_full_policy(dir.path());
+        route_model_tasks(&["native Codex implementation".to_string()]).unwrap();
+        set_session_capability("network", false).unwrap();
+
+        let response =
+            hook_response(&json!({"hook_event_name":"SubagentStart","depth":1})).unwrap();
+        assert_eq!(
+            response
+                .pointer("/hookSpecificOutput/permissionDecision")
+                .and_then(Value::as_str),
+            Some("deny")
+        );
+        assert!(response
+            .pointer("/hookSpecificOutput/permissionDecisionReason")
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .contains("network"));
+
+        env::remove_var("CODEX_HARNESS_ROOT");
+        env::remove_var("CODEX_THREAD_ID");
+    }
+
+    #[test]
+    fn github_guard_never_allows_force_push() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        env::set_var("CODEX_HARNESS_ROOT", dir.path());
+        write_full_policy(dir.path());
+
+        for argv in [
+            vec!["git".into(), "push".into(), "--force".into()],
+            vec!["git".into(), "push".into(), "--force-with-lease".into()],
+            vec![
+                "git".into(),
+                "push".into(),
+                "--force-with-lease=refs/heads/main:deadbeef".into(),
+            ],
+            vec!["git".into(), "push".into(), "-f".into()],
+            vec![
+                "git".into(),
+                "push".into(),
+                "origin".into(),
+                "+refs/heads/main:refs/heads/main".into(),
+            ],
+            vec!["git".into(), "push".into(), "--mirror".into()],
+        ] {
+            let result = github_guard_check(&argv, Some("operator"), false).unwrap();
+            assert_eq!(result.get("ok").and_then(Value::as_bool), Some(false));
+            assert_eq!(
+                result.get("reason").and_then(Value::as_str),
+                Some("force-push is a non-toggleable hard safety boundary")
+            );
+        }
+
+        env::remove_var("CODEX_HARNESS_ROOT");
+    }
+
+    #[test]
+    fn github_guard_reuses_enabled_session_intent_without_extra_id_gate() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        env::set_var("CODEX_HARNESS_ROOT", dir.path());
+        env::set_var("CODEX_THREAD_ID", "github-default-decision");
+
+        let result = github_guard_check(
+            &["gh".into(), "pr".into(), "merge".into(), "123".into()],
+            None,
+            false,
+        )
+        .unwrap();
+        assert_eq!(result.get("ok").and_then(Value::as_bool), Some(true));
+        assert_eq!(
+            result.get("decision_id").and_then(Value::as_str),
+            Some(USER_FULL_ACCESS_DECISION_ID)
+        );
+
+        env::remove_var("CODEX_HARNESS_ROOT");
+        env::remove_var("CODEX_THREAD_ID");
+    }
+
+    #[test]
+    fn claude_child_has_no_tools_or_customization_escape_hatches() {
+        let bare = claude_run_argv("test prompt", false).unwrap();
+        assert_eq!(
+            bare.first().map(String::as_str),
+            Some("/home/flexnetos/.nix-profile/bin/rtk")
+        );
+        assert_eq!(bare.get(1).map(String::as_str), Some("claude"));
+        assert!(bare.iter().any(|arg| arg == "--bare"));
+        assert!(bare.iter().any(|arg| arg == "--safe-mode"));
+        assert!(bare.windows(2).any(|pair| pair == ["--tools", ""]));
+        assert!(bare
+            .windows(2)
+            .any(|pair| pair == ["--mcp-config", r#"{"mcpServers":{}}"#]));
+        assert!(bare.iter().any(|arg| arg == "--strict-mcp-config"));
+        assert!(bare.iter().any(|arg| arg == "--disable-slash-commands"));
+        assert!(bare.iter().any(|arg| arg == "--no-chrome"));
+        assert!(bare.iter().any(|arg| arg == "--no-session-persistence"));
+        assert!(!bare
+            .iter()
+            .any(|arg| arg == "--dangerously-skip-permissions"));
+        assert!(!bare
+            .iter()
+            .any(|arg| arg == "bypassPermissions" || arg == "--permission-mode"));
+        for forbidden_tool in ["Read", "Bash", "Edit", "Write", "Agent"] {
+            assert!(!bare.iter().any(|arg| arg == forbidden_tool));
+        }
+
+        let default_auth = claude_run_argv("test prompt", true).unwrap();
+        assert!(!default_auth.iter().any(|arg| arg == "--bare"));
+        assert!(default_auth.windows(2).any(|pair| pair == ["--tools", ""]));
+
+        let command = claude_run_command("test prompt", true).unwrap();
+        for secret in [
+            "OPENAI_API_KEY",
+            "CODEX_API_KEY",
+            "OPENROUTER_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "CLAUDE_API_KEY",
+            "GITHUB_TOKEN",
+            "GH_TOKEN",
+        ] {
+            assert!(
+                matches!(
+                    command
+                        .get_envs()
+                        .find(|(key, _)| *key == OsStr::new(secret)),
+                    Some((_, None))
+                ),
+                "{secret} must be removed from the Claude child environment"
+            );
+        }
+    }
+
+    #[test]
+    fn provider_receipts_use_latest_success_fingerprint_and_freshness() {
+        let now = parse_utc_timestamp("2026-07-10T23:30:00Z").unwrap();
+        let fingerprint = "current-contract";
+        let success = json!({
+            "event": "claude_bridge",
+            "decision": "allow",
+            "provider": "claude_bridge",
+            "provider_contract_fingerprint": fingerprint,
+            "provider_receipt_ts_utc": "2026-07-10T23:29:00Z",
+            "result": {"ok": true, "executed": true, "exit_code": 0},
+        });
+        assert!(provider_receipt_valid_at(
+            std::slice::from_ref(&success),
+            "claude_bridge",
+            "claude_bridge",
+            true,
+            fingerprint,
+            now,
+            PROVIDER_RECEIPT_MAX_AGE,
+        ));
+
+        let later_inventory = json!({
+            "event": "claude_bridge",
+            "decision": "allow",
+            "provider": "claude_bridge",
+            "provider_contract_fingerprint": fingerprint,
+            "provider_receipt_ts_utc": "2026-07-10T23:29:30Z",
+            "result": {"ok": true, "executed": false},
+        });
+        assert!(provider_receipt_valid_at(
+            &[success.clone(), later_inventory],
+            "claude_bridge",
+            "claude_bridge",
+            true,
+            fingerprint,
+            now,
+            PROVIDER_RECEIPT_MAX_AGE,
+        ));
+
+        let stale = json!({
+            "event": "claude_bridge",
+            "decision": "allow",
+            "provider": "claude_bridge",
+            "provider_contract_fingerprint": fingerprint,
+            "provider_receipt_ts_utc": "2026-07-10T23:14:59Z",
+            "result": {"ok": true, "executed": true, "exit_code": 0},
+        });
+        assert!(!provider_receipt_valid_at(
+            &[stale],
+            "claude_bridge",
+            "claude_bridge",
+            true,
+            fingerprint,
+            now,
+            PROVIDER_RECEIPT_MAX_AGE,
+        ));
+
+        let old_ignored_receipt = json!({
+            "event": "claude_bridge",
+            "decision": "allow",
+            "provider_receipt_ts_utc": "2026-07-10T23:29:00Z",
+            "result": {"ok": true, "executed": true, "exit_code": 0},
+        });
+        assert!(!provider_receipt_valid_at(
+            &[old_ignored_receipt],
+            "claude_bridge",
+            "claude_bridge",
+            true,
+            fingerprint,
+            now,
+            PROVIDER_RECEIPT_MAX_AGE,
+        ));
+
+        let latest_failure = json!({
+            "event": "claude_bridge",
+            "decision": "deny",
+            "provider": "claude_bridge",
+            "provider_contract_fingerprint": fingerprint,
+            "provider_receipt_ts_utc": "2026-07-10T23:29:30Z",
+            "result": {"ok": false, "executed": true, "exit_code": 1},
+        });
+        assert!(!provider_receipt_valid_at(
+            &[success, latest_failure],
+            "claude_bridge",
+            "claude_bridge",
+            true,
+            fingerprint,
+            now,
+            PROVIDER_RECEIPT_MAX_AGE,
+        ));
+    }
+
+    #[test]
+    fn provider_contract_fingerprint_is_provider_specific_and_source_bound() {
+        let _guard = ENV_LOCK.lock().unwrap();
+        let dir = tempfile::tempdir().unwrap();
+        env::set_var("CODEX_HARNESS_ROOT", dir.path());
+        let harness = dir.path().join("codex-harness");
+        fs::create_dir_all(harness.join("src")).unwrap();
+        fs::create_dir_all(harness.join("config/policy")).unwrap();
+        fs::write(harness.join("src/lib.rs"), COMPILED_PROVIDER_SOURCE).unwrap();
+        fs::write(
+            harness.join("config/policy/providers.toml"),
+            COMPILED_PROVIDER_CONFIG,
+        )
+        .unwrap();
+
+        let claude = provider_contract_fingerprint("claude_bridge").unwrap();
+        let ollama = provider_contract_fingerprint("ollama").unwrap();
+        assert_ne!(claude, ollama);
+        fs::write(harness.join("config/policy/providers.toml"), b"changed").unwrap();
+        assert!(provider_contract_fingerprint("claude_bridge").is_err());
+
+        env::remove_var("CODEX_HARNESS_ROOT");
     }
 }

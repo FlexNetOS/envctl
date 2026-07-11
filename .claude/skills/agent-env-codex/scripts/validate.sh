@@ -15,6 +15,8 @@ VALIDATOR=/home/flexnetos/.codex/skills/.system/skill-creator/scripts/quick_vali
 
 for path in "$ORIG" "$FULL" "$SNAPSHOT" "$HARNESS" "$SKILL_ROOT/SKILL.md" \
   "$SKILL_ROOT/references/coverage-map.md" \
+  "$SKILL_ROOT/references/github-execution-policy.md" \
+  "$SKILL_ROOT/references/github-org-and-ccboard.md" \
   "$SKILL_ROOT/references/ownership-map.md" \
   "$SKILL_ROOT/references/runbook-cli-contract.md" \
   "$SKILL_ROOT/agents/openai.yaml" "$DURABLE" "$ACTIVE" "$PROJECT_CODEX" "$PROJECT_CLAUDE"; do
@@ -31,7 +33,18 @@ fi
 grep -Fq 'name: agent-env-codex' "$SKILL_ROOT/SKILL.md"
 grep -Fq '/agent-env-codex' "$SKILL_ROOT/SKILL.md"
 grep -Fq 'references/source-prompt.md' "$SKILL_ROOT/SKILL.md"
+grep -Fq 'references/github-execution-policy.md' "$SKILL_ROOT/SKILL.md"
+grep -Fq 'references/github-org-and-ccboard.md' "$SKILL_ROOT/SKILL.md"
 grep -Fq 'Use $agent-env-codex' "$SKILL_ROOT/agents/openai.yaml"
+grep -Fq 'Never cherry-pick.' "$SKILL_ROOT/references/github-execution-policy.md"
+grep -Fq 'Permission integrity' "$SKILL_ROOT/references/github-execution-policy.md"
+grep -Fq 'Unfinished-work closure' "$SKILL_ROOT/references/github-execution-policy.md"
+grep -Fq 'Meta worktree authority' "$SKILL_ROOT/references/github-execution-policy.md"
+grep -Fq 'Linux-only automation' "$SKILL_ROOT/references/github-execution-policy.md"
+grep -Fq 'Non-destructive fork sync' "$SKILL_ROOT/references/github-execution-policy.md"
+grep -Fq 'SSH Git transport' "$SKILL_ROOT/references/github-execution-policy.md"
+grep -Fq 'Codex is partially wired, not absent' "$SKILL_ROOT/references/github-org-and-ccboard.md"
+grep -Fq 'Do not claim SSH can configure organization settings.' "$SKILL_ROOT/references/github-org-and-ccboard.md"
 
 printf '\n== skill source/projection identity ==\n'
 diff -qr "$DURABLE" "$PROJECT_CODEX"
@@ -112,10 +125,14 @@ cargo run --quiet --manifest-path "$HARNESS" --bin codex-harness-prompt-review -
 printf '\n== complete Codex harness tests ==\n'
 cargo test --quiet --manifest-path "$HARNESS"
 
-if git -C "$ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+RTK=/home/flexnetos/.nix-profile/bin/rtk
+META_ROOT=/home/flexnetos/meta
+if [[ -x "$RTK" && -d "$META_ROOT" ]]; then
   printf '\n== diff check ==\n'
-  git -C "$ROOT" diff --check
+  (cd "$META_ROOT" && "$RTK" meta exec --include envctl -- git -C "$ROOT" diff --check)
   echo 'diff-check OK'
   printf '\n== repo status ==\n'
-  git -C "$ROOT" status --short --branch
+  (cd "$META_ROOT" && "$RTK" meta exec --include envctl -- git -C "$ROOT" status --short --branch)
+else
+  echo 'RTK/Meta unavailable: repository status proof skipped, not replaced by raw git' >&2
 fi

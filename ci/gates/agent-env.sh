@@ -19,7 +19,7 @@ fi
 
 echo "AGENT-ENV GATE: build envctl"
 cargo build -q -p envctl
-BIN=target/debug/envctl
+BIN="${CARGO_TARGET_DIR:-target}/debug/envctl"
 
 render_tmp="$(mktemp -d)"
 trap 'rm -rf "$render_tmp"' EXIT

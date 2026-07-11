@@ -1,7 +1,0 @@
-model = "gpt-5.5"
-model_provider = "openai"
-model_reasoning_effort = "xhigh"
-model_catalog_json = "/home/flexnetos/.codex/model-catalog.json"
-approval_policy = "never"
-sandbox_mode = "danger-full-access"
-default_permissions = ":danger-full-access"
