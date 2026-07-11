@@ -28,7 +28,7 @@ case "$RES" in
   "$ARCHIVE_ROOT"/*)
     ledger "guard.deny" "\"rule\":\"protected-archive\",\"path\":\"$(json_escape "$RES")\""
     deny "Archives are immutable (LAW 1). Never modify ~/.claude/archive contents." ;;
-  /home/flexnetos/lifeos/src/envctl/home/.claude/*)
+  /home/flexnetos/meta/src/envctl/home/.claude/*)
     ledger "guard.deny" "\"rule\":\"protected-live-harness\",\"path\":\"$(json_escape "$RES")\""
     deny "This is the LIVE harness source (envctl main checkout). Sanctioned flow: edit in the envctl worktree on develop, commit, then fast-forward the checkout." ;;
 esac
