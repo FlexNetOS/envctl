@@ -131,6 +131,31 @@ else
   row "yzx ownership proof" "yzx inspect --json" gap "inspect missing/unparseable — verify owner manually"
 fi
 
+# 8g. GitHub workflows are linux-only (github execution policy)
+WFOS=$(grep -rlEi "runs-on:.*\b(macos|windows)|os:.*\[(.*\b(macos|windows))" "$REPO/.github/workflows/" 2>/dev/null || true)
+if [ -z "$WFOS" ]; then
+  row "workflows linux-only" "grep -rEi 'macos|windows' .github/workflows/" pass "no macOS/Windows runners"
+else
+  row "workflows linux-only" "grep -rEi 'macos|windows' .github/workflows/" fail "non-linux runner in: $(echo "$WFOS" | tr '\n' ' ')"
+fi
+# 8h. branches<->origin<->worktrees sync audit (stale/orphaned work = unfinished work)
+REAPABLE=0; INFLIGHT=0
+while IFS= read -r wt; do
+  [ -z "$wt" ] && continue
+  [ "$wt" = "$REPO" ] && continue
+  case "$wt" in "$PWD") continue ;; esac
+  if [ -n "$(git -C "$wt" status --porcelain 2>/dev/null)" ]; then
+    INFLIGHT=$((INFLIGHT+1))
+  elif git -C "$wt" merge-base --is-ancestor HEAD origin/develop 2>/dev/null; then
+    REAPABLE=$((REAPABLE+1))
+  fi
+done < <(git -C "$REPO" worktree list --porcelain 2>/dev/null | sed -n 's/^worktree //p')
+if [ "$REAPABLE" -gt 0 ]; then
+  row "worktree/branch sync" "git worktree list + merge-base audit" gap "$REAPABLE merged-clean worktree(s) awaiting reap; $INFLIGHT dirty (in-flight, recorded)"
+else
+  row "worktree/branch sync" "git worktree list + merge-base audit" pass "0 reapable; $INFLIGHT dirty (in-flight, recorded)"
+fi
+
 # 9. DISCOVERY rows (adopted from the codex sibling: sweep, don't just regress-test)
 W=$(yzx doctor 2>/dev/null | grep "⚠" | grep -vc Found || true)
 if [ "${W:-0}" -le 1 ]; then row "yzx doctor warnings" "yzx doctor warn-lines" pass "$W warning(s)"

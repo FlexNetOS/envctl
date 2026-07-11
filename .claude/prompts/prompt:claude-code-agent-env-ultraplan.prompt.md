@@ -212,6 +212,38 @@ Known profile gaps (verify, queue if still present): `cargo-fmt`/`cargo-clippy` 
 (only `rustfmt`/`clippy-driver`) — use `rustfmt --edition 2024 <files>` locally and CI clippy
 until the profile adds the shims.
 
+## GITHUB EXECUTION POLICY — fleet git/GitHub contract (binding in every repo this harness touches)
+
+- NEVER CHERRY-PICK. Not onto long-lived branches, not between worktrees, not to "rescue" one
+  commit off a stale branch. History moves by superset merge or fast-forward only; a change worth
+  keeping is worth merging whole. (Operator-stated twice — treat as a hard law of this policy.)
+- STALE OR ORPHANED WORK = UNFINISHED WORK. Unfinished work you surfaced is yours to finish: an
+  abandoned branch, an unpushed worktree commit, an unmerged-but-mergeable PR found during any
+  sweep is driven to MERGED or explicitly routed to the backlog with owner + reason — never left
+  dangling. A dirty worktree owned by another live session is recorded (DIRTY-STATE RULE), not
+  seized.
+- NO SIDESTEPPING, EVER: no removal of capability, no commenting-out code to get past a failing
+  gate, no permission change (adding an Allow rule, widening settings) to get past a blocked
+  action (`agent_bypass_request`). Strict upgrade only — fix the cause or surface the blocker.
+- WORKTREE RITUAL (meta policy, always): work happens in a fresh worktree off freshly-fetched
+  `develop` (`rtk meta git worktree create <slug>` / `rtk git worktree add … origin/develop`),
+  never on a shared checkout.
+- FLEET GIT ROUTES THROUGH `rtk meta git …` — never bare `git` for cross-repo operations;
+  unlisted verbs via `rtk meta exec -- git <cmd>`; raw `git` only under the RAW-COMMAND RULE.
+- LAND EVERYTHING: commit ALL changes (no partial "I'll commit the rest later"), push, open the
+  PR against `develop` with auto-merge armed. DONE = `gh pr view` returns `MERGED`
+  (tick-on-merged); armed-but-unmerged stays in-flight.
+- MERGED ⇒ REAP, immediately: delete the feature branch and remove its worktree after merge
+  verification (`scripts/reap-worktrees.sh` is the enforcement tool — dry-run first, never
+  `-D`/force, never a dirty worktree).
+- BRANCH TOPOLOGY: `master`/`main` and `develop` are the ONLY never-removed branches; everything
+  else is short-lived by construction. Branches ↔ origin ↔ worktrees stay in sync at all times —
+  divergence found by any probe is unfinished work under this policy.
+- WORKFLOWS ARE LINUX-ONLY: no macOS or Windows runners in any GitHub workflow (`runs-on` and
+  matrix entries). A workflow carrying `macos-*`/`windows-*` is a blocking finding.
+- FORKS SYNC AS SUPERSETS: a fork must be configured to pull upstream changes WITHOUT removing
+  local updates — upstream merge into the fork, never a force-reset of the fork to upstream.
+
 ## SUBSTRATE INIT CONTRACT — six substrates, all rows mandatory
 
 Sanctioned one-shot (five substrates): `yzx agent init` → preview; `yzx agent init --apply` →
