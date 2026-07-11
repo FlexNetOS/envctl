@@ -2,9 +2,13 @@
 """PreToolUse(Bash) hook: route Bash-tool commands through nushell supervision.
 
 Contract (agent-env prompt, BASH-TOOL ROUTING CONTRACT): nu is the supervising
-outer process (nu env + nu_plugins load, no per-call login-profile re-source);
-bash stays the inner POSIX parser (nu does not parse bash syntax). The original
-command is written to a scratch file for byte-perfect fidelity — no quoting layer.
+outer process; bash stays the inner POSIX executor (nu does not parse bash
+syntax). The command is written to a scratch file for byte-perfect fidelity (no
+quoting layer) and run via `nu -c "^bash <file>"` — the `-c` body is only the
+fixed `^bash <file>` dispatcher, never the user's program, so there is no inline
+shell-program seam. NO `-l` login: no per-call login-profile re-source (that
+coupled every command to nu-login-startup health); PATH is inherited from the
+launched session. External exit code and stdout/stderr pass through faithfully.
 
 Composition: rtk's rewrite is applied INTERNALLY (this hook invokes
 `rtk hook claude` on the same input and wraps its updated command). Whatever
@@ -75,7 +79,7 @@ def main():
     f = tempfile.NamedTemporaryFile("w", dir=scratch, suffix=".sh", delete=False)
     f.write(new_cmd)
     f.close()
-    allow(f'nu -l -c "^bash {f.name}"')
+    allow(f'nu -c "^bash {f.name}"')
 
 
 if __name__ == "__main__":
