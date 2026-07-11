@@ -33,9 +33,9 @@ Missing `.grit`, an absent ICM DB, or a missing Weave executable is a recorded g
 | Yazelix owner update | exactly one of `yzx update local_source`, `yzx update upstream`, or `yzx update home_manager` |
 | Nushell | profile `nu -c` or `nu -l -c` when login config is required |
 | Bash/Zsh compatibility | `yzx run bash -lc "<cmd>"`; `yzx run zsh -lc "<cmd>"` |
-| Single checkout git | `rtk git ...` |
+| Single checkout git | `rtk meta exec --include <repo> -- git <command>` |
 | Meta fleet git | `rtk meta git ...` |
-| Unlisted fleet git | `rtk meta exec -- git <command>` |
+| Unlisted fleet git | `rtk meta exec --include <repo> -- git <command>` |
 | GitKB | `rtk git-kb ...` |
 | Grit | `rtk grit ...` |
 | ICM | `rtk icm ...` |

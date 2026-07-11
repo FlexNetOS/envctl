@@ -31,6 +31,45 @@ fn both_repo_prompt_entrypoints_are_identical_and_have_no_blockers() {
         original, full_access,
         "the original prompt entrypoint must remain byte-identical to the full-access prompt"
     );
+    let full_access_text = String::from_utf8(full_access.clone()).unwrap();
+    for required_skill_path in [
+        "references/source-prompt.md",
+        "references/ownership-map.md",
+        "references/runbook-cli-contract.md",
+        "references/coverage-map.md",
+        "references/bunx-and-github-ssh.md",
+        "references/github-execution-policy.md",
+        "references/github-org-and-ccboard.md",
+        "references/yazelix-cli-plugin-policy.md",
+        "scripts/check-bun-command-policy.py",
+        "scripts/check-yazelix-contract.py",
+        "scripts/validate.sh",
+    ] {
+        assert!(
+            full_access_text.contains(required_skill_path),
+            "prompt target shape omits {required_skill_path}"
+        );
+    }
+    assert!(
+        !full_access_text.contains("`rtk git ...`"),
+        "prompt must route every repository Git operation through RTK/Meta"
+    );
+    assert!(
+        !full_access_text.contains("/bin/rtk git status"),
+        "prompt must not retain a direct RTK Git probe"
+    );
+    assert!(
+        !full_access_text.contains("`rtk meta exec -- git"),
+        "unlisted Git operations must identify the Meta repo scope"
+    );
+    assert!(
+        !full_access_text.contains("`meta exec -- git"),
+        "unwrapped Meta Git passthrough is forbidden"
+    );
+    assert!(
+        full_access_text.contains("rtk meta exec --include <repo> -- git <command>"),
+        "prompt must retain the scoped RTK/Meta fallback"
+    );
 
     for prompt in [original_prompt_path(), full_access_prompt_path()] {
         let report = review_full_access_prompt_path(&prompt).unwrap();

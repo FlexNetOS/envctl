@@ -11,9 +11,13 @@ ORIG="$ROOT/.codex/prompts/prompt:codex-gpt-harness.prompt.md"
 FULL="$ROOT/.codex/prompts/prompt:codex-gpt-harness-v3-full-access-no-sandbox.prompt.md"
 SNAPSHOT="$SKILL_ROOT/references/source-prompt.md"
 HARNESS="$ROOT/home/agent-env/codex-harness/Cargo.toml"
+CLAUDE_PROMPT="$ROOT/.claude/prompts/prompt:claude-code-agent-env-ultraplan.prompt.md"
+CLAUDE_SKILL="$ROOT/.claude/skills/agent-env-claude/SKILL.md"
+SUBSTRATE_PROMPT="$ROOT/.codex/prompts/prompt:substrate-init.inherit.md"
 VALIDATOR=/home/flexnetos/.codex/skills/.system/skill-creator/scripts/quick_validate.py
 
-for path in "$ORIG" "$FULL" "$SNAPSHOT" "$HARNESS" "$SKILL_ROOT/SKILL.md" \
+for path in "$ORIG" "$FULL" "$SNAPSHOT" "$HARNESS" "$CLAUDE_PROMPT" \
+  "$CLAUDE_SKILL" "$SUBSTRATE_PROMPT" "$SKILL_ROOT/SKILL.md" \
   "$SKILL_ROOT/references/coverage-map.md" \
   "$SKILL_ROOT/references/bunx-and-github-ssh.md" \
   "$SKILL_ROOT/references/github-execution-policy.md" \
@@ -74,6 +78,23 @@ grep -Fq 'Never leave completed or idle subagents running.' "$SKILL_ROOT/SKILL.m
 
 printf '\n== Bun/Bunx skill command policy ==\n'
 python3 "$SKILL_ROOT/scripts/check-bun-command-policy.py" "$ROOT"
+POLICY_FIXTURE="$(mktemp -d)"
+trap 'rm -rf "$POLICY_FIXTURE"' EXIT
+mkdir -p "$POLICY_FIXTURE/agent-skills/policy-fixture/scripts"
+printf '%s\n' '#!/usr/bin/env bash' 'npx forbidden-package' \
+  > "$POLICY_FIXTURE/agent-skills/policy-fixture/scripts/fail.sh"
+if python3 "$SKILL_ROOT/scripts/check-bun-command-policy.py" "$POLICY_FIXTURE" \
+  >/dev/null 2>&1; then
+  echo 'Bun/Bunx validator failed to reject an executable non-Markdown npx recipe' >&2
+  exit 8
+fi
+printf '%s\n' '#!/usr/bin/env bash' 'bunx allowed-package' \
+  > "$POLICY_FIXTURE/agent-skills/policy-fixture/scripts/pass.sh"
+rm "$POLICY_FIXTURE/agent-skills/policy-fixture/scripts/fail.sh"
+python3 "$SKILL_ROOT/scripts/check-bun-command-policy.py" "$POLICY_FIXTURE"
+rm -rf "$POLICY_FIXTURE"
+trap - EXIT
+echo 'non-Markdown executable fixture enforcement: yes'
 
 printf '\n== Yazelix durable policy ==\n'
 python3 "$SKILL_ROOT/scripts/check-yazelix-contract.py" --root "$ROOT"
@@ -100,6 +121,39 @@ printf '\n== one-skill target contract ==\n'
 grep -Fq 'one compact `/agent-env-codex`' "$FULL"
 grep -Fq 'agent-skills/agent-env-codex/' "$FULL"
 grep -Fq 'This is one skill.' "$FULL"
+for path in \
+  'references/source-prompt.md' \
+  'references/ownership-map.md' \
+  'references/runbook-cli-contract.md' \
+  'references/coverage-map.md' \
+  'references/bunx-and-github-ssh.md' \
+  'references/github-execution-policy.md' \
+  'references/github-org-and-ccboard.md' \
+  'references/yazelix-cli-plugin-policy.md' \
+  'scripts/check-bun-command-policy.py' \
+  'scripts/check-yazelix-contract.py' \
+  'scripts/validate.sh'; do
+  grep -Fq "$path" "$FULL" || {
+    echo "prompt target shape omits $path" >&2
+    exit 6
+  }
+done
+if grep -Fq '`rtk git ...`' "$FULL" || grep -Fq '/bin/rtk git status' "$FULL"; then
+  echo 'direct RTK Git route remains in prompt; use RTK/Meta' >&2
+  exit 6
+fi
+for path in "$FULL" "$CLAUDE_PROMPT" "$CLAUDE_SKILL" "$SUBSTRATE_PROMPT"; do
+  if grep -Eq '`rtk git (status|worktree|fetch|pull|push|commit|branch|merge|rebase)' "$path" \
+    || grep -Fq '`meta --' "$path" \
+    || grep -Fq '`meta git status`' "$path" \
+    || grep -Fq '`meta exec -- git' "$path" \
+    || grep -Fq '`rtk meta exec -- git' "$path"; then
+    echo "non-Meta-only Git recipe remains in $path" >&2
+    exit 6
+  fi
+done
+grep -Fq 'rtk meta exec --include <repo> -- git <command>' "$FULL"
+grep -Fq 'rtk meta exec --include <repo> -- git <cmd>' "$CLAUDE_PROMPT"
 if grep -Fq 'harness-session/SKILL.md' "$FULL"; then
   echo 'stale split-skill target remains in prompt' >&2
   exit 6

@@ -129,8 +129,9 @@ Required runbook facts to carry into the skill:
   components, never ad-hoc host installs.
 - Meta git routing is mandatory, not optional prose: fleet-aware git work goes
   through `rtk meta git`; unlisted fleet git commands go through
-  `rtk meta exec -- git <command>`. Raw `git` is never an exception; capture
-  unsummarized proof through the RTK/Meta route and tee that routed output.
+  `rtk meta exec --include <repo> -- git <command>`. Raw `git` is never an
+  exception; capture unsummarized proof through the RTK/Meta route and tee that
+  routed output.
 
 ### Research proof ledger captured for skill build
 
@@ -162,7 +163,7 @@ source_path | authority | finding
 /home/flexnetos/meta/src/envctl/docs/runbook/DIAGRAMS.md:282-318 | authoritative | top-level envctl verbs and component lifecycle detect/install/verify/fix/remove
 /home/flexnetos/meta/src/envctl/docs/runbook/DIAGRAMS.md:423-474 | authoritative | component catalog includes GPU-required components, gpu.toml NVIDIA/CUDA/Rust-GPU stack, nvidia-open, CUDA toolkit, and skip behavior on GPU-less hosts
 profile CLI help 2026-07-11 | live proof | yzx agent init is preview by default; --apply creates Meta GitKB, initializes Grit/ICM, applies RTK setup
-profile CLI help 2026-07-11 | live proof | rtk git, rtk meta git, rtk meta exec, rtk git-kb, rtk grit, rtk icm are available profile/toolbin routes
+profile CLI help 2026-07-11 | live proof | rtk meta git, rtk meta exec, rtk git-kb, rtk grit, rtk icm are available profile/toolbin routes; direct rtk git is available but forbidden by the Meta-only repository policy
 profile CLI check 2026-07-11 | live proof | weave repo exists at /home/flexnetos/meta/src/weave but no weave executable was found in profile/toolbin during prompt polish
 profile CLI probe 2026-07-11 | live proof | envctl auto-detect --json observed two NVIDIA GeForce RTX 5090 GPUs, NVIDIA-SMI 610.43.02, CUDA toolkit 13.3, NVIDIA Container Toolkit + CDI, GPU smoke-test scripts, cuda-oxide, PyTorch cu132, kache, wild linker, rtk, grit, icm, and meta components
 profile CLI probe 2026-07-11 | live proof | rtk meta git --help/status and rtk meta exec --include envctl -- git status --short --branch returned successfully; rtk grit status failed only because the current directory lacked .grit; ICM wake-up failed only because the ICM DB was absent
@@ -298,9 +299,9 @@ Command routing:
 | Intent | Preferred route |
 | --- | --- |
 | Yazelix runtime/agent entry | profile `/home/flexnetos/.nix-profile/bin/yzx ...` |
-| Single-repo git summary/mutation | `rtk git ...` |
+| Single-repo git summary/mutation | `rtk meta exec --include <repo> -- git <command>` |
 | Meta fleet git status/worktree/update | `rtk meta git ...` |
-| Meta fleet unlisted git command | `rtk meta exec -- git <command>` |
+| Meta fleet unlisted git command | `rtk meta exec --include <repo> -- git <command>` |
 | GitKB context | `rtk git-kb ...` |
 | Grit coordination | `rtk grit ...` |
 | ICM memory | `rtk icm ...` |
@@ -335,10 +336,9 @@ Manual CLI inventory to preserve in the skill build:
   `update`, `health`, facts/feedback/transcripts/sessions, `wake-up`,
   `context`, `save-project`, hooks, cloud, and MCP serve. Init uses
   `ICM_READONLY=1 ... wake-up`; storing memories is a separate explicit action.
-- `meta git` adapted commands include clone, commit, update, setup-ssh,
+- `rtk meta git` adapted commands include clone, commit, update, setup-ssh,
   snapshot, and worktree; pass-through status exists. For any unlisted git
-  operation, route through `meta exec -- git <command>` or `rtk meta exec -- git
-  <command>`.
+  operation, route through `rtk meta exec --include <repo> -- git <command>`.
 - Weave had no installed profile executable during manual prompt research, but
   source docs at `/home/flexnetos/meta/src/weave/README.md` expose the command
   families the harness must know: setup/uninstall/provider-switch; register/
@@ -366,7 +366,7 @@ gate output is explicitly required.
 | meta git route | `/home/flexnetos/.nix-profile/bin/rtk meta git --help` | Confirms the adapted fleet git route exists. |
 | meta git status | `/home/flexnetos/.nix-profile/bin/rtk meta git status` | Captures fleet status through RTK/meta, not ad-hoc raw git. |
 | meta git passthrough | `/home/flexnetos/.nix-profile/bin/rtk meta exec --include envctl -- git status --short --branch` | Confirms unlisted git commands route through meta exec. |
-| local git route | `/home/flexnetos/.nix-profile/bin/rtk git status` | Confirms single-repo git route. |
+| scoped checkout git route | `/home/flexnetos/.nix-profile/bin/rtk meta exec --include envctl -- git status --short --branch` | Confirms even single-repo Git routes through RTK/Meta. |
 | GitKB context | `/home/flexnetos/.nix-profile/bin/rtk git-kb list --path context/ --json` | Confirms GitKB inspection route. |
 | Grit state | `/home/flexnetos/.nix-profile/bin/rtk grit status` | If `.grit` is absent, record that exact gap; do not initialize implicitly. |
 | ICM state | `ICM_READONLY=1 /home/flexnetos/.nix-profile/bin/rtk icm wake-up --max-tokens 200` | If the DB is absent, record the exact gap; do not initialize implicitly. |
@@ -478,7 +478,13 @@ agent-skills/agent-env-codex/          durable repo source for the one skill
   references/source-prompt.md          byte-identical complete prompt snapshot
   references/ownership-map.md          durable owner and projection boundaries
   references/runbook-cli-contract.md   runbook/Yazelix/CLI/automation contracts
-  references/coverage-map.md            complete controller and phase index
+  references/coverage-map.md           complete controller and phase index
+  references/bunx-and-github-ssh.md    Bun/Bunx execution and SSH proof
+  references/github-execution-policy.md GitHub/Meta worktree lifecycle policy
+  references/github-org-and-ccboard.md organization governance and ccboard paths
+  references/yazelix-cli-plugin-policy.md full Yazelix CLI/plugin/update contract
+  scripts/check-bun-command-policy.py   all-text skill command-policy validator
+  scripts/check-yazelix-contract.py     69-command durable/live Yazelix validator
   scripts/validate.sh                   deterministic no-gap/no-downgrade validator
 project projections: .codex/skills/agent-env-codex/ and .claude/skills/agent-env-codex/
 active materialization: ${CODEX_HOME:-/home/flexnetos/.codex}/skills/agent-env-codex/
