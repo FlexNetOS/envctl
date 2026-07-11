@@ -382,6 +382,8 @@ fn session_control_skills_are_global_and_cover_every_toggle() {
 
     let skill_root = root.join("agent-harness-skills/skills");
     for skill in [
+        "harness-session/SKILL.md",
+        "harness-init/SKILL.md",
         "harness-status/SKILL.md",
         "harness-full/SKILL.md",
         "harness-restricted/SKILL.md",
@@ -389,6 +391,27 @@ fn session_control_skills_are_global_and_cover_every_toggle() {
     ] {
         assert!(skill_root.join(skill).is_file(), "{skill}");
     }
+    let session = fs::read_to_string(skill_root.join("harness-session/SKILL.md")).unwrap();
+    for required in [
+        "CODEX-GPT-HARNESS",
+        ".codex/prompts/prompt:codex-gpt-harness.prompt.md",
+        "$harness-init",
+        "$harness-status",
+        "$harness-full",
+        "$harness-restricted",
+        "$harness-toggle",
+        "/permissions",
+        "Yazelix/Nix profile-owned frontdoors",
+        "Archive before changing existing files",
+        "Never read, print, paste, or commit secrets",
+        "Sol/Terra/Luna",
+        "Do not restore GPT-5.5",
+        "git status --short --branch",
+        "gh pr list --state open",
+    ] {
+        assert!(session.contains(required), "{required}");
+    }
+    assert!(session.contains("Do not keep growing those prompt files as the primary control plane"));
     let toggle = fs::read_to_string(skill_root.join("harness-toggle/SKILL.md")).unwrap();
     assert!(
         toggle.contains("/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/Cargo.toml")

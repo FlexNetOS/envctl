@@ -114,7 +114,13 @@ sequential-thinking. Full surface: [`agent-env/`](agent-env/) (ported kasetto.de
 
 ### Codex harness — durable full-access recovery contract
 
-The harness has two operator-facing prompt paths and they are one contract:
+The former multi-thousand-line session prompt is now represented by the global
+`$harness-session` skill. Treat the prompt files as provenance and compatibility
+shims; put durable procedure in focused skills/rules instead of growing the
+prompt again.
+
+The harness has two operator-facing prompt paths and they mirror the same
+contract:
 
 ```text
 .codex/prompts/prompt:codex-gpt-harness.prompt.md
@@ -191,6 +197,7 @@ commands. Envctl syncs these global skills from
 `agent-harness-controls/agent-env.yaml`:
 
 ```text
+$harness-session
 $harness-status
 $harness-init
 $harness-full

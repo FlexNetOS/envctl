@@ -163,6 +163,7 @@ When this wrapper is active on the current host:
 
 1. stop trying to complete the old prompt unchanged;
 2. keep the old prompt as historical input;
-3. use this wrapper as the execution controller;
+3. use `$harness-session` as the compact skill controller, with this wrapper as
+   historical recovery provenance;
 4. build the harness in small additive Rust-first slices;
 5. run every available proof command when shell execution is restored.

@@ -46,6 +46,11 @@ bun/bunx for Node.js package execution, and profile-owned `codex`, `yzx`, and
 
 ## Session tool bootstrap
 
+The old `CODEX-GPT-HARNESS` session prompt is now the `$harness-session`
+skill. Use that skill as the compact controller for harness continuation or
+repair, and keep the prompt files as provenance/compatibility shims instead of
+the primary procedure store.
+
 Session bootstrap initializes instructions and context, not filesystem state.
 Run `$harness-init` at the start of a chat that needs repository context.
 

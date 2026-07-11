@@ -76,9 +76,8 @@ fn files_equal(left: &Path, right: &Path) -> bool {
         .unwrap_or(false)
 }
 
-fn session_control_commands_execute() -> bool {
-    let manifest =
-        Path::new("/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/Cargo.toml");
+fn session_control_commands_execute(envctl_root: &Path) -> bool {
+    let manifest = envctl_root.join("home/agent-env/codex-harness/Cargo.toml");
     if !manifest.exists() {
         return false;
     }
@@ -452,14 +451,15 @@ fn main() -> Result<()> {
     let session_status = session_capability_status();
     let active_skill_root = Path::new("/home/flexnetos/.codex/skills");
     let source_skill_root = envctl_root.join("agent-harness-skills/skills");
-    let installed_skills_match = [
+    let session_control_skills = [
+        "harness-session",
+        "harness-init",
         "harness-status",
         "harness-full",
         "harness-restricted",
         "harness-toggle",
-    ]
-    .iter()
-    .all(|skill| {
+    ];
+    let installed_skills_match = session_control_skills.iter().all(|skill| {
         files_equal(
             &source_skill_root.join(skill).join("SKILL.md"),
             &active_skill_root.join(skill).join("SKILL.md"),
@@ -467,12 +467,16 @@ fn main() -> Result<()> {
     });
     let session_controls_ok = session_capability_map_valid(&session_status)
         && exists(envctl_root.join("agent-harness-controls/agent-env.yaml"))
-        && exists(envctl_root.join("agent-harness-skills/skills/harness-status/SKILL.md"))
-        && exists(envctl_root.join("agent-harness-skills/skills/harness-full/SKILL.md"))
-        && exists(envctl_root.join("agent-harness-skills/skills/harness-restricted/SKILL.md"))
-        && exists(envctl_root.join("agent-harness-skills/skills/harness-toggle/SKILL.md"))
+        && session_control_skills.iter().all(|skill| {
+            exists(
+                envctl_root
+                    .join("agent-harness-skills/skills")
+                    .join(skill)
+                    .join("SKILL.md"),
+            )
+        })
         && installed_skills_match
-        && session_control_commands_execute();
+        && session_control_commands_execute(&envctl_root);
     let claude_execution_ok = latest_provider_receipt_valid(
         &harness.join("ledger/network.jsonl"),
         "claude_bridge",
@@ -570,12 +574,12 @@ fn main() -> Result<()> {
         ),
         row(
             "chat-session controls",
-            "built-in /permissions authority plus installed thread-scoped harness status, full, restricted, and capability-toggle skills",
+            "built-in /permissions authority plus installed harness-session, init, status, full, restricted, and capability-toggle skills",
             envctl_root
                 .join("agent-harness-controls/agent-env.yaml")
                 .display()
                 .to_string(),
-            "/permissions; $harness-status; $harness-toggle CAPABILITY=<name> STATE=on|off",
+            "/permissions; $harness-session; $harness-init; $harness-status; $harness-toggle CAPABILITY=<name> STATE=on|off",
             pass_fail(session_controls_ok),
         ),
         row(

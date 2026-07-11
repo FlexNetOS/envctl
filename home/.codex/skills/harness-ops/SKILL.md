@@ -11,6 +11,9 @@ HARNESS_MANIFEST=/home/flexnetos/meta/src/envctl/home/agent-env/codex-harness/Ca
 ```
 
 - Status: `cargo run --quiet --manifest-path "$HARNESS_MANIFEST" --bin codex-harness-status`
+- Session controller: invoke `$harness-session`; it is the compact skill form
+  of the former `CODEX-GPT-HARNESS` prompt and points back to prompt files only
+  as provenance/compatibility shims.
 - Session context bootstrap: invoke `$harness-init`; it performs only
   profile-owned read-only GitKB/Grit/ICM/Meta/RTK probes.
 - Nix verification: `cargo run --quiet --manifest-path "$HARNESS_MANIFEST" --bin codex-harness-nix-verify`
@@ -27,6 +30,8 @@ binaries are packaged into the profile.
 Operational rules:
 
 - Archive existing files before modification.
+- Keep durable session procedure in `$harness-session` or focused skills/rules
+  rather than growing multi-thousand-line prompt files.
 - Never read secrets.
 - Use localhost-only local model lanes.
 - Never pull local models without approval.

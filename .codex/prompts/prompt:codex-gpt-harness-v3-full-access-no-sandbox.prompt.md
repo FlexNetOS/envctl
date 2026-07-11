@@ -2559,3 +2559,12 @@ Session bootstrap initializes instructions and context, not tool state.
   `$harness-restricted`, and `$harness-toggle` may not create or mutate GitKB,
   Grit, ICM, Meta, or RTK state.
 - `/permissions` remains the sole live sandbox and approval authority.
+
+## Prompt-To-Skill Pivot - 2026-07-11
+
+This prompt is no longer the primary growing control plane. Use the
+envctl-synced `$harness-session` skill as the compact execution controller for
+future session starts, continuations, and repairs. Keep this prompt as
+provenance and a compatibility shim; when durable procedure changes, update the
+skill or focused harness rules first, then add only a short prompt pointer when
+needed.
