@@ -1,0 +1,52 @@
+# Managed structural-tooling inventory (REQ NFR05 / ARCH10 / AC09).
+#
+# These are the pure-Rust / trust-boundary-safe CLIs envctl relies on for
+# polyglot structural extraction and safe edits. `envctl db components detect`
+# probes each against PATH and the nix profile (never a network install) and
+# reports presence + resolved path.
+#
+# This file is the human-facing manifest; the canonical inventory is the
+# `INVENTORY` const in crates/engine/src/db_components.rs. A test
+# (`manifest_matches_canonical_inventory`) keeps the two from drifting.
+
+[[tool]]
+id = "rg"
+binary = "rg"
+purpose = "ripgrep: fast literal/regex content search across the tree"
+category = "search"
+
+[[tool]]
+id = "sg"
+binary = "sg"
+purpose = "ast-grep: structural (AST) search + rewrite for polyglot extraction"
+category = "structural"
+
+[[tool]]
+id = "fd"
+binary = "fd"
+purpose = "fd: fast, gitignore-aware file discovery"
+category = "search"
+
+[[tool]]
+id = "sd"
+binary = "sd"
+purpose = "sd: safe, literal find-and-replace for line-oriented edits"
+category = "edit"
+
+[[tool]]
+id = "taplo"
+binary = "taplo"
+purpose = "taplo: format-preserving TOML parse/query/edit"
+category = "format"
+
+[[tool]]
+id = "jaq"
+binary = "jaq"
+purpose = "jaq: pure-Rust jq for JSON query/transform"
+category = "format"
+
+[[tool]]
+id = "nu"
+binary = "nu"
+purpose = "nushell: structured-data shell driving envctl's gates and pipelines"
+category = "shell"

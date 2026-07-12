@@ -25,6 +25,7 @@ target today is a GPU-aware dual-RTX-5090 Ubuntu 26.04 workstation.
 | `lock` | content-hashed `envctl.lock` (reproducible) + `--check` CI gate (exit 1 on drift) | writes |
 | `doctor` | read-only health: writability, toolchains, sudo, UEFI/Secure-Boot, GPU, last-op | — |
 | `migrate` | adopt legacy/global installs into the `$META_ROOT` FHS/XDG layout, preserve agent assets, protect shared meta substrates, and refuse unsafe purge | read-only (`apply --apply` materializes dirs) |
+| `db` | index and query Meta/LifeOS roots and symbols; plan root-alias refactors and staged hook deployments | read-only/plan (`--apply --confirm --approve` to mutate) |
 
 ## Quick start
 
@@ -42,6 +43,30 @@ cargo run  -p envctl -- migrate apply --apply      # materialize canonical META_
 ```
 
 The manifest dir defaults to `./manifest` (override with `ENVCTL_MANIFEST_DIR`).
+
+## Meta and LifeOS database automation
+
+envctl's database surface models the **Meta control plane** and the **LifeOS product runtime**
+as distinct, simultaneously addressable roots. It does not rename Meta into LifeOS or treat
+either peer repository as an untrusted external source: `META_ROOT` remains the observed current
+control-plane root, while `LIFE_OS_ROOT` is the canonical release-target root under the
+`lifeos-release` profile. The accepted legacy spelling `LIFEOS_ROOT` normalizes to
+`LIFE_OS_ROOT` in generated output.
+
+The shared Rust engine owns indexing, deterministic queries, symbol/occurrence maps, refactor
+plans, and deploy plans; the CLI only selects and renders those operations. Start with the
+read-only root and query views:
+
+```bash
+envctl db roots --json
+envctl db query --preset root-meta --json
+```
+
+Refactors are plan-only unless a new render tree or an explicitly confirmed, human-approved
+in-place apply is requested. Hook deployment likewise plans first, queues running targets,
+refuses protected targets, and applies only ready steps after the same confirmation gate. The
+complete command contract, all query presets, symbol-mapping workflow, and current CLI examples
+are in [`docs/DB-AUTOMATION.md`](docs/DB-AUTOMATION.md).
 
 ### META_ROOT FHS/XDG layout
 

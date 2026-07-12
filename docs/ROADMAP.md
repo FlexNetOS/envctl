@@ -98,6 +98,28 @@ card; strategy-aware Add-Repo screen; (logs/settings polish ongoing).
 
 ---
 
+## Database automation — implemented
+
+The shared engine and CLI now provide the repo-native database automation needed to operate the
+**Meta control plane** and the **LifeOS product runtime** without collapsing their identities:
+
+- a simultaneous multi-root model keeps observed `META_ROOT` (`current`) and release-target
+  `LIFE_OS_ROOT` (`lifeos-release`) rows; `LIFEOS_ROOT` is accepted and canonicalized;
+- a deterministic file index plus environment-token, Rust-item, and CLI symbol mapping surface;
+- seven stable query presets with JSON and `--explain` output;
+- a normalization-aware, plan-first root-alias refactor with new-tree rendering and a gated,
+  backup/verify in-place path; and
+- plan-first hook deployment that marks steps Ready, Queued, or Refused, leaves running/protected
+  targets untouched, and atomically promotes only approved Ready steps.
+
+The CLI consumes shared engine entry points; engine parity tests pin the API a future GUI database
+screen must call, but the current native GUI does not yet expose that screen. Agent-facing JSON
+shapes are covered by engine contract tests and CLI determinism tests. See
+[DB-AUTOMATION.md](DB-AUTOMATION.md) for the root roles, exact current preset filters,
+symbol/impact workflow, root-alias refactor safety, hook deployment safety, and current commands.
+
+---
+
 ## Secrets Stack Roadmap (docs/secrets/ROADMAP.md) — Full 8-Phase Arc
 
 The secrets stack has its own phased roadmap spanning **Phases 0–8** with the following key milestones:

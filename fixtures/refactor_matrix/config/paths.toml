@@ -1,0 +1,2 @@
+root = "$META_ROOT"
+bin = "${META_ROOT}/bin"
