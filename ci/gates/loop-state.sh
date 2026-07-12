@@ -93,5 +93,25 @@ for LS in "${LOOP_STATES[@]}"; do
     mono="monotonic SKIPPED (no readable prior cycles_total)"
   fi
 
-  echo "LOOP-STATE GATE PASS [$LS] — budget=$cycle_budget wrap_every=$wrap_every last_wrapup=$last_wrapup_total cycles_total=$cycles_total session=$cycles_this_session; $mono"
+  # 5. HANDOFF parity — a re-rendered HANDOFF.md pins `handoff_cycles_total`; when present it
+  #    must equal loop_state's cycles_total. A drifting pair is the 2026-07-12 stale-handoff
+  #    incident class (HANDOFF two boundaries behind, pointing at a dead worktree) — resume
+  #    would misdirect. Legacy HANDOFFs without the machine field are SKIPPED, never failed
+  #    (subset-of-truth, like the monotonic check).
+  HF="$(dirname "$LS")/HANDOFF.md"
+  if [ -f "$HF" ]; then
+    hct="$(field handoff_cycles_total "$HF")"
+    if [ -n "$hct" ]; then
+      is_uint "$hct" || fail "$HF: handoff_cycles_total is not a non-negative integer (got '$hct')"
+      [ "$hct" -eq "$cycles_total" ] \
+        || fail "$HF: handoff_cycles_total ($hct) != $LS cycles_total ($cycles_total) — stale HANDOFF; re-render it from loop_state"
+      hnote="handoff parity ok ($hct)"
+    else
+      hnote="handoff parity SKIPPED (legacy HANDOFF, no handoff_cycles_total field)"
+    fi
+  else
+    hnote="handoff parity SKIPPED (no HANDOFF.md)"
+  fi
+
+  echo "LOOP-STATE GATE PASS [$LS] — budget=$cycle_budget wrap_every=$wrap_every last_wrapup=$last_wrapup_total cycles_total=$cycles_total session=$cycles_this_session; $mono; $hnote"
 done
