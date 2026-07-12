@@ -78,6 +78,23 @@
             "timeout": 30
           }
         ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "weave hook session"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "icm hook start"
+          }
+        ]
       }
     ],
     "PreToolUse": [
@@ -134,6 +151,15 @@
             "command": "rtk hook claude"
           }
         ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "icm hook pre"
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -171,6 +197,14 @@
             "async": true
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "icm hook post"
+          }
+        ]
       }
     ],
     "UserPromptSubmit": [
@@ -182,6 +216,23 @@
             "timeout": 15
           }
         ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "weave hook prompt"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "icm hook prompt"
+          }
+        ]
       }
     ],
     "SessionEnd": [
@@ -191,6 +242,14 @@
             "type": "command",
             "command": "\"$HOME\"/.claude/hooks/ruvector-intel-bridge.sh session-end",
             "timeout": 15
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "icm hook end"
           }
         ]
       }
@@ -213,6 +272,15 @@
             "type": "command",
             "command": "\"$HOME\"/.claude/hooks/spawn-ledger.sh",
             "timeout": 10
+          }
+        ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "weave hook wake"
           }
         ]
       }
@@ -257,6 +325,15 @@
             "timeout": 30
           }
         ]
+      },
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "weave hook wake"
+          }
+        ]
       }
     ],
     "ConfigChange": [
@@ -278,6 +355,16 @@
             "type": "command",
             "command": "\"$HOME\"/.claude/hooks/notify-cosmic.sh",
             "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "icm hook compact"
           }
         ]
       }

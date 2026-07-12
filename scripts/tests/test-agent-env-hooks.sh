@@ -56,6 +56,18 @@ else
   echo "SKIP: ccbrain capture tests (jq/sqlite3 not on PATH)"
 fi
 
+
+# ── substrate hook parity: WL-084 weave (session/prompt/wake) + icm wired in the SOURCE ──
+# The live ~/.claude/settings.json gained these from `weave setup` / icm install, but the
+# ADR-0006 source (home/.claude/settings.json) must carry them too — PATH-resolved, never
+# /nix/store/<hash>-pinned (stale-hash rot: a profile rebuild leaves hooks firing old builds).
+for pat in "weave hook session" "weave hook prompt" "weave hook wake" \
+           "icm hook start" "icm hook pre" "icm hook post" "icm hook prompt" "icm hook end" "icm hook compact"; do
+  grep -qF "$pat" "$root/home/.claude/settings.json" || fail "repo settings.json missing substrate hook: $pat"
+done
+! grep -q "/nix/store/" "$root/home/.claude/settings.json" "$root/home/.claude/settings.json.tmpl" || fail "store-hash path pinned in settings (stale-hash rot class)"
+echo "ok: substrate hook parity (weave WL-084 + icm) PATH-resolved in source settings"
+
 # ── syntax floors ───────────────────────────────────────────────────────────
 bash -n "$root/.claude/skills/agent-env-claude/phase0.sh" || fail "phase0.sh syntax"
 bash -n "$root/home/.claude/hooks/ccbrain-session-start.sh" || fail "ccbrain-session-start.sh syntax"
