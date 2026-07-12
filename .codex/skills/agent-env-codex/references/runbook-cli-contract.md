@@ -31,6 +31,11 @@
   re-renders (ratified 2026-07-12: `permissions.defaultMode:"auto"`, `effortLevel:"high"`;
   markers in $HARNESS_VAR/lib/claude-harness/decisions/). Unratified Tier-B state found
   hard-coded is still drift to sweep.
+- Coverage gates DERIVE, never enumerate: a gate that guards per-job/per-item invariants
+  (e.g. `ci/gates/runner-routing.sh` local-first job routing) derives its item list from
+  the governed artifact itself, with a required-floor set so renames/removals fail loudly —
+  a hardcoded literal lets every NEW item silently escape the gate (audit 2026-07-12; the
+  derivation is contract-tested in `scripts/tests/test-runner-routing.sh`).
 
 ## Session initialization probes
 

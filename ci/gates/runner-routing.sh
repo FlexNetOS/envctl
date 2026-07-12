@@ -2,8 +2,9 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-CI_WORKFLOW="$ROOT/.github/workflows/ci.yml"
-SYNC_WORKFLOW="$ROOT/.github/workflows/sync-master.yml"
+# Overridable for the hermetic contract test (scripts/tests/test-runner-routing.sh) only.
+CI_WORKFLOW="${RUNNER_ROUTING_CI:-$ROOT/.github/workflows/ci.yml}"
+SYNC_WORKFLOW="${RUNNER_ROUTING_SYNC:-$ROOT/.github/workflows/sync-master.yml}"
 
 python3 - "$CI_WORKFLOW" "$SYNC_WORKFLOW" <<'PY'
 from pathlib import Path
@@ -41,7 +42,19 @@ LOCAL_LABELS = "fromJSON('[\"self-hosted\",\"linux\",\"x64\",\"local\",\"flexnet
 FORK_GUARD = "github.event.pull_request.head.repo.full_name == github.repository"
 ESCAPE_HATCH = "vars.CI_FORCE_HOSTED"
 
-for job_id in ["rustfmt", "clippy", "msrv", "cargo-audit", "test", "gates"]:
+# Derive the job list from the workflow itself — a hardcoded literal let any NEW job
+# escape the local-first/fork-guard/escape-hatch invariants (audit finding 2026-07-12).
+# The floor set guards renames/removals: shrinking below it fails, never silently.
+jobs_section = ci[ci.index("\njobs:") :]
+derived_jobs = re.findall(r"(?m)^  ([A-Za-z0-9_-]+):\s*(?:#.*)?$", jobs_section)
+REQUIRED_FLOOR = {"rustfmt", "clippy", "msrv", "cargo-audit", "test", "gates"}
+missing_floor = REQUIRED_FLOOR - set(derived_jobs)
+require(
+    not missing_floor,
+    f"required jobs missing from ci.yml (rename/removal must update the gate floor): {sorted(missing_floor)}",
+)
+
+for job_id in derived_jobs:
     body = job_block(job_id)
     runs_on = re.search(r"(?m)^    runs-on:\s*(?P<expr>.+)$", body)
     require(runs_on is not None, f"{job_id}: missing runs-on")
