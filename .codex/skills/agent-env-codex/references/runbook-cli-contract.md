@@ -25,6 +25,12 @@
   byte-for-byte. Adopt any live-only top-level key (e.g. `effortLevel`) into BOTH files or
   a re-render drops it. Do NOT "fix" the inert render by parameterizing the tmpl — that
   exact change REDs CI (observed 2026-07-12, PR #495 first push).
+- Tier-B ratification: session toggles (permission mode, effort) stay OUT of durable config
+  by default (ANTI-LOCKOUT) — but the operator may RATIFY one into declared state via an
+  answered decision marker, after which it lives in BOTH settings files and must survive
+  re-renders (ratified 2026-07-12: `permissions.defaultMode:"auto"`, `effortLevel:"high"`;
+  markers in $HARNESS_VAR/lib/claude-harness/decisions/). Unratified Tier-B state found
+  hard-coded is still drift to sweep.
 
 ## Session initialization probes
 

@@ -77,6 +77,13 @@ for f in "$root/home/.claude/settings.json" "$root/home/.claude/settings.json.tm
     ! grep -qF "$banned" "$f" || fail "$(basename "$f") contains banned root-var wiring: $banned"
   done
 done
+# Operator ratification 2026-07-12 (decision marker settings-defaultmode-auto-persistence.answered):
+# permissions.defaultMode:"auto" is DECLARED state — a Tier-B toggle an operator may ratify into
+# durable config; it must survive re-renders in both files.
+for f in "$root/home/.claude/settings.json" "$root/home/.claude/settings.json.tmpl"; do
+  python3 -c "import json,sys; d=json.load(open(sys.argv[1])); sys.exit(0 if d.get('permissions',{}).get('defaultMode')=='auto' else 1)" "$f" \
+    || fail "$(basename "$f") missing ratified permissions.defaultMode=auto"
+done
 diff -q "$root/home/.claude/settings.json.tmpl" "$root/home/.claude/settings.json" >/dev/null \
   || fail "settings.json.tmpl != settings.json (identity-render drift; the Rust gate requires byte-parity)"
 echo "ok: settings residuals (effortLevel adopted; no root-var wiring; tmpl==settings byte-parity)"
