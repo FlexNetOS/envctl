@@ -168,6 +168,14 @@ Ownership facts (verified 2026-07-11; re-verify at Phase 0):
   `…-lifeos-foundation-yzx/toolbin/` symlinks → runtime `libexec/` → real packages
   (bash-interactive 5.3, zsh 5.9, nushell 0.113). Compatibility is by construction — there is no
   nu-parses-bash trick; nu does NOT parse bash syntax.
+- Nushell owner surfaces: `~yazelix/nushell/config` + `~yazelix/nushell/scripts` (the local
+  yazelix checkout `/home/flexnetos/meta/src/yazelix`, projected by the profile build to
+  `~/.nix-profile/nushell/{config,scripts}`; rebuild = `yzx update local_source`) own nushell
+  configuration and nushell harness scripts. Use Nu scripts when a repeatable harness command
+  needs a script; wrapper/routing logic is Rust (rtk) or Nu (rtk-wrappers.nu) when possible —
+  never a new bash wrapper layer. Bash runs NATIVE inside that configured Nushell-owned runtime
+  (proof: `nu -l -c "^bash -c 'echo BASH_NATIVE_IN_NU_OK'"`) — a command executed inside the
+  runtime, not a separate harness owner.
 - Yazelix routes behavior: `~/.config/yazelix/settings.jsonc` sets
   `"shell": {"default_shell": "nu"}`; parallel per-shell user hooks
   `~/.config/yazelix/shell_nu.nu` / `shell_bash.sh` / `shell_zsh.zsh` give every shell the same
@@ -189,20 +197,21 @@ A partial copy is how nu login hard-broke on 2026-07-10 (one missing sourced fil
 ENTIRE nu config at parse time, killing all rtk wrappers). Verify: `ls -l` shows `->` into envctl
 AND `nu -l -c "echo NU_LOGIN_OK"` prints. A missing symlink is re-linked, never re-copied.
 
-BASH-TOOL ROUTING CONTRACT. Claude Code's Bash tool supports only bash/zsh/sh (no shell-override
-setting or env var exists; it auto-detects `$SHELL`, sources the matching rc at session start,
-and applies those aliases to every Bash command). The sanctioned rewrite surface is a PreToolUse
-hook returning `updatedInput`. The required hook (Phase 1 deliverable), chained AFTER the rtk
-rewrite hook:
+BASH-TOOL ROUTING CONTRACT (settled 2026-07-11, PR #490/#491 — supersedes every bash→nu wrapper
+design). Claude Code's Bash tool supports only bash/zsh/sh — and that is correct here: bash is
+already a configured citizen of the Nushell-owned yazelix runtime (same toolbin PATH by
+construction), so the Bash tool needs NO shell wrapper.
 
-- Matcher: `Bash`. Input: tool-input JSON on stdin. Output:
-  `{"hookSpecificOutput": {"hookEventName": "PreToolUse", "permissionDecision": "allow",
-  "updatedInput": {"command": "nu -l -c \"^bash -c '<original, escaped>'\""}}}`
-- Contract: nu is the supervising outer process (nu env + nu_plugins loaded, no per-call login
-  profile re-source); bash stays the inner parser (nu cannot parse POSIX syntax). Idempotent:
-  commands already `nu`-prefixed pass through unmodified. Escape hatch honored: a command
-  prefixed `\bash` runs raw.
-- Until this hook lands, the Bash-tool child is the one unrouted seam — a `gap` row, not doctrine.
+- The only Bash-tool command rewriter is `rtk hook claude` (Rust-native PreToolUse), alongside
+  the guard hooks (`guard-bash.sh`, `block-cherry-pick.sh`, `bun-rewrite.sh`).
+- FORBIDDEN — never resurrect (regression-protected by `scripts/tests/test-agent-env-hooks.sh`):
+  Python bash-to-nu hook routing, POSIX nu-launcher routing, scratch-file bash dispatchers, or
+  any parallel shell launcher. The retired wrapper generations ran either a BARE nu (loaded none
+  of the yazelix config — nu-in-name-only) or a per-call launcher re-source (all cost, no
+  doctrine); the test fails if a wrapper reference returns to settings/rules.
+- Nu parsing is invoked EXPLICITLY where it is the point (structured output, nu plugins):
+  `nu -l -c '…'`. Native-bash proof inside configured nu:
+  `nu -l -c "^bash -c 'echo BASH_NATIVE_IN_NU_OK'"` prints the sentinel under bash 5.3.
 
 COMMAND IDIOM (for every command this harness writes):
 
@@ -214,6 +223,7 @@ COMMAND IDIOM (for every command this harness writes):
 | token-optimized output in scripts | explicit `rtk <cmd>` (never assume aliases in a child) |
 | substrate CLIs | rtk-routed: `rtk git-kb …`, `rtk grit …`, `rtk icm …`, `rtk meta git …`; unlisted fleet git: `rtk meta exec --include <repo> -- git <cmd>` |
 | bash/zsh under the yazelix runtime env | `yzx run bash -lc "<cmd>"` / `yzx run zsh -lc "<cmd>"` (profile frontdoor) |
+| repeatable harness script | Nu script (`*.nu`, `~yazelix/nushell/scripts` conventions) when possible; wrappers in Rust or Nu — never a new bash wrapper/launcher |
 | raw bypass | `^git` (nu) / `\git` (bash) / `rtk proxy <cmd>` |
 
 RAW-COMMAND RULE: raw `git`/`meta`/`git-kb`/`grit`/`icm` (rtk-bypassed) is allowed only when
@@ -361,8 +371,10 @@ codex half is owned by the `agent-env-codex` skill (managed via `agent-skills/ag
 + agent-env.lock; its polished codex prompt carries substrate wiring natively — branch
 `codex/harness-prompt-polish` until merged). Shared contracts that MUST stay aligned across
 both halves: the six-substrate init table, session-toggle doctrine (`/permissions` is the live
-authority, never hard-coded lockouts), nix/yazelix profile frontdoors, and `rtk meta git`
-fleet routing. A change to a shared contract lands in BOTH skills or not at all.
+authority, never hard-coded lockouts), nix/yazelix profile frontdoors, the Nushell
+shell-ownership doctrine (`~yazelix/nushell/{config,scripts}` owner surfaces; Nu scripts when
+possible; no separate bash wrappers/launchers), and `rtk meta git` fleet routing. A change to a
+shared contract lands in BOTH skills or not at all.
 
 ENVCTL VERB SURFACE: `auto-detect · install · auto-fix · reset · add-repo · graph · lock ·
 doctor · migrate · dashboard · agent · secret` (destructive verbs preview-by-default). The
@@ -441,8 +453,9 @@ fan-out; a new recurring shape gets a file, not a one-off.
 ENFORCEMENT MACHINERY RULE (adopted from the codex sibling): harness logic that routes, captures,
 or guards gets a hermetic contract test in `scripts/tests/` wired into
 `ci/gates/harness-scripts.sh` — manually-verified-once is not a maintained state. Current
-coverage: `test-agent-env-hooks.sh` (bash-to-nu routing contracts incl. rtk compose + fail-open;
-ccbrain capture + the pipefail regression; syntax floors).
+coverage: `test-agent-env-hooks.sh` (shell-ownership regression — the retired bash-to-nu wrapper
+and any parallel shell launcher must NOT return to hooks/settings/rules; ccbrain capture + the
+pipefail regression; syntax floors).
 
 ## PHASES — run in order; each ends with a proof ledger; blocked rows are recorded and skipped
 
@@ -451,15 +464,21 @@ Commands: `date -u`; `pwd`; `rtk meta exec --include <repo> -- git status --shor
 `command -v nu bash zsh rtk meta grit icm git-kb bun claude weave rtk-monitor ccboard` (every hit
 must resolve under `/nix/store/` or `~/.nix-profile`; misses = `gap` rows);
 `readlink -f $(command -v claude)`; `ls -ld ~/.claude` (ADR-0006 chain); symlink-contract check;
-`nu -l -c "echo NU_LOGIN_OK"`; current Tier-B toggle states; `cat ~/.nix-profile/runtime_variant`
-(expect `kitty`). Mutation: none. This phase can never block.
+`nu -l -c "echo NU_LOGIN_OK"`; `nu -l -c "^bash -c 'echo BASH_NATIVE_IN_NU_OK'"` (bash native
+inside configured nu — no wrapper); `ls ~/.nix-profile/nushell/config ~/.nix-profile/nushell/scripts`
+(the projected `~yazelix/nushell/{config,scripts}` owner surfaces); current Tier-B toggle states;
+`cat ~/.nix-profile/runtime_variant` (expect `kitty`). Mutation: none. This phase can never block.
 
-### Phase 1 — Doctrine encode + Bash-tool routing
+### Phase 1 — Doctrine encode + no-wrapper conformance
 Encode the SHELL DOCTRINE and Law-9 ownership into `~/.claude/rules/toolchain.md` (superset) and
-any surface still assuming bash-primary. Implement the bash→nu PreToolUse wrapper hook to the
-BASH-TOOL ROUTING CONTRACT spec (script + settings entry via envctl `home/.claude`, additive).
-Acceptance: hook fires on a probe command and the probe's process tree shows nu supervising;
-rc-coverage unchanged for interactive shells; toolchain.md diff shown.
+any surface still assuming bash-primary OR still mandating a retired bash→nu wrapper. Enforce the
+BASH-TOOL ROUTING CONTRACT: `rtk hook claude` is the only Bash-tool rewriter; no wrapper script,
+launcher, or dispatcher exists or is referenced in settings/rules — INCLUDING the live
+`~/.claude/settings.json` copy (a stale live copy firing a deleted hook is exactly the
+"bash-to-nu.py: not found" incident class: archive, surgically remove the stale entry, validate).
+Acceptance: `bash scripts/tests/test-agent-env-hooks.sh` PASS output shown; native-bash proof
+(`nu -l -c "^bash -c 'echo BASH_NATIVE_IN_NU_OK'"`) shown; rc-coverage unchanged for interactive
+shells; toolchain.md diff shown.
 
 ### Phase 2 — Substrate init
 Run `yzx agent init` (preview → `--apply` under the session grant). Close the weave gap (build or
