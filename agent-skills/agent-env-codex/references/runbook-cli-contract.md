@@ -7,6 +7,13 @@
 - Materialize only when requested with `envctl agent sync --apply --color never`.
 - Check drift with `envctl agent lock --check` and the repo agent-env gate.
 - Synced skills are replaced from owning sources; do not hand-edit generated copies.
+- Substrate hook parity: the ADR-0006 source `home/.claude/settings.json` (and its
+  `.tmpl`) carries the weave WL-084 hooks (`weave hook session|prompt|wake`) and the icm
+  hooks (`icm hook start|pre|post|prompt|end|compact`) with PATH-resolved commands —
+  never `/nix/store/<hash>`-pinned (a profile rebuild leaves pinned hooks firing stale
+  builds, the `bash-to-nu.py: not found` rot class). A live-only hook that the source
+  lacks is source lag: adopt it PATH-resolved. Enforced by
+  `scripts/tests/test-agent-env-hooks.sh` via the harness-scripts gate.
 
 ## Session initialization probes
 
