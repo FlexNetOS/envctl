@@ -31,7 +31,7 @@ Missing `.grit`, an absent ICM DB, or a missing Weave executable is a recorded g
 | Yazelix command discovery | profile `yzx --help`; `yzx inspect --json` command metadata |
 | Profile/runtime proof | `yzx status --versions`; `yzx status --json`; `yzx inspect --json`; `yzx doctor --json` |
 | Yazelix owner update | exactly one of `yzx update local_source`, `yzx update upstream`, or `yzx update home_manager` |
-| Nushell | profile `nu -c` or `nu -l -c` using the Yazelix-owned `~yazelix/nushell/config` and `~yazelix/nushell/scripts` surfaces |
+| Nushell | profile `nu -c` or `nu -l -c` using the Yazelix-owned `~yazelix/nushell/config` and `~yazelix/nushell/scripts` surfaces; prefer Nu scripts for repeatable harness commands |
 | Bash/Zsh compatibility | Bash is configured inside the Yazelix/Nushell runtime; call it through Nushell/Yazelix when needed, but do not add separate bash wrappers, separate shell launchers, or parallel shell control paths |
 | Single checkout git | `rtk meta exec --include <repo> -- git <command>` |
 | Meta fleet git | `rtk meta git ...` |

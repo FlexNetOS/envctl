@@ -212,8 +212,9 @@ Rules:
 - For shell-compatible agent work, prefer the profile-owned Nushell/Yazelix
   surfaces: `yzx env`, `yzx env --no-shell`, `yzx run <argv...>`, and profile
   `nu -c "<cmd>"` / `nu -l -c "<cmd>"` when a loaded Yazelix Nushell config is
-  required. Treat Bash/Zsh as commands executed inside the configured Nushell
-  runtime, not as separate harness owners.
+  required. Use Nu scripts when a repeatable harness command needs a script;
+  Bash/Zsh are commands executed inside the configured Nushell runtime, not
+  separate harness owners.
 - `yzx agent` launches host Codex as `rtk codex` when Codex and RTK are
   available. `yzx agent init` previews bounded harness setup; `--apply` may
   create missing Meta GitKB, initialize Grit and ICM, and apply RTK setup, but
@@ -310,7 +311,7 @@ Command routing:
 | Grit coordination | `rtk grit ...` |
 | ICM memory | `rtk icm ...` |
 | Codex launch inside Yazelix agent pane | `yzx agent` -> `rtk codex` |
-| Shell parsing under Yazelix | profile `nu -c "<cmd>"` or `nu -l -c "<cmd>"` with `~yazelix/nushell/config` + `~yazelix/nushell/scripts`; Bash is already configured there, so do not add separate bash wrappers/launchers |
+| Shell parsing under Yazelix | profile `nu -c "<cmd>"` or `nu -l -c "<cmd>"` with `~yazelix/nushell/config` + `~yazelix/nushell/scripts`; use Nu scripts when possible; Bash is already configured there, so do not add separate bash wrappers/launchers |
 
 Raw `git`, `meta`, `git-kb`, `grit`, `icm`, or shell commands are allowed only
 when raw output is required for proof; tee the raw output and explain why RTK
