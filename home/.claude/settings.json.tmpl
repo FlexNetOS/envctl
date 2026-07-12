@@ -5,16 +5,16 @@
   "theme": "dark",
   "skipWorkflowUsageWarning": true,
   "teammateMode": "tmux",
-  "autoMemoryDirectory": "/home/flexnetos/meta/var/lib/claude-harness/memory",
+  "autoMemoryDirectory": "${META_ROOT}/var/lib/claude-harness/memory",
   "cleanupPeriodDays": 30,
   "env": {
-    "HARNESS_VAR": "/home/flexnetos/meta/var",
+    "HARNESS_VAR": "${META_ROOT}/var",
     "ENABLE_TOOL_SEARCH": "auto",
     "MAX_MCP_OUTPUT_TOKENS": "25000",
-    "SECURITY_WARNINGS_STATE_DIR": "/home/flexnetos/meta/var/lib/claude-harness/security",
+    "SECURITY_WARNINGS_STATE_DIR": "${META_ROOT}/var/lib/claude-harness/security",
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1",
-    "AGENTDB_PATH": "/home/flexnetos/meta/var/lib/agentdb/reasoningbank.db",
-    "AGENTDB_RUNTIME": "/home/flexnetos/meta/var/lib/agentdb/runtime",
+    "AGENTDB_PATH": "${META_ROOT}/var/lib/agentdb/reasoningbank.db",
+    "AGENTDB_RUNTIME": "${META_ROOT}/var/lib/agentdb/runtime",
     "AGENTDB_ENABLED": "true",
     "AGENTDB_LEARNING": "true",
     "AGENTDB_REASONING": "true",
@@ -22,7 +22,7 @@
     "AGENTDB_CACHE_SIZE": "2000",
     "AGENTDB_HNSW_M": "16",
     "AGENTDB_HNSW_EF": "100",
-    "RUVECTOR_INTEL_ROOT": "/home/flexnetos/meta/src/meta-ruvector"
+    "RUVECTOR_INTEL_ROOT": "${META_ROOT}/src/meta-ruvector"
   },
   "sandbox": {
     "enabled": false
@@ -38,8 +38,8 @@
       "Read(**/.credentials.json)",
       "Read(~/.ssh/**)",
       "Read(**/secrets/**)",
-      "Edit(//home/flexnetos/meta/var/log/claude-harness/**)",
-      "Write(//home/flexnetos/meta/var/log/claude-harness/**)",
+      "Edit(/${META_ROOT}/var/log/claude-harness/**)",
+      "Write(/${META_ROOT}/var/log/claude-harness/**)",
       "Edit(~/.claude/archive/**)",
       "Write(~/.claude/archive/**)",
       "Bash(claude -p:*)",
@@ -369,5 +369,6 @@
         ]
       }
     ]
-  }
+  },
+  "effortLevel": "high"
 }

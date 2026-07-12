@@ -68,6 +68,18 @@ done
 ! grep -q "/nix/store/" "$root/home/.claude/settings.json" "$root/home/.claude/settings.json.tmpl" || fail "store-hash path pinned in settings (stale-hash rot class)"
 echo "ok: substrate hook parity (weave WL-084 + icm) PATH-resolved in source settings"
 
+# ── settings residuals: live-only keys adopted; tmpl paths are ${META_ROOT}-parameterized ──
+for f in "$root/home/.claude/settings.json" "$root/home/.claude/settings.json.tmpl"; do
+  grep -q '"effortLevel"' "$f" || fail "$(basename "$f") missing effortLevel (live-only key never adopted into source)"
+done
+# the portability-links render is `sed s|${META_ROOT}|$M|g tmpl > settings.json` — a tmpl that
+# hardcodes the box path makes the render inert and the tmpl non-portable
+! grep -q "/home/flexnetos/meta" "$root/home/.claude/settings.json.tmpl" \
+  || fail "settings.json.tmpl hardcodes /home/flexnetos/meta — parameterize with \${META_ROOT}"
+grep -q '\${META_ROOT}' "$root/home/.claude/settings.json.tmpl" \
+  || fail "settings.json.tmpl carries no \${META_ROOT} placeholder (render would be a no-op)"
+echo "ok: settings residuals (effortLevel adopted; tmpl \${META_ROOT}-parameterized)"
+
 # ── syntax floors ───────────────────────────────────────────────────────────
 bash -n "$root/.claude/skills/agent-env-claude/phase0.sh" || fail "phase0.sh syntax"
 bash -n "$root/home/.claude/hooks/ccbrain-session-start.sh" || fail "ccbrain-session-start.sh syntax"

@@ -17,6 +17,12 @@
   builds, the `bash-to-nu.py: not found` rot class). A live-only hook that the source
   lacks is source lag: adopt it PATH-resolved. Enforced by
   `scripts/tests/test-agent-env-hooks.sh` via the harness-scripts gate.
+- Settings template ownership: `home/.claude/settings.json.tmpl` is the TEMPLATE authority —
+  `${META_ROOT}`-parameterized, never box-path-hardcoded — and `home/.claude/settings.json`
+  is its EXACT render (`sed "s|\${META_ROOT}|$META_ROOT|g" tmpl` must reproduce it
+  byte-for-byte; the portability-links component re-renders on install). Adopt any live-only
+  top-level key (e.g. `effortLevel`) into BOTH files or a re-render drops it. Same test/gate
+  as above enforces the placeholder + adoption invariants.
 
 ## Session initialization probes
 
