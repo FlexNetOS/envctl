@@ -52,7 +52,8 @@
       "Agent(model:haiku)",
       "Bash(git push:*)"
     ],
-    "disableBypassPermissionsMode": "disable"
+    "disableBypassPermissionsMode": "disable",
+    "defaultMode": "auto"
   },
   "statusLine": {
     "type": "command",

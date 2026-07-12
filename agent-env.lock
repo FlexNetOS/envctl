@@ -2,7 +2,7 @@ version: 2
 skills:
   ./agent-skills::agent-env-codex:
     destination: .claude/skills/agent-env-codex
-    hash: 16fef0c0dcd0453e46c77f0cc6637ff011f793ed1b472b9ac97967434e05ae15
+    hash: bda7e91d0f8ea709f2700ac7b77e60d8c8fbb34aee6fc8fe5e69be51b88db7c9
     skill: agent-env-codex
     description: Rebuild, edit, repair, or upgrade the complete envctl Codex agent harness under home/agent-env/codex-harness from the polished CODEX-GPT-HARNESS prompt, including prompts, Rust harness code, agents, teams, policies, rules, model routing, session capabilities, agent-env projections, tests, and active-skill materialization. Use when the user says /agent-env-codex, rebuild the Codex harness, edit the entire Codex agent environment, update the agent-env Codex harness, convert the harness prompt into the implementation, repair harness drift, or upgrade all Codex harness surfaces.
     source: ./agent-skills
