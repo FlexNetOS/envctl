@@ -68,17 +68,18 @@ done
 ! grep -q "/nix/store/" "$root/home/.claude/settings.json" "$root/home/.claude/settings.json.tmpl" || fail "store-hash path pinned in settings (stale-hash rot class)"
 echo "ok: substrate hook parity (weave WL-084 + icm) PATH-resolved in source settings"
 
-# ── settings residuals: live-only keys adopted; tmpl paths are ${META_ROOT}-parameterized ──
+# ── settings residuals: live-only keys adopted; owner ruling on root-var wiring honored ──
 for f in "$root/home/.claude/settings.json" "$root/home/.claude/settings.json.tmpl"; do
   grep -q '"effortLevel"' "$f" || fail "$(basename "$f") missing effortLevel (live-only key never adopted into source)"
+  # Owner ruling 2026-07-07 (env_cmd_tests::settings_json_matches_rendered_tmpl_no_drift):
+  # no META_ROOT/LIFEOS_ROOT/placeholder wiring in session config — explicit real paths only.
+  for banned in 'META_ROOT' 'LIFEOS_ROOT' 'META_FILE' '${'; do
+    ! grep -qF "$banned" "$f" || fail "$(basename "$f") contains banned root-var wiring: $banned"
+  done
 done
-# the portability-links render is `sed s|${META_ROOT}|$M|g tmpl > settings.json` — a tmpl that
-# hardcodes the box path makes the render inert and the tmpl non-portable
-! grep -q "/home/flexnetos/meta" "$root/home/.claude/settings.json.tmpl" \
-  || fail "settings.json.tmpl hardcodes /home/flexnetos/meta — parameterize with \${META_ROOT}"
-grep -q '\${META_ROOT}' "$root/home/.claude/settings.json.tmpl" \
-  || fail "settings.json.tmpl carries no \${META_ROOT} placeholder (render would be a no-op)"
-echo "ok: settings residuals (effortLevel adopted; tmpl \${META_ROOT}-parameterized)"
+diff -q "$root/home/.claude/settings.json.tmpl" "$root/home/.claude/settings.json" >/dev/null \
+  || fail "settings.json.tmpl != settings.json (identity-render drift; the Rust gate requires byte-parity)"
+echo "ok: settings residuals (effortLevel adopted; no root-var wiring; tmpl==settings byte-parity)"
 
 # ── syntax floors ───────────────────────────────────────────────────────────
 bash -n "$root/.claude/skills/agent-env-claude/phase0.sh" || fail "phase0.sh syntax"

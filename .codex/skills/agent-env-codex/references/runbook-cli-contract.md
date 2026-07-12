@@ -17,12 +17,14 @@
   builds, the `bash-to-nu.py: not found` rot class). A live-only hook that the source
   lacks is source lag: adopt it PATH-resolved. Enforced by
   `scripts/tests/test-agent-env-hooks.sh` via the harness-scripts gate.
-- Settings template ownership: `home/.claude/settings.json.tmpl` is the TEMPLATE authority —
-  `${META_ROOT}`-parameterized, never box-path-hardcoded — and `home/.claude/settings.json`
-  is its EXACT render (`sed "s|\${META_ROOT}|$META_ROOT|g" tmpl` must reproduce it
-  byte-for-byte; the portability-links component re-renders on install). Adopt any live-only
-  top-level key (e.g. `effortLevel`) into BOTH files or a re-render drops it. Same test/gate
-  as above enforces the placeholder + adoption invariants.
+- Settings template ownership (OWNER RULING 2026-07-07, enforced by the Rust gate
+  `env_cmd_tests::settings_json_matches_rendered_tmpl_no_drift`): session wiring uses
+  EXPLICIT REAL PATHS — no META_ROOT/LIFEOS_ROOT/placeholder root-var wiring in
+  `home/.claude/settings.json` or its `.tmpl`. With no placeholders the portability-links
+  render is an identity copy BY DESIGN, and the tmpl must equal settings.json
+  byte-for-byte. Adopt any live-only top-level key (e.g. `effortLevel`) into BOTH files or
+  a re-render drops it. Do NOT "fix" the inert render by parameterizing the tmpl — that
+  exact change REDs CI (observed 2026-07-12, PR #495 first push).
 
 ## Session initialization probes
 
