@@ -54,6 +54,18 @@ fi
 t=$(nu -l -c "which git | get 0.type" 2>/dev/null)
 if [ "$t" = "custom" ]; then row "nu rtk wrappers loaded" 'nu -l -c "which git | get 0.type"' pass "custom"
 else row "nu rtk wrappers loaded" 'nu -l -c "which git | get 0.type"' fail "type=$t (expected custom)"; fi
+# 3b. bash native inside the configured nu runtime (no wrapper needed — doctrine proof)
+if out=$(nu -l -c "^bash -c 'echo BASH_NATIVE_IN_NU_OK'" 2>&1) && [ "$out" = "BASH_NATIVE_IN_NU_OK" ]; then
+  row "bash native inside configured nu" 'nu -l -c "^bash -c ..."' pass "$out"
+else
+  row "bash native inside configured nu" 'nu -l -c "^bash -c ..."' fail "$(echo "$out" | head -1)"
+fi
+# 3c. nushell owner surfaces projected from ~yazelix/nushell/{config,scripts}
+if [ -f "$HOME/.nix-profile/nushell/config/config.nu" ] && [ -d "$HOME/.nix-profile/nushell/scripts" ]; then
+  row "nushell owner surfaces (~yazelix projection)" "ls ~/.nix-profile/nushell/{config,scripts}" pass "config.nu + scripts/ present"
+else
+  row "nushell owner surfaces (~yazelix projection)" "ls ~/.nix-profile/nushell/{config,scripts}" fail "missing — rebuild profile (yzx update local_source)"
+fi
 
 # 4. Symlink contract — envctl-owned shell files are symlinks into envctl
 T=/home/flexnetos/meta/src/envctl/home
@@ -122,13 +134,20 @@ else
   row "codex inherit block present" "ls .codex/prompts/prompt:substrate-init.inherit.md" fail "missing"
 fi
 # 8e. live settings carry the harness hook entries (source<->live parity)
-for h in bash-to-nu ccbrain-session-stop ccbrain-session-start "rtk hook claude" weave; do
+for h in ccbrain-session-stop ccbrain-session-start "rtk hook claude" weave; do
   if grep -q "$h" "$HOME/.claude/settings.json" 2>/dev/null; then
     row "live settings: $h" "grep settings.json" pass "wired"
   else
     row "live settings: $h" "grep settings.json" fail "missing from live ~/.claude/settings.json"
   fi
 done
+# 8e2. no-wrapper contract: retired bash-to-nu / launcher wrappers stay gone (PR #490/#491;
+# a stale LIVE copy firing a deleted hook = the "bash-to-nu.py: not found" incident class)
+if grep -qE "bash-to-nu|yazelix_nu\.sh" "$HOME/.claude/settings.json" 2>/dev/null; then
+  row "live settings: no shell wrapper" "grep -E 'bash-to-nu|yazelix_nu.sh' ~/.claude/settings.json" fail "retired wrapper reference present — archive + surgically remove the stale entry"
+else
+  row "live settings: no shell wrapper" "grep -E 'bash-to-nu|yazelix_nu.sh' ~/.claude/settings.json" pass "absent (rtk hook claude is the only Bash-tool rewriter)"
+fi
 
 # 8f. yazelix ownership proof (codex probe matrix)
 if yzx inspect --json 2>/dev/null | grep -q "nix-profile"; then
