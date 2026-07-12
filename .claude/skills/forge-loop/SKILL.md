@@ -87,6 +87,14 @@ capability or one component per item — so a cycle fits comfortably under the b
    - `.handoff/loop/DONE` present **OR** completion confirmed (see below) → **DONE**: report, no re-fire.
      *Completion is confirmed when* `hf resume --json` reports `next_command: "done"` (hf present) **or**
      all cards are `status: done` / all `backlog.md` items are `- [x]`/`- [!]` (hf absent).
+     **PRIOR-LOOP sentinel exception (2026-07-12):** when a NEW loop is being started (the
+     invocation names a loop/backlog different from `loop_state.md`'s `loop:` line) and the DONE
+     sentinel is the PRIOR loop's terminal record (loop_state `status:` says DONE for that prior
+     loop), the sentinel is stale for this invocation — archive it
+     (`~/.claude/hooks/harness-archive.sh .handoff/loop/DONE`), re-render a fresh `HANDOFF.md`
+     from `loop_state.md` (carry `handoff_cycles_total:` — `ci/gates/loop-state.sh` check 5
+     enforces parity), drain any non-empty `proposed-upgrades.md` body, THEN proceed with the new
+     loop. Never delete without archiving; never treat a prior loop's DONE as this loop's.
    - `.handoff/loop/WRAP-UP-OWED` present → a batch boundary came due (the Stop/PreCompact hook
      dropped it) and the owed wrap-up has not run → **run the batch boundary now** (see "Batch
      wrap-up cadence" below) BEFORE picking another item; do not pick around an owed wrap-up.

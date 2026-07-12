@@ -1365,3 +1365,21 @@ work is **sync-meta-source-UP-then-relocate**, not a symlink sweep.
     (top-k over exported JSONL rows; dim mismatches error not panic); default `cargo check
     --workspace` clean; NO-C GATE PASS raw. Upstream HNSW duplicate-node quirk documented +
     absorbed (over-fetch + dedup).
+
+
+## Drained steward escalations — boundary 65 (Epic I), drained 2026-07-12 (goal-loop hygiene)
+
+- [?] **TASK-0097 (P1, owner-approval-gated):** Queue-aware merge shepherd for the limited-runner
+  fleet (forge-loop, STRUCTURAL). At each merge event update exactly ONE armed PR's branch → wait
+  for its required check → merge → advance, instead of re-queueing all armed PRs (re-BEHINDs them
+  under strict up-to-date protection, saturates the runner fleet). Do NOT weaken the strict
+  up-to-date gate. Orthogonal owner lever: raise runner slots. Origin: evolution-steward
+  escalation, boundary 65 (Epic I R2–R10 "BEHIND treadmill", LESSONS 2026-07-09). Owner approval
+  required before apply (touches merge orchestration).
+- [?] **TASK-0098 (P2, owner-approval-gated):** Mechanical post-arm worktree-edit guard
+  (forge-loop, STRUCTURAL). Fail-closed pre-edit guard that REFUSES edits in a worktree whose
+  branch has an armed OPEN PR (`gh pr view <branch> --json state,autoMergeRequest`; armed+open →
+  block, direct the edit to a fresh worktree off develop). Strengthens the 2026-06-23 armed-PR
+  discipline (LESSONS row 27; recurrence 2 near-miss 2026-07-09: R10 semantic.rs first written
+  into the armed R8 worktree). Owner approval required before apply (adds a guard to the loop's
+  edit path).

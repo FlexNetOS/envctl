@@ -98,7 +98,9 @@ Treat `.kb/store/**` as read-only implementation state. Never edit it directly.
 
 For normal document changes:
 1. `git-kb checkout <slug>`
-2. Edit `.kb/workspace/**`
+2. Edit `.kb/workspaces/<name>/**` (named workspaces — default `main`, e.g.
+   `.kb/workspaces/main/tasks/<slug>.md`; `[hooks] auto_worktree_bind` binds one per branch.
+   The singular `.kb/workspace/` does not exist on disk.)
 3. `git-kb commit -m "msg" <pathspecs...>`
 
 Direct canonical-store edits can desynchronize document bytes from commit

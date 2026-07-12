@@ -3,6 +3,9 @@
 ## Agent-env convergence
 
 - Desired state flows `agent-env.yaml -> agent-env.lock -> envctl agent sync`.
+- Sync is LOCK-DRIVEN: after editing an `agent-skills/` source, regenerate the lock FIRST
+  (`envctl agent lock --color never`), THEN `envctl agent sync --apply` — sync run against a
+  stale lock reports the edited asset "unchanged" and propagates nothing (observed 2026-07-12).
 - Preview with `envctl agent sync --json --color never`.
 - Materialize only when requested with `envctl agent sync --apply --color never`.
 - Check drift with `envctl agent lock --check` and the repo agent-env gate.

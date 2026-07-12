@@ -236,3 +236,5 @@ jobs:
         run: bash ci/gates/loop-state.sh
       - name: harness-scripts gate (merge-driver + reaper + loop-state safety invariants)
         run: bash ci/gates/harness-scripts.sh
+      - name: yazelix-codex runtime ownership gate (home/.claude + home/.codex user-space drift)
+        run: bash ci/gates/yazelix-codex-runtime.sh

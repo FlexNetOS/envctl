@@ -51,7 +51,9 @@ worktree** rather than editing the checked-out tree directly. After verifying sy
 (`git fetch && git status` — confirm clean and even with `origin/master`):
 
 ```bash
-meta git worktree create <task-slug>     # preferred: meta-managed, multi-repo aware
+meta git worktree create <task-slug> origin/develop --repo envctl   # preferred: meta-managed
+# (bare `meta git worktree create <slug>` BAILS: repos must be named via --repo/--all;
+#  building in the set needs detached loop_lib/meta_plugin_protocol siblings from meta/src/*)
 # or, single-repo: git worktree add ../envctl-<task-slug> -b <task-slug>
 ```
 

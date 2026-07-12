@@ -100,4 +100,27 @@ run_gate && fail "planning table missing wrap_every should FAIL" || true
 rm -f "$PLAN_LS"
 run_gate || fail "missing loop_state.md should SKIP (exit 0), not fail"
 
+# 10. HANDOFF parity: handoff_cycles_total matching loop_state cycles_total -> PASS
+write_state 1 5 18 20 1
+cat > "$tmp/.handoff/loop/HANDOFF.md" <<'EOF'
+# HANDOFF (synthetic)
+handoff_cycles_total: 20   # comment survives
+EOF
+run_gate || fail "matching handoff_cycles_total should PASS"
+
+# 11. HANDOFF parity: stale handoff_cycles_total != cycles_total -> FAIL
+#     (the 2026-07-12 incident class: HANDOFF two boundaries behind loop_state, dead worktree path)
+cat > "$tmp/.handoff/loop/HANDOFF.md" <<'EOF'
+# HANDOFF (synthetic, stale)
+handoff_cycles_total: 12
+EOF
+run_gate && fail "stale handoff_cycles_total (12 != 20) should FAIL" || true
+
+# 12. legacy HANDOFF without the machine field -> PASS (skip note, never false-block)
+cat > "$tmp/.handoff/loop/HANDOFF.md" <<'EOF'
+# HANDOFF (legacy prose, no machine field)
+Resume: whatever.
+EOF
+run_gate || fail "legacy HANDOFF without handoff_cycles_total should PASS (skipped)"
+
 echo "test-loop-state-gate: PASS"
