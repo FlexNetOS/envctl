@@ -767,7 +767,9 @@ fn command_output(
         args: &args,
         current_dir: None,
         env: &[],
-        clear_env: false,
+        // Version/sudo probes are read-only diagnostics. Do not let loader,
+        // shell, or exported-function state from the caller influence them.
+        clear_env: true,
     });
     let mut child = command
         .stdout(Stdio::piped())
