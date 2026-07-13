@@ -7,13 +7,9 @@
 def n8n-up [...rest] { ^n8n-up ...$rest }
 def n8n-down [...rest] { ^n8n-down ...$rest }
 
-# === rtk (Rust Token Killer) auto-routing ================================
-# Defs live in a shared module so yazelix sessions and standalone login
-# nushell stay in sync. See that file for coverage limits and rationale.
-# Relative source: nushell resolves `source` against THIS file's dir (~/.config/yazelix),
-# so `../nushell/...` loads regardless of $HOME — no hardcoded path (ADR-0006 wave 2 pattern).
-source ../nushell/rtk-wrappers.nu
-# =========================================================================
+# RTK command routing is owned by Yazelix's packaged managed Nushell config
+# (`nushell/config/rtk_wrappers.nu`). Do not duplicate those defs in this
+# editable user hook.
 
 # === legacy workspace /usr mirror on PATH ================================
 # meta-usr-path.nu is GUARDED on $env.META_ROOT, which session wiring no longer

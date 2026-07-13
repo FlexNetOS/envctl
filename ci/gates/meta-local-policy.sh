@@ -44,7 +44,12 @@ SOURCE_LIST="$(mktemp)"
 FRONTDOOR_TMP="$(mktemp)"
 trap 'rm -f "$TMP" "$SOURCE_LIST" "$FRONTDOOR_TMP"' EXIT
 
-git ls-files -z --cached --others --exclude-standard -- "${ACTIVE_PATHS[@]}" >"$SOURCE_LIST"
+while IFS= read -r -d '' source_path; do
+  # A staged deletion remains in `git ls-files --cached` until commit.  Skip it
+  # so the policy gate remains quiet and deterministic while retiring legacy
+  # components instead of handing nonexistent paths to grep.
+  [[ -f "$source_path" ]] && printf '%s\0' "$source_path"
+done < <(git ls-files -z --cached --others --exclude-standard -- "${ACTIVE_PATHS[@]}") >"$SOURCE_LIST"
 
 
 if grep -RIn -- '--archive-backup-dotfiles\|ARCHIVE_BACKUP_DOTFILES\|apply_backup_dotfile_archive\|is_backup_dotfile\|archive-backup' \
@@ -94,6 +99,12 @@ check_absent manifest/grit.toml '\$META_ROOT/\.cargo/bin' \
   'grit must not wire the legacy META_ROOT .cargo bin path'
 check_absent manifest/prompt_hub.toml '\$META_ROOT/\.cargo/bin' \
   'prompt_hub must not wire the legacy META_ROOT .cargo bin path'
+
+if rg -n '\.toolchains/zsh|META_ROOT/usr/bin/zsh|\$META_ROOT/usr/bin/zsh' manifest >"$TMP"; then
+  echo "meta-local-policy: zsh is Yazelix-profile-owned; legacy meta zsh packages, wrappers, and ZDOTDIR launchers must stay retired" >&2
+  cat "$TMP" >&2
+  exit 1
+fi
 
 check_present() {
   local path="$1" needle="$2" message="$3"

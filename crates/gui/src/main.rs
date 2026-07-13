@@ -17,9 +17,9 @@ use envctl_engine::{
     AgentDoctorReport, AgentDoctorSpec, AgentEditOutcome, AgentList, AgentListKind, AgentListSpec,
     AgentLockDriftItem, AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentReport, AgentScope,
     AgentSectionSel, AgentSyncSpec, BuildStrategy, CatalogRenderReport, ComponentState,
-    DashboardPlan, DashboardSpec, DriftItem, DriftKind, Engine, EngineCommand, EngineEvent, Event,
-    OpStatus, Refactor, RefactorGoal, RenameRule, Severity, Stream, Telemetry, TelemetryControl,
-    Zeroizing,
+    DashboardPlan, DashboardSpec, DoctorReport, DoctorSpec, DriftItem, DriftKind, Engine,
+    EngineCommand, EngineEvent, Event, OpStatus, Refactor, RefactorGoal, RenameRule, Severity,
+    Status, Stream, Telemetry, TelemetryControl, Zeroizing,
 };
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
@@ -40,6 +40,7 @@ fn main() -> eframe::Result<()> {
 #[derive(Clone, Copy, PartialEq)]
 enum Screen {
     Dashboard,
+    Doctor,
     Components,
     Graph,
     AddRepo,
@@ -54,6 +55,7 @@ impl Screen {
     fn label(self) -> &'static str {
         match self {
             Screen::Dashboard => "Dashboard",
+            Screen::Doctor => "Doctor",
             Screen::Components => "Components",
             Screen::Graph => "Graph",
             Screen::AddRepo => "Add Repo",
@@ -213,6 +215,9 @@ struct EnvctlApp {
     driver_loaded: bool,
     software_rendered: bool,
     gpu_count: usize,
+    // top-level whole-environment doctor parity (separate from agent doctor)
+    doctor_report: Option<DoctorReport>,
+    doctor_status: String,
     // add-repo form
     add_url: String,
     add_id: String,
@@ -344,6 +349,8 @@ impl EnvctlApp {
             driver_loaded: false,
             software_rendered: false,
             gpu_count: 0,
+            doctor_report: None,
+            doctor_status: String::new(),
             add_url: String::new(),
             add_id: String::new(),
             add_build: String::new(),
@@ -413,6 +420,7 @@ impl EnvctlApp {
             sec_revoke_result: None,
         };
         let _ = app.cmd_tx.send(EngineCommand::Detect);
+        let _ = app.cmd_tx.send(app.doctor_command());
         let _ = app.cmd_tx.send(EngineCommand::SampleTelemetry);
         app
     }
@@ -442,6 +450,7 @@ impl EnvctlApp {
                     self.components = report.components;
                     self.drift = report.drift;
                 }
+                Event::Doctored { report } => self.apply_doctor_report(report),
                 Event::Log {
                     component,
                     stream,
@@ -741,6 +750,7 @@ impl eframe::App for EnvctlApp {
 
                     for s in [
                         Screen::Dashboard,
+                        Screen::Doctor,
                         Screen::Components,
                         Screen::Graph,
                         Screen::AddRepo,
@@ -771,6 +781,7 @@ impl eframe::App for EnvctlApp {
             )
             .show(ctx, |ui| match self.screen {
                 Screen::Dashboard => self.dashboard(ui),
+                Screen::Doctor => self.doctor_screen(ui),
                 Screen::Components => self.components_screen(ui),
                 Screen::Graph => self.graph_screen(ui),
                 Screen::AddRepo => self.add_repo_screen(ui),
@@ -819,6 +830,112 @@ impl EnvctlApp {
         if ui.add(btn).clicked() {
             self.screen = s;
         }
+    }
+
+    fn doctor_command(&self) -> EngineCommand {
+        EngineCommand::Doctor {
+            spec: DoctorSpec::default(),
+        }
+    }
+
+    fn apply_doctor_report(&mut self, report: DoctorReport) {
+        self.doctor_status = format!(
+            "{:?} · {} ok · {} warning(s) · {} error(s)",
+            report.status, report.summary.ok, report.summary.warnings, report.summary.errors
+        );
+        self.doctor_report = Some(report);
+    }
+
+    // ── Doctor ──────────────────────────────────────────────────────────────
+    /// Render the exact `DoctorReport` produced by `Engine::doctor`. This screen
+    /// contains no duplicate probing or health decisions.
+    fn doctor_screen(&mut self, ui: &mut egui::Ui) {
+        ui.horizontal(|ui| {
+            ui.heading("Environment doctor");
+            if ui.button("Run doctor").clicked() {
+                self.doctor_status = "running…".to_string();
+                let _ = self.cmd_tx.send(self.doctor_command());
+            }
+        });
+        ui.label(RichText::new(&self.doctor_status).color(theme::TEXT_MUTED));
+        ui.separator();
+
+        let Some(report) = self.doctor_report.as_ref() else {
+            ui.label("Waiting for the engine-owned report…");
+            return;
+        };
+        let status_color = match report.status {
+            Status::Ok => theme::HEALTHY,
+            Status::Warning => theme::WARN,
+            Status::Error => theme::DANGER,
+        };
+        ui.label(
+            RichText::new(format!("Overall: {:?}", report.status))
+                .strong()
+                .color(status_color),
+        );
+        if let Some(root) = &report.meta_root {
+            ui.monospace(format!(
+                "META_ROOT={} ({})",
+                root.display(),
+                report.root_source.as_deref().unwrap_or("unknown")
+            ));
+        }
+        if let Some(error) = &report.root_error {
+            ui.colored_label(theme::DANGER, error);
+        }
+        ui.label(format!(
+            "Manifest lock: {:?} · {} drift item(s)",
+            report.manifest_lock.status,
+            report.manifest_lock.drift.len()
+        ));
+
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            ui.add_space(8.0);
+            ui.label(RichText::new("Filesystem").strong());
+            for check in &report.writable {
+                let color = match check.status {
+                    Status::Ok => theme::HEALTHY,
+                    Status::Warning => theme::WARN,
+                    Status::Error => theme::DANGER,
+                };
+                ui.horizontal(|ui| {
+                    ui.colored_label(color, format!("{:?}", check.state));
+                    ui.monospace(check.path.display().to_string());
+                });
+            }
+
+            ui.add_space(8.0);
+            ui.label(RichText::new("Toolchains").strong());
+            for tool in &report.tools {
+                let color = match tool.status {
+                    Status::Ok => theme::HEALTHY,
+                    Status::Warning => theme::WARN,
+                    Status::Error => theme::DANGER,
+                };
+                ui.horizontal(|ui| {
+                    ui.colored_label(color, &tool.tool);
+                    ui.monospace(tool.version.as_deref().unwrap_or("absent"));
+                });
+            }
+
+            ui.add_space(8.0);
+            ui.label(RichText::new("System").strong());
+            ui.label(format!("sudo cached: {}", report.sudo_cached));
+            ui.label(format!("UEFI: {}", report.uefi));
+            ui.label(format!(
+                "Secure Boot: {}",
+                report.secure_boot.as_deref().unwrap_or("unknown")
+            ));
+            ui.label(format!(
+                "NVIDIA driver loaded: {}",
+                report.nvidia_driver_loaded
+            ));
+            ui.label(format!(
+                "Boundary violations: {}",
+                report.meta_boundary.violations.len()
+            ));
+        });
     }
 
     // ── Dashboard ───────────────────────────────────────────────────────────
@@ -3016,7 +3133,7 @@ fn json_bool_field(json: &str, key: &str) -> Option<bool> {
 #[cfg(test)]
 mod agent_spec_tests {
     use super::*;
-    use envctl_engine::AgentLockMode;
+    use envctl_engine::{AgentLockMode, EventSink};
 
     /// A pure, window-free `EnvctlApp` carrying just the agent form fields. The worker channel
     /// and engine clone aren't needed by the `*_spec` builders, so a fresh test app constructs
@@ -3049,6 +3166,8 @@ mod agent_spec_tests {
             driver_loaded: false,
             software_rendered: false,
             gpu_count: 0,
+            doctor_report: None,
+            doctor_status: String::new(),
             add_url: String::new(),
             add_id: String::new(),
             add_build: String::new(),
@@ -3117,6 +3236,44 @@ mod agent_spec_tests {
             sec_relay_result: None,
             sec_revoke_result: None,
         }
+    }
+
+    #[test]
+    fn top_level_doctor_builds_the_shared_engine_command() {
+        let app = test_app();
+        match app.doctor_command() {
+            EngineCommand::Doctor { spec } => {
+                assert!(spec.meta_root.is_none());
+                assert!(spec.start.is_none());
+                assert!(spec.probe_commands);
+            }
+            _ => panic!("expected EngineCommand::Doctor"),
+        }
+    }
+
+    #[test]
+    fn top_level_doctor_screen_consumes_engine_report_without_replica_logic() {
+        let mut app = test_app();
+        let root = std::env::temp_dir().join(format!("envctl-gui-doctor-{}", std::process::id()));
+        std::fs::create_dir_all(&root).unwrap();
+        let report = app
+            .geng
+            .doctor(
+                &DoctorSpec {
+                    meta_root: Some(root.clone()),
+                    start: None,
+                    probe_commands: false,
+                },
+                &EventSink::null(),
+            )
+            .unwrap();
+        let status = report.status;
+        let errors = report.summary.errors;
+        app.apply_doctor_report(report);
+        assert_eq!(app.doctor_report.as_ref().unwrap().status, status);
+        assert_eq!(app.doctor_report.as_ref().unwrap().summary.errors, errors);
+        assert!(app.doctor_status.contains(&format!("{status:?}")));
+        std::fs::remove_dir_all(root).ok();
     }
 
     #[test]

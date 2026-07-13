@@ -75,7 +75,7 @@ requires = ["codex-cli"]
 resolved = ""
 
 [components.codex-global-baseline]
-content_hash = "cedef643ee137256"
+content_hash = "5c189f3d7617614c"
 requires = ["codex-cli"]
 resolved = ""
 
@@ -259,7 +259,7 @@ requires = ["home-local-single-link"]
 resolved = ""
 
 [components.home-config-links]
-content_hash = "99f3c9aadff825e2"
+content_hash = "1ff57a6216f993a4"
 requires = []
 resolved = ""
 
@@ -420,11 +420,6 @@ content_hash = "3ccf2b6257a051f3"
 requires = []
 resolved = ""
 
-[components.ohmyzsh]
-content_hash = "6a79cfc53860251d"
-requires = ["zsh"]
-resolved = ""
-
 [components.ollama]
 content_hash = "9cbb1436801f865b"
 requires = []
@@ -432,6 +427,11 @@ resolved = ""
 
 [components.podman]
 content_hash = "e00f4f5e8a9a46c1"
+requires = []
+resolved = ""
+
+[components.postgres-ruvector]
+content_hash = "bf03b80a72ac250a"
 requires = []
 resolved = ""
 
@@ -547,17 +547,4 @@ resolved = ""
 [components.zellij]
 content_hash = "341be9153b20781f"
 requires = []
-resolved = ""
-
-[components.zsh]
-content_hash = "296d865c2931e1c9"
-requires = []
-resolved = ""
-
-[components.zsh-migration-launcher]
-content_hash = "f29852943b53a961"
-requires = [
-    "ohmyzsh",
-    "zsh",
-]
 resolved = ""

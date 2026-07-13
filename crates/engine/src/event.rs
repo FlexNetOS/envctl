@@ -10,6 +10,7 @@ use crate::agent::report::{
 use crate::agent::AgentScope;
 use crate::component::Phase;
 use crate::dashboard::{DashboardPlan, DeployOutcome};
+use crate::doctor::DoctorReport;
 use crate::model::{EnvReport, OpResult, RunSummary};
 use serde::{Deserialize, Serialize};
 use std::sync::mpsc::{Receiver, Sender};
@@ -42,6 +43,11 @@ pub enum Event {
     /// GUI Components grid + Dashboard).
     Report {
         report: EnvReport,
+    },
+    /// The typed whole-environment diagnostic report. Emitted exactly once by
+    /// `Engine::doctor`; both front-ends consume this same payload.
+    Doctored {
+        report: DoctorReport,
     },
     GuardRefused {
         component: String,

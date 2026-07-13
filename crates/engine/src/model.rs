@@ -405,7 +405,8 @@ pub struct EnvReport {
 
 /// Read-only boundary diagnostic for meta-owned tool shims. A non-empty
 /// `violations` list means envctl must not blindly treat the install as
-/// converged: a real binary/copy/symlink outside META_ROOT is still winning.
+/// converged: a path outside META_ROOT and the exactly proven active Nix
+/// profile is still winning.
 #[derive(Clone, Debug, Default, Serialize, Deserialize)]
 pub struct MetaBoundaryReport {
     pub meta_root: Option<String>,
@@ -461,7 +462,7 @@ pub enum DriftKind {
     WiringMissing,
     /// GPUs present but the kernel driver isn't loaded (software-rendered).
     DriverInactive,
-    /// A known FlexNetOS/meta tool resolves to a real install outside META_ROOT.
+    /// A known FlexNetOS/meta tool resolves outside the approved ownership roots.
     BoundaryViolation,
 }
 
