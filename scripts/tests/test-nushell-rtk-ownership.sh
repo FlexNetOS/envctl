@@ -37,14 +37,18 @@ mkdir -p "$home/.config/nushell" "$home/.nix-profile/nushell/config" \
   "$home/.nix-profile/bin" "$home/.nix-profile/toolbin"
 cp "$config" "$home/.config/nushell/config.nu"
 cp "$root/home/.config/nushell/meta-usr-path.nu" "$home/.config/nushell/meta-usr-path.nu"
-printf '%s\n' 'export def --wrapped cargo [...rest] { ^rtk cargo ...$rest }' \
-  >"$home/.nix-profile/nushell/config/rtk_wrappers.nu"
+{
+  printf '%s\n' 'export def --wrapped cargo [...rest] { ^rtk cargo ...$rest }'
+  printf '%s\n' 'export def --wrapped bash [...rest] { ^rtk proxy -- bash ...$rest }'
+} >"$home/.nix-profile/nushell/config/rtk_wrappers.nu"
 {
   printf '%s\n' '#!/usr/bin/env sh'
   printf '%s\n' 'printf "%s\\n" "$*" >>"$RTK_TEST_LOG"'
+  printf '%s\n' 'if [ "${1-}" = proxy ] && [ "${2-}" = -- ]; then shift 2; exec "$@"; fi'
   printf '%s\n' 'printf "rtk-routed\\n"'
 } >"$home/.nix-profile/bin/rtk"
 chmod +x "$home/.nix-profile/bin/rtk"
+ln -s "$(command -v nu)" "$home/.nix-profile/toolbin/nu"
 
 export HOME="$home"
 export XDG_CONFIG_HOME="$home/.config"
@@ -62,13 +66,16 @@ if grep -Fq '/nix/store/old-codex-cli-0.0.0/codex-path' "$tmp/path.out"; then
   echo "standalone Nu preserved a raw Codex package path" >&2
   exit 1
 fi
+nu -l -c '$env.SHELL' >"$tmp/shell.out"
+grep -Fqx "$home/.nix-profile/toolbin/nu" "$tmp/shell.out"
 
 nu -l -c 'cargo standalone-login' >"$tmp/login.out"
 grep -Fqx 'rtk-routed' "$tmp/login.out"
 grep -Fqx 'cargo standalone-login' "$RTK_TEST_LOG"
 
-nu -l -c '^bash -lc "printf native-bash"' >"$tmp/bash.out"
+nu -l -c 'bash -lc "printf native-bash"' >"$tmp/bash.out"
 grep -Fqx 'native-bash' "$tmp/bash.out"
+grep -Fqx 'proxy -- bash -lc printf native-bash' "$RTK_TEST_LOG"
 
 managed_config="$tmp/managed.nu"
 {
@@ -78,6 +85,6 @@ managed_config="$tmp/managed.nu"
 nu --config "$managed_config" -c 'cargo yazelix-managed' >"$tmp/managed.out"
 grep -Fqx 'rtk-routed' "$tmp/managed.out"
 grep -Fqx 'cargo yazelix-managed' "$RTK_TEST_LOG"
-test "$(wc -l <"$RTK_TEST_LOG" | tr -d '[:space:]')" = 2
+test "$(wc -l <"$RTK_TEST_LOG" | tr -d '[:space:]')" = 3
 
 echo "test-nushell-rtk-ownership: PASS"
