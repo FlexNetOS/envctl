@@ -28,6 +28,12 @@ use `rtk proxy --` for raw evidence from:
 - `journalctl`, `dmesg`, and `systemctl status`
 - `yzx doctor` and `yzx inspect` when the log is validation evidence
 
+Do not hide several independent diagnostics inside `rtk proxy -- bash -lc
+'cmd1; cmd2; ...'` and then count that as full adoption. Route each independent
+command through RTK so its accounting and output policy remain observable. A
+checked-in repository script is one command and may run its own internal
+subprocesses normally.
+
 `rtk proxy --` preserves the native command's stdout, stderr, and exit status.
 Use a tee log behind that proxy when durable raw evidence is required.
 

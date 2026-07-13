@@ -20,6 +20,7 @@ done
 
 grep -Fq "$exact proxy --" "$root/home/AGENTS.rtk.md"
 grep -Fq "$exact proxy --" "$root/home/.codex/AGENTS.rtk.md"
+grep -Fq 'Do not hide several independent diagnostics' "$root/home/.codex/AGENTS.rtk.md"
 test "$(grep -Fxc '@/home/flexnetos/.codex/AGENTS.rtk.md' "$root/home/.codex/AGENTS.md")" = 1
 if grep -Fq '@/home/flexnetos/.codex/RTK.md' "$root/home/.codex/AGENTS.md"; then
   echo "Codex AGENTS still imports the retired duplicate RTK policy surface" >&2

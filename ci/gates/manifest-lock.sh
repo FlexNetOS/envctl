@@ -12,6 +12,9 @@ fail() {
 
 hash_inputs() {
   while IFS= read -r -d '' path; do
+    # Staged deletions remain listed by the index until commit. They are not
+    # live manifest inputs and must not produce git hash-object errors.
+    [[ -f "$path" ]] || continue
     printf '%s\0' "$path"
     git hash-object -- "$path"
   done < <(git ls-files -z -- manifest)
