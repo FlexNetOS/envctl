@@ -24,6 +24,14 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: "1"        # debuggable backtraces when a CI test panics
+  # The repository is checked out below META_ROOT on self-hosted runners, so Cargo
+  # discovers META_ROOT/.cargo/config.toml while walking parent directories. Keep CI
+  # independent from its optional host-local Wild/Kache acceleration: stale profile
+  # paths must not break linking, and a long-lived wrapper daemon must not mix rustc
+  # versions inside an otherwise isolated target directory.
+  CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: cc
+  CARGO_BUILD_RUSTC_WRAPPER: ""
+  RUSTFLAGS: ""
   # loop_lib is consumed at its default branch HEAD (setup-meta-deps.sh default). The old
   # LOOP_LIB_REF pin pointed at a merged+reaped upgrade branch (404) and every job paid a
   # failed fetch + WARN before falling back to exactly this behavior (audit 2026-07-12).
