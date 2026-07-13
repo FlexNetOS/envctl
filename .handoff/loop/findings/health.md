@@ -19,4 +19,3 @@ Failures-only matrix captured from the isolated envctl/Yazelix worktree set. Row
 | Active docs/contracts | FAIL | 1.88/stable, apt-based GUI setup, stale MCP-six policy, and five-test libSQL claims conflict with current sources | Reconcile owning instructions and regenerate agent-env projections |
 
 Already-green baseline evidence before repairs: locked workspace build, default workspace tests, low-cost KDF workspace tests, provider/relay-edge feature lanes, fmt, clippy, agent-env lock/sync/doctor, registry, isolated `secretd --self-check`, and every static gate except cargo-audit.
-

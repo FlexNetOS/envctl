@@ -42,4 +42,3 @@ Yazelix flake source  ── nix profile ─▶ exactly one lifeos_foundation_yz
 ```
 
 Then mark `$META_ROOT/.toolchains`, `$META_ROOT/usr/bin`, user-bin shims, repo caches, and immutable old profile generations as non-authoritative migration/shadow surfaces unless an explicitly documented external-data exception applies.
-
