@@ -33,7 +33,8 @@ fi
 tmp="$(mktemp -d)"
 trap 'rm -rf "$tmp"' EXIT
 home="$tmp/home"
-mkdir -p "$home/.config/nushell" "$home/.nix-profile/nushell/config" "$home/.nix-profile/bin"
+mkdir -p "$home/.config/nushell" "$home/.nix-profile/nushell/config" \
+  "$home/.nix-profile/bin" "$home/.nix-profile/toolbin"
 cp "$config" "$home/.config/nushell/config.nu"
 cp "$root/home/.config/nushell/meta-usr-path.nu" "$home/.config/nushell/meta-usr-path.nu"
 printf '%s\n' 'export def --wrapped cargo [...rest] { ^rtk cargo ...$rest }' \
@@ -48,7 +49,19 @@ chmod +x "$home/.nix-profile/bin/rtk"
 export HOME="$home"
 export XDG_CONFIG_HOME="$home/.config"
 export RTK_TEST_LOG="$tmp/rtk.log"
-export PATH="$home/.nix-profile/bin:$PATH"
+export PATH="/nix/store/old-lifeos-foundation-yzx/toolbin:/nix/store/old-codex-cli-0.0.0/codex-path:$home/.nix-profile/bin:$PATH"
+
+nu -l -c '$env.PATH | each { into string } | to json' >"$tmp/path.out"
+grep -Fq "${home}/.nix-profile/toolbin" "$tmp/path.out"
+grep -Fq "${home}/.nix-profile/bin" "$tmp/path.out"
+if grep -Fq '/nix/store/old-lifeos-foundation-yzx/toolbin' "$tmp/path.out"; then
+  echo "standalone Nu preserved a stale Yazelix profile generation" >&2
+  exit 1
+fi
+if grep -Fq '/nix/store/old-codex-cli-0.0.0/codex-path' "$tmp/path.out"; then
+  echo "standalone Nu preserved a raw Codex package path" >&2
+  exit 1
+fi
 
 nu -l -c 'cargo standalone-login' >"$tmp/login.out"
 grep -Fqx 'rtk-routed' "$tmp/login.out"
