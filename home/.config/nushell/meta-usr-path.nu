@@ -25,6 +25,10 @@ if ("HOME" in $env) and ("PATH" in $env) and (($env.PATH | describe) =~ "list") 
         ([$profile "toolbin"] | path join)
         ([$profile "bin"] | path join)
     ] | where { path exists }
+    let profile_nu = ([$profile "toolbin" "nu"] | path join)
+    if ($profile_nu | path exists) {
+        $env.SHELL = $profile_nu
+    }
     let inherited = ($env.PATH | each { into string })
     let current_only = ($inherited | where {|entry|
         not (
