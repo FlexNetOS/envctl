@@ -1,0 +1,4 @@
+interface:
+  display_name: "Agent Env Codex"
+  short_description: "Rebuild the complete Codex harness"
+  default_prompt: "Use $agent-env-codex to rebuild or upgrade the complete envctl Codex agent harness from its polished prompt."

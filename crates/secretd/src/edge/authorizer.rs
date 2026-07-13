@@ -27,6 +27,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::{anyhow, bail, Context};
+use rustls::pki_types::pem::PemObject;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer, ServerName};
 use rustls::{ClientConfig, RootCertStore};
 use sha2::{Digest, Sha256};
@@ -83,7 +84,7 @@ fn build_client_config(cfg: &AuthorizerConfig) -> anyhow::Result<Arc<ClientConfi
     let mut roots = RootCertStore::empty();
     let mut rd = std::io::BufReader::new(&operator_ca_bytes[..]);
     let mut added = 0usize;
-    for cert in rustls_pemfile::certs(&mut rd) {
+    for cert in CertificateDer::pem_reader_iter(&mut rd) {
         roots
             .add(cert.context("parsing operator-box CA PEM")?)
             .context("adding operator-box CA trust anchor")?;
@@ -111,7 +112,7 @@ fn build_client_config(cfg: &AuthorizerConfig) -> anyhow::Result<Arc<ClientConfi
     })?;
     let client_certs: Vec<CertificateDer<'static>> = {
         let mut r = std::io::BufReader::new(&cert_pem[..]);
-        rustls_pemfile::certs(&mut r)
+        CertificateDer::pem_reader_iter(&mut r)
             .collect::<Result<Vec<_>, _>>()
             .context("parsing authorizer client cert PEM")?
     };
@@ -120,9 +121,7 @@ fn build_client_config(cfg: &AuthorizerConfig) -> anyhow::Result<Arc<ClientConfi
     }
     let client_key: PrivateKeyDer<'static> = {
         let mut r = std::io::BufReader::new(&key_pem[..]);
-        rustls_pemfile::private_key(&mut r)
-            .context("parsing authorizer client key PEM")?
-            .ok_or_else(|| anyhow!("authorizer client key PEM contained no private key"))?
+        PrivateKeyDer::from_pem_reader(&mut r).context("parsing authorizer client key PEM")?
     };
 
     let cfg =
@@ -417,7 +416,7 @@ pub fn cert_fingerprint_from_pem(pem_path: &Path) -> anyhow::Result<[u8; 32]> {
     let pem = std::fs::read(pem_path)
         .with_context(|| format!("reading edge cert {} for fingerprint", pem_path.display()))?;
     let mut rd = std::io::BufReader::new(&pem[..]);
-    let first = rustls_pemfile::certs(&mut rd)
+    let first = CertificateDer::pem_reader_iter(&mut rd)
         .next()
         .ok_or_else(|| anyhow!("no certificate in {}", pem_path.display()))?
         .context("parsing edge cert for fingerprint")?;

@@ -29,8 +29,9 @@ login_shell = true
 script = '''
 envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
+export PATH=/usr/bin:/bin
 M="${META_ROOT:?META_ROOT required}"
-ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 DEST="$M/.toolchains/gh"
 # Bootstrapping gh itself: the redirect-resolve is a github.com HEAD (not the JSON API) so it
 # stays plain curl; the asset download goes through the resolver (bearer when a token is already
@@ -238,27 +239,6 @@ BEG="# >>> envctl kache (Epic H TASK-0055) >>>"
 END="# <<< envctl kache (Epic H TASK-0055) <<<"
 awk -v b="$BEG" -v e="$END" '$0==b{s=1} s&&$0==e{s=0;next} !s{print}' "$CFG" > "$CFG.tmp" && mv "$CFG.tmp" "$CFG"
 printf '%s\n[build]\nrustc-wrapper = "%s/usr/bin/kache"\n%s\n' "$BEG" "$M" "$END" >> "$CFG"
-
-install -d -m 755 "$M/.config/systemd/user"
-cat >"$M/.config/systemd/user/kache.service" <<EOF
-[Unit]
-Description=kache compiler cache daemon (meta-owned)
-After=default.target
-
-[Service]
-Type=simple
-Environment=XDG_CACHE_HOME=$M/.cache
-ExecStart=$DEST/bin/kache daemon run
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=default.target
-EOF
-chmod 0644 "$M/.config/systemd/user/kache.service"
-systemctl --user daemon-reload >/dev/null 2>&1 || true
-
-
 '''
 [component.fix]
 kind = "script"
@@ -290,25 +270,6 @@ BEG="# >>> envctl kache (Epic H TASK-0055) >>>"
 END="# <<< envctl kache (Epic H TASK-0055) <<<"
 awk -v b="$BEG" -v e="$END" '$0==b{s=1} s&&$0==e{s=0;next} !s{print}' "$CFG" > "$CFG.tmp" && mv "$CFG.tmp" "$CFG"
 printf '%s\n[build]\nrustc-wrapper = "%s/usr/bin/kache"\n%s\n' "$BEG" "$M" "$END" >> "$CFG"
-
-install -d -m 755 "$M/.config/systemd/user"
-cat >"$M/.config/systemd/user/kache.service" <<EOF
-[Unit]
-Description=kache compiler cache daemon (meta-owned)
-After=default.target
-
-[Service]
-Type=simple
-Environment=XDG_CACHE_HOME=$M/.cache
-ExecStart=$DEST/bin/kache daemon run
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=default.target
-EOF
-chmod 0644 "$M/.config/systemd/user/kache.service"
-systemctl --user daemon-reload >/dev/null 2>&1 || true
 '''
 [component.verify]
 kind = "script"
@@ -355,8 +316,8 @@ echo 'fn main() {}' > "$tmp/proj/src/main.rs"
 if command -v systemctl >/dev/null 2>&1; then
   UNIT="$M/.config/systemd/user/kache.service"
   [ -f "$UNIT" ]
-  g -q "ExecStart=$M/.toolchains/kache/bin/kache daemon run" "$UNIT"
-  g -q "Environment=XDG_CACHE_HOME=$M/.cache" "$UNIT"
+  g -Fq "ExecStart=\"$M/.toolchains/kache/bin/kache\" daemon run" "$UNIT"
+  g -Fq "Environment=\"XDG_CACHE_HOME=$M/.cache\"" "$UNIT"
 fi
 kache doctor
 '''
@@ -365,8 +326,12 @@ kache doctor
 kind = "script"
 login_shell = true
 script = '''
-set -u
+set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
+# Remove hooks run before generic revert_wiring. Refuse every deletion unless
+# an operator-started daemon is stopped/disabled successfully; generic revert
+# then removes the discovery bridge/canonical unit and reloads the manager.
+systemctl --user disable --now kache.service
 t="$M/usr/bin/kache"
 if [ -e "$t" ] || [ -L "$t" ]; then
   if { [ -f "$t" ] && grep -q 'envctl kache wrapper' "$t"; } || { [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/kache"; }; then
@@ -383,18 +348,31 @@ if [ -f "$CFG" ]; then
   awk -v b="$BEG" -v e="$END" '$0==b{s=1} s&&$0==e{s=0;next} !s{print}' "$CFG" > "$CFG.tmp" && mv "$CFG.tmp" "$CFG"
   grep -q '[^[:space:]]' "$CFG" || rm -f "$CFG"
 fi
-if command -v systemctl >/dev/null 2>&1; then
-  systemctl --user disable --now kache.service >/dev/null 2>&1 || true
-  systemctl --user daemon-reload >/dev/null 2>&1 || true
-fi
-UNIT="$M/.config/systemd/user/kache.service"
-if [ -f "$UNIT" ] && grep -q "ExecStart=$M/.toolchains/kache/bin/kache daemon run" "$UNIT"; then
-  rm -f "$UNIT"
-fi
 '''
 
 [component.wiring]
 path_entries = ["$META_ROOT/usr/bin"]
+
+[[component.wiring.systemd_user]]
+name = "kache.service"
+# Preserve the historical lifecycle: make the daemon discoverable, but do not
+# start/enable it implicitly. Operators may opt in with systemctl --user.
+enable = false
+content = '''
+[Unit]
+Description=kache compiler cache daemon (meta-owned)
+After=default.target
+
+[Service]
+Type=simple
+Environment="XDG_CACHE_HOME=${META_ROOT}/.cache"
+ExecStart="${META_ROOT}/.toolchains/kache/bin/kache" daemon run
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=default.target
+'''
 
 # ── nushell (nu) ── meta-owned musl static binary, replaces nix-delivered nu for
 # interactive use. Additive: yazelix's own bundled nu (absolute nix path) is untouched.
@@ -415,7 +393,7 @@ script = '''
 envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 DEST="$M/.toolchains/nushell"
 TAG="$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/nushell/nushell/releases/latest | sed 's#.*/tag/##')"
 URL="https://github.com/nushell/nushell/releases/download/${TAG}/nu-${TAG}-x86_64-unknown-linux-musl.tar.gz"
@@ -465,7 +443,7 @@ script = '''
 envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 DEST="$M/.toolchains/zellij"
 TAG="$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/zellij-org/zellij/releases/latest | sed 's#.*/tag/##')"
 URL="https://github.com/zellij-org/zellij/releases/download/${TAG}/zellij-x86_64-unknown-linux-musl.tar.gz"
@@ -515,7 +493,7 @@ script = '''
 envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 DEST="$M/.toolchains/mise"
 TAG="$(curl -fsSLI -o /dev/null -w '%{url_effective}' https://github.com/jdx/mise/releases/latest | sed 's#.*/tag/##')"
 URL="https://github.com/jdx/mise/releases/download/${TAG}/mise-${TAG}-linux-x64"
@@ -572,7 +550,7 @@ login_shell = true
 script = '''
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 DEST="$M/.toolchains/ollama"
 MODEL_STORE="$M/var/lib/ollama/models"
 WRAPPER="$META_ROOT/usr/bin/ollama"
@@ -657,87 +635,122 @@ path_entries = ["$META_ROOT/usr/bin"]
 
 # ── llvm-clang ── meta-owned LLVM/clang toolchain, replaces the apt clang/llvm
 # system-depth install. Pure prebuilt tarball into .toolchains/llvm + regular
-# $META_ROOT/usr/bin frontdoor wrappers for the clang/lld driver set. The `/releases/latest` redirect now points at
-# 22.x, so the install pins the latest 21.x tag via the releases API. `envctl env
+# $META_ROOT/usr/bin frontdoor wrappers for the clang/lld driver set. Compiler provenance is part
+# of the sqld helper trust boundary, so the release and both supported architecture payloads are
+# pinned by immutable SHA-256 rather than resolved from a floating release API. `envctl env
 # --toolchains` also exports LIBCLANG_PATH=.toolchains/llvm/lib so bindgen-style
 # consumers find libclang.so (Epic H TASK-0061). Repo: llvm/llvm-project.
 [[component]]
 id = "llvm-clang"
 name = "LLVM/clang (meta-owned)"
-description = "LLVM/clang-21 from upstream prebuilt release tarball into .toolchains/llvm + regular $META_ROOT/usr/bin frontdoor wrappers for the binaries whose runtime libs resolve on this host (clang/clang++/llc/llvm-* always; lld/ld.lld only where libxml2.so.2 exists). Replaces the apt clang/llvm. Pins latest 21.x (the /latest redirect now points at 22.x). Repo: llvm/llvm-project."
+description = "LLVM/clang 21.1.8 from architecture-specific, SHA-256-pinned upstream release tarballs into .toolchains/llvm + regular $META_ROOT/usr/bin frontdoor wrappers for the binaries whose runtime libs resolve on this host (clang/clang++/llc/llvm-* always; lld/ld.lld only where libxml2.so.2 exists). The complete installed generation identity, including every file, mode, and symlink target, is pinned and checked by Detect/Verify. Replaces the apt clang/llvm. Repo: llvm/llvm-project."
 
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/llvm/bin/clang\" ] && [ -x \"$M/usr/bin/clang\" ] && [ ! -L \"$M/usr/bin/clang\" ] && grep -Fqx \"exec \\\"$M/.toolchains/llvm/bin/clang\\\" \\\"\\$@\\\"\" \"$M/usr/bin/clang\""]
+args = ["-lc", '''
+set -euo pipefail
+export PATH=/usr/bin:/bin
+M="${META_ROOT:?META_ROOT required}"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+uid="$(id -u)"
+lifecycle="$ROOT/assets/scripts/envctl-llvm-clang-lifecycle.sh"
+expected_lifecycle_sha256="991b3f75ddfe3d864d3d79f79873875559ff26d991b46abbfbd85b7b64f6cf1d"
+[ -d "$ROOT" ] && [ ! -L "$ROOT" ] && [ "$(readlink -f -- "$ROOT")" = "$ROOT" ] \
+  && [ "$(stat -c '%u' "$ROOT")" = "$uid" ] \
+  && [ -f "$lifecycle" ] && [ ! -L "$lifecycle" ] \
+  && [ "$(readlink -f -- "$lifecycle")" = "$lifecycle" ] \
+  && [ "$(stat -c '%u' "$lifecycle")" = "$uid" ] \
+  && [ "$(stat -c '%a' "$lifecycle")" = 755 ] \
+  && [ "$(sha256sum "$lifecycle" | awk '{print $1}')" = "$expected_lifecycle_sha256" ] || exit 1
+exec /usr/bin/bash "$lifecycle" detect
+''']
 
 [component.install]
 kind = "script"
 login_shell = true
 script = '''
-envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
+export PATH=/usr/bin:/bin
 M="${META_ROOT:?META_ROOT required}"
-ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
-DEST="$M/.toolchains/llvm"
-# Authenticated release listing via the shared resolver (gh tier = 5000/hr, or the vault-sealed
-# mint token; gh is the meta-owned Epic-H component TASK-0057, guaranteed on PATH) — the
-# /releases/latest redirect points at 22.x, so we must LIST releases to pin the latest 21.x.
-# The resolver's gh path preserves `--jq`; we keep our OWN unauthenticated grep-based fallback
-# for when gh is absent/unauthed (60/hr, may 403 when the quota is exhausted), because the
-# curl-side cannot honour gh's --jq. TASK-0068 (last api.github.com rate-limit liability).
-if _envctl_gh_authed; then
-  TAG="$(envctl_gh_api 'repos/llvm/llvm-project/releases?per_page=100' \
-    --jq '.[].tag_name | select(test("^llvmorg-21\\.[0-9]+\\.[0-9]+$"))' | sort -V | tail -1)"
-else
-  TAG="$(envctl_gh_curl 'https://api.github.com/repos/llvm/llvm-project/releases?per_page=100' \
-    | grep -oE '"tag_name": *"llvmorg-21\.[0-9]+\.[0-9]+"' \
-    | grep -oE 'llvmorg-21\.[0-9]+\.[0-9]+' | sort -V | tail -1)"
-fi
-[ -n "$TAG" ] || { echo "llvm: could not resolve latest 21.x tag" >&2; exit 1; }
-VER="${TAG#llvmorg-}"
-URL="https://github.com/llvm/llvm-project/releases/download/${TAG}/LLVM-${VER}-Linux-X64.tar.xz"
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-envctl_gh_curl "$URL" -o "$tmp/llvm.tar.xz"
-rm -rf "$DEST"; install -d -m 755 "$DEST"
-tar -xJf "$tmp/llvm.tar.xz" -C "$DEST" --strip-components=1
-install -d -m 755 "$META_ROOT/usr/bin"
-# only expose regular frontdoor wrappers for binaries whose runtime libs resolve on this host
-# (the prebuilt lld links libxml2.so.2, absent on libxml2.so.16 boxes); the box's strategic linker is wild
-# (TASK-0054), and apt lld remains as fallback until apt removal. The `--version` probe
-# self-prunes any tarball tool with an unsatisfied shared lib, not just lld.
-for b in clang clang++ clang-cpp clang-21 llvm-config llc llvm-ar llvm-nm llvm-objcopy llvm-objdump lld ld.lld; do
-  src="$DEST/bin/$b"; dst="$META_ROOT/usr/bin/$b"
-  if [ -e "$src" ] && "$src" --version >/dev/null 2>&1; then
-    envctl_frontdoor "$src" "$dst"
-  else
-    # prune only our prior exposure for a now-unexposed binary (e.g. a prior install that
-    # exposed lld before libxml2.so.2 went away, or a re-install). Accept both the new
-    # regular wrapper and the legacy managed symlink; never remove a foreign/apt binary.
-    if { [ -L "$dst" ] && readlink "$dst" | grep -q "$DEST"; } || { [ -f "$dst" ] && grep -Fqx "exec \"$src\" \"\$@\"" "$dst"; }; then
-      rm -f "$dst"
-    fi
-  fi
-done
-
-
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+uid="$(id -u)"
+lifecycle="$ROOT/assets/scripts/envctl-llvm-clang-lifecycle.sh"
+expected_lifecycle_sha256="991b3f75ddfe3d864d3d79f79873875559ff26d991b46abbfbd85b7b64f6cf1d"
+[ -d "$ROOT" ] && [ ! -L "$ROOT" ] && [ "$(readlink -f -- "$ROOT")" = "$ROOT" ] \
+  && [ "$(stat -c '%u' "$ROOT")" = "$uid" ] \
+  || { echo "llvm: unsafe envctl source root: $ROOT" >&2; exit 1; }
+[ -f "$lifecycle" ] && [ ! -L "$lifecycle" ] \
+  && [ "$(readlink -f -- "$lifecycle")" = "$lifecycle" ] \
+  && [ "$(stat -c '%u' "$lifecycle")" = "$uid" ] && [ "$(stat -c '%a' "$lifecycle")" = 755 ] \
+  && [ "$(sha256sum "$lifecycle" | awk '{print $1}')" = "$expected_lifecycle_sha256" ] \
+  || { echo "llvm: unsafe lifecycle helper" >&2; exit 1; }
+exec /usr/bin/bash "$lifecycle" install
 '''
 [component.verify]
-kind = "command"
-command = "bash"
-args = ["-lc", "PATH=\"$META_ROOT/usr/bin:$PATH\"; clang --version && llvm-config --version"]
+kind = "script"
+login_shell = true
+script = '''
+set -euo pipefail
+export PATH=/usr/bin:/bin
+M="${META_ROOT:?META_ROOT required}"
+uid="$(id -u)"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+lifecycle="$ROOT/assets/scripts/envctl-llvm-clang-lifecycle.sh"
+expected_lifecycle_sha256="991b3f75ddfe3d864d3d79f79873875559ff26d991b46abbfbd85b7b64f6cf1d"
+[ -d "$ROOT" ] && [ ! -L "$ROOT" ] && [ "$(readlink -f -- "$ROOT")" = "$ROOT" ] \
+  && [ "$(stat -c '%u' "$ROOT")" = "$uid" ] \
+  || { echo "llvm: unsafe envctl source root: $ROOT" >&2; exit 1; }
+[ -f "$lifecycle" ] && [ ! -L "$lifecycle" ] \
+  && [ "$(readlink -f -- "$lifecycle")" = "$lifecycle" ] \
+  && [ "$(stat -c '%u' "$lifecycle")" = "$uid" ] && [ "$(stat -c '%a' "$lifecycle")" = 755 ] \
+  && [ "$(sha256sum "$lifecycle" | awk '{print $1}')" = "$expected_lifecycle_sha256" ] \
+  || { echo "llvm: unsafe lifecycle helper" >&2; exit 1; }
+exec /usr/bin/bash "$lifecycle" verify
+'''
+
+[component.fix]
+kind = "script"
+login_shell = true
+script = '''
+set -euo pipefail
+export PATH=/usr/bin:/bin
+M="${META_ROOT:?META_ROOT required}"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+uid="$(id -u)"
+lifecycle="$ROOT/assets/scripts/envctl-llvm-clang-lifecycle.sh"
+expected_lifecycle_sha256="991b3f75ddfe3d864d3d79f79873875559ff26d991b46abbfbd85b7b64f6cf1d"
+[ -d "$ROOT" ] && [ ! -L "$ROOT" ] && [ "$(readlink -f -- "$ROOT")" = "$ROOT" ] \
+  && [ "$(stat -c '%u' "$ROOT")" = "$uid" ] \
+  || { echo "llvm: unsafe envctl source root: $ROOT" >&2; exit 1; }
+[ -f "$lifecycle" ] && [ ! -L "$lifecycle" ] \
+  && [ "$(readlink -f -- "$lifecycle")" = "$lifecycle" ] \
+  && [ "$(stat -c '%u' "$lifecycle")" = "$uid" ] && [ "$(stat -c '%a' "$lifecycle")" = 755 ] \
+  && [ "$(sha256sum "$lifecycle" | awk '{print $1}')" = "$expected_lifecycle_sha256" ] \
+  || { echo "llvm: unsafe lifecycle helper" >&2; exit 1; }
+exec /usr/bin/bash "$lifecycle" fix
+'''
 
 [component.remove]
 kind = "script"
 login_shell = true
 script = '''
-set -u
+set -euo pipefail
+export PATH=/usr/bin:/bin
 M="${META_ROOT:?META_ROOT required}"
-managed_frontdoor(){ front="$1"; private="$2"; if [ -L "$front" ] && [ "$(readlink -f "$front" 2>/dev/null || true)" = "$(readlink -f "$private" 2>/dev/null || true)" ]; then return 0; fi; [ -f "$front" ] && grep -Fqx "exec \"$private\" \"\$@\"" "$front"; }
-for b in clang clang++ clang-cpp clang-21 llvm-config llc llvm-ar llvm-nm llvm-objcopy llvm-objdump lld ld.lld; do
-  t="$META_ROOT/usr/bin/$b"; src="$M/.toolchains/llvm/bin/$b"; if managed_frontdoor "$t" "$src"; then rm -f "$t"; fi
-done
-rm -rf "$M/.toolchains/llvm"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+uid="$(id -u)"
+lifecycle="$ROOT/assets/scripts/envctl-llvm-clang-lifecycle.sh"
+expected_lifecycle_sha256="991b3f75ddfe3d864d3d79f79873875559ff26d991b46abbfbd85b7b64f6cf1d"
+[ -d "$ROOT" ] && [ ! -L "$ROOT" ] && [ "$(readlink -f -- "$ROOT")" = "$ROOT" ] \
+  && [ "$(stat -c '%u' "$ROOT")" = "$uid" ] \
+  || { echo "llvm: unsafe envctl source root: $ROOT" >&2; exit 1; }
+[ -f "$lifecycle" ] && [ ! -L "$lifecycle" ] \
+  && [ "$(readlink -f -- "$lifecycle")" = "$lifecycle" ] \
+  && [ "$(stat -c '%u' "$lifecycle")" = "$uid" ] && [ "$(stat -c '%a' "$lifecycle")" = 755 ] \
+  && [ "$(sha256sum "$lifecycle" | awk '{print $1}')" = "$expected_lifecycle_sha256" ] \
+  || { echo "llvm: unsafe lifecycle helper" >&2; exit 1; }
+exec /usr/bin/bash "$lifecycle" remove
 '''
 
 [component.wiring]
@@ -768,7 +781,7 @@ login_shell = true
 script = '''
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 DEST="$M/.toolchains/libgccjit"
 COMMIT="$(envctl_gh_curl https://raw.githubusercontent.com/rust-lang/rustc_codegen_gcc/master/libgccjit.version | tr -d '[:space:]')"
 [ -n "$COMMIT" ] || { echo "libgccjit: could not resolve commit from libgccjit.version" >&2; exit 1; }
@@ -820,7 +833,7 @@ script = '''
 envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 DEST="$M/.toolchains/nix-portable"
 rm -rf "$DEST"; install -d -m 755 "$DEST/bin"
 # Authenticated fetch via the shared resolver (gh tier = 5000/hr or the vault-sealed mint token;
@@ -885,7 +898,7 @@ script = '''
 envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 DEST="$M/.toolchains/yazi"
 ASSET="yazi-x86_64-unknown-linux-musl.zip"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
@@ -954,7 +967,7 @@ script = '''
 envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 DEST="$M/.toolchains/helix"
 tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 # Authenticated fetch via the shared resolver (gh tier = 5000/hr or the vault-sealed mint token)

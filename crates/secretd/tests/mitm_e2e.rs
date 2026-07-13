@@ -23,6 +23,7 @@ use envctl_secrets::{
     EgressReq, EgressResp, Engine, EventSink, Method, Provider, RelayKind, RelayPolicy,
     SecretEvent, SecretMeta, SwapMode, Unlock, Upstream,
 };
+use rustls::pki_types::pem::PemObject;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use zeroize::Zeroizing;
 
@@ -105,7 +106,7 @@ fn client_config_trusting_only(ca_pem: &std::path::Path) -> rustls::ClientConfig
     let pem = std::fs::read(ca_pem).expect("read CA pem");
     let mut rd = std::io::BufReader::new(&pem[..]);
     let mut roots = rustls::RootCertStore::empty();
-    for cert in rustls_pemfile::certs(&mut rd) {
+    for cert in rustls::pki_types::CertificateDer::pem_reader_iter(&mut rd) {
         roots
             .add(cert.expect("parse CA cert"))
             .expect("add CA root");

@@ -767,6 +767,7 @@ fn command_output(
         args: &args,
         current_dir: None,
         env: &[],
+        clear_env: false,
     });
     let mut child = command
         .stdout(Stdio::piped())

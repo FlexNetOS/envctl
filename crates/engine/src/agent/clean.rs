@@ -8,10 +8,9 @@
 //! global MCP servers (broker/repowire/weave, never in the agent lock) are never touched
 //! (C-14 never-clobber). Binary-self-removal is out of scope (env-manager binary stays).
 
-use envctl_agent_env::driver::{apply_removals, clean_counts};
-use envctl_agent_env::lock::{save, AgentLockFile};
-use envctl_agent_env::report::{Action, Summary};
-use envctl_agent_env::runtime::clear_runtime_state;
+use envctl_agent_env::driver::{clean_actions, clean_apply_transaction, UpdatedAt};
+use envctl_agent_env::lock::AgentLockFile;
+use envctl_agent_env::report::Summary;
 
 use crate::agent::report::{AgentReport, AgentVerb};
 use crate::agent::{AgentCleanSpec, AgentCtx};
@@ -42,53 +41,32 @@ impl Engine {
             lock_mode: "plain".into(),
         });
 
-        let counts = clean_counts(&lock);
+        let runtime = envctl_agent_env::runtime::load_runtime_state(scope, project_root)?;
+        let mut updated = UpdatedAt {
+            installed_at: runtime.installed_at,
+            managed_outputs: runtime.managed_outputs,
+            last_run: runtime.last_run,
+            latest_report: runtime.latest_report,
+        };
+        let (counts, mut actions) =
+            clean_actions(&lock, &updated, scope, project_root, &ctx.destinations)?;
         let status = if spec.apply {
             "removed"
         } else {
             "would_remove"
         };
-
-        // One action per tracked asset (skills, then mcp servers, then commands) — the live
-        // teardown tree. Built from the lock BEFORE any mutation.
-        let mut actions: Vec<Action> = Vec::new();
-        for entry in lock.skills.values() {
-            actions.push(Action {
-                source: Some(entry.source.clone()),
-                skill: Some(entry.skill.clone()),
-                status: status.into(),
-                error: None,
-            });
-        }
-        for a in lock.assets.values().filter(|a| a.kind == "mcp") {
-            for server in a
-                .destination
-                .split(',')
-                .map(str::trim)
-                .filter(|s| !s.is_empty())
-            {
-                actions.push(Action {
-                    source: Some(a.source.clone()),
-                    skill: Some(format!("mcp:{server}")),
-                    status: status.into(),
-                    error: None,
-                });
-            }
-        }
-        for a in lock.assets.values().filter(|a| a.kind == "command") {
-            actions.push(Action {
-                source: Some(a.source.clone()),
-                skill: Some(format!("command:{}", a.name)),
-                status: status.into(),
-                error: None,
-            });
+        for action in &mut actions {
+            action.status = status.into();
         }
 
         if spec.apply {
-            apply_removals(&lock, scope, project_root)?;
-            lock.clear_all();
-            save(&mut lock, lock_file)?;
-            clear_runtime_state(scope, project_root)?;
+            clean_apply_transaction(
+                &mut lock,
+                &mut updated,
+                scope,
+                project_root,
+                &ctx.destinations,
+            )?;
         }
 
         let summary = Summary {

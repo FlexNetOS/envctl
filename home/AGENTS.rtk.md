@@ -9,7 +9,7 @@ raw output through `/home/flexnetos/.nix-profile/bin/rtk proxy -- ...`:
 - `git fetch origin --prune`
 - `git worktree add ...`
 - `git pull --ff-only`
-- `envctl agent lock --check --color never`
+- `envctl agent lock --check --locked --color never`
 - `envctl agent sync --json --color never`
 - `bash ci/gates/agent-env.sh`
 - `bash ci/gates/yazelix-codex-runtime.sh`

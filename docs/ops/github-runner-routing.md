@@ -8,7 +8,7 @@ The `develop` branch protection currently requires these status contexts:
 
 - `rustfmt`
 - `clippy`
-- `MSRV (Rust 1.88)`
+- `MSRV (Rust 1.89)` — exact 1.89.0 compiler lane
 - `cargo audit`
 - `test`
 - `gates`
@@ -21,7 +21,7 @@ Current routing:
 | --- | --- | --- |
 | `rustfmt` | `ubuntu-latest` | Fast static fan-out; should not wait behind local heavy tests. |
 | `clippy` | `ubuntu-latest` | Compile-heavy, but parallel hosted capacity is faster than serializing all checks on one local runner. |
-| `MSRV (Rust 1.88)` | `ubuntu-latest` | Independent compatibility gate; benefits from hosted fan-out. |
+| `MSRV (Rust 1.89)` | `ubuntu-latest` | Independent compatibility gate; benefits from hosted fan-out. |
 | `cargo audit` | `ubuntu-latest` | Network/tooling gate; keep it off the single local queue. |
 | `gates` | `ubuntu-latest` | Policy/invariant gate; also validates this runner-routing policy. |
 | `test` | `ubuntu-latest` | Required PR proof must come from a clean hosted environment, not the local FlexNetOS host. |

@@ -17,6 +17,7 @@ use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::{anyhow, bail, Context};
+use rustls::pki_types::pem::PemObject;
 use rustls::pki_types::{CertificateDer, PrivateKeyDer};
 use rustls::server::WebPkiClientVerifier;
 use rustls::{RootCertStore, ServerConfig};
@@ -256,7 +257,7 @@ fn build_acceptor(
 
     let certs: Vec<CertificateDer<'static>> = {
         let mut r = std::io::BufReader::new(&cert_pem[..]);
-        rustls_pemfile::certs(&mut r)
+        CertificateDer::pem_reader_iter(&mut r)
             .collect::<Result<Vec<_>, _>>()
             .context("parsing server cert")?
     };
@@ -265,15 +266,13 @@ fn build_acceptor(
     }
     let key: PrivateKeyDer<'static> = {
         let mut r = std::io::BufReader::new(&key_pem[..]);
-        rustls_pemfile::private_key(&mut r)
-            .context("parsing server key")?
-            .ok_or_else(|| anyhow!("server key PEM had no private key"))?
+        PrivateKeyDer::from_pem_reader(&mut r).context("parsing server key")?
     };
 
     let mut roots = RootCertStore::empty();
     let mut r = std::io::BufReader::new(&ca_pem[..]);
     let mut added = 0usize;
-    for c in rustls_pemfile::certs(&mut r) {
+    for c in CertificateDer::pem_reader_iter(&mut r) {
         roots
             .add(c.context("parsing client CA")?)
             .context("adding client CA")?;

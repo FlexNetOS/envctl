@@ -18,7 +18,7 @@ cd /home/flexnetos/meta/src/envctl
 git fetch origin --prune
 git worktree add ../envctl-<task-slug> -b <task-branch> origin/master
 cd ../envctl-<task-slug>
-envctl agent lock --check --color never
+envctl agent lock --check --locked --color never
 envctl agent sync --json --color never
 ```
 

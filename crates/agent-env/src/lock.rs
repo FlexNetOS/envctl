@@ -15,17 +15,35 @@
 //!   fail-closed if it isn't.
 
 use std::collections::BTreeMap;
-use std::fs;
 use std::path::{Path, PathBuf};
+
+#[cfg(test)]
+use std::fs;
 
 use serde::{Deserialize, Serialize};
 
 use crate::config::Scope;
 use crate::{err, Result};
 
-/// Schema version of the agent-asset lock section. Matches kasetto's portable v2 format:
-/// scope-relative `destination` paths, no machine-/run-specific fields.
-pub const LOCK_VERSION: u8 = 2;
+/// Schema version of the agent-asset lock section.
+///
+/// Version 3 introduces the `tree-v1` skill hash domain: effective entry kind, native path bytes,
+/// permission mode, and file bytes are length-framed into the digest. Project-scope snapshots are
+/// first made Git-portable (canonical 0755 directories, 0644/0755 files, and no uncommittable
+/// empty directories), while machine-local global snapshots retain their exact effective modes.
+/// A v2 skill hash is therefore intentionally not reinterpreted as v3.
+pub const LOCK_VERSION: u8 = 3;
+
+/// Refuse a lock written by a newer envctl before its fields can be discarded or restamped.
+/// Older schemas remain readable because plain sync owns their full, evidence-aware migration.
+pub(crate) fn ensure_supported_version(version: u8) -> Result<()> {
+    if version > LOCK_VERSION {
+        return Err(err(format!(
+            "agent lock schema version {version} is newer than supported version {LOCK_VERSION}; refusing to migrate it backward"
+        )));
+    }
+    Ok(())
+}
 
 /// Reserved top-level key for exporters that need to label this lock domain.
 /// The committed envctl repo keeps this data in standalone `agent-env.lock`.
@@ -58,14 +76,29 @@ pub struct AssetEntry {
     pub name: String,
     pub hash: String,
     pub source: String,
-    /// For commands: install paths relative to the scope root (CSV).
-    /// For MCPs: the merged server names (CSV).
+    /// For commands: install paths relative to the scope root.
+    /// For MCPs: merged server names. Version 3 stores both as an injective,
+    /// length-framed list; legacy comma-separated values are read only for v2 migration.
     pub destination: String,
     /// Resolved git revision label (e.g. `ref:v1.0`, `branch:main`, `local`). Defaulted to
     /// empty for backwards compatibility with v2 locks written before this field existed;
     /// drift checks skip the revision comparison when this is empty.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub source_revision: String,
+}
+
+/// Durable proof that a successful project-scope apply installed one exact output unit.
+///
+/// This is deliberately separate from desired content entries and selectors: `agent lock`
+/// preserves existing claims but never fabricates new ownership.  Paths are relative to the
+/// project scope root, so a checked-in lock remains valid in a fresh checkout at a new path.
+#[derive(Debug, Serialize, Deserialize, Default, Clone, PartialEq, Eq)]
+pub struct InstalledOutput {
+    pub asset_id: String,
+    pub destination: String,
+    pub format: String,
+    pub unit: String,
+    pub hash: String,
 }
 
 /// Portable, commit-friendly manifest of installed agent assets (skills + commands/MCPs).
@@ -77,10 +110,24 @@ pub struct AgentLockFile {
     pub skills: BTreeMap<String, AgentLockEntry>,
     #[serde(default)]
     pub assets: BTreeMap<String, AssetEntry>,
+    /// Canonical selectors for lock entries, keyed by the corresponding skill/asset id.
+    /// A content hash is not self-authenticating when `sub-dir`, wildcard/list mode, or an
+    /// object `path` can change which bytes the same source/revision/name selects. Older v2
+    /// locks omit this map; a zero-network audit reports that omission as drift instead of
+    /// guessing, for local and remote sources alike.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub source_selectors: BTreeMap<String, String>,
+    /// Portable project-scope ownership attestations written only after successful apply.
+    /// Removed assets/targets may retain claims as tombstones until a later plain sync safely
+    /// removes the exact output and compacts the map.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub installed_outputs: BTreeMap<String, InstalledOutput>,
 }
 
 fn default_version() -> u8 {
-    LOCK_VERSION
+    // A versionless file predates the explicit tree-v1 domain. Never let serde omission claim
+    // current semantics; callers may inspect it for migration, but sync/save fail closed.
+    2
 }
 
 impl Default for AgentLockFile {
@@ -89,6 +136,8 @@ impl Default for AgentLockFile {
             version: LOCK_VERSION,
             skills: BTreeMap::new(),
             assets: BTreeMap::new(),
+            source_selectors: BTreeMap::new(),
+            installed_outputs: BTreeMap::new(),
         }
     }
 }
@@ -136,6 +185,8 @@ impl LockMode {
 pub struct AgentLockState {
     pub version: u8,
     pub skills: BTreeMap<String, AgentLockEntry>,
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub source_selectors: BTreeMap<String, String>,
 }
 
 impl Default for AgentLockState {
@@ -143,6 +194,7 @@ impl Default for AgentLockState {
         Self {
             version: LOCK_VERSION,
             skills: BTreeMap::new(),
+            source_selectors: BTreeMap::new(),
         }
     }
 }
@@ -189,6 +241,18 @@ impl AgentLockFile {
 
     pub fn remove_tracked_asset(&mut self, id: &str) {
         self.assets.remove(id);
+        self.source_selectors.remove(id);
+    }
+
+    pub fn set_source_selector(&mut self, id: &str, selector: Option<String>) {
+        match selector {
+            Some(selector) => {
+                self.source_selectors.insert(id.to_string(), selector);
+            }
+            None => {
+                self.source_selectors.remove(id);
+            }
+        }
     }
 
     pub fn list_tracked_asset_ids(&self, kind: &str) -> Vec<(&str, &str)> {
@@ -202,6 +266,8 @@ impl AgentLockFile {
     pub fn clear_all(&mut self) {
         self.skills.clear();
         self.assets.clear();
+        self.source_selectors.clear();
+        self.installed_outputs.clear();
     }
 
     /// Capture a portable snapshot of the skill state (kasetto `LockFile::state`).
@@ -209,13 +275,22 @@ impl AgentLockFile {
         AgentLockState {
             version: self.version,
             skills: self.skills.clone(),
+            source_selectors: self
+                .source_selectors
+                .iter()
+                .filter(|(id, _)| self.skills.contains_key(*id))
+                .map(|(id, selector)| (id.clone(), selector.clone()))
+                .collect(),
         }
     }
 
     /// Restore the skill state from a snapshot (kasetto `LockFile::apply_state`).
     pub fn apply_state(&mut self, state: &AgentLockState) {
         self.version = state.version;
+        self.source_selectors
+            .retain(|id, _| !self.skills.contains_key(id));
         self.skills = state.skills.clone();
+        self.source_selectors.extend(state.source_selectors.clone());
     }
 
     /// Sorted, deduplicated list of installed command names from tracked assets.
@@ -232,21 +307,14 @@ impl AgentLockFile {
     }
 
     /// Sorted, deduplicated list of installed MCP server names from tracked assets.
-    pub fn list_installed_mcps(&self) -> Vec<String> {
-        let mut servers: Vec<String> = self
-            .list_tracked_asset_ids("mcp")
-            .into_iter()
-            .flat_map(|(_, dest_csv)| {
-                dest_csv
-                    .split(',')
-                    .map(str::trim)
-                    .filter(|s| !s.is_empty())
-                    .map(String::from)
-            })
-            .collect();
+    pub fn list_installed_mcps(&self) -> Result<Vec<String>> {
+        let mut servers = Vec::new();
+        for (_, destinations) in self.list_tracked_asset_ids("mcp") {
+            servers.extend(decode_asset_list(destinations, self.version)?);
+        }
         servers.sort();
         servers.dedup();
-        servers
+        Ok(servers)
     }
 
     /// Compute drift between this (previous on-disk) lock and a freshly-resolved `next` lock.
@@ -254,15 +322,19 @@ impl AgentLockFile {
     /// no mutation): a non-empty result means the on-disk lock is out of date.
     pub fn lock_check(&self, next: &AgentLockFile) -> Vec<LockDrift> {
         let mut out = Vec::new();
+        if self.version != next.version {
+            out.push(LockDrift {
+                status: DriftStatus::Updated,
+                id: "version".into(),
+            });
+        }
         for (id, prev) in &self.skills {
             match next.skills.get(id) {
                 None => out.push(LockDrift {
                     status: DriftStatus::Removed,
                     id: id.clone(),
                 }),
-                Some(now)
-                    if now.hash != prev.hash || now.source_revision != prev.source_revision =>
-                {
+                Some(now) if now != prev => {
                     out.push(LockDrift {
                         status: DriftStatus::Updated,
                         id: id.clone(),
@@ -280,17 +352,142 @@ impl AgentLockFile {
             }
         }
         for (id, prev) in &self.assets {
-            if let Some(now) = next.assets.get(id) {
-                if now.source_revision != prev.source_revision {
+            match next.assets.get(id) {
+                None => out.push(LockDrift {
+                    status: DriftStatus::Removed,
+                    id: id.clone(),
+                }),
+                Some(now) if now != prev => {
                     out.push(LockDrift {
                         status: DriftStatus::Updated,
                         id: id.clone(),
                     });
                 }
+                _ => {}
+            }
+        }
+        for id in next.assets.keys() {
+            if !self.assets.contains_key(id) {
+                out.push(LockDrift {
+                    status: DriftStatus::Added,
+                    id: id.clone(),
+                });
+            }
+        }
+        for (id, previous) in &self.source_selectors {
+            match next.source_selectors.get(id) {
+                None => out.push(LockDrift {
+                    status: DriftStatus::Removed,
+                    id: format!("selector::{id}"),
+                }),
+                Some(current) if current != previous => out.push(LockDrift {
+                    status: DriftStatus::Updated,
+                    id: format!("selector::{id}"),
+                }),
+                _ => {}
+            }
+        }
+        for id in next.source_selectors.keys() {
+            if !self.source_selectors.contains_key(id) {
+                out.push(LockDrift {
+                    status: DriftStatus::Added,
+                    id: format!("selector::{id}"),
+                });
+            }
+        }
+        for (id, previous) in &self.installed_outputs {
+            match next.installed_outputs.get(id) {
+                None => out.push(LockDrift {
+                    status: DriftStatus::Removed,
+                    id: format!("installed-output::{id}"),
+                }),
+                Some(current) if current != previous => out.push(LockDrift {
+                    status: DriftStatus::Updated,
+                    id: format!("installed-output::{id}"),
+                }),
+                _ => {}
+            }
+        }
+        for id in next.installed_outputs.keys() {
+            if !self.installed_outputs.contains_key(id) {
+                out.push(LockDrift {
+                    status: DriftStatus::Added,
+                    id: format!("installed-output::{id}"),
+                });
             }
         }
         out
     }
+}
+
+/// Injective key for one installed-output ownership unit.
+pub fn installed_output_key(asset_id: &str, destination: &str, format: &str, unit: &str) -> String {
+    format!(
+        "{}:{asset_id}|{}:{destination}|{}:{format}|{}:{unit}",
+        asset_id.len(),
+        destination.len(),
+        format.len(),
+        unit.len()
+    )
+}
+
+/// Encode a v3 list without delimiter ambiguity (paths and server names may contain commas).
+pub fn encode_asset_list(items: impl IntoIterator<Item = String>) -> String {
+    let items = items.into_iter().collect::<Vec<_>>();
+    let mut encoded = format!("v3|{}|", items.len());
+    for item in items {
+        encoded.push_str(&format!("{}:{item}", item.len()));
+    }
+    encoded
+}
+
+/// Decode a v3 length-framed list. Legacy CSV is accepted only when the containing lock is v2.
+pub fn decode_asset_list(value: &str, lock_version: u8) -> Result<Vec<String>> {
+    const MAX_LIST_ITEMS: usize = 4096;
+    const MAX_LIST_BYTES: usize = 4 * 1024 * 1024;
+    if value.len() > MAX_LIST_BYTES {
+        return Err(err("asset list exceeds the maximum encoded size"));
+    }
+    if lock_version < LOCK_VERSION {
+        return Ok(value
+            .split(',')
+            .map(str::trim)
+            .filter(|item| !item.is_empty())
+            .map(str::to_string)
+            .collect());
+    }
+    let rest = value
+        .strip_prefix("v3|")
+        .ok_or_else(|| err("v3 asset list is missing the `v3|` framing prefix"))?;
+    let (count, mut rest) = rest
+        .split_once('|')
+        .ok_or_else(|| err("v3 asset list is missing its item count delimiter"))?;
+    let count = count
+        .parse::<usize>()
+        .map_err(|_| err("v3 asset list has an invalid item count"))?;
+    if count > MAX_LIST_ITEMS {
+        return Err(err("v3 asset list exceeds the maximum item count"));
+    }
+    let mut items = Vec::with_capacity(count);
+    for _ in 0..count {
+        let colon = rest
+            .find(':')
+            .ok_or_else(|| err("v3 asset list item is missing its length delimiter"))?;
+        let len = rest[..colon]
+            .parse::<usize>()
+            .map_err(|_| err("v3 asset list item has an invalid length"))?;
+        let bytes = &rest.as_bytes()[colon + 1..];
+        if bytes.len() < len || !rest[colon + 1..].is_char_boundary(len) {
+            return Err(err("v3 asset list item length is out of bounds"));
+        }
+        let (item, tail) = rest[colon + 1..].split_at(len);
+        items.push(item.to_string());
+        rest = tail;
+    }
+    if !rest.is_empty() {
+        return Err(err("v3 asset list has trailing data"));
+    }
+    Ok(items)
 }
 
 /// Resolve the standalone lock file path for the given scope.
@@ -304,30 +501,47 @@ pub fn lock_path(scope: Scope, project_root: &Path, global_data_dir: &Path) -> P
 
 /// Load the lock file from `path` (or return a default empty one if missing / empty).
 pub fn load(path: &Path) -> Result<AgentLockFile> {
-    if !path.exists() {
+    let Some(bytes) = crate::secure_file::read_optional(path)? else {
         return Ok(AgentLockFile::default());
-    }
-    let text = fs::read_to_string(path)
-        .map_err(|e| err(format!("failed to read lock file {}: {e}", path.display())))?;
+    };
+    let text = String::from_utf8(bytes)
+        .map_err(|e| err(format!("lock file {} is not UTF-8: {e}", path.display())))?;
     if text.trim().is_empty() {
         return Ok(AgentLockFile::default());
     }
     let lock: AgentLockFile = serde_yaml::from_str(&text)
         .map_err(|e| err(format!("failed to parse lock file {}: {e}", path.display())))?;
+    ensure_supported_version(lock.version)?;
     Ok(lock)
 }
 
-/// Write the lock file to `path`, creating parent directories if needed. Stamps the current
-/// schema version so a migrated older lock is relabeled (legacy restamp).
+/// Write a current-version lock file to `path`, creating parent directories if needed.
+///
+/// Older locks must be fully rebuilt before saving; merely relabelling their ambiguous hash bytes
+/// would silently reinterpret the v2 hash algorithm as v3.
 pub fn save(lock: &mut AgentLockFile, path: &Path) -> Result<()> {
-    lock.version = LOCK_VERSION;
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
+    save_with_mode(lock, path, 0o644)
+}
+
+/// Save a lock using the scope's deterministic confidentiality mode.
+pub fn save_for_scope(lock: &mut AgentLockFile, path: &Path, scope: Scope) -> Result<()> {
+    save_with_mode(
+        lock,
+        path,
+        if scope == Scope::Global { 0o600 } else { 0o644 },
+    )
+}
+
+fn save_with_mode(lock: &mut AgentLockFile, path: &Path, mode: u32) -> Result<()> {
+    if lock.version != LOCK_VERSION {
+        return Err(err(format!(
+            "refusing to save agent lock version {} as version {LOCK_VERSION}; fully rebuild the lock to migrate tree hashes",
+            lock.version
+        )));
     }
     let yaml = serde_yaml::to_string(lock)
         .map_err(|e| err(format!("failed to serialize lock file: {e}")))?;
-    fs::write(path, yaml)?;
-    Ok(())
+    crate::secure_file::write_atomic(path, yaml.as_bytes(), mode)
 }
 
 #[cfg(test)]
@@ -392,7 +606,7 @@ mod tests {
         save(&mut lock, &path).unwrap();
         let loaded = load(&path).unwrap();
 
-        assert_eq!(loaded.version, 2);
+        assert_eq!(loaded.version, LOCK_VERSION);
         assert_eq!(loaded.skills.len(), 1);
         assert_eq!(loaded.skills["src::skill-a"].hash, "abc");
         // scope-relative destination round-trips verbatim
@@ -412,18 +626,19 @@ mod tests {
     fn load_returns_default_when_missing() {
         let dir = temp_dir("agent-env-lock-missing");
         let lock = load(&dir.join("nope.lock")).unwrap();
-        assert_eq!(lock.version, 2);
+        assert_eq!(lock.version, LOCK_VERSION);
         assert!(lock.skills.is_empty());
         let _ = fs::remove_dir_all(&dir);
     }
 
     #[test]
-    fn legacy_v1_lock_loads_and_restamps_on_save() {
+    fn legacy_lock_loads_for_audit_but_cannot_be_silently_restamped() {
         let dir = temp_dir("agent-env-lock-legacy");
         let path = dir.join(LOCK_FILENAME);
 
         // A v1 lock carrying fields that no longer exist plus an absolute destination.
-        // Unknown fields must be ignored, absolute paths honored, version relabeled on save.
+        // Unknown fields remain readable for drift/migration diagnostics, but the old hash domain
+        // must never be relabelled by save.
         let legacy = "version: 1\n\
 last_run: '111'\n\
 skills:\n\
@@ -445,13 +660,45 @@ assets: {}\n";
             "/abs/path/.claude/skills/a"
         );
 
-        save(&mut loaded, &path).unwrap();
-        let resaved = fs::read_to_string(&path).unwrap();
-        assert!(resaved.starts_with("version: 2"));
-        assert!(!resaved.contains("last_run"));
-        assert!(!resaved.contains("updated_at"));
+        let before = fs::read_to_string(&path).unwrap();
+        let message = save(&mut loaded, &path).unwrap_err().to_string();
+        assert!(message.contains("fully rebuild the lock"), "{message}");
+        assert_eq!(fs::read_to_string(&path).unwrap(), before);
 
         let _ = fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn versionless_lock_is_legacy_not_implicitly_tree_v1() {
+        let lock: AgentLockFile = serde_yaml::from_str(
+            "skills: {}\nassets:\n  mcp::remote::pack.json:\n    kind: mcp\n    name: pack.json\n    hash: legacy\n    source: https://example.invalid/repo.git\n    destination: demo\n",
+        )
+        .expect("parse versionless lock");
+        assert_eq!(lock.version, 2);
+        let dir = temp_dir("agent-env-versionless-lock");
+        let path = dir.join(LOCK_FILENAME);
+        let mut lock = lock;
+        let message = save(&mut lock, &path).unwrap_err().to_string();
+        assert!(message.contains("fully rebuild the lock"), "{message}");
+        assert!(!path.exists());
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[test]
+    fn future_lock_load_is_rejected_without_rewriting_unknown_fields() {
+        let dir = temp_dir("agent-env-lock-future");
+        let path = dir.join(LOCK_FILENAME);
+        let bytes = format!(
+            "version: {}\nskills: {{}}\nassets: {{}}\nfuture_schema_field: preserve-verbatim\n",
+            LOCK_VERSION + 1
+        );
+        fs::write(&path, bytes.as_bytes()).unwrap();
+
+        let message = load(&path).unwrap_err().to_string();
+        assert!(message.contains("newer than supported"), "{message}");
+        assert_eq!(fs::read(&path).unwrap(), bytes.as_bytes());
+
+        let _ = fs::remove_dir_all(dir);
     }
 
     #[test]
@@ -480,6 +727,126 @@ assets: {}\n";
         assert!(removed && added, "drift: {drift:?}");
         // no spurious "keep" drift
         assert!(!drift.iter().any(|d| d.id == "k::keep"));
+    }
+
+    #[test]
+    fn lock_check_compares_every_skill_and_asset_field() {
+        let skill = skill_entry(".claude/skills/skill-a", "abc", "rev1");
+        let skill_variants = [
+            AgentLockEntry {
+                destination: ".codex/skills/skill-a".into(),
+                ..skill.clone()
+            },
+            AgentLockEntry {
+                hash: "changed".into(),
+                ..skill.clone()
+            },
+            AgentLockEntry {
+                skill: "renamed".into(),
+                ..skill.clone()
+            },
+            AgentLockEntry {
+                description: "changed".into(),
+                ..skill.clone()
+            },
+            AgentLockEntry {
+                source: "other".into(),
+                ..skill.clone()
+            },
+            AgentLockEntry {
+                source_revision: "rev2".into(),
+                ..skill.clone()
+            },
+            AgentLockEntry {
+                scope: Some(Scope::Global),
+                ..skill.clone()
+            },
+        ];
+        for changed in skill_variants {
+            let mut prev = AgentLockFile::default();
+            prev.skills.insert("src::skill-a".into(), skill.clone());
+            let mut next = prev.clone();
+            next.skills.insert("src::skill-a".into(), changed);
+            assert_eq!(
+                prev.lock_check(&next),
+                vec![LockDrift {
+                    status: DriftStatus::Updated,
+                    id: "src::skill-a".into(),
+                }]
+            );
+        }
+
+        let asset = test_asset("command", "review", ".claude/commands/review.md");
+        let asset_variants = [
+            AssetEntry {
+                kind: "mcp".into(),
+                ..asset.clone()
+            },
+            AssetEntry {
+                name: "renamed".into(),
+                ..asset.clone()
+            },
+            AssetEntry {
+                hash: "changed".into(),
+                ..asset.clone()
+            },
+            AssetEntry {
+                source: "other".into(),
+                ..asset.clone()
+            },
+            AssetEntry {
+                destination: ".codex/prompts/review.md".into(),
+                ..asset.clone()
+            },
+            AssetEntry {
+                source_revision: "rev2".into(),
+                ..asset.clone()
+            },
+        ];
+        for changed in asset_variants {
+            let mut prev = AgentLockFile::default();
+            prev.save_tracked_asset("command::src::review", asset.clone());
+            let mut next = prev.clone();
+            next.save_tracked_asset("command::src::review", changed);
+            assert_eq!(
+                prev.lock_check(&next),
+                vec![LockDrift {
+                    status: DriftStatus::Updated,
+                    id: "command::src::review".into(),
+                }]
+            );
+        }
+
+        let mut prev = AgentLockFile::default();
+        prev.save_tracked_asset("command::src::review", asset);
+        let mut next = prev.clone();
+        next.save_tracked_asset(
+            "mcp::src::servers.json",
+            test_asset("mcp", "servers.json", "context7"),
+        );
+
+        let drift = prev.lock_check(&next);
+        assert!(drift
+            .iter()
+            .any(|d| { d.id == "mcp::src::servers.json" && d.status == DriftStatus::Added }));
+
+        next.assets.remove("command::src::review");
+        let drift = prev.lock_check(&next);
+        assert!(drift
+            .iter()
+            .any(|d| { d.id == "command::src::review" && d.status == DriftStatus::Removed }));
+
+        let mut selector_prev = AgentLockFile::default();
+        selector_prev.set_source_selector("src::skill-a", Some("selector-a".into()));
+        let mut selector_next = selector_prev.clone();
+        selector_next.set_source_selector("src::skill-a", Some("selector-b".into()));
+        assert_eq!(
+            selector_prev.lock_check(&selector_next),
+            vec![LockDrift {
+                status: DriftStatus::Updated,
+                id: "selector::src::skill-a".into(),
+            }]
+        );
     }
 
     #[test]
@@ -545,15 +912,18 @@ assets: {}\n";
         let mut lock = AgentLockFile::default();
         lock.save_tracked_asset("mcp::a", test_asset("mcp", "a", "d1"));
         lock.save_tracked_asset("other::b", test_asset("other", "b", "d2"));
+        lock.set_source_selector("mcp::a", Some("selector".into()));
 
         let mcps = lock.list_tracked_asset_ids("mcp");
         assert_eq!(mcps, vec![("mcp::a", "d1")]);
 
         lock.remove_tracked_asset("mcp::a");
         assert!(lock.get_tracked_asset("mcp", "mcp::a").is_none());
+        assert!(!lock.source_selectors.contains_key("mcp::a"));
 
         lock.clear_all();
         assert!(lock.assets.is_empty());
+        assert!(lock.source_selectors.is_empty());
     }
 
     #[test]
@@ -563,6 +933,7 @@ assets: {}\n";
             .insert("src::a".into(), skill_entry("d", "h", "r1"));
         lock.skills
             .insert("src::b".into(), skill_entry("d2", "h2", "r2"));
+        lock.set_source_selector("src::a", Some("selector-a".into()));
 
         let state = lock.state();
         let mut blank = AgentLockFile::default();
@@ -572,6 +943,7 @@ assets: {}\n";
         assert_eq!(blank.skills.len(), 2);
         assert_eq!(blank.skills["src::a"].hash, "h");
         assert!(blank.skills["src::b"].destination == "d2");
+        assert_eq!(blank.source_selectors["src::a"], "selector-a");
     }
 
     #[test]
@@ -591,21 +963,84 @@ assets: {}\n";
     #[test]
     fn list_installed_mcps_deduplicates_and_sorts() {
         let mut lock = AgentLockFile::default();
-        let mut mcp = test_asset("mcp", "pack", "bravo,alpha");
-        mcp.destination = "bravo,alpha".into();
+        let mut mcp = test_asset("mcp", "pack", "");
+        mcp.destination = encode_asset_list(["bravo".into(), "alpha".into()]);
         lock.save_tracked_asset("mcp::a", mcp);
-        let mut mcp2 = test_asset("mcp", "pack2", "alpha, charlie");
-        mcp2.destination = "alpha, charlie".into();
+        let mut mcp2 = test_asset("mcp", "pack2", "");
+        mcp2.destination = encode_asset_list(["alpha".into(), "charlie".into()]);
         lock.save_tracked_asset("mcp::b", mcp2);
         lock.save_tracked_asset("cmd::c", test_asset("command", "c", "bin/c"));
 
         assert_eq!(
-            lock.list_installed_mcps(),
+            lock.list_installed_mcps().unwrap(),
             vec![
                 "alpha".to_string(),
                 "bravo".to_string(),
                 "charlie".to_string()
             ]
         );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn lock_leaf_symlink_is_refused_without_touching_target() {
+        use std::os::unix::fs::symlink;
+
+        let dir = temp_dir("agent-env-lock-symlink");
+        let outside = dir.join("outside");
+        fs::write(&outside, "foreign").unwrap();
+        let path = dir.join(LOCK_FILENAME);
+        symlink(&outside, &path).unwrap();
+        assert!(load(&path)
+            .unwrap_err()
+            .to_string()
+            .contains("real regular file"));
+        let mut lock = AgentLockFile::default();
+        assert!(save(&mut lock, &path).is_err());
+        assert_eq!(fs::read_to_string(&outside).unwrap(), "foreign");
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn lock_intermediate_parent_symlink_is_refused() {
+        use std::os::unix::fs::symlink;
+
+        let dir = temp_dir("agent-env-lock-parent-symlink");
+        let outside = dir.join("outside");
+        fs::create_dir(&outside).unwrap();
+        let link = dir.join("linked");
+        symlink(&outside, &link).unwrap();
+        let mut lock = AgentLockFile::default();
+        assert!(save(&mut lock, &link.join(LOCK_FILENAME)).is_err());
+        assert!(!outside.join(LOCK_FILENAME).exists());
+        let _ = fs::remove_dir_all(dir);
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn scoped_save_tightens_global_mode_and_preserves_stricter_project_mode() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let dir = temp_dir("agent-lock-mode-clamp");
+        let global = dir.join("global.lock");
+        fs::write(&global, "stale").unwrap();
+        fs::set_permissions(&global, fs::Permissions::from_mode(0o644)).unwrap();
+        let mut lock = AgentLockFile::default();
+        save_for_scope(&mut lock, &global, Scope::Global).unwrap();
+        assert_eq!(
+            fs::metadata(&global).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
+
+        let project = dir.join("project.lock");
+        fs::write(&project, "stale").unwrap();
+        fs::set_permissions(&project, fs::Permissions::from_mode(0o600)).unwrap();
+        save_for_scope(&mut lock, &project, Scope::Project).unwrap();
+        assert_eq!(
+            fs::metadata(&project).unwrap().permissions().mode() & 0o777,
+            0o600
+        );
+        let _ = fs::remove_dir_all(dir);
     }
 }

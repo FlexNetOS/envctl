@@ -3,7 +3,6 @@
 //! run an in-process `agent_sync(apply=true)` to install/prune. Preview (`apply: false`)
 //! plans the edit and returns WITHOUT touching the config or the filesystem.
 
-use std::fs;
 use std::path::PathBuf;
 
 use envctl_agent_env::config_edit::{
@@ -38,8 +37,9 @@ impl Engine {
             anyhow::bail!(
                 "`--locked` on `add` requires `--no-sync` — a newly added source cannot be \
                  installed without fetching. Either pass `--no-sync --locked` (edit the manifest \
-                 only, then `lock` + `sync --locked` to install offline), or drop `--locked` to \
-                 fetch the new source now."
+                 only, then run `sync --apply` in a trusted connected bootstrap and commit the \
+                 resulting v3 project lock; clean clones can then use `sync --locked --apply`), \
+                 or drop `--locked` to fetch and install the new source now."
             );
         }
 
@@ -68,12 +68,12 @@ impl Engine {
             spec.sub_dir.as_deref(),
         );
 
-        let mut text = if path.exists() {
-            fs::read_to_string(&path)
-                .map_err(|e| anyhow::anyhow!("failed to read {}: {e}", path.display()))?
-        } else {
-            "# envctl agent-env config\n".to_string()
-        };
+        let mut text = envctl_agent_env::read_config_optional(&path)
+            .map_err(|e| anyhow::anyhow!("failed to read {}: {e}", path.display()))?
+            .map(String::from_utf8)
+            .transpose()
+            .map_err(|e| anyhow::anyhow!("config is not UTF-8 at {}: {e}", path.display()))?
+            .unwrap_or_else(|| "# envctl agent-env config\n".to_string());
 
         for edit in &edits {
             if envctl_agent_env::config_edit::item_exists(&text, edit.section, &edit.item) {
@@ -104,7 +104,7 @@ impl Engine {
         for edit in &edits {
             text = insert_item(&text, edit.section, &edit.item)?;
         }
-        fs::write(&path, &text)
+        envctl_agent_env::write_config_atomic(&path, text.as_bytes())
             .map_err(|e| anyhow::anyhow!("failed to write {}: {e}", path.display()))?;
 
         let sync = if !spec.no_sync {
@@ -142,6 +142,13 @@ impl Engine {
         spec: AgentRemoveSpec,
         sink: &EventSink,
     ) -> anyhow::Result<AgentEditOutcome> {
+        if spec.lock_mode == AgentLockMode::Locked && !spec.no_sync {
+            anyhow::bail!(
+                "`--locked` on `remove` requires `--no-sync` — editing the desired manifest \
+                 before a frozen sync would leave config and lock inconsistent. Pass \
+                 `--no-sync --locked`, then run an intentional plain `sync --apply` to prune."
+            );
+        }
         sink.emit(Event::AgentRunStarted {
             verb: AgentVerb::Remove,
             scope: scope_label(spec.scope_override),
@@ -150,11 +157,13 @@ impl Engine {
         });
 
         let path = resolve_local_config_path(spec.config_path.as_deref())?;
-        if !path.exists() {
-            anyhow::bail!("config not found: {}", path.display());
-        }
-        let mut text = fs::read_to_string(&path)
-            .map_err(|e| anyhow::anyhow!("failed to read {}: {e}", path.display()))?;
+        let mut text = envctl_agent_env::read_config_optional(&path)
+            .map_err(|e| anyhow::anyhow!("failed to read {}: {e}", path.display()))?
+            .ok_or_else(|| anyhow::anyhow!("config not found: {}", path.display()))
+            .and_then(|bytes| {
+                String::from_utf8(bytes)
+                    .map_err(|e| anyhow::anyhow!("config is not UTF-8 at {}: {e}", path.display()))
+            })?;
 
         let (raw_source, at_ref) = split_at_ref(&spec.source);
         if at_ref.is_some() && (spec.git_ref.is_some() || spec.branch.is_some()) {
@@ -208,7 +217,7 @@ impl Engine {
             ));
         }
 
-        fs::write(&path, &text)
+        envctl_agent_env::write_config_atomic(&path, text.as_bytes())
             .map_err(|e| anyhow::anyhow!("failed to write {}: {e}", path.display()))?;
 
         let sync = if !spec.no_sync {
@@ -347,7 +356,11 @@ fn sync_after(
     sink: &EventSink,
 ) -> anyhow::Result<crate::agent::report::AgentReport> {
     let cfg_str = config_path.to_string_lossy().to_string();
-    let ctx = AgentCtx::resolve(Some(&cfg_str), scope_override)?;
+    let ctx = if *lock_mode == AgentLockMode::Locked {
+        AgentCtx::resolve_zero_network(Some(&cfg_str), scope_override)?
+    } else {
+        AgentCtx::resolve(Some(&cfg_str), scope_override)?
+    };
     run_sync_in_ctx(&ctx, apply, lock_mode, sink)
 }
 
