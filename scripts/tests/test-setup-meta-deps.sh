@@ -71,6 +71,19 @@ grep -Fq 'preserving linked worktree meta_plugin_protocol' "$tmp/setup.out"
 grep -Fq 'members = ["loop_lib", "meta_plugin_protocol"]' "$set_root/Cargo.toml"
 grep -Fq 'version = "0.2.25"' "$set_root/Cargo.toml"
 
+sed -i 's/version = "0.2.25"/version = "0.2.22"/' "$set_root/Cargo.toml"
+if ! (
+  cd "$envctl"
+  bash ci/setup-meta-deps.sh >"$tmp/refresh.out" 2>"$tmp/refresh.err"
+); then
+  sed -n '1,200p' "$tmp/refresh.out" >&2
+  sed -n '1,200p' "$tmp/refresh.err" >&2
+  echo "stale generated parent-workspace refresh failed" >&2
+  exit 1
+fi
+grep -Fq 'refreshing stale generated parent workspace' "$tmp/refresh.out"
+grep -Fq 'version = "0.2.25"' "$set_root/Cargo.toml"
+
 {
   printf '[workspace]\n'
   printf 'members = ["unrelated"]\n\n'
