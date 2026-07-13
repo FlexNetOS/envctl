@@ -44,6 +44,11 @@ kache/kache-rustc-wrapper for Rust caching, wild via clang linker flags,
 bun/bunx for Node.js package execution, and profile-owned `codex`, `yzx`, and
 `rtk`. Do not install global npm/cargo/curl binaries to fix navigation.
 
+All Codex shell execution goes through the exact profile-owned RTK binary:
+`/home/flexnetos/.nix-profile/bin/rtk` for supported summarized commands and
+`/home/flexnetos/.nix-profile/bin/rtk proxy -- ...` for exact native output.
+Never bypass RTK for a raw diagnostic; proxy it instead.
+
 ## Codex harness session bootstrap
 
 Use `/agent-env-codex` as the single harness skill. Init, sync, status, full,

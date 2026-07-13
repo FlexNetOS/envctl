@@ -2,8 +2,9 @@
 
 The canonical RTK policy is `/home/flexnetos/.codex/AGENTS.rtk.md`.
 
-For envctl/Codex navigation, run gate and root-cause commands raw rather than
-through summarized RTK output:
+Every Codex shell command must use the exact profile frontdoor
+`/home/flexnetos/.nix-profile/bin/rtk`. For gate and root-cause commands, retain
+raw output through `/home/flexnetos/.nix-profile/bin/rtk proxy -- ...`:
 
 - `git fetch origin --prune`
 - `git worktree add ...`
@@ -14,5 +15,6 @@ through summarized RTK output:
 - `bash ci/gates/yazelix-codex-runtime.sh`
 - `codex doctor --json --summary`
 
-Routine exploratory commands may still use `rtk` when summarized output is
-acceptable.
+Routine exploratory commands use the same exact RTK binary without `proxy --`
+when summarized output is acceptable. Direct raw command invocation is not an
+alternate path.
