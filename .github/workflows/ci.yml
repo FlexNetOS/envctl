@@ -103,36 +103,23 @@ jobs:
         env:
           META_DEPS_TOKEN: ${{ secrets.PARENT_REPO_PAT || github.token }}
         run: bash ci/setup-meta-deps.sh
-      # Use the runner-provisioned toolchain instead of asking rustup to reach
-      # static.rust-lang.org during every CI job. The workspace manifest still
-      # declares rust-version=1.89; this step fail-closes if the runner compiler
-      # is below that floor.
-      - name: use runner-provisioned Rust toolchain for MSRV floor
+      # The self-hosted fleet owns an already-provisioned exact 1.89.0 rustup
+      # lane under META_ROOT. Hosted runners retain their standard rustup home.
+      - name: select the exact MSRV toolchain owner
+        env:
+          ENVCTL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
         run: |
-          rustc --version
-          cargo --version
-          python3 - <<'PY'
-          import re
-          import subprocess
-          import sys
-
-          version = subprocess.check_output(["rustc", "--version"], text=True)
-          match = re.search(r"rustc (\d+)\.(\d+)\.", version)
-          if not match:
-              print(f"could not parse rustc version: {version}", file=sys.stderr)
-              sys.exit(1)
-          major, minor = map(int, match.groups())
-          if (major, minor) < (1, 89):
-              print(f"rustc is below the declared 1.89 floor: {version}", file=sys.stderr)
-              sys.exit(1)
-          PY
+          if [ "$ENVCTL_RUNNER_ENVIRONMENT" = self-hosted ]; then
+            echo 'CARGO_HOME=/home/flexnetos/meta/.toolchains/cargo' >> "$GITHUB_ENV"
+            echo 'RUSTUP_HOME=/home/flexnetos/meta/.toolchains/rustup' >> "$GITHUB_ENV"
+            echo '/home/flexnetos/meta/.toolchains/cargo/bin' >> "$GITHUB_PATH"
+          fi
       - uses: Swatinem/rust-cache@v2
       # `check`, not `build`: the floor is compiler acceptance for the locked shipping graph.
       # No `--all-features`: crates/secrets-store-libsql has mutually-exclusive store features.
-      # `Cargo.toml` declares rust-version=1.89; the runner-provisioned compiler
-      # has already been checked to be at least that floor.
+      # `Cargo.toml` declares rust-version=1.89; compile with that exact lane.
       - name: cargo check --workspace --locked (MSRV 1.89 toolchain)
-        run: cargo check --workspace --locked
+        run: cargo +1.89.0 check --workspace --locked
 
   cargo-audit:
     name: cargo audit
