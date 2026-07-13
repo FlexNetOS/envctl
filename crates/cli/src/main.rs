@@ -303,12 +303,17 @@ enum Cmd {
         after_help = envctl_examples!(
             "envctl doctor",
             "envctl doctor --json",
+            "envctl doctor --root /srv/meta --manifest-dir /srv/meta/src/envctl/manifest",
         )
     )]
     Doctor {
         /// Explicit meta workspace root (highest-priority root-resolution input).
         #[arg(long = "root", value_name = "DIR")]
         root: Option<PathBuf>,
+        /// Explicit component manifest directory. Doctor reports a missing or
+        /// corrupt directory as health data instead of failing before dispatch.
+        #[arg(long = "manifest-dir", value_name = "DIR")]
+        manifest_dir: Option<PathBuf>,
     },
     /// Install components (additive + idempotent; --dry-run to preview).
     #[command(
@@ -1897,6 +1902,17 @@ pub struct MintGithubArgs {
     pub output: String,
 }
 
+/// Doctor is itself the diagnostic bootstrap: a missing/corrupt manifest must
+/// become typed report data, not an error that prevents the command running.
+fn load_doctor_engine(explicit_manifest_dir: Option<&std::path::Path>) -> Engine {
+    let manifest_dir = explicit_manifest_dir
+        .map(std::path::Path::to_path_buf)
+        .or_else(|| std::env::var_os("ENVCTL_MANIFEST_DIR").map(PathBuf::from))
+        .unwrap_or_else(|| PathBuf::from("manifest"));
+    Engine::load(manifest_dir.clone())
+        .unwrap_or_else(|_| Engine::detached_with_manifest_dir(manifest_dir))
+}
+
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     // `dashboard` is manifest-INDEPENDENT (it reads `.meta.yaml`, never the
@@ -1948,6 +1964,8 @@ fn main() -> anyhow::Result<()> {
         }
     ) {
         Engine::detached()
+    } else if let Cmd::Doctor { manifest_dir, .. } = &cli.cmd {
+        load_doctor_engine(manifest_dir.as_deref())
     } else {
         Engine::load_default()?
     };
@@ -2058,7 +2076,10 @@ fn main() -> anyhow::Result<()> {
             }
             Ok(())
         }
-        Cmd::Doctor { root } => run_doctor(&engine, root, json),
+        Cmd::Doctor {
+            root,
+            manifest_dir: _,
+        } => run_doctor(&engine, root, json),
         Cmd::Dashboard {
             meta_file,
             panes_per_tab,
@@ -3172,6 +3193,7 @@ fn should_suppress_notice(cmd: &Cmd, json: bool, quiet: u8) -> bool {
         | Cmd::Manage { .. }
         | Cmd::Env { .. }
         | Cmd::Migrate { .. }
+        | Cmd::Doctor { .. }
         | Cmd::Registry { .. }
         | Cmd::Catalog { .. } => true,
         // `auto-detect`/`graph`/`lock`/`agent ... --json` are gated by the global `json` above;
@@ -5435,6 +5457,15 @@ mod frontend_gaps_tests {
     fn no_color_flag_parses() {
         let cli = Cli::try_parse_from(["envctl", "--no-color", "auto-detect"]).expect("parse");
         assert!(cli.no_color);
+    }
+
+    #[test]
+    fn human_doctor_suppresses_the_mutating_update_notifier() {
+        let command = Cmd::Doctor {
+            root: None,
+            manifest_dir: None,
+        };
+        assert!(super::should_suppress_notice(&command, false, 0));
     }
 
     #[test]

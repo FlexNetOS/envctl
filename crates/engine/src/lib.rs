@@ -173,6 +173,13 @@ impl Engine {
         let manifest_dir = std::env::var("ENVCTL_MANIFEST_DIR")
             .map(PathBuf::from)
             .unwrap_or_else(|_| PathBuf::from("manifest"));
+        Engine::detached_with_manifest_dir(manifest_dir)
+    }
+
+    /// An empty-registry engine that retains an explicit manifest location for
+    /// read-only diagnostics. This lets doctor report a missing or corrupt
+    /// manifest/lock as typed health data instead of failing before dispatch.
+    pub fn detached_with_manifest_dir(manifest_dir: PathBuf) -> Engine {
         Engine {
             inner: Arc::new(EngineInner {
                 registry: Registry::empty(),
@@ -339,7 +346,7 @@ impl Engine {
     /// Read-only manifest/lock comparison shared by `lock --check`, doctor,
     /// and the dedicated CI gate. This never rewrites `envctl.lock`.
     pub fn manifest_lock_check(&self) -> ManifestLockReport {
-        doctor::manifest_lock_check(&self.inner.registry, &self.inner.manifest_dir)
+        doctor::manifest_lock_check(&self.inner.manifest_dir)
     }
 
     /// add-repo: synthesize a build-from-source Component, persist a drop-in

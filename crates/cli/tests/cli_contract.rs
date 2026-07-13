@@ -605,6 +605,56 @@ fn doctor_without_any_root_refuses_instead_of_falling_back_to_desktop_meta() {
 }
 
 #[test]
+fn doctor_bootstraps_outside_a_manifest_cwd_from_root_or_explicit_manifest_dir() {
+    let fx = Fixture::new();
+    let outside = fx.root.join("outside");
+    std::fs::create_dir_all(&outside).unwrap();
+
+    let root_only = Command::new(bin())
+        .current_dir(&outside)
+        .env_remove("ENVCTL_MANIFEST_DIR")
+        .env_remove("META_ROOT")
+        .env("HOME", &fx.home)
+        .env("PATH", "")
+        .args(["--json", "doctor", "--root"])
+        .arg(&fx.meta)
+        .output()
+        .unwrap();
+    assert_eq!(
+        root_only.status.code(),
+        Some(1),
+        "stderr: {}",
+        stderr(&root_only)
+    );
+    let root_report: serde_json::Value = serde_json::from_slice(&root_only.stdout).unwrap();
+    assert_eq!(root_report["meta_root"], fx.meta.display().to_string());
+    assert_eq!(root_report["manifest_lock"]["status"], "missing");
+
+    let lock = fx.cmd().arg("lock").output().unwrap();
+    assert!(lock.status.success(), "stderr: {}", stderr(&lock));
+    let explicit_manifest = Command::new(bin())
+        .current_dir(&outside)
+        .env_remove("ENVCTL_MANIFEST_DIR")
+        .env_remove("META_ROOT")
+        .env("HOME", &fx.home)
+        .env("PATH", "")
+        .args(["--json", "doctor", "--root"])
+        .arg(&fx.meta)
+        .arg("--manifest-dir")
+        .arg(&fx.manifest)
+        .output()
+        .unwrap();
+    assert!(
+        explicit_manifest.status.success(),
+        "stderr: {}",
+        stderr(&explicit_manifest)
+    );
+    let manifest_report: serde_json::Value =
+        serde_json::from_slice(&explicit_manifest.stdout).unwrap();
+    assert_eq!(manifest_report["manifest_lock"]["status"], "clean");
+}
+
+#[test]
 fn secret_wrapper_forwards_frozen_argv_without_live_daemon() {
     let fx = Fixture::new();
     let bin_dir = fx.meta.join("usr/bin");

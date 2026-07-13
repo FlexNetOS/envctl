@@ -12,12 +12,22 @@ fail() {
 
 hash_inputs() {
   while IFS= read -r -d '' path; do
-    # Staged deletions remain listed by the index until commit. They are not
-    # live manifest inputs and must not produce git hash-object errors.
-    [[ -f "$path" ]] || continue
-    printf '%s\0' "$path"
-    git hash-object -- "$path"
-  done < <(git ls-files -z -- manifest)
+    if [[ -L "$path" ]]; then
+      mode=120000
+      object="$(printf '%s' "$(readlink -- "$path")" | git hash-object --stdin)"
+    elif [[ -f "$path" ]]; then
+      if [[ -x "$path" ]]; then
+        mode=100755
+      else
+        mode=100644
+      fi
+      object="$(git hash-object --no-filters -- "$path")"
+    else
+      # A path removed before the snapshot is no longer a live manifest input.
+      continue
+    fi
+    printf '%s\0%s\0%s\0' "$path" "$mode" "$object"
+  done < <(find manifest \( -type f -o -type l \) -print0 | sort -z)
 }
 
 before="$(hash_inputs | git hash-object --stdin)"
@@ -27,7 +37,7 @@ rc=$?
 set -e
 after="$(hash_inputs | git hash-object --stdin)"
 
-[[ "$before" == "$after" ]] || fail "lock check mutated tracked manifest inputs"
+[[ "$before" == "$after" ]] || fail "lock check mutated live manifest inputs"
 [[ "$rc" -eq 0 ]] || fail "envctl lock --check exited $rc"
 
 echo "MANIFEST-LOCK GATE PASS"
