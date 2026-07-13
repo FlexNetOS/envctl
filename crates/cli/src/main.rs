@@ -810,6 +810,161 @@ enum DbCmd {
         #[arg(long, value_name = "TEXT")]
         note: Option<String>,
     },
+    /// Scan the repo root into a PERSISTED file index (`.envctl/db-index.json`).
+    #[command(
+        long_about = "Scan the repo root into a file index and persist it to `<root>/.envctl/db-index.json` (NFR03: the index backend is durable, not a rescan-per-invocation). The printed rows are read back from disk, so `--json` reflects the persisted contract. The `.envctl` state dir is never swept back into the index. Use `--no-persist` for an in-memory-only scan.",
+        after_help = envctl_examples!(
+            "envctl db scan --json",
+            "envctl db --repo-root /path/to/repo scan --json",
+        )
+    )]
+    Scan {
+        /// Scan in memory only; do not write `.envctl/db-index.json`.
+        #[arg(long)]
+        no_persist: bool,
+    },
+    /// Build the symbol + occurrence index over the scope (agent-first --json).
+    #[command(
+        long_about = "Scan the repo root and build the symbol + occurrence index (env-var / path-token references, with a syn-parsed Rust-item pass over `.rs` files). Each occurrence carries its replace policy derived from the owning file's mutable policy, so an agent can tell at a glance what is safe to rewrite. Use --json for the machine contract.",
+        after_help = envctl_examples!(
+            "envctl db symbols --json",
+            "envctl db --repo-root /path/to/repo symbols --json",
+        )
+    )]
+    Symbols {},
+    /// Symbol-reference impact map: what a rename/edit to a symbol would touch.
+    #[command(
+        long_about = "Map the blast radius of a symbol (e.g. an env-var root or a Rust item) across the indexed scope: every file + occurrence that references it, split by whether the occurrence is safely rewritable, needs a parser/owner marker, or is refused (protected/.env). This is the read-only impact surface an agent consults before proposing a refactor. Use --json for the machine contract.",
+        after_help = envctl_examples!(
+            "envctl db impact --symbol META_ROOT --json",
+            "envctl db --repo-root /path/to/repo impact --symbol LIFE_OS_ROOT --json",
+        )
+    )]
+    Impact {
+        /// Symbol name to map (env-var/path-token spellings are normalized).
+        #[arg(long)]
+        symbol: String,
+    },
+    /// Plan (and, gated, apply) a safe hook/wrapper deploy into a target root.
+    #[command(
+        long_about = "Plan a fail-closed deploy of a staged artifact tree into a target layout root. Each step is classified Ready / Queued (target appears to be executing — never disturbed) / Refused (protected/Never target). `--apply` promotes only Ready steps and is gated (R3): it requires --confirm AND --approve <who>; each promotion backs up an existing target to `<target>.envctl-bak` and writes atomically (temp-fsync-rename-reread-hash). Use --json for the machine contract.",
+        after_help = envctl_examples!(
+            "envctl db deploy --kind hooks --target /path/to/root --stage /tmp/rendered --json",
+            "envctl db deploy --kind hooks --target /path/to/root --stage /tmp/rendered --apply --confirm --approve drdave",
+        )
+    )]
+    Deploy {
+        /// What is being deployed (e.g. hooks, wrappers).
+        #[arg(long, default_value = "hooks")]
+        kind: String,
+        /// Target layout root to promote into.
+        #[arg(long)]
+        target: String,
+        /// Directory of staged artifacts to promote (e.g. a `refactor --render-out` tree).
+        #[arg(long = "stage", value_name = "DIR")]
+        stage: Option<String>,
+        /// Promote Ready steps IN PLACE. Requires --confirm and --approve (R3 gate).
+        #[arg(long)]
+        apply: bool,
+        /// Acknowledge the promotion (half of the R3 gate).
+        #[arg(long)]
+        confirm: bool,
+        /// Human approver id — the other half of the R3 gate.
+        #[arg(long, value_name = "WHO")]
+        approve: Option<String>,
+        /// Optional note recorded on the approval.
+        #[arg(long, value_name = "TEXT")]
+        note: Option<String>,
+    },
+    /// One incremental watch poll: report the delta vs the persisted baseline.
+    #[command(
+        long_about = "Run one incremental index poll: scan the repo root, diff it (by content hash) against the persisted baseline at `.envctl/db-index.json`, persist the fresh scan as the new baseline, and report the delta (added / changed / removed / unchanged). Only changed rows are invalidated (REQ-057). Drive it on a timer for a poll-based watcher that needs no per-file OS watches. Use --json for the machine contract.",
+        after_help = envctl_examples!(
+            "envctl db watch --json",
+            "envctl db --repo-root /path/to/repo watch --json",
+        )
+    )]
+    Watch {},
+    /// Agent widget surfaces: compact JSON for roots / refs / hooks views.
+    #[command(
+        long_about = "Emit the compact JSON widget surfaces an agent UI renders directly: `roots` (the multi-root model + per-root reference counts), `refs` (every env-var/path-token reference grouped by symbol), and `hooks` (discovered hook/wrapper scripts with their mutable policy). Read-only; always machine-shaped. Use --json (default for widgets).",
+        after_help = envctl_examples!(
+            "envctl db widget roots --json",
+            "envctl db widget refs --json",
+            "envctl db widget hooks --json",
+        )
+    )]
+    Widget {
+        #[command(subcommand)]
+        which: DbWidgetCmd,
+    },
+    /// Managed-tool inventory: detect rg/sg/fd/sd/taplo/jaq/nu on PATH / nix profile.
+    #[command(
+        long_about = "Inventory the managed structural-tooling components (rg, sg, fd, sd, taplo, jaq, nu) envctl relies on for polyglot extraction and safe edits. `detect` probes each against PATH and the nix profile (no network installs) and reports whether it is present, its resolved path, and version when cheap to read. Use --json for the machine contract.",
+        after_help = envctl_examples!(
+            "envctl db components detect --json",
+        )
+    )]
+    Components {
+        #[command(subcommand)]
+        which: DbComponentsCmd,
+    },
+}
+
+/// `db widget <which>` — the compact agent-UI surfaces.
+#[derive(Subcommand)]
+enum DbWidgetCmd {
+    /// Multi-root model + per-root reference counts.
+    #[command(
+        long_about = "The roots widget: the multi-root model (observed META_ROOT + release-target LIFE_OS_ROOT) alongside how often each root is referenced across the indexed scope (occurrence + file tallies). Machine-shaped for an agent UI.",
+        after_help = envctl_examples!(
+            "envctl db widget roots --json",
+            "envctl db --repo-root /path/to/repo widget roots --observed /o --release /r --json",
+        )
+    )]
+    Roots {
+        /// Observed current root absolute path (optional).
+        #[arg(long)]
+        observed: Option<String>,
+        /// Release-target root absolute path (optional).
+        #[arg(long)]
+        release: Option<String>,
+        /// Release profile label.
+        #[arg(long, default_value = "lifeos-release")]
+        profile: String,
+    },
+    /// Every env-var/path-token reference grouped by symbol.
+    #[command(
+        long_about = "The refs widget: every env-var / path-token reference in the scope grouped under its symbol, each with its file, line/column, matched text, and replace policy. This is the reference-navigation surface an agent UI renders.",
+        after_help = envctl_examples!(
+            "envctl db widget refs --json",
+            "envctl db --repo-root /path/to/repo widget refs --json",
+        )
+    )]
+    Refs {},
+    /// Discovered hook/wrapper scripts with their mutable policy.
+    #[command(
+        long_about = "The hooks widget: the shell/nushell hook + wrapper scripts discovered in the scope, each with its mutable policy, so an agent can see at a glance what is safe to deploy or rewrite.",
+        after_help = envctl_examples!(
+            "envctl db widget hooks --json",
+            "envctl db --repo-root /path/to/repo widget hooks --json",
+        )
+    )]
+    Hooks {},
+}
+
+/// `db components <which>` — the managed-tool inventory.
+#[derive(Subcommand)]
+enum DbComponentsCmd {
+    /// Detect managed tools against PATH / nix profile (no network).
+    #[command(
+        long_about = "Detect the managed structural-tooling inventory (rg, sg, fd, sd, taplo, jaq, nu) against PATH and the nix profile. Read-only and local — no network installs. Reports per tool whether it is present, where it resolved, and via which source (path/nix-profile).",
+        after_help = envctl_examples!(
+            "envctl db components detect --json",
+            "envctl db components detect",
+        )
+    )]
+    Detect {},
 }
 
 /// The migration/adoption subcommands. All variants share optional scope and
@@ -2159,9 +2314,13 @@ fn migration_marker(status: MigrationStatus, protected: bool) -> &'static str {
 /// no db logic of its own (REQ-059). Agent-first: prints JSON under `--json`,
 /// a compact human summary otherwise. Needs no manifest/Engine — pure repo scope.
 fn run_db(repo_root: Option<PathBuf>, cmd: DbCmd, json: bool) -> anyhow::Result<()> {
+    use envctl_engine::db_deploy::{self, DeploySpec};
     use envctl_engine::db_query::{QueryPreset, QuerySpec};
     use envctl_engine::db_refactor::{Approval, RootAliasSpec};
-    use envctl_engine::{db_roots, DbSnapshot, ScanScope};
+    use envctl_engine::{
+        db_components_detect, db_impact, db_roots, db_watch_poll, hooks_widget, refs_widget,
+        roots_widget, DbIndexStore, DbSnapshot, FileIndex, ScanScope,
+    };
 
     let root = repo_root
         .map(|p| p.display().to_string())
@@ -2285,6 +2444,188 @@ fn run_db(repo_root: Option<PathBuf>, cmd: DbCmd, json: bool) -> anyhow::Result<
                 }
             }
         }
+        DbCmd::Scan { no_persist } => {
+            let scope = ScanScope {
+                root: root.clone(),
+                ..Default::default()
+            };
+            let index = FileIndex::scan(&scope)?;
+            // Persist to `<root>/.envctl/db-index.json` and read back, so the
+            // printed rows come through the durable backend (NFR03), unless the
+            // caller opted out.
+            let rows: Vec<_> = if no_persist {
+                index.files().to_vec()
+            } else {
+                let store = DbIndexStore::for_root(&root);
+                store.save(&index)?;
+                store.load()?.files().to_vec()
+            };
+            if json {
+                println!("{}", serde_json::to_string_pretty(&rows)?);
+            } else {
+                println!(
+                    "{} file(s) indexed{}",
+                    rows.len(),
+                    if no_persist {
+                        " (not persisted)"
+                    } else {
+                        " and persisted"
+                    }
+                );
+            }
+        }
+        DbCmd::Symbols {} => {
+            let snap = DbSnapshot::open(ScanScope {
+                root,
+                ..Default::default()
+            })?;
+            let out = serde_json::json!({
+                "symbols": snap.symbols().symbols(),
+                "occurrences": snap.symbols().occurrences(),
+            });
+            if json {
+                println!("{}", serde_json::to_string_pretty(&out)?);
+            } else {
+                println!(
+                    "{} symbol(s), {} occurrence(s)",
+                    snap.symbols().symbols().len(),
+                    snap.symbols().occurrences().len()
+                );
+            }
+        }
+        DbCmd::Impact { symbol } => {
+            let snap = DbSnapshot::open(ScanScope {
+                root,
+                ..Default::default()
+            })?;
+            let report = db_impact(&symbol, snap.files(), snap.symbols());
+            if json {
+                println!("{}", serde_json::to_string_pretty(&report)?);
+            } else {
+                println!(
+                    "{} -> {} file(s), {} occurrence(s) ({} safe, {} refused)",
+                    report.normalized_symbol,
+                    report.files_affected,
+                    report.occurrences_total,
+                    report.safe_occurrences,
+                    report.refused_occurrences
+                );
+            }
+        }
+        DbCmd::Deploy {
+            kind,
+            target,
+            stage,
+            apply,
+            confirm,
+            approve,
+            note,
+        } => {
+            // Index the TARGET root so protected/Never targets are detected.
+            let snap = DbSnapshot::open(ScanScope {
+                root: target.clone(),
+                ..Default::default()
+            })?;
+            let spec = DeploySpec {
+                kind,
+                target,
+                stage_dir: stage,
+            };
+            let plan = snap.deploy_plan(&spec)?;
+            let promoted = if apply {
+                let approval = approve.clone().map(|who| Approval {
+                    approver: who,
+                    approved: true,
+                    note: note.clone(),
+                });
+                Some(db_deploy::apply(&plan, confirm, approval.as_ref())?)
+            } else {
+                None
+            };
+            if json {
+                let out = serde_json::json!({ "plan": plan, "promoted": promoted });
+                println!("{}", serde_json::to_string_pretty(&out)?);
+            } else {
+                println!(
+                    "ready={} queued={} refused={} approved={}",
+                    plan.ready, plan.queued, plan.refused, plan.approved
+                );
+                if let Some(paths) = &promoted {
+                    println!("PROMOTED {} step(s):", paths.len());
+                    for p in paths {
+                        println!("  {p}");
+                    }
+                }
+            }
+        }
+        DbCmd::Watch {} => {
+            let scope = ScanScope {
+                root: root.clone(),
+                ..Default::default()
+            };
+            let store = DbIndexStore::for_root(&root);
+            let delta = db_watch_poll(&scope, &store)?;
+            if json {
+                println!("{}", serde_json::to_string_pretty(&delta)?);
+            } else {
+                println!(
+                    "added={} changed={} removed={} unchanged={}",
+                    delta.added.len(),
+                    delta.changed.len(),
+                    delta.removed.len(),
+                    delta.unchanged
+                );
+            }
+        }
+        DbCmd::Widget { which } => {
+            let snap = || {
+                DbSnapshot::open(ScanScope {
+                    root: root.clone(),
+                    ..Default::default()
+                })
+            };
+            let value = match which {
+                DbWidgetCmd::Roots {
+                    observed,
+                    release,
+                    profile,
+                } => {
+                    let s = snap()?;
+                    serde_json::to_value(roots_widget(
+                        db_roots(observed, release, &profile),
+                        s.symbols(),
+                    ))?
+                }
+                DbWidgetCmd::Refs {} => {
+                    let s = snap()?;
+                    serde_json::to_value(refs_widget(s.files(), s.symbols()))?
+                }
+                DbWidgetCmd::Hooks {} => {
+                    let s = snap()?;
+                    serde_json::to_value(hooks_widget(s.files()))?
+                }
+            };
+            // Widgets are machine-shaped by design; always emit JSON.
+            println!("{}", serde_json::to_string_pretty(&value)?);
+        }
+        DbCmd::Components { which } => match which {
+            DbComponentsCmd::Detect {} => {
+                let report = db_components_detect();
+                if json {
+                    println!("{}", serde_json::to_string_pretty(&report)?);
+                } else {
+                    println!("{} present, {} missing:", report.present, report.missing);
+                    for t in &report.tools {
+                        println!(
+                            "  {:<7} {:<12} {}",
+                            t.id,
+                            if t.present { "present" } else { "missing" },
+                            t.resolved_path.as_deref().unwrap_or("-")
+                        );
+                    }
+                }
+            }
+        },
     }
     Ok(())
 }

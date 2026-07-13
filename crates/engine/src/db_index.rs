@@ -22,7 +22,17 @@ const SKIP_DIRS: &[&str] = &[
     ".venv",
     "__pycache__",
     ".mypy_cache",
+    // envctl's own persisted-index state dir (see [`DbIndexStore`]) — never
+    // sweep a saved index back into a rescan of the same root (NFR03).
+    ENVCTL_STATE_DIR,
 ];
+
+/// The on-disk state directory envctl writes its persisted index into, relative
+/// to a scan root. Kept out of every scan (it is in [`SKIP_DIRS`]).
+pub const ENVCTL_STATE_DIR: &str = ".envctl";
+
+/// Basename of the persisted file index inside [`ENVCTL_STATE_DIR`].
+const INDEX_FILE_NAME: &str = "db-index.json";
 
 /// One indexed file. `mutable_policy`/`protected`/`generated` drive what the
 /// refactor and deploy planners are allowed to touch.
@@ -118,6 +128,102 @@ impl FileIndex {
             .map(|p| (*p).to_string())
             .collect();
         (added, changed, removed)
+    }
+}
+
+/// Serialized envelope for a persisted [`FileIndex`]. The `schema_version` lets
+/// a future reader reject/upgrade an index it does not understand rather than
+/// silently misparsing it.
+#[derive(Debug, Serialize, Deserialize)]
+struct PersistedIndex {
+    schema_version: u32,
+    files: Vec<DbFileRow>,
+}
+
+const INDEX_SCHEMA_VERSION: u32 = 1;
+
+/// The persisted file-index backend (NFR03/REQ-052). A [`FileIndex`] is an
+/// in-memory rescan; `DbIndexStore` makes it durable: `save` serializes the rows
+/// to a deterministic JSON document under an [`ENVCTL_STATE_DIR`] state dir and
+/// `load` reconstructs a byte-identical index. Persisting means the db surface
+/// no longer has to rescan the whole tree on every invocation — the stored index
+/// is the source of truth until [`crate::db_watch`] invalidates it.
+///
+/// The write is atomic (temp sibling + rename) so a crashed save can never leave
+/// a half-written index that `load` would choke on.
+#[derive(Debug, Clone)]
+pub struct DbIndexStore {
+    path: std::path::PathBuf,
+}
+
+impl DbIndexStore {
+    /// A store backed by an explicit index-file path.
+    pub fn new(path: impl Into<std::path::PathBuf>) -> Self {
+        Self { path: path.into() }
+    }
+
+    /// The default index-file path for a scan `root`: `<root>/.envctl/db-index.json`.
+    /// [`FileIndex::scan`] skips [`ENVCTL_STATE_DIR`], so this file is never swept
+    /// back into an index of the same root.
+    pub fn default_path(root: impl AsRef<Path>) -> std::path::PathBuf {
+        root.as_ref().join(ENVCTL_STATE_DIR).join(INDEX_FILE_NAME)
+    }
+
+    /// A store at the default path for `root`.
+    pub fn for_root(root: impl AsRef<Path>) -> Self {
+        Self::new(Self::default_path(root))
+    }
+
+    /// The index-file path this store reads/writes.
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
+    /// Whether a persisted index already exists on disk.
+    pub fn exists(&self) -> bool {
+        self.path.is_file()
+    }
+
+    /// Persist `index` atomically as a deterministic JSON document. Creates the
+    /// parent state dir if missing. Re-saving an identical index yields byte-
+    /// identical output (rows are already sorted by [`FileIndex::scan`]).
+    pub fn save(&self, index: &FileIndex) -> Result<()> {
+        let envelope = PersistedIndex {
+            schema_version: INDEX_SCHEMA_VERSION,
+            files: index.files.clone(),
+        };
+        let bytes = serde_json::to_vec_pretty(&envelope)
+            .map_err(|e| DbError::Index(format!("serialize index: {e}")))?;
+        if let Some(parent) = self.path.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|e| DbError::Index(format!("{}: {e}", parent.display())))?;
+        }
+        // Atomic: write a temp sibling, then rename over the destination.
+        let tmp = self.path.with_extension("json.envctl-tmp");
+        std::fs::write(&tmp, &bytes)
+            .map_err(|e| DbError::Index(format!("{}: {e}", tmp.display())))?;
+        std::fs::rename(&tmp, &self.path)
+            .map_err(|e| DbError::Index(format!("{}: {e}", self.path.display())))?;
+        Ok(())
+    }
+
+    /// Load a persisted index. A missing/unreadable/malformed file is a typed
+    /// [`DbError::Index`] error (never a panic), so a caller can fall back to a
+    /// fresh [`FileIndex::scan`].
+    pub fn load(&self) -> Result<FileIndex> {
+        let bytes = std::fs::read(&self.path)
+            .map_err(|e| DbError::Index(format!("{}: {e}", self.path.display())))?;
+        let envelope: PersistedIndex =
+            serde_json::from_slice(&bytes).map_err(|e| DbError::Index(format!("{}: {e}", e)))?;
+        if envelope.schema_version != INDEX_SCHEMA_VERSION {
+            return Err(DbError::Index(format!(
+                "unsupported index schema_version {} (expected {})",
+                envelope.schema_version, INDEX_SCHEMA_VERSION
+            )));
+        }
+        Ok(FileIndex {
+            files: envelope.files,
+        })
     }
 }
 
@@ -320,6 +426,55 @@ mod tests {
         assert_eq!(paths, sorted);
 
         let _ = fs::remove_dir_all(&root);
+    }
+
+    fn tmp_tag(tag: &str) -> std::path::PathBuf {
+        let d = std::env::temp_dir().join(format!("envctl-db-index-{tag}-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&d);
+        fs::create_dir_all(&d).unwrap();
+        d
+    }
+
+    #[test]
+    fn index_store_save_load_reload_roundtrip_is_lossless() {
+        let root = tmp_tag("store");
+        fs::write(root.join("a.sh"), b"cd $META_ROOT\n").unwrap();
+        fs::write(root.join("b.toml"), b"key = \"$META_ROOT\"\n").unwrap();
+        let scope = ScanScope {
+            root: root.display().to_string(),
+            ..Default::default()
+        };
+        let idx = FileIndex::scan(&scope).unwrap();
+        assert_eq!(idx.files().len(), 2);
+
+        // Save -> load: every row survives byte-identically (NFR03: the persisted
+        // index backend is real, not a rescan-per-invocation claim).
+        let store = DbIndexStore::new(DbIndexStore::default_path(&scope.root));
+        assert!(!store.exists());
+        store.save(&idx).unwrap();
+        assert!(store.exists());
+        let loaded = store.load().unwrap();
+        assert_eq!(loaded.files(), idx.files());
+
+        // Save the LOADED index and load again — a full save/load/save/load cycle
+        // stays lossless and deterministic (same serialized bytes).
+        let first_bytes = fs::read(store.path()).unwrap();
+        store.save(&loaded).unwrap();
+        let reloaded = store.load().unwrap();
+        assert_eq!(reloaded.files(), idx.files());
+        assert_eq!(fs::read(store.path()).unwrap(), first_bytes);
+
+        // The persisted state dir is never swept into a rescan of the same root.
+        let rescan = FileIndex::scan(&scope).unwrap();
+        assert_eq!(rescan.files(), idx.files(), ".envctl must be skipped");
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn index_store_load_of_missing_file_is_typed_error() {
+        let store = DbIndexStore::new("/no/such/envctl-index-xyz.json");
+        assert!(store.load().is_err());
     }
 
     #[test]

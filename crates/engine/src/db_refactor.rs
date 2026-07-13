@@ -259,7 +259,10 @@ pub fn apply(
             .ok_or_else(|| DbError::RefactorBlocked(format!("file gone: {}", change.file_id)))?;
         let original = std::fs::read_to_string(&file.absolute_path)?;
         let (rewritten, _) = rewrite_env_tokens(&original, &from_norm, &to_norm);
-        atomic_write(
+        // In-place mutation goes through the backup+verify primitive: an existing
+        // target is copied to `<path>.bak`, the new bytes are temp-fsync-renamed,
+        // then reread and hash-verified (fail-closed) — ARCH08/MISS07/NFR08.
+        crate::db_atomic::atomic_backup_write(
             std::path::Path::new(&file.absolute_path),
             rewritten.as_bytes(),
         )?;
