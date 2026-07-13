@@ -14,6 +14,7 @@ use crate::{
     },
     component::Phase,
     dashboard::DashboardSpec,
+    doctor::DoctorSpec,
     migration::MigrationSpec,
     model::{AddRepoSpec, RunPlan},
     Engine, Event, EventSink,
@@ -30,6 +31,10 @@ use std::time::Duration;
 #[allow(clippy::large_enum_variant)]
 pub enum EngineCommand {
     Detect,
+    /// Strictly read-only whole-environment diagnostics shared by CLI and GUI.
+    Doctor {
+        spec: DoctorSpec,
+    },
     Install {
         targets: Vec<String>,
         dry_run: bool,
@@ -237,6 +242,11 @@ pub fn run_event_loop(
             EngineCommand::Detect => {
                 if let Err(e) = engine.detect(&sink) {
                     emit_setup_error(&sink, "detect", &e);
+                }
+            }
+            EngineCommand::Doctor { spec } => {
+                if let Err(e) = engine.doctor(&spec, &sink) {
+                    emit_setup_error(&sink, "doctor", &e);
                 }
             }
             EngineCommand::Install { targets, dry_run } => {

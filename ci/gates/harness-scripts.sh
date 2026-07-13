@@ -23,6 +23,7 @@ bash "$root/scripts/tests/test-plan-artifact-gate.sh"
 bash "$root/scripts/tests/test-plan-evals.sh"
 bash "$root/scripts/tests/test-codex-cli-release-lanes.sh"
 bash "$root/scripts/tests/test-flexnetos-codex-runtime-gate.sh"
+bash "$root/scripts/tests/test-manifest-lock-gate.sh"
 
 # Guard the owner-critical publish contract. The harness must never regress to
 # committed-but-unpushed local work; every committed chunk is pushed, PR-backed,

@@ -236,6 +236,8 @@ jobs:
         run: bash ci/gates/kdf-feature-off.sh
       - name: agent-env gate (agent-env.yaml matches agent-env.lock; no kasetto drift)
         run: bash ci/gates/agent-env.sh
+      - name: manifest-lock gate (envctl.lock matches manifest without mutation)
+        run: bash ci/gates/manifest-lock.sh
       - name: meta-local policy gate (META_ROOT-hosted installs only)
         run: bash ci/gates/meta-local-policy.sh
       - name: add-repo policy gate (owned repos register as .meta.yaml peers, not child components)

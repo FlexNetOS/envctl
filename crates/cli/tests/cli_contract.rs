@@ -490,7 +490,14 @@ fn json_shapes_cover_detect_doctor_graph_and_registry() {
         "detect json: {detect_json}"
     );
 
-    let doctor = fx.cmd().args(["--json", "doctor"]).output().unwrap();
+    let lock = fx.cmd().arg("lock").output().unwrap();
+    assert!(lock.status.success(), "stderr: {}", stderr(&lock));
+    let doctor = fx
+        .cmd()
+        .env("PATH", "")
+        .args(["--json", "doctor"])
+        .output()
+        .unwrap();
     assert!(doctor.status.success(), "stderr: {}", stderr(&doctor));
     let doctor_json: serde_json::Value = serde_json::from_slice(&doctor.stdout).unwrap();
     assert!(
@@ -499,6 +506,10 @@ fn json_shapes_cover_detect_doctor_graph_and_registry() {
     );
     assert!(
         doctor_json["writable"].as_array().is_some(),
+        "doctor json: {doctor_json}"
+    );
+    assert!(
+        doctor_json["summary"].is_object(),
         "doctor json: {doctor_json}"
     );
 
@@ -535,6 +546,62 @@ fn json_shapes_cover_detect_doctor_graph_and_registry() {
         0,
         "registry json: {registry_json}"
     );
+}
+
+#[test]
+fn doctor_json_is_emitted_before_unhealthy_exit_and_never_mutates() {
+    let fx = Fixture::new();
+    let before = tree_snapshot(&fx.root);
+    let out = fx
+        .cmd()
+        .env("PATH", "")
+        .args(["--json", "doctor", "--root"])
+        .arg(&fx.meta)
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(1), "stderr: {}", stderr(&out));
+    let report: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(report["status"], "error", "report: {report}");
+    assert_eq!(report["manifest_lock"]["status"], "missing");
+    assert_eq!(before, tree_snapshot(&fx.root), "doctor mutated fixture");
+    assert!(!fx.meta.join(".envctl-doctor-probe").exists());
+}
+
+#[test]
+fn doctor_clean_lock_exits_zero_with_warnings_and_keeps_tree_unchanged() {
+    let fx = Fixture::new();
+    let lock = fx.cmd().arg("lock").output().unwrap();
+    assert!(lock.status.success(), "stderr: {}", stderr(&lock));
+    let before = tree_snapshot(&fx.root);
+    let out = fx
+        .cmd()
+        .env("PATH", "")
+        .args(["--json", "doctor", "--root"])
+        .arg(&fx.meta)
+        .output()
+        .unwrap();
+    assert!(out.status.success(), "stderr: {}", stderr(&out));
+    let report: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(report["manifest_lock"]["status"], "clean");
+    assert_ne!(report["status"], "error");
+    assert_eq!(before, tree_snapshot(&fx.root), "doctor mutated fixture");
+}
+
+#[test]
+fn doctor_without_any_root_refuses_instead_of_falling_back_to_desktop_meta() {
+    let fx = Fixture::new();
+    let out = fx
+        .cmd()
+        .env_remove("META_ROOT")
+        .env("PATH", "")
+        .args(["--json", "doctor"])
+        .output()
+        .unwrap();
+    assert_eq!(out.status.code(), Some(1), "stderr: {}", stderr(&out));
+    let report: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    let error = report["root_error"].as_str().unwrap();
+    assert!(error.contains("no meta root"), "report: {report}");
+    assert!(!error.contains("Desktop/meta"), "report: {report}");
 }
 
 #[test]

@@ -75,7 +75,7 @@ requires = ["codex-cli"]
 resolved = ""
 
 [components.codex-global-baseline]
-content_hash = "cedef643ee137256"
+content_hash = "5c189f3d7617614c"
 requires = ["codex-cli"]
 resolved = ""
 
@@ -432,6 +432,11 @@ resolved = ""
 
 [components.podman]
 content_hash = "e00f4f5e8a9a46c1"
+requires = []
+resolved = ""
+
+[components.postgres-ruvector]
+content_hash = "bf03b80a72ac250a"
 requires = []
 resolved = ""
 
