@@ -18,7 +18,7 @@
 //! engine core therefore has no OS-watch dependency and the no-C boundary holds.
 
 use crate::db::Result;
-use crate::db_index::{FileIndex, ScanScope};
+use crate::db_index::{DbIndexStore, FileIndex, ScanScope};
 use serde::{Deserialize, Serialize};
 
 /// What changed between two index snapshots. Only these rows need re-derived
@@ -84,6 +84,38 @@ impl WatchState {
     }
 }
 
+/// One poll step against a **persisted** baseline: scan `scope`, diff it against
+/// the index stored in `store` (by content hash, via [`FileIndex::diff_paths`]),
+/// persist the fresh scan as the new baseline, and return the [`IndexDelta`].
+///
+/// This is the incremental-invalidation contract the CLI `envctl db watch` and
+/// the GUI watch view both drive: only `added`/`changed`/`removed` rows are
+/// invalidated; a missing baseline makes everything `added`. Because the fresh
+/// scan is written back, successive polls report only what changed *since the
+/// last poll* — the persisted index is the durable source of truth (NFR03/REQ-057).
+pub fn poll_persisted(scope: &ScanScope, store: &DbIndexStore) -> Result<IndexDelta> {
+    let current = FileIndex::scan(scope)?;
+    let previous = if store.exists() {
+        // A corrupt baseline degrades to "everything added" rather than failing
+        // the poll — the fresh scan repairs it below.
+        store.load().unwrap_or_default()
+    } else {
+        FileIndex::new()
+    };
+    let (added, changed, removed) = current.diff_paths(&previous);
+    let unchanged = current
+        .files()
+        .len()
+        .saturating_sub(added.len() + changed.len());
+    store.save(&current)?;
+    Ok(IndexDelta {
+        added,
+        changed,
+        removed,
+        unchanged,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -135,6 +167,44 @@ mod tests {
 
         // Idempotent: a second tick with no change is empty again.
         assert!(w.tick().unwrap().is_empty());
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn poll_persisted_uses_dbindexstore_baseline_and_invalidates_only_changes() {
+        let root = tmp("persist");
+        fs::write(root.join("a.sh"), b"cd $META_ROOT\n").unwrap();
+        fs::write(root.join("b.sh"), b"cd $META_ROOT/b\n").unwrap();
+        let store = DbIndexStore::for_root(&root);
+
+        // First poll: no baseline on disk yet -> everything is "added", and the
+        // fresh scan is persisted (the durable index is now real — NFR03).
+        assert!(!store.exists());
+        let d0 = poll_persisted(&scope(&root), &store).unwrap();
+        assert_eq!(d0.added.len(), 2, "no baseline -> all added: {d0:?}");
+        assert!(d0.changed.is_empty() && d0.removed.is_empty());
+        assert!(store.exists(), "poll must persist the fresh scan");
+
+        // The persisted index round-trips (load == the scan just written).
+        let reloaded = store.load().unwrap();
+        assert_eq!(
+            reloaded.files(),
+            FileIndex::scan(&scope(&root)).unwrap().files()
+        );
+
+        // Second poll with NO change -> empty delta against the persisted baseline.
+        let d1 = poll_persisted(&scope(&root), &store).unwrap();
+        assert!(d1.is_empty(), "no fs change -> empty delta, got {d1:?}");
+
+        // Mutate one, add one -> only those invalidate (baseline came from disk).
+        fs::write(root.join("a.sh"), b"cd $LIFE_OS_ROOT\n").unwrap();
+        fs::write(root.join("c.sh"), b"cd $META_ROOT/c\n").unwrap();
+        let d2 = poll_persisted(&scope(&root), &store).unwrap();
+        let ends = |v: &[String], name: &str| v.iter().any(|p| p.ends_with(name));
+        assert!(ends(&d2.changed, "a.sh"), "a.sh changed: {d2:?}");
+        assert!(ends(&d2.added, "c.sh"), "c.sh added: {d2:?}");
+        assert_eq!(d2.invalidated(), 2);
 
         let _ = fs::remove_dir_all(&root);
     }

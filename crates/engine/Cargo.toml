@@ -17,6 +17,9 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 serde_yaml = { workspace = true }
 toml = { workspace = true }
+# db_symbols syn extraction pass — pure-Rust Rust-source parsing (no C).
+syn = { workspace = true }
+proc-macro2 = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
 sysinfo = { workspace = true }

@@ -14,9 +14,10 @@
 //! match exactly.
 
 use envctl_engine::{
+    db_deploy::DeploySpec,
     db_query::{QueryPreset, QuerySpec},
     db_refactor::RootAliasSpec,
-    DbSnapshot, ScanScope,
+    DbSnapshot, IndexDelta, ScanScope, WatchState,
 };
 use std::fs;
 
@@ -103,6 +104,93 @@ fn cli_and_gui_refactor_plans_are_identical_and_fail_closed() {
     assert_eq!(cli_plan.files_touched, 1);
     assert!(cli_plan.refused >= 1);
     assert!(!cli_plan.approved);
+
+    let _ = fs::remove_dir_all(&root);
+}
+
+#[test]
+fn cli_and_gui_symbols_surface_is_identical() {
+    let root = fixture("symbols");
+
+    // Both front-ends build their own snapshot and serialize the shared symbol +
+    // occurrence index. `db symbols --json` renders exactly this.
+    let symbols_json = |snap: &DbSnapshot| {
+        serde_json::to_string(&serde_json::json!({
+            "symbols": snap.symbols().symbols(),
+            "occurrences": snap.symbols().occurrences(),
+        }))
+        .unwrap()
+    };
+
+    let cli = DbSnapshot::open(scope(&root)).unwrap();
+    let gui = DbSnapshot::open(scope(&root)).unwrap();
+    assert_eq!(
+        symbols_json(&cli),
+        symbols_json(&gui),
+        "CLI and GUI must share the symbols contract"
+    );
+    // Sanity: META_ROOT / LIFE_OS_ROOT symbols were extracted.
+    assert!(cli
+        .symbols()
+        .symbols()
+        .iter()
+        .any(|s| s.normalized_name == "META_ROOT"));
+
+    let _ = fs::remove_dir_all(&root);
+}
+
+#[test]
+fn cli_and_gui_deploy_plans_are_identical_and_fail_closed() {
+    let root = fixture("deploy");
+    // A staged tree to promote and a target root indexed from the fixture.
+    let stage = std::env::temp_dir().join(format!(
+        "envctl-db-parity-deploy-stage-{}",
+        std::process::id()
+    ));
+    let _ = fs::remove_dir_all(&stage);
+    fs::create_dir_all(stage.join("hooks")).unwrap();
+    fs::write(stage.join("hooks/h.sh"), b"cd $LIFE_OS_ROOT\n").unwrap();
+
+    let spec = DeploySpec {
+        kind: "hooks".into(),
+        target: root.display().to_string(),
+        stage_dir: Some(stage.display().to_string()),
+    };
+
+    let cli = DbSnapshot::open(scope(&root)).unwrap();
+    let gui = DbSnapshot::open(scope(&root)).unwrap();
+    let cli_plan = cli.deploy_plan(&spec).unwrap();
+    let gui_plan = gui.deploy_plan(&spec).unwrap();
+    assert_eq!(
+        serde_json::to_string(&cli_plan).unwrap(),
+        serde_json::to_string(&gui_plan).unwrap(),
+        "CLI and GUI must share the deploy contract"
+    );
+    // Fail-closed: a plan is never pre-approved.
+    assert!(!cli_plan.approved);
+
+    let _ = fs::remove_dir_all(&root);
+    let _ = fs::remove_dir_all(&stage);
+}
+
+#[test]
+fn cli_and_gui_watch_deltas_are_identical() {
+    let root = fixture("watch");
+
+    // Each front-end takes its own initial snapshot of the same scope and ticks
+    // once with no fs change between — the shared incremental-invalidation core
+    // must observe byte-identical deltas.
+    let mut cli = WatchState::init(scope(&root)).unwrap();
+    let mut gui = WatchState::init(scope(&root)).unwrap();
+    let cli_delta: IndexDelta = cli.tick().unwrap();
+    let gui_delta: IndexDelta = gui.tick().unwrap();
+    assert_eq!(
+        serde_json::to_string(&cli_delta).unwrap(),
+        serde_json::to_string(&gui_delta).unwrap(),
+        "CLI and GUI must share the watch contract"
+    );
+    assert!(cli_delta.is_empty(), "no change -> empty delta");
+    assert!(cli.index().files().len() >= 3, "fixture indexed");
 
     let _ = fs::remove_dir_all(&root);
 }

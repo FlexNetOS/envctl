@@ -121,6 +121,12 @@ impl SymbolIndex {
                 Err(_) => continue, // binary / unreadable — skip, don't fail the build
             };
             idx.scan_file(file, &content);
+            // Structural Rust-item extraction (crate/module/item/import/clap) via
+            // `syn` — pure Rust, no C in the trust boundary (ARCH09). A file that
+            // fails to parse (partial/edition-mismatched) is skipped, never fatal.
+            if file.file_kind == "rust" {
+                idx.scan_rust_items(file, &content);
+            }
         }
         idx.symbols.sort_by(|a, b| a.symbol_id.cmp(&b.symbol_id));
         idx.occurrences
@@ -183,6 +189,217 @@ impl SymbolIndex {
                 });
             }
         }
+    }
+
+    /// syn-based structural extraction over a Rust source file (ARCH09): emits a
+    /// [`DbSymbolRow`] per top-level and nested item — crate/module/fn/struct/enum/
+    /// trait/impl/const/static/type, `use` imports, and clap `derive(Parser|
+    /// Subcommand)` types (surfaced as [`DbSymbolKind::CliSubcommand`]). Definitions
+    /// only (no occurrence rows), so the env-token refactor surface is untouched.
+    fn scan_rust_items(&mut self, file: &DbFileRow, content: &str) {
+        let ast = match syn::parse_file(content) {
+            Ok(a) => a,
+            Err(_) => return, // unparseable -> skip, never fail the whole build
+        };
+        let mut items = Vec::new();
+        collect_rust_items(&ast.items, "crate", &mut items);
+        for it in items {
+            let symbol_id = format!(
+                "sym:rust:{}:{}:{}",
+                file.file_id, it.line, it.qualified_name
+            );
+            if self.symbols.iter().any(|s| s.symbol_id == symbol_id) {
+                continue;
+            }
+            self.symbols.push(DbSymbolRow {
+                symbol_id,
+                kind: it.kind,
+                name: it.name,
+                normalized_name: it.qualified_name,
+                file_id: file.file_id.clone(),
+                absolute_path: file.absolute_path.clone(),
+                line_start: it.line,
+                line_end: it.line,
+                byte_start: 0,
+                byte_end: 0,
+                value: Some(it.item_kind.to_string()),
+                scope: Some(it.module_path),
+                owner_component: file.logical_owner.clone(),
+                target_profile: None,
+                confidence: SymbolConfidence::Parsed,
+                mutable_policy: file.mutable_policy,
+            });
+        }
+        self.symbols.sort_by(|a, b| a.symbol_id.cmp(&b.symbol_id));
+    }
+}
+
+/// One structural item extracted from a Rust file.
+struct RustItem {
+    /// Bare item name (e.g. `run_db`).
+    name: String,
+    /// Module-qualified name (e.g. `crate::db::run_db`) — the dedupe key.
+    qualified_name: String,
+    /// The enclosing module path (e.g. `crate::db`).
+    module_path: String,
+    /// The item category tag (`fn`, `struct`, `enum`, `use`, …).
+    item_kind: &'static str,
+    /// The symbol kind (`RustItem`, or `CliSubcommand` for clap derives).
+    kind: DbSymbolKind,
+    /// 1-based source line (from proc-macro2 span-locations).
+    line: usize,
+}
+
+/// Recurse `items` under `module_path`, appending a [`RustItem`] per definition.
+fn collect_rust_items(items: &[syn::Item], module_path: &str, out: &mut Vec<RustItem>) {
+    use syn::spanned::Spanned;
+    let line_of = |span: proc_macro2::Span| span.start().line;
+    let qualify = |name: &str| format!("{module_path}::{name}");
+
+    for item in items {
+        match item {
+            syn::Item::Fn(f) => out.push(RustItem {
+                name: f.sig.ident.to_string(),
+                qualified_name: qualify(&f.sig.ident.to_string()),
+                module_path: module_path.to_string(),
+                item_kind: "fn",
+                kind: DbSymbolKind::RustItem,
+                line: line_of(f.sig.ident.span()),
+            }),
+            syn::Item::Struct(s) => {
+                let clap = derive_clap_kind(&s.attrs);
+                out.push(RustItem {
+                    name: s.ident.to_string(),
+                    qualified_name: qualify(&s.ident.to_string()),
+                    module_path: module_path.to_string(),
+                    item_kind: if clap.is_some() {
+                        "clap-struct"
+                    } else {
+                        "struct"
+                    },
+                    kind: clap.unwrap_or(DbSymbolKind::RustItem),
+                    line: line_of(s.ident.span()),
+                });
+            }
+            syn::Item::Enum(e) => {
+                let clap = derive_clap_kind(&e.attrs);
+                out.push(RustItem {
+                    name: e.ident.to_string(),
+                    qualified_name: qualify(&e.ident.to_string()),
+                    module_path: module_path.to_string(),
+                    item_kind: if clap.is_some() { "clap-enum" } else { "enum" },
+                    kind: clap.unwrap_or(DbSymbolKind::RustItem),
+                    line: line_of(e.ident.span()),
+                });
+            }
+            syn::Item::Trait(t) => out.push(RustItem {
+                name: t.ident.to_string(),
+                qualified_name: qualify(&t.ident.to_string()),
+                module_path: module_path.to_string(),
+                item_kind: "trait",
+                kind: DbSymbolKind::RustItem,
+                line: line_of(t.ident.span()),
+            }),
+            syn::Item::Const(c) => out.push(RustItem {
+                name: c.ident.to_string(),
+                qualified_name: qualify(&c.ident.to_string()),
+                module_path: module_path.to_string(),
+                item_kind: "const",
+                kind: DbSymbolKind::RustItem,
+                line: line_of(c.ident.span()),
+            }),
+            syn::Item::Static(s) => out.push(RustItem {
+                name: s.ident.to_string(),
+                qualified_name: qualify(&s.ident.to_string()),
+                module_path: module_path.to_string(),
+                item_kind: "static",
+                kind: DbSymbolKind::RustItem,
+                line: line_of(s.ident.span()),
+            }),
+            syn::Item::Type(t) => out.push(RustItem {
+                name: t.ident.to_string(),
+                qualified_name: qualify(&t.ident.to_string()),
+                module_path: module_path.to_string(),
+                item_kind: "type",
+                kind: DbSymbolKind::RustItem,
+                line: line_of(t.ident.span()),
+            }),
+            syn::Item::Use(u) => {
+                for path in flatten_use_tree(&u.tree, String::new()) {
+                    out.push(RustItem {
+                        name: path.rsplit("::").next().unwrap_or(&path).to_string(),
+                        qualified_name: qualify(&format!("use {path}")),
+                        module_path: module_path.to_string(),
+                        item_kind: "use",
+                        kind: DbSymbolKind::RustItem,
+                        line: line_of(u.span()),
+                    });
+                }
+            }
+            syn::Item::Mod(m) => {
+                let child = qualify(&m.ident.to_string());
+                out.push(RustItem {
+                    name: m.ident.to_string(),
+                    qualified_name: child.clone(),
+                    module_path: module_path.to_string(),
+                    item_kind: "mod",
+                    kind: DbSymbolKind::RustItem,
+                    line: line_of(m.ident.span()),
+                });
+                if let Some((_, inner)) = &m.content {
+                    collect_rust_items(inner, &child, out);
+                }
+            }
+            _ => {}
+        }
+    }
+}
+
+/// If `attrs` carry `#[derive(Parser)]` / `#[derive(Subcommand)]`, return the
+/// matching clap symbol kind. `Subcommand` -> [`DbSymbolKind::CliSubcommand`];
+/// `Parser`/`Args` -> also `CliSubcommand` (both are the CLI-surface contract).
+fn derive_clap_kind(attrs: &[syn::Attribute]) -> Option<DbSymbolKind> {
+    for attr in attrs {
+        if !attr.path().is_ident("derive") {
+            continue;
+        }
+        let mut found = false;
+        // parse_nested_meta walks the derive list: `#[derive(A, B, C)]`.
+        let _ = attr.parse_nested_meta(|meta| {
+            if let Some(id) = meta.path.get_ident() {
+                let n = id.to_string();
+                if n == "Parser" || n == "Subcommand" || n == "Args" {
+                    found = true;
+                }
+            }
+            Ok(())
+        });
+        if found {
+            return Some(DbSymbolKind::CliSubcommand);
+        }
+    }
+    None
+}
+
+/// Flatten a `use` tree into fully-qualified path strings (one per leaf/glob).
+fn flatten_use_tree(tree: &syn::UseTree, prefix: String) -> Vec<String> {
+    let join = |p: &str, seg: &str| {
+        if p.is_empty() {
+            seg.to_string()
+        } else {
+            format!("{p}::{seg}")
+        }
+    };
+    match tree {
+        syn::UseTree::Path(p) => flatten_use_tree(&p.tree, join(&prefix, &p.ident.to_string())),
+        syn::UseTree::Name(n) => vec![join(&prefix, &n.ident.to_string())],
+        syn::UseTree::Rename(r) => vec![join(&prefix, &r.ident.to_string())],
+        syn::UseTree::Glob(_) => vec![join(&prefix, "*")],
+        syn::UseTree::Group(g) => g
+            .items
+            .iter()
+            .flat_map(|t| flatten_use_tree(t, prefix.clone()))
+            .collect(),
     }
 }
 
@@ -296,6 +513,102 @@ fn replace_policy_for(policy: MutablePolicy) -> ReplacePolicy {
     }
 }
 
+/// Per-file slice of a symbol's blast radius.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ImpactFile {
+    pub file_id: String,
+    pub absolute_path: String,
+    pub repo_relative_path: Option<String>,
+    pub mutable_policy: MutablePolicy,
+    pub occurrence_count: usize,
+    /// Occurrences that are safe to mechanically rewrite (replace candidates).
+    pub safe: usize,
+    /// Occurrences refused (protected/.env/manual-review policy).
+    pub refused: usize,
+}
+
+/// The read-only impact map for one symbol: every file + occurrence that
+/// references it, split by rewrite safety. This is what an agent consults before
+/// proposing a refactor (`envctl db impact --symbol <name>`), REQ CMD05.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ImpactReport {
+    /// The symbol as requested.
+    pub symbol: String,
+    /// Its normalized (alias-collapsed) form — the key occurrences match on.
+    pub normalized_symbol: String,
+    pub files: Vec<ImpactFile>,
+    pub files_affected: usize,
+    pub occurrences_total: usize,
+    pub safe_occurrences: usize,
+    pub refused_occurrences: usize,
+    /// Symbol rows whose normalized name matches (the "definitions" side).
+    pub definitions: Vec<DbSymbolRow>,
+}
+
+/// Map the blast radius of `symbol` across the indexed scope. Normalization-aware
+/// (the `LIFEOS_ROOT` alias resolves to the same key as `LIFE_OS_ROOT`), and
+/// deterministic (files sorted by absolute path). Never mutates anything.
+pub fn impact(symbol: &str, files: &FileIndex, symbols: &SymbolIndex) -> ImpactReport {
+    let normalized = normalize_root_var(symbol);
+
+    // Group matching occurrences by file.
+    use std::collections::BTreeMap;
+    let mut per_file: BTreeMap<&str, (usize, usize)> = BTreeMap::new(); // file_id -> (safe, refused)
+    let mut occurrences_total = 0usize;
+    for occ in symbols
+        .occurrences()
+        .iter()
+        .filter(|o| o.normalized_text == normalized)
+    {
+        occurrences_total += 1;
+        let e = per_file.entry(occ.file_id.as_str()).or_insert((0, 0));
+        if occ.replace_candidate {
+            e.0 += 1;
+        } else {
+            e.1 += 1;
+        }
+    }
+
+    let mut impact_files = Vec::new();
+    let (mut safe_occurrences, mut refused_occurrences) = (0usize, 0usize);
+    for (file_id, (safe, refused)) in &per_file {
+        safe_occurrences += safe;
+        refused_occurrences += refused;
+        let file = files.files().iter().find(|f| f.file_id == *file_id);
+        impact_files.push(ImpactFile {
+            file_id: (*file_id).to_string(),
+            absolute_path: file.map(|f| f.absolute_path.clone()).unwrap_or_default(),
+            repo_relative_path: file.and_then(|f| f.repo_relative_path.clone()),
+            mutable_policy: file
+                .map(|f| f.mutable_policy)
+                .unwrap_or(MutablePolicy::ReadOnly),
+            occurrence_count: safe + refused,
+            safe: *safe,
+            refused: *refused,
+        });
+    }
+    impact_files.sort_by(|a, b| a.absolute_path.cmp(&b.absolute_path));
+
+    let mut definitions: Vec<DbSymbolRow> = symbols
+        .symbols()
+        .iter()
+        .filter(|s| s.normalized_name == normalized)
+        .cloned()
+        .collect();
+    definitions.sort_by(|a, b| a.symbol_id.cmp(&b.symbol_id));
+
+    ImpactReport {
+        symbol: symbol.to_string(),
+        normalized_symbol: normalized,
+        files_affected: impact_files.len(),
+        files: impact_files,
+        occurrences_total,
+        safe_occurrences,
+        refused_occurrences,
+        definitions,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -357,6 +670,150 @@ mod tests {
             .expect("env occurrence");
         assert_eq!(env_occ.replace_policy, ReplacePolicy::Refuse);
         assert!(!env_occ.replace_candidate);
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn impact_maps_blast_radius_split_by_rewrite_safety() {
+        let root =
+            std::env::temp_dir().join(format!("envctl-db-symbols-impact-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        // Safe (OwnedApply) shell wrapper with two META_ROOT refs.
+        fs::write(
+            root.join("w.sh"),
+            b"cd $META_ROOT/bin\nexport X=${META_ROOT}/x\n",
+        )
+        .unwrap();
+        // Protected .env with a META_ROOT ref -> refused.
+        fs::write(root.join(".env"), b"SECRET=$META_ROOT/s\n").unwrap();
+        // An unrelated root, to prove filtering.
+        fs::write(root.join("other.sh"), b"cd $OTHER_ROOT\n").unwrap();
+
+        let files = FileIndex::scan(&ScanScope {
+            root: root.display().to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+        let symbols = SymbolIndex::build(&files).unwrap();
+
+        // Alias-normalized lookup: LIFEOS_ROOT would map to LIFE_OS_ROOT; here we
+        // ask for META_ROOT directly.
+        let report = impact("META_ROOT", &files, &symbols);
+        assert_eq!(report.normalized_symbol, "META_ROOT");
+        assert_eq!(report.files_affected, 2, "w.sh + .env, not other.sh");
+        assert_eq!(report.occurrences_total, 3);
+        assert_eq!(report.safe_occurrences, 2, "the two .sh occurrences");
+        assert_eq!(report.refused_occurrences, 1, "the .env occurrence");
+
+        let env_file = report
+            .files
+            .iter()
+            .find(|f| f.absolute_path.ends_with(".env"))
+            .unwrap();
+        assert_eq!(env_file.refused, 1);
+        assert_eq!(env_file.safe, 0);
+        assert_eq!(env_file.mutable_policy, MutablePolicy::Never);
+
+        // An unknown symbol has an empty, well-formed report (no panic).
+        let empty = impact("NOPE_ROOT", &files, &symbols);
+        assert_eq!(empty.files_affected, 0);
+        assert_eq!(empty.occurrences_total, 0);
+
+        let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn syn_pass_extracts_rust_items_imports_and_clap_derives() {
+        let root =
+            std::env::temp_dir().join(format!("envctl-db-symbols-syn-{}", std::process::id()));
+        let _ = fs::remove_dir_all(&root);
+        fs::create_dir_all(&root).unwrap();
+        fs::write(
+            root.join("main.rs"),
+            br#"use std::path::PathBuf;
+use clap::{Parser, Subcommand};
+
+pub const R: &str = "x";
+
+#[derive(Parser)]
+struct Cli {
+    name: String,
+}
+
+#[derive(Subcommand)]
+enum Cmd {
+    Roots,
+    Query,
+}
+
+fn run() -> u32 { 0 }
+
+mod inner {
+    pub fn helper() {}
+}
+"#,
+        )
+        .unwrap();
+
+        let files = FileIndex::scan(&ScanScope {
+            root: root.display().to_string(),
+            ..Default::default()
+        })
+        .unwrap();
+        let symbols = SymbolIndex::build(&files).unwrap();
+
+        let rust: Vec<_> = symbols
+            .symbols()
+            .iter()
+            .filter(|s| s.file_id.contains("file:") && s.value.is_some())
+            .collect();
+
+        let has = |name: &str, item_kind: &str| {
+            rust.iter()
+                .any(|s| s.name == name && s.value.as_deref() == Some(item_kind))
+        };
+        assert!(has("run", "fn"), "fn extracted");
+        assert!(has("R", "const"), "const extracted");
+        assert!(has("inner", "mod"), "module extracted");
+        assert!(has("helper", "fn"), "nested fn extracted");
+
+        // clap derives are surfaced as CliSubcommand.
+        let cli = symbols
+            .symbols()
+            .iter()
+            .find(|s| s.name == "Cli")
+            .expect("Cli struct");
+        assert_eq!(
+            cli.kind,
+            DbSymbolKind::CliSubcommand,
+            "derive(Parser) -> CliSubcommand"
+        );
+        let cmd = symbols
+            .symbols()
+            .iter()
+            .find(|s| s.name == "Cmd")
+            .expect("Cmd enum");
+        assert_eq!(
+            cmd.kind,
+            DbSymbolKind::CliSubcommand,
+            "derive(Subcommand) -> CliSubcommand"
+        );
+
+        // The nested fn carries its module path.
+        let helper = symbols
+            .symbols()
+            .iter()
+            .find(|s| s.name == "helper")
+            .unwrap();
+        assert_eq!(helper.scope.as_deref(), Some("crate::inner"));
+
+        // `use` imports are captured.
+        assert!(
+            rust.iter().any(|s| s.value.as_deref() == Some("use")),
+            "imports extracted"
+        );
 
         let _ = fs::remove_dir_all(&root);
     }
