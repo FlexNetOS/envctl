@@ -1,50 +1,69 @@
-# 01 — Architect plan: single-profile Yazelix/envctl ownership convergence
+# 01 — Architect plan: engine-owned doctor and manifest-lock proof
 
-Date: 2026-07-13
-Verdict: GO
-Architect: `profile_ownership_architect`
+VERDICT: GO
 
-## Outcome
+The current top-level `envctl doctor` is a CLI-local implementation that writes and removes
+probe files, resolves a retired `~/Desktop/meta` fallback, reports stale roots, and returns
+success even when the report is unhealthy. The repair is engine-first and additive: preserve
+the separate agent-env `envctl agent doctor` surface while replacing only the top-level doctor.
 
-Repair the one Yazelix-owned Nix profile so it is the complete runtime/toolchain owner, and align envctl diagnostics with that ownership model. This is additive and fail-closed: no user-bin wrappers, second profile, rustup mutation, compiler downgrade, generated-runtime edits, or bypasses.
+## Target repo and routing
 
-## Verified failures
+One repo (`envctl`) with a linear dependency chain: engine types/behavior → CLI rendering and
+exit semantics → GUI screen → non-mutating CI gate. Route sequentially through one implementer.
 
-- Full envctl musl compilation fails in `ring`/`cc-rs` because only `x86_64-unknown-linux-musl-*` exists; cc-rs requires the conventional `x86_64-linux-musl-*` family.
-- The sole profile lacks `cargo-audit` although locked nixpkgs supplies the required 0.22.1.
-- `yzx doctor --json` rejects package-owned `yzx-desktop-launch` and `yzx-agent-workspace-launch` helpers and reports unhealthy.
-- envctl reports 32 HIGH violations for exact executables exposed by the active Yazelix profile.
-- `ci/setup-meta-deps.sh` assumes `.git` is a directory and therefore mishandles linked worktrees.
-- CI's nominal MSRV lane accepts newer compilers and does not prove Rust 1.89 compatibility.
-- envctl carries a duplicate Nu RTK wrapper instead of sourcing the profile-owned Yazelix Nu module.
+## Engine contract
 
-## Units
+- Add `crates/engine/src/doctor.rs` with typed, serializable `DoctorSpec`, `Status`, `Summary`,
+  `PathState`, `PathCheck`, `ManifestLockStatus`, `ManifestLockReport`, and `DoctorReport`.
+- `Engine::doctor(&DoctorSpec) -> Result<DoctorReport>` owns all health logic. It stays sync,
+  pure-Rust, and non-printing.
+- Root resolution is fail-closed and workspace-aware. Priority is explicit spec root, then
+  `META_ROOT`, then upward `.meta.yaml` discovery, then managed-worktree normalization to the
+  owning meta workspace. It must never fall back to `~/Desktop/meta`.
+- Path checks use metadata/access observations only. No temporary probe file, directory, or
+  cleanup mutation is allowed. EFI checks read the existing efivar filesystem directly.
+- The report includes focused boundary/driver checks and a typed manifest-lock report.
+- `Engine::manifest_lock_check` compares the declarative manifest against `envctl.lock` without
+  mutation and returns `ManifestLockStatus` plus details.
+- Add `Event::Doctored { report }` emitted exactly once per `Engine::doctor` call and
+  `EngineCommand::Doctor { spec }` routed through the standard engine dispatcher.
 
-1. Add exact active-profile target classification in `crates/engine/src/detect.rs`; accept only the active profile's lexical paths or store paths whose canonical target exactly equals its exposed command. Continue rejecting user-bin shadows, second profiles, stale store targets, and unverifiable paths.
-2. Add RED/GREEN engine tests for profile/store acceptance and every refusal path; update model/drift wording without changing serialized API.
-3. Make `ci/setup-meta-deps.sh` Git-aware for linked worktrees and validate/create the minimal sibling workspace at the locked 0.2.25 version. Add a hermetic regression and wire it into `meta-substrates.sh`.
-4. Delete envctl's duplicate `home/.config/nushell/rtk-wrappers.nu`; source `~/.nix-profile/nushell/config/rtk_wrappers.nu` from the managed Nu config exactly once and add clean-login/managed-Nu behavior tests.
-5. Add `pkgs.cargo-audit` to the Yazelix foundation and both command export inventories.
-6. Wrap the existing musl package additively with `x86_64-linux-musl-{gcc,g++,ar,ranlib}` aliases while preserving `x86_64-unknown-linux-musl-*`.
-7. Extend package release contracts to execute cargo-audit, compile C/C++, exercise ar/ranlib, and perform a real Cargo-level static Rust build.
-8. Strictly validate the two package-owned desktop helpers and governed desktop entries in Yazelix ownership diagnostics.
-9. Add an exact Nix-pinned Rust 1.89 compatibility command/lane while retaining latest nightly as the default developer compiler.
-10. Reconcile active MSRV/toolchain/ownership instructions and regenerate agent-env projections through `envctl agent sync --apply`.
+## Front ends
 
-## Guards
+- CLI top-level `doctor` only parses input, calls `Engine::doctor`, and renders the returned
+  report. Valid JSON is written before an unhealthy report exits 1; only `Status::Error` makes
+  the command unhealthy. Human output is a pure projection of the same report.
+- Existing `envctl agent doctor` remains separate and unchanged.
+- GUI gains a top-level Doctor screen that calls the same `Engine::doctor` method and consumes
+  the same `DoctorReport`; no replicated health logic is permitted.
 
-- Build/check the Yazelix package before changing the active profile.
-- Upgrade only the existing `lifeos_foundation_yzx` profile element; require exactly one element before and after.
-- Never rewrite an unrelated parent Cargo workspace or replace an already valid sibling checkout.
-- No `Cargo.lock` or `flake.lock` dependency downgrade is expected.
-- No public Engine/CLI/GUI API delta is needed for this cycle.
+## Manifest-lock gate
 
-## Acceptance
+- Add `ci/gates/manifest-lock.sh`. It hashes tracked inputs before and after and invokes
+  `cargo run --locked -p envctl -- --color never lock --check`. It must fail closed on command
+  failure or any mutation and must not update the lock.
+- Wire the gate into CI beside the existing invariant gates.
 
-- `envctl auto-detect --json` has zero boundary violations for exact active-profile targets while fixtures for user-bin/stale-store/second-profile paths remain HIGH.
-- `cargo-audit` and both musl naming families resolve from the one profile.
-- `cargo build --release --target x86_64-unknown-linux-musl -p envctl --locked` succeeds with no compiler environment overrides; the binary is static.
-- Exact Rust 1.89 checks the workspace while nightly remains the default developer lane.
-- `yzx doctor --json` reports healthy.
-- `envctl agent lock --check`, all workspace tests, clippy, fmt, every CI gate, no-c, and cargo audit pass.
-- The active profile element count remains exactly one.
+## Tests
+
+- Engine unit tests cover every root-resolution priority, managed-worktree normalization,
+  missing/ambiguous-root refusal, status/summary aggregation, exactly-one event emission,
+  manifest-lock typed states, and a before/after filesystem snapshot proving doctor does not
+  mutate.
+- CLI tests cover healthy exit 0, unhealthy exit 1 after parseable JSON, and no retired
+  `Desktop/meta` fallback.
+- GUI tests prove the Doctor screen consumes the engine-owned report and uses the same method.
+- The manifest-lock gate gets a hermetic mutation check.
+
+## Runtime surface
+
+runtime_verifiable: yes. Build the real `envctl`, run `doctor --json` against a controlled
+healthy and unhealthy root, parse the JSON, verify the respective exit codes, and prove no
+filesystem entries changed. Drive `manifest-lock.sh` and the GUI Doctor screen where the native
+GUI test harness permits.
+
+## Invariants
+
+No new dependency, no C trust-boundary change, no generated-home/profile mutation, no probe
+files, no retired fallback, and no downgrade or bypass of the existing agent doctor.

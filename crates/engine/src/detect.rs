@@ -340,6 +340,21 @@ fn meta_boundary_report() -> MetaBoundaryReport {
     meta_boundary_report_for(&meta_root, &local_bin, &cargo_bin, true)
 }
 
+/// Build the focused install-boundary report for an already-resolved meta root.
+///
+/// `doctor` resolves its root through its stricter workspace-aware policy and
+/// calls this helper so the boundary scan cannot silently fall back to a stale
+/// historical checkout. The scan is metadata/PATH-only and never writes.
+pub(crate) fn meta_boundary_report_for_root(meta_root: &Path) -> MetaBoundaryReport {
+    let layout = MetaLayout::from_meta_root(meta_root);
+    meta_boundary_report_for(
+        meta_root,
+        &layout.bin(),
+        &layout.legacy_toolchains().join("cargo/bin"),
+        true,
+    )
+}
+
 fn resolve_meta_root() -> Option<PathBuf> {
     if let Ok(root) = std::env::var("META_ROOT") {
         if !root.trim().is_empty() {

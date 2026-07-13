@@ -1,91 +1,64 @@
-# 02 — Implementer log: envctl profile ownership convergence
+STATUS: GREEN
 
-Date: 2026-07-13
-Implementer: `envctl_profile_implementer`
-Verdict: GREEN for assigned focused scope
+# 02 — Implementer log: engine-owned doctor and manifest-lock proof
 
-## Engine boundary classifier
+## Delivered
 
-- Added an exact active-profile ownership proof for meta tool PATH entries.
-- Accepted frontdoors are limited to lexical
-  `~/.nix-profile/{bin,toolbin}/<tool>` and the command path in each current
-  profile directory's canonical Nix-store exposure.
-- The ultimate binary target alone is deliberately insufficient. A TDD
-  regression gives the current and an old foundation generation the same raw
-  package target and proves that only the current generation passes.
-- User-bin shadows, second-profile paths, old foundation generations, raw
-  package paths, stale store paths, missing exposures, and non-store targets
-  remain fail-closed.
-- Updated boundary model/drift wording without changing the serialized API.
+- Added the typed, non-printing engine doctor in `crates/engine/src/doctor.rs`:
+  `DoctorSpec`, `Status`, `Summary`, `PathState`, `PathCheck`, `ToolCheck`,
+  `ManifestLockStatus`, `ManifestLockReport`, and `DoctorReport`.
+- Added `Engine::doctor` and `Engine::manifest_lock_check`, `Event::Doctored`, and
+  `EngineCommand::Doctor`. Each doctor run emits exactly one typed event.
+- Root priority is explicit `--root` → `META_ROOT` → upward `.meta.yaml` → managed-worktree
+  owner normalization. Missing and ambiguous roots return a typed error report. There is no
+  `~/Desktop/meta` fallback.
+- Replaced write/delete probe files with metadata plus `access(2)` checks. Missing canonical
+  directories are classified `Creatable` only when the nearest existing directory proves write
+  access. EFI Secure Boot and NVIDIA driver state are read directly from existing kernel files.
+- Replaced the CLI-local doctor implementation with pure rendering of `DoctorReport`. JSON is
+  emitted before exit 1, and only `Status::Error` is unhealthy. The separate agent doctor was
+  not changed.
+- Added a top-level GUI Doctor screen driven by the same `EngineCommand::Doctor` and
+  `DoctorReport`; it contains no duplicate probe/decision logic.
+- Added `ci/gates/manifest-lock.sh`, wired it into CI, and added a hermetic mutation-detection
+  regression test. The gate hashes tracked manifest inputs before/after and runs exactly
+  `cargo run --locked -p envctl -- --color never lock --check`.
+- Reconciled `manifest/envctl.lock` after source-history review: only the intended
+  `codex-global-baseline` hash update (#481) and `postgres-ruvector` row (#470) changed.
+- Archived the unrelated prior Blueprint Feature Forge cycle under `.handoff/loop/_done/`.
 
-RED evidence:
+## TDD evidence
 
-```text
-active_profile_ownership_accepts_only_lexical_and_current_store_frontdoors
-FAILED: old-foundation/toolbin/meta was accepted when only ultimate-target
-equality was checked
-```
+- `cargo test -p envctl-engine doctor --locked`: 14 passed.
+- `cargo test -p envctl --test cli_contract doctor --locked`: 4 passed.
+- `cargo test -p envctl-gui top_level_doctor --locked`: 2 passed.
+- `cargo test -p envctl-engine -p envctl -p envctl-gui --locked`: all package unit,
+  integration, parity, and doc tests passed (engine 161, CLI contract 15, GUI 27, plus the
+  remaining package suites).
+- `cargo clippy -p envctl-engine -p envctl -p envctl-gui --all-targets --locked -- -D warnings`:
+  passed.
+- `cargo fmt --all -- --check`: passed.
+- `bash ci/gates/{no-c,shape,enable,manifest-lock,actionlint}.sh`: passed.
+- `bash scripts/tests/test-manifest-lock-gate.sh`: passed, including the intentionally mutating
+  fake-cargo refusal case.
 
-GREEN evidence:
+## Runtime observation
 
-```text
-cargo test -p envctl-engine active_profile_ownership --locked
-3 passed; 0 failed
+The real built surface was driven with:
 
-cargo test -p envctl-engine detect::tests --locked
-12 passed; 0 failed
+`envctl --json --color never doctor --root /home/flexnetos/meta`
 
-cargo clippy -p envctl-engine --lib --locked -- -D warnings
-PASS
-```
+It emitted valid JSON and then exited 1 with 57 OK / 2 warnings / 1 error. The lock report was
+clean. The sole error is the independently confirmed stale boundary policy that currently marks
+the one-profile Yazelix Nix-store frontdoors (`meta`, `icm`, `grit`, `weave`, etc.) as foreign.
+That is an integration dependency on the parallel profile-ownership repair, not a doctor defect:
+the new doctor correctly fails closed and names the exact violations. After that detector policy
+lands, this same runtime check must be rerun and should exit 0 with warnings.
 
-## Shared substrate worktree setup
+## Invariants
 
-- `ci/setup-meta-deps.sh` now recognizes a valid linked worktree whose `.git`
-  is a file, preserves its checkout/HEAD, and refuses to replace an occupied
-  non-repository sibling path.
-- The parent workspace is generated only when absent. An existing parent must
-  contain both substrate members and match the equal `loop_lib` /
-  `meta_plugin_protocol` versions locked by envctl; incompatible parents are
-  refused without modification.
-- Added `scripts/tests/test-setup-meta-deps.sh` and wired it into the
-  `meta-substrates` gate.
-
-RED evidence: the previous implementation treated the linked-worktree `.git`
-file as absent and entered its destructive clone path.
-
-GREEN evidence:
-
-```text
-test-setup-meta-deps: PASS
-META-SUBSTRATES GATE PASS
-```
-
-## Nushell / RTK ownership
-
-- Ported the canonical envctl cleanup exactly: removed the duplicate
-  `home/.config/nushell/rtk-wrappers.nu`, made standalone login Nu import the
-  profile-owned `rtk_wrappers.nu` once, removed the duplicate Yazelix user-hook
-  import, and removed the retired portability-link footprint.
-- Added a hermetic behavioral test that proves login Nu routes Cargo through
-  the profile module, native `^bash` works, and a Yazelix-managed config plus
-  the editable user hook still routes exactly once.
-- Wired the test into `yazelix-codex-runtime.sh`.
-
-RED evidence: the new ownership test initially failed on the duplicate envctl
-module.
-
-GREEN evidence:
-
-```text
-test-nushell-rtk-ownership: PASS
-PASS: Yazelix/Codex ownership source gate
-ok - active Claude harness owners use the Meta root
-```
-
-## Verification discipline
-
-All implementer shell commands were proxied through the explicit current
-profile RTK path with the current profile `toolbin` and `bin` prepended to
-`PATH`. Full workspace builds/tests were intentionally left to the guardian so
-this focused cycle did not contend with the parallel Yazelix/package work.
+- No new crate dependency and no C trust-boundary change; only the already-resolved `rustix`
+  dependency gained its pure-Rust `fs` API feature for `access(2)`.
+- No generated home state, active Nix profile, main profile worktree, or user/global wrapper was
+  modified.
+- No commit or push was made.

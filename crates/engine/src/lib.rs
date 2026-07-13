@@ -21,6 +21,7 @@ pub mod db_watch; // GH#414: incremental index invalidation              [REQ-05
 pub mod db_widget; // GH#414: compact agent-UI surfaces (roots/refs/hooks) [ARCH11]
 pub mod detect; // EnvReport assembly: PCI floor / proc-backed driver state / nvidia-smi / sysinfo / which probes
 pub mod detect_build; // Phase 4: build-system detector table -> BuildPlan
+pub mod doctor; // typed, strictly read-only whole-environment diagnostics shared by CLI + GUI
 pub mod drift; // pure diff(EnvReport, Registry) -> Vec<DriftItem>
 pub mod error; // EngineError, RunContext, run_phase
 pub mod event; // Event, EventSink, Stream, Telemetry, GpuSample
@@ -89,6 +90,10 @@ pub use db_watch::{poll_persisted as db_watch_poll, IndexDelta, WatchState};
 pub use db_widget::{
     hooks_widget, refs_widget, roots_widget, HookEntry, HooksWidget, RefGroup, RefLocation,
     RefsWidget, RootRefCount, RootsWidget,
+};
+pub use doctor::{
+    DoctorReport, DoctorSpec, ManifestLockReport, ManifestLockStatus, PathCheck, PathState, Status,
+    Summary, ToolCheck,
 };
 pub use drift::DriftSummary;
 pub use error::{EngineError, RunContext};
@@ -322,6 +327,19 @@ impl Engine {
     /// auto-detect` and the GUI status grid. Emits a final `Event::Report`.
     pub fn detect(&self, sink: &EventSink) -> anyhow::Result<EnvReport> {
         detect::run(&self.inner.registry, self.inner.runner.as_ref(), sink)
+    }
+
+    /// Strictly read-only whole-environment diagnostics. The engine owns root
+    /// resolution and every health decision; front-ends only render the typed
+    /// report. Exactly one `Event::Doctored` is emitted per successful call.
+    pub fn doctor(&self, spec: &DoctorSpec, sink: &EventSink) -> anyhow::Result<DoctorReport> {
+        doctor::run(self, spec, sink)
+    }
+
+    /// Read-only manifest/lock comparison shared by `lock --check`, doctor,
+    /// and the dedicated CI gate. This never rewrites `envctl.lock`.
+    pub fn manifest_lock_check(&self) -> ManifestLockReport {
+        doctor::manifest_lock_check(&self.inner.registry, &self.inner.manifest_dir)
     }
 
     /// add-repo: synthesize a build-from-source Component, persist a drop-in
