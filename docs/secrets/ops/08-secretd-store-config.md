@@ -103,12 +103,12 @@ OI-1), and there is no hyper-0.14 `hyper-rustls` on rustls 0.23. Therefore:
 
 ## 5. Verification
 
-The libSQL path has real-server coverage (both `#[ignore]`d — they need a running loopback sqld and a
-fresh DB):
+The libSQL path has seven real-server Store integration tests plus an engine-over-libSQL durability
+test. They are `#[ignore]`d by default because they need a running loopback sqld and a fresh DB:
 
 ```sh
 rm -rf /tmp/sqld-data && sqld --http-listen-addr 127.0.0.1:8080 -d /tmp/sqld-data &
-# the Store impl against a real sqld (9 offline + 5 integration):
+# the Store impl against a real sqld (offline unit coverage + 7 integration tests):
 LIBSQL_TEST_URL=http://127.0.0.1:8080 LIBSQL_TEST_AUTH= \
   cargo test -p envctl-secrets-store-libsql --features remote -- --ignored --test-threads=1
 # the engine-over-libSQL durability e2e (init/unlock/put/get + persistence across engine instances):

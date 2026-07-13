@@ -43,7 +43,7 @@ which = "7.0.1"
 # --- CONFLICT 1 (HF-17 + OI-6): rustix feature delta. envctl=["process"],
 # --- env-ctl=["process","net","time"]. UNION wins (`time` = CLOCK_BOOTTIME for the
 # --- OI-6 monotonic clock-rollback fence on the 24h relay window). All pure-Rust on Linux. ---
-rustix = { version = "0.38", features = ["process", "net", "time"] }
+rustix = { version = "0.38", features = ["process", "net", "time", "fs"] }
 # Pure-Rust FFI bindings (extern "C" decls only — compiles no C, links no new C lib) used solely by
 # secretd for the in-process `mlockall` syscall (FS-S4). Already resolved transitively in secretd's
 # tree (tokio -> signal-hook-registry -> errno -> libc), so this pin adds ZERO new lockfile crates.

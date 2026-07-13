@@ -1,4 +1,3 @@
-@/home/flexnetos/.codex/RTK.md
 @/home/flexnetos/.codex/AGENTS.rtk.md
 
 ## FlexNetOS Runtime Frontdoor
@@ -75,6 +74,22 @@ duplicate plugin/catalog surfaces. In particular, do not re-add or infer active
 use of `superhuman`, `digitalocean`, `openai-curated` marketplace fanout, or
 duplicate command/skill inventories merely because they remain present in a
 marketplace source tree or cache.
+
+## Token And Delegation Discipline
+
+Keep agent delegation bounded and context-minimal. A subagent with a
+self-contained task uses `fork_turns="none"`; if recent conversation is truly
+required, pass only the smallest numbered turn window. Do not use the implicit
+or explicit full-conversation fork for routine research, implementation, or
+review. Full-context fan-out repeats the entire cached prompt for every child
+turn and is reserved for a demonstrated dependency that cannot be expressed in
+the task message.
+
+Do not poll agents in a tight loop. Continue independent local work, then use a
+single bounded wait. Keep raw test logs out of conversation context: retain them
+on disk and return the verdict plus the smallest diagnostic excerpt. RTK output
+compression complements these controls; it cannot reduce duplicated system,
+instruction, skill, or inherited-agent context.
 
 ## Operating Rules Source
 

@@ -96,7 +96,8 @@ trust boundary"** (no SQLite/OpenSSL/aws-lc). Under that tenet libSQL `remote` i
   `Store` trait. Engine default store stays `inmem-store`.
 - `ci/gates/no-c.sh` Gate 3a (auto-armed) PROVES no `libsql-ffi`/`libsql-sys`/`sqlite3-sys` is
   linked; Gate 4 PROVES exactly one ring-only `rustls` and zero `aws-lc-*`/`openssl-sys`.
-- The whole workspace builds + tests green (106 passed; the 5 sqld integration tests `#[ignore]`d).
+- The whole workspace builds and its offline tests pass; the 7 real-sqld Store integration tests are
+  `#[ignore]`d by default and run explicitly against a throwaway loopback server.
 
 ### Residuals (honest)
 

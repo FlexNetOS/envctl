@@ -49,10 +49,11 @@ use envctl_engine::{
     AgentSectionSel, AgentSyncSpec, AiAgent, BuildStrategy, BuildSystem, CatalogAnalyzeReport,
     CatalogDiffReport, CatalogFacetCount, CatalogImportReport, CatalogLockReport,
     CatalogRenderReport, CatalogScanSpec, CatalogSnapshot, CatalogSyncReport, CatalogTableName,
-    CatalogTableSummaryRow, DashboardSpec, DriftSummary, Engine, EnvReport, Event, EventSink,
-    HubRegistryReport, HubRegistryStatus, MigrationAction, MigrationReport, MigrationRisk,
-    MigrationScope, MigrationSpec, MigrationStatus, MigrationVerb, OpStatus, Phase, Refactor,
-    RefactorGoal, Registry, RenameRule, ResetGates, RunPlan, SelfUninstallSpec, Severity,
+    CatalogTableSummaryRow, DashboardSpec, DoctorReport, DoctorSpec, DriftSummary, Engine,
+    EnvReport, Event, EventSink, HubRegistryReport, HubRegistryStatus, ManifestLockStatus,
+    MigrationAction, MigrationReport, MigrationRisk, MigrationScope, MigrationSpec,
+    MigrationStatus, MigrationVerb, OpStatus, Phase, Refactor, RefactorGoal, Registry, RenameRule,
+    ResetGates, RunPlan, SelfUninstallSpec, Severity, Status,
 };
 
 #[derive(Parser)]
@@ -302,9 +303,18 @@ enum Cmd {
         after_help = envctl_examples!(
             "envctl doctor",
             "envctl doctor --json",
+            "envctl doctor --root /srv/meta --manifest-dir /srv/meta/src/envctl/manifest",
         )
     )]
-    Doctor,
+    Doctor {
+        /// Explicit meta workspace root (highest-priority root-resolution input).
+        #[arg(long = "root", value_name = "DIR")]
+        root: Option<PathBuf>,
+        /// Explicit component manifest directory. Doctor reports a missing or
+        /// corrupt directory as health data instead of failing before dispatch.
+        #[arg(long = "manifest-dir", value_name = "DIR")]
+        manifest_dir: Option<PathBuf>,
+    },
     /// Install components (additive + idempotent; --dry-run to preview).
     #[command(
         long_about = "Install the named components (or the whole roster when none are named) to bring the box to its declared state. Additive and idempotent — re-running only does what is missing. Pass --dry-run to preview the plan without changing anything.",
@@ -1892,6 +1902,17 @@ pub struct MintGithubArgs {
     pub output: String,
 }
 
+/// Doctor is itself the diagnostic bootstrap: a missing/corrupt manifest must
+/// become typed report data, not an error that prevents the command running.
+fn load_doctor_engine(explicit_manifest_dir: Option<&std::path::Path>) -> Engine {
+    let manifest_dir = explicit_manifest_dir
+        .map(std::path::Path::to_path_buf)
+        .or_else(|| std::env::var_os("ENVCTL_MANIFEST_DIR").map(PathBuf::from))
+        .unwrap_or_else(|| PathBuf::from("manifest"));
+    Engine::load(manifest_dir.clone())
+        .unwrap_or_else(|_| Engine::detached_with_manifest_dir(manifest_dir))
+}
+
 fn main() -> anyhow::Result<()> {
     let cli = Cli::parse();
     // `dashboard` is manifest-INDEPENDENT (it reads `.meta.yaml`, never the
@@ -1913,9 +1934,9 @@ fn main() -> anyhow::Result<()> {
 
     // Spawn the background update check up front (best-effort, silent on failure). Suppress the
     // end-of-run notice for machine-readable / scripted / version-printing commands.
-    let update_handle = envctl_engine::update_notifier::spawn_background_check();
     let suppress_notice = should_suppress_notice(&cli.cmd, cli.json, cli.quiet);
     if !suppress_notice {
+        let update_handle = envctl_engine::update_notifier::spawn_background_check();
         // Give the cache a brief moment to populate (matches kasetto's 800ms).
         envctl_engine::update_notifier::wait_for_check(update_handle, Duration::from_millis(800));
     }
@@ -1943,6 +1964,8 @@ fn main() -> anyhow::Result<()> {
         }
     ) {
         Engine::detached()
+    } else if let Cmd::Doctor { manifest_dir, .. } = &cli.cmd {
+        load_doctor_engine(manifest_dir.as_deref())
     } else {
         Engine::load_default()?
     };
@@ -2017,35 +2040,29 @@ fn main() -> anyhow::Result<()> {
             let reg = engine.registry();
             let dir = engine.manifest_dir();
             if check {
-                let locked = lock::LockFile::load(dir)?;
-                let drift = lock::diff(reg, &locked);
+                let report = engine.manifest_lock_check();
                 if json {
-                    let items: Vec<_> = drift
-                        .iter()
-                        .map(|(id, k)| serde_json::json!({"component": id, "drift": k}))
-                        .collect();
-                    println!(
-                        "{}",
-                        serde_json::to_string_pretty(
-                            &serde_json::json!({"locked": drift.is_empty(), "drift": items})
-                        )?
-                    );
-                } else if drift.is_empty() {
+                    println!("{}", serde_json::to_string_pretty(&report)?);
+                } else if report.locked {
                     println!(
                         "\x1b[1;32m✓ envctl.lock matches the manifest ({} components)\x1b[0m",
                         reg.len()
                     );
                 } else {
                     println!(
-                        "\x1b[1;33m✗ lock drift ({}): manifest changed without re-locking\x1b[0m",
-                        drift.len()
+                        "\x1b[1;33m✗ manifest lock {:?} ({} drift item(s))\x1b[0m",
+                        report.status,
+                        report.drift.len()
                     );
-                    for (id, k) in &drift {
-                        println!("  {:?}  {id}", k);
+                    for item in &report.drift {
+                        println!("  {:?}  {}", item.drift, item.component);
+                    }
+                    if let Some(detail) = &report.detail {
+                        println!("  {detail}");
                     }
                     println!("  run `envctl lock` to update.");
                 }
-                if !drift.is_empty() {
+                if !report.locked {
                     std::process::exit(1);
                 }
             } else {
@@ -2059,7 +2076,10 @@ fn main() -> anyhow::Result<()> {
             }
             Ok(())
         }
-        Cmd::Doctor => print_doctor(&engine, json),
+        Cmd::Doctor {
+            root,
+            manifest_dir: _,
+        } => run_doctor(&engine, root, json),
         Cmd::Dashboard {
             meta_file,
             panes_per_tab,
@@ -3173,6 +3193,7 @@ fn should_suppress_notice(cmd: &Cmd, json: bool, quiet: u8) -> bool {
         | Cmd::Manage { .. }
         | Cmd::Env { .. }
         | Cmd::Migrate { .. }
+        | Cmd::Doctor { .. }
         | Cmd::Registry { .. }
         | Cmd::Catalog { .. } => true,
         // `auto-detect`/`graph`/`lock`/`agent ... --json` are gated by the global `json` above;
@@ -3634,7 +3655,7 @@ fn run_action(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
             Cmd::AutoDetect { .. }
             | Cmd::Graph { .. }
             | Cmd::Lock { .. }
-            | Cmd::Doctor
+            | Cmd::Doctor { .. }
             | Cmd::Dashboard { .. }
             | Cmd::Env { .. }
             | Cmd::Migrate { .. }
@@ -4872,235 +4893,150 @@ fn handle_connect(engine: Engine, cmd: Cmd, json: bool) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Read-only health diagnostics (kasetto-style `doctor`): writability, toolchains,
-/// sudo, UEFI/Secure-Boot, GPU, and the run log. Never mutates anything.
-fn print_doctor(engine: &Engine, json: bool) -> anyhow::Result<()> {
-    let last_run = envctl_engine::runtime::load(engine.manifest_dir()).last_run;
-    let detected = engine.detect(&EventSink::null()).ok();
-    let layout = envctl_engine::MetaLayout::from_env_or_default();
-    let write_ok = |p: &str| -> bool {
-        let dir = std::path::Path::new(p);
-        if std::fs::create_dir_all(dir).is_err() {
-            return false;
-        }
-        let t = dir.join(".envctl-doctor-probe");
-        let ok = std::fs::write(&t, b"x").is_ok();
-        let _ = std::fs::remove_file(&t);
-        ok
+/// Drive the engine-owned doctor, render only the returned typed report, then
+/// exit 1 *after* output when the report contains an error.
+fn run_doctor(engine: &Engine, root: Option<PathBuf>, json: bool) -> anyhow::Result<()> {
+    let spec = DoctorSpec {
+        meta_root: root,
+        ..DoctorSpec::default()
     };
-    let has = |bin: &str| -> Option<String> { doctor_tool_version(bin) };
-    let layout_entries = layout.entries();
-    let mut dirs: Vec<String> = layout_entries
-        .iter()
-        .filter(|entry| entry.is_canonical())
-        .map(|entry| entry.path.display().to_string())
-        .collect();
-    dirs.push("/etc".to_string());
-    let tools = [
-        "git",
-        "cargo",
-        "rustc",
-        "claude",
-        "nix",
-        "podman",
-        "nvidia-smi",
-        "gh",
-        "uv",
-        "bun",
-    ];
-    let sudo_cached = std::process::Command::new("sudo")
-        .args(["-n", "true"])
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .status()
-        .map(|s| s.success())
-        .unwrap_or(false);
-    let uefi = std::path::Path::new("/sys/firmware/efi").exists();
-    let secure_boot = std::process::Command::new("bash")
-        .args(["-lc", "od -An -t u1 /sys/firmware/efi/efivars/SecureBoot-* 2>/dev/null | tr -s ' ' | awk '{print $NF}' | head -1"])
-        .output()
-        .ok()
-        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
-        .filter(|s| !s.is_empty());
-    let driver_loaded = std::path::Path::new("/proc/driver/nvidia/version").exists();
-    let run_log = layout.state().join("envctl.log");
-    let log_exists = run_log.exists();
-
+    let report = engine.doctor(&spec, &EventSink::null())?;
     if json {
-        let dirj: Vec<_> = dirs
-            .iter()
-            .map(|d| serde_json::json!({"path": d, "writable": write_ok(d)}))
-            .collect();
-        let layoutj: Vec<_> = layout_entries
-            .iter()
-            .map(|entry| {
-                serde_json::json!({
-                    "key": entry.key,
-                    "path": entry.path.display().to_string(),
-                    "kind": match entry.kind {
-                        envctl_engine::LayoutKind::Canonical => "canonical",
-                        envctl_engine::LayoutKind::LegacyCompatibility => "legacy_compatibility",
-                    },
-                    "purpose": entry.purpose,
-                })
-            })
-            .collect();
-        let toolj: Vec<_> = tools
-            .iter()
-            .map(|t| serde_json::json!({"tool": t, "version": has(t)}))
-            .collect();
-        println!(
-            "{}",
-            serde_json::to_string_pretty(&serde_json::json!({
-                "writable": dirj, "layout_registry": layoutj,
-                "tools": toolj, "sudo_cached": sudo_cached,
-                "uefi": uefi, "secure_boot": secure_boot, "nvidia_driver_loaded": driver_loaded,
-                "run_log": run_log.display().to_string(), "run_log_exists": log_exists,
-                "meta_boundary": detected.as_ref().map(|r| &r.meta_boundary),
-                "last_run": last_run,
-            }))?
-        );
-        return Ok(());
+        println!("{}", serde_json::to_string_pretty(&report)?);
+    } else {
+        print!("{}", paint(render_doctor(&report)));
     }
-
-    let yn = |b: bool| {
-        if b {
-            "\x1b[1;32m✓\x1b[0m"
-        } else {
-            "\x1b[1;31m✗\x1b[0m"
-        }
-    };
-    println!("\x1b[1;36m── writability ──\x1b[0m");
-    for d in &dirs {
-        println!("  {}  {d}", yn(write_ok(d)));
-    }
-    println!("\x1b[1;36m── toolchains ──\x1b[0m");
-    for t in &tools {
-        match has(t) {
-            Some(v) => println!("  \x1b[1;32m✓\x1b[0m {t:<11} {v}"),
-            None => println!("  \x1b[1;90m·\x1b[0m {t:<11} (absent)"),
-        }
-    }
-    println!("\x1b[1;36m── system ──\x1b[0m");
-    println!("  sudo (cached)      {}", yn(sudo_cached));
-    println!("  UEFI               {}", yn(uefi));
-    println!(
-        "  Secure Boot        {}",
-        match secure_boot.as_deref() {
-            Some("1") => "\x1b[1;33mON\x1b[0m (nvidia-open needs it OFF)",
-            Some("0") => "\x1b[1;32mOFF\x1b[0m",
-            _ => "unknown",
-        }
-    );
-    println!(
-        "  nvidia driver      {}",
-        if driver_loaded {
-            "\x1b[1;32mloaded\x1b[0m"
-        } else {
-            "\x1b[1;33mnot loaded\x1b[0m"
-        }
-    );
-    println!(
-        "  run log            {} {}",
-        yn(log_exists),
-        run_log.display()
-    );
-    match &last_run {
-        Some(lr) => println!(
-            "  last op            {} {} ({}f/{}r/{}i) at {}",
-            lr.verb,
-            if lr.ok {
-                "\x1b[1;32mok\x1b[0m"
-            } else {
-                "\x1b[1;31mFAILED\x1b[0m"
-            },
-            lr.failed,
-            lr.refused,
-            lr.incomplete,
-            lr.at
-        ),
-        None => println!("  last op            (none recorded)"),
-    }
-    if let Some(report) = detected.as_ref() {
-        print_meta_boundary(report);
-    }
-    if !sudo_cached {
-        println!("\n  note: sudo not pre-authorized — privileged installs need `sudo -v` in a real terminal first.");
+    if !report.healthy() {
+        std::process::exit(1);
     }
     Ok(())
 }
 
-fn doctor_tool_version(bin: &str) -> Option<String> {
-    let path = find_on_path(bin)?;
-    let out = command_output_timeout(
-        std::process::Command::new(&path).arg("--version"),
-        std::time::Duration::from_secs(2),
-    )
-    .ok()
-    .flatten();
-    out.and_then(|out| {
-        out.status.success().then(|| {
-            String::from_utf8_lossy(&out.stdout)
-                .lines()
-                .next()
-                .map(str::trim)
-                .filter(|line| !line.is_empty())
-                .map(str::to_string)
-        })?
-    })
-    .or_else(|| Some(path.display().to_string()))
-}
-
-fn find_on_path(bin: &str) -> Option<std::path::PathBuf> {
-    let candidate = std::path::Path::new(bin);
-    if candidate.components().count() > 1 {
-        return executable_file(candidate).then(|| candidate.to_path_buf());
-    }
-    std::env::var_os("PATH").and_then(|path| {
-        std::env::split_paths(&path)
-            .map(|dir| dir.join(bin))
-            .find(|candidate| executable_file(candidate))
-    })
-}
-
-fn executable_file(path: &std::path::Path) -> bool {
-    let Ok(meta) = std::fs::metadata(path) else {
-        return false;
+/// Pure human projection of `DoctorReport` (no probing or health decisions).
+fn render_doctor(report: &DoctorReport) -> String {
+    use std::fmt::Write as _;
+    let mut out = String::new();
+    let icon = |status: Status| match status {
+        Status::Ok => "\x1b[1;32m✓\x1b[0m",
+        Status::Warning => "\x1b[1;33m!\x1b[0m",
+        Status::Error => "\x1b[1;31m✗\x1b[0m",
     };
-    if !meta.is_file() {
-        return false;
+    let _ = writeln!(
+        out,
+        "{} doctor: {} ok · {} warning(s) · {} error(s)",
+        icon(report.status),
+        report.summary.ok,
+        report.summary.warnings,
+        report.summary.errors
+    );
+    if let Some(root) = &report.meta_root {
+        let _ = writeln!(
+            out,
+            "  meta root          {} ({})",
+            root.display(),
+            report.root_source.as_deref().unwrap_or("unknown")
+        );
     }
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt;
-        meta.permissions().mode() & 0o111 != 0
+    if let Some(error) = &report.root_error {
+        let _ = writeln!(out, "  root error         {error}");
     }
-    #[cfg(not(unix))]
-    {
-        true
-    }
-}
 
-fn command_output_timeout(
-    cmd: &mut std::process::Command,
-    timeout: std::time::Duration,
-) -> std::io::Result<Option<std::process::Output>> {
-    let start = std::time::Instant::now();
-    let mut child = cmd
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::null())
-        .spawn()?;
-    loop {
-        if child.try_wait()?.is_some() {
-            return child.wait_with_output().map(Some);
-        }
-        if start.elapsed() >= timeout {
-            let _ = child.kill();
-            let _ = child.wait();
-            return Ok(None);
-        }
-        std::thread::sleep(std::time::Duration::from_millis(25));
+    let _ = writeln!(out, "\x1b[1;36m── writability ──\x1b[0m");
+    for check in &report.writable {
+        let _ = writeln!(
+            out,
+            "  {}  {} ({:?})",
+            icon(check.status),
+            check.path.display(),
+            check.state
+        );
     }
+    let _ = writeln!(out, "\x1b[1;36m── toolchains ──\x1b[0m");
+    for tool in &report.tools {
+        let _ = writeln!(
+            out,
+            "  {} {:<11} {}",
+            icon(tool.status),
+            tool.tool,
+            tool.version.as_deref().unwrap_or("(absent)")
+        );
+    }
+    let _ = writeln!(out, "\x1b[1;36m── system ──\x1b[0m");
+    let _ = writeln!(out, "  sudo (cached)      {}", report.sudo_cached);
+    let _ = writeln!(out, "  UEFI               {}", report.uefi);
+    let _ = writeln!(
+        out,
+        "  Secure Boot        {}",
+        match report.secure_boot.as_deref() {
+            Some("1") => "ON (nvidia-open needs it OFF)",
+            Some("0") => "OFF",
+            _ => "unknown",
+        }
+    );
+    let _ = writeln!(
+        out,
+        "  nvidia driver      {}",
+        if report.nvidia_driver_loaded {
+            "loaded"
+        } else {
+            "not loaded"
+        }
+    );
+    let _ = writeln!(
+        out,
+        "  run log            {} {}",
+        report.run_log_exists,
+        report.run_log.display()
+    );
+    match &report.last_run {
+        Some(last) => {
+            let _ = writeln!(
+                out,
+                "  last op            {} {} ({}f/{}r/{}i) at {}",
+                last.verb,
+                if last.ok { "ok" } else { "FAILED" },
+                last.failed,
+                last.refused,
+                last.incomplete,
+                last.at
+            );
+        }
+        None => {
+            let _ = writeln!(out, "  last op            (none recorded)");
+        }
+    }
+
+    let lock_status = match report.manifest_lock.status {
+        ManifestLockStatus::Clean => Status::Ok,
+        ManifestLockStatus::Drifted | ManifestLockStatus::Missing | ManifestLockStatus::Corrupt => {
+            Status::Error
+        }
+    };
+    let _ = writeln!(out, "\x1b[1;36m── reproducibility ──\x1b[0m");
+    let _ = writeln!(
+        out,
+        "  {} envctl.lock {:?} ({})",
+        icon(lock_status),
+        report.manifest_lock.status,
+        report.manifest_lock.path.display()
+    );
+    for drift in &report.manifest_lock.drift {
+        let _ = writeln!(out, "    {:?}  {}", drift.drift, drift.component);
+    }
+
+    let _ = writeln!(out, "\x1b[1;36m── meta boundary ──\x1b[0m");
+    if report.meta_boundary.violations.is_empty() {
+        let _ = writeln!(out, "  \x1b[1;32m✓\x1b[0m no boundary violations");
+    } else {
+        for violation in &report.meta_boundary.violations {
+            let _ = writeln!(
+                out,
+                "  \x1b[1;31m✗\x1b[0m {} -> {} ({:?})",
+                violation.tool, violation.resolved_path, violation.kind
+            );
+        }
+    }
+    out
 }
 
 fn print_graph_summary(reg: &envctl_engine::Registry) {
@@ -5521,6 +5457,15 @@ mod frontend_gaps_tests {
     fn no_color_flag_parses() {
         let cli = Cli::try_parse_from(["envctl", "--no-color", "auto-detect"]).expect("parse");
         assert!(cli.no_color);
+    }
+
+    #[test]
+    fn human_doctor_suppresses_the_mutating_update_notifier() {
+        let command = Cmd::Doctor {
+            root: None,
+            manifest_dir: None,
+        };
+        assert!(super::should_suppress_notice(&command, false, 0));
     }
 
     #[test]

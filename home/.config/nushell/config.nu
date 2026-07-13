@@ -1,11 +1,9 @@
-# Standard nushell config. Loaded by login nushell (`nu -l`, `nu -l -c`) and
-# interactive non-yazelix nu. NOT loaded by bare `nu -c` (nushell loads no
-# config in that mode) and NOT by yazelix sessions (they use an explicit
-# --config; see ~/.config/yazelix/shell_nu.nu which sources the same module).
-# Relative source: nushell resolves `source` against the directory of this
-# file, so the sibling module loads regardless of $HOME (portability: no
-# hardcoded path). Was an absolute /home/drdave path before ADR-0006 wave 2.
-source rtk-wrappers.nu
+# Standard host Nushell config. Yazelix sessions use their packaged managed
+# config and native `rtk_wrappers.nu`; this host layer must not duplicate those
+# command definitions.
+# Standalone login Nu loads that same module from the stable profile-owned
+# runtime tree, so profile activation updates both paths without copying defs.
+use ~/.nix-profile/nushell/config/rtk_wrappers.nu *
 # Meta /usr mirror on PATH/LD_LIBRARY_PATH (relative source: resolved against this
 # file's dir, so it loads regardless of $HOME). See the module header for rationale.
 source meta-usr-path.nu

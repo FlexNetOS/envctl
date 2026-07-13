@@ -55,7 +55,11 @@ workspace usr/bin/<tool>            -> LEGACY pack residue (runtime ownership = 
   reappear.
 - **Toolchains** = Nix/Yazelix foundation profile: nightly cargo/rustc via the
   profile toolchain, kache for compiler caching, wild via clang linker flags,
-  and bun/bunx for Node.js package execution. Avoid npm/npx global installs.
+  bun/bunx for Node.js package execution, and the supported Bash/Zsh/Fish/Nushell
+  binaries. Host shell startup may select a shell, but it must inherit or prepend
+  `~/.nix-profile/{toolbin,bin}`; retired `$META_ROOT/.toolchains/zsh` builds,
+  `$META_ROOT/usr/bin/zsh` wrappers, and migration launchers are not fallback
+  owners. Avoid npm/npx/global Cargo installs.
 - **meta** = repo/workspace layer — `meta/scripts/bootstrap.sh` sequences rustup → clone → build →
   `envctl install` → `envctl agent sync --locked` → `envctl doctor && envctl lock --check`.
 

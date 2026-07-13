@@ -115,7 +115,7 @@ pub fn compute(report: &EnvReport, reg: &Registry) -> Vec<DriftItem> {
             severity: Severity::High,
             suggested_verb: "envctl install meta-tool-links".into(),
             detail: format!(
-                "{} resolves to {} outside META_ROOT {}",
+                "{} resolves to {} outside approved ownership roots {}",
                 v.tool, v.resolved_path, v.expected_root
             ),
         });

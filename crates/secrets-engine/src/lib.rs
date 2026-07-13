@@ -64,7 +64,9 @@ use keyslot::{
     ARGON2_M_KIB_FLOOR, ARGON2_T_COST_FLOOR,
 };
 use vault::aad::{record_aad, TableTag};
-use vault::store::{BearerRow, CertRow, RelayPolicyRow, SecretRow};
+#[cfg(feature = "mitm-ca")]
+use vault::store::CertRow;
+use vault::store::{BearerRow, RelayPolicyRow, SecretRow};
 
 use broker::{
     bearer_row_mac_message, broker_hmac_key, broker_row_mac_key, canonical_upstreams, decide,
