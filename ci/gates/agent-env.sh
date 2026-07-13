@@ -35,6 +35,12 @@ if [ -z "$meta_candidate" ]; then
   done
 fi
 
+# A self-hosted Actions checkout may physically live below the Meta workspace while still being a
+# standalone CI clone. Its explicit profile toolbin owner takes precedence over ancestor discovery.
+if [ "${GITHUB_ACTIONS:-}" = "true" ] && [ -n "${ENVCTL_GITHUB_PROFILE_TOOLBIN:-}" ]; then
+  meta_candidate=""
+fi
+
 if [ -n "$meta_candidate" ]; then
   TOOLCHAIN_MODE="meta"
   [ -d "$meta_candidate" ] || fail "resolved META_ROOT is not a directory: $meta_candidate"
@@ -60,6 +66,36 @@ if [ -n "$meta_candidate" ]; then
   RUSTC_BIN="$CARGO_HOME/bin/rustc"
   [ "$(command -v cargo)" = "$CARGO_BIN" ] \
     || fail "Cargo did not resolve from canonical CARGO_HOME"
+elif [ "${GITHUB_ACTIONS:-}" = "true" ] && [ -n "${ENVCTL_GITHUB_PROFILE_TOOLBIN:-}" ]; then
+  # FlexNetOS self-hosted runners consume the immutable, profile-owned Rust payload directly.
+  # They intentionally do not carry a second rustup home under the isolated runner HOME.
+  TOOLCHAIN_MODE="github-profile"
+  : "${ENVCTL_GITHUB_PROFILE_HOME:?self-hosted profile home is required}"
+  profile_home="$(readlink -f -- "$ENVCTL_GITHUB_PROFILE_HOME")"
+  profile_toolbin="$profile_home/.nix-profile/toolbin"
+  [ "$ENVCTL_GITHUB_PROFILE_TOOLBIN" = "$profile_toolbin" ] \
+    || fail "self-hosted profile toolbin must be exactly $profile_toolbin"
+  store_root="${ENVCTL_NIX_STORE_ROOT:-/nix/store}"
+  toolbin_root="$(readlink -f -- "$profile_toolbin")"
+  case "$toolbin_root" in
+    "$store_root"/*/toolbin) ;;
+    *) fail "self-hosted profile toolbin is not Nix-store-owned: $toolbin_root" ;;
+  esac
+  CARGO_BIN="$profile_toolbin/cargo"
+  RUSTC_BIN="$profile_toolbin/rustc"
+  for tool in "$CARGO_BIN" "$RUSTC_BIN"; do
+    [ -x "$tool" ] || fail "self-hosted profile tool is missing or non-executable: $tool"
+    resolved="$(readlink -f -- "$tool")"
+    case "$resolved" in
+      "$store_root"/*) ;;
+      *) fail "self-hosted profile tool escapes the Nix store: $tool -> $resolved" ;;
+    esac
+  done
+  export HOME="$profile_home"
+  export CARGO_HOME="$profile_home/.cargo"
+  export RUSTUP_HOME="$profile_home/.rustup"
+  export PATH="$profile_toolbin:/usr/bin:/bin"
+  unset META_ROOT
 elif [ "${GITHUB_ACTIONS:-}" = "true" ]; then
   # Hosted fork / CI_FORCE_HOSTED jobs have no meta owner. Their runner is ephemeral, but PATH may
   # still contain unrelated package-manager cargo shims. Accept only the payloads selected by the

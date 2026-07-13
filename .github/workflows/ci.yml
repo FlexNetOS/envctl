@@ -229,8 +229,8 @@ jobs:
           ENVCTL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
         run: |
           if [ "$ENVCTL_RUNNER_ENVIRONMENT" = self-hosted ]; then
-            export META_ROOT=/home/flexnetos/meta
-            export HOME=/home/flexnetos
+            export ENVCTL_GITHUB_PROFILE_HOME=/home/flexnetos
+            export ENVCTL_GITHUB_PROFILE_TOOLBIN=/home/flexnetos/.nix-profile/toolbin
           fi
           bash ci/gates/agent-env.sh
       - name: manifest-lock gate (envctl.lock matches manifest without mutation)

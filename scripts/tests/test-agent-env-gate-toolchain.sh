@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+unset GITHUB_ACTIONS ENVCTL_GITHUB_PROFILE_HOME ENVCTL_GITHUB_PROFILE_TOOLBIN \
+  ENVCTL_NIX_STORE_ROOT
+
 fail() { echo "FAIL: $*" >&2; exit 1; }
 
 root="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
@@ -60,6 +63,46 @@ grep -Fq "CARGO_HOME=$meta/.toolchains/cargo" "$tmp/out" \
   || fail "gate did not select canonical meta Cargo home"
 grep -Fq "RUSTUP_HOME=$meta/.toolchains/rustup" "$tmp/out" \
   || fail "gate did not select canonical meta Rustup home"
+
+# Self-hosted GitHub jobs use the single Nix-profile toolbin and must not require a second
+# runner-HOME rustup installation.
+profile_home="$tmp/profile-home"
+profile_repo="$tmp/profile/envctl"
+profile_store="$tmp/nix/store/foundation"
+profile_log="$tmp/profile-toolchain.log"
+profile_ambient_called="$tmp/profile-ambient-called"
+mkdir -p "$profile_home" "$profile_repo" "$profile_store/toolbin"
+git -C "$profile_repo" init -q
+ln -s "$profile_store" "$profile_home/.nix-profile"
+for tool in cargo rustc; do
+  cat >"$profile_store/toolbin/$tool" <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$(basename "$0")" >>"${PROFILE_TOOLCHAIN_LOG:?}"
+printf '%s profile-fixture\n' "$(basename "$0")"
+SH
+  chmod 755 "$profile_store/toolbin/$tool"
+done
+
+env -u META_ROOT \
+  ENVCTL_GATE_ROOT="$profile_repo" \
+  ENVCTL_AGENT_ENV_GATE_TOOLCHAIN_PROBE_ONLY=1 \
+  ENVCTL_GITHUB_PROFILE_HOME="$profile_home" \
+  ENVCTL_GITHUB_PROFILE_TOOLBIN="$profile_home/.nix-profile/toolbin" \
+  ENVCTL_NIX_STORE_ROOT="$tmp/nix/store" \
+  GITHUB_ACTIONS=true \
+  PROFILE_TOOLCHAIN_LOG="$profile_log" \
+  AMBIENT_CALLED="$profile_ambient_called" \
+  PATH="$ambient:/usr/bin:/bin" \
+  bash "$gate" >"$tmp/profile-out" 2>"$tmp/profile-err"
+
+grep -Fqx 'cargo' "$profile_log" || fail "profile-owned cargo was not probed"
+grep -Fqx 'rustc' "$profile_log" || fail "profile-owned rustc was not probed"
+grep -Fq 'TOOLCHAIN_MODE=github-profile' "$tmp/profile-out" \
+  || fail "gate did not report the self-hosted profile toolchain"
+grep -Fq "CARGO_BIN=$profile_home/.nix-profile/toolbin/cargo" "$tmp/profile-out" \
+  || fail "gate did not preserve the lexical profile cargo frontdoor"
+[ ! -e "$profile_ambient_called" ] || fail "profile fallback invoked ambient Cargo/Rust"
 
 # Hosted fork/CI_FORCE_HOSTED jobs are standalone clones without a meta owner. Their fallback is
 # explicit to GitHub Actions and must invoke rustup-selected payloads, never an earlier PATH cargo.
@@ -139,4 +182,4 @@ grep -Fq 'ambient Rust is forbidden outside GitHub Actions' "$tmp/standalone-err
   || fail "standalone no-meta refusal was unclear"
 [ ! -e "$hosted_ambient_called" ] || fail "standalone refusal invoked ambient Cargo/Rust"
 
-echo "PASS: agent-env gate owns meta worktree Rust and validates GitHub rustup fallback"
+echo "PASS: agent-env gate owns meta worktree Rust and validates profile/rustup GitHub fallbacks"
