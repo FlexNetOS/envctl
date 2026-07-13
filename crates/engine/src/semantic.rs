@@ -109,7 +109,7 @@ impl SemanticIndex {
                 self.dimensions
             )));
         }
-        // Over-fetch then dedup: ruvector-core 2.2.3's HNSW can surface the
+        // Over-fetch then dedup: ruvector-core 2.3.0's HNSW can surface the
         // same node more than once in one result set (observed: identical id +
         // score twice at k=2), so k results straight from the index may hold
         // duplicates. Ascending-score order is preserved; first sighting wins.

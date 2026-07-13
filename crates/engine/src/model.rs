@@ -344,12 +344,31 @@ pub struct OpResult {
     pub component: String,
     pub phase: Phase,
     pub status: OpStatus,
+    /// Availability of the component after a non-action outcome. `Skipped` alone is deliberately
+    /// not enough: an already-healthy component is safe for dependents, while a missing component
+    /// skipped by `auto-fix` is unavailable and must block its dependency closure.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub availability: Option<ComponentAvailability>,
     pub exit_code: Option<i32>,
     pub duration_ms: u128,
     #[serde(default)]
     pub message: String,
     #[serde(default)]
     pub dry_run: bool,
+}
+
+impl OpResult {
+    pub fn with_availability(mut self, availability: ComponentAvailability) -> Self {
+        self.availability = Some(availability);
+        self
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ComponentAvailability {
+    Healthy,
+    Unavailable,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -636,7 +655,10 @@ pub struct RunSummary {
 
 impl RunSummary {
     pub fn ok(&self) -> bool {
-        self.failed.is_empty() && self.refused.is_empty() && self.incomplete.is_empty()
+        self.failed.is_empty()
+            && self.refused.is_empty()
+            && self.skipped_blocked.is_empty()
+            && self.incomplete.is_empty()
     }
 }
 
@@ -657,6 +679,8 @@ pub struct ResetGates {
 
 /// A data/config directory a component owns. `data_paths` are deleted ONLY with
 /// `--purge` after a fail-closed UUID re-verify; `uuid: None` is always refused.
+/// The portable sentinel `uuid = "runtime"` resolves the path's filesystem UUID at purge time and
+/// then applies the identical `UuidResolves` + `NotLiveDevice` + mount-UUID re-verification chain.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct DataPath {
     pub path: String,

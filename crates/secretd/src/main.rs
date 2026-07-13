@@ -92,7 +92,7 @@ fn main() -> anyhow::Result<()> {
 /// run while the real daemon already holds the socket (it never binds), and (c) offline +
 /// side-effect-free on the vault (it never connects the store). It still catches the realistic
 /// startup failures: a broken crypto-provider pin, unresolvable/locked-down XDG paths, or an invalid
-/// store config (a non-loopback libSQL URL, a group-readable token file — see [`config`]). Any check
+/// store config (a non-loopback libSQL URL, or an unsafe token file — see [`config`]). Any check
 /// that errors bubbles up and the process exits non-zero (fail-closed).
 fn self_check() -> anyhow::Result<()> {
     // 1. The ring CryptoProvider must be installable as the process default (CF-2): the daemon

@@ -91,10 +91,11 @@ pub use migration::{
     MigrationSummary, MigrationVerb,
 };
 pub use model::{
-    AddRepoMode, AddRepoSpec, AiAgent, BuildStrategy, BuildSystem, ComponentState, DataPath,
-    DesktopEntry, DriftItem, DriftKind, EnvReport, MetaBoundaryReport, MetaBoundaryViolation,
-    MetaBoundaryViolationKind, OpResult, OpStatus, Refactor, RefactorGoal, Registry, RenameRule,
-    ResetGates, RunPlan, RunSummary, Severity, ShellRcBlock, SystemdUnit, ToolState, Wiring,
+    AddRepoMode, AddRepoSpec, AiAgent, BuildStrategy, BuildSystem, ComponentAvailability,
+    ComponentState, DataPath, DesktopEntry, DriftItem, DriftKind, EnvReport, MetaBoundaryReport,
+    MetaBoundaryViolation, MetaBoundaryViolationKind, OpResult, OpStatus, Refactor, RefactorGoal,
+    Registry, RenameRule, ResetGates, RunPlan, RunSummary, Severity, ShellRcBlock, SystemdUnit,
+    ToolState, Wiring,
 };
 pub use runner::{DryRunRunner, ProcessRunner};
 pub use self_uninstall::{SelfUninstallOutcome, SelfUninstallSpec};

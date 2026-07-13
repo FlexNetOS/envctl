@@ -1120,7 +1120,7 @@ enum AgentCmd {
     },
     /// Write/verify `agent-env.lock`. `--check` audits (exit 1 on drift); else rewrite.
     #[command(
-        long_about = "Re-resolve every source (re-resolving moving refs) and write agent-env.lock without installing to destinations, so the lock is immediately usable with `sync --locked`. With --check (alias --frozen) it audits the lock against the config and exits 1 on drift without writing. Use --upgrade-package/-P NAME to restrict the re-resolve to sources providing those skills, --locked to make a --check audit zero-network, and --scope to override the resolved scope.",
+        long_about = "Re-resolve every source (including moving refs) and write desired content metadata to agent-env.lock without installing destinations or fabricating ownership. For a first install, run `envctl agent sync --apply` to establish ownership, then commit the resulting v3 project lock; a clean clone can install from its portable proofs with `envctl agent sync --locked --apply`. With --check (alias --frozen), audit the lock against the config and exit 1 on drift without writing. Use --upgrade-package/-P NAME to restrict re-resolution to sources providing those skills, --locked to make a --check audit zero-network, and --scope to override the resolved scope.",
         after_help = envctl_examples!(
             "envctl agent lock",
             "envctl agent lock --check",
@@ -1756,11 +1756,16 @@ fn main() -> anyhow::Result<()> {
         plain,
     });
 
-    // Spawn the background update check up front (best-effort, silent on failure). Suppress the
-    // end-of-run notice for machine-readable / scripted / version-printing commands.
-    let update_handle = envctl_engine::update_notifier::spawn_background_check();
     let suppress_notice = should_suppress_notice(&cli.cmd, cli.json, cli.quiet);
-    if !suppress_notice {
+    // The refresh is not merely presentation: it opens the network and may write the update
+    // cache. Keep that side effect outside machine/scripted output, explicitly read-only
+    // commands, and agent-env's zero-network lock modes.
+    let update_handle = if should_spawn_background_update_check(&cli.cmd, cli.json, cli.quiet) {
+        envctl_engine::update_notifier::spawn_background_check()
+    } else {
+        None
+    };
+    if update_handle.is_some() {
         // Give the cache a brief moment to populate (matches kasetto's 800ms).
         envctl_engine::update_notifier::wait_for_check(update_handle, Duration::from_millis(800));
     }
@@ -2840,6 +2845,34 @@ fn should_suppress_notice(cmd: &Cmd, json: bool, quiet: u8) -> bool {
     }
 }
 
+/// Whether this invocation may start the cosmetic release refresh.
+///
+/// Unlike reading an existing update cache at the end of a human command, refreshing it opens the
+/// network and can write `update-check.json`. Machine/scripted output has no notice to refresh.
+/// Commands with an explicit read-only contract and agent-env's `--locked` zero-network modes must
+/// not acquire that unrelated side effect either.
+fn should_spawn_background_update_check(cmd: &Cmd, json: bool, quiet: u8) -> bool {
+    if should_suppress_notice(cmd, json, quiet) {
+        return false;
+    }
+
+    match cmd {
+        Cmd::AutoDetect { .. } | Cmd::Graph { .. } | Cmd::Lock { check: true } | Cmd::Doctor => {
+            false
+        }
+        Cmd::Agent { cmd } => match cmd {
+            AgentCmd::Sync { apply, locked, .. }
+            | AgentCmd::Add { apply, locked, .. }
+            | AgentCmd::Remove { apply, locked, .. } => *apply && !locked,
+            AgentCmd::Lock { check, locked, .. } => !check && !locked,
+            AgentCmd::List { .. } | AgentCmd::Doctor { .. } => false,
+            AgentCmd::Clean { apply, .. } => *apply,
+            AgentCmd::Init { .. } => true,
+        },
+        _ => true,
+    }
+}
+
 /// Render the end-of-run notice. Honors the resolved plain flag.
 fn render_update_notice(current: &str, latest: &str) -> String {
     let cmd = upgrade_command();
@@ -3343,7 +3376,7 @@ enum AgentResult {
     List(envctl_engine::AgentList),
     /// `init` — always exit 0 on success (failure is an Err instead).
     Init(envctl_engine::AgentInitOutcome),
-    /// `doctor` — read-only diagnostics; always exit 0.
+    /// `doctor` — read-only diagnostics; nonzero unless every typed health check passes.
     Doctor(envctl_engine::AgentDoctorReport),
 }
 
@@ -3377,7 +3410,7 @@ impl AgentResult {
             AgentResult::Lock(o) => !o.check || o.drift.is_empty(),
             AgentResult::List(_) => true,
             AgentResult::Init(_) => true,
-            AgentResult::Doctor(_) => true,
+            AgentResult::Doctor(d) => d.healthy,
         }
     }
 
@@ -3453,7 +3486,7 @@ fn render_agent_doctor(d: &envctl_engine::AgentDoctorReport) {
     emit(format!(
         "\x1b[1;36mdoctor — envctl {} ({})\x1b[0m",
         d.version,
-        if d.failures.is_empty() {
+        if d.healthy {
             "✓ healthy"
         } else {
             "✗ issues"
@@ -3482,11 +3515,24 @@ fn render_agent_doctor(d: &envctl_engine::AgentDoctorReport) {
     emit(format!("  Commands     {}", d.commands.len()));
 
     emit("\n\x1b[1;33mCHECKS\x1b[0m".to_string());
-    let lock_ok = !d.lock_file.is_empty();
-    emit(check_line(lock_ok, "Lock file readable"));
-    let install_ok =
-        std::path::Path::new(&d.installation_path).exists() || d.installation_path == "none";
-    emit(check_line(install_ok, "Install path writable"));
+    emit(check_line(d.lock_present, "Lock file present"));
+    emit(check_line(d.lock_readable, "Lock file readable"));
+    emit(check_line(
+        d.runtime_readable,
+        "Runtime ownership state readable",
+    ));
+    emit(check_line(
+        d.install_paths_writable,
+        "Proven install paths writable",
+    ));
+    emit(check_line(
+        d.proof_issues.is_empty(),
+        if d.proof_issues.is_empty() {
+            "Ownership proofs match live outputs"
+        } else {
+            "Ownership proof issues present"
+        },
+    ));
     emit(check_line(
         d.failures.is_empty(),
         if d.failures.is_empty() {
@@ -3524,6 +3570,13 @@ fn render_agent_doctor(d: &envctl_engine::AgentDoctorReport) {
                 "  \x1b[1;31m!\x1b[0m {} {} {}",
                 f.name, f.reason, f.source
             ));
+        }
+    }
+
+    if !d.proof_issues.is_empty() {
+        emit("\n\x1b[1;33mOWNERSHIP PROOF ISSUES\x1b[0m".to_string());
+        for issue in &d.proof_issues {
+            emit(format!("  \x1b[1;31m!\x1b[0m {issue}"));
         }
     }
 }
@@ -5260,6 +5313,54 @@ mod frontend_gaps_tests {
                 cmd: super::AgentCmd::Doctor { scope },
             } => assert!(scope.is_some()),
             _ => panic!("expected agent doctor"),
+        }
+    }
+
+    #[test]
+    fn update_refresh_respects_machine_read_only_and_locked_contracts() {
+        let forbidden: &[&[&str]] = &[
+            &["envctl", "agent", "doctor", "--scope", "project", "--json"],
+            &["envctl", "agent", "doctor", "--scope", "project"],
+            &["envctl", "agent", "list"],
+            &["envctl", "agent", "lock", "--check"],
+            &["envctl", "agent", "sync"],
+            &["envctl", "agent", "add", "src", "--no-sync"],
+            &["envctl", "agent", "remove", "src"],
+            &["envctl", "agent", "clean"],
+            &["envctl", "agent", "sync", "--locked"],
+            &["envctl", "agent", "add", "src", "--locked", "--no-sync"],
+            &["envctl", "agent", "remove", "src", "--locked"],
+            &["envctl", "auto-detect"],
+            &["envctl", "graph"],
+            &["envctl", "lock", "--check"],
+            &["envctl", "doctor"],
+            &["envctl", "install", "rust", "--json"],
+            &["envctl", "install", "rust", "--quiet"],
+        ];
+
+        for argv in forbidden {
+            let cli = Cli::try_parse_from(*argv).unwrap_or_else(|error| {
+                panic!("failed to parse {argv:?}: {error}");
+            });
+            assert!(
+                !super::should_spawn_background_update_check(&cli.cmd, cli.json, cli.quiet),
+                "cosmetic network/cache refresh must be disabled for {argv:?}"
+            );
+        }
+
+        for argv in [
+            &["envctl", "install", "rust"][..],
+            &["envctl", "agent", "lock"][..],
+            &["envctl", "agent", "init", "--force"][..],
+            &["envctl", "agent", "sync", "--apply"][..],
+        ] {
+            let cli = Cli::try_parse_from(argv).unwrap_or_else(|error| {
+                panic!("failed to parse {argv:?}: {error}");
+            });
+            assert!(
+                super::should_spawn_background_update_check(&cli.cmd, cli.json, cli.quiet),
+                "ordinary human-facing mutation may refresh the notice for {argv:?}"
+            );
         }
     }
 

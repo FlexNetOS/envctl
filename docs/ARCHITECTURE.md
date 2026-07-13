@@ -20,7 +20,8 @@
 ## 1. Overview
 
 `envctl` orchestrates the exact toolchain the existing first-login wizard
-(`yazelix-setup.sh`) installs — Bun + node→bun, the AI CLIs, rustup/rtk, CUDA 13.3 +
+(`yazelix-setup.sh`) installs — Bun + node→bun, the AI CLIs, rustup, profile-owned
+RTK through Yazelix/Nix, CUDA 13.3 +
 nvidia-open 610 + LLVM/clang-21, cuda-oxide, the NVIDIA Container Toolkit, PyTorch cu132,
 gh/Vite/wasmer/uv, Nix + the yazelix Cachix cache, home-manager, yazelix + `yzx desktop`,
 the guarded `~/.bashrc` blocks, and the GPU smoke-test autostart — but makes it
@@ -342,7 +343,7 @@ meta-base-sanity (assert apt base)
       → rust-nightly-cuda-oxide → cuda-oxide → nvidia-container-toolkit
       → pytorch-venv → gpu-verify-scripts
  → gh → vite → wasmer → uv
- → nix → nix-yazelix-cache → home-manager → yazelix → yazelix-desktop
+ → nix → nix-yazelix-cache → yazelix (real-home profile foundation) → home-manager
       → yazelix-config → yazelix-shell → ghostty-default-terminal
 ```
 
@@ -351,7 +352,9 @@ meta-base-sanity (assert apt base)
   `OpStatus::SkippedBlocked` — never run on a broken foundation (exactly why the wizard
   front-loads Nix before home-manager/yazelix).
 * **auto-detect** uses forward order so a dependency's state is known before its dependents are
-  classified.
+  classified. Yazelix's generated runtime is the explicit exception to meta-local placement:
+  its sole active frontdoor is `$ENVCTL_REAL_HOME/.nix-profile`, backed by the real-home XDG
+  profile selector and the canonical `$META_ROOT/src/yazelix#lifeos_foundation_yzx` input.
 * **auto-fix** repairs forward (fix a dependency before its dependent).
 * **reset** traverses the SAME graph REVERSED, refusing to remove a depended-upon component
   unless its reverse-dependents are also in the set or `--cascade` is given.

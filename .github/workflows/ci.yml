@@ -95,36 +95,18 @@ jobs:
         env:
           META_DEPS_TOKEN: ${{ secrets.PARENT_REPO_PAT || github.token }}
         run: bash ci/setup-meta-deps.sh
-      # Use the runner-provisioned toolchain instead of asking rustup to reach
-      # static.rust-lang.org during every CI job. The workspace manifest still
-      # declares rust-version=1.89; this step fail-closes if the runner compiler
-      # is below that floor.
-      - name: use runner-provisioned Rust toolchain for MSRV floor
+      # Compatibility is proved with the exact floor compiler. A newer nightly
+      # accepting the code does not prove Rust 1.89 compatibility.
+      - uses: dtolnay/rust-toolchain@1.89.0
+      - name: prove exact Rust 1.89.0 toolchain
         run: |
-          rustc --version
-          cargo --version
-          python3 - <<'PY'
-          import re
-          import subprocess
-          import sys
-
-          version = subprocess.check_output(["rustc", "--version"], text=True)
-          match = re.search(r"rustc (\d+)\.(\d+)\.", version)
-          if not match:
-              print(f"could not parse rustc version: {version}", file=sys.stderr)
-              sys.exit(1)
-          major, minor = map(int, match.groups())
-          if (major, minor) < (1, 89):
-              print(f"rustc is below the declared 1.89 floor: {version}", file=sys.stderr)
-              sys.exit(1)
-          PY
+          rustc +1.89.0 --version
+          cargo +1.89.0 --version
       - uses: Swatinem/rust-cache@v2
       # `check`, not `build`: the floor is compiler acceptance for the locked shipping graph.
       # No `--all-features`: crates/secrets-store-libsql has mutually-exclusive store features.
-      # `Cargo.toml` declares rust-version=1.89; the runner-provisioned compiler
-      # has already been checked to be at least that floor.
-      - name: cargo check --workspace --locked (MSRV 1.89 toolchain)
-        run: cargo check --workspace --locked
+      - name: cargo +1.89.0 check --workspace --locked
+        run: cargo +1.89.0 check --workspace --locked
 
   cargo-audit:
     name: cargo audit
@@ -146,7 +128,7 @@ jobs:
           cargo --version
       - uses: Swatinem/rust-cache@v2
       - name: install cargo-audit
-        run: cargo install cargo-audit --locked --version 0.22.1
+        run: cargo install cargo-audit --locked --version 0.22.2
       - name: cargo audit gate
         run: bash ci/gates/cargo-audit.sh
 
@@ -188,6 +170,12 @@ jobs:
       # trips a compile_error!.
       - name: cargo test --workspace
         run: cargo test --workspace --features envctl-secrets-engine/low-cost-kdf-tests
+      - name: live-libSQL runner contract (hermetic fixtures)
+        run: bash scripts/tests/test-live-libsql-runner.sh
+      - name: ignored Store + secretd tests against pinned sqld
+        env:
+          LIVE_LIBSQL_READY_TIMEOUT_SECONDS: "20"
+        run: bash ci/run-live-libsql-tests.sh
 
   gates:
     name: gates
@@ -216,18 +204,28 @@ jobs:
         run: bash ci/gates/runner-routing.sh
       - name: no-c gate (no C in the trust boundary)
         run: bash ci/gates/no-c.sh
+      - name: GUI font stack gate (maintained parser + native Linux backends)
+        run: bash scripts/tests/test-gui-font-stack.sh
       - name: meta-substrates gate (loop_lib + meta_plugin_protocol wiring)
         run: bash ci/gates/meta-substrates.sh
       - name: shape gate (TLS / edge module invariants)
         run: bash ci/gates/shape.sh
       - name: enable gate (secretd systemd-unit invariant)
         run: bash ci/gates/enable.sh
+      - name: systemd-user ownership gate (canonical content + active discovery bridge)
+        run: bash ci/gates/systemd-user-ownership.sh
+      - name: systemd-user remove ordering (stop-before-delete + generic revert compatibility)
+        run: bash scripts/tests/test-systemd-user-remove-order.sh
       - name: p7-conformance gate (.handoff Tier-A schema + ledger residency)
         run: bash ci/gates/p7.sh
       - name: kdf-feature-off gate (test-speed Argon2 floor must be off by default)
         run: bash ci/gates/kdf-feature-off.sh
+      - name: toolchain contract gate (exact MSRV + nightly developer default)
+        run: bash ci/gates/toolchain-contract.sh
       - name: agent-env gate (agent-env.yaml matches agent-env.lock; no kasetto drift)
         run: bash ci/gates/agent-env.sh
+      - name: manifest lock gate (component roster is reproducible)
+        run: bash ci/gates/manifest-lock.sh
       - name: meta-local policy gate (META_ROOT-hosted installs only)
         run: bash ci/gates/meta-local-policy.sh
       - name: add-repo policy gate (owned repos register as .meta.yaml peers, not child components)

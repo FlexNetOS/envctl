@@ -48,14 +48,23 @@ pub struct AgentUpdateCheck {
     pub age_seconds: Option<u64>,
 }
 
-/// The full read-only diagnostic report from `Engine::agent_doctor` — the parity contract both
-/// the CLI and GUI render. Field-for-field with kasetto's `DoctorOutput` (TASK-0019, Item 1):
-/// version, lock file, scope, skills, install path, last sync, failures, mcps, commands,
-/// command dirs, and the update-check block.
+/// The full read-only diagnostic report from `Engine::agent_doctor` — the contract both the CLI
+/// and GUI render. It preserves the absorbed inventory fields and adds typed lock/runtime/proof
+/// health so front-ends share one fail-closed success decision.
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct AgentDoctorReport {
     pub version: String,
     pub lock_file: String,
+    #[serde(default)]
+    pub lock_present: bool,
+    #[serde(default)]
+    pub lock_readable: bool,
+    #[serde(default)]
+    pub runtime_readable: bool,
+    #[serde(default)]
+    pub install_paths_writable: bool,
+    #[serde(default)]
+    pub healthy: bool,
     pub scope: String,
     pub skills: Vec<String>,
     pub installation_path: String,
@@ -65,6 +74,8 @@ pub struct AgentDoctorReport {
     pub mcps: Vec<String>,
     pub commands: Vec<String>,
     pub command_dirs: Vec<AgentCommandDirCheck>,
+    #[serde(default)]
+    pub proof_issues: Vec<String>,
     pub update_check: AgentUpdateCheck,
 }
 

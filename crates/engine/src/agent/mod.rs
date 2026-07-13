@@ -24,7 +24,6 @@ pub mod lock;
 pub mod report;
 pub mod sync;
 
-use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use anyhow::Context;
@@ -32,10 +31,9 @@ use serde::{Deserialize, Serialize};
 
 use envctl_agent_env::{
     config_path::default_config_path,
-    extend::load_config_any,
+    extend::{load_config_any, load_config_any_zero_network},
     fsops::{resolve_destinations, scope_root},
     lock::{lock_path, LockMode},
-    runtime::{load_runtime_state, save_runtime_state, RuntimeState},
     Config, Scope,
 };
 
@@ -258,11 +256,33 @@ impl AgentCtx {
         config_path: Option<&str>,
         scope_override: Option<AgentScope>,
     ) -> anyhow::Result<AgentCtx> {
+        Self::resolve_with_policy(config_path, scope_override, true)
+    }
+
+    /// Resolve a context while refusing remote root configs and remote `extends` before
+    /// any HTTP request is constructed. Used by `agent lock --check --locked`.
+    pub(crate) fn resolve_zero_network(
+        config_path: Option<&str>,
+        scope_override: Option<AgentScope>,
+    ) -> anyhow::Result<AgentCtx> {
+        Self::resolve_with_policy(config_path, scope_override, false)
+    }
+
+    fn resolve_with_policy(
+        config_path: Option<&str>,
+        scope_override: Option<AgentScope>,
+        allow_network: bool,
+    ) -> anyhow::Result<AgentCtx> {
         let path = config_path
             .map(str::to_string)
             .unwrap_or_else(default_config_path);
-        let (cfg, cfg_dir, cfg_label) = load_config_any(&path)
-            .with_context(|| format!("failed to load agent config from {path}"))?;
+        let loaded = if allow_network {
+            load_config_any(&path)
+        } else {
+            load_config_any_zero_network(&path)
+        };
+        let (cfg, cfg_dir, cfg_label) =
+            loaded.with_context(|| format!("failed to load agent config from {path}"))?;
         let scope = match scope_override {
             Some(s) => s.into(),
             None => cfg.resolved_scope(),
@@ -290,34 +310,6 @@ impl AgentCtx {
 pub(crate) fn agent_lock_path(scope: Scope, cfg_dir: &Path) -> anyhow::Result<PathBuf> {
     let global = envctl_agent_env::dirs::dirs_agent_env_data()?;
     Ok(lock_path(scope, cfg_dir, &global))
-}
-
-/// The updated-at memo persisted in the runtime state (machine-local, out of the lock).
-pub(crate) fn load_updated_for(scope: Scope, project_root: &Path) -> BTreeMap<String, String> {
-    load_runtime_state(scope, project_root)
-        .map(|r| r.installed_at)
-        .unwrap_or_default()
-}
-
-/// Persist the updated-at memo + the latest report json back into the runtime state.
-pub(crate) fn save_runtime_after(
-    scope: Scope,
-    project_root: &Path,
-    updated: BTreeMap<String, String>,
-    report_json: Option<&str>,
-) -> anyhow::Result<()> {
-    let mut runtime = load_runtime_state(scope, project_root).unwrap_or_else(|_| RuntimeState {
-        last_run: None,
-        latest_report: None,
-        installed_at: BTreeMap::new(),
-    });
-    runtime.installed_at = updated;
-    runtime.last_run = Some(envctl_agent_env::util::now_unix_str());
-    if let Some(json) = report_json {
-        runtime.save_report_json(json);
-    }
-    save_runtime_state(&runtime, scope, project_root)?;
-    Ok(())
 }
 
 #[cfg(test)]

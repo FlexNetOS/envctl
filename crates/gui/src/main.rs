@@ -1172,10 +1172,8 @@ impl EnvctlApp {
                                 if ui.add(b).clicked() {
                                     to_install = Some(v.id.clone());
                                 }
-                            } else {
-                                if ui.button("Fix").clicked() {
-                                    to_fix = Some(v.id.clone());
-                                }
+                            } else if ui.button("Fix").clicked() {
+                                to_fix = Some(v.id.clone());
                             }
                         });
                     });

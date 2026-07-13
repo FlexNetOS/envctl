@@ -256,6 +256,21 @@ impl Agent {
         }
     }
 
+    /// Project-local skill directories owned by this preset.
+    ///
+    /// Codex consumes the native `.codex/skills` surface and the repository-discovery
+    /// `.agents/skills` mirror. Keeping both in the same generated destination set prevents the
+    /// active mirror from retaining stale policy after an agent-env sync. Other presets retain
+    /// their single native directory.
+    pub fn project_skill_paths(self, project_root: &Path) -> Vec<PathBuf> {
+        let primary = self.project_path(project_root);
+        if self == Agent::Codex {
+            vec![primary, project_root.join(".agents/skills")]
+        } else {
+            vec![primary]
+        }
+    }
+
     /// Project-local MCP config location and merge format for this agent (ledger M-14).
     pub fn mcp_project_target(self, project_root: &Path) -> McpSettingsTarget {
         match self {

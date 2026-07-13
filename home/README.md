@@ -16,7 +16,7 @@ $HOME/.claude/skills                -> envctl/home/.claude/skills            (ha
 $HOME/.claude/commands              -> envctl/home/.claude/commands          (harness 2026-07-07, owner-supervised)
 $HOME/.config/rtk                   -> envctl/home/.config/rtk               (rtk-config-links)
 $HOME/.config/yazelix/settings.jsonc-> envctl/home/.config/yazelix/...       (home-config-links)
-$HOME/.config/systemd/user/*.service-> envctl/home/.config/systemd/user/...  (home-config-links)
+$HOME/.config/systemd/user/*.service-> $META_ROOT/.config/systemd/user/...   (engine-owned discovery bridge)
 $HOME/.codex/config.toml            -> active runtime config (not generated from mirrors)
 envctl/home/.codex                  -> reviewed project/home Codex layer
 $ENVCTL_REAL_HOME/.nix-profile      -> real-home Nix profile state          (Yazelix-owned)
@@ -92,7 +92,11 @@ must be reviewed/materialized before any named `--migrate-cache-child NAME` appl
   module relative to the overlay.
 - `home/.config/yazelix/shell_bash.sh` still carries a compatibility fallback for older launches;
   treat it as a reviewed residual, not an install target.
-- `repowire.service` is carried for the record but disabled on the box (binary missing — see header).
+- Systemd user units are not tracked home-tree projections. Their component manifests render the
+  sole authoritative copies under `$META_ROOT/.config/systemd/user`; the wiring engine creates one
+  verified symlink in the real user-manager XDG search path so `systemctl --user` can discover them.
+  Historical `home/.config/systemd/user` copies are intentionally absent, and a foreign bridge is
+  refused before the engine mutates the canonical unit.
 - RTK config is tracked here; RTK command history and tee logs remain machine-local state under
   the workspace `.local/share/rtk/` only when RTK requires XDG data semantics; otherwise use
   the workspace `var/lib/rtk/`. The Yazelix profile is the real-home runtime owner; per-tool

@@ -9,6 +9,9 @@
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, OnceLock};
 
+use envctl_agent_env::{
+    command_asset_id, mcp_asset_id, skill_key, AgentLockEntry, AgentLockFile, Scope,
+};
 use envctl_engine::event::{Event, EventSink};
 use envctl_engine::{
     AgentCleanSpec, AgentListKind, AgentListSpec, AgentLockMode, AgentLockSpec, AgentRemoveSpec,
@@ -101,6 +104,38 @@ fn sink() -> (EventSink, std::sync::mpsc::Receiver<Event>) {
     EventSink::channel()
 }
 
+fn local_asset_source() -> PathBuf {
+    let source = unique_dir("envctl-agent-it-local-assets");
+    copy_tree(&pack_dir(), &source);
+    copy_tree(&cmdpack_dir(), &source);
+    source
+}
+
+fn local_asset_config(source: &Path) -> String {
+    format!(
+        "agent: claude-code\nscope: project\nskills:\n  - source: {source}\n    skills:\n      - alpha\ncommands:\n  - source: {source}\n    commands:\n      - foo\nmcps:\n  - source: {source}\n    mcps:\n      - servers\n",
+        source = source.display()
+    )
+}
+
+fn write_agent_lock(engine: &Engine, config: &str) {
+    let (s, _rx) = sink();
+    let report = engine
+        .agent_lock(
+            AgentLockSpec {
+                config_path: Some(config.to_string()),
+                scope_override: None,
+                check: false,
+                upgrade_only: Vec::new(),
+                lock_mode: AgentLockMode::Plain,
+            },
+            &s,
+        )
+        .expect("write local agent lock");
+    assert!(report.saved);
+    assert!(report.drift.is_empty());
+}
+
 // ---------------------------------------------------------------------------------------
 // 1. sync preview (no writes, would_install) vs apply (installs + lock)
 // ---------------------------------------------------------------------------------------
@@ -161,6 +196,85 @@ fn sync_preview_writes_nothing_then_apply_installs() {
         project.join("agent-env.lock").is_file(),
         "apply wrote the lock"
     );
+}
+
+#[test]
+fn future_lock_schema_refuses_plain_and_update_before_any_mutation() {
+    for lock_mode in [
+        AgentLockMode::Plain,
+        AgentLockMode::Update { only: Vec::new() },
+    ] {
+        let source = unique_dir("envctl-agent-it-future-lock-source");
+        std::fs::create_dir_all(source.join("alpha")).unwrap();
+        std::fs::write(source.join("alpha/SKILL.md"), "# original\n").unwrap();
+        let yaml = format!(
+            "agent: claude-code\nscope: project\nskills:\n  - source: {source}\n    skills: [alpha]\n",
+            source = source.display()
+        );
+        let (engine, project, cfg) = project_with_config(&yaml);
+
+        let (seed_sink, _seed_rx) = sink();
+        let seeded = engine
+            .agent_sync(
+                AgentSyncSpec {
+                    config_path: Some(cfg.clone()),
+                    apply: true,
+                    ..Default::default()
+                },
+                &seed_sink,
+            )
+            .expect("seed current lock and ownership state");
+        assert_eq!(seeded.summary.failed, 0, "{:#?}", seeded.actions);
+
+        let lock_path = project.join("agent-env.lock");
+        let output_path = project.join(".claude/skills/alpha/SKILL.md");
+        let runtime_path =
+            envctl_agent_env::runtime::runtime_state_path(Scope::Project, &project).unwrap();
+        std::fs::write(source.join("alpha/SKILL.md"), "# replacement\n").unwrap();
+
+        let current_lock = std::fs::read_to_string(&lock_path).unwrap();
+        let future_lock = current_lock.replacen(
+            &format!("version: {}", envctl_agent_env::LOCK_VERSION),
+            &format!("version: {}", envctl_agent_env::LOCK_VERSION + 1),
+            1,
+        ) + "future_schema_field: preserve-verbatim\n";
+        assert_ne!(future_lock, current_lock, "fixture must advance the schema");
+        std::fs::write(&lock_path, future_lock.as_bytes()).unwrap();
+
+        let lock_before = std::fs::read(&lock_path).unwrap();
+        let output_before = std::fs::read(&output_path).unwrap();
+        let runtime_before = std::fs::read(&runtime_path).unwrap();
+        let (attempt_sink, _attempt_rx) = sink();
+        let error = engine
+            .agent_sync(
+                AgentSyncSpec {
+                    config_path: Some(cfg),
+                    apply: true,
+                    lock_mode,
+                    ..Default::default()
+                },
+                &attempt_sink,
+            )
+            .expect_err("a future lock schema must be rejected, never migrated backward");
+
+        let message = format!("{error:#}");
+        assert!(message.contains("newer than supported"), "{message}");
+        assert_eq!(
+            std::fs::read(&lock_path).unwrap(),
+            lock_before,
+            "future lock bytes must remain untouched"
+        );
+        assert_eq!(
+            std::fs::read(&output_path).unwrap(),
+            output_before,
+            "installed output must remain untouched"
+        );
+        assert_eq!(
+            std::fs::read(&runtime_path).unwrap(),
+            runtime_before,
+            "runtime ownership/report state must remain untouched"
+        );
+    }
 }
 
 // ---------------------------------------------------------------------------------------
@@ -400,6 +514,69 @@ fn lock_check_reports_drift_then_clean() {
     assert!(drifted.drift.iter().any(|d| d.id.contains("alpha")));
 }
 
+#[test]
+fn locked_check_reports_local_command_and_mcp_content_drift() {
+    let source = unique_dir("envctl-agent-it-lock-assets");
+    copy_tree(&pack_dir(), &source);
+    copy_tree(&cmdpack_dir(), &source);
+    let yaml = format!(
+        "agent: claude-code\nscope: project\nmcps:\n  - source: {source}\n    mcps: \"*\"\ncommands:\n  - source: {source}\n    commands: \"*\"\n",
+        source = source.display()
+    );
+    let (engine, project, cfg) = project_with_config(&yaml);
+    let (s, _rx) = sink();
+    engine
+        .agent_sync(
+            AgentSyncSpec {
+                config_path: Some(cfg.clone()),
+                apply: true,
+                ..Default::default()
+            },
+            &s,
+        )
+        .expect("seed command/MCP lock");
+    let lock_path = project.join("agent-env.lock");
+    let lock_before = std::fs::read_to_string(&lock_path).unwrap();
+
+    std::fs::write(source.join("commands/foo.md"), "# changed local command\n").unwrap();
+    std::fs::write(
+        source.join("mcps/servers.json"),
+        r#"{"mcpServers":{"replacement":{"command":"replacement"}}}"#,
+    )
+    .unwrap();
+
+    let (s2, _rx2) = sink();
+    let checked = engine
+        .agent_lock(
+            AgentLockSpec {
+                config_path: Some(cfg),
+                scope_override: None,
+                check: true,
+                upgrade_only: Vec::new(),
+                lock_mode: AgentLockMode::Locked,
+            },
+            &s2,
+        )
+        .expect("locked local asset audit");
+    assert!(
+        checked
+            .drift
+            .iter()
+            .any(|d| { d.status == "updated" && d.id.starts_with("command::") }),
+        "command drift: {:?}",
+        checked.drift
+    );
+    assert!(
+        checked
+            .drift
+            .iter()
+            .any(|d| { d.status == "updated" && d.id.starts_with("mcp::") }),
+        "MCP drift: {:?}",
+        checked.drift
+    );
+    assert_eq!(std::fs::read_to_string(&lock_path).unwrap(), lock_before);
+}
+
 // ---------------------------------------------------------------------------------------
 // 4. --locked zero-network (unlocked source -> locked_error + failed, no fetch)
 // ---------------------------------------------------------------------------------------
@@ -469,6 +646,291 @@ fn locked_mode_fails_closed_without_lock_then_passes_when_locked() {
         "satisfied lock passes --locked"
     );
     assert!(locked_ok.summary.unchanged >= 2);
+}
+
+#[test]
+fn locked_sync_materializes_hash_locked_local_skills_commands_and_mcps() {
+    let source = local_asset_source();
+    let (engine, project, cfg) = project_with_config(&local_asset_config(&source));
+    write_agent_lock(&engine, &cfg);
+
+    let lock_path = project.join("agent-env.lock");
+    assert!(!project.join(".claude").exists());
+    assert!(!project.join(".mcp.json").exists());
+
+    // A desired-only lock is not ownership evidence. Locked mode must not turn an arbitrary
+    // checked-in lock into permission to install, even when the local source bytes match.
+    let (s, _rx) = sink();
+    let unproven = engine
+        .agent_sync(
+            AgentSyncSpec {
+                config_path: Some(cfg.clone()),
+                apply: true,
+                lock_mode: AgentLockMode::Locked,
+                ..Default::default()
+            },
+            &s,
+        )
+        .expect("locked local sync");
+    assert_eq!(unproven.summary.failed, 1);
+    assert!(!project.join(".claude").exists());
+
+    // Plain apply creates portable installed-output proofs. Once proven, deleting the disposable
+    // outputs and re-running locked can restore them zero-network from the hash-locked local input.
+    let (plain_sink, _plain_rx) = sink();
+    engine
+        .agent_sync(
+            AgentSyncSpec {
+                config_path: Some(cfg.clone()),
+                apply: true,
+                lock_mode: AgentLockMode::Plain,
+                ..Default::default()
+            },
+            &plain_sink,
+        )
+        .expect("plain ownership bootstrap");
+    let lock_before = std::fs::read(&lock_path).unwrap();
+    std::fs::remove_dir_all(project.join(".claude")).unwrap();
+    std::fs::remove_file(project.join(".mcp.json")).unwrap();
+
+    let (proven_sink, _proven_rx) = sink();
+    let report = engine
+        .agent_sync(
+            AgentSyncSpec {
+                config_path: Some(cfg),
+                apply: true,
+                lock_mode: AgentLockMode::Locked,
+                ..Default::default()
+            },
+            &proven_sink,
+        )
+        .expect("proven locked local sync");
+
+    assert_eq!(report.summary.failed, 0, "actions: {:?}", report.actions);
+    assert!(project.join(".claude/skills/alpha/SKILL.md").is_file());
+    assert!(project.join(".claude/commands/foo.md").is_file());
+    let mcp: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(project.join(".mcp.json")).unwrap()).unwrap();
+    assert!(mcp["mcpServers"]["github"].is_object());
+    assert!(mcp["mcpServers"]["context7"].is_object());
+    assert_eq!(
+        std::fs::read(&lock_path).unwrap(),
+        lock_before,
+        "--locked must not rewrite the validated lock"
+    );
+}
+
+#[test]
+fn locked_local_source_drift_is_atomic_for_every_asset_kind() {
+    for kind in ["skill", "command", "mcp"] {
+        let source = local_asset_source();
+        let (engine, project, cfg) = project_with_config(&local_asset_config(&source));
+        write_agent_lock(&engine, &cfg);
+        let lock_path = project.join("agent-env.lock");
+        let lock_before = std::fs::read(&lock_path).unwrap();
+
+        match kind {
+            "skill" => std::fs::write(source.join("alpha/SKILL.md"), "# drifted skill\n").unwrap(),
+            "command" => {
+                std::fs::write(source.join("commands/foo.md"), "# drifted command\n").unwrap()
+            }
+            "mcp" => std::fs::write(
+                source.join("mcps/servers.json"),
+                r#"{"mcpServers":{"drifted":{"command":"false"}}}"#,
+            )
+            .unwrap(),
+            _ => unreachable!(),
+        }
+
+        let (s, _rx) = sink();
+        let report = engine
+            .agent_sync(
+                AgentSyncSpec {
+                    config_path: Some(cfg),
+                    apply: true,
+                    lock_mode: AgentLockMode::Locked,
+                    ..Default::default()
+                },
+                &s,
+            )
+            .expect("locked drift refusal");
+
+        assert!(report.summary.failed > 0, "{kind}: {:#?}", report.actions);
+        assert!(
+            report.actions.iter().any(|action| {
+                action.status == "locked_error"
+                    && action
+                        .error
+                        .as_deref()
+                        .is_some_and(|error| error.contains("lock drift"))
+            }),
+            "{kind}: {:#?}",
+            report.actions
+        );
+        assert!(
+            !project.join(".claude").exists() && !project.join(".mcp.json").exists(),
+            "{kind}: a failed preflight must not create or mutate destinations"
+        );
+        assert_eq!(
+            std::fs::read(&lock_path).unwrap(),
+            lock_before,
+            "{kind}: a failed preflight must not rewrite the lock"
+        );
+    }
+}
+
+#[test]
+fn locked_local_metadata_drift_is_atomic_and_fail_closed() {
+    for field in ["identity", "selector", "destination", "revision", "scope"] {
+        let source = local_asset_source();
+        let source_name = source.to_string_lossy().to_string();
+        let (engine, project, cfg) = project_with_config(&local_asset_config(&source));
+        write_agent_lock(&engine, &cfg);
+        let lock_path = project.join("agent-env.lock");
+        let mut lock = envctl_agent_env::lock::load(&lock_path).unwrap();
+
+        let skill_id = skill_key(&source_name, "alpha");
+        let command_id = command_asset_id(&source_name, "foo");
+        let mcp_id = mcp_asset_id(&source_name, "servers.json");
+        assert!(lock.source_selectors.contains_key(&skill_id));
+        assert!(lock.source_selectors.contains_key(&command_id));
+        assert!(lock.source_selectors.contains_key(&mcp_id));
+
+        match field {
+            "identity" => lock.skills.get_mut(&skill_id).unwrap().source = "other-source".into(),
+            "selector" => {
+                lock.source_selectors
+                    .insert(command_id, "v1|kind=command|selection=other".into());
+            }
+            "destination" => {
+                lock.assets.get_mut(&mcp_id).unwrap().destination = "other-server".into();
+            }
+            "revision" => {
+                lock.assets.get_mut(&command_id).unwrap().source_revision = "branch:main".into();
+            }
+            "scope" => lock.skills.get_mut(&skill_id).unwrap().scope = None,
+            _ => unreachable!(),
+        }
+        envctl_agent_env::lock::save(&mut lock, &lock_path).unwrap();
+        let lock_before = std::fs::read(&lock_path).unwrap();
+
+        let (s, _rx) = sink();
+        let report = engine
+            .agent_sync(
+                AgentSyncSpec {
+                    config_path: Some(cfg),
+                    apply: true,
+                    lock_mode: AgentLockMode::Locked,
+                    ..Default::default()
+                },
+                &s,
+            )
+            .expect("locked metadata refusal");
+
+        assert!(report.summary.failed > 0, "{field}: {:#?}", report.actions);
+        assert!(
+            report.actions.iter().any(|action| {
+                action.status == "locked_error"
+                    && action
+                        .error
+                        .as_deref()
+                        .is_some_and(|error| error.contains("lock drift"))
+            }),
+            "{field}: {:#?}",
+            report.actions
+        );
+        assert!(
+            !project.join(".claude").exists() && !project.join(".mcp.json").exists(),
+            "{field}: a failed metadata preflight must not mutate destinations"
+        );
+        assert_eq!(
+            std::fs::read(&lock_path).unwrap(),
+            lock_before,
+            "{field}: a failed metadata preflight must not rewrite the lock"
+        );
+    }
+}
+
+#[test]
+fn locked_remote_missing_destination_refuses_without_network_input() {
+    let source = "https://network-sentinel.invalid/org/skills";
+    let (engine, project, cfg) = project_with_config(&format!(
+        "destination: ./dest\nscope: project\nskills:\n  - source: {source}\n    ref: deadbeef\n    skills:\n      - alpha\n"
+    ));
+    let lock_path = project.join("agent-env.lock");
+    let id = skill_key(source, "alpha");
+    let mut lock = AgentLockFile::default();
+    lock.skills.insert(
+        id.clone(),
+        AgentLockEntry {
+            destination: "dest/alpha".into(),
+            hash: "locked-remote-content-hash".into(),
+            skill: "alpha".into(),
+            description: "remote alpha".into(),
+            source: source.into(),
+            source_revision: "ref:deadbeef".into(),
+            scope: Some(Scope::Project),
+        },
+    );
+    lock.set_source_selector(
+        &id,
+        Some(
+            "v2|base=38:v1|kind=skill|sub-dir=-|selection=name|scope=project|targets=1|10:dest/alpha"
+                .into(),
+        ),
+    );
+    envctl_agent_env::lock::save(&mut lock, &lock_path).unwrap();
+    let lock_before = std::fs::read(&lock_path).unwrap();
+
+    let (s, _rx) = sink();
+    let report = engine
+        .agent_sync(
+            AgentSyncSpec {
+                config_path: Some(cfg),
+                apply: true,
+                lock_mode: AgentLockMode::Locked,
+                ..Default::default()
+            },
+            &s,
+        )
+        .expect("remote locked refusal");
+
+    assert_eq!(report.summary.failed, 1, "{:#?}", report.actions);
+    assert!(report.actions.iter().any(|action| {
+        action.status == "locked_error"
+            && action
+                .error
+                .as_deref()
+                .is_some_and(|error| error.contains("no verified source input"))
+    }));
+    assert!(
+        !project.join("dest").exists(),
+        "remote locked refusal must happen before destination mutation"
+    );
+    assert_eq!(std::fs::read(&lock_path).unwrap(), lock_before);
+}
+
+#[test]
+fn locked_sync_rejects_remote_extends_before_fetch() {
+    let yaml = "extends: https://network-sentinel.invalid/base.yaml\nagent: claude-code\nscope: project\nskills: []\n";
+    let (engine, _project, cfg) = project_with_config(yaml);
+    let (s, _rx) = sink();
+    let err = engine
+        .agent_sync(
+            AgentSyncSpec {
+                config_path: Some(cfg),
+                apply: false,
+                lock_mode: AgentLockMode::Locked,
+                ..Default::default()
+            },
+            &s,
+        )
+        .expect_err("locked sync must reject remote extends locally");
+    let chain = format!("{err:#}");
+    assert!(
+        chain.contains("--locked forbids remote config fetch"),
+        "must refuse before HTTP: {chain}"
+    );
 }
 
 // ---------------------------------------------------------------------------------------

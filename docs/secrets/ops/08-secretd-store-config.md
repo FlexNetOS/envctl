@@ -47,25 +47,30 @@ The token is a credential, so it is **never** taken from the TOML file. Provide 
 `SECRETD_LIBSQL_AUTH_TOKEN_FILE` pointing at a **`0600`** file — a group/other-readable token file is
 **refused** (fail-closed). The **config-layer** token copy is held in a zeroizing buffer and never
 logged (the config's `Debug` redacts it); note the downstream libSQL client takes a plain `String`
-(its public API) and keeps its own non-zeroized copy for the connection's lifetime. An empty token is
-accepted only for a loopback sqld with open auth (dev).
+(its public API) and keeps its own non-zeroized copy for the connection's lifetime. The low-level
+configuration parser still accepts an empty token for an explicitly started development server,
+but the envctl-managed production units and real-server test runner always require JWT auth.
 
 ## 2. Standing up a loopback sqld (Profile A — recommended)
 
-`sqld` (a.k.a. `libsql-server`) is run **on loopback**, co-located with `secretd`:
+`sqld` (a.k.a. `libsql-server`) is run **on loopback**, co-located with `secretd`. Install the
+managed components rather than starting an open-auth server by hand:
 
 ```sh
-sqld --http-listen-addr 127.0.0.1:8080 -d /var/lib/env-ctl/sqld
-# production: configure auth with --auth-jwt-key-file and set SECRETD_LIBSQL_AUTH_TOKEN(_FILE)
+envctl install sqld --apply
+envctl install env-ctl --apply
 ```
 
-Then:
-
-```sh
-SECRETD_STORE_BACKEND=libsql SECRETD_LIBSQL_URL=http://127.0.0.1:8080 secretd
-```
-
-`secretd` provisions the schema on first connect (idempotent), so no manual migration step is needed.
+The `sqld` component generates a current-user-owned `0600` Ed25519 public-key/client-JWT pair and
+starts the pinned server with `--auth-jwt-key-file`. Before dependents may start, systemd verifies
+the Rust helper's component-owned SHA-256 record; a bounded `ExecStartPost` then proves the exact
+MainPID/executable owns the listener, unauthenticated SQL returns `401`, and the file-fed bearer can
+execute `SELECT 1`. The `env-ctl.service` unit has strict
+`Requires=`, `BindsTo=`, and `After=` relationships on `sqld.service`; it also pins the service
+backend, loopback URL, and token file. Because `env-ctl.service` is `Type=notify`, it cannot become
+active until `secretd` has authenticated to that sqld and idempotently provisioned the schema. A
+missing, open-auth, unreachable, or JWT-incompatible server therefore fails closed instead of
+reporting a false-ready daemon. No manual migration step is needed.
 
 ## 3. Transport: loopback-only, or a loopback TLS terminator for a remote DB
 
@@ -103,19 +108,16 @@ OI-1), and there is no hyper-0.14 `hyper-rustls` on rustls 0.23. Therefore:
 
 ## 5. Verification
 
-The libSQL path has real-server coverage (both `#[ignore]`d — they need a running loopback sqld and a
-fresh DB):
+The libSQL path has real-server coverage through one hermetic runner. It downloads and verifies the
+exact pinned sqld release, generates a fresh Rust-native JWT pair for each suite, requires an
+unauthenticated SQL request to return `401`, then requires an authenticated `SELECT 1` before running
+the ignored tests against fresh databases:
 
 ```sh
-rm -rf /tmp/sqld-data && sqld --http-listen-addr 127.0.0.1:8080 -d /tmp/sqld-data &
-# the Store impl against a real sqld (9 offline + 5 integration):
-LIBSQL_TEST_URL=http://127.0.0.1:8080 LIBSQL_TEST_AUTH= \
-  cargo test -p envctl-secrets-store-libsql --features remote -- --ignored --test-threads=1
-# the engine-over-libSQL durability e2e (init/unlock/put/get + persistence across engine instances):
-LIBSQL_TEST_URL=http://127.0.0.1:8080 LIBSQL_TEST_AUTH= \
-  cargo test -p envctl-secretd --test libsql_e2e -- --ignored --nocapture
+bash ci/run-live-libsql-tests.sh
 ```
 
-The default `cargo test --workspace` keeps these `#[ignore]`d (no sqld needed) and stays green;
-`ci/gates/no-c.sh` confirms the libSQL stack adds no C **library** and keeps the single ring-only
-rustls.
+The runner covers both the Store implementation and the engine-over-libSQL durability E2E
+(init/unlock/put/get plus persistence across engine instances). The default `cargo test --workspace`
+keeps these `#[ignore]`d (no sqld needed) and stays green; `ci/gates/no-c.sh` confirms the libSQL
+stack adds no C **library** and keeps the single ring-only rustls.

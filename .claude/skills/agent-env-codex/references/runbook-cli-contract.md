@@ -8,7 +8,7 @@
   stale lock reports the edited asset "unchanged" and propagates nothing (observed 2026-07-12).
 - Preview with `envctl agent sync --json --color never`.
 - Materialize only when requested with `envctl agent sync --apply --color never`.
-- Check drift with `envctl agent lock --check` and the repo agent-env gate.
+- Check drift without network with `envctl agent lock --check --locked` and the repo agent-env gate.
 - Synced skills are replaced from owning sources; do not hand-edit generated copies.
 - Substrate hook parity: the ADR-0006 source `home/.claude/settings.json` (and its
   `.tmpl`) carries the weave WL-084 hooks (`weave hook session|prompt|wake`) and the icm

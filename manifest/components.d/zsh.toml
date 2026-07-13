@@ -27,7 +27,7 @@ script = '''
 envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-ROOT="$M/envctl"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"; source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 DEST="$M/.toolchains/zsh"
 
 # 1. Resolve the NEWEST stable tag (exclude *-test pre-releases). No hardcoded

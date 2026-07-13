@@ -18,19 +18,21 @@ Complete reference for how `envctl agent sync` resolves sources, discovers skill
 
 ## Top-Level Pipeline
 
-The end-to-end sync: load config → load lock → sync skills → sync commands → sync MCPs → save
-lock + report (only on `--apply`). See the numbered pipeline in
+The end-to-end sync: load config + v3 lock/runtime proof → build the complete immutable plan →
+stage skills/commands/MCPs + lock + runtime → revalidate → commit or roll back (only on
+`--apply`). See the numbered pipeline in
 [How Sync Works → Sync Flow](./how-sync-works.md).
 
 ---
 
 ## Source Materialization
 
-Shared by all asset kinds — skills, commands, and MCPs. For each source, envctl decides whether a
-fetch is needed (lock pins it **and** destinations already match → no network), and only then
-materializes (downloads + extracts remote archives, or resolves a local path). Archive extraction
-rejects unsafe `..` paths (tar-slip guard); default-branch resolution tries `main` then `master`,
-with `ref` > `branch` > default precedence.
+Shared by all asset kinds — skills, commands, and MCPs. Plain/update mode may materialize local or
+remote sources while rebuilding desired pins. Only `--locked`/`--frozen` guarantees zero network:
+it refuses remote root configs/remote `extends`, re-hashes local inputs in place, and validates
+remote hash/revision/selector pins without constructing a fetch. Archive extraction in networked
+modes rejects unsafe `..` paths (tar-slip guard); default-branch resolution tries `main` then
+`master`, with `ref` > `branch` > default precedence.
 
 ---
 
@@ -48,15 +50,17 @@ Resolve each skill's destination from the active scope + agent preset (or an exp
 
 ### Hash, Diff & Copy
 
-Hash the source skill directory (SHA-256, OS-invariant path normalization), compare to the lock; if
-unchanged, skip. Otherwise copy the entire directory to the destination, fully replacing any
-previous version.
+Snapshot the source skill directory once (lock-v3 SHA-256 over length-framed native paths,
+effective entry types, file bytes, modes, and empty directories), compare it to the desired lock
+and destination, then install that same immutable snapshot. Project snapshots normalize to Git's
+portable mode subset and reject empty directories; global snapshots retain exact mode/platform
+semantics. Existing outputs are replaced only after exact ownership proof succeeds.
 
 ### Stale Removal
 
-Remove skill directories that are no longer listed in the config (tracked-only — never touches
-anything envctl didn't install). Skipped if any source failed, to avoid destroying still-locked
-assets on a partial error.
+Remove skill directories that are no longer listed in the config only from exact v3 ownership
+tombstones. Missing, incomplete, forged, or drifted proof fails closed; envctl never derives delete
+authority from desired lock entries alone.
 
 ---
 
@@ -85,6 +89,8 @@ overwritten (first write wins).
 Scope resolves as **CLI `--scope` → config `scope:` field → Global default**. The scope root is the
 project root (Project) or `$HOME` (Global), and the lock + per-agent destinations are derived from
 it. Lock locations: Global → `$XDG_DATA_HOME/agent-env/agent-env.lock`; Project → `./agent-env.lock`.
+Portable `installed_outputs` are project-only and relative. Global ownership is machine-local;
+historical project custom roots require the portable tombstone plus its matching runtime proof.
 
 ---
 
@@ -95,3 +101,7 @@ it. Lock locations: Global → `$XDG_DATA_HOME/agent-env/agent-env.lock`; Projec
 
 The preview (default, no `--apply`) skips all writes. Actions report `would_install`,
 `would_update`, `would_remove`. The lock file is never modified.
+
+Apply stages and revalidates the entire output set plus the resulting lock/runtime state before the
+first rename. A strict commit failure restores prior outputs and ledgers. A successful commit is
+the only point at which new ownership attestations become authoritative.

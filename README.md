@@ -29,7 +29,7 @@ target today is a GPU-aware dual-RTX-5090 Ubuntu 26.04 workstation.
 ## Quick start
 
 ```bash
-# Rust is required (this repo pins stable via rust-toolchain.toml):
+# Rust is required (latest nightly is the dev default; exact Rust 1.89.0 is the MSRV lane):
 #   curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && . "$HOME/.cargo/env"
 
 cargo build -p envctl-engine -p envctl     # engine + CLI (zero system deps)
@@ -110,7 +110,8 @@ It installs `$META_ROOT/usr/bin/envctl-gui`, an
 
 ## Status
 
-**Phase 0 + a working `auto-detect`.** The workspace compiles green on stable Rust; the
+**Phase 0 + a working `auto-detect`.** The workspace compiles green on the latest nightly and
+under the exact Rust 1.89.0 MSRV check; the
 read-only verb is fully implemented and validated on the live dual-5090 box (PCI-floor GPU
 detection that works even before the driver loads). `install`/`reset`/`auto-fix`/`add-repo`
 are wired end-to-end with the real safety machinery (fail-closed guards, dry-run defaults,

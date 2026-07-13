@@ -1,0 +1,491 @@
+# envctl CLI owner — canonical META_ROOT frontdoor for the environment manager itself.
+#
+# The payload is staged privately, bound to the canonical envctl + shared-substrate Rust sources
+# by an atomic SHA-256 install receipt, and exposed through a regular, marked wrapper.
+# Symlink frontdoors are retired only when they resolve inside META_ROOT; foreign
+# regular files and foreign symlinks fail closed.
+[[component]]
+id = "envctl-cli"
+name = "envctl CLI (meta-owned)"
+description = "Builds envctl from the meta workspace into a private META_ROOT payload, records source+payload SHA-256 generation identity, and exposes one atomic regular $META_ROOT/usr/bin/envctl frontdoor."
+requires = ["rustup"]
+destructive = false
+
+[component.detect]
+kind = "script"
+script = '''
+set -euo pipefail
+M="${META_ROOT:?META_ROOT required}"
+SRC="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+PRIVATE="$M/usr/libexec/envctl/cli/bin/envctl"
+RECEIPT="$M/usr/libexec/envctl/cli/install-receipt"
+FRONT="$M/usr/bin/envctl"
+
+envctl_tree_identity() {
+  (
+    cd "$SRC"
+    test -f Cargo.toml
+    test -f Cargo.lock
+    test -f rust-toolchain.toml
+    test -d crates
+    {
+      printf '%s\0' Cargo.toml Cargo.lock rust-toolchain.toml
+      if [ -d .cargo ]; then find .cargo -type f -print0; fi
+      find crates -type d -name target -prune -o -type f -print0
+    } | LC_ALL=C sort -zu | while IFS= read -r -d '' rel; do
+      sum="$(sha256sum -- "$rel" | awk '{print $1}')"
+      printf '%s  %s\0' "$sum" "$rel"
+    done
+  ) | sha256sum | awk '{print $1}'
+}
+
+sibling_tree_identity() {
+  local root="$1"
+  (
+    cd "$root"
+    test -f Cargo.toml
+    test -d src
+    {
+      printf '%s\0' Cargo.toml
+      if [ -f build.rs ]; then printf '%s\0' build.rs; fi
+      find src -type d -name target -prune -o -type f -print0
+    } | LC_ALL=C sort -zu | while IFS= read -r -d '' rel; do
+      sum="$(sha256sum -- "$rel" | awk '{print $1}')"
+      printf '%s  %s\0' "$sum" "$rel"
+    done
+  ) | sha256sum | awk '{print $1}'
+}
+
+source_identity() {
+  local shared_root envctl_sha loop_lib_sha protocol_sha
+  shared_root="$(dirname "$SRC")"
+  envctl_sha="$(envctl_tree_identity)"
+  loop_lib_sha="$(sibling_tree_identity "$shared_root/loop_lib")"
+  protocol_sha="$(sibling_tree_identity "$shared_root/meta_plugin_protocol")"
+  printf '%s\n' \
+    "envctl=$envctl_sha" \
+    "loop_lib=$loop_lib_sha" \
+    "meta_plugin_protocol=$protocol_sha" | sha256sum | awk '{print $1}'
+}
+
+[ -f "$PRIVATE" ] && [ -x "$PRIVATE" ] && [ ! -L "$PRIVATE" ]
+[ -f "$RECEIPT" ] && [ ! -L "$RECEIPT" ]
+[ -f "$FRONT" ] && [ -x "$FRONT" ] && [ ! -L "$FRONT" ]
+expected_frontdoor="$(printf '%s\n' \
+  '#!/bin/sh' \
+  '# managed-by: envctl component envctl-cli' \
+  "export META_ROOT=\"\${META_ROOT:-$M}\"" \
+  "export ENVCTL_MANIFEST_DIR=\"\${ENVCTL_MANIFEST_DIR:-$M/src/envctl/manifest}\"" \
+  "exec \"$PRIVATE\" \"\$@\"")"
+[ "$(cat -- "$FRONT")" = "$expected_frontdoor" ]
+
+source_sha256="$(source_identity)"
+payload_sha256="$(sha256sum -- "$PRIVATE" | awk '{print $1}')"
+expected="$(printf '%s\n' \
+  '# managed-by: envctl component envctl-cli' \
+  'schema=1' \
+  "source_sha256=$source_sha256" \
+  "payload_sha256=$payload_sha256")"
+[ "$(cat -- "$RECEIPT")" = "$expected" ]
+'''
+
+[component.install]
+kind = "script"
+script = '''
+set -euo pipefail
+M="${META_ROOT:?META_ROOT required}"
+SRC="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+DEST="$M/usr/libexec/envctl/cli/bin"
+PRIVATE="$DEST/envctl"
+RECEIPT="$M/usr/libexec/envctl/cli/install-receipt"
+FRONT="$M/usr/bin/envctl"
+TARGET="$M/var/cache/envctl/cargo-target/envctl-cli"
+export CARGO_HOME="$M/.toolchains/cargo"
+export RUSTUP_HOME="$M/.toolchains/rustup"
+export CARGO_TARGET_DIR="$TARGET"
+export PATH="$CARGO_HOME/bin:$M/usr/bin:/usr/bin:/bin"
+CARGO="$CARGO_HOME/bin/cargo"
+[ -d "$RUSTUP_HOME" ] || { echo "FATAL: canonical RUSTUP_HOME missing at $RUSTUP_HOME" >&2; exit 1; }
+[ -f "$CARGO" ] && [ -x "$CARGO" ] \
+  || { echo "FATAL: canonical meta Cargo missing at $CARGO" >&2; exit 1; }
+cargo_resolved="$(readlink -f -- "$CARGO")"
+case "$cargo_resolved" in
+  "$M"/*) ;;
+  *) echo "FATAL: canonical Cargo escapes META_ROOT: $CARGO -> $cargo_resolved" >&2; exit 1 ;;
+esac
+test -f "$SRC/Cargo.toml" || { echo "FATAL: envctl checkout not found at $SRC" >&2; exit 1; }
+
+envctl_tree_identity() {
+  (
+    cd "$SRC"
+    test -f Cargo.toml
+    test -f Cargo.lock
+    test -f rust-toolchain.toml
+    test -d crates
+    {
+      printf '%s\0' Cargo.toml Cargo.lock rust-toolchain.toml
+      if [ -d .cargo ]; then find .cargo -type f -print0; fi
+      find crates -type d -name target -prune -o -type f -print0
+    } | LC_ALL=C sort -zu | while IFS= read -r -d '' rel; do
+      sum="$(sha256sum -- "$rel" | awk '{print $1}')"
+      printf '%s  %s\0' "$sum" "$rel"
+    done
+  ) | sha256sum | awk '{print $1}'
+}
+
+sibling_tree_identity() {
+  local root="$1"
+  (
+    cd "$root"
+    test -f Cargo.toml
+    test -d src
+    {
+      printf '%s\0' Cargo.toml
+      if [ -f build.rs ]; then printf '%s\0' build.rs; fi
+      find src -type d -name target -prune -o -type f -print0
+    } | LC_ALL=C sort -zu | while IFS= read -r -d '' rel; do
+      sum="$(sha256sum -- "$rel" | awk '{print $1}')"
+      printf '%s  %s\0' "$sum" "$rel"
+    done
+  ) | sha256sum | awk '{print $1}'
+}
+
+source_identity() {
+  local shared_root envctl_sha loop_lib_sha protocol_sha
+  shared_root="$(dirname "$SRC")"
+  envctl_sha="$(envctl_tree_identity)"
+  loop_lib_sha="$(sibling_tree_identity "$shared_root/loop_lib")"
+  protocol_sha="$(sibling_tree_identity "$shared_root/meta_plugin_protocol")"
+  printf '%s\n' \
+    "envctl=$envctl_sha" \
+    "loop_lib=$loop_lib_sha" \
+    "meta_plugin_protocol=$protocol_sha" | sha256sum | awk '{print $1}'
+}
+
+frontdoor_content() {
+  printf '%s\n' \
+    '#!/bin/sh' \
+    '# managed-by: envctl component envctl-cli' \
+    "export META_ROOT=\"\${META_ROOT:-$M}\"" \
+    "export ENVCTL_MANIFEST_DIR=\"\${ENVCTL_MANIFEST_DIR:-$M/src/envctl/manifest}\"" \
+    "exec \"$PRIVATE\" \"\$@\""
+}
+
+frontdoor_state() {
+  local resolved
+  if [ -L "$FRONT" ]; then
+    resolved="$(readlink -f "$FRONT" 2>/dev/null || true)"
+    case "$resolved" in
+      "$M"/*) printf 'legacy:%s\n' "$resolved" ;;
+      *) echo "REFUSE envctl-cli: foreign symlink frontdoor $FRONT -> $resolved" >&2; return 1 ;;
+    esac
+  elif [ -e "$FRONT" ]; then
+    if [ -f "$FRONT" ] && [ "$(cat -- "$FRONT")" = "$(frontdoor_content)" ]; then
+      printf 'managed\n'
+    else
+      echo "REFUSE envctl-cli: foreign regular frontdoor at $FRONT" >&2
+      return 1
+    fi
+  else
+    printf 'missing\n'
+  fi
+}
+
+frontdoor_before="$(frontdoor_state)"
+source_sha256="$(source_identity)"
+"$CARGO" build --release --locked -p envctl --bin envctl --manifest-path "$SRC/Cargo.toml"
+built="$TARGET/release/envctl"
+test -x "$built" || { echo "FATAL: cargo did not produce $built" >&2; exit 1; }
+source_sha256_after="$(source_identity)"
+[ "$source_sha256_after" = "$source_sha256" ] || {
+  echo "FATAL: envctl source changed while the owned payload was building" >&2
+  exit 1
+}
+frontdoor_after="$(frontdoor_state)"
+[ "$frontdoor_after" = "$frontdoor_before" ] || {
+  echo "FATAL: envctl frontdoor changed while the owned payload was building" >&2
+  exit 1
+}
+install -d -m755 "$DEST" "$M/usr/bin"
+payload_tmp="$DEST/.envctl.$$"
+install -m755 "$built" "$payload_tmp"
+mv -f "$payload_tmp" "$PRIVATE"
+payload_sha256="$(sha256sum -- "$PRIVATE" | awk '{print $1}')"
+receipt_tmp="$M/usr/libexec/envctl/cli/.install-receipt.$$"
+printf '%s\n' \
+  '# managed-by: envctl component envctl-cli' \
+  'schema=1' \
+  "source_sha256=$source_sha256" \
+  "payload_sha256=$payload_sha256" >"$receipt_tmp"
+chmod 644 "$receipt_tmp"
+mv -f "$receipt_tmp" "$RECEIPT"
+case "$frontdoor_before" in
+  legacy:*)
+    archive="$M/var/lib/envctl/legacy-archives/envctl-cli-$(date -u +%Y%m%dT%H%M%SZ)/usr/bin"
+    install -d -m700 "$archive"
+    mv "$FRONT" "$archive/envctl"
+    ;;
+  managed|missing) ;;
+  *) echo "FATAL: unknown envctl frontdoor state: $frontdoor_before" >&2; exit 1 ;;
+esac
+front_tmp="$M/usr/bin/.envctl.$$"
+frontdoor_content >"$front_tmp"
+chmod 755 "$front_tmp"
+mv -f "$front_tmp" "$FRONT"
+'''
+
+[component.verify]
+kind = "script"
+script = '''
+set -euo pipefail
+M="${META_ROOT:?META_ROOT required}"
+SRC="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+PRIVATE="$M/usr/libexec/envctl/cli/bin/envctl"
+RECEIPT="$M/usr/libexec/envctl/cli/install-receipt"
+FRONT="$M/usr/bin/envctl"
+
+envctl_tree_identity() {
+  (
+    cd "$SRC"
+    test -f Cargo.toml
+    test -f Cargo.lock
+    test -f rust-toolchain.toml
+    test -d crates
+    {
+      printf '%s\0' Cargo.toml Cargo.lock rust-toolchain.toml
+      if [ -d .cargo ]; then find .cargo -type f -print0; fi
+      find crates -type d -name target -prune -o -type f -print0
+    } | LC_ALL=C sort -zu | while IFS= read -r -d '' rel; do
+      sum="$(sha256sum -- "$rel" | awk '{print $1}')"
+      printf '%s  %s\0' "$sum" "$rel"
+    done
+  ) | sha256sum | awk '{print $1}'
+}
+
+sibling_tree_identity() {
+  local root="$1"
+  (
+    cd "$root"
+    test -f Cargo.toml
+    test -d src
+    {
+      printf '%s\0' Cargo.toml
+      if [ -f build.rs ]; then printf '%s\0' build.rs; fi
+      find src -type d -name target -prune -o -type f -print0
+    } | LC_ALL=C sort -zu | while IFS= read -r -d '' rel; do
+      sum="$(sha256sum -- "$rel" | awk '{print $1}')"
+      printf '%s  %s\0' "$sum" "$rel"
+    done
+  ) | sha256sum | awk '{print $1}'
+}
+
+source_identity() {
+  local shared_root envctl_sha loop_lib_sha protocol_sha
+  shared_root="$(dirname "$SRC")"
+  envctl_sha="$(envctl_tree_identity)"
+  loop_lib_sha="$(sibling_tree_identity "$shared_root/loop_lib")"
+  protocol_sha="$(sibling_tree_identity "$shared_root/meta_plugin_protocol")"
+  printf '%s\n' \
+    "envctl=$envctl_sha" \
+    "loop_lib=$loop_lib_sha" \
+    "meta_plugin_protocol=$protocol_sha" | sha256sum | awk '{print $1}'
+}
+
+[ -f "$PRIVATE" ] && [ -x "$PRIVATE" ] && [ ! -L "$PRIVATE" ]
+[ -f "$RECEIPT" ] && [ ! -L "$RECEIPT" ]
+[ -f "$FRONT" ] && [ -x "$FRONT" ] && [ ! -L "$FRONT" ]
+expected_frontdoor="$(printf '%s\n' \
+  '#!/bin/sh' \
+  '# managed-by: envctl component envctl-cli' \
+  "export META_ROOT=\"\${META_ROOT:-$M}\"" \
+  "export ENVCTL_MANIFEST_DIR=\"\${ENVCTL_MANIFEST_DIR:-$M/src/envctl/manifest}\"" \
+  "exec \"$PRIVATE\" \"\$@\"")"
+[ "$(cat -- "$FRONT")" = "$expected_frontdoor" ]
+
+source_sha256="$(source_identity)"
+payload_sha256="$(sha256sum -- "$PRIVATE" | awk '{print $1}')"
+expected="$(printf '%s\n' \
+  '# managed-by: envctl component envctl-cli' \
+  'schema=1' \
+  "source_sha256=$source_sha256" \
+  "payload_sha256=$payload_sha256")"
+[ "$(cat -- "$RECEIPT")" = "$expected" ]
+"$PRIVATE" --version >/dev/null
+"$FRONT" --version >/dev/null
+'''
+
+[component.fix]
+kind = "script"
+script = '''
+set -euo pipefail
+M="${META_ROOT:?META_ROOT required}"
+SRC="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+DEST="$M/usr/libexec/envctl/cli/bin"
+PRIVATE="$DEST/envctl"
+RECEIPT="$M/usr/libexec/envctl/cli/install-receipt"
+FRONT="$M/usr/bin/envctl"
+TARGET="$M/var/cache/envctl/cargo-target/envctl-cli"
+export CARGO_HOME="$M/.toolchains/cargo"
+export RUSTUP_HOME="$M/.toolchains/rustup"
+export CARGO_TARGET_DIR="$TARGET"
+export PATH="$CARGO_HOME/bin:$M/usr/bin:/usr/bin:/bin"
+CARGO="$CARGO_HOME/bin/cargo"
+[ -d "$RUSTUP_HOME" ] || { echo "FATAL: canonical RUSTUP_HOME missing at $RUSTUP_HOME" >&2; exit 1; }
+[ -f "$CARGO" ] && [ -x "$CARGO" ] \
+  || { echo "FATAL: canonical meta Cargo missing at $CARGO" >&2; exit 1; }
+cargo_resolved="$(readlink -f -- "$CARGO")"
+case "$cargo_resolved" in
+  "$M"/*) ;;
+  *) echo "FATAL: canonical Cargo escapes META_ROOT: $CARGO -> $cargo_resolved" >&2; exit 1 ;;
+esac
+test -f "$SRC/Cargo.toml" || { echo "FATAL: envctl checkout not found at $SRC" >&2; exit 1; }
+
+envctl_tree_identity() {
+  (
+    cd "$SRC"
+    test -f Cargo.toml
+    test -f Cargo.lock
+    test -f rust-toolchain.toml
+    test -d crates
+    {
+      printf '%s\0' Cargo.toml Cargo.lock rust-toolchain.toml
+      if [ -d .cargo ]; then find .cargo -type f -print0; fi
+      find crates -type d -name target -prune -o -type f -print0
+    } | LC_ALL=C sort -zu | while IFS= read -r -d '' rel; do
+      sum="$(sha256sum -- "$rel" | awk '{print $1}')"
+      printf '%s  %s\0' "$sum" "$rel"
+    done
+  ) | sha256sum | awk '{print $1}'
+}
+
+sibling_tree_identity() {
+  local root="$1"
+  (
+    cd "$root"
+    test -f Cargo.toml
+    test -d src
+    {
+      printf '%s\0' Cargo.toml
+      if [ -f build.rs ]; then printf '%s\0' build.rs; fi
+      find src -type d -name target -prune -o -type f -print0
+    } | LC_ALL=C sort -zu | while IFS= read -r -d '' rel; do
+      sum="$(sha256sum -- "$rel" | awk '{print $1}')"
+      printf '%s  %s\0' "$sum" "$rel"
+    done
+  ) | sha256sum | awk '{print $1}'
+}
+
+source_identity() {
+  local shared_root envctl_sha loop_lib_sha protocol_sha
+  shared_root="$(dirname "$SRC")"
+  envctl_sha="$(envctl_tree_identity)"
+  loop_lib_sha="$(sibling_tree_identity "$shared_root/loop_lib")"
+  protocol_sha="$(sibling_tree_identity "$shared_root/meta_plugin_protocol")"
+  printf '%s\n' \
+    "envctl=$envctl_sha" \
+    "loop_lib=$loop_lib_sha" \
+    "meta_plugin_protocol=$protocol_sha" | sha256sum | awk '{print $1}'
+}
+
+frontdoor_content() {
+  printf '%s\n' \
+    '#!/bin/sh' \
+    '# managed-by: envctl component envctl-cli' \
+    "export META_ROOT=\"\${META_ROOT:-$M}\"" \
+    "export ENVCTL_MANIFEST_DIR=\"\${ENVCTL_MANIFEST_DIR:-$M/src/envctl/manifest}\"" \
+    "exec \"$PRIVATE\" \"\$@\""
+}
+
+frontdoor_state() {
+  local resolved
+  if [ -L "$FRONT" ]; then
+    resolved="$(readlink -f "$FRONT" 2>/dev/null || true)"
+    case "$resolved" in
+      "$M"/*) printf 'legacy:%s\n' "$resolved" ;;
+      *) echo "REFUSE envctl-cli: foreign symlink frontdoor $FRONT -> $resolved" >&2; return 1 ;;
+    esac
+  elif [ -e "$FRONT" ]; then
+    if [ -f "$FRONT" ] && [ "$(cat -- "$FRONT")" = "$(frontdoor_content)" ]; then
+      printf 'managed\n'
+    else
+      echo "REFUSE envctl-cli: foreign regular frontdoor at $FRONT" >&2
+      return 1
+    fi
+  else
+    printf 'missing\n'
+  fi
+}
+
+frontdoor_before="$(frontdoor_state)"
+source_sha256="$(source_identity)"
+"$CARGO" build --release --locked -p envctl --bin envctl --manifest-path "$SRC/Cargo.toml"
+built="$TARGET/release/envctl"
+test -x "$built" || { echo "FATAL: cargo did not produce $built" >&2; exit 1; }
+source_sha256_after="$(source_identity)"
+[ "$source_sha256_after" = "$source_sha256" ] || {
+  echo "FATAL: envctl source changed while the owned payload was building" >&2
+  exit 1
+}
+frontdoor_after="$(frontdoor_state)"
+[ "$frontdoor_after" = "$frontdoor_before" ] || {
+  echo "FATAL: envctl frontdoor changed while the owned payload was building" >&2
+  exit 1
+}
+install -d -m755 "$DEST" "$M/usr/bin"
+payload_tmp="$DEST/.envctl.$$"
+install -m755 "$built" "$payload_tmp"
+mv -f "$payload_tmp" "$PRIVATE"
+payload_sha256="$(sha256sum -- "$PRIVATE" | awk '{print $1}')"
+receipt_tmp="$M/usr/libexec/envctl/cli/.install-receipt.$$"
+printf '%s\n' \
+  '# managed-by: envctl component envctl-cli' \
+  'schema=1' \
+  "source_sha256=$source_sha256" \
+  "payload_sha256=$payload_sha256" >"$receipt_tmp"
+chmod 644 "$receipt_tmp"
+mv -f "$receipt_tmp" "$RECEIPT"
+case "$frontdoor_before" in
+  legacy:*)
+    archive="$M/var/lib/envctl/legacy-archives/envctl-cli-$(date -u +%Y%m%dT%H%M%SZ)/usr/bin"
+    install -d -m700 "$archive"
+    mv "$FRONT" "$archive/envctl"
+    ;;
+  managed|missing) ;;
+  *) echo "FATAL: unknown envctl frontdoor state: $frontdoor_before" >&2; exit 1 ;;
+esac
+front_tmp="$M/usr/bin/.envctl.$$"
+frontdoor_content >"$front_tmp"
+chmod 755 "$front_tmp"
+mv -f "$front_tmp" "$FRONT"
+'''
+
+[component.remove]
+kind = "script"
+script = '''
+set -euo pipefail
+M="${META_ROOT:?META_ROOT required}"
+PRIVATE="$M/usr/libexec/envctl/cli/bin/envctl"
+RECEIPT="$M/usr/libexec/envctl/cli/install-receipt"
+FRONT="$M/usr/bin/envctl"
+expected_frontdoor="$(printf '%s\n' \
+  '#!/bin/sh' \
+  '# managed-by: envctl component envctl-cli' \
+  "export META_ROOT=\"\${META_ROOT:-$M}\"" \
+  "export ENVCTL_MANIFEST_DIR=\"\${ENVCTL_MANIFEST_DIR:-$M/src/envctl/manifest}\"" \
+  "exec \"$PRIVATE\" \"\$@\"")"
+if [ -e "$FRONT" ] || [ -L "$FRONT" ]; then
+  if [ -f "$FRONT" ] && [ ! -L "$FRONT" ] &&
+     [ "$(cat -- "$FRONT")" = "$expected_frontdoor" ]; then
+    rm -f "$FRONT"
+  else
+    echo "REFUSE envctl-cli: foreign or non-canonical frontdoor at $FRONT" >&2
+    exit 1
+  fi
+fi
+rm -f "$PRIVATE"
+rm -f "$RECEIPT"
+rmdir "$M/usr/libexec/envctl/cli/bin" "$M/usr/libexec/envctl/cli" 2>/dev/null || true
+'''
+
+[component.wiring]
+path_entries = ["$META_ROOT/usr/bin"]

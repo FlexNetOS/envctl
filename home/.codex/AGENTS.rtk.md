@@ -16,7 +16,7 @@ Run these commands raw when capturing gate evidence or root-cause diagnostics:
 
 If a command would normally be routed through RTK but raw output is required, run it raw with a tee log. Use `rtk proxy <cmd>` only when tracking is useful and the raw output is still preserved.
 
-Preserve raw failure logs under the execution pack `logs/` directory or `/home/flexnetos/FlexNetOS/var/log/raw`. Do not replace root-cause evidence with RTK summaries.
+Preserve raw failure logs under the execution pack `logs/` directory or `/home/flexnetos/meta/var/log/raw`. Do not replace root-cause evidence with RTK summaries.
 
 For Yazelix runtime-path verification, prefer raw proof of:
 

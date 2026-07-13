@@ -13,3 +13,6 @@ envctl-engine = { workspace = true }
 eframe = { workspace = true }
 egui = { workspace = true }
 egui_extras = { workspace = true }
+
+[dev-dependencies]
+font-test-data = "0.7.0"

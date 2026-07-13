@@ -1,7 +1,7 @@
 //! The `kasetto.yaml` / agent-env config model — ported from kasetto v3.2.0
 //! `src/model/config.rs` + `src/model/agent.rs`.
 //!
-//! The schema is **6 keys + `extends`**: `destination`, `scope`, `agent`, `skills`,
+//! The schema is **7 keys + `extends`**: `destination`, `scope`, `runtime`, `agent`, `skills`,
 //! `mcps`, `commands` (the `extends` key is stripped at the YAML layer before
 //! deserialization — see [`crate::extend`]). The `*Field` / `*Entry` / `*SourceSpec`
 //! enums are `#[serde(untagged)]` so a single YAML key accepts either a `"*"` wildcard
@@ -25,6 +25,10 @@ pub struct Config {
     pub destination: Option<String>,
     #[serde(default)]
     pub scope: Option<Scope>,
+    /// Optional runtime-ownership contract that every agent verb audits before it touches
+    /// managed assets.  Omitted for generic agent-env consumers; envctl declares Yazelix here.
+    #[serde(default)]
+    pub runtime: Option<RuntimeContract>,
     #[serde(default)]
     pub agent: Option<AgentField>,
     #[serde(default)]
@@ -33,6 +37,16 @@ pub struct Config {
     pub mcps: Vec<McpSourceSpec>,
     #[serde(default)]
     pub commands: Vec<CommandSourceSpec>,
+}
+
+/// A declarative runtime contract that accompanies agent assets.
+///
+/// `yazelix-nushell` means the user config tree remains editable input, while the single
+/// real-home Nix profile owns the generated Nu module, native RTK, and the `yzx` frontdoor.
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
+pub enum RuntimeContract {
+    #[serde(rename = "yazelix-nushell")]
+    YazelixNushell,
 }
 
 impl Config {
@@ -116,6 +130,33 @@ impl SourceSpec {
             GitPin::Ref(r) => format!("ref:{r}"),
             GitPin::Branch(b) => format!("branch:{b}"),
             GitPin::Default => "branch:main".into(),
+        }
+    }
+
+    /// Whether a lock's recorded revision could have supplied bytes for this source spec.
+    ///
+    /// An unpinned remote tries `main` and then `master`, so both labels are valid only for
+    /// that default case. Explicit refs and branches remain exact. This lets the zero-network
+    /// auditor preserve the branch that actually materialized instead of falsely relabelling a
+    /// successful `master` fallback as `main`.
+    pub fn accepts_resolved_revision(&self, revision: &str) -> bool {
+        if !self.source.contains("://") {
+            return revision == "local";
+        }
+        match self.git_pin() {
+            GitPin::Ref(r) => revision == format!("ref:{r}"),
+            GitPin::Branch(b) => revision == format!("branch:{b}"),
+            GitPin::Default => matches!(revision, "branch:main" | "branch:master"),
+        }
+    }
+
+    /// Human-readable lock expectation used in fail-closed diagnostics.
+    pub fn revision_expectation(&self) -> String {
+        match self.git_pin() {
+            GitPin::Default if self.source.contains("://") => {
+                "`branch:main` or `branch:master`".into()
+            }
+            _ => format!("`{}`", self.expected_revision()),
         }
     }
 }
@@ -255,7 +296,7 @@ impl Default for AgentField {
 /// NOTE (TASK-0012 scope): only the enum **shape** + serde renames are ported here. The
 /// per-agent native path-mapping methods (`global_path`, `mcp_settings_target`,
 /// `commands_*_path`, …) are deferred to TASK-0013 (the Engine wiring card).
-#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Agent {
     #[serde(rename = "amp")]
     Amp,
@@ -341,6 +382,14 @@ mod tests {
         let cfg: Config = serde_yaml::from_str("scope: project\nskills: []\n").expect("parse");
         assert_eq!(resolve_scope(None, Some(&cfg)), Scope::Project);
         assert_eq!(resolve_scope(None, None), Scope::Global);
+    }
+
+    #[test]
+    fn config_parses_yazelix_nushell_runtime_contract() {
+        let cfg: Config =
+            serde_yaml::from_str("scope: project\nruntime: yazelix-nushell\nskills: []\n")
+                .expect("parse");
+        assert_eq!(cfg.runtime, Some(RuntimeContract::YazelixNushell));
     }
 
     #[test]
@@ -448,6 +497,16 @@ skills:
                 .expect("parse");
         assert_eq!(default.skills[0].git_pin(), GitPin::Default);
         assert_eq!(default.skills[0].expected_revision(), "branch:main");
+        assert!(default.skills[0].accepts_resolved_revision("branch:main"));
+        assert!(default.skills[0].accepts_resolved_revision("branch:master"));
+        assert!(!default.skills[0].accepts_resolved_revision("branch:trunk"));
+        assert_eq!(
+            default.skills[0].revision_expectation(),
+            "`branch:main` or `branch:master`"
+        );
+
+        assert!(branch.skills[0].accepts_resolved_revision("branch:dev"));
+        assert!(!branch.skills[0].accepts_resolved_revision("branch:main"));
     }
 
     #[test]
