@@ -360,6 +360,9 @@ fn build_command(hook: &Hook) -> Command {
         args: &args,
         current_dir: None,
         env: &env,
+        // Component hooks intentionally inherit the launch environment; the
+        // enforced meta variables above overlay and constrain that environment.
+        clear_env: false,
     })
 }
 
