@@ -44,16 +44,16 @@ macro_rules! envctl_examples {
 use envctl_engine::catalog as catalog_engine;
 use envctl_engine::secrets::run_secretctl;
 use envctl_engine::{
-    AddRepoMode, AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentDoctorSpec, AgentInitSpec,
-    AgentListKind, AgentListSpec, AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentScope,
-    AgentSectionSel, AgentSyncSpec, AiAgent, BuildStrategy, BuildSystem, CatalogAnalyzeReport,
-    CatalogDiffReport, CatalogFacetCount, CatalogImportReport, CatalogLockReport,
-    CatalogRenderReport, CatalogScanSpec, CatalogSnapshot, CatalogSyncReport, CatalogTableName,
-    CatalogTableSummaryRow, DashboardSpec, DoctorReport, DoctorSpec, DriftSummary, Engine,
-    EnvReport, Event, EventSink, HubRegistryReport, HubRegistryStatus, ManifestLockStatus,
-    MigrationAction, MigrationReport, MigrationRisk, MigrationScope, MigrationSpec,
-    MigrationStatus, MigrationVerb, OpStatus, Phase, Refactor, RefactorGoal, Registry, RenameRule,
-    ResetGates, RunPlan, SelfUninstallSpec, Severity, Status,
+    AddRepoMode, AddRepoSpec, AgentAddSpec, AgentAuditReport, AgentAuditSpec, AgentCleanSpec,
+    AgentDoctorSpec, AgentInitSpec, AgentListKind, AgentListSpec, AgentLockMode, AgentLockSpec,
+    AgentRemoveSpec, AgentScope, AgentSectionSel, AgentSyncSpec, AiAgent, BuildStrategy,
+    BuildSystem, CatalogAnalyzeReport, CatalogDiffReport, CatalogFacetCount, CatalogImportReport,
+    CatalogLockReport, CatalogRenderReport, CatalogScanSpec, CatalogSnapshot, CatalogSyncReport,
+    CatalogTableName, CatalogTableSummaryRow, DashboardSpec, DoctorReport, DoctorSpec,
+    DriftSummary, Engine, EnvReport, Event, EventSink, HubRegistryReport, HubRegistryStatus,
+    ManifestLockStatus, MigrationAction, MigrationReport, MigrationRisk, MigrationScope,
+    MigrationSpec, MigrationStatus, MigrationVerb, OpStatus, Phase, Refactor, RefactorGoal,
+    Registry, RenameRule, ResetGates, RunPlan, SelfUninstallSpec, Severity, Status,
 };
 
 #[derive(Parser)]
@@ -564,12 +564,13 @@ enum Cmd {
     /// PREVIEW by default; pass `--apply` to write. `--json` (global) emits the typed
     /// return value. `list`/`lock --check` are read-only.
     #[command(
-        long_about = "Manage agent assets (skills / MCP servers / commands) declaratively over the shared engine. Reconcile installed assets with the config (sync), add or remove sources, lock the config, list the inventory, prune orphans (clean), create a starter config (init), or run diagnostics (doctor). Mutating verbs (sync / add / remove / clean) are PREVIEW by default; pass --apply to write. `list` and `lock --check` are read-only.",
+        long_about = "Manage agent assets (skills / MCP servers / commands) declaratively over the shared engine. Reconcile installed assets with the config (sync), add or remove sources, lock the config, list the inventory, prune orphans (clean), create a starter config (init), inspect diagnostics (doctor), or run a strict zero-network config/lock/install audit. Mutating verbs (sync / add / remove / clean) are PREVIEW by default; pass --apply to write. `list`, `lock --check`, `doctor`, and `audit` are read-only.",
         after_help = envctl_examples!(
             "envctl agent sync --apply",
             "envctl agent add https://github.com/FlexNetOS/example --skill find --apply",
             "envctl agent list --kind skills",
             "envctl agent lock --check",
+            "envctl agent audit --config agent-env.yaml",
             "envctl agent doctor --scope global",
         )
     )]
@@ -1363,6 +1364,23 @@ enum AgentCmd {
         /// Overwrite an existing config file.
         #[arg(short = 'f', long)]
         force: bool,
+    },
+    /// Strict zero-network config → lock → installed-assets audit. Exits 1 on any finding.
+    #[command(
+        long_about = "Resolve one agent-env config and verify its project lock plus every installed managed skill hash without fetching or writing. The report also records managed command and MCP ownership, native target presence, and duplicate-owner conflicts. Unlike doctor, audit is a fail-closed policy gate and exits 1 on any finding.",
+        after_help = envctl_examples!(
+            "envctl agent audit --config agent-env.yaml",
+            "envctl agent audit --config /workspace/repo/agent-env.yaml --json",
+            "envctl agent audit --scope project",
+        )
+    )]
+    Audit {
+        /// Config file path (else the default-config resolution / `$ENVCTL_AGENT_CONFIG`).
+        #[arg(long)]
+        config: Option<String>,
+        /// Override the scope resolved from the config.
+        #[arg(long, value_enum)]
+        scope: Option<ScopeArg>,
     },
     /// Read-only diagnostics: version, lock, scope, inventory, command-dir writability, updates.
     #[command(
@@ -3228,7 +3246,7 @@ fn should_spawn_background_update_check(cmd: &Cmd, json: bool, quiet: u8) -> boo
             | AgentCmd::Add { apply, locked, .. }
             | AgentCmd::Remove { apply, locked, .. } => *apply && !locked,
             AgentCmd::Lock { check, locked, .. } => !check && !locked,
-            AgentCmd::List { .. } | AgentCmd::Doctor { .. } => false,
+            AgentCmd::List { .. } | AgentCmd::Doctor { .. } | AgentCmd::Audit { .. } => false,
             AgentCmd::Clean { apply, .. } => *apply,
             AgentCmd::Init { .. } => true,
         },
@@ -3741,6 +3759,8 @@ enum AgentResult {
     Init(envctl_engine::AgentInitOutcome),
     /// `doctor` — read-only diagnostics; nonzero unless every typed health check passes.
     Doctor(envctl_engine::AgentDoctorReport),
+    /// Strict config/lock/installed-assets audit — exit 1 on any finding.
+    Audit(AgentAuditReport),
 }
 
 impl AgentResult {
@@ -3754,6 +3774,7 @@ impl AgentResult {
             AgentResult::List(l) => serde_json::to_string_pretty(l)?,
             AgentResult::Init(o) => serde_json::to_string_pretty(o)?,
             AgentResult::Doctor(d) => serde_json::to_string_pretty(d)?,
+            AgentResult::Audit(a) => serde_json::to_string_pretty(a)?,
         })
     }
 
@@ -3774,6 +3795,7 @@ impl AgentResult {
             AgentResult::List(_) => true,
             AgentResult::Init(_) => true,
             AgentResult::Doctor(d) => d.healthy,
+            AgentResult::Audit(a) => a.is_healthy(),
         }
     }
 
@@ -3810,6 +3832,7 @@ impl AgentResult {
                 );
             }
             AgentResult::Doctor(d) => render_agent_doctor(d),
+            AgentResult::Audit(a) => render_agent_audit(a),
             // Fully rendered by the EventSink stream (print_event); nothing to add.
             AgentResult::Report(_) | AgentResult::Lock(_) => {}
         }
@@ -3945,6 +3968,67 @@ fn render_agent_doctor(d: &envctl_engine::AgentDoctorReport) {
 }
 
 /// A `✓ / ✗ label` check row.
+/// Human rendering for the strict `agent audit` fleet gate. The engine owns all findings; this
+/// function merely presents its typed return after the worker has completed.
+fn render_agent_audit(a: &AgentAuditReport) {
+    let o = out();
+    if o.is_quiet() && !o.json {
+        return;
+    }
+    emit(format!(
+        "\x1b[1;36maudit — {}\x1b[0m",
+        if a.is_healthy() {
+            "✓ healthy"
+        } else {
+            "✗ issues"
+        }
+    ));
+    emit(format!("  Config     {}", a.config));
+    emit(format!("  Lock       {}", a.lock_file));
+    emit(format!("  Scope      {:?}", a.scope));
+    emit(format!("  Skills     {}", a.skills.len()));
+    emit(format!("  Commands   {}", a.commands.len()));
+    emit(format!("  MCPs       {}", a.mcps.len()));
+    if !a.commands.is_empty() {
+        emit("\n\x1b[1;33mCOMMAND OWNERSHIP\x1b[0m".to_string());
+        for command in &a.commands {
+            let present = command
+                .targets
+                .iter()
+                .filter(|target| target.present)
+                .count();
+            emit(format!(
+                "  {}  owners={}  targets={}/{}{}",
+                command.name,
+                command.owners.join(","),
+                present,
+                command.targets.len(),
+                if command.conflict { "  CONFLICT" } else { "" }
+            ));
+        }
+    }
+    if !a.mcps.is_empty() {
+        emit("\n\x1b[1;33mMCP OWNERSHIP\x1b[0m".to_string());
+        for mcp in &a.mcps {
+            let present = mcp.targets.iter().filter(|target| target.present).count();
+            emit(format!(
+                "  {}  owners={}  targets={}/{}{}",
+                mcp.name,
+                mcp.owners.join(","),
+                present,
+                mcp.targets.len(),
+                if mcp.conflict { "  CONFLICT" } else { "" }
+            ));
+        }
+    }
+    if !a.issues.is_empty() {
+        emit("\n\x1b[1;31mFINDINGS\x1b[0m".to_string());
+        for issue in &a.issues {
+            emit(format!("  {} {} — {}", issue.kind, issue.id, issue.detail));
+        }
+    }
+}
+
 fn check_line(ok: bool, label: &str) -> String {
     if ok {
         format!("  \x1b[1;32m✓\x1b[0m {label}")
@@ -4113,6 +4197,13 @@ fn run_agent(engine: Engine, cmd: AgentCmd, json: bool) -> anyhow::Result<()> {
             AgentCmd::Init { global, force } => {
                 let spec = AgentInitSpec { global, force };
                 AgentResult::Init(eng.agent_init(spec, &sink)?)
+            }
+            AgentCmd::Audit { config, scope } => {
+                let spec = AgentAuditSpec {
+                    config_path: config,
+                    scope_override: scope.map(AgentScope::from),
+                };
+                AgentResult::Audit(eng.agent_audit(spec, &sink)?)
             }
             AgentCmd::Doctor { scope } => {
                 let spec = AgentDoctorSpec {
@@ -4834,6 +4925,11 @@ fn print_event(ev: &Event) {
         Event::AgentDoctored { report } => {
             // `agent doctor` honors --quiet (kasetto: quiet && !json => no-op). The human view
             // is rendered from the typed return in `render_agent_doctor`, not here.
+            let _ = report;
+        }
+        Event::AgentAudited { report } => {
+            // The typed report is rendered after the worker completes so JSON and human output
+            // share the same one-report shape; keep the event path intentionally silent.
             let _ = report;
         }
         Event::RunFinished { summary } => {

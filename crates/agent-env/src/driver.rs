@@ -58,7 +58,8 @@ use crate::source::{
     resolve_mcp_entry, BrowseDerived,
 };
 use crate::sync::{
-    command_action_label, command_asset_id, mcp_action_label, mcp_asset_id, skill_key,
+    command_action_label, command_asset_id, desired_command_names, desired_mcp_file_name_for_entry,
+    desired_mcp_file_names, desired_skill_names, mcp_action_label, mcp_asset_id, skill_key,
 };
 use crate::util::{now_unix, now_unix_str};
 use crate::{err, Result, TreeSnapshot};
@@ -3178,24 +3179,6 @@ fn force_remove(path: &Path) -> Result<()> {
 // Skills (kasetto commands/sync/skills.rs)
 // ===================================================================================
 
-fn desired_skill_names(src: &SourceSpec, lock: &AgentLockFile) -> Vec<String> {
-    match &src.skills {
-        SkillsField::List(items) => items
-            .iter()
-            .map(|it| match it {
-                SkillTarget::Name(n) => n.clone(),
-                SkillTarget::Obj { name, .. } => name.clone(),
-            })
-            .collect(),
-        SkillsField::Wildcard(_) => lock
-            .skills
-            .values()
-            .filter(|e| e.source == src.source)
-            .map(|e| e.skill.clone())
-            .collect(),
-    }
-}
-
 fn ensure_locked_satisfiable(
     src: &SourceSpec,
     desired: &[String],
@@ -3225,28 +3208,6 @@ fn ensure_locked_satisfiable(
                 )))
             }
         }
-    }
-}
-
-fn desired_command_names(
-    src: &crate::config::CommandSourceSpec,
-    lock: &AgentLockFile,
-) -> Vec<String> {
-    match &src.commands {
-        CommandsField::List(entries) => entries
-            .iter()
-            .map(|e| match e {
-                CommandEntry::Name(n) => n.clone(),
-                CommandEntry::Obj { name, .. } => name.clone(),
-            })
-            .collect(),
-        CommandsField::Wildcard(s) if s == "*" => lock
-            .assets
-            .values()
-            .filter(|a| a.kind == "command" && a.source == src.source)
-            .map(|a| a.name.clone())
-            .collect(),
-        CommandsField::Wildcard(_) => Vec::new(),
     }
 }
 
@@ -3290,34 +3251,6 @@ fn file_name_str(path: &Path) -> String {
         .unwrap_or_default()
         .to_string_lossy()
         .to_string()
-}
-
-fn desired_mcp_file_names(src: &crate::config::McpSourceSpec, lock: &AgentLockFile) -> Vec<String> {
-    match &src.mcps {
-        McpsField::List(entries) => entries
-            .iter()
-            .map(desired_mcp_file_name_for_entry)
-            .collect(),
-        McpsField::Wildcard(s) if s == "*" => lock
-            .assets
-            .values()
-            .filter(|a| a.kind == "mcp" && a.source == src.source)
-            .map(|a| a.name.clone())
-            .collect(),
-        McpsField::Wildcard(_) => Vec::new(),
-    }
-}
-
-fn desired_mcp_file_name_for_entry(entry: &McpEntry) -> String {
-    let name = match entry {
-        McpEntry::Name(n) => n.clone(),
-        McpEntry::Obj { name, .. } => name.clone(),
-    };
-    if name.ends_with(".json") {
-        name
-    } else {
-        format!("{name}.json")
-    }
 }
 
 fn ensure_locked_satisfiable_mcps(

@@ -1,4 +1,4 @@
-//! Integration tests for `envctl agent {sync,add,remove,lock,list,clean}`. Drives the
+//! Integration tests for `envctl agent {sync,add,remove,lock,list,clean,doctor,audit}`. Drives the
 //! real `envctl` binary against a hermetic temp project (its own cwd, config, and
 //! XDG dirs) and asserts: (1) every mutating verb's dry-run (no `--apply`) writes
 //! NOTHING — config + `agent-env.lock` + destination dir are byte-identical before/after
@@ -667,9 +667,36 @@ fn add_ref_and_branch_conflict_exits_nonzero() {
     );
 }
 
-/// `agent --help` lists all eight verbs (surface smoke).
 #[test]
-fn help_lists_the_eight_verbs() {
+fn audit_is_zero_network_and_exits_nonzero_for_a_missing_lock() {
+    let fx = Fixture::new();
+    let before = snapshot(&fx);
+    let out = fx
+        .cmd()
+        .args(["agent", "audit", "--config", "agent-env.yaml", "--json"])
+        .output()
+        .unwrap();
+    assert!(
+        !out.status.success(),
+        "audit must fail closed when the project lock is missing; stdout: {}",
+        String::from_utf8_lossy(&out.stdout)
+    );
+    let report: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(report["lock_present"], false, "json: {report}");
+    assert!(
+        report["issues"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|issue| issue["kind"] == "lock_missing"),
+        "json: {report}"
+    );
+    assert_unchanged(&fx, &before, "audit");
+}
+
+/// `agent --help` lists every agent verb (surface smoke).
+#[test]
+fn help_lists_agent_verbs() {
     let out = Command::new(bin())
         .args(["agent", "--help"])
         .output()
@@ -677,7 +704,7 @@ fn help_lists_the_eight_verbs() {
     assert!(out.status.success());
     let help = String::from_utf8(out.stdout).unwrap();
     for verb in [
-        "sync", "add", "remove", "lock", "list", "clean", "init", "doctor",
+        "sync", "add", "remove", "lock", "list", "clean", "init", "doctor", "audit",
     ] {
         assert!(
             help.contains(verb),

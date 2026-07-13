@@ -499,8 +499,12 @@ pub fn lock_path(scope: Scope, project_root: &Path, global_data_dir: &Path) -> P
     }
 }
 
-/// Load the lock file from `path` (or return a default empty one if missing / empty).
-pub fn load(path: &Path) -> Result<AgentLockFile> {
+/// Inspect the lock file from `path` without accepting its schema for mutation.
+///
+/// This is the read-only diagnostic path used by strict audits that must return typed evidence
+/// for an unsupported schema. Mutation paths must use [`load`], which rejects newer schemas
+/// before any fields can be discarded or rewritten.
+pub fn inspect(path: &Path) -> Result<AgentLockFile> {
     let Some(bytes) = crate::secure_file::read_optional(path)? else {
         return Ok(AgentLockFile::default());
     };
@@ -511,6 +515,12 @@ pub fn load(path: &Path) -> Result<AgentLockFile> {
     }
     let lock: AgentLockFile = serde_yaml::from_str(&text)
         .map_err(|e| err(format!("failed to parse lock file {}: {e}", path.display())))?;
+    Ok(lock)
+}
+
+/// Load the lock file from `path` (or return a default empty one if missing / empty).
+pub fn load(path: &Path) -> Result<AgentLockFile> {
+    let lock = inspect(path)?;
     ensure_supported_version(lock.version)?;
     Ok(lock)
 }

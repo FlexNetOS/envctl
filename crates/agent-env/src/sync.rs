@@ -22,6 +22,11 @@
 
 use std::collections::HashSet;
 
+use crate::config::{
+    CommandEntry, CommandSourceSpec, CommandsField, McpEntry, McpSourceSpec, McpsField,
+    SkillTarget, SkillsField, SourceSpec,
+};
+use crate::lock::AgentLockFile;
 use crate::report::{Action, Summary};
 
 /// One stale asset candidate processed by [`remove_stale`].
@@ -94,6 +99,77 @@ pub fn mcp_asset_id(source: &str, file_name: &str) -> String {
 /// Action-log label for an MCP: `mcp:<file_name>`.
 pub fn mcp_action_label(file_name: &str) -> String {
     format!("mcp:{file_name}")
+}
+
+/// Resolve the skill names selected by one config source using only the lock for wildcard input.
+/// This is the shared zero-network selector used by both sync and fleet audit.
+pub fn desired_skill_names(src: &SourceSpec, lock: &AgentLockFile) -> Vec<String> {
+    match &src.skills {
+        SkillsField::List(items) => items
+            .iter()
+            .map(|item| match item {
+                SkillTarget::Name(name) => name.clone(),
+                SkillTarget::Obj { name, .. } => name.clone(),
+            })
+            .collect(),
+        SkillsField::Wildcard(value) if value == "*" => lock
+            .skills
+            .values()
+            .filter(|entry| entry.source == src.source)
+            .map(|entry| entry.skill.clone())
+            .collect(),
+        SkillsField::Wildcard(_) => Vec::new(),
+    }
+}
+
+/// Resolve the command names selected by one config source without materializing the source.
+pub fn desired_command_names(src: &CommandSourceSpec, lock: &AgentLockFile) -> Vec<String> {
+    match &src.commands {
+        CommandsField::List(entries) => entries
+            .iter()
+            .map(|entry| match entry {
+                CommandEntry::Name(name) => name.clone(),
+                CommandEntry::Obj { name, .. } => name.clone(),
+            })
+            .collect(),
+        CommandsField::Wildcard(value) if value == "*" => lock
+            .assets
+            .values()
+            .filter(|asset| asset.kind == "command" && asset.source == src.source)
+            .map(|asset| asset.name.clone())
+            .collect(),
+        CommandsField::Wildcard(_) => Vec::new(),
+    }
+}
+
+/// Canonical `.json` filename selected by one MCP config entry.
+pub fn desired_mcp_file_name_for_entry(entry: &McpEntry) -> String {
+    let name = match entry {
+        McpEntry::Name(name) => name.clone(),
+        McpEntry::Obj { name, .. } => name.clone(),
+    };
+    if name.ends_with(".json") {
+        name
+    } else {
+        format!("{name}.json")
+    }
+}
+
+/// Resolve the MCP filenames selected by one config source without materializing the source.
+pub fn desired_mcp_file_names(src: &McpSourceSpec, lock: &AgentLockFile) -> Vec<String> {
+    match &src.mcps {
+        McpsField::List(entries) => entries
+            .iter()
+            .map(desired_mcp_file_name_for_entry)
+            .collect(),
+        McpsField::Wildcard(value) if value == "*" => lock
+            .assets
+            .values()
+            .filter(|asset| asset.kind == "mcp" && asset.source == src.source)
+            .map(|asset| asset.name.clone())
+            .collect(),
+        McpsField::Wildcard(_) => Vec::new(),
+    }
 }
 
 #[cfg(test)]
