@@ -15,6 +15,7 @@
 //! The agent-asset lock (`agent-env.lock`, SHA-256) is wholly separate from the engine's
 //! FNV-1a component lock (`crate::lock`): this module never imports `crate::lock`.
 
+pub mod audit;
 pub mod clean;
 pub mod doctor;
 pub mod edit;
@@ -42,8 +43,10 @@ use envctl_agent_env::{
 /// Re-export the per-verb spec/return types so callers `use crate::agent::*`.
 pub use doctor::AgentDoctorSpec;
 pub use report::{
-    AgentCommandDirCheck, AgentDoctorReport, AgentEditItem, AgentEditOutcome, AgentInitOutcome,
-    AgentList, AgentLockDriftItem, AgentLockOutcome, AgentReport, AgentUpdateCheck, AgentVerb,
+    AgentAuditIssue, AgentAuditReport, AgentCommandAudit, AgentCommandDirCheck,
+    AgentCommandTargetAudit, AgentDoctorReport, AgentEditItem, AgentEditOutcome, AgentInitOutcome,
+    AgentList, AgentLockDriftItem, AgentLockOutcome, AgentMcpAudit, AgentMcpTargetAudit,
+    AgentReport, AgentSkillAudit, AgentSkillTargetAudit, AgentUpdateCheck, AgentVerb,
 };
 
 /// Serializable mirror of the library `Scope` — the engine-facing scope (so `event.rs` and
@@ -203,6 +206,17 @@ pub struct AgentLockSpec {
     pub upgrade_only: Vec<String>,
     /// Honored only with `--check`: `Locked` makes the audit zero-network.
     pub lock_mode: AgentLockMode,
+}
+
+/// Options for `Engine::agent_audit`.
+///
+/// Unlike `agent_doctor`, audit requires a config (the explicit path, or the normal default
+/// resolution) so it can prove the config, project lock, and installed assets agree. It is
+/// strictly read-only and performs no source resolution or network access.
+#[derive(Clone, Debug, Default)]
+pub struct AgentAuditSpec {
+    pub config_path: Option<String>,
+    pub scope_override: Option<AgentScope>,
 }
 
 /// Options for `Engine::agent_list`.

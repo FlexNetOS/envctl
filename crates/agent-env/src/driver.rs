@@ -47,7 +47,8 @@ use crate::source::{
     resolve_mcp_entry, BrowseDerived,
 };
 use crate::sync::{
-    command_action_label, command_asset_id, mcp_action_label, mcp_asset_id, remove_stale,
+    command_action_label, command_asset_id, desired_command_names, desired_mcp_file_name_for_entry,
+    desired_mcp_file_names, desired_skill_names, mcp_action_label, mcp_asset_id, remove_stale,
     skill_key, StaleEntry,
 };
 use crate::util::{now_unix, now_unix_str};
@@ -542,24 +543,6 @@ fn process_locked_skill(
     Ok(())
 }
 
-fn desired_skill_names(src: &SourceSpec, lock: &AgentLockFile) -> Vec<String> {
-    match &src.skills {
-        SkillsField::List(items) => items
-            .iter()
-            .map(|it| match it {
-                SkillTarget::Name(n) => n.clone(),
-                SkillTarget::Obj { name, .. } => name.clone(),
-            })
-            .collect(),
-        SkillsField::Wildcard(_) => lock
-            .skills
-            .values()
-            .filter(|e| e.source == src.source)
-            .map(|e| e.skill.clone())
-            .collect(),
-    }
-}
-
 fn ensure_locked_satisfiable(
     src: &SourceSpec,
     desired: &[String],
@@ -905,28 +888,6 @@ fn sync_commands(ctx: &DriverCtx, lock: &mut AgentLockFile, res: &mut SyncResult
 
     if res.summary.failed == 0 {
         remove_stale_commands(ctx, lock, res, &desired_ids);
-    }
-}
-
-fn desired_command_names(
-    src: &crate::config::CommandSourceSpec,
-    lock: &AgentLockFile,
-) -> Vec<String> {
-    match &src.commands {
-        CommandsField::List(entries) => entries
-            .iter()
-            .map(|e| match e {
-                CommandEntry::Name(n) => n.clone(),
-                CommandEntry::Obj { name, .. } => name.clone(),
-            })
-            .collect(),
-        CommandsField::Wildcard(s) if s == "*" => lock
-            .assets
-            .values()
-            .filter(|a| a.kind == "command" && a.source == src.source)
-            .map(|a| a.name.clone())
-            .collect(),
-        CommandsField::Wildcard(_) => Vec::new(),
     }
 }
 
@@ -1387,34 +1348,6 @@ fn sync_mcps(ctx: &DriverCtx, lock: &mut AgentLockFile, res: &mut SyncResult) {
 
     if res.summary.failed == 0 {
         remove_stale_mcps(ctx, lock, res, &desired_mcp_ids, &mcp_settings_list);
-    }
-}
-
-fn desired_mcp_file_names(src: &crate::config::McpSourceSpec, lock: &AgentLockFile) -> Vec<String> {
-    match &src.mcps {
-        McpsField::List(entries) => entries
-            .iter()
-            .map(desired_mcp_file_name_for_entry)
-            .collect(),
-        McpsField::Wildcard(s) if s == "*" => lock
-            .assets
-            .values()
-            .filter(|a| a.kind == "mcp" && a.source == src.source)
-            .map(|a| a.name.clone())
-            .collect(),
-        McpsField::Wildcard(_) => Vec::new(),
-    }
-}
-
-fn desired_mcp_file_name_for_entry(entry: &McpEntry) -> String {
-    let name = match entry {
-        McpEntry::Name(n) => n.clone(),
-        McpEntry::Obj { name, .. } => name.clone(),
-    };
-    if name.ends_with(".json") {
-        name
-    } else {
-        format!("{name}.json")
     }
 }
 

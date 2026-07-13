@@ -24,6 +24,88 @@ pub enum AgentVerb {
     Clean,
     Init,
     Doctor,
+    Audit,
+}
+
+/// One fail-closed finding from `agent audit`. `kind` is stable for fleet policy and CI while
+/// `detail` carries the local path/source evidence a human needs to repair the project.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AgentAuditIssue {
+    pub kind: String,
+    pub id: String,
+    pub detail: String,
+}
+
+/// Hash evidence for one native target of a lock-managed skill.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AgentSkillTargetAudit {
+    pub path: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub actual_hash: Option<String>,
+    pub matches_lock: bool,
+}
+
+/// Hash evidence for one lock-managed installed skill across every configured native target.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AgentSkillAudit {
+    pub id: String,
+    pub source: String,
+    pub expected_hash: String,
+    pub targets: Vec<AgentSkillTargetAudit>,
+}
+
+/// Presence evidence for one native target of a lock-managed command.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AgentCommandTargetAudit {
+    pub path: String,
+    pub present: bool,
+}
+
+/// Ownership and native-target evidence for one managed command name.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AgentCommandAudit {
+    pub name: String,
+    pub owners: Vec<String>,
+    pub conflict: bool,
+    pub targets: Vec<AgentCommandTargetAudit>,
+}
+
+/// Presence evidence for one agent-native MCP settings target.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AgentMcpTargetAudit {
+    pub path: String,
+    pub present: bool,
+}
+
+/// Ownership evidence for one MCP server name. More than one `owner` is a deterministic lock
+/// conflict: additive installation cannot prove which pack owns future updates for that name.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AgentMcpAudit {
+    pub name: String,
+    pub owners: Vec<String>,
+    pub conflict: bool,
+    pub targets: Vec<AgentMcpTargetAudit>,
+}
+
+/// Strict, zero-network config → lock → installed-assets report for fleet policy gates.
+#[derive(Clone, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub struct AgentAuditReport {
+    pub config: String,
+    pub lock_file: String,
+    pub scope: AgentScope,
+    pub lock_present: bool,
+    pub lock_version: u8,
+    pub skills: Vec<AgentSkillAudit>,
+    pub commands: Vec<AgentCommandAudit>,
+    pub mcps: Vec<AgentMcpAudit>,
+    pub issues: Vec<AgentAuditIssue>,
+}
+
+impl AgentAuditReport {
+    /// True only when every lock/config/hash/command/MCP ownership assertion passed.
+    pub fn is_healthy(&self) -> bool {
+        self.issues.is_empty()
+    }
 }
 
 /// One command directory checked by `agent doctor` — its path and whether it (or its

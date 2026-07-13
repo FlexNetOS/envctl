@@ -13,13 +13,13 @@ mod theme;
 use eframe::egui::{self, Color32, RichText};
 use egui_extras::{Column, TableBuilder};
 use envctl_engine::{
-    run_event_loop, AddRepoMode, AddRepoSpec, AgentAddSpec, AgentCleanSpec, AgentCommandSpec,
-    AgentDoctorReport, AgentDoctorSpec, AgentEditOutcome, AgentList, AgentListKind, AgentListSpec,
-    AgentLockDriftItem, AgentLockMode, AgentLockSpec, AgentRemoveSpec, AgentReport, AgentScope,
-    AgentSectionSel, AgentSyncSpec, BuildStrategy, CatalogRenderReport, ComponentState,
-    DashboardPlan, DashboardSpec, DriftItem, DriftKind, Engine, EngineCommand, EngineEvent, Event,
-    OpStatus, Refactor, RefactorGoal, RenameRule, Severity, Stream, Telemetry, TelemetryControl,
-    Zeroizing,
+    run_event_loop, AddRepoMode, AddRepoSpec, AgentAddSpec, AgentAuditReport, AgentAuditSpec,
+    AgentCleanSpec, AgentCommandSpec, AgentDoctorReport, AgentDoctorSpec, AgentEditOutcome,
+    AgentList, AgentListKind, AgentListSpec, AgentLockDriftItem, AgentLockMode, AgentLockSpec,
+    AgentRemoveSpec, AgentReport, AgentScope, AgentSectionSel, AgentSyncSpec, BuildStrategy,
+    CatalogRenderReport, ComponentState, DashboardPlan, DashboardSpec, DriftItem, DriftKind,
+    Engine, EngineCommand, EngineEvent, Event, OpStatus, Refactor, RefactorGoal, RenameRule,
+    Severity, Stream, Telemetry, TelemetryControl, Zeroizing,
 };
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
@@ -105,6 +105,7 @@ enum AgentVerbTab {
     List,
     Clean,
     Doctor,
+    Audit,
 }
 
 impl AgentVerbTab {
@@ -117,6 +118,7 @@ impl AgentVerbTab {
             AgentVerbTab::List => "List",
             AgentVerbTab::Clean => "Clean",
             AgentVerbTab::Doctor => "Doctor",
+            AgentVerbTab::Audit => "Audit",
         }
     }
 }
@@ -265,6 +267,7 @@ struct EnvctlApp {
     agent_last_report: Option<AgentReport>,
     agent_lock_drift: Option<Vec<AgentLockDriftItem>>,
     agent_last_doctor: Option<AgentDoctorReport>,
+    agent_last_audit: Option<AgentAuditReport>,
     agent_status: String,
     // ── Secrets panel (TASK-0028) — the active verb sub-tab + per-verb form inputs ──────────
     secrets_verb: SecretsVerbTab,
@@ -390,6 +393,7 @@ impl EnvctlApp {
             agent_last_report: None,
             agent_lock_drift: None,
             agent_last_doctor: None,
+            agent_last_audit: None,
             agent_status: String::new(),
             secrets_verb: SecretsVerbTab::MintGithub,
             sec_install_id: String::new(),
@@ -563,6 +567,21 @@ impl EnvctlApp {
                         report.failures.len(),
                     );
                     self.agent_last_doctor = Some(report);
+                }
+                Event::AgentAudited { report } => {
+                    self.agent_status = format!(
+                        "audit {} · {} skill(s) · {} command(s) · {} mcp(s) · {} finding(s)",
+                        if report.is_healthy() {
+                            "healthy"
+                        } else {
+                            "issues"
+                        },
+                        report.skills.len(),
+                        report.commands.len(),
+                        report.mcps.len(),
+                        report.issues.len(),
+                    );
+                    self.agent_last_audit = Some(report);
                 }
                 Event::AgentAction {
                     source,
@@ -1666,6 +1685,13 @@ impl EnvctlApp {
         }
     }
 
+    fn agent_audit_spec(&self) -> AgentAuditSpec {
+        AgentAuditSpec {
+            config_path: opt_str(&self.agent_config),
+            scope_override: self.agent_scope.to_override(),
+        }
+    }
+
     /// Wrap the active verb's spec in `EngineCommand::Agent { spec }` — the single command the
     /// worker dispatches to the matching `Engine::agent_*` method.
     fn agent_command(&self) -> EngineCommand {
@@ -1677,6 +1703,7 @@ impl EnvctlApp {
             AgentVerbTab::List => AgentCommandSpec::List(self.agent_list_spec()),
             AgentVerbTab::Clean => AgentCommandSpec::Clean(self.agent_clean_spec()),
             AgentVerbTab::Doctor => AgentCommandSpec::Doctor(self.agent_doctor_spec()),
+            AgentVerbTab::Audit => AgentCommandSpec::Audit(self.agent_audit_spec()),
         };
         EngineCommand::Agent { spec }
     }
@@ -1695,6 +1722,7 @@ impl EnvctlApp {
                 AgentVerbTab::List,
                 AgentVerbTab::Clean,
                 AgentVerbTab::Doctor,
+                AgentVerbTab::Audit,
             ] {
                 let active = self.agent_verb == v;
                 let text = if active {
@@ -1795,6 +1823,13 @@ impl EnvctlApp {
                         ui.colored_label(
                             theme::TEXT_MUTED,
                             "Read-only diagnostics: version, lock, scope, inventory, command-dir writability, and the update check.",
+                        );
+                    }
+                    AgentVerbTab::Audit => {
+                        self.agent_config_row(ui);
+                        ui.colored_label(
+                            theme::TEXT_MUTED,
+                            "Strict zero-network gate: config → lock → all skill hashes plus command/MCP ownership and native-target presence. Any finding is unhealthy.",
                         );
                     }
                 }
@@ -1990,6 +2025,9 @@ impl EnvctlApp {
         if let Some(doctor) = self.agent_last_doctor.clone() {
             self.agent_doctor_tables(ui, &doctor);
         }
+        if let Some(audit) = self.agent_last_audit.clone() {
+            self.agent_audit_tables(ui, &audit);
+        }
     }
 
     /// Render the `agent doctor` report (parity with the CLI's grouped view): Environment,
@@ -2098,6 +2136,100 @@ impl EnvctlApp {
                     ui.colored_label(
                         theme::WARN,
                         format!("  ! {} {} {}", f.name, f.reason, f.source),
+                    );
+                }
+            }
+        });
+    }
+
+    /// Render the strict fleet-policy audit returned by `Engine::agent_audit`.
+    fn agent_audit_tables(&self, ui: &mut egui::Ui, audit: &AgentAuditReport) {
+        theme::card().show(ui, |ui| {
+            ui.set_width(ui.available_width());
+            ui.label(
+                RichText::new(if audit.is_healthy() {
+                    "audit — ✓ healthy"
+                } else {
+                    "audit — ✗ issues"
+                })
+                .strong(),
+            );
+            ui.colored_label(theme::TEXT_MUTED, format!("  Config: {}", audit.config));
+            ui.colored_label(theme::TEXT_MUTED, format!("  Lock: {}", audit.lock_file));
+            ui.colored_label(
+                theme::TEXT_MUTED,
+                format!(
+                    "  Skills {} · Commands {} · MCPs {}",
+                    audit.skills.len(),
+                    audit.commands.len(),
+                    audit.mcps.len()
+                ),
+            );
+            if !audit.commands.is_empty() {
+                ui.add_space(6.0);
+                ui.label(
+                    RichText::new("Command ownership")
+                        .color(theme::ACCENT_TEXT)
+                        .strong(),
+                );
+                for command in &audit.commands {
+                    let present = command
+                        .targets
+                        .iter()
+                        .filter(|target| target.present)
+                        .count();
+                    let color = if command.conflict || present != command.targets.len() {
+                        theme::WARN
+                    } else {
+                        theme::TEXT_MUTED
+                    };
+                    ui.colored_label(
+                        color,
+                        format!(
+                            "  {} → {} ({}/{}){}",
+                            command.name,
+                            command.owners.join(", "),
+                            present,
+                            command.targets.len(),
+                            if command.conflict { " · conflict" } else { "" }
+                        ),
+                    );
+                }
+            }
+            if !audit.mcps.is_empty() {
+                ui.add_space(6.0);
+                ui.label(
+                    RichText::new("MCP ownership")
+                        .color(theme::ACCENT_TEXT)
+                        .strong(),
+                );
+                for mcp in &audit.mcps {
+                    let present = mcp.targets.iter().filter(|target| target.present).count();
+                    let color = if mcp.conflict || present != mcp.targets.len() {
+                        theme::WARN
+                    } else {
+                        theme::TEXT_MUTED
+                    };
+                    ui.colored_label(
+                        color,
+                        format!(
+                            "  {} → {} ({}/{}){}",
+                            mcp.name,
+                            mcp.owners.join(", "),
+                            present,
+                            mcp.targets.len(),
+                            if mcp.conflict { " · conflict" } else { "" }
+                        ),
+                    );
+                }
+            }
+            if !audit.issues.is_empty() {
+                ui.add_space(6.0);
+                ui.label(RichText::new("Findings").color(theme::WARN).strong());
+                for issue in &audit.issues {
+                    ui.colored_label(
+                        theme::WARN,
+                        format!("  {} {} — {}", issue.kind, issue.id, issue.detail),
                     );
                 }
             }
@@ -3095,6 +3227,7 @@ mod agent_spec_tests {
             agent_last_report: None,
             agent_lock_drift: None,
             agent_last_doctor: None,
+            agent_last_audit: None,
             agent_status: String::new(),
             secrets_verb: SecretsVerbTab::MintGithub,
             sec_install_id: String::new(),
@@ -3251,6 +3384,23 @@ mod agent_spec_tests {
                 spec: AgentCommandSpec::Clean(_),
             } => {}
             _ => panic!("expected EngineCommand::Agent(Clean)"),
+        }
+    }
+
+    #[test]
+    fn audit_uses_config_and_shared_scope() {
+        let mut app = test_app();
+        app.agent_verb = AgentVerbTab::Audit;
+        app.agent_config = " ./agent-env.yaml ".into();
+        app.agent_scope = AgentScopeSel::Project;
+        match app.agent_command() {
+            EngineCommand::Agent {
+                spec: AgentCommandSpec::Audit(spec),
+            } => {
+                assert_eq!(spec.config_path.as_deref(), Some("./agent-env.yaml"));
+                assert_eq!(spec.scope_override, Some(AgentScope::Project));
+            }
+            _ => panic!("expected EngineCommand::Agent(Audit)"),
         }
     }
 

@@ -48,10 +48,12 @@ pub mod update_notifier; // end-of-run "new version available" cache + check (CL
 pub mod wiring; // apply()/revert() for Wiring (shell_rc backup-then-excise) // EngineCommand / EngineEvent + run_event_loop (GUI worker API)
 
 pub use agent::{
-    AgentAddSpec, AgentCleanSpec, AgentCommandDirCheck, AgentDoctorReport, AgentDoctorSpec,
-    AgentEditItem, AgentEditOutcome, AgentInitOutcome, AgentInitSpec, AgentList, AgentListKind,
-    AgentListSpec, AgentLockDriftItem, AgentLockMode, AgentLockOutcome, AgentLockSpec,
-    AgentRemoveSpec, AgentReport, AgentScope, AgentSectionSel, AgentSyncSpec, AgentUpdateCheck,
+    AgentAddSpec, AgentAuditIssue, AgentAuditReport, AgentAuditSpec, AgentCleanSpec,
+    AgentCommandAudit, AgentCommandDirCheck, AgentCommandTargetAudit, AgentDoctorReport,
+    AgentDoctorSpec, AgentEditItem, AgentEditOutcome, AgentInitOutcome, AgentInitSpec, AgentList,
+    AgentListKind, AgentListSpec, AgentLockDriftItem, AgentLockMode, AgentLockOutcome,
+    AgentLockSpec, AgentMcpAudit, AgentMcpTargetAudit, AgentRemoveSpec, AgentReport, AgentScope,
+    AgentSectionSel, AgentSkillAudit, AgentSkillTargetAudit, AgentSyncSpec, AgentUpdateCheck,
     AgentVerb,
 };
 pub use catalog::{

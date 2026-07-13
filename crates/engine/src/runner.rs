@@ -360,6 +360,7 @@ fn build_command(hook: &Hook) -> Command {
         args: &args,
         current_dir: None,
         env: &env,
+        clear_env: false,
     })
 }
 
