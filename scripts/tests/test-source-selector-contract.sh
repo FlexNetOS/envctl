@@ -88,7 +88,6 @@ selector_manifests = (
     Path("manifest/components.d/epic-h-toolchains.toml"),
     Path("manifest/components.d/meta-env-plugin.toml"),
     Path("manifest/components.d/portability-links.toml"),
-    Path("manifest/components.d/zsh.toml"),
     env_ctl_path,
     Path("manifest/nix-yazelix.toml"),
 )

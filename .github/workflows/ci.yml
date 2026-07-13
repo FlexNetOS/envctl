@@ -190,6 +190,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+      - name: normalize fail-closed tracked helper modes
+        run: chmod 0755 assets/scripts/envctl-sqld-hermetic-cargo.sh
       - name: isolate Cargo target for this persistent-runner job
         run: echo "CARGO_TARGET_DIR=$RUNNER_TEMP/envctl-target-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$GITHUB_JOB" >> "$GITHUB_ENV"
       - name: setup meta path dependencies
