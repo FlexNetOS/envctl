@@ -76,6 +76,8 @@ codex_global_setup() {
     "$CODEX_GLOBAL_SOURCE_ROOT/home/.codex/AGENTS.md"
     "$CODEX_GLOBAL_SOURCE_ROOT/home/.codex/RTK.md"
     "$CODEX_GLOBAL_SOURCE_ROOT/home/.codex/AGENTS.rtk.md"
+    "$CODEX_GLOBAL_SOURCE_ROOT/home/.codex/RULES.md"
+    "$CODEX_GLOBAL_SOURCE_ROOT/home/.codex/model-catalog.json"
     "$CODEX_GLOBAL_SOURCE_ROOT/home/AGENTS.md"
     "$CODEX_GLOBAL_SOURCE_ROOT/home/AGENTS.rtk.md"
   )
@@ -83,9 +85,20 @@ codex_global_setup() {
     "$CODEX_GLOBAL_CONFIG_ROOT/AGENTS.md"
     "$CODEX_GLOBAL_CONFIG_ROOT/RTK.md"
     "$CODEX_GLOBAL_CONFIG_ROOT/AGENTS.rtk.md"
+    "$CODEX_GLOBAL_CONFIG_ROOT/RULES.md"
+    "$CODEX_GLOBAL_CONFIG_ROOT/model-catalog.json"
     "$CODEX_GLOBAL_REAL_HOME/AGENTS.md"
     "$CODEX_GLOBAL_REAL_HOME/AGENTS.rtk.md"
   )
+  local profile
+  for profile in "$CODEX_GLOBAL_SOURCE_ROOT"/home/.codex/envctl-*.config.toml; do
+    [ -e "$profile" ] \
+      || codex_global_die "missing tracked Codex profile sources"
+    CODEX_GLOBAL_POLICY_SOURCES+=("$profile")
+    CODEX_GLOBAL_POLICY_DESTINATIONS+=(
+      "$CODEX_GLOBAL_CONFIG_ROOT/$(/usr/bin/basename -- "$profile")"
+    )
+  done
 
   [ -f "$CODEX_GLOBAL_PROFILE_LIFECYCLE" ] \
     && [ ! -L "$CODEX_GLOBAL_PROFILE_LIFECYCLE" ] \
@@ -102,7 +115,7 @@ codex_global_require_policy_sources() {
   local source
   for source in "${CODEX_GLOBAL_POLICY_SOURCES[@]}"; do
     [ -f "$source" ] && [ ! -L "$source" ] && [ -r "$source" ] \
-      || codex_global_die "missing tracked RTK policy source: $source"
+      || codex_global_die "missing tracked Codex policy/profile source: $source"
     case "$source" in "$CODEX_GLOBAL_SOURCE_ROOT/home"/*) ;; *)
       codex_global_die "tracked RTK policy source escaped the home projection: $source"
       ;;
@@ -131,12 +144,12 @@ codex_global_require_policy_projection() {
         || [ "$(/usr/bin/stat -c '%u' -- "$destination" 2>/dev/null || true)" != "$uid" ] \
         || ! /usr/bin/cmp -s -- "$source" "$destination"; then
       codex_global_die \
-        "missing or drifted active-home RTK policy projection: $destination"
+        "missing or drifted active-home Codex policy/profile projection: $destination"
     fi
     mode="$(/usr/bin/stat -c '%a' -- "$destination")"
     [ "$mode" = 600 ] \
       || codex_global_die \
-        "active-home RTK policy projection must have mode 600: $destination"
+        "active-home Codex policy/profile projection must have mode 600: $destination"
   done
 }
 
@@ -186,7 +199,7 @@ codex_global_sync_policy_projection() (
 
     if [ -e "$destination" ] || [ -L "$destination" ]; then
       [ "$(/usr/bin/stat -c '%u' -- "$destination")" = "$uid" ] \
-        || codex_global_die "refusing foreign RTK policy projection: $destination"
+        || codex_global_die "refusing foreign Codex policy/profile projection: $destination"
       need_archive=1
       had_original+=(1)
     else

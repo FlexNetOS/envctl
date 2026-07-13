@@ -37,10 +37,16 @@ printf '@%s/.codex/RTK.md\n@%s/.codex/AGENTS.rtk.md\n' \
 for policy in \
   home/.codex/RTK.md \
   home/.codex/AGENTS.rtk.md \
+  home/.codex/RULES.md \
   home/AGENTS.md \
   home/AGENTS.rtk.md; do
   printf 'tracked policy: %s\n' "$policy" >"$source_root/$policy"
 done
+printf '{"models":[]}\n' >"$source_root/home/.codex/model-catalog.json"
+cat >"$source_root/home/.codex/envctl-test.config.toml" <<TOML
+model = "fixture"
+model_catalog_json = "$real_home/.codex/model-catalog.json"
+TOML
 
 cat >"$profile_lifecycle" <<'PROFILE'
 #!/usr/bin/env bash
@@ -191,7 +197,7 @@ write_valid_config
 if run_lifecycle detect >"$tmp/policy-missing.out" 2>"$tmp/policy-missing.err"; then
   fail "detect accepted missing active-home RTK policy projections"
 fi
-grep -Fq 'missing or drifted active-home RTK policy projection' \
+grep -Fq 'missing or drifted active-home Codex policy/profile projection' \
   "$tmp/policy-missing.err" \
   || fail "missing RTK policy projection refusal was not explicit"
 
@@ -222,6 +228,9 @@ for policy in \
   .codex/AGENTS.md \
   .codex/RTK.md \
   .codex/AGENTS.rtk.md \
+  .codex/RULES.md \
+  .codex/model-catalog.json \
+  .codex/envctl-test.config.toml \
   AGENTS.md \
   AGENTS.rtk.md; do
   cmp -s "$source_root/home/$policy" "$real_home/$policy" \
@@ -253,7 +262,7 @@ printf 'stale local policy\n' >"$real_home/.codex/AGENTS.rtk.md"
 if run_lifecycle detect >"$tmp/policy-drift.out" 2>"$tmp/policy-drift.err"; then
   fail "detect accepted a drifted active-home RTK policy projection"
 fi
-grep -Fq 'missing or drifted active-home RTK policy projection' \
+grep -Fq 'missing or drifted active-home Codex policy/profile projection' \
   "$tmp/policy-drift.err" \
   || fail "drifted RTK policy projection refusal was not explicit"
 archives_before="$(find "$meta/var/lib/envctl/legacy-archives" -mindepth 1 -maxdepth 1 -type d | wc -l)"
