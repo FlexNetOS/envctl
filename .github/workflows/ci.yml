@@ -154,7 +154,7 @@ jobs:
           cargo --version
       - uses: Swatinem/rust-cache@v2
       - name: install cargo-audit
-        run: cargo install cargo-audit --locked --version 0.22.1
+        run: cargo install cargo-audit --locked --version 0.22.2
       - name: cargo audit gate
         run: bash ci/gates/cargo-audit.sh
 
@@ -235,7 +235,15 @@ jobs:
       - name: kdf-feature-off gate (test-speed Argon2 floor must be off by default)
         run: bash ci/gates/kdf-feature-off.sh
       - name: agent-env gate (agent-env.yaml matches agent-env.lock; no kasetto drift)
-        run: bash ci/gates/agent-env.sh
+        env:
+          ENVCTL_GATE_ROOT: ${{ github.workspace }}
+          ENVCTL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+        run: |
+          if [ "$ENVCTL_RUNNER_ENVIRONMENT" = self-hosted ]; then
+            export META_ROOT=/home/flexnetos/meta
+            export HOME=/home/flexnetos
+          fi
+          bash ci/gates/agent-env.sh
       - name: manifest-lock gate (envctl.lock matches manifest without mutation)
         run: bash ci/gates/manifest-lock.sh
       - name: meta-local policy gate (META_ROOT-hosted installs only)
