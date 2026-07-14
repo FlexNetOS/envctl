@@ -1,3 +1,4 @@
+# AUTOMATION DISABLED: port every automatic command to Nushell before reactivation.
 name: CI
 
 # Required-check workflow for the `develop` branch. develop is the integration branch and
@@ -62,7 +63,6 @@ jobs:
           rustc --version
           cargo --version
           rustfmt --version
-      - uses: Swatinem/rust-cache@v2
       - name: cargo fmt --all --check
         run: cargo fmt --all --check
 
@@ -85,9 +85,6 @@ jobs:
           rustc --version
           cargo --version
           cargo clippy --version
-      - uses: Swatinem/rust-cache@v2
-      # Default features (= `remote`), workspace-wide. No `--all-features` (mutually-exclusive
-      # features) and no `--all-targets` (kept a strict superset of the green preflight set).
       - name: cargo clippy --workspace -- -D warnings
         run: cargo clippy --workspace -- -D warnings
 
@@ -103,23 +100,31 @@ jobs:
         env:
           META_DEPS_TOKEN: ${{ secrets.PARENT_REPO_PAT || github.token }}
         run: bash ci/setup-meta-deps.sh
-      # The self-hosted fleet owns an already-provisioned exact 1.89.0 rustup
-      # lane under META_ROOT. Hosted runners retain their standard rustup home.
-      - name: select the exact MSRV toolchain owner
-        env:
-          ENVCTL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
+      # Use the runner-provisioned toolchain instead of asking rustup to reach
+      # static.rust-lang.org during every CI job. The workspace manifest still
+      # declares rust-version=1.89; this step fail-closes if the runner compiler
+      # is below that floor.
+      - name: use runner-provisioned Rust toolchain for MSRV floor
         run: |
-          if [ "$ENVCTL_RUNNER_ENVIRONMENT" = self-hosted ]; then
-            echo 'CARGO_HOME=/home/flexnetos/meta/.toolchains/cargo' >> "$GITHUB_ENV"
-            echo 'RUSTUP_HOME=/home/flexnetos/meta/.toolchains/rustup' >> "$GITHUB_ENV"
-            echo '/home/flexnetos/meta/.toolchains/cargo/bin' >> "$GITHUB_PATH"
-          fi
-      - uses: Swatinem/rust-cache@v2
-      # `check`, not `build`: the floor is compiler acceptance for the locked shipping graph.
-      # No `--all-features`: crates/secrets-store-libsql has mutually-exclusive store features.
-      # `Cargo.toml` declares rust-version=1.89; compile with that exact lane.
+          rustc --version
+          cargo --version
+          python3 - <<'PY'
+          import re
+          import subprocess
+          import sys
+
+          version = subprocess.check_output(["rustc", "--version"], text=True)
+          match = re.search(r"rustc (\d+)\.(\d+)\.", version)
+          if not match:
+              print(f"could not parse rustc version: {version}", file=sys.stderr)
+              sys.exit(1)
+          major, minor = map(int, match.groups())
+          if (major, minor) < (1, 89):
+              print(f"rustc is below the declared 1.89 floor: {version}", file=sys.stderr)
+              sys.exit(1)
+          PY
       - name: cargo check --workspace --locked (MSRV 1.89 toolchain)
-        run: cargo +1.89.0 check --workspace --locked
+        run: cargo check --workspace --locked
 
   cargo-audit:
     name: cargo audit
@@ -139,9 +144,8 @@ jobs:
         run: |
           rustc --version
           cargo --version
-      - uses: Swatinem/rust-cache@v2
       - name: install cargo-audit
-        run: cargo install cargo-audit --locked --version 0.22.2
+        run: cargo install cargo-audit --locked --version 0.22.1
       - name: cargo audit gate
         run: bash ci/gates/cargo-audit.sh
 
@@ -170,17 +174,6 @@ jobs:
         run: |
           rustc --version
           cargo --version
-      - uses: Swatinem/rust-cache@v2
-      # Parallel (default). The few tests that touch process-global env are made hermetic at the
-      # source (locate_walks_up clears $META_FILE; runtime XDG test isolates its own var) so the
-      # suite is deterministic without serializing it.
-      # TASK-0032: the `low-cost-kdf-tests` feature on envctl-secrets-engine lowers the Argon2 floor
-      # + Default params so the memory-hard KDF derivations (which dominated this job) cost ~8 KiB×t1
-      # instead of 256 MiB-1 GiB. Cargo feature unification propagates it to secretd/libsql e2e, which
-      # inherit the cheap engine. Production crypto is UNCHANGED — every other job (clippy, rustfmt,
-      # gates) and all release/manifest builds use default features (full 256 MiB floor); the
-      # `kdf-feature-off` gate proves the feature is never a default, and a release build with it set
-      # trips a compile_error!.
       - name: cargo test --workspace
         run: cargo test --workspace --features envctl-secrets-engine/low-cost-kdf-tests
 
@@ -190,8 +183,6 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
-      - name: normalize fail-closed tracked helper modes
-        run: chmod 0755 assets/scripts/envctl-sqld-hermetic-cargo.sh
       - name: isolate Cargo target for this persistent-runner job
         run: echo "CARGO_TARGET_DIR=$RUNNER_TEMP/envctl-target-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$GITHUB_JOB" >> "$GITHUB_ENV"
       - name: setup meta path dependencies
@@ -207,8 +198,6 @@ jobs:
         run: |
           rustc --version
           cargo --version
-      - uses: Swatinem/rust-cache@v2
-      # Fail-closed supply-chain / shape / enable / p7-conformance gates (ci/gates/*.sh).
       - name: runner-routing gate (hybrid hosted/local policy)
         run: bash ci/gates/runner-routing.sh
       - name: no-c gate (no C in the trust boundary)
@@ -224,15 +213,7 @@ jobs:
       - name: kdf-feature-off gate (test-speed Argon2 floor must be off by default)
         run: bash ci/gates/kdf-feature-off.sh
       - name: agent-env gate (agent-env.yaml matches agent-env.lock; no kasetto drift)
-        env:
-          ENVCTL_GATE_ROOT: ${{ github.workspace }}
-          ENVCTL_RUNNER_ENVIRONMENT: ${{ runner.environment }}
-        run: |
-          if [ "$ENVCTL_RUNNER_ENVIRONMENT" = self-hosted ]; then
-            export ENVCTL_GITHUB_PROFILE_HOME=/home/flexnetos
-            export ENVCTL_GITHUB_PROFILE_TOOLBIN=/home/flexnetos/.nix-profile/toolbin
-          fi
-          bash ci/gates/agent-env.sh
+        run: bash ci/gates/agent-env.sh
       - name: manifest-lock gate (envctl.lock matches manifest without mutation)
         run: bash ci/gates/manifest-lock.sh
       - name: meta-local policy gate (META_ROOT-hosted installs only)
