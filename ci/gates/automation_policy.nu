@@ -1,6 +1,7 @@
 #!/usr/bin/env nu
 
 const active_policy_workflow = ".github/workflows/automation_policy.yml"
+const toolchain_manifest = "manifest/components.d/epic-h-toolchains.toml"
 
 def yaml_files [] {
   glob ".github/**/*.{yml,yaml}" | sort
@@ -75,6 +76,67 @@ if ($active_policy_workflow | path exists) {
     line: 1
     rule: "active policy workflow is missing"
     text: "repository policy is fail-closed"
+  }
+}
+
+if ($toolchain_manifest | path exists) {
+  let manifest = open $toolchain_manifest
+  let matches = $manifest.component | where id == "kache"
+  if ($matches | length) != 1 {
+    $violations = $violations | append {
+      file: $toolchain_manifest
+      line: 1
+      rule: "Kache component cardinality"
+      text: "exactly one profile-owned Kache component is required"
+    }
+  } else {
+    let kache = $matches | first
+    let owner = "/home/flexnetos/.nix-profile/bin/yazelix_volatile_runtime"
+    for hook in [detect install fix] {
+      let operation = $kache | get $hook
+      if (($operation.kind? | default "") != "command") or (($operation.command? | default "") != $owner) {
+        $violations = $violations | append {
+          file: $toolchain_manifest
+          line: 1
+          rule: "Kache install ownership"
+          text: $"($hook) must delegate to the Yazelix profile owner"
+        }
+      }
+    }
+    if (($kache.verify.kind? | default "") != "command") or (($kache.verify.command? | default "") != "/home/flexnetos/.nix-profile/toolbin/nu") {
+      $violations = $violations | append {
+        file: $toolchain_manifest
+        line: 1
+        rule: "Kache verification shell"
+        text: "verification must use profile-owned Nushell"
+      }
+    }
+    if (($kache | columns) | any {|column| $column in [remove wiring] }) {
+      $violations = $violations | append {
+        file: $toolchain_manifest
+        line: 1
+        rule: "Kache ownership escape"
+        text: "envctl may not remove or rewire profile-owned Kache"
+      }
+    }
+    let serialized = $kache | to nuon
+    for forbidden in ["sccache" ".toolchains/kache" '$META_ROOT/usr/bin/kache' '$META_ROOT/.cache/kache'] {
+      if ($serialized | str contains $forbidden) {
+        $violations = $violations | append {
+          file: $toolchain_manifest
+          line: 1
+          rule: "legacy Kache delivery"
+          text: $"forbidden declaration: ($forbidden)"
+        }
+      }
+    }
+  }
+} else {
+  $violations = $violations | append {
+    file: $toolchain_manifest
+    line: 1
+    rule: "Kache policy manifest missing"
+    text: "profile ownership cannot be proven"
   }
 }
 
