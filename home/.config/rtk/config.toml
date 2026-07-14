@@ -31,15 +31,30 @@ max_file_size = 1048576
 [telemetry]
 enabled = false
 consent_given = false
+# The active-home projector preserves this per-host consent metadata while
+# converging all policy fields below and above it.
 consent_date = "2026-06-02T07:23:26.899265900+00:00"
 
 [hooks]
-exclude_commands = []
-transparent_prefixes = []
+exclude_commands = [
+    "^envctl",
+    "^fxrun",
+    "^cargo (test|build|check|clippy|nextest)",
+    "^nix (build|flake check|develop|log)",
+    "^gh (run view|run download|pr checks)",
+    "^journalctl",
+    "^dmesg",
+    "^systemctl status",
+    "^yzx (doctor|inspect)",
+]
+transparent_prefixes = [
+    "timeout",
+    "env -u RTK_SKIP_CHECKSUM",
+]
 
 [limits]
-grep_max_results = 80
-grep_max_per_file = 8
+grep_max_results = 200
+grep_max_per_file = 25
 status_max_files = 15
 status_max_untracked = 10
-passthrough_max_chars = 1200
+passthrough_max_chars = 2000

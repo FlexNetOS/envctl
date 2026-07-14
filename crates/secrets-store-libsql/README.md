@@ -154,10 +154,12 @@ C-SQLite path stays forbidden regardless.
 
 - **Offline unit tests** (`src/tests.rs`, run by `cargo test`): parameter-binding shape, error
   `Display`, anyhow conversion, wiring flags. **No sqld required.**
-- **Integration tests** (`tests/integration_remote.rs`): `#[ignore]`d; require a running sqld. Run:
+- **Integration tests** (`tests/integration_remote.rs`): `#[ignore]`d; run against the exact pinned,
+  JWT-authenticated sqld release with a fresh database and credential pair:
 
   ```sh
-  sqld --http-listen-addr 127.0.0.1:8080          # open auth: TEST ONLY, never production
-  LIBSQL_TEST_URL=http://127.0.0.1:8080 LIBSQL_TEST_AUTH= \
-    cargo test -p envctl-secrets-store-libsql --features remote -- --ignored --nocapture
+  bash ci/run-live-libsql-tests.sh
   ```
+
+  The runner first proves unauthenticated SQL is rejected with `401`, then proves the generated
+  bearer can execute `SELECT 1`; it also runs the daemon durability E2E against a separate sqld.

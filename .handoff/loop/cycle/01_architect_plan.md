@@ -1,7 +1,5 @@
 # 01 — Architect plan: engine-owned doctor and manifest-lock proof
 
-VERDICT: GO
-
 The current top-level `envctl doctor` is a CLI-local implementation that writes and removes
 probe files, resolves a retired `~/Desktop/meta` fallback, reports stale roots, and returns
 success even when the report is unhealthy. The repair is engine-first and additive: preserve

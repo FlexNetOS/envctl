@@ -5,99 +5,70 @@
 # Yazelix owns the active Nix profile under the real home:
 #   $ENVCTL_REAL_HOME/.nix-profile -> $ENVCTL_REAL_HOME/.local/state/nix/profiles/profile
 # Never replace the whole real-home .local tree. Envctl may only archive known
-# per-tool user-bin shadows after their profile/META_ROOT frontdoors are present.
+# per-tool user-bin shadows after their profile/META_ROOT frontdoors are present. The same guard
+# archives the known retired META_ROOT/usr/bin/git-kb staging symlink only when it is byte-identical
+# to the exact current-profile GitKB 0.2.12; unknown or different frontdoor symlinks are refused.
 
 [[component]]
 id = "home-local-single-link"
 name = "Yazelix real-home Nix profile guard"
-description = "Compatibility id retained. Preserves the Yazelix-owned real-home Nix profile state and archives known per-tool user-bin shadows instead of replacing the whole real-home .local tree."
+description = "Compatibility id retained. Preserves the Yazelix-owned real-home Nix profile state, archives only proven real-home user-bin shadows, and removes only byte-identical known retired META_ROOT frontdoor symlinks instead of replacing the whole real-home .local tree."
 [component.detect]
 kind = "command"
 command = "bash"
 args = ["-lc", '''
-set -e
+set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-R="${ENVCTL_REAL_HOME:-}"
-[ -n "$R" ] && [ "$R" != "$M" ] || exit 0
-if [ -L "$R/.nix-profile" ]; then
-  target="$(readlink "$R/.nix-profile" 2>/dev/null || true)"
-  case "$target" in
-    "$R/.local/state/nix/profiles/profile"|"$R/.local/state/nix/profiles/"*) ;;
-    *) echo "unexpected .nix-profile target: $target" >&2; exit 1 ;;
-  esac
-fi
-for name in agent bun bunx codex codex-alpha git-kb kache-rustc-wrapper loop meta meta-git meta-mcp meta-project meta-release meta-rust rtk; do
-  t="$R/.local/bin/$name"
-  [ ! -e "$t" ] && [ ! -L "$t" ] || { echo "stale real-home user-bin shadow: $t" >&2; exit 1; }
-done
+R="${ENVCTL_REAL_HOME:?ENVCTL_REAL_HOME required}"
+[ "$R" != "$M" ] || { echo "real home must differ from META_ROOT" >&2; exit 1; }
+MANIFEST_DIR="${ENVCTL_MANIFEST_DIR:-$M/src/envctl/manifest}"
+ROOT="$(cd "$MANIFEST_DIR/.." && pwd -P)"
+AUDIT="${ENVCTL_PORTABILITY_AUDIT:-$ROOT/scripts/audit-meta-local-paths.sh}"
+[ -x "$AUDIT" ] || { echo "missing executable portability audit: $AUDIT" >&2; exit 1; }
+exec "$AUDIT" --profile-shadow-guard-only --require-yazelix-profile \
+  --meta-root "$M" --real-home "$R" --envctl-home-source "$ROOT/home"
 ''']
 [component.install]
 kind = "script"
 script = '''
-set -e
+set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-R="${ENVCTL_REAL_HOME:-}"
-[ -n "$R" ] && [ "$R" != "$M" ] || { echo "SKIP home-local-single-link: real home unavailable or already META_ROOT"; exit 0; }
-if [ -L "$R/.nix-profile" ]; then
-  target="$(readlink "$R/.nix-profile" 2>/dev/null || true)"
-  case "$target" in
-    "$R/.local/state/nix/profiles/profile"|"$R/.local/state/nix/profiles/"*) ;;
-    *) echo "REFUSE home-local-single-link: unexpected .nix-profile target: $target" >&2; exit 1 ;;
-  esac
-fi
-ARCH="$M/var/lib/envctl/legacy-archives/real-home-bin-$(date -u +%Y-%m-%d)/.local/bin"
-changed=0
-for name in agent bun bunx codex codex-alpha git-kb kache-rustc-wrapper loop meta meta-git meta-mcp meta-project meta-release meta-rust rtk; do
-  t="$R/.local/bin/$name"
-  if [ -e "$t" ] || [ -L "$t" ]; then
-    if [ ! -e "$R/.nix-profile/bin/$name" ] && [ ! -L "$R/.nix-profile/bin/$name" ] && \
-       [ ! -e "$M/usr/bin/$name" ] && [ ! -L "$M/usr/bin/$name" ]; then
-      echo "REFUSE home-local-single-link: no replacement frontdoor for stale real-home user-bin shadow: $t" >&2
-      exit 1
-    fi
-    install -d -m 755 "$ARCH"
-    dest="$ARCH/$name"
-    if [ -e "$dest" ] || [ -L "$dest" ]; then
-      dest="$ARCH/$name.$(date -u +%H%M%S).$$"
-    fi
-    mv "$t" "$dest"
-    echo "archived stale real-home user-bin shadow: $dest"
-    changed=1
-  fi
-done
-[ "$changed" = 1 ] || echo "no stale real-home user-bin shadows found"
+R="${ENVCTL_REAL_HOME:?ENVCTL_REAL_HOME required}"
+[ "$R" != "$M" ] || { echo "real home must differ from META_ROOT" >&2; exit 1; }
+MANIFEST_DIR="${ENVCTL_MANIFEST_DIR:-$M/src/envctl/manifest}"
+ROOT="$(cd "$MANIFEST_DIR/.." && pwd -P)"
+AUDIT="${ENVCTL_PORTABILITY_AUDIT:-$ROOT/scripts/audit-meta-local-paths.sh}"
+[ -x "$AUDIT" ] || { echo "missing executable portability audit: $AUDIT" >&2; exit 1; }
+exec "$AUDIT" --apply --profile-shadow-guard-only --require-yazelix-profile \
+  --meta-root "$M" --real-home "$R" --envctl-home-source "$ROOT/home"
 '''
 [component.verify]
 kind = "command"
 command = "bash"
 args = ["-lc", '''
-set -e
+set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-R="${ENVCTL_REAL_HOME:-}"
-[ -n "$R" ] && [ "$R" != "$M" ] || exit 0
-if [ -L "$R/.nix-profile" ]; then
-  target="$(readlink "$R/.nix-profile" 2>/dev/null || true)"
-  case "$target" in
-    "$R/.local/state/nix/profiles/profile"|"$R/.local/state/nix/profiles/"*) ;;
-    *) echo "unexpected .nix-profile target: $target" >&2; exit 1 ;;
-  esac
-fi
-for name in agent bun bunx codex codex-alpha git-kb kache-rustc-wrapper loop meta meta-git meta-mcp meta-project meta-release meta-rust rtk; do
-  t="$R/.local/bin/$name"
-  [ ! -e "$t" ] && [ ! -L "$t" ] || { echo "stale real-home user-bin shadow: $t" >&2; exit 1; }
-done
+R="${ENVCTL_REAL_HOME:?ENVCTL_REAL_HOME required}"
+[ "$R" != "$M" ] || { echo "real home must differ from META_ROOT" >&2; exit 1; }
+MANIFEST_DIR="${ENVCTL_MANIFEST_DIR:-$M/src/envctl/manifest}"
+ROOT="$(cd "$MANIFEST_DIR/.." && pwd -P)"
+AUDIT="${ENVCTL_PORTABILITY_AUDIT:-$ROOT/scripts/audit-meta-local-paths.sh}"
+[ -x "$AUDIT" ] || { echo "missing executable portability audit: $AUDIT" >&2; exit 1; }
+exec "$AUDIT" --profile-shadow-guard-only --require-yazelix-profile \
+  --meta-root "$M" --real-home "$R" --envctl-home-source "$ROOT/home"
 ''']
 
 [[component]]
 id = "home-config-links"
 name = "META_ROOT config links"
-description = "Links META_ROOT-scoped config files from $META_ROOT/envctl/home into the META_ROOT home view. Hooks run with HOME=$META_ROOT; this never writes real-home config paths."
+description = "Links META_ROOT-scoped config files from $META_ROOT/src/envctl/home into the META_ROOT home view. Hooks run with HOME=$META_ROOT; this never writes real-home config paths. Systemd user units are deliberately excluded: their component manifest wiring owns canonical content under $META_ROOT/.config/systemd/user, and the wiring engine owns the sole verified real-XDG discovery bridge."
 [component.detect]
 kind = "command"
 command = "bash"
 args = ["-lc", '''
 M="${META_ROOT:?META_ROOT required}"
-T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+T="${ENVCTL_HOME_TREE:-$ROOT/home}"
 [ "$(readlink -f "$M/.gitconfig" 2>/dev/null)" = "$(readlink -f "$T/.gitconfig" 2>/dev/null)" ]
 ''']
 [component.install]
@@ -105,7 +76,8 @@ kind = "script"
 script = '''
 set -e
 M="${META_ROOT:?META_ROOT required}"
-T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+T="${ENVCTL_HOME_TREE:-$ROOT/home}"
 ARCH="$M/var/lib/envctl/archives/home-links-$(date +%Y%m%d-%H%M%S)"
 link() {
   src="$T/$1"
@@ -135,19 +107,16 @@ link .config/yazelix/terminal_ghostty.conf
 link .config/yazelix/tombi.toml
 link .config/yazelix/helix/steel_plugins/README.md
 link .config/yazelix/configs/zellij/layouts/mission-control.kdl
-link .config/systemd/user/env-ctl.service
-link .config/systemd/user/sqld.service
-link .config/systemd/user/repowire.service
-systemctl --user daemon-reload 2>/dev/null || true
 '''
 [component.verify]
 kind = "command"
 command = "bash"
 args = ["-lc", '''
 M="${META_ROOT:?META_ROOT required}"
-T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+T="${ENVCTL_HOME_TREE:-$ROOT/home}"
 ok=1
-for p in .gitconfig .config/nushell/config.nu .config/nushell/meta-usr-path.nu .config/kasetto/kasetto.yaml .config/yazelix/settings.jsonc .config/systemd/user/env-ctl.service .config/systemd/user/sqld.service; do
+for p in .gitconfig .config/nushell/config.nu .config/nushell/meta-usr-path.nu .config/kasetto/kasetto.yaml .config/yazelix/settings.jsonc; do
   [ "$(readlink -f "$M/$p" 2>/dev/null)" = "$(readlink -f "$T/$p" 2>/dev/null)" ] || { echo "NOT META_ROOT-LINKED: $p"; ok=0; }
 done
 [ $ok = 1 ]
@@ -156,10 +125,9 @@ done
 kind = "script"
 script = '''
 M="${META_ROOT:?META_ROOT required}"
-for p in .gitconfig .config/ghostty/config.ghostty .config/nushell/config.nu .config/nushell/meta-usr-path.nu .config/kasetto/kasetto.yaml .config/yazelix/settings.jsonc .config/yazelix/shell_bash.sh .config/yazelix/shell_nu.nu .config/yazelix/terminal_ghostty.conf .config/yazelix/tombi.toml .config/systemd/user/env-ctl.service .config/systemd/user/sqld.service .config/systemd/user/repowire.service; do
+for p in .gitconfig .config/ghostty/config.ghostty .config/nushell/config.nu .config/nushell/meta-usr-path.nu .config/kasetto/kasetto.yaml .config/yazelix/settings.jsonc .config/yazelix/shell_bash.sh .config/yazelix/shell_nu.nu .config/yazelix/terminal_ghostty.conf .config/yazelix/tombi.toml; do
   [ -L "$M/$p" ] && rm "$M/$p"
 done
-systemctl --user daemon-reload 2>/dev/null || true
 '''
 
 [[component]]
@@ -184,14 +152,15 @@ args = ["-lc", "true"]
 [[component]]
 id = "rtk-config-links"
 name = "RTK config -> META_ROOT home tree"
-description = "Links META_ROOT/.config/rtk to $META_ROOT/envctl/home/.config/rtk. RTK state remains under META_ROOT-local state."
+description = "Links META_ROOT/.config/rtk to $META_ROOT/src/envctl/home/.config/rtk. RTK state remains under META_ROOT-local state."
 requires = ["home-config-links"]
 [component.detect]
 kind = "command"
 command = "bash"
 args = ["-lc", '''
 M="${META_ROOT:?META_ROOT required}"
-T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+T="${ENVCTL_HOME_TREE:-$ROOT/home}"
 [ "$(readlink -f "$M/.config/rtk" 2>/dev/null)" = "$(readlink -f "$T/.config/rtk" 2>/dev/null)" ]
 ''']
 [component.install]
@@ -199,7 +168,8 @@ kind = "script"
 script = '''
 set -e
 M="${META_ROOT:?META_ROOT required}"
-T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+T="${ENVCTL_HOME_TREE:-$ROOT/home}"
 src="$T/.config/rtk"
 dst="$M/.config/rtk"
 ARCH="$M/var/lib/envctl/archives/home-links-$(date +%Y%m%d-%H%M%S)"
@@ -221,7 +191,8 @@ kind = "command"
 command = "bash"
 args = ["-lc", '''
 M="${META_ROOT:?META_ROOT required}"
-T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+T="${ENVCTL_HOME_TREE:-$ROOT/home}"
 [ "$(readlink -f "$M/.config/rtk" 2>/dev/null)" = "$(readlink -f "$T/.config/rtk" 2>/dev/null)" ] && rtk gain >/dev/null
 ''']
 [component.remove]
@@ -260,7 +231,8 @@ kind = "command"
 command = "bash"
 args = ["-lc", '''
 M="${META_ROOT:?META_ROOT required}"
-T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+T="${ENVCTL_HOME_TREE:-$ROOT/home}"
 [ "$(readlink -f "$M/.claude/settings.json" 2>/dev/null)" = "$(readlink -f "$T/.claude/settings.json" 2>/dev/null)" ]
 ''']
 [component.install]
@@ -268,7 +240,8 @@ kind = "script"
 script = '''
 set -e
 M="${META_ROOT:?META_ROOT required}"
-T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+T="${ENVCTL_HOME_TREE:-$ROOT/home}"
 ARCH="$M/var/lib/envctl/archives/home-links-$(date +%Y%m%d-%H%M%S)"
 if [ -f "$T/.claude/settings.json.tmpl" ]; then
   sed "s|\${META_ROOT}|$M|g" "$T/.claude/settings.json.tmpl" > "$T/.claude/settings.json"
@@ -295,7 +268,8 @@ kind = "command"
 command = "bash"
 args = ["-lc", '''
 M="${META_ROOT:?META_ROOT required}"
-T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+T="${ENVCTL_HOME_TREE:-$ROOT/home}"
 [ "$(readlink -f "$M/.claude/settings.json" 2>/dev/null)" = "$(readlink -f "$T/.claude/settings.json" 2>/dev/null)" ]
 ''']
 [component.remove]

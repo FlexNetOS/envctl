@@ -1,0 +1,7 @@
+{
+  "git": {
+    "sha1": "946275a6117f13cd8a310898e605121efc050b1c",
+    "dirty": true
+  },
+  "path_in_vcs": "crates/ruvllm"
+}

@@ -35,6 +35,13 @@ pub struct Component {
     pub gpu_required: bool,
     #[serde(default)]
     pub destructive: bool,
+    /// Opt in when a physically present component has build/source identity that can drift. For
+    /// these components, `install` runs Verify before taking the detected fast path and refreshes
+    /// through the Install hook when Verify fails. `auto-fix` already uses Verify for present
+    /// components, so both normal convergence verbs repair the same drift without weakening other
+    /// components' skip-if-detected behavior.
+    #[serde(default)]
+    pub refresh_on_verify_failure: bool,
 
     pub detect: Option<Hook>,
     pub install: Option<Hook>,

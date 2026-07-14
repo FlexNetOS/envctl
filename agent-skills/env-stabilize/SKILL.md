@@ -21,13 +21,13 @@ every `kasetto` verb is dead.
 Drift = live state diverges from declared state. For the agent environment, drift = installed
 `.claude`/`.codex` skills/MCPs differ from `agent-skills/` + `agent-env.yaml`. Detect before
 trusting; never "fix" by editing live synced files (that hides drift) — fix the source and
-re-sync. Drift gate: `envctl agent lock --check` (read-only, zero-network, exit 1 on drift;
+re-sync. Drift gate: `envctl agent lock --check --locked` (read-only, zero-network, exit 1 on drift;
 CI: `ci/gates/agent-env.sh`).
 
 ### 2. Doctor diagnostics
 A doctor pass is a read-only health report: present / broken (detects-present, fails verify) /
 missing / drifted. Run before and after any environment change: `envctl doctor` (box),
-`envctl agent lock --check` (agent layer), `yzx doctor` (yazelix runtime). Non-green doctor =
+`envctl agent lock --check --locked` (agent layer), `yzx doctor` (yazelix runtime). Non-green doctor =
 blocker, not warning.
 
 ### 3. Content-hashed lock
@@ -46,7 +46,7 @@ moving sources.
   `agent-env.lock`. Preview (no `--apply`) is the default — fail-closed, dry-run ethos.
 - **Reproducibility test:** a second sync is a no-op. If it is not, something drifted —
   investigate before proceeding.
-- **CI gate:** `ci/gates/agent-env.sh` runs `envctl agent lock --check`.
+- **CI gate:** `ci/gates/agent-env.sh` runs `envctl agent lock --check --locked`.
 
 ## Layer table — compose, don't duplicate
 
@@ -54,7 +54,7 @@ moving sources.
 |---|---|---|---|
 | Manages | toolchain binaries and runtimes | meta-local components, wiring, daemons | the agent toolkit (skills · MCPs) |
 | Targets | `~/.nix-profile` / toolbin | `$META_ROOT`, `manifest/*.toml` surfaces | `.claude/` + `.codex/` |
-| Lock / verbs | `flake.lock`; `yzx update local_source`, `yzx doctor` | `envctl.lock`; `doctor/install/auto-fix/reset/lock --check` | `agent-env.lock`; `agent sync [--apply]`, `agent lock --check` |
+| Lock / verbs | `flake.lock`; `yzx update local_source`, `yzx doctor` | `envctl.lock`; `doctor/install/auto-fix/reset/lock --check` | `agent-env.lock`; `agent sync [--apply]`, `agent lock --check --locked` |
 
 **Rules that make it pay off:**
 1. **One source of truth — never hand-edit what the sync owns.** Change `agent-skills/` +
@@ -71,7 +71,7 @@ moving sources.
 
 ## Stabilization Workflow
 
-1. `envctl doctor` + `envctl agent lock --check` + `yzx doctor` → baseline health.
+1. `envctl doctor` + `envctl agent lock --check --locked` + `yzx doctor` → baseline health.
 2. Reconcile: `.claude`/`.codex` managed surfaces come from `agent-skills/`, nothing else.
 3. Edit source → `envctl agent sync --apply` → commit `agent-env.yaml` + `agent-env.lock`.
 4. Re-run sync → confirm no-op (proves reproducibility).

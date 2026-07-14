@@ -26,6 +26,8 @@ pub mod keyslot; // Keyslot, Kdf, Argon2Params, wrap/unwrap (LUKS-style dual KEK
 pub mod mint_github; // GitHubAppMint: RS256 App-JWT → installation token (ProviderMint seam)
 pub mod paths; // Paths (XDG, env-ctl-namespaced)
 pub mod seam; // Clock, UsbProbe, ProviderMint, Upstream + SystemClock/RealUsbProbe + fakes
+#[cfg(feature = "sqld-auth")]
+pub mod sqld_auth; // Rust-native sqld Ed25519 SPKI + matching EdDSA client JWT bootstrap
 pub mod startup; // Profile-B startup-refusal guards (FS-S21/S22/S23/S24)
 pub mod vault; // Vault state machine + Store trait + crypto (seal/open) + canonical AAD + audit // ChildEnvPlan, ResolvedInjection, injection_template, run_wrapped
 
@@ -4916,9 +4918,35 @@ mod native_mint_tests {
 
     const NOW_MS: i64 = 1_700_000_000_000;
 
-    /// A throwaway 1024-bit RSA key (PKCS#1) — weak BY DESIGN, never a real credential. Same fixture
-    /// shape `mint_github`'s own tests use.
-    const TEST_PEM: &str = "-----BEGIN RSA PRIVATE KEY-----\nMIICXgIBAAKBgQDw1EvUY2q80CzzraBZxIBLq1xjF9Eu5PsEseAd2bD+oJo4QQkI\npGycm26vJalBiW/rdzcSPaxPUT7KgH1IeftkUL0pbDG6nN08MgJM0/LjVKx3fK5A\n2Lq+CCh+eHfRGxcX8haBzWcwi4tfb90/7Vi9CGh7IXyyMTWLNW/mBVoH8wIDAQAB\nAoGBAMSPYbzdz9Z/ytCwm7noyhX4rRUr8U3nEoIIdDWo4e9RQc48NpVZLlS8ACDw\nCi81b6WtzcMTlzm9xBQfvyGSff0S/cCPAWEfGNItWOg5jeLSNftDVh4yM06BPEOI\nf+FwkGPiQYtCnhSXLhQq0ClODymjHyW+M7MBf8iyqnd8bnUhAkEA/q8Z5C7YQSFq\nIbywMegUkmCykiX8oCrvykg8i5oOjZXhIp/hnxv6jYynZd0PV1oOtbVTuvEve8kr\nCj+84GCPKQJBAPIS3i9C1VaaecCoSlnSY6FHWXmbLsm4wqXGbcyS0m4tQclIXfsd\nuDO4AUTu6Xc893Xfa3M/4Jpl7Fs5TReVbbsCQQCUFIlQVDBmxh/oV8Z2bgMwDMsn\nELEvC2f6zD9vx/Y4OnH5aM6NbX4juSlHn92go3s0CacSZdN+/LtqrR6Ls3jpAkBC\n/DOdUlokf9SHGkqQtmY5X7wDqYx153l9U/5YKJywPjfBEhRng57QOO+o+o+CHk2/\nwVZDav6k2uVfjOinSQM3AkEApokk6NycDKY657zkXPtlhKBsvyxfVW+evW9XjoHi\nEnHNytN8c6NOpZMjmzxgSUoOpAI4OVMIH00OvKHIIpvN0w==\n-----END RSA PRIVATE KEY-----";
+    /// A throwaway 2048-bit RSA key (PKCS#1), the minimum accepted GitHub App key size.
+    /// Test-only data; never an operator credential.
+    const TEST_PEM: &str = r#"-----BEGIN RSA PRIVATE KEY-----
+MIIEowIBAAKCAQEA0G8nmHDYnA1m1chZJg9pNMvWW+IdNLP63CdrDfh+orhv6dMP
+U/XeVUz/1yRVxM3r0wtmoh0nIi6WbAT9Q58HK9/T6WyVRMSbZlDQWlo+xv2vFCpR
+XCTJ2guoF/ND6iPEY3EPP1wWbUls3FVbEm8RHTbfwFx6HqChbuYw5Y0xTXo3Ei8U
+j5cUzFCjSk+aY+cdus11Fb1/jN3KaAn8JsrAzwLBX75UVrZUsxmauZLZlwK64P+t
+IFH0kKJKMFY+cS1vjaz0erkKhp8Fejzr/RJsg1G7/dCmqQ1FqL9cOie9s/t5rd8G
+ZtBH8PimRw0t37Qh7emXVDDgwC6yYTFdar3YuQIDAQABAoIBAA0NNMnFIS8uYKbY
+14o8U05oyCizQThsX7Q67KdwjL90NJ/L5U0Q24X0Xx3R6uP6r/5kW54hnLJ1f9pO
+OqyqD9kluB+I+tTWSdPPkihiN8Wem4C0AKm4LQKQEcvEIhfOewzuBrIlOktIGn62
+gpAmL8hoR/0D3Wq/DLTEycGKBJERDcOZpqROzKuEmrmmE3rm7Q9yXnsGen+9Do3r
+nmMaYvvD0uHr0E0ABo14uGgqQaZSeCSBgGe0OzATS4Du+vWJw0JcctEUPghLmaMJ
+QPWwbOtDyEHxxD6rmIbXLwP42I1EkS9Xxs2GGuKgSvYoxy4FmaVFWNahNhQqusQ3
+TpqrSR0CgYEA/iRI/RdJys4Rqiw76O6zqf2o+206iBcYirI2dCs3wecXVno7YUpz
+IUc+0xj5bjmCsHlNltmFTupZQAI51sv2zJKsjUzsu2ImJTroBRSy6C5Kj8oUUFl9
+OLDLjbsnv6Mx6WR+JwiYKwfMuTQCUflO32Tr+LElBKisNY2PqmO4+tUCgYEA0fVP
+3F2XKpBjy2Qs6y2Xo8/khcxSRqfwDkog7ZLRW1C7u6J8Rrq1ezke/IjOVLM4nZDP
+3UceT9LzrkL6jcJ07A2gDwARg9ZYmPetXCCCKdHTgN8Y8mz0XToYZxKatr2D/r1R
+VJClKYtahRorkqEWWhOmkw0HusGbKfCmd5gwUFUCgYBvVCvZGuuLeOwKFOiFqJNx
+wxnUUkwSs7NfhqQODaSWP4pcqpz6iKeYi2I9DTKvE2hpsCnKDC22nThNruvxaVYK
+1bHbEDif+WXmZ0CegSvCRA0LoiV18U3GmMQCqVrHO1ExAYG1zbEDIJ6Q/vSJPmJL
+wCUSw18JBG6z4vhtVtQApQKBgQCvgL1W2SzJOZURqRUbKSs+lULSzO5hfXPenfxU
+WouCJ0QmHjZ/8QZOkHrkYX8HsiA7JZd7wj0GQLHNEtPZt5iA0QrgPxBlAcFhbHeP
+MOVdC7YeXV6/FnBVlYBceGK3KkexopLfe2F0DraF2FBf6yOB/DcbaKLza27GahDc
+m2yXWQKBgEDwcbQUP17Yppbvz79w9A2ljzzMEgBulHLkN6iSqAfXMaQkadraPpsp
+WEg8K5iVIXq7W+GvrkoafCom6FDuxb2Agrq69g6MuFqIWcy/Sjp9QMCHJRQ/EKSI
+s3naIfplFX7rzQJRxNYdYivYJA6vRfPq9Ebc+VWPmivwoEVpdx0i
+-----END RSA PRIVATE KEY-----"#;
 
     struct NoUsb;
     impl UsbProbe for NoUsb {

@@ -76,21 +76,9 @@ parent_workspace_is_compatible() {
   ' "$manifest"
 }
 
-ensure_parent_workspace() {
-  local manifest="$meta_root/Cargo.toml"
-  local version
-  version="$(workspace_version)"
-  if [ -f "$manifest" ]; then
-    if parent_workspace_is_compatible "$manifest" "$version"; then
-      echo "meta-dep: validated parent workspace manifest at $manifest (version $version)"
-      return
-    fi
-    echo "FAIL: refusing to overwrite unrelated or incompatible parent workspace at $manifest; require loop_lib + meta_plugin_protocol members and workspace version $version" >&2
-    exit 1
-  fi
-
-  echo "meta-dep: writing minimal parent workspace manifest at $manifest"
-  cat > "$manifest" <<EOF_MANIFEST
+render_parent_workspace() {
+  local version="$1"
+  cat <<EOF_MANIFEST
 [workspace]
 members = ["loop_lib", "meta_plugin_protocol"]
 resolver = "2"
@@ -101,6 +89,47 @@ edition = "2021"
 license = "MIT"
 repository = "https://github.com/FlexNetOS/meta"
 EOF_MANIFEST
+}
+
+parent_workspace_is_envctl_generated() {
+  local manifest="$1"
+  local normalized expected
+  normalized="$(sed -E 's/^version = "[^"]+"$/version = "__ENVCTL_VERSION__"/' "$manifest")"
+  expected="$(render_parent_workspace __ENVCTL_VERSION__)"
+  [ "$normalized" = "$expected" ]
+}
+
+write_parent_workspace() {
+  local manifest="$1"
+  local version="$2"
+  local temporary="${manifest}.envctl.$$"
+  trap 'rm -f "$temporary"' RETURN
+  umask 022
+  render_parent_workspace "$version" >"$temporary"
+  mv -f "$temporary" "$manifest"
+  trap - RETURN
+}
+
+ensure_parent_workspace() {
+  local manifest="$meta_root/Cargo.toml"
+  local version
+  version="$(workspace_version)"
+  if [ -f "$manifest" ]; then
+    if parent_workspace_is_compatible "$manifest" "$version"; then
+      echo "meta-dep: validated parent workspace manifest at $manifest (version $version)"
+      return
+    fi
+    if parent_workspace_is_envctl_generated "$manifest"; then
+      echo "meta-dep: refreshing stale generated parent workspace at $manifest to version $version"
+      write_parent_workspace "$manifest" "$version"
+      return
+    fi
+    echo "FAIL: refusing to overwrite unrelated or incompatible parent workspace at $manifest; require loop_lib + meta_plugin_protocol members and workspace version $version" >&2
+    exit 1
+  fi
+
+  echo "meta-dep: writing minimal parent workspace manifest at $manifest"
+  write_parent_workspace "$manifest" "$version"
 }
 
 ensure_repo() {

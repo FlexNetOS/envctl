@@ -7,6 +7,11 @@
 //! PUBLIC API and asserts agent-env reproduces kasetto's expected outputs. A mismatch
 //! here is a genuine port defect (parity FAIL), independent of agent-env's own tests.
 //!
+//! Assertions explicitly labeled `Intentional envctl security superset` are the exception:
+//! they pin envctl's fail-closed extensions beyond kasetto v3.2.0 (lock schema v3,
+//! immutable tree snapshots, and portable ownership evidence). Those assertions protect a
+//! security upgrade and must not be weakened merely to reproduce the upstream v2 lock.
+//!
 //! This is the parity-verifier pass that flips `[~]` → `[x]` in
 //! `.handoff/loop/rust-port/parity-ledger.md` (and merge-ledger.md).
 
@@ -249,38 +254,113 @@ fn parity_hash_str_and_file_vs_sha256() {
     let _ = fs::remove_dir_all(&dir);
 }
 
-// hash_dir framing (rel + NUL + content + NUL, sorted, sep-invariant) reproduced by an
-// independent SHA-256 over the SAME byte stream — a 3rd-party oracle for F-01.
+// Intentional envctl security superset: lock v3 replaces kasetto's rel+NUL+content framing with
+// tree-v1. Reconstruct the Unix tree-v1 byte stream independently from the public wrapper.
+#[cfg(unix)]
 #[test]
-fn parity_hash_dir_vs_independent_framing() {
+fn security_superset_hash_dir_tree_v1_framing() {
     use sha2::{Digest, Sha256};
+    use std::os::unix::fs::PermissionsExt;
+
     let root = tmp("hashdir");
     fs::create_dir_all(root.join("sub")).unwrap();
     fs::write(root.join("SKILL.md"), "# Demo\n").unwrap();
     fs::write(root.join("sub/extra.md"), "body\n").unwrap();
 
-    // Independent reconstruction of kasetto's documented framing (src/fsops/hash.rs:hash_dir):
-    // collect files, sort by rel path, feed `rel\0 content \0` per file (rel '\\'→'/').
-    let mut files: Vec<(String, Vec<u8>)> = vec![
-        ("SKILL.md".to_string(), b"# Demo\n".to_vec()),
-        ("sub/extra.md".to_string(), b"body\n".to_vec()),
+    let mode = |path: &Path| fs::metadata(path).unwrap().permissions().mode() & 0o7777;
+    type OracleEntry<'a> = (u8, Vec<&'a [u8]>, u32, &'a [u8]);
+    let entries: Vec<OracleEntry<'_>> = vec![
+        (b'd', vec![], mode(&root), b""),
+        (
+            b'f',
+            vec![b"SKILL.md"],
+            mode(&root.join("SKILL.md")),
+            b"# Demo\n",
+        ),
+        (b'd', vec![b"sub"], mode(&root.join("sub")), b""),
+        (
+            b'f',
+            vec![b"sub", b"extra.md"],
+            mode(&root.join("sub/extra.md")),
+            b"body\n",
+        ),
     ];
-    files.sort_by(|a, b| a.0.cmp(&b.0));
     let mut h = Sha256::new();
-    for (rel, content) in &files {
-        h.update(rel.replace('\\', "/").as_bytes());
-        h.update([0u8]);
-        h.update(content);
-        h.update([0u8]);
+    h.update(b"envctl-agent-env-tree-v1-unix\0");
+    for (kind, components, entry_mode, bytes) in entries {
+        h.update([kind]);
+        h.update((components.len() as u64).to_le_bytes());
+        for component in components {
+            h.update((component.len() as u64).to_le_bytes());
+            h.update(component);
+        }
+        h.update(entry_mode.to_le_bytes());
+        h.update((bytes.len() as u64).to_le_bytes());
+        h.update(bytes);
     }
     let expected = format!("{:x}", h.finalize());
     assert_eq!(
         hash_dir(&root).unwrap(),
         expected,
-        "hash_dir framing must match kasetto's"
+        "hash_dir must use the independently reconstructed tree-v1 framing"
     );
     // stability across runs (kasetto hash_dir_is_stable_across_runs)
     assert_eq!(hash_dir(&root).unwrap(), hash_dir(&root).unwrap());
+    let _ = fs::remove_dir_all(&root);
+}
+
+// Intentional envctl security superset: kasetto v3.2.0 hashed only normalized paths and file
+// bytes. Lock v3 uses one immutable TreeSnapshot for hashing and installation, including entry
+// kind, Unix mode semantics, and empty directories. Project snapshots are restricted to the
+// subset Git can reproduce in a fresh clone.
+#[cfg(unix)]
+#[test]
+fn security_superset_tree_v1_binds_modes_and_empty_directories() {
+    use envctl_agent_env::TreeSnapshot;
+    use std::os::unix::fs::PermissionsExt;
+
+    let root = tmp("tree-v1-security-superset");
+    let skill = root.join("skill");
+    fs::create_dir(&skill).unwrap();
+    let script = skill.join("run.sh");
+    fs::write(&script, b"#!/bin/sh\n").unwrap();
+    fs::set_permissions(&script, fs::Permissions::from_mode(0o644)).unwrap();
+
+    let non_executable = TreeSnapshot::capture(&skill).unwrap();
+    let non_executable_hash = non_executable.hash();
+    fs::set_permissions(&script, fs::Permissions::from_mode(0o755)).unwrap();
+    let executable = TreeSnapshot::capture(&skill).unwrap();
+    assert_ne!(
+        executable.hash(),
+        non_executable_hash,
+        "global tree-v1 hashes must bind executable/mode semantics"
+    );
+
+    let portable_executable = executable.clone().into_git_portable().unwrap().hash();
+    fs::set_permissions(&script, fs::Permissions::from_mode(0o711)).unwrap();
+    assert_eq!(
+        TreeSnapshot::capture(&skill)
+            .unwrap()
+            .into_git_portable()
+            .unwrap()
+            .hash(),
+        portable_executable,
+        "project snapshots normalize executable files to Git-portable 0755 semantics"
+    );
+
+    let before_empty = TreeSnapshot::capture(&skill).unwrap().hash();
+    fs::create_dir(skill.join("empty")).unwrap();
+    let with_empty = TreeSnapshot::capture(&skill).unwrap();
+    assert_ne!(
+        with_empty.hash(),
+        before_empty,
+        "global tree-v1 hashes must bind empty directories"
+    );
+    assert!(
+        with_empty.into_git_portable().is_err(),
+        "project locks must reject empty directories that Git cannot reproduce"
+    );
+
     let _ = fs::remove_dir_all(&root);
 }
 
@@ -1557,11 +1637,11 @@ fn parity_resolve_scope_precedence() {
 }
 
 // ───────────────────────────── M-23/M-24 · AgentLockEntry fields + LOCK_VERSION ─────────────────────────────
-// Oracle: kasetto src/model/types.rs (SkillEntry fields, LOCK_VERSION=2). envctl folds
-// SkillEntry → AgentLockEntry; State{version,skills} is engine-folded (see BLOCKED note).
+// Oracle: kasetto src/model/types.rs for SkillEntry fields. LOCK_VERSION=3 is an intentional
+// envctl security-superset divergence from kasetto's v2 lock.
 #[test]
-fn parity_lock_entry_fields_and_version() {
-    assert_eq!(LOCK_VERSION, 2);
+fn security_superset_lock_entry_fields_and_version() {
+    assert_eq!(LOCK_VERSION, 3);
     // SkillEntry's 7 fields, including the Option<Scope> skip-if-none + default description.
     let e = AgentLockEntry {
         destination: ".claude/skills/a".into(),
@@ -1809,16 +1889,19 @@ fn parity_fetch_config_text_local_arm() {
     );
 }
 
-// ───────────────────────────── L-01 · AssetEntry (CSV destination, skip-empty revision) ─────────────────────────────
+// ───────────────────────────── L-01 · AssetEntry (legacy CSV, v3 framed list) ─────────────────────────────
 // Oracle: kasetto src/lock.rs (AssetEntry fields; source_revision default + skip_if_empty).
 #[test]
 fn parity_asset_entry_fields() {
+    use envctl_agent_env::lock::{decode_asset_list, encode_asset_list};
+
+    let framed = encode_asset_list(["srv,one".to_string(), "srv-two".to_string()]);
     let a = AssetEntry {
         kind: "mcp".into(),
         name: "pack.json".into(),
         hash: "h1".into(),
         source: "src".into(),
-        destination: "srv1,srv2".into(), // CSV: MCP server names
+        destination: framed.clone(),
         source_revision: "branch:main".into(),
     };
     let back: AssetEntry = serde_yaml::from_str(&serde_yaml::to_string(&a).unwrap()).unwrap();
@@ -1839,17 +1922,33 @@ fn parity_asset_entry_fields() {
     )
     .unwrap();
     assert_eq!(legacy.source_revision, "");
+
+    // Intentional v3 hardening: canonical lists are injective/length-framed, so a comma in a
+    // server name cannot alias two units. CSV remains readable only while migrating a v2 lock.
+    assert_eq!(
+        decode_asset_list(&framed, LOCK_VERSION).unwrap(),
+        vec!["srv,one", "srv-two"]
+    );
+    assert_eq!(
+        decode_asset_list("srv1,srv2", 2).unwrap(),
+        vec!["srv1", "srv2"]
+    );
+    assert!(decode_asset_list("srv1,srv2", LOCK_VERSION).is_err());
 }
 
 // ───────────────────────────── L-02 · AgentLockFile + Default + default_version ─────────────────────────────
-// Oracle: kasetto src/lock.rs::tests::round_trip_empty_lock_file + LockFile::Default.
+// Oracle: kasetto src/lock.rs::tests::round_trip_empty_lock_file + LockFile::Default, with
+// intentional envctl v3 schema/version hardening.
 #[test]
 fn parity_lock_file_default_and_version() {
     let lf = AgentLockFile::default();
-    assert_eq!(lf.version, 2); // default_version = LOCK_VERSION = 2
+    assert_eq!(lf.version, LOCK_VERSION);
+    assert_eq!(LOCK_VERSION, 3);
     assert!(lf.skills.is_empty());
     assert!(lf.assets.is_empty());
-    // version field defaults to 2 when absent (unknown fields ignored / legacy-tolerant).
+    assert!(lf.source_selectors.is_empty());
+    assert!(lf.installed_outputs.is_empty());
+    // A versionless lock is treated as v2 migration input, never silently relabelled as v3.
     let parsed: AgentLockFile = serde_yaml::from_str("skills: {}\nassets: {}\n").unwrap();
     assert_eq!(parsed.version, 2);
     // unknown top-level fields are tolerated (legacy v1 carried extra keys).
@@ -1861,10 +1960,10 @@ fn parity_lock_file_default_and_version() {
 // ───────────────────────────── L-03 · AgentLockFile state methods (asset CRUD) ─────────────────────────────
 // Oracle: kasetto src/lock.rs::tests::{list_tracked_asset_ids_filters_by_kind,
 // remove_tracked_asset_deletes_entry, list_installed_mcps_deduplicates, clear_all_empties_everything}.
-// NOTE: kasetto's list_installed_{commands,mcps} + state/apply_state are NOT on envctl's
-// public lock API (engine-folded) — see BLOCKED note. The asset-CRUD subset is verified here.
 #[test]
 fn parity_lock_state_asset_crud() {
+    use envctl_agent_env::lock::{encode_asset_list, installed_output_key, InstalledOutput};
+
     let mk = |kind: &str, name: &str, dest: &str| AssetEntry {
         kind: kind.into(),
         name: name.into(),
@@ -1874,13 +1973,14 @@ fn parity_lock_state_asset_crud() {
         source_revision: "rev".into(),
     };
     let mut lock = AgentLockFile::default();
-    lock.save_tracked_asset("mcp::a", mk("mcp", "a", "srv1,srv2"));
+    let mcp_dest = encode_asset_list(["srv1".to_string(), "srv2".to_string()]);
+    lock.save_tracked_asset("mcp::a", mk("mcp", "a", &mcp_dest));
     lock.save_tracked_asset("other::b", mk("other", "b", "d2"));
 
     // get_tracked_asset returns (hash, destination) only when the kind matches.
     assert_eq!(
         lock.get_tracked_asset("mcp", "mcp::a"),
-        Some(("h".into(), "srv1,srv2".into()))
+        Some(("h".into(), mcp_dest.clone()))
     );
     assert_eq!(
         lock.get_tracked_asset("command", "mcp::a"),
@@ -1890,16 +1990,36 @@ fn parity_lock_state_asset_crud() {
 
     // list_tracked_asset_ids filters by kind.
     let mcps = lock.list_tracked_asset_ids("mcp");
-    assert_eq!(mcps, vec![("mcp::a", "srv1,srv2")]);
+    assert_eq!(mcps, vec![("mcp::a", mcp_dest.as_str())]);
+    assert_eq!(lock.list_installed_mcps().unwrap(), vec!["srv1", "srv2"]);
 
     // remove deletes the entry.
     lock.remove_tracked_asset("mcp::a");
     assert!(lock.get_tracked_asset("mcp", "mcp::a").is_none());
 
-    // clear_all empties skills + assets.
+    // clear_all also clears v3 selector bindings and portable ownership/tombstone proofs.
     lock.skills.insert("k".into(), AgentLockEntry::default());
+    lock.source_selectors.insert("k".into(), "selector".into());
+    let proof = InstalledOutput {
+        asset_id: "skill::v3|1:s|1:k".into(),
+        destination: ".codex/skills/k".into(),
+        format: "skill-tree".into(),
+        unit: "tree".into(),
+        hash: "h".into(),
+    };
+    lock.installed_outputs.insert(
+        installed_output_key(
+            &proof.asset_id,
+            &proof.destination,
+            &proof.format,
+            &proof.unit,
+        ),
+        proof,
+    );
     lock.clear_all();
     assert!(lock.skills.is_empty() && lock.assets.is_empty());
+    assert!(lock.source_selectors.is_empty());
+    assert!(lock.installed_outputs.is_empty());
 }
 
 // ───────────────────────────── L-04 · lock_path (scope-keyed) ─────────────────────────────
@@ -1918,12 +2038,14 @@ fn parity_lock_path_by_scope() {
     assert_eq!(g, data.join("agent-env.lock"));
 }
 
-// ───────────────────────────── L-05 · load_lock / save_lock (round-trip, legacy restamp) ─────────────────────────────
+// ───────────────────────────── L-05 · load_lock / save_lock (v3 round-trip, fail-closed legacy) ─────────────────────────────
 // Oracle: kasetto src/lock.rs::tests::{round_trip_with_skills_and_assets,
-// load_returns_default_when_missing, legacy_v1_lock_loads_and_restamps_on_save}.
+// load_returns_default_when_missing}; legacy restamping intentionally diverges in envctl v3.
 #[test]
 fn parity_load_save_lock() {
-    use envctl_agent_env::lock::{load, save};
+    use envctl_agent_env::lock::{
+        encode_asset_list, installed_output_key, load, save, InstalledOutput,
+    };
     let dir = tmp("lock-roundtrip");
     let path = dir.join("agent-env.lock");
 
@@ -1948,13 +2070,30 @@ fn parity_load_save_lock() {
             name: "pack.json".into(),
             hash: "h1".into(),
             source: "src".into(),
-            destination: "srv1,srv2".into(),
+            destination: encode_asset_list(["srv1".to_string(), "srv2".to_string()]),
             source_revision: "rev1".into(),
         },
     );
+    lock.source_selectors
+        .insert("src::skill-a".into(), "v1|kind=skill|scope=project".into());
+    let proof = InstalledOutput {
+        asset_id: "skill::v3|3:src|7:skill-a".into(),
+        destination: ".claude/skills/skill-a".into(),
+        format: "skill-tree".into(),
+        unit: "tree".into(),
+        hash: "abc".into(),
+    };
+    let proof_key = installed_output_key(
+        &proof.asset_id,
+        &proof.destination,
+        &proof.format,
+        &proof.unit,
+    );
+    lock.installed_outputs
+        .insert(proof_key.clone(), proof.clone());
     save(&mut lock, &path).unwrap();
     let loaded = load(&path).unwrap();
-    assert_eq!(loaded.version, 2);
+    assert_eq!(loaded.version, LOCK_VERSION);
     assert_eq!(loaded.skills.len(), 1);
     assert_eq!(loaded.skills["src::skill-a"].hash, "abc");
     assert_eq!(
@@ -1963,15 +2102,27 @@ fn parity_load_save_lock() {
     );
     assert_eq!(
         loaded.get_tracked_asset("mcp", "mcp::src::pack.json"),
-        Some(("h1".into(), "srv1,srv2".into()))
+        Some((
+            "h1".into(),
+            encode_asset_list(["srv1".to_string(), "srv2".to_string()])
+        ))
+    );
+    assert_eq!(loaded.installed_outputs.get(&proof_key), Some(&proof));
+    assert_eq!(
+        loaded
+            .source_selectors
+            .get("src::skill-a")
+            .map(String::as_str),
+        Some("v1|kind=skill|scope=project")
     );
 
     // missing file → default lock.
     let missing = load(&dir.join("nope.lock")).unwrap();
-    assert_eq!(missing.version, 2);
+    assert_eq!(missing.version, LOCK_VERSION);
     assert!(missing.skills.is_empty());
 
-    // legacy v1 lock: unknown fields ignored, absolute dest honored, restamped to v2 on save.
+    // Legacy locks remain readable for a controlled migration, but a direct save must fail
+    // closed. Re-labelling v1/v2 hashes as tree-v1 would forge v3 evidence.
     let legacy_path = dir.join("legacy.lock");
     let legacy = "version: 1\n\
 last_run: '111'\n\
@@ -1991,11 +2142,10 @@ assets: {}\n";
         loaded.skills["src::a"].destination,
         "/abs/path/.claude/skills/a" // legacy absolute dest honored
     );
-    save(&mut loaded, &legacy_path).unwrap();
-    let resaved = fs::read_to_string(&legacy_path).unwrap();
-    assert!(resaved.starts_with("version: 2"), "restamped to v2");
-    assert!(!resaved.contains("last_run"));
-    assert!(!resaved.contains("updated_at"));
+    let before = fs::read(&legacy_path).unwrap();
+    let error = save(&mut loaded, &legacy_path).unwrap_err();
+    assert!(error.to_string().contains("fully rebuild"));
+    assert_eq!(fs::read(&legacy_path).unwrap(), before);
 
     let _ = fs::remove_dir_all(&dir);
 }
@@ -3137,4 +3287,137 @@ fn parity_default_config_path_env_override() {
         Some(v) => std::env::set_var(CONFIG_ENV_VAR, v),
         None => std::env::remove_var(CONFIG_ENV_VAR),
     }
+}
+
+// Intentional envctl security superset: desired v3 entries are not installation authority.
+// A plain apply records portable proof only after commit; that proof remains valid when the
+// project is cloned under a different absolute path with no machine-local runtime cache.
+#[test]
+fn security_superset_v3_ownership_bootstrap_and_clean_clone() {
+    use envctl_agent_env::driver::{rebuild_lock, sync, DriverCtx, UpdatedAt};
+
+    struct EnvRestore([(&'static str, Option<std::ffi::OsString>); 3]);
+    impl Drop for EnvRestore {
+        fn drop(&mut self) {
+            for (key, value) in &self.0 {
+                match value {
+                    Some(value) => std::env::set_var(key, value),
+                    None => std::env::remove_var(key),
+                }
+            }
+        }
+    }
+
+    let _guard = ENV_LOCK
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    let root = tmp("v3-ownership-bootstrap");
+    let home = root.join("home");
+    let cache = root.join("cache");
+    let data = root.join("data");
+    fs::create_dir_all(&home).unwrap();
+    fs::create_dir_all(&cache).unwrap();
+    fs::create_dir_all(&data).unwrap();
+    let restore_env = EnvRestore([
+        ("HOME", std::env::var_os("HOME")),
+        ("XDG_CACHE_HOME", std::env::var_os("XDG_CACHE_HOME")),
+        ("XDG_DATA_HOME", std::env::var_os("XDG_DATA_HOME")),
+    ]);
+    std::env::set_var("HOME", &home);
+    std::env::set_var("XDG_CACHE_HOME", &cache);
+    std::env::set_var("XDG_DATA_HOME", &data);
+
+    let source = root.join("pack/alpha");
+    fs::create_dir_all(&source).unwrap();
+    fs::write(source.join("SKILL.md"), "# Alpha\n\nPortable proof.\n").unwrap();
+    let cfg: Config = serde_yaml::from_str(
+        r#"scope: project
+destination: managed/skills
+skills:
+  - source: ./pack
+    skills:
+      - alpha
+"#,
+    )
+    .unwrap();
+    let destinations = resolve_destinations(&root, &cfg, Scope::Project).unwrap();
+    let desired = rebuild_lock(&cfg, &root, Scope::Project, &AgentLockFile::default(), &[])
+        .expect("build desired v3 lock");
+    assert!(desired.installed_outputs.is_empty());
+
+    // Matching bytes copied by someone else are still unowned. Locked apply must not adopt them.
+    let installed = destinations[0].join("alpha");
+    fs::create_dir_all(&installed).unwrap();
+    fs::copy(source.join("SKILL.md"), installed.join("SKILL.md")).unwrap();
+    let locked_ctx = DriverCtx::from_mode(
+        &cfg,
+        &root,
+        &destinations,
+        root.clone(),
+        Scope::Project,
+        true,
+        &LockMode::Locked,
+    );
+    let mut unowned_lock = desired.clone();
+    let mut unowned_runtime = UpdatedAt::default();
+    let refused = sync(&locked_ctx, &mut unowned_lock, &mut unowned_runtime);
+    assert_eq!(refused.summary.failed, 1);
+    assert!(refused
+        .actions
+        .iter()
+        .any(|action| action.status == "locked_error"));
+    assert!(unowned_lock.installed_outputs.is_empty());
+    assert!(installed.join("SKILL.md").is_file());
+
+    // Plain apply may install a missing target and records proof in the same transaction.
+    fs::remove_dir_all(&installed).unwrap();
+    let plain_ctx = DriverCtx::from_mode(
+        &cfg,
+        &root,
+        &destinations,
+        root.clone(),
+        Scope::Project,
+        true,
+        &LockMode::Plain,
+    );
+    let installed_result = sync(&plain_ctx, &mut unowned_lock, &mut unowned_runtime);
+    assert_eq!(
+        installed_result.summary.failed, 0,
+        "{:?}",
+        installed_result.actions
+    );
+    assert!(!unowned_lock.installed_outputs.is_empty());
+    assert!(installed.join("SKILL.md").is_file());
+
+    // Re-root the same source/output/portable lock and discard runtime state: locked succeeds.
+    let clone_root = root.join("clone");
+    let clone_source = clone_root.join("pack/alpha");
+    fs::create_dir_all(&clone_source).unwrap();
+    fs::copy(source.join("SKILL.md"), clone_source.join("SKILL.md")).unwrap();
+    let clone_destinations = resolve_destinations(&clone_root, &cfg, Scope::Project).unwrap();
+    let clone_ctx = DriverCtx::from_mode(
+        &cfg,
+        &clone_root,
+        &clone_destinations,
+        clone_root.clone(),
+        Scope::Project,
+        true,
+        &LockMode::Locked,
+    );
+    let mut clone_lock = unowned_lock.clone();
+    let expected_lock = clone_lock.clone();
+    let mut empty_runtime = UpdatedAt::default();
+    let clone_result = sync(&clone_ctx, &mut clone_lock, &mut empty_runtime);
+    assert_eq!(clone_result.summary.failed, 0, "{:?}", clone_result.actions);
+    assert_eq!(
+        clone_lock, expected_lock,
+        "locked audit must not rewrite the lock"
+    );
+    assert!(
+        clone_root.join("managed/skills/alpha/SKILL.md").is_file(),
+        "portable proof plus local source bytes must install into a clean clone"
+    );
+
+    drop(restore_env);
+    let _ = fs::remove_dir_all(&root);
 }
