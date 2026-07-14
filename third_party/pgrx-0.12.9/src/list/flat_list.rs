@@ -167,33 +167,34 @@ impl<'cx, T: Enlist> List<'cx, T> {
 
         // If draining all, rip it out of place to contain broken invariants from panics
         let raw = if drain_start == 0 {
-            mem::take(self).into_ptr()
+            NonNull::new(mem::take(self).into_ptr())
         } else {
-            // Leave it in place, but we need a pointer:
+            // Leave it in place, retaining the non-null ownership invariant:
             match self {
-                List::Nil => ptr::null_mut(),
-                List::Cons(head) => head.list.as_ptr().cast(),
+                List::Nil => None,
+                List::Cons(head) => Some(head.list),
             }
         };
 
-        // Remember to check that our raw ptr is non-null
-        if raw.is_non_null() {
+        if let Some(mut raw) = raw {
             // Shorten the list to prohibit interaction with List's state after drain_start.
             // Note this breaks List repr invariants in the `drain_start == 0` case, but
             // we only consider returning the list ptr to `&mut self` if Drop is completed
-            unsafe { (*raw).length = drain_start as _ };
-            let cells_ptr = unsafe { (*raw).elements };
+            unsafe { raw.as_mut().length = drain_start as _ };
+            let cells_ptr = unsafe { raw.as_ref().elements };
             let iter = unsafe {
                 RawCellIter {
                     ptr: cells_ptr.add(drain_start).cast(),
                     end: cells_ptr.add(tail_start).cast(),
                 }
             };
+            let raw = raw.as_ptr();
             Drain { tail_len: tail_len as _, tail_start: tail_start as _, raw, origin: self, iter }
         } else {
             // If it's not, produce the only valid choice: a 0-len iterator pointing to null
             // One last doublecheck for old paranoia's sake:
             assert!(tail_len == 0 && tail_start == 0 && drain_start == 0);
+            let raw = ptr::null_mut();
             Drain { tail_len: 0, tail_start: 0, raw, origin: self, iter: Default::default() }
         }
     }

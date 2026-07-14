@@ -5,7 +5,8 @@ not snapshots of local checkouts and, in particular, are not sourced from the st
 `meta-ruvector` checkout. `Cargo.toml.orig`, `.cargo_vcs_info.json`, license files, tests, and all
 unmodified release content are retained so the delta from the published crate remains auditable.
 
-The patches only replace five unmaintained dependencies in the resolved RuVector feature graph:
+The dependency patches only replace five unmaintained dependencies in the resolved RuVector
+feature graph:
 
 - `number_prefix 0.4.0` is removed by applying hf-hub upstream commit
   `65fb0347d92c5569be93b334f547fc2f5c861ac6` to the exact `hf-hub 0.4.3` release and pinning
@@ -24,6 +25,17 @@ The patches only replace five unmaintained dependencies in the resolved RuVector
 - `bincode 1.3.3` is replaced explicitly with Servo's `fugue-bincode = 1.3.4` in hnsw_rs and
   ruvector-postgres. hnsw_rs's legacy format-v2 decoder is preserved; removing or refusing that
   branch would be a data-compatibility downgrade.
+
+Two behavior-preserving unsafe-pointer hardenings are also applied to the release sources:
+
+- pgrx's PostgreSQL list drains retain the existing `NonNull<pg_sys::List>` invariant until the
+  raw pointer must be stored in `Drain`. A `List::Cons` allocation remains owned by its PostgreSQL
+  memory context; `List::Nil` is represented explicitly as `None` before conversion back to null.
+- ruvector-postgres's IVFFlat page writer reacquires the previous page header from the still-pinned,
+  exclusively locked buffer instead of retaining a raw page pointer across loop iterations.
+
+These changes make the lifetime proof visible to static analysis without changing allocation,
+serialization, page layout, or list-drain behavior.
 
 No replacement is hidden behind a Cargo package alias. The maintained package names appear in
 both the patched manifests and Rust namespaces. The original names remain only in the published

@@ -946,7 +946,6 @@ unsafe fn write_inverted_list(
     let mut start_page: u32 = 0;
     let mut page_count: u32 = 0;
     let mut prev_buffer: Buffer = pg_sys::InvalidBuffer as Buffer;
-    let mut prev_header_ptr: *mut ListPageHeader = std::ptr::null_mut();
     let mut written = 0;
 
     while written < entries.len() {
@@ -965,9 +964,14 @@ unsafe fn write_inverted_list(
         }
         page_count += 1;
 
-        // Link previous page to this one
-        if !prev_header_ptr.is_null() {
-            (*prev_header_ptr).next_page = actual_page;
+        // Link the previous page while its buffer remains pinned and locked. Reacquire the
+        // header from the buffer instead of retaining a raw page pointer across iterations.
+        if prev_buffer != pg_sys::InvalidBuffer as Buffer {
+            let prev_page = pg_sys::BufferGetPage(prev_buffer);
+            let prev_page_header = prev_page as *mut pg_sys::PageHeaderData;
+            let prev_data_ptr = (prev_page_header as *mut u8).add(page_header_size);
+            let prev_list_header = prev_data_ptr as *mut ListPageHeader;
+            (*prev_list_header).next_page = actual_page;
             pg_sys::MarkBufferDirty(prev_buffer);
             pg_sys::UnlockReleaseBuffer(prev_buffer);
         }
@@ -1010,7 +1014,6 @@ unsafe fn write_inverted_list(
 
         // Keep reference for linking
         prev_buffer = buffer;
-        prev_header_ptr = list_header;
     }
 
     // Release the last buffer

@@ -181,27 +181,27 @@ impl<'cx, T: Enlist> List<'cx, T> {
 
         // If draining all, rip it out of place to contain broken invariants from panics
         let raw = if drain_start == 0 {
-            mem::take(self).into_ptr()
+            NonNull::new(mem::take(self).into_ptr())
         } else {
-            // Leave it in place, but we need a pointer:
+            // Leave it in place, retaining the non-null ownership invariant:
             match self {
-                List::Nil => ptr::null_mut(),
-                List::Cons(head) => head.list.as_ptr().cast(),
+                List::Nil => None,
+                List::Cons(head) => Some(head.list),
             }
         };
 
-        // Remember to check that our raw ptr is non-null
-        if raw.is_non_null() {
+        if let Some(mut raw) = raw {
             // Shorten the list to prohibit interaction with List's state after drain_start.
             // Note this breaks List repr invariants in the `drain_start == 0` case, but
             // we only consider returning the list ptr to `&mut self` if Drop is completed
             unsafe {
-                (*raw).length = drain_start as _;
+                let list = raw.as_mut();
+                list.length = drain_start as _;
                 let drain_prefix: *mut ListCell<T> = match drain_start as u32 {
                     0 => ptr::null_mut(),
                     start @ 1.. => {
                         // We're guaranteed we have at least one pointer by Postgres
-                        let mut ptr = NonNull::new_unchecked((*raw).head);
+                        let mut ptr = NonNull::new_unchecked(list.head);
                         // so we also start counting at 1, because we want to stop "one early"
                         let mut ct = 1;
                         while let Some(next) = NonNull::new((*ptr.as_ptr()).next) {
@@ -217,11 +217,12 @@ impl<'cx, T: Enlist> List<'cx, T> {
                 };
                 let iter = RawCellIter {
                     ptr: if drain_prefix.is_null() {
-                        (*raw).head.cast()
+                        list.head.cast()
                     } else {
                         (*drain_prefix).cell.next.cast()
                     },
                 };
+                let raw = raw.as_ptr();
                 Drain { tail_len: tail_len as _, drain_prefix, left, raw, origin: self, iter }
             }
         } else {
@@ -232,7 +233,7 @@ impl<'cx, T: Enlist> List<'cx, T> {
                 tail_len: 0,
                 drain_prefix: ptr::null_mut(),
                 left: 0,
-                raw,
+                raw: ptr::null_mut(),
                 origin: self,
                 iter: Default::default(),
             }
