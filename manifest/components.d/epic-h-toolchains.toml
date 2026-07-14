@@ -65,18 +65,16 @@ rm -rf "$M/.toolchains/gh"
 
 [component.wiring]
 path_entries = ["$META_ROOT/usr/bin"]
-
 # ── wild (linker) ── owner-preferred replacement for mold. crates.io pkg = `wild-linker`,
 # binary = `wild`. FULLY WIRED (Epic H TASK-0054): install ALSO writes a delimited block in
 # the meta-root $META_ROOT/.cargo/config.toml linker section (`linker = "clang"` +
 # `-Clink-arg=--ld-path=wild`) so local cargo builds link via wild; detect/verify assert
-# the wiring; remove strips ONLY its block. The file is CO-MANAGED with the kache component
-# (TASK-0055) via non-clobbering block-upsert. A full `cargo build` was confirmed to link
+# the wiring; remove strips ONLY its block. A full `cargo build` was confirmed to link
 # through `clang --ld-path=wild` before this landed (build-verify gate).
 [[component]]
 id = "wild-linker"
 name = "wild linker (meta-owned, wired + verified)"
-description = "Fast Rust linker (davidlattimore/wild) via `cargo install --locked wild-linker` into .toolchains/wild, wired as the local cargo linker via a delimited block in the meta-root .cargo/config.toml (clang + --ld-path=wild). Owner-preferred over mold. Wiring is verified — a full cargo build links through wild before it lands; the config is co-managed with kache (block-upsert) and remove strips only the wild block."
+description = "Fast Rust linker (davidlattimore/wild) via `cargo install --locked wild-linker` into .toolchains/wild, wired as the local cargo linker via a delimited block in the meta-root .cargo/config.toml (clang + --ld-path=wild). Owner-preferred over mold. Wiring is verified — a full cargo build links through wild before it lands; remove strips only the wild block."
 
 [component.detect]
 kind = "command"
@@ -100,15 +98,14 @@ envctl_frontdoor "$DEST/bin/wild" "$META_ROOT/usr/bin/wild"
 # Wire wild as the local cargo linker via the meta-root .cargo/config.toml. This file
 # lives OUTSIDE the envctl repo (a runtime artifact at $META_ROOT, like .toolchains/); only
 # this component def is committed. CI clones each repo standalone so it never sees it. The
-# file is CO-MANAGED with the kache component (Epic H TASK-0055): each component owns a
-# delimited block written by a NON-CLOBBERING upsert (strip my old block, append fresh),
-# so the two never overwrite each other and any foreign content is preserved.
+# delimited block is written by a NON-CLOBBERING upsert (strip my old block, append fresh),
+# so foreign content is preserved.
 install -d -m 755 "$M/.cargo"
 CFG="$M/.cargo/config.toml"
 touch "$CFG"
 # One-time migration off the legacy wholesale format (pre-TASK-0055: a single marker line +
 # a [target...] section written via `cat >`). Strip exactly those legacy lines, preserving
-# anything else (e.g. a kache [build] block written first). Stop the legacy skip at the next
+# anything else. Stop the legacy skip at the next
 # [section] OR the next comment line (so a following block's `# >>> ... >>>` marker survives).
 if grep -q '^# managed by envctl wild-linker component' "$CFG"; then
   awk '/^# managed by envctl wild-linker component/{leg=1;next} leg&&((/^\[/&&$0!~/^\[target\.x86_64-unknown-linux-gnu\]/)||/^#/){leg=0} leg{next} {print}' "$CFG" > "$CFG.mig" && mv "$CFG.mig" "$CFG"
@@ -168,8 +165,8 @@ set -u
 M="${META_ROOT:?META_ROOT required}"
 t="$META_ROOT/usr/bin/wild"; [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/wild" && rm -f "$t"
 rm -rf "$M/.toolchains/wild"
-# Strip the wild linker block from the CO-MANAGED config (non-destructive to other blocks,
-# e.g. kache, and to foreign content). Self-guarded by OUR delimiters; also strips the legacy
+# Strip the wild linker block from the config without touching foreign content. It is
+# self-guarded by OUR delimiters and also strips the legacy
 # wholesale format if present. If nothing is left, remove the file. Drop any obsolete
 # pre-wild backup left by the legacy format.
 CFG="$M/.cargo/config.toml"
@@ -188,191 +185,34 @@ rm -f "$CFG.pre-wild.bak"
 [component.wiring]
 path_entries = ["$META_ROOT/usr/bin"]
 
-# ── kache (compiler cache) ── owner-preferred RUSTC_WRAPPER (kunobi-ninja/kache).
-# FULLY WIRED (Epic H TASK-0055): install ALSO writes a delimited `[build] rustc-wrapper`
-# block into the meta-root $META_ROOT/.cargo/config.toml (CO-MANAGED with the wild-linker
-# component via non-clobbering block-upsert), so local cargo builds are cache-wrapped by
-# the canonical `$META_ROOT/usr/bin/kache` frontdoor. The frontdoor is a wrapper (not a
-# symlink) so kache always uses meta-owned XDG state/cache, even from shells that have not
-# sourced `envctl env --toolchains`.
-# Verify proves a real throwaway build is actually intercepted by kache and writes the
-# active cache under `$META_ROOT/.cache/kache`, never `~/.cache/kache`.
+# ── kache (compiler cache) ── profile-owned, local-only, and single-root.
+# Yazelix owns the binary, rustc wrapper, runtime policy, and the sole persistent cache at
+# /home/flexnetos/.cache/kache. envctl may verify or activate that owner; it must never
+# install a private toolchain, wrapper, daemon, Cargo block, or secondary cache.
 [[component]]
 id = "kache"
-name = "kache compiler cache (meta-owned, wired + verified)"
-description = "Content-addressed Rust compiler cache (kunobi-ninja/kache) via `cargo install kache` into .toolchains/kache, exposed through a $META_ROOT/usr/bin/kache XDG wrapper, and wired as RUSTC_WRAPPER via an absolute delimited [build] block in the meta-root .cargo/config.toml (co-managed with wild via block-upsert). Wiring is verified by a throwaway cargo build that must write $META_ROOT/.cache/kache, not ~/.cache/kache. sccache only as last-resort fallback."
+name = "kache compiler cache (Yazelix profile-owned)"
+description = "Verifies the sole profile-owned, local-only Kache deployment. All non-Kache caches are volatile; legacy meta/runner Kache roots and delivery shadows fail closed."
 
 [component.detect]
 kind = "command"
-command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; [ -x \"$M/.toolchains/kache/bin/kache\" ] && [ -x \"$META_ROOT/usr/bin/kache\" ] && [ ! -L \"$META_ROOT/usr/bin/kache\" ] && grep -Fqx \"exec \\\"$M/.toolchains/kache/bin/kache\\\" \\\"\\$@\\\"\" \"$META_ROOT/usr/bin/kache\" && [ -f \"$M/.cargo/config.toml\" ] && grep -q 'rustc-wrapper' \"$M/.cargo/config.toml\""]
+command = "/home/flexnetos/.nix-profile/bin/yazelix_volatile_runtime"
+args = ["check"]
 
 [component.install]
-kind = "script"
-login_shell = true
-script = '''
-envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
-set -euo pipefail
-M="${META_ROOT:?META_ROOT required}"
-DEST="$M/.toolchains/kache"
-export CARGO_HOME="$M/.toolchains/cargo"
-export RUSTUP_HOME="$M/.toolchains/rustup"
-export PATH="$CARGO_HOME/bin:$M/.toolchains/cargo/bin:$PATH"
-cargo install kache --root "$DEST"
-install -d -m 755 "$META_ROOT/usr/bin"
-cat >"$META_ROOT/usr/bin/kache" <<EOF
-#!/bin/sh
-# envctl kache wrapper
-export XDG_CACHE_HOME="\${XDG_CACHE_HOME:-$M/.cache}"
-exec "$DEST/bin/kache" "\$@"
-EOF
-chmod 755 "$META_ROOT/usr/bin/kache"
-# Wire kache as RUSTC_WRAPPER via the meta-root .cargo/config.toml [build] section. Same
-# CO-MANAGED file as the wild-linker component (TASK-0054): each owns a delimited block,
-# written by a non-clobbering upsert so the two never overwrite each other and foreign
-# content is preserved. Use an ABSOLUTE wrapper path so Cargo never falls through to an
-# older host-local kache or any PATH-shadowed binary.
-install -d -m 755 "$M/.cargo"
-CFG="$M/.cargo/config.toml"
-touch "$CFG"
-BEG="# >>> envctl kache (Epic H TASK-0055) >>>"
-END="# <<< envctl kache (Epic H TASK-0055) <<<"
-awk -v b="$BEG" -v e="$END" '$0==b{s=1} s&&$0==e{s=0;next} !s{print}' "$CFG" > "$CFG.tmp" && mv "$CFG.tmp" "$CFG"
-printf '%s\n[build]\nrustc-wrapper = "%s/usr/bin/kache"\n%s\n' "$BEG" "$M" "$END" >> "$CFG"
-'''
+kind = "command"
+command = "/home/flexnetos/.nix-profile/bin/yazelix_volatile_runtime"
+args = ["ensure"]
+
 [component.fix]
-kind = "script"
-login_shell = true
-script = '''
-envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
-set -euo pipefail
-M="${META_ROOT:?META_ROOT required}"
-DEST="$M/.toolchains/kache"
-export CARGO_HOME="$M/.toolchains/cargo"
-export RUSTUP_HOME="$M/.toolchains/rustup"
-export PATH="$CARGO_HOME/bin:$M/.toolchains/cargo/bin:$PATH"
-if [ ! -x "$DEST/bin/kache" ]; then
-  cargo install kache --root "$DEST"
-fi
-install -d -m 755 "$M/usr/bin"
-cat >"$M/usr/bin/kache" <<EOF
-#!/bin/sh
-# envctl kache wrapper
-export XDG_CACHE_HOME="\${XDG_CACHE_HOME:-$M/.cache}"
-exec "$DEST/bin/kache" "\$@"
-EOF
-chmod 755 "$M/usr/bin/kache"
+kind = "command"
+command = "/home/flexnetos/.nix-profile/bin/yazelix_volatile_runtime"
+args = ["ensure"]
 
-install -d -m 755 "$M/.cargo"
-CFG="$M/.cargo/config.toml"
-touch "$CFG"
-BEG="# >>> envctl kache (Epic H TASK-0055) >>>"
-END="# <<< envctl kache (Epic H TASK-0055) <<<"
-awk -v b="$BEG" -v e="$END" '$0==b{s=1} s&&$0==e{s=0;next} !s{print}' "$CFG" > "$CFG.tmp" && mv "$CFG.tmp" "$CFG"
-printf '%s\n[build]\nrustc-wrapper = "%s/usr/bin/kache"\n%s\n' "$BEG" "$M" "$END" >> "$CFG"
-'''
 [component.verify]
-kind = "script"
-login_shell = true
-script = '''
-set -euo pipefail
-M="${META_ROOT:?META_ROOT required}"
-export CARGO_HOME="$M/.toolchains/cargo"
-export RUSTUP_HOME="$M/.toolchains/rustup"
-export PATH="$M/usr/bin:$CARGO_HOME/bin:$M/.toolchains/cargo/bin:$PATH"
-# Bypass any interactive `grep` shell-function wrapper (rtk/ugrep hook in login shells).
-g() { command grep "$@"; }
-# 1) tools resolve to the meta wrapper + real binary exists.
-[ "$(command -v kache)" = "$M/usr/bin/kache" ]
-[ -x "$M/usr/bin/kache" ] && g -q 'envctl kache wrapper' "$M/usr/bin/kache"
-[ -x "$M/.toolchains/kache/bin/kache" ]
-kache --version
-# 2) the co-managed config carries the absolute rustc-wrapper wiring (not bare PATH lookup).
-CFG="$M/.cargo/config.toml"
-[ -f "$CFG" ] && g -q "rustc-wrapper = \"$M/usr/bin/kache\"" "$CFG"
-! awk '/^# >>> envctl kache /{s=1} s&&/^# <<< envctl kache /{s=0} s&&/rustc-wrapper = "kache"/{bad=1} END{exit bad?0:1}' "$CFG"
-# 3) prove kache actually wraps a real build and that the active cache lands in meta.
-#    The throwaway HOME catches regressions where kache falls back to ~/.cache/kache.
-tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-mkdir -p "$tmp/home" "$M/.cache"
-rm -f "$tmp/home/.cache/kache/index.db"
-mkdir -p "$tmp/proj/src"
-cat > "$tmp/proj/Cargo.toml" <<EOF
-[workspace]
-
-[package]
-name = "kache-wire-probe"
-version = "0.0.0"
-edition = "2021"
-[[bin]]
-name = "kache-wire-probe"
-path = "src/main.rs"
-EOF
-echo 'fn main() {}' > "$tmp/proj/src/main.rs"
-( cd "$tmp/proj" && env -u XDG_CACHE_HOME HOME="$tmp/home" PATH="$M/usr/bin:$PATH" cargo build --config "$CFG" --target-dir "$tmp/td" 2>&1 )
-[ -s "$M/.cache/kache/index.db" ] || { echo "kache did not record the wrapped build under $M/.cache/kache"; exit 1; }
-[ ! -e "$tmp/home/.cache/kache/index.db" ] || { echo "kache leaked cache state to HOME/.cache/kache"; exit 1; }
-# 4) daemon service restarts must also stay meta-owned.
-if command -v systemctl >/dev/null 2>&1; then
-  UNIT="$M/.config/systemd/user/kache.service"
-  [ -f "$UNIT" ]
-  g -Fq "ExecStart=\"$M/.toolchains/kache/bin/kache\" daemon run" "$UNIT"
-  g -Fq "Environment=\"XDG_CACHE_HOME=$M/.cache\"" "$UNIT"
-fi
-kache doctor
-'''
-
-[component.remove]
-kind = "script"
-login_shell = true
-script = '''
-set -euo pipefail
-M="${META_ROOT:?META_ROOT required}"
-# Remove hooks run before generic revert_wiring. Refuse every deletion unless
-# an operator-started daemon is stopped/disabled successfully; generic revert
-# then removes the discovery bridge/canonical unit and reloads the manager.
-systemctl --user disable --now kache.service
-t="$M/usr/bin/kache"
-if [ -e "$t" ] || [ -L "$t" ]; then
-  if { [ -f "$t" ] && grep -q 'envctl kache wrapper' "$t"; } || { [ -L "$t" ] && readlink "$t" | grep -q "$M/.toolchains/kache"; }; then
-    rm -f "$t"
-  fi
-fi
-rm -rf "$M/.toolchains/kache"
-# Strip ONLY the kache block from the co-managed config (leaves wild's block + foreign
-# content intact). Self-guarded by OUR delimiters. Remove the file if nothing remains.
-CFG="$M/.cargo/config.toml"
-BEG="# >>> envctl kache (Epic H TASK-0055) >>>"
-END="# <<< envctl kache (Epic H TASK-0055) <<<"
-if [ -f "$CFG" ]; then
-  awk -v b="$BEG" -v e="$END" '$0==b{s=1} s&&$0==e{s=0;next} !s{print}' "$CFG" > "$CFG.tmp" && mv "$CFG.tmp" "$CFG"
-  grep -q '[^[:space:]]' "$CFG" || rm -f "$CFG"
-fi
-'''
-
-[component.wiring]
-path_entries = ["$META_ROOT/usr/bin"]
-
-[[component.wiring.systemd_user]]
-name = "kache.service"
-# Preserve the historical lifecycle: make the daemon discoverable, but do not
-# start/enable it implicitly. Operators may opt in with systemctl --user.
-enable = false
-content = '''
-[Unit]
-Description=kache compiler cache daemon (meta-owned)
-After=default.target
-
-[Service]
-Type=simple
-Environment="XDG_CACHE_HOME=${META_ROOT}/.cache"
-ExecStart="${META_ROOT}/.toolchains/kache/bin/kache" daemon run
-Restart=on-failure
-RestartSec=5
-
-[Install]
-WantedBy=default.target
-'''
+kind = "command"
+command = "/home/flexnetos/.nix-profile/toolbin/nu"
+args = ["-c", "$env.KACHE_CACHE_DIR = '/home/flexnetos/.cache/kache'; /home/flexnetos/.nix-profile/bin/yazelix_volatile_runtime check; /home/flexnetos/.nix-profile/bin/kache doctor"]
 
 # ── nushell (nu) ── meta-owned musl static binary, replaces nix-delivered nu for
 # interactive use. Additive: yazelix's own bundled nu (absolute nix path) is untouched.
