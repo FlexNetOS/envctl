@@ -46,14 +46,13 @@ Use these workflow files as thin shims only; the authoritative workflow bodies r
 
 ## Runtime Gates
 
-- Legacy repo-local Codex lifecycle hook sources from the pre-clean-room
-  baseline are purged, retired, and archived evidence only. Do not restore
-  `.codex/hooks.json`, `.codex/hooks/`, hook install scripts, or regenerated
-  hook sources from this repo as active root policy.
-- Hooks remain mandatory for the control plane, but the replacement must be a
-  clean-room design owned by the root lifecycle contract. Until that rebuild
-  lands, envctl-derived Codex config must keep hook features disabled and purge
-  stale generated hook state.
+- Legacy repo-local Codex lifecycle hook sources remain archive-only. Do not
+  restore `.codex/hooks.json`, `.codex/hooks/`, hook install scripts, or
+  checkout-local hook sources as active root policy.
+- The active generated hook surface is exactly `PreToolUse` for `Bash`, running
+  `/home/flexnetos/.nix-profile/bin/rtk hook claude`. Keep
+  `features.hooks = true`; never purge generated RTK hook state or restore
+  lifecycle, ICM, or raw-store hooks.
 - Root lifecycle policy is owned by `/home/flexnetos/AGENTS.md`,
   `/home/flexnetos/.codex/RULES.md`, and the active home/runtime config
   `/home/flexnetos/.codex/config.toml`.

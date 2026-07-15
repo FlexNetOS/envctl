@@ -184,6 +184,16 @@ JS imports) — those are **wrong for this repo**.
     profile desktop entry, per the Yazelix Home Manager and troubleshooting
     docs.
 
+### RTK Codex hook contract
+
+The clean-room hook purge is retired. The generated Codex hook surface is
+active and contains exactly one hook: `PreToolUse` for `Bash`, running the
+profile-owned `/home/flexnetos/.nix-profile/bin/rtk hook claude` processor.
+Do not restore archived lifecycle, ICM, checkout-local, or raw-store hooks;
+do not disable `features.hooks` or delete the generated `hooks.json`. The
+`codex-global-baseline` component and `test-flexnetos-codex-runtime-gate.sh`
+are the owning generator and proof surface.
+
 ## Agent navigation and retired mirror paths (2026-07-07)
 
 New sessions must enter this repo through a fresh worktree at the latest
@@ -297,6 +307,7 @@ general "`.Codex/skills/*` are kasetto-generated" rule above — the kasetto-man
 **Change history:**
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
+| 2026-07-15 | Restore RTK-only Codex hooks and retire clean-room purge | `codex-global-baseline`; `ai-clis`; runtime gate; Codex guidance | The active hook contract is exactly the profile-owned RTK `PreToolUse` Bash processor. Legacy lifecycle/ICM hooks remain retired; generators and gates must not disable or delete the hook surface. |
 | 2026-06-27 | Harden loop-state gate for planning-engineer table state | `ci/gates/loop-state.sh`; `scripts/tests/test-loop-state-gate.sh` | Review found open planning PRs carried `.handoff/loop/plan/loop_state.md` as markdown tables while the gate only parsed `key: value`, causing false missing-counter failures. The gate now accepts both presentations while preserving the same required counter schema and fail-closed tests for missing fields. |
 | 2026-06-26 | Recover and eject planning-engineer harness | `.claude`/`.agents` planning skills+agents; `.handoff/loop/plan`; `ci/gates/{loop-state,harness-scripts}.sh`; `scripts/tests/test-plan-*` | Recovered Claude-lost `/harness:planning-engineer` + `/harness:plan-loop` work from transcript, re-ejected into envctl, and added hermetic gates so the plan-loop state/eject/contract cannot silently drift |
 | 2026-06-04 | Initial harness build | agents/{feature-architect,rust-implementer,invariant-guardian}; skills/{feature-forge,rust-feature-impl} | Build a feature-delivery construction crew (design/implement/verify) that upholds the non-negotiable invariants |
