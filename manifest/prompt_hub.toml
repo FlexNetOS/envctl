@@ -57,8 +57,8 @@ ver="$(cargo --version | awk '{print $2}')"
 printf '1.91.1\n%s\n' "$ver" | sort -V -C || { echo "FATAL: cargo $ver < prompt_hub MSRV 1.91.1"; exit 1; }
 
 # prompt_hub lives in the meta workspace (registered in ../.meta.yaml, .gitignore'd, its own repo).
-repo="${PROMPT_HUB_REPO:-$META_ROOT/prompt_hub}"
-test -d "$repo" || { echo "FATAL: prompt_hub checkout not found at $repo (set PROMPT_HUB_REPO)"; exit 1; }
+repo="$META_ROOT/src/prompt_hub"
+test -d "$repo" || { echo "FATAL: managed prompt_hub checkout not found at $repo"; exit 1; }
 
 # Front-door CLI (package `prompthub`, bin `prompthub`) + the HTTP server (`prompthub-server`).
 # Default features: the heavy optional backends (smart-ort/ONNX, tui, otel, …) are opt-in and NOT
@@ -81,8 +81,8 @@ script = '''
 set -euo pipefail
 export CARGO_HOME="$META_ROOT/.toolchains/cargo"
 export PATH="$CARGO_HOME/bin:$PATH"
-repo="${PROMPT_HUB_REPO:-$META_ROOT/prompt_hub}"
-test -d "$repo" || { echo "FATAL: prompt_hub checkout not found at $repo (set PROMPT_HUB_REPO)"; exit 1; }
+repo="$META_ROOT/src/prompt_hub"
+test -d "$repo" || { echo "FATAL: managed prompt_hub checkout not found at $repo"; exit 1; }
 cargo install --path "$repo/prompthub" --force --locked
 cargo install --path "$repo/prompthub-server" --force --locked
 '''

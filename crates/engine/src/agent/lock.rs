@@ -6,8 +6,8 @@
 //! touches the engine's FNV-1a component lock (`crate::lock`) — the two are wholly separate
 //! (TASK-0016 records that split as the no-downgrade decision).
 
-use envctl_agent_env::driver::rebuild_lock;
-use envctl_agent_env::lock::{save, AgentLockFile, LockMode};
+use envctl_agent_env::driver::{audit_lock_zero_network, rebuild_lock};
+use envctl_agent_env::lock::{save_for_scope, AgentLockFile, LockMode, LOCK_VERSION};
 
 use crate::agent::report::{AgentLockDriftItem, AgentLockOutcome, AgentVerb};
 use crate::agent::{AgentCtx, AgentLockSpec};
@@ -28,7 +28,12 @@ impl Engine {
         spec: AgentLockSpec,
         sink: &EventSink,
     ) -> anyhow::Result<AgentLockOutcome> {
-        let ctx = AgentCtx::resolve(spec.config_path.as_deref(), spec.scope_override)?;
+        let zero_network = spec.check && matches!(spec.lock_mode.to_library(), LockMode::Locked);
+        let ctx = if zero_network {
+            AgentCtx::resolve_zero_network(spec.config_path.as_deref(), spec.scope_override)?
+        } else {
+            AgentCtx::resolve(spec.config_path.as_deref(), spec.scope_override)?
+        };
 
         sink.emit(Event::AgentRunStarted {
             verb: AgentVerb::Lock,
@@ -38,13 +43,18 @@ impl Engine {
         });
 
         let prev: AgentLockFile = envctl_agent_env::lock::load(&ctx.lock_file)?;
+        if !spec.check && prev.version < LOCK_VERSION {
+            anyhow::bail!(
+                "agent lock v{} carries legacy ownership evidence; run `envctl agent sync --apply` to migrate atomically before writing a v{LOCK_VERSION} lock",
+                prev.version
+            );
+        }
 
-        // `--check` with `Locked` is a true zero-network audit: skip the re-resolve entirely
-        // (no `materialize_source`), so a satisfied lock simply diffs clean against itself.
-        let zero_network = spec.check && matches!(spec.lock_mode.to_library(), LockMode::Locked);
-
+        // `--check` with `Locked` is a true zero-network audit: re-hash local sources in
+        // place and validate remote selectors against the committed lock, without ever
+        // materializing a remote source.
         let next = if zero_network {
-            prev.clone()
+            audit_lock_zero_network(&ctx.cfg, &ctx.cfg_dir, ctx.scope, &prev)?
         } else {
             rebuild_lock(&ctx.cfg, &ctx.cfg_dir, ctx.scope, &prev, &spec.upgrade_only)?
         };
@@ -75,7 +85,7 @@ impl Engine {
         }
 
         let mut next = next;
-        save(&mut next, &ctx.lock_file)?;
+        save_for_scope(&mut next, &ctx.lock_file, ctx.scope)?;
         Ok(AgentLockOutcome {
             check: false,
             saved: true,

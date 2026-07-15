@@ -358,10 +358,10 @@ args = ["-lc", "[ -x \"$META_ROOT/usr/bin/yazelix-gpu-verify.sh\" ]"]
 # installer (port of yazelix-setup.sh 3f). The installer self-gates on lspci nvidia.
 [component.install]
 kind = "shipped_script"
-path = "$META_ROOT/envctl/assets/scripts/yazelix-gpu-verify-install.sh"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/yazelix-gpu-verify-install.sh"
 [component.fix]
 kind = "shipped_script"
-path = "$META_ROOT/envctl/assets/scripts/yazelix-gpu-verify-install.sh"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/yazelix-gpu-verify-install.sh"
 # verify runs the shipped smoke test from the meta-local launcher; </dev/null answers its final read.
 [component.verify]
 kind = "command"

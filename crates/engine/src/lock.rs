@@ -59,8 +59,18 @@ impl LockFile {
     pub fn load(manifest_dir: &Path) -> anyhow::Result<LockFile> {
         let path = lock_path(manifest_dir);
         match std::fs::read_to_string(&path) {
-            Ok(t) => toml::from_str(&t)
-                .map_err(|e| anyhow::anyhow!("corrupt lock {}: {e}", path.display())),
+            Ok(t) => {
+                let lock: LockFile = toml::from_str(&t)
+                    .map_err(|e| anyhow::anyhow!("corrupt lock {}: {e}", path.display()))?;
+                anyhow::ensure!(
+                    lock.version == LOCK_VERSION,
+                    "unsupported envctl.lock version {} in {} (expected {})",
+                    lock.version,
+                    path.display(),
+                    LOCK_VERSION
+                );
+                Ok(lock)
+            }
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(LockFile::default()),
             Err(e) => Err(anyhow::anyhow!("reading lock {}: {e}", path.display())),
         }
@@ -100,7 +110,7 @@ pub fn generate(reg: &Registry) -> LockFile {
     lf
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum LockDriftKind {
     Added,
@@ -115,9 +125,7 @@ pub fn diff(reg: &Registry, lock: &LockFile) -> Vec<(String, LockDriftKind)> {
     for (id, e) in &cur.components {
         match lock.components.get(id) {
             None => out.push((id.clone(), LockDriftKind::Added)),
-            Some(le) if le.content_hash != e.content_hash => {
-                out.push((id.clone(), LockDriftKind::Changed))
-            }
+            Some(le) if le != e => out.push((id.clone(), LockDriftKind::Changed)),
             _ => {}
         }
     }

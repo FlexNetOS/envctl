@@ -1,5 +1,6 @@
-# Core dev base: fonts, JS runtime (+ node-via-bun), Rust toolchain, rtk.
-# Maps yazelix-setup.sh sections 1-3.
+# Core dev base: fonts, JS runtime (+ node-via-bun), Rust toolchain, and the
+# profile-owned RTK compatibility component.
+# Maps the surviving declarative portions of yazelix-setup.sh sections 1-3.
 
 [[component]]
 id = "nerd-fonts"
@@ -314,11 +315,11 @@ path_entries = ["$META_ROOT/usr/bin"]
 [[component]]
 id = "rustup"
 name = "rustup toolchain"
-description = "Rust toolchain manager (cargo/rustc). Foundation for rtk + cuda-oxide."
+description = "Rust toolchain manager (cargo/rustc). Foundation for cuda-oxide and Rust development; RTK is owned separately by the Yazelix Nix profile."
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export CARGO_HOME=\"$M/.toolchains/cargo\" RUSTUP_HOME=\"$M/.toolchains/rustup\" PATH=\"$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH\"; rustup --version >/dev/null 2>&1 && cargo --version >/dev/null 2>&1 && rustc --version >/dev/null 2>&1 && rustup default 2>/dev/null | grep -q '^nightly'"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export CARGO_HOME=\"$M/.toolchains/cargo\" RUSTUP_HOME=\"$M/.toolchains/rustup\" PATH=\"$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH\"; rustup --version >/dev/null 2>&1 && cargo --version >/dev/null 2>&1 && rustc --version >/dev/null 2>&1 && rustup default 2>/dev/null | grep -q '^nightly' && rustup toolchain list | grep -q '^1.89.0-' && cargo +1.89.0 --version >/dev/null"]
 [component.install]
 kind = "script"
 script = '''
@@ -328,19 +329,21 @@ export CARGO_HOME="$M/.toolchains/cargo"
 export RUSTUP_HOME="$M/.toolchains/rustup"
 mkdir -p "$CARGO_HOME" "$RUSTUP_HOME" "$META_ROOT/.toolchains/cargo/bin"
 # Owner standing directive: the workstation/meta Rust default is ALWAYS nightly (latest).
-# A repo with its own rust-toolchain.toml (e.g. envctl pinned 1.96.0) still overrides this for
-# its own builds — the global default does not change a repo's pinned channel.
+# A repo with its own rust-toolchain.toml still overrides this for its own builds; envctl itself
+# tracks nightly there while separately proving its Rust 1.89 MSRV. The global default does not
+# override another repository's pinned channel.
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --default-toolchain nightly
 export PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"
+rustup toolchain install 1.89.0 --profile minimal
 rustup default nightly
-for tool in cargo cargo-clippy cargo-fmt cargo-miri clippy-driver rls rust-analyzer rust-gdb rust-gdbgui rust-lldb rustc rustdoc rustfmt rustup; do
-  ln -sfn "$CARGO_HOME/bin/rustup" "$META_ROOT/.toolchains/cargo/bin/$tool"
+for tool in cargo cargo-clippy cargo-fmt cargo-miri clippy-driver rls rust-analyzer rust-gdb rust-gdbgui rust-lldb rustc rustdoc rustfmt; do
+  ln -sfn rustup "$CARGO_HOME/bin/$tool"
 done
 '''
 [component.verify]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export CARGO_HOME=\"$M/.toolchains/cargo\" RUSTUP_HOME=\"$M/.toolchains/rustup\" PATH=\"$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH\"; rustup --version && rustc --version && cargo --version"]
+args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export CARGO_HOME=\"$M/.toolchains/cargo\" RUSTUP_HOME=\"$M/.toolchains/rustup\" PATH=\"$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH\"; rustup --version && rustup default | grep -q '^nightly' && rustc --version && cargo --version && cargo +1.89.0 --version"]
 [component.fix]
 kind = "script"
 script = '''
@@ -356,9 +359,10 @@ export PATH="$CARGO_HOME/bin:$META_ROOT/.toolchains/cargo/bin:$PATH"
 rustup self update
 # Keep the meta default on the LATEST nightly (owner directive: always latest toolchain).
 rustup update nightly
+rustup toolchain install 1.89.0 --profile minimal
 rustup default nightly
-for tool in cargo cargo-clippy cargo-fmt cargo-miri clippy-driver rls rust-analyzer rust-gdb rust-gdbgui rust-lldb rustc rustdoc rustfmt rustup; do
-  ln -sfn "$CARGO_HOME/bin/rustup" "$META_ROOT/.toolchains/cargo/bin/$tool"
+for tool in cargo cargo-clippy cargo-fmt cargo-miri clippy-driver rls rust-analyzer rust-gdb rust-gdbgui rust-lldb rustc rustdoc rustfmt; do
+  ln -sfn rustup "$CARGO_HOME/bin/$tool"
 done
 '''
 [component.remove]
@@ -369,24 +373,26 @@ args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; export CARGO_HOME=\"$M/.
 
 [[component]]
 id = "rtk"
-name = "rtk (Rust Token Killer)"
-description = "cargo-installed CLI; first run: rtk gain ; rtk init -g."
-requires = ["rustup"]
+name = "rtk (Yazelix profile-owned)"
+description = "Compatibility component that validates one RTK payload in the real-home Yazelix Nix profile and archives parallel Cargo, META_ROOT, or user-bin shadows. It never installs a wrapper or a second RTK binary."
+requires = ["yazelix"]
 [component.detect]
-kind = "command"
-command = "bash"
-args = ["-lc", "command -v rtk || [ -x \"$META_ROOT/usr/bin/rtk\" ] || [ -x \"$META_ROOT/.toolchains/cargo/bin/rtk\" ]"]
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-rtk-profile-lifecycle.sh"
+args = ["detect"]
 [component.install]
-kind = "script"
-script = "export PATH=\"$META_ROOT/.toolchains/cargo/bin:$PATH\"; cargo install --git https://github.com/rtk-ai/rtk"
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-rtk-profile-lifecycle.sh"
+args = ["install"]
 [component.verify]
-kind = "command"
-command = "bash"
-args = ["-lc", "export PATH=\"$META_ROOT/.toolchains/cargo/bin:$PATH\"; rtk --version"]
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-rtk-profile-lifecycle.sh"
+args = ["verify"]
 [component.fix]
-kind = "script"
-script = "export PATH=\"$META_ROOT/.toolchains/cargo/bin:$PATH\"; cargo install --force --git https://github.com/rtk-ai/rtk"
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-rtk-profile-lifecycle.sh"
+args = ["fix"]
 [component.remove]
-kind = "command"
-command = "bash"
-args = ["-lc", "export PATH=\"$META_ROOT/.toolchains/cargo/bin:$PATH\"; cargo uninstall rtk"]
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-rtk-profile-lifecycle.sh"
+args = ["remove"]

@@ -109,13 +109,21 @@ pub fn compute(report: &EnvReport, reg: &Registry) -> Vec<DriftItem> {
     }
 
     for v in &report.meta_boundary.violations {
+        let (component, suggested_verb) = if v.tool == "envctl" {
+            ("envctl-cli", "envctl install envctl-cli")
+        } else {
+            (
+                "meta-boundary",
+                "envctl doctor  # inspect the owning profile/component",
+            )
+        };
         items.push(DriftItem {
-            component: "meta-tool-links".into(),
+            component: component.into(),
             kind: DriftKind::BoundaryViolation,
             severity: Severity::High,
-            suggested_verb: "envctl install meta-tool-links".into(),
+            suggested_verb: suggested_verb.into(),
             detail: format!(
-                "{} resolves to {} outside META_ROOT {}",
+                "{} resolves to {} outside approved ownership roots {}",
                 v.tool, v.resolved_path, v.expected_root
             ),
         });
@@ -283,7 +291,34 @@ mod tests {
         assert_eq!(drift.len(), 1);
         assert_eq!(drift[0].kind, DriftKind::BoundaryViolation);
         assert_eq!(drift[0].severity, Severity::High);
-        assert_eq!(drift[0].component, "meta-tool-links");
-        assert_eq!(drift[0].suggested_verb, "envctl install meta-tool-links");
+        assert_eq!(drift[0].component, "meta-boundary");
+        assert_eq!(
+            drift[0].suggested_verb,
+            "envctl doctor  # inspect the owning profile/component"
+        );
+    }
+
+    #[test]
+    fn envctl_frontdoor_violation_routes_to_owning_component() {
+        let report = EnvReport {
+            meta_boundary: MetaBoundaryReport {
+                meta_root: Some("/meta".into()),
+                local_bin: "/meta/usr/bin".into(),
+                cargo_bin: "/meta/.toolchains/cargo/bin".into(),
+                violations: vec![MetaBoundaryViolation {
+                    tool: "envctl".into(),
+                    path: "/meta/usr/bin/envctl".into(),
+                    resolved_path: "/meta/src/envctl/target/release/envctl".into(),
+                    expected_root: "/meta".into(),
+                    kind: MetaBoundaryViolationKind::MetaFrontdoorSymlink,
+                }],
+            },
+            ..EnvReport::default()
+        };
+
+        let drift = compute(&report, &Registry::empty());
+
+        assert_eq!(drift[0].component, "envctl-cli");
+        assert_eq!(drift[0].suggested_verb, "envctl install envctl-cli");
     }
 }

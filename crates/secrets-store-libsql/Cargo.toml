@@ -31,7 +31,7 @@
 name = "envctl-secrets-store-libsql"
 version = "0.1.0"
 edition = "2021"
-rust-version = "1.80"
+rust-version.workspace = true
 license = "MIT OR Apache-2.0"
 description = "libSQL remote Store backend (C-quarantined, links no C library) — adopted, OI-1 RESOLVED (a)"
 

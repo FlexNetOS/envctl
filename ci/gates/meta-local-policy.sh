@@ -44,7 +44,12 @@ SOURCE_LIST="$(mktemp)"
 FRONTDOOR_TMP="$(mktemp)"
 trap 'rm -f "$TMP" "$SOURCE_LIST" "$FRONTDOOR_TMP"' EXIT
 
-git ls-files -z --cached --others --exclude-standard -- "${ACTIVE_PATHS[@]}" >"$SOURCE_LIST"
+while IFS= read -r -d '' source_path; do
+  # A staged deletion remains in `git ls-files --cached` until commit.  Skip it
+  # so the policy gate remains quiet and deterministic while retiring legacy
+  # components instead of handing nonexistent paths to grep.
+  [[ -f "$source_path" ]] && printf '%s\0' "$source_path"
+done < <(git ls-files -z --cached --others --exclude-standard -- "${ACTIVE_PATHS[@]}") >"$SOURCE_LIST"
 
 
 if grep -RIn -- '--archive-backup-dotfiles\|ARCHIVE_BACKUP_DOTFILES\|apply_backup_dotfile_archive\|is_backup_dotfile\|archive-backup' \
@@ -53,24 +58,19 @@ if grep -RIn -- '--archive-backup-dotfiles\|ARCHIVE_BACKUP_DOTFILES\|apply_backu
   exit 1
 fi
 
-# Documentation and codex detector-rule inputs are excluded on the same
-# rationale as migration.rs above: they intentionally contain the forbidden
-# spellings as reference/detector content, not as install directives.
-#   - home/.codex/AGENTS{,.rtk}.md   describe yazelix ~/.local runtime output and
-#                                    stale shadows agents must clean up.
-#   - .../mined-live/rules/default.rules  lists ~/.local paths as detector patterns.
-#   - home/agent-env/PORTABLE_CODEX_LOGS.md  cites the standard XDG default
-#                                    ${XDG_STATE_HOME:-$HOME/.local/state} log path.
+# Reject real-home .local install directives and the retired symlink-farm design across active
+# sources. Reference-only comments and the one negative-test diagnostic are filtered by line shape;
+# the audit and its tests are no longer blanket path exemptions.
 if [ -s "$SOURCE_LIST" ] && xargs -0 grep -HEnI "$PATTERN" <"$SOURCE_LIST" |
+  grep -v '^[^:]*:[0-9]*:[[:space:]]*#' |
   grep -v '^ci/gates/meta-local-policy.sh:' |
   grep -v '^crates/engine/src/migration.rs:' |
-  grep -v '^scripts/audit-meta-local-paths.sh:' |
-  grep -v '^scripts/tests/test-meta-local-path-audit.sh:' |
+  grep -v '^scripts/tests/test-meta-local-path-audit.sh:[0-9]*:[[:space:]]*echo "expected .*~/.local' |
   grep -v '^home/.codex/AGENTS.md:' |
   grep -v '^home/.codex/AGENTS.rtk.md:' |
   grep -v '^home/.codex/mined-live/rules/default.rules:' |
   grep -v '^home/agent-env/PORTABLE_CODEX_LOGS.md:' >"$TMP"; then
-  echo "meta-local-policy: real-home .local/symlink-farm references remain in active install sources:" >&2
+  echo "meta-local-policy: real-home .local install or retired symlink-farm references remain in active sources:" >&2
   cat "$TMP" >&2
   exit 1
 fi
@@ -94,6 +94,12 @@ check_absent manifest/grit.toml '\$META_ROOT/\.cargo/bin' \
   'grit must not wire the legacy META_ROOT .cargo bin path'
 check_absent manifest/prompt_hub.toml '\$META_ROOT/\.cargo/bin' \
   'prompt_hub must not wire the legacy META_ROOT .cargo bin path'
+
+if rg -n '\.toolchains/zsh|META_ROOT/usr/bin/zsh|\$META_ROOT/usr/bin/zsh' manifest >"$TMP"; then
+  echo "meta-local-policy: zsh is Yazelix-profile-owned; legacy meta zsh packages, wrappers, and ZDOTDIR launchers must stay retired" >&2
+  cat "$TMP" >&2
+  exit 1
+fi
 
 check_present() {
   local path="$1" needle="$2" message="$3"
@@ -130,7 +136,6 @@ allowed_path_fragments = (
     '/.config/',
     '/.toolchains/cargo/bin/',
     'portability-links.toml',
-    'codex-global-baseline.toml',
 )
 
 def q(value: str) -> str:
@@ -187,11 +192,20 @@ check_present manifest/prompt_hub.toml 'export CARGO_HOME="$META_ROOT/.toolchain
   'prompt_hub must force cargo installs into the meta toolchains cargo home'
 check_absent home/.gitconfig '\.local/bin/gh|/home/drdave/Desktop/meta/\.local/bin/gh' \
   "managed git credential helper must use the canonical META_ROOT usr/bin gh front door"
+check_absent scripts/audit-meta-local-paths.sh \
+  'only intentional real-home bridge|ln -sfn "\$META_ROOT/\.local" "\$local_link"|created \$local_link -> \$META_ROOT/\.local|relinked \$local_link -> \$META_ROOT/\.local|expected symlink to \$META_ROOT/\.local' \
+  'real-home .local must never be created, replaced, or relinked to META_ROOT'
 
 if ! grep -q 'Yazelix real-home Nix profile guard' manifest/components.d/portability-links.toml || \
    ! grep -q 'Never replace the whole real-home .local tree' manifest/components.d/portability-links.toml || \
-   ! grep -q 'stale real-home user-bin shadow' manifest/components.d/portability-links.toml; then
-  echo "meta-local-policy: missing Yazelix real-home Nix profile guard and user-bin shadow cleanup" >&2
+   ! grep -q -- '--profile-shadow-guard-only --require-yazelix-profile' manifest/components.d/portability-links.toml || \
+   ! grep -q 'validate_yazelix_profile_chain' scripts/audit-meta-local-paths.sh || \
+   ! grep -q 'real-home .local must remain a real directory' scripts/audit-meta-local-paths.sh || \
+   ! grep -q 'unknown real-home user-bin entry' scripts/audit-meta-local-paths.sh || \
+   ! grep -q 'unknown META_ROOT usr/bin symlink' scripts/audit-meta-local-paths.sh || \
+   ! grep -q 'cmp -s "\$path" "\$replacement"' scripts/audit-meta-local-paths.sh || \
+   ! grep -q 'gitnexus)' scripts/audit-meta-local-paths.sh; then
+  echo "meta-local-policy: missing exact Yazelix profile, real-directory, or fail-closed shadow contract" >&2
   exit 1
 fi
 
@@ -348,6 +362,16 @@ for path_file in crates/secrets-engine/src/paths.rs crates/secretctl/src/main.rs
   fi
 done
 
+bash scripts/tests/test-meta-local-path-audit.sh
+bash scripts/tests/test-envctl-cli-component.sh
+bash scripts/tests/test-cargo-audit-component.sh
+bash scripts/tests/test-toolchain-contract-gate.sh
+bash scripts/tests/test-postgres-ruvector-component.sh
+bash scripts/tests/test-sqld-component.sh
+bash scripts/tests/test-manifest-lock-gate.sh
+bash scripts/tests/test-source-selector-contract.sh
+bash scripts/tests/test-codedb-upload-list-export.sh
+bash scripts/tests/test-gh-fetch-contract.sh
 bash scripts/tests/test-odysseus-install-idempotence.sh
 
 echo "meta-local-policy: active install sources target META_ROOT FHS/XDG; Yazelix real-home Nix profile state is preserved"

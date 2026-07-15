@@ -2,8 +2,9 @@
 # audit-meta-local-paths.sh — verify the meta-local install surface stays inside META_ROOT.
 #
 # Read-only by default.  With --apply, performs only conservative, reversible migrations:
-#   * create/fix the single real-home .local -> $META_ROOT/.local bridge when the existing entry is
-#     missing or already a symlink;
+#   * preserve the Yazelix-owned real-home .local directory and exact active Nix-profile chain;
+#   * archive an owner-reviewed real-home .local/bin shadow only after its exact current-profile or
+#     META_ROOT/usr/bin replacement is executable (GitNexus must report the pinned version);
 #   * repoint $META_ROOT/.local/bin/<name> symlinks that resolve outside META_ROOT only when an
 #     executable replacement already exists under $META_ROOT/usr/bin or $META_ROOT/.toolchains/cargo/bin;
 #   * relink real-home .gitconfig through $META_ROOT/.gitconfig, archiving a non-symlink first;
@@ -30,9 +31,15 @@ set -euo pipefail
 
 usage() {
   cat <<'USAGE'
-usage: scripts/audit-meta-local-paths.sh [--apply] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--owner-supervised-sensitive-review-plan PATH] [--owner-supervised-state-report PATH] [--owner-supervised-child-report PATH] [--owner-supervised-child-plan PATH] [--owner-supervised-child-candidates-report PATH] [--owner-supervised-child-candidate-actions PATH] [--owner-supervised-cache-child-component-plan PATH] [--owner-supervised-cache-child-component-manifest-status PATH] [--owner-supervised-cache-child-component-manifest-validation PATH] [--owner-supervised-cache-child-component-manifest-scaffold PATH] [--owner-supervised-managed-config-child-review-plan PATH] [--owner-supervised-managed-config-child-conflict-plan PATH] [--owner-supervised-managed-config-child-conflict-summary PATH] [--owner-supervised-managed-config-child-deep-status PATH] [--owner-supervised-managed-config-child-deep-diff-summary PATH] [--owner-supervised-config-child-classification-plan PATH] [--owner-supervised-child-candidate-action-summary PATH] [--owner-supervised-child-candidates-summary PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--migration-blockers-plan PATH] [--open-handle-process-window-plan PATH] [--fail-migration-blockers] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--write-cache-child-component-manifest NAME]... [--migrate-cache-child NAME]... [--bridge-managed-config-child NAME]... [--bridge-identical-managed-config-child NAME]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
+usage: scripts/audit-meta-local-paths.sh [--apply] [--profile-shadow-guard-only] [--require-yazelix-profile] [--nix-store-root PATH] [--apply-shell-dotfiles] [--apply-history-archives] [--shell-dotfile-conflict-report PATH] [--app-config-conflict-report PATH] [--unknown-app-config-report PATH] [--sensitive-state-report PATH] [--owner-supervised-sensitive-review-plan PATH] [--owner-supervised-state-report PATH] [--owner-supervised-child-report PATH] [--owner-supervised-child-plan PATH] [--owner-supervised-child-candidates-report PATH] [--owner-supervised-child-candidate-actions PATH] [--owner-supervised-cache-child-component-plan PATH] [--owner-supervised-cache-child-component-manifest-status PATH] [--owner-supervised-cache-child-component-manifest-validation PATH] [--owner-supervised-cache-child-component-manifest-scaffold PATH] [--owner-supervised-managed-config-child-review-plan PATH] [--owner-supervised-managed-config-child-conflict-plan PATH] [--owner-supervised-managed-config-child-conflict-summary PATH] [--owner-supervised-managed-config-child-deep-status PATH] [--owner-supervised-managed-config-child-deep-diff-summary PATH] [--owner-supervised-config-child-classification-plan PATH] [--owner-supervised-child-candidate-action-summary PATH] [--owner-supervised-child-candidates-summary PATH] [--migration-blockers-report PATH] [--migration-blockers-summary PATH] [--migration-blockers-plan PATH] [--open-handle-process-window-plan PATH] [--fail-migration-blockers] [--inventory PATH] [--inventory-summary PATH] [--deep-link-inventory PATH] [--deep-link-summary PATH] [--fail-real-home-deep-links] [--migrate-dot DOT]... [--write-cache-child-component-manifest NAME]... [--migrate-cache-child NAME]... [--bridge-managed-config-child NAME]... [--bridge-identical-managed-config-child NAME]... [--meta-root PATH] [--real-home PATH] [--envctl-home-source PATH]
 
 Audits $META_ROOT/.local, $META_ROOT/.toolchains, and every top-level real-home dot entry for path drift.
+The real-home .local path must remain a real directory.  If any Yazelix profile-chain entry exists,
+the exact .nix-profile -> XDG profile selector -> numbered generation -> Nix-store profile chain is
+validated.  --require-yazelix-profile also rejects a completely missing chain.  --nix-store-root is
+for hermetic fixtures; production defaults to /nix/store.
+--profile-shadow-guard-only stops after this profile/shadow contract; the portability component uses
+that focused mode so unrelated owner-supervised dot-entry inventory cannot mask lifecycle status.
 With --inventory, also writes a tab-separated relocation inventory:
 dot_entry, type, state, target_class, canonical_target, action, apply_safe.
 With --inventory-summary, writes a tab-separated per-class migration summary:
@@ -206,6 +213,9 @@ USAGE
 APPLY=0
 APPLY_SHELL_DOTFILES=0
 APPLY_HISTORY_ARCHIVES=0
+REQUIRE_YAZELIX_PROFILE=0
+PROFILE_SHADOW_GUARD_ONLY=0
+NIX_STORE_ROOT="${ENVCTL_NIX_STORE_ROOT:-/nix/store}"
 ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")/.." rev-parse --show-toplevel 2>/dev/null || pwd)"
 META_ROOT="${META_ROOT:-$(cd "$ROOT/.." && pwd)}"
 REAL_HOME="${ENVCTL_REAL_HOME:-$HOME}"
@@ -251,6 +261,9 @@ BRIDGE_IDENTICAL_MANAGED_CONFIG_CHILDREN=()
 while [ "$#" -gt 0 ]; do
   case "$1" in
     --apply) APPLY=1; shift ;;
+    --profile-shadow-guard-only) PROFILE_SHADOW_GUARD_ONLY=1; shift ;;
+    --require-yazelix-profile) REQUIRE_YAZELIX_PROFILE=1; shift ;;
+    --nix-store-root) NIX_STORE_ROOT="${2:?--nix-store-root requires a path}"; shift 2 ;;
     --apply-shell-dotfiles) APPLY_SHELL_DOTFILES=1; shift ;;
     --apply-history-archives) APPLY_HISTORY_ARCHIVES=1; shift ;;
     --inventory) INVENTORY_PATH="${2:?--inventory requires a path}"; shift 2 ;;
@@ -300,6 +313,7 @@ done
 
 META_ROOT="$(cd "$META_ROOT" && pwd -P)"
 REAL_HOME="$(cd "$REAL_HOME" && pwd -P)"
+NIX_STORE_ROOT="$(readlink -m "$NIX_STORE_ROOT")"
 if [ -d "$ENVCTL_HOME_SOURCE" ]; then
   ENVCTL_HOME_SOURCE="$(cd "$ENVCTL_HOME_SOURCE" && pwd -P)"
 fi
@@ -474,6 +488,314 @@ entry_type() {
   else
     printf 'missing'
   fi
+}
+
+is_known_real_home_bin_shadow() {
+  case "$1" in
+    agent|bun|bunx|codex|codex-alpha|envctl|git-kb|gitnexus|kache-rustc-wrapper|loop|meta|meta-git|meta-mcp|meta-project|meta-release|meta-rust|rtk|yzx)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+profile_chain_present() {
+  [ -e "$REAL_HOME/.nix-profile" ] || [ -L "$REAL_HOME/.nix-profile" ] ||
+    [ -e "$REAL_HOME/.local/state/nix/profiles/profile" ] ||
+    [ -L "$REAL_HOME/.local/state/nix/profiles/profile" ]
+}
+
+PROFILE_CHAIN_VALID=0
+PROFILE_GENERATION_DIR=""
+
+validate_yazelix_profile_chain() {
+  local frontdoor="$REAL_HOME/.nix-profile"
+  local profiles_dir="$REAL_HOME/.local/state/nix/profiles"
+  local selector="$profiles_dir/profile"
+  local frontdoor_target selector_target generation_link generation_target generation_resolved
+
+  PROFILE_CHAIN_VALID=0
+  PROFILE_GENERATION_DIR=""
+
+  if [ ! -L "$frontdoor" ]; then
+    fail "invalid Yazelix profile chain: $frontdoor must be a symlink to $selector"
+    return 1
+  fi
+  frontdoor_target="$(readlink "$frontdoor" 2>/dev/null || true)"
+  if [ "$frontdoor_target" != "$selector" ]; then
+    fail "invalid Yazelix profile chain: $frontdoor target is ${frontdoor_target:-<missing>}, expected exactly $selector"
+    return 1
+  fi
+
+  if [ ! -L "$selector" ]; then
+    fail "invalid Yazelix profile chain: $selector must be a numbered-generation selector symlink"
+    return 1
+  fi
+  selector_target="$(readlink "$selector" 2>/dev/null || true)"
+  if [[ ! "$selector_target" =~ ^profile-[1-9][0-9]*-link$ ]]; then
+    fail "invalid Yazelix profile chain: $selector target ${selector_target:-<missing>} is not exactly profile-N-link"
+    return 1
+  fi
+
+  generation_link="$profiles_dir/$selector_target"
+  if [ ! -L "$generation_link" ]; then
+    fail "invalid Yazelix profile chain: numbered generation $generation_link is not a symlink"
+    return 1
+  fi
+  generation_target="$(readlink "$generation_link" 2>/dev/null || true)"
+  case "$generation_target" in
+    "$NIX_STORE_ROOT"/*-profile) ;;
+    *)
+      fail "invalid Yazelix profile chain: $generation_link target ${generation_target:-<missing>} is not a direct $NIX_STORE_ROOT/*-profile path"
+      return 1
+      ;;
+  esac
+  if [ "$(dirname "$generation_target")" != "$NIX_STORE_ROOT" ] || [ ! -d "$generation_target" ]; then
+    fail "invalid Yazelix profile chain: numbered generation target $generation_target is missing or nested outside the Nix store root"
+    return 1
+  fi
+  generation_resolved="$(readlink -f "$generation_link" 2>/dev/null || true)"
+  if [ "$generation_resolved" != "$generation_target" ] ||
+     [ "$(readlink -f "$selector" 2>/dev/null || true)" != "$generation_target" ] ||
+     [ "$(readlink -f "$frontdoor" 2>/dev/null || true)" != "$generation_target" ]; then
+    fail "invalid Yazelix profile chain: frontdoor, selector, and numbered generation do not resolve to the same exact store profile"
+    return 1
+  fi
+
+  PROFILE_CHAIN_VALID=1
+  PROFILE_GENERATION_DIR="$generation_target"
+  ok "$frontdoor -> $selector -> $selector_target -> $generation_target"
+  return 0
+}
+
+replacement_reports_expected_version() {
+  local name="$1" candidate="$2" version_output
+  case "$name" in
+    gitnexus)
+      version_output="$("$candidate" --version 2>/dev/null || true)"
+      [ "$version_output" = "1.6.9" ]
+      ;;
+    git-kb)
+      version_output="$("$candidate" --version 2>/dev/null || true)"
+      [ "$version_output" = "git-kb 0.2.12" ]
+      ;;
+    *)
+      return 0
+      ;;
+  esac
+}
+
+exact_current_profile_replacement() {
+  local name="$1" candidate resolved
+
+  if [ "$PROFILE_CHAIN_VALID" -eq 1 ] && [ -n "$PROFILE_GENERATION_DIR" ]; then
+    candidate="$REAL_HOME/.nix-profile/bin/$name"
+    resolved="$(readlink -f "$candidate" 2>/dev/null || true)"
+    if [ -x "$candidate" ] && [ -n "$resolved" ]; then
+      case "$resolved" in
+        "$NIX_STORE_ROOT"/*)
+          if replacement_reports_expected_version "$name" "$candidate"; then
+            printf '%s\n' "$candidate"
+            return 0
+          fi
+          ;;
+      esac
+    fi
+  fi
+
+  return 1
+}
+
+exact_shadow_replacement() {
+  local name="$1" candidate resolved
+
+  if candidate="$(exact_current_profile_replacement "$name" 2>/dev/null)"; then
+    printf '%s\n' "$candidate"
+    return 0
+  fi
+
+  candidate="$META_ROOT/usr/bin/$name"
+  resolved="$(readlink -f "$candidate" 2>/dev/null || true)"
+  if [ -x "$candidate" ] && [ -n "$resolved" ] && is_under_meta "$resolved" &&
+     replacement_reports_expected_version "$name" "$candidate"; then
+    printf '%s\n' "$candidate"
+    return 0
+  fi
+
+  return 1
+}
+
+declare -a META_USR_BIN_SHADOW_PATHS=()
+declare -a META_USR_BIN_SHADOW_REPLACEMENTS=()
+
+is_known_retired_meta_usr_bin_target() {
+  local name="$1" link_text="$2"
+  case "$name:$link_text" in
+    git-kb:*/FlexNetOS/release/staging/*/bin/git-kb|git-kb:*/lifeos/release/staging/*/bin/git-kb)
+      return 0
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
+preflight_meta_usr_bin_symlink_shadows() {
+  local bin_dir="$META_ROOT/usr/bin" path name link_text resolved replacement
+
+  META_USR_BIN_SHADOW_PATHS=()
+  META_USR_BIN_SHADOW_REPLACEMENTS=()
+  [ -d "$bin_dir" ] || return 0
+
+  while IFS= read -r -d '' path; do
+    name="$(basename "$path")"
+    link_text="$(readlink "$path" 2>/dev/null || true)"
+    if ! is_known_retired_meta_usr_bin_target "$name" "$link_text"; then
+      fail "unknown META_ROOT usr/bin symlink: $path -> ${link_text:-<missing>}; refusing automatic cleanup"
+      continue
+    fi
+    replacement="$(exact_current_profile_replacement "$name" || true)"
+    if [ -z "$replacement" ]; then
+      fail "no exact current-profile replacement for known META_ROOT usr/bin symlink shadow: $path"
+      continue
+    fi
+    resolved="$(readlink -f "$path" 2>/dev/null || true)"
+    if [ -z "$resolved" ] || [ ! -x "$path" ]; then
+      fail "known META_ROOT usr/bin symlink shadow has a missing or non-executable target: $path"
+      continue
+    fi
+    if ! cmp -s "$path" "$replacement"; then
+      fail "META_ROOT usr/bin symlink target differs from exact current-profile replacement: $path"
+      continue
+    fi
+    META_USR_BIN_SHADOW_PATHS+=("$path")
+    META_USR_BIN_SHADOW_REPLACEMENTS+=("$replacement")
+    if [ "$APPLY" -eq 0 ]; then
+      fail "known META_ROOT usr/bin symlink shadow: $path (replacement: $replacement); rerun with --apply to archive it"
+    fi
+  done < <(find "$bin_dir" -mindepth 1 -maxdepth 1 -type l -print0 | sort -z)
+}
+
+apply_meta_usr_bin_symlink_shadows() {
+  local archive_root path name replacement destination i
+
+  [ "$APPLY" -eq 1 ] || return 0
+  [ "$failures" -eq 0 ] || return 0
+  archive_root="$META_ROOT/var/lib/envctl/legacy-archives/real-home-bin-$(date -u +%Y-%m-%d)/usr/bin"
+
+  for ((i = 0; i < ${#META_USR_BIN_SHADOW_PATHS[@]}; i++)); do
+    path="${META_USR_BIN_SHADOW_PATHS[$i]}"
+    name="$(basename "$path")"
+    replacement="${META_USR_BIN_SHADOW_REPLACEMENTS[$i]}"
+    if ! require_no_open_handles_for_migration "META_ROOT usr/bin symlink shadow $name" "$path"; then
+      continue
+    fi
+    mkdir -p "$archive_root"
+    destination="$archive_root/$name"
+    if [ -e "$destination" ] || [ -L "$destination" ]; then
+      destination="$archive_root/$name.$(date -u +%H%M%S).$$"
+    fi
+    mv "$path" "$destination"
+    changed_msg "archived known META_ROOT usr/bin symlink shadow $path to $destination after proving replacement $replacement"
+  done
+}
+
+audit_real_home_local_and_user_bin() {
+  local local_dir="$REAL_HOME/.local" bin_dir="$REAL_HOME/.local/bin"
+  local path name replacement archive_root legacy_archive_root destination i
+  local shadow_blocked=0
+  local -a shadow_paths=()
+  local -a shadow_replacements=()
+  local -a legacy_archive_paths=()
+
+  if [ -L "$local_dir" ] || [ ! -d "$local_dir" ]; then
+    fail "real-home .local must remain a real directory (not a symlink or missing): $local_dir"
+    inventory_row ".local" "$(entry_type "$local_dir")" "invalid-real-home-local" "yazelix-owned-state" "$local_dir" "preserve-real-directory" "no"
+    return 1
+  fi
+  ok "$local_dir is a preserved real directory"
+  inventory_row ".local" "directory" "yazelix-owned-state" "real-home-xdg" "$local_dir" "preserve-real-directory" "n/a"
+
+  if profile_chain_present || [ "$REQUIRE_YAZELIX_PROFILE" -eq 1 ]; then
+    validate_yazelix_profile_chain || shadow_blocked=1
+  fi
+
+  # Preflight META_ROOT frontdoor symlinks before either cleanup surface mutates.  This makes an
+  # unknown or mismatched frontdoor block the otherwise-safe real-home shadow archive too.
+  preflight_meta_usr_bin_symlink_shadows
+
+  if [ ! -d "$bin_dir" ]; then
+    return "$shadow_blocked"
+  fi
+
+  while IFS= read -r -d '' path; do
+    name="$(basename "$path")"
+    if [ "$name" = "archive" ] && [ -d "$path" ] && [ ! -L "$path" ]; then
+      legacy_archive_paths+=("$path")
+      if [ "$APPLY" -eq 0 ]; then
+        fail "known misplaced real-home user-bin archive directory: $path; rerun with --apply to preserve it under META_ROOT legacy archives"
+        shadow_blocked=1
+      fi
+      continue
+    fi
+    if ! is_known_real_home_bin_shadow "$name"; then
+      fail "unknown real-home user-bin entry: $path; owner classification is required before any cleanup"
+      shadow_blocked=1
+      continue
+    fi
+    replacement="$(exact_shadow_replacement "$name" || true)"
+    if [ -z "$replacement" ]; then
+      fail "no exact healthy replacement for known real-home user-bin shadow: $path"
+      shadow_blocked=1
+      continue
+    fi
+    shadow_paths+=("$path")
+    shadow_replacements+=("$replacement")
+    if [ "$APPLY" -eq 0 ]; then
+      fail "known real-home user-bin shadow: $path (replacement: $replacement); rerun with --apply to archive it"
+      shadow_blocked=1
+    fi
+  done < <(find "$bin_dir" -mindepth 1 -maxdepth 1 -print0 | sort -z)
+
+  if [ "$APPLY" -eq 0 ] || [ "$shadow_blocked" -ne 0 ] || [ "$failures" -ne 0 ]; then
+    return "$shadow_blocked"
+  fi
+
+  archive_root="$META_ROOT/var/lib/envctl/legacy-archives/real-home-bin-$(date -u +%Y-%m-%d)/.local/bin"
+  legacy_archive_root="$META_ROOT/var/lib/envctl/legacy-archives/real-home-bin-$(date -u +%Y-%m-%d)/misplaced-user-bin-archives"
+  for path in "${legacy_archive_paths[@]}"; do
+    if ! require_no_open_handles_for_migration "misplaced real-home user-bin archive" "$path"; then
+      shadow_blocked=1
+      continue
+    fi
+    mkdir -p "$legacy_archive_root"
+    destination="$legacy_archive_root/archive"
+    if [ -e "$destination" ] || [ -L "$destination" ]; then
+      destination="$legacy_archive_root/archive.$(date -u +%H%M%S).$$"
+    fi
+    mv "$path" "$destination"
+    changed_msg "preserved misplaced real-home user-bin archive $path at $destination"
+  done
+  for ((i = 0; i < ${#shadow_paths[@]}; i++)); do
+    path="${shadow_paths[$i]}"
+    name="$(basename "$path")"
+    replacement="${shadow_replacements[$i]}"
+    if ! require_no_open_handles_for_migration "real-home user-bin shadow $name" "$path"; then
+      shadow_blocked=1
+      continue
+    fi
+    mkdir -p "$archive_root"
+    destination="$archive_root/$name"
+    if [ -e "$destination" ] || [ -L "$destination" ]; then
+      destination="$archive_root/$name.$(date -u +%H%M%S).$$"
+    fi
+    mv "$path" "$destination"
+    changed_msg "archived known real-home user-bin shadow $path to $destination after proving replacement $replacement"
+  done
+
+  return "$shadow_blocked"
 }
 
 require_no_open_handles_for_migration() {
@@ -3068,38 +3390,27 @@ PY
   fi
 }
 
-# 1. The only intentional real-home bridge is ~/.local -> $META_ROOT/.local.
-mkdir -p "$META_ROOT/.local"
-local_link="$REAL_HOME/.local"
-if [ -L "$local_link" ]; then
-  local_resolved="$(readlink -f "$local_link" 2>/dev/null || true)"
-  if [ "$local_resolved" = "$META_ROOT/.local" ]; then
-    ok "$local_link -> $META_ROOT/.local"
-  elif [ "$APPLY" -eq 1 ]; then
-    ln -sfn "$META_ROOT/.local" "$local_link"
-    changed_msg "relinked $local_link -> $META_ROOT/.local"
-  else
-    fail "$local_link resolves to ${local_resolved:-<missing>}, expected $META_ROOT/.local"
+# 1. Preserve the Yazelix-owned real-home XDG state.  Never create, relink, or replace ~/.local.
+# Validate the active profile chain when present (or unconditionally for the CI/component guard),
+# inventory every direct ~/.local/bin entry, and archive only owner-reviewed shadows with a proven
+# exact current-profile or META_ROOT replacement.
+if [ ! -d "$META_ROOT/.local" ]; then
+  if [ "$APPLY" -eq 1 ] && [ "$PROFILE_SHADOW_GUARD_ONLY" -eq 0 ]; then
+    mkdir -p "$META_ROOT/.local"
+    changed_msg "created missing META_ROOT local state directory: $META_ROOT/.local"
+  elif [ "$PROFILE_SHADOW_GUARD_ONLY" -eq 0 ]; then
+    fail "missing META_ROOT local state directory: $META_ROOT/.local"
   fi
-elif [ -e "$local_link" ]; then
-  fail "$local_link is not a symlink; refusing to move a real directory automatically"
-elif [ "$APPLY" -eq 1 ]; then
-  ln -sfn "$META_ROOT/.local" "$local_link"
-  changed_msg "created $local_link -> $META_ROOT/.local"
-else
-  fail "$local_link missing; expected symlink to $META_ROOT/.local"
 fi
-if [ -L "$local_link" ]; then
-  local_resolved="$(readlink -f "$local_link" 2>/dev/null || true)"
-  if [ "$local_resolved" = "$META_ROOT/.local" ]; then
-    inventory_row ".local" "symlink" "meta-bridge" "bridge" "$META_ROOT/.local" "ensure-symlink" "yes"
-  else
-    inventory_row ".local" "symlink" "bridge-drift" "bridge" "$META_ROOT/.local" "ensure-symlink" "yes"
+audit_real_home_local_and_user_bin || true
+apply_meta_usr_bin_symlink_shadows
+if [ "$PROFILE_SHADOW_GUARD_ONLY" -eq 1 ]; then
+  if [ "$failures" -gt 0 ]; then
+    say "profile-shadow guard: FAIL failures=$failures changed=$changed" >&2
+    exit 1
   fi
-elif [ -e "$local_link" ]; then
-  inventory_row ".local" "$(entry_type "$local_link")" "real-home-state" "bridge" "$META_ROOT/.local" "owner-supervised-archive-and-bridge" "no"
-else
-  inventory_row ".local" "missing" "missing" "bridge" "$META_ROOT/.local" "ensure-symlink" "yes"
+  say "profile-shadow guard: PASS changed=$changed"
+  exit 0
 fi
 
 # 2. No symlink under $META_ROOT/.local/bin may point outside META_ROOT.
@@ -3210,7 +3521,8 @@ for child in "${BRIDGE_IDENTICAL_MANAGED_CONFIG_CHILDREN[@]}"; do
   bridge_identical_managed_config_child "$child"
 done
 
-# 6. Walk every top-level real-home dot entry.  The default audit only mutates .local/.gitconfig;
+# 6. Walk every top-level real-home dot entry.  The default audit preserves .local and only mutates
+# owner-reviewed .local/bin shadows plus .gitconfig;
 # requested --migrate-dot / --write-cache-child-component-manifest / --migrate-cache-child /
 # --bridge-managed-config-child / --bridge-identical-managed-config-child entries above are reflected here after they have been
 # bridged into META_ROOT.  This keeps the loop honest ("every dot file/folder was observed")

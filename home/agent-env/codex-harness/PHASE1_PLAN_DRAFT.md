@@ -48,15 +48,14 @@ Codex/harness owns:
 
 ## MCP reconciliation gate
 
-Runbook baseline mentions:
-- github
-- context7
-- exa
-- memory
-- playwright
-- sequential-thinking
+The reconciled repository baseline contains only:
+- exa (remote HTTP server; no local launcher)
 
-Phase 0 observed active Codex MCP list was empty.
+The former six-server list was a historical observation, not authority to restore retired
+launchers. Local MCPs may return only after their commands are profile-owned under the same
+Yazelix runtime contract.
+
+Phase 0 observed an empty active Codex MCP list; the current generated floor is `exa` only.
 Do not blindly widen MCP scope.
 Use active /home/flexnetos/.codex/config.toml as runtime authority.
 Use envctl preview and lock checks first.
@@ -118,7 +117,7 @@ Conditional only after compatibility and approval:
 
 ## Acceptance commands
 
-- envctl agent lock --check --color never
+- envctl agent lock --check --locked --color never
 - envctl agent sync --json --color never
 - codex mcp list
 - codex plugin list

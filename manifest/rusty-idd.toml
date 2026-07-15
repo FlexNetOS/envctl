@@ -19,7 +19,7 @@
 id = "rusty-idd"
 name = "rusty-idd — harness control-plane front door"
 description = "Single-binary IDD engine + fleet-deploy control plane (ADR-0015). The thin-adapter SessionStart hooks deployed across the fleet call `rusty-idd next`, so the binary must be on PATH box-wide. External tool binary installed under $META_ROOT/.toolchains/rusty-idd and exposed through a regular $META_ROOT/usr/bin frontdoor wrapper; NOT linked into any envctl crate."
-requires = ["rustup"]   # cargo + a toolchain >= MSRV 1.88 (base.toml). Pure-Rust: no libssl-dev.
+requires = ["rustup"]   # base provisions nightly + 1.89; rusty-idd's own floor remains 1.88. Pure-Rust: no libssl-dev.
 destructive = false
 
 # DETECT == "already present" predicate (read-only; feeds auto-detect + drives install/doctor).
@@ -48,8 +48,8 @@ ver="$(cargo --version | awk '{print $2}')"
 printf '1.88.0\n%s\n' "$ver" | sort -V -C || { echo "FATAL: cargo $ver < MSRV 1.88"; exit 1; }
 
 # rusty-idd lives in the meta workspace (registered in ../.meta.yaml, .gitignore'd, its own repo).
-repo="${RUSTY_IDD_REPO:-$M/rusty-idd}"
-test -d "$repo" || { echo "FATAL: rusty-idd checkout not found at $repo (set RUSTY_IDD_REPO)"; exit 1; }
+repo="$M/src/rusty-idd"
+test -d "$repo" || { echo "FATAL: managed rusty-idd checkout not found at $repo"; exit 1; }
 
 # Install only the front-door binary's package (crates/cli = rusty-idd-cli, bin name `rusty-idd`)
 # into a meta-owned root, then expose a regular frontdoor wrapper on $META_ROOT/usr/bin.
@@ -78,8 +78,8 @@ export CARGO_HOME="$M/.toolchains/cargo"
 export RUSTUP_HOME="$M/.toolchains/rustup"
 BIN="${ENVCTL_BIN_DIR:-$M/usr/bin}"
 export PATH="$CARGO_HOME/bin:$BIN:$PATH"
-repo="${RUSTY_IDD_REPO:-$M/rusty-idd}"
-test -d "$repo" || { echo "FATAL: rusty-idd checkout not found at $repo (set RUSTY_IDD_REPO)"; exit 1; }
+repo="$M/src/rusty-idd"
+test -d "$repo" || { echo "FATAL: managed rusty-idd checkout not found at $repo"; exit 1; }
 ROOT="$M/.toolchains/rusty-idd"
 cargo install --path "$repo/crates/cli" --force --locked --root "$ROOT"
 mkdir -p "$BIN"
