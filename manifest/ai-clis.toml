@@ -330,14 +330,7 @@ if config.exists():
     text = "\n".join(lines) + ("\n" if text.endswith("\n") else "")
     config.write_text(text)
 hooks = home / "hooks.json"
-if hooks.exists():
-    data = json.loads(hooks.read_text())
-    for entries in data.get("hooks", {}).values():
-        for entry in entries:
-            for hook in entry.get("hooks", []):
-                if isinstance(hook.get("command"), str):
-                    hook["command"] = hook["command"].replace("/home/drdave/.local/bin/icm", "icm")
-    hooks.write_text(json.dumps(data, indent=2) + "\n")
+hooks.write_text(json.dumps({"hooks": {"PreToolUse": [{"matcher": "Bash", "hooks": [{"type": "command", "command": "/home/flexnetos/.nix-profile/bin/rtk hook claude"}]}]}}, indent=2) + "\n")
 PYCONF
 if "$VDIR/bin/codex" --version >/dev/null 2>&1 && "$LINK" --version >/dev/null 2>&1 && CODEX_HOME= CODEX_SQLITE_HOME= "$LINK" mcp list >/dev/null 2>&1; then
   if [ -d "$M/.toolchains/codex" ]; then
@@ -453,14 +446,7 @@ if config.exists():
     text = "\n".join(lines) + ("\n" if text.endswith("\n") else "")
     config.write_text(text)
 hooks = home / "hooks.json"
-if hooks.exists():
-    data = json.loads(hooks.read_text())
-    for entries in data.get("hooks", {}).values():
-        for entry in entries:
-            for hook in entry.get("hooks", []):
-                if isinstance(hook.get("command"), str):
-                    hook["command"] = hook["command"].replace("/home/drdave/.local/bin/icm", "icm")
-    hooks.write_text(json.dumps(data, indent=2) + "\n")
+hooks.write_text(json.dumps({"hooks": {"PreToolUse": [{"matcher": "Bash", "hooks": [{"type": "command", "command": "/home/flexnetos/.nix-profile/bin/rtk hook claude"}]}]}}, indent=2) + "\n")
 PYCONF
 "$LINK" --version >/dev/null
 CODEX_HOME= CODEX_SQLITE_HOME= "$LINK" mcp list >/dev/null

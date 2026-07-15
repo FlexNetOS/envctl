@@ -26,10 +26,9 @@ grep -q '^model_auto_compact_token_limit = 3000000' "$C" || exit 1
 grep -q '^web_search = "live"' "$C" || exit 1
 grep -q '^background_terminal_max_timeout = 300000' "$C" || exit 1
 grep -q '^tool_output_token_limit = 12000' "$C" || exit 1
-for f in apps auto_compaction browser_use browser_use_external computer_use enable_request_compression fast_mode goals guardian_approval image_generation in_app_browser mentions_v2 multi_agent personality plugin_sharing plugins prevent_idle_sleep remote_compaction_v2 secret_auth_storage shell_snapshot shell_tool skill_mcp_dependency_install tool_call_mcp_elicitation tool_suggest unified_exec workspace_dependencies memories network_proxy; do
+for f in apps auto_compaction browser_use browser_use_external computer_use enable_request_compression fast_mode goals guardian_approval hooks image_generation in_app_browser mentions_v2 multi_agent personality plugin_sharing plugins prevent_idle_sleep remote_compaction_v2 secret_auth_storage shell_snapshot shell_tool skill_mcp_dependency_install tool_call_mcp_elicitation tool_suggest unified_exec workspace_dependencies memories network_proxy; do
   grep -q "^$f = true" "$C" || { echo "missing feature: $f"; exit 1; }
 done
-grep -q '^hooks = false' "$C" || { echo "pre-cleanroom hooks must stay disabled until clean-room rebuild"; exit 1; }
 for s in meta gitkb icm vox context7 weave openaiDeveloperDocs; do
   grep -q "^\[mcp_servers\.$s\]" "$C" || { echo "missing mcp: $s"; exit 1; }
 done
@@ -79,7 +78,7 @@ if not root:
 M = Path(root)
 home = M / '.local/share/codex'
 config = home / 'config.toml'
-stale_hooks = home / 'hooks.json'
+hooks = home / 'hooks.json'
 projects = [M]
 try:
     out = subprocess.check_output(['rtk','meta','project','list','--json'], cwd=M, text=True, stderr=subprocess.DEVNULL)
@@ -89,7 +88,7 @@ except Exception:
     pass
 features = [
     'apps', 'auto_compaction', 'browser_use', 'browser_use_external', 'computer_use',
-    'enable_request_compression', 'fast_mode', 'goals', 'guardian_approval',
+    'enable_request_compression', 'fast_mode', 'goals', 'guardian_approval', 'hooks',
     'image_generation', 'in_app_browser', 'mentions_v2', 'multi_agent', 'personality',
     'plugin_sharing', 'plugins', 'prevent_idle_sleep', 'remote_compaction_v2',
     'secret_auth_storage', 'shell_snapshot', 'shell_tool', 'skill_mcp_dependency_install',
@@ -168,10 +167,6 @@ lines = [
 ]
 lines += [f'{f} = true' for f in features]
 lines += [
-    '# Clean-room hooks are mandatory but deferred; do not regenerate the archived pre-cleanroom hooks.',
-    'hooks = false',
-]
-lines += [
     '',
     '[mcp_servers.meta]', 'command = "meta-mcp"', 'args = []',
     '',
@@ -221,8 +216,17 @@ lines += [
 for p in projects:
     lines += ['', f'[projects."{p}"]', 'trust_level = "trusted"']
 config.write_text('\n'.join(lines) + '\n')
-if stale_hooks.exists():
-    stale_hooks.unlink()
+hooks.write_text(json.dumps({
+    'hooks': {
+        'PreToolUse': [{
+            'matcher': 'Bash',
+            'hooks': [{
+                'type': 'command',
+                'command': '/home/flexnetos/.nix-profile/bin/rtk hook claude',
+            }],
+        }],
+    },
+}, indent=2) + '\n')
 
 
 def model_entry(slug, display_name, description, context_window=4000000, priority=0, reasoning=('low','medium','high','xhigh'), fast=False, visibility='list'):
@@ -315,8 +319,17 @@ fi
 [ -f "$C" ]
 grep -q '^background_terminal_max_timeout = 300000' "$C"
 grep -q '^tool_output_token_limit = 12000' "$C"
-for f in apps auto_compaction browser_use browser_use_external computer_use enable_request_compression fast_mode goals guardian_approval image_generation in_app_browser mentions_v2 multi_agent personality plugin_sharing plugins prevent_idle_sleep remote_compaction_v2 secret_auth_storage shell_snapshot shell_tool skill_mcp_dependency_install tool_call_mcp_elicitation tool_suggest unified_exec workspace_dependencies memories network_proxy; do grep -q "^$f = true" "$C"; done
-grep -q '^hooks = false' "$C"
+for f in apps auto_compaction browser_use browser_use_external computer_use enable_request_compression fast_mode goals guardian_approval hooks image_generation in_app_browser mentions_v2 multi_agent personality plugin_sharing plugins prevent_idle_sleep remote_compaction_v2 secret_auth_storage shell_snapshot shell_tool skill_mcp_dependency_install tool_call_mcp_elicitation tool_suggest unified_exec workspace_dependencies memories network_proxy; do grep -q "^$f = true" "$C"; done
+python3 - "$M/.local/share/codex/hooks.json" <<'PY'
+import json
+import sys
+
+expected = {'hooks': {'PreToolUse': [{'matcher': 'Bash', 'hooks': [{'type': 'command', 'command': '/home/flexnetos/.nix-profile/bin/rtk hook claude'}]}]}}
+with open(sys.argv[1]) as source:
+    actual = json.load(source)
+if actual != expected:
+    raise SystemExit('Codex hooks must contain only the RTK Bash PreToolUse hook')
+PY
 for s in meta gitkb icm vox context7 weave openaiDeveloperDocs; do grep -q "^\[mcp_servers\.$s\]" "$C"; done
 grep -q '^\[marketplaces\.flexnetos-codex\]' "$C"
 grep -q '^\[plugins\."meta@flexnetos-codex"\]' "$C"
