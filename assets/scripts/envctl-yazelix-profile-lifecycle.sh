@@ -60,6 +60,8 @@ yazelix_setup() {
   YAZELIX_SOURCE="$YAZELIX_META_ROOT/src/yazelix"
   YAZELIX_PROFILE_DIR="$YAZELIX_REAL_HOME/.local/state/nix/profiles"
   YAZELIX_PROFILE="$YAZELIX_PROFILE_DIR/profile"
+  YAZELIX_LEGACY_PROFILE_DIR="$YAZELIX_REAL_HOME/.local/state/nix"
+  YAZELIX_LEGACY_PROFILE="$YAZELIX_LEGACY_PROFILE_DIR/profile"
   YAZELIX_FRONTDOOR="$YAZELIX_REAL_HOME/.nix-profile"
   YAZELIX_ELEMENT=lifeos_foundation_yzx
   YAZELIX_INSTALLABLE="path:$YAZELIX_SOURCE#$YAZELIX_ELEMENT"
@@ -70,6 +72,7 @@ yazelix_setup() {
   YAZELIX_ATTR="packages.$YAZELIX_SYSTEM.$YAZELIX_ELEMENT"
   export YAZELIX_META_ROOT YAZELIX_REAL_HOME YAZELIX_STORE_ROOT YAZELIX_SOURCE
   export YAZELIX_PROFILE_DIR YAZELIX_PROFILE YAZELIX_FRONTDOOR YAZELIX_ELEMENT
+  export YAZELIX_LEGACY_PROFILE_DIR YAZELIX_LEGACY_PROFILE
   export YAZELIX_INSTALLABLE YAZELIX_SYSTEM YAZELIX_ATTR
   export YAZELIX_KITTY_DESKTOP_REL YAZELIX_AGENT_DESKTOP_REL
 }
@@ -131,8 +134,34 @@ yazelix_require_profile_chain() {
     || yazelix_die "invalid real-home Nix profile ownership chain: $YAZELIX_FRONTDOOR -> $YAZELIX_PROFILE"
 }
 
+yazelix_legacy_profile_chain_ok() {
+  local uid="$1" selector generation target resolved
+  [ ! -e "$YAZELIX_PROFILE" ] && [ ! -L "$YAZELIX_PROFILE" ] || return 1
+  [ -L "$YAZELIX_FRONTDOOR" ] \
+    && [ "$(/usr/bin/stat -c '%u' -- "$YAZELIX_FRONTDOOR")" = "$uid" ] \
+    && [ "$(/usr/bin/readlink -- "$YAZELIX_FRONTDOOR")" = "$YAZELIX_LEGACY_PROFILE" ] \
+    || return 1
+  [ -L "$YAZELIX_LEGACY_PROFILE" ] \
+    && [ "$(/usr/bin/stat -c '%u' -- "$YAZELIX_LEGACY_PROFILE")" = "$uid" ] \
+    || return 1
+  selector="$(/usr/bin/readlink -- "$YAZELIX_LEGACY_PROFILE")"
+  [[ "$selector" =~ ^profile-[1-9][0-9]*-link$ ]] || return 1
+  generation="$YAZELIX_LEGACY_PROFILE_DIR/$selector"
+  [ -L "$generation" ] && [ "$(/usr/bin/stat -c '%u' -- "$generation")" = "$uid" ] \
+    || return 1
+  target="$(/usr/bin/readlink -f -- "$generation" 2>/dev/null)"
+  case "$target" in "$YAZELIX_STORE_ROOT"/*-profile) ;; *) return 1 ;; esac
+  [ -d "$target" ] && [ ! -L "$target" ] || return 1
+  resolved="$(/usr/bin/readlink -f -- "$YAZELIX_FRONTDOOR" 2>/dev/null)"
+  [ "$resolved" = "$target" ]
+}
+
 yazelix_profile_json() {
   yazelix_nix profile list --profile "$YAZELIX_PROFILE" --json
+}
+
+yazelix_legacy_profile_json() {
+  yazelix_nix profile list --profile "$YAZELIX_LEGACY_PROFILE" --json
 }
 
 yazelix_json_valid() {
@@ -236,13 +265,24 @@ yazelix_validate_desktop_surface() {
 
 yazelix_validate_runtime_tree() {
   local store="$1" profile_root="${2:-}" relative entry resolved expected count=0
+  local runtime_identity profile_identity
   case "$store" in "$YAZELIX_STORE_ROOT"/*-lifeos-foundation-yzx) ;; *) return 1 ;; esac
   [ -d "$store" ] && [ ! -L "$store" ] || return 1
   [ -x "$store/bin/yzx" ] || return 1
-  [ -s "$store/runtime_identity.json" ] && [ -s "$store/runtime_tools.json" ] \
-    && [ -s "$store/runtime_components.json" ] || return 1
-  /usr/bin/jq -e 'type == "object"' "$store/runtime_tools.json" >/dev/null || return 1
-  /usr/bin/jq -e '.schema_version == 1' "$store/runtime_identity.json" >/dev/null || return 1
+  runtime_identity="$store/share/yazelix/runtime_identity.json"
+  [ -s "$runtime_identity" ] || return 1
+  /usr/bin/jq -e \
+    'type == "object" and .name == "Yazelix Nova"
+      and (.version | type == "string" and length > 0)' \
+    "$runtime_identity" >/dev/null || return 1
+  resolved="$(/usr/bin/readlink -f -- "$runtime_identity" 2>/dev/null)"
+  case "$resolved" in "$YAZELIX_STORE_ROOT"/*) ;; *) return 1 ;; esac
+  if [ -n "$profile_root" ]; then
+    profile_identity="$profile_root/share/yazelix/runtime_identity.json"
+    [ -s "$profile_identity" ] || return 1
+    expected="$(/usr/bin/readlink -f -- "$profile_identity" 2>/dev/null)"
+    [ "$expected" = "$resolved" ] || return 1
+  fi
   yazelix_validate_desktop_surface "$store" "$profile_root" || return 1
   [ -d "$store/toolbin" ] && [ ! -L "$store/toolbin" ] || return 1
   for relative in \
@@ -341,6 +381,51 @@ yazelix_archive_shadows() {
   done < <(yazelix_shadow_paths)
 }
 
+yazelix_no_legacy_profile_layout() {
+  local path
+  while IFS= read -r -d '' path; do
+    return 1
+  done < <(/usr/bin/find "$YAZELIX_LEGACY_PROFILE_DIR" -mindepth 1 -maxdepth 1 \
+    -type l \( -name profile -o -name 'profile-[1-9]*-link' \) -print0)
+  return 0
+}
+
+yazelix_archive_legacy_profile_layout() {
+  local uid="$1" path base destination directory archive_root
+  local -a paths=()
+  mapfile -d '' -t paths < <(/usr/bin/find "$YAZELIX_LEGACY_PROFILE_DIR" \
+    -mindepth 1 -maxdepth 1 -type l \
+    \( -name profile -o -name 'profile-[1-9]*-link' \) -print0 \
+    | LC_ALL=C /usr/bin/sort -z)
+  [ "${#paths[@]}" -gt 0 ] || return 0
+  yazelix_require_profile_chain "$uid"
+  yazelix_require_safe_existing_chain "$YAZELIX_META_ROOT" \
+    "$YAZELIX_META_ROOT/var/lib/envctl/legacy-archives" "$uid"
+  for directory in \
+    "$YAZELIX_META_ROOT/var" \
+    "$YAZELIX_META_ROOT/var/lib" \
+    "$YAZELIX_META_ROOT/var/lib/envctl" \
+    "$YAZELIX_META_ROOT/var/lib/envctl/legacy-archives"; do
+    if [ ! -e "$directory" ] && [ ! -L "$directory" ]; then
+      /usr/bin/install -d -m 755 -- "$directory"
+    fi
+    yazelix_require_safe_dir "$directory" "$uid"
+  done
+  archive_root="$(/usr/bin/mktemp -d \
+    "$YAZELIX_META_ROOT/var/lib/envctl/legacy-archives/yazelix-profile-layout.XXXXXXXX")"
+  for path in "${paths[@]}"; do
+    [ "$(/usr/bin/stat -c '%u' -- "$path")" = "$uid" ] \
+      || yazelix_die "refusing foreign legacy Nix profile link: $path"
+    base="$(/usr/bin/basename -- "$path")"
+    destination="$archive_root/$base"
+    [ ! -e "$destination" ] && [ ! -L "$destination" ] \
+      || yazelix_die "legacy profile archive collision: $destination"
+    /usr/bin/mv -T --no-copy -- "$path" "$destination"
+    printf 'yazelix-profile: archived legacy profile link %s -> %s\n' \
+      "$path" "$destination"
+  done
+}
+
 yazelix_validate_installed() {
   local uid="$1" json store
   yazelix_require_profile_chain "$uid"
@@ -352,6 +437,8 @@ yazelix_validate_installed() {
   store="$(yazelix_element_store "$json")" || yazelix_die "Yazelix profile element has no store path"
   yazelix_validate_runtime_tree "$store" "$YAZELIX_FRONTDOOR" \
     || yazelix_die "profile-owned Yazelix runtime/toolbin frontdoors are incomplete or drifted"
+  yazelix_no_legacy_profile_layout \
+    || yazelix_die "parallel legacy real-home Nix profile selectors remain"
   yazelix_no_shadows || yazelix_die "remove/archive stale user-bin or desktop shadows with an explicit repair"
 }
 
@@ -380,8 +467,45 @@ yazelix_restore_before() {
   return 1
 }
 
+yazelix_adopt_legacy_profile() {
+  local uid="$1" candidate="$2" post profile_root temporary_frontdoor
+  yazelix_legacy_profile_chain_ok "$uid" \
+    || yazelix_die "legacy real-home Nix profile chain changed during adoption"
+  if ! yazelix_nix profile add --profile "$YAZELIX_PROFILE" --priority 4 \
+      --accept-flake-config --impure --no-write-lock-file "$YAZELIX_INSTALLABLE"; then
+    yazelix_die "failed to create the canonical Yazelix profile selector"
+  fi
+  post="$(yazelix_profile_json)" \
+    || yazelix_die "could not read the canonical profile created during adoption"
+  profile_root="$(/usr/bin/readlink -f -- "$YAZELIX_PROFILE" 2>/dev/null)"
+  if [ "$(yazelix_foreign_elements "$post")" != '{}' ] \
+    || ! yazelix_element_exact "$post" "$candidate" \
+    || ! yazelix_validate_runtime_tree "$candidate" "$YAZELIX_PROFILE" \
+    || [ -z "$profile_root" ]; then
+    yazelix_die "candidate profile failed validation before frontdoor adoption"
+  fi
+
+  temporary_frontdoor="$YAZELIX_REAL_HOME/.nix-profile.envctl-adopt.$$"
+  [ ! -e "$temporary_frontdoor" ] && [ ! -L "$temporary_frontdoor" ] \
+    || yazelix_die "temporary frontdoor collision during profile adoption"
+  /usr/bin/ln -s -- "$YAZELIX_PROFILE" "$temporary_frontdoor"
+  /usr/bin/mv -T -- "$temporary_frontdoor" "$YAZELIX_FRONTDOOR"
+  if ! yazelix_profile_chain_ok "$uid" \
+    || ! yazelix_validate_runtime_tree "$candidate" "$YAZELIX_FRONTDOOR"; then
+    /usr/bin/rm -f -- "$temporary_frontdoor"
+    /usr/bin/ln -s -- "$YAZELIX_LEGACY_PROFILE" "$temporary_frontdoor"
+    /usr/bin/mv -T -- "$temporary_frontdoor" "$YAZELIX_FRONTDOOR"
+    yazelix_die "canonical profile failed validation; restored the legacy frontdoor"
+  fi
+
+  yazelix_archive_legacy_profile_layout "$uid"
+  yazelix_archive_shadows "$uid"
+  yazelix_validate_installed "$uid"
+  printf 'yazelix-profile: adopted legacy selector into %s\n' "$YAZELIX_PROFILE"
+}
+
 yazelix_install_core() {
-  local uid="$1" json='' before foreign candidate post store removed=0 had_profile=0
+  local uid="$1" json='' before foreign candidate post store removed=0 had_profile=0 legacy_profile=0
   yazelix_validate_roots "$uid"
   yazelix_validate_source "$uid"
   yazelix_prepare_profile_layout "$uid"
@@ -396,7 +520,13 @@ yazelix_install_core() {
     json="$(yazelix_profile_json)" || yazelix_die "could not read the real-home Nix profile"
     yazelix_json_valid "$json" || yazelix_die "malformed or unsupported Nix profile manifest"
   elif [ -e "$YAZELIX_FRONTDOOR" ] || [ -L "$YAZELIX_FRONTDOOR" ]; then
-    yazelix_die "real-home profile frontdoor exists without a profile selector"
+    yazelix_legacy_profile_chain_ok "$uid" \
+      || yazelix_die "real-home profile frontdoor exists without a supported profile selector"
+    legacy_profile=1
+    json="$(yazelix_legacy_profile_json)" \
+      || yazelix_die "could not read the legacy real-home Nix profile"
+    yazelix_json_valid "$json" \
+      || yazelix_die "malformed or unsupported legacy Nix profile manifest"
   else
     json='{"elements":{},"version":3}'
   fi
@@ -406,6 +536,11 @@ yazelix_install_core() {
   [ "$foreign" = '{}' ] \
     || yazelix_die "real-home Nix profile has parallel elements; migrate them into the Yazelix foundation"
   candidate="$(yazelix_build_candidate)"
+
+  if [ "$legacy_profile" -eq 1 ]; then
+    yazelix_adopt_legacy_profile "$uid" "$candidate"
+    return 0
+  fi
 
   # A path flake can retain the same declared URL while its content changes. Build the candidate
   # before accepting an incumbent so a source update replaces the old store path instead of

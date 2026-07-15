@@ -53,7 +53,7 @@ printf '%s\n' \
   'export def --wrapped codex [...rest] { ^rtk codex ...$rest }' \
   'export def --wrapped cargo [...rest] { ^rtk cargo ...$rest }' \
   >"$fake_candidate/nushell/config/rtk_wrappers.nu"
-mkdir -p "$fake_candidate/share/applications"
+mkdir -p "$fake_candidate/share/applications" "$fake_candidate/share/yazelix"
 write_desktop_fixture() {
   printf '%s\n' \
     '[Desktop Entry]' \
@@ -88,11 +88,8 @@ for size in 48x48 64x64 128x128 256x256; do
   printf 'fixture icon %s\n' "$size" \
     >"$fake_candidate/share/icons/hicolor/$size/apps/yazelix.png"
 done
-printf '%s\n' '{"schema_version":1,"runtime_variant":"kitty","source":{},"version":"fixture"}' \
-  >"$fake_candidate/runtime_identity.json"
-printf '%s\n' '{"codex":{"commands":["codex"],"required_commands":["codex"],"source":"bundled"}}' \
-  >"$fake_candidate/runtime_tools.json"
-printf '%s\n' '{}' >"$fake_candidate/runtime_components.json"
+printf '%s\n' '{"name":"Yazelix Nova","version":"1.0.0-test"}' \
+  >"$fake_candidate/share/yazelix/runtime_identity.json"
 
 increment() {
   local file="$1" value
@@ -207,16 +204,27 @@ expect_failure() {
 
 yazelix_setup "$meta" "$real" "$store_root"
 write_empty_state
+write_exact_owned_state "$meta/src/yazelix"
 fake_activate_profile
-ln -s "$real/.local/state/nix/profiles/profile" "$real/.nix-profile"
+mv "$real/.local/state/nix/profiles/profile" "$real/.local/state/nix/profile"
+mv "$real/.local/state/nix/profiles/profile-1-link" \
+  "$real/.local/state/nix/profile-1-link"
+ln -s "$real/.local/state/nix/profile" "$real/.nix-profile"
 
-# Initial install builds before mutation, adds exactly one canonical element,
-# and exposes the exact profile tree.
+# A sole-element legacy XDG selector is adopted transactionally: the canonical
+# candidate is built before mutation, a new profiles/profile generation is
+# created and verified, the frontdoor switches atomically, and legacy selector
+# links are archived instead of remaining a parallel runtime owner.
 yazelix_install_core "$uid" >"$tmp/install.out"
 [ "$(<"$build_counter")" -eq 1 ]
 [ "$(<"$add_counter")" -eq 1 ]
 [ "$(<"$remove_counter")" -eq 0 ]
 [ "$(readlink "$real/.nix-profile")" = "$real/.local/state/nix/profiles/profile" ]
+[ ! -e "$real/.local/state/nix/profile" ] \
+  && [ ! -L "$real/.local/state/nix/profile" ]
+[ ! -e "$real/.local/state/nix/profile-1-link" ] \
+  && [ ! -L "$real/.local/state/nix/profile-1-link" ]
+find "$meta/var/lib/envctl/legacy-archives" -type l -name profile -print -quit | grep -q .
 yazelix_only_foundation_element "$(<"$state")"
 yazelix_validate_installed "$uid"
 [ ! -e "$meta/.nix-profile" ] && [ ! -L "$meta/.nix-profile" ]

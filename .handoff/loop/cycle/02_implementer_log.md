@@ -1,64 +1,36 @@
-STATUS: GREEN
-
-# 02 — Implementer log: engine-owned doctor and manifest-lock proof
+# Implementer Log — OpenRouter Agent-Environment Convergence
 
 ## Delivered
 
-- Added the typed, non-printing engine doctor in `crates/engine/src/doctor.rs`:
-  `DoctorSpec`, `Status`, `Summary`, `PathState`, `PathCheck`, `ToolCheck`,
-  `ManifestLockStatus`, `ManifestLockReport`, and `DoctorReport`.
-- Added `Engine::doctor` and `Engine::manifest_lock_check`, `Event::Doctored`, and
-  `EngineCommand::Doctor`. Each doctor run emits exactly one typed event.
-- Root priority is explicit `--root` → `META_ROOT` → upward `.meta.yaml` → managed-worktree
-  owner normalization. Missing and ambiguous roots return a typed error report. There is no
-  `~/Desktop/meta` fallback.
-- Replaced write/delete probe files with metadata plus `access(2)` checks. Missing canonical
-  directories are classified `Creatable` only when the nearest existing directory proves write
-  access. EFI Secure Boot and NVIDIA driver state are read directly from existing kernel files.
-- Replaced the CLI-local doctor implementation with pure rendering of `DoctorReport`. JSON is
-  emitted before exit 1, and only `Status::Error` is unhealthy. The separate agent doctor was
-  not changed.
-- Added a top-level GUI Doctor screen driven by the same `EngineCommand::Doctor` and
-  `DoctorReport`; it contains no duplicate probe/decision logic.
-- Added `ci/gates/manifest-lock.sh`, wired it into CI, and added a hermetic mutation-detection
-  regression test. The gate hashes tracked manifest inputs before/after and runs exactly
-  `cargo run --locked -p envctl -- --color never lock --check`.
-- Reconciled `manifest/envctl.lock` after source-history review: only the intended
-  `codex-global-baseline` hash update (#481) and `postgres-ruvector` row (#470) changed.
-- Archived the unrelated prior Blueprint Feature Forge cycle under `.handoff/loop/_done/`.
+- Added `tencent/hy3:free` to the tracked active Codex model catalog and synchronized the harness catalog contract: 262144-token context, `low`/`high` reasoning, high default reasoning, and free-route expiry `2026-07-21`.
+- Kept both tracked OpenRouter profiles on the Responses wire API with `OPENROUTER_API_KEY` as the environment-only credential reference.
+- Hardened the Rust probe so readiness requires discovery of the requested target model, a zero-exit 2xx Responses call, `status = completed`, no API error, non-empty parsed output, and the default unique marker `HY3_OPENROUTER_LIVE_OK`. Custom prompts deliberately require non-empty completed output but do not invent an expected marker.
+- Added the HY3 slug to the model-access catalog inventory requirement without mixing it into the OpenAI-account probe lanes.
+- Added `scripts/verify-agent-env-fleet.nu`, a read-only Nushell inventory for Meta plus every declared project. Repos with both `agent-env.yaml` and `agent-env.lock` are `independent`; every other repo inherits the central runtime, while missing or partial state is still reported fail-closed. Preview and strict `agent audit` execution require explicit flags. Execution defaults only to the canonical Meta-local engine at `$META_ROOT/usr/libexec/envctl/cli/bin/envctl`, accepts an explicit source-verification override, and fails closed if that exact engine is missing. There is no apply path, ambient-PATH fallback, or fallback-shell control plane.
 
 ## TDD evidence
 
-- `cargo test -p envctl-engine doctor --locked`: 14 passed.
-- `cargo test -p envctl --test cli_contract doctor --locked`: 4 passed.
-- `cargo test -p envctl-gui top_level_doctor --locked`: 2 passed.
-- `cargo test -p envctl-engine -p envctl -p envctl-gui --locked`: all package unit,
-  integration, parity, and doc tests passed (engine 161, CLI contract 15, GUI 27, plus the
-  remaining package suites).
-- `cargo clippy -p envctl-engine -p envctl -p envctl-gui --all-targets --locked -- -D warnings`:
-  passed.
-- `cargo fmt --all -- --check`: passed.
-- `bash ci/gates/{no-c,shape,enable,manifest-lock,actionlint}.sh`: passed.
-- `bash scripts/tests/test-manifest-lock-gate.sh`: passed, including the intentionally mutating
-  fake-cargo refusal case.
+Red:
 
-## Runtime observation
+- The first focused run failed to compile because `openrouter_responses_summary` did not exist.
+- The first green attempt exposed a Nushell parser defect in the new fleet verifier (`and` was parsed as an external command); the failing fixture prevented acceptance until corrected.
 
-The real built surface was driven with:
+Green:
 
-`envctl --json --color never doctor --root /home/flexnetos/meta`
+- `cargo test --test openrouter_probe --test agent_env_fleet --bin codex-harness-model-access`: 9 OpenRouter tests, 4 fleet tests, and 4 model-access tests passed.
+- `cargo clippy --tests -- -D warnings`: passed.
+- `rustfmt --edition 2021` on all changed Rust files: passed.
+- `nu-check` for `scripts/verify-agent-env-fleet.nu`: passed.
+- Live read-only fleet inventory: `ok=true`, execution not requested, canonical Meta-local envctl present, 2 independent repos and 42 central-inherited repos.
 
-It emitted valid JSON and then exited 1 with 57 OK / 2 warnings / 1 error. The lock report was
-clean. The sole error is the independently confirmed stale boundary policy that currently marks
-the one-profile Yazelix Nix-store frontdoors (`meta`, `icm`, `grit`, `weave`, etc.) as foreign.
-That is an integration dependency on the parallel profile-ownership repair, not a doctor defect:
-the new doctor correctly fails closed and names the exact violations. After that detector policy
-lands, this same runtime check must be rerun and should exit 0 with warnings.
+The complete harness test run reached all unit/binary suites but retained two pre-existing contract failures because current `HEAD` does not track `.github/workflows/ci.yml` or `.claude/prompts/prompt:claude-code-agent-env-ultraplan.prompt.md`; neither missing path is caused or repaired by this OpenRouter change.
 
-## Invariants
+## Files
 
-- No new crate dependency and no C trust-boundary change; only the already-resolved `rustix`
-  dependency gained its pure-Rust `fs` API feature for `access(2)`.
-- No generated home state, active Nix profile, main profile worktree, or user/global wrapper was
-  modified.
-- No commit or push was made.
+- `home/.codex/model-catalog.json`
+- `home/agent-env/codex-harness/model-catalog/model-catalog.json`
+- `home/agent-env/codex-harness/src/lib.rs`
+- `home/agent-env/codex-harness/src/bin/codex-harness-model-access.rs`
+- `home/agent-env/codex-harness/tests/openrouter_probe.rs`
+- `home/agent-env/codex-harness/tests/agent_env_fleet.rs`
+- `scripts/verify-agent-env-fleet.nu`

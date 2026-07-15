@@ -1,67 +1,60 @@
-# 01 — Architect plan: engine-owned doctor and manifest-lock proof
+# Architecture Plan — OpenRouter Agent-Environment Convergence
 
-The current top-level `envctl doctor` is a CLI-local implementation that writes and removes
-probe files, resolves a retired `~/Desktop/meta` fallback, reports stale roots, and returns
-success even when the report is unhealthy. The repair is engine-first and additive: preserve
-the separate agent-env `envctl agent doctor` surface while replacing only the top-level doctor.
+## Verdict
 
-## Target repo and routing
+GO. Existing OpenRouter provider profiles, policy, Rust probe, and internal
+catalog are reusable. The active/projected model catalog and installed runtime
+are incomplete, and the probe accepts responses too loosely.
 
-One repo (`envctl`) with a linear dependency chain: engine types/behavior → CLI rendering and
-exit semantics → GUI screen → non-mutating CI gate. Route sequentially through one implementer.
+Authenticated generation is NO-GO until an operator-owned OpenRouter key is
+loaded without exposing it.
 
-## Engine contract
+## Ownership
 
-- Add `crates/engine/src/doctor.rs` with typed, serializable `DoctorSpec`, `Status`, `Summary`,
-  `PathState`, `PathCheck`, `ManifestLockStatus`, `ManifestLockReport`, and `DoctorReport`.
-- `Engine::doctor(&DoctorSpec) -> Result<DoctorReport>` owns all health logic. It stays sync,
-  pure-Rust, and non-printing.
-- Root resolution is fail-closed and workspace-aware. Priority is explicit spec root, then
-  `META_ROOT`, then upward `.meta.yaml` discovery, then managed-worktree normalization to the
-  owning meta workspace. It must never fall back to `~/Desktop/meta`.
-- Path checks use metadata/access observations only. No temporary probe file, directory, or
-  cleanup mutation is allowed. EFI checks read the existing efivar filesystem directly.
-- The report includes focused boundary/driver checks and a typed manifest-lock report.
-- `Engine::manifest_lock_check` compares the declarative manifest against `envctl.lock` without
-  mutation and returns `ManifestLockStatus` plus details.
-- Add `Event::Doctored { report }` emitted exactly once per `Engine::doctor` call and
-  `EngineCommand::Doctor { spec }` routed through the standard engine dispatcher.
+- Meta enumerates the fleet and owns shared policy/evidence.
+- Each repo independently owns any committed `agent-env.yaml` and
+  `agent-env.lock`.
+- Repos without those files inherit the central Codex runtime; they are not
+  falsely reported as independently synced.
+- Envctl remains the per-repo lock/sync/audit engine.
+- Yazelix/Nix owns the Codex binary frontdoor; `codex-global-baseline`
+  projects tracked profiles and the catalog into the active home.
+- Nushell is the primary fleet/runtime command surface. Existing Bash lifecycle
+  hooks remain compatibility gates; no new Python/JS or shell control plane.
 
-## Front ends
+## Minimal implementation
 
-- CLI top-level `doctor` only parses input, calls `Engine::doctor`, and renders the returned
-  report. Valid JSON is written before an unhealthy report exits 1; only `Status::Error` makes
-  the command unhealthy. Human output is a pure projection of the same report.
-- Existing `envctl agent doctor` remains separate and unchanged.
-- GUI gains a top-level Doctor screen that calls the same `Engine::doctor` method and consumes
-  the same `DoctorReport`; no replicated health logic is permitted.
+1. Add a visible `tencent/hy3:free` entry to the tracked active catalog and
+   keep its contract in parity with the harness catalog.
+2. Correct current official metadata: 262144-token context, high/low reasoning,
+   and the 2026-07-21 free-route expiry.
+3. Harden the Rust OpenRouter probe to require target-model discovery and a
+   parsed completed Responses result with non-empty output, while redacting all
+   credential-bearing data.
+4. Add failing-first Rust tests for absent target, API error/empty output, and a
+   valid completed response. Add tracked-catalog/profile contract coverage.
+5. Add a read-only Nushell fleet verifier that inventories Meta plus all
+   declared projects, previews/audits repos with independent agent-env state,
+   and classifies the remainder as central-runtime inheritance.
+6. Apply only through the existing envctl component owner, then prove active
+   mode-0600 projections, profile-owned Codex 0.144.0, and interactive
+   `/model` visibility.
+7. If a key is available, run a unique-marker HY3 generation through the
+   OpenRouter profile and persist only redacted proof.
 
-## Manifest-lock gate
+## Impact and test gates
 
-- Add `ci/gates/manifest-lock.sh`. It hashes tracked inputs before and after and invokes
-  `cargo run --locked -p envctl -- --color never lock --check`. It must fail closed on command
-  failure or any mutation and must not update the lock.
-- Wire the gate into CI beside the existing invariant gates.
+- `openrouter_model_catalog_summary`: one direct production caller.
+- `openrouter_probe_value`: two direct callers (shim and supervised runner).
+- Whole `codex-harness/src/lib.rs`: HIGH file-level blast radius; edits stay
+  localized to OpenRouter symbols.
+- Runtime-contract and agent-audit engine code remain unchanged.
+- Run focused harness tests first, then harness workspace tests, envctl
+  agent-env tests, Codex baseline/runtime gates, no-C/meta-substrate gates,
+  format/clippy, lock checks, fleet preview/audit, installed-runtime proof, and
+  GitKB change detection.
 
-## Tests
+## Archive
 
-- Engine unit tests cover every root-resolution priority, managed-worktree normalization,
-  missing/ambiguous-root refusal, status/summary aggregation, exactly-one event emission,
-  manifest-lock typed states, and a before/after filesystem snapshot proving doctor does not
-  mutate.
-- CLI tests cover healthy exit 0, unhealthy exit 1 after parseable JSON, and no retired
-  `Desktop/meta` fallback.
-- GUI tests prove the Doctor screen consumes the engine-owned report and uses the same method.
-- The manifest-lock gate gets a hermetic mutation check.
-
-## Runtime surface
-
-runtime_verifiable: yes. Build the real `envctl`, run `doctor --json` against a controlled
-healthy and unhealthy root, parse the JSON, verify the respective exit codes, and prove no
-filesystem entries changed. Drive `manifest-lock.sh` and the GUI Doctor screen where the native
-GUI test harness permits.
-
-## Invariants
-
-No new dependency, no C trust-boundary change, no generated-home/profile mutation, no probe
-files, no retired fallback, and no downgrade or bypass of the existing agent doctor.
+Pre-edit snapshots are under
+`/tmp/envctl-openrouter-agent-env-20260714/`.
