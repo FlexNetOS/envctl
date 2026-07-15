@@ -56,16 +56,14 @@ lifecycle, not a separate agent-env binary.)
 
 ## Shell autocompletion
 
-You can run `echo $SHELL` to determine your shell.
+On a Yazelix workstation, Nu is the configured interactive shell and the active command
+frontdoor is the single profile-owned Nix profile. Do not append an envctl block to
+`~/.bashrc` or create a user-bin wrapper. Change the Yazelix user-config input when a shell
+integration is genuinely required, then regenerate the runtime output through its owner.
 
-To get tab completions for `envctl`, generate them with the standard clap-based completions
-mechanism and source them in your shell config, for example:
-
-```
-echo 'eval "$(envctl completions bash)"' >> ~/.bashrc
-```
-
-Then restart your shell or source the config file.
+For another supported shell, generate completions only after confirming that shell is the active
+owner of its configuration; keep the generated completion in that shell's native configuration
+surface rather than adding an unrelated Bash startup block.
 
 ## Next steps
 

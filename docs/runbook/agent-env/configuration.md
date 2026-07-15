@@ -312,9 +312,9 @@ Use `destination` when targeting an agent that isn't in the supported list.
 
 ## Scope: Global vs Project
 
-By default, skills are installed globally into the agent's home-directory path. Add `scope: project` to your config, or pass `--project` on the command line, to install into the current project directory instead.
+By default, skills are installed globally into the agent's home-directory path. Add `scope: project` to your config, or pass `--scope project` on the command line, to install into the current project directory instead.
 
-The `--project` / `--global` flags always override whatever `scope` is set in the config file.
+`--scope project` / `--scope global` overrides whatever `scope` is set in the config file.
 
 ## Environment Variables
 

@@ -24,7 +24,7 @@ Treat `agent-env.lock` like `Cargo.lock` or `package-lock.json`: commit it next 
 
 ```
 # Maintainer: set up the config, sync, then commit both files.
-envctl agent sync --project --apply
+envctl agent sync --scope project --apply
 git add agent-env.yaml agent-env.lock
 git commit -m "chore: pin agent skills"
 ```
@@ -45,7 +45,7 @@ git commit -m "chore: bump agent skills"
 
 ```
 # CI verifies the checked-in lock without ever fetching new versions.
-envctl agent sync --locked --project --apply
+envctl agent sync --locked --scope project --apply
 ```
 
 `--locked` (alias `--frozen`) errors if the config needs something the lock can't satisfy, so a stale lock fails the build instead of silently drifting. See [CI & automation](./ci.md) and [How Sync Works → The Lockfile Contract](./how-sync-works.md).
