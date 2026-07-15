@@ -126,7 +126,6 @@ link() {
 link .gitconfig
 link .config/ghostty/config.ghostty
 link .config/nushell/config.nu
-link .config/nushell/rtk-wrappers.nu
 link .config/nushell/meta-usr-path.nu
 link .config/kasetto/kasetto.yaml
 link .config/yazelix/settings.jsonc
@@ -148,7 +147,7 @@ args = ["-lc", '''
 M="${META_ROOT:?META_ROOT required}"
 T="${ENVCTL_HOME_TREE:-$M/envctl/home}"
 ok=1
-for p in .gitconfig .config/nushell/config.nu .config/nushell/rtk-wrappers.nu .config/nushell/meta-usr-path.nu .config/kasetto/kasetto.yaml .config/yazelix/settings.jsonc .config/systemd/user/env-ctl.service .config/systemd/user/sqld.service; do
+for p in .gitconfig .config/nushell/config.nu .config/nushell/meta-usr-path.nu .config/kasetto/kasetto.yaml .config/yazelix/settings.jsonc .config/systemd/user/env-ctl.service .config/systemd/user/sqld.service; do
   [ "$(readlink -f "$M/$p" 2>/dev/null)" = "$(readlink -f "$T/$p" 2>/dev/null)" ] || { echo "NOT META_ROOT-LINKED: $p"; ok=0; }
 done
 [ $ok = 1 ]
@@ -157,7 +156,7 @@ done
 kind = "script"
 script = '''
 M="${META_ROOT:?META_ROOT required}"
-for p in .gitconfig .config/ghostty/config.ghostty .config/nushell/config.nu .config/nushell/rtk-wrappers.nu .config/nushell/meta-usr-path.nu .config/kasetto/kasetto.yaml .config/yazelix/settings.jsonc .config/yazelix/shell_bash.sh .config/yazelix/shell_nu.nu .config/yazelix/terminal_ghostty.conf .config/yazelix/tombi.toml .config/systemd/user/env-ctl.service .config/systemd/user/sqld.service .config/systemd/user/repowire.service; do
+for p in .gitconfig .config/ghostty/config.ghostty .config/nushell/config.nu .config/nushell/meta-usr-path.nu .config/kasetto/kasetto.yaml .config/yazelix/settings.jsonc .config/yazelix/shell_bash.sh .config/yazelix/shell_nu.nu .config/yazelix/terminal_ghostty.conf .config/yazelix/tombi.toml .config/systemd/user/env-ctl.service .config/systemd/user/sqld.service .config/systemd/user/repowire.service; do
   [ -L "$M/$p" ] && rm "$M/$p"
 done
 systemctl --user daemon-reload 2>/dev/null || true
