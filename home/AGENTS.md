@@ -18,7 +18,7 @@ cd /home/flexnetos/meta/src/envctl
 git fetch origin --prune
 git worktree add ../envctl-<task-slug> -b <task-branch> origin/master
 cd ../envctl-<task-slug>
-envctl agent lock --check --color never
+envctl agent lock --check --locked --color never
 envctl agent sync --json --color never
 ```
 
@@ -43,6 +43,11 @@ Use the Nix/Yazelix foundation frontdoors: profile-owned nightly cargo/rustc,
 kache/kache-rustc-wrapper for Rust caching, wild via clang linker flags,
 bun/bunx for Node.js package execution, and profile-owned `codex`, `yzx`, and
 `rtk`. Do not install global npm/cargo/curl binaries to fix navigation.
+
+All Codex shell execution goes through the exact profile-owned RTK binary:
+`/home/flexnetos/.nix-profile/bin/rtk` for supported summarized commands and
+`/home/flexnetos/.nix-profile/bin/rtk proxy -- ...` for exact native output.
+Never bypass RTK for a raw diagnostic; proxy it instead.
 
 ## Codex harness session bootstrap
 

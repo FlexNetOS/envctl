@@ -3,8 +3,10 @@
 //!
 //! This is the per-machine, run-specific payload kept *out* of the committed
 //! `agent-env.lock` so the lock stays portable across machines and users (mirroring how
-//! `uv` keeps machine state in its cache directory, separate from `uv.lock`). Everything
-//! here is regenerated on the next sync; the file is safe to delete.
+//! `uv` keeps machine state in its cache directory, separate from `uv.lock`). Project-native
+//! ownership is also carried portably in lock v3. Global ownership, plus the second factor for
+//! retired project custom roots, exists only here and therefore fails closed if this file is
+//! deleted; a later trusted apply must re-establish those claims before destructive repair.
 //!
 //! Scope note: this is a **separate** runtime payload from any engine runtime — it is the
 //! agent-asset runtime state (last-run stamp, cached `Report` JSON, per-asset install
@@ -23,8 +25,10 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
-use std::fs;
 use std::path::{Path, PathBuf};
+
+#[cfg(test)]
+use std::fs;
 
 use crate::config::Scope;
 use crate::dirs::{dirs_agent_env_cache, dirs_agent_env_data};
@@ -37,19 +41,36 @@ use crate::{err, Result};
 /// so the lock stays portable across machines and users. This mirrors how `uv`
 /// keeps machine state in its cache directory, separate from `uv.lock`.
 ///
-/// Everything here is regenerated on the next sync; the file is safe to delete.
+/// Timestamps and reports are disposable. `managed_outputs` is security evidence for global
+/// outputs and retired project custom roots, so deleting the file intentionally drops authority
+/// to mutate those destinations until a later trusted apply re-establishes it.
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct RuntimeState {
     /// Unix timestamp of the last successful sync.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last_run: Option<String>,
-    /// Serialized JSON of the most recent sync `Report` (used by `doctor`).
+    /// Serialized JSON of the most recent coherent sync result (used by `doctor`). This may be a
+    /// success or a preflight/fully-rolled-back failure; an incomplete rollback is never cached.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub latest_report: Option<String>,
     /// `entry id -> unix timestamp` of when this machine last installed/updated
     /// each skill. Drives the "updated N ago" display in `list`.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub installed_at: BTreeMap<String, String>,
+    /// Machine-local proof that envctl committed a specific output identity at a destination.
+    /// Keys are length-framed asset/destination identities; values are content hashes.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub managed_outputs: BTreeMap<String, ManagedOutput>,
+}
+
+/// Exact machine-local ownership proof for one committed output unit.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ManagedOutput {
+    pub asset_id: String,
+    pub destination: String,
+    pub format: String,
+    pub unit: String,
+    pub hash: String,
 }
 
 impl RuntimeState {
@@ -81,7 +102,7 @@ impl RuntimeState {
         if let Some(actions) = value.get("actions").and_then(|v| v.as_array()) {
             for action in actions {
                 let status = action.get("status").and_then(|v| v.as_str()).unwrap_or("");
-                if status != "broken" && status != "source_error" {
+                if status != "broken" && status != "source_error" && status != "locked_error" {
                     continue;
                 }
                 failed.push(SyncFailure {
@@ -120,11 +141,11 @@ pub fn runtime_state_path(scope: Scope, project_root: &Path) -> Result<PathBuf> 
 
 pub fn load_runtime_state(scope: Scope, project_root: &Path) -> Result<RuntimeState> {
     let path = runtime_state_path(scope, project_root)?;
-    if !path.exists() {
+    let Some(bytes) = crate::secure_file::read_optional(&path)? else {
         return Ok(RuntimeState::default());
-    }
-    let text = fs::read_to_string(&path)
-        .map_err(|e| err(format!("failed to read state file {}: {e}", path.display())))?;
+    };
+    let text = String::from_utf8(bytes)
+        .map_err(|e| err(format!("state file {} is not UTF-8: {e}", path.display())))?;
     if text.trim().is_empty() {
         return Ok(RuntimeState::default());
     }
@@ -138,44 +159,20 @@ pub fn load_runtime_state(scope: Scope, project_root: &Path) -> Result<RuntimeSt
 
 pub fn save_runtime_state(state: &RuntimeState, scope: Scope, project_root: &Path) -> Result<()> {
     let path = runtime_state_path(scope, project_root)?;
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
-    }
     let json = serde_json::to_string_pretty(state)
         .map_err(|e| err(format!("failed to serialize state file: {e}")))?;
-    fs::write(&path, json)?;
-    Ok(())
+    crate::secure_file::write_atomic(&path, json.as_bytes(), 0o600)
 }
 
 pub fn clear_runtime_state(scope: Scope, project_root: &Path) -> Result<()> {
     let path = runtime_state_path(scope, project_root)?;
-    if path.exists() {
-        fs::remove_file(&path).map_err(|e| {
-            err(format!(
-                "failed to remove state file {}: {e}",
-                path.display()
-            ))
-        })?;
-    }
-    Ok(())
+    crate::secure_file::remove_file(&path)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::sync::{Mutex, MutexGuard, OnceLock};
     use std::time::{SystemTime, UNIX_EPOCH};
-
-    /// The round-trip test sets `HOME`/`XDG_*_HOME` (consumed by `dirs_agent_env_*`), which is
-    /// process-global; serialize it against the `dirs` env-poking tests via a shared lock so
-    /// parallel threads never observe each other's overrides. (Race-safety requirement of the
-    /// Y-gate: HOME/env-mutating tests must not corrupt sibling tests.)
-    fn env_lock() -> MutexGuard<'static, ()> {
-        static LOCK: OnceLock<Mutex<()>> = OnceLock::new();
-        LOCK.get_or_init(|| Mutex::new(()))
-            .lock()
-            .unwrap_or_else(|p| p.into_inner())
-    }
 
     fn unique_root(prefix: &str) -> PathBuf {
         let nonce = SystemTime::now()
@@ -187,10 +184,16 @@ mod tests {
 
     #[test]
     fn round_trip_runtime_state() {
-        let _g = env_lock();
+        let _g = crate::dirs::test_env_lock();
+        let previous_home = std::env::var_os("HOME");
+        let previous_cache = std::env::var_os("XDG_CACHE_HOME");
+        let previous_data = std::env::var_os("XDG_DATA_HOME");
         let home = unique_root("agent-env-state-home");
         let cache = unique_root("agent-env-state-cache");
         let data = unique_root("agent-env-state-data");
+        fs::create_dir_all(&home).unwrap();
+        fs::create_dir_all(&cache).unwrap();
+        fs::create_dir_all(&data).unwrap();
         // Pin every XDG base the runtime path touches so the test is hermetic.
         std::env::set_var("HOME", &home);
         std::env::set_var("XDG_CACHE_HOME", &cache);
@@ -206,6 +209,22 @@ mod tests {
         state.save_report_json(r#"{"actions":[]}"#);
 
         save_runtime_state(&state, Scope::Project, &root).unwrap();
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let path = runtime_state_path(Scope::Project, &root).unwrap();
+            assert_eq!(
+                fs::metadata(&path).unwrap().permissions().mode() & 0o777,
+                0o600
+            );
+            fs::set_permissions(&path, fs::Permissions::from_mode(0o644)).unwrap();
+            save_runtime_state(&state, Scope::Project, &root).unwrap();
+            assert_eq!(
+                fs::metadata(path).unwrap().permissions().mode() & 0o777,
+                0o600,
+                "runtime rewrites must tighten a permissive existing leaf"
+            );
+        }
         let loaded = load_runtime_state(Scope::Project, &root).unwrap();
 
         assert_eq!(loaded.last_run.as_deref(), Some("123"));
@@ -218,8 +237,32 @@ mod tests {
             .last_run
             .is_none());
 
-        std::env::remove_var("XDG_CACHE_HOME");
-        std::env::remove_var("XDG_DATA_HOME");
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::symlink;
+            let path = runtime_state_path(Scope::Project, &root).unwrap();
+            let outside = cache.join("outside-runtime-marker");
+            fs::write(&outside, "foreign").unwrap();
+            symlink(&outside, &path).unwrap();
+            assert!(load_runtime_state(Scope::Project, &root).is_err());
+            assert!(save_runtime_state(&state, Scope::Project, &root).is_err());
+            assert!(clear_runtime_state(Scope::Project, &root).is_err());
+            assert_eq!(fs::read_to_string(&outside).unwrap(), "foreign");
+            fs::remove_file(path).unwrap();
+        }
+
+        match previous_home {
+            Some(value) => std::env::set_var("HOME", value),
+            None => std::env::remove_var("HOME"),
+        }
+        match previous_cache {
+            Some(value) => std::env::set_var("XDG_CACHE_HOME", value),
+            None => std::env::remove_var("XDG_CACHE_HOME"),
+        }
+        match previous_data {
+            Some(value) => std::env::set_var("XDG_DATA_HOME", value),
+            None => std::env::remove_var("XDG_DATA_HOME"),
+        }
         let _ = fs::remove_dir_all(&home);
         let _ = fs::remove_dir_all(&cache);
         let _ = fs::remove_dir_all(&data);
@@ -243,13 +286,15 @@ mod tests {
             r#"{"actions":[
                 {"status":"installed","skill":"good","source":"s"},
                 {"status":"broken","skill":"bad","source":"s","error":"missing"},
-                {"status":"source_error","skill":"err","source":"s2","error":"timeout"}
+                {"status":"source_error","skill":"err","source":"s2","error":"timeout"},
+                {"status":"locked_error","skill":"locked","source":"s3","error":"drift"}
             ]}"#,
         );
         let failures = state.load_latest_failures();
-        assert_eq!(failures.len(), 2);
+        assert_eq!(failures.len(), 3);
         assert_eq!(failures[0].name, "bad");
         assert_eq!(failures[1].reason, "timeout");
+        assert_eq!(failures[2].name, "locked");
     }
 
     #[test]

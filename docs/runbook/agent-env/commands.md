@@ -183,7 +183,12 @@ envctl agent lock [OPTIONS]
 | `--locked` | With `--check`: make the audit zero-network |
 | `-P`, `--upgrade-package <name>...` | Only re-resolve sources providing these skills (mirrors `sync --update <name>...`) |
 
-Skills are hashed from the materialized **source tree**. Because a skill installs as a verbatim copy, that hash equals the one a later `sync` computes at the destination — so after `envctl agent lock` a plain `envctl agent sync --locked` succeeds with zero fetches. MCP and command entries can't be hashed without applying their merge/transform, so `lock` only refreshes their resolved revision pins; their content hash fills in on the next real `sync`. Any source that fails to resolve aborts the lock before writing.
+Skills are hashed from the materialized immutable tree; command/MCP source bytes are hashed too.
+The lock also binds selectors, scope, complete targets, and native formats. `agent lock` records
+desired pins but never fabricates `installed_outputs` ownership. Therefore a freshly generated v3
+lock cannot authorize a locked overwrite: perform the first install with plain `sync --apply`, then
+commit the resulting proof-bearing project lock. Any source failure aborts before writing. A v2
+lock cannot be directly rewritten; migrate exact outputs with plain `sync --apply` first.
 
 `envctl agent lock` reads remote configs fine (it only writes the lock, never the config). `envctl agent add` / `envctl agent remove`, which rewrite the config, require a local file.
 
@@ -227,7 +232,8 @@ envctl agent doctor [OPTIONS]
 
 ## envctl agent clean
 
-Removes installed assets that are no longer referenced by the config — skills, commands, MCP configs — and resets the corresponding lock entries. **PREVIEW by default — pass `--apply` to write.**
+Removes every exact output owned by the selected scope — skills, commands, and MCP fragments — and
+clears the corresponding lock/runtime evidence. **PREVIEW by default — pass `--apply` to write.**
 
 ```
 envctl agent clean [OPTIONS]
@@ -241,10 +247,9 @@ envctl agent clean [OPTIONS]
 | `--scope <global\|project>` | Override the resolved scope |
 | `--apply` | Write changes — actually remove (else preview / zero writes) |
 
-> **envctl note:** kasetto's `clean` is a full teardown of *everything* installed for the scope and
-> previews with `--dry-run`. envctl's `clean` **prunes only assets orphaned from the config** and is
-> preview-by-default (`--apply` to write). For a full teardown, remove the sources from the config
-> first, then `clean --apply`.
+`clean` requires a migrated v3 lock and a complete, exact ownership proof set (including
+tombstones). It refuses drifted, symlinked, foreign-owned, forged, or unsupported targets. Preview
+and apply enumerate the same proof units; ordinary `sync` handles config-orphaned outputs.
 
 ## envctl self
 

@@ -318,6 +318,9 @@ const LOCAL_META_TOOLS: &[&str] = &[
     "vox",
     "icm",
     "grit",
+    "rtk",
+    "git-kb",
+    "gitnexus",
     "envctl",
     "envctl-gui",
     "meta-dashboard",
@@ -338,6 +341,103 @@ fn meta_boundary_report() -> MetaBoundaryReport {
         };
     };
     meta_boundary_report_for(&meta_root, &local_bin, &cargo_bin, true)
+}
+
+/// Build the focused install-boundary report for an already-resolved meta root.
+///
+/// `doctor` resolves its root through its stricter workspace-aware policy and
+/// calls this helper so the boundary scan cannot silently fall back to a stale
+/// historical checkout. The scan is metadata/PATH-only and never writes.
+pub(crate) fn meta_boundary_report_for_root(meta_root: &Path) -> MetaBoundaryReport {
+    let layout = MetaLayout::from_meta_root(meta_root);
+    meta_boundary_report_for(
+        meta_root,
+        &layout.bin(),
+        &layout.legacy_toolchains().join("cargo/bin"),
+        true,
+    )
+}
+
+#[derive(Debug, Default)]
+struct ActiveProfileProvenance {
+    targets: BTreeSet<(String, PathBuf)>,
+}
+
+impl ActiveProfileProvenance {
+    /// Load the active real-home Nix profile only when the ownership chain has
+    /// the Yazelix shape: `~/.nix-profile` -> the XDG profile selector -> the
+    /// current numbered generation. A direct store link is deliberately not
+    /// accepted because it bypasses the profile-owned frontdoor.
+    fn from_home(home: &Path) -> Option<Self> {
+        Self::from_home_with_store_root(home, Path::new("/nix/store"))
+    }
+
+    fn from_home_with_store_root(home: &Path, store_root: &Path) -> Option<Self> {
+        let frontdoor = home.join(".nix-profile");
+        let profiles = home.join(".local/state/nix/profiles");
+        let selector = profiles.join("profile");
+        let frontdoor_target = symlink_target(&frontdoor)?;
+        if frontdoor_target != selector {
+            return None;
+        }
+
+        let generation_link = symlink_target(&selector)?;
+        let generation_name = generation_link.file_name()?.to_str()?;
+        let generation_number = generation_name
+            .strip_prefix("profile-")?
+            .strip_suffix("-link")?;
+        if generation_link.parent() != Some(profiles.as_path())
+            || generation_number.is_empty()
+            || !generation_number.chars().all(|ch| ch.is_ascii_digit())
+        {
+            return None;
+        }
+
+        let store_root = std::fs::canonicalize(store_root).ok()?;
+        let generation = std::fs::canonicalize(&generation_link).ok()?;
+        let generation_store_name = generation.file_name()?.to_str()?;
+        if generation.parent() != Some(store_root.as_path())
+            || !generation_store_name.ends_with("-profile")
+            || generation_store_name == "-profile"
+            || std::fs::canonicalize(&frontdoor).ok()? != generation
+        {
+            return None;
+        }
+
+        let mut targets = BTreeSet::new();
+        for tool in LOCAL_META_TOOLS.iter().chain(CARGO_META_TOOLS.iter()) {
+            for dir in ["bin", "toolbin"] {
+                let entry = frontdoor.join(dir).join(tool);
+                if let Ok(target) = std::fs::canonicalize(entry) {
+                    if target.starts_with(&store_root) && target != store_root {
+                        targets.insert(((*tool).to_string(), target));
+                    }
+                }
+            }
+        }
+        Some(Self { targets })
+    }
+
+    fn from_env() -> Option<Self> {
+        let home = std::env::var_os("ENVCTL_REAL_HOME")
+            .filter(|value| !value.is_empty())
+            .or_else(|| std::env::var_os("HOME"))?;
+        Self::from_home(Path::new(&home))
+    }
+
+    fn owns(&self, tool: &str, resolved: &Path) -> bool {
+        self.targets
+            .contains(&(tool.to_string(), canonical_or_self(resolved.to_path_buf())))
+    }
+}
+
+fn symlink_target(path: &Path) -> Option<PathBuf> {
+    let target = std::fs::read_link(path).ok()?;
+    if target.is_absolute() {
+        Some(target)
+    } else {
+        Some(path.parent()?.join(target))
+    }
 }
 
 fn resolve_meta_root() -> Option<PathBuf> {
@@ -370,9 +470,20 @@ fn meta_boundary_report_for(
     cargo_bin: &Path,
     scan_path: bool,
 ) -> MetaBoundaryReport {
-    let expected_root = meta_root.display().to_string();
+    let active_profile_root = active_nix_profile_root();
+    let expected_root = active_profile_root
+        .as_ref()
+        .map(|profile| {
+            format!(
+                "META_ROOT {} or exact active Nix profile frontdoors {}/{{bin,toolbin}} and their current canonical exposure paths",
+                meta_root.display(),
+                profile.display()
+            )
+        })
+        .unwrap_or_else(|| meta_root.display().to_string());
     let mut seen: BTreeSet<(String, String)> = BTreeSet::new();
     let mut violations = Vec::new();
+    let active_profile_provenance = scan_path.then(ActiveProfileProvenance::from_env).flatten();
 
     for tool in LOCAL_META_TOOLS {
         inspect_bin_entry(
@@ -401,7 +512,21 @@ fn meta_boundary_report_for(
             if let Ok(paths) = which::which_all(tool) {
                 for path in paths {
                     let resolved = canonical_or_self(path.clone());
-                    if !resolved.starts_with(meta_root) {
+                    let profile_owned = match (
+                        active_profile_root.as_ref(),
+                        active_profile_provenance.as_ref(),
+                    ) {
+                        (Some(profile_root), Some(provenance)) => {
+                            active_profile_owns_tool_path(
+                                tool,
+                                &path,
+                                profile_root,
+                                Path::new("/nix/store"),
+                            ) && provenance.owns(tool, &resolved)
+                        }
+                        _ => false,
+                    };
+                    if !resolved.starts_with(meta_root) && !profile_owned {
                         push_violation(
                             tool,
                             &path,
@@ -423,6 +548,56 @@ fn meta_boundary_report_for(
         cargo_bin: cargo_bin.display().to_string(),
         violations,
     }
+}
+
+fn active_nix_profile_root() -> Option<PathBuf> {
+    std::env::var_os("ENVCTL_REAL_HOME")
+        .filter(|home| !home.is_empty())
+        .or_else(|| std::env::var_os("HOME").filter(|home| !home.is_empty()))
+        .map(PathBuf::from)
+        .map(|home| home.join(".nix-profile"))
+}
+
+/// Prove that `candidate` is an exact command exposure owned by the active
+/// Yazelix Nix profile.  A profile path is accepted only when it is the exact
+/// `bin/<tool>` or `toolbin/<tool>` exposure. A direct Nix-store path is
+/// accepted only when it is the command path inside the canonical *current*
+/// profile exposure directory. Comparing only the ultimate binary target is
+/// insufficient: an old foundation generation can point at the same package.
+/// This deliberately rejects user-bin, second-profile, old-generation, and
+/// raw-package paths even when they ultimately reach the same store object.
+fn active_profile_owns_tool_path(
+    tool: &str,
+    candidate: &Path,
+    profile_root: &Path,
+    store_root: &Path,
+) -> bool {
+    if tool.is_empty() || tool.contains('/') || tool.contains('\\') {
+        return false;
+    }
+
+    let Ok(candidate_target) = std::fs::canonicalize(candidate) else {
+        return false;
+    };
+
+    [profile_root.join("bin"), profile_root.join("toolbin")]
+        .iter()
+        .any(|profile_dir| {
+            let lexical_frontdoor = profile_dir.join(tool);
+            let Ok(current_store_dir) = std::fs::canonicalize(profile_dir) else {
+                return false;
+            };
+            let current_store_frontdoor = current_store_dir.join(tool);
+            if !current_store_frontdoor.starts_with(store_root) {
+                return false;
+            }
+            let Ok(exposure_target) = std::fs::canonicalize(&current_store_frontdoor) else {
+                return false;
+            };
+            exposure_target.starts_with(store_root)
+                && candidate_target == exposure_target
+                && (candidate == lexical_frontdoor || candidate == current_store_frontdoor)
+        })
 }
 
 fn inspect_bin_entry(
@@ -519,6 +694,13 @@ fn wiring_present(comp: &crate::component::Component) -> bool {
             .unwrap_or(false)
     };
 
+    // A unit at the right filename is still drifted when its rendered body
+    // targets a retired META_ROOT.
+    let systemd_ok = w
+        .systemd_user
+        .iter()
+        .all(crate::wiring::systemd_user_present);
+
     // System-scope footprints: each is present iff its on-disk target exists
     // (mirrors wiring.rs apply targets: sources.list.d/<list_file>, NIX_CONF
     // line, cdi output file, alternative link).
@@ -539,7 +721,7 @@ fn wiring_present(comp: &crate::component::Component) -> bool {
         .iter()
         .all(|a| std::path::Path::new(&a.link).exists());
 
-    shell_rc_ok && path_ok && apt_ok && nix_ok && cdi_ok && alt_ok
+    shell_rc_ok && path_ok && systemd_ok && apt_ok && nix_ok && cdi_ok && alt_ok
 }
 
 #[cfg(test)]
@@ -670,12 +852,228 @@ mod tests {
     }
 
     #[test]
+    fn active_profile_provenance_accepts_only_current_generation_targets() {
+        let root = temp_root("active-profile-current-generation");
+        let home = root.join("home");
+        let profiles = home.join(".local/state/nix/profiles");
+        let current_generation = root.join("nix/store/current-profile");
+        let current_package = root.join("nix/store/current-meta");
+        let stale_package = root.join("nix/store/stale-meta");
+        std::fs::create_dir_all(&profiles).unwrap();
+        std::fs::create_dir_all(current_generation.join("bin")).unwrap();
+        std::fs::create_dir_all(current_generation.join("toolbin")).unwrap();
+        std::fs::create_dir_all(current_package.join("bin")).unwrap();
+        std::fs::create_dir_all(stale_package.join("bin")).unwrap();
+        std::fs::write(current_package.join("bin/meta"), b"current").unwrap();
+        std::fs::write(stale_package.join("bin/meta"), b"stale").unwrap();
+        symlink(
+            current_package.join("bin/meta"),
+            current_generation.join("bin/meta"),
+        )
+        .unwrap();
+        symlink(
+            current_package.join("bin/meta"),
+            current_generation.join("toolbin/meta"),
+        )
+        .unwrap();
+        symlink(&current_generation, profiles.join("profile-2-link")).unwrap();
+        symlink("profile-2-link", profiles.join("profile")).unwrap();
+        symlink(profiles.join("profile"), home.join(".nix-profile")).unwrap();
+
+        let provenance =
+            ActiveProfileProvenance::from_home_with_store_root(&home, &root.join("nix/store"))
+                .unwrap();
+
+        assert!(provenance.owns("meta", &current_package.join("bin/meta")));
+        assert!(!provenance.owns("meta", &stale_package.join("bin/meta")));
+        assert!(!provenance.owns("other", &current_package.join("bin/meta")));
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn active_profile_provenance_rejects_direct_store_frontdoor() {
+        let root = temp_root("active-profile-direct-store");
+        let home = root.join("home");
+        let generation = root.join("nix/store/profile");
+        std::fs::create_dir_all(&home).unwrap();
+        std::fs::create_dir_all(&generation).unwrap();
+        symlink(&generation, home.join(".nix-profile")).unwrap();
+
+        assert!(ActiveProfileProvenance::from_home(&home).is_none());
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn active_profile_provenance_rejects_non_numeric_or_non_store_generations() {
+        let root = temp_root("active-profile-invalid-generation");
+        let home = root.join("home");
+        let profiles = home.join(".local/state/nix/profiles");
+        let store = root.join("nix/store");
+        let outside = root.join("foreign/current-profile");
+        std::fs::create_dir_all(&profiles).unwrap();
+        std::fs::create_dir_all(&store).unwrap();
+        std::fs::create_dir_all(&outside).unwrap();
+        symlink(&outside, profiles.join("profile-current-link")).unwrap();
+        symlink("profile-current-link", profiles.join("profile")).unwrap();
+        symlink(profiles.join("profile"), home.join(".nix-profile")).unwrap();
+
+        assert!(
+            ActiveProfileProvenance::from_home_with_store_root(&home, &store).is_none(),
+            "a named-but-nonnumeric generation must not establish profile provenance"
+        );
+
+        std::fs::remove_file(profiles.join("profile")).unwrap();
+        std::fs::remove_file(profiles.join("profile-current-link")).unwrap();
+        symlink(&outside, profiles.join("profile-9-link")).unwrap();
+        symlink("profile-9-link", profiles.join("profile")).unwrap();
+        assert!(
+            ActiveProfileProvenance::from_home_with_store_root(&home, &store).is_none(),
+            "a generation outside the Nix store must not establish profile provenance"
+        );
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn active_profile_provenance_does_not_accept_a_tool_escaping_the_store() {
+        let root = temp_root("active-profile-tool-store-escape");
+        let home = root.join("home");
+        let profiles = home.join(".local/state/nix/profiles");
+        let store = root.join("nix/store");
+        let generation = store.join("abc-profile");
+        let foreign_tool = root.join("foreign/meta");
+        std::fs::create_dir_all(generation.join("bin")).unwrap();
+        std::fs::create_dir_all(foreign_tool.parent().unwrap()).unwrap();
+        std::fs::create_dir_all(&profiles).unwrap();
+        std::fs::write(&foreign_tool, b"foreign").unwrap();
+        symlink(&foreign_tool, generation.join("bin/meta")).unwrap();
+        symlink(&generation, profiles.join("profile-3-link")).unwrap();
+        symlink("profile-3-link", profiles.join("profile")).unwrap();
+        symlink(profiles.join("profile"), home.join(".nix-profile")).unwrap();
+
+        let provenance = ActiveProfileProvenance::from_home_with_store_root(&home, &store).unwrap();
+        assert!(!provenance.owns("meta", &foreign_tool));
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
     fn meta_boundary_normalizes_meta_managed_worktree_root() {
         let root = PathBuf::from("/home/user/Desktop/meta/.worktrees/task-0007");
 
         let normalized = normalize_meta_root(root);
 
         assert_eq!(normalized, PathBuf::from("/home/user/Desktop/meta"));
+    }
+
+    #[test]
+    fn active_profile_ownership_accepts_only_lexical_and_current_store_frontdoors() {
+        let root = temp_root("active-profile-ownership");
+        let profile = root.join("home/.nix-profile");
+        let store = root.join("nix/store");
+        let raw_target = store.join("meta-package/bin/meta");
+        let current_store_bin = store.join("current-foundation/toolbin/meta");
+        let stale_store_bin = store.join("old-foundation/toolbin/meta");
+        let profile_bin = profile.join("toolbin/meta");
+        std::fs::create_dir_all(raw_target.parent().unwrap()).unwrap();
+        std::fs::create_dir_all(current_store_bin.parent().unwrap()).unwrap();
+        std::fs::create_dir_all(stale_store_bin.parent().unwrap()).unwrap();
+        std::fs::create_dir_all(&profile).unwrap();
+        std::fs::write(&raw_target, b"profile-owned meta").unwrap();
+        symlink(&raw_target, &current_store_bin).unwrap();
+        symlink(&raw_target, &stale_store_bin).unwrap();
+        symlink(current_store_bin.parent().unwrap(), profile.join("toolbin")).unwrap();
+
+        assert!(active_profile_owns_tool_path(
+            "meta",
+            &profile_bin,
+            &profile,
+            &store,
+        ));
+        assert!(active_profile_owns_tool_path(
+            "meta",
+            &current_store_bin,
+            &profile,
+            &store,
+        ));
+        assert!(!active_profile_owns_tool_path(
+            "meta",
+            &stale_store_bin,
+            &profile,
+            &store,
+        ));
+        assert!(!active_profile_owns_tool_path(
+            "meta",
+            &raw_target,
+            &profile,
+            &store,
+        ));
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn active_profile_ownership_refuses_user_bin_and_second_profile_shadows() {
+        let root = temp_root("profile-shadow-refusal");
+        let profile = root.join("home/.nix-profile");
+        let store = root.join("nix/store");
+        let store_bin = store.join("profile-generation/bin/meta");
+        let profile_bin = profile.join("bin/meta");
+        let user_shadow = root.join("home/.local/bin/meta");
+        let second_profile = root.join("home/.local/state/nix/profiles/second/bin/meta");
+        std::fs::create_dir_all(store_bin.parent().unwrap()).unwrap();
+        std::fs::create_dir_all(profile_bin.parent().unwrap()).unwrap();
+        std::fs::create_dir_all(user_shadow.parent().unwrap()).unwrap();
+        std::fs::create_dir_all(second_profile.parent().unwrap()).unwrap();
+        std::fs::write(&store_bin, b"profile-owned meta").unwrap();
+        symlink(&store_bin, &profile_bin).unwrap();
+        symlink(&store_bin, &user_shadow).unwrap();
+        symlink(&store_bin, &second_profile).unwrap();
+
+        assert!(!active_profile_owns_tool_path(
+            "meta",
+            &user_shadow,
+            &profile,
+            &store,
+        ));
+        assert!(!active_profile_owns_tool_path(
+            "meta",
+            &second_profile,
+            &profile,
+            &store,
+        ));
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn active_profile_ownership_refuses_stale_store_and_missing_profile_proof() {
+        let root = temp_root("profile-proof-refusal");
+        let profile = root.join("home/.nix-profile");
+        let missing_profile = root.join("missing/.nix-profile");
+        let store = root.join("nix/store");
+        let active_store_bin = store.join("active-generation/bin/meta");
+        let stale_store_bin = store.join("stale-generation/bin/meta");
+        let profile_bin = profile.join("bin/meta");
+        std::fs::create_dir_all(active_store_bin.parent().unwrap()).unwrap();
+        std::fs::create_dir_all(stale_store_bin.parent().unwrap()).unwrap();
+        std::fs::create_dir_all(profile_bin.parent().unwrap()).unwrap();
+        std::fs::write(&active_store_bin, b"active").unwrap();
+        std::fs::write(&stale_store_bin, b"stale").unwrap();
+        symlink(&active_store_bin, &profile_bin).unwrap();
+
+        assert!(!active_profile_owns_tool_path(
+            "meta",
+            &stale_store_bin,
+            &profile,
+            &store,
+        ));
+        assert!(!active_profile_owns_tool_path(
+            "meta",
+            &active_store_bin,
+            &missing_profile,
+            &store,
+        ));
+
+        let _ = std::fs::remove_dir_all(root);
     }
 
     fn temp_root(name: &str) -> PathBuf {

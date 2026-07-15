@@ -1,50 +1,160 @@
-version: 2
+version: 3
 skills:
-  ./agent-skills::agent-env-codex:
-    destination: .claude/skills/agent-env-codex
-    hash: f1db6b1e361b73a2b6829df89223dad18bea84ff7f0ca0aa8e56511e7fa3b2c1
-    skill: agent-env-codex
-    description: Rebuild, edit, repair, or upgrade the complete envctl Codex agent harness under home/agent-env/codex-harness from the polished CODEX-GPT-HARNESS prompt, including prompts, Rust harness code, agents, teams, policies, rules, model routing, session capabilities, agent-env projections, tests, and active-skill materialization. Use when the user says /agent-env-codex, rebuild the Codex harness, edit the entire Codex agent environment, update the agent-env Codex harness, convert the harness prompt into the implementation, repair harness drift, or upgrade all Codex harness surfaces.
-    source: ./agent-skills
-    source_revision: local
-    scope: project
-  ./agent-skills::agent-env-config:
-    destination: .claude/skills/agent-env-config
-    hash: e2207dbc97c8964e765d8687b7af8a1b8dbad31b8f66106a2c7f4bb8f878b662
-    skill: agent-env-config
-    description: '"The CORRECT conventions and agent-environment configuration for the envctl Rust workspace — supersedes the broken ECC-auto-generated skill/instincts that assert JavaScript conventions. Use whenever writing or reviewing envctl code, naming files/types, writing tests, composing commits, or configuring the .claude/.codex agent setup (skills, MCP servers, multi-agent roles). Triggers: ''what conventions'', ''how do I name this'', ''write a test'', ''commit message'', ''configure the agents'', ''MCP setup'', ''is camelCase right''."'
-    source: ./agent-skills
-    source_revision: local
-    scope: project
-  ./agent-skills::codedb-config-tables:
-    destination: .claude/skills/codedb-config-tables
-    hash: 6986faaa284b80ad1a02b9a920d6ed17179e7322cec4b8c51478ce5a2c480380
-    skill: codedb-config-tables
-    description: Transform config files, settings trees, environment/runtime state, and file inventories into CodeDB tables through `codedb` and `nu_plugin_codedb`, with full semantic rows, blob references, structured-row extraction, and explicit gap/error reporting. Use when Codex needs to catalog or query repo configs, Yazelix-generated state, Nushell/plugin surfaces, or envctl-exported files as database-like tables rather than ad hoc text parsing.
-    source: ./agent-skills
-    source_revision: local
-    scope: project
-  ./agent-skills::env-stabilize:
+  skill::v3|14:./agent-skills|13:env-stabilize:
     destination: .claude/skills/env-stabilize
-    hash: ca74f4950e58100c9c8a5678e00ff5eeffb1c195692ddfe0d0c1d6e7718cbd69
+    hash: acd9f3cbba1c05ee78b9c4dac8e788667f0dc03eb845221579fcf141166a71d7
     skill: env-stabilize
     description: '"How to keep the environment reproducible and drift-free — the detect/drift, doctor-diagnostic, and content-hashed lock discipline envctl uses, plus how the built-in agent-env engine (envctl agent) provisions and locks the agent config. Use when checking environment health, diagnosing drift, regenerating or verifying a lock, or making the agent environment reproducible. Triggers: ''is the environment stable'', ''check for drift'', ''run doctor'', ''the lock is stale'', ''make this reproducible'', ''env is inconsistent'', ''sync the agents''."'
     source: ./agent-skills
     source_revision: local
     scope: project
-  ./agent-skills::env-toolchain-install:
+  skill::v3|14:./agent-skills|15:agent-env-codex:
+    destination: .claude/skills/agent-env-codex
+    hash: 4b58bdc44ea914a91271b9fe8dbcbe38a45e66e100e1984f3b36e419e29d13ea
+    skill: agent-env-codex
+    description: Rebuild, edit, repair, or upgrade the complete envctl Codex agent harness under home/agent-env/codex-harness from the polished CODEX-GPT-HARNESS prompt, including prompts, Rust harness code, agents, teams, policies, rules, model routing, session capabilities, agent-env projections, tests, and active-skill materialization. Use when the user says /agent-env-codex, rebuild the Codex harness, edit the entire Codex agent environment, update the agent-env Codex harness, convert the harness prompt into the implementation, repair harness drift, or upgrade all Codex harness surfaces.
+    source: ./agent-skills
+    source_revision: local
+    scope: project
+  skill::v3|14:./agent-skills|16:agent-env-config:
+    destination: .claude/skills/agent-env-config
+    hash: 1c4c698e421692c7682ebefcb7e02e97305057e90ae0fce9cb8b3a06021b152f
+    skill: agent-env-config
+    description: '"The CORRECT conventions and agent-environment configuration for the envctl Rust workspace — supersedes the broken ECC-auto-generated skill/instincts that assert JavaScript conventions. Use whenever writing or reviewing envctl code, naming files/types, writing tests, composing commits, or configuring the .claude/.codex agent setup (skills, MCP servers, multi-agent roles). Triggers: ''what conventions'', ''how do I name this'', ''write a test'', ''commit message'', ''configure the agents'', ''MCP setup'', ''is camelCase right''."'
+    source: ./agent-skills
+    source_revision: local
+    scope: project
+  skill::v3|14:./agent-skills|20:codedb-config-tables:
+    destination: .claude/skills/codedb-config-tables
+    hash: 40417b259ed04caefde2f1a6cded9b5daecf4f55943b40a67d2fc1f27c2974cd
+    skill: codedb-config-tables
+    description: Transform config files, settings trees, environment/runtime state, and file inventories into CodeDB tables through `codedb` and `nu_plugin_codedb`, with full semantic rows, blob references, structured-row extraction, and explicit gap/error reporting. Use when Codex needs to catalog or query repo configs, Yazelix-generated state, Nushell/plugin surfaces, or envctl-exported files as database-like tables rather than ad hoc text parsing.
+    source: ./agent-skills
+    source_revision: local
+    scope: project
+  skill::v3|14:./agent-skills|21:env-toolchain-install:
     destination: .claude/skills/env-toolchain-install
-    hash: 1be4e99177765aca63c8a356b5985c79f24ee0b1cc0bb0081080af1c71e7fd1c
+    hash: 8320a7870746a248e896bc0f9d9caf0d188787acc7aef60e740d2c82dbdfc08b
     skill: env-toolchain-install
     description: '"How to install and configure environment tooling the way this box does it — the nix profile owns every toolchain binary; envctl''s declarative components (detect→install→verify→fix→remove lifecycle per manifest/*.toml) own the meta-local install/wiring layer. Use whenever installing, repairing, or configuring environment tooling or authoring a new component. Triggers: ''install the toolchain'', ''set up the environment'', ''add a component'', ''why is X not on PATH'', ''repair the environment'', ''the install isn''t idempotent''."'
     source: ./agent-skills
     source_revision: local
     scope: project
 assets:
-  mcp::./agent-skills::exa.json:
+  mcp::v3|14:./agent-skills|8:exa.json:
     kind: mcp
     name: exa.json
     hash: c56e84148f520efd573a149bb29badbada5671e3e8777896216060622776301a
     source: ./agent-skills
-    destination: exa
+    destination: v3|1|3:exa
     source_revision: local
+source_selectors:
+  mcp::v3|14:./agent-skills|8:exa.json: v2|base=26:v1|kind=mcp|selection=name|scope=project|targets=2|29:.codex/config.toml@codex-toml26:.mcp.json@mcp-servers-json
+  skill::v3|14:./agent-skills|13:env-stabilize: v2|base=42:v1|kind=skill|sub-dir=-|selection=wildcard|scope=project|targets=3|28:.agents/skills/env-stabilize28:.claude/skills/env-stabilize27:.codex/skills/env-stabilize
+  skill::v3|14:./agent-skills|15:agent-env-codex: v2|base=42:v1|kind=skill|sub-dir=-|selection=wildcard|scope=project|targets=3|30:.agents/skills/agent-env-codex30:.claude/skills/agent-env-codex29:.codex/skills/agent-env-codex
+  skill::v3|14:./agent-skills|16:agent-env-config: v2|base=42:v1|kind=skill|sub-dir=-|selection=wildcard|scope=project|targets=3|31:.agents/skills/agent-env-config31:.claude/skills/agent-env-config30:.codex/skills/agent-env-config
+  skill::v3|14:./agent-skills|20:codedb-config-tables: v2|base=42:v1|kind=skill|sub-dir=-|selection=wildcard|scope=project|targets=3|35:.agents/skills/codedb-config-tables35:.claude/skills/codedb-config-tables34:.codex/skills/codedb-config-tables
+  skill::v3|14:./agent-skills|21:env-toolchain-install: v2|base=42:v1|kind=skill|sub-dir=-|selection=wildcard|scope=project|targets=3|36:.agents/skills/env-toolchain-install36:.claude/skills/env-toolchain-install35:.codex/skills/env-toolchain-install
+installed_outputs:
+  36:mcp::v3|14:./agent-skills|8:exa.json|18:.codex/config.toml|10:codex-toml|3:exa:
+    asset_id: mcp::v3|14:./agent-skills|8:exa.json
+    destination: .codex/config.toml
+    format: codex-toml
+    unit: exa
+    hash: 37034b1fa1f97f451ac8f1d172dd3408c896067e3f9223630131375d229b57d3
+  36:mcp::v3|14:./agent-skills|8:exa.json|9:.mcp.json|16:mcp-servers-json|3:exa:
+    asset_id: mcp::v3|14:./agent-skills|8:exa.json
+    destination: .mcp.json
+    format: mcp-servers-json
+    unit: exa
+    hash: c77701680a1f4632ca1c9eed0ed42da889d6516593f45c023cbaf79ba3fd6ae4
+  44:skill::v3|14:./agent-skills|13:env-stabilize|27:.codex/skills/env-stabilize|10:skill-tree|4:tree:
+    asset_id: skill::v3|14:./agent-skills|13:env-stabilize
+    destination: .codex/skills/env-stabilize
+    format: skill-tree
+    unit: tree
+    hash: acd9f3cbba1c05ee78b9c4dac8e788667f0dc03eb845221579fcf141166a71d7
+  44:skill::v3|14:./agent-skills|13:env-stabilize|28:.agents/skills/env-stabilize|10:skill-tree|4:tree:
+    asset_id: skill::v3|14:./agent-skills|13:env-stabilize
+    destination: .agents/skills/env-stabilize
+    format: skill-tree
+    unit: tree
+    hash: acd9f3cbba1c05ee78b9c4dac8e788667f0dc03eb845221579fcf141166a71d7
+  44:skill::v3|14:./agent-skills|13:env-stabilize|28:.claude/skills/env-stabilize|10:skill-tree|4:tree:
+    asset_id: skill::v3|14:./agent-skills|13:env-stabilize
+    destination: .claude/skills/env-stabilize
+    format: skill-tree
+    unit: tree
+    hash: acd9f3cbba1c05ee78b9c4dac8e788667f0dc03eb845221579fcf141166a71d7
+  46:skill::v3|14:./agent-skills|15:agent-env-codex|29:.codex/skills/agent-env-codex|10:skill-tree|4:tree:
+    asset_id: skill::v3|14:./agent-skills|15:agent-env-codex
+    destination: .codex/skills/agent-env-codex
+    format: skill-tree
+    unit: tree
+    hash: 4ea8430bb9148e01eef6d4d8433ebb15ba9866c2a141757ddaf1707a495bf184
+  46:skill::v3|14:./agent-skills|15:agent-env-codex|30:.agents/skills/agent-env-codex|10:skill-tree|4:tree:
+    asset_id: skill::v3|14:./agent-skills|15:agent-env-codex
+    destination: .agents/skills/agent-env-codex
+    format: skill-tree
+    unit: tree
+    hash: 4ea8430bb9148e01eef6d4d8433ebb15ba9866c2a141757ddaf1707a495bf184
+  46:skill::v3|14:./agent-skills|15:agent-env-codex|30:.claude/skills/agent-env-codex|10:skill-tree|4:tree:
+    asset_id: skill::v3|14:./agent-skills|15:agent-env-codex
+    destination: .claude/skills/agent-env-codex
+    format: skill-tree
+    unit: tree
+    hash: 4ea8430bb9148e01eef6d4d8433ebb15ba9866c2a141757ddaf1707a495bf184
+  47:skill::v3|14:./agent-skills|16:agent-env-config|30:.codex/skills/agent-env-config|10:skill-tree|4:tree:
+    asset_id: skill::v3|14:./agent-skills|16:agent-env-config
+    destination: .codex/skills/agent-env-config
+    format: skill-tree
+    unit: tree
+    hash: 1c4c698e421692c7682ebefcb7e02e97305057e90ae0fce9cb8b3a06021b152f
+  47:skill::v3|14:./agent-skills|16:agent-env-config|31:.agents/skills/agent-env-config|10:skill-tree|4:tree:
+    asset_id: skill::v3|14:./agent-skills|16:agent-env-config
+    destination: .agents/skills/agent-env-config
+    format: skill-tree
+    unit: tree
+    hash: 1c4c698e421692c7682ebefcb7e02e97305057e90ae0fce9cb8b3a06021b152f
+  47:skill::v3|14:./agent-skills|16:agent-env-config|31:.claude/skills/agent-env-config|10:skill-tree|4:tree:
+    asset_id: skill::v3|14:./agent-skills|16:agent-env-config
+    destination: .claude/skills/agent-env-config
+    format: skill-tree
+    unit: tree
+    hash: 1c4c698e421692c7682ebefcb7e02e97305057e90ae0fce9cb8b3a06021b152f
+  51:skill::v3|14:./agent-skills|20:codedb-config-tables|34:.codex/skills/codedb-config-tables|10:skill-tree|4:tree:
+    asset_id: skill::v3|14:./agent-skills|20:codedb-config-tables
+    destination: .codex/skills/codedb-config-tables
+    format: skill-tree
+    unit: tree
+    hash: 40417b259ed04caefde2f1a6cded9b5daecf4f55943b40a67d2fc1f27c2974cd
+  51:skill::v3|14:./agent-skills|20:codedb-config-tables|35:.agents/skills/codedb-config-tables|10:skill-tree|4:tree:
+    asset_id: skill::v3|14:./agent-skills|20:codedb-config-tables
+    destination: .agents/skills/codedb-config-tables
+    format: skill-tree
+    unit: tree
+    hash: 40417b259ed04caefde2f1a6cded9b5daecf4f55943b40a67d2fc1f27c2974cd
+  51:skill::v3|14:./agent-skills|20:codedb-config-tables|35:.claude/skills/codedb-config-tables|10:skill-tree|4:tree:
+    asset_id: skill::v3|14:./agent-skills|20:codedb-config-tables
+    destination: .claude/skills/codedb-config-tables
+    format: skill-tree
+    unit: tree
+    hash: 40417b259ed04caefde2f1a6cded9b5daecf4f55943b40a67d2fc1f27c2974cd
+  52:skill::v3|14:./agent-skills|21:env-toolchain-install|35:.codex/skills/env-toolchain-install|10:skill-tree|4:tree:
+    asset_id: skill::v3|14:./agent-skills|21:env-toolchain-install
+    destination: .codex/skills/env-toolchain-install
+    format: skill-tree
+    unit: tree
+    hash: 8320a7870746a248e896bc0f9d9caf0d188787acc7aef60e740d2c82dbdfc08b
+  52:skill::v3|14:./agent-skills|21:env-toolchain-install|36:.agents/skills/env-toolchain-install|10:skill-tree|4:tree:
+    asset_id: skill::v3|14:./agent-skills|21:env-toolchain-install
+    destination: .agents/skills/env-toolchain-install
+    format: skill-tree
+    unit: tree
+    hash: 8320a7870746a248e896bc0f9d9caf0d188787acc7aef60e740d2c82dbdfc08b
+  52:skill::v3|14:./agent-skills|21:env-toolchain-install|36:.claude/skills/env-toolchain-install|10:skill-tree|4:tree:
+    asset_id: skill::v3|14:./agent-skills|21:env-toolchain-install
+    destination: .claude/skills/env-toolchain-install
+    format: skill-tree
+    unit: tree
+    hash: 8320a7870746a248e896bc0f9d9caf0d188787acc7aef60e740d2c82dbdfc08b

@@ -8,8 +8,9 @@
 //! ## Credential hygiene
 //! The libSQL AUTH TOKEN is a credential and is therefore **never** read from the TOML file — only
 //! from `SECRETD_LIBSQL_AUTH_TOKEN`, or from a file named by `SECRETD_LIBSQL_AUTH_TOKEN_FILE` (which
-//! must be `0600` — a group/other-readable token file is refused, fail-closed). The CONFIG-layer
-//! token copy is held in a [`Zeroizing`] buffer and never logged (Debug redacts it); note the
+//! must be a current-user-owned regular file with exact mode `0600`; the leaf is opened no-follow
+//! and validated/read through one descriptor, fail-closed). The CONFIG-layer token copy is held in
+//! a [`Zeroizing`] buffer and never logged (Debug redacts it); note the
 //! downstream libSQL client takes a plain `String` (its public API) and keeps its own non-zeroized
 //! copy for the connection's lifetime — unavoidable without libSQL support.
 //!
@@ -25,6 +26,8 @@
 //! empty auth token is accepted for a loopback sqld (local/dev open auth); a token may still be
 //! supplied (e.g. a loopback terminator forwarding to an authenticated remote).
 
+use std::fs::File;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use anyhow::{anyhow, bail, Context};
@@ -466,36 +469,93 @@ fn parse_pubkey_hex(s: &str) -> Option<[u8; 32]> {
     Some(out)
 }
 
-/// Load the auth token from `SECRETD_LIBSQL_AUTH_TOKEN`, else from the `0600` file at
-/// `SECRETD_LIBSQL_AUTH_TOKEN_FILE`. A group/other-readable token file is refused (fail-closed).
+/// Load the auth token from `SECRETD_LIBSQL_AUTH_TOKEN`, else from the exact-`0600` file at
+/// `SECRETD_LIBSQL_AUTH_TOKEN_FILE`. The file is opened once without following the leaf, validated
+/// through that descriptor, and read from that same descriptor so a path swap cannot redirect the
+/// credential read.
 fn load_token() -> anyhow::Result<Option<Zeroizing<String>>> {
     if let Some(t) = env_nonempty(ENV_TOKEN) {
         return Ok(Some(Zeroizing::new(t)));
     }
     if let Some(p) = env_nonempty(ENV_TOKEN_FILE) {
         let path = PathBuf::from(p);
-        check_token_file_mode(&path)?;
-        let raw = std::fs::read_to_string(&path)
-            .with_context(|| format!("reading token file {}", path.display()))?;
-        return Ok(Some(Zeroizing::new(raw.trim().to_string())));
+        return read_token_file(&path).map(Some);
     }
     Ok(None)
 }
 
-/// Refuse a token file that is group/other-readable (mode & 0o077 != 0).
-fn check_token_file_mode(path: &Path) -> anyhow::Result<()> {
-    use std::os::unix::fs::PermissionsExt;
-    let meta =
-        std::fs::metadata(path).with_context(|| format!("stat token file {}", path.display()))?;
-    let mode = meta.permissions().mode();
-    if mode & 0o077 != 0 {
+fn validate_token_file_attributes(
+    path: &Path,
+    is_regular: bool,
+    owner_uid: u32,
+    mode: u32,
+    expected_uid: u32,
+) -> anyhow::Result<()> {
+    if !is_regular {
         bail!(
-            "token file {} is group/other-accessible (mode {:o}); chmod 0600 it",
+            "token file {} must be a current-user-owned regular file with exact mode 0600",
+            path.display()
+        );
+    }
+    if owner_uid != expected_uid {
+        bail!(
+            "token file {} must be owned by the current user (uid {expected_uid}); found uid {owner_uid}",
+            path.display()
+        );
+    }
+    if mode != 0o600 {
+        bail!(
+            "token file {} must have exact mode 0600; found {:04o}",
             path.display(),
-            mode & 0o7777
+            mode
         );
     }
     Ok(())
+}
+
+fn read_token_file(path: &Path) -> anyhow::Result<Zeroizing<String>> {
+    read_token_file_after_open(path, || {})
+}
+
+fn read_token_file_after_open(
+    path: &Path,
+    after_open: impl FnOnce(),
+) -> anyhow::Result<Zeroizing<String>> {
+    use rustix::fs::{open, Mode, OFlags};
+    use std::os::unix::fs::MetadataExt;
+
+    // NONBLOCK keeps an accidentally named FIFO or socket from hanging startup. It has no effect
+    // on regular-file reads. NOFOLLOW makes a leaf symlink fail at the open boundary.
+    let descriptor = open(
+        path,
+        OFlags::RDONLY | OFlags::CLOEXEC | OFlags::NOFOLLOW | OFlags::NONBLOCK,
+        Mode::empty(),
+    )
+    .map_err(std::io::Error::from)
+    .with_context(|| {
+        format!(
+            "opening token file {} without following symlinks",
+            path.display()
+        )
+    })?;
+    let mut file: File = descriptor.into();
+    let metadata = file
+        .metadata()
+        .with_context(|| format!("inspecting open token file {}", path.display()))?;
+    validate_token_file_attributes(
+        path,
+        metadata.is_file(),
+        metadata.uid(),
+        metadata.mode() & 0o7777,
+        rustix::process::geteuid().as_raw(),
+    )?;
+
+    after_open();
+
+    let mut raw = Zeroizing::new(String::new());
+    file.read_to_string(&mut raw)
+        .with_context(|| format!("reading open token file {}", path.display()))?;
+    Ok(Zeroizing::new(raw.trim().to_string()))
 }
 
 /// Pure, testable validation core: turn the (already env/file-merged) raw values into a validated
@@ -764,6 +824,123 @@ mod tests {
         let s = format!("{c:?}");
         assert!(s.contains("<redacted>"));
         assert!(!s.contains("super-secret"));
+    }
+
+    #[cfg(unix)]
+    fn token_test_dir(name: &str) -> TokenTestDir {
+        let path = std::env::temp_dir().join(format!(
+            "envctl-secretd-token-{name}-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .expect("system clock after epoch")
+                .as_nanos()
+        ));
+        std::fs::create_dir(&path).expect("create token test directory");
+        TokenTestDir(path)
+    }
+
+    #[cfg(unix)]
+    struct TokenTestDir(PathBuf);
+
+    #[cfg(unix)]
+    impl std::ops::Deref for TokenTestDir {
+        type Target = Path;
+
+        fn deref(&self) -> &Self::Target {
+            &self.0
+        }
+    }
+
+    #[cfg(unix)]
+    impl Drop for TokenTestDir {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    #[cfg(unix)]
+    fn write_token(path: &Path, contents: &str, mode: u32) {
+        use std::os::unix::fs::PermissionsExt;
+
+        if path.exists() {
+            std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o600))
+                .expect("make prior token fixture writable");
+        }
+        std::fs::write(path, contents).expect("write token fixture");
+        std::fs::set_permissions(path, std::fs::Permissions::from_mode(mode))
+            .expect("set token fixture mode");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn token_file_requires_regular_current_owner_exact_0600() {
+        use std::os::unix::fs::MetadataExt;
+
+        let dir = token_test_dir("identity");
+        let token = dir.join("client.jwt");
+        write_token(&token, "  signed-token\n", 0o600);
+        assert_eq!(
+            &*read_token_file(&token).expect("valid token"),
+            "signed-token"
+        );
+
+        for mode in [0o400, 0o200, 0o640, 0o660, 0o6000] {
+            write_token(&token, "signed-token", mode);
+            read_token_file(&token).expect_err("non-0600 mode must fail");
+        }
+
+        let metadata = std::fs::metadata(&token).expect("token metadata");
+        let wrong_uid = metadata.uid().wrapping_add(1);
+        let error = validate_token_file_attributes(&token, true, wrong_uid, 0o600, metadata.uid())
+            .expect_err("foreign owner must fail");
+        assert!(error.to_string().contains("current user"));
+
+        let directory = dir.join("not-a-file");
+        std::fs::create_dir(&directory).expect("create non-regular fixture");
+        let error = read_token_file(&directory).expect_err("directory token must fail");
+        assert!(error.to_string().contains("regular file"));
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn token_file_refuses_leaf_symlink_and_socket_without_blocking() {
+        use std::os::unix::fs::symlink;
+        use std::os::unix::net::UnixListener;
+
+        let dir = token_test_dir("types");
+        let target = dir.join("target.jwt");
+        let link = dir.join("link.jwt");
+        write_token(&target, "signed-token", 0o600);
+        symlink(&target, &link).expect("create token symlink");
+        assert!(read_token_file(&link).is_err(), "leaf symlink must fail");
+
+        let socket = dir.join("token.sock");
+        let _listener = UnixListener::bind(&socket).expect("bind non-regular fixture");
+        assert!(
+            read_token_file(&socket).is_err(),
+            "unix socket token must fail without blocking"
+        );
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn token_file_path_swap_reads_the_validated_open_descriptor() {
+        let dir = token_test_dir("swap");
+        let token = dir.join("client.jwt");
+        let replacement = dir.join("replacement.jwt");
+        let retired = dir.join("retired.jwt");
+        write_token(&token, "incumbent", 0o600);
+        write_token(&replacement, "replacement", 0o600);
+
+        let loaded = read_token_file_after_open(&token, || {
+            std::fs::rename(&token, &retired).expect("retire opened token path");
+            std::fs::rename(&replacement, &token).expect("replace token path");
+        })
+        .expect("read already-open token");
+
+        assert_eq!(&*loaded, "incumbent");
+        assert_eq!(std::fs::read_to_string(&token).unwrap(), "replacement");
     }
 
     #[test]

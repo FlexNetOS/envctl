@@ -21,6 +21,7 @@ tar = { workspace = true }
 # Inherits the workspace pin (default-features=false, rustls-tls→ring). The crate adds the
 # `blocking` client feature only — keeping the single ring-only rustls discipline intact.
 reqwest = { workspace = true, features = ["blocking"] }
+rustix = { workspace = true, features = ["fs"] }
 
 [dev-dependencies]
 serde_yaml = { workspace = true }

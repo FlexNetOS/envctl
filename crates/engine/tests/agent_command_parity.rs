@@ -347,7 +347,59 @@ fn c07_add_locked_without_no_sync_refused() {
     let err = engine
         .agent_add(spec, &s)
         .expect_err("--locked w/o --no-sync must error");
-    assert!(err.to_string().contains("--no-sync"), "locked rule: {err}");
+    let message = err.to_string();
+    assert!(message.contains("--no-sync"), "locked rule: {err}");
+    assert!(
+        message.contains("sync --apply"),
+        "v3 bootstrap guidance: {err}"
+    );
+    assert!(message.contains("commit"), "portable proof guidance: {err}");
+    assert!(
+        !message.contains("lock` + `sync --locked"),
+        "stale desired-equals-ownership guidance: {err}"
+    );
+}
+
+#[test]
+fn c08_remove_locked_without_no_sync_is_refused_before_config_write() {
+    let (engine, _proj, cfg) = project(
+        "scope: project\nskills:\n  - source: https://github.com/org/repo\n    skills: [alpha]\n",
+    );
+    let before = std::fs::read(&cfg).unwrap();
+    let mut spec = remove_spec("https://github.com/org/repo", &cfg);
+    spec.apply = true;
+    spec.lock_mode = AgentLockMode::Locked;
+    let (s, _rx) = sink();
+    let error = engine
+        .agent_remove(spec, &s)
+        .expect_err("locked remove must require no-sync");
+    assert!(error.to_string().contains("--no-sync"));
+    assert_eq!(std::fs::read(cfg).unwrap(), before);
+}
+
+#[cfg(unix)]
+#[test]
+fn c07_add_refuses_symlink_config_without_touching_target() {
+    use std::os::unix::fs::symlink;
+
+    let root = unique_dir("agent-edit-config-symlink");
+    let target = root.join("authoritative.yaml");
+    let link = root.join("agent-env.yaml");
+    let original = "scope: project\nskills: []\n";
+    std::fs::write(&target, original).unwrap();
+    symlink(&target, &link).unwrap();
+    let engine = Engine::detached();
+    let mut spec = add_spec("./pack", link.to_str().unwrap());
+    spec.apply = true;
+    spec.no_sync = true;
+    spec.no_verify = true;
+    let (s, _rx) = sink();
+    let error = engine
+        .agent_add(spec, &s)
+        .expect_err("symlink config write must fail closed");
+    assert!(error.to_string().contains("real regular file"));
+    assert_eq!(std::fs::read_to_string(target).unwrap(), original);
+    let _ = std::fs::remove_dir_all(root);
 }
 
 /// Contract: ledger C-07 — the `@<ref>` shorthand conflicts with `--ref`/`--branch` (ERR).
@@ -559,10 +611,76 @@ fn c09_lock_check_reports_drift_without_writing() {
     );
 }
 
-/// Contract: ledger C-09 — `--check` with `Locked` is a true zero-network audit: a satisfied
-/// lock diffs clean against itself (no re-resolve, empty drift, nothing written).
+/// Contract: ledger C-09 — `--check` with `Locked` is a true zero-network audit: local
+/// sources are re-hashed without fetching and missing sources fail closed. The lock remains
+/// byte-for-byte unchanged in both cases.
 #[test]
-fn c09_lock_check_locked_is_zero_network_clean() {
+fn c09_lock_check_locked_audits_local_content_and_missing_source() {
+    let source = unique_dir("envctl-agent-cmdparity-lock-source");
+    copy_tree(&pack_dir(), &source);
+    let pack = source;
+    let (engine, proj, cfg) = project(&skills_named_cfg(&pack, &["alpha"]));
+    let (s, _rx) = sink();
+    engine
+        .agent_lock(
+            AgentLockSpec {
+                config_path: Some(cfg.clone()),
+                scope_override: None,
+                check: false,
+                upgrade_only: Vec::new(),
+                lock_mode: AgentLockMode::Plain,
+            },
+            &s,
+        )
+        .expect("lock write");
+    let lock_path = proj.join("agent-env.lock");
+    let lock_before = std::fs::read_to_string(&lock_path).unwrap();
+
+    std::fs::write(
+        pack.join("alpha/SKILL.md"),
+        "---\nname: alpha\n---\nLOCKED DRIFT\n",
+    )
+    .unwrap();
+    let (s2, _rx2) = sink();
+    let checked = engine
+        .agent_lock(
+            AgentLockSpec {
+                config_path: Some(cfg.clone()),
+                scope_override: None,
+                check: true,
+                upgrade_only: Vec::new(),
+                lock_mode: AgentLockMode::Locked,
+            },
+            &s2,
+        )
+        .expect("locked --check");
+    assert!(
+        checked.drift.iter().any(|d| d.id.contains("alpha")),
+        "locked check must re-hash local content"
+    );
+    assert!(!checked.saved);
+    assert_eq!(std::fs::read_to_string(&lock_path).unwrap(), lock_before);
+
+    std::fs::remove_dir_all(&pack).unwrap();
+    let (s3, _rx3) = sink();
+    let err = engine
+        .agent_lock(
+            AgentLockSpec {
+                config_path: Some(cfg),
+                scope_override: None,
+                check: true,
+                upgrade_only: Vec::new(),
+                lock_mode: AgentLockMode::Locked,
+            },
+            &s3,
+        )
+        .expect_err("missing local source must fail closed");
+    assert!(err.to_string().contains("source"), "missing source: {err}");
+    assert_eq!(std::fs::read_to_string(&lock_path).unwrap(), lock_before);
+}
+
+#[test]
+fn c09_lock_check_locked_reports_config_add_remove_drift() {
     let pack = pack_dir();
     let (engine, proj, cfg) = project(&skills_named_cfg(&pack, &["alpha"]));
     let (s, _rx) = sink();
@@ -578,7 +696,10 @@ fn c09_lock_check_locked_is_zero_network_clean() {
             &s,
         )
         .expect("lock write");
-    // Remove the source entirely → a zero-network Locked check must still diff clean.
+    let lock_path = proj.join("agent-env.lock");
+    let lock_before = std::fs::read_to_string(&lock_path).unwrap();
+
+    std::fs::write(&cfg, skills_named_cfg(&pack, &["beta"])).unwrap();
     let (s2, _rx2) = sink();
     let checked = engine
         .agent_lock(
@@ -591,13 +712,110 @@ fn c09_lock_check_locked_is_zero_network_clean() {
             },
             &s2,
         )
-        .expect("locked --check");
+        .expect("locked config audit");
+    assert!(checked
+        .drift
+        .iter()
+        .any(|d| { d.status == "removed" && d.id.contains("alpha") }));
+    assert!(checked
+        .drift
+        .iter()
+        .any(|d| { d.status == "added" && d.id.contains("beta") }));
+    assert_eq!(std::fs::read_to_string(&lock_path).unwrap(), lock_before);
+}
+
+#[test]
+fn c09_lock_check_locked_remote_missing_pin_never_connects() {
+    // This host is a sentinel: the only accepted error is the local lock-satisfaction
+    // refusal below. A resolver/fetch error would prove the zero-network contract regressed.
+    let yaml = "agent: claude-code\nscope: project\nskills:\n  - source: https://network-sentinel.invalid/org/repo\n    ref: deadbeef\n    skills:\n      - alpha\n";
+    let (engine, _proj, cfg) = project(yaml);
+    let (s, _rx) = sink();
+    let err = engine
+        .agent_lock(
+            AgentLockSpec {
+                config_path: Some(cfg),
+                scope_override: None,
+                check: true,
+                upgrade_only: Vec::new(),
+                lock_mode: AgentLockMode::Locked,
+            },
+            &s,
+        )
+        .expect_err("remote source absent from lock must fail closed");
     assert!(
-        checked.drift.is_empty(),
-        "satisfied locked check diffs clean"
+        err.to_string().contains("not in the lock"),
+        "must fail from local lock validation before resolving/fetching: {err}"
     );
-    assert!(!checked.saved);
-    let _ = proj; // project root retained for symmetry.
+}
+
+#[test]
+fn c09_lock_check_locked_rejects_remote_extends_before_fetch() {
+    let yaml = "extends: https://network-sentinel.invalid/base.yaml\nagent: claude-code\nscope: project\nskills: []\n";
+    let (engine, _proj, cfg) = project(yaml);
+    let (s, _rx) = sink();
+    let err = engine
+        .agent_lock(
+            AgentLockSpec {
+                config_path: Some(cfg),
+                scope_override: None,
+                check: true,
+                upgrade_only: Vec::new(),
+                lock_mode: AgentLockMode::Locked,
+            },
+            &s,
+        )
+        .expect_err("locked check must reject remote extends locally");
+    let chain = format!("{err:#}");
+    assert!(
+        chain.contains("--locked forbids remote config fetch"),
+        "must refuse before HTTP: {chain}"
+    );
+}
+
+#[test]
+fn c09_v2_lock_write_refuses_without_destroying_sync_migration_evidence() {
+    let pack = pack_dir();
+    let (engine, project, cfg) = project(&skills_named_cfg(&pack, &["alpha"]));
+    let lock_path = project.join("agent-env.lock");
+    let legacy = format!(
+        "version: 2\nskills:\n  '{source}::alpha':\n    destination: .claude/skills/alpha\n    hash: legacy-v2-hash\n    skill: alpha\n    source: '{source}'\n    source_revision: local\n    scope: project\nassets: {{}}\n",
+        source = pack.display()
+    );
+    std::fs::write(&lock_path, &legacy).unwrap();
+
+    let (lock_sink, _lock_rx) = sink();
+    let error = engine
+        .agent_lock(
+            AgentLockSpec {
+                config_path: Some(cfg.clone()),
+                scope_override: None,
+                check: false,
+                upgrade_only: Vec::new(),
+                lock_mode: AgentLockMode::Plain,
+            },
+            &lock_sink,
+        )
+        .unwrap_err();
+    assert!(error.to_string().contains("agent sync --apply"), "{error}");
+    assert_eq!(std::fs::read_to_string(&lock_path).unwrap(), legacy);
+
+    let (sync_sink, _sync_rx) = sink();
+    let report = engine
+        .agent_sync(
+            AgentSyncSpec {
+                config_path: Some(cfg),
+                apply: true,
+                lock_mode: AgentLockMode::Plain,
+                ..Default::default()
+            },
+            &sync_sink,
+        )
+        .unwrap();
+    assert_eq!(report.summary.failed, 0, "{:#?}", report.actions);
+    let migrated = envctl_agent_env::lock::load(&lock_path).unwrap();
+    assert_eq!(migrated.version, envctl_agent_env::lock::LOCK_VERSION);
+    assert!(!migrated.installed_outputs.is_empty());
 }
 
 // =======================================================================================

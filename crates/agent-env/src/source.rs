@@ -823,13 +823,18 @@ pub fn materialize_source_with(
             }
             GitPin::Default => {
                 let (url, auth) = remote_repo_archive_branch(&parsed, "main");
-                fetch_extract(&url, &auth, stage, &src.source).or_else(|_| {
-                    let (url, auth) = remote_repo_archive_branch(&parsed, "master");
-                    fetch_extract(&url, &auth, stage, &src.source).map_err(|e2| {
-                        err(format!("{e2} (also tried branch `master` after `main`)"))
-                    })
-                })?;
-                "branch:main".into()
+                match fetch_extract(&url, &auth, stage, &src.source) {
+                    Ok(()) => "branch:main".into(),
+                    Err(main_error) => {
+                        let (url, auth) = remote_repo_archive_branch(&parsed, "master");
+                        fetch_extract(&url, &auth, stage, &src.source).map_err(|master_error| {
+                            err(format!(
+                                "default-branch archive fetch failed for both `main` ({main_error}) and `master` ({master_error})"
+                            ))
+                        })?;
+                        "branch:master".into()
+                    }
+                }
             }
         };
 
@@ -1579,7 +1584,7 @@ mod tests {
         let stage = temp_dir("agent-env-remote-stage");
         let materialized =
             materialize_source(&src, Path::new("/"), &stage).expect("materialize remote");
-        assert_eq!(materialized.source_revision, "branch:main");
+        assert_eq!(materialized.source_revision, "branch:master");
         assert!(materialized.cleanup_dir.is_some());
         let _ = fs::remove_dir_all(&stage);
     }
@@ -1589,8 +1594,8 @@ mod tests {
     /// fetch-and-stage step via `materialize_source_with` to drive the **exact** retry branch
     /// (`GitPin::Default` → fail `main`, succeed `master`) with no network: the mock errors on
     /// the `main` archive URL and stages a real skill tree for the `master` URL. Asserts both
-    /// branches were attempted in order and the kasetto behaviour holds — `source_revision`
-    /// stays `"branch:main"` even when `master` is what actually resolved.
+    /// branches were attempted in order and the exact resolved branch is recorded —
+    /// `source_revision` must be `"branch:master"` when `master` supplied the bytes.
     #[test]
     fn remote_materialize_main_to_master_fallback_offline() {
         let src = SourceSpec {
@@ -1621,7 +1626,7 @@ mod tests {
         let materialized = materialize_source_with(&fetch_extract, &src, Path::new("/"), &stage)
             .expect("offline main→master fallback");
 
-        assert_eq!(materialized.source_revision, "branch:main");
+        assert_eq!(materialized.source_revision, "branch:master");
         assert!(materialized.cleanup_dir.is_some());
         assert!(materialized.available.contains_key("demo-skill"));
 

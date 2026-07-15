@@ -25,7 +25,8 @@ export PATH="$fake_bin:$PATH"
 meta="$tmp/meta"
 home="$tmp/home"
 outside="$tmp/outside"
-mkdir -p "$meta/.local/bin" "$meta/usr/bin" "$meta/envctl/home" "$home" "$outside" "$home/.ssh" "$home/.aws" "$home/.cache" "$home/.cargo"
+mkdir -p "$meta/.local/bin" "$meta/usr/bin" "$meta/envctl/home" "$home/.local" "$outside" "$home/.ssh" "$home/.aws" "$home/.cache" "$home/.cargo"
+home_local_inode="$(stat -c '%d:%i:%F' "$home/.local")"
 printf '# managed gitconfig\n' >"$meta/envctl/home/.gitconfig"
 printf '# managed shell config\n' >"$meta/envctl/home/.zshrc"
 printf '# unmanaged shell config\n' >"$home/.zshrc"
@@ -45,14 +46,13 @@ if "$root/scripts/audit-meta-local-paths.sh" --meta-root "$meta" --real-home "$h
   echo "expected audit to fail before safe migration" >&2
   exit 1
 fi
-grep -q 'FAIL: .*\.local missing' "$tmp/pre.err"
 grep -q 'FAIL: .*\.local/bin/hf resolves outside META_ROOT' "$tmp/pre.err"
 grep -q 'FAIL: .*\.gitconfig resolves to' "$tmp/pre.err"
 
 "$root/scripts/audit-meta-local-paths.sh" --apply --meta-root "$meta" --real-home "$home" --envctl-home-source "$meta/envctl/home" >"$tmp/apply.out" 2>"$tmp/apply.err"
 "$root/scripts/audit-meta-local-paths.sh" --inventory "$tmp/inventory.tsv" --inventory-summary "$tmp/inventory-summary.tsv" --sensitive-state-report "$tmp/sensitive-state.tsv" --owner-supervised-sensitive-review-plan "$tmp/sensitive-review-plan.tsv" --meta-root "$meta" --real-home "$home" --envctl-home-source "$meta/envctl/home" >"$tmp/post.out" 2>"$tmp/post.err"
 
-test "$(readlink -f "$home/.local")" = "$meta/.local"
+test "$(stat -c '%d:%i:%F' "$home/.local")" = "$home_local_inode"
 test "$(readlink "$home/.gitconfig")" = "$meta/.gitconfig"
 test "$(readlink -f "$home/.gitconfig")" = "$meta/envctl/home/.gitconfig"
 test "$(readlink -f "$meta/.local/bin/hf")" = "$meta/usr/bin/hf"
@@ -66,7 +66,7 @@ grep -q 'dot_entries=9' "$tmp/post.out"
 
 head -n 1 "$tmp/inventory.tsv" | grep -qx $'dot_entry\ttype\tstate\ttarget_class\tcanonical_target\taction\tapply_safe'
 awk -F '\t' 'NF != 7 { print "bad inventory row: " $0 >"/dev/stderr"; bad=1 } END { exit bad }' "$tmp/inventory.tsv"
-grep -qx $'.local\tsymlink\tmeta-bridge\tbridge\t'"$meta"$'/.local\tensure-symlink\tyes' "$tmp/inventory.tsv"
+grep -qx $'.local\tdirectory\tyazelix-owned-state\treal-home-xdg\t'"$home"$'/.local\tpreserve-real-directory\tn/a' "$tmp/inventory.tsv"
 grep -qx $'.gitconfig\tsymlink\tmanaged-bridge\tmanaged-dotfile\t'"$meta"$'/.gitconfig\tbridge-canonical\tyes' "$tmp/inventory.tsv"
 grep -qx $'.zshrc\tfile\treal-home-state\tmanaged-dotfile\t'"$meta"$'/envctl/home/.zshrc\towner-supervised-bridge\tno' "$tmp/inventory.tsv"
 grep -qx $'.aws\tdirectory\treal-home-state\tsensitive\t\towner-supervised-vault-or-bridge\tno' "$tmp/inventory.tsv"
@@ -162,7 +162,7 @@ supervised_home="$tmp/supervised-home"
 mkdir -p "$supervised_meta/.local/cache/meta-cache" "$supervised_meta/envctl/home/.config/managed-app/type-conflict" "$supervised_home/.cache/tool" "$supervised_home/.config/app" "$supervised_home/.config/managed-app" "$supervised_home/.ssh"
 printf '# managed gitconfig\n' >"$supervised_meta/envctl/home/.gitconfig"
 ln -s "$supervised_meta/envctl/home/.gitconfig" "$supervised_meta/.gitconfig"
-ln -s "$supervised_meta/.local" "$supervised_home/.local"
+mkdir -p "$supervised_home/.local"
 ln -s "$supervised_meta/.gitconfig" "$supervised_home/.gitconfig"
 printf 'cache-index\n' >"$supervised_home/.cache/tool/index"
 printf 'meta-cache-index\n' >"$supervised_meta/.local/cache/meta-cache/index"
@@ -894,7 +894,7 @@ awk -F '\t' -v home="$supervised_home" '
 ' "$tmp/owner-supervised-plan.tsv"
 
 head -n 1 "$tmp/inventory-summary.tsv" | grep -qx $'target_class\ttotal\tapply_safe_yes\tapply_safe_no\tapply_safe_na\tactions'
-grep -qx $'bridge\t1\t1\t0\t0\tensure-symlink' "$tmp/inventory-summary.tsv"
+grep -qx $'real-home-xdg\t1\t0\t0\t1\tpreserve-real-directory' "$tmp/inventory-summary.tsv"
 grep -qx $'managed-dotfile\t2\t1\t1\t0\tbridge-canonical,owner-supervised-bridge' "$tmp/inventory-summary.tsv"
 grep -qx $'sensitive\t2\t0\t2\t0\towner-supervised-vault-or-bridge' "$tmp/inventory-summary.tsv"
 grep -qx $'toolchain-state\t1\t0\t1\t0\tcomponent-managed-toolchain-migration' "$tmp/inventory-summary.tsv"
@@ -1007,7 +1007,7 @@ mkdir -p \
 printf '# managed gitconfig\n' >"$mig_meta/envctl/home/.gitconfig"
 ln -s "$mig_meta/envctl/home/.gitconfig" "$mig_meta/.gitconfig"
 ln -s "$mig_meta/.gitconfig" "$mig_home/.gitconfig"
-ln -s "$mig_meta/.local" "$mig_home/.local"
+mkdir -p "$mig_home/.local"
 printf 'real-home cargo state\n' >"$mig_home/.cargo/config"
 printf 'ai-profile\n' >"$mig_home/.unknown-ai-sensitive/settings.toml"
 printf 'secret\n' >"$mig_home/.unknown-ai-sensitive/tokens/api-token"
@@ -1415,7 +1415,7 @@ clean_home="$tmp/clean-home"
 mkdir -p "$clean_meta/.local/bin" "$clean_meta/envctl/home" "$clean_home"
 printf '%s\n' '# managed gitconfig' >"$clean_meta/envctl/home/.gitconfig"
 ln -s "$clean_meta/envctl/home/.gitconfig" "$clean_meta/.gitconfig"
-ln -s "$clean_meta/.local" "$clean_home/.local"
+mkdir -p "$clean_home/.local"
 ln -s "$clean_meta/.gitconfig" "$clean_home/.gitconfig"
 "$root/scripts/audit-meta-local-paths.sh" --fail-migration-blockers --meta-root "$clean_meta" --real-home "$clean_home" --envctl-home-source "$clean_meta/envctl/home" >"$tmp/migration-blockers-clean.out" 2>"$tmp/migration-blockers-clean.err"
 grep -q 'meta-local audit: PASS' "$tmp/migration-blockers-clean.out"
@@ -1611,7 +1611,7 @@ mkdir -p "$pki_open_meta/.local" "$pki_open_meta/envctl/home" "$pki_open_home/.p
 printf '# managed gitconfig\n' >"$pki_open_meta/envctl/home/.gitconfig"
 ln -s "$pki_open_meta/envctl/home/.gitconfig" "$pki_open_meta/.gitconfig"
 ln -s "$pki_open_meta/.gitconfig" "$pki_open_home/.gitconfig"
-ln -s "$pki_open_meta/.local" "$pki_open_home/.local"
+mkdir -p "$pki_open_home/.local"
 printf 'key db fixture\n' >"$pki_open_home/.pki/nssdb/key4.db"
 if ENVCTL_TEST_LSOF_OPEN_SOURCE="$pki_open_home/.pki" "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .pki --meta-root "$pki_open_meta" --real-home "$pki_open_home" --envctl-home-source "$pki_open_meta/envctl/home" >"$tmp/migrate-pki-open.out" 2>"$tmp/migrate-pki-open.err"; then
   echo "expected --migrate-dot .pki to fail closed with open file handles" >&2
@@ -1644,7 +1644,7 @@ id = "cache-other"
 MANIFEST
 printf '# managed gitconfig\n' >"$cache_child_meta/envctl/home/.gitconfig"
 ln -s "$cache_child_meta/envctl/home/.gitconfig" "$cache_child_meta/.gitconfig"
-ln -s "$cache_child_meta/.local" "$cache_child_home/.local"
+mkdir -p "$cache_child_home/.local"
 ln -s "$cache_child_meta/.gitconfig" "$cache_child_home/.gitconfig"
 printf 'cache-index\n' >"$cache_child_home/.cache/tool/index"
 
@@ -1660,9 +1660,9 @@ cp "$root/scripts/audit-meta-local-paths.sh" "$cache_child_writer_repo/scripts/a
 cp "$root/scripts/audit-meta-local-paths.sh" "$cache_child_writer_wrong_repo/scripts/audit-meta-local-paths.sh"
 printf '# managed gitconfig\n' >"$cache_child_writer_meta/envctl/home/.gitconfig"
 ln -s "$cache_child_writer_meta/envctl/home/.gitconfig" "$cache_child_writer_meta/.gitconfig"
-ln -s "$cache_child_writer_meta/.local" "$cache_child_writer_home/.local"
+mkdir -p "$cache_child_writer_home/.local"
 ln -s "$cache_child_writer_meta/.gitconfig" "$cache_child_writer_home/.gitconfig"
-ln -s "$cache_child_writer_meta/.local" "$cache_child_writer_missing_home/.local"
+mkdir -p "$cache_child_writer_missing_home/.local"
 ln -s "$cache_child_writer_meta/.gitconfig" "$cache_child_writer_missing_home/.gitconfig"
 printf 'cache-index\n' >"$cache_child_writer_home/.cache/tool/index"
 cat >"$cache_child_writer_wrong_repo/manifest/components.d/cache-tool.toml" <<'MANIFEST'
@@ -1725,7 +1725,7 @@ repo_reviewed_cache_child_home="$tmp/repo-reviewed-cache-child-home"
 mkdir -p "$repo_reviewed_cache_child_meta/.local" "$repo_reviewed_cache_child_meta/envctl/home" "$repo_reviewed_cache_child_home/.cache/.wasm-pack"
 printf '# managed gitconfig\n' >"$repo_reviewed_cache_child_meta/envctl/home/.gitconfig"
 ln -s "$repo_reviewed_cache_child_meta/envctl/home/.gitconfig" "$repo_reviewed_cache_child_meta/.gitconfig"
-ln -s "$repo_reviewed_cache_child_meta/.local" "$repo_reviewed_cache_child_home/.local"
+mkdir -p "$repo_reviewed_cache_child_home/.local"
 ln -s "$repo_reviewed_cache_child_meta/.gitconfig" "$repo_reviewed_cache_child_home/.gitconfig"
 printf 'wasm-pack-cache-index\n' >"$repo_reviewed_cache_child_home/.cache/.wasm-pack/index"
 "$root/scripts/audit-meta-local-paths.sh" --migrate-cache-child .wasm-pack --meta-root "$repo_reviewed_cache_child_meta" --real-home "$repo_reviewed_cache_child_home" --envctl-home-source "$repo_reviewed_cache_child_meta/envctl/home" >"$tmp/repo-reviewed-cache-child-wasm-pack-dry.out" 2>"$tmp/repo-reviewed-cache-child-wasm-pack-dry.err"
@@ -1773,7 +1773,7 @@ cache_child_missing_manifest_home="$tmp/cache-child-missing-manifest-home"
 mkdir -p "$cache_child_missing_manifest_meta/.local" "$cache_child_missing_manifest_meta/envctl/home" "$cache_child_missing_manifest_home/.cache/tool"
 printf '# managed gitconfig\n' >"$cache_child_missing_manifest_meta/envctl/home/.gitconfig"
 ln -s "$cache_child_missing_manifest_meta/envctl/home/.gitconfig" "$cache_child_missing_manifest_meta/.gitconfig"
-ln -s "$cache_child_missing_manifest_meta/.local" "$cache_child_missing_manifest_home/.local"
+mkdir -p "$cache_child_missing_manifest_home/.local"
 ln -s "$cache_child_missing_manifest_meta/.gitconfig" "$cache_child_missing_manifest_home/.gitconfig"
 printf 'cache-index\n' >"$cache_child_missing_manifest_home/.cache/tool/index"
 if (
@@ -1792,7 +1792,7 @@ cache_child_invalid_manifest_home="$tmp/cache-child-invalid-manifest-home"
 mkdir -p "$cache_child_invalid_manifest_meta/.local" "$cache_child_invalid_manifest_meta/envctl/home" "$cache_child_invalid_manifest_home/.cache/tool"
 printf '# managed gitconfig\n' >"$cache_child_invalid_manifest_meta/envctl/home/.gitconfig"
 ln -s "$cache_child_invalid_manifest_meta/envctl/home/.gitconfig" "$cache_child_invalid_manifest_meta/.gitconfig"
-ln -s "$cache_child_invalid_manifest_meta/.local" "$cache_child_invalid_manifest_home/.local"
+mkdir -p "$cache_child_invalid_manifest_home/.local"
 ln -s "$cache_child_invalid_manifest_meta/.gitconfig" "$cache_child_invalid_manifest_home/.gitconfig"
 printf 'cache-index\n' >"$cache_child_invalid_manifest_home/.cache/tool/index"
 if (
@@ -1811,7 +1811,7 @@ cache_child_open_home="$tmp/cache-child-open-home"
 mkdir -p "$cache_child_open_meta/.local" "$cache_child_open_meta/envctl/home" "$cache_child_open_home/.cache/tool"
 printf '# managed gitconfig\n' >"$cache_child_open_meta/envctl/home/.gitconfig"
 ln -s "$cache_child_open_meta/envctl/home/.gitconfig" "$cache_child_open_meta/.gitconfig"
-ln -s "$cache_child_open_meta/.local" "$cache_child_open_home/.local"
+mkdir -p "$cache_child_open_home/.local"
 ln -s "$cache_child_open_meta/.gitconfig" "$cache_child_open_home/.gitconfig"
 printf 'cache-index\n' >"$cache_child_open_home/.cache/tool/index"
 if (
@@ -1831,7 +1831,7 @@ cache_child_collision_home="$tmp/cache-child-collision-home"
 mkdir -p "$cache_child_collision_meta/.local/cache/tool" "$cache_child_collision_meta/envctl/home" "$cache_child_collision_home/.cache/tool"
 printf '# managed gitconfig\n' >"$cache_child_collision_meta/envctl/home/.gitconfig"
 ln -s "$cache_child_collision_meta/envctl/home/.gitconfig" "$cache_child_collision_meta/.gitconfig"
-ln -s "$cache_child_collision_meta/.local" "$cache_child_collision_home/.local"
+mkdir -p "$cache_child_collision_home/.local"
 ln -s "$cache_child_collision_meta/.gitconfig" "$cache_child_collision_home/.gitconfig"
 printf 'source-cache\n' >"$cache_child_collision_home/.cache/tool/index"
 printf 'target-cache\n' >"$cache_child_collision_meta/.local/cache/tool/index"
@@ -1876,7 +1876,7 @@ mkdir -p "$config_bridge_meta/.local" "$config_bridge_meta/envctl/home/.config/m
 printf '# managed gitconfig\n' >"$config_bridge_meta/envctl/home/.gitconfig"
 printf 'managed config\n' >"$config_bridge_meta/envctl/home/.config/managed-app/config.toml"
 ln -s "$config_bridge_meta/envctl/home/.gitconfig" "$config_bridge_meta/.gitconfig"
-ln -s "$config_bridge_meta/.local" "$config_bridge_home/.local"
+mkdir -p "$config_bridge_home/.local"
 ln -s "$config_bridge_meta/.gitconfig" "$config_bridge_home/.gitconfig"
 
 "$root/scripts/audit-meta-local-paths.sh" --bridge-managed-config-child managed-app --meta-root "$config_bridge_meta" --real-home "$config_bridge_home" --envctl-home-source "$config_bridge_meta/envctl/home" >"$tmp/config-bridge-dry.out" 2>"$tmp/config-bridge-dry.err"
@@ -1901,7 +1901,7 @@ mkdir -p "$config_bridge_external_meta/.local" "$config_bridge_external_meta/env
 printf '# managed gitconfig\n' >"$config_bridge_external_meta/envctl/home/.gitconfig"
 printf 'managed config\n' >"$config_bridge_external_meta/envctl/home/.config/managed-app/config.toml"
 ln -s "$config_bridge_external_meta/envctl/home/.gitconfig" "$config_bridge_external_meta/.gitconfig"
-ln -s "$config_bridge_external_meta/.local" "$config_bridge_external_home/.local"
+mkdir -p "$config_bridge_external_home/.local"
 ln -s "$config_bridge_external_meta/.gitconfig" "$config_bridge_external_home/.gitconfig"
 ln -s "$outside/hf" "$config_bridge_external_home/.config/managed-app"
 if "$root/scripts/audit-meta-local-paths.sh" --bridge-managed-config-child managed-app --meta-root "$config_bridge_external_meta" --real-home "$config_bridge_external_home" --envctl-home-source "$config_bridge_external_meta/envctl/home" >"$tmp/config-bridge-external.out" 2>"$tmp/config-bridge-external.err"; then
@@ -1917,7 +1917,7 @@ printf '# managed gitconfig\n' >"$config_bridge_existing_meta/envctl/home/.gitco
 printf 'managed config\n' >"$config_bridge_existing_meta/envctl/home/.config/managed-app/config.toml"
 printf 'real config\n' >"$config_bridge_existing_home/.config/managed-app/config.toml"
 ln -s "$config_bridge_existing_meta/envctl/home/.gitconfig" "$config_bridge_existing_meta/.gitconfig"
-ln -s "$config_bridge_existing_meta/.local" "$config_bridge_existing_home/.local"
+mkdir -p "$config_bridge_existing_home/.local"
 ln -s "$config_bridge_existing_meta/.gitconfig" "$config_bridge_existing_home/.gitconfig"
 "$root/scripts/audit-meta-local-paths.sh" --bridge-managed-config-child managed-app --meta-root "$config_bridge_existing_meta" --real-home "$config_bridge_existing_home" --envctl-home-source "$config_bridge_existing_meta/envctl/home" >"$tmp/config-bridge-existing-dry.out" 2>"$tmp/config-bridge-existing-dry.err"
 grep -q 'DRY-RUN: would refuse automatic managed config-child bridge because source .* already exists; owner-reviewed merge/removal required before bridge' "$tmp/config-bridge-existing-dry.out"
@@ -1971,7 +1971,7 @@ printf 'managed-only\n' >"$managed_config_deep_meta/envctl/home/.config/diff-app
 printf 'real-only\n' >"$managed_config_deep_home/.config/diff-app/real-only.txt"
 printf 'managed file\n' >"$managed_config_deep_meta/envctl/home/.config/diff-app/type-conflict"
 ln -s "$managed_config_deep_meta/envctl/home/.gitconfig" "$managed_config_deep_meta/.gitconfig"
-ln -s "$managed_config_deep_meta/.local" "$managed_config_deep_home/.local"
+mkdir -p "$managed_config_deep_home/.local"
 ln -s "$managed_config_deep_meta/.gitconfig" "$managed_config_deep_home/.gitconfig"
 "$root/scripts/audit-meta-local-paths.sh" --owner-supervised-managed-config-child-deep-status "$tmp/managed-config-deep-status.tsv" --meta-root "$managed_config_deep_meta" --real-home "$managed_config_deep_home" --envctl-home-source "$managed_config_deep_meta/envctl/home" >"$tmp/managed-config-deep-status.out" 2>"$tmp/managed-config-deep-status.err"
 head -n 1 "$tmp/managed-config-deep-status.tsv" | grep -qx $'dot_entry\tchild_name\treal_path\tmanaged_source\treal_type\tmanaged_type\tdeep_identical\tsupervision\tnext_action\tapply_command'
@@ -2058,7 +2058,7 @@ printf '# managed gitconfig\n' >"$config_identical_meta/envctl/home/.gitconfig"
 printf 'unit\n' >"$config_identical_meta/envctl/home/.config/systemd/user/envctl.service"
 printf 'unit\n' >"$config_identical_home/.config/systemd/user/envctl.service"
 ln -s "$config_identical_meta/envctl/home/.gitconfig" "$config_identical_meta/.gitconfig"
-ln -s "$config_identical_meta/.local" "$config_identical_home/.local"
+mkdir -p "$config_identical_home/.local"
 ln -s "$config_identical_meta/.gitconfig" "$config_identical_home/.gitconfig"
 
 "$root/scripts/audit-meta-local-paths.sh" --bridge-identical-managed-config-child systemd --meta-root "$config_identical_meta" --real-home "$config_identical_home" --envctl-home-source "$config_identical_meta/envctl/home" >"$tmp/config-identical-bridge-dry.out" 2>"$tmp/config-identical-bridge-dry.err"
@@ -2093,7 +2093,7 @@ mkdir -p "$config_identical_missing_meta/.local" "$config_identical_missing_meta
 printf '# managed gitconfig\n' >"$config_identical_missing_meta/envctl/home/.gitconfig"
 printf 'managed config\n' >"$config_identical_missing_meta/envctl/home/.config/managed-app/config.toml"
 ln -s "$config_identical_missing_meta/envctl/home/.gitconfig" "$config_identical_missing_meta/.gitconfig"
-ln -s "$config_identical_missing_meta/.local" "$config_identical_missing_home/.local"
+mkdir -p "$config_identical_missing_home/.local"
 ln -s "$config_identical_missing_meta/.gitconfig" "$config_identical_missing_home/.gitconfig"
 if "$root/scripts/audit-meta-local-paths.sh" --bridge-identical-managed-config-child managed-app --meta-root "$config_identical_missing_meta" --real-home "$config_identical_missing_home" --envctl-home-source "$config_identical_missing_meta/envctl/home" >"$tmp/config-identical-missing.out" 2>"$tmp/config-identical-missing.err"; then
   echo "expected --bridge-identical-managed-config-child to reject missing real-home sources" >&2
@@ -2108,7 +2108,7 @@ printf '# managed gitconfig\n' >"$config_identical_diff_meta/envctl/home/.gitcon
 printf 'managed config\n' >"$config_identical_diff_meta/envctl/home/.config/managed-app/config.toml"
 printf 'real config\n' >"$config_identical_diff_home/.config/managed-app/config.toml"
 ln -s "$config_identical_diff_meta/envctl/home/.gitconfig" "$config_identical_diff_meta/.gitconfig"
-ln -s "$config_identical_diff_meta/.local" "$config_identical_diff_home/.local"
+mkdir -p "$config_identical_diff_home/.local"
 ln -s "$config_identical_diff_meta/.gitconfig" "$config_identical_diff_home/.gitconfig"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --bridge-identical-managed-config-child managed-app --meta-root "$config_identical_diff_meta" --real-home "$config_identical_diff_home" --envctl-home-source "$config_identical_diff_meta/envctl/home" >"$tmp/config-identical-diff.out" 2>"$tmp/config-identical-diff.err"; then
   echo "expected --bridge-identical-managed-config-child to reject differing trees" >&2
@@ -2286,7 +2286,7 @@ mkdir -p "$gphoto_bad_meta/.local" "$gphoto_bad_meta/envctl/home" "$gphoto_bad_h
 printf '# managed gitconfig\n' >"$gphoto_bad_meta/envctl/home/.gitconfig"
 ln -s "$gphoto_bad_meta/envctl/home/.gitconfig" "$gphoto_bad_meta/.gitconfig"
 ln -s "$gphoto_bad_meta/.gitconfig" "$gphoto_bad_home/.gitconfig"
-ln -s "$gphoto_bad_meta/.local" "$gphoto_bad_home/.local"
+mkdir -p "$gphoto_bad_home/.local"
 printf 'not a directory\n' >"$gphoto_bad_home/.gphoto"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .gphoto --meta-root "$gphoto_bad_meta" --real-home "$gphoto_bad_home" --envctl-home-source "$gphoto_bad_meta/envctl/home" >"$tmp/migrate-gphoto-file.out" 2>"$tmp/migrate-gphoto-file.err"; then
   echo "expected --migrate-dot .gphoto to fail closed for non-directory source" >&2
@@ -2302,7 +2302,7 @@ mkdir -p "$vscode_shared_bad_meta/.local" "$vscode_shared_bad_meta/envctl/home" 
 printf '# managed gitconfig\n' >"$vscode_shared_bad_meta/envctl/home/.gitconfig"
 ln -s "$vscode_shared_bad_meta/envctl/home/.gitconfig" "$vscode_shared_bad_meta/.gitconfig"
 ln -s "$vscode_shared_bad_meta/.gitconfig" "$vscode_shared_bad_home/.gitconfig"
-ln -s "$vscode_shared_bad_meta/.local" "$vscode_shared_bad_home/.local"
+mkdir -p "$vscode_shared_bad_home/.local"
 printf 'not a directory\n' >"$vscode_shared_bad_home/.vscode-shared"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .vscode-shared --meta-root "$vscode_shared_bad_meta" --real-home "$vscode_shared_bad_home" --envctl-home-source "$vscode_shared_bad_meta/envctl/home" >"$tmp/migrate-vscode-shared-file.out" 2>"$tmp/migrate-vscode-shared-file.err"; then
   echo "expected --migrate-dot .vscode-shared to fail closed for non-directory source" >&2
@@ -2318,7 +2318,7 @@ mkdir -p "$ai_bad_meta/.local" "$ai_bad_meta/envctl/home" "$ai_bad_home"
 printf '# managed gitconfig\n' >"$ai_bad_meta/envctl/home/.gitconfig"
 ln -s "$ai_bad_meta/envctl/home/.gitconfig" "$ai_bad_meta/.gitconfig"
 ln -s "$ai_bad_meta/.gitconfig" "$ai_bad_home/.gitconfig"
-ln -s "$ai_bad_meta/.local" "$ai_bad_home/.local"
+mkdir -p "$ai_bad_home/.local"
 printf 'not a directory\n' >"$ai_bad_home/.ai"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .ai --meta-root "$ai_bad_meta" --real-home "$ai_bad_home" --envctl-home-source "$ai_bad_meta/envctl/home" >"$tmp/migrate-ai-file.out" 2>"$tmp/migrate-ai-file.err"; then
   echo "expected --migrate-dot .ai to fail closed for non-directory source" >&2
@@ -2334,7 +2334,7 @@ mkdir -p "$jetbrains_bad_meta/.local" "$jetbrains_bad_meta/envctl/home" "$jetbra
 printf '# managed gitconfig\n' >"$jetbrains_bad_meta/envctl/home/.gitconfig"
 ln -s "$jetbrains_bad_meta/envctl/home/.gitconfig" "$jetbrains_bad_meta/.gitconfig"
 ln -s "$jetbrains_bad_meta/.gitconfig" "$jetbrains_bad_home/.gitconfig"
-ln -s "$jetbrains_bad_meta/.local" "$jetbrains_bad_home/.local"
+mkdir -p "$jetbrains_bad_home/.local"
 printf 'not a directory\n' >"$jetbrains_bad_home/.jetbrains"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .jetbrains --meta-root "$jetbrains_bad_meta" --real-home "$jetbrains_bad_home" --envctl-home-source "$jetbrains_bad_meta/envctl/home" >"$tmp/migrate-jetbrains-file.out" 2>"$tmp/migrate-jetbrains-file.err"; then
   echo "expected --migrate-dot .jetbrains to fail closed for non-directory source" >&2
@@ -2350,7 +2350,7 @@ mkdir -p "$meta_bad_meta/.local" "$meta_bad_meta/envctl/home" "$meta_bad_home"
 printf '# managed gitconfig\n' >"$meta_bad_meta/envctl/home/.gitconfig"
 ln -s "$meta_bad_meta/envctl/home/.gitconfig" "$meta_bad_meta/.gitconfig"
 ln -s "$meta_bad_meta/.gitconfig" "$meta_bad_home/.gitconfig"
-ln -s "$meta_bad_meta/.local" "$meta_bad_home/.local"
+mkdir -p "$meta_bad_home/.local"
 printf 'not a directory\n' >"$meta_bad_home/.meta"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .meta --meta-root "$meta_bad_meta" --real-home "$meta_bad_home" --envctl-home-source "$meta_bad_meta/envctl/home" >"$tmp/migrate-meta-file.out" 2>"$tmp/migrate-meta-file.err"; then
   echo "expected --migrate-dot .meta to fail closed for non-directory source" >&2
@@ -2366,7 +2366,7 @@ mkdir -p "$java_bad_meta/.local" "$java_bad_meta/envctl/home" "$java_bad_home"
 printf '# managed gitconfig\n' >"$java_bad_meta/envctl/home/.gitconfig"
 ln -s "$java_bad_meta/envctl/home/.gitconfig" "$java_bad_meta/.gitconfig"
 ln -s "$java_bad_meta/.gitconfig" "$java_bad_home/.gitconfig"
-ln -s "$java_bad_meta/.local" "$java_bad_home/.local"
+mkdir -p "$java_bad_home/.local"
 printf 'not a directory\n' >"$java_bad_home/.java"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .java --meta-root "$java_bad_meta" --real-home "$java_bad_home" --envctl-home-source "$java_bad_meta/envctl/home" >"$tmp/migrate-java-file.out" 2>"$tmp/migrate-java-file.err"; then
   echo "expected --migrate-dot .java to fail closed for non-directory source" >&2
@@ -2382,7 +2382,7 @@ mkdir -p "$pi_bad_meta/.local" "$pi_bad_meta/envctl/home" "$pi_bad_home"
 printf '# managed gitconfig\n' >"$pi_bad_meta/envctl/home/.gitconfig"
 ln -s "$pi_bad_meta/envctl/home/.gitconfig" "$pi_bad_meta/.gitconfig"
 ln -s "$pi_bad_meta/.gitconfig" "$pi_bad_home/.gitconfig"
-ln -s "$pi_bad_meta/.local" "$pi_bad_home/.local"
+mkdir -p "$pi_bad_home/.local"
 printf 'not a directory\n' >"$pi_bad_home/.pi"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .pi --meta-root "$pi_bad_meta" --real-home "$pi_bad_home" --envctl-home-source "$pi_bad_meta/envctl/home" >"$tmp/migrate-pi-file.out" 2>"$tmp/migrate-pi-file.err"; then
   echo "expected --migrate-dot .pi to fail closed for non-directory source" >&2
@@ -2398,7 +2398,7 @@ mkdir -p "$n8n_bad_meta/.local" "$n8n_bad_meta/envctl/home" "$n8n_bad_home"
 printf '# managed gitconfig\n' >"$n8n_bad_meta/envctl/home/.gitconfig"
 ln -s "$n8n_bad_meta/envctl/home/.gitconfig" "$n8n_bad_meta/.gitconfig"
 ln -s "$n8n_bad_meta/.gitconfig" "$n8n_bad_home/.gitconfig"
-ln -s "$n8n_bad_meta/.local" "$n8n_bad_home/.local"
+mkdir -p "$n8n_bad_home/.local"
 printf 'not a directory\n' >"$n8n_bad_home/.n8n"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .n8n --meta-root "$n8n_bad_meta" --real-home "$n8n_bad_home" --envctl-home-source "$n8n_bad_meta/envctl/home" >"$tmp/migrate-n8n-file.out" 2>"$tmp/migrate-n8n-file.err"; then
   echo "expected --migrate-dot .n8n to fail closed for non-directory source" >&2
@@ -2414,7 +2414,7 @@ mkdir -p "$n8n_claude_bridge_bad_meta/.local" "$n8n_claude_bridge_bad_meta/envct
 printf '# managed gitconfig\n' >"$n8n_claude_bridge_bad_meta/envctl/home/.gitconfig"
 ln -s "$n8n_claude_bridge_bad_meta/envctl/home/.gitconfig" "$n8n_claude_bridge_bad_meta/.gitconfig"
 ln -s "$n8n_claude_bridge_bad_meta/.gitconfig" "$n8n_claude_bridge_bad_home/.gitconfig"
-ln -s "$n8n_claude_bridge_bad_meta/.local" "$n8n_claude_bridge_bad_home/.local"
+mkdir -p "$n8n_claude_bridge_bad_home/.local"
 printf 'not a directory\n' >"$n8n_claude_bridge_bad_home/.n8n-claude-bridge"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .n8n-claude-bridge --meta-root "$n8n_claude_bridge_bad_meta" --real-home "$n8n_claude_bridge_bad_home" --envctl-home-source "$n8n_claude_bridge_bad_meta/envctl/home" >"$tmp/migrate-n8n-claude-bridge-file.out" 2>"$tmp/migrate-n8n-claude-bridge-file.err"; then
   echo "expected --migrate-dot .n8n-claude-bridge to fail closed for non-directory source" >&2
@@ -2430,7 +2430,7 @@ mkdir -p "$pki_bad_meta/.local" "$pki_bad_meta/envctl/home" "$pki_bad_home"
 printf '# managed gitconfig\n' >"$pki_bad_meta/envctl/home/.gitconfig"
 ln -s "$pki_bad_meta/envctl/home/.gitconfig" "$pki_bad_meta/.gitconfig"
 ln -s "$pki_bad_meta/.gitconfig" "$pki_bad_home/.gitconfig"
-ln -s "$pki_bad_meta/.local" "$pki_bad_home/.local"
+mkdir -p "$pki_bad_home/.local"
 printf 'not a directory\n' >"$pki_bad_home/.pki"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .pki --meta-root "$pki_bad_meta" --real-home "$pki_bad_home" --envctl-home-source "$pki_bad_meta/envctl/home" >"$tmp/migrate-pki-file.out" 2>"$tmp/migrate-pki-file.err"; then
   echo "expected --migrate-dot .pki to fail closed for non-directory source" >&2
@@ -2446,7 +2446,7 @@ mkdir -p "$forge_bad_meta/.local" "$forge_bad_meta/envctl/home" "$forge_bad_home
 printf '# managed gitconfig\n' >"$forge_bad_meta/envctl/home/.gitconfig"
 ln -s "$forge_bad_meta/envctl/home/.gitconfig" "$forge_bad_meta/.gitconfig"
 ln -s "$forge_bad_meta/.gitconfig" "$forge_bad_home/.gitconfig"
-ln -s "$forge_bad_meta/.local" "$forge_bad_home/.local"
+mkdir -p "$forge_bad_home/.local"
 printf 'not a directory\n' >"$forge_bad_home/.forge"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .forge --meta-root "$forge_bad_meta" --real-home "$forge_bad_home" --envctl-home-source "$forge_bad_meta/envctl/home" >"$tmp/migrate-forge-file.out" 2>"$tmp/migrate-forge-file.err"; then
   echo "expected --migrate-dot .forge to fail closed for non-directory source" >&2
@@ -2462,7 +2462,7 @@ mkdir -p "$ruvector_bad_meta/.local" "$ruvector_bad_meta/envctl/home" "$ruvector
 printf '# managed gitconfig\n' >"$ruvector_bad_meta/envctl/home/.gitconfig"
 ln -s "$ruvector_bad_meta/envctl/home/.gitconfig" "$ruvector_bad_meta/.gitconfig"
 ln -s "$ruvector_bad_meta/.gitconfig" "$ruvector_bad_home/.gitconfig"
-ln -s "$ruvector_bad_meta/.local" "$ruvector_bad_home/.local"
+mkdir -p "$ruvector_bad_home/.local"
 printf 'not a directory\n' >"$ruvector_bad_home/.ruvector"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .ruvector --meta-root "$ruvector_bad_meta" --real-home "$ruvector_bad_home" --envctl-home-source "$ruvector_bad_meta/envctl/home" >"$tmp/migrate-ruvector-file.out" 2>"$tmp/migrate-ruvector-file.err"; then
   echo "expected --migrate-dot .ruvector to fail closed for non-directory source" >&2
@@ -2478,7 +2478,7 @@ mkdir -p "$repowire_bad_meta/.local" "$repowire_bad_meta/envctl/home" "$repowire
 printf '# managed gitconfig\n' >"$repowire_bad_meta/envctl/home/.gitconfig"
 ln -s "$repowire_bad_meta/envctl/home/.gitconfig" "$repowire_bad_meta/.gitconfig"
 ln -s "$repowire_bad_meta/.gitconfig" "$repowire_bad_home/.gitconfig"
-ln -s "$repowire_bad_meta/.local" "$repowire_bad_home/.local"
+mkdir -p "$repowire_bad_home/.local"
 printf 'not a directory\n' >"$repowire_bad_home/.repowire"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .repowire --meta-root "$repowire_bad_meta" --real-home "$repowire_bad_home" --envctl-home-source "$repowire_bad_meta/envctl/home" >"$tmp/migrate-repowire-file.out" 2>"$tmp/migrate-repowire-file.err"; then
   echo "expected --migrate-dot .repowire to fail closed for non-directory source" >&2
@@ -2494,7 +2494,7 @@ mkdir -p "$nv_bad_meta/.local" "$nv_bad_meta/envctl/home" "$nv_bad_home"
 printf '# managed gitconfig\n' >"$nv_bad_meta/envctl/home/.gitconfig"
 ln -s "$nv_bad_meta/envctl/home/.gitconfig" "$nv_bad_meta/.gitconfig"
 ln -s "$nv_bad_meta/.gitconfig" "$nv_bad_home/.gitconfig"
-ln -s "$nv_bad_meta/.local" "$nv_bad_home/.local"
+mkdir -p "$nv_bad_home/.local"
 printf 'not a directory\n' >"$nv_bad_home/.nv"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .nv --meta-root "$nv_bad_meta" --real-home "$nv_bad_home" --envctl-home-source "$nv_bad_meta/envctl/home" >"$tmp/migrate-nv-file.out" 2>"$tmp/migrate-nv-file.err"; then
   echo "expected --migrate-dot .nv to fail closed for non-directory source" >&2
@@ -2510,7 +2510,7 @@ mkdir -p "$archon_bad_meta/.local" "$archon_bad_meta/envctl/home" "$archon_bad_h
 printf '# managed gitconfig\n' >"$archon_bad_meta/envctl/home/.gitconfig"
 ln -s "$archon_bad_meta/envctl/home/.gitconfig" "$archon_bad_meta/.gitconfig"
 ln -s "$archon_bad_meta/.gitconfig" "$archon_bad_home/.gitconfig"
-ln -s "$archon_bad_meta/.local" "$archon_bad_home/.local"
+mkdir -p "$archon_bad_home/.local"
 printf 'not a directory\n' >"$archon_bad_home/.archon"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .archon --meta-root "$archon_bad_meta" --real-home "$archon_bad_home" --envctl-home-source "$archon_bad_meta/envctl/home" >"$tmp/migrate-archon-file.out" 2>"$tmp/migrate-archon-file.err"; then
   echo "expected --migrate-dot .archon to fail closed for non-directory source" >&2
@@ -2526,7 +2526,7 @@ mkdir -p "$hermes_bad_meta/.local" "$hermes_bad_meta/envctl/home" "$hermes_bad_h
 printf '# managed gitconfig\n' >"$hermes_bad_meta/envctl/home/.gitconfig"
 ln -s "$hermes_bad_meta/envctl/home/.gitconfig" "$hermes_bad_meta/.gitconfig"
 ln -s "$hermes_bad_meta/.gitconfig" "$hermes_bad_home/.gitconfig"
-ln -s "$hermes_bad_meta/.local" "$hermes_bad_home/.local"
+mkdir -p "$hermes_bad_home/.local"
 printf 'not a directory\n' >"$hermes_bad_home/.hermes"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .hermes --meta-root "$hermes_bad_meta" --real-home "$hermes_bad_home" --envctl-home-source "$hermes_bad_meta/envctl/home" >"$tmp/migrate-hermes-file.out" 2>"$tmp/migrate-hermes-file.err"; then
   echo "expected --migrate-dot .hermes to fail closed for non-directory source" >&2
@@ -2542,7 +2542,7 @@ mkdir -p "$n8n_mcp_bad_meta/.local" "$n8n_mcp_bad_meta/envctl/home" "$n8n_mcp_ba
 printf '# managed gitconfig\n' >"$n8n_mcp_bad_meta/envctl/home/.gitconfig"
 ln -s "$n8n_mcp_bad_meta/envctl/home/.gitconfig" "$n8n_mcp_bad_meta/.gitconfig"
 ln -s "$n8n_mcp_bad_meta/.gitconfig" "$n8n_mcp_bad_home/.gitconfig"
-ln -s "$n8n_mcp_bad_meta/.local" "$n8n_mcp_bad_home/.local"
+mkdir -p "$n8n_mcp_bad_home/.local"
 printf 'not a directory\n' >"$n8n_mcp_bad_home/.n8n-mcp"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .n8n-mcp --meta-root "$n8n_mcp_bad_meta" --real-home "$n8n_mcp_bad_home" --envctl-home-source "$n8n_mcp_bad_meta/envctl/home" >"$tmp/migrate-n8n-mcp-file.out" 2>"$tmp/migrate-n8n-mcp-file.err"; then
   echo "expected --migrate-dot .n8n-mcp to fail closed for non-directory source" >&2
@@ -2558,7 +2558,7 @@ mkdir -p "$repomix_bad_meta/.local" "$repomix_bad_meta/envctl/home" "$repomix_ba
 printf '# managed gitconfig\n' >"$repomix_bad_meta/envctl/home/.gitconfig"
 ln -s "$repomix_bad_meta/envctl/home/.gitconfig" "$repomix_bad_meta/.gitconfig"
 ln -s "$repomix_bad_meta/.gitconfig" "$repomix_bad_home/.gitconfig"
-ln -s "$repomix_bad_meta/.local" "$repomix_bad_home/.local"
+mkdir -p "$repomix_bad_home/.local"
 printf 'not a directory\n' >"$repomix_bad_home/.repomix"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .repomix --meta-root "$repomix_bad_meta" --real-home "$repomix_bad_home" --envctl-home-source "$repomix_bad_meta/envctl/home" >"$tmp/migrate-repomix-file.out" 2>"$tmp/migrate-repomix-file.err"; then
   echo "expected --migrate-dot .repomix to fail closed for non-directory source" >&2
@@ -2574,7 +2574,7 @@ mkdir -p "$junie_bad_meta/.local" "$junie_bad_meta/envctl/home" "$junie_bad_home
 printf '# managed gitconfig\n' >"$junie_bad_meta/envctl/home/.gitconfig"
 ln -s "$junie_bad_meta/envctl/home/.gitconfig" "$junie_bad_meta/.gitconfig"
 ln -s "$junie_bad_meta/.gitconfig" "$junie_bad_home/.gitconfig"
-ln -s "$junie_bad_meta/.local" "$junie_bad_home/.local"
+mkdir -p "$junie_bad_home/.local"
 printf 'not a directory\n' >"$junie_bad_home/.junie"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .junie --meta-root "$junie_bad_meta" --real-home "$junie_bad_home" --envctl-home-source "$junie_bad_meta/envctl/home" >"$tmp/migrate-junie-file.out" 2>"$tmp/migrate-junie-file.err"; then
   echo "expected --migrate-dot .junie to fail closed for non-directory source" >&2
@@ -2590,7 +2590,7 @@ mkdir -p "$junie_collision_meta/.local/share/junie/current" "$junie_collision_me
 printf '# managed gitconfig\n' >"$junie_collision_meta/envctl/home/.gitconfig"
 ln -s "$junie_collision_meta/envctl/home/.gitconfig" "$junie_collision_meta/.gitconfig"
 ln -s "$junie_collision_meta/.gitconfig" "$junie_collision_home/.gitconfig"
-ln -s "$junie_collision_meta/.local" "$junie_collision_home/.local"
+mkdir -p "$junie_collision_home/.local"
 printf 'target settings\n' >"$junie_collision_meta/.local/share/junie/settings.json"
 printf 'source settings\n' >"$junie_collision_home/.junie/settings.json"
 printf 'source session\n' >"$junie_collision_home/.junie/sessions/events.jsonl"
@@ -2631,7 +2631,7 @@ grep -q -- '--migrate-dot .config is not in the supervised migration allowlist' 
 portable_file_meta="$tmp/portable-file-meta"
 portable_file_home="$tmp/portable-file-home"
 mkdir -p "$portable_file_meta/.local" "$portable_file_meta/envctl/home" "$portable_file_home/.ideavimrc"
-ln -s "$portable_file_meta/.local" "$portable_file_home/.local"
+mkdir -p "$portable_file_home/.local"
 if "$root/scripts/audit-meta-local-paths.sh" --apply --migrate-dot .ideavimrc --meta-root "$portable_file_meta" --real-home "$portable_file_home" --envctl-home-source "$portable_file_meta/envctl/home" >"$tmp/migrate-ideavim-dir.out" 2>"$tmp/migrate-ideavim-dir.err"; then
   echo "expected --migrate-dot .ideavimrc directory to fail closed" >&2
   exit 1
@@ -2649,7 +2649,7 @@ mkdir -p "$hist_meta/.local" "$hist_meta/envctl/home" "$hist_home/.n8n.bak.17807
 printf '# managed gitconfig\n' >"$hist_meta/envctl/home/.gitconfig"
 ln -s "$hist_meta/envctl/home/.gitconfig" "$hist_meta/.gitconfig"
 ln -s "$hist_meta/.gitconfig" "$hist_home/.gitconfig"
-ln -s "$hist_meta/.local" "$hist_home/.local"
+mkdir -p "$hist_home/.local"
 printf 'ls -la\n' >"$hist_home/.bash_history"
 printf '# old bashrc\n' >"$hist_home/.bashrc.bak.1780388793"
 printf 'backup backup\n' >"$hist_home/.tool.backup"
@@ -2712,7 +2712,7 @@ mkdir -p "$hist_collision_meta/.local" "$hist_collision_meta/envctl/home" "$hist
 printf '# managed gitconfig\n' >"$hist_collision_meta/envctl/home/.gitconfig"
 ln -s "$hist_collision_meta/envctl/home/.gitconfig" "$hist_collision_meta/.gitconfig"
 ln -s "$hist_collision_meta/.gitconfig" "$hist_collision_home/.gitconfig"
-ln -s "$hist_collision_meta/.local" "$hist_collision_home/.local"
+mkdir -p "$hist_collision_home/.local"
 printf 'real\n' >"$hist_collision_home/.zsh_history"
 printf 'canonical\n' >"$hist_collision_meta/var/lib/envctl/real-home-dotfile-migration/history-or-backup/.zsh_history"
 "$root/scripts/audit-meta-local-paths.sh" \
@@ -2736,7 +2736,7 @@ mkdir -p "$backup_meta/.local" "$backup_meta/envctl/home" "$backup_home/.n8n.bak
 printf '# managed gitconfig\n' >"$backup_meta/envctl/home/.gitconfig"
 ln -s "$backup_meta/envctl/home/.gitconfig" "$backup_meta/.gitconfig"
 ln -s "$backup_meta/.gitconfig" "$backup_home/.gitconfig"
-ln -s "$backup_meta/.local" "$backup_home/.local"
+mkdir -p "$backup_home/.local"
 printf 'active history\n' >"$backup_home/.bash_history"
 printf '# backup bashrc\n' >"$backup_home/.bashrc.bak.123"
 printf '# backup zshrc\n' >"$backup_home/.zshrc.bak.2026-06-03_05-44-02"
@@ -2786,7 +2786,7 @@ mkdir -p \
 printf '# managed gitconfig\n' >"$deep_meta/envctl/home/.gitconfig"
 ln -s "$deep_meta/envctl/home/.gitconfig" "$deep_meta/.gitconfig"
 ln -s "$deep_meta/.gitconfig" "$deep_home/.gitconfig"
-ln -s "$deep_meta/.local" "$deep_home/.local"
+mkdir -p "$deep_home/.local"
 printf '#!/usr/bin/env bash\nexit 0\n' >"$deep_meta/usr/bin/rustc"
 chmod +x "$deep_meta/usr/bin/rustc"
 ln -s "$deep_meta/usr/bin/rustc" "$deep_meta/.toolchains/cargo/bin/rustc"
@@ -2841,5 +2841,315 @@ if "$root/scripts/audit-meta-local-paths.sh" --apply --meta-root "$meta" --real-
 fi
 test "$(readlink -f "$meta/.local/bin/hf")" = "$outside/hf"
 grep -q 'no safe meta replacement was applied' "$tmp/no-candidate.err"
+
+# Yazelix owns a real ~/.local directory and an exact three-link profile chain:
+#   ~/.nix-profile -> XDG selector -> numbered generation -> Nix store profile.
+# Known user-bin shadows may be archived only after the current generation (or
+# META_ROOT/usr/bin) provides the exact replacement. Unknown entries fail closed.
+make_yazelix_profile_fixture() {
+  local fixture_home="$1" fixture_store="$2" generation="${3:-17}"
+  local profile_dir="$fixture_home/.local/state/nix/profiles"
+  local generation_name="profile-${generation}-link"
+  local store_profile="$fixture_store/0123456789abcdefghijklmnopqrstuv-profile"
+
+  mkdir -p "$fixture_home/.local/bin" "$profile_dir" "$store_profile/bin"
+  ln -s "$profile_dir/profile" "$fixture_home/.nix-profile"
+  ln -s "$generation_name" "$profile_dir/profile"
+  ln -s "$store_profile" "$profile_dir/$generation_name"
+}
+
+make_managed_gitconfig_fixture() {
+  local fixture_meta="$1" fixture_home="$2"
+  mkdir -p "$fixture_meta/envctl/home"
+  printf '# managed gitconfig\n' >"$fixture_meta/envctl/home/.gitconfig"
+  ln -s "$fixture_meta/envctl/home/.gitconfig" "$fixture_meta/.gitconfig"
+  ln -s "$fixture_meta/.gitconfig" "$fixture_home/.gitconfig"
+}
+
+profile_meta="$tmp/profile-meta"
+profile_home="$tmp/profile-home"
+profile_store="$tmp/nix/store"
+mkdir -p "$profile_meta/usr/bin"
+make_yazelix_profile_fixture "$profile_home" "$profile_store"
+make_managed_gitconfig_fixture "$profile_meta" "$profile_home"
+printf '#!/usr/bin/env bash\nprintf "1.6.9\\n"\n' \
+  >"$profile_store/0123456789abcdefghijklmnopqrstuv-profile/bin/gitnexus"
+chmod +x "$profile_store/0123456789abcdefghijklmnopqrstuv-profile/bin/gitnexus"
+printf '#!/usr/bin/env bash\nprintf "git-kb 0.2.12\\n"\n' \
+  >"$profile_store/0123456789abcdefghijklmnopqrstuv-profile/bin/git-kb"
+chmod +x "$profile_store/0123456789abcdefghijklmnopqrstuv-profile/bin/git-kb"
+printf '#!/usr/bin/env bash\nprintf "legacy\\n"\n' >"$profile_home/.local/bin/gitnexus"
+chmod +x "$profile_home/.local/bin/gitnexus"
+mkdir -p "$profile_home/.local/bin/archive/foundation-tool-swap"
+ln -s "$profile_home/.nix-profile/bin/gitnexus" \
+  "$profile_home/.local/bin/archive/foundation-tool-swap/gitnexus"
+retired_git_kb="$tmp/FlexNetOS/release/staging/flexnetos-test/bin/git-kb"
+mkdir -p "$(dirname "$retired_git_kb")"
+cp "$profile_store/0123456789abcdefghijklmnopqrstuv-profile/bin/git-kb" "$retired_git_kb"
+ln -s "$retired_git_kb" "$profile_meta/usr/bin/git-kb"
+printf '#!/usr/bin/env bash\nprintf "envctl fixture\\n"\n' >"$profile_meta/usr/bin/envctl"
+chmod +x "$profile_meta/usr/bin/envctl"
+envctl_frontdoor_inode="$(stat -c '%d:%i:%F' "$profile_meta/usr/bin/envctl")"
+profile_archive_root="$profile_meta/var/lib/envctl/legacy-archives/real-home-bin-$(date -u +%Y-%m-%d)/.local/bin"
+mkdir -p "$profile_archive_root"
+printf 'preserve prior archive\n' >"$profile_archive_root/gitnexus"
+profile_local_inode="$(stat -c '%d:%i:%F' "$profile_home/.local")"
+profile_frontdoor_link="$(readlink "$profile_home/.nix-profile")"
+profile_selector_link="$(readlink "$profile_home/.local/state/nix/profiles/profile")"
+profile_generation_link="$(readlink "$profile_home/.local/state/nix/profiles/profile-17-link")"
+
+if "$root/scripts/audit-meta-local-paths.sh" \
+  --require-yazelix-profile \
+  --nix-store-root "$profile_store" \
+  --meta-root "$profile_meta" \
+  --real-home "$profile_home" \
+  --envctl-home-source "$profile_meta/envctl/home" \
+  >"$tmp/profile-preview.out" 2>"$tmp/profile-preview.err"; then
+  echo "expected preview to report the known GitNexus shadow" >&2
+  exit 1
+fi
+test -x "$profile_home/.local/bin/gitnexus"
+test "$(stat -c '%d:%i:%F' "$profile_home/.local")" = "$profile_local_inode"
+grep -q 'known real-home user-bin shadow: .*gitnexus.*replacement: .*\.nix-profile/bin/gitnexus' "$tmp/profile-preview.err"
+grep -q 'known misplaced real-home user-bin archive directory: .*\.local/bin/archive' "$tmp/profile-preview.err"
+grep -q 'known META_ROOT usr/bin symlink shadow: .*usr/bin/git-kb.*replacement: .*\.nix-profile/bin/git-kb' "$tmp/profile-preview.err"
+
+"$root/scripts/audit-meta-local-paths.sh" \
+  --apply \
+  --require-yazelix-profile \
+  --nix-store-root "$profile_store" \
+  --meta-root "$profile_meta" \
+  --real-home "$profile_home" \
+  --envctl-home-source "$profile_meta/envctl/home" \
+  >"$tmp/profile-apply.out" 2>"$tmp/profile-apply.err"
+test ! -e "$profile_home/.local/bin/gitnexus"
+test ! -L "$profile_home/.local/bin/gitnexus"
+test ! -e "$profile_home/.local/bin/archive"
+test ! -e "$profile_meta/usr/bin/git-kb"
+test ! -L "$profile_meta/usr/bin/git-kb"
+test "$(stat -c '%d:%i:%F' "$profile_meta/usr/bin/envctl")" = "$envctl_frontdoor_inode"
+test "$(stat -c '%d:%i:%F' "$profile_home/.local")" = "$profile_local_inode"
+test "$(readlink "$profile_home/.nix-profile")" = "$profile_frontdoor_link"
+test "$(readlink "$profile_home/.local/state/nix/profiles/profile")" = "$profile_selector_link"
+test "$(readlink "$profile_home/.local/state/nix/profiles/profile-17-link")" = "$profile_generation_link"
+grep -qx 'preserve prior archive' "$profile_archive_root/gitnexus"
+archived_gitnexus="$(find "$profile_archive_root" -type f -name 'gitnexus.*' -print -quit)"
+test -n "$archived_gitnexus"
+grep -qx 'printf "legacy\\n"' < <(tail -n 1 "$archived_gitnexus")
+archived_git_kb="$(find "$profile_meta/var/lib/envctl/legacy-archives" -type l -path '*/usr/bin/git-kb*' -print -quit)"
+test -n "$archived_git_kb"
+test "$(readlink "$archived_git_kb")" = "$retired_git_kb"
+preserved_user_bin_archive="$(find "$profile_meta/var/lib/envctl/legacy-archives" -type d -path '*/misplaced-user-bin-archives/archive*' -print -quit)"
+test -n "$preserved_user_bin_archive"
+test "$(readlink "$preserved_user_bin_archive/foundation-tool-swap/gitnexus")" = \
+  "$profile_home/.nix-profile/bin/gitnexus"
+
+unknown_meta_link_meta="$tmp/unknown-meta-link-meta"
+unknown_meta_link_home="$tmp/unknown-meta-link-home"
+unknown_meta_link_store="$tmp/unknown-meta-link-store"
+mkdir -p "$unknown_meta_link_meta/usr/bin" "$tmp/unknown-meta-target"
+make_yazelix_profile_fixture "$unknown_meta_link_home" "$unknown_meta_link_store"
+make_managed_gitconfig_fixture "$unknown_meta_link_meta" "$unknown_meta_link_home"
+printf '#!/usr/bin/env bash\nexit 0\n' >"$tmp/unknown-meta-target/mystery"
+chmod +x "$tmp/unknown-meta-target/mystery"
+ln -s "$tmp/unknown-meta-target/mystery" "$unknown_meta_link_meta/usr/bin/mystery"
+if "$root/scripts/audit-meta-local-paths.sh" \
+  --apply --require-yazelix-profile --nix-store-root "$unknown_meta_link_store" \
+  --meta-root "$unknown_meta_link_meta" --real-home "$unknown_meta_link_home" \
+  --envctl-home-source "$unknown_meta_link_meta/envctl/home" \
+  >"$tmp/unknown-meta-link.out" 2>"$tmp/unknown-meta-link.err"; then
+  echo "expected unknown META_ROOT usr/bin symlink to fail closed" >&2
+  exit 1
+fi
+test -L "$unknown_meta_link_meta/usr/bin/mystery"
+grep -q 'unknown META_ROOT usr/bin symlink: .*usr/bin/mystery' "$tmp/unknown-meta-link.err"
+
+different_meta_link_meta="$tmp/different-meta-link-meta"
+different_meta_link_home="$tmp/different-meta-link-home"
+different_meta_link_store="$tmp/different-meta-link-store"
+mkdir -p "$different_meta_link_meta/usr/bin"
+make_yazelix_profile_fixture "$different_meta_link_home" "$different_meta_link_store"
+make_managed_gitconfig_fixture "$different_meta_link_meta" "$different_meta_link_home"
+printf '#!/usr/bin/env bash\nprintf "git-kb 0.2.12\\n"\n' \
+  >"$different_meta_link_store/0123456789abcdefghijklmnopqrstuv-profile/bin/git-kb"
+chmod +x "$different_meta_link_store/0123456789abcdefghijklmnopqrstuv-profile/bin/git-kb"
+different_retired="$tmp/FlexNetOS/release/staging/different/bin/git-kb"
+mkdir -p "$(dirname "$different_retired")"
+printf '#!/usr/bin/env bash\nprintf "different payload\\n"\n' >"$different_retired"
+chmod +x "$different_retired"
+ln -s "$different_retired" "$different_meta_link_meta/usr/bin/git-kb"
+if "$root/scripts/audit-meta-local-paths.sh" \
+  --apply --require-yazelix-profile --nix-store-root "$different_meta_link_store" \
+  --meta-root "$different_meta_link_meta" --real-home "$different_meta_link_home" \
+  --envctl-home-source "$different_meta_link_meta/envctl/home" \
+  >"$tmp/different-meta-link.out" 2>"$tmp/different-meta-link.err"; then
+  echo "expected different GitKB staging payload to fail closed" >&2
+  exit 1
+fi
+test -L "$different_meta_link_meta/usr/bin/git-kb"
+grep -q 'META_ROOT usr/bin symlink target differs from exact current-profile replacement: .*usr/bin/git-kb' "$tmp/different-meta-link.err"
+
+missing_meta="$tmp/missing-replacement-meta"
+missing_home="$tmp/missing-replacement-home"
+missing_store="$tmp/missing-replacement-store"
+mkdir -p "$missing_meta/usr/bin"
+make_yazelix_profile_fixture "$missing_home" "$missing_store"
+make_managed_gitconfig_fixture "$missing_meta" "$missing_home"
+printf '#!/usr/bin/env bash\nexit 0\n' >"$missing_home/.local/bin/gitnexus"
+chmod +x "$missing_home/.local/bin/gitnexus"
+if "$root/scripts/audit-meta-local-paths.sh" \
+  --apply --require-yazelix-profile --nix-store-root "$missing_store" \
+  --meta-root "$missing_meta" --real-home "$missing_home" \
+  --envctl-home-source "$missing_meta/envctl/home" \
+  >"$tmp/missing-replacement.out" 2>"$tmp/missing-replacement.err"; then
+  echo "expected GitNexus cleanup to refuse a missing exact replacement" >&2
+  exit 1
+fi
+test -x "$missing_home/.local/bin/gitnexus"
+grep -q 'no exact healthy replacement for known real-home user-bin shadow: .*gitnexus' "$tmp/missing-replacement.err"
+
+wrong_version_meta="$tmp/wrong-version-meta"
+wrong_version_home="$tmp/wrong-version-home"
+wrong_version_store="$tmp/wrong-version-store"
+mkdir -p "$wrong_version_meta/usr/bin"
+make_yazelix_profile_fixture "$wrong_version_home" "$wrong_version_store"
+make_managed_gitconfig_fixture "$wrong_version_meta" "$wrong_version_home"
+printf '#!/usr/bin/env bash\nprintf "1.6.8\\n"\n' \
+  >"$wrong_version_store/0123456789abcdefghijklmnopqrstuv-profile/bin/gitnexus"
+chmod +x "$wrong_version_store/0123456789abcdefghijklmnopqrstuv-profile/bin/gitnexus"
+printf '#!/usr/bin/env bash\nexit 0\n' >"$wrong_version_home/.local/bin/gitnexus"
+chmod +x "$wrong_version_home/.local/bin/gitnexus"
+if "$root/scripts/audit-meta-local-paths.sh" \
+  --apply --require-yazelix-profile --nix-store-root "$wrong_version_store" \
+  --meta-root "$wrong_version_meta" --real-home "$wrong_version_home" \
+  --envctl-home-source "$wrong_version_meta/envctl/home" \
+  >"$tmp/wrong-version.out" 2>"$tmp/wrong-version.err"; then
+  echo "expected wrong GitNexus replacement version to fail closed" >&2
+  exit 1
+fi
+test -x "$wrong_version_home/.local/bin/gitnexus"
+grep -q 'no exact healthy replacement for known real-home user-bin shadow: .*gitnexus' "$tmp/wrong-version.err"
+
+unknown_meta="$tmp/unknown-bin-meta"
+unknown_home="$tmp/unknown-bin-home"
+unknown_store="$tmp/unknown-bin-store"
+mkdir -p "$unknown_meta/usr/bin"
+make_yazelix_profile_fixture "$unknown_home" "$unknown_store"
+make_managed_gitconfig_fixture "$unknown_meta" "$unknown_home"
+printf '#!/usr/bin/env bash\nexit 0\n' >"$unknown_home/.local/bin/not-owner-reviewed"
+chmod +x "$unknown_home/.local/bin/not-owner-reviewed"
+if "$root/scripts/audit-meta-local-paths.sh" \
+  --apply --require-yazelix-profile --nix-store-root "$unknown_store" \
+  --meta-root "$unknown_meta" --real-home "$unknown_home" \
+  --envctl-home-source "$unknown_meta/envctl/home" \
+  >"$tmp/unknown-bin.out" 2>"$tmp/unknown-bin.err"; then
+  echo "expected unknown ~/.local/bin entry to fail closed" >&2
+  exit 1
+fi
+test -x "$unknown_home/.local/bin/not-owner-reviewed"
+grep -q 'unknown real-home user-bin entry: .*not-owner-reviewed' "$tmp/unknown-bin.err"
+
+for profile_failure in wrong-frontdoor malicious-selector broken-generation; do
+  bad_meta="$tmp/profile-$profile_failure-meta"
+  bad_home="$tmp/profile-$profile_failure-home"
+  bad_store="$tmp/profile-$profile_failure-store"
+  mkdir -p "$bad_meta/usr/bin"
+  make_yazelix_profile_fixture "$bad_home" "$bad_store"
+  make_managed_gitconfig_fixture "$bad_meta" "$bad_home"
+  case "$profile_failure" in
+    wrong-frontdoor)
+      ln -sfn "$bad_home/.local/state/nix/profiles/profile-17-link" "$bad_home/.nix-profile"
+      ;;
+    malicious-selector)
+      ln -sfn ../../../../outside "$bad_home/.local/state/nix/profiles/profile"
+      ;;
+    broken-generation)
+      ln -sfn "$bad_store/does-not-exist-profile" "$bad_home/.local/state/nix/profiles/profile-17-link"
+      ;;
+  esac
+  if "$root/scripts/audit-meta-local-paths.sh" \
+    --require-yazelix-profile --nix-store-root "$bad_store" \
+    --meta-root "$bad_meta" --real-home "$bad_home" \
+    --envctl-home-source "$bad_meta/envctl/home" \
+    >"$tmp/profile-$profile_failure.out" 2>"$tmp/profile-$profile_failure.err"; then
+    echo "expected $profile_failure profile chain to fail closed" >&2
+    exit 1
+  fi
+  grep -q 'invalid Yazelix profile chain' "$tmp/profile-$profile_failure.err"
+done
+
+symlink_local_meta="$tmp/symlink-local-meta"
+symlink_local_home="$tmp/symlink-local-home"
+mkdir -p "$symlink_local_meta/.local" "$symlink_local_home"
+ln -s "$symlink_local_meta/.local" "$symlink_local_home/.local"
+if "$root/scripts/audit-meta-local-paths.sh" \
+  --apply --meta-root "$symlink_local_meta" --real-home "$symlink_local_home" \
+  --envctl-home-source "$symlink_local_meta/envctl/home" \
+  >"$tmp/symlink-local.out" 2>"$tmp/symlink-local.err"; then
+  echo "expected whole ~/.local symlink to be rejected" >&2
+  exit 1
+fi
+test -L "$symlink_local_home/.local"
+grep -q 'real-home \.local must remain a real directory' "$tmp/symlink-local.err"
+
+# The manifest lifecycle delegates to the same focused fail-closed guard. Exercise the parsed TOML
+# hooks so a future static/no-op component cannot make the script tests green while runtime drifts.
+component_detect="$(python3 - "$root/manifest/components.d/portability-links.toml" <<'PY'
+import sys, tomllib
+with open(sys.argv[1], "rb") as handle:
+    doc = tomllib.load(handle)
+component = next(item for item in doc["component"] if item["id"] == "home-local-single-link")
+print(component["detect"]["args"][-1])
+PY
+)"
+component_install="$(python3 - "$root/manifest/components.d/portability-links.toml" <<'PY'
+import sys, tomllib
+with open(sys.argv[1], "rb") as handle:
+    doc = tomllib.load(handle)
+component = next(item for item in doc["component"] if item["id"] == "home-local-single-link")
+print(component["install"]["script"])
+PY
+)"
+component_verify="$(python3 - "$root/manifest/components.d/portability-links.toml" <<'PY'
+import sys, tomllib
+with open(sys.argv[1], "rb") as handle:
+    doc = tomllib.load(handle)
+component = next(item for item in doc["component"] if item["id"] == "home-local-single-link")
+print(component["verify"]["args"][-1])
+PY
+)"
+
+component_meta="$tmp/component-meta"
+component_home="$tmp/component-home"
+component_store="$tmp/component-store"
+mkdir -p "$component_meta/usr/bin"
+make_yazelix_profile_fixture "$component_home" "$component_store"
+printf '#!/usr/bin/env bash\nprintf "1.6.9\\n"\n' \
+  >"$component_store/0123456789abcdefghijklmnopqrstuv-profile/bin/gitnexus"
+chmod +x "$component_store/0123456789abcdefghijklmnopqrstuv-profile/bin/gitnexus"
+printf '#!/usr/bin/env bash\nprintf "legacy component\\n"\n' >"$component_home/.local/bin/gitnexus"
+chmod +x "$component_home/.local/bin/gitnexus"
+component_local_inode="$(stat -c '%d:%i:%F' "$component_home/.local")"
+component_env=(
+  "META_ROOT=$component_meta"
+  "ENVCTL_REAL_HOME=$component_home"
+  "ENVCTL_NIX_STORE_ROOT=$component_store"
+  "ENVCTL_MANIFEST_DIR=$root/manifest"
+  "ENVCTL_PORTABILITY_AUDIT=$root/scripts/audit-meta-local-paths.sh"
+)
+if env "${component_env[@]}" bash -c "$component_detect" \
+  >"$tmp/component-detect-pre.out" 2>"$tmp/component-detect-pre.err"; then
+  echo "expected component detect to report the GitNexus shadow" >&2
+  exit 1
+fi
+env "${component_env[@]}" bash -c "$component_install" \
+  >"$tmp/component-install.out" 2>"$tmp/component-install.err"
+env "${component_env[@]}" bash -c "$component_detect" \
+  >"$tmp/component-detect-post.out" 2>"$tmp/component-detect-post.err"
+env "${component_env[@]}" bash -c "$component_verify" \
+  >"$tmp/component-verify.out" 2>"$tmp/component-verify.err"
+test "$(stat -c '%d:%i:%F' "$component_home/.local")" = "$component_local_inode"
+test ! -e "$component_home/.local/bin/gitnexus"
+grep -q 'profile-shadow guard: PASS' "$tmp/component-verify.out"
 
 echo "test-meta-local-path-audit: PASS"
