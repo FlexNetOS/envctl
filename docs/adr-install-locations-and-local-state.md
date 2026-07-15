@@ -1,8 +1,21 @@
 # ADR — Install-location map + local-state model
 
-**Status:** accepted (2026-06-23), amended 2026-06-26 · **Owner:** envctl · **Builds on:**
+**Status:** accepted (2026-06-23), amended 2026-06-26, amended 2026-07-14 (ARCHBP-030) ·
+**Owner:** envctl · **Builds on:**
 [adr-meta-tool-location-and-portability](adr-meta-tool-location-and-portability.md), ADR-0006
 (home/ overlay portability).
+
+## 2026-07-14 amendment: Root 2 is retired (ARCHBP-030)
+
+The compatibility toolchain store described under "Root 2" below is **retired**. The canonical
+manager-store location is `$META_ROOT/opt/toolchains/<manager>` inside the envctl-owned
+portable prefix, and the default `envctl env --toolchains` / managed-hook seams no longer emit
+the retired paths. The bridge survives only behind the explicit noncanonical
+`--legacy-bridge` / `ENVCTL_LEGACY_BRIDGE=1` rollback surface until the receipted relocation
+(`envctl migrate relocate …`) lands at cutover. See
+[adr-envctl-root-relocation](adr-envctl-root-relocation.md) for the relocation plan, receipts,
+rollback, and retirement criteria. The Root 2 section below is retained as the historical
+record of the bridge being retired.
 
 ## 2026-06-26 amendment: META_ROOT is the install root
 
