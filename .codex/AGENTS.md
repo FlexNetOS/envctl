@@ -4,8 +4,8 @@ This supplements the root `AGENTS.md` with the repo-local Codex baseline. The ro
 
 ## Repo Skill
 
-- Canonical envctl convention skill: `.agents/skills/agent-env-config/SKILL.md` and `.codex/skills/agent-env-config/SKILL.md`.
-- Harness skills live under `.agents/skills/*`; prompt shims live under `.codex/prompts/*`.
+- Canonical envctl convention skill: `agent-skills/capability-packs/agent-env-config/SKILL.md` and `.codex/skills/agent-env-config/SKILL.md`.
+- Harness skills live under `agent-skills/capability-packs/*`; prompt shims live under `.codex/prompts/*`.
 - Keep user-specific credentials, provider redirects, and private MCP auth in `~/.codex/config.toml`, not in this repo.
 
 ## MCP Baseline
@@ -44,7 +44,7 @@ restored just because they appear in catalog output or marketplace listings.
 - `/session-relay-wrap-up` - `.codex/prompts/session-relay-wrap-up.md`
 
 Use these workflow files as thin shims only; the authoritative workflow bodies remain in
-`.agents/skills/*/SKILL.md` and the durable state remains in `.handoff/`.
+`agent-skills/capability-packs/*/SKILL.md` and the durable state remains in `.handoff/`.
 
 ## Runtime Gates
 

@@ -57,7 +57,7 @@ manages this: `agent-skills/` + `agent-env.yaml` → `envctl agent sync --apply`
   `.claude/settings*.json`. Do NOT hand-maintain `.claude/homunculus/instincts/...` ECC files —
   superseded by the curated skills.
 - **Codex** → `.codex/` : `config.toml` (MCP servers + multi-agent), `AGENTS.md`, role configs
-  under `.codex/agents/`. Codex-facing skill mirror under `.agents/skills/`.
+  under `.codex/agents/`. Codex-facing skill mirror under `agent-skills/`.
 
 ### MCP baseline (Yazelix mirror only)
 The generated agent environment may only install MCP entries that honor the Yazelix ownership

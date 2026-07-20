@@ -312,16 +312,17 @@ grep -qiE 'differential-drive\.sh' "$TSTRAT_SKILL" || fail "plan-test-strategy m
 grep -qiE 'tests-ran'     "$TSTRAT_SKILL" || fail "plan-test-strategy must keep the tests-ran>0 count-verify"
 echo "PASS: prompt-parity contract locked (toolchain law · P4 control-plane diagram · P5 row schema · P2 HF/cross-repo · P8 differential-drive + count-verify)"
 
-# ---- Codex-tree parity: the .agents/skills mirror must not drift from the parity content the Claude
-# tree carries (the eject maintains BOTH .claude/skills and the Codex-front-door .agents/skills). The
+# ---- Canonical-tree parity: capability-pack content must not drift from the Claude
+# compatibility projection. The active Codex roots intentionally materialize only selected packs.
 # Codex mirror lagged once and only re-synced here, so lock the three parity carriers in .agents too.
-AG="$repo_root/.agents/skills"
+AG="$repo_root/agent-skills/capability-packs"
 if [ -d "$AG" ]; then
   grep -qiE 'ruvllm'                "$AG/planning-engineer/SKILL.md"  || fail ".agents Codex mirror: planning-engineer SKILL lost the shimmy/ruvllm toolchain law"
   grep -qiE 'hugging ?face'         "$AG/plan-trend-research/SKILL.md" || fail ".agents Codex mirror: plan-trend-research lost the Hugging Face research tool"
   grep -qiE 'differential-drive\.sh' "$AG/plan-test-strategy/SKILL.md" || fail ".agents Codex mirror: plan-test-strategy lost the differential-drive.sh driver"
-  echo "PASS: Codex-tree parity locked (.agents/skills mirror carries the toolchain law · HF · differential-drive driver)"
+  echo "PASS: canonical capability-pack parity locked"
 fi
+
 
 # ---- source-of-truth + transport + terminal artifact-gate hardening ----
 PE_SCRIPT_DIR="$PE_DIR/scripts"
@@ -362,4 +363,5 @@ for t in test-plan-artifact-gate.sh test-plan-evals.sh test-plan-weave-dispatch.
   [ -f "$PE_SCRIPT_DIR/tests/$t" ] || fail "new planning regression test missing: $t"
 done
 echo "PASS: source-of-truth + weave transport + terminal artifact-gate contract locked"
+
 echo "PASS: plan contract locked — targets rows, graph artifact names, JSON validity, and the documented examples all conform ($jq_note)"

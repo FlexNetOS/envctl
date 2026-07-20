@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # test-runner-routing.sh — hermetic contract test for ci/gates/runner-routing.sh:
-#   * PASS on the repo's real ci.yml + sync-master.yml (derivation covers every live job)
+#   * PASS on the tracked disabled migration-source workflows (derivation covers every job)
 #   * FAIL when a NEW job lacks the local-first labels/fork-guard/escape-hatch (the
 #     derivation must catch jobs a hardcoded list never knew about)
 #   * FAIL when a required-floor job disappears (rename/removal must update the gate)
@@ -16,14 +16,14 @@ tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
 bash "$GATE" >/dev/null || fail "gate should PASS on the repo's real workflows"
 
 # 2. a NEW job with bare runs-on escapes a literal list — derivation must FAIL it
-cp "$root/.github/workflows/ci.yml" "$tmp/ci.yml"
+cp "$root/.github/workflows_disabled/ci.yml" "$tmp/ci.yml"
 printf '\n  sneaky-probe:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo probe\n' >> "$tmp/ci.yml"
 if RUNNER_ROUTING_CI="$tmp/ci.yml" bash "$GATE" >/dev/null 2>&1; then
   fail "uncovered new job (sneaky-probe, bare runs-on) must FAIL the derived gate"
 fi
 
 # 3. removing a floor job (test) must FAIL, not silently shrink coverage
-python3 - "$root/.github/workflows/ci.yml" "$tmp/ci-nofloor.yml" <<'PY'
+python3 - "$root/.github/workflows_disabled/ci.yml" "$tmp/ci-nofloor.yml" <<'PY'
 import re, sys
 t = open(sys.argv[1]).read()
 t2 = re.sub(r"(?ms)^  test:\n.*?(?=^  [A-Za-z0-9_-]+:|\Z)", "", t, count=1)
@@ -41,7 +41,7 @@ for key in \
   CARGO_BUILD_RUSTC_WRAPPER \
   RUSTFLAGS
 do
-  python3 - "$root/.github/workflows/ci.yml" "$tmp/ci-no-$key.yml" "$key" <<'PY'
+  python3 - "$root/.github/workflows_disabled/ci.yml" "$tmp/ci-no-$key.yml" "$key" <<'PY'
 from pathlib import Path
 import sys
 
@@ -60,7 +60,7 @@ done
 
 # 5. A new target directory per run/attempt/job prevents persistent self-hosted
 # runners from reusing compiler artifacts across jobs or toolchain upgrades.
-python3 - "$root/.github/workflows/ci.yml" "$tmp/ci-shared-target.yml" <<'PY'
+python3 - "$root/.github/workflows_disabled/ci.yml" "$tmp/ci-shared-target.yml" <<'PY'
 from pathlib import Path
 import sys
 

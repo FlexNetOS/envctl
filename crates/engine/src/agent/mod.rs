@@ -16,6 +16,7 @@
 //! FNV-1a component lock (`crate::lock`): this module never imports `crate::lock`.
 
 pub mod audit;
+pub mod catalog;
 pub mod clean;
 pub mod doctor;
 pub mod edit;
@@ -38,6 +39,7 @@ use envctl_agent_env::{
     Config, Scope,
 };
 
+pub use catalog::AgentCatalogReport;
 /// Re-export the per-verb spec/return types so callers `use crate::agent::*`.
 pub use doctor::AgentDoctorSpec;
 pub use report::{
@@ -240,6 +242,22 @@ pub struct AgentInitSpec {
     pub global: bool,
     /// Overwrite an existing config file (default: fail closed).
     pub force: bool,
+}
+
+/// Owner-managed catalog action. Exactly one selector is accepted by the CLI;
+/// callers may use an empty spec for inventory.
+#[derive(Clone, Debug, Default)]
+pub struct AgentCatalogSpec {
+    pub search: Option<String>,
+    pub show: Option<String>,
+    pub activate_pack: Option<String>,
+    pub activate_skill: Option<String>,
+    pub activate_intent: Option<String>,
+    pub deactivate_pack: Option<String>,
+    /// After an applied catalog change, run the owner lock → sync → locked
+    /// verification lifecycle in-process through the same shared Engine API.
+    pub sync: bool,
+    pub apply: bool,
 }
 
 // --------------------------------------------------------------------------------------

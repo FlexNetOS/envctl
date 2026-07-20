@@ -63,7 +63,7 @@ moving sources.
 2. **Multi-agent parity for free.** One config keeps `claude-code` and `codex` consistent.
 3. **Know what stays OUT of the sync.** The hand-authored harness skills named in envctl
    `CLAUDE.md` (the feature-forge family, `env-install-loop`, `auto-provision`,
-   `session-relay*`, `agent-env-claude`) are git-tracked and edited in place — bespoke,
+   `session-relay*`) are git-tracked and edited in place — bespoke,
    fast-iterating orchestration. The sync is for the stable, locked baseline only.
 4. **Toolchain requests route to the owner.** A missing binary is a nix-profile item
    (yazelix flake → `yzx update local_source`), not an ad-hoc install and usually not an
