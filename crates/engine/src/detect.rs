@@ -374,33 +374,24 @@ impl ActiveProfileProvenance {
 
     fn from_home_with_store_root(home: &Path, store_root: &Path) -> Option<Self> {
         let frontdoor = home.join(".nix-profile");
-        let profiles = home.join(".local/state/nix/profiles");
+        let profiles = home.join(".local/state/nix");
         let selector = profiles.join("profile");
         let frontdoor_target = symlink_target(&frontdoor)?;
         if frontdoor_target != selector {
             return None;
         }
 
-        let generation_link = symlink_target(&selector)?;
-        let generation_name = generation_link.file_name()?.to_str()?;
-        let generation_number = generation_name
-            .strip_prefix("profile-")?
-            .strip_suffix("-link")?;
-        if generation_link.parent() != Some(profiles.as_path())
-            || generation_number.is_empty()
-            || !generation_number.chars().all(|ch| ch.is_ascii_digit())
+        let generation_name = std::fs::read_link(&selector).ok()?;
+        if generation_name.is_absolute()
+            || generation_name.components().count() != 1
+            || !is_profile_generation_name(generation_name.to_str()?)
         {
             return None;
         }
 
         let store_root = std::fs::canonicalize(store_root).ok()?;
-        let generation = std::fs::canonicalize(&generation_link).ok()?;
-        let generation_store_name = generation.file_name()?.to_str()?;
-        if generation.parent() != Some(store_root.as_path())
-            || !generation_store_name.ends_with("-profile")
-            || generation_store_name == "-profile"
-            || std::fs::canonicalize(&frontdoor).ok()? != generation
-        {
+        let generation = resolve_profile_generation(&profiles, &generation_name, &store_root)?;
+        if std::fs::canonicalize(&frontdoor).ok()? != generation {
             return None;
         }
 
@@ -429,6 +420,51 @@ impl ActiveProfileProvenance {
         self.targets
             .contains(&(tool.to_string(), canonical_or_self(resolved.to_path_buf())))
     }
+}
+
+fn is_profile_generation_name(value: &str) -> bool {
+    let Some(mut suffix) = value.strip_prefix("profile-") else {
+        return false;
+    };
+    loop {
+        let Some((number, rest)) = suffix.split_once("-link") else {
+            return false;
+        };
+        if number.is_empty() || !number.bytes().all(|byte| byte.is_ascii_digit()) || number == "0" {
+            return false;
+        }
+        if rest.is_empty() {
+            return true;
+        }
+        let Some(next) = rest.strip_prefix('-') else {
+            return false;
+        };
+        suffix = next;
+    }
+}
+
+fn resolve_profile_generation(
+    profile_dir: &Path,
+    selector: &Path,
+    store_root: &Path,
+) -> Option<PathBuf> {
+    let mut link = profile_dir.join(selector);
+    for _ in 0..16 {
+        let target = std::fs::read_link(&link).ok()?;
+        if target.is_absolute() {
+            let store_profile = std::fs::canonicalize(target).ok()?;
+            let name = store_profile.file_name()?.to_str()?;
+            return (store_profile.parent() == Some(store_root)
+                && name.ends_with("-profile")
+                && name != "-profile")
+                .then_some(store_profile);
+        }
+        if target.components().count() != 1 || !is_profile_generation_name(target.to_str()?) {
+            return None;
+        }
+        link = profile_dir.join(target);
+    }
+    None
 }
 
 fn symlink_target(path: &Path) -> Option<PathBuf> {
@@ -855,7 +891,7 @@ mod tests {
     fn active_profile_provenance_accepts_only_current_generation_targets() {
         let root = temp_root("active-profile-current-generation");
         let home = root.join("home");
-        let profiles = home.join(".local/state/nix/profiles");
+        let profiles = home.join(".local/state/nix");
         let current_generation = root.join("nix/store/current-profile");
         let current_package = root.join("nix/store/current-meta");
         let stale_package = root.join("nix/store/stale-meta");
@@ -876,7 +912,8 @@ mod tests {
             current_generation.join("toolbin/meta"),
         )
         .unwrap();
-        symlink(&current_generation, profiles.join("profile-2-link")).unwrap();
+        symlink(&current_generation, profiles.join("profile-2-link-1-link")).unwrap();
+        symlink("profile-2-link-1-link", profiles.join("profile-2-link")).unwrap();
         symlink("profile-2-link", profiles.join("profile")).unwrap();
         symlink(profiles.join("profile"), home.join(".nix-profile")).unwrap();
 
@@ -907,7 +944,7 @@ mod tests {
     fn active_profile_provenance_rejects_non_numeric_or_non_store_generations() {
         let root = temp_root("active-profile-invalid-generation");
         let home = root.join("home");
-        let profiles = home.join(".local/state/nix/profiles");
+        let profiles = home.join(".local/state/nix");
         let store = root.join("nix/store");
         let outside = root.join("foreign/current-profile");
         std::fs::create_dir_all(&profiles).unwrap();
@@ -937,7 +974,7 @@ mod tests {
     fn active_profile_provenance_does_not_accept_a_tool_escaping_the_store() {
         let root = temp_root("active-profile-tool-store-escape");
         let home = root.join("home");
-        let profiles = home.join(".local/state/nix/profiles");
+        let profiles = home.join(".local/state/nix");
         let store = root.join("nix/store");
         let generation = store.join("abc-profile");
         let foreign_tool = root.join("foreign/meta");
@@ -1018,7 +1055,7 @@ mod tests {
         let store_bin = store.join("profile-generation/bin/meta");
         let profile_bin = profile.join("bin/meta");
         let user_shadow = root.join("home/.local/bin/meta");
-        let second_profile = root.join("home/.local/state/nix/profiles/second/bin/meta");
+        let second_profile = root.join("home/.local/state/nix/second/bin/meta");
         std::fs::create_dir_all(store_bin.parent().unwrap()).unwrap();
         std::fs::create_dir_all(profile_bin.parent().unwrap()).unwrap();
         std::fs::create_dir_all(user_shadow.parent().unwrap()).unwrap();

@@ -552,7 +552,7 @@ ACTIVE MODE
   - `sandbox_mode = "danger-full-access"`
   - `default_permissions = ":danger-full-access"`
   - launch flag: `--dangerously-bypass-approvals-and-sandbox`
-  - active hooks are RTK-only: `PreToolUse` for `Bash` runs `/home/flexnetos/.nix-profile/bin/rtk hook claude`; do not restore retired lifecycle hooks or purge this generated hook file
+  - approved lifecycle dispatch is limited to `rtk hook claude` and PATH-resolved `icm hook` commands; do not create copied scripts, hook JSON, fallback scanners, or local hook archives.
 - Secret-deny, archive-first, and no destructive user-data deletion remain
   mandatory behavioral rules. They do not justify downgrading the session to
   restricted mode.
@@ -610,9 +610,9 @@ missing or wrong:
 
 - `/home/flexnetos/.codex/config.toml` uses full-access execution and does not
   default to a limited permission profile.
-- `features.hooks = true` and generated `hooks.json` contains only the
-  profile-owned RTK `PreToolUse` hook for `Bash`; retired lifecycle hooks stay
-  absent and the generator must not purge the RTK hook file.
+- The approved Claude lifecycle contract contains only `rtk hook claude` and
+  PATH-resolved `icm hook` commands. Retired copied scripts, hook JSON, archives,
+  installers, and fallback scanners remain absent.
 - `/home/flexnetos/meta/.ignore` and/or `.rgignore` excludes:
   `var/lib/ruvector/pgdata/`
 - This prompt contains this controller above the old v2 phase gates.
@@ -1081,30 +1081,8 @@ Subagents:
 - Whether Codex has a native “agent teams” feature separate from subagents.
 - If no native teams feature exists, define “team” as a harness-owned role group of bounded subagents.
 - Whether subagents can spawn subagents.
-- Whether hooks can block subagent starts.
 - Whether subagents inherit full-access/no-extra-gate/runtime overrides.
 - How inactive-agent approvals surface.
-
-Hooks:
-- Exact hook locations:
-  - `~/.codex/hooks.json`
-  - `~/.codex/config.toml`
-  - `<repo>/.codex/hooks.json`
-  - `<repo>/.codex/config.toml`
-  - plugin-bundled hooks
-  - managed hooks
-- Trusted project requirement.
-- Hook trust review mechanism.
-- Exact hook event list.
-- Exact hook matcher support.
-- Exact hook JSON input/output schema.
-- Whether hook commands run concurrently.
-- Whether one matching hook can prevent another from starting.
-- Hook timeout behavior.
-- Hook block/deny shapes.
-- Hook rewrite/update input support.
-- Whether WebSearch/Browser/Computer/MCP tools are hook-interceptable.
-- Whether unified exec affects hook coverage.
 
 Rules:
 - `.rules` file locations.
@@ -1289,7 +1267,6 @@ Inspect without modifying:
 - "$HOME/.codex"
 - "$HOME/.codex/config.toml"
 - "$HOME/.codex/*.config.toml"
-- "$HOME/.codex/hooks.json"
 - "$HOME/.codex/rules"
 - "$HOME/.codex/agents"
 - "$HOME/.codex/skills"
@@ -1449,9 +1426,6 @@ Create:
 "$HARNESS_WORKSPACE"
 
 Binaries:
-
-- codex-harness-hook
-  Parses Codex hook JSON, enforces policy, emits documented hook JSON responses.
 
 - codex-harness-runner
   Supervises background commands, Codex exec lanes, subagent jobs, local model calls, Rust shims, Claude wrappers, GitHub commands, browser/computer-use gates.
@@ -1696,14 +1670,11 @@ Rules must deny or prompt:
 Every rule must include match/not_match tests where supported.
 Validate with `codex execpolicy check --pretty`.
 
-1.7 Hooks
+1.7 Retired lifecycle-hook boundary
 
-The active Codex hook surface contains exactly one entry: `PreToolUse` with
-matcher `Bash`, running the profile-owned
-`/home/flexnetos/.nix-profile/bin/rtk hook claude` processor. It performs RTK
-command rewriting only. Do not add SessionStart, UserPromptSubmit,
-PermissionRequest, PostToolUse, subagent, compact, stop, ICM, checkout-local,
-or raw-store hooks; the retired lifecycle bundle remains archive-only.
+Codex and Claude lifecycle hooks are intentionally unconfigured. Enforcement
+remains in repository policy, validators, and explicit commands; this prompt
+must not recreate a hook JSON, dispatcher, installer, archive, or fallback.
 
 1.8 Kill switch
 
@@ -1745,7 +1716,7 @@ Run real tests in a scratch worktree:
 - GitHub mutation without guard denied.
 - OpenRouter direct use denied until compatibility verified.
 - Claude direct use denied outside bridge.
-- Stop hook blocks once.
+- Stop behavior is validated through explicit policy tests.
 - kill switch stops all harness-owned jobs.
 - `codex execpolicy check --pretty` passes.
 - cargo fmt/clippy/test pass.
@@ -2039,7 +2010,7 @@ Before any subagent:
 2. model-router emits route JSON.
 3. security policy checks route.
 4. worktree/file owner assigned.
-5. SubagentStart hook verifies all fields.
+5. The task router verifies all fields before the agent starts.
 6. agent starts.
 
 If any step missing, block.
@@ -2189,14 +2160,10 @@ Agents:
 - computer-use-auditor.
 - computer-use-operator under the full-access no-sandbox controller.
 
-5.3 Hooks
+5.3 Browser/computer controls
 
-If browser/computer tools expose hook names, enforce:
-- PreToolUse gate.
-- PostToolUse ledger.
-- screenshot redaction.
-- timeout.
-- kill switch awareness.
+Use explicit policy checks, screenshot redaction, timeouts, and kill-switch
+ownership; do not introduce lifecycle-hook interception.
 
 ──────────────────────────────────────────────────────────────────────────────
 PHASE 6 — MEMORY AND DATABASE
@@ -2470,7 +2437,7 @@ No decorative prose.
 Audit before install:
 - official status.
 - source.
-- hooks.
+- retired lifecycle-hook absence.
 - MCP servers.
 - context cost.
 - network.

@@ -10,7 +10,6 @@ $HOME/.gitconfig                    -> envctl/home/.gitconfig
 $HOME/.claude/settings.json         -> envctl/home/.claude/settings.json     (claude-global-links)
 $HOME/.claude/CLAUDE.md             -> envctl/home/.claude/CLAUDE.md         (harness 2026-07-07, owner-supervised)
 $HOME/.claude/rules                 -> envctl/home/.claude/rules             (harness 2026-07-07, owner-supervised)
-$HOME/.claude/hooks                 -> envctl/home/.claude/hooks             (harness 2026-07-07, owner-supervised)
 $HOME/.claude/agents                -> envctl/home/.claude/agents            (harness 2026-07-07, owner-supervised)
 $HOME/.claude/skills                -> envctl/home/.claude/skills            (harness 2026-07-07, owner-supervised)
 $HOME/.claude/commands              -> envctl/home/.claude/commands          (harness 2026-07-07, owner-supervised)
@@ -87,9 +86,8 @@ For missing manifests, add
 produce a deterministic escaped TOML `manifest_stub` for owner review; the report is read-only and
 must be reviewed/materialized before any named `--migrate-cache-child NAME` apply run.
 
-- `home/.claude/settings.json` is rendered from the tracked template; materialized absolute
-  marketplace/statusline paths are expected for this workstation, not a reason to reintroduce
-  real-home install roots.
+- `home/.claude/settings.json` is rendered from the tracked template. It deliberately contains
+  no lifecycle-hook or statusline command path; a future hook system requires its own reviewed owner.
 - `home/.config/yazelix/mission-control.kdl` is a generated host layout and may carry this box's
   pane paths until the owning component regenerates it.
 - `home/.config/nushell/config.nu` no longer hardcodes `/home/drdave`; it sources the meta path

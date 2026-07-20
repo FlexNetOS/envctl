@@ -94,7 +94,6 @@ No mutating MCP tools without explicit approval.
 ## Required Rust binaries
 
 Existing:
-- codex-harness-hook
 - codex-harness-runner
 - codex-harness-status
 - codex-harness-halt

@@ -2842,20 +2842,21 @@ fi
 test "$(readlink -f "$meta/.local/bin/hf")" = "$outside/hf"
 grep -q 'no safe meta replacement was applied' "$tmp/no-candidate.err"
 
-# Yazelix owns a real ~/.local directory and an exact three-link profile chain:
-#   ~/.nix-profile -> XDG selector -> numbered generation -> Nix store profile.
+# Yazelix owns a real ~/.local directory and an exact XDG selector chain:
+#   ~/.nix-profile -> XDG selector -> numbered generation link(s) -> Nix store profile.
 # Known user-bin shadows may be archived only after the current generation (or
 # META_ROOT/usr/bin) provides the exact replacement. Unknown entries fail closed.
 make_yazelix_profile_fixture() {
   local fixture_home="$1" fixture_store="$2" generation="${3:-17}"
-  local profile_dir="$fixture_home/.local/state/nix/profiles"
+  local profile_dir="$fixture_home/.local/state/nix"
   local generation_name="profile-${generation}-link"
   local store_profile="$fixture_store/0123456789abcdefghijklmnopqrstuv-profile"
 
   mkdir -p "$fixture_home/.local/bin" "$profile_dir" "$store_profile/bin"
   ln -s "$profile_dir/profile" "$fixture_home/.nix-profile"
-  ln -s "$generation_name" "$profile_dir/profile"
   ln -s "$store_profile" "$profile_dir/$generation_name"
+  ln -s "$generation_name" "$profile_dir/${generation_name}-1-link"
+  ln -s "${generation_name}-1-link" "$profile_dir/profile"
 }
 
 make_managed_gitconfig_fixture() {
@@ -2895,8 +2896,8 @@ mkdir -p "$profile_archive_root"
 printf 'preserve prior archive\n' >"$profile_archive_root/gitnexus"
 profile_local_inode="$(stat -c '%d:%i:%F' "$profile_home/.local")"
 profile_frontdoor_link="$(readlink "$profile_home/.nix-profile")"
-profile_selector_link="$(readlink "$profile_home/.local/state/nix/profiles/profile")"
-profile_generation_link="$(readlink "$profile_home/.local/state/nix/profiles/profile-17-link")"
+profile_selector_link="$(readlink "$profile_home/.local/state/nix/profile")"
+profile_generation_link="$(readlink "$profile_home/.local/state/nix/profile-17-link")"
 
 if "$root/scripts/audit-meta-local-paths.sh" \
   --require-yazelix-profile \
@@ -2930,8 +2931,8 @@ test ! -L "$profile_meta/usr/bin/git-kb"
 test "$(stat -c '%d:%i:%F' "$profile_meta/usr/bin/envctl")" = "$envctl_frontdoor_inode"
 test "$(stat -c '%d:%i:%F' "$profile_home/.local")" = "$profile_local_inode"
 test "$(readlink "$profile_home/.nix-profile")" = "$profile_frontdoor_link"
-test "$(readlink "$profile_home/.local/state/nix/profiles/profile")" = "$profile_selector_link"
-test "$(readlink "$profile_home/.local/state/nix/profiles/profile-17-link")" = "$profile_generation_link"
+test "$(readlink "$profile_home/.local/state/nix/profile")" = "$profile_selector_link"
+test "$(readlink "$profile_home/.local/state/nix/profile-17-link")" = "$profile_generation_link"
 grep -qx 'preserve prior archive' "$profile_archive_root/gitnexus"
 archived_gitnexus="$(find "$profile_archive_root" -type f -name 'gitnexus.*' -print -quit)"
 test -n "$archived_gitnexus"
@@ -3058,13 +3059,13 @@ for profile_failure in wrong-frontdoor malicious-selector broken-generation; do
   make_managed_gitconfig_fixture "$bad_meta" "$bad_home"
   case "$profile_failure" in
     wrong-frontdoor)
-      ln -sfn "$bad_home/.local/state/nix/profiles/profile-17-link" "$bad_home/.nix-profile"
+      ln -sfn "$bad_home/.local/state/nix/profile-17-link" "$bad_home/.nix-profile"
       ;;
     malicious-selector)
-      ln -sfn ../../../../outside "$bad_home/.local/state/nix/profiles/profile"
+      ln -sfn ../../../../outside "$bad_home/.local/state/nix/profile"
       ;;
     broken-generation)
-      ln -sfn "$bad_store/does-not-exist-profile" "$bad_home/.local/state/nix/profiles/profile-17-link"
+      ln -sfn "$bad_store/does-not-exist-profile" "$bad_home/.local/state/nix/profile-17-link"
       ;;
   esac
   if "$root/scripts/audit-meta-local-paths.sh" \

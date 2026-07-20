@@ -221,7 +221,9 @@ kind = "shipped_script"
 path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-codex-profile-lifecycle.sh"
 args = ["detect"]
 [component.install]
-kind = "script"
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-codex-profile-lifecycle.sh"
+args = ["install"]
 script = '''
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
@@ -303,7 +305,7 @@ fi
 install -d -m 700 "$M/.local/share/codex" "$M/.local/state/codex"
 python3 - <<PYCONF
 from pathlib import Path
-import json, re
+import re
 home = Path("$M/.local/share/codex")
 config = home / "config.toml"
 if config.exists():
@@ -325,18 +327,6 @@ if config.exists():
         lines.append(line)
     text = "\n".join(lines) + ("\n" if text.endswith("\n") else "")
     config.write_text(text)
-hooks = home / "hooks.json"
-hooks.write_text(json.dumps({
-    "hooks": {
-        "PreToolUse": [{
-            "matcher": "Bash",
-            "hooks": [{
-                "type": "command",
-                "command": "/home/flexnetos/.nix-profile/bin/rtk hook claude",
-            }],
-        }],
-    },
-}, indent=2) + "\n")
 PYCONF
 if "$VDIR/bin/codex" --version >/dev/null 2>&1 && "$LINK" --version >/dev/null 2>&1 && CODEX_HOME= CODEX_SQLITE_HOME= "$LINK" mcp list >/dev/null 2>&1; then
   if [ -d "$M/.toolchains/codex" ]; then
@@ -363,7 +353,9 @@ kind = "shipped_script"
 path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-codex-profile-lifecycle.sh"
 args = ["verify"]
 [component.fix]
-kind = "script"
+kind = "shipped_script"
+path = "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-codex-profile-lifecycle.sh"
+args = ["fix"]
 script = '''
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
@@ -429,7 +421,7 @@ fi
 install -d -m 700 "$M/.local/share/codex" "$M/.local/state/codex"
 python3 - <<PYCONF
 from pathlib import Path
-import json, re
+import re
 home = Path("$M/.local/share/codex")
 config = home / "config.toml"
 if config.exists():
@@ -451,18 +443,6 @@ if config.exists():
         lines.append(line)
     text = "\n".join(lines) + ("\n" if text.endswith("\n") else "")
     config.write_text(text)
-hooks = home / "hooks.json"
-hooks.write_text(json.dumps({
-    "hooks": {
-        "PreToolUse": [{
-            "matcher": "Bash",
-            "hooks": [{
-                "type": "command",
-                "command": "/home/flexnetos/.nix-profile/bin/rtk hook claude",
-            }],
-        }],
-    },
-}, indent=2) + "\n")
 PYCONF
 "$LINK" --version >/dev/null
 CODEX_HOME= CODEX_SQLITE_HOME= "$LINK" mcp list >/dev/null

@@ -24,8 +24,6 @@ to 1.
 Shared learning layers wired under this contract (2026-07-07):
 - AgentDB: `$HARNESS_VAR/lib/agentdb/` (runtime installed with bun,
   ruvector backend, `AGENTDB_*` env in settings.json).
-- Ruvector intelligence bridge: `~/.claude/hooks/ruvector-intel-bridge.sh`
-  (bun with node fallback).
 
 ## Nushell-primary shell doctrine (agent-env prompt, 2026-07-11)
 
@@ -33,10 +31,9 @@ Shared learning layers wired under this contract (2026-07-07):
   `"shell": {"default_shell": "nu"}`; bash/zsh/nu all come from the same
   `lifeos-foundation-yzx` runtime (toolbin symlinks -> libexec -> real
   packages). Compatibility is by construction; nu does NOT parse bash syntax.
-- **rtk routing**: `~/.config/nushell/rtk-wrappers.nu` is the Nushell route and
-  `rtk hook claude` remains the Claude Bash-tool route. Escape hatches: `^git`
-  (nu), `\git` (bash), `rtk proxy <cmd>`.
-- **No shell wrapper**: do not resurrect Python Bash-to-Nu hook routing,
+- **rtk routing**: `~/.config/nushell/rtk-wrappers.nu` is the Nushell route.
+  Escape hatches: `^git` (nu), `\git` (bash), `rtk proxy <cmd>`.
+- **No shell wrapper**: do not resurrect Python Bash-to-Nu routing,
   POSIX Nu launcher routing, scratch-file bash dispatchers, or any parallel shell launcher.
   Yazelix is Nushell-owned, Bash is already available inside that configured
   runtime, and RTK is Rust-native.

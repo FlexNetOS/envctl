@@ -232,7 +232,7 @@ if ! grep -Fq 'layout.local_bin()' crates/engine/src/runner.rs || \
   exit 1
 fi
 
-if ! grep -Fq '$ENVCTL_REAL_HOME/.nix-profile -> $ENVCTL_REAL_HOME/.local/state/nix/profiles/profile' docs/adr-install-locations-and-local-state.md || \
+if ! grep -Fq '$ENVCTL_REAL_HOME/.nix-profile -> $ENVCTL_REAL_HOME/.local/state/nix/profile' docs/adr-install-locations-and-local-state.md || \
    ! grep -Fq '$ENVCTL_REAL_HOME/.nix-profile      -> real-home Nix profile state' home/README.md; then
   echo "meta-local-policy: Yazelix Nix profile preservation policy is not documented in the canonical ADR/home README" >&2
   exit 1

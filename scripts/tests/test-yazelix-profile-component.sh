@@ -24,7 +24,7 @@ build_counter="$tmp/build-counter"
 add_counter="$tmp/add-counter"
 remove_counter="$tmp/remove-counter"
 
-mkdir -p "$meta/src/yazelix" "$real/.local/state/nix/profiles" \
+mkdir -p "$meta/src/yazelix" "$real/.local/state/nix" \
   "$store_root" "$fake_candidate/bin" "$fake_candidate/toolbin" \
   "$fake_candidate/nushell/config" "$foreign_store"
 printf '{ outputs = _: {}; }\n' >"$meta/src/yazelix/flake.nix"
@@ -44,49 +44,41 @@ make_executable "$fake_candidate/bin/yzx" 'yzx fixture'
 make_executable "$fake_candidate/toolbin/codex" 'codex fixture'
 make_executable "$fake_candidate/toolbin/rtk" 'rtk fixture'
 make_executable "$fake_candidate/toolbin/nu" 'nu fixture'
-make_executable "$fake_candidate/bin/yzx-desktop-launch" 'desktop fixture'
-make_executable "$fake_candidate/bin/yzx-agent-workspace-launch" 'agent workspace fixture'
 ln -s ../toolbin/codex "$fake_candidate/bin/codex"
 ln -s ../toolbin/rtk "$fake_candidate/bin/rtk"
 printf '%s\n' 'use rtk_wrappers.nu *' >"$fake_candidate/nushell/config/config.nu"
 printf '%s\n' \
-  'export def --wrapped codex [...rest] { ^rtk codex ...$rest }' \
-  'export def --wrapped cargo [...rest] { ^rtk cargo ...$rest }' \
+  'export def --wrapped codex [...rest] {' \
+  '  ^rtk codex ...$rest' \
+  '}' \
+  'export def --wrapped cargo [...rest] {' \
+  '  ^rtk cargo ...$rest' \
+  '}' \
   >"$fake_candidate/nushell/config/rtk_wrappers.nu"
-mkdir -p "$fake_candidate/share/applications" "$fake_candidate/share/yazelix"
+mkdir -p "$fake_candidate/share/yazelix/applications" "$fake_candidate/share/yazelix"
 write_desktop_fixture() {
   printf '%s\n' \
     '[Desktop Entry]' \
-    'Version=1.4' \
-    'Type=Application' \
-    'Name=New Yazelix - Kitty' \
-    'Comment=Yazi + Zellij + Helix integrated terminal environment' \
-    'Icon=yazelix' \
-    'StartupWMClass=com.yazelix.Yazelix' \
-    'Terminal=false' \
-    'X-Yazelix-Managed=true' \
-    'Exec=/usr/bin/env sh -lc "exec ~/.nix-profile/bin/yzx-desktop-launch"' \
-    'Categories=Development;' \
-    >"$fake_candidate/share/applications/com.yazelix.Yazelix.Kitty.desktop"
-  printf '%s\n' \
-    '[Desktop Entry]' \
-    'Version=1.4' \
+    'Version=1.5' \
     'Type=Application' \
     'Name=FlexNetOS Yazelix Agent' \
-    'Comment=Yazelix Kitty with FlexNetOS agent workspace layout' \
-    'Icon=yazelix' \
-    'StartupWMClass=com.yazelix.Yazelix' \
+    'GenericName=Terminal Emulator' \
+    'Comment=Yazelix Nova with the profile-owned FlexNetOS agent workspace' \
+    'Icon=/home/flexnetos/.nix-profile/share/pixmaps/yazelix.png' \
+    'StartupWMClass=mars' \
+    'StartupNotify=true' \
     'Terminal=false' \
     'X-FlexNetOS-Managed=true' \
-    'Exec=/usr/bin/env sh -lc "exec ~/.nix-profile/bin/yzx-agent-workspace-launch"' \
-    'Categories=Development;' \
-    >"$fake_candidate/share/applications/com.flexnetos.Yazelix.Agent.desktop"
+    'X-Yazelix-Managed=true' \
+    'Exec=/home/flexnetos/.nix-profile/bin/yzx launch' \
+    'Categories=System;TerminalEmulator' \
+    >"$fake_candidate/share/yazelix/applications/com.flexnetos.Yazelix.Agent.desktop"
 }
 write_desktop_fixture
 for size in 48x48 64x64 128x128 256x256; do
   mkdir -p "$fake_candidate/share/icons/hicolor/$size/apps"
   printf 'fixture icon %s\n' "$size" \
-    >"$fake_candidate/share/icons/hicolor/$size/apps/yazelix.png"
+    >"$fake_candidate/share/icons/hicolor/$size/apps/yzx.png"
 done
 printf '%s\n' '{"name":"Yazelix Nova","version":"1.0.0-test"}' \
   >"$fake_candidate/share/yazelix/runtime_identity.json"
@@ -122,8 +114,8 @@ fake_activate_profile() {
     done
   fi
   selector="profile-${number}-link"
-  ln -s "$profile_store" "$real/.local/state/nix/profiles/$selector"
-  ln -sfn "$selector" "$real/.local/state/nix/profiles/profile"
+  ln -s "$profile_store" "$real/.local/state/nix/$selector"
+  ln -sfn "$selector" "$real/.local/state/nix/profile"
 }
 
 write_foreign_only_state() {
@@ -206,24 +198,25 @@ yazelix_setup "$meta" "$real" "$store_root"
 write_empty_state
 write_exact_owned_state "$meta/src/yazelix"
 fake_activate_profile
-mv "$real/.local/state/nix/profiles/profile" "$real/.local/state/nix/profile"
-mv "$real/.local/state/nix/profiles/profile-1-link" \
-  "$real/.local/state/nix/profile-1-link"
-ln -s "$real/.local/state/nix/profile" "$real/.nix-profile"
+mkdir -p "$real/.local/state/nix/profiles"
+mv "$real/.local/state/nix/profile" "$real/.local/state/nix/profiles/profile"
+mv "$real/.local/state/nix/profile-1-link" \
+  "$real/.local/state/nix/profiles/profile-1-link"
+ln -s "$real/.local/state/nix/profiles/profile" "$real/.nix-profile"
 
 # A sole-element legacy XDG selector is adopted transactionally: the canonical
-# candidate is built before mutation, a new profiles/profile generation is
+# candidate is built before mutation, a new singular profile generation is
 # created and verified, the frontdoor switches atomically, and legacy selector
 # links are archived instead of remaining a parallel runtime owner.
 yazelix_install_core "$uid" >"$tmp/install.out"
 [ "$(<"$build_counter")" -eq 1 ]
 [ "$(<"$add_counter")" -eq 1 ]
 [ "$(<"$remove_counter")" -eq 0 ]
-[ "$(readlink "$real/.nix-profile")" = "$real/.local/state/nix/profiles/profile" ]
-[ ! -e "$real/.local/state/nix/profile" ] \
-  && [ ! -L "$real/.local/state/nix/profile" ]
-[ ! -e "$real/.local/state/nix/profile-1-link" ] \
-  && [ ! -L "$real/.local/state/nix/profile-1-link" ]
+[ "$(readlink "$real/.nix-profile")" = "$real/.local/state/nix/profile" ]
+[ ! -e "$real/.local/state/nix/profiles/profile" ] \
+  && [ ! -L "$real/.local/state/nix/profiles/profile" ]
+[ ! -e "$real/.local/state/nix/profiles/profile-1-link" ] \
+  && [ ! -L "$real/.local/state/nix/profiles/profile-1-link" ]
 find "$meta/var/lib/envctl/legacy-archives" -type l -name profile -print -quit | grep -q .
 yazelix_only_foundation_element "$(<"$state")"
 yazelix_validate_installed "$uid"
@@ -231,12 +224,12 @@ yazelix_validate_installed "$uid"
 
 # Exact incumbent keeps its generation and mutation state; it still builds the source candidate
 # so an edited path flake cannot leave stale bytes behind under the same originalUrl.
-generation_before="$(readlink "$real/.local/state/nix/profiles/profile")"
+generation_before="$(readlink "$real/.local/state/nix/profile")"
 yazelix_install_core "$uid" >"$tmp/idempotent.out"
 [ "$(<"$build_counter")" -eq 2 ]
 [ "$(<"$add_counter")" -eq 1 ]
 [ "$(<"$remove_counter")" -eq 0 ]
-[ "$(readlink "$real/.local/state/nix/profiles/profile")" = "$generation_before" ]
+[ "$(readlink "$real/.local/state/nix/profile")" = "$generation_before" ]
 
 # A source-drifted element is upgraded through remove+add only after candidate proof.
 jq '.elements.lifeos_foundation_yzx.originalUrl = "github:old/yazelix"
@@ -292,7 +285,7 @@ rm "$real/.nix-profile"
 ln -s "$tmp/foreign-profile" "$real/.nix-profile"
 expect_failure hostile-frontdoor yazelix_install_core "$uid"
 rm "$real/.nix-profile"
-ln -s "$real/.local/state/nix/profiles/profile" "$real/.nix-profile"
+ln -s "$real/.local/state/nix/profile" "$real/.nix-profile"
 ln -s "$tmp/foreign-profile" "$meta/.nix-profile"
 expect_failure meta-profile-shadow yazelix_install_core "$uid"
 rm "$meta/.nix-profile"
@@ -304,26 +297,22 @@ ln -s "$foreign_store/rtk" "$active_generation/toolbin/rtk"
 expect_failure hostile-toolbin yazelix_validate_installed "$uid"
 fake_activate_profile
 
-# The user-local entries are stale only when the active profile has a canonical,
-# content-valid launcher. Missing or store-owner-bypassing profile desktop entries
+# The user-local entries are stale only when the active profile has its canonical,
+# content-valid Agent entry. Missing or store-owner-bypassing profile entries
 # therefore fail before any shadow archival can occur.
 active_generation="$(readlink -f "$real/.nix-profile")"
-rm "$active_generation/share/applications/com.yazelix.Yazelix.Kitty.desktop"
+rm "$active_generation/share/yazelix/applications/com.flexnetos.Yazelix.Agent.desktop"
 expect_failure missing-profile-desktop yazelix_validate_installed "$uid"
 fake_activate_profile
 sed -i 's#^Exec=.*#Exec="/tmp/foreign/yzx" desktop launch#' \
-  "$fake_candidate/share/applications/com.yazelix.Yazelix.Kitty.desktop"
+  "$fake_candidate/share/yazelix/applications/com.flexnetos.Yazelix.Agent.desktop"
 expect_failure hostile-profile-desktop-exec yazelix_validate_installed "$uid"
 write_desktop_fixture
 yazelix_validate_installed "$uid"
-active_generation="$(readlink -f "$real/.nix-profile")"
-rm "$active_generation/share/applications/com.flexnetos.Yazelix.Agent.desktop"
-expect_failure missing-agent-profile-desktop yazelix_validate_installed "$uid"
-fake_activate_profile
-rm "$fake_candidate/share/icons/hicolor/128x128/apps/yazelix.png"
+rm "$fake_candidate/share/icons/hicolor/128x128/apps/yzx.png"
 expect_failure missing-profile-icon yazelix_validate_installed "$uid"
 printf 'fixture icon 128x128\n' \
-  >"$fake_candidate/share/icons/hicolor/128x128/apps/yazelix.png"
+  >"$fake_candidate/share/icons/hicolor/128x128/apps/yzx.png"
 yazelix_validate_installed "$uid"
 
 # Explicit repair archives stale user-bin and desktop shadows only after the

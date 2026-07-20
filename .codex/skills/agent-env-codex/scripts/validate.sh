@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-ROOT="${1:-/home/flexnetos/meta/src/envctl}"
+ROOT="${1:-$(git -C "$(dirname "${BASH_SOURCE[0]}")/../../.." rev-parse --show-toplevel)}"
 SKILL_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DURABLE="$ROOT/agent-skills/agent-env-codex"
 ACTIVE="${CODEX_HOME:-/home/flexnetos/.codex}/skills/agent-env-codex"
@@ -11,13 +11,11 @@ ORIG="$ROOT/.codex/prompts/prompt:codex-gpt-harness.prompt.md"
 FULL="$ROOT/.codex/prompts/prompt:codex-gpt-harness-v3-full-access-no-sandbox.prompt.md"
 SNAPSHOT="$SKILL_ROOT/references/source-prompt.md"
 HARNESS="$ROOT/home/agent-env/codex-harness/Cargo.toml"
-CLAUDE_PROMPT="$ROOT/.claude/prompts/prompt:claude-code-agent-env-ultraplan.prompt.md"
-CLAUDE_SKILL="$ROOT/.claude/skills/agent-env-claude/SKILL.md"
 SUBSTRATE_PROMPT="$ROOT/.codex/prompts/prompt:substrate-init.inherit.md"
 VALIDATOR=/home/flexnetos/.codex/skills/.system/skill-creator/scripts/quick_validate.py
 
-for path in "$ORIG" "$FULL" "$SNAPSHOT" "$HARNESS" "$CLAUDE_PROMPT" \
-  "$CLAUDE_SKILL" "$SUBSTRATE_PROMPT" "$SKILL_ROOT/SKILL.md" \
+for path in "$ORIG" "$FULL" "$SNAPSHOT" "$HARNESS" "$SUBSTRATE_PROMPT" \
+  "$SKILL_ROOT/SKILL.md" \
   "$SKILL_ROOT/references/coverage-map.md" \
   "$SKILL_ROOT/references/bunx-and-github-ssh.md" \
   "$SKILL_ROOT/references/github-execution-policy.md" \
@@ -142,7 +140,7 @@ if grep -Fq '`rtk git ...`' "$FULL" || grep -Fq '/bin/rtk git status' "$FULL"; t
   echo 'direct RTK Git route remains in prompt; use RTK/Meta' >&2
   exit 6
 fi
-for path in "$FULL" "$CLAUDE_PROMPT" "$CLAUDE_SKILL" "$SUBSTRATE_PROMPT"; do
+for path in "$FULL" "$SUBSTRATE_PROMPT"; do
   if grep -Eq '`rtk git (status|worktree|fetch|pull|push|commit|branch|merge|rebase)' "$path" \
     || grep -Fq '`meta --' "$path" \
     || grep -Fq '`meta git status`' "$path" \
@@ -153,7 +151,6 @@ for path in "$FULL" "$CLAUDE_PROMPT" "$CLAUDE_SKILL" "$SUBSTRATE_PROMPT"; do
   fi
 done
 grep -Fq 'rtk meta exec --include <repo> -- git <command>' "$FULL"
-grep -Fq 'rtk meta exec --include <repo> -- git <cmd>' "$CLAUDE_PROMPT"
 if grep -Fq 'harness-session/SKILL.md' "$FULL"; then
   echo 'stale split-skill target remains in prompt' >&2
   exit 6

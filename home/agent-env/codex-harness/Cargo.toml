@@ -11,10 +11,6 @@ name = "codex_harness"
 path = "src/lib.rs"
 
 [[bin]]
-name = "codex-harness-hook"
-path = "src/bin/codex-harness-hook.rs"
-
-[[bin]]
 name = "codex-harness-runner"
 path = "src/bin/codex-harness-runner.rs"
 

@@ -1027,7 +1027,6 @@ fn known_harness_command(first: &str) -> bool {
             | "codex-harness-cargo-fmt"
             | "codex-harness-github-guard"
             | "codex-harness-halt"
-            | "codex-harness-hook"
             | "codex-harness-index"
             | "codex-harness-jsonl"
             | "codex-harness-memory-audit"
@@ -1386,216 +1385,6 @@ pub fn read_stdin_string() -> Result<String> {
     let mut input = String::new();
     io::stdin().read_to_string(&mut input)?;
     Ok(input)
-}
-
-pub fn hook_response(input: &Value) -> Result<Value> {
-    let event = input
-        .get("hook_event_name")
-        .and_then(Value::as_str)
-        .unwrap_or("Unknown");
-    if budget_ceiling_exceeded()
-        && matches!(
-            event,
-            "PreToolUse" | "PermissionRequest" | "SubagentStart" | "UserPromptSubmit"
-        )
-    {
-        record_bad_behavior("budget_ceiling", "budget ceiling marker present", "")?;
-        append_ledger(
-            "budget.jsonl",
-            json!({"event":"budget_ceiling_block","decision":"deny","reason":"budget ceiling marker present"}),
-        )?;
-        return Ok(
-            json!({"hookSpecificOutput":{"permissionDecision":"deny","permissionDecisionReason":"codex-harness budget ceiling exceeded"},"decision":"block","reason":"codex-harness budget ceiling exceeded","systemMessage":"codex-harness blocked because budget ceiling marker is present"}),
-        );
-    }
-    if matches!(event, "SubagentStart") {
-        if !session_capability_enabled("subagents") {
-            record_bad_behavior(
-                "subagent_session_disabled",
-                "subagents disabled for this chat session",
-                &redact(&input.to_string()),
-            )?;
-            return Ok(
-                json!({"hookSpecificOutput":{"permissionDecision":"deny","permissionDecisionReason":"codex-harness session capability disables subagents"},"systemMessage":"codex-harness denied subagent spawn because the session toggle is off"}),
-            );
-        }
-        if !session_capability_enabled("network") {
-            record_bad_behavior(
-                "subagent_network_disabled",
-                "network disabled for this chat session",
-                &redact(&input.to_string()),
-            )?;
-            return Ok(
-                json!({"hookSpecificOutput":{"permissionDecision":"deny","permissionDecisionReason":"codex-harness session capability disables network for subagents"},"systemMessage":"codex-harness denied subagent spawn because the current network toggle is off"}),
-            );
-        }
-        let depth = input
-            .get("depth")
-            .or_else(|| input.pointer("/subagent/depth"))
-            .and_then(Value::as_i64)
-            .unwrap_or(1);
-        if depth > 1 {
-            record_bad_behavior("subagent_depth", "max_depth=1", &format!("depth={depth}"))?;
-            append_ledger(
-                "decisions.jsonl",
-                json!({"event":"subagent_depth_deny","decision":"deny","reason":"max_depth=1","depth":depth}),
-            )?;
-            return Ok(
-                json!({"hookSpecificOutput":{"permissionDecision":"deny","permissionDecisionReason":"codex-harness max_depth=1 denies depth > 1"},"systemMessage":"codex-harness denied subagent depth > 1"}),
-            );
-        }
-        if !model_router_ready() {
-            record_bad_behavior(
-                "subagent_without_model_router",
-                "subagent spawn requires model-router first",
-                &redact(&input.to_string()),
-            )?;
-            append_ledger(
-                "decisions.jsonl",
-                json!({"event":"subagent_model_router_deny","decision":"deny","reason":"model-router route marker missing"}),
-            )?;
-            return Ok(
-                json!({"hookSpecificOutput":{"permissionDecision":"deny","permissionDecisionReason":"codex-harness denied subagent spawn before model-router"},"systemMessage":"codex-harness denied subagent spawn before model-router"}),
-            );
-        }
-    }
-    let mut command_argv = Vec::<String>::new();
-    if let Some(cmd) = input.pointer("/tool_input/command").and_then(Value::as_str) {
-        command_argv = vec!["sh".into(), "-lc".into(), cmd.into()];
-    }
-    if let Some(cmd) = input.pointer("/tool_input/cmd").and_then(Value::as_str) {
-        command_argv = vec!["sh".into(), "-lc".into(), cmd.into()];
-    }
-    if let Some(arr) = input.pointer("/tool_input/argv").and_then(Value::as_array) {
-        command_argv = arr
-            .iter()
-            .filter_map(Value::as_str)
-            .map(str::to_string)
-            .collect();
-    }
-    let text = input.to_string();
-    if matches!(event, "UserPromptSubmit") {
-        let lower = text.to_ascii_lowercase();
-        if lower.contains("leak secrets") || lower.contains("without archive") {
-            record_bad_behavior(
-                "unsafe_user_prompt",
-                "prompt requests bypass or secret unsafe action",
-                &redact(&text),
-            )?;
-            append_ledger(
-                "decisions.jsonl",
-                json!({"event":"user_prompt_block","decision":"deny","reason":"prompt requests bypass or secret unsafe action","preview":redact(&text)}),
-            )?;
-            return Ok(
-                json!({"decision":"block","reason":"codex-harness blocked bypass/secret/archive violation request"}),
-            );
-        }
-    }
-    if matches!(event, "PermissionRequest") {
-        let lower = text.to_ascii_lowercase();
-        if lower.contains("auth.json") {
-            record_bad_behavior(
-                "unsafe_permission_request",
-                "danger/bypass/secret permission request",
-                &redact(&text),
-            )?;
-            append_ledger(
-                "decisions.jsonl",
-                json!({"event":"permission_deny","decision":"deny","reason":"danger/bypass/secret permission request","preview":redact(&text)}),
-            )?;
-            return Ok(
-                json!({"hookSpecificOutput":{"permissionDecision":"deny","permissionDecisionReason":"codex-harness denied danger/bypass/secret permission request"},"systemMessage":"codex-harness denied unsafe permission request"}),
-            );
-        }
-    }
-    if matches!(event, "PreToolUse") && !command_argv.is_empty() {
-        let decision = policy_decision(&command_argv);
-        append_ledger(
-            "decisions.jsonl",
-            json!({"event":"pre_tool_use","decision":format!("{:?}", decision.decision),"reason":decision.reason,"preview":decision.redacted_preview}),
-        )?;
-        if decision.decision == DecisionKind::Deny {
-            record_policy_violation(&decision)?;
-            return Ok(
-                json!({"hookSpecificOutput":{"permissionDecision":"deny","permissionDecisionReason":decision.reason},"systemMessage":"codex-harness denied unsafe tool use"}),
-            );
-        }
-    }
-    if matches!(event, "PreToolUse") {
-        let lower = text.to_ascii_lowercase();
-        if lower.contains("codex-harness/ledger")
-            || lower.contains("/ledger/")
-            || lower.contains("agent-env/archive")
-            || lower.contains("/archive/")
-            || lower.contains("auth.json")
-            || lower.contains(".ssh")
-            || lower.contains(".env")
-        {
-            record_bad_behavior(
-                "unsafe_path_access",
-                "direct ledger/archive/index/secret path mutation or read",
-                &redact(&text),
-            )?;
-            append_ledger(
-                "decisions.jsonl",
-                json!({"event":"pre_tool_use_path_deny","decision":"deny","reason":"direct ledger/archive/secret path mutation or read","preview":redact(&text)}),
-            )?;
-            return Ok(
-                json!({"hookSpecificOutput":{"permissionDecision":"deny","permissionDecisionReason":"codex-harness denied direct ledger/archive/secret path access"},"systemMessage":"codex-harness denied unsafe path access"}),
-            );
-        }
-        let tool_name = input
-            .get("tool_name")
-            .and_then(Value::as_str)
-            .unwrap_or_default();
-        let path = input
-            .pointer("/tool_input/path")
-            .or_else(|| input.pointer("/tool_input/file_path"))
-            .and_then(Value::as_str);
-        if matches!(tool_name, "apply_patch" | "Edit" | "Write") {
-            if let Some(path) = path {
-                let target = Path::new(path);
-                if target.exists() && !archive_record_exists(path)? {
-                    record_bad_behavior(
-                        "write_without_archive",
-                        "existing target has no archive record",
-                        path,
-                    )?;
-                    append_ledger(
-                        "decisions.jsonl",
-                        json!({"event":"write_without_archive_deny","decision":"deny","reason":"existing target has no archive record","target":path}),
-                    )?;
-                    return Ok(
-                        json!({"hookSpecificOutput":{"permissionDecision":"deny","permissionDecisionReason":"codex-harness denied write/edit without archive record"},"systemMessage":"codex-harness denied write/edit without archive record"}),
-                    );
-                }
-            }
-        }
-    }
-    if matches!(event, "Stop") && unresolved_decision_exists()? {
-        let marker = state_dir().join("stop-blocked-once");
-        if !marker.exists() {
-            fs::create_dir_all(state_dir())?;
-            fs::write(&marker, utc_now())?;
-            record_bad_behavior(
-                "stop_unresolved_decision",
-                "unresolved decision marker exists",
-                "",
-            )?;
-            append_ledger(
-                "decisions.jsonl",
-                json!({"event":"stop_block_once","decision":"deny","reason":"unresolved decision marker exists"}),
-            )?;
-            return Ok(
-                json!({"decision":"block","reason":"codex-harness unresolved decision marker blocks Stop once"}),
-            );
-        }
-    }
-    append_ledger(
-        "harness.jsonl",
-        json!({"event":"hook_allow","hook_event_name":event,"decision":"allow"}),
-    )?;
-    Ok(json!({}))
 }
 
 pub fn unresolved_decision_exists() -> Result<bool> {
@@ -2146,14 +1935,12 @@ pub fn audit_value() -> Value {
         }
     }
     let project = project_root();
-    let hooks = project.join(".codex/hooks.json");
     let config = project.join(".codex/config.toml");
     json!({
         "ok": ok,
         "harness_root": harness_root(),
         "project_root": project,
         "ledgers": ledgers,
-        "project_hooks_exists": hooks.exists(),
         "project_config_exists": config.exists(),
         "nix": nix_verify_value()
     })
@@ -3435,39 +3222,6 @@ danger_full_access = "keep"
     }
 
     #[test]
-    fn hooks_pretool_denies_codex() {
-        let _guard = ENV_LOCK.lock().unwrap();
-        let dir = tempfile::tempdir().unwrap();
-        env::set_var("CODEX_HARNESS_ROOT", dir.path());
-        fs::create_dir_all(dir.path().join("codex-harness/ledger")).unwrap();
-        let input =
-            json!({"hook_event_name":"PreToolUse","tool_input":{"argv":["codex","exec","x"]}});
-        let resp = hook_response(&input).unwrap();
-        assert_eq!(
-            resp.pointer("/hookSpecificOutput/permissionDecision")
-                .and_then(Value::as_str),
-            Some("deny")
-        );
-        env::remove_var("CODEX_HARNESS_ROOT");
-    }
-
-    #[test]
-    fn hooks_deny_depth_two_subagent() {
-        let _guard = ENV_LOCK.lock().unwrap();
-        let dir = tempfile::tempdir().unwrap();
-        env::set_var("CODEX_HARNESS_ROOT", dir.path());
-        fs::create_dir_all(dir.path().join("codex-harness/ledger")).unwrap();
-        let input = json!({"hook_event_name":"SubagentStart","depth":2});
-        let resp = hook_response(&input).unwrap();
-        assert_eq!(
-            resp.pointer("/hookSpecificOutput/permissionDecision")
-                .and_then(Value::as_str),
-            Some("deny")
-        );
-        env::remove_var("CODEX_HARNESS_ROOT");
-    }
-
-    #[test]
     fn ledger_hash_chain_roundtrip() {
         let _guard = ENV_LOCK.lock().unwrap();
         let dir = tempfile::tempdir().unwrap();
@@ -3584,22 +3338,6 @@ danger_full_access = "keep"
             "/home/flexnetos/.local/bin/codex"
         )));
         assert!(!approved_codex_frontdoor_path(Path::new("/tmp/codex")));
-    }
-
-    #[test]
-    fn model_router_marker_unlocks_subagent_depth_one() {
-        let _guard = ENV_LOCK.lock().unwrap();
-        let dir = tempfile::tempdir().unwrap();
-        env::set_var("CODEX_HARNESS_ROOT", dir.path());
-        env::set_var("CODEX_PERMISSION_PROFILE", ":danger-full-access");
-        write_full_policy(dir.path());
-        fs::create_dir_all(dir.path().join("codex-harness/ledger")).unwrap();
-        route_model_tasks(&["containment policy tests".to_string()]).unwrap();
-        let input = json!({"hook_event_name":"SubagentStart","depth":1});
-        let resp = hook_response(&input).unwrap();
-        assert!(resp.as_object().map(|o| o.is_empty()).unwrap_or(false));
-        env::remove_var("CODEX_HARNESS_ROOT");
-        env::remove_var("CODEX_PERMISSION_PROFILE");
     }
 
     #[test]
@@ -3893,34 +3631,6 @@ danger_full_access = "keep"
                 Some("network is disabled by the optional session routing switch")
             );
         }
-
-        env::remove_var("CODEX_HARNESS_ROOT");
-        env::remove_var("CODEX_THREAD_ID");
-    }
-
-    #[test]
-    fn subagent_start_rechecks_current_network_toggle() {
-        let _guard = ENV_LOCK.lock().unwrap();
-        let dir = tempfile::tempdir().unwrap();
-        env::set_var("CODEX_HARNESS_ROOT", dir.path());
-        env::set_var("CODEX_THREAD_ID", "subagent-network-recheck");
-        write_full_policy(dir.path());
-        route_model_tasks(&["native Codex implementation".to_string()]).unwrap();
-        set_session_capability("network", false).unwrap();
-
-        let response =
-            hook_response(&json!({"hook_event_name":"SubagentStart","depth":1})).unwrap();
-        assert_eq!(
-            response
-                .pointer("/hookSpecificOutput/permissionDecision")
-                .and_then(Value::as_str),
-            Some("deny")
-        );
-        assert!(response
-            .pointer("/hookSpecificOutput/permissionDecisionReason")
-            .and_then(Value::as_str)
-            .unwrap_or_default()
-            .contains("network"));
 
         env::remove_var("CODEX_HARNESS_ROOT");
         env::remove_var("CODEX_THREAD_ID");

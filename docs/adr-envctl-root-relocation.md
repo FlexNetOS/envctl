@@ -15,7 +15,7 @@ the envctl-owned portable prefix (`$META_ROOT/{usr,etc,var,opt}` + meta-XDG root
 relocatable/archivable only through receipted, reversible tooling.
 
 The one Yazelix-owned Nix profile (`$ENVCTL_REAL_HOME/.nix-profile ->
-$ENVCTL_REAL_HOME/.local/state/nix/profiles/profile`) remains the current install owner for
+$ENVCTL_REAL_HOME/.local/state/nix/profile`) remains the current install owner for
 profile-provided frontdoors during the transition. Envctl never mutates the profile, its
 generations, or profile-owned symlinks; there is exactly one canonical envctl root and one
 profile owner — never a second active envctl root.

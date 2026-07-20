@@ -17,7 +17,7 @@ use crate::dirs::dirs_home;
 use crate::{err, Result};
 
 const FOUNDATION_ELEMENT: &str = "lifeos_foundation_yzx";
-const PROFILE_RELATIVE: &str = ".local/state/nix/profiles/profile";
+const PROFILE_RELATIVE: &str = ".local/state/nix/profile";
 const FRONTDOOR_NAME: &str = ".nix-profile";
 const HOST_NU_CONFIG_RELATIVE: &str = ".config/nushell/config.nu";
 const YAZELIX_NU_HOOK_RELATIVE: &str = ".config/yazelix/shell_nu.nu";
@@ -58,25 +58,11 @@ fn validate_yazelix_nushell_at(home: &Path, store_root: &Path) -> Result<()> {
             profile.display()
         )));
     }
-    let generation = profile.parent().expect("profile has parent").join(selector);
-    let generation_target = fs::read_link(&generation).map_err(|source| {
-        err(format!(
-            "Yazelix Nix profile generation is unreadable at {}: {source}",
-            generation.display()
-        ))
-    })?;
-    if !generation_target.is_absolute()
-        || !generation_target.starts_with(store_root)
-        || !generation_target
-            .file_name()
-            .is_some_and(|name| name.to_string_lossy().ends_with("-profile"))
-    {
-        return Err(err(format!(
-            "Yazelix Nix profile generation must resolve directly under {}: {}",
-            store_root.display(),
-            generation.display()
-        )));
-    }
+    let generation_target = resolve_profile_generation(
+        profile.parent().expect("profile has parent"),
+        &selector,
+        store_root,
+    )?;
     let profile_root = frontdoor.canonicalize().map_err(|source| {
         err(format!(
             "Yazelix Nix profile frontdoor cannot be resolved at {}: {source}",
@@ -136,13 +122,66 @@ fn reject_legacy_profile_frontdoors(home: &Path) -> Result<()> {
 }
 
 fn is_profile_generation_name(value: &str) -> bool {
-    let Some(number) = value
-        .strip_prefix("profile-")
-        .and_then(|value| value.strip_suffix("-link"))
-    else {
+    let Some(mut suffix) = value.strip_prefix("profile-") else {
         return false;
     };
-    !number.is_empty() && number.bytes().all(|byte| byte.is_ascii_digit()) && number != "0"
+    loop {
+        let Some((number, rest)) = suffix.split_once("-link") else {
+            return false;
+        };
+        if number.is_empty() || !number.bytes().all(|byte| byte.is_ascii_digit()) || number == "0" {
+            return false;
+        }
+        if rest.is_empty() {
+            return true;
+        }
+        let Some(next) = rest.strip_prefix('-') else {
+            return false;
+        };
+        suffix = next;
+    }
+}
+
+fn resolve_profile_generation(
+    profile_dir: &Path,
+    selector: &Path,
+    store_root: &Path,
+) -> Result<std::path::PathBuf> {
+    let mut link = profile_dir.join(selector);
+    for _ in 0..16 {
+        let target = fs::read_link(&link).map_err(|source| {
+            err(format!(
+                "Yazelix Nix profile generation is unreadable at {}: {source}",
+                link.display()
+            ))
+        })?;
+        if target.is_absolute() {
+            if target.parent() == Some(store_root)
+                && target
+                    .file_name()
+                    .is_some_and(|name| name.to_string_lossy().ends_with("-profile"))
+            {
+                return Ok(target);
+            }
+            return Err(err(format!(
+                "Yazelix Nix profile generation must resolve directly under {}: {}",
+                store_root.display(),
+                link.display()
+            )));
+        }
+        if target.components().count() != 1
+            || !is_profile_generation_name(&target.to_string_lossy())
+        {
+            return Err(err(format!(
+                "Yazelix Nix profile generation must link only to a local profile-N-link generation: {}",
+                link.display()
+            )));
+        }
+        link = profile_dir.join(target);
+    }
+    Err(err(
+        "Yazelix Nix profile generation link chain exceeds 16 entries",
+    ))
 }
 
 fn validate_foundation_manifest(profile_root: &Path, store_root: &Path) -> Result<()> {
@@ -343,14 +382,21 @@ mod tests {
 
     #[cfg(unix)]
     use std::os::unix::fs::symlink;
+    use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
     fn temp_dir(prefix: &str) -> PathBuf {
         let nonce = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("clock")
             .as_nanos();
-        std::env::temp_dir().join(format!("{prefix}-{}-{nonce}", std::process::id()))
+        let sequence = TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+        std::env::temp_dir().join(format!(
+            "{prefix}-{}-{nonce}-{sequence}",
+            std::process::id()
+        ))
     }
 
     #[cfg(unix)]
@@ -362,7 +408,7 @@ mod tests {
         fs::create_dir_all(profile_root.join("toolbin")).unwrap();
         fs::create_dir_all(profile_root.join("bin")).unwrap();
         fs::create_dir_all(profile_root.join("nushell/config")).unwrap();
-        fs::create_dir_all(home.join(".local/state/nix/profiles")).unwrap();
+        fs::create_dir_all(home.join(".local/state/nix")).unwrap();
         fs::create_dir_all(home.join(".config/nushell")).unwrap();
         fs::create_dir_all(home.join(".config/yazelix")).unwrap();
         fs::write(profile_root.join("toolbin/nu"), "nu").unwrap();
@@ -394,8 +440,9 @@ mod tests {
             .to_string(),
         )
         .unwrap();
-        let profiles = home.join(".local/state/nix/profiles");
-        symlink(&profile_root, profiles.join("profile-1-link")).unwrap();
+        let profiles = home.join(".local/state/nix");
+        symlink(&profile_root, profiles.join("profile-1-link-1-link")).unwrap();
+        symlink("profile-1-link-1-link", profiles.join("profile-1-link")).unwrap();
         symlink("profile-1-link", profiles.join("profile")).unwrap();
         symlink(profiles.join("profile"), home.join(FRONTDOOR_NAME)).unwrap();
         fs::write(
@@ -424,12 +471,96 @@ mod tests {
     fn yazelix_contract_rejects_legacy_parallel_frontdoor() {
         let (root, home, store) = fixture();
         symlink(
-            home.join(".local/state/nix/profiles/profile"),
+            home.join(".local/state/nix/profile"),
             home.join(".nix-profile-1-link"),
         )
         .unwrap();
         let error = validate_yazelix_nushell_at(&home, &store).unwrap_err();
         assert!(error.to_string().contains("parallel Nix profile frontdoor"));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn yazelix_contract_rejects_plural_or_store_bypassing_frontdoors() {
+        let (root, home, store) = fixture();
+        fs::remove_file(home.join(FRONTDOOR_NAME)).unwrap();
+        symlink(
+            home.join(".local/state/nix/profiles/profile"),
+            home.join(FRONTDOOR_NAME),
+        )
+        .unwrap();
+        let error = validate_yazelix_nushell_at(&home, &store).unwrap_err();
+        assert!(error.to_string().contains("must point only"));
+        fs::remove_file(home.join(FRONTDOOR_NAME)).unwrap();
+        symlink(
+            fs::canonicalize(home.join(FRONTDOOR_NAME))
+                .unwrap_or_else(|_| store.join("fixture-profile")),
+            home.join(FRONTDOOR_NAME),
+        )
+        .unwrap();
+        let error = validate_yazelix_nushell_at(&home, &store).unwrap_err();
+        assert!(error.to_string().contains("must point only"));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn yazelix_contract_rejects_selector_outside_the_profile_directory() {
+        let (root, home, store) = fixture();
+        let selector = home.join(PROFILE_RELATIVE);
+        fs::remove_file(&selector).unwrap();
+        symlink("../outside", &selector).unwrap();
+        let error = validate_yazelix_nushell_at(&home, &store).unwrap_err();
+        assert!(error
+            .to_string()
+            .contains("must name one local profile-N-link generation"));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn yazelix_contract_rejects_invalid_generation_and_foundation_manifest_variants() {
+        let (root, home, store) = fixture();
+        let selector = home.join(PROFILE_RELATIVE);
+        fs::remove_file(&selector).unwrap();
+        symlink("profile-99-link", &selector).unwrap();
+        symlink(
+            store.join("not-a-generation"),
+            home.join(".local/state/nix/profile-99-link"),
+        )
+        .unwrap();
+        let error = validate_yazelix_nushell_at(&home, &store).unwrap_err();
+        assert!(error.to_string().contains("must resolve directly under"));
+        fs::remove_file(&selector).unwrap();
+        symlink("profile-1-link", &selector).unwrap();
+
+        let profile_root = fs::canonicalize(home.join(FRONTDOOR_NAME)).unwrap();
+        let manifest = profile_root.join("manifest.json");
+        for invalid in [
+            serde_json::json!({"version": 3, "elements": {}}),
+            serde_json::json!({"version": 3, "elements": { FOUNDATION_ELEMENT: {
+                "active": true, "priority": 3,
+                "attrPath": "packages.x86_64-linux.lifeos_foundation_yzx",
+                "storePaths": [store.join("fixture-lifeos-foundation-yzx").to_string_lossy()],
+            }}}),
+            serde_json::json!({"version": 3, "elements": { FOUNDATION_ELEMENT: {
+                "active": true, "priority": 4,
+                "attrPath": "legacy.lifeos_foundation_yzx",
+                "storePaths": [store.join("fixture-lifeos-foundation-yzx").to_string_lossy()],
+            }}}),
+            serde_json::json!({"version": 3, "elements": { FOUNDATION_ELEMENT: {
+                "active": true, "priority": 4,
+                "attrPath": "packages.x86_64-linux.lifeos_foundation_yzx",
+                "storePaths": [
+                    store.join("fixture-lifeos-foundation-yzx").to_string_lossy(),
+                    store.join("another-lifeos-foundation-yzx").to_string_lossy(),
+                ],
+            }}}),
+        ] {
+            fs::write(&manifest, invalid.to_string()).unwrap();
+            assert!(validate_yazelix_nushell_at(&home, &store).is_err());
+        }
         fs::remove_dir_all(root).unwrap();
     }
 
