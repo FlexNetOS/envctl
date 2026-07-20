@@ -13,6 +13,7 @@ use std::process::Command;
 const ACTIVE_CATALOG: &str = "/home/flexnetos/.codex/model-catalog.json";
 
 const REQUIRED_CATALOG_MODELS: &[&str] = &[
+    "tencent/hy3:free",
     "gpt-5.4",
     "gpt-5.4-mini",
     "gpt-5.4-nano",

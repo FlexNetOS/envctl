@@ -14,7 +14,7 @@
 //!   parallel PR #73 port, kept self-contained here.
 //! - F-05: [`resolve_path`] (leading-`~` home expansion only).
 //! - F-06: [`select_targets`] + [`BrokenSkill`] + [`TargetSelection`].
-//! - F-07: [`resolve_destinations`] (one skills path per agent, scope-aware).
+//! - F-07: [`resolve_destinations`] (all owned skills surfaces per agent, scope-aware).
 //! - F-08: [`resolve_mcp_settings_targets`] (one MCP config target per agent, deduped).
 //! - F-09: [`resolve_command_targets`] (one command dir per agent, filtered + deduped).
 //! - F-10: [`scope_root`] / [`relativize_dest`] / [`resolve_dest`] (the lock-portability core).
@@ -26,7 +26,7 @@ use std::path::{Path, PathBuf};
 use crate::agent::{CommandTarget, McpSettingsTarget};
 use crate::config::{Config, Scope, SkillTarget, SkillsField};
 use crate::dirs::{dirs_agent_env_config, dirs_home};
-use crate::{err, Result};
+use crate::{err, Result, TreeSnapshot};
 
 // ---------------------------------------------------------------------------
 // F-04: SettingsFile (JSON load/mutate/save wrapper)
@@ -72,50 +72,18 @@ impl SettingsFile {
 // F-03: recursive directory copy
 // ---------------------------------------------------------------------------
 
-/// Depth ceiling for [`copy_dir_contents`] recursion — a symlink cycle would otherwise
-/// recurse forever; exceeding this is treated as a cycle and refused (fail-closed).
-const MAX_COPY_DEPTH: u32 = 32;
-
-/// Replace `dst` with a fresh recursive copy of `src` (destination removed first).
+/// Replace `dst` atomically with a verified snapshot of `src`.
 pub fn copy_dir(src: &Path, dst: &Path) -> Result<()> {
-    if dst.exists() {
-        fs::remove_dir_all(dst)?;
-    }
-    fs::create_dir_all(dst)?;
-    copy_dir_contents(src, dst, 0)
+    TreeSnapshot::capture(src)?.install_atomic(dst)
 }
 
-/// Recursively copy the entries of `src` into `dst`, following symlinks and guarding against
-/// symlink cycles via [`MAX_COPY_DEPTH`].
+/// Copy a tree using the same fail-closed snapshot policy as [`copy_dir`].
+///
+/// `depth` remains in the public signature for source compatibility; traversal is now cycle-aware
+/// rather than relying on an arbitrary recursion ceiling.
 pub fn copy_dir_contents(src: &Path, dst: &Path, depth: u32) -> Result<()> {
-    if depth > MAX_COPY_DEPTH {
-        return Err(err(format!(
-            "copy depth limit ({MAX_COPY_DEPTH}) exceeded — possible symlink cycle at {}",
-            src.display()
-        )));
-    }
-    for entry in fs::read_dir(src)? {
-        let entry = entry?;
-        let src_path = entry.path();
-        let target = dst.join(entry.file_name());
-        let file_type = entry.file_type()?;
-        if file_type.is_symlink() {
-            let resolved = fs::canonicalize(&src_path)?;
-            let meta = fs::metadata(&resolved)?;
-            if meta.is_dir() {
-                fs::create_dir_all(&target)?;
-                copy_dir_contents(&resolved, &target, depth + 1)?;
-            } else {
-                copy_file(&resolved, &target)?;
-            }
-        } else if file_type.is_dir() {
-            fs::create_dir_all(&target)?;
-            copy_dir_contents(&src_path, &target, depth + 1)?;
-        } else {
-            copy_file(&src_path, &target)?;
-        }
-    }
-    Ok(())
+    let _ = depth;
+    copy_dir(src, dst)
 }
 
 /// Copy a single file, creating parent dirs and (on Windows) stripping a propagated
@@ -280,7 +248,14 @@ pub fn resolve_destinations(base: &Path, cfg: &Config, scope: Scope) -> Result<V
         ));
     }
     match scope {
-        Scope::Project => Ok(agents.iter().map(|a| a.project_path(base)).collect()),
+        Scope::Project => {
+            let mut seen = std::collections::HashSet::new();
+            Ok(agents
+                .iter()
+                .flat_map(|agent| agent.project_skill_paths(base))
+                .filter(|path| seen.insert(path.clone()))
+                .collect())
+        }
         Scope::Global => {
             let home = dirs_home()?;
             Ok(agents.iter().map(|a| a.global_path(&home)).collect())
@@ -608,6 +583,17 @@ mod tests {
         assert_eq!(
             dests,
             vec![base.join(".claude/skills"), base.join(".cursor/skills"),]
+        );
+    }
+
+    #[test]
+    fn codex_project_skills_include_active_agents_mirror() {
+        let cfg: Config = serde_yaml::from_str("agent: codex\nskills: []\n").expect("parse config");
+        let base = Path::new("/proj");
+        let dests = resolve_destinations(base, &cfg, Scope::Project).expect("resolve");
+        assert_eq!(
+            dests,
+            vec![base.join(".codex/skills"), base.join(".agents/skills")]
         );
     }
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test-codex-cli-release-lanes.sh — guard envctl's Node-independent Codex Rust release lanes.
+# test-codex-cli-release-lanes.sh — guard the single profile-owned Codex release lane.
 set -euo pipefail
 
 ROOT="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)"
@@ -9,27 +9,6 @@ fail() {
   echo "FAIL: $*" >&2
   exit 1
 }
-
-grep -Fq 'pinned upstream release rust-v0.142.3' "$MANIFEST" \
-  || fail "stable Codex CLI component must pin rust-v0.142.3"
-
-if grep -Fq '0.142.0' "$MANIFEST"; then
-  grep -Fn '0.142.0' "$MANIFEST" >&2
-  fail "stale rust-v0.142.0 default remains"
-fi
-
-stable_defaults="$(grep -Fc 'CODEX_VERSION:-0.142.3' "$MANIFEST")"
-[ "$stable_defaults" -ge 3 ] \
-  || fail "stable component must use CODEX_VERSION override with 0.142.3 default in detect/install/fix"
-
-grep -Fq 'id = "codex-cli-alpha"' "$MANIFEST" \
-  || fail "missing opt-in codex-cli-alpha component"
-grep -Fq 'CODEX_ALPHA_VERSION:-0.143.0-alpha.29' "$MANIFEST" \
-  || fail "alpha lane must pin current candidate rust-v0.143.0-alpha.29 behind CODEX_ALPHA_VERSION"
-grep -Fq 'envctl codex alpha wrapper' "$MANIFEST" \
-  || fail "alpha lane must expose a distinct codex-alpha wrapper"
-grep -Fq 'codex-alpha' "$MANIFEST" \
-  || fail "alpha lane must expose codex-alpha without repointing codex"
 
 python3 - "$MANIFEST" <<'PY'
 import sys
@@ -43,20 +22,48 @@ for required in ("codex-cli", "codex-cli-alpha"):
     if required not in components:
         raise SystemExit(f"missing component {required}")
 
+stable_text = manifest.read_text().split('id = "codex-cli"', 1)[1].split("[[component]]", 1)[0]
+if components["codex-cli"].get("requires") != ["yazelix"]:
+    raise SystemExit("stable Codex must delegate ownership exclusively to the Yazelix profile")
+if components["codex-cli-alpha"].get("requires") != ["codex-cli"]:
+    raise SystemExit("the retired alpha compatibility component must depend on stable profile ownership")
+
 alpha_text = manifest.read_text().split('id = "codex-cli-alpha"', 1)[1].split("[[component]]", 1)[0]
 for forbidden in (
-    'ln -sfn "$VER" "$CUR"',
-    'openai-codex/current/bin/codex',
-    'CODEX_BIN_PATH="${CODEX_BIN_PATH:-$META_ROOT/.toolchains/openai-codex/${VER}/bin/codex}"',
+    "CODEX_VERSION",
+    "CODEX_ALPHA_VERSION",
+    "0.142.3",
+    "0.143.0-alpha.29",
+    "releases/download/rust-v",
+    ".toolchains/openai-codex",
+    'LINK="$M/usr/bin/codex"',
+    "envctl codex wrapper",
+    "envctl codex alpha wrapper",
+    "codex-alpha",
+    "CODEX_BUILD_FROM_SOURCE",
+    "CODEX_CARGO_JOBS",
+    "CARGO_PROFILE_RELEASE_LTO",
+    "CARGO_PROFILE_RELEASE_CODEGEN_UNITS",
+    "CARGO_PROFILE_RELEASE_INCREMENTAL",
 ):
-    if forbidden in alpha_text:
-        raise SystemExit(f"alpha lane must not repoint or use stable current: {forbidden}")
+    if forbidden in stable_text or forbidden in alpha_text:
+        raise SystemExit(f"Codex must not retain a parallel Meta-root release lane: {forbidden}")
 
-stable_remove = " ".join(components["codex-cli"]["remove"]["args"])
-if '@openai/codex' not in stable_remove:
-    raise SystemExit("stable remove path must still clean stale npm/Bun @openai/codex shims")
-if "timeout --kill-after=2s 20s bun remove -g @openai/codex" not in manifest.read_text():
-    raise SystemExit("stale npm/Bun cleanup must be timeout-bounded and non-blocking")
+for component_id in ("codex-cli", "codex-cli-alpha"):
+    for phase in ("detect", "install", "verify", "fix", "remove"):
+        hook = components[component_id][phase]
+        if hook.get("kind") != "shipped_script":
+            raise SystemExit(f"{component_id} {phase} must use the validated shipped-script boundary")
+        if hook.get("path") != "$ENVCTL_SOURCE_ROOT/assets/scripts/envctl-codex-profile-lifecycle.sh":
+            raise SystemExit(f"{component_id} {phase} must use the profile lifecycle script")
+        if hook.get("args") != [phase]:
+            raise SystemExit(f"{component_id} {phase} must delegate to the profile lifecycle")
+
+group_detect = components["group-ai-clis"]["detect"]["args"][-1]
+if "envctl-codex-profile-lifecycle.sh" not in group_detect:
+    raise SystemExit("AI CLI group detect must use the profile-owned Codex contract")
+if "command -v codex" in group_detect or "for c in claude codex" in group_detect:
+    raise SystemExit("AI CLI group detect must not search the Meta-first PATH for Codex")
 PY
 
-echo "PASS: Codex Rust release lanes are Node-independent and alpha is opt-in"
+echo "PASS: Codex release ownership is singular and Yazelix-profile-owned"

@@ -67,7 +67,11 @@ write_record() {
 }
 
 resolve_weave() {
-  if [ -n "${WEAVE_BIN:-}" ]; then printf '%s\n' "$WEAVE_BIN"; return 0; fi
+  if [ -n "${WEAVE_BIN:-}" ]; then
+    [ -x "$WEAVE_BIN" ] || return 1
+    printf '%s\n' "$WEAVE_BIN"
+    return 0
+  fi
   if command -v weave >/dev/null 2>&1; then command -v weave; return 0; fi
   local meta_root="${META_ROOT:-}"
   if [ -z "$meta_root" ] && [ -n "${TARGET_ROOT:-}" ] && [ -d "$TARGET_ROOT/.." ]; then

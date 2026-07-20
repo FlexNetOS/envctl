@@ -9,10 +9,12 @@
 # (`crates/agent-env` + `Engine::agent_*`), so this component drives the BUILT-IN `envctl agent`
 # verbs — no `cargo install kasetto`, no external binary, no `rustup` requirement just for this layer.
 #
-#   detect : envctl present + an agent-env config exists (the agent engine is built into envctl).
-#   verify : `envctl agent lock --config agent-env.yaml --check --locked` proves lock drift closed.
-#   install/fix : `envctl agent sync --config agent-env.yaml --apply` (provision/refresh .claude/.codex).
-#   remove : `envctl agent clean --scope project --apply` (unprovision the installed skills/MCPs).
+#   detect : the owned private envctl payload + an agent-env config exist.
+#   verify : the exact owned payload runs `agent lock --scope project --check --locked`.
+#   install/fix : that payload runs `agent sync --scope project --apply`.
+#   remove : that payload runs `agent clean --scope project --apply`.
+# The explicit dependency chain makes Yazelix's one-profile Nu/RTK route the only runtime
+# foundation before agent assets are checked or rendered; no hook resolves ambient PATH.
 #
 # NOTE: `agent-env.yaml`/`agent-env.lock` are the absorbed envctl-agent filenames. The retired
 # `kasetto.yaml`/`kasetto.lock` names are historical only (TASK-0040).
@@ -22,29 +24,49 @@
 [[component]]
 id = "kasetto"
 name = "agent-env toolkit (envctl agent — kasetto v3.2.0 absorbed)"
-description = "Declarative AI-agent environment layer; provisions the skills + MCP baseline from agent-env.yaml into .claude/.codex via the built-in `envctl agent` (kasetto v3.2.0 absorbed). detect = envctl present + config; verify = zero-network `envctl agent lock --config agent-env.yaml --check --locked`. External kasetto binary retired (TASK-0018)."
-requires = []
+description = "Declarative AI-agent environment layer; provisions the skills + MCP baseline from agent-env.yaml via the exact meta-owned envctl-cli payload. verify = zero-network project-scope lock check; ambient PATH generations are never used. External kasetto binary retired (TASK-0018)."
+requires = ["envctl-cli", "yazelix", "rtk", "codex-global-baseline"]
 [component.detect]
-kind = "command"
-command = "bash"
-args = ["-lc", "command -v envctl >/dev/null 2>&1 && [ -f agent-env.yaml ]"]
+kind = "script"
+script = '''
+set -euo pipefail
+M="${META_ROOT:?META_ROOT required}"
+ENVCTL="$M/usr/libexec/envctl/cli/bin/envctl"
+[ -f "$ENVCTL" ] && [ -x "$ENVCTL" ] && [ ! -L "$ENVCTL" ] && [ -f agent-env.yaml ]
+'''
 [component.install]
 kind = "script"
 script = '''
-export PATH="$META_ROOT/.toolchains/cargo/bin:$META_ROOT/usr/bin:$PATH"
-envctl agent sync --config agent-env.yaml --apply
+set -euo pipefail
+M="${META_ROOT:?META_ROOT required}"
+ENVCTL="$M/usr/libexec/envctl/cli/bin/envctl"
+[ -f "$ENVCTL" ] && [ -x "$ENVCTL" ] && [ ! -L "$ENVCTL" ]
+"$ENVCTL" agent sync --config agent-env.yaml --scope project --apply
 '''
 [component.verify]
-kind = "command"
-command = "bash"
-args = ["-lc", "export PATH=\"$META_ROOT/.toolchains/cargo/bin:$META_ROOT/usr/bin:$PATH\"; envctl agent lock --config agent-env.yaml --check --locked"]
+kind = "script"
+script = '''
+set -euo pipefail
+M="${META_ROOT:?META_ROOT required}"
+ENVCTL="$M/usr/libexec/envctl/cli/bin/envctl"
+[ -f "$ENVCTL" ] && [ -x "$ENVCTL" ] && [ ! -L "$ENVCTL" ]
+"$ENVCTL" agent lock --config agent-env.yaml --scope project --check --locked
+'''
 [component.fix]
 kind = "script"
 script = '''
-export PATH="$META_ROOT/.toolchains/cargo/bin:$META_ROOT/usr/bin:$PATH"
-envctl agent sync --config agent-env.yaml --apply
+set -euo pipefail
+M="${META_ROOT:?META_ROOT required}"
+ENVCTL="$M/usr/libexec/envctl/cli/bin/envctl"
+[ -f "$ENVCTL" ] && [ -x "$ENVCTL" ] && [ ! -L "$ENVCTL" ]
+"$ENVCTL" agent sync --config agent-env.yaml --scope project --apply
 '''
 [component.remove]
-kind = "command"
-command = "bash"
-args = ["-lc", "export PATH=\"$META_ROOT/.toolchains/cargo/bin:$META_ROOT/usr/bin:$PATH\"; envctl agent clean --scope project --apply"]
+kind = "script"
+script = '''
+set -euo pipefail
+M="${META_ROOT:?META_ROOT required}"
+ENVCTL="$M/usr/libexec/envctl/cli/bin/envctl"
+[ -f "$ENVCTL" ] && [ -x "$ENVCTL" ] && [ ! -L "$ENVCTL" ]
+"$ENVCTL" agent clean --scope project --apply
+'''

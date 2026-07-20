@@ -6,11 +6,11 @@
 # ECC-auto-generated .claude/.codex files. Lock-of-record: agent-env.lock (was kasetto.lock).
 #
 # Stabilize/refresh:
-#   envctl agent lock --check --color never         # read-only, zero-network
+#   envctl agent lock --check --locked --color never # read-only, zero-network
 #   envctl agent sync --json --color never          # preview; writes nothing
 #   envctl agent sync --apply --color never         # only after review/approval
 # CI enforcement:
-#   envctl agent lock --check                       # exits 1 on config/lock drift
+#   envctl agent lock --check --locked              # zero-network; exits 1 on drift
 #
 # Navigation invariant:
 #   /home/flexnetos/.codex/config.toml is the active runtime config.
@@ -22,6 +22,11 @@
 #   retired mirrors; do not use them as inputs or fallback outputs.
 
 scope: project
+
+# The only active user runtime is the Yazelix-managed Nushell route.  Agent sync/lock/doctor
+# refuse to bless a duplicate RTK wrapper, a second Nix profile frontdoor, or a profile that
+# does not contain exactly the foundation package.
+runtime: yazelix-nushell
 
 agent:
   - claude-code

@@ -1,50 +1,32 @@
-//! OS-invariant SHA-256 content hashing — ported verbatim from kasetto v3.2.0
-//! `src/fsops/hash.rs`.
+//! Versioned SHA-256 content hashing for agent assets.
 //!
-//! Path separators are normalized (`\` → `/`) before being fed into the digest so the same
-//! skill hashes identically on Windows and Unix; otherwise a committed lock would not be
-//! portable across operating systems.
+//! Skill trees use the lock-v3 `tree-v1` domain. Paths are separator-normalized, but relevant
+//! permission modes are also authenticated, so a skill lock is reproducible for the declared
+//! target platform rather than falsely claiming byte-for-byte cross-OS equivalence.
 
 use std::fs;
 use std::io::{BufReader, Read};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use sha2::{Digest, Sha256};
 
-use crate::Result;
+use crate::{Result, TreeSnapshot};
 
 /// Hash a directory tree: every file's relative path (separator-normalized) and contents
 /// are folded into one SHA-256 digest, with files visited in sorted order for stability.
 pub fn hash_dir(path: &Path) -> Result<String> {
-    let mut files = Vec::new();
-    collect_files(path, &mut files)?;
-    files.sort();
-
-    let mut hasher = Sha256::new();
-    let mut buf = [0u8; 8192];
-    for f in files {
-        // Normalize path separators so the digest is invariant across OSes
-        // (Windows `\` vs Unix `/`); otherwise the same skill hashes differently
-        // per platform and breaks committed-lock portability.
-        let rel = f
-            .strip_prefix(path)
-            .map_err(|e| crate::err(format!("hash_dir strip_prefix failed: {e}")))?
-            .to_string_lossy()
-            .replace('\\', "/");
-        hasher.update(rel.as_bytes());
-        hasher.update([0]);
-        let file = fs::File::open(&f)?;
-        let mut reader = BufReader::new(file);
-        sha256_update_reader(&mut reader, &mut hasher, &mut buf)?;
-        hasher.update([0]);
-    }
-    Ok(format!("{:x}", hasher.finalize()))
+    Ok(TreeSnapshot::capture(path)?.hash())
 }
 
 /// Hash an arbitrary string (used to key machine-local state by lock path).
 pub fn hash_str(s: &str) -> String {
+    hash_bytes(s.as_bytes())
+}
+
+/// Hash already-captured bytes without re-reading a mutable source path.
+pub fn hash_bytes(bytes: &[u8]) -> String {
     let mut hasher = Sha256::new();
-    hasher.update(s.as_bytes());
+    hasher.update(bytes);
     format!("{:x}", hasher.finalize())
 }
 
@@ -73,23 +55,10 @@ fn sha256_update_reader<R: Read>(
     Ok(())
 }
 
-fn collect_files(dir: &Path, out: &mut Vec<PathBuf>) -> Result<()> {
-    for entry in fs::read_dir(dir)? {
-        let entry = entry?;
-        let file_type = entry.file_type()?;
-        let path = entry.path();
-        if file_type.is_dir() {
-            collect_files(&path, out)?;
-        } else if file_type.is_file() {
-            out.push(path);
-        }
-    }
-    Ok(())
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::PathBuf;
 
     fn temp_dir(prefix: &str) -> PathBuf {
         let nanos = std::time::SystemTime::now()

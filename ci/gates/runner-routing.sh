@@ -2,8 +2,9 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-CI_WORKFLOW="$ROOT/.github/workflows/ci.yml"
-SYNC_WORKFLOW="$ROOT/.github/workflows/sync-master.yml"
+# Overridable for the hermetic contract test (scripts/tests/test-runner-routing.sh) only.
+CI_WORKFLOW="${RUNNER_ROUTING_CI:-$ROOT/.github/workflows/ci.yml}"
+SYNC_WORKFLOW="${RUNNER_ROUTING_SYNC:-$ROOT/.github/workflows/sync-master.yml}"
 
 python3 - "$CI_WORKFLOW" "$SYNC_WORKFLOW" <<'PY'
 from pathlib import Path
@@ -40,8 +41,36 @@ def job_block(job_id: str) -> str:
 LOCAL_LABELS = "fromJSON('[\"self-hosted\",\"linux\",\"x64\",\"local\",\"flexnetos\"]')"
 FORK_GUARD = "github.event.pull_request.head.repo.full_name == github.repository"
 ESCAPE_HATCH = "vars.CI_FORCE_HOSTED"
+TARGET_ISOLATION = (
+    'echo "CARGO_TARGET_DIR=$RUNNER_TEMP/envctl-target-'
+    '$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT-$GITHUB_JOB" >> "$GITHUB_ENV"'
+)
 
-for job_id in ["rustfmt", "clippy", "msrv", "cargo-audit", "test", "gates"]:
+# CI checkouts live below META_ROOT on the self-hosted fleet. Cargo walks parent
+# directories and therefore sees META_ROOT/.cargo/config.toml, whose optional
+# Wild/Kache acceleration is host state rather than part of this repository's CI
+# contract. These workflow-level overrides keep every job reproducible on both
+# self-hosted and GitHub-hosted runners.
+for setting in (
+    "  CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: cc",
+    '  CARGO_BUILD_RUSTC_WRAPPER: ""',
+    '  RUSTFLAGS: ""',
+):
+    require(setting in ci, f"ci.yml missing hermetic Cargo override: {setting.strip()}")
+
+# Derive the job list from the workflow itself — a hardcoded literal let any NEW job
+# escape the local-first/fork-guard/escape-hatch invariants (audit finding 2026-07-12).
+# The floor set guards renames/removals: shrinking below it fails, never silently.
+jobs_section = ci[ci.index("\njobs:") :]
+derived_jobs = re.findall(r"(?m)^  ([A-Za-z0-9_-]+):\s*(?:#.*)?$", jobs_section)
+REQUIRED_FLOOR = {"rustfmt", "clippy", "msrv", "cargo-audit", "test", "gates"}
+missing_floor = REQUIRED_FLOOR - set(derived_jobs)
+require(
+    not missing_floor,
+    f"required jobs missing from ci.yml (rename/removal must update the gate floor): {sorted(missing_floor)}",
+)
+
+for job_id in derived_jobs:
     body = job_block(job_id)
     runs_on = re.search(r"(?m)^    runs-on:\s*(?P<expr>.+)$", body)
     require(runs_on is not None, f"{job_id}: missing runs-on")
@@ -63,6 +92,10 @@ for job_id in ["rustfmt", "clippy", "msrv", "cargo-audit", "test", "gates"]:
     require(
         "'ubuntu-latest'" in expr,
         f"{job_id} must declare the GitHub-hosted fallback lane",
+    )
+    require(
+        TARGET_ISOLATION in body,
+        f"{job_id} must isolate CARGO_TARGET_DIR by run, attempt, and job",
     )
 
 # Stale PR runs should not keep either queue busy, but protected develop pushes must

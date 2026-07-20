@@ -33,6 +33,7 @@ use envctl_secrets::{
     SwapMode, Unlock, Upstream,
 };
 use ring::signature::{Ed25519KeyPair, KeyPair};
+use rustls::pki_types::pem::PemObject;
 use sha2::{Digest, Sha256};
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use zeroize::Zeroizing;
@@ -226,7 +227,7 @@ fn client_config_trusting_only(cert_pem: &std::path::Path) -> rustls::ClientConf
     let pem = std::fs::read(cert_pem).expect("read relay cert");
     let mut rd = std::io::BufReader::new(&pem[..]);
     let mut roots = rustls::RootCertStore::empty();
-    for cert in rustls_pemfile::certs(&mut rd) {
+    for cert in rustls::pki_types::CertificateDer::pem_reader_iter(&mut rd) {
         roots.add(cert.expect("parse cert")).expect("add root");
     }
     rustls::ClientConfig::builder_with_provider(Arc::new(rustls::crypto::ring::default_provider()))

@@ -30,9 +30,8 @@ git commit -m "chore: pin agent skills"
 ```
 
 ```
-# Teammates: clone, then sync. The lock is honored exactly —
-# no surprise upgrades, and no network fetch when nothing changed.
-envctl agent sync --apply
+# Teammates: clone, then use the committed v3 proofs with zero network.
+envctl agent sync --locked --apply
 ```
 
 ```
@@ -91,10 +90,10 @@ Both honor `--locked`/`--frozen` (the follow-up sync refuses to fetch), `--json`
 
 ## Verify The Lock In CI Without Installing
 
-`envctl agent lock --check` (alias `--frozen`) re-resolves the config and compares against `agent-env.lock` — exits non-zero on drift, never writes. Cheaper than a full `sync --locked` when you only need to know "is the committed lock still accurate?":
+`envctl agent lock --check` (alias `--frozen`) re-resolves the config and compares against `agent-env.lock` — exits non-zero on drift and never writes, but may fetch remote sources. For a fail-closed, zero-network CI audit, also pass `--locked`:
 
 ```
-envctl agent lock --check
+envctl agent lock --check --locked
 ```
 
 When a single dependency needs to roll forward without re-resolving everything, target it with `-P` / `--upgrade-package` (mirrors `sync --update <name>...`):

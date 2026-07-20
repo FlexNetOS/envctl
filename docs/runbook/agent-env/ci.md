@@ -28,7 +28,11 @@ If you commit `agent-env.lock` (recommended for teams — see [Cookbook](./cookb
 envctl agent sync --locked --apply
 ```
 
-`--locked` (alias `--frozen`) errors if the config needs something the lock can't satisfy, so a stale or out-of-sync lock fails the build instead of drifting. It still repairs tampered destinations locally, but never resolves moving refs or downloads new content.
+`--locked` (alias `--frozen`) errors if the config needs something the v3 lock and verified local
+bytes cannot satisfy, so stale selectors/proofs or missing remote content fail instead of drifting.
+It never resolves moving refs, fetches remote configs/`extends`, or downloads source content. A
+clean project clone can install from a committed proof-bearing lock when the required source bytes
+are local to the checkout; a remote-only missing input fails closed.
 
 ### Validate Without Writing
 
@@ -62,7 +66,7 @@ envctl agent sync --color never
 
 envctl is designed to keep going when individual skills are missing/broken in a source, but failures that prevent reading sources/configs are treated as errors.
 
-If you're depending on strict enforcement in CI, pair the preview run with `--json` and enforce policy in the CI step based on the report — or use `envctl agent lock --check` (alias `--frozen`), which **exits 1 on drift**.
+If you're depending on strict enforcement in CI, pair the preview run with `--json` and enforce policy in the CI step based on the report — or use `envctl agent lock --check --locked`, which is zero-network and **exits 1 on drift**.
 
 ## GitHub Actions Example
 

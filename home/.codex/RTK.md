@@ -1,32 +1,6 @@
-# RTK - Rust Token Killer (Codex CLI)
+# RTK policy pointer
 
-**Usage**: Token-optimized CLI proxy for shell commands.
-
-## Rule
-
-Always prefix shell commands with `rtk`.
-
-Examples:
-
-```bash
-rtk git status
-rtk cargo test
-rtk npm run build
-rtk pytest -q
-```
-
-## Meta Commands
-
-```bash
-rtk gain            # Token savings analytics
-rtk gain --history  # Recent command savings history
-rtk proxy <cmd>     # Run raw command without filtering
-```
-
-## Verification
-
-```bash
-rtk --version
-rtk gain
-which rtk
-```
+The sole Codex RTK policy is `/home/flexnetos/.codex/AGENTS.rtk.md`. It requires
+the exact profile-owned `/home/flexnetos/.nix-profile/bin/rtk` frontdoor and
+`rtk proxy --` for unfiltered native output. This compatibility file is not a
+second policy surface and is intentionally not imported by `AGENTS.md`.

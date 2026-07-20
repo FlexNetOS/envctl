@@ -12,7 +12,8 @@ use crate::error::{run_phase, RunContext};
 use crate::event::{Event, EventSink, Stream};
 use crate::layout::MetaLayout;
 use crate::model::{
-    AddRepoMode, AddRepoSpec, OpResult, OpStatus, Registry, ResetGates, RunPlan, RunSummary, Wiring,
+    AddRepoMode, AddRepoSpec, ComponentAvailability, OpResult, OpStatus, Registry, ResetGates,
+    RunPlan, RunSummary, Wiring,
 };
 use std::collections::HashSet;
 use std::path::Path;
@@ -194,6 +195,8 @@ pub fn run(
     let mut failed_ids: HashSet<String> = HashSet::new();
 
     for (i, comp) in order.iter().enumerate() {
+        let install_post_verify =
+            plan.phase == Phase::Install && comp.refresh_on_verify_failure && comp.verify.is_some();
         sink.emit(Event::StepStarted {
             component: comp.id.clone(),
             phase: plan.phase,
@@ -212,8 +215,10 @@ pub fn run(
                 OpStatus::SkippedBlocked,
                 "dependency failed",
                 plan.dry_run,
-            );
+            )
+            .with_availability(ComponentAvailability::Unavailable);
             summary.skipped_blocked.push(comp.id.clone());
+            failed_ids.insert(comp.id.clone());
             finish(sink, &mut summary, res);
             continue;
         }
@@ -224,9 +229,13 @@ pub fn run(
         if plan.phase == Phase::Install && !plan.dry_run {
             // run_phase (not runner.run) so the probe gets catch_unwind + gpu/guard
             // treatment, consistent with every other phase (audit fix).
-            if comp.detect.is_some()
-                && run_phase(sink, comp, Phase::Detect, runner, false, &ctx).status == OpStatus::Ok
-            {
+            let detected = comp.detect.is_some()
+                && run_phase(sink, comp, Phase::Detect, runner, false, &ctx).status == OpStatus::Ok;
+            let refresh_required = detected
+                && comp.refresh_on_verify_failure
+                && comp.verify.is_some()
+                && run_phase(sink, comp, Phase::Verify, runner, false, &ctx).status != OpStatus::Ok;
+            if detected && !refresh_required {
                 {
                     let mut res = mkres(
                         comp,
@@ -234,8 +243,19 @@ pub fn run(
                         OpStatus::Skipped,
                         "already present",
                         false,
-                    );
+                    )
+                    .with_availability(ComponentAvailability::Healthy);
                     apply_wiring(comp, sink, &mut res, &mut summary);
+                    if install_post_verify {
+                        if let Some(d) = reverify_install_healthy(comp, runner, sink, &ctx) {
+                            res = d;
+                            summary.incomplete.push(comp.id.clone());
+                            failed_ids.insert(comp.id.clone());
+                        }
+                    }
+                    if res.status == OpStatus::Incomplete {
+                        failed_ids.insert(comp.id.clone());
+                    }
                     finish(sink, &mut summary, res);
                     continue;
                 }
@@ -247,16 +267,19 @@ pub fn run(
             if comp.detect.is_some()
                 && run_phase(sink, comp, Phase::Detect, runner, false, &ctx).status != OpStatus::Ok
             {
+                failed_ids.insert(comp.id.clone());
+                summary.skipped_blocked.push(comp.id.clone());
                 finish(
                     sink,
                     &mut summary,
                     mkres(
                         comp,
                         Phase::Fix,
-                        OpStatus::Skipped,
+                        OpStatus::SkippedBlocked,
                         "not installed; use install",
                         false,
-                    ),
+                    )
+                    .with_availability(ComponentAvailability::Unavailable),
                 );
                 continue;
             }
@@ -272,7 +295,8 @@ pub fn run(
                         OpStatus::Skipped,
                         "already healthy",
                         false,
-                    ),
+                    )
+                    .with_availability(ComponentAvailability::Healthy),
                 );
                 continue;
             }
@@ -284,6 +308,7 @@ pub fn run(
                     reason: reason.clone(),
                 });
                 summary.refused.push(comp.id.clone());
+                failed_ids.insert(comp.id.clone());
                 finish(
                     sink,
                     &mut summary,
@@ -299,8 +324,18 @@ pub fn run(
                 summary.failed.push(comp.id.clone());
                 failed_ids.insert(comp.id.clone());
             }
-            OpStatus::Refused => summary.refused.push(comp.id.clone()),
-            OpStatus::SkippedBlocked => summary.skipped_blocked.push(comp.id.clone()),
+            OpStatus::Refused => {
+                summary.refused.push(comp.id.clone());
+                failed_ids.insert(comp.id.clone());
+            }
+            OpStatus::SkippedBlocked => {
+                summary.skipped_blocked.push(comp.id.clone());
+                failed_ids.insert(comp.id.clone());
+            }
+            OpStatus::Skipped if res.availability == Some(ComponentAvailability::Unavailable) => {
+                summary.skipped_blocked.push(comp.id.clone());
+                failed_ids.insert(comp.id.clone());
+            }
             _ => {}
         }
 
@@ -308,7 +343,25 @@ pub fn run(
         // the hook actually acted: Ok | NoHook).
         if !plan.dry_run && matches!(res.status, OpStatus::Ok | OpStatus::NoHook) {
             match plan.phase {
-                Phase::Install => apply_wiring(comp, sink, &mut res, &mut summary),
+                Phase::Install => {
+                    let install_hook_absent = res.status == OpStatus::NoHook;
+                    apply_wiring(comp, sink, &mut res, &mut summary);
+                    // A detected component reached Install only because its opt-in Verify failed.
+                    // Prove the refresh and its wiring/start effects before reporting success.
+                    if res.status != OpStatus::Incomplete && install_hook_absent {
+                        if let Some(d) = reverify_install_present(comp, runner, sink, &ctx) {
+                            res = d;
+                            summary.incomplete.push(comp.id.clone());
+                        } else if comp.detect.is_some() {
+                            res.availability = Some(ComponentAvailability::Healthy);
+                        }
+                    } else if install_post_verify {
+                        if let Some(d) = reverify_install_healthy(comp, runner, sink, &ctx) {
+                            res = d;
+                            summary.incomplete.push(comp.id.clone());
+                        }
+                    }
+                }
                 Phase::Remove => {
                     revert_wiring(comp, &plan.gates, &ctx, sink, &mut res, &mut summary);
                     // reset must leave the component ABSENT.
@@ -327,6 +380,10 @@ pub fn run(
                 }
                 _ => {}
             }
+        }
+
+        if matches!(plan.phase, Phase::Install | Phase::Fix) && res.status == OpStatus::Incomplete {
+            failed_ids.insert(comp.id.clone());
         }
 
         finish(sink, &mut summary, res);
@@ -355,6 +412,7 @@ fn mkres(comp: &Component, phase: Phase, status: OpStatus, msg: &str, dry_run: b
         component: comp.id.clone(),
         phase,
         status,
+        availability: None,
         exit_code: None,
         duration_ms: 0,
         message: msg.into(),
@@ -374,6 +432,7 @@ fn mkres_id(id: &str, phase: Phase, status: OpStatus, msg: &str, dry_run: bool) 
         component: id.into(),
         phase,
         status,
+        availability: None,
         exit_code: None,
         duration_ms: 0,
         message: msg.into(),
@@ -428,6 +487,13 @@ fn wiring_present(comp: &Component) -> bool {
             .unwrap_or(false)
     };
 
+    // A unit at the right filename is still drifted when its rendered body
+    // targets a retired META_ROOT.
+    let systemd_ok = w
+        .systemd_user
+        .iter()
+        .all(crate::wiring::systemd_user_present);
+
     // System-scope footprints: each is present iff its on-disk target exists
     // (mirrors wiring.rs apply targets: SOURCES_D/<list_file>, NIX_CONF line,
     // cdi output file, alternative link).
@@ -448,7 +514,7 @@ fn wiring_present(comp: &Component) -> bool {
         .iter()
         .all(|a| std::path::Path::new(&a.link).exists());
 
-    shell_rc_ok && path_ok && apt_ok && nix_ok && cdi_ok && alt_ok
+    shell_rc_ok && path_ok && systemd_ok && apt_ok && nix_ok && cdi_ok && alt_ok
 }
 
 fn emit_wiring(comp: &Component, sink: &EventSink, rep: &crate::wiring::WiringReport, verb: &str) {
@@ -481,8 +547,14 @@ fn apply_wiring(comp: &Component, sink: &EventSink, res: &mut OpResult, summary:
     }
     let rep = crate::wiring::apply(&comp.wiring);
     emit_wiring(comp, sink, &rep, "applied");
-    if !rep.failures.is_empty() && matches!(res.status, OpStatus::Ok | OpStatus::NoHook) {
+    if !rep.failures.is_empty()
+        && matches!(
+            res.status,
+            OpStatus::Ok | OpStatus::NoHook | OpStatus::Skipped
+        )
+    {
         res.status = OpStatus::Incomplete;
+        res.availability = Some(ComponentAvailability::Unavailable);
         res.message = "wiring apply reported failures (see log)".into();
         summary.incomplete.push(comp.id.clone());
     }
@@ -503,6 +575,7 @@ fn revert_wiring(
     emit_wiring(comp, sink, &rep, "reverted");
     if !rep.failures.is_empty() && matches!(res.status, OpStatus::Ok | OpStatus::NoHook) {
         res.status = OpStatus::Incomplete;
+        res.availability = Some(ComponentAvailability::Unavailable);
         res.message = "wiring revert reported failures (see log)".into();
         summary.incomplete.push(comp.id.clone());
     }
@@ -549,6 +622,57 @@ fn reverify_healthy(
             "fix ran, but verify still fails — review log / escalate",
             false,
         ))
+    }
+}
+
+/// refresh-on-install postcondition: the opt-in repair must leave the component HEALTHY after
+/// wiring has been applied. No verify hook is impossible for the caller, but remains fail-safe.
+fn reverify_install_healthy(
+    comp: &Component,
+    runner: &dyn HookRunner,
+    sink: &EventSink,
+    ctx: &RunContext,
+) -> Option<OpResult> {
+    comp.verify.as_ref()?;
+    if run_phase(sink, comp, Phase::Verify, runner, false, ctx).status == OpStatus::Ok {
+        None
+    } else {
+        Some(
+            mkres(
+                comp,
+                Phase::Install,
+                OpStatus::Incomplete,
+                "refresh install ran, but verify still fails — review log / escalate",
+                false,
+            )
+            .with_availability(ComponentAvailability::Unavailable),
+        )
+    }
+}
+
+/// An absent component with no Install hook may still be a wiring-owned aggregate, but wiring is
+/// not proof that its Detect contract became true. Re-detect after wiring; an unproved prerequisite
+/// is unavailable and must block its dependency closure.
+fn reverify_install_present(
+    comp: &Component,
+    runner: &dyn HookRunner,
+    sink: &EventSink,
+    ctx: &RunContext,
+) -> Option<OpResult> {
+    comp.detect.as_ref()?;
+    if run_phase(sink, comp, Phase::Detect, runner, false, ctx).status == OpStatus::Ok {
+        None
+    } else {
+        Some(
+            mkres(
+                comp,
+                Phase::Install,
+                OpStatus::Incomplete,
+                "no install hook acted and the component is still unavailable after wiring",
+                false,
+            )
+            .with_availability(ComponentAvailability::Unavailable),
+        )
     }
 }
 
@@ -599,7 +723,7 @@ fn prewarm_sudo(
     }
     // `sudo -v` inherits this process's stdio: from a real terminal it prompts
     // once; with no TTY it fails fast (and we warn) rather than hanging later.
-    let ok = std::process::Command::new("sudo")
+    let ok = trusted_sudo_command()
         .arg("-v")
         .status()
         .map(|s| s.success())
@@ -622,9 +746,10 @@ fn prewarm_sudo(
     let stop2 = stop.clone();
     let handle = std::thread::spawn(move || {
         while !stop2.load(Ordering::Relaxed) {
-            let _ = std::process::Command::new("sudo")
+            let _ = trusted_sudo_command()
                 .arg("-n")
-                .arg("true")
+                .arg("--")
+                .arg("/usr/bin/true")
                 .status();
             for _ in 0..50 {
                 if stop2.load(Ordering::Relaxed) {
@@ -638,6 +763,17 @@ fn prewarm_sudo(
         stop,
         handle: Some(handle),
     })
+}
+
+fn trusted_sudo_command() -> std::process::Command {
+    let mut command = std::process::Command::new("/usr/bin/sudo");
+    command.env_clear().env("PATH", "/usr/bin:/bin");
+    for key in ["TERM", "LANG", "LC_ALL", "LC_CTYPE"] {
+        if let Some(value) = std::env::var_os(key) {
+            command.env(key, value);
+        }
+    }
+    command
 }
 
 // ---------------------------------------------------------------------------
@@ -1018,8 +1154,935 @@ fn now_epoch() -> u128 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sudo_prewarm_uses_an_absolute_scrubbed_entrypoint() {
+        let command = trusted_sudo_command();
+        assert_eq!(command.get_program(), "/usr/bin/sudo");
+        assert_eq!(
+            command
+                .get_envs()
+                .find(|(key, _)| *key == std::ffi::OsStr::new("PATH"))
+                .and_then(|(_, value)| value),
+            Some(std::ffi::OsStr::new("/usr/bin:/bin"))
+        );
+        assert!(command
+            .get_envs()
+            .all(|(key, _)| key != std::ffi::OsStr::new("LD_PRELOAD")));
+    }
+    use crate::component::{Hook, HookRunner};
+    use crate::event::EventSink;
     use crate::model::{AddRepoSpec, ShellRcBlock, Wiring};
+    use std::os::unix::fs::PermissionsExt;
+    use std::sync::atomic::{AtomicBool, Ordering};
+    use std::sync::Mutex;
     use std::time::{SystemTime, UNIX_EPOCH};
+
+    struct RefreshRunner {
+        detected: AtomicBool,
+        current: AtomicBool,
+        repair_succeeds: AtomicBool,
+        calls: Mutex<Vec<Phase>>,
+    }
+
+    impl RefreshRunner {
+        fn new() -> Self {
+            Self {
+                detected: AtomicBool::new(true),
+                current: AtomicBool::new(false),
+                repair_succeeds: AtomicBool::new(true),
+                calls: Mutex::new(Vec::new()),
+            }
+        }
+
+        fn take_calls(&self) -> Vec<Phase> {
+            std::mem::take(&mut *self.calls.lock().unwrap())
+        }
+    }
+
+    impl HookRunner for RefreshRunner {
+        fn run(
+            &self,
+            comp: &str,
+            phase: Phase,
+            _hook: &Hook,
+            dry_run: bool,
+            _sink: &EventSink,
+        ) -> OpResult {
+            self.calls.lock().unwrap().push(phase);
+            let status = match phase {
+                Phase::Detect if self.detected.load(Ordering::SeqCst) => OpStatus::Ok,
+                Phase::Detect => OpStatus::Failed,
+                Phase::Verify if self.current.load(Ordering::SeqCst) => OpStatus::Ok,
+                Phase::Verify => OpStatus::Failed,
+                Phase::Install | Phase::Fix => {
+                    if self.repair_succeeds.load(Ordering::SeqCst) {
+                        self.current.store(true, Ordering::SeqCst);
+                    }
+                    OpStatus::Ok
+                }
+                Phase::Remove => OpStatus::Ok,
+            };
+            OpResult {
+                component: comp.to_string(),
+                phase,
+                status,
+                availability: None,
+                exit_code: None,
+                duration_ms: 0,
+                message: String::new(),
+                dry_run,
+            }
+        }
+    }
+
+    #[test]
+    fn verify_refresh_opt_in_repairs_present_drift_on_install_and_fix() {
+        let root = temp_root("executor-verify-refresh");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(
+            root.join("refresh.toml"),
+            r#"
+[[component]]
+id = "sqld-fixture"
+name = "sqld fixture"
+refresh_on_verify_failure = true
+
+[component.detect]
+kind = "command"
+command = "true"
+
+[component.install]
+kind = "command"
+command = "true"
+
+[component.verify]
+kind = "command"
+command = "true"
+
+[component.fix]
+kind = "command"
+command = "true"
+"#,
+        )
+        .unwrap();
+        let registry = Registry::load(&root).unwrap();
+        assert!(
+            registry
+                .get("sqld-fixture")
+                .unwrap()
+                .refresh_on_verify_failure
+        );
+        let runner = RefreshRunner::new();
+        let sink = EventSink::null();
+
+        let install = super::run(
+            &registry,
+            &runner,
+            RunPlan::new(Phase::Install, vec!["sqld-fixture".into()], false),
+            &sink,
+        )
+        .unwrap();
+        assert!(install.ok());
+        assert_eq!(
+            runner.take_calls(),
+            vec![Phase::Detect, Phase::Verify, Phase::Install, Phase::Verify]
+        );
+
+        runner.current.store(false, Ordering::SeqCst);
+        let fix = super::run(
+            &registry,
+            &runner,
+            RunPlan::new(Phase::Fix, vec!["sqld-fixture".into()], false),
+            &sink,
+        )
+        .unwrap();
+        assert!(fix.ok());
+        assert_eq!(
+            runner.take_calls(),
+            vec![Phase::Detect, Phase::Verify, Phase::Fix, Phase::Verify]
+        );
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn verify_refresh_opt_in_proves_first_install_and_healthy_skip() {
+        let root = temp_root("executor-verify-refresh-convergence");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(
+            root.join("refresh.toml"),
+            r#"
+[[component]]
+id = "sqld-fixture"
+name = "sqld fixture"
+refresh_on_verify_failure = true
+
+[component.detect]
+kind = "command"
+command = "true"
+
+[component.install]
+kind = "command"
+command = "true"
+
+[component.verify]
+kind = "command"
+command = "true"
+"#,
+        )
+        .unwrap();
+        let registry = Registry::load(&root).unwrap();
+        let runner = RefreshRunner::new();
+        let sink = EventSink::null();
+
+        runner.detected.store(false, Ordering::SeqCst);
+        let first = super::run(
+            &registry,
+            &runner,
+            RunPlan::new(Phase::Install, vec!["sqld-fixture".into()], false),
+            &sink,
+        )
+        .unwrap();
+        assert!(first.ok());
+        assert_eq!(
+            runner.take_calls(),
+            vec![Phase::Detect, Phase::Install, Phase::Verify]
+        );
+
+        runner.detected.store(true, Ordering::SeqCst);
+        runner.current.store(true, Ordering::SeqCst);
+        let healthy = super::run(
+            &registry,
+            &runner,
+            RunPlan::new(Phase::Install, vec!["sqld-fixture".into()], false),
+            &sink,
+        )
+        .unwrap();
+        assert!(healthy.ok());
+        assert_eq!(
+            runner.take_calls(),
+            vec![Phase::Detect, Phase::Verify, Phase::Verify]
+        );
+
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn verify_refresh_install_is_incomplete_when_postcondition_stays_broken() {
+        let root = temp_root("executor-verify-refresh-postcondition");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(
+            root.join("refresh.toml"),
+            r#"
+[[component]]
+id = "forged-helper-fixture"
+name = "forged helper fixture"
+refresh_on_verify_failure = true
+
+[component.detect]
+kind = "command"
+command = "true"
+
+[component.install]
+kind = "command"
+command = "true"
+
+[component.verify]
+kind = "command"
+command = "false"
+"#,
+        )
+        .unwrap();
+        let registry = Registry::load(&root).unwrap();
+        let runner = RefreshRunner::new();
+        runner.repair_succeeds.store(false, Ordering::SeqCst);
+        let summary = super::run(
+            &registry,
+            &runner,
+            RunPlan::new(Phase::Install, vec!["forged-helper-fixture".into()], false),
+            &EventSink::null(),
+        )
+        .unwrap();
+
+        assert!(!summary.ok());
+        assert_eq!(summary.incomplete, vec!["forged-helper-fixture"]);
+        assert_eq!(
+            runner.take_calls(),
+            vec![Phase::Detect, Phase::Verify, Phase::Install, Phase::Verify]
+        );
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn failed_install_postcondition_blocks_dependents() {
+        struct Runner {
+            calls: Mutex<Vec<(String, Phase)>>,
+        }
+        impl HookRunner for Runner {
+            fn run(
+                &self,
+                comp: &str,
+                phase: Phase,
+                _hook: &Hook,
+                dry_run: bool,
+                _sink: &EventSink,
+            ) -> OpResult {
+                self.calls.lock().unwrap().push((comp.to_owned(), phase));
+                let status = match (comp, phase) {
+                    ("sqld-fixture", Phase::Detect | Phase::Verify) => OpStatus::Failed,
+                    _ => OpStatus::Ok,
+                };
+                OpResult {
+                    component: comp.to_owned(),
+                    phase,
+                    status,
+                    availability: None,
+                    exit_code: None,
+                    duration_ms: 0,
+                    message: String::new(),
+                    dry_run,
+                }
+            }
+        }
+
+        let root = temp_root("executor-install-postcondition-dependency");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(
+            root.join("refresh.toml"),
+            r#"
+[[component]]
+id = "sqld-fixture"
+name = "sqld fixture"
+refresh_on_verify_failure = true
+[component.detect]
+kind = "command"
+command = "true"
+[component.install]
+kind = "command"
+command = "true"
+[component.verify]
+kind = "command"
+command = "false"
+
+[[component]]
+id = "dependent"
+name = "dependent"
+requires = ["sqld-fixture"]
+[component.detect]
+kind = "command"
+command = "false"
+[component.install]
+kind = "command"
+command = "true"
+"#,
+        )
+        .unwrap();
+        let registry = Registry::load(&root).unwrap();
+        let runner = Runner {
+            calls: Mutex::new(Vec::new()),
+        };
+        let summary = super::run(
+            &registry,
+            &runner,
+            RunPlan::new(
+                Phase::Install,
+                vec!["sqld-fixture".into(), "dependent".into()],
+                false,
+            ),
+            &EventSink::null(),
+        )
+        .unwrap();
+        assert!(!summary.ok());
+        assert_eq!(summary.incomplete, vec!["sqld-fixture"]);
+        assert_eq!(summary.skipped_blocked, vec!["dependent"]);
+        assert_eq!(
+            *runner.calls.lock().unwrap(),
+            vec![
+                ("sqld-fixture".into(), Phase::Detect),
+                ("sqld-fixture".into(), Phase::Install),
+                ("sqld-fixture".into(), Phase::Verify),
+            ]
+        );
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn refused_dependency_blocks_the_full_transitive_chain() {
+        struct Runner {
+            calls: Mutex<Vec<(String, Phase)>>,
+        }
+        impl HookRunner for Runner {
+            fn run(
+                &self,
+                comp: &str,
+                phase: Phase,
+                _hook: &Hook,
+                dry_run: bool,
+                _sink: &EventSink,
+            ) -> OpResult {
+                self.calls.lock().unwrap().push((comp.to_owned(), phase));
+                let status = match (comp, phase) {
+                    ("a", Phase::Detect) => OpStatus::Failed,
+                    ("a", Phase::Install) => OpStatus::Refused,
+                    _ => OpStatus::Ok,
+                };
+                OpResult {
+                    component: comp.to_owned(),
+                    phase,
+                    status,
+                    availability: None,
+                    exit_code: None,
+                    duration_ms: 0,
+                    message: String::new(),
+                    dry_run,
+                }
+            }
+        }
+
+        let root = temp_root("executor-refused-transitive");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(
+            root.join("chain.toml"),
+            r#"
+[[component]]
+id = "a"
+name = "a"
+[component.detect]
+kind = "command"
+command = "false"
+[component.install]
+kind = "command"
+command = "false"
+
+[[component]]
+id = "b"
+name = "b"
+requires = ["a"]
+[component.install]
+kind = "command"
+command = "false"
+
+[[component]]
+id = "c"
+name = "c"
+requires = ["b"]
+[component.install]
+kind = "command"
+command = "false"
+"#,
+        )
+        .unwrap();
+        let registry = Registry::load(&root).unwrap();
+        let runner = Runner {
+            calls: Mutex::new(Vec::new()),
+        };
+        let summary = super::run(
+            &registry,
+            &runner,
+            RunPlan::new(Phase::Install, vec!["c".into()], false),
+            &EventSink::null(),
+        )
+        .unwrap();
+
+        assert!(!summary.ok());
+        assert_eq!(summary.refused, vec!["a"]);
+        assert_eq!(summary.skipped_blocked, vec!["b", "c"]);
+        assert_eq!(
+            *runner.calls.lock().unwrap(),
+            vec![("a".into(), Phase::Detect), ("a".into(), Phase::Install)]
+        );
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn fix_missing_dependency_is_explicitly_unavailable_and_non_green() {
+        struct Runner;
+        impl HookRunner for Runner {
+            fn run(
+                &self,
+                comp: &str,
+                phase: Phase,
+                _hook: &Hook,
+                dry_run: bool,
+                _sink: &EventSink,
+            ) -> OpResult {
+                OpResult {
+                    component: comp.to_owned(),
+                    phase,
+                    status: OpStatus::Failed,
+                    availability: None,
+                    exit_code: Some(1),
+                    duration_ms: 0,
+                    message: String::new(),
+                    dry_run,
+                }
+            }
+        }
+
+        let root = temp_root("executor-fix-unavailable");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(
+            root.join("chain.toml"),
+            r#"
+[[component]]
+id = "a"
+name = "a"
+[component.detect]
+kind = "command"
+command = "false"
+[component.fix]
+kind = "command"
+command = "false"
+
+[[component]]
+id = "b"
+name = "b"
+requires = ["a"]
+[component.fix]
+kind = "command"
+command = "false"
+
+[[component]]
+id = "c"
+name = "c"
+requires = ["b"]
+[component.fix]
+kind = "command"
+command = "false"
+"#,
+        )
+        .unwrap();
+        let registry = Registry::load(&root).unwrap();
+        let summary = super::run(
+            &registry,
+            &Runner,
+            RunPlan::new(Phase::Fix, vec!["c".into()], false),
+            &EventSink::null(),
+        )
+        .unwrap();
+
+        assert!(!summary.ok());
+        assert_eq!(summary.skipped_blocked, vec!["a", "b", "c"]);
+        assert_eq!(summary.results[0].status, OpStatus::SkippedBlocked);
+        assert_eq!(
+            summary.results[0].availability,
+            Some(ComponentAvailability::Unavailable)
+        );
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn healthy_install_skip_keeps_dependents_available() {
+        struct Runner {
+            calls: Mutex<Vec<(String, Phase)>>,
+        }
+        impl HookRunner for Runner {
+            fn run(
+                &self,
+                comp: &str,
+                phase: Phase,
+                _hook: &Hook,
+                dry_run: bool,
+                _sink: &EventSink,
+            ) -> OpResult {
+                self.calls.lock().unwrap().push((comp.to_owned(), phase));
+                let status = match (comp, phase) {
+                    ("healthy", Phase::Detect) => OpStatus::Ok,
+                    ("dependent", Phase::Detect) => OpStatus::Failed,
+                    ("dependent", Phase::Install) => OpStatus::Ok,
+                    _ => OpStatus::Failed,
+                };
+                OpResult {
+                    component: comp.to_owned(),
+                    phase,
+                    status,
+                    availability: None,
+                    exit_code: None,
+                    duration_ms: 0,
+                    message: String::new(),
+                    dry_run,
+                }
+            }
+        }
+
+        let root = temp_root("executor-healthy-skip");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(
+            root.join("healthy.toml"),
+            r#"
+[[component]]
+id = "healthy"
+name = "healthy"
+[component.detect]
+kind = "command"
+command = "true"
+[component.install]
+kind = "command"
+command = "true"
+
+[[component]]
+id = "dependent"
+name = "dependent"
+requires = ["healthy"]
+[component.detect]
+kind = "command"
+command = "false"
+[component.install]
+kind = "command"
+command = "true"
+"#,
+        )
+        .unwrap();
+        let registry = Registry::load(&root).unwrap();
+        let runner = Runner {
+            calls: Mutex::new(Vec::new()),
+        };
+        let summary = super::run(
+            &registry,
+            &runner,
+            RunPlan::new(Phase::Install, vec!["dependent".into()], false),
+            &EventSink::null(),
+        )
+        .unwrap();
+
+        assert!(summary.ok());
+        assert!(summary.skipped_blocked.is_empty());
+        assert_eq!(summary.results[0].status, OpStatus::Skipped);
+        assert_eq!(
+            summary.results[0].availability,
+            Some(ComponentAvailability::Healthy)
+        );
+        assert_eq!(summary.results[1].status, OpStatus::Ok);
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn detected_component_with_failed_wiring_blocks_its_dependent() {
+        let _env = crate::test_env_lock();
+        struct Runner {
+            calls: Mutex<Vec<(String, Phase)>>,
+        }
+        impl HookRunner for Runner {
+            fn run(
+                &self,
+                comp: &str,
+                phase: Phase,
+                _hook: &Hook,
+                dry_run: bool,
+                _sink: &EventSink,
+            ) -> OpResult {
+                self.calls.lock().unwrap().push((comp.to_owned(), phase));
+                OpResult {
+                    component: comp.to_owned(),
+                    phase,
+                    status: if (comp, phase) == ("healthy", Phase::Detect) {
+                        OpStatus::Ok
+                    } else {
+                        OpStatus::Failed
+                    },
+                    availability: None,
+                    exit_code: None,
+                    duration_ms: 0,
+                    message: String::new(),
+                    dry_run,
+                }
+            }
+        }
+
+        let root = temp_root("executor-wiring-failure-blocks");
+        let meta = root.join("meta");
+        let manifest = root.join("manifest");
+        std::fs::create_dir_all(&meta).unwrap();
+        std::fs::create_dir_all(&manifest).unwrap();
+        // OpenOptions::append cannot open a directory, deterministically forcing a wiring report
+        // failure without relying on host permissions.
+        std::fs::create_dir(meta.join(".bashrc")).unwrap();
+        std::fs::write(
+            manifest.join("wiring.toml"),
+            r#"
+[[component]]
+id = "healthy"
+name = "healthy"
+[component.detect]
+kind = "command"
+command = "true"
+[component.install]
+kind = "command"
+command = "true"
+[[component.wiring.shell_rc]]
+file = "$META_ROOT/.bashrc"
+marker = "fixture"
+content = "export FIXTURE=1"
+
+[[component]]
+id = "dependent"
+name = "dependent"
+requires = ["healthy"]
+[component.install]
+kind = "command"
+command = "false"
+"#,
+        )
+        .unwrap();
+        let old_meta = std::env::var_os("META_ROOT");
+        std::env::set_var("META_ROOT", &meta);
+        let registry = Registry::load(&manifest).unwrap();
+        let runner = Runner {
+            calls: Mutex::new(Vec::new()),
+        };
+        let summary = super::run(
+            &registry,
+            &runner,
+            RunPlan::new(Phase::Install, vec!["dependent".into()], false),
+            &EventSink::null(),
+        )
+        .unwrap();
+
+        assert!(!summary.ok());
+        assert_eq!(summary.incomplete, vec!["healthy"]);
+        assert_eq!(summary.skipped_blocked, vec!["dependent"]);
+        assert_eq!(summary.results[0].status, OpStatus::Incomplete);
+        assert_eq!(
+            summary.results[0].availability,
+            Some(ComponentAvailability::Unavailable)
+        );
+        assert_eq!(
+            *runner.calls.lock().unwrap(),
+            vec![("healthy".into(), Phase::Detect)]
+        );
+        restore_env("META_ROOT", old_meta);
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn no_install_hook_cannot_make_an_undetected_prerequisite_available() {
+        struct Runner;
+        impl HookRunner for Runner {
+            fn run(
+                &self,
+                comp: &str,
+                phase: Phase,
+                _hook: &Hook,
+                dry_run: bool,
+                _sink: &EventSink,
+            ) -> OpResult {
+                OpResult {
+                    component: comp.to_owned(),
+                    phase,
+                    status: OpStatus::Failed,
+                    availability: None,
+                    exit_code: Some(1),
+                    duration_ms: 0,
+                    message: String::new(),
+                    dry_run,
+                }
+            }
+        }
+
+        let root = temp_root("executor-no-install-hook");
+        std::fs::create_dir_all(&root).unwrap();
+        std::fs::write(
+            root.join("no-hook.toml"),
+            r#"
+[[component]]
+id = "a"
+name = "a"
+[component.detect]
+kind = "command"
+command = "false"
+
+[[component]]
+id = "b"
+name = "b"
+requires = ["a"]
+[component.install]
+kind = "command"
+command = "false"
+"#,
+        )
+        .unwrap();
+        let registry = Registry::load(&root).unwrap();
+        let summary = super::run(
+            &registry,
+            &Runner,
+            RunPlan::new(Phase::Install, vec!["b".into()], false),
+            &EventSink::null(),
+        )
+        .unwrap();
+
+        assert!(!summary.ok());
+        assert_eq!(summary.incomplete, vec!["a"]);
+        assert_eq!(summary.skipped_blocked, vec!["b"]);
+        assert_eq!(summary.results[0].status, OpStatus::Incomplete);
+        assert_eq!(
+            summary.results[0].availability,
+            Some(ComponentAvailability::Unavailable)
+        );
+        let _ = std::fs::remove_dir_all(root);
+    }
+
+    #[test]
+    fn engine_process_runner_repairs_forged_generation_and_blocks_on_failed_final_verify() {
+        let _env = crate::test_env_lock();
+        let root = temp_root("engine-process-runner-refresh");
+        let meta = root.join("meta");
+        let manifest = root.join("manifest");
+        let state = meta.join("state/current");
+        let fake_bin = meta.join("usr/bin");
+        std::fs::create_dir_all(&state).unwrap();
+        std::fs::create_dir_all(&manifest).unwrap();
+        std::fs::create_dir_all(&fake_bin).unwrap();
+        std::fs::create_dir_all(meta.join("var/lib/envctl")).unwrap();
+        for leaf in ["secretctl", "secretctl.sha256", "secretctl.source.sha256"] {
+            std::fs::write(state.join(leaf), format!("forged:{leaf}\n")).unwrap();
+        }
+        std::fs::write(meta.join("removable.bin"), "payload\n").unwrap();
+        std::fs::write(meta.join("unit.loaded"), "loaded\n").unwrap();
+        let systemctl = fake_bin.join("systemctl");
+        std::fs::write(
+            &systemctl,
+            format!(
+                r#"#!/bin/sh
+set -eu
+state='{}'
+case " $* " in
+  *" show --property=LoadState --value removable.service "*)
+    if [ -f "$state" ]; then echo loaded; else echo not-found; fi ;;
+  *" show --property=ActiveState --value removable.service "*)
+    if [ -f "$state" ]; then echo active; else echo inactive; fi ;;
+  *" disable --now removable.service "*) rm -f "$state" ;;
+  *) exit 2 ;;
+esac
+"#,
+                meta.join("unit.loaded").display()
+            ),
+        )
+        .unwrap();
+        std::fs::set_permissions(&systemctl, std::fs::Permissions::from_mode(0o755)).unwrap();
+        std::fs::write(
+            manifest.join("fixture.toml"),
+            r#"
+[[component]]
+id = "sqld-generation"
+name = "sqld generation fixture"
+refresh_on_verify_failure = true
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", "test -f \"$META_ROOT/state/current/secretctl\""]
+[component.install]
+kind = "script"
+script = '''
+set -euo pipefail
+stage="$META_ROOT/state/.next"
+rm -rf "$stage"
+mkdir -p "$stage"
+generation=trusted
+[ "$(/usr/bin/cat "$META_ROOT/repair-success")" = 1 ] || generation=forged
+for leaf in secretctl secretctl.sha256 secretctl.source.sha256; do
+  printf '%s:%s\n' "$generation" "$leaf" >"$stage/$leaf"
+done
+rm -rf "$META_ROOT/state/current"
+mv "$stage" "$META_ROOT/state/current"
+'''
+[component.verify]
+kind = "script"
+script = '''
+set -euo pipefail
+for leaf in secretctl secretctl.sha256 secretctl.source.sha256; do
+  [ "$(cat "$META_ROOT/state/current/$leaf")" = "trusted:$leaf" ]
+done
+'''
+
+[[component]]
+id = "dependent"
+name = "dependent"
+requires = ["sqld-generation"]
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", "test -f \"$META_ROOT/dependent.ready\""]
+[component.install]
+kind = "command"
+command = "bash"
+args = ["-lc", "touch \"$META_ROOT/dependent.ready\""]
+
+[[component]]
+id = "removable"
+name = "removable"
+[component.detect]
+kind = "command"
+command = "bash"
+args = ["-lc", "test -f \"$META_ROOT/removable.bin\""]
+[component.remove]
+kind = "script"
+script = '''
+set -euo pipefail
+load_state="$(systemctl --user show --property=LoadState --value removable.service)"
+active_state="$(systemctl --user show --property=ActiveState --value removable.service)"
+if [ "$load_state" = not-found ]; then
+  [ "$active_state" = inactive ]
+else
+  systemctl --user disable --now removable.service
+fi
+rm -f "$META_ROOT/removable.bin"
+'''
+"#,
+        )
+        .unwrap();
+
+        let old_meta = std::env::var_os("META_ROOT");
+        std::env::set_var("META_ROOT", &meta);
+        std::fs::write(meta.join("repair-success"), "1\n").unwrap();
+        let engine = crate::Engine::load(manifest.clone()).unwrap();
+        let repaired = engine
+            .run(
+                RunPlan::new(Phase::Install, vec!["dependent".into()], false),
+                &EventSink::null(),
+            )
+            .unwrap();
+        assert!(repaired.ok());
+        assert!(meta.join("dependent.ready").is_file());
+        assert_eq!(
+            std::fs::read_to_string(state.join("secretctl")).unwrap(),
+            "trusted:secretctl\n"
+        );
+
+        std::fs::remove_file(meta.join("dependent.ready")).unwrap();
+        for leaf in ["secretctl", "secretctl.sha256", "secretctl.source.sha256"] {
+            std::fs::write(state.join(leaf), format!("forged:{leaf}\n")).unwrap();
+        }
+        std::fs::write(meta.join("repair-success"), "0\n").unwrap();
+        let blocked = engine
+            .run(
+                RunPlan::new(Phase::Install, vec!["dependent".into()], false),
+                &EventSink::null(),
+            )
+            .unwrap();
+        assert!(!blocked.ok());
+        assert_eq!(blocked.incomplete, vec!["sqld-generation"]);
+        assert_eq!(blocked.skipped_blocked, vec!["dependent"]);
+        assert!(!meta.join("dependent.ready").exists());
+
+        let first_remove = engine
+            .run(
+                RunPlan::new(Phase::Remove, vec!["removable".into()], false),
+                &EventSink::null(),
+            )
+            .unwrap();
+        assert!(first_remove.ok());
+        let second_remove = engine
+            .run(
+                RunPlan::new(Phase::Remove, vec!["removable".into()], false),
+                &EventSink::null(),
+            )
+            .unwrap();
+        assert!(second_remove.ok());
+
+        restore_env("META_ROOT", old_meta);
+        let _ = std::fs::remove_dir_all(root);
+    }
 
     #[test]
     fn resolve_peer_routes_by_owner_and_honors_mode_override() {
@@ -1077,6 +2140,7 @@ mod tests {
             requires: Vec::new(),
             gpu_required: false,
             destructive: false,
+            refresh_on_verify_failure: false,
             detect: None,
             install: None,
             verify: None,
