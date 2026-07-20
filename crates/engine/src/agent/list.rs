@@ -35,10 +35,11 @@ impl Engine {
                 .map_err(|e| envctl_agent_env::AgentEnvError::Message(e.to_string()))?;
             envctl_agent_env::lock::load(&path)
         };
-        let load_updated = |scope: Scope, root: &Path| crate::agent::load_updated_for(scope, root);
+        let load_runtime =
+            |scope: Scope, root: &Path| envctl_agent_env::runtime::load_runtime_state(scope, root);
 
         let (mut skills, mut mcps, mut commands) =
-            load_skills_mcps_commands(scope_override, &project_root, &load_lock, &load_updated)?;
+            load_skills_mcps_commands(scope_override, &project_root, &load_lock, &load_runtime)?;
 
         if !matches!(spec.kind, AgentListKind::All | AgentListKind::Skills) {
             skills.clear();

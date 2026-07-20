@@ -14,6 +14,9 @@ fail() {
 test -f crates/engine/Cargo.toml || fail "run from repo root"
 test -f crates/cli/Cargo.toml || fail "run from repo root"
 
+bash scripts/tests/test-setup-meta-deps.sh \
+  || fail "linked-worktree/meta-parent setup regression"
+
 grep -Eq '^[[:space:]]*loop_lib[[:space:]]*=[[:space:]]*\{.*path[[:space:]]*=[[:space:]]*"../../../loop_lib"' crates/engine/Cargo.toml \
   || fail "envctl-engine must keep loop_lib as a ../../../loop_lib path dependency; upgrade loop_lib instead of bypassing it"
 grep -Eq '^[[:space:]]*meta_plugin_protocol[[:space:]]*=[[:space:]]*\{.*path[[:space:]]*=[[:space:]]*"../../../meta_plugin_protocol"' crates/cli/Cargo.toml \
@@ -36,6 +39,10 @@ grep -q 'loop_lib path dependency is not materialized' ci/setup-meta-deps.sh \
   || fail "CI must prove loop_lib path dependency exists"
 grep -q 'meta_plugin_protocol path dependency is not materialized' ci/setup-meta-deps.sh \
   || fail "CI must prove meta_plugin_protocol path dependency exists"
+grep -q 'preserving linked worktree' ci/setup-meta-deps.sh \
+  || fail "CI setup must preserve linked sibling worktrees whose .git is a file"
+grep -q 'refusing to overwrite unrelated or incompatible parent workspace' ci/setup-meta-deps.sh \
+  || fail "CI setup must refuse to overwrite unrelated parent workspaces"
 
 metadata="${TMPDIR:-/tmp}/envctl-meta-substrates-metadata.json"
 cargo metadata --format-version 1 --locked >"$metadata"

@@ -50,7 +50,7 @@ truth; the ECC conventions are wrong — ignore them.**
 
 The environment targets two agent runtimes; keep them consistent (the built-in agent-env engine
 manages this: `agent-skills/` + `agent-env.yaml` → `envctl agent sync --apply` →
-`agent-env.lock`; drift gate `envctl agent lock --check`. kasetto is retired — see
+`agent-env.lock`; zero-network drift gate `envctl agent lock --check --locked`. kasetto is retired — see
 `env-stabilize`):
 
 - **Claude Code** → `.claude/` : managed skills under `.claude/skills/<name>/SKILL.md`, plus

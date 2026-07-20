@@ -55,6 +55,43 @@ reproduces — these:
   precedence with the deferred `master` fallback, browser-URL → raw rewrite, host-aware auth hints.
 - **MCP merge discipline** — additive, never-clobber, never-prune-on-failure.
 
+### Intentional envctl security superset: agent lock v3
+
+Parity is a floor, not a ceiling. Envctl's current agent-env lock is schema **v3** and deliberately
+rejects several ambiguous behaviors accepted by kasetto's v2 lock:
+
+- **Desired state is not ownership.** `skills`, `assets`, and `source_selectors` describe what a
+  run wants. They do not authorize replacement or deletion. A project-scope apply writes separate
+  `installed_outputs` attestations only after the exact output commits; removed outputs remain as
+  tombstones until a proof-checked sync/clean removes them and compacts the lock. `agent lock` and
+  `lock --check` preserve existing attestations but never manufacture new ones.
+- **Selectors and identities are injective.** v3 length-frames asset IDs and multi-value lists, and
+  binds each source selector to its selection form, scope, complete target-path set, and native
+  output format. Commas, path changes, format changes, or a wildcard/object-selector change cannot
+  alias the old lock entry.
+- **One immutable tree drives hash and install.** `TreeSnapshot` captures effective paths, entry
+  kinds, file bytes, modes, empty directories, and lossless native names. Contained source symlinks
+  become ordinary effective entries; escapes, cycles, special files, and destination symlinks are
+  refused. Global hashes retain exact platform/mode semantics. Project hashes normalize to Git's
+  reproducible subset (directories `0755`, files `0644` or executable `0755`) and reject empty
+  directories that a fresh clone cannot carry.
+- **Locked means zero network.** `sync --locked`/`--frozen` and `lock --check --locked` use the
+  zero-network config loader (remote root configs or remote `extends` are refused), re-hash local
+  sources, and validate remote hashes, revisions, selectors, and installed copies against v3.
+  Missing remote bytes fail closed instead of fetching. Plain sync may resolve/materialize sources.
+- **Migration is evidence-preserving.** A versionless lock is v2. Locked mode rejects it, and a
+  direct lock rewrite refuses to relabel its old hashes. A plain `sync --apply` may migrate only
+  exact v2-named outputs whose configured identity, destination/unit, and current hash all match;
+  the output changes, v3 lock, and runtime ledger commit in one rollback-capable transaction.
+- **Scope-specific ownership.** Portable `installed_outputs` are project-only and relative to the
+  project root. The machine-local `managed_outputs` ledger is authoritative for global scope and is
+  a required second factor for a retired project custom root. Global custom-root cleanup likewise
+  requires an exact secure runtime proof. Forged/out-of-root claims, incomplete proof sets,
+  symlinked paths, foreign ownership, or content drift are refused.
+- **State files are roots of trust.** Lock/runtime reads are no-follow and current-user-owned;
+  writes use owned parent chains and atomic sibling replacement. Existing modes are preserved;
+  new project locks default to `0644`, and new global locks/runtime files default to `0600`.
+
 ---
 
 ## 1. Declarative YAML Config + Schema
@@ -111,12 +148,11 @@ changed gets touched. This is the cargo/uv "lock-first" model applied to agent a
   hash-verified-good copy, kasetto repairs by local copy instead of re-downloading. Only when
   no good local copy exists does it fetch.
 
-**Relevance to envctl:** **ADOPT (top priority).** envctl has *drift detection* but, per its
-docs, no committed lock/manifest-of-record with content hashes. A `envctl.lock` recording the
-resolved git ref + a content/build hash per component would give envctl: reproducible installs
-across machines, a fast "nothing changed → no work" path, and a precise basis for drift/auto-fix
-("on-disk hash ≠ locked hash → repair"). The OS-invariant hashing trick and relative-path
-portability are directly reusable design decisions.
+**Envctl status:** **ABSORBED and hardened.** `agent-env.lock` carries the source/revision/content
+contract, while schema v3 adds selector/target binding, tree-v1 hashes, framed lists/identities,
+and portable project ownership attestations. Unlike kasetto v2, envctl does not treat a desired
+entry or an old-version hash as proof that it owns existing bytes. See the v3 security-superset
+contract in §0.
 
 ---
 
@@ -161,10 +197,13 @@ closed, and `[[component]]` arrays merge by component `id`.
 - Per-agent install paths differ by scope: `Agent::global_path(home)` vs
   `Agent::project_path(project_root)` (and likewise for MCP/command targets).
 
-**Relevance to envctl:** **PARTIAL.** envctl is a single-box manager so "project scope" maps
-weakly, but the **CLI-flag → config-field → default** resolution ladder and scope-scoped lock
-files are a good template if envctl ever supports per-repo/per-user component sets. Tag PARTIAL
-because envctl's domain is inherently global-per-host.
+**Envctl status:** **ABSORBED with scope-specific trust rules.** Agent assets support both scopes
+with the **CLI flag → config field → Global default** ladder. Project locks are commit-friendly
+and may carry relative `installed_outputs` attestations. Global locks/runtime are private `0600`,
+and global mutation relies on the machine-local ownership ledger rather than portable project
+proofs. Project destinations must stay beneath the project root; current custom roots are allowed
+only inside that boundary, while retired custom-root tombstones require their matching runtime
+second factor.
 
 ---
 
@@ -341,12 +380,13 @@ removes each asset to make disk match config — with a `--dry-run` preview.
 5. **Dry-run:** every mutating branch is gated on `ctx.dry_run`; statuses become
    `would_install` / `would_update` / `would_remove`; nothing is written.
 
-**Relevance to envctl:** **ADOPT.** This is essentially envctl's `install` + `reset` +
-`auto-fix` unified into one converge-to-desired-state pass with a structured report. Reusable
-specifics: the **classify-then-apply** split, the **"never prune on partial failure"** safety
-rule, and the uniform `Summary` counters (`installed/updated/removed/unchanged/broken/failed`).
-envctl already has dry-run *defaults* on destructive verbs — kasetto's gating-on-a-single-flag
-implementation is a clean reference.
+**Envctl status:** **ABSORBED and made transactional.** Preview still classifies the complete plan
+without writing. Apply stages and revalidates every output, then commits output bytes, the v3 lock,
+and the runtime ownership/report ledger as one strict rollback boundary. A failed commit restores
+the prior coherent state; only after a successful commit do in-memory ownership claims advance.
+`clean` likewise enumerates exact proof units (including tombstones), refuses incomplete or drifted
+proof sets, and keeps ownership evidence intact if output cleanup cannot complete. The shared
+engine remains non-printing and exposes the uniform structured result to both front-ends.
 
 ---
 
@@ -381,10 +421,10 @@ just `auto-detect`.
 - `site/docs/ci.mdx` recommends `kst sync --project --dry-run --json` in GitHub Actions and
   `--locked` for reproducible installs.
 
-**Relevance to envctl:** **ADOPT.** envctl should define crisp exit-code semantics
-(0 = converged, non-zero = drift-found / op-failed) and a CI-grade `--locked`-style mode that
-**fails on drift instead of silently fixing** — perfect for a "is this box still in spec?" CI
-gate. The non-TTY/`NO_COLOR`/`--color` auto-detection is also worth copying wholesale.
+**Envctl status:** **ABSORBED and fail-closed.** Locked source/config/selector/ownership failures
+surface as `locked_error`, increment `failed`, are cached in the coherent top-level `SyncResult`
+for `doctor`, and produce a non-zero front-end exit. `lock --check --locked` is the read-only
+zero-network drift gate; it writes neither outputs nor the lock.
 
 ---
 
@@ -404,10 +444,12 @@ gate. The non-TTY/`NO_COLOR`/`--color` auto-detection is also worth copying whol
   / `local`; if the lock's `source_revision` differs (user retargeted a `ref`/`branch`), a
   fetch is forced even when the old content still hashes correctly.
 
-**Relevance to envctl:** **ADOPT.** Directly maps to envctl needs: plain run = converge to lock;
-`--update` = roll component versions forward and re-pin; `--locked` = enforce in CI. The
-**revision-mismatch-forces-rebuild** rule is exactly what a source-building manager wants when
-a component's pinned git ref changes.
+**Envctl status:** **ABSORBED with a stricter zero-network boundary.** Only `--locked`/`--frozen`
+guarantees zero network. Plain sync is allowed to rebuild/re-resolve/materialize the configured
+sources; `--update [name...]` controls explicit moving-pin/selection update intent and selective
+resolution, but is not the only network-enabling mode. Locked mode accepts only v3 and verifies
+local source bytes plus remote source/revision/selector bindings from the committed lock; it never
+constructs a remote fetch to fill a missing input.
 
 ---
 
@@ -486,10 +528,14 @@ timestamps) kept *out* of the committed lock — mirroring how uv separates its 
 "updated N ago"). Safe to delete; regenerated on next sync. Keyed by a SHA-256 of the lock path
 so multiple projects don't collide.
 
-**Relevance to envctl:** **ADOPT.** Clean separation: the **reproducible, committed** record
-(lock) vs **machine-local, regenerable** telemetry (last run, last report, timings). envctl
-should split its persisted state the same way so the reproducible component manifest/lock stays
-diff-clean while last-op reports and timing live in a cache dir.
+**Envctl status:** **ABSORBED with a deliberate ownership split.** Telemetry remains disposable,
+but v3 runtime state also carries `managed_outputs`: the authoritative ownership ledger for global
+scope and the second factor for retired project custom roots. Deleting that cache is harmless to
+ordinary project installs because their relative `installed_outputs` live in the committed lock;
+it intentionally removes authority to mutate global or historical custom-root outputs. Envctl
+does not reconstruct that authority from matching pre-existing bytes; an absent output may be
+installed anew by a safe plain apply. A successful sync stores the final top-level
+`SyncResult`; a coherent failed transaction stores its failure report without advancing ownership.
 
 ---
 
@@ -532,13 +578,15 @@ pattern (§3), applicable to envctl's component-dependency graph for cycle detec
 - **Self-update integrity:** SHA-256 verification before binary swap (§15).
 - `unsafe_code = "forbid"` crate-wide.
 
-**Relevance to envctl:** **ADOPT (partly already aligned).** envctl's stated doctrine
-("resolve + re-verify, refuse on ambiguity, dry-run by default, back up before clobber, never
-touch user data," fail-closed guards) is philosophically identical. Concrete ADOPTs from
-kasetto: **env-var-only credentials** (no secrets on disk), **additive/tracked-only mutation**,
-**tar-slip guards** on any archive it extracts in `add-repo`, and **host-aware actionable auth
-hints**. The main *difference*: envctl **does** run code (builds from source), so it needs
-stronger sandboxing than kasetto's no-exec model.
+**Envctl status:** **ABSORBED and strengthened.** Env-var-only credentials, additive MCP merge,
+tar-slip refusal, and host-aware auth diagnostics remain. V3 further requires exact ownership
+proof before replacement/deletion, rejects symlink/foreign-owner/path-escape ambiguity, binds
+selectors and target formats, and commits outputs plus both ledgers transactionally. A synthetic
+or freshly rebuilt v3 desired lock with empty `installed_outputs` cannot authorize a locked
+mutation: the first authorized install into absent destinations is a plain `sync --apply`, which
+records proofs. Commit that resulting project lock; a clean clone can then use
+`sync --locked --apply`. V2 exact-output
+bootstrap exists only for that one migration path, never as a general first-install shortcut.
 
 ---
 
@@ -600,13 +648,13 @@ via git-cliff if it wants automated releases.
 > `crates/agent-env` + `Engine::agent_*` at parity (§0). Kept ranked as the rationale record.
 
 
-1. **Committed lock file with OS-invariant content hashing (§2).** The single highest-value
-   idea: an `envctl.lock` pinning each component's resolved git ref + content/build hash gives
-   reproducible cross-machine installs, a fast "hashes match → do nothing" path, and a precise
-   drift/auto-fix basis. Steal the relative-path portability and `\`→`/` hash normalization.
-2. **Lock-driven sync modes — plain / `--update` / `--locked` (§12, §11).** plain = converge to
-   lock with zero work when in spec; `--update` = roll versions forward and re-pin; `--locked`
-   = CI gate that *fails on drift instead of fixing it*. Plus crisp exit codes.
+1. **Committed lock file with reproducible, scope-aware content hashing (§2).** The single
+   highest-value idea became `agent-env.lock` v3: source/revision/content pins plus selector/target
+   binding and separate ownership proofs. Project tree hashes normalize to Git-reproducible mode
+   semantics; global hashes deliberately retain exact platform/mode semantics.
+2. **Lock-driven sync modes — plain / `--update` / `--locked` (§12, §11).** Plain may resolve
+   configured sources; `--update` expresses moving-pin/selection update intent; only `--locked`
+   is a zero-network CI gate that fails closed on drift or missing proof. Plus crisp exit codes.
 3. **Multi-host source resolver layer (§7).** Port kasetto's classify→parse→host-tarball→safe-
    extract→default-branch-fallback→browser-URL-rewrite pipeline to harden `add-repo` beyond
    GitHub, including the tar-slip (`..`) guard and `ref > branch > default` precedence.

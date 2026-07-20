@@ -28,7 +28,11 @@ If you commit `agent-env.lock` (recommended for teams — see [Cookbook](./cookb
 envctl agent sync --locked --apply
 ```
 
-`--locked` (alias `--frozen`) errors if the config needs something the lock can't satisfy, so a stale or out-of-sync lock fails the build instead of drifting. It still repairs tampered destinations locally, but never resolves moving refs or downloads new content.
+`--locked` (alias `--frozen`) errors if the config needs something the v3 lock and verified local
+bytes cannot satisfy, so stale selectors/proofs or missing remote content fail instead of drifting.
+It never resolves moving refs, fetches remote configs/`extends`, or downloads source content. A
+clean project clone can install from a committed proof-bearing lock when the required source bytes
+are local to the checkout; a remote-only missing input fails closed.
 
 ### Validate Without Writing
 
@@ -62,15 +66,16 @@ envctl agent sync --color never
 
 envctl is designed to keep going when individual skills are missing/broken in a source, but failures that prevent reading sources/configs are treated as errors.
 
-If you're depending on strict enforcement in CI, pair the preview run with `--json` and enforce policy in the CI step based on the report — or use `envctl agent lock --check` (alias `--frozen`), which **exits 1 on drift**.
+If you're depending on strict enforcement in CI, pair the preview run with `--json` and enforce policy in the CI step based on the report — or use `envctl agent lock --check --locked`, which is zero-network and **exits 1 on drift**.
 
 ## GitHub Actions Example
 
 This validates a repository's `agent-env.yaml` (project scope) without writing changes.
 
-> **envctl note:** envctl has no `curl | sh` installer (the standalone binary was retired). In CI,
-> build `envctl` from the meta Cargo workspace (or use a prebuilt artifact from your own pipeline)
-> rather than the kasetto install script.
+> **envctl note:** envctl has no `curl | sh` installer (the standalone binary was retired). In a
+> peer-repository CI job, do not try to build envctl from that peer's source tree. Supply the
+> approved Meta-built/profile-owned binary or a verified envctl build artifact, then invoke it
+> against the peer's committed config.
 
 ```yaml
 name: envctl
@@ -86,16 +91,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Set up Rust
-        uses: dtolnay/rust-toolchain@stable
+      - name: Make approved envctl available
+        # Obtain this from the Meta toolchain image or a verified build artifact.
+        run: envctl --version
 
-      - name: Build envctl
-        run: cargo build -p envctl --release
-
-      - name: Validate agent-env.yaml
+      - name: Audit agent-env.yaml
         env:
           # Add tokens if you pull from private sources:
           # GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        # default preview (no --apply) = validate without writing
-        run: ./target/release/envctl agent sync --project --json
+        # Read-only, zero-network proof of config → lock → installed outputs.
+        run: envctl agent audit --config agent-env.yaml --scope project --json
 ```

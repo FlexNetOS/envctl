@@ -4,12 +4,13 @@
 //! CLI drains the same vocabulary. (`EventSink::channel()`, not `new()`, keeps
 //! clippy's `new_ret_no_self` happy — it returns a channel pair, not `Self`.)
 use crate::agent::report::{
-    AgentDoctorReport, AgentEditOutcome, AgentInitOutcome, AgentList, AgentLockDriftItem,
-    AgentReport, AgentVerb,
+    AgentAuditReport, AgentDoctorReport, AgentEditOutcome, AgentInitOutcome, AgentList,
+    AgentLockDriftItem, AgentReport, AgentVerb,
 };
 use crate::agent::AgentScope;
 use crate::component::Phase;
 use crate::dashboard::{DashboardPlan, DeployOutcome};
+use crate::doctor::DoctorReport;
 use crate::model::{EnvReport, OpResult, RunSummary};
 use serde::{Deserialize, Serialize};
 use std::sync::mpsc::{Receiver, Sender};
@@ -42,6 +43,11 @@ pub enum Event {
     /// GUI Components grid + Dashboard).
     Report {
         report: EnvReport,
+    },
+    /// The typed whole-environment diagnostic report. Emitted exactly once by
+    /// `Engine::doctor`; both front-ends consume this same payload.
+    Doctored {
+        report: DoctorReport,
     },
     GuardRefused {
         component: String,
@@ -116,6 +122,10 @@ pub enum Event {
     /// full report so the GUI Doctor tab renders the identical data the CLI prints.
     AgentDoctored {
         report: AgentDoctorReport,
+    },
+    /// The strict read-only config → lock → installed-assets audit used by Meta fleet policy.
+    AgentAudited {
+        report: AgentAuditReport,
     },
     /// The outcome of `self uninstall`: a preview (dry-run, zero writes) or applied teardown.
     /// Emitted once; the destructive removal counts + any fail-closed refusal reason.

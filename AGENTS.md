@@ -49,6 +49,12 @@ Do all work in the worktree; never start coding on a stale or dirty `master`.
 
 ## Build / test / lint
 
+All command examples below are payloads for the profile-owned RTK frontdoor.
+Use `/home/flexnetos/.nix-profile/bin/rtk <supported-command> ...` when its
+summary is sufficient, or `/home/flexnetos/.nix-profile/bin/rtk proxy --
+<command> ...` when exact stdout/stderr is required. Direct raw shell execution
+is not an alternate path.
+
 ```bash
 cargo build -p envctl-engine -p envctl       # engine + CLI, zero system deps
 cargo run  -p envctl -- auto-detect          # read-only, safe anytime (add --json for EnvReport)
@@ -184,6 +190,16 @@ JS imports) — those are **wrong for this repo**.
     profile desktop entry, per the Yazelix Home Manager and troubleshooting
     docs.
 
+### RTK Codex hook contract
+
+The clean-room hook purge is retired. The generated Codex hook surface is
+active and contains exactly one hook: `PreToolUse` for `Bash`, running the
+profile-owned `/home/flexnetos/.nix-profile/bin/rtk hook claude` processor.
+Do not restore archived lifecycle, ICM, checkout-local, or raw-store hooks;
+do not disable `features.hooks` or delete the generated `hooks.json`. The
+`codex-global-baseline` component and `test-flexnetos-codex-runtime-gate.sh`
+are the owning generator and proof surface.
+
 ## Agent navigation and retired mirror paths (2026-07-07)
 
 New sessions must enter this repo through a fresh worktree at the latest
@@ -297,6 +313,7 @@ general "`.Codex/skills/*` are kasetto-generated" rule above — the kasetto-man
 **Change history:**
 | Date | Change | Target | Reason |
 |------|--------|--------|--------|
+| 2026-07-15 | Restore RTK-only Codex hooks and retire clean-room purge | `codex-global-baseline`; `ai-clis`; runtime gate; Codex guidance | The active hook contract is exactly the profile-owned RTK `PreToolUse` Bash processor. Legacy lifecycle/ICM hooks remain retired; generators and gates must not disable or delete the hook surface. |
 | 2026-06-27 | Harden loop-state gate for planning-engineer table state | `ci/gates/loop-state.sh`; `scripts/tests/test-loop-state-gate.sh` | Review found open planning PRs carried `.handoff/loop/plan/loop_state.md` as markdown tables while the gate only parsed `key: value`, causing false missing-counter failures. The gate now accepts both presentations while preserving the same required counter schema and fail-closed tests for missing fields. |
 | 2026-06-26 | Recover and eject planning-engineer harness | `.claude`/`.agents` planning skills+agents; `.handoff/loop/plan`; `ci/gates/{loop-state,harness-scripts}.sh`; `scripts/tests/test-plan-*` | Recovered Claude-lost `/harness:planning-engineer` + `/harness:plan-loop` work from transcript, re-ejected into envctl, and added hermetic gates so the plan-loop state/eject/contract cannot silently drift |
 | 2026-06-04 | Initial harness build | agents/{feature-architect,rust-implementer,invariant-guardian}; skills/{feature-forge,rust-feature-impl} | Build a feature-delivery construction crew (design/implement/verify) that upholds the non-negotiable invariants |
@@ -325,6 +342,11 @@ general "`.Codex/skills/*` are kasetto-generated" rule above — the kasetto-man
 | 2026-06-18 | P1/P2/P3 + batch wrap-up cadence — make the periodic reaper/wrap-up/retro hook-enforced, not skippable | scripts/tests/{test-merge-driver,test-reaper}.sh (NEW); ci/gates/harness-scripts.sh (NEW) + ci.yml step; .Codex/hooks/hf-checkpoint.sh (boundary marker); .handoff/loop/loop_state.md (`wrap_every`/`last_wrapup_total`); skills/{forge-loop,session-relay-wrap-up,session-relay-resume} | Owner: keep 1-task-per-PR but **remove the per-task pause/summary**, run tasks back-to-back, and move the pause to a **batch boundary every N tasks** that auto-runs reaper + wrap-up + evolution-steward — plus "a post hook trigger for wrap-up to ensure properly done; it gets skipped." Closed the steward's escalations and implemented the cadence. **P1/P2:** the merge driver (cycle-5 anti-concatenation guard) and the reaper (anti-pileup guard) were destructive/merge-affecting but **untested** — added hermetic, network-free tests (driver: clean-merge→forced-conflict; reaper: reap-merged / skip-dirty / protect-trunk / FF-sync) wired into a new `harness-scripts` CI gate. **P3 + cadence:** new `wrap_every` (default 5) / `last_wrapup_total` schema; forge-loop runs cycles with no per-task narration and fires a **batch boundary** at `cycles_total - last_wrapup_total >= wrap_every` (reaper→wrap-up reconcile→steward retro), distinct from `cycle_budget` (hand-off). **Enforcement (the "ensure properly done"):** the Stop/PreCompact hook drops `.handoff/loop/WRAP-UP-OWED` when a boundary comes due (cheap file I/O, no git — the reaper does NOT run from a per-turn hook), wrap-up gained a BATCH-BOUNDARY mode that clears the marker + sets `last_wrapup_total`, and resume is **fail-closed** on the marker (runs the owed wrap-up before any new work). A skipped boundary is now impossible to lose — caught at the next resume, bounded to one inter-session gap. |
 | 2026-06-18 | Epic G deep audit + Tier-1 hardening (TASK-0041/0042/0043) | `.handoff/loop/backlog.md` (Epic G plan, TASK-0041..0052, Tier-2/3 decisions LOCKED); ci/gates/loop-state.sh + scripts/tests/test-loop-state-gate.sh (NEW) + harness-scripts.sh + ci.yml; skills/session-relay-wrap-up (step 3b proposed-upgrades drain) + .handoff/loop/proposed-upgrades.md (drained); skills/feature-forge (Phase 3.5 runtime-verify); agents/{feature-architect (`## Runtime surface`),invariant-guardian (invariant #10 + Runtime verification + `## Runtime check`)}; skills/rust-feature-impl/references/verification.md (§4.5) | Owner-requested deep audit of the forge-loop harness (provenance + gaps + adoptable rust-port/harness_hub patterns). **Provenance:** hand-authored bespoke in envctl (`5dcc4b2`/`00237ca`, 2026-06-04), NOT from a "forge" repo — it is the *source pattern* harness_hub later abstracted. Planned all findings as tiered Epic G; owner LOCKED the Tier-2/3 forks (TASK-0044 pick-deps via the **hf kernel**, gated on Epic A; TASK-0048 A2 **all-green barrier**, not OS-matrix; TASK-0052 **full eject/package** into harness_hub — overrides "hand-authored outside pipeline" doctrine, AGENTS.md reconcile owed). **Tier 1 shipped:** (0041) `loop-state.sh` counter-integrity gate (ints/cadence≥1/`cycles_total`≥`last_wrapup`/monotonic) + hermetic test in the harness-scripts gate; (0042) wrap-up step 3b now drains `proposed-upgrades.md` fail-closed to tracked `- [?]` items (drained the stale 49-line file: P1/P2 already-resolved, P3 declined); (0043, P0) **Phase 3.5 runtime-verify** — the guardian now drives an architect-declared observable surface with the `verify` skill (run the app, capture evidence) before a clean PASS, closing the "compiles + gates green but doesn't work at runtime" gap (TASK-0028 GUI screen marked done with no `secretctl` call / no GUI launch). No gate weakened; each change is additive/strictly-stronger. |
 | 2026-06-18 | Epic G Tier-2/3 complete: TASK-0044 (hf-kernel cards) + TASK-0052 (harness_hub package) | TASK-0044: `.handoff/tasks/TASK-*.task.json` (53 fleet-scoped cards via handoff-kernel-engineer) + `skills/forge-loop` pick-path correction; TASK-0052: **harness_hub** `harness/skills/feature-forge/` + `forge-loop`/`rust-feature-impl` + `harness/agents/feature-forge-{architect,implementer,guardian,kernel-engineer}.md` + `registry.json`/`entries/feature-forge.md` + plugin 1.11.0 (PR #38); this AGENTS.md Placement reconcile | Closed Epic G (11/12 → all picked up). **0044:** minted envctl's backlog into the shared fleet ledger as per-member `handoff.task.v1` cards (no contamination — handoff 55/prompt_hub 71/fleet 840 unchanged; HFTASK-0026-done routing); the dependency-authority substrate now exists. Found kernel **HFTASK-0054** (shipped hf is CWD-relative for the ledger, no `--ledger`/`--member` override → live picker `hf resume`/`claim --next` can't serve a member's cards without contamination; member state now uses legitimate local ledger cache plus JSONL export), so the safe read-only authority TODAY is `hf fleet render envctl`; forge-loop SKILL corrected, markdown fallback retained. **0052 (owner-locked full eject/package):** packaged the generic construction-crew core into harness_hub as `/harness:feature-forge` (prefixed specialists, reuses shared evolution/continuity/integration-qa; ejectable; `hub-validate` PASS 8 entries) — supersedes the never-packaged stance for that core; envctl-specific loops (env-install-loop/auto-provision/handoff-sync) stay envctl-only. |
+
+**Change history:** The archival table moved to
+[`docs/AGENTS-CHANGE-HISTORY.md`](docs/AGENTS-CHANGE-HISTORY.md). It is kept
+outside this always-loaded instruction surface to reduce repeated agent context;
+consult it only when historical provenance is relevant.
 
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence

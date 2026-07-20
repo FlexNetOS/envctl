@@ -7,113 +7,1631 @@
 # libSQL `remote` (HTTP/Hrana) transport (`http://127.0.0.1:8080`). The trust boundary stays C-free:
 # nothing C is LINKED into any envctl crate — sqld is a sibling daemon, not a dependency.
 #
-# Profile: loopback-only (binds 127.0.0.1), open auth (no token) — acceptable for a local single-user
-# box because the auth token is what secretd's config.rs allows to be empty ONLY for a loopback URL.
-# detect == verify (binary present + unit installed + the loopback port answers) so drift never nudges
-# a destructive reinstall. remove() drops the binary + unit but NEVER the data dir (user data is
-# never touched; purge is the operator's explicit path).
+# Profile: loopback-only (binds 127.0.0.1) with Ed25519/EdDSA JWT authentication. On first install,
+# a private Rust-native secretctl helper generates an in-memory Ed25519 key, writes sqld's
+# SubjectPublicKeyInfo PUBLIC KEY PEM plus its matching client JWT as current-user 0600 files, and
+# never prints secret bytes. The same helper is sqld.service's bounded ExecStartPost readiness
+# barrier: it binds 127.0.0.1:8080 to systemd's exact MainPID/payload, requires unauthenticated SQL
+# to return 401, and proves the file-fed bearer can execute SELECT 1. Existing safe 0600 material may instead be supplied through
+# SQLD_AUTH_JWT_KEY_SOURCE + SQLD_CLIENT_JWT_SOURCE; both overrides are preflighted, staged, and
+# committed with no-replace hardlinks. An ordinary second-link failure rolls the first back, while
+# a crash/concurrent observer may see a fail-closed partial pair that requires operator recovery.
+# remove() drops the binary but NEVER the auth or data; engine-owned config/data wiring handles
+# their separately guarded lifecycle.
 
 [[component]]
 id = "sqld"
 name = "sqld (libSQL server, loopback)"
 description = "Prebuilt libSQL server (sqld) bound to 127.0.0.1:8080 as secretd's durable store backend. External binary OUTSIDE the trust boundary (installed from a release tarball, NOT built from source) so no C-SQLite is linked into the workspace."
-requires = []
+requires = ["rustup", "llvm-clang"]
 destructive = false
+# The installed helper carries a zero-network fingerprint of its checked-in Rust/build inputs.
+# Detect remains the physical-presence predicate; Verify rejects a stale fingerprint. This opt-in
+# makes both `envctl install` and `auto-fix` run their repair hook on that verification drift.
+refresh_on_verify_failure = true
 
-# DETECT == "installed AND the unit is present" predicate (fast; no network).
+# DETECT == physical managed shape only (fast; no execution/network). Verify freshly rebuilds the
+# verifier and binds exact payload, source, META-owned Rust/LLVM/Cargo inputs, auth, and service.
+# The GNU target still consumes Ubuntu's host headers, CRT, libc/libgcc, and compiler runtime DSOs;
+# those OS/sysroot inputs are an explicit residual, not part of this component's source digest.
 [component.detect]
 kind = "command"
 command = "bash"
-args = ["-lc", "M=\"${META_ROOT:?META_ROOT required}\"; test -x \"$M/.toolchains/sqld/bin/sqld\" && test -x \"$M/usr/bin/sqld\" && [ ! -L \"$M/usr/bin/sqld\" ] && grep -Fqx \"exec \\\"$M/.toolchains/sqld/bin/sqld\\\" \\\"\\$@\\\"\" \"$M/usr/bin/sqld\" && test -f \"$M/.config/systemd/user/sqld.service\""]
+args = ["-lc", '''
+set -euo pipefail
+export PATH=/usr/bin:/bin
+M="${META_ROOT:?META_ROOT required}"
+payload="$M/.toolchains/sqld/bin/sqld"
+front="$M/usr/bin/sqld"
+key="$M/.config/sqld/auth-jwt-key.pem"
+token_file="$M/.config/sqld/client.jwt"
+probe="$M/usr/libexec/envctl/sqld/bin/current/secretctl"
+probe_digest="$M/usr/libexec/envctl/sqld/bin/current/secretctl.sha256"
+probe_source="$M/usr/libexec/envctl/sqld/bin/current/secretctl.source.sha256"
+canonical_is_lexical() { [ "$(readlink -f -- "$1" 2>/dev/null)" = "$1" ]; }
+expected_wrapper="$(printf '%s\n' '#!/bin/sh' '# managed-by: envctl component sqld' "exec \"$payload\" \"\$@\"")"
+{ [ -x "$payload" ] && [ -f "$payload" ] && [ ! -L "$payload" ] && canonical_is_lexical "$payload" && [ "$(stat -c '%a' "$payload")" = 755 ] && [ "$(stat -c '%u' "$payload")" = "$(id -u)" ]; } || exit 1
+{ [ -x "$probe" ] && [ -f "$probe" ] && [ ! -L "$probe" ] && canonical_is_lexical "$probe" && [ "$(stat -c '%a' "$probe")" = 755 ] && [ "$(stat -c '%u' "$probe")" = "$(id -u)" ]; } || exit 1
+{ [ -s "$probe_digest" ] && [ -f "$probe_digest" ] && [ ! -L "$probe_digest" ] && canonical_is_lexical "$probe_digest" && [ "$(stat -c '%a' "$probe_digest")" = 600 ] && [ "$(stat -c '%u' "$probe_digest")" = "$(id -u)" ]; } || exit 1
+{ [ -s "$probe_source" ] && [ -f "$probe_source" ] && [ ! -L "$probe_source" ] && canonical_is_lexical "$probe_source" && [ "$(stat -c '%a' "$probe_source")" = 600 ] && [ "$(stat -c '%u' "$probe_source")" = "$(id -u)" ]; } || exit 1
+source_identity="$(cat "$probe_source")"
+case "$source_identity" in ''|*[!0-9a-f]*) exit 1 ;; esac
+[ "${#source_identity}" = 64 ] || exit 1
+{ [ -x "$front" ] && [ -f "$front" ] && [ ! -L "$front" ] && canonical_is_lexical "$front"; } || exit 1
+[ "$(cat "$front")" = "$expected_wrapper" ] || exit 1
+{ [ -s "$key" ] && [ -f "$key" ] && [ ! -L "$key" ] && canonical_is_lexical "$key" && [ "$(stat -c '%a' "$key")" = 600 ] && [ "$(stat -c '%u' "$key")" = "$(id -u)" ]; } || exit 1
+{ [ -s "$token_file" ] && [ -f "$token_file" ] && [ ! -L "$token_file" ] && canonical_is_lexical "$token_file" && [ "$(stat -c '%a' "$token_file")" = 600 ] && [ "$(stat -c '%u' "$token_file")" = "$(id -u)" ]; } || exit 1
+unit="$M/.config/systemd/user/sqld.service"
+{ [ -f "$unit" ] && [ ! -L "$unit" ] && canonical_is_lexical "$unit" && [ "$(stat -c '%u' "$unit")" = "$(id -u)" ]; } || exit 1
+''']
 
-# INSTALL: fetch the prebuilt sqld release tarball, place the binary, create the loopback data dir.
-# Pinned version for reproducibility; override with SQLD_VERSION. Idempotent.
+# INSTALL: fetch and checksum the exact prebuilt release, atomically place the binary + wrapper,
+# and create (but never clear) the loopback data dir. The version cannot be overridden.
 [component.install]
 kind = "script"
 script = '''
 set -euo pipefail
-ver="${SQLD_VERSION:-v0.24.32}"
+export PATH=/usr/bin:/bin
+version="0.24.32"
 arch="$(uname -m)"
 case "$arch" in
-  x86_64)  target="x86_64-unknown-linux-gnu" ;;
-  aarch64) target="aarch64-unknown-linux-gnu" ;;
+  x86_64)
+    target="x86_64-unknown-linux-gnu"
+    expected_sha256="71720fc8648c19efef416efebd47145ef59b62e198770533530a858e1336879f"
+    expected_payload_sha256="0863c3fbe68ac9714bca2cec1330def7a0ba5e4a29f199bf60ef46fa0c95b895"
+    ;;
+  aarch64)
+    target="aarch64-unknown-linux-gnu"
+    expected_sha256="37f9eee45b388a30192907ecf4565b93df945c079331657073b5b3caf8bb1cd0"
+    expected_payload_sha256="54039931c1088483706790e6cf73444ad88b843a9bb0ca8285b82fc309ad4810"
+    ;;
   *) echo "FATAL: unsupported arch $arch for sqld release binary"; exit 1 ;;
 esac
 
-envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/sqld/bin"
-install -d -m755 "$DEST" "$M/usr/bin"
-install -d -m700 "$M/.local/share/sqld"   # loopback data dir (the durable libSQL database)
+payload="$DEST/sqld"
+front="$M/usr/bin/sqld"
+data="$M/.local/share/sqld"
+auth_dir="$M/.config/sqld"
+key="$auth_dir/auth-jwt-key.pem"
+token_file="$auth_dir/client.jwt"
+probe_root="$M/usr/libexec/envctl/sqld/bin"
+probe_dir="$probe_root/current"
+probe="$probe_dir/secretctl"
+probe_digest="$probe_dir/secretctl.sha256"
+probe_source="$probe_dir/secretctl.source.sha256"
+probe_contract='envctl-sqld-readiness-v1'
+rustup_bin="$M/.toolchains/cargo/bin/rustup"
+rust_toolchain_dir="$M/.toolchains/rustup/toolchains/1.89.0-${target}"
+rustc_bin="$rust_toolchain_dir/bin/rustc"
+cargo_bin="$rust_toolchain_dir/bin/cargo"
+rustdoc_bin="$rust_toolchain_dir/bin/rustdoc"
+rust_lld_bin="$rust_toolchain_dir/lib/rustlib/$target/bin/rust-lld"
+rust_toolchain_lib_root="$rust_toolchain_dir/lib"
+llvm_bin="$M/.toolchains/llvm/bin"
+llvm_generation_root="$M/.toolchains/llvm"
+clang_bin="$llvm_bin/clang"
+clangxx_bin="$llvm_bin/clang++"
+llvm_ar_bin="$llvm_bin/llvm-ar"
+llvm_ranlib_bin="$llvm_bin/llvm-ranlib"
+clang_resource_root="$M/.toolchains/llvm/lib/clang/21"
+uid="$(id -u)"
 
-if [ ! -x "$DEST/sqld" ]; then
-  tmp="$(mktemp -d)"
-  trap 'rm -rf "$tmp"' EXIT
-  # Release asset naming: tag = libsql-server-<ver>; asset = libsql-server-<target>.tar.xz.
-  url="https://github.com/tursodatabase/libsql/releases/download/libsql-server-${ver}/libsql-server-${target}.tar.xz"
-  echo "fetching sqld ${ver} for ${target}"
-  curl -fsSL "$url" -o "$tmp/sqld.tar.xz" \
-    || { echo "FATAL: could not download sqld release from $url"; exit 1; }
-  tar -xJf "$tmp/sqld.tar.xz" -C "$tmp"
-  # The tarball contains the `sqld` binary (under a versioned dir); place just the binary.
-  bin="$(find "$tmp" -type f -name sqld | head -n1)"
-  test -n "$bin" || { echo "FATAL: sqld binary not found in tarball"; exit 1; }
-  install -Dm755 "$bin" "$DEST/sqld"
-  envctl_frontdoor "$DEST/sqld" "$M/usr/bin/sqld"
+canonical_is_lexical() {
+  [ "$(readlink -f -- "$1" 2>/dev/null)" = "$1" ]
+}
+owned_real_dir() {
+  [ -d "$1" ] && [ ! -L "$1" ] && [ "$(stat -c '%u' "$1")" = "$uid" ] \
+    && canonical_is_lexical "$1"
+}
+validate_managed_chain() {
+  target_path="$1"
+  case "$target_path" in "$M"|"$M"/*) ;; *) echo "FATAL: managed sqld path escapes META_ROOT: $target_path" >&2; exit 1 ;; esac
+  owned_real_dir "$M" \
+    || { echo "FATAL: META_ROOT must be a canonical current-user-owned real directory" >&2; exit 1; }
+  case "$(stat -c '%a' "$M")" in 700|755|775) ;; *) echo "FATAL: unsafe META_ROOT mode" >&2; exit 1 ;; esac
+  relative="${target_path#"$M"}"
+  relative="${relative#/}"
+  current="$M"
+  missing=0
+  IFS='/' read -r -a components <<< "$relative"
+  for component in "${components[@]}"; do
+    [ -n "$component" ] || continue
+    current="$current/$component"
+    if [ -e "$current" ] || [ -L "$current" ]; then
+      [ "$missing" = 0 ] && owned_real_dir "$current" \
+        || { echo "FATAL: managed sqld parent chain is not canonical/current-user-owned: $current" >&2; exit 1; }
+      case "$(stat -c '%a' "$current")" in 700|755|775) ;; *) echo "FATAL: unsafe managed sqld directory mode: $current" >&2; exit 1 ;; esac
+    else
+      missing=1
+    fi
+  done
+}
+validate_existing_dir_mode() {
+  path="$1"
+  expected_mode="$2"
+  if [ -e "$path" ] || [ -L "$path" ]; then
+    owned_real_dir "$path" && [ "$(stat -c '%a' "$path")" = "$expected_mode" ] \
+      || { echo "FATAL: unsafe managed sqld directory: $path" >&2; exit 1; }
+  fi
+}
+validate_existing_leaf() {
+  path="$1"
+  expected_mode="$2"
+  if [ -e "$path" ] || [ -L "$path" ]; then
+    [ -f "$path" ] && [ ! -L "$path" ] && canonical_is_lexical "$path" \
+      && [ "$(stat -c '%u' "$path")" = "$uid" ] && [ "$(stat -c '%a' "$path")" = "$expected_mode" ] \
+      || { echo "FATAL: unsafe managed sqld file: $path" >&2; exit 1; }
+  fi
+}
+validate_build_config_file() {
+  config="$1"
+  if [ -e "$config" ] || [ -L "$config" ]; then
+    [ -f "$config" ] && [ ! -L "$config" ] && canonical_is_lexical "$config" \
+      && [ "$(stat -c '%u' "$config")" = "$uid" ] \
+      || { echo "FATAL: unowned or symlinked Cargo config: $config" >&2; exit 1; }
+  fi
+}
+reject_external_build_config() {
+  config="$1"
+  if [ -e "$config" ] || [ -L "$config" ]; then
+    echo "FATAL: external Cargo config is forbidden for the sqld helper build: $config" >&2
+    exit 1
+  fi
+}
+validate_source_tree() {
+  source_root="$1"
+  case "$source_root" in /*) ;; *) echo "FATAL: envctl source root must be absolute" >&2; exit 1 ;; esac
+  owned_real_dir "$source_root" \
+    || { echo "FATAL: envctl source root must be canonical/current-user-owned" >&2; exit 1; }
+  for required in Cargo.toml Cargo.lock rust-toolchain.toml assets/scripts/envctl-sqld-hermetic-cargo.sh crates/secretctl crates/secrets-engine crates/secrets-proto; do
+    node="$source_root/$required"
+    [ -e "$node" ] && [ ! -L "$node" ] && canonical_is_lexical "$node" \
+      && [ "$(stat -c '%u' "$node")" = "$uid" ] && { [ -f "$node" ] || [ -d "$node" ]; } \
+      || { echo "FATAL: unsafe or missing envctl build input: $node" >&2; exit 1; }
+  done
+  while IFS= read -r -d '' node; do
+    [ ! -L "$node" ] && canonical_is_lexical "$node" \
+      && [ "$(stat -c '%u' "$node")" = "$uid" ] && { [ -f "$node" ] || [ -d "$node" ]; } \
+      || { echo "FATAL: unsafe envctl build-tree node: $node" >&2; exit 1; }
+  done < <(find "$source_root/Cargo.toml" "$source_root/Cargo.lock" "$source_root/rust-toolchain.toml" \
+    "$source_root/assets/scripts/envctl-sqld-hermetic-cargo.sh" \
+    "$source_root/crates/secretctl" "$source_root/crates/secrets-engine" "$source_root/crates/secrets-proto" \
+    -print0)
+  validate_build_config_file "$source_root/.cargo/config.toml"
+  validate_build_config_file "$source_root/.cargo/config"
+  reject_external_build_config "/.cargo/config.toml"
+  reject_external_build_config "/.cargo/config"
+  reject_external_build_config "$M/.toolchains/cargo/config.toml"
+  reject_external_build_config "$M/.toolchains/cargo/config"
+}
+sanitize_cargo_environment() {
+  unset RUSTC RUSTDOC RUSTDOCFLAGS RUSTC_WRAPPER RUSTC_WORKSPACE_WRAPPER RUSTFLAGS \
+    CARGO_ENCODED_RUSTFLAGS CARGO_BUILD_RUSTC CARGO_BUILD_RUSTDOC CARGO_BUILD_RUSTC_WRAPPER \
+    CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER CARGO_BUILD_RUSTFLAGS \
+    CC CXX AR RANLIB CFLAGS CXXFLAGS CPPFLAGS LDFLAGS BINDGEN_EXTRA_CLANG_ARGS
+  while IFS='=' read -r variable _; do
+    case "$variable" in \
+      CARGO_TARGET_*_LINKER|CARGO_TARGET_*_RUSTFLAGS|CARGO_TARGET_*_RUNNER|\
+      CC_*|CXX_*|AR_*|RANLIB_*|CFLAGS_*|CXXFLAGS_*|CPPFLAGS_*|LDFLAGS_*|\
+      *_CC|*_CXX|*_AR|*_RANLIB|*_CFLAGS|*_CXXFLAGS|*_CPPFLAGS|*_LDFLAGS) unset "$variable" ;;
+    esac
+  done < <(env)
+}
+load_hermetic_cargo_helpers() {
+  local helper="$source_root/assets/scripts/envctl-sqld-hermetic-cargo.sh"
+  local expected_sha256="e64615f3491225e9420572f196bcc4618a4d7cb031083e1f49a5bf3c5821cf53"
+  [ -f "$helper" ] && [ ! -L "$helper" ] && canonical_is_lexical "$helper" \
+    && [ "$(stat -c '%u' "$helper")" = "$uid" ] && [ "$(stat -c '%a' "$helper")" = 755 ] \
+    || { echo "FATAL: unsafe sqld hermetic-Cargo helper" >&2; exit 1; }
+  [ "$(/usr/bin/sha256sum "$helper" | /usr/bin/awk '{print $1}')" = "$expected_sha256" ] \
+    || { echo "FATAL: sqld hermetic-Cargo helper SHA-256 mismatch" >&2; exit 1; }
+  # shellcheck source=../../assets/scripts/envctl-sqld-hermetic-cargo.sh
+  source "$helper"
+}
+sqld_mv() { /usr/bin/mv "$@"; }
+sqld_sync() { /usr/bin/sync "$@"; }
+payload_activation=0
+payload_was_initial=0
+payload_fallback=""
+front_activation=0
+front_was_initial=0
+front_fallback=""
+helper_activation=0
+helper_was_initial=0
+helper_fallback=""
+auth_created=0
+service_restore_needed=0
+service_enabled_state=""
+require_atomic_mv() {
+  /usr/bin/mv --help 2>&1 | /usr/bin/grep -Fq -- '--exchange' \
+    && /usr/bin/mv --help 2>&1 | /usr/bin/grep -Fq -- '--no-copy' \
+    || { echo "FATAL: host mv lacks atomic --exchange/--no-copy support" >&2; exit 1; }
+}
+rollback_payload_activation() {
+  [ "$payload_activation" = 1 ] || return 0
+  failed=0
+  if [ "$payload_was_initial" = 1 ]; then
+    sqld_mv -T --no-copy -- "$payload" "$payload_fallback" || failed=1
+  else
+    sqld_mv -T --exchange --no-copy -- "$payload_fallback" "$payload" || failed=1
+  fi
+  if [ "$failed" = 0 ]; then
+    sqld_sync -f "$DEST" || failed=1
+    /usr/bin/rm -f -- "$payload_fallback" || failed=1
+    sqld_sync -f "$DEST" || failed=1
+  fi
+  [ "$failed" = 0 ] || return 1
+  payload_activation=0
+  payload_fallback=""
+}
+rollback_front_activation() {
+  [ "$front_activation" = 1 ] || return 0
+  failed=0
+  if [ "$front_was_initial" = 1 ]; then
+    sqld_mv -T --no-copy -- "$front" "$front_fallback" || failed=1
+  else
+    sqld_mv -T --exchange --no-copy -- "$front_fallback" "$front" || failed=1
+  fi
+  if [ "$failed" = 0 ]; then
+    sqld_sync -f "$M/usr/bin" || failed=1
+    /usr/bin/rm -f -- "$front_fallback" || failed=1
+    sqld_sync -f "$M/usr/bin" || failed=1
+  fi
+  [ "$failed" = 0 ] || return 1
+  front_activation=0
+  front_fallback=""
+}
+rollback_helper_activation() {
+  [ "$helper_activation" = 1 ] || return 0
+  failed=0
+  if [ "$helper_was_initial" = 1 ]; then
+    sqld_mv -T --no-copy -- "$probe_dir" "$helper_fallback" || failed=1
+  else
+    sqld_mv -T --exchange --no-copy -- "$helper_fallback" "$probe_dir" || failed=1
+  fi
+  if [ "$failed" = 0 ]; then
+    sqld_sync -f "$probe_root" || failed=1
+    /usr/bin/rm -rf --one-file-system -- "$helper_fallback" || failed=1
+    sqld_sync -f "$probe_root" || failed=1
+  fi
+  [ "$failed" = 0 ] || return 1
+  helper_activation=0
+  helper_fallback=""
+}
+rollback_created_auth() {
+  [ "$auth_created" = 1 ] || return 0
+  auth_file_ok "$key" && auth_file_ok "$token_file" || return 1
+  /usr/bin/rm -f -- "$key" "$token_file" || return 1
+  sqld_sync -f "$auth_dir" || return 1
+  auth_created=0
+}
+restore_service_after_rollback() {
+  [ "$service_restore_needed" = 1 ] || return 0
+  if [ "$service_enabled_state" = enabled ]; then
+    systemctl --user enable --now sqld.service || return 1
+  else
+    systemctl --user start sqld.service || return 1
+  fi
+  [ "$(systemctl --user show --property=ActiveState --value sqld.service)" = active ] \
+    || return 1
+  service_restore_needed=0
+}
+rollback_runtime_activation() {
+  failed=0
+  rollback_front_activation || failed=1
+  rollback_payload_activation || failed=1
+  rollback_helper_activation || failed=1
+  rollback_created_auth || failed=1
+  restore_service_after_rollback || failed=1
+  [ "$failed" = 0 ]
+}
+commit_runtime_activation() {
+  failed=0
+  if [ "$front_activation" = 1 ] && [ "$front_was_initial" = 0 ]; then
+    /usr/bin/rm -f -- "$front_fallback" || failed=1
+  fi
+  if [ "$payload_activation" = 1 ] && [ "$payload_was_initial" = 0 ]; then
+    /usr/bin/rm -f -- "$payload_fallback" || failed=1
+  fi
+  if [ "$helper_activation" = 1 ] && [ "$helper_was_initial" = 0 ]; then
+    /usr/bin/rm -rf --one-file-system -- "$helper_fallback" || failed=1
+  fi
+  sqld_sync -f "$M/usr/bin" || failed=1
+  sqld_sync -f "$DEST" || failed=1
+  sqld_sync -f "$probe_root" || failed=1
+  [ "$failed" = 0 ] || return 1
+  front_activation=0
+  payload_activation=0
+  helper_activation=0
+  auth_created=0
+  front_fallback=""
+  payload_fallback=""
+  helper_fallback=""
+}
+preflight_layout() {
+  source_root="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+  load_hermetic_cargo_helpers
+  require_atomic_mv
+  for managed_dir in "$DEST" "$M/usr/bin" "$data" "$auth_dir" "$probe_root" "$probe_dir" \
+    "$M/var/tmp/envctl" "$M/.toolchains/cargo" "$M/.toolchains/rustup" "$rust_toolchain_dir/bin" \
+    "$rust_toolchain_dir/lib/rustlib/$target/bin" "$rust_toolchain_lib_root" \
+    "$llvm_generation_root" "$llvm_bin" "$clang_resource_root"; do
+    validate_managed_chain "$managed_dir"
+  done
+  validate_existing_dir_mode "$DEST" 755
+  validate_existing_dir_mode "$M/.toolchains/sqld" 755
+  validate_existing_dir_mode "$M/usr/bin" 755
+  validate_existing_dir_mode "$data" 700
+  validate_existing_dir_mode "$auth_dir" 700
+  validate_existing_dir_mode "$probe_root" 755
+  validate_existing_dir_mode "$M/usr/libexec/envctl/sqld" 755
+  validate_existing_dir_mode "$probe_dir" 755
+  validate_existing_dir_mode "$M/var/tmp/envctl" 700
+  validate_source_tree "$source_root"
+  validate_existing_leaf "$payload" 755
+  for managed_exec in "$rustup_bin" "$rustc_bin" "$cargo_bin" "$rustdoc_bin" "$rust_lld_bin" \
+    "$clang_bin" "$clangxx_bin" "$llvm_ar_bin" "$llvm_ranlib_bin"; do
+    [ -x "$managed_exec" ] && [ -f "$managed_exec" ] && [ ! -L "$managed_exec" ] \
+      && canonical_is_lexical "$managed_exec" && [ "$(stat -c '%u' "$managed_exec")" = "$uid" ] \
+      && [ "$(stat -c '%a' "$managed_exec")" = 755 ] \
+      || { echo "FATAL: required META-owned Rust toolchain executable is unsafe or missing: $managed_exec" >&2; exit 1; }
+  done
+  validate_toolchain_resource_tree
+  helper_owned_or_absent
+  key_exists=0
+  token_exists=0
+  { [ -e "$key" ] || [ -L "$key" ]; } && key_exists=1
+  { [ -e "$token_file" ] || [ -L "$token_file" ]; } && token_exists=1
+  if [ "$key_exists" = 1 ] || [ "$token_exists" = 1 ]; then
+    [ "$key_exists" = 1 ] && [ "$token_exists" = 1 ] && auth_file_ok "$key" && auth_file_ok "$token_file" \
+      || { echo "FATAL: partial or unsafe existing sqld auth pair" >&2; exit 1; }
+  fi
+  key_source="${SQLD_AUTH_JWT_KEY_SOURCE:-}"
+  token_source="${SQLD_CLIENT_JWT_SOURCE:-}"
+  if [ -n "$key_source" ] || [ -n "$token_source" ]; then
+    [ -n "$key_source" ] && [ -n "$token_source" ] && auth_file_ok "$key_source" && auth_file_ok "$token_source" \
+      || { echo "FATAL: both sqld auth overrides must be safe canonical 0600 files" >&2; exit 1; }
+  fi
+  frontdoor_owned_or_absent \
+    || { echo "FATAL: refusing to replace foreign frontdoor $front" >&2; exit 1; }
+}
+
+wrapper_body() {
+  printf '%s\n' '#!/bin/sh' '# managed-by: envctl component sqld' "exec \"$payload\" \"\$@\""
+}
+legacy_wrapper_body() {
+  printf '%s\n' '#!/bin/sh' "exec \"$payload\" \"\$@\""
+}
+frontdoor_owned_or_absent() {
+  if [ ! -e "$front" ] && [ ! -L "$front" ]; then
+    return 0
+  fi
+  [ -f "$front" ] && [ ! -L "$front" ] || return 1
+  current="$(cat "$front")"
+  [ "$current" = "$(wrapper_body)" ] || [ "$current" = "$(legacy_wrapper_body)" ]
+}
+payload_ok() {
+  "$probe" internal-sqld-verify-sha256 \
+    --file "$1" --expected-sha256 "$expected_payload_sha256" --expected-mode 0755
+}
+auth_file_ok() {
+  [ -s "$1" ] && [ -f "$1" ] && [ ! -L "$1" ] \
+    && canonical_is_lexical "$1" \
+    && [ "$(stat -c '%a' "$1")" = 600 ] \
+    && [ "$(stat -c '%u' "$1")" = "$uid" ]
+}
+ensure_auth_dir() {
+  if [ -e "$auth_dir" ] || [ -L "$auth_dir" ]; then
+    [ -d "$auth_dir" ] && [ ! -L "$auth_dir" ] && [ "$(stat -c '%u' "$auth_dir")" = "$(id -u)" ] \
+      || { echo "FATAL: sqld auth path must be a current-user-owned real directory" >&2; exit 1; }
+  else
+    install -d -m700 "$auth_dir"
+  fi
+  chmod 700 "$auth_dir"
+}
+adopt_auth_pair() {
+  key_source="$1"
+  token_source="$2"
+  auth_file_ok "$key_source" \
+    || { echo "FATAL: refusing unsafe sqld JWT verification-key source (must be nonempty, current-user-owned, regular 0600)" >&2; exit 1; }
+  auth_file_ok "$token_source" \
+    || { echo "FATAL: refusing unsafe sqld client-JWT source (must be nonempty, current-user-owned, regular 0600)" >&2; exit 1; }
+  staged_key="$(mktemp "$auth_dir/.key.XXXXXX")"
+  staged_token="$(mktemp "$auth_dir/.token.XXXXXX")"
+  install -m600 "$key_source" "$staged_key"
+  install -m600 "$token_source" "$staged_token"
+  cmp -s "$key_source" "$staged_key" && cmp -s "$token_source" "$staged_token" \
+    || { echo "FATAL: staged sqld auth pair differs from its source" >&2; exit 1; }
+  ln "$staged_key" "$key" \
+    || { echo "FATAL: refusing to overwrite sqld JWT verification key" >&2; exit 1; }
+  if ! ln "$staged_token" "$token_file"; then
+    [ "$key" -ef "$staged_key" ] && rm -f "$key"
+    echo "FATAL: refusing to overwrite sqld client JWT" >&2
+    exit 1
+  fi
+  rm -f "$staged_key" "$staged_token"
+  staged_key=""
+  staged_token=""
+}
+helper_owned_or_absent() {
+  probe_exists=0
+  digest_exists=0
+  source_exists=0
+  { [ -e "$probe" ] || [ -L "$probe" ]; } && probe_exists=1
+  { [ -e "$probe_digest" ] || [ -L "$probe_digest" ]; } && digest_exists=1
+  { [ -e "$probe_source" ] || [ -L "$probe_source" ]; } && source_exists=1
+  if [ "$probe_exists" = 0 ] && [ "$digest_exists" = 0 ] && [ "$source_exists" = 0 ]; then
+    return 0
+  fi
+  [ "$probe_exists" = 1 ] && [ "$digest_exists" = 1 ] && [ "$source_exists" = 1 ] \
+    || { echo "FATAL: partial/unowned sqld readiness-helper state" >&2; exit 1; }
+  [ -x "$probe" ] && [ -f "$probe" ] && [ ! -L "$probe" ] \
+    && [ "$(stat -c '%a' "$probe")" = 755 ] && [ "$(stat -c '%u' "$probe")" = "$(id -u)" ] \
+    || { echo "FATAL: refusing unsafe or foreign sqld readiness helper" >&2; exit 1; }
+  [ -s "$probe_digest" ] && [ -f "$probe_digest" ] && [ ! -L "$probe_digest" ] \
+    && [ "$(stat -c '%a' "$probe_digest")" = 600 ] && [ "$(stat -c '%u' "$probe_digest")" = "$(id -u)" ] \
+    || { echo "FATAL: refusing unsafe or foreign sqld readiness-helper digest" >&2; exit 1; }
+  [ -s "$probe_source" ] && [ -f "$probe_source" ] && [ ! -L "$probe_source" ] \
+    && [ "$(stat -c '%a' "$probe_source")" = 600 ] && [ "$(stat -c '%u' "$probe_source")" = "$(id -u)" ] \
+    || { echo "FATAL: refusing unsafe or foreign sqld readiness-helper source identity" >&2; exit 1; }
+  recorded_source="$(cat "$probe_source")"
+  case "$recorded_source" in ''|*[!0-9a-f]*) echo "FATAL: invalid sqld helper source identity" >&2; exit 1 ;; esac
+  [ "${#recorded_source}" = 64 ] \
+    || { echo "FATAL: invalid sqld helper source-identity length" >&2; exit 1; }
+}
+install_probe() {
+  source_root="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+  [ -f "$source_root/Cargo.toml" ] \
+    || { echo "FATAL: envctl source checkout not found for Rust-native sqld helper" >&2; exit 1; }
+  helper_owned_or_absent
+  build_parent="$M/var/tmp/envctl"
+  if [ -e "$build_parent" ] || [ -L "$build_parent" ]; then
+    [ -d "$build_parent" ] && [ ! -L "$build_parent" ] \
+      && [ "$(stat -c '%a' "$build_parent")" = 700 ] \
+      && [ "$(stat -c '%u' "$build_parent")" = "$(id -u)" ] \
+      || { echo "FATAL: unsafe sqld helper build directory" >&2; exit 1; }
+  else
+    install -d -m700 "$build_parent"
+  fi
+  build_root="$(mktemp -d "$build_parent/sqld-install.XXXXXX")"
+  cargo_target_dir="$build_root/target"
+  sanitize_cargo_environment
+  stage_hermetic_cargo_home "$build_root"
+  run_hermetic_cargo_build "$build_root" "$target" "$cargo_target_dir"
+  collect_used_crate_archives
+  built="$cargo_target_dir/release/secretctl"
+  [ -x "$built" ] || { echo "FATAL: Rust-native sqld helper build produced no binary" >&2; exit 1; }
+  install -d -m755 "$probe_root"
+  stage_dir="$(mktemp -d "$probe_root/.next.XXXXXX")"
+  chmod 755 "$stage_dir"
+  staged_probe="$stage_dir/secretctl"
+  staged_digest="$stage_dir/secretctl.sha256"
+  staged_source="$stage_dir/secretctl.source.sha256"
+  contract_digest="$build_root/secretctl.contract.sha256"
+  install -m755 "$built" "$staged_probe"
+  "$staged_probe" internal-sqld-self-digest --output "$contract_digest" \
+    || { echo "FATAL: built sqld helper could not authenticate its staged bytes" >&2; exit 1; }
+  [ "$($staged_probe internal-sqld-readiness-contract --helper-digest "$contract_digest" 2>/dev/null)" = "$probe_contract" ] \
+    || { echo "FATAL: built sqld helper has the wrong authenticated contract" >&2; exit 1; }
+  rm -f "$contract_digest"
+  if [ "$probe_exists" = 1 ]; then
+    if ! "$staged_probe" internal-sqld-verify-current-helper --file "$probe" --digest "$probe_digest"; then
+      echo "refreshing sqld readiness helper from the fresh current-source build" >&2
+    fi
+  fi
+  "$staged_probe" internal-sqld-self-digest \
+    --output "$staged_digest" --installed-path "$probe" \
+    || { echo "FATAL: built sqld helper could not record its owned bytes" >&2; exit 1; }
+  "$staged_probe" internal-sqld-source-digest \
+    --source-root "$source_root" \
+    --toolchain-file "$rustup_bin" --toolchain-file "$cargo_bin" \
+    --toolchain-file "$rustc_bin" --toolchain-file "$rustdoc_bin" \
+    --toolchain-file "$rust_lld_bin" --toolchain-file "$clang_bin" \
+    --toolchain-file "$clangxx_bin" --toolchain-file "$llvm_ar_bin" \
+    --toolchain-file "$llvm_ranlib_bin" \
+    --toolchain-root "$clang_resource_root" \
+    --toolchain-root "$rust_toolchain_lib_root" \
+    --toolchain-root "$llvm_generation_root" \
+    --toolchain-root "$private_cargo_home/registry/index/$registry_id" \
+    "${crate_archive_args[@]}" --output "$staged_source" \
+    || { echo "FATAL: built sqld helper could not record its Rust/build inputs" >&2; exit 1; }
+  helper_fallback="$stage_dir"
+  helper_was_initial=0
+  if [ "$probe_exists" = 1 ]; then
+    sqld_mv -T --exchange --no-copy -- "$stage_dir" "$probe_dir" \
+      || { echo "FATAL: atomic sqld helper-generation exchange failed" >&2; exit 1; }
+  else
+    helper_was_initial=1
+    sqld_mv -T --no-copy -- "$stage_dir" "$probe_dir" \
+      || { echo "FATAL: initial sqld helper-generation activation failed" >&2; exit 1; }
+  fi
+  helper_activation=1
+  stage_dir=""
+  if ! sqld_sync -f "$probe_root"; then
+    rollback_helper_activation \
+      || { echo "FATAL: sqld helper-generation fsync failed and rollback was incomplete" >&2; exit 1; }
+    echo "FATAL: sqld helper-generation fsync failed; activation was rolled back" >&2
+    exit 1
+  fi
+  rm -rf "$build_root"
+  build_root=""
+}
+bootstrap_auth_pair() {
+  "$probe" internal-sqld-auth-bootstrap --public-key "$key" --client-token "$token_file"
+}
+ensure_auth_pair() {
+  created_pair=0
+  key_exists=0
+  token_exists=0
+  { [ -e "$key" ] || [ -L "$key" ]; } && key_exists=1
+  { [ -e "$token_file" ] || [ -L "$token_file" ]; } && token_exists=1
+  if [ "$key_exists" = 1 ] || [ "$token_exists" = 1 ]; then
+    [ "$key_exists" = 1 ] && [ "$token_exists" = 1 ] \
+      || { echo "FATAL: partial sqld auth state; refusing to overwrite either credential" >&2; exit 1; }
+  else
+    key_source="${SQLD_AUTH_JWT_KEY_SOURCE:-}"
+    token_source="${SQLD_CLIENT_JWT_SOURCE:-}"
+    if [ -n "$key_source" ] || [ -n "$token_source" ]; then
+      [ -n "$key_source" ] && [ -n "$token_source" ] \
+        || { echo "FATAL: both sqld auth source overrides are required together" >&2; exit 1; }
+      adopt_auth_pair "$key_source" "$token_source"
+    else
+      bootstrap_auth_pair
+    fi
+    created_pair=1
+  fi
+  auth_file_ok "$key" \
+    || { echo "FATAL: managed sqld JWT verification key must be a nonempty, current-user-owned 0600 regular file" >&2; exit 1; }
+  auth_file_ok "$token_file" \
+    || { echo "FATAL: managed sqld client JWT must be a nonempty, current-user-owned 0600 regular file" >&2; exit 1; }
+  auth_created="$created_pair"
+}
+write_frontdoor() {
+  staged_front="$(mktemp "$M/usr/bin/.sqld.XXXXXX")"
+  wrapper_body >"$staged_front"
+  chmod 755 "$staged_front"
+  front_fallback="$staged_front"
+  front_was_initial=0
+  if [ -e "$front" ] || [ -L "$front" ]; then
+    if ! sqld_mv -T --exchange --no-copy -- "$staged_front" "$front"; then
+      /usr/bin/rm -f -- "$staged_front"
+      front_fallback=""
+      return 1
+    fi
+  else
+    front_was_initial=1
+    if ! sqld_mv -T --no-copy -- "$staged_front" "$front"; then
+      /usr/bin/rm -f -- "$staged_front"
+      front_fallback=""
+      return 1
+    fi
+  fi
+  front_activation=1
+  staged_front=""
+  sqld_sync -f "$M/usr/bin"
+}
+revalidate_active_service() {
+  unit="$M/.config/systemd/user/sqld.service"
+  load_state="$(systemctl --user show --property=LoadState --value sqld.service)" \
+    || { echo "FATAL: could not query sqld.service LoadState during activation" >&2; return 1; }
+  active_state="$(systemctl --user show --property=ActiveState --value sqld.service)" \
+    || { echo "FATAL: could not query sqld.service ActiveState during activation" >&2; return 1; }
+  if [ "$load_state" = not-found ] && [ "$active_state" = inactive ]; then
+    return 0
+  fi
+  if [ "$load_state" = loaded ] && [ "$active_state" = inactive ]; then
+    return 0
+  fi
+  [ "$load_state" = loaded ] && [ "$active_state" = active ] \
+    || { echo "FATAL: sqld.service is not in a proven active, inactive, or absent state" >&2; return 1; }
+  # An older materialized unit is rewritten/restarted by the engine wiring phase. When the unit
+  # already owns the current barrier, however, a helper-only upgrade would otherwise leave the
+  # active service unproved by the new bytes. Run those bytes against the exact active MainPID now.
+  [ -f "$unit" ] && [ ! -L "$unit" ] || return 0
+  grep -Fq 'internal-sqld-readiness-probe' "$unit" || return 0
+  grep -Fq -- '--helper-digest ' "$unit" || return 0
+  main_pid="$(systemctl --user show --property=MainPID --value sqld.service)"
+  case "$main_pid" in ''|0|*[!0-9]*) echo "FATAL: active sqld.service has no valid MainPID" >&2; return 1 ;; esac
+  if "$probe" internal-sqld-readiness-probe \
+    --pid "$main_pid" --expected-executable "$payload" --port 8080 \
+    --client-token "$token_file" --helper-digest "$probe_digest" --timeout-seconds 5
+  then
+    return 0
+  fi
+  if service_enabled_state="$(systemctl --user is-enabled sqld.service 2>/dev/null)"; then
+    [ "$service_enabled_state" = enabled ] \
+      || { echo "FATAL: unexpected successful sqld.service enable state" >&2; return 1; }
+  else
+    [ "$service_enabled_state" = disabled ] \
+      || { echo "FATAL: could not prove sqld.service enable state before restart" >&2; return 1; }
+  fi
+  service_restore_needed=1
+  # `restart` is synchronous through ExecStartPost, so success proves the replacement helper and
+  # the restarted payload/auth/listener before the component hook returns.
+  if systemctl --user restart sqld.service; then
+    service_restore_needed=0
+    return 0
+  fi
+  echo "FATAL: replacement sqld failed readiness; runtime bytes will roll back before restoring the incumbent service state" >&2
+  return 1
+}
+fetch_payload() {
+  asset="libsql-server-${target}.tar.xz"
+  url="https://github.com/tursodatabase/libsql/releases/download/libsql-server-v${version}/${asset}"
+  tmp="$(mktemp -d "$DEST/.download.XXXXXX")"
+  archive="$tmp/$asset"
+  staged_payload="$(mktemp "$DEST/.sqld.XXXXXX")"
+  echo "fetching sqld v${version} for ${target}"
+  curl --proto '=https' --tlsv1.2 --location --fail --silent --show-error "$url" -o "$archive"
+  chmod 0600 "$archive"
+  "$probe" internal-sqld-verify-sha256 \
+    --file "$archive" --expected-sha256 "$expected_sha256" --expected-mode 0600
+  tar -xJf "$archive" -C "$tmp"
+  bin="$(find "$tmp" -type f -name sqld -print -quit)"
+  [ -n "$bin" ] || { echo "FATAL: sqld binary not found in $asset" >&2; exit 1; }
+  install -m755 "$bin" "$staged_payload"
+  payload_ok "$staged_payload" \
+    || { echo "FATAL: downloaded sqld does not match exact release v${version}" >&2; exit 1; }
+  payload_fallback="$staged_payload"
+  payload_was_initial=0
+  if [ -e "$payload" ] || [ -L "$payload" ]; then
+    sqld_mv -T --exchange --no-copy -- "$staged_payload" "$payload" \
+      || { echo "FATAL: atomic sqld payload exchange failed" >&2; exit 1; }
+  else
+    payload_was_initial=1
+    sqld_mv -T --no-copy -- "$staged_payload" "$payload" \
+      || { echo "FATAL: initial sqld payload activation failed" >&2; exit 1; }
+  fi
+  payload_activation=1
+  staged_payload=""
+  if ! sqld_sync -f "$DEST"; then
+    rollback_payload_activation \
+      || { echo "FATAL: sqld payload fsync failed and rollback was incomplete" >&2; exit 1; }
+    echo "FATAL: sqld payload fsync failed; activation was rolled back" >&2
+    exit 1
+  fi
+  rm -rf "$tmp"
+  tmp=""
+  staged_payload=""
+}
+
+preflight_layout
+install -d -m755 "$M/.toolchains/sqld" "$DEST" "$M/usr/bin" \
+  "$M/usr/libexec/envctl/sqld" "$probe_root"
+install -d -m700 "$data"
+ensure_auth_dir
+runtime_transaction_open=1
+runtime_transaction_exit() {
+  rc="$?"
+  /usr/bin/rm -rf --one-file-system -- "${tmp:-}" "${build_root:-}" "${stage_dir:-}"
+  /usr/bin/rm -f -- "${staged_payload:-}" "${staged_front:-}" \
+    "${staged_key:-}" "${staged_token:-}"
+  if [ "$runtime_transaction_open" = 1 ]; then
+    rollback_runtime_activation \
+      || { echo "FATAL: sqld transaction abort left an incomplete runtime rollback" >&2; exit 1; }
+  fi
+  exit "$rc"
+}
+trap runtime_transaction_exit EXIT
+install_probe
+payload_ok "$payload" || fetch_payload
+ensure_auth_pair
+if ! { [ -f "$front" ] && [ ! -L "$front" ] && [ "$(cat "$front")" = "$(wrapper_body)" ]; }; then
+  if ! write_frontdoor; then
+    rollback_runtime_activation \
+      || { echo "FATAL: sqld frontdoor activation failed and runtime rollback was incomplete" >&2; exit 1; }
+    runtime_transaction_open=0
+    echo "FATAL: sqld frontdoor activation failed; runtime activation was rolled back" >&2
+    exit 1
+  fi
 fi
+if ! revalidate_active_service; then
+  rollback_runtime_activation \
+    || { echo "FATAL: active-service proof failed and sqld runtime rollback was incomplete" >&2; exit 1; }
+  runtime_transaction_open=0
+  echo "FATAL: active-service proof failed; sqld runtime activation was rolled back" >&2
+  exit 1
+fi
+if ! commit_runtime_activation; then
+  runtime_transaction_open=0
+  trap - EXIT
+  echo "FATAL: sqld runtime activation committed but strict retired-state cleanup/fsync failed" >&2
+  exit 1
+fi
+runtime_transaction_open=0
+trap - EXIT
 '''
 
-# VERIFY: the binary answers AND (best-effort) the loopback port is listening if the unit is up.
-# The hard predicate is the binary; the port check is non-fatal (unit may be intentionally stopped).
+# VERIFY: exact payload digest + auth material + active unit + authenticated SQL round-trip.
 [component.verify]
 kind = "command"
 command = "bash"
 args = ["-lc", '''
+set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
-export PATH="$M/usr/bin:$PATH"
-[ -x "$M/usr/bin/sqld" ] && [ ! -L "$M/usr/bin/sqld" ] && grep -Fqx "exec \"$M/.toolchains/sqld/bin/sqld\" \"\$@\"" "$M/usr/bin/sqld"
-sqld --version >/dev/null 2>&1 || sqld --help >/dev/null 2>&1 || exit 1
-if systemctl --user is-active --quiet sqld.service; then
-  if curl -fsS http://127.0.0.1:8080/health >/dev/null 2>&1 \
-     || curl -fsS http://127.0.0.1:8080/ >/dev/null 2>&1; then
-    echo "sqld serving on 127.0.0.1:8080 (healthy)"
-  else
-    echo "sqld.service active but loopback port not answering yet (non-fatal)"
+export PATH=/usr/bin:/bin
+payload="$M/.toolchains/sqld/bin/sqld"
+front="$M/usr/bin/sqld"
+key="$M/.config/sqld/auth-jwt-key.pem"
+token_file="$M/.config/sqld/client.jwt"
+probe="$M/usr/libexec/envctl/sqld/bin/current/secretctl"
+probe_digest="$M/usr/libexec/envctl/sqld/bin/current/secretctl.sha256"
+probe_source="$M/usr/libexec/envctl/sqld/bin/current/secretctl.source.sha256"
+source_root="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+uid="$(id -u)"
+canonical_is_lexical() {
+  [ "$(readlink -f -- "$1" 2>/dev/null)" = "$1" ]
+}
+owned_real_dir() {
+  [ -d "$1" ] && [ ! -L "$1" ] && [ "$(stat -c '%u' "$1")" = "$uid" ] \
+    && canonical_is_lexical "$1"
+}
+validate_managed_chain() {
+  target_path="$1"
+  case "$target_path" in "$M"|"$M"/*) ;; *) echo "unsafe sqld verifier path" >&2; exit 1 ;; esac
+  owned_real_dir "$M" || { echo "unsafe META_ROOT for sqld verification" >&2; exit 1; }
+  case "$(stat -c '%a' "$M")" in 700|755|775) ;; *) echo "unsafe META_ROOT mode" >&2; exit 1 ;; esac
+  relative="${target_path#"$M"}"
+  relative="${relative#/}"
+  current="$M"
+  missing=0
+  IFS='/' read -r -a components <<< "$relative"
+  for component in "${components[@]}"; do
+    [ -n "$component" ] || continue
+    current="$current/$component"
+    if [ -e "$current" ] || [ -L "$current" ]; then
+      [ "$missing" = 0 ] && owned_real_dir "$current" \
+        || { echo "unsafe sqld verifier parent chain: $current" >&2; exit 1; }
+      case "$(stat -c '%a' "$current")" in 700|755|775) ;; *) echo "unsafe sqld verifier directory mode: $current" >&2; exit 1 ;; esac
+    else
+      missing=1
+    fi
+  done
+}
+validate_build_config_file() {
+  config="$1"
+  if [ -e "$config" ] || [ -L "$config" ]; then
+    [ -f "$config" ] && [ ! -L "$config" ] && canonical_is_lexical "$config" \
+      && [ "$(stat -c '%u' "$config")" = "$uid" ] \
+      || { echo "unowned or symlinked Cargo config: $config" >&2; exit 1; }
   fi
+}
+reject_external_build_config() {
+  config="$1"
+  if [ -e "$config" ] || [ -L "$config" ]; then
+    echo "external Cargo config is forbidden for the sqld verifier build: $config" >&2
+    exit 1
+  fi
+}
+validate_source_tree() {
+  case "$source_root" in /*) ;; *) echo "envctl source root must be absolute" >&2; exit 1 ;; esac
+  owned_real_dir "$source_root" || { echo "unsafe envctl source root" >&2; exit 1; }
+  for required in Cargo.toml Cargo.lock rust-toolchain.toml assets/scripts/envctl-sqld-hermetic-cargo.sh crates/secretctl crates/secrets-engine crates/secrets-proto; do
+    node="$source_root/$required"
+    [ -e "$node" ] && [ ! -L "$node" ] && canonical_is_lexical "$node" \
+      && [ "$(stat -c '%u' "$node")" = "$uid" ] && { [ -f "$node" ] || [ -d "$node" ]; } \
+      || { echo "unsafe or missing envctl build input: $node" >&2; exit 1; }
+  done
+  while IFS= read -r -d '' node; do
+    [ ! -L "$node" ] && canonical_is_lexical "$node" \
+      && [ "$(stat -c '%u' "$node")" = "$uid" ] && { [ -f "$node" ] || [ -d "$node" ]; } \
+      || { echo "unsafe envctl build-tree node: $node" >&2; exit 1; }
+  done < <(find "$source_root/Cargo.toml" "$source_root/Cargo.lock" "$source_root/rust-toolchain.toml" \
+    "$source_root/assets/scripts/envctl-sqld-hermetic-cargo.sh" \
+    "$source_root/crates/secretctl" "$source_root/crates/secrets-engine" "$source_root/crates/secrets-proto" \
+    -print0)
+  validate_build_config_file "$source_root/.cargo/config.toml"
+  validate_build_config_file "$source_root/.cargo/config"
+  reject_external_build_config "/.cargo/config.toml"
+  reject_external_build_config "/.cargo/config"
+  reject_external_build_config "$M/.toolchains/cargo/config.toml"
+  reject_external_build_config "$M/.toolchains/cargo/config"
+}
+sanitize_cargo_environment() {
+  unset RUSTC RUSTDOC RUSTDOCFLAGS RUSTC_WRAPPER RUSTC_WORKSPACE_WRAPPER RUSTFLAGS \
+    CARGO_ENCODED_RUSTFLAGS CARGO_BUILD_RUSTC CARGO_BUILD_RUSTDOC CARGO_BUILD_RUSTC_WRAPPER \
+    CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER CARGO_BUILD_RUSTFLAGS \
+    CC CXX AR RANLIB CFLAGS CXXFLAGS CPPFLAGS LDFLAGS BINDGEN_EXTRA_CLANG_ARGS
+  while IFS='=' read -r variable _; do
+    case "$variable" in \
+      CARGO_TARGET_*_LINKER|CARGO_TARGET_*_RUSTFLAGS|CARGO_TARGET_*_RUNNER|\
+      CC_*|CXX_*|AR_*|RANLIB_*|CFLAGS_*|CXXFLAGS_*|CPPFLAGS_*|LDFLAGS_*|\
+      *_CC|*_CXX|*_AR|*_RANLIB|*_CFLAGS|*_CXXFLAGS|*_CPPFLAGS|*_LDFLAGS) unset "$variable" ;;
+    esac
+  done < <(env)
+}
+load_hermetic_cargo_helpers() {
+  local helper="$source_root/assets/scripts/envctl-sqld-hermetic-cargo.sh"
+  local expected_sha256="e64615f3491225e9420572f196bcc4618a4d7cb031083e1f49a5bf3c5821cf53"
+  [ -f "$helper" ] && [ ! -L "$helper" ] && canonical_is_lexical "$helper" \
+    && [ "$(stat -c '%u' "$helper")" = "$uid" ] && [ "$(stat -c '%a' "$helper")" = 755 ] \
+    || { echo "unsafe sqld hermetic-Cargo helper" >&2; exit 1; }
+  [ "$(/usr/bin/sha256sum "$helper" | /usr/bin/awk '{print $1}')" = "$expected_sha256" ] \
+    || { echo "sqld hermetic-Cargo helper SHA-256 mismatch" >&2; exit 1; }
+  # shellcheck source=../../assets/scripts/envctl-sqld-hermetic-cargo.sh
+  source "$helper"
+}
+case "$(uname -m)" in
+  x86_64)
+    rust_target="x86_64-unknown-linux-gnu"
+    expected_payload_sha256="0863c3fbe68ac9714bca2cec1330def7a0ba5e4a29f199bf60ef46fa0c95b895"
+    ;;
+  aarch64)
+    rust_target="aarch64-unknown-linux-gnu"
+    expected_payload_sha256="54039931c1088483706790e6cf73444ad88b843a9bb0ca8285b82fc309ad4810"
+    ;;
+  *) exit 1 ;;
+esac
+rustup_bin="$M/.toolchains/cargo/bin/rustup"
+rust_toolchain_dir="$M/.toolchains/rustup/toolchains/1.89.0-${rust_target}"
+rustc_bin="$rust_toolchain_dir/bin/rustc"
+cargo_bin="$rust_toolchain_dir/bin/cargo"
+rustdoc_bin="$rust_toolchain_dir/bin/rustdoc"
+rust_lld_bin="$rust_toolchain_dir/lib/rustlib/$rust_target/bin/rust-lld"
+rust_toolchain_lib_root="$rust_toolchain_dir/lib"
+llvm_bin="$M/.toolchains/llvm/bin"
+llvm_generation_root="$M/.toolchains/llvm"
+clang_bin="$llvm_bin/clang"
+clangxx_bin="$llvm_bin/clang++"
+llvm_ar_bin="$llvm_bin/llvm-ar"
+llvm_ranlib_bin="$llvm_bin/llvm-ranlib"
+clang_resource_root="$M/.toolchains/llvm/lib/clang/21"
+load_hermetic_cargo_helpers
+validate_source_tree
+validate_managed_chain "$M/var/tmp/envctl"
+validate_managed_chain "$M/.toolchains/cargo"
+validate_managed_chain "$M/.toolchains/rustup"
+validate_managed_chain "$rust_toolchain_dir/bin"
+validate_managed_chain "$rust_toolchain_dir/lib/rustlib/$rust_target/bin"
+validate_managed_chain "$llvm_bin"
+validate_managed_chain "$clang_resource_root"
+validate_managed_chain "$rust_toolchain_lib_root"
+validate_managed_chain "$llvm_generation_root"
+for managed_exec in "$rustup_bin" "$rustc_bin" "$cargo_bin" "$rustdoc_bin" "$rust_lld_bin" \
+  "$clang_bin" "$clangxx_bin" "$llvm_ar_bin" "$llvm_ranlib_bin"; do
+  [ -x "$managed_exec" ] && [ -f "$managed_exec" ] && [ ! -L "$managed_exec" ] \
+    && canonical_is_lexical "$managed_exec" && [ "$(stat -c '%u' "$managed_exec")" = "$uid" ] \
+    && [ "$(stat -c '%a' "$managed_exec")" = 755 ] \
+    || { echo "required META-owned Rust toolchain executable is unsafe or missing: $managed_exec" >&2; exit 1; }
+done
+validate_toolchain_resource_tree
+expected_wrapper="$(printf '%s\n' '#!/bin/sh' '# managed-by: envctl component sqld' "exec \"$payload\" \"\$@\"")"
+[ -x "$probe" ] && [ -f "$probe" ] && [ ! -L "$probe" ] && canonical_is_lexical "$probe" && [ "$(stat -c '%a' "$probe")" = 755 ] && [ "$(stat -c '%u' "$probe")" = "$uid" ]
+[ -s "$probe_digest" ] && [ -f "$probe_digest" ] && [ ! -L "$probe_digest" ] && canonical_is_lexical "$probe_digest" && [ "$(stat -c '%a' "$probe_digest")" = 600 ] && [ "$(stat -c '%u' "$probe_digest")" = "$uid" ]
+[ -s "$probe_source" ] && [ -f "$probe_source" ] && [ ! -L "$probe_source" ] && canonical_is_lexical "$probe_source" && [ "$(stat -c '%a' "$probe_source")" = 600 ] && [ "$(stat -c '%u' "$probe_source")" = "$uid" ]
+verify_parent="$M/var/tmp/envctl"
+if [ -e "$verify_parent" ] || [ -L "$verify_parent" ]; then
+  [ -d "$verify_parent" ] && [ ! -L "$verify_parent" ] \
+    && [ "$(stat -c '%a' "$verify_parent")" = 700 ] \
+    && [ "$(stat -c '%u' "$verify_parent")" = "$(id -u)" ] \
+    || { echo "unsafe sqld verifier scratch directory" >&2; exit 1; }
 else
-  echo "sqld.service not active (non-fatal; start it to serve)"
+  install -d -m700 "$verify_parent"
 fi
-exit 0
+verifier_root="$(mktemp -d "$verify_parent/sqld-verify.XXXXXX")"
+trap 'rm -rf "$verifier_root"' EXIT
+cargo_target_dir="$verifier_root/target"
+sanitize_cargo_environment
+stage_hermetic_cargo_home "$verifier_root"
+run_hermetic_cargo_build "$verifier_root" "$rust_target" "$cargo_target_dir"
+collect_used_crate_archives
+verifier="$cargo_target_dir/release/secretctl"
+[ -x "$verifier" ] && [ -f "$verifier" ] && [ ! -L "$verifier" ] \
+  || { echo "fresh sqld verifier build produced no regular executable" >&2; exit 1; }
+verifier_digest="$verifier_root/secretctl.sha256"
+"$verifier" internal-sqld-self-digest --output "$verifier_digest"
+[ "$($verifier internal-sqld-readiness-contract --helper-digest "$verifier_digest" 2>/dev/null)" = 'envctl-sqld-readiness-v1' ]
+"$verifier" internal-sqld-verify-current-helper --file "$probe" --digest "$probe_digest"
+"$verifier" internal-sqld-verify-source-digest --source-root "$source_root" \
+  --toolchain-file "$rustup_bin" --toolchain-file "$cargo_bin" \
+  --toolchain-file "$rustc_bin" --toolchain-file "$rustdoc_bin" \
+  --toolchain-file "$rust_lld_bin" --toolchain-file "$clang_bin" \
+  --toolchain-file "$clangxx_bin" --toolchain-file "$llvm_ar_bin" \
+  --toolchain-file "$llvm_ranlib_bin" \
+  --toolchain-root "$clang_resource_root" \
+  --toolchain-root "$rust_toolchain_lib_root" \
+  --toolchain-root "$llvm_generation_root" \
+  --toolchain-root "$private_cargo_home/registry/index/$registry_id" \
+  "${crate_archive_args[@]}" --digest "$probe_source"
+"$verifier" internal-sqld-verify-sha256 \
+  --file "$payload" --expected-sha256 "$expected_payload_sha256" --expected-mode 0755
+[ -x "$front" ] && [ -f "$front" ] && [ ! -L "$front" ] && canonical_is_lexical "$front"
+[ "$(cat "$front")" = "$expected_wrapper" ]
+[ -s "$key" ] && [ -f "$key" ] && [ ! -L "$key" ] && canonical_is_lexical "$key" && [ "$(stat -c '%a' "$key")" = 600 ] && [ "$(stat -c '%u' "$key")" = "$uid" ]
+[ -s "$token_file" ] && [ -f "$token_file" ] && [ ! -L "$token_file" ] && canonical_is_lexical "$token_file" && [ "$(stat -c '%a' "$token_file")" = 600 ] && [ "$(stat -c '%u' "$token_file")" = "$uid" ]
+systemctl --user is-active --quiet sqld.service \
+  || { echo "sqld.service is not active" >&2; exit 1; }
+main_pid="$(systemctl --user show --property=MainPID --value sqld.service)"
+case "$main_pid" in ''|0|*[!0-9]*) echo "sqld.service has no valid MainPID" >&2; exit 1 ;; esac
+# The helper verifies its own open /proc/self/exe handle BEFORE it opens the token file, then binds
+# this exact systemd MainPID/executable/listener and performs the 401-negative + bearer-positive SQL
+# proof. No shell variable, argv, environment entry, or trace line ever contains the token bytes.
+"$verifier" internal-sqld-readiness-probe \
+  --pid "$main_pid" --expected-executable "$payload" --port 8080 \
+  --client-token "$token_file" --helper-digest "$verifier_digest" --timeout-seconds 5
+echo "sqld serving authenticated SQL on 127.0.0.1:8080 (healthy)"
 ''']
 
-# FIX: re-fetch the binary if missing and (re)start the unit. Idempotent.
+# FIX: replace a missing/wrong-version payload, repair an owned wrapper, and repair auth material.
+# The engine's wiring phase owns unit creation/start. This hook never starts an inactive unit; when
+# an already-current unit is active, it revalidates it with replacement helper bytes and restarts
+# synchronously only if that new proof fails.
 [component.fix]
 kind = "script"
 script = '''
 set -euo pipefail
-ver="${SQLD_VERSION:-v0.24.32}"
+export PATH=/usr/bin:/bin
+version="0.24.32"
 arch="$(uname -m)"
 case "$arch" in
-  x86_64)  target="x86_64-unknown-linux-gnu" ;;
-  aarch64) target="aarch64-unknown-linux-gnu" ;;
+  x86_64)
+    target="x86_64-unknown-linux-gnu"
+    expected_sha256="71720fc8648c19efef416efebd47145ef59b62e198770533530a858e1336879f"
+    expected_payload_sha256="0863c3fbe68ac9714bca2cec1330def7a0ba5e4a29f199bf60ef46fa0c95b895"
+    ;;
+  aarch64)
+    target="aarch64-unknown-linux-gnu"
+    expected_sha256="37f9eee45b388a30192907ecf4565b93df945c079331657073b5b3caf8bb1cd0"
+    expected_payload_sha256="54039931c1088483706790e6cf73444ad88b843a9bb0ca8285b82fc309ad4810"
+    ;;
   *) echo "FATAL: unsupported arch $arch"; exit 1 ;;
 esac
-envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 M="${META_ROOT:?META_ROOT required}"
 DEST="$M/.toolchains/sqld/bin"
-install -d -m755 "$DEST" "$M/usr/bin"
-install -d -m700 "$M/.local/share/sqld"
-if [ ! -x "$DEST/sqld" ]; then
-  tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
-  url="https://github.com/tursodatabase/libsql/releases/download/libsql-server-${ver}/libsql-server-${target}.tar.xz"
-  curl -fsSL "$url" -o "$tmp/sqld.tar.xz" || { echo "FATAL: download failed $url"; exit 1; }
-  tar -xJf "$tmp/sqld.tar.xz" -C "$tmp"
-  bin="$(find "$tmp" -type f -name sqld | head -n1)"
-  install -Dm755 "$bin" "$DEST/sqld"
-  envctl_frontdoor "$DEST/sqld" "$M/usr/bin/sqld"
+payload="$DEST/sqld"
+front="$M/usr/bin/sqld"
+data="$M/.local/share/sqld"
+auth_dir="$M/.config/sqld"
+key="$auth_dir/auth-jwt-key.pem"
+token_file="$auth_dir/client.jwt"
+probe_root="$M/usr/libexec/envctl/sqld/bin"
+probe_dir="$probe_root/current"
+probe="$probe_dir/secretctl"
+probe_digest="$probe_dir/secretctl.sha256"
+probe_source="$probe_dir/secretctl.source.sha256"
+probe_contract='envctl-sqld-readiness-v1'
+rustup_bin="$M/.toolchains/cargo/bin/rustup"
+rust_toolchain_dir="$M/.toolchains/rustup/toolchains/1.89.0-${target}"
+rustc_bin="$rust_toolchain_dir/bin/rustc"
+cargo_bin="$rust_toolchain_dir/bin/cargo"
+rustdoc_bin="$rust_toolchain_dir/bin/rustdoc"
+rust_lld_bin="$rust_toolchain_dir/lib/rustlib/$target/bin/rust-lld"
+rust_toolchain_lib_root="$rust_toolchain_dir/lib"
+llvm_bin="$M/.toolchains/llvm/bin"
+llvm_generation_root="$M/.toolchains/llvm"
+clang_bin="$llvm_bin/clang"
+clangxx_bin="$llvm_bin/clang++"
+llvm_ar_bin="$llvm_bin/llvm-ar"
+llvm_ranlib_bin="$llvm_bin/llvm-ranlib"
+clang_resource_root="$M/.toolchains/llvm/lib/clang/21"
+uid="$(id -u)"
+
+canonical_is_lexical() {
+  [ "$(readlink -f -- "$1" 2>/dev/null)" = "$1" ]
+}
+owned_real_dir() {
+  [ -d "$1" ] && [ ! -L "$1" ] && [ "$(stat -c '%u' "$1")" = "$uid" ] \
+    && canonical_is_lexical "$1"
+}
+validate_managed_chain() {
+  target_path="$1"
+  case "$target_path" in "$M"|"$M"/*) ;; *) echo "FATAL: managed sqld path escapes META_ROOT: $target_path" >&2; exit 1 ;; esac
+  owned_real_dir "$M" \
+    || { echo "FATAL: META_ROOT must be a canonical current-user-owned real directory" >&2; exit 1; }
+  case "$(stat -c '%a' "$M")" in 700|755|775) ;; *) echo "FATAL: unsafe META_ROOT mode" >&2; exit 1 ;; esac
+  relative="${target_path#"$M"}"
+  relative="${relative#/}"
+  current="$M"
+  missing=0
+  IFS='/' read -r -a components <<< "$relative"
+  for component in "${components[@]}"; do
+    [ -n "$component" ] || continue
+    current="$current/$component"
+    if [ -e "$current" ] || [ -L "$current" ]; then
+      [ "$missing" = 0 ] && owned_real_dir "$current" \
+        || { echo "FATAL: managed sqld parent chain is not canonical/current-user-owned: $current" >&2; exit 1; }
+      case "$(stat -c '%a' "$current")" in 700|755|775) ;; *) echo "FATAL: unsafe managed sqld directory mode: $current" >&2; exit 1 ;; esac
+    else
+      missing=1
+    fi
+  done
+}
+validate_existing_dir_mode() {
+  path="$1"
+  expected_mode="$2"
+  if [ -e "$path" ] || [ -L "$path" ]; then
+    owned_real_dir "$path" && [ "$(stat -c '%a' "$path")" = "$expected_mode" ] \
+      || { echo "FATAL: unsafe managed sqld directory: $path" >&2; exit 1; }
+  fi
+}
+validate_existing_leaf() {
+  path="$1"
+  expected_mode="$2"
+  if [ -e "$path" ] || [ -L "$path" ]; then
+    [ -f "$path" ] && [ ! -L "$path" ] && canonical_is_lexical "$path" \
+      && [ "$(stat -c '%u' "$path")" = "$uid" ] && [ "$(stat -c '%a' "$path")" = "$expected_mode" ] \
+      || { echo "FATAL: unsafe managed sqld file: $path" >&2; exit 1; }
+  fi
+}
+validate_build_config_file() {
+  config="$1"
+  if [ -e "$config" ] || [ -L "$config" ]; then
+    [ -f "$config" ] && [ ! -L "$config" ] && canonical_is_lexical "$config" \
+      && [ "$(stat -c '%u' "$config")" = "$uid" ] \
+      || { echo "FATAL: unowned or symlinked Cargo config: $config" >&2; exit 1; }
+  fi
+}
+reject_external_build_config() {
+  config="$1"
+  if [ -e "$config" ] || [ -L "$config" ]; then
+    echo "FATAL: external Cargo config is forbidden for the sqld helper build: $config" >&2
+    exit 1
+  fi
+}
+validate_source_tree() {
+  source_root="$1"
+  case "$source_root" in /*) ;; *) echo "FATAL: envctl source root must be absolute" >&2; exit 1 ;; esac
+  owned_real_dir "$source_root" \
+    || { echo "FATAL: envctl source root must be canonical/current-user-owned" >&2; exit 1; }
+  for required in Cargo.toml Cargo.lock rust-toolchain.toml assets/scripts/envctl-sqld-hermetic-cargo.sh crates/secretctl crates/secrets-engine crates/secrets-proto; do
+    node="$source_root/$required"
+    [ -e "$node" ] && [ ! -L "$node" ] && canonical_is_lexical "$node" \
+      && [ "$(stat -c '%u' "$node")" = "$uid" ] && { [ -f "$node" ] || [ -d "$node" ]; } \
+      || { echo "FATAL: unsafe or missing envctl build input: $node" >&2; exit 1; }
+  done
+  while IFS= read -r -d '' node; do
+    [ ! -L "$node" ] && canonical_is_lexical "$node" \
+      && [ "$(stat -c '%u' "$node")" = "$uid" ] && { [ -f "$node" ] || [ -d "$node" ]; } \
+      || { echo "FATAL: unsafe envctl build-tree node: $node" >&2; exit 1; }
+  done < <(find "$source_root/Cargo.toml" "$source_root/Cargo.lock" "$source_root/rust-toolchain.toml" \
+    "$source_root/assets/scripts/envctl-sqld-hermetic-cargo.sh" \
+    "$source_root/crates/secretctl" "$source_root/crates/secrets-engine" "$source_root/crates/secrets-proto" \
+    -print0)
+  validate_build_config_file "$source_root/.cargo/config.toml"
+  validate_build_config_file "$source_root/.cargo/config"
+  reject_external_build_config "/.cargo/config.toml"
+  reject_external_build_config "/.cargo/config"
+  reject_external_build_config "$M/.toolchains/cargo/config.toml"
+  reject_external_build_config "$M/.toolchains/cargo/config"
+}
+sanitize_cargo_environment() {
+  unset RUSTC RUSTDOC RUSTDOCFLAGS RUSTC_WRAPPER RUSTC_WORKSPACE_WRAPPER RUSTFLAGS \
+    CARGO_ENCODED_RUSTFLAGS CARGO_BUILD_RUSTC CARGO_BUILD_RUSTDOC CARGO_BUILD_RUSTC_WRAPPER \
+    CARGO_BUILD_RUSTC_WORKSPACE_WRAPPER CARGO_BUILD_RUSTFLAGS \
+    CC CXX AR RANLIB CFLAGS CXXFLAGS CPPFLAGS LDFLAGS BINDGEN_EXTRA_CLANG_ARGS
+  while IFS='=' read -r variable _; do
+    case "$variable" in \
+      CARGO_TARGET_*_LINKER|CARGO_TARGET_*_RUSTFLAGS|CARGO_TARGET_*_RUNNER|\
+      CC_*|CXX_*|AR_*|RANLIB_*|CFLAGS_*|CXXFLAGS_*|CPPFLAGS_*|LDFLAGS_*|\
+      *_CC|*_CXX|*_AR|*_RANLIB|*_CFLAGS|*_CXXFLAGS|*_CPPFLAGS|*_LDFLAGS) unset "$variable" ;;
+    esac
+  done < <(env)
+}
+load_hermetic_cargo_helpers() {
+  local helper="$source_root/assets/scripts/envctl-sqld-hermetic-cargo.sh"
+  local expected_sha256="e64615f3491225e9420572f196bcc4618a4d7cb031083e1f49a5bf3c5821cf53"
+  [ -f "$helper" ] && [ ! -L "$helper" ] && canonical_is_lexical "$helper" \
+    && [ "$(stat -c '%u' "$helper")" = "$uid" ] && [ "$(stat -c '%a' "$helper")" = 755 ] \
+    || { echo "FATAL: unsafe sqld hermetic-Cargo helper" >&2; exit 1; }
+  [ "$(/usr/bin/sha256sum "$helper" | /usr/bin/awk '{print $1}')" = "$expected_sha256" ] \
+    || { echo "FATAL: sqld hermetic-Cargo helper SHA-256 mismatch" >&2; exit 1; }
+  # shellcheck source=../../assets/scripts/envctl-sqld-hermetic-cargo.sh
+  source "$helper"
+}
+sqld_mv() { /usr/bin/mv "$@"; }
+sqld_sync() { /usr/bin/sync "$@"; }
+payload_activation=0
+payload_was_initial=0
+payload_fallback=""
+front_activation=0
+front_was_initial=0
+front_fallback=""
+helper_activation=0
+helper_was_initial=0
+helper_fallback=""
+auth_created=0
+service_restore_needed=0
+service_enabled_state=""
+require_atomic_mv() {
+  /usr/bin/mv --help 2>&1 | /usr/bin/grep -Fq -- '--exchange' \
+    && /usr/bin/mv --help 2>&1 | /usr/bin/grep -Fq -- '--no-copy' \
+    || { echo "FATAL: host mv lacks atomic --exchange/--no-copy support" >&2; exit 1; }
+}
+rollback_payload_activation() {
+  [ "$payload_activation" = 1 ] || return 0
+  failed=0
+  if [ "$payload_was_initial" = 1 ]; then
+    sqld_mv -T --no-copy -- "$payload" "$payload_fallback" || failed=1
+  else
+    sqld_mv -T --exchange --no-copy -- "$payload_fallback" "$payload" || failed=1
+  fi
+  if [ "$failed" = 0 ]; then
+    sqld_sync -f "$DEST" || failed=1
+    /usr/bin/rm -f -- "$payload_fallback" || failed=1
+    sqld_sync -f "$DEST" || failed=1
+  fi
+  [ "$failed" = 0 ] || return 1
+  payload_activation=0
+  payload_fallback=""
+}
+rollback_front_activation() {
+  [ "$front_activation" = 1 ] || return 0
+  failed=0
+  if [ "$front_was_initial" = 1 ]; then
+    sqld_mv -T --no-copy -- "$front" "$front_fallback" || failed=1
+  else
+    sqld_mv -T --exchange --no-copy -- "$front_fallback" "$front" || failed=1
+  fi
+  if [ "$failed" = 0 ]; then
+    sqld_sync -f "$M/usr/bin" || failed=1
+    /usr/bin/rm -f -- "$front_fallback" || failed=1
+    sqld_sync -f "$M/usr/bin" || failed=1
+  fi
+  [ "$failed" = 0 ] || return 1
+  front_activation=0
+  front_fallback=""
+}
+rollback_helper_activation() {
+  [ "$helper_activation" = 1 ] || return 0
+  failed=0
+  if [ "$helper_was_initial" = 1 ]; then
+    sqld_mv -T --no-copy -- "$probe_dir" "$helper_fallback" || failed=1
+  else
+    sqld_mv -T --exchange --no-copy -- "$helper_fallback" "$probe_dir" || failed=1
+  fi
+  if [ "$failed" = 0 ]; then
+    sqld_sync -f "$probe_root" || failed=1
+    /usr/bin/rm -rf --one-file-system -- "$helper_fallback" || failed=1
+    sqld_sync -f "$probe_root" || failed=1
+  fi
+  [ "$failed" = 0 ] || return 1
+  helper_activation=0
+  helper_fallback=""
+}
+rollback_created_auth() {
+  [ "$auth_created" = 1 ] || return 0
+  auth_file_ok "$key" && auth_file_ok "$token_file" || return 1
+  /usr/bin/rm -f -- "$key" "$token_file" || return 1
+  sqld_sync -f "$auth_dir" || return 1
+  auth_created=0
+}
+restore_service_after_rollback() {
+  [ "$service_restore_needed" = 1 ] || return 0
+  if [ "$service_enabled_state" = enabled ]; then
+    systemctl --user enable --now sqld.service || return 1
+  else
+    systemctl --user start sqld.service || return 1
+  fi
+  [ "$(systemctl --user show --property=ActiveState --value sqld.service)" = active ] \
+    || return 1
+  service_restore_needed=0
+}
+rollback_runtime_activation() {
+  failed=0
+  rollback_front_activation || failed=1
+  rollback_payload_activation || failed=1
+  rollback_helper_activation || failed=1
+  rollback_created_auth || failed=1
+  restore_service_after_rollback || failed=1
+  [ "$failed" = 0 ]
+}
+commit_runtime_activation() {
+  failed=0
+  if [ "$front_activation" = 1 ] && [ "$front_was_initial" = 0 ]; then
+    /usr/bin/rm -f -- "$front_fallback" || failed=1
+  fi
+  if [ "$payload_activation" = 1 ] && [ "$payload_was_initial" = 0 ]; then
+    /usr/bin/rm -f -- "$payload_fallback" || failed=1
+  fi
+  if [ "$helper_activation" = 1 ] && [ "$helper_was_initial" = 0 ]; then
+    /usr/bin/rm -rf --one-file-system -- "$helper_fallback" || failed=1
+  fi
+  sqld_sync -f "$M/usr/bin" || failed=1
+  sqld_sync -f "$DEST" || failed=1
+  sqld_sync -f "$probe_root" || failed=1
+  [ "$failed" = 0 ] || return 1
+  front_activation=0
+  payload_activation=0
+  helper_activation=0
+  auth_created=0
+  front_fallback=""
+  payload_fallback=""
+  helper_fallback=""
+}
+preflight_layout() {
+  source_root="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+  load_hermetic_cargo_helpers
+  require_atomic_mv
+  for managed_dir in "$DEST" "$M/usr/bin" "$data" "$auth_dir" "$probe_root" "$probe_dir" \
+    "$M/var/tmp/envctl" "$M/.toolchains/cargo" "$M/.toolchains/rustup" "$rust_toolchain_dir/bin" \
+    "$rust_toolchain_dir/lib/rustlib/$target/bin" "$rust_toolchain_lib_root" \
+    "$llvm_generation_root" "$llvm_bin" "$clang_resource_root"; do
+    validate_managed_chain "$managed_dir"
+  done
+  validate_existing_dir_mode "$DEST" 755
+  validate_existing_dir_mode "$M/.toolchains/sqld" 755
+  validate_existing_dir_mode "$M/usr/bin" 755
+  validate_existing_dir_mode "$data" 700
+  validate_existing_dir_mode "$auth_dir" 700
+  validate_existing_dir_mode "$probe_root" 755
+  validate_existing_dir_mode "$M/usr/libexec/envctl/sqld" 755
+  validate_existing_dir_mode "$probe_dir" 755
+  validate_existing_dir_mode "$M/var/tmp/envctl" 700
+  validate_source_tree "$source_root"
+  validate_existing_leaf "$payload" 755
+  for managed_exec in "$rustup_bin" "$rustc_bin" "$cargo_bin" "$rustdoc_bin" "$rust_lld_bin" \
+    "$clang_bin" "$clangxx_bin" "$llvm_ar_bin" "$llvm_ranlib_bin"; do
+    [ -x "$managed_exec" ] && [ -f "$managed_exec" ] && [ ! -L "$managed_exec" ] \
+      && canonical_is_lexical "$managed_exec" && [ "$(stat -c '%u' "$managed_exec")" = "$uid" ] \
+      && [ "$(stat -c '%a' "$managed_exec")" = 755 ] \
+      || { echo "FATAL: required META-owned Rust toolchain executable is unsafe or missing: $managed_exec" >&2; exit 1; }
+  done
+  validate_toolchain_resource_tree
+  helper_owned_or_absent
+  key_exists=0
+  token_exists=0
+  { [ -e "$key" ] || [ -L "$key" ]; } && key_exists=1
+  { [ -e "$token_file" ] || [ -L "$token_file" ]; } && token_exists=1
+  if [ "$key_exists" = 1 ] || [ "$token_exists" = 1 ]; then
+    [ "$key_exists" = 1 ] && [ "$token_exists" = 1 ] && auth_file_ok "$key" && auth_file_ok "$token_file" \
+      || { echo "FATAL: partial or unsafe existing sqld auth pair" >&2; exit 1; }
+  fi
+  key_source="${SQLD_AUTH_JWT_KEY_SOURCE:-}"
+  token_source="${SQLD_CLIENT_JWT_SOURCE:-}"
+  if [ -n "$key_source" ] || [ -n "$token_source" ]; then
+    [ -n "$key_source" ] && [ -n "$token_source" ] && auth_file_ok "$key_source" && auth_file_ok "$token_source" \
+      || { echo "FATAL: both sqld auth overrides must be safe canonical 0600 files" >&2; exit 1; }
+  fi
+  frontdoor_owned_or_absent \
+    || { echo "FATAL: refusing to replace foreign frontdoor $front" >&2; exit 1; }
+}
+
+wrapper_body() {
+  printf '%s\n' '#!/bin/sh' '# managed-by: envctl component sqld' "exec \"$payload\" \"\$@\""
+}
+legacy_wrapper_body() {
+  printf '%s\n' '#!/bin/sh' "exec \"$payload\" \"\$@\""
+}
+frontdoor_owned_or_absent() {
+  if [ ! -e "$front" ] && [ ! -L "$front" ]; then
+    return 0
+  fi
+  [ -f "$front" ] && [ ! -L "$front" ] || return 1
+  current="$(cat "$front")"
+  [ "$current" = "$(wrapper_body)" ] || [ "$current" = "$(legacy_wrapper_body)" ]
+}
+payload_ok() {
+  "$probe" internal-sqld-verify-sha256 \
+    --file "$1" --expected-sha256 "$expected_payload_sha256" --expected-mode 0755
+}
+auth_file_ok() {
+  [ -s "$1" ] && [ -f "$1" ] && [ ! -L "$1" ] \
+    && canonical_is_lexical "$1" \
+    && [ "$(stat -c '%a' "$1")" = 600 ] \
+    && [ "$(stat -c '%u' "$1")" = "$uid" ]
+}
+ensure_auth_dir() {
+  if [ -e "$auth_dir" ] || [ -L "$auth_dir" ]; then
+    [ -d "$auth_dir" ] && [ ! -L "$auth_dir" ] && [ "$(stat -c '%u' "$auth_dir")" = "$(id -u)" ] \
+      || { echo "FATAL: sqld auth path must be a current-user-owned real directory" >&2; exit 1; }
+  else
+    install -d -m700 "$auth_dir"
+  fi
+  chmod 700 "$auth_dir"
+}
+adopt_auth_pair() {
+  key_source="$1"
+  token_source="$2"
+  auth_file_ok "$key_source" \
+    || { echo "FATAL: refusing unsafe sqld JWT verification-key source (must be nonempty, current-user-owned, regular 0600)" >&2; exit 1; }
+  auth_file_ok "$token_source" \
+    || { echo "FATAL: refusing unsafe sqld client-JWT source (must be nonempty, current-user-owned, regular 0600)" >&2; exit 1; }
+  staged_key="$(mktemp "$auth_dir/.key.XXXXXX")"
+  staged_token="$(mktemp "$auth_dir/.token.XXXXXX")"
+  install -m600 "$key_source" "$staged_key"
+  install -m600 "$token_source" "$staged_token"
+  cmp -s "$key_source" "$staged_key" && cmp -s "$token_source" "$staged_token" \
+    || { echo "FATAL: staged sqld auth pair differs from its source" >&2; exit 1; }
+  ln "$staged_key" "$key" \
+    || { echo "FATAL: refusing to overwrite sqld JWT verification key" >&2; exit 1; }
+  if ! ln "$staged_token" "$token_file"; then
+    [ "$key" -ef "$staged_key" ] && rm -f "$key"
+    echo "FATAL: refusing to overwrite sqld client JWT" >&2
+    exit 1
+  fi
+  rm -f "$staged_key" "$staged_token"
+  staged_key=""
+  staged_token=""
+}
+helper_owned_or_absent() {
+  probe_exists=0
+  digest_exists=0
+  source_exists=0
+  { [ -e "$probe" ] || [ -L "$probe" ]; } && probe_exists=1
+  { [ -e "$probe_digest" ] || [ -L "$probe_digest" ]; } && digest_exists=1
+  { [ -e "$probe_source" ] || [ -L "$probe_source" ]; } && source_exists=1
+  if [ "$probe_exists" = 0 ] && [ "$digest_exists" = 0 ] && [ "$source_exists" = 0 ]; then
+    return 0
+  fi
+  [ "$probe_exists" = 1 ] && [ "$digest_exists" = 1 ] && [ "$source_exists" = 1 ] \
+    || { echo "FATAL: partial/unowned sqld readiness-helper state" >&2; exit 1; }
+  [ -x "$probe" ] && [ -f "$probe" ] && [ ! -L "$probe" ] \
+    && [ "$(stat -c '%a' "$probe")" = 755 ] && [ "$(stat -c '%u' "$probe")" = "$(id -u)" ] \
+    || { echo "FATAL: refusing unsafe or foreign sqld readiness helper" >&2; exit 1; }
+  [ -s "$probe_digest" ] && [ -f "$probe_digest" ] && [ ! -L "$probe_digest" ] \
+    && [ "$(stat -c '%a' "$probe_digest")" = 600 ] && [ "$(stat -c '%u' "$probe_digest")" = "$(id -u)" ] \
+    || { echo "FATAL: refusing unsafe or foreign sqld readiness-helper digest" >&2; exit 1; }
+  [ -s "$probe_source" ] && [ -f "$probe_source" ] && [ ! -L "$probe_source" ] \
+    && [ "$(stat -c '%a' "$probe_source")" = 600 ] && [ "$(stat -c '%u' "$probe_source")" = "$(id -u)" ] \
+    || { echo "FATAL: refusing unsafe or foreign sqld readiness-helper source identity" >&2; exit 1; }
+  recorded_source="$(cat "$probe_source")"
+  case "$recorded_source" in ''|*[!0-9a-f]*) echo "FATAL: invalid sqld helper source identity" >&2; exit 1 ;; esac
+  [ "${#recorded_source}" = 64 ] \
+    || { echo "FATAL: invalid sqld helper source-identity length" >&2; exit 1; }
+}
+install_probe() {
+  source_root="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
+  [ -f "$source_root/Cargo.toml" ] \
+    || { echo "FATAL: envctl source checkout not found for Rust-native sqld helper" >&2; exit 1; }
+  helper_owned_or_absent
+  build_parent="$M/var/tmp/envctl"
+  if [ -e "$build_parent" ] || [ -L "$build_parent" ]; then
+    [ -d "$build_parent" ] && [ ! -L "$build_parent" ] \
+      && [ "$(stat -c '%a' "$build_parent")" = 700 ] \
+      && [ "$(stat -c '%u' "$build_parent")" = "$(id -u)" ] \
+      || { echo "FATAL: unsafe sqld helper build directory" >&2; exit 1; }
+  else
+    install -d -m700 "$build_parent"
+  fi
+  build_root="$(mktemp -d "$build_parent/sqld-install.XXXXXX")"
+  cargo_target_dir="$build_root/target"
+  sanitize_cargo_environment
+  stage_hermetic_cargo_home "$build_root"
+  run_hermetic_cargo_build "$build_root" "$target" "$cargo_target_dir"
+  collect_used_crate_archives
+  built="$cargo_target_dir/release/secretctl"
+  [ -x "$built" ] || { echo "FATAL: Rust-native sqld helper build produced no binary" >&2; exit 1; }
+  install -d -m755 "$probe_root"
+  stage_dir="$(mktemp -d "$probe_root/.next.XXXXXX")"
+  chmod 755 "$stage_dir"
+  staged_probe="$stage_dir/secretctl"
+  staged_digest="$stage_dir/secretctl.sha256"
+  staged_source="$stage_dir/secretctl.source.sha256"
+  contract_digest="$build_root/secretctl.contract.sha256"
+  install -m755 "$built" "$staged_probe"
+  "$staged_probe" internal-sqld-self-digest --output "$contract_digest" \
+    || { echo "FATAL: built sqld helper could not authenticate its staged bytes" >&2; exit 1; }
+  [ "$($staged_probe internal-sqld-readiness-contract --helper-digest "$contract_digest" 2>/dev/null)" = "$probe_contract" ] \
+    || { echo "FATAL: built sqld helper has the wrong authenticated contract" >&2; exit 1; }
+  rm -f "$contract_digest"
+  if [ "$probe_exists" = 1 ]; then
+    if ! "$staged_probe" internal-sqld-verify-current-helper --file "$probe" --digest "$probe_digest"; then
+      echo "refreshing sqld readiness helper from the fresh current-source build" >&2
+    fi
+  fi
+  "$staged_probe" internal-sqld-self-digest \
+    --output "$staged_digest" --installed-path "$probe" \
+    || { echo "FATAL: built sqld helper could not record its owned bytes" >&2; exit 1; }
+  "$staged_probe" internal-sqld-source-digest \
+    --source-root "$source_root" \
+    --toolchain-file "$rustup_bin" --toolchain-file "$cargo_bin" \
+    --toolchain-file "$rustc_bin" --toolchain-file "$rustdoc_bin" \
+    --toolchain-file "$rust_lld_bin" --toolchain-file "$clang_bin" \
+    --toolchain-file "$clangxx_bin" --toolchain-file "$llvm_ar_bin" \
+    --toolchain-file "$llvm_ranlib_bin" \
+    --toolchain-root "$clang_resource_root" \
+    --toolchain-root "$rust_toolchain_lib_root" \
+    --toolchain-root "$llvm_generation_root" \
+    --toolchain-root "$private_cargo_home/registry/index/$registry_id" \
+    "${crate_archive_args[@]}" --output "$staged_source" \
+    || { echo "FATAL: built sqld helper could not record its Rust/build inputs" >&2; exit 1; }
+  helper_fallback="$stage_dir"
+  helper_was_initial=0
+  if [ "$probe_exists" = 1 ]; then
+    sqld_mv -T --exchange --no-copy -- "$stage_dir" "$probe_dir" \
+      || { echo "FATAL: atomic sqld helper-generation exchange failed" >&2; exit 1; }
+  else
+    helper_was_initial=1
+    sqld_mv -T --no-copy -- "$stage_dir" "$probe_dir" \
+      || { echo "FATAL: initial sqld helper-generation activation failed" >&2; exit 1; }
+  fi
+  helper_activation=1
+  stage_dir=""
+  if ! sqld_sync -f "$probe_root"; then
+    rollback_helper_activation \
+      || { echo "FATAL: sqld helper-generation fsync failed and rollback was incomplete" >&2; exit 1; }
+    echo "FATAL: sqld helper-generation fsync failed; activation was rolled back" >&2
+    exit 1
+  fi
+  rm -rf "$build_root"
+  build_root=""
+}
+bootstrap_auth_pair() {
+  "$probe" internal-sqld-auth-bootstrap --public-key "$key" --client-token "$token_file"
+}
+ensure_auth_pair() {
+  created_pair=0
+  key_exists=0
+  token_exists=0
+  { [ -e "$key" ] || [ -L "$key" ]; } && key_exists=1
+  { [ -e "$token_file" ] || [ -L "$token_file" ]; } && token_exists=1
+  if [ "$key_exists" = 1 ] || [ "$token_exists" = 1 ]; then
+    [ "$key_exists" = 1 ] && [ "$token_exists" = 1 ] \
+      || { echo "FATAL: partial sqld auth state; refusing to overwrite either credential" >&2; exit 1; }
+  else
+    key_source="${SQLD_AUTH_JWT_KEY_SOURCE:-}"
+    token_source="${SQLD_CLIENT_JWT_SOURCE:-}"
+    if [ -n "$key_source" ] || [ -n "$token_source" ]; then
+      [ -n "$key_source" ] && [ -n "$token_source" ] \
+        || { echo "FATAL: both sqld auth source overrides are required together" >&2; exit 1; }
+      adopt_auth_pair "$key_source" "$token_source"
+    else
+      bootstrap_auth_pair
+    fi
+    created_pair=1
+  fi
+  auth_file_ok "$key" \
+    || { echo "FATAL: managed sqld JWT verification key must be a nonempty, current-user-owned 0600 regular file" >&2; exit 1; }
+  auth_file_ok "$token_file" \
+    || { echo "FATAL: managed sqld client JWT must be a nonempty, current-user-owned 0600 regular file" >&2; exit 1; }
+  auth_created="$created_pair"
+}
+write_frontdoor() {
+  staged_front="$(mktemp "$M/usr/bin/.sqld.XXXXXX")"
+  wrapper_body >"$staged_front"
+  chmod 755 "$staged_front"
+  front_fallback="$staged_front"
+  front_was_initial=0
+  if [ -e "$front" ] || [ -L "$front" ]; then
+    if ! sqld_mv -T --exchange --no-copy -- "$staged_front" "$front"; then
+      /usr/bin/rm -f -- "$staged_front"
+      front_fallback=""
+      return 1
+    fi
+  else
+    front_was_initial=1
+    if ! sqld_mv -T --no-copy -- "$staged_front" "$front"; then
+      /usr/bin/rm -f -- "$staged_front"
+      front_fallback=""
+      return 1
+    fi
+  fi
+  front_activation=1
+  staged_front=""
+  sqld_sync -f "$M/usr/bin"
+}
+revalidate_active_service() {
+  unit="$M/.config/systemd/user/sqld.service"
+  load_state="$(systemctl --user show --property=LoadState --value sqld.service)" \
+    || { echo "FATAL: could not query sqld.service LoadState during activation" >&2; return 1; }
+  active_state="$(systemctl --user show --property=ActiveState --value sqld.service)" \
+    || { echo "FATAL: could not query sqld.service ActiveState during activation" >&2; return 1; }
+  if [ "$load_state" = not-found ] && [ "$active_state" = inactive ]; then
+    return 0
+  fi
+  if [ "$load_state" = loaded ] && [ "$active_state" = inactive ]; then
+    return 0
+  fi
+  [ "$load_state" = loaded ] && [ "$active_state" = active ] \
+    || { echo "FATAL: sqld.service is not in a proven active, inactive, or absent state" >&2; return 1; }
+  # An older materialized unit is rewritten/restarted by the engine wiring phase. When the unit
+  # already owns the current barrier, however, a helper-only upgrade would otherwise leave the
+  # active service unproved by the new bytes. Run those bytes against the exact active MainPID now.
+  [ -f "$unit" ] && [ ! -L "$unit" ] || return 0
+  grep -Fq 'internal-sqld-readiness-probe' "$unit" || return 0
+  grep -Fq -- '--helper-digest ' "$unit" || return 0
+  main_pid="$(systemctl --user show --property=MainPID --value sqld.service)"
+  case "$main_pid" in ''|0|*[!0-9]*) echo "FATAL: active sqld.service has no valid MainPID" >&2; return 1 ;; esac
+  if "$probe" internal-sqld-readiness-probe \
+    --pid "$main_pid" --expected-executable "$payload" --port 8080 \
+    --client-token "$token_file" --helper-digest "$probe_digest" --timeout-seconds 5
+  then
+    return 0
+  fi
+  if service_enabled_state="$(systemctl --user is-enabled sqld.service 2>/dev/null)"; then
+    [ "$service_enabled_state" = enabled ] \
+      || { echo "FATAL: unexpected successful sqld.service enable state" >&2; return 1; }
+  else
+    [ "$service_enabled_state" = disabled ] \
+      || { echo "FATAL: could not prove sqld.service enable state before restart" >&2; return 1; }
+  fi
+  service_restore_needed=1
+  # `restart` is synchronous through ExecStartPost, so success proves the replacement helper and
+  # the restarted payload/auth/listener before the component hook returns.
+  if systemctl --user restart sqld.service; then
+    service_restore_needed=0
+    return 0
+  fi
+  echo "FATAL: replacement sqld failed readiness; runtime bytes will roll back before restoring the incumbent service state" >&2
+  return 1
+}
+fetch_payload() {
+  asset="libsql-server-${target}.tar.xz"
+  url="https://github.com/tursodatabase/libsql/releases/download/libsql-server-v${version}/${asset}"
+  tmp="$(mktemp -d "$DEST/.download.XXXXXX")"
+  archive="$tmp/$asset"
+  staged_payload="$(mktemp "$DEST/.sqld.XXXXXX")"
+  echo "fetching sqld v${version} for ${target}"
+  curl --proto '=https' --tlsv1.2 --location --fail --silent --show-error "$url" -o "$archive"
+  chmod 0600 "$archive"
+  "$probe" internal-sqld-verify-sha256 \
+    --file "$archive" --expected-sha256 "$expected_sha256" --expected-mode 0600
+  tar -xJf "$archive" -C "$tmp"
+  bin="$(find "$tmp" -type f -name sqld -print -quit)"
+  [ -n "$bin" ] || { echo "FATAL: sqld binary not found in $asset" >&2; exit 1; }
+  install -m755 "$bin" "$staged_payload"
+  payload_ok "$staged_payload" \
+    || { echo "FATAL: downloaded sqld does not match exact release v${version}" >&2; exit 1; }
+  payload_fallback="$staged_payload"
+  payload_was_initial=0
+  if [ -e "$payload" ] || [ -L "$payload" ]; then
+    sqld_mv -T --exchange --no-copy -- "$staged_payload" "$payload" \
+      || { echo "FATAL: atomic sqld payload exchange failed" >&2; exit 1; }
+  else
+    payload_was_initial=1
+    sqld_mv -T --no-copy -- "$staged_payload" "$payload" \
+      || { echo "FATAL: initial sqld payload activation failed" >&2; exit 1; }
+  fi
+  payload_activation=1
+  staged_payload=""
+  if ! sqld_sync -f "$DEST"; then
+    rollback_payload_activation \
+      || { echo "FATAL: sqld payload fsync failed and rollback was incomplete" >&2; exit 1; }
+    echo "FATAL: sqld payload fsync failed; activation was rolled back" >&2
+    exit 1
+  fi
+  rm -rf "$tmp"
+  tmp=""
+  staged_payload=""
+}
+
+preflight_layout
+install -d -m755 "$M/.toolchains/sqld" "$DEST" "$M/usr/bin" \
+  "$M/usr/libexec/envctl/sqld" "$probe_root"
+install -d -m700 "$data"
+ensure_auth_dir
+runtime_transaction_open=1
+runtime_transaction_exit() {
+  rc="$?"
+  /usr/bin/rm -rf --one-file-system -- "${tmp:-}" "${build_root:-}" "${stage_dir:-}"
+  /usr/bin/rm -f -- "${staged_payload:-}" "${staged_front:-}" \
+    "${staged_key:-}" "${staged_token:-}"
+  if [ "$runtime_transaction_open" = 1 ]; then
+    rollback_runtime_activation \
+      || { echo "FATAL: sqld transaction abort left an incomplete runtime rollback" >&2; exit 1; }
+  fi
+  exit "$rc"
+}
+trap runtime_transaction_exit EXIT
+install_probe
+payload_ok "$payload" || fetch_payload
+ensure_auth_pair
+if ! { [ -f "$front" ] && [ ! -L "$front" ] && [ "$(cat "$front")" = "$(wrapper_body)" ]; }; then
+  if ! write_frontdoor; then
+    rollback_runtime_activation \
+      || { echo "FATAL: sqld frontdoor activation failed and runtime rollback was incomplete" >&2; exit 1; }
+    runtime_transaction_open=0
+    echo "FATAL: sqld frontdoor activation failed; runtime activation was rolled back" >&2
+    exit 1
+  fi
 fi
-systemctl --user daemon-reload || true
-systemctl --user enable --now sqld.service || true
+if ! revalidate_active_service; then
+  rollback_runtime_activation \
+    || { echo "FATAL: active-service proof failed and sqld runtime rollback was incomplete" >&2; exit 1; }
+  runtime_transaction_open=0
+  echo "FATAL: active-service proof failed; sqld runtime activation was rolled back" >&2
+  exit 1
+fi
+if ! commit_runtime_activation; then
+  runtime_transaction_open=0
+  trap - EXIT
+  echo "FATAL: sqld runtime activation committed but strict retired-state cleanup/fsync failed" >&2
+  exit 1
+fi
+runtime_transaction_open=0
+trap - EXIT
 '''
 
 # REMOVE: disable + drop the unit and the binary. The data dir is data_paths — touched only on --purge.
@@ -121,9 +1639,202 @@ systemctl --user enable --now sqld.service || true
 kind = "script"
 script = '''
 set -euo pipefail
-systemctl --user disable --now sqld.service 2>/dev/null || true
-M="${META_ROOT:?META_ROOT required}"; t="$M/usr/bin/sqld"; src="$M/.toolchains/sqld/bin/sqld"; { [ -L "$t" ] && [ "$(readlink -f "$t" 2>/dev/null)" = "$(readlink -f "$src" 2>/dev/null)" ]; } || { [ -f "$t" ] && grep -Fqx "exec \"$src\" \"\$@\"" "$t"; } && rm -f "$t" || true; rm -rf "$M/.toolchains/sqld/bin"
-systemctl --user daemon-reload || true
+export PATH=/usr/bin:/bin
+M="${META_ROOT:?META_ROOT required}"
+uid="$(id -u)"
+case "$(uname -m)" in
+  x86_64) expected_payload_sha256="0863c3fbe68ac9714bca2cec1330def7a0ba5e4a29f199bf60ef46fa0c95b895" ;;
+  aarch64) expected_payload_sha256="54039931c1088483706790e6cf73444ad88b843a9bb0ca8285b82fc309ad4810" ;;
+  *) echo "FATAL: unsupported architecture for sqld removal" >&2; exit 1 ;;
+esac
+payload_dir="$M/.toolchains/sqld/bin"
+payload="$payload_dir/sqld"
+front="$M/usr/bin/sqld"
+probe_root="$M/usr/libexec/envctl/sqld/bin"
+probe_dir="$probe_root/current"
+probe="$probe_dir/secretctl"
+probe_digest="$probe_dir/secretctl.sha256"
+probe_source="$probe_dir/secretctl.source.sha256"
+canonical_is_lexical() { [ "$(readlink -f -- "$1" 2>/dev/null)" = "$1" ]; }
+owned_dir() {
+  [ -d "$1" ] && [ ! -L "$1" ] && canonical_is_lexical "$1" \
+    && [ "$(stat -c '%u' "$1")" = "$uid" ] && [ "$(stat -c '%a' "$1")" = "$2" ]
+}
+owned_file() {
+  [ -f "$1" ] && [ ! -L "$1" ] && canonical_is_lexical "$1" \
+    && [ "$(stat -c '%u' "$1")" = "$uid" ] && [ "$(stat -c '%a' "$1")" = "$2" ]
+}
+exists() { [ -e "$1" ] || [ -L "$1" ]; }
+runtime_nodes=0
+for node in "$payload" "$front" "$probe" "$probe_digest" "$probe_source"; do
+  exists "$node" && runtime_nodes=$((runtime_nodes + 1))
+done
+if [ "$runtime_nodes" = 0 ]; then
+  [ ! -e "$payload_dir" ] && [ ! -L "$payload_dir" ] \
+    && [ ! -e "$probe_root" ] && [ ! -L "$probe_root" ] \
+    || { echo "FATAL: refusing partial sqld removal state with empty/foreign private directories" >&2; exit 1; }
+else
+  [ "$runtime_nodes" = 5 ] \
+    || { echo "FATAL: refusing partial sqld runtime state during removal" >&2; exit 1; }
+  owned_dir "$M/usr/bin" 755 && owned_dir "$M/.toolchains/sqld" 755 \
+    && owned_dir "$M/usr/libexec/envctl/sqld" 755 \
+    && owned_dir "$payload_dir" 755 && owned_dir "$probe_root" 755 && owned_dir "$probe_dir" 755 \
+    || { echo "FATAL: refusing unsafe or foreign sqld private directories" >&2; exit 1; }
+  [ "$(find "$payload_dir" -mindepth 1 -maxdepth 1 -printf '%f\n' | LC_ALL=C sort)" = sqld ] \
+    || { echo "FATAL: refusing sqld payload directory with unexpected entries" >&2; exit 1; }
+  [ "$(find "$probe_root" -mindepth 1 -maxdepth 1 -printf '%f\n' | LC_ALL=C sort)" = current ] \
+    || { echo "FATAL: refusing sqld helper root with unexpected entries" >&2; exit 1; }
+  [ "$(find "$probe_dir" -mindepth 1 -maxdepth 1 -printf '%f\n' | LC_ALL=C sort)" = \
+    $'secretctl\nsecretctl.sha256\nsecretctl.source.sha256' ] \
+    || { echo "FATAL: refusing sqld helper generation with unexpected entries" >&2; exit 1; }
+  owned_file "$payload" 755 && owned_file "$front" 755 && owned_file "$probe" 755 \
+    && owned_file "$probe_digest" 600 && owned_file "$probe_source" 600 \
+    || { echo "FATAL: refusing unsafe or foreign sqld runtime files" >&2; exit 1; }
+  /usr/bin/sha256sum --check --status "$probe_digest" \
+    || { echo "FATAL: refusing sqld helper that differs from its owned-byte record" >&2; exit 1; }
+  source_identity="$(cat "$probe_source")"
+  case "$source_identity" in ''|*[!0-9a-f]*) echo "FATAL: invalid sqld helper source identity" >&2; exit 1 ;; esac
+  [ "${#source_identity}" = 64 ] \
+    || { echo "FATAL: invalid sqld helper source-identity length" >&2; exit 1; }
+  [ "$(/usr/bin/sha256sum "$payload" | /usr/bin/awk '{print $1}')" = "$expected_payload_sha256" ] \
+    || { echo "FATAL: refusing sqld payload that differs from the pinned release" >&2; exit 1; }
+  managed="$(printf '%s\n' '#!/bin/sh' '# managed-by: envctl component sqld' "exec \"$payload\" \"\$@\"")"
+  legacy="$(printf '%s\n' '#!/bin/sh' "exec \"$payload\" \"\$@\"")"
+  current="$(cat "$front")"
+  [ "$current" = "$managed" ] || [ "$current" = "$legacy" ] \
+    || { echo "FATAL: refusing foreign sqld frontdoor during removal" >&2; exit 1; }
+fi
+
+sqld_remove_mv() { /usr/bin/mv "$@"; }
+sqld_remove_sync() { /usr/bin/sync "$@"; }
+sqld_remove_mktemp() { /usr/bin/mktemp "$@"; }
+retired_origins=()
+retired_backups=()
+retired_parents=()
+retire_node() {
+  origin="$1"
+  backup="$2"
+  parent="$3"
+  sqld_remove_mv -T --no-copy -- "$origin" "$backup" || return 1
+  retired_origins+=("$origin")
+  retired_backups+=("$backup")
+  retired_parents+=("$parent")
+  sqld_remove_sync -f "$parent"
+}
+rollback_removal() {
+  failed=0
+  for ((index=${#retired_backups[@]} - 1; index >= 0; index--)); do
+    sqld_remove_mv -T --no-copy -- "${retired_backups[$index]}" "${retired_origins[$index]}" \
+      || failed=1
+    sqld_remove_sync -f "${retired_parents[$index]}" || failed=1
+  done
+  [ "$failed" = 0 ]
+}
+restore_service_state() {
+  [ "$load_state" != not-found ] || return 0
+  if [ "$enabled_state" = enabled ]; then
+    if [ "$active_state" = active ]; then
+      systemctl --user enable --now sqld.service
+    else
+      systemctl --user enable sqld.service
+    fi
+  elif [ "$active_state" = active ]; then
+    systemctl --user start sqld.service
+  fi
+}
+
+# Reserve every same-filesystem retirement name before service mutation. The successful prepared
+# state contains no filesystem nodes (only collision-resistant names), so a preparation/query
+# failure cannot leave the service stopped or a placeholder confused with managed runtime state.
+front_retired=""
+payload_retired=""
+probe_retired=""
+if [ "$runtime_nodes" = 5 ]; then
+  prepare_failed=0
+  front_retired="$(sqld_remove_mktemp "$M/usr/bin/.sqld.remove.XXXXXX")" || prepare_failed=1
+  [ "$prepare_failed" = 1 ] || /usr/bin/rm -f -- "$front_retired" || prepare_failed=1
+  if [ "$prepare_failed" = 0 ]; then
+    payload_retired="$(sqld_remove_mktemp -d "$M/.toolchains/sqld/.bin.retired.XXXXXX")" \
+      || prepare_failed=1
+  fi
+  [ "$prepare_failed" = 1 ] || /usr/bin/rmdir "$payload_retired" || prepare_failed=1
+  if [ "$prepare_failed" = 0 ]; then
+    probe_retired="$(sqld_remove_mktemp -d "$M/usr/libexec/envctl/sqld/.bin.retired.XXXXXX")" \
+      || prepare_failed=1
+  fi
+  [ "$prepare_failed" = 1 ] || /usr/bin/rmdir "$probe_retired" || prepare_failed=1
+  if [ "$prepare_failed" = 1 ]; then
+    cleanup_failed=0
+    [ -z "$front_retired" ] || /usr/bin/rm -f -- "$front_retired" || cleanup_failed=1
+    [ -z "$payload_retired" ] || /usr/bin/rm -rf --one-file-system -- "$payload_retired" \
+      || cleanup_failed=1
+    [ -z "$probe_retired" ] || /usr/bin/rm -rf --one-file-system -- "$probe_retired" \
+      || cleanup_failed=1
+    [ "$cleanup_failed" = 0 ] \
+      || { echo "FATAL: retirement-path preparation failed and placeholder cleanup was incomplete" >&2; exit 1; }
+    echo "FATAL: could not reserve sqld runtime retirement paths before stopping the service" >&2
+    exit 1
+  fi
+fi
+
+# The remove hook runs before wiring teardown. Prove the complete runtime identity and prepare all
+# rollback paths above before changing service state. A failed disable may already have stopped or
+# disabled part of the unit, so restore the exact prior enabled/active state before returning.
+load_state="$(systemctl --user show --property=LoadState --value sqld.service)" \
+  || { echo "FATAL: could not query sqld.service LoadState" >&2; exit 1; }
+active_state="$(systemctl --user show --property=ActiveState --value sqld.service)" \
+  || { echo "FATAL: could not query sqld.service ActiveState" >&2; exit 1; }
+service_restore_needed=0
+if [ "$load_state" = not-found ]; then
+  [ "$active_state" = inactive ] \
+    || { echo "FATAL: absent sqld.service is not proven inactive" >&2; exit 1; }
+  enabled_state=not-found
+else
+  [ "$load_state" = loaded ] && { [ "$active_state" = active ] || [ "$active_state" = inactive ]; } \
+    || { echo "FATAL: sqld.service is not in a removable loaded state" >&2; exit 1; }
+  if enabled_state="$(systemctl --user is-enabled sqld.service 2>/dev/null)"; then
+    [ "$enabled_state" = enabled ] \
+      || { echo "FATAL: unexpected successful sqld.service enable state" >&2; exit 1; }
+  else
+    [ "$enabled_state" = disabled ] \
+      || { echo "FATAL: could not prove sqld.service enable state" >&2; exit 1; }
+  fi
+  service_restore_needed=1
+  if ! systemctl --user disable --now sqld.service; then
+    if ! restore_service_state; then
+      echo "FATAL: sqld stop/disable failed and the prior service state could not be restored" >&2
+      exit 1
+    fi
+    service_restore_needed=0
+    echo "FATAL: sqld stop/disable failed; the prior service state was restored" >&2
+    exit 1
+  fi
+fi
+if [ "$runtime_nodes" = 5 ]; then
+  if ! retire_node "$front" "$front_retired" "$M/usr/bin" \
+    || ! retire_node "$payload_dir" "$payload_retired" "$M/.toolchains/sqld" \
+    || ! retire_node "$probe_root" "$probe_retired" "$M/usr/libexec/envctl/sqld"; then
+    rollback_failed=0
+    rollback_removal || rollback_failed=1
+    restore_service_state || rollback_failed=1
+    [ "$rollback_failed" = 0 ] \
+      || { echo "FATAL: sqld runtime retirement failed and rollback was incomplete" >&2; exit 1; }
+    echo "FATAL: sqld runtime retirement failed; incumbent namespaces were restored" >&2
+    exit 1
+  fi
+  # All active namespaces are gone. From here onward cleanup can fail, but restoring the service
+  # would be unsafe because no executable/helper runtime remains at its active paths.
+  service_restore_needed=0
+  cleanup_failed=0
+  /usr/bin/rm -f -- "$front_retired" || cleanup_failed=1
+  /usr/bin/rm -rf --one-file-system -- "$payload_retired" "$probe_retired" || cleanup_failed=1
+  sqld_remove_sync -f "$M/usr/bin" || cleanup_failed=1
+  sqld_remove_sync -f "$M/.toolchains/sqld" || cleanup_failed=1
+  sqld_remove_sync -f "$M/usr/libexec/envctl/sqld" || cleanup_failed=1
+  [ "$cleanup_failed" = 0 ] \
+    || { echo "FATAL: sqld removal committed and the service remains stopped/disabled, but retired-state cleanup/fsync failed; retry removal or inspect the retired paths" >&2; exit 1; }
+fi
+service_restore_needed=0
 # $META_ROOT/.local/share/sqld is data_paths below — never deleted by remove(); --purge only (user data rule).
 '''
 
@@ -140,18 +1851,28 @@ Description=sqld (libSQL server, loopback) — durable store backend for env-ctl
 After=default.target
 
 [Service]
-Type=simple
-# Loopback-only (no remote exposure), open auth (acceptable for a single-user local box; secretd's
-# config.rs permits an empty auth token ONLY for a loopback URL). Data persists under the data dir.
-Environment=META_ROOT=%h/Desktop/meta
-ExecStart=%h/Desktop/meta/usr/bin/sqld --http-listen-addr 127.0.0.1:8080 -d %h/Desktop/meta/.local/share/sqld
+Type=exec
+# Loopback-only (no remote exposure) and JWT-authenticated. Only the public verification key path is
+# passed to sqld; the matching client JWT remains in a current-user-owned 0600 file read by secretd.
+Environment="META_ROOT=${META_ROOT}"
+ExecStart="${META_ROOT}/usr/bin/sqld" --http-listen-addr 127.0.0.1:8080 --auth-jwt-key-file "${META_ROOT}/.config/sqld/auth-jwt-key.pem" -d "${META_ROOT}/.local/share/sqld"
+# systemd includes non-ignored ExecStartPost completion in Before=/After= ordering. The pure-Rust
+# helper first hashes its already-open /proc/self/exe handle against the 0600 owned-byte record;
+# only then may it open the token. It binds this exact $MAINPID + /proc/PID/exe to the listening
+# socket, requires unauthenticated SQL to return exactly 401, and requires the file-fed bearer to
+# return SELECT 1. The token bytes are never placed in argv, Environment=, or logs.
+ExecStartPost="${META_ROOT}/usr/libexec/envctl/sqld/bin/current/secretctl" internal-sqld-readiness-probe --pid "${MAINPID}" --expected-executable "${META_ROOT}/.toolchains/sqld/bin/sqld" --port 8080 --client-token "${META_ROOT}/.config/sqld/client.jwt" --helper-digest "${META_ROOT}/usr/libexec/envctl/sqld/bin/current/secretctl.sha256" --timeout-seconds 20
+TimeoutStartSec=30
 Restart=on-failure
 RestartSec=5
 # Defense-in-depth sandbox (sqld is external; keep it boxed).
 NoNewPrivileges=true
+LimitCORE=0
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=%h/Desktop/meta/.local/share/sqld
+ReadOnlyPaths="${META_ROOT}/.config/sqld/auth-jwt-key.pem" "${META_ROOT}/.config/sqld/client.jwt"
+ReadOnlyPaths="${META_ROOT}/usr/libexec/envctl/sqld/bin/current/secretctl" "${META_ROOT}/usr/libexec/envctl/sqld/bin/current/secretctl.sha256" "${META_ROOT}/usr/libexec/envctl/sqld/bin/current/secretctl.source.sha256"
+ReadWritePaths="${META_ROOT}/.local/share/sqld"
 PrivateTmp=true
 ProtectKernelTunables=true
 ProtectControlGroups=true
@@ -164,3 +1885,9 @@ WantedBy=default.target
 # ---- DATA: the durable libSQL database — deleted ONLY by `envctl reset sqld --purge` ----
 [[component.wiring.data_paths]]
 path = "$META_ROOT/.local/share/sqld"
+uuid = "runtime" # resolve + reverify at purge time; NotLiveDevice remains fail-closed
+
+# Auth material is preserved by the remove hook. The engine only moves it to recoverable trash on a
+# confirmed reset (and honors --keep-config); neither key nor token is ever rendered into a unit.
+[[component.wiring.config_paths]]
+path = "$META_ROOT/.config/sqld"

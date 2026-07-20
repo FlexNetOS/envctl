@@ -71,4 +71,4 @@ a **fresh shell** sees the tool — check all the shells the box actually runs:
 `bash -c 'command -v <tool>'` (non-login carries toolbin here), `bash -lc '…'` (login), and
 `nu -l -c 'which <tool>'` (nushell is the default shell; rtk-wrapped tools report type
 `custom`). The environment is reproducible iff every component detects-present and
-verifies-green from a clean shell, and `envctl doctor` + `envctl agent lock --check` are green.
+verifies-green from a clean shell, and `envctl doctor` + `envctl agent lock --check --locked` are green.

@@ -267,15 +267,15 @@
       "slug": "tencent/hy3:free",
       "display_name": "OpenRouter Tencent Hunyuan HY3 Free",
       "description": "Operator-selected OpenRouter default model; authenticated Responses proof uses OPENROUTER_API_KEY.",
-      "default_reasoning_level": "medium",
+      "default_reasoning_level": "high",
       "supported_reasoning_levels": [
         {
           "effort": "low",
           "description": "Fast responses with lighter reasoning"
         },
         {
-          "effort": "medium",
-          "description": "Balanced proof route"
+          "effort": "high",
+          "description": "Deeper reasoning for complex work"
         }
       ],
       "shell_type": "shell_command",
@@ -301,8 +301,8 @@
       },
       "supports_parallel_tool_calls": false,
       "supports_image_detail_original": false,
-      "context_window": 64000,
-      "max_context_window": 64000,
+      "context_window": 262144,
+      "max_context_window": 262144,
       "effective_context_window_percent": 95,
       "experimental_supported_tools": [],
       "input_modalities": [
@@ -312,7 +312,8 @@
       "use_responses_lite": false,
       "provider": "openrouter",
       "network_required": true,
-      "privacy_class": "external-provider"
+      "privacy_class": "external-provider",
+      "free_route_expires_on": "2026-07-21"
     },
     {
       "slug": "gpt-5.5-pro",

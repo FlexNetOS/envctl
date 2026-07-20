@@ -360,7 +360,8 @@ pub(crate) mod seed_factor {
         let pem = std::fs::read(ca_path()).ok()?;
         let mut roots = rustls::RootCertStore::empty();
         let mut rd = std::io::BufReader::new(&pem[..]);
-        for cert in rustls_pemfile::certs(&mut rd) {
+        use rustls::pki_types::pem::PemObject;
+        for cert in rustls::pki_types::CertificateDer::pem_reader_iter(&mut rd) {
             roots.add(cert.ok()?).ok()?;
         }
         if roots.is_empty() {

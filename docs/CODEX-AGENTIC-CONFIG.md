@@ -2,8 +2,8 @@
 
 This note records the project Codex configuration pass that updated `.codex/config.toml`,
 `.codex/hooks.json`, `.codex/AGENTS.md`, and the three baseline custom-agent TOML files.
-The 2026-07-03 envctl repair archived and disabled the pre-cleanroom hook bundle;
-hooks remain mandatory, but the replacement lifecycle gate must be rebuilt cleanly.
+The retired lifecycle bundle remains archive-only. The active generated hook surface is
+the profile-owned RTK `PreToolUse` hook for Bash only.
 
 ## Official-doc research used
 
@@ -46,7 +46,7 @@ Sources were restricted to current OpenAI Codex documentation fetched on 2026-06
 | Tool-output bloat | No explicit per-tool stored-output cap. | Set `tool_output_token_limit = 12000`. | Keeps large command output from consuming the context window. |
 | Model/reasoning | No repo default model/reasoning. | Set `model = "gpt-5.5"`, `model_reasoning_effort = "high"`, `plan_mode_reasoning_effort = "xhigh"`. | Aligns envctl with the current official Codex model guidance for complex coding/planning. |
 | Background/subagents | Only 6 threads and no worker timeout. | Set `max_threads = 12`, `max_depth = 1`, `job_max_runtime_seconds = 3600`. | Supports broad fan-out without recursive runaway. |
-| Hooks | Stop/PreCompact hooks used an absolute path into the main checkout; later envctl state still regenerated the corrupted pre-cleanroom lifecycle hooks. | Keep the archived hook bundle as evidence, remove active hook generation from `codex-global-baseline`, and pin `[features].hooks = false` until a clean-room gate is rebuilt. | Stops the bad hook bundle from returning while preserving the rule that lifecycle hooks are mandatory after redesign. |
+| Hooks | Legacy lifecycle hooks used absolute paths and mixed responsibilities. | Generate only `/home/flexnetos/.nix-profile/bin/rtk hook claude` for `PreToolUse` with matcher `Bash`, and enable `[features].hooks`. | Keeps shell-command rewriting profile-owned while preventing legacy lifecycle hooks from returning. |
 | Memories/history | Memory not explicitly enabled in project config; history size default. | Enable memories and set history cap to 100 MiB. | Improves cross-thread recovery while keeping team rules in AGENTS.md. |
 | Subagent schema | Baseline three custom agent files lacked explicit `name`/`description`. | Add required standalone custom-agent fields. | Matches current `.codex/agents/*.toml` schema. |
 | Project auth/provider | `model_provider = "openai"` was initially considered. | Deliberately omitted. | Current docs and `codex --strict-config doctor` confirm provider/auth keys are ignored in project config. |

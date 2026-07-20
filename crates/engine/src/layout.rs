@@ -47,6 +47,22 @@ impl MetaLayout {
         }
     }
 
+    /// Resolve the canonical meta layout from an explicitly exported
+    /// `META_ROOT`. Mutating ownership-sensitive surfaces use this constructor
+    /// so a missing environment contract cannot silently target a historical
+    /// checkout derived from `HOME`.
+    pub fn from_env_required() -> io::Result<Self> {
+        std::env::var_os("META_ROOT")
+            .filter(|root| !root.is_empty())
+            .map(Self::from_meta_root)
+            .ok_or_else(|| {
+                io::Error::new(
+                    io::ErrorKind::NotFound,
+                    "META_ROOT is required for this envctl-owned path",
+                )
+            })
+    }
+
     /// Resolve from `META_ROOT`, falling back to the historical local checkout
     /// convention. This is intentionally non-canonicalizing: envctl must be able
     /// to render paths for not-yet-created directories and worktree-relative
@@ -233,6 +249,14 @@ impl MetaLayout {
 
     pub fn xdg_config_home(&self) -> PathBuf {
         self.meta_root.join(".config")
+    }
+
+    /// The one active systemd-user unit directory owned by envctl.
+    ///
+    /// It is deliberately derived from the meta XDG config root, never from
+    /// the invoking user's `HOME` or ambient `XDG_CONFIG_HOME`.
+    pub fn systemd_user_dir(&self) -> PathBuf {
+        self.xdg_config_home().join("systemd/user")
     }
 
     pub fn xdg_data_home(&self) -> PathBuf {
@@ -545,6 +569,12 @@ impl MetaLayout {
                 purpose: "meta-home XDG config root",
             },
             LayoutEntry {
+                key: "systemd_user_dir",
+                path: self.systemd_user_dir(),
+                kind: LayoutKind::Canonical,
+                purpose: "authoritative envctl-owned systemd user unit directory",
+            },
+            LayoutEntry {
                 key: "xdg_data_home",
                 path: self.xdg_data_home(),
                 kind: LayoutKind::Canonical,
@@ -728,6 +758,7 @@ impl MetaLayout {
             ("ENVCTL_OPT_DIR", self.opt()),
             ("ENVCTL_REPO_STORE", self.repo_store()),
             ("ENVCTL_XDG_CONFIG_HOME", self.xdg_config_home()),
+            ("ENVCTL_SYSTEMD_USER_DIR", self.systemd_user_dir()),
             ("ENVCTL_XDG_DATA_HOME", self.xdg_data_home()),
             ("ENVCTL_XDG_STATE_HOME", self.xdg_state_home()),
             ("ENVCTL_XDG_CACHE_HOME", self.xdg_cache_home()),
@@ -775,6 +806,7 @@ mod tests {
         assert_eq!(l.tmp(), Path::new("/m/var/tmp"));
         assert_eq!(l.opt(), Path::new("/m/opt"));
         assert_eq!(l.xdg_config_home(), Path::new("/m/.config"));
+        assert_eq!(l.systemd_user_dir(), Path::new("/m/.config/systemd/user"));
         assert_eq!(l.xdg_data_home(), Path::new("/m/.local/share"));
         assert_eq!(l.xdg_state_home(), Path::new("/m/.local/state"));
         assert_eq!(l.xdg_cache_home(), Path::new("/m/.cache"));
@@ -868,6 +900,8 @@ mod tests {
         assert!(exports
             .iter()
             .any(|(k, v)| *k == "ENVCTL_XDG_CONFIG_HOME" && v == Path::new("/meta/.config")));
+        assert!(exports.iter().any(|(k, v)| *k == "ENVCTL_SYSTEMD_USER_DIR"
+            && v == Path::new("/meta/.config/systemd/user")));
     }
 
     #[test]
