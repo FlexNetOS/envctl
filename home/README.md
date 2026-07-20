@@ -16,7 +16,7 @@ $HOME/.claude/skills                -> envctl/home/.claude/skills            (ha
 $HOME/.claude/commands              -> envctl/home/.claude/commands          (harness 2026-07-07, owner-supervised)
 $HOME/.config/rtk                   -> envctl/home/.config/rtk               (rtk-config-links)
 $HOME/.config/yazelix/settings.jsonc-> envctl/home/.config/yazelix/...       (home-config-links)
-$HOME/.config/systemd/user/*.service-> envctl/home/.config/systemd/user/...  (home-config-links)
+$HOME/.config/systemd/user/*.service-> $META_ROOT/.config/systemd/user/...   (engine-owned discovery bridge)
 $HOME/.codex/config.toml            -> active runtime config (not generated from mirrors)
 envctl/home/.codex                  -> reviewed project/home Codex layer
 $ENVCTL_REAL_HOME/.nix-profile      -> real-home Nix profile state          (Yazelix-owned)
@@ -55,7 +55,11 @@ workspace usr/bin/<tool>            -> LEGACY pack residue (runtime ownership = 
   reappear.
 - **Toolchains** = Nix/Yazelix foundation profile: nightly cargo/rustc via the
   profile toolchain, kache for compiler caching, wild via clang linker flags,
-  and bun/bunx for Node.js package execution. Avoid npm/npx global installs.
+  bun/bunx for Node.js package execution, and the supported Bash/Zsh/Fish/Nushell
+  binaries. Host shell startup may select a shell, but it must inherit or prepend
+  `~/.nix-profile/{toolbin,bin}`; retired `$META_ROOT/.toolchains/zsh` builds,
+  `$META_ROOT/usr/bin/zsh` wrappers, and migration launchers are not fallback
+  owners. Avoid npm/npx/global Cargo installs.
 - **meta** = repo/workspace layer — `meta/scripts/bootstrap.sh` sequences rustup → clone → build →
   `envctl install` → `envctl agent sync --locked` → `envctl doctor && envctl lock --check`.
 
@@ -92,7 +96,11 @@ must be reviewed/materialized before any named `--migrate-cache-child NAME` appl
   module relative to the overlay.
 - `home/.config/yazelix/shell_bash.sh` still carries a compatibility fallback for older launches;
   treat it as a reviewed residual, not an install target.
-- `repowire.service` is carried for the record but disabled on the box (binary missing — see header).
+- Systemd user units are not tracked home-tree projections. Their component manifests render the
+  sole authoritative copies under `$META_ROOT/.config/systemd/user`; the wiring engine creates one
+  verified symlink in the real user-manager XDG search path so `systemctl --user` can discover them.
+  Historical `home/.config/systemd/user` copies are intentionally absent, and a foreign bridge is
+  refused before the engine mutates the canonical unit.
 - RTK config is tracked here; RTK command history and tee logs remain machine-local state under
   the workspace `.local/share/rtk/` only when RTK requires XDG data semantics; otherwise use
   the workspace `var/lib/rtk/`. The Yazelix profile is the real-home runtime owner; per-tool

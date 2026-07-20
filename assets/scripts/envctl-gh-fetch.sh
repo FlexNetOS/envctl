@@ -6,7 +6,8 @@
 # stdout carries return values that callers capture with `$(...)`, so a stray stdout line
 # would corrupt a `TAG=$(...)` capture.
 #
-# Three-tier token resolution (`envctl_gh_token`), each falling through SILENTLY on ANY failure:
+# Three-tier token resolution (`envctl_gh_token`), each falling through on ANY failure without
+# contaminating stdout (fixed diagnostics, where useful, go only to stderr):
 #   1. isolated (preferred): secretctl mint-github  — vault-sealed GitHub App token.
 #   2. gh (fallback):        gh auth token          — the developer's authenticated gh.
 #   3. unauth:               no token               — caller fetches anonymously (60/hr limit).
@@ -16,38 +17,90 @@
 # is available. A token never changes WHAT is fetched, only the rate-limit bucket it counts against.
 #
 # Usage from a component install hook:
-#   ROOT="${META_ROOT:?META_ROOT required}/envctl"
+#   ROOT="${ENVCTL_SOURCE_ROOT:-${META_ROOT:?META_ROOT required}/src/envctl}"
 #   source "$ROOT/assets/scripts/envctl-gh-fetch.sh"
 #   TAG="$(envctl_gh_api 'repos/cli/cli/releases/latest' --jq .tag_name)"
+
+# Return 0 only when VALUE is an unsigned decimal integer no greater than MAX. This compares
+# canonical decimal strings instead of using shell arithmetic, whose signed range cannot represent
+# the full u64 installation-id domain. Leading zeroes remain accepted, matching clap's integer
+# parser. No caller-controlled value is printed on rejection.
+_envctl_gh_unsigned_decimal_le() {
+  local value="${1-}" max="${2-}" canonical prefix index value_digit max_digit
+
+  case "$value" in
+    ""|*[!0-9]*) return 1 ;;
+  esac
+
+  # Strip the longest all-zero prefix without a subprocess. An all-zero value canonicalises to 0.
+  prefix="${value%%[!0]*}"
+  canonical="${value#"$prefix"}"
+  [ -n "$canonical" ] || canonical=0
+
+  if [ "${#canonical}" -lt "${#max}" ]; then
+    return 0
+  fi
+  if [ "${#canonical}" -gt "${#max}" ]; then
+    return 1
+  fi
+
+  # Equal-length decimal strings are compared one digit at a time. Each arithmetic comparison is
+  # therefore bounded to 0..9 even when the complete value exceeds Bash's signed integer range.
+  index=0
+  while [ "$index" -lt "${#max}" ]; do
+    value_digit="${canonical:index:1}"
+    max_digit="${max:index:1}"
+    if [ "$value_digit" -lt "$max_digit" ]; then
+      return 0
+    fi
+    if [ "$value_digit" -gt "$max_digit" ]; then
+      return 1
+    fi
+    index=$((index + 1))
+  done
+  return 0
+}
 
 # Resolve a GitHub bearer token to STDOUT and return 0 if one is available; return 1 (echo
 # nothing) otherwise. Diagnostics on tier fallback go to stderr.
 envctl_gh_token() {
-  local out tok
+  local out tok installation_id ttl_secs
+
+  installation_id="${ENVCTL_GH_INSTALLATION_ID:-}"
+  ttl_secs="${ENVCTL_GH_TTL_SECS:-3600}"
 
   # Tier 1 — isolated (vault-sealed GitHub App). `secretctl mint-github` REQUIRES
   # --installation-id, --ttl-secs and --output json (frozen contract, TASK-0020). The
   # installation-id is NOT something this resolver can invent, so the mint tier only fires when
   # the operator supplies one via ENVCTL_GH_INSTALLATION_ID; otherwise it falls through cleanly
   # to gh (fail-open). ANY failure (no binary / vault locked / daemon down / malformed JSON /
-  # no installation-id) silently drops to the next tier.
-  if [ -n "${ENVCTL_GH_INSTALLATION_ID:-}" ] && command -v secretctl >/dev/null 2>&1; then
-    if out=$(secretctl mint-github \
-               --installation-id "$ENVCTL_GH_INSTALLATION_ID" \
-               --ttl-secs "${ENVCTL_GH_TTL_SECS:-3600}" \
-               --output json 2>/dev/null); then
-      if command -v jq >/dev/null 2>&1; then
-        tok=$(printf '%s' "$out" | jq -r '.token // empty' 2>/dev/null)
-      else
-        # Fallback extractor over the frozen compact shape `{"token":"...","expires_at_unix":N}`.
-        tok=$(printf '%s' "$out" | grep -oE '"token":"[^"]*"' | head -1 | sed 's/.*:"//;s/"$//')
+  # no installation-id) drops to the next tier without contaminating stdout.
+  if [ -n "$installation_id" ]; then
+    # Validate the two ambient values before command construction. secretctl's frozen contract is
+    # `installation_id: u64` plus `ttl_secs: i64`; the daemon additionally rejects negative TTLs.
+    # Invalid values fall through to gh/unauthenticated fetches and never reach a child argv.
+    if ! _envctl_gh_unsigned_decimal_le "$installation_id" 18446744073709551615; then
+      >&2 echo "envctl-gh-fetch: invalid ENVCTL_GH_INSTALLATION_ID, skipping mint"
+    elif ! _envctl_gh_unsigned_decimal_le "$ttl_secs" 9223372036854775807; then
+      >&2 echo "envctl-gh-fetch: invalid ENVCTL_GH_TTL_SECS, skipping mint"
+    elif command -v secretctl >/dev/null 2>&1; then
+      if out=$(secretctl mint-github \
+                 --installation-id "$installation_id" \
+                 --ttl-secs "$ttl_secs" \
+                 --output json 2>/dev/null); then
+        if command -v jq >/dev/null 2>&1; then
+          tok=$(printf '%s' "$out" | jq -r '.token // empty' 2>/dev/null)
+        else
+          # Fallback extractor over the frozen compact shape `{"token":"...","expires_at_unix":N}`.
+          tok=$(printf '%s' "$out" | grep -oE '"token":"[^"]*"' | head -1 | sed 's/.*:"//;s/"$//')
+        fi
+        if [ -n "$tok" ]; then
+          printf '%s\n' "$tok"
+          return 0
+        fi
       fi
-      if [ -n "$tok" ]; then
-        printf '%s\n' "$tok"
-        return 0
-      fi
+      >&2 echo "envctl-gh-fetch: mint unavailable, using gh"
     fi
-    >&2 echo "envctl-gh-fetch: mint unavailable, using gh"
   fi
 
   # Tier 2 — authenticated gh.

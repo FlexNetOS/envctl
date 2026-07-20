@@ -95,7 +95,7 @@ From `~/Desktop/env-ctl/Cargo.toml` and `crates/*/Cargo.toml` (all `VERIFIED` by
 | `crates/secretd` | `envctl-secretd` | `secretd` | YES (tokio 1.43, tonic 0.12, hyper 1.5, reqwest 0.12) | YES today (Phase 0 scaffold); gains libSQL **behind a feature** in Phase 1 |
 | `crates/secretctl` | `envctl-secretctl` | `secretctl` | client-side tonic | YES |
 
-Workspace pins (`[workspace.dependencies]`, `VERIFIED`): `rust-version = "1.88"`,
+Workspace pins (`[workspace.dependencies]`, `VERIFIED`): `rust-version = "1.89"`,
 `edition = "2021"`, `resolver = "2"`. Crypto is pure-Rust:
 `chacha20poly1305 = 0.10`, `argon2 = 0.5 (features=["zeroize"])`, `hkdf = 0.12`,
 `sha2 = 0.10`, `blake3 = 1.5`, `zeroize = 1.8`, `subtle = 2.6`, `rand = 0.8`,
@@ -121,7 +121,7 @@ rustix = { version = "0.38", features = ["process", "net"] }
 
 | Dep | Pin | Source | Note |
 |---|---|---|---|
-| rustup / stable toolchain | MSRV 1.88 | https://rustup.rs/ ; channel pinned in `rust-toolchain.toml` (`VERIFIED`) | `cargo --version` must be ≥ 1.88 |
+| rustup / Rust toolchains | exact MSRV 1.89.0 + latest nightly default | https://rustup.rs/ ; policy in `rust-toolchain.toml` and `manifest/base.toml` (`VERIFIED`) | `cargo +1.89.0 --version`; default remains nightly |
 | tokio | 1.43 | https://github.com/tokio-rs/tokio/releases | check CVE-2024-47609 accept-loop fix is in-tree (see §9) |
 | tonic | 0.12 | https://github.com/hyperium/tonic/releases | |
 | prost | 0.13 | https://github.com/tokio-rs/prost/releases | |
@@ -151,7 +151,7 @@ META_ROOT-hosted layout from ARCHITECTURE.md §"Layout" (lines 124-127):
 id = "env-ctl"
 name = "env-ctl secrets daemon"
 description = "Pure-Rust gRPC secrets vault + credential broker. Stores keys AEAD-encrypted at rest, mints <=24h peer-bound relay bearers, terminates TLS in-process for the remote relay edge. Control plane is UDS + SO_PEERCRED (owner-only); data plane is loopback; the only network surface is the relay HTTPS edge."
-requires = ["rustup"]      # cargo + stable >= 1.88
+requires = ["rustup"]      # latest nightly default + exact Rust 1.89.0 MSRV lane
 destructive = false
 
 # DETECT == the "already installed AND healthy enough to be present" predicate.
@@ -168,9 +168,9 @@ script = '''
 set -euo pipefail
 export PATH="$HOME/.cargo/bin:$PATH"
 
-# MSRV gate (rust-version = 1.88 in the workspace). Fail closed, do not silently upgrade.
+# MSRV gate (rust-version = 1.89 in the workspace). Fail closed, do not silently upgrade.
 ver="$(cargo --version | awk '{print $2}')"
-printf '%s\n1.88.0\n' "$ver" | sort -V -C || { echo "FATAL: cargo $ver < MSRV 1.88"; exit 1; }
+printf '%s\n1.89.0\n' "$ver" | sort -V -C || { echo "FATAL: cargo $ver < MSRV 1.89"; exit 1; }
 
 # Post-merge this is the envctl workspace itself; pre-merge override with ENV_CTL_REPO.
 repo="${ENV_CTL_REPO:-$HOME/Desktop/envctl}"
@@ -304,8 +304,13 @@ args = ["-lc", "lsblk -dno PARTUUID | grep -q . || { echo 'FATAL: no PARTUUID st
 - `Type=notify` + `NotifyAccess=main` + `LimitMEMLOCK=infinity`: the daemon `mlockall`s and
   refuses to start without it (FS-S4). `LimitMEMLOCK=infinity` lets the lock succeed under a
   systemd user session; `LimitCORE=0` doubles the in-process `RLIMIT_CORE=0`. The daemon's
-  refusal remains authoritative — the unit only removes a reason to fail. `UNVERIFIED` that
-  Phase 6 `secretd` emits `sd_notify(READY=1)`; if it does not, change `Type=notify`→`simple`.
+  refusal remains authoritative — the unit only removes a reason to fail. Readiness is now
+  **verified**: `sqld.service` first checks the component-owned helper digest, then its bounded
+  `ExecStartPost` binds systemd's MainPID/executable to `127.0.0.1:8080`, requires unauthenticated
+  SQL to return `401`, and proves the file-fed bearer. Systemd includes that completion in
+  `After=` ordering. `secretd` then opens the authenticated libSQL store and provisions its schema
+  before `sd_notify(READY=1)`; `env-ctl.service` therefore remains `activating` until the durable
+  store is usable.
 - `enable = true` now that Phase 6 has landed — see §4.3.
 - `secretd --self-check` is the Phase-6 verify surface and now **exists** (`VERIFIED`:
   `crates/secretd/src/main.rs`, the `Cli`/`self_check` path) — a non-serving pre-flight that
@@ -324,7 +329,8 @@ args = ["-lc", "lsblk -dno PARTUUID | grep -q . || { echo 'FATAL: no PARTUUID st
 requires = ["rustup"]
 ```
 
-This is the only hard external dependency: `cargo` + a stable toolchain ≥ 1.88. (`rustup` is
+This is the only hard external dependency: the latest nightly developer toolchain plus the exact
+Rust 1.89.0 MSRV toolchain. (`rustup` is
 the natural `requires` target; envctl's graph resolves `requires` before install —
 `executor.rs:157`, `VERIFIED`.) The systemd user session and `$XDG_RUNTIME_DIR` are assumed
 present (true on this box's interactive login).
@@ -348,7 +354,7 @@ cargo tree -i aws-lc-sys 2>/dev/null && { echo "FAIL: aws-lc-sys present (expect
 test "$(cargo tree -i rustls 2>/dev/null | grep -c '^rustls v')" = "1" || { echo "FAIL: multiple rustls"; exit 1; }
 
 # (3) MSRV gate.
-cargo +1.88.0 check -p envctl-secrets-engine -p envctl-secrets-proto -p envctl-secretctl
+cargo +1.89.0 check -p envctl-secrets-engine -p envctl-secrets-proto -p envctl-secretctl
 
 # (4) The rustix feature UNION survived the merge (HF-17 regression guard).
 cargo tree -e features -i rustix 2>/dev/null | grep -q 'feature "net"' \
@@ -384,7 +390,7 @@ The pre-Phase-6 scaffold guard is retired with this PR and `enable` flips to `tr
 ### 5.1 Pre-flight (operator)
 
 ```bash
-rustup show                 # stable >= 1.88 active
+rustup show                 # nightly default and exact 1.89.0 both installed
 which cargo secretd 2>/dev/null
 lsblk -dno PARTUUID         # the USB key partition's PARTUUID (pre-filter selector only)
 ```
@@ -574,8 +580,9 @@ is daemon config under `$META_ROOT/.config/env-ctl`; the component just refrains
    `libsql` `default-features=false, features=["remote"]` (docs say no C ffi at runtime, but graph
    purity unproven). Candidate B: `libsql-client` + `libsql-hrana` (clearly pure-Rust). **Decide
    and CI-gate before enabling the libSQL store.** (https://docs.rs/crate/libsql/latest/features)
-2. **`secretd` readiness protocol.** Does Phase-6 `secretd` emit `sd_notify(READY=1)`? If yes keep
-   `Type=notify`; if no use `Type=simple`. `UNVERIFIED`.
+2. **`secretd` readiness protocol — CLOSED/VERIFIED.** Keep `Type=notify`. Source and CI prove the
+   sqld owned-byte/MainPID/auth `ExecStartPost` barrier completes before `secretd` starts, and that
+   authenticated libSQL construction/schema provisioning completes before `sd_notify(READY=1)`.
 3. **`secretd --self-check` / `--init` / `secretctl vault init` / `keyslot enroll` surface.**
    The exact CLI verbs used in §3 verify and §5.3 are intended, not implemented. Pin the names in
    SCAFFOLD-SPEC before the manifest hard-codes them. `UNVERIFIED`.

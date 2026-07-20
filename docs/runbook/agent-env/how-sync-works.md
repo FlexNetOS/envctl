@@ -16,27 +16,19 @@ A look at what `envctl agent sync` actually does — how skills are installed, h
 ## Sync Flow
 
 ```
-1. Load config (`$ENVCTL_AGENT_CONFIG` → `./agent-env.yaml` → saved preference → `$XDG_CONFIG_HOME/agent-env/agent-env.yaml`, or explicit `--config` path/URL)
-2. Load lock file (agent-env.lock)
-3. Sync skills
-   a. For each skill source: decide whether a fetch is needed (the lock pins it and the destinations already match → no network)
-   b. Materialize (download if remote) only when a fetch is needed
-   c. Discover skills in source directory
-   d. For each skill: hash → compare to lock → copy if changed
-   e. Remove skills no longer in config
-4. Sync commands
-   a. For each command source: decide whether a fetch is needed (the lock pins it and the destination files already exist → no network)
-   b. Materialize (download if remote) only when a fetch is needed
-   c. Discover commands in source, transform into each agent's native format
-   d. For each command: hash → compare to lock → write if changed
-   e. Remove commands no longer in config
-5. Sync MCPs
-   a. For each MCP source: decide whether a fetch is needed (the lock pins it and its servers are already present in the agent settings → no network)
-   b. Materialize (download if remote) only when a fetch is needed
-   c. Discover MCP pack files in source
-   d. For each pack: hash → compare to lock → merge into agent settings if changed
-   e. Remove MCP entries no longer in config
-6. Save lock file and report (only when --apply; the default preview writes nothing)
+1. Load config and resolve scope/targets.
+   - Plain/update may load local or remote configs and materialize sources.
+   - --locked uses the zero-network loader; remote root configs and remote extends fail closed.
+2. Load agent-env.lock and the machine-local runtime ownership/report ledger.
+3. Build and validate the complete desired snapshot.
+   - Plain/update re-resolves and materializes configured sources.
+   - --locked re-hashes local sources and validates remote hash/revision/selector pins without fetch.
+4. Snapshot skills once; parse/render commands and MCP target fragments; compare every live output.
+5. Require exact ownership proof before replacing/removing an existing output; plan stale tombstones.
+6. Stage every changed output plus the resulting v3 lock and runtime state; revalidate live inputs.
+7. On --apply, commit the staged set as one rollback boundary. Preview reports the same plan but
+   writes nothing. A successful commit advances ownership; a failed coherent commit restores the
+   previous bytes and records only the failure report.
 ```
 
 ## Skills: Copy and Replace
@@ -50,10 +42,11 @@ Skills are plain directories with a `SKILL.md` file (see [writing skills](./writ
   - root-level subdirectories with `SKILL.md`, and
   - `skills/<name>/SKILL.md`.
 
-- **Hashes** the source skill directory.
+- **Snapshots** the source skill directory once, then hashes and installs that immutable snapshot.
 - **Compares** the hash to the lock file. If unchanged, the skill is skipped.
-- **Copies** the entire directory to the destination, replacing any previous version (including
-symlinked files/directories inside the skill).
+- **Copies** the entire effective directory to the destination, replacing only an output whose
+  ownership is proven. Contained source symlinks are captured as ordinary entries; escapes,
+  cycles, special entries, and symlinks in an installed destination are refused.
 - **Removes** skill directories that are no longer listed in the config.
 
 Skills are fully replaced on update — no partial merges.
@@ -98,18 +91,31 @@ All formats follow the same additive-merge instructions — the underlying behav
 
 ## Change Detection
 
-envctl uses SHA-256 hashes so it only does work when something actually changed:
+envctl uses schema-v3 SHA-256 hashes so output writes happen only when something actually changed:
 
-- **Skills:** The entire skill directory is hashed. If the hash matches the lock file, the skill is
-skipped.
+- **Skills:** tree-v1 length-frames path components, entry kind, mode, and file bytes, and includes
+  empty directories. Project scope normalizes directories to `0755` and files to Git's `0644` or
+  executable `0755`; an empty directory is rejected because a clean Git clone cannot reproduce it.
+  Global scope keeps exact platform/mode semantics.
 - **MCP packs:** The pack file is hashed. If the hash matches **and** all server names are still
 present in the target settings, the pack is skipped.
 
-This keeps re-sync fast — unchanged sources require no file I/O beyond reading the lock.
+The comparison still reads local source/destination bytes. Only `--locked`/`--frozen` guarantees
+zero network; plain sync is allowed to resolve and materialize configured sources.
 
 ## The Lockfile Contract
 
-`agent-env.lock` is a real lockfile, in the same spirit as `Cargo.lock`, `package-lock.json`, or `go.sum`. It pins exactly which skills, commands, and MCP assets were installed — by source, revision, destination, and content hash — so that anyone who runs `envctl agent sync` against the same config and lock gets an identical setup.
+`agent-env.lock` is a real lockfile, in the same spirit as `Cargo.lock`, `package-lock.json`, or
+`go.sum`. Schema v3 separates two facts:
+
+- `skills`, `assets`, and `source_selectors` pin **desired state**: source, revision, selection,
+  complete target paths/formats, and content hash.
+- Project-only `installed_outputs` pin **ownership evidence**: the exact relative destination,
+  native format/unit, and installed hash committed by a successful apply. Inactive entries are
+  retained as tombstones until proof-checked removal succeeds.
+
+A desired entry never proves envctl installed a pre-existing file. `agent lock` and
+`lock --check` preserve existing ownership attestations but never synthesize them.
 
 Where it lives depends on the scope:
 
@@ -120,9 +126,11 @@ Where it lives depends on the scope:
 
 The lock is also how envctl knows what to remove when you drop a source from the config or run `envctl agent clean`. You generally won't need to touch it by hand.
 
-**Skills** are tracked by a composite key (`source::skill-name`) along with their destination path and hash.
+**Skills and assets** use length-framed v3 identities; selectors and multi-value destination/server
+lists are also length-framed so commas or concatenated names cannot alias another identity.
 
-**MCPs** are tracked as assets with the server names they installed (e.g., `destination: "git-tools,airflow"`). Only these tracked names are removed during cleanup.
+**MCPs** are tracked as assets plus one ownership unit per installed server fragment. Only exact,
+hash-matching proven fragments are removed during sync or cleanup.
 
 envctl never touches entries it didn't install. Manually added servers, skills from other tools, or entries from a different scope are always left alone.
 
@@ -130,29 +138,55 @@ envctl never touches entries it didn't install. Manually added servers, skills f
 
 For project scope, commit **both** `agent-env.yaml` and `agent-env.lock`. The config says *what* you want; the lock says *exactly which versions* everyone gets. The lock is deterministic and portable by design:
 
-- Destination paths are stored **relative to the scope root**, so the file is identical on every machine and diffs cleanly in review.
+- Project ownership destinations are stored **relative to the project root**, so the proof remains
+  valid after cloning at another absolute path.
 - It contains **no timestamps or machine-specific data** — nothing run-specific leaks in.
 
-Machine-local runtime state (last-run report, per-skill install times used by `envctl agent list` and `envctl agent doctor`) lives separately under `$XDG_CACHE_HOME/agent-env/runtime/` and is **never committed**. It is safe to delete and regenerates on the next sync.
+Machine-local runtime state (last-run report, per-skill install times, and `managed_outputs`) lives
+separately under `$XDG_CACHE_HOME/agent-env/runtime/` and is **never committed**. For project-native
+targets, the committed portable proof is authoritative across a clean clone. The runtime ledger is
+authoritative for global scope and is a required second factor for a retired project custom root;
+deleting it intentionally removes authority to mutate those outputs until a safe plain apply
+installs an absent output anew; matching pre-existing bytes are never silently re-adopted.
 
-A custom **absolute** `destination:` stays non-portable by design — an absolute path can't be relativized, so it's stored as-is. Use a relative `destination:` (or the defaults) if you want the lock to travel between machines.
+Project destinations must stay beneath the project root. Current project custom roots inside that
+boundary can receive portable proof; historical custom-root tombstones require the exact matching
+runtime proof as a second factor. Global custom roots are non-portable and may be removed only from
+an exact current-user-owned, hash-matching runtime proof.
 
 ### How sync Honors the Lock
 
 | Command | Behavior |
 | --- | --- |
-| `envctl agent sync` | Installs exactly what the lock pins. If the on-disk destinations already match the locked hashes, **no network fetch happens** — moving refs like a branch are not re-resolved. (Add `--apply` to write.) |
+| `envctl agent sync` | Preview by default. Plain mode may re-resolve/materialize configured sources and rebuild desired pins; `--apply` commits the complete plan. |
 | `envctl agent sync --update` (`-u`) | Re-resolves branch / default-HEAD sources, downloads the latest, and rewrites the pins (hash + revision) in the lock. |
 | `envctl agent sync --update <name>` | Updates only the selected entries; everything else is honored from the lock. (Naming one skill re-resolves its whole source.) |
-| `envctl agent sync --locked` / `--frozen` | Strict mode for CI: installs from the lock and **never fetches**. Errors only if the config needs something the lock can't satisfy. |
+| `envctl agent sync --locked` / `--frozen` | Strict v3 mode: performs **zero network I/O**, validates selectors/proofs, and errors if local/installed verified bytes cannot satisfy the lock. |
 
-A plain `envctl agent sync` always re-hashes the destination contents locally (cheap, no network) and repairs any tampered or missing copy from the lock — but it will not phone home to check whether an upstream branch moved. That is what `--update` is for. `--update` and `--locked` together are contradictory and rejected.
+`--update` controls moving-pin/selection update intent; it is not the only mode allowed to use the
+network. `--update` and `--locked` together are contradictory and rejected.
 
-### Wildcards Are Frozen to the Locked Set
+### First Install, Clean Clone, and v2 Migration
 
-When a source uses `skills: "*"`, a plain `envctl agent sync` installs exactly the set recorded in the lock — not whatever the source currently contains. New skills added upstream and skills removed upstream are only reflected after `envctl agent sync --update`, which re-discovers the source and prunes accordingly. This keeps the lock authoritative: the wildcard resolves the same way for every teammate until someone deliberately updates.
+A synthetic/fresh v3 lock with empty `installed_outputs` cannot authorize `--locked` to overwrite
+pre-existing bytes. Run the first install into absent destinations as plain
+`envctl agent sync --apply`; it records portable proofs only for outputs that actually commit.
+Commit the resulting project lock. A clean clone can then run
+`envctl agent sync --locked --apply` without a machine cache, using those relative proofs and
+verified local source bytes.
 
-**One-time `updated` flood after upgrading.** A release normalizes the skill content hash across operating systems (path separators are unified before hashing). The first `envctl agent sync` after upgrading will therefore show every skill as `updated` once as it rewrites the lock with the new hash format. This is expected and self-heals — subsequent syncs report `unchanged` again.
+A versionless lock is treated as v2. Locked mode and direct lock rewrite reject it. The only
+bootstrap is a plain apply migration, and only when the configured identity, destination/unit, and
+current hash name the exact v2 output. The v3 output, lock, and runtime ledger commit together.
+
+### Wildcards In Plain Versus Locked Mode
+
+When a source uses `skills: "*"`, plain/update mode may re-materialize and rediscover the source,
+then rewrite the desired set. Locked mode freezes the wildcard to the exact v3 identities and
+selector binding already committed; it never discovers newly added remote items.
+
+**V2 upgrade requires an apply migration.** Envctl does not silently restamp old hash bytes as
+tree-v1. Run a plain `sync --apply`, review the exact migration actions, and commit the v3 lock.
 
 ## Removal Behavior
 
@@ -166,19 +200,20 @@ file. The file itself is preserved.
 
 ### envctl agent clean
 
-Prunes assets orphaned from the config for the given scope (preview-by-default; `--apply` to write):
+Tears down every output owned by the selected scope (preview-by-default; `--apply` to write):
 
-- Deletes tracked skill directories no longer referenced by the config
-- Removes tracked MCP server entries no longer referenced, from every agent's settings file
-- Resets the corresponding lock entries
+- Enumerates exact skill, command, and MCP ownership units, including retained tombstones
+- Refuses a v2 lock, an incomplete/forged proof set, a symlink/foreign owner, or content drift
+- Removes only exact proven output units, then clears the corresponding lock/runtime evidence
 
 The default (no `--apply`) prints what would be removed (skill destinations and MCP pack lines) without changing disk.
 
-Anything you added by hand outside the lock is never touched.
+Anything you added by hand outside the ownership proofs is never touched. If output cleanup fails,
+the proofs remain intact for a recoverable retry; strict transaction failures roll back committed
+replacements.
 
-> **envctl note:** kasetto's `clean` was a full teardown of *everything* tracked in the lock for the
-> scope. envctl's `clean` prunes only what's **orphaned from the config**. For a full teardown,
-> empty the config first, then `clean --apply`.
+> `clean` is a full tracked teardown. Ordinary `sync` handles only assets that became stale relative
+> to the config.
 
 ## Edge Cases
 

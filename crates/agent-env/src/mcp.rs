@@ -17,14 +17,19 @@
 //! Non-printing; returns [`crate::Result`]; kasetto's `err(...)` maps onto
 //! [`crate::AgentEnvError::Message`](crate::AgentEnvError).
 
+use std::collections::BTreeMap;
 use std::fs;
 use std::path::Path;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use toml::Value as Toml;
 
 use crate::agent::{McpSettingsFormat, McpSettingsTarget};
 use crate::fsops::SettingsFile;
+use crate::hash::hash_bytes;
 use crate::{err, Result};
+
+static MCP_TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 
 // ---------------------------------------------------------------------------
 // Top-level dispatch (kasetto src/mcps/mod.rs)
@@ -33,12 +38,339 @@ use crate::{err, Result};
 /// Merge MCP server definitions from a pack JSON into an agent-native config file.
 /// The pack must have a top-level `"mcpServers"` object.
 pub fn merge_mcp_config(source_path: &Path, target: &McpSettingsTarget) -> Result<()> {
+    let source_bytes = fs::read(source_path)?;
+    apply_mcp_config_bytes_atomic(&source_bytes, target, &[])
+}
+
+#[allow(dead_code)]
+fn merge_mcp_config_in_place(source_path: &Path, target: &McpSettingsTarget) -> Result<()> {
     match target.format {
         McpSettingsFormat::McpServers => merge_mcp_servers_object(source_path, &target.path),
         McpSettingsFormat::VsCodeServers => merge_vscode_servers_object(source_path, &target.path),
         McpSettingsFormat::OpenCode => merge_opencode_mcp_object(source_path, &target.path),
         McpSettingsFormat::CodexToml => merge_codex_config_toml(source_path, &target.path),
     }
+}
+
+/// Atomically apply already-captured MCP pack bytes to one settings target.
+///
+/// `remove_owned` is the previously-proven managed server set. Removals and the additive merge
+/// happen only in a sibling staging file; the live target changes at one rename commit point.
+pub fn apply_mcp_config_bytes_atomic(
+    source_bytes: &[u8],
+    target: &McpSettingsTarget,
+    remove_owned: &[String],
+) -> Result<()> {
+    read_source_mcp_servers_bytes(source_bytes)?;
+    let parent = target
+        .path
+        .parent()
+        .ok_or_else(|| err("MCP settings target has no parent"))?;
+    fs::create_dir_all(parent)?;
+    if let Ok(metadata) = fs::symlink_metadata(&target.path) {
+        if metadata.file_type().is_symlink() || !metadata.is_file() {
+            return Err(err(format!(
+                "MCP settings target must be a real file: {}",
+                target.path.display()
+            )));
+        }
+    }
+
+    let current_bytes = if target.path.exists() {
+        Some(fs::read(&target.path)?)
+    } else {
+        None
+    };
+    let rendered = render_mcp_settings_bytes(
+        source_bytes,
+        current_bytes.as_deref(),
+        target.format,
+        remove_owned,
+    )?;
+    let sequence = MCP_TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+    let base = target
+        .path
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("mcp-settings");
+    let target_stage = parent.join(format!(
+        ".{base}.envctl-stage-{}-{sequence}",
+        std::process::id()
+    ));
+    let backup = parent.join(format!(
+        ".{base}.envctl-backup-{}-{sequence}",
+        std::process::id()
+    ));
+    let result = (|| -> Result<()> {
+        fs::write(&target_stage, &rendered)?;
+        if fs::read(&target_stage)? != rendered {
+            return Err(err(format!(
+                "staged MCP settings verification failed: {}",
+                target.path.display()
+            )));
+        }
+
+        let had_target = fs::symlink_metadata(&target.path).is_ok();
+        if had_target {
+            fs::rename(&target.path, &backup)?;
+        }
+        if let Err(error) = fs::rename(&target_stage, &target.path) {
+            if had_target {
+                let _ = fs::rename(&backup, &target.path);
+            }
+            return Err(error.into());
+        }
+        if had_target {
+            let _ = fs::remove_file(&backup);
+        }
+        Ok(())
+    })();
+
+    let _ = fs::remove_file(&target_stage);
+    if result.is_err()
+        && fs::symlink_metadata(&target.path).is_err()
+        && fs::symlink_metadata(&backup).is_ok()
+    {
+        let _ = fs::rename(&backup, &target.path);
+    }
+    result
+}
+
+/// Return same-name servers whose existing native representation differs from captured pack
+/// bytes. Missing names are not conflicts and may be additively installed.
+pub fn conflicting_mcp_server_names(
+    source_bytes: &[u8],
+    target: &McpSettingsTarget,
+) -> Result<Vec<String>> {
+    let source = read_source_mcp_servers_bytes(source_bytes)?;
+    if !target.path.exists() {
+        return Ok(Vec::new());
+    }
+
+    let mut conflicts = Vec::new();
+    match target.format {
+        McpSettingsFormat::CodexToml => {
+            let root = load_or_empty_toml(&target.path)?;
+            let existing = root.get("mcp_servers").and_then(|value| value.as_table());
+            for (name, value) in source {
+                let expected = Toml::Table(json_mcp_server_to_codex_toml_table(&value)?);
+                if existing
+                    .and_then(|servers| servers.get(&name))
+                    .is_some_and(|actual| actual != &expected)
+                {
+                    conflicts.push(name);
+                }
+            }
+        }
+        format => {
+            let text = fs::read_to_string(&target.path)?;
+            let root: serde_json::Value = serde_json::from_str(&text).map_err(|error| {
+                err(format!(
+                    "invalid MCP settings JSON {}: {error}",
+                    target.path.display()
+                ))
+            })?;
+            let key = match format {
+                McpSettingsFormat::McpServers => "mcpServers",
+                McpSettingsFormat::VsCodeServers => "servers",
+                McpSettingsFormat::OpenCode => "mcp",
+                McpSettingsFormat::CodexToml => unreachable!(),
+            };
+            let existing = root.get(key).and_then(|value| value.as_object());
+            for (name, value) in source {
+                let expected = match format {
+                    McpSettingsFormat::McpServers => value,
+                    McpSettingsFormat::VsCodeServers => normalize_vscode_server(value),
+                    McpSettingsFormat::OpenCode => mcp_entry_to_opencode(&name, &value)?,
+                    McpSettingsFormat::CodexToml => unreachable!(),
+                };
+                if existing
+                    .and_then(|servers| servers.get(&name))
+                    .is_some_and(|actual| actual != &expected)
+                {
+                    conflicts.push(name);
+                }
+            }
+        }
+    }
+    conflicts.sort();
+    Ok(conflicts)
+}
+
+/// Sorted server names from captured pack bytes.
+pub fn mcp_server_names_from_bytes(source_bytes: &[u8]) -> Result<Vec<String>> {
+    let mut names = read_source_mcp_servers_bytes(source_bytes)?
+        .into_iter()
+        .map(|(name, _)| name)
+        .collect::<Vec<_>>();
+    names.sort();
+    Ok(names)
+}
+
+/// Render the complete target settings bytes from captured source/current bytes without writing.
+pub fn render_mcp_settings_bytes(
+    source_bytes: &[u8],
+    current_bytes: Option<&[u8]>,
+    format: McpSettingsFormat,
+    remove_owned: &[String],
+) -> Result<Vec<u8>> {
+    let source = read_source_mcp_servers_bytes(source_bytes)?;
+    match format {
+        McpSettingsFormat::CodexToml => {
+            let mut root = match current_bytes {
+                Some(bytes) => std::str::from_utf8(bytes)
+                    .map_err(|error| err(format!("invalid UTF-8 in Codex config: {error}")))?
+                    .parse::<Toml>()
+                    .map_err(|error| err(format!("invalid Codex config TOML: {error}")))?,
+                None => Toml::Table(Default::default()),
+            };
+            let root_table = root
+                .as_table_mut()
+                .ok_or_else(|| err("Codex config root must be a TOML table"))?;
+            let servers = root_table
+                .entry("mcp_servers")
+                .or_insert_with(|| Toml::Table(Default::default()))
+                .as_table_mut()
+                .ok_or_else(|| err("Codex mcp_servers must be a TOML table"))?;
+            for name in remove_owned {
+                servers.remove(name);
+            }
+            for (name, value) in source {
+                if !servers.contains_key(&name) {
+                    servers.insert(
+                        name,
+                        Toml::Table(json_mcp_server_to_codex_toml_table(&value)?),
+                    );
+                }
+            }
+            toml::to_string_pretty(&root)
+                .map(String::into_bytes)
+                .map_err(|error| err(format!("failed to serialize Codex config.toml: {error}")))
+        }
+        format => {
+            let mut root = match current_bytes {
+                Some(bytes) => serde_json::from_slice::<serde_json::Value>(bytes)
+                    .map_err(|error| err(format!("invalid MCP settings JSON: {error}")))?,
+                None => serde_json::json!({}),
+            };
+            let root_key = match format {
+                McpSettingsFormat::McpServers => "mcpServers",
+                McpSettingsFormat::VsCodeServers => "servers",
+                McpSettingsFormat::OpenCode => "mcp",
+                McpSettingsFormat::CodexToml => unreachable!(),
+            };
+            let root_object = root
+                .as_object_mut()
+                .ok_or_else(|| err("settings file is not a JSON object"))?;
+            let servers = root_object
+                .entry(root_key)
+                .or_insert_with(|| serde_json::json!({}))
+                .as_object_mut()
+                .ok_or_else(|| err(format!("settings `{root_key}` must be a JSON object")))?;
+            for name in remove_owned {
+                servers.remove(name);
+            }
+            for (name, value) in source {
+                if servers.contains_key(&name) {
+                    continue;
+                }
+                let transformed = match format {
+                    McpSettingsFormat::McpServers => value,
+                    McpSettingsFormat::VsCodeServers => normalize_vscode_server(value),
+                    McpSettingsFormat::OpenCode => mcp_entry_to_opencode(&name, &value)?,
+                    McpSettingsFormat::CodexToml => unreachable!(),
+                };
+                servers.insert(name, transformed);
+            }
+            serde_json::to_vec_pretty(&root).map_err(Into::into)
+        }
+    }
+}
+
+/// Expected per-server native fragment hashes for captured pack bytes and one target format.
+pub fn expected_mcp_fragment_hashes(
+    source_bytes: &[u8],
+    format: McpSettingsFormat,
+) -> Result<BTreeMap<String, String>> {
+    let source = read_source_mcp_servers_bytes(source_bytes)?;
+    let mut out = BTreeMap::new();
+    for (name, value) in source {
+        let hash = match format {
+            McpSettingsFormat::McpServers => hash_json_fragment(&value)?,
+            McpSettingsFormat::VsCodeServers => {
+                hash_json_fragment(&normalize_vscode_server(value))?
+            }
+            McpSettingsFormat::OpenCode => {
+                hash_json_fragment(&mcp_entry_to_opencode(&name, &value)?)?
+            }
+            McpSettingsFormat::CodexToml => {
+                hash_toml_fragment(&Toml::Table(json_mcp_server_to_codex_toml_table(&value)?))
+            }
+        };
+        out.insert(name, hash);
+    }
+    Ok(out)
+}
+
+/// Current per-server native fragment hashes; absent servers map to `None`.
+pub fn current_mcp_fragment_hashes(
+    server_names: &[String],
+    target: &McpSettingsTarget,
+) -> Result<BTreeMap<String, Option<String>>> {
+    let mut out = BTreeMap::new();
+    match target.format {
+        McpSettingsFormat::CodexToml => {
+            let root = load_or_empty_toml(&target.path)?;
+            let servers = root.get("mcp_servers").and_then(|value| value.as_table());
+            for name in server_names {
+                out.insert(
+                    name.clone(),
+                    servers
+                        .and_then(|map| map.get(name))
+                        .map(hash_toml_fragment),
+                );
+            }
+        }
+        format => {
+            let root = if target.path.exists() {
+                serde_json::from_slice::<serde_json::Value>(&fs::read(&target.path)?).map_err(
+                    |error| {
+                        err(format!(
+                            "invalid MCP settings JSON {}: {error}",
+                            target.path.display()
+                        ))
+                    },
+                )?
+            } else {
+                serde_json::json!({})
+            };
+            let key = match format {
+                McpSettingsFormat::McpServers => "mcpServers",
+                McpSettingsFormat::VsCodeServers => "servers",
+                McpSettingsFormat::OpenCode => "mcp",
+                McpSettingsFormat::CodexToml => unreachable!(),
+            };
+            let servers = root.get(key).and_then(|value| value.as_object());
+            for name in server_names {
+                out.insert(
+                    name.clone(),
+                    servers
+                        .and_then(|map| map.get(name))
+                        .map(hash_json_fragment)
+                        .transpose()?,
+                );
+            }
+        }
+    }
+    Ok(out)
+}
+
+fn hash_json_fragment(value: &serde_json::Value) -> Result<String> {
+    Ok(hash_bytes(&serde_json::to_vec(value)?))
+}
+
+fn hash_toml_fragment(value: &Toml) -> String {
+    hash_bytes(value.to_string().as_bytes())
 }
 
 /// Remove a server entry from an agent-native config file (no-op if the file is absent).
@@ -157,9 +489,15 @@ fn json_all_keys_present(server_names: &[String], path: &Path, root_key: &str) -
 pub fn read_source_mcp_servers(
     source_path: &Path,
 ) -> Result<serde_json::Map<String, serde_json::Value>> {
-    let source_text = fs::read_to_string(source_path)?;
-    let source: serde_json::Value = serde_json::from_str(&source_text)
-        .map_err(|e| err(format!("invalid MCP JSON {}: {e}", source_path.display())))?;
+    read_source_mcp_servers_bytes(&fs::read(source_path)?)
+}
+
+/// Parse the `mcpServers` map from already-captured pack bytes.
+pub fn read_source_mcp_servers_bytes(
+    source_bytes: &[u8],
+) -> Result<serde_json::Map<String, serde_json::Value>> {
+    let source: serde_json::Value =
+        serde_json::from_slice(source_bytes).map_err(|e| err(format!("invalid MCP JSON: {e}")))?;
     Ok(source
         .get("mcpServers")
         .and_then(|v| v.as_object())

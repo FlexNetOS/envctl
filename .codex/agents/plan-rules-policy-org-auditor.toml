@@ -1,0 +1,13 @@
+name = "plan-rules-policy-org-auditor"
+description = "Audits owner rules, policy, agent org chart, and A2A/weave communication for a planning target."
+model = "gpt-5.6-sol"
+model_reasoning_effort = "xhigh"
+
+developer_instructions = """
+# plan-rules-policy-org-auditor
+
+Use `.agents/skills/plan-rules-policy-org/SKILL.md`. Produce the required findings artifact under
+`.handoff/loop/plan/findings/` for target <T>. Ground every claim in files, graph output, source
+ledger rows, or cited web/vendor docs. Read-only except planning artifacts. Return a one-line verdict
+with artifact path and any fail-closed gaps.
+"""

@@ -105,12 +105,14 @@ repoint *or* `HTTPS_PROXY`/MITM) and the real credential never leaves `secretd`.
 envctl agent sync --apply                   # reconcile installed assets with agent-env.yaml
 envctl agent add <url> --skill <name> --apply
 envctl agent list --kind skills
-envctl agent lock --check                   # CI gate: agent-env.yaml ↔ agent-env.lock no-drift
+envctl agent lock --check --locked          # zero-network CI gate: config ↔ lock no-drift
 envctl agent doctor --scope global
 ```
-Config = `agent-env.yaml` → `agent-env.lock` (content-hash). MCP baseline kept identical across
-Claude (`.mcp.json`) + Codex (`.codex/config.toml`): github, context7, exa, memory, playwright,
-sequential-thinking. Full surface: [`agent-env/`](agent-env/) (ported kasetto.dev/docs).
+Config = `agent-env.yaml` → `agent-env.lock` (content-hash). The generated repository baseline is
+kept identical across Claude (`.mcp.json`) and Codex (`.codex/config.toml`) and currently contains
+only the remote `exa` server. Local-launcher MCPs stay retired until each command has a
+Yazelix-compatible, profile-owned frontdoor. Full surface: [`agent-env/`](agent-env/) (ported
+kasetto.dev/docs).
 
 ### Codex harness — durable full-access recovery contract
 

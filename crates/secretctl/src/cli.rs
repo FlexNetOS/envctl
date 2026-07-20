@@ -20,6 +20,125 @@ pub struct Cli {
 
 #[derive(Subcommand, Debug)]
 pub enum Cmd {
+    /// Internal, unattended bootstrap for sqld's Ed25519 verification key and matching client JWT.
+    /// This surface is intentionally hidden: the envctl sqld component owns its invocation.
+    #[command(name = "internal-sqld-auth-bootstrap", hide = true)]
+    InternalSqldAuthBootstrap {
+        /// Destination for sqld's SubjectPublicKeyInfo PUBLIC KEY PEM.
+        #[arg(long = "public-key")]
+        public_key: std::path::PathBuf,
+        /// Destination for the matching EdDSA client JWT.
+        #[arg(long = "client-token")]
+        client_token: std::path::PathBuf,
+    },
+    /// Internal bounded readiness barrier for the envctl-owned sqld user service.
+    /// It binds the listener to systemd's MainPID, proves auth is enforced, and then proves the
+    /// managed bearer can execute SQL. The bearer is read only from a 0600 file.
+    #[command(name = "internal-sqld-readiness-probe", hide = true)]
+    InternalSqldReadinessProbe {
+        /// systemd's MainPID for sqld.service.
+        #[arg(long)]
+        pid: u32,
+        /// Canonical envctl-managed sqld payload expected at /proc/PID/exe.
+        #[arg(long = "expected-executable")]
+        expected_executable: std::path::PathBuf,
+        /// Loopback TCP port owned by that PID.
+        #[arg(long, default_value_t = 8080)]
+        port: u16,
+        /// Current-user-owned 0600 file containing the matching JWT.
+        #[arg(long = "client-token")]
+        client_token: std::path::PathBuf,
+        /// Current-user-owned 0600 SHA-256 record for this exact helper executable.
+        #[arg(long = "helper-digest")]
+        helper_digest: std::path::PathBuf,
+        /// Hard upper bound for listener/auth readiness.
+        #[arg(long = "timeout-seconds", default_value_t = 20)]
+        timeout_seconds: u64,
+    },
+    /// Machine-stable identity used by the sqld component after proving this helper's bytes.
+    #[command(name = "internal-sqld-readiness-contract", hide = true)]
+    InternalSqldReadinessContract {
+        /// Current-user-owned 0600 SHA-256 record for this exact helper executable.
+        #[arg(long = "helper-digest")]
+        helper_digest: std::path::PathBuf,
+    },
+    /// Write a no-replace 0600 SHA-256 record for this helper. Used only while staging the
+    /// component-owned helper and by the real pinned-sqld test runner.
+    #[command(name = "internal-sqld-self-digest", hide = true)]
+    InternalSqldSelfDigest {
+        #[arg(long)]
+        output: std::path::PathBuf,
+        /// Final absolute executable path to record when the running helper is a staging file.
+        #[arg(long = "installed-path")]
+        installed_path: Option<std::path::PathBuf>,
+    },
+    /// Verify a regular current-user-owned file against an expected SHA-256 without external tools.
+    #[command(name = "internal-sqld-verify-sha256", hide = true)]
+    InternalSqldVerifySha256 {
+        #[arg(long)]
+        file: std::path::PathBuf,
+        #[arg(long = "expected-sha256")]
+        expected_sha256: String,
+        /// Required file mode, expressed as four octal digits (for example 0755 or 0600).
+        #[arg(long = "expected-mode")]
+        expected_mode: String,
+    },
+    /// Verify an installed helper file against its current-user-owned 0600 path-bound digest.
+    #[command(name = "internal-sqld-verify-owned-digest", hide = true)]
+    InternalSqldVerifyOwnedDigest {
+        #[arg(long)]
+        file: std::path::PathBuf,
+        #[arg(long)]
+        digest: std::path::PathBuf,
+    },
+    /// Require an installed helper to match both its record and this freshly built verifier.
+    #[command(name = "internal-sqld-verify-current-helper", hide = true)]
+    InternalSqldVerifyCurrentHelper {
+        #[arg(long)]
+        file: std::path::PathBuf,
+        #[arg(long)]
+        digest: std::path::PathBuf,
+    },
+    /// Atomically exchange a complete staged helper generation with the active real directory.
+    #[command(name = "internal-sqld-commit-helper-generation", hide = true)]
+    InternalSqldCommitHelperGeneration {
+        #[arg(long = "staged-dir")]
+        staged_dir: std::path::PathBuf,
+        #[arg(long = "current-dir")]
+        current_dir: std::path::PathBuf,
+    },
+    /// Write the deterministic digest of checked-in inputs plus the pinned build toolchain bytes.
+    #[command(name = "internal-sqld-source-digest", hide = true)]
+    InternalSqldSourceDigest {
+        #[arg(long = "source-root")]
+        source_root: std::path::PathBuf,
+        #[arg(long = "toolchain-file", required = true)]
+        toolchain_files: Vec<std::path::PathBuf>,
+        /// Compiler data roots (for example clang's built-in headers) consumed by the build.
+        #[arg(long = "toolchain-root", required = true)]
+        toolchain_roots: Vec<std::path::PathBuf>,
+        /// Freshly staged, Cargo.lock-checksummed `.crate` archives used by this build.
+        #[arg(long = "crate-archive", required = true)]
+        crate_archives: Vec<std::path::PathBuf>,
+        #[arg(long)]
+        output: std::path::PathBuf,
+    },
+    /// Compare checked-in inputs and pinned toolchain bytes with a managed 0600 digest.
+    #[command(name = "internal-sqld-verify-source-digest", hide = true)]
+    InternalSqldVerifySourceDigest {
+        #[arg(long = "source-root")]
+        source_root: std::path::PathBuf,
+        #[arg(long = "toolchain-file", required = true)]
+        toolchain_files: Vec<std::path::PathBuf>,
+        /// Compiler data roots (for example clang's built-in headers) consumed by the build.
+        #[arg(long = "toolchain-root", required = true)]
+        toolchain_roots: Vec<std::path::PathBuf>,
+        /// Freshly staged, Cargo.lock-checksummed `.crate` archives used by this build.
+        #[arg(long = "crate-archive", required = true)]
+        crate_archives: Vec<std::path::PathBuf>,
+        #[arg(long)]
+        digest: std::path::PathBuf,
+    },
     /// Vault lock status (no unlock side effect).
     Status,
     /// Initialize a fresh vault: mint the DEK + enroll keyslots. Dry-run preview unless `--apply`;

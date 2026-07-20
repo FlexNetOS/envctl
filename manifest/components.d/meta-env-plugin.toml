@@ -19,15 +19,16 @@ script = '''
 envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
 DEST="$M/usr/libexec/envctl/meta-env"
 LINK="$M/usr/bin/meta-env"
 export CARGO_HOME="$M/.toolchains/cargo"
 export PATH="$M/usr/bin:$CARGO_HOME/bin:$PATH"
 # Build only the meta-env autobin from the envctl CLI crate (no GUI → no system libs). wild-linker
 # acceleration is inherited via the meta-root $M/.cargo/config.toml.
-cargo build --release -p envctl --bin meta-env --manifest-path "$M/envctl/Cargo.toml"
+cargo build --release -p envctl --bin meta-env --manifest-path "$ROOT/Cargo.toml"
 install -d -m 755 "$DEST/bin" "$M/usr/bin"
-install -m 755 "$M/envctl/target/release/meta-env" "$DEST/bin/meta-env"
+install -m 755 "$ROOT/target/release/meta-env" "$DEST/bin/meta-env"
 envctl_frontdoor "$DEST/bin/meta-env" "$LINK"
 
 '''
@@ -41,13 +42,14 @@ script = '''
 envctl_frontdoor() { src="$1"; dst="$2"; printf '%s\n' '#!/bin/sh' "exec \"$src\" \"\$@\"" > "$dst"; chmod 755 "$dst"; }
 set -euo pipefail
 M="${META_ROOT:?META_ROOT required}"
+ROOT="${ENVCTL_SOURCE_ROOT:-$M/src/envctl}"
 DEST="$M/usr/libexec/envctl/meta-env"
 LINK="$M/usr/bin/meta-env"
 export CARGO_HOME="$M/.toolchains/cargo"
 export PATH="$M/usr/bin:$CARGO_HOME/bin:$PATH"
-cargo build --release -p envctl --bin meta-env --manifest-path "$M/envctl/Cargo.toml"
+cargo build --release -p envctl --bin meta-env --manifest-path "$ROOT/Cargo.toml"
 install -d -m 755 "$DEST/bin" "$M/usr/bin"
-install -m 755 "$M/envctl/target/release/meta-env" "$DEST/bin/meta-env"
+install -m 755 "$ROOT/target/release/meta-env" "$DEST/bin/meta-env"
 envctl_frontdoor "$DEST/bin/meta-env" "$LINK"
 
 '''

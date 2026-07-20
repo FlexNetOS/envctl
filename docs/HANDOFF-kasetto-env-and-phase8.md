@@ -1,6 +1,7 @@
 # HANDOFF — kasetto agent environment + Phase-8 progress + consolidation
 
-**Updated:** 2026-06-04. **Scope:** the agent-environment stabilization (via the `kasetto` tool), the
+**Updated:** 2026-07-12. **Scope:** the agent-environment stabilization (originally via the retired
+`kasetto` tool and now owned by `envctl agent`), the
 envctl secrets Phase-8 code progress, and the repo consolidation/cleanup. SEPARATE from the project's
 own `HANDOFF.md` (the secrets-stack verification guide) — read both.
 
@@ -60,23 +61,24 @@ thing left.
 
 Future features land **directly in envctl `master`**.
 
-## The kasetto-managed agent environment
+## The envctl-managed agent environment
 
 The `.claude/` + `.codex/` agent config is now provisioned and locked by **agent-env** (the env-manager
 CLI surface installed through `$META_ROOT/usr/bin/envctl`), from a committed source — NOT hand-edited.
 
-- **Source of truth:** `envctl/kasetto.yaml` + `envctl/agent-skills/` (3 curated skills:
-  `env-toolchain-install`, `agent-env-config`, `env-stabilize`; + a 6-server MCP pack:
-  github/context7/exa/memory/playwright/sequential-thinking). Lock: `envctl/kasetto.lock` (committed).
+- **Source of truth:** `agent-env.yaml` + `agent-skills/`, with `agent-env.lock` as the committed
+  content lock. The generated repository MCP floor is currently remote `exa` only. The former
+  six-server pack is historical and must not be restored: local-launcher MCPs return only after
+  their commands have Yazelix-compatible, profile-owned frontdoors.
 - **The old ECC auto-generated config was RETIRED** — it asserted JavaScript conventions (camelCase
   files, `*.test.ts`) wrong for this Rust repo. The `agent-env-config` skill supersedes it with correct
   Rust conventions. Do not regenerate the ECC bundle over this.
 - **Operate it:**
-  - `kasetto sync` — provision/refresh (authoritative; a clean tree is a no-op).
-  - `kasetto doctor` — health check. `kasetto list` — inventory.
-  - `kasetto sync --locked` — CI enforcement (never fetches; fails on drift). Wire into CI.
-  - Change the env by editing `agent-skills/` or `kasetto.yaml` then `kasetto sync` — never by
-    hand-editing `.claude/.codex` live files.
+  - `envctl agent sync` — preview reconciliation; add `--apply` only for reviewed mutation.
+  - `envctl agent doctor` — health check. `envctl agent list` — inventory.
+  - `envctl agent lock --check --locked` — zero-network CI enforcement; fails on drift.
+  - Change the environment by editing `agent-skills/` or `agent-env.yaml`, regenerate the lock,
+    then run `envctl agent sync --apply`; never hand-edit generated `.claude/.codex/.agents` assets.
 
 ## Phase-8 remaining (F2/F5/F6) — GATED ON PURPOSE, not forgotten
 

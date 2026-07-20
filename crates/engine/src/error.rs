@@ -4,7 +4,7 @@
 //! `OpStatus::Failed`, NEVER an `Err`: only setup problems abort the run.
 use crate::component::{Component, HookRunner, Phase};
 use crate::event::{Event, EventSink};
-use crate::model::{OpResult, OpStatus};
+use crate::model::{ComponentAvailability, OpResult, OpStatus};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -57,6 +57,7 @@ pub fn run_phase(
             component: comp.id.clone(),
             phase,
             status: OpStatus::Skipped,
+            availability: Some(ComponentAvailability::Unavailable),
             exit_code: None,
             duration_ms: 0,
             message: "skipped: no NVIDIA GPU".into(),
@@ -76,6 +77,7 @@ pub fn run_phase(
                 component: comp.id.clone(),
                 phase,
                 status: OpStatus::Refused,
+                availability: Some(ComponentAvailability::Unavailable),
                 exit_code: None,
                 duration_ms: 0,
                 message: reason,
@@ -89,6 +91,7 @@ pub fn run_phase(
             component: comp.id.clone(),
             phase,
             status: OpStatus::NoHook,
+            availability: None,
             exit_code: None,
             duration_ms: 0,
             message: String::new(),
@@ -106,6 +109,7 @@ pub fn run_phase(
                     component: id,
                     phase,
                     status: OpStatus::Failed,
+                    availability: Some(ComponentAvailability::Unavailable),
                     exit_code: None,
                     duration_ms: 0,
                     message: "hook panicked".into(),

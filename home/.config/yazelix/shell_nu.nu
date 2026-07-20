@@ -11,10 +11,11 @@ def n8n-down [...rest] { ^rtk proxy -- n8n-down ...$rest }
 # (`nushell/config/rtk_wrappers.nu`). Do not duplicate those defs in this
 # editable user hook.
 
-# === legacy workspace /usr mirror on PATH ================================
-# meta-usr-path.nu is GUARDED on $env.META_ROOT, which session wiring no longer
-# sets (owner ruling 2026-07-07: no META_ROOT/LIFEOS_ROOT) — so this source is
-# an inert no-op kept for the migration sweep; runtime ownership = Nix profile.
+# === active-profile reset + optional workspace /usr mirror ================
+# This always removes stale Yazelix/Codex store paths inherited from an older
+# profile generation and restores ~/.nix-profile/{toolbin,bin} as the lexical
+# frontdoors. The META_ROOT-specific /usr mirror remains guarded and normally
+# inert in Yazelix sessions (owner ruling 2026-07-07).
 source ../nushell/meta-usr-path.nu
 # =========================================================================
 

@@ -80,7 +80,6 @@ getrandom = "0.2"
 
 # ---- TLS / local CA: pin ONE rustls on the RING path (REVIEW FIX CF-2: NOT aws-lc-rs) ----
 rustls = { version = "0.23", default-features = false, features = ["ring", "logging", "std", "tls12"] }
-rustls-pemfile = "2.2"
 rustls-pki-types = "1"
 rcgen = { version = "0.13", default-features = false, features = ["ring", "pem"] }
 x509-parser = "0.16"
@@ -111,7 +110,7 @@ path = "src/lib.rs"
 [features]
 default = ["inmem-store", "mitm-ca"]   # default store is inmem until OI-1 is ruled (no C dep ships)
 inmem-store = []                       # RAM-only vault for tests/CI (envctl DryRunRunner analogue)
-mitm-ca = ["dep:rcgen", "dep:x509-parser", "dep:rustls", "dep:rustls-pemfile", "dep:rustls-pki-types"]  # OI-14: TLS optional
+mitm-ca = ["dep:rcgen", "dep:x509-parser", "dep:rustls", "dep:rustls-pki-types"]  # OI-14: TLS optional
 provider-github = []
 provider-openai = []
 
@@ -136,7 +135,6 @@ rand = { workspace = true }
 getrandom = { workspace = true }
 # tls/ca — OPTIONAL, only under mitm-ca (REVIEW FIX OI-14: a CA-less engine build drops TLS entirely)
 rustls = { workspace = true, optional = true }
-rustls-pemfile = { workspace = true, optional = true }
 rustls-pki-types = { workspace = true, optional = true }
 rcgen = { workspace = true, optional = true }
 x509-parser = { workspace = true, optional = true }
@@ -559,7 +557,7 @@ hyper-util = { workspace = true }
 http-body-util = { workspace = true }
 reqwest = { workspace = true }
 rustls = { workspace = true }
-rustls-pemfile = { workspace = true }
+rustls-pki-types = { workspace = true }
 webpki-roots = { workspace = true }   # frozen upstream root store (FS-S7)
 anyhow = { workspace = true }
 thiserror = { workspace = true }

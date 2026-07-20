@@ -17,7 +17,7 @@
 
 ### 1.1 The problem
 
-Provisioning a high-end GPU developer workstation from source is a long, fragile, multi-stage process. The existing first-login wizard (`yazelix-setup.sh`) already installs the entire toolchain — Bun (+ `node`→bun), the AI CLIs (Claude/Codex/Gemini/Kimi/Devin), rustup/rtk, CUDA 13.3 + nvidia-open 610 + LLVM/clang-21, cuda-oxide, the NVIDIA Container Toolkit, PyTorch cu132, gh/Vite/wasmer/uv, Nix + the yazelix Cachix cache, home-manager, yazelix + `yzx desktop`, the guarded `~/.bashrc` blocks, and the GPU smoke-test autostart — but it is a **one-shot, fire-and-forget script**. It has no memory of what it already did, no way to report what state the box is actually in, no clean way to repair a single broken tool, and no way to cleanly undo what it changed.
+Provisioning a high-end GPU developer workstation from source is a long, fragile, multi-stage process. The existing first-login wizard (`yazelix-setup.sh`) already installs the entire toolchain — Bun (+ `node`→bun), the AI CLIs (Claude/Codex/Gemini/Kimi/Devin), rustup, profile-owned RTK through Yazelix/Nix, CUDA 13.3 + nvidia-open 610 + LLVM/clang-21, cuda-oxide, the NVIDIA Container Toolkit, PyTorch cu132, gh/Vite/wasmer/uv, Nix + the yazelix Cachix cache, home-manager, yazelix + `yzx desktop`, the guarded `~/.bashrc` blocks, and the GPU smoke-test autostart — but it is a **one-shot, fire-and-forget script**. It has no memory of what it already did, no way to report what state the box is actually in, no clean way to repair a single broken tool, and no way to cleanly undo what it changed.
 
 That leaves four capability gaps that bite a working developer:
 
@@ -98,7 +98,7 @@ There is no multi-tenant, no team, no fleet. The product optimizes for *this one
 > *As the operator on a freshly installed, driverless box, I want to bring the entire dev/AI/GPU toolchain up in the right order, idempotently, watching live logs, so that one failed installer doesn't strand me.*
 
 - `envctl auto-detect` → confirms the base, sees 2× GPU via PCI floor, flags `software_rendered` + "reboot to load nvidia-open 610".
-- `envctl install` → forward topo order: fonts → bun → node-via-bun → AI CLIs → rustup → rtk → GPU subgraph → gh/vite/wasmer/uv → nix → home-manager → yazelix → desktop/config.
+- `envctl install` → forward topo order: fonts → bun → node-via-bun → AI CLIs → rustup → GPU subgraph → gh/vite/wasmer/uv → nix → home-manager → yazelix → profile-owned RTK verification → desktop/config.
 - Already-present components are **Skipped** (idempotent), their wiring still reconciled. A failed component records into `failed[]`; its dependents become `SkippedBlocked`. The GPU subgraph auto-skips on a non-NVIDIA box.
 - nvidia-open's verify is **reboot-gated** → reported `RebootRequired`, not `Failed`.
 - Reboot → `envctl auto-detect` shows the driver live, smoke test green.

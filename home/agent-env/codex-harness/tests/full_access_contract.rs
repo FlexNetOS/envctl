@@ -252,12 +252,23 @@ fn retired_roots_and_tracked_model_cache_are_absent() {
     let baseline =
         fs::read_to_string(root.join("manifest/components.d/codex-global-baseline.toml")).unwrap();
     assert!(
-        !baseline.contains("'model = \"gpt-5.5\"'"),
-        "meta-local generated runtime must not route GPT-5.5"
+        baseline.contains("envctl-codex-global-baseline-lifecycle.sh"),
+        "Codex global policy must dispatch the audited active-home lifecycle"
     );
-    assert!(baseline.contains("'model = \"gpt-5.6-terra\"'"));
     assert!(!baseline.contains("LIFEOS_ROOT"));
-    assert!(baseline.contains("home/.codex/agents"));
+    for forbidden in [
+        "model-catalog",
+        "home/.codex/agents",
+        "marketplaces.",
+        "plugins.\"",
+        "CODEX_HOME",
+        "CODEX_SQLITE_HOME",
+    ] {
+        assert!(
+            !baseline.contains(forbidden),
+            "Codex global policy regenerated forbidden runtime surface: {forbidden}"
+        );
+    }
 
     let access = parse_toml(
         &root.join("home/agent-env/codex-harness/model-catalog/model-access-matrix.toml"),

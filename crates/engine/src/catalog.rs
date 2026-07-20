@@ -5244,6 +5244,11 @@ name = "nix-portable"
         .unwrap();
         write_envctl_home_fixture(&root);
 
+        let prior_meta_root = std::env::var_os("META_ROOT");
+        let prior_home = std::env::var_os("HOME");
+        std::env::set_var("META_ROOT", &root);
+        std::env::set_var("HOME", &root);
+
         let snapshot = scan(
             CatalogScanSpec {
                 repo_root: root.clone(),
@@ -5252,6 +5257,15 @@ name = "nix-portable"
             &Registry::empty(),
         )
         .unwrap();
+
+        match prior_meta_root {
+            Some(value) => std::env::set_var("META_ROOT", value),
+            None => std::env::remove_var("META_ROOT"),
+        }
+        match prior_home {
+            Some(value) => std::env::set_var("HOME", value),
+            None => std::env::remove_var("HOME"),
+        }
 
         let source_rel = "home/.config/yazelix/settings.jsonc";
         let source_abs = root.join(source_rel).display().to_string();
@@ -5324,14 +5338,8 @@ name = "nix-portable"
                 && row.owner_component.as_deref() == Some("rtk-config-links")
                 && row.artifact_kind == "envctl_managed_runtime_config"
         }));
-        assert!(snapshot.paths.iter().any(|row| {
-            row.path
-                == root
-                    .join(".config/systemd/user/env-ctl.service")
-                    .display()
-                    .to_string()
-                && row.path_kind == "envctl_home_frontdoor"
-                && row.owner_component.as_deref() == Some("home-config-links")
+        assert!(!snapshot.paths.iter().any(|row| {
+            row.owner_component.as_deref() == Some("home-config-links")
                 && row.artifact_kind == "envctl_managed_systemd_user_unit"
         }));
     }
@@ -5617,7 +5625,6 @@ const ENVCTL_SEED_TOKEN_FILE: &str = "ENVCTL_SEED_TOKEN_FILE";
         std::fs::create_dir_all(root.join("home/.config/kasetto")).unwrap();
         std::fs::create_dir_all(root.join("home/.config/nushell")).unwrap();
         std::fs::create_dir_all(root.join("home/.config/rtk")).unwrap();
-        std::fs::create_dir_all(root.join("home/.config/systemd/user")).unwrap();
         std::fs::write(root.join("home/.gitconfig"), "[user]\nname = Envctl\n").unwrap();
         std::fs::write(
             root.join("home/.claude/settings.json"),
@@ -5688,11 +5695,6 @@ const ENVCTL_SEED_TOKEN_FILE: &str = "ENVCTL_SEED_TOKEN_FILE";
         std::fs::write(
             root.join("home/.config/rtk/config.toml"),
             "[display]\nmode = \"compact\"\n",
-        )
-        .unwrap();
-        std::fs::write(
-            root.join("home/.config/systemd/user/env-ctl.service"),
-            "[Unit]\nDescription=envctl\n",
         )
         .unwrap();
     }

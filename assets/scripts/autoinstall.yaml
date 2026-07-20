@@ -9,8 +9,9 @@
 # Apt-installable tools are handled here (incl. Ghostty, which yazelix wants
 # present first). Everything that needs a real login session, the network, and
 # interactive auth (Bun as the JS runtime + `node`, Nix, the yazelix cache,
-# home-manager, yazelix itself, nerd fonts, rtk, CUDA/cuda-oxide, and the AI
-# CLIs) is installed by an interactive wizard that AUTO-LAUNCHES on first login:
+# home-manager, yazelix itself (including profile-owned RTK), nerd fonts,
+# CUDA/cuda-oxide, and the AI CLIs) is installed by an interactive wizard that
+# AUTO-LAUNCHES on first login:
 #     /usr/local/bin/yazelix-setup.sh   (source: yazelix-setup.sh on the USB)
 # Note: nushell + mise are NOT installed here or by the wizard — the yazelix
 # runtime bundles them (available via `yzx env` / inside yazelix).
