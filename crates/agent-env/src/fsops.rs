@@ -23,8 +23,8 @@ use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use crate::agent::{CommandTarget, McpSettingsTarget};
-use crate::config::{Config, Scope, SkillTarget, SkillsField};
+use crate::agent::{CommandTarget, McpSettingsFormat, McpSettingsTarget};
+use crate::config::{Agent, Config, Scope, SkillTarget, SkillsField};
 use crate::dirs::{dirs_agent_env_config, dirs_home};
 use crate::{err, Result, TreeSnapshot};
 
@@ -267,7 +267,14 @@ pub fn resolve_destinations(base: &Path, cfg: &Config, scope: Scope) -> Result<V
 // F-08: resolve_mcp_settings_targets
 // ---------------------------------------------------------------------------
 
-/// Returns one MCP settings target per configured agent, respecting scope, deduped by path.
+/// Returns MCP settings targets for configured agents, respecting scope, deduped by path.
+///
+/// A project configured for Codex also owns the repository's portable `.mcp.json`
+/// compatibility projection.  It carries the same declarative MCP baseline as
+/// `.codex/config.toml`, but does not imply a Claude skill, hook, or lifecycle
+/// projection.  Keeping the pair in this owner-level target set prevents a later
+/// `agent sync --apply` from silently deleting the compatibility file after the
+/// retired root-Claude projection has been removed.
 pub fn resolve_mcp_settings_targets(
     cfg: &Config,
     scope: Scope,
@@ -285,6 +292,15 @@ pub fn resolve_mcp_settings_targets(
                 let t = a.mcp_project_target(project_root);
                 if seen.insert(t.path.clone()) {
                     out.push(t);
+                }
+                if a == Agent::Codex {
+                    let compatibility = McpSettingsTarget {
+                        path: project_root.join(".mcp.json"),
+                        format: McpSettingsFormat::McpServers,
+                    };
+                    if seen.insert(compatibility.path.clone()) {
+                        out.push(compatibility);
+                    }
                 }
             }
         }
@@ -614,6 +630,18 @@ mod tests {
         let targets = resolve_mcp_settings_targets(&cfg, Scope::Project, pr).expect("resolve");
         assert_eq!(targets.len(), 1);
         assert_eq!(targets[0].path, pr.join(".mcp.json"));
+    }
+
+    #[test]
+    fn resolve_mcp_settings_targets_codex_keeps_portable_mcp_projection() {
+        let cfg: Config = serde_yaml::from_str("agent: codex\nskills: []\n").expect("parse config");
+        let pr = Path::new("/proj");
+        let targets = resolve_mcp_settings_targets(&cfg, Scope::Project, pr).expect("resolve");
+        assert_eq!(targets.len(), 2);
+        assert_eq!(targets[0].path, pr.join(".codex/config.toml"));
+        assert_eq!(targets[0].format, McpSettingsFormat::CodexToml);
+        assert_eq!(targets[1].path, pr.join(".mcp.json"));
+        assert_eq!(targets[1].format, McpSettingsFormat::McpServers);
     }
 
     #[test]

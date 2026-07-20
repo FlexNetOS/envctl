@@ -25,14 +25,14 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use crate::agent::{
     all_command_global_targets, all_command_project_targets, all_mcp_project_targets,
-    all_mcp_settings_targets, CommandTarget, McpSettingsTarget,
+    all_mcp_settings_targets, CommandTarget, McpSettingsFormat, McpSettingsTarget,
 };
 use crate::command::{
     destination_path, parse as parse_command, render as render_command, validate_command_name,
 };
 use crate::config::{
-    CommandEntry, CommandsField, Config, McpEntry, McpsField, Scope, SkillTarget, SkillsField,
-    SourceSpec, AGENT_PRESETS,
+    Agent, CommandEntry, CommandsField, Config, McpEntry, McpsField, Scope, SkillTarget,
+    SkillsField, SourceSpec, AGENT_PRESETS,
 };
 use crate::config_edit::{Pin, Section, Selector, SourceItem};
 use crate::dirs::{dirs_agent_env_config, dirs_agent_env_data, dirs_home};
@@ -1052,6 +1052,29 @@ fn retired_projection_placeholder(destination: &Path) -> bool {
         .is_ok_and(|contents| contents == PLACEHOLDER)
 }
 
+/// A normal project sync may adopt the repository's exact tracked MCP compatibility
+/// projection when Codex first becomes its owner.  This is deliberately narrower than
+/// general output adoption: it applies only to the `.mcp.json` companion target added for
+/// Codex, only while writing a new lock, only with one configured MCP asset, and only when
+/// the complete existing file is byte-for-byte the selected source.  A locked audit and any
+/// customized or multi-server file remain fail-closed until backed by an ownership proof.
+fn exact_codex_mcp_compatibility_projection(
+    ctx: &DriverCtx,
+    target: &McpSettingsTarget,
+    source_bytes: &[u8],
+    current_bytes: Option<&[u8]>,
+    configured_mcp_assets: usize,
+    persist_lock: bool,
+) -> bool {
+    persist_lock
+        && ctx.scope == Scope::Project
+        && configured_mcp_assets == 1
+        && ctx.cfg.agents().contains(&Agent::Codex)
+        && target.format == McpSettingsFormat::McpServers
+        && target.path == ctx.cfg_dir.join(".mcp.json")
+        && current_bytes == Some(source_bytes)
+}
+
 #[cfg(test)]
 fn record_runtime_ownership(
     updated: &mut UpdatedAt,
@@ -1873,7 +1896,16 @@ fn prepare_sync_plan(
                         if migrated {
                             legacy_live_mcp_assets.insert((*asset_id).clone());
                         }
-                        if !migrated {
+                        let exact_compatibility_projection =
+                            exact_codex_mcp_compatibility_projection(
+                                ctx,
+                                target,
+                                source_bytes,
+                                current_bytes.as_deref(),
+                                mcp_assets.len(),
+                                persist_lock,
+                            );
+                        if !migrated && !exact_compatibility_projection {
                             require_output_ownership(
                                 lock,
                                 updated,
@@ -5601,6 +5633,51 @@ command = "weave"
         );
 
         let _ = fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn sync_adopts_only_the_exact_codex_mcp_compatibility_projection() {
+        let root = temp_dir("agent-env-codex-mcp-compatibility-projection");
+        let _xdg = TestXdg::pin(&root);
+        let source_dir = root.join("pack/mcps");
+        fs::create_dir_all(&source_dir).unwrap();
+        let source_bytes = br#"{
+  "mcpServers": {
+    "exa": {
+      "url": "https://mcp.exa.ai/mcp"
+    }
+  }
+}"#;
+        fs::write(source_dir.join("exa.json"), source_bytes).unwrap();
+        fs::write(root.join(".mcp.json"), source_bytes).unwrap();
+
+        let cfg: Config = serde_yaml::from_str(
+            "scope: project\nagent: codex\nmcps:\n  - source: ./pack\n    mcps: [exa]\n",
+        )
+        .unwrap();
+        let destinations = resolve_destinations(&root, &cfg, Scope::Project).unwrap();
+        let mut lock =
+            rebuild_lock(&cfg, &root, Scope::Project, &AgentLockFile::default(), &[]).unwrap();
+        let ctx = DriverCtx::from_mode(
+            &cfg,
+            &root,
+            &destinations,
+            root.clone(),
+            Scope::Project,
+            true,
+            &LockMode::Plain,
+        );
+        let mut updated = UpdatedAt::default();
+        let result = sync(&ctx, &mut lock, &mut updated);
+        assert_eq!(result.summary.failed, 0, "actions: {:?}", result.actions);
+        assert_eq!(fs::read(root.join(".mcp.json")).unwrap(), source_bytes);
+        assert!(lock
+            .installed_outputs
+            .values()
+            .any(|proof| proof.destination == ".mcp.json" && proof.unit == "exa"));
+
+        let _ = crate::runtime::clear_runtime_state(Scope::Project, &root);
+        let _ = fs::remove_dir_all(root);
     }
 
     #[test]

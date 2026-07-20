@@ -57,7 +57,7 @@ assets:
     destination: v3|1|3:exa
     source_revision: local
 source_selectors:
-  mcp::v3|14:./agent-skills|8:exa.json: v2|base=26:v1|kind=mcp|selection=name|scope=project|targets=1|29:.codex/config.toml@codex-toml
+  mcp::v3|14:./agent-skills|8:exa.json: v2|base=26:v1|kind=mcp|selection=name|scope=project|targets=2|29:.codex/config.toml@codex-toml26:.mcp.json@mcp-servers-json
   skill::v3|14:./agent-skills|13:env-stabilize: v2|base=42:v1|kind=skill|sub-dir=-|selection=wildcard|scope=project|targets=2|28:.agents/skills/env-stabilize27:.codex/skills/env-stabilize
   skill::v3|14:./agent-skills|15:agent-env-codex: v2|base=42:v1|kind=skill|sub-dir=-|selection=wildcard|scope=project|targets=2|30:.agents/skills/agent-env-codex29:.codex/skills/agent-env-codex
   skill::v3|14:./agent-skills|16:agent-env-config: v2|base=42:v1|kind=skill|sub-dir=-|selection=wildcard|scope=project|targets=2|31:.agents/skills/agent-env-config30:.codex/skills/agent-env-config
@@ -71,6 +71,12 @@ installed_outputs:
     format: codex-toml
     unit: exa
     hash: 37034b1fa1f97f451ac8f1d172dd3408c896067e3f9223630131375d229b57d3
+  36:mcp::v3|14:./agent-skills|8:exa.json|9:.mcp.json|16:mcp-servers-json|3:exa:
+    asset_id: mcp::v3|14:./agent-skills|8:exa.json
+    destination: .mcp.json
+    format: mcp-servers-json
+    unit: exa
+    hash: c77701680a1f4632ca1c9eed0ed42da889d6516593f45c023cbaf79ba3fd6ae4
   44:skill::v3|14:./agent-skills|13:env-stabilize|27:.codex/skills/env-stabilize|10:skill-tree|4:tree:
     asset_id: skill::v3|14:./agent-skills|13:env-stabilize
     destination: .codex/skills/env-stabilize
